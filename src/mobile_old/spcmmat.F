@@ -86,8 +86,8 @@ C...........   Speciation profiles table
         REAL        ALLADJ
         
         INTEGER     NPROFS                      !  actual number of profiles
-        INTEGER     SXREF( NSPRM )              !  profile indexes (sorted)
-        REAL        SCOEF( NSPRM, MXMPOL )      !  profile coefficients
+        INTEGER     SXREF( MXSPRO )              !  profile indexes (sorted)
+        REAL        SCOEF( MXSPRO , MXMPOL )      !  profile coefficients
 
 C...........   Speciation naming and indexing lists
 
@@ -194,7 +194,7 @@ C........ Third part depends on road class only
 
 C.......   Speciation matrix variables and their names:
         
-        REAL          SPCFACS( NMSRC, NVTYPE, NSMATX ) ! speciation coefficients
+        REAL   SPCFACS( NMSRC, NVTYPE, MXMPOL*MXEPRC ) ! speciation coefficients
 
 C...........   Other local variables
         
@@ -382,7 +382,7 @@ C...............   ASSUMPTIONS: CSVNAME has provided model species list (EMNAM)
      &       ' ', 'Reading SPECIATION PROFILES file...', ' '
 
         
-        NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, NSPRM, 
+        NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, MXSPRO, 
      &                    SXREF, SCOEF, INVPRO )
 
         IF ( NPROFS .LE. 0 ) THEN
