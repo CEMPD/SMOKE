@@ -218,14 +218,31 @@ C.............  Allocate memory for and store pollutant names
         END IF
 
 C.........  Ensure that the number of mapped variables is
-C           consistent with the inventory file head
-        IF ( NMAP .GT. 0 .AND. NMAP .NE. NIPPA ) THEN
+C           consistent with the inventory file header
+        IF ( NMAP .GT. 0 .AND. NMAP .LT. NIPPA ) THEN
+            WRITE( MESG,94010 ) 'WARNING: Number of map-formatted ' //
+     &             'variables is less than number in header of '//
+     &             'inventory file.' // CRLF()// BLANK10 // 
+     &             'I/O API header has', NIPPA, 'variables indicated'//
+     &              ', but map-formated inventory file has', NMAP
+            CALL M3MSG2( MESG )
+
+            MESG = 'This occurs when the inventory contained ' //
+     &             'pollutants with all zero values.' // CRLF() // 
+     &             'You should confirm this in your Smkinven log '//
+     &             'file.'
+            CALL M3MSG2( MESG )
+            NIPOL = NIPOL - ( NIPPA - NMAP )
+
+        ELSE IF ( NMAP .GT. 0 .AND. NMAP .GT. NIPPA ) THEN
             WRITE( MESG,94010 ) 'Number of map-formatted ' //
-     &             'variables is inconsistent with header of  '//
+     &             'variables is greater than number in header of '//
      &             'inventory file.' // CRLF()// BLANK10 // 
      &             'I/O API header has', NIPPA, 'variables indicated'//
      &              ', but map-formated inventory file has', NMAP
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+
         END IF
 
         K = 0
