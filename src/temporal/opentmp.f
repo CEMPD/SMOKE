@@ -75,10 +75,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: TZONE  ! zone used for hours in output files
         INTEGER     , INTENT (IN) :: NPELV  ! number of elevated sources
         CHARACTER(*), INTENT(OUT) :: TNAME  ! lay-1 (or all) hourly logical name 
-C...........   LOCAL PARAMETERS
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
 
-        PARAMETER   ( SCCSW   = '$Revision$' ) ! CVS revision number
+C...........   LOCAL PARAMETERS
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C...........   Other local variables
 
@@ -127,12 +126,12 @@ C.........  Get header information from inventory file
 
         FDESC3D( 1 ) = CATDESC // ' source hourly emissions data'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         FDESC3D( 4 ) = '/TZONE/ '   // CTZONE
         WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR 
         IF( PYEAR .GT. 0 ) 
-     &      WRITE( FDESC3D( 5 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
-	WRITE( FDESC3D( 6 ),94010 ) '/OZONE SEASON/', INVPIDX
+     &      WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
+	WRITE( FDESC3D( 7 ),94010 ) '/OZONE SEASON/', INVPIDX
 
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
