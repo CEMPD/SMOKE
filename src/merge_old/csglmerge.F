@@ -7,12 +7,12 @@ C***********************************************************************
 C  program body starts at line 179
 C
 C  DESCRIPTION:
-C       Use gridding-transform, model-speciation, and control matrices 
+C       Use gridding-transform, model-speciation, and control matrices
 C       from programs GRDAMAT, GRDPMAT, SPCAMAT, SPCPMAT, and optionally
-C       CTLAMAT and CTLPMAT to merge, grid, speciate, and control 
+C       CTLAMAT and CTLPMAT to merge, grid, speciate, and control
 C       source-level area and point source emissions files.
 C
-C  PRECONDITIONS REQUIRED:  
+C  PRECONDITIONS REQUIRED:
 C       M3IO source-level source emissions in canonical order produced
 C       by RAWAREA and RAWPOINT
 C
@@ -22,9 +22,11 @@ C
 C  REVISION  HISTORY:
 C       Prototype  8/95 by CJC.
 C
-C       Version    2/96 by CJC for combinations of area, biogenic, 
+C       Version    2/96 by CJC for combinations of area, biogenic,
 C       mobile, and point
 C
+C       Version    1/97 by SL for met header implementation and header
+C       consistency checking scheme.
 C***********************************************************************
 
       IMPLICIT NONE
@@ -182,6 +184,9 @@ C...........   Other local variables
         CHARACTER*16    ENAME   !  logical name for emission output file
             
         CHARACTER*16    SCRBUF, TMPBUF, ABUF, BBUF  !  scratch vbles for names
+        CHARACTER*80    BMETHEAD( 2 )  ! met headers from BTMP
+        CHARACTER*80    MMETHEAD( 2 )  ! met headers from MTMP
+        CHARACTER*80    PMETHEAD( 2 )  ! met headers from PLAY
         CHARACTER*256   MESG
 
 
@@ -296,6 +301,9 @@ C.......   Open biogenic file; set appropriate flags:
                 CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
             END IF
 
+            BMETHEAD( 1 ) = FDESC3D ( 2 )  ! record met header from BTMP
+            BMETHEAD( 2 ) = FDESC3D ( 3 )
+
             DO  11  V = 1, NMPOL
                 BSPCFLAG( V ) = ( INDEX1( EMNAM( V ), 
      &                                    NVARS3D, VNAME3D ) .GT. 0 )
@@ -367,6 +375,9 @@ C.......   Open mobile-related files; set appropriate flags:
                 MESG = 'Could not get description of file ' // MNAME
                 CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
             END IF
+
+            MMETHEAD( 1 ) = FDESC3D ( 2 )  ! record met header from MTMP
+            MMETHEAD( 2 ) = FDESC3D ( 3 )
 
             IF ( JDATE .GE. 0 ) THEN    !  dates and times defined
                 IF ( ( JDATE .LT. SDATE3D ) .OR.
@@ -494,8 +505,10 @@ C.........  Create 3D file if have point sources
                 CALL M3EXIT( 'CSGLMERGE', 0, 0,
      &                  'Could not get description of file "'
      &                  // PLNAME( 1:TRIMLEN( PLNAME ) ) // '"', 2 )
-
             END IF
+
+            PMETHEAD( 1 ) = FDESC3D ( 2 )  ! record met header from PLAY
+            PMETHEAD( 2 ) = FDESC3D ( 3 )
             
 C.........  If no point sources, someone has changed the code, so give error
         ELSE
@@ -505,6 +518,138 @@ C.........  If no point sources, someone has changed the code, so give error
      &         2 )
 
         ENDIF
+
+C.........  Compare the consistency of met headers from BTMP, MTMP, PLAY to
+C           make sure they are using the same met file
+
+            IF ( (BMETHEAD(1).EQ.MMETHEAD(1)) .AND.   ! All three (bo, mb, pt)
+     &           (BMETHEAD(2).EQ.MMETHEAD(2)) .AND.   ! are consistent
+     &           (MMETHEAD(1).EQ.PMETHEAD(1)) .AND.
+     &           (MMETHEAD(2).EQ.PMETHEAD(2)) 
+     &         ) THEN
+
+               WRITE( MESG,92000 ) 'Met file consistency is verified '
+     &                          // 'among BTMP, MTMP, and PLAY'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+            ELSE IF ( (BMETHEAD(1).EQ.MMETHEAD(1)) .AND.
+     &                (BMETHEAD(2).EQ.MMETHEAD(2)) ) THEN ! bo & mb are consist.
+               IF ( PMETHEAD(1).NE.BMETHEAD(1) ) THEN ! Pt's scen. inconsistent
+                  WRITE( MESG,92000 ) 
+     &               'Point source has different met scenario ' //
+     &               'than Biogenics and Mobile' 
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+               IF ( PMETHEAD(2).NE.BMETHEAD(2) ) THEN ! Pt's scheme incons.
+                  WRITE( MESG,92000 ) 
+     &               'Point source has different cloud scheme ' //
+     &               'than Biogenics and Mobile' 
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF 
+ 
+               WRITE( MESG,92000 ) 'For Point Sources:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) PMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) PMETHEAD( 2 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92000 ) 'For Biogenics and Mobile:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 2 )
+               CALL M3MESG( MESG )
+ 
+            ELSE IF ( (MMETHEAD(1).EQ.PMETHEAD(1)) .AND.
+     &                (MMETHEAD(2).EQ.PMETHEAD(2)) ) THEN ! Try mb & pt
+               IF ( BMETHEAD(1).NE.MMETHEAD(1) ) THEN ! Bo's scen. inconsistent
+                  WRITE( MESG,92000 ) 
+     &               'Biogenics has different met scenario ' //
+     &               'than Mobile and Point' 
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+               IF ( BMETHEAD(2).NE.MMETHEAD(2) ) THEN ! Bo's scheme incons.
+                  WRITE( MESG,92000 ) 
+     &               'Biogenics has different cloud scheme ' //
+     &               'than Mobile and Point' 
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF 
+ 
+               WRITE( MESG,92000 ) 'For Biogenics:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 2 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92000 ) 'For Mobile and Point:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) MMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) MMETHEAD( 2 )
+               CALL M3MESG( MESG )
+ 
+            ELSE IF ( (PMETHEAD(1).EQ.BMETHEAD(1)) .AND.
+     &                (PMETHEAD(2).EQ.BMETHEAD(2)) ) THEN ! Try pt & bo
+               IF ( MMETHEAD(1).NE.PMETHEAD(1) ) THEN ! Mb's scen. inconsistent
+                  WRITE( MESG,92000 ) 
+     &               'Mobile has different met scenario ' //
+     &               'than Point and Biogenics' 
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+               IF ( MMETHEAD(2).NE.PMETHEAD(2) ) THEN ! Mb's scheme incons.
+                  WRITE( MESG,92000 ) 
+     &               'Mobile has different cloud scheme ' //
+     &               'than Point and Biogenics' 
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF 
+ 
+               WRITE( MESG,92000 ) 'For Mobile:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) MMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) MMETHEAD( 2 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92000 ) 'For Point and Biogenics:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) PMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) PMETHEAD( 2 )
+               CALL M3MESG( MESG )
+ 
+            ELSE     ! Neither two inputs use the same met data 
+               WRITE( MESG,92000 ) 'Biogenic, Mobile and Point all '
+     &                          // 'used different met inputs '
+               CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+
+               WRITE( MESG,92000 ) 
+     &            'For Biogenics:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 1 ) 
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) BMETHEAD( 2 ) 
+               CALL M3MESG( MESG )
+
+               WRITE( MESG,92000 ) 
+     &            'For Mobile:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) MMETHEAD( 1 ) 
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) MMETHEAD( 2 ) 
+               CALL M3MESG( MESG )
+
+               WRITE( MESG,92000 ) 
+     &            'For Point Source:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) PMETHEAD( 1 ) 
+               CALL M3MESG( MESG )
+               WRITE( MESG,92010 ) PMETHEAD( 2 ) 
+               CALL M3MESG( MESG )
+
+            END IF   ! Met header comparison             
 
         IF ( .NOT. DSCGRID( GRDNM, SCRBUF,
      &                      GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D, 
@@ -1123,7 +1268,7 @@ C...........   Error and warning message formats..... 91xxx
 C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
-
+92010   FORMAT( 10X, A )
 
 C...........   Formatted file I/O formats............ 93xxx
 
