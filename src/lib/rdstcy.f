@@ -397,7 +397,7 @@ C.........  Loop through and read country data
                 CALL M3MESG( MESG )
             END IF
 
-            CTRYCOD( N ) = COU
+            CTRYCOD( N ) = COU * 100000
             CTRYNAM( N ) = ADJUSTL( LINE( 3:22 ) )
 
             LCOU = COU
@@ -614,7 +614,7 @@ C.........  Store state and country populations
             DO J = 1, NCOUNTY
 
                 FIP = CNTYCOD( J )
-                COU = FIP / 100000
+                COU = ( FIP / 100000 ) * 100000
                 STA = ( FIP / 1000 ) * 1000
 
 C.................  Add to country population
@@ -623,8 +623,8 @@ C.................  Add to country population
                     CTRYPOPL( F ) = CTRYPOPL( F ) + CNTYPOPL( J )
                 ELSE
                     WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
-     &                     'find country', COU, 'in list while ' //
-     &                     'computing country population.'
+     &                     'find country', COU/100000, 'in list while ' 
+     &                     //'computing country population.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
                 END IF
