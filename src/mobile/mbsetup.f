@@ -238,6 +238,14 @@ C.............  Make sure speed is in the inventory
             ALLOCATE( SPEED( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
             CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
+
+C.............  Check that speed values are less than 1000; speeds more than
+C               three digits long cause problems when writing the SPDSUM file
+            IF( MAXVAL( SPEED ) >= 1000 ) THEN
+                MESG = 'Vehicle speeds greater than 1000 miles/hr ' //
+     &                 'found in inventory.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+            END IF
         END IF
         
 C.........  Make sure VMT is in the inventory
