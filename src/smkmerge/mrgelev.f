@@ -10,9 +10,13 @@ C      This subroutine multiplies a source-emissions vector with optionally
 C      a speciation array and multiplicative control array. 
 C      The first time this routine is called, a PinG- and elevated-source-
 C      specific set of arrays are allocated for storing and processing the 
-C      PinG and elevated emissions.
+C      PinG and elevated emissions.  This routine computes the elevated 
+C      emissions for UAM-style processing and the PinG grouped emissions
+C      for CMAQ PinG files.
 C
 C  PRECONDITIONS REQUIRED:
+C      Assumes any source that will be a PinG source is also a major (elevated)
+C      source.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
@@ -98,17 +102,17 @@ C           indices
         IF( FIRSTIME ) THEN
 
 C.............  Allocate indices used for processing in this routine
-            ALLOCATE( ELEVSIDX( NMAJOR ), STAT=IOS )
+            ALLOCATE( ELEVSIDX( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ELEVSIDX', PROGNAME )
-            ALLOCATE( PINGGIDX( NMAJOR ), STAT=IOS )
+            ALLOCATE( PINGGIDX( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PINGGIDX', PROGNAME )
             ELEVSIDX = 0   ! array
             PINGGIDX = 0   ! array
 
 C.............  Allocate arrays for storing emissions (arrays from MODMERGE)
-            ALLOCATE( ELEVEMIS( NMAJOR ), STAT=IOS )
+            ALLOCATE( ELEVEMIS( NMAJOR ), STAT=IOS )    ! ungrouped Elev
             CALL CHECKMEM( IOS, 'ELEVEMIS', PROGNAME )
-            ALLOCATE( PGRPEMIS( NGROUP ), STAT=IOS )
+            ALLOCATE( PGRPEMIS( NGROUP ), STAT=IOS )    ! grouped PinG
             CALL CHECKMEM( IOS, 'PGRPEMIS', PROGNAME )
 
 C.............  Create indices used for processing in this routine
@@ -117,43 +121,33 @@ C.............  Create indices used for processing in this routine
             DO S = 1, NSRC
 
 C.................  Set elevated sources index
-                IF( LMAJOR( S ) ) THEN
+                IF( ELEVFLAG .AND. LMAJOR( S ) ) THEN
                     I = I + 1
                     IF( I .GT. NMAJOR ) CYCLE
 
-C.....................  Store index to sources 
-                    ELEVSIDX( I ) = S
+C.....................  Store index to major count 
+                    ELEVSIDX( S ) = I
 
                 END IF
 
 C.................  Set PinG indicies
                 IF( LPING( S ) ) THEN
-                    J = J + 1
-                    IF( J .GT. NMAJOR ) CYCLE
 
 C.....................  Find group ID in list
                     K = FIND1( GROUPID( S ), NGROUP, GRPGID )
 
-C.....................  Store index to sources and index to groups
-                    PINGGIDX( J ) = K
+C.....................  Store index to groups
+                    IF( K .GT. 0 ) PINGGIDX( S ) = K
 
                 END IF
 
             END DO
 
 C.............  Abort if dimensions incorrect
-            IF( I .NE. NMAJOR ) THEN
+            IF( ELEVFLAG .AND. I .NE. NMAJOR ) THEN
                 WRITE( MESG,94010 ) 'INTERNAL ERROR: Number of ' //
      &                  'elevated sources I=', I, 
      &                  'unequal to dimension NMAJOR=', NMAJOR
-                CALL M3MSG2( MESG ) 
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-            END IF
-
-            IF( J .NE. NPING ) THEN
-                WRITE( MESG,94010 ) 'INTERNAL ERROR: Number of ' //
-     &                  'plume-in-grid sources J=', J, 
-     &                  'unequal to dimension NPING=', NPING
                 CALL M3MSG2( MESG ) 
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
             END IF
@@ -172,74 +166,89 @@ C.........  Check if this is a valid inventory pollutant for this call
 C............. If multiplicative controls & speciation
             IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
 
-                DO K = 1, NMAJOR
+                DO S = 1, NSRC
 
-                    S   = ELEVSIDX( K )   ! index to source arrays
+C.....................  Skip if source is not elevated and not PinG
+    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
 
-                    VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) * CNV
-                    MULT = VAL * PCUMATX( S,KEY2 )
+                    VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) ! Spec value
+                    MULT = VAL * PCUMATX( S,KEY2 )              ! w/ control
 
                     VMP  = PRINFO( S,2 )
-                    VAL = ( MULT * (1.-VMP) + PRINFO( S,1 ) * VMP )
+                    VAL = ( MULT * (1.-VMP) + PRINFO( S,1 ) * VMP ) ! w/ reactivity control
 
-                    IDX = PINGGIDX( K )
+C......................  NOTE - apply units conversion after application
+C                        of reactivity matrix.
+                    IDX = PINGGIDX( S )
                     IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
+     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL * CNV
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
+                    IDX = ELEVSIDX( S )
+                    IF( IDX .GT. 0 )
+     &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
 
                 END DO
 
 C............. If multiplicative controls only
             ELSE IF( KEY2 .GT. 0 ) THEN
 
-                DO K = 1, NMAJOR
+                DO S = 1, NSRC
 
-                    S   = ELEVSIDX( K )   ! index to source arrays
+    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
 
                     VAL = PEMSRC( S,KEY1 ) * PCUMATX( S,KEY2 )
 
-                    IDX = PINGGIDX( K )
+                    IDX = PINGGIDX( S )
                     IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
+     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL * CNV
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
+                    IDX = ELEVSIDX( S )
+                    IF( IDX .GT. 0 )
+     &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
 
                 END DO
 
 C.............  If speciation only
             ELSE IF( KEY4 .GT. 0 ) THEN
 
-                DO K = 1, NMAJOR
+                DO S = 1, NSRC
 
-                    S   = ELEVSIDX( K )   ! index to source arrays
+    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
 
                     VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) 
                     VMP  = PRINFO( S,2 )
                     VAL = ( VAL * (1.-VMP) + PRINFO( S,1 ) * VMP )
 
-                    IDX = PINGGIDX( K )
+                    IDX = PINGGIDX( S )
                     IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
+     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL * CNV
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
+                    IDX = ELEVSIDX( S )
+                    IF( IDX .GT. 0 )
+     &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
 
                 END DO
 
 C.............  If inventory pollutant only
             ELSE 
 
-                DO K = 1, NMAJOR
+                DO S = 1, NSRC
 
-                    S   = ELEVSIDX( K )   ! index to source arrays
+    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
 
                     VAL = PEMSRC( S,KEY1 )
 
-                    IDX = PINGGIDX( K )
+                    IDX = PINGGIDX( S )
                     IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
+     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL * CNV
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
+                    IDX = ELEVSIDX( S )
+                    IF( IDX .GT. 0 )
+     &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
 
                 END DO
 
