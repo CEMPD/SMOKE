@@ -1,7 +1,7 @@
 
-        SUBROUTINE GENPDOUT( FDEV, MXIDAT, TZONE, SDATE, STIME, NSTEPS, 
-     &                       TSTEP, NVAR, MXPDSRC, TYPNAM, FNAME, 
-     &                       EAIDX, INVDCOD, INVDNAM )
+        SUBROUTINE GENPDOUT( FDEV, TZONE, SDATE, STIME, NSTEPS, INSTEP, 
+     &                       OUTSTEP, NVAR, MXPDSRC, TYPNAM, FNAME, 
+     &                       EAIDX )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -67,19 +67,17 @@ C.........  EXTERNAL FUNCTIONS
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV      ! file unit no.
-        INTEGER     , INTENT (IN) :: MXIDAT    ! max no of inventory data
         INTEGER     , INTENT (IN) :: TZONE     ! output time zone
         INTEGER     , INTENT (IN) :: SDATE     ! Julian starting date in TZONE
         INTEGER     , INTENT (IN) :: STIME     ! start time of data in TZONE
         INTEGER     , INTENT (IN) :: NSTEPS    ! no. time steps
-        INTEGER     , INTENT (IN) :: TSTEP     ! time step HHMMSS
+        INTEGER     , INTENT (IN) :: INSTEP    ! expected data time step HHMMSS
+        INTEGER     , INTENT (IN) :: OUTSTEP   ! output time step HHMMSS
         INTEGER     , INTENT (IN) :: NVAR      ! no. period-specific variables
         INTEGER     , INTENT (IN) :: MXPDSRC   ! maximum period-specific sources
         CHARACTER(*), INTENT (IN) :: TYPNAM    ! 'day' or 'hour'
         CHARACTER(*), INTENT (IN) :: FNAME     ! logical file name
         INTEGER     , INTENT (IN) :: EAIDX( NIPPA ) ! index to EANAM
-        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) !  inv data 5-digit codes
-        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) !  in data names
 
 C.........  Local allocatable arrays
         LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
@@ -188,9 +186,8 @@ C.........  Message before reading the input file (list of files)
         CALL M3MSG2( MESG )
 
 C.........  Loop through input files and actually read the data
-        CALL RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, INVDCOD, INVDNAM, SDATE, STIME, 
-     &                 NSTEPS, EASTAT )
+        CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
+     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT )
 
 C.........  Determine the actual number of day-specific or hour-specific sources
         NPDSRC = 0
@@ -226,7 +223,7 @@ C           writing with a single WRITE3 statement.
 
 C.........  Open day-specific or hour-specific output file, depending on value
 C           of TYPNAM
-        CALL OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, TSTEP, 
+        CALL OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, OUTSTEP, 
      &                  TYPNAM, OFLAG, EAIDX, ONAME )
 
 C.........  Loop through time steps and output emissions
@@ -239,7 +236,7 @@ C.........  Loop through time steps and output emissions
      &                     OFLAG, EAIDX, PDEMOUT( 1,1 ), PDEMOUT( 1,2 ),
      &                     EFLAG )
 
-            CALL NEXTIME( JDATE, JTIME, TSTEP )
+            CALL NEXTIME( JDATE, JTIME, OUTSTEP )
 
         END DO     !  End of loop over time steps
 
