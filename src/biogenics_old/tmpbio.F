@@ -41,9 +41,13 @@ C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC adapted from UAM BEIS2 subroutine HRLYEM
 C
-C       Revised 8/96 by SL and CJC: algorithm change to match OTAG BEIS2
-C       algorithm
+C       Revised    8/96 by SL and CJC: algorithm change to match OTAG BEIS2
+C             algorithm
 C
+C       Revised    1/97 by SL: integrated tmpbios.F's functionality into this
+C             program. added flexibility in calculating PAR by using
+C             1. observational cloud, 2. RGRND from MM5, 3, KUO cloud, 
+C             4. KF cloud
 C***********************************************************************
 
         IMPLICIT NONE
@@ -71,9 +75,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
+        INTEGER         GETMENU
         INTEGER         TRIMLEN
 
-        EXTERNAL        GETNUM, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
+        EXTERNAL        GETNUM, GETYN, INDEX1, PROMPTMFILE, 
+     &                  PROMPTFFILE, GETMENU, TRIMLEN
 
 C...........    Mods for reading in gridded solar radiation
  
@@ -87,6 +93,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         NHRS    !  run duration (hours)
         INTEGER         JDATE   !  current simulation date (YYYYDDD)
         INTEGER         JTIME   !  current simulation time (HHMMSS)
+        INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         HR      !  current simulation hour
         INTEGER         I, J, K, L !  loop counters and subscripts
         INTEGER         B, M    !  counters for biogenic, model species
@@ -94,6 +101,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         CHARACTER*16    NNAME   !  logical name for normalized-emissions input
         CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
         CHARACTER*16    MNAME   !  logical name for MET_CRO_3D
+        CHARACTER*16    SNAME   !  logical name for solar radiation file
 
         CHARACTER*256   MESG    !  message buffer for M3EXIT()
 
@@ -135,9 +143,9 @@ C.......   Name tables for file NNAME
         CHARACTER*72    PARMENU( 4 )               ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use observational clouds',
-                   'Use MM5 generated RGND',
-                   'Use KUO cloud attenuation',
-                   'Use KF  cloud attenuation'   /
+     &             'Use MM5 generated RGND',
+     &             'Use KUO cloud attenuation',
+     &             'Use KF  cloud attenuation'   /
             
 
 C***********************************************************************
@@ -166,7 +174,8 @@ C   begin body of program TMPBIO
 
 C.......   Get the method to calculate PAR
 
-         PARTYPE = GETMENU( 4, 2, 'How will PAR be calculated?')
+         PARTYPE = GETMENU( 4, 2, 'How will PAR be calculated?',
+     &                      PARMENU )
 
 C.......   Get input files
 
@@ -174,16 +183,16 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
 
         NNAME = PROMPTMFILE( 
      &          'Enter name for NORMALIZED EMISSIONS input file',
-     &          FSREAD3, 'BNORM', 'TMPBIO' )
+     &          FSREAD3, 'BGRD', 'TMPBIO' )
 
         IF ( PARTYPE .EQ. 2 ) THEN
 
-           INDEV = PROMPTMFILE(
+           SNAME = PROMPTMFILE(
      &             'Enter name for PAR and SFC. TEMP input file',
      &             FSREAD3, 'SOLAR', 'TMPBIO' )
-           IF ( .NOT. DESC3( INDEV ) ) THEN
+           IF ( .NOT. DESC3( SNAME ) ) THEN
                MESG = 'Could not get description of file "' //
-     &                INDEV( 1:TRIMLEN( INDEV ) ) // '"'
+     &                SNAME( 1:TRIMLEN( SNAME ) ) // '"'
                CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
            END IF
 
@@ -260,18 +269,19 @@ C.......   Build name table for variables in normalized emissions file"
 24      CONTINUE
 
 C...........   Read time-independent data:
+
         IF ( PARTYPE .NE. 2 ) THEN     ! Use cloud to calc. PAR
            IF ( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, LAT ) ) THEN
               MESG = 'Could not read LAT from file "' //
      &                GNAME( 1:TRIMLEN( GNAME ) ) // '"'
               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
            END IF
-        END IF
 
-        IF ( .NOT. READ3( GNAME, 'LON', 1, 0, 0, LON ) ) THEN
-             MESG = 'Could not read LON from file "' //
-     &              GNAME( 1:TRIMLEN( GNAME ) ) // '"'
-            CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+           IF ( .NOT. READ3( GNAME, 'LON', 1, 0, 0, LON ) ) THEN
+              MESG = 'Could not read LON from file "' //
+     &                GNAME( 1:TRIMLEN( GNAME ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+           END IF
         END IF
 
 C.......   Loops reading the various categories of normalized emissions:
@@ -322,13 +332,13 @@ C.......   Loop on time steps:
 
         DO  899  HR = 1, NHRS
            IF ( PARTYPE .EQ. 2 ) THEN      ! Use RGRND
-              IF ( .NOT. READ3( INDEV, 'PAR', ALLAYS3, JDATE,
+              IF ( .NOT. READ3( SNAME, 'PAR', ALLAYS3, JDATE,
      &             JTIME, TSOLAR(1,1) ) ) THEN
                  MESG = 'Could not read from file SOLAR'
                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
               END IF
  
-              IF ( .NOT. READ3( INDEV, 'TA', ALLAYS3, JDATE,
+              IF ( .NOT. READ3( SNAME, 'TA', ALLAYS3, JDATE,
      &             JTIME, TSFC(1,1) ) ) THEN
                  MESG = 'Could not read from file SOLAR'
                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
