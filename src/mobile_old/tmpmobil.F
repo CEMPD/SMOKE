@@ -103,8 +103,8 @@ C...........   MPLIST emissions factor cross reference tables:
         INTEGER   MPRDT( NLIST )
         INTEGER   MPLNK( NLIST )
         INTEGER   MPREF( 0:23, NLIST )    !  hour&source-specific xrefs
-        INTEGER   REFCNT
-        INTEGER   REFLIST( NLIST )
+        INTEGER   REFCNT                  !  count of unique list of PSIs
+        INTEGER   REFLIST( NLIST )        !  unique list of PSIs
 
         INTEGER   EFDEX( 0:23, NMSRC )    ! subscript into emis fac tables
 
@@ -113,15 +113,21 @@ C...........   Emissions factor tables:
         REAL    TEMP0		!  starting em factor table temperature
         REAL    TEMP1		!  ending em factor table temperature
         REAL    DTEMP		!  em factor table temperature increment (K)
-        REAL    DDTEMP		!  inverse temperature increment (K)
+        REAL    DDTEMP		!  inverse non-diurnal temperature increment (K)
+        REAL    DNLTI           !  inverse diurnal temperature increment (K)
+
         INTEGER NTEMP		!  number of active elements in temp grid
 
-        REAL	EXH_CO ( MAXTMP, NVTYPE, NLIST )	!  emissions factor
-        REAL	EXH_NOX( MAXTMP, NVTYPE, NLIST )	!  emissions factor
-        REAL	EXH_VOC( MAXTMP, NVTYPE, NLIST )	!  emissions factor
-        REAL	EVP_VOC( MAXTMP, NVTYPE, NLIST )	!  emissions factor
-        REAL	RNL_VOC( MAXTMP, NVTYPE, NLIST )	!  emissions factor
-        REAL	RST_VOC( MAXTMP, NVTYPE, NLIST )	!  emissions factor
+        REAL	EXH_CO ( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
+        REAL	EXH_NOX( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
+        REAL	EXH_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
+        REAL	EVP_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
+        REAL	RNL_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
+        REAL	RST_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
+        REAL	WDL_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
+        REAL	DNL_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
+        REAL	HOT_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
+        REAL	CRC_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
 
 C.......   Temporal profiles:
 
@@ -203,6 +209,13 @@ C...........   Ungridding matrix:
 
         COMMON  / UGRIDMAT / NU, IU, CU
 
+C...........   Ungridded minimum/maximum temperature arrays
+        INTEGER     TMMI ( NMSRC )      ! Min/max indice
+        REAL        TKMIN( NMSRC )      ! daily minimum temperature [deg K]
+        REAL        TKMAX( NMSRC )      ! daily maximum temperature [deg K]
+
+        COMMON  / MINMAX / TMMI, TKMIN, TKMAX
+
 C...........   Other local variables
 
         LOGICAL  DAYLIT  !  true when TZONES have been changed to daylight time
@@ -225,6 +238,7 @@ C...........   Other local variables
         INTEGER         JTIME	!  for output file
         INTEGER         JYEAR
         INTEGER         LNK     !  Temporary user defined link code
+        INTEGER         MAXTL   !  Intermediate temperature indice variable
         INTEGER         MDATE	!  for met input file
         INTEGER         MTIME	!  for met input file
         INTEGER         NEMODE  !  Number of scenario-specific emission modes
@@ -246,8 +260,13 @@ C...........   Other local variables
 
         INTEGER         H, HCORR, I, II, IREC  
         INTEGER         J, K, KU, L, M, C0, C1, F, S, T, V
+        INTEGER         J1, J2, J3, J4   
         INTEGER         MONTH, DAY, LDATE
+        REAL            TMMIDV
+
         REAL            SCR, PP, QQ
+        REAL            R1, R2, S1, S2     
+        REAL            TMIN0, TMAX0
 
         REAL            TA( NGRID )	!  one-layer slice of temperature
         REAL            TASRC           !  temperature, interpolated to srcs
@@ -258,10 +277,12 @@ C...........   Other local variables
         CHARACTER*3     INV     !  temporary string for inventory species name
         CHARACTER*3     PROC    !  temporary string for process name
         CHARACTER*16    ANAME   !  logical name for mobile-source     input file
-        CHARACTER*16    FNAME   !  logical name for emissions factors input file
+        CHARACTER*16    DNAME   !  logical name for diurnal EFs       input file
+        CHARACTER*16    FNAME   !  logical name for non-diurnal EFs input file
         CHARACTER*16    MNAME   !  logical name for met_cro_3d        input file
-        CHARACTER*16    UNAME   !  logical name for ungridding-matrix input file
         CHARACTER*16    TNAME   !  logical name for timestepped      output file
+        CHARACTER*16    UNAME   !  logical name for ungridding-matrix input file
+        CHARACTER*16    WNAME   !  logical name for ungridded min/max tmpr input
         CHARACTER*256   LINE    !  buffer for reading XREF file
         CHARACTER*256   MESG    !  buffer for M3EXIT()
 
@@ -316,8 +337,12 @@ C.......   and temporal profiles files
      &          FSREAD3, 'MOBL', 'TMPMOBIL' )
 
         FNAME = PROMPTMFILE( 
-     &          'Enter logical name for EMISSIONS FACTOR input file',
-     &          FSREAD3, 'MEFS', 'TMPMOBIL' )
+     &          'Enter logical name for NON-DIURNAL EMISSIONS ' //
+     &          'FACTOR input file', FSREAD3, 'MEFSND', 'TMPMOBIL' )
+
+        DNAME = PROMPTMFILE( 
+     &          'Enter logical name for DIURNAL EMISSIONS ' //
+     &          'FACTOR input file', FSREAD3, 'MEFSD', 'TMPMOBIL' )
 
         MNAME = PROMPTMFILE( 
      &          'Enter logical name for MET_CRO_3D input file',
@@ -326,6 +351,10 @@ C.......   and temporal profiles files
         UNAME = PROMPTMFILE( 
      &          'Enter logical name for UNGRIDDING MATRIX input file',
      &          FSREAD3, 'MUGMAT', 'TMPMOBIL' )
+
+        WNAME = PROMPTMFILE( 
+     &          'Enter logical name for UNGRIDDED MIN/MAX TEMPERATURE '
+     &          // 'input file', FSREAD3, 'MINMAXT', 'TMPMOBIL' )
 
         VDEV = PROMPTFFILE( 
      &           'Enter logical name for VMT MIX file',
@@ -751,7 +780,7 @@ C...........   Check for overflows
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
      &             'Max XREF NRCLAS=', NRCLAS,
-     &             'exceeded in XREF file: count=',NPRNF
+     &             'exceeded in XREF file: count=', NPRNF
             CALL M3MESG( MESG )
         ENDIF
 
@@ -1031,24 +1060,30 @@ C...........   If you get to here:  error
         END IF                                               
 
 
-C...........   Read relevant emissions factors from MEFS
+C...........   Read non-diurnal emissions factors params from MEFSND
 
         IF ( .NOT. DESC3( FNAME ) ) THEN
             MESG = 'Could not get description for ' // FNAME
             CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         END IF
 
-
 C.......   Get starting point, increment, number of items for
-C.......   emissions factor temperature tables:
+C.......   non-diurnal emissions factor temperature tables:
 
-        FDATE  = SDATE3D
         NTEMP  = STR2INT( FDESC3D( 5 ) )
         TEMP0  = CTOK  +  SNGL( FTOC * ( XORIG3D - 32.0D0 ) )
         DTEMP  = SNGL( FTOC * XCELL3D )
         TEMP1  = TEMP0 +  DTEMP * FLOAT( NTEMP - 1 )
         DDTEMP = 1.0 / DTEMP
 
+C.......   Get constants and increment for
+C.......   non-diurnal emissions factor temperature tables:
+
+        MAXTL  = INT( ( MAXT_MAX - MAXT_MIN ) / TINTV ) + 1 
+        DNLTI  = 1.0 / ( FTOC * TINTV )
+
+C.......   Set date for reading emission factors
+        FDATE = JYEAR * 1000 + 1
 
 C.......   Read emissions factor tables:
 
@@ -1108,9 +1143,43 @@ C.......   Read emissions factor tables:
                 CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
             END IF
 
+            IF ( .NOT. READ3( DNAME, 'WDL_VOC', ALLAYS3, 
+     &                        FDATE, SEC2TIME( REFLIST( T ) ),
+     &                        WDL_VOC( 1,1,T ) ) ) THEN
+                WRITE( MESG,94010 ) 
+     &          'Could not read record', REFLIST( T ),
+     &          'of variable WDL_VOC from ' // DNAME
+                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. READ3( DNAME, 'DNL_VOC', ALLAYS3, 
+     &                        FDATE, SEC2TIME( REFLIST( T ) ),
+     &                        DNL_VOC( 1,1,T ) ) ) THEN
+                WRITE( MESG,94010 ) 
+     &          'Could not read record', REFLIST( T ),
+     &          'of variable DNL_VOC from ' // DNAME
+                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. READ3( DNAME, 'HOT_VOC', ALLAYS3, 
+     &                        FDATE, SEC2TIME( REFLIST( T ) ),
+     &                        HOT_VOC( 1,1,T ) ) ) THEN
+                WRITE( MESG,94010 ) 
+     &          'Could not read record', REFLIST( T ),
+     &          'of variable HOT_VOC from ' // DNAME
+                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. READ3( DNAME, 'CRC_VOC', ALLAYS3, 
+     &                        FDATE, SEC2TIME( REFLIST( T ) ),
+     &                        CRC_VOC( 1,1,T ) ) ) THEN
+                WRITE( MESG,94010 ) 
+     &          'Could not read record', REFLIST( T ),
+     &          'of variable CRC_VOC from ' // DNAME
+                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+            END IF
+
 366     CONTINUE
-
-
 
 C.......   Read ungridding matrix:
 
@@ -1119,9 +1188,10 @@ C.......   Read ungridding matrix:
             CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         END IF
 
-
+C......................................................................
 C...........   Construct TMAT -- array of effective composite 
 C...........   profile coefficients
+C......................................................................
 
 C...........   For each time step, write out the area source emissions values:
 
@@ -1135,8 +1205,8 @@ C...........   For each time step, write out the area source emissions values:
                 MESG = 'Could not read TA from ' // MNAME
                 CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
             END IF
-C...............   If this is a new month, or transitions between
-C...............   weekday and weekend, calculate a new TMAT
+C...............   If this is a new month, or new day, calculate
+C...............   new TMAT
 
 
             IF ( LDATE .NE. JDATE ) THEN
@@ -1176,7 +1246,7 @@ C.................  Create temporal adjustment matrix for current day
      &                           TZONE,  TZONES,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, MXMAT, VMT, TMAT )
+     &                           DIUFAC, DDEX, MXMAT, TMAT )
 
                 ELSE IF ( DAY .GE. 6 ) THEN     !  day is Saturday or Sunday
                                                 !  in SAI's brain-damaged
@@ -1187,7 +1257,7 @@ C.................  Create temporal adjustment matrix for current day
      &                           TZONE,  TZONES,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
-     &                           ENDFAC, EDEX, MXMAT, VMT, TMAT )
+     &                           ENDFAC, EDEX, MXMAT, TMAT )
 
                 ELSE
 
@@ -1196,9 +1266,20 @@ C.................  Create temporal adjustment matrix for current day
      &                           TZONE,  TZONES,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, MXMAT, VMT, TMAT )
+     &                           DIUFAC, DDEX, MXMAT, TMAT )
 
                 END IF
+
+C.................  Read ungridded MIN/MAX temperature indices for the day
+
+                IF( .NOT. 
+     &               READ3( WNAME, ALLVAR3, 1, JDATE, 0, TMMI ) ) THEN
+
+                     MESG = 'Could not read TMMI from ' // 
+     &                      WNAME( 1:TRIMLEN( WNAME ) )
+                     CALL M3EXIT( 'TMPMOBIL', JDATE, 0, MESG, 2 )
+                ENDIF
+             
 
             END IF      ! if jdate not ldate
 
@@ -1214,6 +1295,8 @@ C...............   Ungrid temperature:
                     KU = KU + 1
                     TASRC = TASRC + TA( IU( KU ) ) * CU( KU )
 811             CONTINUE
+
+C...............   Get factors for interpolating non-diurnal emission factors
 
                 IF ( TASRC .LT. TEMP0 ) THEN	    !  trap TASRC against TEMP0
 
@@ -1239,10 +1322,49 @@ C...............   Ungrid temperature:
 
                     SCR = DDTEMP * ( TASRC - TEMP0 )
                     II  = 1 + INT( SCR )
-                    PP  = AMOD( SCR, 1.0 )
-                    QQ  = 1.0 - PP
+                    QQ  = AMOD( SCR, 1.0 )
+                    PP  = 1.0 - QQ
 
                 END IF		!  tasrc trapped; coeffs & index found.
+
+C...............   Get factors for interpolating diurnal emission factors
+C...................   Note that min/max has already been trapped by PREDIUR
+
+                J1     = TMMI( S )
+
+C.................  Set up if diurnal emissions are non-zero
+                IF( J1 .NE. 0 ) THEN
+
+                    J2     = J1 + MAXTL
+                    J3     = J1 + 1
+                    J4     = J2 + 1
+
+                    TMMIDV = INT( J1 / MAXTL )
+                    TMIN0  = MINT_MIN + TINTV * TMMIDV
+                    TMIN0  = CTOK  +  SNGL( FTOC * ( TMIN0 - 32.0D0 ) )
+                    TMAX0  = MAXT_MIN + TINTV * ( J1 - MAXTL*TMMIDV - 1)
+                    TMAX0  = CTOK  +  SNGL( FTOC * ( TMAX0 - 32.0D0 ) )
+
+                    R1     = AMOD ( DNLTI * ( TKMIN(S) - TMIN0 ), 1.0 )
+                    R2     = 1.0 - R1
+                  
+                    S1     = AMOD ( DNLTI * ( TKMAX(S) - TMAX0 ), 1.0 )
+                    S2     = 1.0 - S1
+
+C.................  Set up if diurnal emissions are zero
+                ELSE
+                    J1 = 1
+                    J2 = 1
+                    J3 = 1
+                    J4 = 1
+                    R1 = 0.
+                    R2 = 0.
+                    S1 = 0.
+                    S2 = 0.
+
+                ENDIF
+                  
+C...............   Adjust which hourly EF to use based on time zone
 
                 HCORR = MOD( H + TZONE + 25 - TZONES( S ), 24 )
                 M     = EFDEX( HCORR, S )
@@ -1317,6 +1439,62 @@ C...............   Ungrid temperature:
      &                              ( PP * RST_VOC( II  ,V,M ) +
      &                                QQ * RST_VOC( II+1,V,M ) )
   823               CONTINUE
+
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'WDL_VOC' ) THEN
+
+                    DO 824 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+     &                               S2 * ( R2 * WDL_VOC( J1,V,M ) +
+     &                                      R1 * WDL_VOC( J2,V,M )   ) +
+     &                               S1 * ( R2 * WDL_VOC( J3,V,M ) +
+     &                                      R1 * WDL_VOC( J4,V,M )   )
+  824               CONTINUE
+
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'DNL_VOC' ) THEN
+
+                    DO 825 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+     &                               S2 * ( R2 * DNL_VOC( J1,V,M ) +
+     &                                      R1 * DNL_VOC( J2,V,M )   ) +
+     &                               S1 * ( R2 * DNL_VOC( J3,V,M ) +
+     &                                      R1 * DNL_VOC( J4,V,M )   )
+  825               CONTINUE
+
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'HOT_VOC' ) THEN
+
+                    DO 826 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+     &                               S2 * ( R2 * HOT_VOC( J1,V,M ) +
+     &                                      R1 * HOT_VOC( J2,V,M )   ) +
+     &                               S1 * ( R2 * HOT_VOC( J3,V,M ) +
+     &                                      R1 * HOT_VOC( J4,V,M )   )
+  826               CONTINUE
+
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'CRC_VOC' ) THEN
+
+                    DO 827 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+     &                               S2 * ( R2 * CRC_VOC( J1,V,M ) +
+     &                                      R1 * CRC_VOC( J2,V,M )   ) +
+     &                               S1 * ( R2 * CRC_VOC( J3,V,M ) +
+     &                                      R1 * CRC_VOC( J4,V,M )   )
+  827               CONTINUE
 
                     I = I + 1
                 ENDIF
