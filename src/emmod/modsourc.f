@@ -42,7 +42,7 @@
 
 !.........  Sorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
-        INTEGER, ALLOCATABLE, PUBLIC:: ISIC  ( : )  !  source SIC
+        INTEGER, POINTER,     PUBLIC:: ISIC  ( : )  !  source SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: CELLID( : )  !  Cell ID
@@ -80,9 +80,9 @@
         CHARACTER(LEN=ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
         CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE ( : ) ! vehicle type
         CHARACTER(LEN=ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
-        CHARACTER(LEN=MACLEN3), ALLOCATABLE, PUBLIC:: CMACT  ( : ) ! MACT code
-        CHARACTER(LEN=NAILEN3), ALLOCATABLE, PUBLIC:: CNAICS ( : ) ! NAICS code
-        CHARACTER(LEN=STPLEN3), ALLOCATABLE, PUBLIC:: CSRCTYP( : ) ! source type code
+        CHARACTER(LEN=MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
+        CHARACTER(LEN=NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
+        CHARACTER(LEN=STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
         
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
 
