@@ -2,54 +2,31 @@
 #
 all: opts
 #
-opts: rawmobil emisfac prediur tmpmobil grdmmat spcmmat csgmobil grdmobil
-#
-LDIRS=-L$(em) \
-      -L$(io) \
-      -L$(ncf)
+opts: csgmobil emisfac grdmmat grdmobil prediur rawmobil spcmmat tmpmobil
 #
 LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf 
 #
-LMOB=$(LDIRS) -L$(mo) -lemstuff -lm3io -lnetcdf -lmo5av1
+LMOB=$(LDIRS) -lemstuff -lm3io -lnetcdf -lmo5av1
 #
 #
-RAW=rawmobil.F 
 #
-RAWI=MBDIMS3.EXT TMDIMS3.EXT
+CSGV=csgmobil.F msmatvec.F csvname.F
 #
-rawmobil: $(RAW) $(RAWI)
-	echo RAWMOBIL:
-	f77 $(FFLAGS)  -o $(SCENDIR)/rawmobil $(RAW) $(LIBS)
+CSGI=MBDIMS3.EXT CHDGEN3.EXT GRDIMS3.EXT
+#
+csgmobil: $(CSGV) $(CSGI)
+	echo CSGMOBIL:
+	f77 $(FFLAGS) -o $(SCENDIR)/csgmobil $(CSGV) $(LIBS)
 #
 #
 #
 EMIS=emisfac.F efcombo.F moinbld.F mobile.F
 
-EMISI=MBDIMS3.EXT
+EMISI=MBDIMS3.EXT CHDGEN3.EXT
 
 emisfac: $(EMIS) $(EMISI)
 	echo EMISFAC:
 	f77 $(FFLAGS) -o $(SCENDIR)/emisfac $(EMIS) $(LMOB)
-#
-#
-#
-PRED=prediur.F rdmplist.F
-
-PREDI=MBDIMS3.EXT GRDIMS3.EXT
-
-prediur: $(PRED) $(PREDI)
-	echo PREDIUR:
-	f77 $(FFLAGS) -o $(SCENDIR)/prediur $(PRED) $(LIBS)
-#
-#
-#
-GRDS=grdmobil.F
-#
-GRDI=MBDIMS3.EXT GRDIMS3.EXT
-#
-grdmobil: $(GRD) $(GRDI)
-	echo GRDMOBIL:
-	f77 $(FFLAGS) -o $(SCENDIR)/grdmobil $(GRDS) $(LIBS)
 #
 #
 #
@@ -63,9 +40,39 @@ grdmmat: $(GRMS) $(GRMI)
 #
 #
 #
+GRDS=grdmobil.F
+#
+GRDI=MBDIMS3.EXT GRDIMS3.EXT
+#
+grdmobil: $(GRD) $(GRDI)
+	echo GRDMOBIL:
+	f77 $(FFLAGS) -o $(SCENDIR)/grdmobil $(GRDS) $(LIBS)
+#
+#
+#
+PRED=prediur.F rdmplist.F
+
+PREDI=MBDIMS3.EXT GRDIMS3.EXT
+
+prediur: $(PRED) $(PREDI)
+	echo PREDIUR:
+	f77 $(FFLAGS) -o $(SCENDIR)/prediur $(PRED) $(LIBS)
+#
+#
+#
+RAW=rawmobil.F 
+#
+RAWI=MBDIMS3.EXT TMDIMS3.EXT
+#
+rawmobil: $(RAW) $(RAWI)
+	echo RAWMOBIL:
+	f77 $(FFLAGS)  -o $(SCENDIR)/rawmobil $(RAW) $(LIBS)
+#
+#
+#
 SPCS=spcmmat.F csvname.F rdsprof.F rdmconv.F
 #
-SPCI=MBDIMS3.EXT CHDIMS3.EXT
+SPCI=MBDIMS3.EXT CHDGEN3.EXT
 #
 spcmmat: $(SPC) $(SPCI)
 	echo SPCMMAT:
@@ -75,21 +82,12 @@ spcmmat: $(SPC) $(SPCI)
 #
 TMPV=tmpmobil.F mkvmat.F rdmplist.F csvname.F rdvmix.F
 #
-TMPI=MBDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT GRDIMS3.EXT
+TMPI=MBDIMS3.EXT CHDGEN3.EXT TMDIMS3.EXT GRDIMS3.EXT
 #
 tmpmobil: $(TMPV) $(TMPI)
 	echo TMPMOBIL:
 	f77 $(FFLAGS) -o $(SCENDIR)/tmpmobil $(TMPV) $(LIBS)
 #
-#
-#
-CSGV=csgmobil.F msmatvec.F csvname.F
-#
-CSGI=MBDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
-#
-csgmobil: $(CSGV) $(CSGI)
-	echo CSGMOBIL:
-	f77 $(FFLAGS) -o $(SCENDIR)/csgmobil $(CSGV) $(LIBS)
 #
 #
 clean:

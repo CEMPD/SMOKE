@@ -2,56 +2,32 @@
 #
 all: debug 
 #
-opts: rawmobil.debug emisfac.debug prediur.debug tmpmobil.debug \
-      grdmmat.debug spcmmat.debug csgmobil.debug grdmobil.debug
-#
-LDIRS=-L$(em) \
-      -L$(io) \
-      -L$(ncf)
+debug: csgmobil.debug emisfac.debug grdmmat.debug grdmobil.debug \
+      prediur.debug rawmobil.debug spcmmat.debug tmpmobil.debug
 #
 LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf 
 #
-LMOB=$(LDIRS) -L$(mo) -lemstuff.debug -lm3io.debug -lnetcdf.debug -lmo5av1.debug
+LMOB=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug -lmo5av1.debug
 #
 #
 #
-RAW=rawmobil.F 
+CSGV=csgmobil.F msmatvec.F csvname.F
 #
-RAWI=MBDIMS3.EXT TMDIMS3.EXT
+CSGI=MBDIMS3.EXT CHDGEN3.EXT GRDIMS3.EXT
 #
-rawmobil.debug: $(RAW) $(RAWI)
-	echo RAWMOBIL:
-	f77 $(DBGFLAGS)  -o rawmobil.debug $(RAW) $(LIBS)
+csgmobil.debug: $(CSGV) $(CSGI)
+	echo CSGMOBIL:
+	f77 $(DBGFLAGS) -o csgmobil.debug $(CSGV) $(LIBS)
 #
 #
 #
 EMIS=emisfac.F efcombo.F moinbld.F mobile.F
 
-EMISI=MBDIMS3.EXT
+EMISI=MBDIMS3.EXT CHDGEN3.EXT
 
 emisfac.debug: $(EMIS) $(EMISI)
 	echo EMISFAC:
 	f77 $(DBGFLAGS) -o emisfac.debug $(EMIS) $(LMOB)
-#
-#
-#
-PRED=prediur.F rdmplist.F
-
-PREDI=MBDIMS3.EXT GRDIMS3.EXT
-
-prediur.debug: $(PRED) $(PREDI)
-	echo PREDIUR:
-	f77 $(DBGFLAGS) -o prediur.debug $(PRED) $(LIBS)
-#
-#
-#
-GRDS=grdmobil.F
-#
-GRDI=MBDIMS3.EXT GRDIMS3.EXT
-#
-grdmobil.debug: $(GRD) $(GRDI)
-	echo GRDMOBIL:
-	f77 $(DBGFLAGS) -o grdmobil.debug $(GRDS) $(LIBS)
 #
 #
 #
@@ -65,9 +41,39 @@ grdmmat.debug: $(GRMS) $(GRMI)
 #
 #
 #
+GRDS=grdmobil.F
+#
+GRDI=MBDIMS3.EXT GRDIMS3.EXT
+#
+grdmobil.debug: $(GRD) $(GRDI)
+	echo GRDMOBIL:
+	f77 $(DBGFLAGS) -o grdmobil.debug $(GRDS) $(LIBS)
+#
+#
+#
+PRED=prediur.F rdmplist.F
+
+PREDI=MBDIMS3.EXT GRDIMS3.EXT
+
+prediur.debug: $(PRED) $(PREDI)
+	echo PREDIUR:
+	f77 $(DBGFLAGS) -o prediur.debug $(PRED) $(LIBS)
+#
+#
+#
+RAW=rawmobil.F 
+#
+RAWI=MBDIMS3.EXT TMDIMS3.EXT
+#
+rawmobil.debug: $(RAW) $(RAWI)
+	echo RAWMOBIL:
+	f77 $(DBGFLAGS)  -o rawmobil.debug $(RAW) $(LIBS)
+#
+#
+#
 SPCS=spcmmat.F csvname.F rdsprof.F rdmconv.F
 #
-SPCI=MBDIMS3.EXT CHDIMS3.EXT
+SPCI=MBDIMS3.EXT CHDGEN3.EXT
 #
 spcmmat.debug: $(SPCS) $(SPCI)
 	echo SPCMMAT:
@@ -77,7 +83,7 @@ spcmmat.debug: $(SPCS) $(SPCI)
 #
 TMPV=tmpmobil.F mkvmat.F rdmplist.F csvname.F rdvmix.F 
 #
-TMPI=MBDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT GRDIMS3.EXT
+TMPI=MBDIMS3.EXT CHDGEN3.EXT TMDIMS3.EXT GRDIMS3.EXT
 #
 tmpmobil.debug: $(TMPV) $(TMPI)
 	echo TMPMOBIL:
@@ -85,10 +91,3 @@ tmpmobil.debug: $(TMPV) $(TMPI)
 #
 #
 #
-CSGV=csgmobil.F msmatvec.F csvname.F
-#
-CSGI=MBDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
-#
-csgmobil.debug: $(CSGV) $(CSGI)
-	echo CSGMOBIL:
-	f77 $(DBGFLAGS) -o csgmobil.debug $(CSGV) $(LIBS)
