@@ -501,14 +501,12 @@ C      data tables should then contain the start year.
                     YFLAG   = .TRUE.
                     RETURN
 
-C.................  Start and end year are the same... (error)
+C.................  Start and end year are the same... (warning)
                 ELSE IF( SYEAR .EQ. OUTYEAR ) THEN
-                    EFLAG = .TRUE.      ! EFLAG from main
                     WRITE( MESG,94010 )
-     &                  'ERROR: I/O error', IOS,
-     &                  'reading packet years at line', IREC  ! IREC from main
-                    CALL M3MESG( MESG )
-                    PKTIDX = -1
+     &                  'WARNING: Input year and output year are '//
+     &                  'the same.'
+                    CALL M3MSG2( MESG )
                     RETURN
 
 C.................  Start year is fine, but output year disagrees with other pkt
