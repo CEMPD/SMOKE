@@ -39,16 +39,19 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
+     &                      CELLID   
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: SRGIDPOS, SGFIPPOS
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, COORD, GDTYP, 
+     &                     P_ALP, P_BET, P_GAM, XCENT, YCENT, NGRID,
+     &                     OFFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIPPA, EANAM
 
 C.........  This module is required by the FileSetAPI
         USE MODFILESET

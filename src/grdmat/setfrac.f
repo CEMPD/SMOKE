@@ -43,7 +43,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGS, SRGLIST, SRGCSUM, SRGFRAC
 
         IMPLICIT NONE
 

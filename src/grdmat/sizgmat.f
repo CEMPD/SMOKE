@@ -41,16 +41,17 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: XLOCA, YLOCA, IFIP, CELLID, CLINK,
+     &                      XLOC1, YLOC1, XLOC2, YLOC2
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: SRGIDPOS, SGFIPPOS
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS
 
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NCELLS, FIPCELL
 
         IMPLICIT NONE
 
