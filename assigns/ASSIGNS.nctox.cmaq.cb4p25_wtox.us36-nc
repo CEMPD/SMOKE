@@ -25,14 +25,15 @@
 
    setenv EBASE     nctox        # Output merged base case name
 
-   setenv METSCEN   a1a              # Met scenario name
-   setenv GRID      us36-nc          # Gridding root
-   setenv SPC       cmaq.cb4p25_wtox # Speciation type
-   setenv ESDATE    19960709         # Start date of emis time-based files
-   setenv MSDATE    19960709         # Start date of met  time-based files
-   setenv NDAYS     1                # Duration in days of emis time-based files
-   setenv MDAYS     1                # Duration in days of met  time-based files
-   setenv YEAR      1996             # Year for year-specific files
+   setenv METSCEN      a1a              # Met scenario name
+   setenv GRID         us36-nc          # Gridding root for naming
+   setenv IOAPI_GRID_1 US36NC_23X12     # Grid selected from GRIDDESC file
+   setenv SPC          cmaq.cb4p25_wtox # Speciation type
+   setenv ESDATE       19960709         # Start date of emis time-based files
+   setenv MSDATE       19960709         # Start date of met  time-based files
+   setenv NDAYS        1                # Duration in days of emis time-based files
+   setenv MDAYS        1                # Duration in days of met  time-based files
+   setenv YEAR         1996             # Year for year-specific files
 
 ## Intialize date controls
    set setdate = y
@@ -134,24 +135,24 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PTINV      $INVDIR/point/ptinv.lst                 # EMS-95 point emissions
    setenv PTDAY      $INVDIR/point/ptday.lst                 # daily point emis
    setenv PTHOUR     $INVDIR/point/pthour.lst                # hourly point emis
-   setenv PELVCONFIG $INVDIR/point/pelvconfig.top100.txt     # elevated source selection
+   setenv PELVCONFIG $INVDIR/point/pelvconfig.top50.txt     # elevated source selection
    setenv REPCONFIG  $INVDIR/point/repconfig.point.txt       # Default report configurations
-   setenv PTMPLIST   $INVDIR/point/ptmplist.txt              # List of PTMP files for Elevpoint
+   #      PTMPLIST                                           # Set automatically by script
    setenv GCNTL      $INVDIR/other/gcntl.control.txt         # Scenario-specific controls
    setenv PPROJ      $INVDIR/other/gcntl.proj.$BYFYR.txt     # Projection factors
    setenv PTPRO      $GE_DAT/amptpro.m3.062801.us+can.txt    # Temporal profiles
    setenv PTREF      $GE_DAT/amptref.m3.032503.us+can.txt    # Point temporal x-ref
-   setenv PSTK       $GE_DAT/pstk.$PSTK_ID.txt               # Replacement stack params
+   setenv PSTK       $GE_DAT/pstk.m3.txt               # Replacement stack params
 endif
 #
 ## Shared input files
-   setenv INVTABLE    $INVDIR/other/invtable.txt   # Inventory table
+   setenv INVTABLE    $INVDIR/other/invtable_nonroad.cb4.120202.txt # Inventory table
    setenv NHAPEXCLUDE $INVDIR/other/nhapexclude.txt # NONHAPVOC exclusions x-ref
    setenv GRIDDESC    $GE_DAT/GRIDDESC             # Grid descriptions.
-   setenv COSTCY      $GE_DAT/costcy.051702.txt    # country/state/county info
+   setenv COSTCY      $GE_DAT/costcy.txt           # country/state/county info
    setenv HOLIDAYS    $GE_DAT/holidays.txt         # holidays for day change
    setenv SCCDESC     $GE_DAT/scc_desc.txt         # SCC descriptions
-   setenv SRGDESC     $GE_DAT/srg_desc.$GRID.txt   # surrogate descriptions
+   setenv SRGDESC     $GE_DAT/srg_desc.us36.txt    # surrogate descriptions
    setenv ORISDESC    $GE_DAT/oris_info.txt        # ORIS ID descriptions
    setenv GSREF       $GE_DAT/gsref.$SPC.txt       # Speciation x-ref
    setenv GSPRO       $GE_DAT/gspro.$SPC.txt       # Speciation profiles
