@@ -94,16 +94,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   LOCAL VARIABLES and their descriptions:
 
-        INTEGER         LDEV    !  unit number for log device
-        INTEGER         NSTEPS  !  run duration (hours)
+        INTEGER         B, M    !  counters for biogenic, model species
+        INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
+        INTEGER         HR      !  current simulation hour
+        INTEGER         IOS     !  temporay IO status
         INTEGER         JDATE   !  current simulation date (YYYYDDD)
         INTEGER         JTIME   !  current simulation time (HHMMSS)
         INTEGER         LDATE   !  previous simulation date
+        INTEGER         LDEV    !  unit number for log device
+        INTEGER         NSTEPS  !  run duration (hours)
+        INTEGER         MXSTEPS !  maximum number of time steps
         INTEGER         PARTYPE !  method number to calculate PAR
-        INTEGER         HR      !  current simulation hour
-        INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
-        INTEGER         IOS     !  temporay IO status
-        INTEGER         B, M    !  counters for biogenic, model species
 
         LOGICAL         EFLAG   !  error flag
         LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
@@ -236,8 +237,12 @@ C.......   Get input files
      &       NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
             CALL M3MSG2( MESG )
             CALL M3EXIT( 'TMPBIO', 0, 0, 'Bad input file.', 2 )
- 
+
+        ELSE
+            MXSTEPS = MXREC3D 
+
         END IF
+
 
 C.........  If needed, get other met files and check dimensions
 
@@ -333,11 +338,10 @@ C...........   Get starting date, time, run duration
      &          'Enter simulation starting date (YYYYDDD|YYYYMMDD)' )
 
         JTIME = GETNUM( 0, 235959, JTIME, 
-     &                 'Enter simulation starting time  (HHMMSS)' )
+     &                  'Enter simulation starting time  (HHMMSS)' )
 
-        NSTEPS = GETNUM( 1, MXREC3D, NSTEPS, 
+        NSTEPS = GETNUM( 1, MXSTEPS, NSTEPS, 
      &                  'Enter output duration (hours)' )
-
 
 C.......   Build description for, and create/open output file
 C.......   (all but variables-table in description is borrowed from M2NAME)
@@ -347,7 +351,7 @@ C.......   (all but variables-table in description is borrowed from M2NAME)
         MXREC3D = NSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
-
+        TSTEP3D = 10000
 
         DO  11  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )
