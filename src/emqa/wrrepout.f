@@ -1,6 +1,6 @@
 
         SUBROUTINE WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, 
-     &                       LAYER, DELIM, OUTFMT, EFLAG )
+     &                       LAYER, DELIM, OUTFMT, ZEROFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -52,7 +52,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: SCCDESC
+        USE MODLISTS, ONLY: SCCDESC, SICDESC
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, VARWIDTH,
@@ -66,7 +66,7 @@ C.........  This module contains Smkreport-specific settings
      &                      STKPFMT, STKPWIDTH, CHARWIDTH, ELEVWIDTH,
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
-     &                      ALLRPT
+     &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -74,7 +74,8 @@ C.........  This module contains report arrays for each output bin
      &                      BINCOIDX, BINSTIDX, BINCYIDX,
      &                      BINMONID, BINWEKID, BINDIUID,
      &                      BINSRGID1, BINSRGID2, BINSPCID, BINRCL,
-     &                      BINELEV, BINSNMIDX, BINBAD
+     &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
+     &                      BINSICIDX
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM
@@ -100,6 +101,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: LAYER    ! layer number for output
         CHARACTER(*), INTENT (IN) :: DELIM
         CHARACTER(*), INTENT (IN) :: OUTFMT
+        LOGICAL     , INTENT (IN) :: ZEROFLAG
         LOGICAL     , INTENT(OUT) :: EFLAG
 
 C...........   Local parameters
@@ -123,8 +125,8 @@ C...........   Other local variables
         INTEGER     NC                        ! no. source char fields
         INTEGER     OUTHOUR                   ! output hour
         INTEGER     YEAR                      ! 4-digit year
-	INTEGER	    STIDX                     ! starting index of loop
-	INTEGER     EDIDX                     ! ending index of loop
+        INTEGER     STIDX                     ! starting index of loop
+        INTEGER     EDIDX                     ! ending index of loop
 
         INTEGER, SAVE :: PRCNT = 0
 
@@ -156,8 +158,8 @@ C.............  Transfer array info to scalar info for this report
 
 C.............  Allocate memory for LF if not available already
             IF( .NOT. ALLOCATED( LF ) ) THEN
-        	ALLOCATE( LF( MXCHRS ), STAT=IOS )
-        	CALL CHECKMEM( IOS, 'LF', PROGNAME )
+                ALLOCATE( LF( MXCHRS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LF', PROGNAME )
             END IF
 
 C.............  Initialize output status of source characteristics
@@ -176,14 +178,16 @@ C               example
         END IF
 
 C.........  Loop through variables for the database format
-	DO V = 1, NDATA
+        DO V = 1, NDATA
 
 C.........  Loop through entries for all bins for current date and hour
             DO I = 1, NOUTBINS
 
-C.............  Check if emissions are zero and skip record if they are.
-                ECHECK = SUM( BINDATA( I,1:NDATA ) )
-                IF ( ECHECK .EQ. 0. ) CYCLE
+C.............  Check for zero emissions if flag is not set
+                IF( .NOT. ZEROFLAG ) THEN
+                    ECHECK = SUM( BINDATA( I,1:NDATA ) )
+                    IF ( ECHECK .EQ. 0. ) CYCLE
+                END IF
 
 C.............  Build tmp string based on date, hour, and other columns that
 c               are included in the output file.  Whether these are included
@@ -194,16 +198,16 @@ c               is determined by the report settings.
                 LX     = 1
 
 C.............  Include variable in string
-		IF( RPT_%RPTMODE .EQ. 3 ) THEN
+                IF( RPT_%RPTMODE .EQ. 3 ) THEN
 
-		    L = VARWIDTH
-		    L1 = L - LV
-		    STRING = STRING( 1:LE ) //
+                    L = VARWIDTH
+                    L1 = L - LV
+                    STRING = STRING( 1:LE ) //
      &                       OUTDNAM( V, RCNT )( 1:L1 ) // DELIM
-		    MXLE = MXLE + L
-		    LE = MIN( MXLE, STRLEN )
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
 
-		END IF
+                END IF
 
 C.............  Include date in string
                 IF( RPT_%BYDATE ) THEN
@@ -332,6 +336,16 @@ C.............  Include SCC code in string
                     STRING = STRING( 1:LE ) // 
      &                       BINSCC( I )( 1:L1 ) // DELIM
                     MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include SIC code in string
+                IF( RPT_%BYSIC ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, SICFMT ) BINSIC( I )    ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + SICWIDTH + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF
@@ -482,6 +496,18 @@ C.............  This is knowingly including extra blanks before final quote
                     LE = MIN( MXLE, STRLEN )
                 END IF
 
+C.............  Include SIC description
+C.............  This is knowingly including extra blanks before final quote
+                IF( RPT_%SICNAM ) THEN
+                    J = BINSICIDX( I ) 
+                    L = SIDSWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       '"'// SICDESC( J )( 1:L1 )// '"' // DELIM
+                    MXLE = MXLE + L + 2
+                    LE = MIN( MXLE, STRLEN )
+                END IF
+
 C.............  Remove leading spaces and get new length
                 STRING = STRING( 2:LE )
                 LE = LE - 1
@@ -498,11 +524,11 @@ C.............  If current bin has bad values, update those now.
                 IF( BINBAD( I ) .GT. 0 ) BINDATA( I,1:NDATA ) = -9.
 
 C.............  Write out this record
-	        IF( RPT_%NUMFILES .EQ. 1 ) THEN
+                IF( RPT_%NUMFILES .EQ. 1 ) THEN
 
-		    IF( RPT_%RPTMODE .EQ. 2 ) THEN
+                    IF( RPT_%RPTMODE .EQ. 2 ) THEN
 
-		        IF( FIRSTIME ) THEN
+                        IF( FIRSTIME ) THEN
                             STIDX = 1
                             EDIDX = RPT_%RPTNVAR
                             FIRSTIME = .FALSE.
@@ -522,63 +548,63 @@ C.............  Write out this record
 
                         END IF
 
-		    ELSE IF( RPT_%RPTMODE .EQ. 1 ) THEN
+                    ELSE IF( RPT_%RPTMODE .EQ. 1 ) THEN
 
-		        STIDX = 1
-		        EDIDX = NDATA
-
-		    ELSE IF( RPT_%RPTMODE .EQ. 3 ) THEN
-
-		        STIDX = 1
-		        EDIDX = 1
-
-		    ELSE
-
-		        STIDX = 1
+                        STIDX = 1
                         EDIDX = NDATA
 
-		    END IF
+                    ELSE IF( RPT_%RPTMODE .EQ. 3 ) THEN
 
-	        ELSE
-		    IF( FIRSTIME ) THEN
-		        STIDX = 1
-		        EDIDX = RPT_%RPTNVAR
-		        FIRSTIME = .FALSE.
+                        STIDX = 1
+                        EDIDX = 1
 
-		    ELSE
-		        IF( EDIDX + RPT_%RPTNVAR .GT.
+                    ELSE
+
+                        STIDX = 1
+                        EDIDX = NDATA
+
+                    END IF
+
+                ELSE
+                    IF( FIRSTIME ) THEN
+                        STIDX = 1
+                        EDIDX = RPT_%RPTNVAR
+                        FIRSTIME = .FALSE.
+
+                    ELSE
+                        IF( EDIDX + RPT_%RPTNVAR .GT.
      &                                     NDATA ) THEN
 
-		 	    STIDX = EDIDX + 1
-			    EDIDX = NDATA
+                            STIDX = EDIDX + 1
+                            EDIDX = NDATA
 
-		        ELSE
-			    STIDX = EDIDX + 1
-			    EDIDX = EDIDX + RPT_%RPTNVAR
+                        ELSE
+                            STIDX = EDIDX + 1
+                            EDIDX = EDIDX + RPT_%RPTNVAR
 
-		        END IF
+                        END IF
 
-		    END IF
+                    END IF
 
-	        END IF
+                END IF
 
-		IF( RPT_%RPTMODE .NE. 3 ) THEN
+                IF( RPT_%RPTMODE .NE. 3 ) THEN
 
                     WRITE( FDEV, OUTFMT ) STRING( 1:LE ), 
      &                              ( BINDATA( I,J ), J=STIDX, EDIDX )
 
-		ELSE
+                ELSE
 
-		    WRITE( FDEV, OUTFMT ) STRING( 1:LE ), BINDATA( I,V ),
+                    WRITE( FDEV, OUTFMT ) STRING( 1:LE ), BINDATA(I,V),
      &                                DELIM, OUTUNIT( V )
 
-		END IF
+                END IF
 
             END DO  ! End loop through bins
 
-	    IF( RPT_%RPTMODE .NE. 3 ) GOTO 777
+            IF( RPT_%RPTMODE .NE. 3 ) GOTO 777
 
-	END DO   ! End loop through variables
+        END DO   ! End loop through variables
 
 C.........  Save report number for next time routine is called
 777     PRCNT = RCNT
