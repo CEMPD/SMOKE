@@ -195,10 +195,10 @@ endif
 ## Shared input files - always set
    setenv SIPOLS     $INVDIR/sipols.txt           # Master pollutants file
    setenv ACTVNAMS   $INVDIR/actvnams.txt         # Master activities file
-   setenv G_GRIDPATH $BASDIR/G_GRIDPATH.${GRID}   # Grid descriptions.
+   setenv GRIDDESC   $BASDIR/G_GRIDPATH.${GRID}   # Grid descriptions.
    setenv ZONES      $GE_DAT/zones                # time zones by state&county
    setenv USERIN     $SCENARIO/userin.utm.$YEAR   # EPS userin file
-   setenv COSTCY     $GE_DAT/costcy.txt           # country/state/county info
+   setenv COSTCY     $GE_DAT/costcy.013102.txt    # country/state/county info
    setenv HOLIDAYS   $GE_DAT/holidays.txt         # holidays for day change
 
 #
@@ -229,11 +229,13 @@ if ( $SMK_SOURCE == 'A' || $MRG_AREA == 'Y' ) then
 
    if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' ) then
       setenv ATMP  $SMKDAT/run_$ASCEN/$ESDATE/atmp.$ESDATE.$NDAYS.$ASCEN.ncf
+      setenv ATSUP $SMKDAT/run_${ASCEN}/$ESDATE/atsup.$ESDATE.$ASCEN.txt
    endif
 
    if ( $RUN_SPCMAT == 'Y' || $MRG_SPCMAT_YN == 'Y' ) then   # Area speciation
       setenv ASMAT_S  $SMKDAT/run_$ABASE/static/asmat_s.$SPC.$ABASE.ncf
       setenv ASMAT_L  $SMKDAT/run_$ABASE/static/asmat_l.$SPC.$ABASE.ncf
+      setenv ASSUP    $SMKDAT/run_${ABASE}/static/assup.$SPC.$ABASE.txt
    endif
 
    if ( $RUN_CNTLMAT == 'Y' || $MRG_AREA_REAC == 'Y' ) then  # Area reactivity
@@ -284,11 +286,13 @@ if ( $SMK_SOURCE == 'M' || $MRG_MOBILE == 'Y' ) then
 
    if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' ) then
       setenv MTMP  $SMKDAT/run_$MSCEN/$ESDATE/mtmp.$ESDATE.$NDAYS.$GRID.$MSM.ncf
+      setenv MTSUP $SMKDAT/run_${MSCEN}/$ESDATE/mtsup.$ESDATE.$MSCEN.txt
    endif
 
    if ( $RUN_SPCMAT == 'Y' || $MRG_SPCMAT_YN == 'Y' ) then  # Mobile speciation
       setenv MSMAT_L  $SMKDAT/run_$MBASE/static/msmat_l.$SPC.$MBASE.ncf
       setenv MSMAT_S  $SMKDAT/run_$MBASE/static/msmat_s.$SPC.$MBASE.ncf    
+      setenv MSSUP    $SMKDAT/run_${MBASE}/static/mssup.$SPC.$MBASE.txt
    endif
 
    if ( $RUN_CNTLMAT == 'Y' || $MRG_MOBILE_REAC == 'Y' ) then# Mobile reactivity
@@ -350,13 +354,15 @@ if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
       setenv PHOURPRO $INVOPD/phourpro.$INVOP.ncf   # Pt NetCDF src-spec dnl profs
    endif
 
-   if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' ) then
+   if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' || $RUN_ELEVPOINT == 'Y' ) then
       setenv PTMP  $SMKDAT/run_$PSCEN/$ESDATE/ptmp.$ESDATE.$NDAYS.$PSCEN.ncf
+      setenv PTSUP $SMKDAT/run_${PSCEN}/$ESDATE/ptsup.$ESDATE.$PSCEN.txt
    endif
 
    if ( $RUN_SPCMAT == 'Y' || $MRG_SPCMAT_YN == 'Y' ) then   # Point speciation
       setenv PSMAT_L  $SMKDAT/run_$PBASE/static/psmat_l.$SPC.$PBASE.ncf
       setenv PSMAT_S  $SMKDAT/run_$PBASE/static/psmat_s.$SPC.$PBASE.ncf
+      setenv PSSUP    $SMKDAT/run_${PBASE}/static/pssup.$SPC.$PBASE.txt
    endif
 
    if ( $RUN_CNTLMAT == 'Y' || $MRG_POINT_REAC == 'Y' ) then # Point reactivity
