@@ -1,0 +1,176 @@
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML> 
+<HEAD>
+<TITLE> 
+    To-Do List
+</TITLE>
+</HEAD>
+   
+<BODY>
+<H1>
+    To-Do List:  Plans for further SMOKE development
+</H1>
+
+<VAR>!! under construction !!</VAR>
+
+<UL>
+    <LI>  <A HREF = "#chem"> Enhanced support for non-VOC species </A>
+    <LI>  <A HREF = "#sort"> Enhanced sorting of profiles and 
+                             cross references </A>
+    <LI>  <A HREF = "#allo"> Run-Time Dimensioning </A>
+    <LI>  <A HREF = "#cntl"> Control-Related Enhancements </A>
+    <LI>  <A HREF = "#err">  Enhanced Error Handling  </A>
+    <LI>  <A HREF = "#ZZ">   (dummy subject) </A>
+</UL>
+
+<HR> <!----------------------------------------------------------------->
+
+
+<H2> <A NAME = "chem"> Enhanced support for non-VOC species </A></H2>
+
+    <VAR>!! page in progress !!</VAR><P> 
+
+    The proof-of-concept version of SMOKE was constructed for the
+    Carbon Bond IV chemical mechanism, with explicit provision for
+    the subscripts of non-VOC species CO, NOX (in the inventory), 
+    and NO, and NO2 (in the model-speciated emissions output).  
+    This needs to be re-worked so that the non-VOC subscripts are 
+    no longer hard-coded, and so that the non-VOC species lists
+    are allowed to vary.  Provision needs to be made for the optional
+    presence/absence of additional non-VOC species, including 
+    at least the following:
+    <UL>
+        <LI>  SOX, SO2, and SO4
+        <LI>  Ammonia
+        <LI>  Methane
+        <LI>  Particulates (PM-10, PM-2.5)
+    </UL>
+    Both INCLUDE-file <A HREF = "INCLUDES.html#chdims">CHDIMS3.EXT</A>
+    and the programs
+    <A HREF = "MERGE.html#CSELEV">    CSELEV</A>, 
+    <A HREF = "QA.html#CSGAREA">   CSGAREA</A>, 
+    <A HREF = "MERGE.html#CSGLMERGE"> CSGLMERGE</A>, 
+    <A HREF = "MERGE.html#CSGMERGE">  CSGMERGE</A>, 
+    <A HREF = "QA.html#CSGMOBIL">  CSGMOBIL</A>, 
+    <A HREF = "QA.html#CSGPOINT">  CSGPOINT</A>, 
+    <A HREF = "AREA.html#SPCAMAT">   SPCAMAT</A>, 
+    <A HREF = "MOBILE.html#SPCMMAT">   SPCMMAT</A>, 
+    <A HREF = "POINT.html#SPCPMAT">   SPCPMAT</A>, and
+    <A HREF = "BIOGENICS.html#TMPBIO">    TMPBIO</A> need to be modified 
+    accordingly.
+    <P> 
+
+
+<H2> <A NAME = "sort"> Enhanced sorting of profiles and cross 
+                       references </A></H2>
+
+    <VAR>!! page in progress !!</VAR><P>
+
+    All profiles and cross references should be sorted on-the-fly;
+    since they have the same structure across all emissions categories,
+    both temporal and speciation profiles should be sorted by shared
+    utility routines (currently this is done for temporal profiles; it
+    needs to be extended to speciation profiles; quite possibly it can
+    be extended to the gridding profiles (surrogate fractions) shared
+    by area and biogenics).
+    <P> 
+
+
+
+<H2> <A NAME = "allo"> Run-Time Dimensioning </A></H2>
+
+    <VAR>!! page in progress !!</VAR><P> 
+    
+    Currently, all dimensioning--inventory dimensioning for the 
+    numbers of sources, species dimensioning, grid dimensioning,
+    and table dimensioning for cross references and profiles--is 
+    <A HREF = "INCLUDES.html"> INCLUDE-file resident.</A>  For a
+    production system, at least inventory and grid dimensioning should
+    be determined at run-time, with dynamic allocation governed either
+    by explicit counting of the input, by obtaining dimension values
+    from the file headers using the 
+    <A HREF = "http://www.iceis.mcnc.org/EDSS/ioapi/H.DESC3.html">DESC3</A> I/O API routine, or 
+    from I/O API routine <A HREF =
+    "http://www.iceis.mcnc.org/EDSS/ioapi/H.DSCGRID.html">DSCGRID</A> for grid dimensioning.
+    This will introduce portability, since there are at least three
+    notions of dynamic memory allocation extant on the platforms of
+    interest.
+    <P> 
+
+    Note that this will mandate an additional level of checking to 
+    ensure that all files and all processing are consistent with each
+    other.
+    <P> 
+
+
+<H2> <A NAME = "cntl"> Control-Related Enhancements </A></H2>
+
+    <VAR>!! page in progress !!</VAR><P>
+
+    How best to implement the following?
+    <UL>
+        <LI>  Day-specific or meteorology-specific controls 
+              (control &quot;tactics&quot; rather than control 
+              &quot;strategies&quot;)
+        <LI>  Control strategies which interact with other
+              sub-models (e.g., by changing temporal or speciation
+              profiles, or by interacting with stack parameters)
+    </UL>
+    <P> 
+
+    We need to <STRONG>separate control functionality from 
+    future/past projection functionality.</STRONG>  
+    Projection-specification files should contain both
+    source-year and target-year (&quot;Projection factors from 1989
+    inventory to future year 2005&quot;, for example), since
+    inventories may be composites without a homogeneous inventory year.
+    (This happens in the NC SIP processing, where the inventory years
+    are different for the various states in the modeled area, and for
+    various industries in the point inventory).  In general, the CSG*
+    programs will read optional projection matrices in addition to the
+    optional control matrices.  The exception to this practice is the
+    mobile source processing, where (since temporal modeling is made
+    year-specific by the presence of year-specific vehicle mix
+    fractions in file <A HREF = "MOBILE.html#MVMTM">MVMTM</A>) the projection
+    matrices should normally be optionally applied by program
+    <A HREF = "MOBILE.html#TMPMOBIL">TMPMOBIL</A>.
+    <P> 
+    
+
+<H2> <A NAME = "err"> Enhanced Error Handling </A></H2>
+ 
+    In the initial proof-of-concept area source prototype, programs
+    terminated as soon as they detected any error.  During the early
+    work with the proof-of-concept, it was quickly realized that it
+    is a much friendlier philosophy to carry through any given stage 
+    of processing while logging all errors encountered before
+    terminating, rather than terminating immediately.  As a result,
+    some programs behave the first way, and others behave the second.
+    We need to go through the entirety of SMOKE to ensure that the 
+    second and friendlier error-handling philosophy is implemented
+    consistently.
+
+
+<H2> <A NAME = "ZZ"> (dummy subject) </A></H2>
+
+    <VAR>!! page in progress !!</VAR><P>
+
+
+<HR> <!--trailing references .................................  -->
+
+
+<A HREF = "PERF.html">  
+<STRONG>Previous: </STRONG>  SMOKE Performance 
+</A>
+<P> 
+
+<A HREF = "index.html"> 
+<STRONG>Top: </STRONG>  
+SMOKE Root Document  </A>
+<P> 
+
+
+</BODY>      <!--end body  -->
+</HTML>      <!--end html  -->
+

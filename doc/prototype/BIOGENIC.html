@@ -1,0 +1,956 @@
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML> 
+<HEAD>
+<TITLE> 
+    Biogenic Source Emissions
+</TITLE>
+</HEAD>
+   
+<BODY>
+<H1>
+    Biogenic Source Emissions
+</H1>
+
+<H2> Contents </H2>
+<UL>
+    <LI>  <A HREF = "#overview"> Processing: Overview and Principles </A>
+    <UL>
+        <LI>  <A HREF = "#grid"> Normalized Emissions </A>
+        <LI>  <A HREF = "#temp"> Temporal Modeling </A>
+    </UL>
+    <LI>  <A HREF = "#programs"> Program Specifications </A>
+    <LI>  <A HREF = "#dataset">  Biogenic Emissions Data Set Definitions </A>
+</UL>
+
+<HR>
+
+<H2> <A NAME = "overview"> Processing:  Overview and Principles </A> </H2>
+    
+    SMOKE biogenic emissions modeling &quot;SMOKE-BEIS2&quot;
+    is basically an adaptation of BEIS2 to fit within the data 
+    flows of SMOKE and to work compatibly with the meteorology 
+    and air quality models being developed within EDSS and Models-3.  
+    <STRONG>Data flow diagrams</STRONG> giving an  overview of 
+    SMOKE-BEIS2 biogenic emissions modeling are available in
+    <A HREF = "figs/BIO.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.gif">GIF</A>, in
+    <A HREF = "figs/BIO.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.jpg">JPEG</A>.  Diagrams giving an 
+    overview of the main line of SMOKE processing  and how biogenic
+    emissions modeling fits into that whole are available for 
+    <STRONG>UAM</STRONG> air quality modeling in
+    <A HREF = "figs/OVERVIEW.UAM.ps">Postscript</A>, in
+    <A HREF = "figs/OVERVIEW.UAM.gif">GIF</A>, in
+    <A HREF = "figs/OVERVIEW.UAM.xbm">X bitmap</A>, and in
+    <A HREF = "figs/OVERVIEW.UAM.jpg">JPEG</A>; 
+    and also are available for <STRONG>EDSS/Models-3</STRONG> 
+    air quality modeling in
+    <A HREF = "figs/OVERVIEW.EDSS.ps">Postscript</A>, in
+    <A HREF = "figs/OVERVIEW.EDSS.gif">GIF</A>, in
+    <A HREF = "figs/OVERVIEW.EDSS.xbm">X bitmap</A>, and in
+    <A HREF = "figs/OVERVIEW.EDSS.jpg">JPEG</A>.
+
+
+<H3> <A NAME = "grid"> Preparation of Gridded Normalized Emissions</A></H3>
+
+    There are two different paths of processing for SMOKE-BEIS2, depending
+    upon whether one begins with gridded or county-aggregated BEIS2
+    land use data.  Both produce the same sort of gridded normalized
+    biogenic emissions output file <A HREF = "#BGRD">BGRD</A>, 
+    which contains gridded land use type specific normalized
+    (time-independent) emissions and biomass data.  In the gridded 
+    land use case, program  <A HREF = "#GRDBIO">GRDBIO</A> reads 
+    BEIS2 gridded land use data from <A HREF = "#BGUSE">BGUSE</A> 
+    and BEIS2 emissions factors from <A HREF = "#BFAC">BFAC</A>
+    to produce this file.  In the county-aggregated case, program
+    <A HREF = "#RAWBIO">RAWBIO</A> reads a county list from
+    <A HREF = "#BFIP">BFIP</A>, BEIS2 county-aggregated
+    land use data from <A HREF = "#BCUSE">BCUSE</A>, BEIS2
+    emissions factors from BFAC, and gridding-surrogate coefficients
+    from <A HREF = "#BGPRO">BGPRO</A> to produce this file. 
+    In both cases, BGRD then goes into TMPBIO to prepare model-ready
+    biogenic emissions.
+    <P> 
+    
+    <STRONG>Data flow diagrams</STRONG> describing normalized biogenic
+    emissons processing are available for both the gridded case in
+    <A HREF = "figs/BIO.GRD.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.GRD.gif">GIF</A>, in
+    <A HREF = "figs/BIO.GRD.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.GRD.jpg">JPEG</A>; 
+    and for the county-aggregated case, also in
+    <A HREF = "figs/BIO.RAW.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.RAW.gif">GIF</A>, in
+    <A HREF = "figs/BIO.RAW.xbm">X bitmap</A>, and in
+    <A HREF = "figs/POINT.RAW.jpg">JPEG</A>.
+    <P> 
+    
+
+<H3><A NAME = "temp"> Temporal Modeling </A></H3>
+
+    Program <A HREF = "#TMPBIO">TMPBIO</A> reads the gridded
+    normalized biogenic emissions file <A HREF = "#BGRD">BGRD</A>,
+    EDSS/Models-3 meteorology, and observational cloud cover data, and
+    produces gridded speciated hourly biogenic emissions
+    <A HREF = "#BGTS">BGTS</A>.
+    <P> 
+    
+    <STRONG>Data flow diagrams</STRONG> describing temporal modeling
+    for biogenic emissons are available in
+    <A HREF = "figs/BIO.TMP.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.TMP.gif">GIF</A>, in
+    <A HREF = "figs/BIO.TMP.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.TMP.jpg">JPEG</A>.
+
+<H2> <A NAME = "programs"> Biogenic Source Programs </A> </H2>
+ 
+    <UL>
+ 
+        <LI>  <STRONG><A HREF = "#GRDBIO"> GRDBIO</A></STRONG>:
+        <LI>  <STRONG><A HREF = "#RAWBIO"> RAWBIO</A></STRONG>:
+        <LI>  <STRONG><A HREF = "#TMPBIO"> TMPBIO</A></STRONG>:
+
+     </UL>
+ 
+<HR>
+<H2> <a name="GRDBIO"> GRDBIO </a></H2>
+<table >
+<tr>
+<td><A HREF = "#GRDBIO_DESC"> Description</A>
+<td><A HREF = "#GRDBIO_PRORD"> Processing Order</A>
+<td><A HREF = "#GRDBIO_INFIL"> Input Files</A>
+<td><A HREF = "#GRDBIO_INPAR"> Input Params</A>
+<td><A HREF = "#GRDBIO_INENV"> Input Envt Vars</A>
+<tr>
+<td><A HREF = "#GRDBIO_OUTFIL"> Output Files</A>
+<td><A HREF = "#GRDBIO_INCL"> Include File Params</A>
+<td><A HREF = "#GRDBIO_UPCOM"> Upcoming Features</A>
+<td><A HREF = "#GRDBIO_BUGS"> Known Bugs</A>
+<td><A HREF = "#GRDBIO_USAGE"> Usage</A>
+</table>
+
+<H3><A NAME = "GRDBIO_DESC"> Description </A></H3>
+    GRDBIO reads the gridded biomass/landuse and the emissions factors, 
+    and produces gridded normalized biogenic emissions.  
+    Note that program <A HREF = "#RAWBIO">RAWBIO</A>
+    does an equivalent task starting from county level (rather than
+    gridded) biomass/land use, providing an alternate pathway for
+    biogenic processing.
+
+<H3><A NAME = "GRDBIO_PRORD"> Processing Order </A></H3>
+    The following <b>data flow diagram</b> provides a conceptual overview
+    of using GRDBIO. <p>
+
+    <IMG SRC="figs/BIO.GRD.gif" ALT="Biogenics raw data import diagram for gridded land use data"><p>
+
+    <STRONG>Data flow diagrams</STRONG> for the data preparation and 
+    import of biogenic source processing are available in 
+    <A HREF = "figs/BIO.GRD.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.GRD.gif">GIF</A>, in
+    <A HREF = "figs/BIO.GRD.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.GRD.jpg">JPEG</A>; diagrams describing how GRDBIO
+    fits into the totality of biogenic source processing are available in
+    <A HREF = "figs/BIO.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.gif">GIF</A>, in
+    <A HREF = "figs/BIO.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.jpg">JPEG</A>.
+    <P> 
+<H3><A NAME = "GRDBIO_INFIL"> Input Files </A></H3>
+    <UL> 
+        <LI>  Input file  <A HREF = "#BFAC">  <STRONG> BFAC  </STRONG></A>
+        <LI>  Input file  <A HREF = "#BGUSE"> <STRONG> BGUSE </STRONG></A>
+    </UL>
+<H3><A NAME = "GRDBIO_INPAR"> Input Parameters </A></H3>
+<H3><A NAME = "GRDBIO_INENV"> Input Environment Variables </A></H3>
+<H3><A NAME = "GRDBIO_OUTFIL"> Output Files </A></H3>
+    <UL>
+        <LI>  Output file <A HREF = "#BGRD">  <STRONG> BGRD  </STRONG></A>
+    </UL>
+<H3><A NAME = "GRDBIO_INCL"> Include file parameters </A></H3>
+<H3><A NAME = "GRDBIO_UPCOM"> Upcoming Features </A></H3>
+<H3><A NAME = "GRDBIO_BUGS"> Known Bugs </A></H3>
+<H3><A NAME = "GRDBIO_USAGE"> Usage </A></H3>
+<PRE>
+#
+#   set up environment variables (logical names of input files):
+#
+setenv BFAC     &lt;path-name for emission factors file&gt;
+setenv BGUSE    &lt;path-name for county landuse file&gt;
+setenv BGRD     &lt;path-name for normalized emissions file&gt;
+#
+# now run the program, using a here-document to supply the input:
+#
+grdbio &lt;&lt;  EOF
+Yes, continue with the program
+BFAC                    ! emission factors file
+BGUSE                   ! county landuse file
+BGRD                    ! normalized emissions file
+EOF
+#
+</PRE><P> 
+
+
+
+<HR>
+<H2> <a name="RAWBIO"> RAWBIO </a></H2>
+<table >
+<tr>
+<td><A HREF = "#RAWBIO_DESC"> Description</A>
+<td><A HREF = "#RAWBIO_PRORD"> Processing Order</A>
+<td><A HREF = "#RAWBIO_INFIL"> Input Files</A>
+<td><A HREF = "#RAWBIO_INPAR"> Input Params</A>
+<td><A HREF = "#RAWBIO_INENV"> Input Envt Vars</A>
+<tr>
+<td><A HREF = "#RAWBIO_OUTFIL"> Output Files</A>
+<td><A HREF = "#RAWBIO_INCL"> Include File Params</A>
+<td><A HREF = "#RAWBIO_UPCOM"> Upcoming Features</A>
+<td><A HREF = "#RAWBIO_BUGS"> Known Bugs</A>
+<td><A HREF = "#RAWBIO_USAGE"> Usage</A>
+</table>
+
+<H3><A NAME = "RAWBIO_DESC"> Description </A></H3>
+    RAWBIO reads the county level biomass/land use, the emissions factors, 
+    and the surrogate factors, and produces gridded normalized biogenic
+    emissions.  Note that program <A HREF = "#GRDBIO">GRDBIO</A>
+    does an equivalent task starting from gridded (rather than county
+    level) biomass/land use, providing an alternate pathway for
+    biogenic processing.
+
+<H3><A NAME = "RAWBIO_PRORD"> Processing Order </A></H3>
+    The following <b>data flow diagram</b> provides a conceptual overview
+    of using RAWBIO. <p>
+
+    <IMG SRC="figs/BIO.RAW.gif" ALT="Biogenics raw data import diagram  for county land use "><p>
+
+    <STRONG>Data flow diagrams</STRONG> for the data preparation and 
+    import of biogenic source processing are available in 
+    <A HREF = "figs/BIO.RAW.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.RAW.gif">GIF</A>, in
+    <A HREF = "figs/BIO.RAW.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.RAW.jpg">JPEG</A>; diagrams describing how RAWBIO
+    fits into the totality of biogenic source processing are available in
+    <A HREF = "figs/BIO.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.gif">GIF</A>, in
+    <A HREF = "figs/BIO.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.jpg">JPEG</A>.
+    <P> 
+<H3><A NAME = "RAWBIO_INFIL"> Input Files </A></H3>
+    <UL> 
+        <LI>  Input file  <A HREF = "MERGE.html#GRIDDESC"> <STRONG> GRIDDESC </STRONG></A>
+        <LI>  Input file  <A HREF = "#BFIP">  <STRONG> BFIP  </STRONG></A>
+        <LI>  Input file  <A HREF = "#BFAC">  <STRONG> BFAC  </STRONG></A>
+        <LI>  Input file  <A HREF = "#BGPRO"> <STRONG> BGPRO </STRONG></A>
+        <LI>  Input file  <A HREF = "#BCUSE"> <STRONG> BCUSE </STRONG></A>
+    </UL>
+<H3><A NAME = "RAWBIO_INPAR"> Input Parameters </A></H3>
+<H3><A NAME = "RAWBIO_INENV"> Input Environment Variables </A></H3>
+<H3><A NAME = "RAWBIO_OUTFIL"> Output Files </A></H3>
+    <UL>
+        <LI>  Output file <A HREF = "#BGRD">  <STRONG> BGRD  </STRONG></A>
+    </UL>
+<H3><A NAME = "RAWBIO_INCL"> Include file parameters </A></H3>
+<H3><A NAME = "RAWBIO_UPCOM"> Upcoming Features </A></H3>
+<H3><A NAME = "RAWBIO_BUGS"> Known Bugs </A></H3>
+<H3><A NAME = "RAWBIO_USAGE"> Usage </A></H3>
+
+    RAWBIO <STRONG>will prompt you</STRONG> for file names and also 
+    for the surrogate categories (as found in the 
+    <A HREF = "AREA.html#AGPRO">AGPRO</A> and 
+    <A HREF = "#BGPRO">BGPRO</A> surrogate coefficient files) 
+    to be used for each of the following land coverage categories:
+    <UL>
+        <LI>  pine forest
+        <LI>  deciduous forest
+        <LI>  (other) coniferous forest
+        <LI>  all (other) forest
+        <LI>  agriculture
+        <LI>  grasslands
+        <LI>  wetlands
+        <LI>  other land uses
+    </UL>
+    The default response to these prompts is 1, which represents land
+    area, as suggested by the UAM BEIS2 Users Manual.  Since the other
+    surrogate categories are more specific (e.g., agriculture itself),
+    it may be possible to get better results by careful choice of
+    surrogate mapping.
+    <P> 
+    
+<PRE>
+#
+#   set up environment variables (logical names of input files, etc.):
+#
+setenv BFIP     &lt;path-name for FIP codes list file&gt;
+setenv BFAC     &lt;path-name for emission factors file&gt;
+setenv BGPRO    &lt;path-name for surrogate factors file&gt;
+setenv BCUSE    &lt;path-name for county landuse file&gt;
+setenv BGRD     &lt;path-name for normalized emissions file&gt;
+setenv GRIDDESC &lt;path-name for grid description file&gt;
+setenv GRID     &lt;name for the output grid--e.g."NC_UTM_GRID"&gt;
+#
+# now run the program, using a here-document to supply the input:
+#
+rawbio &lt;&lt;  EOF
+Yes, continue with the program
+BFIP                    ! FIP codes list
+BFAC                    ! emission factors file
+BGPRO                   ! surrogate factors file
+BCUSE                   ! county landuse file
+GRID                    ! name of output grid
+BGRD                    ! normalized biogenic emissions file
+1                       ! surrogate index for pine forest
+1                       ! surrogate index for deciduous forest
+1                       ! surrogate index for other coniferous forest
+1                       ! surrogate index for all other forest
+1                       ! surrogate index for agriculture
+1                       ! surrogate index for grasslands
+1                       ! surrogate index for wetlands
+1                       ! surrogate index for other land uses
+EOF
+#
+</PRE><P> 
+
+
+<HR>
+<H2> <a name="TMPBIO"> TMPBIO </a></H2>
+
+<table >
+<tr>
+<td><A HREF = "#TMPBIO_DESC"> Description</A>
+<td><A HREF = "#TMPBIO_PRORD"> Processing Order</A>
+<td><A HREF = "#TMPBIO_INFIL"> Input Files</A>
+<td><A HREF = "#TMPBIO_INPAR"> Input Params</A>
+<td><A HREF = "#TMPBIO_INENV"> Input Envt Vars</A>
+<tr>
+<td><A HREF = "#TMPBIO_OUTFIL"> Output Files</A>
+<td><A HREF = "#TMPBIO_INCL"> Include File Params</A>
+<td><A HREF = "#TMPBIO_UPCOM"> Upcoming Features</A>
+<td><A HREF = "#TMPBIO_BUGS"> Known Bugs</A>
+<td><A HREF = "#TMPBIO_USAGE"> Usage</A>
+</table>
+
+<H3><A NAME = "TMPBIO_DESC"> Description </A></H3>
+
+    TMPBIO reads the gridded normalized emissions 
+    <A HREF = "#BGRD">BNORM</A> produced by either
+    <A HREF = "#RAWBIO">RAWBIO</A> or 
+    <A HREF = "#GRDBIO">GRDBIO</A>, EDSS/Models-3 meteorology
+    from <A HREF = "http://www.iceis.mcnc.org/EDSS/MCIP/FILES.html#GRID_CRO_2D">GRID_CRO_2D</A> and 
+    <A HREF = "http://www.iceis.mcnc.org/EDSS/MCIP/FILES.html#MET_CRO_3D">MET_CRO_3D</A>, and observational 
+    cloud cover data from <A HREF = "#SURMET">SURMET</A>, and 
+    produces gridded speciated hourly biogenic emissions.  Inputs from
+    the user include the starting date, starting time, and duration of
+    the TMPBIO run, and the simulation time zone for the output file.
+    Simulation time zone should be the number of hours East of
+    Greenwich Mean Time (taking daylight savings time into account 
+    if appropriate):  Eastern Standard Time is Zone 5, for example;
+    Eastern Daylight Time is Zone 4.
+    <P> 
+    
+    Variant TMPBIO_S reads Dyntel format solar radiation/surface 
+    temperature data from file <A HREF = "#SOLAR">SOLAR</A> instead 
+    of calculating it from MCIP/Models-3 files GRID_CRO_2D and MET_CRO_3D
+    and surface met file SURMET.  It does not calculate cloud
+    attenuation on its own, assuming that it has already been
+    considered in the construction of the SOLAR file.
+    <P> 
+
+<H3><A NAME = "TMPBIO_PRORD"> Processing Order </A></H3>
+    The following <b>data flow diagram</b> provides a conceptual overview
+    of using TMPBIO. <p>
+
+    <IMG SRC="figs/BIO.TMP.gif" ALT="Biogenics temporal processing diagram"><p>
+
+    <STRONG>Data flow diagrams</STRONG> for the data preparation and 
+    import of biogenic source processing are available in 
+    <A HREF = "figs/BIO.TMP.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.TMP.gif">GIF</A>, in
+    <A HREF = "figs/BIO.TMP.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.TMP.jpg">JPEG</A>; diagrams describing how TMPBIO
+    fits into the totality of biogenic source processing are available in
+    <A HREF = "figs/BIO.ps">Postscript</A>, in
+    <A HREF = "figs/BIO.gif">GIF</A>, in
+    <A HREF = "figs/BIO.xbm">X bitmap</A>, and in
+    <A HREF = "figs/BIO.jpg">JPEG</A>.
+    <P> 
+<H3><A NAME = "TMPBIO_INFIL"> Input Files </A></H3>
+    <UL> 
+        <LI>  Input  file <A HREF = "#BGRD">  
+                            <STRONG> BNORM  </STRONG></A>
+        <LI>  Input  file <A HREF = "http://www.iceis.mcnc.org/EDSS/MCIP/FILES.html#GRID_CRO_2D">  
+                            <STRONG> GRID_CRO_2D  </STRONG></A>
+        <LI>  Input  file <A HREF = "http://www.iceis.mcnc.org/EDSS/MCIP/FILES.html#MET_CRO_3D">  
+                            <STRONG> MET_CRO_3D  </STRONG></A>
+        <LI>  Input  file <A HREF = "#SURMET"> 
+                            <STRONG> SURMET </STRONG></A>
+        <LI>  Input  file <A HREF = "#SOLAR"> 
+                            <STRONG> SOLAR </STRONG></A>
+    </UL>
+
+<H3><A NAME = "TMPBIO_INPAR"> Input Parameters </A></H3>
+<H3><A NAME = "TMPBIO_INENV"> Input Environment Variables </A></H3>
+<ul>
+  <li> <b>BG_CLOUD_TYPE</b>: Set this environment variable to an
+       integer to control clouds treatment:</li>
+     <ul>
+       <li><b>1</b>: Use observational clouds
+       <li><b>2</b>: Use MM5 generated RGND
+       <li><b>3</b>: Use KUO cloud attenuation
+       <li><b>4</b>: Use KF  cloud attenuation
+       <li><b>5</b>: Use No deep convection parameter'
+       <li><b>6</b>: Assume Clear Skies
+     </ul>
+<H3><A NAME = "TMPBIO_OUTFIL"> Output Files </A></H3>
+    <UL>
+        <LI>  Output file <A HREF = "#BGRT">  
+                            <STRONG> BGRT </STRONG></A>
+    </UL>
+<H3><A NAME = "TMPBIO_INCL"> Include file parameters </A></H3>
+<H3><A NAME = "TMPBIO_UPCOM"> Upcoming Features </A></H3>
+<H3><A NAME = "TMPBIO_BUGS"> Known Bugs </A></H3>
+<H3><A NAME = "TMPBIO_USAGE"> Usage </A></H3>
+
+<PRE>
+#
+#   set up environment variables (logical names of input files, etc.):
+#
+setenv BGRD            &lt;path-name for normalized emissions file&gt;
+setenv GRID_CRO_2D     &lt;path-name for 2-D grid data file&gt;
+setenv MET_CRO_3D      &lt;path-name for 3-D met file&gt;
+setenv SURMET          &lt;path-name for surface met obs file&gt;
+setenv BGTS            &lt;path-name for output file&gt;
+setenv SURMET_INT_IDS  &lt;TRUE iff using WBAN station IDs&gt;
+#
+# now run the program, using a here-document to supply the input:
+#
+tmpbio &lt;&lt;  EOF
+Yes, continue with the program
+BGRD                    ! normalized emissions file
+GRID_CRO_2D             ! 2-D grid data file
+MET_CRO_3D              ! 3-D met file
+SURMET                  ! surface met obs file
+BGTS                    ! output emissions file
+EOF
+#
+</PRE><P> 
+
+<HR>
+ 
+<H2> <A NAME = "dataset"> Biogenic Source Data Set Definitions </A> </H2>
+ 
+    <UL>
+        <LI>  <A HREF = "#BCUSE"> <STRONG>BCUSE: </STRONG></A>
+              ASCII BEIS2 county-level land use file
+
+        <LI>  <A HREF = "#BFAC"> <STRONG>BFAC: </STRONG></A>
+              ASCII Biogenic emissions factors, by land use category and
+              biogenic species
+
+        <LI>  <A HREF = "#BFIP"> <STRONG>BFIP: </STRONG></A>
+              ASCII sorted actually occurring biogenic FIPs
+
+        <LI>  <A HREF = "#BGPRO"> <STRONG>BGPRO: </STRONG> </A>
+              Biogenic source gridding profile (surrogate coefficient)
+              file; same file as <A HREF = "AREA.html#AGPRO">AGPRO</A>
+
+        <LI>  <A HREF = "#BGRD"> <STRONG>BGRD: </STRONG> </A>
+              Biogenic source gridded normalized emissions factors file
+
+        <LI>  <A HREF = "#BGRT"> <STRONG>BGRT: </STRONG> </A>
+              
+
+        <LI>  <A HREF = "#BGTS"> <STRONG>BGTS: </STRONG> </A>
+              Timestepped gridded speciated biogenic source emissions file
+
+        <LI>  <A HREF = "#BGUSE"> <STRONG>BGUSE: </STRONG></A>
+              BEIS2 gridded land use file
+
+        <LI>  <A HREF = "#SOLAR"> <STRONG>SOLAR: </STRONG></A>
+              Hourly gridded solar radiation and surface temperature file
+
+        <LI>  <A HREF = "#SURMET"> <STRONG>SURMET: </STRONG></A>
+              Hourly surface meteorology observations file
+    </UL>
+    <P> 
+
+
+<HR>
+   
+<H2> <a name="BCUSE"> BCUSE File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+    BCUSE is the emissions prototype's BEIS2-format ASCII 
+    biogenic county land use file input to the 
+    <A HREF = "#RAWBIO">RAWBIO</A> normalized biogenic emissions
+    program.  BCUSE is an (portable, network transparent, machine 
+    architecture independent sequential ASCII) file with the following 
+    structure:
+    <PRE>
+    For each county:
+
+        a line with the FIPS code for that county
+
+        for each of the 4 land use types in the list
+        { rural forest, urban forest, agriculture, other}:
+
+            a line with area (hectares) within the county devoted 
+            to that land use type, and number of land use subtypes 
+            occurring within the county for that land use type;
+
+            for each such land use subtypes:
+
+                a line with name of the land use subtypes as a 
+                4-letter character string, and the area (hectares) 
+                within the county devoted to that land use subtype
+    </PRE>
+    <P> 
+        
+    <STRONG>See also </STRONG> <A HREF = "#BGUSE">biogenic gridded
+    land use file BGUSE</A>.
+    <P> 
+
+
+
+<HR> <!---->
+
+<H2> <a name="BFAC"> BFAC File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+    BFAC is the emissions prototype's BEIS2 ASCII emissions factor
+    file.  BFAC is an (portable, network transparent, machine 
+    architecture independent sequential ASCII)  file.  It has 
+    lines of the form 
+    <PRE>
+    FORMAT( 1X, 
+     &      A4, 	!  vegetation ID
+     &      F9.0, 	!  ISOP emission factor
+     &      F9.0, 	!  MONO emission factor
+     &      F9.0, 	!  OVOC emission factor
+     &      F6.0, 	!  NO   emission factor
+     &      I2 )	!  leaf area index
+    </PRE>
+    for the various BEIS2 land use categories modeled
+
+
+<HR> <!---->
+
+<H2> <a name="BFIP"> BFIP File </a></H2>
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+
+    BFIP is the emissions prototype's ASCII list of 
+    actually-occurring biogenic source county names, FIPS codes, and 
+    additional data.  BFIP is an  (portable, network transparent, 
+    machine architecture independent sequential ASCII)  file.  
+    It is compatible with the UAM EPS BEIS USERIN file.  The
+    significant parts of the format are the following:
+    <UL>
+        <LI>  A header line consisting of &quot;/COUNTY/&quot;,
+        <LI>  data lines, with format &quot;A20&quot; county name, 
+              followed by format &quot;I5&quot; FIPS county code 
+              (everything else is ignored by SMOKE BEIS2), and
+        <LI>  an end-of-packet line consisting of &quot;/END/&quot;
+    </UL>
+
+<HR> <!---->
+
+   
+<H2> <a name="BGPRO">BGPRO File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+    BGPRO is the emissions prototype's AIRS/AMS-format ASCII 
+    area/biogenic source gridding profile file.  BGPRO is an (portable, 
+    network transparent, machine architecture independent sequential 
+    ASCII) file identical to the normal UAM EPS surrogate file and the 
+    AGPRO area source gridding profile file.  See
+    <A HREF = "AREA.html#AGPRO">AGPRO's format specification</A> for
+    the definitions of the surrogate categories.
+    <P> 
+    
+
+
+<HR> <!---->
+
+<H2> <a name="BGRD"> BGRD File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+    BGRD is the biogenic emissions prototype's biogenic source gridded 
+    normalized emissions file.  It is a portable, network transparent, 
+    machine architecture independent direct access binary file produced 
+    by either of programs <A HREF = "#GRDBIO"> GRDBIO </A> (on the
+    basis of gridded BEIS2 land use <A HREF = "#BGUSE">BGUSE</A>)
+    and <A HREF = "#RAWBIO"> RAWBIO </A> (on the basis of county
+    level land use <A HREF = "#BCUSE">BCUSE</A>) and used by
+    <A HREF = "#TMPBIO"> TMPBIO.</A>  BGRD is time-independent,
+    with values representing normalized emissions of NO and various
+    VOC's, as well as gridded biomass and leaf area totals.
+    <P> 
+    
+    It is a time-independent 
+    <A HREF = "http://www.iceis.mcnc.org/EDSS/ioapi/H.AA.html"> EDSS/Models-3 I/O API files </A> 
+    of type GRDDED3 (gridded) with dimensions appropriate for the model 
+    grid: 
+    <UL>
+        <LI>  NLAYS, the number of layers, is 1
+        <LI>  NCOLS and NROWS, the numbers of columns and rows,
+              are defined in the <A HREF = "INCLUDES.html#grdims">
+              GRDIMS3.EXT include file</A>
+        <LI>  
+    </UL>
+    The variables in the files are the gridded inventory speciated 
+    normalized biogenic source emissions for various land use
+    categories, together with the average leaf area index.  Names 
+    for the normalized emission variables for VOCs are combinations of
+    the BIOLTYPE biogenic land type names with the BIOSPC biogenic VOC
+    species names; normalized NO-variables are combinations of the
+    BIOLUSE biogenic land use categories with &quot;NO&quot; (all 
+    from the <A HREF = "INCLUDES.html#biodims"> BIODIMS3.EXT</A> 
+    include file).  The list of variable names is the following:
+    <UL>
+        <LI>  <STRONG>PINEISOP</STRONG>
+        <LI>  <STRONG>PINEMONO</STRONG>
+        <LI>  <STRONG>PINEOVOC</STRONG>
+        <LI>  <STRONG>DECDISOP</STRONG>
+        <LI>  <STRONG>DECDMONO</STRONG>
+        <LI>  <STRONG>DECDOVOC</STRONG>
+        <LI>  <STRONG>CONFISOP</STRONG>
+        <LI>  <STRONG>CONFMONO</STRONG>
+        <LI>  <STRONG>CONFOVOC</STRONG>
+        <LI>  <STRONG>AGRCISOP</STRONG>
+        <LI>  <STRONG>AGRCMONO</STRONG>
+        <LI>  <STRONG>AGRCOVOC</STRONG>
+        <LI>  <STRONG>LEAFISOP</STRONG>
+        <LI>  <STRONG>LEAFMONO</STRONG>
+        <LI>  <STRONG>LEAFOVOC</STRONG>
+        <LI>  <STRONG>OTHRISOP</STRONG>
+        <LI>  <STRONG>OTHRMONO</STRONG>
+        <LI>  <STRONG>OTHROVOC</STRONG>
+        <LI>  <STRONG>AVLAI</STRONG>
+        <LI>  <STRONG>GRASNO</STRONG>
+        <LI>  <STRONG>FORENO</STRONG>
+        <LI>  <STRONG>WETLNO</STRONG>
+        <LI>  <STRONG>AGRINO</STRONG>
+    </UL>    
+    <P> 
+
+
+<HR> <!---->
+
+<H2> <a name="BGRT"> BGRT File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+<HR>
+
+<H2> <a name="BGTS">Biogenic Source Model-Emissions File BGTS </a></H2>
+
+    BGTS is the emissions prototype's model-ready hourly time stepped
+    gridded biogenic-source emissions file.  It is an 
+    (portable, network transparent, machine architecture independent 
+    direct access binary)  file produced by program 
+    <A HREF = "#TMPBIO"> TMPBIO </A> and used by the
+    chemistry-transport model.
+    <P> 
+    
+    It is a time-stepped <A HREF = "http://www.iceis.mcnc.org/EDSS/ioapi/H.AA.html"> 
+    EDSS/Models-3 I/O API file </A> of type GRDDED3 (gridded), with
+    time step 1 hour, and dimensions appropriate for the model grid:
+    the number of layers is 1, while the numbers NCOLS of columns 
+    and NROWS of rows are defined in the 
+    <A HREF = "INCLUDES.html#grdims"> GRDIMS3.EXT include file.</A>
+    
+    The variables in the file are a subset of the the gridded model 
+    species, representing hourly time stepped biogenic source emissions, 
+    in units of moles per hour.  Names for the variables are the 
+    EMSPC names from the <A HREF = "INCLUDES.html#biodims">
+    BIODIMS3.EXT</A> include file.   For the North Carolina domain 
+    UAM Carbon-Bond IV prototype, the list of variable names is the following:
+    <UL>
+         <LI>  <STRONG>NO</STRONG>, nitric oxide;
+         <LI>  <STRONG>OLE</STRONG>, olefins;
+         <LI>  <STRONG>PAR</STRONG>, parafins;
+         <LI>  <STRONG>ALD2</STRONG>, high molecular weight aldehydes;
+         <LI>  <STRONG>ISOP</STRONG>, isoprene
+    </UL>    
+    <P> 
+
+<HR> <!---->
+
+<H2> <a name="BGUSE"> BGUSE File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+    BGUSE is the emissions prototype's BEIS2-format ASCII 
+    biogenic gridded land use file input to the 
+    <A HREF = "#GRDBIO">GRDBIO</A> gridded normalized biogenic
+    emissions program.  BGUSE is an (portable, network transparent, 
+    machine architecture independent sequential ASCII) file.   Note 
+    that, unlike  <A HREF = "#BCUSE">BCUSE</A>, the data records 
+    in BGUSE all have list-directed formatting (e.g., quoted strings
+    instead of free-form).  BGUSE has the structure given below:
+    <PRE>
+    A header with 
+        
+        text metadata sections including the following:
+            
+            &quot;Introduction;&quot;
+            &quot;Grid Definition:&quot;
+            &quot;File Description:&quot;
+            a list of &quot;VEGID&quot; names and descriptions,
+            formatted &quot;(1X, A4, 3X, A)&quot;
+            &quot;Notes on VEGID:&quot;
+            &quot;Source of Data&quot;
+            &quot;Version:&quot;
+            &quot;ENDHEADER&quot;
+    
+    For each cell:
+
+        a line with the column, the row, and the cell area in hectares
+
+        for each of the 4 land use types in the list
+        { rural forest, urban forest, agriculture, other}:
+
+            a line with area (hectares) within the county devoted 
+            to that land use type, and number of land use subtypes 
+            occurring within the county for that land use type;
+
+            for each such land use subtypes:
+
+                a line with name of the land use subtypes as a 
+                4-letter quited character string, and the area (hectares) 
+                within the county devoted to that land use subtype
+    </PRE>
+    <P> 
+    
+    <STRONG>See also </STRONG> <A HREF = "#BCUSE">biogenic county
+    land use file BCUSE</A>.
+    <P> 
+
+
+<HR> <!---->
+
+
+<H2> <a name="SOLAR"> SOLAR File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+    BGUSE is the emissions prototype's BEIS2-format ASCII 
+
+    <STRONG>SOLAR</STRONG> is the <A HREF = "http://www.iceis.mcnc.org/EDSS/ioapi/H.LOGICALS.html"> 
+    logical name </A> for the Dyntel text file which stores
+    hourly gridded solar radiation and surface temperature.
+    <P> 
+
+    This file is a sequence of lines, each having the following data:
+    <UL>
+        <LI>  Hour, <STRONG>not according to EDSS/Models-3 
+              conventions</STRONG>, but in the format HH relative
+              to some starting time.
+        <LI>  grid column
+        <LI>  grid row
+        <LI>  surface temperature, in degrees C
+        <LI>  solar radiation, in micro-Einsteins per square meter per
+              second.
+    </UL>
+    The data structure for the lines in this file is:
+    <PRE>
+    For each HOUR
+        for each COLUMN in the grid
+            for each ROW in the grid
+                data line for that hour, column, and row
+    </PRE>
+
+
+<HR> <!---->
+
+<H2> <a name="SURMET"> SURMET File </a></H2>
+
+<H3> Overview</H3>
+    <b>Description:</b>
+    <b>Sequence:</b>
+    <b>Type:</b>
+    <b>Origin:</b>
+    <b>Used by:</b>
+    <b>Summary:</b>
+
+<H3>File Format(s)</H3>
+    <b>Same as:</b>
+    <b>Structure:</b>
+    <b>Header:</b>
+    <b>Variables:</b><p>
+
+    BGUSE is the emissions prototype's BEIS2-format ASCII 
+    <STRONG>SURMET</STRONG> is the <A HREF = "http://www.iceis.mcnc.org/EDSS/ioapi/H.LOGICALS.html"> 
+    logical name </A> for the EDSS/Models-3 text files which store
+    hourly surface meteorology observations.  SURMET data can be read
+    cleanly in terms of EDSS/Models-3 conventions using routine 
+    <A HREF = "LIBS.html#readsmet">READSMET()</A>.  
+    <P> 
+
+    There are <STRONG>two variations</STRONG> allowed in SURMET files.  
+    In the first (following the ROM2.2-and-later style), station IDs 
+    are 5-digit <STRONG>integer WBAN numbers</STRONG>; in the second, 
+    station IDs are <STRONG>4-letter NWS character strings</STRONG>.  
+    READSMET() expects environment variable SURMET_INT_IDS to
+    be set to TRUE in the former case, and FALSE in the latter.
+    <P> 
+    
+    Surface meteorology
+    observation data as read by READSMET() has the following structure:
+    <UL>
+        <LI>  NMET is the actual number of stations returned at this hour
+        <LI>  IMET( 1...NMET ) are station ID's
+        <LI>  RMET (  1, 1...NMET )  --  latitude  (deg) [ -90...90]
+        <LI>  RMET (  2, 1...NMET )  --  longitude (deg) [-180...180]
+        <LI>  RMET (  3, 1...NMET )  --  opaque sky cover percentage
+        <LI>  RMET (  4, 1...NMET )  --  total sky cover classification
+            <UL> 
+                <LI>  0 = clear
+                <LI>  1 = partial obscuration
+                <LI>  2 = thin scattered
+                <LI>  3 = thin broken
+                <LI>  4 = thin overcast
+                <LI>  5 = scattered
+                <LI>  6 = broken
+                <LI>  7 = overcast
+                <LI>  8 = obscured
+                <LI>  -999 = indeterminate
+            </UL>
+        <LI>  RMET (  5, 1...NMET )  --  lowest cloud cover percentage
+        <LI>  RMET (  6, 1...NMET )  --  lowest cloud height (meters)
+        <LI>  RMET (  7, 1...NMET )  --  2nd lowest cloud cover percentage
+        <LI>  RMET (  8, 1...NMET )  --  2nd lowest cloud height (meters)
+        <LI>  RMET (  9, 1...NMET )  --  3rd lowest cloud cover percentage
+        <LI>  RMET ( 10, 1...NMET )  --  3rd lowest cloud height (meters)
+        <LI>  RMET ( 11, 1...NMET )  --  sea level pressure (mb)
+        <LI>  RMET ( 12, 1...NMET )  --  wind direction (bearing, deg from N)
+        <LI>  RMET ( 13, 1...NMET )  --  wind speed (meters/second)
+        <LI>  RMET ( 14, 1...NMET )  --  temperature (deg C)
+        <LI>  RMET ( 15, 1...NMET )  --  dew point (deg C)
+        <LI>  RMET ( 16, 1...NMET )  --  station pressure (mb)
+    </UL>
+<P>         
+
+
+<HR> <!---->
+
+<A HREF = "MOBILE.html">   
+<STRONG>Previous:</STRONG>  Mobile Source Emissions</A>
+<P> 
+
+<A HREF = "MERGE.html"> 
+<STRONG>Next:</STRONG>      Merge Processing </A>
+<P> 
+
+<A HREF = "index.html#models">  
+<STRONG>Up:</STRONG>  Models  -- Area, Point, Biogenic, Mobile </A>
+<P> 
+
+<A HREF = "index.html"> 
+<STRONG>Top:</STRONG>  SMOKE Root Document  </A>
+<P> 
+
+
+</BODY>      <!--end body  -->
+</HTML>      <!--end html  -->
+

@@ -1,0 +1,32 @@
+
+C....................................................................
+C  INCLUDE FILE  ARDIMS33
+C
+C  CONTAINS:  
+C       dimensioning parameters for EDSS Area Emissions Prototype
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C       Prototype 2/95 by CJC
+C
+C....................................................................
+
+        INTEGER     NAFIP   !  number of area-source FIPS codes appearing
+        INTEGER     NASID   !  number of area-source state codes appearing
+        INTEGER     NASCC   !  number of area-src SCC codes in inventory
+        INTEGER     NASRG   !  number of surrogate categories   appearing
+        INTEGER     NSPRA   !  number of speciation profiles    appearing
+        INTEGER     NACEL   !  max number of sources  per cell
+        INTEGER     NCFIP   !  max number of cells per FIP
+        INTEGER     NTRFA   !  max number of FIP-ASC pairs in temporal XREF
+        INTEGER     NASRC   !  number of area-sources
+        
+        PARAMETER ( NAFIP =  132 ,  NASID =    5 , NASCC =   42 ,
+     &              NASRG =   15 ,  NSPRA =   16 ,
+     &              NACEL =  136 ,  NCFIP =  128 ,
+     &              NTRFA =    1 ,	!  = ? * NASC ! (actually _0_ for NC)
+     &              NASRC = 3978 )
+        
+C................   end   ARDIMS33   ....................................
+

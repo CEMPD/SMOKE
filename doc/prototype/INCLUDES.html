@@ -1,0 +1,909 @@
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML> 
+<HEAD>
+<TITLE> 
+    INCLUDE Files
+</TITLE>
+</HEAD>
+   
+<BODY>
+
+<H2>
+    Contents
+</H2>
+    <UL>
+        <LI>  <A HREF = "#ardims">  Area-Source Dimensions </A>
+        <LI>  <A HREF = "#ptdims">  Point-Source Dimensions </A>
+        <LI>  <A HREF = "#mbdims">  Mobile-Source Dimensions </A>
+        <LI>  <A HREF = "#biodims"> Biogenic-Source Dimensions </A>
+        <LI>  <A HREF = "#chdims">  Chemical Species and Mechanisms </A>
+        <LI>  <A HREF = "#grdims">  Horizontal Grid Dimensions </A>
+        <LI>  <A HREF = "#ladims">  Vertical Grid Dimensions </A>
+        <LI>  <A HREF = "#tmdims">  Temporal Allocation Parameters </A>
+        <LI>   <A HREF = "http://www.iceis.mcnc.org/EDSS/ioapi/H.INCLUDE.html">
+              EDSS/Models-3 I/O API INCLUDE files </A>
+    </UL>
+
+<hr>
+<p>
+Instructions are now available for <a href="configure.txt"> reconfiguring SMOKE
+for another domain and/or inventory</a>.  Enjoy!
+<p>
+<hr>
+
+<H2>
+    <A NAME = "ardims"> ARDIMS3.EXT:  Area-Source Dimensions </A>
+</H2>
+
+    In the current prototypes, area source naming and dimensioning
+    information are kept in the Fortran INCLUDE-file ARDIMS3.EXT.  This
+    file is used by various routines in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "QA.html#CSGAREA"> CSGAREA </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGMERGE"> CSGMERGE </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGLMERGE"> CSGLMERGE </A>
+
+        <LI>  <A HREF = "AREA.html#CTLAMAT"> CTLAMAT </A>
+
+        <LI>  <A HREF = "AREA.html#GRDAMAT"> GRDAMAT </A>
+
+        <LI>  <A HREF = "QA.html#GRDAREA"> GRDAREA </A>
+
+        <LI>  <A HREF = "AREA.html#RAWAREA"> RAWAREA </A>
+
+        <LI>  <A HREF = "AREA.html#SPCAMAT"> SPCAMAT </A>
+
+        <LI>  <A HREF = "AREA.html#TMPAREA"> TMPAREA </A>
+
+        <LI>  <A HREF = "FIPXY2CR.html"> FIPXY2CR </A>
+
+    </UL>
+    <P> 
+
+    Parameters specified in this file are the following
+    <UL> 
+
+        <LI>  <STRONG>NAFIP</STRONG>, the number of area-source FIPS
+              codes appearing; 
+
+        <LI>  <STRONG>NASID</STRONG>, the number of area-source state
+              codes appearing; 
+
+        <LI>  <STRONG>NASCC</STRONG>, the number of area-source SCC
+              codes actually occurring in the inventory; 
+
+        <LI>  <STRONG>NASRG</STRONG>, the number of surrogate
+              categories actually occurring in the inventory;
+
+        <LI>  <STRONG>NSPRA</STRONG>, the number of area-source
+              speciation profiles actually occurring in the inventory;
+
+        <LI>  <STRONG>NACEL</STRONG>, the maximum number of area 
+              sources per cell; 
+
+        <LI>  <STRONG>NCFIP</STRONG>, the maximum number of cells per
+              FIP (i.e., per county); 
+
+        <LI>  <STRONG>NTRFA</STRONG>, the maximum number of FIP-ASC
+              pairs actually occurring in the temporal cross-reference
+              file; and 
+
+        <LI>  <STRONG>NASRC</STRONG>, the number of area-sources
+              actually occurring in the inventory.
+
+    </UL>
+    <P> 
+
+
+    <A HREF = "ARDIMS3.txt"> Source code for the North Carolina UAM domain
+    version of ARDIMS3.EXT </A>
+
+
+<H2>
+    <A NAME = "ptdims"> PTDIMS3.EXT:  Point-Source Dimensions </A>
+</H2>
+
+    In the current prototypes, point source naming and dimensioning
+    information are kept in the Fortran INCLUDE-file PTDIMS3.EXT.  This
+    file is used by various routines in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "MERGE.html#CSELEV"> CSELEV </A>
+
+        <LI>  <A HREF = "QA.html#CSGPOINT"> CSGPOINT </A>
+
+        <LI>  <A HREF = "CSGLPOINT.html"> CSGLPOINT </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGMERGE"> CSGMERGE </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGLMERGE"> CSGLMERGE </A>
+
+        <LI>  <A HREF = "POINT.html#CTLPMAT"> CTLPMAT </A>
+
+        <LI>  <A HREF = "POINT.html#PDPOINT"> PDPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#ELEVPOINT"> ELEVPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#GRDPMAT"> GRDPMAT </A>
+
+        <LI>  <A HREF = "QA.html#GRDPOINT"> GRDPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#RAWPOINT"> RAWPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#SPCPMAT"> SPCPMAT </A>
+
+        <LI>  <A HREF = "SRTPTX.html"> SRTPTX </A>
+
+        <LI>  <A HREF = "POINT.html#TMPPOINT"> TMPPOINT </A>
+
+    </UL>
+    <P> 
+
+
+    Parameters specified in this file are the following
+    <UL> 
+
+        <LI>  <STRONG>NPFIP</STRONG>, the number of point-source FIPS
+              codes appearing; 
+
+        <LI>  <STRONG>NPSID</STRONG>, the number of point-source state
+              codes appearing; 
+
+        <LI>  <STRONG>NPSCC</STRONG>, the number of point-source SCC
+              codes actually occurring in the inventory; 
+
+        <LI>  <STRONG>NSPRP</STRONG>, the number of point-source 
+              speciation profiles actually occurring in the inventory;
+
+        <LI>  <STRONG>NPCEL</STRONG>, the maximum number of point
+              sources per cell; 
+
+        <LI>  <STRONG>NSREF</STRONG>, the maximum number of entries
+              in the point-source speciation cross reference file; 
+
+        <LI>  <STRONG>NTRFP</STRONG>, the maximum number of FIP-ASC
+              pairs actually occurring in the point-source temporal 
+              cross-reference file; and 
+
+        <LI>  <STRONG>NPSRC</STRONG>, the number of point-sources
+              actually occurring in the inventory.
+
+        <LI>  <STRONG>NPDAY</STRONG>, the maximum number of point-sources
+              for which there exists day-specific data.
+
+        <LI>  <STRONG>NPHR</STRONG>, the maximum number of point-sources
+              for which there exists hour-specific data.
+
+        <LI>  <STRONG>NPELV</STRONG>, the maximum number of point-sources
+              to be given elevated source plume-rise treatment. 
+
+        <LI>  <STRONG>MAXSCN</STRONG>, the maximum number of emissions
+              factor scenarios in input file
+
+        <LI>  <STRONG>MAXTMP</STRONG>, the maximum number of emissions
+              factor input temperatures
+
+        <LI>  <STRONG>NLIST</STRONG>, the maximum number of emissions
+              factor scenario specific parameter list entries
+
+        <LI>  <STRONG>NPREF</STRONG>, the maximum number of emissions
+              factor normal parameter cross reference entries
+
+        <LI>  <STRONG>NNFAC</STRONG>, the number of normal cross
+              reference pointers
+
+        <LI>  <STRONG>NCFAC</STRONG>, the number of control cross
+              refererence pointers
+
+    </UL>
+    <P> 
+
+
+    <A HREF = "PTDIMS3.txt"> Source code for the North Carolina UAM domain
+    version of PTDIMS3.EXT </A>
+
+
+<H2>
+    <A NAME = "mbdims"> MBDIMS3.EXT:  Mobile Source Dimensions and
+                        lists</A>
+</H2>
+
+    In the current prototypes, mobile source naming and dimensioning
+    information are kept in the Fortran INCLUDE-file MBDIMS3.EXT.  This
+    file is used by various routines in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "QA.html#CSGMOBIL"> CSGMOBIL </A>
+
+        <LI>  <A HREF = "MOBILE.html#CTLMMAT"> CTLMMAT </A>
+
+        <LI>  <A HREF = "MOBILE.html#EMISFAC"> EMISFAC </A>
+
+        <LI>  <A HREF = "MOBILE.html#GRDMMAT"> GRDMMAT </A>
+
+        <LI>  <A HREF = "QA.html#GRDMOBIL"> GRDMOBIL </A>
+
+        <LI>  <A HREF = "MOBILE.html#RAWMOBIL"> RAWMOBIL </A>
+
+        <LI>  <A HREF = "MOBILE.html#SPCMMAT"> SPCMMAT </A>
+
+        <LI>  <A HREF = "MOBILE.html#TMPMOBIL"> TMPMOBIL </A>
+
+    </UL>
+    <P> 
+
+
+    Parameters specified in this file are the following
+    <UL> 
+
+        <LI>  <STRONG>MXEMIS</STRONG>, the maximum number of emissions
+              types
+
+        <LI>  <STRONG>MXFACS</STRONG>, the maximum number of entries in
+              any emissions factors table
+
+        <LI>  <STRONG>MXSURG</STRONG>, the number of surrogate
+              categories
+
+        <LI>  <STRONG>MXLPC</STRONG>, the maximum number of links per
+              FIP and road-class
+
+        <LI>  <STRONG>MXLSRC</STRONG>, the maximum number of link
+              sources
+
+        <LI>  <STRONG>MXVMTL</STRONG>, the maximum number of entries in
+              the VMT list
+
+        <LI>  <STRONG>MXSTA</STRONG>, the maximum number of state codes
+
+        <LI>  <STRONG>MXLNK</STRONG>, the maximum number of link
+              sources
+
+        <LI>  <STRONG>MXFIP</STRONG>, the maximum number of FIP county
+              codes
+
+        <LI>  <STRONG>MXCFIP</STRONG>, the maximum number of cells per
+              FIP
+
+        <LI>  <STRONG>MXSCEL</STRONG>, the maximum number of sources
+              per cell
+
+        <LI>  <STRONG>MXGCOF</STRONG>, the maximum number of 
+              gridding/ungridding coefficients
+
+        <LI>  <STRONG>NSPRM</STRONG>, the maximum number of speciation
+              profiles
+
+        <LI>  <STRONG>NETYPE</STRONG>, the number of emissions types
+
+        <LI>  <STRONG>NMSRC</STRONG>, the number of mobile sources
+
+        <LI>  <STRONG>NRCLAS</STRONG>, the number of road classes
+
+        <LI>  <STRONG>NVTYPE</STRONG>, the number of vehicle types
+
+    </UL>
+    <P> 
+
+    Name and ID-code tables found in this INCLUDE file are the following:
+    <UL>
+        <LI>  <STRONG>MROADS3( NRCLAS )</STRONG>, Road class codes
+
+        <LI>  <STRONG>RCLAS3 ( NRCLAS )</STRONG>, Road class names
+              (given with matching MROADS codes, as above):
+              <UL>
+                  <LI>  110:  RURAL INTERSTATE
+                  <LI>  130:  RURAL PRIN ART
+                  <LI>  150:  RURAL MINOR ART
+                  <LI>  170:  RURAL MAJOR COL
+                  <LI>  190:  RURAL MINOR COL
+                  <LI>  210:  RURAL LOCAL
+                  <LI>  230:  URBAN INTERSTATE
+                  <LI>  250:  URBAN FREEWAY
+                  <LI>  270:  URBAN PRIN ART
+                  <LI>  290:  URBAN MINOR ART
+                  <LI>  310:  URBAN COLLECTOR
+                  <LI>  330:  URBAN LOCAL
+              </UL>
+
+        <LI>  <STRONG>VTYPE3 ( NVTYPE )</STRONG>, names of vehicle
+              types
+
+        <LI>  <STRONG>VHDESC3( NVTYPE )</STRONG>, descriptions of
+              vehicle types
+              <UL>
+                  <LI>  <STRONG>LDGV</STRONG>:  Light Duty Gas Vehicles
+                  <LI>  <STRONG>LDGT1</STRONG>:  Light Duty Gas Trucks 1
+                  <LI>  <STRONG>LDGT2</STRONG>:  Light Duty Gas Trucks 2
+                  <LI>  <STRONG>HDGV</STRONG>:  Heavy Duty Gas Vehicles
+                  <LI>  <STRONG>LDDV</STRONG>:  Light Duty Diesel Vehicles
+                  <LI>  <STRONG>LDDT</STRONG>:  Light Duty Diesel Trucks
+                  <LI>  <STRONG>HDDV</STRONG>:  Heavy Duty Diesel Vehicles
+                  <LI>  <STRONG>MC</STRONG>:  Motorcycles
+              </UL>
+
+        <LI>  <STRONG>EMTLST ( MXEMIS )</STRONG>, Emissions factors
+              names list (all possible types)
+
+        <LI>  <STRONG>EMTUNIT( MXEMIS )</STRONG>, Emissions factors
+              units
+
+        <LI>  <STRONG>EMTDESC( MXEMIS )</STRONG>, emissions factors
+              descriptions.  These are given below, together with the
+              matching EMTLIST and EMTUNIT names:
+              <UL>
+                  <LI>  <STRONG>EXH_CO</STRONG>  (g/mi):  EFs for
+                        Exhaust CO
+                  <LI>  <STRONG>EXH_NOX</STRONG> (g/mi):  EFs for
+                        Exhaust NOX
+                  <LI>  <STRONG>EXH_VOC</STRONG> (g/mi):  EFs for
+                        Exhaust VOC
+                  <LI>  <STRONG>EVP_VOC</STRONG> (g/mi):  EFs for
+                        Evaporative VOC
+                  <LI>  <STRONG>RNL_VOC</STRONG> (g/mi):  EFs for
+                        Running VOC
+                  <LI>  <STRONG>RST_VOC</STRONG> (g/mi):  EFs for
+                        Resting VOC
+                  <LI>  <STRONG>RF1_VOC</STRONG> (g/mi):  EFs for
+                        Refueling 1 VOC
+                  <LI>  <STRONG>RF2_VOC</STRONG> (g/mi):  EFs for
+                        Refueling 2 VOC
+                  <LI>  <STRONG>HOT_VOC</STRONG> (g/mi):  EFs for Hot
+                        soak evaporative VOC
+                  <LI>  <STRONG>CRC_VOC</STRONG> (g/mi):  EFs for
+                        Crankcase VOC
+                  <LI>  <STRONG>RHR_VOC</STRONG> (g/hr):  EFs for
+                        Resting by the hour VOC
+              </UL>
+
+        <LI>  <STRONG>EMTNAM ( NETYPE )</STRONG> Emissions types  as
+              actually used for the SMOKE scenarios:  (EXH_CO, EXH_NOX,
+              EXH_VOC, EVP_VOC, RNL_VOC, RST_VOC)
+
+    </UL>
+
+    <A HREF = "MBDIMS3.txt"> Source code for the North Carolina UAM domain
+    version of MBDIMS3.EXT </A>
+
+
+<H2>
+    <A NAME = "biodims"> BIODIMS3.EXT:  Biogenic Source Dimensions and
+                         Tables</A>
+</H2>
+
+    In the current prototypes, point source naming and dimensioning
+    information are kept in the Fortran INCLUDE-file BIODIMS3.EXT.  This
+    file is used by various routines in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "BIOGENICS.html#RAWBIO"> RAWBIO </A>
+
+        <LI>  <A HREF = "BIOGENICS.html#GRDBIO"> GRDBIO </A>
+
+        <LI>  <A HREF = "BIOGENICS.html#TMPBIO"> TMPBIO </A>
+
+    </UL>
+    <P> 
+
+
+    Parameters specified in this file are the following
+    <UL> 
+
+        <LI>  <STRONG>NBFIP</STRONG>, the number of biogenic-source FIPS
+              codes appearing; 
+
+        <LI>  <STRONG>MXVEGS</STRONG>, the maximum number of vegetation
+              types per land use category
+
+        <LI>  <STRONG>MXID</STRONG>, the maximum number of vegetation
+              types in the emissions factor table
+
+        <LI>  <STRONG>NSEF</STRONG>, the number of emissions classes in
+              the emissions factor table
+
+        <LI>  <STRONG>LUSES</STRONG>, the number of land use categories
+              (gras, fore, wetl, agri)
+
+        <LI>  <STRONG>BTYPES</STRONG>, the number of VOC-emitting types
+
+        <LI>  <STRONG>TREETY</STRONG>, the number of tree types (pine,
+              decid, conif)
+
+        <LI>  <STRONG>GRAS</STRONG>, the LUSE subscript for grasslands 
+
+        <LI>  <STRONG>FORE</STRONG>, the LUSE subscript for forest
+
+        <LI>  <STRONG>WETL</STRONG>, the LUSE subscript for wetlands
+
+        <LI>  <STRONG>AGRI</STRONG>, the LUSE subscript for agriculture
+
+        <LI>  <STRONG>RMTREE</STRONG>, dimension for OTHERID tree table
+
+        <LI>  <STRONG>SPTREE</STRONG>, dimension for SPFORID tree table
+
+        <LI>  <STRONG>FACTEN</STRONG>, conversion factor, M^2/hectare
+
+        <LI>  <STRONG>BSPCS</STRONG>, the number of biogenic emissions
+              species
+
+        <LI>  <STRONG>MSPCS</STRONG>, the number of model emissions
+              species
+
+        <LI>  <STRONG>ISOP</STRONG>, the biogenic emissions species
+              subscript for isoprene
+
+        <LI>  <STRONG>MONO</STRONG>, the biogenic emissions species
+              subscript for monoterpenes
+
+        <LI>  <STRONG>OVOC</STRONG>, the biogenic emissions species
+              subscript for other VOCs
+
+        <LI>  <STRONG>NO</STRONG>, the biogenic emissions species
+              subscript for NO 
+
+        <LI>  <STRONG>NNO</STRONG>, the output model emissions species
+              subscript for NO
+
+        <LI>  <STRONG>NPAR</STRONG>, the output model emissions species
+              subscript for parrafins
+
+        <LI>  <STRONG>NOLE</STRONG>, the output model emissions species
+              subscript for olefins
+
+        <LI>  <STRONG>NALD</STRONG>, the output model emissions species
+              subscript for aldehydes
+
+        <LI>  <STRONG>NISO</STRONG>, the output model emissions species
+              subscript for isoprene
+
+        <LI>  <STRONG>DENISO</STRONG>, the inverse molecular weight for
+              isoprene
+
+        <LI>  <STRONG>DENMON</STRONG>, the inverse molecular weight for
+              monoterpenes
+
+        <LI>  <STRONG>DENUNK</STRONG>, the inverse molecular weight for
+              other VOCs
+
+        <LI>  <STRONG>DENNO</STRONG>, the inverse molecular weight for
+              NO
+
+        <LI>  <STRONG>MON2PAR</STRONG>, the conversion factor of MON to
+              PAR
+
+        <LI>  <STRONG>MON2OLE</STRONG>, the conversion factor of MON to
+              OLE
+
+        <LI>  <STRONG>MON2ALD2</STRONG>, the conversion factor of MON
+              to ALD2
+
+        <LI>  <STRONG>OTH2OLE</STRONG>, the conversion factor of OTH to
+              OLE
+
+        <LI>  <STRONG>OTH2PAR</STRONG>, the conversion factor of OTH to
+              PAR
+
+    </UL>
+    <P> 
+
+    Name-tables found in this INCLUDE file include the following
+    <UL>
+        <LI>  <STRONG>BIOLUSE( LUSES )</STRONG>, biogenic land use categories
+              <UL> 
+                  <LI>  GRAS:  grasslands
+                  <LI>  FORE:  forested
+                  <LI>  WETL:  wetlands
+                  <LI>  AGRI:  agricultural
+              </UL>
+
+        <LI>  <STRONG>BIOLTYPE( BTYPES )</STRONG>
+              <UL> 
+                  <LI>  PINE:  pine forest
+                  <LI>  DECD:  deciduous forest
+                  <LI>  CONF:  other coniferous
+                  <LI>  AGRC:  agricultural
+                  <LI>  LEAF:  leaf area
+                  <LI>  OTHR:  other biogenic source
+              </UL>
+
+        <LI>  <STRONG>BIOSPC( BSPCS )</STRONG>, biogenic-model species
+              <UL> 
+                  <LI>  ISOP:  isoprene
+                  <LI>  MONO:  monoterpenes
+                  <LI>  OVOC:  other VOCs
+                  <LI>  NO
+              </UL>
+
+        <LI>  <STRONG>EMSPC( MSPCS )</STRONG>, emitted model species, 
+              which for the Carbon-Bond IV prototye are the following:
+              <UL> 
+                  <LI>  NO
+                  <LI>  PAR
+                  <LI>  OLE
+                  <LI>  ALD2
+                  <LI>  ISOP
+              </UL>
+
+        <LI>  <STRONG>OTHERID( RMTREE )</STRONG>, tree-types list
+              <UL> 
+                  <LI>  Mixf
+                  <LI>  Conf
+                  <LI>  Harf
+                  <LI>  Borf
+                  <LI>  Spin
+                  <LI>  Ufor
+                  <LI>  Oak
+                  <LI>  Odcd
+                  <LI>  Cnif
+              </UL>
+
+        <LI>  <STRONG>SPFORID( SPTREE )</STRONG>
+              <UL> 
+                  <LI>  Borf
+                  <LI>  Wcnf
+                  <LI>  Wetf
+                  <LI>  Wmxf
+                  <LI>  Wwdl
+              </UL>
+
+    </UL>
+    <P> 
+
+    <A HREF = "BIODIMS3.txt"> Source code for the North Carolina UAM domain
+    version of BIODIMS3.EXT </A>
+
+
+<H2>
+    <A NAME = "chdims"> CHDIMS3.EXT:  Chemical Species and Mechanisms </A>
+</H2>
+
+    In the current prototypes, chemistry naming and dimensioning
+    information for both the inventory species and the model-mechanism
+    species are kept in the Fortran INCLUDE-file CHDIMS3.EXT.  This
+    file is used by various routines in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "QA.html#CSGAREA"> CSGAREA </A>
+
+        <LI>  <A HREF = "QA.html#CSGPOINT"> CSGPOINT </A>
+
+        <LI>  <A HREF = "CSGLPOINT.html"> CSGLPOINT </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGMERGE"> CSGMERGE </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGLMERGE"> CSGLMERGE </A>
+
+        <LI>  <A HREF = "AREA.html#CTLAMAT"> CTLAMAT </A>
+
+        <LI>  <A HREF = "POINT.html#CTLPMAT"> CTLPMAT </A>
+
+        <LI>  <A HREF = "QA.html#CSGPOINT"> CSGPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#PDPOINT"> PDPOINT </A>
+
+        <LI>  <A HREF = "AREA.html#GRDAMAT"> GRDAMAT </A>
+
+        <LI>  <A HREF = "POINT.html#GRDPMAT"> GRDPMAT </A>
+
+        <LI>  <A HREF = "QA.html#GRDAREA"> GRDAREA </A>
+
+        <LI>  <A HREF = "QA.html#GRDPOINT"> GRDPOINT </A>
+
+        <LI>  <A HREF = "AREA.html#RAWAREA"> RAWAREA </A>
+
+        <LI>  <A HREF = "POINT.html#RAWPOINT"> RAWPOINT </A>
+
+        <LI>  <A HREF = "AREA.html#SPCAMAT"> SPCAMAT </A>
+
+        <LI>  <A HREF = "POINT.html#SPCPMAT"> SPCPMAT </A>
+
+        <LI>  <A HREF = "AREA.html#TMPAREA"> TMPAREA </A>
+
+        <LI>  <A HREF = "POINT.html#TMPPOINT"> TMPPOINT </A>
+
+    </UL>
+    <P> 
+
+    
+    Parameters specified in this file are the following
+    <UL> 
+        <LI>  <STRONG>NIPOL</STRONG>, the number of inventory
+              pollutants; and 
+        <LI>  <STRONG>NMPOL</STRONG>, the number of model-mechanism
+              pollutants.
+        <LI>  <STRONG>COFAC</STRONG>, the inverse of the molecular
+              weight for model species CO.
+        <LI>  <STRONG>NOFAC</STRONG>, the product of the inverse of 
+              the molecular weight for model species NO and the 
+              NOx_to_NO conversion factor.
+        <LI>  <STRONG>NO2FAC</STRONG>, the product of the inverse of 
+              the molecular weight for model species NO2 and the 
+              NOxNO2 conversion factor.
+    </UL>
+    <P> 
+        
+    Data arrays contained in this INCLUDE-file are the following
+    <UL> 
+         <LI>  <A NAME = "inventory"> <CODE>INTEGER</CODE> 
+               <STRONG>PCODE( NIPOL )</STRONG> 
+               containing the sorted list of numeric pollutant codes 
+               for the inventory pollutant species</A>.  For the 
+               North Carolina UAM-domain Carbon-Bond IV emissions
+               prototype, these are:
+               <UL>
+                   <LI>  <STRONG>42101</STRONG> for CO (carbon
+                         monoxide); 
+                   <LI>  <STRONG>42603</STRONG> for NOX (oxides of
+                         nitrogen); and
+                   <LI>  <STRONG>43104</STRONG> for VOC (volatile
+                         organic compounds).
+               </UL>
+
+         <LI>  <CODE>CHARACTER*16</CODE> <STRONG>ACODE( NIPOL )</STRONG> 
+               containing the (left-justified) five-digit character-string 
+               representations for the numeric inventory pollutant species 
+               codes; 
+
+         <LI>  <CODE>CHARACTER*16</CODE> <STRONG>EINAM( NIPOL )</STRONG> 
+               containing the ordinary chemical names (CO, NOX, VOC) for 
+               the inventory pollutant species (in the same order as
+               they are found in arrays PCODE and ACODE (and also 
+               left-justified); and
+
+         <LI>  <CODE>CHARACTER*16</CODE> <STRONG>EMNAM( NMPOL )</STRONG> 
+               containing the (left-justified) character-string chemical 
+               names for the model-mechanism pollutant species.  For the 
+               North Carolina UAM-domain Carbon-Bond IV emissions
+               prototype, these are:
+               <UL>
+                   <LI>  <STRONG>CO</STRONG>, carbon monoxide;
+                   <LI>  <STRONG>NO</STRONG>, nitric oxide;
+                   <LI>  <STRONG>NO2</STRONG>, nitrogen dioxide;
+                   <LI>  <STRONG>OLE</STRONG>, olefins;
+                   <LI>  <STRONG>PAR</STRONG>, parafins;
+                   <LI>  <STRONG>TOL</STRONG>, toluene;
+                   <LI>  <STRONG>XYL</STRONG>, xylene;
+                   <LI>  <STRONG>FORM</STRONG>, formaldehyde;
+                   <LI>  <STRONG>ALD2</STRONG>, high molecular weight aldehydes;
+                   <LI>  <STRONG>ETH</STRONG>, ethene;
+                   <LI>  <STRONG>MEOH</STRONG>, methanol;
+                   <LI>  <STRONG>ETOH</STRONG>, ethanol; and
+                   <LI>  <STRONG>ISOP</STRONG>, isoprene
+               </UL>
+
+         <LI>  <CODE>CHARACTER*16</CODE> <STRONG>SFNAM( NMPOL )</STRONG> 
+               containing the (left-justified) character-string names 
+               for the variables in speciation-factors matrices.  The 
+               corresponding variables are the factors for converting 
+               tons of the inventory species to moles of the corresponding 
+               model species.  For the North Carolina UAM-domain 
+               Carbon-Bond IV emissions prototype, these are:
+               <UL>
+                   <LI>  <STRONG>CO_to_CO </STRONG>, for carbon monoxide;
+                   <LI>  <STRONG>NOX_to_NO</STRONG>, for nitric oxide;
+                   <LI>  <STRONG>NOX_to_NO2</STRONG>, for nitrogen dioxide;
+                   <LI>  <STRONG>VOC_to_OLE</STRONG>, for olefins;
+                   <LI>  <STRONG>VOC_to_PAR</STRONG>, for parafins;
+                   <LI>  <STRONG>VOC_to_TOL</STRONG>, for toluene;
+                   <LI>  <STRONG>VOC_to_XYL</STRONG>, for xylene;
+                   <LI>  <STRONG>VOC_to_FORM</STRONG>, for formaldehyde;
+                   <LI>  <STRONG>VOC_to_ALD2</STRONG>, for high molecular weight aldehydes;
+                   <LI>  <STRONG>VOC_to_ETH</STRONG>,  for ethene;
+                   <LI>  <STRONG>VOC_to_MEOH</STRONG>, for methanol;
+                   <LI>  <STRONG>VOC_to_ETOH</STRONG>, for ethanol; and
+                   <LI>  <STRONG>VOC_to_ISOP</STRONG>, for isoprene
+               </UL>
+
+         <LI>  <CODE>REAL</CODE> <STRONG>EMWT( NMPOL )</STRONG> 
+               containing the molecular weights for the
+               model-mechanism pollutant species.
+
+    </UL>
+    <P> 
+
+    
+    <A HREF = "CHDIMS3.txt"> Source code for the UAM-Carbon Bond IV
+    version of CHDIMS3.EXT </A>
+        
+
+<H2>
+    <A NAME = "grdims"> GRDIMS3.EXT:  Horizontal Grid Dimensions </A>
+</H2>
+
+    In the current prototypes, horizontal grid naming and dimensioning
+    information are kept in the Fortran INCLUDE-file GRDIMS3.EXT.  This
+    file is used by various routines in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "QA.html#CSGAREA"> CSGAREA </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGMERGE"> CSGMERGE </A>
+
+        <LI>  <A HREF = "MERGE.html#CSGLMERGE"> CSGLMERGE </A>
+
+        <LI>  <A HREF = "QA.html#CSGPOINT"> CSGPOINT </A>
+
+        <LI>  <A HREF = "CSGLPOINT.html"> CSGLPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#PDPOINT"> PDPOINT </A>
+
+        <LI>  <A HREF = "AREA.html#GRDAMAT"> GRDAMAT </A>
+
+        <LI>  <A HREF = "POINT.html#GRDPMAT"> GRDPMAT </A>
+
+        <LI>  <A HREF = "QA.html#GRDAREA"> GRDAREA </A>
+
+        <LI>  <A HREF = "QA.html#GRDPOINT"> GRDPOINT </A>
+
+        <LI>  <A HREF = "AREA.html#RAWAREA"> RAWAREA </A>
+
+        <LI>  <A HREF = "POINT.html#RAWPOINT"> RAWPOINT </A>
+
+        <LI>  <A HREF = "FIPXY2CR.html"> FIPXY2CR </A>
+
+    </UL>
+    <P> 
+
+    Parameters specified in this file are the following
+    <UL> 
+
+        <LI>  <STRONG>NCOLS</STRONG>, the number of horizontal-grid columns;
+
+        <LI>  <STRONG>NROWS</STRONG>, the number of horizontal-grid rows; 
+
+        <LI>  <STRONG>NGRID</STRONG>, the number of horizontal-grid cells 
+              (the product of NCOLS and NROWS); 
+
+        <LI>  <STRONG>NMATX</STRONG>, the dimensioned number of area-source
+              gridding matrix coefficients; 
+
+        <LI>  <STRONG>GRDNM</STRONG>, the grid name consistent with an entry
+              in the <a href= "MERGE.html#GRIDDESC"> GRIDDESC</a> file; and 
+
+        <LI>  <STRONG>DEPS</STRONG>, a constant &quot;epsilon&quot;
+              used to test coordinate differences for zero.
+
+    </UL>
+    <P> 
+
+
+    <A HREF = "GRDIMS3.txt"> Source code for the North Carolina UAM domain
+    version of GRDIMS3.EXT </A>
+
+
+
+<H2>
+    <A NAME = "ladims"> LADIMS3.EXT:  Vertical Grid Dimensions </A>
+</H2>
+
+    In the current prototypes, vertical grid naming and dimensioning
+    information are kept in the Fortran INCLUDE-file LADIMS3.EXT.  This
+    file is used by various routines in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "MERGE.html#CSGLMERGE"> CSGLMERGE </A>
+
+        <LI>  <A HREF = "CSGLPOINT.html"> CSGLPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#LAYPOINT"> LAYPOINT </A>
+
+    </UL>
+    <P> 
+
+    Parameters specified in this file are the following
+    <UL> 
+
+        <LI>  <STRONG>NLAYS</STRONG>, the number of model vertical grid 
+              layers; and
+
+        <LI>  <STRONG>EMLAYS</STRONG>, the number of vertical grid
+              layers in which emissions may be allocated.
+
+    </UL>
+    <P> 
+
+
+    <A HREF = "LADIMS3.txt"> Source code for the North Carolina UAM domain
+    version of LADIMS3.EXT </A>
+
+
+
+<H2>
+    <A NAME = "tmdims"> TMDIMS3.EXT:  Temporal Allocation Parameters </A>
+</H2>
+   
+    In the current prototypes, temporal allocation dimensioning
+    information and related constants are kept in the Fortran 
+    INCLUDE-file TMDIMS3.EXT.  This file is used by various routines 
+    in the following programs:
+    <UL> 
+
+        <LI>  <A HREF = "QA.html#CSGPOINT"> CSGPOINT </A>
+
+        <LI>  <A HREF = "POINT.html#PDPOINT"> PDPOINT </A>
+
+        <LI>  <A HREF = "AREA.html#RAWAREA"> RAWAREA </A>
+
+        <LI>  <A HREF = "POINT.html#RAWPOINT"> RAWPOINT </A>
+
+        <LI>  <A HREF = "AREA.html#TMPAREA"> TMPAREA </A>
+
+        <LI>  <A HREF = "POINT.html#TMPPOINT"> TMPPOINT </A>
+
+    </UL>
+    <P> 
+
+
+    Parameters specified in this file are the following
+    <UL> 
+
+        <LI>  <STRONG>NMCOD</STRONG>, the maximum number of monthly
+              temporal allocation profile codes in the temporal profile
+              file; 
+
+        <LI>  <STRONG>NWCOD</STRONG>, the maximum number of weekly
+              temporal allocation profile codes in the temporal profile
+              file;
+
+        <LI>  <STRONG>NDCOD</STRONG>, the maximum number of diurnal
+              temporal allocation profile codes in the temporal profile
+              file;
+
+        <LI>  <STRONG>NTCOD</STRONG>, the maximum temporal profile
+              table size, 
+              <BLOCKQUOTE><VAR>NMCOD * NWCOD * NDCOD</VAR></BLOCKQUOTE>
+
+        <LI>  <STRONG>MXSRC</STRONG>, the maximum number of sources
+              (any type)
+
+        <LI>  <STRONG>SEC2DAY</STRONG>, the number of seconds in one
+              day, 86400
+
+        <LI>  <STRONG>SEC2HR</STRONG>, the number of seconds in one
+              hour, 3600
+
+        <LI>  <STRONG>DAY2YR</STRONG>, the number of days in one year,
+              taken as 365.0, for converting daily emissions estimates 
+              to annual emissions estimates.
+
+        <LI>  <STRONG>STPRFAC</STRONG>, flag value for use as a factor in 
+              variable TPFLAG in files <A HREF = "POINT.html#PNTS">PNTS</A> and 
+              <A HREF = "AREA.html#AREA">AREA</A> to indicate that seasonal
+              temporal-profile coefficients should be used for the
+              indicated source.
+
+        <LI>  <STRONG>MTPRFAC</STRONG>, flag value for use as a factor in 
+              variable TPFLAG in files <A HREF = "POINT.html#PNTS">PNTS</A> and 
+              <A HREF = "AREA.html#AREA">AREA</A> to indicate that monthly
+              temporal-profile coefficients should be used for the
+              indicated source.
+
+        <LI>  <STRONG>WTPRFAC</STRONG>, flag value for use as a factor in 
+              variable TPFLAG in files <A HREF = "POINT.html#PNTS">PNTS</A> and 
+              <A HREF = "AREA.html#AREA">AREA</A> to indicate that
+              day-of-week temporal-profile coefficients should be 
+              used for the indicated source.
+
+    </UL>
+    <P> 
+
+
+    <A HREF = "TMDIMS3.txt"> Source code for the North Carolina UAM domain
+    version of TMDIMS3.EXT </A>
+    <P> 
+        
+
+
+<HR> <!----------------------------------------------------------------->
+
+<A HREF = "index.html"> 
+<STRONG>Top:</STRONG>  SMOKE Root Document  </A>
+<P> 
+
+</BODY>      <!--end body  -->
+</HTML>      <!--end html  -->
+

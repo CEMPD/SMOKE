@@ -1,0 +1,37 @@
+
+C....................................................................
+C  INCLUDE FILE  PTDIMS3.EXT
+C
+C  CONTAINS:  
+C       dimensioning parameters for EDSS Point Emissions Prototype
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C       Prototype 6/95 by CJC
+C
+C....................................................................
+
+        INTEGER     NPFIP   !  number of point-source FIPS  codes appearing
+        INTEGER     NPSID   !  number of point-source state codes appearing
+        INTEGER     NPSCC   !  number of point-src SCC codes in inventory
+        INTEGER     NSPRP   !  number of speciation profiles    appearing
+        INTEGER     NPCEL   !  max number of sources  per cell
+        INTEGER     NSREF   !  max number of entries in     speciation XREF
+        INTEGER     NTRFP   !  max number of FIP-SCC pairs in temporal XREF
+        INTEGER     NPSRC   !  actual number of point-sources
+        INTEGER     NPDAY   !  max number of day-specific  point-sources
+        INTEGER     NPHR    !  max number of hour-specific point-sources
+        INTEGER     NPELV   !  max number of elevated      point-sources
+
+        PARAMETER ( NPFIP =   96 ,  NPSID =    5 ,
+     &              NPSCC =  585 , 
+     &              NSPRP =  120 ,  NPCEL = 1000 ,
+     &              NSREF =  585 ,  NTRFP = 8000 ,
+     &              NPSRC = 6113 ,
+     &              NPDAY =   50 ,
+     &              NPHR  =   50 ,
+     &              NPELV =  900 )
+
+C................   end   PTDIMS3.EXT   ....................................
+

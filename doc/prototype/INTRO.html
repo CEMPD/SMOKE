@@ -1,0 +1,105 @@
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML> 
+<HEAD>
+<TITLE> 
+    SMOKE:  Introduction
+</TITLE>
+</HEAD>
+   
+<BODY>
+<H2>
+    SMOKE:  Introduction
+</H2>
+
+    The use of computers to investigate environmental issues is
+    becoming more commonplace.  Advanced numerical air quality 
+    models have been developed to understand the interactions 
+    among meteorology, emissions, and pollutant chemistry and 
+    dynamics.  One of the most important inputs for these air 
+    quality models is the data about pollutant production coming 
+    from emissions models.  Decision makers need emissions models
+    with high performance and fast turnaround, so that they can
+    gain insight into the cause-and-effect relationships involved
+    in atmospheric air pollution issues, and so that they can 
+    investigate the effectiveness of proposed controls.
+    <P> 
+
+    Emissions modeling needs to change if it is to be useful for
+    decision making.  There are two directions in which these changes
+    need to be made:  in the internals of the emissions models
+    themselves, and in the way the emissions models fit into complete
+    decision support systems.  Current emissions models follow an
+    internal paradigm admirably suited to 1970's-vintage machines 
+    with their miniscule available memories and  tape-only storage, 
+    but are not well adapted to current desktop machines, much less 
+    high performance supercomputers.  It is interesting to note that 
+    the misdesign for high performance computing causes one current 
+    emissions model to run four times slower on a Cray supercomputer
+    than on a $10,000 desktop machine.  On the other hand, a little
+    analysis shows that the computations being performed <EM>should</EM> 
+    be admirably adaptable to HPCC, since they can be reformulated to 
+    use high performance parallel sparse matrix libraries, with potentially 
+    hundredfold or even thousandfold improvements in turnaround 
+    time--to respond to decision makers in minutes instead of days 
+    and weeks.
+    <P>
+
+    MCNC is currently investigating how to redesign emissions modeling 
+    to take advantage of new HPCC sparse-matrix algorithms.  At the
+    same time, we are intending to build a system which has greatly
+    enhanced support for emissions control decision making for both
+    urban and regional applications, but which still can serve as a 
+    drop-in replacement for the Urban Airshed Model's Emissions 
+    Preprocessing System (UAM/EPS), today's most-frequently-used 
+    emissions modeling system, while at the same time avoiding some of
+    the Rube Goldbergish features of that system.  (See the 
+    <A HREF = "EPSDIFS.html"> section on differences </A> for specifics 
+    on differences between SMOKE and EPS and enhancements to support 
+    chemical mechanisms other than Carbon-Bond IV, and to support 
+    regional modeling.)  Our initial version of biogenic emissions
+    modeling is a more modest reimplementation of BEIS2 in a manner 
+    that integrates cleanly with SMOKE and with the rest of EDSS and
+    Models-3.
+    <P> 
+
+    There are profound differences between SMOKE processing and EPS
+    processing for emissions modeling. Particularly notable is how little
+    extra computation is required in order to model a new control
+    strategy.  Data flow diagrams giving an overview of the main 
+    line of SMOKE processing for both the base case and new control 
+    strategies are available for <STRONG>UAM</STRONG> air quality 
+    modeling in
+    <A HREF = "figs/OVERVIEW.UAM.ps">Postscript</A>, in
+    <A HREF = "figs/OVERVIEW.UAM.gif">GIF</A>, in
+    <A HREF = "figs/OVERVIEW.UAM.xbm">X bitmap</A>, and in
+    <A HREF = "figs/OVERVIEW.UAM.jpg">JPEG</A>; 
+    and also for <STRONG>EDSS</STRONG> air quality modeling in
+    <A HREF = "figs/OVERVIEW.EDSS.ps">Postscript</A>, in
+    <A HREF = "figs/OVERVIEW.EDSS.gif">GIF</A>, in
+    <A HREF = "figs/OVERVIEW.EDSS.xbm">X bitmap</A>, and in
+    <A HREF = "figs/OVERVIEW.EDSS.jpg">JPEG</A>.  Note that additional
+    options for analysis and quality assurance processing are detailed
+    under the specific source categories detailed in the section on
+    <A HREF = "#models">models</A>.  Context diagrams indicating how
+    an emissions modeling system <EM>should</EM> fit into the entirety
+    of a decision support system are available in
+    <A HREF = "figs/CONTEXT.ps">Postscript</A>, in
+    <A HREF = "figs/CONTEXT.gif">GIF</A>, in
+    <A HREF = "figs/CONTEXT.xbm">X bitmap</A>, and in
+    <A HREF = "figs/CONTEXT.jpg">JPEG</A>.
+
+
+<HR> <!----------------------------------------------------------------->
+
+<A HREF = "CONCEPT.html"> 
+<STRONG>Next: </STRONG>  Conceptual Design for SMOKE</A>
+<P> 
+
+<A HREF = index.html"> 
+<STRONG>Top:</STRONG>  SMOKE Root Document  </A>
+<P> 
+
+</BODY>      <!--end body  -->
+</HTML>      <!--end html  -->
+
