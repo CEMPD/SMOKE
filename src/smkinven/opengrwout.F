@@ -52,10 +52,11 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
-C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
+C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2             CRLF
         LOGICAL                 ENVYN
         CHARACTER(LEN=IODLEN3)  GETCFDSC
+        INTEGER                 GETIFDSC
         INTEGER                 GETEFILE
         INTEGER                 INDEX1
         INTEGER                 PROMPTFFILE
@@ -80,6 +81,7 @@ C...........   LOCAL PARAMETERS
 
 C...........   Other local variables
 
+        INTEGER         BYEAR     ! tmp base year
         INTEGER         CATIDX    ! index for source category
         INTEGER         IOS       ! i/o status
         INTEGER         L, N         ! counters and indices
@@ -174,12 +176,15 @@ C               header for output inventory file
 C.............  Store non-category-specific header information
             IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
             IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
+            BYEAR   = GETIFDSC( FDESC3D, '/BASE YEAR/', .TRUE. )
 
             FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
             FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 
-C.............  If projection year is non-zero, store in FDESC3D
-            IF( FYEAR .NE. 0 ) THEN
+C.............  If projection year is non-zero and we haven't simply
+C               applied a factor to the inventory for the same year,
+C               store future year in FDESC3D
+            IF( FYEAR .NE. 0 .AND. FYEAR .NE. BYEAR ) THEN
                  WRITE( FDESC3D( 14 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
             END IF
 
