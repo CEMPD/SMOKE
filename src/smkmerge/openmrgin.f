@@ -284,7 +284,6 @@ C               speciation variable descriptions, and store mass or moles.
 
                 CALL RETRIEVE_IOAPI_HEADER( ASNAME )
                 CALL CHKSRCNO( 'area', 'ASMAT', NROWS3D, NASRC, EFLAG )
-
                 ANSMATV = NVARS3D
 
                 IF( RLZN .EQ. 0 ) THEN
@@ -297,7 +296,8 @@ C               speciation variable descriptions, and store mass or moles.
                     CALL STORE_VUNITS( 1, 1, ANSMATV, ASVUNIT )
 
                 ELSE
-c uncertainty stuff here
+C.....................  Uncertainty processing needs to recreate the
+C                       list of pollutants coming in from speciation.
                     IF( ALLOCATED( UVDESC ) ) DEALLOCATE( UVDESC )
                     IF( ALLOCATED( UVUNIT ) ) DEALLOCATE( UVUNIT )
 
@@ -306,7 +306,7 @@ c uncertainty stuff here
                     ALLOCATE( UVUNIT( ANSMATV ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'UVUNIT', PROGNAME )
 
-                    CALL PROBEFORU( ANSMATV )
+                    CALL PROBEFORU( ANIPOL, AEINAM, ANSMATV )
 
                     ALLOCATE( ASVDESC( ANSMATV ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'ASVDESC', PROGNAME )
@@ -573,29 +573,36 @@ C.................  Check the year and projection year of the matrix
 C.........  If we have point sources 
         IF( PFLAG ) THEN
 
-C.............  Get inventory file names given source category
-            CALL GETINAME( 'POINT', PENAME, DUMNAME )
+            IF( RLZN .EQ. 0 ) THEN
 
-C.............  Prompt for inventory files
-            PENAME = PROMPTMFILE( 
-     &       'Enter logical name for the I/O API POINT INVENTORY file',
-     &       FSREAD3, PENAME, PROGNAME )
+C.................  Get inventory file names given source category
+                CALL GETINAME( 'POINT', PENAME, DUMNAME )
+              
+C.................  Prompt for inventory files
+                PENAME = PROMPTMFILE( 
+     &           'Enter logical name for the I/O API POINT ' //
+     &           'INVENTORY file',
+     &           FSREAD3, PENAME, PROGNAME )
+              
+                PSDEV = PROMPTFFILE( 
+     &           'Enter logical name for the ASCII POINT ' //
+     &           'INVENTORY file',
+     &           .TRUE., .TRUE., DUMNAME, PROGNAME )
+              
+C.................  Get number of sources
+                CALL RETRIEVE_IOAPI_HEADER( PENAME )
+                NPSRC = NROWS3D
+              
+C.................  If outputing ASCII elevated sources, retrieve the position
+C                   of the stack in the source characteristics
+                IF( ELEVFLAG ) 
+     &              JSTACK = GETIFDSC( FDESC3D, 
+     &                                 '/STACK POSITION/', .TRUE. )
 
-            PSDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII POINT INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
+C.................  Determine the year and projection status of the inventory
+                CALL CHECK_INVYEAR( PENAME, PPRJFLAG, FDESC3D )
 
-C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( PENAME )
-            NPSRC = NROWS3D
-
-C.............  If outputing ASCII elevated sources, retrieve the position
-C               of the stack in the source characteristics
-            IF( ELEVFLAG ) 
-     &        JSTACK   = GETIFDSC( FDESC3D, '/STACK POSITION/', .TRUE. )
-
-C.............  Determine the year and projection status of the inventory
-            CALL CHECK_INVYEAR( PENAME, PPRJFLAG, FDESC3D )
+            END IF
 
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
@@ -660,12 +667,37 @@ C               speciation variable names, and store mass or moles.
                 CALL RETRIEVE_IOAPI_HEADER( PSNAME )
                 CALL CHKSRCNO( 'point','PSMAT',NROWS3D,NPSRC,EFLAG )
                 PNSMATV = NVARS3D
-                ALLOCATE( PSVDESC( PNSMATV ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'PSVDESC', PROGNAME )
-                ALLOCATE( PSVUNIT( PNSMATV ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'PSVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, PNSMATV, PSVDESC )
-                CALL STORE_VUNITS( 1, 1, PNSMATV, PSVUNIT )
+
+                IF( RLZN .EQ. 0 ) THEN
+
+                    ALLOCATE( PSVDESC( PNSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'PSVDESC', PROGNAME )
+                    ALLOCATE( PSVUNIT( PNSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'PSVUNIT', PROGNAME )
+                    CALL STORE_VDESCS( 1, 1, PNSMATV, PSVDESC )
+                    CALL STORE_VUNITS( 1, 1, PNSMATV, PSVUNIT )
+
+                ELSE
+C.....................  Uncertainty processing needs to recreate the
+C                       list of pollutants coming in from speciation.
+                    IF( ALLOCATED( UVDESC ) ) DEALLOCATE( UVDESC )
+                    IF( ALLOCATED( UVUNIT ) ) DEALLOCATE( UVUNIT )
+
+                    ALLOCATE( UVDESC( PNSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'UVDESC', PROGNAME )
+                    ALLOCATE( UVUNIT( PNSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'UVUNIT', PROGNAME )
+
+                    CALL PROBEFORU( PNIPOL, PEINAM, PNSMATV )
+
+                    ALLOCATE( PSVDESC( PNSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'PSVDESC', PROGNAME )
+                    ALLOCATE( PSVUNIT( PNSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'PSVUNIT', PROGNAME )
+                    CALL STORE_UVDESCS( 1, 1, PNSMATV, PSVDESC )
+                    CALL STORE_UVUNITS( 1, 1, PNSMATV, PSVUNIT )
+
+                END IF
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'point' )
@@ -893,20 +925,23 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
  
         CONTAINS
 
-            SUBROUTINE PROBEFORU( ASNUM )
+c need to add args asnum anipol aeinam 
+            SUBROUTINE PROBEFORU( XNIPOL, XEINAM, XSNUM )
 
-            INTEGER, INTENT(IN OUT)    :: ASNUM  ! tmp no. of uncert vars
+            INTEGER,      INTENT( IN )   :: XNIPOL          ! no. of uncert pollutants
+            CHARACTER(*), INTENT( IN )   :: XEINAM(XNIPOL)  ! array of uncert pollutants
+            INTEGER,      INTENT(IN OUT) :: XSNUM           ! no. of uncert vars
 
-            INTEGER         I, J, L, L2, U, V    
+            INTEGER         I, J, L, L2, U
 
 C----------------------------------------------------------------------
 
             U = 0
-            DO I = 1, ASNUM
-                DO J = 1, ANIPOL
+            DO I = 1, XSNUM
+                DO J = 1, XNIPOL
 
-                    L = LEN_TRIM( AEINAM( J ) )
-                    IF(AEINAM( J )( 1:L ) .EQ. VDESC3D( I )( 1:L )) THEN
+                    L = LEN_TRIM( XEINAM( J ) )
+                    IF(XEINAM( J )( 1:L ) .EQ. VDESC3D( I )( 1:L )) THEN
 
                         U = U + 1
                         L2 = LEN_TRIM( VDESC3D( I ) )
@@ -920,7 +955,7 @@ C----------------------------------------------------------------------
                 END DO
             END DO
 
-            ASNUM = U
+            XSNUM = U
 
             END SUBROUTINE PROBEFORU
 
@@ -1224,12 +1259,15 @@ C.................  Check the number of sources
                     IF( .NOT.( TUCFLAG ) )
      &                  CALL CHKSRCNO( 'area', TMPNAM, NROWS3D, 
      &                             NASRC, EFLAG )
+
                 CASE( 'MOBILE' ) 
                     CALL CHKSRCNO( 'mobile', TMPNAM, NROWS3D, 
      &                             NMSRC, EFLAG )
 
                 CASE( 'POINT' ) 
-                    CALL CHKSRCNO( 'point', TMPNAM, NROWS3D, 
+
+                    IF( .NOT.( TUCFLAG ) )
+     &                  CALL CHKSRCNO( 'point', TMPNAM, NROWS3D,
      &                             NPSRC, EFLAG )
 
                 END SELECT
