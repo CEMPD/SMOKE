@@ -40,7 +40,7 @@ C
 C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C****************************************************************************
 
@@ -68,10 +68,10 @@ C...........   ARGUMENTS and their descriptions:
         LOGICAL, INTENT(OUT) :: EFLAG         !  error flag
 
 C.........  Local arrays dimensioned with subroutine arguments
-        INTEGER  XCOL(   NDIM + 1 )    !  subscript for this grid intersection
-        INTEGER  YROW(   NDIM + 1 )    !  subscript for this grid intersection
-        REAL     XFAC( 0:NDIM + 1 )    !  frac of link traversed
-        REAL     YFAC( 0:NDIM + 1 )    !  frac of link traversed
+        INTEGER, ALLOCATABLE, SAVE :: XCOL( : )    !  subscript for this grid intersection
+        INTEGER, ALLOCATABLE, SAVE :: YROW( : )    !  subscript for this grid intersection
+        REAL, ALLOCATABLE, SAVE    :: XFAC( : )    !  frac of link traversed
+        REAL, ALLOCATABLE, SAVE    :: YFAC( : )    !  frac of link traversed
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -92,6 +92,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER  CCC                     !  ending   x-cell of link
         INTEGER  COL                     !  starting x-cell of link
         INTEGER  IX, IY
+        INTEGER  IOS                     !  i/o status
         INTEGER  ISAV
         INTEGER  J, IR, IC, JZ  
         INTEGER  NX, NY
@@ -101,17 +102,36 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER  XB, XE                  !  pntr to calc fracs @ link beg & end
         INTEGER  YB, YE                  !  pntr to calc fracs @ link beg & end
 
+        LOGICAL :: FIRSTIME = .TRUE.     !  true: first time routine called
+
         CHARACTER*16   :: PROGNAME = 'LNK2GRD'  ! progname name
 
 C***********************************************************************
 C   begin body of subroutine  LNK2GRD
 
-C...........   Initializations
+C...........   Allocate memory first time routine is called
+        IF( FIRSTIME ) THEN
+            ALLOCATE( XCOL( NDIM+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XCOL', PROGNAME )
+            ALLOCATE( YROW( NDIM+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YROW', PROGNAME )
+            ALLOCATE( XFAC( 0:NDIM+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XFAC', PROGNAME )
+            ALLOCATE( YFAC( 0:NDIM+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YFAC', PROGNAME )
+            FIRSTIME = .FALSE.
+        END IF
 
+C...........   Initializations
         XBEG = XBEGIN
         XEND = XENDIN
         YBEG = YBEGIN
         YEND = YENDIN
+
+        XCOL = 0   ! array
+        YROW = 0   ! array
+        XFAC = 0.  ! array
+        YFAC = 0.  ! array
 
         XLNK = XEND - XBEG
         YLNK = YEND - YBEG
@@ -127,26 +147,18 @@ C...........   Initializations
 
         ALEN = SQRT( XLNK**2 + YLNK**2 )		!  link length
 
+C...........  Initialize the number of cells to zero
+        NCEL = 0
+
 C...............   Check for 0-D, 1-D cases, using tolerance of
 C...............   1.0E-5 * cellsize (on the order of 0.5-10.0 meters).
-C...........  0-D case, within-a-cell case:
-
-        IF( ALEN .EQ. 0.0 ) THEN 
-
-            NCEL = -1
-            RETURN
-
-        ELSEIF ( ( CCC .EQ. COL  .AND. RRR .EQ. ROW ) .OR.
+C...............   Within a cell case:
+        IF ( ( CCC .EQ. COL  .AND. RRR .EQ. ROW ) .OR.
      &           ( ALEN .LT. 1.0E-5 * XCELL3D )            ) THEN
 
-C.............  Case: link is outside domain
-            IF ( COL .LT. 1  .OR.  COL .GT. NCOLS3D .OR.
-     &           ROW .LT. 1  .OR.  ROW .GT. NCOLS3D      ) THEN
-
-                NCEL = 0
-
-C.............  Case: link is completely in a single cell
-            ELSE
+C.............  Make sure 1-cell link is inside domain
+            IF ( COL .GE. 1  .AND.  COL .LE. NCOLS3D .AND.
+     &           ROW .GE. 1  .AND.  ROW .LE. NCOLS3D      ) THEN
 
                 NCEL = 1
                 ACEL ( 1 ) = COL + NCOLS3D * ( ROW - 1 )
@@ -318,22 +330,14 @@ C...................................................................
 
 C.........  Establish loop bounds and starting and ending coordinates
 C.........  Also, precalculate pointers (XB & XE) for adjusting fractions 
-C.........  based on orientation of link.  NOTE: XINC is used for 
-C.........  stepping through loop _AND_ for changing sign in the XFAC calc
+C.........  based on orientation of link. 
         IX    = COL
         NX    = CCC
         START = XBEG
         ENDS  = XEND
-
-        IF ( COL .LT. CCC ) THEN
-            XINC = 1
-            XB   = IX
-            XE   = NX - 1
-        ELSE
-            XINC = -1
-            XB   = IX - 1
-            XE   = NX
-        END IF
+        XINC = 1
+        XB   = IX
+        XE   = NX - 1
 
         J         = 0         !  cell counter
         XFAC( J ) = 9.0E36    !  sentinel on front end-of-list
@@ -344,7 +348,7 @@ C.........  Initialize for all cells (inside domain) intersecting link
 
 C.............  First X-cell of link is inside domain
             IF( IC .EQ. IX .AND. START .GE. XORIG3D .AND.
-     &          IC .GT. 1  .AND. IC    .LE. NCOLS3D       ) THEN
+     &          IC .GE. 1  .AND. IC    .LE. NCOLS3D       ) THEN
                 J         = J + 1
                 XX        = XORIG3D + XCELL3D * FLOAT( XB )
                 XCOL( J ) = IC
@@ -359,14 +363,14 @@ C.............  Initialize first cell when link starts outside domain
 C.............  Last X-cell of link is inside domain
             ELSEIF( IC   .EQ. NX .AND. 
      &              ENDS .LE. XORIG3D + XCELL3D * NCOLS3D .AND.
-     &              IC   .GT. 1  .AND. IC .LE. NCOLS3D          ) THEN
+     &              IC   .GE. 1  .AND. IC .LE. NCOLS3D          ) THEN
                 J         = J + 1
                 XX        = XORIG3D + XCELL3D * FLOAT( XE )
                 XCOL( J ) = IC
                 XFAC( J ) = XFAC( J-1 ) + 
      &                      DXLNK * FLOAT( XINC ) * ( ENDS - XX )
 
-C.............  Set fractions for interior of domain
+C.............  Set fractions for interior of domain and non-end of link
             ELSEIF( IC .GT. 1 .AND. IC .LE. NCOLS3D ) THEN
                 J         = J + 1
                 XCOL( J ) = IC
@@ -419,7 +423,7 @@ C.........  Calculate fractions for cells (inside domain) intersecting link
 
 C.............  First Y-cell of link is inside domain
             IF( IR .EQ. IY .AND. START .GE. YORIG3D .AND.
-     &          IR .GT. 1  .AND. IR    .LE. NROWS3D      ) THEN
+     &          IR .GE. 1  .AND. IR    .LE. NROWS3D      ) THEN
                 J         = J + 1
                 YY        = YORIG3D + YCELL3D * FLOAT( YB )
                 YROW( J ) = IR
@@ -434,14 +438,14 @@ C.............  Initialize first cell when link starts outside domain
 C.............  Last Y-cell of link is inside domain
             ELSEIF( IR   .EQ. NY .AND. 
      &              ENDS .LE. YORIG3D + YCELL3D * NROWS3D .AND.
-     &              IR   .GT. 1 .AND. IR .LE. NROWS3D           ) THEN
+     &              IR   .GE. 1 .AND. IR .LE. NROWS3D           ) THEN
                 J         = J + 1
                 YY        = YORIG3D + YCELL3D * FLOAT( YE )
                 YROW( J ) = IR
                 YFAC( J ) = YFAC( J-1 ) + 
      &                      DYLNK * FLOAT( YINC ) * ( ENDS - YY )
 
-C.............  Set fractions for interior of domain
+C.............  Set fractions for interior of domain and non-end of link
             ELSEIF( IR .GT. 1 .AND. IR .LE. NROWS3D ) THEN
                 J         = J + 1
                 YROW( J ) = IR
@@ -459,7 +463,6 @@ C.........  Case: Link is outside domain
             NCEL = 0
             RETURN
         END IF
-
 
 C...................................................................
 C........   Now merge the two intersection lists:
@@ -517,7 +520,6 @@ C.............  Intersect new row next
                 AFRAC( J ) = MIN( 1.0, MAX( 0.0, FAC ) )
                 GO TO  133              !  to head of loop
             END IF
-
 
 C...........   Merge complete.  Return the number of cells found:
 
