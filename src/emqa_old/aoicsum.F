@@ -90,7 +90,7 @@ C...........   Area Sources input and output arrays
 
         INTEGER      ISTLIST ( NASID )  !  List of states in AREA file
         INTEGER      ICOLIST ( NAFIP )  !  List of counties in AREA file
-        INTEGER      IOICLIST( MAXOIC ) !  List of OIC codes in ASCC file
+        INTEGER      IOICLIST( MAXOIC ) !  List of OIC codes in ASCS file
 
         LOGICAL      IN_RPT  ( MAXOIC ) / MAXOIC * .FALSE. / 
                             !  Indicates which OIC codes are reportable
@@ -145,7 +145,7 @@ C...........   Other local variables
 
 
 C***********************************************************************
-C   begin body of program REPPLHT
+C   begin body of program AOICSUM
 
         LDEV = INIT3()
 
@@ -187,7 +187,7 @@ C.......   Get file name; open input area source
 
         SUNIT = PROMPTFFILE( 
      &          'Enter name for AREA ASCT CODES file',
-     &          .TRUE., .TRUE., 'ASCC', 'AOICSUM' )
+     &          .TRUE., .TRUE., 'ASCS', 'AOICSUM' )
 
         COLISTSZ = ENVINT ( 'COLSTSZ', 'Max counties per OIC', MAXCO, 
      &                      STATUS )
@@ -224,9 +224,7 @@ C.......   Get file name; open input area source
 
                     ISTFIP ( TOT_ST ) = FIPNUM / 1000
                     STATES ( TOT_ST ) = FIPNAME
-C                    PRINT '( A, I2, A, A, A, I2, A )', 
-C     &                'Got state #', TOT_ST, ': ',
-C     &                STATES ( TOT_ST ), ' (FIP=', ISTFIP ( TOT_ST ), ')'
+
                 ELSE
                     TOT_CO = TOT_CO + 1
                     IF ( TOT_CO .GT. MAXCO ) THEN
@@ -242,9 +240,7 @@ C     &                STATES ( TOT_ST ), ' (FIP=', ISTFIP ( TOT_ST ), ')'
 
                     ICOFIP ( TOT_CO ) = FIPNUM
                     COUNTIES ( TOT_CO ) = FIPNAME
-C                    PRINT '( A, I4, A, A, A, I5, A )', 
-C     &                'Got county #', TOT_CO, ': ',
-C     &                COUNTIES ( TOT_CO ), ' (FIP=', ICOFIP ( TOT_CO ),')'
+
                 END IF
             END IF
         GO TO 30
@@ -255,7 +251,7 @@ C     &                COUNTIES ( TOT_CO ), ' (FIP=', ICOFIP ( TOT_CO ),')'
         TOT_ASCT = 0
 35      CONTINUE ! Begin "infinite" loop; until EOF.
             READ ( AUNIT, 710, END = 45 ) INASC, ASCTNAME
-C            PRINT *, INASC // ': ' // ASCTNAME
+
             TOT_ASCT = TOT_ASCT + 1
             IF ( TOT_ASCT .GT. MAXASCT ) THEN
                 WRITE ( BUF1, 600 ) TOT_ASCT
@@ -273,19 +269,16 @@ C            PRINT *, INASC // ': ' // ASCTNAME
             IALLASC7 ( TOT_ASCT ) = INASC7
             IALLASC3 ( TOT_ASCT ) = INASC3
             ASCTNAMES ( TOT_ASCT ) = ASCTNAME
-C            PRINT '( A, I2, A, A, A, I7.7, I3.3, A )', 
-C     &            'Got ASCT #', TOT_ASCT, ': ',
-C     &            ASCTNAMES ( TOT_ASCT ), ' (ASC=', 
-C     &            IALLASC7 ( TOT_ASCT ), IALLASC3 ( TOT_ASCT ), ')'
+
         GO TO 35
 45      CONTINUE
 
         LASTOIC = 0
         TOT_OIC = 0
 
-        ! Find the unique complement of OIC codes within the ASCC file
+        ! Find the unique complement of OIC codes within the ASCS file
 55      CONTINUE
-            READ ( SUNIT, '(A)', END = 65 ) INASC
+            READ ( SUNIT, '(A10)', END = 65 ) INASC
 
             READ ( INASC ( 1:4 ), '(I4)' ) INOIC
             IF ( INOIC .NE. LASTOIC ) THEN
@@ -294,7 +287,7 @@ C     &            IALLASC7 ( TOT_ASCT ), IALLASC3 ( TOT_ASCT ), ')'
                     WRITE ( BUF1, 600 ) TOT_OIC
                     WRITE ( BUF2, 600 ) MAXOIC
                     CALL M3EXIT( 'AOICSUM', 0, 0, 
-     &                      'Number of OIC codes in ASCC (' // 
+     &                      'Number of OIC codes in ASCS (' // 
      &                      BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
      &                      ') exceeds program limits (MAXOIC=' //
      &                      BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
@@ -315,7 +308,7 @@ C     &            IALLASC7 ( TOT_ASCT ), IALLASC3 ( TOT_ASCT ), ')'
 200         END DO
         ELSE
 210         CONTINUE
-                READ ( LUNIT, '(I)', END = 220 ) INOIC
+                READ ( LUNIT, *, END = 220 ) INOIC
                 INDEX = FIND1 ( INOIC, TOT_OIC, IOICLIST )
                 IF ( INDEX .GT. 0 ) THEN
                     IN_RPT ( INDEX ) = .TRUE.
@@ -323,7 +316,7 @@ C     &            IALLASC7 ( TOT_ASCT ), IALLASC3 ( TOT_ASCT ), ')'
                     WRITE ( BUF1, 600 ) INOIC
                     CALL M3WARN ( 'AOICSUM', 0, 0, 
      &                   'Requested OIC code (' // BUF1 // 
-     &                   ') not in file "ASCC"' )
+     &                   ') not in inventory' )
                 END IF
             GO TO 210
 220         CONTINUE
@@ -352,7 +345,7 @@ C     &            IALLASC7 ( TOT_ASCT ), IALLASC3 ( TOT_ASCT ), ')'
         END IF
 
         DO 50 I = 1, NIPOL
-C           PRINT *, 'Reading ' // EINAM (I) // '...'
+
             IF ( .NOT. READ3 ( ENAME, EINAM ( I ), ALLAYS3, 0, 0, 
      &                         SPECBUF ( 1, I ) ) ) THEN
                 CALL M3EXIT( 'AOICSUM', 0, 0, 
@@ -370,8 +363,6 @@ C           PRINT *, 'Reading ' // EINAM (I) // '...'
                 NOX_VAR = I
             END IF
 50      CONTINUE
-C        PRINT '(A, I2, A, A )', 'VOC Variable is ', VOC_VAR, ' or ', 
-C     &        EINAM ( VOC_VAR )
 
         LASTCO = 0
         LASTST = 0
@@ -501,7 +492,7 @@ C     &        EINAM ( VOC_VAR )
             END IF
 
             ! Find the description for this OIC code.
-            INASC7 = IOICLIST ( K )
+            INASC7 = IOICLIST ( K ) * 1000
             INASC3 = 0
             INDEX = FIND2 ( INASC7, INASC3, TOT_ASCT, 
      &                      IALLASC7, IALLASC3 )
