@@ -34,6 +34,7 @@ cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH_DEBUG)
 # Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+include $(FSDIR)/modmake.inc
 
 aloccmat.o: $(MODXREF) $(MODCNTRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ aloccmat.f
@@ -41,7 +42,7 @@ alocpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ alocpkts.f
 asgncntl.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgncntl.f
-cntlmat.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
+cntlmat.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ cntlmat.f
 fillcdat.o: $(MODCNTRL) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ fillcdat.f
@@ -53,11 +54,11 @@ genproj.o:  $(MODSOURC) $(MODCNTRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ genproj.f
 genreact.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ genreact.f
-opencmat.o: $(MODCNTRL) $(MODINFO)
+opencmat.o: $(MODCNTRL) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ opencmat.f
-openpmat.o: $(MODINFO)
+openpmat.o: $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ openpmat.f
-openrmat.o: $(MODINFO)
+openrmat.o: $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ openrmat.f
 pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ pktloop.f

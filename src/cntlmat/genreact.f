@@ -58,6 +58,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
@@ -410,8 +411,7 @@ C.........  Read speciation profiles file
         MESG = 'Reading SPECIATION PROFILES file for ' // TRIM( RPOL )
         CALL M3MSG2( MESG )
 
-        CALL RDSPROF( PDEV, RPOL, MXSPFUL, NSPFUL, NMSPC,
-     &                INPRF, SPECID, MOLEFACT, MASSFACT )
+        CALL RDSPROF( PDEV, RPOL, NMSPC )
 
 C.........  Ensure that profile(s) exist for this pollutant
         IF( NSPFUL .LE. 0 ) THEN
@@ -463,14 +463,16 @@ C           more than 13 characters - must use BLDENAMS routine to
 C           do this correctly.
         IF( LO3SEAS ) THEN
             VNAM = OZNSEART // RPOL( 1:MIN( LEN_TRIM( RPOL ), 13 ) )
-            IF( .NOT. READ3( ENAME, VNAM, ALLAYS3, 0, 0, EMIS ) ) THEN
+            IF( .NOT. READSET( ENAME, VNAM, ALLAYS3, ALLFILES,
+     &                         0, 0, EMIS ) ) THEN
                 MESG = 'Could not read "' // TRIM( RPOL ) //
      &                '" from inventory file ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
         ELSE
-            IF( .NOT. READ3( ENAME, RPOL, ALLAYS3, 0, 0, EMIS ) ) THEN
+            IF( .NOT. READSET( ENAME, RPOL, ALLAYS3, ALLFILES,
+     &                         0, 0, EMIS ) ) THEN
                 MESG = 'Could not read "' // TRIM( RPOL ) //
      &                '" from inventory file ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

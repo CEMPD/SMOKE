@@ -41,13 +41,15 @@ C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
@@ -84,7 +86,7 @@ C   begin body of subroutine OPENPMAT
 
 C.........  Get header information from inventory file
 
-        IF ( .NOT. DESC3( ENAME ) ) THEN
+        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -93,7 +95,7 @@ C.........  Get header information from inventory file
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
         J       = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        UNITS   = UNITS3D( J + 1 )
+        UNITS   = VUNITSET( J + 1 )
 
 C.........  Initialize I/O API output file headers
         CALL HDRMISS3

@@ -57,6 +57,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'FLTERR.EXT'    !  functions for comparing two numbers
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -336,7 +337,8 @@ C...........  Ozone-season emissions
            IF( LO3SEAS ) THEN
 
                IF ( .NOT. 
-     &              READ3( ENAME, OUTNAMES(I,2), 1, 0, 0, EMIS )  ) THEN
+     &              READSET( ENAME, OUTNAMES(I,2), 1, -1, 
+     &                       0, 0, EMIS ) ) THEN
                    CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
                END IF
 
@@ -344,7 +346,8 @@ C...........  Annual emissions
            ELSE 
 
                IF ( .NOT. 
-     &              READ3( ENAME, OUTNAMES(I,1), 1, 0, 0, EMIS )  ) THEN
+     &              READSET( ENAME, OUTNAMES(I,1), 1, -1,
+     &                       0, 0, EMIS )  ) THEN
                    CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
                END IF
 
@@ -376,18 +379,18 @@ C             AREA sources, rule penetration.
 C.............  Area sources...
               CASE( 'AREA' )
 
-              IF ( .NOT. READ3( ENAME, OUTNAMES(I,4), 1, 0, 0, 
-     &        CTLEFF ) ) THEN
+              IF ( .NOT. READSET( ENAME, OUTNAMES(I,4), 1, -1,
+     &                          0, 0, CTLEFF ) ) THEN
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,4), PROGNAME )
               END IF
 
-              IF ( .NOT. READ3( ENAME, OUTNAMES(I,5), 1, 0, 0, 
-     &        RULEFF ) ) THEN
+              IF ( .NOT. READSET( ENAME, OUTNAMES(I,5), 1, -1,
+     &                          0, 0, RULEFF ) ) THEN
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,5), PROGNAME )
               END IF
 
-              IF ( .NOT. READ3( ENAME, OUTNAMES(I,6), 1, 0, 0, 
-     &        RULPEN ) ) THEN
+              IF ( .NOT. READSET( ENAME, OUTNAMES(I,6), 1, -1,
+     &                          0, 0, RULPEN ) ) THEN
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,6), PROGNAME )
               END IF
 
@@ -401,13 +404,13 @@ C.............  Mobile sources...
 C.............  Point sources...
               CASE( 'POINT' )
 
-              IF ( .NOT. READ3( ENAME, OUTNAMES(I,3), 1, 0, 0, 
-     &        CTLEFF ) ) THEN
+              IF ( .NOT. READSET( ENAME, OUTNAMES(I,3), 1, -1,
+     &                          0, 0, CTLEFF ) ) THEN
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,3), PROGNAME )
               END IF
 
-              IF ( .NOT. READ3( ENAME, OUTNAMES(I,4), 1, 0, 0, 
-     &        RULEFF ) ) THEN
+              IF ( .NOT. READSET( ENAME, OUTNAMES(I,4), 1, -1,
+     &                          0, 0, RULEFF ) ) THEN
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,4), PROGNAME )
               END IF
 
