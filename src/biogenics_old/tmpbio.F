@@ -2,7 +2,7 @@
         PROGRAM TMPBIO
 
 C***********************************************************************
-C  program body starts at line  165
+C  program body starts at line  170
 C
 C  DESCRIPTION:
 C       Computes time stepped gridded biogenic emissions in terms of 
@@ -64,13 +64,17 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
+        CHARACTER*5 BLANK5
         REAL        MICR2G      !  conversion factor:  ug~~>g
         REAL        HA2MSQ      !  hectares to square meters
-        PARAMETER ( MICR2G    = 1.0E-6 ,
-     &              HA2MSQ    = 1.0E4 )
+
+        PARAMETER ( BLANK5    = ' '
+     &            , MICR2G    = 1.0E-6
+     &            , HA2MSQ    = 1.0E4 )
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF   
         INTEGER         ENVINT 
         LOGICAL         ENVYN
         INTEGER         GETDATE
@@ -84,7 +88,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL        ENVINT, ENVYN, GETDATE, GETMENU, GETNUM, 
+        EXTERNAL        CRLF, ENVINT, ENVYN, GETDATE, GETMENU, GETNUM, 
      &                  GETYN, HHMMSS, MMDDYY, PROMPTMFILE, PROMPTFFILE,
      &                  TRIMLEN, WKDAY
 
@@ -220,17 +224,64 @@ C.......   Get input files
             MESG = 'Could not get description of file "' //
      &             M2NAME( 1:TRIMLEN( M2NAME ) ) // '"'
             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+
+        ELSEIF( NROWS3D .NE. NROWS .OR.
+     &          NCOLS3D .NE. NCOLS      ) THEN
+ 
+            WRITE( MESG,94020 )
+     &       'SFCCRO grid dimensions inconsistent with program' //
+     &       CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D, ',',
+     &       NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'TMPBIO', 0, 0, 'Bad input file.', 2 )
+ 
         END IF
+
+C.........  If needed, get other met files and check dimensions
 
         IF ( PARTYPE .NE. 2 ) THEN 
 
-           M3NAME = PROMPTMFILE( 
-     &             'Enter name for 3D METEOROLOGY input file',
-     &             FSREAD3, 'LAYCRO', 'TMPBIO' )
-           GNAME = PROMPTMFILE( 
-     &             'Enter name for 2D GRID PARAMETERS input file',
-     &             FSREAD3, 'SFCGRD', 'TMPBIO' )
+            M3NAME = PROMPTMFILE( 
+     &              'Enter name for 3D METEOROLOGY input file',
+     &              FSREAD3, 'LAYCRO', 'TMPBIO' )
 
+            IF ( .NOT. DESC3( M3NAME ) ) THEN
+                MESG = 'Could not get description of file "' //
+     &                 M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
+                CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+
+            ELSEIF( NROWS3D .NE. NROWS .OR.
+     &              NCOLS3D .NE. NCOLS      ) THEN
+ 
+                WRITE( MESG,94020 )
+     &            'LAYCRO grid dimensions inconsistent with program' //
+     &            CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D,
+     &            ',', NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+                  CALL M3MSG2( MESG )
+                CALL M3EXIT( 'TMPBIO', 0, 0, 'Bad input file.', 2 )
+ 
+            END IF
+
+            GNAME = PROMPTMFILE( 
+     &              'Enter name for 2D GRID PARAMETERS input file',
+     &              FSREAD3, 'SFCGRD', 'TMPBIO' )
+
+            IF ( .NOT. DESC3( GNAME ) ) THEN
+                CALL M3EXIT( 'LAYPOINT', 0, 0,
+     &                      'Could not get description of file "'
+     &                      // GNAME( 1:TRIMLEN( GNAME ) ) // '"', 2 )
+ 
+            ELSEIF( NROWS3D .NE. NROWS .OR.
+     &              NCOLS3D .NE. NCOLS      ) THEN
+ 
+                WRITE( MESG,94020 )
+     &            'SFCGRD grid dimensions inconsistent with program' //
+     &            CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D,
+     &            ',', NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+                  CALL M3MSG2( MESG )
+                CALL M3EXIT( 'TMPBIO', 0, 0, 'Bad input file.', 2 )
+ 
+            END IF
         END IF    ! Use cloud to calculate PAR
 
 C.......   Get default time characteristic for output file:
@@ -494,6 +545,8 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+
+94020   FORMAT( 10 ( A, :, I4, :, 1X ) )
 
 94030   FORMAT( 8X, 'at time ', A8 )
 
