@@ -151,6 +151,7 @@ C.........  Other local variables
         LOGICAL       :: FIRSTIME = .TRUE.   ! true: first time routine called
 
         CHARACTER*16           OUTFMT       ! output format for elevated ASCII
+        CHARACTER*100          EFMT         ! output emissions foamat
         CHARACTER*200          BUFFER       ! source chars buffer
         CHARACTER*300          MESG         ! message buffer
 
@@ -607,8 +608,13 @@ C.................  If current record is new, print out previous value and
 C                   initialize emissions
                 ELSE IF( K .NE. LK ) THEN
                     
-                    IF( ESUM .NE. 0. ) 
-     &                  WRITE( EVDEV, 93090 ) LK, VNAME, ESUM
+                    IF( ESUM .NE. 0. ) THEN 
+
+                        CALL GET_ESUM_FORMAT( VNAME, ESUM, EFMT )
+                        WRITE( EVDEV, EFMT ) LK, VNAME, ESUM
+
+                    END IF
+
                     ESUM = ELEVEMIS( I )
 
 C.................  If current record is for the same plant and stack, sum
@@ -622,8 +628,13 @@ C                   emissions
 
             END DO
 
-C.............  Output for final record
-            IF( ESUM .NE. 0. ) WRITE( EVDEV, 93090 ) K, VNAME, ESUM
+C.............  Output for final record...
+            IF( ESUM .NE. 0. ) THEN
+
+                CALL GET_ESUM_FORMAT( VNAME, ESUM, EFMT )
+                WRITE( EVDEV, 93090 ) K, VNAME, ESUM
+
+            END IF
 
 C.............  After last species, write packet end fields
             IF( VNAME .EQ. EMNAM( NMSPC ) ) THEN
@@ -761,5 +772,55 @@ C----------------------------------------------------------------------
             RETURN
 
             END FUNCTION REMOVE_4DIGIT_YEAR
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram determines the format to output
+C               emission values
+            SUBROUTINE GET_ESUM_FORMAT( VBUF, VAL, FMT )
+
+C.............  Subroutine arguments
+            CHARACTER*(*), INTENT (IN) :: VBUF
+            REAL         , INTENT (IN) :: VAL
+            CHARACTER*(*), INTENT(OUT) :: FMT
+
+C----------------------------------------------------------------------
+
+            IOS = 0
+
+C.............  Value is too large for 
+            IF( VAL .GT. 999999999. ) THEN
+                FMT = '( I10, A10, E10.3 )'
+
+                L = LEN_TRIM( VBUF )
+                WRITE( MESG,94020 ) 'WARNING: "' // VBUF( 1:L ) // 
+     &            '"Emissions value of', ESUM, CRLF()// BLANK10// 
+     &            '" is too large for file format, so writing ' //
+     &            'in scientific notation for source:',
+     &            CRLF() // BLANK10 // ECSRCA( J )
+
+                CALL M3MESG( MESG )
+
+            ELSE IF( VAL .GT. 99999999. ) THEN
+                FMT = '( I10, A10, F10.0 )'
+
+            ELSE IF( VAL .GT. 9999999. ) THEN
+                FMT = '( I10, A10, F10.1 )'
+
+            ELSE IF( VAL .GT. 999999. ) THEN
+                FMT = '( I10, A10, F10.2 )'
+
+            ELSE
+                FMT = '( I10, A10, F10.3 )'
+
+            END IF
+
+            RETURN
+
+94020       FORMAT( 10( A, :, E12.5, :, 1X ) )
+
+            END SUBROUTINE GET_ESUM_FORMAT
+
 
         END SUBROUTINE WMRGELEV
