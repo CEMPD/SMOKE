@@ -1007,8 +1007,7 @@ C.................  Skip blanks that can occur when NGRP > 1
 
 C.................  Read the emissions data in either map format
 C                   or the old format.
-                CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                         1, 1, EBUF, CBUF, 1, EMAC( 1,I )   )
+                CALL RDMAPPOL( NSRC, 1, 1, CBUF, EMAC( 1,I ) )
 
 C...............  If there are any missing values in the data, give an
 C                 error to avoid problems in genhemis routine
