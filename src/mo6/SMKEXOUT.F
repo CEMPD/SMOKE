@@ -9,7 +9,7 @@ C  file.
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, 
      &                     DBSCTITLE, TABCHAR, DBUNIT,
      &                     DBSELFAC
-      USE MODMBSET, ONLY : EMISSIONS, EMISPOS
+      USE MODMBSET, ONLY : EMISSIONS
       
       IMPLICIT NONE
 
@@ -23,20 +23,21 @@ C  file.
       
       EXTERNAL STR2INT, EFPOSITION
       
-      REAL,DIMENSION(24,5),INTENT(IN)  ::  HEF
-      INTEGER,INTENT(IN)               ::  IP
-      INTEGER,INTENT(IN)               ::  IV
-      INTEGER,INTENT(IN)               ::  JDX      
+      REAL,DIMENSION(24,5),INTENT(IN)  ::  HEF  ! gm/mile emission factors
+      INTEGER,INTENT(IN)               ::  IP   ! pollutant
+      INTEGER,INTENT(IN)               ::  IV   ! vehicle type (1 - 28)
+      INTEGER,INTENT(IN)               ::  JDX  ! age
       
-      INTEGER :: IH
-      INTEGER :: IFAC
-      INTEGER :: IVEH
-      INTEGER :: EFTYPE
+      INTEGER :: IH        ! hour
+      INTEGER :: IFAC      ! facility type
+      INTEGER :: IVEH      ! vehicle type (1 - 8)
+      INTEGER :: EFTYPE    ! emission factor type
+      INTEGER :: EMISPOS   ! position in master emission factor array
       
-      REAL :: MILES
-      REAL :: SUMVMT
+      REAL :: MILES        ! hourly miles
+      REAL :: SUMVMT       ! vmt fraction for one of 8 vehicle types
       
-      LOGICAL, SAVE :: INITIAL = .TRUE.
+      LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
       
 C  First time, initialize emission factor array
       IF (INITIAL) THEN

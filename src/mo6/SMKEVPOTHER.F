@@ -8,7 +8,7 @@ C  to the database file.
      &                     ZGMMILE_EVP
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, DBSCTITLE,
      &                     TABCHAR, DBUNIT, DBSELFAC                
-      USE MODMBSET, ONLY : EMISSIONS, EMISPOS
+      USE MODMBSET, ONLY : EMISSIONS
       
       IMPLICIT NONE
 
@@ -22,25 +22,24 @@ C  to the database file.
       
       EXTERNAL STR2INT, EFPOSITION
       
-      INTEGER,INTENT(IN) ::  IEVAP
-      INTEGER,INTENT(IN) ::  IV
-      INTEGER,INTENT(IN) ::  JDX
-      INTEGER,INTENT(IN) ::  IROAD
-      REAL, INTENT(IN)   ::  GRAMS_MI(24)
+      INTEGER,INTENT(IN) ::  IEVAP         ! evap emission process
+      INTEGER,INTENT(IN) ::  IV            ! vehicle type
+      INTEGER,INTENT(IN) ::  JDX           ! age
+      INTEGER,INTENT(IN) ::  IROAD         ! road type
+      REAL, INTENT(IN)   ::  GRAMS_MI(24)  ! gm/mile emission factors
             
       INTEGER :: IP = 1        ! pollutant will always be HC
       INTEGER :: IFAC = 5      ! road type will always be none
       
-      INTEGER :: IH
-      INTEGER :: VTYPE, IVX
-      INTEGER :: EFTYPE, EFX
+      INTEGER :: IH            ! hour
+      INTEGER :: VTYPE, IVX    ! vehicle type and index
+      INTEGER :: EFTYPE, EFX   ! emission factor type and index
+      INTEGER :: EMISPOS       ! position in master emission factor array
       
-      REAL :: MILES
-      REAL :: SUMVMT
+      REAL :: MILES            ! hourly miles
+      REAL :: SUMVMT           ! vmt fraction for one of 8 vehicle types
       
-      REAL :: DUMMY
-      
-      LOGICAL, SAVE :: INITIAL = .TRUE.
+      LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
       
 C  First time, initialize emission factor array
       IF (INITIAL) THEN
