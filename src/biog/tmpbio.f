@@ -92,8 +92,9 @@ C.........  Gridded meteorology data
         REAL, ALLOCATABLE :: TASFC ( :, : )    !  level-1 air  temperature (K)
         REAL, ALLOCATABLE :: PRSFC  ( :, : )    !  pressure (Pa)
         REAL, ALLOCATABLE :: TSOLAR ( :, :)     !  Photosynthetic Active Radiation (PAR)
+        INTEGER, ALLOCATABLE :: SEASON( :, : )  !  Seasonal switch
 
-C.......   Gridded normalized emissions description input from file BGRD
+C.......   Gridded normalized emissions to use in hrbio(s)
 
         REAL, ALLOCATABLE ::  PINE( :, :, : )         !   for pine
         REAL, ALLOCATABLE ::  DECD( :, :, : )         !   for deciduous forest
@@ -104,6 +105,32 @@ C.......   Gridded normalized emissions description input from file BGRD
 
         REAL, ALLOCATABLE ::  AVLAI( :, : )           !  average LAI
         REAL, ALLOCATABLE ::  NORNO( :, :, : )        !  normalized NO emissions
+
+C.......   Gridded winter normalized emissions from BGRDW file 
+
+        REAL, ALLOCATABLE ::  PINEW( :, :, : )     !   for pine
+        REAL, ALLOCATABLE ::  DECDW( :, :, : )     !   for deciduous forest
+        REAL, ALLOCATABLE ::  CONFW( :, :, : )     !   for coniferous forest
+        REAL, ALLOCATABLE ::  AGRCW( :, :, : )     !   for agricultural land
+        REAL, ALLOCATABLE ::  LEAFW( :, :, : )     !   for leaf area
+        REAL, ALLOCATABLE ::  OTHRW( :, :, : )     !   for other land
+
+        REAL, ALLOCATABLE ::  AVLAIW( :, : )      !  average LAI
+        REAL, ALLOCATABLE ::  NORNOW( :, :, :)    !  normalized NO emissions
+
+C........  normalized emissions after seasonal switch 
+
+        REAL, ALLOCATABLE ::  PINES( :, :, : )     !   for pine
+        REAL, ALLOCATABLE ::  DECDS( :, :, : )     !   for deciduous forest
+        REAL, ALLOCATABLE ::  CONFS( :, :, : )     !   for coniferous forest
+        REAL, ALLOCATABLE ::  AGRCS( :, :, : )     !   for agricultural land
+        REAL, ALLOCATABLE ::  LEAFS( :, :, : )     !   for leaf area
+        REAL, ALLOCATABLE ::  OTHRS( :, :, : )     !   for other land
+
+        REAL, ALLOCATABLE ::  AVLAIS( :, : )      !  average LAI
+        REAL, ALLOCATABLE ::  NORNOS( :, :, :)    !  normalized NO emissions
+
+ 
         REAL, ALLOCATABLE ::  MLFAC( :, : )           !  mole factors 
         REAL, ALLOCATABLE ::  MSFAC( :, : )           !  mass factors (tons/hour)
 
@@ -113,13 +140,14 @@ C.......   BEIS2 internal, output species
         REAL, ALLOCATABLE :: EMISL( :, :, : )         ! emissions in moles/hour
         REAL, ALLOCATABLE :: EMISS( :, :, : )         ! emissions in tons/hour
 
-      
+
         CHARACTER*5      CTZONE     ! string of time zone
         CHARACTER*16     RADNAM     !  string for shortwave radiation reaching ground
         CHARACTER*16     TMPRNAM    !  string for temperature 
         CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
         CHARACTER*50  :: LUSE      !  temporary string for land use description
+        CHARACTER*50  :: LUSE2     !  temporary string for 2nd land use desc.
 
 C.......   Name tables for file NNAME
 
@@ -145,6 +173,8 @@ C...........   Logical names and unit numbers
         CHARACTER*16    ENAME   !  logical name for emissions output (moles)
         CHARACTER*16    SNAME   !  logical name for emissions output (mass)
         CHARACTER*16    NNAME   !  logical name for normalized-emissions input
+        CHARACTER*16    NNAME2  !  logical name for 2nd norm emissions input
+        CHARACTER*16    BNAME   !  logical name for frost switch input
         CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
         CHARACTER*16    M3NAME  !  logical name for MET_FILE1
         CHARACTER*16    M2NAME  !  logical name for MET_FILE2
@@ -167,7 +197,8 @@ C...........   Other variables and their descriptions:
         INTEGER         NGRID   ! no. of grid cells
         INTEGER         NLINES  ! no. of lines in GSPRO speciation profiles file  
         INTEGER         NROWS   ! no. of grid rows
-        INTEGER         NSTEPS  !  run duration (hours)
+        INTEGER         NSTEPS  !  duration of met file
+        INTEGER         BSTEPS  ! no. of hourly time steps for output
         INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         RDATE   !  met file 2 start date 
         INTEGER         RTIME   !  met file 2 start time
@@ -175,6 +206,7 @@ C...........   Other variables and their descriptions:
 
         LOGICAL         EFLAG   !  error flag
         LOGICAL ::      SAMEFILE = .TRUE.   ! radiation/cld and tmpr data in same file 
+        LOGICAL ::      SWITCH_FILE = .TRUE.  ! use frost switch file
 
         CHARACTER*300   MESG    !  message buffer for M3EXIT()
 
@@ -265,13 +297,18 @@ C.......   Get the method to calculate PAR
         MESG =  'PAR calculation will ' // PARMENU( PARTYPE )  
         WRITE( LDEV, 92000 ) MESG
 
+C.......   Check to see if frost date switch file to be used
+
+        MESG = 'Using a frost date switch file?'
+        SWITCH_FILE = ENVYN ( 'BIOSW_YN', MESG, .TRUE., IOS )
+
 C.......   Get normalized emissions file, BGRD
 
         NNAME = PROMPTMFILE( 
      &          'Enter name for NORMALIZED EMISSIONS input file',
      &          FSREAD3, 'BGRD', 'TMPBIO' )
 
-C......    Read description of temperature file
+C......    Read description of normalized emissions file
 
         IF ( .NOT. DESC3( NNAME ) ) THEN
 
@@ -283,12 +320,60 @@ C......    Read description of temperature file
 
 C.......   Initialize grid definition 
 
-        CALL CHKGRID( NNAME, 'GRID' , EFLAG )
+        CALL CHKGRID( NNAME, 'GRID' , 0, EFLAG )
 
         NCOLS = NCOLS3D 
         NROWS = NROWS3D
         NGRID = NCOLS3D * NROWS3D
         LUSE  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
+
+        IF ( SWITCH_FILE ) THEN
+
+C.......   Get winter normalized emissions file, BGRDW
+C.......   Note that second normalized file is assumed to be
+C.......   the winter file
+
+           NNAME2 = PROMPTMFILE( 
+     &          'Enter name for winter NORMALIZED EMISSIONS input file',
+     &          FSREAD3, 'BGRDW', 'TMPBIO' )
+
+C......    Read description of second normalized emissions file
+
+           IF ( .NOT. DESC3( NNAME2 ) ) THEN
+
+              MESG = 'Could not get description of file "' //
+     &             NNAME( 1:TRIMLEN( NNAME2 ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+
+           ENDIF
+
+C.......   Initialize grid definition 
+
+           CALL CHKGRID( NNAME2, 'GRID' ,0 , EFLAG )
+
+           LUSE2  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
+
+C.......    Get bioseason switch file, BIOSEASON
+
+           BNAME = PROMPTMFILE( 
+     &          'Enter name for season switch input file',
+     &          FSREAD3, 'BIOSEASON', 'TMPBIO' )
+           
+C......    Read description of switch file
+
+           IF ( .NOT. DESC3( BNAME ) ) THEN
+
+              MESG = 'Could not get description of file "' //
+     &             NNAME( 1:TRIMLEN( BNAME ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+
+           ENDIF
+
+C.......   Initialize grid definition 
+
+           CALL CHKGRID( BNAME, 'GRID' , 0 , EFLAG )
+
+        ENDIF
 C.......   Get temperature file
 
         M3NAME = PROMPTMFILE( 
@@ -321,7 +406,7 @@ C......    Read description of temperature file
  
         ENDIF
 
-        CALL CHKGRID( M3NAME, 'GRID' , EFLAG ) 
+        CALL CHKGRID( M3NAME, 'GRID' , 0 , EFLAG ) 
 
 C........  If grid definition does not match BGRD file then stop
 
@@ -355,7 +440,7 @@ C......    Read description of radiation/cloud file
 
              ENDIF
 
-             CALL CHKGRID( M2NAME, 'GRID' , EFLAG )
+             CALL CHKGRID( M2NAME, 'GRID' , 0 , EFLAG )
 
 C........  If grid definition does not match BGRD file then stop
 
@@ -408,7 +493,8 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
 
         SDATE3D = JDATE
         STIME3D = JTIME
-        MXREC3D = NSTEPS
+        BSTEPS  = NSTEPS
+        MXREC3D = BSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
         TSTEP3D = 10000
@@ -426,7 +512,12 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
         FDESC3D( 4 ) = '/TZONE/ '   // CTZONE
-        FDESC3D( 5 ) = '/LANDUSE/ ' // LUSE
+        IF ( SWITCH_FILE ) THEN
+           FDESC3D( 5 ) = '/LANDUSE/ ' // LUSE // LUSE2
+        ELSE
+           FDESC3D( 5 ) = '/LANDUSE/ ' // LUSE
+        ENDIF
+
         FDESC3D( 6 ) = '/MET SCENARIO/ ' // METSCEN
         FDESC3D( 7 ) = '/CLOUD SCHEME/ ' // CLOUDSHM
 
@@ -435,7 +526,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
      &          FSUNKN3, 'BGTS_L', 'TMPBIO' )
 
         DO M = 1, MSPCS
-            UNITS3D( M ) = 'ton/hr'
+            UNITS3D( M ) = 'tons/hr'
         ENDDO
 
         SNAME = PROMPTMFILE(
@@ -458,7 +549,7 @@ C........  coordinates from GRID_CRO_2D file
      &                      // GNAME( 1:TRIMLEN( GNAME ) ) // '"', 2 )
 
             ENDIF 
-            CALL CHKGRID( GNAME, 'GRID' , EFLAG ) 
+            CALL CHKGRID( GNAME, 'GRID' , 0 , EFLAG ) 
 
 C........  If grid definition does not match BGRD file then stop
 
@@ -514,7 +605,7 @@ C.......   Build name table for variables in normalized emissions file"
         ENDDO
 
 
-C.......   Loops reading the various categories of normalized emissions:
+C.......   Allocate memory for normalized emissions
 
         ALLOCATE( PINE( NCOLS, NROWS, BSPCS-1  ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PINE', PROGNAME )
@@ -536,6 +627,48 @@ C.......   Loops reading the various categories of normalized emissions:
         ALLOCATE( NORNO( NCOLS, NROWS, LUSES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NORNO', PROGNAME )
 
+        IF ( SWITCH_FILE ) THEN
+           ALLOCATE( PINEW( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'PINEW', PROGNAME )
+           ALLOCATE( DECDW( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'DECDW', PROGNAME )
+           ALLOCATE( CONFW( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'CONFW', PROGNAME )
+           ALLOCATE( AGRCW( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'AGRCW', PROGNAME )
+           ALLOCATE( LEAFW( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'LEAFW', PROGNAME )
+           ALLOCATE( OTHRW( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'OTHRW', PROGNAME )
+           ALLOCATE( AVLAIW( NCOLS, NROWS ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'AVLAIW', PROGNAME )
+           ALLOCATE( NORNOW( NCOLS, NROWS, LUSES ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'NORNOW', PROGNAME )
+
+           ALLOCATE( PINES( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'PINEW', PROGNAME )
+           ALLOCATE( DECDS( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'DECDW', PROGNAME )
+           ALLOCATE( CONFS( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'CONFW', PROGNAME )
+           ALLOCATE( AGRCS( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'AGRCW', PROGNAME )
+           ALLOCATE( LEAFS( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'LEAFW', PROGNAME )
+           ALLOCATE( OTHRS( NCOLS, NROWS, BSPCS-1 ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'OTHRW', PROGNAME )
+           ALLOCATE( AVLAIS( NCOLS, NROWS ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'AVLAIW', PROGNAME )
+           ALLOCATE( NORNOS( NCOLS, NROWS, LUSES ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'NORNOW', PROGNAME )
+
+           ALLOCATE( SEASON( NCOLS, NROWS), STAT=IOS )
+           CALL CHECKMEM( IOS, 'SEASON', PROGNAME )
+           SEASON = 0   ! array
+
+        ENDIF
+
+C.......   Loops reading the various categories of normalized emissions:
         I = 0
 
         DO  M = 1, BSPCS - 1
@@ -550,6 +683,16 @@ C.......   Loops reading the various categories of normalized emissions:
      &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
+            IF ( SWITCH_FILE ) THEN
+               IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
+     &                      PINEW( 1, 1, M ) ) ) THEN
+                  MESG = 'Could not read "' // 
+     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  '" from file "' //
+     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+               END IF
+            ENDIF
 
             I = I + 1
 
@@ -561,6 +704,16 @@ C.......   Loops reading the various categories of normalized emissions:
      &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
+            IF ( SWITCH_FILE ) THEN
+               IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
+     &                      DECDW( 1, 1, M ) ) ) THEN
+                  MESG = 'Could not read "' // 
+     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  '" from file "' //
+     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+               END IF
+            ENDIF
 
             I = I + 1
 
@@ -572,6 +725,16 @@ C.......   Loops reading the various categories of normalized emissions:
      &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
+            IF ( SWITCH_FILE ) THEN
+               IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
+     &                      CONFW( 1, 1, M ) ) ) THEN
+                  MESG = 'Could not read "' // 
+     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  '" from file "' //
+     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+               END IF
+            ENDIF
 
             I = I + 1
 
@@ -583,7 +746,17 @@ C.......   Loops reading the various categories of normalized emissions:
      &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
- 
+            IF ( SWITCH_FILE ) THEN
+               IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
+     &                      AGRCW( 1, 1, M ) ) ) THEN
+                  MESG = 'Could not read "' // 
+     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  '" from file "' //
+     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+               END IF
+            ENDIF 
+
             I = I + 1
 
             IF ( .NOT. READ3( NNAME, NORMV( I ), 1, 0, 0,
@@ -594,6 +767,16 @@ C.......   Loops reading the various categories of normalized emissions:
      &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
+            IF ( SWITCH_FILE ) THEN
+               IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
+     &                      LEAFW( 1, 1, M ) ) ) THEN
+                  MESG = 'Could not read "' // 
+     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  '" from file "' //
+     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+               END IF
+            ENDIF
 
             I = I + 1
 
@@ -605,7 +788,16 @@ C.......   Loops reading the various categories of normalized emissions:
      &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
- 
+            IF ( SWITCH_FILE ) THEN
+               IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
+     &                      OTHRW( 1, 1, M ) ) ) THEN
+                  MESG = 'Could not read "' // 
+     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  '" from file "' //
+     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+               END IF
+            ENDIF
 
         ENDDO        !  end loop to read normalized emissions 
 
@@ -614,6 +806,14 @@ C.......   Loops reading the various categories of normalized emissions:
      &              NNAME( 1:TRIMLEN( NNAME ) ) // '"'
             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
         END IF
+        IF ( SWITCH_FILE ) THEN
+           IF ( .NOT. READ3( NNAME2, 'AVLAI', 1, 0, 0, 
+     &                      AVLAIW ) ) THEN
+              MESG = 'Could not read AVLAI from file "' //
+     &              NNAME2( 1:TRIMLEN( NNAME ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+           END IF
+        ENDIF
 
         I = 0
         DO  J = 1, BSPCS
@@ -627,6 +827,17 @@ C.......   Loops reading the various categories of normalized emissions:
      &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
+
+            IF ( SWITCH_FILE ) THEN
+               IF ( .NOT. READ3( NNAME2, NORMN( I ), 1, 0, 0, 
+     &                      NORNOW( 1,1,J ) ) ) THEN
+                  MESG = 'Could not read "' // 
+     &                  NORMN( I )( 1 : TRIMLEN( NORMN( I ) ) ) //
+     &                  '" from file "' //
+     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+               END IF
+            ENDIF
 
         ENDDO        !  end loop reading normalized NO's
 
@@ -666,9 +877,9 @@ C.........  Set up gridded met file(s) dates and times for specific time zone
 
         LDATE = 0     
 
-C.........  Loop thru the number of time steps
+C.........  Loop thru the number of time steps (hourly)
  
-        DO  HR = 1, NSTEPS
+        DO  HR = 1, BSTEPS
 
            EMISL = 0
            EMISS = 0
@@ -676,6 +887,68 @@ C.........  Loop thru the number of time steps
            IF( JDATE .NE. LDATE ) THEN
 
                CALL WRDAYMSG( JDATE, MESG )               
+
+C..........  If new date, read season switch 
+
+               IF ( SWITCH_FILE ) THEN
+                 
+                  MESG = 'Reading gridded season switch data..'  
+                  CALL M3MESG( MESG ) 
+                  IF ( .NOT. READ3( BNAME, 'SEASON', 1, 
+     &                JDATE, 0, SEASON ) ) THEN
+                     MESG = 'Could not read SEASON from file ' //
+     &               BNAME( 1:TRIMLEN( BNAME ) )
+                     CALL M3EXIT( 'TMPBIO', JDATE, 0, MESG, 2 )
+                  END IF
+
+                  MESG = 'Applying gridded season switch data..' 
+                  CALL M3MESG( MESG )
+
+
+                  DO I = 1, NCOLS
+                    DO J = 1, NROWS
+
+C..........   If switch equal to 0 use winter normalized emissions
+
+                       IF ( SEASON ( I, J ) .EQ. 0 ) THEN
+                          DO M = 1, BSPCS - 1
+                             PINES( I, J, M ) = PINEW( I, J, M ) 
+                             DECDS( I, J, M ) = DECDW( I, J, M )
+                             CONFS( I, J, M ) = CONFW( I, J, M )
+                             LEAFS( I, J, M ) = LEAFW( I, J, M )
+                             AGRCS( I, J, M ) = AGRCW( I, J, M )
+                             OTHRS( I, J, M ) = OTHRW( I, J, M )
+                          ENDDO
+
+                          AVLAIS( I, J ) = AVLAIW ( I, J )
+
+                          DO M = 1, BSPCS
+                             NORNOS( I , J , M ) = NORNOW( I, J, M )
+                          ENDDO
+
+                       ELSE
+
+                          DO M = 1, BSPCS - 1
+                             PINES( I, J, M ) = PINE( I, J, M )
+                             DECDS( I, J, M ) = DECD( I, J, M )
+                             CONFS( I, J, M ) = CONF( I, J, M )
+                             LEAFS( I, J, M ) = LEAF( I, J, M )
+                             AGRCS( I, J, M ) = AGRC( I, J, M )
+                             OTHRS( I, J, M ) = OTHR( I, J, M )
+                          ENDDO
+
+                          AVLAIS( I, J ) = AVLAI ( I, J )
+
+                          DO M = 1, BSPCS
+                             NORNOS( I , J , M ) = NORNO( I, J, M )
+                          ENDDO
+
+                       ENDIF
+
+                    ENDDO
+                  ENDDO
+ 
+               ENDIF
 
            ENDIF
 
@@ -714,10 +987,20 @@ C............. Convert shortwave radiation to PAR
 
 C............. Calculate non-speciated emissions
 C............. must pass met date and time here
+
+              IF ( SWITCH _FILE ) THEN
+  
+                 CALL HRBIOS( MDATE, MTIME, NCOLS, NROWS,
+     &                   PINES, DECDS, CONFS, AGRCS, LEAFS, OTHRS,
+     &                   AVLAIS, NORNOS, TASFC, TSOLAR, EMPOL )
+          
+              ELSE 
  
-              CALL HRBIOS( MDATE, MTIME, NCOLS, NROWS,
+                 CALL HRBIOS( MDATE, MTIME, NCOLS, NROWS,
      &                   PINE, DECD, CONF, AGRC, LEAF, OTHR, AVLAI,
      &                   NORNO, TASFC, TSOLAR, EMPOL )
+
+              ENDIF
 
            ELSE        ! Use clouds or clear skies to calculate PAR
 
@@ -741,9 +1024,19 @@ C...............  convert to millibars
 C............. Calculate non-speciated emissions
 C............. must pass met date and time here
 
-              CALL HRBIO( MDATE, MTIME, NCOLS, NROWS, LAT, LON, PRSFC, 
-     &                    TASFC, PINE, DECD, CONF, AGRC, LEAF, OTHR,  
-     &                    AVLAI, NORNO, PARTYPE, EMPOL )
+              IF ( SWITCH_FILE ) THEN
+
+                 CALL HRBIO( MDATE, MTIME, NCOLS, NROWS, LAT, LON,  
+     &                  PRSFC, TASFC, PINES, DECDS, CONFS, AGRCS, 
+     &                  LEAFS, OTHRS, AVLAIS, NORNOS, PARTYPE, EMPOL )
+              ELSE
+ 
+                 CALL HRBIO( MDATE, MTIME, NCOLS, NROWS, LAT, LON,
+     &                  PRSFC, TASFC, PINE, DECD, CONF, AGRC, LEAF,
+     &                  OTHR, AVLAI, NORNO, PARTYPE, EMPOL )
+
+              ENDIF
+
            END IF 
 
 C............. Speciate emissions
