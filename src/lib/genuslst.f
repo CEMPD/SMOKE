@@ -248,7 +248,7 @@ C.....................  Set type of SCC
 C.............  Check if ISIC is allocated.  
 C.............  If it is, generate unique list of SICs, and generate list of
 C               where which SCCs go with which SICs
-            IF( ALLOCATED( ISIC ) ) THEN
+            IF( ASSOCIATED( ISIC ) ) THEN
 
 C.................  Initialize SIC sorting index     
                 DO S = 1, NSRC
@@ -317,7 +317,7 @@ C.................  Create unique SIC list
 
 C.............  Check if CMACT is allocated.  
 C.............  If it is, generate unique list of MACT codes
-            IF( ALLOCATED( CMACT ) ) THEN
+            IF( ASSOCIATED( CMACT ) ) THEN
 
 C.................  Initialize MACT sorting index     
                 DO S = 1, NSRC

@@ -117,8 +117,8 @@ C               was already generated.
             END IF
 
 C.............  Set flags indicating which source category is being processed
-            PFLAG = ALLOCATED( ISIC )
-            MFLAG = ALLOCATED( CMACT )
+            PFLAG = ASSOCIATED( ISIC )
+            MFLAG = ASSOCIATED( CMACT )
 
 C.............  Check length of SCC string
             L = LEN( TSCC )

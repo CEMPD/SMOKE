@@ -392,7 +392,7 @@ C               may be needed for reading day- and hour-specific data
 
             CASE( 'POINT' )
  
-                IF( UFLAG .AND. .NOT. ALLOCATED( ISIC ) ) THEN
+                IF( UFLAG .AND. .NOT. ASSOCIATED( ISIC ) ) THEN
                     ALLOCATE( ISIC( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
                 END IF
@@ -455,7 +455,7 @@ C               may be needed for reading day- and hour-specific data
 C.................  Do not deallocate plant description in case needed for
 C                   point sources report.
                 IF( .NOT. PFLAG .AND. 
-     &              .NOT. AFLAG .AND. ALLOCATED( ISIC ) ) 
+     &              .NOT. AFLAG .AND. ASSOCIATED( ISIC ) ) 
 !     &              DEALLOCATE( ISIC, IDIU, IWEK, XLOCA, YLOCA, 
 !     &                          STKHT, STKDM, STKTK, STKVE )
      &              DEALLOCATE( ISIC, XLOCA, YLOCA, 
