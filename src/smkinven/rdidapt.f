@@ -278,7 +278,12 @@ C.............   Allocate memory for line segments if not already done
             
 C................  Compute the number of segments - different depending on 
 C                  whether pollutant or activity
-		NSEG = 37
+                IF ( FIXED ) THEN
+		    NSEG = 37
+                ELSE
+                    NSEG = 10
+                END IF
+                
                 DO V = 1, NVAR
                     J = DATPOS( V )
                     IF( INVSTAT( J ) .EQ. 1 ) NSEG = NSEG + NPPOL
@@ -331,7 +336,24 @@ C................  Initialize fixed-format field positions
 C.............  Separate line into parts for list format
 	    ELSE
             
-                CALL PARSLINE( LINE, NSEG, SEGMENT )
+                SEGMENT(  1 ) = ADJUSTL( LINE (   1:2   ) )  ! state
+                SEGMENT(  2 ) = ADJUSTL( LINE (   3:5   ) )  ! county
+                SEGMENT(  3 ) = ADJUSTL( LINE (   6:20  ) )  ! plant ID
+                SEGMENT(  4 ) = ADJUSTL( LINE (  21:35  ) )  ! point ID
+                SEGMENT(  5 ) = ADJUSTL( LINE (  36:47  ) )  ! stack ID
+                SEGMENT(  6 ) = ADJUSTL( LINE (  48:53  ) )  ! DOE plant ID
+                SEGMENT(  7 ) = ADJUSTL( LINE (  54:59  ) )  ! boiler ID
+                SEGMENT(  8 ) = ADJUSTL( LINE (  60:61  ) )  ! segment ID
+                SEGMENT(  9 ) = ADJUSTL( LINE (  62:101 ) )  ! plant descr.
+                SEGMENT( 10 ) = ADJUSTL( LINE ( 102:111 ) )  ! SCC code
+                
+                FCID = SEGMENT( 3 )
+                PTID = SEGMENT( 4 )
+                SKID = SEGMENT( 5 )
+                SGID = SEGMENT( 8 )
+                
+                SEGMENT( 11 ) = ADJUSTL( LINE ( 112:118 ) )  ! activity #1
+                SEGMENT( 12 ) = ADJUSTL( LINE ( 119:131 ) )  ! activity #2
                 
             END IF
             
@@ -350,7 +372,7 @@ C..............  Set the default temporal resolution of the data
 	    TPF = MTPRFAC * WKSET
             
 C..............  Perform unit conversions on input data
-
+	    IF ( FIXED ) THEN
 C.............  Read stack height and convert units
             CALL READ_REAL( 4, IREC, .TRUE., LINE( 120:123 ), 
      &                      'stack height' , HT, EFLAG )
@@ -408,11 +430,17 @@ C.............  Read stack longitude and correct hemisphere if necessary
             CALL READ_REAL( 9, IREC, .FALSE., LINE( 240:248 ), 
      &                      'longtiude' , LON, EFLAG )
             IF( WFLAG .AND. LON .GT. 0 ) LON = -LON
-
+	    
+            END IF
 C.............  Make sure that all of the needed real values are real...
 
 C.............  Emissions or activity and associated data
-	    K = 37
+            IF ( FIXED ) THEN
+	        K = 37
+            ELSE
+                K = 10
+            END IF
+            
             DO V = 1, NVAR
             
               J = DATPOS( V )
@@ -533,7 +561,12 @@ C.............  Store source characteristics if dimension is okay
                 CPDESCA ( SS ) = SEGMENT( 9 )
             END IF
             
-            K = 37
+            IF ( FIXED ) THEN
+                K = 37
+            ELSE
+                K = 10
+            END IF
+            
             DO V = 1, NVAR
             
                 ES = ES + 1
