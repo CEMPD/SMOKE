@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, RDEV, NCPE, PYEAR,
+        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, NCPE, PYEAR,
      &                       ENAME, MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
 
 C***********************************************************************
@@ -62,9 +62,11 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL   ENVYN
         INTEGER   GETEFILE
+        INTEGER   INDEX1
+        INTEGER   PROMPTFFILE
         REAL      YR2DAY
 
-        EXTERNAL  ENVYN, GETEFILE, YR2DAY
+        EXTERNAL  ENVYN, GETEFILE, INDEX1, PROMPTFFILE, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -72,7 +74,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV   ! file unit no. for tmp ALW file
-        INTEGER     , INTENT (IN) :: RDEV   ! file unit no. for output report
         INTEGER     , INTENT (IN) :: NCPE   ! no. of control packet entries
         INTEGER     , INTENT (IN) :: PYEAR  ! projected year, or missing
         CHARACTER*16, INTENT (IN) :: ENAME  ! logical name for i/o api 
@@ -105,7 +106,7 @@ C...........   Local allocatable arrays
 
         CHARACTER(LEN=STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
 
-C.........  Local arrays
+C.........   Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
 
         CHARACTER(LEN=IOVLEN3)  OUTNAMES( NVCMULT,6 ) ! var names
@@ -119,6 +120,7 @@ C...........   Other local variables
         INTEGER          IOS      ! input/output status
         INTEGER          NGRP     ! number of reporting groups
         INTEGER          PIDX     ! previous IDX
+        INTEGER          RDEV     ! Report unit number
         INTEGER          SCCBEG   ! begining of SCC in CSOURC string
         INTEGER          SCCEND   ! end of SCC in CSOURC string
 
@@ -158,6 +160,13 @@ C   begin body of subroutine GENMULTC
 C.........  Get environment variables that control program behavior
         MESG = 'Use annual or ozone season emissions'
         LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+
+C.........  Open reports file
+        RPTDEV( 1 ) = PROMPTFFILE( 
+     &                'Enter logical name for MULTIPLICATIVE ' //
+     &                'CONTROLS REPORT',
+     &                .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
+        RDEV = RPTDEV( 1 )
 
 C.........  Allocate index to reporting groups
         ALLOCATE( GRPINDX( NSRC ), STAT=IOS )
@@ -364,6 +373,7 @@ C             AREA sources, rule penetration.
 
               SELECT CASE( CATEGORY )
 
+C.............  Area sources...
               CASE( 'AREA' )
 
               IF ( .NOT. READ3( ENAME, OUTNAMES(I,4), 1, 0, 0, 
@@ -381,6 +391,14 @@ C             AREA sources, rule penetration.
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,6), PROGNAME )
               END IF
 
+C.............  Mobile sources...
+              CASE( 'MOBILE' ) 
+
+              CTLEFF = 0.   ! array
+              RULEFF = 0.   ! array
+              RULPEN = 0.   ! array
+
+C.............  Point sources...
               CASE( 'POINT' )
 
               IF ( .NOT. READ3( ENAME, OUTNAMES(I,3), 1, 0, 0, 
@@ -394,6 +412,10 @@ C             AREA sources, rule penetration.
               END IF
 
               RULPEN = 100.0  ! array
+
+              CASE DEFAULT
+                  MESG = 'Case ' // CATEGORY // ' not supported.'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
               END SELECT      ! end select on category
 
@@ -693,9 +715,6 @@ C.............  Write multiplicative controls for current pollutant
 
 C.........  Write out controlled facilities report for point sources
         IF( APPLFLAG ) THEN
-            WRITE( RDEV, 93000 ) 
-            WRITE( RDEV, 93000 ) REPEAT( '-', 80 )
-
             WRITE( RDEV, 93000 ) 'Processed as '// CATDESC// ' sources'
             IF ( PYEAR .GT. 0 ) THEN
                 WRITE( RDEV, 93390 ) 'Projected inventory year ', PYEAR
