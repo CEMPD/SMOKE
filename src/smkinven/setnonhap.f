@@ -40,16 +40,17 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC 
+        USE MODSOURC, ONLY: POLVAL, IPOSCOD, NPCNT, CSOURC
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: INVSTAT, MXIDAT, INVDNAM, INVDVTS,
+     &                      ITMSPC, ITEXPL
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: LNONHAP
         
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NCHARS, NEM
 
         IMPLICIT NONE
 
@@ -234,7 +235,7 @@ C                       subtract toxic emissions from criteria values
                     IF( LASTFLAG ) THEN
 
 C.........................  Format information for this source
-                        CALL FMTCSRC( CSOURC( I ), 7, BUFFER, L2 )
+                        CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
                 
 C.........................  Give warning if source has toxics but no criteria
                         IF( VOCPOS == 0 .AND. FNDVOC ) THEN
