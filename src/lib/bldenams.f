@@ -82,7 +82,7 @@ C.........  Area source variable name parameters
      &                  RULEFFRT, RULPENRT /
 
         CHARACTER(LEN=IOULEN3) ARUNITS( NARPPOL3 )
-        DATA ARUNITS / 'ton/yr', 'ton/day', 
+        DATA ARUNITS / 'tons/yr', 'tons/day', 
      &                 'SCC units', '%', '%', '%' /
 
         INTEGER ARTYPES( NARPPOL3 )
@@ -102,7 +102,7 @@ C.........  Mobile source variable name parameters
         DATA MBPREFIX / OZNSEART /
 
         CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
-        DATA MBUNITS / 'ton/yr', 'ton/day' /
+        DATA MBUNITS / 'tons/yr', 'tons/day' /
 
         INTEGER MBTYPES( NMBPPOL3 )
         DATA MBTYPES / M3REAL, M3REAL /
@@ -116,7 +116,7 @@ C.........  Point source variable name parameters
      &                  EMISFCRT, CECOD1RT, CECOD2RT /
 
         CHARACTER(LEN=IOULEN3) PTUNITS( NPTPPOL3 )
-        DATA PTUNITS / 'ton/yr', 'ton/day', '%', '%',
+        DATA PTUNITS / 'tons/yr', 'tons/day', '%', '%',
      &                 'SCC units', 'n/a', 'n/a' /
 
         INTEGER PTTYPES( NPTPPOL3 )
@@ -216,10 +216,12 @@ C.........  Build output names
                 OUTUNITS( I,1 ) = MBUNITS ( 1 )          
                 OUTTYPES( I,1 ) = MBTYPES ( 1 )           
                 OUTDESCS( I,1 ) = MBDESCS ( 1 )
-                OUTNAMES( I,2 ) = MBPREFIX( 2 ) // ABRNAMA( I )( 1:L )
-                OUTUNITS( I,2 ) = MBUNITS ( 2 )          
-                OUTTYPES( I,2 ) = MBTYPES ( 2 )           
-                OUTDESCS( I,2 ) = MBDESCS ( 2 )
+                DO J = 2, NPPOA
+                    OUTNAMES( I,2 ) = MBPREFIX( 2 )//ABRNAMA( I )( 1:L )
+                    OUTUNITS( I,2 ) = MBUNITS ( 2 )          
+                    OUTTYPES( I,2 ) = MBTYPES ( 2 )           
+                    OUTDESCS( I,2 ) = MBDESCS ( 2 )
+                ENDDO
 
             CASE( 'POINT' )
 
