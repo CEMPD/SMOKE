@@ -178,7 +178,7 @@ C.........  Logical names and unit numbers
 
 C.........  Other variables
         REAL            CFAC, DDX, DDY, DX, DY, SFAC, VAL
-        REAL            X0, XMIN, XMAX, Y0, YMIN, YMAX
+        REAL            X0, XMIN, XMAX, Y0, YMIN, YMAX, XX, YY
         REAL            MEANVAL      ! Mean of criterion output values
         REAL            MINVAL       ! Min non-zero of criterion output values
         REAL            MINDIFF      ! Minimum difference between src and mean
@@ -189,7 +189,7 @@ C.........  Other variables
         INTEGER         CELLNUM, RN, SCNT, TSTEP, XN, YN
         INTEGER         EMMTHD       ! method of sorting based on emissions
         INTEGER         ENDSRC       ! Ending source count for output
-        INTEGER         FIP, PLANT, SCC, SIC, STACK  ! Temporary vars
+        INTEGER         FIP, PLANT, SCC, SIC, SID, STACK  ! Temporary vars
         INTEGER         INCSRC       ! Increment for processing sources
         INTEGER         IOS          ! I/O status
         INTEGER         JDATE, JTIME ! Current date and time
@@ -653,8 +653,21 @@ C.........  Create pointer based on cell or on source parameters
                 ENDIF
             
             ELSEIF( METHOD .EQ. 2 ) THEN
-           
-                IF( ( FIP   .EQ. IFIP  ( J ) .OR. FIP   .EQ. 0 ) .AND.
+                IF( MOD( FIP,1000 ) .EQ. 0 ) THEN
+
+                    SID = ( IFIP( J ) / 1000 ) * 1000 
+
+                    IF( (FIP   .EQ. SID         .OR. FIP   .EQ. 0) .AND.
+     &                  (SIC   .EQ. ISIC  ( J ) .OR. SIC   .EQ. 0) .AND.
+     &                  (SCC   .EQ. ISCC  ( J ) .OR. SCC   .EQ. 0) .AND.
+     &                  (PLANT .EQ. IPLANT( J ) .OR. PLANT .EQ. 0) .AND.
+     &                  (STACK .EQ. ISTACK( J ) .OR. STACK .EQ. 0)) THEN
+                        ICNT = ICNT + 1
+                        EINX( ICNT ) = J
+                    ENDIF
+
+                ELSEIF
+     &            ( ( FIP   .EQ. IFIP  ( J ) .OR. FIP   .EQ. 0 ) .AND.
      &              ( SIC   .EQ. ISIC  ( J ) .OR. SIC   .EQ. 0 ) .AND.
      &              ( SCC   .EQ. ISCC  ( J ) .OR. SCC   .EQ. 0 ) .AND.
      &              ( PLANT .EQ. IPLANT( J ) .OR. PLANT .EQ. 0 ) .AND.
@@ -893,10 +906,17 @@ C.....................  Loop over list of sources
 
                         IF( METHOD .NE. 1 ) THEN  ! not cell selection
 
-                            XNUM( I ) = INT(DDX * 
-     &                                  ( XLOCA( EINX( I ) ) -X0 ) ) + 1
-                            YNUM( I ) = INT(DDY * 
-     &                                  ( YLOCA( EINX( I ) ) -Y0 ) ) + 1
+                            XX = DDX * ( XLOCA( EINX( I ) ) -X0 )
+                            YY = DDY * ( YLOCA( EINX( I ) ) -Y0 )
+
+                            IF( XX .GT. 0 .AND. YY .GT. 0 ) THEN
+                                XNUM( I ) = INT( XX ) + 1
+                                YNUM( I ) = INT( YY ) + 1
+                            ELSE
+                                XNUM( I ) = INT( XX )
+                                YNUM( I ) = INT( YY )
+                            ENDIF
+
                         ELSE
 
                             XNUM( I ) = XN
@@ -906,8 +926,10 @@ C.....................  Loop over list of sources
 
                         CELLNUM = ( YNUM( I )-1 )*NCOLS + XNUM( I )
 
-                        IF( CELLNUM .LE. 0     .OR. 
-     &                      CELLNUM .GT. NGRID      ) THEN
+                        IF( XNUM( I ) .LE. 0     .OR. 
+     &                      XNUM( I ) .GT. NCOLS .OR.
+     &                      YNUM( I ) .LE. 0     .OR.
+     &                      YNUM( I ) .GT. NROWS      ) THEN
 
                             GSTATE( I ) = 'OUTSIDE'
                             GO TO 44
@@ -1005,8 +1027,8 @@ C.........  Loop over list of sources and output details
         DO 88 I = 1, NOUT
             S = EINX( I )
 
-            L1 = LBLANK( CPLANT( S ) )
-            L2 = LBLANK( CSTACK( S ) )
+            L1 = LBLANK( CPLANT( S ) ) + 1
+            L2 = LBLANK( CSTACK( S ) ) + 1
             CPLT = CPLANT( S )( L1:TRIMLEN( CPLANT( S ) ) )
             CSTK = CSTACK( S )( L2:TRIMLEN( CSTACK( S ) ) )
             L1 = TRIMLEN( CPLT )
@@ -1123,7 +1145,7 @@ C.............  Write out time dependent emissions
 
 77          CONTINUE
 
-            IF( LAYRFLAG ) THEN
+            IF( LAYRFLAG .AND. GSTATE( I ) .NE. 'OUTSIDE' ) THEN
 
 C.................  Write out header for layer fractions
                 WRITE( ODEV, 93060 ) MMDDYY( SDATE ), 
