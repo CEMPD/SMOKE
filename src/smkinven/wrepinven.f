@@ -38,6 +38,9 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
+C...........   This module is the inventory arrays
+        USE MODSOURC
+        
 C.........  This module contains the information about the source category
         USE MODINFO
         
@@ -58,9 +61,10 @@ C...........   INCLUDES
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+	INTEGER		FIND1
 	INTEGER		INDEX1
         
-        EXTERNAL	INDEX1
+        EXTERNAL	FIND1, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -74,11 +78,16 @@ C...........   Local variables
         CHARACTER(LEN=SCCLEN3)  SCC
         CHARACTER(LEN=IOVLEN3)  DNAME
         CHARACTER(LEN=SDSLEN3)	SCCDC
+        CHARACTER(LEN=SCCLEN3)  PSCC
         
-        INTEGER		I, J, K, L
+        INTEGER		I, J, K, L, S, IOS
         INTEGER		STATE
         INTEGER		NFIPS
         INTEGER		POLL
+        INTEGER		PFIP
+        
+        INTEGER, ALLOCATABLE :: ASSIGNED( : )
+        INTEGER, ALLOCATABLE :: UNASSIGN( : )
         
         REAL		VALCHECK
         REAL		DIFF
@@ -159,9 +168,12 @@ C.........  Write out second report to REPINVEN file
           
           VALCHECK = EMISBYCAS( K ) * ITFACA( J )
           DIFF = VALCHECK - EMISBYPOL( I )
-          IF( ABS( DIFF ) .GT. 0.000001 ) THEN
-            MESG = 'EMISBYCAS * ITFACA is not equal to EMISBYPOL.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 1 )
+          IF( ABS( DIFF ) .NE. 0.0 ) THEN
+            WRITE( MESG, 94020 )
+     &         'WARNING: Summed emissions for pollutant, ',
+     &         ITNAMA( J ), ', differ from factored emissions '//
+     &         'by ', DIFF
+            CALL M3MESG( MESG )
           END IF
 
           WRITE( ADEV, 93060 ) SORTCAS( I ), EMISBYCAS( K ),
@@ -175,14 +187,33 @@ C.........  Write out second report to REPINVEN file
         WRITE( ADEV, 93000 ) ' '
         
 
-C.........  The next two reports are only created when area
+C.........  The next four reports are only created when area
 C           to point allocation is occuring
        
         IF( ALLOCATED( REPAR2PT ) ) THEN
         
           CALL RDSCCDSC( CDEV )
-        
+          
 C.........  Write out third report to REPINVEN file
+
+	  WRITE( ADEV, 93000 ) ' SCCs in area-to-point factors '//
+     &           'file not found in the inventory:'
+          WRITE( ADEV, 93000 ) ' '
+          
+          DO I = 1, NA2PSCC
+          
+            K = INDEX1( A2PSCC( I ), NINVSCC, INVSCC )
+            IF( K .LE. 0 ) THEN
+              WRITE( ADEV, 93130 ) A2PSCC( I )
+            END IF
+            
+          END DO
+          
+          WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+          WRITE( ADEV, 93000 ) ' '
+          WRITE( ADEV, 93000 ) ' '
+        
+C.........  Write out fourth report to REPINVEN file
 
 	  WRITE( ADEV, 93070 ) 'SCC Code', 'Data Name',
      &         'FIPS count', 'Emissions before', 'Emissions after',
@@ -236,7 +267,7 @@ C.........  Write out third report to REPINVEN file
           WRITE( ADEV, 93000 ) ' '
           WRITE( ADEV, 93000 ) ' '
         
-C.........  Write out fourth report to REPINVEN file
+C.........  Write out fifth report to REPINVEN file
 
 	  WRITE( ADEV, 93100 ) 'State', 'SCC Code', 'Data Name',
      &         'FIPS count', 'Emissions before', 'Emissions after',
@@ -277,6 +308,55 @@ C.........  Write out fourth report to REPINVEN file
           WRITE( ADEV, 93000 ) ' ' 
         
         
+C.........  Write out sixth report to REPINVEN file
+
+	  WRITE( ADEV, 93140 ) 'FIPS count'
+	  WRITE( ADEV, 93150 ) 'SCC Code', 'Assigned',
+     &         'Unassigned', 'SCC Description'
+          WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+          
+          ALLOCATE( ASSIGNED( NINVSCC ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'ASSIGNED', PROGNAME )
+          ALLOCATE( UNASSIGN( NINVSCC ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'UNASSIGN', PROGNAME )
+          ASSIGNED = 0
+          UNASSIGN = 0
+          
+          PFIP = 99999
+          PSCC = '9999999999'
+          
+          DO S = 1, NSRC
+          
+            IF( IFIP( S ) .EQ. PFIP .AND. CSCC( S ) .EQ. PSCC ) CYCLE
+            
+            J = INDEX1( CSCC( S ), NA2PSCC, A2PSCC )
+            IF( J .GT. 0 ) THEN
+            
+              K = INDEX1( CSCC( S ), NINVSCC, INVSCC )
+              IF( XLOCA( S ) .GT. AMISS3 .AND. 
+     &             YLOCA( S ) .GT. AMISS3 ) THEN
+                ASSIGNED( K ) = ASSIGNED( K ) + 1
+              ELSE
+                UNASSIGN( K ) = UNASSIGN( K ) + 1
+              END IF
+              
+            END IF
+            
+            PFIP = IFIP( S )
+            PSCC = CSCC( S )
+            
+          END DO
+          
+          DO I = 1, NINVSCC
+          
+            WRITE( ADEV, 93160 ) INVSCC( I ), ASSIGNED( I ),
+     &             UNASSIGN( I ), SCCDESC( I )
+     
+          END DO
+          
+          WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+     
+     
         END IF
           
         RETURN
@@ -291,7 +371,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( 32X, A11 )
 
-93030   FORMAT( 1X, A8, 4X, A1, 7X, I5, 4X, F16.10, 4X, A40 )
+93030   FORMAT( 1X, A8, 4X, A1, 2X, I10, 4X, F16.10, 4X, A40 )
 
 93040	FORMAT( 1X, A8, 6X, A13, 4X, A6, 2X, A9, 13X, A14, 4X,
      &          A16, 28X, A15 )
@@ -317,7 +397,17 @@ C...........   Formatted file I/O formats............ 93xxx
 93120	FORMAT( 1X, I2.2, 4X, A10, 4X, A16,4X, I3, 4X, F16.10, 4X,
      &          F16.10, 4X, A )
      
+93130	FORMAT( 1X, A10 )
+
+93140	FORMAT( 20X, A10 )
+
+93150	FORMAT( 1X, A8, 4X, A8, 2X, A10, 4X, A15 )
+
+93160	FORMAT( 1X, A10, I10, 2X, I10, 4X, A )
+     
 94010	FORMAT( 10( A, :, A8, :, 1X ) )
+
+94020	FORMAT( A, :, A16, :, A, :, F16.10 )
 
 
 
