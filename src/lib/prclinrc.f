@@ -434,6 +434,7 @@ C.............  Reset all packet-specific settings
             INPACKET   = .FALSE.
             INGROUP    = .FALSE.
             INREPORT   = .FALSE.
+            INSPCIFY   = .FALSE.
 
             GRP_LABEL  = ' '
 
@@ -484,6 +485,7 @@ C.............  Specification processing
 
 C.............  Determine how many conditions appear for this line
             J = NSEGS
+            I = 0
             DO
                 I = I + 1
                 J = J - 4              ! three fields plus AND

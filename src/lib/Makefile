@@ -13,7 +13,7 @@ include $(ETDSRC)/modmake.inc
 FILES_A = \
   applumat.o   evalcrit.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
-  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o \
+  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o   blkorcmt.o \
   alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o  \
   alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
   alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
@@ -30,7 +30,7 @@ FILES_C = \
   bldcsrc.o    fillchrt.o   getiname.o   parscsrc.o   rdsconv.o    wrchrscc.o \
   bldenams.o   fillctbl.o   getinvyr.o   rdcodnam.o   wrdaymsg.o   wridaout.o \
   fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
-  fillmtbl.o   rdsprof.o    \
+  fillmtbl.o   rdsprof.o    prclinrc.o   rmcommnt.o   rdorsdsc.o \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
   fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
 
@@ -138,6 +138,8 @@ rdinvchr.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ rdinvchr.f
 rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
+rdorsdsc.o : $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ rdorsdsc.f
 rdpelv.o : $(MODINFO) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ rdpelv.f
 rdsccdsc.o : $(MODLISTS)

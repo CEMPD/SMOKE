@@ -55,20 +55,21 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS:
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
+        INTEGER         GETNLIST
         INTEGER         INDEX1
         INTEGER         JUNIT
         INTEGER         LBLANK
         INTEGER         STR2INT
         REAL            STR2REAL
 
-        EXTERNAL        CHKINT, CHKREAL, INDEX1, JUNIT, LBLANK, STR2INT, 
-     &                  STR2REAL
+        EXTERNAL        CHKINT, CHKREAL, GETNLIST, INDEX1, JUNIT, 
+     &                  LBLANK, STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER         FDEV   ! unit number of input point sources file
 
 C...........   Other local variables
-        INTEGER         CSS, I, K, L, L1  ! counters and indices
+        INTEGER         CSS, I, K, L, L1, L2, N  ! counters and indices
 
         INTEGER         AT     ! tmp mobile area type
         INTEGER         CYID   ! tmp county ID
@@ -134,9 +135,10 @@ C.........  Loop through lines of file
 
 C............. Determine if the file is list format
             L1 = INDEX( LINE, 'INVYEAR' )
+            L2 = INDEX( LINE, 'DATERANGE' )
 
 C.............  Found INVYEAR packet, so list format
-            IF( L1 .GT. 0 ) THEN
+            IF( L1 .GT. 0 .OR. L2 .GT. 0 ) THEN
                 GETFORMT = LSTFMT
                 EXIT           ! To rewind and return
             END IF
@@ -161,6 +163,12 @@ C................  Check if format is provided as a header entry
                 L = INDEX( LINE, 'EPS2' )
                 IF( L .GT. 0 ) THEN
                     GETFORMT = EPSFMT
+                    EXIT ! To end inner loop
+                END IF
+
+                L = INDEX( LINE, 'CEM' )
+                IF( L .GT. 0 ) THEN
+                    GETFORMT = CEMFMT
                     EXIT ! To end inner loop
                 END IF
 
@@ -452,6 +460,15 @@ C.....................  Try day-specific emissions file
                     EXIT           ! To rewind and return
                 ENDIF
 
+            END IF
+
+C.............  Determine if file is CEM list-formatted file by trying to
+C               read in all fields and only all fields with list format
+            L = LEN_TRIM( LINE )
+            N = GETNLIST( L, LINE )
+            IF ( N .EQ. 11 ) THEN
+                GETFORMT = CEMFMT
+                EXIT       ! To rewind and return
             END IF
 
 C.............  Attempt to open LINE as file name
