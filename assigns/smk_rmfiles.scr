@@ -42,8 +42,15 @@ endif
 
 ## For Smkinven and Grwinven output files
 #
+set import_aveinv = Y
+if ( $?IMPORT_AVEINV_YN ) then 
+   if ( $IMPORT_AVEINV_YN == N ) then
+       set import_aveinv = N
+   endif
+endif
+
 set inmap = ' '
-if ( $RUN_SMKINVEN == 'Y' && $RUN_PART1 == 'Y' ) then
+if ( $RUN_SMKINVEN == 'Y' && $RUN_PART1 == 'Y' && $import_aveinv != N ) then
    if ( $SMK_SOURCE == 'A' ) then
       set inmap = $AREA
    endif
@@ -68,7 +75,7 @@ if ( $RUN_GRWINVEN == 'Y' && $RUN_PART1 == 'Y' ) then
    endif
 endif
 
-if ( ( $RUN_SMKINVEN == Y || $RUN_GRWINVEN == Y ) && $RUN_PART1 == Y ) then
+if ( ( $RUN_SMKINVEN == Y || $RUN_GRWINVEN == Y ) && $RUN_PART1 == Y && $import_aveinv != N ) then
    foreach f ( $inmap )
      set dataflag = n
      if ( -e $f ) then       

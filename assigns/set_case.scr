@@ -28,7 +28,7 @@ if ( $?SMK_FUTURE_YN ) then
           setenv MSCEN   ${MSCEN}_${fyr2}
           setenv PSCEN   ${PSCEN}_${fyr2}
           setenv ESCEN   ${ESCEN}_${fyr2}
-          setenv FYIOP   ${INVOP}_${fyr2}
+          setenv FYIOP   ${FYIOP}_${fyr2}
           setenv EF_YEAR $FYEAR
 
       else
@@ -54,7 +54,7 @@ if ( $?SMK_CONTROL_YN ) then
           setenv MSCEN   ${MSCEN}_${CNTLCASE}
           setenv PSCEN   ${PSCEN}_${CNTLCASE}
           setenv ESCEN   ${ESCEN}_${CNTLCASE}
-          setenv FYIOP   ${INVOP}_${CNTLCASE}
+          setenv FYIOP   ${FYIOP}_${CNTLCASE}
 
       else
 

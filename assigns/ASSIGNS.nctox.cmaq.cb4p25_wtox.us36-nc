@@ -243,6 +243,7 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv NPROJREP $REPSTAT/nprojrep.$ASCEN.rpt
    setenv NREACREP $REPSTAT/nreacrep.$ASCEN.rpt
    setenv NCSUMREP $REPSTAT/ncsumrep.$ASCEN.rpt
+   setenv NCTLWARN $REPSTAT/nctlwarn.$ASCEN.txt
    setenv NROAD_O  $INVOPD/nroad.map.$FYINV.txt
    setenv NRINV_O  $ARDAT/nrinv.$FYINV.ida.txt
 endif
@@ -390,6 +391,7 @@ endif
       setenv APROJREP $NPROJREP 
       setenv AREACREP $NREACREP
       setenv ACSUMREP $NCSUMREP
+      setenv ACTLWARN $NCTLWARN
       setenv AREA_O   $NROAD_O 
       setenv ARINV_O  $NRINV_O 
    endif
