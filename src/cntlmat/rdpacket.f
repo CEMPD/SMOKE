@@ -50,11 +50,12 @@ C...........   INCLUDES
          INCLUDE 'CPKTDAT.EXT'   !  control packet contents
 
 C...........   EXTERNAL FUNCTIONS:
+        LOGICAL       CHKREAL
         CHARACTER*2   CRLF
 	INTEGER       STR2INT
         REAL          STR2REAL
 
-        EXTERNAL      CRLF, STR2INT, STR2REAL
+        EXTERNAL      CHKREAL, CRLF, STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS:
         INTEGER        , INTENT (IN) :: FDEV      ! in file unit number
@@ -111,15 +112,25 @@ C.........  Process the line of data, depending on packet type
             PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
             PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
             PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
-            PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
+
+C.........  Check to see if last column is blank. If blank, then
+C           set PKTINFO%FAC4 = -9 and issue warning.
+            IF ( SEGMENT( 7 ) .EQ. ' ' ) THEN
+               PKTINFO%FAC4 = -9
+               WRITE( MESG, 94020 ) 'RACT value missing from CTG' 
+     &         // ' packet record at line', IREC
+               CALL M3WARN( PROGNAME, 0, 0, MESG )
+            ELSE
+               PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
+            END IF
 
         CASE( 'CONTROL' )
             PKTINFO%TSCC =           SEGMENT( 2 )
             PKTINFO%CPOL =           SEGMENT( 3 )
-            PKTINFO%CPRI = STR2INT ( SEGMENT( 4 ))
-            PKTINFO%FAC1 = STR2REAL( SEGMENT( 5 ) )
-            PKTINFO%FAC2 = STR2REAL( SEGMENT( 6 ) )
-            PKTINFO%FAC3 = STR2REAL( SEGMENT( 7 ) )
+            PKTINFO%FAC1 = STR2INT ( SEGMENT( 4 ))
+            PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
+            PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
+            PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
             PKTINFO%CSIC =           SEGMENT( 8 )
             PKTINFO%PLT  =           SEGMENT( 9 )
             PKTINFO%CHAR1=           SEGMENT( 10 )
@@ -141,6 +152,14 @@ C.........  Process the line of data, depending on packet type
             PKTINFO%CHAR3=           SEGMENT( 11 )
             PKTINFO%CHAR4=           SEGMENT( 12 )
             PKTINFO%CHAR5=           SEGMENT( 13 )
+
+C.........  Check to see if both CAP and REPLACE are missing. If so, issue
+C           a warning.
+            IF ( PKTINFO%FAC2 .LT. 0 .AND. PKTINFO%FAC3 .LT. 0) THEN
+               WRITE( MESG, 94020 ) 'Neither CAP or REPLACE defined'
+     &         // ' in allowable packet record at line', IREC
+               CALL M3WARN( PROGNAME, 0, 0, MESG )
+            END IF
 
         CASE( 'ADD' )
             PKTINFO%TSCC =           SEGMENT( 2 )
@@ -207,6 +226,7 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+94020   FORMAT( A, I8 )
 
         END SUBROUTINE RDPACKET
 

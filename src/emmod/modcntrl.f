@@ -83,7 +83,9 @@
         INTEGER, PUBLIC :: NVCMULT = 0  ! number of multultiplicative variables
         INTEGER, PUBLIC :: NVCADD  = 0  ! number of additive variables
 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: VNAMMULT( : ) ! mult
+        LOGICAL, ALLOCATABLE, PUBLIC :: PCTLFLAG( :,: ) ! control flags
+
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMMULT( : ) ! mult
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: VNAMADD ( : ) ! add
 
 !.........  Multiplicative control matrices, dim n*src, mxpolpgp

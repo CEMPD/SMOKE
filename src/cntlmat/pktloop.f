@@ -1,6 +1,6 @@
 
-        SUBROUTINE PKTLOOP( FDEV, CPYEAR, NPACKET, ACTION, ENAME, 
-     &                      PKTCNT, PKTBEG, PKTLIST, XRFCNT )
+        SUBROUTINE PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
+     &                      ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -65,17 +65,25 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS:
 
         INTEGER     , INTENT(IN) :: FDEV      ! control packets file unit no.
+        INTEGER     , INTENT(IN) :: ADEV      ! file unit no. for tmp ADD file
+        INTEGER     , INTENT(IN) :: CDEV      ! file unit no. for tmp CTL file 
+        INTEGER     , INTENT(IN) :: GDEV      ! file unit no. for tmp CTG file
+        INTEGER     , INTENT(IN) :: LDEV      ! file unit no. for tmp ALW file
         INTEGER     , INTENT(IN) :: CPYEAR    ! year to project to
-        INTEGER     , INTENT(IN) :: NPACKET   ! number of valid packets
         CHARACTER(*), INTENT(IN) :: ACTION    ! action to take for packets 
         CHARACTER(*), INTENT(IN) :: ENAME     ! inventory file name 
         INTEGER     , INTENT(IN) :: PKTCNT(  NPACKET ) ! count of packet recs
         INTEGER     , INTENT(IN) :: PKTBEG ( NPACKET ) ! 1st line of pkt in file
-        CHARACTER(*), INTENT(IN) :: PKTLIST( NPACKET ) ! packet names 
         INTEGER , INTENT(IN OUT) :: XRFCNT ( NPACKET ) ! count of x-ref recs
 
 C...........   Derived type local variables
         TYPE ( CPACKET ) PKTINFO     ! packet information
+
+C...........   Logical names and unit numbers
+        INTEGER         ADEV         ! unit # for additive indices tmp file
+        INTEGER         CDEV         ! unit # for control indices tmp file
+        INTEGER         GDEV         ! unit # for CTG indices tmp file
+        INTEGER         LDEV         ! unit # for allowable indices tmp file
 
 C...........   Other local variables
         INTEGER         I, J, K      ! counters and indices
@@ -249,7 +257,8 @@ C.................  Group cross-reference information for current packet
 
 C.................  Match controls to sources and pollutants, as needed for 
 C                   each packet type
-                CALL PROCPKTS( CPYEAR, PKTLIST( K ), ENAME, OFLAG )
+                CALL PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR, 
+     &                         PKTLIST( K ), ENAME, OFLAG )
 
             END IF  ! End process section
 

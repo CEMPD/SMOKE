@@ -1,6 +1,6 @@
 
-        SUBROUTINE ALOCPKTS( FDEV, INYEAR, NPACKET, PKTLIST, CPYEAR, 
-     &                       PKTCNT, PKTBEG, XRFCNT )
+        SUBROUTINE ALOCPKTS( FDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
+     &                       XRFCNT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -68,13 +68,18 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   SUBROUTINE ARGUMENTS:
 
         INTEGER     , INTENT (IN) :: FDEV      ! in file unit number
-        INTEGER     , INTENT (IN) :: INYEAR    ! year to project from
-        INTEGER     , INTENT (IN) :: NPACKET   ! number of valid packets
-        CHARACTER(*), INTENT (IN) :: PKTLIST( NPACKET ) ! packet names 
+        INTEGER     , INTENT (IN) :: INYEAR    ! year to project from 
         INTEGER     , INTENT(OUT) :: CPYEAR    ! year to project to
         INTEGER     , INTENT(OUT) :: PKTCNT( NPACKET ) ! count of packet recs
         INTEGER     , INTENT(OUT) :: PKTBEG( NPACKET ) ! 1st line of pkt in file
         INTEGER     , INTENT(OUT) :: XRFCNT( NPACKET ) ! count of x-ref entries
+
+C...........   Logical names and unit numbers
+
+        INTEGER         ADEV      ! file unit no. for tmp ADD file
+        INTEGER         CDEV      ! file unit no. for tmp CTL file
+        INTEGER         GDEV      ! file unit no. for tmp CTG file
+        INTEGER         LDEV      ! file unit no. for tmp ALW file
 
 C...........   Other local variables
 
@@ -319,8 +324,8 @@ C           find SIC NE 0 and SCC EQ 0, and expand the memory requirements
 C           accordingly.
 
         ACTION = 'COUNT'
-        CALL PKTLOOP( FDEV, CPYEAR, NPACKET, ACTION, BLANK5, PKTCNT, 
-     &                PKTBEG, PKTLIST, XRFCNT )
+        CALL PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
+     &                ACTION, BLANK5, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Rewind file
         REWIND( FDEV )
@@ -392,7 +397,7 @@ C.............  If packet is not recognized, return
 C.............  Otherwise, continue...
 
 C.............  Check for year information...
-            L = L1 + LEN_TRIM( PKTLIST( PKTIDX ) )
+            L = L1 + LEN_TRIM( PKTLIST( PKTIDX ) ) + 1
             IF( L2 .GT. L ) THEN
 
                 READ( LINE( L+1:L2 ), *, IOSTAT=IOS ) SYEAR, OUTYEAR

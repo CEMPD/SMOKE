@@ -1,5 +1,6 @@
 
-        SUBROUTINE PROCPKTS( CPYEAR, PKTTYP, ENAME, SFLAG )
+        SUBROUTINE PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR,
+     &                       PKTTYP, ENAME, SFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -29,7 +30,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -74,7 +75,11 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   SUBROUTINE ARGUMENTS:
 
-        INTEGER     , INTENT (IN) :: CPYEAR    ! year to project to
+        INTEGER     , INTENT (IN) :: ADEV      ! file unit no. for tmp ADD file
+        INTEGER     , INTENT (IN) :: CDEV      ! file unit no. for tmp CTL file 
+        INTEGER     , INTENT (IN) :: GDEV      ! file unit no. for tmp CTG file
+        INTEGER     , INTENT (IN) :: LDEV      ! file unit no. for tmp ALW file
+        INTEGER     , INTENT (IN) :: CPYEAR    ! year to project to 
         CHARACTER(*), INTENT (IN) :: PKTTYP    ! packet type
         CHARACTER(*), INTENT (IN) :: ENAME     ! inventory file name
         LOGICAL     , INTENT(OUT) :: SFLAG     ! true: at least one packet done
@@ -83,16 +88,19 @@ C.........  Reshaped inventory pollutants and associated variables
         INTEGER         NGRP                ! number of pollutant groups 
         INTEGER         NGSZ                ! number of pollutants per group 
         INTEGER               , ALLOCATABLE:: IPSTAT ( : )   ! pol status (0|1)
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: EINAM2D( :,: ) 
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: EINAM2D( :,: )
 
 C...........   Other local variables
 
         INTEGER         I, J, K, L, L1, L2, N      ! counters and indices
 
-        INTEGER         IOS       ! i/o error status
+        INTEGER         IOS                   ! i/o error status
+        INTEGER         VIDXMULT( NIPPA )     ! pollutant flags
 
         LOGICAL       :: EFLAG    = .FALSE.   ! error flag
         LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
+        LOGICAL       :: OFLAG(NPACKET) = .FALSE.   ! true: tmp file has not
+                                                    ! been opened
 
         CHARACTER*5     CPOS        ! tmp sorted position of pol
         CHARACTER*300   LINE        ! read buffer for a line
@@ -176,8 +184,21 @@ C                   iteration
 
             END IF
 
+C.................  Create array for names of pollutants that receive controls
+                ALLOCATE( PNAMMULT( NIPPA ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PNAMMULT', PROGNAME )
+
+C.................  Create array of flags indicating which controls are
+C                   applied to each pollutant receiving at least one type
+C                   of control
+                ALLOCATE( PCTLFLAG( NIPPA, 4 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PCTLFALG', PROGNAME )
+
 C.............  Initialize pollutant indictor to zero
-            IPSTAT = 0   ! Array
+            IPSTAT = 0          ! Array
+
+C.............  Initialize control flags to false
+            PCTLFLAG = .FALSE.  ! Array
  
 C.............  Loop through the pollutant groups...
 
@@ -203,50 +224,68 @@ C.................  Write message stating the pollutants are being processed
                 CASE( 'CTG' )
 
                     CTGIDX = 0   ! array
+                    VIDXMULT = 0 ! array
                     CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
      &                             IPSTAT, CTGIDX )
 
-C STOPPED HERE: Need to write these routines
-
-c                    CALL UPDATE_POLLIST( NVCMULT, VNAMMULT )
-c                    CALL OPENCTMP( PKTTYP, GDEV )
-c                    CALL WRCTMP  ( GDEV, NSRC, NGSZ, ?? )
+                    CALL UPDATE_POLLIST( N, NGSZ, CTGIDX,
+     &                                   VIDXMULT, 2 )
+                    IF ( .NOT. OFLAG(1) ) THEN
+                       CALL OPENCTMP( PKTTYP, GDEV )
+                       OFLAG(1) = .TRUE.
+                    END IF
+                    CALL WRCTMP( GDEV, N, NGSZ, CTGIDX, VIDXMULT )
 
                     SFLAG = .TRUE.
 
                 CASE( 'CONTROL' )
 
                     CTLIDX = 0   ! array
+                    VIDXMULT = 0 ! array
                     CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
      &                             IPSTAT, CTLIDX )
 
-c                    CALL UPDATE_POLLIST( NVCMULT, VNAMMULT )
-c                    CALL OPENCTMP( PKTTYP, CDEV )
-c                    CALL WRCTMP  ( CDEV, NSRC, NGSZ, CTLIDX )
+                    CALL UPDATE_POLLIST( N, NGSZ, CTLIDX,
+     &                                   VIDXMULT, 1 )
+                    IF ( .NOT. OFLAG(2) ) THEN
+                       CALL OPENCTMP( PKTTYP, CDEV )
+                       OFLAG(2) = .TRUE.
+                    END IF
+                    CALL WRCTMP( CDEV, N, NGSZ, CTLIDX, VIDXMULT )
 
                     SFLAG = .TRUE.
 
                 CASE( 'ALLOWABLE' )
 
                     ALWIDX = 0   ! array
+                    VIDXMULT = 0 ! array
                     CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
      &                             IPSTAT, ALWIDX )
 
-c                    CALL UPDATE_POLLIST( NVCMULT, VNAMMULT )
-c                    CALL OPENCTMP( PKTTYP, LDEV )
-c                    CALL WRCTMP  ( LDEV, NSRC, NGSZ, ALWIDX )
+                    CALL UPDATE_POLLIST( N, NGSZ, ALWIDX,
+     &                                   VIDXMULT, 3 )
+                    IF ( .NOT. OFLAG(3) ) THEN
+                       CALL OPENCTMP( PKTTYP, LDEV )
+                       OFLAG(3) = .TRUE.
+                    END IF
+                    CALL WRCTMP( LDEV, N, NGSZ, ALWIDX, VIDXMULT )
 
                     SFLAG = .TRUE.
 
                 CASE( 'ADD' )
 
                     ADDIDX = 0   ! array
+                    VIDXMULT = 0 ! array
                     CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
      &                             IPSTAT, ADDIDX )
 
-c                    CALL UPDATE_POLLIST( NVCADD, VNAMADD )
-c                    CALL OPENCTMP( PKTTYP, ADEV )
-c                    CALL WRCTMP  ( ADEV, NSRC, NGSZ, ADDIDX )
+c                    CALL UPDATE_POLLIST( N, NGSZ, ADDIDX,
+c     &                                   VIDXMULT, 4 )
+c                    IF ( .NOT. OFLAG(4) ) THEN
+c                       CALL OPENCTMP( PKTTYPE, ADEV )
+c                       OFLAG(4) = .TRUE.
+c                    END IF
+c                    CALL WRCTMP( ADEV, N, NGSZ, ADDIDX, VIDXMULT )
 
                     SFLAG = .TRUE.
 
@@ -256,13 +295,20 @@ c                    CALL WRCTMP  ( ADEV, NSRC, NGSZ, ADDIDX )
 
         END SELECT   ! End select on pol-specific packet or not
 
+C...........   Rewind tmp files
+
+        REWIND( ADEV )
+        REWIND( CDEV )
+        REWIND( GDEV )
+        REWIND( LDEV )
+
         RETURN
        
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93000   FORMAT( A )
+93000  FORMAT( A )
 
 C...........   Internal buffering formats............ 94xxx
 
@@ -270,5 +316,68 @@ C...........   Internal buffering formats............ 94xxx
 
 C STOPPED HERE:  Need to add UPDATE_POLLIST to maintain the lists of 
 C       variable names for the mult control matrix and addative control matrix
-        
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+        CONTAINS
+
+C.............  This internal subprogram flags pollutants that have any
+C               controls applied.
+            SUBROUTINE UPDATE_POLLIST( IGRP, NGSZ, IDX,
+     &                                 VIDX, CFLG )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN) :: IGRP            ! pollutant group
+            INTEGER     , INTENT (IN) :: NGSZ            ! # pollutants/group
+            INTEGER     , INTENT (IN) :: IDX(NSRC,NGSZ)  ! index to data tables
+            INTEGER , INTENT (IN OUT) :: VIDX(NIPOL)     ! pollutant flags
+            INTEGER     , INTENT (IN) :: CFLG            ! control flag
+
+C.............  Local variables
+            INTEGER   I,K,S   ! counters and indices
+            LOGICAL   ::      SRCLOOP= .TRUE.   ! true: pollutant 'I' does not
+                                                ! have controls applied
+
+
+C----------------------------------------------------------------------
+
+C.............  Initialize counters and indices
+        K = 0
+
+C.............  Loop through all pollutants in the current group
+        DO I = 1,NGSZ
+
+           SRCLOOP = .TRUE.
+           S = 0
+           K = NGSZ*IGRP - NGSZ + I  ! compute index to master pollutant
+                                     ! list for current pollutant
+
+C.............  For current pollutant, loop through sources until a source with
+C               controls is encountered. Terminate loop when all sources have
+C               been examined.            
+           DO WHILE( SRCLOOP .AND. S .LT. NSRC )
+
+              S = S + 1
+              IF ( IDX(S,I) .GT. 0 ) SRCLOOP = .FALSE.  ! controls encountered,
+                                                        ! exit source loop
+           END DO  ! end source loop
+
+C.............  Check to see if current pollutant has controls applied
+           IF ( SRCLOOP ) THEN       ! no controls
+              VIDX(K) = 0
+           ELSE                      ! controls
+              NVCMULT  = NVCMULT + 1
+              VIDX(K)  = 1
+              PCTLFLAG( NVCMULT, CFLG ) = .TRUE.
+              PNAMMULT( NVCMULT ) = EINAM( K )
+           END IF
+
+        END DO  ! end pollutant group loop
+
+        RETURN
+
+        END SUBROUTINE UPDATE_POLLIST
+
+C----------------------------------------------------------------------
+
        END SUBROUTINE PROCPKTS

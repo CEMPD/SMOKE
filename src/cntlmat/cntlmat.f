@@ -68,16 +68,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        INTEGER     , PARAMETER :: NPACKET = 6
-
         CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
-        CHARACTER*20, PARAMETER :: PKTLIST( NPACKET ) = 
-     &                          (  / 'CTG                 ',
-     &                               'CONTROL             ',
-     &                               'ALLOWABLE           ',
-     &                               'ADD                 ',
-     &                               'REACTIVITY          ',
-     &                               'PROJECTION          '  / )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -95,8 +86,12 @@ C...........   Allocatable local arrays
         LOGICAL, ALLOCATABLE :: TFLAG( : )  !  flags:  track these sources
 
 C...........   Logical names and unit numbers
+        INTEGER         ATMPDEV      !  file unit no. for tmp ADD file
         INTEGER         CDEV         !  control file unit no.
+        INTEGER         CTMPDEV      !  file unit no. for tmp CTL file
+        INTEGER         GTMPDEV      !  file unit no. for tmp CTG file
         INTEGER         LDEV         !  log file unit no.
+        INTEGER         LTMPDEV      !  file unit no. for tmp ALW file
         INTEGER         RDEV         !  report file unit no.
         INTEGER         SDEV         !  ASCII part of inventory unit no.
         INTEGER         TDEV         !  tracking file unit no.
@@ -229,8 +224,7 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
 C.........  Allocate memory for control packet information in input file.
-        CALL ALOCPKTS( CDEV, SYEAR, NPACKET, PKTLIST, CPYEAR, PKTCNT, 
-     &                 PKTBEG, XRFCNT )
+        CALL ALOCPKTS( CDEV, SYEAR, CPYEAR, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Set the flags that indicate which packets are valid
         GFLAG = ( PKTCNT( 1 ) .GT. 0 )
@@ -250,19 +244,21 @@ C           each packet type while determining the pollutants to use in opening
 C           the final output files.
 
         ACTION = 'PROCESS'
-        CALL PKTLOOP( CDEV, CPYEAR, NPACKET, ACTION, ENAME, 
-     &                PKTCNT, PKTBEG, PKTLIST, XRFCNT )
+        CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, CPYEAR,
+     &                ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
 C..........  Process control matrices that depend on pollutants...
 
 C.........  Multiplicative matrix
         IF( CFLAG .OR. GFLAG .OR. LFLAG ) THEN
 
-C..............  Open control matrix
-C            CALL OPENCMAT( ENAME, NPOLMULT, 'MULTIPLICATIVE', PNAMMULT )
+C.........  Open control matrix
+            CALL OPENCMAT( ENAME, 'MULTIPLICATIVE', MNAME )
 
-C            CALL GENMULTC( )  ! Post-processes temporary packet index by source
-C                                files
+C.........  Write-out control matrix
+            CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, 
+     &                     PKTCNT(2), ENAME, MNAME, CFLAG, GFLAG,
+     &                     LFLAG )
 
 C STOPPED HERE: Need to write opencmat, genmultc, genaddc, report post-processor
         END IF
