@@ -29,15 +29,16 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	echo GRWINVEN \(debug\):
 	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
 
-RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o	\
-	gethdr.o getpdinfo.o initinfo.o \
-	openinvin.o openinvout.o openpdout.o procinven.o rdcempd.o \
-	rdemspd.o rdepspd.o rdgrdapi.o \
-	rdinvsrcs.o rdlooppd.o smkinven.o \
-	srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
-	setnonhap.o rdsrcidaar.o rdsrcntiar.o rddataidaar.o rdinvdata.o rddatantiar.o \
-	procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
-	rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o
+RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
+        gethdr.o getpdinfo.o initinfo.o \
+        openinvin.o openinvout.o openpdout.o procinven.o rdcempd.o \
+        rdemspd.o rdepspd.o rdgrdapi.o \
+        rdinvsrcs.o rdlooppd.o smkinven.o \
+        srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
+        setnonhap.o rdsrcidaar.o rdsrcntiar.o rddataidaar.o rdinvdata.o rddatantiar.o \
+        procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
+        rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
+        rddataemsar.o
 #	 
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
