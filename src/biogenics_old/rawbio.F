@@ -2,7 +2,7 @@
         PROGRAM RAWBIO
 
 C***********************************************************************
-C  program body starts at line  205
+C  program body starts at line  206
 C
 C  DESCRIPTION:
 C       Computes normalized gridded biogenic emissions in terms of gridded
@@ -120,7 +120,7 @@ C.......   Source-level variables
         REAL    AOTH, AGRS, AWTF, ALAI, SUMLAI, AVGLAI
         REAL    BUTME, BUTMN, EUTME, EUTMN
         REAL    XCELSZ, YCELSZ, XCOOR, YCOOR, XX, YY
-        REAL    FRAC( 15 ), DWIDTH, DHEIGHT
+        REAL    FRAC( 100 ), DWIDTH, DHEIGHT
         INTEGER UTMZONE, ZONE
 
 
@@ -153,6 +153,7 @@ C.......   Surrogate indices
         INTEGER         FSRG    !  for forest
         INTEGER         GSRG    !  for grasslands
         INTEGER         WSRG    !  for grasslands
+        INTEGER         MXSRG   !  maximum of all of the above
 
 C.......   Gridded normalized emissions description output to file BGRD
 
@@ -305,7 +306,7 @@ C.......   Set up file description and open emissions file:
 
         ENAME = PROMPTMFILE(  
      &          'Enter logical name for NORMALIZED BIO output file',
-     &          FSUNKN3, 'BNORM', 'RAWBIO' )
+     &          FSUNKN3, 'BGRD', 'RAWBIO' )
 
 
 C.......   Get surrogate categories for each emissions type:
@@ -316,23 +317,37 @@ C.......   Get surrogate categories for each emissions type:
         DSRG = GETNUM( 1, 15, 1, 
      &         'Enter surrogate index for deciduous forest' )
 
+        MXSRG = MAX( PSRG, DSRG )
+
         CSRG = GETNUM( 1, 15, 1, 
      &         'Enter surrogate index for coniferous forest' )
+
+        MXSRG = MAX( MXSRG, CSRG )
 
         FSRG = GETNUM( 1, 15, 1, 
      &         'Enter surrogate index for all forest' )
 
+        MXSRG = MAX( MXSRG, FSRG )
+
         ASRG = GETNUM( 1, 15, 1, 
      &         'Enter surrogate index for agriculture' )
+
+        MXSRG = MAX( MXSRG, ASRG )
 
         GSRG = GETNUM( 1, 15, 1, 
      &         'Enter surrogate index for grasslands' )
 
+        MXSRG = MAX( MXSRG, GSRG )
+
         WSRG = GETNUM( 1, 15, 1, 
      &         'Enter surrogate index for wetlands' )
 
+        MXSRG = MAX( MXSRG, WSRG )
+
         OSRG = GETNUM( 1, 15, 1, 
      &         'Enter surrogate index for other land uses' )
+
+        MXSRG = MAX( MXSRG, OSRG )
 
 
 C.......   Loop:  read emission factor file
@@ -1032,7 +1047,7 @@ c sl     &                   'Bad EUTMN placement in SURROGATE file', 2 )
      &          XCOOR,
      &          YCOOR,
      &          ZONE,
-     &        ( FRAC(K), K = 1, 15 )
+     &        ( FRAC(K), K = 1, MXSRG )
             LINE = LINE + 1
 
             IF ( ISTAT .NE. 0 ) THEN
@@ -1166,7 +1181,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( 4 F10.0, I10, 2F10.0 )
 
-93030   FORMAT( I5, 2F10.0, I10, 15F10.4 )    ! sl For surrogate data
+93030   FORMAT( I5, 2F10.0, I10, 100F10.4 )    ! sl For surrogate data
 
 
 C...........   Internal buffering formats............ 94xxx
