@@ -2,7 +2,7 @@
         PROGRAM SRGGRID
 
 C***********************************************************************
-C  program body starts at line 138
+C  program body starts at line 178
 C
 C  DESCRIPTION:
 C       Construct by-FIP and sum-total gridded files containing data from
@@ -13,7 +13,7 @@ C       Sorted, cut-down input data for surrogate coeffs.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
-C       FIND1, FIND2, FIND3, GETYN, PROMPTFFILE, PROMPTMFILE, TRIMLEN
+C       FIND1, GETYN, PROMPTFFILE, PROMPTMFILE, TRIMLEN
 C
 C  REVISION  HISTORY:
 C       Prototype  9/96 by CJC.
@@ -55,22 +55,29 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER         FIND1, FIND2, FIND3
-        INTEGER         GETMENU, GETNUM
+        CHARACTER*2     CRLF
+        LOGICAL         DSCGRID
+        INTEGER         FIND1
+        INTEGER         GETMENU
+        INTEGER         GETNUM
         LOGICAL         GETYN
+        INTEGER         LBLANK
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        LOGICAL         DSCGRID
+        INTEGER         STR2INT
+        REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL  DSCGRID, FIND1, FIND2, FIND3, GETMENU, GETNUM, GETYN,
-     &            PROMPTFFILE, PROMPTMFILE, TRIMLEN
+        EXTERNAL  CRLF, DSCGRID, FIND1, GETMENU, GETNUM, GETYN, LBLANK,
+     &            PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   PARAMETERS:
 
-        INTEGER         NRMAX                   !  max # of surrogate records
-        PARAMETER     ( NRMAX = 275 000 )
+        INTEGER          NRMAX                  !  max # of surrogate records
+        CHARACTER*5      BLANK5
+        PARAMETER     (  NRMAX = 275 000
+     &                 , BLANK5= ' '     )
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -92,37 +99,60 @@ C...........   Surrogate-cell::FIPS tables (unsorted; sorted and processed)
         INTEGER     INDXA( NRMAX )        !  subscripts for sorti1()
         INTEGER     CELLA( NRMAX )        !  cell number,        before sorting
         INTEGER     FIPSA( NRMAX )        !  FIP code,           before sorting
-        INTEGER     SIDSA( NRMAX )        !  surrogate ID,       before sorting
+        INTEGER     SSCSA( NRMAX )        !  surrogate ID,       before sorting
         REAL        FRACA( NRMAX )        !  surrogate fraction, before sorting
 
         INTEGER     CELL( NRMAX )        !  cell number,        before sorting
         INTEGER     FIPS( NRMAX )        !  FIP code,           before sorting
-        INTEGER     SIDS( NRMAX )        !  surrogate ID,       before sorting
+        INTEGER     SSCS( NRMAX )        !  surrogate ID,       before sorting
         REAL        FRAC( NRMAX )        !  surrogate fraction, before sorting
 
 C...........   Output grids:
 
         REAL            GRID( NGRID, NASRG )
 
-C...........   Other local variables
+C...........   Logical names and unit numbers
 
-        REAL            SRG
-        INTEGER         FIP, STA, SSC, SID, CID
-        INTEGER         LFIP, LSTA
-        INTEGER         COL,  ROW
-        INTEGER         LO, HI
-        INTEGER         JDATE, JTIME
-        INTEGER         CHOICE, LOLIST, HILIST
-        INTEGER         C, S, F, J, K, N  !  counters, subscripts
+        INTEGER         LDEV    !  log-device
         INTEGER         SDEV    !  for surrogate coeff file
         INTEGER         TDEV    !  for surrogate total file
-        INTEGER         LDEV    !  log-device
+
+        CHARACTER*16    GNAME   !  logical name for grid matrix     output file
+
+C...........   Other local variables
+
+        REAL            DDX, DDY                !  inverse of cell widths
+        REAL            SRG
+        REAL            SRGT( NASRG )
+        REAL            X1, X2, Y1, Y2, XC, YC  !  surrogate file header
+        REAL            XOFF, YOFF              !  surrogate offsets from grid
+        REAL            XX, YY                  !  cell number or l-l position
+
+        INTEGER         C, S, F, J, K, N, V  !  counters, subscripts
+        INTEGER         CHOICE
+        INTEGER         COL,  ROW
+        INTEGER         FIP, STA, SSC, SID, CID
+        INTEGER         HCOL, HROW              !  surrogate hdr cols and rows
+        INTEGER         JDATE, JTIME
         INTEGER         IOS     !  I/O status
         INTEGER         IREC    !  input line (record) number
+        INTEGER         L1, L2
+        INTEGER         LFIP, LSTA
+        INTEGER         LO, HI
+        INTEGER         LOLIST, HILIST
+        INTEGER         NSRG    !  Count of srgts in EPS2 srgts
+        INTEGER         NVAROUT !  Number of output surrogates
+        INTEGER         SSCT ( NASRG )
+        INTEGER         VINDX( NASRG )
+
         LOGICAL         EFLAG   !  input error flat
         LOGICAL         TFLAG   !  iff totals file provided
-        CHARACTER*16    GNAME   !  logical name for grid matrix     output file
+
+        CHARACTER*5     FFORMAT !  temporary indicator for input formats
         CHARACTER*16    SCRBUF
+        CHARACTER*16    NAME, VNAME( NASRG )
+        CHARACTER*80    DESC, VDESC( NASRG )
+        CHARACTER*256   LINE    !  input buffer 
         CHARACTER*256   MESG
 
         CHARACTER*72    MENU( 3 )
@@ -131,6 +161,16 @@ C...........   Other local variables
      &  '... for all counties in a selected STATE',	!  choice 2
      &  '... for a selected COUNTY in a selected STATE'	!  choice 3
      &  /
+
+C...........   STATEMENT FUNCTIONS:
+C.......   floating point "unequal" -- true iff
+C.......   | P - Q | > 1e-5 * sqrt( p*p + q*q + 1e-5 )
+ 
+        REAL            P, Q
+        LOGICAL         FLTERR
+        FLTERR( P, Q ) =
+     &  ( (P - Q)**2  .GT.  1.0E-10*( P*P + Q*Q + 1.0E-5 ) )
+
 
 C***********************************************************************
 C   begin body of program SRGGRID
@@ -143,9 +183,20 @@ C   begin body of program SRGGRID
      &  'file and the SURROGATE TOTAL BY FIP file, and produce gridded',
      &  'SURROGATE TOTAL and SURROGATE BY-FIPS file.', 
      &  ' ',
-     &  'NOTE: the EMS95 surrogate cross reference file must have',
-     &  '      been sorted by FIP (state/county) and SURROGATE codes',
-     &  '      prior to program execution.',
+     &  'NOTE: If the EPS2.0 surrogate coefficient file is used, it',
+     &  '      must use the ZONE field of the header line (line 1,',
+     &  '      columns 41-50) to indicate the number of surrogates',
+     &  '      in the file, and each surrogates column must be',
+     &  '      compatible with an f10.8 format.  In addition, SMOKE',
+     &  '      permits the x-cell and y-cell numbers to be used in',
+     &  '      place of the (x,y) coordinates.',
+     &  ' ',
+     &  'NOTE: The EMS95-formatted surrogates file refers to a',
+     &  '      format created by writing the SAS srgratio.ssd EMS95',
+     &  '      file to an ASCII file.  The file format is delimited',
+     &  '      columns of surrogate ID code, state code, county code,',
+     &  '      grid column number, grid row number, and surrogate',
+     &  '      fraction, in 59 columns or less.',
      &  ' '
         WRITE( *,92000 ) 
      &  'You will need to enter the logical names for the input and',
@@ -191,85 +242,222 @@ C.......   to put into file header:
 
         END IF                  ! if dscgrid() failed
 
-        FTYPE3D = GRDDED3
-        SDATE3D = 0
-        STIME3D = 10000
-        TSTEP3D = 10000
-        NVARS3D = NASRG
-        NLAYS3D = 1
-        GDNAM3D = GRDNM
-        VGTYP3D = IMISS3
-        VGTOP3D = BADVAL3
-        FDESC3D( 1 ) = 'Area-Source gridding surrogates, by FIP'
-        FDESC3D( 2 ) = 
-     &  'First record is totals, SUM_fip( surg( fip )*tot( fip ) )'
-        FDESC3D( 3 ) = 
-     &  'Other records are FIP-specific gridded surrogate fractions'
-        FDESC3D( 4 ) = 
-     &  'with the FIPS in consecutive sorted order.'
 
-        DO  11   K = 5, MXDESC3
-            FDESC3D( K ) = ' '
-11      CONTINUE
+C........  Determine input format of gridding surrogates file
+C........  For EPS2 format, treat 1st line as header line, and QA file
+C........  For Lat-lon grids, header will be irrelevant, but can't check either
+ 
+        FFORMAT = 'EPS2'
+        READ( SDEV, 93000, END=27, IOSTAT=IOS ) LINE
+ 
+        IF( TRIMLEN( LINE ) .LT. 60 ) THEN  ! EMS-95 format
+ 
+            FFORMAT = 'EMS95'
+            NSRG    = 1
+            REWIND( SDEV )
+ 
+        ELSE                                ! EPS2   format
+ 
+            IREC = IREC + 1
+ 
+            IF( GDTYP3D .NE. LATGRD3 ) THEN
+ 
+                X1  = STR2REAL( LINE(  1:10 ) )
+                Y1  = STR2REAL( LINE( 11:20 ) )
+                X2  = STR2REAL( LINE( 21:30 ) )
+                Y2  = STR2REAL( LINE( 31:40 ) )
+                NSRG= STR2INT ( LINE( 41:50 ) )
+                XC  = STR2REAL( LINE( 51:60 ) )
+                YC  = STR2REAL( LINE( 61:70 ) )
+ 
+                IF( XC .EQ. 0 ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                   'XCELL is zero in SURROGATE file header', 2 )
+ 
+                ELSEIF( YC .EQ. 0 ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                   'YCELL is zero in SURROGATE file header', 2 )
+ 
+                ELSE
+                    DDX = 1.0 / XC
+                    DDY = 1.0 / YC
+                ENDIF
+ 
+                XOFF= DDX * ( X1 - XORIG3D )
+                YOFF= DDY * ( Y1 - YORIG3D )
+                HCOL= NINT( DDX * ( X2 - X1 ) )
+                HCOL= NINT( DDX * ( X2 - X1 ) )
+                HROW= NINT( DDY * ( Y2 - Y1 ) )
+ 
+                IF ( FLTERR( XC, SNGL( XCELL3D ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                           'Bad XCELL in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( YC, SNGL( YCELL3D ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                           'Bad YCELL in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( XOFF, FLOAT( NINT( XOFF ) ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad X alignment in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( YOFF, FLOAT( NINT( YOFF ) ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad Y alignment in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( REAL( HCOL ), REAL( NCOLS ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad ending X-coord in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( REAL( HROW ), REAL( NROWS ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad ending Y-coord in SURROGATE file', 2 )
+                ELSEIF ( NSRG .LE. 0 ) THEN
+                    WRITE( MESG, 94010 )
+     &               'NOTE: Use ZONE portion of EPS2.0 surrogates '//
+     &               'header' // CRLF() // BLANK5 //
+     &               '      to specify number of surrogates ' //
+     &               'in the file.'
+                    CALL M3MSG2( MESG )
+ 
+                    WRITE( MESG, 94010 )
+     &               'Number of surrogates in header was ', NSRG
+                    CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+ 
+                ELSEIF ( NSRG .GT. NASRG ) THEN
+                    WRITE( MESG, 94010 )
+     &               'Number of surrogates in file =', NSRG,
+     &               'but maximum (NASRG) =', NASRG
+                    CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+ 
+                END IF
+ 
+            ELSE  ! Grid type is LAT-LON
+ 
+                MESG= 'Using LAT-LON grid, with EPS2.0 surrogates file.'
+                CALL M3WARN( 'GRDAMAT', 0, 0, MESG )
+ 
+            END IF
+ 
+        ENDIF
 
-        VNAME3D( 1 ) = 'AGRI'
-        UNITS3D( 1 ) = 'n/a'
-        VDESC3D( 1 ) = 'AGRI gridding surrogate, by FIP'
-        VTYPE3D( 1 ) = M3REAL
+        WRITE( *,92000 ) 
+     &      ' ', 'Reading GRIDDING SURROGATE COEFF file...', ' '
 
-        VNAME3D( 2 ) = 'AIRPORT'
-        UNITS3D( 2 ) = 'n/a'
-        VDESC3D( 2 ) = 'AIRPORT gridding surrogate, by FIP'
-        VTYPE3D( 2 ) = M3REAL
+C...........   Start loop for actually reading surrogates data
+ 
+22      CONTINUE                !  head of the SDEV-read loop
+ 
+C...............  Read EMS-95 formatted file
+            IF( FFORMAT .EQ. 'EMS95' ) THEN
+ 
+                READ( SDEV, *, END=27, IOSTAT=IOS )
+     &              SSCT( NSRG ),   !  surrogate ID
+     &              SID, CID,       !  state, county FIP codes
+     &              COL, ROW,       !  grid col and row
+     &              SRGT( NSRG )    !  surrogate fraction
+ 
+                IREC = IREC + 1
+ 
+                FIP  = 1000 * SID + CID
+ 
+C...............  Read EPS2 file.  This read is made somewhat more complex
+C...............  because we're conforming to EMS95 file structure.  However,
+C...............  since the EPS2.0 format does not specify exact column
+C...............  numbers for each surrogate class (just must start on
+C...............  column 36 and continue to column 186), and the number of
+C...............  surrogates is not pre-defined, the EPS2.0 format is ill-
+C...............  defined anyway.  Here, we add the constraint that the
+C...............  zone field is used to define the number of surrogate
+C...............  entries. Also, all file columns are as described in the
+C...............  EPS2 documentation, AND the surrogates entries are 10
+C...............  columns wide.  These constraints allow us to read in the
+C...............  file more assuredly.  MRH.
+            ELSEIF( FFORMAT .EQ. 'EPS2' ) THEN
+ 
+                READ( SDEV, 93010, END=27, IOSTAT=IOS )
+     &                FIP, XX, YY, ( SRGT( J ), J = 1, NSRG )
+ 
+                IREC = IREC + 1
+ 
+C.................  First try col/row format
+                COL = INT( XX )
+                ROW = INT( YY )
+ 
+C.................  If no good, then try coordinates format
+                IF( COL .LT. 1  .OR. COL .GT. NCOLS .OR.
+     &              ROW .LT. 1  .OR. ROW .GT. NROWS      ) THEN
+ 
+                    COL = 1 + NINT( DDX * ( XX - XORIG3D ) )
+                    ROW = 1 + NINT( DDY * ( YY - YORIG3D ) )
+ 
+                ENDIF
+ 
+                DO 23 J = 1, NSRG
+                    SSCT( J ) = J
+23              CONTINUE
+ 
+            END IF         ! end input format type
+ 
+            IF ( IOS .NE. 0 ) THEN
+ 
+                WRITE( MESG,94010 )
+     &              'I/O error ', IOS,
+     &              'reading SURG COEFF file at line', IREC
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+                GO TO  22   ! to head of SDEV read loop
+ 
+C.................  If columns and rows are still a problem, give message,
+C.................  but don't error because may want to use bigger
+C.................  surrogates file to do smaller domain
+            ELSE IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
+ 
+                WRITE( MESG,94010 )
+     &              'Column ', COL,
+     &              'out of range in SURG COEFF file at line', IREC
+                CALL M3MESG( MESG )
+                GO TO  22   ! to head of SDEV read loop
+ 
+            ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
+ 
+                WRITE( MESG,94010 )
+     &              'Row ', ROW,
+     &              'out of range in SURG COEFF file at line', IREC
+                CALL M3MESG( MESG )
+                GO TO  22   ! to head of SDEV read loop
+ 
+            END IF              !  if IOS bad, or col, or row out of range
 
-        VNAME3D( 3 ) = 'AREA'
-        UNITS3D( 3 ) = 'n/a'
-        VDESC3D( 3 ) = 'AREA gridding surrogate, by FIP'
-        VTYPE3D( 3 ) = M3REAL
+C...........   Record surrogate fraction for this cell.
+C...........   Loop through the number of surrogates in current record
+            DO 25 J = 1, NSRG
+ 
+                N = N + 1
+ 
+                IF( SSCT( J ) .LT. 1     .OR.
+     &              SSCT( J ) .GT. NASRG      ) THEN
+ 
+                    WRITE( MESG,94010 )
+     &                  'Surrogate code ', SSCT( J ),
+     &                  'out of range (NASRG) in ASPRO at line', IREC
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                    GO TO  22   ! to head of SDEV read loop
+ 
+                ELSEIF( N .LE. NRMAX ) THEN
+ 
+                    INDXA( N ) = N
+                    CELLA( N ) = COL  +  NCOLS * ( ROW - 1 )
+                    SSCSA( N ) = SSCT( J )
+                    FIPSA( N ) = FIP
+                    FRACA( N ) = SRGT( J )
+ 
+                END IF                      ! if n in bounds
+ 
+25          CONTINUE
+ 
+            GO TO  22  !  to head of SDEV read loop
+ 
+27      CONTINUE       !  end of the SDEV-read loop
 
-        VNAME3D( 4 ) = 'HOUSING'
-        UNITS3D( 4 ) = 'n/a'
-        VDESC3D( 4 ) = 'HOUSING gridding surrogate, by FIP'
-        VTYPE3D( 4 ) = M3REAL
+        CALL M3MSG2( 'NOTE: File read in as ' // FFORMAT // ' format.' )
 
-        VNAME3D( 5 ) = 'INVHOUSING'
-        UNITS3D( 5 ) = 'n/a'
-        VDESC3D( 5 ) = 'INVERSE HOUSING gridding surrogate, by FIP'
-        VTYPE3D( 5 ) = M3REAL
-
-        VNAME3D( 6 ) = 'INVPOP'
-        UNITS3D( 6 ) = 'n/a'
-        VDESC3D( 6 ) = 'INVERSE POPULATION gridding surrogate, by FIP'
-        VTYPE3D( 6 ) = M3REAL
-
-        VNAME3D( 7 ) = 'HWY'
-        UNITS3D( 7 ) = 'n/a'
-        VDESC3D( 7 ) = 'MAJOR HIGHWAYS gridding surrogate, by FIP'
-        VTYPE3D( 7 ) = M3REAL
-
-        VNAME3D( 8 ) = 'POP'
-        UNITS3D( 8 ) = 'n/a'
-        VDESC3D( 8 ) = 'POPULATION gridding surrogate, by FIP'
-        VTYPE3D( 8 ) = M3REAL
-
-        VNAME3D( 9 ) = 'PORTS'
-        UNITS3D( 9 ) = 'n/a'
-        VDESC3D( 9 ) = 'PORTS gridding surrogate, by FIP'
-        VTYPE3D( 9 ) = M3REAL
-
-        VNAME3D( 10 ) = 'RR'
-        UNITS3D( 10 ) = 'n/a'
-        VDESC3D( 10 ) = 'RAILROADS gridding surrogate, by FIP'
-        VTYPE3D( 10 ) = M3REAL
-
-        VNAME3D( 11 ) = 'WATER'
-        UNITS3D( 11 ) = 'n/a'
-        VDESC3D( 11 ) = 'WATER gridding surrogate, by FIP'
-        VTYPE3D( 11 ) = M3REAL
-
-        GNAME = PROMPTMFILE( 
-     &      'Enter logical name for GRIDDING SURROGATES output file',
-     &      FSUNKN3, 'ASURG', 'SRGGRID' )
 
 
 C...........   Read and process the surrogate coefficient file:
@@ -277,78 +465,75 @@ C...............   Must be sorted by FIP (state ID, county ID), surrogate ID,
 C...............   col, and row.  
 C...............   All actually-occurring area source FIP codes must be present.
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Reading GRIDDING SURROGATE COEFF file...', ' '
-
-        IREC    =  1     
-        N       =  0
-        EFLAG   = .FALSE.
-
-22      CONTINUE                !  head of the SDEV-read loop
-
-            IREC = IREC + 1
-            READ( SDEV, *, END=23, IOSTAT=IOS ) 
-     &          SSC,            !  surrogate ID
-     &          SID, CID,       !  state, county FIP codes
-     &          COL, ROW,       !  grid col and row
-     &          SRG             !  surrogate fraction
-
-            IF ( IOS .NE. 0 ) THEN
-
-                WRITE( MESG,94010 ) 
-     &              'I/O error ', IOS, 
-     &              'reading SURG COEFF file at line', IREC
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  22
-
-            ELSE IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
-
-                WRITE( MESG,94010 )
-     &              'Column ', COL,
-     &              'out of range in SURG COEFF file at line', IREC
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  22
-
-            ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
-
-                WRITE( MESG,94010 )
-     &              'Row ', ROW,
-     &              'out of range in SURG COEFF file at line', IREC
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  22
-
-            ELSE IF ( SSC .LT. 1  .OR. SSC .GT. NASRG ) THEN
-
-                WRITE( MESG,94010 )
-     &              'Surrogate code ', SSC,
-     &              'out of range in SURG COEFF file at line', IREC
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  22
-
-            END IF              !  if IOS bad, or col,row, or ssc out of range
-
-
-C...........   Record surrogate fraction for this cell.
-
-            N = N + 1
-
-            IF ( N .LE. NRMAX ) THEN
-
-                INDXA( N ) = N
-                CELLA( N ) = COL  +  NCOLS * ( ROW - 1 )
-                SIDSA( N ) = SSC
-                FIPSA( N ) = 1000 * SID + CID
-                FRACA( N ) = SRG
-
-            END IF                      ! if n in bounds
-
-            GO TO  22                   !  to head of loop
-
-23      CONTINUE                        !  end of the SDEV-read loop
+c        IREC    =  1     
+c        N       =  0
+c        EFLAG   = .FALSE.
+c
+c22      CONTINUE                !  head of the SDEV-read loop
+c
+c            IREC = IREC + 1
+c            READ( SDEV, *, END=23, IOSTAT=IOS ) 
+c     &          SSC,            !  surrogate ID
+c     &          SID, CID,       !  state, county FIP codes
+c     &          COL, ROW,       !  grid col and row
+c     &          SRG             !  surrogate fraction
+c
+c            IF ( IOS .NE. 0 ) THEN
+c
+c                WRITE( MESG,94010 ) 
+c     &              'I/O error ', IOS, 
+c     &              'reading SURG COEFF file at line', IREC
+c                CALL M3MESG( MESG )
+c                EFLAG = .TRUE.
+c                GO TO  22
+c
+c            ELSE IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
+c
+c                WRITE( MESG,94010 )
+c     &              'Column ', COL,
+c     &              'out of range in SURG COEFF file at line', IREC
+c                CALL M3MESG( MESG )
+c                EFLAG = .TRUE.
+c                GO TO  22
+c
+c            ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
+c
+c                WRITE( MESG,94010 )
+c     &              'Row ', ROW,
+c     &              'out of range in SURG COEFF file at line', IREC
+c                CALL M3MESG( MESG )
+c                EFLAG = .TRUE.
+c                GO TO  22
+c
+c            ELSE IF ( SSC .LT. 1  .OR. SSC .GT. NASRG ) THEN
+c
+c                WRITE( MESG,94010 )
+c     &              'Surrogate code ', SSC,
+c     &              'out of range in SURG COEFF file at line', IREC
+c                CALL M3MESG( MESG )
+c                EFLAG = .TRUE.
+c                GO TO  22
+c
+c            END IF              !  if IOS bad, or col,row, or ssc out of range
+c
+c
+cC...........   Record surrogate fraction for this cell.
+c
+c            N = N + 1
+c
+c            IF ( N .LE. NRMAX ) THEN
+c
+c                INDXA( N ) = N
+c                CELLA( N ) = COL  +  NCOLS * ( ROW - 1 )
+c                SSCSA( N ) = SSC
+c                FIPSA( N ) = 1000 * SID + CID
+c                FRACA( N ) = SRG
+c
+c            END IF                      ! if n in bounds
+c
+c            GO TO  22                   !  to head of loop
+c
+c23      CONTINUE                        !  end of the SDEV-read loop
 
 
         NSREC = N
@@ -373,7 +558,7 @@ C...........   Sort and process the surrogates:
         WRITE( *,92000 ) 
      &      ' ', 'Processing GRIDDING SURROGATE COEFF file...', ' '
 
-        CALL SORTI3( NSREC, INDXA, FIPSA, CELLA, SIDSA )
+        CALL SORTI3( NSREC, INDXA, FIPSA, CELLA, SSCSA )
 
         F    = 0
         S    = 0
@@ -385,12 +570,12 @@ C...........   Sort and process the surrogates:
             K   = INDXA( J )
             C   = CELLA( K )
             FIP = FIPSA( K )
-            SID = SIDSA( K )
+            SID = SSCSA( K )
             SRG = FRACA( K )
 
             CELL( J ) = C
             FIPS( J ) = FIP
-            SIDS( J ) = SID
+            SSCS( J ) = SID
             FRAC( J ) = SRG
 
             IF ( FIP .NE. LFIP ) THEN
@@ -441,12 +626,19 @@ C...........  If surrogates file present, process SURROGATE-TOTAL-BY-FIP file:
 43          CONTINUE                !  end loop on SID's
 44          CONTINUE                !  end loop on FIPS
 
-            IREC  = 0
-            EFLAG = .FALSE.
+            IREC    = 0
+            NVAROUT = 0
+            SSC     = IMISS3
+            EFLAG   = .FALSE.
 
 55          CONTINUE                !  head of loop reading TDEV
 
-                READ( TDEV,*, END=66, IOSTAT=IOS ) FIP, SSC, SRG
+                READ( TDEV, 93000, END=66, IOSTAT=IOS ) LINE 
+
+                IREC = IREC + 1
+
+                L1 = LBLANK ( LINE )
+                L2 = TRIMLEN( LINE )
 
                 IF ( IOS .NE. 0 ) THEN
 
@@ -457,27 +649,55 @@ C...........  If surrogates file present, process SURROGATE-TOTAL-BY-FIP file:
                     EFLAG = .TRUE.
                     GO TO  55
 
-                ELSE IF ( SSC .LT. 1  .OR. SSC .GT. NASRG ) THEN
+                ELSEIF( LINE( L1+1:L1+7 ) .EQ. '/STYPE/' ) THEN
 
-                    WRITE( MESG,94010 )
-     &                  'Surrogate code ', SSC,
-     &                  'out of range in SURG TOTAL file at line', IREC
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
+                    READ( LINE( L1+8:L2 ), * ) SSC, NAME, DESC
+
+                    IF ( SSC .LT. 1  .OR. SSC .GT. NASRG ) THEN
+
+                        WRITE( MESG,94010 )
+     &                    'Surrogate code ', SSC, 'out of range' //
+     &                    'in SURG TOTAL file at line', IREC
+                        CALL M3MESG( MESG )
+                        EFLAG = .TRUE.
+
+                    ELSE
+
+                        NVAROUT = NVAROUT + 1
+                        VNAME( NVAROUT ) = NAME 
+                        VDESC( NVAROUT ) = DESC
+                        VINDX( SSC ) = NVAROUT
+
+                    END IF  !  if IO error, or if SID out of range
+
                     GO TO  55
 
-                END IF              !  if IO error, or if SID out of range
+                ELSEIF( SSC .EQ. IMISS3 ) THEN
+
+                    MESG = 'Total surrogates file must use ' //
+     &                     '/STYPE/ packet in the form: ' // CRLF() //
+     &                     BLANK5 // '/STYPE/ <SSC code> ' //
+     &                     '"<OUTPUT VAR NAME>" "<OUTPUT VAR DESC>"'
+                    CALL M3EXIT( 'SRGGRID', 0, 0, MESG, 2 )
+
+                ENDIF
+
+                FIP = STR2INT( LINE( 1:2 ) ) * 1000 +
+     &                STR2INT( LINE( 3:5 ) )
+
+                SRG = STR2REAL( LINE( 6:L2 ) )
+
 
                 F = FIND1( FIP, NFIPLIST, FIPLIST )
 
-                IF ( S .GE. 0 ) THEN
+                IF ( F .GE. 0 ) THEN
                     FIPSIZE( SSC,F ) = SRG
+
                 ELSE
                     WRITE( MESG,94010 )
      &                  'FIP', FIP, 
      &                  'not found in SURG TOTAL file at line', IREC
                     CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
                 END IF
 
                 GO TO  55           !  to head of loop
@@ -500,20 +720,23 @@ C...............   Process gridded surrogate-totals:
             LFIP = -1
             DO  133  K = 1, NSREC
                 FIP = FIPS( K )
+                C   = CELL( K )
+                S   = SSCS( K )
+                V   = VINDX( S )
+
                 IF ( FIP .NE. LFIP ) THEN
                     F   = FIND1( FIP, NFIPLIST, FIPLIST )
                     LFIP = FIP
                 END IF
-                C = CELL( K )
-                S = SIDS( K )
-                GRID( C,S ) = GRID( C,S )  +  FRAC( K ) * FIPSIZE( S,F )
+
+                IF ( V .GT. 0 ) THEN
+
+                    GRID( C,V )= GRID( C,V ) + FRAC( K )*FIPSIZE( S,F )
+
+                END IF
+
 133         CONTINUE
 
-CXCC        IF ( .NOT. WRITE3( GNAME, 0, 0, 'ALL' ) ) THEN
-CXCC            MESG = 'Could not write SURROGATE TOTALS to "' //
-CXCC &                 GNAME( 1 : TRIMLEN( GNAME ) ) // '"'
-CXCC            CALL M3EXIT( 'SRGGRID', 0, 0, MESG, 2 )
-CXCC        END IF
 
         ENDIF   ! End if surrogates file present or not
 
@@ -557,15 +780,60 @@ C...........   Select sublist to compute:
         END IF			!  if all counties, else if state, else if fip
 
 
+        FTYPE3D = GRDDED3
+        SDATE3D = 1
+        STIME3D = 0
+        TSTEP3D = 10000
+        NVARS3D = NVAROUT
+        NLAYS3D = 1
+        GDNAM3D = GRDNM
+        VGTYP3D = IMISS3
+        VGTOP3D = BADVAL3
+        FDESC3D( 1 ) = 'Gridding surrogates, by FIP'
+        FDESC3D( 2 ) = 
+     &  'First record is totals, SUM_fip( surg( fip )*tot( fip ) )'
+        FDESC3D( 3 ) = 
+     &  'Other records are FIP-specific gridded surrogate fractions'
+        FDESC3D( 4 ) = 
+     &  'with the FIPS in consecutive sorted order.'
+
+        DO  166  K = 5, MXDESC3
+            FDESC3D( K ) = ' '
+166     CONTINUE
+
+        DO  188  K = 1, NVAROUT
+
+            VNAME3D( K ) = VNAME( K )
+            UNITS3D( K ) = 'n/a'
+            VDESC3D( K ) = VDESC( K )
+            VTYPE3D( K ) = M3REAL
+
+188     CONTINUE
+
+        GNAME = PROMPTMFILE( 
+     &      'Enter logical name for GRIDDING SURROGATES output file',
+     &      FSUNKN3, 'ASURG', 'SRGGRID' )
+
+
 C...........   Process gridded county-level surrogates
 
         WRITE( *,92000 ) 
      &  ' ', 
-     &  'Constructinging GRIDDED SURROGATE FRACTIONS output file...',
+     &  'Constructing GRIDDED SURROGATE FRACTIONS output file...',
      &  ' '
 
-        JDATE = 0
-        JTIME = 10000
+        JDATE = 1
+        JTIME = 0
+
+        IF ( .NOT. WRITE3( GNAME, 'ALL', JDATE, JTIME, GRID ) ) THEN
+
+            MESG = 'Could not write SURROGATE TOTALS to "' //
+     &             GNAME( 1 : TRIMLEN( GNAME ) ) // '"'
+            CALL M3EXIT( 'SRGGRID', 0, 0, MESG, 2 )
+
+        END IF
+
+        CALL NEXTIME( JDATE, JTIME, 10000 )
 
         DO  299  F = LOLIST, HILIST                !  loop on counties
 
@@ -581,17 +849,20 @@ C...........   Process gridded county-level surrogates
             DO  288  K = LO, HI         !  loop on records K for this fip
 
                 C = CELL( K )
-                S = SIDS( K )
-                GRID( C,S ) = GRID( C,S )  +  FRAC( K )
+                S = VINDX( SSCS( K ) )
+
+                IF( S .GT. 0 ) THEN
+                    GRID( C,S ) = GRID( C,S )  +  FRAC( K )
+                ENDIF
 
 288         CONTINUE                    !  end loop on records K for this fip
 
             IF ( WRITE3( GNAME, 'ALL', JDATE, JTIME, GRID ) ) THEN
 
                 WRITE( MESG,94020 ) 
-     &              'Writing', FIPLIST( F ),  
-     &              'to "' // GNAME( 1 : TRIMLEN( GNAME ) ) // 
-     &              '" as record', F - LOLIST + 1
+     &              'FIP', FIPLIST( F ),  
+     &              'written to "' // GNAME( 1 : TRIMLEN( GNAME ) ) //
+     &              '" as record', F - LOLIST + 2
                 CALL M3MESG( MESG )
 
             ELSE                        !  else write3() failed
@@ -625,6 +896,9 @@ C...........   Informational (LOG) message formats... 92xxx
 
 C...........   Formatted file I/O formats............ 93xxx
 
+93000   FORMAT( A )
+
+93010   FORMAT( I5, 2F10.0, 10X, <NSRG>( F10.8 ) )
 
 C...........   Internal buffering formats............ 94xxx
 
