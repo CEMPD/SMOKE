@@ -242,14 +242,14 @@ C.........  Read ungridding matrix
         CALL RDUMAT( UNAME, NSRC, NMATX, NMATX, 
      &               UMAT( 1 ), UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ) )
 
-C.........  Create list of counties inside grid
+C.........  Create list of counties inside grid that have VMT values
         TMPCTY  = 0   ! array
         PREVCTY = 0
         CURRCTY = 0
         NGRDCTY = 0
 
         DO S = 1, NSRC
-            IF( UMAT( S ) == 0 ) CYCLE
+            IF( UMAT( S ) == 0 .OR. VMT( S ) == 0 ) CYCLE
             
             CURRCTY = IFIP( S )
             IF( CURRCTY /= PREVCTY ) THEN
