@@ -79,7 +79,7 @@ C              is not worth going to extra trouble for since it is not realistic
         REAL            AFAC( NGRID )    ! fraction of link in cell
 
 C...........   Other local variables
-        INTEGER         C, I, J, N, S          ! counters and indices
+        INTEGER         C, F, J, K, I, N, S          ! counters and indices
 
         INTEGER         CCNT             ! counters for no. non-zero-surg cells
         INTEGER         ISIDX            ! tmp surrogate ID code index
@@ -112,15 +112,19 @@ C............  If non-link source...
 
 C.................  Retrieve the index to the surrogates cy/st/co list
                 ISIDX = SRGIDPOS( S )
-                J     = SGFIPPOS( S )
+                F     = SGFIPPOS( S )
 
 C.................  Retrieve the cell intersection info from the
 C                   surrogates tables from MODSURG
-                IF ( J .GT. 0 ) THEN
+                IF ( F .GT. 0 ) THEN
 
-                    NCEL = NCELLS( J )
-                    ACEL( 1:NCEL ) = FIPCELL( 1:NCEL, J )      ! arrays
-                    AFAC( 1:NCEL ) = SRGFRAC( ISIDX,1:NCEL,J ) ! arrays
+                    NCEL = NCELLS( F )
+                    ACEL( 1:NCEL ) = FIPCELL( 1:NCEL, F )      ! arrays
+
+                    DO K = 1, NCEL
+                        CALL SETFRAC( ISIDX, K, F, 1, .FALSE., ' ',
+     &                                AFAC( K ) )
+                    END DO
 
 C.................  Otherwise, skip this source because it's outside the grid
                 ELSE  
@@ -145,11 +149,11 @@ C.................  Make sure that there was enough storage
             END IF
 C
 C.............  Loop through the cells for this source and increment the number
-C               of sources per cell
+C               of sources per cell. 
             CCNT = 0
             DO N = 1, NCEL
 
-                IF( AFAC( N ) .NE. 0. ) THEN
+                IF( AFAC( N ) .GT. 0. ) THEN
                     C = ACEL( N )
                     NX( C ) = NX( C ) + 1
                     CCNT = CCNT + 1
