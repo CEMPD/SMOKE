@@ -100,8 +100,8 @@ C...........   TMAT update variables
 
         INTEGER, SAVE :: NHRCALC             ! No. of entries in HRCALC
         INTEGER, SAVE :: HRCALC( 24 )        ! List of hrs for calc'g TMAT
-        INTEGER          MONTH ( 24, 0:23 )  ! time zone's month 1 ... 12
-        INTEGER          DAYOW ( 24, 0:23 )  ! time zone's day   1 ... 7
+        INTEGER, SAVE :: MONTH ( 24, 0:23 )  ! time zone's month 1 ... 12
+        INTEGER, SAVE :: DAYOW ( 24, 0:23 )  ! time zone's day   1 ... 7
 
 C...........   Other local variables
 
@@ -124,8 +124,9 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first call to subrtn
         LOGICAL, SAVE :: FIRSTSTP = .TRUE.  ! true: first time step
         LOGICAL, SAVE :: HFLAG              ! true: hour-specific data
-        LOGICAL, SAVE :: OUTMSG             ! true: outputs date/time msg needed
+        LOGICAL, SAVE :: OUTMSG = .TRUE.    ! true: output message for new day
         LOGICAL, SAVE :: TMATCALC           ! true: need to calculate new TMAT
+        LOGICAL, SAVE :: WKEMSG = .FALSE.   ! true: wkend-profile msg written
         LOGICAL, SAVE :: ZONE4WM        !  True: src zone for week/mon temp prof
 
         CHARACTER*300          MESG      !  message buffer 
@@ -169,11 +170,12 @@ C.............  Adjust TZMIN for possibility of daylight savings
 
 C.............  Determine hours of output day for updating TMAT
             NHRCALC = TZMAX - TZMIN + 1
-        
+
+            J = 0        
             DO I = TZMIN, TZMAX
                 J = J + 1    
                 HRCALC( J ) = MOD( I - TZONE + 25, 24 )
-            ENDDO
+            END DO
 
 C.............  Set flags for daily and hourly data
             DFLAG = ( DNAME .NE. 'NONE' )
@@ -181,7 +183,7 @@ C.............  Set flags for daily and hourly data
 
             FIRSTIME = .FALSE.
 
-        ENDIF
+        END IF  ! End of first time section
 
 C.........  For new date...
         IF( JDATE .NE. LDATE ) THEN
@@ -217,8 +219,12 @@ C.............  Use same loop for case where this feature is turned off
 C.............  Set day of week based on output day
             DAY = WKDAY( JDATE )
 
-C.............  Turn on message for day of week and date
-            OUTMSG = .TRUE.
+C.............  Turn on the writing of messages for the start of weekend profs
+            OUTMSG = .TRUE. 
+
+C.............  Write message for day of week and date
+            MESG = 'Processing ' // DAYS( DAY ) // MMDDYY( JDATE )
+            CALL M3MSG2( MESG )
 
 C.............  Initialize day-specific emissions array with average emissions
 C               Only need to do this for a new day because the sources with 
@@ -315,11 +321,11 @@ C               add 1 if date is not daylight and ZONES is daylight
 C.............  If there are no weekend packets...
             IF ( DAY .LT. 6 .OR. NEND .EQ. 0 ) THEN  !  no weekend packet
 
-                IF( OUTMSG ) THEN
-                    CALL M3MSG2( 'Processing ' //
-     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
-                    OUTMSG = .FALSE.
-                ENDIF
+                IF( WKEMSG ) THEN
+                    MESG = 'NOTE: Weekend-specific profiles have ended.'
+                    CALL M3MSG2( MESG )
+                    WKEMSG = .FALSE.
+                END IF 
 
                 IF( CATEGORY .NE. 'MOBILE' ) THEN
 
@@ -337,11 +343,12 @@ C                   CALL MKVMAT( )
 C.............  If there are weekend packets, and it's a weekend...
             ELSE IF( DAY .GE. 6 .AND. NEND .GT. 0 ) THEN
 
-                IF( OUTMSG ) THEN
-                    CALL M3MSG2( 'Processing weekend day ' //
-     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+                IF( OUTMSG ) THEN                
+                    MESG = 'NOTE: Weekend-specific profiles start now.'
+                    CALL M3MSG2( MESG )
                     OUTMSG = .FALSE.
-                ENDIF
+                    WKEMSG = .TRUE.
+                END IF
 
                 IF( CATEGORY .NE. 'MOBILE' ) THEN
 

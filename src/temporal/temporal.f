@@ -1,5 +1,5 @@
 
-        PROGRAM TMPPOINT
+        PROGRAM TEMPORAL
 
 C***********************************************************************
 C  program body starts at line 
@@ -147,7 +147,6 @@ C...........   Other local variables
         LOGICAL      :: EFLAG = .FALSE.  !  error-flag
         LOGICAL      :: EFLAG2= .FALSE.  !  error-flag (2)
         LOGICAL         HFLAG   !  hour-specific file available
-        LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
         LOGICAL         UFLAG   !  generating upper-level output file
 
         INTEGER        I, J, K, L, L1, L2, N, S, T
@@ -158,8 +157,8 @@ C...........   Other local variables
         INTEGER         ENLEN               ! length of ENAME string
         INTEGER         JDATE, JTIME        ! Julian date and time
         INTEGER         JRUNLEN             ! models-3 "run length" in HHMMSS
+        INTEGER         NINVARR             ! no inventory variables to read
         INTEGER         NLINE               ! tmp number of lines in ASCII file 
-        INTEGER         NSRC                ! general number of sources
         INTEGER         NSTEPS              ! number of output time steps
         INTEGER         SDATE, STIME        ! starting Julian date and time
         INTEGER         TNLEN               ! length of TNAME string
@@ -172,10 +171,10 @@ C...........   Other local variables
         CHARACTER*300   MESG    !  buffer for M3EXIT() messages
         CHARACTER(LEN=IOVLEN3) CBUF ! pollutant name temporary buffer 
 
-        CHARACTER*16 :: PROGNAME = 'TMPPOINT' ! program name
+        CHARACTER*16 :: PROGNAME = 'TEMPORAL' ! program name
 
 C***********************************************************************
-C   begin body of program TMPPOINT
+C   begin body of program TEMPORAL
 
         LDEV = INIT3()
 
@@ -183,10 +182,11 @@ C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, SCCSW, PROGNAME )
 
+c note: can/should some of these be obtained from subroutines in which they
+c n:    are used?
+
 C.........  Get environment variables that control program behavior
 C.........  Only abort if Models-3 environment variables are not set
-        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
-     &                    .FALSE., IOS )
 
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
@@ -200,54 +200,14 @@ C.........  Only abort if Models-3 environment variables are not set
      &                  'Generate elevated point-source file',
      &                   .FALSE., IOS )
 
-C.........  Get Models-3-set episode settings
-        SDATE  = ENVINT( 'G_STDATE', 'Start date (YYYYDDD)', 0, IOS )
-        IF( IOS .NE. 0 ) THEN
-            EFLAG = .TRUE.
-            MESG = 'G_STDATE is not set properly to starting date!'
-            CALL M3MSG2( MESG )
-        ENDIF 
-
-        STIME  = ENVINT( 'G_STTIME' , 'Start time (HHMMSS)', 0 , IOS )
-        IF( IOS .NE. 0 ) THEN
-            EFLAG = .TRUE.
-            MESG = 'G_STTIME is not set properly to starting time!'
-            CALL M3MSG2( MESG )
-        ENDIF 
-
-        TSTEP = ENVINT( 'G_TSTEP', 'Time step (HHMMSS)', 0, IOS )
-        IF( IOS .NE. 0 ) THEN
-            EFLAG = .TRUE.
-            MESG = 'G_TSTEP is not set properly to time step!'
-            CALL M3MSG2( MESG )
-        ENDIF 
-
-        JRUNLEN = ENVINT( 'G_RUNLEN', 'Duration (HHMMSS)', 0, IOS )
-        IF( IOS .NE. 0 ) THEN
-            EFLAG = .TRUE.
-            MESG = 'G_RUNLEN is not set properly to duration!'
-            CALL M3MSG2( MESG )
-        ENDIF 
-
-        IF( EFLAG ) THEN
-            MESG = 'Bad environment variable setting(s)'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
-
-C.........  Ensure that episode settings are consistent with SMOKE
-        IF( .NOT. CHKEMEPI( SDATE, STIME, TSTEP, JRUNLEN ) ) THEN
-            MESG = 'Invalid episode settings from environment'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
-
-C.........   Set more time information based on environment variable inputs
-        NSTEPS = JRUNLEN / 10000
-
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
+
+c note: might want to put the file opens in a separate subroutine, because
+c    n: there will be several more for mobile sources.
 
 C.........  Prompt for and open input I/O API and ASCII files
         ENAME = PROMPTMFILE( 
@@ -297,6 +257,13 @@ C.............  Store non-category-specific header information
             NSRC = NROWS3D
 
         ENDIF
+
+C.........  Get episode settings from the Models-3 environment variables
+        SDATE  = 0
+        STIME  = 0
+        NSTEPS = 1
+        TSTEP  = 10000  
+        CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
 
 C.........  For day-specific data input...
         IF( DFLAG ) THEN
@@ -355,53 +322,27 @@ C.............  Allocate memory for reading hour-specific emissions data
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
 
-C.........  Prompt for episode data only if PROMPTFLAG has been set to true
-        IF( PROMPTF ) THEN
-
-            TZONE = GETNUM( -12, 12, TZONE, 
-     &             'Enter time zone (0 for GMT, 5 for EST, 4 for EDT)' )
-
-            SDATE = GETDATE( SDATE,
-     &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
-
-            STIME = GETNUM( 0, 235959, STIME, 
-     &                      'Enter simulation starting time (HHMMSS)' )
-  
-            NSTEPS= GETNUM( 1, 999999, NSTEPS,
-     &                      'Enter output duration (hours)' )
-        ENDIF
-
-C.........  Report episode information that is being used for the output file(s)
-        DTBUF = MMDDYY( SDATE )
-        WRITE( MESG,94050 )
-     &  'Output Time Zone:', TZONE,           CRLF() // BLANK5 //
-     &  '      Start Date:', DTBUF( 1:LEN_TRIM( DTBUF ) ) //
-     &                                        CRLF() // BLANK5 //
-     &  '      Start Time:', STIME,'HHMMSS'// CRLF() // BLANK5 //
-     &  '       Time Step:', 1    ,'hour'  // CRLF() // BLANK5 //
-     &  '        Duration:', NSTEPS, 'hours'
- 
-        CALL M3MSG2( MESG )
-
-        CALL M3MSG2( 'Reading source data from inventory file...' )
-
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'TZONES'
         IVARNAMS( 2 ) = 'TPFLAG'
         IVARNAMS( 3 ) = 'CSCC'
+        IVARNAMS( 4 ) = 'CSOURC'
 
-C.........  Allocate memory for and read required inventory characteristics
+C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
+            NINVARR = 4
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            NINVARR = 6
+            IVARNAMS( 5 ) = 'IRCLAS'  ! ??????
+            IVARNAMS( 6 ) = 'CLINK'   ! ??????
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-
-            IVARNAMS( 4 ) = 'CSOURC'
-
-            CALL RPNTSCHR( ENAME, SDEV, NSRC, 4, IVARNAMS, NCHARS )
-
+            NINVARR = 4
         END IF
+
+C.........  Allocate memory for and read in required inventory characteristics
+        CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
@@ -465,6 +406,11 @@ C.........  To determine the approproate size, first attempt to allocate memory
 C           for all pollutants to start, and if this fails, divide pollutants
 C           into even groups and try again.
 
+c note: for mobile sources, the EINAM would have had to be updated by the
+c    n: information in the emission factors table before the memory
+c    n: could be alloctated for the temporal array
+
+
         NGSZ = NIPOL   ! Number of pollutant in each group
         NGRP = 1       ! Number of groups
         DO
@@ -505,7 +451,7 @@ C           into even groups and try again.
         ENDDO
         
 C.........  Allocate a few small arrays based on the size of the groups
-C.........  NOTE: this has a small potential for a problem if these little
+C.........  NOTE that this has a small potential for a problem if these little
 C           arrays exceed the total memory limit.
         ALLOCATE( EINAM2D( NGSZ, NGRP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EINAM2D', PROGNAME )
@@ -519,8 +465,8 @@ C.........  Create 2-d array for storing pollutant names in groups
         EINAM2D = RESHAPE( EINAM, (/ NGSZ, NGRP /) )
 
 C.........  Set up and open I/O API output file(s) header(s) variables...
-        CALL OPENPTMP( ENAME, UFLAG, SDATE, STIME, TSTEP, TZONE, NPELV,
-     &                 NIPOL, EINAM, TNAME, UNAME )
+        CALL OPENTMP( ENAME, UFLAG, SDATE, STIME, TSTEP, TZONE, NPELV,
+     &                TNAME, UNAME )
 
         TNLEN = LEN_TRIM( TNAME )
         UNLEN = LEN_TRIM( UNAME )
@@ -676,5 +622,5 @@ C...........   Internal buffering formats.............94xxx
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
 
-        END PROGRAM TMPPOINT
+        END PROGRAM TEMPORAL
 

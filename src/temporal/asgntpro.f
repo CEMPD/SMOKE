@@ -136,7 +136,7 @@ C.................  Set WFLAG to trur for using weekly temporal adjustments
                 MREF = MPRNA( S )
                 WREF = WPRNA( S )
                 DREF = DPRNA( S )
-                CALL SETSOURCE_TPROFS
+                CALL SETSOURCE_TPROFS  ! Sets MDEX, WDEX, DDEX, EDEX
 
             ENDDO
 
@@ -147,6 +147,8 @@ C.............  Set for remaining pollutants in group
                 DDEX( :,J ) = DDEX( :,1 )
                 EDEX( :,J ) = EDEX( :,1 )
             ENDDO
+c note: do we need to keep EDEX allocated for all source categories or
+c    n: only allocate it for point sources?
 
        ENDIF
 
@@ -189,8 +191,7 @@ C.................  Create selection
                 SELECT CASE ( CATEGORY )
 
                 CASE ( 'AREA' ) 
-                    WRITE( CFIP, FMTFIP ) IFIP( S )
-
+                    CFIP    = CSRC( 1:FIPLEN3 )
                     CSTA    = CFIP( 1:STALEN3 )
                     TSCC    = CSCC( S )
                     TSCCL   = TSCC( 1:LSCCEND )
@@ -494,7 +495,7 @@ C.................  Try for any country/state code match (not, pol-specific)
                     WREF = WPRT01( V )
                     DREF = DPRT01( V )
                     
-                    CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                     WRITE( MESG,94010 )
      &                     'NOTE: Using default temporal profile for:'//
@@ -514,7 +515,7 @@ C.................  Try for any country/state code match (not, pol-specific)
                 ELSE
                     EFLAG = .TRUE.
 
-                    CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                     WRITE( MESG,94010 )
      &                     'ERROR: No temporal cross-reference ' //
@@ -565,7 +566,7 @@ C----------------------------------------------------------------------
 
                 IF( MDEX( S,J ) .EQ. 0 ) THEN
 
-                    CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
@@ -585,7 +586,7 @@ C----------------------------------------------------------------------
 
                 IF( WDEX( S,J ) .EQ. 0 ) THEN
 
-                    CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
@@ -608,7 +609,7 @@ C----------------------------------------------------------------------
 
             IF( DDEX( S,J ) .EQ. 0 .AND. EDEX( S,J ) .EQ. 0 ) THEN
 
-                CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
+                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 

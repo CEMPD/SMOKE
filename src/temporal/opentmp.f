@@ -1,6 +1,6 @@
 
-        SUBROUTINE OPENPTMP( ENAME, UFLAG, SDATE, STIME, TSTEP, TZONE, 
-     &                       NPELV, NIPOL, EINAM, TNAME, UNAME )
+        SUBROUTINE OPENTMP( ENAME, UFLAG, SDATE, STIME, TSTEP, TZONE, 
+     &                      NPELV, TNAME, UNAME )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -39,6 +39,9 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -58,17 +61,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        INDEX1, GETCFDSC, GETIFDSC, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=NAMLEN3) ENAME ! emissions inven logical name (in)
-        LOGICAL       UFLAG          ! true if elevated output (in)
-        INTEGER       SDATE          ! episode start date (in)
-        INTEGER       STIME          ! episode start time (in)
-        INTEGER       TSTEP          ! episode time step (in)
-        INTEGER       TZONE          ! zone used for hours in output files (in)
-        INTEGER       NPELV          ! number of elevated sources (in)
-        INTEGER       NIPOL          ! number of inventory pollutants (in)
-        CHARACTER(LEN=IOVLEN3) EINAM( NIPOL ) ! Name of actual pollutants (in)
-        CHARACTER(LEN=NAMLEN3) TNAME ! lay-1 (or all) hourly logical name (out)
-        CHARACTER(LEN=NAMLEN3) UNAME ! elevated hourly logical name (out)
+        CHARACTER(*), INTENT (IN) :: ENAME  ! emissions inven logical name
+        LOGICAL     , INTENT (IN) :: UFLAG  ! true if elevated output
+        INTEGER     , INTENT (IN) :: SDATE  ! episode start date 
+        INTEGER     , INTENT (IN) :: STIME  ! episode start time
+        INTEGER     , INTENT (IN) :: TSTEP  ! episode time step
+        INTEGER     , INTENT (IN) :: TZONE  ! zone used for hours in output files
+        INTEGER     , INTENT (IN) :: NPELV  ! number of elevated sources
+        CHARACTER(*), INTENT(OUT) :: TNAME  ! lay-1 (or all) hourly logical name 
+        CHARACTER(*), INTENT(OUT) :: UNAME  ! elevated hourly logical name 
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
@@ -80,7 +81,6 @@ C...........   Other local variables
 
         INTEGER         I, J, V     ! counters and indices
 
-        INTEGER         BYEAR       ! base year from inventory file
         INTEGER         NINVVAR     ! number of inventory variables
         INTEGER         PYEAR       ! projected year from inventory file (or -1)
 
@@ -89,10 +89,10 @@ C...........   Other local variables
 
         CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
 
-        CHARACTER*16 :: PROGNAME = 'OPENPTMP' ! program name
+        CHARACTER*16 :: PROGNAME = 'OPENTMP' ! program name
 
 C***********************************************************************
-C   begin body of subroutine OPENPTMP
+C   begin body of subroutine OPENTMP
 
 C.........  Write time zone to character string
         WRITE( CTZONE,94000 ) TZONE
@@ -106,7 +106,7 @@ C.........  Get header information from inventory file
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
+        END IF
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
@@ -119,11 +119,9 @@ C.........  Get header information from inventory file
         STIME3D = STIME
         TSTEP3D = TSTEP
 
-        DO I = 1, MXDESC3
-            FDESC3D( I ) = ' '
-        ENDDO
+        FDESC3D = ' '   ! array
 
-        FDESC3D( 1 ) = 'Point source hourly emissions data'
+        FDESC3D( 1 ) = CATDESC // ' source hourly emissions data'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
         FDESC3D( 4 ) = '/TZONE/ '   // CTZONE
@@ -131,8 +129,8 @@ C.........  Get header information from inventory file
         IF( PYEAR .GT. 0 ) 
      &      WRITE( FDESC3D( 5 ),94010 ) '/PROJECTED YEAR/ ', PYEAR 
 
-        FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
-        FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
+        FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
+        FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
 C.........  Define source characteristic variables that are not strings
 
@@ -152,7 +150,7 @@ C.........  Define source characteristic variables that are not strings
             VDESC3D( V ) = VDESC3D( I )
             VTYPE3D( V ) = M3REAL
 
-        ENDDO  ! End loop on pollutants for output
+        END DO  ! End loop on pollutants for output
 
 C.........  Prompt for and open I/O API output file(s)...
 
@@ -165,10 +163,11 @@ C           applicable header entries and prompt for both layer-1 and upper-
 C           level point sources files
         IF( UFLAG ) THEN 
         
-            FDESC3D( 1 ) = 'Point source layer-1 hourly emissions data'
+            FDESC3D( 1 ) = CATDESC // ' source layer-1 hourly ' //
+     &                     'emissions data'
 
             MESG = 'Enter name for output LAYER-1 HOURLY EMISSIONS file'
-            TNAME= PROMPTMFILE( MESG, FSUNKN3, 'PTMP', PROGNAME )
+            TNAME= PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME )
 
             NVARS3D = NIPOL + 1
             NROWS3D = NPELV
@@ -177,7 +176,8 @@ C           level point sources files
             VDESC3D( NVARS3D ) = 'SMOKE source ID number'
             VTYPE3D( NVARS3D ) = M3INT
 
-            FDESC3D( 1 ) = 'Point source elevated hourly emissions data'
+            FDESC3D( 1 ) = CATDESC // ' source elevated hourly ' //
+     &                     'emissions data'
 
             MESG ='Enter name for output ELEVATED HOURLY EMISSIONS file'
             UNAME= PROMPTMFILE( MESG, FSUNKN3, 'ETMP', PROGNAME )
@@ -187,11 +187,11 @@ C           to prompt for one file.
         ELSE
 
             MESG = 'Enter name for output HOURLY EMISSIONS file'
-            TNAME = PROMPTMFILE( MESG, FSUNKN3, 'PTMP', PROGNAME )
+            TNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
 
             UNAME = ' '
 
-        ENDIF      !  if generating upper-level point sources file or not
+        END IF      !  if generating upper-level point sources file or not
 
         RETURN
 
@@ -203,5 +203,5 @@ C...........   Internal buffering formats............ 94xxx
  
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END SUBROUTINE OPENPTMP
+        END SUBROUTINE OPENTMP
 
