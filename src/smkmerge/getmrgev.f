@@ -112,17 +112,17 @@ C.........  Process the character strings to set the various control flags
         MFLAG = ( INDEX( MRGSRC, 'M' ) .GT. 0 )
         PFLAG = ( INDEX( MRGSRC, 'P' ) .GT. 0 )        
 
-        AUFLAG = ( INDEX( CTLMULT, 'A' ) .GT. 0 )
-        MUFLAG = ( INDEX( CTLMULT, 'M' ) .GT. 0 )
-        PUFLAG = ( INDEX( CTLMULT, 'P' ) .GT. 0 )
+        AUFLAG = ( INDEX( CTLMULT, 'A' ) .GT. 0 .AND. AFLAG )
+        MUFLAG = ( INDEX( CTLMULT, 'M' ) .GT. 0 .AND. MFLAG ) 
+        PUFLAG = ( INDEX( CTLMULT, 'P' ) .GT. 0 .AND. PFLAG )
 
-        AAFLAG = ( INDEX( CTLADD, 'A' ) .GT. 0 )
-        MAFLAG = ( INDEX( CTLADD, 'M' ) .GT. 0 )
-        PAFLAG = ( INDEX( CTLADD, 'P' ) .GT. 0 )
+        AAFLAG = ( INDEX( CTLADD, 'A' ) .GT. 0 .AND. AFLAG )
+        MAFLAG = ( INDEX( CTLADD, 'M' ) .GT. 0 .AND. MFLAG )
+        PAFLAG = ( INDEX( CTLADD, 'P' ) .GT. 0 .AND. PFLAG )
 
-        ARFLAG = ( INDEX( CTLREAC, 'A' ) .GT. 0 )
-        MRFLAG = ( INDEX( CTLREAC, 'M' ) .GT. 0 )
-        PRFLAG = ( INDEX( CTLREAC, 'P' ) .GT. 0 )
+        ARFLAG = ( INDEX( CTLREAC, 'A' ) .GT. 0 .AND. AFLAG )
+        MRFLAG = ( INDEX( CTLREAC, 'M' ) .GT. 0 .AND. MFLAG )
+        PRFLAG = ( INDEX( CTLREAC, 'P' ) .GT. 0 .AND. PFLAG )
 
 C.........  Determine if there are multiple source categories
         J = 0
@@ -180,9 +180,9 @@ C.........  Retrieve the on/off environment variables
 C.........  If temporal processing, set which source categories get by-day 
 C           processing
         IF( TFLAG ) THEN
-            AFLAG_BD = ( INDEX( TMPBYDAY, 'A' ) .GT. 0 )
-            MFLAG_BD = ( INDEX( TMPBYDAY, 'M' ) .GT. 0 )
-            PFLAG_BD = ( INDEX( TMPBYDAY, 'P' ) .GT. 0 )
+            AFLAG_BD = ( INDEX( TMPBYDAY, 'A' ) .GT. 0 .AND. AFLAG )
+            MFLAG_BD = ( INDEX( TMPBYDAY, 'M' ) .GT. 0 .AND. MFLAG )
+            PFLAG_BD = ( INDEX( TMPBYDAY, 'P' ) .GT. 0 .AND. PFLAG )
         END IF
 
 C.........  Retrieve variable to indicate whether to use annual or ozone 
