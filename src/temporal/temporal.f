@@ -93,13 +93,13 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*14    MMDDYY
         INTEGER         RDTPROF
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
-        LOGICAL         OPNFULL3
         INTEGER         SECSDIFF
         INTEGER         STR2INT
+        LOGICAL         SETENVVAR
 
         EXTERNAL    CHKEMEPI, CHKINT, CRLF, ENVINT, ENVYN, FINDC, 
      &              GETDATE, GETFLINE, GETNUM, INDEX1, MMDDYY, RDTPROF, 
-     &              PROMPTMFILE, OPNFULL3, SECSDIFF, STR2INT
+     &              PROMPTMFILE, SECSDIFF, STR2INT, SETENVVAR
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -580,11 +580,20 @@ C.................  Assign and store logical file name
                 WRITE( CURLNM,94030 ) 'EMISFAC_', N
                 EFLOGS( N ) = CURLNM
 
+C.................  Set logical file name
+                IF( .NOT. SETENVVAR( CURLNM, CURFNM ) ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Could not set logical file name ' //
+     &                     'for file ' // CRLF() // BLANK10 // '"' //
+     &                     TRIM( CURFNM ) // '".'
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
+
                 USETIME( AVERTYPE ) = .TRUE.
 
 C.................  Try to open file   
-                IF( .NOT. OPNFULL3( CURLNM, FSREAD3, CURFNM, 
-     &                              PROGNAME ) ) THEN
+                IF( .NOT. OPEN3( CURLNM, FSREAD3, PROGNAME ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not open emission factors ' //
      &                     'file ' // CRLF() // BLANK10 // '"' //
@@ -1085,9 +1094,22 @@ C.............................  Use date and time to find appropriate ef file
                                 CURFNM = EFLIST( EFDAYS( STPOS,L ) )
                                 CURLNM = EFLOGS( EFDAYS( STPOS,L ) )
 
-C................................  Open current file
-                                IF( .NOT. OPNFULL3( CURLNM, FSREAD3, 
-     &                                         CURFNM, PROGNAME ) ) THEN
+C.................................  Set logical file name
+                                IF( .NOT. SETENVVAR( CURLNM, 
+     &                                               CURFNM ) ) THEN
+                                    EFLAG = .TRUE.
+                                    MESG = 'ERROR: Could not set ' //
+     &                                     'logical file name for ' //
+     &                                     'file ' // CRLF() // BLANK10
+     &                                     // '"' // TRIM( CURFNM ) // 
+     &                                     '".'
+                                    CALL M3EXIT( PROGNAME, FDATE, FTIME,
+     &                                           MESG, 2 )
+                                END IF
+
+C.................................  Open current file
+                                IF( .NOT. OPEN3( CURLNM, FSREAD3, 
+     &                                           PROGNAME ) ) THEN
      	                            EFLAG = .TRUE.
                                     MESG = 'ERROR: Could not open ' //
      &                                     'emission factors file ' //
