@@ -12,7 +12,7 @@ C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
-C  REVISION  HISTORY:F
+C  REVISION  HISTORY:
 C
 C****************************************************************************/
 C
@@ -46,6 +46,7 @@ C...........   This module is the source inventory arrays
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -94,9 +95,8 @@ C...........   Other local variables
         LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
 
         CHARACTER*20           HEADER( 20 ) ! header fields
-        CHARACTER*300          FILFMT ! ASCII file format after header
-        CHARACTER*300          LINE   ! line of ASCII source file
-        CHARACTER*300          MESG   ! message buffer
+        CHARACTER*256          FILFMT ! ASCII file format after header
+        CHARACTER*256          MESG   ! message buffer
         CHARACTER(LEN=BLRLEN3) CBLR   ! temporary boiler name
         CHARACTER(LEN=FIPLEN3) CFIP   ! temporary character FIPs code
         CHARACTER(LEN=CHRLEN3) CHARS( 5 ) ! temporary plant characteristics
@@ -131,172 +131,189 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
             SELECT CASE( INVAR )
 
             CASE( 'IFIP' )
-                ALLOCATE( IFIP( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+              ALLOCATE( IFIP( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'IFIP',ALLAYS3,0,0,IFIP ) ) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF(.NOT. READSET(INFILE,'IFIP',ALLAYS3,1,0,0,IFIP)) THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'IRCLAS' )
-                ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
+              ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
 
-                IF(.NOT. READ3(INFILE,'IRCLAS',ALLAYS3,0,0,IRCLAS)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF(.NOT. READSET(INFILE,'IRCLAS',ALLAYS3,1,0,0,IRCLAS)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'ISIC' )
-                ALLOCATE( ISIC( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
+              ALLOCATE( ISIC( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'ISIC',ALLAYS3,0,0,ISIC ) ) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'ISIC',ALLAYS3,1,0,0,ISIC )) THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'IVTYPE' )
-                ALLOCATE( IVTYPE( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
+              ALLOCATE( IVTYPE( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
 
-                IF(.NOT. READ3(INFILE,'IVTYPE',ALLAYS3,0,0,IVTYPE)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF(.NOT. READSET(INFILE,'IVTYPE',ALLAYS3,1,0,0,IVTYPE)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'CELLID' )
-                ALLOCATE( CELLID( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
+              ALLOCATE( CELLID( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
 
-                IF(.NOT. READ3(INFILE,'CELLID',ALLAYS3,0,0,CELLID)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF(.NOT. READSET(INFILE,'CELLID',ALLAYS3,1,0,0,CELLID)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'TZONES' )
-                ALLOCATE( TZONES( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
+              ALLOCATE( TZONES( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
 
-                IF(.NOT. READ3(INFILE,'TZONES',ALLAYS3,0,0,TZONES)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF(.NOT. READSET(INFILE,'TZONES',ALLAYS3,1,0,0,TZONES)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'TPFLAG' )
-                ALLOCATE( TPFLAG( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
+              ALLOCATE( TPFLAG( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
 
-                IF(.NOT. READ3(INFILE,'TPFLAG',ALLAYS3,0,0,TPFLAG)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF(.NOT. READSET(INFILE,'TPFLAG',ALLAYS3,1,0,0,TPFLAG)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'INVYR' )
-                ALLOCATE( INVYR( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
+              ALLOCATE( INVYR( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'INVYR',ALLAYS3,0,0,INVYR)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'INVYR',ALLAYS3,1,0,0,INVYR)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
            
             CASE( 'IDIU' )
-                ALLOCATE( IDIU( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
+              ALLOCATE( IDIU( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'IDIU',ALLAYS3,0,0,IDIU ) ) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'IDIU',ALLAYS3,1,0,0,IDIU )) THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'IWEK' )
-                ALLOCATE( IWEK( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
+              ALLOCATE( IWEK( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'IWEK',ALLAYS3,0,0,IWEK ) ) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'IWEK',ALLAYS3,1,0,0,IWEK )) THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'XLOCA' )
-                ALLOCATE( XLOCA( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
+              ALLOCATE( XLOCA( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'XLOCA',ALLAYS3,0,0,XLOCA)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'XLOCA',ALLAYS3,1,0,0,XLOCA)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'YLOCA' )
-                ALLOCATE( YLOCA( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
+              ALLOCATE( YLOCA( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'YLOCA',ALLAYS3,0,0,YLOCA)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'YLOCA',ALLAYS3,1,0,0,YLOCA)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'XLOC1' )
-                ALLOCATE( XLOC1( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
+              ALLOCATE( XLOC1( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'XLOC1',ALLAYS3,0,0,XLOC1)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'XLOC1',ALLAYS3,1,0,0,XLOC1)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'YLOC1' )
-                ALLOCATE( YLOC1( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'YLOC1', PROGNAME )
+              ALLOCATE( YLOC1( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'YLOC1', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'YLOC1',ALLAYS3,0,0,YLOC1)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'YLOC1',ALLAYS3,1,0,0,YLOC1)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'XLOC2' )
-                ALLOCATE( XLOC2( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
+              ALLOCATE( XLOC2( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'XLOC2',ALLAYS3,0,0,XLOC2)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'XLOC2',ALLAYS3,1,0,0,XLOC2)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'YLOC2' )
-                ALLOCATE( YLOC2( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
+              ALLOCATE( YLOC2( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'YLOC2',ALLAYS3,0,0,YLOC2)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'YLOC2',ALLAYS3,1,0,0,YLOC2)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'SPEED' )
-                ALLOCATE( SPEED( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
+              ALLOCATE( SPEED( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'SPEED',ALLAYS3,0,0,SPEED)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'SPEED',ALLAYS3,1,0,0,SPEED)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
             
             CASE( 'STKHT' )
-                ALLOCATE( STKHT( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
+              ALLOCATE( STKHT( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'STKHT',ALLAYS3,0,0,STKHT)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'STKHT',ALLAYS3,0,0,STKHT)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'STKDM' )
-                ALLOCATE( STKDM( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
+              ALLOCATE( STKDM( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'STKDM',ALLAYS3,0,0,STKDM)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'STKDM',ALLAYS3,0,0,STKDM)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'STKTK' )
-                ALLOCATE( STKTK( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
+              ALLOCATE( STKTK( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'STKTK',ALLAYS3,0,0,STKTK)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'STKTK',ALLAYS3,1,0,0,STKTK)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
 
             CASE( 'STKVE' )
-                ALLOCATE( STKVE( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
+              ALLOCATE( STKVE( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
 
-                IF( .NOT. READ3(INFILE,'STKVE',ALLAYS3,0,0,STKVE)) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+              IF( .NOT. READSET(INFILE,'STKVE',ALLAYS3,1,0,0,STKVE)) 
+     &            THEN
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              ENDIF
             
             CASE DEFAULT
                 UNREAD = UNREAD + 1

@@ -42,6 +42,9 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -49,9 +52,9 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+c        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2     CRLF
@@ -180,7 +183,7 @@ C............. Allocate memory and store the source attributes units
         END IF
 
         DO I = 1, NVAR
-            ATTRUNIT( I ) = UNITS3D( I )
+            ATTRUNIT( I ) = VUNITSET( I )
         END DO
 
         IF( .NOT. ALLOCATED( EANAM ) ) THEN
@@ -208,11 +211,11 @@ C.............  Allocate memory for and store pollutant names
         DO I = 1, NIPOL
 
             K = K + 1
-            EINAM ( I ) = VNAME3D( J )
-	    EANAM ( K ) = VNAME3D( J )
-            EAREAD( K ) = VNAME3D( J + INVPIDX )
-            EAUNIT( K ) = UNITS3D( J + INVPIDX )
-            EADESC( K ) = VDESC3D( J + INVPIDX )
+            EINAM ( I ) = VNAMESET( J )
+	    EANAM ( K ) = VNAMESET( J )
+            EAREAD( K ) = VNAMESET( J + INVPIDX )
+            EAUNIT( K ) = VUNITSET( J + INVPIDX )
+            EADESC( K ) = VDESCSET( J + INVPIDX )
 
             J = J + NPPOL   ! skip over other pollutant-spec variables
 
@@ -227,11 +230,11 @@ C.........  Allocate memory for and store activity names
         DO I = 1, NIACT
 
             K = K + 1
-            ACTVTY( I ) = VNAME3D( J )
-            EANAM ( K ) = VNAME3D( J )
-            EAREAD( K ) = VNAME3D( J )
-            EAUNIT( K ) = UNITS3D( J )
-            EADESC( K ) = VDESC3D( J )
+            ACTVTY( I ) = VNAMESET( J )
+            EANAM ( K ) = VNAMESET( J )
+            EAREAD( K ) = VNAMESET( J )
+            EAUNIT( K ) = VUNITSET( J )
+            EADESC( K ) = VDESCSET( J )
             J = J + NPACT   ! skip over other activity-spec variables
 
         END DO

@@ -37,13 +37,19 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
+
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDE FILES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
+c        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+c        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -79,7 +85,7 @@ C   begin body of subroutine RDINVPOL
         STATUS = 0
 
 C.........  Get description of file header so we can get variable types
-        IF ( .NOT. DESC3( FILNAM ) ) THEN
+        IF ( .NOT. DESCSET( FILNAM, ALLFILES ) ) THEN
             MESG = 'Could not get description of file "'
      &             // FILNAM( 1:LEN_TRIM( FILNAM ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -93,9 +99,9 @@ C.........  Read variables by type, and store as REAL in POLDAT
             LV = LEN_TRIM( VARBUF )
 
 C.............  Find variable name in list to get type
-            K = INDEX1( VARBUF, NVARS3D, VNAME3D )
+            K = INDEX1( VARBUF, NVARSET, VNAMESET )
 
-            IF( VTYPE3D( K ) .EQ. M3INT ) THEN
+            IF( VTYPESET( K ) .EQ. M3INT ) THEN
 
 C.................  If memory is not allocated for integer read array, then
 C                   allocate it
@@ -104,8 +110,8 @@ C                   allocate it
                     CALL CHECKMEM( IOS, 'IREAD', PROGNAME )
                 END IF
 
-                IF( .NOT. READ3( FILNAM, VARBUF, ALLAYS3,
-     &                           JDATE, JTIME, IREAD ) ) THEN
+                IF( .NOT. READSET( FILNAM, VARBUF, ALLAYS3,
+     &                             ALLFILES, JDATE, JTIME, IREAD )) THEN
                     STATUS = 1
                     MESG = 'ERROR: Could not read "' //
      &                      VARBUF( 1:LV ) // '" from file.'
@@ -117,8 +123,9 @@ C                   allocate it
 
                 END IF
 
-            ELSE IF( .NOT. READ3( FILNAM, VARBUF, ALLAYS3,
-     &                       JDATE, JTIME, POLDAT( 1,V ) ) ) THEN
+            ELSE IF( .NOT. READSET( FILNAM, VARBUF, ALLAYS3,
+     &                              ALLFILES, JDATE, JTIME, 
+     &                              POLDAT( 1,V )            ) ) THEN
                 STATUS = 1
                 MESG = 'ERROR: Could not read "' //
      &                 VARBUF( 1:LV ) // '" from file.'
