@@ -64,7 +64,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
 
-        EXTERNAL CHKINT, CHKREAL, CRLF, GETFLINE, STR2INT, STR2REAL
+        EXTERNAL CHKINT, CHKREAL, CRLF, GETFLINE, INDEX1, STR2INT, 
+     &           STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: FDEV   ! iventory table unit no.
