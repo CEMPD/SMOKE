@@ -169,7 +169,7 @@ C...................   cosine of zenith angle to zenith angle (radians)
 C................... Check max/min bounds of PAR and calculate
 C................... biogenic ISOP          
 
-                  IF ( PAR .LT. 0.00 .OR. PAR .GT. 2500.0 ) THEN
+                  IF ( PAR .LT. 0.00  ) THEN
 
                       WRITE( MESG, 94010 )
      &                 'PAR=', PAR, 
@@ -177,6 +177,18 @@ C................... biogenic ISOP
                       CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
                   ENDIF
+
+                  IF ( PAR .GT. 2550.00 ) THEN
+
+                      WRITE( MESG, 94020 )
+     &                 'PAR=', PAR,
+     &                 'out of range at (C,R)=',  C, R,
+     &                 ' resetting to 2550.'
+                      CALL M3WARN( PROGNAME, JDATE, JTIME, MESG  )
+                      PAR = 2550.00
+
+                  ENDIF
+
 
 C................... Initialize csubl 
                   CSUBL = 0.0
