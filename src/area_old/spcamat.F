@@ -4,7 +4,7 @@ C Version "@(#)$Id$ $Source$ $Date$
         PROGRAM SPCAMAT
 
 C***********************************************************************
-C  program body starts at line 155
+C  program body starts at line 178
 C
 C  DESCRIPTION:
 C       Construct area source chemical speciation matrix from data 
@@ -43,10 +43,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
+        INTEGER         STR2INT
         INTEGER         TRIMLEN
         
         EXTERNAL        FIND1, FIND2, FIND3, GETEFILE, GETYN, 
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN
+     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, TRIMLEN
 
 
 C...........   PARAMETERS and their descriptions:
@@ -61,9 +62,11 @@ C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
         INTEGER     FIP
+        INTEGER     PLANT
         INTEGER     SID
         INTEGER     ID7
         INTEGER     ID3
+        INTEGER     LID, LID7, LID3
                                  
 C...........   Speciation profiles table
         
@@ -77,8 +80,30 @@ C...........   Speciation profiles table
         INTEGER     SXREF( NSPRA )              !  profile indexes (sorted)
         REAL        SCOEF( NSPRA, NMPOL )       !  profile coefficients
 
+        CHARACTER*7 ID7C
+        CHARACTER*3 ID3C
+
+C.......   Actually-occurring ASC table
+
+        INTEGER     NASC
+        INTEGER     ASCA7( NASCC )
+        INTEGER     ASCA3( NASCC )
+
 C...........   Speciation cross-reference table:  
-C.......   three parts:   first part is FIP-independent part
+C.......   Before sorting:
+
+        INTEGER     NREFA
+        INTEGER     INDEXA( NASRC )
+        INTEGER     FIPSXA( NASRC )
+        INTEGER     ASC7XA( NASRC )
+        INTEGER     ASC3XA( NASRC )
+        INTEGER     SPXRFA( NASRC )
+        REAL        VREACA( NASRC )
+        REAL        ETHADA( NASRC )
+        REAL        FRMADA( NASRC )
+        REAL        ALLADA( NASRC )
+
+C.......   After sorting -- three parts:   first part is FIP-independent part
             
         INTEGER     NREF0               !  number of actual entries
         INTEGER     ASC7X0( NASCC )	!  leading  7 digits of ASC
@@ -127,10 +152,12 @@ C...........   Area Sources Table
 
 C...........   Other local variables
         
-        INTEGER         S, F, I, V   !  loop counters.
+        INTEGER         S, F, I, J, V   !  loop counters.
+        INTEGER         ADEV            !  for actual-ASC file
         INTEGER         SDEV            !  for surrogate coeff file
         INTEGER         XDEV            !  for surrogate xref  file
         INTEGER         LDEV            !  log-device
+        INTEGER         NSPEC           !  # species represented in ASPRO
         INTEGER         SPCREF          !  scratch xref value
         INTEGER         IOS             !  I/O status
         INTEGER         IREC            !  input line (record) number
@@ -140,7 +167,9 @@ C...........   Other local variables
         REAL            FAC             !  common factor subexpression
         CHARACTER*16    ANAME   !  logical name for area-source  input file
         CHARACTER*16    MNAME   !  logical name for spec matrix output file
-        CHARACTER*80    MSGBUF  !  message buffer for M3ERR()
+        CHARACTER*256   MESG    !  message buffer for M3MESG() and M3EXIT()
+        
+        LOGICAL         EFLAG   !  input error flat
 
 
 C***********************************************************************
@@ -176,6 +205,10 @@ C.......   Get file name; open input area sources file
      &          'Enter logical name for AREA SOURCE input file',
      &          FSREAD3, 'AREA', 'SPCAMAT' )
 
+        ADEV = PROMPTFFILE( 
+     &           'Enter logical name for ACTUAL ASC file',
+     &           .TRUE., .TRUE., 'ASCC', 'SPCAMAT' )
+
         XDEV = PROMPTFFILE( 
      &           'Enter logical name for SPECIATION XREF file',
      &           .TRUE., .TRUE., 'ASREF', 'SPCAMAT' )
@@ -187,9 +220,9 @@ C.......   Get file name; open input area sources file
 C.......   Read in description of area-source file
         
         IF ( .NOT. DESC3( ANAME ) ) THEN
-            CALL M3ERR( 'SPCAMAT', 0, 0, 
-     &                  'Could not get description of file ' // ANAME,
-     &                  .TRUE. )
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Could not get description of file ' // ANAME, 
+     &                   2 )
         END IF
         
         
@@ -226,150 +259,341 @@ C.......   Open speciation matrix file:  reuse much of AREA file description
 C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
         
         IF ( .NOT. READ3( ANAME, 'FIP', ALLAYS3, 0, 0, FIPS ) ) THEN
-            CALL M3ERR( 'SPCAMAT', 0, 0, 
-     &                  'Error reading FIP from file' // ANAME,
-     &                  .TRUE. )
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Error reading FIP from file' // ANAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ANAME, 'ASC7', ALLAYS3, 0, 0, ASC7 ) ) THEN
-            CALL M3ERR( 'SPCAMAT', 0, 0, 
-     &                  'Error reading ASC7 from file' // ANAME,
-     &                  .TRUE. )
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Error reading ASC7 from file' // ANAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ANAME, 'ASC3', ALLAYS3, 0, 0, ASC3 ) ) THEN
-            CALL M3ERR( 'SPCAMAT', 0, 0, 
-     &                  'Error reading ASC3 from file' // ANAME,
-     &                  .TRUE. )
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Error reading ASC3 from file' // ANAME, 2 )
         END IF
 
 
-C.......   Read the SPECIATION PROFILES FILE
-C...............   ASSUMPTION:  sorted by FIP, ASC
+C.......   Read the ACTUAL ASC FILE
         
+        WRITE( *,92000 ) 
+     &       ' ', 'Reading ACTUAL ASC file...', ' '
+
+        IREC  =  0
+        I     =  0
+        NASC  =  0
+        LID3  = -1
+        LID7  = -1
+        EFLAG = .FALSE.
+        
+55      CONTINUE        !  head of the ADEV-read loop
+        
+            READ( ADEV, 93020, END=66, IOSTAT=IOS ) ID7, ID3
+
+            IREC = IREC + 1
+
+            IF ( IOS .NE. 0 ) THEN
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94050 ) 
+     &              'I/O error', IOS, 
+     &              'reading ACTUAL ASC file at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE IF ( I .GE. NASCC ) THEN 
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94050 )
+     &              'Max ASC TABLE size', NASCC, 
+     &              'exceeded at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE IF ( ( LID7 .GT. ID7 ) .OR.
+     &                ( LID7 .EQ. ID7 .AND. LID3 .GE. ID3 ) ) THEN 
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94050 )
+     &              'ASC table out of order at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE
+
+                I          = I + 1
+                LID7       = ID7
+                LID3       = ID3
+                ASCA7( I ) = ID7
+                ASCA3( I ) = ID3
+
+            END IF
+
+            GO TO  55  !  to head of loop
+      
+66      CONTINUE        !  end of the ADEV-read loop
+
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Error reading ACTUAL ASC file.', 2 )
+        END IF
+
+        NASC = I
+
+
+C.......   Read the SPECIATION PROFILES FILE
+C...............   ASSUMPTION:  sorted by profile ID
+
         WRITE( *,92000 ) 
      &       ' ', 'Reading SPECIATION PROFILES file...', ' '
 
+C.........  Read SDEV header
+        READ ( SDEV, * ) NSPEC
+
+        DO 76 I = 1, NSPEC
+            READ( SDEV, * )
+76      CONTINUE
+
         IREC  =  0
-        
-101     CONTINUE        !  head of the SDEV-read loop
-        
-            READ( SDEV, *, END=122, IOSTAT=IOS ) 
+        I     =  0
+        LID   = -1
+        EFLAG = .FALSE.
+
+77      CONTINUE        !  head of the SDEV-read loop
+
+            READ( SDEV, *, END=99, IOSTAT=IOS ) 
      &          SID, ( FACS( V ), V = 4, NMPOL )
 
             IREC = IREC + 1
+
             IF ( IOS .NE. 0 ) THEN
-                WRITE( *,92010 ) 
-     &              'Unit # ', SDEV, 
-     &              'IOSTAT ', IOS, 
-     &              'Line # ', IREC, ' '
-                CALL M3ERR( 'SPCAMAT', 0, 0, 
-     &              'I/O error reading SPECIATION PROFILE file.',
-     &              .TRUE. )
-            ELSE IF ( IREC .GT. NSPRA ) THEN 
-                WRITE( *,92010 ) 
-     &              'Record number  ', IREC,
-     &              'Dimensioned max', NSPRA, ' '
-                CALL M3ERR( 'SPCAMAT', 0, 0, 
-     &              'Max speciation profile table size NSPRA exceeded',
-     &              .TRUE. )
+
+                EFLAG = .TRUE.
+                WRITE( MESG, 94050 )
+     &              'I/O error', IOS, 'reading SPRO at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE IF ( I .GE. NSPRA ) THEN 
+
+                EFLAG = .TRUE.
+                WRITE( MESG, 94050 )
+     &              'Max SPRO table size', NSPRA, 
+     &              'exceeded at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE IF ( LID .GE. SID ) THEN 
+
+                EFLAG = .TRUE.
+                WRITE( MESG, 94050 )
+     &              'SPRO table out of order at line ', IREC
+                CALL M3MESG( MESG )
+
+            ELSE
+
+                I          = I + 1
+                LID        = SID
+                SXREF( I ) = SID
+                DO  88  V = 4, NMPOL
+                    SCOEF( I,V ) = FACS( V )
+88              CONTINUE
+
             END IF
-            
-            SXREF( IREC ) = SID
-            DO  111  V = 4, NMPOL
-                SCOEF( IREC,V ) = FACS( V )
-111         CONTINUE
 
-            GO TO  101  !  to head of loop
-      
-122     CONTINUE        !  end of the SDEV-read loop
+            GO TO  77   !  to head of loop
 
-        NPROFS = IREC
+99      CONTINUE        !  end of the SDEV-read loop
 
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Error reading SPECIATION PROFILE file.', 2 )
+        END IF
 
+        NPROFS = I
 
 C.......   Read the speciation cross-reference file
-C...............   ASSUMPTION:  sorted by FIP and ASC (i.e., <ID7,ID3> pair)
 
         WRITE( *,92000 ) 
      &      ' ', 'Reading SPECIATION XREF file...', ' '
 
         IREC = 0
-        I0   = 0
-        I1   = 0
-        I2   = 0
+        I     =  0
+        EFLAG = .FALSE.
 
-133     CONTINUE        !  head of the XDEV-read loop
-        
-            READ( XDEV, 93030, END=135, IOSTAT=IOS ) 
-     &          FIP, ID7, ID3, SID, VREACT, ETHADJ, FRMADJ, ALLADJ
+101     CONTINUE        !  head of the XDEV-read loop
+
             IREC = IREC + 1
+            READ( XDEV, 93030, END=111, IOSTAT=IOS ) 
+     &          FIP, PLANT, ID7C, ID3C, SID, VREACT, ETHADJ, 
+     &          FRMADJ, ALLADJ
 
-            IF ( IOS .NE. 0 ) THEN
-            
-                WRITE( MSGBUF,94050 ) 
+            IF( IOS .NE. 0 ) THEN
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94050 ) 
      &              'Error ', IOS, 
      &              'reading SPECIATION XREF file at line', IREC
-                CALL M3EXIT( 'SPCAMAT', 0, 0, MSGBUF, 2 )
-            
-            END IF
-            
-            IF ( FIP .EQ. 0  .AND.  I0 .LT. NASCC ) THEN !  FIP independent refs
+                CALL M3MESG( MESG )
 
-                I0 = I0 + 1
-                SPXRF0( I0 ) = SID 
-                ASC7X0( I0 ) = ID7 
-                ASC3X0( I0 ) = ID3
-                VREAC0( I0 ) = VREACT
-                ETHAD0( I0 ) = ETHADJ
-                FRMAD0( I0 ) = FRMADJ
-                ALLAD0( I0 ) = ALLADJ
+            ELSEIF( PLANT .GT. 0 ) THEN   ! Point source x-ref entry
 
-                GO TO  133
+                GO TO 101
 
-            ELSE IF ( ( MOD( FIP, 1000 ) .EQ. 0 )
-     &                .AND.     ( I1 .LT. NASCC ) ) THEN ! state-dependent refs
+            ELSEIF( ID7C(1:1) .GT. '9' ) THEN   ! Motor vehicle x-ref entry
 
-                I1 = I1 + 1
-                FIPSXS( I1 ) = FIP
-                SPXRFS( I1 ) = SID 
-                ASC7XS( I1 ) = ID7 
-                ASC3XS( I1 ) = ID3
-                VREACS( I1 ) = VREACT
-                ETHADS( I1 ) = ETHADJ
-                FRMADS( I1 ) = FRMADJ
-                ALLADS( I1 ) = ALLADJ
-
-                GO TO  133
-
-            ELSE IF ( FIP .GT. 0 .AND. I2 .LT. NASCC ) THEN  ! FIP-dep refs
-
-                I2 = I2 + 1
-                FIPSXF( I2 ) = FIP
-                SPXRFF( I2 ) = SID 
-                ASC7XF( I2 ) = ID7 
-                ASC3XF( I2 ) = ID3
-                VREACF( I2 ) = VREACT
-                ETHADF( I2 ) = ETHADJ
-                FRMADF( I2 ) = FRMADJ
-                ALLADF( I2 ) = ALLADJ
-
-                GO TO  133
+                GO TO 101
 
             ELSE
+
+                ID7 = STR2INT( ID7C )
+                ID3 = STR2INT( ID3C )
+
+                IF( ID7 .GT. 0 .AND. ID3 .GE. 0 ) THEN
+                    J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )
+                ELSE
+                    J = 1
+                ENDIF
+
+                IF( J .LE. 0 ) THEN   ! ASC code not found in ASCC LIST file
+
+                    GO TO 101
+
+                ELSEIF( I .GE. NASRC ) THEN
+
+                    WRITE( MESG,94050 ) 
+     &                     'XREF table overflow at record', IREC
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+
+                ELSE 
+
+                    I = I + 1
+                    INDEXA( I ) = I
+                    FIPSXA( I ) = FIP
+                    ASC7XA( I ) = ID7
+                    ASC3XA( I ) = ID3
+                    SPXRFA( I ) = SID
+                    VREACA( I ) = VREACT
+                    ETHADA( I ) = ETHADJ
+                    FRMADA( I ) = FRMADJ
+                    ALLADA( I ) = ALLADJ
+
+                END IF  !  No overflow, ASC found in list
+
+            ENDIF       !  Area source record
             
-                WRITE( MSGBUF,94050 ) 
-     &          'Max table-size ', NASCC,  
-     &          'exceeded in XREF file at line', IREC
-                CALL M3EXIT( 'SPCAMAT', 0, 0, MSGBUF, 2 )
+        GO TO  101	!  to head of the XDEV-read loop
+
+111     CONTINUE        !  end of the XDEV-read loop
+
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Error reading SPEC X-REF file.', 2 )
+        END IF
+
+        NREFA = I
+
+
+C...........   Now sort the XREF inputs and place into appropriate tables:
+
+        CALL SORTI3( NREFA, INDEXA, FIPSXA, ASC7XA, ASC3XA )
+
+        WRITE( *,92000 ) 
+     &      ' ', 'Processing SPECIATION XREF file...', ' '
+
+        I0    = 0
+        I1    = 0
+        I2    = 0
+        EFLAG = .FALSE.
+
+        DO  122  I = 1, NREFA
+        
+            J   = INDEXA( I )
+            FIP = FIPSXA( J ) 
+            ID7 = ASC7XA( J )
+            ID3 = ASC3XA( J )
+            SID = SPXRFA( J )
             
+            IF ( FIP .EQ. 0  ) THEN !  FIP independent refs
+
+                IF ( I0 .LT. NASCC ) THEN
+
+                    I0 = I0 + 1
+                    SPXRF0( I0 ) = SID 
+                    ASC7X0( I0 ) = ID7 
+                    ASC3X0( I0 ) = ID3
+                    VREAC0( I0 ) = VREACA( J )
+                    ETHAD0( I0 ) = ETHADA( J )
+                    FRMAD0( I0 ) = FRMADA( J )
+                    ALLAD0( I0 ) = ALLADA( J )
+
+                ELSE
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94050 )
+     &                  'Max FIP-independent table-size ', NASCC,  
+     &                  'exceeded in XREF file at line', IREC
+                    CALL M3MESG( MESG )
+
+                END IF
+
+            ELSE IF ( MOD( FIP, 1000 ) .EQ. 0 )  THEN ! state-dependent refs
+
+                IF ( I1 .LT. NASCC ) THEN
+
+                    I1 = I1 + 1
+                    FIPSXS( I1 ) = FIP
+                    SPXRFS( I1 ) = SID 
+                    ASC7XS( I1 ) = ID7 
+                    ASC3XS( I1 ) = ID3
+                    VREACS( I1 ) = VREACA( J )
+                    ETHADS( I1 ) = ETHADA( J )
+                    FRMADS( I1 ) = FRMADA( J )
+                    ALLADS( I1 ) = ALLADA( J )
+
+                ELSE
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94050 )
+     &                  'Max state-dependent table-size ', NASCC,  
+     &                  'exceeded in XREF file at line', IREC
+                    CALL M3MESG( MESG )
+
+                END IF
+
+            ELSE 		! fip > 0:  FIP-dep refs
+
+                IF ( I2 .LT. NASCC ) THEN
+
+                    I2 = I2 + 1
+                    FIPSXF( I2 ) = FIP
+                    SPXRFF( I2 ) = SID 
+                    ASC7XF( I2 ) = ID7 
+                    ASC3XF( I2 ) = ID3
+                    VREACF( I2 ) = VREACA( J )
+                    ETHADF( I2 ) = ETHADA( J )
+                    FRMADF( I2 ) = FRMADA( J )
+                    ALLADF( I2 ) = ALLADA( J )
+
+                ELSE
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94050 )
+     &                  'Max FIP-dependent table-size ', NASCC,  
+     &                  'exceeded in XREF file at line', IREC
+                    CALL M3MESG( MESG )
+
+                END IF
+
             END IF
 
-135     CONTINUE        !  end of the SDEV-read loop
+122     CONTINUE        !  end of the X-REF allocation loop
+        
+        IF ( EFLAG ) THEN
+                CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                       'Max table-size exceeded by XREF file', 2 )
+        END IF
         
         NREF0 = I0              !  number of location-independent refs
         NREFS = I1              !  " state-only         dependent refs
         NREFF = I2              !  " state-and-county   dependent refs
+        EFLAG = .FALSE.
         
         
 C.......   Compute the speciation coefficient matrix
@@ -421,15 +645,15 @@ C...........   Then if that fails, try by ASC only.
 
                     ELSE        !  not found:  error
 
-                        WRITE( MSGBUF,93000 ) 
-     &                      'Error computing speciation matrix:  '//
-     &                      'source not found'
-                        WRITE( *,92010 ) 
-     &                      'Source #', S, 
-     &                      'FIP code', FIP,
+                        EFLAG = .TRUE.
+                        WRITE( MESG,93000 ) 
+     &                      'Source', S, 
+     &                      '(FIP', FIP,
      &                      'ASC7    ', ID7,
-     &                      'ASC3    ', ID3
-                        CALL M3EXIT( 'SPCAMAT', 0, 0, MSGBUF, 2 )
+     &                      'ASC3    ', ID3, ') not found'
+                        CALL M3MESG( MESG )
+
+                        GO TO 144      !  to end of loop
 
                     END IF      !  if find2(scc) succeeded, or not
 
@@ -441,14 +665,14 @@ C...........   Then if that fails, try by ASC only.
 
             IF ( I .LE. 0 ) THEN        !  error:  XREF index not found
 
-                WRITE( MSGBUF,93000 ) 
-     &              'Error computing spc matrix:   XREF not found.'
-                WRITE( *,92010 ) 
-     &              'FIPS code', FIP,
-     &              'ASC7 code', ID7,
-     &              'ASC3 code', ID3, 
-     &              'XREF code', SPXRF0( F )
-                CALL M3EXIT( 'SPCAMAT', 0,0, MSGBUF, 2 )
+                WRITE( MESG,93000 ) 
+     &              'XREF for FIPS', FIP,
+     &              'ASC7', ID7,
+     &              'ASC3', ID3, 
+     &              'XREF', SPXRF0( F ), 'not found'
+                CALL M3MESG( MESG )
+
+                GO TO  144	!  to end of loop
 
             END IF      !  if i nonpositive (cross-reference not found)
 
@@ -456,13 +680,18 @@ C...........   Then if that fails, try by ASC only.
             SPCFACS( S, 2 ) = ALLADJ * NOFAC      ! 90% of 1/molwt for NO
             SPCFACS( S, 3 ) = ALLADJ * NO2FAC     ! 10% of 1/molwt for NO2
             FAC = ALLADJ	!  if THC used, need VREACT * ALLADJ
-            DO  143  V = 4, NMPOL
+            DO  133  V = 4, NMPOL
                 SPCFACS( S,V ) = FAC * SCOEF( I,V )
-143         CONTINUE
+133         CONTINUE
             SPCFACS( S, 8 ) = FRMADJ * SPCFACS( S, 8 )
             SPCFACS( S,10 ) = ETHADJ * SPCFACS( S,10 )
 
 144     CONTINUE        ! end loop on area sources, computing speciation matrix
+
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'SPCAMAT', 0, 0, 
+     &                   'Error computing SPECIATION MATRIX', 2 )
+        END IF
 
         
 C.......   Write out the speciation matrix:
@@ -498,7 +727,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( I7, I3 )
 
-93030   FORMAT( I5, I8, I3, I6, F6.3, 15X, 3 F6.3 ) !  for SPC XREF file
+93030   FORMAT( I5, I6, 5X, A7, A3, 1X, I5, F6.3, 15X, 3 F6.3 ) ! for ASREF
 
 
 C...........   Internal buffering formats............ 94xxx
@@ -511,7 +740,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94040   FORMAT( G10.3 )
 
-94050   FORMAT( 3( A, :, I10, :, 2X ) )
+94050   FORMAT( 10 ( A, :, I10, :, 2X ) )
 
 
         END
