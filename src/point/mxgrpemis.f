@@ -69,12 +69,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      GETFLINE
         LOGICAL      ISOPEN
         CHARACTER*14 MMDDYY
-        LOGICAL      OPNFULL3
+        LOGICAL      SETENVVAR
         INTEGER      PROMPTFFILE
         INTEGER      SECSDIFF
         INTEGER      WKDAY
 
-        EXTERNAL    CRLF, GETFLINE, ISOPEN, MMDDYY, OPNFULL3, 
+        EXTERNAL    CRLF, GETFLINE, ISOPEN, MMDDYY, SETENVVAR, 
      &              PROMPTMFILE, SECSDIFF, WKDAY
 
 C...........   Local allocatable arrays
@@ -258,9 +258,18 @@ C.............  Get physical file name for current iteration
 C.............  Skip any blank lines
             IF( PTMPFILE .EQ. ' ' ) CYCLE
 
-C.............  Try to open file and retrieve logical file name
-            IF( .NOT. OPNFULL3( TNAME, FSREAD3, PTMPFILE,
-     &                          PROGNAME ) ) THEN
+C.............  Set logical file name
+            IF( .NOT. SETENVVAR( TNAME, PTMPFILE ) ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( PTMPFILE )
+                MESG = 'INTERNAL ERROR: Could not set logical file ' //
+     &                 'name for file ' // PTMPFILE( 1:L )
+                CALL M3MSG2( MESG )
+                CYCLE
+            END IF    
+                           
+C.............  Try to open file
+            IF( .NOT. OPEN3( TNAME, FSREAD3, PROGNAME ) ) THEN
                 EFLAG = .TRUE.
                 L = LEN_TRIM( PTMPFILE )
                 MESG = 'ERROR: Could not open hourly emissions file ' //
@@ -495,9 +504,18 @@ C.............  Close previous file if needed
 
             END IF
 
-C.............  Try to open file and retrieve logical file name
-            IF( .NOT. OPNFULL3( TNAME, FSREAD3, PTMPFILE,
-     &                          PROGNAME ) ) THEN
+C.............  Set logical file name
+            IF( .NOT. SETENVVAR( TNAME, PTMPFILE ) ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( PTMPFILE )
+                MESG = 'INTERNAL ERROR: Could not set logical file ' //
+     &                 'name for file ' // PTMPFILE( 1:L )
+                CALL M3MSG2( MESG )
+                CYCLE
+            END IF   
+
+C.............  Try to open file
+            IF( .NOT. OPEN3( TNAME, FSREAD3, PROGNAME ) ) THEN
                 EFLAG = .TRUE.
                 L = LEN_TRIM( PTMPFILE )
                 MESG = 'ERROR: Could not open hourly emissions file ' //
