@@ -2,7 +2,7 @@
         PROGRAM RAWBIO
 
 C***********************************************************************
-C  program body starts at line  125
+C  program body starts at line  116
 C
 C  DESCRIPTION:
 C       Computes normalized gridded biogenic emissions in terms of 
@@ -50,6 +50,9 @@ C...........   This module contains the gridding surrogates tables
 C...........   This module contains biogenic variables
         USE MODBIOG
  
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -74,47 +77,43 @@ C...........   LOCAL PARAMETERS
      &              CVSW      = '$Name$' )
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-
+        CHARACTER*2     CRLF
+        LOGICAL         DSCM3GRD
         LOGICAL         ENVYN
         INTEGER         GETFLINE
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        INTEGER         TRIMLEN
         CHARACTER*16    VERCHAR
 
-        EXTERNAL        ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE,  
-     &                  TRIMLEN, VERCHAR
+        EXTERNAL        CRLF, DSCM3GRD, ENVYN, GETFLINE, PROMPTFFILE, 
+     &                  PROMPTMFILE, VERCHAR
+
+C...........   File names and unit numbers
+        INTEGER         FDEV    !  unit number for emissions factor file:
+        INTEGER         GDEV    !  unit number for gridded land use file
+        INTEGER         LDEV    !  unit number for log file
+        INTEGER         SDEV    !  unit number for surrogate factors
+        INTEGER         UDEV    !  unit number for county land use file
+
+        CHARACTER*16    ENAME   !  logical name for emissions output
 
 C...........   LOCAL VARIABLES and their descriptions:
 
         INTEGER         B, C, R, I, J, K, L, M, N ! loop counters and subscripts
-        INTEGER         IOS     !  I/O status result
-        LOGICAL ::   GLUSE_YN = .TRUE.   ! gridded or county luse to be used
-        LOGICAL         LGRID 
 
-        INTEGER         FDEV    !  unit number for emissions factor file:
-        INTEGER         SDEV    !  unit number for surrogate factors
-        INTEGER         UDEV    !  unit number for county land use file
-        INTEGER         GDEV    !  unit number for gridded land use file
-        INTEGER         LDEV    !  unit number for log file:
-        CHARACTER*16    ENAME   !  logical name for emissions output
+        INTEGER         DATNROWS            ! no. rows in input data file
+        INTEGER         DATNCOLS            ! no. cols in input data file
+        INTEGER         IOS                 ! i/o status result
 
-        CHARACTER*256   MESG    !  message buffer for M3EXIT()
+        LOGICAL ::      EFLAG = .FALSE.     ! true: error found
+        LOGICAL ::      GLUSE_YN = .TRUE.   ! gridded or county luse to be used
+        LOGICAL ::      LGRID = .FALSE.     ! true: use gridded land use
 
-        CHARACTER*16            GRDNM    !  grid name
-        CHARACTER*16            SRGFMT   !  surrogates format
-        CHARACTER*80            GDESC    !  grid description
-
-        REAL            XCELL  ! Cell size, X direction
-        REAL            XCENT  ! Center of coordinate system
-        REAL            XORIG  ! X origin
-        REAL            YCELL  ! Cell size, Y direction
-        REAL            YCENT  ! Center of coordinate system
-        REAL            YORIG  ! Y origin
-
-        INTEGER         NCOLS   ! no. of grid columns
-        INTEGER         NGRID   ! no. of grid cells
-        INTEGER         NROWS   ! no. of grid rows
+        CHARACTER*16     COORUNIT           ! coordinate system projection units
+        CHARACTER*16  :: DATGRDNM = ' '     ! input data grid name
+        CHARACTER*16     SRGFMT             ! surrogates format
+        CHARACTER*80     GDESC              ! grid description
+        CHARACTER*256    MESG               ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'RAWBIO'   !  program name
 
@@ -136,7 +135,7 @@ C.......   Get file name; open emission factors file
 
 C.......   Determine if gridded landuse is to be used
 
-        MESG = 'Is gridded landuse to be used?'
+        MESG = 'Use gridded land use or not'
         LGRID = ENVYN ( 'GLUSE_YN', MESG, .FALSE., IOS )
 
 C.......   If county landuse is to be used open surrogates and 
@@ -144,34 +143,28 @@ C          county landuse file
 
         IF ( .NOT. LGRID ) THEN
 
-C.......   Get file name; open surrogates fractions file
-
-           SDEV = PROMPTFFILE( 
-     &           'Enter logical name for SURROGATE FACTORS file',
-     &           .TRUE., .TRUE., 'BGPRO', PROGNAME )
-
 C.......   Get file name; open county landuse file
 
            UDEV = PROMPTFFILE( 
      &           'Enter logical name for COUNTY LANDUSE file',
      &           .TRUE., .TRUE., 'BCUSE', PROGNAME )
 
+C.......   Get file name; open surrogates fractions file
 
-           CALL M3MSG2( 'Reading gridding surrogates file...' )
+           SDEV = PROMPTFFILE( 
+     &           'Enter logical name for GRIDDING SURROGATES file',
+     &           .TRUE., .TRUE., 'BGPRO', PROGNAME )
 
-C.............  Read the surrogates header and check that it is consistent
-C               with the grid description from the DSCM3GRD call
-C.............  Also, obtain the format of the file.
+           CALL M3MSG2( 'Reading gridding surrogates header...' )
 
-           CALL RDSRGHDR(  SDEV, SRGFMT, GRDNM, GDESC, XCENT, YCENT,
-     &                     XORIG, YORIG, XCELL, YCELL, NCOLS, NROWS )
+C.............  Read the surrogates header, obtain the format of the file, 
+C               and save the name of the input grid
+           CALL RDSRGHDR( SDEV, SRGFMT )
+           DATGRDNM = GRDNM
+           DATNCOLS = NCOLS
+           DATNROWS = NROWS
 
-           NGRID = NCOLS * NROWS
-
-C.............  Allocate memory for and read the gridding surrogates file
-           CALL RDSRG( SDEV, SRGFMT, XCENT, YCENT, XORIG,
-     &                  YORIG, XCELL, YCELL, NCOLS, NROWS )
-
+C.........  Use gridded landuse file...
         ELSE
 
 C.......   Get file name; open county landuse file
@@ -180,31 +173,70 @@ C.......   Get file name; open county landuse file
      &           'Enter logical name for GRIDDED LANDUSE file',
      &           .TRUE., .TRUE., 'BGUSE', PROGNAME )
 
-
-C.............  Read the header of landuse file and check that it is consistent
-C               with the grid description from the DSCM3GRD call
-C.............  Also, obtain the format of the file.
-
-           CALL RDSRGHDR(  GDEV, SRGFMT, GRDNM, GDESC, XCENT, YCENT,
-     &                     XORIG, YORIG, XCELL, YCELL, NCOLS, NROWS )
-
-           NGRID = NCOLS * NROWS
+C.............  Read the header of landuse file, obtain the format of the file, 
+C               and save the name of the input grid
+           CALL RDSRGHDR(  GDEV, SRGFMT )
+           DATGRDNM = GRDNM
+           DATNCOLS = NCOLS
+           DATNROWS = NROWS
 
 C.............   Rewind gridded landuse file
-
            REWIND ( GDEV )
 
-        ENDIF
+        END IF
 
-C............. some grid description info obtained from call to RDSRG above
+C.........  Get grid name from the environment and read grid parameters
+        IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUNIT,
+     &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, 
+     &                     YCENT3D, XORIG3D, YORIG3D, XCELL3D,
+     &                     YCELL3D, NCOLS3D, NROWS3D, NTHIK3D)) THEN
 
+            MESG = 'Could not get Models-3 grid description.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
+C.........  Check the output grid grid settings as compared to the input
+C           surrogates or land use data
+        CALL CHKGRID( GDNAM3D, 'GRIDDESC', 1, EFLAG )
+
+C.........  Abort if error
+        IF ( EFLAG ) THEN
+            MESG = 'Inconsistency between grid selected and ' //
+     &             'grid in input data.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Write message stating grid name and description
+        L = LEN_TRIM( GRDNM )
+        MESG = 'NOTE: Output grid "' // GRDNM( 1:L ) // 
+     &         '" set; described as' // CRLF() // BLANK10 // GDESC
+        CALL M3MSG2( MESG )
+
+C.........  If output grid is different from surrogates, write message
+        IF ( OFFLAG ) THEN
+            L = LEN_TRIM( DATGRDNM )
+            MESG = 'NOTE: gridding surrogates extracted for output '//
+     &             'grid from grid "' // DATGRDNM( 1:L ) // '"'
+            CALL M3MSG2( MESG )
+        END IF
+
+C.........  If surrogates are needed, allocate memory for and read the 
+C           gridding surrogates
+        IF( .NOT. LGRID ) THEN
+
+            CALL RDSRG( SDEV, SRGFMT, DATNROWS, DATNCOLS )
+
+        END IF
+
+C............. Set up header variables for output file BGRD...
+
+C............. Some grid description info obtained from call to RDSRG above
+
+        FTYPE3D = GRDDED3
         NROWS3D = NROWS
         NCOLS3D = NCOLS
         GDNAM3D = GRDNM
-        FTYPE3D = GRDDED3
-
-C............. set up header variables for output file BGRD
-
         SDATE3D = 0       !  n/a
         STIME3D = 0       !  n/a
         TSTEP3D = 0       !  time independent
@@ -222,7 +254,7 @@ C............. set up header variables for output file BGRD
           FDESC3D( 4 ) = '/LANDUSE/ COUNTY '
         ELSE
           FDESC3D( 4 ) = '/LANDUSE/ GRIDDED ' 
-        ENDIF
+        END IF
 
         I = 0
         DO  M = 1, BSPCS - 1
@@ -233,8 +265,8 @@ C............. set up header variables for output file BGRD
             UNITS3D( I ) = 'grams/hour' 
             VTYPE3D( I ) = M3REAL
 
-          ENDDO
-        ENDDO
+          END DO
+        END DO
 
         I = I + 1
         VNAME3D( I ) = 'AVLAI'
@@ -245,49 +277,43 @@ C............. set up header variables for output file BGRD
         DO  L = 1, LUSES
 
             I = I + 1
-            VNAME3D( I ) = BIOLUSE( L )( 1:TRIMLEN( BIOLUSE( L )))//'NO'
+            VNAME3D( I ) = BIOLUSE( L )( 1:LEN_TRIM( BIOLUSE(L)))//'NO'
             VDESC3D( I ) = 'Normalized emissions--nonforest land use'
             UNITS3D( I ) = 'grams/hour' 
             VTYPE3D( I ) = M3REAL
 
-        ENDDO
+        END DO
 
         ENAME = PROMPTMFILE(  
      &          'Enter logical name for NORMALIZED BIO output file',
      &          FSUNKN3, 'BGRD', PROGNAME )
 
-
-C.......  Get length of BFAC file
-
+C.........  Get number of records of BFAC file
         NVEG = GETFLINE( FDEV, 'Emissions factor file' )
 
-C.......  Allocate memory for emission factor variables   
-
+C.........  Allocate memory for emission factor variables   
         ALLOCATE( VEGID ( NVEG ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VEGID', PROGNAME )
-
         ALLOCATE( EMFAC ( NVEG, NSEF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMFAC', PROGNAME )
-
         ALLOCATE( LAI ( NVEG ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LAI', PROGNAME )
 
-C.......  Read emissions factor file
-
-        WRITE( LDEV,92000 ) ' ', 'Reading EMISSIONS FACTOR file', ' '
+C.........  Read emissions factor file
+        CALL M3MSG2( 'Reading EMISSIONS FACTOR file...' )
 
         CALL RDBEFAC( FDEV, NVEG, VEGID, EMFAC, LAI ) 
 
-C...........   Fold ug~~>g, hectare~~>m^2 factors into emfac:
+C.........  Fold ug~~>g, hectare~~>m^2 factors into emfac:
 
         DO  J = 1, NSEF
           DO  I = 1, NVEG
             EMFAC( I, J ) = MICR2G * HA2MSQ * EMFAC( I, J )
-          ENDDO
-        ENDDO
+          END DO
+        END DO
 
-C.............. Allocate memory and initialize variables for normalized
-C.............. emissions categories
+C.........  Allocate memory and initialize variables for normalized
+C           emissions categories
 
         ALLOCATE( PINE ( NGRID, BSPCS-1  ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PINE', PROGNAME )
@@ -313,12 +339,12 @@ C.............. emissions categories
         ALLOCATE( AGRINO ( NGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AGRINO', PROGNAME )
 
-        PINE = 0.0      !array
-        DECD = 0.0      !array
-        CONF = 0.0      !array
-        AGRC = 0.0      !array
-        LEAF = 0.0      !array
-        OTHR = 0.0      !array
+        PINE = 0.0      ! array
+        DECD = 0.0      ! array
+        CONF = 0.0      ! array
+        AGRC = 0.0      ! array
+        LEAF = 0.0      ! array
+        OTHR = 0.0      ! array
 
         AVLAI  = 0.0    ! array
         GRASNO = 0.0    ! array
@@ -335,9 +361,9 @@ C............  either county or gridded landuse
 
         ELSE
 
-          CALL GRDBIO( GDEV, NCOLS, NROWS)
+          CALL GRDBIO( GDEV, DATNROWS, DATNCOLS )
 
-        ENDIF
+        END IF
  
 C...............   Write output file:
 
@@ -348,7 +374,7 @@ C...............   Write output file:
             IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         PINE( 1,M ) ) ) THEN
                 MESG = 'Could not write "' //
-     &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
+     &                  VNAME3D( I )( 1: LEN_TRIM( VNAME3D( I ) ) ) //
      &                  '" to ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -356,7 +382,7 @@ C...............   Write output file:
             IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         DECD( 1,M ) ) ) THEN
                 MESG = 'Could not write "' //
-     &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
+     &                  VNAME3D( I )( 1: LEN_TRIM( VNAME3D( I ) ) ) //
      &                  '" to ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -365,7 +391,7 @@ C...............   Write output file:
             IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         CONF( 1,M ) ) ) THEN
                 MESG = 'Could not write "' //
-     &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
+     &                  VNAME3D( I )( 1: LEN_TRIM( VNAME3D( I ) ) ) //
      &                  '" to ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -374,7 +400,7 @@ C...............   Write output file:
             IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         AGRC( 1,M ) ) ) THEN
                 MESG = 'Could not write "' //
-     &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
+     &                  VNAME3D( I )( 1: LEN_TRIM( VNAME3D( I ) ) ) //
      &                  '" to ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -383,7 +409,7 @@ C...............   Write output file:
             IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         LEAF( 1,M ) ) ) THEN
                 MESG = 'Could not write "' //
-     &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
+     &                  VNAME3D( I )( 1: LEN_TRIM( VNAME3D( I ) ) ) //
      &                  '" to ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -392,12 +418,12 @@ C...............   Write output file:
             IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         OTHR( 1,M ) ) ) THEN
                 MESG = 'Could not write "' //
-     &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
+     &                  VNAME3D( I )( 1: LEN_TRIM( VNAME3D( I ) ) ) //
      &                  '" to ' // ENAME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-        ENDDO        !  end loop on VOC species M
+        END DO        !  end loop on VOC species M
 
         IF ( .NOT. WRITE3( ENAME, 'AVLAI', 0, 0,
      &                     AVLAI ) ) THEN
