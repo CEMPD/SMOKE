@@ -153,7 +153,7 @@ C.......   Get file name; open input raw area source file
 
         UDEV = PROMPTFFILE( 
      &           'Enter logical name for GRIDDED LANDUSE file',
-     &           .TRUE., .TRUE., 'BCUSE', 'GRDBIO' )
+     &           .TRUE., .TRUE., 'BGUSE', 'GRDBIO' )
 
 
 C.......   Set up file description and open emissions file:
@@ -173,8 +173,8 @@ C.......   Set up file description and open emissions file:
 
         GDNAM3D = GRDNM
         FTYPE3D = GRDDED3
-        SDATE3D = 0             !  n/a
-        STIME3D = 0             !  n/a
+        SDATE3D = 1988167             !  n/a
+        STIME3D = 050000             !  n/a
         TSTEP3D = 0             !  time independent
         NVARS3D = BTYPES * ( BSPCS - 1 ) + LUSES + 1
         NLAYS3D = 1
@@ -182,7 +182,7 @@ C.......   Set up file description and open emissions file:
         VGTYP3D = IMISS3
         VGTOP3D = AMISS3
         FDESC3D( 1 ) = 'Biogenic Source normalized emissions values.'
-        FDESC3D( 2 ) = 'Inventory  type COUNTY_BASED'
+        FDESC3D( 2 ) = 'Inventory type GRID_BASED'
 
         DO  11  I = 3, MXDESC3
             FDESC3D( I ) = ' '
@@ -267,7 +267,7 @@ C...........   Fold ug~~>g, hectare~~>m^2 factors into emfac:
 
 C.......   Initialize normalized-emissions arrays:
 
-        DO 33 I = 1, BSPCS
+        DO 33 I = 1, BSPCS-1
         DO 32 R = 1, NROWS
         DO 31 C = 1, NCOLS
             PINE( C, R, I ) = 0.0
@@ -312,7 +312,7 @@ C.......   Loops:  read and process gridded LANDUSE file:
 
 55      CONTINUE                !  head of loop:  read data recordsh
 
-            READ( UDEV, 93000, END = 122, IOSTAT=ISTAT ) C, R, AREA
+            READ( UDEV, 93005, END = 122, IOSTAT=ISTAT ) C, R, AREA
             LINE =  LINE + 1
             IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
@@ -360,12 +360,12 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
 
             DO  69  N = 1, NTYPE
 
-                READ( UDEV, *, IOSTAT=ISTAT ) TYPE, AREA
+                READ( UDEV, 93030, IOSTAT=ISTAT ) TYPE, AREA
                 LINE =  LINE + 1
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              'Error reading AREA TYPE from ' //
+     &              '1. Error reading AREA TYPE from ' //
      &              'LANDUSE at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
@@ -386,9 +386,9 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     ALAI   = ALAI   + AREA
                     DO  61  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
 61                  CONTINUE
-                    ENOFOR = ENOFOR + AREA * EMFAC( NO, K )
+                    ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Wdcp' ) THEN
 
@@ -397,9 +397,9 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  62  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
 62                  CONTINUE
-                    ENOAG  = ENOAG + AREA * EMFAC( NO, K )
+                    ENOAG  = ENOAG + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
 
@@ -408,9 +408,9 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  63  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K, M )
 63                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Urba' ) THEN
 
@@ -420,29 +420,30 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  64  M = 1, BSPCS - 1
-                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( M , K )
+                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 64                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE    !  Add area to the forest area, add NO to the forest NO
 
                     AFOR = AFOR + AREA
+                    ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     IF     ( LAI( K ) .EQ. 3 ) THEN
                         DO  65  M = 1, BSPCS - 1
-                            EPINE( M ) = EPINE( M ) + AREA*EMFAC( M,K )
+                            EPINE( M ) = EPINE( M ) + AREA*EMFAC( K,M )
 65                      CONTINUE
 
                     ELSE IF( LAI( K ) .EQ. 5 ) THEN
 
                         DO  66  M = 1, BSPCS - 1
-                            EDECD( M ) = EDECD( M ) + AREA*EMFAC( M,K )
+                            EDECD( M ) = EDECD( M ) + AREA*EMFAC( K,M )
 66                      CONTINUE
 
                     ELSE IF( LAI( K ) .EQ. 7 ) THEN
 
                         DO  67  M = 1, BSPCS - 1
-                            ECONF( M ) = ECONF( M ) + AREA*EMFAC( M,K )
+                            ECONF( M ) = ECONF( M ) + AREA*EMFAC( K,M )
 67                      CONTINUE
 
                     ELSE
@@ -450,9 +451,9 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                         SUMLAI = SUMLAI + AREA * LAI( K )
                         ALAI   = ALAI   + AREA
                         DO  68  M = 1, BSPCS - 1
-                            ELAI( M ) = ELAI( M ) + AREA*EMFAC( M,K )
+                            ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 68                      CONTINUE
-                        ENOFOR = ENOFOR + AREA * EMFAC( NO, K )
+c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !  if lai is 3,5,7, or otherwise
 
@@ -464,6 +465,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
 C...........   Land use type:  urban forest.  Process subtypes:
 
             READ( UDEV, *,IOSTAT=ISTAT )  ATYPE, NTYPE
+            LINE =  LINE + 1
             IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
@@ -474,12 +476,12 @@ C...........   Land use type:  urban forest.  Process subtypes:
 
             DO  79  N = 1, NTYPE
 
-                READ( UDEV, *, IOSTAT=ISTAT ) TYPE, AREA
+                READ( UDEV, 93030, IOSTAT=ISTAT ) TYPE, AREA
                 LINE =  LINE + 1
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              'Error reading AREA TYPE from ' //
+     &              '2. Error reading AREA TYPE from ' //
      &              'LANDUSE at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
@@ -501,9 +503,9 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     ALAI   = ALAI   + AREA
                     DO  71  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
 71                  CONTINUE
-                    ENOFOR = ENOFOR + AREA * EMFAC( NO, K )
+                    ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Wdcp' ) THEN
 
@@ -512,9 +514,9 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  72  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
 72                  CONTINUE
-                    ENOAG  = ENOAG + AREA * EMFAC( NO, K )
+                    ENOAG  = ENOAG + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
 
@@ -523,9 +525,9 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  73  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K, M )
 73                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Urba' ) THEN
 
@@ -535,29 +537,30 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  74  M = 1, BSPCS - 1
-                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( M , K )
+                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 74                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE    !  Add area to the forest area, add NO to the forest NO
 
                     AFOR = AFOR + AREA
+                    ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     IF     ( LAI( K ) .EQ. 3 ) THEN
                         DO  75  M = 1, BSPCS - 1
-                            EPINE( M ) = EPINE( M ) + AREA*EMFAC( M,K )
+                            EPINE( M ) = EPINE( M ) + AREA*EMFAC( K,M )
 75                      CONTINUE
 
                     ELSE IF( LAI( K ) .EQ. 5 ) THEN
 
                         DO  76  M = 1, BSPCS - 1
-                            EDECD( M ) = EDECD( M ) + AREA*EMFAC( M,K )
+                            EDECD( M ) = EDECD( M ) + AREA*EMFAC( K,M )
 76                      CONTINUE
 
                     ELSE IF( LAI( K ) .EQ. 7 ) THEN
 
                         DO  77  M = 1, BSPCS - 1
-                            ECONF( M ) = ECONF( M ) + AREA*EMFAC( M,K )
+                            ECONF( M ) = ECONF( M ) + AREA*EMFAC( K,M )
 77                      CONTINUE
 
                     ELSE
@@ -565,9 +568,9 @@ C...........   Land use type:  urban forest.  Process subtypes:
                         SUMLAI = SUMLAI + AREA * LAI( K )
                         ALAI   = ALAI   + AREA
                         DO  78  M = 1, BSPCS - 1
-                            ELAI( M ) = ELAI( M ) + AREA*EMFAC( M,K )
+                            ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 78                      CONTINUE
-                        ENOFOR = ENOFOR + AREA * EMFAC( NO, K )
+c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !!  if lai is 3,5,7, or otherwise
 
@@ -579,6 +582,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
 C...........   Land use type:  agriculture.  Process subtypes:
 
             READ( UDEV, *,IOSTAT=ISTAT )  ATYPE, NTYPE
+            LINE =  LINE + 1
             IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
@@ -589,12 +593,12 @@ C...........   Land use type:  agriculture.  Process subtypes:
 
             DO  82  N = 1, NTYPE
 
-                READ( UDEV, *, IOSTAT=ISTAT ) TYPE, AREA
+                READ( UDEV, 93030, IOSTAT=ISTAT ) TYPE, AREA
                 LINE =  LINE + 1
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              'Error reading AREA TYPE from ' //
+     &              '3. Error reading AREA TYPE from ' //
      &              'LANDUSE at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
@@ -610,9 +614,9 @@ C...........   Land use type:  agriculture.  Process subtypes:
 
                 AAG = AAG + AREA
                 DO  81  M = 1, BSPCS - 1
-                    EAG( M ) = EAG( M ) + AREA * EMFAC( M , K )
+                    EAG( M ) = EAG( M ) + AREA * EMFAC( K , M )
 81              CONTINUE
-                ENOAG  = ENOAG + AREA * EMFAC( NO, K )
+                ENOAG  = ENOAG + AREA * EMFAC( K, NO )
 
 82          CONTINUE
 
@@ -620,6 +624,7 @@ C...........   Land use type:  agriculture.  Process subtypes:
 C...........   Land use type:  remaining/other.  Process subtypes:
 
             READ( UDEV, *,IOSTAT=ISTAT )  ATYPE, NTYPE
+            LINE =  LINE + 1
             IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
@@ -630,12 +635,12 @@ C...........   Land use type:  remaining/other.  Process subtypes:
 
             DO  101  N = 1, NTYPE
 
-                READ( UDEV, *, IOSTAT=ISTAT ) TYPE, AREA
+                READ( UDEV, 93030, IOSTAT=ISTAT ) TYPE, AREA
                 LINE =  LINE + 1
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              'Error reading AREA TYPE from ' //
+     &              '4. Error reading AREA TYPE from ' //
      &              'LANDUSE file at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
@@ -659,17 +664,17 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     AFOR   = AFOR + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  91  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
 91                  CONTINUE
-                    ENOFOR = ENOFOR + AREA * EMFAC( NO, K )
+                    ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Pacp' ) THEN
 
                     AAG = AAG + AREA
                     DO  92  M = 1, BSPCS - 1
-                        EAG( M ) = EAG( M ) + AREA * EMFAC( M , K )
+                        EAG( M ) = EAG( M ) + AREA * EMFAC( K , M )
 92                  CONTINUE
-                    ENOAG = ENOAG + AREA * EMFAC( NO, K )
+                    ENOAG = ENOAG + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Gras' .OR.
 
@@ -678,9 +683,9 @@ C...........   Land use type:  remaining/other.  Process subtypes:
      &                    TYPE .EQ. 'Othe' ) THEN
                     AGRS = AGRS + AREA
                     DO  93  M = 1, BSPCS - 1
-                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( M , K )
+                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 93                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Wetf' ) THEN
 
@@ -688,11 +693,11 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     ALAI = ALAI + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  94  M = 1, BSPCS - 1
-                        EMIS = AREA * EMFAC( M , K )
+                        EMIS = AREA * EMFAC( K , M )
                         EOTH( M ) = EOTH( M ) + EMIS
                         ELAI( M ) = ELAI( M ) + EMIS
 94                  CONTINUE
-                    ENOWTF = ENOWTF + AREA * EMFAC( NO, K )
+                    ENOWTF = ENOWTF + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Wate' .OR.
      &                    TYPE .EQ. 'Barr' .OR.
@@ -707,9 +712,9 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     AAG    = AAG    + 0.5 * AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  95  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
 95                  CONTINUE
-                    ENOAG = ENOAG + AREA * EMFAC( NO, K )
+                    ENOAG = ENOAG + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
 
@@ -718,9 +723,9 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     AGRS   = AGRS   + 0.5 * AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  96  M = 1, BSPCS - 1
-                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( M , K )
+                        ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
 96                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Urba' ) THEN
 
@@ -728,18 +733,18 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     AGRS   = AGRS   + 0.2 * AREA
                     AOTH   = AOTH   + 0.6 * AREA
                     DO  97  M = 1, BSPCS - 1
-                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( M , K )
+                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 97                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE IF ( TYPE .EQ. 'Desh' ) THEN
 
                     AGRS   = AGRS   + 0.5 * AREA
                     AOTH   = AOTH   + 0.5 * AREA
                     DO  98  M = 1, BSPCS - 1
-                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( M , K )
+                        EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 98                  CONTINUE
-                    ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                    ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                 ELSE
 
@@ -750,16 +755,16 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                         ALAI   = ALAI   + AREA
                         SUMLAI = SUMLAI + AREA * LAI( K )
                         DO  99  M = 1, BSPCS - 1
-                            ELAI( M ) = ELAI( M ) + AREA * EMFAC( M,K )
+                            ELAI( M ) = ELAI( M ) + AREA * EMFAC( K,M )
 99                      CONTINUE
-                        ENOFOR = ENOFOR + AREA * EMFAC( NO, K )
+                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     ELSE
 
                         DO  100  M = 1, BSPCS - 1
-                            EOTH( M ) = EOTH( M ) + AREA * EMFAC( M,K )
+                            EOTH( M ) = EOTH( M ) + AREA * EMFAC( K,M )
 100                      CONTINUE
-                        ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
+                        ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
                     END IF
 
@@ -856,10 +861,12 @@ C...........   Formatted file I/O formats............ 93xxx
                                    
 93000   FORMAT( A )
 
+93005   FORMAT( I3.3, 1X, I3.3, F12.3 )
 93010   FORMAT( 1X, A4, 3 F9.0, F6.0, I2 )
 
 93020   FORMAT( 4 F10.0, I10, 2F10.0 )
 
+93030   FORMAT( 12x, A4, 2x, F12.3 ) 
 
 C...........   Internal buffering formats............ 94xxx
 
