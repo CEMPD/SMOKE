@@ -154,6 +154,7 @@ C.......   BEIS2 internal, output species
         CHARACTER*5      CTZONE     ! string of time zone
         CHARACTER*16     RADNAM     !  string for shortwave radiation reaching ground
         CHARACTER*16     TMPRNAM    !  string for temperature 
+        CHARACTER*16     PRESNAM    !  string for surface pressure
         CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
         CHARACTER*50  :: LUSE      !  temporary string for land use description
@@ -1453,11 +1454,16 @@ C...............     must pass met date and time here
 
            ELSE        ! Use clouds or clear skies to calculate PAR
 
+C..............  Get name of surface pressure variable to use
+
+              MESG = 'Variable name for surface pressure'
+              CALL ENVSTR( 'PRES_VAR', MESG, 'PRSFC', PRESNAM, IOS )
+
 C..............  Read surface pressure data from temperature file
 
-              IF ( .NOT. READ3( MNAME, 'PRES', 1, 
+              IF ( .NOT. READ3( MNAME, PRESNAM, 1, 
      &                        MDATE, MTIME, PRSFC ) ) THEN
-                  MESG = 'Could not read PRES from file "' //
+                  MESG = 'Could not read '// PRESNAM // 'from file "'//
      &                   METFILE( 1:LEN_TRIM( METFILE ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', MDATE, MTIME, MESG, 2 )
               END IF
