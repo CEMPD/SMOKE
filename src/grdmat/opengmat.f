@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: FDEV    ! report file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW  = '$Revision$'  ! CVS revision no.
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -126,7 +126,7 @@ C.........  Set up I/O API output file header for gridding matrix
 
         FDESC3D( 1  ) = CATDESC // 'source gridding matrix'
         FDESC3D( 2  ) = '/FROM/ ' // PROGNAME
-        FDESC3D( 3  ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3  ) = '/VERSION/ ' // VERCHAR( CVSW )
         FDESC3D( 4  ) = '/GDESC/ ' // GDESC
         WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS
         WRITE( FDESC3D(6), 94010 ) '/NROWS3D/ ', NROWS
