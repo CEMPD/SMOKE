@@ -1,20 +1,12 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 #
+# Programs listed in alphabetical order
+#
 all: opts
 #
-opts: csgarea ctlamat emsarea grdamat rawarea spcamat tmparea 
+opts: ctlamat emsarea grdamat rawarea spcamat tmparea 
 #
 LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
-#
-#
-CSGS=csgarea.F
-#
-CSGI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
-#
-csgarea: $(CSGS) $(CSGI)
-	echo CSGAREA:
-	f77 $(FFLAGS) -o $(SCENDIR)/csgarea $(CSGS) $(LIBS)
-#
 #
 #
 CTLS=ctlamat.F

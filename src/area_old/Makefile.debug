@@ -1,21 +1,11 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 #
-all: opts
+all: debug
 #
-opts: csgarea.debug ctlamat.debug emsarea.debug grdamat.debug \
+opts: ctlamat.debug emsarea.debug grdamat.debug \
       rawarea.debug spcamat.debug tmparea.debug
 #
 LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
-#
-#
-CSGS=csgarea.F
-#
-CSGI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
-#
-csgarea.debug : $(CSGS) $(CSGI)
-	echo CSGAREA:
-	f77 $(DBGFLAGS) -o csgarea.debug $(CSGS) $(LIBS)
-#
 #
 #
 CTLS=ctlamat.F
