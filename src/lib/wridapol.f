@@ -1,12 +1,14 @@
 
-        SUBROUTINE WRIDAPOL( CATEGORY, NSRC, BUFFER, VCNT, 
-     &                       POLALL, STATUS )
+        SUBROUTINE WRIDAPOL( CATEGORY, VNAM, NSRC, VCNT, POLALL, FDEV, 
+     &                       STATUS )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 76
 C
 C  DESCRIPTION:
-C      Write inventory pollutant-specific data for variables listed in VNAMES
+C      Write inventory pollutant-specific data for variables listed in 
+C      subroutine arguments to a temporary file. This subroutine opens the
+C      temporary files as well.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -20,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -40,63 +42,92 @@ C***************************************************************************
         IMPLICIT NONE
 
 C...........   EXTERNAL FUNCTIONS:
-        INTEGER         TRIMLEN
-
-        EXTERNAL        TRIMLEN
+        INTEGER         GETEFILE
+        EXTERNAL        GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)   CATEGORY         ! Source category
-        INTEGER         NSRC             ! Number of sources
-        CHARACTER*(*)   BUFFER( NSRC )   ! Pollutant output buffer
-        INTEGER         VCNT             ! Number of variables per pollutant
-        REAL            POLDAT( NSRC,VCNT ) ! Pollutant-specific data
-        INTEGER         STATUS           ! Exit status
+        CHARACTER*(*), INTENT (IN) :: CATEGORY            ! src category
+        CHARACTER*(*), INTENT (IN) :: VNAM                ! variable name
+        INTEGER      , INTENT (IN) :: NSRC                ! no. of sources
+        INTEGER      , INTENT (IN) :: VCNT                ! no. vars to write
+        REAL         , INTENT (IN) :: POLALL( NSRC,VCNT ) ! var-specific data
+        INTEGER      , INTENT(OUT) :: FDEV                ! unit number
+        INTEGER      , INTENT(OUT) :: STATUS              ! exit status
 
 C...........   Other local variables
 
-        INTEGER         I, L1, L2, S     ! counters and indices
+        INTEGER          I, S     ! counters and indices
 
-        CHARACTER*300   LINE
+        INTEGER          IOS      ! i/o status
+        INTEGER, SAVE :: LP       ! length of PATHNM
+
+        LOGICAL       :: FIRSTIME = .TRUE.  ! true: first time routine is called
+
+        CHARACTER*300          MESG           ! tmp message buffer
+        CHARACTER*300, SAVE :: PATHNM = ' '   ! tmp path name
+        CHARACTER*340          FILENM         ! tmp file name (with path)
 
         CHARACTER*16 :: PROGNAME = 'WRIDAPOL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRIDAPOL
 
+C.........  First time routine is called...
+        IF( FIRSTIME ) THEN
+
+C.............  Get directory for temporary files
+            MESG = 'Path for temporary files will be written'
+            CALL ENVSTR( 'SMK_TMPPATH', MESG, '.', PATHNM, IOS )
+            LP = LEN_TRIM( PATHNM )
+
+            FIRSTIME = .FALSE.
+
+        END IF
+
+C.........  Initialize exit status
         STATUS = 0
 
-C.........  Get current length of buffer (NOTE: all sources are the same)
-        L1 = TRIMLEN( BUFFER( 1 ) )
-        L2 = LEN( BUFFER( 1 ) )
-
+C.........  Open temprary file
+        FILENM = PATHNM( 1:LP ) // '/grwinven_tmp_' // VNAM
+        FDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
+        
 C.........  Append current pollutant to output buffer, w/ correct format
-        IF( CATEGORY .EQ. 'AREA' ) THEN
+        SELECT CASE ( CATEGORY )
+        CASE( 'AREA' )
 
             DO S = 1, NSRC
 
-                WRITE( LINE, 94200, ERR=999 ) BUFFER( S )( 1:L1 ), 
+                WRITE( FDEV, *, ERR=999 ) 
      &               ( POLALL( S,I ), I = 1, VCNT )
 
-                BUFFER( S ) = LINE( 1:L2 )
+            END DO ! End loop over sources
 
-            ENDDO ! End loop over sources
- 
-        ELSEIF( CATEGORY .EQ. 'POINT' ) THEN
+        CASE( 'MOBILE' )
 
             DO S = 1, NSRC
 
-                WRITE( LINE, 94210, ERR=999 ) BUFFER( S )( 1:L1 ), 
+                WRITE( FDEV, *, ERR=999 ) 
      &               ( POLALL( S,I ), I = 1, VCNT )
 
-                BUFFER( S ) = LINE( 1:L2 )
+            END DO ! End loop over sources
 
-            ENDDO ! End loop over sources
+        CASE( 'POINT' ) 
 
-        ENDIF
+            DO S = 1, NSRC
+
+                WRITE( FDEV, *, ERR=999 ) 
+     &               ( POLALL( S,I ), I = 1, VCNT )
+
+            END DO ! End loop over sources
+
+        END SELECT
+
+C.........  Normal completion of subroutine
 
         RETURN
 
-999     MESG = 'ERROR: Problem writing to internal buffer "LINE" ' //
+C.........  Exit with errors
+999     MESG = 'ERROR: Problem writing to temporary file ' //
      &         'in subroutine ' // PROGNAME
         CALL M3MSG2( MESG )
 
@@ -108,9 +139,13 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94200   FORMAT( A, F10.4, F10.4, F11.4, F7.2, F3.0, F3.0 ) ! area
+c94200   FORMAT( 1X, F10.4, 1X, F10.4, 1X, F11.4, 1X, F7.2,           ! area
+c     &          1X, F3.0, 1X, F3.0 )
 
-94210   FORMAT( A, F13.4, F13.4, F7.2, F3.0, F10.4, I3, I3 ) ! point
+c94210   FORMAT( 1X, F20.5, 1X, F20.5 )                               ! mobile
+
+c94220   FORMAT( 1X, F13.4, 1X, F13.4, 1X, F7.2, 1X, F3.0, 1X, F10.4, ! point
+c     &          1X, I3, 1X, I3 )
 
         END
 
