@@ -86,16 +86,27 @@ C...........   Local pointers
         CHARACTER(LEN=SCCLEN3), POINTER :: OLDCSCCA  ( : ) ! SCC
         CHARACTER(LEN=ALLCAS3), POINTER :: OLDCSOURCA( : ) ! concat src
 
+C...........   Local allocatable arrays
+        INTEGER               , ALLOCATABLE :: REPIDX ( : )    ! index for sorting
+        REAL                  , ALLOCATABLE :: REPEMIS( :,: )  ! emissions for reporting
+        CHARACTER(LEN=ALLCAS3), ALLOCATABLE :: REPSRCS( : )    ! source characteristics
+
 C...........   Other local variables
         INTEGER         I,J,K,S     ! counters
         INTEGER         IOS         ! I/O error status
-        INTEGER         NA2PSRCS    ! no. of area-to-point sources
+        INTEGER         LSTATE      ! last state code
+        INTEGER         LPOL        ! last pollutant code
+        INTEGER         NA2PSRCS    ! no. of area-to-point sources to add
+        INTEGER         NREPSRCS    ! total no. of area-to-point sources
         INTEGER         TBLE        ! current area-to-point table number
         INTEGER         ROW         ! current area-to-point row
         INTEGER         OLDNRAWBP   ! old number of srcs x pols
         INTEGER         PE, PS      ! pollutant postn end and start in CSOURCA 
         INTEGER         POS         ! position in unsorted arrays
+        INTEGER         REPPOS      ! position in reporting arrays
         INTEGER         SLEN        ! length of source 
+        INTEGER         TSTATE      ! temp state code
+        INTEGER         TPOL        ! temp pollutant code
 
         REAL            EANN        ! original annual emissions
         REAL            EOZN        ! original ozone season emissions
@@ -103,6 +114,8 @@ C...........   Other local variables
         REAL            PREVYLOC    ! previous y location
 
         CHARACTER(LEN=5      )  TPOLPOS     !  Temporary pollutant position
+        CHARACTER(LEN=SCCLEN3)  LSCC        !  last SCC code
+        CHARACTER(LEN=SCCLEN3)  TSCC        !  temp SCC code
         CHARACTER(LEN=ALLLEN3)  LSRCCHR     !  previous CSOURC
         CHARACTER(LEN=ALLLEN3)  TSRCCHR     !  tmporary CSOURC
         CHARACTER(LEN=3)        LOCID       !  tmporary location number
@@ -131,13 +144,23 @@ C.............  Determine total number of sources to be added; if source only
 C               has one location, can use existing arrays and don't need to 
 C               create additional memory for it
             NA2PSRCS = 0
+            NREPSRCS = 0
 
             DO I = 1, NRAWBP
                 S = SRCIDA( I )
                 IF( AR2PTTBL( S ) /= 0 ) THEN
                     NA2PSRCS = NA2PSRCS + AR2PTCNT( S ) - 1
+                    NREPSRCS = NREPSRCS + 1
                 END IF
             END DO
+
+C.............  Allocate memory for reporting
+            ALLOCATE( REPIDX ( NREPSRCS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'REPIDX', PROGNAME )
+            ALLOCATE( REPSRCS( NREPSRCS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'REPSRCS', PROGNAME )
+            ALLOCATE( REPEMIS( NREPSRCS,2 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'REPEMIS', PROGNAME )
 
             OLDNRAWBP = NRAWBP
                 
@@ -199,6 +222,7 @@ C.............  Allocate memory for X and Y locations
             
 C.............  Set position for adding sources to unsorted arrays
             POS = OLDNRAWBP + 1
+            REPPOS = 0
 
 C.............  Loop through original sources
             DO I = 1, OLDNRAWBP
@@ -207,6 +231,14 @@ C.............  Loop through original sources
 
 C.................  Check if current source is to be processed
                 IF( AR2PTTBL( S ) /= 0 ) THEN
+                	
+C.....................  Save information for reports
+                    REPPOS = REPPOS + 1
+                    REPSRCS( REPPOS ) = CSOURCA( J )
+                    REPEMIS( REPPOS,1 ) = POLVLA( J,NEM )
+                    REPEMIS( REPPOS,2 ) = BADVAL3
+
+C.....................  Set area-to-point table and row for current source                	
                     TBLE = AR2PTTBL( S )
                     ROW  = AR2PTIDX( S )
 
@@ -222,6 +254,7 @@ C.....................  Adjust annual and ozone season emissions based on alloca
                     IF( EANN /= BADVAL3 ) THEN
                         POLVLA( J, NEM ) = 
      &                          EANN * AR2PTABL( ROW,TBLE )%ALLOC
+                        REPEMIS( REPPOS,2 ) = POLVLA( J, NEM )
                     END IF
                     
                     IF( EOZN /= BADVAL3 ) THEN
@@ -256,6 +289,8 @@ C.........................  Adjust and store emissions
                         IF( EANN /= BADVAL3 ) THEN
                             POLVLA( POS,NEM ) =
      &                              EANN * AR2PTABL( ROW,TBLE )%ALLOC
+                            REPEMIS( REPPOS,2 ) = 
+     &                          REPEMIS( REPPOS,2 ) + POLVLA( POS,NEM )
                         END IF
                         
                         IF( EOZN /= BADVAL3 ) THEN
@@ -275,6 +310,100 @@ C.........................  Increment position in unsorted arrays
 
                 END IF  ! check if source has any locations
             END DO  ! loop through sources
+
+C.............  Process reporting arrays
+
+C.............  Remove county information from source
+            REPSRCS( : )( 4:6 ) = ' '
+
+C.............  Sort source information
+            DO I = 1, NREPSRCS
+                REPIDX( I ) = I
+            END DO
+
+            CALL SORTIC( NREPSRCS, REPIDX, REPSRCS )
+
+C.............  Determine total number of sources accounting for multiple
+C               pollutants and counties
+            LSTATE = 0
+            LSCC = EMCMISS3
+            LPOL = 0
+            DO I = 1, NREPSRCS
+                J = REPIDX( I )
+            
+                TSTATE = STR2INT( REPSRCS( J )( 2:3 ) )
+                TSCC   = REPSRCS( J )( SCCPOS3:SCCPOS3+SCCLEN3-1 )
+                TPOL   = STR2INT( REPSRCS( J )( POLPOS3:ALLLEN3 ) )
+                
+                IF( TSTATE /= LSTATE .OR.
+     &              TSCC   /= LSCC   .OR.
+     &              TPOL   /= LPOL        ) THEN
+                    NCONDSRC = NCONDSRC + 1
+                END IF
+                
+                LSTATE = TSTATE
+                LSCC   = TSCC
+                LPOL   = TPOL
+            END DO
+
+C.............  Allocate final size for reporting array
+            ALLOCATE( REPAR2PT( NCONDSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'REPAR2PT', PROGNAME )
+            REPAR2PT%NFIPS    = 0
+            REPAR2PT%ORIGEMIS = 0.
+            REPAR2PT%SUMEMIS  = 0.
+
+C.............  Loop through and store final reporting information   
+            LSTATE = 0
+            LSCC = EMCMISS3
+            LPOL = 0
+            K    = 0                     
+            DO I = 1, NREPSRCS
+                J = REPIDX( I )
+            
+                TSTATE = STR2INT( REPSRCS( J )( 2:3 ) )
+                TSCC   = REPSRCS( J )( SCCPOS3:SCCPOS3+SCCLEN3-1 )
+                TPOL   = STR2INT( REPSRCS( J )( POLPOS3:ALLLEN3 ) )
+                
+                IF( TSTATE /= LSTATE .OR.
+     &              TSCC   /= LSCC   .OR.
+     &              TPOL   /= LPOL        ) THEN
+                    
+                    K = K + 1
+                    REPAR2PT( K )%STATE = TSTATE
+                    REPAR2PT( K )%SCC   = TSCC
+                    REPAR2PT( K )%POLL  = TPOL
+                    REPAR2PT( K )%NFIPS = 1
+               
+                    IF( REPEMIS( I,1 ) /= BADVAL3 ) THEN
+                        REPAR2PT( K )%ORIGEMIS = REPEMIS( I,1 )
+                    END IF
+               
+                    IF( REPEMIS( I,2 ) /= BADVAL3 ) THEN
+                        REPAR2PT( K )%SUMEMIS  = REPEMIS( I,2 )
+                    END IF
+                ELSE
+                    REPAR2PT( K )%NFIPS = REPAR2PT( K )%NFIPS + 1
+                    
+                    IF( REPEMIS( I,1 ) /= BADVAL3 ) THEN
+                        REPAR2PT( K )%ORIGEMIS = 
+     &                    REPAR2PT( K )%ORIGEMIS + REPEMIS( I,1 )
+                    END IF
+               
+                    IF( REPEMIS( I,2 ) /= BADVAL3 ) THEN
+                        REPAR2PT( K )%SUMEMIS  = 
+     &                    REPAR2PT( K )%SUMEMIS  + REPEMIS( I,2 )
+                    END IF
+                END IF
+        
+                LSTATE = TSTATE
+                LSCC   = TSCC
+                LPOL   = TPOL
+                         
+            END DO
+
+C.............  Deallocate temporary arrays
+            DEALLOCATE( REPIDX, REPSRCS, REPEMIS )
 
 C.............  Resort inventory and pollutants
             CALL M3MSG2( 'Resorting raw inventory data...' )
