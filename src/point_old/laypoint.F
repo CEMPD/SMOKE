@@ -136,7 +136,7 @@ C...........   Other local variables
         INTEGER         JDATE, JTIME
         INTEGER         NSTEPS
         INTEGER         I, L, S
-        REAL            X, Y, P, Q, PP, QQ
+        REAL            X, Y, P, Q
         REAL            ZZ0, ZZ1
         REAL            BOT 	!  plume bottom elevation (m)
         REAL            TOP 	!  plume top    elevation (m)
@@ -743,7 +743,7 @@ C...........   Compute other derived meteorology variables:
 
                 PSFC  = PP * Y + QQ * X
                 ES    = 6.1078 * EXP( 5384.21 / CTOK - 
-     &                                5384.21 / TSFC( S ) ) )
+     &                                5384.21 / TSFC( S ) )
                 QSFC  = 0.622 * ES / ( PSFC - ES )
                 TVSFC = TSFC( S ) * ( 1.0 + 0.6077 * QSFC )
                 THETG = TVSFC * ( 1000.0 / PSFC )**0.286
