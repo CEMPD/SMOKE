@@ -263,6 +263,11 @@ C.........  Set status of pollutants for current packet
         K = INDEX1( PKTINFO%CPOL, NIPPA, EANAM )
         IF( K .GT. 0 ) THEN
             USEPOL( K ) = .TRUE.
+
+        ELSE IF( PKTINFO%CPOL .EQ. '-9' .OR.
+     &           PKTINFO%CPOL .EQ. ' '       ) THEN
+            USEPOL = .TRUE.   ! all pollutants
+
         END IF
 
         RETURN
