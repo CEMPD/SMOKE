@@ -29,6 +29,7 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'     !  I/O API parameters
         INCLUDE 'IODECL3.EXT'    !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures.
+        INCLUDE 'NETCDF.EXT'     !  NetCDF declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -48,6 +49,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL     FIND1, GETEFILE, GETNUM, GETREAL, GETYN, 
      &               INDEX1, LOCAT1, PROMPTFFILE, PROMPTMFILE, 
      &               SEC2TIME, STR2INT, TRIMLEN
+
+C...........   EXTERNAL BLOCK DATA for mobile:
+
+        EXTERNAL      BD01, BD02, BD03, BD04, BD05, BD06, BD10,
+     &                BD11, BD12, BD13, BD14, BD15, BD16, BD17,
+     &                BD18, BD19, BD20, BD21, BD22, BD23, BD24,
+     &                BD25, BD26, BD27, BD28, BD29, BD30, BD31,
+     &                BD32, BD33, BD34, BD35, BD36, BD37, BD38
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -142,7 +151,7 @@ C...........   Other local variables
         INTEGER IOS                       ! I/O status
         INTEGER IPARM                     ! temporary PSI value 
         INTEGER IPTIM                     ! IPARM converted to time for file ops
-        INTEGER ITEMP                     ! Indicator for MOBILE5 for only 
+        INTEGER ITEMP                     ! Indicator of tmpr status for MOBILE5 
         INTEGER JYEAR                     ! year to calculate emission factors
         INTEGER NTEMP                     ! Actual no. of temps for eval of EFs
         INTEGER P5( MXTMMI )              ! Dummy for reading EF-based TMMI vals
@@ -153,6 +162,7 @@ C...........   Other local variables
         LOGICAL DFLAG                     ! Calculate diurnal factors when true
         LOGICAL EFLAG                     ! Error exists when true
         LOGICAL NFLAG                     ! Calculate non-dnl factors when true
+        LOGICAL RFLAG                     ! Diurnal facs _were_ calc'd when true
         LOGICAL SFLAG( MXPSI )            ! Update diurnal combos when true
 
         CHARACTER*4   VOLNAM              !  name of Mobile5 hydrocarbon
@@ -168,7 +178,7 @@ C   begin body of program EMISFAC
      &  'Program EMISFAC drives the MOBILE5a program by supplying',
      &  'a range of ambient temperatures and a scenario-specific',
      &  'MOBILE5 parameter file MPLIST. Using multiple calls',
-     &  'to MOBILE5a, EMISFAC creates a master emissions factors',
+     &  'to MOBILE5a, EMISFAC creates a master emission factors',
      &  'table for the specified temperatures and input parameter',
      &  'conbinations.',
      &  ' ',
@@ -188,6 +198,10 @@ C   begin body of program EMISFAC
             WRITE( *,92000 ) ' ', 'Ending program EMISFAC', ' '
             CALL EXIT( 0 )
         END IF
+
+C.........  Turn off verbose NetCDF to elimiate error messages when using
+C.........  CHECK3 to check for available time steps
+        CALL NCPOPT( 0 )
 
 C.........  Get MOBILE5a input file (no prompt)
         MODEV = GETEFILE( 'MO5AIN', .FALSE., .TRUE., 'EMISFAC' )
@@ -216,11 +230,6 @@ C.........  Prompt for MPREF (general MOBILE5a parameter x-ref file)
         NRDEV = PROMPTFFILE( 
      &          'Enter logical name for MPREF input file',
      &          .TRUE., .TRUE., 'MPREF', 'EMISFAC' )
-
-C.........  Prompt for modeling year
-        JYEAR = 1988
-        JYEAR = GETNUM( 0, 9999, JYEAR,
-     &         'Enter modeling year for emissions factors (YYYY)' )
 
 C.........  Write out list of legal hydrocarbon species
         WRITE( *,92000 ) ' '
@@ -279,7 +288,15 @@ C.............  Get file description
 
             ENDIF
 
+C.............  Set output file name to same as input
             ONAME = ENAME
+
+C.............  Set modeling year
+            JYEAR = SDATE3D / 1000
+
+            WRITE( MESG,94010 ) 
+     &          'Emission factors are being calculated for', JYEAR
+            CALL M3MESG( MESG )
 
 C.............  Check that file delta temperature is same as compiled value
             IF( XCELL3D .NE. TINTV ) THEN
@@ -302,6 +319,11 @@ C.............  Check that file delta temperature is same as compiled value
 
 C.........  If it does not exist, build the parameters from scratch
         ELSE 
+
+C.............  Prompt for modeling year
+            JYEAR = 1988
+            JYEAR = GETNUM( 0, 9999, JYEAR,
+     &             'Enter modeling year for emission factors (YYYY)' )
 
 C.............  Prompt for start temperature
             BTEMP = GETREAL( 1.,110., 1.,
@@ -331,14 +353,14 @@ C.............  Set up non-diurnal master list file description
 
             FTYPE3D = GRDDED3
             P_ALP3D = DBLE( IMISS3 )
-            P_BET3D = DBLE( AMISS3 )
-            P_GAM3D = DBLE( AMISS3 )
+            P_BET3D = DBLE( BADVAL3 )
+            P_GAM3D = DBLE( BADVAL3 )
             XCENT3D = 0.0D0
             YCENT3D = 0.0D0
             XORIG3D = DBLE( BTEMP )     ! Starting temperature
-            YORIG3D = DBLE( AMISS3 )
+            YORIG3D = DBLE( BADVAL3 )
             XCELL3D = DBLE( TINTV )     ! Temperature increment
-            YCELL3D = DBLE( AMISS3 )
+            YCELL3D = DBLE( BADVAL3 )
             SDATE3D = JYEAR * 1000 + 1
             STIME3D = 1
             TSTEP3D = 1
@@ -349,7 +371,7 @@ C.............  Set up non-diurnal master list file description
             NTHIK3D = 1
             GDTYP3D = IMISS3
             VGTYP3D = IMISS3
-            VGTOP3D = AMISS3
+            VGTOP3D = BADVAL3
             GDNAM3D = ' ' 
 
             FDESC3D( 1 ) = 'Non-diurnal Master Emissions Factors list'
@@ -391,7 +413,22 @@ C.........  Set output diurnal name if input file exists
                 CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
 
             ENDIF
+
+C.............  Set output file name to same as input
             NNAME  = DNAME
+
+C.............  Check modeling year to ensure same as ENAME
+            I = SDATE3D / 1000
+            IF( I .NE. JYEAR ) THEN
+
+                WRITE( *,92020 ) 'The year of input file ' //
+     &              DNAME( 1:TRIMLEN( DNAME ) ) // ' is', I,
+     &              'but the year of input file ' //
+     &              ENAME( 1:TRIMLEN( ENAME ) ) // ' is', JYEAR
+                CALL M3EXIT( 'EMISFAC', 0, 0, 
+     &                       'Incompatible input files', 2 )
+
+            ENDIF 
 
         ELSE
 
@@ -399,14 +436,14 @@ C.............  Set up diurnal master List file description
 
             FTYPE3D = GRDDED3
             P_ALP3D = DBLE( IMISS3 )
-            P_BET3D = DBLE( AMISS3 )
-            P_GAM3D = DBLE( AMISS3 )
+            P_BET3D = DBLE( BADVAL3 )
+            P_GAM3D = DBLE( BADVAL3 )
             XCENT3D = 0.0D0
             YCENT3D = 0.0D0
             XORIG3D = DBLE( MINT_MIN )     ! Starting temperature
-            YORIG3D = DBLE( AMISS3 )
+            YORIG3D = DBLE( BADVAL3 )
             XCELL3D = DBLE( TINTV )     ! Temperature increment
-            YCELL3D = DBLE( AMISS3 )
+            YCELL3D = DBLE( BADVAL3 )
             SDATE3D = JYEAR * 1000 + 1
             STIME3D = 1
             TSTEP3D = 1
@@ -417,7 +454,7 @@ C.............  Set up diurnal master List file description
             NTHIK3D = 1
             GDTYP3D = IMISS3
             VGTYP3D = IMISS3
-            VGTOP3D = AMISS3
+            VGTOP3D = BADVAL3
             GDNAM3D = ' ' 
 
             FDESC3D( 1 ) = 'Diurnal Master Emissions Factors list'
@@ -786,9 +823,15 @@ C.............  Search for MPLIST indice in PSI list used in temperature index
                 CALL M3EXIT('EMISFAC', 0, 0, MESG, 2 )
             ENDIF
  
+C.............  Write message to screen
+            WRITE( *,92000 ) ' '
+            WRITE( *,92020 ) 'Processing PSI', IPARM, '...'
 
 C.............  Initialize MIN/MAX temperature indice counter
             MMTC( K ) = 1
+
+C.............  Initialize flag to say diurnal factors not calculated
+            RFLAG = .FALSE.
 
 C.............  Recognize only indice representing pure EF calculations
             IF( ISTYPE( J,1 ) .EQ. 0 ) THEN
@@ -800,12 +843,15 @@ C.................  Check to see any diurnals for this profile indice exist
 C.....................  Init diurnal arrays b/c blanks will exist on write3
                     DO 81 I = 1, NVTYPE
                         DO 80 JJ = 1, NMINMAX
-                            WDL_VOC( JJ, I ) = AMISS3
-                            DNL_VOC( JJ, I ) = AMISS3
-                            HOT_VOC( JJ, I ) = AMISS3
-                            CRC_VOC( JJ, I ) = AMISS3
+                            WDL_VOC( JJ, I ) = BADVAL3
+                            DNL_VOC( JJ, I ) = BADVAL3
+                            HOT_VOC( JJ, I ) = BADVAL3
+                            CRC_VOC( JJ, I ) = BADVAL3
    80                   CONTINUE
    81               CONTINUE
+
+C.....................  Diurnal emission factors were "calculated"
+                    RFLAG = .TRUE.
 
 C.................  If exists, initialize by reading existing values
                 ELSE
@@ -871,10 +917,13 @@ C.............................  diurnal emissions are not zero
 
 C.........................  Increase counter if using min/max, otherwise
 C.........................  reset min/max current temp is not between them
-                        IF( TF_MIN      .LE. TEMPIN( T ) .AND.
-     &                      TEMPIN( T ) .LE. TF_MAX            ) THEN
+                        IF( TEMPIN( T ) .EQ. 
+     &                      TF_MIN + ( TF_MAX - TF_MIN ) / 2. ) THEN
 
                             MMTC( K ) = MMTC( K ) + 1  ! Set for next time
+
+C.............................  Diurnal emission factors were calculated 
+                            RFLAG = .TRUE. 
 
                         ELSE
 
@@ -900,6 +949,9 @@ C.........................  Create input file for MOBILE5a
                         CALL MOINBLD( MODEV, IPARM, VOLORG, JYEAR,
      &                                TEMPIN( T ), TF_MIN, TF_MAX  )
 
+C.........................  Initialize error count
+                        IERR = 0 
+
 C.........................  Create EFs for current NPSI, CPSI, temperature
                         REWIND( MODEV )                  
                         CALL MOBILE ( IERR, ITEMP, MODEV, EFACT, DFACT )
@@ -915,14 +967,16 @@ C.............................  Put EFACT into non-diurnal arrays
                             RST_VOC( T   , I ) = EFACT( 6, I )
 
 C.............................  Put DFACT into diurnal arrays
-                            WDL_VOC( TMMI, I ) = DFACT( 1, I )
-                            DNL_VOC( TMMI, I ) = DFACT( 2, I )
-                            HOT_VOC( TMMI, I ) = DFACT( 3, I )
-                            CRC_VOC( TMMI, I ) = DFACT( 4, I )
+                            IF( RFLAG ) THEN
+                                WDL_VOC( TMMI, I ) = DFACT( 1, I )
+                                DNL_VOC( TMMI, I ) = DFACT( 2, I )
+                                HOT_VOC( TMMI, I ) = DFACT( 3, I )
+                                CRC_VOC( TMMI, I ) = DFACT( 4, I )
+                            ENDIF
 
    88                   CONTINUE
 
-  101               CONTINUE  ! T, temperature for non-dirnal factors
+  101               CONTINUE  ! T, temperature for non-diurnal factors
 
 C.....................  Add non-diurnal EFs to master list 
                     IF( .NOT. WRITE3
@@ -938,19 +992,19 @@ C.....................  Add non-diurnal EFs to master list
                 ELSE
 
                     WRITE( MESG, 94010 )
-     &                'Non-diurnal emissions factors for set', IPARM,
-     &                'already exists in ' // ENAME( 1:TRIMLEN(ENAME) )
+     &                'Non-diurnal emission factors for set', IPARM,
+     &                'already exist in ' // ENAME( 1:TRIMLEN(ENAME) )
                     CALL M3MESG( MESG )
 
                 ENDIF      ! Non-Diurnal EFs have been created or not
 
                 ITEMP = 1            ! More has changed than just temperature
-                SFLAG( K ) = .FALSE. ! Initialize
+                SFLAG( K ) = .TRUE.  ! Initialize - default: update diurnal EFs
 
 C.................  Loop through remaining temperature indices for IPARM
                 DO 151 T = MMTC( K ), NTIDX( K )
 
-                    DFLAG = .FALSE.
+                    DFLAG = .FALSE.  ! Update for each new T combo
 
 C.....................  Get temperature index for PSI(K) and count(K)
                     TMMI   = TIDXPSI( T,K )
@@ -968,16 +1022,20 @@ C.........................  Specify min and max temperatures
 C.........................  Check if EFs for this TMMI is missing
                         IF( WDL_VOC( TMMI,1 ) .LT. 0 ) DFLAG = .TRUE.
 
-                        IF( .NOT. SFLAG( K ) ) SFLAG( K ) = DFLAG
-
 C.........................  If diurnal EF has not yet been calculated for this
 C.........................  min/max temperature combination
                         IF( DFLAG ) THEN
 
+                            TF = TF_MIN + ( TF_MAX - TF_MIN ) / 2.0
+
 C.............................  Create input file for MOBILE5a
                             REWIND( MODEV )                  
                             CALL MOINBLD( MODEV, IPARM, VOLORG, JYEAR,
-     &                                    TF_MIN, TF_MIN, TF_MAX  )
+cmh  &                                    TF_MIN, TF_MIN, TF_MAX  )
+     &                                    TF, TF_MIN, TF_MAX  )
+
+C.............................  Initialize error count
+                            IERR = 0 
 
 C.............................  Create EFs current temperature combo
                             REWIND( MODEV )                  
@@ -992,18 +1050,18 @@ C.............................  Put DFACT into diurnal arrays
                                 HOT_VOC( TMMI, I ) = DFACT( 3, I )
                                 CRC_VOC( TMMI, I ) = DFACT( 4, I )
 
+C.................................  Diurnal emission factors were calculated 
+                                RFLAG = .TRUE. 
+
   121                       CONTINUE
  
                         ENDIF  ! If need to call MOBILE or not
-
-C.....................  Diurnal emissions are zero for this PSI, but still
-C.....................  initialize file for use in tmpmobil.
-                    ELSE
-                        SFLAG( K ) = .TRUE.  ! Set output flag to true
-
-                    ENDIF
+                    ENDIF      ! If valid min/max temp combo or not
  
-  151           CONTINUE   ! Loop through temperature indices for IPARM
+  151           CONTINUE       ! Loop through temperature indices for IPARM
+
+C.................  If diurnal factors were not calculated, then don't output them
+                IF( .NOT. RFLAG ) SFLAG( K ) = .FALSE.
 
 C.................  Write out diurnal emission factors for IPARM
 C.....................  Add non-diurnal EFs to master list 
@@ -1019,8 +1077,8 @@ C.....................  Add non-diurnal EFs to master list
                     ENDIF  ! Write to diurnal master list
                 ELSEIF( DNAME .NE. 'NONE' ) THEN
                     WRITE( MESG, 94010 )
-     &                'Diurnal     emissions factors for set', IPARM,
-     &                'already exists in ' // DNAME( 1:TRIMLEN(DNAME) )
+     &                'Diurnal     emission factors for set', IPARM,
+     &                'already exist in ' // DNAME( 1:TRIMLEN(DNAME) )
                     CALL M3MESG( MESG )
 
                 ELSE
@@ -1050,7 +1108,11 @@ C.............  Search for MPLIST indice in MPREF index
 C.............  Recognize only indice representing combo EF calculations
             IF( ISTYPE( J,1 ) .GT. 0 ) THEN
 
-C.................  Update diurnals for K if any related pure factors were
+C.................  Write message to screen
+                WRITE( *,92000 ) ' '
+                WRITE( *,92020 ) 'Processing PSI', IPARM, '...'
+
+C.................  Update diurnals for K if any related pure factors were updated
                 DO 381 I = 1, ISTYPE( J,1 )
 
                     II    = FIND1( IPLIST( I,KK ), NTREF, MMTREF )
@@ -1090,8 +1152,8 @@ C.................  Store emission factors in master lists
                 ELSE
 
                     WRITE( MESG, 94010 )
-     &                'Non-diurnal emissions factors for set', IPARM,
-     &                'already exists in ' // ENAME( 1:TRIMLEN(ENAME) )
+     &                'Non-diurnal emission factors for set', IPARM,
+     &                'already exist in ' // ENAME( 1:TRIMLEN(ENAME) )
                     CALL M3MESG( MESG )
 
                 ENDIF      ! Missing non-diurnal for this IPARM or not
@@ -1110,8 +1172,8 @@ C.................  Store emission factors in master lists
                 ELSE
 
                     WRITE( MESG, 94010 )
-     &                'Diurnal     emissions factors for set', IPARM,
-     &                'already exists in ' // DNAME( 1:TRIMLEN(DNAME) )
+     &                'Diurnal     emission factors for set', IPARM,
+     &                'already exist in ' // DNAME( 1:TRIMLEN(DNAME) )
                     CALL M3MESG( MESG )
 
                 ENDIF      ! Missing diurnal for this IPARM or not
@@ -1129,6 +1191,7 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
 92010   FORMAT( 5X, A, I5 / 20( 5X, A / ) )
+92020   FORMAT( 20( 5X, A, 1X, I5 ) )
 
 C...........   Formatted file I/O formats............ 93xxx
 
