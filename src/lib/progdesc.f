@@ -167,9 +167,12 @@ C.........  SMOKE programs - listed in alphabetical order
         CASE( 'RAWBIO' ) 
             WRITE( LDEV,92000 )
      &      ' ',
-     &  'Program RAWBIO to take the county level biomass,',
-     &  'the emissions factors, and the surrogate factors,',
-     &  'and produce gridded normalized biogenic emissions.',
+     &  'Program RAWBIO uses the biogenic emission factors, and',
+     &  'either:',
+     &  '   1) county-level biogenic land use data and gridding',
+     &  '      surrogate factors, or',
+     &  '   2) gridded biogenic land use data',
+     &  'to produce gridded normalized biogenic emissions.',
      &  ' '
 
         CASE( 'SMK2EMIS' )
