@@ -1,6 +1,6 @@
 
 C***********************************************************************
-C  common variables start at line 40
+C  type definition starts at line 34
 C
 C  DESCRIPTION:
 C      This include file defines the TYPE CPACKET for reading control packets
@@ -38,6 +38,10 @@ C************************************************************************
             REAL                   :: FAC2
             REAL                   :: FAC3
             REAL                   :: FAC4  
+            REAL                   :: FAC5
+            REAL                   :: FAC6
+            REAL                   :: FAC7  
+            REAL                   :: FAC8  
             CHARACTER*5            :: CPOS    ! tmp sorted position of pol
             CHARACTER(LEN=FIPLEN3) :: CFIP    ! tmp char country/state/co code
             CHARACTER(LEN=CHRLEN3) :: CHAR1   ! tmp plant characteristic 1
