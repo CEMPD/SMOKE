@@ -1,6 +1,6 @@
 
-        SUBROUTINE RDDATANTINP( LINE, READDATA, READPOL, IYEAR, 
-     &                          SIC, MACT, NAICS, HDRFLAG, EFLAG )
+        SUBROUTINE RDDATANTINP( LINE, READDATA, READPOL, IYEAR, SIC,
+     &                          MACT, SRCTYP, NAICS, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -41,7 +41,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NEM, NOZ, NEF, NCE, NRE, NRP
+        USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NRP
         
         IMPLICIT NONE
 
@@ -61,6 +61,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,                INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(LEN=SICLEN3), INTENT (OUT) :: SIC                   ! SIC
         CHARACTER(LEN=MACLEN3), INTENT (OUT) :: MACT                  ! MACT code
+        CHARACTER(LEN=STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
         CHARACTER(LEN=NAILEN3), INTENT (OUT) :: NAICS                 ! NAICS code
         LOGICAL,                INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,                INTENT (OUT) :: EFLAG                 ! error flag
@@ -120,13 +121,14 @@ C.........  Separate line into segments
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        SIC   = SEGMENT( 4 )              ! SIC
-        MACT  = ADJUSTL( SEGMENT( 5 ) )   ! MACT code
-        NAICS = ADJUSTL( SEGMENT( 6 ) )   ! NAICS code
+        SIC    = SEGMENT( 3 )              ! SIC
+        MACT   = ADJUSTL( SEGMENT( 4 ) )   ! MACT code
+        SRCTYP = ADJUSTL( SEGMENT( 5 ) )   ! source type code
+        NAICS  = ADJUSTL( SEGMENT( 6 ) )   ! NAICS code
         
         READPOL ( 1     ) = SEGMENT( 7 )
         READDATA( 1,NEM ) = SEGMENT( 8 )  ! annual emissions
-        READDATA( 1,NOZ ) = SEGMENT( 9 )  ! average-day emissions
+        READDATA( 1,NDY ) = SEGMENT( 9 )  ! average-day emissions
         READDATA( 1,NEF ) = ' '           ! emission factor
         READDATA( 1,NCE ) = SEGMENT( 10 ) ! control efficiency
         READDATA( 1,NRE ) = SEGMENT( 11 ) ! rule effectiveness
