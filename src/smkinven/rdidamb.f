@@ -1,6 +1,6 @@
 
-       SUBROUTINE RDIDAMB ( FDEV, NRAWIN, NRAWBV, WKSET, 
-     &                      NRAWOUT, EFLAG, NDROP, VDROP )
+       SUBROUTINE RDIDAMB ( FDEV, NRAWBV, WKSET, 
+     &                      CURREC, EFLAG, NDROP, VDROP )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -81,10 +81,9 @@ C...........   Subroutine arguments. Note that number and amount of dropped
 C              VMT is initialied in calling program.
 
         INTEGER     , INTENT (IN) :: FDEV        ! file unit number
-        INTEGER     , INTENT (IN) :: NRAWIN      ! total raw record count
         INTEGER     , INTENT (IN) :: NRAWBV      ! total rec x data var count
         INTEGER     , INTENT (IN) :: WKSET       ! weekly profile interpretation
-        INTEGER     , INTENT(OUT) :: NRAWOUT     ! valid raw record count
+        INTEGER     ,INTENT(INOUT):: CURREC      ! current no. source * pollutants
         INTEGER     ,INTENT(INOUT):: NDROP       ! number of records dropped
         REAL        ,INTENT(INOUT):: VDROP( MXIDAT ) ! sum of data dropped
         LOGICAL     , INTENT(OUT) :: EFLAG       ! error flag
@@ -111,10 +110,6 @@ C...........   Local arrays
 C...........   Local allocatable arrays
         CHARACTER*50, ALLOCATABLE :: SEGMENT( : ) ! list-formatted strings
 
-C...........   Counters of total number of input records
-        INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
-        INTEGER, SAVE :: NSRCVAR = 0 ! cumulative source x pollutants count
-
 C...........   Local variables
 
         INTEGER         I, J, K, L, N, V     ! indices
@@ -134,7 +129,6 @@ C...........   Local variables
         INTEGER         NSEG           ! number of input segments
         INTEGER         NVAR           ! number of data variables
         INTEGER, SAVE:: NWARN =0       ! number of warnings in this routine
-        INTEGER         SS             ! counter for sources
         INTEGER         STA            ! state code
         INTEGER         RWT            ! roadway type
         INTEGER         SCCLEN         ! length of SCC string 
@@ -197,8 +191,7 @@ C........................................................................
 C.............  Head of the main read loop  .............................
 C........................................................................
 
-        SS   = NSRCSAV
-        ES   = NSRCVAR
+        ES   = CURREC
         IREC = 0
         CLNK = ' '
 
@@ -346,14 +339,14 @@ C.............  Determine if SCC has proper length
                 CALL M3MESG( MESG )
             END IF
 
-C.............  Set the default temporal resolution of the data
-            TPF  = MTPRFAC * WKSET
-
 C.............  Make sure that all of the needed real values are real...
 
 C.............  Emissions or activity and associated data
             K = 4
             DO V = 1, NVAR
+
+C.................  Set the default temporal resolution of the data
+                TPF  = MTPRFAC * WKSET
 
                 J = DATPOS( V )
                 IF( INVSTAT( J ) .EQ.  1 ) NPVAR = NPPOL
@@ -397,11 +390,7 @@ C                           with ozone season data, if user has requested it.
                                 CALL M3MESG( MESG )
                             END IF
 
-C.............................  Remove monthly factors for this source. 
-C                               Note that this will impact ALL pollutants, 
-C                               even if only one pollutant gets filled. This 
-C                               is necessary unless TPF is changed to be 
-C                               pollutant-dependent.        
+C.............................  Remove monthly factors for this source.     
                             TPF  = WKSET
 
                         END IF
@@ -533,24 +522,7 @@ C.............  Make adjustments to pad with zeros, if needed
             WRITE( CRWT,RWTFMT ) RWT
             WRITE( CIVT,VIDFMT ) IVT
 
-C.............  Store source characteristics if dimension is okay
-            SS = SS + 1
-
-            IF( SS .LE. NRAWIN ) THEN
-                IFIPA  ( SS ) = FIP
-                IRCLASA( SS ) = RWT
-                IVTYPEA( SS ) = IVT
-                CLINKA ( SS ) = CLNK
-                CVTYPEA( SS ) = VTYPE
-                TPFLGA ( SS ) = TPF
-                INVYRA ( SS ) = INY
-                CSCCA  ( SS ) = TSCC
-                XLOC1A ( SS ) = BADVAL3
-                YLOC1A ( SS ) = BADVAL3
-                XLOC2A ( SS ) = BADVAL3
-                YLOC2A ( SS ) = BADVAL3
-            END IF 
-
+C.............  Store source characteristics
             K = 4              
             DO V = 1, NVAR
 
@@ -562,8 +534,18 @@ C.............  Store source characteristics if dimension is okay
 
                 IF ( ES .LE. NRAWBV ) THEN
 
-                    INDEXA ( ES ) = ES
-                    INRECA ( ES ) = SS                    
+                    IFIPA  ( ES ) = FIP
+                    IRCLASA( ES ) = RWT
+                    IVTYPEA( ES ) = IVT
+                    CLINKA ( ES ) = CLNK
+                    CVTYPEA( ES ) = VTYPE
+                    TPFLGA ( ES ) = TPF
+                    INVYRA ( ES ) = INY
+                    CSCCA  ( ES ) = TSCC
+                    XLOC1A ( ES ) = BADVAL3
+                    YLOC1A ( ES ) = BADVAL3
+                    XLOC2A ( ES ) = BADVAL3
+                    YLOC2A ( ES ) = BADVAL3                  
 
                     WRITE( CCOD,94125 ) J
 
@@ -596,34 +578,21 @@ C.....................  Store related values (if any)
               
 12      CONTINUE           ! end of read on input file
 
-C.........  Update saved cumulative counts
-        NSRCSAV = SS       !  source
-        NSRCVAR = ES       !  source*pollutant
-
         NDROP   = NDROP + IDROP
 
 C.........  Write message if overflow occurred
-        IF( NSRCSAV .GT. NRAWIN ) THEN
-
-            EFLAG = .TRUE.
-            MESG = 'INTERNAL ERROR: Source memory allocation ' //
-     &             'insufficient for IDA inventory'
-            CALL M3MSG2( MESG )
-
-        END IF
-
-        IF( NSRCVAR .GT. NRAWBV ) THEN  ! Check for memory overflow
+        IF( ES .GT. NRAWBV ) THEN  ! Check for memory overflow
 
             WRITE( MESG, 94010 )
      &        'INTERNAL ERROR: Number of valid src x variables ' //
-     &        'encountered: ', NRAWOUT, CRLF() // BLANK5 //
+     &        'encountered: ', ES, CRLF() // BLANK5 //
      &        'Maximum number of raw records allowed: ', NRAWBV
 
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )      
 
         ELSE
-            NRAWOUT = NSRCVAR
+            CURREC = ES
 
         END IF
 	

@@ -1,6 +1,6 @@
 
-        SUBROUTINE RDIDAPT( FDEV, NRAWIN, NRAWBP, WKSET,
-     &                      NRAWOUT, EFLAG, NDROP, EDROP )
+        SUBROUTINE RDIDAPT( FDEV, NRAWBP, WKSET,
+     &                      CURREC, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
 C  subroutine body starts at line 186
@@ -81,10 +81,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
 C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: FDEV   ! unit number of input file
-        INTEGER     , INTENT (IN) :: NRAWIN ! total raw record-count 
         INTEGER     , INTENT (IN) :: NRAWBP ! total raw record times pols
         INTEGER     , INTENT (IN) :: WKSET  ! weekly profile interpretation
-        INTEGER     , INTENT(OUT) :: NRAWOUT! outgoing source * pollutants
+        INTEGER     ,INTENT(INOUT):: CURREC ! current no. source * pollutants
         LOGICAL     , INTENT(OUT) :: EFLAG  ! outgoing error flag
         INTEGER     ,INTENT(INOUT):: NDROP  !  number of records dropped
         REAL        ,INTENT(INOUT):: EDROP( MXIDAT )  ! emis dropped per pol
@@ -112,10 +111,6 @@ C...........   Local arrays
         INTEGER          IS( NPTPPOL3 )  ! start position for each pol char
         INTEGER          IE( NPTPPOL3 )  ! end position for each pol char
 
-C...........   Counters of total number of input records
-        INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
-        INTEGER, SAVE :: NSRCPOL = 0 ! cumulative source x pollutants count
-
 C.........  Temporary variables for storing source characteristics.  These
 C           variables must be the width of the fields for global source
 C           characteristics definition for use in BLDCSRC.
@@ -142,7 +137,6 @@ C...........   Other local variables
         INTEGER, SAVE:: MXWARN  !  maximum number of warnings
         INTEGER         NPOL    !  number of pollutants in file
         INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
-        INTEGER         SS      !  counter for sources
         INTEGER         STA     !  state code
         INTEGER         TPF     !  tmp temporal adjustments setting
 
@@ -210,8 +204,7 @@ C........................................................................
 C.............  Head of the main read loop  .............................
 C........................................................................
 
-        SS   = NSRCSAV
-        ES   = NSRCPOL
+        ES   = CURREC
         IREC = 0
         DO
 
@@ -351,12 +344,6 @@ C               the various data fields that remain
             DESC = ADJUSTL( LINPT1(  62:101 ) )  ! plant description
             TSCC = ADJUSTL( LINPT1( 102:111 ) )  ! SCC code
 
-C.............  Set the default temporal resolution of the data
-            TPF  = MTPRFAC * WKSET
-
-C.............  Increment source number
-            SS = SS + 1
-
 C.............  Make adjustments to pad with zeros, if needed
             WRITE( CFIP,94120 ) FIP
             CALL PADZERO( CFIP )
@@ -367,6 +354,9 @@ C               record for each pollutant.  This will be consistent with
 C               the other reader routines.
             DO V = 1, NPOL
 
+C.................  Set the default temporal resolution of the data
+                TPF  = MTPRFAC * WKSET
+            
 C.................  Non-advancing read for all but the last pollutant and
 C                   advancing read for the last pollutant
                 LEOR = .FALSE.
@@ -458,10 +448,7 @@ C                   user option is set
 
                     EANN = EOZN * DAY2YR
 
-C.....................  Remove monthly factors for this source. Note that this
-C                       will impact ALL pollutants, even if only one pollutant
-C                       gets filled.  This is necessary unless TPF is changed
-C                       to be pollutant-dependent.
+C.....................  Remove monthly factors for this source.
                     TPF  = WKSET
 
                 END IF
@@ -472,8 +459,20 @@ C.................  Store data in final arrays if there is enough memory
                 IF ( ES .LE. NRAWBP ) THEN
 
                     J = DATPOS( V )
-                    INDEXA ( ES     ) = ES
-                    INRECA ( ES     ) = SS                    
+                    IFIPA  ( ES     ) = FIP
+                    ISICA  ( ES     ) = SIC
+                    TPFLGA ( ES     ) = TPF
+                    INVYRA ( ES     ) = INY
+                    STKHTA ( ES     ) = HT
+                    STKDMA ( ES     ) = DM
+                    STKTKA ( ES     ) = TK
+                    STKVEA ( ES     ) = VL
+                    XLOCAA ( ES     ) = LON
+                    YLOCAA ( ES     ) = LAT
+                    CSCCA  ( ES     ) = TSCC
+                    CORISA ( ES     ) = CORS
+                    CBLRIDA( ES     ) = BLID
+                    CPDESCA( ES     ) = DESC              
                     POLVLA ( ES,NEM ) = INVDCNV( J ) * EANN
                     POLVLA ( ES,NOZ ) = EOZN
                     POLVLA ( ES,NCE ) = CEFF
@@ -492,28 +491,6 @@ C.................  Store data in final arrays if there is enough memory
 
             END DO      !  end of loop through pollutants
 
-C.............  Store source characteristics if dimension is okay
-C.............  This is done after pollutants stored because TPF might change
-C               in pollutants loop
-            IF( SS .LE. NRAWIN ) THEN
-
-                IFIPA  ( SS ) = FIP
-                ISICA  ( SS ) = SIC
-                TPFLGA ( SS ) = TPF
-                INVYRA ( SS ) = INY
-                STKHTA ( SS ) = HT
-                STKDMA ( SS ) = DM
-                STKTKA ( SS ) = TK
-                STKVEA ( SS ) = VL
-                XLOCAA ( SS ) = LON
-                YLOCAA ( SS ) = LAT
-                CSCCA  ( SS ) = TSCC
-                CORISA ( SS ) = CORS
-                CBLRIDA( SS ) = BLID
-                CPDESCA( SS ) = DESC
-
-            END IF 
-
         END DO          !  to head of FDEV-read loop
 
 199     CONTINUE        !  exit from the FDEV-read loop
@@ -522,31 +499,14 @@ C               in pollutants loop
 
         WRITE( MESG,94010 ) 
      &         'IDA FILE processed:'  // CRLF() // BLANK10 //
-     &              'This-file source-count', SS - NSRCSAV,
-     &         CRLF() // BLANK10 //
-     &              'Cumulative source-count', SS,
-     &         CRLF() // BLANK10 //
-     &              'This-file source*pollutant-count', ES - NSRCPOL,
+     &              'This-file source*pollutant-count', ES - CURREC,
      &         CRLF() // BLANK10 //
      &              'Cumulative source*pollutant-count', ES
 
         CALL M3MSG2( MESG )
 
-C.........  Update saved cumulative counts
-        NSRCSAV = SS        !  source
-        NSRCPOL = ES        !  source*pollutant
-
 C.........  Write message if overflow occurred
-        IF( NSRCSAV .GT. NRAWIN ) THEN
-
-            EFLAG = .TRUE.
-            MESG = 'INTERNAL ERROR: Source memory allocation ' //
-     &             'insufficient for IDA inventory'
-            CALL M3MSG2( MESG )
-
-        END IF
-
-        IF( NSRCPOL .GT. NRAWBP ) THEN
+        IF( ES .GT. NRAWBP ) THEN
 
             EFLAG = .TRUE.
             MESG = 'INTERNAL ERROR: Source by pollutant memory ' //
@@ -554,7 +514,7 @@ C.........  Write message if overflow occurred
             CALL M3MSG2( MESG )
 
         ELSE
-            NRAWOUT = NSRCPOL
+            CURREC = ES
 
         END IF
 
