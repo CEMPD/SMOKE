@@ -31,7 +31,7 @@ C
 C env_progs@mcnc.org
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
 
@@ -66,7 +66,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: SCCSW = '%W%'
 
 C...........  LOCAL VARIABLES and their descriptions:
 
@@ -123,10 +123,12 @@ C...........   Other local variables
 
         INTEGER         IOS        ! i/o status
         INTEGER         IYEAR      ! inventory year
+        INTEGER         MXPVAR     ! max of NPPOL and NPACT
         INTEGER      :: NCALL  = 0 ! number of variables applying to "all"
         INTEGER         NCMAT      ! no. control matrices
         INTEGER         NINVARR    ! no. of inventory characteristics
         INTEGER         NNPVAR     ! no. non-pollutant inventory variables
+        INTEGER         NPVAR      ! no. variables per data variable
         INTEGER      :: PYEAR  = 0 ! projected inventory year
         INTEGER      :: PBYEAR = 0 ! projection matrix base year
         INTEGER      :: PPYEAR = 0 ! projection matrix destination year
@@ -530,8 +532,9 @@ C.........  If no IDA output, deallocate memory for source characteristics
 
 C.........  Allocate memory for pollutant- and activity-specific data (one
 C           pollutant or activity at a time)
+        MXPVAR = MAX( NPPOL, NPACT )
         CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .TRUE., NSRC, 
-     &               NSRC, NPPOL )
+     &               NSRC, MXPVAR )
 
         MESG = 'Processing inventory data...'
         CALL M3MSG2( MESG )
@@ -540,10 +543,19 @@ C.........  Loop through inventory pollutants and activities
         DO V = 1, NIPPA
 
             VARBUF = EANAM( V )
+            K1 = INDEX1( VARBUF, NIACT, ACTVTY )
+
+C.............  Determine name index and count depending on pol or activity
+            IF( K1 .GT. 0 ) THEN
+                IS = NNPVAR + NIPOL*NPPOL + ( V-NIPOL-1 ) * NPACT + 1
+                NPVAR = NPACT
+            ELSE
+                IS = NNPVAR + ( V-1 ) * NPPOL + 1
+                NPVAR = NPPOL
+            END IF
 
 C.............  Read inventory pollutant or activity from I/O API file
-            IS = NNPVAR + ( V-1 ) * NPPOL + 1
-            CALL RDINVPOL( ENAME, NSRC, NPPOL, 0, 0, IVNAMES( IS ),
+            CALL RDINVPOL( ENAME, NSRC, NPVAR, 0, 0, IVNAMES( IS ),
      &                     POLVAL, IOS )
 
 C.............  If there was a read error, then go to next variable
@@ -617,7 +629,7 @@ C                   loop through sources, applying factors as needed
 
 C.............  Write out pollutant-based variables to SMOKE file
             IF( ONAME .NE. 'NONE' ) THEN
-                CALL WRINVPOL( ONAME, CATEGORY, NSRC, 1, NPPOL, 
+                CALL WRINVPOL( ONAME, CATEGORY, NSRC, 1, NPVAR, 
      &                         IVNAMES( IS ), POLVAL )
 
             END IF
@@ -627,7 +639,7 @@ C.............  Write out pollutant-based variables to SMOKE file
 C.............  Write out pollutant-based variables to temporary files for IDA
             IF( IDAFLAG ) THEN
                     
-                CALL WRIDAPOL( CATEGORY, VARBUF, NSRC, NPPOL, POLVAL, 
+                CALL WRIDAPOL( CATEGORY, VARBUF, NSRC, NPVAR, POLVAL, 
      &                         TDEV( V ), IOS )
 
             END IF
@@ -644,7 +656,7 @@ C.............  Write out pollutant-based variables to temporary files for IDA
 
 C.........  Deallocate input pollutant arrays
         CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .TRUE., 
-     &               NSRC, NSRC, NPPOL )
+     &               NSRC, NSRC, MXPVAR )
 
 C.........  For IDA output
         IF( IDAFLAG ) THEN
