@@ -72,13 +72,13 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: LDEV   ! log file unit no.
 
 C.............  Parameters
-        INTEGER, PARAMETER :: NFIELDS = 11  ! no. input fields
+        INTEGER, PARAMETER :: NFIELDS = 10  ! no. input fields
         INTEGER, PARAMETER :: FBEG( NFIELDS ) = 
-     &                      ( / 1 , 7, 10, 22, 32, 52,
-     &                          66, 78, 92, 108, 122 / )
+     &                      ( / 1 , 8, 11, 34, 39, 63,
+     &                          86, 98, 114, 126 / )
         INTEGER, PARAMETER :: FEND( NFIELDS ) = 
-     &                      ( / 6 , 8, 20, 30, 50, 64,
-     &                          76, 90, 105, 120, 127 / )
+     &                      ( / 6 , 9, 32, 37, 61, 84,
+     &                          93, 109, 124, 139 / )
 
 C...........   Local allocatable arrays...
 C...........   For processing:
@@ -107,6 +107,8 @@ C...........   Other local variables
         INTEGER      :: LFIP           ! previous co/st/cy FIPS code 
         INTEGER      :: MXSCC          ! max no. of SCCs per table 
         INTEGER      :: NXREF          ! number of cross-ref entries 
+
+        REAL         :: SUMTEST = 0.   ! value to check that factors sum to 1.
 
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error found
 
@@ -287,6 +289,45 @@ C.........  Check if count exceeded maximum expected
 C.........  Sort area-to-point factors cross-reference
         CALL SORTIC( NXREF, INDXTA, CSRCTA )
 
+C.........  Check that fractions for each FIPS/SCC combo sums to 1.
+        DO I = 1, NXREF
+
+            J    = INDXTA( I )
+            FIP  = IFIPTA( J )
+            TSCC = CSCCTA( J ) 
+
+C............  Loop through entries for current FIPS/SCC and compute
+C              sum of allocation factors
+            N   = IARPTA( J,1 )
+            CNT = IARPTA( J,2 ) - 1
+            SUMTEST = 0.
+            DO K = 1, IARPTA( J,3 )
+                CNT = CNT + 1
+                SUMTEST = SUMTEST + AR2PTABL( CNT,N )%ALLOC
+            END DO
+
+C............  If sum of allocation factors is outside allowable 
+C              range, then write error
+            IF( SUMTEST .GT. 1.001 .OR.
+     &          SUMTEST .LT. 0.999      ) THEN
+    
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Sum of factors for '//
+     &                 'Co/St/Cy=', FIP, 'and SCC= '// TSCC//
+     &                 CRLF()// BLANK10 // 'is not equal to 1. '//
+     &                 'Value is ', SUMTEST, '.'
+                CALL M3MSG2( MESG )
+
+            END IF
+
+        END DO
+
+C.........  Abort if errors found
+        IF( EFLAG ) THEN
+            MESG = 'Area-to-point factors file has bad data'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  Call cross-referencing routine, which will also populate
 C           the ARPT09 array (full FIPs and full SCC matches only)
         CALL XREFTBL( 'AR2PT', NXREF )
@@ -372,6 +413,8 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
+94020   FORMAT(  A, 1X, I6.6, 1X, A, 1X, F10.7, 1X, A )
+
 94675   FORMAT( 10X, A10, 4X, I2.2, 5X, A )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
@@ -406,9 +449,9 @@ C.............  Local variables
             INTEGER          FIP        ! tmp co/st/cy FIPS code
             INTEGER          IOS        ! i/o status
             INTEGER          IREC       ! record number
-            INTEGER          LINSCC     ! number of SCCs on current header line
+            INTEGER       :: LINSCC = 0 ! number of SCCs on current header line
             INTEGER, SAVE :: NLINES     ! no. lines in input file
-            INTEGER          NSCC       ! SCC counter
+            INTEGER       :: NSCC = 0   ! SCC counter
             INTEGER          NTBL       ! no. tables
             INTEGER          STA        ! tmp state code
 
@@ -426,7 +469,7 @@ C.............  If the first time the internal subprogram is called
             IF( FIRSTIME ) THEN
 
 C................  Determine the number of lines in the input file
-                NLINES = GETFLINE( FDEV, 'ARTOPNT file' )
+                NLINES = GETFLINE( FDEV )
 
                 FIRSTIME = .FALSE.
 
@@ -484,6 +527,14 @@ C...................  Otherwise add to the SCC count
 
 C....................  Store maximum SCC value
                     MXSCC = MAX( MXSCC, NSCC )
+
+C....................  Give error if no SCCs are provided in the packet
+                    IF( LINSCC .LE. 0 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: No SCCs provided '//
+     &                         'in /LOCATIONS/ packet at line', IREC
+                        CALL M3MSG2( MESG )
+                    END IF
 
 C....................  Set packet status 
                     THISPKT = .TRUE.
