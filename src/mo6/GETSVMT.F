@@ -99,23 +99,23 @@ C       Open the external data file.
 C 
 
 ccs        CALL UCCOMP(INPREC(21:), FILENAME) 
-        CALL LJCOMP(INPREC(21:), FILENAME)
+        CALL LJCOMP(INPREC(21:), M6FILE)
 
 ccs     Usually M6 input files live in SMK_M6PATH; however, we put
 ccs     the full path of the files in the M6 input file
 
-        OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+        OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *         IOSTAT=RC,ERR=80) 
         IF (RC.NE.0) THEN 
 C 
 C     Error opening the external data file. 
 C 
-   80     WRITE(IOUERR,280) FILENAME 
+   80     WRITE(IOUERR,280) M6FILE 
   280     FORMAT(/'*** ERROR: unable to open the following external ', 
      &      'data file:',/'*** ',A) 
           INERR = INERR + 1 
         ELSE 
-          WRITE(IOUREP,200) FILENAME 
+          WRITE(IOUREP,200) M6FILE 
   200     FORMAT(/'* Reading Hourly, Roadway, and Speed VMT dist.', 
      &              ' from the following external',/'* data file: ',A) 
 C 
@@ -128,13 +128,13 @@ C     Error reading the header of the external data file.
 C 
             SELECT CASE (RC) 
               CASE (:-1) 
-                WRITE(IOUERR,285) FILENAME 
+                WRITE(IOUERR,285) M6FILE 
   285           FORMAT(/'*** ERROR: no header record was found in ', 
      &            'the following external data file:',/'***',A) 
                 RC = 1 
                 INERR = INERR + 1 
               CASE (1:) 
-                WRITE(IOUERR,286) FILENAME 
+                WRITE(IOUERR,286) M6FILE 
   286           FORMAT(/'*** ERROR reading the header of the ', 
      &                  'following external data file:',/'*** ',A) 
               CASE DEFAULT 
