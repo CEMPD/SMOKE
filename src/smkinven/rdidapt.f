@@ -220,7 +220,7 @@ C.............  If line is a header line or blank, it will advance anyway
             READ( FDEV, 93010, END=199, IOSTAT=IOS, ADVANCE="NO" ) 
      &            LINPT1
             IREC = IREC + 1
-            LEOR = ( IOS .EQ. -2 )
+            LEOR = ( IOS .LT. 0 )
 
             IF ( IOS .GT. 0 ) THEN
 
@@ -266,6 +266,7 @@ C...........  If end of record reached already, error
                 WRITE( MESG,94010 ) 'ERROR: Unexpected end of line '//
      &                 'at line', IREC
                 CALL M3MESG( MESG )
+                READ( FDEV, 93000, END=199, ADVANCE = "YES" )
                 CYCLE
             END IF
 
@@ -369,10 +370,10 @@ C               the other reader routines.
 C.................  Non-advancing read for all but the last pollutant and
 C                   advancing read for the last pollutant
                 LEOR = .FALSE.
-                IF ( V .LE. NPOL ) THEN
+                IF ( V .LT. NPOL ) THEN
                     READ( FDEV, 93020, END=199, IOSTAT=IOS, 
      &                    ADVANCE="NO" ) LINEMS
-                    LEOR = ( IOS .EQ. -2 )
+                    LEOR = ( IOS .LT. 0 )
                 ELSE
                     READ( FDEV, 93020, END=199, IOSTAT=IOS ) 
      &                  LINEMS
@@ -388,7 +389,8 @@ C...............  If end of record reached already, error
                     WRITE( MESG,94010 ) 'ERROR: Unexpected end of '//
      &                     'line at line', IREC
                     CALL M3MESG( MESG )
-                    CYCLE
+                    READ( FDEV, 93000, END=199, ADVANCE = "YES" )
+                    EXIT
                 END IF
 
 C.................  Read annual emissions for pollutant V
