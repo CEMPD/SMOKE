@@ -221,11 +221,10 @@ C.........  For an IDA format file
         ELSE IF( INVFMT .EQ. IDAFMT ) THEN
             CALL GETIDASZ( FDEV, CATEGORY, NREC, NRECDAT )
 
-C.........  For the 1996 NTI format
-        ELSE IF( INVFMT .EQ. NTIFMTA ) THEN
-            NREC = 1
-            NRECDAT = 1
-c note: temporary
+C.........  For a toxics format file
+        ELSE IF( INVFMT .EQ. NTIFMT ) THEN
+            CALL GETNTISZ( FDEV, CATEGORY, NREC )
+            NRECDAT = NREC
 
         ELSE
             WRITE( MESG,94010 ) 'INTERNAL ERROR: Illegal call to ' //
