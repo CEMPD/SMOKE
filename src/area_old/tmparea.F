@@ -2,7 +2,7 @@
         PROGRAM TMPAREA
 
 C***********************************************************************
-C  program body starts at line 254
+C  program body starts at line 255
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -15,7 +15,7 @@ C       M3IO source-level area source emissions in canonical order
 C       produced by EMSAREA
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C       RDTPROF(), RDASCC(), MKTMAT()
+C       RDTPROF(), RDASCC(), MKTMATSI()
 C       Models-3 I/O.
 C
 C  REVISION  HISTORY:
@@ -230,7 +230,7 @@ C...........   Other local variables
         INTEGER         H, I, J, K, C0, C1, F, S, T, V
         INTEGER         FIP, ID7, ID3, CODE
         INTEGER         IMON, IWEK, IDIU, IEND
-        INTEGER         YEAR, MONTH, DAY, LDATE
+        INTEGER         MONTH, DAY, LDATE
         INTEGER         LFIP, LID7, LID3, LCOD   ! From previous line of X-REF
         INTEGER         LMON, LWEK, LDIU         ! From previous line of X-REF
         CHARACTER*14    DTBUF   !  buffer for MMDDYY
@@ -995,37 +995,38 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
 
                 IF ( NEND .EQ. 0 .AND. LDATE .LT. 0 ) THEN !  no weekend packet
 
-                    WRITE( *,92030 ) 
-     &                  'Processing ', DAYS( DAY ), MMDDYY( JDATE )
-                    CALL MKTMAT( NASRC,  JDATE, MONTH,  DAY, 
-     &                           TZONE,  ZONES, TFLAG,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, 0,0, TMAT )
+                    CALL M3MSG2( 'Processing ' //
+     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+
+                    CALL MKTMATSI( NASRC,  JDATE, MONTH,  DAY, 
+     &                             TZONE,  ZONES, TFLAG,
+     &                             MONFAC, MDEX,
+     &                             WEKFAC, WDEX,
+     &                             DIUFAC, DDEX, 0,0, TMAT )
 
                 ELSE IF ( DAY .GE. 6 ) THEN     !  day is Saturday or Sunday
                                                 !  in SAI's brain-damaged
                                                 !  day-of-week conventions.
 
-                    WRITE( *,92030 ) 
-     &                  'Processing weekend day ', 
-     &                  DAYS( DAY ), MMDDYY( JDATE )
-                    CALL MKTMAT( NASRC,  JDATE, MONTH, DAY, 
-     &                           TZONE,  ZONES, TFLAG,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           ENDFAC, EDEX, 0,0, TMAT )
+                    CALL M3MSG2( 'Processing weekend day ' //
+     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+
+                    CALL MKTMATSI( NASRC,  JDATE, MONTH, DAY, 
+     &                             TZONE,  ZONES, TFLAG,
+     &                             MONFAC, MDEX,
+     &                             WEKFAC, WDEX,
+     &                             ENDFAC, EDEX, 0,0, TMAT )
 
                 ELSE
 
-                    WRITE( *,92030 ) 
-     &                  'Processing midweek day ', 
-     &                  DAYS( DAY ), MMDDYY( JDATE )
-                    CALL MKTMAT( NASRC,  JDATE, MONTH, DAY, 
-     &                           TZONE,  ZONES, TFLAG,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, 0,0, TMAT )
+                    CALL M3MSG2( 'Processing midweek day ' //
+     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+
+                    CALL MKTMATSI( NASRC,  JDATE, MONTH, DAY, 
+     &                             TZONE,  ZONES, TFLAG,
+     &                             MONFAC, MDEX,
+     &                             WEKFAC, WDEX,
+     &                             DIUFAC, DDEX, 0,0, TMAT )
 
                 END IF
 
@@ -1033,6 +1034,7 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
 
             END IF      ! if jdate not ldate
 
+C.............  Write to screen because WRITE3 only writes to LDEV
             WRITE( *, 94030 ) HHMMSS( JTIME )
 
             H = 1 + MOD( JTIME / 10000 , 24 )
