@@ -503,12 +503,6 @@ C.........  Abort if simulation date is less than date in MINMAXT file
             CALL M3EXIT( 'TMPMOBIL', 0, 0,
      &                   'Requested starting date too early', 2 )
 
-        ELSEIF( WTIME .NE. 0 ) THEN
-
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Error: time in ' // 
-     &                   WNAME( 1:TRIMLEN( WNAME ) ) // 
-     &                   ' is not 00000!', 2 )
-
         ELSEIF( JDATE .NE. JWDATE .OR. JTIME .NE. JWTIME ) THEN
 
             WRITE( *,92000 ) ' '
@@ -1481,6 +1475,7 @@ C.................  Read ungridded MIN/MAX temperature indices for the day
                      CALL M3EXIT( 'TMPMOBIL', MDATE, 0, MESG, 2 )
                 ENDIF
              
+                CALL NEXTIME( WDATE, WTIME, 230000 )
 
             END IF      ! if jdate not ldate
 
