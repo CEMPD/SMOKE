@@ -29,9 +29,9 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #	$(FC) $(FFLAGS) -o $(@) $(GTR) $(LIBS_DEBUG)
 #
 #
-SMR=smkreport.o asgnbins.o bldrepidx.o blkorcmt.o genrprt.o openrepin.o   \
+SMR=smkreport.o asgnbins.o bldrepidx.o genrprt.o openrepin.o   \
     openrepout.o rdgrps.o rdrepin.o rdrprts.o repmrggrd.o repunits.o\
-    rmcommnt.o scanrepc.o selectsrc.o wrrephdr.o wrrepout.o
+    scanrepc.o selectsrc.o wrrephdr.o wrrepout.o
 
 smkreport: $(SMR) $(ALLI) $(LIBPATH)
 	echo SMKREPORT:
