@@ -20,7 +20,7 @@ C
 C  REVISION  HISTORY:
 C     Created 1/99 by M. Houyoux
 C
-C****************************************************************************/
+C*************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -383,7 +383,8 @@ C               these characteristics will appear earlier in the sorted list
 
                 END IF
 
-            ELSEIF( CNFIP .EQ. ' ' ) THEN    ! Country/St/Co code is complete
+            ELSEIF( CNFIP .EQ. ' ' .OR.
+     &              CNFIP .EQ. TSCC     ) THEN  ! Country/St/Co code is complete
 
                 IF( TSCC .EQ. SCCZERO ) THEN            ! SCC code is default
 
