@@ -4,22 +4,23 @@ C Version "@(#)$Id$ $Source$ $Date$
         PROGRAM ELEVPOINT
 
 C***********************************************************************
-C  program body starts at line  73
+C  program body starts at line  75
 C
 C  DESCRIPTION:
-C	Uses PLUMRIS() and user-selected CUTOFF to determine which point
-C	sources may possibly generate elevated plumes.  Outputs elevated
-C	plume source FIP,SCC,PLANT,STACK,RISE to file.
+C       Uses PLUMRIS() and user-selected CUTOFF to determine which point
+C       sources may possibly generate elevated plumes.  Outputs elevated
+C       plume source FIP,SCC,PLANT,STACK,RISE to file.
 C
 C  PRECONDITIONS REQUIRED:
-C	RAWPOINT point sources output file
+C       RAWPOINT point sources output file
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C	PLUMRIS()
+C       PLUMRIS()
 C
 C  REVISION  HISTORY:
-C	Prototype 10/95 by CKJC
-C
+C       Prototype 10/95 by CJC
+C       Version   12/95 by CJC uses stack parameters file to fix up missing
+C       stack parameter values.
 C***********************************************************************
 
       IMPLICIT NONE
@@ -60,6 +61,7 @@ C...........   Other local variables
         INTEGER         S       !  loop counter.
         INTEGER         N       !  elevated sources counter.
         CHARACTER*16    ENAME   !  logical name for point-source input file
+        INTEGER         FDEV    !  unit number for stack parameters file
         INTEGER         LDEV    !  unit number for log file
         INTEGER         PDEV    !  ... output elevated point source file
         REAL            CUTOFF  !  plume rise cutoff for elev pts
@@ -106,6 +108,13 @@ C.......   elevated points file
         IF ( ENAME( 1:5 ) .EQ. 'NNONE ' ) THEN
             CALL M3EXIT( 'ELEVPOINT', 0, 0, 
      &           'Could not open POINT SOURCE input file', 2 )
+        END IF
+
+        FDEV = PROMPTFFILE( 'Enter name for STACK PARAMETER input file',
+     &                      .TRUE., .TRUE., 'PSTK', 'ELEVPOINT' )
+        IF ( FDEV .LE. 0 ) THEN
+            CALL M3EXIT( 'ELEVPOINT', 0, 0, 
+     &           'Could not open input STACK PARAMETER FILE', 2 )
         END IF
 
         PDEV = PROMPTFFILE(  
@@ -168,6 +177,14 @@ C...........   IPLANT, ISTACK, TZONES
      &                   'Error reading STKVE from file' // ENAME, 2 )
         END IF
 
+
+C...........   Fix up missing stack parameters:
+
+        CALL FIXSTK( FDEV, IFIP, ISCC, STKHT, STKDM, STKTK, STKVE )
+
+
+C...........   Process the stacks to determine elevated sources:
+
         WRITE( *,92000 ) 
      &  ' ',
      &  'Writing ELEVATED POINT SOURCE output file',
@@ -215,7 +232,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( A, I5 )
+94010   FORMAT( 10 ( A, :, I5, :, 2X  ) )
 
 
         END
