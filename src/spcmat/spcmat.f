@@ -386,7 +386,7 @@ C.........  Read the pollutant to pollutant conversion file, if any
 C.........  resulting tables are passed via MODSPRO
         IF ( KFLAG ) THEN
 
-            CALL RDSCONV( KDEV, NIPPA, CATEGORY, EANAM, SANAM )
+            CALL RDSCONV( KDEV, NIPPA, EANAM, SANAM )
 
         END IF
 
