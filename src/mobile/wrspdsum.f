@@ -1,13 +1,51 @@
 
         SUBROUTINE WRSPDSUM( MDEV, REFIDX )
 
+C***********************************************************************
+C  subroutine body starts at line 104
+C
+C  DESCRIPTION:
+C       Writes the SPDSUM output file
+C
+C  PRECONDITIONS REQUIRED:
+C       MDEV has been opened
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC
 
 C.........  This module contains the information about the source category
         USE MODINFO
-        
+
+C.........  This module is used for MOBILE6 setup information         
         USE MODMBSET
         
         IMPLICIT NONE
@@ -393,20 +431,19 @@ C.................  Calculate the number of sources for this speed and road type
                 NSRCSPEED = L - K
 
 C.................  Write current speed to SPDSUM file                
-                CALL WRITE_SPD_TO_SPDSUM( MDEV, 
-     &                               SPDARRAY( K:K + NSRCSPEED - 1,: ), 
-     &                               NSRCSPEED, COUNTY )                           
+                CALL WRITE_SPD_TO_SPDSUM( MDEV, SPDARRAY( K:L-1,: ), 
+     &                                    NSRCSPEED, COUNTY )                           
 
 C.................  Increment correct index based on current road type and set
 C                   road type to opposite of current
                 SELECT CASE( ROADTYPE )
                 
                 CASE( M6FREEWAY )
-                    CURRFREE = CURRFREE + NSRCSPEED
+                    CURRFREE = K + NSRCSPEED
                     ROADTYPE = M6ARTERIAL
                     
                 CASE( M6ARTERIAL )
-                    CURRART = CURRART + NSRCSPEED
+                    CURRART = K + NSRCSPEED
                     ROADTYPE = M6FREEWAY
                     
 C.................  Since there is only one line of local sources, if the road type
@@ -452,7 +489,7 @@ C.................  Set starting and ending indices for first line
             END IF
 
 C.............  If no. sources is more than NSRCLINE, use multiple lines
-	        NLINES = ( NUMSRC - 1 ) / NSRCLINE
+	    NLINES = ( NUMSRC - 1 ) / NSRCLINE
 
 C.............  Loop through all lines except last one (to write continuation character)
             DO M = 1, NLINES
