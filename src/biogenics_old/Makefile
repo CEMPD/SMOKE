@@ -21,7 +21,7 @@ grdbio:  $(INCS) $(GRDS)
 RAWS=rawbio.F
 #
 rawbio:  $(INCS) $(RAWS)
-	f77 $(FFLAGS) -o rawbio $(RAWS) $(LIBS)
+	f77 $(FFLAGS) -o $(SCENARIO)/rawbio $(RAWS) $(LIBS)
 #
 #
 #
