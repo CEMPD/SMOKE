@@ -1,0 +1,61 @@
+
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+        SUBROUTINE  AMRGVEC( NCOLA, A, NCOFF, NA, IA, MA, NROWS, V )
+
+C***********************************************************************
+C  subroutine body starts at line  44
+C
+C  FUNCTION:  multiply vectors A and P by sparse matrices <NA,IA,CA> 
+C	and add the result to V, for CSGMERGE program.
+C
+C  PRECONDITIONS REQUIRED:  none
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C       prototype 2/96 by CJC
+C
+C***********************************************************************
+
+      IMPLICIT NONE
+
+C...........   ARGUMENTS and their descriptions:
+        
+        INTEGER         NCOLA           ! length of input vector A
+        INTEGER         NCOFF           ! max number of A-coefficients
+        INTEGER         NROWS           ! length of output vector
+        REAL            A ( NCOLA )     !  input vector A
+        INTEGER         NA( NROWS )     ! # of entries per row
+        INTEGER         IA( NCOFF )     ! columns list
+        REAL            MA( NCOFF )     ! coefficient array
+        REAL            V ( NROWS )     ! output vector
+
+
+C...........   SCRATCH LOCAL VARIABLES and their descriptions:
+        
+        INTEGER         R, C, KA
+        REAL            SUM
+
+
+C***********************************************************************
+C   begin body of subroutine  SMRGVEC
+
+        KA = 0
+
+        DO  33  R = 1, NROWS
+            
+            SUM = V( R )
+            
+            DO  11  C = 1, NA( R )
+                KA = KA + 1
+                SUM = SUM  +  MA( KA ) * A( IA( KA ) )
+11          CONTINUE
+
+            V( R ) = SUM
+        
+33      CONTINUE
+
+        RETURN
+        END
+
