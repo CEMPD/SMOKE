@@ -53,7 +53,6 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-        INCLUDE 'FLTERR.EXT'    !  functions for comparing two numbers
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETEFILE
