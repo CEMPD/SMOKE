@@ -10,7 +10,7 @@ C  DESCRIPTION:
 C       computes plume rise height
 C
 C  PRECONDITIONS REQUIRED:
-C	meteorology and stack parameters
+C       meteorology and stack parameters
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
@@ -98,7 +98,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER LPLM      !  first L: ZH(L) > Plume height ! same as RADM's KPR
 
         REAL    BFLX            !  buoyancy flux (m**4/s**3)
-        REAL    DH		!  plume rise increment to center of the plume
+        REAL    DH              !  plume rise increment to center of the plume
         REAL    DHM             !  plume rise from momentum
         REAL    DHN             !  plume rise for neutral case
         REAL    DHT             !  plume rise increment to the top of the plume
@@ -113,9 +113,9 @@ C...........   STATEMENT FUNCTIONS:
 
         REAL    B, H, U         !  arguments
 
-        REAL    NEUTRL		!  neutral-stability plume rise function
-        REAL    STABLE		!  stable            plume rise function
-        REAL    UNSTBL		!  unstable          plume rise function
+        REAL    NEUTRL          !  neutral-stability plume rise function
+        REAL    STABLE          !  stable            plume rise function
+        REAL    UNSTBL          !  unstable          plume rise function
 
         NEUTRL( H, B, U ) =
      &     MIN( 10.0 * H, 
@@ -153,7 +153,7 @@ C.......   NOTE: This part of algorithm added based on Models-3 plume rise
 
 C.......   Compute initial plume rise from stack top to next level surface:
 
-        IF( HSTAR .GT. HCRIT ) THEN		!  unstable case:
+        IF( HSTAR .GT. HCRIT ) THEN             !  unstable case:
 
             ZMIX = HMIX - STKHT
 
@@ -193,7 +193,7 @@ C.............        DHM = 3.0 * STKDM * STKVE / WSTK
 
                 DHT = DH
 
-            ELSE				!  unstable case:
+            ELSE                        !  unstable case:
 
                 DH  = UNSTBL( BFLX, WSTK )
                 DHN = NEUTRL( STKHT, BFLX, WSTK )
@@ -211,7 +211,7 @@ C.............        DHM = 3.0 * STKDM * STKVE / WSTK
                 ENDIF
 
                 DHT = DH
-	       
+     
             END IF
 
         ELSE IF( HSTAR .LT. -HCRIT ) THEN      !  stable case:
@@ -227,12 +227,12 @@ C.............        DHM = 3.0 * STKDM * STKVE / WSTK
                 IQ = 3
             END IF
 
-        ELSE					!  neutral case:
+        ELSE                                   !  neutral case:
 
             DHT =  NEUTRL( STKHT, BFLX, WSTK )
             IQ  = 2
             
-        END IF			!  hstar ==> unstable, stable, or neutral
+        END IF                 !  hstar ==> unstable, stable, or neutral
   
 C.......   Compute further plume rise from between level surfaces:
 
@@ -269,16 +269,16 @@ C...........   interpolation identical to ZH( LPLM ).
 
 C...........   Compute residual bflx by stability case IQ:
 
-            IF( IQ .EQ. 1 ) THEN	!  now compute resid bflx by stab case:
+            IF( IQ .EQ. 1 ) THEN           !  now compute resid bflx by stab case:
                 R     = D30 * R
                 RBFLX = WPLM * R**FIVETHD
             ELSE IF ( IQ .EQ. 2 ) THEN
                 P = STKHT + TWOTHD * ZPLM
                 RBFLX = D1355 * R * WPLM * ( ( WSPD( 1 )**2. )/144. ) 
      &               * ( R / P )**TWOTHD
-            ELSE	!  else iq = 3:
+            ELSE        !  else iq = 3:
                 RBFLX = D17576 * WPLM * S * R**3
-            END IF	!  if stability flag iq is 1, 2, or 3
+            END IF      !  if stability flag iq is 1, 2, or 3
 
 C...........   Prevent divide-by-zero by WPLM
 
@@ -306,9 +306,9 @@ C...........   Process according to stability cases:
                 IF ( DHN .LT. DH ) THEN
                     DH = DHN
                     IQ  = 2
-		        ENDIF
-		        DHT = DH
-	
+                ENDIF
+                DHT = DH
+
             END IF
  
             ZPLM = ZSTK( LPLM-1 ) + DHT

@@ -285,10 +285,10 @@ C.........  Loop through time steps and output emissions and other data
         END DO     !  End of loop over time steps
 
 C.............  Abort if error found
-	IF ( EFLAG ) THEN
+        IF ( EFLAG ) THEN
             MESG = 'Problem with input file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-	END IF
+        END IF
 
 C.........  Deallocate local memory
         DEALLOCATE( EASTAT )

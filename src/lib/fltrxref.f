@@ -241,7 +241,7 @@ C           skip the pollutant/activity-specific entry
             
                     SKIPPOA = .TRUE.   ! indicates skipped pol/act-spec entries
                     SKIPREC = .TRUE.   ! indicates skip this rec in calling prgm
-		    
+   
             END IF
 
         END IF

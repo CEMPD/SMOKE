@@ -53,7 +53,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)  CRLF
         INTEGER       GETEFILE
         INTEGER       JUNIT
-	LOGICAL	      SETENVVAR
+        LOGICAL       SETENVVAR
 
         EXTERNAL    CRLF, GETEFILE, JUNIT, SETENVVAR
 
@@ -65,12 +65,12 @@ C...........   Local variables
         INTEGER         I, L, L2        ! counters and indices
         INTEGER         IOS             ! i/o status
 
-	CHARACTER(3)    FILENO          ! tmp file number buffer
-	CHARACTER(10)   FMT             ! tmp format buffer
+        CHARACTER(3)    FILENO          ! tmp file number buffer
+        CHARACTER(10)   FMT             ! tmp format buffer
         CHARACTER(16)   VARBUF          ! logical file name buffer
         CHARACTER(300)  MESG            ! message buffer
         CHARACTER(300)  PNAME           ! physical file name on ENVSTR test
-	CHARACTER(300)  NNAME           ! new physical file name buffer
+        CHARACTER(300)  NNAME           ! new physical file name buffer
 
         CHARACTER(16) :: PROGNAME = 'OPENREPOUT' ! program name
 
@@ -88,7 +88,7 @@ C           defined environment variable
         END IF
 
 C.........  Open output file(s)
-	DO I = 1, RPT_%NUMFILES
+        DO I = 1, RPT_%NUMFILES
 
 C.........  If it is a defined environment variable, open as logical file name
             IF( IOS .EQ. 0 ) THEN
@@ -123,14 +123,14 @@ C.........  Set logical file name to new file name
 C.........  If it is not a defined environment variable, open as physical file
 C           name
             ELSE
-	
-		IF( RPT_%RPTMODE .EQ. 1 ) THEN
 
-		    WRITE( FILENO, '( I3 )' ) I
-		    FILENO = ADJUSTL( FILENO )
-		    NNAME = FILNAM // '_' // FILENO
-		
-		END IF
+                IF( RPT_%RPTMODE .EQ. 1 ) THEN
+
+                    WRITE( FILENO, '( I3 )' ) I
+                    FILENO = ADJUSTL( FILENO )
+                    NNAME = FILNAM // '_' // FILENO
+
+                END IF
 
                 FDEV( I ) = JUNIT()
                 OPEN( FDEV( I ),ERR=1006,FILE=NNAME,
@@ -139,8 +139,8 @@ C           name
 
             END IF
 
-	END DO
-	
+        END DO
+
         RETURN
 
 C.........  Error opening raw input file

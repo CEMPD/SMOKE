@@ -146,7 +146,7 @@ C.............  Parse the line into 4 segments
 
 C.............  Convert inventory county to integer             
             IF( CHKINT(SEGMENT(1)) .AND. CHKINT(SEGMENT(2)) ) THEN
-            	CALL PADZERO( SEGMENT( 2 ) )
+                CALL PADZERO( SEGMENT( 2 ) )
                 INVCOUNTY = STR2INT( ADJUSTR(SEGMENT(1)) // 
      &                               SEGMENT(2) )
             ELSE
@@ -206,9 +206,9 @@ C.............  Skip any entries equal to zero due to blank lines
 
 C.............  Check if current inventory county is duplicate (match previous)
             IF( INVCOUNTY == PICOUNTY ) THEN
-     	
-     	        DUPFLAG = .TRUE.
-     	        EFLAG   = .TRUE.
+ 
+                DUPFLAG = .TRUE.
+                EFLAG   = .TRUE.
                 
                 WRITE( MESG,94010 ) 'ERROR: Duplicate entries in ' //
      &                 'county cross-reference file for ' // CRLF() //
@@ -216,7 +216,7 @@ C.............  Check if current inventory county is duplicate (match previous)
      &                 ', reference county', REFCOUNTY, '.'
                 CALL M3MESG( MESG )
             ELSE
-            	
+ 
 C.............  Check that current county is inside the grid (and in the inventory)
                 K = FIND1( INVCOUNTY, NCTY, GRIDCTY )
                 
@@ -252,8 +252,8 @@ C.........  Initialize index for sorting
         DO I = 1, NCTY
             IDX2( I ) = I
         END DO
-        	
-C.........  Sort list of inv. counties in MCREF        	
+ 
+C.........  Sort list of inv. counties in MCREF
         CALL SORTI1( NCTY, IDX2, MCREFSORT( :,1 ) )
 
 C.........  Created sorted array
@@ -270,7 +270,7 @@ C.............  Get county from grid list
             J = FIND1( INVCOUNTY, NCTY, MCREFINV ) 
 
             IF( J < 0 ) THEN
-                EFLAG = .TRUE.	
+                EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Missing reference ' //
      &                 'county for inventory county', INVCOUNTY,
      &                CRLF() // BLANK10 // 'in county ' //
@@ -312,8 +312,8 @@ C.........  Create reference county index array
             REFCOUNTY = MCREFSORT( I,2 )
             
             IF( REFCOUNTY /= PRCOUNTY ) THEN
-            	N = N + 1
-            	
+                N = N + 1
+ 
                 MCREFIDX( N,1 ) = REFCOUNTY
                 MCREFIDX( N,2 ) = I
             END IF

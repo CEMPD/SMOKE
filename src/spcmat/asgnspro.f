@@ -267,7 +267,7 @@ C.............  Create selection
 
             CASE ( 'MOBILE' )
 
-         	WRITE( CRWT, RWTFMT ) IRCLAS( S )
+                WRITE( CRWT, RWTFMT ) IRCLAS( S )
                 WRITE( CVID, VIDFMT ) IVTYPE( S )
 
                 TSCC = CRWT // CVID
@@ -329,27 +329,27 @@ C                           pollutant-specific vehicle type match
                 F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
                 F1 = FINDC( CHKVID, NCNV1, CNVRT01 ) 
 
-        	IF( F5 .GT. 0 .AND. CNVFC03(F5,V) .NE. AMISS3 ) THEN
+                IF( F5 .GT. 0 .AND. CNVFC03(F5,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC03( F5,V )
 
-        	ELSE IF( F4 .GT. 0 .AND. CNVFC02(F4,V) .NE. AMISS3 ) THEN
+                ELSE IF( F4 .GT. 0 .AND. CNVFC02(F4,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC02( F4,V )
 
-        	ELSE IF( F3 .GT. 0 .AND. CNVFC01(F3,V) .NE. AMISS3 ) THEN
+                ELSE IF( F3 .GT. 0 .AND. CNVFC01(F3,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC01( F3,V )
 
-        	ELSE IF( F2 .GT. 0 .AND. CNVFC01(F2,V) .NE. AMISS3 ) THEN
+                ELSE IF( F2 .GT. 0 .AND. CNVFC01(F2,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC01( F2,V )
 
-        	ELSE IF( F1 .GT. 0 .AND. CNVFC01(F1,V) .NE. AMISS3 ) THEN
+                ELSE IF( F1 .GT. 0 .AND. CNVFC01(F1,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC01( F1,V )
 
 C.................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
 C                   there is no need for error checking
-        	ELSE
+                ELSE
                     CNVFAC = CNVFC00( V )
 
-        	END IF
+                END IF
 
 C.............  If they don't exist, simply set the conversion factor to one
             ELSE

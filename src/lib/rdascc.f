@@ -7,14 +7,14 @@ C***********************************************************************
 C  subroutine body starts at line  72
 C
 C  DESCRIPTION:
-C	Reads formatted actual-ASC file.
+C       Reads formatted actual-ASC file.
 C
 C  PRECONDITIONS REQUIRED:
-C	Actual-ASC file opened on unit ADEV.
-C	Actual-ASC file is sorted, and formatted (I7,I3)
+C       Actual-ASC file opened on unit ADEV.
+C       Actual-ASC file is sorted, and formatted (I7,I3)
 C
 C  REVISION  HISTORY:
-C	Prototype  12/96 by CJC for area-source submodel in SMOKE
+C       Prototype  12/96 by CJC for area-source submodel in SMOKE
 C
 C***********************************************************************
 C
@@ -48,11 +48,11 @@ C...........   INCLUDES:
 
 C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 
-        INTEGER     ADEV		!  unit number for actual-ASC file
-        INTEGER     NDIM		!  max dimensioned number of ASCs
-        INTEGER     NASC		!  actual number of ASCs returned
-        INTEGER     ASCA7( NDIM )	!  leading-7 digits
-        INTEGER     ASCA3( NDIM )	!  trailing-3 digits
+        INTEGER     ADEV          !  unit number for actual-ASC file
+        INTEGER     NDIM          !  max dimensioned number of ASCs
+        INTEGER     NASC          !  actual number of ASCs returned
+        INTEGER     ASCA7( NDIM ) !  leading-7 digits
+        INTEGER     ASCA3( NDIM ) !  trailing-3 digits
 
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
@@ -104,7 +104,7 @@ C   begin body of subroutine  RDASCC
                 CALL M3MESG( MESG )
                 GO TO  11
 
-            END IF		!  if i/o error; else if out-of-order
+            END IF              !  if i/o error; else if out-of-order
 
             I = I + 1
             IF ( I .LE. NDIM ) THEN 
@@ -112,7 +112,7 @@ C   begin body of subroutine  RDASCC
                 ASCA7( I ) = ID7
                 ASCA3( I ) = ID3
 
-            END IF		!  if I in bounds
+            END IF              !  if I in bounds
      
             LID7 = ID7
             LID3 = ID3

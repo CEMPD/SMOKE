@@ -56,13 +56,13 @@ C  file.
       
 C  First time, initialize emission factor array
       IF (INITIAL) THEN
-      	 ALLOCATE( EXHAUST( MAXIH,5,8 ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'EXHAUST', PROGNAME )
-      	 ALLOCATE( ZMILES ( MAXIH     ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
-      	 ALLOCATE( ZGMHOUR( MAXIH,5   ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
-      	
+         ALLOCATE( EXHAUST( MAXIH,5,8 ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'EXHAUST', PROGNAME )
+         ALLOCATE( ZMILES ( MAXIH     ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
+         ALLOCATE( ZGMHOUR( MAXIH,5   ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
+ 
          EXHAUST = 0.
          ZMILES  = 0.
          ZGMHOUR = 0.
@@ -132,8 +132,8 @@ C.....         Reinitialize arrays after last hour and facility
 
 C  If vehicle type = 28 and age = 0, we're done with this pollutant, so output array
       IF (IV == 28 .AND. JDX-1 == 0) THEN
-      	 DO EFTYPE = 1,2
-      	 
+         DO EFTYPE = 1,2
+ 
 C.....      Check if this is a valid pollutant/process combo
             IF (M6POL2EF( EFTYPE, IP ) == -1) CYCLE
          

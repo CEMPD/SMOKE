@@ -448,14 +448,14 @@ C                       exempt from daylight time or not.
                     IF(       ISDSTIME( JDATE ) .AND. 
      &                  .NOT. DAYLIT            .AND.
      &                  USEDAYLT( K )                   ) THEN
-                	DAYLIT = .TRUE.
-                	ZONE = ZONE - 1
+                        DAYLIT = .TRUE.
+                        ZONE = ZONE - 1
 
                     ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. 
      &                             DAYLIT            .AND.
      &                       USEDAYLT( K )                  ) THEN
-                	DAYLIT = .FALSE.
-                	ZONE = ZONE + 1
+                        DAYLIT = .FALSE.
+                        ZONE = ZONE + 1
                     END IF
 
 C.....................  Convert date and time to output time zone

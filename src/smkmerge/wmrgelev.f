@@ -177,7 +177,7 @@ C.........  Other local variables
         CHARACTER(CHRLEN3) SKID         ! tmp stack ID
         CHARACTER(STKLEN3) ECS          ! stack elevated source chars
         CHARACTER(STKLEN3) PECS         ! tmp previous ECS
-	CHARACTER(IOULEN3) GRDENV       ! gridded output units from envrmt
+        CHARACTER(IOULEN3) GRDENV       ! gridded output units from envrmt
 
         CHARACTER(16) :: PROGNAME = 'WMRGELEV' ! program name
 
@@ -437,19 +437,19 @@ C..................  Store arrays for writing emissions
 C.................  Get settings from the environment...
 
 C.................  Get type of plume rise calculation from environment
-        	MESG = 'Vertical method: "PLUMERISE" or "STACKHGT"'
-        	CALL ENVSTR( 'UAM_VERTICAL_METHOD', MESG, 'STACKHGT', 
+                MESG = 'Vertical method: "PLUMERISE" or "STACKHGT"'
+                CALL ENVSTR( 'UAM_VERTICAL_METHOD', MESG, 'STACKHGT', 
      &                       VTYPE, IOS )
 
 C.................  Get UAM file note
                 NOTEDEF = 'UAM elev pt emis from ' // 
      &                    PROGNAME
-        	MESG = 'UAM file note for output file'
-        	CALL ENVSTR( 'UAM_NOTE', MESG, NOTEDEF , UNOTE, IOS )
+                MESG = 'UAM file note for output file'
+                CALL ENVSTR( 'UAM_NOTE', MESG, NOTEDEF , UNOTE, IOS )
 
 C.................  Insert grid name
-        	L = LEN_TRIM( GRDNM )
-        	FNOTE  = GRDNM( 1:L ) // ' ' // ADJUSTL( UNOTE )
+                L = LEN_TRIM( GRDNM )
+                FNOTE  = GRDNM( 1:L ) // ' ' // ADJUSTL( UNOTE )
 
 C.................  Vertical structure information
                 EML = EMLAYS
@@ -467,72 +467,72 @@ C.................  Vertical structure information
                 NZUPPR = ENVINT( 'UAM4_LAYABOVE', 
      &                           'Layers above diffbreak', NZUPPR, IOS )
 
-        	MESG = 'Height of surface layer [meters]'
-        	HTSUR = ENVREAL( 'UAM4_HTSFC', MESG, 0., IOS )
+                MESG = 'Height of surface layer [meters]'
+                HTSUR = ENVREAL( 'UAM4_HTSFC', MESG, 0., IOS )
 
-        	MESG= 'Min. ht. of cells b/w sfc and diffbreak [meters]'
-        	HTLOWR = ENVREAL( 'UAM4_HTLOWR', MESG, 20., IOS )
+                MESG= 'Min. ht. of cells b/w sfc and diffbreak [meters]'
+                HTLOWR = ENVREAL( 'UAM4_HTLOWR', MESG, 20., IOS )
 
-        	MESG= 'Min. ht. of cells b/w diffbreak and top [meters]'
-        	HTUPPR = ENVREAL( 'UAM4_HTUPPR', MESG, 100., IOS )
+                MESG= 'Min. ht. of cells b/w diffbreak and top [meters]'
+                HTUPPR = ENVREAL( 'UAM4_HTUPPR', MESG, 100., IOS )
 
 C.................  Control packet settings
-        	MESG = 'Number of parameters for UAM control packet'
-        	NPARAM = ENVINT( 'UAM_NPARAM', MESG, 20, IOS )
+                MESG = 'Number of parameters for UAM control packet'
+                NPARAM = ENVINT( 'UAM_NPARAM', MESG, 20, IOS )
 
-        	MESG = 'PTSRCE output file unit number'
-        	PDEVOUT = ENVINT( 'UAM_PTSRCE_OUTUNIT', MESG, 20, IOS )
+                MESG = 'PTSRCE output file unit number'
+                PDEVOUT = ENVINT( 'UAM_PTSRCE_OUTUNIT', MESG, 20, IOS )
 
-        	MESG = 'Print output grid, 0=no, 1=yes'
-        	GSWITCH = ENVINT( 'UAM_PRINT_OUTGRD', MESG, 0, IOS )
+                MESG = 'Print output grid, 0=no, 1=yes'
+                GSWITCH = ENVINT( 'UAM_PRINT_OUTGRD', MESG, 0, IOS )
 
-        	MESG = 'Print units table, 0=no, 1=yes'
-        	USWITCH = ENVINT( 'UAM_PRINT_UNITS', MESG, 0, IOS )
+                MESG = 'Print units table, 0=no, 1=yes'
+                USWITCH = ENVINT( 'UAM_PRINT_UNITS', MESG, 0, IOS )
 
-        	MESG = 'Print source locations table, 0=no, 1=yes'
-        	LSWITCH = ENVINT( 'UAM_PRINT_LOCATIONS', MESG, 0, IOS )
+                MESG = 'Print source locations table, 0=no, 1=yes'
+                LSWITCH = ENVINT( 'UAM_PRINT_LOCATIONS', MESG, 0, IOS )
 
-        	MESG = 'Print methods table, 0=no, 1=yes'
-        	MSWITCH = ENVINT( 'UAM_PRINT_METHODS', MESG, 0, IOS )
+                MESG = 'Print methods table, 0=no, 1=yes'
+                MSWITCH = ENVINT( 'UAM_PRINT_METHODS', MESG, 0, IOS )
 
-        	MESG = 'Print source values table, 0=no, 1=yes'
-        	VSWITCH = ENVINT( 'UAM_PRINT_VALUES', MESG, 0, IOS )
+                MESG = 'Print source values table, 0=no, 1=yes'
+                VSWITCH = ENVINT( 'UAM_PRINT_VALUES', MESG, 0, IOS )
 
-        	MESG = 'Print vertical methods table, 0=no, 1=yes'
-        	ESWITCH = ENVINT( 'UAM_PRINT_VERTMETH', MESG, 0, IOS )
+                MESG = 'Print vertical methods table, 0=no, 1=yes'
+                ESWITCH = ENVINT( 'UAM_PRINT_VERTMETH', MESG, 0, IOS )
 
-        	MESG = 'DIFFBREAK file unit number'
-        	DDEVOUT = ENVINT( 'UAM4_DIFFBREAK_UNIT', MESG, 0, IOS )
+                MESG = 'DIFFBREAK file unit number'
+                DDEVOUT = ENVINT( 'UAM4_DIFFBREAK_UNIT', MESG, 0, IOS )
 
-        	MESG = 'REGIONTOP file unit number'
-        	RDEVOUT = ENVINT( 'UAM4_REGIONTOP_UNIT', MESG, 0, IOS )
+                MESG = 'REGIONTOP file unit number'
+                RDEVOUT = ENVINT( 'UAM4_REGIONTOP_UNIT', MESG, 0, IOS )
 
 C.................  If PLUMERISE method has been selected, get file unit
 C                   assignments
-        	IF( VTYPE .EQ. 'PLUMERISE' ) THEN
+                IF( VTYPE .EQ. 'PLUMERISE' ) THEN
 
-        	    MESG = 'TEMPERATUR file unit number'
-        	    TDEVOUT= ENVINT( 'UAM4_TEMPERATUR_UNIT', 
+                    MESG = 'TEMPERATUR file unit number'
+                    TDEVOUT= ENVINT( 'UAM4_TEMPERATUR_UNIT', 
      &                               MESG, 14, IOS ) 
 
-        	    MESG = 'METSCALARS file unit number'
-        	    MDEVOUT= ENVINT( 'UAM4_METSCALARS_UNIT', 
+                    MESG = 'METSCALARS file unit number'
+                    MDEVOUT= ENVINT( 'UAM4_METSCALARS_UNIT', 
      &                               MESG, 15, IOS )
 
-        	    MESG = 'WIND file unit number'
-        	    WDEVOUT = ENVINT( 'UAM4_WIND_UNIT', MESG, 16, IOS )
+                    MESG = 'WIND file unit number'
+                    WDEVOUT = ENVINT( 'UAM4_WIND_UNIT', MESG, 16, IOS )
 
-        	END IF
+                END IF
 
 C.................  Get output units from the environment
-		BUFFER = 'Units for output gridded emissions'
+                BUFFER = 'Units for output gridded emissions'
                 CALL ENVSTR( 'MRG_GRDOUT_UNIT', BUFFER,
      &                         ' ', GRDENV, IOS)
 
 C.................  Write header information to the file
-        	WRITE( EVDEV,93010 ) 'CONTROL', GRDENV
-        	WRITE( EVDEV,93000 ) 'PTSOURCE'
-        	WRITE( EVDEV,93000 ) FNOTE
+                WRITE( EVDEV,93010 ) 'CONTROL', GRDENV
+                WRITE( EVDEV,93000 ) 'PTSOURCE'
+                WRITE( EVDEV,93000 ) FNOTE
     
 C.................  Insert crrect number of sources into 1st line of ESTRING
                 WRITE( EVDEV,93015 ) NMSPC, 0, NOUT, 1, NPARAM
@@ -544,12 +544,12 @@ C.................  Insert crrect number of sources into 1st line of ESTRING
      &                               MDEVOUT, WDEVOUT
 
 C.................  Write species names
-        	DO I = 1, NMSPC
+                DO I = 1, NMSPC
                     SPCNAM = EMNAM( I )( 1:LEN( SPCNAM ) )
 
                     IF( SPCNAM .NE. EMNAM( I ) ) THEN
-                	L = LEN_TRIM( EMNAM( I ) ) 
-                	MESG = 'WARNING: Species name "' // 
+                        L = LEN_TRIM( EMNAM( I ) ) 
+                        MESG = 'WARNING: Species name "' // 
      &                         EMNAM( I )( 1:L ) // 
      &                         '" is being truncated to "' // SPCNAM //
      &                         CRLF() // BLANK10 // '" on output to ' //
@@ -558,13 +558,13 @@ C.................  Write species names
 
                     END IF
  
-        	    WRITE( EVDEV, 93020, IOSTAT=IOS ) SPCNAM
+                    WRITE( EVDEV, 93020, IOSTAT=IOS ) SPCNAM
 
-        	END DO
+                END DO
 
 C.................  Output the beginning and ending dates and times
-        	IBD = REMOVE_4DIGIT_YEAR( SDATE )
-        	IED = REMOVE_4DIGIT_YEAR( EDATE )
+                IBD = REMOVE_4DIGIT_YEAR( SDATE )
+                IED = REMOVE_4DIGIT_YEAR( EDATE )
                 IBT = STIME / 100
                 IET = ETIME / 100
                 WRITE( EVDEV, 93030 ) IBD, IBT, IED, IET
@@ -572,20 +572,20 @@ C.................  Output the beginning and ending dates and times
                 WRITE( EVDEV, 93000 ) 'END'
 
 C.................  Region packet:
-        	WRITE( EVDEV, 93000 ) 'REGION'
-        	WRITE( EVDEV, 93040 ) 0., 0., INT( P_ALP )
-        	WRITE( EVDEV, 93040 ) XORIG, YORIG
+                WRITE( EVDEV, 93000 ) 'REGION'
+                WRITE( EVDEV, 93040 ) 0., 0., INT( P_ALP )
+                WRITE( EVDEV, 93040 ) XORIG, YORIG
 
-        	IF( GDTYP .EQ. LATGRD3 ) THEN           ! Print out for Lat-Lon
-        	    WRITE( EVDEV, 93045 ) XCELL, YCELL
-        	ELSE                                    ! other coordinate sys
-        	    WRITE( EVDEV, 93040 ) XCELL, YCELL
-        	END IF
+                IF( GDTYP .EQ. LATGRD3 ) THEN           ! Print out for Lat-Lon
+                    WRITE( EVDEV, 93045 ) XCELL, YCELL
+                ELSE                                    ! other coordinate sys
+                    WRITE( EVDEV, 93040 ) XCELL, YCELL
+                END IF
 
-        	WRITE( EVDEV, 93050 ) NCOLS, NROWS, NULAYS
-        	WRITE( EVDEV, 93060 ) NZLOWR, NZUPPR, HTSUR, 
+                WRITE( EVDEV, 93050 ) NCOLS, NROWS, NULAYS
+                WRITE( EVDEV, 93060 ) NZLOWR, NZUPPR, HTSUR, 
      &                                HTLOWR, HTUPPR 
-        	WRITE( EVDEV, 93000 ) 'END' 
+                WRITE( EVDEV, 93000 ) 'END' 
 
 C.................  Point Sources packet:
 
@@ -638,7 +638,7 @@ C                       the grid is lat-lon or not
 
                 END DO
 
-        	WRITE( EVDEV, 93000 ) 'END' 
+                WRITE( EVDEV, 93000 ) 'END' 
 
             END IF    ! End of output format for UAM file
 
@@ -698,8 +698,8 @@ C.............  Emissions Values packet.  Only write this if the time is
 C               new, otherwise, it will write each time routine is called
 C               for the next species.
             IF( JTIME .NE. PTIME ) THEN
-        	WRITE( EVDEV, 93000 ) 'EMISSIONS VALUES'
-        	WRITE( EVDEV, 93000 ) 'ALL       ALL            0.000'
+                WRITE( EVDEV, 93000 ) 'EMISSIONS VALUES'
+                WRITE( EVDEV, 93000 ) 'ALL       ALL            0.000'
             END IF
 
             LN = 0
@@ -804,8 +804,8 @@ C.............  For explicit sources
 
 C.............  After last species, write packet end fields
             IF( VNAME .EQ. EMNAM( NMSPC ) ) THEN
-        	WRITE( EVDEV, 93000 ) 'END' 
-        	WRITE( EVDEV, 93000 ) 'ENDTIME'
+                WRITE( EVDEV, 93000 ) 'END' 
+                WRITE( EVDEV, 93000 ) 'ENDTIME'
             END IF
 
         END IF   ! End UAM/CAMx elevated point sources format
@@ -828,7 +828,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93030   FORMAT( 4I10 )
 
-93040   FORMAT(	2F10.0, I10 )
+93040   FORMAT( 2F10.0, I10 )
 
 93045   FORMAT( 2F10.7 )
 

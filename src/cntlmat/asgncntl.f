@@ -217,7 +217,7 @@ C               they are not yet data-specific
             CALL M3MSG2( MESG )
 
             DO S = 1, NSRCIN
-	    
+   
                 CSRC    = CSOURC( S )
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CSTA    = CFIP( 1:STALEN3 )

@@ -526,7 +526,7 @@ C
         INQUIRE(FILE=M6FILE,EXIST=FEXIST)  ! Ensure file exists before trying to delete it 
         IF(FEXIST) CLOSE (IOUERR,STATUS='DELETE') 
       ELSE 
-      	EFLAG = .TRUE.
+        EFLAG = .TRUE.
         WRITE(IOUOUT,595) TOTERR 
         INQUIRE(IOUREP,OPENED=FOPEN)
         IF(FOPEN) WRITE(IOUREP,595) TOTERR 

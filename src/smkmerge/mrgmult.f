@@ -277,7 +277,7 @@ C............. If multiplicative controls & speciation & layer fractions
                         SUM1 = GOUT1( C,L )
                         SUM2 = GOUT2( C,L )
 
-                	DO J = 1, NX( C )
+                        DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
                             IDX  = ICNY( S )
@@ -321,7 +321,7 @@ C............. If multiplicative controls and layer fractions
                         SUM1 = GOUT1( C,L )
                         SUM2 = GOUT2( C,L )
 
-                	DO J = 1, NX( C )
+                        DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
                             IDX  = ICNY( S )
@@ -340,7 +340,7 @@ C............. If multiplicative controls and layer fractions
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
 
-                	END DO
+                        END DO
 
                         GOUT1( C,L ) = SUM1
                         GOUT2( C,L ) = SUM2

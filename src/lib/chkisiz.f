@@ -49,8 +49,8 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL        CRLF, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*)   FILNAM         ! Name of file being checked	
-        CHARACTER(*)   FILDESC	       ! Description of file being checked
+        CHARACTER(*)   FILNAM         ! Name of file being checked
+        CHARACTER(*)   FILDESC        ! Description of file being checked
         CHARACTER(*)   COMPDESC       ! Description of comparison value
         INTEGER        NSRC           ! Number of sources comparing against
         INTEGER        STATUS         ! Exit status

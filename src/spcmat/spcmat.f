@@ -381,18 +381,18 @@ C               in order of appearance
                 ENAM = EMTNAM( K,I )
                 EANAM( J ) = ENAM
 
-        	L1 = INDEX( ENAM, ETJOIN )
-        	L2 = LEN_TRIM( ENAM )
-        	IF( L1 .GT. 0 ) PNAM = ENAM( L1+2:L2 )
+                L1 = INDEX( ENAM, ETJOIN )
+                L2 = LEN_TRIM( ENAM )
+                IF( L1 .GT. 0 ) PNAM = ENAM( L1+2:L2 )
 
 C.................  If it does not already appear in list, store pollutant name
-        	N = INDEX1( PNAM, NP, IINAM )
+                N = INDEX1( PNAM, NP, IINAM )
 
-        	IF( N .LE. 0 ) THEN
+                IF( N .LE. 0 ) THEN
                     NP = NP + 1
                     IINAM( NP ) = PNAM
                     N = NP
-        	END IF
+                END IF
 
 C.................  Set index back to master list (IINAM) position 
                 EAIDX( J ) = N
@@ -603,9 +603,9 @@ C.................  For pollutant data...
                     MESG = 'Processing pollutant "'// PNAM( 1:L1 )// '"'
 
                     IF( PNAM .NE. SNAM ) THEN
-                	L1 = LEN_TRIM( MESG )
-                	L2 = LEN_TRIM( SNAM )
-                	MESG = MESG( 1:L1 ) // ' using pollutant "' //
+                        L1 = LEN_TRIM( MESG )
+                        L2 = LEN_TRIM( SNAM )
+                        MESG = MESG( 1:L1 ) // ' using pollutant "' //
      &                         SNAM( 1:L2 ) // '" for profiles'
                     END IF
 

@@ -8,14 +8,14 @@ C  DESCRIPTION:
 C      Uses the rules of naming control and projection variables to compare
 C      a control or projection variable name to the list of inventory pollutant
 C      names.  Returns an integer value based on the comparison:
-C	  Returns -3 if variable should be skipped
-C	  Returns -2 if error
-C 	  Returns -1 if CPVNAM does not apply to any pollutants in EINAM
-C	  Returns  0 if CPVNAM applies to all pollutants
-C	  Returns  number of inventory pollutant (1 to NIPOL) if CPVNAM applies
-C		to a single inventory pollutant
+C         Returns -3 if variable should be skipped
+C         Returns -2 if error
+C         Returns -1 if CPVNAM does not apply to any pollutants in EINAM
+C         Returns  0 if CPVNAM applies to all pollutants
+C         Returns  number of inventory pollutant (1 to NIPOL) if CPVNAM applies
+C            to a single inventory pollutant
 C      Rules of control/projection variable nameing:
-C   	  1) A variable name of "all" applies to ALL pollutants in the 
+C         1) A variable name of "all" applies to ALL pollutants in the 
 C            inventory. How it is applied depends on the type of control matrix.
 C         2) A variable name that matches an inventory pollutant name applies
 C            only to that inventory pollutant
@@ -60,8 +60,8 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*)   CPVNAM         ! Name of control/proj variable
-        INTEGER        NIPOL	       ! Number of inventory pollutant names
-        CHARACTER(*)   EINAM( NIPOL ) ! List of inventory pollutant names	
+        INTEGER        NIPOL          ! Number of inventory pollutant names
+        CHARACTER(*)   EINAM( NIPOL ) ! List of inventory pollutant names
 
 C...........   Other local variables
 

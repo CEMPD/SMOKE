@@ -138,7 +138,7 @@ C.........  CAS codes in sorted order WITH DUPLICATES and reference index back t
 C           input order - dimensioned by NINVTBL
         INTEGER,            ALLOCATABLE, PUBLIC :: SCASIDX( : ) ! index to ITNAMA
         CHARACTER(CASLEN3), ALLOCATABLE, PUBLIC :: SORTCAS( : ) ! CAS code (left justified)
-	 
+ 
 C.........  CAS codes in sorted order WITHOUT DUPLICATES and count of pollutants
 C           for each CAS code (0 pollutants indicates that no pollutants for that
 C           CAS are kept) - dimensioned by NUNIQCAS

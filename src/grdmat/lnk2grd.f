@@ -137,13 +137,13 @@ C...........   Initializations
         DDX   = 1.0 / XCELL3D
         DDY   = 1.0 / YCELL3D
 
-        COL  = 1 + INT( DDX * ( XBEG - XORIG3D ) )	!  starting cell
+        COL  = 1 + INT( DDX * ( XBEG - XORIG3D ) )      !  starting cell
         ROW  = 1 + INT( DDY * ( YBEG - YORIG3D ) )
 
-        CCC  = 1 + INT( DDX * ( XEND - XORIG3D ) )	!  ending cell
+        CCC  = 1 + INT( DDX * ( XEND - XORIG3D ) )      !  ending cell
         RRR  = 1 + INT( DDY * ( YEND - YORIG3D ) )
 
-        ALEN = SQRT( XLNK**2 + YLNK**2 )		!  link length
+        ALEN = SQRT( XLNK**2 + YLNK**2 )                !  link length
 
 C...........  Initialize the number of cells to zero
         NCEL = 0

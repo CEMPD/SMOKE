@@ -5,7 +5,7 @@ C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C	Allocates memory for and reads in the PELV file output from ELEVPOINT.
+C       Allocates memory for and reads in the PELV file output from ELEVPOINT.
 C       This file contains a column for Major sources, plume-in-grid, sources, 
 C       and for stack group numbers.  Only the source codes that are either 
 C       identified as major source or PinG source are listed. 
@@ -13,7 +13,7 @@ C
 C  PRECONDITIONS REQUIRED:
 C
 C  REVISION  HISTORY:
-C	Written  1/99 by M. Houyoux
+C       Written  1/99 by M. Houyoux
 C
 C***********************************************************************
 C
@@ -133,7 +133,7 @@ C.............  If no input file, then end read loop
 C.............  Set sources that are major sources
             IF( IMAJR .GT. 0 .AND. IMAJR .LE. NSRC ) THEN
                 NMAJOR = NMAJOR + 1
-        	LMAJOR  ( IMAJR ) = .TRUE.
+                LMAJOR  ( IMAJR ) = .TRUE.
                 GROUPID ( IMAJR ) = IGRP
             END IF 
 

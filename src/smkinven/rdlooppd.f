@@ -253,7 +253,7 @@ C.............  Open files, and report status
 C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
             IF( FILFMT( IFIL ) .EQ. EMSFMT ) THEN
 
-        	CALL RDEMSPD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG, 
+                CALL RDEMSPD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG, 
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME, 
      &                        EDATE, ETIME, EASTAT, SPSTAT )
 

@@ -39,7 +39,7 @@ C  Count total number of pollutants and determine which are PM based
            DO IV = 1, MAXVEH
                IF( ATHIV( JXV, IRB, IMAP, IV ) ) THEN
                    NTOTHAPS = NTOTHAPS + 1
-               	   PMHAPS( IMAP ) = NTOTHAPS
+                   PMHAPS( IMAP ) = NTOTHAPS
                    EXIT
                END IF
            END DO
@@ -59,7 +59,7 @@ C  Store names of toxic pollutants
                IF( L1 > 8 ) THEN
                    HAPNAMES( IMAP ) = TEMPNAME( 1:8 )
                ELSE
-               	   HAPNAMES( IMAP ) = TEMPNAME( 1:L1 )
+                   HAPNAMES( IMAP ) = TEMPNAME( 1:L1 )
                END IF
                TEMPNAME = HAPNAMES( IMAP )
                HAPNAMES( IMAP ) = TRIM( TEMPNAME ) // '25'

@@ -123,7 +123,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYSPC      = .FALSE.
         ALLRPT%BYSRC      = .FALSE.
         ALLRPT%BYSRG      = .FALSE.
-	ALLRPT%BYSTACK    = .FALSE.
+        ALLRPT%BYSTACK    = .FALSE.
         ALLRPT%BYSTAT     = .FALSE.
         ALLRPT%BYSTNAM    = .FALSE.
         ALLRPT%BYWEK      = .FALSE.
@@ -136,7 +136,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%SCCNAM     = .FALSE.
         ALLRPT%SRCNAM     = .FALSE.
         ALLRPT%STKPARM    = .FALSE.
-	ALLRPT%USEASCELEV = .FALSE.
+        ALLRPT%USEASCELEV = .FALSE.
         ALLRPT%USECRMAT   = .FALSE.
         ALLRPT%USECUMAT   = .FALSE.
         ALLRPT%USEGMAT    = .FALSE.
@@ -154,12 +154,12 @@ C.........  Allocate and initialize report arrays
         ALLRPT%ELEVSTAT   = 0
         ALLRPT%NUMDATA    = -9      ! zero is legitimate
         ALLRPT%NUMTITLE   = 0
-	ALLRPT%NUMFILES   = 0
-	ALLRPT%NUMSECT    = 0
+        ALLRPT%NUMFILES   = 0
+        ALLRPT%NUMSECT    = 0
         ALLRPT%OUTTIME    = 0
         ALLRPT%RENDLIN    = 0
-	ALLRPT%RPTMODE    = 0
-	ALLRPT%RPTNVAR    = 0
+        ALLRPT%RPTMODE    = 0
+        ALLRPT%RPTNVAR    = 0
         ALLRPT%RSTARTLIN  = 0
         ALLRPT%SCCRES     = 10
         ALLRPT%SRGRES     = 0

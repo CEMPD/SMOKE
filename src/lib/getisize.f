@@ -190,7 +190,7 @@ C.................  For NTI format files inside a SMOKE list file
                     CALL GETNTISZ( TDEV, CATEGORY, N1 )
                     NREC = NREC + N1
 
-                ELSE  ! File format not recognized	
+                ELSE  ! File format not recognized
 
                     MESG = 'File format is not recognized for file. ' //
      &                     CRLF() // BLANK10 // 

@@ -92,12 +92,12 @@ C.............  Get Mobile6 command
 
 C.............  Comment out absolute humidity command
             IF( INDEX( COMMAND, 'ABSOLUTE HUMIDITY' ) > 0 ) THEN
-            	RPLCLINE( 1:1 ) = '*'
-            	RPLCLINE( 2:150 ) = CURRLINE( 1:149 )
-            	SCENARIO( I ) = RPLCLINE
+                RPLCLINE( 1:1 ) = '*'
+                RPLCLINE( 2:150 ) = CURRLINE( 1:149 )
+                SCENARIO( I ) = RPLCLINE
             END IF
 
-C.............  Check for relative humidity command                	     
+C.............  Check for relative humidity command
             IF( INDEX( COMMAND, 'RELATIVE HUMIDITY' ) > 0 ) THEN
                 RHPOS = I
             END IF

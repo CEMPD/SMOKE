@@ -485,8 +485,8 @@ C.....................  Find end date in file description
                     DO I = 1, MXDESC3
                        IF( INDEX( FDESC3D( I ), 
      &                            SEARCHSTR( 1:L ) ) > 0 ) THEN
-     	                       TEMPLINE = FDESC3D( I )
-                       	   IF( CHKINT( TEMPLINE( L+1:L+8 ) ) ) THEN
+                           TEMPLINE = FDESC3D( I )
+                           IF( CHKINT( TEMPLINE( L+1:L+8 ) ) ) THEN
                                EDATE = STR2INT( TEMPLINE( L+1:L+8 ) )
                                EXIT
                            ELSE
@@ -499,11 +499,11 @@ C.....................  Find end date in file description
                            EFLAG = .TRUE.
                        END IF
                     END DO
-                    	
+
                     IF( EFLAG ) THEN
                         MESG = 'Could not get ending date of file ' //
      &                         TNAME
-                    	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
                 END IF
 
@@ -528,13 +528,13 @@ C.................  Allocate space for meteorology info
 C.................  Read contents of hourly meteorology file
                 MESG = 'Reading hourly meteorology file...'
                 CALL M3MSG2( MESG )
-            	
+
 C.................  Read county list from file
                 IF( .NOT. READ3( TNAME, 'COUNTIES', 1, SDATE, STIME, 
      &                           TEMPCTY ) ) THEN
-     	            MESG = 'Could not read COUNTIES from ' // TNAME
-     	            CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
-     	        END IF
+                    MESG = 'Could not read COUNTIES from ' // TNAME
+                    CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
+                END IF
               
 C.................  Read temperature data from file            
                 TEMPDATE = SDATE

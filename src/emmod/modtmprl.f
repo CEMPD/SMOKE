@@ -51,7 +51,7 @@
 
         INTEGER, ALLOCATABLE, PUBLIC :: HOLREGN ( : ) ! Region code of holiday
         INTEGER, ALLOCATABLE, PUBLIC :: HOLJDATE( : ) ! Julian date of holidays
-	INTEGER, ALLOCATABLE, PUBLIC :: HOLALTDY( : ) ! alternative day of week
+        INTEGER, ALLOCATABLE, PUBLIC :: HOLALTDY( : ) ! alternative day of week
 
 !.........  Sorted temporal profiles
         INTEGER, PUBLIC :: NMON   ! number of monthly profiles

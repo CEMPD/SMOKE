@@ -100,7 +100,7 @@ C.........  Allocate local temporary variables
         CALL CHECKMEM( IOS, 'HRLPROF', PROGNAME )
 
 C.........  Write header with current variables
-	L1 = LEN_TRIM( VARNAM( 1 ) )
+        L1 = LEN_TRIM( VARNAM( 1 ) )
         BUFFER = '"' // VARNAM( 1 )( 1:L1 ) // '"'
         DO V = 2, NVAR
             L1 = LEN_TRIM( VARNAM( V ) )
@@ -134,8 +134,8 @@ C.............  Retrieve profile numbers for all pollutants
             PHRL = 0
             DO V = 1, NVAR
                 MONPROF( V ) = MONREF( MDEX( S,V ) )
-		WEKPROF( V ) = WEKREF( WDEX( S,V ) )
-		HRLPROF( V ) = HRLREF( DDEX( S,V ) )
+                WEKPROF( V ) = WEKREF( WDEX( S,V ) )
+                HRLPROF( V ) = HRLREF( DDEX( S,V ) )
 
                 IF( V .NE. 1 .AND.  
      &              MONPROF( V ) .NE. PMON ) MFLAG = .FALSE.
@@ -190,7 +190,7 @@ C.............  Write profile information by pollutant
         END DO  ! end source loop
 
 C.........  Deallocate local temporary variables
-	DEALLOCATE( MONPROF, WEKPROF, HRLPROF )
+        DEALLOCATE( MONPROF, WEKPROF, HRLPROF )
 
         RETURN
 

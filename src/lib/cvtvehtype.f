@@ -69,7 +69,7 @@ C   begin body of function CVTVEHTYPE
            CVTVEHTYPE = 8
        CASE DEFAULT                   
            EFLAG = .TRUE.
-            	
+ 
            WRITE( MESG, 94010 ) 'ERROR: Vehicle type ', SMKVEH,
      &                          'is not recognized.'
            CALL M3MESG( MESG )

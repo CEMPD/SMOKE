@@ -242,12 +242,12 @@ C.................  Check for missing values
                 IF ( PDDATA( I,V ) .LT. AMISS3 ) THEN
                     IF( NOMISS( S,V ) ) THEN
                         IF ( V .LE. NVAR ) THEN
-               	            MESG = 'WARNING: Data missing for: ' //
+                            MESG = 'WARNING: Data missing for: ' //
      &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
      &                             ' VAR: '// EANAM( EAIDX( V ) )
                         ELSE
                             K = V - NVAR
-               	            MESG = 'WARNING: Data missing for: ' //
+                            MESG = 'WARNING: Data missing for: ' //
      &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
      &                             ' VAR: '//SPDATNAM( SPIDX2( K ) )
                         END IF

@@ -70,7 +70,7 @@
         TYPE( AR2PT ), ALLOCATABLE, PUBLIC :: AR2PTABL( :,: ) ! area-to-point table
         
 !.........  Area-to-point table SCCs.
-	INTEGER			  , PUBLIC :: NA2PSCC         ! no. of area-to-point SCCs
+        INTEGER                        , PUBLIC :: NA2PSCC         ! no. of area-to-point SCCs
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: A2PSCC( : )  ! area-to-point SCCs
 
 !.........  Reporting array (dimension is NCONDSRC)

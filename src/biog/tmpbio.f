@@ -412,12 +412,12 @@ C.............  Skip any blank lines
 
 C.............  Set logical file name
             IF( .NOT. SETENVVAR( MNAME, METFILE ) ) THEN
-            	EFLAG = .TRUE.
-            	MESG = 'INTERNAL ERROR: Could not set logical file ' //
+                EFLAG = .TRUE.
+                MESG = 'INTERNAL ERROR: Could not set logical file ' //
      &                 'name for file ' // TRIM( METFILE )
                 CALL M3MSG2( MESG )
                 CYCLE
-            END IF       	
+            END IF
 
 C.............  Try to open file            
             IF( .NOT. OPEN3( MNAME, FSREAD3, PROGNAME ) ) THEN
@@ -427,7 +427,7 @@ C.............  Try to open file
                 CALL M3MSG2( MESG )
                 CYCLE
             ELSE
-            	METOPEN = .TRUE.
+                METOPEN = .TRUE.
             END IF
 
 C.............  Read description of file            
@@ -442,7 +442,7 @@ C.............  Read description of file
 C.............  Check that requested variable is in file
             J = INDEX1( TMPRNAM, NVARS3D, VNAME3D )
             IF( J <= 0 ) THEN
-            	EFLAG = .TRUE.
+                EFLAG = .TRUE.
                 MESG = 'ERROR: Could not find ' // TMPRNAM // 
      &                 'in file ' //
      &                 METFILE( 1:LEN_TRIM( METFILE ) )
@@ -471,7 +471,7 @@ C.............  If met data starts before episode, skip ahead to start of episod
                 NMETSTEPS = MXREC3D + HRPOS
                 HRPOS = 1
             ELSE
-            	NMETSTEPS = MXREC3D
+                NMETSTEPS = MXREC3D
                 HRPOS = HRPOS + 1
             END IF
 
@@ -637,9 +637,9 @@ C.....................  Skip any blank lines
                     
 C.....................  Set env variable
                     IF( .NOT. SETENVVAR( RNAME, RADFILE ) ) THEN
-                    	EFLAG = .TRUE.
-                    	MESG = 'INTERNAL ERROR: Could not set ' //
-     &               	       'logical file name for file ' //
+                        EFLAG = .TRUE.
+                        MESG = 'INTERNAL ERROR: Could not set ' //
+     &                         'logical file name for file ' //
      &                         TRIM( RADFILE )
                         CALL M3MSG2( MESG )
                         CYCLE
@@ -655,7 +655,7 @@ C.....................  Try to open file
                         CALL M3MESG( MESG )
                         CYCLE
                     ELSE
-                    	RADOPEN = .TRUE.
+                        RADOPEN = .TRUE.
                     END IF
 
 C.....................  Read description of file            
@@ -673,7 +673,7 @@ C.....................  Read description of file
 C.........................  Check that requested variable is in file
                         J = INDEX1( RADNAM, NVARS3D, VNAME3D )
                         IF( J <= 0 ) THEN
-                        	EFLAG = .TRUE.
+                            EFLAG = .TRUE.
                             MESG = 'ERROR: Could not find ' // RADNAM // 
      &                             'in file ' //
      &                             RADFILE( 1:LEN_TRIM( RADFILE ) )
@@ -702,7 +702,7 @@ C                       skip ahead to start of episode
                         NRADSTEPS = MXREC3D + HRPOS
                         HRPOS = 1
                     ELSE
-                    	NRADSTEPS = MXREC3D
+                        NRADSTEPS = MXREC3D
                         HRPOS = HRPOS + 1
                     END IF
 
@@ -1346,7 +1346,7 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
 C.............  Open temperature file
            NEXTFILE = METLIST( METCHECK( METSTART + ( HR-1 ) ) )
-           IF( NEXTFILE /= METFILE ) THEN           	
+           IF( NEXTFILE /= METFILE ) THEN
                IF( METOPEN ) THEN
                    IF( .NOT. CLOSE3( MNAME ) ) THEN
                        MESG = 'Could not close temperature file ' // 
@@ -1361,20 +1361,20 @@ C.............  Open temperature file
 
 C................  Set env variable
                IF( .NOT. SETENVVAR( MNAME, METFILE ) ) THEN
-               	   MESG = 'Could not set logical file name ' //
-     &          	  'for file ' // TRIM( METFILE )
+                   MESG = 'Could not set logical file name ' //
+     &                    'for file ' // TRIM( METFILE )
                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                END IF
                
 C................  Try to open file               
                IF( .NOT. OPEN3( MNAME, FSREAD3, PROGNAME ) ) THEN
-     	           MESG = 'Could not open temperature file ' // 
+                   MESG = 'Could not open temperature file ' // 
      &                    METFILE( 1:LEN_TRIM( METFILE ) )
-     	           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-     	       ELSE
-     	       	   METOPEN = .TRUE.
-     	       END IF
-     	   END IF
+                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+               ELSE
+                   METOPEN = .TRUE.
+               END IF
+           END IF
 
 C.............  Read temperature data
            IF ( .NOT. READ3( MNAME, TMPRNAM, 1, 
@@ -1397,26 +1397,26 @@ C...............  Open radiation file
      &                           RADFILE( 1:LEN_TRIM( RADFILE ) )
                           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                       ELSE
-                      	  RADOPEN = .FALSE.
+                        RADOPEN = .FALSE.
                       END IF
                   END IF 
                   
                   RADFILE = NEXTFILE
                   
                   IF( .NOT. SETENVVAR( RNAME, RADFILE ) ) THEN
-               	      MESG = 'Could not set logical file name ' //
-     &          	     'for file ' // TRIM( RADFILE )
+                      MESG = 'Could not set logical file name ' //
+     &                       'for file ' // TRIM( RADFILE )
                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                   END IF
                   
                   IF( .NOT. OPEN3( RNAME, FSREAD3, PROGNAME ) ) THEN
-     	              MESG = 'Could not open radiation file ' // 
-     &         	              RADFILE( 1:LEN_TRIM( RADFILE ) )
-     	              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-     	          ELSE
-     	              RADOPEN = .TRUE.
-     	          END IF
-     	      END IF
+                      MESG = 'Could not open radiation file ' // 
+     &                        RADFILE( 1:LEN_TRIM( RADFILE ) )
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  ELSE
+                      RADOPEN = .TRUE.
+                  END IF
+              END IF
 
               IF ( .NOT. READ3( RNAME, RADNAM, ALLAYS3, MDATE,
      &             MTIME, TSOLAR(1,1) ) ) THEN

@@ -196,26 +196,26 @@ C.............  Set flags for daily and hourly data
 C.............  For mobile sources, define the vehicle type index for all 
 C               sources so it doesn't need to be looked up each time
             IF( CATEGORY .EQ. 'MOBILE' ) THEN
-        	ALLOCATE( VIDX( NSRC ), STAT=IOS )
-        	CALL CHECKMEM( IOS, 'VIDX', PROGNAME )
+                ALLOCATE( VIDX( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VIDX', PROGNAME )
 
 C.................  Convert mobile vehicle type values to their index values
-        	DO S = 1, NSRC
+                DO S = 1, NSRC
                     I = INDEX1( CVTYPE( S ), MXM6VTYP, M6VTYPES )
 
                     IF( I .LE. 0 ) THEN
-                	L = LEN_TRIM( CVTYPE( S ) )
-                	MESG = 'WARNING: Inventory vehicle type '// 
+                        L = LEN_TRIM( CVTYPE( S ) )
+                        MESG = 'WARNING: Inventory vehicle type '// 
      &                     CVTYPE( S )( 1:L ) //
      &                     ' not used in MOBILE model.' // CRLF()//
      &                     BLANK10 // 'No emission factors available '//
      &                     'so emissions will not be computed.'
-                	CALL M3MSG2( MESG )                   
+                        CALL M3MSG2( MESG )                   
                     END IF
 
                     VIDX( S ) = I
 
-        	END DO
+                END DO
 
             END IF  ! End of mobile only section
 

@@ -58,7 +58,6 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'     ! emissions constants
         INCLUDE 'BIODIMS3.EXT'    ! biogenic-related constants
 
-
 C...........   ARGUMENTS and their descriptions:
 
         INTEGER, INTENT (IN)  :: JDATE   ! current simulation date (YYYYDDD)

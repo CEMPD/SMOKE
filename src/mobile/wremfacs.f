@@ -126,7 +126,7 @@ C               exhaust running, evp running, brake, and tire wear
             IF( M6FAC2EF( IEF, M6NONE ) == 1 ) THEN
                 FTYPE = M6NONE
             ELSE
-            	FTYPE = 1
+                FYPE = 1
             END IF 
 
 C.............  Loop over all pollutants including user-defined                
@@ -343,8 +343,8 @@ C...............  Write variable to file
               IF( .NOT. WRITESET( FNAME, TRIM( CURRVAR ), ALLFILES, 
      &                            JDATE, JTIME, 
      &                            SRCEFS( 1:EFPOS ) ) ) THEN
-     	          MESG = 'Could not write ' // TRIM( CURRVAR ) // 
-     &	                 'to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
+                  MESG = 'Could not write ' // TRIM( CURRVAR ) // 
+     &                   'to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
                   CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
               END IF
                               
@@ -354,7 +354,7 @@ C...............  Write variable to file
 C.............  Write source numbers to file
           IF( .NOT. WRITESET( FNAME, 'SOURCES', ALLFILES, JDATE, 
      &                        JTIME, EFIDX( 1:EFPOS ) ) ) THEN
-     	      MESG = 'Could not write source numbers ' //
+              MESG = 'Could not write source numbers ' //
      &               ' to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
               CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
           END IF

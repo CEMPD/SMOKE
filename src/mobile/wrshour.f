@@ -65,7 +65,7 @@ C   begin body of subroutine WRSHOUR
 C.........  Write county codes to file
         IF( .NOT. WRITE3( FNAME, 'COUNTIES', JDATE, JTIME,
      &                    CNTYCODES ) ) THEN       
-     	    MESG = 'Could not write county codes to "' //
+            MESG = 'Could not write county codes to "' //
      &              TRIM( FNAME ) // '".'
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
         END IF

@@ -115,14 +115,14 @@ C........ compute sine of lat and lon first time through
           ENDDO
           ENDDO
 
-      END IF	!  if firstime
+      END IF    !  if firstime
 
 
 C.......   Convert time to hours and add time-zone offset
       
-      GMT    =  FLOAT( JTIME / 10000 ) +			!  hr part
-     &            D60 * ( FLOAT( MOD( JTIME / 100 , 100 ) ) 	!  min part
-     &                  + D60 * FLOAT( MOD( JTIME, 100 ) ) )	!  sec part
+      GMT    =  FLOAT( JTIME / 10000 ) +                        !  hr part
+     &            D60 * ( FLOAT( MOD( JTIME / 100 , 100 ) )     !  min part
+     &                  + D60 * FLOAT( MOD( JTIME, 100 ) ) )    !  sec part
       DAD    =  GMT * D24 + MOD( JDATE , 1000 )
       DF     =  ROTDAY * PI180 * DAD      !  The terrestrial-rotation angle
            

@@ -98,12 +98,12 @@ C.............  Read line
             END IF
 
         END DO
-        	
+
         IF( .NOT. FNDLINE ) THEN
             REWIND( SDEV )
             CURRLINE = 0
         END IF
-        	
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************

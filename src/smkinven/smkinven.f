@@ -271,8 +271,8 @@ C               present in the inventory.
             NIPOL = 0
             NIACT = 0
             DO I = 1, MXIDAT
-        	IF( INVSTAT( I ) .GT.  1 ) NIPOL = NIPOL + 1
-        	IF( INVSTAT( I ) .LT. -1 ) NIACT = NIACT + 1
+                IF( INVSTAT( I ) .GT.  1 ) NIPOL = NIPOL + 1
+                IF( INVSTAT( I ) .LT. -1 ) NIACT = NIACT + 1
             ENDDO
 
             NIPPA = NIPOL + NIACT
@@ -298,18 +298,18 @@ C.............  These are for opening output file and processing output data
             DO I = 1, MXIDAT
 
                IF( INVSTAT( I ) .GT. 0 ) THEN
-        	       J1 = J1 + 1
-        	       J3 = J3 + 1
-        	       EIIDX( J3 ) = I
-        	       EINAM( J3 ) = INVDNAM( I )
+                   J1 = J1 + 1
+                   J3 = J3 + 1
+                   EIIDX( J3 ) = I
+                   EINAM( J3 ) = INVDNAM( I )
                    EANAM( J1 ) = INVDNAM( I )
                END IF
 
                IF( INVSTAT( I ) .LT. 0 ) THEN
-        	       J1 = J1 + 1
-        	       J2 = J2 + 1
-        	       AVIDX ( J2 ) = I
-        	       ACTVTY( J2 ) = INVDNAM( I )
+                   J1 = J1 + 1
+                   J2 = J2 + 1
+                   AVIDX ( J2 ) = I
+                   ACTVTY( J2 ) = INVDNAM( I )
                    EANAM ( J1 ) = INVDNAM( I )
                END IF
 
@@ -328,14 +328,14 @@ C               this is not perfectly accurate for all counties.
 
             PFIP = 0
             DO S = 1, NSRC
-        	    FIP   = IFIP( S )
-        	    
-        	    IF( FIP /= PFIP ) THEN
-            	    TZONES( S ) = GETTZONE( FIP )
-            	    PFIP = FIP
-            	ELSE
-            	    TZONES( S ) = TZONES( S - 1 )
-            	END IF
+                FIP   = IFIP( S )
+ 
+                IF( FIP /= PFIP ) THEN
+                    TZONES( S ) = GETTZONE( FIP )
+                    PFIP = FIP
+                ELSE
+                    TZONES( S ) = TZONES( S - 1 )
+                END IF
             END DO
 
 C.............  Write out primary inventory files. Do this before the day- or 
@@ -455,11 +455,11 @@ C.............  Read and output hour-specific data
 
 C.............  Write out toxics report file
 
-	CALL M3MSG2( ' ' )
-	CALL M3MSG2( ' ' )
-	CALL M3MSG2( 'Writing toxics report file...' )
+        CALL M3MSG2( ' ' )
+        CALL M3MSG2( ' ' )
+        CALL M3MSG2( 'Writing toxics report file...' )
 
-	CALL WREPINVEN( ADEV, CDEV )
+        CALL WREPINVEN( ADEV, CDEV )
 
 C.........  End program successfully
         MESG = ' '

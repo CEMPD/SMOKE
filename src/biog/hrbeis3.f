@@ -287,10 +287,10 @@ C..........   CN98 - p. 261 (assume exponentially wtd avg)
 C.........    CN98 - p. 261 (for next 3 eqns)
 
             PARSHADE   = CANPARDIF + CANPARSCAT
-	    PARSUN     = KBE * (PARDB + PARDIF) + PARSHADE
-	    LAISUN     = (1. - EXP( -KBE * TLAI))/KBE
-	    FRACSUN    = LAISUN/TLAI
-	    FRACSHADE  = 1. - FRACSUN
+            PARSUN     = KBE * (PARDB + PARDIF) + PARSHADE
+            LAISUN     = (1. - EXP( -KBE * TLAI))/KBE
+            FRACSUN    = LAISUN/TLAI
+            FRACSHADE  = 1. - FRACSUN
 
 C..........  cguen is guenther's eqn for computing light correction as a 
 C..........  function of PAR...fracSun should probably be higher since 

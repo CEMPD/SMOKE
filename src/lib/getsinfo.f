@@ -300,7 +300,7 @@ C                  name are the same
                 END IF
 
                 EINAM ( I ) = VNAMESET( 2 )
-	        EANAM ( K ) = VNAMESET( 2 )
+                EANAM ( K ) = VNAMESET( 2 )
                 EAREAD( K ) = VNAMESET( 2 + INVPIDX )
                 EAUNIT( K ) = VUNITSET( 2 + INVPIDX )
                 EADESC( K ) = VDESCSET( 2 + INVPIDX )
@@ -315,7 +315,7 @@ C............  For old style inventory
             ELSE
 
                 EINAM ( I ) = VNAMESET( J )
-	        EANAM ( K ) = VNAMESET( J )
+                EANAM ( K ) = VNAMESET( J )
                 EAREAD( K ) = VNAMESET( J + INVPIDX )
                 EAUNIT( K ) = VUNITSET( J + INVPIDX )
                 EADESC( K ) = VDESCSET( J + INVPIDX )
@@ -375,7 +375,7 @@ C                  name are the same
                 END IF
 
                 ACTVTY( I ) = VNAMESET( 2 )
-	        EANAM ( K ) = VNAMESET( 2 )
+                EANAM ( K ) = VNAMESET( 2 )
                 EAREAD( K ) = VNAMESET( 2 + INVPIDX )
                 EAUNIT( K ) = VUNITSET( 2 + INVPIDX )
                 EADESC( K ) = VDESCSET( 2 + INVPIDX )

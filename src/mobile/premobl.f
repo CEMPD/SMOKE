@@ -298,7 +298,7 @@ C           file, or else this program does not need to be run
         END IF
 
 C.........  Create note about time zone expected in meteorology file
-        WRITE( MESG, 94010 ) 'NOTE: Time stamps of input meteorology ' //
+        WRITE( MESG, 94000 ) 'NOTE: Time stamps of input meteorology '//
      &                       'files are assumed to be in GMT.'
         CALL M3MSG2( MESG )
  
@@ -430,7 +430,7 @@ C.............  Try to open file
                 CALL M3MESG( MESG )
                 CYCLE
             ELSE
-            	FILEOPEN = .TRUE.
+                FILEOPEN = .TRUE.
             END IF
 
 C.............  Try to get description from file            
@@ -445,7 +445,7 @@ C.............  Try to get description from file
 C.............  Check that requested variables are in the file
             J = INDEX1( TVARNAME, NVARS3D, VNAME3D )
             IF( J <= 0 ) THEN
-            	EFLAG = .TRUE.
+                EFLAG = .TRUE.
                 MESG = 'ERROR: Could not find ' // TRIM( TVARNAME ) // 
      &                 ' in file ' // TRIM( METFILE )
                 CALL M3MESG( MESG )
@@ -475,7 +475,7 @@ C.............  Initialize (or check) reference grid with meteorology data
 
 C............. If the dimensions were in error, print message and cycle
             IF( GRID_ERR ) THEN
-            	EFLAG = .TRUE.
+                EFLAG = .TRUE.
                 MESG = 'ERROR: Grid in meteorology file ' //
      &                 TRIM( METFILE ) // ' is inconsistent ' //
      &                 'with previous files.' 
@@ -525,7 +525,7 @@ C.........  Check that all days are covered
             
 C.............  Loop over all days in episode
             DO
-            	
+
 C.................  Make sure we're within episode bounds
                 IF( T > NSTEPS ) EXIT
 
@@ -539,7 +539,7 @@ C.....................  Double check episode bounds
 C.....................  If no met data for current step, try to find data
                     IF( METDAYS( K ) == 0 ) THEN
  
-C.........................  Try 24 hours back                    	
+C.........................  Try 24 hours back
                         IF( K - 24 > 0 ) THEN
                             IF( METDAYS( K - 24 ) > 0 ) THEN
                                 METDAYS( K ) = - METDAYS( K - 24 )
@@ -575,7 +575,7 @@ C.........  Check that all weeks are covered
             
 C.............  Loop over all weeks in episode
             DO
-            	
+
 C.................  Check episode bounds
                 IF( T > NSTEPS ) EXIT
 
@@ -627,7 +627,7 @@ C.........................  Loop through remaining days in week
           
 C.............................  Check episode bounds              
                             IF( K + J*24 < NSTEPS ) THEN
-                            	
+
 C.................................  Make sure it's still the same week
                                 CALL NEXTIME( TDATE, TTIME, J*240000 )
                                 IF( WKDAY( TDATE ) /= 7 ) THEN
@@ -636,7 +636,7 @@ C.................................  Make sure it's still the same week
                                         EXIT
                                     END IF
                                 ELSE
-                                	
+
 C.................................  Otherwise, it's the next week, so exit
                                     EXIT
                                 END IF  
@@ -697,7 +697,7 @@ C.........................  Loop through previous days in month
 
 C.............................  Check episode bounds                        
                             IF( K - J*24 > 0 ) THEN
-                            	
+
 C.................................  Make sure it's still the same month
                                 CALL NEXTIME( TDATE, TTIME, -J*240000 )
                                 CALL DAYMON( TDATE, TMPMNTH, DAY )
@@ -728,7 +728,7 @@ C.........................  Loop through remaining days in month
                         
 C.............................  Check episode bounds   
                             IF( K + J*24 < NSTEPS ) THEN
-                            	
+
 C.................................  Make sure it's still the same month
                                 CALL NEXTIME( TDATE, TTIME, J*240000 )
                                 CALL DAYMON( TDATE, TMPMNTH, DAY )
@@ -1066,7 +1066,7 @@ C.................  Close previous file if needed
      &                             'file ' // TRIM( PREVFILE )
                             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                         ELSE
-                        	FILEOPEN = .FALSE.
+                            FILEOPEN = .FALSE.
                         END IF
                     END IF
 
@@ -1076,8 +1076,8 @@ C.................  Close previous file if needed
 
 C.................  Set logical file name
                 IF( .NOT. SETENVVAR( METNAME, METFILE ) ) THEN
-            	    MESG = 'Could not set logical file name for ' //
-     &       	           'file ' // TRIM( METFILE )
+                    MESG = 'Could not set logical file name for ' //
+     &                     'file ' // TRIM( METFILE )
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
 
@@ -1087,7 +1087,7 @@ C.................  Open the meteorology data file
      &                     TRIM( METFILE )
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 ELSE
-            	    FILEOPEN = .TRUE.
+                    FILEOPEN = .TRUE.
                 END IF
 
 C.................  Reset read date when using alternate data
@@ -1146,7 +1146,7 @@ C.................  Create hourly meteorology arrays by source
 
 C.............  Make sure we've waited long enough to catch all time zones
             IF( POS > TSPREAD ) THEN
-            	
+
 C.................  Adjust time step for 24-hour arrays
                 ARRAYPOS = MOD( POS - TSPREAD, 24 )
                 IF( ARRAYPOS == 0 ) ARRAYPOS = 24
@@ -1207,7 +1207,7 @@ C.....................  Write time step to file
      &                            WKCODES, TWKCNTY, QVWKCNTY, BPWKCNTY )
                     
                     IF( OTIME == 230000 ) THEN
-                    	
+
 C.........................  Store current date to use for next week
                         WDATE = DDATE + 1
                         DUMMYTIME = 0
@@ -1249,7 +1249,7 @@ C.....................  Write time step to file
      &                            MNCODES, TMNCNTY, QVMNCNTY, BPMNCNTY )               
                     
                     IF( OTIME == 230000 ) THEN
-                    	
+
 C.........................  Store current date to use for next month
                         MDATE = DDATE + 1
                         DUMMYTIME = 0
@@ -1300,9 +1300,9 @@ C                   not the last day of the month
                         CALL OPENSHOUR( ENAME, 'monthly', MDATE, EDATE,
      &                                  TVARNAME, NMNCNTY, TEMPDIR, 
      &                                  MNAME )
-                        MONOPEN = .TRUE.                 	
+                        MONOPEN = .TRUE.
                     END IF
-                	
+
                     DO K = 1, 24
                         CALL AVERTEMP( NSRC, NMNCNTY, MNCODES, 
      &                                 COUNTYSRC( :,1 ), K,
@@ -1333,10 +1333,10 @@ C.................  Count sources outside the grid
                 IF( .NOT. OFLAG ) THEN
                     DO S = 1, NSRC
 
-                	IF( UMAT( S ) == 0 ) THEN
-                        OFLAG = .TRUE.
-                        OSRC = OSRC + 1
-                	END IF
+                        IF( UMAT( S ) == 0 ) THEN
+                            OFLAG = .TRUE.
+                            OSRC = OSRC + 1
+                        END IF
 
                     END DO
                 END IF
@@ -1377,6 +1377,8 @@ C...........   Formatted file I/O formats............ 93xxx
 93010   FORMAT( I8, 1X, F13.5, 1X, F13.5, 1X, I8, 1X, A )
  
 C...........   Internal buffering formats............ 94xxx
+
+94000   FORMAT( A )
  
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 

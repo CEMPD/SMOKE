@@ -88,7 +88,7 @@ C.............  Get Mobile6 command
 
 C.............  Search command for min/max command
             IF( INDEX( COMMAND, 'MIN/MAX TEMPERATURE' ) > 0 ) THEN
-            	
+
 C.................  Move rest of scenario down one line to make room
 C                   for second line of temperatures
                 DO J = NSCEN, I + 1, -1
@@ -102,7 +102,7 @@ C.................  Update scenario level start if needed
 
             END IF
 
-C.............  Replace either temperature command with hourly temperatures                	     
+C.............  Replace either temperature command with hourly temperatures
             IF( INDEX( COMMAND, 'TEMPERATURE' ) > 0 ) THEN
 
                 WRITE( RPLCLINE,94020 ) 

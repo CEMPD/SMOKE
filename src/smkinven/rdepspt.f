@@ -267,8 +267,8 @@ C.............  If a header line was encountered, go to next line
 
 C.............  Write first ten lines to log file
             IF( NWRLINE < 10 ) THEN
-            	NWRLINE = NWRLINE + 1
-            	TENLINES( NWRLINE ) = TRIM( LINE )
+                NWRLINE = NWRLINE + 1
+                TENLINES( NWRLINE ) = TRIM( LINE )
             
                 IF( NWRLINE == 10 ) THEN
                     MESG = 'First 10 lines of EPS point inventory:'
@@ -539,8 +539,8 @@ C.................  variable is true, and longitude is negative.
 
                 END IF
  
-        	LON = XLOC
-        	LAT = YLOC
+                LON = XLOC
+                LAT = YLOC
 
 C.............  Convert to lat/lon from UTM
             ELSE
@@ -725,7 +725,7 @@ C........................................................................
         ELSE
             NRAWOUT = NSRCPOL
 
-        END IF		!  if overflow or if errors
+        END IF        !  if overflow or if errors
 
         RETURN
 

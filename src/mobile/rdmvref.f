@@ -143,7 +143,7 @@ C.............  Parse the line into segments
 
 C.............  Convert reference county to integer             
             IF( CHKINT(SEGMENT(1)) .AND. CHKINT(SEGMENT(2)) ) THEN
-            	CALL PADZERO( SEGMENT( 2 ) )
+                CALL PADZERO( SEGMENT( 2 ) )
                 REFCOUNTY = STR2INT( ADJUSTR(SEGMENT(1)) // 
      &                               SEGMENT(2) )
             ELSE
@@ -213,9 +213,9 @@ C.............  Skip any entries equal to zero due to blank lines
             IF( REFCOUNTY == 0 ) CYCLE
             
             IF( REFCOUNTY == PRCOUNTY ) THEN
-     	
-     	        DUPFLAG = .TRUE.
-     	        EFLAG   = .TRUE.
+
+                DUPFLAG = .TRUE.
+                EFLAG   = .TRUE.
                 
                 WRITE( MESG,94010 ) 'ERROR: Duplicate entries in ' //
      &                 'reference county settings file for ' // 
@@ -223,7 +223,7 @@ C.............  Skip any entries equal to zero due to blank lines
      &                 REFCOUNTY, '.'
                 CALL M3MESG( MESG )
             ELSE
-            	
+
 C.............  Check that current reference county is in the county cross-reference list
                 K = FIND1( REFCOUNTY, NREFC, MCREFIDX( :,1 ) )
                 
@@ -269,7 +269,7 @@ C.............  Get county from MCREF index array
             END IF
 
             IF( J < 0 ) THEN
-                EFLAG = .TRUE.	
+                EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Missing settings ' //
      &                 ' for reference county', REFCOUNTY,
      &                 CRLF() // BLANK10 // 'in reference ' //

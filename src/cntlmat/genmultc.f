@@ -67,17 +67,18 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
-        INCLUDE 'FLTERR.EXT'    !  functions for comparing two numbers
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         LOGICAL      ENVYN
+        LOGICAL      FLTERR
         INTEGER      GETEFILE
         INTEGER      INDEX1
         INTEGER      PROMPTFFILE
         REAL         YR2DAY
 
-        EXTERNAL  CRLF, ENVYN, GETEFILE, INDEX1, PROMPTFFILE, YR2DAY
+        EXTERNAL  CRLF, ENVYN, FLTERR, GETEFILE, INDEX1, 
+     &            PROMPTFFILE, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -938,7 +939,7 @@ C...........   Formatted file I/O formats............ 93xxx
 93402   FORMAT( '  State;', 5X, '        SCC;', 1X, 
      &          100( '  In ', A16, ';', 1X, 'Out ', A16, :, ';' ) )
 
-93405   FORMAT( 7X, ';', 16X, ';', 1X
+93405   FORMAT( 7X, ';', 16X, ';', 1X,
      &          100( 2X, A16, 3X, ';', 1X, A16, :, 4X, ';' ))
 
 93410   FORMAT( 4X, A3, ';', 6X, A10, ';', 1X, 

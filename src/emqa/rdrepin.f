@@ -110,9 +110,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT (IN) :: NDEV   ! unit no.: SCC descriptions
         INTEGER     , INTENT (IN) :: NIDEV  ! unit no.: SIC descriptions
-	INTEGER     , INTENT (IN) :: ADEV   ! unit no.: ASCII elevated file
+        INTEGER     , INTENT (IN) :: ADEV   ! unit no.: ASCII elevated file
         CHARACTER(*), INTENT (IN) :: ENAME  ! name for I/O API inven input
-	CHARACTER(*), INTENT (IN) :: CUNAME ! mulitplicative control matrix name
+        CHARACTER(*), INTENT (IN) :: CUNAME ! mulitplicative control matrix name
         CHARACTER(*), INTENT (IN) :: GNAME  ! gridding matrix name
         CHARACTER(*), INTENT (IN) :: LNAME  ! layer fractions file name
         CHARACTER(*), INTENT (IN) :: PRNAME ! projection matrix name
@@ -152,16 +152,16 @@ C...........   Other local variables
         INTEGER          NREPLIN            ! no. lines in input report
         INTEGER          NS                 ! tmp no. strings on line
         INTEGER          NV                 ! tmp no. variables in temporal suplm
-	INTEGER          NSTK               ! no. of stacks in ASCII elevated file
-	INTEGER          COLS               ! no. of cols in grid
-	INTEGER          ROWS               ! no. of rows in grid
+        INTEGER          NSTK               ! no. of stacks in ASCII elevated file
+        INTEGER          COLS               ! no. of cols in grid
+        INTEGER          ROWS               ! no. of rows in grid
         INTEGER       :: SRGID1             ! tmp primary surrogate IDs
         INTEGER       :: SRGID2             ! tmp fallback surrogate IDs
         INTEGER          WEK                ! tmp weekly profile number
 
-	REAL             XO, YO             ! x and y origins
-	REAL             XC, YC             ! x and y cell widths
-	REAL             XL, YL             ! x and y stack locations
+        REAL             XO, YO             ! x and y origins
+        REAL             XC, YC             ! x and y cell widths
+        REAL             XL, YL             ! x and y stack locations
 
         LOGICAL       :: LRDREGN = .FALSE.  !  true: read region code
         LOGICAL       :: EFLAG   = .FALSE.  !  true: error found
@@ -178,7 +178,7 @@ C...........   Other local variables
         CHARACTER(FIPLEN3) CFIP         !  tmp ASCII FIPS code
         CHARACTER(LNKLEN3) CLNK         !  tmp link code
         CHARACTER(SRCLEN3) CSRC         !  tmp source chars
-	CHARACTER(PLTLEN3) FCID         !  tmp facility code
+        CHARACTER(PLTLEN3) FCID         !  tmp facility code
         CHARACTER(PLTLEN3) PLT          !  tmp plant code
         CHARACTER(SRCLEN3) SRCBUF       !  tmp source chars
         CHARACTER(SCCLEN3) TSCC         !  tmp SCC code
@@ -189,7 +189,7 @@ C***********************************************************************
 C   begin body of subroutine RDREPIN
 
 C.........  If not using the ASCII elevated file
-	IF( .NOT. AFLAG ) THEN
+        IF( .NOT. AFLAG ) THEN
 C.........  Set local variables for determining input inventory variables
             LRDREGN = ( ANY_TRUE( NREPORT, ALLRPT%BYCNRY ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYSTAT ) .OR.
@@ -251,105 +251,105 @@ C.........  Allocate memory for and read in required inventory characteristics
             CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, 
      &                     IVARNAMS )
 
-	ELSE
+        ELSE
 
 C.........  Read ASCII elevated file
-	    ALLOCATE( ATTRUNIT( 11 ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'ATTRUNIT', PROGNAME )
-	    ATTRUNIT = ''
+            ALLOCATE( ATTRUNIT( 11 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ATTRUNIT', PROGNAME )
+            ATTRUNIT = ''
 
-	    ATTRUNIT( 8 ) = 'm'
-	    ATTRUNIT( 9 ) = 'm'
-	    ATTRUNIT( 10 ) = 'deg K'
-	    ATTRUNIT( 11 ) = 'm/s'
+            ATTRUNIT( 8 ) = 'm'
+            ATTRUNIT( 9 ) = 'm'
+            ATTRUNIT( 10 ) = 'deg K'
+            ATTRUNIT( 11 ) = 'm/s'
 
-	    DO I = 1, 3
-		ASCREC = ASCREC + 1
+            DO I = 1, 3
+                ASCREC = ASCREC + 1
                 READ( ADEV, '(A)' ) LINE
             END DO
 
 C..............  Read in x, y origin and grid cell size
-	    READ( ADEV, '(F10.0,F10.0)' ) XO, YO
-	    ASCREC = ASCREC + 1
-	    READ( ADEV, '(F10.0,F10.0)' ) XC, YC
-	    ASCREC = ASCREC + 1
-	    READ( ADEV, '(I10,I10)' ) COLS, ROWS
-	    ASCREC = ASCREC + 1
+            READ( ADEV, '(F10.0,F10.0)' ) XO, YO
+            ASCREC = ASCREC + 1
+            READ( ADEV, '(F10.0,F10.0)' ) XC, YC
+            ASCREC = ASCREC + 1
+            READ( ADEV, '(I10,I10)' ) COLS, ROWS
+            ASCREC = ASCREC + 1
 
 C..............  Read in point source characteristics
-	    DO I = 1, 3
-		ASCREC = ASCREC + 1
-		READ( ADEV, '(A)' ) LINE
+            DO I = 1, 3
+                ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
             END DO
 
-	    ALLOCATE( IFIP( NSRC ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
-	    ALLOCATE( CSOURC( NSRC ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
-	    ALLOCATE( STKHT( NSRC ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
-	    ALLOCATE( STKDM( NSRC ), STAT=IOS )
+            ALLOCATE( IFIP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+            ALLOCATE( CSOURC( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+            ALLOCATE( STKHT( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
+            ALLOCATE( STKDM( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
-	    ALLOCATE( STKTK( NSRC ), STAT=IOS )
+            ALLOCATE( STKTK( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
-	    ALLOCATE( STKVE( NSRC ), STAT=IOS )
+            ALLOCATE( STKVE( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
-	    ALLOCATE( STKX( NSRC ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'STKX', PROGNAME )
-	    ALLOCATE( STKY( NSRC ), STAT=IOS )
+            ALLOCATE( STKX( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKX', PROGNAME )
+            ALLOCATE( STKY( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKY', PROGNAME )
-	    ALLOCATE( LPING( NSRC ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'LPING', PROGNAME )
-	    ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
+            ALLOCATE( LPING( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LPING', PROGNAME )
+            ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
-	    LPING  = .FALSE.
-	    LMAJOR = .TRUE. 
+            LPING  = .FALSE.
+            LMAJOR = .TRUE. 
 
-	    DO I = 1, NSRC
+            DO I = 1, NSRC
 
-		CHARS = ''    ! array
+                CHARS = ''    ! array
 
-		ASCREC = ASCREC + 1
-		READ( ADEV, 93010 ) N, XL, YL, FCID,
+                ASCREC = ASCREC + 1
+                READ( ADEV, 93010 ) N, XL, YL, FCID,
      &                      CHARS( 1 ), IFIP( I )
 
-		WRITE( CFIP, '(I5.5)' ) IFIP( I )
+                WRITE( CFIP, '(I5.5)' ) IFIP( I )
 
-		CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
+                CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
      &                        CHARS(3), CHARS(4), CHARS(5),
      &                        POLBLNK3, CSOURC( I ) )
 
-		READ( ADEV, 93020 ) STKHT( I ), STKDM( I ),
+                READ( ADEV, 93020 ) STKHT( I ), STKDM( I ),
      &                      STKTK( I ), STKVE( I )
-		ASCREC = ASCREC + 1
+                ASCREC = ASCREC + 1
 
-		IF( STKDM( I ) .LT. 0. ) THEN
-		    LPING( I ) = .TRUE.
-		    STKDM( I ) = -STKDM( I )
-		END IF
+                IF( STKDM( I ) .LT. 0. ) THEN
+                    LPING( I ) = .TRUE.
+                    STKDM( I ) = -STKDM( I )
+                END IF
 
-		STKVE( I ) = STKVE( I ) / 3600.
+                STKVE( I ) = STKVE( I ) / 3600.
 
-		STKX( I ) = INT( ( XL - XO ) / XC ) + 1
-		STKY( I ) = INT( ( YL - YO ) / YC ) + 1
+                STKX( I ) = INT( ( XL - XO ) / XC ) + 1
+                STKY( I ) = INT( ( YL - YO ) / YC ) + 1
 
-		IF( STKX( I ) .LT. 0 .OR. STKX( I ) .GT. COLS
+                IF( STKX( I ) .LT. 0 .OR. STKX( I ) .GT. COLS
      &              .OR. STKY( I ) .LT. 0 .OR. STKY( I ) .GT. ROWS
      &              ) THEN
-		    WRITE( MESG, 94010 ) 'ERROR: Source at ' //
+                    WRITE( MESG, 94010 ) 'ERROR: Source at ' //
      &                     'line', IREC, 'is outside of the grid.'
-		    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-		END IF
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
-	    END DO
+            END DO
 
 C..............  Leave read pointer at beginning of emissions data
-	    DO I = 1, 11
-		ASCREC = ASCREC + 1
-		READ( ADEV, '(A)' ) LINE
-	    END DO
+            DO I = 1, 11
+                ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
+            END DO
 
-	END IF
+        END IF
 
 C.........  Create unique source characteristic lists
         CALL GENUSLST
@@ -929,9 +929,9 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93010	FORMAT( I10, 10X, 2F10.0, 2A10, I10.5 )
+93010   FORMAT( I10, 10X, 2F10.0, 2A10, I10.5 )
 
-93020	FORMAT( F10.1, F10.2, F10.1, F10.0 )
+93020   FORMAT( F10.1, F10.2, F10.1, F10.0 )
 
 C...........   Internal buffering formats............ 94xxx
 

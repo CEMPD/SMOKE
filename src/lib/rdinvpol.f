@@ -53,7 +53,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL     CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: FILNAM           ! Logical file name	
+        CHARACTER(*), INTENT (IN) :: FILNAM           ! Logical file name
         INTEGER     , INTENT (IN) :: NCNT             ! Number of records
         INTEGER     , INTENT (IN) :: VCNT             ! No. vars other than SRCID
         CHARACTER(*), INTENT (IN) :: VNAMES( VCNT )   ! Variable names

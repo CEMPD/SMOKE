@@ -120,7 +120,7 @@
 
 !.........  Output pollutants (variable names) for control matrices
         INTEGER, PUBLIC :: NVCMULT = 0  ! number of multultiplicative variables
-	INTEGER, PUBLIC :: NVPROJ  = 0  ! number of projection variables
+        INTEGER, PUBLIC :: NVPROJ  = 0  ! number of projection variables
 
         LOGICAL, PUBLIC :: POLSFLAG = .FALSE. ! true: proj data-spec assignment
         LOGICAL, ALLOCATABLE, PUBLIC :: PCTLFLAG( :,: ) ! control flags

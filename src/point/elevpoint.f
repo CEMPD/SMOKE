@@ -1085,10 +1085,10 @@ C.............  If firstime routine called
             IF ( FIRSTIME ) THEN
 
 C.................  Allocate local memory
-        	ALLOCATE( LF( MXCHRS ), STAT=IOS )
-        	CALL CHECKMEM( IOS, 'LF', PROGNAME )
-        	ALLOCATE( VNAME( NV ), STAT=IOS )
-        	CALL CHECKMEM( IOS, 'VNAME', PROGNAME )
+                ALLOCATE( LF( MXCHRS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LF', PROGNAME )
+                ALLOCATE( VNAME( NV ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VNAME', PROGNAME )
 
 C.................  Initialize output status of source characteristics
                 LF = .FALSE.    ! array

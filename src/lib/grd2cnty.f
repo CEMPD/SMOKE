@@ -118,18 +118,18 @@ C.............  Allocatable memory to sum surrogates by cell
 
 C.............  Sum by grid cell
             DO F = 1, NSRGFIPS
-        	DO N = 1, NCELLS( F )
+                DO N = 1, NCELLS( F )
 
                     C    = FIPCELL( N,F )        ! Retrieve cell number
                     FRAC = SRGFRAC( SRGID,N,F )
                     SRGSUM( C ) = SRGSUM( C ) + FRAC
 
-        	END DO  ! End loop on cells in county
+                END DO  ! End loop on cells in county
             END DO      ! End loop on counties in domain
 
 C.............  Divide surrogate value by sum on cell
             DO F = 1, NSRGFIPS
-        	DO N = 1, NCELLS( F )
+                DO N = 1, NCELLS( F )
 
                     C = FIPCELL( N,F )
                     IF( SRGFRAC( SRGID,N,F ) .EQ. 0. ) THEN
@@ -145,7 +145,7 @@ C.............  Divide surrogate value by sum on cell
      &                                         SRGSUM( C )
                     END IF
 
-        	END DO  ! End loop on cells in county
+                END DO  ! End loop on cells in county
             END DO      ! End loop on counties in domain
 
             FIRSTIME = .FALSE.

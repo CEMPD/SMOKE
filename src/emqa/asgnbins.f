@@ -169,24 +169,24 @@ C.........  Create a sorting array for all output records
 
 C.............  If BY CELL, insert X-cell and then Y-cell 
             IF( RPT_%BYCELL ) THEN
-		IF( .NOT. AFLAG ) THEN
+                IF( .NOT. AFLAG ) THEN
                     C = OUTCELL( I )
                     ROW = 1 + INT( (C-1) / NCOLS )
                     COL = C - NCOLS * ( ROW-1 )
-		ELSE
-		    ROW = STKY( I )
-		    COL = STKX( I )
-		END IF
+                ELSE
+                    ROW = STKY( I )
+                    COL = STKX( I )
+                END IF
             END IF
 
 C.............  If BY SOURCE, then nothing else needed
             IF( RPT_%BYSRC ) THEN
                 SRCID = OUTSRC( I )
                 FIP   = IFIP( SRCID )
-		IF( .NOT. AFLAG ) THEN
+                IF( .NOT. AFLAG ) THEN
                     SCC   = CSCC( SRCID )
                     IF( RPT_%BYSIC ) SIC = ISIC( SRCID )
-		END IF
+                END IF
 
             ELSE
 

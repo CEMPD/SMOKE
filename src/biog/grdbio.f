@@ -155,8 +155,8 @@ C.........  Read until end of the BGUSE file
 
 C.............  Skip all lines in file until ENDHEADER found
             IF( INHEADER ) THEN
-        	J = INDEX( INBUF, 'ENDHEADER' )
-        	IF( J .GT. 0 ) INHEADER = .FALSE.
+                J = INDEX( INBUF, 'ENDHEADER' )
+                IF( J .GT. 0 ) INHEADER = .FALSE.
             END IF
 
 C.............  If SMOKE header line found cycle

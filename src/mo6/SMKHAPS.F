@@ -59,24 +59,24 @@ C  Begin body of subroutine SMKHAPS
 
 C  Allocate and initialize arrays first time
       IF (INITIAL) THEN
-      	  ALLOCATE( HAPAGGR( 8,NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
-      	  CALL CHECKMEM( IOS, 'HAPAGGR', PROGNAME )
+          ALLOCATE( HAPAGGR( 8,NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'HAPAGGR', PROGNAME )
 
           ALLOCATE( HAPEFS ( NUMSCEN,8,NTOTHAPS,8,MAXIH,5 ), STAT=IOS )
           CALL CHECKMEM( IOS, 'HAPEFS', PROGNAME )
 
-      	  ALLOCATE(  ZMILES( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
-      	  CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
+          ALLOCATE(  ZMILES( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
 
-      	  ALLOCATE( ZGMHOUR( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
-      	  CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
-      	
-      	  HAPAGGR = 0.0
-      	  HAPEFS  = 0.0
-      	  ZMILES  = 0.0
-      	  ZGMHOUR = 0.0
-      	  
-      	  PREVVEH = IV
+          ALLOCATE( ZGMHOUR( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
+ 
+          HAPAGGR = 0.0
+          HAPEFS  = 0.0
+          ZMILES  = 0.0
+          ZGMHOUR = 0.0
+
+          PREVVEH = IV
           INITIAL = .FALSE.
       END IF
 
@@ -84,7 +84,7 @@ C  Allocate and initialize arrays first time
 
 C  If this is the second time through, only bother with PM ratio pollutants
       IF( PSZCUT == 10 ) THEN
-      	  IF( .NOT. OUTPUT ) THEN
+          IF( .NOT. OUTPUT ) THEN
               IF( PMHAPS( IP ) == 0 ) RETURN
               IPNEW = PMHAPS( IP )
           END IF
@@ -92,7 +92,7 @@ C  If this is the second time through, only bother with PM ratio pollutants
 
 C  If the vehicle type has changed, need to aggregate previous values
       IF( PREVVEH /= IV ) THEN
-          	
+ 
 C  Select appropriate vehicle class (8 types) for vehicle type (28)
           SELECT CASE (PREVVEH)
           CASE (1)
@@ -120,7 +120,7 @@ C  Select appropriate vehicle class (8 types) for vehicle type (28)
              IVEH = 8
              SUMVMT = VMTMIX(24)
           END SELECT
-          	
+ 
           DO IPTMP = 1,NTOTHAPS
               DO IEF = 1,6
                   
@@ -211,7 +211,7 @@ C    EFTYPE = 8 -> EFIDX = 6  ! evp. refueling
 
 C  If this is the second time through, only bother with PM ratio pollutants
                       IF( PSZCUT == 10 ) THEN
-              	          IF( IEF /= 1 ) CYCLE
+                          IF( IEF /= 1 ) CYCLE
                           IF( PMHAPS( IPTMP ) == 0 ) CYCLE
                           IPNEW = PMHAPS( IPTMP )
                       END IF
@@ -251,7 +251,7 @@ C  Subtract PM2.5 values from PM10 emission factors
                         
                          END DO
 #else                    
-	                 IPOL = IPNEW + 50  
+                         IPOL = IPNEW + 50  
                          WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IPOL,
      &                   TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFTMP,
      &                   TABCHAR,IHTMP,TABCHAR,
@@ -267,8 +267,8 @@ C  Subtract PM2.5 values from PM10 emission factors
           PREVVEH = 1
           
           HAPAGGR = 0.0
-      	  ZMILES  = 0.0
-      	  ZGMHOUR = 0.0
+          ZMILES  = 0.0
+          ZGMHOUR = 0.0
       END IF  ! check for output
 
       END SUBROUTINE SMKHAPS

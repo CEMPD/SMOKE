@@ -558,26 +558,26 @@ C.........................  Make sure there are still files to read
      &                        IOSTAT=IOS )
                 
 C.........................  Check for errors while opening file
-		     	        IF( IOS /= 0 ) THEN
-					
-				            WRITE( MESG,94010 ) 'Problem at line ', 
-     &  		               CURFIL, 'of ' // TRIM( FNAME ) // 
-     &  		               '.' // ' Could not open file:' //
-     &		                   CRLF() // BLANK5 // TRIM( INFILE ) 
-				            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-			
-			            ELSE
-				            WRITE( MESG,94010 ) 
-     &  		              'Successful OPEN for ' //
-     &		                  'inventory file(s):' // CRLF() // 
+                        IF( IOS /= 0 ) THEN
+                    
+                            WRITE( MESG,94010 ) 'Problem at line ', 
+     &                         CURFIL, 'of ' // TRIM( FNAME ) // 
+     &                         '.' // ' Could not open file:' //
+     &                         CRLF() // BLANK5 // TRIM( INFILE ) 
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            
+                        ELSE
+                            WRITE( MESG,94010 ) 
+     &                        'Successful OPEN for ' //
+     &                        'inventory file(s):' // CRLF() // 
      &                        BLANK5 // TRIM( INFILE )
-				            CALL M3MSG2( MESG ) 
-			
-				        END IF
+                            CALL M3MSG2( MESG ) 
+            
+                        END IF
 
 C.........................  Set default inventory characteristics that depend on file format
-			            CALL INITINFO( FILFMT( CURFIL ) )
-			            CURFMT = FILFMT( CURFIL )
+                        CALL INITINFO( FILFMT( CURFIL ) )
+                        CURFMT = FILFMT( CURFIL )
 
 C.........................  Reallocate memory to store emissions from a single line
                         DEALLOCATE( READDATA, READPOL )
@@ -588,12 +588,12 @@ C.........................  Reallocate memory to store emissions from a single l
                         
 C.........................  Skip back to the beginning of the loop
                         CYCLE
-			  
+              
 C.....................  Otherwise, no more files to read, so exit
-			        ELSE
-			            LSTTIME = .TRUE.
-			            EXIT
-			        END IF
+                    ELSE
+                        LSTTIME = .TRUE.
+                        EXIT
+                    END IF
 
 C.................  Otherwise, not a list file, so exit
                 ELSE

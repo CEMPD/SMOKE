@@ -122,13 +122,13 @@ C.........  State totals...
 
             IF( AFLAG ) THEN
                 AEBSTA = 0.   ! state total inven or speciated emissions
-        	IF ( ALLOCATED( AEUSTA ) ) THEN
+                IF ( ALLOCATED( AEUSTA ) ) THEN
                     AEUSTA = 0.   ! state total multipltv-controlled emissions 
                 END IF
-        	IF ( ALLOCATED( AERSTA ) ) THEN
+                IF ( ALLOCATED( AERSTA ) ) THEN
                     AERSTA = 0.   ! state total reactivity-controlled emissions
                 END IF
-        	IF ( ALLOCATED( AECSTA ) ) THEN
+                IF ( ALLOCATED( AECSTA ) ) THEN
                     AECSTA = 0.   ! state total all-controlled emissions
                 END IF
             END IF
@@ -138,41 +138,41 @@ C.........  State totals...
             END IF
 
             IF( MFLAG ) THEN
-        	MEBSTA = 0.
-        	IF ( ALLOCATED( MEUSTA ) ) THEN
+                MEBSTA = 0.
+                IF ( ALLOCATED( MEUSTA ) ) THEN
                     MEUSTA = 0.
                 END IF
-        	IF ( ALLOCATED( MERSTA ) ) THEN
+                IF ( ALLOCATED( MERSTA ) ) THEN
                     MERSTA = 0.
                 END IF
-        	IF ( ALLOCATED( MECSTA ) ) THEN
+                IF ( ALLOCATED( MECSTA ) ) THEN
                     MECSTA = 0.
                 END IF
             END IF
 
             IF( PFLAG ) THEN
-        	PEBSTA = 0.
-        	IF ( ALLOCATED( PEUSTA ) ) THEN
+                PEBSTA = 0.
+                IF ( ALLOCATED( PEUSTA ) ) THEN
                     PEUSTA = 0.
                 END IF
-        	IF ( ALLOCATED( PERSTA ) ) THEN
+                IF ( ALLOCATED( PERSTA ) ) THEN
                     PERSTA = 0.
                 END IF
-        	IF ( ALLOCATED( PECSTA ) ) THEN
+                IF ( ALLOCATED( PECSTA ) ) THEN
                     PECSTA = 0.
                 END IF
             END IF
 
             IF( XFLAG ) THEN
-        	TEBSTA = 0.
-        	IF ( ALLOCATED( TEUSTA ) ) THEN
+                TEBSTA = 0.
+                IF ( ALLOCATED( TEUSTA ) ) THEN
                     TEUSTA = 0.
                 END IF
-        	IF ( ALLOCATED( TERSTA ) ) THEN
+                IF ( ALLOCATED( TERSTA ) ) THEN
                     TERSTA = 0.
                 END IF
-        	IF ( ALLOCATED( TECSTA ) ) THEN
-       	            TECSTA = 0.
+                IF ( ALLOCATED( TECSTA ) ) THEN
+                    TECSTA = 0.
                 END IF
             END IF
 

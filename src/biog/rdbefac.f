@@ -5,13 +5,13 @@ C***********************************************************************
 C  subroutine body starts at line 69 
 C
 C  DESCRIPTION:
-C	Reads in the biogenic emissions factors 
+C       Reads in the biogenic emissions factors 
 C       from the BFAC file.   
 C
 C  PRECONDITIONS REQUIRED:
 C
 C  REVISION  HISTORY:
-C	Written  11/99 by J. Vukovich
+C       Written  11/99 by J. Vukovich
 C
 C***********************************************************************
 C

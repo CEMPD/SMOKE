@@ -5,21 +5,21 @@ C***********************************************************************
 C  subroutine body starts at line 159
 C
 C  DESCRIPTION:
-C	Read and use replacement stack parameters from file PSTK to fill in
-C	stack parameters which are "missing" (i.e., negative). Also use
+C       Read and use replacement stack parameters from file PSTK to fill in
+C       stack parameters which are "missing" (i.e., negative). Also use
 C       ultimate defaults (set as local parameters) when no other stack 
 C       parameters are available.
 C
 C  PRECONDITIONS REQUIRED:
-C	Opened file with unit FDEV
+C       Opened file with unit FDEV
 C       Memory of arrays already allocated and with NSRC
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C	Subroutines: I/O API subroutines, CHECKMEM, FMTCSRC
+C       Subroutines: I/O API subroutines, CHECKMEM, FMTCSRC
 C       Function: I/O API functions, GETFLINE
 C
 C  REVISION  HISTORY:
-C	prototype 12/95 by CJC
+C       prototype 12/95 by CJC
 C       copied by: mhouyoux
 C       origin: fixstk.F 4.3
 C
@@ -61,10 +61,10 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER(2)    CRLF
-        INTEGER		FINDC
-        INTEGER		GETFLINE
+        INTEGER         FINDC
+        INTEGER         GETFLINE
 
-        EXTERNAL	CRLF, FINDC, GETFLINE
+        EXTERNAL        CRLF, FINDC, GETFLINE
 
 C...........   ARGUMENTS and their descriptions:
 
@@ -115,23 +115,23 @@ C.........  SCC-FIPS code table
         CHARACTER(FPSLEN3), ALLOCATABLE :: TBL3( : ) ! FIPS code // scc
          
 C.........  Other local variables
-        INTEGER		I, J, K, L1, L2, L3, S   !  counters and indices
+        INTEGER         I, J, K, L1, L2, L3, S   !  counters and indices
 
-        INTEGER		FIP	!  temporary FIPs code
-        INTEGER		IOS	!  I/O error status
-        INTEGER		IREC	!  current record number
-        INTEGER		LDEV	!  log file unit number
-        INTEGER		NLINE	!  Number of lines
-        INTEGER		NPSTK	!  Number of PSTK entries
-        INTEGER		SID	!  temporary state ID
+        INTEGER         FIP     !  temporary FIPs code
+        INTEGER         IOS     !  I/O error status
+        INTEGER         IREC    !  current record number
+        INTEGER         LDEV    !  log file unit number
+        INTEGER         NLINE   !  Number of lines
+        INTEGER         NPSTK   !  Number of PSTK entries
+        INTEGER         SID     !  temporary state ID
 
-        REAL		HT	!  temporary height
-        REAL		DM	!  temporary diameter
-        REAL		TK	!  temporary exit temperature
-        REAL		VE	!  temporary velocity
+        REAL            HT      !  temporary height
+        REAL            DM      !  temporary diameter
+        REAL            TK      !  temporary exit temperature
+        REAL            VE      !  temporary velocity
 
-        LOGICAL	     :: EFLAG = .FALSE.  !  error flag
-        LOGICAL		DFLAG( NSRC )    ! true if source getting default parms
+        LOGICAL      :: EFLAG = .FALSE.  !  error flag
+        LOGICAL         DFLAG( NSRC )    ! true if source getting default parms
 
         CHARACTER(8)       FMTFIP    !  format for converting FIPs code
         CHARACTER(8)       FMTSTA    !  format for converting cntry/state
@@ -213,7 +213,7 @@ C.........  For now, require the SCC to be in quotes to use list formatting
 
             IREC = IREC + 1
 
-            IF ( IOS .GT. 0 ) THEN	!  I/O error
+            IF ( IOS .GT. 0 ) THEN      !  I/O error
 
                 WRITE( MESG,94010 ) 'I/O Error', IOS, 
      &                 'reading stack replacements file at line', IREC
@@ -450,7 +450,7 @@ C.............  Set up temporary character strings
                     ENDIF
                 ENDIF
 
-            END IF	!  if stack height bad
+            END IF      !  if stack height bad
 
             IF ( STKDM( S ) .LE. 0.0 ) THEN
                 K = FINDC( CFIPSCC, NR3, TBL3 )
@@ -511,7 +511,7 @@ C.............  Set up temporary character strings
                     ENDIF
                 ENDIF
 
-            END IF  	!  if stack diameter bad
+            END IF      !  if stack diameter bad
 
             IF ( STKTK( S ) .LE. 0.0 ) THEN
                 K = FINDC( CFIPSCC, NR3, TBL3 )
@@ -564,7 +564,7 @@ C.............  Set up temporary character strings
                     ENDIF
                 ENDIF
 
-            END IF	!  if stack exhaust temperature bad
+            END IF      !  if stack exhaust temperature bad
 
             IF ( STKVE( S ) .LE. 0.0 ) THEN
                 K = FINDC( CFIPSCC, NR3, TBL3 )
@@ -609,7 +609,7 @@ C.............  Set up temporary character strings
                     STKVE( S ) = VE
                 ENDIF
 
-            END IF	!  if stack exhaust velocity bad
+            END IF      !  if stack exhaust velocity bad
 
         ENDDO  !  end loop on sources for fixing missing stack parameters
 
@@ -673,7 +673,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010	FORMAT( 10 ( A, :, I8, :, 1X ) )
+94010   FORMAT( 10 ( A, :, I8, :, 1X ) )
 
 94020   FORMAT( 7X, A, 2X, E10.3, 1X, E10.3 )
 

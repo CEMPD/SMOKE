@@ -216,7 +216,7 @@ C    N: added in during the loop.
 
             N = N + 1
             IF( K .GT. 0 ) THEN         ! Store emission type and pol from it
-        	L2 = LEN_TRIM( EBUF )
+                L2 = LEN_TRIM( EBUF )
                 ETPNAM( N ) = EBUF
                 DATNAM( N ) = EBUF( K+LT:L2 )
 
@@ -274,7 +274,7 @@ C.............  Loop through hourly emissions data variables
 
 C.................  Store emission type and/or pollutant
                 IF( K .GT. 0 ) THEN
-        	    L2 = LEN_TRIM( EBUF )
+                    L2 = LEN_TRIM( EBUF )
                     ETPNAM( N ) = EBUF
                     DATNAM( N ) = EBUF( K+LT:L2 )
 
@@ -318,9 +318,9 @@ C.............  Get header of mole speciation matrix
 
                 IF ( .NOT. DESCSET( SLNAME, ALLFILES ) ) THEN
 
-        	    MESG = 'Could not get description of file "' //
+                    MESG = 'Could not get description of file "' //
      &                     SLNAME( 1:LEN_TRIM( SLNAME ) ) // '"'
-        	    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 ENDIF
 
@@ -334,9 +334,9 @@ C.............  Get header of mass speciation matrix
 
                 IF ( .NOT. DESCSET( SSNAME, ALLFILES ) ) THEN
 
-        	    MESG = 'Could not get description of file "' //
+                    MESG = 'Could not get description of file "' //
      &                     SSNAME( 1:LEN_TRIM( SSNAME ) ) // '"'
-        	    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 ENDIF
 
@@ -351,15 +351,15 @@ C.............  Count the number of unique species
             NMSPC = 0
             DO V = 1, NSVARS
 
-        	VBUF = VDESCSET( V )
+                VBUF = VDESCSET( V )
 
-        	J  = INDEX( VBUF, ETJOIN )   ! Look for emission type joiner
-        	K  = INDEX( VBUF, SPJOIN )   ! Look for speciation joiner
-        	L2 = LEN_TRIM( VBUF )
+                J  = INDEX( VBUF, ETJOIN )   ! Look for emission type joiner
+                K  = INDEX( VBUF, SPJOIN )   ! Look for speciation joiner
+                L2 = LEN_TRIM( VBUF )
 
                 IF( K .LE. 0 ) THEN
                     EFLAG = .TRUE.
-        	    WRITE( MESG,94010 ) 'ERROR: Speciation joiner "'//
+                    WRITE( MESG,94010 ) 'ERROR: Speciation joiner "'//
      &                     SPJOIN( 1:LS ) // '" is not found for ' //
      &                     'speciation variable', V
                     CALL M3MSG2( MESG )
@@ -440,8 +440,8 @@ C.................  No emission type
 
 C.................  Count unique species.  Look for this species in previous 
 C                   list and add one to count of not found.
-        	K = INDEX1( SBUF, V-1, SPCNAM )
-        	IF( K .LE. 0 ) NMSPC = NMSPC + 1
+                K = INDEX1( SBUF, V-1, SPCNAM )
+                IF( K .LE. 0 ) NMSPC = NMSPC + 1
 
             END DO  ! End of loop for speciation variables
 
@@ -456,27 +456,27 @@ C.............  Create sorted list of unique species names
             PBUF = ' '
             K = 0
             DO V = 1, NSVARS
-        	J = SRTIDX( V )
-        	
+                J = SRTIDX( V )
+ 
 C.................  Skip any zeroes in the sorted index due to unused species
                 IF( J == 0 ) CYCLE
-        	
-        	SBUF = SPCNAM( J )
+ 
+                SBUF = SPCNAM( J )
 
-        	IF( SBUF .NE. PBUF ) THEN
+                IF( SBUF .NE. PBUF ) THEN
                     K = K + 1
                     EMNAM( K ) = SBUF
-        	END IF
+                END IF
 
-        	PBUF = SBUF
+                PBUF = SBUF
 
             END DO  ! End creating list of unique species
 
 C.............  If species name in SPCNAM is the same as a pollutant name, 
 C               then set it to blank
             DO V = 1, NSVARS
-        	K = INDEX1( SPCNAM( V ), NIPPA, EANAM )
-        	IF( K .GT. 0 ) SPCNAM( V ) = ' '
+                K = INDEX1( SPCNAM( V ), NIPPA, EANAM )
+                IF( K .GT. 0 ) SPCNAM( V ) = ' '
             END DO  ! End creating list of unique species
 
         END IF      ! End if speciation
@@ -531,14 +531,14 @@ C.................  If species is same as pollutant, then add prefix
 
                     DO V = 1, NMSPC
                         J = J + 1
-                	SBUF = EMNAM( V )
+                        SBUF = EMNAM( V )
 
                         K = INDEX1( SBUF, NDATALL, DATNAM )
 
                         IF( K .GT. 0 ) THEN
-                	    OUTDNAM( J,N ) = 'S-' // SBUF
+                            OUTDNAM( J,N ) = 'S-' // SBUF
                         ELSE
-                	    OUTDNAM( J,N ) = SBUF
+                            OUTDNAM( J,N ) = SBUF
                         END IF
                     END DO
 
@@ -638,50 +638,50 @@ C......................  Set hourly variable as having speciation
 
 C.........................  Skip species that don't match inventory data
 C.........................  To species column
-                	IF( OUTDNAM( I,N ) .EQ. SPCNAM( V ) ) THEN
+                        IF( OUTDNAM( I,N ) .EQ. SPCNAM( V ) ) THEN
                             TOSOUT( V,N )%SPC = I
                             TOSOUT( V,N )%AGG = 1
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
                             SPCOUT( V ) = .TRUE.
                             ANYOUT = .TRUE.
-                	END IF
+                        END IF
 
 C.........................  To emission-type/species column
-                	IF( OUTDNAM( I,N ) .EQ. ETPSPCNAM( V ) ) THEN 
+                        IF( OUTDNAM( I,N ) .EQ. ETPSPCNAM( V ) ) THEN 
                             TOSOUT( V,N )%ETPSPC = I
                             TOSOUT( V,N )%AGG = 1
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
                             SPCOUT( V ) = .TRUE.
                             ANYOUT = .TRUE.
-                	END IF
+                        END IF
 
 C.........................  To process/species column
-                	IF( OUTDNAM( I,N ) .EQ. PRCSPCNAM( V ) ) THEN 
+                        IF( OUTDNAM( I,N ) .EQ. PRCSPCNAM( V ) ) THEN 
                             TOSOUT( V,N )%PRCSPC = I
                             TOSOUT( V,N )%AGG = 1
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
                             SPCOUT( V ) = .TRUE.
                             ANYOUT = .TRUE.
-                	END IF
+                        END IF
 
 C.........................  To post-speciation summed emission type column
-                	IF( OUTDNAM( I,N ) .EQ. SUMETPNAM( V ) ) THEN 
+                        IF( OUTDNAM( I,N ) .EQ. SUMETPNAM( V ) ) THEN 
                             TOSOUT( V,N )%SUMETP = I
                             TOSOUT( V,N )%AGG = 1
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
                             SPCOUT( V ) = .TRUE.
                             ANYOUT = .TRUE.
-                	END IF
+                        END IF
 
 C.........................  To post-speciation summed pollutant column
 C.........................  Also for species with same name as pollutants
-                	IF( OUTDNAM( I,N ) .EQ. SUMPOLNAM( V ) ) THEN 
+                        IF( OUTDNAM( I,N ) .EQ. SUMPOLNAM( V ) ) THEN 
                             TOSOUT( V,N )%SUMPOL = I
                             TOSOUT( V,N )%AGG = 1
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
                             SPCOUT( V ) = .TRUE.
                             ANYOUT = .TRUE.
-                	END IF
+                        END IF
 
                     END DO   ! End loop over speciation variables
 

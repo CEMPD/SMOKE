@@ -281,7 +281,7 @@ C.............  Try to open file
                 CALL M3MSG2( MESG )
                 CYCLE
             ELSE
-            	FILEOPEN = .TRUE.
+                FILEOPEN = .TRUE.
             END IF
 
 C.............  Read description of file
@@ -503,7 +503,7 @@ C.............  Close previous file if needed
      &                         'file ' // PREVFILE( 1:L )
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     ELSE
-                    	FILEOPEN = .FALSE.
+                        FILEOPEN = .FALSE.
                     END IF
                 END IF
 
@@ -530,7 +530,7 @@ C.............  Try to open file
                 CALL M3MSG2( MESG )
                 CYCLE
             ELSE
-            	FILEOPEN = .TRUE.
+                FILEOPEN = .TRUE.
             END IF
 
 C.............  Loop through pollutants that are used as selection criteria

@@ -61,7 +61,7 @@ C...........   Other local variables
         INTEGER, SAVE :: LP                    ! length of tmp file path
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subroutine called
-	
+
         CHARACTER(200), SAVE :: PATHNM         ! path name for tmp file
         CHARACTER(220)          FILENM                ! file name
         CHARACTER(256)          MESG                  ! message buffer

@@ -169,13 +169,13 @@ C   begin body of subroutine CONVRTXY
             
             END IF
 
-        ELSE		!  error
+        ELSE            !  error
             WRITE( MESG,94010 ) 'ERROR: Do not know how to convert ' //
      &             'from Lat-lon to coordinate type number', CTYPE
 
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-        END IF		!  if coord type UTM, Lambert, or Polar Stereographic
+        END IF          !  if coord type UTM, Lambert, or Polar Stereographic
 
         RETURN
 

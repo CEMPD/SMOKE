@@ -5,12 +5,12 @@ C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C	Reads character SCC codes
+C       Reads character SCC codes
 C
 C  PRECONDITIONS REQUIRED:
 C
 C  REVISION  HISTORY:
-C	Written  1/99 by M. Houyoux
+C       Written  1/99 by M. Houyoux
 C
 C***********************************************************************
 C

@@ -58,13 +58,13 @@ C  to the database file.
       
 C  First time, initialize emission factor array
       IF (INITIAL) THEN
-      	 ALLOCATE( EVPOTHER( MAXIH,5,5 ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'EVPOTHER', PROGNAME )
-      	 ALLOCATE( ZMILES  ( MAXIH,5   ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
-      	 ALLOCATE( ZGMHOUR ( MAXIH,5   ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
-      	
+         ALLOCATE( EVPOTHER( MAXIH,5,5 ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'EVPOTHER', PROGNAME )
+         ALLOCATE( ZMILES  ( MAXIH,5   ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
+         ALLOCATE( ZGMHOUR ( MAXIH,5   ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
+ 
          EVPOTHER = 0.
          ZMILES   = 0.
          ZGMHOUR  = 0.
@@ -178,7 +178,7 @@ C....          Convert vehicle index back to vehicle class
                IF (IVX == 5) THEN
                   VTYPE = 8
                ELSE
-               	  VTYPE = IVX
+                  VTYPE = IVX
                END IF
 
 C....          Check if this is a valid vehicle/process combo

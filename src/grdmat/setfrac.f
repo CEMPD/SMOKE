@@ -98,12 +98,12 @@ C.........  Default of 50 is population
             ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
 
             IF( ISDEF .LE. 0 ) THEN
-        	WRITE( MESG,94010 ) 'WARNING: Fallback surrogate', 
+                WRITE( MESG,94010 ) 'WARNING: Fallback surrogate', 
      &             DEFSRGID, 'not found in surrogate list, resetting '//
      &             'it to ', SRGLIST( 1 )
-        	CALL M3MSG2( MESG )
-        	DEFSRGID = SRGLIST( 1 )
-        	ISDEF = 1
+                CALL M3MSG2( MESG )
+                DEFSRGID = SRGLIST( 1 )
+                ISDEF = 1
             END IF
 
             FIRSTIME = .FALSE.

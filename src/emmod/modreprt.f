@@ -100,12 +100,12 @@
             INTEGER       :: ELEVSTAT      ! elev/no-elev/all status
             INTEGER       :: OUTTIME       ! end hour for summing
             INTEGER       :: NUMDATA       ! number of data values
-	    INTEGER       :: NUMFILES      ! number of files per report
-	    INTEGER       :: NUMSECT       ! number of sections per report
+            INTEGER       :: NUMFILES      ! number of files per report
+            INTEGER       :: NUMSECT       ! number of sections per report
             INTEGER       :: NUMTITLE      ! number of titles
             INTEGER       :: RENDLIN       ! rpt packet end line
-	    INTEGER       :: RPTMODE       ! rpt mode
-	    INTEGER       :: RPTNVAR       ! no. of variables per rpt or section
+            INTEGER       :: RPTMODE       ! rpt mode
+            INTEGER       :: RPTNVAR       ! no. of variables per rpt or section
             INTEGER       :: RSTARTLIN     ! rpt packet start line
             INTEGER       :: SCCRES        ! SCC resolution
             INTEGER       :: SRGRES        ! surrogate resolution (1st or 2nd)
@@ -126,7 +126,7 @@
             LOGICAL       :: BYSIC         ! true: by SIC 
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
-	    LOGICAL       :: BYSTACK       ! true: by stack
+            LOGICAL       :: BYSTACK       ! true: by stack
             LOGICAL       :: BYSTAT        ! true: by state code
             LOGICAL       :: BYSTNAM       ! true: by state name
             LOGICAL       :: BYSRG         ! true: by surrogate codes
@@ -142,12 +142,12 @@
             LOGICAL       :: SICNAM        ! true: output SIC name
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
-	    LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
+            LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
             LOGICAL       :: USECRMAT      ! true: use reactivity controls
             LOGICAL       :: USECUMAT      ! true: use multiplicative controls
             LOGICAL       :: USEGMAT       ! true: use gridding
             LOGICAL       :: USEHOUR       ! true: use hourly data
-	    LOGICAL       :: USEPRMAT      ! true: use projection matrix
+            LOGICAL       :: USEPRMAT      ! true: use projection matrix
             LOGICAL       :: USESLMAT      ! true: use mole spec
             LOGICAL       :: USESSMAT      ! true: use mass spec
 
@@ -174,12 +174,12 @@
         INTEGER, PUBLIC :: TSTEP  = 0       ! time step (HHMMSS)
         INTEGER, PUBLIC :: TZONE  = 0       ! time zone of hourly data (0-23)
 
-	INTEGER, PUBLIC, ALLOCATABLE :: STKX( : )   ! x cell no. of stack
-	INTEGER, PUBLIC, ALLOCATABLE :: STKY( : )   ! y cell no. of stack
+        INTEGER, PUBLIC, ALLOCATABLE :: STKX( : )   ! x cell no. of stack
+        INTEGER, PUBLIC, ALLOCATABLE :: STKY( : )   ! y cell no. of stack
 
 !.........  Controls for whether input files are needed
 !.........  These variables are set once, and never reset
-	LOGICAL, PUBLIC :: AFLAG  = .FALSE. ! true: read in ASCII elevated file
+        LOGICAL, PUBLIC :: AFLAG  = .FALSE. ! true: read in ASCII elevated file
         LOGICAL, PUBLIC :: CUFLAG = .FALSE. ! true: read in multipl. control matrix
         LOGICAL, PUBLIC :: CURPTFLG = .FALSE. ! true: read mult. cntl report
         LOGICAL, PUBLIC :: CRFLAG = .FALSE. ! true: read in reactivity control matrix
@@ -210,7 +210,7 @@
         INTEGER, PUBLIC :: NSBGRAW  = 0   ! no. raw file subgrids 
         INTEGER, PUBLIC :: NSPCPOL  = 0   ! no. pollutants specified for BYSPC
         INTEGER, PUBLIC :: MINC     = 0   ! minimum output source chars
-	INTEGER, PUBLIC :: MXRPTNVAR= 30  ! max. number of variables per report
+        INTEGER, PUBLIC :: MXRPTNVAR= 30  ! max. number of variables per report
 
         LOGICAL, PUBLIC :: RC_ERROR = .FALSE.  ! true: error found reading file
         LOGICAL, PUBLIC :: DATAMISS = .FALSE.  ! true: no SELECT DATA instrs
@@ -238,7 +238,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 
         LOGICAL, ALLOCATABLE, PUBLIC :: LSPCPOL ( : )  ! true: spc pol in *SSUP file
         CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPCPOL( : ) ! pols for BYSPC
-	CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: ASCNAM( : ) ! pols from ASCII elevated file
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: ASCNAM( : ) ! pols from ASCII elevated file
 
 !.........  Report characteristics arrays, dimensioned by NREPORT
 
@@ -276,8 +276,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: SRG2WIDTH=0 ! width of fallback surg column
         INTEGER      , PUBLIC :: STWIDTH  =0 ! width of state name column
         INTEGER      , PUBLIC :: STKPWIDTH=0 ! width of stack parameters columns
-	INTEGER      , PUBLIC :: UNITWIDTH=0 ! width of unit column
-	INTEGER      , PUBLIC :: VARWIDTH=0  ! width of variable column
+        INTEGER      , PUBLIC :: UNITWIDTH=0 ! width of unit column
+        INTEGER      , PUBLIC :: VARWIDTH=0  ! width of variable column
         INTEGER      , PUBLIC :: WEKWIDTH =0 ! width of weekly profile label
 
         CHARACTER(50),  PUBLIC :: CELLFMT     ! format string for cell columns
@@ -325,8 +325,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 !.........  Temporary report-specific settings
         TYPE( EACHRPT ), PUBLIC :: RPT_
 
-	INTEGER, PUBLIC :: ASCDATA       ! no. of data from ASCII elevated file
-	INTEGER, PUBLIC :: ASCREC        ! line no. of ASCII elevated file
+        INTEGER, PUBLIC :: ASCDATA       ! no. of data from ASCII elevated file
+        INTEGER, PUBLIC :: ASCREC        ! line no. of ASCII elevated file
         INTEGER, PUBLIC :: EDATE         ! Julian ending date
         INTEGER, PUBLIC :: ETIME         ! ending time (HHMMSS)
         INTEGER, PUBLIC :: RPTNSTEP      ! no. of time steps for current report

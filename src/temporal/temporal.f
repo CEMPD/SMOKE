@@ -495,8 +495,8 @@ C.............  If time is before 6 am, don't need last day
 
 C.............  Read header of ungridding matrix
             IF( .NOT. DESC3( GNAME ) ) THEN
-            	MESG = 'Could not get description for file ' // GNAME
-            	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                MESG = 'Could not get description for file ' // GNAME
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
 C.............  Store number of ungridding factors
@@ -684,9 +684,9 @@ C.................  Find end date in file description
                 DO I = 1, MXDESC3
                    IF( INDEX( FDESC3D( I ), 
      &                        SEARCHSTR( 1:L ) ) > 0 ) THEN
-     	                   TEMPLINE = FDESC3D( I )
-                   	   IF( CHKINT( TEMPLINE( L+1:L+8 ) ) ) THEN
-                               EFEDATE = STR2INT( TEMPLINE( L+1:L+8 ) )
+                       TEMPLINE = FDESC3D( I )
+                       IF( CHKINT( TEMPLINE( L+1:L+8 ) ) ) THEN
+                           EFEDATE = STR2INT( TEMPLINE( L+1:L+8 ) )
                            EXIT
                        ELSE
                            ENDFLAG = .TRUE.
@@ -698,7 +698,7 @@ C.................  Find end date in file description
                        ENDFLAG = .TRUE.
                    END IF
                 END DO
-                	
+
                 IF( ENDFLAG ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not get ending date of ' //
@@ -719,7 +719,7 @@ C.................  Make sure starting and ending positions are valid
                     IF( ENDPOS > 0 ) THEN
                         STPOS = 1
                     ELSE
-                    	CYCLE
+                        CYCLE
                     END IF
                 END IF 
                 
@@ -747,7 +747,7 @@ C.................  Read source information
                 IF( .NOT. READSET( CURLNM, 'SOURCES', ALLAYS3, 
      &                             ALLFILES, SDATE3D, STIME3D, 
      &                             SRCS ) ) THEN
-     	            EFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     MESG = 'ERROR: Could not read SOURCES ' // 
      &                     'from file ' // CRLF() // BLANK10 // '"' //
      &                     TRIM( CURFNM ) // '".'
@@ -781,7 +781,7 @@ C.................  Close current file
                 END IF
                 
             END DO
-            	
+ 
 C.............  Exit if there was a problem with the emission factor files
             IF( EFLAG ) THEN
                 MESG = 'Problem checking emission factor files'
@@ -1063,8 +1063,8 @@ C.............  If using uniform profiles, set all temporal profile number
 C               to 1; otherwise, assign profiles with cross-reference info
             IF( NFLAG ) THEN
                 MDEX = 1
-        	WDEX = 1
-        	DDEX = 1
+                WDEX = 1
+                DDEX = 1
 
             ELSE
                 CALL ASGNTPRO( NGSZ, EANAM2D( 1,N ), TREFFMT )
@@ -1212,7 +1212,7 @@ C.................................  Set logical file name
 C.................................  Open current file
                                 IF( .NOT. OPENSET( CURLNM, FSREAD3, 
      &                                             PROGNAME ) ) THEN
-     	                            EFLAG = .TRUE.
+                                    EFLAG = .TRUE.
                                     MESG = 'ERROR: Could not open ' //
      &                                     'emission factors file ' //
      &                                     CRLF() // BLANK10 // '"' //

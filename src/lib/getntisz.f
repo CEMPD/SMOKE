@@ -99,7 +99,7 @@ C.........  Allocate memory for line segments
         
 C.........  Loop through lines in file
         DO
-        	
+ 
 C.............  Read line of file
             READ( FDEV, 93000, IOSTAT=IOS ) LINE
             IREC = IREC + 1

@@ -289,7 +289,7 @@ C.........  Create list of counties inside grid that have VMT values
         DO S = 1, NGRDCTY
             GRIDCTY( S ) = TMPCTY( S )
         END DO
-        	
+ 
         DEALLOCATE( TMPCTY )
 
 C.........  Read the county cross-reference file            

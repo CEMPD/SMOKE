@@ -91,7 +91,7 @@ C...........   Other local variables
         INTEGER, SAVE :: IREC_MIN = 99999999 ! minimum record number
         INTEGER, SAVE :: PREC     = -9       ! previous call record number
 
-	LOGICAL, SAVE :: ASCFLAG   = .FALSE.  ! true: using ascii file
+        LOGICAL, SAVE :: ASCFLAG   = .FALSE.  ! true: using ascii file
         LOGICAL, SAVE :: FIRSTIME  = .TRUE.   ! true: first time routine called
         LOGICAL, SAVE :: FIRSTLOOP = .TRUE.   ! true: file already read once
         LOGICAL, SAVE :: LCATSET   = .FALSE.  ! true: source category set
@@ -164,19 +164,19 @@ C.............  Store source category setting
                 LCATSET = .TRUE.
 
                 IF( SEGMENT( 2 ) .EQ. 'A' ) THEN        ! area
-		    MINC     = 3
+                    MINC     = 3
                     CRL      = 'A'
                     CATEGORY = 'AREA'
                     CATDESC  = 'Area'
 
                 ELSE IF( SEGMENT( 2 ) .EQ. 'M' ) THEN   ! mobile
-		    MINC     = 2
+                    MINC     = 2
                     CRL      = 'M'
                     CATEGORY = 'MOBILE'
                     CATDESC  = 'Mobile'
 
                 ELSE IF( SEGMENT( 2 ) .EQ. 'P' ) THEN   ! point
-		    MINC     = 2
+                    MINC     = 2
                     CRL      = 'P'
                     CATEGORY = 'POINT'
                     CATDESC  = 'Point'
@@ -397,7 +397,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSPC     = .FALSE.
                         RPT_%BYSRC     = .FALSE.
                         RPT_%BYSRG     = .FALSE.
-			RPT_%BYSTACK   = .FALSE.
+                        RPT_%BYSTACK   = .FALSE.
                         RPT_%BYSTAT    = .FALSE.
                         RPT_%BYSTNAM   = .FALSE.
                         RPT_%BYWEK     = .FALSE.
@@ -410,7 +410,7 @@ C.........................  Reset report settings to defaults
                         RPT_%SCCNAM    = .FALSE.
                         RPT_%SRCNAM    = .FALSE.
                         RPT_%STKPARM   = .FALSE.
-			RPT_%USEASCELEV= .FALSE.
+                        RPT_%USEASCELEV= .FALSE.
                         RPT_%USECRMAT  = .FALSE.
                         RPT_%USECUMAT  = .FALSE.
                         RPT_%USEGMAT   = .FALSE.
@@ -423,12 +423,12 @@ C.........................  Reset report settings to defaults
 
                         RPT_%ELEVSTAT  = 0
                         RPT_%NUMDATA   = -9   ! zero is legitimate
-			RPT_%NUMFILES  = 0
-			RPT_%NUMSECT   = 0
+                        RPT_%NUMFILES  = 0
+                        RPT_%NUMSECT   = 0
                         RPT_%NUMTITLE  = 0
                         RPT_%RENDLIN   = 0    ! init for consistency
-	                RPT_%RPTMODE   = 0
-			RPT_%RPTNVAR   = 0
+                        RPT_%RPTMODE   = 0
+                        RPT_%RPTNVAR   = 0
                         RPT_%RSTARTLIN = 0    ! init for consistency
                         RPT_%SCCRES    = 10
                         RPT_%SRGRES    = 0
@@ -568,76 +568,77 @@ C               MODREPRT
             SELECT CASE( SEGMENT( 1 ) )
 
 C.............  Report arrangement
-	    CASE( 'ARRANGE' )
+            CASE( 'ARRANGE' )
 
-		IF( SEGMENT( 2 ) .EQ. 'MULTIFILE' ) THEN
-		    RPT_%RPTMODE = 1
-		    READ( SEGMENT( 3 ), * ) RPT_%RPTNVAR
-
-C...............  If number of variables per report is greater than the maximum,
-C                 then reset to maximum value
-		    IF( RPT_%RPTNVAR .GT. MXRPTNVAR ) THEN
-			RPT_%RPTNVAR = MXRPTNVAR
-
-			IF( FIRSTLOOP ) THEN
-			  WRITE( MESG, 94010 )
-     &                     'WARNING: Number of variables per report ' //
-     &                     'at line', IREC, ' is greater than the ' //
-     &                     'maximum allowed. Resetting to maximum ' //
-     &                     'value.'
-			  CALL M3MSG2( MESG )
-			END IF
-		    END IF
-		
-		ELSE IF( SEGMENT( 2 ) .EQ. 'ONEFILE' ) THEN
-		    RPT_%RPTMODE = 2
-		    READ( SEGMENT( 3 ), * ) RPT_%RPTNVAR
+                IF( SEGMENT( 2 ) .EQ. 'MULTIFILE' ) THEN
+                    RPT_%RPTMODE = 1
+                    READ( SEGMENT( 3 ), * ) RPT_%RPTNVAR
 
 C...............  If number of variables per report is greater than the maximum,
 C                 then reset to maximum value
-		    IF( RPT_%RPTNVAR .GT. MXRPTNVAR ) THEN
+                    IF( RPT_%RPTNVAR .GT. MXRPTNVAR ) THEN
                         RPT_%RPTNVAR = MXRPTNVAR
 
-			IF( FIRSTLOOP ) THEN
+                        IF( FIRSTLOOP ) THEN
                           WRITE( MESG, 94010 )
      &                     'WARNING: Number of variables per report ' //
      &                     'at line', IREC, ' is greater than the ' //
      &                     'maximum allowed. Resetting to maximum ' //
      &                     'value.'
                           CALL M3MSG2( MESG )
-			END IF
+                        END IF
+                    END IF
+                
+                ELSE IF( SEGMENT( 2 ) .EQ. 'ONEFILE' ) THEN
+                    RPT_%RPTMODE = 2
+                    READ( SEGMENT( 3 ), * ) RPT_%RPTNVAR
+
+C...............  If number of variables per report is greater than the maximum,
+C                 then reset to maximum value
+                    IF( RPT_%RPTNVAR .GT. MXRPTNVAR ) THEN
+                        RPT_%RPTNVAR = MXRPTNVAR
+
+                        IF( FIRSTLOOP ) THEN
+                          WRITE( MESG, 94010 )
+     &                     'WARNING: Number of variables per report ' //
+     &                     'at line', IREC, ' is greater than the ' //
+     &                     'maximum allowed. Resetting to maximum ' //
+     &                     'value.'
+                          CALL M3MSG2( MESG )
+                        END IF
                     END IF
 
-		ELSE IF( SEGMENT( 2 ) .EQ. 'DATABASE' ) THEN
-		    RPT_%RPTMODE = 3
+                ELSE IF( SEGMENT( 2 ) .EQ. 'DATABASE' ) THEN
+                    RPT_%RPTMODE = 3
 
-		ELSE
-		    IF( FIRSTLOOP ) THEN
-		        L = LEN_TRIM( SEGMENT( 2 ) )
-		        WRITE( MESG, 94010 )
-     &			    'WARNING: Arrangement type "'//
+                ELSE
+                    IF( FIRSTLOOP ) THEN
+                        L = LEN_TRIM( SEGMENT( 2 ) )
+                        WRITE( MESG, 94010 )
+     &                      'WARNING: Arrangement type "'//
      &                      SEGMENT( 2 )( 1:L )// '" at line', IREC,
      &                      ' is not known.' // CRLF()// BLANK10 //
      &                      'Will use no arrangement.'
-		        CALL M3MSG2( MESG )
-	            END IF
+                        CALL M3MSG2( MESG )
+                    END IF
 
-		END IF
+                END IF
 
 C.............  ASCII elevated sources file used for report
-	    CASE( 'ASCIIELEV' )
+            CASE( 'ASCIIELEV' )
 
-		IF( PKTCOUNT( RPT_IDX ) .EQ. 1 ) THEN
-		    ASCFLAG = .TRUE.
-		ELSE IF( PKTCOUNT( RPT_IDX ) .GT. 1 .AND.
+                IF( PKTCOUNT( RPT_IDX ) .EQ. 1 ) THEN
+                    ASCFLAG = .TRUE.
+                ELSE IF( PKTCOUNT( RPT_IDX ) .GT. 1 .AND.
      &                   .NOT. ASCFLAG ) THEN
-		    MESG = 'ERROR: If one report contains the ASCIIELEV '//
-     &                     'instruction, all reports must contain it.'
+                    MESG = 'ERROR: If one report contains the ' //
+     &                     'ASCIIELEV instruction, all reports ' //
+     &                     'must contain it.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
-		RPT_%USEASCELEV = .TRUE.
-		AFLAG = .TRUE.
+                RPT_%USEASCELEV = .TRUE.
+                AFLAG = .TRUE.
 
 C.............  Check control or projection matrix versus report
             CASE( 'CHECK' )
@@ -662,10 +663,10 @@ C.............  Multiplicative controls used for report
 
 C.............  Gridding used for report
             CASE( 'GRIDDING' )
-		IF( .NOT. AFLAG ) THEN
+                IF( .NOT. AFLAG ) THEN
                     GFLAG      = .TRUE.
                     RPT_%USEGMAT  = .TRUE.
-		END IF
+                END IF
 
 C.............  Projection used for report
             CASE( 'PROJECTION' )
@@ -690,7 +691,7 @@ C.............  Speciation used for report
                 ELSE
                     IF( FIRSTLOOP ) THEN
                         L = LEN_TRIM( SEGMENT( 2 ) )
-                	WRITE( MESG,94010 ) 
+                        WRITE( MESG,94010 ) 
      &                    'WARNING: Speciation type "'// 
      &                    SEGMENT( 2 )( 1:L )// '" at line', IREC, 
      &                    'is not known.' // CRLF()// BLANK10 // 
@@ -715,10 +716,10 @@ C.............  BY options affecting inputs needed
                 SELECT CASE( SEGMENT( 2 ) )
 
                 CASE( 'CELL' )
-	 	    IF( .NOT. AFLAG ) THEN
+                    IF( .NOT. AFLAG ) THEN
                         GFLAG      = .TRUE.
                         RPT_%USEGMAT  = .TRUE.
-		    END IF
+                    END IF
 
                     RPT_%BYCELL = .TRUE.
 
@@ -739,7 +740,7 @@ C.............  BY options affecting inputs needed
 
                 CASE( 'ELEVSTAT' )
                     IF( CATEGORY .EQ. 'POINT' ) THEN
-                	RPT_%BYELEV = .TRUE.
+                        RPT_%BYELEV = .TRUE.
 
                     ELSE IF( FIRSTLOOP ) THEN
 
@@ -748,15 +749,15 @@ C.............  BY options affecting inputs needed
                     END IF
 
                 CASE( 'HOUR' )
-		    IF( .NOT. AFLAG ) THEN
+                    IF( .NOT. AFLAG ) THEN
                         TFLAG      = .TRUE.           ! Implies temporal allocation
                         RPT_%USEHOUR  = .TRUE.
-		    END IF
+                    END IF
 
                     RPT_%BYHOUR = .TRUE.
 
                 CASE( 'LAYER' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                       IF( CATEGORY .EQ. 'POINT' ) THEN
                         LFLAG        = .TRUE.     ! Implies layer fractions file
                         TFLAG        = .TRUE.     ! Implies temporal allocation
@@ -771,14 +772,14 @@ C.............  BY options affecting inputs needed
 
                       END IF
 
-		    ELSE
-		      WRITE( MESG, 94010 )
+                    ELSE
+                      WRITE( MESG, 94010 )
      &                   'WARNING: BY LAYER instruction at ' //
      &                   'line', IREC, 'is not allowed with ' //
      &                   'the ASCIIELEV instruction.'
-		      CALL M3MSG2( MESG )
+                      CALL M3MSG2( MESG )
 
-		    END IF
+                    END IF
 
                 CASE( 'PLANT' )
                     RPT_%BYPLANT = .TRUE.
@@ -787,9 +788,9 @@ C.............  BY options affecting inputs needed
                     END IF
 
                 CASE( 'ROADCLASS' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                         IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                	    RPT_%BYRCL = .TRUE.
+                            RPT_%BYRCL = .TRUE.
 
                         ELSE IF( FIRSTLOOP ) THEN
 
@@ -797,15 +798,15 @@ C.............  BY options affecting inputs needed
 
                         END IF
 
-		    ELSE
+                    ELSE
 
-			WRITE( MESG, 94010 )
+                        WRITE( MESG, 94010 )
      &                     'WARNING: ROADCLASS instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
 
-		    END IF
+                    END IF
 
                 CASE( 'SIC' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
@@ -824,7 +825,7 @@ C.............  BY options affecting inputs needed
                     END IF
 
                 CASE( 'SCC10' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                         RPT_%BYSCC  = .TRUE.
                         RPT_%SCCRES = 10
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
@@ -832,23 +833,23 @@ C.............  BY options affecting inputs needed
                             RPT_%SCCNAM = .TRUE.
                             IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                         END IF
-		    ELSE
-			WRITE( MESG, 94010 )
+                    ELSE
+                        WRITE( MESG, 94010 )
      &                     'WARNING: BY SCC10 instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
-		    END IF
+                    END IF
                
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
-		    IF( .NOT. AFLAG ) THEN
+                    IF( .NOT. AFLAG ) THEN
                         RPT_%BYSCC   = .TRUE.
                         RPT_%SCCRES  = 10
                         IF ( CATEGORY .EQ. 'POINT' ) RPT_%BYSIC = .TRUE.
-		    END IF
+                    END IF
                     IF( SEGMENT( 3 ) .EQ. 'NAME' .OR.
      &                  SEGMENT( 4 ) .EQ. 'NAME' ) THEN
                         IF( CATEGORY .EQ. 'POINT' ) THEN
@@ -866,20 +867,20 @@ C.............  BY options affecting inputs needed
      &                  RPT_%STKPARM = .TRUE.
 
                 CASE( 'SPCCODE' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                         PSFLAG = .TRUE.
                         RPT_%BYSPC = .TRUE.
                         RPT_%SPCPOL = SEGMENT( 3 )
-		    ELSE
-			WRITE( MESG, 94010 )
+                    ELSE
+                        WRITE( MESG, 94010 )
      &                     'WARNING: BY SPCCODE instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
-		    END IF
+                    END IF
 
                 CASE( 'SRGCODE' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                         IF( CATEGORY .NE. 'POINT' ) THEN
                             GSFLAG = .TRUE.
                             RPT_%BYSRG = .TRUE.
@@ -892,56 +893,56 @@ C.............  BY options affecting inputs needed
                             CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
                         END IF
-		    ELSE
-		        WRITE( MESG, 94010 )
+                    ELSE
+                        WRITE( MESG, 94010 )
      &                     'WARNING: BY SRGCODE instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'then ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
-		    END IF
+                    END IF
 
-		CASE( 'STACK' )
-		    RPT_%BYSTACK = .TRUE.
+                CASE( 'STACK' )
+                    RPT_%BYSTACK = .TRUE.
                     RPT_%BYPLANT = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'STACKPARM' ) THEN
                         RPT_%STKPARM = .TRUE.
                     END IF
 
                 CASE( 'MONCODE' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                         TSFLAG = .TRUE.
                         RPT_%BYMON = .TRUE.
-		    ELSE
-			WRITE( MESG, 94010 )
+                    ELSE
+                        WRITE( MESG, 94010 )
      &                     'WARNING: BY MONCODE instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
-		    END IF
+                    END IF
 
                 CASE( 'WEKCODE' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                         TSFLAG = .TRUE.
                         RPT_%BYWEK = .TRUE.
-		    ELSE
-			WRITE( MESG, 94010 )
+                    ELSE
+                        WRITE( MESG, 94010 )
      &                     'WARNING: BY WEKCODE instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
-		    END IF
+                    END IF
 
                 CASE( 'DIUCODE' )
-		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
                         TSFLAG = .TRUE.
                         RPT_%BYDIU = .TRUE.
-		    ELSE
-			WRITE( MESG, 94010 )
+                    ELSE
+                        WRITE( MESG, 94010 )
      &                     'WARNING: BY DIUCODE instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
-		    END IF
+                    END IF
 
                 CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE
@@ -951,7 +952,7 @@ C.............  BY options affecting inputs needed
 C.............  Setting for the use of layer fractions
             CASE( 'LAYFRAC' )
 
-		IF( .NOT. RPT_%USEASCELEV ) THEN
+                IF( .NOT. RPT_%USEASCELEV ) THEN
 
                     IF( CATEGORY .EQ. 'POINT' ) THEN
                         LFLAG = .TRUE.
@@ -963,15 +964,15 @@ C.............  Setting for the use of layer fractions
 
                     END IF
 
-		ELSE
+                ELSE
 
-		    WRITE( MESG, 94010 )
+                    WRITE( MESG, 94010 )
      &                 'WARNING: LAYFRAC instruction at ' //
      &                 'line', IREC, 'is not allowed with ' //
      &                 'the ASCIIELEV instruction.'
                     CALL M3MSG2( MESG )
 
-		END IF
+                END IF
 
 C.............  Setting for the normalize instruction
             CASE( 'NORMALIZE' )
@@ -1007,10 +1008,10 @@ C.............  SELECT options affecting inputs needed
                 CASE( 'ELEVATED' )
 
                     IF( CATEGORY .EQ. 'POINT' ) THEN
-                	RPT_%ELEVSTAT = ELEVOUT3
-                	RPT_%BYELEV = .TRUE.
+                        RPT_%ELEVSTAT = ELEVOUT3
+                        RPT_%BYELEV = .TRUE.
 
-                	IF( SEGMENT( 3 ) .EQ. 'PING' ) THEN
+                        IF( SEGMENT( 3 ) .EQ. 'PING' ) THEN
                             VFLAG = .TRUE.
                             RPT_%ELEVSTAT = PINGOUT3
                         END IF
@@ -1023,8 +1024,8 @@ C.............  SELECT options affecting inputs needed
 
                 CASE( 'NOELEVATED' )
                     IF( CATEGORY .EQ. 'POINT' ) THEN
-                	RPT_%BYELEV = .TRUE.
-                	RPT_%ELEVSTAT = NOELOUT3
+                        RPT_%BYELEV = .TRUE.
+                        RPT_%ELEVSTAT = NOELOUT3
 
                     ELSE IF( FIRSTLOOP ) THEN
 

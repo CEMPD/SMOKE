@@ -119,7 +119,7 @@ C***********************************************************************
 C   begin body of subroutine WRM6INPUT
 
         IF( INITIAL ) THEN
-        	
+
 C.............  Get speed vmt directory information from the environment
             MESG = 'Path where speed vmt files for ' //
      &             'MOBILE6 will be written'
@@ -226,7 +226,7 @@ C.............  Check M6 scenario for unused commands and calendar year
      &                     FLATFLAG )
 
             IF( TEMPFLAG .OR. RHFLAG ) THEN
-            	
+
 C.................  Find current county in meteorology array
                 CTYPOS = FIND1( STR2INT(CURRCOUNTY), NCOUNTY, CTYLIST )
                 
@@ -285,8 +285,8 @@ C.............  Move to starting line for current county in SPDSUM file
             CALL GETSPDLN( SDEV, CURRCOUNTY, NLINESPD, CURRLINE )
 
             IF( CURRLINE == 0 ) THEN
-            	EFLAG = .TRUE.
-            	
+                EFLAG = .TRUE.
+
                 WRITE( MESG, 93000 ) 'ERROR: Could not find county ' 
      &                 // CURRCOUNTY // ' in speed summary file.'
                 CALL M3MESG( MESG )
@@ -319,15 +319,15 @@ C.............  Read speeds and sources
                     NEWSCEN = .TRUE.
                 END IF
 
-                IF( NEWSCEN ) THEN               	
-                	
+                IF( NEWSCEN ) THEN
+
 C.....................  Create speed vmt file
                     SPDFILE = WRSPDVMT( PREVSPD, CURRSPD, SPDDIR, 
      &                                  SPDFLAG, ADJINV, ADJHOUR )
                     
                     IF( SPDFILE == '' ) THEN
-                    	EFLAG = .TRUE.
-                    	
+                        EFLAG = .TRUE.
+
                         WRITE( MESG,93000 ) 'ERROR: Could not create '
      &                         // 'speed vmt file: ' // CRLF() 
      &                         // BLANK5 // SPDFILE

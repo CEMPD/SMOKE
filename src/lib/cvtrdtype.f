@@ -92,7 +92,7 @@ C   begin body of function CVTRDTYPE
            END IF
        CASE DEFAULT                   
            EFLAG = .TRUE.
-            	
+ 
            WRITE( MESG, 94010 ) 'ERROR: Road type ', SMKROAD,
      &                          'is not recognized.'
            CALL M3MESG( MESG )

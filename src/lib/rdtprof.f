@@ -210,8 +210,8 @@ C                   and saturday or sunday are not available, then error
             END IF     ! End if Monthly/Weekly or Diurnal
 
             IF( EFLAG ) THEN
-        	MESG = 'Problem reading temporal profiles file.'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                MESG = 'Problem reading temporal profiles file.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ENDIF
 
         END IF   !  End if uniform profiles or not
@@ -389,8 +389,8 @@ C............  Monthly profiles
             END SELECT
 
             IF( EFLAG ) THEN
-        	MESG = 'Problem reading temporal profiles file.'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                MESG = 'Problem reading temporal profiles file.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
         END IF  ! End of uniform profiles or not
@@ -453,28 +453,28 @@ C.............  Head of counting read loop
 
 C.................  Read line of profile.  Use END in case the profile type
 C                   requested is not in the file - such as weekend
-        	READ( FDEV, 93000, END=111, IOSTAT=IOS ) LINE
-        	IREC = IREC + 1
+                READ( FDEV, 93000, END=111, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
 
 C.................  Check read error status
-        	IF( IOS .GT. 0 ) THEN
+                IF( IOS .GT. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'I/O error', IOS, 
      &                     'reading TEMPORAL PROFILE file at line', IREC
  
                     CALL M3MESG( MESG )
                     CYCLE
-        	ENDIF
+                END IF
 
 C.................  Scan line for profile type (e.g., /MONTHLY/)
-        	IF( .NOT. FOUND ) THEN
+                IF( .NOT. FOUND ) THEN
                     J = INDEX( LINE, PTYPE( 1:L ) )
                     IF( J .GT. 0 ) FOUND = .TRUE.
                     NSKIP = IREC
 
 C.................  Count records of input profile type, and look of end of 
 C                   section
-        	ELSE
+                ELSE
 
                     K = INDEX( LINE, '/END/' )
 
@@ -482,7 +482,7 @@ C                   section
 
                     I = I + 1
 
-        	ENDIF
+                END IF
 
             END DO   ! End of first read though to determine memory needs
 
@@ -539,43 +539,43 @@ C.............  Read unsorted entries of the requested profile type
             IREC = NSKIP
             DO I = 1, NPROF
 
-        	READ( FDEV, 93000, IOSTAT=IOS ) LINE
-        	IREC = IREC + 1
+                READ( FDEV, 93000, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
 
-        	IF( IOS .GT. 0 ) THEN
+                IF( IOS .GT. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'I/O error', IOS, 
      &                     'reading TEMPORAL PROFILE file at line', IREC
 
                     CALL M3MESG( MESG )
                     CYCLE
-        	END IF
+                END IF
 
-        	CODEA( I ) = STR2INT( LINE( 1:5 ) )
-        	INDXA( I ) = I
+                CODEA( I ) = STR2INT( LINE( 1:5 ) )
+                INDXA( I ) = I
 
 C.................  Convert columns from ASCII to integer in groups of 4
-        	J    = 6
-        	K    = 9	!  j:k spans 4 characters
-        	ISUM = 0
-        	DO N = 1, NFAC
+                J    = 6
+                K    = 9         !  j:k spans 4 characters
+                ISUM = 0
+                DO N = 1, NFAC
                     WT( N ) = STR2INT( LINE( J:K ) )
                     J       = J + 4
                     K       = K + 4
-        	END DO
+                END DO
 
 C.................  Final field is 1-character wider than others
-        	WT( NFAC + 1 ) = STR2INT( LINE( J:K+1 ) )
+                WT( NFAC + 1 ) = STR2INT( LINE( J:K+1 ) )
 
-        	IF ( WT( NFAC+1 ) .NE. 0 ) THEN
+                IF ( WT( NFAC+1 ) .NE. 0 ) THEN
                     DIV = 1.0 / FLOAT( WT( NFAC+1 ) )
-        	ELSE
+                ELSE
                     DIV = 0.0
-        	END IF
+                END IF
 
-        	DO N = 1, NFAC
+                DO N = 1, NFAC
                     PFACA( N,I ) = DIV * FLOAT( WT( N ) )
-        	END DO
+                END DO
 
             END DO
 

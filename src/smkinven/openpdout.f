@@ -131,18 +131,18 @@ C.........  Define hour-specific emissions, if any
 
 C............. If outputs are profiles instead of data values
             IF( PFLAG ) THEN
-        	UNITS3D( J ) = 'n/a'
-        	VDESC3D( J ) = TYPNAM // '-specific ' // 
+                UNITS3D( J ) = 'n/a'
+                VDESC3D( J ) = TYPNAM // '-specific ' // 
      &                             VBUF( 1:L ) // ' diurnal profile'
 
 C............. If outputs are data values...
             ELSE
-        	UNITS3D( J ) = 'ton/' // TYPNAM
-        	VDESC3D( J ) = TYPNAM // '-specific ' //
+                UNITS3D( J ) = 'ton/' // TYPNAM
+                VDESC3D( J ) = TYPNAM // '-specific ' //
      &                             VBUF( 1:L ) // ' data'
             END IF
 
-   	END DO
+        END DO
 
 C.........  Define hour-specific special data values, if any
         K = 0
@@ -152,10 +152,10 @@ C.........  Define hour-specific special data values, if any
                 J = J + 1
                 VNAME3D( J ) = SPDATNAM( V )
                 VTYPE3D( J ) = M3REAL
-        	UNITS3D( J ) = SPDATUNT( V )
+                UNITS3D( J ) = SPDATUNT( V )
 
                 L = LEN_TRIM( SPDATDSC( V ) )
-        	VDESC3D( J ) = TYPNAM // '-specific ' //
+                VDESC3D( J ) = TYPNAM // '-specific ' //
      &                         SPDATDSC( V )( 1:L ) // ' data'
 
             END IF

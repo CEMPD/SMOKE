@@ -112,7 +112,7 @@ C***********************************************************************
 C   Begin body of subroutine RDSRG
 
         IREC    = 0
-	J       = 0
+        J       = 0
         NSRGREC = 0
 
 C......... Determine the number surrogate file entries
@@ -120,7 +120,7 @@ C......... Determine the number surrogate file entries
         REWIND( FDEV )
 
         SELECT CASE( SRGFMT )
-	
+
         CASE( 'MODELS3' )
 
             HFLAG = .FALSE.
@@ -190,10 +190,10 @@ C.........  Create message fields for errors
 C.........  Fill surrogate arrays
 
         REWIND( FDEV )
-	IREC    = 0
+        IREC    = 0
 
         SELECT CASE( SRGFMT )
-	
+
         CASE( 'MODELS3' )
 
             HFLAG = .FALSE.
@@ -474,37 +474,37 @@ C           less than or equal to 1.
 
 C.................  Check if county total surrogates greater than 1
                 IF( SRGCSUM( K,I ) .GT. 1.001 ) THEN
-		
+
 C.....................  If first problem on this line
-		    IF( .NOT. GFLAG ) THEN
-                    	WRITE( MESG,94030 ) 'WARNING: County ' //
+                    IF( .NOT. GFLAG ) THEN
+                        WRITE( MESG,94030 ) 'WARNING: County ' //
      &                    'surrogate total greater than 1. for '//
      &                    'county' // CRLF() // BLANK10, SRGFIPS( I ), 
      &                    ', SSC(', SRGLIST( K ), '):', SRGCSUM( K,I )
-		    	GFLAG = .TRUE.
-    	    	    	CNTCHK = CNTCHK + 1
-			
+                        GFLAG = .TRUE.
+                        CNTCHK = CNTCHK + 1
+
 C.....................  If multiple problems on this line, but fewer than
 C                       the MESG length will permit, add to message
-		    ELSE IF( CNTCHK .LE. 27 ) THEN
-		    	L = LEN_TRIM( MESG )
-		        WRITE( MESG,94031 ) MESG( 1:L )// ', SSC(', 
+                    ELSE IF( CNTCHK .LE. 27 ) THEN
+                        L = LEN_TRIM( MESG )
+                        WRITE( MESG,94031 ) MESG( 1:L )// ', SSC(', 
      &                         SRGLIST( K ), '):', SRGCSUM( K,I )
-    	    	    	CNTCHK = CNTCHK + 1
-			
-    	    	    END IF
-		    
+                        CNTCHK = CNTCHK + 1
+
+                    END IF
+    
                 END IF
 
 C.................  Renormalize all surrogates with totals > 1
-    	    	IF( SRGCSUM( K,I ) .GT. 1. ) THEN
+                IF( SRGCSUM( K,I ) .GT. 1. ) THEN
                     RFLAG = .TRUE.  ! Set to give global warning
                     DO C = 1, NCELLS( I )
                         SRGFRAC( K,C,I ) = SRGFRAC( K,C,I ) /
      &                                     SRGCSUM( K,I )
                     END DO
-    	    	END IF
-		
+                END IF
+
             END DO
 
 C.............  Give a warning message for significant counties

@@ -51,13 +51,13 @@ C.............  Read stack splits file
                 IREC = IREC + 1
 
 C.................  Check read error status
-        	IF( IOS .GT. 0 ) THEN
+                IF( IOS .GT. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'I/O error', IOS, 
      &                 'reading stack splits file at line', IREC
                     CALL M3MESG( MESG )
                     CYCLE
-        	END IF
+                END IF
 
 C.................  Store contents of splits file entry
                 SPTINDX( I ) = I

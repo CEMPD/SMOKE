@@ -49,8 +49,8 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL        TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*)   INFILE           ! Name of file being read	
-        CHARACTER(*)   OUTFILE          ! Name of file being written	
+        CHARACTER(*)   INFILE           ! Name of file being read
+        CHARACTER(*)   OUTFILE          ! Name of file being written
         CHARACTER(*)   VNAME            ! Variable name being read/written
         INTEGER        LAYSVAL          ! layer number or value of ALLAYS3
         INTEGER        JDATE            ! Julian date being read/written

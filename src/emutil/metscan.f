@@ -220,8 +220,8 @@ C.........  Initialize freeze range depending on hemisphere specified
         END IF
 
 C.........  Loop through time steps of Met data
-	JDATE = SDATE
-	JTIME = STIME
+        JDATE = SDATE
+        JTIME = STIME
         DO T = 1, NSTEPS
 
 C.............  Set day index

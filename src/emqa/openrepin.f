@@ -90,7 +90,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: ENAME  ! name for I/O API inven input
         CHARACTER(*), INTENT(OUT) :: ANAME  ! name for ASCII inven input 
-	CHARACTER(*), INTENT(OUT) :: CUNAME ! multiplicative control matrix name
+        CHARACTER(*), INTENT(OUT) :: CUNAME ! multiplicative control matrix name
         CHARACTER(*), INTENT(OUT) :: GNAME  ! gridding matrix name
         CHARACTER(*), INTENT(OUT) :: LNAME  ! layer fractions file name
         CHARACTER(*), INTENT(OUT) :: PRNAME ! projection matrix name
@@ -106,7 +106,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
         INTEGER     , INTENT(OUT) :: NIDEV  ! unit no.: SIC descriptions
-	INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
+        INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
 
 C.........  Temporary array for speciation variable names
         CHARACTER(IODLEN3), ALLOCATABLE :: SLVNAMS( : )
@@ -122,17 +122,17 @@ C.........  Other local variables
         INTEGER         I, J, L, L1, L2, N, V       ! counters and indices
 
         INTEGER         IOS           ! tmp I/O status
-	INTEGER		ISD           ! start time of ASCII elevated file
-	INTEGER		IED	      ! end time of ASCII elevated file
+        INTEGER         ISD           ! start time of ASCII elevated file
+        INTEGER         IED           ! end time of ASCII elevated file
         INTEGER         TSTEP_T       ! unused time step from environment
 
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
         LOGICAL      :: TIMEFLAG = .FALSE.  ! true: time info already init
 
         CHARACTER(16)   NAMBUF       ! tmp file name buffer
-	CHARACTER(16)   UNITS        ! units of ASCII elevated file
+        CHARACTER(16)   UNITS        ! units of ASCII elevated file
         CHARACTER(256)  MESG         ! message buffer
-	CHARACTER(300)  LINE         ! tmp line buffer
+        CHARACTER(300)  LINE         ! tmp line buffer
 
         CHARACTER(IOULEN3) GRDENV      ! gridded output units from envrmt
 
@@ -141,7 +141,7 @@ C.........  Other local variables
 C***********************************************************************
 C   begin body of subroutine OPENREPIN
 
-	IF( .NOT. AFLAG ) THEN
+        IF( .NOT. AFLAG ) THEN
 C.........  Get inventory file names given source category
             CALL GETINAME( CATEGORY, ENAME, ANAME )
 
@@ -172,25 +172,25 @@ C           specific data values.  MXINDAT might get larger than needed.
 C.........  Determine the year and projection status of the inventory
 c           CALL CHECK_INVYEAR( ENAME, APRJFLAG, FDESC3D )
 
-	ELSE
-	    NCHARS = 3
-	    JSCC = 0
-	    JSTACK = 3
+        ELSE
+            NCHARS = 3
+            JSCC = 0
+            JSTACK = 3
 
-	    ALLOCATE( SC_BEGP( NCHARS ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'SC_BEGP', PROGNAME )
-	    ALLOCATE( SC_ENDP( NCHARS ), STAT=IOS )
+            ALLOCATE( SC_BEGP( NCHARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SC_BEGP', PROGNAME )
+            ALLOCATE( SC_ENDP( NCHARS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SC_ENDP', PROGNAME )
 
-	    PLTIDX = 2
-	    MXCHRS = MXPTCHR3
+            PLTIDX = 2
+            MXCHRS = MXPTCHR3
 
-	    DO I = 1, NCHARS
-		SC_BEGP( I ) = PTBEGL3( I )
-		SC_ENDP( I ) = PTENDL3( I )
-	    END DO
+            DO I = 1, NCHARS
+                SC_BEGP( I ) = PTBEGL3( I )
+                SC_ENDP( I ) = PTENDL3( I )
+            END DO
 
-	END IF
+        END IF
 
 C.........  For temporal inputs, prompt for hourly file
         IF( TFLAG ) THEN
@@ -341,7 +341,7 @@ C.................  Check the dscriptions of variables
 C.............  Otherwise, set number of speciation variables
             ELSE
 
-        	NSVARS  = NVARSET
+                NSVARS  = NVARSET
 
             END IF 
 
@@ -532,47 +532,47 @@ C.........  Get SIC descriptions, if needed
         END IF
 
 C.........  Open ASCII elevation file output by SMKMERGE, if needed
-	IF( AFLAG ) THEN
+        IF( AFLAG ) THEN
 
-	    CALL ENVSTR( 'MRG_GRDOUT_UNIT', ' ', ' ', GRDENV, IOS)
+            CALL ENVSTR( 'MRG_GRDOUT_UNIT', ' ', ' ', GRDENV, IOS)
 
-	    IF( GRDENV( 1:1 ) .EQ. 'm' ) THEN
+            IF( GRDENV( 1:1 ) .EQ. 'm' ) THEN
 
-	        ADEV = PROMPTFFILE(
+                ADEV = PROMPTFFILE(
      &              'Enter name for ASCII ELEVATED SOURCES file', 
      &              .TRUE., .TRUE., 'ELEVTS_L', PROGNAME )
 
-	    ELSE
+            ELSE
 
-		ADEV = PROMPTFFILE(
+                ADEV = PROMPTFFILE(
      &              'Enter name for ASCII ELEVATED SOURCES file',
      &              .TRUE., .TRUE., 'ELEVTS_S', PROGNAME )
 
-	    END IF
+            END IF
 
 C.........  Read ASCII elevated file
             MESG = 'Reading ASCII elevated file...'
             CALL M3MSG2( MESG )
 
-	    ASCREC = 0 
+            ASCREC = 0 
 
 C............  Read in units
-	    ASCREC = ASCREC + 1
-	    READ( ADEV, '(10X,A)') UNITS
+            ASCREC = ASCREC + 1
+            READ( ADEV, '(10X,A)') UNITS
 
 C............  Skip header lines
             DO I = 1, 2
-		ASCREC = ASCREC + 1
+                ASCREC = ASCREC + 1
                 READ( ADEV, '(A)' ) LINE
             END DO
 
 C.............  Get number of species and point stacks from file
-	    ASCREC = ASCREC + 1
+            ASCREC = ASCREC + 1
             READ( ADEV, '(I10,10X,I10)' ) ASCDATA, NSRC
 
             NIPPA = ASCDATA
             NSVARS = NIPPA
-	    MXINDAT = MAX( NIPPA, MXINDAT )
+            MXINDAT = MAX( NIPPA, MXINDAT )
 
             ALLOCATE( EANAM( NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
@@ -582,27 +582,27 @@ C.............  Get number of species and point stacks from file
             EAUNIT = TRIM( UNITS )
 
             DO I = 1, 4
-		ASCREC = ASCREC + 1
+                ASCREC = ASCREC + 1
                 READ( ADEV, '(A)' ) LINE
             END DO
 
 C..............  Read in list of species
             DO I = 1, ASCDATA
-		ASCREC = ASCREC + 1
+                ASCREC = ASCREC + 1
                 READ( ADEV, '(A)' ) LINE
                 EANAM( I ) = TRIM( LINE )
             END DO
 
 C..............  Read in start and end dates and times
-	    ASCREC = ASCREC + 1
-	    READ( ADEV, '(4I10)' ) ISD, STIME, IED, ETIME
-	    SDATE = ISD + 1900000
-	    EDATE = IED + 1900000
-	    BYEAR = INT( SDATE/1000 )
-	    TSTEP = 10000
-	    NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME )/3600
+            ASCREC = ASCREC + 1
+            READ( ADEV, '(4I10)' ) ISD, STIME, IED, ETIME
+            SDATE = ISD + 1900000
+            EDATE = IED + 1900000
+            BYEAR = INT( SDATE/1000 )
+            TSTEP = 10000
+            NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME )/3600
 
-	END IF
+        END IF
 
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort

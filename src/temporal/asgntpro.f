@@ -262,7 +262,7 @@ C.................  Set category-specific source characteristic combinations
 
                 CASE ( 'MOBILE' )
 C CHANGED DUE TO IRIX BUG
-c              	     WRITE( CRWT, RWTFMT ) IRCLAS( S )
+c                    WRITE( CRWT, RWTFMT ) IRCLAS( S )
 c                    WRITE( CVID, VIDFMT ) IVTYPE( S )
                     WRITE( CRWT, '(I3.3)' ) IRCLAS( S )
                     WRITE( CVID, '(I4.4)' ) IVTYPE( S )

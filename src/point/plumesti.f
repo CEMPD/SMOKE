@@ -14,10 +14,10 @@ C      and Stable Surroundings. ATMOS. ENVIRON. 6, 507 - 510. (Jul 72).
 C
 C  REVISION  HISTORY:
 C       Copied 8/99 from plumris.F v4.2 in SMOKE prototype
-C	Adapted 10/95 by Carlie J. Coats, Jr., from UAM/EPS BEH072().
+C       Adapted 10/95 by Carlie J. Coats, Jr., from UAM/EPS BEH072().
 C       Discontinuity in EPS DISTF calculation at F=55 resolved so
-C	that DISTF --> 595.0  as  F --> 55.0 from either side.
-C	Uses standard conditions temperature T=293 deg K, 
+C       that DISTF --> 595.0  as  F --> 55.0 from either side.
+C       Uses standard conditions temperature T=293 deg K, 
 C                                pressure    P=960 mb, 
 C                                wind speed  U=  2 m/s,
 C                       Pasquill stability KST=  2
@@ -51,17 +51,17 @@ C...........   INCLUDES:
 
 C...........   ARGUMENTS and their descriptions:
 
-        REAL      HS	!  physical stack height (m)
-        REAL      TS	!  stack gas temperature (deg k)
-        REAL      VS	!  stack gas exit velocity (m/sec)
-        REAL      DS	!  inside stack diameter (m)
+        REAL      HS    !  physical stack height (m)
+        REAL      TS    !  stack gas temperature (deg k)
+        REAL      VS    !  stack gas exit velocity (m/sec)
+        REAL      DS    !  inside stack diameter (m)
 
 C...........   PARAMETERS and their descriptions:
 
-        REAL        T		!  default ambient air temperature (deg k)
-        REAL        P		!  default ambient air pressure (mb)
-        REAL        U		!  default wind speed (m/sec)
-        REAL        D3		!  one-third
+        REAL        T           !  default ambient air temperature (deg k)
+        REAL        P           !  default ambient air pressure (mb)
+        REAL        U           !  default wind speed (m/sec)
+        REAL        D3          !  one-third
 
         PARAMETER ( T    = 293.0 ,
      &              P    = 960.0 ,
@@ -70,9 +70,9 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   LOCAL VARIABLES:
 
-        REAL      F	! buoyancy flux (m**4/sec**3)
-C       REAL      DELHF	! final plume rise (m)
-C       REAL      DISTF	! distance of final plume rise from source (m)
+        REAL      F     ! buoyancy flux (m**4/sec**3)
+C       REAL      DELHF ! final plume rise (m)
+C       REAL      DISTF ! distance of final plume rise from source (m)
 
 
 C***********************************************************************

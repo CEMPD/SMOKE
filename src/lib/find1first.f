@@ -62,8 +62,8 @@ C.........  If the key is found, search backward until the first entry is reache
                 IF( LIST( INDEX ) /= KEY ) EXIT
                 INDEX = INDEX - 1
             END DO
-            	
-            INDEX = INDEX + 1	
+ 
+            INDEX = INDEX + 1
         END IF
 
         FIND1FIRST = INDEX
@@ -138,8 +138,8 @@ C.........  If the key is found, search backward until the first entry is reache
                 IF( LIST( INDEX ) /= KEY ) EXIT
                 INDEX = INDEX - 1
             END DO
-            	
-            INDEX = INDEX + 1	
+ 
+            INDEX = INDEX + 1
         END IF
 
         FINDR1FIRST = INDEX
@@ -214,8 +214,8 @@ C.........  If the key is found, search backward until the first entry is reache
                 IF( LIST( INDEX ) /= KEY ) EXIT
                 INDEX = INDEX - 1
             END DO
-            	
-            INDEX = INDEX + 1	
+ 
+            INDEX = INDEX + 1
         END IF
 
         FINDCFIRST = INDEX

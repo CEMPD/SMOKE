@@ -235,7 +235,7 @@ C.............  Set the number of fields, depending on day- or hour-specific
             IF( DAYFLAG ) THEN
                 NFIELD = 1
             ELSE
-        	NFIELD  = 24
+                NFIELD  = 24
             END IF
             NFM1   = NFIELD - 1
 
@@ -438,18 +438,18 @@ C               iteration
 C.............  Set column locations for reading data file...
 C.............  Day-specific from an hourly file - read totals
             IF( DAYFLAG .AND. SFLAG ) THEN
-        	L1 = 233 
-        	L2 = 240
+                L1 = 233 
+                L2 = 240
                 WD = 8
 C.............  Day-specific from a day-specific file
             ELSE IF( DAYFLAG ) THEN
-        	L1 = 55 
-        	L2 = 72 
+                L1 = 55 
+                L2 = 72 
                 WD = 18
 C.............  Hourly file
             ELSE
-        	L1 = 66 
-        	L2 = 72 
+                L1 = 66 
+                L2 = 72 
                 WD = 7
             END IF
 

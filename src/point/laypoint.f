@@ -948,8 +948,8 @@ C.............  Loop through sources and compute plume rise
                 TK = STKTK( S )
                 VE = STKVE( S )
                 FL = 0.          ! initialize flow
-	        XL = XLOCA( S )
-	        YL = YLOCA( S )
+                XL = XLOCA( S )
+                YL = YLOCA( S )
 
 C.................  Find source in index list if hourly data or used
                 IF ( HFLAG ) THEN

@@ -322,10 +322,10 @@ C               and only the first hour of data will be read
                     P2 = P2 + FIXVMTWD
 
                     IF( VMIX( V ) .LT. 0.0 ) THEN
-                	EFLAG = .TRUE.
+                        EFLAG = .TRUE.
                         K = NPRECOLF + J
                         CALL BAD_VMIX( IREC, K )
-                	CYCLE
+                        CYCLE
                     END IF
 
                 END DO
@@ -341,7 +341,7 @@ C.................  Set source characteristics
                 CLNK = SEGMENT( 3 )   ! link ID
 
 C.................  Store VMT mix value and check for bad value
-        	DO J = 1, NV
+                DO J = 1, NV
                     K = NPRECOLL + J
                     V = VIDX( J )
                     IF( V .LE. 0 ) CYCLE
@@ -349,12 +349,12 @@ C.................  Store VMT mix value and check for bad value
                     VMIX( V ) = STR2REAL( SEGMENT( K ) )
 
                     IF( VMIX( V ) .LT. 0.0 ) THEN
-                	EFLAG = .TRUE.
+                        EFLAG = .TRUE.
                         CALL BAD_VMIX( IREC, K )
-                	CYCLE
+                        CYCLE
                     END IF
 
-        	END DO
+                END DO
 
             END IF
 

@@ -12,13 +12,13 @@ C.............  Scan the groups file to determine the number of PinG groups
                 IREC = IREC + 1
 
 C.................  Check read error status
-        	IF( IOS .GT. 0 ) THEN
+                IF( IOS .GT. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'I/O error', IOS, 
      &                 'reading stack groups file at line', IREC
                     CALL M3MESG( MESG )
                     CYCLE
-        	END IF
+                END IF
 
                 IF( CSWITCH1 .NE. ' ' ) NGROUP = NGROUP + 1
 
@@ -36,7 +36,7 @@ C.............  Allocate memory for stack groups based on the number of lines
             IF( CFLAG ) THEN
                 MESG = 'NOTE: Converting stack parameters from ' //
      &                 'English to metric units'
-        	CALL M3MSG2( MESG )
+                CALL M3MSG2( MESG )
             END IF
 
 C.............  Read stack groups file
@@ -49,13 +49,13 @@ C.............  Read stack groups file
                 IREC = IREC + 1
 
 C.................  Check read error status
-        	IF( IOS .GT. 0 ) THEN
+                IF( IOS .GT. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'I/O error', IOS, 
      &                 'reading stack groups file at line', IREC
                     CALL M3MESG( MESG )
                     CYCLE
-        	END IF
+                END IF
 
 C.................  Skip entry if not a plume-in-grid source
                 IF( CSWITCH1 .EQ. ' ' ) CYCLE

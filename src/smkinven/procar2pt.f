@@ -258,7 +258,7 @@ C.........  Loop through original sources
 C.............  Check if current source is to be processed
             IF( AR2PTTBL( S ) /= 0 ) THEN
 
-C.................  Set area-to-point table and row for current source                	
+C.................  Set area-to-point table and row for current source
                 TBLE = AR2PTTBL( S )
                 ROW  = AR2PTIDX( S )
 

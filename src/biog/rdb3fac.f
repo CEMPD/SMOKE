@@ -6,12 +6,12 @@ C***********************************************************************
 C  subroutine body starts at line XX 
 C
 C  DESCRIPTION:
-C	Reads in the BEIS3 emissions factors from the BFAC file. 
+C       Reads in the BEIS3 emissions factors from the BFAC file. 
 C
 C  PRECONDITIONS REQUIRED:
 C
 C  REVISION  HISTORY:
-C	03/01 protoype by J. Vukovich
+C       03/01 protoype by J. Vukovich
 C
 C***********************************************************************
 C

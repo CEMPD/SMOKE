@@ -52,7 +52,7 @@ C...........   EXTERNAL FUNCTIONS:
         LOGICAL       CHKREAL
         CHARACTER(2)  CRLF
         INTEGER       INDEX1
-	INTEGER       STR2INT
+        INTEGER       STR2INT
         REAL          STR2REAL
 
         EXTERNAL      CHKREAL, CRLF, INDEX1, STR2INT, STR2REAL

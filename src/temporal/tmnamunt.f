@@ -117,7 +117,7 @@ C.................  Check if pollutant is output hydrocarbon
                 IF( OUTPUTHC /= ' ' ) THEN
                     J = INDEX( CURRVNAME, TRIM( OUTPUTHC ) )
                     IF( J > 0 ) THEN
-                    	FIXDESC = .TRUE.
+                        FIXDESC = .TRUE.
                         CURRVNAME = CURRVNAME( 1:J-1 ) // INPUTHC
                     END IF
                 END IF

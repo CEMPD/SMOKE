@@ -36,7 +36,7 @@ C     surface pressure PRES
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       m3io
-C	CZANGLE, DAYMON, CLDATEN
+C       CZANGLE, DAYMON, CLDATEN
 C
 C  REVISION  HISTORY:
 C     11/99: by Jeff Vukovich from hrbio.F version 4.4 SMOKE prototype

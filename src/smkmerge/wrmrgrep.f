@@ -843,7 +843,7 @@ C....................  Write units for columns
                     WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT(J), J=1,NDIM )
 
 C.....................  Write line
-       	            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
+                    WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
                 END IF
 

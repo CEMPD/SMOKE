@@ -68,18 +68,18 @@
         REAL   , ALLOCATABLE, PUBLIC :: MASSFACT( : ) ! mass-based spec factors
 
         ! speciation profile codes
-	CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: INPRF( : )
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: INPRF( : )
   
         ! names of species
-	CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPECID( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPECID( : )
 
 !.........  Table of species names per inventory pollutant
 
-	CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPCNAMES( :,: )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPCNAMES( :,: )
 
 !.........  Table of mole-based units per inventory pollutant for all species
 
-	CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: MOLUNITS( :,: )
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: MOLUNITS( :,: )
 
 !.........  Header definitions for NONHAP<pollutants>
         CHARACTER(5), PARAMETER :: HDREND   = '/END/'   ! end of header

@@ -309,10 +309,10 @@ C................  If source is in the domain, get cell number and store
 
 C.....................  Check that the maximum number of sources per cell is ok
                     IF ( J .LE. NMATX ) THEN
-                	IS ( J ) = S
+                        IS ( J ) = S
                         IC ( J ) = C
                         NCL( J ) = N
-                	CS ( J ) = 1.0
+                        CS ( J ) = 1.0
                     END IF
 
 C................  Otherwise, mark source as being outside domain

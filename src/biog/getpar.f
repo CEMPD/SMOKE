@@ -56,7 +56,7 @@ C...........   PARAMETERS and their descriptions:
         REAL, PARAMETER :: WATT2UMOL = 4.6  ! convert W/m^2 to umol/m^2-s (4.6)
 
 C      
-        REAL RATIO		! transmission fraction for total radiation
+        REAL RATIO              ! transmission fraction for total radiation
         REAL OT                   ! optical thickness
         REAL RDVIS                ! possible direct visible beam (W/m^2)
         REAL RFVIS              ! possible visible diffuse (W/m^2)
@@ -84,7 +84,7 @@ C............ or if solar radiation is zero
              PARDIF = 0.
              RETURN
         ENDIF
-	   
+  
 C............ Compute clear sky (aka potential) radiation terms
 
         OT    = PRES / 1013.25 / COS(ZEN)              !Atmospheric Optical thickness
@@ -112,7 +112,7 @@ C............ Compute fraction of visible that is direct beam
 
 C............ Compute PAR (direct beam and diffuse) in umol/m2-sec
 
-        PARDB  = RSOLAR * FVIS * FVB * WATT2UMOL	
+        PARDB  = RSOLAR * FVIS * FVB * WATT2UMOL
         PARDIF = RSOLAR * FVIS * FVD * WATT2UMOL      
 
 

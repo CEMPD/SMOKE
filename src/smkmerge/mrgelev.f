@@ -168,8 +168,8 @@ C............. If multiplicative controls & speciation
                 DO S = 1, NSRC
 
 C.....................  Skip if source is not elevated and not PinG
-    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
-     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
+                    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &                  PINGGIDX( S ) .EQ. 0       ) CYCLE
 
                     VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) ! Spec value
                     MULT = VAL * PCUMATX( S,KEY2 )              ! w/ control
@@ -194,8 +194,8 @@ C............. If multiplicative controls only
 
                 DO S = 1, NSRC
 
-    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
-     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
+                    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &                  PINGGIDX( S ) .EQ. 0       ) CYCLE
 
                     VAL = PEMSRC( S,KEY1 ) * PCUMATX( S,KEY2 )
 
@@ -214,8 +214,8 @@ C.............  If speciation only
 
                 DO S = 1, NSRC
 
-    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
-     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
+                    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &                  PINGGIDX( S ) .EQ. 0       ) CYCLE
 
                     VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) 
                     VMP  = PRINFO( S,2 )
@@ -236,8 +236,8 @@ C.............  If inventory pollutant only
 
                 DO S = 1, NSRC
 
-    	    	    IF( ELEVSIDX( S ) .EQ. 0 .AND.
-     &	    	        PINGGIDX( S ) .EQ. 0       ) CYCLE
+                    IF( ELEVSIDX( S ) .EQ. 0 .AND.
+     &                  PINGGIDX( S ) .EQ. 0       ) CYCLE
 
                     VAL = PEMSRC( S,KEY1 )
 

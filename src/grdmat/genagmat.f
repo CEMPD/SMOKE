@@ -194,12 +194,12 @@ C................  If source is in the domain, get cell number and store
 
 C.....................  Check that the maximum number of sources per cell is ok
                     IF ( J .LT. MXSCEL ) THEN  ! Not .LE.
-                	J = J + 1
-                	IS ( J,C ) = S
-                	CS ( J,C ) = 1.0
+                        J = J + 1
+                        IS ( J,C ) = S
+                        CS ( J,C ) = 1.0
 C.....................  Keep track of the maximum sources per cell for err mesg
                     ELSE
-                	IF( J+1 .GT. JMAX ) JMAX = J+1
+                        IF( J+1 .GT. JMAX ) JMAX = J+1
                     END IF
 
                     NX( C ) = J
@@ -272,13 +272,13 @@ C.....................  Check that the maximum number of sources per cell is ok
 C.....................  Note that this J comparison to MXSCEL is not the typical
 C                       .LE. on purpose.
                     IF ( J .LT. MXSCEL .AND. FRAC .NE. 0. ) THEN
-                	J = J + 1
-                	IS ( J,C ) = S
-                	CS ( J,C ) = FRAC
+                        J = J + 1
+                        IS ( J,C ) = S
+                        CS ( J,C ) = FRAC
 
 C.....................  Keep track of the maximum sources per cell for err mesg
                     ELSE
-                	IF( J+1 .GT. JMAX ) JMAX = J+1
+                        IF( J+1 .GT. JMAX ) JMAX = J+1
                     END IF
 
 C.....................  Store the count of sources for current cell

@@ -87,8 +87,8 @@ C               Open appropriate files if necessary
             SELECT CASE( CURRTIME )
             
             CASE( DAILY )
-            	IF( .NOT. OPENDAY ) THEN
-            	    DAYDEV = PROMPTFFILE(
+                IF( .NOT. OPENDAY ) THEN
+                    DAYDEV = PROMPTFFILE(
      &                       'Enter logical name for DAILYGROUP file',
      &                       .FALSE., .TRUE., 'DAILYGROUP', PROGNAME )
                     OPENDAY = .TRUE.
@@ -122,16 +122,16 @@ C               Open appropriate files if necessary
      &                       'Enter logical name for EPISODEGROUP file',
      &                       .FALSE., .TRUE., 'EPISODEGROUP', PROGNAME )
                     OPENEPIS = .TRUE.
-            	END IF
-            	
-            	CURRDEV = EPISDEV
-            	
+                END IF
+ 
+                CURRDEV = EPISDEV
+ 
             END SELECT
 
 C.............  Get local-to-arterial setting for this ref. county
             LASAFLAG = MVREFSORT( I,4 )
-        	
-C.............  Check if this ref. county is not spatially averaged            	
+ 
+C.............  Check if this ref. county is not spatially averaged
             IF( MVREFSORT( I,2 ) == 1 ) THEN
 
 C.................  Loop through inv. counties using this ref. county

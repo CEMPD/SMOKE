@@ -57,13 +57,13 @@ C  file.
       
 C  First time, initialize emission factor array
       IF (INITIAL) THEN
-      	 ALLOCATE( EVPRUN ( MAXIH,4,4 ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'EVPRUN', PROGNAME )
-      	 ALLOCATE( ZMILES ( MAXIH,4   ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
-      	 ALLOCATE( ZGMHOUR( MAXIH,4   ), STAT=IOS )
-      	 CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
-      	
+         ALLOCATE( EVPRUN ( MAXIH,4,4 ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'EVPRUN', PROGNAME )
+         ALLOCATE( ZMILES ( MAXIH,4   ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
+         ALLOCATE( ZGMHOUR( MAXIH,4   ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
+ 
          EVPRUN  = 0.
          ZMILES  = 0.
          ZGMHOUR = 0.
@@ -130,7 +130,7 @@ C.....      Reinitialize arrays after last hour and facility
 
 C  If vehicle = 25, age = 0, and road type = 4, we're done, so output array
       IF (IV == 25 .AND. JDX-1 == 0 .AND. IROAD == 4) THEN
-      	 EFTYPE = IEVAP
+         EFTYPE = IEVAP
 
 C....    Check if this is a valid pollutant/process combo
          IF (M6POL2EF( EFTYPE, IP ) /= -1) THEN

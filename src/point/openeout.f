@@ -101,9 +101,9 @@ C.........  If needed, set up and open plume-in-grid i/o api output file
 C.........  Get header information from inventory file
 
             IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
-        	MESG = 'Could not get description of file "' 
+                MESG = 'Could not get description of file "' 
      &                 // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
             IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
@@ -120,8 +120,8 @@ C               the output file
      &                XORIG3D, YORIG3D, XCELL3D, YCELL3D,
      &                NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
 
-        	MESG = 'Could not get Models-3 grid description.'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )            
+                MESG = 'Could not get Models-3 grid description.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )            
             END IF            
 
 C............. Finalize i/o api header fields

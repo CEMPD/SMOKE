@@ -104,7 +104,7 @@ C.........  Determine end date based on file type and episode end
         END IF
 
         DO
-        	
+ 
 C.............  For daily files, the end date is the start date
             IF( DESC == 'daily' ) EXIT
 
@@ -123,11 +123,11 @@ C.............  For weekly files, the end date is the next Saturday
 
 C.............  For monthly files, the end date is the last day of the month            
             IF( DESC == 'monthly' ) THEN
-            	CALL DAYMON( FILE_EDATE, CURRMNTH, DUMMYDAY )
-            	IF( CURRMNTH /= PREVMNTH ) THEN
-            	    CALL NEXTIME( FILE_EDATE, DUMMYTIME, 24*10000 )
-            	    EXIT
-            	END IF
+                CALL DAYMON( FILE_EDATE, CURRMNTH, DUMMYDAY )
+                IF( CURRMNTH /= PREVMNTH ) THEN
+                    CALL NEXTIME( FILE_EDATE, DUMMYTIME, 24*10000 )
+                    EXIT
+                END IF
             END IF
 
             CALL NEXTIME( FILE_EDATE, DUMMYTIME, 24*10000 )
