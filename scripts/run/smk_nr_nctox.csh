@@ -68,6 +68,7 @@ setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 #     OUTZONE                 # see multiple-program controls, below
 #     REPORT_DEFAULTS         # see multiple-program controls, below
 #     SMK_O3SEASON_YN         # see multiple-program controls, below
+#     Date/time settings      # in Assigns file
 
 # For Smkmerge
 setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
@@ -110,7 +111,7 @@ source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 1
 setenv RUN_PART1 N
 
-## Loop through days to run Temporal
+## Loop through days to run Temporal, Smkmerge, and Smk2emis
 #
 setenv RUN_PART2 Y
 setenv RUN_PART4 Y
