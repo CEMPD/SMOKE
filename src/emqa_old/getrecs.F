@@ -118,7 +118,7 @@ C.........  Define SMAT variables
 C.........  Define GMAT variables
 
         INTEGER         NS( NGRID )
-        INTEGER         IS( NMATX )
+        INTEGER         IS( NPSRC )
  
         COMMON  / GRIDMAT / NS, IS
 
@@ -262,22 +262,43 @@ C.........  Prompt for PNTS
      &          'Enter logical name for POINT SOURCE input file >> ',
      &          FSREAD3, 'PNTS', 'GETRECS' )
 
+        IF ( .NOT. DESC3( PNAME ) ) THEN
+            CALL M3EXIT( 'GETRECS', 0, 0,
+     &                  'Could not get description of file "'
+     &                  // PNAME( 1:TRIMLEN( PNAME ) ) // '"', 2 )
+
+        ELSEIF( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  PNTS file:', NROWS3D,
+     &      'program NPSRC=', NPSRC
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
+        ENDIF
+
 C.........  Prompt for PTMP
 
         TNAME = PROMPTMFILE(
      &          'Enter logical name for POINT SOURCE file',
      &          FSREAD3, 'PTMP', 'GETRECS' )
 
-C.........  Get header information from PNTS
+C.........  Get header information from PTMP
 
         IF ( .NOT. DESC3( TNAME ) ) THEN
             CALL M3EXIT( 'GETRECS', 0, 0,
      &                  'Could not get description of file "'
      &                  // TNAME( 1:TRIMLEN( TNAME ) ) // '"', 2 )
+
+        ELSEIF( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  PTMP file:', NROWS3D,
+     &      'program NPSRC=', NPSRC
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
+        ELSE
+            JDATE = SDATE3D
+            JTIME = STIME3D
+            TSTEP = TSTEP3D
         ENDIF
-        JDATE = SDATE3D
-        JTIME = STIME3D
-        TSTEP = TSTEP3D
 
 C.........  Prompt for starting date
 
@@ -388,12 +409,40 @@ C.........  Prompt for emissions based selection
 
         ENDIF
 
-C.........  Get header information from PNTS
+C.........  Check layer fractions file dimensions, if needed
+        IF( LAYRFLAG ) THEN
+            IF ( .NOT. DESC3( LNAME ) ) THEN
+                CALL M3EXIT( 'GETRECS', 0, 0,
+     &                      'Could not get description of file "'
+     &                      // LNAME( 1:TRIMLEN( LNAME ) ) // '"', 2 )
+
+            ELSEIF( NROWS3D .NE. NPSRC ) THEN
+                WRITE( MESG, 94010 )
+     &          'Dimension mismatch.  PLAY file:', NROWS3D,
+     &          'program NPSRC=', NPSRC
+                CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+            ENDIF
+        ENDIF
+
+C.........  Get header information from PGMAT
 
         IF ( .NOT. DESC3( GNAME ) ) THEN
             CALL M3EXIT( 'GETRECS', 0, 0,
      &                  'Could not get description of file "'
      &                  // GNAME( 1:TRIMLEN( GNAME ) ) // '"', 2 )
+
+        ELSEIF( NROWS3D .NE. NGRID ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  PGMAT file:', NROWS3D,
+     &      'program NGRID=', NGRID
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
+        ELSEIF( NCOLS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  PGMAT file:', NCOLS3D,
+     &      'program NPSRC=', NPSRC
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
         END IF
 
 C.........  Read ALL variables in PNTS
@@ -630,6 +679,12 @@ C.......   Build description of how to use speciation matrix:
             CALL M3EXIT( 'GETRECS', 0, 0,
      &                   'Could not get description of file ' // SNAME,
      &                  .TRUE. )
+        ELSEIF( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  PSMAT file:', NROWS3D,
+     &      'program NPSRC=', NPSRC
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
         END IF
  
         DO  14  V = 1, NIPOL
@@ -693,7 +748,7 @@ C......... Check to make sure that the number records in cell matches GMAT info
                 WRITE( * , 92100 ) 
      &          'Warning: the number of counted records for',
      &          'cell (', XN, ',', YN,') is ', NOUT,
-     &          ' but the number in the gridding matrix is ', NUMBER 
+     &          ' but the number in the gridding matrix is ', NINCELL
             ENDIF
 
 C.............  Count up sources up to cell of interest
@@ -1075,6 +1130,6 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10 ( A, :, I10, :, 2X ) )
+94010   FORMAT( 10 ( A, :, I10, :, 1X ) )
 
         END
