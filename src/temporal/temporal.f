@@ -81,7 +81,6 @@ C.........  INCLUDES:
 
 C..........  EXTERNAL FUNCTIONS and their descriptions:
 
-        LOGICAL         CHKEMEPI    ! checks the emissions episode parameters
         LOGICAL         CHKINT
         CHARACTER*2     CRLF
         INTEGER         ENVINT
@@ -98,7 +97,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         LOGICAL         SETENVVAR
 
-        EXTERNAL    CHKEMEPI, CHKINT, CRLF, ENVINT, ENVYN, FINDC, 
+        EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, 
      &              GETDATE, GETFLINE, GETNUM, INDEX1, MMDDYY, RDTPROF, 
      &              PROMPTMFILE, SECSDIFF, STR2INT, SETENVVAR
                         
@@ -445,9 +444,6 @@ C.........  When mobile codes file is being used read mobile codes file
         IF( MFLAG ) CALL RDMVINFO( MDEV )
 
 C.........  Perform steps needed for using activities and emission factors
-C.........  NOTE - the CHRT* variables that are part of the MODXREF module 
-C           will be used by RDEFXREF and ASGNPSI and done with before these
-C           variables are again needed by RDTREF and ASGNTPRO.
 
         IF( NIACT .GT. 0 ) THEN
 
