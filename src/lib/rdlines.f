@@ -75,6 +75,9 @@ C   begin body of subroutine RDLINES
 
             READ( FDEV, 93000, END=22, IOSTAT=IOS ) LINE
             IREC = IREC + 1
+
+C.............  Skip blank lines
+            IF( LINE .EQ. ' ' ) GO TO 11
  
             L2 = LEN_TRIM( LINE )
 
