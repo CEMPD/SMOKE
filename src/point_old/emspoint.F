@@ -1248,7 +1248,7 @@ C.................  Check and set time period type (Year/day/hourly)
 
                 ELSE IF ( LINE( 114:115 ) .EQ. 'AD' ) THEN 
 
-                    TPF  = WTPRFAC              !  use week profiles
+                    TPF  = WDTPFAC              !  use week profiles
                     EMIS = DAY2YR * EMIS
 
                 ELSE IF ( LINE( 114:115 ) .EQ. 'DS' ) THEN
