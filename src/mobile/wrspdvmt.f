@@ -87,11 +87,11 @@ C.........  Write header line to file
         
 C.........  Write arrays to file
         DO I = 1, 24
-            WRITE( SDEV, 93010 ) FREEWAY, I, FREEPROF
+            WRITE( SDEV, 93010 ) M6FREEWAY, I, FREEPROF
         END DO
         	
         DO I = 1, 24
-            WRITE( SDEV, 93010 ) ARTERIAL, I, ARTPROF
+            WRITE( SDEV, 93010 ) M6ARTERIAL, I, ARTPROF
         END DO
 
 C.........  Close the file        

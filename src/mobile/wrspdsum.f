@@ -250,7 +250,7 @@ C.................  Convert facility type to road class and store
                 
 C.................  Store speed for freeways and arterials
 C                   Rounding of speeds could be added here                    
-                IF( SPDARRAY( N,3 ) /= LOCAL ) THEN
+                IF( SPDARRAY( N,3 ) /= M6LOCAL ) THEN
                     SPDARRAY( N,2 ) = SPEED( K )
                 END IF
 
@@ -291,11 +291,11 @@ C.............  Local subprogram variables
 C.............................................................................
             
 C.............  Find the start of each road type
-            STFREEWAY  = FINDR1FIRST( REAL( FREEWAY ), NUMSRC, 
+            STFREEWAY  = FINDR1FIRST( REAL( M6FREEWAY ), NUMSRC, 
      &                                SPDARRAY( :,3 ) )        	
-            STARTERIAL = FINDR1FIRST( REAL( ARTERIAL ), NUMSRC, 
+            STARTERIAL = FINDR1FIRST( REAL( M6ARTERIAL ), NUMSRC, 
      &                                SPDARRAY( :,3 ) )            
-            STLOCAL    = FINDR1FIRST( REAL( LOCAL ), NUMSRC, 
+            STLOCAL    = FINDR1FIRST( REAL( M6LOCAL ), NUMSRC, 
      &                                SPDARRAY( :,3 ) )
 
 C.............  If find comes back -1, we have no sources of that type, so set
@@ -315,38 +315,38 @@ C               starting position to next source starting position
             CURRFREE = STFREEWAY
             CURRART  = STARTERIAL
             
-            ROADTYPE = FREEWAY
+            ROADTYPE = M6FREEWAY
 
 C.............  Loop through sources for current road type and speed            
             DO            
                 
 C.................  Set index into speed array based on desired road type
 
-                IF( ROADTYPE == FREEWAY ) THEN
+                IF( ROADTYPE == M6FREEWAY ) THEN
                     K = CURRFREE
                     
 C.....................  If we're done with freeway sources, go to arterial sources                    
                     IF( K >= STARTERIAL ) THEN
-                        ROADTYPE = ARTERIAL
+                        ROADTYPE = M6ARTERIAL
                     END IF
                 END IF
                 
-                IF( ROADTYPE == ARTERIAL ) THEN
+                IF( ROADTYPE == M6ARTERIAL ) THEN
                     K = CURRART
                     
 C.....................  If we're done with arterial sources, check if we still have
 C                       freeway sources to output.  Otherwise, go to local sources
                     IF( K >= STLOCAL ) THEN
                         IF( CURRFREE >= STARTERIAL ) THEN
-                            ROADTYPE = LOCAL
+                            ROADTYPE = M6LOCAL
                         ELSE
-                            ROADTYPE = FREEWAY
+                            ROADTYPE = M6FREEWAY
                             K = CURRFREE
                         END IF
                     END IF
                 END IF
                 
-                IF( ROADTYPE == LOCAL ) THEN
+                IF( ROADTYPE == M6LOCAL ) THEN
                     K = STLOCAL
                 END IF
 
@@ -378,17 +378,17 @@ C.................  Increment correct index based on current road type and set
 C                   road type to opposite of current
                 SELECT CASE( ROADTYPE )
                 
-                CASE( FREEWAY )
+                CASE( M6FREEWAY )
                     CURRFREE = CURRFREE + NSRCSPEED
-                    ROADTYPE = ARTERIAL
+                    ROADTYPE = M6ARTERIAL
                     
-                CASE( ARTERIAL )
+                CASE( M6ARTERIAL )
                     CURRART = CURRART + NSRCSPEED
-                    ROADTYPE = FREEWAY
+                    ROADTYPE = M6FREEWAY
                     
 C.................  Since there is only one line of local sources, if the road type
 C                   is local, we're done                    
-                CASE( LOCAL )
+                CASE( M6LOCAL )
                     EXIT
                 
                 END SELECT              
@@ -429,7 +429,7 @@ C.................  Set starting and ending indices for first line
             END IF
 
 C.............  If no. sources is more than NSRCLINE, use multiple lines
-		    NLINES = ( NUMSRC - 1 ) / NSRCLINE
+	    NLINES = ( NUMSRC - 1 ) / NSRCLINE
 
 C.............  Loop through all lines except last one (to write continuation character)
             DO M = 1, NLINES

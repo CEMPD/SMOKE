@@ -233,7 +233,7 @@ C.............  Find starting line for current county in SPDSUM file
                 CYCLE
             END IF
 
-            PREVROAD = LOCAL
+            PREVROAD = M6LOCAL
 
 C.............  Read speeds and sources
             DO
@@ -241,11 +241,11 @@ C.............  Read speeds and sources
      &                          NLINESPD, LASAFLAG, CURRROAD, CURRSPD,
      &                          SRCNUM )
                 
-                IF( CURRROAD == LOCAL ) THEN
+                IF( CURRROAD == M6LOCAL ) THEN
                     CURRSPD = PREVSPD
                 END IF
                  
-                IF( CURRROAD == ARTERIAL ) THEN
+                IF( CURRROAD == M6ARTERIAL ) THEN
                     NEWSCEN = .TRUE.
                 END IF
 
@@ -253,7 +253,8 @@ C.............  Read speeds and sources
                     NEWSCEN = .TRUE.
                 END IF
 
-                IF( PREVROAD == FREEWAY .AND. CURRROAD == LOCAL ) THEN
+                IF( PREVROAD == M6FREEWAY .AND. 
+     &              CURRROAD == M6LOCAL ) THEN
                     NEWSCEN = .TRUE.
                 END IF
 
@@ -293,7 +294,7 @@ C.....................  Increment scenario number
 
                 NEWSCEN = .FALSE.
 
-                IF( CURRROAD == LOCAL ) EXIT
+                IF( CURRROAD == M6LOCAL ) EXIT
 
                 PREVROAD = CURRROAD
                 PREVSPD  = CURRSPD
