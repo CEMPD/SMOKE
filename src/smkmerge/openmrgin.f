@@ -284,14 +284,14 @@ C               and store control variable names.
             IF( AUFLAG ) THEN
                 MESG = 'Enter logical name for the AREA ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                AUNAME = PROMPTMFILE( MESG, FSREAD3, 'ACMAT', PROGNAME )
+                AUNAME = PROMPTSET( MESG, FSREAD3, 'ACMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( AUNAME )
-                CALL CHKSRCNO( 'area', 'AXMAT', NROWS3D, NASRC, EFLAG )
+                CALL RETRIEVE_SET_HEADER( AUNAME )
+                CALL CHKSRCNO( 'area', 'ACMAT', NROWS3D, NASRC, EFLAG )
                 ANUMATV = NVARS3D
                 ALLOCATE( AUVNAMS( ANUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, ANUMATV, .FALSE., AUVNAMS )
+                CALL STORE_VNAMES( 1, 1, ANUMATV, .TRUE., AUVNAMS )
 
             END IF  ! end of multiplicative control open
 
@@ -528,14 +528,14 @@ C               and store control variable names.
             IF( MUFLAG ) THEN
                 MESG = 'Enter logical name for the MOBILE ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                MUNAME = PROMPTMFILE( MESG, FSREAD3, 'MCMAT', PROGNAME )
+                MUNAME = PROMPTSET( MESG, FSREAD3, 'MCMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( MUNAME )
+                CALL RETRIEVE_SET_HEADER( MUNAME )
                 CALL CHKSRCNO( 'mobile', 'MCMAT', NROWS3D, NMSRC, EFLAG)
                 MNUMATV = NVARS3D
                 ALLOCATE( MUVNAMS( MNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, MNUMATV, .FALSE., MUVNAMS )
+                CALL STORE_VNAMES( 1, 1, MNUMATV, .TRUE., MUVNAMS )
 
             END IF  ! end of multiplicative control open
 
@@ -711,14 +711,14 @@ C               and store control variable names.
             IF( PUFLAG ) THEN
                 MESG = 'Enter logical name for the POINT ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                PUNAME = PROMPTMFILE( MESG, FSREAD3, 'PCMAT', PROGNAME )
+                PUNAME = PROMPTSET( MESG, FSREAD3, 'PCMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( PUNAME )
-                CALL CHKSRCNO( 'point', 'PXMAT', NROWS3D, NPSRC, EFLAG )
+                CALL RETRIEVE_SET_HEADER( PUNAME )
+                CALL CHKSRCNO( 'point', 'PCMAT', NROWS3D, NPSRC, EFLAG )
                 PNUMATV = NVARS3D
                 ALLOCATE( PUVNAMS( PNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, PNUMATV, .FALSE., PUVNAMS )
+                CALL STORE_VNAMES( 1, 1, PNUMATV, .TRUE., PUVNAMS )
 
             END IF  ! end of multiplicative control open
 
