@@ -80,8 +80,8 @@ C             degree and comparing current record with previous record as part
 C             of the counting. Note that although all arrays below are 
 C             available for each degree of matching, only the array elements 
 C             that are appropriate for a given degree are actually populated. 
-        INTEGER                N     ( NXTYPES )  ! cnt for degree of matching
-        INTEGER                PIFIP ( NXTYPES )  ! previous co/st/cy code
+        INTEGER                N     ( 0:NXTYPES ) ! cnt for degree of matching
+        INTEGER                PIFIP (   NXTYPES ) ! previous co/st/cy code
 
         CHARACTER(LEN=SCCLEN3) PTSCC ( NXTYPES )  ! previous SCC
         CHARACTER(LEN=SRCLEN3) PCSRC ( NXTYPES )  ! previous CSRC
@@ -275,6 +275,7 @@ C               these characteristics will appear earlier in the sorted list
 
                             DEFAULT( ISP ) = .TRUE.
                             NT = 1
+                            N( NT ) = N( NT ) + 1
 
                         ELSE                                  ! Report and skip
                             CALL REPORT_DUP_XREF
@@ -537,7 +538,7 @@ C           grouped cross-reference tables
         CALL ALOCCHRT( N( 1 ) )
 
 C.........  Populate the grouped tables of cross-reference source-characteristics 
-        CALL FILLCHRT( NXREF, XTYPE, XTCNT )
+        CALL FILLCHRT( NXREF, XTYPE, XTCNT( 1 ) )
 
 C.........  Depending on the operation type, first allocate memory for the tables
 C           and initialize profile codes where needed.
@@ -548,39 +549,39 @@ C.........  Temporal x-ref tables
         IF( TFLAG ) THEN
 
             CALL ALOCTTBL( NIPPA, N( 1 ) )
-            CALL FILLTTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT ) 
+            CALL FILLTTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT( 1 ) ) 
 
 C.........  Speciation x-ref tables
         ELSE IF( SFLAG ) THEN 
 
-            CALL ALOCSTBL( NIPPA, N )
-            CALL FILLSTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT ) 
+            CALL ALOCSTBL( NIPPA, N( 1 ) )
+            CALL FILLSTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT( 1 ) ) 
 
 C.........  Gridding x-ref tables
         ELSE IF( IFLAG ) THEN
-            CALL ALOCGTBL( N )
-            CALL FILLGTBL( NXREF, N( 1 ), XTYPE, XTCNT ) 
+            CALL ALOCGTBL( N( 1 ) )
+            CALL FILLGTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) ) 
 
 C.........  Emission factor x-ref tables
         ELSE IF( FFLAG ) THEN
-            CALL ALOCETBL( NIACT, N )
-            CALL FILLETBL( NIACT, NXREF, N( 1 ), XTYPE, XTCNT ) 
+            CALL ALOCETBL( NIACT, N( 1 ) )
+            CALL FILLETBL( NIACT, NXREF, N( 1 ), XTYPE, XTCNT( 1 ) ) 
 
 C.........  Vehicle mix
         ELSE IF( MFLAG ) THEN
-             CALL ALOCMTBL( N )
-             CALL FILLMTBL( NXREF, N( 1 ), XTYPE, XTCNT )
+             CALL ALOCMTBL( N( 1 ) )
+             CALL FILLMTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
 C.........  Speeds
         ELSE IF( PFLAG ) THEN
-c             CALL ALOCPTBL( N )
-c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT )
+c             CALL ALOCPTBL( N( 1 ) )
+c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
 C.........  All control x-ref tables
         ELSE
 
-            CALL ALOCCTBL( NIPPA, N )
-            CALL FILLCTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT )
+            CALL ALOCCTBL( NIPPA, N( 1 ) )
+            CALL FILLCTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
         END IF
 
