@@ -346,6 +346,27 @@ C.......   Loops:  read and process gridded LANDUSE file:
                 CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
             END IF
 
+C...........   If landuse file provides more grid cells than the test domain
+C              skip them.
+
+            IF ( (C .GT. NCOLS) .OR. (R .GT. NROWS) ) THEN
+               WRITE( MESG,92020 )
+     &               'Grid ( ', C, ', ', R, ' ) ' //
+     &               'of Landuse file is outside the domain'
+               CALL M3WARN( 'GRDBIO', 0, 0, MESG )
+
+               DO 58 B = 1, 4    ! Skip all four blocks in landuse file
+                  READ( UDEV, *, IOSTAT=ISTAT ) ATYPE, NTYPE
+                  LINE =  LINE + 1
+
+                  DO 57 N = 1, NTYPE
+                     READ( UDEV, 93030, IOSTAT=ISTAT ) TYPE, AREA
+                     LINE =  LINE + 1
+57                END DO
+58             END DO
+               GO TO 55
+            END IF
+
             READ( UDEV, *, IOSTAT=ISTAT ) ATYPE, NTYPE
             LINE =  LINE + 1
             IF ( ISTAT .NE. 0 ) THEN
