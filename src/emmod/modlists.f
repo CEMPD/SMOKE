@@ -45,6 +45,7 @@
 !.........  Sizes of the arrays...
 
         INTEGER, PUBLIC :: NINVSIC  ! no. unique SICs in inventory
+        INTEGER, PUBLIC :: NINVSIC2 ! no. unique 2-digit SICs in inventory
         INTEGER, PUBLIC :: NINVSCC  ! no. unique SCCs in inventory
         INTEGER, PUBLIC :: NINVSCL  ! no. unique left SCCs in inventory
         INTEGER, PUBLIC :: NSCCPSIC ! no. all SCCs for all SICs
@@ -64,16 +65,12 @@
 
 !.........  SIC arrays dimensioned by NINVSIC
         INTEGER, ALLOCATABLE, PUBLIC :: INVSIC ( : ) ! SICs
-        INTEGER, ALLOCATABLE, PUBLIC :: IBEGSIC( : ) ! start position in SICSCC
-        INTEGER, ALLOCATABLE, PUBLIC :: IENDSIC( : ) ! end   position in SICSCC
+        INTEGER, ALLOCATABLE, PUBLIC :: INVSIC2( : ) ! 2-digit SICs
 
 !.........  SCC arrays dimensioned by NINVSCC
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCC( : ) ! SCCs
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCL( : ) ! left SCCs
         CHARACTER(LEN=SDSLEN3), ALLOCATABLE, PUBLIC :: SCCDESC( : ) ! descrptn
-
-!.........  SCCs for all SICs
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: SCCPSIC( : )
 
 !.........  Country/state/county codes dimensioned by NINVFIP
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
