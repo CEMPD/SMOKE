@@ -233,7 +233,7 @@ C.......   Get file name; open actual-scc file
      &  'Enter logical name for GRIDDING SURROGATE XREF file',
      &           .TRUE., .TRUE., 'MGREF', 'GRDMMAT' )
 
-        EPSFLG = GETYN( 'EPS formatted surrogates?', .FALSE. )
+        EPSFLG = GETYN( 'EPS formatted surrogates?', .TRUE. )
 
         SDEV = PROMPTFFILE( 
      &  'Enter logical name for SURROGATE COEFF file',
@@ -1042,6 +1042,10 @@ C...........   with multiple entries per FIP.
                     GO TO 155
 
                 END IF
+
+            ELSEIF( F .LT. 0 ) THEN
+                    GO TO 155
+
             ENDIF
 
             DO  144  K = 1, NCELLS( F )
