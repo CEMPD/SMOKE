@@ -1,6 +1,6 @@
 
-        SUBROUTINE HOURTEMP( NSRC, JTIME, DAYBEGT, VALBYSRC, 
-     &                       HOUROUT )
+        SUBROUTINE HOURTEMP( NSRC, NSTEPS, CURRSTEP, JTIME, DAYBEGT, 
+     &                       VALBYSRC, HOUROUT )
 
 C***********************************************************************
 C  subroutine HOURTEMP body starts at line < >
@@ -43,14 +43,17 @@ C...........   INCLUDES:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT    (IN) :: NSRC                  ! no. sources
+        INTEGER, INTENT    (IN) :: NSTEPS                ! no. time steps
+        INTEGER, INTENT    (IN) :: CURRSTEP              ! current time step
         INTEGER, INTENT    (IN) :: JTIME                 ! HHMMSS
         INTEGER, INTENT    (IN) :: DAYBEGT ( NSRC )      ! begin. time for day
         REAL   , INTENT    (IN) :: VALBYSRC( NSRC )      ! per-source values
-        REAL   , INTENT(IN OUT) :: HOUROUT ( NSRC,0:23 ) ! hourly temp per source 
+        REAL   , INTENT(IN OUT) :: HOUROUT ( NSRC,0:NSTEPS-1 ) ! hourly temp per source 
 
 C...........   Other local variables
         INTEGER     S           ! counters and indices
         INTEGER     TIMESLOT    ! array location
+        INTEGER     DAY         ! current day based on current time step
 
         REAL        VAL         ! tmp value
 
@@ -76,15 +79,21 @@ C.............  Store temperature value in appropriate time slot in output array
 
             IF( VAL > AMISS3 )THEN
 
-C.................  Appropriate time will be day starting time (in local time
-C                   zone ) subtracted from met data time (in GMT)
-                TIMESLOT = (JTIME - DAYBEGT( S )) / 10000
+C.................  Appropriate 24 hour time will be day starting time (in local 
+C                   time zone ) subtracted from met data time (in GMT)
+                TIMESLOT = ( JTIME - DAYBEGT( S ) ) / 10000
+
+C.................  Put into correct day slot based on current time step
+                DAY = ( CURRSTEP - 1 ) / 24
+                TIMESLOT = TIMESLOT + ( DAY * 24 )
                 
-C.................  If less than zero, add 24 hours                
+C.................  If timeslot is less than zero, add 24; if better data comes
+C                   along, the old data will get overwritten (helps in case of
+C                   one running one day)
                 IF( TIMESLOT < 0 ) THEN
                     TIMESLOT = TIMESLOT + 24
                 END IF
-
+                
                 HOUROUT( S,TIMESLOT ) = VAL
 
             END IF
