@@ -1,0 +1,75 @@
+# Version "@(#)$Id$ $Source$ $Date$ 
+#
+all: opts
+#
+opts: grdamat.debug spcamat.debug ctlamat.debug rawarea.debug \
+      tmparea.debug csgarea.debug
+#
+LDIRS=-L$(em) \
+      -L$(io) \
+      -L$(ncf)
+#
+LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+#
+#
+GRMS=grdamat.F
+#
+GRMI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
+#
+grdamat.debug: $(GRMS) $(GRMI)
+	echo GRDAMAT:
+	f77 $(DBGFLAGS) -o grdamat.debug $(GRMS) $(LIBS)
+#
+#
+#
+SPCS=spcamat.F
+#
+SPCI=ARDIMS3.EXT CHDIMS3.EXT
+#
+spcamat.debug:  $(SPCS) $(SPCI)
+	echo SPCAMAT:
+	f77 $(DBGFLAGS) -o spcamat.debug $(SPCS) $(LIBS)
+#
+#
+#
+CTLS=ctlamat.F
+#
+CTLI=ARDIMS3.EXT CHDIMS3.EXT
+#
+ctlamat.debug:  $(CTLS) $(CTLI)
+	echo CTLAMAT:
+	f77 $(DBGFLAGS) -o ctlamat.debug $(CTLS) $(LIBS)
+#
+#
+#
+RAWS=rawarea.F
+#
+RAWI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
+#
+rawarea.debug: $(RAWS) $(RAWI)
+	echo RAWAREA:
+	f77 $(DBGFLAGS) -o rawarea.debug $(RAWS) $(LIBS)
+#
+#
+#
+TMPS=tmparea.F mktmat.F
+#
+TMPI=ARDIMS3.EXT CHDIMS3.EXT  TMDIMS3.EXT
+#
+tmparea.debug: $(TMPS) $(TMPI)
+	echo TMPAREA:
+	f77 $(DBGFLAGS) -o tmparea.debug $(TMPS) $(LIBS) 
+#
+#
+#
+CSGS=csgarea.F
+#
+CSGI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
+#
+csgarea.debug : $(CSGS) $(CSGI)
+	echo CSGAREA:
+	f77 $(DBGFLAGS) -o csgarea.debug $(CSGS) $(LIBS)
+#
+#
+clean:
+	rm *.o
