@@ -157,6 +157,7 @@ C...........   Other local variables
         INTEGER      :: NVARHR = 0 ! no. hour-specific variables
         INTEGER      :: NVSPHR = 0 ! no. hour-specific special variables
         INTEGER         OUTSTEP    ! output time step HHMMSS for day/hour data
+        INTEGER         PFIP       ! previous FIPS code
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
         LOGICAL         A2PFLAG          ! true: using area-to-point processing
@@ -327,9 +328,16 @@ C               this is not perfectly accurate for all counties.
             ALLOCATE( TZONES( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
 
+            PFIP = 0
             DO S = 1, NSRC
         	    FIP   = IFIP( S )
-        	    TZONES( S ) = GETTZONE( FIP )
+        	    
+        	    IF( FIP /= PFIP ) THEN
+            	    TZONES( S ) = GETTZONE( FIP )
+            	    PFIP = FIP
+            	ELSE
+            	    TZONES( S ) = TZONES( S - 1 )
+            	END IF
             END DO
 
 C.............  Write out primary inventory files. Do this before the day- or 
