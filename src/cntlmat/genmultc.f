@@ -1,6 +1,7 @@
 
-        SUBROUTINE GENMULTC( CDEV, GDEV, LDEV, NCPE, PYEAR,
-     &                       ENAME, MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
+        SUBROUTINE GENMULTC( CDEV, GDEV, LDEV, MDEV, NCPE, PYEAR,
+     &                       ENAME, MNAME, CFLAG, GFLAG, LFLAG, 
+     &                       SFLAG, MFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -41,13 +42,23 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: FACCEFF, FACREFF, FACRLPN,
+     &                      BASCEFF, BASREFF, BASRLPN,
+     &                      EMSCEFF, EMSREFF, EMSRLPN,
+     &                      NVCMULT, PNAMMULT, FACTOR,
+     &                      DATVAL, BACKOUT, GRPINDX, GRPFLAG,
+     &                      GRPINEM, GRPOUTEM, RPTDEV, PCTLFLAG,
+     &                      EMSTOTL, CUTCTG, FACCTG, FACMACT, 
+     &                      FACRACT, EMCAPALW, EMREPALW, GRPSTIDX,
+     &                      GRPCHAR, EMSPTCF, MACEXEFF, MACNWEFF,
+     &                      MACNWFRC, CTLRPLC
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NSRC, NEM, NDY, NCE, NRE, NRP, 
+     &                     NPPOL, BYEAR, NCHARS, CATDESC, CRL
 
         IMPLICIT NONE
 
@@ -75,6 +86,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN OUT) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN OUT) :: GDEV   ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN OUT) :: LDEV   ! file unit no. for tmp ALW file
+        INTEGER     , INTENT (IN OUT) :: MDEV   ! file unit no. for tmp MACT file
         INTEGER     , INTENT (IN) :: NCPE   ! no. of control packet entries
         INTEGER     , INTENT (IN) :: PYEAR  ! projected year, or missing
         CHARACTER*16, INTENT (IN) :: ENAME  ! logical name for i/o api 
@@ -84,6 +96,7 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) :: GFLAG  ! true = apply CTG controls
         LOGICAL     , INTENT (IN) :: LFLAG  ! true = apply ALW controls
         LOGICAL     , INTENT (IN) :: SFLAG  ! true = apply EMS_CTL controls
+        LOGICAL     , INTENT (IN) :: MFLAG  ! true = apply MACT controls
 
 C...........   Local allocatable arrays
 c        INTEGER, ALLOCATABLE :: ALWINDX ( :,: ) ! indices to ALW controls table
@@ -106,7 +119,7 @@ c        REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
 
 C.........   Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
-        INTEGER                 ODEV( 3 )             ! tmp output files
+        INTEGER                 ODEV( 4 )             ! tmp output files
         CHARACTER(LEN=IOVLEN3)  OUTNAMES( NVCMULT,6 ) ! var names
         CHARACTER(LEN=IOULEN3)  OUTUNITS( NVCMULT,6 ) ! var units
         CHARACTER(LEN=IODLEN3)  OUTDESCS( NVCMULT,6 ) ! var descriptions
@@ -117,6 +130,7 @@ C...........   Other local variables
         INTEGER       :: ALWINDX = 0 ! indices to ALW controls table
         INTEGER       :: CTGINDX = 0 ! indices to CTG controls table
         INTEGER       :: CTLINDX = 0 ! indices to CTL controls table
+        INTEGER       :: MACINDX = 0 ! indices to MACT controls table
         INTEGER          IDX      ! group index
         INTEGER          IOS      ! input/output status
         INTEGER          PIDX     ! previous IDX
@@ -132,8 +146,12 @@ C...........   Other local variables
         REAL             CUTOFF   ! CTG cutoff for application of control
         REAL             DENOM    ! denominator of control back-out factor
         REAL             E1, E2   ! tmp emissions values
+        REAL             EXSTCEFF ! control efficiency for existing sources
         REAL             FAC      ! tmp control factor
+        REAL             INVEFF   ! inventory baseline efficiency
         REAL             MACT     ! max. achievable cntrl tech. cntrl factor
+        REAL             NEWCEFF  ! control efficiency for new sources
+        REAL             NEWFRAC  ! fraction of new sources vs. existing
         REAL             RACT     ! reasonably achiev. cntrl tech. cntrl factor
         REAL             REPLACE  ! replacement emissions
         REAL             RULEFF   ! tmp rule effectiveness
@@ -187,6 +205,10 @@ C           temporary file exists - indicating that the packet is being used
             FILENM = TRIM( PATHNM ) // '/cntlmat_tmp_alw_rep'
             ODEV( 3 ) = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
         ENDIF
+        IF( MDEV .GT. 0 ) THEN
+            FILENM = TRIM( PATHNM ) // '/cntlmat_tmp_mact_rep'
+            ODEV( 4 ) = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
+        END IF
 
 C.........  Allocate index to reporting groups
 c        ALLOCATE( GRPINDX( NSRC ), STAT=IOS )
@@ -294,10 +316,17 @@ C...........  Ensure the temporary files, if opened, are rewound
         IF( CDEV .GT. 0 ) REWIND( CDEV )
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
+        IF( MDEV .GT. 0 ) REWIND( MDEV )
 
 C...........  Fractionalize control-packet information
 
-        IF ( CFLAG ) THEN
+        IF( MFLAG ) THEN
+            MACEXEFF = MACEXEFF*0.01  ! array
+            MACNWEFF = MACNWEFF*0.01  ! array
+            MACNWFRC = MACNWFRC*0.01  ! array
+        END IF
+
+        IF( CFLAG ) THEN
             FACCEFF = FACCEFF*0.01  ! array
             FACREFF = FACREFF*0.01  ! array
             FACRLPN = FACRLPN*0.01  ! array
@@ -393,6 +422,68 @@ C..................  Perform division by zero check.
            END IF
 
 C.............................................................................
+C...........  Apply /MACT/ packet controls if present for the current
+C             pollutant
+C.............................................................................
+           IF ( MFLAG .AND. PCTLFLAG( I, 4 ) ) THEN
+
+C...............  Loop through sources
+              DO S = 1, NSRC
+              
+                 E1  = DATVAL( S, E )
+                 FAC = 1.
+
+C................  Read temporary input file indices
+                 READ( MDEV,* ) MACINDX
+                 
+C................  If MACT packet applies to this source, compute factor
+                 IF ( MACINDX .GT. 0 ) THEN
+
+C......................  Calculate inventory baseline efficiency
+                    CTLEFF = 0.
+                    RULEFF = 1.
+                    RULPEN = 1.
+                    IF ( NCE .GT. 0 ) CTLEFF = DATVAL( S,NCE )
+                    IF ( NRE .GT. 0 ) RULEFF = DATVAL( S,NRE )
+                    IF ( NRP .GT. 0 ) RULPEN = DATVAL( S,NRP )
+                    INVEFF = CTLEFF * RULEFF * RULPEN
+
+                    EXSTCEFF = MACEXEFF( MACINDX )
+                    NEWCEFF  = MACNWEFF( MACINDX )
+                    NEWFRAC  = MACNWFRC( MACINDX )
+
+C.....................  Compute factor for existing and new sources
+                    FAC = (1-NEWFRAC) * ((1-EXSTCEFF)/(1-INVEFF)) + 
+     &                    (NEWFRAC) * ((1-NEWCEFF)/(1-INVEFF))
+
+C...................  Overwrite temporary file line with new info
+                    E2 = E1 * FAC
+                    FACTOR( S ) = FACTOR( S ) * FAC
+                    
+                    WRITE( ODEV(4),93300 ) 1, PNAM, E1, E2, FAC
+                    APPLFLAG = .TRUE.
+                    
+                    IF( FAC .GT. 1. ) THEN
+                        CSRC = CSOURC( S )
+                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                        WRITE( MESG,94110 ) 'WARNING: MACT ' //
+     &                         'packet record number', MACINDX,
+     &                         'is increasing ' // CRLF() // BLANK10 //
+     &                         'emissions by factor', FAC, 'for:'
+     &                         // CRLF() // BLANK10 //
+     &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
+                        CALL M3MESG( MESG )
+                    END IF               
+                 ELSE
+                    WRITE( ODEV(4),93300 ) 0, 'D', 0., 0., 0.
+                 
+                 END IF
+                 
+              END DO ! end source loop
+              
+           END IF
+          
+C.............................................................................
 C...........  Apply /CONTROL/ packet controls if present for the current 
 C             pollutant
 C.............................................................................
@@ -401,7 +492,8 @@ C.............................................................................
 C...............  Loop through sources
               DO S = 1, NSRC
 
-                 E1 = DATVAL( S, E )
+                 E1  = DATVAL( S,E )
+                 FAC = 1.
 
 C................  Read temporary input file indices
                  READ( CDEV,* ) CTLINDX
@@ -411,21 +503,30 @@ C................  If control packet applies to this source, compute factor
                     CTLEFF = FACCEFF( CTLINDX )
                     RULEFF = FACREFF( CTLINDX )
                     RULPEN = FACRLPN( CTLINDX )
-                    FACTOR( S ) = BACKOUT( S )*
-     &                          ( 1.0 - CTLEFF*RULEFF*RULPEN )
+
+C.....................  Check if this is a "replace" entry                    
+                    IF( CTLRPLC( CTLINDX ) ) THEN
+                        FAC = BACKOUT( S )*
+     &                        ( 1.0 - CTLEFF*RULEFF*RULPEN )
+                        FACTOR( S ) = FAC
+                    ELSE
+                        FAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
+                        FACTOR( S ) = FACTOR( S ) * FAC
+                    END IF
 
 C...................  Overwrite temporary file line with new info
-                    E2 = E1 * FACTOR( S )
-                    WRITE( ODEV(1),93300 ) 1, PNAM, E1, E2, FACTOR( S )
+                    E2 = E1 * FAC                   
+                    
+                    WRITE( ODEV(1),93300 ) 1, PNAM, E1, E2, FAC
                     APPLFLAG = .TRUE.
 
-                    IF( FACTOR(S) .GT. 1. ) THEN
+                    IF( FAC .GT. 1. ) THEN
                         CSRC = CSOURC( S )
                         CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
                         WRITE( MESG,94110 ) 'WARNING: CONTROL '//
      &                         'packet record number', CTLINDX, 
      &                         'is increasing ' // CRLF()// BLANK10//
-     &                         'emissions by factor', FACTOR(S), 'for:'
+     &                         'emissions by factor', FAC, 'for:'
      &                         //CRLF()// BLANK10//
      &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
                         CALL M3MESG( MESG )
@@ -433,7 +534,6 @@ C...................  Overwrite temporary file line with new info
 
 C..................  Overwrite temporary file line with new info
                  ELSE
-                    E2 = E1
                     WRITE( ODEV(1),93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
@@ -451,7 +551,8 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
 
               DO S = 1, NSRC
 
-                 E1 = DATVAL( S, E )
+                 E1  = DATVAL( S,E )
+                 FAC = 1.
 
 C................  Read temporary input file indices
                  READ( CDEV,* ) CTLINDX
@@ -459,29 +560,31 @@ C................  Read temporary input file indices
 C................  EMS CONTROL packet applies to this source, compute factor
                  IF ( CTLINDX .GT. 0 ) THEN
                     IF( EMSTOTL( CTLINDX ) .NE. 0. ) THEN
-                       FACTOR( S ) = EMSTOTL( CTLINDX )
+                       FAC = EMSTOTL( CTLINDX )
 
                     ELSE
                        CTLEFF = EMSCEFF( CTLINDX )
                        RULEFF = EMSREFF( CTLINDX )
                        RULPEN = EMSRLPN( CTLINDX )
-                       FACTOR( S ) = BACKOUT(CTLINDX)*EMSPTCF(CTLINDX)* 
-     &                               (1.- CTLEFF*RULEFF*RULPEN)
+                       FAC = BACKOUT(CTLINDX)*EMSPTCF(CTLINDX)* 
+     &                       (1.- CTLEFF*RULEFF*RULPEN)
 
                     END IF
 
 C..................  Write output temporary file line with new info
-                    E2 = E1 * FACTOR( S )
-                    WRITE( ODEV(1),93300 ) 1, PNAM, E1, E2, FACTOR( S )
+                    E2 = E1 * FAC
+                    FACTOR( S ) = FACTOR( S ) * FAC
+                    
+                    WRITE( ODEV(1),93300 ) 1, PNAM, E1, E2, FAC
                     APPLFLAG = .TRUE.
 
-                    IF( FACTOR(S) .GT. 1. ) THEN
+                    IF( FAC .GT. 1. ) THEN
                         CSRC = CSOURC( S )
                         CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
                         WRITE( MESG,94110 ) 'WARNING: EMS_CONTROL '//
      &                         'packet record number', CTLINDX, 
      &                         'is increasing ' // CRLF()// BLANK10//
-     &                         'emissions by factor', FACTOR(S), 'for:'
+     &                         'emissions by factor', FAC, 'for:'
      &                         //CRLF()// BLANK10//
      &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
                         CALL M3MESG( MESG )
@@ -489,7 +592,6 @@ C..................  Write output temporary file line with new info
 
 C..................  Write output temporary file line with placeholder info
                  ELSE
-                    E2 = E1
                     WRITE( ODEV(1),93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
@@ -555,7 +657,7 @@ C...........................  Otherwise, set to cutoff value
                        END IF
 
 C........................  Compute aggregate factor for current source
-                       FACTOR( S ) = FACTOR( S ) * FAC 
+                       FACTOR( S ) = FACTOR( S ) * FAC
 
 C........................  Write output temporary file line with new info
                        WRITE( ODEV(2),93300 ) 1, PNAM, E1, E2, FAC
@@ -711,6 +813,8 @@ C.........  Write out controlled facilities report for point sources
             ELSE
                 WRITE( RDEV, 93390 ) 'Base inventory year ', BYEAR
             END IF
+            IF( MFLAG ) WRITE( RDEV, 93000 )
+     &                  'Controls applied with /MACT/ packet'
             IF( CFLAG ) WRITE( RDEV, 93000 ) 
      &                  'Controls applied with /CONTROL/ packet'
             IF( SFLAG ) WRITE( RDEV, 93000 ) 
@@ -781,15 +885,15 @@ C.........  Write out controlled facilities report for point sources
 
         IF( .NOT. APPLFLAG ) THEN
 
-            MESG = 'WARNING: No CONTROL, EMS_CONTROL, CTG, or ' //
+            MESG = 'WARNING: No MACT, CONTROL, EMS_CONTROL, CTG, or ' //
      &             'ALLOWABLE packet entries match inventory.'
             CALL M3MSG2( MESG )
 
             MESG = 'WARNING: Multiplicative control will not be output!'
             CALL M3MSG2( MESG )
 
-            WRITE( RDEV, 93000 ) 'No CONTROL, EMS_CONTROL, CTG, or ' //
-     &             'ALLOWABLE packet entries matched inventory.'
+            WRITE( RDEV, 93000 ) 'No MACT, CONTROL, EMS_CONTROL, ' //
+     &             'CTG, or ALLOWABLE packet entries matched inventory.'
 
         END IF
 
@@ -798,6 +902,7 @@ C          report processing.
         IF( CDEV .GT. 0 ) CDEV = ODEV( 1 )
         IF( GDEV .GT. 0 ) GDEV = ODEV( 2 )
         IF( LDEV .GT. 0 ) LDEV = ODEV( 3 )
+        IF( MDEV .GT. 0 ) MDEV = ODEV( 4 )
 
 C.........  Deallocate local memory
         DEALLOCATE( BACKOUT, DATVAL, FACTOR )
