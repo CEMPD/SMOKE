@@ -386,7 +386,7 @@ C.......   volatile pollutant in inventory.
             VID = INDEX1( EINAM( I ), NUMVOL, VOLTYP )
             IF( VID .GT. 0 ) THEN
 
-                POLV = EINAM( VID )
+                POLV = EINAM( I )
                 GO TO 88
 
             ELSEIF( I .EQ. NIPOL ) THEN
