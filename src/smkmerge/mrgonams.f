@@ -41,7 +41,12 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: 
+     &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
+     &          AONAME, BONAME, MONAME, PONAME, TONAME,
+     &          PINGNAME, PELVNAME, LREPSPC, LREPCTL, NIPPA,
+     &          TFLAG, SFLAG, LFLAG, GRDUNIT,
+     &          ARFLAG, MRFLAG, PRFLAG, AUFLAG, MUFLAG, PUFLAG
 
         IMPLICIT NONE
 

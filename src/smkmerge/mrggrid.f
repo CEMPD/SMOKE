@@ -43,7 +43,8 @@ C***********************************************************************
  
 C...........   MODULES for public variables
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS, NLAYS, 
+     &                     VGLVS, VGTYP, VGTOP
 
         IMPLICIT NONE
  

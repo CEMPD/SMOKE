@@ -41,16 +41,23 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: EXPLFLAG, EMLAYS, PVSDATE, PVSTIME, PVNAME,
+     &                      PENAME, PSDEV, NPSRC, NMSPC, EMNAM,
+     &                      SDATE, STIME, EDATE, ETIME, TSTEP,
+     &                      JSTACK, EVDEV, LFRAC
 
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NHRSRC, GRPCOL, GRPROW, GRPXL, GRPYL, 
+     &                     GRPHT, GRPDM, GRPTK, GRPVE,
+     &                     NGROUP, GRPGID, ELEVSRC, LPING,
+     &                      ELEVSIDX, GROUPID, INDXH, ELEVEMIS
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NCOLS, NROWS, XCELL, YCELL, XORIG, YORIG,
+     &                     GRDNM, P_ALP, GDTYP, VGTYP, VGLVS
 
         IMPLICIT NONE
 

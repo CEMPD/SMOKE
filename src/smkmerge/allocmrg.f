@@ -42,19 +42,68 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: 
+     &          AFLAG, BFLAG, MFLAG, PFLAG,                     ! source flags
+     &          AUFLAG, MUFLAG, PUFLAG,                         ! mult control flags
+     &          ARFLAG, MRFLAG, PRFLAG,                         ! reac control flags
+     &          APRJFLAG, MPRJFLAG, PPRJFLAG,                   ! growth flags
+     &          AFLAG_BD, MFLAG_BD, PFLAG_BD,                   ! by-day hourly emis flags
+     &          TFLAG, SFLAG, LFLAG,                            ! use temporal, spec, layers
+     &          PINGFLAG, ELEVFLAG, EXPLFLAG,                   ! ping, elevated, expl. plume
+     &          LMKTPON, LREPANY,                               ! mkt penetration, any reports
+     &          CDEV, EDEV, GDEV,                               ! costcy, elev/ping, grid surg
+     &          AENAME, ATNAME, AGNAME, ASNAME, ARNAME, AUNAME, ! area files
+     &          BTNAME,                                         ! biogenic files
+     &          MENAME, MTNAME, MGNAME, MSNAME, MRNAME, MUNAME, ! mobile files
+     &          PENAME, PTNAME, PGNAME, PSNAME, PRNAME, PUNAME, ! point files
+     &          PLNAME, PVNAME, PHNAME,
+     &          NASRC, NMSRC, NPSRC, EMLAYS,                    ! no. of srcs, no. emis layers
+     &          ANMSPC, BNMSPC, MNMSPC, PNMSPC, NMSPC,          ! no. species
+     &          ANGMAT, MNGMAT,                                 ! no. gridding matrix entries
+     &          ANSREAC, MNSREAC, PNSREAC,                      ! no. src w/ reac controls
+     &          ARNMSPC, MRNMSPC, PRNMSPC,                      ! no. reac species
+     &          AEMNAM, BEMNAM, MEMNAM, PEMNAM, EMNAM,          ! species names
+     &          ANMAP, AMAPNAM, AMAPFIL,                        ! area map file
+     &          MNMAP, MMAPNAM, MMAPFIL,                        ! mobile map file
+     &          PNMAP, PMAPNAM, PMAPFIL,                        ! point map file
+     &          VGRPCNT, IDVGP, GVNAMES,                        ! group count, ids, var names
+     &          SIINDEX, SPINDEX, GVLOUT,                       ! EANAM & EMNAM idx, output pts
+     &          A_EXIST, M_EXIST, P_EXIST,                      ! grp indices for inv emis
+     &          AU_EXIST, MU_EXIST, PU_EXIST,                   ! grp indices for mult controls
+     &          AR_EXIST, MR_EXIST, PR_EXIST,                   ! grp indices for reac controls
+     &          AS_EXIST, BS_EXIST, MS_EXIST, PS_EXIST,         ! grp indices for spec matrices
+     &          SDATE, STIME, NSTEPS, TSTEP, PVSDATE, PVSTIME,  ! episode information
+     &          ASDATE, MSDATE, PSDATE,                         ! dates for by-day hrly emis
+     &          BIOGFAC, BIOTFAC, GRDFAC, TOTFAC,               ! conversion factors
+     &          AEMSRC, MEMSRC, PEMSRC,                         ! inv or hrly emissions
+     &          AEISRC, MEISRC, PEISRC,                         ! inv only emissions
+     &          AGMATX, MGMATX, PGMATX,                         ! gridding matrices
+     &          ASMATX, MSMATX, PSMATX,                         ! speciation matrices
+     &          ARINFO, MRINFO, PRINFO,                         ! reactivity matrices
+     &          AEMGRD, BEMGRD, MEMGRD, PEMGRD, TEMGRD,         ! gridded emissions
+     &          AEBCNY, BEBCNY, MEBCNY, PEBCNY,                 ! cnty total spec emissions
+     &          AEUCNY, MEUCNY, PEUCNY,                         ! cnty total mult control emis
+     &          AERCNY, MERCNY, PERCNY,                         ! cnty total reac control emis
+     &          AECCNY, MECCNY, PECCNY,                         ! cnty total all-control emis
+     &          LFRAC, EANAM, TONAMES                           ! layer frac, pol/act names
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: ELEVFLTR, ELEVSRC, NHRSRC, INDXH, NGROUP, 
+     &                     GRPGID, GRPXL, GRPYL, GRPCOL, GRPROW, 
+     &                     GRPHT, GRPDM, GRPTK, GRPVE
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY:
+     &                  ACUMATX, MCUMATX, PCUMATX,
+     &                  ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN, ACRFAC,
+     &                  MCRIDX, MCRREPEM, MCRPRJFC, MCRMKTPN, MCRFAC,
+     &                  PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRFAC
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTY, NSTATE
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID
 
         IMPLICIT NONE
 

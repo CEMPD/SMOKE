@@ -47,13 +47,14 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: ELEVFLAG, PEMSRC, PSMATX, PRINFO
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: PCUMATX
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: ELEVSIDX, PINGGIDX, NGROUP, GRPGID, PGRPEMIS,
+     &                     ELEVEMIS, LMAJOR, LPING, GROUPID
 
         IMPLICIT NONE
 

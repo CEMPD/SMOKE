@@ -39,7 +39,10 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: BIOGFAC, BIOTFAC, GRDFAC, TOTFAC,
+     &                      BIOUNIT, GRDUNIT, TOTUNIT, 
+     &                      SPCUNIT, TOUNITS,
+     &                      SFLAG, TFLAG, BFLAG, NIPPA
 
         IMPLICIT NONE
 

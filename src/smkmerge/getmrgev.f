@@ -39,7 +39,15 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: AFLAG, BFLAG, MFLAG, PFLAG,
+     &                      AUFLAG, MUFLAG, PUFLAG,
+     &                      ARFLAG, MRFLAG, PRFLAG,
+     &                      AFLAG_BD, MFLAG_BD, PFLAG_BD,
+     &                      XFLAG, TFLAG, SFLAG, LFLAG,
+     &                      PINGFLAG, ELEVFLAG, EXPLFLAG,
+     &                      LMETCHK, LMKTPON, LGRDOUT, LREPCNY,
+     &                      LREPSTA, LREPINV, LREPSPC, LREPCTL, 
+     &                      LREPANY, LAVEDAY, INVPIDX
 
         IMPLICIT NONE
 
