@@ -54,10 +54,10 @@ C     emission inputs by applying correction factors for temperature
 C     and solar energy.
 C
 C  PRECONDITIONS REQUIRED:
-C     surface pressure PRES
+C     PAR and Surface Temperature
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C	CZANGLE, DAYMON, CLDATEN
+C     m3io 
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC adapted from UAM BEIS2 subroutines SOLBIO, 
