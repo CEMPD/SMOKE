@@ -180,15 +180,15 @@ C           MRGMULT will work.
 
 C.........  Read the state and county names file and store for the 
 C           states and counties in the grid
-C.........  For biogenic included in merge, use list of codes from the 
-C           surrogates file needed for state and county totals
-        IF( BFLAG ) THEN
-            CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
-
-C.........  Otherwise, for anthropogenic source categories, use FIPS list
+C.........  For anthropogenic source categories, use FIPS list
 C           from the inventory for limiting state/county list
-        ELSE
+        IF( AFLAG .OR. MFLAG .OR. PFLAG ) THEN
             CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
+
+C.........  Otherwise, for biogenic merge only, use list of codes from the 
+C           surrogates file needed for state and county totals
+        ELSE
+            CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
 
         END IF
 
@@ -373,7 +373,7 @@ C.....................  Update list of pollutants names for message
         	END IF  ! end speciation or not
 
 C.................  Set input variable names
-                INNAMES ( V ) = PBUF
+                INNAMES ( V ) = TONAMES( SIINDEX( V,N ) )
 
             END DO      ! End variables in group loop
 
