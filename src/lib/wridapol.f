@@ -97,7 +97,7 @@ C.........  Append current pollutant to output buffer, w/ correct format
 
             DO S = 1, NSRC
 
-                WRITE( FDEV, *, ERR=999 ) 
+                WRITE( FDEV, 93200, ERR=999 ) 
      &               ( POLALL( S,I ), I = 1, VCNT )
 
             END DO ! End loop over sources
@@ -106,7 +106,7 @@ C.........  Append current pollutant to output buffer, w/ correct format
 
             DO S = 1, NSRC
 
-                WRITE( FDEV, *, ERR=999 ) 
+                WRITE( FDEV, 93210, ERR=999 ) 
      &               ( POLALL( S,I ), I = 1, VCNT )
 
             END DO ! End loop over sources
@@ -115,7 +115,7 @@ C.........  Append current pollutant to output buffer, w/ correct format
 
             DO S = 1, NSRC
 
-                WRITE( FDEV, *, ERR=999 ) 
+                WRITE( FDEV, 93220, ERR=999 ) 
      &               ( POLALL( S,I ), I = 1, VCNT )
 
             END DO ! End loop over sources
@@ -137,15 +137,16 @@ C.........  Exit with errors
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-C...........   Internal buffering formats............ 94xxx
+C...........   File read/write formats............ 93xxx
 
-c94200   FORMAT( 1X, F10.4, 1X, F10.4, 1X, F11.4, 1X, F7.2,           ! area
-c     &          1X, F3.0, 1X, F3.0 )
+C......... NOTE - this three formats need to be consistent with wridaout.f
+93200   FORMAT( 1X, E13.6, 1X, E13.6, 1X, E13.6, 1X, E13.6,          ! area
+     &          1X, F4.0, 1X, F4.0 )
 
-c94210   FORMAT( 1X, F20.5, 1X, F20.5 )                               ! mobile
+93210   FORMAT( 1X, E20.13, 1X, E20.13 )                             ! mobile
 
-c94220   FORMAT( 1X, F13.4, 1X, F13.4, 1X, F7.2, 1X, F3.0, 1X, F10.4, ! point
-c     &          1X, I3, 1X, I3 )
+93220   FORMAT( 1X, E13.6, 1X, E13.6, 1X, E13.6, 1X, F4.0, 1X, E13.6, ! point
+     &          1X, E10.3, 1X, E10.3 )
 
         END
 
