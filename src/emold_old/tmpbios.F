@@ -21,7 +21,7 @@ C * Last updated: $Date$
 C *
 C ****************************************************************************/
 
-        PROGRAM TMPBIO_SOLRAD
+        PROGRAM TMPBIOS
 
 C***********************************************************************
 C  program body starts at line  134
@@ -135,7 +135,7 @@ C.......   Name tables for file NNAME
 
 
 C***********************************************************************
-C   begin body of program TMPBIO_SOLRAD
+C   begin body of program TMPBIOS
 
         LDEV = INIT3()
         
