@@ -382,7 +382,7 @@ C.......   Read lines from met list file
             METLIST( 1 ) = METFILE
         END IF
         
-        CLOSE( MDEV )
+        IF( MDEV .GT. 0 ) CLOSE( MDEV )
 
         MESG = 'Checking temperature files...'
         CALL M3MSG2( MESG )
@@ -607,7 +607,7 @@ C.................  Read lines from rad list file
                     RADLIST( 1 ) = RADFILE
                 END IF
 
-                CLOSE( DDEV )
+                IF( DDEV .GT. 0 ) CLOSE( DDEV )
 
                 MESG = 'Checking radiation/cloud files...'
                 CALL M3MSG2( MESG )
