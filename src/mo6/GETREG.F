@@ -100,6 +100,10 @@ C
       CHARACTER  STDLAB*40 
       INTEGER    IVC,I,J 
       REAL       CHKMYR, DUM1(25) 
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
@@ -134,9 +138,13 @@ C
 ccs      CALL UCCOMP(INPREC(21:), FILENAME) 
       CALL LJCOMP(INPREC(21:), FILENAME)
 
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME
+      
       IOUALT = JUNIT()
 
-      OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+      OPEN(IOUALT,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,120) TRIM(FILENAME) 
   120 FORMAT(/'* Reading Registration Distributions ', 

@@ -101,6 +101,8 @@ C
       INCLUDE 'IVTYPE.I' 
       INCLUDE 'YEARS4.I' 
 C 
+      INTEGER, EXTERNAL :: JUNIT   
+C 
       CHARACTER   INPREC*(*) 
       INTEGER     INERR 
       INTEGER     RC 
@@ -116,6 +118,10 @@ C
       CHARACTER   STDLAB*40 
       INTEGER IFAC, KINK50, NEWREG, NEWPOL 
       REAL A50NEW  
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
 C     Note: The rules for the federal evaporative test procedure have 
 C     been finalized and the parameters of the final rulemakeing have  
@@ -158,7 +164,7 @@ C
 C       Read the data from an external data file. 
 C 
         EXTDATA = .TRUE. 
-        SOURCE = IOUALT 
+        SOURCE = JUNIT() 
 C 
 C       Find the token number of the record label that must appear 
 C       on a record somewhere in the header of the external data file. 
@@ -175,7 +181,11 @@ C
 ccs        CALL UCCOMP(INPREC(21:), FILENAME) 
         CALL LJCOMP(INPREC(21:), FILENAME)
 
-        OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+ccs     All M6 input files live in SMK_M6PATH
+        CALL GETENV( "SMK_M6PATH", M6DIR )
+        M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME
+
+        OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *       IOSTAT=RC,ERR=80) 
         WRITE(IOUREP,120) FILENAME 
   120   FORMAT(/'* Reading non-default BASIC EMISSION RATES from ', 
@@ -252,7 +262,7 @@ C
       IF(KINK50==2) BERNEW(3,IFAC)=A50NEW 
    50 CONTINUE 
 C 
-      IF (EXTDATA) CLOSE (IOUALT) 
+      IF (EXTDATA) CLOSE (SOURCE) 
 C 
 C  Store new ef equations for later access by BEF. 
 C 

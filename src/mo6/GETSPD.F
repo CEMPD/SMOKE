@@ -46,6 +46,8 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'STDIST.I' 
 C 
+      INTEGER, EXTERNAL :: JUNIT   
+C 
       CHARACTER   INPREC*(*) 
       INTEGER     INERR 
       INTEGER     RC 
@@ -61,6 +63,10 @@ C
       CHARACTER   STDLAB*40 
       INTEGER     IV,IWEEK,JDX,L 
       REAL        DUM(25), DUMM 
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
       RC = 0 
       SPDFLG = SPDFLG + 1 
@@ -90,7 +96,7 @@ C
 C       Read the data from an external data file. 
 C 
           EXTDATA = .TRUE. 
-          SOURCE = IOUALT 
+          SOURCE = JUNIT() 
 C 
 C       Find the token number of the record label that must appear 
 C       on a record somewhere in the header of the external data file. 
@@ -107,7 +113,11 @@ C
 ccs          CALL UCCOMP(INPREC(21:), FILENAME) 
           CALL LJCOMP(INPREC(21:), FILENAME)
 
-          OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+ccs       All M6 input files live in SMK_M6PATH
+          CALL GETENV( "SMK_M6PATH", M6DIR )
+          M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME
+
+          OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *         IOSTAT=RC,ERR=80) 
           IF (RC.NE.0) THEN 
 C 
@@ -176,7 +186,7 @@ C
                   DO JDX=1,25 
                     DUM(JDX)=0.0 
                   END DO 
-                  READ (IOUALT,*,IOSTAT=RC) 
+                  READ (SOURCE,*,IOSTAT=RC) 
      *                 IWEEK, IV, (DUM(JDX),JDX=1,25) 
 C 
 C     Check the entered values for starts per day. 
@@ -208,7 +218,7 @@ C
                   ENDIF 
                   IF(RC.LT.0) EXIT 
                 END DO  !reading user inputs 
-                IF (EXTDATA) CLOSE(IOUALT) 
+                IF (EXTDATA) CLOSE(SOURCE) 
               END IF 
             END IF 
           END IF 

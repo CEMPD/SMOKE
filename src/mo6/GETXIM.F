@@ -75,6 +75,10 @@ C
       CHARACTER*150  M6REC 
       INTEGER        SECTION 
       CHARACTER      STDLAB*40 
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
 C ..................................................................... 
 C 
@@ -87,8 +91,12 @@ C
 ccs      CALL UCCOMP(INPREC(22:), FILENAME) 
       CALL LJCOMP(INPREC(22:), FILENAME)
 
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME
+      
       IOUXIM = JUNIT()
-      OPEN(IOUXIM,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+      OPEN(IOUXIM,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,110) FILENAME 
   110 FORMAT(/'* Reading I/M program description records from the', 

@@ -61,6 +61,8 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'SKDIST.I' 
 C 
+      INTEGER, EXTERNAL :: JUNIT   
+C 
       CHARACTER   INPREC*(*) 
       INTEGER     INERR 
       INTEGER     RC 
@@ -76,6 +78,10 @@ C
       INTEGER     SOURCE 
       CHARACTER   STDLAB*40 
       INTEGER     I,J,K 
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
       RC = 0 
 C 
@@ -90,7 +96,7 @@ C
 C     Read the data from an external data file. 
 C 
         EXTDATA = .TRUE. 
-        SOURCE = IOUALT 
+        SOURCE = JUNIT() 
 C 
 C     Find the token number of the record label that must appear 
 C     on a record somewhere in the header of the external data file. 
@@ -107,7 +113,11 @@ C
 ccs        CALL UCCOMP(INPREC(21:), FILENAME) 
         CALL LJCOMP(INPREC(21:), FILENAME)
 
-        OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+ccs     All M6 input files live in SMK_M6PATH
+        CALL GETENV( "SMK_M6PATH", M6DIR )
+        M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME
+
+        OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *       IOSTAT=RC,ERR=80) 
         IF (RC.NE.0) THEN 
 C 
@@ -186,7 +196,7 @@ C
                 READ(SOURCE, *, END=98, IOSTAT=RC) 
      &              (((SOAKDIST(I,J,K), I=1,24), J=1,70), K=1,2) 
 C 
-                IF (EXTDATA) CLOSE(IOUALT) 
+                IF (EXTDATA) CLOSE(SOURCE) 
 C 
               END IF 
             END IF 

@@ -41,6 +41,8 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'SPEED9.I' 
 C 
+      INTEGER, EXTERNAL :: JUNIT   
+C 
 C     Declare parameter list. 
 C 
       CHARACTER,  INTENT(IN) :: INPREC*(*) 
@@ -63,6 +65,10 @@ C
       REAL        TSUM 
       INTEGER     I, IFAC, IHR, ISPD 
       REAL        DUM(2,14,24), DUM1(14) 
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
  
 C 
       RC = 0 
@@ -78,7 +84,7 @@ C
 C       Read the data from an external data file. 
 C 
         EXTDATA = .TRUE. 
-        SOURCE = IOUALT 
+        SOURCE = JUNIT() 
 C 
 C       Find the token number of the record label that must appear 
 C       on a record somewhere in the header of the external data file. 
@@ -94,6 +100,9 @@ C
 
 ccs        CALL UCCOMP(INPREC(21:), FILENAME) 
         CALL LJCOMP(INPREC(21:), FILENAME)
+
+ccs     Usually M6 input files live in SMK_M6PATH; however, we put
+ccs     the full path of the files in the M6 input file
 
         OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
      *         IOSTAT=RC,ERR=80) 
@@ -209,7 +218,7 @@ C
 C 
 C 
                 IF(NSCEN==0) GLSVMT=SVMT ! for scenario/run level user input 
-                IF (EXTDATA) CLOSE(IOUALT) 
+                IF (EXTDATA) CLOSE(SOURCE) 
 C 
               END IF 
             END IF 

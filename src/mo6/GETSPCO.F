@@ -43,6 +43,8 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'SPEED9.I' 
 C 
+      INTEGER, EXTERNAL :: JUNIT   
+C 
       CHARACTER   INPREC*(*) 
       INTEGER     INERR 
       INTEGER     RC 
@@ -58,6 +60,10 @@ C
       INTEGER     SOURCE 
       CHARACTER   STDLAB*40 
       INTEGER  I, J, K, M 
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
       RC = 0 
       IF (SPCOFLG.EQ.1) THEN 
@@ -77,7 +83,7 @@ C
 C       Read the data from an external data file. 
 C 
         EXTDATA = .TRUE. 
-        SOURCE = IOUALT 
+        SOURCE = JUNIT() 
 C 
 C       Find the token number of the record label that must appear 
 C       on a record somewhere in the header of the external data file. 
@@ -94,7 +100,11 @@ C
 ccs        CALL UCCOMP(INPREC(21:), FILENAME) 
         CALL LJCOMP(INPREC(21:), FILENAME)
 
-        OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+ccs     All M6 input files live in SMK_M6PATH
+        CALL GETENV( "SMK_M6PATH", M6DIR )
+        M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME
+
+        OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *       IOSTAT=RC,ERR=80) 
         WRITE(IOUREP,200) FILENAME 
   200   FORMAT(/'* Reading non-default SPEED VMT from the ', 
@@ -169,7 +179,7 @@ C
   311 CONTINUE 
 C 
 C 
-      IF (EXTDATA) CLOSE(IOUALT) 
+      IF (EXTDATA) CLOSE(SOURCE) 
 C 
    40 GOTO 99 
 C 
