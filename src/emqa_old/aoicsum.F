@@ -501,7 +501,7 @@ C     &        EINAM ( VOC_VAR )
             END IF
 
             ! Find the description for this OIC code.
-            INASC7 = IOICLIST ( K ) * 1000
+            INASC7 = IOICLIST ( K )
             INASC3 = 0
             INDEX = FIND2 ( INASC7, INASC3, TOT_ASCT, 
      &                      IALLASC7, IALLASC3 )
