@@ -1,6 +1,6 @@
 
-        SUBROUTINE OPENINVOUT( A2PFLAG, NONPOINT, GRDNM, ENAME, ANAME, 
-     &                         IDEV, SDEV, ADEV, VARPATH, VAR_FORMULA )
+        SUBROUTINE OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, IDEV, 
+     &                        SDEV, ADEV, VARPATH, VAR_FORMULA )
 
 C*************************************************************************
 C  subroutine body starts at line 119
@@ -74,7 +74,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
 
 C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT(IN)  :: A2PFLAG  ! true: using area-to-point processing
-        LOGICAL     , INTENT(IN)  :: NONPOINT ! true: importing nonpoint inventory
         CHARACTER(*), INTENT(IN)  :: GRDNM    ! grid name if any gridded data
         CHARACTER(*), INTENT(OUT) :: ENAME    ! emis i/o api inven logical name
         CHARACTER(*), INTENT(OUT) :: ANAME    ! emis ASCII inven logical name
@@ -207,8 +206,6 @@ C           inventory variables
             ELSE
                 NNPVAR = NARVAR3
             END IF
-            
-            IF( NONPOINT ) NNPVAR = NNPVAR + 1
         CASE( 'MOBILE' )
             NNPVAR = NMBVAR3
         CASE( 'POINT' )
@@ -330,13 +327,11 @@ C.........  Define source characteristic variables that are not strings
             VDESCSET( J ) = 'Cell number'
             J = J + 1
 
-            IF( NONPOINT ) THEN
-                VNAMESET( J ) = 'ISIC'
-                VTYPESET( J ) = M3INT
-                VUNITSET( J ) = 'n/a'
-                VDESCSET( J ) = 'Source Industrial Code'
-                J = J + 1
-            END IF
+            VNAMESET( J ) = 'ISIC'
+            VTYPESET( J ) = M3INT
+            VUNITSET( J ) = 'n/a'
+            VDESCSET( J ) = 'Source Industrial Code'
+            J = J + 1
             
         CASE( 'MOBILE' )
 
