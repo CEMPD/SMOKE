@@ -74,10 +74,12 @@ csgpoint: $(CSG) $(CSGIP)
 	echo CSGPOINT:
 	f77 $(FFLAGS)   -o $(SCENDIR)/csgpoint $(CSG) $(LIBS)
 #
-OBJS = getrecs.F rdvmix.F
+#OBJS = getrecs.F rdvmix.F
+OBJS = getrecs.F
 
 INCS = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT \
-       TMDIMS3.EXT EMCNST3.EXT EMDIMS3.EXT
+       TMDIMS3.EXT
+#       TMDIMS3.EXT EMCNST3.EXT EMDIMS3.EXT
 
 getrecs: $(OBJS) $(INCS)
 	echo GETRECS:
