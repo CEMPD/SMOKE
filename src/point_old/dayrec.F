@@ -106,7 +106,7 @@ C...........   sorted final version (image EMISREC of data record)
 
         INTEGER       NPDPT           !  current source-count
         INTEGER       INDXD( NPDAY )   !  subscript into netCDF inventory file
-        REAL          EMISD( NPDAY, NIPOL )  !  emissions values (tons/yr)
+        REAL          EMISD( NPDAY, NIPOL )  !  emissions values (tons/day)
 
         COMMON / EMISREC / NPDPT, INDXD, EMISD
 
@@ -203,6 +203,8 @@ C.......   then permute the records according to the result:
      &              'Plant:',   PLANT,
      &              'Stack:',   STACK,
      &              'Species:', PCODE( V )
+                CALL M3MESG( MESG )
+
                 GO TO  133
 
             ELSE IF ( L .NE. K ) THEN
