@@ -154,6 +154,10 @@ C....................  Set as 1 cell and get the cell number
                     ACEL( 1 ) = ( ROW-1 ) * NCOLS + COL
                     AFAC( 1 ) = 1.
 
+C.................  Otherwise, skip this source because it's outside the grid
+                ELSE
+                    NCEL = 0
+                    
                 END IF
 
 C............  If area/non-link source...
