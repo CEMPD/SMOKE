@@ -334,6 +334,7 @@ C.................  Loop through global species index
 
 C.........................  Access global indices
                 	I = SIINDEX( V,N )
+                	IF( I .EQ. 0 ) CYCLE     ! Skip unused pollutants
                 	J = SPINDEX( V,N )
                 	IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
 
