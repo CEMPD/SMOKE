@@ -227,8 +227,8 @@ C...............  Allocate first set of reporting arrays
                     CALL CHECKMEM( IOS, 'GRPSTIDX', PROGNAME )
                     ALLOCATE( GRPCHAR( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'GRPCHAR', PROGNAME )
+                    GRPINDX  = 0  ! array
                 END IF
-                GRPINDX  = 0  ! array
 
 C...............  If haven't already, get set up for group reporting...
                 IF ( .NOT. ALLOCATED( GRPFLAG ) ) THEN
@@ -497,6 +497,7 @@ C.............  For current pollutant, loop through sources until a source with
 C               controls is encountered. Terminate loop when all sources have
 C               been examined.
         SRCLOOP = .TRUE.
+        S = 0
         DO WHILE( SRCLOOP .AND. S .LT. NSRC )
 
            S = S + 1
