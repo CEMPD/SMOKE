@@ -207,12 +207,26 @@ C.........  Read Inventory Table
 C.............  Skip comment lines
             IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
 
-C.............  Parse the line into its sections based on file format def'n
-            DO N = 1, NFIELDS
+C.............  Check if line is a process/pollutant combination
+            IF( INDEX( LINE( 1:16 ), ETJOIN ) > 0 ) THEN
+                SEGMENT( 1 ) = ADJUSTL( LINE( 1:16 ) )
 
-                SEGMENT( N ) = ADJUSTL( LINE( FBEG( N ):FEND( N ) ) )
+C.................  Skip CAS number, SAROAD code, and reactivity, then
+C                   store remaining fields               
+                DO N = 5, NFIELDS
+                    SEGMENT( N ) = 
+     &                  ADJUSTL( LINE( FBEG( N ):FEND( N ) ) )
+                END DO
+            ELSE
 
-            END DO
+C.................  Parse the line into its sections based on file format def'n
+                DO N = 1, NFIELDS
+
+                    SEGMENT( N ) = 
+     &                  ADJUSTL( LINE( FBEG( N ):FEND( N ) ) )
+
+                END DO
+            END IF
 
 C.............  Get length of data name
             L = LEN_TRIM( SEGMENT( 1 ) )
