@@ -2,9 +2,9 @@
         PROGRAM CSGLDAYMRG
 
 C***********************************************************************
-C  program     CSGLDAYMRG body starts at line  279
-C  subroutine  DAYFILE         starts at line 1442
-C  subroutine  CTLSPC          starts at line 1556
+C  program     CSGLDAYMRG body starts at line  280
+C  subroutine  DAYFILE         starts at line 1586
+C  subroutine  CTLSPC          starts at line 1699
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -77,22 +77,24 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
+        INTEGER         CSVNAME
         LOGICAL         DSCGRID
+        INTEGER         ENVINT 
+        LOGICAL         ENVYN  
         INTEGER         GETDATE
         INTEGER         GETNUM
         LOGICAL         GETYN
-        INTEGER         INDEX1
-        CHARACTER*16    PROMPTMFILE
-        INTEGER         PROMPTFFILE
-        INTEGER         TRIMLEN
-        INTEGER         CSVNAME
-        INTEGER         WKDAY
-        CHARACTER*14    MMDDYY
         CHARACTER*10    HHMMSS
+        INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
+        INTEGER         PROMPTFFILE
+        CHARACTER*16    PROMPTMFILE
+        INTEGER         TRIMLEN
+        INTEGER         WKDAY
 
-        EXTERNAL    CRLF, DSCGRID, GETDATE, GETNUM, GETYN, INDEX1,
-     &              PROMPTMFILE, PROMPTFFILE, TRIMLEN, CSVNAME,
-     &              WKDAY, MMDDYY, HHMMSS
+        EXTERNAL    CRLF, CSVNAME, DSCGRID, ENVINT, ENVYN, GETDATE, 
+     &              GETNUM, GETYN, HHMMSS, INDEX1, MMDDYY, 
+     &              PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY
 
 C...........   PARAMETER
 
@@ -182,17 +184,10 @@ C...........   form "<INV-SPC-NAME>to<MODEL-SPC-NAME>")
         INTEGER         NPPM( MXMPOL )        !  No. of spcs facs per model spcs
         
         CHARACTER*16    INVNAME( NMPOL )      !  inv-spc part of name
-        CHARACTER*16    MSNAMES( MXMPOL*MXEPRC )!  mobile spc-names
         CHARACTER*16    SPCFNM( MXMPOL*MXEPRC ) !  Names of speciation factors
         CHARACTER*16    NMATCH                  !  Name for matching
         CHARACTER*16    EMTNAM( MXEMIS )        ! Names of emission types
         CHARACTER*16    LNAME            ! Var name from previous loop iteration
-
-C...........   Gridding Matrix, Control Matrix, Speciation Matrix
-
-        INTEGER         NX( NGRID )
-        INTEGER         IX( NMATX )
-        REAL            CX( NMATX )
 
 C...........   Other local variables
         
@@ -206,21 +201,27 @@ C...........   Other local variables
         INTEGER         SIDX                  !  Speciation matrix index no.
         INTEGER         TDEV                  !  Speciation list file unit
         INTEGER         NSNAME                ! No. of speciation factor names
+        INTEGER         PVGTYP                !  Vertical coord type from PLAY
+        INTEGER         PVGTOP                !  Vertical coord top  from PLAY
         INTEGER         ICNT                  ! Counter
         INTEGER         LDEV
         INTEGER         I, J, K, L, M, N, F, S, T, V
-        INTEGER         KK, JJ, III
+        INTEGER         IOS                   !  temporary I/O status
+        INTEGER         KK, JJ
         
         LOGICAL         AFLAG   !  area     source emissions go into the merge
         LOGICAL         BFLAG   !  biogenic source emissions go into the merge
         LOGICAL         MFLAG   !  mobile   source emissions go into the merge
         LOGICAL         PFLAG   !  point    source emissions go into the merge
+        LOGICAL         EFLAG   !  error flag
+        LOGICAL         HFLAG   !  hourly output flag
         LOGICAL         ACFLAG  !  use area   source control matrix
         LOGICAL         MCFLAG  !  use mobile source control matrix
         LOGICAL         PCFLAG  !  use point  source control matrix
         LOGICAL         APFLAG  !  use area   source projection matrix
         LOGICAL         MPFLAG  !  use mobile source projection matrix
         LOGICAL         PPFLAG  !  use point  source projection matrix
+        LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
         LOGICAL         METFLAG !  check consistency of input files' met headers
         LOGICAL         BSPCFLAG( NMPOL )       !  is spc in bio input file?
         LOGICAL         OUTFLAG !  generating file output
@@ -247,7 +248,7 @@ C...........   Other local variables
         CHARACTER*16    BTNAME  !  logical name for biogenic temporal input file
         CHARACTER*16    ENAME   !  logical name for emission         output file
 
-        CHARACTER*16    SCRBUF, TMPBUF, ABUF, BBUF  !  scratch vbles for names
+        CHARACTER*16    SCRBUF, TMPBUF, ABUF  !  scratch vbles for names
         CHARACTER*80    BMETHEAD( 2 )  ! met headers from BGTS
         CHARACTER*80    MMETHEAD( 2 )  ! met headers from MTMP
         CHARACTER*80    PMETHEAD( 2 )  ! met headers from PLAY
@@ -312,20 +313,80 @@ C   begin body of program CSGLDAYMRG
      &                   'Ending program at user request', 0 )
         END IF
 
+C.......   Get environment variable logical variables
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
+
+        HFLAG = ENVYN( 'MRG_HOURLY', 'Hourly merge output',
+     &                  .TRUE., IOS )
+
+        AFLAG = ENVYN( 'MRG_AREA', 'Include area sources in merge',
+     &                  .TRUE., IOS )
+
+        BFLAG = ENVYN( 'MRG_BIOG', 'Include biog sources in merge',
+     &                  .TRUE., IOS )
+
+        MFLAG = ENVYN( 'MRG_MOBILE', 'Include mobile sources in merge',
+     &                  .TRUE., IOS )
+
+        PFLAG = ENVYN( 'MRG_POINT', 'Include point sources in merge',
+     &                  .TRUE., IOS )
+
+        METFLAG= ENVYN( 'MRG_HDR_CHECK', 
+     &                  'Check consistency of met headers', .TRUE., IOS)
 
 C.......   Set appropriate flags and parameters for this run:
 
-        AFLAG = GETYN( 'Do you want HOURLY output?', .TRUE. )
-        
-        IF ( AFLAG ) THEN
+        HFLAG = GETYN( 'Do you want HOURLY output?', HFLAG )
 
-            JDATE  = GETDATE( 1995182,
+C.......   Get default time characteristic for output file:
+C.......   If we're going to prompt, then set the defaults as best we can
+C.......      otherwise, use environment variables to set defaults
+        EFLAG = .FALSE.
+        IF( PROMPTF ) THEN
+
+            JDATE  = ENVINT( 'ESDATE', 'Start date', 1995182, IOS )
+            JTIME  = ENVINT( 'STIME' , 'Start time', 0 , IOS )
+            NSTEPS = ENVINT( 'DURATION', 'Duration', 24, IOS )
+
+        ELSE
+            JDATE  = ENVINT( 'ESDATE', 'Start date', 1995182, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but ESDATE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            JTIME  = ENVINT( 'STIME' , 'Start time', 0 , IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but STIME is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            NSTEPS = ENVINT( 'DURATION', 'Duration', 24, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but DURATION is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            IF( EFLAG ) THEN
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0,
+     &                       'Bad environment variable setting(s)', 2 )
+            ENDIF
+
+        ENDIF
+
+        IF ( HFLAG ) THEN
+
+            JDATE  = GETDATE( JDATE,
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
 
-            JTIME   = GETNUM( 0,  235959, 0, 
-     &                        'Enter starting time  (HHMMSS)' )
+            JTIME   = GETNUM( 0,  235959, JTIME, 
+     &                'Enter simulation starting time  (HHMMSS)' )
             TSTEP   = 10000
-            NSTEPS  = GETNUM( 1, 999999, 24,
+            NSTEPS  = GETNUM( 1, 999999, NSTEPS,
      &                        'Enter run duration    (hours)' )
 
         ELSE
@@ -338,27 +399,27 @@ C.......   Set appropriate flags and parameters for this run:
         END IF                  !  if hourly output desired, or not
 
 
-        ADATE = 0
-        ATIME = 0
-        AFLAG = GETYN( 'Include AREA SOURCES in merge?', .TRUE. )
+        ADATE = JDATE
+        ATIME = JTIME
+        AFLAG = GETYN( 'Include AREA SOURCES in merge?', AFLAG )
 
-        BDATE = 0
-        BTIME = 0
-        BFLAG = GETYN( 'Include BIOGENIC SOURCES in merge?', .TRUE. )
+        BDATE = JDATE
+        BTIME = JTIME
+        BFLAG = GETYN( 'Include BIOGENIC SOURCES in merge?', BFLAG )
 
-        MDATE = 0
-        MTIME = 0
-        MFLAG = GETYN( 'Include MOBILE SOURCES in merge?', .TRUE. )
+        MDATE = JDATE
+        MTIME = JTIME
+        MFLAG = GETYN( 'Include MOBILE SOURCES in merge?', MFLAG )
 
-        PDATE = 0
-        PTIME = 0
-        PFLAG = GETYN( 'Include POINT SOURCES in merge?', .TRUE. )
+        PDATE = JDATE
+        PTIME = JTIME
+        PFLAG = GETYN( 'Include POINT SOURCES in merge?', PFLAG )
 
         IF ( .NOT.( AFLAG .OR. BFLAG .OR. MFLAG .OR. PFLAG ) ) THEN
             CALL M3EXIT( 'CSGLDAYMRG', 0, 0, 'No input files', 2 )
         END IF
 
-        METFLAG = GETYN( 'Check consistency of met headers?', .TRUE. )
+        METFLAG = GETYN( 'Check consistency of met headers?', METFLAG )
 
 C.......   As appropriate, open and check dimensionality of matrix files:
 C...........   NOTE that CLTSPC() and DAYFILE() called later perform
@@ -592,6 +653,8 @@ C.......   Point source matrix and layer fraction files:
             END IF !  if file's dimensionality matches, or niot
             PMETHEAD( 1 ) = FDESC3D( 2 ) ! save met header to an array
             PMETHEAD( 2 ) = FDESC3D( 3 ) 
+            PVGTYP        = VGTYP3D
+            PVGTOP        = VGTOP3D
 
             DO  11  L = 0, EMLAYS
                 IF ( FLTERR( SIGMAF( L ), VGLVS3D( L ) ) ) THEN
@@ -683,8 +746,8 @@ C...........   Set up header for output file
 
         END IF
 
-        VGTYP3D = VGTYP
-        VGTOP3D = VGTOP
+        VGTYP3D = PVGTYP
+        VGTOP3D = PVGTOP
 
         DO  12  L = 0, EMLAYS
             VGLVS3D( L ) = SIGMAF( L )
@@ -717,12 +780,13 @@ C...........   Set up header for output file
             VDESC3D( V ) = MESG
             VTYPE3D( V ) = M3REAL
 22      CONTINUE
-        FDESC3D( 1 ) = 'area source speciated gridded emissions.'
                  
         IF ( ACFLAG .OR. MCFLAG .OR. PCFLAG ) THEN
             ENAME = 'EMISC3D'
+            FDESC3D( 1 ) = 'Speciated, gridded, controlled emissions'
         ELSE
             ENAME = 'EMIS3D'
+            FDESC3D( 1 ) = 'Speciated, gridded emissions'
         END IF
 
         ENAME = PROMPTMFILE(  
@@ -1164,30 +1228,53 @@ C           make sure they are using the same met file
 
         DO  229  T = 1, NSTEPS
 
-            IF ( MOD( T,24 ) .EQ. 1 ) THEN
- 
-                MESG = 'Processing ' //
-     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
-                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
- 
-            END IF
- 
             IF ( LDATE .NE. JDATE ) THEN  !  get new day's input files, etc
 
                 LDATE = JDATE
 
                 IF ( AFLAG ) THEN
-                    ANAME = 'ATMP'
+
+                    IF( WKDAY( JDATE ) .EQ. 5 ) THEN
+                        ANAME = 'ATMP_FRI'
+
+                    ELSEIF( WKDAY( JDATE ) .EQ. 6 ) THEN
+                        ANAME = 'ATMP_SAT'
+
+                    ELSEIF( WKDAY( JDATE ) .EQ. 7 ) THEN
+                        ANAME = 'ATMP_SUN'
+
+                    ELSE
+                        ANAME = 'ATMP_WKDAY'
+
+                    ENDIF
+
                     CALL DAYFILE( ANAME, ADATE, ATIME, JDATE, JTIME,
      &                            NASRC, 'Enter  AREA  SOURCE file' )
                 END IF
 
                 IF ( PFLAG ) THEN
-                    PNAME = 'PTMP'
+                    IF( WKDAY( JDATE ) .EQ. 5 ) THEN
+                        PNAME = 'PTMP_FRI'
+
+                    ELSEIF( WKDAY( JDATE ) .EQ. 6 ) THEN
+                        PNAME = 'PTMP_SAT'
+
+                    ELSEIF( WKDAY( JDATE ) .EQ. 7 ) THEN
+                        PNAME = 'PTMP_SUN'
+
+                    ELSE
+                        PNAME = 'PTMP_WKDAY'
+
+                    ENDIF
+
                     CALL DAYFILE( PNAME, PDATE, PTIME, JDATE, JTIME,
      &                            NPSRC, 'Enter  POINT SOURCE file' )
                 END IF
 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
             END IF  !  if ldate different from jdate (so get new input files)
 
 C.............  Write to screen because WRITE3 only writes to LDEV
@@ -1200,7 +1287,7 @@ C...........   Read mobile source emissions:
 C.............   Read in entire emissions field
  
                IF( .NOT. READ3( MTNAME, ALLVAR3, ALLAYS3,
-     &                    JDATE, JTIME, MOBILV ) ) THEN
+     &                          MDATE, MTIME, MOBILV ) ) THEN
 
                    MESG = 'Could not read timestep from ' // MTNAME
                    CALL M3EXIT( 'CSGLDAYMRG', JDATE, JTIME, MESG, 2 )
@@ -1243,7 +1330,7 @@ C...........   write to output file:
 
                 IF( AFLAG ) THEN
                     IF( .NOT. READ3( ANAME, EINAM( V ), ALLAYS3, 
-     &                         JDATE, JTIME, AREAV ) ) THEN
+     &                               ADATE, ATIME, AREAV ) ) THEN
 
                         MESG = 'Could not read "' //
      &                  EINAM( V )( 1:TRIMLEN( EINAM( V ))) //
@@ -1257,7 +1344,7 @@ C...........   write to output file:
                 IF ( PFLAG ) THEN
 
                     IF( .NOT. READ3( PNAME, EINAM( V ), ALLAYS3, 
-     &                         JDATE, JTIME, POINTV ) ) THEN
+     &                               PDATE, PTIME, POINTV ) ) THEN
 
                         MESG = 'Could not read "' //
      &                  EINAM( V )( 1:TRIMLEN( EINAM( V ))) //
@@ -1285,7 +1372,7 @@ C...................   set to zero:
                     IF ( BSPCFLAG( K ) ) THEN
 
                         IF( .NOT. READ3( BTNAME, EMNAM( K ), ALLAYS3,
-     &                                   JDATE, JTIME, EMISG ) ) THEN
+     &                                   BDATE, BTIME, EMISG ) ) THEN
                             MESG = 'Could not read "' //
      &                      EMNAM( K )( 1:TRIMLEN( EMNAM( K ))) //
      &                      '" from ' // BTNAME
@@ -1474,12 +1561,14 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2     CRLF
+        INTEGER         GETDATE
         INTEGER         GETNUM
         LOGICAL         GETYN
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
 
-        EXTERNAL        CRLF, GETNUM, GETYN, PROMPTMFILE, TRIMLEN
+        EXTERNAL        CRLF, GETDATE, GETNUM, GETYN, PROMPTMFILE, 
+     &                  TRIMLEN
 
 
 C...........   LOCAL PARAMETERS
@@ -1521,8 +1610,8 @@ C   begin body of subroutine  DAYFILE
      &           CRLF() // BLANK5 //
      &          'current model date & time.'
             CALL M3MSG2( MESG )
-            FDATE = GETNUM( SDATE3D, 9999999, SDATE3D, 
-     &                      'Enter date (YYYYDDD)' )
+            FDATE = GETDATE( SDATE3D, 'Enter date (YYYYDDD)|(YYYYMMDD)')
+
             FTIME = GETNUM( 0, 235959, JTIME, 
      &                      'Enter time  (HHMMSS)' )
         ELSE
