@@ -284,9 +284,9 @@ C.............  Check horizontal parameters from header
      &           FLTERR( P_GAM, SNGL( P_GAM3D ) )      ) THEN
 
                 EFLAG = .TRUE.
-                MESG = 'Horizontal grid parameters in file "' // 
-     &                 FILNAM( 1:L2 ) //
-     &                 '" are inconsitent with initialized values.'
+                MESG = 'ERROR: Horizontal grid parameters in file "' // 
+     &                 FILNAM( 1:L2 ) // '"'// CRLF() // BLANK10//
+     &                 'are inconsitent with initialized values.'
                 CALL M3MSG2( MESG )
 
             END IF
@@ -315,9 +315,9 @@ C.............  Check vertical parameters from header
                 END IF
 
                 IF( EFLAG ) THEN
-                    MESG = 'Vertical grid parameters in file "' // 
-     &                     FILNAM( 1:L2 ) //
-     &                     '" are inconsitent with initialized values.'
+                    MESG = 'ERROR: Vertical grid parameters in file "'// 
+     &                     FILNAM( 1:L2 ) // '"'//CRLF() // BLANK10//
+     &                     'are inconsitent with initialized values.'
                     CALL M3MSG2( MESG )
                 END IF
 
@@ -329,7 +329,7 @@ C               there, compare to the original settings.
             CVAL = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. )
             IF( CVAL .NE. ' ' .AND. CVAL .NE. METSCEN ) THEN
                 EFLAG = .TRUE.
-                MESG = 'Meteorology scenario in file "' // 
+                MESG = 'ERROR: Meteorology scenario in file "' // 
      &                 FILNAM( 1:L2 ) // '" is inconsistent '//
      &                 'with initialized value.'
                 CALL M3MSG2( MESG )
@@ -338,9 +338,9 @@ C               there, compare to the original settings.
             CVAL = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. )
             IF( CVAL .NE. ' ' .AND. CVAL .NE. CLOUDSHM ) THEN
                 EFLAG = .TRUE.
-                MESG = 'Cloud scehem in file "' // 
+                MESG = 'ERROR: Cloud scheme in file "' // 
      &                 FILNAM( 1:L2 ) // '" is inconsistent '//
-     &                 'with initialized value.'
+     &                 CRLF() // BLANK10// 'with initialized value.'
                 CALL M3MSG2( MESG )
             END IF
 
