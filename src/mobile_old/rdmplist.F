@@ -1,11 +1,9 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         INTEGER FUNCTION RDMPLIST( FDEV, MPFIP, MPRDT, MPLNK, 
      &                             MPREF, REFCNT, REFLIST ) 
 
 C***********************************************************************
-C  subroutine body starts at line  71
+C  subroutine body starts at line  90
 C
 C  FUNCTION:  read and sort file MPLIST for TMPMOBIL
 C
@@ -20,16 +18,37 @@ C  REVISION  HISTORY:
 C       Prototype  1/96 by CJC
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
 
+      INCLUDE 'CHDGEN3.EXT'     ! generalized speciation parms
+      INCLUDE 'MBDIMS3.EXT'     ! mobile-source parameters
       INCLUDE 'PARMS3.EXT'      ! I/O API constants
       INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
       INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
-      INCLUDE 'CHDIMS3.EXT'     ! chemistry parameters
-      INCLUDE 'MBDIMS3.EXT'     ! mobile-source parameters
 
 
 C...........   ARGUMENTS and their descriptions:

@@ -1,13 +1,11 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         SUBROUTINE RDMCONV( KDEV, TDEV,
      &                      FAC0, FIP1, RDT1, FAC1, N1,
      &                            FIP2, RDT2, FAC2, N2,
      &                                  RDT3, FAC3, N3  )
 
 C***********************************************************************
-C  function body starts at line  99
+C  function body starts at line  118
 C
 C  FUNCTION:
 C       Reads the indicated volatile organic conversion file,
@@ -26,12 +24,33 @@ C  REVISION  HISTORY:
 C       prototype 7/96 by MRH
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
 
-      INCLUDE 'CHDIMS3.EXT'     ! emis chem info (both inventory and model)
+      INCLUDE 'CHDGEN3.EXT'     ! emis chem info (both inventory and model)
       INCLUDE 'MBDIMS3.EXT'     ! mobile-specific information
       INCLUDE 'PARMS3.EXT'      ! I/O API constants
       INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
