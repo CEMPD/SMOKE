@@ -53,7 +53,6 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         INTEGER         FIND1
-        INTEGER         GETMENU
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
@@ -63,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL        FIND1, GETMENU, GETYN, HHMMSS, INDEX1, MMDDYY, 
+        EXTERNAL        FIND1, GETYN, HHMMSS, INDEX1, MMDDYY, 
      &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -78,13 +77,15 @@ C...........   Factor arrays
         INTEGER ADJRDT( NRCLAS )
 
         REAL    ADJFAC ( NRCLAS )
-        REAL    OLDEMIS( NRCLAS )
-        REAL    NEWEMIS( NRCLAS )
+        REAL    OLDEMIS( NVTYPE, NRCLAS )
+        REAL    NEWEMIS( NVTYPE, NRCLAS )
+
+C...........   Indicator for which variable to adjust
+        LOGICAL LADJUST( MXVARS3 )
 
 C...........   Other local variables
         INTEGER         I, J, K, L, S, T, V
 
-        INTEGER         IADJVAR  ! index to variable name being adjusted
         INTEGER         IOS
         INTEGER         JDATE, JTIME, TSTEP
         INTEGER         LDATE, LTIME
@@ -100,6 +101,7 @@ C...........   Other local variables
         CHARACTER*16    ANAME   !  logical name for mobile-source input file
         CHARACTER*16    INAME   !  logical name for input inventory name
         CHARACTER*16    ONAME   !  logical name for output file name
+        CHARACTER*16    POLADJ  !  pollutant name to adjust
 
         CHARACTER*256   MESG    !  scratch message area
 
@@ -133,6 +135,10 @@ C   begin body of program ADJMOBIL
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'ADJMOBIL', 0, 0, 'Ending Program', 2 )
         END IF
+
+C.......   Get environment variable string of pollutant that needs adjusting.
+        MESG = 'Name of pollutant to adjust'
+        CALL ENVSTR( 'ADJUST_POLLUTANT', MESG, 'NOX', POLADJ, IOS )
  
 C.......   Get file names; open input mobile source, mods table, and
 C.......   output files.
@@ -224,25 +230,45 @@ C.........  Set up to open output file
         FDESC3D( 1 ) = FDESC3D( 1 )( 1:L ) // ' adjusted by ADJMOBIL'
         IF ( TSTEP .EQ. 0 ) THEN
             OUTNAM = 'MOBLOUT'
-            IADJVAR = INDEX1( 'VMT', NVARS3D, VNAME3D )
-           
+
+            DO 81 I = 1, NVARS3D
+                LADJUST( I ) = .FALSE.
+81          CONTINUE
+  
+            K = INDEX1( 'VMT', NVARS3D, VNAME3D )
+            LADJUST( K ) = .TRUE.
+            MESG = 'NOTE: Adjusting variable VMT'
+            CALL M3MSG2( MESG )
+
         ELSE  
             OUTNAM = 'MTMPOUT'
 
-            IADJVAR = GETMENU( NVARS3D, 2, 
-     &                         'Select process/pollutant to adjust',
-     &                         VNAME3D )
+C.............  Scan the input variable names and flag the ones that
+C               contain the name of the pollutant to adjust.
+            L = TRIMLEN( POLADJ )
+            DO 91 I = 1, NVARS3D
+                K = INDEX( VNAME3D( I ), POLADJ( 1:L ) )
+                IF( K .GT. 0 ) THEN
+                    LADJUST( I ) = .TRUE.
+                    MESG = 'NOTE: Adjusting variable ' // VNAME3D( I )
+                    CALL M3MSG2( MESG )
+                ELSE
+                    LADJUST( I ) = .FALSE.
+                END IF
+91          CONTINUE
+
         END IF
 
         ONAME = PROMPTMFILE( 'Enter logical name for output file',
      &                       FSUNKN3, OUTNAM, 'ADJMOBIL' )
 
-
 C.......   Initialize old and new total emissions by road clas
-       DO 101 I = 1, NRCLAS
-           OLDEMIS( I ) = 0.
-           NEWEMIS( I ) = 0.
-101    CONTINUE
+       DO 103 J = 1, NRCLAS
+           DO 101 I = 1, NVTYPE
+               OLDEMIS( I, J ) = 0.
+               NEWEMIS( I, J ) = 0.
+101        CONTINUE
+103    CONTINUE
 
 C.......   Transform and write out mobile source emissions values:
         LDATE = 0
@@ -274,7 +300,7 @@ C.............   Read in entire emissions field
                 END IF          !  if read3() succeeds or not
 
 C.................  If this is the variable to adjust, then do it!
-                IF( V .EQ. IADJVAR ) THEN
+                IF( LADJUST( V ) ) THEN
 
                     DO 111 K = 1, NVTYPE
                         DO 109 S = 1, NMSRC
@@ -283,11 +309,11 @@ C.................  If this is the variable to adjust, then do it!
 
                             J = FIND1( RDT, NRCLAS, ADJRDT )
 
-                            OLDEMIS( J ) = OLDEMIS( J ) + EMISV( S,K )
+                            OLDEMIS( K,J ) = OLDEMIS( K,J )+EMISV( S,K )
 
                             EMISV( S,K ) = EMISV( S,K ) * ADJFAC( J )
 
-                            NEWEMIS( J ) = NEWEMIS( J ) + EMISV( S,K )
+                            NEWEMIS( K,J ) = NEWEMIS( K,J )+EMISV( S,K )
 
 109                     CONTINUE
 111                 CONTINUE
@@ -314,11 +340,14 @@ C.................  If this is the variable to adjust, then do it!
 199     CONTINUE          !  end loop on time steps
 
 C.........  Write old and new emissions by road class
-        DO I = 1, NRCLAS
-            WRITE( LDEV, * ) ' RDT=', ADJRDT( I ), 
-     &                       ' Old emis=', OLDEMIS( I ),
-     &                       ' New emis=', NEWEMIS( I ) 
-        ENDDO
+        DO 203 J = 1, NRCLAS
+            DO 201 I = 1, NVTYPE
+                WRITE( LDEV, * ) ' RDT=', ADJRDT( J ), 
+     &                           ' VTYPE=', VTYPE3( I ),
+     &                           ' Old emis=', OLDEMIS( I,J ),
+     &                           ' New emis=', NEWEMIS( I,J ) 
+201         CONTINUE
+203     CONTINUE
       
         CALL M3EXIT( 'ADJMOBIL', 0, 0, 
      &               'Normal completion of PROGRAM ADJMOBIL', 0 )
