@@ -5,6 +5,7 @@
 MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
 
 MODSOURC = $(MD_OUT)/modsourc.o
+MODMOBIL = $(MD_OUT)/modmobil.o
 MODXREF  = $(MD_OUT)/modxref.o
 MODTPRO  = $(MD_OUT)/modtpro.o
 MODSPRO  = $(MD_OUT)/modspro.o
@@ -19,9 +20,9 @@ MODMERGE = $(MD_OUT)/modmerge.o
 MODELEV  = $(MD_OUT)/modelev.o
 MODMET   = $(MD_OUT)/modmet.o
 #
-MODALL   = $(MODSOURC) $(MODXREF) $(MODTPRO)  $(MODSPRO)  $(MODCNTRL) \
-           $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODMERGE) $(MODSTCY)  \
-           $(MODSURG)  $(MODEMFAC) $(MODELEV) $(MODMET)
+MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODTPRO)  $(MODSPRO) \
+           $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODMERGE)  \
+           $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV) $(MODMET)
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
@@ -34,6 +35,12 @@ $(MODSOURC): $(MD_SRC)/modsourc.f  $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	if ( test -f modsourc.mod ) ; then mv modsourc.mod $(MD_OUT) ; fi
 	if ( test -f modsourc.M   ) ; then mv modsourc.M   $(MD_OUT) ; fi
 	if ( test -f MODSOURC.mod ) ; then mv MODSOURC.mod $(MD_OUT) ; fi
+
+$(MODMOBIL): $(MD_SRC)/modmobil.f  $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modmobil.f
+	if ( test -f modmobil.mod ) ; then mv modmobil.mod $(MD_OUT) ; fi
+	if ( test -f modmobil.M   ) ; then mv modmobil.M   $(MD_OUT) ; fi
+	if ( test -f MODMOBIL.mod ) ; then mv MODMOBIL.mod $(MD_OUT) ; fi
 
 $(MODXREF): $(MD_SRC)/modxref.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modxref.f
