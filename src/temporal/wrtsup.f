@@ -77,7 +77,7 @@ C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE :: HRLPROF( : )  ! tmp diurnal profiles by variable
 
 C.........  Local varables
-        INTEGER       L1, L2, S, V      ! indices and counters
+        INTEGER       I, L1, L2, S, V      ! indices and counters
 
         INTEGER       IOS               ! i/o status
         INTEGER       PMON              ! monthly profile from previous iteration
@@ -88,6 +88,7 @@ C.........  Local varables
         LOGICAL       WFLAG             ! true: weekly same for all pols
         LOGICAL       HFLAG             ! true: hourly same for all pols
 
+        CHARACTER*100 :: OUTFMT = ' '    ! output format
         CHARACTER*512 :: BUFFER = ' '    ! output variables buffer
 
         CHARACTER*16 :: PROGNAME = 'WRTSUP' !  program name
@@ -114,6 +115,17 @@ C.........  Write header with current variables
 
         L2 = LEN_TRIM( BUFFER )
         WRITE( FDEV, '(A)' ) BUFFER( 1:L2 )
+
+C.........  Create output format
+        OUTFMT = '(A,I8,","'
+        DO I = 1, NVAR, 50
+            IF ( I .EQ. 1 ) THEN
+                OUTFMT = TRIM( OUTFMT ) // ',50(I8,",")'
+            ELSE
+                OUTFMT = TRIM( OUTFMT ) // ',14X,/,50(I8,",")'
+            END IF
+        END DO 
+        OUTFMT = TRIM( OUTFMT ) // ',I8)'
 
 C.........  Loop through sources to output temporal profile info
         DO S = 1, NSRC
@@ -163,21 +175,21 @@ C               profile to negative
 
 C.............  Write profile information by pollutant
             IF( MFLAG ) THEN
-                WRITE( FDEV,93150 ) '"M"', 1, MONPROF( 1 )
+                WRITE( FDEV,OUTFMT ) '"M"', 1, MONPROF( 1 )
             ELSE
-                WRITE( FDEV,93150 ) '"M"', NVAR, ( MONPROF(V),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"M"', NVAR, (MONPROF(V),V=1,NVAR)
             END IF
 
             IF( MFLAG ) THEN
-                WRITE( FDEV,93150 ) '"W"', 1, WEKPROF( 1 )
+                WRITE( FDEV,OUTFMT ) '"W"', 1, WEKPROF( 1 )
             ELSE
-                WRITE( FDEV,93150 ) '"W"', NVAR, ( WEKPROF(V),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"W"', NVAR, (WEKPROF(V),V=1,NVAR)
             END IF
 
             IF( MFLAG ) THEN
-                WRITE( FDEV,93150 ) '"H"', 1, HRLPROF( 1 )
+                WRITE( FDEV,OUTFMT ) '"H"', 1, HRLPROF( 1 )
             ELSE
-                WRITE( FDEV,93150 ) '"H"', NVAR, ( HRLPROF(V),V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"H"', NVAR, (HRLPROF(V),V=1,NVAR)
             END IF
 
         END DO  ! end source loop
@@ -192,8 +204,6 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
-
-93150   FORMAT( A, 120(',', I8 ) )
 
 C...........   Internal buffering formats............ 94xxx
 
