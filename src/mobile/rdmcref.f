@@ -96,7 +96,7 @@ C.........  Initialize arrays
             
             IDX( I ) = I
                 
-C.........  Read line
+C.............  Read line
             READ( MDEV, 93000, END=999, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
