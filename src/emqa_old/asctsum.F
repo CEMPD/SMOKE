@@ -108,6 +108,7 @@ C...........   Other local variables
         CHARACTER*40    ASCTNAME !  Buffer for reading the ASCT name
 
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
+		CHARACTER*256   FMT
 
 C***********************************************************************
 C   begin body of program ASCTSUM
@@ -279,8 +280,10 @@ C           PRINT *, 'Reading ' // EINAM (I) // '...'
                 	ASCTNAME = "*** no ASCT name available"
                 END IF 
             END IF
-
-            WRITE ( OUNIT, 830 ) IASC7LIST ( J ), IASC3LIST ( J ), 
+C           04/07/99 wts - Create format.
+            WRITE ( FMT, 831 ) NIPOL
+C           WRITE ( OUNIT, 830 ) IASC7LIST ( J ), IASC3LIST ( J ), 
+			WRITE ( OUNIT, FMT ) IASC7LIST ( J ), IASC3LIST ( J ),
      &            ( SPECSUM ( J, I ), I = 1, NIPOL ), ASCTNAME
 90      CONTINUE
         
@@ -299,7 +302,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 800     FORMAT ( A, / )
 810     FORMAT ( A )
 820     FORMAT ( A9, $ )
-830     FORMAT ( I7.7, I3.3, 1X, <NIPOL>F9.2, 2X, A )
+C830    FORMAT ( I7.7, I3.3, 1X, <NIPOL>F9.2, 2X, A )
+831     FORMAT ( '( I7.7, I3.3, 1X, ', I8, 'F9.2, 2X, A )' )
 840     FORMAT ( A, $ )
 850     FORMAT ( A, A, / )
 

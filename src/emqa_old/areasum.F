@@ -105,6 +105,7 @@ C...........   Other local variables
         CHARACTER*20    FIPNAME !  Buffer for reading the state/county name
 
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
+		CHARACTER*256   FMT
 
 
 C***********************************************************************
@@ -295,7 +296,10 @@ C           PRINT *, 'Reading ' // EINAM (I) // '...'
                 FIPNAME = '*** no state name'
             ENDIF
 
-            WRITE ( OUNIT, 830 ) 
+C           05/04/99 wts - Create format.
+            WRITE (FMT, 831 ) NIPOL
+C           WRITE ( OUNIT, 830 )
+			WRITE ( OUNIT, FMT )
      &           ISTLIST ( J ), ( STSUM ( J, I ), I = 1, NIPOL ),
      &           FIPNAME
 90      CONTINUE
@@ -332,7 +336,10 @@ C           PRINT *, 'Reading ' // EINAM (I) // '...'
                 FIPNAME = '*** no county name'
             ENDIF
 
-            WRITE ( OUNIT, 870 ) 
+C           05/04/99 wgs - Create format.
+            WRITE ( 871, FMT ) NIPOL
+C           WRITE ( OUNIT, 870 )
+			WRITE ( OUNIT, FMT ) 
      &           ICOLIST ( J ), ( COSUM ( J, I ), I = 1, NIPOL ),
      &           FIPNAME
 100     CONTINUE
@@ -350,9 +357,11 @@ C******************  FORMAT  STATEMENTS   ******************************
 800     FORMAT ( A, / )
 810     FORMAT ( A )
 820     FORMAT ( A10, $ )
-830     FORMAT ( I2.2, 2X, <NIPOL>F10.2, 2X, A )
+C830    FORMAT ( I2.2, 2X, <NIPOL>F10.2, 2X, A )
+831     FORMAT ( '( I2.2, 2X, ', I8, 'F10.2, 2X, A )' )
 840     FORMAT ( A, $ )
 850     FORMAT ( //, A, A )
 860     FORMAT ( /, 19X, A )
-870     FORMAT ( I5.5, <NIPOL>F10.2, 2X, A )
+C870    FORMAT ( I5.5, <NIPOL>F10.2, 2X, A )
+871     FORMAT ( '( I5.5, ', I8, 'F10.2, 2X, A )' )
         END
