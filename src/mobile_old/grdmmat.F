@@ -52,7 +52,8 @@ C...........   INCLUDES:
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
+        REAL            ADJMV        
         CHARACTER*2     CRLF
         LOGICAL         DSCGRID
         INTEGER         FIND1, FIND2, FIND3
@@ -63,7 +64,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         LOGICAL         UTM2LAM
         
-        EXTERNAL        CRLF, DSCGRID, FIND1, FIND2, FIND3, GETYN,
+        EXTERNAL        ADJMV, CRLF, DSCGRID, FIND1, FIND2, FIND3, GETYN,
      &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN,
      &                  SETLAM, UTM2LAM
 
@@ -71,11 +72,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   PARAMETER:
 
         CHARACTER*5     BLANK5
+        CHARACTER*10    BLANK10
         CHARACTER*14    BLANK14
         INTEGER         NMMAX   !  max number of gridding-xref entries
         INTEGER         MXLNKD  !  max number of entries in link defs file
  
         PARAMETER     ( BLANK5  = ' ',
+     &                  BLANK10 = ' ',
      &                  BLANK14 = ' ',
      &                  NMMAX   = NRCLAS*( 1 + MXSTA + MXFIP + MXLNK ),
      &                  MXLNKD  = NRCLAS * MXFIP )
@@ -146,9 +149,9 @@ C...........   Mobile Sources Table
         
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 
-        INTEGER     IS( MXSCEL , NGRID )
-        REAL        CS( MXSCEL , NGRID )
-
+        INTEGER     IS ( MXSCEL , NGRID ) ! source IDs for each cell
+        REAL        CS ( MXSCEL , NGRID ) ! factors (no adjustments), for ungrid
+        REAL        CSJ( MXSCEL , NGRID ) ! factors (with adjustments)
 C...........   Gridding Matrix
 
         INTEGER     NX( NGRID )
@@ -171,6 +174,18 @@ C...........   Ungridding Matrix
 
         COMMON  / UGRIDMAT / NU, IU, CU
 
+C...........   FIPS code and Road Class Adjustment table
+        INTEGER     NADJ1              ! number of entries in FIP/RDT table
+        INTEGER     ADJFIP ( MXADJ1 )  ! FIPS codes
+        INTEGER     ADJRDT ( MXADJ1 )  ! Road class codes
+        REAL        ADJFAC1( MXADJ1 )  ! adjustment factors
+
+C...........   Cell-based Adjustment table
+        INTEGER     NADJ2              ! number of entries in cell table
+        INTEGER     ADJCELL( MXADJ2 )  ! cell numbers
+        REAL        ADJFAC2( MXADJ2 )  ! adjustment factors
+        
+
 C...........   Arrays for error checking
 
         INTEGER         NOSURG( NMSRC )  ! FIPs codes w/o surrogates
@@ -180,8 +195,9 @@ C...........   Arrays for error checking
 
 C...........   Logical names and unit numbers
         
-        INTEGER         LDEV    !  for log-device
+        INTEGER         ADEV    !  for adjustments file
         INTEGER         KDEV    !  for link defs file
+        INTEGER         LDEV    !  for log-device
         INTEGER         SDEV    !  for surrogate coeff file
         INTEGER         XDEV    !  for surrogate xref  file
 
@@ -192,6 +208,7 @@ C...........   Logical names and unit numbers
 
 C...........   Other local variables
         
+        REAL            ADJ, ADJC             ! tmp adjustment factors
         REAL            DDX, DDY, DD          ! division parms
         REAL            SRGT( NMSRG )         !  (scratch) surrogate fractions
         REAL            X1, Y1, X2, Y2, XC, YC, XX, YY  ! SDEV header
@@ -219,6 +236,7 @@ C...........   Other local variables
         INTEGER         UZONE      !  zone for all sources in inventory
         INTEGER         ZONE       !  temporary zone for each linkdef
 
+        LOGICAL         AFLAG      !  true: using adjustments file
         LOGICAL         EFLAG      !  input error flat
         LOGICAL         GFLAG      !  generate output   gridding matrix if true
         LOGICAL         UFLAG      !  generate output UNgridding matrix if true
@@ -314,8 +332,14 @@ C.......   Get file name; open actual-scc file
      &           .TRUE., .TRUE., 'MGREF', 'GRDMMAT' )
 
         SDEV = PROMPTFFILE( 
-     &  'Enter logical name for SURROGATE COEFF file',
+     & 'Enter logical name for SURROGATE COEFF file',
      &           .TRUE., .TRUE., 'MGPRO', 'GRDMMAT' )
+
+        ADEV = PROMPTFFILE( 
+     & 'Enter logical name for ADJUSTMENT FACTORS file or "NONE"',
+     &           .TRUE., .TRUE., 'MVADJUST', 'GRDMMAT' )
+
+        AFLAG = ( ADEV .GT. 0 )
 
         KDEV = PROMPTFFILE( 
      &  'Enter logical name for LINK DEFS file (or "NONE")',
@@ -612,6 +636,17 @@ C.......   Initializations:
             NCELLS( S ) = 0     !  for Surrogate  cell::FIPS table
 67      CONTINUE
 
+        IF( AFLAG ) THEN
+
+            MESG = 'Reading adjustment factors file...'
+            CALL M3MSG2( MESG )
+            CALL RDMVADJ( ADEV, MXADJ1, MXADJ2, NCOLS, NROWS, NADJ1, 
+     &                    NADJ2, ADJFIP, ADJRDT, ADJCELL,
+     &                    ADJFAC1, ADJFAC2 )
+
+C STOPPED HERE: Still need to write this
+
+        END IF
 
 C.......   ASSUMPTION:  sorted by FIP
 
@@ -1049,8 +1084,12 @@ C.......       sixth case:   fallback default
             FIP = IFIP  ( I )
             RDT = IRCLAS( I )
             LNK = ILINK ( I )
-            
-            IF ( LNK .GT. 0 ) THEN	!  explicit calculation for this link
+
+C.............  Find FIP/RoadClass adjustment for FIP and RDT
+            ADJ = ADJMV( NADJ1, FIP, RDT, ADJFIP, ADJRDT, ADJFAC1 )
+
+C.............  Process for link source...
+            IF ( LNK .GT. 0 ) THEN
 
 C.................  Convert coordinate system from UTM to required system
 
@@ -1096,9 +1135,11 @@ C.................  Convert coordinate system from UTM to required system
 
                 END IF
 
+C.................  Compute the fractions of the link in each grid cell
                 CALL LNK2GRD( XBEG, YBEG, XEND, YEND,
      &                        NCEL, ACEL, AFAC, ALEN )
 
+C.................  Make sure that there is enough storage 
                 IF ( NCEL .GT. MXCFIP ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
@@ -1106,6 +1147,8 @@ C.................  Convert coordinate system from UTM to required system
                     CALL M3MESG( MESG )
                     GO TO  155
 
+C.................  If link is outside the grid, store its information and go to
+C                   next loop iteration
                 ELSEIF( NCEL .EQ. 0 ) THEN
 
                     NLKOGRD = NLKOGRD + 1
@@ -1116,6 +1159,7 @@ C.................  Convert coordinate system from UTM to required system
 
                     GO TO  155
                     
+C.................  Write error if the link has no starting coordinates = ending
                 ELSEIF( NCEL .EQ. -1 ) THEN
 
                     EFLAG = .TRUE.
@@ -1127,10 +1171,27 @@ C.................  Convert coordinate system from UTM to required system
 
                 ENDIF
 
-
+C.................  Loop through cells intersecting the current link
                 DO  111  K = 1, NCEL
                     C = ACEL( K )
 
+C.....................  Find cell-based adjustment for cell C
+                    ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
+     &                            ADJFAC2 )
+
+C.....................  Warn when both types of adjustments are applied
+                    IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
+
+                        WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
+     &                         'RoadClass and Cell-specific adjustments'
+     &                         // ' applied for ' // CRLF() // BLANK10//
+     &                         'FIP=', FIP,'RoadClass=', RDT, 'Link=',
+     &                         LNK, 'Cell=', C
+                        CALL M3MSG2( MESG )
+
+                    ENDIF
+
+C.....................  Make sure cell ID is in valid range.
                     IF( C .GT. NGRID .OR. C .LT. 0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'Tried to assign link to'//
@@ -1138,42 +1199,79 @@ C.................  Convert coordinate system from UTM to required system
      &                    ' for FIP:', FIP, 'RDT:', RDT, 'LNK:', LNK
                         CALL M3MSG2( MESG )
                         GOTO 111
- 
+
+C.....................  Otherwise, increase the count of sources for this cell
                     ELSE
                         J = NX( C ) + 1
 
                     ENDIF
 
+C.....................  Check that the maximum number of sources per cell is ok
                     IF ( J .GT. MXSCEL ) THEN
                         OFLAG = .TRUE.      !  overflow occurred.
                         WRITE( MESG,94010 )
      &                      'Overflow for cell', C
                         CALL M3MESG( MESG )
+
+C.........................  Keep track of the maximum sources per cell 
+                        IF( J .GT. JMAX ) JMAX = J
+
+C.....................  If ok, store the source ID and the factor for this link
                     ELSE  
-                        IS( J,C ) = I 
-                        CS( J,C ) = AFAC( K )
+                        IS ( J,C ) = I 
+                        CS ( J,C ) = AFAC( K )
+                        CSJ( J,C ) = ADJ * ADJC * AFAC( K )
+
                     END IF
-                    NX( C )   = J
+
+C.....................  Store the source count for this cell
+                   NX( C )   = J
+
 111             CONTINUE
 
                 GO TO 155	!  to end of loop
 
-            END IF
-            
+            END IF   ! End of link-specific processing
+
+C............. Start of non-link processing (will only get here if the
+C              source is a non-link source)...
+
+C............. Look for source in the grid-by-link table
             S = FIND2( FIP, RDT, NUMLNK, LNKFIP, LNKRDT )  !  use LNKDEF factor
             IF ( S .GT. 0 ) THEN
                 
                 DO  122  K = 1, LNKCNT( S )
                     C = LNKCEL( J,S )
                     J = NX( C ) + 1
+
+C.....................  Find cell-based adjustment for cell C
+                    ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
+     &                            ADJFAC2 )
+
+C.....................  Warn when both types of adjustments are applied
+                    IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
+
+                        WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
+     &                         'RoadClass and Cell-specific adjustments'
+     &                         // ' applied for ' // CRLF() // BLANK10//
+     &                         'FIP=', FIP,'RoadClass=', RDT, 'Cell=', C
+                        CALL M3MSG2( MESG )
+
+                    END IF
+
                     IF ( J .GT. MXSCEL ) THEN
                         OFLAG = .TRUE.      !  overflow occurred.
                         WRITE( MESG,94010 )
      &                      'Overflow for cell', C
                         CALL M3MESG( MESG )
+
+C.........................  Keep track of the maximum sources per cell 
+                        IF( J .GT. JMAX ) JMAX = J
+
                     ELSE  
-                        IS( J,C ) = I 
-                        CS( J,C ) = LNKFAC( K,S )
+                        IS ( J,C ) = I 
+                        CS ( J,C ) = LNKFAC( K,S )
+                        CSJ( J,C ) = ADJ * ADJC * LNKFAC( K,S )
                     END IF
                     NX( C )   = J
 122             CONTINUE
@@ -1181,6 +1279,8 @@ C.................  Convert coordinate system from UTM to required system
                 GO TO 155       !  to end of loop
 
             END IF
+
+C............. Look for source in the surrogate cross reference tables...
 
             S = FIND2( FIP, RDT, NUMSCF, SRFIPF, SRRDTF )  !  FIP+roadtype
             IF ( S .GT. 0 ) THEN
@@ -1236,6 +1336,8 @@ C...........   Check SID against maximum to make sure no overflow
 
             ENDIF
 
+C.............  Make sure the FIP is in list of FIPS from surrogates before
+C               continuing
             IF( FIP .NE. LFIP ) THEN
 
                 LFIP = FIP
@@ -1256,29 +1358,52 @@ C.....................  Store list of unfound FIPs
 
                 END IF
 
+C.............  Continue to skip this FIP if it wasn't found in a previous 
+C               iteration
             ELSEIF( F .LT. 0 ) THEN
                 GO TO 155
 
             ENDIF
 
+C.............  Loop through all of the cells intersecting this FIPS code. 
             DO  144  K = 1, NCELLS( F )
             
-                C = FIPCELL( K,F )
-                J = NX( C ) + 1
+                C = FIPCELL( K,F )   ! Retrieve cell number
+                J = NX( C ) + 1      ! increment source counter for this cell
 
+C.................  Find cell-based adjustment for cell C
+                ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, ADJFAC2 )
+
+C.................  Warn when both types of adjustments are applied
+                IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
+
+                    WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
+     &                     'RoadClass and Cell-specific adjustments ' //
+     &                     'applied for ' // CRLF() // BLANK10 //
+     &                     'FIP=', FIP,'RoadClass=', RDT, 'Cell=', C
+                    CALL M3MSG2( MESG )
+
+                END IF
+
+C.................  Ensure that the number of sources per cell is okay
                 IF ( J .GT. MXSCEL ) THEN
                     OFLAG = .TRUE.      !  overflow occurred.
-                    WRITE( MESG,94010 )  
-     &              'Overflow for FIP  code ', FIP,
-     &              'RDT code', RDT,
-     &              'cell code', C, ' '
+                    WRITE( MESG,94010 ) 'Overflow for FIP code ', FIP,  
+     &              'RDT code', RDT, 'cell code', C
                     CALL M3MESG( MESG )
 
+C.....................  Keep track of the maximum sources per cell for reporting
                     IF( J .GT. JMAX ) JMAX = J
+
+C.................  If ok, store the source number and the factor
                 ELSE
-                    IS( J,C ) = I
-                    CS( J,C ) = SRGFRAC( SID,K,F )
+                    IS ( J,C ) = I
+                    CS ( J,C ) = SRGFRAC( SID,K,F )
+                    CSJ( J,C ) = ADJ * ADJC * SRGFRAC( SID,K,F )
+
                 END IF
+
+C.................  Store the count of sources for current cell
                 NX( C )   = J
 
 144         CONTINUE    !  end of loop on cells K for this FIP
@@ -1335,8 +1460,8 @@ C.......   Compute statistics.
                 
             DO 222  C = 1, NX( 1 )
                 K       = K + 1
-                IX( K ) = IS( C,1 )
-                CX( K ) = CS( C,1 )
+                IX( K ) = IS ( C,1 )
+                CX( K ) = CSJ( C,1 )
 222         CONTINUE
                    
             DO  233  R = 2, NGRID
@@ -1352,12 +1477,15 @@ C.......   Compute statistics.
                 DO 232  C = 1, J
                     K       = K + 1
                     IF ( K .LE. NMATX ) THEN
-                        IX( K ) = IS( C,R )
-                        CX( K ) = CS( C,R )
+                        IX( K ) = IS ( C,R )
+                        CX( K ) = CSJ( C,R )
                     END IF
 232             CONTINUE
                    
 233         CONTINUE    !  end of loop on cells K for this FIP
+
+
+C *********
             
             IF ( K .GT. NMATX ) THEN
                 WRITE( MESG,94010 ) 
