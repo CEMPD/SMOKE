@@ -89,7 +89,7 @@ C...........   MPLIST scenario-specific emissions factor XREF tables:
         INTEGER   MPLNK( MXPLST )         !  link IDs in XREF entries
         INTEGER   MPREF( 0:23, MXPLST )   !  hour&source-specific xrefs
         INTEGER   REFCNT                  !  count of total unique PSIs
-        INTEGER   REFLIST( MXPLST )       !  list of unique PSIs
+        INTEGER   REFLIST( MXPSI )        !  list of unique PSIs
 
 C...........   Gridded Temperature
         REAL      TA( NGRID )             !  one-layer slice of temperature
@@ -573,7 +573,7 @@ C.....................  Round min temperature DOWN to nearest on interval
                         CALL M3MESG( MESG )
 
                         TKMIN( S ) = CTOK + 
-     &                               SNGL( FTOC * ( MINT_MIN - 32.0 ) )
+     &                               ( FTOC * ( MINT_MIN - 32.0 ) )
                         TMIN = MINT_MIN
 
                     ELSEIF( TF .GT. MINT_MAX ) THEN
@@ -583,7 +583,7 @@ C.....................  Round min temperature DOWN to nearest on interval
                         CALL M3MESG( MESG )
 
                         TKMIN( S ) = CTOK + 
-     &                               SNGL( FTOC * ( MINT_MAX - 32.0 ) )
+     &                               ( FTOC * ( MINT_MAX - 32.0 ) )
                         TMIN = MINT_MAX
 
                     ELSE  ! Note: round DOWN
@@ -603,7 +603,7 @@ C.....................  Round max temperature to nearest on interval
                         CALL M3MESG( MESG )
 
                         TKMAX( S ) = CTOK + 
-     &                               SNGL( FTOC * ( MAXT_MIN - 32.0 ) )
+     &                               ( FTOC * ( MAXT_MIN - 32.0 ) )
                         TMAX = MAXT_MIN
 
                     ELSEIF( TF .GT. MAXT_MAX ) THEN
@@ -613,7 +613,7 @@ C.....................  Round max temperature to nearest on interval
                         CALL M3MESG( MESG )
 
                         TKMAX( S ) = CTOK + 
-     &                               SNGL( FTOC * ( MAXT_MAX - 32.0 ) )
+     &                               ( FTOC * ( MAXT_MAX - 32.0 ) )
                         TMAX = MAXT_MAX
 
                     ELSE  ! Note: round DOWN
@@ -887,8 +887,8 @@ C...........   Informational (LOG) message formats... 92xxx
  
 C...........   Formatted file I/O formats............ 93xxx
  
-93010   FORMAT( I5, ',', I8, ',' 20( I4, ',' ) /, 
-     &                  49( 15X, 20( I4, ',' ) / ) )
+93010   FORMAT( I5, ',', I8, ',', 20( I4, : ',' ), /, 
+     &                   49( 15X, 20( I4, : ',' ), / ) )
  
 C...........   Internal buffering formats............ 94xxx
  
