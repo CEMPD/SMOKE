@@ -678,7 +678,7 @@ C.............  Write report if report flag is switched on
 
                IF( RDEV .GT. 0 )
      &         CALL STATELST( RDEV  , MESG , NASID , NSTA ,
-     &              MSPCS, 'F8.2', EMSPC , STATES, STEM )
+     &              MSPCS, 'F8.1', EMSPC , STATES, STEM )
 
 
                IF ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) THEN
@@ -693,7 +693,7 @@ C.............  Write report if report flag is switched on
 
                   IF( TDEV .GT. 0 )
      &            CALL STATELST( TDEV  , MESG , NASID , NSTA ,
-     &              MSPCS, 'F9.2', EMSPC , STATES, STDAY )
+     &              MSPCS, 'F9.1', EMSPC , STATES, STDAY )
 
                   DO 298 I = 1, NASID
 
