@@ -1,18 +1,19 @@
-        MODULE MODTPRO
+
+        MODULE MODTMPRL
 
 !***********************************************************************
 !  Module body starts at line 41
 !
 !  DESCRIPTION:
-!     This module contains the public allocatable arrays for temporal profile
-!     tables.
+!     This module contains temporal allocation information. 
 !
 !  PRECONDITIONS REQUIRED:
 !
 !  SUBROUTINES AND FUNCTIONS CALLED:
 !
 !  REVISION HISTORY:
-!     Created 1/99 by M. Houyoux
+!     Created 1/99 by M. Houyoux for temporal profiles only
+!     Changed 10/2000 by MRH to include additional temporal info.
 !
 !***************************************************************************
 !
@@ -20,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -37,21 +38,25 @@
 !
 !****************************************************************************
 
+!.........  Holiday dates arrays
+        INTEGER, PUBLIC :: NHOLIDAY  ! number of holidays
+
+        INTEGER, ALLOCATABLE, PUBLIC :: HOLREGN ( : ) ! Region code of holiday
+        INTEGER, ALLOCATABLE, PUBLIC :: HOLJDATE( : ) ! Julian date of holidays
+	INTEGER, ALLOCATABLE, PUBLIC :: HOLALTDY( : ) ! alternative day of week
+
 !.........  Sorted temporal profiles
         INTEGER, PUBLIC :: NMON   ! number of monthly profiles
         INTEGER, PUBLIC :: NWEK   ! number of weekly profiles
-        INTEGER, PUBLIC :: NWKD   ! number of weekday diurnal profiles 
-        INTEGER, PUBLIC :: NEND   ! number of weekend diurnal profiles 
+        INTEGER, PUBLIC :: NHRL   ! number of diurnal profiles 
 
         INTEGER, ALLOCATABLE, PUBLIC :: MONREF( : )   ! Monthly codes
         INTEGER, ALLOCATABLE, PUBLIC :: WEKREF( : )   ! Weekly codes 
-        INTEGER, ALLOCATABLE, PUBLIC :: WKDREF( : )   ! Weekday-diurnal codes
-        INTEGER, ALLOCATABLE, PUBLIC :: ENDREF( : )   ! Weekend-diurnal codes
+        INTEGER, ALLOCATABLE, PUBLIC :: HRLREF( : )   ! Diurnal codes
 
         REAL   , ALLOCATABLE, PUBLIC :: MONFAC( :,: ) ! Monthly factors
         REAL   , ALLOCATABLE, PUBLIC :: WEKFAC( :,: ) ! Weekly facs (week-norm)
         REAL   , ALLOCATABLE, PUBLIC :: XWKFAC( :,: ) ! Weekly facs (wkday-norm)
-        REAL   , ALLOCATABLE, PUBLIC :: WKDFAC( :,: ) ! Weekday-diurnal factors
-        REAL   , ALLOCATABLE, PUBLIC :: ENDFAC( :,: ) ! Weekend-diurnal factors        
+        REAL   , ALLOCATABLE, PUBLIC :: HRLFAC( :,:,: ) ! Hourly factors
 
-        END MODULE MODTPRO
+        END MODULE MODTMPRL
