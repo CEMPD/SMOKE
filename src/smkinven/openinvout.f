@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG )
+        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG, ADEV )
 
 C*************************************************************************
 C  subroutine body starts at line 119
@@ -74,6 +74,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: ANAME   ! emis ASCII inven logical name
         INTEGER     , INTENT(OUT) :: SDEV    ! ascii output inven file unit no.
         LOGICAL     , INTENT(IN)  :: A2PFLAG ! true: using area-to-point processing
+	INTEGER     , INTENT(OUT) :: ADEV    ! REPINVEN output file unit no.
 
 C...........   LOCAL PARAMETERS
         CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
@@ -602,6 +603,11 @@ C.........  Prompt for and open ASCII output file
         SDEV= PROMPTFFILE( 
      &      'Enter logical name for the ASCII INVENTORY output file',
      &      .FALSE., .TRUE., ANAME, PROGNAME )
+
+C.........  Prompt for and open REPINVEN file
+	ADEV = PROMPTFFILE(
+     &      'Enter logical name for the REPINVEN file',
+     &      .FALSE., .TRUE., 'REPINVEN', PROGNAME )
 
 C.........  Deallocate local memory
         DEALLOCATE( EONAMES, EOTYPES, EOUNITS, EODESCS )
