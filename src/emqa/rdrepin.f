@@ -424,7 +424,7 @@ C.........  If needed, read in country, state, county file
 
 C.........  If needed, read in elevated source indentification file
         IF( VFLAG ) THEN
-            CALL RDPELV( EDEV, NSRC, NMAJOR, NPING )
+            CALL RDPELV( EDEV, NSRC, .TRUE., NMAJOR, NPING )
         END IF
 
 C.........  If needed, read in SCC descriptions file
