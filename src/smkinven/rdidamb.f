@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -41,6 +41,9 @@ C***************************************************************************
 C...........   Modules for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC
+
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
@@ -124,6 +127,9 @@ C...........   Local variables
 
 C***********************************************************************
 C   Begin body of subroutine RDIDAMB
+
+C Note: I need to remove this and use the POLID flag.  Make sure that both the
+C    n: activities and pollutants are in the same array.
 
 C.........  Find 'VMT' in "pollutants" names list
         I =  INDEX1( 'VMT', MXIDAT, INVDNAM )
