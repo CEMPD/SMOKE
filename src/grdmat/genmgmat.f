@@ -147,6 +147,7 @@ C...........   Other local variables
         REAL            XEND, YEND  ! tmp X and Y link end   coordinates
 
         LOGICAL      :: EFLAG = .FALSE.  !  true: error detected
+        LOGICAL      :: IFLAG = .FALSE.  !  true: internal error detected
 
         CHARACTER*16    COORD     !  coordinate system name
         CHARACTER*16    COORUNIT  !  coordinate system projection units
@@ -157,7 +158,6 @@ C...........   Other local variables
 
         CHARACTER(LEN=LNKLEN3)    CLNK   ! tmp link ID
         CHARACTER(LEN=SRCLEN3)    CSRC   ! tmp source chars string
-        CHARACTER(LEN=SRCLEN3)    CSRC2  ! tmp truncated source chars string
 
         CHARACTER*16 :: PROGNAME = 'GENMGMAT' ! program name
 
@@ -244,7 +244,6 @@ C.......       sixth case:   fallback default
             RWT  = IRCLAS( S )
             CLNK = CLINK ( S )
             CSRC = CSOURC( S )
-            CSRC2= CSRC( 1:VIDPOS3-1 )  ! abridged for these purposes
 
 C.............  Initialize sources as being in the domain
             INDOMAIN( S ) = .TRUE.
@@ -264,10 +263,10 @@ C.................  Convert coordinate system from UTM to required system
 
 C.................  Compute the fractions of the link in each grid cell
                 CALL LNK2GRD( NGRID, XBEG, YBEG, XEND, YEND,
-     &                        NCEL, ACEL, AFAC, ALEN, EFLAG  )
+     &                        NCEL, ACEL, AFAC, ALEN, IFLAG  )
 
 C.................  Make sure that there was enough storage 
-                IF ( EFLAG ) THEN
+                IF ( IFLAG ) THEN
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
                     WRITE( MESG,94010 )
      &                 'INTERNAL ERROR: Overflow for link to ' //
@@ -286,15 +285,14 @@ C                   go to next loop iteration
 
                     CYCLE
                     
-C.................  Write error if the link has no starting coordinates = ending
-                ELSE IF( NCEL .EQ. -1 ) THEN
-
-                    EFLAG = .TRUE.
+C.................  Write warning if the link has zero-length link
+                ELSE IF( ALEN .EQ. 0.0 ) THEN
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
                     WRITE( MESG,94010 )
-     &                  'Zero-length link for ' // BUFFER( 1:L2 )
+     &                  'WARNING: Zero-length link for: ' // CRLF() //
+     &                  BLANK10 // BUFFER( 1:L2 ) // '.'// CRLF() // 
+     &                  BLANK10 // 'Emissions put in cell', ACEL( 1 )
                     CALL M3MESG( MESG )
-                    CYCLE
 
                 END IF
 
@@ -425,7 +423,7 @@ C.............  Loop through all of the cells intersecting this co/st/cy code.
 
 C.................  Set the surrogate fraction
                 CALL SETFRAC( FDEV, S, ISIDX, K, F, 2, INDOMAIN( S ), 
-     &                        CSRC2, FRAC )
+     &                        CSRC, FRAC )
 
                 IF( FRAC .GT. 0 ) THEN
 
@@ -465,7 +463,7 @@ C                       is okay
         END DO        !  end loop on sources S, computing gridding matrix.
         
 C.........  Abort if error
-        IF( EFLAG ) THEN
+        IF( EFLAG .OR. IFLAG ) THEN
             MESG = 'Problem creating gridding matrix.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
