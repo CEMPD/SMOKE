@@ -216,7 +216,8 @@ C........................................................................
 
 C.............  Read a line of IDA file as a character string
 C.............  If line is a header line or blank, it will advance anyway
-            READ( FDEV, 93010, END=199, IOSTAT=IOS, ADVANCE="NO" ) 
+            READ( FDEV, 93010, END=199, IOSTAT=IOS, ADVANCE="NO", 
+     &            EOR=1001 ) 
      &            LINPT1
             IREC = IREC + 1
 
@@ -225,7 +226,8 @@ C.............  If line is a header line or blank, it will advance anyway
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 )
      &              'I/O error', IOS, 
-     &              'reading inventory file at line', IREC
+     &              'reading inventory file before column ', PTNONPWD,
+     &              'at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
 
@@ -358,7 +360,7 @@ C.................  Non-advancing read for all but the last pollutant and
 C                   advancing read for the last pollutant
                 IF ( V .LE. NPOL ) THEN
                     READ( FDEV, 93020, END=199, IOSTAT=IOS, 
-     &                    ADVANCE="NO" ) LINEMS
+     &                    ADVANCE="NO", EOR = 1003 ) LINEMS
                 ELSE
                     READ( FDEV, 93020, END=199, IOSTAT=IOS ) 
      &                  LINEMS
@@ -541,6 +543,15 @@ C.........  Make sure routine knows it's been called already
 
 C.........  Return from subroutine 
         RETURN
+
+1001    WRITE( MESG,94010 ) 'End of line encountered ' //
+     &                      'unexpectedly at line', IREC
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+1003    WRITE( MESG,94010 ) 'End of line encountered ' //
+     &                      'unexpectedly for variable', V, 
+     &                      'at line', IREC
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
