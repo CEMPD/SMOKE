@@ -242,6 +242,9 @@ C.......   Compute further plume rise from between level surfaces:
             IF( ZPLM .LE. ZSTK( LPLM ) ) GO TO  199  ! exit plume rise loop
 
             NITER = NITER + 1
+            IF ( LPLM .LT. EMLAYS ) THEN
+                LPLM = LPLM + 1
+            END IF
             
 C...........   compute residual bflx by stability case IQ:
             
@@ -260,7 +263,8 @@ C...........   compute residual bflx by stability case IQ:
             
 C...........   Re-interpolate met data:
             
-            Q   = ZPLM - ZSTK( LPLM )
+            Q   = ( ZPLM           - ZSTK( LPLM ) ) / 
+     &            ( ZSTK( LPLM+1 ) - ZSTK( LPLM ) )
             P   = 1.0 - Q
             WPLM = P * WSPD( LPLM-1 )  +  Q * WSPD( LPLM )
             TPLM = P * TA  ( LPLM-1 )  +  Q * TA  ( LPLM )
