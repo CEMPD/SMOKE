@@ -39,7 +39,12 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, IRCLAS, ISIC, IVTYPE, CELLID, TZONES,
+     &                      TPFLAG, INVYR, IDIU, IWEK, XLOCA, YLOCA, 
+     &                      XLOC1, YLOC1, XLOC2, YLOC2, SPEED, STKHT,
+     &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
+     &                      CLINK, CPDESC, CSOURC, CVTYPE, CMACT,
+     &                      CNAICS, CSRCTYP, CERPTYP
 
         IMPLICIT NONE
 
@@ -86,12 +91,20 @@ C...........   Other local variables
         LOGICAL       :: CSRFLAG = .FALSE.  ! True: source chars requested
         LOGICAL       :: EFLAG   = .FALSE.  ! True: error
         LOGICAL       :: BLRFLAG = .FALSE.  ! True: boilers requested
+        LOGICAL       :: ERPIN   = .FALSE.  ! True: emission release type in input file
+        LOGICAL       :: ERPFLAG = .FALSE.  ! True: emission release point type requested
         LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
+        LOGICAL       :: MCTIN   = .FALSE.  ! True: MACT code in input file
+        LOGICAL       :: MACFLAG = .FALSE.  ! True: MACT code requested
+        LOGICAL       :: NAIIN   = .FALSE.  ! True: NAICS code in input file
+        LOGICAL       :: NAIFLAG = .FALSE.  ! True: NAICS code requested
         LOGICAL       :: ORSIN   = .FALSE.  ! Ture: DOE plant ID in input file
         LOGICAL       :: ORSFLAG = .FALSE.  ! True: DOE plant ID requested
         LOGICAL       :: PDSIN   = .FALSE.  ! True: plant desc in input file
         LOGICAL       :: PDSFLAG = .FALSE.  ! True: plant description requested
         LOGICAL       :: SCCFLAG = .FALSE.  ! True: SCC requested
+        LOGICAL       :: STPIN   = .FALSE.  ! True: source type code in input file
+        LOGICAL       :: STPFLAG = .FALSE.  ! True: source type code requested
         LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
 
         CHARACTER*20           HEADER( 20 ) ! header fields
@@ -107,6 +120,10 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) CS     ! temporary scc
         CHARACTER(LEN=VIDLEN3) CVID   ! temporary vehicle type code
         CHARACTER(LEN=VTPLEN3) CVTP   ! tmp vehicle type
+        CHARACTER(LEN=MACLEN3) CMT    ! tmp MACT code
+        CHARACTER(LEN=NAILEN3) CNAI   ! tmp NAICS code
+        CHARACTER(LEN=STPLEN3) CSTP   ! tmp source type code
+        CHARACTER(LEN=ERPLEN3) CERP   ! tmp emission release point code
         CHARACTER(LEN=PLTLEN3) FCID   ! temporary facility code
         CHARACTER(LEN=IOVLEN3) INVAR  ! tmp inventory pollutant name
 
@@ -389,6 +406,26 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
 
+                CASE( 'CMACT' )
+                    MACFLAG = .TRUE.
+                    ALLOCATE( CMACT( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CMACT', PROGNAME )
+                    
+                CASE( 'CNAICS' )
+                    NAIFLAG = .TRUE.
+                    ALLOCATE( CNAICS( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CNAICS', PROGNAME )
+                    
+                CASE( 'CSRCTYP' )
+                    STPFLAG = .TRUE.
+                    ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+                
+                CASE( 'CERPTYP' )
+                    ERPFLAG = .TRUE.
+                    ALLOCATE( CERPTYP( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CERPTYP', PROGNAME )
+
                 CASE DEFAULT
                     EFLAG = .TRUE.
                     MESG = 'INTERNAL ERROR: Program "' // 
@@ -417,12 +454,53 @@ C               characteristics
             SELECT CASE ( CATEGORY )
             CASE ( 'AREA' )
 
+C.................  Determine if MACT code is present
+                J = INDEX1( 'MACT code', NCOL, HEADER )
+                MCTIN = ( J > 0 )
+                
+C.................  Determine if NAICS code is present
+                J = INDEX1( 'NAICS code', NCOL, HEADER )
+                NAIIN = ( J > 0 )
+                
+C.................  Determine if source type code is present
+                J = INDEX1( 'Source type code', NCOL, HEADER )
+                STPIN = ( J > 0 )
+
+C.................  If MACT code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. MCTIN .AND. MACFLAG ) THEN
+                    DEALLOCATE( CMACT )
+                END IF
+                
+C.................  If NAICS code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. NAIIN .AND. NAIFLAG ) THEN
+                    DEALLOCATE( CNAICS )
+                END IF
+
+C.................  If source type code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. STPIN .AND. STPFLAG ) THEN
+                    DEALLOCATE( CSRCTYP )
+                END IF
+
                 DO S = 1, NSRC
 
 C.....................  Read in line of character data
-                    READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
+                    IF( MCTIN .AND. NAIIN .AND. STPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                        CMT, CNAI, CSTP
+                    ELSE
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
+                    END IF
 
                     IF( SCCFLAG ) CSCC( S ) = CS
+
+                    IF( MACFLAG .AND. MCTIN ) CMACT( S ) = CMT
+                    
+                    IF( NAIFLAG .AND. NAIIN ) CNAICS( S ) = CNAI
+                    
+                    IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, CS, CHRBLNK3, CHRBLNK3,
@@ -475,6 +553,22 @@ C.................  Determine if boiler is present
                 J = INDEX1( 'Boiler code', NCOL, HEADER )
                 BLRIN = ( J .GT. 0 )
 
+C.................  Determine if MACT code is present
+                J = INDEX1( 'MACT code', NCOL, HEADER )
+                MCTIN = ( J > 0 )
+                
+C.................  Determine if NAICS code is present
+                J = INDEX1( 'NAICS code', NCOL, HEADER )
+                NAIIN = ( J > 0 )
+                
+C.................  Determine if source type code is present
+                J = INDEX1( 'Source type code', NCOL, HEADER )
+                STPIN = ( J > 0 )
+                
+C.................  Determine if emission release code is present
+                J = INDEX1( 'Emission release pt', NCOL, HEADER )
+                ERPIN = ( J > 0 )
+                
 C.................  Determine if plant description is present
                 J = INDEX1( 'Facility description', NCOL, HEADER )
                 PDSIN = ( J .GT. 0 )
@@ -499,6 +593,30 @@ C                   internal err
 
                 END IF
 
+C.................  If MACT code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. MCTIN .AND. MACFLAG ) THEN
+                    DEALLOCATE( CMACT )
+                END IF
+                
+C.................  If NAICS code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. NAIIN .AND. NAIFLAG ) THEN
+                    DEALLOCATE( CNAICS )
+                END IF
+
+C.................  If source type code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. STPIN .AND. STPFLAG ) THEN
+                    DEALLOCATE( CSRCTYP )
+                END IF
+
+C.................  If emission release code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. ERPIN .AND. ERPFLAG ) THEN
+                    DEALLOCATE( CERPTYP )
+                END IF
+                
                 IF( EFLAG ) THEN
 
                     MESG = 'ERROR: Problem reading inventory file(s)'
@@ -517,7 +635,25 @@ C.....................  Initialize temporary characteristics
 
 C.....................  Read in line of character data
 
-                    IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
+                    IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
+     &                  MCTIN .AND. NAIIN .AND. STPIN .AND. ERPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND. 
+     &                       NAIIN .AND. STPIN .AND. ERPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS
+     
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. 
+     &                       STPIN .AND. ERPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS      
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CPDS
 
@@ -544,6 +680,14 @@ C.....................  Read in line of character data
                     IF( ORSFLAG ) CORIS ( S ) = ADJUSTR( CORS )
 
                     IF( BLRFLAG ) CBLRID( S ) = ADJUSTR( CBLR )
+
+                    IF( MACFLAG .AND. MCTIN ) CMACT( S ) = CMT
+                    
+                    IF( NAIFLAG .AND. NAIIN ) CNAICS( S ) = CNAI
+                    
+                    IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
+                    
+                    IF( ERPFLAG .AND. ERPIN ) CERPTYP( S ) = CERP
 
                     IF( PDSFLAG ) CPDESC( S ) = CPDS
 
