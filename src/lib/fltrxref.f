@@ -208,13 +208,14 @@ C                   case.
 C.........  Check SIC with inventory SIC list.  The record might not match
 C           based on SCC, but maybe by SIC.
         SIC2 = SIC/100
-        IF( SKIPREC .AND. PFLAG .AND. SIC .NE. 0 ) THEN
+        IF( ( TSCC == SCCZERO .OR. SKIPREC ) .AND. 
+     &        PFLAG .AND. SIC .NE. 0               ) THEN
 
             IF( MOD( SIC,100 ) .EQ. 0 ) THEN
-                IXSIC = FINDC( SIC2, NINVSIC2, INVSIC2 )
+                IXSIC = FIND1( SIC2, NINVSIC2, INVSIC2 )
 
             ELSE
-                IXSIC = FINDC( SIC, NINVSIC, INVSIC )
+                IXSIC = FIND1( SIC, NINVSIC, INVSIC )
 
             END IF
 
