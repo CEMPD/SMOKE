@@ -269,7 +269,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESCSET( FILNAM,ALLFILES ) ) THEN
+            IF ( .NOT. DESC3( FILNAM ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
