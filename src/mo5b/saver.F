@@ -1,0 +1,97 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      SUBROUTINE SAVER(IY)
+C
+C  SAVE saves the intermediate Jan 1st runs used for interpolation
+C  by ADJUST.
+C
+C  Called by MOBILE.
+C
+C  Calls none.
+C
+C  Input on call:
+C
+C    paramter list: IY
+C    common blocks:
+C    /EVAPGR/ EVP,GREVP,VGREVP,PARD,GRPD,
+C    /RESUL1/ EFFTP,EFEXH,EFEVAP,EFREFL,EFRUNL
+C    /RESUL2/ RLGGAL,RSTGPH,EFRSTL,EFIDLE,
+C    /RESUL/ VFTP,VEXH,VEVAP,VLOSS,VRUNLS,VRSTLS,VIDLE
+C    /MAXIMA/ MAXVEH,MAXPOL
+C    /VMXCOM/ REGMIX,TFNORM,VMTMIX,VCOUNT,
+C
+C  Output on return:
+C
+C    common blocks:
+C    /X1/ XEVP,XGREVP,XVGREV,XGRPD,
+C    /X2/ XFTP,XEXH,XEVAP,XREFL,XRUNL,
+C    /X3/ XRLG,XRSTG,XRSTL,XIDLE,
+C    /X4/ XVFTP,XVEXH,XVEVAP,XVLOSS,XVRUNL,XVRSTL,XVIDLE,
+C    /X5/ XREG,XVMT
+C
+C  Notes:
+C
+C  SAVER was added for MOBILE5v1.
+C
+C
+      INCLUDE 'EVAPGR.I'
+      INCLUDE 'RESUL1.I'
+      INCLUDE 'RESUL2.I'
+      INCLUDE 'RESUL3.I'
+      INCLUDE 'MAXIMA.I'
+      INCLUDE 'VMXCOM.I'
+C
+      INCLUDE 'X1.I'
+      INCLUDE 'X2.I'
+      INCLUDE 'X3.I'
+      INCLUDE 'X4.I'
+      INCLUDE 'X5.I'
+C
+      MAXV = MAXVEH + 1
+C
+      DO 20 IP = 1, MAXPOL
+        XVFTP(IP,IY) = VFTP(IP)
+        XVIDLE(IP,IY) = VIDLE(IP)
+        DO 10 IV = 1, MAXV
+          XFTP(IP,IV,IY) = EFFTP(IP,IV)
+          XIDLE(IP,IV,IY) = EFIDLE(IP,IV)
+   10   CONTINUE
+   20 CONTINUE
+C
+      DO 30 IV = 1, MAXV
+        XEXH(IV,IY) = EFEXH(IV)
+        XEVAP(IV,IY) = EFEVAP(IV)
+        XREFL(IV,IY) = EFREFL(IV)
+        XRUNL(IV,IY) = EFRUNL(IV)
+        XRSTL(IV,IY) = EFRSTL(IV)
+        XRLG(IV,IY) = RLGGAL(IV)
+        XRSTG(IV,IY) = RSTGPH(IV)
+   30 CONTINUE
+C
+      DO 40 IV = 1, MAXVEH
+        XREG(IV,IY) = REGMIX(IV)
+        XVMT(IV,IY) = VMTMIX(IV)
+   40 CONTINUE
+C
+      XVEVAP(IY) = VEVAP
+      XVLOSS(IY) = VLOSS
+      XVRUNL(IY) = VRUNLS
+      XVRSTL(IY) = VRSTLS
+      XVEXH(IY) = VEXH
+C
+      DO 60 IEVP = 1, 4
+        XEVP(IEVP,IY) = EVP(IEVP)
+        XVGREV(IEVP,IY) = VGREVP(IEVP)
+        DO 50 IV = 1, MAXV
+          XGREVP(IEVP,IV,IY) = GREVP(IEVP,IV)
+   50   CONTINUE
+   60 CONTINUE
+C
+      DO 80 IV = 1, MAXV
+        DO 70 IPARTL = 1, 3
+          XGRPD(IPARTL,IV,IY) = GRPD(IPARTL,IV)
+   70   CONTINUE
+   80 CONTINUE
+C
+      RETURN
+      END

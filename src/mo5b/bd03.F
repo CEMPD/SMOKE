@@ -1,0 +1,334 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      BLOCK DATA BD03
+C
+C  BLOCK DATA Subprogram 03: /BASEQ2/,/BASEQ4/,/BASEQ6/
+C
+C  BLOCK DATA 03 defines the model year groups (by their upper bounds) and
+C  associated parameters used to select and index the intercept and slope
+C  arrays for the basic FTP Emission Rate (ER) equations.
+C
+C  Common block array subscripts:
+C
+C  BERNEW(3,100)       -  BERNEW ( IBER, IFAC )
+C  MYGERB(25,3,8,2)    -  MYGERB ( IG,      IP, IV, IR )
+C  MYGERU(12,2,3,8,2)  -  MYGERU ( JG, IFL, IP, IV, IR )
+C  NEWFIT(100)         -  NEWFIT ( IFAC )
+C  NEWPAR(5,100)       -  NEWPAR ( IPAR, IFAC )
+C  NUMERU(3,8,2)       -  NUMERU ( IP, IV, IR )
+C
+C  Common block dictionary:
+C
+C   Name   Type              Description
+C  ------  ----  --------------------------------------------
+C  /BASEQ2/:
+C
+C  MYGERB   I    myg upper bounds for Block Data hardcoded FTP emission rate
+C                equation intercept & (LDGV <50K) slope arrays (ERBZML, ERBDR)
+C  MAXERB   I    maximum number of BD hardcoded ER equations possible for any
+C                given combination of IP, IV and IR.  MAXERB is the limit of
+C                the myg dimension of arrays ERBZML, ERBDR and MYGERB.
+C
+C  /BASEQ4/:
+C
+C  NEWPAR   R    parameters identifying where (region, vehicle type and
+C                pollutant) and when (first & last model years included)
+C                to use new (user supplied) emission rates
+C  BERNEW   R    intercept and slopes of user supplied emission rates
+C  NEWFIT   I    whether or not (1 or 0) user supplied emission rate
+C                information can be fit into the affected data arrays
+C                (no => the new rate is not stored & not used)
+C  NEWCT    I    count of number of sets of new emission rate specifications
+C                entered by user (not necessarily the number actually used -
+C                see NEWFIT)
+C  MAXCT    I    maximum number of sets allowed by NEWFLG = sets dimension of
+C                the arrays of /BASEQ4/
+C
+C  /BASEQ6/:
+C
+C  MYGERU   I    myg lower & upper bounds for User supplied FTP emission rate
+C                equation intercept and slopes arrays (ERUZML, ERUDR, ERU50K)
+C  MAXERU   I    maximum number of user supplied ER equation parameters sets
+C                allowed for each IP x IV x IR case (same limit for each case)
+C  NUMERU   I    number of user supplied ER records successfully stored for
+C                each IP x IV x IR case.
+C
+C  Local array subscripts:
+C
+C  IERLO<IV>(25,3)  - IERLO<IV> ( IG, IP )
+C  IERHI<IV>(25,3)  - IERHI<IV> ( IG, IP )
+C
+C  Local array dictionary:
+C
+C   Name      Type                 Descriptions
+C  ---------  ----  ---------------------------------------------------
+C  IERLO<IV>   I    low altitude myg upper bounds for hardcoded FTP ERs
+C  IERHI<IV>   I    high altitude myg upper bounds for hardcoded FTP ERs
+C
+C  Notes:
+C
+C  None.
+C
+C
+      INCLUDE 'BASEQ2.I'
+      INCLUDE 'BASEQ4.I'
+      INCLUDE 'BASEQ6.I'
+      INCLUDE 'PARAME.I'
+C
+        DIMENSION
+     *   IERLO1(25,3),
+     *   IERLO2(25,3),
+     *   IERLO3(25,3),
+     *   IERLO4(25,3),
+     *   IERLO5(25,3),
+     *   IERLO6(25,3),
+     *   IERLO7(25,3),
+     *   IERLO8(25,3)
+C
+        EQUIVALENCE
+     *   (MYGERB(1,1,1,1),IERLO1(1,1)),
+     *   (MYGERB(1,1,2,1),IERLO2(1,1)),
+     *   (MYGERB(1,1,3,1),IERLO3(1,1)),
+     *   (MYGERB(1,1,4,1),IERLO4(1,1)),
+     *   (MYGERB(1,1,5,1),IERLO5(1,1)),
+     *   (MYGERB(1,1,6,1),IERLO6(1,1)),
+     *   (MYGERB(1,1,7,1),IERLO7(1,1)),
+     *   (MYGERB(1,1,8,1),IERLO8(1,1))
+C
+        DIMENSION
+     *   IERHI1(25,3),
+     *   IERHI2(25,3),
+     *   IERHI3(25,3),
+     *   IERHI4(25,3),
+     *   IERHI5(25,3),
+     *   IERHI6(25,3),
+     *   IERHI7(25,3),
+     *   IERHI8(25,3)
+C
+        EQUIVALENCE
+     *   (MYGERB(1,1,1,2),IERHI1(1,1)),
+     *   (MYGERB(1,1,2,2),IERHI2(1,1)),
+     *   (MYGERB(1,1,3,2),IERHI3(1,1)),
+     *   (MYGERB(1,1,4,2),IERHI4(1,1)),
+     *   (MYGERB(1,1,5,2),IERHI5(1,1)),
+     *   (MYGERB(1,1,6,2),IERHI6(1,1)),
+     *   (MYGERB(1,1,7,2),IERHI7(1,1)),
+     *   (MYGERB(1,1,8,2),IERHI8(1,1))
+C
+C
+C  /BASEQ2/:
+C
+C
+C  Continuation line code is the pollutant type:
+C
+C      H = HC    C = CO    N = NOx
+C
+C  mygs for low altitude FTP emission rates
+C
+C     LDGV
+        DATA IERLO1/
+     H   1967,1969,1971,1974,1979,1980,1981,1982,1983,1984,
+     H   1985,1986,1987,1988,1989,1990,1991,1993,1994,1995,
+     H   1996,1997,NEYR,0000,0000,
+     C   1967,1969,1971,1974,1979,1980,1981,1982,1983,1984,
+     C   1985,1986,1987,1988,1989,1990,1991,NEYR,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1967,1972,1974,1976,1979,1980,1981,1982,1983,1984,
+     N   1985,1986,1987,1988,1989,1990,1991,1993,1994,1995,
+     N   NEYR,0000,0000,0000,0000/
+C     LDGT1
+        DATA IERLO2/
+     H   1967,1969,1971,1974,1978,1980,1983,1984,1985,1986,
+     H   1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,
+     H   1997,NEYR,0000,0000,0000,
+     C   1967,1969,1971,1974,1978,1980,1983,1984,1985,1986,
+     C   1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,
+     C   1997,NEYR,0000,0000,0000,
+     N   1967,1972,1974,1978,1980,1983,1984,1985,1986,1987,
+     N   1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,
+     N   NEYR,0000,0000,0000,0000/
+C     LDGT2
+        DATA IERLO3/
+     H   1969,1973,1978,1980,1983,1984,1985,1986,1987,1988,
+     H   1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,
+     H   NEYR,0000,0000,0000,0000,
+     C   1969,1973,1978,1980,1983,1984,1985,1986,1987,1988,
+     C   1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,
+     C   NEYR,0000,0000,0000,0000,
+     N   1969,1973,1978,1980,1983,1984,1985,1986,1987,1988,
+     N   1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,
+     N   NEYR,0000,0000,0000,0000/
+C
+C     HDGV   M5v3
+      DATA IERLO4/
+     H   1962,1969,1973,1974,1975,1976,1978,1979,1980,1983,
+     H   1984,1985,1986,1989,1990,1997,2000,NEYR,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1962,1969,1973,1974,1975,1976,1978,1979,1980,1983,
+     C   1984,1985,1986,1989,1990,1997,2000,NEYR,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1962,1969,1973,1974,1975,1976,1978,1979,1980,1983,
+     N   1984,1985,1986,1989,1990,1997,2000,NEYR,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+        DATA IERLO5/
+     H   1974,1976,1977,1978,1979,NEYR,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1974,1976,1977,1978,1979,NEYR,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1974,1976,1977,1978,1979,1980,1984,NEYR,0000,0000,
+     N   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+        DATA IERLO6/
+     H   1977,1980,NEYR,0000,0000,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1977,1980,NEYR,0000,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1977,1980,1987,1989,NEYR,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+        DATA IERLO7/
+C       HDDT
+     H   1966,1968,1969,1970,1973,1976,1977,1978,1979,1981,
+     H   1982,1983,1984,1985,1986,1987,1989,1990,1997,2000,
+     H   NEYR,0000,0000,0000,0000,
+     C   1966,1968,1969,1970,1973,1976,1977,1978,1979,1981,
+     C   1982,1983,1984,1985,1986,1987,1989,1990,1997,2000,
+     C   NEYR,0000,0000,0000,0000,
+     N   1966,1968,1969,1970,1973,1976,1977,1978,1979,1981,
+     N   1982,1983,1984,1985,1986,1987,1989,1990,1997,2000,
+     N   NEYR,0000,0000,0000,0000/
+C
+        DATA IERLO8/
+     H   1977,1979,1981,1984,1987,NEYR,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1977,1979,1981,NEYR,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1977,1979,NEYR,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+C  mygs for high altitude FTP emission rates
+C
+        DATA IERHI1/
+     H   1967,1969,1971,1974,1976,1977,1979,1980,1981,1982,
+     H   1983,1984,1985,1986,1987,1988,1989,1990,1991,1993,
+     H   1994,1995,1996,1997,NEYR,
+     C   1967,1969,1971,1974,1976,1977,1979,1980,1981,1982,
+     C   1983,1984,1985,1986,1987,1988,1989,1990,1991,NEYR,
+     C   0000,0000,0000,0000,0000,
+     N   1967,1972,1974,1976,1977,1979,1980,1981,1982,1983,
+     N   1984,1985,1986,1987,1988,1989,1990,1991,1993,1994,
+     N   1995,NEYR,0000,0000,0000/
+C     LDGT1
+        DATA IERHI2/
+     H   1967,1969,1971,1974,1976,1977,1978,1980,1981,1983,
+     H   1984,1985,1986,1987,1988,1989,1990,1991,1993,1994,
+     H   1995,1996,1997,NEYR,0000,
+     C   1967,1969,1971,1974,1976,1977,1978,1980,1981,1983,
+     C   1984,1985,1986,1987,1988,1989,1990,1991,1993,1994,
+     C   1995,1996,1997,NEYR,0000,
+     N   1967,1972,1974,1976,1977,1978,1980,1981,1983,1984,
+     N   1985,1986,1987,1988,1989,1990,1991,1993,1994,1995,
+     N   1996,1997,NEYR,0000,0000/
+C     LDGT2
+        DATA IERHI3/
+     H   1969,1973,1978,1980,1981,1983,1984,1985,1986,1987,
+     H   1988,1989,1990,1991,1993,1994,1995,1996,1997,1998,
+     H   NEYR,0000,0000,0000,0000,
+     C   1969,1973,1978,1980,1981,1983,1984,1985,1986,1987,
+     C   1988,1989,1990,1991,1993,1994,1995,1996,1997,1998,
+     C   NEYR,0000,0000,0000,0000,
+     N   1969,1973,1978,1980,1981,1983,1984,1985,1986,1987,
+     N   1988,1989,1990,1991,1993,1994,1995,1996,1997,1998,
+     N   NEYR,0000,0000,0000,0000/
+C
+C     HDGV   M5v3
+      DATA IERHI4/
+     H   1962,1969,1973,1974,1975,1976,1978,1979,1980,1983,
+     H   1984,1985,1986,1989,1990,1997,2000,NEYR,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1962,1969,1973,1974,1975,1976,1978,1979,1980,1983,
+     C   1984,1985,1986,1989,1990,1997,2000,NEYR,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1962,1969,1973,1974,1975,1976,1978,1979,1980,1983,
+     N   1984,1985,1986,1989,1990,1997,2000,NEYR,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+        DATA IERHI5/
+     H   1974,1976,1977,1978,1979,1981,1983,NEYR,0000,0000,
+     H   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1974,1976,1977,1978,1979,1981,1983,NEYR,0000,0000,
+     C   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1974,1976,1977,1978,1979,1980,1984,NEYR,0000,0000,
+     N   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+        DATA IERHI6/
+     H   1977,1978,1980,1983,NEYR,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1977,1978,1980,1983,NEYR,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1977,1978,1979,1980,1984,1987,1989,NEYR,0000,0000,
+     N   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+        DATA IERHI7/
+C       HDDT
+     H   1966,1968,1969,1970,1973,1976,1977,1978,1979,1981,
+     H   1982,1983,1984,1985,1986,1987,1989,1990,1997,2000,
+     H   NEYR,0000,0000,0000,0000,
+     C   1966,1968,1969,1970,1973,1976,1977,1978,1979,1981,
+     C   1982,1983,1984,1985,1986,1987,1989,1990,1997,2000,
+     C   NEYR,0000,0000,0000,0000,
+     N   1966,1968,1969,1970,1973,1976,1977,1978,1979,1981,
+     N   1982,1983,1984,1985,1986,1987,1989,1990,1997,2000,
+     N   NEYR,0000,0000,0000,0000/
+C
+        DATA IERHI8/
+     H   1977,1979,1981,1984,1987,NEYR,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     H   0000,0000,0000,0000,0000,
+     C   1977,1979,1981,NEYR,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     C   0000,0000,0000,0000,0000,
+     N   1977,1979,NEYR,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,
+     N   0000,0000,0000,0000,0000/
+C
+        DATA MAXERB/25/
+C
+C
+C  /BASEQ4/:
+C
+C
+C  Except for the limit on the total number of replacement ef parameter records,
+C  the /BASEQ4/ block is initialized to dummy zeroes, since the cells either
+C  get read in or assigned values or are not used.
+C
+      DATA NEWPAR/500*0/,BERNEW/300*0.0/,NEWFIT/100*0/,NEWCT/0/
+      DATA MAXCT/100/
+C
+C
+C  /BASEQ6/:
+C
+C
+C  Initialize all user supplied myg cases to 0, to allow IERPTR storage
+C  algorithm to work, and NUMERU to 0, to allow storage and access algorithms
+C  to work.
+C
+      DATA MYGERU/1152*0/,MAXERU/12/,NUMERU/48*0/
+C
+      END
