@@ -70,9 +70,6 @@ C...........   Other local variables
 
         INTEGER         I, J, K  ! counters and indices
         INTEGER         CNT
-        INTEGER         TDEV     ! unit number for INVTABLE file
-
-        LOGICAL, SAVE :: FIRSTCHK = .TRUE. ! true: first time for a check
 
         CHARACTER*256    MESG              ! message buffer
 
@@ -91,21 +88,6 @@ C.........  If current pollutant is not a NONHAP* pollutant, exit
 
 C.........  Store pollutant name to check in next iteration
         PREV_PNAM = PNAM
-
-C.........  Check if this is the first pollutant that we need to chk
-        IF( FIRSTCHK ) THEN
-
-C............  Open inventory table
-            MESG = 'Enter logical name for INVENTORY DATA TABLE file'
-            TDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'INVTABLE',
-     &                          PROGNAME )
-
-C............  Call inventory table reader
-            CALL RDCODNAM( TDEV )
-
-            FIRSTCHK = .FALSE.
-
-        END IF
 
 C.........  Search for pollutant in list of available definitions
         I = INDEX1( PNAM, NSPDEF, SPCDEFPOL )
