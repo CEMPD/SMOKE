@@ -1,6 +1,5 @@
 
-        SUBROUTINE RPLCTEMP( COUNTY, TEMPS, NCOUNTY, 
-     &                       SCENARIO, NLINES, CTYPOS )
+        SUBROUTINE RPLCTEMP( CTYPOS, NSCEN, NLINES, SCENARIO, STSCEN )
 
 C***********************************************************************
 C  subroutine body starts at line 75
@@ -40,6 +39,10 @@ C Last updated: $Date$
 C
 C***********************************************************************
         
+C.........  MODULES for public variables
+C.........  This module is the derived meteorology data for emission factors
+        USE MODMET, ONLY: TKHOUR
+        
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -50,12 +53,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,            INTENT (IN)    :: COUNTY             ! current county being processed
-        REAL,               INTENT (IN)    :: TEMPS( NCOUNTY, 24 ) ! hourly temps per county
-        INTEGER,            INTENT (IN)    :: NCOUNTY  ! no. counties in temps array
-        CHARACTER(LEN=150), INTENT (INOUT) :: SCENARIO( NLINES+1 ) ! scenario array
-        INTEGER,            INTENT (IN)    :: NLINES             ! no. lines in scenario
-        INTEGER,            INTENT (IN)    :: CTYPOS   ! position of county in TEMPS array
+        INTEGER,            INTENT (IN)    :: CTYPOS             ! position of county in TKHOUR
+        INTEGER,            INTENT (INOUT) :: NSCEN              ! no. actual lines in scenario
+        INTEGER,            INTENT (IN)    :: NLINES             ! no. lines in scenario array
+        CHARACTER(LEN=150), INTENT (INOUT) :: SCENARIO( NLINES ) ! scenario array
+        INTEGER,            INTENT (INOUT) :: STSCEN             ! start of scenario level commands
 
 C...........   Local allocatable arrays
 
@@ -74,13 +76,14 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RPLCTEMP
         
-        DO I = 1, NLINES
+        DO I = 1, NSCEN
         
             CURRLINE = SCENARIO( I )
 
-C.............  Skip comment lines
+C.............  Skip comment and blank lines
             IF( CURRLINE( 1:1 ) == '*' ) CYCLE
             IF( CURRLINE( 1:1 ) == '>' ) CYCLE
+            IF( CURRLINE == ' ' ) CYCLE
             
 C.............  Get Mobile6 command                   
             COMMAND = CURRLINE( 1:19 )            
@@ -90,9 +93,14 @@ C.............  Search command for min/max command
             	
 C.................  Move rest of scenario down one line to make room
 C                   for second line of temperatures
-                DO J = NLINES, I + 1, -1
+                DO J = NSCEN, I + 1, -1
                     SCENARIO( J + 1 ) = SCENARIO( J )
                 END DO
+
+                NSCEN = NSCEN + 1
+
+C.................  Update scenario level start if needed
+                IF( I < STSCEN ) STSCEN = STSCEN + 1
 
             END IF
 
@@ -100,10 +108,10 @@ C.............  Replace either temperature command with hourly temperatures
             IF( INDEX( COMMAND, 'TEMPERATURE' ) > 0 ) THEN
 
                 WRITE( RPLCLINE,94020 ) 
-     &               'HOURLY TEMPERATURES: ', TEMPS( CTYPOS,1:12 )
+     &               'HOURLY TEMPERATURES: ', TKHOUR( CTYPOS,1:12 )
                 SCENARIO( I ) = RPLCLINE
                 
-                WRITE( RPLCLINE,94030 ) TEMPS( CTYPOS,13:24 )
+                WRITE( RPLCLINE,94030 ) TKHOUR( CTYPOS,13:24 )
                 SCENARIO( I + 1 ) = RPLCLINE
                 
                 EXIT
