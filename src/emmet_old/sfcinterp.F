@@ -337,7 +337,7 @@ C 9980   FORMAT( I5 )
 
 C........    Read Variables one timestep at a time
 
-       DO 300 T = 1, NT 
+       DO 300 T = 1, MXREC3D
 
              IF ( .NOT. READ3( MC3NAME, 'TA', ALLAYS3, JDATE, 
      &            JTIME, BUF3C(1,1,1,1) ) ) THEN
@@ -494,7 +494,7 @@ C........    Finished processing one time step, call nextime
 
              CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-300    END DO    ! T = 1, NT
+300    END DO    ! T = 1, MXREC3D
 
        CALL M3EXIT( 'SFCINTERP', 0, 0,
      &              'Normal completion of PROGRAM SFCINTERP', 0 )
