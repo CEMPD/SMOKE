@@ -1,0 +1,54 @@
+#!/bin/csh -f
+#
+# QSUB -r metmerge                     # request name
+# QSUB -o metmerge.log
+# QSUB -e metmerge.err
+# QSUB -lM 10Mw                        # maximum memory
+# QSUB -lT 600                         # time limit
+# QSUB                                 # no more qsub commands
+#
+#
+# ****************************************************************************
+# *
+# * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+# *                System
+# * File Version: @(#)$Id$
+# *
+# * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+# * All Rights Reserved
+# *
+# * See file COPYRIGHT for conditions of use.
+# *
+# * Environmental Programs Group
+# * MCNC--North Carolina Supercomputing Center
+# * P.O. Box 12889
+# * Research Triangle Park, NC  27709-2889
+# *
+# * env_progs@mcnc.org
+# *
+# * Pathname: $Source$
+# * Last updated: $Date$ 
+# *
+# *     Prototype  7/96 by C. SUNNY LO
+# *     Modified  12/96 by C. SUNNY LO
+#
+#****************************************************************************/
+#
+#   set up environment variables (logical names of input files, etc.):
+ja
+setenv MC2NAME     /tmp/sunnylo/MET_CRO_2D_G0
+setenv SFCNAME     /flyer/com/epa/sunnylo/test/sfcinterp.cdf
+setenv ONAME       /flyer/com/epa/sunnylo/test/metmerge_1.5.cdf
+setenv GRIDDESC    /tmp/sunnylo/GRIDDESC_G0
+setenv EXE_PATH    /flyer/com/epa/sunnylo/test
+#
+# now run the program, using a here-document to supply the input:
+#
+cd $EXE_PATH
+metmerge <<  EOF
+MC2NAME                 ! MET_CRO_2D file for Solar Radiation
+SFCNAME                 ! Interpolated Sfc Temperature file
+ONAME                   ! output emissions file
+EOF
+ja -cshlt
+#
