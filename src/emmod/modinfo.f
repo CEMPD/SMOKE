@@ -1,3 +1,4 @@
+
         MODULE MODINFO
 
 !***********************************************************************
@@ -45,7 +46,8 @@
 
         INTEGER    , PUBLIC :: BYEAR    ! base inventory year
         INTEGER    , PUBLIC :: CATLEN   ! length of CATEGORY string
-        INTEGER    , PUBLIC :: JSCC     ! position in source chars of SCC (or 0)
+        INTEGER    , PUBLIC :: JSCC  =0 ! position in source chars of SCC (or 0)
+        INTEGER    , PUBLIC :: JSTACK=0 ! position in source chars of stack
         INTEGER    , PUBLIC :: LSCCEND  ! end of left-SCC
         INTEGER    , PUBLIC :: MXCHRS   ! max no. of source characteristics
         INTEGER    , PUBLIC :: NCHARS   ! actual no. of source characteristics
@@ -90,6 +92,10 @@
 !.........  Inventory pollutants and inventory activies, dimensioned by NIPPA
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EAREAD( : ) ! for read3
+
+!.........  Units and conversion factors for allowed data types
+        REAL                  , ALLOCATABLE, PUBLIC :: INVDCNV( :,: )
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: INVDUNT( :,: )
 
 !.........  Inventory pollutants/activies units and descriptions
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EAUNIT( : )
