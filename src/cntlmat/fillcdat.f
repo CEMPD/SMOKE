@@ -97,7 +97,7 @@ C NOTE: What will be the standard for storing percentages read in a 0-100?
         CASE( 'PROJECT AMS' )
             PRJFC  ( JT ) = PKTINFO%FAC1
 
-        CASE( 'PROJECT PTS' )
+        CASE( 'PROJECT PROJECTION' )
             IPRJSIC( JT ) = STR2INT( PKTINFO%CSIC )
             PRJFC  ( JT ) = PKTINFO%FAC1
 

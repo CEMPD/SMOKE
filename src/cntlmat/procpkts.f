@@ -148,7 +148,7 @@ C.............  Generate reactivity matrices
 
             SFLAG = .TRUE.
 
-        CASE( 'PROJECT PTS' )
+        CASE( 'PROJECT PROJECTION' )
 
 C NOTE: STOPPED HERE.  Must write GENPROJ and include the code below in it.
 
