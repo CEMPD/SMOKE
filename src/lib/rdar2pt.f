@@ -51,7 +51,7 @@ C.........  This module is for cross reference tables
         USE MODXREF
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS   ! Note - needed for reporting only
+        USE MODLISTS, ONLY: NINVSCC, INVSCC, SCCDESC  ! Note - needed for reporting only
 
 C.........  This module contains the arrays for the area-to-point x-form
         USE MODAR2PT
@@ -344,7 +344,7 @@ C.........  Sum SCC count
             NINVSCC = NINVSCC + NUMSCC( N )
         END DO
 
-	NA2PSCC = NINVSCC
+        NA2PSCC = NINVSCC
         
 C.........  Allocate temporary "inventory" SCC list from MODLISTS
         ALLOCATE( INVSCC( NINVSCC ), STAT=IOS )

@@ -48,8 +48,10 @@ C.........  This module is for cross reference tables
         USE MODXREF
 
 C.........  This module contains the information about the source category
-        USE MODINFO
-
+        USE MODINFO, ONLY: MXCHRS, NIPPA, SCCLEV1, SCCLEV2,
+     &                     SCCLEV3, LSCCEND, SC_ENDP, SC_BEGP, 
+     &                     JSCC, RSCCBEG, PLTIDX, EANAM, NIACT,
+     &                     NCHARS
         IMPLICIT NONE
 
 C...........   INCLUDES
