@@ -60,9 +60,7 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
- 
-        PARAMETER ( SCCSW   = '@(#)$Id$'    )
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
      
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -221,7 +219,7 @@ C   begin body of program TMPBIO
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
 
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Evaluate the environment variables...
 
@@ -510,7 +508,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
 
         FDESC3D( 1 ) = 'Gridded biogenic emissions from SMOKE-BEIS2'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         FDESC3D( 4 ) = '/TZONE/ '   // CTZONE
         IF ( SWITCH_FILE ) THEN
            FDESC3D( 5 ) = '/LANDUSE/ ' // LUSE // LUSE2

@@ -67,11 +67,11 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   LOCAL PARAMETERS
 
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
+        CHARACTER*50  CVSW          ! CVS release tag
 
         PARAMETER ( MICR2G    = 1.0E-6 ,
      &              HA2MSQ    = 1.0E4  , 
-     &              SCCSW   = '@(#)$Id$'    )
+     &              CVSW      = '$Name$' )
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -126,7 +126,7 @@ C   begin body of program RAWBIO
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
 
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
    
 C.......   Get file name; open emission factors file
 
@@ -217,7 +217,7 @@ C............. set up header variables for output file BGRD
         FDESC3D = ' '
         FDESC3D( 1 ) = 'Biogenic Source normalized emissions values.'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         IF ( .NOT. LGRID ) THEN
           FDESC3D( 4 ) = '/LANDUSE/ COUNTY '
         ELSE
