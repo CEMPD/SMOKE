@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = -lfileset $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = -lfileset $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
 
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
@@ -34,7 +34,8 @@ RAW=adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o  \
     openinvin.o openinvout.o openpdout.o procinven.o rdcempd.o rdemsar.o \
     rdemsmb.o rdemspd.o rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o \
     rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o rdntimb.o smkinven.o \
-    srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o
+    srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
+    setnonhap.o
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
