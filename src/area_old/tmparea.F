@@ -2,7 +2,7 @@
         PROGRAM TMPAREA
 
 C***********************************************************************
-C  program body starts at line 266
+C  program body starts at line 268
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -79,6 +79,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         CHKXLIN
         CHARACTER*2     CRLF
+        LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3
         INTEGER         GETDATE
         INTEGER         GETEFILE
@@ -97,10 +98,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL  CHKXLIN, CRLF, FIND1, FIND2, FIND3, GETDATE, GETEFILE, 
-     &            GETNUM, GETYN, HHMMSS, INDEX1, ISDSTIME, JULIAN,
-     &            MMDDYY, PROMPTFFILE, PROMPTMFILE, RDTPROF, STR2INT,
-     &            TIME2SEC, TRIMLEN, WKDAY
+        EXTERNAL  CHKXLIN, CRLF, ENVYN, FIND1, FIND2, FIND3, GETDATE, 
+     &            GETEFILE, GETNUM, GETYN, HHMMSS, INDEX1, ISDSTIME,
+     &            JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE, RDTPROF, 
+     &            STR2INT, TIME2SEC, TRIMLEN, WKDAY
 
 
 C...........   PARAMETERS and their descriptions
@@ -256,6 +257,7 @@ C...........   Other local variables
         LOGICAL         DSTNOW  !  iff currently daylight time now
         LOGICAL         EFLAG   !  error-flag
         LOGICAL         TMATCALC!  iff need to calculate new TMAT
+        LOGICAL         ZONE4WM !  iff use zone for applying week/mon temp prof
 
         LOGICAL         FIRSTCOD  !  iff haven't yet encounter CODE > 0
         DATA            FIRSTCOD / .TRUE. /
@@ -298,6 +300,10 @@ C   begin body of program TMPAREA
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'TMPAREA', 0, 0, 'Ending program', 2 )
         END IF
+
+C.......   Get environment variable logical variables
+        ZONE4WM = ENVYN ( 'ZONE4WM', 'Assign weekly/monthly ' //
+     &                    'using time zones', .TRUE., IOS         )
 
         DO  2  S = 1, NMCOD
         DO  1  I = 1, 12
@@ -1002,7 +1008,8 @@ C...........   For each time step, write out the area source emissions values:
             IF( JDATE .NE. LDATE ) THEN
 
 C.................  Store month and day of week for this output date for
-C.................  all source's time zones and hours of day
+C.................  all source's time zones and hours of day.
+C.................  Use same loop for case where this feature is turned off
                 DO 155 I = TZMIN, TZMAX
 
                     TDATE = JDATE
@@ -1011,8 +1018,13 @@ C.................  all source's time zones and hours of day
 
                     DO 151 J = 1, 24
 
-                        CALL DAYMON( TDATE, MON, DAY ) ! month & scratch date
-                        DAY = WKDAY( TDATE )           !  get day-of-week
+                        IF( ZONE4WM ) THEN
+                            CALL DAYMON( TDATE, MON, DAY ) ! month & scratch date
+                            DAY = WKDAY( TDATE )           ! get day-of-week
+                        ELSE
+                            CALL DAYMON( JDATE, MON, DAY )
+                            DAY = WKDAY( JDATE )
+                        ENDIF
 
                         MONTH( J,I ) = MON
                         DAYOW( J,I ) = DAY
@@ -1034,9 +1046,17 @@ C...........   Set integer hour of day for output time
 
 C...........   Determine if this hour is one that requires a new TMAT
 C...........   (because one or more sources are starting a new day)
+C...........   Allow for case where ZONE4WM is false, then only
+C...........   need to update TMAT once per day.
 
-            TMATCALC = ( FIND1( H, NHRCALC , HRCALC ) .GT. 0 .OR.
-     &                   T .EQ. 1 )
+            IF( ZONE4WM ) THEN
+                I        =  FIND1( H, NHRCALC , HRCALC )
+                TMATCALC = ( I .GT. 0 .OR. T .EQ. 1 )
+ 
+            ELSE
+                TMATCALC = ( JDATE .NE. LDATE  )
+ 
+            ENDIF
 
 C...........   Construct TMAT -- array of effective composite 
 C...........   profile coefficients as appropriate:
