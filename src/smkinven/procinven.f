@@ -45,8 +45,7 @@ C...........   This module is the inventory arrays
      &                      IPOSCODA, SRCIDA, ICASCODA, CSOURCA, 
      &                      CSOURC, NPCNT, POLVAL, IPOSCOD, IFIP,
      &                      CSCC, XLOCA, YLOCA, CELLID, IRCLAS,
-     &                      IVTYPE, CLINK, CVTYPE, XLOC1, XLOC2,
-     &                      YLOC1, YLOC2
+     &                      IVTYPE, CLINK, CVTYPE
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT
@@ -157,14 +156,6 @@ C.........  Allocate memory for sorted inventory arrays
             CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
             ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
-            ALLOCATE( XLOC1( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
-            ALLOCATE( YLOC1( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'YLOC1', PROGNAME )
-            ALLOCATE( XLOC2( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
-            ALLOCATE( YLOC2( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
         CASE( 'POINT' )
 !            ALLOCATE( IDIU( NSRC ), STAT=IOS )
 !            CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
@@ -217,11 +208,6 @@ C.................  Set vehicle type based on vehicle ID
                 CVTYPE( S ) = CVTYPLST( J )
                 
             END DO
-            
-            XLOC1 = BADVAL3   ! array
-            YLOC1 = BADVAL3   ! array
-            XLOC2 = BADVAL3   ! array
-            YLOC2 = BADVAL3   ! array
 
         CASE( 'POINT' )
         
