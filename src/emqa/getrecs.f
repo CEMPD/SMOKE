@@ -76,7 +76,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL          YR2DAY
  
         EXTERNAL      FIND1, GETIFDSC GETMENU, GETNUM, GETYN, INDEX1,
-     &                MMDDYY, PROMPTFFILE, PROMPTMFILE, SECSDIF,
+     &                MMDDYY, PROMPTFFILE, PROMPTMFILE, SECSDIFF,
      &                YR2DAY
 
 C.........  Local parameters
