@@ -103,12 +103,10 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine ALLOCMRG
 
-       IF( LREPANY ) THEN
-           NCNY = NCOUNTY  ! from modstcy
-       ELSE
-           NCNY = 0
-       END IF
-
+C........  NOTE - set these temporary variables for memory allocate no matter
+C          what, because the county totals will be computed, even if they 
+C          are not output.
+       NCNY = NCOUNTY  ! from modstcy
        NSTA = NSTATE   ! from modstcy
 
 C....................................................................
@@ -126,6 +124,7 @@ C........  Allocate memory for fixed-size area source arrays
 
             ALLOCATE( AEMGRD( NGRID ), STAT=IOS )  ! gridded area emissions
             CALL CHECKMEM( IOS, 'AEMGRD', PROGNAME )
+            AEMGRD = 0.  ! array
 
             NDIM = 0
             IF( LREPINV ) NDIM = NDIM + ANIPOL
@@ -234,6 +233,7 @@ C.........  Mobile source fixed-size arrays
 
             ALLOCATE( MEMGRD( NGRID ), STAT=IOS )! gridded mobile emissions
             CALL CHECKMEM( IOS, 'MEMGRD', PROGNAME )
+            MEMGRD = 0.  ! array
 
             NDIM = 0
             IF( LREPINV ) NDIM = NDIM + MNIPPA
@@ -324,6 +324,7 @@ C.........  Point source fixed-size arrays
 
             ALLOCATE( PEMGRD( NGRID,EMLAYS ), STAT=IOS ) ! gridded point emissions
             CALL CHECKMEM( IOS, 'PEMGRD', PROGNAME )
+            PEMGRD = 0.  ! array
 
             NDIM = 0
             IF( LREPINV ) NDIM = NDIM + PNIPOL
