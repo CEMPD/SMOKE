@@ -1,21 +1,44 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
-
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File Version: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
+ 
         PROGRAM GRDBIO
 
 C***********************************************************************
-C  program body starts at line  131
+C  program body starts at line  149
 C
 C  DESCRIPTION:
-C       Computes normalized gridded biogenic emissions in terms of gridded
-C       or county level biomass, land use, and emissions factors, and 
-C       surrogate factors if biomass is at county level.
+C       Computes normalized gridded biogenic emissions in terms of
+C       gridded or county level biomass, land use, and emissions factors,
+C       and surrogate factors if biomass is at county level.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC adapted from UAM BEIS2 subroutine NORMALEM
+C
+C       Revised 8/96 by SL and CJC: algorithm change to match OTAG BEIS2 
+C       algorithm
 C
 C***********************************************************************
 
@@ -40,7 +63,6 @@ C...........   PARAMETERS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
-        INTEGER         FIND1
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         INDEX1
@@ -51,7 +73,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        DSCGRID, FIND1, GETNUM, GETYN, INDEX1, LBLANK, 
+        EXTERNAL        DSCGRID, GETNUM, GETYN, INDEX1, LBLANK, 
      &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
      &                  TRIMLEN
 
@@ -139,6 +161,9 @@ C   begin body of program GRDBIO
      &  'You may use END_OF-FILE (control-D) to quit the program',
      &  'during logical-name entry. Default responses are indicated',
      &  'in brackets [LIKE THIS].',
+     &  ' ',
+     &  'COPYRIGHT(C)1996, MCNC--North Carolina Supercomputing Center',
+     &  'See file COPYRIGHT for conditions of use.',
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
@@ -173,8 +198,8 @@ C.......   Set up file description and open emissions file:
 
         GDNAM3D = GRDNM
         FTYPE3D = GRDDED3
-        SDATE3D = 1988167             !  n/a
-        STIME3D = 050000             !  n/a
+        SDATE3D = 1993202       !  n/a
+        STIME3D = 050000        !  n/a
         TSTEP3D = 0             !  time independent
         NVARS3D = BTYPES * ( BSPCS - 1 ) + LUSES + 1
         NLAYS3D = 1
@@ -417,8 +442,6 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-c sl                   ALAI   = ALAI   + AREA
-c sl                   SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  64  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 64                  CONTINUE
@@ -453,7 +476,6 @@ c sl                   SUMLAI = SUMLAI + AREA * LAI( K )
                         DO  68  M = 1, BSPCS - 1
                             ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 68                      CONTINUE
-c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !  if lai is 3,5,7, or otherwise
 
@@ -534,8 +556,6 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-c sl                   ALAI   = ALAI   + AREA
-c sl                   SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  74  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 74                  CONTINUE
@@ -570,7 +590,6 @@ c sl                   SUMLAI = SUMLAI + AREA * LAI( K )
                         DO  78  M = 1, BSPCS - 1
                             ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 78                      CONTINUE
-c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !!  if lai is 3,5,7, or otherwise
 
@@ -695,7 +714,6 @@ C...........   Land use type:  remaining/other.  Process subtypes:
 
                     DO  94  M = 1, BSPCS - 1
                         EMIS = AREA * EMFAC( K , M )
-c sl                      EOTH( M ) = EOTH( M ) + EMIS
                         ELAI( M ) = ELAI( M ) + EMIS
 94                  CONTINUE
                     ENOWTF = ENOWTF + AREA * EMFAC( K, NO )
@@ -870,6 +888,7 @@ C...........   Formatted file I/O formats............ 93xxx
 93000   FORMAT( A )
 
 93005   FORMAT( I3.3, 1X, I3.3, F12.3 )
+
 93010   FORMAT( 1X, A4, 3 F9.0, F6.0, I2 )
 
 93020   FORMAT( 4 F10.0, I10, 2F10.0 )
