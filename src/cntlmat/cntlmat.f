@@ -68,7 +68,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        INTEGER     , PARAMETER :: NPACKET = 7
+        INTEGER     , PARAMETER :: NPACKET = 6
 
         CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
         CHARACTER*20, PARAMETER :: PKTLIST( NPACKET ) = 
@@ -77,7 +77,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
      &                               'ALLOWABLE           ',
      &                               'ADD                 ',
      &                               'REACTIVITY          ',
-     &                               'PROJECT PROJECTION  '  / )
+     &                               'PROJECTION          '  / )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -238,7 +238,7 @@ C.........  Set the flags that indicate which packets are valid
         LFLAG = ( PKTCNT( 3 ) .GT. 0 )
         DFLAG = ( PKTCNT( 4 ) .GT. 0 )
         RFLAG = ( PKTCNT( 5 ) .GT. 0 )
-        JFLAG = ( PKTCNT( 6 ) .GT. 0 .OR. PKTCNT( 7 ) .GT. 0 )
+        JFLAG = ( PKTCNT( 6 ) .GT. 0 )
 
 C.........  Process packets: this means read packet, sort it, group it into 
 C           grouped, x-ref structures in MODXREF, and assign to sources, and
