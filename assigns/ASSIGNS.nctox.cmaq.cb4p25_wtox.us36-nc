@@ -162,9 +162,25 @@ endif
    setenv SCCDESC     $GE_DAT/scc_desc.txt         # SCC descriptions
    setenv SRGDESC     $GE_DAT/srg_desc.us36.txt    # surrogate descriptions
    setenv ORISDESC    $GE_DAT/oris_info.txt        # ORIS ID descriptions
+   setenv GSCNV       $GE_DAT/gscnv.txt            # ROG to TOG conversion facs
    setenv GSREF       $GE_DAT/gsref.$SPC.txt       # Speciation x-ref
    setenv GSPRO       $GE_DAT/gspro.$SPC.txt       # Speciation profiles
-   setenv GSCNV       $GE_DAT/gscnv.txt            # ROG to TOG conversion facs
+
+   # For cases when GSREF and GSPRO is not a shared file.
+   if ( $?SMK_SOURCE && $?SPC_SRC_SPECIFIC ) then
+      if ( $SMK_SOURCE == A && $SPC_SRC_SPECIFIC == Y ) then
+         setenv GSREF $GE_DAT/gsref.$SPC.a.txt
+         setenv GSPRO $GE_DAT/gspro.$SPC.a.txt
+      endif
+      if ( $SMK_SOURCE == M && $SPC_SRC_SPECIFIC == Y ) then
+         setenv GSREF $GE_DAT/gsref.$SPC.m.txt
+         setenv GSPRO $GE_DAT/gspro.$SPC.m.txt
+      endif
+      if ( $SMK_SOURCE == P && $SPC_SRC_SPECIFIC == Y ) then
+         setenv GSREF $GE_DAT/gsref.$SPC.p.txt
+         setenv GSPRO $GE_DAT/gspro.$SPC.p.txt
+      endif
+   endif
 #
 ## Override shared inputs
 if ( $?INVTABLE_OVERRIDE ) then
