@@ -38,14 +38,9 @@ C
 C***********************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the inventory arrays
-        USE MODSOURC
-
-C.........  This module contains the information about the source category
-        USE MODINFO
-        
 C.........  This module is used for MOBILE6 setup information 
-        USE MODMBSET
+        USE MODMBSET, ONLY: NINVC, NREFC, MCREFIDX, MCREFSORT, 
+     &                      MVREFSORT, DAILY, WEEKLY, MONTHLY, EPISLEN
         
         IMPLICIT NONE
 
