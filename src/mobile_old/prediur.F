@@ -134,7 +134,8 @@ C...........   Other local variables:
         INTEGER    TMMIT(4)!  temporary TMMI indices for all four min/max
         INTEGER    TSTEP   !  time step of input temperature data (HHMMSS)
         INTEGER    TZONE   !  zone to determine output days
-        INTEGER    FIRSTIME!  the starting time for modeling
+        INTEGER    IDATE   !  the starting date for modeling
+        INTEGER    ITIME   !  the starting time for modeling
 
         REAL       TMAX   !  deg F temporary source max temperature on interval
         REAL       TMIN   !  deg F temporary source min temperature on interval
@@ -274,7 +275,6 @@ C.........  Read header of first temperature file
 
 C.........  Save time step for processing temperatures
         TSTEP = TSTEP3D
-
 C.........  Prompt for time zone for output file (to get local time to use
 C.........     for beginning of the day)
         TZONE  = 0  ! Keep data in MINMAXT in GMT for increased portability
@@ -285,7 +285,8 @@ C     &             'per day (0 for GMT)' )
      &                   'Enter starting date in GMT (YYYYDDD)' )
         JTIME  = GETNUM( 0, 999999, STIME3D,
      &                   'Enter starting time in GMT (HHMMSS)' )
-        FIRSTIME = JTIME
+        IDATE = JDATE
+        ITIME = JTIME
 75      NSTEPS = GETNUM( 1, 999999, 24,
      &                   'Enter output duration (hours)' )
         IF ( MOD( NSTEPS, 24 ) .NE. 0 ) THEN
@@ -734,23 +735,26 @@ C.....................................  Insert new TMMIT(J) for PSI(K)
 
 C.................  Give warning if end of day is not hour 23
 
-                IF( JTIME .NE. 230000 ) THEN 
-                    WRITE( MESG, 94010 )
-     &                     'Day not ending on HHMMSS 230000'
+C               IF( JTIME .NE. 230000 ) THEN 
+C                   WRITE( MESG, 94010 )
+C    &                     'Day not ending on HHMMSS 230000'
 
-                    CALL M3WARN( 'PREDIUR', JDATE, JTIME, MESG )
+C                   CALL M3WARN( 'PREDIUR', JDATE, JTIME, MESG )
 
-                ENDIF
+C               ENDIF
 
 C.................  Write out min/max information for the current day
+
                 IF( .NOT. WRITE3( 
 C    &              ONAME, 'ALL', JDATE, 0, TMMI ) ) THEN
-     &              ONAME, 'ALL', JDATE, FIRSTIME, TMMI ) ) THEN 
+     &              ONAME, 'ALL', IDATE, ITIME, TMMI ) ) THEN 
 
                     CALL M3EXIT( 'PREDIUR', JDATE, 0,
      &                           'Could not write timestep to "' //
      &                           ONAME( 1 : TRIMLEN( ONAME ) ) // 
      &                           '".', 2 )
+                CALL NEXTIME( IDATE, ITIME, TSTEP3D ) ! prepare for the next day
+
                 ENDIF
 
 C.................................................................
