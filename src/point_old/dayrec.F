@@ -65,7 +65,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER       IPLANA( NDSRC )  !  Plant ID
         INTEGER       ISTACA( NDSRC )  !  Stack ID
         INTEGER       ICODEA( NDSRC )  !  spcecies-subscript
-        REAL          EMISDA( NDSRC )  !  emissions values (tons/yr)
+        REAL          EMISDA( NDSRC )  !  emissions values (tons/time)
         INTEGER       JDATE, JTIME     !  current date and time
         CHARACTER*16  ENAME     !  logical name for PNTS file from RAWPOINT
         CHARACTER*16  DNAME     !  " DAY-POINTS output file
@@ -197,7 +197,7 @@ C.......   then permute the records according to the result:
             IF ( K .LT. 0 ) THEN
 
                 WFLAG = .TRUE.
-                WRITE( MESG,94020 )
+                WRITE( MESG,94030 )
      &              'Invalid source -- FIP:', FIP,
      &              'SCC:',     SCC, 
      &              'Plant:',   PLANT,
@@ -218,7 +218,7 @@ C.......   then permute the records according to the result:
                 EMISD ( J,V ) = EMIS
             ELSE
                 VFLAG = .TRUE.
-                WRITE( MESG,94020 )
+                WRITE( MESG,94030 )
      &              'Duplicate emissions record:  FIP:', FIP,
      &              'SCC:',     SCC, 
      &              'Plant:',   PLANT,
@@ -253,7 +253,7 @@ C.......   then permute the records according to the result:
                IF ( EMISD( S,V ) .LT. AMISS3 ) THEN
 
                     VFLAG = .TRUE.
-                    WRITE( MESG,94020 )
+                    WRITE( MESG,94030 )
      &                  'Missing emissions record:  FIP:', IFIP( S ),
      &                  'SCC:',     ISCC( S ), 
      &                  'Plant:',   IPLANT( S ),
@@ -271,13 +271,6 @@ C.......   then permute the records according to the result:
      &                       'Missing records in input file', 2 )
             END IF
 
-        ELSE            !  "missing" ~~~> 0
-
-            DO  148  V = 1, NIPOL
-            DO  147  S = 1, NPDAY
-                IF ( EMISD( S,V ) .LT. AMISS3 ) EMISD( S,V ) = 0.0
-147         CONTINUE
-148         CONTINUE
 
         END IF          !  sflag or not:  check for non-set EMIS values
 
@@ -308,8 +301,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94020   FORMAT( A, X, I5, X, A, I7, X, A, X, I5, X, A, X, A, I3, A, I5 )
-
+94030   FORMAT( A, X, I5, X, A, I8, X, A, X, I5, X, A, I4, X, A, I5 )
 
 C...........   Miscellaneous formats................. 95xxx
 
