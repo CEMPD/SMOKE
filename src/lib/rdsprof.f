@@ -201,6 +201,7 @@ C.............  Check for current pollutant of interest
         
         PPRF   = ' '
         PSPCNM = ' '
+        NPOLSPRO = 0
         N = 0
         DO I = 1, NSPFUL
 
