@@ -41,13 +41,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: INDXTA, ISPTA, CSCCTA, CSRCTA, MPRNA, CMACTA
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY
 
         IMPLICIT NONE
 
@@ -99,6 +99,7 @@ C.........  Parse the line of data into segments based on the rules
 C.........  Ensure that pollutant is in master list of pollutants or
 C               skip the pollutant-specific entry
         CSCCTA( JX ) = TMPSCC
+        CMACTA( JX ) = PKTINFO%CMCT
         MPRNA ( JX ) = JT   ! Position in data table
 
 C.........  Store sorting criteria as right-justified in fields
@@ -111,7 +112,7 @@ C.........  Store sorting criteria as right-justified in fields
      &                    CHRBLNK3, POLBLNK3, CSRCALL )
 
             CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
-     &                     PKTINFO%CPOS
+     &                     PKTINFO%CMCT // PKTINFO%CPOS
 
         CASE( 'MOBILE' )
             CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
@@ -129,7 +130,7 @@ C.........  Store sorting criteria as right-justified in fields
      &                    CSRCALL )
 
             CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
-     &                     PKTINFO%CPOS
+     &                     PKTINFO%CMCT // PKTINFO%CPOS
 
         END SELECT
 
