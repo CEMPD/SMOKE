@@ -1,13 +1,16 @@
 
-        INTEGER FUNCTION GETIDASZ( FDEV, CATEGORY, OUTTYPE )
+        SUBROUTINE GETIDASZ( FDEV, CATEGORY, NLINES, NLINEBP )
 
 C***********************************************************************
-C  function body starts at line 
+C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This function returns an exact number of records or records times
-C      pollutants (depending on the value of OUTTYPE) for a raw IDA input
-C      file opened on unit FDEV.
+C      This subroutine returns an exact number of records or records times
+C      pollutants (depending on the value of OUTTYPE) for a raw inventory input
+C      file opened on unit FDEV.  The file must use the #POLID or #DATA header
+C      to indicate how many data variables are contained on each line of the
+C      file.  This routine will work with EMS-95 mobile files as well as
+C      IDA files.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -16,13 +19,13 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 1/99
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -52,20 +55,18 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        GETNLIST
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER       FDEV        !  unit number of input file
-        CHARACTER*(*) CATEGORY    !  description of source category
-        INTEGER       OUTTYPE     !  type of output of the function:
-                                  !    1 = input records; 2 = records times pols
+        INTEGER     , INTENT (IN ) :: FDEV     !  unit number of input file
+        CHARACTER(*), INTENT (IN ) :: CATEGORY !  description of source category
+        INTEGER     , INTENT (OUT) :: NLINES   !  no. input recs
+        INTEGER     , INTENT (OUT) :: NLINEBP  !  no. recs times data vars
 
 C...........   Other local variables
-        INTEGER         I, L   !  counters and indices
+        INTEGER         I1, I2, L   !  counters and indices
 
         INTEGER         IOS         !  i/o status
         INTEGER      :: IREC    = 0 !  input line counter
         INTEGER         FILFMT      !  file format code
-        INTEGER, SAVE:: NLINES  = 0 !  number of lines
-        INTEGER, SAVE:: NLINEBP = 0 !  number of lines times pollutants
-        INTEGER      :: NPOL    = 0 !  number of pollutants at line in file
+        INTEGER      :: NVAR    = 0 !  number of data vars at line in file
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
 
@@ -76,100 +77,94 @@ C...........   Other local variables
         CHARACTER*16 :: PROGNAME = 'GETIDASZ' ! program name
 
 C***********************************************************************
-C   begin body of function GETIDASZ
+C   begin body of subroutine GETIDASZ
 
-        IF( FIRSTIME ) THEN
+C.........  Initialize counters
+        NLINES  = 0
+        NLINEBP = 0
 
-            FIRSTIME = .FALSE.
+        DO   ! Head of file read loop
 
-            DO   ! Head of file read loop
-
-C.................  Read in part of line of file (enough for the header)
-                READ( FDEV,93000, END=111, IOSTAT=IOS ) LINE
-                IREC = IREC + 1
+C.............  Read in part of line of file (enough for the header)
+            READ( FDEV,93000, END=111, IOSTAT=IOS ) LINE
+            IREC = IREC + 1
  
-C.................  Check I/O error status
-                IF( IOS .GT. 0 ) THEN
-                    WRITE( MESG, 94010 )
-     &                     'Error', IOS,  'reading IDA input file ' // 
+C.............  Check I/O error status
+            IF( IOS .GT. 0 ) THEN
+                WRITE( MESG, 94010 )
+     &                     'Error', IOS,  'reading inventory file ' // 
      &                     'as character strings at line', IREC
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-                END IF
-
-C.................  Skip blank lines
-                IF( LINE .EQ. ' ' ) CYCLE
-
-C.................  Scan for header lines
-                IF( LINE( 1:1 ) .EQ. '#' ) THEN
-
-C.....................  Scan for pollutant header field
-                    L = LEN_TRIM( LINE )
-                    I = INDEX( LINE, 'POLID' )
-
-                    IF( I .GT. 0 ) THEN
-                        I = I + 5
-                        BUFFER = LINE( I:L )
-                        L = L - I - 1
-  
-                        CALL UPCASE( BUFFER )
-                        NPOL = GETNLIST( L, BUFFER )
-
-                    END IF
-
-                    CYCLE  ! to end of loop
-
-C.................  Otherwise, count the lines and lines times pollutants
-                ELSE
-
-C.....................  First, check to ensure header was there for area and 
-C                       point sources
-C.....................  For mobile sources, header will not be there, so set
-C                       NPOL to 1 for the VMT
-                    IF( NPOL .EQ. 0 ) THEN
-
-                        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                            NPOL = 1
-                        ELSE
-                            WRITE( MESG,94010 ) 
-     &                             'No #POLID header in IDA file', FDEV
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                        END IF
-
-                    END IF
-
-                    NLINES  = NLINES  + 1
-                    NLINEBP = NLINEBP + NPOL
-
-                END IF
-
-            END DO
-
-111         CONTINUE  ! Exit from read loop
-
-            IF( NLINES .EQ. 0 ) THEN
-                MESG = 'IDA-formatted inventory file has no valid ' //
-     &                 'lines of inventory data.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
             END IF
 
-        END IF  ! end of first time
+C.............  Skip blank lines
+            IF( LINE .EQ. ' ' ) CYCLE
+
+C.............  Scan for header lines
+            IF( LINE( 1:1 ) .EQ. CINVHDR ) THEN
+
+C.................  Scan for pollutant header field
+                L = LEN_TRIM( LINE )
+                I1 = INDEX( LINE, 'POLID' )
+                I2 = INDEX( LINE, 'DATA' )
+
+                IF( I1 .GT. 0 ) THEN
+                    I1 = I1 + 5
+                    BUFFER = LINE( I1:L )
+                    L = L - I1 - 1
+  
+                    CALL UPCASE( BUFFER )
+                    NVAR = GETNLIST( L, BUFFER )
+
+                ELSE IF( I2 .GT. 0 ) THEN
+                    I2 = I2 + 5
+                    BUFFER = LINE( I2:L )
+                    L = L - I2 - 1
+  
+                    CALL UPCASE( BUFFER )
+                    NVAR = GETNLIST( L, BUFFER )
+
+                END IF
+
+                CYCLE  ! to end of loop
+
+C.............  Otherwise, count the lines and lines times pollutants
+            ELSE
+
+C.................  First, check to ensure header was there for area and 
+C                   point sources
+C.................  For mobile sources, header might not be there, so the
+C                   default value is 1.
+                IF( NVAR .EQ. 0 ) THEN
+
+                    IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                        NVAR = 1
+                    ELSE
+                        WRITE( MESG,94010 ) 
+     &                             'No #POLID or #DATA header in ' //
+     &                             'inventory file unit number', FDEV
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+                END IF
+
+                NLINES  = NLINES  + 1
+                NLINEBP = NLINEBP + NVAR
+
+            END IF
+
+        END DO
+
+111     CONTINUE  ! Exit from read loop
+
+        IF( NLINES .EQ. 0 ) THEN
+            MESG = 'Inventory file has no valid ' //
+     &             'lines of inventory data.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
         REWIND( FDEV )
-
-        IF( OUTTYPE .EQ. 1 ) THEN
-            GETIDASZ = NLINES
-
-        ELSE IF( OUTTYPE .EQ. 2 ) THEN
-            GETIDASZ = NLINEBP
-
-        ELSE
-            MESG = 'INTERNAL ERROR: Bad output type in call to ' // 
-     &             'subroutine ' // PROGNAME     
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-        END IF
 
         RETURN
 
