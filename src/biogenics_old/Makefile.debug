@@ -1,0 +1,35 @@
+# Version "@(#)$Id$ $Source$ $Date$ 
+#
+all: debug
+#
+debug: grdbio.debug rawbio.debug tmpbio.debug 
+#
+#
+LDBG=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+#
+#
+INCS=BIODIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT
+#
+#
+#
+GRDS=grdbio.F
+#
+grdbio.debug:  $(INCS) $(GRDS)
+	f77 $(DBGFLAGS) -o grdbio.debug $(GRDS) $(LDBG)
+#
+#
+#
+RAWS=rawbio.F
+#
+rawbio.debug:  $(INCS) $(RAWS)
+	f77 $(DBGFLAGS) -o rawbio.debug $(RAWS) $(LDBG)
+#
+#
+#
+TMPS=tmpbio.F hrbio.F hrbios.F cldaten.F cldaten_calc.F czangle.F
+#
+tmpbio.debut:  $(INCS) $(TMPS)
+	f77 $(DBGFLAGS) -o tmpbio.debug $(TMPS) $(LDBG)
+#
+#
+#
