@@ -116,8 +116,9 @@ C   begin body of program MAPPOINT
         WRITE( *,92000 ) 
      &  ' ',
      &  'Program MAPPOINT to take the POINT SOURCE file produced by',
-     &  'RAWPOINT and sorted list of SCC codes, and produce the',
-     &  'gridded map of plant-counts for plants found in the list.',
+     &  'RAWPOINT and ANY sorted list of SCC codes, and produces a',
+     &  'gridded map of plant-counts for PLANTS (not stacks)',
+     &  'found with SCC codes matching those in the list.',
      &  ' ',
      &  'You will need to enter the logical names for the input and',
      &  'output files and for the grid descriptions file GRIDDESC;',  
@@ -132,8 +133,7 @@ C   begin body of program MAPPOINT
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program MAPPOINT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'MAPPOINT', 0, 0, 'Ending program', 2 )
         END IF
 
 
@@ -156,8 +156,8 @@ C.......   Get file name; open points file
             
         ENDIF
 
-        SDEV = PROMPTFFILE( 'Enter the SCC LIST file',
-     &          .TRUE., .TRUE., 'SCCLIST', 'MAPPOINT' )
+        SDEV = PROMPTFFILE( 'Enter file with a list of SCC codes',
+     &          .TRUE., .TRUE., 'PSCC', 'MAPPOINT' )
 
 C.......   Initializations:
         
@@ -224,7 +224,7 @@ C.......   Get file name; open output site count file
 
 C.......   Read in the area source emissions FIP and ASC tables:
         
-        WRITE( *,92000 ) ' ', 'Reading in POINT SOURCES file...', ' '
+        CALL M3MSG2( 'Reading in POINT SOURCES file...' )
 
         IF ( .NOT. READ3( ENAME, 'ISCC', ALLAYS3, 0, 0,  ISCC ) ) THEN
             CALL M3EXIT( 'MAPPOINT', 0, 0, 
@@ -304,7 +304,7 @@ C...........   Read SCC list
 111     CONTINUE        !  end loop on sources I, computing gridding matrix.
         
                    
-        WRITE( *,92000 ) ' ', 'Writing out SOURCE COUNT file...'
+        CALL M3MSG2( 'Writing out SOURCE COUNT file...' )
            
         IF ( .NOT. WRITE3( MNAME, 'ALL', 0, 0, COUNT ) ) THEN
             CALL M3EXIT( 'MAPPOINT', 0, 0, 
