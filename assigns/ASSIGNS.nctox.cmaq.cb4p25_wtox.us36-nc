@@ -384,9 +384,6 @@ endif
 #  Merge output files
    source $ASSIGNS/setmerge_files.scr
 #
-#  Unset temporary environment variables
-   source $ASSIGNS/unset.scr
-#
 #  Create and change permissions for output directories
    $ASSIGNS/smk_mkdir
 
@@ -409,6 +406,9 @@ endif
       echo "      automatic removal of SMOKE I/O API intermediate and"
       echo "      output files"
    endif
+#
+#  Unset temporary environment variables
+   source $ASSIGNS/unset.scr
 
 if ( $outstat == 1 ) then
    echo "ERROR: Problem found while setting up SMOKE."
