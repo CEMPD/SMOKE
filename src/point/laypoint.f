@@ -5,6 +5,9 @@ C***********************************************************************
 C  program body starts at line 
 C
 C  DESCRIPTION:
+C     This program computes the layer fractions for point sources.  It uses
+C     a modified Briggs algorithm to compute plume rise.  The plume is
+C     allocated to multiple layers when necessary.
 C
 C  PRECONDITIONS REQUIRED:  
 C
@@ -45,6 +48,9 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -52,24 +58,28 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         CHKMETEM
         CHARACTER*2     CRLF
+        LOGICAL         DSCM3GRD
+        LOGICAL         DSCM3LAY
         INTEGER         ENVINT
         LOGICAL         ENVYN
+        INTEGER         FIND1
         CHARACTER*50    GETCFDSC
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
         CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        CHARACTER*16    VERCHAR
         INTEGER         WKDAY
 
-        EXTERNAL   CHKMETEM, CRLF, ENVINT, GETCFDSC, HHMMSS, INDEX1,
-     &             MMDDYY, PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY
+        EXTERNAL   CHKMETEM, CRLF, DSCM3GRD, DSCM3LAY, ENVINT, ENVYN, 
+     &             FIND1, GETCFDSC, HHMMSS, INDEX1, MMDDYY, 
+     &             PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -135,9 +145,16 @@ C           Dimensioned 4 by NSRC
 C.........  Output layer fractions, dimensioned NSRC, emlays
         REAL   , ALLOCATABLE :: LFRAC( :, : )
 
+C.........  Input/output hour-specific data index, dimensioned by NSRC and
+C           by EMLAYS, so that index can be written to PLAY_EX file
+        INTEGER, ALLOCATABLE :: LOCINDXH( :,: )
+
 C.........  Fixed-dimension arrays
+        REAL         LFULLHT( 0:MXLAYS3 )     !  full-level heights [m]
+        REAL         LHALFHT( 1:MXLAYS3 )     !  half-level heights [m]
         REAL         SIGH   ( 0:MXLAYS3-1 )   !  half-level sigma values
         REAL         VGLVSXG( 0:MXLAYS3 )     !  vertical coord values.
+        REAL         WEIGHTS( 1:MXLAYS3 )     !  tmp weights for vertical aloc
 
 C...........   Logical names and unit numbers
 
@@ -150,16 +167,16 @@ C...........   Logical names and unit numbers
         CHARACTER*16    DNAME   !  dot-point layered met file name
         CHARACTER*16    ENAME   !  point-source inventory input file
         CHARACTER*16    GNAME   !  cross-point layered grid file name
+        CHARACTER*16    HNAME   !  hourly input file name
         CHARACTER*16    LNAME   !  layer fractions matrix output file
         CHARACTER*16    SNAME   !  cross-point surface met file name
         CHARACTER*16    XNAME   !  cross-point layered met file name
 
 C...........   Other local variables
 
-        INTEGER          I, J, L, L1, L2, S, T  ! counters and indices
+        INTEGER          I, J, K, L, L1, L2, S, T  ! counters and indices
 
         INTEGER          EMLAYS    ! number of emissions layers
-        INTEGER          GDTYP     ! i/o api grid type code
         INTEGER          IOS       ! tmp i/o status
         INTEGER          JDATE     ! Julian date (YYYYDDD)
         INTEGER          JTIME     ! time (HHMMSS)
@@ -168,60 +185,64 @@ C...........   Other local variables
         INTEGER          LPBL      ! first L: ZF(L) above mixing layer
         INTEGER          LSTK      ! first L: ZF(L) > STKHT
         INTEGER          LTOP      ! plume top    layer
-        INTEGER          NCOLS     ! cross grid number of grid columns
         INTEGER          NDOTS     ! dot grid number of cells
-        INTEGER          NGRID     ! cross grid number of cells
-        INTEGER          NLAYS     ! number of layers in met files
+        INTEGER          NHR       ! no. hour-specific sources for current hour
         INTEGER          NMAJOR    ! no. major sources
         INTEGER          NPING     ! no. plume-in-grid sources
-        INTEGER          NROWS     ! cross grid number of grid rows
-        INTEGER          NSTEPS    ! mumber of time steps
+        INTEGER       :: NSTEPS= 1 ! mumber of time steps
         INTEGER          REP_LAYR  ! layer for reporting srcs w/ high plumes
-        INTEGER          SDATE     ! Julian start date (YYYYDDD)
-        INTEGER          STIME     ! start time (HHMMSS)
+        INTEGER       :: SDATE = 0 ! Julian start date (YYYYDDD)
+        INTEGER       :: STIME = 0 ! start time (HHMMSS)
         INTEGER          TSTEP     ! output time step
-        INTEGER          VGTYP     ! vertical type from cross-point file
 
         REAL             X, Y, P, Q, PP, QQ
+        REAL             DM, HT, TK, VE, FL  ! tmp stack parameters
         REAL             XBEG, XEND, XL  ! tmp x-coords
         REAL             YBEG, YEND, YL  ! tmp y-coords
+        REAL             FAC       !  tmp factor for renormalizing
         REAL             PSFC      !  surface pressure (Pa)
+        REAL             SURFACE   !  tmp weight at surface
+        REAL             TDIFF     !  tmp layer frac diff for renormalizing
         REAL             TSTK      !  temperature at top of stack (K)
+        REAL             TSUM      !  tmp layer frac sum for renormalizing
         REAL             USTMP     !  tmp Ustar
-        REAL             VGTOP     !  top value from cross-point file 
         REAL             WSTK      !  wind speed  at top of stack (m/s)
         REAL             ZZ0, ZZ1, ZF0, ZF1
         REAL             ZBOT      !  plume bottom elevation (m)
         REAL             ZTOP      !  plume top    elevation (m)
 
-        REAL*8           P_ALP     ! projection alpha
-        REAL*8           P_BET     ! projection beta
-        REAL*8           P_GAM     ! projection gamma
-        REAL*8           XCELL     ! cross grid X-coordinate cell dimension
-        REAL*8           YCELL     ! cross grid Y-coordinate cell dimension
-        REAL*8           XCENT     ! x-center of projection
-        REAL*8           YCENT     ! y-center of projection
-        REAL*8           XORIG     ! cross grid X-cord origin of grid 
-        REAL*8           YORIG     ! cross grid Y-coordinate origin of grid
         REAL*8           XCELLDG   ! dot grid X-coordinate cell dimension
         REAL*8           YCELLDG   ! dot grid Y-coordinate cell dimension
         REAL*8           XORIGDG   ! dot grid X-coordinate origin of grid 
         REAL*8           YORIGDG   ! dot grid Y-coordinate origin of grid
 
+        LOGICAL       :: BFLAG = .FALSE.  ! true: use plume bottom and top
+        LOGICAL       :: CFLAG = .FALSE.  ! true: recalc vel w/ flow & diam
+        LOGICAL     :: COMPUTE = .FALSE.  ! true: compute plume rise 
         LOGICAL       :: EFLAG = .FALSE.  ! error flag
+        LOGICAL       :: FFLAG = .FALSE.  ! true: use hourly flow rate
+        LOGICAL       :: HFLAG = .FALSE.  ! true: hourly input used
+        LOGICAL       :: LFLAG = .FALSE.  ! true: use hourly layer 1 fraction
+        LOGICAL       :: PFLAG = .FALSE.  ! true: compute plm ris for iteration
+        LOGICAL       :: TFLAG = .FALSE.  ! true: use hourly temperatures
         LOGICAL       :: VFLAG = .FALSE.  ! true: use elevated file (PELV)
+        LOGICAL       :: XFLAG = .FALSE.  ! true: process ONLY explicit sources
+        LOGICAL       :: YFLAG = .FALSE.  ! true: use hourly velocities
         LOGICAL       :: ZSTATIC = .TRUE. ! true: Get heights from GRID_CRO file
-        LOGICAL          LF( 9 )          ! true: source characteristic is valid
+        LOGICAL          LFG( 9 )          ! true: source characteristic is valid
 
         CHARACTER*50     CHARS( 9 )!  tmp source characeristics 
         CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
+        CHARACTER*80  :: GDESC     !  grid description
         CHARACTER*200    OUTFMT    !  output format for RDEV report
         CHARACTER*200    BUFFER    !  source characteristics buffer
         CHARACTER*300    MESG      !  buffer for M3EXIT() messages
 
-        CHARACTER(LEN=IOVLEN3)  VNAME ! variable name buffer 
-        CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
+        CHARACTER(LEN=IOVLEN3) VNAME      ! variable name buffer 
+        CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name
+        CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
+        CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
 
         CHARACTER*16  :: PROGNAME = 'LAYPOINT'   !  program name
 
@@ -241,6 +262,23 @@ C.........   Get setting from environment variables
         MESG = 'Indicator for defining major/minor sources'
         VFLAG = ENVYN( 'SMK_SPECELEV_YN', MESG, .FALSE., IOS )
 
+        MESG = 'Indicator for defining hourly plume rise data'
+        HFLAG = ENVYN( 'HOUR_PLUMEDATA_YN', MESG, .FALSE., IOS )
+
+        MESG = 'Indicator for processing ONLY explicit plume ' //
+     &         'rise sources'
+        XFLAG = ENVYN( 'EXPLICIT_PLUMES_YN', MESG, .FALSE., IOS )
+
+C.........  Must have HOUR_PLUMEDATA_YN = Y to have EXPLICIT_PLUMES_YN = Y
+        IF ( XFLAG .AND. .NOT. HFLAG ) THEN
+            HFLAG = .TRUE.
+            MESG = 'NOTE: Setting HOUR_PLUMEDATA_YN to Y because '//
+     &             'EXPLICIT_PLUMES_YN is Y'
+            CALL M3MSG2( MESG )
+        END IF
+
+        CFLAG = ENVYN( 'VELOC_RECALC', 
+     &                 'Flag for recalculating velocity', .FALSE., IOS )
 
 C.........  Cannot use default and cannot set to less than 4 because of
 C           limits of plume rise algorithm
@@ -318,102 +356,257 @@ C           results are stored in module MODINFO.
 
         END IF
 
+C.........  Get file name and open daily input inventory file
+        IF( HFLAG ) THEN
+            HNAME = PROMPTMFILE( 
+     &               'Enter logical name for HOUR-SPECIFIC file',
+     &               FSREAD3, CRL // 'HOUR', PROGNAME )
+
+C.............  Check to see if appropriate variable list exists
+            CALL RETRIEVE_IOAPI_HEADER( HNAME )
+
+            NHRSRC = NROWS3D
+
+C.............  Check input variables and allocate memory...
+C.............  Check for layer-1 fraction
+            I = INDEX1( SPDATNAM( 1 ), NVARS3D, VNAME3D )
+            IF ( I .GT. 0 ) THEN
+                LFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'NOTE: Plume top and bottom in ' //
+     &                 'hourly input will be used '//CRLF()// BLANK10//
+     &                 'to allocate plumes for some sources.'
+                CALL M3MSG2( MESG )
+
+                ALLOCATE( LAY1F( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LAY1F', PROGNAME )
+
+            END IF
+            
+C.............  Check for plume top and plume bottom
+            J = INDEX1( SPDATNAM( 2 ), NVARS3D, VNAME3D )
+            K = INDEX1( SPDATNAM( 3 ), NVARS3D, VNAME3D )
+            IF ( J .GT. 0 .AND. K .LE. 0 ) THEN
+                MESG = 'WARNING: Plume bottom in hourly input file '//
+     &                 'will not be used '// CRLF()// BLANK10//
+     &                 'because plume top is not also present.'
+                CALL M3MSG2( MESG )
+
+            ELSE IF ( J .LE. 0 .AND. K .GT. 0 ) THEN
+                MESG = 'WARNING: Plume top in hourly input file '//
+     &                 'will not be used '// CRLF()// BLANK10//
+     &                 'because plume bottom is not also present.'
+                CALL M3MSG2( MESG )
+
+            ELSE IF ( J .GT. 0 .AND. K .GT. 0 ) THEN
+                BFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'NOTE: Plume top and bottom in ' //
+     &                 'hourly input will be used '//CRLF()// BLANK10//
+     &                 'to allocate plumes for some sources.'
+                CALL M3MSG2( MESG )
+
+                ALLOCATE( PLMBOT( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PLMBOT', PROGNAME )
+                ALLOCATE( PLMTOP( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PTOP', PROGNAME )
+
+            END IF
+
+C.............  Check for temperatures
+            I = INDEX1( SPDATNAM( 4 ), NVARS3D, VNAME3D )
+            IF ( I .GT. 0 ) THEN
+                TFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'NOTE: Temperatures ' //
+     &                 'hourly input will be used '//CRLF()// BLANK10//
+     &                 'to allocate plumes for some sources.'
+                CALL M3MSG2( MESG )
+
+                ALLOCATE( HRSTKTK( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'HRSTKTK', PROGNAME )
+
+            END IF
+         
+C.............  Check for velocity
+            I = INDEX1( SPDATNAM( 5 ), NVARS3D, VNAME3D )
+            IF ( I .GT. 0 ) THEN
+                YFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'NOTE: Velocities ' //
+     &                 'hourly input will be used '//CRLF()// BLANK10//
+     &                 'to allocate plumes for some sources.'
+                CALL M3MSG2( MESG )
+
+                ALLOCATE( HRSTKVE( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'HRSTKVE', PROGNAME )
+
+            END IF
+         
+C.............  Check for flow rate
+            I = INDEX1( SPDATNAM( 6 ), NVARS3D, VNAME3D )
+            IF ( I .GT. 0 ) THEN
+                FFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'NOTE: Flow rate ' //
+     &                 'hourly input will be used '//CRLF()// BLANK10//
+     &                 'to allocate plumes for some sources.'
+                CALL M3MSG2( MESG )
+
+                ALLOCATE( HRSTKFL( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'HRSTKFL', PROGNAME )
+
+            END IF
+
+C.............  If no correct variables, then ignore file
+            HFLAG= ( LFLAG .OR. BFLAG .OR. TFLAG .OR. YFLAG .OR. FFLAG )
+
+C.............  Give warning if no valid data
+            IF( .NOT. HFLAG ) THEN
+                MESG = 'WARNING: No hourly data used because ' //
+     &                 'no correct variables names ' // CRLF() // 
+     &                 BLANK10 // '(defined in EMCNST3.EXT) were found.'
+                CALL M3MSG2( MESG )
+            END IF
+         
+        END IF      ! End if hourly data use was requested by E.V. settings
+
         IF( VFLAG ) THEN
             PDEV = PROMPTFFILE( 
      &          'Enter logical name for the ELEVATED POINT SOURCE file',
      &          .TRUE., .TRUE., CRL // 'ELV', PROGNAME )
         END IF
 
-        SNAME = PROMPTMFILE( 
+C.........  If not explicit plume rise only, open and process other met files
+        IF ( .NOT. XFLAG ) THEN
+
+            SNAME = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT SURFACE MET file',
      &          FSREAD3, 'MET_CRO_2D', PROGNAME )
 
-        GNAME = PROMPTMFILE( 
+            GNAME = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT LAYERED GRID file',
      &          FSREAD3, 'GRID_CRO_3D', PROGNAME )
 
-        XNAME = PROMPTMFILE( 
+            XNAME = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT LAYERED MET file',
      &          FSREAD3, 'MET_CRO_3D', PROGNAME )
 
-        DNAME = PROMPTMFILE( 
+            DNAME = PROMPTMFILE( 
      &          'Enter name for DOT-POINT LAYERED MET file',
      &          FSREAD3, 'MET_DOT_3D', PROGNAME )
 
-C.........  Check multiple met files for consistency
-        EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, GNAME, XNAME, DNAME ) )
+C.............  Check multiple met files for consistency
+            EFLAG = ( .NOT. CHKMETEM( 'NONE',SNAME,GNAME,XNAME,DNAME ) )
 
-        IF ( EFLAG ) THEN
+            IF ( EFLAG ) THEN
 
-            MESG = 'Input met files have inconsistent grids or layers.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                MESG = 'Input met files have inconsistent grids or ' //
+     &                 'layers.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+C.............  Get grid parameters from 3-d cross-point met file and store 
+C               needed header information.  Use time parameters for time 
+C               defaults.
+            CALL RETRIEVE_IOAPI_HEADER( XNAME )
+            SDATE  = SDATE3D
+            STIME  = STIME3D
+            NSTEPS = MXREC3D
+            NCOLS  = NCOLS3D
+            NROWS  = NROWS3D
+            NLAYS  = NLAYS3D
+            GDTYP  = GDTYP3D
+            P_ALP  = P_ALP3D
+            P_BET  = P_BET3D
+            P_GAM  = P_GAM3D
+            XCENT  = XCENT3D
+            YCENT  = YCENT3D
+            XORIG  = XORIG3D
+            YORIG  = YORIG3D
+            XCELL  = XCELL3D
+            YCELL  = YCELL3D
+            VGTYP  = VGTYP3D
+            VGTOP  = VGTOP3D
+
+            NGRID = NCOLS * NROWS
+            NDOTS = ( NCOLS + 1 ) * ( NROWS + 1 )
+
+            METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. ) 
+            CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. ) 
+
+C.........  Determine whether height information is time dependent or time
+C           independent. Non-hydrostatic is time-independent and hydrostatic
+C           is time-dependent.
+            SELECT CASE( VGTYP )
+            CASE ( VGSGPH3, VGHVAL3 ) 
+                ZSTATIC = .FALSE.
+
+            CASE ( VGSGPN3 )
+                ZSTATIC = .TRUE.
+
+            CASE DEFAULT
+                WRITE( MESG,94010 ) 'Cannot process vertical ' //
+     &                 'coordinate type', VGTYP
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END SELECT
+
+            CALL RETRIEVE_IOAPI_HEADER( DNAME )
+            XCELLDG = XCELL3D
+            YCELLDG = YCELL3D 
+            XORIGDG = XORIG3D
+            YORIGDG = YORIG3D
+
+C.........  If not using met data (for explicit plume rise only...)
+        ELSE
+ 
+C.............  Get horizontal grid structure from the G_GRIDPATH file
+            IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD3D, GDTYP, COORUN3D,
+     &                          P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                          XORIG, YORIG, XCELL, YCELL,
+     &                          NCOLS, NROWS, NTHIK3D ) ) THEN
+
+                MESG = 'Could not get Models-3 grid description.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            NGRID = NCOLS * NROWS
+
+C.............  Get vertical layer structure from the G_GRIDPATH file
+            IF ( .NOT. DSCM3LAY( NLAYS, VGTYP, VGTOP, VGLVS3D ) )
+     &           THEN
+                MESG = 'Could not get vertical layer structure from '//
+     &                 'Models-3 grid description file.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Check to make sure input vertical structure has been provided
+C               that is "meters above ground."
+            IF ( VGTYP .NE. VGHVAL3 ) THEN
+                WRITE( MESG,94010 ) 'Explicit plume rise requires ' //
+     &                 'vertical type ', VGHVAL3, 'in grid ' //
+     &                 'description' // CRLF() // BLANK10 //
+     &                 'file, but type', VGTYP, 'was found.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            DO I = 1, NLAYS3D
+                J = J + 1
+                SIGH   ( I-1 ) = 0.5 * ( VGLVSXG( J ) + VGLVSXG( J-1 ) )
+            END DO
 
         END IF
 
-C.........  Get grid parameters from 3-d cross-point met file and store needed
-C           header information.  Use time parameters for time defaults.
-        CALL RETRIEVE_IOAPI_HEADER( XNAME )
-        SDATE  = SDATE3D
-        STIME  = STIME3D
-        NSTEPS = MXREC3D
-        NCOLS  = NCOLS3D
-        NROWS  = NROWS3D
-        NLAYS  = NLAYS3D
-        GDTYP  = GDTYP3D
-        P_ALP  = P_ALP3D
-        P_BET  = P_BET3D
-        P_GAM  = P_GAM3D
-        XCENT  = XCENT3D
-        YCENT  = YCENT3D
-        XORIG  = XORIG3D
-        YORIG  = YORIG3D
-        XCELL  = XCELL3D
-        YCELL  = YCELL3D
-        VGTYP  = VGTYP3D
-        VGTOP  = VGTOP3D
-
-        NGRID = NCOLS * NROWS
-        NDOTS = ( NCOLS + 1 ) * ( NROWS + 1 )
-
+C.........  Store local layer information
         J = LBOUND( VGLVS3D, 1 )
         VGLVSXG( 0 ) = VGLVS3D( J )
-        DO I = 1, NLAYS3D
+        DO I = 1, NLAYS
             J = J + 1
             VGLVSXG( I ) = VGLVS3D( J )
             SIGH   ( I-1 ) = 0.5 * ( VGLVS3D( J ) + VGLVS3D( J-1 ) )
         END DO
 
-        METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. ) 
-        CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. ) 
-
-C.........  Determine whether height information is time dependent or time
-C           independent. Non-hydrostatic is time-independent and hydrostatic
-C           is time-dependent.
-        SELECT CASE( VGTYP )
-        CASE ( VGSGPH3, VGHVAL3 ) 
-            ZSTATIC = .FALSE.
-
-        CASE ( VGSGPN3 )
-            ZSTATIC = .TRUE.
-
-        CASE DEFAULT
-            WRITE( MESG,94010 ) 'Cannot process vertical ' //
-     &             'coordinate type', VGTYP
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-        END SELECT
-
-        CALL RETRIEVE_IOAPI_HEADER( DNAME )
-        XCELLDG = XCELL3D
-        YCELLDG = YCELL3D 
-        XORIGDG = XORIG3D
-        YORIGDG = YORIG3D
-
 C.........  Compare number of meteorology layers to number of emissions layers
         IF( EMLAYS .LE. NLAYS ) THEN
             WRITE( MESG,94010 ) 'NOTE: The number of emission layers '//
-     &             'is', EMLAYS, ', and the number of '// CRLF()// 
-     &             BLANK10//'layers in the meteorology file is', NLAYS
+     &             'is', EMLAYS, ', and the maximum '// CRLF()// 
+     &             BLANK10//'possible layers is', NLAYS
             CALL M3MSG2( MESG )
 
         ELSE
@@ -433,49 +626,9 @@ C.........  Update start date/time and duration from the environment
 C.........  Set up and open output file, which will primarily using I/O API 
 C           settings from the cross-point met file (XNAME), which are 
 C           already retrieved
-
-        CALL HDRMISS3 
-
-        SDATE3D = SDATE
-        STIME3D = STIME
-        TSTEP3D = TSTEP
-        NROWS3D = NSRC
-        NLAYS3D = EMLAYS
-        NVARS3D = 1
-        J = LBOUND( VGLVS3D, 1 )
-        VGLVS3D( J:J+EMLAYS ) = VGLVSXG( 0:EMLAYS )  ! array
-        VGTYP3D = VGTYP
-        VGTOP3D = VGTOP
-
-        VNAME3D( 1 ) = 'LFRAC'
-        VTYPE3D( 1 ) = M3REAL
-        UNITS3D( 1 ) = 'none'
-        VDESC3D( 1 ) = 'Fraction of plume emitted into layer'
-
-        FDESC3D = ' '  ! array
-
-        FDESC3D( 1 ) = 'Source level hourly plume rise layer fractions'
-        FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
-        FDESC3D( 4 ) = '/MET SCENARIO/ ' // METSCEN
-        FDESC3D( 5 ) = '/CLOUD SCHEME/ ' // CLOUDSHM
-
-        FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
-        FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
-
-        MESG = 'Enter logical name for LAYER FRACTIONS MATRIX'
-        LNAME = PROMPTMFILE( MESG, FSUNKN3, 'PLAY', PROGNAME )
-
-C.........  Get file name of report of plume exceeding specified layer
-C.........  Write header to the report
-        IF( REP_LAYR .GT. 0 ) THEN
-
-            WRITE( MESG,94010 ) 'Enter logical name for report of ' //
-     &                          'plumes exceeding layer', REP_LAYR
-            RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
-     &                          'REPRTLAY', PROGNAME )
-
-        ENDIF
+        CALL OPENLAYOUT( SDATE, STIME, TSTEP, EMLAYS, REP_LAYR, XFLAG, 
+     &                   IFDESC2, IFDESC3, METSCEN, CLOUDSHM, VGLVSXG, 
+     &                   LNAME, RDEV )
 
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( 'POINT', ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
@@ -525,65 +678,87 @@ C.........  Allocate per-source and per-layer arrays
         ALLOCATE( ZSTK( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ZSTK', PROGNAME )
 
-C.........  Allocate layer fractions array
-        ALLOCATE( LFRAC( NSRC,EMLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
-
-C.........  Allocate ungridding arrays
-        ALLOCATE( ND( 4,NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ND', PROGNAME )
-        ALLOCATE( NX( 4,NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'NX', PROGNAME )
-        ALLOCATE( CD( 4,NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CD', PROGNAME )
-        ALLOCATE( CX( 4,NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CX', PROGNAME )
-
-C.........  Allocate per-layer arrays from 1:EMLAYS
-        ALLOCATE( WSPD( EMLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'WSPD', PROGNAME )
-        ALLOCATE( DTHDZ( EMLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'DTHDZ', PROGNAME )
-        ALLOCATE( TFRAC( EMLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TFRAC', PROGNAME )
-
-C.........  Allocate per-layer arrays from 0:EMLAYS
-        ALLOCATE( PRESF( 0:EMLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PRESF', PROGNAME )
-        ALLOCATE( ZZF( 0:EMLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ZZF', PROGNAME )
-
-C.........  Allocate array for tmp gridded, layered cross-point met data
-        ALLOCATE( XBUF( NGRID,NLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'XBUF', PROGNAME )
-        ALLOCATE( DBUF( NDOTS,NLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'DBUF', PROGNAME )
-
-C.........  Compute un-gridding matrices for dot and cross point met data
-        CALL UNGRIDB( NCOLS+1, NROWS+1, 
-     &                XORIGDG, YORIGDG, XCELLDG, YCELLDG,
-     &                NSRC, XLOCA, YLOCA, ND, CD )
-
-        CALL UNGRIDB( NCOLS, NROWS, XORIG, YORIG, XCELL, YCELL,
-     &                NSRC, XLOCA, YLOCA, NX, CX )
-
-C.........  Read time-independent ZF and ZH for non-hydrostatic Met data
-C.........  Compute per-source heights
-        IF( ZSTATIC ) THEN
-
-            CALL RETRIEVE_IOAPI_HEADER( GNAME )
-            CALL GET_VARIABLE_NAME( 'ZH', VNAME )
-            CALL SAFE_READ3( GNAME,VNAME,ALLAYS3,SDATE3D,STIME3D,XBUF )
-            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
-
-            CALL GET_VARIABLE_NAME( 'ZF', VNAME )
-            CALL SAFE_READ3( GNAME,VNAME,ALLAYS3,SDATE3D,STIME3D,XBUF )
-            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
-
-C.............  Pre-process ZF and ZH to compute DDZH and DDZF
-            CALL COMPUTE_DELTA_ZS
-
+C.........  If hourly data input, allocate index array
+        IF( HFLAG ) THEN
+            ALLOCATE( LOCINDXH( NHRSRC,EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LOCINDXH', PROGNAME )
+            LOCINDXH = 0   ! array
         END IF
+
+C.........  Allocate layer fractions array: by source if not explicit, by
+C           hour-specific source if it is explicit
+        IF( XFLAG ) THEN
+            ALLOCATE( LFRAC( NHRSRC,EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
+            ALLOCATE( TFRAC( EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TFRAC', PROGNAME )
+
+C.........  If computing plume rise...
+        ELSE
+
+C.............  Layer fractions for all sources
+            ALLOCATE( LFRAC( NSRC,EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
+
+C.............  Allocate ungridding arrays
+            ALLOCATE( ND( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ND', PROGNAME )
+            ALLOCATE( NX( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NX', PROGNAME )
+            ALLOCATE( CD( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CD', PROGNAME )
+            ALLOCATE( CX( 4,NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CX', PROGNAME )
+
+C.............  Allocate per-layer arrays from 1:EMLAYS
+            ALLOCATE( WSPD( EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'WSPD', PROGNAME )
+            ALLOCATE( DTHDZ( EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DTHDZ', PROGNAME )
+            ALLOCATE( TFRAC( EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TFRAC', PROGNAME )
+
+C.............  Allocate per-layer arrays from 0:EMLAYS
+            ALLOCATE( PRESF( 0:EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PRESF', PROGNAME )
+            ALLOCATE( ZZF( 0:EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ZZF', PROGNAME )
+
+C.............  Allocate array for tmp gridded, layered cross-point met data
+            ALLOCATE( XBUF( NGRID,NLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XBUF', PROGNAME )
+            ALLOCATE( DBUF( NDOTS,NLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DBUF', PROGNAME )
+
+C.............  Compute un-gridding matrices for dot and cross point met data
+            CALL UNGRIDB( NCOLS+1, NROWS+1, 
+     &                    XORIGDG, YORIGDG, XCELLDG, YCELLDG,
+     &                    NSRC, XLOCA, YLOCA, ND, CD )
+
+            CALL UNGRIDB( NCOLS, NROWS, XORIG, YORIG, XCELL, YCELL,
+     &                    NSRC, XLOCA, YLOCA, NX, CX )
+
+C.............  Read time-independent ZF and ZH for non-hydrostatic Met data
+C.............  Compute per-source heights
+            IF( ZSTATIC ) THEN
+
+                CALL RETRIEVE_IOAPI_HEADER( GNAME )
+                CALL GET_VARIABLE_NAME( 'ZH', VNAME )
+                CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D, 
+     &                           STIME3D, XBUF )
+                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
+
+                CALL GET_VARIABLE_NAME( 'ZF', VNAME )
+                CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D,
+     &                           STIME3D, XBUF )
+                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
+
+C.................  Pre-process ZF and ZH to compute DDZH and DDZF
+                CALL COMPUTE_DELTA_ZS
+
+            END IF
+
+        END IF     ! if explicit plume rise or not
 
 C.........  Write out header to report, if any. This includes generating
 C           format statement for the 
@@ -601,11 +776,11 @@ C           format statement for the
         END IF
 
 C.........  Set logical array for setting valid source characeristics columns
-        LF( 1:NCHARS ) = .TRUE.   ! array
-        IF( NCHARS .LE. 8 ) LF( NCHARS+1:9 ) = .FALSE.  ! array
+        LFG( 1:NCHARS ) = .TRUE.   ! array
+        IF( NCHARS .LE. 8 ) LFG( NCHARS+1:9 ) = .FALSE.  ! array
 
 C.........  Get variable names from surface meteorology file
-        CALL RETRIEVE_IOAPI_HEADER( SNAME )
+        IF ( .NOT. XFLAG ) CALL RETRIEVE_IOAPI_HEADER( SNAME )
 
 C.........  For each time step, compute the layer fractions...
 
@@ -629,7 +804,7 @@ C.................  Write day and date message to stdout and log file
 C.................  Write day and date message to report file
                 IF( RDEV .GT. 0 ) THEN
                     WRITE( RDEV,93000 ) MESG( 1:LEN_TRIM( MESG ) )
-                ENDIF
+                END IF
 
                 LDATE = JDATE
  
@@ -643,9 +818,58 @@ C.............  Write to report file if report feature is on
                 WRITE( RDEV,93020 ) HHMMSS( JTIME )
             END IF
 
+C.............  Initialize layer fraction array
+            LFRAC = 0.    ! 2-d array
+
+C.............  If needed, read hourly plume rise and/or stack parameters...
+C.............  Read source index
+            IF ( HFLAG ) THEN
+
+                IF( .NOT. READ3( HNAME, 'INDXH', ALLAYS3, 
+     &                           JDATE, JTIME, LOCINDXH( 1,1 ) ) ) THEN
+                    L1 = LEN_TRIM( HNAME )
+                    MESG = 'Could not read "IDXH" from file "' //
+     &                     HNAME( 1:L1 ) // '."'
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                END IF
+
+C.................  Determine the number of valid hour-specific sources for
+C                   the current hour
+                DO I = NHRSRC, 1, -1
+                    IF ( LOCINDXH( I,1 ) .NE. 0 ) EXIT
+                END DO
+                NHR = I
+
+            END IF
+
+C.............  Layer-1 fraction
+            IF ( LFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(1), ALLAYS3, 
+     &                                    JDATE, JTIME, LAY1F )
+
+C.............  Plume bottom and top
+            IF ( BFLAG ) THEN
+                CALL SAFE_READ3( HNAME, SPDATNAM(2), ALLAYS3, 
+     &                           JDATE, JTIME, PLMBOT )
+                CALL SAFE_READ3( HNAME, SPDATNAM(3), ALLAYS3, 
+     &                           JDATE, JTIME, PLMTOP )
+            END IF
+
+C.............  Temperatures
+            IF ( TFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(4), ALLAYS3, 
+     &                                    JDATE, JTIME, HRSTKTK )
+
+C.............  Velocity
+            IF ( CFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(5), ALLAYS3, 
+     &                                    JDATE, JTIME, HRSTKVE )
+
+C.............  Flow rate
+            IF ( FFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(6), ALLAYS3, 
+     &                                    JDATE, JTIME, HRSTKFL )
+
 C.............  Read time-dependent ZF and ZH for hydrostatic Met data
 C.............  Compute per-source heights
-            IF( .NOT. ZSTATIC ) THEN
+            IF( .NOT. XFLAG .AND. .NOT. ZSTATIC ) THEN
 
                 CALL SAFE_READ3( XNAME,'ZH',ALLAYS3,JDATE,JTIME,XBUF )
                 CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
@@ -659,7 +883,7 @@ C.................  Pre-process ZF and ZH to compute DDZH and DDZF
             END IF
 
 C.............  Read and transform meteorology:
-
+            IF ( .NOT. XFLAG ) THEN
             CALL SAFE_READ3( SNAME, 'HFX', ALLAYS3, JDATE, JTIME, XBUF )
             CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, HFX )
 
@@ -687,7 +911,7 @@ C.............  Read and transform meteorology:
 
             CALL SAFE_READ3( DNAME, 'VWIND', ALLAYS3, JDATE,JTIME,DBUF )
             CALL BMATVEC( NDOTS, NSRC, EMLAYS, ND, CD, DBUF, VWIND )
-
+            END IF
 C.............  Precompute constants before starting source loop
 
             P  = ( SIGH(0) - VGLVSXG(0) ) / ( SIGH( 1 ) - SIGH( 0 ) )
@@ -695,45 +919,165 @@ C.............  Precompute constants before starting source loop
             QQ =     - P 
 
 C.............  Loop through sources and compute plume rise
+            K = 0
             DO S = 1, NSRC
 
-C.................  Skip source if it is outside grid
+                DM = STKDM( S )
+                HT = STKHT( S )
+                TK = STKTK( S )
+                VE = STKVE( S )
+                FL = 0.          ! initialize flow
 	        XL = XLOCA( S )
 	        YL = YLOCA( S )
-                IF( XL .LT. XBEG .OR. XL .GT. XEND .OR.
-     &              YL .LT. YBEG .OR. YL .GT. YEND     ) CYCLE
+
+C.................  Find source in index list if hourly data or used
+                IF ( HFLAG ) THEN
+                    K = FIND1( S, NHR, LOCINDXH( 1,1 ) )
+                END IF
+
+C.................  Skip source if explicit processing and source not on list
+                IF ( XFLAG .AND. K .LE. 0 ) THEN
+                    CYCLE
+
+C.................  Skip source if it is outside grid
+                ELSE IF( XL .LT. XBEG .OR. XL .GT. XEND .OR.
+     &              YL .LT. YBEG .OR. YL .GT. YEND     ) THEN
+                    CYCLE
 
 C.................  Skip source if it is minor source and assign layer fractions
 C                   that put all emissions in layer 1
-                IF( .NOT. LMAJOR( S ) ) THEN
-                    LFRAC( S,1 )        = 1.
-                    LFRAC( S,2:EMLAYS ) = 0.
+                ELSE IF( .NOT. LMAJOR( S ) ) THEN
+                    IF( XFLAG ) THEN
+                       WRITE( MESG,94010 ) 
+     &                      'INTERNAL ERROR: LMAJOR(S) = FALSE for'//
+     &                      'explicit plume source number', S
+                       CALL M3MSG2( MESG )
+                       CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                    ELSE
+                        LFRAC( S,1 ) = 1.
+                    END IF
                     CYCLE
+
                 END IF
 
-C.................  Compute surface pressure (and convert to mb from Pa)
-                PSFC = 1.0E-2 * ( PP * PRES( 1,S ) + QQ * PRES( 2,S ) )
+C.................  If hourly data available, check if source has hourly data
+C                   for the current hour, then read hourly stack parameters
+                IF ( HFLAG ) THEN
 
-C.................  Compute derived met variables needed before PLMRISs
-                CALL PREPLM( EMLAYS, HMIX( S ), STKHT( S ), PSFC, 
-     &                       TSFC( S ), DDZH( 1,S ), QV( 1,S ), 
-     &                       TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ), 
-     &                       ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ), 
-     &                       PRES( 1,S ), LSTK, LPBL, TSTK, WSTK,
-     &                       DTHDZ, WSPD, ZZF )
+C.....................  If source has hourly data...
+                    IF( K .GT. 0 ) THEN
 
-C.................  Trap USTAR at a minimum realistic value
-                USTMP = MAX( USTAR( S ), USTARMIN )
+C.........................  If hourly temperatures are available, reset
+                        IF( TFLAG ) THEN
+                            IF( HRSTKTK( K ) .GT. 0 ) TK = HRSTKTK( K )
+                        END IF
 
-C.................  Compute plume rise for this source 
-                CALL PLMRIS( EMLAYS, LPBL, LSTK, HFX( S ), HMIX( S ),
-     &                       STKDM( S ), STKHT( S ), STKTK( S ), 
-     &                       STKVE( S ), TSTK, USTMP, DTHDZ, TA( 1,S ), 
-     &                       WSPD, ZZF( 0 ), ZH( 1,S ), ZSTK( 1,S ), 
-     &                       WSTK, ZTOP, ZBOT )
+C.........................  If hourly velocities are available, reset
+                        IF( YFLAG ) THEN
+                            IF( HRSTKVE( K ) .GT. 0 ) VE = HRSTKVE( K )
+                        END IF
 
-C.................  Check plume rise for nonsense output
-                IF( ZTOP .LT. STKHT( S ) ) THEN
+C.........................  If hourly flow rates are available, reset and
+C                           recompute velocity if requested
+                        IF( FFLAG ) THEN
+                            IF( HRSTKFL( K ) .GT. 0 ) THEN
+                                FL = HRSTKFL( K )
+                                IF ( CFLAG ) THEN
+                                    VE = FL / ( 0.25 * PI * DM * DM )
+                                END IF  ! if velocity recalculation requested.
+                            END IF      ! if flow valid for source
+                        END IF          ! if flow in hourly file
+                    END IF              ! if source is hourly
+                END IF                  ! if hourly used
+
+C.................  For explicit plume rise, assign plume top and
+C                   plume bottom from hourly data, and setup weights for 
+C                   allocation to the layers using static layer heights. Weight
+C                   by penetration of plume into layer and the layer thickness.
+C.................  This is the approach for UAM-style processing
+                IF ( XFLAG ) THEN
+
+C.....................  If plume bottom, and plume top are available, set 
+C                       these and set to skip plume rise computation
+                    IF( PLMBOT( K ) .GE. 0. .AND.
+     &                  PLMTOP( K ) .GT. 0.       ) THEN
+                        ZBOT = PLMBOT( K )
+                        ZTOP = PLMTOP( K )
+
+C.....................  Otherwuse, set top and bottom of plume to be in layer 1.
+                    ELSE
+                        ZBOT = VGLVS( 1 ) * 0.5
+                        ZTOP = ZBOT
+
+                    END IF
+
+                    SURFACE = 100.             ! percent to surface
+                    LFULLHT( 0 ) = 0.
+                    DO L = EMLAYS, 1, -1
+                        LFULLHT( L ) = VGLVSXG( L )
+                        LHALFHT( L ) = VGLVSXG( L-1 ) +
+     &                                 0.5 * ( VGLVSXG(L)-VGLVSXG(L-1) )
+                    
+                        WEIGHTS( L ) = 100. * ( LFULLHT( EMLAYS ) - 
+     &                                          LHALFHT( L )        ) /
+     &                                          LFULLHT( EMLAYS )
+                    END DO
+
+C.................  For non-explicit plume rise, preprocess met data...
+                ELSE
+
+C.....................  Compute surface pressure (and convert to mb from Pa)
+                    PSFC = 1.0E-2 * ( PP * PRES( 1,S ) + 
+     &                                QQ * PRES( 2,S )   )
+
+C.....................  Compute derived met vars needed before layer assignments
+                    CALL PREPLM( EMLAYS, HMIX( S ), STKHT( S ), PSFC, 
+     &                           TSFC( S ), DDZH( 1,S ), QV( 1,S ), 
+     &                           TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ), 
+     &                           ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ), 
+     &                           PRES( 1,S ), LSTK, LPBL, TSTK, WSTK,
+     &                           DTHDZ, WSPD, ZZF )
+
+C.....................  Trap USTAR at a minimum realistic value
+                    USTMP = MAX( USTAR( S ), USTARMIN )
+
+                    COMPUTE = .TRUE.
+
+C.....................  If available, assign hourly plume top and plume bottom
+                    IF ( BFLAG .AND. K .GT. 0 ) THEN
+
+C.........................  If plume bottom, and plume top are available, set 
+C                           these and set to skip plume rise computation
+                        IF( PLMBOT( K ) .GE. 0. .AND.
+     &                      PLMTOP( K ) .GT. 0.       ) THEN
+                            ZBOT = PLMBOT( K )
+                            ZTOP = PLMTOP( K )
+                            COMPUTE = .FALSE.
+                        END IF
+
+                    END IF
+
+C.....................  Compute plume rise for this source, if needed
+                    IF ( COMPUTE ) THEN
+
+                        CALL PLMRIS( EMLAYS, LPBL, LSTK, HFX(S), 
+     &                           HMIX(S), DM, HT, TK, VE, TSTK, USTMP, 
+     &                           DTHDZ, TA(1,S), WSPD, ZZF(0), ZH(1,S), 
+     &                           ZSTK(1,S), WSTK, ZTOP, ZBOT )
+                    END IF
+
+C.....................  Setup for computing plume fractions, assuming uniform
+C                       distribution in pressure (~mass concentration -- minor 
+C                       hydrostatic assumption) from bottom to top.
+                    SURFACE = PSFC
+                    LFULLHT( 0:EMLAYS ) = ZZF ( 0:EMLAYS   )
+                    LHALFHT( 1:EMLAYS ) = ZH  ( 1:EMLAYS,S )
+                    WEIGHTS( 1:EMLAYS ) = PRES( 1:EMLAYS,S )
+
+                END IF  ! if computing plume rise
+
+C.................  Check plume rise for nonsense values
+                IF( ZTOP .LT. STKHT( S ) .AND. K .LE. 0 ) THEN
 
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
 
@@ -746,20 +1090,38 @@ C.................  Check plume rise for nonsense output
 
                 END IF
 
-C.................  Compute plume fractions, assuming uniform distribution
-C.................  in pressure (~mass concentration -- minor hydrostatic
-C.................  assumption) from bottom to top.
-                CALL POSTPLM( EMLAYS, S, PSFC, ZBOT, ZTOP, PRES( 1,S ),
-     &                        ZZF, ZH( 1,S ), LTOP, TFRAC )
+C.................  Allocate plume to layers
+                CALL POSTPLM( EMLAYS, S, SURFACE, ZBOT, ZTOP, WEIGHTS, 
+     &                        LFULLHT, LHALFHT, LTOP, TFRAC )
 
-                LFRAC( S,1:EMLAYS ) = TFRAC( 1:EMLAYS )  ! array
+C.................  If hourly layer-1 fraction is present, reset this and re-
+C                   normalize
+C.................  Must account for the case where
+                IF( LFLAG .AND. K .GT. 0 ) THEN
+                    IF( LAY1F( K ) .GT. 0. .AND.
+     &                  TFRAC( 1 ) .LT. 1.       ) THEN
+                        TSUM = SUM( TFRAC( 2:EMLAYS ) )
+                        TDIFF = TSUM + TFRAC( 1 ) - LAY1F( K )
+                        FAC = TDIFF / TSUM
+
+                        TFRAC( 1 ) = LAY1F( K )
+                        TFRAC( 2:EMLAYS ) = TFRAC( 2:EMLAYS ) * FAC
+                    END IF
+                END IF
+
+C.................  Store layer fractions
+                IF( XFLAG ) THEN
+                    LFRAC( K,1:EMLAYS ) = TFRAC( 1:EMLAYS )  ! array
+                ELSE 
+                    LFRAC( S,1:EMLAYS ) = TFRAC( 1:EMLAYS )  ! array
+                END IF
 
 C.................  Check if LTOP out of range, and report (will only work
 C.................    if REP_LAYR env var has been set b/c default is -1
                 IF( REP_LAYR .GT. 0 .AND. LTOP .GT. REP_LAYR ) THEN
 
                     CALL PARSCSRC( CSOURC( S ), NCHARS, SC_BEGP, 
-     &                             SC_ENDP, LF, I, CHARS )
+     &                             SC_ENDP, LFG, I, CHARS )
 
                     WRITE( OUTFMT, 93042 ) PLTLEN3, NCHARS-2, CHRLEN3
                     WRITE( RDEV,OUTFMT ) S, IFIP( S ),
@@ -771,6 +1133,7 @@ C.................    if REP_LAYR env var has been set b/c default is -1
 
             END DO    !  end loop on sources S
 
+C.............  Write out layer fractions
             IF ( .NOT. WRITE3( LNAME, 'LFRAC', 
      &                         JDATE, JTIME, LFRAC ) ) THEN
 
@@ -780,6 +1143,20 @@ C.................    if REP_LAYR env var has been set b/c default is -1
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
             END IF
+
+C.............  For explicit plume rise, also write out source numbers
+            IF ( XFLAG ) THEN
+                IF ( .NOT. WRITE3( LNAME, 'INDXH', JDATE, 
+     &                             JTIME, LOCINDXH( 1,1 ) ) ) THEN
+
+                    MESG = 'Problem writing "LFRAC" to file "' // 
+     &                     LNAME( 1:LEN_TRIM( LNAME ) ) // '."'
+
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                END IF
+            END IF
+
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
@@ -829,7 +1206,7 @@ C----------------------------------------------------------------------
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-            ENDIF
+            END IF
 
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
 

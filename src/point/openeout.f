@@ -79,7 +79,6 @@ C...........   LOCAL PARAMETERS
 C...........   Other local variables
         INTEGER         J      ! indices and counters
          
-        LOGICAL      :: PINGFLAG = .FALSE.  !  true: there are ping sources
         LOGICAL      :: EFLAG    = .FALSE.  !  true: error found
 
         CHARACTER*80    GDESC               !  grid description
@@ -100,10 +99,8 @@ C.........  Open ASCII output file
      &        'Enter name for ELEVATED POINT SOURCE output file',
      &        .FALSE., .TRUE., CRL // 'ELV', PROGNAME )
 
-        PINGFLAG = ( NGROUP .GT. 0 )
-
 C.........  If needed, set up and open plume-in-grid i/o api output file
-        IF( PINGFLAG ) THEN
+        IF( NGROUP .GT. 0 ) THEN
 
 C.........  Get header information from inventory file
 
