@@ -45,14 +45,14 @@ C  Last updated: $Date$
 C
 C****************************************************************************/
 
-      IMPLICIT NONE
+        IMPLICIT NONE
 
 C...........   INCLUDES:
 
-      INCLUDE 'CHDIMS3.EXT'     !  emis chem parms (inventory + model)
-      INCLUDE 'PARMS3.EXT'      ! I/O API constants
-      INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-      INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+        INCLUDE 'CHDGEN3.EXT'     ! generalized speciation parms (inv + model)
+        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C...........   ARGUMENTS and their descriptions:
 
@@ -103,7 +103,7 @@ C.........  File header:  first, read number of species
             WRITE( MESG,94010 )
      &          'Max model species', MXMPOL,
      &          'exceeded in SPRO file: count=', NSPEC
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
             RDSPROF = IMISS3
             RETURN    
 
