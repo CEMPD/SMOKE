@@ -116,10 +116,13 @@ C...........   Inventory arrays
         INTEGER         IFIP  ( NASRC )   ! FIPs  code for each source
         INTEGER         INVYR ( NASRC )   ! Inventory year code for each source
         INTEGER         ISPTR ( NASRC )   ! Pointer for each state
+        INTEGER         ICPTR ( NASRC )   ! Pointer for each county
         INTEGER         STATES( NASID )   ! Unique list of state IDs
+        INTEGER         CTYS  ( NAFIP )   ! Unique list of county IDs
 
 C...........   Report arrays
         REAL            EMSUM( NASID, NMPOL ) ! Summed emissions by state
+        REAL            CYSUM( NAFIP, NMPOL ) ! Summed emissions by county
 
 C...........   Other local variables
 
@@ -133,13 +136,17 @@ C...........   Other local variables
         INTEGER         LDATE, LTIME       ! previous date and time in loop
         INTEGER         LDEV               ! logfile unit number
         INTEGER         RDEV               ! output report unit number
+        INTEGER         FDEV               ! state, county names unit number
         INTEGER         RTIME              ! time for reporting state totals
         INTEGER         LSTA               ! previous state code
         INTEGER         NSTA               ! actual number of states
+        INTEGER         LCTY               ! previous county code
+        INTEGER         NCTY               ! actual number of counties
         INTEGER         NSTEPS
-        INTEGER         STA                ! temporay state code
-        
-        LOGICAL         CONTROLFLAG, OUTPUTFLAG, ST_REPORT
+        INTEGER         STA                ! temporary state code
+        INTEGER         CTY                ! temporary county code 
+
+        LOGICAL         CONTROLFLAG, OUTPUTFLAG, ST_REPORT, CY_REPORT
 
         CHARACTER*16    ANAME   !  logical name for area-source       input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
@@ -193,6 +200,18 @@ C   begin body of program CSGAREA
 C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
+
+        CY_REPORT = ENVYN( 'CY_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
+
+C.......  If county report desired, get state and county names
+
+        IF ( CY_REPORT )
+     &          FDEV = PROMPTFFILE(
+     &          'Enter name for STATE/COUNTY FIPS CODE file',
+     &          .TRUE., .TRUE., 'STCYNAM', 'CSGAREA' )
+
+
 
         RTIME = ENVINT( 'ST_REPTIME',
      &                  'Per-State summation reporting time (HHMMSS)',
@@ -276,7 +295,7 @@ C.........  Hourly inventory file as input with NO controls
         END IF
 
 C.......   Read FIPS code for reporting purpose
-        IF( ST_REPORT ) THEN
+        IF( ST_REPORT .OR. CY_REPORT ) THEN
 
 C............  If we've read in temporal file, must get inventory file name
             IF ( TSTEP .NE. 0 ) THEN
@@ -308,10 +327,12 @@ C............  If we've read in temporal file, must get inventory file name
      &             'Enter logical name for TOTALS REPORT or "NONE"', 
      &             .FALSE., .TRUE., REPNAM, 'CSGAREA' )
 
+            IF ( ST_REPORT ) THEN
+ 
 C............  Create state codes arrays
-            LSTA = -9
-            K    = 0
-            DO 22 I = 1, NASRC
+              LSTA = -9
+              K    = 0
+              DO 22 I = 1, NASRC
 
                 STA = IFIP( I ) / 1000
 
@@ -322,26 +343,67 @@ C............  Create state codes arrays
                     LSTA        = STA
 
                 ENDIF
-
+ 
                 ISPTR ( I ) = K   
 
-22          CONTINUE
+22            CONTINUE
 
-            NSTA = K
+              NSTA = K
 
-            IF( NSTA .GT. NASID ) THEN
+              IF( NSTA .GT. NASID ) THEN
                 WRITE( MESG,94010 ) 
      &                'Number of states is ', NSTA,
      &                'but maximum (NASID) is', NASID
                 CALL M3EXIT( 'CSGAREA', JDATE, JTIME, MESG, 2 )
-            ENDIF
+              ENDIF
 
 C............  Initialize emission summary array
-            DO 28 I = 1, NASID
+              DO 28 I = 1, NASID
                 DO 27 S = 1, NMPOL
                     EMSUM( I,S ) = 0.
 27              CONTINUE
-28          CONTINUE
+28            CONTINUE
+
+            ENDIF
+
+            IF ( CY_REPORT ) THEN
+
+C............  Create county codes arrays
+              LCTY = -9
+              K    = 0
+              DO 32 I = 1, NASRC
+
+                CTY = IFIP( I ) 
+
+                IF( CTY .GT. LCTY ) THEN
+
+                    K = K + 1
+                    CTYS( K ) = CTY
+                    LCTY      = CTY
+
+                ENDIF
+
+                ICPTR ( I ) = K  
+
+32            CONTINUE
+
+              NCTY = K
+
+              IF( NCTY .GT. NAFIP ) THEN
+                WRITE( MESG,94010 )
+     &                'Number of counties is ', NCTY,
+     &                'but maximum (NAFIP) is', NAFIP
+                CALL M3EXIT( 'CSGAREA', JDATE, JTIME, MESG, 2 )
+              ENDIF
+
+C............  Initialize county emission summary array
+              DO 38 I = 1, NAFIP
+                DO 37 S = 1, NMPOL
+                    CYSUM( I,S ) = 0.
+37              CONTINUE
+38            CONTINUE
+
+            ENDIF
 
 C............  Set position of "special" species in name list
             INO  = INDEX1( 'NO' , NMPOL, EMNAM )
@@ -372,7 +434,7 @@ C............  Set position of "special" species in name list
             VDESC3D( V ) = 'gridded speciated emissions'
             VTYPE3D( V ) = M3REAL
 33      CONTINUE
-        FDESC3D( 1 ) = 'area source speciated gridded emissions.'
+        FDESC3D( 1 ) = 'Area source speciated gridded emissions.'
     
 C.........  Optionally open output file
     
@@ -567,9 +629,10 @@ C.............  Write to screen because WRITE3 only writes to LDEV
                         END IF          !  if outputflag
 
 C.........................  When reporting is switched on, calculate emissions
-C.........................  summaries by state and report to output QA file
-C.........................  EMSUM must be initialized
-                        IF( ST_REPORT ) THEN
+C.........................  summaries by state and/or county and report to output 
+C.........................  QA file. 
+C.........................  EMSUM and CYSUM must be initialized
+                        IF( ST_REPORT .OR. CY_REPORT ) THEN
 
 C.............................  For annual values, convert to day-specific
                             IF( TSTEP .EQ. 0 ) THEN
@@ -581,11 +644,25 @@ C.............................  For annual values, convert to day-specific
 
                             ENDIF
 
+                        ENDIF
+
+C............................. Sum emissions by state
+
+                        IF ( ST_REPORT ) THEN
+
                             CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
      &                                    CS, ISPTR, EMISC, 
      &                                    EMSUM( 1,K ) )
                         ENDIF
+C............................. Sum emissions by county
 
+                        IF ( CY_REPORT ) THEN
+
+                            CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
+     &                                    CS, ICPTR, EMISC,
+     &                                    CYSUM( 1,K ) )
+                        ENDIF
+ 
 122                 CONTINUE    !  end loop on output vbles for this input vble
 
                 ELSE
@@ -605,8 +682,9 @@ C.............................  For annual values, convert to day-specific
 
 C.............  Write report if report flag is switched on and previous
 C.............  time equals the report time
-            IF( ST_REPORT .AND.
-     &          ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) ) THEN
+            IF ( ST_REPORT .OR. CY_REPORT ) THEN
+
+              IF  ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS )  THEN
 
 C.................  Convert summary emissions from moles/day to tons/day
 
@@ -619,13 +697,30 @@ C.....................  Conversion factor for AREA as input file
                         FAC = EMWT( INO2 ) / TON2GM
                     ENDIF
 
-                    DO 144 I = 1, NSTA
+C.....................  Apply conversion factor
+                    IF ( ST_REPORT ) THEN
+                      DO 144 I = 1, NSTA
 
                        EMSUM( I,S ) = EMSUM( I,S ) * FAC
 
-144                 CONTINUE
+144                   CONTINUE
+
+                    ENDIF
+
+                    IF ( CY_REPORT ) THEN
+
+                      DO 146 I = 1, NCTY
+
+                       CYSUM( I,S ) = CYSUM( I,S ) * FAC
+
+146                   CONTINUE
+
+                    ENDIF
+
 
 155             CONTINUE
+
+C...............  Write totals to report file RDEV
 
                 IF( TSTEP .NE. 0 .AND. RDEV .GT. 0 )
      &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
@@ -641,19 +736,35 @@ C.....................  Conversion factor for AREA as input file
      &                     '(tons/specific day) within grid ' // GRDNM
                 ENDIF
 
-                IF( RDEV .GT. 0 )
-     &          CALL STATELST( RDEV  , MESG , NASID , NSTA , NMPOL, 
+                IF( RDEV .GT. 0 ) THEN
+                  IF ( ST_REPORT ) 
+     &             CALL STATELST( RDEV  , MESG , NASID , NSTA , NMPOL, 
      &                         'F7.1', EMNAM, STATES, EMSUM         )
 
+                  IF ( CY_REPORT ) 
+     &             CALL CYLST( RDEV , FDEV,  MESG , NAFIP , NCTY , 
+     &                         NMPOL,  'F7.2', EMNAM, CTYS, CYSUM   )
+                ENDIF
+
 C.................  Reinitialize emissions summary
-                DO 198 I = 1, NASID
-                    DO 197 S = 1, NMPOL
+
+                DO 197 S = 1, NMPOL
+
+                   DO 195 I = 1, NASID
                         EMSUM( I,S ) = 0.
-197                 CONTINUE
-198             CONTINUE
+195                CONTINUE
+
+                   DO 196 I = 1, NAFIP
+                        CYSUM( I,S ) = 0.
+196                CONTINUE
+
+197             CONTINUE
+
  
 C.................  Set begining time for next day
                 BTIME = JTIME
+
+              ENDIF
 
             ENDIF
 
