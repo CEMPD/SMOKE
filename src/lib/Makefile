@@ -87,7 +87,7 @@ cvtrdtype.o: $(MODMBSET)
 	$(FC) $(FFLAGS) -c -o $@ cvtrdtype.f
 dscsprof.o: $(MODSPRO) 
 	$(FC) $(FFLAGS) -c -o $@ dscsprof.f
-efsetup.o : $(MODEMFAC) $(INC)/M5CNST3.EXT
+efsetup.o : $(MODEMFAC) $(INC)/M6CNST3.EXT
 	$(FC) $(FFLAGS) -c -o $@ efsetup.f
 fillchrt.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ fillchrt.f
