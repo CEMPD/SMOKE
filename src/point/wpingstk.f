@@ -82,6 +82,7 @@ C...........   These are for sorting groups and outputting in sorted order
 
 C...........   Other local variables
         INTEGER         I, J, L      ! indices and counters
+        INTEGER         IOS          ! i/o status
          
         LOGICAL      :: EFLAG    = .FALSE.  !  true: error found
 
@@ -197,7 +198,7 @@ C.........  Store sorted information
         END IF
 
 C.........  Deallocate local memory
-        DEALLOCATE( LOCIDX, LOCGID, LOCCNT, LOCCOL, LOCROW
+        DEALLOCATE( LOCIDX, LOCGID, LOCCNT, LOCCOL, LOCROW,
      &              LOCDM, LOCFL, LOCHT, LOCLAT, LOCLON, LOCTK,
      &              LOCVE, LOCXL, LOCYL )
 
