@@ -89,7 +89,7 @@ C...........   follow this scheme with parallel arrays
         INTEGER     ID3         !  trailing-3 digits of ASC
         REAL        CNOX        !  NOX control factor
         REAL        CVOC        !  VOC control factor
-        REAL        CCO         !  OC control factor
+        REAL        CCO         !  CO control factor
         REAL        PFAC        !  projection factor
         REAL        TNOX        !  NOX control threshold
         REAL        TVOC        !  VOC control threshold
@@ -196,7 +196,7 @@ C.......   Get file name; open input area sources, control definitions files
 
         RDEV = PROMPTFFILE( 
      &           '...for REPORT file, or "NONE"',
-     &           .FALSE., .TRUE., 'REPORT', 'CTLAMAT' )
+     &           .FALSE., .TRUE., 'ACREPT', 'CTLAMAT' )
 
         RFLAG = ( RDEV .GT. 0 )
 
@@ -204,7 +204,7 @@ C.......   Get file name; open input area sources, control definitions files
 
             TDEV = PROMPTFFILE( 
      &           '...for TRACKING LIST, or "ALL"',
-     &           .TRUE., .TRUE., 'TRACK', 'CTLAMAT' )
+     &           .TRUE., .TRUE., 'ACTRACK', 'CTLAMAT' )
 
         END IF
 
