@@ -1,8 +1,8 @@
 #!/bin/csh -f
 
-# Version %W%
-# Path    %P%
-# Date    %G% %U%
+# Version @(#)$Id$
+# Path    $Source$
+# Date    $Date$
 
 # This script runs the SMOKE processors.  
 #
@@ -363,6 +363,31 @@ if ( $?RUN_MRGGRID ) then
    else 
       if ( $RUN_MRGGRID == 'Y' ) then
 	 echo 'SCRIPT ERROR: MRGGRID program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Formats conversion
+#
+setenv TMPLOG   $OUTLOG/smk2emis.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_SMK2EMIS ) then
+   if ( $RUN_SMK2EMIS == 'Y' && -e $SMK_BIN/smk2emis ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/smk2emis
+      endif
+
+   else 
+      if ( $RUN_SMK2EMIS == 'Y' ) then
+	 echo 'SCRIPT ERROR: SMK2EMIS program does not exist in:'
 	 echo '              '$SMK_BIN
 	 set exitstat = 1
       endif
