@@ -66,7 +66,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         STR2INT
 
-        EXTERNAL  CHKINT, CRLF, FINDC, GETNLIST, GETFLINE, INDEX1, STR2INT
+        EXTERNAL  CHKINT, CRLF, FINDC, GETNLIST, GETFLINE, INDEX1, 
+     &            STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV              ! x-ref file unit no.
