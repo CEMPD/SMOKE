@@ -491,7 +491,7 @@ C.................  Extract name of variable in group
                 VBUF = GVNAMES( V,N )
 
 C.................  For speciation...
-        	IF( SFLAG ) THEN
+                IF( SFLAG ) THEN
 
 C.....................  Update list of output species names for message
                     SBUF = EMNAM( SPINDEX( V,N ) )
@@ -519,7 +519,7 @@ C                       position
      &                    CALL RDSMAT( PSNAME, VBUF, PSMATX( 1,K3 ) )
 
 C.................  For no speciation, prepare list of variables for output mesg
-        	ELSE
+                ELSE
 
 C.....................  Update list of pollutants names for message
                     PBUF = EANAM( SIINDEX( V,N ) )
@@ -530,7 +530,7 @@ C.....................  Update list of pollutants names for message
                         VARNAMES( OCNT ) = PBUF
                     END IF
 
-        	END IF  ! end speciation or not
+                END IF  ! end speciation or not
 
 C.................  Set input variable names
                 INNAMES ( V ) = TONAMES( SIINDEX( V,N ) )
@@ -700,7 +700,7 @@ C.................  Loop through variables in the current group
 
 C.....................  Set species or pollutant/activity name for this 
 C                       iteration
-        	    IF( SFLAG ) THEN
+                    IF( SFLAG ) THEN
                         SBUF = EMNAM( SPINDEX( V,N ) )
                         IF( AFLAG ) KA  = INDEX1( SBUF, ANMSPC, AEMNAM )
                         IF( BFLAG ) KB  = INDEX1( SBUF, BNMSPC, BEMNAM )
@@ -711,8 +711,13 @@ C                       iteration
                     END IF
 
 C.....................  Set conversion factors
-                    F1 = GRDFAC( SIINDEX( V,N ) )
-                    F2 = TOTFAC( SIINDEX( V,N ) )
+                    IF( SFLAG ) THEN
+                        F1 = GRDFAC( SPINDEX( V,N ) )
+                        F2 = TOTFAC( SPINDEX( V,N ) )
+                    ELSE
+                        F1 = GRDFAC( SIINDEX( V,N ) )
+                        F2 = TOTFAC( SIINDEX( V,N ) )
+                    END IF
 
 C.....................  If area reactivity matrix applies, pre-compute
 C                       source array of reactivity emissions & mkt pentrtn
