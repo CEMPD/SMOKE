@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM GRDMMAT
 
 C***********************************************************************
-C  program body starts at line 207
+C  program body starts at line 224
 C
 C  DESCRIPTION:
 C       Construct mobile source gridding and ungridding matrices from 
@@ -20,6 +18,27 @@ C
 C  REVISION  HISTORY:
 C       Prototype 1/96 by CJC 
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
@@ -34,6 +53,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        CHARACTER*2     CRLF
         LOGICAL         DSCGRID
         INTEGER         FIND1, FIND2, FIND3
         LOGICAL         GETYN
@@ -43,17 +63,19 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         LOGICAL         UTM2LAM
         
-        EXTERNAL        DSCGRID, FIND1, FIND2, FIND3, GETYN, 
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, 
+        EXTERNAL        CRLF, DSCGRID, FIND1, FIND2, FIND3, GETYN,
+     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN,
      &                  SETLAM, UTM2LAM
 
 
 C...........   PARAMETER:
 
+        CHARACTER*5     BLANK5
         INTEGER         NMMAX   !  max number of gridding-xref entries
         INTEGER         MXLNKD  !  max number of entries in link defs file
-
-        PARAMETER     ( NMMAX  = NRCLAS*( 1 + MXSTA + MXFIP + MXLNK ),
+ 
+        PARAMETER     ( BLANK5 = ' ',
+     &                  NMMAX  = NRCLAS*( 1 + MXSTA + MXFIP + MXLNK ),
      &                  MXLNKD = NRCLAS * MXFIP )
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -191,8 +213,6 @@ C...........   Other local variables
         LOGICAL         OFLAG   !  Did overflow occur
         CHARACTER*160   MESG
 
-
-
 C...........   STATEMENT FUNCTION
 
         LOGICAL         FLTERR
@@ -258,10 +278,12 @@ C.......   Get file name; open actual-scc file
         UZONE = NINT( P_ALP3D )
 
         IF( NROWS3D .NE. NMSRC ) THEN
-            WRITE( *, 92000 ) ' '
-            WRITE( *, 92010 )
+            WRITE( MESG, 94010 )
      &             'Existing MOBL file has record count      ', NROWS3D,
+     &              CRLF() // BLANK5 //
      &             'But, GRDMMAT compiled using count (NMSRC)', NMSRC
+
+            CALL M3MSG2( MESG )
             CALL M3EXIT( 'GRDMMAT', 0, 0,
      &        'Max record-count exceeded in MOBILE SOURCE file.', 2 )
 
@@ -559,8 +581,7 @@ C.......   Initializations:
 
 C.......   ASSUMPTION:  sorted by FIP
 
-        WRITE( *,92000 ) 
-     &  ' ', 'Reading GRIDDING SURROGATE COEFFICIENT file...', ' '
+        CALL M3MSG2( 'Reading GRIDDING SURROGATE COEFFICIENT file...' )
 
 C.........  Read EPS format file header
         IF( EPSFLG ) THEN  
@@ -753,8 +774,7 @@ C...........   Find this FIP and record this cell for it
 
 C...........   Read the surrogate cross-reference file
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Reading GRIDDING SURROGATE XREF file...', ' '
+        CALL M3MSG2( 'Reading GRIDDING SURROGATE XREF file...' )
 
         IREC  = 0
         I     = 0
@@ -805,8 +825,7 @@ C...........   Read the surrogate cross-reference file
 
 C.......   Sort and process the surrogate cross-reference file
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Processing GRIDDING SURROGATE XREF file...', ' '
+        CALL M3MSG2( 'Processing GRIDDING SURROGATE XREF file...' )
         
         CALL SORTI3( NUMSCA, INDEXA, SRFIPA, SRRDTA, SRLNKA )
 
@@ -885,7 +904,7 @@ C.......   Sort and process the surrogate cross-reference file
 
 C.......   Read in the mobile source emissions tables:
 
-        WRITE( *,92000 ) ' ', 'Reading in MOBILE SOURCES file...', ' '
+        CALL M3MSG2( 'Reading in MOBILE SOURCES file...' )
 
         IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3, 0,0, IFIP ) ) THEN
             CALL M3EXIT( 'GRDMMAT', 0, 0, 
@@ -931,7 +950,7 @@ C.......       Fourth case:  state+roadtype cross-reference match
 C.......       fifth case:   roadtype cross-reference match
 C.......       sixth case:   fallback default
 
-        WRITE( *,92000 ) ' ', 'Computing gridding matrix...', ' '
+        CALL M3MSG2( 'Computing gridding matrix...' )
 
         OFLAG = .FALSE.         !  flag to detect overflow
         EFLAG = .FALSE.         !  flag to detect other errors
@@ -1170,13 +1189,14 @@ C.....................  Store list of unfound FIPs
 
 211         CONTINUE    !  end of loop on cells K for this FIP
 
-            WRITE( *,92000 )
-     &          ' ',
+            WRITE( MESG,94010 )
      &          'WARNING:  ' // GNAME( 1:TRIMLEN( GNAME ) ) // 
-     &          ' not written.',
-     &          'Internal arrays would have overflowed.'
-            WRITE( *,92010 ) 
-     &          'Sources per cell dimensioned', MXSCEL
+     &          ' not written.' // CRLF() // BLANK5 //
+     &          '        Internal arrays would have overflowed.'
+     &          // CRLF() // BLANK5 //
+     &          '        Sources per cell (MXSCEL) =', MXSCEL
+
+            CALL M3MSG2( MESG )
 
         ELSE IF ( EFLAG ) THEN          ! error in the XREF lookup
 
@@ -1224,7 +1244,7 @@ C.......   Compute statistics.
                    
 C.......   Write out the gridding matrix:
             
-            WRITE( *,92000 ) ' ', 'Writing out GRIDDING MATRIX file...'
+            CALL M3MSG2( 'Writing out GRIDDING MATRIX file...' )
 
             IF ( .NOT. WRITE3( GNAME, 'ALL', 0, 0, NX ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0, 
@@ -1255,14 +1275,20 @@ C.......   Just compute statistics.
 C.......   Report statistics:
 
         XDUM = FLOAT( K ) / FLOAT( NGRID )
-        WRITE( *,92000 ) ' ', 'GRIDDING-MATRIX statistics', ' '
-        WRITE( *,92010 ) 
-     &      'Total number of coefficients   ', K   ,
-     &      'Max  number of sources per cell', CMAX,
-     &      'Min  number of sources per cell', CMIN
-        WRITE( *,92020 ) 
-     &      'Mean number of sources per cell', XDUM,
-     &      ' '
+
+        CALL M3MSG2( 'GRIDDING-MATRIX statistics:' )
+
+        WRITE( MESG,94010 ) 
+     &      'Total number of coefficients   :', K   ,
+     &      CRLF() // BLANK5 //
+     &      'Max  number of sources per cell:', CMAX,
+     &      CRLF() // BLANK5 //
+     &      'Min  number of sources per cell:', CMIN
+        WRITE( MESG, 94020 ) MESG( 1:TRIMLEN( MESG ) ) //
+     &      CRLF() // BLANK5 //
+     &      'Mean number of sources per cell:', XDUM
+
+        CALL M3MSG2( MESG )
 
 C...........   IF UFLAG and no errors, generate the UNgridding matrix:
         
@@ -1348,13 +1374,12 @@ C.......   Renormalize and Transpose ((IS,CS) into scratch arrays (IT,CT):
                 END IF
 344         CONTINUE        
 
-            WRITE( *,92000 )
-     &          ' ',
+            WRITE( MESG,94010 )
      &          'WARNING:  ' // UNAME( 1:TRIMLEN( UNAME ) ) // 
-     &          ' not written.',
-     &          'Internal arrays would have overflowed.'
-            WRITE( *,92010 ) 
-     &          'Cells per source dimensioned', MXCFIP
+     &          ' not written.' // CRLF() // BLANK5 //
+     &          '        Internal arrays would have overflowed.'
+     &          // CRLF() // BLANK5 //
+     &          '        Cells per source (MXCFIP) =', MXCFIP
 
         ELSE
         
@@ -1386,7 +1411,7 @@ C.......   Compute statistics.
 
 377         CONTINUE
 
-            WRITE( *,92000 ) ' ','Writing out UNGRIDDING MATRIX file...'
+            CALL M3MSG2( 'Writing out UNGRIDDING MATRIX file...' )
 
             IF ( .NOT. WRITE3( UNAME, 'ALL', 0, 0, NU ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0, 
@@ -1399,15 +1424,18 @@ C.......   Compute statistics.
 C.......   Report statistics for ungridding matrix:
 
         XDUM = FLOAT( K ) / FLOAT( NMSRC )
-        WRITE( *,92000 ) ' ', 'UNGRIDDING-MATRIX statistics', ' '
-        WRITE( *,92010 ) 
-     &      'Total number of coefficients   ', K   ,
-     &      'Max  number of cells per source', CMAX,
-     &      'Min  number of cells per source', CMIN
-        WRITE( *,92020 ) 
-     &      'Mean number of cells per source', XDUM,
-     &      ' '
+        CALL M3MSG2( 'UNGRIDDING-MATRIX statistics:' )
 
+        WRITE( MESG,94010 ) 
+     &      'Total number of coefficients   :', K   ,
+     &      'Max  number of cells per source:', CMAX,
+     &      'Min  number of cells per source:', CMIN
+
+        WRITE( MESG, 94020 ) MESG( 1:TRIMLEN( MESG ) ) //
+     &      CRLF() // BLANK5 //
+     &      'Mean number of cells per source:', XDUM
+
+        CALL M3MSG2( MESG )
                   
 C...............   End of program
 
@@ -1425,8 +1453,6 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92010   FORMAT( 5X, A, :, I12 )
 
-92020   FORMAT( 5X, A, :, F17.4 )
-
 
 C...........   Formatted file I/O formats............ 93xxx
 
@@ -1440,6 +1466,8 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I8, :, 2X ) )
+
+94020   FORMAT( 5X, A, :, F8.2 )
 
 
         END

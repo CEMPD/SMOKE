@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         SUBROUTINE  MSMATVEC( N, M, A, V, C )
 
 C***********************************************************************
-C  subroutine body starts at line  43
+C  subroutine body starts at line  61
 C
 C  FUNCTION:  apply a layered diagonal matrix to a layered vector
 C             and sum to existing output vector
@@ -18,6 +16,27 @@ C       prototype 2/95 by CJC
 C       modified  6/95 by M Houyoux to add to exsiting C
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 

@@ -1,11 +1,9 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         SUBROUTINE MOINBLD( MODEV, IPARM , IP  , NIDX, CIDX, VOLATIL,
      &                      YEAR , TMPRTR, TMIN, TMAX, WARNON         )
 
 C***********************************************************************
-C  program body starts at line 195
+C  program body starts at line 227
 C
 C  DESCRIPTION:
 C      This program accepts a parameter scheme index IPARM, a volatile type
@@ -21,6 +19,27 @@ C  REVISION  HISTORY:
 C      Prototype 12/95 by MRH
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         IMPLICIT NONE
 
@@ -28,10 +47,16 @@ C...........   INCLUDES:
         INCLUDE 'MBDIMS3.EXT'
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        CHARACTER*2  CRLF 
         INTEGER      FIND1
         LOGICAL      GETYN
         INTEGER      TRIMLEN
-        EXTERNAL     GETYN, TRIMLEN
+
+        EXTERNAL     CRLF, FIND1, GETYN, TRIMLEN
+
+C...........   LOCAL PARAMETERS and their descriptions:
+        CHARACTER*5  BLANK5
+        PARAMETER(   BLANK5 = ' ' )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -378,11 +403,10 @@ C.............  Read Tech I-II file
 
                 IF( ISTAT .LT. 0 ) THEN
 
-                    WRITE( *,'(/5X,A,///10X,A)' )
-     &                    'ERROR: input file not found: '//
-     &                    FNAME( 1:TRIMLEN( FNAME ) ),
-     &                    'Could not open input file "' //
+                    WRITE( MESG, 94010 )
+     &                   'ERROR: Could not open input file "' //
      &                    FNAME( 1:TRIMLEN( FNAME ) ) // '"'
+                    CALL M3MSG2( MESG )
 
                     IF( GETYN( '     Try again', .TRUE. ) ) THEN
                         GO TO 44
@@ -422,11 +446,10 @@ C.............  Read Tech IV+ file
 
                 IF( ISTAT .LT. 0 ) THEN
 
-                    WRITE( *,'(/5X,A,///10X,A)' )
-     &                    'ERROR: input file not found: '//
-     &                    FNAME( 1:TRIMLEN( FNAME ) ),
-     &                    'Could not open input file "' //
+                    WRITE( MESG,94010  )
+     &                    'ERROR: Could not open input file "' //
      &                    FNAME( 1:TRIMLEN( FNAME ) ) // '"'
+                    CALL M3MSG2( MESG )
 
                     IF( GETYN( '     Try again', .TRUE. ) ) THEN
                         GO TO 55
@@ -1081,7 +1104,7 @@ C........... REGION
                 REGION = 3
             ELSE                             ! Error
 
-                WRITE( *, 93000 ) 
+                WRITE( MESG, 94010 ) 
      &                 'Must use ATP and I/M programs even when ',
      &                 'using default LEV program (LEV parm=-1)'
                 WRITE( MESG,94000 ) 
@@ -1099,20 +1122,21 @@ C........... REGION
 
             ELSE ! Error
  
-                WRITE( *,93000 ) 
-     &                 'Must specify I/M program for LEV program'
-                CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
                 WRITE( MESG,94000 ) 
+     &                 'Must specify I/M program for LEV program'
+     &                 // CRLF() // BLANK5 //
      &                'Illegal combination of parameters'
+                CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
 
             ENDIF
 
         ELSE ! Error
 
-            WRITE( *,93000 ) 'Altitude setting',NIDX( IP,9 )
-            WRITE( *,93000 ) 'LEV program selection',CIDX( IP,10 )
-            WRITE( MESG,94000 ) 
-     &             'Illegal combination of parameters'
+            WRITE( MESG,94010 ) 'Altitude setting:', NIDX( IP,9 ),
+     &           CRLF() // BLANK5 //
+     &           'LEV program selection:', CIDX( IP,10 )
+     &           CRLF() // BLANK5 //
+     &             'Illegal combination of parameters!'
             CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
 
         ENDIF
@@ -1346,5 +1370,6 @@ C******************  FORMAT  STATEMENTS   ******************************
 93620   FORMAT( 7F4.2, 3F4.0 )
 
 94000   FORMAT( A )
+
 94010   FORMAT( 10( A, :, 1X, I5, :, 1X ) )
         END

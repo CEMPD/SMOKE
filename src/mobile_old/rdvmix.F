@@ -1,12 +1,9 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
-
         SUBROUTINE RDVMIX( VDEV, JYEAR, IFIP, IRCLAS, ILINK, VMT,
      &                     MXMAT )
 
 C***********************************************************************
-C  program body starts at line 177
+C  program body starts at line 132
 C
 C  DESCRIPTION:
 C       Read MVTVM vehicle mix factors file and map vehicle
@@ -25,6 +22,27 @@ C
 C  REVISION  HISTORY:
 C       Prototype  1/96 by CJC.
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
@@ -107,7 +125,7 @@ C...........   Other local variables
 
 
 C***********************************************************************
-C   begin body of program TMPMOBIL
+C   begin body of program RDVMIX
         
 C..........   Read VMT mix profiles file:
 
@@ -174,12 +192,12 @@ C..........   Read VMT mix profiles file:
             WRITE( MESG,94010 )
      &          'Vehicle mix table overflow.  Max', MXAMIX,
      &          'actual', S
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'RDVMIX', 0, 0, MESG, 2 )
         ELSE IF ( EFLAG ) THEN
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+            CALL M3EXIT( 'RDVMIX', 0, 0, 
      &                   'Error reading VMT MIX file', 2 )
         ELSE IF ( S .EQ. 0 ) THEN
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+            CALL M3EXIT( 'RDVMIX', 0, 0, 
      &                   'No relevant mixes in VMT MIX file', 2 )
         END IF
 
@@ -301,14 +319,14 @@ C...........   Sort and process the vehicle mix factor arrays:
 39      CONTINUE
         
         IF ( EFLAG ) THEN
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+            CALL M3EXIT( 'RDVMIX', 0, 0, 
      &                   'Error processing VEHICLE MIX file', 2 )
         END IF
         
 
 C...........   Construct mapping of source number to vehicle mixes.
 
-        WRITE( *,92000 ) ' ', 'Building vehicle mix source indexes.'
+        CALL M3MSG2 ( 'Building vehicle mix source indexes...' )
         EFLAG = .FALSE.
 
         DO  299  S = 1, NMSRC
@@ -372,7 +390,7 @@ C...........   Construct mapping of source number to vehicle mixes.
 299     CONTINUE        !  end loop on sources S, constructing TNDX
         
         IF ( EFLAG ) THEN
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+            CALL M3EXIT( 'RDVMIX', 0, 0, 
      &                   'Error applying VMT mix from MVMTM', 2 )
         END IF
        

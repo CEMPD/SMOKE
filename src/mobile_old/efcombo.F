@@ -1,11 +1,9 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         SUBROUTINE EFCOMBO( FNAME1, FNAME2, NTEMP, MPTYPE, 
      &                      PERCENT, LIST, JDATE )
 
 C***********************************************************************
-C  program body starts at line
+C  program body starts at line 99
 C
 C  DESCRIPTION:
 C      This subroutine creates emission factors using multiple previously 
@@ -22,6 +20,27 @@ C  REVISION  HISTORY:
 C      Prototype 2/96 by MRH
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         IMPLICIT NONE
 
@@ -72,6 +91,9 @@ C...........   Master Diurnal EFs list variables
 
         INTEGER I, V, T      ! Counters and pointers
         CHARACTER*256 MESG
+
+C***********************************************************************
+C   begin body of program EFCOMBO
 
 C.........  Initialize EF sum variables
         DO 22 V = 1, NVTYPE

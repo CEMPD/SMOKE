@@ -1,13 +1,11 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         SUBROUTINE RDMTREF( XDEV, IFIP, IRCLAS, ILINK,
      &                      NMON, NWEK, NDIU, NEND,
      &                      MONREF, WEKREF, DIUREF, ENDREF,
      &                      MDEX, WDEX, DDEX )
 
 C***********************************************************************
-C  subroutine body starts at line 158
+C  subroutine body starts at line 176
 C
 C  DESCRIPTION:
 C       Constructs sorted, structured mobile source temporal 
@@ -27,6 +25,27 @@ C
 C  REVISION  HISTORY:
 C       Prototype  1/96 by CJC.
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
@@ -185,7 +204,7 @@ C   begin body of subroutine RDMTREF
 
 C.......   Read temporal-profile cross-reference file.
 
-        WRITE( *,92000 ) ' ', 'Reading temporal-profile XREF file.'
+        CALL M3MSG2( 'Reading temporal-profile XREF file...' )
 
         EFLAG = .FALSE.
         IREC  = 1
@@ -199,8 +218,9 @@ C.......   Read temporal-profile cross-reference file.
             
             IF ( IOS .NE. 0 ) THEN
 
-                WRITE( *,92010 ) 'Line number ', IREC, 
-     &                           'I/O status  ', IOS
+                WRITE( MESG,94010 ) 'Line number ', IREC, 
+     &                              'I/O status  ', IOS
+                CALL M3MSG2( MESG )
                 CALL M3EXIT( 'TMPMOBIL', 0, 0, 
      &                       'Error reading CROSS-REFERENCE file', 2 )
  
@@ -311,7 +331,7 @@ C.......   Read temporal-profile cross-reference file.
 
 C.......   Sort and process temporal-profile cross-reference file.
 
-        WRITE( *,92000 ) ' ', 'Processing temporal-profile XREF file.'
+        CALL M3MSG2( 'Processing temporal-profile XREF file...' )
         CALL SORTI4( NPRFA, INDXA, FIPFA, RDTFA, LNKFA, VHTFA )
 
         EFLAG = .FALSE.
@@ -401,13 +421,14 @@ C.......   Sort and process temporal-profile cross-reference file.
                         NPRNF = NPRNF + 1
                         IF ( NPRNF .GT. NRCLAS ) THEN
                             EFLAG = .TRUE.
-                            WRITE( *,92010 )
+                            WRITE( MESG,94010 )
      &                              'Line number ', IREC,
      &                              'FIP         ', FIP,
      &                              'RDT         ', RDT,
      &                              'VHT         ', VHT
+                            CALL M3MESG( MESG )
                             CALL M3MESG( 
-     &                           'Subscript NPRNF out of range' )
+     &                           '   Subscript NPRNF out of range' )
                             GO TO 199
                         END IF
 
@@ -484,13 +505,14 @@ C.......   Sort and process temporal-profile cross-reference file.
                     NPRNC = NPRNC + 1
                     IF ( NPRNC .GT. MXSREF ) THEN
                         EFLAG = .TRUE.
-                        WRITE( *,92010 )
+                        WRITE( MESG,94010 )
      &                          'Line number ', IREC,
      &                          'FIP         ', FIP,
      &                          'RDT         ', RDT,
      &                          'VHT         ', VHT
+                        CALL M3MESG( MESG )
                         CALL M3MESG(
-     &                       'Subscript NPRNC out of range' )
+     &                       '   Subscript NPRNC out of range' )
                         GO TO 199
                     END IF
 
@@ -565,13 +587,14 @@ C.......   Sort and process temporal-profile cross-reference file.
                     NPRFC = NPRFC + 1
                     IF ( NPRFC .GT. MXFREF ) THEN
                         EFLAG = .TRUE.
-                        WRITE( *,92010 )
+                        WRITE( MESG,94010 )
      &                          'Line number ', IREC,
      &                          'FIP         ', FIP,
      &                          'RDT         ', RDT,
      &                          'VHT         ', VHT
+                        CALL M3MESG( MESG )
                         CALL M3MESG(
-     &                      'Subscript NPRFC out of range' )
+     &                      '   Subscript NPRFC out of range' )
                         GO TO 199
                     END IF
 
@@ -645,13 +668,14 @@ C.......   Sort and process temporal-profile cross-reference file.
                     NPRFL = NPRFL + 1
                     IF ( NPRFL .GT. MXLREF ) THEN
                         EFLAG = .TRUE.
-                        WRITE( *,92010 )
+                        WRITE( MESG,94010 )
      &                          'Line number ', IREC,
      &                          'FIP         ', FIP,
      &                          'RDT         ', RDT,
      &                          'LNK         ', LNK
+                        CALL M3MESG( MESG )
                         CALL M3MESG(
-     &                      'Subscript NPRFC out of range' )
+     &                      '   Subscript NPRFC out of range' )
                         GO TO 199
                     END IF
 
@@ -729,7 +753,7 @@ C.......   Sort and process temporal-profile cross-reference file.
 C...........   Construct mapping of source number to effective
 C...........   composite temporal profile number and to vehicle mixes.
               
-        WRITE( *,92000 ) ' ', 'Building source indexes.'
+        CALL M3MSG2( 'Building source indexes...' )
         EFLAG = .FALSE.
 
         DO  299  S = 1, NMSRC

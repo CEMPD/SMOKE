@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM GRDMOBIL
 
 C***********************************************************************
-C  program body starts at line 104
+C  program body starts at line 103
 C
 C  DESCRIPTION:
 C       Use gridding-transform from program GRDMMAT to grid time-stepped,
@@ -21,6 +19,27 @@ C  REVISION  HISTORY:
 C       Prototype  2/96 by CJC.
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
@@ -83,7 +102,7 @@ C   begin body of program GRDMOBIL
         
         LDEV = INIT3()
         
-        WRITE( *,92000 ) 
+        WRITE( *,92000 )  )
      &  ' ',
      &  'Program GRDMOBIL to take a sorted source level mobile source ',
      &  'emissions file and a gridding-transform matrix computed by',
@@ -108,8 +127,7 @@ C   begin body of program GRDMOBIL
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program GRDMOBIL', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'GRDMOBIL', 0, 0, 'Ending Program', 2 )
         END IF
 
 
@@ -164,7 +182,7 @@ C.......   Build description of output file, and optionally open it:
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
-        WRITE( *,92000 ) ' ', 'Reading GRIDDING matrix.', ' '
+        CALL M3MSG2( 'Reading GRIDDING matrix...' )
         IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NX ) ) THEN
 
             CALL M3EXIT( 'GRDMOBIL', 0, 0,
@@ -175,9 +193,7 @@ C.......   Read gridding, speciation, and (optional) control matrices:
 
 C.......   Transform and write out area source emissions values:
 
-        WRITE( *,92000 ) 
-     &  ' ', 
-     &  'Calculating gridded categorized VMT...'
+        CALL M3MSG2( 'Calculating gridded categorized VMT...' )
 
         DO  199  T = 1, NSTEPS
 

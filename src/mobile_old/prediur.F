@@ -1,10 +1,8 @@
  
-C Version "@(#)$Id$ $Source$ $Date$ 
- 
         PROGRAM PREDIUR
  
 C***********************************************************************
-C  program body starts at line
+C  program body starts at line 176
 C
 C  DESCRIPTION:
 C     This program inputs gridded, time-dependent temperature data, a mobile 
@@ -21,6 +19,27 @@ C  REVISION  HISTORY:
 C      Prototype 11/95 by MRH
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         IMPLICIT NONE
  
@@ -35,6 +54,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2  CRLF
         INTEGER      FIND1
         INTEGER      FIND3
         INTEGER      GETNUM
@@ -46,16 +66,18 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      RDMPLIST
         INTEGER      TRIMLEN
 
-        EXTERNAL     FIND1, FIND3, GETNUM, GETREAL, GETYN, LOCAT1,
+        EXTERNAL     CRLF, FIND1, FIND3, GETNUM, GETREAL, GETYN, LOCAT1,
      &               PROMPTFFILE, PROMPTMFILE, RDMPLIST, TRIMLEN
 
 C...........   LOCAL PARAMETERS and their descriptions:
 
+        CHARACTER*5     BLANK5
         REAL            CTOF   !  Celcius to Fahrnht conversion constant
         REAL            FTOC   !  Fahrnht to Celcius conversion constant
         INTEGER         MXTFIL !  maximum number of input temperature files
 
-        PARAMETER     (   CTOF   = 9.0 / 5.0 
+        PARAMETER     (   BLANK5 = ' '
+     &                  , CTOF   = 9.0 / 5.0 
      &                  , FTOC   = 1.0 / CTOF
      &                  , MXTFIL = 20 
      &                )
@@ -171,8 +193,7 @@ C   begin body of program PREDIUR
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program PREDIUR', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'PREDIUR', 0, 0, 'Ending program', 2 )
         END IF
 
 C.........  Prompt for SMOKE mobile inventory file
@@ -192,7 +213,7 @@ C.........  Prompt for MPLIST (scenario specific parameter scheme list)
 
 C.........  Read FIP, road class, and Link IDs from inventory file
 
-        WRITE( *,92000 ) ' ', 'Reading VMT INVENTORY file ...'
+        CALL M3MSG2( 'Reading VMT INVENTORY file ...' )
 
         IF ( .NOT. READ3( ANAME, 'IFIP', ALLAYS3, 0,0, IFIP ) ) THEN
             CALL M3EXIT( 'PREDIUR', 0, 0,
@@ -211,7 +232,7 @@ C.........  Read FIP, road class, and Link IDs from inventory file
 
 C.........  Read Ungridding Matrix
 
-        WRITE( *,92000 ) ' ', 'Reading UNGRIDDING MATRIX ...'
+        CALL M3MSG2( 'Reading UNGRIDDING MATRIX ...' )
 
         IF ( .NOT. READ3( UNAME, ALLVAR3, ALLAYS3, 0, 0, NU ) ) THEN
             MESG = 'Could not read ungridding matrix from ' // UNAME
@@ -219,13 +240,13 @@ C.........  Read Ungridding Matrix
         END IF
 
 C.........  Loop for prompting for temperature data files:
-        WRITE( *,92000 )
-     &  ' ',
-     &  'Now enter the list of logical file names for surface',
-     &  'temperature input files.',
-     &  ' ',
-     &  'NOTE: Time stamps assumed to be in GMT.',
-     &  ' '
+        WRITE( MESG, 94010 )
+     &    'Now enter the list of logical file names for surface' //
+     &    CRLF() // BLANK5 //
+     &    'temperature input files...' // CRLF() // CRLF() // BLANK5 //
+     &    'NOTE: Time stamps assumed to be in GMT.',
+
+        CALL M3MSG2( MESG )
 
         IFIL =    0
    66   CONTINUE
@@ -285,7 +306,7 @@ C.........     for beginning of the day)
      &                   'Enter output duration (hours)' )
 
         IF ( MOD( NSTEPS, 24 ) .NE. 0 ) THEN
-           WRITE( *,92000 ) 'Output duration has to be a multiple of 24'
+           CALL M3MSG2( 'Output duration has to be a multiple of 24' )
            GO TO 75
         END IF 
  
@@ -293,12 +314,13 @@ C.........  Abort if start time is < than first time for temperatures
         IF( ( JDATE .EQ. SDATE3D .AND. JTIME .LT. STIME3D ) .OR.
      &        JDATE .LT. SDATE3D ) THEN
 
-            WRITE( *,92010 )
-     &          ' ',
+            WRITE( MESG,94060 )
      &          'Requested start date/time       :', 
-     &          JDATE  , JTIME  , 'GMT', 
+     &          JDATE  , JTIME  , 'GMT', CRLF() // BLANK5 //
      &          'First temperature data data/time:', 
-     &          SDATE3D, STIME3D, 'GMT', ' '
+     &          SDATE3D, STIME3D, 'GMT'
+
+            CALL M3MSG2( MESG )
 
             CALL M3EXIT( 'PREDIUR', 0, 0,
      &                   'Requested start is earlier than start '
@@ -370,8 +392,7 @@ C.........  Prompt for EF-based output file of temp combo indices
 
 C...........   Read and process emissions factors cross reference file MPLIST
  
-        WRITE( *,92000 )
-     &         ' ', 'Reading EMISSION FACTORS XREF file ...', ' '
+        CALL M3MSG2( 'Reading EMISSION FACTORS XREF file ...' )
  
         NMPLIST = RDMPLIST( NLDEV, MPFIP, MPRDT, MPLNK,
      &                      MPREF, REFCNT, REFLIST )
@@ -383,8 +404,7 @@ C...........   Read and process emissions factors cross reference file MPLIST
 C...........   Map emissions factor indexes onto sources, and store each
 C...........   unique, pure emission factor index:
  
-        WRITE( *,92000 )
-     &         ' ', 'Processing EMISSION FACTORS XREF ...', ' '
+        CALL M3MSG2( 'Processing EMISSION FACTORS XREF ...' )
 
         EFLAG = .FALSE.
         DO  93 S = 1, NMSRC
@@ -496,8 +516,7 @@ C.........  Initialize NTIDX and TIDXPSI
 C.........  Initialize constants for loop
         MAXTL = INT( ( MAXT_MAX - MAXT_MIN ) / TINTV ) + 1
 
-        WRITE( *,92000 ) 
-     &        ' ', 'Processing TEMPERATURE data ...', ' '
+        CALL M3MSG2( 'Processing TEMPERATURE data ...' )
 
 C.........  Loop through days/hours of temperature files
 
@@ -631,8 +650,9 @@ C                  .......  set TMIN from TMAX, and adjust down on interval
 
 
                         WRITE( MESG, 94020 ) 'Temperature: TMAX - TMIN'
-     &                         // ' is > 40 for source', S,
-     &                         '.  Changing TMIN from', MSAV, 'to', TMIN
+     &                         // ' is > 40 for source', S, '.' //
+     &                         CRLF // BLANK5 // 
+     &                         '   Changing TMIN from', MSAV, 'to', TMIN
                         CALL M3MESG( MESG )
 
                     ENDIF
@@ -650,8 +670,9 @@ C.....................  which means no diurnal emissions!
 
                         WRITE( MESG, 94050 ) 'Temperature: TMAX - TMIN'
      &                         // ' is <= ', MAX( TINTV, 1.0 ), 
-     &                         'for source', S,
-     &                         '.  No diurnal emissions will exist.'
+     &                         'for source', S, '.' //
+     &                         CRLF() // BLANK5 //
+     &                         '   No diurnal emissions will exist.'
                         CALL M3MESG( MESG )
 
                     ELSE
@@ -856,8 +877,7 @@ C.....................  Update minimum and maximum per source
  
 C......... Write temp combos indices for each PSI into ASCII file
 
-        WRITE( *,92000 ) 
-     &         ' ', 'Writing out EF-REF/TEMPERATURE file ...', ' '
+        CALL M3MSG2( 'Writing out EF-REF/TEMPERATURE file ...' )
 
         DO 521 K = 1, REFCNT
 
@@ -886,8 +906,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Informational (LOG) message formats... 92xxx
  
 92000   FORMAT( 5X, A )
-92010   FORMAT( 5X, A, 2( /, 5X, A, 1X, I7.7, 1X, I6.6, 1X, A ) )
- 
+
 C...........   Formatted file I/O formats............ 93xxx
  
 93010   FORMAT( I5, ',', I8, ',', 20( I4, : ',' ), /, 
@@ -896,11 +915,17 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
  
 94010   FORMAT( 10 ( A, :, 1X, I5, :, 1X ) )
+
 94020   FORMAT( 10 ( A, 1X, I5, 2( 1X, A, 1X, F8.2 ) ) )
+
 94030   FORMAT( A, F10.3, 1X, A )
+
 94040   FORMAT( A5, I2.2 )
+
 94050   FORMAT( 10 ( A, 1X, F8.2, 2( 1X, A, 1X, I5 ) ) )
 
+94060   FORMAT( A, 2( /, 5X, A, 1X, I7.7, 1X, I6.6, 1X, A ) )
+ 
         END
 
 
