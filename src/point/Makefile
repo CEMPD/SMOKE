@@ -1,95 +1,57 @@
-# Version "@(#)$Id$ $Source$ $Date$ 
+# Version @(#)$Id$ 
+# Path    $Source$
+# Date    $Date$ 
 #
-all: debug 
+LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
-debug: rawpoint.debug grdpmat.debug
-#
-FC=f90
-FFLAGS = $(DBGFLAGS)
-LDFLAGS = -g
-LDIRS = -L$(EDSS_LIB)  \
-        -L$(EL_SRC)/$(EDSS_OS)
-LIBS=$(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBPATH= $(EL_SRC)/$(EDSS_OS)/libsmoke.debug.a
-#
+all: laypoint elevpoint
+
+debug: laypoint.debug elevpoint.debug
 
 .f.o:
-	$(FC) $(FFLAGS) -c -o $@ $<	
+	$(FC) $(FFLAGS) -c -o $@ $<
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-RAW=rawpoint.o rdptinv.o rdemspt.o fixstk.o openpnts.o wpntschr.o \
-    wpntspol.o wrptref.o
+LAY=laypoint.o preplm.o plmris.o postplm.o
 #
-rawpoint.debug: $(RAW) $(ALLI) $(LIBPATH)
-	echo RAWPOINT:
-	$(FC) $(FFLAGS) -o $(@) $(RAW) $(LIBS)
+laypoint: $(LAY) $(ALLI) $(LIBPATH)
+	echo LAYPOINT:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(LAY) $(LIBS)
 #
-GRD=grdpmat.o genpgmat.o rpntschr.o
+laypoint.debug: $(LAY) $(ALLI) $(LIBPATH_DEBUG)
+	echo LAYPOINT \(debug\):
+	$(FC) $(FFLAGS) -o $(@) $(LAY) $(LIBS_DEBUG)
 #
-grdpmat.debug: $(GRD) $(ALLI) $(LIBPATH)
-	echo GRDPMAT:
-	$(FC) $(FFLAGS) -o $(@) $(GRD) $(LIBS)
+ELV=elevpoint.o openeout.o plumesti.o wpingstk.o
 #
+elevpoint: $(ELV) $(ALLI) $(LIBPATH)
+	echo ELEVPOINT:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(ELV) $(LIBS)
 #
-TMP=tmppoint.o openptmp.o rpntschr.o
+elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
+	echo ELEVPOINT \(debug\):
+	$(FC) $(FFLAGS) -o $(@) $(ELV) $(LIBS_DEBUG)
 #
-tmppoint.debug: $(TMP) $(ALLI) $(LIBPATH)
-	echo TMPPOINT:
-	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS)
-#
-TST=testprog.o rdsipols.o
-#
-TSTI=EMCNST3.EXT
-#
-testprog.debug: $(TST) $(TSTI)
-	echo TESTPROG:
-	$(FC) $(FFLAGS) -o $(@) $(TST) $(LIBS)
-#
-# Modules
-#
-MODSOURC = $(MD_SRC)/modsourc.o
-MODXREF  = $(MD_SRC)/modxref.o
-MODTPRO  = $(MD_SRC)/modtpro.o
-MODSPRO  = $(MD_SRC)/modspro.o
-#
-# Module dependencies
-#
-$(MODSOURC):
-	$(FC) $(FFLAGS) -c -o $@ $<
-	mv modsourc.M $(MD_SRC)
 
-$(MODXREF):
-	$(FC) $(FFLAGS) -c -o $@ $<
-	mv modxref.M $(MD_SRC)
+#include $(MD_SRC)/modmake.inc
+MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
+MODSOURC = $(MD_OUT)/modsourc.o
+MODELEV  = $(MD_OUT)/modelev.o
+MODINFO  = $(MD_OUT)/modinfo.o
 
-$(MODTPRO):
+laypoint.o: $(MODSOURC) $(MODELEV) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-	mv modtpro.M $(MD_SRC)
-
-$(MODSPRO):
+elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-	mv modspro.M $(MD_SRC)
-
-tmppoint.o: $(MODSOURC) $(MODXREF) $(MODTPRO)
+openeout.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-fixstk.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
-grdpmat.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
-rawpoint.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
-rdemspt.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
-rdidapt.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
-rdptinv.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
-rpntschr.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
-wpntschr.o: $(MODSOURC)
+wpingstk.o: $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
-	rm *.o
+	/bin/rm *.o 

@@ -39,6 +39,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
 
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -55,15 +58,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKMETEM
         CHARACTER*2     CRLF
         INTEGER         ENVINT
+        LOGICAL         ENVYN
         CHARACTER*50    GETCFDSC
         CHARACTER*10    HHMMSS
+        INTEGER         INDEX1
         CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         CHARACTER*16    VERCHAR
         INTEGER         WKDAY
 
-        EXTERNAL        CHKMETEM, CRLF, ENVINT, GETCFDSC, HHMMSS,
+        EXTERNAL        CHKMETEM, CRLF, ENVINT, GETCFDSC, HHMMSS, INDEX1,
      &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY
 
 C...........  LOCAL PARAMETERS and their descriptions:
@@ -137,7 +142,8 @@ C.........  Fixed-dimension arrays
 C...........   Logical names and unit numbers
 
         INTEGER         LDEV    !  log file
-        INTEGER         RDEV    !  optional report iff REP_LAYER_MAX is set
+        INTEGER      :: PDEV = 0!  elevated/PinG source file
+        INTEGER      :: RDEV = 0!  optional report iff REP_LAYER_MAX is set
         INTEGER         SDEV    !  ASCII part of inventory file
 
         CHARACTER*16    ANAME   !  ASCII point-source inventory file
@@ -166,6 +172,8 @@ C...........   Other local variables
         INTEGER          NDOTS     ! dot grid number of cells
         INTEGER          NGRID     ! cross grid number of cells
         INTEGER          NLAYS     ! number of layers in met files
+        INTEGER          NMAJOR    ! no. major sources
+        INTEGER          NPING     ! no. plume-in-grid sources
         INTEGER          NROWS     ! cross grid number of grid rows
         INTEGER          NSTEPS    ! mumber of time steps
         INTEGER          REP_LAYR  ! layer for reporting srcs w/ high plumes
@@ -201,6 +209,7 @@ C...........   Other local variables
         REAL*8           YORIGDG   ! dot grid Y-coordinate origin of grid
 
         LOGICAL       :: EFLAG = .FALSE.  ! error flag
+        LOGICAL       :: VFLAG = .FALSE.  ! true: use elevated/PinG file (PELV)
         LOGICAL          LF( 9 )          ! true: source characteristic is valid
 
         CHARACTER*50     CHARS( 9 )!  tmp source characeristics 
@@ -209,6 +218,8 @@ C...........   Other local variables
         CHARACTER*200    OUTFMT    !  output format for RDEV report
         CHARACTER*200    BUFFER    !  source characteristics buffer
         CHARACTER*300    MESG      !  buffer for M3EXIT() messages
+
+        CHARACTER(LEN=IOVLEN3)  VNAME ! variable name buffer 
         CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
 
         CHARACTER*16  :: PROGNAME = 'LAYPOINT'   !  program name
@@ -225,6 +236,14 @@ C           to continue running the program.
 C.........   Get setting from environment variables
         EMLAYS = ENVINT( 'SMK_EMLAYS', 'Number of emission layers',
      &                   -1, IOS )
+
+        MESG = 'Indicator for create plume-in-grid outputs'
+        VFLAG = ENVYN( 'SMK_PING_YN', MESG, .FALSE., IOS )
+
+        MESG = 'Indicator for defining major/minor sources'
+        VFLAG = ( VFLAG .OR. 
+     &            ENVYN( 'SMK_SPECELEV_YN', MESG, .FALSE., IOS ) )
+
 
 C.........  Cannot use default and cannot set to less than 4 because of
 C           limits of plume rise algorithm
@@ -259,11 +278,19 @@ C           limits of plume rise algorithm
 
         END IF
 
-C.......   Set category to point sources
-        CATEGORY = 'POINT'
+C.........  Set source category based on environment variable setting
+        CALL GETCTGRY
 
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
+
+C.........  Make sure only run for point sources
+        IF( CATEGORY .NE. 'POINT' ) THEN
+            MESG = 'ERROR: ' // PROGNAME( 1:LEN_TRIM( PROGNAME ) ) //
+     &             ' is not valid for ' // CATEGORY( 1:CATLEN ) // 
+     &             ' sources'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.......   Get file name; open input point sources, temporal cross-reference,
 C.......   and temporal profiles files
@@ -275,22 +302,6 @@ C.......   and temporal profiles files
         SDEV = PROMPTFFILE( 
      &           'Enter logical name for the ASCII INVENTORY file',
      &           .TRUE., .TRUE., ANAME, PROGNAME )
-
-        SNAME = PROMPTMFILE( 
-     &          'Enter name for CROSS-POINT SURFACE MET file',
-     &          FSREAD3, 'MET_CRO_2D', PROGNAME )
-
-        GNAME = PROMPTMFILE( 
-     &          'Enter name for CROSS-POINT LAYERED GRID file',
-     &          FSREAD3, 'GRID_CRO_3D', PROGNAME )
-
-        XNAME = PROMPTMFILE( 
-     &          'Enter name for CROSS-POINT LAYERED MET file',
-     &          FSREAD3, 'MET_CRO_3D', PROGNAME )
-
-        DNAME = PROMPTMFILE( 
-     &          'Enter name for DOT-POINT LAYERED MET file',
-     &          FSREAD3, 'MET_DOT_3D', PROGNAME )
 
 C.........  Get header description of inventory file 
         IF( .NOT. DESC3( ENAME ) ) THEN
@@ -309,6 +320,28 @@ C           results are stored in module MODINFO.
             IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
 
         END IF
+
+        IF( VFLAG ) THEN
+            PDEV = PROMPTFFILE( 
+     &          'Enter logical name for the ELEVATED POINT SOURCE file',
+     &          .TRUE., .TRUE., CRL // 'ELV', PROGNAME )
+        END IF
+
+        SNAME = PROMPTMFILE( 
+     &          'Enter name for CROSS-POINT SURFACE MET file',
+     &          FSREAD3, 'MET_CRO_2D', PROGNAME )
+
+        GNAME = PROMPTMFILE( 
+     &          'Enter name for CROSS-POINT LAYERED GRID file',
+     &          FSREAD3, 'GRID_CRO_3D', PROGNAME )
+
+        XNAME = PROMPTMFILE( 
+     &          'Enter name for CROSS-POINT LAYERED MET file',
+     &          FSREAD3, 'MET_CRO_3D', PROGNAME )
+
+        DNAME = PROMPTMFILE( 
+     &          'Enter name for DOT-POINT LAYERED MET file',
+     &          FSREAD3, 'MET_DOT_3D', PROGNAME )
 
 C.........  Check multiple met files for consistency
         EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, GNAME, XNAME, DNAME ) )
@@ -428,6 +461,11 @@ C           coordinate system of the destination grid
         CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
      &                 XCENT, YCENT, XLOCA, YLOCA )
 
+C.........  Call elevated sources indicator file, even thought it might not
+C           be opened - routine will initialize LMAJOR and LPING regardless
+C           of whether the file is available.
+        CALL RDPELV( PDEV, NSRC, NMAJOR, NPING )
+
 C.........  Allocate memory for all remaining variables using dimensions 
 C           obtained previously...
 
@@ -509,10 +547,12 @@ C.........  Read time-independent ZF and ZH
 C.........  Use BMATVEC to convert from a gridded array to a source-based array
 
         CALL RETRIEVE_IOAPI_HEADER( GNAME )
-        CALL SAFE_READ3( GNAME, 'ZH', ALLAYS3, SDATE3D, STIME3D, XBUF )
+        CALL GET_VARIABLE_NAME( 'ZH', VNAME )
+        CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D, STIME3D, XBUF )
         CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
 
-        CALL SAFE_READ3( GNAME, 'ZF', ALLAYS3, SDATE3D, STIME3D, XBUF )
+        CALL GET_VARIABLE_NAME( 'ZF', VNAME )
+        CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D, STIME3D, XBUF )
         CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
 
 C.........  Pre-process ZF and ZH to compute DDZH and DDZF
@@ -556,6 +596,9 @@ C.........  Set logical array for setting valid source characeristics columns
         LF( 1:NCHARS ) = .TRUE.   ! array
         IF( NCHARS .LE. 8 ) LF( NCHARS+1:9 ) = .FALSE.  ! array
 
+C.........  Get variable names from surface meteorology file
+        CALL RETRIEVE_IOAPI_HEADER( SNAME )
+
 C.........  For each time step, compute the layer fractions...
 
         MESG = 'Calculating hourly layer fractions...'
@@ -572,10 +615,10 @@ C.........  For each time step, compute the layer fractions...
 
             IF ( LDATE .NE. JDATE ) THEN
  
-                MESG = 'Processing ' //
-     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
-                CALL M3MSG2( MESG( 1:LEN_TRIM( MESG ) ) )
+C.................  Write day and date message to stdout and log file
+                CALL WRDAYMSG( JDATE, MESG )
 
+C.................  Write day and date message to report file
                 IF( RDEV .GT. 0 ) THEN
                     WRITE( RDEV,93000 ) MESG( 1:LEN_TRIM( MESG ) )
                 ENDIF
@@ -600,7 +643,8 @@ C.............  Read and transform meteorology:
             CALL SAFE_READ3( SNAME, 'PBL', ALLAYS3, JDATE, JTIME, XBUF )
             CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, HMIX )
 
-            CALL SAFE_READ3( SNAME, 'TGD', ALLAYS3, JDATE, JTIME, XBUF )
+            CALL GET_VARIABLE_NAME( 'TGD', VNAME )
+            CALL SAFE_READ3( SNAME, VNAME, ALLAYS3, JDATE, JTIME, XBUF )
             CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, TSFC )
 
             CALL SAFE_READ3( SNAME, 'USTAR', ALLAYS3, JDATE,JTIME,XBUF )
@@ -631,11 +675,25 @@ C.............  Loop through sources and compute plume rise
             DO S = 1, NSRC
 
 C.................  Skip source if it is outside grid
-
 	        XL = XLOCA( S )
 	        YL = YLOCA( S )
                 IF( XL .LT. XBEG .OR. XL .GT. XEND .OR.
      &              YL .LT. YBEG .OR. YL .GT. YEND     ) CYCLE
+
+C.................  Skip source if it is a PinG source and assign 0 to the
+C                   layer fractions
+                IF( LPING( S ) ) THEN
+                    LFRAC( S, 1:EMLAYS ) = 0.
+                    CYCLE
+                END IF
+
+C.................  Skip source if it is minor source and assign layer fractions
+C                   that put all emissions in layer 1
+                IF( .NOT. LMAJOR( S ) ) THEN
+                    LFRAC( S,1 )        = 1.
+                    LFRAC( S,2:EMLAYS ) = 0.
+                    CYCLE
+                END IF
 
 C.................  Compute surface pressure (and convert to mb from Pa)
                 PSFC = 1.0E-2 * ( PP * PRES( 1,S ) + QQ * PRES( 2,S ) )
@@ -763,6 +821,51 @@ C----------------------------------------------------------------------
             ENDIF
 
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram resolves the differences in 
+C               variable names for different version of the Met files
+            SUBROUTINE GET_VARIABLE_NAME( INNAME, OUTNAME )
+
+C.............  Subprogram arguments
+            CHARACTER(*), INTENT (IN) :: INNAME    ! variable name to check
+            CHARACTER(*), INTENT(OUT) :: OUTNAME   ! variable name to read
+
+C.............  Local variables
+            INTEGER J
+
+C----------------------------------------------------------------------
+
+C.............  Search for variable name in the list of names
+            J = INDEX1( INNAME, NVARS3D, VNAME3D )
+
+C.............  If the input name is there, then set output name and return
+            IF( J .GT. 0 ) THEN
+                OUTNAME = INNAME
+                RETURN
+            END IF
+
+C.............  Set output name
+C.............  Currently there is only one alternative for each
+            SELECT CASE( INNAME )
+            CASE( 'ZH' )
+                OUTNAME = 'X3HT0F'
+            CASE( 'ZF' )
+                OUTNAME = 'X3HT0M'
+            CASE( 'TGD' ) 
+                OUTNAME = 'TEMPG'
+            CASE DEFAULT
+                MESG = 'INTERNAL ERROR: Do not have an alternative ' //
+     &                 'name for met variable ' // INNAME
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+            END SELECT
+
+            RETURN
+
+            END SUBROUTINE GET_VARIABLE_NAME
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------

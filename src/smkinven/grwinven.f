@@ -58,7 +58,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL                 GETYN
         INTEGER                 GETISIZE
         INTEGER                 GETFLINE
-        INTEGER                 GETFMTPT
         INTEGER                 GETTZONE
         INTEGER                 INDEX1
         CHARACTER*5             ORDERNAM
@@ -66,8 +65,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                 STR2INT
         INTEGER                 TRIMLEN
 
-        EXTERNAL CRLF, ENVYN, GETYN, GETISIZE, GETFLINE, GETFMTPT,
-     &           GETTZONE, INDEX1, ORDERNAM, PROMPTFFILE, , STR2INT,
+        EXTERNAL CRLF, ENVYN, GETYN, GETISIZE, GETFLINE, 
+     &           GETTZONE, INDEX1, ORDERNAM, PROMPTFFILE, STR2INT,
      &           TRIMLEN
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -202,8 +201,8 @@ C           of variables per pollutant, and pollutant names
         ELSE
             NPSRC  = NROWS3D
             NPVARS = NVARS3D
-            NNONPV = GETIFDSC( FDESC3, '/NON POLLUTANT/' )
-            NVPERP = GETIFDSC( FDESC3, '/PER POLLUTANT/' )
+            NNONPV = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
+            NVPERP = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .TRUE. )
 
 C.............  Allocate memory for inventory pollutant names
             NIPOL = ( NPVARS - NNONPV ) / NVPERP
@@ -280,7 +279,7 @@ C.............  Prompt for name
             ENDIF
 
             CNAMEA( I ) = MNAME  ! Store name in unsorted list
-            CTYPEA( I ) = GETIFDSC( FDESC3, '/CTYPE/' )
+            CTYPEA( I ) = GETIFDSC( FDESC3D, '/CTYPE/' )
             CINDXA( I ) = I
             CCNTRA( I ) = I
 
@@ -306,7 +305,7 @@ C               track of those that are not in the inventory file.
  
                 CPVNAMS( V,I ) = VNAME3D( V )
 
-                K = CHKCPVAR( VNAME3D( V ), EINAM, NIPOL ) 
+                K = CHKCPVAR( VNAME3D( V ), NIPOL, EINAM ) 
 
                 IF( K .EQ. 0 ) THEN   ! Count matrices with "all"
                     M = M + 1
