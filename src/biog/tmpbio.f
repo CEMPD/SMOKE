@@ -221,6 +221,7 @@ C...........   Other variables and their descriptions:
         INTEGER      :: SWNROWS = 0   !  bioseason 
         INTEGER      :: SWXOFF  = 0   !  bioseason x offset from met grid
         INTEGER      :: SWYOFF  = 0   !  bioseason y offset from met grid
+        INTEGER         TSTEP   !  Time step from environment
         INTEGER         TZONE   !  output-file time zone
 
         LOGICAL ::      EFLAG    = .FALSE.  ! error flag
@@ -330,7 +331,7 @@ C.......   Get the method to calculate PAR
         WRITE( LDEV, 92000 ) MESG
 
 C.......   Get episode date and time from environment
-        CALL GETM3EPI( TZONE, JDATE, JTIME, NSTEPS )
+        CALL GETM3EPI( TZONE, JDATE, JTIME, TSTEP, NSTEPS )
 
 C........  Convert start date and time to output time zone.
         MDATE = JDATE
@@ -911,7 +912,7 @@ C.......   Build description for, and create/open output file
         MXREC3D = NSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
-        TSTEP3D = 10000
+        TSTEP3D = 10000    ! only 1-hour time step supported
 
         DO  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )

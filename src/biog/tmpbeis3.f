@@ -150,7 +150,6 @@ C...........   Other variables and their descriptions:
         INTEGER         B, M    !  counters for biogenic, model species
         INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
         INTEGER         HR      !  current simulation hour
-
         INTEGER         IOS     !  temporay IO status
         INTEGER         JDATE   !  current simulation date (YYYYDDD)
         INTEGER         JTIME   !  current simulation time (HHMMSS)
@@ -168,6 +167,7 @@ C...........   Other variables and their descriptions:
         INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         RDATE   !  met file 2 start date 
         INTEGER         RTIME   !  met file 2 start time
+        INTEGER         TSTEP   !  time step set by environment
         INTEGER         TZONE   !  output-file time zone ; not used in program
 
         LOGICAL         EFLAG   !  error flag
@@ -444,7 +444,7 @@ C.......      otherwise, use environment variables to set defaults
         JTIME  = STIME3D
         NSTEPS = MXREC3D
 
-        CALL GETM3EPI( TZONE, JDATE, JTIME, NSTEPS )
+        CALL GETM3EPI( TZONE, JDATE, JTIME, TSTEP, NSTEPS )
 
 C.......   Build description for, and create/open output file
 C.......   (all but variables-table in description is borrowed from M3NAME)
@@ -455,7 +455,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
         MXREC3D = BSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
-        TSTEP3D = 10000
+        TSTEP3D = 10000   ! only 1-hour timestep supported
 
         DO  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )
