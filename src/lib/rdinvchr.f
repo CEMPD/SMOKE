@@ -162,6 +162,14 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ENDIF
 
+            CASE( 'CELLID' )
+                ALLOCATE( CELLID( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
+
+                IF(.NOT. READ3(INFILE,'CELLID',ALLAYS3,0,0,CELLID)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
             CASE( 'TZONES' )
                 ALLOCATE( TZONES( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
