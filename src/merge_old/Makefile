@@ -2,7 +2,7 @@
 #
 all: opts
 #
-opts:   csgmerge csglmerge csglmerge2
+opts:   csgmerge csglmerge csgldaymrg
 #
 LDIRS=-L$(em) \
       -L$(io) \
@@ -35,6 +35,6 @@ csglmerge: $(CSGLS) $(CSGLI)
 #
 CSGLS2=csglmerge.2.F amrgvec.F plmvec.F msmatvec.F csvname.F
 #
-csglmerge2: $(CSGLS2) $(CSGLI)
-	f77 $(FFLAGS) -o $(SCENDIR)/csglmerge2 $(CSGLS2) $(LIBS)
+csgldaymrg: $(CSGLS2) $(CSGLI)
+	f77 $(FFLAGS) -o $(SCENDIR)/csgldaymrg $(CSGLS2) $(LIBS)
 #
