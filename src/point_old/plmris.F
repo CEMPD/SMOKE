@@ -61,11 +61,11 @@ C...........   INCLUDES:
 C...........   ARGUMENTS and their descriptions:
 
 
-        REAL    ZH   ( NLAYS )  !  layer surface height (m)
-        REAL    ZF   ( NLAYS )  !  layer center  height (m)
-        REAL    WSPD ( NLAYS )  !  wind speed (m/s)
-        REAL    TA   ( NLAYS )  !  temperature (deg K)
-        REAL    DTHDZ( NLAYS )  !  gradient of THETV
+        REAL    ZH   ( EMLAYS ) !  layer center height (m)
+        REAL    ZF   ( 0:EMLAYS )!  layer surface height (m)
+        REAL    WSPD ( EMLAYS ) !  wind speed (m/s)
+        REAL    TA   ( EMLAYS ) !  temperature (deg K)
+        REAL    DTHDZ( EMLAYS ) !  gradient of THETV
         REAL    USTAR           !  friction velocity (m/s)
         REAL    STKHT           !  stack height (m)
         REAL    STKDM           !  stack diameter (m)
@@ -118,7 +118,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER M               !  layer counter
         INTEGER IQ              !  stab class:  1-unstbl,2-neut,3-stbl
         INTEGER LPLM            !  first L: ZH(L) > STKHT
-        REAL    HSTAR           !  convective scale at stack (m?)
+        REAL    HSTAR           !  convective scale at stack (m**2/s**3)
         REAL    TPLM            !  temperature at top of plume (m/s)
         REAL    WPLM            !  wind speed  at top of plume (m/s)
         REAL    BFLX            !  buoyancy flux (m**4/s**3)
@@ -155,8 +155,7 @@ C.......   Compute buoyancy flux, convective scale.
         LPLM  = LSTK
         HSTAR = GRAV * HFX / TA( 1 )
         BFLX  = MAX( 0.0 , 
-     &          0.25 * PI * ( STKTK - TSTK ) * STKVE * STKDM**2 / TSTK
-     &             )
+     &          0.25*GRAV * ( STKTK-TSTK ) * STKVE * STKDM**2 / STKTK )
 
 C.......   Compute initial plume rise from stack top to next level surface:
 
@@ -169,10 +168,11 @@ C.......   Compute initial plume rise from stack top to next level surface:
                 LPLM = MIN( EMLAYS-1, LPBL+1 )
                 S    = GRAV * DTHDZ( LPLM ) / TSTK
 
-                IF ( S .LE. SMALL ) THEN
+                IF ( S .LT. SMALL ) THEN
                     DH = 1.5 * NEUTRL( STKHT, BFLX, WSTK, USTAR )
                     IQ = 2
                 ELSE
+                     S = SMALL
                     DH = 1.5 * STABLE( BFLX, WSTK, S )
                     IQ = 3
                 END IF
@@ -191,7 +191,7 @@ C.......   Compute initial plume rise from stack top to next level surface:
                     TOP = HMIX
                     BOT = 0.0
                 ELSE
-                    TOP = ZF( LSTK )
+                    TOP = ZF( LSTK - 1 )  ! -1 because storage from 0:EMLAYS
                     BOT = 0.0
                 END IF
 
