@@ -49,13 +49,14 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER   ENVINT
-        INTEGER   FIND1
-        INTEGER   INDEX1
-        INTEGER   GETFLINE
-        INTEGER   STR2INT 
+        CHARACTER*2  CRLF
+        INTEGER      ENVINT
+        INTEGER      FIND1
+        INTEGER      INDEX1
+        INTEGER      GETFLINE
+        INTEGER      STR2INT 
 
-        EXTERNAL  ENVINT, FIND1, INDEX1, GETFLINE, STR2INT
+        EXTERNAL  CRLF, ENVINT, FIND1, INDEX1, GETFLINE, STR2INT
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN):: FDEV            ! county file unit no.
@@ -326,10 +327,32 @@ C.............  Find state code in valid list
 
         END DO
 
+C.........  Check if input states all have information in state codes file
         IF( K .NE. NDIMST ) THEN
-            MESG = 'INTERNAL ERROR: Actual count of state codes in ' //
-     &             'error'
+
+            IF( FILTER ) THEN
+
+C.................  Loop through input states and report missing
+                DO N = 1, NDIMST
+                    STA = INSTATE( N ) * 1000
+                    J = FIND1( STA, K, STATCOD )
+                    IF( J .LE. 0 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,'(A,1X,I3.3,A)' )
+     &                    'ERROR: Input data contains country/state' // 
+     &                    'code', INSTATE( N ), 
+     &                    ', but it '// CRLF()// BLANK10//
+     &                    'is not found in state/county codes file.'
+                        CALL M3MSG2( MESG )
+                    END IF
+                END DO 
+
+            END IF
+
+            MESG = 'INTERNAL ERROR: Actual count of state codes ' //
+     &             'in error'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         END IF
 
 C.........  Read in county section of the file...
