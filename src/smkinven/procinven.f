@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCINVEN( NRAWBP, MXIDAT, FILFMT, PRATIO, INVSTAT )
+        SUBROUTINE PROCINVEN( NRAWBP, FILFMT )
 
 C**************************************************************************
 C  subroutine body starts at line 114
@@ -43,6 +43,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC 
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -64,10 +67,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NRAWBP            ! no.raw recs x pol/act
-        INTEGER     , INTENT (IN) :: MXIDAT            ! max no. inv pols/actvty
         INTEGER     , INTENT (IN) :: FILFMT            ! input file(s) fmt code
-        REAL        , INTENT (IN) :: PRATIO            ! position ratio
-        INTEGER     , INTENT(IN OUT) :: INVSTAT( MXIDAT ) ! (<0 actv, >0 pol)
 
 C...........   Variables dimensioned by subroutine arguments
         INTEGER         TMPSTAT( MXIDAT ) ! tmp data status
@@ -235,6 +235,7 @@ C.........  Keep case statement outside the loops to speed processing
                     TPFLAG( S ) = TPFLGA ( K )
                     INVYR ( S ) = INVYRA ( K )
                     CSCC  ( S ) = CSCCA  ( K )
+                    CELLID( S ) = 0
 
                     CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
                 END IF
@@ -263,7 +264,6 @@ C.........  Keep case statement outside the loops to speed processing
                     YLOC1 ( S ) = YLOC1A ( K )
                     XLOC2 ( S ) = XLOC2A ( K )
                     YLOC2 ( S ) = YLOC2A ( K )
-                    SPEED ( S ) = SPEEDA ( K )
 
                     CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
                 END IF
