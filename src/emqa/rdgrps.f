@@ -317,7 +317,7 @@ C.............  Local variables
 
             INTEGER       FIP      ! tmp region code
             INTEGER       IOS      ! i/o status
-            INTEGER       NS       ! no. segments in line
+            INTEGER    :: NS = 1   ! no. segments in line
             INTEGER       RCNT     ! record count
 
             CHARACTER*300 BUFFER   ! tmp line buffer as uppercase
@@ -333,6 +333,7 @@ C.............  Rewind input file
             REWIND( FDEV )
 
 C.............  Loop though file to store local array of labeled group names
+            SEGMENT = ' '     ! array
             IREC = 0
             DO I = 1, NLINE_RC
             
@@ -464,7 +465,10 @@ C.....................  A subgrid is being selected
                     IF( LSUBGRID .AND. RPT_%SUBGNAM .NE. PSUBGNAM ) THEN
 
 C.........................  Search for subgrid names in defined subgrids
-                        J = INDEX1( RPT_%SUBGNAM, NSBGRAW, SUBGNAM )
+                        J = 0
+                        IF( NSBGRAW .GT. 0 ) 
+     &                      J = INDEX1( RPT_%SUBGNAM, NSBGRAW, SUBGNAM )
+                    
                     
 C.........................  If subgrid name is not found, then try to interpret
 C                           entry as a subgrid definition.
