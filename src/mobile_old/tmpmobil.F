@@ -306,9 +306,11 @@ C       INTEGER         RDEV    ! ...output report file
         CHARACTER*16    TNAME   !  logical name for timestepped      output file
         CHARACTER*16    UNAME   !  logical name for ungridding-matrix input file
         CHARACTER*16    WNAME   !  logical name for ungridded min/max tmpr input
+        CHARACTER*80    SCEN_STR!  temporary string for scenario name
+        CHARACTER*80    SCHE_STR!  temporary string for cloud scheme name
         CHARACTER*256   LINE    !  buffer for reading XREF file
         CHARACTER*256   MESG    !  buffer for M3EXIT()
-
+        
 
 C***********************************************************************
 C   begin body of program TMPMOBIL
@@ -434,6 +436,9 @@ C.........  Get starting date and time from met data file
      &                  // MNAME( 1:TRIMLEN( MNAME ) ) // '"',
      &                  2 )
         END IF
+
+        SCEN_STR = FDESC3D( 21 )
+        SCHE_STR = FDESC3D( 22 )
 
 C.........  Set   date/time for temperature based on simulation
 C........   start date/time
@@ -583,6 +588,9 @@ C.............  Set other variable properties
         DO  21 V = NVTYPE+2, MXDESC3
             FDESC3D( V ) = ' '
 21      CONTINUE
+
+        FDESC3D( 21 ) = SCEN_STR
+        FDESC3D( 22 ) = SCHE_STR
 
         TNAME = PROMPTMFILE( 
      &  'Enter logical name for output TIME-STEPPED MOBILE EMIS file',
