@@ -1,0 +1,87 @@
+#!/bin/csh -f
+
+# Version @(#)$Id$
+# Path    $Source$
+# Date    $Date$
+
+# This script sets up needed environment variables for running biogenic source
+# emissions in SMOKE, and calls the script that runs the SMOKE programs. 
+#
+# Script created by : M. Houyoux, North Carolina 
+#                     Supercomputing Center
+#
+#*********************************************************************
+
+# set Assigns file name
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.net96.us36
+
+# set source category
+setenv SMK_SOURCE B            # source category to process
+setenv MRG_SOURCE B            # source category to merge
+setenv SRCABBR    bg           # abbreviation for naming log files
+
+# time independent programs
+setenv RUN_RAWBIO    N         # Y runs landuse import
+
+# time-dependent programs
+setenv RUN_TMPBIO    N         # Y runs biogenic temporal adjustments
+setenv RUN_SMKMERGE  Y         # Y runs merge program
+
+# For Rawbio ( 60 = area surrogate in Models-3 )
+setenv GLUSE_YN          Y     # Y for gridded landuse, N for county landuse
+setenv PINE_SURG         3     # Surrogate code - pine
+setenv DECD_SURG         3     # Surrogate code - deciduous 
+setenv CONF_SURG         3     # Surrogate code - coniferous 
+setenv ALLFOR_SURG       3     # Surrogate code - all forest
+setenv AGRI_SURG         3     # Surrogate code - agriculture 
+setenv GRASS_SURG        3     # Surrogate code - grasslands 
+setenv WETL_SURG         3     # Surrogate code - wetlands 
+setenv OTHER_SURG        3     # Surrogate code - other land uses 
+setenv LAI_SURG          3     # Surrogate code - leaf area index 
+
+# For Tmpbio
+setenv BIOSW_YN         Y      # Y for using seasons file in Tmpbio
+setenv TMPR_VAR         TEMP10 # name of temperature variable
+setenv RAD_VAR          RGRND  # name of radiation/cloud variable
+setenv BIOMET_SAME      N      # Y: temperature and rad/cld data in same file   
+setenv BIOG_SPRO        0000   # speciation profile code to use for biogenics
+setenv BG_CLOUD_TYPE    1      # method used to calculate PAR
+setenv OUTZONE          0      # Output time zone
+
+# For Smkmerge - getting county reports
+setenv MRG_TEMPORAL_YN    Y        # Y merges with hourly emissions
+setenv MRG_SPCMAT_YN      Y        # Y merges with speciation matrix
+setenv MRG_REPSTA_YN      Y        # Y outputs state totals
+setenv MRG_REPCNY_YN      Y        # Y outputs county totals
+setenv MRG_TOTOUT_UNIT    tons/day # units for state and/or county totals
+setenv SPC_INPUT          mass     # [mass|mole] controls speciation merge
+setenv AREA_SURROGATE_NUM 3        # number for area surrogate
+
+# Multiple-program controls
+setenv PROMPTFLAG       N          # Y (never set to Y for batch processing)
+setenv SMK_MAXWARNING   100        # maximum number of warnings in log file
+setenv SMK_MAXERROR     100        # maximum number of errors in log file
+setenv AUTO_DELETE_LOG  Y          # Y automatically deletes logs without asking
+
+# Invoke Assigns file
+source $ASSIGNS_FILE
+
+##############################################################################
+
+#
+## Set biogenic-source-specific input file names when they are different
+## from the defaults prompted by the programs
+#
+setenv MET_FILE1 $MET_CRO_2D
+setenv MET_FILE2 $MET_CRO_2D
+
+#
+## Run programs
+#
+source smk_run.scr
+
+#
+## Ending of script
+#
+exit( $status )
+
