@@ -176,8 +176,8 @@ C.........  Read volatile pollutants conversion factors file
             EFLAG = .TRUE.
             WRITE( MESG, 94010 )
      &          'Actual CONVERSION table size:', I,
-     &          'Dimensioned:', MXSCNV
-            CALL M3MESG( MESG )
+     &          'Dimensioned (MXSCNV):', MXSCNV
+            CALL M3MSG2( MESG )
         END IF		!  if I not in bounds
 
         IF ( EFLAG ) THEN
