@@ -84,7 +84,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
-        REAL            YEAR4  
+        INTEGER         YEAR4  
         REAL            YR2DAY 
         
         EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETYN, JUNIT,
@@ -186,6 +186,7 @@ C...........   Other local variables
         INTEGER     INY         !  temporary inventory year
         INTEGER     IREC        !  input line (record) number
         INTEGER     IPOL        !  temporary inventory pollutant code number
+        INTEGER     IYY         !  inv year from AFS file
         INTEGER     LFIP, LSCC, LPLT, LSTK  ! previous fip, scc, plant, stack
         INTEGER     MM, DD, HH, NDAYS        
         INTEGER     FIP         !  temporary FIPS code
@@ -405,7 +406,7 @@ C.............  making changes
                 SIC   = STR2INT ( LINE(  24: 27 ) )
                 SCC   = STR2INT ( LINE(  29: 38 ) )
                 PLANT = STR2INT ( LINE(  40: 44 ) )
-                STACK = STR2INT ( LINE(  46: 48 ) )
+                STACK = STR2INT ( LINE(  45: 48 ) )
                 XLOC  = STR2REAL( LINE(  78: 87 ) )
                 YLOC  = STR2REAL( LINE(  89: 98 ) )
                 ZONE  = STR2INT ( LINE( 100:101 ) )
@@ -436,15 +437,15 @@ C.............  making changes
                     STM = 10000 * HH
                     DD  = MOD( SDT / 100  , 100 )
                     MM  = MOD( SDT / 10000, 100 )
-                    YY  = YEAR4( SDT / 1000000 )
-                    SDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
+                    IYY  = YEAR4( SDT / 1000000 )
+                    SDT = (IYY/100)*100 + JULIAN( IYY, MM, DD )  !  as Julian date
 
                     HH  = MOD( EDT        , 100 )
                     ETM = 10000 * HH
                     DD  = MOD( EDT / 100  , 100 )
                     MM  = MOD( EDT / 10000, 100 )
-                    YY  = YEAR4( EDT / 1000000 )
-                    EDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
+                    IYY  = YEAR4( EDT / 1000000 )
+                    EDT = (IYY/100)*100 + JULIAN( IYY, MM, DD )  !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
 
                     NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
@@ -458,10 +459,10 @@ C.............  making changes
 
                     EMIS = DAY2YR * EMIS
 
-                    IF( FIRSTP .AND. INY .NE. YY ) THEN
+                    IF( FIRSTP .AND. INY .NE. IYY ) THEN
                         FIRSTP = .FALSE.
                         WRITE( MESG,94010 ) 'WARNING: Year', INY,
-     &                         'given in PNLST, but year', YY,
+     &                         'given in PNLST, but year', IYY,
      &                         'appears in file:' // CRLF() // BLANK5 //
      &                         RNAME( 1:TRIMLEN( RNAME ) )
                         CALL M3MSG2( MESG )
@@ -473,15 +474,15 @@ C.............  making changes
                     STM = 10000 * HH
                     DD  = MOD( SDT / 100  , 100 )
                     MM  = MOD( SDT / 10000, 100 )
-                    YY  = YEAR4( SDT / 1000000 )
-                    SDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
+                    IYY  = YEAR4( SDT / 1000000 )
+                    SDT = (IYY/100)*100 + JULIAN( IYY, MM, DD )  !  as Julian date
 
                     HH  = MOD( EDT        , 100 )
                     ETM = 10000 * HH
                     DD  = MOD( EDT / 100  , 100 )
                     MM  = MOD( EDT / 10000, 100 )
-                    YY  = YEAR4( EDT / 1000000 )
-                    EDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
+                    IYY  = YEAR4( EDT / 1000000 )
+                    EDT = (IYY/100)*100 + JULIAN( IYY, MM, DD )  !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
 
                     NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
@@ -498,10 +499,10 @@ C.............  making changes
                     WRITE( MESG, 94030 ) FIP, SCC, PLANT, STACK, IREC
                     CALL M3MESG( MESG )
 
-                    IF( FIRSTP .AND. INY .NE. YY ) THEN
+                    IF( FIRSTP .AND. INY .NE. IYY ) THEN
                         FIRSTP = .FALSE.
                         WRITE( MESG,94010 ) 'WARNING: Year', INY,
-     &                         'given in PNLST, but year', YY,
+     &                         'given in PNLST, but year', IYY,
      &                         'appears in file:' // CRLF() // BLANK5 //
      &                         RNAME( 1:TRIMLEN( RNAME ) )
                         CALL M3MSG2( MESG )
@@ -523,7 +524,7 @@ C.............  making changes
 
 C................  Make changes in XLOC and YLOC if they are provided in LAT-LON
 
-               IF( ZONE .EQ. IMISS3 ) THEN
+               IF( ZONE .LT. 0 ) THEN
 
 C....................  Trade XLOC/YLOC because of EPS format
                    SLOC = YLOC
@@ -545,7 +546,7 @@ C...........   and still call what they are doing "UTM":
 
                 IF ( GDTYP3D .EQ. UTMGRD3 ) THEN
 
-                    IF ( ZONE .EQ. IMISS3 ) THEN	!  lat-lon input
+                    IF ( ZONE .LT. 0 ) THEN	!  lat-lon input
 
                         CALL LL2UTM( XLOC, YLOC, UZONE, XX, YY )
                         XLOC = XX
@@ -568,7 +569,7 @@ C...........   and still call what they are doing "UTM":
 
                 ELSE IF ( GDTYP3D .EQ. LAMGRD3 ) THEN
 
-                    IF ( ZONE .EQ. IMISS3 ) THEN        !  lat-lon input
+                    IF ( ZONE .LT. 0 ) THEN        !  lat-lon input
 
                         IF ( .NOT. LL2LAM( XLOC, YLOC, XX, YY ) ) THEN
                             EFLAG = .TRUE.
@@ -887,7 +888,7 @@ C.......   Get file name; open output point sources file
         VGTOP3D = AMISS3
         GDNAM3D = COORDN
 
-        FDESC3D( 1 ) = 'NC Point Source emissions values.'
+        FDESC3D( 1 ) = 'Point Source emissions values.'
         FDESC3D( 2 ) = 'Inventory  type "' // LINE(  1: 1 ) // '"'
         FDESC3D( 3 ) = 'Projection year "' // LINE(  3: 4 ) // '"'
         FDESC3D( 4 ) = 'Base year       "' // LINE(  6: 7 ) // '"'
