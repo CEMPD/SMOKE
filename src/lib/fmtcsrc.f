@@ -79,8 +79,8 @@ C.........  Make sure not to exceed NCHARS legal value
 
 C.........  Initialize output buffer
         IF( NCHARS .GE. 1 ) THEN
-            L1 = LENARR3( 1 )
-            L2 = LENARR3( 2 ) - 1
+            L1 = PTBEGL3( 1 )
+            L2 = PTENDL3( 1 )
   
             WRITE( OUTBUFF, 94900 ) LABEL( 1 ), INSTRING( L1:L2 )
 
@@ -93,8 +93,8 @@ C           for each populated source characterstic
 
             L = TRIMLEN( OUTBUFF )
 
-            L1 = LENARR3( I )    ! retrieve stored field lengths
-            L2 = LENARR3( I+1 ) - 1
+            L1 = PTBEGL3( I )    ! retrieve stored field lengths
+            L2 = PTENDL3( I )
  
             BUFFER = ADJUSTL( INSTRING( L1:L2 ) )   ! Left-justifying
             L3 = TRIMLEN( BUFFER )

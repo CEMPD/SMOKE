@@ -120,7 +120,7 @@ C.........  Loop through lines of file
      &                 'Error', IOS,  'reading PTINV file ' //
      &                 'at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            ENDIF
 
 C............. Determine if the file is list format
             L1 = INDEX( LINE, 'INVYEAR' )
@@ -129,14 +129,48 @@ C.............  Found INVYEAR packet, so list format
             IF( L1 .GT. 0 ) THEN
                 GETFMTPT = LSTFMT
                 EXIT           ! To rewind and return
-            END IF
+            ENDIF
  
-C............. Determine if the file is IDA format
+C.............  Determine if the file is IDA format
             L1 = INDEX( LINE, '#' )
             IF( L1 .EQ. 1 ) THEN
-                GETFMTPT = IDAFMT
-                EXIT           ! To rewind and return
-            END IF
+
+C................  Make sure it is a point source file and not another type
+C                  of IDA file. Approach is to read additional lines until
+C                  there is not a '#' and check positions 61-69.
+                DO 
+                    READ( FDEV, 93000, END=201, IOSTAT=IOS ) LINE
+                    IREC = IREC + 1
+
+                    IF ( IOS .GT. 0 ) THEN
+                        WRITE( MESG, 94010 )
+     &                         'Error', IOS,  'reading PTINV file ' //
+     &                         'at line', IREC
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ENDIF
+
+                    L1 = INDEX( LINE, '#' )
+                    L  = TRIMLEN( LINE )
+                    IF( L1 .EQ. 1 ) THEN
+                        CYCLE
+
+                    ELSEIF( L .GE. 69 .AND.
+     &                      .NOT. CHKREAL( LINE( 61:69 ) ) ) THEN
+                            
+                        GETFMTPT = IDAFMT
+                        EXIT ! To end inner loop
+
+                    ELSE
+                        MESG = 'IDA-formatted file is not a point ' //
+     &                         'source file!'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ENDIF
+
+                ENDDO
+
+                EXIT ! To rewind and return
+
+            ENDIF
             
 C............. Determine if the file is EPS format.  Approach is to scan the
 C              correct part of the field for emissions type, FIPS code, and
@@ -153,13 +187,13 @@ C              beginning period interval; and do a range checks
 
                         YY = STR2INT( LINE( 60:61 ) )
 
-                            IF( YY .GT. 18 ) THEN
-                                GETFMTPT = EPSFMT
-                                EXIT           ! To rewind and return
-                            END IF
-                    END IF
-                END IF
-            END IF
+                        IF( YY .GT. 18 ) THEN
+                            GETFMTPT = EPSFMT
+                            EXIT           ! To rewind and return
+                        ENDIF
+                    ENDIF
+                ENDIF
+            ENDIF
  
 C............. Determine if the file is EMS-95 format.  Needs to return EMSFMT
 C              for all types of EMS-95 formats.  Approach is to scan the

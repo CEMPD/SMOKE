@@ -63,10 +63,52 @@ C   begin body of subroutine PROGDESC
         ELSEIF( NAME .EQ. 'SPCAMAT' ) THEN
         ELSEIF( NAME .EQ. 'SPCMMAT' ) THEN
         ELSEIF( NAME .EQ. 'GRDPMAT' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program GRDPMAT to take a SMOKE point source inventory file',
+     &  'and produce a SMOKE point source gridding matrix for a grid',
+     &  'defined at run time.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'GRDAMAT' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program GRDAMAT to take a SMOKE area source inventory file,',
+     &  'area source surrogates, and an area source surrogate cross-',
+     &  'reference, and produce a SMOKE area source gridding matrix',
+     &  'for a grid defined at run time.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'GRDMMAT' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program GRDMMAT to take a SMOKE mobile source inventory file,',
+     &  'mobile source surrogates, a mobile source surrogate cross-',
+     &  'reference, and an optional link definitions file, and produce',
+     &  'SMOKE mobile source gridding and ungridding matrices for a',
+     &  'grid defined at run time.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'TMPPOINT' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program TMPPOINT to take a SMOKE point source inventory file,',
+     &  'the actual SCCs file, the temporal profiles, the temporal',
+     &  'cross-reference file, an optional SMOKE day-specific file,',
+     &  'and an optional SMOKE hour-specific point source file, and',
+     &  'produce hourly low-level and optionally hourly elevated point',
+     &  'source emissions for the requested episode.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'TMPAREA' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program TMPAREA to take a SMOKE area source inventory file,',
+     &  'the actual SCCs file, the temporal profiles, and the temporal',
+     &  'cross-reference file, and produce hourly area source',
+     &  'emissions for the requested episode.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'TMPMOBIL' ) THEN
         ELSEIF( NAME .EQ. 'TMPBIO' ) THEN
         ELSEIF( NAME .EQ. 'CTLPMAT' ) THEN

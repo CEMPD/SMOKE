@@ -1,14 +1,16 @@
 
-        CHARACTER*(*) FUNCTION BLDCSRC( CFIP , PLANT, CHAR1, CHAR2, 
-     &                                  CHAR3, CHAR4, CHAR5, CCOD   )
+        SUBROUTINE BLDCSRC( CFIP , PLANT, CHAR1, CHAR2, 
+     &                      CHAR3, CHAR4, CHAR5, CCOD , CSRC )
 
 C***********************************************************************
-C  function body starts at line 97
+C  subroutine body starts at line 97
 C
 C  DESCRIPTION:
-C      This function combines the source characteristics into a single
+C      This subroutine combines the source characteristics into a single
 C      string.  It right justifies the fields and maintains the correct
-C      segment lengths.
+C      segment lengths.  Note that if the results from this function are 
+C      used in the calling program with concatenation, the programmer should
+C      first use LEN_TRIM on the function result before doing the concatenation
 C
 C  PRECONDITIONS REQUIRED:
 C      Values for at least CFIP, PLANT, CHAR1, and CCOD, with other CHAR* values
@@ -50,23 +52,20 @@ C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
-C...........   EXTERNAL FUNCTIONS:
-        INTEGER    TRIMLEN
-
-        EXTERNAL   TRIMLEN
-
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*)    CFIP         ! string FIPS code
-        CHARACTER(LEN=*)    PLANT        ! string plant code
-        CHARACTER(LEN=*)    CHAR1        ! source char 1
-        CHARACTER(LEN=*)    CHAR2        ! source char 2
-        CHARACTER(LEN=*)    CHAR3        ! source char 3
-        CHARACTER(LEN=*)    CHAR4        ! source char 4
-        CHARACTER(LEN=*)    CHAR5        ! source char 5
-        CHARACTER(LEN=*)    CCOD         ! string of int postn of pollutant
+        CHARACTER(LEN=*), INTENT (IN) :: CFIP  ! string FIPS code
+        CHARACTER(LEN=*), INTENT (IN) :: PLANT ! string plant code
+        CHARACTER(LEN=*), INTENT (IN) :: CHAR1 ! source char 1
+        CHARACTER(LEN=*), INTENT (IN) :: CHAR2 ! source char 2
+        CHARACTER(LEN=*), INTENT (IN) :: CHAR3 ! source char 3
+        CHARACTER(LEN=*), INTENT (IN) :: CHAR4 ! source char 4
+        CHARACTER(LEN=*), INTENT (IN) :: CHAR5 ! source char 5
+        CHARACTER(LEN=*), INTENT (IN) :: CCOD  ! string of int postn of pollutant
+        CHARACTER(LEN=*), INTENT(OUT) :: CSRC  ! concatenated result
 
 C...........   Other local variables
         INTEGER         L
+        INTEGER         OUTLEN
 
         CHARACTER(LEN=FIPLEN3) B1
         CHARACTER(LEN=PLTLEN3) B2
@@ -77,27 +76,18 @@ C...........   Other local variables
         CHARACTER(LEN=CHRLEN3) B7
         CHARACTER(LEN=POLLEN3) B8
 
-        CHARACTER*256   MESG 
-        CHARACTER*256   STRING 
+        CHARACTER*300   MESG 
+        CHARACTER*300   STRING
 
-        INTEGER         OUTLEN
-        SAVE            OUTLEN
-
-        LOGICAL         FIRSTIME
-        DATA            FIRSTIME / .TRUE. /
-        SAVE            FIRSTIME
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.
 
         CHARACTER*16 :: PROGNAME = 'BLDCSRC' ! program name
 
 C***********************************************************************
-C   begin body of function BLDCSRC
+C   begin body of subroutine BLDCSRC
 
-C.........  Determine allocated length of string used in calling program
-C           for the function.
-        IF( FIRSTIME ) THEN
-            OUTLEN = LEN( BLDCSRC )
-            FIRSTIME = .FALSE.
-        ENDIF
+C.........  Determine allocated length of string used for output
+        OUTLEN = LEN( CSRC )
 
 C.........  First copy the strings from the arrays of whatever length to
 C           arrays that are the correct length.  Presumably, the calling
@@ -121,21 +111,24 @@ C.........  Now, right-justify using the correct lengths
         B7 = ADJUSTR( B7 )
         B8 = ADJUSTR( B8 )
 
+        STRING = ' '
         STRING = B1 // B2 // B3 // B4 // B5 // B6 // B7 // B8
-        L = TRIMLEN( STRING )
+        L = LEN_TRIM( STRING )
 
         IF( L .GT. OUTLEN ) THEN 
             MESG= 'INTERNAL ERROR: Function BLDCSRC has been ' //
      &            'modified improperly'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
         ELSE
-            BLDCSRC = STRING( 1:L )
+            CSRC = STRING( 1:OUTLEN )
+
         ENDIF
 
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-        END
+        END SUBROUTINE BLDCSRC
 

@@ -61,7 +61,8 @@ C...........   LOCAL VARIABLES their descriptions:
         INTEGER       IVAL         ! temporary integer value
         INTEGER       K            ! description string position of key
 
-        CHARACTER*256 MESG         ! Message buffer
+        CHARACTER*300 BUFFER       ! Key buffer
+        CHARACTER*300 MESG         ! Message buffer
 
         CHARACTER*16 :: PROGNAME = 'GETIFDSC'    ! Program name
 
@@ -69,10 +70,13 @@ C***********************************************************************
 C   begin body of subroutine GETIFDSC
 
         L1 = TRIMLEN( KEY )
+        BUFFER = ADJUSTL( KEY( 1:L1 ) )
+
+        L1 = TRIMLEN( BUFFER )
 
         DO I = 1, MXDESC3
 
-            K = INDEX( FILEINFO( I ), KEY( 1:L1 ) )
+            K = INDEX( FILEINFO( I ), BUFFER( 1:L1 ) )
 
             IF( K .GT. 0 ) THEN
 

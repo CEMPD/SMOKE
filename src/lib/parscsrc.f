@@ -71,8 +71,8 @@ C   begin body of subroutine PARSCSRC
                 J = J + 1
 
 C.................  Retrieve and left-justify contents of this part of string
-                L1 = LENARR3( I )
-                L2 = LENARR3( I+1 ) - 1
+                L1 = PTBEGL3( I )
+                L2 = PTENDL3( I )
                 BUFFER = ADJUSTL( INSTRING( L1:L2 ) )
 
 C.................  Convert missing entries to blanks 

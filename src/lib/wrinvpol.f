@@ -6,7 +6,8 @@ C***********************************************************************
 C  subroutine body starts at line
 C
 C  DESCRIPTION:
-C      Write inventory pollutant-specific data for variables listed in VNAMES
+C      Write inventory pollutant-specific data to SMOKE inventory file
+C      for variables listed in VNAMES
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -55,14 +56,16 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER         NSRC             ! Number of sources
         INTEGER         VCNT             ! Number of variables
         CHARACTER*(*)   VNAMES( VCNT )   ! Variable names
-        REAL            POLDAT( NSRC,VCNT ) ! Pollutant-specific data
+        REAL            POLALL( NSRC,VCNT ) ! Pollutant-specific data
         INTEGER         STATUS           ! Exit status
 
 C...........   Other local variables
 
+        INTEGER         V
         INTEGER         JDATE, JTIME
 
-        CHARACTER*300   MESG 
+        CHARACTER*300          MESG 
+        CHARACTER(LEN=IOVLEN3) VARBUF 
 
         CHARACTER*16 :: PROGNAME = 'WRINVPOL' ! program name
 
@@ -73,11 +76,11 @@ C   begin body of subroutine WRINVPOL
         JDATE  = 0
         JTIME  = 0
 
-        DO V = 1, VCOUNT
+        DO V = 1, VCNT
 
             VARBUF = VNAMES( V )
             IF( .NOT. WRITE3( FILNAM, VARBUF, ALLAYS3,
-     &                       JDATE, JTIME, POLDAT( 1,V ) ) THEN
+     &                       JDATE, JTIME, POLALL( 1,V ) ) ) THEN
                 STATUS = 1
                 MESG = 'ERROR: Could not write "' //
      &                 VARBUF( 1:TRIMLEN( VARBUF ) ) // '" from file.'

@@ -1,11 +1,11 @@
 
-        SUBROUTINE WRPTSCC( FDEV, NPSRC, INDEX, ISCC )
+        SUBROUTINE WRCHRSCC( FDEV, NSRC, CSCC )
 
 C***********************************************************************
-C  subroutine body starts at line 67
+C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This subroutine writes a temporal x-ref file in SMOKE format
+C      This subroutine writes character string SCC codes
 C
 C  PRECONDITIONS REQUIRED:
 C      Output temporal x-ref file opened on unit FDEV
@@ -18,7 +18,7 @@ C
 C  REVISION  HISTORY:
 C      Created 10/98 by M. Houyoux
 C
-C****************************************************************************/
+C************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -46,33 +46,44 @@ C***************************************************************************
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER      FDEV           !  ASCII file unit
-        INTEGER      NPSRC          !  actual source count
-        INTEGER      INDEX( NPSRC ) !  source FIPS (county) ID
-        INTEGER      ISCC ( NPSRC ) !  source SCC
+        INTEGER     , INTENT (IN) :: FDEV          !  ASCII file unit
+        INTEGER     , INTENT (IN) :: NSRC          !  actual source count
+        CHARACTER(*), INTENT (IN) :: CSCC( NSRC )  !  unsorted SCCs
+
+C...........   Sorting index
+        INTEGER       INDX( NSRC )
 
 C...........   Other local variables
-        INTEGER       J, S, SCC, LSCC
+        INTEGER       J, S
 
-        CHARACTER*300 MESG             !  message buffer
+        CHARACTER*300 MESG                !  message buffer
+        CHARACTER(LEN=SCCLEN3) TSCC, LSCC !  current and previous 10-digit SCC
 
-        CHARACTER*16 :: PROGNAME = 'WRPTSCC' !  program name
+        CHARACTER*16 :: PROGNAME = 'WRCHRSCC' !  program name
 
 C***********************************************************************
-C   begin body of subroutine WRPTSCC
+C   begin body of subroutine WRCHRSCC
 
-        LSCC = IMISS3
-        DO S = 1, NPSRC
+C.........  Initialize SCC sorting index     
+        DO S = 1, NSRC
+            INDX( S ) = S
+        ENDDO
 
-            J   = INDEX( S )
-            SCC = ISCC ( J )
+C.........  Sort all SCCs in the point sources inventory in increasing order
+        CALL SORTIC( NSRC, INDX, CSCC )
 
-            IF( SCC .NE. LSCC ) THEN
-                WRITE( FDEV, 93030, ERR=6001 ) SCC
-                LSCC = SCC
+        LSCC = '-9'
+        DO S = 1, NSRC
+
+            J = INDX( S )
+
+            TSCC = CSCC( J )
+
+            IF( TSCC .NE. LSCC ) THEN
+                WRITE( FDEV, '(A)', ERR=6001 ) TSCC
+                LSCC = TSCC
             ENDIF 
 
         ENDDO 
@@ -92,4 +103,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+        END SUBROUTINE WRCHRSCC
