@@ -420,7 +420,6 @@ C           create an array of their names
             END DO
             
 
-        
         DO I = 1, FPKTENT
         
             IF ( FAPCKT( I )%METH .EQ. 'E' ) THEN
@@ -480,7 +479,7 @@ C.............  Make sure SCC is set to SCCZERO if it is missing
             TSCC = ADJUSTL( FAPCKT( I )%TSCC )
             CALL FLTRNEG( TSCC )
             CALL PADZERO( TSCC )
-            
+
             CPOA = FAPCKT( I )%CPOL    !  pollutant/emission type name
             CFIP = FAPCKT( I )%CFIP    !  county/state/county code
             
@@ -497,7 +496,7 @@ C               with master list.
             NREF = NREF + 1
             
         END DO
-        
+
         REWIND( FDEV )
         
         ALLOCATE ( INDXTA( NREF ), STAT=IOS )		! sorting index
@@ -521,7 +520,7 @@ C.............  Make sure SCC is set to SCCZERO if it is missing
             
             CPOA = FAPCKT( I )%CPOL    !  pollutant/emission type name
             CFIP = FAPCKT( I )%CFIP    !  country/state/county code
-            
+
 C.............  Post-process x-ref information to scan for '-9', pad
 C               with zeros, compare SCC version master list, compare
 C               SIC version to master list, and compare pol/act name 
@@ -529,7 +528,7 @@ C               with master list.
             
             CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, IDUM,
      &                     JSPC, PFLAG, SKIPREC )
-            
+
             IF( SKIPREC ) CYCLE
             
             WRITE ( CPOS, '(I5)' ) JSPC
@@ -564,16 +563,16 @@ c                    CALL MBSCCADJ( I, TSCC, CRWT, CVID, TSCC, EFLAG )
                 CASE( 'POINT' )
                 
 C.....................  Store string source characteristics
-                     PLT = FAPCKT( I )%PLT
+                     PLT    = FAPCKT( I )%PLT
                      CHARS1 = FAPCKT( I )%CHAR1
                      CHARS2 = FAPCKT( I )%CHAR2 
                      CHARS3 = FAPCKT( I )%CHAR3
                      CHARS4 = FAPCKT( I )%CHAR4
                      CHARS5 = FAPCKT( I )%CHAR5
-                     
+
                      CALL BLDCSRC( CFIP, PLT, CHARS1, CHARS2,
      &                             CHARS3, CHARS4, CHARS5,
-     &                             POLBLNK3, CSRCALL )                                                                           
+     &                             POLBLNK3, CSRCALL )
 
             END SELECT 
 
@@ -611,7 +610,7 @@ C           building CSRCTA, and CPOS will equal "0" when the x-ref entry is
 C           not pol/act-specific, the non-pol/act-specific entries will
 C           always appear first.  This is necessary for the table-generating
 C           subroutines.                                    
-
+	
         CALL SORTIC ( NXREF, INDXTA, CSRCTA )
 
         CALL XREFTBL ( 'UNCERT', NXREF )
