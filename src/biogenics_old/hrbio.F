@@ -1,32 +1,10 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File Version: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
  
         SUBROUTINE  HRBIO( JDATE, JTIME, LAT, LON, PRES, TA, 
      &                     PINE, DECD, CONF, LAI, OTHR, AVLAI, NORNO,
      &                     PARTYPE, EMIS )
 
 C***********************************************************************
-C  subroutine body starts at line  202
+C  subroutine body starts at line  203
 C
 C  FUNCTION:
 C
@@ -68,6 +46,27 @@ C       Revised 8/96 by SL and CJC: algorithm change to match OTAG BEIS2
 C       algorithm
 C
 C***********************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File Version: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
       IMPLICIT NONE
 
@@ -157,7 +156,6 @@ C...........   SAVED LOCAL VARIABLES and their descriptions:
 
         LOGICAL      FIRSTIME
         REAL         DMON(   12 )       !  inverse length of month
-        REAL         IDAY( 0:13 )
         REAL         ADAY( 0:13 )
         REAL         BDAY( 0:13 )
         REAL         CDAY( 0:13 )
@@ -169,7 +167,9 @@ C...........   SAVED LOCAL VARIABLES and their descriptions:
         DATA DMON
      & / D31, D28, D31, D30, D31, D30, 
      &   D31, D31, D30, D31, D30, D31 /
-
+      
+        INTEGER         IDAY( 0:13 )        
+ 
         DATA IDAY
      & /   1,     21,     52,     81,    112,    142,    173,
      &   203,    234,    265,    295,    326,    356,    366 /
