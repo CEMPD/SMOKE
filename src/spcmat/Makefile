@@ -2,9 +2,9 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
-LIBPATH       = $(SMK_BIN)/libsmoke.a
+LIBS          = $(LDIRS) $(LIBS_SYS) -lfileset
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) -lfileset.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
 
@@ -35,9 +35,9 @@ include $(MD_SRC)/modmake.inc
 asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnspro.f
 opensmat.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ opensmat.f
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ opensmat.f
 spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ spcmat.f
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ spcmat.f
 
 
 #
