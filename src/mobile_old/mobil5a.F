@@ -1,6 +1,11 @@
-C Version @(#)$Id$ $Source$ $Date$ 
 
-      SUBROUTINE MOBILE(INERR, *)
+C Version "@(#)$Id$ $Source$ $Date$ %U
+
+C  All "cmh" comments are modifications for the SMOKE modeling system
+C  made by Marc Houyoux at MCNC.
+
+cmh   SUBROUTINE MOBILE(INERR, *)
+      SUBROUTINE MOBILE( INERR, ITEMP, MODEV, EFACT )
 C
 C  Called by user's program (example: Air Quality Analysis
 C  System).
@@ -66,7 +71,7 @@ c
 c  Add definition of ndi_di, ENVL, and M5ERR
 c
       CHARACTER*1 ndi_di
-      CHARACTER*132 ENVL,M5ERR
+cmh   CHARACTER*132 ENVL,M5ERR
 C
       INTEGER PROMPT,TAMFLG,SPDFLG,VMFLAG,OXYFLG,DSFLAG
       INTEGER ALHFLG
@@ -82,6 +87,17 @@ C
       REAL LEVSTD, LEVIMP, LDTAB
       LOGICAL RFGON
 C
+cmh add includes
+c     INCLUDE 'EFS.EXT'
+      INCLUDE 'CHDIMS3.EXT'
+      INCLUDE 'MBDIMS3.EXT'
+cmh
+cmh add declarations
+      REAL    EFACT( MXEMIS, NVTYPE )
+      INTEGER MODEV                ! Unit number of MOBILE5a input file
+      INTEGER ITEMP                ! Indicates if just temperature has changed
+cmh
+
       COMMON /ALUHAC/ ACEQIP(8,3,2),ACCF(2,3,2,3,2)
       COMMON /ALUHIN/ AC,XLOAD(3),TRAILR(3),ABSHUM,DB,WB
       COMMON /ALUHLT/ XLCF(3,6,3,2),TWCF(3,6,3,2)
@@ -250,6 +266,19 @@ c
       COMMON /SCENE3/ ndi_di
 c
 C
+cmh add 11 lines
+      IOUGEN = MODEV
+      IOUGET = 5
+      IOUREP = 7
+      IOUASK = 6
+      IOUERR = 6
+      IOBAT = 19
+
+      IF( ITEMP .EQ. 1 ) THEN
+          IREAD = 0 ! Reset MOBILE5's indicator for reading TECH12 file
+          ITEMP = 0 ! Indicate that only temperature is changing
+      ENDIF
+cmh
       IF(JCALL.EQ.0) GOTO 10
 C
 C  Subroutine call, setup run.
@@ -295,12 +324,12 @@ c  This is needed because the temperature matrix is wide enough to cause errors.
 c  Therefore, in this modified version, if this count exceeds 50, the run will
 c  NOT abort.
 c
-   20 CLOSE(IOUERR)
-      CALL GETENV("EMS_LOC",ENVL)
-      M5ERR=ENVL(1:LNBLNK(ENVL))//'/M5ERRORS_WARNING_REPORT'
-      OPEN(IOUERR,FILE=M5ERR,STATUS='UNKNOWN')
-      CALL PARSEC(ICY,INERR,*98)
-c   20 CALL PARSEC(ICY,INERR,*98)
+cmh20 CLOSE(IOUERR)
+cmh   CALL GETENV("EMS_LOC",ENVL)
+cmh   M5ERR=ENVL(1:LNBLNK(ENVL))//'/M5ERRORS_WARNING_REPORT'
+cmh   OPEN(IOUERR,FILE=M5ERR,STATUS='UNKNOWN')
+cmh   CALL PARSEC(ICY,INERR,*98)
+   20 CALL PARSEC(ICY,INERR,*98)
 C
 C  50+ errors is (arbritrary) run limit => stop execution.  Otherwise,
 C  one or more input processing errors => abort current scenario & then do
@@ -357,7 +386,44 @@ C
       IF(IOUASK.EQ.0.OR.IOUASK.EQ.9) WRITE(IOUASK,120)
   120 FORMAT(' Preparing output.')
 C
-      CALL OUTPUT(ICY)
+cmh   CALL OUTPUT(ICY)
+cmh
+cmh add  6 lines
+
+C.......  Initialize EFACT
+      DO II = 1, MXEMIS
+          DO JJ = 1, NVTYPE
+
+              EFACT( II,JJ ) = 0.0
+
+          ENDDO
+      ENDDO
+
+      DO JJ = 1,NVTYPE
+
+          EFACT( 1,JJ ) = EFFTP ( 2,JJ )   ! Exhaust CO
+          EFACT( 2,JJ ) = EFFTP ( 3,JJ )   ! Exhaust NOX
+          EFACT( 3,JJ ) = EFEXH ( JJ )     ! Exhaust VOC
+          EFACT( 4,JJ ) = EFEVAP( JJ )     ! Evaporative VOC
+          EFACT( 5,JJ ) = EFRUNL( JJ )     ! Running Loss VOC
+          EFACT( 6,JJ ) = EFRSTL( JJ )     ! Resting Loss VOC
+          EFACT( 7,JJ ) = EFREFL( JJ )     ! Refueling Loss VOC
+
+      ENDDO
+
+      DO JJ = 1,4
+          EFACT( 8, JJ ) = RLGGAL( JJ )     ! Refueling loss VOC g/gal
+          EFACT( 9, JJ ) = GREVP ( 1,JJ )   ! Hot Soak Evap VOC
+          EFACT( 10,JJ ) = GREVP ( 4,JJ )   ! Crankcase Evap VOC
+          EFACT( 11,JJ ) = RSTGPH( JJ )     ! Resting Loss VOC g/hr
+      ENDDO
+
+      EFACT( 9 , NVTYPE ) = GREVP ( 1,NVTYPE )
+      EFACT( 11, NVTYPE ) = GREVP ( 4,NVTYPE )
+      EFACT( 12, NVTYPE ) = RSTGPH( NVTYPE )
+
+cmh end add
+cmh 
       LEAST1=1
       GOTO 20
 C
@@ -380,4 +446,6 @@ C  Calling program can branch to attach a new input file or terminate
 C  calls to MOBILE.
 C
   999 RETURN 1
+
+94300 FORMAT ( A, I5, A, A )
       END
