@@ -146,4 +146,13 @@ C           Dimensioned by MXIDAT
         INTEGER, ALLOCATABLE, PUBLIC :: IDXCOD ( : ) ! index to INVDNAM
         INTEGER, ALLOCATABLE, PUBLIC :: SORTCOD( : ) ! SAROAD number
 
+C.........  Arrays for per CAS reports - dimensioned by NUNIQCAS
+C           The array order is the same as UNIQCAS
+        INTEGER, ALLOCATABLE, PUBLIC :: RECSBYCAS( : ) ! no. records per CAS number
+        REAL   , ALLOCATABlE, PUBLIC :: EMISBYCAS( : ) ! total emissions per CAS number
+
+C.........  Arrays for CAS/pollutant combo reports - dimensioned by NINVTBL
+C           The array order is the same as SORTCAS
+        REAL   , ALLOCATABLE, PUBLIC :: EMISBYPOL( : ) ! total emissions per CAS/pollutant combo
+
         END MODULE MODLISTS
