@@ -1,7 +1,7 @@
 
-        SUBROUTINE MKTMAT( NSRC, NPOL, JDATE, TZONE, NDAY, NDSP, INDD, 
-     &                     ZONES, TPF, MDEX, WDEX, DDEX, MONTH, DAYOW, 
-     &                     LDSPOL, DFAC, TMAT )
+        SUBROUTINE MKTMAT( NSRC, NPOL, JDATE, TZONE, NDAY, ZONES, 
+     &                     TPF, MDEX, WDEX, DDEX, MONTH, DAYOW, 
+     &                     DFAC, TMAT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -51,6 +51,9 @@ C.........  MODULES for public variables
 C.........  This module contains the temporal profile tables
         USE MODTPRO
 
+C.........  This module contains data for day- and hour-specific data
+        USE MODDAYHR
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -64,8 +67,6 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER,INTENT (IN) :: JDATE                 ! date YYYYDDD
         INTEGER,INTENT (IN) :: TZONE                 ! time zone (5 for Eastern)
         INTEGER,INTENT (IN) :: NDAY                  ! act. no. of diurnal profs
-        INTEGER,INTENT (IN) :: NDSP                  ! no. of day-specific obs
-        INTEGER,INTENT (IN) :: INDD ( NDSP )         ! subscripts: day-spec obs
         INTEGER,INTENT (IN) :: ZONES( NSRC )         ! src time zones
         INTEGER,INTENT (IN) :: TPF  ( NSRC )         ! src tmprl treatment flag
         INTEGER,INTENT (IN) :: MDEX ( NSRC, NPOL )   ! monthly profile codes
@@ -73,7 +74,6 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER,INTENT (IN) :: DDEX ( NSRC, NPOL )   ! diurnal profile codes
         INTEGER,INTENT (IN) :: MONTH( 24, 0:23 )     ! source time zone's 1...12
         INTEGER,INTENT (IN) :: DAYOW( 24, 0:23 )     ! source time zone's 1...7
-        LOGICAL,INTENT (IN) :: LDSPOL( NPOL )        ! indicates dy-spec pols
         REAL   ,INTENT (IN) :: DFAC ( 24, NDAY )     ! diurnal profile
         REAL   ,INTENT(OUT) :: TMAT ( NSRC, NPOL, 24 )! temporal-profile coeffs
 
@@ -119,8 +119,8 @@ C.......   Compute TMAT for current group of pollutants
                 L = DDEX( S,V )
 
 C.................  Use day-specific data (no adjustments for month or weekday)
-                J = FIND1( S, NDSP, INDD )
-                IF ( LDSPOL( V ) .AND. J .GT. 0 ) THEN
+                J = FIND1( S, NDYSRC, INDXD )
+                IF ( LDSPOA( V ) .AND. J .GT. 0 ) THEN
 
                     DO H = 1, 24
 
