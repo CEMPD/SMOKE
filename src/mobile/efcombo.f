@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -43,6 +43,9 @@ C
 C****************************************************************************
 
 C...........   MODULES for public variables
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
+
 C.........  This module contains emission factor tables and related
         USE MODEMFAC
 
