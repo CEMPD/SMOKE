@@ -476,6 +476,9 @@ C.............  Local variables
 
             INTEGER          NREC      ! number of output records for each pollutant
 
+    	    REAL    	   MINANN      ! min negative annual value
+    	    REAL    	   MINAVD      ! min negative seasonal/ave day value
+
             LOGICAL     :: FFLAGA = .FALSE.  ! true: first part of formula processed
             LOGICAL     :: FFLAGB = .FALSE.  ! true: 2nd part of formula processed
 
@@ -589,6 +592,8 @@ C.................  Give warning if no emissions data available
                     CYCLE
                 END IF
 
+C.................  Give warning about maximum value of negative numbers
+
 C.................  Set up to open output file...
 C.................  Set the pollutant-specific items for the I/O API header
                 NROWS3D = NREC
@@ -640,6 +645,8 @@ C...............  Count up the number of non-zero records for the computed
 C                 emissions.  No need to reformat SRCPOL or SRCID, because it is 
 C                 sparse storage.  Populate sparse arrays.
                 NREC = 0
+    	    	MINANN = 0.
+    	    	MINAVD = 0.
                 DO S = 1, NSRC
                     IF( COMPUTED( S,1 ) .GT. 0. .OR. 
      &                  COMPUTED( S,2 ) .GT. 0.      ) THEN
@@ -657,6 +664,7 @@ C......................  Check for negative values for annual value
      &                        'to 0. for source:'// CRLF() // BLANK10// 
      &                        BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
+    	    	    	    MINANN = MIN( MINANN, COMPUTED( S,1 ) )
                             COMPUTED( S,1 ) = 0.
                         END IF
 
@@ -670,11 +678,26 @@ C......................  Check for negative values for average day value
      &                        'to 0. for source:'// CRLF() // BLANK10// 
      &                        BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
+    	    	    	    MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
                             COMPUTED( S,2 ) = 0.
                         END IF
 
                     END IF      ! If non-zero value for COMPUTED
                 END DO          ! End loop through sources for sparse storage
+
+C...............  Give warning for that includes negative annual value
+    	    	IF( MINANN .LT. 0. ) THEN
+    	    	    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
+     &                     'value for "'// TRIM( VNAMFORM(2) ) //
+     &                     '" was', MINANN, 'and was reset to 0.'
+    	    	END IF
+
+C...............  Give warning for that includes negative seasonal value
+    	    	IF( MINAVD .LT. 0. ) THEN
+    	    	    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
+     &                     'value for "'// TRIM( VNAMFORM(3) ) //
+     &                     '" was', MINAVD, 'and was reset to 0.'
+    	    	END IF
 
 C...............  Set up output arrays in sparse format....
 C...............  Reset I/O API header information
