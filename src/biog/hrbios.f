@@ -112,7 +112,6 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            CFNOA     !  NO   corr fac for land use AGRI
         REAL            CFOVOC    !  non-isop corr fac
         INTEGER         R, C, L
-        INTEGER         NTERP, NNO, NISO, NOVOC
         REAL            PAR             !  photo. actinic flux (UE/M**2-S)
         REAL            PARZ, SQPARZ, CT, DT
         REAL            TAIR

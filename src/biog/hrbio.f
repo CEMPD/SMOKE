@@ -155,7 +155,6 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            FCLAI
         REAL            BISOP, BMONO, BOVOC        !  biogenic VOC spcs emis.
         REAL            DRCT0, TOTAL, ATTEN
-        INTEGER         NTERP, NNO, NISO, NOVOC
 
         CHARACTER*16    CLDTYPE    !  KUO, KF, no deep cumulus param
         CHARACTER*256   MESG
@@ -585,6 +584,8 @@ C...........   Compute correction factors for NO (see note, above)
             ENDDO
 
         END IF          !  if getatn (sun above horizon) or not
+
+        DEALLOCATE ( CLDATN, COSZEN )
 
         RETURN
 
