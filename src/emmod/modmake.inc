@@ -10,7 +10,18 @@ MODTPRO  = $(MD_OUT)/modtpro.o
 MODSPRO  = $(MD_OUT)/modspro.o
 MODLISTS = $(MD_OUT)/modlists.o
 MODINFO  = $(MD_OUT)/modinfo.o
+MODCNTRL = $(MD_OUT)/modcntrl.o
 MODSURG  = $(MD_OUT)/modsurg.o
+MODEMFAC = $(MD_OUT)/modemfac.o
+MODSTCY  = $(MD_OUT)/modstcy.o
+MODMERGE = $(MD_OUT)/modmerge.o
+MODELEV  = $(MD_OUT)/modelev.o
+MODMET   = $(MB_SRC)/modmet.o
+#
+MODALL   = $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODSPRO) $(MODCNTRL) \
+           $(MODLISTS) $(MODINFO) $(MODMERGE) $(MODSTCY) $(MODSURG) \
+           $(MODEMFAC) $(MODELEV)
+
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
@@ -18,38 +29,68 @@ MODSURG  = $(MD_OUT)/modsurg.o
 # link the modules, the debugger will not be able to assign breakpoints
 # at specific lines in the code
 #
-$(MODSOURC): $(MD_SRC)/modsourc.f
+$(MODSOURC): $(MD_SRC)/modsourc.f  $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modsourc.f
 	if ( test -f modsourc.mod ) ; then mv modsourc.mod $(MD_OUT) ; fi
 	if ( test -f MODSOURC.mod ) ; then mv MODSOURC.mod $(MD_OUT) ; fi
 
-$(MODXREF): $(MD_SRC)/modxref.f
+$(MODXREF): $(MD_SRC)/modxref.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modxref.f
 	if ( test -f modxref.mod ) ; then mv modxref.mod $(MD_OUT) ; fi
 	if ( test -f MODXREF.mod ) ; then mv MODXREF.mod $(MD_OUT) ; fi
 
-$(MODTPRO):  $(MD_SRC)/modtpro.f
+$(MODTPRO):  $(MD_SRC)/modtpro.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modtpro.f
 	if ( test -f modtpro.mod ) ; then mv modtpro.mod $(MD_OUT) ; fi
 	if ( test -f MODTPRO.mod ) ; then mv MODTPRO.mod $(MD_OUT) ; fi
 
-$(MODSPRO): $(MD_SRC)/modspro.f
+$(MODSPRO): $(MD_SRC)/modspro.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modspro.f
 	if ( test -f modspro.mod ) ; then mv modspro.mod $(MD_OUT) ; fi
 	if ( test -f MODSPRO.mod ) ; then mv MODSPRO.mod $(MD_OUT) ; fi
 
-$(MODLISTS): $(MD_SRC)/modlists.f
+$(MODLISTS): $(MD_SRC)/modlists.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modlists.f
 	if ( test -f modlists.mod ) ; then mv modlists.mod $(MD_OUT) ; fi
 	if ( test -f MODLISTS.mod ) ; then mv MODLISTS.mod $(MD_OUT) ; fi
 
-$(MODINFO): $(MD_SRC)/modinfo.f
+$(MODINFO): $(MD_SRC)/modinfo.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modinfo.f
 	if ( test -f modinfo.mod ) ; then mv modinfo.mod $(MD_OUT) ; fi
 	if ( test -f MODINFO.mod ) ; then mv MODINFO.mod $(MD_OUT) ; fi
+
+$(MODCNTRL): $(MD_SRC)/modcntrl.f
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modcntrl.f
+	if ( test -f modcntrl.mod ) ; then mv modcntrl.mod $(MD_OUT) ; fi
+	if ( test -f MODCNTRL.mod ) ; then mv MODCNTRL.mod $(MD_OUT) ; fi
 
 $(MODSURG): $(MD_SRC)/modsurg.f
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modsurg.f
 	if ( test -f modsurg.mod ) ; then mv modsurg.mod $(MD_OUT) ; fi
 	if ( test -f MODSURG.mod ) ; then mv MODSURG.mod $(MD_OUT) ; fi
+
+$(MODEMFAC): $(MD_SRC)/modemfac.f
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modemfac.f
+	if ( test -f modemfac.mod ) ; then mv modemfac.mod $(MD_OUT) ; fi
+	if ( test -f MODEMFAC.mod ) ; then mv MODEMFAC.mod $(MD_OUT) ; fi
+
+$(MODSTCY): $(MD_SRC)/modstcy.f
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modstcy.f
+	if ( test -f modstcy.mod ) ; then mv modstcy.mod $(MD_OUT) ; fi
+	if ( test -f MODSTCY.mod ) ; then mv MODSTCY.mod $(MD_OUT) ; fi
+
+$(MODMERGE): $(MD_SRC)/modmerge.f
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modmerge.f
+	if ( test -f modmerge.mod ) ; then mv modmerge.mod $(MD_OUT) ; fi
+	if ( test -f MODMERGE.mod ) ; then mv MODMERGE.mod $(MD_OUT) ; fi
+
+$(MODELEV): $(MD_SRC)/modelev.f
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modelev.f
+	if ( test -f modelev.mod ) ; then mv modelev.mod $(MD_OUT) ; fi
+	if ( test -f MODELEV.mod ) ; then mv MODELEV.mod $(MD_OUT) ; fi
+
+$(MODMET): $(MB_SRC)/modmet.f
+	$(FC) $(FFLAGS) -c -o $@ $(MB_SRC)/modmet.f
+	if ( test -f modmet.mod ) ; then mv modmet.mod $(MD_OUT) ; fi
+	if ( test -f MODMET.mod ) ; then mv MODMET.mod $(MD_OUT) ; fi
 
