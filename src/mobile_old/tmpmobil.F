@@ -70,6 +70,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETEFILE
         INTEGER         GETNUM
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         INTEGER         INDEX1
         LOGICAL         ISDSTIME
         INTEGER         JULIAN
@@ -85,8 +86,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY           !  day of week (1...7)
 
         EXTERNAL    CHKXLIN, CRLF, CSVNAME, FIND1, FIND2, FIND3,
-     &              GETDATE, GETEFILE, GETNUM, GETYN, INDEX1, ISDSTIME,
-     &              JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE,
+     &              GETDATE, GETEFILE, GETNUM, GETYN, HHMMSS, INDEX1,
+     &              ISDSTIME, JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE,
      &              RDMPLIST, RDTPROF, STR2INT, SEC2TIME, TIME2SEC, 
      &              TRIMLEN, WKDAY
 

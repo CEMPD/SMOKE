@@ -236,7 +236,7 @@ C   begin body of program EMISFAC
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            CALL M3EXIT( 'EMISFAC', 0, 0 'Ending program', 2 )
+            CALL M3EXIT( 'EMISFAC', 0, 0, 'Ending program', 2 )
         END IF
 
 C.........  Turn off verbose NetCDF to elimiate error messages when using
@@ -616,9 +616,9 @@ C...................................................................
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 )
      &                 'Records count for PSI updates       :', NUPDAT,
-     &                 // CRLF() // BLANK5 //
+     &                 CRLF() // BLANK5 //
      &                 'Max dimensioned record-count (MXPSI):', MXPSI,
-     &                 // CRLF() // BLANK5 //
+     &                 CRLF() // BLANK5 //
      &                 'Max record-count exceeded.'
                 CALL M3MSG2( MESG )
             ENDIF
@@ -656,7 +656,7 @@ C.............  Read first line of 2-line records
             ELSEIF( I .GT. MXPREF ) THEN
                 WRITE( MESG, 94010 )
      &                'Maximum number of master PSIs', MXPREF,
-     &                 // CRLF() // BLANK5 //
+     &                 CRLF() // BLANK5 //
      &                 '  exceeded at line', IREC, ', file MPREF'
                 CALL M3MESG( MESG )
 
@@ -687,10 +687,10 @@ C                       the legal number of other PSIs
                         EFLAG = .TRUE.
 
                         WRITE( MESG, 94010 ) 
-     &                   'Problem at line', IREC, ', file MPREF:'
-     &                   // CRLF() // BLANK5 // '  ' //
+     &                   'Problem at line', IREC, ', file MPREF:' //
+     &                   CRLF() // BLANK5 // '  ' //
      &                   'Attmptd # PSIs used in combo        :',MPTYPE,
-     &                   // CRLF() // BLANK5 // '  ' //
+     &                   CRLF() // BLANK5 // '  ' //
      &                   'Max     # PSIs used in combo (MXNPT):',MXNPT
                         CALL M3MESG( MESG )
 
@@ -942,7 +942,7 @@ C...................................................................
 
             EFLAG = .TRUE.
             WRITE( MESG, 94010 )
-     &       'Records count of temperature indices:', NTREF ,
+     &       'Records count of temperature indices:', NTREF,
      &       CRLF() // BLANK5 //
      &       'Max dimensioned record-count (MXPSI):', MXPSI,
      &       CRLF() // BLANK5 //
@@ -956,19 +956,19 @@ C.........  is the same as the number in MPLIST.  If not - give warning.
         IF( MPNUM .NE. NTREF ) THEN
 
             WRITE( MESG,94010 ) 
-     &                 'The number of entries in MEFTEMP is', NTREF 
+     &                 'The number of entries in MEFTEMP is', NTREF,
      &                 CRLF() // BLANK5 //
      &                 'The number of entries in MPLIST  is', MPNUM
             CALL M3MSG2( MESG )
 
             WRITE( MESG,94010 ) 
-     &        '*****************************************************',
+     &        '*****************************************************'//
      &         CRLF() // BLANK5 //
-     &        'WARNING: The parameter scheme indices in MEFTEMP are',
+     &        'WARNING: The parameter scheme indices in MEFTEMP are'//
      &         CRLF() // BLANK5 //
-     &        '         inconsistent with those in the MPLIST file',
+     &        '         inconsistent with those in the MPLIST file'//
      &         CRLF() // BLANK5 //
-     &        '*****************************************************',
+     &        '*****************************************************'
             CALL M3MSG2( MESG )
 
         ENDIF

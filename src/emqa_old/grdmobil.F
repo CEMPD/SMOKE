@@ -102,7 +102,7 @@ C   begin body of program GRDMOBIL
         
         LDEV = INIT3()
         
-        WRITE( *,92000 )  )
+        WRITE( *,92000 )
      &  ' ',
      &  'Program GRDMOBIL to take a sorted source level mobile source ',
      &  'emissions file and a gridding-transform matrix computed by',

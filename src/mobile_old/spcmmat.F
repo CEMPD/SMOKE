@@ -317,7 +317,7 @@ C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK
 C.......   Read/sort the SPECIATION PROFILES FILE
 C...............   ASSUMPTIONS: CSVNAME has provided model species list (EMNAM)
 
-        CALL M3MSG2( 'Reading SPECIATION PROFILES file...' ) )
+        CALL M3MSG2( 'Reading SPECIATION PROFILES file...' )
 
         
         NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, MXSPRO, 
@@ -369,7 +369,7 @@ C.......   volatile pollutant in inventory.
  
         ENDIF
 
-        CALL M3MSG2( 'Reading VOLATILE CONVERSION file...' ) )
+        CALL M3MSG2( 'Reading VOLATILE CONVERSION file...' )
 
 C.......   If needed, read the volatile pollutant conversion file
         IF( KFLAG ) THEN
@@ -809,7 +809,7 @@ C...........   Then if that fails, try by ASC only.
             EFLAG = .TRUE.      !  if you get to here:  no match found
 
             WRITE( MESG,94010 ) 
-                'Default XREF required, but none found for' //
+     &          'Default XREF required, but none found for' //
      &          CRLF() // BLANK5 //
      &          '  FIP:', FIP, 'RDT:', RDT, 'LNK:', LNK, 
      &            'VHT:', VHT, 'EMT:', EMT

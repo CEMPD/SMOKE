@@ -1134,7 +1134,7 @@ C........... REGION
 
             WRITE( MESG,94010 ) 'Altitude setting:', NIDX( IP,9 ),
      &           CRLF() // BLANK5 //
-     &           'LEV program selection:', CIDX( IP,10 )
+     &           'LEV program selection:', CIDX( IP,10 ),
      &           CRLF() // BLANK5 //
      &             'Illegal combination of parameters!'
             CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )

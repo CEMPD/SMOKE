@@ -244,7 +244,7 @@ C.........  Loop for prompting for temperature data files:
      &    'Now enter the list of logical file names for surface' //
      &    CRLF() // BLANK5 //
      &    'temperature input files...' // CRLF() // CRLF() // BLANK5 //
-     &    'NOTE: Time stamps assumed to be in GMT.',
+     &    'NOTE: Time stamps assumed to be in GMT.'
 
         CALL M3MSG2( MESG )
 
@@ -651,7 +651,7 @@ C                  .......  set TMIN from TMAX, and adjust down on interval
 
                         WRITE( MESG, 94020 ) 'Temperature: TMAX - TMIN'
      &                         // ' is > 40 for source', S, '.' //
-     &                         CRLF // BLANK5 // 
+     &                         CRLF() // BLANK5 // 
      &                         '   Changing TMIN from', MSAV, 'to', TMIN
                         CALL M3MESG( MESG )
 

@@ -317,7 +317,7 @@ C.......   Transform and write out mobile source emissions values:
             CALL M3MSG2( 'Calculating and writing ' //
      &                   'controlled speciated gridded emissions...' )
         ELSE IF ( CONTROLFLAG ) THEN
-     &      CALL M3MSG2( 
+            CALL M3MSG2( 
      &       'Calculating controlled speciated gridded emissions...' )
         ELSE IF ( OUTPUTFLAG ) THEN
             CALL M3MSG2(
