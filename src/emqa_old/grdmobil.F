@@ -7,9 +7,8 @@ C***********************************************************************
 C  program body starts at line 104
 C
 C  DESCRIPTION:
-C       Use gridding-transform, model-speciation, and control matrices 
-C       from programs GRDMMAT, SPCMMAT, and CTLMMAT to grid, speciate,
-C       and control source-level area source emissions files.
+C       Use gridding-transform from program GRDMMAT to grid time-stepped,
+C       source level mobile source emission files.
 C
 C  PRECONDITIONS REQUIRED:  
 C       M3IO source-level area source emissions in canonical order used
@@ -27,7 +26,6 @@ C***********************************************************************
 
 C...........   INCLUDES:
         
-        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
         INCLUDE 'MBDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
@@ -87,10 +85,10 @@ C   begin body of program GRDMOBIL
         
         WRITE( *,92000 ) 
      &  ' ',
-     &  'Program GRDMOBIL to take a sorted source level area source ',
+     &  'Program GRDMOBIL to take a sorted source level mobile source ',
      &  'emissions file and a gridding-transform matrix computed by',
      &  'program GRDMMAT, and produce gridded vehicle-typed, mode',
-     &  'specific VMT.  The output time step structure of the ',
+     &  'specific emissions.  The output time step structure of the ',
      &  'gridded file will be the same as the time step structure of',
      &  'the input area source emissions file.',
      &  ' '
@@ -123,7 +121,7 @@ C.......   output files.
      &          FSREAD3, 'MGMAT', 'GRDMOBIL' )
 
         ANAME = PROMPTMFILE( 
-     &          'Enter logical name for MOBIL SOURCE file',
+     &          'Enter logical name for TIME-STEPPED MOBILE EMIS file',
      &          FSREAD3, 'MTMP', 'GRDMOBIL' )
 
 C.......   Build description of output file, and optionally open it:
