@@ -1,6 +1,6 @@
 
         SUBROUTINE WRM6INPUT( GRPLIST, NLINES, SDEV, MDEV, 
-     &                        TEMPS, NCOUNTY, NSTEPS, VOLNAM, 
+     &                        TEMPS, NCOUNTY, VOLNAM, 
      &                        SCENNUM, SRCNUM )
 
 C.........  MODULES for public variables
@@ -31,100 +31,106 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &            WRSPDVMT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,      INTENT (IN)  :: GRPLIST( NLINES,3 )          ! GROUP file contents
-        INTEGER,      INTENT (IN)  :: NLINES                       ! no. lines in GROUP file
-        INTEGER,      INTENT (IN)  :: SDEV                         ! SPDSUM file unit no.
-        INTEGER,      INTENT (IN)  :: MDEV                         ! M6INPUT file unit no.
-        REAL,         INTENT (IN)  :: TEMPS( NCOUNTY, 0:NSTEPS-1 ) ! temps per county
-        INTEGER,      INTENT (IN)  :: NCOUNTY                      ! no. counties in temps array
-        INTEGER,      INTENT (IN)  :: NSTEPS                       ! no. time steps in temps array
-        CHARACTER(*), INTENT (IN)  :: VOLNAM                       ! volatile pollutant name
-        INTEGER,      INTENT (OUT) :: SCENNUM                      ! total number of scenarios
-        INTEGER,      INTENT (OUT) :: SRCNUM                       ! total number of sources
+        INTEGER,      INTENT (IN)  :: GRPLIST( NLINES,3 )   ! GROUP file contents
+        INTEGER,      INTENT (IN)  :: NLINES                ! no. lines in GROUP file
+        INTEGER,      INTENT (IN)  :: SDEV                  ! SPDSUM file unit no.
+        INTEGER,      INTENT (IN)  :: MDEV                  ! M6INPUT file unit no.
+        REAL,         INTENT (IN)  :: TEMPS( NCOUNTY, 24 )  ! temps per county
+        INTEGER,      INTENT (IN)  :: NCOUNTY               ! no. counties in temps array
+        CHARACTER(*), INTENT (IN)  :: VOLNAM                ! volatile pollutant name
+        INTEGER,      INTENT (OUT) :: SCENNUM               ! total number of scenarios
+        INTEGER,      INTENT (OUT) :: SRCNUM                ! total number of sources
 
 C...........   Local allocatable arrays
         CHARACTER(LEN=150),     ALLOCATABLE :: M6SCEN( : )    ! M6 scenario file
-        INTEGER, ALLOCATABLE :: CTYLIST( : )   ! list of counties in temperature file
+        INTEGER, ALLOCATABLE, SAVE :: CTYLIST( : )   ! list of counties in temperature file
 
 C...........   Other local variables
         INTEGER I, J, K                   ! counters and indices                     
         
-        INTEGER IOS                       ! I/O status
-        INTEGER JYEAR                     ! emission factor year
-        INTEGER NLINESCEN                 ! number of lines in M6 scenario file
-        INTEGER NLINESPD                  ! number of lines in speed summary file
-        INTEGER FDEV                      ! unit no. for M6 scenario file
-        INTEGER PREVCTY                   ! previous county number in SPDSUM file
-        INTEGER CURRCTY                   ! current county number in SPDSUM file
-        INTEGER CTYNUM                    ! number of counties in SPDSUM file
-        INTEGER CTYPOS                    ! position of current county in CTYLIST
-        INTEGER STLINE                    ! starting line in SPDSUM for current county
-        INTEGER CURRROAD                  ! road type from SPDSUM file
-        INTEGER PREVROAD                  ! previous road type
-        INTEGER STSCEN                    ! starting line of scenario data in scenario file
-        INTEGER LASAFLAG                  ! local-as-arterial setting
+        INTEGER          IOS              ! I/O status
+        INTEGER, SAVE :: JYEAR            ! emission factor year
+        INTEGER          NLINESCEN        ! number of lines in M6 scenario file
+        INTEGER, SAVE :: NLINESPD         ! number of lines in speed summary file
+        INTEGER          FDEV             ! unit no. for M6 scenario file
+        INTEGER          PREVCTY          ! previous county number in SPDSUM file
+        INTEGER          CURRCTY          ! current county number in SPDSUM file
+        INTEGER          CTYNUM           ! number of counties in SPDSUM file
+        INTEGER          CTYPOS           ! position of current county in CTYLIST
+        INTEGER          STLINE           ! starting line in SPDSUM for current county
+        INTEGER          CURRROAD         ! road type from SPDSUM file
+        INTEGER          PREVROAD         ! previous road type
+        INTEGER          STSCEN           ! starting line of scenario data in scenario file
+        INTEGER          LASAFLAG         ! local-as-arterial setting
         
         REAL    CURRSPD                   ! speed value from SPDSUM file
         REAL    PREVSPD                   ! previous speed
 
-        LOGICAL :: EFLAG      = .FALSE.   ! true: error found
-        LOGICAL :: NEWSCEN    = .FALSE.   ! true: print current and create a new scenario
+        LOGICAL      :: EFLAG   = .FALSE. ! true: error found
+        LOGICAL      :: NEWSCEN = .FALSE. ! true: print current and create a new scenario
+        LOGICAL,SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
         
         CHARACTER(LEN=FIPLEN3) CURRCOUNTY            ! current county FIPS code
         CHARACTER(LEN=FIPLEN3) REFCOUNTY             ! ref. county FIPS code for curr. county
         CHARACTER(LEN=6)       SCENARIO              ! scenario number
         
-        CHARACTER(LEN=60)      SPDDIR   ! directory for creating speed vmt files
-        CHARACTER(LEN=80)      SPDFILE  ! name of SPEED VMT file for M6 input file
-        CHARACTER(LEN=300)     SCENFILE !  M6 scenario file name
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(LEN=60),SAVE :: SPDDIR   ! directory for creating speed vmt files
+        CHARACTER(LEN=80)         SPDFILE  ! name of SPEED VMT file for M6 input file
+        CHARACTER(LEN=300)        SCENFILE !  M6 scenario file name
+        CHARACTER(LEN=300)        MESG     !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'WRM6INPUT'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine WRM6INPUT
 
-C.........  Get speed vmt directory information from the environment
-        MESG = 'Path where speed vmt files for MOBILE6 will be written'
-        CALL ENVSTR( 'SMK_SPDPATH', MESG, '.', SPDDIR, IOS )
-
-        IF( IOS /= 0 ) THEN
-            MESG = 'WARNING: Speed vmt files being placed '//
-     &             'executable directory because ' // CRLF() //
-     &             BLANK10 // 'environment variable SMK_SPDPATH '//
-     &             'is not set properly'
-            CALL M3MSG2( MESG )
-        END IF
-        
-C.........  Get the year for computing the emission factors
-        MESG = 'Emission factors year'
-        JYEAR = ENVINT( 'EF_YEAR', MESG, 1988, IOS )
-
-C.........  Write message about which year emission factors will be for
-        WRITE( MESG,94010 ) 
-     &         'NOTE: Emission factors are for year', JYEAR
-        CALL M3MSG2( MESG )
-
-C.........  Get number of lines in speed summary file
-        NLINESPD = GETFLINE( SDEV, 'Speed summary file' )
-        
-C.........  Read county list from SPDSUM file
-        ALLOCATE( CTYLIST( NCOUNTY ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CTYLIST', PROGNAME )
-
-        PREVCTY = 0
-        CTYNUM  = 0
-
-        DO I = 1, NLINESPD
-            READ( SDEV,93010 ) CURRCTY
+        IF( INITIAL ) THEN
+        	
+C.............  Get speed vmt directory information from the environment
+            MESG = 'Path where speed vmt files for ' //
+     &             'MOBILE6 will be written'
+            CALL ENVSTR( 'SMK_SPDPATH', MESG, '.', SPDDIR, IOS )
             
-            IF( CURRCTY /= PREVCTY ) THEN
-                CTYNUM = CTYNUM + 1
-                CTYLIST( CTYNUM ) = CURRCTY
+            IF( IOS /= 0 ) THEN
+                MESG = 'WARNING: Speed vmt files being placed '//
+     &                 'executable directory because ' // CRLF() //
+     &                 BLANK10 // 'environment variable SMK_SPDPATH '//
+     &                 'is not set properly'
+                CALL M3MSG2( MESG )
             END IF
             
-            PREVCTY = CURRCTY
-        END DO
+C.............  Get the year for computing the emission factors
+            MESG = 'Emission factors year'
+            JYEAR = ENVINT( 'EF_YEAR', MESG, 1988, IOS )
+            
+C.............  Write message about which year emission factors will be for
+            WRITE( MESG,94010 ) 
+     &             'NOTE: Emission factors are for year', JYEAR
+            CALL M3MSG2( MESG )
+            
+C.............  Get number of lines in speed summary file
+            NLINESPD = GETFLINE( SDEV, 'Speed summary file' )
+            
+C.............  Read county list from SPDSUM file
+            ALLOCATE( CTYLIST( NCOUNTY ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CTYLIST', PROGNAME )
+            
+            PREVCTY = 0
+            CTYNUM  = 0
+            
+            DO I = 1, NLINESPD
+                READ( SDEV,93010 ) CURRCTY
+                
+                IF( CURRCTY /= PREVCTY ) THEN
+                    CTYNUM = CTYNUM + 1
+                    CTYLIST( CTYNUM ) = CURRCTY
+                END IF
+                
+                PREVCTY = CURRCTY
+            END DO
+        
+            INITIAL = .FALSE.
+        END IF
         
         REWIND( SDEV )
 
@@ -192,7 +198,7 @@ C.............  Find county in CTYLIST array
             END IF
             
 C.............  Replace temperatures in M6 scenario
-            CALL RPLCTEMP( CURRCOUNTY, TEMPS, NCOUNTY, NSTEPS, 
+            CALL RPLCTEMP( CURRCOUNTY, TEMPS, NCOUNTY, 
      &                     M6SCEN, NLINESCEN, CTYPOS )
 
 C.............  Write run level commands to M6 input file
@@ -202,17 +208,17 @@ C.............  Write run level commands to M6 input file
             END DO
 
 C.............  Select M6 output based on volatile pollutant name            
-            SELECT CASE( VOLNAM( 1:LEN_TRIM( VOLNAM ) )
+            SELECT CASE( VOLNAM( 1:LEN_TRIM( VOLNAM ) ) )
             CASE ( 'THC' )
-                WRITE( MDEV,93000 ) 'EXPRESS HC AS THC  :' // CRLF()
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS THC  :'
             CASE ( 'NMH' )
-                WRITE( MDEV,93000 ) 'EXPRESS HC AS NMHC :' // CRLF()
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS NMHC :'
             CASE ( 'TOG' )
-                WRITE( MDEV,93000 ) 'EXPRESS HC AS TOG  :' // CRLF()
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS TOG  :'
             CASE ( 'NMO' )
-                WRITE( MDEV,93000 ) 'EXPRESS HC AS HMOG :' // CRLF()
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS HMOG :'
             CASE DEFAULT
-                WRITE( MDEV,93000 ) 'EXPRESS HC AS VOC  :' // CRLF()
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS VOC  :'
             END SELECT
 
 C.............  Find starting line for current county in SPDSUM file
@@ -250,7 +256,7 @@ C.............  Read speeds and sources
                 IF( PREVROAD == FREEWAY .AND. CURRROAD == LOCAL ) THEN
                     NEWSCEN = .TRUE.
                 END IF
-              
+
                 IF( NEWSCEN ) THEN               	
                 	
 C.....................  Create speed vmt file
