@@ -1,5 +1,44 @@
 
         PROGRAM MBSETUP
+
+C***********************************************************************
+C  program body starts at line 115
+C
+C  DESCRIPTION:
+C       Sets up necessary data for MOBILE6 runs. Reads in MCREF and 
+C       MVREF files. Removes any counties outside of the grid. Creates
+C       the SPDSUM file to assocate each source with a road type and speed.
+C       Groups counties by requested temporal averaging types.
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
         
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
@@ -7,7 +46,8 @@ C.........  This module contains the inventory arrays
 
 C.........  This module contains the information about the source category
         USE MODINFO
-        
+
+C.........  This module is used for MOBILE6 setup information        
         USE MODMBSET
 
         IMPLICIT NONE
@@ -63,7 +103,7 @@ C.........   Other local variables
         INTEGER          NMATX             ! size of ungridding matrix
         INTEGER          CURRCTY           ! current county FIPS code
         INTEGER          PREVCTY           ! previous county code
-        INTEGER          NUMCTY            ! no. counties inside grid
+        INTEGER          NGRDCTY           ! no. counties inside grid
         
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         
@@ -190,24 +230,24 @@ C.........  Create list of counties inside grid
         TMPCTY  = 0   ! array
         PREVCTY = 0
         CURRCTY = 0
-        NUMCTY  = 0
+        NGRDCTY = 0
 
         DO S = 1, NSRC
             IF( UMAT( S ) == 0 ) CYCLE
             
             CURRCTY = IFIP( S )
             IF( CURRCTY /= PREVCTY ) THEN
-                NUMCTY = NUMCTY + 1
-                TMPCTY( NUMCTY ) = CURRCTY
+                NGRDCTY = NGRDCTY + 1
+                TMPCTY( NGRDCTY ) = CURRCTY
                 PREVCTY = CURRCTY
             END IF            
         END DO
 
-        ALLOCATE( GRIDCTY( NUMCTY ), STAT=IOS )
+        ALLOCATE( GRIDCTY( NGRDCTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRIDCTY', PROGNAME )
         GRIDCTY = 0   ! array
         
-        DO S = 1, NUMCTY
+        DO S = 1, NGRDCTY
             GRIDCTY( S ) = TMPCTY( S )
         END DO
         	
@@ -217,7 +257,7 @@ C.........  Read the county cross-reference file
         MESG = 'Reading county cross-reference file...'
         CALL M3MSG2( MESG )
         
-        CALL RDMCREF( XDEV, GRIDCTY, NUMCTY )
+        CALL RDMCREF( XDEV, GRIDCTY, NGRDCTY )
         
 C.........  Read the reference county settings file
         MESG = 'Reading reference county settings file...'
