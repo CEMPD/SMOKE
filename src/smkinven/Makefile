@@ -2,8 +2,8 @@
 # Path	  $Source$
 # Date	  $Date$ 
 #
-LIBS		  = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG	  = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS		  = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG	  = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 
 LIBPATH		  = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
@@ -37,8 +37,7 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o	\
 	srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
 	setnonhap.o rdsrcidaar.o rdsrcntiar.o rddataidaar.o rdinvdata.o rddatantiar.o \
 	procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
-	rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
-	rddataemsar.o
+	rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o
 #	 
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -51,6 +50,8 @@ smkinven.debug: $(RAW) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(RAW) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgnar2pt.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnar2pt.f
@@ -65,13 +66,13 @@ gethdr.o: $(MODINFO) $(MODLISTS) $(MODSTCY)
 getpdinfo.o: $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ getpdinfo.f
 grwinven.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ grwinven.f
+	$(FC) $(FFLAGS) -c -o $@ grwinven.F
 initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ initinfo.f
 opengrwout.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ opengrwout.f
+	$(FC) $(FFLAGS) -c -o $@ opengrwout.F
 openinvout.o: $(MODLISTS) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ openinvout.f
+	$(FC) $(FFLAGS) -c -o $@ openinvout.F
 openpdout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openpdout.f
 procar2pt.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODAR2PT)
@@ -80,8 +81,6 @@ procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ procinven.f
 rdcempd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ rdcempd.f
-rddataemsar.o: $(MODINFO) $(MODLISTS)
-	$(FC) $(FFLAGS) -c -o $@ rddataemsar.f
 rddataemsmb.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rddataemsmb.f
 rddataidaar.o: $(MODINFO)
@@ -111,11 +110,9 @@ rdgrdapi.o: $(MODSOURC) $(MODINFO)
 rdinvdata.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdinvdata.f
 rdinvsrcs.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
-	$(FC) $(FFLAGS) -c -o $@ rdinvsrcs.f
+	$(FC) $(FFLAGS) -c -o $@ rdinvsrcs.F
 rdlooppd.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdlooppd.f
-rdsrcemsar.o: $(MODLISTS)
-	$(FC) $(FFLAGS) -c -o $@ rdsrcemsar.f
 rdsrcemsmb.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsrcemsmb.f
 rdsrcidaar.o:
@@ -139,7 +136,7 @@ wrepinven.o: $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODAR2PT)
 wrinvchr.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrinvchr.f
 wrinvemis.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ wrinvemis.f
+	$(FC) $(FFLAGS) -c -o $@ wrinvemis.F
 wrinvpol.o: $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ wrinvpol.f
 wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
@@ -148,4 +145,11 @@ wrptref.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrptref.f
 
 clean:
-	/bin/rm -f *.o
+	/bin/rm -f *.o 
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)
