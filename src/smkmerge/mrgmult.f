@@ -43,7 +43,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC
+        USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC, PINGFLAG
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVFLTR
@@ -104,13 +104,13 @@ C   begin body of subroutine MRGMULT
 
         FG0 = FG / FT
 
-C.........  If the sources are point sources and their are elevated sources,
-C           transfer ELEVADJ to ELEVADJ
-        IF( NSRC .EQ. NPSRC .AND. ELEVFLAG ) THEN
+C.........  If the sources are point sources and there are elevated sources,
+C           transfer ELEVFLTR to ELEVADJ
+        IF( NSRC .EQ. NPSRC .AND. (ELEVFLAG .OR. PINGFLAG) ) THEN
 
             ELEVADJ( 1:NPSRC ) = ELEVFLTR( 1:NPSRC )
 
-        ELSE IF( ELEVFLAG ) THEN
+        ELSE
 
             ELEVADJ = 0.
 
