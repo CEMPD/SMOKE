@@ -160,7 +160,7 @@ C.........  Weight monthly profiles by the number of days in a month
                 FAC = FAC + MWFAC( K ) * MONFAC( K,I )
             END DO
 
-            FAC = TOT / FAC
+            IF( FAC .GT. 0 ) FAC = TOT / FAC
 
             DO K = 1, 12
                 MONFAC( K,I ) = FAC * MONFAC( K,I )
