@@ -44,14 +44,16 @@ C.........  This module contains the major data structure and control flags
         IMPLICIT NONE
 
 C.........  INCLUDES:
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
         INCLUDE 'FLTERR.EXT'    !  error filter statement function
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
+        CHARACTER*2  CRLF
         INTEGER      GETIFDSC  
-        EXTERNAL     GETIFDSC
+        EXTERNAL     CRLF, GETIFDSC
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN) :: CATDESC  ! category descriptions
@@ -65,7 +67,7 @@ C...........   Local variables
 
         LOGICAL, SAVE :: GFLAG = .FALSE.  ! true: grid settings have been init
 
-        CHARACTER*20    FILDESC  ! description of input file
+        CHARACTER*25    FILDESC  ! description of input file
         CHARACTER*300   MESG     ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'CHKGRID' ! program name
@@ -83,6 +85,11 @@ C.............  Set tmp rows, columns, and total cells depending on file type
             NC = NCOLS3D
             NR = NROWS3D
             FILDESC = 'gridded file'
+
+        ELSEIF( FTYPE .EQ. 'GRIDDESC' ) THEN
+            NC = NCOLS3D
+            NR = NROWS3D
+            FILDESC = 'grid description file'
 
         ELSE
             MESG = 'INTERNAL ERROR: File type "' // FTYPE // 
@@ -112,9 +119,9 @@ C               existing to this file.
      &           FLTERR( P_GAM, SNGL( P_GAM3D ) )      ) THEN
 
                 EFLAG = .TRUE.
-                MESG = 'Grid parameters in ' // CATDESC // ' ' //
-     &                 FILDESC( 1:L ) // ' are not consistent ' //
-     &                 'with initialized values.'
+                MESG = 'ERROR: Grid parameters in ' // CATDESC // ' ' //
+     &                 FILDESC( 1:L ) // ' are inconsistent '// CRLF()//
+     &                 BLANK10 // 'with initialized values.'
                 CALL M3MSG2( MESG )
 
             END IF
