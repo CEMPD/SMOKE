@@ -975,6 +975,9 @@ C...........   Report errors, or if GFLAG, write out matrix to file:
      &       'NMATX dimensioned:', NMATX, CRLF() // BLANK5 //
      &       'NMATX    required:', T
 
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'GRDAMAT', 0,0, 'Bad executable program.', 3 )
+
         ELSE IF ( EFLAG ) THEN          ! other errors:  missing codes?
 
             CALL M3EXIT( 'GRDAMAT', 0,0, 'Missing surrogate codes', 3 )
