@@ -508,6 +508,11 @@ C.........................  Loop through cells in this county
 
         END DO
 
+C.........  Reset number of surrogate records stored in the module with
+C           the correct number after reading file and removing records that
+C           are outside the subgrid (if any)
+        NSRGREC = NSRGALL
+
         IF( RFLAG ) THEN
             MESG = 'WARNING: Surrogates renormalized when total ' //
      &             'of surrogates by county were ' // CRLF() //
