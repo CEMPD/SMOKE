@@ -62,8 +62,10 @@ C.........  Units for speciation matrices
         CHARACTER*16, PARAMETER :: SMASUNIT = 'gm/ton'
         CHARACTER*16, PARAMETER :: SMOLUNIT = 'moles/ton'
 
-C.........  Packet names
+C.........  Packet names and settings
         CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
+        CHARACTER*4 , PARAMETER :: MASSSTR  = 'Mass'
+        CHARACTER*4 , PARAMETER :: MOLESTR  = 'Mole'
 
 C.........  Environment variables
         CHARACTER*16, PARAMETER :: WARNSET = 'SMK_MAXWARNING  '
@@ -120,7 +122,7 @@ C.........  Variable dimensioning components, independent
      &              , NARPPOL3 = 6
      &              , NARVAR3  = 4
      &              , NMBVAR3  = 11
-     &              , NMBPPOL3 = 1   
+     &              , NMBPPOL3 = 2   
      &              , NPTPPOL3 = 7
      &              , NPTVAR3  = 11
      &              )
