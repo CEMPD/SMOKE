@@ -41,6 +41,9 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
 
+C.........  This module contains the global variables for uncertainty
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -290,6 +293,19 @@ C           emissions or not, and controlled emissions or not do not work yet
         IF( SPCIOS .GE. 0 ) THEN
             MESG = 'NOTE: MRG_REPSPC_YN control is not yet functional.'
             CALL M3MSG2( MESG )
+        END IF
+
+C.........  Get the gridding unceratinty flag
+        GUCFLAG = ENVYN( 'SMK_GRDMAT_UNCERT', 'Mode for SMOKE grdmat',
+     &                  .FALSE., IOS )
+
+C.........  Get the temporal unceratinty flag
+        TUCFLAG = ENVYN( 'SMK_TEMPORAL_UNCERT', 
+     &                  'Mode for SMOKE temporal', .FALSE., IOS )
+
+        IF( GUCFLAG .OR. TUCFLAG ) THEN
+            MESG = 'Realizations to draw'
+            DRAWRLZN = ENVINT( 'SMK_REALIZATIONS', MESG, 1 , IOS )
         END IF
 
         RETURN
