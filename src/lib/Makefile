@@ -9,6 +9,7 @@
 
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
+include $(FSDIR)/modmake.inc
 
 FILES_A = \
   applumat.o   evalcrit.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
@@ -117,8 +118,8 @@ getctgry.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getctgry.f
 getformt.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getformt.f
-getsinfo.o: $(MODINFO)
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ getsinfo.f
+getsinfo.o: $(MODINFO) $(MODFILESET)
+	$(FC) $(FFLAGS) -c -o $@ getsinfo.f
 gettzone.o: $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ gettzone.f
 getvmix.o: $(MODXREF) $(MODINFO)
@@ -144,9 +145,9 @@ rdeproc.o: $(MODEMFAC) $(MODINFO)
 rdgref.o : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdgref.f
 rdinvchr.o: $(MODSOURC) 
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ rdinvchr.f
-rdinvpol.o:
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ rdinvpol.f
+	$(FC) $(FFLAGS) -c -o $@ rdinvchr.f
+rdinvpol.o: $(MODFILESET) 
+	$(FC) $(FFLAGS) -c -o $@ rdinvpol.f
 rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
 rdorsdsc.o : $(MODLISTS)
@@ -158,7 +159,9 @@ rdsccdsc.o : $(MODLISTS)
 rdsconv.o : $(MODLISTS) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsconv.f
 rdsmat.o : $(MODFILESET)
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ rdsmat.f
+	$(FC) $(FFLAGS) -c -o $@ rdsmat.f
+rdsprof.o  : $(MODSPRO)
+	$(FC) $(FFLAGS) -c -o $@ rdsprof.f
 rdsref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsref.f
 rdsrg.o   : $(MODSURG) $(MODGRID)
