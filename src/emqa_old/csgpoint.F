@@ -20,6 +20,7 @@ C       Models-3 I/O; GETYN, PROMPTMFILE, TRIMLEN
 C
 C  REVISION  HISTORY:
 C       Prototype  7/95 by CJC.
+C       Report added 4/97 by JMV.
 C
 C***********************************************************************
 C
@@ -61,20 +62,25 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
         LOGICAL         GETYN
+        LOGICAL         ENVYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
+        INTEGER         PROMPTFFILE
         CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         INTEGER         WKDAY
+        REAL            YR2DAY
 
         EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
-     &                  PROMPTMFILE, TRIMLEN, WKDAY
-
+     &                  PROMPTMFILE, TRIMLEN, WKDAY, YR2DAY,
+     &                  PROMPTFFILE, ENVYN
 C...........   PARAMETER
 
         CHARACTER*16    NONE
         PARAMETER     ( NONE = 'NONE' )
+        REAL GM2TON
+        PARAMETER ( GM2TON = 1.102311E-06 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point Sources input and output arrays (one variable at a time)
@@ -108,21 +114,44 @@ C...........   form "<INV-SPC-NAME>to<MODEL-SPC-NAME>")
 
         CHARACTER*16    INVNAME( NMPOL )	!  inv-spc part of name
 
+C...........   Inventory arrays
+        INTEGER         IFIP  ( NPSRC )   ! FIPs  code for each source
+        INTEGER         INVYR ( NPSRC )   ! Inventory year code for each source
+        INTEGER         ISPTR ( NPSRC )   ! Pointer for each state
+        INTEGER         STATES( NPSID )   ! Unique list of state IDs
+
+C...........   Report arrays
+        REAL            EMSUM( NPSID, NMPOL ) ! Summed emissions by state
+
 C...........   Other local variables
 
-        INTEGER         JDATE, JTIME, TSTEP
+        REAL            FAC     !  temporary conversion factor
+
+        INTEGER         BTIME   !  beginning time of day in run
+        INTEGER         IOS
+        INTEGER         NSTA               ! actual number of states
+
+        INTEGER         INO, INO2          ! position in list of pollutants
+        INTEGER         STA                ! temporay state code
+
+        INTEGER         LDATE, LTIME, JDATE, JTIME, TSTEP
+        INTEGER         RDEV               ! output report unit number
+        INTEGER         LSTA               ! previous state code
+
         INTEGER         NSTEPS
         INTEGER         LDEV
         INTEGER         I, J, K, F, S, T, V
 
-        LOGICAL         CONTROLFLAG, OUTPUTFLAG
+        LOGICAL         CONTROLFLAG, OUTPUTFLAG, ST_REPORT
 
         CHARACTER*16    PNAME   !  logical name for point-source      input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
         CHARACTER*16    CNAME   !  logical name for control    matrix input file
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
+        CHARACTER*16    INAME   !  logical name for inventory input file
 
+        CHARACTER*8     REPNAM  !  contains default logical report output name
         CHARACTER*5     OUTNAM  !  contains default logical output name
         CHARACTER*16    SCRBUF  !  scratch buffer
         CHARACTER*16    UNITS   !  temporary units buffer
@@ -163,6 +192,10 @@ C   begin body of program CSGPOINT
             CALL M3EXIT( 'CSGPOINT', 0, 0, 'Ending Program', 2 )
         END IF
 
+C.......   Get environment variable settings
+        ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
+
 
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, point source file, 
@@ -201,10 +234,123 @@ C.......   Build description of output file, and optionally open it:
 
         END IF
 
+        JDATE = SDATE3D
+        JTIME = STIME3D
+        TSTEP = TSTEP3D
+
+C.........  Annual inventory file as input with controls
+        IF ( TSTEP .EQ. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Point gridded, controlled model species'
+            OUTNAM = 'PGSC'
+            REPNAM = 'PGSCREP'
+            UNITS  = 'mole/year'
+
+C.........  Annual inventory file as input with NO controls
+        ELSEIF( TSTEP .EQ. 0 ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Point gridded model species'
+            OUTNAM = 'PGS'
+            REPNAM = 'PGSREP'
+            UNITS  = 'mole/year'
+
+C.........  Hourly inventory file as input with controls
+        ELSEIF ( TSTEP .GT. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 
+     &        'Point gridded, hourly, controlled model species'
+            OUTNAM = 'PGTSC'
+            REPNAM = 'PGTSCREP'
+            UNITS  = 'mole/hour'
+
+C.........  Hourly inventory file as input with NO controls
+        ELSE
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 'Point gridded, hourly model species'
+            OUTNAM = 'PGTS'
+            REPNAM = 'PGTSREP'
+            UNITS  = 'mole/hour'
+
+        END IF
+
+C.......   Read FIPS code for reporting purpose
+        IF( ST_REPORT ) THEN
+
+C............  If we've read in temporal file, must get inventory file name
+            IF ( TSTEP .NE. 0 ) THEN
+
+                INAME = PROMPTMFILE(
+     &                  'Enter logical name for POINT INVENTORY file',
+     &                  FSREAD3, 'PNTS', 'CSGPOINT' )
+            ELSE
+                INAME = PNAME
+
+            ENDIF
+
+            IF( .NOT. READ3( INAME, 'IFIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+
+                CALL M3EXIT( 'CSGPOINT', 0, 0,
+     &                       'Error reading FIP from file' // PNAME, 2 )
+
+            END IF
+
+            IF( .NOT.
+     &          READ3( INAME, 'INVYR', ALLAYS3, 0, 0, INVYR ) ) THEN
+
+                CALL M3EXIT( 'CSGPOINT', 0, 0,
+     &               'Error reading INVYR from file' // PNAME, 2 )
+
+            END IF
+
+            RDEV  = PROMPTFFILE(
+     &             'Enter logical name for TOTALS REPORT or "NONE"',
+     &             .FALSE., .TRUE., REPNAM, 'CSGPOINT' )
+C............  Create state codes arrays
+            LSTA = -9
+            K    = 0
+            DO 22 I = 1, NPSRC
+
+                STA = IFIP( I ) / 1000
+
+                IF( STA .GT. LSTA ) THEN
+
+                    K = K + 1
+                    STATES( K ) = STA
+                    LSTA        = STA
+
+                ENDIF
+
+                ISPTR ( I ) = K
+
+22          CONTINUE
+
+            NSTA = K
+
+            IF( NSTA .GT. NPSID ) THEN
+
+                WRITE( MESG,94010 )
+     &                'Number of states is ', NSTA,
+     &                'but maximum (NPSID) is', NPSID
+                CALL M3EXIT( 'CSGPOINT', JDATE, JTIME, MESG, 2 )
+            ENDIF
+
+C............  Initialize emission summary array
+            DO 28 I = 1, NPSID
+                DO 27 S = 1, NMPOL
+                    EMSUM( I,S ) = 0.
+27              CONTINUE
+28          CONTINUE
+
+C............  Set position of "special" species in name list
+            INO  = INDEX1( 'NO' , NMPOL, EMNAM )
+            INO2 = INDEX1( 'NO2', NMPOL, EMNAM )
+
+        ENDIF
+
         IF ( .NOT. DSCGRID( GRDNM, SCRBUF,
-     &                      GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D, 
-     &                      XCENT3D, YCENT3D, XORIG3D, YORIG3D, 
-     &                      XCELL3D, YCELL3D, 
+     &                      GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D,
+     &                      XCENT3D, YCENT3D, XORIG3D, YORIG3D,
+     &                      XCELL3D, YCELL3D,
      &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
 
             CALL M3EXIT( 'CSGPOINT', 0, 0,
@@ -218,40 +364,6 @@ C.......   Build description of output file, and optionally open it:
         GDNAM3D = GRDNM
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
-        JDATE   = SDATE3D
-        JTIME   = STIME3D
-        TSTEP   = TSTEP3D
-
-C.........  Annual inventory file as input with controls
-        IF ( TSTEP .EQ. 0 .AND. CONTROLFLAG ) THEN
-            NSTEPS  = 1
-            FDESC3D( 1 ) = 'Point gridded, controlled model species'
-            OUTNAM = 'PGSC'
-            UNITS  = 'mole/year'
-
-C.........  Annual inventory file as input with NO controls
-        ELSEIF( TSTEP .EQ. 0 ) THEN
-            NSTEPS  = 1
-            FDESC3D( 1 ) = 'Point gridded model species'
-            OUTNAM = 'PGS'
-            UNITS  = 'mole/year'
-
-C.........  Hourly inventory file as input with controls
-        ELSEIF ( TSTEP .GT. 0 .AND. CONTROLFLAG ) THEN
-            NSTEPS  = MXREC3D
-            FDESC3D( 1 ) = 
-     &        'Point gridded, hourly, controlled model species'
-            OUTNAM = 'PGTSC'
-            UNITS  = 'mole/hour'
-
-C.........  Hourly inventory file as input with NO controls
-        ELSE
-            NSTEPS  = MXREC3D
-            FDESC3D( 1 ) = 'Point gridded, hourly model species'
-            OUTNAM = 'PGTS'
-            UNITS  = 'mole/hour'
-
-        END IF
 
         DO  33 V = 1, NMPOL
             VNAME3D( V ) = EMNAM( V )
@@ -406,11 +518,13 @@ C.......   Transform and write out point source emissions values:
             CALL M3MSG2( 'Calculating speciated gridded emissions...' )
         END IF
 
+        LDATE = 0
+
         DO  199  T = 1, NSTEPS
 
 C...............   If this is a new month, or new day, write message
-            IF ( JDATE .GT. 0 .AND. MOD( T,24 ) .EQ. 1 ) THEN
- 
+            IF ( JDATE .GT. 0 .AND. LDATE .NE. JDATE ) THEN
+                LDATE=JDATE 
                 MESG = 'Processing ' //
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
                 CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
@@ -449,6 +563,26 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
                         END IF          !  if outputflag
 
+C.........................  When reporting is switched on, calculate emissions
+C.........................  summaries by state and report to output QA file
+C.........................  EMSUM must be initialized
+                        IF( ST_REPORT ) THEN
+
+C.............................  For annual values, convert to day-specific
+                            IF( TSTEP .EQ. 0 ) THEN
+
+                                DO 111 S = 1, NPSRC
+                                    EMISC( S ) = YR2DAY( INVYR( S ) ) *
+     &                                           EMISC( S )
+111                             CONTINUE
+
+                            ENDIF
+
+                            CALL PGRDSUM( NPSRC, NGRID, NMATX, NS, IS,
+     &                                    ISPTR, EMISC,
+     &                                    EMSUM( 1,K ) )
+                        ENDIF
+
 197                 CONTINUE    !  end loop on output vbles for this input vble
 
                 ELSE
@@ -462,7 +596,64 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
 198         CONTINUE            ! end loop on input variables
 
+            LDATE = JDATE
+            LTIME = JTIME
+
             CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+C.............  Write report if report flag is switched on
+
+            IF( ST_REPORT .AND.
+     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+
+C.................  Convert summary emissions from moles/day to tons/day
+
+                DO 155 S = 1, NMPOL
+
+C.....................  Conversion factor for AREA as input file
+                    IF( S .NE. INO ) THEN
+                        FAC = EMWT( S ) * GM2TON
+                    ELSE
+                        FAC = EMWT( INO2 ) * GM2TON
+                    ENDIF
+
+                    DO 144 I = 1, NSTA
+
+                       EMSUM( I,S ) = EMSUM( I,S ) * FAC
+
+144                 CONTINUE
+
+155             CONTINUE
+
+                IF( TSTEP .NE. 0 )
+     &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
+     &                               MMDDYY( LDATE ) // ' from',
+     &                               BTIME, 'to', LTIME
+
+                IF( TSTEP .EQ. 0 ) THEN
+                    MESG = 'Point source emissions ' //
+     &                     '(tons/ave inventory day) within grid ' //
+     &                     GRDNM
+                ELSE
+                    MESG = 'Point source emissions ' //
+     &                     '(tons/specific day) within grid ' // GRDNM
+                ENDIF
+
+                CALL STATELST( RDEV  , MESG , NPSID , NSTA , NMPOL,
+     &                         'F7.1', EMNAM, STATES, EMSUM         )
+
+C.................  Reinitialize emissions summary
+                DO 298 I = 1, NPSID
+                    DO 297 S = 1, NMPOL
+                        EMSUM( I,S ) = 0.
+297                 CONTINUE
+298             CONTINUE
+
+C.................  Set begining time for next day
+                BTIME = JTIME
+
+            ENDIF
+ 
 
 199     CONTINUE          !  end loop on time steps
 
