@@ -58,13 +58,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETNUM
         REAL*4          GETREAL
         LOGICAL         GETYN
+        INTEGER         INDEX1
         INTEGER         LEN2
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
 
-        EXTERNAL        DSCGRID, GETMENU, GETNUM, GETREAL, GETYN, LEN2,
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN
+        EXTERNAL        DSCGRID, GETMENU, GETNUM, GETREAL, GETYN,
+     &                  INDEX1, LEN2, PROMPTFFILE, PROMPTMFILE, TRIMLEN
 
 C...........   Temperature arrays
         REAL       TA( NGRID ) ! storage for temperatures
@@ -74,7 +75,7 @@ C...........   Methods of faking the temperature file
         PARAMETER     ( NMETHOD = 4 ) 
         CHARACTER*40    MDESC( NMETHOD )
 
-        DATA   MDESC / 'Uniform', 'By state',
+        DATA   MDESC / 'Uniform', 'Cell to value creation of new data',
      &                 'Cell to value transform of existing data', 
      &                 'Cell to cell  transform of existing data'  /
 
@@ -85,6 +86,15 @@ C...........   Variables for uniform method
 
         DATA  TRESOLUT / 'Per hour', 'Per Day', 'Constant' /
 
+C...........   Variables for cell to value methods
+        INTEGER     MXTVAL
+        PARAMETER ( MXTVAL = 26 )  ! Number of letter in alphabet
+
+        INTEGER     NTVAL
+        REAL        TVAL ( MXTVAL )
+        CHARACTER*1 TCLAS( MXTVAL )
+        CHARACTER*1 TCGRD( NCOLS, NROWS )
+
 C...........   Variables for cell to cell conversion method
         INTEGER    NCEL           ! Number of cell to cell conversions
         INTEGER    CINDEX1( NGRID )  ! Destination cell numbers
@@ -92,15 +102,16 @@ C...........   Variables for cell to cell conversion method
 
 C...........   Unit numbers and file names
         INTEGER       CDEV        ! Cell to cell conversion file number
-        INTEGER       LDEV
+        INTEGER       LDEV        ! Log file unit number
+        INTEGER       VDEV        ! Cell to value file number
 
         CHARACTER*16  ONAME       ! Output temperature file
         CHARACTER*16  TNAME       ! Input  temperature file
 
 C...........   LOCAL VARIABLES and their descriptions:
-        REAL       TEMP           ! Temperature [deg K] at each day
+        REAL       TMPR           ! Temorary temperature [K]
 
-        INTEGER    I, T           ! Counters and Pointers
+        INTEGER    I, J, N, T     ! Counters and Pointers
         INTEGER    IOS            ! I/O status
         INTEGER    IREC           ! Record number count
         INTEGER    JDATE          ! Current date
@@ -169,12 +180,19 @@ C.........  Initialize program control variables
         CEL2CEL = .FALSE.
         CEL2VAL = .FALSE.
 
-C.........  Set program control variables based on method selected
-        IF( METHOD .EQ. 1 ) THEN
+C.........  Set program control variables based on method selected 
 
-            TPROMPT = GETMENU( 3, 1, 
+        IF( METHOD .EQ. 1 ) THEN 
+            TPROMPT = GETMENU( 3, 1,
      &                'Temporal resolution for uniform temperatures?',
      &                TRESOLUT )
+
+        ELSEIF( METHOD .EQ. 2 ) THEN
+            CEL2VAL = .TRUE.
+
+        ELSEIF( METHOD .EQ. 3 ) THEN
+            INFILE  = .TRUE.
+            CEL2VAL = .TRUE.
 
         ELSEIF( METHOD .EQ. 4 ) THEN
             INFILE  = .TRUE.
@@ -248,6 +266,15 @@ C.............  Get grid header variables
  
             END IF                  ! if dscgrid() failed
 
+            IF( NROWS3D .NE. NROWS .OR. 
+     &          NCOLS3D .NE. NCOLS      ) THEN
+
+               WRITE( MESG,94010 ) 'In GRDIMS3.EXT, GRDNM ' // GRDNM //
+     &                ' inconsistent w/ NCOLS=', NCOLS, 
+     &                '& NROWS=', NROWS
+
+            ENDIF
+
 C.............  Set up remaining header variables
             FTYPE3D = GRDDED3
             SDATE3D = SDATE 
@@ -266,6 +293,74 @@ C.............  Set up remaining header variables
             VTYPE3D( 1 ) = M3REAL
             UNITS3D( 1 ) = 'deg K' 
             VDESC3D( 1 ) = 'Temperature'
+
+        ENDIF
+
+C.........  Prompt for, read, and process cell to value file, which
+C           can be used for either creating or modifying, depending
+C           on status in INFILE
+
+        IF( CEL2VAL ) THEN
+
+            VDEV = PROMPTFFILE(
+     &           'Enter name for CELL TO VALUE input file',
+     &           .TRUE., .TRUE., 'TCTOV', 'FAKETEMP' )
+
+            IF ( VDEV .LE. 0 ) THEN
+                CALL M3EXIT( 'FAKETEMP', 0, 0,
+     &             'Could not open CELL TO VALUE input file', 2 )
+            END IF
+
+            EFLAG = .FALSE.
+
+C.............  Read past VDEV header 
+            READ( VDEV, *, END=999 )
+            READ( VDEV, *, END=999 )
+            READ( VDEV, *, END=999 )
+
+C.............  Read number of different temperatures used
+            READ( VDEV, *, END=999 ) NTVAL
+
+C.............  Ensure number of temperatures is not > max
+            IF ( NTVAL .GT. MXTVAL ) THEN
+                WRITE( MESG,94010 ) 
+     &                'Number of temperature classes > MXTVAL=', MXTVAL
+                CALL M3EXIT( 'FAKETEMP', 0, 0, MESG, 2 )
+            ENDIF
+
+C.............  Read classes (single chars) and temperature values (real)
+C.............  A TVAL >= 9999. means do not set or adjust temperature
+            IREC  = 4
+            DO 15 I = 1, NTVAL
+
+                READ( VDEV,*,END=999,IOSTAT=IOS ) TCLAS( I ), TVAL( I )
+
+                IREC = IREC + 1
+                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94010 )
+     &                  'I/O error', IOS,
+     &                  'reading CELL TO VALUE file at line', IREC
+                    CALL M3EXIT( 'FAKETEMP', 0, 0, MESG, 2 )
+                ENDIF
+
+   15       CONTINUE
+
+C.............  Read grid of temperature classes
+            DO  17 J = NROWS, 1, -1
+
+                READ( VDEV, '(1000A1)', END=999, IOSTAT=IOS )
+     &                        ( TCGRD( I,J ), I = 1,NCOLS )
+
+                IREC = IREC + 1
+
+                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94010 )
+     &                  'I/O error', IOS,
+     &                  'reading CELL TO VALUE file at line', IREC
+                    CALL M3EXIT( 'FAKETEMP', 0, 0, MESG, 2 )
+                ENDIF
+
+   17       CONTINUE  !  End of VDEV read 
 
         ENDIF
 
@@ -304,8 +399,8 @@ C.............  Read past CDEV header
                     CALL M3MESG( MESG )
                     GO TO 22
 
-                ELSEIF( X1 .GT. NCOLS3D .OR. 
-     &                  Y1 .GT. NROWS3D      ) THEN
+                ELSEIF( X1 .GT. NCOLS .OR. 
+     &                  Y1 .GT. NROWS      ) THEN
                     EFLAG = .TRUE.
 
                     SCRBUF = GRDNM
@@ -316,8 +411,8 @@ C.............  Read past CDEV header
                     CALL M3MESG( MESG )
                     GO TO 22
 
-                ELSEIF( X2 .GT. NCOLS3D .OR.
-     &                  Y2 .GT. NROWS3D      ) THEN
+                ELSEIF( X2 .GT. NCOLS .OR.
+     &                  Y2 .GT. NROWS      ) THEN
                     EFLAG = .TRUE.
 
                     SCRBUF = GRDNM
@@ -331,8 +426,8 @@ C.............  Read past CDEV header
                 ELSE
                     I = I + 1
 
-                    CINDEX1( I ) = ( Y1-1 ) * NCOLS3D + X1
-                    CINDEX2( I ) = ( Y2-1 ) * NCOLS3D + X2
+                    CINDEX1( I ) = ( Y1-1 ) * NCOLS + X1
+                    CINDEX2( I ) = ( Y2-1 ) * NCOLS + X2
 
                 ENDIF
 
@@ -365,7 +460,7 @@ C.........  Get output file name using environment variable
 C.........  Prompt for uniform, constant temperature
         IF( TPROMPT .EQ. 3 ) THEN
             WRITE( MESG,94010 ) 'Enter temperature value for output'
-            TEMP = GETREAL( 0., 1000., 293., MESG )
+            TMPR = GETREAL( 0., 1000., 293., MESG )
 
         ENDIF
 
@@ -394,28 +489,46 @@ C.............  Get day-specific temperature
             IF( TPROMPT .EQ. 2 .AND. MOD( T+23,24 ) .EQ. 0 ) THEN
                 WRITE( MESG,94010 ) 
      &                 'Enter temperature value for date:', JDATE
-                TEMP = GETREAL( 0., 1000., 293., MESG )
+                TMPR = GETREAL( 0., 1000., 293., MESG )
 
 C.............  Get hour-specific temperature
             ELSEIF( TPROMPT .EQ. 1 ) THEN
                 WRITE( MESG,94010 ) 
      &                 'Enter temperature value for date:', JDATE,
      &                 'and time:', JTIME
-                TEMP = GETREAL( 0., 1000., 293., MESG )
+                TMPR = GETREAL( 0., 1000., 293., MESG )
 
             ENDIF
 
 C.............  Populate temperature array
             IF( TPROMPT .GT. 0 ) THEN
                 DO 44 I = 1, NGRID
-                    TA( I ) = TEMP
+                    TA( I ) = TMPR
    44           CONTINUE
+
+            ELSEIF( CEL2VAL ) THEN
+                
+                DO 55 J = 1, NROWS
+                    DO 54 I = 1, NCOLS
+                        N = ( J-1 )*NCOLS + I
+
+                        TMPR = TVAL( INDEX1( 
+     &                               TCGRD( I,J ), NTVAL, TCLAS ) )
+
+                        IF( TMPR .LT. 9999. ) THEN
+                            TA( N ) = TMPR
+                        ELSEIF( .NOT. INFILE ) THEN
+                            TA( N ) = 0.
+                        ENDIF 
+
+   54               CONTINUE
+   55           CONTINUE
 
             ELSEIF( CEL2CEL ) THEN
 
-                DO 55 I = 1, NCEL
+                DO 66 I = 1, NCEL
                      TA( CINDEX1( I ) ) = TA( CINDEX2( I ) )
-   55           CONTINUE
+   66           CONTINUE
 
             ENDIF
 
@@ -436,6 +549,11 @@ C.............  Write temperature array
         CALL M3EXIT( 'FAKETEMP', 0, 0,
      &               'Normal completion of PROGRAM FAKETEMP', 0 )
 
+C.........  Abort if too early an end to TCTOV file
+  999   WRITE( MESG,94010 ) 
+     &        'Unexpected end to TCTOV at line', IREC
+
+        CALL M3EXIT( 'FAKETEMP', 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
