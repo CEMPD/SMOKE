@@ -1,4 +1,3 @@
-
         SUBROUTINE RDSTCY( FDEV, NDIM, INCNTYS )
 
 C***********************************************************************
@@ -114,6 +113,15 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDSTCY
 
+        IF( ALLOCATED( CTRYCOD  ) ) DEALLOCATE( CTRYCOD  )
+        IF( ALLOCATED( CTRYNAM  ) ) DEALLOCATE( CTRYNAM  )
+        IF( ALLOCATED( STATCOD  ) ) DEALLOCATE( STATCOD  )
+        IF( ALLOCATED( STATNAM  ) ) DEALLOCATE( STATNAM  )
+        IF( ALLOCATED( CNTYCOD  ) ) DEALLOCATE( CNTYCOD  )
+        IF( ALLOCATED( CNTYNAM  ) ) DEALLOCATE( CNTYNAM  )
+        IF( ALLOCATED( CNTYTZON ) ) DEALLOCATE( CNTYTZON )
+        IF( ALLOCATED( USEDAYLT ) ) DEALLOCATE( USEDAYLT )
+
         MESG = 'Default time zone for sources'
         TZONE0 = ENVINT( 'SMK_DEFAULT_TZONE', MESG, 5, IOS )
 
@@ -123,6 +131,9 @@ C   begin body of subroutine RDSTCY
 C.........  Loop through lines of file and determine dimension for county
 C           arrays, state arrays, and country arrays
      
+        ISKIPCTR = 0
+        ISKIPCNY = 0
+        ISKIPSTA = 0
         IREC = 0
         K = 0 
         DO
