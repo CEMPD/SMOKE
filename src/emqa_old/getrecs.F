@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
  
         PROGRAM GETRECS
 
 C***********************************************************************
-C  program body starts at line 164
+C  program body starts at line 227
 C
 C  DESCRIPTION:
 C       Searches for a specific source, for all sources in a 
@@ -45,6 +23,27 @@ C
 C  REVISION  HISTORY:
 C       Prototype  10/95 by M Houyoux
 C***********************************************************************
+C 
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C***********************************************************************
  
         IMPLICIT NONE
 
@@ -53,24 +52,29 @@ C...........   INCLUDES:
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
+        INCLUDE 'CONST3.EXT'    !  I/O API parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'VGRD3.EXT'     !  vertical grid description
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER       FIND1
+        INTEGER       GETMENU
         INTEGER       GETNUM
         LOGICAL       GETYN
         INTEGER       INDEX1
+        CHARACTER*14  MMDDYY
         INTEGER       PROMPTFFILE
         CHARACTER*16  PROMPTMFILE
         INTEGER       TRIMLEN
 
-        EXTERNAL      FIND1, GETNUM, GETYN, INDEX1, PROMPTFFILE, 
-     &                PROMPTMFILE, TRIMLEN
+        EXTERNAL      FIND1, GETMENU, GETNUM, GETYN, INDEX1, MMDDYY,
+     &                PROMPTFFILE, PROMPTMFILE, TRIMLEN
 
 C.........  Define PNTS variables
+        INTEGER     INDEXA( NPSRC )  !  index for sorting, if needed
         INTEGER     IFIP  ( NPSRC )  !  source FIPS (county) ID
         INTEGER     ISCC  ( NPSRC )  !  source SCC
         INTEGER     ISIC  ( NPSRC )  !  source SIC
@@ -93,6 +97,11 @@ C.........  Define PNTS variables
         COMMON / EMISREC / IFIP, ISIC, ISCC, IPLANT, ISTACK, TZONES,
      &                    TPFLAG, INVYR, XLOCA, YLOCA, STKHT, STKDM, 
      &                    STKTK, STKVE, CTLEFF, RULEFF, RULPEN, EMISV
+
+C.........  Define temporary source variable
+
+        REAL        CRITVAL( NPSRC ) !  Criterion for sorting output
+        REAL        STKFL  ( NPSRC ) !  Stack flow
 
 C.........  Define PTMP variables
         REAL        EMIST ( NPSRC )  !  ptmp emissions values (tons/yr) 
@@ -117,46 +126,100 @@ C.........  Define CMAT variables
 
         REAL            CC( NPSRC, NIPOL )
 
-C.........  Local parameters
-        INTEGER         NEOUT
-        PARAMETER     ( NEOUT = 500 )
+C.........  Define Layer Fractions
 
-C.........  Local variables
-        INTEGER         EINX ( NPSRC )   ! index for output sources
-        INTEGER         ISLOC( NEOUT )   ! Cell specific IS values
+        REAL            LFRAC( NPSRC, EMLAYS )
+
+C.........  Local parameters
+        INTEGER         MXEOUT            ! Maximum number of output records
+        INTEGER         NMETHOD           ! number of menu items 
+        INTEGER         NRANGE            ! number of ranges in range menu
+        INTEGER         NSTKMTHD          ! no. of ways to sort by stack parms
+
+        PARAMETER     ( MXEOUT  = 2000, 
+     &                  NMETHOD = 5   ,
+     &                  NRANGE  = 3   ,
+     &                  NSTKMTHD= 5      )
+
+C.........  Local arrays
+        INTEGER         EINX ( MXEOUT )   ! index for output sources
+        INTEGER         ISLOC( NMATX  )   ! Cell specific IS values
         INTEGER         NOUT             ! actual number of output emis
+        INTEGER         SPNT ( NMPOL )   ! pointer to speciation factors
+        INTEGER         XNUM ( MXEOUT )   ! X-cell for output sources
+        INTEGER         YNUM ( MXEOUT )   ! Y-cell for output sources
+
+        REAL            EOUT ( MXEOUT, NMPOL, 24) ! output emissions
+        REAL            ETMP ( MXEOUT, NIPOL, 24) ! temporal factors
+        REAL            OFRAC( MXEOUT, EMLAYS, 24)! output layer fractions
+
+        CHARACTER*7     GSTATE( MXEOUT ) ! state of gridding matrix for output
+
+C.........  Logical names and unit numbers
         INTEGER         LDEV             ! IO/API initialization unit #
         INTEGER         ODEV             ! number for output file
-        INTEGER         SPNT ( NMPOL )   ! pointer to speciation factors
-        INTEGER         XNUM ( NEOUT )   ! X-cell for output sources
-        INTEGER         YNUM ( NEOUT )   ! Y-cell for output sources
 
-        REAL            EOUT( NEOUT, NMPOL, 24) ! output emissions
-        REAL            ETMP( NEOUT, NIPOL, 24) ! temporal factors
-
-        CHARACTER*7     GSTATE( NEOUT ) ! state of gridding matrix for output
-
-C.........  Other variables
-        INTEGER         I, ICNT, IJ, IWCH 
-        INTEGER         J, JDATE, JTIME, K, NINCELL, NSTEPS, NUMBER
-        INTEGER         CELLNUM, F, FIP, PLANT, RN, S, SCC, SCNT, SDATE,
-     &                  SIC, STACK, STIME, T, TSTEP, V, XN, YN
-
-        REAL            CFAC, DDX, DDY, DX, DY, SFAC
-        REAL            X0, XMIN, XMAX, Y0, YMIN, YMAX
-
-        LOGICAL         CELLTRUE, CONTROLFLAG, RECTRUE
-
-
-        CHARACTER*16    PNAME   !  logical name for point-source      input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
         CHARACTER*16    CNAME   !  logical name for control    matrix input file
+        CHARACTER*16    LNAME   !  logical name for layer fractions   input file
+        CHARACTER*16    PNAME   !  logical name for point-source      input file
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    TNAME   !  logical name for temporal point source file
 
+C.........  Other variables
+        REAL            CFAC, DDX, DDY, DX, DY, SFAC, VAL
+        REAL            X0, XMIN, XMAX, Y0, YMIN, YMAX
+        REAL            MEANVAL      ! Mean of criterion output values
+        REAL            MINVAL       ! Min non-zero of criterion output values
+        REAL            MINDIFF      ! Minimum difference between src and mean
+        REAL            THISDIFF     ! Current difference between src and mean
+
+        INTEGER         I, ICNT, F, J, K, L, S, T, V   ! pointers and counters
+
+        INTEGER         CELLNUM, RN, SCNT, TSTEP, XN, YN
+        INTEGER         EMMTHD       ! method of sorting based on emissions
+        INTEGER         ENDSRC       ! Ending source count for output
+        INTEGER         FIP, PLANT, SCC, SIC, STACK  ! Temporary vars
+        INTEGER         INCSRC       ! Increment for processing sources
+        INTEGER         JDATE, JTIME ! Current date and time
+        INTEGER         MEANCNT      ! count of sources contibuting to mean val
+        INTEGER         MEANSRC      ! source ID that has value closest to mean
+        INTEGER         METHOD       ! method of source selection
+        INTEGER         MINSRC       ! source ID that has min non-zero value
+        INTEGER         NINCELL, NSTEPS, NUMBER
+        INTEGER         NRPRT        ! number of sources to report
+        INTEGER         RANGE        ! method of selecting range of sorted srcs
+        INTEGER         SDATE, STIME ! Starting date and time
+        INTEGER         SRTSRC       ! Starting source count for output
+        INTEGER         STKMTHD      ! method of sorting based on stack parms
+
+        LOGICAL         CTRLFLAG
+        LOGICAL         LAYRFLAG
+
+        CHARACTER*8     TONSUNIT
+        CHARACTER*8     MOLEUNIT
         CHARACTER*16    SCRBUF  !  scratch point
+        CHARACTER*80    MENULST( NMETHOD )
+        CHARACTER*80    RNGMENU( NRANGE )
+        CHARACTER*80    STKMENU( NSTKMTHD )
         CHARACTER*256   MESG    !  scratch message buffer 
- 
+
+        DATA MENULST / 
+     &       'Select all sources in specific grid cell',
+     &       'Select sources by FIPs code, SCC, Plant, & Stack',
+     &       'Select single source with source ID',
+     &       'Select sources by stack parameters',
+     &       'Select sources with X emissions of pollutant Y'    /
+
+        DATA RNGMENU / 'Highest X number of sources', 
+     &                 'Middle non-zero X number of sources', 
+     &                 'Lowest non-zero X number of sources'  /
+
+        DATA STKMENU / 'Stack Height',
+     &                 'Stack Diameter',
+     &                 'Stack Exit Temperature',
+     &                 'Stack Exit Velocity',
+     &                 'Stack Exit Flow Rate'   /
 
 C***********************************************************************
 C   begin body of program GETRECS
@@ -226,10 +289,18 @@ C.........  Prompt for starting time
 C.........  Prompt for time number of time steps
 
         NSTEPS = 24
-        WRITE( MESG, 94000 ) 'Enter number of time steps of ',
-     &                       TSTEP,' in HHMMSS.'
-        NSTEPS = GETNUM( 1, 24, NSTEPS, MESG )
+        WRITE( MESG, 94010 ) 'Enter number of time steps of',
+     &                       TSTEP, 'in HHMMSS.'
+        NSTEPS = GETNUM( 1, 9999, NSTEPS, MESG )
         
+C.........  Prompt for PLAY
+
+        LNAME = PROMPTMFILE( 
+     &          'Enter logical name for LAYER FRACTIONS file ' //
+     &          'or "NONE"', FSREAD3, 'PLAY', 'GETRECS' )
+
+        LAYRFLAG = ( LNAME .NE. 'NONE' ) 
+
 C.........  Prompt for SMAT
 
         SNAME = PROMPTMFILE(
@@ -246,23 +317,20 @@ C.........  Prompt for CMAT
 
         CNAME = PROMPTMFILE(
      &          'Enter logical name for CONTROL MATRIX file ' //
-     &          'or "NONE"',
-     &          FSREAD3, 'PCMAT', 'GETRECS' )
+     &          'or "NONE"', FSREAD3, 'PCMAT', 'GETRECS' )
 
-        CONTROLFLAG = ( CNAME .NE. 'NONE' )
+        CTRLFLAG = ( CNAME .NE. 'NONE' )
 
 C.........  Prompt for Cell or Source or Record number
-        CELLTRUE = .FALSE.
-        RECTRUE  = .FALSE.
-        IWCH = 1
-        IWCH = GETNUM( 1, 3, IWCH,
-     &     'Enter 1 for cell, 2 for source info, 3 for record no.' )
-        IF( IWCH .EQ. 1 ) CELLTRUE = .TRUE. 
-        IF( IWCH .EQ. 3 ) RECTRUE  = .TRUE.
+        METHOD = 1
+        METHOD = GETMENU( NMETHOD , METHOD, 
+     &                  'Choose source sub-selection method', MENULST )
 
 C.........  If Cell, Prompt for x-dir and y-dir cell numbers
 
-        IF( CELLTRUE ) THEN
+        STKMTHD = 0
+
+        IF( METHOD .EQ. 1 ) THEN
 
             XN  = 1
             XN  = GETNUM( 1, NCOLS, XN,
@@ -271,15 +339,8 @@ C.........  If Cell, Prompt for x-dir and y-dir cell numbers
             YN  = GETNUM( 1, NROWS, YN,
      &                      'Enter Y-dir cell number' )
 
-C.........  If Source, Prompt for FIP, SIC, SCC, PLANT, STACK
-
-        ELSEIF( RECTRUE ) THEN
-
-            RN  = 1
-            RN  = GETNUM( 1, NPSRC, RN,
-     &                    'Enter record number' )
-
-        ELSE
+C.........  Prompt for FIP, SIC, SCC, PLANT, STACK
+        ELSEIF( METHOD .EQ. 2 ) THEN
 
             FIP   = 0
             FIP   = GETNUM( 0, 99999, FIP, 'Enter FIP' )
@@ -295,6 +356,30 @@ C.........  If Source, Prompt for FIP, SIC, SCC, PLANT, STACK
            
             STACK = 0
             STACK = GETNUM( 0, 9999999, STACK, 'Enter STACK' )
+
+C.........  Prompt for source ID
+
+        ELSEIF( METHOD .EQ. 3 ) THEN
+
+            RN  = 1
+            RN  = GETNUM( 1, NPSRC, RN,
+     &                    'Enter record number' )
+
+C.........  Prompt for stack parameters
+
+        ELSEIF( METHOD .EQ. 4 ) THEN
+
+            STKMTHD = 1
+            STKMTHD = GETMENU( NSTKMTHD, STKMTHD,
+     &             'Choose stack feature for ranking sources', STKMENU ) 
+
+C.........  Prompt for emissions based selection
+
+        ELSEIF( METHOD .EQ. 5 ) THEN
+
+            EMMTHD = 1
+            EMMTHD = GETMENU( NIPOL, EMMTHD,
+     &         'Choose inventory pollutant for ranking sources', EINAM )
 
         ENDIF
 
@@ -321,61 +406,204 @@ C.........  Store parameters
         X0  = XORIG3D
         Y0  = YORIG3D
 
+C.........  Create unsorted index and preprocess stack parms
+        IF( METHOD .EQ. 4 .OR. METHOD .EQ. 5 ) THEN
+
+            MEANVAL = 0.
+            MEANCNT = 0
+            DO 9 I = 1, NPSRC
+                INDEXA( I ) = I
+
+                STKFL( I ) = 0.25 * PI * STKVE( I ) *
+     &                                   STKDM( I ) * STKDM( I )
+
+                IF( METHOD .EQ. 5 ) THEN
+                    CRITVAL( I ) = EMISV( I, EMMTHD )
+
+                ELSEIF( STKMTHD .EQ. 1 ) THEN
+                    CRITVAL( I ) = STKHT( I )
+
+                ELSEIF( STKMTHD .EQ. 2 ) THEN
+                    CRITVAL( I ) = STKDM( I )
+
+                ELSEIF( STKMTHD .EQ. 3 ) THEN
+                    CRITVAL( I ) = STKTK( I )
+
+                ELSEIF( STKMTHD .EQ. 4 ) THEN
+                    CRITVAL( I ) = STKVE( I )
+
+                ELSEIF( STKMTHD .EQ. 5 ) THEN
+                    CRITVAL( I ) = STKFL( I )
+
+                ENDIF
+
+                IF( CRITVAL( I ) .GT. 0. ) THEN
+                    MEANVAL = MEANVAL + CRITVAL( I )
+                    MEANCNT = MEANCNT + 1
+                ENDIF
+
+9           CONTINUE  
+
+            MEANVAL = MEANVAL / REAL( MEANCNT )
+
+        ELSE
+
+            DO 10 I = 1, NPSRC
+                INDEXA( I ) = I
+
+                STKFL( I ) = 0.25 * PI * STKVE( I ) *
+     &                                   STKDM( I ) * STKDM( I )
+
+ 10         CONTINUE
+
+        ENDIF
+
 C.........  Calculate cell location if it cell method selected
-        IF( CELLTRUE ) THEN
+C.........  and set starting and ending sources
+        IF( METHOD .EQ. 1 ) THEN
 
             XMIN = X0 + ( XN-1 ) * DX
             XMAX = XMIN + DX
             YMIN = Y0 + ( YN-1 ) * DY
             YMAX = YMIN + DY
 
+            SRTSRC = 1
+            ENDSRC = NPSRC
+            INCSRC = 1
+
+C.........  Set starting and ending sources for source-based methods
+
+        ELSEIF( METHOD .EQ. 2 ) THEN
+
+            SRTSRC = 1
+            ENDSRC = NPSRC
+            INCSRC = 1
+
+        ELSEIF( METHOD .EQ. 3 ) THEN   ! for single source
+
+            SRTSRC = 1
+            ENDSRC = 1
+            INCSRC = 1
+
+C.........  If ranked by source characteristic...
+
+        ELSEIF( METHOD .EQ. 4 .OR. METHOD .EQ. 5 ) THEN
+
+C.............  Retrieve source sub-selection characteristics
+            RANGE = 1
+            RANGE = GETMENU( NRANGE, RANGE,
+     &            'Choose range for reporting ranked sources', RNGMENU )
+
+            NRPRT = 50
+            NRPRT = GETNUM( 1, NPSRC, NRPRT, 
+     &                      'Enter number of sources to report' )
+
+C.............  Sort based on selected category
+            CALL SORTR1( NPSRC, INDEXA, CRITVAL )
+
+C.............  Set starting and ending sources and for medium output list, 
+C               must first calculate which sources is closest to mean value
+
+            MINDIFF = 1.0E36
+            MINVAL  = 1.0E36
+            IF( RANGE .EQ. 1 ) THEN      ! Highest X sources
+
+                SRTSRC = NPSRC
+                ENDSRC = NPSRC - NRPRT + 1
+                INCSRC = -1
+
+            ELSEIF( RANGE .EQ. 2 ) THEN  ! Middle X sources
+
+                DO 11 I = 1, NPSRC
+
+                    J = INDEXA( I )
+                    THISDIFF = ABS( MEANVAL - CRITVAL( J ) )
+                    IF( THISDIFF .LT. MINDIFF ) THEN
+                        MEANSRC = I
+                        MINDIFF = THISDIFF
+                    ENDIF
+
+11              CONTINUE
+
+                SRTSRC = MEANSRC - NRPRT / 2 + 1
+                ENDSRC = MEANSRC + NRPRT / 2 + MOD( NRPRT,2 )
+                INCSRC = 1
+            
+            ELSEIF( RANGE .EQ. 3 ) THEN ! Lowest X sources
+
+                DO 12 I = 1, NPSRC
+
+                    J = INDEXA( I )
+                    IF( CRITVAL( J ) .GT. 0      .AND. 
+     &                  CRITVAL( J ) .LT. MINVAL       ) THEN
+                        MINSRC = I
+                        MINVAL = CRITVAL( J )
+                    ENDIF
+
+12              CONTINUE
+
+                SRTSRC = MINSRC
+                ENDSRC = MINSRC + NRPRT - 1
+                INCSRC = 1
+
+            ENDIF
+
         ENDIF
+
 C.........  Create pointer based on cell or on source parameters
 
         ICNT = 0
-        DO 11 I = 1, NPSRC
+        DO 13 I = SRTSRC, ENDSRC, INCSRC
 
-            IF( CELLTRUE ) THEN
+            J = INDEXA( I )
 
-                IF( XLOCA( I ) .GE. XMIN .AND.
-     &              XLOCA( I ) .LE. XMAX .AND.
-     &              YLOCA( I ) .GE. YMIN .AND.
-     &              YLOCA( I ) .LE. YMAX       ) THEN
+            IF( ICNT .GE. MXEOUT ) THEN   ! Prevent overflow, but continue count
+
+                ICNT = ICNT + 1
+
+            ELSEIF( METHOD .EQ. 1 ) THEN
+
+                IF( XLOCA( J ) .GE. XMIN .AND.
+     &              XLOCA( J ) .LE. XMAX .AND.
+     &              YLOCA( J ) .GE. YMIN .AND.
+     &              YLOCA( J ) .LE. YMAX       ) THEN
 
                     ICNT = ICNT + 1
-                    EINX( ICNT ) = I
+                    EINX( ICNT ) = J
 
                 ENDIF
             
-            ELSEIF( RECTRUE ) THEN
+            ELSEIF( METHOD .EQ. 2 ) THEN
+           
+                IF( ( FIP   .EQ. IFIP  ( J ) .OR. FIP   .EQ. 0 ) .AND.
+     &              ( SIC   .EQ. ISIC  ( J ) .OR. SIC   .EQ. 0 ) .AND.
+     &              ( SCC   .EQ. ISCC  ( J ) .OR. SCC   .EQ. 0 ) .AND.
+     &              ( PLANT .EQ. IPLANT( J ) .OR. PLANT .EQ. 0 ) .AND.
+     &              ( STACK .EQ. ISTACK( J ) .OR. STACK .EQ. 0 ) ) THEN
+                    ICNT = ICNT + 1
+                    EINX( ICNT ) = J
+ 
+                ENDIF
+                
+            ELSEIF( METHOD .EQ. 3 ) THEN
 
                 ICNT = 1
                 EINX( ICNT ) = RN    
 
-            ELSE
-           
-                IF( ( FIP   .EQ. IFIP  ( I ) .OR. FIP   .EQ. 0 ) .AND.
-     &              ( SIC   .EQ. ISIC  ( I ) .OR. SIC   .EQ. 0 ) .AND.
-     &              ( SCC   .EQ. ISCC  ( I ) .OR. SCC   .EQ. 0 ) .AND.
-     &              ( PLANT .EQ. IPLANT( I ) .OR. PLANT .EQ. 0 ) .AND.
-     &              ( STACK .EQ. ISTACK( I ) .OR. STACK .EQ. 0 ) ) THEN
+            ELSEIF( METHOD .EQ. 4 .OR. METHOD .EQ. 5 ) THEN
 
-                    ICNT = ICNT + 1
-                    IF( ICNT .LE. NEOUT ) THEN
-                        EINX( ICNT ) = I
-                    ENDIF
- 
-                ENDIF
-                
+                ICNT = ICNT + 1
+                EINX( ICNT ) = J
+
             ENDIF
 
-   11   CONTINUE
+   13   CONTINUE
 
         NOUT = ICNT
-        IF( NOUT .GT. NEOUT ) THEN
-            WRITE( MESG, 94000 ) 'Sources found = ',NOUT,
-     &                           ' but maximum = ',NEOUT,
-     &                           '. Reset NEOUT and try again.'
+        IF( NOUT .GT. MXEOUT ) THEN
+            WRITE( MESG, 94010 ) 'Output sources found =', NOUT,
+     &                           'but maximum (MXEOUT) =', MXEOUT,
+     &                           '. Reset MXEOUT and try again.'
             CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
 
         ENDIF
@@ -399,9 +627,9 @@ C.......   Build description of how to use speciation matrix:
      &                  .TRUE. )
         END IF
  
-        DO  13  V = 1, NIPOL
+        DO  14  V = 1, NIPOL
             NSPCOUT( V ) = 0
-13      CONTINUE
+14      CONTINUE
  
         DO  15  V = 1, NMPOL
  
@@ -451,7 +679,7 @@ C.........  Read GMAT
 
 C......... Check to make sure that the number records in cell matches GMAT info
 
-        IF( CELLTRUE ) THEN
+        IF( METHOD .EQ. 1 ) THEN
 
             CELLNUM = ( YN-1 )*NCOLS + XN
             NINCELL= NS( CELLNUM )
@@ -484,7 +712,7 @@ C.............  Create sorted source list for cell
 
 C.........  Read CMAT
 
-        IF( CONTROLFLAG ) THEN
+        IF( CTRLFLAG ) THEN
 
             DO  22 S = 1, NIPOL
  
@@ -508,10 +736,29 @@ C.........  Loop over time
 
         DO 66 T = 1, NSTEPS
 
+C.............  Read layer fractions for given hour
+            IF( READ3( LNAME, 'LFRAC', ALLAYS3,
+     &                 JDATE, JTIME, LFRAC   ) ) THEN
+
+                DO 27 L = 1, EMLAYS
+                    DO 25 I = 1, NOUT
+
+                        OFRAC( I, L, T ) = LFRAC( EINX( I ), L )
+
+25                  CONTINUE
+27              CONTINUE
+
+            ELSE ! Read failed
+
+                CALL M3EXIT( 'GETRECS', JDATE, JTIME,
+     &                       'Could not read "LFRAC" from '// LNAME, 2 )
+
+            ENDIF
+
 C.............  Loop over inventory species
             DO 55 V = 1, NIPOL    
 
-C.................  Read PTMP for given hour
+C.................  Read PTMP for given hour and species
                 IF( READ3( TNAME, EINAM( V ), ALLAYS3,
      &                     JDATE, JTIME, EMIST ) ) THEN
 
@@ -519,7 +766,7 @@ C.....................  Loop over list of sources
 
                     DO 44 I = 1, NOUT
 
-                        IF( .NOT. CELLTRUE ) THEN
+                        IF( METHOD .NE. 1 ) THEN  ! not cell selection
 
                             XNUM( I ) = INT(DDX * 
      &                                  ( XLOCA( EINX( I ) ) -X0 ) ) + 1
@@ -541,7 +788,7 @@ C.....................  Loop over list of sources
                             GO TO 44
                         ENDIF
 
-                        IF( .NOT. CELLTRUE ) THEN
+                        IF( METHOD .NE. 1 ) THEN  ! not cell selection
 
 C.............................  Count up sources up to cell of interest
                             SCNT = 1
@@ -580,7 +827,7 @@ C.........................  Loop over model species per inventory species
 C.............................  Multiply PTMP, SMAT, and CMAT for source
 
                             SFAC = SS( EINX( I ), K ) 
-                            IF( CONTROLFLAG ) THEN
+                            IF( CTRLFLAG ) THEN
                                 CFAC = CC( EINX( I ), V )
                             ELSE
                                 CFAC = 1.0
@@ -625,29 +872,33 @@ C.........  Prompt for output temporal x-ref file name
      &                   'Could not open ASCII OUTPUT file', 2 )
         END IF
 
-C.........  Loop over list of sources
+        TONSUNIT = '[tons]  '
+        MOLEUNIT = '[gm mol]'
+
+C.........  Loop over list of sources and output details
 
         DO 88 I = 1, NOUT
-            IJ = EINX( I )
+            S = EINX( I )
 
 C.............  Write out all time INdependant data
             WRITE( ODEV, 93000 ) 
-     &      I, IJ, XNUM( I ), YNUM( I ), GSTATE( I ), XLOCA( IJ ), 
-     &      YLOCA( IJ ), IFIP( IJ ), 
-     &      ISIC( IJ ), ISCC( IJ ), IPLANT( IJ ), ISTACK( IJ ), 
-     &      TZONES( IJ ), TPFLAG( IJ ), INVYR( IJ ), STKVE( IJ ), 
-     &      STKDM( IJ ), STKTK( IJ ), STKHT( IJ )
+     &      I, S, 
+     &      IFIP( S ), ISIC( S ), ISCC( S ), IPLANT( S ), ISTACK( S ),
+     &      INVYR( S ), TZONES( S ), TPFLAG( S ), 
+     &      STKHT( S ), STKDM( S ), STKTK( S ), STKVE( S ), STKFL( S ),
+     &      XNUM( I ), YNUM( I ), GSTATE( I ), XLOCA( S ), YLOCA( S ) 
 
-C.............  Write out time INdependant inventory emissions
-            WRITE( ODEV, 93005 ) ( EINAM( V ), V = 1, NIPOL )
-            WRITE( ODEV, 93010 ) 'INV', 
-     &                          ( EMISV( EINX( I ), V ), V = 1, NIPOL )
-   
 C.............  Write out control coefficients
 
-            IF( CONTROLFLAG ) 
-     &      WRITE( ODEV, 93010 ) 'CTL', 
-     &                          ( CC( IJ, V ), V = 1, NIPOL )
+            IF( CTRLFLAG )
+     &      WRITE( ODEV, 93010 ) 
+     &           ( EINAM( V )( 1:TRIMLEN( EINAM( V ) ) ), 
+     &             CC( S, V ), V = 1, NIPOL )
+
+C.............  Write out time independant inventory emissions
+            WRITE( ODEV, 93020 ) 
+     &           ( EINAM( V )( 1:TRIMLEN( EINAM( V ) ) ),
+     &             EMISV( EINX( I ), V ), V = 1, NIPOL )
 
 C.............  Create pointer for model species
             ICNT = 0
@@ -663,24 +914,71 @@ C.............  Create pointer for model species
 
 C.............  Write out speciation coefficients
 
-            WRITE( ODEV, 93005 ) ( EMNAM( SPNT( J ) ), J = 1, NMPOL )
-            WRITE( ODEV, 93010 ) 'SPC',
-     &                       ( SS( IJ, SPNT( J ) ), J=1,NMPOL )
+            WRITE( ODEV, 93030 ) (  EMNAM( SPNT( J ) ),
+     &                              SS( S, SPNT( J ) ), J=1, NMPOL )
 
-C.............  Write out all time dependant data
+C.............  Write out header for temporal emissions
+            WRITE( ODEV, 93040 ) MMDDYY( SDATE ),
+     &                           ( EINAM( V )        , V = 1, NIPOL ), 
+     &                           ( EMNAM( SPNT( J ) ), J = 1, NMPOL ),
+     &                           ( TONSUNIT          , K = 1, NIPOL ),
+     &                           ( MOLEUNIT          , L = 1, NMPOL )
+
+C.............  Write out time dependent emissions
             JDATE = SDATE
             JTIME = STIME
             DO 77 T = 1, NSTEPS
 
-                WRITE( ODEV, 93020 ) 
-     &                 JDATE, JTIME, ( ETMP( I, V, T ), V=1,NIPOL )
-
-                WRITE( ODEV, 93030 )
-     &                 ( EOUT( I, SPNT( J ), T ), J=1,NMPOL )
+                WRITE( ODEV, 93050 ) 
+     &                 SDATE-JDATE+1, JTIME/10000, 
+     &                 ( ETMP( I, V, T ), V=1,NIPOL ),
+     &                 ( EOUT( I, SPNT( J ), T ), J=1, NMPOL )
 
                 CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-   77       CONTINUE
+77          CONTINUE
+
+            IF( LAYRFLAG ) THEN
+
+C.................  Write out header for layer fractions
+                WRITE( ODEV, 93060 ) MMDDYY( SDATE ), 
+     &                               ( L, L = 1, EMLAYS )
+
+C.................  Write out time dependent layer fractions
+C.................  Format will put blanks where there are zeroes
+                JDATE = SDATE
+                JTIME = STIME
+                DO 79 T = 1, NSTEPS
+
+                    WRITE( ODEV, 93070 ) 
+     &                     SDATE-JDATE+1, JTIME/10000
+
+                    DO 78 L = 1, EMLAYS - 1
+
+                        VAL = OFRAC( I, L, T ) 
+                        IF( VAL .GT. 0. ) THEN
+                            WRITE( ODEV, 93080 ) VAL
+                        ELSE
+                            WRITE( ODEV, 93090 ) 
+                        ENDIF
+
+78                  CONTINUE
+
+                    VAL = OFRAC( I, EMLAYS, T )
+                    IF( VAL .GT. 0. ) THEN
+                        WRITE( ODEV, 93100 ) VAL
+                    ELSE 
+                        WRITE( ODEV, 93110 )
+                    ENDIF
+
+                    CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+79              CONTINUE
+
+            ENDIF
+
+            WRITE( ODEV, '(A)' ) ' '
+
    88   CONTINUE 
 
         CALL M3EXIT( 'GETRECS', 0, 0,
@@ -691,25 +989,52 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Informational (LOG) message formats... 92xxx
  
 92000   FORMAT( 5X, A )
-92100   FORMAT( 10x A, / 10X, A, I3, A, I3, A, I5 / 10X, A, I5)
+
+92100   FORMAT( 10X, A, / 10X, A, I3, A, I3, A, I5 / 10X, A, I5)
  
 C...........   Formatted file I/O formats............ 93xxx
 
-93000   FORMAT( I3, 1X, I4, ' (',I3,',',I3,') ', A7, 2( 1X, E14.7), 1X,
-     &          I5.5, 1X, I5, 1X, I8.8, 
-     &          1X, I8, 1X, I8, 3( 1X, I4 ), 1X, 'V:', F6.2, 1X,
-     &          'D:', F6.2, 1X, 'T:', F5.1, 1X, 'H:', F6.2 )
+93000   FORMAT( I5, ' Src ID:', I7, 
+     &              ' FIP:', I5.5, ' SIC:', I4.4, ' SCC:', I8.8,
+     &              ' PLT:', I8  , ' STK:', I8  , ' YR:' , I4,
+     &              ' ZON:', I2.2, ' TPF:', I1, /,
+     &          5X, ' Stack parms...   H[m]:', F7.2, '   D[m]:', F7.2,
+     &              '   T[K]:', F7.1, '   V[m/s]:', F7.1, 
+     &              '   F[m^3/s]:', F10.1, /,
+     &          5X, ' Gridding...      Cell:(', I3,',', I3, 
+     &              ')   Status:', A7, 
+     &              '   XLOC:', E14.7, '   YLOC:', E14.7 )
 
-93005   FORMAT( 9X, 30( 4X, A5, 2X ) )
-93010   FORMAT( 5X, A3 ,': ', 30( 1X, E9.3 ) )
+93010   FORMAT( 5X, ' Control facs...  ',
+     &              30( 1X, A, ': ', E11.5 )   )
 
-93020   FORMAT( 5X, I7.7, 1X, I6.6, 30( 1X, E9.3 ) )
+93020   FORMAT( 5X, ' Inv emissions...',
+     &              30( 1X, A, ': ', E11.5 )   )
 
-93030   FORMAT( 19X, 30( 1X, E9.3 ) )
+93030   FORMAT( 5X, ' Speciation coefficients [gm mol/tons]...', /,
+     &          5( 9X, 7( 1X, A4, ': ', E11.5 ), / ) )
+
+93040   FORMAT( 5X, ' Hourly emissions starting ', A14, '...' /,
+     &          5X, ' Dy Hr', <NIPOL+NMPOL>( 1X, A8 ) , /,
+     &          11X, <NIPOL+NMPOL>( 1X, A8 ) )
+
+93050   FORMAT( 6X, I2.2, 1X, I2.2, 30( 1X, E8.3 ) )
+
+93060   FORMAT( 5X, ' Layer fractions starting ', A14, '...' /,
+     &          5X, ' Dy Hr', <EMLAYS>( 1X, ' Lyr(', I2.2, ')' ) )
+
+93070   FORMAT( 6X, I2.2, 1X, I2.2, $ )
+
+93080   FORMAT( 1X, E8.3, $ )
+
+93090   FORMAT( 9X, $ )
+
+93100   FORMAT( 1X, E8.3 )
+
+93110   FORMAT( 9X )
 
 C...........   Internal buffering formats............ 94xxx
 
-94000   FORMAT( A, I5, A, I5, A, I5, A, I5)
-
+94010   FORMAT( 10 ( A, :, I10, :, 2X ) )
 
         END
