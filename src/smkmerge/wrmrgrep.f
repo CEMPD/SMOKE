@@ -116,10 +116,10 @@ C...........   Other local variables
  
         LOGICAL, SAVE :: FIRSTIME= .TRUE. ! true: first time routine called
 
-        CHARACTER(300)     DATFMT     ! format for data
-        CHARACTER(300)     HDRFMT     ! format for header
-        CHARACTER(300)     HEADER     ! header for output files
-        CHARACTER(300)     LINFLD     ! line of dashes
+        CHARACTER(500)     DATFMT     ! format for data
+        CHARACTER(500)     HDRFMT     ! format for header
+        CHARACTER(500)     HEADER     ! header for output files
+        CHARACTER(500)     LINFLD     ! line of dashes
         CHARACTER(300)     MESG       ! message buffer
         CHARACTER(IOVLEN3) SBUF       ! tmp pol or species name
         CHARACTER(IOULEN3) CBUF       ! tmp units field
