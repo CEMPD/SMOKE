@@ -47,81 +47,11 @@ C   begin body of subroutine PROGDESC
         NAME = INPROGNM
         CALL UPCASE( NAME )
 
-        IF( NAME .EQ. 'SMKINVEN' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program SMKINVEN to take ASCII area or point source files',
-     &  'in IDA, EPS2, EMS-95, or SMOKE list format, or mobile files',
-     &  'in IDA format, and produce the I/O API and ASCII SMOKE',  
-     &  'inventory files and list of unique SCCs in the inventory.',
-     &      ' '
+C.........  SMOKE programs - listed in alphabetical order
+        
+        SELECT CASE( NAME )
+        CASE( 'CNTLMAT' )       
 
-        ELSEIF( NAME .EQ. 'RAWBIO' ) THEN
-            WRITE( LDEV,92000 )
-     &      ' ',
-     &  'Program RAWBIO to take the county level biomass,',
-     &  'the emissions factors, and the surrogate factors,',
-     &  'and produce gridded normalized biogenic emissions.',
-     &  ' '
-
-        ELSEIF( NAME .EQ. 'GRDBIO' ) THEN
-        ELSEIF( NAME .EQ. 'SPCMAT' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program SPCMAT to take a SMOKE area, mobile, or point source',
-     &  'inventory file, a speciation profiles file, a speciation',
-     &  'cross-reference file, an optional pollutant-to-pollutant,',
-     &  'conversion file, and produce mass-based and/or mole-based',
-     &  'SMOKE speciation matrices for all inventory pollutants',
-     &  'using run-time defined combinations of pollutants and model',
-     &  'species. The output species are defined at run time by the',
-     &  'speciation profiles file, permitting support of any chemical',
-     &  'mechanism.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'GRDMAT' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program GRDMAT to take a SMOKE area, mobile, or point source',
-     &  'inventory file, gridding surrogates,  surrogate cross-',
-     &  'reference, and an optional link definitions file, and produce',
-     &  'a SMOKE gridding matrix for a grid defined at run time. For',
-     &  'mobile sources, an "ungridding" matrix is also created to',
-     &  'allow the use of gridded temperature data in assigning',
-     &  'factors to mobile sources.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'MRGGRID' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program MRGGRID reads 2-D area, biogenic, mobile, and 3-D',
-     &  'point source emissions and merges into a single 3-D file.',
-     &  'The time period merged is adjusted based on the latest',
-     &  'starting file and earliest ending file.  All variables are',
-     &  'merged, even if different variables are in each file.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'TEMPORAL' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program TEMPORAL to take a SMOKE area, mobile, or point',
-     &  'source inventory file, a temporal profiles file, a temporal',
-     &  'cross-reference file, an optional SMOKE day-specific file, ',
-     &  'and an optional SMOKE hour-specific point source file, and',
-     &  'produce hourly low-level and optionally hourly elevated point',
-     &  'source emissions for the requested episode.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'TMPBIO' ) THEN
-            WRITE( LDEV,92000 )
-     &      ' ',
-     &  'Program TMPBIO takes postprocessed MM5 meteorology and ',
-     &  'normalized gridded emissions from RAWBIO or GRDBIO, and ', 
-     &  'produces time stepped gridded speciated biogenic ',
-     &  'emissions.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'CNTLMAT' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program CNTLMAT to take a SMOKE inventory file, a control',
@@ -134,19 +64,10 @@ C   begin body of subroutine PROGDESC
      &  '     5) controls report ',
      &      ' '
 
-        ELSEIF( NAME .EQ. 'ELEVPOINT' ) THEN
-        ELSEIF( NAME .EQ. 'LAYPOINT' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program LAYPOINT to take a SMOKE point source inventory file',
-     &  'and dot- and cross-point meteorology files and construct a',
-     &  'point source layer fractions matrix for all selected hours',
-     &  'and an optional report of plume exceeding a user-defined',
-     &  'layer number. The program uses a Briggs method that has been',
-     &  'adapted for multiple layers. ',
-     &      ' '
+        CASE( 'ELEVPOINT' ) 
 
-        ELSEIF( NAME .EQ. 'EMISFAC' ) THEN
+
+        CASE( 'EMISFAC' )
             WRITE( *,92000 )
      &      ' ',
      &  'Program EMISFAC drives the MOBILE5a/b program by supplying',
@@ -157,7 +78,64 @@ C   begin body of subroutine PROGDESC
      &  'parameter combinations.',
      &      ' '
  
-        ELSEIF( NAME .EQ. 'PREMOBL' ) THEN
+        CASE( 'GETRECS' )
+            WRITE( LDEV,92000 ) 
+     &  ' ',
+     &  'Program GETRECS searches for a specific source, for all',
+     &  'sources in a specific cell, or for combinations of source',
+     &  'keys.  It creates an ASCII file which lists all details about',
+     &  'the source including source number, grid cell, if found in',
+     &  'gridding matrix, temporalization factors, control factors,',
+     &  'inventory pollutant emissions, and model species emissions.'
+
+        CASE( 'GRDMAT' )
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program GRDMAT to take a SMOKE area, mobile, or point source',
+     &  'inventory file, gridding surrogates,  surrogate cross-',
+     &  'reference, and an optional link definitions file, and produce',
+     &  'a SMOKE gridding matrix for a grid defined at run time. For',
+     &  'mobile sources, an "ungridding" matrix is also created to',
+     &  'allow the use of gridded temperature data in assigning',
+     &  'factors to mobile sources.',
+     &      ' '
+
+        CASE( 'LAYPOINT' ) 
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program LAYPOINT to take a SMOKE point source inventory file',
+     &  'and dot- and cross-point meteorology files and construct a',
+     &  'point source layer fractions matrix for all selected hours',
+     &  'and an optional report of plume exceeding a user-defined',
+     &  'layer number. The program uses a Briggs method that has been',
+     &  'adapted for multiple layers. ',
+     &      ' '
+
+        CASE( 'METSCAN' )
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program METSCAN scans meteorology temperature data for any',
+     &  'time range to determine the dates between which freezing',
+     &  'occurs (sometimes called the first and last freeze dates.',
+     &      ' '
+
+        CASE( 'MRGGRID' )
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program MRGGRID reads 2-D area, biogenic, mobile, and 3-D',
+     &  'point source emissions and merges into a single 3-D file.',
+     &  'The time period merged is adjusted based on the latest',
+     &  'starting file and earliest ending file.  All variables are',
+     &  'merged, even if different variables are in each file.',
+     &      ' '
+
+        CASE( 'MVCONDNS' ) 
+            WRITE( LDEV,92000 ) 
+     &  ' ',
+     &  'Program MVCONDNS condenses a mobile source inventory file to',
+     &  'preprocess for preparing the MPLIST and MPREF files.'
+
+        CASE( 'PREMOBL' )
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program PREMOBL to input gridded, time-dependent temperature',
@@ -167,7 +145,31 @@ C   begin body of subroutine PROGDESC
      &  'factor.',
      &      ' '
 
-        ELSEIF( NAME .EQ. 'SMKMERGE' ) THEN
+        CASE( 'RAWBIO' ) 
+            WRITE( LDEV,92000 )
+     &      ' ',
+     &  'Program RAWBIO to take the county level biomass,',
+     &  'the emissions factors, and the surrogate factors,',
+     &  'and produce gridded normalized biogenic emissions.',
+     &  ' '
+
+        CASE( 'SMK2EMIS' )
+            WRITE( LDEV,92000 )
+     &  ' ',
+     &  'Program SMK2EMIS converts a NetCDF gridded, hourly emissions ',
+     &  'file into a UAM ready gridded emissions file.  Program has ', 
+     &  'been tested for lat-lon and UTM projections only.'
+
+        CASE( 'SMKINVEN' ) 
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program SMKINVEN to take ASCII area or point source files',
+     &  'in IDA, EPS2, EMS-95, or SMOKE list format, or mobile files',
+     &  'in IDA format, and produce the I/O API and ASCII SMOKE',  
+     &  'inventory files and list of unique SCCs in the inventory.',
+     &      ' '
+
+        CASE( 'SMKMERGE' )
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program SMKMERGE to merge the inventory or hourly emission',
@@ -182,51 +184,62 @@ C   begin body of subroutine PROGDESC
      &  'is three-dimensional.',
      &      ' '
 
-        ELSEIF( NAME .EQ. 'GETRECS' ) THEN
+        CASE( 'SMKREPORT' )
             WRITE( LDEV,92000 ) 
-     &  ' ',
-     &  'Program GETRECS searches for a specific source, for all',
-     &  'sources in a specific cell, or for combinations of source',
-     &  'keys.  It creates an ASCII file which lists all details about',
-     &  'the source including source number, grid cell, if found in',
-     &  'gridding matrix, temporalization factors, control factors,',
-     &  'inventory pollutant emissions, and model species emissions.'
+     &      ' ',
+     &  'Program SMKREPORT to take any combination of SMOKE intermed-',
+     &  'iate files (but at least an inventory file) and generate',
+     &  'one or more user-defined reports in any combination of output',
+     &  'files.',
+     &      ' '
 
-        ELSEIF( NAME .EQ. 'ASCI2NCF' ) THEN
+        CASE( 'SPCMAT' )
             WRITE( LDEV,92000 ) 
-     &  ' ',
-     &  'Program ASCI2NCF creates a NetCDF gridded, hourly file ',
-     &  'from an ASCII file with the following format:',
-     &  'HOUR, ICELL, JCELL, VARIABLE NAME, VALUE1, VALUE2, where',
-     &  'each VALUE* gets written to a different output file',
-     &  'temporal profiles to create a NetCDF emissions file.'
+     &      ' ',
+     &  'Program SPCMAT to take a SMOKE area, mobile, or point source',
+     &  'inventory file, a speciation profiles file, a speciation',
+     &  'cross-reference file, an optional pollutant-to-pollutant,',
+     &  'conversion file, and produce mass-based and/or mole-based',
+     &  'SMOKE speciation matrices for all inventory pollutants',
+     &  'using run-time defined combinations of pollutants and model',
+     &  'species. The output species are defined at run time by the',
+     &  'speciation profiles file, permitting support of any chemical',
+     &  'mechanism.',
+     &      ' '
 
-        ELSEIF( NAME .EQ. 'MVCONDNS' ) THEN
+        CASE( 'TEMPORAL' ) 
             WRITE( LDEV,92000 ) 
-     &  ' ',
-     &  'Program MVCONDNS condenses a mobile source inventory file to',
-     &  'preprocess for preparing the MPLIST and MPREF files.'
+     &      ' ',
+     &  'Program TEMPORAL to take a SMOKE area, mobile, or point',
+     &  'source inventory file, a temporal profiles file, a temporal',
+     &  'cross-reference file, an optional SMOKE day-specific file, ',
+     &  'and an optional SMOKE hour-specific point source file, and',
+     &  'produce hourly low-level and optionally hourly elevated point',
+     &  'source emissions for the requested episode.',
+     &      ' '
 
-        ELSEIF( NAME .EQ. 'SMK2EMIS' ) THEN
+        CASE( 'TMPBIO' ) 
             WRITE( LDEV,92000 )
-     &  ' ',
-     &  'Program SMK2EMIS converts a NetCDF gridded, hourly emissions ',
-     &  'file into a UAM ready gridded emissions file.  Program has ', 
-     &  'been tested for lat-lon and UTM projections only.'
+     &      ' ',
+     &  'Program TMPBIO takes postprocessed MM5 meteorology and ',
+     &  'normalized gridded emissions from RAWBIO or GRDBIO, and ', 
+     &  'produces time stepped gridded speciated biogenic ',
+     &  'emissions.',
+     &      ' '
 
-        ELSEIF( NAME .EQ. 'UAM2NCF' ) THEN
+        CASE( 'UAM2NCF' ) 
             WRITE( LDEV,92000 )
      &  ' ',
      &  'Program UAM2NCF converts a UAM gridded, hourly emissions ',
      &  'into a NetCDF gridded, hourly emissions file.  Program has ',
      &  'been tested for the lat-lon projection only.'
 
-        ELSE
+        CASE DEFAULT
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'No program description is available for ' // NAME
 
-        ENDIF
+        END SELECT
 
         RETURN
 

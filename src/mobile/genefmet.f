@@ -1,6 +1,6 @@
 
         SUBROUTINE GENEFMET( NSRC, MXPSI, NVLDTMM, NIACT, 
-     &                       METIDX, TIPSI )
+     &                       ISTAT, METIDX, TIPSI )
    
 C***********************************************************************
 C  subroutine GENEFMET body starts at line < >
@@ -55,6 +55,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MXPSI           ! max. no. PSIs for all actvtys
         INTEGER, INTENT (IN) :: NVLDTMM         ! no. valid tempr combos
         INTEGER, INTENT (IN) :: NIACT           ! no. activites
+        INTEGER, INTENT (IN) :: ISTAT( NIACT   )! 0=don't use, >0=use
         INTEGER, INTENT (IN) :: METIDX( NSRC,4 )! min/max combo indicator
         INTEGER, INTENT(OUT) :: TIPSI( MXPSI,NVLDTMM,NIACT ) ! PSI/min-max flag
 
@@ -80,6 +81,9 @@ c.........  Loop through sources
 
 C.............  Loop through activities
             DO V = 1, NIACT
+
+C.................  Skip activity if not to be used
+                IF( ISTAT( V ) .EQ. 0 ) CYCLE
 
 C.................  Get index to unsorted PSIs cross-reference
                 K = EFSIDX( S,V )
