@@ -3,7 +3,7 @@
      &                       NX, IX, NCOEF, CMAX, CMIN )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 102
 C
 C  DESCRIPTION:
 C      This subroutine creates the point source gridding matrix and
@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -82,27 +82,14 @@ C...........   Other local variables
 
         INTEGER         C, I, J, K, K2, R !  indices and counters.
 
-        INTEGER         COL   ! tmp column number
-        INTEGER         ROW   ! tmp row number
-        INTEGER         CSAV  ! saved value of C
         INTEGER         IOS   ! i/o status
         INTEGER         KSAV  ! saved value of K
         INTEGER         K2SAV ! saved value of K2
         INTEGER         NEXCLD! number of sources not in grid.  Will
                               !    appear as blanks in SN( ) and GN( )
-        INTEGER         NROWS, NCOLS  ! No. of rows, columns, and cells
 
-        REAL            XX, YY, XDUM, YDUM ! tmp X and Y coordinates
-        REAL            XX0, YY0  ! X and Y origin in coordinates of grid
-        REAL            XX1, YY1  ! X and Y upper right position of grid
-        REAL            DDX, DDY  ! Inverse cell length in X and Y directions
-                                 
         LOGICAL         GFLAG     !  generate output gridding matrix if true
 
-        CHARACTER*16    COORD     !  coordinate system name
-        CHARACTER*16    COORUNIT  !  coordinate system projection units
-        CHARACTER*16    GRDNM     !  grid name
-        CHARACTER*80    GDESC     !  grid description
         CHARACTER*300   MESG      !  message buffer 
 
         CHARACTER*16 :: PROGNAME = 'GENPGMAT' ! program name
@@ -110,102 +97,12 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine GENPGMAT
 
-C.........  Get grid name from the environment and read grid parameters
-        IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD, GDTYP3D, COORUNIT, 
-     &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
-     &                      XORIG3D, YORIG3D, XCELL3D, YCELL3D,
-     &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+C.........  Initialize temporary storage table. NOTE - uses I/O API
+C           definitions of grid from include file
+        CALL GENPTCEL( NPSRC, NGRID, XLOCA, YLOCA, NEXCLD, NX, 
+     &                 INDX, GN, SN )
 
-            MESG = 'ERROR: Could not get Models-3 grid description'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Store grid parameters for later processing
-        ELSE
-
-            XX0   = SNGL( XORIG3D )
-            YY0   = SNGL( YORIG3D )
-            XX1   = XX0 + FLOAT( NCOLS3D ) * SNGL( XCELL3D )
-            YY1   = YY0 + FLOAT( NROWS3D ) * SNGL( YCELL3D )
-            DDX   = 1.0 / SNGL( XCELL3D )
-            DDY   = 1.0 / SNGL( YCELL3D )
-            NROWS = NROWS3D
-            NCOLS = NCOLS3D
-
-            IF( NCOLS * NROWS .NE. NGRID ) THEN
- 
-                MESG = 'INTERNAL ERROR: Number of cells in "' //
-     &                 PROGNAME( 1:16 ) // '" are inconsistent '//
-     &                 'with calling program'
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-            ENDIF
-
-        ENDIF
-
-C.........  Initialize number of sources per cell
-        DO C = 1, NGRID
-            NX( C ) = 0
-        ENDDO
-
-C.........  Initialize temporary storage table
-        NEXCLD = 0
-        CSAV = 0
-        DO I = 1, NPSRC
-            GN  ( I ) = 0
-            SN  ( I ) = 0
-            INDX( I ) = I
-
-            XX = XLOCA( I )
-            YY = YLOCA( I ) 
-            
-            XDUM = DDX * ( XX - XX0 )
-            IF ( XDUM .LT. 0.0  )  THEN
-                NEXCLD = NEXCLD + 1
-                CYCLE  ! To end of loop
-            ENDIF
-
-            COL = 1 + INT( XDUM )
-            IF ( COL .GT. NCOLS )  THEN
-                NEXCLD = NEXCLD + 1
-                CYCLE  ! To end of loop
-            ENDIF
-
-            YDUM = DDY * ( YY - YY0 )
-            IF ( YDUM .LT. 0.0  )  THEN
-                NEXCLD = NEXCLD + 1
-                CYCLE  ! To end of loop
-            ENDIF
-
-            ROW = 1 + INT( YDUM )
-            IF ( ROW .GT. NROWS )  THEN
-                NEXCLD = NEXCLD + 1
-                CYCLE  ! To end of loop
-            ENDIF
-            
-            C = COL  +  NCOLS * ( ROW - 1 )
-
-            IF( C .LE. NGRID ) THEN
-                NX( C ) = NX( C ) + 1
-
-            ELSEIF( C .GT. CSAV ) THEN
-                CSAV = C
-
-            ENDIF
-
-            GN( I ) = C
-            SN( I ) = I
-
-        ENDDO        !  end loop on sources I, computing gridding matrix.
-        
-        IF ( CSAV .GT. NGRID ) THEN
-            WRITE( MESG,94010 ) 
-     &             'INTERNAL ERROR: Number of grid cells C=', CSAV,
-     &             'exceeds NGRID=', NGRID
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 3 ) 
-        END IF
-
+C.........  Initialize statistics
         CMAX = NX( 1 )
         CMIN = CMAX
 
@@ -317,5 +214,5 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
  
-        END
+        END SUBROUTINE GENPGMAT
 

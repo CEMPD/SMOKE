@@ -8,6 +8,10 @@ LIBPATH    = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
 
+all: grdmat
+
+debug: grdmat.debug
+
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
 
@@ -40,4 +44,4 @@ sizgmat.o: $(MODSOURC) $(MODXREF) $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
-	rm *.o
+	/bin/rm *.o

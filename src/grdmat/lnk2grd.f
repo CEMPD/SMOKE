@@ -1,11 +1,9 @@
-C copied by: mhouyoux
-C origin: lnk2grd.F 3.2
 
-        SUBROUTINE  LNK2GRD( XBEG, YBEG, XEND, YEND, 
-     &                       NCEL, ACEL, AFRAC, ALEN )
+        SUBROUTINE LNK2GRD( NDIM, XBEGIN, YBEGIN, XENDIN, YENDIN, 
+     &                      NCEL, ACEL, AFRAC, ALEN, EFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line  103
+C  subroutine body starts at line 111
 C
 C  FUNCTION:  Given a link with end points XBEG, YBEG, XEND, YEND:
 C       Compute the number NCEL of cells intersected by the link,
@@ -18,11 +16,10 @@ C       Grid description set into FDESC3.EXT prior to call
 C       right handed coord system (XCELL3D and YCELL3D positive)
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C       none
 C
 C  REVISION  HISTORY:
-C       prototype 1/96 by CJC
-C       New algorithm 5/96 by CJC  (removes termination check bug)
+C       Copied from lnk2grd.F 3.2 by mhouyoux
+C       Updated for new SMOKE in 5/99
 C
 C***********************************************************************
 C
@@ -30,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -51,7 +48,6 @@ C****************************************************************************
 
 C...........   INCLUDES:
 
-        INCLUDE 'MBDIMS3.EXT'   ! mobile-source dimensioning parameters
         INCLUDE 'PARMS3.EXT'    ! I/O API constants
         INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
@@ -60,28 +56,38 @@ C...........   COMMON in FDESC3.EXT provides XCELL3D, YCELL3D, etc.
 
 C...........   ARGUMENTS and their descriptions:
 
-        REAL        XBEG, YBEG, XEND, YEND      !  end points of link
-        INTEGER     NCEL                        !  number of intersections
-        INTEGER     ACEL ( MXCFIP )             !  cell #:  col + (row-1)*ncols
-        REAL        AFRAC( MXCFIP )             !  length of link in cell
-        REAL        ALEN                        !  link length
+        INTEGER, INTENT (IN) :: NDIM          !  max number of intersections
+        REAL   , INTENT (IN) :: XBEGIN        !  end points of link
+        REAL   , INTENT (IN) :: YBEGIN        !  end points of link
+        REAL   , INTENT (IN) :: XENDIN        !  end points of link
+        REAL   , INTENT (IN) :: YENDIN        !  end points of link
+        INTEGER, INTENT(OUT) :: NCEL          !  number of intersections
+        INTEGER, INTENT(OUT) :: ACEL ( NDIM ) !  cell #:  col + (row-1)*ncols
+        REAL   , INTENT(OUT) :: AFRAC( NDIM ) !  length of link in cell
+        REAL   , INTENT(OUT) :: ALEN          !  link length
+        LOGICAL, INTENT(OUT) :: EFLAG         !  error flag
 
+C.........  Local arrays dimensioned with subroutine arguments
+        INTEGER  XCOL(   NDIM + 1 )    !  subscript for this grid intersection
+        INTEGER  YROW(   NDIM + 1 )    !  subscript for this grid intersection
+        REAL     XFAC( 0:NDIM + 1 )    !  frac of link traversed
+        REAL     YFAC( 0:NDIM + 1 )    !  frac of link traversed
 
-C...........   SCRATCH LOCAL VARIABLES and their descriptions:
+C...........   LOCAL VARIABLES and their descriptions:
 
         REAL     DDX, DDY                !  1/cellsize
         REAL     DXLNK                   !  One over x-dir link length
         REAL     DYLNK                   !  One over y-dir link length
-        REAL     END                     !  scratch ending coordinate
+        REAL     ENDS                    !  scratch ending coordinate
         REAL     FF                      !  scratch factor vbles
         REAL     FAC                     !  fraction of link traversed so far
         REAL     RSAV
         REAL     START                   !  start starting coordinate
         REAL     XX, YY
+        REAL     XBEG, YBEG              !  local beginning coords
+        REAL     XEND, YEND              !  local ending coords
         REAL     XLNK                    !  link length in x direction
         REAL     YLNK                    !  link length in y direction
-        REAL     XFAC( 0:MXCFIP + 1 )    !  frac of link traversed
-        REAL     YFAC( 0:MXCFIP + 1 )    !  frac of link traversed
 
         INTEGER  CCC                     !  ending   x-cell of link
         INTEGER  COL                     !  starting x-cell of link
@@ -92,15 +98,20 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER  ROW                     !  starting y-cell of link
         INTEGER  RRR                     !  ending   y-cell of link
         INTEGER  XINC, YINC              !  merge counters increments
-        INTEGER  XCOL( MXCFIP + 1 )      !  subscript for this grid intersection
-        INTEGER  YROW( MXCFIP + 1 )      !  subscript for this grid intersection
         INTEGER  XB, XE                  !  pntr to calc fracs @ link beg & end
         INTEGER  YB, YE                  !  pntr to calc fracs @ link beg & end
+
+        CHARACTER*16   :: PROGNAME = 'LNK2GRD'  ! progname name
 
 C***********************************************************************
 C   begin body of subroutine  LNK2GRD
 
 C...........   Initializations
+
+        XBEG = XBEGIN
+        XEND = XENDIN
+        YBEG = YBEGIN
+        YEND = YENDIN
 
         XLNK = XEND - XBEG
         YLNK = YEND - YBEG
@@ -211,6 +222,8 @@ C.................  Reset first fraction if it starts on interior of domain
                     AFRAC( 1 ) = DYLNK * ( YY - YBEG )
                 ENDIF
 
+                IF( NCEL .GT. NDIM ) CALL REPORT_BAD_CELL
+
 C.................  Reset last  fraction if it ends   on interior of domain
                 IF( YEND .LT. YORIG3D + YCELL3D * NROWS3D ) THEN
                     YY = YORIG3D + YCELL3D * FLOAT( RRR - 1 )
@@ -270,6 +283,8 @@ C.................  Initialize for all cells (inside domain) intersecting link
 
                 NCEL = J
 
+                IF( NCEL .GT. NDIM ) CALL REPORT_BAD_CELL
+
 C.................  Reset first fraction if it starts on interior of domain
                 IF( XBEG .GT. XORIG3D ) THEN
                     XX = XORIG3D + XCELL3D * FLOAT( COL )
@@ -308,7 +323,7 @@ C.........  stepping through loop _AND_ for changing sign in the XFAC calc
         IX    = COL
         NX    = CCC
         START = XBEG
-        END   = XEND
+        ENDS  = XEND
 
         IF ( COL .LT. CCC ) THEN
             XINC = 1
@@ -342,14 +357,14 @@ C.............  Initialize first cell when link starts outside domain
                 XFAC( J ) = FF
 
 C.............  Last X-cell of link is inside domain
-            ELSEIF( IC  .EQ. NX .AND. 
-     &              END .LE. XORIG3D + XCELL3D * NCOLS3D .AND.
-     &              IC  .GT. 1  .AND. IC .LE. NCOLS3D          ) THEN
+            ELSEIF( IC   .EQ. NX .AND. 
+     &              ENDS .LE. XORIG3D + XCELL3D * NCOLS3D .AND.
+     &              IC   .GT. 1  .AND. IC .LE. NCOLS3D          ) THEN
                 J         = J + 1
                 XX        = XORIG3D + XCELL3D * FLOAT( XE )
                 XCOL( J ) = IC
                 XFAC( J ) = XFAC( J-1 ) + 
-     &                      DXLNK * FLOAT( XINC ) * ( END - XX )
+     &                      DXLNK * FLOAT( XINC ) * ( ENDS - XX )
 
 C.............  Set fractions for interior of domain
             ELSEIF( IC .GT. 1 .AND. IC .LE. NCOLS3D ) THEN
@@ -378,12 +393,12 @@ C...................................................................
 
 C.........  Establish loop bounds and starting and ending coordinates
 C.........  Also, precalculate pointers (YB & YE) for adjusting fractions 
-C.........  based on orientation of link.  NOTE: YINC is used for 
+C.........  based on orientation of link.  Note that YINC is used for 
 C.........  stepping through loop _AND_ for changing sign in the YFAC calc
         IY    = ROW
         NY    = RRR
         START = YBEG
-        END   = YEND
+        ENDS  = YEND
 
         IF ( ROW .LT. RRR ) THEN
             YINC = 1
@@ -417,14 +432,14 @@ C.............  Initialize first cell when link starts outside domain
                 YFAC( J ) = FF
 
 C.............  Last Y-cell of link is inside domain
-            ELSEIF( IR  .EQ. NY .AND. 
-     &              END .LE. YORIG3D + YCELL3D * NROWS3D .AND.
-     &              IR  .GT. 1 .AND. IR .LE. NROWS3D           ) THEN
+            ELSEIF( IR   .EQ. NY .AND. 
+     &              ENDS .LE. YORIG3D + YCELL3D * NROWS3D .AND.
+     &              IR   .GT. 1 .AND. IR .LE. NROWS3D           ) THEN
                 J         = J + 1
                 YY        = YORIG3D + YCELL3D * FLOAT( YE )
                 YROW( J ) = IR
                 YFAC( J ) = YFAC( J-1 ) + 
-     &                      DYLNK * FLOAT( YINC ) * ( END - YY )
+     &                      DYLNK * FLOAT( YINC ) * ( ENDS - YY )
 
 C.............  Set fractions for interior of domain
             ELSEIF( IR .GT. 1 .AND. IR .LE. NROWS3D ) THEN
@@ -508,5 +523,29 @@ C...........   Merge complete.  Return the number of cells found:
 
         NCEL = J
         RETURN
-        END
+
+C ********************** INTERNAL SUBPROGRAMS ****************************
+
+        CONTAINS
+
+            SUBROUTINE REPORT_BAD_CELL
+
+C.............  Local variables
+            CHARACTER*300 MESG 
+
+C..........................................................................
+
+            WRITE( MESG,94010 ) 'INTERNAL ERROR: Bad number of cells ', 
+     &             NCEL, 'computed in ' // PROGNAME
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+
+C...........   Internal buffering formats............ 94xxx
+
+94010       FORMAT( 10( A, :, I10, :, 1X ) )
+
+            END SUBROUTINE REPORT_BAD_CELL
+
+        END SUBROUTINE LNK2GRD
+
 
