@@ -117,15 +117,14 @@ C.........  Separate line into segments
 C.........  Use the file format definition to parse the line into
 C           the various data fields
         WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS        
-        CFIP( 2:3 ) = ADJUSTR( SEGMENT( 1 )( 1:2 ) )
-        CFIP( 4:6 ) = ADJUSTR( SEGMENT( 2 )( 1:3 ) )
+        CFIP( 2:6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
 
 C.........  Replace blanks with zeros        
         DO I = 1,FIPLEN3
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
         END DO
         
-        TSCC = SEGMENT( 3 )              ! SCC code
+        TSCC = SEGMENT( 2 )              ! SCC code
 
 C.........  Determine number of pollutants for this line based on CAS number
         TCAS = ADJUSTL( SEGMENT( 7 ) )
