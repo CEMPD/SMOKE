@@ -119,6 +119,7 @@ C...........   Logical names and unit numbers
 C...........   Other local variables 
         INTEGER       C, F, J, K, L, L1, L2, NL, V, T ! pointers and counters
 
+        INTEGER       DUMMY                      ! dummy value for use with I/O API functions
         INTEGER       EDATE                      ! ending julian date
         INTEGER       ETIME                      ! ending time HHMMSS
         INTEGER    :: G_SDATE = 0                ! start date from environment
@@ -706,11 +707,12 @@ C.................  Output array
 
 C.....................  Set read date
                     IF( MRGDIFF .AND. USEFIRST( F ) ) THEN
-                        IF( JDATE == SDATE ) THEN
-                            RDATE = SDATEA( F )
-                        ELSE
-                            RDATE = SDATEA( F ) + ( JDATE - SDATE )
-                        END IF
+                        RDATE = SDATEA( F ) + ( JDATE - SDATE )
+                        
+C.........................  Normalize read date (i.e. could be 2000367 -> 2001001)
+                        DUMMY = 0
+                        CALL NEXTIME( RDATE, DUMMY, 0 )
+                        
                     ELSE
                         RDATE = JDATE
                     END IF
