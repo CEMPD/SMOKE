@@ -90,11 +90,17 @@ C.............  Store the current line's file name
 
 C.............  Skip INVYEAR packet 
             I = GETINVYR( INFILE )
-            IF( I .GT. 0 ) CYCLE
+            IF( I .GT. 0 ) THEN
+                FILFMT( J ) = -1
+                CYCLE
+            END IF
 
 C.............  Skip the date range packet
             I = INDEX( INFILE, 'DATERANGE' )
-            IF( I .GT. 0 ) CYCLE
+            IF( I .GT. 0 ) THEN
+                FILFMT( J ) = -1
+                CYCLE
+            END IF
 
 C.............  Open INFILE
             TDEV = JUNIT()
