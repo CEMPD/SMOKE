@@ -267,7 +267,7 @@ C.........  If needed, get other met files and check dimensions
      &              FSREAD3, 'SFCGRD', 'TMPBIO' )
 
             IF ( .NOT. DESC3( GNAME ) ) THEN
-                CALL M3EXIT( 'LAYPOINT', 0, 0,
+                CALL M3EXIT( 'TMPBIO', 0, 0,
      &                      'Could not get description of file "'
      &                      // GNAME( 1:TRIMLEN( GNAME ) ) // '"', 2 )
  
