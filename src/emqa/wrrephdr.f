@@ -83,30 +83,36 @@ C...........   Local parameters
         INTEGER, PARAMETER :: OLINELEN = 2500
         INTEGER, PARAMETER :: IHDRDATE = 1
         INTEGER, PARAMETER :: IHDRHOUR = 2
-        INTEGER, PARAMETER :: IHDRCOL  = 3
-        INTEGER, PARAMETER :: IHDRROW  = 4
-        INTEGER, PARAMETER :: IHDRSRC  = 5
-        INTEGER, PARAMETER :: IHDRREGN = 6
-        INTEGER, PARAMETER :: IHDRCNRY = 7
-        INTEGER, PARAMETER :: IHDRSTAT = 8
-        INTEGER, PARAMETER :: IHDRCNTY = 9
-        INTEGER, PARAMETER :: IHDRSCC  = 10
-        INTEGER, PARAMETER :: IHDRSRG1 = 11
-        INTEGER, PARAMETER :: IHDRSRG2 = 12
-        INTEGER, PARAMETER :: IHDRHT   = 13
-        INTEGER, PARAMETER :: IHDRDM   = 14
-        INTEGER, PARAMETER :: IHDRTK   = 15
-        INTEGER, PARAMETER :: IHDRVE   = 16
-        INTEGER, PARAMETER :: IHDRELEV = 17
-        INTEGER, PARAMETER :: IHDRPNAM = 18
-        INTEGER, PARAMETER :: IHDRSNAM = 19
-        INTEGER, PARAMETER :: NHEADER  = 19
+        INTEGER, PARAMETER :: IHDRLAYR = 3
+        INTEGER, PARAMETER :: IHDRCOL  = 4
+        INTEGER, PARAMETER :: IHDRROW  = 5
+        INTEGER, PARAMETER :: IHDRSRC  = 6
+        INTEGER, PARAMETER :: IHDRREGN = 7
+        INTEGER, PARAMETER :: IHDRCNRY = 8
+        INTEGER, PARAMETER :: IHDRSTAT = 9
+        INTEGER, PARAMETER :: IHDRCNTY = 10
+        INTEGER, PARAMETER :: IHDRSCC  = 11
+        INTEGER, PARAMETER :: IHDRSRG1 = 12
+        INTEGER, PARAMETER :: IHDRSRG2 = 13
+        INTEGER, PARAMETER :: IHDRMON  = 14
+        INTEGER, PARAMETER :: IHDRWEK  = 15
+        INTEGER, PARAMETER :: IHDRDIU  = 16
+        INTEGER, PARAMETER :: IHDRSPC  = 17
+        INTEGER, PARAMETER :: IHDRHT   = 18
+        INTEGER, PARAMETER :: IHDRDM   = 19
+        INTEGER, PARAMETER :: IHDRTK   = 20
+        INTEGER, PARAMETER :: IHDRVE   = 21
+        INTEGER, PARAMETER :: IHDRELEV = 22
+        INTEGER, PARAMETER :: IHDRPNAM = 23
+        INTEGER, PARAMETER :: IHDRSNAM = 24
+        INTEGER, PARAMETER :: NHEADER  = 24
 
         CHARACTER*12, PARAMETER :: MISSNAME = 'Missing Name'
 
         CHARACTER*15, PARAMETER :: HEADERS( NHEADER ) = 
      &                          ( / 'Date           ',
      &                              'Hour           ',
+     &                              'Layer          ',
      &                              'X cell         ',
      &                              'Y cell         ',
      &                              'Source ID      ',
@@ -117,6 +123,10 @@ C...........   Local parameters
      &                              'SCC            ',
      &                              'Primary Srg    ',
      &                              'Fallbk Srg     ',
+     &                              'Monthly Prf    ',
+     &                              'Weekly Prf     ',
+     &                              'Diurnal Prf    ',
+     &                              'Spec Prf       ',
      &                              'Stk Ht         ',
      &                              'Stk Dm         ',
      &                              'Stk Tmp        ',
@@ -312,6 +322,18 @@ C.........  Hour column
 
         END IF
 
+C.........  Layer column
+        IF( RPT_%BYLAYER ) THEN
+            J = LEN_TRIM( HEADERS( IHDRLAYR ) )  ! header width
+            WRITE( LAYRFMT, 94630 ) J, 2, RPT_%DELIM  ! leading zeros
+            J = MAX( 2, J )
+            LAYRWIDTH = J + LV
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRLAYR), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+        END IF
+
 C.........  Cell columns
         IF( RPT_%BYCELL ) THEN
 
@@ -396,7 +418,7 @@ C.............  Set country name column width
 C.........  State names
         IF( RPT_%BYSTNAM ) THEN
 
-C.............  For countries in the inventory, get max name width
+C.............  For states in the inventory, get max name width
             NWIDTH = 0
             DO I = 1, NSTATE
                 IF( LSTATUSE( I ) ) THEN
@@ -404,7 +426,7 @@ C.............  For countries in the inventory, get max name width
                 END IF
             END DO
 
-C.............  If any missing country names, check widths
+C.............  If any missing state names, check widths
             IF( STATMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
 
 C.............  Set country name column width 
@@ -476,6 +498,59 @@ C.........  Fallback surrogates column
 
             WRITE( SRG2FMT, 94650 ) W1, RPT_%DELIM 
             SRG2WIDTH = W1 + LV
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYMON ) THEN          ! Monthly
+            J = LEN_TRIM( HEADERS( IHDRMON ) )
+            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINMONID )
+            W1  = MAX( W1, J )
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRMON), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( MONFMT, 94625 ) W1, RPT_%DELIM 
+            MONWIDTH = W1 + LV
+        END IF
+
+        IF( RPT_%BYWEK ) THEN          ! Weekly
+            J = LEN_TRIM( HEADERS( IHDRWEK ) )
+            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINWEKID )
+            W1  = MAX( W1, J )
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRWEK), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( WEKFMT, 94625 ) W1, RPT_%DELIM 
+            WEKWIDTH = W1 + LV
+        END IF
+
+        IF( RPT_%BYDIU ) THEN          ! Diurnal
+            J = LEN_TRIM( HEADERS( IHDRDIU ) )
+            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINDIUID )
+            W1  = MAX( W1, J )
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRDIU), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( DIUFMT, 94625 ) W1, RPT_%DELIM 
+            DIUWIDTH = W1 + LV
+        END IF
+
+C.........  Speciation profile column
+        IF( RPT_%BYSPC ) THEN
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINSPCID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRSPC ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRSPC), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            SPCWIDTH = J + LV
+
         END IF
 
 C.........  Road class.  By roadclass can only be true if by source is not
@@ -766,6 +841,13 @@ C.........  Whether a speciation matrix was applied and mole- or mass-based
 
         END IF
 
+C.........  What pollutant was used for speciation profiles
+        IF( RPT_%BYSPC ) THEN
+            L = LEN_TRIM( RPT_%SPCPOL )
+            WRITE( FDEV,93000 ) 'Speciation profiles for pollutant "' //
+     &                          RPT_%SPCPOL( 1:L ) // '"'
+        END IF
+
 C.........  Whether hourly data or inventory data were input 
 C.........  For hourly data, the time period processed
         IF( RPT_%USEHOUR ) THEN
@@ -876,11 +958,11 @@ C...........   Internal buffering formats............ 94xxx
 
 94620   FORMAT( '(1X,I2.2,"/",I2.2,"/",I4.4,"', A, '")' )
 
-94625   FORMAT( '(1X,I', I1, ',"', A, '")' )
+94625   FORMAT( '(1X,I', I2.2, ',"', A, '")' )
 
-94630   FORMAT( '(1X,I', I1, '.', I1, ',"', A, '")' )
+94630   FORMAT( '(1X,I', I2.2, '.', I1, ',"', A, '")' )
 
-94635   FORMAT( '(1X,', 'I',I1, ',"',A,'", I',I1, ',"',A,'")' )
+94635   FORMAT( '(1X,', 'I',I2.2, ',"',A,'", I',I1, ',"',A,'")' )
 
 94640   FORMAT( '(', 3('1X,F', I2.2, '.2,"', A, '",'), 
      &          '1X,F', I2.2, '.2,"', A, '")' )
