@@ -1,10 +1,30 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         PROGRAM LAYPOINT
 
 C***********************************************************************
-C  program body starts at line 226
+C  program body starts at line 238
 C
 C  DESCRIPTION:
 C       Produces source-level layer fractions, using the emissions-source 
@@ -24,6 +44,7 @@ C       Prototype  11/95 by CJC using algorithms adapted from RADM
 C       subroutine PR()
 C       Version 6/96 by CJC allocates plume fraction uniformly in PRES
 C       instead of in Z (as RADM does), in order to conserve mixing ratio.
+C
 C***********************************************************************
 
       IMPLICIT NONE
@@ -43,7 +64,6 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
-        REAL            ENVREAL
         INTEGER         GETNUM
         LOGICAL         GETYN
         LOGICAL         LAMBERT
@@ -53,7 +73,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
 
-      EXTERNAL       DSCGRID, ENVREAL, GETNUM, GETYN, LAMBERT, LL2LAM, 
+      EXTERNAL       DSCGRID, GETNUM, GETYN, LAMBERT, LL2LAM, 
      &               POLY, PROMPTFFILE, PROMPTMFILE, TRIMLEN
 
 
@@ -61,9 +81,12 @@ C...........   PARAMETERS and their descriptions
 
         INTEGER     NDOTS
         REAL        GAMA
-        PARAMETER ( NDOTS = ( NCOLS + 1 ) * ( NROWS + 1 ) ,
-     &              GAMA  = -0.0098 )
+        REAL        USTARMIN              ! Minimum realistic value for USTAR
 
+        PARAMETER (  NDOTS    = ( NCOLS + 1 ) * ( NROWS + 1 )
+     &             , GAMA     = -0.0098 
+     &             , USTARMIN = 0.01
+     &            )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point source stack parameters:
@@ -79,19 +102,14 @@ C...........   Point source stack parameters:
 
 C.......   Point source meteorology profiles and variables
 
-        REAL        PSTR0( NPSRC )  !  reference P*
         REAL        TSFC ( NPSRC )  !  surface temperature (deg K)
         REAL        HFX  ( NPSRC )  !  sensible heat flux (M K / S )
         REAL        HMIX ( NPSRC )  !  mixing height (m)
-        REAL        ZRUF ( NPSRC )  !  surface roughness (m)
         REAL        USTAR( NPSRC )  !  friction velocity (m/s)
-        REAL        MOL  ( NPSRC )  !  inverse Monin-Obukhov length (1/m)
-        REAL        PRES0( EMLAYS, NPSRC )  !  reference pressure
         REAL        ZF   ( EMLAYS, NPSRC )  !  layer surface height (m)
         REAL        ZH   ( EMLAYS, NPSRC )  !  layer center  height (m)
         REAL        TA   ( EMLAYS, NPSRC )  !  temperature (K)
         REAL        TV   ( EMLAYS, NPSRC )  !  virtual temperature
-        REAL        QV   ( EMLAYS, NPSRC )  !  mixing ratio
         REAL        UWIND( EMLAYS, NPSRC )  !  wind speed (m/s)
         REAL        VWIND( EMLAYS, NPSRC )  !  wind speed (m/s)
         REAL        PRES ( EMLAYS, NPSRC )  !  pressure (Pa)
@@ -132,17 +150,12 @@ C.......   Output layer fractions (in I/O order)
 
         REAL            LFRAC( NPSRC, EMLAYS )
 
-C.......   Empirically developed plume spread factors:
-
-        REAL            SZ0FAC
-        REAL            SPRFAC
-
 C...........   Other local variables
 
         INTEGER         TSTEP   !  output time step
         INTEGER         JDATE, JTIME
         INTEGER         NSTEPS
-        INTEGER         I, L, LL, S
+        INTEGER         I, L, M, S
         REAL            X, Y, P, Q, PP, QQ
         REAL            ZZ0, ZZ1, ZF0, ZF1
         REAL            ZBOT    !  plume bottom elevation (m)
@@ -162,7 +175,6 @@ C...........   Other local variables
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
         INTEGER         FDEV    !  unit number for stack parameters file
         INTEGER         LDEV    !  unit number for log file
-        INTEGER         ISTAT   !  ENVREAL() status
 
 C.......   Dot and cross point grid description parameters:
 
@@ -260,15 +272,6 @@ C   begin body of program LAYPOINT
             CALL M3EXIT( 'LAYPOINT', 0, 0, 'Ending program', 2 )
         END IF
 
-C.......   Get empirical plume rise/spread constants:
-
-        SZ0FAC = ENVREAL( 'SZ0FAC', 
-     &                    'Empirical plume spread factor SZ0FAC',
-     &                    2.0, ISTAT )
-        SPRFAC = ENVREAL( 'SPRFAC',
-     &                    'Empirical plume spread factor SPRFAC',
-     &                    10.0, ISTAT )
-
 
 C.......   Get file name; open input point sources, temporal cross-reference,
 C.......   and temporal profiles files
@@ -325,7 +328,7 @@ C.......   Get time period for output file, dot point grid desc parameters:
 
         JDATE  = SDATE3D
         JTIME  = STIME3D
-        NSTEPS = MXREC3D
+        NSTEPS = MXREC3D - 1
 
         JDATE  = GETNUM( 0, 9999999, JDATE, 
      &                  'Enter starting date (YYYYDDD)' )
@@ -383,7 +386,7 @@ C.......   Get time period for output file, dot point grid desc parameters:
         IF ( .NOT. DESC3( XNAME ) ) THEN
             CALL M3EXIT( 'LAYPOINT', 0, 0, 
      &                  'Could not get description of file "' 
-     &                  // XNAME( 1:TRIMLEN( DNAME ) ) // '"', 2 )
+     &                  // XNAME( 1:TRIMLEN( XNAME ) ) // '"', 2 )
         END IF
 
         NCOLSXG = NCOLS3D
@@ -480,7 +483,7 @@ C.......   for description of output file
             MESG = 'EMIS and MET coordinate system names "' //
      &              GDNAM3D( 1: TRIMLEN( GDNAM3D ) ) // '" and "' //
      &              COONMDG( 1: TRIMLEN( COONMDG ) ) // '" do not match'
-            CALL M3MESG( MESG )
+            CALL M3WARN( 'LAYPOINT', 0, 0, MESG )
 
         END IF
 
@@ -517,9 +520,6 @@ C.......   for description of output file
         WRITE( *,92030 ) 'Starting date', JDATE,  '(YYYYDDD)'
         WRITE( *,92030 ) 'Starting time', JTIME,  '(HHMMSS)'
         WRITE( *,92030 ) 'Run Length   ', NSTEPS, '(hours)'
-        WRITE( *,92000 ) ' '
-        WRITE( *,92040 ) 'Plume Spread factor SZ0FAC', SZ0FAC
-        WRITE( *,92040 ) 'Plume Spread factor SPRFAC', SPRFAC
         WRITE( *,92000 ) ' '
 
 C...........   Read in emissions stack parameters IFIP, ISCC, XLOCA, YLOCA,
@@ -582,27 +582,7 @@ C...........   met data:
      &                NPSRC, XLOCA, YLOCA, NX, CX )
 
 
-C.......   Read time-independent ZZERO, PSTAR0, ZF, ZH:
-
-        IF ( .NOT. READ3( SGRID, 'ZZERO', ALLAYS3,
-     &                    JDATE, JTIME, XBUF ) ) THEN
-
-            MESG = 'Could not read ZZERO from "' //
-     &             SGRID( 1 : TRIMLEN( SGRID ) ) // '".'
-            CALL M3EXIT( 'LAYPOINT', JDATE, JTIME, MESG, 2 )
-
-        END IF      !  if read3() failed on dname
-        CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, ZRUF )
-
-        IF ( .NOT. READ3( SGRID, 'PSTAR0', ALLAYS3,
-     &                    JDATE, JTIME, XBUF ) ) THEN
-
-            MESG = 'Could not read PSTAR0 from "' //
-     &             SGRID( 1 : TRIMLEN( SGRID ) ) // '".'
-            CALL M3EXIT( 'LAYPOINT', JDATE, JTIME, MESG, 2 )
-
-        END IF      !  if read3() failed on dname
-        CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, PSTR0 )
+C.......   Read time-independent ZF, ZH:
 
         IF ( .NOT. READ3( XGRID, 'ZH', ALLAYS3,
      &                    JDATE, JTIME, XBUF ) ) THEN
@@ -627,14 +607,12 @@ C.......   Read time-independent ZZERO, PSTAR0, ZF, ZH:
         DO  45  S = 1, NPSRC
 
             ZZ0 = ZH( 1,S )
-            PRES0( 1,S ) = SIGH( 1 ) * PSTR0( S )  +  VGTOP3D
             ZSTK ( 1,S ) = ZZ0 - STKHT( S )
             ZF0 = ZF( 1,S )
             DDZF( 1,S ) = 1.0 / ZF0
 
             DO  44  L = 2, EMLAYS
 
-                PRES0( L,S ) = SIGH( L ) * PSTR0( S )  +  VGTOP3D
                 ZZ1 = ZH( L,S )
                 ZSTK( L  ,S ) = ZZ1 - STKHT( S )
                 DDZH( L-1,S ) = 1.0 / ( ZZ1 - ZZ0 )
@@ -690,14 +668,6 @@ C...........   Read and transform meteorology:
             END IF      !  if read3() failed on dname
             CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, USTAR )
 
-            IF ( .NOT. READ3( SNAME, 'MOL', ALLAYS3,    ! _inverse_ MOL
-     &                        JDATE, JTIME, XBUF ) ) THEN
-                CALL M3EXIT( 'LAYPOINT', JDATE, JTIME,
-     &               'Could not read MOL from "' // 
-     &               SNAME( 1 : TRIMLEN( SNAME ) ) // '".', 2 )
-            END IF      !  if read3() failed on dname
-            CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, MOL )
-
             IF ( .NOT. READ3( XNAME, 'TA', ALLAYS3,
      &                        JDATE, JTIME, XBUF ) ) THEN
                 CALL M3EXIT( 'LAYPOINT', JDATE, JTIME,
@@ -713,14 +683,6 @@ C...........   Read and transform meteorology:
      &               XNAME( 1 : TRIMLEN( XNAME ) ) // '".', 2 )
             END IF      !  if read3() failed on dname
             CALL BMATVEC( NGRID, NPSRC, EMLAYS, NX, CX, XBUF, TV )
-
-            IF ( .NOT. READ3( XNAME, 'QV', ALLAYS3,
-     &                        JDATE, JTIME, XBUF ) ) THEN
-                CALL M3EXIT( 'LAYPOINT', JDATE, JTIME,
-     &               'Could not read QV from "' // 
-     &               XNAME( 1 : TRIMLEN( XNAME ) ) // '".', 2 )
-            END IF      !  if read3() failed on dname
-            CALL BMATVEC( NGRID, NPSRC, EMLAYS, NX, CX, XBUF, QV )
 
             IF ( .NOT. READ3( XNAME, 'PRES', ALLAYS3,
      &                        JDATE, JTIME, XBUF ) ) THEN
@@ -800,20 +762,23 @@ C...........   Compute other derived meteorology variables:
 
 111             CONTINUE
 
-                P    = MIN( ZSTK( LSTK,S ) * DDZH( LSTK,S ) , 1.0 )
-                Q    = 1.0 - P
-                TSTK = P * TA  ( LSTK-1,S )  +  Q * TA  ( LSTK,S )
-                WSTK = P * WSPD( LSTK-1 )    +  Q * WSPD( LSTK )
-
+                M    = MAX( 1, LSTK - 2 )
+                TSTK = POLY( ZSTK( LSTK,S ),
+     &                       ZH( M,S ),
+     &                       TA( M,S ), 3 )
+                WSTK = MAX( POLY( ZSTK( LSTK,S ),
+     &                            ZH( M,S ),
+     &                            WSPD( M ), 3 ),
+     &                      0.1 )
 
 C...............   Compute plume rise for this source (noting inversion of MOL):
+C...............   Trap USTAR at a minimum realistic value 
 
                 CALL PLMRIS( ZH( 1,S ), ZZF( 1 ), WSPD, 
-     &           TA( 1,S ), QV( 1,S ), PRES( 1,S ), DTHDZ, USTAR( S ), 
-     &           ZRUF( S ), HMIX( S ), 1.0 / MOL( S ), HFX( S ),
-     &           STKHT( S ), STKDM( S ), STKTK( S ), STKVE( S ),
-     &           ZSTK( 1,S ), TSTK, WSTK, LSTK, LPBL, 
-     &           SZ0FAC, SPRFAC, ZTOP, ZBOT )
+     &               TA( 1,S ), DTHDZ, MAX( USTAR( S ), USTARMIN ), 
+     &               HMIX( S ), HFX( S ), STKHT( S ), STKDM( S ), 
+     &               STKTK( S ), STKVE( S ), ZSTK( 1,S ), TSTK, 
+     &               WSTK, LSTK, LPBL, ZTOP, ZBOT )
 
 
 C...............   Compute plume fractions, assuming uniform distribution
@@ -869,10 +834,10 @@ C...................   (Use 3rd order polynomial via POLY() )
      &                                 PRES( 1,S ), 3 )
 
                     DO  126  L = 3, EMLAYS-2
-                        LL = L-2
+                        M = L - 2
                         PRESF( L ) = POLY( ZZF ( L ), 
-     &                                     ZH  ( LL,S ), 
-     &                                     PRES( LL,S ), 3 )
+     &                                     ZH  ( M,S ), 
+     &                                     PRES( M,S ), 3 )
 126                 CONTINUE
 
                     PRESF( EMLAYS-1 ) = POLY( ZZF ( EMLAYS-1 ),
@@ -882,13 +847,13 @@ C...................   (Use 3rd order polynomial via POLY() )
      &                                        ZH  ( EMLAYS-1,S ),
      &                                        PRES( EMLAYS-1,S ), 1 )
 
-                    LL = MIN( MAX( 0, LBOT-2 ), EMLAYS-3 )
-                    PBOT = POLY( ZBOT, ZZF( LL ), PRESF( LL ), 3 )
+                    M    = MIN( MAX( 0, LBOT-2 ), EMLAYS-3 )
+                    PBOT = POLY( ZBOT, ZZF( M ), PRESF( M ), 3 )
 
-                    LL = MIN( MAX( 0, LTOP-2 ), EMLAYS-3 )
-                    PTOP = POLY( ZTOP, ZZF( LL ), PRESF( LL ), 3 )
+                    M    = MIN( MAX( 0, LTOP-2 ), EMLAYS-3 )
+                    PTOP = POLY( ZTOP, ZZF( M ), PRESF( M ), 3 )
 
-                    DDP = 1.0 / ( PBOT - PTOP )  !  = d(plumefrac)/d(pres)
+                    DDP  = 1.0 / ( PBOT - PTOP )  !  = d(plumefrac)/d(pres)
 
                     LFRAC( S,LBOT ) = DDP * ( PBOT - PRESF( LBOT ) )
                     LFRAC( S,LTOP ) = DDP * ( PRESF( LTOP-1 ) - PTOP )
@@ -934,8 +899,6 @@ C...........   Informational (LOG) message formats... 92xxx
 92020   FORMAT ( 5X , A, I9 )
 
 92030   FORMAT ( 5X , A, I12, :, 2X, A  )
-
-92040   FORMAT ( 5X , A, 1PG12.3, :, 2X, A )
 
 
 C...........   Formatted file I/O formats............ 93xxx
