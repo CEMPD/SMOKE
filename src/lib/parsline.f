@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -150,34 +150,34 @@ C.............  Waiting for next field...
                 NUMBER = THISNMBR
                 ALPHA  = ( .NOT. NUMBER .AND. IXP .LE. 0 )
 
-                IF( ALPHA ) THEN
-                    DELIM = .FALSE.
-                    L1    = I
-                    NCNT  = NCNT + 1
-
-                ELSEIF( NUMBER ) THEN
-                    DELIM  = .FALSE.
-                    L1     = I
-                    NCNT   = NCNT + 1
-
-                ELSEIF( CBUF .EQ. SINGLEQ ) THEN
+                IF( CBUF .EQ. SINGLEQ ) THEN
                     QUOTED  = .TRUE.
                     DELIM   = .FALSE.
                     QUOTVAL = SINGLEQ
                     L1     = I + 1
                     NCNT    = NCNT + 1
 
-                ELSEIF( CBUF .EQ. DOUBLEQ ) THEN
+                ELSE IF( CBUF .EQ. DOUBLEQ ) THEN
                     QUOTED  = .TRUE.
                     DELIM   = .FALSE.
                     QUOTVAL = DOUBLEQ
                     L1      = I + 1
                     NCNT    = NCNT + 1
 
-                ENDIF  ! Else its another delimiter
+                ELSE IF( ALPHA ) THEN
+                    DELIM = .FALSE.
+                    L1    = I
+                    NCNT  = NCNT + 1
+
+                ELSE IF( NUMBER ) THEN
+                    DELIM  = .FALSE.
+                    L1     = I
+                    NCNT   = NCNT + 1
+
+                END IF  ! Else its another delimiter
 
 C.............  In a quoted field, skip everything unless it is an end quote
-            ELSEIF( QUOTED ) THEN
+            ELSE IF( QUOTED ) THEN
 
                 IF( CBUF .EQ. QUOTVAL ) THEN
                     QUOTED  = .FALSE.
@@ -186,11 +186,11 @@ C.............  In a quoted field, skip everything unless it is an end quote
 
                     CALL STORE_SEGMENT  
                   
-                ENDIF
+                END IF
 
 C.............  If start of field was a number, but adjacent character is not
 C               a delimiter, then turn field into an alpha
-            ELSEIF( NUMBER .AND. .NOT. THISNMBR .AND. IXP .LE. 0 ) THEN
+            ELSE IF( NUMBER .AND. .NOT. THISNMBR .AND. IXP .LE. 0 ) THEN
                 ALPHA  = .TRUE.
                 NUMBER = .FALSE.
 
@@ -204,11 +204,12 @@ C               delimiter, then end of number has been reached
 
                 CALL STORE_SEGMENT
 
-            ENDIF
+            END IF
 
-        ENDDO
+        END DO
 
 C.........  Store final segment
+        IF( CBUF .EQ. QUOTVAL ) L = L - 1
         L2 = L
         CALL STORE_SEGMENT
 
