@@ -295,6 +295,9 @@ C.............  Get stack split groups file
             GDEV = PROMPTFFILE( 
      &         'Enter logical name for the STACK SPLIT GROUPS file',
      &         .TRUE., .TRUE., CRL // 'GROUP', PROGNAME )
+        END IF
+
+        IF( PINGFLAG .OR. MAJRFLAG ) THEN
 
 C.............  Get stack split definitions file
             TDEV = PROMPTFFILE( 
@@ -593,6 +596,7 @@ C.............  Flag and sources as major or plume-in-grid, and store group
 C               number for plume-in-grid sources
             DO S = 1, NSRC
 
+C.................  Look for source characteristics in the stack splits file
                 CSRC = CSOURC( S )( 1:PTENDL3( 4 ) )
                 I = FINDC( CSRC, NSLINES, SPTCSRC )
 
@@ -601,28 +605,31 @@ C               number for plume-in-grid sources
                     I = FINDC( CSRC, NSLINES, SPTCSRC )
                 END IF
 
+C.................  For sources that appear in the stack splits file...
                 IF( I .GT. 0 ) THEN
                     J = SPTINDX( I )
                     FOUND  ( I ) = .TRUE.
-                    GROUPID( S ) = SPTGIDA( J )
+
+C.....................  Store per-source major status (not dependent on groups)
+                    LMAJOR ( S ) = ( MAJRFLAG .AND. SPTMMSA( J ) )
+                    IF( LMAJOR( S ) ) THEN
+                        NMAJOR = NMAJOR + 1
+                    END IF
 
 C.....................  Find group ID in stack groups file to make sure that
 C                       output is desired for this group
                     GID = SPTGIDA( J )
+                    GROUPID( S ) = GID
                     K = FIND1( GID, NGROUP, GRPGID )
 
 C.....................  Skip source if stack group is not in stack group file
                     IF( K .LE. 0 ) CYCLE
 
-C.....................  Store per-source major and PinG source info
-                    LMAJOR ( S ) = ( MAJRFLAG .AND. SPTMMSA( J ) )
+C.....................  Store per-source PinG status
                     LPING  ( S ) = ( PINGFLAG .AND. SPTMPSA( J ) )
-
                     IF( LPING( S ) ) THEN
                         NPING  = NPING  + 1
-                    ELSE IF( LMAJOR( S ) ) THEN
-                        NMAJOR = NMAJOR + 1
-                    END IF
+                    ENDIF
 
 C.....................  Check the stack groups file for stack parameters and
 C                       coordinates. If the group is missing any information,
