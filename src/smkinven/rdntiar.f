@@ -374,7 +374,7 @@ C.................  Apply factor for this pollutant (only if valid)
                 END IF
                 
 C.................  Store emissions by pollutant for reporting
-                EMISBYPOL( I ) = EMISBYPOL( I ) + EANN
+                EMISBYPOL( I ) = EMISBYPOL( I ) + POLANN
 
 C.................  Check if current pollutant is kept
                 IF( .NOT. ITKEEPA( SCASIDX( I ) ) ) THEN
