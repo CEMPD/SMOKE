@@ -143,7 +143,7 @@ C.............  Prompt for and gridded open file(s)
 
             IF( BFLAG ) THEN
                 CALL SETUP_VARIABLES( BNIPOL, BNMSPC, BEINAM, BEMNAM )
-                NLAYS3D = EMLAYS
+                NLAYS3D = 1
                 FDESC3D( 1 ) = 'Biogenic source emissions data'
                 BONAME = PROMPTMFILE(  
      &            'Enter name for BIOGENIC-SOURCE GRIDDED OUTPUT file',
@@ -162,6 +162,7 @@ C.............  Prompt for and gridded open file(s)
             IF( PFLAG ) THEN
                 CALL SETUP_VARIABLES( PNIPOL, PNMSPC, PEINAM, PEMNAM )
                 NLAYS3D = EMLAYS
+                VGLVS3D = VGLVS
                 FDESC3D( 1 ) = 'Point source emissions data'
                 PONAME = PROMPTMFILE(  
      &            'Enter name for POINT-SOURCE GRIDDED OUTPUT file',
@@ -171,6 +172,7 @@ C.............  Prompt for and gridded open file(s)
             IF( XFLAG ) THEN
                 CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )
                 NLAYS3D = EMLAYS
+                VGLVS3D = VGLVS
                 FDESC3D( 1 ) = 'Multiple category emissions data'
                 TONAME = PROMPTMFILE(  
      &            'Enter name for MULTI-SOURCE GRIDDED OUTPUT file',
