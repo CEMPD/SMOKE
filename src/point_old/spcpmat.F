@@ -62,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         FIND1, FIND2, FIND3, FIND4
         LOGICAL         GETYN
-        INTEGER         GETMENU 
+        INTEGER         INDEX1
         INTEGER         LBLANK
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
@@ -71,7 +71,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETYN, GETMENU, 
+        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETYN, INDEX1,
      &                  LBLANK, PROMPTFFILE, PROMPTMFILE, RDSPROF,
      &                  STR2INT, STR2REAL, TRIMLEN
 
@@ -218,6 +218,7 @@ C...........   Other local variables
         INTEGER         SDEV                !  for surrogate coeff file
         INTEGER         XDEV                !  for surrogate xref  file
         INTEGER         LDEV                !  log-device
+        INTEGER         VID                 ! id index of volatile pollutant
 
         INTEGER         IOS                 !  I/O status
         INTEGER         IREC                !  input line (record) number
@@ -354,6 +355,17 @@ C.......   Read the ACTUAL-SCC FILE
 
 33      CONTINUE        !  end of the CDEV-read loop
 
+        IF( I .EQ. 0 ) THEN
+            EFLAG = .TRUE.
+            CALL M3MESG( 'ACTUAL SCC file is empty' )
+
+        ELSE
+            WRITE( MESG,94010 ) 
+     &             'NOTE: ACTUAL SCC file has', I, 'entries'
+            CALL M3MESG( MESG )
+
+        ENDIF
+
         IF ( EFLAG ) THEN
             MESG = 'Error reading ACTUAL SCC file'
             CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
@@ -378,35 +390,55 @@ C...............   ASSUMPTION:  sorted by profile ID
         END IF
 
 C.......   Compare inventory pollutant in the speciation profile with
-C.......   volatile pollutant in inventory.  If not the same, prompt for
-C.......   a conversion file.
+C.......   volatile pollutant in inventory.
 
-C.......   Prompt for which inventory pollutant is volatile
-C.......   If needed, read the volatile pollutant conversion file
+        VID  = 0
+        I    = 0
+        POLV = ' '
+77      CONTINUE  ! Loop to find volatile inventory pollutant
 
-        CHOICE = GETMENU( NIPOL, 1, 
-     &                    'Which inventory pollutant is volatile?',
-     &                    EINAM )
+            I = I + 1
+            VID = INDEX1( EINAM( I ), NUMVOL, VOLTYP )
+            IF( VID .GT. 0 ) THEN
 
-        POLV  = EINAM( CHOICE )
-        KFLAG = ( INVPRO .NE. POLV )
+                POLV = EINAM( I )
+                GO TO 88
 
-        IF( KFLAG ) THEN
+            ELSEIF( I .EQ. NIPOL ) THEN
+
+                I = I + 1
+                CALL M3WARN( 'SPCMMAT', 0, 0,
+     &                       'No valid volatile inventory pollutant' )
+                GO TO 88
+
+            ENDIF
+
+        GO TO 77  ! To head of finding volatile pollutant type
+
+88      CONTINUE
+
+        IF( INVPRO .NE. POLV .AND. I .LE. NIPOL) THEN
 
             MESG = 'Enter logical name for ' //
      &              POLV ( 1:TRIMLEN( POLV ) ) // ' TO ' //
-     &              INVPRO ( 1:TRIMLEN( INVPRO ) ) // 
-     &             ' CONVERSION file'
-            KDEV = PROMPTFFILE( 
+     &              INVPRO ( 1:TRIMLEN( INVPRO ) ) //
+     &             ' CONVERSION file >> '
+
+            KDEV = PROMPTFFILE(
      &             MESG, .TRUE., .TRUE., 'PSCNV', 'SPCPMAT' )
 
             KFLAG = .TRUE.
 
+        ENDIF
+
+C.......   If needed, read the volatile pollutant conversion file
+
+        IF( KFLAG ) THEN
+
             CALL RDPCONV( KDEV, FIPSV1, SCCSV1, CONVV1, NCNV1,
      &                    SCCSV2, CONVV2, NCNV2 )
 
-        END IF		!  if invpro not polv
-
+        ENDIF
 
 C.......   Read the speciation cross-reference file
 
@@ -417,10 +449,10 @@ C.......   Read the speciation cross-reference file
         I     = 0
         EFLAG = .FALSE.
 
-77      CONTINUE        !  head of the XDEV-read loop
+  101   CONTINUE        !  head of the XDEV-read loop
 
             IREC = IREC + 1
-            READ( XDEV, 93000, END=88, IOSTAT=IOS ) LINE
+            READ( XDEV, 93000, END=111, IOSTAT=IOS ) LINE
 
             IF ( IOS .NE. 0 ) THEN
 
@@ -438,10 +470,10 @@ C.......   Read the speciation cross-reference file
 C............. Convert character SCC field to integer SCC number
 
             IF( LS .EQ. 0 .AND. EC .EQ. 10 ) THEN  ! Area x-ref entry
-                GO TO 77
+                GO TO 101
 
             ELSEIF( LINE(17:17) .GT. '9' ) THEN    ! Motor vehicle x-ref entry
-                GO TO 77
+                GO TO 101
 
             ELSE
                 SCC = STR2INT( LINE( 17:26 ) )
@@ -458,7 +490,7 @@ C............. Convert character SCC field to integer SCC number
             END IF
 
             IF ( J .LE. 0 ) THEN  ! SCC code not found in SCC LIST file
-                GO TO  77
+                GO TO  101
 
             ELSE IF ( I .GE. NPSRC ) THEN
                 EFLAG = .TRUE.
@@ -482,9 +514,9 @@ C............. Convert character SCC field to integer SCC number
 
             END IF
 
-        GO TO  77   !  to head of the SDEV-read loop
+        GO TO  101  !  to head of the SDEV-read loop
 
-88      CONTINUE        !  end of the SDEV-read loop
+  111   CONTINUE        !  end of the SDEV-read loop
 
         IF ( EFLAG ) THEN
             MESG = 'Error reading SPECIATION XREF file'
