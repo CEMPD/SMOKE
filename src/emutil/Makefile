@@ -8,9 +8,10 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 geofac mvcondns mvsetup pktreduc smk2emis surgtool uam2ncf 
+all: beld3to2 geofac metscan mvcondns mvsetup pktreduc smk2emis surgtool \
+     uam2ncf 
 
-debug: beld3to2.debug geofac.debug mvcondns.debug mvsetup.debug \
+debug: beld3to2.debug geofac.debug metscan.debug mvcondns.debug mvsetup.debug \
        pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug 
 
 .f.o:
@@ -39,6 +40,16 @@ geofac: $(GEOF) $(ALLI) $(LIBPATH)
 geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'GEOFAC (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(GEOF) $(LIBS_DEBUG)
+
+MSCN=metscan.o
+#
+metscan: $(MSCN) $(ALLI) $(LIBPATH)
+        echo METSCAN:
+        $(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MSCN) $(LIBS)
+#
+metscan.debug: $(MSCN) $(ALLI) $(LIBPATH_DEBUG)
+        echo METSCAN \(debug\):
+        $(FC) $(DBGFLAGS) -o $(@) $(MSCN) $(LIBS_DEBUG)
 
 MVC=mvcondns.o
 
