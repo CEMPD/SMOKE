@@ -293,7 +293,7 @@ C.......   Get output file name; open control file, and report file if any
 44      CONTINUE
 
         RDEV  = PROMPTFFILE( '...for REPORT file, or "NONE"',
-     &                       .FALSE., .TRUE., 'REPORT', 'ADJPMAT' )
+     &                       .FALSE., .TRUE., 'PAREPT', 'ADJPMAT' )
         RFLAG = ( RDEV .GT. 0 )
 
 
