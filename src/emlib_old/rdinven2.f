@@ -103,9 +103,10 @@ C   begin body of subroutine RDINVEN2
             ZONNAM = 'ZONES'
 
         ELSEIF( CATEGORY .EQ. 'MOBILE' ) THEN
-            NVARI  = 2
+            NVARI  = 3
             FIPNAM = 'IFIP'
             VR2NAM = 'IRCLAS'
+            VR3NAM = 'ILINK'
             ZONNAM = 'TZONES'
 
         ELSEIF( CATEGORY .EQ. 'POINT' ) THEN
