@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -300,8 +300,14 @@ C.................  Get factor for the numerator and denominator
                 FAC1 = UNITFAC( T_UNIT, O_UNIT, .TRUE. )
                 FAC2 = UNITFAC( T_UNIT, O_UNIT, .FALSE. )
 
-                IF( FAC1 .EQ. 1 ) NUM_O = NUM_I
-                IF( FAC2 .EQ. 1 ) DEN_O = DEN_I
+                IF( FAC1 .LT. 0. ) THEN
+                    NUM_O = NUM_I
+                    FAC1 = 1.
+                ENDIF
+                IF( FAC2 .LT. 0. ) THEN
+                    DEN_O = DEN_I
+                    FAC2 = 1.
+                ENDIF
 
 C.................  Set the final output units
                 L1  = LEN_TRIM( NUM_O )

@@ -87,7 +87,9 @@ C...........   File units and logical/physical names
         INTEGER         LDEV    !  log-device
         INTEGER         NDEV    !  SCC descriptions
         INTEGER         ODEV    !  output file unit number
+        INTEGER         PDEV    !  speciation supplemental file
         INTEGER         SDEV    !  ASCII inven input file
+        INTEGER         TDEV    !  temporal supplemental files
         INTEGER         YDEV    !  country/state/county names file
 
         CHARACTER*16  :: ANAME  = ' '   !  logical name for ASCII inven input 
@@ -139,7 +141,7 @@ C           values for use in memory allocation.
 
 C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, GNAME, LNAME, SLNAME, SSNAME, 
-     &                  TNAME, GDEV, SDEV, EDEV, YDEV, NDEV )
+     &                  TNAME, SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV)
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -169,8 +171,8 @@ C           so that arrays can be passed through subroutines).
         CALL CHECKMEM( IOS, 'SSMAT', PROGNAME )
 
 C.........  Read one-time input file data
-        CALL RDREPIN( GDIM, NSLIN, NSSIN, GDEV, SDEV, EDEV, YDEV, NDEV, 
-     &                ENAME, GNAME, LNAME, SLNAME, SSNAME, 
+        CALL RDREPIN( GDIM, NSLIN, NSSIN, SDEV, GDEV, PDEV, TDEV, EDEV, 
+     &                YDEV, NDEV, ENAME, GNAME, LNAME, SLNAME, SSNAME, 
      &                GMAT( 1 ), GMAT( NGRID+1 ),
      &                GMAT( NGRID+NMATX+1 ), SSMAT, SLMAT )
 
@@ -330,12 +332,12 @@ C               for the appropriate time resolution...
 
 C.............  For mole-based speciation...
             IF( RPT_%USESLMAT ) THEN
-                CALL GENRPRT( ODEV, N, ENAME, TNAME, OUTFMT,
+                CALL GENRPRT( ODEV, N, ENAME, TNAME, LNAME, OUTFMT,
      &                        SLMAT, EFLAG )
 
 C.............  For mass-based and no speciation
             ELSE
-                CALL GENRPRT( ODEV, N, ENAME, TNAME, OUTFMT,
+                CALL GENRPRT( ODEV, N, ENAME, TNAME, LNAME, OUTFMT,
      &                        SSMAT, EFLAG )
             END IF
 

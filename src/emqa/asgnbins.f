@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -68,16 +68,17 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER    INDEX1
         INTEGER    FIND1
         INTEGER    FINDC
 
-        EXTERNAL   FIND1, FINDC
+        EXTERNAL   INDEX1, FIND1, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT    ! current report number
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: BUFLEN = 61 + SCCLEN3
+        INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SPNLEN3
 
 C...........   Sorting arrays
         INTEGER              , ALLOCATABLE :: SORTIDX( : )
@@ -88,14 +89,17 @@ C...........   Local variables
         INTEGER         B, C, F, I, J, K, LB, S
 
         INTEGER         COL               ! tmp column number
+        INTEGER         DIUID             ! tmp diurnal profile number
         INTEGER         FIP               ! tmp country/state/county
         INTEGER         IOS               ! i/o status
+        INTEGER         MONID             ! tmp monthly profile number
         INTEGER         NDATA             ! no. output data columns for current
         INTEGER         RCL               ! tmp road class code
         INTEGER         ROW               ! tmp row number
         INTEGER         SRCID             ! tmp source ID
         INTEGER         SRGID1            ! tmp primary surrogate ID
         INTEGER         SRGID2            ! tmp fallback surrogate ID
+        INTEGER         WEKID             ! tmp weekly profile number
 
         CHARACTER*1            ESTAT      ! tmp elevated status
         CHARACTER*60           FMTBUF     ! format buffer
@@ -104,6 +108,7 @@ C...........   Local variables
         CHARACTER(LEN=BUFLEN)  BUFFER     ! sorting info buffer
         CHARACTER(LEN=BUFLEN)  LBUF       ! previous sorting info buffer
         CHARACTER(LEN=SCCLEN3) SCC        ! tmp SCC
+        CHARACTER(LEN=SPNLEN3) SPCID      ! tmp speciation profile
 
         CHARACTER*16 :: PROGNAME = 'ASGNBINS' ! program name
 
@@ -125,7 +130,8 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF, '(A,I2.2,A)' ) '(4I8, A', SCCLEN3, ',3I8,A)'
+        WRITE( FMTBUF, '(A,I2.2,A,I2.2,A)' ) 
+     &         '(4I8, A', SCCLEN3, ',5I8,A', SPNLEN3, ',I8,A)'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -136,6 +142,10 @@ C           report
         RCL    = 0
         SRGID1 = 0
         SRGID2 = 0
+        MONID  = 0
+        WEKID  = 0
+        DIUID  = 0
+        SPCID  = ' '
         SCC    = ' '
         ESTAT  = ' '
 
@@ -204,6 +214,33 @@ C.................  If by surrogates IDs, insert them depending on resolution
 
             END IF  ! End by surrogate IDs
 
+C.................  If by monthly temporal profile, insert them
+            IF( RPT_%BYMON ) MONID = IMON( OUTSRC( I ) )
+
+C.................  If by weekly temporal profile, insert them
+            IF( RPT_%BYWEK ) WEKID = IWEK( OUTSRC( I ) )
+
+C.................  If by diurnal temporal profile, insert them
+            IF( RPT_%BYDIU ) DIUID = IDIU( OUTSRC( I ) )
+
+C.................  If by speciation profile, insert them based on the pollutant
+C                   specified
+            IF( RPT_%BYSPC ) THEN
+                J = INDEX1( RPT_%SPCPOL, NSPCPOL, SPCPOL )
+
+C.................  Unless coding error, RPT_%SPCPOL should be found
+                IF ( J .LE. 0 ) THEN
+
+                    MESG = 'INTERNAL ERROR: Pollutant "'// RPT_%SPCPOL//
+     &                     'not found in list created from REPCONFIG.'
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+                ELSE
+                    SPCID = SPPROF( OUTSRC(I),J )                    
+                END IF
+            END IF
+
 C.................  If BY ELEVSTAT, insert elevated status code
             IF( RPT_%BYELEV ) THEN
 
@@ -219,7 +256,8 @@ C.................  If BY ELEVSTAT, insert elevated status code
 
 C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, 
-     &                             SRGID1, SRGID2, RCL, ESTAT
+     &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
+     &                             SPCID, RCL, ESTAT
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
@@ -274,6 +312,10 @@ C.........  Allocate memory for bins
      &                     ALLOCATE( BINSRGID1( NOUTBINS ), STAT=IOS )
         IF( RPT_%SRGRES .GE. 1 ) 
      &                     ALLOCATE( BINSRGID2( NOUTBINS ), STAT=IOS )
+        IF( RPT_%BYMON   ) ALLOCATE( BINMONID ( NOUTBINS ), STAT=IOS )
+        IF( RPT_%BYWEK   ) ALLOCATE( BINWEKID ( NOUTBINS ), STAT=IOS )
+        IF( RPT_%BYDIU   ) ALLOCATE( BINDIUID ( NOUTBINS ), STAT=IOS )
+        IF( RPT_%BYSPC   ) ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
         IF( RPT_%BYRCL   ) ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
         IF( RPT_%BYCELL  ) ALLOCATE( BINX     ( NOUTBINS ), STAT=IOS )
         IF( RPT_%BYCELL  ) ALLOCATE( BINY     ( NOUTBINS ), STAT=IOS )
@@ -296,7 +338,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
 
                 READ( BUFFER,FMTBUF ) 
      &                COL, ROW, SRCID, FIP, SCC, SRGID1, SRGID2, 
-     &                RCL, ESTAT
+     &                MONID, WEKID, DIUID, SPCID, RCL, ESTAT
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -339,6 +381,14 @@ C.................  Store SCC name index
 C.................  Store surrogate codes
                 IF( RPT_%SRGRES .EQ. 1 ) BINSRGID1( B ) = SRGID1
                 IF( RPT_%SRGRES .GE. 1 ) BINSRGID2( B ) = SRGID2
+
+C.................  Store temporal profiles
+                IF( RPT_%BYMON ) BINMONID( B ) = MONID
+                IF( RPT_%BYWEK ) BINWEKID( B ) = WEKID
+                IF( RPT_%BYDIU ) BINDIUID( B ) = DIUID
+
+C.................  Store speciation profiles
+                IF( RPT_%BYSPC ) BINSPCID( B ) = SPCID
 
 C.................  Store x-cell and y-cell
                 IF( RPT_%BYCELL ) BINX( B ) = COL

@@ -97,6 +97,8 @@ C.........  Widths that depend on other widths
         INTEGER, PARAMETER :: STALEN3 = FIPLEN3 - CNYLEN3 ! Country/St
         INTEGER, PARAMETER :: STSLEN3 = STALEN3 + SCCLEN3 ! Cy/St //SCC
         INTEGER, PARAMETER :: SRCLEN3 = POLPOS3 - 1       ! Source less pol'nt
+        INTEGER, PARAMETER :: OBRLEN3 = ORSLEN3 + BLRLEN3 ! oris + boiler
+        INTEGER, PARAMETER :: OPTLEN3 = ORSLEN3 + CHRLEN3 ! oris + point (IDA char1)
 
         INTEGER, PARAMETER :: SS0LEN3 = CH1POS3-1 + SCCLEN3 ! -> Plant // SCC
         INTEGER, PARAMETER :: SS1LEN3 = CH2POS3-1 + SCCLEN3 ! -> Char1 // SCC

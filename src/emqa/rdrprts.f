@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -55,8 +55,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2   CRLF
         LOGICAL       BLKORCMT
         INTEGER       GETNLIST
+        INTEGER       INDEX1
 
-        EXTERNAL   CRLF, BLKORCMT, GETNLIST
+        EXTERNAL   CRLF, BLKORCMT, GETNLIST, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! File unit number
@@ -65,7 +66,7 @@ C...........   Line parsing array
         CHARACTER*300 SEGMENT( 100 )
  
 C...........   Other local variables
-        INTEGER          H, I, L, N    ! counters and indices
+        INTEGER          H, I, J, L, N    ! counters and indices
 
         INTEGER          IOS     !  i/o status
         INTEGER          IREC    !  record counter
@@ -77,6 +78,8 @@ C...........   Other local variables
         CHARACTER*300    BUFFER            !  line work buffer
         CHARACTER*300    LINE              !  line input buffer
         CHARACTER*300    MESG              !  message buffer
+
+        CHARACTER(LEN=IOVLEN3) :: CBUF     !  tmp pollutant buffer
 
         CHARACTER*16 :: PROGNAME = 'RDRPRTS' ! program name
 
@@ -211,10 +214,23 @@ C note: Must edit here.
 C.........  Rewind file
         REWIND( FDEV )
 
-C.........  Post-process output times and update logical array
+C.........  If speciation codes selected, allocate memory for pollutants list
+C           and flag to indicate which of the selected pollutants were in the
+C           supplemental speciation file.
+        IF ( PSFLAG ) THEN
+            ALLOCATE( SPCPOL( NIPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPCPOL', PROGNAME )
+            ALLOCATE( LSPCPOL( NIPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LSPCPOL', PROGNAME )
+            SPCPOL  = ' '       ! array
+            LSPCPOL = .FALSE.   ! array
+        END IF
+
+C.........  Post-process reports...
         DO N = 1, NREPORT
 
-C.............  If reportin "BY HOUR" or if temporal allocation not used for 
+C.............  Post-process output times and update logical array
+C.............  If reporting "BY HOUR" or if temporal allocation not used for 
 C               the report, set output for all "hours" to true. 
             IF( ALLRPT( N )%BYHOUR .OR. .NOT. ALLRPT( N )%USEHOUR ) THEN
 
@@ -227,6 +243,62 @@ C.............  Output for a specific hour (set as HHMMSS)
 
             END IF
 
+C.............  Check pollutants selected with SPCCODE and build a list of
+C               valid pollutants
+            IF ( ALLRPT( N )%BYSPC ) THEN
+
+                CBUF = ALLRPT( N )%SPCPOL
+
+C.................  Search for pollutant from REPCONFIG in inventory list
+                J = INDEX1( CBUF, NIPOL, EINAM )
+
+C.................  Error if not found
+                IF ( J .LE. 0 ) THEN
+
+                    L = LEN_TRIM( CBUF )
+                    WRITE( MESG,94010 ) 'WARNING: Pollutant "'//
+     &                     CBUF( 1:L ) // 'for report', N,
+     &                     'not found in inventory ' // CRLF()//
+     &                     BLANK10// 'pollutant list.  Ignoring '//
+     &                     'instruction for speciation codes.'
+                    CALL M3MSG2( MESG )
+                    ALLRPT( N )%BYSPC = .FALSE.
+
+C.................  Store first valid pollutant
+                ELSE IF ( NSPCPOL .EQ. 0 ) THEN
+                    NSPCPOL = 1
+                    SPCPOL( 1 ) = CBUF
+                    INDNAM( 1, N ) = CBUF      ! select pollutant
+                    ALLRPT( N )%NUMDATA = 1
+
+C.................  Only allow one pollutant in REPCONFIG file 
+                ELSE IF ( CBUF .EQ. SPCPOL( 1 ) ) THEN
+                    INDNAM( 1, N ) = CBUF      ! select pollutant
+                    ALLRPT( N )%NUMDATA = 1
+
+C.................  Store other valid pollutants, but ensure not already in list
+                ELSE 
+                    L = LEN_TRIM( CBUF )
+                    WRITE( MESG,94010 ) 'WARNING: Skipping pollutant '//
+     &                      '"'// CBUF( 1:L ) // '" at line', IREC, 
+     &                      CRLF()// BLANK10 // 'Only allowed one '
+     &                      // 'pollutant per REPCONFIG file '//
+     &                      'with SPCCODE instruction.'
+                    CALL M3MSG2( MESG )
+
+                    INDNAM( 1, N ) = CBUF      ! select pollutant
+                    ALLRPT( N )%NUMDATA = 1
+
+c                    J = INDEX1( CBUF, NSPCPOL, SPCPOL )
+c                    IF ( J .LE. 0 ) THEN
+c                        NSPCPOL = NSPCPOL + 1
+c                        SPCPOL( NSPCPOL ) = CBUF
+c                    END IF
+
+                END IF
+
+            END IF    
+                
         END DO
 
 C.........  If there was an error reading the file

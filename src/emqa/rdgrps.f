@@ -10,10 +10,7 @@ C     the entries, and stores the fully detailed group information in a table
 C     for each type of group.
 C      - Subgrid will store cell numbers that are included
 C      - Region will store Regions that are excluded.
-C
-C     NOTE: This routine works somewhat for subgrids, but is incomplete for
-C        N: region groups
-C
+CC
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -27,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -77,19 +74,24 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays...
 
 C...........   Region group input allocatable arrays
-        INTEGER               , ALLOCATABLE :: REGRAW  ( :,: )
-        LOGICAL               , ALLOCATABLE :: REGSTAT ( :,: )
+        INTEGER, ALLOCATABLE :: REGNREC ( : )    ! no. records per group
+        INTEGER, ALLOCATABLE :: REGRAW  ( :,: )  ! raw codes from input file
+        INTEGER, ALLOCATABLE :: REGTYPE ( :,: )  ! 0=bad,1=country,2=st,3=county
+        LOGICAL, ALLOCATABLE :: REGSTAT ( :,: )  ! raw status (true=include)
 
 C...........   Subgrid input allocatable arrays
-        INTEGER               , ALLOCATABLE :: SBGNREC ( : )
+        INTEGER      , ALLOCATABLE :: SBGNREC ( : )   ! no. records per subgrid
 
-        CHARACTER*100, ALLOCATABLE :: SBGRAW  ( :,: )
-        LOGICAL      , ALLOCATABLE :: SBGSTAT ( :,: )
+        CHARACTER*100, ALLOCATABLE :: SBGRAW  ( :,: ) ! raw info from input file
+        LOGICAL      , ALLOCATABLE :: SBGSTAT ( :,: ) ! raw status (true=incld)
 
 C...........   Per grid-cell local allocatable arrays
         LOGICAL, ALLOCATABLE :: LCELSTAT( : )
         LOGICAL, ALLOCATABLE :: LCEL    ( : )
 c note: make this public in modules??
+
+C...........   Per county allocatable arrays
+        LOGICAL, ALLOCATABLE :: LRGN( : )     ! true: county included
 
 C...........   Per input line local allocatable arrays
         INTEGER, ALLOCATABLE :: LINECODE( : ) ! 1= in-line region; 2= in-line subgrid
@@ -99,11 +101,15 @@ C...........   Other local arrays
         INTEGER   NCNT( NALLPCKT )   ! Count of groups defined by SELECT 
         
 C...........   Other local variables
-        INTEGER         C, I, J, N          ! counters and indices
+        INTEGER         C, I, J, K, N          ! counters and indices
 
+        INTEGER         IC                  ! tmp partial region code
         INTEGER         IOS                 ! i/o status
         INTEGER         IREC                ! line number
+        INTEGER         LEVEL               ! match level for region groups
         INTEGER      :: NINCL = 0           ! tmp number of included cells
+
+        REAL            FAC                 ! tmp conversion factor
 
         LOGICAL      :: EFLAG = .FALSE.     ! true: error found
 
@@ -127,12 +133,15 @@ C           the input file.
         CALL CHECKMEM( IOS, 'LCELSTAT', PROGNAME )
         ALLOCATE( LCEL( NGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LCEL', PROGNAME )
+        ALLOCATE( LRGN( NCOUNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LRGN', PROGNAME )
         
         REGNNAM = ' '     ! array
         SUBGNAM = ' '     ! array
         LINECODE = 0       ! array
         LCELSTAT = .FALSE. ! array
         LCEL     = .FALSE. ! array
+        LRGN     = .FALSE. ! array
 
 C.........  Read in defined group labels
         CALL READ_GROUPS( FDEV, NGRID, 'DEFINED LABELS', LCELSTAT )
@@ -170,16 +179,28 @@ C.........  Reallocate memory for group labels so that labels can be reset with
 C           the inline labels as well.
         IF( NREGNGRP .GT. 0 ) THEN
             DEALLOCATE( REGNNAM )
-            ALLOCATE( REGNNAM( NREGRAW ), STAT=IOS )
+            ALLOCATE( REGNNAM( NREGNGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'REGNNAM', PROGNAME )
+            ALLOCATE( REGNREC( NREGNGRP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'REGNREC', PROGNAME )
             ALLOCATE( REGRAW( MXGRPREC,NREGNGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'REGRAW', PROGNAME )
             ALLOCATE( REGSTAT( MXGRPREC,NREGNGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'REGSTAT', PROGNAME )
+            ALLOCATE( REGTYPE( MXGRPREC,NREGNGRP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'REGTYPE', PROGNAME )
 
-            REGNNAM = ' '     ! array
+            ALLOCATE( NREGREC( NREGNGRP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NREGREC', PROGNAME )
+            ALLOCATE( EXCLDRGN( NCOUNTY,NREGNGRP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EXCLDRGN', PROGNAME )
+
+            REGNNAM  = ' '     ! array
+            REGNREC  = 0       ! array
             REGRAW   = 0       ! array
             REGSTAT  = .TRUE.  ! array (default is include)
+            REGTYPE  = 0       ! array (default is record invalid)
+            EXCLDRGN = 0       ! array 
 
         END IF
 
@@ -210,7 +231,71 @@ C           appear in the input file, but not converted to the data structures
 C           needed for further processing.
         CALL READ_GROUPS( FDEV, NGRID, 'STORE', LCELSTAT )
 
-C.........  Convert entries to data structures needed for further processing.
+C.........  Convert region group entries to data structures needed for
+C           further processing
+        IF( NREGNGRP .GT. 0 ) THEN
+
+C.............  Loop through different regions
+            DO N = 1, PKTCOUNT( REG_IDX )
+
+C.................  Initialize region list indicator depending on first subgrid
+C                   entry
+                IF( REGSTAT( 1,N ) ) THEN   ! include
+                    LRGN = .FALSE.          ! array
+                ELSE                        ! exclude
+                    LRGN = .TRUE.           ! array
+                END IF
+
+C.................  Loop through records in each packet or in-line region group
+                DO I = 1, REGNREC( N )
+
+C.....................  Depending on type of the record (country, state, or
+C                       county), set divisor factor
+                    SELECT CASE( REGTYPE( I,N ) )
+                    CASE( 1 )                     ! country
+                        FAC = 1. / 100000.
+                    CASE( 2 )                     ! state
+                        FAC = 1. / 1000.
+                    CASE( 3 )                     ! county
+                        FAC = 1.           
+                    CASE DEFAULT
+                        CYCLE
+
+                    END SELECT
+
+C.....................  Convert raw value to comparison value
+                    IC = INT( REAL( REGRAW( I,N ) ) * FAC )
+
+C..................... Loop through counties and determine which ones 
+                    DO J = 1, NCOUNTY
+
+                        K = INT( REAL( CNTYCOD( J ) ) * FAC )
+                        IF( K .EQ. IC ) 
+     &                      LRGN( J ) = REGSTAT( I,N )
+                        IF( K .GT. IC ) EXIT
+
+                    END DO  ! End loop on counties
+
+                END DO      ! End loop on entries in region group
+
+C.................  Create list of counties to exclude from group
+                K = 0
+                DO J = 1, NCOUNTY
+
+                    IF( .NOT. LRGN( J ) ) THEN
+                        K = K + 1
+                        EXCLDRGN( K,N ) = CNTYCOD( J )
+                    END IF
+                    NREGREC( N ) = K
+
+                END DO      ! End loop on counties
+
+            END DO          ! End loop on region groups
+
+        END IF
+
+C.........  Convert subgrid entries to data structures needed for further 
+C           processing.
         IF( NSUBGRID .GT. 0 ) THEN
 
 C.............  Loop through different subgrids
@@ -265,10 +350,12 @@ C.................  Based on global cell status, create list of valid cells
         END IF 
             
 C.........  Deallocate raw group information
-        IF( ALLOCATED( REGRAW ) ) DEALLOCATE( REGRAW, REGSTAT )
+        IF( ALLOCATED( REGRAW ) ) DEALLOCATE( REGNREC, REGRAW, 
+     &                                        REGSTAT, REGTYPE )
         IF( ALLOCATED( SBGRAW ) ) DEALLOCATE( SBGRAW, SBGSTAT )
         IF( ALLOCATED( LINECODE ) ) DEALLOCATE( LINECODE )
         IF( ALLOCATED( LCELSTAT ) ) DEALLOCATE( LCELSTAT, LCEL )
+        IF( ALLOCATED( LRGN ) ) DEALLOCATE( LRGN )
 
         RETURN
 
@@ -307,7 +394,7 @@ C.............  Subprogram arguments
             LOGICAL     , INTENT (IN) :: LGRDSTAT( NGRID ) ! true: report cell
 
 C.............   Local parameters   
-            INTEGER, PARAMETER :: MXSEG = 10
+            INTEGER, PARAMETER :: MXSEG = 100
 
 C.............  Subprogram local arrays
             CHARACTER*256 SEGMENT( MXSEG )
@@ -418,28 +505,29 @@ C.................................  Convert label to region code
 
 C.................................  Check if label is a valid region code
 C.................................  REGNTMP is a dummy argument at this stage
-c                                CALL CHECK_REGIONS( FIP, REGNTMP, IOS )
+                                CALL CHECK_REGIONS( FIP, LEVEL, IOS )
                             
 C.................................  If code is valid, store line number of
 C                                   record
-c                                IF( IOS .EQ. 0 ) THEN
-c                                    N = NCNT( REG_IDX ) + 1
-c                                    NCNT( REG_IDX ) = N
-c                                    LINECODE( IREC ) = 1
+                                IF( IOS .EQ. 0 ) THEN
+                                    N = NCNT( REG_IDX ) + 1
+                                    NCNT( REG_IDX ) = N
+                                    LINECODE( IREC ) = 1
 
-C.................................  Otherwise, give warning
-c                                ELSE
-c                                    L = LEN_TRIM( RPT_%REGNNAM )
-c                                    WRITE( MESG,94010 ) 
-c     &                                'WARNING: Region label "' //
-c     &                                RPT_%REGNNAM( 1:L )// '" at line', 
-c     &                                IREC, 'does not match any groups'
-c     &                                // CRLF() // BLANK10 // 'or ' //
-c     &                                'region codes in the inventory. '
-c     &                                //'SELECT REGION will be ignored.'
-c                                    CALL M3MSG2( MESG )
+C.................................  Otherwise, give warning because the label
+C                                   does not match and it's not an inline code
+                                ELSE
+                                    L = LEN_TRIM( RPT_%REGNNAM )
+                                    WRITE( MESG,94010 ) 
+     &                                'WARNING: Region label "' //
+     &                                RPT_%REGNNAM( 1:L )// '" at line', 
+     &                                IREC, 'does not match any groups'
+     &                                // CRLF() // BLANK10 // 'or ' //
+     &                                'region codes in the inventory. '
+     &                                //'SELECT REGION will be ignored.'
+                                    CALL M3MSG2( MESG )
 
-c                                END IF
+                                END IF
 
 C.............................  Label is not an integer, label is invalid
                             ELSE
@@ -533,8 +621,18 @@ C.............................  Store group label
 
 C.............................  Make sure region code is an integer
                             IF( CHKINT( SEGMENT( 1 ) ) ) THEN
-                                REGRAW ( N,RCNT )= STR2INT( SEGMENT(1) )
-                                REGSTAT( N,RCNT )= GRP_INCLSTAT
+                                FIP = STR2INT( SEGMENT(1) )
+
+                                CALL CHECK_REGIONS( FIP, LEVEL, IOS )
+
+                                IF( IOS .EQ. 0 ) THEN
+
+                                    REGNREC( RCNT )  = N
+                                    REGRAW ( N,RCNT )= FIP
+                                    REGSTAT( N,RCNT )= GRP_INCLSTAT
+                                    REGTYPE( N,RCNT )= LEVEL
+
+                                END IF
 
 C.............................  Give an error if code not an integer
                             ELSE
@@ -573,8 +671,28 @@ C                               store unparsed string
 
 C.....................  If not in group, is this line a valid Select-specified
 C                       region?
-c                    ELSE IF( LINECODE( IREC ) .EQ. 1 ) THEN
-c                    note: insert here
+                    ELSE IF( LINECODE( IREC ) .EQ. 1 ) THEN
+
+                        PKTCOUNT( REG_IDX ) = PKTCOUNT( REG_IDX ) + 1
+                        RCNT = PKTCOUNT( REG_IDX ) 
+
+                        FIP = STR2INT( RPT_%REGNNAM )
+
+                        CALL CHECK_REGIONS( FIP, LEVEL, IOS )
+
+C.........................  Store without checking status because LINECODE = 1
+C                           only if code has already been through CHECK_REGIONS
+                        WRITE( REGNNAM( RCNT ), '(A,I3.3)' ) 
+     &                         'IN-LINE ', RCNT
+                        REGNREC( RCNT )   = 1
+                        REGRAW ( 1,RCNT ) = FIP
+                        REGSTAT( 1,RCNT ) = .TRUE.
+                        REGTYPE( 1,RCNT ) = LEVEL
+
+C.........................  Store internal region group name for in-line group
+C                           for current packet
+                        N = PKTCOUNT( RPT_IDX )
+                        ALLRPT( N )%REGNNAM = REGNNAM( RCNT )
 
 C.....................  If not in group, is this line a valid Select-specified
 C                       subgrid?
@@ -635,77 +753,53 @@ C----------------------------------------------------------------------
 C.............  This subprogram compares a region code to the valid country,
 C               state, and county codes and sets corresponding entries in a 
 C               logical array aligning with the CNTYCOD array
-            SUBROUTINE CHECK_REGIONS( REGN, LREGSTAT, STATUS )
+            SUBROUTINE CHECK_REGIONS( REGN, LEVEL, STATUS )
 
 C.............  Exernal subroutines
             INTEGER    FIND1
             EXTERNAL   FIND1
 
 C.............  Subprogram arguments
-            INTEGER, INTENT (IN) :: REGN                ! region code
-            LOGICAL, INTENT (OUT):: LREGSTAT( NCOUNTY ) ! true: region selectd
-            INTEGER, INTENT (OUT):: STATUS              ! exit status
+            INTEGER, INTENT (IN) :: REGN        ! region code
+            INTEGER, INTENT (OUT):: LEVEL       ! sub-region level code
+            INTEGER, INTENT (OUT):: STATUS      ! exit status
 
 C.............  Local variables
             INTEGER  K, L, N     ! counters and indices
 
             INTEGER  FIP         ! tmp country/state/county code
-            INTEGER  LEVEL       ! sub-region level code
             INTEGER  RCHK        ! region code for comparison
 
             CHARACTER*300 MESG   ! mesg buffer
 C----------------------------------------------------------------------
 
-C.............  Initialize exit status
-            STATUS = 0
+C.............  Initialize output variables
+            STATUS = 1
+            LEVEL  = 0
+
 c note: The country codes read in my rdstcy are not in 6-digit format, but the
 c    n: state and county codes are.  This should be corrected to be consistent, 
 c    n: and the places where the country codes are used should be updated
-c    n: accordingly.    
+c    n: accordingly.  
+  
 C.............  Find in country list                      
             IF( MOD( REGN,100000 ) .EQ. 0 ) THEN
-                K = FIND1( REGN, NCOUNTRY, CTRYCOD )
+                K = FIND1( REGN/100000, NCOUNTRY, CTRYCOD )
+                STATUS = 0
                 LEVEL = 1
 
 C.............  Find in state list
-            ELSE IF( MOD( FIP,1000 ) .EQ. 0 ) THEN
+            ELSE IF( MOD( REGN,1000 ) .EQ. 0 ) THEN
                 K = FIND1( REGN, NSTATE, STATCOD )
+                STATUS = 0
                 LEVEL = 2
 
 C.............  Find in county list                      
             ELSE
                 K = FIND1( REGN, NCOUNTY, CNTYCOD )
+                STATUS = 0
                 LEVEL = 3
-
-            END IF
                             
-C.............  If cy/st/co code matches inventory, set status of codes in
-C               input array
-            IF( K .GT. 0 ) THEN
-
-                DO N = 1, NCOUNTY                    
-
-                    SELECT CASE( LEVEL )
-                    CASE( 1 )
-                        RCHK = ( CNTYCOD( N ) / 100000 ) * 100000
-                        
-                    CASE( 2 )
-                        RCHK = ( CNTYCOD( N ) / 1000 ) * 1000
-
-                    CASE( 3 )
-                        RCHK = CNTYCOD( N )
-
-                    END SELECT
-
-                    LREGSTAT( N ) = ( REGN .EQ. RCHK )
-
-                END DO
-
-C.............  If cy/st/co code does not match inventory...
-            ELSE
-
-                STATUS = 1
-
             END IF
 
             RETURN
@@ -812,7 +906,7 @@ C.................  Give error if value is not an integer
      &                     '" in subgrid definition at line', IREC
                     CALL M3MESG( MESG )
 
-                ENDIF
+                END IF
 
 C.................  Ensure y-coordinate buffer is an integer
                 IF( CHKINT( YBUF ) ) THEN
