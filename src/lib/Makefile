@@ -13,7 +13,7 @@ include $(IOMOD_SRC)/modmake.inc
 FILES_A = \
   applumat.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
-  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o   \
+  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     \
   alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o  \
   alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
   alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
@@ -126,6 +126,8 @@ normtpro.o: $(MODTMPRL)
 	$(FC) $(FFLAGS) -c -o $@ $<     
 procspro.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
+rdcodnam.o: $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ $<
 rdefxref.o: $(MODMOBIL) $(MODXREF) $(MODEMFAC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdeproc.o: $(MODEMFAC) $(MODINFO)
