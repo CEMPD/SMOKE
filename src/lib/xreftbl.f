@@ -110,7 +110,6 @@ C...........   Other local variables
         INTEGER    :: PISP = IMISS3    ! previous iteration ISP
 
         LOGICAL    :: CFLAG = .FALSE.  ! true: operation type is control cntls
-        LOGICAL    :: DEFAULT( NIPPA ) ! true: if default entry in x-ref
         LOGICAL    :: EFLAG = .FALSE.  ! true: error has occurred
         LOGICAL    :: FFLAG = .FALSE.  ! true: operation type is emis. factors
         LOGICAL    :: GFLAG = .FALSE.  ! true: operation type is ctg cntls
