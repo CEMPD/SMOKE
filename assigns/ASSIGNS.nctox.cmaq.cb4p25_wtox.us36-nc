@@ -229,6 +229,7 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv APROJREP $REPSTAT/aprojrep.$ASCEN.rpt
    setenv AREACREP $REPSTAT/areacrep.$ASCEN.rpt
    setenv ACSUMREP $REPSTAT/acsumrep.$ASCEN.rpt
+   setenv ACTLWARN $REPSTAT/actlwarn.$ASCEN.txt
    setenv AREA_O   $INVOPD/area.map.$FYINV.txt
    setenv ARINV_O  $ARDAT/arinv.$FYINV.ida.txt
 
@@ -297,6 +298,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MPROJREP $REPSTAT/mprojrep.$MSCEN.rpt
    setenv MREACREP $REPSTAT/mreacrep.$MSCEN.rpt
    setenv MCSUMREP $REPSTAT/mcsumrep.$MSCEN.rpt
+   setenv MCTLWARN $REPSTAT/mctlwarn.$MSCEN.txt
    #      HOURLYT      automaticall set and created by emisfac_run.scr script
    #      MEFLIST      automatically set and created by smk_run.scr script
    setenv SPDSUM       $STATIC/spdsum.$MSCEN.txt        # Speed summary file
@@ -340,6 +342,7 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PPROJREP  $REPSTAT/pprojrep.$PSCEN.rpt
    setenv PREACREP  $REPSTAT/preacrep.$PSCEN.rpt
    setenv PCSUMREP  $REPSTAT/pcsumrep.$PSCEN.rpt
+   setenv PCTLWARN  $REPSTAT/pctlwarn.$PSCEN.txt
    setenv PELV      $STATIC/PELV.$PBASE.txt       # Elev/PinG pt source list
    setenv PNTS_O    $INVOPD/pnts.map.$FYINV.txt
    setenv PTINV_O   $PTDAT/ptinv_o.$FYINV.ida.txt
