@@ -146,7 +146,7 @@ C......... NOTE - this three formats need to be consistent with wridaout.f
 93210   FORMAT( 1X, E20.13, 1X, E20.13 )                             ! mobile
 
 93220   FORMAT( 1X, E13.6, 1X, E13.6, 1X, E13.6, 1X, F4.0, 1X, E13.6, ! point
-     &          1X, E10.3, 1X, E10.3 )
+     &          1X, E10.2, 1X, E10.3 )
 
         END
 
