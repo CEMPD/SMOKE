@@ -2,7 +2,7 @@
         PROGRAM TMPAREA
 
 C***********************************************************************
-C  program body starts at line 248
+C  program body starts at line 266
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -210,34 +210,52 @@ C...........   Temporal Profile and XREF-code arrays
         REAL            DIUFAC( 24, NDCOD ) ! Hour:Weekday profile coeffs
         REAL            ENDFAC( 24, NDCOD ) ! Hour:Weekend profile coeffs
 
-C...........   Other local variables
+C...........   TMAT update variables
 
-        LOGICAL         EFLAG   !  error-flag
-        LOGICAL         DAYLIT  !  iff ZONES changed to daylight time
-        LOGICAL         DSTNOW  !  iff currently daylight time now
-        INTEGER         TZONE
-        INTEGER         DCNT    !  count of uses for default profiles
-        INTEGER         JDATE
-        INTEGER         JTIME
-        INTEGER         TSTEP
-        INTEGER         NSTEPS
-        INTEGER         LDEV
-        INTEGER         ADEV    ! unit number for actual-ASC file
-        INTEGER         XDEV	! ...for cross-reference input file
-        INTEGER         PDEV	! ...temporal profile input file
-        INTEGER         IOS
-        INTEGER         IREC
-        INTEGER         H, I, J, K, C0, C1, F, S, T, V
-        INTEGER         FIP, ID7, ID3, CODE
-        INTEGER         IMON, IWEK, IDIU, IEND
-        INTEGER         MONTH, DAY, LDATE
-        INTEGER         LFIP, LID7, LID3, LCOD   ! From previous line of X-REF
-        INTEGER         LMON, LWEK, LDIU         ! From previous line of X-REF
-        CHARACTER*14    DTBUF   !  buffer for MMDDYY
+        INTEGER         NHRCALC             ! No. of entries in HRCALC
+        INTEGER         HRCALC( 24 )        ! List of hrs for calculating TMAT
+        INTEGER         MONTH ( 24, 0:23 )  ! source time zone's 1 ... 12
+        INTEGER         DAYOW ( 24, 0:23 )  ! source time zone's 1 ... 7
+
+C...........   Logical names and unit numbers
+
+        INTEGER         ADEV    !  unit number for actual-ASC file
+        INTEGER         LDEV    !  unit for log file
+        INTEGER         PDEV	!  unit for temporal profile input file
+        INTEGER         XDEV	!  unit for cross-reference input file
+
         CHARACTER*16    ANAME   !  logical name for area-source  input file
         CHARACTER*16    TNAME   !  logical name for timestepped output file
+
+C...........   Other local variables
+
+        INTEGER         H, I, J, K, C0, C1, F, S, T, V
+        INTEGER         DCNT    !  count of uses for default profiles
+        INTEGER         IOS
+        INTEGER         IREC
+        INTEGER         IMON, IWEK, IDIU, IEND
+        INTEGER         JDATE                    ! Current Julian date
+        INTEGER         JTIME                    ! Current time
+        INTEGER         FIP, ID7, ID3, CODE      ! Temporary variables
+        INTEGER         LDATE                    ! Previous Julian date
+        INTEGER         LFIP, LID7, LID3, LCOD   ! From previous line of X-REF
+        INTEGER         LMON, LWEK, LDIU         ! From previous line of X-REF
+        INTEGER         MON, DAY            ! temporary month no. and day-of-wk
+        INTEGER         NSTEPS              ! number of output time steps
+        INTEGER         TDATE               ! temporary Julian date
+        INTEGER         TSTEP               ! time step (hardcoded to 1 hour)
+        INTEGER         TTIME               ! temporary time
+        INTEGER         TZONE               ! output time zone
+        INTEGER         TZMIN, TZMAX        ! min/max time zones in inventory
+
+        CHARACTER*14    DTBUF   !  buffer for MMDDYY
         CHARACTER*128   LINE    !  buffer for input of X-ref file
         CHARACTER*256   MESG    !  message buffer
+
+        LOGICAL         DAYLIT  !  iff ZONES changed to daylight time
+        LOGICAL         DSTNOW  !  iff currently daylight time now
+        LOGICAL         EFLAG   !  error-flag
+        LOGICAL         TMATCALC!  iff need to calculate new TMAT
 
         LOGICAL         FIRSTCOD  !  iff haven't yet encounter CODE > 0
         DATA            FIRSTCOD / .TRUE. /
@@ -378,6 +396,7 @@ C.......   Get time period for output file:
         END IF
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone for output emissions (0 for GMT)' )
+
         JDATE  = GETDATE( 1995182, 
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
 
@@ -841,9 +860,16 @@ C...........   composite profile number.
 C...........   Search for FIP-ASC match; else for STATE-ASC match; 
 C...........   else for ASC-only match; else use defaults.
 
+C...........   As long as there is a loop through all sources, also
+C...........   determine the hours in the output time zone for which a new
+C...........   TMAT is necessary (in order to have sources in different time
+C...........   zones all get the start of each day of the week correct)
+
         CALL M3MSG2( 'Building source indexes...' )
         EFLAG = .FALSE.
         DCNT  = 0
+        TZMIN = ZONES( 1 )   ! Initialize minimum time zone in inventory
+        TZMAX = ZONES( 1 )   ! Initialize maximum time zone in inventory
 
         DO  88  S = 1, NASRC
 
@@ -903,6 +929,15 @@ C...........   else for ASC-only match; else use defaults.
 
             END IF      !  if find3() FIP-and-ASC succeeded
 
+C.............  Set minimum and maximum time zone in inventory
+            IF    ( ZONES( S ) .LT. TZMIN ) THEN
+                TZMIN = ZONES( S )
+
+            ELSEIF( ZONES( S ) .GT. TZMAX ) THEN
+                TZMAX = ZONES( S )
+
+            ENDIF
+
 88      CONTINUE        !  end loop on sources S, constructing TNDX
 
         IF ( DCNT .GT. 0 ) THEN
@@ -923,6 +958,19 @@ C...........   else for ASC-only match; else use defaults.
             CALL M3EXIT( 'TMPAREA', 0, 0, 'Bad XREF::PROF match.', 2 )
         END IF
 
+
+C...........   Adjust TZMIN for possibility of daylight savings
+        TZMIN = TZMIN - 1
+
+C...........   Determine hours of output day for updating TMAT
+        J = 0
+        DO  91 I = TZMIN, TZMAX
+
+            J = J + 1    
+            HRCALC( J ) = MOD( I - TZONE + 25, 24 )
+
+91      CONTINUE
+        NHRCALC = J
 
 C...........   Read in emissions values.
 
@@ -946,18 +994,55 @@ C...........   For each time step, write out the area source emissions values:
 
         CALL M3MSG2( 'Writing out hourly emissions values...' )
 
-        LDATE  = -1   !  initialization forces TMAT calculation on first iter.
-        DAYLIT = .FALSE.
+        LDATE  = -1      !  Initialization 
+        DAYLIT = .FALSE. !  Initialization
 
         DO  199  T = 1, NSTEPS
+
+            IF( JDATE .NE. LDATE ) THEN
+
+C.................  Store month and day of week for this output date for
+C.................  all source's time zones and hours of day
+                DO 155 I = TZMIN, TZMAX
+
+                    TDATE = JDATE
+                    TTIME = JTIME
+                    CALL NEXTIME( TDATE, TTIME, ( TZONE - I ) * 10000 )
+
+                    DO 151 J = 1, 24
+
+                        CALL DAYMON( TDATE, MON, DAY ) ! month & scratch date
+                        DAY = WKDAY( TDATE )           !  get day-of-week
+
+                        MONTH( J,I ) = MON
+                        DAYOW( J,I ) = DAY
+
+                        CALL NEXTIME( TDATE, TTIME, TSTEP )
+
+151                 CONTINUE
+
+155             CONTINUE
+
+C...............   Set day of week based on output day
+                DAY = WKDAY( JDATE )
+
+            ENDIF
+
+C...........   Set integer hour of day for output time 
+
+            H = 1 + MOD( JTIME / 10000 , 24 )
+
+C...........   Determine if this hour is one that requires a new TMAT
+C...........   (because one or more sources are starting a new day)
+
+            TMATCALC = ( FIND1( H, NHRCALC , HRCALC ) .GT. 0 .OR.
+     &                   T .EQ. 1 )
 
 C...........   Construct TMAT -- array of effective composite 
 C...........   profile coefficients as appropriate:
 
-            IF ( LDATE .NE. JDATE ) THEN
+            IF ( TMATCALC ) THEN
 
-C...............   If this is a new month, or transitions between
-C...............   weekday and weekend, calculate a new TMAT
 C...............   Adjust sources' time zones to account for daylight time
 C..................   Subtract 1 if date is daylight and ZONES is not
 C..................   Add 1 if date is not daylight and ZONES is daylight
@@ -966,7 +1051,6 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
                 IF ( DSTNOW .AND. .NOT. DAYLIT ) THEN
  
                     DAYLIT = .TRUE.
-                    LDATE  = -1
 
                     DO 101 S = 1, NASRC
                         ZONES( S ) = ZONES( S ) - 1
@@ -975,7 +1059,6 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
                 ELSE IF( DAYLIT .AND. .NOT. DSTNOW ) THEN
  
                     DAYLIT = .FALSE.
-                    LDATE  = -1
  
                     DO 103 S = 1, NASRC
                         ZONES( S ) = ZONES( S ) + 1
@@ -983,39 +1066,42 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
  
                 END IF
 
-                CALL DAYMON( JDATE, MONTH, DAY )  !  get month
-                DAY = WKDAY( JDATE )              !  get day-of-week
+C.................  If there are no weekend packets...
+                IF ( NEND .EQ. 0 ) THEN !  no weekend packet
 
-                IF ( NEND .EQ. 0 .AND. LDATE .LT. 0 ) THEN !  no weekend packet
+                    IF( JDATE .NE. LDATE ) 
+     &                  CALL M3MSG2( 'Processing ' //
+     &                               DAYS( DAY ) // MMDDYY( JDATE ) )
 
-                    CALL M3MSG2( 'Processing ' //
-     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
-
-                    CALL MKTMATSI( NASRC,  JDATE, MONTH,  DAY, 
+                    CALL MKTMATSI( NASRC,  JDATE, MONTH,  DAYOW, 
      &                             TZONE,  ZONES, TFLAG,
      &                             MONFAC, MDEX,
      &                             WEKFAC, WDEX,
      &                             DIUFAC, DDEX, 0,0, TMAT )
 
+C.................  If there are weekend packets, and it's a weekend...
                 ELSE IF ( DAY .GE. 6 ) THEN     !  day is Saturday or Sunday
                                                 !  in SAI's brain-damaged
                                                 !  day-of-week conventions.
 
-                    CALL M3MSG2( 'Processing weekend day ' //
-     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+                    IF( JDATE .NE. LDATE ) 
+     &                  CALL M3MSG2( 'Processing weekend day ' //
+     &                               DAYS( DAY ) // MMDDYY( JDATE ) )
 
-                    CALL MKTMATSI( NASRC,  JDATE, MONTH, DAY, 
+                    CALL MKTMATSI( NASRC,  JDATE, MONTH, DAYOW, 
      &                             TZONE,  ZONES, TFLAG,
      &                             MONFAC, MDEX,
      &                             WEKFAC, WDEX,
      &                             ENDFAC, EDEX, 0,0, TMAT )
 
+C.................  If there are weekend packets, and it's not a weekend...
                 ELSE
 
-                    CALL M3MSG2( 'Processing midweek day ' //
-     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+                    IF( JDATE .NE. LDATE ) 
+     &                  CALL M3MSG2( 'Processing midweek day ' //
+     &                               DAYS( DAY ) // MMDDYY( JDATE ) )
 
-                    CALL MKTMATSI( NASRC,  JDATE, MONTH, DAY, 
+                    CALL MKTMATSI( NASRC,  JDATE, MONTH, DAYOW, 
      &                             TZONE,  ZONES, TFLAG,
      &                             MONFAC, MDEX,
      &                             WEKFAC, WDEX,
@@ -1023,14 +1109,10 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
 
                 END IF
 
-                LDATE = JDATE		!  reset LDATE
-
             END IF      ! if jdate not ldate
 
 C.............  Write to screen because WRITE3 only writes to LDEV
             WRITE( *, 94030 ) HHMMSS( JTIME )
-
-            H = 1 + MOD( JTIME / 10000 , 24 )
 
             DO  198  S = 1, NASRC
             DO  197  V = 1, NIPOL
@@ -1047,7 +1129,9 @@ C.............  Write to screen because WRITE3 only writes to LDEV
      &                 TNAME( 1 : TRIMLEN( TNAME ) ) // '".'
                 CALL M3EXIT( 'TMPAREA', JDATE, JTIME, MESG, 2 )
 
-            END IF		! if write3() failed
+            END IF         ! if write3() failed
+
+            LDATE = JDATE  !  reset LDATE (don't move to JDATE .NE. LDATE sec.)
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
