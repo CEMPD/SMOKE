@@ -254,7 +254,7 @@ C.......   get file name; open output day-point file
         NVARS3D = NIPOL
         NROWS3D = NPDAY     !  number of rows = # of point sources.
 
-        FDESC3D( 1 ) = 'NC Time-Specific Point Source emissions values'
+        FDESC3D( 1 ) = 'Time-Specific Point Source emissions values'
         FDESC3D( 2 ) = 'Inventory  type "' // LINE(  1: 1 ) // '"'
         FDESC3D( 3 ) = 'Projection year "' // LINE(  2: 3 ) // '"'
         FDESC3D( 4 ) = 'Base year       "' // LINE(  5: 6 ) // '"'
@@ -265,7 +265,7 @@ C.......   get file name; open output day-point file
 211     CONTINUE
 
         DO  222  V = 1, NIPOL
-            VNAME3D( V ) = 'DAY' // EINAM( V )
+            VNAME3D( V ) = EINAM( V )
             VTYPE3D( V ) = M3REAL
             UNITS3D( V ) = UNITS
             VDESC3D( V ) = 'specific period emissions totals'
@@ -355,7 +355,7 @@ C.................  Where year is different, warn and skip
 
 C.............  Where next date exceeds current date, write out current
 C.............  date, reset date, and initialize number of sources
-            ELSE IF ( SDT .GT. JDATE ) THEN       ! construct and write time step
+            ELSE IF ( SDT .GT. JDATE .OR. SECS .EQ. STEP ) THEN       ! construct and write time step
 
                 IF ( S .GT. NSMAX ) THEN
                     WRITE( MESG, 94020 ) 
@@ -431,7 +431,7 @@ C.............  date, reset date, and initialize number of sources
             SIC   = STR2INT ( LINE(  24: 27 ) )
             SCC   = STR2INT ( LINE(  29: 38 ) )
             PLANT = STR2INT ( LINE(  40: 44 ) )
-            STACK = STR2INT ( LINE(  46: 48 ) )
+            STACK = STR2INT ( LINE(  45: 48 ) )
 
             S = S + 1
 
@@ -462,7 +462,7 @@ C.............  date, reset date, and initialize number of sources
 122     CONTINUE        !  end of the PDEV-read loop
         
         IF ( EFLAG ) THEN
-            MESG = 'Error reading period specific source file PRDAY'
+            MESG = 'Error reading period specific source file '
             CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 2 )
         ENDIF
 
