@@ -25,7 +25,6 @@ C***********************************************************************
 
 C...........   INCLUDES:
         
-        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
         INCLUDE 'MBDIMS3.EXT'   !  mobile-source dimensioning parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
@@ -71,7 +70,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         REAL        XDUM, YDUM
         REAL        XBEG, YBEG, XEND, YEND
         REAL        X00, Y00, XCELL, YCELL, XX, YY, DDX, DDY, DD
-        REAL        FRAC( MXSRG )         !  (scratch) surrogate fractions
+        REAL        FRAC( NMSRG )         !  (scratch) surrogate fractions
         REAL        DIV
 
 C...........   LNKDEF tables:
@@ -124,7 +123,7 @@ C...........   Surrogate-cell::FIPS table
         INTEGER     NCELLS (                MXFIP )  !  # cells per FIP
         INTEGER     FIPLIST(                MXFIP )  !  FIP-list
         INTEGER     FIPCELL(        MXCFIP, MXFIP )  !  cty codes::cell number
-        REAL        SRGFRAC( MXSRG, MXCFIP, MXFIP )  !  surrogate fractions
+        REAL        SRGFRAC( NMSRG, MXCFIP, MXFIP )  !  surrogate fractions
                 
 C...........   Mobile Sources Table
         
@@ -144,8 +143,8 @@ C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 C...........   Gridding Matrix
 
         INTEGER     NX( NGRID )
-        INTEGER     IX( MXGCOF )
-        REAL        CX( MXGCOF )
+        INTEGER     IX( NMATX )
+        REAL        CX( NMATX )
 
         COMMON  / GRIDMAT / NX, IX, CX
 
@@ -158,8 +157,8 @@ C...........   Scratch Ungridding Matrix (subscripted by cell, source)
 C...........   Ungridding Matrix
 
         INTEGER     NU( NMSRC )
-        INTEGER     IU( MXGCOF )
-        REAL        CU( MXGCOF )
+        INTEGER     IU( NMATX )
+        REAL        CU( NMATX )
 
         COMMON  / UGRIDMAT / NU, IU, CU
 
@@ -294,7 +293,7 @@ C.......   Get file name; open output gridding matrix file
         STIME3D = 0
         TSTEP3D = 0
         NVARS3D = 1
-        NCOLS3D = MXGCOF
+        NCOLS3D = NMATX
         NROWS3D = NGRID
         NLAYS3D = 1
         NTHIK3D = NMSRC
@@ -324,7 +323,7 @@ C.......   Get file name; open output UNgridding matrix file
         STIME3D = 0
         TSTEP3D = 0
         NVARS3D = 1
-        NCOLS3D = MXGCOF
+        NCOLS3D = NMATX
         NROWS3D = NMSRC
         NLAYS3D = 1
         NTHIK3D = NGRID
@@ -615,7 +614,7 @@ C.............  Read EPS format
             IF( EPSFLG ) THEN  
 
                 READ( SDEV, * , END=79, IOSTAT=IOS ) 
-     &                FIP, XX, YY, ZONE, ( FRAC( C ), C = 1, MXSRG )
+     &                FIP, XX, YY, ZONE, ( FRAC( C ), C = 1, NMSRG )
 
                 IREC = IREC + 1
 
@@ -654,7 +653,7 @@ C.............  Read default SMOKE format
             ELSE
 
                 READ( SDEV, * , END=79, IOSTAT=IOS )
-     &                FIP, COL, ROW, ( FRAC( C ), C = 1, MXSRG )
+     &                FIP, COL, ROW, ( FRAC( C ), C = 1, NMSRG )
  
                 IREC = IREC + 1
  
@@ -712,7 +711,7 @@ C...........   Find this FIP and record this cell for it
 
                 NCELLS (   S ) = K
                 FIPCELL( K,S ) = C
-                DO  78  F = 1, MXSRG
+                DO  78  F = 1, NMSRG
                     SRGFRAC( F,K,S ) = FRAC( F )
 78              CONTINUE
 
@@ -1120,7 +1119,7 @@ C.......   Compute statistics.
                    
                 DO 232  C = 1, J
                     K       = K + 1
-                    IF ( K .LE. MXGCOF ) THEN
+                    IF ( K .LE. NMATX ) THEN
                         IX( K ) = IS( C,R )
                         CX( K ) = CS( C,R )
                     END IF
@@ -1128,10 +1127,10 @@ C.......   Compute statistics.
                    
 233         CONTINUE    !  end of loop on cells K for this FIP
             
-            IF ( K .GT. MXGCOF ) THEN
+            IF ( K .GT. NMATX ) THEN
                 WRITE( MESG,94010 ) 
      &                  'Number of coeffs', K, 
-     &                  'exceeds MXGCOF=', MXGCOF
+     &                  'exceeds NMATX=', NMATX
                 CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 3 ) 
             END IF
                    
