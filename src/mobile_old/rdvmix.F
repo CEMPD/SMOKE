@@ -65,13 +65,19 @@ C...........   ARGUMENTS:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        CHARACTER*2     CRLF
         INTEGER         FIND1, FIND2, FIND3
         INTEGER         INDEX1
         INTEGER         TRIMLEN
         
-        EXTERNAL    FIND1, FIND2, FIND3, INDEX1, TRIMLEN
+        EXTERNAL        CRLF, FIND1, FIND2, FIND3, INDEX1, TRIMLEN
 
                                             
+C...........   LOCAL PARAMETER and their descriptions:
+        CHARACTER*5     BLANK5
+
+        PARAMETER(      BLANK5 = ' ' )
+
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Vehicle Mix Factor arrays:
@@ -127,6 +133,8 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of program RDVMIX
         
+        CALL M3MSG2( 'Reading vehicle mix profiles table...' )
+
 C..........   Read VMT mix profiles file:
 
         IREC  = 0
@@ -161,8 +169,9 @@ C..........   Read VMT mix profiles file:
 23                  CONTINUE
                     IF ( SCR .EQ. 0.0 ) THEN
                         WRITE( MESG,94010 ) 
-     &                  'Vehicle mix weights sum to 0 at line', IREC
-                        CALL M3MESG( MESG )
+     &                  'Vehicle mix factors sum to 0 at line', IREC,
+     &                  'of MVMTM !'
+                        CALL M3MSG2( MESG )
                         EFLAG = .TRUE.
                     ELSE
                         SCR = 1.0 / SCR
@@ -177,7 +186,8 @@ C..........   Read VMT mix profiles file:
 
                 WRITE( MESG,94010 )
      &              'I/O error', IOS, 
-     &              'reading VMT MIX file at line', IREC
+     &              'reading VMT MIX file at line', IREC,
+     &              'of MVMTM'
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                         
@@ -239,13 +249,6 @@ C...........   Sort and process the vehicle mix factor arrays:
                             MFACR( V,NVMXR ) = VFACA( V,K )
 32                      CONTINUE
 
-                    ELSE
-                        
-                        WRITE( MESG,94010 ) 
-     &                  'Vehicle Mix RDTY overflow at subscript', NVMXR
-                        CALL M3MESG( MESG )
-                        EFLAG = .TRUE.
-
                     END IF
                 
                 END IF
@@ -262,13 +265,6 @@ C...........   Sort and process the vehicle mix factor arrays:
                         MFACS( V,NVMXS ) = VFACA( V,K )
 33                  CONTINUE
 
-                ELSE
-
-                    WRITE( MESG,94010 )
-     &              'Vehicle Mix STATE overflow at subscript', NVMXS
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-
                 END IF
 
             ELSE IF ( LNK .EQ. 0 ) THEN
@@ -282,13 +278,6 @@ C...........   Sort and process the vehicle mix factor arrays:
                     DO  34  V = 1, NVTYPE
                         MFACF( V, NVMXF ) = VFACA( V,K )
 34                  CONTINUE
-
-                ELSE
-
-                    WRITE( MESG,94010 )
-     &              'Vehicle Mix FIP overflow at subscript', NVMXF
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
 
                 END IF
 
@@ -305,28 +294,52 @@ C...........   Sort and process the vehicle mix factor arrays:
                         MFACL( V, NVMXL ) = VFACA( V,K )
 35                  CONTINUE
 
-                ELSE
-
-                    WRITE( MESG,94010 )
-     &              'Vehicle Mix LNK overflow at subscript', NVMXL
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-
                 END IF
 
             END IF
             
 39      CONTINUE
-        
-        IF ( EFLAG ) THEN
+
+C.........  Write out dimensioning situation
+        WRITE( MESG,94010 )
+     &      'Number of VEHICLE MIX by ROAD CLASS entries--' //
+     &      CRLF() // BLANK5 // '   dimensioned (NRCLAS):', NRCLAS,
+     &      'actual:', NVMXR
+        CALL M3MSG2( MESG )
+
+        WRITE( MESG,94010 )
+     &      'Number of VEHICLE MIX by STATE entries--' //
+     &      CRLF() // BLANK5 // '   dimensioned (MXSTRC):', MXSTRC,
+     &      'actual:', NVMXS
+        CALL M3MSG2( MESG )
+
+        WRITE( MESG,94010 )
+     &      'Number of VEHICLE MIX by FIP entries--' //
+     &      CRLF() // BLANK5 // '   dimensioned (MXFRC):', MXFRC,
+     &      'actual:', NVMXF
+        CALL M3MSG2( MESG )
+
+        WRITE( MESG,94010 )
+     &      'Number of VEHICLE MIX by LINK entries--' //
+     &      CRLF() // BLANK5 // '   dimensioned (MXFLK):', MXFLK,
+     &      'actual:', NVMXL
+        CALL M3MSG2( MESG )
+
+C...........   If there is an overflow, abort
+        IF( NVMXR .GT. NRCLAS .OR.
+     &      NVMXS .GT. MXSTRC .OR.
+     &      NVMXF .GT. MXFRC  .OR. 
+     &      NVMXL .GT. MXFLK       ) THEN
+
             CALL M3EXIT( 'RDVMIX', 0, 0, 
-     &                   'Error processing VEHICLE MIX file', 2 )
+     &                   'VEHICLE MIX table overflow', 2 )
+
         END IF
-        
 
 C...........   Construct mapping of source number to vehicle mixes.
 
-        CALL M3MSG2 ( 'Building vehicle mix source indexes...' )
+        CALL M3MSG2 ( 'Applying vehicle mix factors to sources...' )
+
         EFLAG = .FALSE.
 
         DO  299  S = 1, NMSRC
@@ -376,13 +389,18 @@ C...........   Construct mapping of source number to vehicle mixes.
                     MXMAT( S,V ) = MFAC0( V ) * VMT( S )
 285             CONTINUE
 
+                WRITE( MESG,94010 )
+     &                 'Default VMT MIX applied for FIP:', FIP, 
+     &                 'RDT::', RDT, 'LNK:', LNK
+                CALL M3MESG( MESG )
+
             ELSE                        !  Error
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
      &                 'No VMT MIX match found for FIP:', FIP, 
-     &                 ' Road class:', RDT
-                CALL M3MESG( MESG )
+     &                 'RDT:', RDT, 'LNK:', LNK
+                CALL M3MSG2( MESG )
 
             END IF
 
@@ -406,7 +424,7 @@ C...........   Informational (LOG) message formats... 92xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+94010   FORMAT( 10 ( A, :, I5, :, 1X ) )
 
         END
 
