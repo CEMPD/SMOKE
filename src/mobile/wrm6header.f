@@ -12,6 +12,9 @@ C   begin body of subroutine WRM6HEADER
         WRITE( MDEV,93000 ) 'MOBILE6 INPUT FILE :'
         WRITE( MDEV,93000 ) 'NO DESC OUTPUT     :'
         WRITE( MDEV,93000 ) 'DATABASE OUTPUT    :'
+        WRITE( MDEV,93000 ) 'POLLUTANTS         : CO NOX HC'
+        WRITE( MDEV,93000 ) 'PARTICULATES       :'
+        WRITE( MDEV,93000 ) 'AIR TOXICS         :'
         WRITE( MDEV,93000 ) 'RUN DATA           :'
         WRITE( MDEV,93000 ) ' '
 
