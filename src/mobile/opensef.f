@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENSEF( SRCCT, DESC, SDATE, STIME, EMISDIR, FNAME )
+        SUBROUTINE OPENSEF( SRCCT, DESC, SDATE, EDATE, EMISDIR, FNAME )
 
 C...........   MODULES for public variables
 C...........   This module contains the information about the source category
@@ -18,17 +18,18 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
+        INTEGER                INDEX1
         CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
         LOGICAL                OPNFULL3
 
-        EXTERNAL        GETCFDSC, PROMPTMFILE, VERCHAR, OPNFULL3
+        EXTERNAL        GETCFDSC, INDEX1, PROMPTMFILE, VERCHAR, OPNFULL3
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: SRCCT    ! total number of sources
         CHARACTER(*), INTENT    (IN) :: DESC     ! description of file type
         INTEGER     , INTENT    (IN) :: SDATE    ! julian start date
-        INTEGER     , INTENT    (IN) :: STIME    ! HHMMSS start time
+        INTEGER     , INTENT    (IN) :: EDATE    ! julian end date
         CHARACTER(*), INTENT    (IN) :: EMISDIR  ! directory of output files
         CHARACTER(*), INTENT(IN OUT) :: FNAME    ! name output emission factors file
 
@@ -36,10 +37,11 @@ C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
-        INTEGER     J
+        INTEGER     J, K
 
-        CHARACTER*300   MESG    !  message buffer
-        CHARACTER*256   FULLNAME ! full file name
+        CHARACTER*300   MESG      ! message buffer
+        CHARACTER*256   FULLNAME  ! full file name
+        CHARACTER*16    CURRVNAME ! current variable name
 
         CHARACTER*16 :: PROGNAME = 'OPENSEF' ! program name
 
@@ -55,13 +57,14 @@ C.........  Initialize I/O API output file headers
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         FDESC3D( 4 ) = '/NOTE/ Time 000000 in file represents ' //
      &                 '6 AM in local time zone'
+        WRITE( FDESC3D( 5 ), 94010 ) '/END DATE/ ', EDATE
 
 C.........  Set header values that cannot be default
 
         SDATE3D = SDATE
         STIME3D = 0
         TSTEP3D = 10000
-        NVARS3D = NEFS + 1
+        NVARS3D = MXETYPE + 1
         NROWS3D = SRCCT
         NLAYS3D = 1
  
@@ -71,10 +74,15 @@ C.........  Set header values that cannot be default
         VDESC3D( J ) = 'Source number'
         VTYPE3D( J ) = M3INT
         
+C.........  Loop through emission process/pollutant combos 
+C           (EMTNAM is created from MEPROC file and contains only the ones we want, 
+C           EFS* contains all possible MOBILE6 outputs with units and descriptions)        
         DO J = 2, NVARS3D
-            VNAME3D( J ) = EFSNAM( J - 1 )
-            UNITS3D( J ) = EFSUNT( J - 1 )
-            VDESC3D( J ) = EFSDSC( J - 1 )
+            CURRVNAME = TRIM( EMTNAM( J-1,1 ) )
+            K = INDEX1( CURRVNAME, NEFS, EFSNAM )
+            VNAME3D( J ) = EFSNAM( K )
+            UNITS3D( J ) = EFSUNT( K )
+            VDESC3D( J ) = EFSDSC( K )
             VTYPE3D( J ) = M3REAL
         END DO
 
@@ -82,10 +90,10 @@ C.........  Create full file name
         WRITE( FULLNAME,94010 ) EMISDIR( 1:LEN_TRIM( EMISDIR ) ) //
      &                          '/emisfacs.' // 
      &                          DESC( 1:LEN_TRIM( DESC ) ) // '.', 
-     &                          SDATE, '.ncf' 
+     &                          SDATE, '.ncf'
 
 C.........  Open new file
-        IF( .NOT. OPNFULL3( FNAME, FSNEW3, FULLNAME, PROGNAME ) ) THEN
+        IF( .NOT. OPNFULL3( FNAME, FSUNKN3, FULLNAME, PROGNAME ) ) THEN
             MESG = 'Could not create new output file ' // FULLNAME
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
@@ -98,7 +106,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( A, I7, A )
 
-94030   FORMAT( A, F15.9, 1X, A )
+94020   FORMAT( A, I7, A1, I7, A )
 
         END SUBROUTINE OPENSEF
 
