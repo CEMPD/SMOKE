@@ -4,9 +4,9 @@
 C***********************************************************************
 C  subroutine body starts at line  69
 C
-C  FUNCTION:  multiply vector P by sparse incidence matrix <NP,IP> 
-C       and layer fractions FL, and add to the result V for CSGLMERGE 
-C       program.
+C  DESCRIPTION:  
+C       multiply vector P by sparse incidence matrix <NP,IP> and layer 
+C       fractions FL, and add to the result V for CSGLMERGE program.
 C
 C  PRECONDITIONS REQUIRED:  none
 C
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.

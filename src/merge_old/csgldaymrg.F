@@ -3,8 +3,8 @@
 
 C***********************************************************************
 C  program     CSGLDAYMRG body starts at line  280
-C  subroutine  DAYFILE         starts at line 1586
-C  subroutine  CTLSPC          starts at line 1699
+C  subroutine  DAYFILE         starts at line 1588
+C  subroutine  CTLSPC          starts at line 1701
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -41,7 +41,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -278,6 +278,8 @@ C***********************************************************************
 C   begin body of program CSGLDAYMRG
         
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
         
         WRITE( *,92000 ) ' ', ' ', ' ',
      &'Program CSGLDAYMRG to take combinations of the sorted source    ',
@@ -1694,7 +1696,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         CHARACTER*16    INVNAME( NMPOL )
 
 C***********************************************************************
-C   begin body of subroutine  CSGLDAYMRG
+C   begin body of subroutine  CTLSPC
         
         IF ( .NOT. DESC3( FNAME ) ) THEN
 

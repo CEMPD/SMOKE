@@ -2,9 +2,12 @@
         PROGRAM CSGMERGE
 
 C***********************************************************************
-C  program body starts at line 188
+C  program body starts at line 191
 C
 C  DESCRIPTION:
+C
+C       THIS PROGRAM IS NOT DEBUGGED!  USE CSGLDAYMRG !
+C
 C       Use gridding-transform, model-speciation, and control matrices 
 C       from programs GRD*MAT, SPC*MAT, and optionally CTL*MAT to merge, 
 C       grid, speciate, and control combinations of source-level area,
@@ -29,7 +32,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -186,6 +189,8 @@ C***********************************************************************
 C   begin body of program CSGMERGE
 
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
 
         WRITE( *,92000 ) ' ', ' ', ' ',
      &'Program CSGMERGE to take combinations of the sorted source    ',

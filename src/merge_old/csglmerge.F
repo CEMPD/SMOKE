@@ -2,9 +2,12 @@
         PROGRAM CSGLMERGE
 
 C***********************************************************************
-C  program body starts at line 215
+C  program body starts at line 219
 C
 C  DESCRIPTION:
+C
+C       THIS PROGRAM IS NOT DEBUGGED!  USE CSGLDAYMRG !
+C
 C       Use gridding-transform, model-speciation, and control matrices
 C       from programs GRDAMAT, GRDPMAT, SPCAMAT, SPCPMAT, and optionally
 C       CTLAMAT and CTLPMAT to merge, grid, speciate, and control
@@ -25,13 +28,14 @@ C       mobile, and point
 C
 C       Version    1/97 by SL for met header implementation and header
 C       consistency checking scheme.
+C
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -213,6 +217,8 @@ C***********************************************************************
 C   begin body of program CSGLMERGE
         
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
         
         WRITE( *,92000 ) ' ', ' ', ' ',
      &'Program CSGLMERGE to take combinations of the sorted source    ',

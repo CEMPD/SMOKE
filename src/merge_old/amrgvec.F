@@ -2,9 +2,10 @@
         SUBROUTINE  AMRGVEC( NCOLA, A, NCOFF, NA, IA, MA, NROWS, V )
 
 C***********************************************************************
-C  subroutine body starts at line  63
+C  subroutine body starts at line  64
 C
-C  FUNCTION:  multiply vectors A and P by sparse matrices <NA,IA,CA> 
+C  DESCRIPTION:  
+C       multiply vectors A and P by sparse matrices <NA,IA,CA> 
 C	and add the result to V, for CSGMERGE program.
 C
 C  PRECONDITIONS REQUIRED:  none
@@ -20,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
