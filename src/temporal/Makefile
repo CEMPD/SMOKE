@@ -45,7 +45,7 @@ opentmp.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 opentmpin.o: $(MODMET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdefacs.o: $(MODEMFAC) $(MODINFO) $(MODMET)
+rdefacs.o: $(MODMOBIL) $(MODEMFAC) $(MODINFO) $(MODMET) ($MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ $<
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR)
