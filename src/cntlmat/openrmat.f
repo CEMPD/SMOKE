@@ -178,7 +178,7 @@ C               if needed in the future
 C.............  Check total number of output variables with I/O API max.  
             IF( J .LE. MXVARS3 ) THEN
                 VTYPE3D( J ) = M3REAL
-                VDESC3D( J ) = CPOL // '_' // SPECIES( I )               
+                VDESC3D( J ) = CPOL // SPJOIN // SPECIES( I )               
             ENDIF
 
             WRITE( SVNAMES( I ), '(A4,I3.3)' ) 'SVAR', I

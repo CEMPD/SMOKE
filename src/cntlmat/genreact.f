@@ -157,7 +157,7 @@ C               MXSPFUL, which is from module MODSPRO
             CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
 
 C.............  Determine if source category is point sources, or other
-            PFLAG = ALLOCATED( CSOURC )
+            PFLAG = ALLOCATED( ISIC )
 
             FIRSTIME = .FALSE.
 

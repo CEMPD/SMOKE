@@ -55,13 +55,17 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CPKTDAT.EXT'   !  control packet contents
 
+C...........   EXTERNAL FUNCTIONS:
+        INTEGER       STR2INT
+        EXTERNAL      STR2INT
+
 C...........   SUBROUTINE ARGUMENTS:
 
         CHARACTER(*), INTENT (IN) :: PKTTYP ! packet type 
         INTEGER     , INTENT (IN) :: JTMAX  ! max allowed JT
         INTEGER     , INTENT (IN) :: JXMAX  ! max allowed JX
-        INTEGER     , INTENT (IN) :: NSTART ! loop beg for expding SIC-based rec
-        INTEGER     , INTENT (IN) :: NEND   ! loop end for expding SIC-based rec
+        INTEGER     , INTENT (IN) :: NSTART ! start of SIC expansion loop
+        INTEGER     , INTENT (IN) :: NEND   ! end of SIC expansion loop
         TYPE( CPACKET ),INTENT(IN):: PKTINFO! packet information
         INTEGER     , INTENT (IN) :: JPOL   ! pollutant position
         INTEGER  , INTENT(IN OUT) :: JT     ! idx to control data tables
@@ -69,6 +73,7 @@ C...........   SUBROUTINE ARGUMENTS:
 
 C...........   Other local variables
         INTEGER         N               !  counters and indices
+        INTEGER         SIC             !  tmp SIC
 
         CHARACTER(LEN=SCCLEN3) TMPSCC   !  tmp SCC
         CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol
@@ -81,23 +86,31 @@ C   begin body of subroutine FILLCNTL
 C.........  Increment data table counter
         JT = JT + 1
 
-C.........  Loop through expansion records and store all SCCs for SIC, or
-C           the same SCC if no expansion
+C.........  Store packet information in temporary variables
+        TMPSCC = PKTINFO%TSCC
+        SIC    = STR2INT( PKTINFO%CSIC )
+
+C.........  Loop through records and store all SCCs for SIC, or
+C           the same SCC if no expansion. 
         DO N = NSTART, NEND
 
             JX = JX + 1
 
             IF( JX .GT. JXMAX ) CYCLE  ! to next iteration
 
-            TMPSCC = INVSCC( N )
+C.............  Treat SIC=0 case specially.
+            IF ( SIC .GT. 0 ) THEN
+                TMPSCC = SCCPSIC( N )
+
+            END IF
 
 C.............  Store unsorted x-ref table entries
             INDXTA( JX ) = JX
             ISPTA ( JX ) = JPOL
 
-C.........  Parse the line of data into segments based on the rules
-C.........  Ensure that pollutant is in master list of pollutants or
-C           skip the pollutant-specific entry
+C.............  Parse the line of data into segments based on the rules
+C.............  Ensure that pollutant is in master list of pollutants or
+C               skip the pollutant-specific entry
             CSCCTA( JX ) = TMPSCC
             MPRNA ( JX ) = JT   ! Position in data table
 
@@ -106,14 +119,20 @@ C.............  Store sorting criteria as right-justified in fields
             SELECT CASE( CATEGORY )
 
             CASE( 'AREA' )
-                CALL BLDCSRC( PKTINFO%CFIP, TMPSCC, CHRBLNK3,
-     &                        CHRBLNK3, CHRBLNK3, CHRBLNK3, 
-     &                        CHRBLNK3, PKTINFO%CPOS, CSRCALL )
+                CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
+     &                        CHRBLNK3, PLTBLNK3, CHRBLNK3, 
+     &                        CHRBLNK3, POLBLNK3, CSRCALL )
 
-                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 )
+                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
+     &                         PKTINFO%CPOS
 
             CASE( 'MOBILE' )
-c note: insert here when needed
+                CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
+     &                        CHRBLNK3, CHRBLNK3, CHRBLNK3, 
+     &                        CHRBLNK3, POLBLNK3, CSRCALL )
+
+                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
+     &                         PKTINFO%CPOS
 
             CASE( 'POINT' )
 
