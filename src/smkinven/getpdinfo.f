@@ -1,7 +1,7 @@
 
-        SUBROUTINE GETPDINFO( FDEV, MXIDAT, TZONE, TSTEP, TYPNAM, FNAME, 
-     &                        SDATE, STIME, NSTEPS, NPDVAR, MXPDSRC, 
-     &                        EAIDX, INVDCOD, INVDNAM )
+        SUBROUTINE GETPDINFO( FDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, 
+     &                        FNAME, SDATE, STIME, NSTEPS, NPDVAR, 
+     &                        MXPDSRC, EAIDX )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -68,9 +68,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN):: FDEV          ! file unit no.
-        INTEGER     , INTENT (IN):: MXIDAT        ! max no of inventory data
         INTEGER     , INTENT (IN):: TZONE         ! output time zone
-        INTEGER     , INTENT (IN):: TSTEP         ! time step HHMMSS
+        INTEGER     , INTENT (IN):: INSTEP        ! expected data time step HHMMSS
+        INTEGER     , INTENT (IN):: OUTSTEP       ! output time step HHMMSS
         CHARACTER(*), INTENT (IN):: TYPNAM        ! name of processing type
         CHARACTER(*), INTENT (IN):: FNAME         ! logical file name
         INTEGER     , INTENT(OUT):: SDATE         ! Julian start date in TZONE
@@ -79,8 +79,6 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT):: NPDVAR        ! no. pol/act variables
         INTEGER     , INTENT(OUT):: MXPDSRC       ! max. no. srcs over all times
         INTEGER     , INTENT(OUT):: EAIDX( NIPPA )! index to EANAM
-        INTEGER     , INTENT (IN):: INVDCOD( MXIDAT ) !  inv data 5-digit codes
-        CHARACTER(*), INTENT (IN):: INVDNAM( MXIDAT ) !  in data names
 
 C.........  Local allocatable arrays...
         LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
@@ -134,9 +132,8 @@ C.........  Ensure that input file is a list-formatted file
          
 C.........  Get the dates (in the output time zone) from the files and
 C           flag the pollutants of interest
-        CALL RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, INVDCOD, INVDNAM, SDATE, STIME, 
-     &                 NSTEPS, EASTAT )
+        CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
+     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT )
 
 C.........  Allocate memory and initialize for the maximum number of 
 C           records per time step
@@ -150,9 +147,8 @@ C           records per time step
 
 C.........  Get the maximum number of records per time step - i.e., populate
 C           MXSRCPD
-        CALL RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, INVDCOD, INVDNAM, SDATE, STIME, 
-     &                 NSTEPS, EASTAT )
+        CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
+     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT )
 
 C.........  Create index to pollutant/activity names for current data files
         N = 0
