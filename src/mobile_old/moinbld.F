@@ -2,10 +2,10 @@
 C Version "@(#)$Id$ $Source$ $Date$ 
 
         SUBROUTINE MOINBLD( MODEV, IPARM , IP  , NIDX, CIDX, VOLATIL,
-     &                      YEAR , TMPRTR, TMIN, TMAX                 )
+     &                      YEAR , TMPRTR, TMIN, TMAX, WARNON         )
 
 C***********************************************************************
-C  program body starts at line
+C  program body starts at line 195
 C
 C  DESCRIPTION:
 C      This program accepts a parameter scheme index IPARM, a volatile type
@@ -46,6 +46,8 @@ C...........   Subroutine arguments
         REAL    TMPRTR                   ! Ambient temperature
         REAL    TMIN                     ! Minimum daily temperature
         REAL    TMAX                     ! Maximum daily temperature
+        LOGICAL WARNON                   ! Indicates whether warning messages 
+                                         ! should be written or not
 
 C...........   Main data table indices
         INTEGER IACCUM( MXFACS )
@@ -55,6 +57,7 @@ C...........   Main data table indices
         INTEGER ICTOFF( MXFACS )
         INTEGER IDIESL( MXFACS )
         INTEGER IEFIM ( MXFACS )
+        INTEGER IEXLOD( MXFACS )
         INTEGER ILAPMO( MXFACS )
         INTEGER IOMODE( MXFACS )
         INTEGER IOXYGF( MXFACS )         
@@ -64,20 +67,16 @@ C...........   Main data table indices
         INTEGER ITAMRT( MXFACS )
         INTEGER ITPLEN( MXFACS )
 
-        SAVE    IACCUM, IATP  , IAVSPD, ICTOFF, IDIESL, IEFIM , IBSEXH,
-     &          ILAPMO, IOMODE, IOXYGF, IPREST, IPURGT, IRDIST, ITAMRT,
-     &          ITPLEN
-
-c       INTEGER IEFLEV( )
-c       INTEGER IEFRFL( )
-
+        SAVE    IACCUM, IATP  , IAVSPD, IBSEXH, ICTOFF, IDIESL, IEFIM , 
+     &          IEXLOD, ILAPMO, IOMODE, IOXYGF, IPREST, IPURGT, IRDIST, 
+     &          ITAMRT, ITPLEN
 
 C...........   Main data tables ! number of rows second to help with indexing
 
         REAL    TACCUM( 200, MXFACS )  ! Mileage accum rates: 25 yrs, 8 vtype
         REAL    TAVSPD( 8  , MXFACS )  ! Average speeds for all vehicle types
         REAL    TDIESL( 51 , MXFACS )  ! Dsl sales % for 25 years LDVs & LDTs
-                                       !   Addtional space for year.
+                                       !   Addtional column for year
         REAL    TOMODE( 3  , MXFACS )  ! 3 operating mode parameters
         REAL    TOXYGF( 5  , MXFACS )  ! Oxygenated fuels params, 5 is integer
         REAL    TRDIST( 200, MXFACS )  ! Registration dist'n: 25 yrs, 8 vtype
@@ -97,6 +96,12 @@ C. . . . . . . . Tampering rates: 3 time categroies, 4 vehicle types, 8 kinds
         REAL    TTRDR ( 96 , MXFACS )  ! Deterioration rate
 
         SAVE    TTRZML, TTRDR
+
+C. . . . . . . . Extra loading tables:
+        INTEGER IEXSIZ( MXFACS )      ! Indicates 6 or 10 entries (ALGFLG=2 or 3)
+        REAL    TEXLOD( 10, MXFACS )  ! Extra loading parameters (6 or 10 filled)
+
+        SAVE    IEXSIZ, TEXLOD
 
 C. . . . . . . . Basic emissions tables:
         INTEGER IBSCNT( MXFACS )            ! Count of BER records
@@ -146,13 +151,13 @@ C. . . . . . . . Anti-Tampering program tables:
 C...........   Numbers of actual entries in tables 
         INTEGER NACCUM, NRDIST, NTAMRT, NLAPMO, NTPLEN, NAVSPD,
      &          NOMODE, NBSEXH, NEFIM, NDIESL, NCTOFF, NOXYGF, NATP, 
-     &          NPREST, NPURGT 
+     &          NPREST, NPURGT, NEXLOD
 
         SAVE    NACCUM, NRDIST, NTAMRT, NLAPMO, NTPLEN, NAVSPD,
      &          NOMODE, NBSEXH, NEFIM, NDIESL, NCTOFF, NOXYGF, NATP,
-     &          NPREST, NPURGT
+     &          NPREST, NPURGT, NEXLOD
 
-        INTEGER IOXY, JOPM, JTPLEN, JLAPMO, JOXY, IRFG
+        INTEGER IOXY, JOPM, JTPLEN, JLAPMO, JOXY, IRFG, JEXL
  
         LOGICAL READFAC( 20 ), FIRSTIME( 20 ), LSPD
         
@@ -185,6 +190,7 @@ c       DATA    INPSI_LAST, ICPSI_LAST / -1, -1 /
 
 C...........   Other local variables
 
+        INTEGER B1, B2, E1, E2
         INTEGER G7, G8, G9
         INTEGER I, ICUT, IMP, IPPREV, J, JDSL, JJ, JJ2, JK, K
         CHARACTER*256 MESG, BUFFER
@@ -292,11 +298,11 @@ C.........  Read in main factor matrices and indices, unless already have
 
         ENDIF
 
-c       IF ( READFAC( 10 ) .AND. FIRSTIME( 10 ) ) THEN
-c           CALL GETFAC( 'A/C, EXTRA LOADING, HUMIDITY', 'MLOAD',
-c    &                    MXFACS, , ,  ... )
-c           FIRSTIME( 10 ) = .FALSE.
-c       ENDIF
+        IF ( READFAC( 10 ) .AND. FIRSTIME( 10 ) ) THEN
+            CALL GETFACD( 'A/C, EXTRA LOADING, HUMIDITY', 'MLOAD',
+     &                     MXFACS, NEXLOD, IEXLOD, IEXSIZ, 10, TEXLOD )
+            FIRSTIME( 10 ) = .FALSE.
+        ENDIF
 
         IF ( READFAC( 11 ) .AND. FIRSTIME( 11 ) ) THEN
             CALL GETIIR3D( 'BASIC EMISSIONS RATES', 'MBSEXH',
@@ -349,7 +355,7 @@ C.............  Set I/M credit file settings individually
 C.............  Read Tech I-II file
             IF( READIMC1( IMCX1 ) ) THEN
 
-   44           WRITE( MESG, 94100 ) 
+   44           WRITE( MESG, 94010 ) 
      &                'Enter logical name of '// 
      &                TNAME1( 1:TRIMLEN( TNAME1 ) ) // ' TECH I-II '//
      &                'FILE', IMCX1
@@ -393,7 +399,7 @@ C.............  Read Tech I-II file
 
 C.............  Read Tech IV+ file
             IF( READIMC2( IMCX2 ) ) THEN
-   55           WRITE( MESG, 94100 ) 
+   55           WRITE( MESG, 94010 ) 
      &                'Enter logical name of '// 
      &                TNAME2( 1:TRIMLEN( TNAME2 ) ) // ' TECH IV+ '//
      &                'FILE', IMCX2
@@ -491,7 +497,7 @@ C.............  Set control flags
             IMFLAG = 2
         ELSEIF( CIDX( IP,3 ) .EQ. 0 .AND. CIDX( IP,4 ) .GT. 0 ) THEN
 
-            WRITE( MESG,94100 ) 
+            WRITE( MESG,94010 ) 
      &             'Error: 2nd I/M program is', CIDX( IP,4 ),
      &             'but 1st I/M program is 0 in ' //
      &             'parameter scheme', IP
@@ -500,7 +506,32 @@ C.............  Set control flags
         ENDIF
 
         IF( NIDX( IP,10 ) .GT. 0 ) THEN
-            ALHFLG = 3
+
+            JEXL = FIND1( NIDX( IP,10 ), NEXLOD, IEXLOD )
+
+            IF( JEXL .LT. 0 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'Extra loading data profile', NIDX( IP,10 ),
+     &                 'from parameter scheme', IP, 'is not '//
+     &                 'found in the extra loading factors table.'
+                CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+            ENDIF
+
+            IF    ( IEXSIZ( JEXL ) .EQ. 6  ) THEN
+                ALHFLG = 2
+
+            ELSEIF( IEXSIZ( JEXL ) .EQ. 10 ) THEN
+                ALHFLG = 3
+
+            ELSE
+                WRITE( MESG,94010 ) 
+     &                 'Invalid no. of extra loading parameters:',
+     &                 IEXSIZ( JEXL ), 'from parameter scheme', IP, 
+     &                 'using extra loading profile', NIDX( IP,10 )
+                CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
+            ENDIF
+
         ENDIF
 
         G7 = CIDX( IP,7 )
@@ -531,7 +562,7 @@ C               modify SPDFLG
 
             J = FIND1( NIDX( IP,7 ), NAVSPD, IAVSPD )
             IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'AVERAGE SPEED profile', NIDX( IP,7 ),
      &                 'from parameter scheme', IP,
      &                 'not found in average speed table.'
@@ -557,17 +588,17 @@ C.............  Make adjustment for output if speeds all the same
 
             JTPLEN = FIND1( NIDX( IP,5 ), NTPLEN, ITPLEN )
             IF( JTPLEN .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'TRIP LENGTH profile', NIDX( IP,5 ),
      &                 'from parameter scheme', IP,
      &                 'not found in trip length table.'
                 CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
             ENDIF
 
-            IF( NIDX( IP,7 ) .GT. 0 ) THEN
-                WRITE( MESG,94100 ) 'AVERAGE SPEED profile', NIDX(IP,7),
+            IF( WARNON .AND. NIDX( IP,7 ) .GT. 0 ) THEN
+                WRITE( MESG,94010 ) 'AVE SPEED profile', NIDX(IP,7),
      &                              'from parameter scheme', IP,
-     &                              'not applied because trip length'//
+     &                              'not applied. Trip length '//
      &                              'distribution', NIDX( IP,5 ), 
      &                              'applied instead.'
                 CALL M3MESG( MESG )
@@ -595,7 +626,7 @@ C.........  Tampering rates for {Non-I/M case} OR {Non-I/M and I/M cases}
 
             J = FIND1( NIDX( IP,3 ), NTAMRT, ITAMRT )
             IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 )
+                WRITE( MESG,94010 )
      &                 'TAMPERING RATES profile', NIDX( IP,3 ),
      &                 'from parameter scheme', IP,
      &                 'not found in tampering rates table.'
@@ -611,19 +642,20 @@ C.............  Check if Tampering profiles the same if two I/M programs
                 JJ  = FIND1( CIDX( IP,3 ), NEFIM, IEFIM  )
                 JJ2 = FIND1( CIDX( IP,4 ), NEFIM, IEFIM  )
 
-                IF( TEFIM( 16,JJ  ) .GT. 0 .AND.
+                IF( WARNON .AND. 
+     &              TEFIM( 16,JJ  ) .GT. 0 .AND.
      &              TEFIM( 16,JJ2 ) .GT. 0 .AND.
      &              TEFIM( 16,JJ  ) .NE. TEFIM( 16,JJ2 ) ) THEN
 
                     IMP = CIDX( IP,3 )
-                    WRITE( MESG,94100 ) 
+                    WRITE( MESG,94010 ) 
      &                     'I/M PROGRAM profiles', CIDX( IP,3 ),
      &                     'and', CIDX( IP,4 ), 
      &                     'from parameter scheme', IP,
      &                     'use different tampering rates'
                     CALL M3MESG( MESG )
 
-                    WRITE( MESG,94100 ) 
+                    WRITE( MESG,94010 ) 
      &                 '   ( Rate profile', TEFIM( 16,JJ ), 
      &                 'from I/M program', CIDX( IP,3 ) ,'selected )'
                     CALL M3MESG( MESG )
@@ -647,7 +679,7 @@ C............. Check if I/M program number IMP has valid tampering rates prof
 
                 JJ = FIND1( IMP, NEFIM, IEFIM  )
                 IF( JJ .LT. 0 ) THEN
-                    WRITE( MESG,94100 ) 
+                    WRITE( MESG,94010 ) 
      &                     'I/M PROGRAM profile', IMP,  
      &                     'from parameter scheme', IP,
      &                     'not found in I/M PROGRAMS table.'
@@ -656,7 +688,7 @@ C............. Check if I/M program number IMP has valid tampering rates prof
 
                 IF( TEFIM( 16,JJ ) .LE. 0 ) THEN
 
-                     WRITE( MESG,94100 )
+                     WRITE( MESG,94010 )
      &                'I/M profile',IMP,
      &                'from parameter scheme', IP,
      &                'gives illegal tampering profile',TEFIM( 16,JJ ),
@@ -666,7 +698,7 @@ C............. Check if I/M program number IMP has valid tampering rates prof
                 ELSE
                     JK = FIND1( TEFIM( 16,JJ ), NTAMRT, ITAMRT )
                     IF( JK .LT. 0 ) THEN
-                        WRITE( MESG,94100 )
+                        WRITE( MESG,94010 )
      &                        'TAMPERING RATES profile', TEFIM( 16,JJ ), 
      &                        '(requested by I/M profile', IMP,
      &                        'from parameter scheme', IP,
@@ -693,7 +725,7 @@ C.........  Annual mileage accumulation rates
 
             J = FIND1( NIDX( IP,1 ), NACCUM, IACCUM )
             IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'MILEAGE ACCUM profile', NIDX( IP,1 ),
      &                 'from parameter scheme', IP,
      &                 'not found in mileage accum table.'
@@ -709,7 +741,7 @@ C.........  Registration distributions
 
             J = FIND1( NIDX( IP,2 ), NRDIST, IRDIST )
             IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'REGISTRATION DISTN profile', NIDX( IP,2 ),
      &                 'from parameter scheme', IP,
      &                 'not found in registration distn table.'
@@ -725,7 +757,7 @@ C.........  Basic emissions rates
 
             K = FIND1( CIDX( IP,1 ), NBSEXH, IBSEXH )
             IF( K .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'BASIC EMISSIONS profile', CIDX( IP,1 ),
      &                 'from parameter scheme', IP,
      &                 'not found in basic emission rates table.'
@@ -755,7 +787,7 @@ C.........  Inspection and Maintenence Program(s)
 C.................  Get index of I/M program
                 J = FIND1( CIDX ( IP,K ), NEFIM , IEFIM )
                 IF( J .LT. 0 ) THEN
-                    WRITE( MESG,94100 ) 
+                    WRITE( MESG,94010 ) 
      &                     'I/M PROGRAM profile', CIDX( IP,K ),
      &                     'from parameter scheme', IP,
      &                     'not found in I/M PROGRAMS table.'
@@ -776,7 +808,7 @@ C.....................  Check for non-default cut-offs for types 1,2,3
                         IF ( IMCX1 .EQ. 0 .OR. 
      &                       IMCX2 .EQ. 0      ) THEN 
 
-                             WRITE( MESG,94100 )
+                             WRITE( MESG,94010 )
      &                         'MOBILE5 parameters profile',IP,
      &                         'has I/M profile with test type',TTYPE,
      &                         'and non-default cutoffs, '//
@@ -801,7 +833,7 @@ C.....................  Check for non-default cut-offs for types 1,2,3
 C......................  Ensure cut-offs will be read for type 4
                      IF( TEFIM( 15,J ) .LE. 0 ) THEN
 
-                         WRITE( MESG,94100 )
+                         WRITE( MESG,94010 )
      &                         'I/M Profile number',CIDX( IP,K ),
      &                         'from parameter scheme', IP,
      &                         'has non-postive cutpoint index for'//
@@ -814,7 +846,7 @@ C......................  Ensure cut-offs will be read for type 4
 
                 ELSE
 
-                     WRITE( MESG,94100 ) 
+                     WRITE( MESG,94010 ) 
      &                 'I/M Profile number',CIDX( IP,K ),
      &                 'from parameter scheme', IP,
      &                 'has illegal test type specifier of', TTYPE
@@ -833,7 +865,7 @@ C.................  Read cutoff file for given case, if specified
                     JJ = FIND1( TEFIM( 15,J ), NCTOFF, ICTOFF )
                     IF( JJ .LT. 0 ) THEN
                         BUFFER = MESG
-                        WRITE( MESG,94100 ) MESG( 1:TRIMLEN(MESG) )
+                        WRITE( MESG,94010 ) MESG( 1:TRIMLEN(MESG) )
      &                                  //' profile', TEFIM( 15,J ),
      &                                  'not found in cutoffs table.'
                         CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -869,7 +901,7 @@ C.................  Adjust test cutpoints for non-default if needed
 
                         ELSE
 
-                            WRITE( MESG,94100 ) 'Cutoff value',I,
+                            WRITE( MESG,94010 ) 'Cutoff value',I,
      &                        'from cutoff profile', JJ,
      &                        'is an illegal value.'
                             CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -904,7 +936,7 @@ C.........  Anti-tampering programs
             J = FIND1( CIDX( IP,7 ), NATP, IATP )
 
             IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'Anti-tampering profile ', CIDX( IP,7 ),
      &                 'from parameter scheme', IP,
      &                 'not found in ANTI-TAMPERING table.'
@@ -921,7 +953,7 @@ C.........  Functional pressure check
             J = FIND1( CIDX( IP,8 ), NPREST, IPREST )
 
             IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'Pressure test profile ', CIDX( IP,8 ),
      &                 'from parameter scheme', IP,
      &                 'not found in PRESSURE TEST table.'
@@ -938,7 +970,7 @@ C.........  Functional purge check
             J = FIND1( CIDX( IP,9 ), NPURGT, IPURGT )
 
             IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'Purge test profile ', CIDX( IP,9 ),
      &                 'from parameter scheme', IP,
      &                 'not found in PURGE TEST table.'
@@ -957,7 +989,7 @@ c           ENDIF
 C........... Check LAP/Month code for consistencies, get index
         IF( NIDX( IP,4 ) .LE. 0 ) THEN ! Error
 
-            WRITE( MESG, 94100 ) 
+            WRITE( MESG, 94010 ) 
      &            'LAP/month record number', NIDX( IP,4 ), 
      &            'from parameter scheme', IPARM,
      &            'not allowed.  Value MUST be positive.'
@@ -967,7 +999,7 @@ C........... Check LAP/Month code for consistencies, get index
 
             JLAPMO = FIND1( NIDX( IP,4 ), NLAPMO, ILAPMO )
             IF( JLAPMO .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'LAP/month profile', NIDX( IP,4 ),
      &                 'from parameter scheme', IPARM,
      &                 'not found in LAP/month table.'
@@ -981,7 +1013,7 @@ C........... Check LAP/Month code for consistencies, get index
             IF( MONTH .LT. 1 .OR. MONTH .GT. 7 .OR.
      &          ( MONTH .GT. 1 .AND. MONTH .LT. 7 ) ) THEN ! Error
 
-                 WRITE( MESG,94100 ) 
+                 WRITE( MESG,94010 ) 
      &            'Month in LAPMO record', NIDX( IP,4 ),
      &            'from parameter scheme', IPARM,
      &            'must be 1 or 7.'
@@ -994,7 +1026,7 @@ C........... Check LAP/Month code for consistencies, get index
                  IF( TFUELV( JLAPMO ) .LT. 'A' .OR.
      &               TFUELV( JLAPMO ) .GT. 'E'      ) THEN ! Error
 
-                     WRITE( MESG,94100 ) 
+                     WRITE( MESG,94010 ) 
      &                 'Fuel volatility in LAPMO record', NIDX( IP,4 ),
      &                 'from parameter scheme', IPARM,
      &                 'must be A, B, C, D, or E when RFG controls '//
@@ -1090,7 +1122,7 @@ C........... OPERATING MODE FRACTIONS
 
             JOPM = FIND1( NIDX( IP,8 ), NOMODE, IOMODE )
             IF( JOPM .LT. 0 ) THEN
-                WRITE( MESG,94100 )
+                WRITE( MESG,94010 )
      &                 'OPERATING MODES profile', NIDX( IP,8 ),
      &                 'from parameter scheme', IP,
      &                 'not found in operating modes table.'
@@ -1189,7 +1221,7 @@ C.........  Oxygenated Fuels Descriptive Record: index w/ NIDX(IP,4)
             JOXY = FIND1( IOXY, NOXYGF, IOXYGF )
                 
             IF( JOXY.LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'Oxygenated fuels profile', IOXY, 
      &                 'from parameter scheme',IP, 'is not '//
      &                 'found in the oxygenated fuels programs table.'
@@ -1206,7 +1238,7 @@ C.........  Diesel Sales Fractions
             JDSL = FIND1( NIDX( IP,6 ), NDIESL, IDIESL )
 
             IF( INT( TDIESL( 1,JDSL ) ) .NE. YEAR ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'DIESEL SALES profile', NIDX( IP,6 ),
      &                 'from parameter scheme', IP,
      &                 'has year',INT( TDIESL( 1,JDSL ) ),
@@ -1215,7 +1247,7 @@ C.........  Diesel Sales Fractions
             ENDIF
 
             IF( JDSL .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
+                WRITE( MESG,94010 ) 
      &                 'DIESEL SALES profile', NIDX( IP,6 ),
      &                 'from parameter scheme', IP,
      &                 'is not found in diesel sales fractions table.'
@@ -1227,19 +1259,59 @@ C.........  Diesel Sales Fractions
         ENDIF
 
 C.........  Trip length distribution
-        IF( NIDX( IP,7 ) .EQ. 0 .AND.
-     &      NIDX( IP,5 ) .GT. 0       ) THEN
+        IF( NIDX( IP,5 ) .GT. 0 ) THEN
 
             WRITE( MODEV, 93530 )
      &           ( TTPLEN( I, JTPLEN ), I=2,7 )
         ENDIF
 
-C.............  Additional Correction factors for LDGVs
-c           IF( NIDX( IP,10 ) .GT. 0 ) THEN
-C! Hard for many reasons
-c           ENDIF
+C.........  Additional Correction factors for LDGVs
+        IF( NIDX( IP,10 ) .GT. 0 ) THEN
 
-        IPPREV = IP   ! Store IP for compsrison on next call
+            WRITE( MODEV, '(F4.2,$)' ) TEXLOD( 1,JEXL )
+
+            IF( IEXSIZ( JEXL ) .EQ. 6 ) THEN
+                B1 = 2
+                E1 = 5
+                B2 = 6
+                E2 = 6
+
+            ELSEIF( IEXSIZ( JEXL ) .EQ. 10 ) THEN
+                B1 = 2
+                E1 = 7
+                B2 = 8
+                E2 = 10
+
+            ENDIF
+
+C.............  Preserve 3 decimal place accuracy on output
+            DO 144 I = B1, E1
+
+                IF( TEXLOD( I,JEXL ) .LT. 0.01 ) THEN
+                    WRITE( MODEV, '(F4.3,$)' ) TEXLOD( I,JEXL )
+                ELSE
+                    WRITE( MODEV, '(F4.2,$)' ) TEXLOD( I,JEXL )
+                ENDIF
+
+  144       CONTINUE
+
+C.............  Preserve 1 decimal place accuracy on output
+            DO 148 I = B2, E2
+
+                IF( TEXLOD( I,JEXL ) .LT. 100. ) THEN
+                    WRITE( MODEV, '(F4.1,$)' ) TEXLOD( I,JEXL )
+                ELSE
+                    WRITE( MODEV, '(F4.0,$)' ) TEXLOD( I,JEXL )
+                ENDIF
+
+  148       CONTINUE
+
+C............. Output new line
+            WRITE( MODEV, '(/)' )
+
+        ENDIF
+
+        IPPREV = IP   ! Store IP for comparison on next call
 
         RETURN
 
@@ -1270,8 +1342,9 @@ C******************  FORMAT  STATEMENTS   ******************************
 93510   FORMAT( 4( F4.3, 1X ), I1 )
 93520   FORMAT( 20F4.3 / 20F4.3 / 10F4.3 )
 93530   FORMAT( 6(1X,F4.1) )
-93600   FORMAT( 8F4.3 )
+93600   FORMAT( 5F4.2,  F4.0 )
+93620   FORMAT( 7F4.2, 3F4.0 )
 
 94000   FORMAT( A )
-94100   FORMAT( 10( A, 1X, I5, 1X ) )
+94010   FORMAT( 10( A, :, 1X, I5, :, 1X ) )
         END
