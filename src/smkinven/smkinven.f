@@ -332,7 +332,7 @@ C               hour-specific processing so that if there is a problem, the
 C               lengthy inventory import does not need to be redone...
 
 C.............  Write out SCC file
-            CALL WRCHRSCC( NSRC, CSCC )
+            CALL WRCHRSCC( CSCC )
 
 C.............  Write out temporal x-ref file. (TFLAG is true for EMS-95 format
 C               for point sources only)
