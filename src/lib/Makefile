@@ -38,7 +38,7 @@ FILES_C = \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
   fillttbl.o   rdsref.o     genptcel.o   chkemepi.o   getntisz.o \
   setsrcdy.o   getdysav.o   find1first.o cvtrdtype.o  cvtvehtype.o \
-  rdspdref.o   rdspdprof.o  alocptbl.o   fillptbl.o
+  rdspdref.o   rdspdprof.o  alocptbl.o   fillptbl.o   setscctype.o
 
 FILES_TMP = 
 
@@ -190,6 +190,7 @@ rdvmix.o  : $(MODMOBIL) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdvmix.f
 rdxclude.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdxclude.f
+setscctype.o : $(MODINFO)
 wrchrscc.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrchrscc.f
 wridaout.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
