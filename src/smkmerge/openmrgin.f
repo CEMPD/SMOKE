@@ -79,6 +79,7 @@ C.........  Other local variables
         LOGICAL      :: GFLAG = .FALSE.  ! true: grid settings have been init
         LOGICAL      :: IFLAG = .FALSE.  ! true: episode settings have been init
         LOGICAL      :: OFLAG = .FALSE.  ! true: met info has been init
+        LOGICAL      :: YFLAG = .FALSE.  ! true: year/projection info been init
         LOGICAL      :: ZFLAG = .FALSE.  ! true: time zone has been init
 
         CHARACTER*4     SPCTYPE      ! type of speciation matrix (mass|mole)
@@ -108,6 +109,9 @@ C.............  Get number of sources
             CALL RETRIEVE_IOAPI_HEADER( AENAME )
             NASRC = NROWS3D
 
+C.............  Determine the year and projection status of the inventory
+            CALL CHECK_INVYEAR( PENAME, APRJFLAG, FDESC3D )
+
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
@@ -125,6 +129,9 @@ C.................  Set parameters and pollutants from hourly file
                 ALLOCATE( AEINAM( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AEINAM', PROGNAME )
                 CALL STORE_VNAMES( 1, 1, ANIPOL, AEINAM )
+
+C.................  Determine the year and projection status of the hourly
+                CALL CHECK_INVYEAR( ATNAME, APRJFLAG, FDESC3D )
 
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
@@ -144,7 +151,7 @@ C               compare or initialize grid information.
      &       FSREAD3, 'AGMAT', PROGNAME )
 
             CALL RETRIEVE_IOAPI_HEADER( AGNAME )
-            CALL CHKSRCNO( 'area', 'AGMAT', NROWS3D, NASRC, EFLAG )
+            CALL CHKSRCNO( 'area', 'AGMAT', NTHIK3D, NASRC, EFLAG )
             CALL CHECK_GRID_INFO( 'area', 'GMAT' )
             ANGMAT = NCOLS3D
 
@@ -203,6 +210,7 @@ C               store control variable descriptions, and store mass or moles.
                 CALL RETRIEVE_IOAPI_HEADER( ARNAME )
                 CALL CHKSRCNO( 'area', 'ARMAT', NTHIK3D, NASRC, EFLAG )
                 ANRMATV = NVARS3D
+                ANSREAC = NROWS3D
                 ALLOCATE( ARVDESC( ANRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ARVDESC', PROGNAME )
                 CALL STORE_VDESCS( 1, 1, ANRMATV, ARVDESC )
@@ -213,6 +221,9 @@ C.................  Retrieve the number of speciation factors
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'area' )
                 SPCUNIT = UNITS3D( NVARS3D )
+
+C.................  Check the year and projection year of the matrix
+                CALL CHECK_INVYEAR( ARNAME, APRJFLAG, FDESC3D )
 
             END IF  ! end of reactivity control open
 
@@ -268,6 +279,9 @@ C.............  Get number of sources
             CALL RETRIEVE_IOAPI_HEADER( PENAME )
             NPSRC = NROWS3D
 
+C.............  Determine the year and projection status of the inventory
+            CALL CHECK_INVYEAR( PENAME, PPRJFLAG, FDESC3D )
+
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
@@ -285,6 +299,9 @@ C.................  Set parameters and pollutants from hourly file
                 CALL CHECKMEM( IOS, 'PEINAM', PROGNAME )
                 CALL STORE_VNAMES( 1, 1, PNIPOL, PEINAM )
                 INVUNIT = UNITS3D( 1 )
+
+C.................  Determine the year and projection status of the hourly 
+                CALL CHECK_INVYEAR( PTNAME, PPRJFLAG, FDESC3D )
 
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
@@ -362,6 +379,7 @@ C               store control variable descriptions, and store mass or moles.
                 CALL RETRIEVE_IOAPI_HEADER( PRNAME )
                 CALL CHKSRCNO( 'point', 'PRMAT', NTHIK3D, NPSRC, EFLAG )
                 PNRMATV = NVARS3D
+                PNSREAC = NROWS3D
                 ALLOCATE( PRVDESC( PNRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PRVDESC', PROGNAME )
                 CALL STORE_VDESCS( 1, 1, PNRMATV, PRVDESC )
@@ -372,6 +390,9 @@ C.................  Retrieve the number of speciation factors
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'point' )
                 SPCUNIT = UNITS3D( NVARS3D )
+
+C.................  Check the year and projection year of the matrix
+                CALL CHECK_INVYEAR( PRNAME, PPRJFLAG, FDESC3D )
 
             END IF  ! end of reactivity control open
 
@@ -564,6 +585,92 @@ C...........   Internal buffering formats.............94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE UPDATE_TIME_INFO
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram initializes and checks the inventory year
+C               of the emissions and the projection status
+            SUBROUTINE CHECK_INVYEAR( FNAME, PRJFLAG, IODESC )
+
+C.............  Subprogram arguments
+            CHARACTER(*), INTENT (IN)     :: FNAME
+            LOGICAL     , INTENT (IN OUT) :: PRJFLAG
+            CHARACTER(*), INTENT (IN)     :: IODESC( * )
+
+C.............  Local variables
+            INTEGER           YY      ! tmp year
+            LOGICAL           STRICT  ! flag for strict checks or not
+            CHARACTER*20      BUFFER  ! program name buffer
+            INTEGER , SAVE :: FLEN    ! name length of savnam
+            CHARACTER(LEN=IOVLEN3), SAVE :: SAVNAM  ! name of file used to init
+
+C----------------------------------------------------------------------
+
+            STRICT = .TRUE.
+
+C.............  First determine whether to abort when projected year does not
+C               match.  This is used for reactivity matrices, which will
+C               always have a projection year, even if the inventory isn't
+C               projected.
+            IF( .NOT. PRJFLAG ) THEN
+                BUFFER = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+                IF( BUFFER .EQ. 'OPENRMAT' ) STRICT = .FALSE.
+            END IF
+
+C.............  If time information has already been initialized...
+            IF( YFLAG ) THEN
+
+                YY = GETIFDSC( IODESC, '/PROJECTED YEAR/', .FALSE. )
+                IF( YY .LE. 0 ) THEN
+
+                    YY = GETIFDSC( IODESC, '/BASE YEAR/', .TRUE. ) 
+                    IF( YY .NE. BYEAR ) THEN
+                        WRITE( MESG,94010 ) 
+     &                        'Base year of ' // FNAME // ' file:', YY,
+     &                        CRLF() // BLANK10 //
+     &                        ', does not equal emissions year of ' //
+     &                        SAVNAM( 1:FLEN ) // ' file:', BYEAR
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+                ELSE IF ( STRICT            .AND. 
+     &                    YY     .GT. 0     .AND. 
+     &                    YY     .NE. PYEAR      ) THEN
+
+                    WRITE( MESG,94010 ) 
+     &                    'Projected year of ' // FNAME // ' file:', YY,
+     &                    CRLF() // BLANK10 //
+     &                    ', does not equal emissions year of ' //
+     &                    SAVNAM( 1:FLEN ) // ' file:', PYEAR
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END IF
+
+C.............  If year information needs to be initialized...
+            ELSE
+                
+                BYEAR = GETIFDSC( IODESC, '/BASE YEAR/', .TRUE. ) 
+                PYEAR = GETIFDSC( IODESC, '/PROJECTED YEAR/', .FALSE. )
+
+                IF( YY .GT. 0 ) THEN
+                    PRJFLAG = .TRUE.
+                ELSE
+                    PYEAR = BYEAR
+                END IF
+
+                SAVNAM = FNAME
+                FLEN   = LEN_TRIM( SAVNAM )
+                YFLAG  = .TRUE.
+
+            END IF
+
+C------------------  FORMAT  STATEMENTS   -----------------------------
+
+C...........   Internal buffering formats.............94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE CHECK_INVYEAR
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------

@@ -60,6 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Master list of valid inventory pollutants (needed for sorting
 C              output variables)
         INTEGER                                MXIPOL       ! max no pollutants
+        INTEGER                             :: NPOL   = 0   ! actual no pols
         INTEGER               , ALLOCATABLE :: INVPCOD( : ) ! codes
         LOGICAL               , ALLOCATABLE :: INVSTAT( : ) ! true: used in run
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: INVPNAM( : ) ! pollutant name
@@ -99,7 +100,7 @@ C.........  Allocate memory for storing contents of pollutants file
         INVSTAT = .FALSE.  ! array
 
 C.........  Read and sort pollutant codes/names file
-        CALL RDSIPOLS( PDEV, MXIPOL, INVPCOD, INVPNAM )
+        CALL RDCODNAM( PDEV, MXIPOL, NPOL, INVPCOD, INVPNAM )
 
 C.........  Loop through pollutants in each source category and update status
 C           of pollutants in master list.

@@ -45,6 +45,11 @@ C.........  This module contains the major data structure and control flags
 
         IMPLICIT NONE
 
+        INTEGER         I       ! position of '/' in SPCUNIT
+
+        CHARACTER*4     TMPUNIT ! tmp first part of SPCUNIT
+        CHARACTER*300   MESG    ! message buffer
+
         CHARACTER*16 :: PROGNAME = 'MRGONAMS' ! program name
 
 C***********************************************************************
@@ -134,6 +139,39 @@ C.........  Initialize - everything will be gridded
 
             CALL TRIM_AND_CONCAT( PONAME, '3D' )
             CALL TRIM_AND_CONCAT( TONAME, '3D' )
+
+        END IF
+
+C.........  Now append mass or mole for I/O API files, depending on which
+C           inputs were used
+        IF( SFLAG ) THEN
+
+            I = INDEX( SPCUNIT, '/' )
+            TMPUNIT = SPCUNIT( 1:I-1 )
+
+            SELECT CASE ( TMPUNIT )
+
+            CASE( 'gm' ) 
+
+                CALL TRIM_AND_CONCAT( AONAME, '_S' )
+                CALL TRIM_AND_CONCAT( MONAME, '_S' )
+                CALL TRIM_AND_CONCAT( PONAME, '_S' )
+                CALL TRIM_AND_CONCAT( TONAME, '_S' )
+
+            CASE( 'mole' ) 
+
+                CALL TRIM_AND_CONCAT( AONAME, '_L' )
+                CALL TRIM_AND_CONCAT( MONAME, '_L' )
+                CALL TRIM_AND_CONCAT( PONAME, '_L' )
+                CALL TRIM_AND_CONCAT( TONAME, '_L' )
+
+            CASE DEFAULT
+                MESG = 'INTERNAL ERROR: SPCUNIT has an unrecognized ' //
+     &                 'value of ' // SPCUNIT // ' in ' // PROGNAME
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+            END SELECT
 
         END IF
 

@@ -67,12 +67,14 @@ C...........  SUBROUTINE ARGUMENTS
 C...........   Other local variables
         INTEGER         J, K, L, N, V    !  counters and indices
 
-        INTEGER         IOS      ! i/o error status
-        INTEGER         NLOOP    ! tmp loop total
         INTEGER         ACNT     ! area src var counter
         INTEGER         BCNT     ! biogenic src var counter
         INTEGER         GCNT     ! group counter
+        INTEGER         IOS      ! i/o error status
+        INTEGER         ISDIM    ! tmp dimension for speciation
+        INTEGER         JA, JM, JP ! position in rctvty var desc of pol-spc
         INTEGER         MCNT     ! mobile src var counter
+        INTEGER         NLOOP    ! tmp loop total
         INTEGER         PCNT     ! pollutant counter OR point src var counter
         INTEGER         SCNT     ! species counter
         INTEGER         TGRP     ! tmp group number
@@ -100,6 +102,9 @@ C.........  Global pollutants
         ALLOCATE( PLNAMES( MXPOLPGP, MXGRP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PLNAMES', PROGNAME )
 
+C.........  Compute dimension for allocating EXIST arrays for speciation
+        ISDIM = MAX( 1, MXSPPOL )
+
 C.........  Allocate memory for all *EXIST arrays for a source category if
 C           that source category is present.  This is necessary to simplify
 C           using these arrays, and it will be a small memory penalty.
@@ -110,15 +115,16 @@ C.........  Reactivity control matrices: e.g., AS_EXIST
 
 C.........  Allocate and initialize to zero...
         IF( AFLAG ) THEN   ! area
+
             ALLOCATE( A_EXIST( MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'A_EXIST', PROGNAME )
             ALLOCATE( AU_EXIST( MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AU_EXIST', PROGNAME )
             ALLOCATE( AA_EXIST( MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AA_EXIST', PROGNAME )
-            ALLOCATE( AR_EXIST( MXSPPOL, MXPOLPGP, MXGRP ), STAT=IOS )
+            ALLOCATE( AR_EXIST( ISDIM, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AR_EXIST', PROGNAME )
-            ALLOCATE( AS_EXIST( MXSPPOL,MXPOLPGP,MXGRP ), STAT=IOS)
+            ALLOCATE( AS_EXIST( ISDIM, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AS_EXIST', PROGNAME )
             A_EXIST  = 0  ! array
             AU_EXIST = 0  ! array
@@ -128,7 +134,7 @@ C.........  Allocate and initialize to zero...
         ENDIF
 
         IF( BFLAG ) THEN   ! biogenics
-            ALLOCATE( BS_EXIST( MXSPPOL,MXPOLPGP,MXGRP ), STAT=IOS)
+            ALLOCATE( BS_EXIST( MXSPPOL,MXPOLPGP,MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BS_EXIST', PROGNAME )
             BS_EXIST = 0  ! array
         ENDIF
@@ -140,9 +146,9 @@ C.........  Allocate and initialize to zero...
             CALL CHECKMEM( IOS, 'MU_EXIST', PROGNAME )
             ALLOCATE( MA_EXIST( MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MA_EXIST', PROGNAME )
-            ALLOCATE( MR_EXIST( MXSPPOL, MXPOLPGP, MXGRP ), STAT=IOS )
+            ALLOCATE( MR_EXIST( ISDIM, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MR_EXIST', PROGNAME )
-            ALLOCATE( MS_EXIST( MXSPPOL,MXPOLPGP,MXGRP ), STAT=IOS)
+            ALLOCATE( MS_EXIST( ISDIM, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MS_EXIST', PROGNAME )
             M_EXIST  = 0  ! array
             MU_EXIST = 0  ! array
@@ -158,9 +164,9 @@ C.........  Allocate and initialize to zero...
             CALL CHECKMEM( IOS, 'PU_EXIST', PROGNAME )
             ALLOCATE( PA_EXIST( MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PA_EXIST', PROGNAME )
-            ALLOCATE( PR_EXIST( MXSPPOL, MXPOLPGP, MXGRP ), STAT=IOS )
+            ALLOCATE( PR_EXIST( ISDIM, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PR_EXIST', PROGNAME )
-            ALLOCATE( PS_EXIST( MXSPPOL,MXPOLPGP,MXGRP ), STAT=IOS)
+            ALLOCATE( PS_EXIST( ISDIM, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PS_EXIST', PROGNAME )
             P_EXIST  = 0  ! array
             PU_EXIST = 0  ! array
@@ -171,15 +177,18 @@ C.........  Allocate and initialize to zero...
  
 C.........  Allocate memory for speciation-based indices for global 
 C           pol-to-species and species
+C.........  Allocate the NSMPPG even if there is no speciation so that this
+C           array will be valid in SMKMERGE no matter what
+        ALLOCATE( NSMPPG( MXPOLPGP, MXGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NSMPPG', PROGNAME )
+        NSMPPG  = 1  ! array
+
         IF( SFLAG ) THEN
 
-            ALLOCATE( NSMPPG( MXPOLPGP, MXGRP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'NSMPPG', PROGNAME )
             ALLOCATE( SMINDEX( MXSPPOL, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SMINDEX', PROGNAME )
             ALLOCATE( SPINDEX( MXSPPOL, MXPOLPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPINDEX', PROGNAME )
-            NSMPPG  = 0  ! array
             SMINDEX = 0  ! array
             SPINDEX = 0  ! array
 
@@ -282,6 +291,12 @@ C.............  Set group number for current group
 
         END DO
 
+C.........  Precompute the position of the species variables in the reactivity
+C           matrices
+        JA   = ANRMATV - ARNMSPC + 1
+        JM   = MNRMATV - MRNMSPC + 1
+        JP   = PNRMATV - PRNMSPC + 1
+ 
 C.........  Create source-categeory-specific indicies for speciation, inventory
 C           emissions, and control matrices...
 
@@ -290,6 +305,11 @@ C           pollutant/group and store the count for each source category.
 C.........  The counts are kept for each source category because each
 C           source category has only it's own speciation factors stored
 C           for only the pollutants in that category.
+C.........  The counts are used because of the pollutant groups.  If the
+C           position in the variable list was stored, this would not be
+C           the correct index for a pollutant within a group.  The counts
+C           work because all of the pollutant/species are sorted in the same
+C           order for all source categories and files.
 C.........  If there is reactivity, then also store the position in the
 C           reactivity matrix
 
@@ -319,7 +339,7 @@ C.....................  Loop through the number of pol-to-species
                         END IF
 
                         IF ( ARFLAG ) THEN    ! Area reactivity
-                            K = INDEX1( SVBUF, ANRMATV, ARVDESC )
+                            K = INDEX1( SVBUF, ARNMSPC, ARVDESC( JA ) )
                             AR_EXIST( J,V,N ) = K
                         END IF
 
@@ -340,7 +360,7 @@ C.....................  Loop through the number of pol-to-species
                         END IF
 
                         IF ( MRFLAG ) THEN    ! Mobile reactivity
-                            K = INDEX1( SVBUF, MNRMATV, MRVDESC )
+                            K = INDEX1( SVBUF, MRNMSPC, MRVDESC( JM ) )
                             MR_EXIST( J,V,N ) = K
                         END IF
 
@@ -353,7 +373,7 @@ C.....................  Loop through the number of pol-to-species
                         END IF
 
                         IF ( PRFLAG ) THEN    ! Point reactivity
-                            K = INDEX1( SVBUF, PNRMATV, PRVDESC )
+                            K = INDEX1( SVBUF, PRNMSPC, PRVDESC( JP ) )
                             PR_EXIST( J,V,N ) = K
                         END IF
 

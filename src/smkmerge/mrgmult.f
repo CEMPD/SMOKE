@@ -1,7 +1,7 @@
 
         SUBROUTINE MRGMULT( NSRC, NG, NL, NMAT1, NMAT2, 
      &                      KEY1, KEY2, KEY3, KEY4, EMSRC, 
-     &                      CUMATX, CAMATX, SMATX,
+     &                      RINFO, CUMATX, CAMATX, SMATX,
      &                      NX, IX, GMATX, GOUT1, GOUT2 )
 
 C***********************************************************************
@@ -65,6 +65,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: KEY3        ! additive controls index
         INTEGER     , INTENT (IN) :: KEY4        ! speciation index
         REAL        , INTENT (IN) :: EMSRC ( NSRC,* ) ! source-based emissions
+        REAL        , INTENT (IN) :: RINFO ( NSRC,2 ) ! reactivity information
         REAL        , INTENT (IN) :: CUMATX( NSRC,* ) ! mult control factors
         REAL        , INTENT (IN) :: CAMATX( NSRC,* ) ! additive control factors
         REAL        , INTENT (IN) :: SMATX ( NSRC,* ) ! speciation factors
@@ -79,6 +80,7 @@ C.........  Other local variables
         REAL*8          SUM1            ! sum for GOUT1   
         REAL*8          SUM2            ! sum for GOUT2  
         REAL*8          VAL             ! tmp value  
+        REAL*8          VMP             ! tmp market penetration value  
 
         CHARACTER*16 :: PROGNAME = 'MRGMULT' ! program name
 
@@ -101,11 +103,15 @@ C............. If multiplicative controls, additive controls, and speciation
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
-                        VAL = CAMATX( S,KEY3 ) + 
-     &                        EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                        CUMATX( S,KEY2 ) * SMATX( S,KEY4 )
+                        VAL = CAMATX( S,KEY3 ) * SMATX( S,KEY4 ) + 
+     &                        EMSRC ( S,KEY1 ) * SMATX( S,KEY4 ) *
+     &                        CUMATX( S,KEY2 )
+                        VMP  = RINFO( S,2 )
+                        VAL  = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
+     &                         GMATX( K )
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
+
                     END DO
 
                     GOUT1( C,1 ) = SUM1
@@ -126,8 +132,8 @@ C............. If multiplicative controls & additive controls
                         K = K + 1
                         S = IX( K )
                         VAL = CAMATX( S,KEY3 ) + 
-     &                        EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                        CUMATX( S,KEY2 )
+     &                        EMSRC ( S,KEY1 ) * CUMATX( S,KEY2 ) 
+                        VAL = VAL * GMATX( K ) 
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
                     END DO
@@ -149,8 +155,11 @@ C............. If multiplicative controls & speciation
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
-                        VAL = EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                        CUMATX( S,KEY2 ) * SMATX( S,KEY4 )
+                        VAL = EMSRC ( S,KEY1 ) * SMATX( S,KEY4 ) *
+     &                        CUMATX( S,KEY2 )
+                        VMP  = RINFO( S,2 )
+                        VAL  = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
+     &                         GMATX( K )
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
                     END DO
@@ -172,9 +181,11 @@ C............. If additive controls & speciation
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
-                        VAL = CAMATX( S,KEY3 ) + 
-     &                        EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                        SMATX ( S,KEY4 )
+                        VAL = CAMATX( S,KEY3 ) * SMATX ( S,KEY4 ) + 
+     &                        EMSRC ( S,KEY1 ) * SMATX ( S,KEY4 )
+                        VMP  = RINFO( S,2 )
+                        VAL  = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
+     &                         GMATX( K )
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
                     END DO
@@ -219,7 +230,7 @@ C............. If additive controls only
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
-                        VAL = CAMATX( S,KEY3 ) + 
+                        VAL = CAMATX( S,KEY3 ) * GMATX( K ) + 
      &                        EMSRC ( S,KEY1 ) * GMATX( K )
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
@@ -242,8 +253,10 @@ C.............  If speciation only
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
-                        VAL = EMSRC( S,KEY1 ) * GMATX( K ) * 
-     &                        SMATX( S,KEY4 )
+                        VAL = EMSRC( S,KEY1 ) * SMATX( S,KEY4 )
+                        VMP  = RINFO( S,2 )
+                        VAL  = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
+     &                         GMATX( K )
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
                     END DO
@@ -295,9 +308,12 @@ C............. If multiplicative controls, additive controls, and speciation
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
-                            VAL = CAMATX( S,KEY3 ) + LFRAC( S,L ) *
-     &                            EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                            CUMATX( S,KEY2 ) * SMATX( S,KEY4 )
+                            VAL = CAMATX( S,KEY3 ) * SMATX( S,KEY4 ) + 
+     &                            EMSRC ( S,KEY1 ) * SMATX( S,KEY4 ) *
+     &                            CUMATX( S,KEY2 )
+                            VMP  = RINFO( S,2 )
+                            VAL  = ( VAL*(1.-VMP) + RINFO( S,1 )*VMP ) *
+     &                             LFRAC( S,L ) * GMATX( K )
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO
@@ -322,9 +338,9 @@ C............. If multiplicative controls & additive controls
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
-                            VAL = CAMATX( S,KEY3 ) + LFRAC( S,L ) *
-     &                            EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                            CUMATX( S,KEY2 )
+                            VAL = CAMATX( S,KEY3 ) + 
+     &                            EMSRC ( S,KEY1 ) * CUMATX( S,KEY2 )
+                            VAL = VAL * LFRAC( S,L ) * GMATX( K )
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO
@@ -349,9 +365,11 @@ C............. If multiplicative controls & speciation
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
-                            VAL = LFRAC( S,L ) *
-     &                            EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                            CUMATX( S,KEY2 ) * SMATX( S,KEY4 )
+                            VAL = EMSRC ( S,KEY1 ) * SMATX( S,KEY4 ) *
+     &                            CUMATX( S,KEY2 )
+                            VMP  = RINFO( S,2 )
+                            VAL  = ( VAL*(1.-VMP) + RINFO( S,1 )*VMP ) *
+     &                             LFRAC( S,L ) * GMATX( K )
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO
@@ -376,9 +394,11 @@ C............. If additive controls & speciation
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
-                            VAL = CAMATX( S,KEY3 ) + LFRAC( S,L ) *
-     &                            EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                            SMATX( S,KEY4 )
+                            VAL = CAMATX( S,KEY3 ) * SMATX( S,KEY4 ) + 
+     &                            EMSRC ( S,KEY1 ) * SMATX( S,KEY4 )
+                            VMP  = RINFO( S,2 )
+                            VAL  = ( VAL*(1.-VMP) + RINFO( S,1 )*VMP ) *
+     &                             LFRAC( S,L ) * GMATX( K )
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO
@@ -430,8 +450,8 @@ C............. If additive controls only
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
-                            VAL = CAMATX( S,KEY3 ) + LFRAC( S,L ) *
-     &                            EMSRC ( S,KEY1 ) * GMATX( K )
+                            VAL = ( CAMATX(S,KEY3) + EMSRC (S,KEY1) ) * 
+     &                            LFRAC( S,L ) * GMATX( K )
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO
@@ -456,9 +476,10 @@ C............. If speciation only
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
-                            VAL = LFRAC( S,L ) *
-     &                            EMSRC ( S,KEY1 ) * GMATX( K ) * 
-     &                            SMATX( S,KEY4 )
+                            VAL = EMSRC ( S,KEY1 ) * SMATX( S,KEY4 )
+                            VMP  = RINFO( S,2 )
+                            VAL  = ( VAL*(1.-VMP) + RINFO( S,1 )*VMP ) *
+     &                             LFRAC( S,L ) * GMATX( K )
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO

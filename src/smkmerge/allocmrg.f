@@ -91,7 +91,7 @@ C...........   Other local variables
         INTEGER         MXPOLPGP_SAV ! saved MXPOLPGP value
         INTEGER         NDIM         ! tmp dimension
 
-        LOGICAL         RESET    ! true: memory allocation fail, try new config
+        LOGICAL      :: RESET = .FALSE. ! true: mem alloc fail, try new config
 
         CHARACTER*300   MESG     ! message buffer
 
@@ -111,6 +111,9 @@ C........  Allocate memory for fixed-size area source arrays
             CALL CHECKMEM( IOS, 'AGMATX', PROGNAME )
             ALLOCATE( AIFIP( NASRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'AIFIP', PROGNAME )
+
+            ALLOCATE( ARINFO( NASRC,2 ), STAT=IOS )        ! tmp ar react. data
+            CALL CHECKMEM( IOS, 'ARINFO', PROGNAME )
 
             IF( LGRDOUT ) THEN
                 ALLOCATE( AEMGRD( NGRID ), STAT=IOS )  ! gridded area emissions
@@ -186,8 +189,6 @@ C........  Allocate memory for fixed-size area source arrays
                 CALL CHECKMEM( IOS, 'ACRMKTPN', PROGNAME )
                 ALLOCATE( ACRFAC( ANSREAC,ANSMATV ), STAT=IOS )       ! factors
                 CALL CHECKMEM( IOS, 'ACRFAC', PROGNAME )
-                ALLOCATE( ASMATSAV( ANSREAC,ANSMATV ), STAT=IOS )  ! saved spec
-                CALL CHECKMEM( IOS, 'ASMATSAV', PROGNAME )
             ENDIF
 
         END IF
@@ -216,6 +217,9 @@ C.........  Mobile source fixed-size arrays
             CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
             ALLOCATE( MIFIP( NMSRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'MIFIP', PROGNAME )
+
+            ALLOCATE( MRINFO( NMSRC,2 ), STAT=IOS )        ! tmp mb react. data
+            CALL CHECKMEM( IOS, 'MRINFO', PROGNAME )
 
             IF( LGRDOUT ) THEN
                 ALLOCATE( MEMGRD( NGRID ), STAT=IOS )! gridded mobile emissions
@@ -291,8 +295,6 @@ C.........  Mobile source fixed-size arrays
                 CALL CHECKMEM( IOS, 'MCRMKTPN', PROGNAME )
                 ALLOCATE( MCRFAC( MNSREAC,MNSMATV ), STAT=IOS )       ! factors
                 CALL CHECKMEM( IOS, 'MCRFAC', PROGNAME )
-                ALLOCATE( MSMATSAV( MNSREAC,MNSMATV ), STAT=IOS )  ! saved spec
-                CALL CHECKMEM( IOS, 'MSMATSAV', PROGNAME )
             END IF
 
         END IF
@@ -304,6 +306,9 @@ C.........  Point source fixed-size arrays
             CALL CHECKMEM( IOS, 'PGMATX', PROGNAME )
             ALLOCATE( PIFIP( NPSRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'PIFIP', PROGNAME )
+
+            ALLOCATE( PRINFO( NPSRC,2 ), STAT=IOS )        ! tmp pt react. data
+            CALL CHECKMEM( IOS, 'PRINFO', PROGNAME )
 
             IF( LGRDOUT ) THEN
                 ALLOCATE( PEMGRD( NGRID ), STAT=IOS ) ! gridded point emissions
@@ -379,8 +384,6 @@ C.........  Point source fixed-size arrays
                 CALL CHECKMEM( IOS, 'PCRMKTPN', PROGNAME )
                 ALLOCATE( PCRFAC( PNSREAC,PNSMATV ), STAT=IOS )       ! factors
                 CALL CHECKMEM( IOS, 'PCRFAC', PROGNAME )
-                ALLOCATE( PSMATSAV( PNSREAC,PNSMATV ), STAT=IOS )  ! saved spec
-                CALL CHECKMEM( IOS, 'PSMATSAV', PROGNAME )
             END IF
 
             IF( LFLAG ) THEN
@@ -589,6 +592,31 @@ C.............  Point
             PPOLSIZ = MIN( PPOLSIZ, MXPOLPGP )
             ALLOCATE( PEMSRC( NPSRC,PPOLSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'PEMSRC', PROGNAME )
+
+C.............  Allocate emissions arrays needed for reactivity
+C.............  Area
+            IF( ARFLAG ) THEN
+                J = J + 1
+                APOLSIZ = MIN( APOLSIZ, MXPOLPGP )
+                ALLOCATE( AEISRC( NASRC,APOLSIZ ), STAT=IOSA( J ) )
+                CALL CHECKMEM( IOSA( J ), 'AEMSRC', PROGNAME )
+            END IF
+
+C.............  Mobile
+            IF( MRFLAG ) THEN
+                J = J + 1
+                MPOLSIZ = MIN( MPOLSIZ, MXPOLPGP )
+                ALLOCATE( MEISRC( NMSRC,MPOLSIZ ), STAT=IOSA( J ) )
+                CALL CHECKMEM( IOSA( J ), 'MEMSRC', PROGNAME )
+            END IF
+
+C.............  Point
+            IF( PRFLAG ) THEN
+                J = J + 1
+                PPOLSIZ = MIN( PPOLSIZ, MXPOLPGP )
+                ALLOCATE( PEISRC( NPSRC,PPOLSIZ ), STAT=IOSA( J ) )
+                CALL CHECKMEM( IOSA( J ), 'PEMSRC', PROGNAME )
+            END IF
 
 C.............  Check IOSA values to see if any allocations failed
             DO I = 1, J

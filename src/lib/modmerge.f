@@ -65,6 +65,11 @@
         LOGICAL, PUBLIC :: PRFLAG
         LOGICAL, PUBLIC :: TRFLAG  ! total
 
+!.........  Flags to indicate inventory emissions are projected or not
+        LOGICAL, PUBLIC :: APRJFLAG = .FALSE.
+        LOGICAL, PUBLIC :: MPRJFLAG = .FALSE.
+        LOGICAL, PUBLIC :: PPRJFLAG = .FALSE.
+
 !.........  Flags for controlling on-off features
         LOGICAL, PUBLIC :: TFLAG   ! use temporalized (hourly) emissions
         LOGICAL, PUBLIC :: SFLAG   ! use speciation
@@ -237,7 +242,7 @@
         INTEGER, ALLOCATABLE, PUBLIC :: M_EXIST( :,: )   ! mobile
         INTEGER, ALLOCATABLE, PUBLIC :: P_EXIST( :,: )   ! point
 
-!.........  Group indices for multiplicate control matrices
+!.........  Group indices for multiplicative control matrices
         INTEGER, ALLOCATABLE, PUBLIC :: AU_EXIST( :,: )   ! area
         INTEGER, ALLOCATABLE, PUBLIC :: MU_EXIST( :,: )   ! mobile
         INTEGER, ALLOCATABLE, PUBLIC :: PU_EXIST( :,: )   ! point
@@ -288,6 +293,8 @@
         INTEGER, PUBLIC :: NSTEPS = 1     ! number of time loop iterations
         INTEGER, PUBLIC :: TSTEP  = 10000 ! hourly time steps
         INTEGER, PUBLIC :: TZONE  = -1    ! time zone
+        INTEGER, PUBLIC :: BYEAR  = 0     ! base inventory year
+        INTEGER, PUBLIC :: PYEAR  = 0     ! projected inventory year
 
 !.........  Units
         CHARACTER(LEN=IOVLEN3), PUBLIC :: INVUNIT = ' ' ! emis units w/time
@@ -303,6 +310,11 @@
         REAL   , ALLOCATABLE, PUBLIC :: AEMSRC( :,: ) ! area: nasrc, mxpolpgp
         REAL   , ALLOCATABLE, PUBLIC :: MEMSRC( :,: ) ! mobile: nmsrc, mxpolpgp
         REAL   , ALLOCATABLE, PUBLIC :: PEMSRC( :,: ) ! point: npsrc, mxpolpgp
+
+!.........  Emissions (for inventory only)
+        REAL   , ALLOCATABLE, PUBLIC :: AEISRC( :,: ) ! area: nasrc, mxpolpgp
+        REAL   , ALLOCATABLE, PUBLIC :: MEISRC( :,: ) ! mobile: nmsrc, mxpolpgp
+        REAL   , ALLOCATABLE, PUBLIC :: PEISRC( :,: ) ! point: npsrc, mxpolpgp
 
 !.........  Biogenic gridded emissions
         REAL   , ALLOCATABLE, PUBLIC :: BEMGRD( : )   ! dim: ngrid
@@ -320,6 +332,11 @@
         REAL   , ALLOCATABLE, PUBLIC :: MSMATX( :,: ) ! mobile
         REAL   , ALLOCATABLE, PUBLIC :: PSMATX( :,: ) ! point
 
+!.........  Reactivity matrix temporary source-based arrays, 1=emis, 2=mkt pen
+        REAL   , ALLOCATABLE, PUBLIC :: ARINFO( :,: ) ! area
+        REAL   , ALLOCATABLE, PUBLIC :: MRINFO( :,: ) ! mobile
+        REAL   , ALLOCATABLE, PUBLIC :: PRINFO( :,: ) ! point
+
 !.........  OUTPUT ARRAYS ...
 
 !.........  Gridded emissions (or for mobile, VMT)
@@ -327,6 +344,18 @@
         REAL   , ALLOCATABLE, PUBLIC :: MEMGRD( : )   ! mobile, dim: ngrid
         REAL   , ALLOCATABLE, PUBLIC :: PEMGRD( : )   ! point , dim: ngrid
         REAL   , ALLOCATABLE, PUBLIC :: TEMGRD( :,: ) ! all,3d, dim: ngrid,nlay
+
+!.........  State by source and county by source pointers for summing emissions
+!           by state and county. They point to state and county sum arrays
+        INTEGER, ALLOCATABLE, PUBLIC :: AIXSTA( : )  ! area, dim NASRC
+        INTEGER, ALLOCATABLE, PUBLIC :: BIXSTA( : )  ! biogen, dim NGRID
+        INTEGER, ALLOCATABLE, PUBLIC :: MIXSTA( : )  ! mobile, dim NMSRC
+        INTEGER, ALLOCATABLE, PUBLIC :: PIXSTA( : )  ! point, dim NPSRC
+
+        INTEGER, ALLOCATABLE, PUBLIC :: AIXCNY( : )  ! area, dim NASRC
+        INTEGER, ALLOCATABLE, PUBLIC :: BIXCNY( : )  ! biogen, dim NGRID
+        INTEGER, ALLOCATABLE, PUBLIC :: MIXCNY( : )  ! mobile, dim NMSRC
+        INTEGER, ALLOCATABLE, PUBLIC :: PIXCNY( : )  ! point, dim NPSRC
 
 !.........  In the following lists, ndim can either by nipol (number of 
 !           inventory pollutants) or nmspc (number of model species)

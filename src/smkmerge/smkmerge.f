@@ -6,8 +6,8 @@ C  program SMKMERGE body starts at line
 C
 C  DESCRIPTION:
 C      The purpose of this program is to merge the inventory or hourly
-C      emissions files from the tmp* programs with gridding matrices and with
-C      optionally any combination of speciation matrices and 3 control
+C      emissions files from the Temporal program with gridding matrices and 
+C      with optionally any combination of speciation matrices and 3 control
 C      matrices (different types).  The program can operate on from 1 to 4 
 C      source categories (area, biogenic, mobile, or point sources), or any 
 C      combination of these.  If a layer fractions file is input, then the 
@@ -85,8 +85,12 @@ C...........   Other local variables
         INTEGER          IOS           ! tmp I/O status
         INTEGER          JDATE         ! Julian date (YYYYDDD)
         INTEGER          JTIME         ! time (HHMMSS)
-        INTEGER          K1, K2, K3    ! tmp indices for valid speciation matrix
-        INTEGER          K4, K5, K6    ! tmp indices for valid reactivity matrix
+        INTEGER       :: K1 = 0        ! tmp index for valid ar spc matrix
+        INTEGER       :: K2 = 0        ! tmp index for valid mb spc matrix
+        INTEGER       :: K3 = 0        ! tmp index for valid pt spc matrix
+        INTEGER       :: K4 = 0        ! tmp index for valid ar reactvty matrix
+        INTEGER       :: K5 = 0        ! tmp index for valid mb reactvty matrix
+        INTEGER       :: K6 = 0        ! tmp index for valid pt reactvty matrix
         INTEGER          LDATE         ! Julian date from previous iteration
         INTEGER          MXGRP         ! max no. of pollutant groups
         INTEGER          MXPOLPGP      ! max no. of pols per group
@@ -100,6 +104,7 @@ C...........   Other local variables
         CHARACTER(LEN=PLSLEN3) SVBUF   ! pol to species description buffer
         CHARACTER(LEN=IOVLEN3) SBUF    ! tmp species name
         CHARACTER(LEN=IOVLEN3) PBUF    ! tmp pollutant name
+        CHARACTER(LEN=IOVLEN3) VBUF    ! tmp pollutant or species name
         CHARACTER*300    MESG
 
         CHARACTER*16  :: PROGNAME = 'SMKMERGE' ! program name
@@ -130,20 +135,19 @@ C.........  Create arrays of sorted unique species
         CALL MRGVNAMS
 
 C.........  Allocate memory for fixed-size arrays by source category...
-C.........  Area source fixed-size arrays
         CALL ALLOCMRG( MXGRP, MXPOLPGP, MXSPPOL )
 
 C.........  Read reactivity matrices
-        IF( ARFLAG ) CALL RDRMAT( ARNAME, ANSREAC, ARNMSPC, ACRREPEM, 
-     &                            ACRIDX, ACRPRJFC, ACRMKTPN, ACRFAC )
+        IF( ARFLAG ) CALL RDRMAT( ARNAME, ANSREAC, ARNMSPC, ACRIDX, 
+     &                            ACRREPEM, ACRPRJFC, ACRMKTPN, ACRFAC )
 
-        IF( MRFLAG ) CALL RDRMAT( MRNAME, MNSREAC, MRNMSPC, MCRREPEM, 
-     &                            MCRIDX, MCRPRJFC, MCRMKTPN, MCRFAC )
+        IF( MRFLAG ) CALL RDRMAT( MRNAME, MNSREAC, MRNMSPC, MCRIDX, 
+     &                            MCRREPEM, MCRPRJFC, MCRMKTPN, MCRFAC )
 
-        IF( PRFLAG ) CALL RDRMAT( PRNAME, PNSREAC, PRNMSPC, PCRREPEM, 
-     &                            PCRIDX, PCRPRJFC, PCRMKTPN, PCRFAC )
+        IF( PRFLAG ) CALL RDRMAT( PRNAME, PNSREAC, PRNMSPC, PCRIDX, 
+     &                            PCRREPEM, PCRPRJFC, PCRMKTPN, PCRFAC )
 
-C.........  Read gridding matrices (note: must do through subroutine because of
+C.........  Read gridding matrices (note, must do through subroutine because of
 C           needing contiguous allocation for integer and reals)
         IF( AFLAG ) CALL RDGMAT( AGNAME, NGRID, ANGMAT, ANGMAT,
      &                           AGMATX( 1 ), AGMATX( NGRID + 1 ),
@@ -167,6 +171,14 @@ C.........  Open NetCDF output files, open ASCII report files, and write headers
         CALL OPENMRGOUT
 C NOTE: This is partially written.  Enough to write out the gridded output file.
 
+C.........  In case reactivity does not exist, initialize temporary arrays
+C           for reactivity information anyway.  These are used even without
+C           reactivity matrix inputs so that the code does not need even
+C           more conditionals in the matrix multiplication step.
+        IF( AFLAG ) ARINFO = 0.  ! array
+        IF( MFLAG ) MRINFO = 0.  ! array
+        IF( PFLAG ) PRINFO = 0.  ! array
+
 C.........  Loop through processing groups (if speciation, this will be specia-
 C           tion groups, but if no speciation, this will be pollutant groups,  
 C           for purposes of memory usage if many pollutants and/or species)
@@ -176,6 +188,9 @@ C           for purposes of memory usage if many pollutants and/or species)
             NPPGP = PLCNT( N )
 
 C.............  If new pollutant group, read pollutant-specific control matrices
+C.............  For reactivity matrices, read inventory emissions that will
+C               be needed for getting ratios of inventory to hourly for applying
+C               reactivity-based projection to hourly emissions
 C.............  Note that only the pollutants in this group that are actually
 C               in the control matrices are stored, and the index that says
 C               which are valid is *U_EXIST and *A_EXIST
@@ -204,6 +219,18 @@ C               which are valid is *U_EXIST and *A_EXIST
                 IF( PAFLAG )
      &              CALL RD3MASK( PANAME, 0, 0, NPSRC, NPPGP, 
      &                      PLNAMES( 1,N ), PA_EXIST( 1,N ), PCAMATX )
+
+                IF( ARFLAG )
+     &              CALL RD3MASK( AENAME, 0, 0, NASRC, NPPGP,
+     &                      PLNAMES( 1,N ), A_EXIST( 1,N ), AEISRC   )
+
+                IF( MRFLAG ) 
+     &              CALL RD3MASK( MENAME, 0, 0, NMSRC, NPPGP, 
+     &                      PLNAMES( 1,N ), M_EXIST( 1,N ), MEISRC   )
+
+                IF( PRFLAG )
+     &              CALL RD3MASK( PENAME, 0, 0, NPSRC, NPPGP, 
+     &                      PLNAMES( 1,N ), P_EXIST( 1,N ), PEISRC   )
 
             END IF
 
@@ -251,42 +278,16 @@ C                           position
                         IF ( K3 .GT. 0 )
      &                    CALL RDSMAT( PSNAME, SVBUF, PSMATX( 1,K3 ) )
 
-C.........................  Set position for application of reactivity matrix
-                        IF( ARFLAG ) K4 = AR_EXIST( J,V,N ) 
-                        IF( MRFLAG ) K5 = MR_EXIST( J,V,N ) 
-                        IF( PRFLAG ) K6 = PR_EXIST( J,V,N ) 
-
-C.........................  Adjust speciation matrix, if needed, with reactivty
-C                           matrix, and store old speciation (for use in 
-C                           creating state/county totals)
-C.........................  Also, update speciation "EXIST" arrays
-                        IF ( K4 .GT. 0 ) THEN
-                          CALL APPLRSPC( ANSREAC, LMKTPON, ACRIDX,
-     &                                   ACRMKTPN, ACRFAC(1,K4), 
-     &                                   ASMATSAV(1,K1), ASMATX(1,K1) )
-                          AS_EXIST( J,V,N ) = K4
-                        END IF
-
-                        IF ( K5 .GT. 0 ) THEN
-                          CALL APPLRSPC( MNSREAC, LMKTPON, MCRIDX,
-     &                                   MCRMKTPN, MCRFAC(1,K5),
-     &                                   MSMATSAV(1,K1), MSMATX(1,K1) )
-                          MS_EXIST( J,V,N ) = K5
-                        END IF
-
-                        IF ( K6 .GT. 0 ) THEN
-                          CALL APPLRSPC( PNSREAC, LMKTPON, PCRIDX,
-     &                                   PCRMKTPN, PCRFAC(1,K6),
-     &                                   PSMATSAV(1,K1), PSMATX(1,K1) )
-                          PS_EXIST( J,V,N ) = K6
-                        END IF
-
                     END DO  ! End pol-to-species loop
 
                 END DO      ! End pollutant loop
 
-                MESG = 'Processing species:'// CRLF()// BLANK10// MESG
+                MESG = 'Processing species:'// CRLF()// BLANK10// 
+     &                 MESG( 1:LEN_TRIM( MESG ) )
                 CALL M3MSG2( MESG )
+
+c note: is there any way to use the pollutant-message routine for reporting 
+c    n: the species here and in the speciation program?
 
 C.............  Otherwise, print message about which pollutants are being 
 C               processed
@@ -311,10 +312,8 @@ C               processed
                 MESG = 'Processing pollutants:'//CRLF()//BLANK10//MESG
                 CALL M3MSG2( MESG )
 
-            ENDIF
+            END IF
 
-C.............  Initialize various arrays that need to start as zero before 
-C               time loop
 ! NOTE: Does anything need to go here?
  
 ! NOTE: Need to add the capability to output future year stuff based on
@@ -335,7 +334,7 @@ C.............  Loop through output time steps
 C................. For time-dependent processing, write out a few messages...
                 IF( TFLAG ) THEN
                     
-C.....................  Write out message for new day.  NOTE: For time-
+C.....................  Write out message for new day.  Note, For time-
 C                       independent, LDATE and JDATE will both be zero.
                     IF( JDATE .NE. LDATE ) THEN
 
@@ -344,7 +343,7 @@ C                       independent, LDATE and JDATE will both be zero.
      &                         MMDDYY( JDATE )
                         CALL M3MSG2( MESG )
 
-                    ENDIF
+                    END IF
 
 C.....................  For new hour...
 C.....................  Write to screen because WRITE3 only writes to LDEV
@@ -359,13 +358,13 @@ C                   step for all area-source pollutants in current pol group
      &                      PLNAMES( 1,N ), A_EXIST( 1,N ), AEMSRC   )
 
 C.................  If mobile sources, read inventory emissions for this time 
-C                   step for all area-source pollutants in current pol group
+C                   step for all mobile-source pollutants in current pol group
                 IF( MFLAG ) 
      &              CALL RD3MASK( MTNAME, JDATE, JTIME, NMSRC, NPPGP, 
      &                      PLNAMES( 1,N ), M_EXIST( 1,N ), MEMSRC   )
 
 C.................  If point sources, read inventory emissions for this time 
-C                   step for all area-source pollutants in current pol group
+C                   step for all point-source pollutants in current pol group
                 IF( PFLAG )
      &              CALL RD3MASK( PTNAME, JDATE, JTIME, NPSRC, NPPGP, 
      &                      PLNAMES( 1,N ), P_EXIST( 1,N ), PEMSRC   )
@@ -385,150 +384,144 @@ C.................  If layer fractions, read them for this time step
 
 C.................  Initialize arrays for this time step that need to be zero
 
+! Needed?
 
 C.................  Loop through pollutants in pollutant group 
                 DO V = 1, NPPGP
 
-C.....................  If speciation, processing accordingly...
-                    IF( SFLAG ) THEN
-
-C.........................  Loop through pol-to-species for this pollutant/group
-                        DO J = 1, NSMPPG( V,N )
-
-C............................. Initialized gridded, merged emissions
-                            TEMGRD = 0.  ! array
-
-C.............................  For area sources, loop through sources, apply
-C                               whatever matrices are valid, and store
-                            IF( AFLAG ) THEN
-
-                                K1 = A_EXIST ( V,N )
-                                K2 = AU_EXIST( V,N )
-                                K3 = AA_EXIST( V,N )
-                                K4 = AS_EXIST( J,V,N )
-                                K5 = NGRID + ANGMAT + 1
-                                CALL MRGMULT( NASRC, NGRID, 1, ANGMAT, 
-     &                               ANGMAT, K1, K2, K3, K4, 
-     &                               AEMSRC, ACUMATX, ACAMATX, 
-     &                               ASMATX, AGMATX(1), 
-     &                               AGMATX(NGRID+1), AGMATX(K5), 
-     &                               AEMGRD, TEMGRD )
-                            END IF
-                            
-C.............................  For biogenic sources, read gridded emissions,
-C                               add to totals and store
-                            IF( BFLAG ) THEN
-! NOTE: Fill in later
-!                                K4 = BS_EXIST( J,V,N )
-!                                CALL MRGBIO( NGRID, K4, BEMGRD, TEMGRD )
-
-                            END IF
-                            
-C.............................  For mobile sources, loop through sources, apply
-C                               whatever matrices are valid, and store
-                            IF( MFLAG ) THEN
-
-                                K1 = M_EXIST ( V,N )
-                                K2 = MU_EXIST( V,N )
-                                K3 = MA_EXIST( V,N )
-                                K4 = MS_EXIST( J,V,N )
-                                K5 = NGRID + MNGMAT + 1
-                                CALL MRGMULT( NMSRC, NGRID, 1, MNGMAT,
-     &                               MNGMAT, K1, K2, K3, K4, 
-     &                               MEMSRC, MCUMATX, MCAMATX, 
-     &                               MSMATX, MGMATX(1), 
-     &                               MGMATX(NGRID+1), MGMATX(K5),  
-     &                               MEMGRD, TEMGRD )
-                            END IF
-                            
-C.............................  For point sources, loop through sources, apply
-C                               whatever matrices are valid, and store
-                            IF( PFLAG ) THEN
-
-                                K1 = P_EXIST ( V,N )
-                                K2 = PU_EXIST( V,N )
-                                K3 = PA_EXIST( V,N )
-                                K4 = PS_EXIST( J,V,N )
-                                K5 = NGRID + NPSRC + 1
-                                CALL MRGMULT( NPSRC, NGRID, EMLAYS, 
-     &                               NPSRC, NPSRC, K1, K2, K3, K4,
-     &                               PEMSRC, PCUMATX, PCAMATX, 
-     &                               PSMATX, PGMATX(1), 
-     &                               PGMATX(NGRID+1), PGMATX(K5), 
-     &                               PEMGRD, TEMGRD )
-                            END IF
-                            
-C.............................  Call subroutine to write speciated emissions
-                            SBUF = EMNAM( SPINDEX( J,V,N ) )
-                            CALL WRMRGGRD( SBUF, JDATE, JTIME )
-            
-                        END DO   ! End loop on pol-to-species
-
-C.....................  If NOT speciation, processing accordingly...
-C NOTE: Need to alloc speciation matrices even if not using because of EMMULT
-
-                    ELSE
+C.....................  Loop through pol-to-species for this pollutant/group
+C.....................  Note that NSMPPG is 1 when there is no speciation, so
+C                       that a single loop iteration will be done.
+                    DO J = 1, NSMPPG( V,N )
 
 C......................... Initialized gridded, merged emissions
                         TEMGRD = 0.  ! array
 
-C.........................  For area sources, loop through sources, apply
-C                           whatever matrices are valid, and store
+C.........................  If reactivity matrix applies, pre-compute source
+C                           array of reactivity emissions and market penetration
+                        IF( ARFLAG ) THEN
+                            K1 = A_EXIST ( V,N )
+                            K2 = AR_EXIST( J,V,N )
+                            IF( K2 .GT. 0 ) THEN
+                                CALL APPLREAC( NASRC, ANSREAC, K1, K2, 
+     &                                 APRJFLAG, LMKTPON, AEISRC,AEMSRC, 
+     &                                 ACRIDX, ACRREPEM, ACRPRJFC, 
+     &                                 ACRMKTPN, ACRFAC, ARINFO )
+
+                            ELSE
+                                ARINFO = 0.  ! array
+                            END IF
+                        END IF
+
+C.........................  For area sources, loop through sources, apply 
+C                           whatever other matrices are valid, and store
                         IF( AFLAG ) THEN
 
                             K1 = A_EXIST ( V,N )
                             K2 = AU_EXIST( V,N )
                             K3 = AA_EXIST( V,N )
-                            K4 = 0
+                            K4 = AS_EXIST( J,V,N )
                             K5 = NGRID + ANGMAT + 1
+
                             CALL MRGMULT( NASRC, NGRID, 1, ANGMAT, 
-     &                               ANGMAT, K1, K2, K3, K4,
-     &                               AEMSRC, ACUMATX, ACAMATX,
-     &                               ASMATX, AGMATX(1), 
-     &                               AGMATX(NGRID+1), AGMATX(K5), 
-     &                               AEMGRD, TEMGRD )
+     &                             ANGMAT, K1, K2, K3, K4, AEMSRC, 
+     &                             ARINFO, ACUMATX, ACAMATX, ASMATX, 
+     &                             AGMATX(1), AGMATX(NGRID+1), 
+     &                             AGMATX(K5), AEMGRD, TEMGRD )
                         END IF
                             
-C.........................  For mobile sources, loop through sources, apply
-C                           whatever matrices are valid, and store
+C.........................  For biogenic sources, read gridded emissions,
+C                               add to totals and store
+                        IF( BFLAG ) THEN
+! NOTE: Fill in later
+!                            K4 = BS_EXIST( J,V,N )
+!                            CALL MRGBIO( NGRID, K4, BEMGRD, TEMGRD )
+
+                        END IF
+                            
+C.........................  If reactivity matrix applies, pre-compute source
+C                           array of reactivity emissions and market penetration
+                        IF( MRFLAG ) THEN
+                            K1 = M_EXIST ( V,N )
+                            K2 = MR_EXIST( J,V,N )
+                            IF( K2 .GT. 0 ) THEN
+                                CALL APPLREAC( NMSRC, MNSREAC, K1, K2, 
+     &                                 MPRJFLAG, LMKTPON, MEISRC,MEMSRC,
+     &                                 MCRIDX, MCRREPEM, MCRPRJFC, 
+     &                                 MCRMKTPN, MCRFAC, MRINFO )
+
+                            ELSE
+                                MRINFO = 0.  ! array
+                            END IF
+                        END IF
+
+C.........................  For mobile sources, loop through sources, pre-
+C                           compute reactivity emissions, apply whatever other
+C                           matrices are valid, and store
                         IF( MFLAG ) THEN
 
                             K1 = M_EXIST ( V,N )
                             K2 = MU_EXIST( V,N )
                             K3 = MA_EXIST( V,N )
-                            K4 = 0
+                            K4 = MS_EXIST( J,V,N )
                             K5 = NGRID + MNGMAT + 1
+                           
                             CALL MRGMULT( NMSRC, NGRID, 1, MNGMAT,
-     &                               MNGMAT, K1, K2, K3, K4,
-     &                               MEMSRC, MCUMATX, MCAMATX, 
-     &                               MSMATX, MGMATX(1), 
-     &                               MGMATX(NGRID+1), MGMATX(K5),  
-     &                               MEMGRD, TEMGRD )
+     &                             MNGMAT, K1, K2, K3, K4, MEMSRC, 
+     &                             MRINFO, MCUMATX, MCAMATX, MSMATX, 
+     &                             MGMATX(1), MGMATX(NGRID+1), 
+     &                             MGMATX(K5), MEMGRD, TEMGRD )
                         END IF
                             
-C.........................  For point sources, loop through sources, apply
-C                           whatever matrices are valid, and store
+C.........................  If reactivity matrix applies, pre-compute source
+C                           array of reactivity emissions and market penetration
+                        IF( PRFLAG ) THEN
+                            K1 = P_EXIST ( V,N )
+                            K2 = PR_EXIST( J,V,N )
+                            IF( K2 .GT. 0 ) THEN
+                                CALL APPLREAC( NPSRC, PNSREAC, K1, K2,  
+     &                                 PPRJFLAG, LMKTPON, PEISRC,PEMSRC,
+     &                                 PCRIDX, PCRREPEM, PCRPRJFC, 
+     &                                 PCRMKTPN, PCRFAC, PRINFO )
+                            ELSE
+                                PRINFO = 0.  ! array
+                            END IF
+                        END IF
+
+C.........................  For point sources, loop through sources, pre-
+C                           compute reactivity emissions, apply whatever other
+C                           matrices are valid, and store
                         IF( PFLAG ) THEN
 
                             K1 = P_EXIST ( V,N )
                             K2 = PU_EXIST( V,N )
                             K3 = PA_EXIST( V,N )
-                            K4 = 0
+                            K4 = PS_EXIST( J,V,N )
                             K5 = NGRID + NPSRC + 1
-                            CALL MRGMULT( NPSRC, NGRID, EMLAYS, NPSRC,
-     &                               NPSRC, K1, K2, K3, K4,
-     &                               PEMSRC, PCUMATX, PCAMATX, 
-     &                               PSMATX, PGMATX(1), 
-     &                               PGMATX(NGRID+1), PGMATX(K5), 
-     &                               PEMGRD, TEMGRD )
+                            CALL MRGMULT( NPSRC, NGRID, EMLAYS, NPSRC, 
+     &                             NPSRC, K1, K2, K3, K4, PEMSRC, 
+     &                             PRINFO, PCUMATX, PCAMATX, PSMATX, 
+     &                             PGMATX(1), PGMATX(NGRID+1),
+     &                             PGMATX(K5), PEMGRD, TEMGRD )
+                        END IF
+                            
+C.........................  Set output variable name
+                        IF ( SFLAG ) THEN
+                            VBUF = EMNAM( SPINDEX( J,V,N ) )
+                        ELSE
+                            VBUF = PLNAMES( V,N )
                         END IF
 
-C.........................  Call subroutine to write inventory data
-                        CALL WRMRGGRD( PLNAMES( V,N ), JDATE, JTIME )
+C.........................  Call subroutine to write emissions
+                        CALL WRMRGGRD( VBUF, JDATE, JTIME )
+            
+                    END DO   ! End loop on pol-to-species (or single loop)
 
-                    END IF  ! End speciation or not
+C NOTE: Need to alloc speciation matrices even if not using because of EMMULT
 
                 END DO      ! End loop on pollutants in group
+
+                LDATE = JDATE
 
                 CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
 
@@ -538,13 +531,9 @@ C.................  Write report data for previous day...
 ! Add report writing later
                 END IF
 
-                LDATE = JDATE
-
             END DO          ! End loop on time steps
 
         END DO   ! End of loop on pollutant/pol-to-spcs groups
-
-999     CONTINUE          !  exit program
 
 C.........  Successful completion of program
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
