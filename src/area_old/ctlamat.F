@@ -2,7 +2,7 @@
         PROGRAM CTLAMAT
 
 C***********************************************************************
-C  program body starts at line 138
+C  program body starts at line 160
 C
 C  DESCRIPTION:
 C       Construct area source control matrix from data 
@@ -180,8 +180,7 @@ C   begin body of program CTLAMAT
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program CTLAMAT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'CTLAMAT', 0, 0, 'Ending program.', 2 )
         END IF
 
 
@@ -1598,6 +1597,8 @@ C.......   Process CTG packet of control file:
      &                   2 )
         END IF
 
+        CALL M3MSG2( 'Reading CONTROL PACKETS file...' )
+
 181     CONTINUE        !  head of loop reading this category of packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=189 ) LINE
@@ -1662,7 +1663,8 @@ C.......   Process CTG packet of control file:
                             
                         END IF
 
-                    ELSE IF( VOC( S ) .GT. TVOC ) THEN  ! VOC control applies                            T = RULEFF( S ) * RULPEN( S )
+                    ELSE IF( VOC( S ) .GT. TVOC ) THEN! VOC control applies
+                                                      ! T = RULEFF(S)*RULPEN(S)
 
                         IF ( TFLAG( S ) ) 
      &                      WRITE( RDEV,93030 ) 
@@ -1712,7 +1714,8 @@ C.......   Process CTG packet of control file:
 
                         END IF
 
-                    ELSE IF( VOC( S ) .GT. TVOC ) THEN  ! VOC control applies                            T = RULEFF( S ) * RULPEN( S )
+                    ELSE IF( VOC( S ) .GT. TVOC ) THEN! VOC control applies
+                                                      ! T = RULEFF(S)*RULPEN(S)
 
                         IF ( TFLAG( S ) ) 
      &                      WRITE( RDEV,93030 ) 
@@ -1757,7 +1760,8 @@ C.......   Process CTG packet of control file:
 
                         END IF
 
-                    ELSE IF( VOC( S ) .GT. TVOC ) THEN  ! VOC control applies                            T = RULEFF( S ) * RULPEN( S )
+                    ELSE IF( VOC( S ) .GT. TVOC ) THEN! VOC control applies
+                                                      ! T = RULEFF(S)*RULPEN(S)
 
                         IF ( TFLAG( S ) ) 
      &                      WRITE( RDEV,93030 ) 
@@ -1792,7 +1796,7 @@ C.......   Compute the control matrix:
 C............................................................................
 C.......   Write out the control matrix:
 
-        WRITE( *,92000 ) ' ', 'Writing out CONTROL MATRIX...', ' '
+        CALL M3MSG2( 'Writing out CONTROL MATRIX...' )
 
         IF ( .NOT. WRITE3( MNAME, 'ALL', 0, 0,CMAT ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0, 
@@ -1803,8 +1807,8 @@ C.......   Write out the control matrix:
 
 999   CONTINUE          !  exit program
 
-      CALL M3EXIT( 'CTLAMAT', 0, 0,
-     &             '====  END PROGRAM CTLAMAT  ====', 0 )
+      CALL M3EXIT( 'CTLAMAT', 0, 0, 
+     &             'Normal completion of program CTLAMAT', 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 

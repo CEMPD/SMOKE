@@ -2,7 +2,7 @@
         PROGRAM GRDAREA
 
 C***********************************************************************
-C  program body starts at line  96
+C  program body starts at line  95
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDAMAT to grid
@@ -25,8 +25,6 @@ C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
 C                Modeling System
 C File Version @(#)$Id$
-C Pathname:    $Source$
-C Last updated: $Date$ 
 C
 C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
@@ -39,6 +37,9 @@ C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
 C env_progs@mcnc.org
+C
+C Pathname:    $Source$
+C Last updated: $Date$ 
 C
 C***************************************************************************/
 
@@ -119,8 +120,7 @@ C   begin body of program GRDAREA
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program GRDAREA', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'GRDAREA', 0, 0 , 'Ending program.', 2 )
         END IF
 
         GNAME = PROMPTMFILE( 
@@ -205,7 +205,7 @@ C.......   Get file name; open output gridded area sources file
 
 C.......   Read gridding-transform matrix:
 
-        WRITE( *,92000 ) ' ', 'Reading GRIDDING-TRANSFORM matrix.', ' '
+        CALL M3MSG2( 'Reading GRIDDING-TRANSFORM matrix...' )
         IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NS ) ) THEN
 
             CALL M3ERR( 'GRDAREA', 0, 0,
@@ -218,7 +218,7 @@ C.......   Read gridding-transform matrix:
 
 C.......   Write out the area source emissions values:
 
-        WRITE( *,92000 ) ' ', 'Writing out emissions values...', ' '
+        CALL M3MSG2( 'Writing GRIDDED INVENTORY EMISSIONS values...' )
 
         DO  199  T = 1, NSTEPS
 

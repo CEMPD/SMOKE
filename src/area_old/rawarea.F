@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
          PROGRAM RAWAREA
 
 C***********************************************************************
-C  program body starts at line 146
+C  program body starts at line 175
 C
 C  DESCRIPTION:
 C       Construct Models3/EDSS area source file from data contained in
@@ -24,7 +22,29 @@ C       files ARAW01, ARAW02, ..., each with its own inventory-year.
 C       Supports both UTM and Lambert-based coordinate systems.
 C       Version 8/96 by CJC does bounds-checking in loop 144; better
 C       treatment of "missing".
+C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
@@ -40,6 +60,7 @@ C***********************************************************************
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         GETNUM
@@ -53,15 +74,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN, 
+        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN,
      &           PROMPTFFILE, PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL,
      &           TRIMLEN
 
 
 C...........   PARAMETER:
 
+        CHARACTER*5     BLANK5
         INTEGER         NSMAX
-        PARAMETER     ( NSMAX = NASRC * NIPOL )
+        PARAMETER     ( BLANK5 = ' ',
+     &                  NSMAX  = NASRC * NIPOL )
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -134,7 +157,7 @@ C...........   Other local variables
         INTEGER         IREC            !  input line (record) number
         INTEGER         IFIL            !  input file counter
         LOGICAL         MFLAG   !  sum duplicate emissions flag
-        LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
+        LOGICAL         EFLAG   !  input verification:  TRUE iff ERROR
         LOGICAL         SFLAG   !  input verification:  report missing species
         CHARACTER*16    SCRBUF  !  scratch name buffer
         CHARACTER*16    COORDN  !  coordinate system name
@@ -168,8 +191,7 @@ C   begin body of program RAWAREA
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program RAWAREA', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'RAWAREA', 0, 0, 'Ending program', 2 )
         END IF
 
         SFLAG = ENVYN( 'RAW_SRC_CHECK', 
@@ -203,11 +225,9 @@ C.......   Get file name; open input time zone file
 
 C.......   Get file name; open input raw area source file
 
-        WRITE( *,92000 ) 
-     &  ' ', 
-     &  'Now enter the list of logical file names for ',
-     &  'RAW AREA SOURCE files...', 
-     &  ' '
+        CALL M3MSG2( 'Now enter the list of logical file names for'
+     &               // CRLF() // BLANK5 // 'RAW AREA SOURCE files...'
+
         IFIL =    0
         S    =    0
         INY  = 1989
@@ -246,10 +266,11 @@ C.......   Process this area source file
                 READ( ADEV, 93000, END=133, IOSTAT=IOS )LINE
 
                 IF ( IOS .NE. 0 ) THEN
-                    WRITE( *,92010 ) 
+                    WRITE( MESG,94010 )
      &                  'Unit number', ADEV, 
      &                  'I/O Status ', IOS, 
      &                  'Line number', IREC
+                    CALL M3MSG2( MESG )
                     CALL M3EXIT( 'RAWAREA', 0, 0, 
      &                  'Error reading "' //
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"', 2 )
@@ -278,7 +299,7 @@ C.......   Process this area source file
      &                  '" in "' //
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"'
                     CALL M3MESG( MESG )
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     GO TO  111
                 END IF
 
@@ -363,7 +384,7 @@ C                   END IF
      &                  'SPECIAL time period type for', 
      &                  DAYS, ' days not supported'
                         CALL M3MESG( MESG )
-                        VFLAG = .TRUE.
+                        EFLAG = .TRUE.
                         GO TO  111
                     END IF
                     EMIS = DAY2YR * EMIS
@@ -375,7 +396,7 @@ C                   END IF
      &                  'Unsupported time period type "' // 
      &                  LINE( 37:38 ) // '"'
                     CALL M3MESG( MESG )
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     GO TO  111
 
                 END IF  !  if annual, peak, special, or unrecognized
@@ -409,10 +430,10 @@ C                   END IF
 133         CONTINUE        !  end of the ADEV-read loop
 
 
-            IF ( VFLAG ) THEN
+            IF ( EFLAG ) THEN
                 CALL M3EXIT( 'RAWAREA', 0, 0, 
      &                       'Error reading AREA SOURCE file.', 2 )
-            END IF      !  if VFLAG
+            END IF      !  if EFLAG
 
             GO TO 101   !  to process next input file
 
@@ -420,9 +441,12 @@ C                   END IF
 
         NSRC = S
         IF ( S .GT. NSMAX ) THEN
-            WRITE( *,92010 ) 
+            WRITE( MESG,94010 )
      &              'Actual record count         ', NSRC/3,
+     &               CRLF() // BLANK5 //
      &              'Max dimensioned record-count', NSMAX/3
+            CALL M3MSG2( MESG )
+
             CALL M3EXIT( 'RAWAREA', 0, 0, 
      &        'Max record-count exceeded in AREA SOURCE file.', 2 )
 
@@ -435,7 +459,7 @@ C                   END IF
 C.......   Use SORTI3() to perform an indirect sort by FIPS,SCC7,SCC3;
 C.......   then permute the records according to the result:
 
-        WRITE( *,92000 ) ' ', 'Sorting RAW AREA SOURCE file...', ' '
+        CALL M3MSG2( 'Sorting RAW AREA SOURCE file...' )
 
         CALL SORTI3( NSRC, INDEXA, IFIPSA, ISCC7A, ISCC3A )
 
@@ -445,7 +469,7 @@ C.......   then permute the records according to the result:
             VMISS = 0.0
         END IF
 
-        VFLAG = .FALSE.
+        EFLAG = .FALSE.
         LFIP  = IMISS3
         LID7  = IMISS3
         LID3  = IMISS3
@@ -513,7 +537,7 @@ C.......   then permute the records according to the result:
                     IF( MFLAG ) THEN
                         EMISV ( J,V ) = EMISV ( J,V ) + EMISVA( I )
                     ELSE
-                        VFLAG = .TRUE.
+                        EFLAG = .TRUE.
                     ENDIF
 
                 END IF  !  if new pollutant for this source, or not
@@ -530,21 +554,21 @@ C.......   then permute the records according to the result:
             CALL M3EXIT( 'RAWAREA', 0, 0, MESG, 2 )            
         END IF
 
-        IF ( VFLAG ) THEN
+        IF ( EFLAG ) THEN
             CALL M3EXIT( 'RAWAREA', 0, 0, 
      &                   'Duplicate records found in input file', 2 )
         END IF
 
         IF ( SFLAG ) THEN
 
-            VFLAG = .FALSE.
+            EFLAG = .FALSE.
 
             DO  146  V = 1, NIPOL
             DO  145  S = 1, NASRC
  
                IF ( EMISV( S,V ) .LT. AMISS3 ) THEN
 
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     WRITE( MESG,94020 )
      &                  'Missing emissions record:  FIP:', FIP,
      &                  'ASC:', ID7, ID3, 'Species:', PCODE( V )
@@ -555,7 +579,7 @@ C.......   then permute the records according to the result:
 145         CONTINUE
 146         CONTINUE
 
-            IF ( VFLAG ) THEN
+            IF ( EFLAG ) THEN
                 CALL M3EXIT( 'RAWAREA', 0, 0,
      &                       'Missing species recs in input file', 2 )
             END IF
@@ -565,7 +589,7 @@ C.......   then permute the records according to the result:
 
 C.......   Process the time zone file
 
-        WRITE( *,92000 ) ' ', 'Processing TIME ZONE file...', ' '
+        CALL M3MSG2( 'Processing TIME ZONE file...' )
         IREC = 0
 
 155     CONTINUE        !  head of time-zone loop
@@ -574,11 +598,12 @@ C.......   Process the time zone file
             IREC = IREC + 1
 
             IF ( IOS .NE. 0 ) THEN
-                WRITE( *,92010 ) 
+                WRITE( MESG,94010 ) 
      &              'Unit number', ZDEV, 
      &              'I/O Status ', IOS, 
      &              'Line number', IREC
-                    CALL M3EXIT( 'RAWAREA', 0, 0, 
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( 'RAWAREA', 0, 0, 
      &              'Error reading TIME ZONE file.', 2 )
             END IF
             
@@ -717,7 +742,7 @@ C.......   FDESC3.EXT data structures by DSCGRID().
 
 C.......   Write out the area source emissions values:
 
-        WRITE( *,92000 ) ' ', 'Writing out AREA SOURCES file...', ' '
+        CALL M3MSG2( 'Writing out AREA SOURCES file...' )
 
         IF ( .NOT. WRITE3( ENAME, 'ALL', 0, 0,  IFIPS ) ) THEN
             CALL M3EXIT( 'RAWAREA', 0, 0,  
@@ -768,7 +793,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 3( A, :, I7, :, 1X ) )
+94010   FORMAT( 10( A, :, I7, :, 1X ) )
 
 94020   FORMAT( A, 1X, I5, 1X, A, I7.7, I3.3, 1X, A, I5 )
 

@@ -148,8 +148,7 @@ C   begin body of program CSGAREA
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program CSGAREA', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'CSGAREA', 0, 0, 'Ending program.', 2 )
         END IF
 
 C.......   Get file names; open input gridding, speciation, 
@@ -230,7 +229,8 @@ C.......   Build description of output file, and optionally open it:
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
-        WRITE( *,92000 ) ' ', 'Reading GRIDDING matrix.', ' '
+        CALL M3MSG2( 'Reading GRIDDING matrix...' )
+
         IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NS ) ) THEN
 
             CALL M3EXIT( 'CSGAREA', 0, 0,
@@ -239,7 +239,8 @@ C.......   Read gridding, speciation, and (optional) control matrices:
             
         END IF      !  if read3() failed for gridding matrix
 
-        WRITE( *,92000 ) ' ','Reading SPECIATION matrix.',' '
+        CALL M3MSG2( 'Reading SPECIATION matrix...' )
+
         IF ( .NOT. READ3( SNAME, 'ALL', 1, 0, 0, SS ) ) THEN
 
             CALL M3EXIT( 'CSGAREA', 0, 0,
@@ -304,8 +305,7 @@ C.......   If CONTROLFLAG, read and apply control matrix:
 
         IF( CONTROLFLAG ) THEN
 
-            WRITE( *,92000 ) 
-     &      ' ', 'Reading CONTROL matrix.', ' '
+            CALL M3MSG2( 'Reading CONTROL matrix...' )
 
             IF ( .NOT. DESC3( CNAME ) ) THEN
                 WRITE( MESG, '(2A)' ) 
@@ -354,22 +354,16 @@ C...............   e.g., the "42101" in "42101toCO"
 C.......   Transform and write out area source emissions values:
 
         IF ( CONTROLFLAG .AND. OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing ' //
-     &      'controlled speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating and writing ' //
+     &                   'controlled speciated gridded emissions...' )
         ELSE IF ( CONTROLFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating controlled speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating controlled ' //
+     &                   'speciated gridded emissions...' )
         ELSE IF ( OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating and writing ' //
+     &                   'speciated gridded emissions...' )
         ELSE 
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating speciated gridded emissions...' )
         END IF
 
         DO  199  T = 1, NSTEPS
