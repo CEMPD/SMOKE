@@ -227,7 +227,7 @@ C.................  Set type of SCC
 
 C.................  Determine if SCC is in inventory list
                 K1 = FINDC( TSCC, NINVSCC, INVSCC )
-                K2 = FINDC( TSCL, NINVSCC, INVSCL )
+                K2 = FINDC( TSCL, NINVSCL, INVSCL )
 
                 IF( K1 .LE. 0 .AND. K2 .LE. 0 ) CYCLE   ! Skip record if SCC not in inventory
 
