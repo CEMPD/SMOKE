@@ -132,7 +132,7 @@ C.........  File units and logical/physical names
 
 C...........   Other local variables
                                 
-        INTEGER         S, I, J, J1, J2, K, L, L2, V !  counters and indices
+        INTEGER         S, I, J, J1, J2, J3, K, L, L2, V !  counters and indices
 
         INTEGER      :: DNSTEP = 0 ! day-specific data time step number
         INTEGER      :: DSDATE = 0 ! day-specific data start date
@@ -281,20 +281,22 @@ C               output order. The indexes are for accessing INVDCOD, if needed.
 C.............  These are for opening output file and processing output data
             J1 = 0
             J2 = 0
+            J3 = 0
             DO I = 1, MXIDAT
 
                IF( INVSTAT( I ) .GT. 0 ) THEN
-        	   J1 = J1 + 1
-        	   EIIDX( J1 ) = I
-        	   EINAM( J1 ) = INVDNAM( I )
+        	       J1 = J1 + 1
+        	       J3 = J3 + 1
+        	       EIIDX( J3 ) = I
+        	       EINAM( J3 ) = INVDNAM( I )
                    EANAM( J1 ) = INVDNAM( I )
                END IF
 
                IF( INVSTAT( I ) .LT. 0 ) THEN
-        	   J1 = J1 + 1
-        	   J2 = J2 + 1
-        	   AVIDX ( J2 ) = I
-        	   ACTVTY( J2 ) = INVDNAM( I )
+        	       J1 = J1 + 1
+        	       J2 = J2 + 1
+        	       AVIDX ( J2 ) = I
+        	       ACTVTY( J2 ) = INVDNAM( I )
                    EANAM ( J1 ) = INVDNAM( I )
                END IF
 
