@@ -66,7 +66,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '%W%'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........  LOCAL VARIABLES and their descriptions:
 
@@ -155,7 +155,7 @@ C   begin body of program GRWINVEN
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Get environment variables that control this program
         EVNAME = 'SMK_NUM_CTLMAT'
@@ -701,7 +701,7 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94020   FORMAT( A, 1X, I5.5, 1X, A, 1X, I8.8, 1X,
-     &          A, I6, X, A, I6, X, A, :, I6 )
+     &          A, I6, 1X, A, I6, 1X, A, :, I6 )
 
 94040   FORMAT( A, I2.2 )
 
