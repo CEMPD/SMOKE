@@ -174,7 +174,7 @@ C.......   Fold sfac into ADAY, dpres0 into BDAY
 
             FIRSTIME = .FALSE.
 
-            DO  11  JMON = 1, 14
+            DO  11  JMON = 0, 13
                 ADAY( JMON ) = SOLFAC * ADAY( JMON )
                 BDAY( JMON ) = DPRES0 * BDAY( JMON )
 11          CONTINUE
