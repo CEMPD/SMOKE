@@ -131,6 +131,8 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MCREF     $INVDIR/mobile/mcref.$MSCEN.txt        # County cross-reference file
    setenv MVREF     $INVDIR/mobile/mvref.$MSCEN.txt        # County settings file
    setenv METLIST   $INVDIR/mobile/metlist.premobl.txt     # Episode meteorology files list
+   setenv SPDREF    $INVDIR/mobile/spdref.$MSCEN.txt       # Speed cross-reference file
+   setenv SPDPRO    $INVDIR/mobile/spdpro.$MSCEN.txt       # Speed profiles file
    setenv REPCONFIG $INVDIR/mobile/REPCONFIG.mobile.txt    # Default report configurations
    setenv MGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt # Mobile gridding surrogates
    setenv MGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt  # Mobile gridding x-ref 
