@@ -71,7 +71,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: SEGMENT( * )! parsed input record
 
 C...........   Other local variables
-        INTEGER          J, L, L2            ! counters and indices
+        INTEGER          I, J, L, L2            ! counters and indices
         INTEGER          IOS                 ! i/o status
 
         INTEGER, SAVE :: IREC_MIN = 99999999 ! minimum record number
@@ -188,6 +188,7 @@ C.........  Initializations needed for every line
         LIN_SUBDATA = .FALSE.
         LIN_TITLE   = .FALSE.
         LIN_UNIT    = .FALSE.
+        LIN_SPCIFY  = .FALSE.
 
 C.........  Set length of full line
         L2 = LEN_TRIM( LINE )
@@ -318,7 +319,7 @@ C.........................  Ensure ozone season setting made
                         PKTEND   = IREC
                         INPACKET = .FALSE.             ! end implied
 
-C.....................  A group definition packet
+C.....................  A region group or subgrid definition packet
 C.....................  Reset group specific to defaults
                     CASE( REG_IDX, SBG_IDX )
                         INGROUP      = .TRUE.
@@ -329,7 +330,14 @@ C.....................  Reset group specific to defaults
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
                         ELSE
                             GRP_LABEL = ADJUSTL( LINE( J+1:L2 ) )
-                        END IF                                                
+                        END IF
+
+C.....................  Specification of elevated groups, PinG sources, or
+C                       elevated sources
+                    CASE( ELG_IDX, PNG_IDX, ELV_IDX )
+                        INSPCIFY    = .TRUE.
+                        LIN_SPCIFY  = .TRUE.
+                        SPCF_NOR    = 0
 
 C.....................  A report packet
                     CASE( RPT_IDX )
@@ -471,6 +479,23 @@ C.............  If neither, count entries in the current group definition
             
         END IF      ! End group packet
 
+C.............  Specification processing
+        IF( INSPCIFY ) THEN
+
+C.............  Determine how many conditions appear for this line
+            J = NSEGS
+            DO
+                I = I + 1
+                J = J - 4              ! three fields plus AND
+                IF ( J .LE. 0 ) EXIT
+            END DO
+            SPCF_NAND = I
+
+C.............  Increment the OR field count (one per row)
+            SPCF_NOR  = SPCF_NOR + 1
+
+        END IF
+
 C.............  Check current line for report settings
 C.............  Set global and line-by-line logical variables, shared through
 C               MODREPRT
@@ -553,6 +578,21 @@ C.............  BY options affecting inputs needed
                     TFLAG      = .TRUE.           ! Implies temporal allocation
                     RPT_%USEHOUR  = .TRUE.
                     RPT_%BYHOUR = .TRUE.
+
+                CASE( 'LAYER' )
+                    IF( CATEGORY .EQ. 'POINT' ) THEN
+                        LFLAG        = .TRUE.     ! Implies layer fractions file
+                        TFLAG        = .TRUE.     ! Implies temporal allocation
+                        RPT_%BYLAYER = .TRUE.
+                        RPT_%LAYFRAC = .TRUE.
+                        RPT_%USEHOUR = .TRUE.     ! Implies temporal allocation
+                        RPT_%BYHOUR  = .TRUE.
+
+                    ELSE IF( FIRSTLOOP ) THEN
+
+                        CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
+
+                    END IF
 
                 CASE( 'ROADCLASS' )
                     IF( CATEGORY .EQ. 'MOBILE' ) THEN
@@ -699,8 +739,8 @@ C.....................  Warning if used more than once
 
                     END IF
 
-                    GFLAG       = .TRUE.
-                    RPT_%USEGMAT   = .TRUE.
+                    GFLAG        = .TRUE.
+                    RPT_%USEGMAT = .TRUE.
                     LSUBGRID = .TRUE.
                     CALL EXTRACT_LABEL( IREC, 'SUBGRID', LINE, 
      &                                  RPT_%SUBGNAM )
@@ -880,7 +920,7 @@ C.............  Determine lengths of input strings
             LL = LEN_TRIM( LINE )
 
 C.............  Determine first position after keyword
-            K = INDEX( LINE, KEYWORD ) + LK
+            K = INDEX( LINE, KEYWORD ) + LK + 1
 
 C.............  Make sure a label is there. If not, error.
             IF( LL .LE. K ) THEN
