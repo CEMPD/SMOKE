@@ -31,7 +31,7 @@ C.........  Dimensioning parameters
      &           , MXM5EFS  = MXM5NDI + MXM5DIU
      &           , MXM5ALL  = 2 + NM5VPOL*( MXM5NDI-2 ) + 
      &                            NM5VPOL*MXM5DIU 
-     &           , MXM5SCEN = 12
+     &           , MXM5SCEN = 25
      &           , MXM5VTYP = 9
      &           )
 
