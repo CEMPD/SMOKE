@@ -54,8 +54,9 @@ C.........   Other local variables
         INTEGER    VARPOL           ! pollutant specified by current variable
         INTEGER    VAREMIS          ! emission process specified by current variable
         
-        LOGICAL :: LASAFLAG = .FALSE.      ! true: treat local roads as arterial
-        LOGICAL :: SRCMATCH = .FALSE.      ! true: matched source to emission factors
+        LOGICAL       :: LASAFLAG = .FALSE. ! true: treat local roads as arterial
+        LOGICAL       :: SRCMATCH = .FALSE. ! true: matched source to emission factors
+        LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
         CHARACTER*300          MESG      !  message buffer 
         
@@ -66,11 +67,15 @@ C   begin body of program WREMFACS
 
         LJ = LEN_TRIM( ETJOIN )
 
-C.........  Allocate arrays for per-source efs        
-        ALLOCATE( SRCEFS( NUMSRC, NEFS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMISFACS', PROGNAME )
-        ALLOCATE( EFIDX( NUMSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EFIDX', PROGNAME )
+C.........  Allocate arrays for per-source efs
+        IF( INITIAL ) THEN     
+            ALLOCATE( SRCEFS( NUMSRC, NEFS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMISFACS', PROGNAME )
+            ALLOCATE( EFIDX( NUMSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EFIDX', PROGNAME )
+            
+            INITIAL = .FALSE.
+        END IF
         
         DO IHR = 1,24
             EFPOS = 1
