@@ -504,7 +504,9 @@ C.........  Open output file(s)
 
 C.........  Update the year of the data if the projection year is non-zero
         IF( PPYEAR .NE. 0 ) THEN
-            INVYR = PPYEAR       ! array
+            DO S = 1, NSRC
+                IF( INVYR( S ) .EQ. PBYEAR ) INVYR( S ) = PPYEAR
+            END DO
         END IF
 
 C.........  Write out I/O API file source characteristics, if the file has been
@@ -600,6 +602,8 @@ C                   loop through sources, applying factors as needed
                     DO S = 1, NSRC
                         IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
                         IF( K .GT. 0 ) PSFAC  = CFAC( S )
+
+                        IF( INVYR( S ) .NE. PBYEAR ) CYCLE
 
 C.........................  Adjust annual emissions or activity
                         POLVAL( S,1 ) = POLVAL( S,1 ) * ALLFAC* PSFAC
