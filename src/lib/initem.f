@@ -47,7 +47,7 @@ C****************************************************************************
         IMPLICIT NONE
 
 C.........  Subroutine arguments
-        INTEGER     , INTENT (OUT) :: LDEV      ! Log file unit number
+        INTEGER     , INTENT (INOUT) :: LDEV      ! Log file unit number
         CHARACTER*50, INTENT (IN) :: NAMEVERS  ! ASCII field e/ version number appended to end
         CHARACTER*16, INTENT (IN) :: INPROGNM  ! Calling program name
 
