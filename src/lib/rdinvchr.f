@@ -470,18 +470,21 @@ C.................  If MACT code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. MCTIN .AND. MACFLAG ) THEN
                     DEALLOCATE( CMACT )
+                    NULLIFY( CMACT )
                 END IF
                 
 C.................  If NAICS code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. NAIIN .AND. NAIFLAG ) THEN
                     DEALLOCATE( CNAICS )
+                    NULLIFY( CNAICS )
                 END IF
 
 C.................  If source type code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. STPIN .AND. STPFLAG ) THEN
                     DEALLOCATE( CSRCTYP )
+                    NULLIFY( CSRCTYP )
                 END IF
 
                 DO S = 1, NSRC
@@ -597,18 +600,21 @@ C.................  If MACT code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. MCTIN .AND. MACFLAG ) THEN
                     DEALLOCATE( CMACT )
+                    NULLIFY( CMACT )
                 END IF
                 
 C.................  If NAICS code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. NAIIN .AND. NAIFLAG ) THEN
                     DEALLOCATE( CNAICS )
+                    NULLIFY( CNAICS )
                 END IF
 
 C.................  If source type code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. STPIN .AND. STPFLAG ) THEN
                     DEALLOCATE( CSRCTYP )
+                    NULLIFY( CSRCTYP )
                 END IF
 
 C.................  If emission release code not present but has been requested,
