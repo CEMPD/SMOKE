@@ -2,7 +2,7 @@
          PROGRAM SMKINVEN
 
 C***********************************************************************
-C  program body starts at line 170
+C  program body starts at line 171
 C
 C  DESCRIPTION:
 C    The smkinven program reads the any source inventory in one of four
@@ -165,7 +165,6 @@ C...........   Other local variables
 
         CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
 
-        integer bdev
 C***********************************************************************
 C   begin body of program SMKINVEN
 
