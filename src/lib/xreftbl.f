@@ -117,7 +117,7 @@ C...........   Other local variables
         LOGICAL    :: LFLAG = .FALSE.  ! true: operation type is allowable cntls
         LOGICAL    :: MFLAG = .FALSE.  ! true: operation type is VMT mix
         LOGICAL    :: NFLAG = .TRUE.   ! true: has pol or activity-specific
-        LOGICAL    :: OFLAG = .FALSE.  ! true: any control packet
+        LOGICAL    :: OFLAG = .FALSE.  ! true: use extra SCC matches
         LOGICAL    :: PFLAG = .FALSE.  ! true: operation type is speeds
         LOGICAL    :: POADFLT          ! true: okay to have pol/act-spec dfaults
         LOGICAL    :: RFLAG = .FALSE.  ! true: operation type is reactivty cntls
@@ -205,6 +205,8 @@ C.........  Check for valid operation type
         CASE( 'NONHAP' )
             POADFLT = .FALSE.
             XFLAG   = .TRUE.
+            NFLAG   = .FALSE.
+            OFLAG   = .TRUE.
         CASE( 'REACTIVITY' )
             POADFLT = .FALSE.
             RFLAG   = .TRUE.
@@ -776,10 +778,9 @@ C.........  Speeds
 c             CALL ALOCPTBL( N( 1 ) )
 c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
-C.........  NONHAP excluding
-        ELSE IF( XFLAG ) THEN
-c            CALL ALOCXTBL( N( 1 ) )
-c            CALL FILLXTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) ) 
+C.........  non-HAP exclusions file
+        ELSE IF( XFLAG ) THEN   
+              ! Do nothing, because all that is needed is the CHRT* arrays
 
 C.........  Area-to-point factors assignment
         ELSE IF( YFLAG ) THEN

@@ -15,7 +15,7 @@ FILES_A = \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
   alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o   blkorcmt.o \
   alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o    rdar2pt.o \
-  alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
+  alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o    rdxclude.o \
   alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
 
 FILES_B = \
@@ -171,6 +171,8 @@ rdtref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdtref.f
 rdvmix.o  : $(MODMOBIL) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdvmix.f
+rdxclude.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rdxclude.f
 wrchrscc.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrchrscc.f
 wridaout.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
