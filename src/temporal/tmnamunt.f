@@ -16,6 +16,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 10/99 by M. Houyoux
+C     Modified 5/02 by G. Cano
 C
 C*************************************************************************
 C
@@ -47,10 +48,14 @@ C.........  This module contains emission factor tables and related
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C...........   This module contains the uncertainty arrays and variables
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER   INDEX1
@@ -152,6 +157,17 @@ C.....................  Store for emission types
 
                 END IF
 
+c BUG must be changed
+                IF ( J .LE. 0 .OR. CATEGORY .EQ. 'AREA' ) THEN
+                    
+C.....................  Store for emission types for uncertainties
+c                    EMTUNT( K,I ) = MULTUNIT( DIUUNT( J ), EAUNIT( M ) )
+c                    EMTDSC( K,I ) = DIUDSC( J )( L+3:L2 )// 
+c     &                              ' from ' // ACTVTY( I )
+                    EMTEFT( K,I ) = 'I'
+
+                END IF
+
 C.................  If emission type has not been associated with an emission
 C                   factor, then error
                 IF( EMTEFT( K,I ) .EQ. ' ' ) THEN
@@ -174,8 +190,9 @@ C               from one activity are the same.
             FAC1 = UNITFAC( CBUF, 'tons', .TRUE. )
             FAC2 = UNITFAC( EAUNIT( M ), '1/yr', .FALSE. )
 
-            IF ( FAC1 .LT. 0. ) FAC1 = 1.
-            IF ( FAC2 .LT. 0. ) FAC2 = 1.
+c BUG must be changed
+            IF ( FAC1 .LT. 0. .OR. CATEGORY .EQ. 'AREA' ) FAC1 = 1.
+            IF ( FAC2 .LT. 0. .OR. CATEGORY .EQ. 'AREA' ) FAC2 = 1.
 
             EAUNIT( M ) = 'tons/hr'
             EACNV ( M ) = FAC1 / FAC2
@@ -191,8 +208,9 @@ C.........  Now loop through pollutants and create units and conversion factors
             FAC1 = UNITFAC( CBUF, 'tons', .TRUE. )
             FAC2 = UNITFAC( EAUNIT( M ), '1/yr', .FALSE. )
 
-            IF ( FAC1 .LT. 0. ) FAC1 = 1.
-            IF ( FAC2 .LT. 0. ) FAC2 = 1.
+c BUG must be changed
+            IF ( FAC1 .LT. 0. .OR. CATEGORY .EQ. 'AREA' ) FAC1 = 1.
+            IF ( FAC2 .LT. 0. .OR. CATEGORY .EQ. 'AREA' ) FAC2 = 1.
 
             EAUNIT( M ) = 'tons/hr'
             EACNV ( M ) = FAC1 / FAC2
