@@ -80,12 +80,12 @@ C...........   Local parameters
         CHARACTER*6, PARAMETER :: LOCCATS( 3 ) = 
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
-C...........   Sorted pollutant/activity names
-        INTEGER                   INDXP  ( NIPPA ) !  sorting index for pol/act
+C...........   Sorted pollutant/emission type names
+        INTEGER                   INDXP  ( NIPPA ) !  sorting index for pol/etyp
         CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPPA ) !  sorted pol/act names
 
-C...........   Array of source characeristics
-        CHARACTER*300           CHARS( 7 )
+C...........   Array of point source plant characeristics
+        CHARACTER(LEN=CHRLEN3) CHARS( 5 )
 
 C...........   Array for reading temporal x-ref fields
         CHARACTER*20            SEGMENT( MXTCOL )
@@ -93,16 +93,16 @@ C...........   Array for reading temporal x-ref fields
 C...........   Other local variables
         INTEGER         I, J, J1, J2, J3, K, L, N    !  counters and indices
 
-        INTEGER         COD     !  temporary pollutant/activity code
+        INTEGER         COD     !  temporary pollutant/emission type code
         INTEGER         FIP     !  temporary FIPS code
         INTEGER         IDIU    !  temporary diurnal profile code
-        INTEGER         IDUM    !  tmp dummy integer
+        INTEGER      :: IDUM = 0!  tmp dummy integer
         INTEGER         IMON    !  temporary monthly profile code
         INTEGER         IOS     !  i/o status
         INTEGER         IWEK    !  temporary weekly profile code
         INTEGER         IREC    !  record counter
         INTEGER      :: JS = 0  !  position of SCC in source chars in x-ref file
-        INTEGER         JSPC    !  tmp index to master pollutant/activity list
+        INTEGER         JSPC    !  tmp index to master pollutant/etype list
         INTEGER         LINTYPE !  temporary source category code
         INTEGER         LPCK    !  length of point definition packet
         INTEGER      :: NCP = 0 !  input point source header parm
@@ -123,18 +123,21 @@ C...........   Other local variables
         CHARACTER*300          LINE     !  line buffer
         CHARACTER*300          MESG     !  message buffer
 
-        CHARACTER(LEN=SICLEN3) CDUM     !  dummy character field for SIC
+        CHARACTER(LEN=SICLEN3) :: CDUM = '0' !  dummy character field for SIC
         CHARACTER(LEN=LNKLEN3) CLNK     !  temporary link code
         CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
         CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
         CHARACTER(LEN=FIPLEN3) FIPZERO  !  buffer for zero FIPS code
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO  !  buffer for zero SCC
+        CHARACTER(LEN=PLTLEN3) PLT      !  tmp plant ID
         CHARACTER(LEN=SCCLEN3) PSCCL    !  left digits of TSCC of prev iteration
         CHARACTER(LEN=SCCLEN3) SCCL     !  left digits of TSCC
         CHARACTER(LEN=SCCLEN3) SCCR     !  right 5 digits of TSCC
         CHARACTER(LEN=SCCLEN3) SCRZERO  !  buffer for zero SCCR
-        CHARACTER(LEN=IOVLEN3) CPOA     !  temporary pollutant/activity
+        CHARACTER(LEN=IOVLEN3) CPOA     !  temporary pollutant/emission type
+        CHARACTER(LEN=RWTLEN3) CRWT     !  roadway type no.
+        CHARACTER(LEN=VIDLEN3) CVID     !  vehicle type ID no.
 
         CHARACTER*16 :: PROGNAME = 'RDTREF' ! program name
 
@@ -158,19 +161,21 @@ C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         SCCZERO = REPEAT( '0', SCCLEN3 )
         SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
 
-C.........  Sort the actual list of pollutant/activity names and store it
+C.........  Sort the actual list of pollutant/emission type names and store it
         DO I = 1, NIPPA
             INDXP( I ) = I
-        ENDDO
+        END DO
 
         CALL SORTIC( NIPPA, INDXP, EANAM )
 
         DO I = 1, NIPPA
             J = INDXP( I )
             SRTINAM( I ) = EANAM( J )
-        ENDDO
+        END DO
 
-        CALL M3MSG2( 'Reading temporal cross-reference file...' )
+C.........  Write status message
+        MESG = 'Reading temporal cross-reference file...'
+        CALL M3MSG2( MESG )
 
 C.........  Set up constants for loop...
 
@@ -179,6 +184,9 @@ C.........  Length of point definition packet, plus one
 
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'Temporal cross reference file' )
+
+C.........  Initialize character strings
+        SEGMENT = ' '  ! array
 
 C.........   First pass through file.  Determine format and count the number
 C            of lines matching SCC list and pol/act list.  Do this so that 
@@ -209,7 +217,7 @@ C.............  Skip blank lines
 
 C.............  Auto check for LIST or EPS2.0 formated temporal x-ref...
 C.............  If header is found, read point source header information
-            ELSEIF( INDEX( LINE, PDEFPCKT ) .GT. 0 ) THEN
+            ELSE IF( INDEX( LINE, PDEFPCKT ) .GT. 0 ) THEN
                 HFLAG = .TRUE.
 
 
@@ -225,7 +233,7 @@ C.................  Compare point source definition from header to inventory
                 CYCLE
 
 C.............  The source-formatted will have only 3 columns                
-            ELSEIF( NFIELD .LE. 3 ) THEN
+            ELSE IF( NFIELD .LE. 3 ) THEN
 
                 FFORMAT = 'SOURCE' 
                 NREF = NLINES     ! equals the number of sources
@@ -238,7 +246,7 @@ C.............  The source-formatted will have only 3 columns
 
 C.................  Make sure SCC is set to SCCZERO if it is missing
                 TSCC = ADJUSTL( SEGMENT( 1 ) )
-                IF( INDEX( TSCC, '-9' ) .GT. 0 ) TSCC = ' '
+                CALL FLTRNEG( TSCC )
                 CALL PADZERO( TSCC )
 
 C.................  Get SCC from source definition if it is defined already
@@ -246,7 +254,7 @@ C.................  Get SCC from source definition if it is defined already
                     TSCC = SEGMENT( 5 + JS )    ! from source definition
                 END IF
 
-                CPOA = SEGMENT( 5 )   ! pollutant/activity name
+                CPOA = SEGMENT( 5 )   ! pollutant/emission type name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
 
 C.................  Post-process x-ref information to scan for '-9', pad
@@ -271,11 +279,11 @@ C.................  Ensure that header is present for point sources and
                 ELSE
                     NREF = NREF + 1
 
-                ENDIF
+                END IF
 
-            ENDIF     ! End format of temporal x-ref file
+            END IF     ! End format of temporal x-ref file
 
-        ENDDO         ! End first pass through file
+        END DO         ! End first pass through file
 
         REWIND( FDEV )
 
@@ -309,7 +317,7 @@ C           with EMS-95 inputs).
                 WPRNA( I ) = IWEK
                 DPRNA( I ) = IDIU
 
-            ENDDO  !  End of loop for reading list-formatted xref file
+            END DO  !  End of loop for reading list-formatted xref file
 
         END IF
 
@@ -331,17 +339,18 @@ C.........  Leave routine for list-formatted file because no grouping needed
 C.........  FFORMAT = 'SOURCE' DOES NOT APPLY AFTER THIS POINT
 
 C.........  Allocate memory for unsorted data used in all source categories
-        ALLOCATE( ISPTA( NREF ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISPTA', PROGNAME )
         ALLOCATE( INDXTA( NREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
+        ALLOCATE( ISPTA( NREF ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ISPTA', PROGNAME )
         ALLOCATE( CSCCTA( NREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
         ALLOCATE( CSRCTA( NREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
 
 C.........  Initialize character strings
-        CHARS = ' ' ! array
+        CHARS   = ' '  ! array
+        SEGMENT = ' '  ! array
 
 C.........  Second pass through file: read lines and store unsorted data for
 C           the source category of interest
@@ -376,7 +385,7 @@ C.................  Separate line from file into fields
 
 C.................  Make sure SCC is set to SCCZERO if it is missing
                 TSCC = ADJUSTL( SEGMENT( 1 ) )
-                IF( INDEX( TSCC, '-9' ) .GT. 0 ) TSCC = ' '
+                CALL FLTRNEG( TSCC )
                 CALL PADZERO( TSCC )
 
 C.................  Get SCC from source definition if it is defined already
@@ -384,7 +393,7 @@ C.................  Get SCC from source definition if it is defined already
                     TSCC = SEGMENT( 5 + JS )    ! from source definition
                 END IF
 
-                CPOA = SEGMENT( 5 )   ! pollutant/activity name
+                CPOA = SEGMENT( 5 )   ! pollutant/emission type name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
 
 C.................  Post-process x-ref information to scan for '-9', pad
@@ -402,7 +411,10 @@ C.................  Check for integers for temporal profile numbers
      &              .NOT. CHKINT( SEGMENT( 3 ) ) .OR.
      &              .NOT. CHKINT( SEGMENT( 4 ) )      ) THEN
                     EFLAG = .TRUE.
-C NOTE: Insert error message
+                    WRITE( MESG,94010 )'ERROR: temporal profile '//
+     &                     'code(s) at line', IREC, 'of temporal'//
+     &                     CRLF() // BLANK10 // 
+     &                     'cross-reference file are non-integer.'
                     CYCLE
 
 C.................  Convert temporal profile numbers
@@ -432,12 +444,10 @@ C.................  Write pol/act position to a character string
                 N = N + 1
                 IF( N .GT. NREF ) CYCLE  ! Ensure no overflow
 
-C.................  Store fields
-                CSCCTA( N ) = TSCC
-
                 CSRCALL = ' '
 C.................  Store sorting criteria as right-justified in fields
 C.................  For mobile sources, retrieve link from character field
+C                   and extract road class and vehicle type from SCC
 C.................  For point sources, retrieve plant + characteristics
                 SELECT CASE( CATEGORY )
 
@@ -448,9 +458,12 @@ C.................  For point sources, retrieve plant + characteristics
      &                            POLBLNK3, CSRCALL )
 
                 CASE( 'MOBILE' )
+
+C.....................  Convert TSCC to internal value
+                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
+    
                     CLNK = SEGMENT( 7 )
-                    IF( INDEX( CLNK, '-9' ) .GT. 0 ) CLNK = ' '
-                    CHARS( 2 ) = CLNK 
+                    CALL FLTRNEG( CLNK )
 
                     CALL BLDCSRC( CFIP, RWTBLNK3, CLNK, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
@@ -459,16 +472,17 @@ C.................  For point sources, retrieve plant + characteristics
                 CASE( 'POINT' )
 
 C.....................  Store string source characteristics 
-                    DO J = 2, NCHARS
-                        CHARS( J ) = SEGMENT( 5+J )
-                    ENDDO
+                    PLT = SEGMENT ( 7 )
+                    CHARS( 1:5 ) = SEGMENT( 8:MXTCOL )
 
-                    CALL BLDCSRC( CFIP, CHARS(2), CHARS(3),
-     &                            CHARS(4), CHARS(5), CHARS(6),
-     &                            CHARS(7), POLBLNK3, CSRCALL )
+                    CALL BLDCSRC( CFIP, PLT, CHARS(1),
+     &                            CHARS(2), CHARS(3), CHARS(4),
+     &                            CHARS(5), POLBLNK3, CSRCALL )
 
                 END SELECT
 
+C.................  Store fields
+                CSCCTA( N ) = TSCC
                 CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // CPOS
 
 C.................  Store case-indpendent fields
@@ -478,9 +492,9 @@ C.................  Store case-indpendent fields
                 WPRNA ( N ) = IWEK
                 DPRNA ( N ) = IDIU
 
-            ENDIF  !  This line matches source category of interest
+            END IF  !  This line matches source category of interest
 
-        ENDDO      ! End of loop on I for reading in temporal x-ref file
+        END DO      ! End of loop on I for reading in temporal x-ref file
 
 C.........  Set actual number of cross-reference entries
         NXREF = N
@@ -489,7 +503,7 @@ C.........  Check for errors reading cross-reference file, and abort
         IF( EFLAG ) THEN
             MESG = 'Problem reading temporal cross-reference file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
+        END IF
 
         CALL M3MSG2( 'Processing temporal cross-reference file...' )
 
@@ -504,7 +518,7 @@ C           subroutines.
         CALL XREFTBL( 'TEMPORAL', NXREF )
 
 C.........  Deallocate temporary unsorted arrays
-        DEALLOCATE( CSCCTA, CSRCTA, MPRNA, WPRNA, DPRNA, INDXTA )
+        DEALLOCATE( INDXTA, ISPTA, CSCCTA, CSRCTA, MPRNA, WPRNA, DPRNA )
 
 C.........  Rewind file
         REWIND( FDEV )

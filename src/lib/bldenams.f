@@ -77,7 +77,7 @@ C.........  Area source variable name parameters
      &                  RULEFFRT, RULPENRT /
 
         CHARACTER(LEN=IOULEN3) ARUNITS( NARPPOL3 )
-        DATA ARUNITS / 'tons/year', 'tons/day', 
+        DATA ARUNITS / 'ton/yr', 'ton/day', 
      &                 'SCC units', '%', '%', '%' /
 
         INTEGER ARTYPES( NARPPOL3 )
@@ -94,7 +94,7 @@ C.........  Area source variable name parameters
 
 C.........  Mobile source variable name parameters
         CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
-        DATA MBUNITS / 'VMT/year' /
+        DATA MBUNITS / 'mi/yr' /
 
         INTEGER MBTYPES( NMBPPOL3 )
         DATA MBTYPES / M3REAL /
@@ -108,7 +108,7 @@ C.........  Point source variable name parameters
      &                  EMISFCRT, CECOD1RT, CECOD2RT /
 
         CHARACTER(LEN=IOULEN3) PTUNITS( NPTPPOL3 )
-        DATA PTUNITS / 'tons/year', 'tons/day', '%', '%',
+        DATA PTUNITS / 'ton/yr', 'ton/day', '%', '%',
      &                 'SCC units', 'n/a', 'n/a' /
 
         INTEGER PTTYPES( NPTPPOL3 )
@@ -151,9 +151,10 @@ C.........  fields to be inserted
 
         IDIF = IOVLEN3 - CPRTLEN3
         DO I = 1, NIPPA
-           INDEXA ( I ) = I        
-           ABRNAMA( I ) = EANAM( I )( 1:IDIF )
-        ENDDO
+           INDEXA ( I ) = I
+           L = MIN( IDIF, LEN_TRIM( EANAM( I ) ) )        
+           ABRNAMA( I ) = EANAM( I )( 1:L )
+        END DO
 
 C.........  Sort to set up for duplicates search
         CALL SORTIC( NIPPA, INDEXA, ABRNAMA )

@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -83,6 +83,7 @@ C...........   Local variables
         INTEGER         FIP                   ! tmp country/state/county code
         INTEGER         IOS                   ! i/o status
         INTEGER         IREC                  ! Record counter
+        INTEGER         LC, LR                ! length of COLRANGE & ROWRANGE
         INTEGER         LCEL                  ! cell ID from previous iteration
         INTEGER         LFIP                  ! county code from prev iteration
         INTEGER         LSSC                  ! srg ID from previous iteration
@@ -93,8 +94,13 @@ C...........   Local variables
 
         REAL            RATIO                 ! Temp spatial surrogate Ratio
 
-        LOGICAL         HFLAG                 ! true: header found
+        LOGICAL      :: EFLAG = .FALSE.       ! true: error found
+        LOGICAL      :: HFLAG = .FALSE.       ! true: header found
+        LOGICAL      :: OFLAG = .FALSE.       ! true: overall warning flag
+        LOGICAL         WFLAG                 ! true: per iteration warning flag
 
+        CHARACTER*20    COLRANGE              ! buffer w/ column range
+        CHARACTER*20    ROWRANGE              ! buffer w/ row range
         CHARACTER*80    LINE                  ! Read buffer for a line
         CHARACTER*300   MESG                  ! Message buffer
 
@@ -124,7 +130,7 @@ C......... Determine the number surrogate file entries
              
                 IF ( IOS .GT. 0 ) THEN
                     WRITE( MESG, 94010)
-     &                'I/O error', IOS, 'reading speciation profile '//
+     &                'I/O error', IOS, 'reading gridding surrogates '//
      &                'file at line', IREC
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
@@ -172,7 +178,14 @@ C......... Allocate memory for surrogate arrays
         ALLOCATE( SFRACA( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SFRACA', PROGNAME )
 
-C......... Fill surrogate arrays
+C.........  Create message fields for errors
+        WRITE( COLRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, NCOLS
+        WRITE( ROWRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, NROWS
+
+        LC = LEN_TRIM( COLRANGE )
+        LR = LEN_TRIM( ROWRANGE )
+
+C.........  Fill surrogate arrays
 
         REWIND( FDEV )
 	IREC    = 0
@@ -208,8 +221,7 @@ C......... Fill surrogate arrays
 
                 ELSEIF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
                     CYCLE
-                ELSE
-                    J = J + 1 
+
                 END IF
 
 C.................  Parse the line of data into segments based on the rules
@@ -218,14 +230,57 @@ C                   quotes around the text strings
 
                 CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
-                IDXSRGA( J ) = J
-                IDXSRGB( J ) = J
                 SSC    = STR2INT ( SEGMENT( 1 ) )
                 FIP    = STR2INT ( SEGMENT( 2 ) )
                 COL    = STR2INT ( SEGMENT( 3 ) )
                 ROW    = STR2INT ( SEGMENT( 4 ) )
                 RATIO  = STR2REAL( SEGMENT( 5 ) )
 
+                WFLAG = .FALSE.
+C.................  Check the value of the column number
+                IF( COL .LT. 0 .OR.  COL .GT. NCOLS  .OR.
+     &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN                    WFLAG = .TRUE.
+                    WFLAG = .TRUE.
+                    OFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'WARNING: Column value ', COL,
+     &                     'is outside range ' // COLRANGE( 1:LC ) // 
+     &                     ' at line', IREC
+                    CALL M3MESG( MESG )
+                END IF
+
+C.................  Check the value of the row number
+                IF( ROW .LT. 0 .OR.  ROW .GT. NROWS  .OR.
+     &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN
+                    WFLAG = .TRUE.
+                    OFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'WARNING: Row value ', ROW,
+     &                     'is outside range ' // ROWRANGE( 1:LR ) // 
+     &                     ' at line', IREC
+                    CALL M3MESG( MESG )                    
+
+C.................  Special treatment for cell (0,0)
+                ELSE IF( ROW .EQ. 0 .AND. COL. EQ. 0 ) THEN
+                    CYCLE
+c note: at a later date, add handling of these "county-outside-grid" fractions
+
+                END IF
+
+C.................  Check the value of the ratio value
+                IF( RATIO .GT. 1. ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                     'ERROR: surrogates ratio is greater than ' //
+     &                     '1.0 at line', IREC
+                    CALL M3MESG( MESG )
+                END IF
+
+C.................  Skip entry if rows and columns are out of range
+                IF( WFLAG ) CYCLE
+
+                J = J + 1 
+
+                IDXSRGA( J ) = J
+                IDXSRGB( J ) = J
                 SCELLA ( J ) = (ROW-1)*NCOLS + COL
                 SFIPSA ( J ) = FIP
                 SSRGIDA( J ) = SSC
@@ -237,7 +292,24 @@ C                   quotes around the text strings
 
             NSRGALL = J
 
+C.............  Write out final warning for row/col out of range
+            IF( OFLAG ) THEN
+                MESG = 'Lines skipped in surrogate file because ' //
+     &                 'rows or columns were out of range.'
+                CALL M3WARN( PROGNAME, 0, 0, MESG )
+            END IF
+
+        CASE DEFAULT
+            MESG = 'INTERNAL ERROR: Surrogate format "' // SRGFMT //
+     &             '" not understood'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         END SELECT
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem reading gridding surrogates file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Now create the derived surrogates tables from the original data...
 

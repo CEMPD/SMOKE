@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -65,11 +65,15 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER         ID7,  ID3
         INTEGER         LID7, LID3
         LOGICAL         EFLAG   !  input error flag
-        CHARACTER*256   MESG    !  message buffer for M3MESG() and M3EXIT()
+        CHARACTER*300   MESG    !  message buffer for M3MESG() and M3EXIT()
+
+        CHARACTER*16 :: PROGNAME = 'RDASCC' ! program name
 
 
 C***********************************************************************
 C   begin body of subroutine  RDASCC
+
+        CALL M3MSG2( 'Reading ACTUAL ASCs file...' )
 
         IREC  =  0
         I     =  0
@@ -84,7 +88,7 @@ C   begin body of subroutine  RDASCC
 
             IREC = IREC + 1
 
-            IF ( IOS .NE. 0 ) THEN
+            IF ( IOS .GT. 0 ) THEN
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 

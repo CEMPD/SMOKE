@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -83,7 +83,7 @@ C...........   Array of input fields
         CHARACTER(LEN=SCCLEN3)  FIELDARR( 3 )
   
 C...........   Other local variables
-        INTEGER         I, J, J1, J2, K, L, N    !  counters and indices
+        INTEGER         I, J, J1, J2, L, N    !  counters and indices
 
         INTEGER         FIP     !  temporary FIPS code
         INTEGER         IDUM    !  dummy variable
@@ -96,7 +96,6 @@ C...........   Other local variables
         INTEGER      :: NCP = 0 !  input point source header parm
         INTEGER         NLINES  !  number of lines
         INTEGER         NXREF   !  number of valid x-ref entries
-        INTEGER         RDT     !  temporary road class code
         INTEGER         THISTYP !  index in LOCCATS for CATEGORY
         INTEGER         VTYPE   !  temporary vehicle type number
 
@@ -109,12 +108,12 @@ C...........   Other local variables
         CHARACTER*300          MESG     !  message buffer
         CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol
         CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(LEN=RWTLEN3) CRWT     !  buffer for roadway type
         CHARACTER(LEN=SICLEN3) CDUM     !  dummy buffer for SIC code
         CHARACTER(LEN=SCCLEN3) CHKZERO  !  buffer to check for zero SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO  !  zero SCC
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC or roadway type
-        CHARACTER(LEN=SCCLEN3) FIELD2   !  tmp 2nd field for sorting x-ref
-        CHARACTER(LEN=SCCLEN3) FIELD4   !  tmp 4th field for sorting x-ref
+        CHARACTER(LEN=VIDLEN3) CVID     !  buffer for vehicle type ID
 
         CHARACTER*16 :: PROGNAME = 'RDGREF' ! program name
 
@@ -158,8 +157,6 @@ C           the source category of interest
         IREC   = 0
         N      = 0
         CDUM = ' ' 
-        FIELD2 = ' ' 
-        FIELD4 = ' ' 
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -182,7 +179,7 @@ C               fields.  In cases where blanks are allowed, do not use
 C               STR2INT to prevent warning messages.
             SELECT CASE( CATEGORY )
 
-            CASE( 'AREA' )    ! Same fields for area and mobile
+            CASE( 'AREA' ) 
                 CALL PARSLINE( LINE, 3, FIELDARR )
 
                 CFIP = FIELDARR( 1 )
@@ -193,45 +190,32 @@ C                   with zeros, compare SCC version master list.
                 CALL FLTRXREF( CFIP, CDUM, TSCC, ' ', IDUM, 
      &                         IDUM, IDUM, LDUM, SKIPREC   )
 
-                FIELD2 = TSCC
-
-            CASE( 'BIOG' )
-c note: insert here when needed
-
             CASE( 'MOBILE' )
 
                 CALL PARSLINE( LINE, 3, FIELDARR )
 
                 L = LEN_TRIM( FIELDARR( 2 ) )
 
-C.................  Make sure roadway type is an integer
-                IF( .NOT. CHKINT( FIELDARR( 2 ) ) ) THEN
+C.................  Make sure SCC is full length
+                IF( L .NE. SCCLEN3 ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Roadway type ' //
-     &                     'is not an integer at line', IREC
-                    CALL M3MESG( MESG )
-
-C.................  Make sure roadway type is two digits
-                ELSE IF( L .GT. 2 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Roadway type ' //
-     &                     'is more than two digits at line', IREC
+                    WRITE( MESG,94010 ) 'ERROR: SCC value ' //
+     &                     'is not', SCCLEN3, 'digits at line', IREC
                     CALL M3MESG( MESG )
 
                 END IF
 
                 CFIP = FIELDARR( 1 )
-                TSCC = FIELDARR( 2 )   ! actually roadway type
+                TSCC = FIELDARR( 2 )
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros.  Do not include SCC in call below
 C                   because this input file does not use SCC.
-                CALL FLTRXREF( CFIP, CDUM, SCCZERO, ' ', IDUM, 
+                CALL FLTRXREF( CFIP, CDUM, TSCC, ' ', IDUM, 
      &                         IDUM, IDUM, LDUM, SKIPREC   )
 
-                CALL PADZERO( TSCC )
-
-                FIELD4 = TSCC
+C.................  Convert TSCC to internal value
+                CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
 
             END SELECT
 
@@ -259,16 +243,18 @@ C.............  Store case-indpendent fields
             CSCCTA ( N ) = TSCC
 
 C.............  Store sorting criteria as right-justified in fields
-C.............  For mobile, we are using "TSCC" to store the roadway
-C               type so that we can use the XREFTBL subroutine.  Put TSCC
-C               in the spot for the link ID (field 4) so that records 
-C               will be sorted properly.
             CSRCALL = ' '
-            CALL BLDCSRC( CFIP, FIELD2, CHRBLNK3, FIELD4,
-     &                    CHRBLNK3, CHRBLNK3, CHRBLNK3,
-     &                    POLBLNK3, CSRCALL   )
+            IF( CATEGORY .EQ. 'AREA' ) THEN
+                CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
+     &                        CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                        POLBLNK3, CSRCALL   )
+            ELSE
+                CALL BLDCSRC( CFIP, RWTBLNK3, CHRBLNK3, CHRBLNK3,
+     &                        CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                        POLBLNK3, CSRCALL   )
+            END IF
 
-            CSRCTA( N ) = CSRCALL( 1:SC_ENDP( NCHARS ) )
+            CSRCTA( N ) = CSRCALL( 1:SC_ENDP( NCHARS ) ) // TSCC
 
         END DO      ! End of loop on I for reading in speciation x-ref file
 

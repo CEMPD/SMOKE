@@ -1,5 +1,5 @@
 
-        INTEGER FUNCTION CHKCPVAR( CPVNAM, EINAM, NIPOL )
+        INTEGER FUNCTION CHKCPVAR( CPVNAM, NIPOL, EINAM )
 
 C***********************************************************************
 C  function body starts at line
@@ -32,7 +32,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -62,8 +62,8 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER*(*)   CPVNAM         ! Name of control/proj variable
-        CHARACTER*(*)   EINAM( NIPOL ) ! List of inventory pollutant names	
         INTEGER         NIPOL	       ! Number of inventory pollutant names
+        CHARACTER*(*)   EINAM( NIPOL ) ! List of inventory pollutant names	
 
 C...........   Other local variables
 

@@ -194,18 +194,19 @@ C.........  Initialize default array
 
 C.........  Initialize arrays for counting number of x-ref records in each
 C           degree of matching
-        N      = 0   ! arrays
-        ISP    = 0
+        N      = 0    ! arrays
         PIFIP  = 0
-        PSCC   = ' '
         PCSRC  = ' '
         PCSSC  = ' '
+        PTSCC  = ' '
 
 C.........  Initialize source characteristics
         CHARS = ' '  ! array
 
 C.........  Loop through and count entries of each type. Store type.
 C.........  For CSRC, don't include pollutant for grouping.
+        ISP    = 0
+        PSCC   = ' '
         DO I = 1, NXREF
 
             J = INDXTA( I )
@@ -537,8 +538,8 @@ C.........  Temporal x-ref tables
 C.........  Speciation x-ref tables
         ELSE IF( SFLAG ) THEN 
 
-            CALL ALOCSTBL( NIPOL, N )
-            CALL FILLSTBL( NIPOL, NXREF, N( 1 ), XTYPE, XTCNT ) 
+            CALL ALOCSTBL( NIPPA, N )
+            CALL FILLSTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT ) 
 
 C.........  Gridding x-ref tables
         ELSE IF( IFLAG ) THEN
@@ -593,9 +594,12 @@ C......................................................................
      &             ' x-ref file:' // CRLF() // BLANK10 //
      &             BUFFER( 1:L2 )
 
+            L1 = LEN_TRIM( MESG )
+            IF( TSCC .NE. SCCZERO ) MESG = MESG( 1:L1 ) // 
+     &                                     ' TSCC: ' // TSCC
             IF( ISP .GT. 0 ) THEN
                 L1 = LEN_TRIM( MESG )
-                MESG = MESG( 1:L1 ) // ' POA:' // EANAM( ISP )
+                MESG = MESG( 1:L1 ) // ' POL:' // EANAM( ISP )
             END IF
 
             CALL M3MSG2( MESG )

@@ -1,5 +1,5 @@
  
-        SUBROUTINE RDSCONV( FDEV, NIPOL, EINAM, OUTNAM )
+        SUBROUTINE RDSCONV( FDEV, NIPOL, CATEGORY, EINAM, OUTNAM )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -59,6 +59,7 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
 
         INTEGER     , INTENT (IN) :: FDEV            ! unit no. for file
         INTEGER     , INTENT (IN) :: NIPOL           ! no. of valid inv pols
+        CHARACTER(*), INTENT (IN) :: CATEGORY        ! source category
         CHARACTER(*), INTENT (IN) :: EINAM ( NIPOL ) ! inventory pollutant names
         CHARACTER(*), INTENT(OUT) :: OUTNAM( NIPOL ) ! destination pol names
 
@@ -122,6 +123,8 @@ C.........  Other local variables
         CHARACTER(LEN=FIPLEN3-STALEN3) CYIDZERO ! zero county code
         CHARACTER(LEN=IOVLEN3) IBUF      ! tmp inventory pol name buffer
         CHARACTER(LEN=IOVLEN3) SBUF      ! tmp output    pol name buffer
+        CHARACTER(LEN=RWTLEN3) CRWT      ! roadway type no.
+        CHARACTER(LEN=VIDLEN3) CVID      ! vehicle type ID no.
 
         CHARACTER*16 :: PROGNAME = 'RDSCONV' ! program name
 
@@ -208,6 +211,12 @@ C               in EINAM
 
                 CFIP = ADJUSTR( LINE( CS1:CE1 ) )
                 TSCC = ADJUSTR( LINE( CS2:CE2 ) )
+
+C.................  Convert SCC to mobile internal standard
+                IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
+
+                END IF
    
                 WRITE( CPOL, '(I5.5)' ) ISP
 
@@ -372,6 +381,14 @@ C.........  Store pollutant conversion factors in sorted tables
 C.........  Deallocate temporary sorting arrays
         DEALLOCATE( INDX, PCVA, TYPA, FACA )
         
+C.........  Abort for read error
+        IF( EFLAG ) THEN
+
+            MESG = 'Problem reading in pollutant conversion file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
         RETURN
 
 C.........  Error message for reaching the end of file too soon

@@ -65,14 +65,16 @@ C...........   Local variables
         INTEGER         I, K, L, L2 ! counters and indices
 
         INTEGER         IOS     ! status from retrieving E.V.s
+        INTEGER         LJ      ! length of emission type joiner
         INTEGER         ML      ! length of MODELNAM buffer
         INTEGER         PINDX   ! polluntant index
 
-        LOGICAL      :: DFLAG = .FALSE.  ! true: process for diurnal emissions
-        LOGICAL      :: EFLAG = .FALSE.  ! true: processing error found
+        LOGICAL       :: DFLAG    = .FALSE.  ! true: process for diurnal emis
+        LOGICAL       :: EFLAG    = .FALSE.  ! true: processing error found
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
 
-        CHARACTER(LEN=IOVLEN3) VOLNAM  ! Name of colatile pollutant
-        CHARACTER*300          MESG    ! message buffer
+        CHARACTER(LEN=IOVLEN3), SAVE :: VOLNAM = ' ' ! name of vol pollutant
+        CHARACTER*300                   MESG         ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'EFSETUP' ! program name
 
@@ -102,8 +104,11 @@ C.........  Get environment variable for the volatile pollutant for mobile
 C           sources. For now, this routine only know about MOBILE5
         IF ( MODELNAM .EQ. 'MOBILE5' ) THEN
 
-            MESG = 'Volatile pollutant type'
-            CALL ENVSTR( 'MB_HC_TYPE', MESG, 'VOC', VOLNAM, IOS )
+
+            IF( FIRSTIME ) THEN
+                MESG = 'Volatile pollutant type'
+                CALL ENVSTR( 'MB_HC_TYPE', MESG, 'VOC', VOLNAM, IOS )
+            END IF
 
 C.............  Create message about the volatile pollutant that is being used
             IF ( IOS .LT. 0 ) THEN
@@ -180,11 +185,12 @@ C               arrays defined in the MOBILE5 include file
 
 C.............  Find volatile pol name in list of Mobile5 emission factor names
 C.............  Assign for diurnal OR non-diurnal (not both)
+            LJ = LEN_TRIM( ETJOIN )
             DO I = 3, MXM5ALL
 
-                L  = INDEX( M5EFLST( I ), '_' )
+                L  = INDEX( M5EFLST( I ), ETJOIN )
                 L2 = LEN_TRIM( M5EFLST( I ) )
-                IF( M5EFLST( I )( L+1:L2 ) .EQ. VOLNAM .AND.
+                IF( M5EFLST( I )( L+LJ:L2 ) .EQ. VOLNAM .AND.
      &            ( ( .NOT. DFLAG .AND. .NOT. M5DIURNL(I) ) .OR.
      &              ( DFLAG .AND. M5DIURNL( I )           )     ) ) THEN
                     K = K + 1
@@ -203,8 +209,14 @@ C.............  For diurnal
 
                 ALLOCATE( DIUNAM( NDIU ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'DIUNAM', PROGNAME )
+                ALLOCATE( DIUUNT( NDIU ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NDIUNT', PROGNAME )
+                ALLOCATE( DIUDSC( NDIU ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NDIDSC', PROGNAME )
 
                 DIUNAM( 1:NDIU ) = VNAMES( 1:NDIU )
+                DIUUNT( 1:NDIU ) = VUNITS( 1:NDIU )
+                DIUDSC( 1:NDIU ) = VDESCS( 1:NDIU )
 
 C.............  Otherwise, for non-diurnal
             ELSE 
@@ -212,12 +224,20 @@ C.............  Otherwise, for non-diurnal
 
                 ALLOCATE( NDINAM( NNDI ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'NDINAM', PROGNAME )
+                ALLOCATE( NDIUNT( NNDI ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NDIUNT', PROGNAME )
+                ALLOCATE( NDIDSC( NNDI ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NDIDSC', PROGNAME )
 
                 NDINAM( 1:NNDI ) = VNAMES( 1:NNDI )
+                NDIUNT( 1:NNDI ) = VUNITS( 1:NNDI )
+                NDIDSC( 1:NNDI ) = VDESCS( 1:NNDI )
 
             END IF
 
         END SELECT
+
+        FIRSTIME = .FALSE.
 
         RETURN
 

@@ -9,7 +9,7 @@ C      This subroutine writes character string SCC codes
 C
 C  PRECONDITIONS REQUIRED:
 C      Output temporal x-ref file opened on unit FDEV
-C      Number of sources NPSRC defined correctly
+C      Number of sources NSRC defined correctly
 C      Index sorted in order of increasing ISCC value and ISCC populated
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -41,6 +41,10 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -51,9 +55,6 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV          !  ASCII file unit
         INTEGER     , INTENT (IN) :: NSRC          !  actual source count
         CHARACTER(*), INTENT (IN) :: CSCC( NSRC )  !  unsorted SCCs
-
-C...........   Sorting index
-        INTEGER       INDX( NSRC )
 
 C...........   Other local variables
         INTEGER       J, S
@@ -66,31 +67,19 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine WRCHRSCC
 
-C.........  Initialize SCC sorting index     
-        DO S = 1, NSRC
-            INDX( S ) = S
-        ENDDO
+C.........  Call the routine that generates the unique SCC list 
+        CALL GENUSLST
 
-C.........  Sort all SCCs in the point sources inventory in increasing order
-        CALL SORTIC( NSRC, INDX, CSCC )
+C.........  Write unique SCCs list  
+        DO J = 1, NINVSCC
 
-        LSCC = '-9'
-        DO S = 1, NSRC
+            WRITE( FDEV, '(A)', ERR=6001 ) INVSCC( J )
 
-            J = INDX( S )
-
-            TSCC = CSCC( J )
-
-            IF( TSCC .NE. LSCC ) THEN
-                WRITE( FDEV, '(A)', ERR=6001 ) TSCC
-                LSCC = TSCC
-            ENDIF 
-
-        ENDDO 
+        END DO 
 
         RETURN
 
-6001    MESG = 'ERROR writing SCC file'
+6001    MESG = 'Problem writing SCC file'
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************

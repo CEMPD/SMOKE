@@ -1,12 +1,12 @@
 
-        SUBROUTINE POLMESG( NPOL, NAMES )
+        SUBROUTINE POLMESG( NLIST, NAMES )
 
 C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This subroutine writes out a message stating that the pollutants in the
-C      argument list are being processed.
+C      This subroutine writes out a message stating that the pollutants or
+C      emission types in the argument list are being processed.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,29 +45,56 @@ C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+        CHARACTER*2  CRLF
+        EXTERNAL     CRLF
+
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NPOL           !  number of pollutants
-        CHARACTER(*), INTENT (IN) :: NAMES( NPOL )  !  pollutant names
+        INTEGER     , INTENT (IN) :: NLIST          !  no. of pols or emis types
+        CHARACTER(*), INTENT (IN) :: NAMES( NLIST ) !  pollutant names
 
 C...........   Other local variables
-        INTEGER       I, L1, L2
+        INTEGER       I, L0, L1, L2
+        INTEGER       LCNT              ! length count
 
-        CHARACTER*300 MESG           !  message buffer
+        CHARACTER*300 :: MESG           !  message buffer
+        CHARACTER*20  :: SPACE = ' '
 
         CHARACTER*16 :: PROGNAME = 'POLMESG' !  program name
 
 C***********************************************************************
 C   begin body of subroutine POLMESG
 
-        MESG = 'Processing pollutants: '
+C.........  Set up initial message. 
+        MESG = 'Processing data for:' 
 
-        DO I = 1, NPOL
+        L0 = LEN_TRIM( MESG )
+
+        L1 = LEN_TRIM( NAMES( 1 ) )
+        IF( NAMES( 1 ) .NE. ' ' ) THEN
+            MESG = MESG( 1:L0 ) // ' "' // NAMES( 1 )( 1:L1 ) // '"'
+        END IF
+
+C.........  Initialize length of initial message
+        LCNT = L0 + L1 + 4
+        DO I = 2, NLIST
 
             L1 = LEN_TRIM( MESG )
-            IF( NAMES( I ) .EQ. ' ' ) EXIT
-
+            IF( NAMES( I ) .EQ. ' ' ) CYCLE
             L2 = LEN_TRIM( NAMES( I ) )
-            MESG = MESG( 1:L1 ) // ', "' // NAMES( I )( 1:L2 ) // '"'
+
+            LCNT = LCNT + L2 + 4
+
+            IF( LCNT .GT. 74 ) THEN
+                LCNT = L0 + L2 + 4
+                MESG = MESG( 1:L1 ) // ',' // CRLF() // BLANK5 // 
+     &                 SPACE // '"' // NAMES( I )( 1:L2 ) // '"'
+
+            ELSE
+
+                MESG = MESG( 1:L1 )// ', "'// NAMES( I )( 1:L2 )// '"'
+
+            END IF
 
         ENDDO
 

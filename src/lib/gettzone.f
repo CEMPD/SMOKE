@@ -1,6 +1,5 @@
 
-        INTEGER FUNCTION GETTZONE( FIP, NZS, NZF, TZONE0,
-     &                             TZONST, TFIPST, TZONEF, TFIPEF )
+        INTEGER FUNCTION GETTZONE( FIP )
 
 C***********************************************************************
 C  function body starts at line 76
@@ -25,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -42,59 +41,62 @@ C Last updated: $Date$
 C
 C****************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
+
         IMPLICIT NONE
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        INTEGER      ENVINT
         INTEGER      FIND1   !  returns -1 for failure
-        EXTERNAL     FIND1
+        EXTERNAL     ENVINT, FIND1
 
 C...........   ARGUMENTS and their descriptions:
 
-        INTEGER      FIP               !  input FIPS code to assign zone
-        INTEGER      NZS               !  no of state-specific
-        INTEGER      NZF               !  no of county-specific
-        INTEGER      TZONE0            !  fallback zone
-        INTEGER      TZONST( NZS )     !  state-specific time zones
-        INTEGER      TFIPST( NZS )     !  state FIPS codes (2 digit)
-        INTEGER      TZONEF( NZF )     !  FIPS-specific time zones
-        INTEGER      TFIPEF( NZF )     !  state/county FIPS codes (5 digits)
+        INTEGER, INTENT (IN) :: FIP !  input FIPS code to assign zone
 
 C...........   LOCAL VARIABLES their descriptions:
 
-        INTEGER       K            ! indice
+        INTEGER          K            ! indice
+        INTEGER          IOS          ! i/o status
+        INTEGER, SAVE :: TZONE0       ! default time zone
 
-        CHARACTER*1   BUFFER       ! ASCII LINE from X-ref file
-        CHARACTER*300 MESG         ! Message buffer
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.
 
-        CHARACTER*16 :: PROGNAME = 'GETTZONE' ! Program name
+        CHARACTER*1      BUFFER       ! ASCII LINE from X-ref file
+        CHARACTER*300    MESG         ! Message buffer
+
+        CHARACTER*16  :: PROGNAME = 'GETTZONE' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETTZONE
 
+C.........  For the first time the routine is called, retrieve the default
+C           time zone from the environment (or use the ultimate default of 5)
+        IF( FIRSTIME ) THEN
+
+            MESG = 'Default time zone for sources'
+            TZONE0 = ENVINT( 'SMK_DEFAULT_TZONE', MESG, 5, IOS )
+            FIRSTIME = .FALSE.
+
+        END IF
+
 C.........  Search for FIPS code in county-specific table
-        K = FIND1( FIP, NZF, TFIPEF )
+        K = FIND1( FIP, NCOUNTY, CNTYCOD )
 
         IF ( K .GT. 0 ) THEN
-            GETTZONE = TZONEF( K )
+            GETTZONE = CNTYTZON( K )
 
-C.........  Search for FIPS code in state-specific table
+C.........  Apply default
         ELSE
-            K = FIND1( FIP/1000, NZS, TFIPST )
+            GETTZONE = TZONE0
 
-            IF ( K .GT. 0 ) THEN
-                GETTZONE = TZONST( K )
-
-C.............  Apply default
-            ELSE
-                GETTZONE = TZONE0
-
-                WRITE( MESG,94040 ) 
+            WRITE( MESG,94040 ) 
      &                'WARNING: Applying default time zone of', TZONE0,
-     &                'to state/county FIPS code', FIP
-                CALL M3MESG( MESG )
-
-            END IF
+     &                'to country, state, and county code', FIP
+            CALL M3MESG( MESG )
 
         END IF
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE FMTCSRC( INSTRING, NCHARS, OUTBUFF, LENOUT )
+        SUBROUTINE FMTCSRC( INSTRING, NCIN, OUTBUFF, LENOUT )
 
 C***********************************************************************
 C  subroutine body starts at line 78
@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -42,6 +42,10 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C...........   Modules for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -50,23 +54,42 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2     CRLF
-        INTEGER         TRIMLEN
 
-        EXTERNAL        CRLF, TRIMLEN
+        EXTERNAL        CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*) INSTRING     ! Input string
-        INTEGER       NCHARS       ! No. of characteristics to format (1 to 8)
-        CHARACTER*(*) OUTBUFF      ! Formatted output string
-        INTEGER       LENOUT       ! Length of output string
+        CHARACTER(*), INTENT (IN) :: INSTRING ! Input string
+        INTEGER     , INTENT (IN) :: NCIN     ! No. of chars to format (1 to 8)
+        CHARACTER(*), INTENT(OUT) :: OUTBUFF  ! Formatted output string
+        INTEGER     , INTENT(OUT) :: LENOUT   ! Length of output string
 
-C...........   Other local variables
-        INTEGER         I, L, K, L1, L2, L3  ! counters and indices
+C...........   Local paramaters
+        INTEGER, PARAMETER :: MXPTLBL = 8
+        INTEGER, PARAMETER :: MXARLBL = 3
+        INTEGER, PARAMETER :: MXMBLBL = 5
 
-        CHARACTER*5  :: LABEL( 8 ) =  !  message buffer
-     &                ( / 'FIPS ', 'PLANT', 'CHAR1', 'CHAR2',
-     &                    'CHAR3', 'CHAR4', 'CHAR5', 'POL  ' / )
+C.........  Output labels (note: these could be dynamic if in MODINFO)
+        CHARACTER*5  :: PTLABEL( MXPTLBL ) =  !  message buffer
+     &                ( / 'FIPS ', 'Plant', 'Char1', 'Char2',
+     &                    'Char3', 'Char4', 'Char5', 'Pol  ' / )
  
+        CHARACTER*5  :: ARLABEL( MXARLBL ) =  !  message buffer
+     &                ( / 'FIPS ', 'SCC  ', 'Pol  ' / )
+ 
+        CHARACTER*9  :: MBLABEL( MXMBLBL ) =  !  message buffer
+     &                ( / 'FIPS     ', 'Road Type', 
+     &                    'Link     ', 'Vtype    ', 'Pol      ' / )
+
+        CHARACTER*9, SAVE :: LABEL( MXPTLBL )
+ 
+C...........   Other local variables
+        INTEGER         I, L, K, L1, L2, L3, L4  ! counters and indices
+
+        INTEGER, SAVE :: TMPNUM      ! temporary number of chars
+        INTEGER          NLOOP       ! number of loop iterations
+
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.
+
         CHARACTER*300   BUFFER  !  string buffer
 
         CHARACTER*16 :: PROGNAME = 'FMTCSRC'  ! program name
@@ -74,51 +97,77 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine FMTCSRC
 
+        IF( FIRSTIME ) THEN
+
+            FIRSTIME = .FALSE.
+
+            SELECT CASE( CATEGORY )
+            CASE( 'AREA' )
+                TMPNUM = MXARLBL
+                LABEL( 1:MXARLBL ) = ARLABEL  ! array
+
+            CASE( 'MOBILE' )
+                TMPNUM = MXMBLBL
+                LABEL( 1:MXMBLBL ) = MBLABEL  ! array
+
+            CASE( 'POINT' )
+                TMPNUM = MXPTLBL
+                LABEL( 1:MXPTLBL ) = PTLABEL  ! array
+
+            CASE DEFAULT
+
+            END SELECT
+
+        END IF
+
 C.........  Make sure not to exceed NCHARS legal value
-        NCHARS = MIN( NCHARS, 8 )
+        NLOOP = MIN( NCIN, TMPNUM )
 
 C.........  Initialize output buffer
         IF( NCHARS .GE. 1 ) THEN
-            L1 = PTBEGL3( 1 )
-            L2 = PTENDL3( 1 )
-  
-            WRITE( OUTBUFF, 94900 ) LABEL( 1 ), INSTRING( L1:L2 )
+            L1 = SC_BEGP( 1 )
+            L2 = SC_ENDP( 1 )
+            L4 = LEN_TRIM( LABEL( 1 ) )
+
+            WRITE( OUTBUFF, 94900 ) LABEL( 1 )(1:L4), INSTRING( L1:L2 )
 
         ENDIF
 
 C.........  Loop through the remaining source chars, writing the output string
 C           for each populated source characterstic
-        K = TRIMLEN( OUTBUFF )
-        DO I = 2, NCHARS
+        K = LEN_TRIM( OUTBUFF )
+        DO I = 2, NLOOP
 
-            L = TRIMLEN( OUTBUFF )
+            L = LEN_TRIM( OUTBUFF )
 
-            L1 = PTBEGL3( I )    ! retrieve stored field lengths
-            L2 = PTENDL3( I )
+            L1 = SC_BEGP( I )    ! retrieve stored field lengths
+            L2 = SC_ENDP( I )
  
             BUFFER = ADJUSTL( INSTRING( L1:L2 ) )   ! Left-justifying
-            L3 = TRIMLEN( BUFFER )
+            L3 = LEN_TRIM( BUFFER )
             K = K + 8 + L3
 
 C.............  Continue to contribute to buffer if not blank
             IF( BUFFER .NE. ' ' ) THEN
 
+                L4 = LEN_TRIM( LABEL( I ) )
+
 C.................  Include a return and indent if line gets too long
                 IF( K .GT. EMOUTLN3 ) THEN
                     K = 18 + L3
                     WRITE( OUTBUFF, 94900 ) OUTBUFF( 1:L ) //
-     &                                      CRLF() // BLANK10 //
-     &                                      LABEL( I ), BUFFER( 1:L3 )
+     &                     CRLF() // BLANK10 // LABEL( I )( 1:L4 ),
+     &                     BUFFER( 1:L3 )
                 ELSE
                     WRITE( OUTBUFF, 94900 ) OUTBUFF( 1:L ) // ' ' //
-     &                                      LABEL( I ), BUFFER( 1:L3 )
+     &                     LABEL( I )( 1:L4 ), BUFFER( 1:L3 )
 
                 ENDIF
             ENDIF
 
         ENDDO
 
-        LENOUT = TRIMLEN( OUTBUFF )
+        LENOUT = LEN_TRIM( OUTBUFF )
 
         RETURN
 

@@ -30,7 +30,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -118,7 +118,7 @@ C.......   Compute TMAT for current group of pollutants
 
                 L = DDEX( S,V )
 
-C.................  Use day-specific data (no adjustments)
+C.................  Use day-specific data (no adjustments for month or weekday)
                 J = FIND1( S, NDSP, INDD )
                 IF ( LDSPOL( V ) .AND. J .GT. 0 ) THEN
 

@@ -1,17 +1,18 @@
 
-        SUBROUTINE RPNTSCHR( INFILE, FDEV, NPSRC, NVARS, VNAMES, NCHARS)
+        SUBROUTINE RDINVCHR( CATEGORY, INFILE, FDEV, NSRC, 
+     &                       NVARS, VNAMES )
 
 C***********************************************************************
 C  program body starts at line 
 CC
 C  DESCRIPTION:
-C     Reads in SMOKE point inventory characteristics
+C     Reads in SMOKE inventory characteristics for any source category
 C
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
-C  REVISION  HISTORY:
+C  REVISION  HISTORY:F
 C
 C****************************************************************************/
 C
@@ -19,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -57,12 +58,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL               CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
+        CHARACTER(*), INTENT (IN) :: CATEGORY        ! source category
         CHARACTER(*), INTENT (IN) :: INFILE          ! inven logical file name
         INTEGER     , INTENT (IN) :: FDEV            ! inven ASCII file unit no.
-        INTEGER     , INTENT (IN) :: NPSRC           ! no. of point sources
+        INTEGER     , INTENT (IN) :: NSRC            ! no. of sources
         INTEGER     , INTENT (IN) :: NVARS           ! no. of inven vars to read
         CHARACTER(*), INTENT (IN) :: VNAMES( NVARS ) ! variable names 
-        INTEGER     , INTENT(OUT) :: NCHARS          ! no. src characterstics
 
 C...........   Index for unread variables
         INTEGER        UNREAD
@@ -70,7 +71,7 @@ C...........   Index for unread variables
 
 C...........   Error message strings
         CHARACTER*23 ,PARAMETER :: PART1 = 'Error reading variable '
-        CHARACTER*24 ,PARAMETER :: PART3 = ' from POINT SOURCES file'
+        CHARACTER*24 ,PARAMETER :: PART3 = ' from INVENTORY file'
 
 C...........   Other local variables
         INTEGER          J, N, S    ! counters and indices
@@ -78,30 +79,40 @@ C...........   Other local variables
         INTEGER          ID         ! tmp smoke ID
         INTEGER          IOS        ! i/o status
         INTEGER          NCOL       ! number of columns in FDEV
+        INTEGER          NC         ! number of plant characteristics
 
-        LOGICAL       :: BLRIN   = .FALSE.  ! True: Boiler is in input file
-        LOGICAL       :: CSRFLAG = .FALSE.  ! True: Source chars requested
+        LOGICAL       :: BLRIN   = .FALSE.  ! True: boiler is in input file
+        LOGICAL       :: CSRFLAG = .FALSE.  ! True: source chars requested
         LOGICAL       :: EFLAG   = .FALSE.  ! True: error
-        LOGICAL       :: BLRFLAG = .FALSE.  ! True: Boilers requested
-        LOGICAL       :: PDSFLAG = .FALSE.  ! True: Plant description requested
+        LOGICAL       :: BLRFLAG = .FALSE.  ! True: boilers requested
+        LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
+        LOGICAL       :: PDSFLAG = .FALSE.  ! True: plant description requested
         LOGICAL       :: SCCFLAG = .FALSE.  ! True: SCC requested
+        LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
 
         CHARACTER*20           HEADER( 20 ) ! header fields
         CHARACTER*300          FILFMT ! ASCII file format after header
-        CHARACTER*300          LINE   ! line of ASCII point source file
+        CHARACTER*300          LINE   ! line of ASCII source file
         CHARACTER*300          MESG   ! message buffer
         CHARACTER(LEN=BLRLEN3) CBLR   ! temporary boiler name
         CHARACTER(LEN=FIPLEN3) CFIP   ! temporary character FIPs code
-        CHARACTER(LEN=CHRLEN3) CHARS( 5 ) ! temporary character FIPs code
+        CHARACTER(LEN=CHRLEN3) CHARS( 5 ) ! temporary plant characteristics
+        CHARACTER(LEN=LNKLEN3) CLNK   ! temporary link ID
         CHARACTER(LEN=DSCLEN3) CPDS   ! temporary plant description
+        CHARACTER(LEN=RWTLEN3) CRWT   ! temporary roadway type
         CHARACTER(LEN=SCCLEN3) CS     ! temporary scc
+        CHARACTER(LEN=VIDLEN3) CVID   ! temporary vehicle type code
+        CHARACTER(LEN=VTPLEN3) CVTP   ! tmp vehicle type
         CHARACTER(LEN=PLTLEN3) FCID   ! temporary facility code
         CHARACTER(LEN=IOVLEN3) INVAR  ! tmp inventory pollutant name
 
-        CHARACTER*16 :: PROGNAME = 'RPNTSCHR'   !  program name
+        CHARACTER*16 :: PROGNAME = 'RDINVCHR'   !  program name
 
 C***********************************************************************
-C   begin body of program RPNTSCHR
+C   begin body of program RDINVCHR
+
+        MESG = 'Reading source data from inventory file...'
+        CALL M3MSG2( MESG )
 
 C.........  Loop through input variables
 C.........  Allocate memory and read the ones that are needed from I/O API file
@@ -116,15 +127,23 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
             SELECT CASE( INVAR )
 
             CASE( 'IFIP' )
-                ALLOCATE( IFIP( NPSRC ), STAT=IOS )
+                ALLOCATE( IFIP( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'IFIP',ALLAYS3,0,0,IFIP ) ) THEN
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ENDIF
 
+            CASE( 'IRCLAS' )
+                ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
+
+                IF(.NOT. READ3(INFILE,'IRCLAS',ALLAYS3,0,0,IRCLAS)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
             CASE( 'ISIC' )
-                ALLOCATE( ISIC( NPSRC ), STAT=IOS )
+                ALLOCATE( ISIC( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'ISIC',ALLAYS3,0,0,ISIC ) ) THEN
@@ -132,15 +151,23 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'IORIS' )
-                ALLOCATE( IORIS( NPSRC ), STAT=IOS )
+                ALLOCATE( IORIS( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IORIS', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'IORIS',ALLAYS3,0,0,IORIS)) THEN
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ENDIF
 
+            CASE( 'IVTYPE' )
+                ALLOCATE( IVTYPE( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
+
+                IF(.NOT. READ3(INFILE,'IVTYPE',ALLAYS3,0,0,IVTYPE)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
             CASE( 'TZONES' )
-                ALLOCATE( TZONES( NPSRC ), STAT=IOS )
+                ALLOCATE( TZONES( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
 
                 IF(.NOT. READ3(INFILE,'TZONES',ALLAYS3,0,0,TZONES)) THEN
@@ -148,7 +175,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'TPFLAG' )
-                ALLOCATE( TPFLAG( NPSRC ), STAT=IOS )
+                ALLOCATE( TPFLAG( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
 
                 IF(.NOT. READ3(INFILE,'TPFLAG',ALLAYS3,0,0,TPFLAG)) THEN
@@ -156,7 +183,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'INVYR' )
-                ALLOCATE( INVYR( NPSRC ), STAT=IOS )
+                ALLOCATE( INVYR( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'INVYR',ALLAYS3,0,0,INVYR)) THEN
@@ -164,7 +191,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
            
             CASE( 'IDIU' )
-                ALLOCATE( IDIU( NPSRC ), STAT=IOS )
+                ALLOCATE( IDIU( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'IDIU',ALLAYS3,0,0,IDIU ) ) THEN
@@ -172,7 +199,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'IWEK' )
-                ALLOCATE( IWEK( NPSRC ), STAT=IOS )
+                ALLOCATE( IWEK( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'IWEK',ALLAYS3,0,0,IWEK ) ) THEN
@@ -180,7 +207,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'XLOCA' )
-                ALLOCATE( XLOCA( NPSRC ), STAT=IOS )
+                ALLOCATE( XLOCA( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'XLOCA',ALLAYS3,0,0,XLOCA)) THEN
@@ -188,15 +215,55 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'YLOCA' )
-                ALLOCATE( YLOCA( NPSRC ), STAT=IOS )
+                ALLOCATE( YLOCA( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'YLOCA',ALLAYS3,0,0,YLOCA)) THEN
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ENDIF
 
+            CASE( 'XLOC1' )
+                ALLOCATE( XLOC1( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
+
+                IF( .NOT. READ3(INFILE,'XLOC1',ALLAYS3,0,0,XLOC1)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
+            CASE( 'YLOC1' )
+                ALLOCATE( YLOC1( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'YLOC1', PROGNAME )
+
+                IF( .NOT. READ3(INFILE,'YLOC1',ALLAYS3,0,0,YLOC1)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
+            CASE( 'XLOC2' )
+                ALLOCATE( XLOC2( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
+
+                IF( .NOT. READ3(INFILE,'XLOC2',ALLAYS3,0,0,XLOC2)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
+            CASE( 'YLOC2' )
+                ALLOCATE( YLOC2( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
+
+                IF( .NOT. READ3(INFILE,'YLOC2',ALLAYS3,0,0,YLOC2)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
+            CASE( 'SPEED' )
+                ALLOCATE( SPEED( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
+
+                IF( .NOT. READ3(INFILE,'SPEED',ALLAYS3,0,0,SPEED)) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+            
             CASE( 'STKHT' )
-                ALLOCATE( STKHT( NPSRC ), STAT=IOS )
+                ALLOCATE( STKHT( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'STKHT',ALLAYS3,0,0,STKHT)) THEN
@@ -204,7 +271,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'STKDM' )
-                ALLOCATE( STKDM( NPSRC ), STAT=IOS )
+                ALLOCATE( STKDM( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'STKDM',ALLAYS3,0,0,STKDM)) THEN
@@ -212,7 +279,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'STKTK' )
-                ALLOCATE( STKTK( NPSRC ), STAT=IOS )
+                ALLOCATE( STKTK( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'STKTK',ALLAYS3,0,0,STKTK)) THEN
@@ -220,7 +287,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 ENDIF
 
             CASE( 'STKVE' )
-                ALLOCATE( STKVE( NPSRC ), STAT=IOS )
+                ALLOCATE( STKVE( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'STKVE',ALLAYS3,0,0,STKVE)) THEN
@@ -248,7 +315,7 @@ C.........  Section if the ASCII file is also to be read in
      &                 PROGNAME( 1:LEN_TRIM( PROGNAME ) ) //
      &                 '" found unread variable "' //
      &                 INVAR( 1:LEN_TRIM( INVAR ) ) //
-     &                 '." NOTE: ASCII PNTS file is not opened.'
+     &                 '." NOTE: ASCII inventory file is not opened.'
                 CALL M3MSG2( MESG )
 
             ENDDO
@@ -267,23 +334,33 @@ C.............  Allocate memory for the data that are needed from the ASCII file
 
                 CASE( 'CSCC' )
                     SCCFLAG = .TRUE. 
-                    ALLOCATE( CSCC( NPSRC ), STAT=IOS )
+                    ALLOCATE( CSCC( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
 
                 CASE( 'CBLRID' )
                     BLRFLAG = .TRUE. 
-                    ALLOCATE( CBLRID( NPSRC ), STAT=IOS )
+                    ALLOCATE( CBLRID( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CBLRID', PROGNAME )
+
+                CASE( 'CLINK' )
+                    LNKFLAG = .TRUE. 
+                    ALLOCATE( CLINK( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
 
                 CASE( 'CPDESC' )
                     PDSFLAG = .TRUE. 
-                    ALLOCATE( CPDESC( NPSRC ), STAT=IOS )
+                    ALLOCATE( CPDESC( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )
 
                 CASE( 'CSOURC' )
                     CSRFLAG = .TRUE. 
-                    ALLOCATE( CSOURC( NPSRC ), STAT=IOS )
+                    ALLOCATE( CSOURC( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+
+                CASE( 'CVTYPE' )
+                    VTPFLAG = .TRUE. 
+                    ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
 
                 CASE DEFAULT
                     EFLAG = .TRUE.
@@ -307,68 +384,113 @@ C.............  Read past header
                 READ( FDEV, '(A)' ) HEADER( J )
             ENDDO
 
-C.............  Determine number of source characteristics. Assumes SCC is
-C               the first variable after the final source characteristic 
-            J = INDEX1( 'SCC', NCOL, HEADER )
-            NCHARS = J - 4  ! Four because Source ID, FIPS, Plant ID, & SCC 
+CC.............  Depending on source category, read in and store ASCII source
+C               characteristics
 
-C.............  Determine if boiler is present
-            J = INDEX1( 'Boiler code', NCOL, HEADER )
-            BLRIN = ( J .GT. 0 )
+            SELECT CASE ( CATEGORY )
+            CASE ( 'AREA' )
 
-C.............  If boiler not present but has been requested, then internal err
-            IF( .NOT. BLRIN .AND. BLRFLAG ) THEN
+                DO S = 1, NSRC
 
-                MESG = 'INTERNAL ERROR: Boiler request, but is ' //
-     &                 'not present in ASCII inventory file'
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+C.....................  Read in line of character data
+                    READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
 
-            ENDIF
+                    IF( SCCFLAG ) CSCC( S ) = CS
 
-C.............  Initialize arrays of source characteristics
-            CHARS = ' '  ! array
+                    IF( CSRFLAG ) 
+     &                  CALL BLDCSRC( CFIP, CS, CHRBLNK3, CHRBLNK3,
+     &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                                POLBLNK3, CSOURC( S ) )
 
-            DO S = 1, NPSRC
+                    CALL CHECK_CORRUPTED
 
-C.................  Initialize temporary characteristics
-                CHARS = ' '  ! array
-                CBLR  = ' '
-                CPDS  = ' '
+                END DO  ! End loop on sources
 
-C.................  Read in line of character data
+            CASE ( 'MOBILE' )
 
-                IF( BLRIN ) THEN
-                    READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                  ( CHARS( J ), J=1, NCHARS ), CS, CBLR, CPDS
+                DO S = 1, NSRC
 
-                ELSE
+C.....................  Initialize temporary characteristics
+                    CVID  = ' '
+                    CLNK  = ' '
 
-                    READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                  ( CHARS( J ), J=1, NCHARS ), CS, CPDS
+C.....................  Read in line of character data
+                    READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
+     &                                            CLNK, CVID, CS, CVTP
 
-                ENDIF
+                    IF( SCCFLAG ) CSCC  ( S ) = CS
 
-                IF( SCCFLAG ) CSCC  ( S ) = CS
+                    IF( VTPFLAG ) CVTYPE( S ) = CVTP
 
-                IF( BLRFLAG ) CBLRID( S ) = CBLR
+                    IF( LNKFLAG ) CLINK ( S ) = CLNK
 
-                IF( PDSFLAG ) CPDESC( S ) = CPDS
+                    IF( CSRFLAG ) 
+     &                  CALL BLDCSRC( CFIP, CRWT, CLNK, CVID,
+     &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                                POLBLNK3, CSOURC( S ) )
 
-                IF( CSRFLAG ) 
-     &              CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
-     &                            CHARS(3), CHARS(4), CHARS(5),
-     &                            POLBLNK3, CSOURC( S ) )
+                    CALL CHECK_CORRUPTED
 
-                IF( ID .NE. S ) THEN
+                END DO  ! End loop on sources
 
-                    WRITE( MESG,94010 ) 'SMOKE ASCII inventory ' //
-     &                     'file has been corrupted at source ID', ID
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            CASE ( 'POINT' )
 
-                ENDIF
+C.................  Determine number of plant characteristics. Assumes SCC is
+C                   the first variable after the final source characteristic 
+                J = INDEX1( 'SCC', NCOL, HEADER )
+                NC = J - 4  ! Four because Source ID, FIPS, Plant ID, & SCC 
 
-            ENDDO  ! End loop on sources
+C.................  Determine if boiler is present
+                J = INDEX1( 'Boiler code', NCOL, HEADER )
+                BLRIN = ( J .GT. 0 )
+
+C.................  If boiler not present but has been requested, then 
+C                   internal err
+                IF( .NOT. BLRIN .AND. BLRFLAG ) THEN
+
+                    MESG = 'INTERNAL ERROR: Boiler request, but is ' //
+     &                     'not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+                END IF
+
+                DO S = 1, NSRC
+
+C.....................  Initialize temporary characteristics
+                    CHARS = ' '  ! array
+                    CBLR  = ' '
+                    CPDS  = ' '
+
+C.....................  Read in line of character data
+
+                    IF( BLRIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CBLR, CPDS
+
+                    ELSE
+
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS
+
+                    ENDIF
+
+                    IF( SCCFLAG ) CSCC  ( S ) = CS
+
+                    IF( BLRFLAG ) CBLRID( S ) = CBLR
+
+                    IF( PDSFLAG ) CPDESC( S ) = CPDS
+
+                    IF( CSRFLAG ) 
+     &                  CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
+     &                                CHARS(3), CHARS(4), CHARS(5),
+     &                                POLBLNK3, CSOURC( S ) )
+
+                    CALL CHECK_CORRUPTED
+
+                END DO  ! End loop on sources
+
+            END SELECT
 
             REWIND( FDEV )
 
@@ -376,15 +498,12 @@ C.................  Read in line of character data
 
         IF( EFLAG ) CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
-C.........  For output, the number of characteristics must include the FIPS
-C           code and the facility code
-        NCHARS = NCHARS + 2 
-
         RETURN
 
 999     MESG = 'End of file reached unexpectedly. ' //
-     &         'Check format of temporal' // CRLF() // BLANK5 //
-     &         'cross reference file.'
+     &         'Check format of ASCII' // CRLF() // BLANK5 //
+     &         'inventory file.'
+
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
@@ -393,7 +512,34 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
 
+C******************  INTERNAL SUBPROGRAMS  *****************************
 
-        END
+        CONTAINS
+
+C.............  This internal subprogram checks to make sure the ASCII inventory
+C               file has not been corrupted, and if it has, stops the program
+            SUBROUTINE CHECK_CORRUPTED
+
+C......................................................................
+
+            IF( ID .NE. S ) THEN
+
+                WRITE( MESG,94010 ) 'SMOKE ASCII inventory ' //
+     &                      'file has been corrupted at source ID', ID
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+C--------------------  FORMAT  STATEMENTS   ----------------------------
+
+C...........   Internal buffering formats............ 94xxx
+
+94010       FORMAT( 10( A, :, I10, :, 1X ) )
+
+            END SUBROUTINE CHECK_CORRUPTED
+
+C----------------------------------------------------------------------
+
+        END SUBROUTINE RDINVCHR
 
 

@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -39,11 +39,6 @@ C***************************************************************************
 
         IMPLICIT NONE
 
-C...........   EXTERNAL FUNCTIONS:
-        INTEGER         TRIMLEN
-
-        EXTERNAL        TRIMLEN
-
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER*(*)   STRING   ! input character string
 
@@ -52,6 +47,7 @@ C...........   Other local variables
 
         LOGICAL         SPACFLAG  ! true if already encountered a space in string
         LOGICAL         PERDFLAG  ! true if already encountered a period in string
+        LOGICAL         NEGVFLAG  ! true if already encountered a '-' in string
 
         CHARACTER*1     CBUF 
         CHARACTER*256   BUFFER 
@@ -64,10 +60,11 @@ C   begin body of function CHKREAL
         CHKREAL = .TRUE.
 
         BUFFER = ADJUSTL( STRING )
-        L = TRIMLEN( BUFFER )
+        L = LEN_TRIM( BUFFER )
 
         SPACFLAG = .FALSE.
         PERDFLAG = .FALSE.
+        NEGVFLAG = .FALSE.
         DO K = 1, L
 
             CBUF = BUFFER( K:K )
@@ -75,9 +72,12 @@ C   begin body of function CHKREAL
             IF( CBUF .GT. '9' .OR.
      &        ( CBUF .LT. '0' .AND. 
      &          CBUF .NE. ' ' .AND. 
-     &          CBUF .NE. '.'       ) .OR.  
-     &        ( ( SPACFLAG .OR. PERDFLAG ) .AND. CBUF .EQ. ' ' ) .OR.
-     &        ( PERDFLAG .AND. CBUF .EQ. '.' ) ) THEN
+     &          CBUF .NE. '.' .AND.
+     &          CBUF .NE. '-'       ) .OR.  
+     &        ( ( SPACFLAG .OR. PERDFLAG .OR. NEGVFLAG ) .AND.
+     &            CBUF .EQ. ' '                                ) .OR.
+     &        ( NEGVFLAG .AND. CBUF .EQ. '-' ) .OR.
+     &        ( PERDFLAG .AND. CBUF .EQ. '.' )      ) THEN
 
                 CHKREAL = .FALSE.
                 RETURN
@@ -86,6 +86,7 @@ C   begin body of function CHKREAL
 
             IF( CBUF .EQ. ' ' ) SPACFLAG = .TRUE.
             IF( CBUF .EQ. '.' ) PERDFLAG = .TRUE.
+            IF( CBUF .EQ. '-' ) NEGVFLAG = .TRUE.
 
         ENDDO    
 

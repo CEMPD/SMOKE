@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -71,7 +71,7 @@ C.........  Other local variables
         INTEGER          I, J, L2, S, V    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
-        INTEGER          EREF    !  tmp diurnal profile code
+        INTEGER          EREF           !  tmp diurnal profile code
 
         LOGICAL       :: EFLAG    = .FALSE.
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
@@ -114,7 +114,7 @@ C.............  Retrieve environment variables
         ENDIF
 
 C.........  Set up roadway type format
-        WRITE( RWTFMT, '("(I",I2.2")")' ) RWTLEN3
+        WRITE( RWTFMT, '("(I",I2.2,")")' ) RWTLEN3
 
 C.........  Initialize search fields to blank
         CSRC    = ' '

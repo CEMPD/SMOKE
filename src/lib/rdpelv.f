@@ -1,11 +1,14 @@
 
-        SUBROUTINE RDPELV( FDEV, NPSRC, MXPELV, CSOURC, NPELV, INDXE )
+        SUBROUTINE RDPELV( FDEV, NSRC, NMAJOR, NPING )
 
 C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C	Reads 
+C	Allocates memory for and reads in the PELV file output from ELEVPOINT.
+C       This file contains a column for Major sources, plume-in-grid, sources, 
+C       and for stack group numbers.  Only the source codes that are either 
+C       identified as major source or PinG source are listed. 
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -18,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -35,6 +38,10 @@ C Last updated: $Date$
 C
 C****************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -45,54 +52,89 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2            CRLF
-        INTEGER                FINDC
+        CHARACTER*2   CRLF
+        LOGICAL       ENVYN
 
-        EXTERNAL    CRLF, FINDC
+        EXTERNAL      CRLF, ENVYN
 
 C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 
-        INTEGER     FDEV                !  unit number for elev srcs file (in)
-        INTEGER     NPSRC               !  no. of point sources (in)
-        INTEGER     MXPELV              !  max valid entires in FDEV (in)
-        INTEGER     CSOURC( NPSRC )     !  source characteristics (int)
-        INTEGER     NPELV               !  actual usable records in FDEV (out)
-        INTEGER     INDXE ( MXPELV )    !  elevated sources index (out)
+        INTEGER, INTENT (IN)  :: FDEV    !  unit number for elev srcs file 
+        INTEGER, INTENT (IN)  :: NSRC    !  no. sources
+        INTEGER, INTENT (OUT) :: NMAJOR  !  number of major sources
+        INTEGER, INTENT (OUT) :: NPING   !  number of PinG sources
 
-C...........   Variables for source definition input and manipulation
-        INTEGER         NCHARS          ! number of source characteristics
-
-        LOGICAL      :: TRUEARR( 7 ) =  ! array of trues
-     &                             ( / .TRUE., .TRUE., .TRUE., .TRUE., 
-     &                                 .TRUE., .TRUE., .TRUE.        / )
-
-        CHARACTER*300   CHARS( 7 )      ! specific source characteristics
+C...........   Arrays dimensioned by subroutine arguments
+        INTEGER      SINDX( NSRC ) ! sorting index for group ID
 
 C...........   OTHER LOCAL VARIABLES and their descriptions:
 
-        INTEGER         I, J, K, L, L2   !  counters and indices
+        INTEGER         I, J, K, L, L2, S   !  counters and indices
         INTEGER         IOS              !  I/O Status
+        INTEGER         IGRP             !  group number for PinG source, or 0
+        INTEGER         IMAJR            !  src ID for major source, or 0
+        INTEGER         IPING            !  src ID for PinG source, or 0
         INTEGER         IREC             !  input line counter
+        INTEGER         PGRP             !  group from previous iteration
 
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
+        LOGICAL      :: RFLAG = .TRUE.   !  true: non-PinG, elevated srcs okay
 
         CHARACTER*300   BUFFER           !  buffer for formatted source chars
         CHARACTER*300   MESG             !  message buffer
-        CHARACTER(LEN=SRCLEN3) CSRC      !  source characteristics buffer
-        CHARACTER(LEN=ALLLEN3) CSRCALL   !  source characteristics buffer // pol
 
         CHARACTER*16 :: PROGNAME = 'RDPELV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDPELV
 
+C.........   Get settings from environment variables
+C.........   This variable enables have no "major" sources identified in the
+C            PELV file, and actually not doing plume rise on any sources instead
+C            of the default behaviour, which is to do plume rise on all sources
+        MESG = 'Indicator for having elevated sources'
+        RFLAG = ENVYN( 'SMK_ELEVPT_YN', MESG, .TRUE., IOS )
+
+C.........  Allocate the MODELEV arrays for identifying major/PinG sources
+        ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
+        ALLOCATE( LPING( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LPING', PROGNAME )
+        ALLOCATE( GROUPID( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GROUPID', PROGNAME )
+
+C.........  Initialize arrays
+        LMAJOR  = .FALSE.   ! arrays 
+        LPING   = .FALSE.
+        GROUPID = 0 
+
+C......... If there is not a PELV file, then possible reset LMAJOR and return
+        IF( FDEV .LE. 0 ) THEN
+            IF( RFLAG ) THEN
+                LMAJOR = .TRUE.  ! array
+
+            ELSE
+                MESG = 'Because SMK_ELEVPT_YN = N and there is no ' //
+     &                 'elevated source file, the' // CRLF()// BLANK10//
+     &                 'Laypoint program is not needed'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            RETURN
+
+        END IF
+
+        MESG = 'Reading elevated/plume-in-grid sources file...'
+        CALL M3MSG2( MESG )
+
 C.........  Read in lines knowing that they are formatted in the CSOURC
 C           spacing
-        IREC = 0
-        J    = 0
+        NMAJOR = 0
+        NPING  = 0
+        IREC   = 0
         DO           !  head of the FDEV-read loop
 
-            READ( FDEV, 93000, END=23, IOSTAT=IOS ) CSRC
+            READ( FDEV, *, END=23, IOSTAT=IOS ) IMAJR, IPING, IGRP
             IREC = IREC + 1
 
             IF( IOS .GT. 0 ) THEN
@@ -105,62 +147,105 @@ C           spacing
 
             END IF
 
-            CHARS = ' '  ! Array
+C.............  Set sources that are major sources
+            IF( IMAJR .GT. 0 .AND. IMAJR .LE. NSRC ) THEN
+                NMAJOR = NMAJOR + 1
+        	LMAJOR ( IMAJR ) = .TRUE.
+            END IF 
 
-C.............  Separare CSRC array into components
-            CALL PARSCSRC( CSRC, TRUEARR, CHARS, NCHARS )
+C.............  Set sources that are PinG sources
+            IF( IPING .GT. 0 .AND. IPING .LE. NSRC ) THEN
+                NPING = NPING + 1                
+                LPING  ( IPING ) = .TRUE.
+                GROUPID( IPING ) = IGRP
+            END IF 
 
-            CALL BLDCSRC( CHARS(1), CHARS(2), CHARS(3), CHARS(4),
-     &                    CHARS(5), CHARS(6), CHARS(7), ' ', CSRCALL )
-
-            L = LEN_TRIM( CSRCALL )
-            I = FINDC( CSRCALL( 1:L ), NPSRC, CSOURC )
-
-            IF ( I .LE. 0 ) THEN
-
-                CALL FMTCSRC ( CSRCALL, 7, BUFFER, L2 )
-
-                MESG = 'Input elevated source not found in inventory:'//
-     &                  CRLF() // BLANK10 // BUFFER( 1:L2 )
-
+C.............  If index is out of range, ELEVPOINT needs rerunning
+            IF( IMAJR .GT. NSRC .OR. IPING .GT. NSRC ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Source ID', NSRC, 
+     &                 'in elevated sources file is greater than' //
+     &                 CRLF()// BLANK10 // 
+     &                 'the maximum number of sourced!' //
+     &                 CRLF()// BLANK10 // 'Elevpoint should be rerun.'
                 CALL M3MESG( MESG )
-
-C.............  Ensure there is no overflow of INDXE
-            ELSEIF( J .LE. MXPELV ) THEN
-                J = J + 1
-                INDXE( J ) = I
 
             END IF 
 
-        ENDDO       !  to head of elevated sources loop
+        END DO       !  to head of elevated sources loop
 
 23      CONTINUE    !  end of read loop
 
-        NPELV = J
+C.........  If there are no major sources specifically identified, then 
+C           change array to make all sources potentially elevated (unless
+C           the environment variable override has been set)
+        IF( RFLAG .AND. NMAJOR .EQ. 0 ) THEN
+            LMAJOR = .TRUE.  ! array
+            MESG = 'NOTE: All non-PinG sources are potentially elevated'
 
-C.........  Report warning for skipped sources from elevated sources file
-        IF( NPELV .LT. MXPELV ) THEN
+        ELSEIF( NMAJOR .EQ. 0 ) THEN
+            MESG = 'NOTE: All non-PinG sources are low-level (layer 1)'
 
-            J = MXPELV - NPELV
-            WRITE( MESG,94010 ) 'Program is ignoring', J, 'records ' //
-     &                          'in the input elevated sources file.'
-            CALL M3WARN( PROGNAME, 0, 0, MESG )
+        ELSE
+            WRITE( MESG,94010 ) 'NOTE:', NMAJOR,' non-PinG sources ' //
+     &             'will be elevated, and the rest are' //
+     &             CRLF()// BLANK10 // 'low-level (layer 1)'
+     &             
+        END IF
+        CALL M3MSG2( MESG )
 
-        ENDIF
+        IF( NPING .EQ. 0 ) THEN
+            MESG = 'NOTE: No PinG sources will be modeled'
+        ELSE
+            WRITE( MESG,94010 ) 'NOTE:', NPING,' PinG sources will ' //
+     &             'be modeled'
+        END IF
+        CALL M3MSG2( MESG )
 
-C.........  Check for overflow...
-        IF( J .GT. MXPELV ) THEN 
-
-            EFLAG = .TRUE.
-            MESG = 'INTERNAL ERROR: Memory allocation insufficient ' //
-     &             'for elevated point sources file'
-            CALL M3MSG2( MESG )
-
-        ENDIF
-
+C.........  Abort if error occured on read
         IF( EFLAG ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-        ENDIF
+            MESG = 'Problem reading elevated sources file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Create sorting index for GROUPID (from MODELEV)
+        DO S = 1, NSRC
+            SINDX( S ) = S
+        END DO
+
+C.........  Sort list of group IDs
+        CALL SORTI1( NSRC, SINDX, GROUPID )
+
+C.........  Count up unique groups
+        NGROUP = 0
+        PGRP   = 0   !  Set to zero so zero will be excluded from count
+        DO S = 1, NSRC
+
+            J = SINDX( S )
+            IF( GROUPID( J ) .NE. PGRP ) THEN
+                NGROUP = NGROUP + 1
+                PGRP = GROUPID( J )
+            END IF
+
+        END DO
+
+C.........  Allocate memory for group list and PinG emissions by group
+        ALLOCATE( GRPGID( NGROUP ), STAT=IOS )       ! from MODELEV
+        CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
+
+C.........  Store sorted list of groups
+        NGROUP = 0
+        PGRP   = 0   !  Set to zero so zero will be excluded from count
+        DO S = 1, NSRC
+
+            J = SINDX( S )
+            IF( GROUPID( J ) .NE. PGRP ) THEN
+                NGROUP = NGROUP + 1
+                GRPGID( NGROUP ) = GROUPID( J )
+                PGRP = GROUPID( J )
+            END IF
+
+        END DO
 
         RETURN
 

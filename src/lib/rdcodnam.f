@@ -1,14 +1,16 @@
 
-        SUBROUTINE RDSIPOLS( FDEV, NPOLS, CODES, NAMES )
+        SUBROUTINE RDCODNAM( FDEV, MXDAT, NDAT, CODES, NAMES )
 
 C***********************************************************************
 C  subroutine body starts at line 92
 C
 C  DESCRIPTION:
-C     Reads the master inventory pollutants list, concatenates the names if
-C     they are longer than 16 characters, checks for duplicates, renames if
-C     there are duplicates, and converts all names to uppercase. The subroutine
-C     returns the names in their original, unsorted order.
+C     Reads the master inventory pollutants list or activity list, concatenates
+C     the names if they are longer than 16 characters, checks for duplicates,
+C     renames if there are duplicates, and converts all names to uppercase. The 
+C     subroutine returns the names in their original, unsorted order. If the
+C     arrays are not empty on input, the subroutine appends the data from the
+C     file to the input arrays.
 C
 C  PRECONDITIONS REQUIRED:
 C     File unit FDEV already is opened
@@ -27,7 +29,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -59,16 +61,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL CRLF, LBLANK, STR2INT, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER       FDEV              !  pollutants file unit number
-        INTEGER       NPOLS             !  number of pollutants in file
-        INTEGER       CODES( NPOLS )    !  pollutant codes
-        CHARACTER(LEN=IOVLEN3) NAMES( NPOLS )    !  pollutant names
+        INTEGER     , INTENT    (IN) :: FDEV           ! input file unit no.
+        INTEGER     , INTENT    (IN) :: MXDAT          ! max pols and/or actvties
+        INTEGER     , INTENT(IN OUT) :: NDAT           ! no. cumulative recs
+        INTEGER     , INTENT   (OUT) :: CODES( MXDAT ) ! pol or activity codes
+        CHARACTER(*), INTENT   (OUT) :: NAMES( MXDAT ) ! pol or activity names
 
 C...........   Unsorted pollutant records
-        INTEGER       INDX1A( NPOLS )
-        INTEGER       INDX2A( NPOLS )
-        INTEGER       CODESA( NPOLS )
-        CHARACTER(LEN=IOVLEN3) NAMESA( NPOLS )    !  pollutant names
+        INTEGER       INDX1A( MXDAT )
+        INTEGER       INDX2A( MXDAT )
+        INTEGER       CODESA( MXDAT )
+        CHARACTER(LEN=IOVLEN3) NAMESA( MXDAT )    !  pollutant names
 
 C...........   Other local variables
         INTEGER         COD     !  tmp for pollutant code
@@ -77,16 +80,24 @@ C...........   Other local variables
         INTEGER         IREC    !  record counter
         INTEGER         L, L2   !  length indices
         INTEGER         LCOD    !  previous pollutant code
+        INTEGER         NDATSAV !  no. records in current file
+
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.
 
         CHARACTER*300   LNAM    !  previous pollutant name
         CHARACTER*300   PNAM    !  tmp for pollutant name (NOT correct length)
         CHARACTER*300   LINE    !  line buffer
         CHARACTER*300   MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSIPOLS' ! program name
+        CHARACTER*16 :: PROGNAME = 'RDCODNAM' ! program name
 
 C***********************************************************************
-C   begin body of subroutine RDSIPOLS
+C   begin body of subroutine RDCODNAM
+
+C.........  Store initial value of counter
+        NDATSAV = NDAT
+
+C.........  Loop through input file...
 
         I    = 0
         IREC = 0
@@ -95,9 +106,9 @@ C   begin body of subroutine RDSIPOLS
             READ( FDEV, 93000, END=22, IOSTAT=IOS ) LINE
             IREC = IREC + 1
 
-            IF( IOS .NE. 0 ) THEN
+            IF( IOS .GT. 0 ) THEN
                 WRITE( MESG, 94010 ) 
-     &                 'Error', IOS,  'reading pollutant names ' // 
+     &                 'Error', IOS,  'reading names ' // 
      &                 'and codes file at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ENDIF
@@ -116,7 +127,7 @@ C.............  Truncate name to IOVLEN3 characters
                 PNAM = PNAM( 1:IOVLEN3 )
 
                 WRITE( MESG,94010 )
-     &                 'WARNING: Pollutant name too long for ' //
+     &                 'WARNING: Name too long for ' //
      &                 'I/O API variable names at line', IREC,
      &                 CRLF() // BLANK5 //
      &                 'in pollutant file. Truncating to "' //
@@ -124,16 +135,17 @@ C.............  Truncate name to IOVLEN3 characters
                 CALL M3MESG( MESG )
 
             ELSEIF( COD .LE. 0 ) THEN
-                WRITE( MESG,94010 )
-     &                 'Blank, alphabetic, or 0 pollutant code at line',
-     &                 IREC, 'in pollutant file. Skipping record.'
+                WRITE( MESG,94010 ) 'WARNING: ' //
+     &                 'Blank, alphabetic, or 0 data code at line',
+     &                 IREC, CRLF() // BLANK10 //
+     &                 'in code/names file. Skipping record.'
                 CALL M3MESG( MESG )
                 CYCLE
 
             ELSE                                        !  county-specific zone
 
                 I = I + 1
-                IF( I .LE. NPOLS ) THEN
+                IF( I .LE. MXDAT ) THEN
                     INDX1A( I ) = I
                     INDX2A( I ) = I
                     CODESA( I ) = COD
@@ -146,33 +158,38 @@ C.............  Truncate name to IOVLEN3 characters
 
 22      CONTINUE       !  exit from loop reading FDEV
 
-        IF( I .GT. NPOLS ) THEN
+        NDAT = I
+
+        IF( NDAT .GT. MXDAT ) THEN
             WRITE( MESG,94010 ) 
-     &        'Number of pollutant records :', I, CRLF()// BLANK5//
-     &        '           Memory allocated :', NPOLS
+     &             'ERROR: Number of pollutant records :', NDAT, 
+     &             CRLF() // BLANK10 // 'Memory allocated :', MXDAT
             CALL M3MSG2( MESG )
 
-            MESG = 'ERROR: Insufficient memory allocated for ' //
-     &             'pollutant codes and names file'
+            MESG = 'Insufficient memory allocated for ' //
+     &             'codes/names file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        ELSE IF( NDAT .EQ. 0 ) THEN
+            MESG ='No entries in codes/names file.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         ENDIF
 
-        NPOLS = I
-
 C.........  Sort by number for checking for duplicates
-        CALL SORTI1( NPOLS, INDX1A, CODESA )
+        CALL SORTI1( NDAT, INDX1A, CODESA )
 
 C.........  Check for duplicate numbers - delete duplicates
         LCOD = -9
-        DO I = 1, NPOLS
+        DO I = 1, NDAT
 
             J = INDX1A( I )
             COD = CODESA( J )
 
             IF( COD .EQ. LCOD ) THEN
                 WRITE( MESG,94010 )
-     &                 'Duplicate pollutant code "', CODES( I ),
-     &                 '" at line', J, 'in pollutant file.' //
+     &                 'WARNING: Duplicate code "', CODES( I ),
+     &                 '" at line', J, 'in codes/names file.' //
      &                 CRLF() // BLANK5 // 'Skipping record.'
                 CALL M3MESG( MESG )
 
@@ -185,11 +202,11 @@ C.........  Check for duplicate numbers - delete duplicates
         ENDDO
 
 C.........  Sort by name for checking for duplicates
-        CALL SORTIC( NPOLS, INDX2A, NAMESA )
+        CALL SORTIC( NDAT, INDX2A, NAMESA )
 
 C.........  Check for duplicate names - rename
         LNAM = EMCMISS3
-        DO I = 1, NPOLS
+        DO I = 1, NDAT
 
             J = INDX2A( I )
             PNAM = NAMESA( J )
@@ -198,8 +215,8 @@ C.........  Check for duplicate names - rename
 
                 L2 = TRIMLEN( PNAM )
                 WRITE( MESG,94010 )
-     &                 'Duplicate pollutant name "' // PNAM( 1:L2 ) //
-     &                 '" at line', J, 'in pollutant file.' //
+     &                 'WARNING: Duplicate name "' // PNAM( 1:L2 ) //
+     &                 '" at line', J, 'in codes/names file.' //
      &                 CRLF() // BLANK5 // 'Skipping record.'
                 CALL M3MESG( MESG )
 
@@ -213,8 +230,8 @@ C.........  Check for duplicate names - rename
 
 C.........  Store valid entries in original (unsorted) order and convert to 
 C           uppercase
-        J = 0
-        DO I = 1, NPOLS
+        J = NDATSAV
+        DO I = 1, NDAT
 
             IF( CODESA( I ) .NE. 0 ) THEN
                 J = J + 1
@@ -224,7 +241,8 @@ C           uppercase
 
         ENDDO
 
-        NPOLS = J
+        NDAT    = J
+        NDATSAV = J
 
 C.........  Rewind file
 
@@ -242,4 +260,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+        END SUBROUTINE RDCODNAM

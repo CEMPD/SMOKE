@@ -1,6 +1,6 @@
 
-        SUBROUTINE CONVRTXY( NSRC, XVALS, YVALS, CTYPE, P_ALP, P_BET, 
-     &                       P_GAM, XCENT, YCENT )
+        SUBROUTINE CONVRTXY( NSRC, CTYPE, P_ALP, P_BET, 
+     &                       P_GAM, XCENT, YCENT, XVALS, YVALS )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -46,15 +46,15 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER       NSRC          !  actual source count
-        REAL          XVALS( NSRC ) !  x location (input lon)
-        REAL          YVALS( NSRC ) !  y location (input lat)
-        INTEGER       CTYPE	    !  coord sys type
-        REAL*8        P_ALP	    !  first, second, third map
-        REAL*8        P_BET	    !  projection descriptive
-        REAL*8        P_GAM	    !  parameters
-        REAL*8        XCENT	    !  lon for coord-system X=0
-        REAL*8        YCENT	    !  lat for coord-system Y=0
+        INTEGER, INTENT    (IN) :: NSRC          !  actual source count
+        INTEGER, INTENT    (IN) :: CTYPE         !  coord sys type
+        REAL*8 , INTENT    (IN) :: P_ALP         !  first, second, third map
+        REAL*8 , INTENT    (IN) :: P_BET         !  projection descriptive
+        REAL*8 , INTENT    (IN) :: P_GAM         !  parameters
+        REAL*8 , INTENT    (IN) :: XCENT         !  lon for coord-system X=0
+        REAL*8 , INTENT    (IN) :: YCENT         !  lat for coord-system Y=0
+        REAL   , INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input lon)
+        REAL   , INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input lat)
 
 C...........   EXTERNAL FUNCTIONS
         LOGICAL       LAMBERT

@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -43,26 +43,31 @@ C***************************************************************************
         IMPLICIT NONE
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER    INDEX1
+        EXTERNAL   INDEX1
         
-        INTEGER         TRIMLEN
-
-        EXTERNAL        TRIMLEN
-
 C...........   SUBROUTINE ARGUMENTS
         INTEGER       ILENGTH     !  length of string
         CHARACTER*(*) STRING      !  description of source category
 
+C...........   Local parameters
+        INTEGER, PARAMETER :: NXALP = 25
+        CHARACTER*1, PARAMETER :: XALPLIST( NXALP ) =    ! non-delimiters
+     &             ( / '~', '@', '#', '$', '%', '^', '&', '*', '(', 
+     &                 ')', '-', '_', '+', '=', '{', '}', '[', ']',
+     &                 '|', '\', '<', '>', '.', '?', '/' / )
+             
 C...........   Array of 1-char strings for processing
         CHARACTER*1   ARRSTR( ILENGTH )
 
 C...........   Other local variables
         INTEGER         I, L             !  counters and indices
-        INTEGER      :: NCNT   = 0       !  count of fields
+        INTEGER      :: NCNT             !  count of fields
 
-        LOGICAL      :: ALPHA  = .FALSE. !  true when within alpha-numeric 
-        LOGICAL      :: DELIM  = .FALSE. !  true when within or past delimiter 
-        LOGICAL      :: NUMBER = .FALSE. !  true when within number in string 
-        LOGICAL      :: QUOTED = .FALSE. !  true when within quotes in string
+        LOGICAL      :: ALPHA            !  true when within alpha-numeric 
+        LOGICAL      :: DELIM            !  true when within or past delimiter 
+        LOGICAL      :: NUMBER           !  true when within number in string 
+        LOGICAL      :: QUOTED           !  true when within quotes in string
 
         CHARACTER*1      CBUF          !  temporary buffer
         CHARACTER*1   :: DOUBLEQ = '"'
@@ -75,28 +80,38 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of function GETNLIST
 
-        L = TRIMLEN( STRING )
+        L = MIN( LEN_TRIM( STRING ), ILENGTH )
 
 C.........  Copy string into 1-char array
         DO I = 1, L
             ARRSTR( I ) = STRING( I:I )
         ENDDO
 
+C.........  Initialize count, flags, and segments (npte, initializing in
+C           the variable definitions is insufficient)
+        NCNT    = 0
+        ALPHA   = .FALSE.
+        DELIM   = .TRUE.
+        NUMBER  = .FALSE.
+        QUOTED  = .FALSE.
+
 C.........  Process array of 1-char strings to count up fields.
-        DO I = 1, ILENGTH
+        DO I = 1, L
 
             CBUF = ARRSTR( I )
-
 C.............  Waiting for next field...
             IF( DELIM ) THEN
 
-                IF( CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) THEN
-                    ALPHA = .TRUE.
+                NUMBER = ( CBUF .GE. '0' .AND. CBUF .LE. '9' )
+                ALPHA  = ( .NOT. NUMBER .AND. CBUF .NE. ',' .AND.
+     &                     CBUF .NE. ' ' .AND. CBUF .NE. ';' .AND.
+     &                     CBUF .NE. SINGLEQ .AND. CBUF .NE. DOUBLEQ )
+
+                IF( ALPHA ) THEN
                     DELIM = .FALSE.
                     NCNT  = NCNT + 1
 
-                ELSEIF( CBUF .GE. '0' .AND. CBUF .LE. '9' ) THEN
-                    NUMBER = .TRUE.
+                ELSEIF( NUMBER ) THEN
                     DELIM  = .FALSE.
                     NCNT   = NCNT + 1
 
@@ -112,7 +127,7 @@ C.............  Waiting for next field...
                     QUOTVAL = DOUBLEQ
                     NCNT    = NCNT + 1
 
-                ENDIF  ! Else its another delimiter
+                ENDIF  ! Else its a delimiter
 
 C.............  In a quoted field, skip everything unless it is an end quote
             ELSEIF( QUOTED ) THEN
@@ -125,7 +140,8 @@ C.............  In a quoted field, skip everything unless it is an end quote
 C.............  If start of field was a number, but adjacent character is a
 C               alpha, then turn field into an alpha (periods would delimit)
             ELSEIF( NUMBER .AND. 
-     &              CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) THEN
+     &            ( ( CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) .OR.
+     &              INDEX1( CBUF, NXALP, XALPLIST ) .GT. 0 ) ) THEN
                 ALPHA  = .TRUE.
                 NUMBER = .FALSE.
 
@@ -141,7 +157,9 @@ C.............  If start of field was an alpha, and this is not an
 C               alpha-numeric, then end of alpha has been reached.
             ELSEIF( ALPHA .AND.
      &              .NOT. ( CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) .AND.
-     &              .NOT. ( CBUF .GE. '0' .AND. CBUF .LE. '9' ) ) THEN
+     &              .NOT. ( CBUF .GE. '0' .AND. CBUF .LE. '9' ) .AND.
+     &              INDEX1( CBUF, NXALP, XALPLIST ) .LE. 0 ) THEN
+
                 ALPHA = .FALSE.
                 DELIM = .TRUE.
 
@@ -159,4 +177,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+        END FUNCTION GETNLIST

@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -55,6 +55,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: XTYPE ( NXREF ) ! group no. of x-ref entry
         INTEGER     , INTENT (IN) :: XTCNT ( NXREF ) ! pos. in x-ref group
 
+C...........   Local field position array
+        INTEGER       ENDLEN( MXPTCHR3 )   ! NOTE: MXPTCHR3 is max of ar,mb,pt
+
 C...........   Other local variables
         INTEGER       I, J, K, T       ! counter and indices
 
@@ -74,6 +77,22 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine FILLCHRT
+
+C.........  Initialize the local field position array
+        ENDLEN = 1  ! array
+
+C.........  Set the local field position array based on the source category
+        SELECT CASE ( CATEGORY )
+        CASE( 'AREA' ) 
+            ENDLEN( 1:MXARCHR3 ) = ARENDL3( 1:MXARCHR3 )
+
+        CASE( 'MOBILE' )
+            ENDLEN( 1:MXMBCHR3 ) = MBENDL3( 1:MXMBCHR3 )
+
+        CASE( 'POINT' )
+            ENDLEN( 1:MXPTCHR3 ) = PTENDL3( 1:MXPTCHR3 )
+
+        END SELECT
 
 C.........  Store the source characteristics for each x-ref entry, depending
 C           on the group (XTYPE) and the position in that group (XTCNT)
@@ -112,24 +131,24 @@ C.............  Set up partial strings for saving
             CASE( 9 )
                 CHRT09( K ) = CFIP // TSCC
             CASE( 10 )
-                CHRT10( K ) = CSRC( 1:PTENDL3( 2 ) )
+                CHRT10( K ) = CSRC( 1:ENDLEN( 2 ) )
             CASE( 11 )
-                CHRT11( K ) = CSRC( 1:PTENDL3( 2 ) ) // TSCC
+                CHRT11( K ) = CSRC( 1:ENDLEN( 2 ) ) // TSCC
             CASE( 12 )
-                CHRT12( K ) = CSRC( 1:PTENDL3( 3 ) ) // TSCC
+                CHRT12( K ) = CSRC( 1:ENDLEN( 3 ) ) // TSCC
             CASE( 13 )
-                CHRT13( K ) = CSRC( 1:PTENDL3( 4 ) ) // TSCC
+                CHRT13( K ) = CSRC( 1:ENDLEN( 4 ) ) // TSCC
             CASE( 14 )
-                CHRT14( K ) = CSRC( 1:PTENDL3( 5 ) ) // TSCC
+                CHRT14( K ) = CSRC( 1:ENDLEN( 5 ) ) // TSCC
             CASE( 15 )
-                CHRT15( K ) = CSRC( 1:PTENDL3( 6 ) ) // TSCC
+                CHRT15( K ) = CSRC( 1:ENDLEN( 6 ) ) // TSCC
             CASE( 16 )
-                CHRT16( K ) = CSRC( 1:PTENDL3( 7 ) ) // TSCC
+                CHRT16( K ) = CSRC( 1:ENDLEN( 7 ) ) // TSCC
             CASE DEFAULT
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
-     &                 'INTERNAL ERROR: Point source cross-' // 
+     &                 'INTERNAL ERROR: Cross-' // 
      &                 'reference category', T, 
      &                 'not known in subroutine ' // PROGNAME
                 CALL M3MESG( MESG )

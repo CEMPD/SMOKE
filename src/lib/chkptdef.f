@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -74,8 +74,9 @@ C.........  Compare the input total number of sources with the inventory
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
      &             'ERROR: Source definition mismatch. Number of ' //
-     &             'characteristics in file: ', CHKNCHAR, ', ' // 
-     &             CRLF() // BLANK10 // 'but in ' // CATDESC // 
+     &             'source definition' // CRLF() // BLANK10 // 
+     &             'characteristics in file: ', CHKNCHAR, 
+     &             ', but in ' // CATDESC // 
      &             ' source inventory file: ', NCHARS
             CALL M3MSG2( MESG )
 
@@ -87,7 +88,7 @@ C.........  Compare the input position of SCCs with the inventory
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
      &             'ERROR: Source definition mismatch. Position of ' //
-     &             'SCC in characteristics in file: ', CHKJSCC, ', ' //
+     &             'SCC in file source definition: ', CHKJSCC, ', ' //
      &             CRLF() // BLANK10 // 'but in ' // CATDESC // 
      &             ' source inventory file: ', JSCC
             CALL M3MSG2( MESG )

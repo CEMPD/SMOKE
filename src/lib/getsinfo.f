@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -54,9 +54,10 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2     CRLF
+        LOGICAL         ENVYN
         INTEGER         GETIFDSC
 
-        EXTERNAL        CRLF, GETIFDSC
+        EXTERNAL        CRLF, ENVYN, GETIFDSC
 
 C...........   LOCAL VARIABLES their descriptions:
 
@@ -64,12 +65,24 @@ C...........   LOCAL VARIABLES their descriptions:
         INTEGER       IOS         ! memory allocation status
         INTEGER       NVAR        ! number of non-pollutant variables 
 
+        LOGICAL       LO3SEAS     ! true: use ozone season emissions
+
         CHARACTER*300 MESG         ! Message buffer
 
         CHARACTER*16 :: PROGNAME = 'GETSINFO'    ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETSINFO
+
+C.........  Retrieve variable to indicate whether to use annual or ozone
+C           season data
+        MESG = 'Use annual or ozone season emissions'
+        LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+
+C.........  Set index to permit reading of ozone season emissions instead of
+C           annual emissions, which is the default
+        INVPIDX = 0
+        IF( LO3SEAS ) INVPIDX = 1
 
 C.........  Set the number of sources 
         NSRC = NROWS3D
@@ -89,8 +102,8 @@ C.........  Set source-category-specific information
 
         CASE( 'AREA' )
 
-            LSCCEND  = 4
-            RSCCBEG  = 5
+            LSCCEND  = 7
+            RSCCBEG  = 8
             NPPOL    = NARPPOL3
             PLTIDX   = MXARCHR3
             MXCHRS   = MXARCHR3
@@ -102,8 +115,8 @@ C.........  Set source-category-specific information
             
         CASE( 'MOBILE' )
 
-            LSCCEND  = 7
-            RSCCBEG  = 8
+            LSCCEND  = SCCLEN3 - VIDLEN3   ! For reset SCCs CRWT // VCID
+            RSCCBEG  = LSCCEND + 1
             NPPOL    = NMBPPOL3
             PLTIDX   = 2
             MXCHRS   = MXMBCHR3
@@ -147,10 +160,16 @@ C.............  Allocate memory for pollutant names and/or activities
         NIPPA = NIPOL + NIACT
 
 C............. Allocate memory for the array that stors pollutant
-C............. names and activity names. Populate this array in the
-C............. loops below that fill EINAM and NIACT
+C............. names and activity names, units, and descriptions. Populate 
+C              this array in the loops below that fill EINAM and NIACT
         ALLOCATE( EANAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
+        ALLOCATE( EAREAD( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EAREAD', PROGNAME )
+        ALLOCATE( EAUNIT( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EAUNIT', PROGNAME )
+        ALLOCATE( EADESC( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EADESC', PROGNAME )
 
 C.............  Allocate memory for and store pollutant names 
         ALLOCATE( EINAM( NIPOL ), STAT=IOS )
@@ -161,11 +180,15 @@ C.............  Allocate memory for and store pollutant names
         DO I = 1, NIPOL
 
             K = K + 1
-            EINAM( I ) = VNAME3D( J )
-	    EANAM( K ) = EINAM( I )
+            EINAM ( I ) = VNAME3D( J )
+	    EANAM ( K ) = VNAME3D( J )
+            EAREAD( K ) = VNAME3D( J + INVPIDX )
+            EAUNIT( K ) = UNITS3D( J + INVPIDX )
+            EADESC( K ) = VDESC3D( J + INVPIDX )
+
             J = J + NPPOL   ! skip over other pollutant-spec variables
 
-        ENDDO
+        END DO
 
 C.........  Allocate memory for and store activity names
         ALLOCATE( ACTVTY( NIACT ), STAT=IOS )
@@ -175,10 +198,13 @@ C.........  Allocate memory for and store activity names
 
             K = K + 1
             ACTVTY( I ) = VNAME3D( J )
-            EANAM( K )  = ACTVTY( I )
+            EANAM ( K ) = VNAME3D( J )
+            EAREAD( K ) = VNAME3D( J )
+            EAUNIT( K ) = UNITS3D( J )
+            EADESC( K ) = VDESC3D( J )
             J = J + NPACT   ! skip over other activity-spec variables
 
-        ENDDO
+        END DO
 
 
         RETURN

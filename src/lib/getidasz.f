@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -48,9 +48,8 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         INTEGER         GETNLIST
-        INTEGER         TRIMLEN
 
-        EXTERNAL        GETNLIST, TRIMLEN
+        EXTERNAL        GETNLIST
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER       FDEV        !  unit number of input file
@@ -64,9 +63,11 @@ C...........   Other local variables
         INTEGER         IOS         !  i/o status
         INTEGER      :: IREC    = 0 !  input line counter
         INTEGER         FILFMT      !  file format code
-        INTEGER      :: NLINES  = 0 !  number of lines
-        INTEGER      :: NLINEBP = 0 !  number of lines times pollutants
+        INTEGER, SAVE:: NLINES  = 0 !  number of lines
+        INTEGER, SAVE:: NLINEBP = 0 !  number of lines times pollutants
         INTEGER      :: NPOL    = 0 !  number of pollutants at line in file
+
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
 
         CHARACTER*300   BUFFER      !  temporary buffer
         CHARACTER*300   LINE        !  input file line buffer
@@ -77,64 +78,89 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of function GETIDASZ
 
-        DO   ! Head of file read loop
+        IF( FIRSTIME ) THEN
 
-C.............  Read in part of line of file (enough for the header)
-            READ( FDEV,93000, END=111, IOSTAT=IOS ) LINE
-            IREC = IREC + 1
+            FIRSTIME = .FALSE.
+
+            DO   ! Head of file read loop
+
+C.................  Read in part of line of file (enough for the header)
+                READ( FDEV,93000, END=111, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
  
-C.............  Check I/O error status
-            IF( IOS .GT. 0 ) THEN
-                WRITE( MESG, 94010 )
-     &                 'Error', IOS,  'reading IDA input file ' //
-     &                 'as character strings at line', IREC
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.................  Check I/O error status
+                IF( IOS .GT. 0 ) THEN
+                    WRITE( MESG, 94010 )
+     &                     'Error', IOS,  'reading IDA input file ' // 
+     &                     'as character strings at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-            ENDIF
+                END IF
 
-C.............  Scan for header lines
-            IF( LINE( 1:1 ) .EQ. '#' ) THEN
+C.................  Skip blank lines
+                IF( LINE .EQ. ' ' ) CYCLE
 
-C.................  Scan for pollutant header field
-                L = TRIMLEN( LINE )
-                I = INDEX( LINE( 2:L ), 'POLID' )
+C.................  Scan for header lines
+                IF( LINE( 1:1 ) .EQ. '#' ) THEN
 
-                IF( I .GT. 0 ) THEN
-                    I = I + 5
-                    BUFFER = LINE( I:L )
-                    L = L - I - 1
+C.....................  Scan for pollutant header field
+                    L = LEN_TRIM( LINE )
+                    I = INDEX( LINE, 'POLID' )
+
+                    IF( I .GT. 0 ) THEN
+                        I = I + 5
+                        BUFFER = LINE( I:L )
+                        L = L - I - 1
   
-                    CALL UPCASE( BUFFER )
-                    NPOL = GETNLIST( L, BUFFER )
+                        CALL UPCASE( BUFFER )
+                        NPOL = GETNLIST( L, BUFFER )
 
-                ENDIF
+                    END IF
 
-                CYCLE  ! to end of loop
+                    CYCLE  ! to end of loop
 
-C.............  Check to ensure header was there!
-            ELSEIF( NPOL .EQ. 0 ) THEN
+C.................  Otherwise, count the lines and lines times pollutants
+                ELSE
 
-                WRITE( MESG,94010 ) 'No #POLID header in IDA file', FDEV
+C.....................  First, check to ensure header was there for area and 
+C                       point sources
+C.....................  For mobile sources, header will not be there, so set
+C                       NPOL to 1 for the VMT
+                    IF( NPOL .EQ. 0 ) THEN
+
+                        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                            NPOL = 1
+                        ELSE
+                            WRITE( MESG,94010 ) 
+     &                             'No #POLID header in IDA file', FDEV
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+
+                    END IF
+
+                    NLINES  = NLINES  + 1
+                    NLINEBP = NLINEBP + NPOL
+
+                END IF
+
+            END DO
+
+111         CONTINUE  ! Exit from read loop
+
+            IF( NLINES .EQ. 0 ) THEN
+                MESG = 'IDA-formatted inventory file has no valid ' //
+     &                 'lines of inventory data.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
-C.............  Otherwise, count the lines and lines times pollutants
-            ELSE
-
-                NLINES = NLINES + 1
-                NLINEBP = NLINEBP + NPOL
-
-            ENDIF
-
-        ENDDO
-
-111     CONTINUE  ! Exit from read loop
+        END IF  ! end of first time
 
         REWIND( FDEV )
 
         IF( OUTTYPE .EQ. 1 ) THEN
             GETIDASZ = NLINES
 
-        ELSEIF( OUTTYPE .EQ. 2 ) THEN
+        ELSE IF( OUTTYPE .EQ. 2 ) THEN
             GETIDASZ = NLINEBP
 
         ELSE
@@ -143,7 +169,7 @@ C.............  Otherwise, count the lines and lines times pollutants
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
-        ENDIF
+        END IF
 
         RETURN
 

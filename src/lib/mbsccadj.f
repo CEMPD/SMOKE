@@ -1,5 +1,5 @@
 
-        SUBROUTINE MBSCCADJ( TSCC, CRWT, CVID, TSCCINTL )
+        SUBROUTINE MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCCINTL, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -46,12 +46,19 @@ C.........  This module contains the information about the source category
 
         IMPLICIT NONE
 
+C...........   INCLUDES
+
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        CHARACTER*2     CRLF
         INTEGER         FIND1
-        INTEGER         FIND1, STR2INT
-        EXTERNAL  STR2INT
+        INTEGER         STR2INT
+
+        EXTERNAL    CRLF, FIND1, STR2INT
 
 C.........   SUBROUTINE ARGUMENTS
+        INTEGER               , INTENT (IN) :: IREC     ! line number
         CHARACTER(LEN=SCCLEN3), INTENT (IN) :: TSCC     ! external SCC
         CHARACTER(LEN=RWTLEN3), INTENT(OUT) :: CRWT     ! roadway type no.
         CHARACTER(LEN=VIDLEN3), INTENT(OUT) :: CVID     ! vehicle type ID no.
@@ -76,9 +83,6 @@ C.........  Set up roadway type format
         IF( FIRSTIME ) THEN
             WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
         END IF
-
-C.........  Initialize error flag
-        EFLAG = .FALSE.
 
 C.........  Set road class from the TSCC
         RCL = STR2INT( TSCC( 8:10 ) )

@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -77,10 +77,10 @@ C.........  Retrieve file header
 
 C.........  Make sure variable name has proper spacing that is the same as
 C           file header
-        L1 = INDEX( VDESC, '_' )
+        L1 = INDEX( VDESC, SPJOIN )
         L2 = LEN_TRIM( VDESC )
         DBUF = VDESC( 1:L1-1 )
-        DBUF = DBUF( 1:IOVLEN3 ) // '_' // VDESC( L1+1:L2 )
+        DBUF = DBUF( 1:IOVLEN3 ) // SPJOIN // VDESC( L1+1:L2 )
 
 C.........  Find variable description in list of descriptions
         J = INDEX1( DBUF, NVARS3D, VDESC3D )

@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -144,12 +144,12 @@ C.........  Initialize factors to 1.0
 
         CASE( 'WEEKDAY' )
             NFAC = 24
-            ALLOCATE( DIUREF( NPROF ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'DIUREF', PROGNAME )
-            ALLOCATE( DIUFAC( NFAC,NPROF ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'DIUFAC', PROGNAME )
+            ALLOCATE( WKDREF( NPROF ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'WKDREF', PROGNAME )
+            ALLOCATE( WKDFAC( NFAC,NPROF ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'WKDFAC', PROGNAME )
 
-            DIUFAC = 1.0
+            WKDFAC = 1.0
 
         CASE( 'WEEKEND' )
             NFAC = 24
@@ -273,7 +273,7 @@ C.........  Store sorted profiles, depending on profile type
         SELECT CASE( PROFTYPE )
 
         CASE( 'WEEKDAY' )
-            CALL STORE_TPROF( NPROF, NFAC, DIUREF, DIUFAC )
+            CALL STORE_TPROF( NPROF, NFAC, WKDREF, WKDFAC )
 
         CASE( 'WEEKEND' )
             CALL STORE_TPROF( NPROF, NFAC, ENDREF, ENDFAC )

@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -39,8 +39,7 @@ C
 C***************************************************************************
 
 C...........   Modules for public variables
-C              This module contains the speciation profile tables
-
+C...........   This module contains the speciation profile tables
         USE MODSPRO
 
         IMPLICIT NONE
@@ -57,7 +56,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL        CRLF, GETFLINE, INDEX1
 
-C...........   Subroutine arguments (note: outputs MXSPFUL, MXSPEC, and SPCNAMES
+C...........   Subroutine arguments (note- outputs MXSPFUL, MXSPEC, and SPCNAMES
 C              passed via module MODSPRO)
 
         INTEGER     , INTENT  (IN) :: FDEV            ! file unit number
@@ -68,6 +67,7 @@ C...........   Arrays for getting pollutant-specific information from file
         INTEGER       NENTRA ( NIPOL )   ! number of table entries per pollutant
         INTEGER       NSPECA ( NIPOL )   ! number of species per pollutant
         CHARACTER*16  POLNAMA( NIPOL )   ! unsorted pollutant names
+        LOGICAL       LMOLAR ( NIPOL )   ! true: moles conversion is not mass
 
 C...........   Arrays for getting species-specific information from file
         INTEGER     , ALLOCATABLE :: INDX1A ( : ) ! sorting index for SPECNMA
@@ -87,6 +87,8 @@ C...........   Local variables
         INTEGER        PPOS       ! tmp position (from INDEX1) of pol in POLNAMA
         INTEGER        SPOS       ! tmp position (from INDEX1) of pol in SPECNMA
 
+        REAL           FAC1, FAC2 ! tmp speciation profile factors
+
         CHARACTER*5    TMPPRF     ! tmp profile number
         CHARACTER*16   POLNAM     ! pollutant name
         CHARACTER*16   SPECNM     ! tmp species name
@@ -96,34 +98,50 @@ C...........   Local variables
 
 C***********************************************************************
 C   Begin body of subroutine DSCSPROF
+
+C...........  Make sure routine arguments are valid
+        IF( FDEV .LE. 0 .OR. NIPOL .LE. 0 ) THEN
+            MESG = 'INTERNAL ERROR: Invalid subroutine arguments'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
        
 C...........   Determine length of input file and allocate memory for
 C              a temporary species names array, an array that
 C              associates a pollutant with each species name, and an
 C              index array
 
-        NLINES = GETFLINE( FDEV )
+        NLINES = GETFLINE( FDEV, 'Speciation profile file' )
         ALLOCATE( SPECNMA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPECNMA', PROGNAME )
         ALLOCATE( ISPOL( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ISPOL', PROGNAME )
         ALLOCATE( INDX1A( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDX1A', PROGNAME )
+        ALLOCATE( SPCNAMES( MXVARS3,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCNAMES', PROGNAME )
 
-C...........   Initialize species count per pollutant
-        NSPECA = 0.  ! array
+C...........   Initialize species count per pollutant and flag for indicating
+C              true molar conversions (NOTE - for some pollutants like PM10,
+C              there is no mole-based factor and outputu should be in units
+C              of gm/mole into the mole-base speciation matrix)
+        NENTRA  = 0        ! array
+        NSPECA  = 0.       ! array
+        POLNAMA = ' '      ! array
+        LMOLAR  = .TRUE.   ! array
 
 C...........   Read through input file to determine the total number
 C              of pollutants in the input file, to determine the
-C              number of profiles per pollutant, and to
-C              store the unique species names.
+C              number of profiles per pollutant, to store the unique 
+C              species names, and to store the units for mass-based and
+C              mole-based conversions
         ICOUNT = 1
         IPOL   = 0
         IREC   = 0
         ISP    = 0
         DO I = 1, NLINES
         
-            READ( FDEV,93100,END=999,IOSTAT=IOS ) TMPPRF, POLNAM, SPECNM
+            READ( FDEV,93100,END=999,IOSTAT=IOS ) 
+     &                             TMPPRF, POLNAM, SPECNM, FAC1, FAC2
      
             IREC = IREC + 1
              
@@ -149,6 +167,9 @@ C.............  Search for pollutant unique list of all pollutants
                 POLNAMA( IPOL ) = POLNAM    ! add POLNAM to POLNAMA
                 NENTRA ( IPOL ) = 1         ! init for first entry per pol
 
+C.................  If mole-based factor is unity, then no molar transform
+                IF( FAC1/FAC2 .EQ. 1. ) LMOLAR( J ) = .FALSE.
+
                 PPOS = IPOL   ! Set for storing species count, below
                
             ELSE     ! if current POLNAM is already in POLNAMA, then
@@ -161,35 +182,52 @@ C                   for this pollutant
             
             SPOS = INDEX1( SPECNM, ISP, SPECNMA )
         
-            IF ( SPOS .EQ. 0 ) THEN    ! if current SPECNM is not in
+            IF ( SPOS .LE. 0 ) THEN    ! if current SPECNM is not in
                                            ! SPECNMA, then
                 ISP = ISP + 1
                 INDX1A ( ISP )  = ISP
                 SPECNMA( ISP )  = SPECNM
                 ISPOL  ( ISP )  = J
-                NSPECA ( PPOS ) = NSPECA( PPOS ) + 1
      
             END IF
+
+C.............  Check if species is already stored for current pollutant, and
+C               if not, increment species-per-pollutant counter and 
+C               add species to list.
+            K = NSPECA( PPOS ) 
+            J = INDEX1( SPECNM, K, SPCNAMES( 1,PPOS ) )
+
+            IF( J .LE. 0 ) THEN
             
+                K = K + 1
+
+                IF( K .LE. MXVARS3 ) THEN
+                    SPCNAMES( K, PPOS ) = SPECNM
+                END IF
+
+                NSPECA( PPOS ) = K
+
+            END IF
+
         END DO
 
-C...........   Loop through NENTRA and NSPECA to determine the MXSPFUL & MXSPEC
-
-        MXSPFUL = NENTRA( 1 )
-        MXSPEC  = NSPECA( 1 )
- 
-        DO I = 1, IPOL
- 
-             IF ( NENTRA( I ) .GT. MXSPFUL ) MXSPFUL = NENTRA( I )
-             IF ( NSPECA( I ) .GT. MXSPEC  ) MXSPEC  = NSPECA( I )
-      
-        END DO
- 
-C...........   Allocate memory for species names array
+C...........   Determine the max species per full table, and the max species
+C              per pollutant
+        MXSPFUL = MAXVAL( NENTRA )
+        MXSPEC  = MAXVAL( NSPECA )
+       
+C...........   Allocate memory for species names array and units to use for
+C              mole-based transformations. Also initialize.
+        DEALLOCATE( SPCNAMES )
         ALLOCATE( SPCNAMES( MXSPEC,NIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCNAMES', PROGNAME )
+        ALLOCATE( MOLUNITS( MXSPEC,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MOLUNITS', PROGNAME )
 
-C...........   Sort master pollutant names
+        SPCNAMES = ' '   ! array
+        MOLUNITS = ' '   ! array
+
+C...........   Sort master species names
         CALL SORTIC( ISP , INDX1A, SPECNMA )  ! sort on SPECNMA
 
 C...........   Initialize species names table and counter per pollutant
@@ -209,10 +247,19 @@ C              position stored for the species, then write to SPCNAMES table.
 
                      ICOUNT = ICOUNT + 1
                      SPCNAMES( ICOUNT, I ) = SPECNMA( K )
-  
+
+C......................  When the pollutant does not have molar factors, store
+C                        the molar units as mass units
+                     IF( LMOLAR( I ) ) THEN
+                         MOLUNITS( ICOUNT, I ) = SMOLUNIT
+                     ELSE
+                         MOLUNITS( ICOUNT, I ) = SMASUNIT
+                     END IF
+
                 END IF
        
             END DO
+
         END DO
  
 C........  Rewind file
@@ -232,7 +279,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93100   FORMAT( A5, 1X, A16, 1X, A16 )
+93100   FORMAT( A5, 1X, A16, 1X, A16, 1X, G13.0, 1X, G13.0, 1X, G9.0 )
 
 C...........   Internal buffering formats............ 94xxx
 

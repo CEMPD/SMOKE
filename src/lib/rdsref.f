@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -80,9 +80,9 @@ C...........   Local parameters
         CHARACTER*6, PARAMETER :: LOCCATS( 3 ) = 
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
-C...........   Sorted pollutant names
-        INTEGER                   INDXP  ( NIPOL ) !  sorting index for pols
-        CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPOL ) !  sorted pollutant names
+C...........   Sorted pollutant/emission type names
+        INTEGER                   INDXP  ( NIPPA ) !  sort index for pols/etypes
+        CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPPA ) !  sorted pol/etype names
 
 C...........   Array of point source plant characeristics
         CHARACTER(LEN=CHRLEN3) CHARS( 5 )
@@ -97,7 +97,6 @@ C...........   Array for parsing list-formatted inputs
 C...........   Other local variables
         INTEGER         I, J, J1, J2, K, L, N    !  counters and indices
 
-        INTEGER         COD     !  temporary pollutant code
         INTEGER         FIP     !  temporary FIPS code
         INTEGER         IDIU    !  temporary diurnal profile code     
         INTEGER         IDUM    !  dummy integer
@@ -106,7 +105,7 @@ C...........   Other local variables
         INTEGER         IWEK    !  temporary weekly profile code
         INTEGER         IREC    !  record counter
         INTEGER         JS      !  position of SCC in source chars in x-ref file
-        INTEGER         JSPC    !  tmp index to master pollutant list
+        INTEGER         JSPC    !  tmp index to master pollutant/etype list
         INTEGER         LPCK    !  length of point definition packet
         INTEGER         NCIN    !  number of chars after Cy/St/Co from file
         INTEGER         NCINSHFT!  ending position in SEGMENT
@@ -129,11 +128,11 @@ C...........   Other local variables
         CHARACTER*300          LINE     !  line buffer
         CHARACTER*300          MESG     !  message buffer
         CHARACTER(LEN=SICLEN3) CDUM     !  dummy buffer for SIC code
-        CHARACTER(LEN=IOVLEN3) CPOL     !  temporary pollutant name
+        CHARACTER(LEN=IOVLEN3) CPOA     !  temporary pollutant/emis type name
         CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol
         CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
         CHARACTER(LEN=RWTLEN3) CRWT     !  buffer for roadway type code
-        CHARACTER(LEN=VIDLEN3) CVTP     !  buffer for vehicle type ID (no name)
+        CHARACTER(LEN=VIDLEN3) CVID     !  buffer for vehicle type ID (no name)
         CHARACTER(LEN=FIPLEN3) FIPZERO  !  buffer for zero Cy/St/Co code
         CHARACTER(LEN=LNKLEN3) LNKZERO  !  buffer for zero Link ID
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
@@ -173,20 +172,21 @@ C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
         LNKZERO = REPEAT( '0', LNKLEN3 )
 
-C.........  Sort the actual list of pollutant names and store it
-        DO I = 1, NIPOL
+C.........  Sort the actual list of pollutant/emis type names and store it
+        DO I = 1, NIPPA
             INDXP( I ) = I
         END DO
 
-        CALL SORTIC( NIPOL, INDXP, EINAM )
+        CALL SORTIC( NIPPA, INDXP, EANAM )
 
-        DO I = 1, NIPOL
+        DO I = 1, NIPPA
             J = INDXP( I )
-            SRTINAM( I ) = EINAM( J )
+            SRTINAM( I ) = EANAM( J )
         END DO
 
-C NOTE: It might be worthwhile to have SRTINAM and INDXP in the MODLISTS and
-C        set in GETSINFO
+C.........  Write status message
+        MESG = 'Reading speciation cross-reference file...'
+        CALL M3MSG2( MESG )
 
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'Speciation cross reference file' )
@@ -203,8 +203,8 @@ C.........  Allocate memory for unsorted data used in all source categories
         ALLOCATE( INDXTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
 
-C.........   Set the number of input fields after the pollutant ID in the input
-C            file format
+C.........   Set the number of input fields after the pollutant/emis type name
+C            in the input file format
         SELECT CASE( CATEGORY )
         CASE( 'AREA' ) 
             NCIN     = 1  !  FIPS code
@@ -222,10 +222,8 @@ C.........  Put file read pointer at top of file
         REWIND( FDEV )
 
 C.........  Initialize character strings
-        CHARS = ' ' ! array
-
-        MESG = 'Reading speciation cross-reference file...'
-        CALL M3MSG2( MESG )
+        CHARS   = ' ' ! array
+        SEGMENT = ' '  ! array
 
 C.........  Read lines and store unsorted data for the source category of 
 C           interest
@@ -284,7 +282,7 @@ C                   all source categories (NCIN set above)
 
                     TSCC   = LINE( 1:10 )
                     SPCODE = LINE( 12:16 )  !  profile number
-                    CPOL   = LINE( 18:33 )  !  pollutant name
+                    CPOA   = LINE( 18:33 )  !  pollutant/emis type name
                     CFIP   = SEGMENT( 1 )
                     PLT    = SEGMENT( 2 )
                     PROC   = SEGMENT( 2 )
@@ -297,7 +295,7 @@ C.................  Otherwise, read in list format
 
                     TSCC   = SEGMENT( 1 )
                     SPCODE = SEGMENT( 2 )                    
-                    CPOL   = SEGMENT( 3 )
+                    CPOA   = SEGMENT( 3 )
                     CFIP   = SEGMENT( 4 )
                     PLT    = SEGMENT( 5 )
                     PROC   = SEGMENT( 5 )
@@ -308,18 +306,18 @@ C.................  Otherwise, read in list format
 C.................  Adjust these for proper sorting and matching with profiles
 C                   file.
                 SPCODE = ADJUSTR( SPCODE )
-                CPOL   = ADJUSTL( CPOL   )
+                CPOA   = ADJUSTL( CPOA   )
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, and compare
-C                   pollutant name with master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOL, IDUM, 
+C                   pollutant/emission type name with master list.
+                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, 
      &                         IDUM, JSPC, PFLAG, SKIPREC  )
      
                 SKIPPOL = ( SKIPPOL .OR. PFLAG )
 
 C.................  Filter the case where the pollutant code is not present
-                IF( CPOL .EQ. ' ' ) THEN
+                IF( CPOA .EQ. ' ' ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG, 94010 ) 
      &                     'ERROR: Skipping cross-reference entry ' //
@@ -361,13 +359,15 @@ C.................  Store case-specific fields from cross reference
                     CSRCTA( N ) = CSRCALL( 1:SRCLEN3 )
 
                 CASE( 'MOBILE' )
-                    CRWT = TSCC( SRS:SRE )
-                    CVTP = TSCC( SVS:SVE )
 
-                    CALL BLDCSRC( CFIP, CRWT, LNKZERO, CVTP, PROC, 
-     &                            CHRBLNK3, CHRBLNK3, CPOL, CSRCALL )
+C.....................  Convert TSCC to internal value
+                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
 
-                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 )
+                    CALL BLDCSRC( CFIP, CRWT, LNKZERO, CHRBLNK3,
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
+     &                            POLBLNK3, CSRCALL )
+
+                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // CPOS
 
                 CASE( 'POINT' )
  
@@ -384,7 +384,7 @@ C.....................  Store sorting criteria as right-justified in fields
 
 C.................  Store case-indpendent fields from cross-reference
                 INDXTA( N ) = N
-                ISPTA ( N ) = JSPC    ! Save index to EINAM or zero
+                ISPTA ( N ) = JSPC    ! Save index to EANAM or zero
                 CSCCTA( N ) = TSCC
                 CSPRNA( N ) = SPCODE
 
@@ -399,7 +399,8 @@ C.........  Write warning message for pollutants in cross-reference that are
 C           not in master list
         IF( SKIPPOL ) THEN
             MESG = 'Pollutant-specific entries in the speciation ' //
-     &             'cross-reference file have been skipped.'
+     &             'cross-reference file have ' // CRLF() // BLANK10 //
+     &             'been skipped.'
             CALL M3WARN( PROGNAME, 0, 0, MESG )
         END IF
 
@@ -428,7 +429,7 @@ C.......  Check for errors reading XREF file, and abort
 
 C.........  Sort speciation cross-reference entries. Since CPOS was used in 
 C           building CSRCTA, and CPOS will equal "0" when the x-ref entry is
-C           not pollutant-specific, the non-pollutant-specific entries will
+C           not pollutant/emistype-specific, the these entries will
 C           always appear first.  This is necessary for the table-generating
 C           subroutines.
         CALL SORTIC( NXREF, INDXTA, CSRCTA )

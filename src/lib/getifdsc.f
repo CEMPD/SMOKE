@@ -1,11 +1,12 @@
 
-        INTEGER FUNCTION GETIFDSC( FILEINFO, KEY )
+        INTEGER FUNCTION GETIFDSC( FILEINFO, KEY, REQUIRED )
 
 C***********************************************************************
 C  function body starts at line
 C
 C  DESCRIPTION: 
-C     Retreives an integer from the FDESC array
+C     Retreives an integer from the FDESC array or returns -1 if key is not
+C     required to be found and key is not present
 C
 C  PRECONDITIONS REQUIRED:
 C     
@@ -21,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,8 +46,10 @@ C...........   Include files
 
 C...........   ARGUMENTS and their descriptions:
 
-        CHARACTER*(*) FILEINFO( * )! Array of file information
-        CHARACTER*(*) KEY          ! Key to search for in FILEINFO
+        CHARACTER(*), INTENT (IN) :: FILEINFO( * ) ! Array of file information
+        CHARACTER(*), INTENT (IN) :: KEY           ! Key to find in FILEINFO
+        LOGICAL     , INTENT (IN) :: REQUIRED      ! true: key must be found
+
 
 C...........   EXTERNAL FUNCTIONS:
         INTEGER    STR2INT
@@ -67,7 +70,7 @@ C...........   LOCAL VARIABLES their descriptions:
         CHARACTER*16 :: PROGNAME = 'GETIFDSC'    ! Program name
 
 C***********************************************************************
-C   begin body of subroutine GETIFDSC
+C   begin body of function GETIFDSC
 
         L1 = TRIMLEN( KEY )
         BUFFER = ADJUSTL( KEY( 1:L1 ) )
@@ -81,12 +84,12 @@ C   begin body of subroutine GETIFDSC
             IF( K .GT. 0 ) THEN
 
                 L2 = TRIMLEN( FILEINFO( I ) )
-                IVAL = STR2INT( FILEINFO( I )( K+L1-1:L2 ) )
+                IVAL = STR2INT( FILEINFO( I )( K+L1:L2 ) )
 
                 IF( IVAL .EQ. IMISS3 ) THEN
                     MESG = 'ERROR: non-integer result found at FDESC '//
      &                     'entry "'// KEY( 1:L1 )// '" in NetCDF file'
-                    CALL M3EXIT( MESG, 0, 0, PROGNAME, 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 ELSE
                     GETIFDSC = IVAL
@@ -97,11 +100,19 @@ C   begin body of subroutine GETIFDSC
 
         ENDDO
 
-C.........  If we get here, then key was not found in FDESC!
+C.........  If we get here, then key was not found in FDESC, so if it was
+C           required, then abort.
 
-        MESG = 'ERROR: key "' // KEY( 1:L1 ) // 
-     &         '" not found in NetCDF file!'
-        CALL M3EXIT( MESG, 0, 0, PROGNAME, 2 )
+        IF( REQUIRED ) THEN
+            MESG = 'FDESC3D packet "' // KEY( 1:L1 ) // 
+     &             '" was not found in NetCDF file!'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        ELSE
+            GETIFDSC = -1
+            RETURN
+
+        END IF
     
 C******************  FORMAT  STATEMENTS   ******************************
 
@@ -109,4 +120,4 @@ C...........   Internal buffering formats.............94xxx
  
 94010   FORMAT( 10( A, :, I6, :, 2X ) )
 
-        END
+        END FUNCTION GETIFDSC

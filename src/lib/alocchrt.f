@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -65,63 +65,63 @@ C.........  First deallocate if these have previously been allocated
 
         END IF
 
-        J = ICSIZE( 2 )                               ! SCC=left, FIP=0
+        J = MAX( 1, ICSIZE( 2 ) )                     ! SCC=left, FIP=0
         ALLOCATE( CHRT02( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT02', PROGNAME )
 
-        J = ICSIZE( 3 )                               ! SCC=all, FIP=0
+        J = MAX( 1, ICSIZE( 3 ) )                     ! SCC=all, FIP=0
         ALLOCATE( CHRT03( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT03', PROGNAME )
                 
-        J = ICSIZE( 4 )                               ! SCC=0, FIP=state
+        J = MAX( 1, ICSIZE( 4 ) )                     ! SCC=0, FIP=state
         ALLOCATE( CHRT04( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT04', PROGNAME )
             
-        J = ICSIZE( 5 )                               ! SCC=left, FIP=state
+        J = MAX( 1, ICSIZE( 5 ) )                     ! SCC=left, FIP=state
         ALLOCATE( CHRT05( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT05', PROGNAME )
             
-        J = ICSIZE( 6 )                               ! SCC=all, FIP=state
+        J = MAX( 1, ICSIZE( 6 ) )                     ! SCC=all, FIP=state
         ALLOCATE( CHRT06( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT06', PROGNAME )
                         
-        J = ICSIZE( 7 )                               ! SCC=0, FIP=all
+        J = MAX( 1, ICSIZE( 7 ) )                     ! SCC=0, FIP=all
         ALLOCATE( CHRT07( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT07', PROGNAME )
             
-        J = ICSIZE( 8 )                               ! SCC=left, FIP=all
+        J = MAX( 1, ICSIZE( 8 ) )                     ! SCC=left, FIP=all
         ALLOCATE( CHRT08( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT08', PROGNAME )
                         
-        J = ICSIZE( 9 )                               ! SCC=all, FIP=all
+        J = MAX( 1, ICSIZE( 9 ) )                     ! SCC=all, FIP=all
         ALLOCATE( CHRT09( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT09', PROGNAME )
             
-        J = ICSIZE( 10 )                              ! PLANT=non-blank, SCC=0
+        J = MAX( 1, ICSIZE( 10 ) )                    ! PLANT=non-blank, SCC=0
         ALLOCATE( CHRT10( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT10', PROGNAME )
             
-        J = ICSIZE( 11 )                              ! PLANT=non-blank, SCC=all     
+        J = MAX( 1, ICSIZE( 11 ) )                    ! PLANT=non-blank, SCC=all
         ALLOCATE( CHRT11( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT11', PROGNAME )
             
-        J = ICSIZE( 12 )                              ! CHAR1=non-blank, SCC=all     
+        J = MAX( 1, ICSIZE( 12 ) )                    ! CHAR1=non-blank, SCC=all
         ALLOCATE( CHRT12( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT12', PROGNAME )
             
-        J = ICSIZE( 13 )                              ! CHAR2=non-blank, SCC=all
+        J = MAX( 1, ICSIZE( 13 ) )                    ! CHAR2=non-blank, SCC=all
         ALLOCATE( CHRT13( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT13', PROGNAME )
             
-        J = ICSIZE( 14 )                              ! CHAR3=non-blank, SCC=all
+        J = MAX( 1, ICSIZE( 14 ) )                    ! CHAR3=non-blank, SCC=all
         ALLOCATE( CHRT14( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT14', PROGNAME )
           
-        J = ICSIZE( 15 )                              ! CHAR4=non-blank, SCC=all
+        J = MAX( 1, ICSIZE( 15 ) )                    ! CHAR4=non-blank, SCC=all
         ALLOCATE( CHRT15( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT15', PROGNAME )
             
-        J = ICSIZE( 16 )                              ! CHAR5=non-blank, SCC=all
+        J = MAX( 1, ICSIZE( 16 ) )                    ! CHAR5=non-blank, SCC=all
         ALLOCATE( CHRT16( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT16', PROGNAME )
             

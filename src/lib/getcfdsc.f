@@ -1,5 +1,5 @@
 
-        CHARACTER*(*) FUNCTION GETCFDSC( FILEINFO, KEY )
+        CHARACTER*(*) FUNCTION GETCFDSC( FILEINFO, KEY, REQUIRED )
 
 C***********************************************************************
 C  function body starts at line
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -46,8 +46,9 @@ C...........   Include files
 
 C...........   ARGUMENTS and their descriptions:
 
-        CHARACTER*(*) FILEINFO( * )! Array of file information
-        CHARACTER*(*) KEY          ! Key to search for in FILEINFO
+        CHARACTER(*), INTENT (IN) :: FILEINFO( * ) ! Array of file information
+        CHARACTER(*), INTENT (IN) :: KEY           ! Key to find in FILEINFO
+        LOGICAL     , INTENT (IN) :: REQUIRED      ! true: key must be found
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2  CRLF
@@ -102,20 +103,28 @@ C.........  Get length of function
      &                     LENGTH, '. Trimming FDESC3D entry.'
                     CALL M3MSG2( MESG )
 
-                ENDIF
+                END IF
 
                 GETCFDSC = ADJUSTL( CVAL( 1:LENGTH ) )
                 RETURN
 
-            ENDIF
+            END IF
 
-        ENDDO
+        END DO
 
-C.........  If we get here, then key was not found in FDESC!
+C.........  If we get here, then key was not found in FDESC, so if it was
+C           required, then abort.
 
-        MESG = 'ERROR: key "' // KEY( 1:L1 ) // 
-     &         '" not found in NetCDF file!'
-        CALL M3EXIT( MESG, 0, 0, PROGNAME, 2 )
+        IF( REQUIRED ) THEN
+            MESG = 'FDESC3D packet "' // KEY( 1:L1 ) // 
+     &             '" was not found in NetCDF file!'
+            CALL M3EXIT( MESG, 0, 0, PROGNAME, 2 )
+
+        ELSE
+            GETCFDSC = ' '
+            RETURN
+
+        END IF
     
 C******************  FORMAT  STATEMENTS   ******************************
 

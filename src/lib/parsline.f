@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,8 +45,8 @@ C***************************************************************************
         IMPLICIT NONE
 
 C...........   EXTERNAL FUNCTIONS
-        INTEGER    INDEX1
-        EXTERNAL   INDEX1
+        INTEGER    FINDC
+        EXTERNAL   FINDC
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: LINE         ! character string to parse
@@ -54,23 +54,34 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: SEGMENT( N ) ! parsed string
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: NXALP = 25
-        CHARACTER*1, PARAMETER :: XALPLIST( NXALP ) =    ! non-delimiters
-     &             ( / '~', '@', '#', '$', '%', '^', '&', '*', '(', 
-     &                 ')', '-', '_', '+', '=', '{', '}', '[', ']',
-     &                 '|', '\', '<', '>', '.', '?', '/' / )
+        INTEGER    , PARAMETER :: NDELIM = 4
+        CHARACTER*1, PARAMETER :: DELIMLST( NDELIM ) = 
+     &                         (/ ',', ' ', ';', '	' /)
+
+c        INTEGER, PARAMETER :: NXALP = 25
+c        CHARACTER*1, PARAMETER :: XALPLIST( NXALP ) =    ! non-delimiters
+c     &             ( / '~', '@', '#', '$', '%', '^', '&', '*', '(', 
+c     &                 ')', '-', '_', '+', '=', '{', '}', '[', ']',
+c     &                 '|', '\', '<', '>', '.', '?', '/' / )
              
 C...........   Array of 1-char strings for processing
         CHARACTER*1   ARRSTR( 6000 )
 
+C...........  Arrays for sorting non-delimiters on a per-machine basis
+        INTEGER              NDINDX  ( NDELIM )
+        CHARACTER*1, SAVE :: DELIMSRT( NDELIM )
+
 C...........   Other local variables
-        INTEGER         I, L, L1, L2     !  counters and indices
+        INTEGER         I, J, L, L1, L2  !  counters and indices
+        INTEGER         IXP              !  index to non-delimeters
         INTEGER      :: NCNT             !  count of fields
 
         LOGICAL      :: ALPHA            !  true when within alpha-numeric 
         LOGICAL      :: DELIM            !  true when within or past delimiter 
+        LOGICAL      :: FIRSTIME = .TRUE.!  true first time routine is called
         LOGICAL      :: NUMBER           !  true when within number in string 
         LOGICAL      :: QUOTED           !  true when within quotes in string
+        LOGICAL      :: THISNMBR         !  true when current iteration is numbr
 
         CHARACTER*1     CBUF             !  temporary buffer
         CHARACTER*1  :: DOUBLEQ = '"'
@@ -85,10 +96,27 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine PARSLINE
 
+C.........  The first time the routine is called, sort the list of delimiters
+        IF( FIRSTIME ) THEN
+            DO I = 1, NDELIM 
+                NDINDX( I ) = I
+            END DO
+
+            CALL SORTIC( NDELIM, NDINDX, DELIMLST )
+
+            DO I = 1, NDELIM 
+                J = NDINDX( I )
+                DELIMSRT( I ) = DELIMLST( J )
+            END DO
+
+            FIRSTIME = .FALSE.
+
+        END IF
+
         L2 = LEN_TRIM( LINE )
 
 C.........  Check for comments, and use to set the end of the line
-        L = INDEX( LINE, '!' )
+        L = INDEX( LINE( 1:L2 ), '!' )
 
         IF( L .LE. 0 ) THEN
             L = L2
@@ -110,12 +138,17 @@ C.........  Process LINE 1-character at a time
 
             CBUF = LINE( I:I )
 
+C.............  Look for character in delimiters
+            IXP = FINDC( CBUF, NDELIM, DELIMSRT )
+
+C.............  Evaluate the current character for number or not
+            THISNMBR = ( CBUF .GE. '0' .AND. CBUF .LE. '9' )
+
 C.............  Waiting for next field...
             IF( DELIM ) THEN
 
-                NUMBER = ( CBUF .GE. '0' .AND. CBUF .LE. '9' )
-                ALPHA  = ( .NOT. NUMBER .AND. CBUF .NE. ',' .AND.
-     &                     CBUF .NE. ' ' .AND. CBUF .NE. ';' )
+                NUMBER = THISNMBR
+                ALPHA  = ( .NOT. NUMBER .AND. IXP .LE. 0 )
 
                 IF( ALPHA ) THEN
                     DELIM = .FALSE.
@@ -155,34 +188,18 @@ C.............  In a quoted field, skip everything unless it is an end quote
                   
                 ENDIF
 
-C.............  If start of field was a number, but adjacent character is a
-C               alpha, then turn field into an alpha (periods would delimit)
-            ELSEIF( NUMBER .AND. 
-     &            ( ( CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) .OR.
-     &              INDEX1( CBUF, NXALP, XALPLIST ) .GT. 0 ) ) THEN
+C.............  If start of field was a number, but adjacent character is not
+C               a delimiter, then turn field into an alpha
+            ELSEIF( NUMBER .AND. .NOT. THISNMBR .AND. IXP .LE. 0 ) THEN
                 ALPHA  = .TRUE.
                 NUMBER = .FALSE.
 
-C.............  If start of field was a number, and this is not a decimal or
-C               another number, then end of number has been reached
-            ELSEIF( NUMBER .AND. 
-     &              CBUF .NE. PERIOD .AND.
-     &            ( CBUF .LT. '0' .OR. CBUF .GT. '9' ) ) THEN
+C.............  If start of field was a number or alpha, and this is a 
+C               delimiter, then end of number has been reached
+            ELSE IF( IXP .GT. 0 ) THEN
+                ALPHA = .FALSE.
                 NUMBER = .FALSE.
                 DELIM  = .TRUE.
-                L2     = I - 1
-
-                CALL STORE_SEGMENT
-
-C.............  If start of field was an alpha, and this is not an 
-C               alpha-numeric, then end of alpha has been reached.
-            ELSEIF( ALPHA .AND.
-     &              .NOT. ( CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) .AND.
-     &              .NOT. ( CBUF .GE. '0' .AND. CBUF .LE. '9' ) .AND.
-     &              INDEX1( CBUF, NXALP, XALPLIST ) .LE. 0 ) THEN
-
-                ALPHA = .FALSE.
-                DELIM = .TRUE.
                 L2     = I - 1
 
                 CALL STORE_SEGMENT

@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -36,6 +36,10 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+
+C...........   MODULES for public variables
+C...........   This module is the inventory arrays
+        USE MODSOURC
 
         IMPLICIT NONE
 
@@ -82,23 +86,6 @@ C NOTE: Fill in later for area sources
 
 C...........   Mobile source characteristics
 C NOTE: Fill in later for mobile sources
-
-C...........   Point source characteristics
-        INTEGER, ALLOCATABLE:: ISCC  ( : )  !  source SCC
-        INTEGER, ALLOCATABLE:: ISIC  ( : )  !  source SIC
-        INTEGER, ALLOCATABLE:: IORIS ( : )  !  source ORIS ID code
-        INTEGER, ALLOCATABLE:: INVYR ( : )  !  inventory year
-        REAL   , ALLOCATABLE:: XLOCA ( : )  !  UTM X-location (m)
-        REAL   , ALLOCATABLE:: YLOCA ( : )  !  UTM Y-location (m)
-        REAL   , ALLOCATABLE:: STKHT ( : )  !  stack height   (m)
-        REAL   , ALLOCATABLE:: STKDM ( : )  !  stack diameter (m)
-        REAL   , ALLOCATABLE:: STKTK ( : )  !  exhaust temperature (deg K)
-        REAL   , ALLOCATABLE:: STKVE ( : )  !  exhaust velocity    (m/s)
-
-        CHARACTER(LEN=BLRLEN3), ALLOCATABLE:: CBLRID( : ) !  boiler ID
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE:: CPDESC( : ) !  plant description
-
-        CHARACTER(LEN=SRCLEN3), ALLOCATABLE:: CSOURC( : ) !  concatonated source
 
 C...........   IDA output variables (names same as IDA format description)
 
@@ -165,8 +152,8 @@ C.........  Get file header from I/O API NetCDF inventory file
         ENDIF
 
 C.........  Write pollutant names to single buffer for header
-        NNONPV = GETIFDSC( FDESC3, '/NON POLLUTANT/' )
-        NVPERP = GETIFDSC( FDESC3, '/PER POLLUTANT/' )
+        NNONPV = GETIFDSC( FDESC3, '/NON POLLUTANT/', .TRUE. )
+        NVPERP = GETIFDSC( FDESC3, '/PER POLLUTANT/', .TRUE. )
 
         LMAX = LEN( POLINE( 1 ) )  ! length of POLINE string
         IS   = NONPV + 1          
@@ -233,29 +220,29 @@ C.........  Allocate memory for point-source arrays and read from file
 C..............  Allocate memory 
             ALLOCATE( ISCC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISCC', PROGNAME )  
-            ALLOCATE( ISIC( NPSRC ), STAT=IOS )
+            ALLOCATE( ISIC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
-            ALLOCATE( IORIS( NPSRC ), STAT=IOS )
+            ALLOCATE( IORIS( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'IORIS', PROGNAME )
-            ALLOCATE( INVYR( NPSRC ), STAT=IOS )
+            ALLOCATE( INVYR( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
-            ALLOCATE( XLOCA( NPSRC ), STAT=IOS )
+            ALLOCATE( XLOCA( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
-            ALLOCATE( YLOCA( NPSRC ), STAT=IOS )
+            ALLOCATE( YLOCA( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
-            ALLOCATE( STKHT( NPSRC ), STAT=IOS )
+            ALLOCATE( STKHT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
-            ALLOCATE( STKDM( NPSRC ), STAT=IOS )
+            ALLOCATE( STKDM( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
-            ALLOCATE( STKTK( NPSRC ), STAT=IOS )
+            ALLOCATE( STKTK( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
-            ALLOCATE( STKVE( NPSRC ), STAT=IOS )
+            ALLOCATE( STKVE( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
-            ALLOCATE( CBLRID( NPSRC ), STAT=IOS )
+            ALLOCATE( CBLRID( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CBLRID', PROGNAME )  
-            ALLOCATE( CPDESC( NPSRC ), STAT=IOS )
+            ALLOCATE( CPDESC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )  
-            ALLOCATE( CSOURC( NPSRC ), STAT=IOS )
+            ALLOCATE( CSOURC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )  
 
 C..............  Read point-source characteristics 

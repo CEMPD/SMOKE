@@ -8,6 +8,8 @@ C  DESCRIPTION:
 C     This subroutine retrieves the models-3 episode environment
 C     variables, using the defaults provided as input.  The time step for
 C     emissions must be one hour, so this ends up being one no matter what.
+C     If the TZONE or NSTEPS arguments are negative, the subroutine will
+C     ignore the steps that involve these arguments.
 C
 C  PRECONDITIONS REQUIRED:
 C     
@@ -23,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -60,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS:
         INTEGER         SECSDIFF
         INTEGER         STR2INT
 
-        EXTERNAL   CRLF, ENVYN, GETDATE, GETNUM, MMDDYY, SECSDIFF,
+        EXTERNAL   CRLF, ENVINT, GETDATE, GETNUM, MMDDYY, SECSDIFF,
      &             STR2INT
 
 C...........   LOCAL VARIABLES their descriptions:
@@ -76,6 +78,7 @@ C...........   LOCAL VARIABLES their descriptions:
         INTEGER       ISECS        ! tmp duration in seconds
         INTEGER       IOS          ! tmp i/o status
         INTEGER       JRUNLEN      ! episode duration from E.V. (HHMMSS)
+        INTEGER       L            ! tmp string length
         INTEGER       N            ! tmp duration HHMMSS 
         INTEGER       TSTEP        ! time step (HHMMSS) 
 
@@ -90,12 +93,6 @@ C   begin body of subroutine GETM3EPI
 C.........  Hardcoded actual time step
         TSTEP = 10000
 
-C.........  Compute ending time from subroutine arguments, using 1-hour time
-C           step assumption
-        EDATE = SDATE
-        ETIME = STIME
-        CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
-
 C.........  Get episode settings from the environment (using defaults from
 C           actual files in case the environment variables are not set)
         G_SDATE = ENVINT( 'G_STDATE', 'Start date (YYYYDDD)', 
@@ -105,42 +102,72 @@ C           actual files in case the environment variables are not set)
         G_TSTEP = ENVINT( 'G_TSTEP', 'Time step (HHMMSS)', 
      &                    TSTEP, IOS )
 
-        N = NSTEPS * TSTEP
-        JRUNLEN= ENVINT( 'G_RUNLEN', 'Duration (HHMMSS)' , N, IOS )
-        G_NSTEPS = JRUNLEN / G_TSTEP
+        IF( NSTEPS .GT. 0 ) THEN  ! only reset if argument is positive.
+            N = NSTEPS * TSTEP
+            JRUNLEN = ENVINT( 'G_RUNLEN', 'Duration (HHMMSS)' , N, IOS )
+            IF( G_TSTEP .NE. 0 ) THEN
+                G_NSTEPS = JRUNLEN / G_TSTEP
+            ELSE
+                G_NSTEPS = 0
+            END IF
+        END IF
 
-C.........  Compare environment-based episode settings to those of the files
-C.........  If the environment settings are more restrictive, then reset.
-        G_EDATE = G_SDATE
-        G_ETIME = G_STIME
-        CALL NEXTIME( G_EDATE, G_ETIME, G_NSTEPS * G_TSTEP )
+C.........  Check if date and time are already set (by a file) and if so, make
+C           comparisons to the environment values.
+        IF( SDATE .GT. 0 ) THEN
 
-        ISECS = SECSDIFF( SDATE, STIME, G_SDATE, G_STIME )
-        IF( ISECS .GT. 0 ) THEN  ! environment settings are later
-            SDATE = G_SDATE
-            STIME = G_STIME
-        ELSEIF( ISECS .LT. 0 ) THEN
-            MESG = 'Episode start of episode must be later ' //
-     &             'than is set by the environment ' //
-     &             CRLF() // BLANK5 // 'because of the input files.'
-            CALL M3WARN( PROGNAME, 0, 0, MESG )
+C.............  Compute ending time from subroutine arguments, using 1-hour time
+C               step assumption
+            EDATE = SDATE
+            ETIME = STIME
+            CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
 
-        ENDIF
+C.............  Compare environment-based episode settings to those of the files
+C.............  If the environment settings are more restrictive, then reset.
+            G_EDATE = G_SDATE
+            G_ETIME = G_STIME
+            CALL NEXTIME( G_EDATE, G_ETIME, G_NSTEPS * G_TSTEP )
+  
+            ISECS = SECSDIFF( SDATE, STIME, G_SDATE, G_STIME )
+            IF( ISECS .GT. 0 ) THEN  ! environment settings are later
+                SDATE = G_SDATE
+                STIME = G_STIME
+            ELSE IF( ISECS .LT. 0 ) THEN
+                MESG = 'Start of episode must be later ' //
+     &                 'than is set by the environment ' //
+     &                 CRLF() // BLANK5 // 'because of the input files.'
+                CALL M3WARN( PROGNAME, 0, 0, MESG )
 
-        ISECS = SECSDIFF( EDATE, ETIME, G_EDATE, G_ETIME )
-        IF( ISECS .LT. 0 ) THEN  ! environment settings are earlier
-            EDATE = G_EDATE
-            ETIME = G_ETIME
+            END IF
 
-        ELSEIF( ISECS .GT. 0 ) THEN
-            MESG = 'End of episode must be earlier than is set ' //
-     &             'by the environment ' //
-     &             CRLF() // BLANK5 // 'because of the input files.'
-            CALL M3WARN( PROGNAME, 0, 0, MESG )
+            ISECS = SECSDIFF( EDATE, ETIME, G_EDATE, G_ETIME )
+            IF( ISECS .LT. 0 ) THEN  ! environment settings are earlier
+                EDATE = G_EDATE
+                ETIME = G_ETIME
 
-        ENDIF
+            ELSE IF( ISECS .GT. 0 ) THEN
+                MESG = 'End of episode must be earlier than is set ' //
+     &                 'by the environment ' //
+     &                 CRLF() // BLANK5 // 'because of the input files.'
+                CALL M3WARN( PROGNAME, 0, 0, MESG )
 
-        NSTEPS = SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600 ! assume 1 hour
+            END IF
+
+C.........  If date and time are not already set, use the environment variable
+C           values as defaults
+        ELSE
+
+            SDATE  = G_SDATE
+            STIME  = G_STIME            
+            EDATE  = SDATE
+            ETIME  = STIME
+
+            IF( NSTEPS .GT. 0 ) THEN
+                NSTEPS = G_NSTEPS
+                CALL NEXTIME( EDATE, ETIME, G_NSTEPS*G_TSTEP )
+            END IF
+
+        END IF
 
         SDATE = GETDATE( SDATE,
      &         'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
@@ -148,30 +175,58 @@ C.........  If the environment settings are more restrictive, then reset.
         STIME = GETNUM( 0, 235959, STIME, 
      &                  'Enter simulation starting time (HHMMSS)' )
   
-        NSTEPS= GETNUM( 1, 999999, NSTEPS,
-     &                  'Enter output duration (hours)' )
+C.........  Assuming NSTEPS is requested by the calling program...
+C.........  Recompute number of steps assuming 1 hour time steps
+        IF( NSTEPS .GT. 0 ) THEN
+            NSTEPS = SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600 
+
+C.............  Double check the number of time steps to ensure that the input 
+C               files are not out of range from the environment settings
+            IF( NSTEPS .LE. 0 ) THEN
+                MESG= 'Date/time from input file(s) are inconsistent '//
+     &                'with the environment ' // CRLF() // BLANK10 //
+     &                'episode settings.' 
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            NSTEPS= GETNUM( 1, NSTEPS, NSTEPS,
+     &                      'Enter output duration (hours)' )
+        END IF
+
+C.........  Get date buffer field
+        DTBUF = MMDDYY( SDATE )
+        L = LEN_TRIM( DTBUF )
 
 C.........  Write message about episode.  Time zone might be unknown
-        IF( TZONE .GE. 0 ) THEN
+        IF( TZONE .GE. 0 .AND. NSTEPS .GT. 0 ) THEN
 
-            DTBUF = MMDDYY( SDATE )
             WRITE( MESG,94050 )
      &        'Output Time Zone:', TZONE,           CRLF() // BLANK5 //
-     &        '      Start Date:', DTBUF( 1:LEN_TRIM( DTBUF ) ) //
-     &                                              CRLF() // BLANK5 //
+     &        '      Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
      &        '      Start Time:', STIME,'HHMMSS'// CRLF() // BLANK5 //
      &        '       Time Step:', 1    ,'hour'  // CRLF() // BLANK5 //
      &        '        Duration:', NSTEPS, 'hours'
  
-        ELSE
+        ELSE IF( NSTEPS .GT. 0 ) THEN
 
-            DTBUF = MMDDYY( SDATE )
             WRITE( MESG,94052 )
-     &        '      Start Date:', DTBUF( 1:LEN_TRIM( DTBUF ) ) //
-     &                                              CRLF() // BLANK5 //
+     &        '      Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
      &        '      Start Time:', STIME,'HHMMSS'// CRLF() // BLANK5 //
      &        '       Time Step:', 1    ,'hour'  // CRLF() // BLANK5 //
      &        '        Duration:', NSTEPS, 'hours'
+
+        ELSE IF( TZONE .GE. 0 ) THEN
+
+            WRITE( MESG,94050 )
+     &        'Output Time Zone:', TZONE,           CRLF() // BLANK5 //
+     &        '      Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
+     &        '      Start Time:', STIME,'HHMMSS'
+
+        ELSE
+
+            WRITE( MESG,94052 )
+     &        '      Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
+     &        '      Start Time:', STIME,'HHMMSS'
  
         END IF
 

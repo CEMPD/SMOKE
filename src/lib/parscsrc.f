@@ -1,5 +1,6 @@
 
-        SUBROUTINE PARSCSRC( INSTRING, OUTCOL, STRARRAY, NARR )
+        SUBROUTINE PARSCSRC( INSTRING, MAXN, STARTS, ENDS, OUTCOL, 
+     &                       NARR, STRARRAY )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -20,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -43,17 +44,14 @@ C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
-C...........   EXTERNAL FUNCTIONS:
-
-        INTEGER         TRIMLEN
-
-        EXTERNAL        TRIMLEN
-
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)   INSTRING       ! Input string
-        LOGICAL         OUTCOL( 7 )    ! true if column is valid (taking 7 of 9)
-        CHARACTER*(*)   STRARRAY( * )  ! output array of strings 
-        INTEGER         NARR           ! number of non-blank characteristics
+        CHARACTER(*), INTENT (IN) :: INSTRING       ! input string
+        INTEGER     , INTENT (IN) :: MAXN           ! max number of fields
+        INTEGER     , INTENT (IN) :: STARTS( MAXN ) ! starting field pos'ns
+        INTEGER     , INTENT (IN) :: ENDS  ( MAXN ) ! ending field pos'ns
+        LOGICAL     , INTENT (IN) :: OUTCOL( MAXN ) ! true if column is valid 
+        INTEGER     , INTENT(OUT) :: NARR           ! no. of non-blank chars
+        CHARACTER(*), INTENT(OUT) :: STRARRAY( * )  ! output array of strings 
 
 C...........   Other local variables
         INTEGER         I, J, L1, L2
@@ -66,13 +64,13 @@ C***********************************************************************
 C   begin body of subroutine PARSCSRC
 
         J = 0
-        DO I = 1, 7
+        DO I = 1, MAXN
             IF( OUTCOL( I ) ) THEN
                 J = J + 1
 
 C.................  Retrieve and left-justify contents of this part of string
-                L1 = PTBEGL3( I )
-                L2 = PTENDL3( I )
+                L1 = STARTS( I )
+                L2 = ENDS  ( I )
                 BUFFER = ADJUSTL( INSTRING( L1:L2 ) )
 
 C.................  Convert missing entries to blanks 
@@ -93,5 +91,5 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+        END SUBROUTINE PARSCSRC
 

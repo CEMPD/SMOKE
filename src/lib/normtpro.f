@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -94,7 +94,11 @@ C.........  Renormalize temporal profiles, if needed
                     TOT = TOT + MONFAC( K,I )
                 END DO
 
-                DIV = 1.0 / TOT
+                IF( TOT .GT. 0. ) THEN
+                    DIV = 1.0 / TOT
+                ELSE
+                    DIV = 0.
+                END IF
 
                 DO K = 1, 12
                     MONFAC( K,I ) = DIV * MONFAC( K,I )
@@ -109,7 +113,11 @@ C.........  Renormalize temporal profiles, if needed
                     TOT = TOT + WEKFAC( K,I )
                 END DO
 
-                DIV = 1.0 / TOT
+                IF( TOT .GT. 0. ) THEN
+                    DIV = 1.0 / TOT
+                ELSE
+                    DIV = 0.
+                END IF
 
                 DO K = 1, 7
                     WEKFAC( K,I ) = DIV * WEKFAC( K,I )
@@ -117,17 +125,21 @@ C.........  Renormalize temporal profiles, if needed
 
             END DO
 
-            DO I = 1, NDIU   ! Diurnal
+            DO I = 1, NWKD   ! Diurnal
 
                 TOT = 0.0
                 DO K = 1, 24
-                    TOT = TOT + DIUFAC( K,I )
+                    TOT = TOT + WKDFAC( K,I )
                 END DO
 
-                DIV = 1.0 / TOT
+                IF( TOT .GT. 0. ) THEN
+                    DIV = 1.0 / TOT
+                ELSE
+                    DIV = 0.
+                END IF
 
                 DO K = 1, 24
-                    DIUFAC( K,I ) = DIV * DIUFAC( K,I )
+                    WKDFAC( K,I ) = DIV * WKDFAC( K,I )
                 END DO
 
             END DO
@@ -139,7 +151,11 @@ C.........  Renormalize temporal profiles, if needed
                     TOT = TOT + ENDFAC( K,I )
                 END DO
 
-                DIV = 1.0 / TOT
+                IF( TOT .GT. 0. ) THEN
+                    DIV = 1.0 / TOT
+                ELSE
+                    DIV = 0.
+                END IF
 
                 DO K = 1, 24
                     ENDFAC( K,I ) = DIV * ENDFAC( K,I )

@@ -16,7 +16,7 @@ C      Inventory format INVFMT specified
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C      Subroutines: I/O API subroutines, CHECKMEM, RDLINES
-C      Functions: I/O API functions, GETFLINE, GETFMTPT
+C      Functions: I/O API functions, GETFLINE, GETFORMT
 C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 12/98
@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -54,11 +54,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
         INTEGER         GETFLINE
-        INTEGER         GETFMTPT
+        INTEGER         GETFORMT
         INTEGER         JUNIT
         INTEGER         TRIMLEN
 
-        EXTERNAL        CRLF, GETFLINE, GETFMTPT, JUNIT, TRIMLEN
+        EXTERNAL        CRLF, GETFLINE, GETFORMT, JUNIT, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER       FDEV        !  unit number of input file
@@ -72,9 +72,9 @@ C...........   File units and logical/physical names
         INTEGER         TDEV        !  emissions file
 
 C...........   Other local variables
-        INTEGER         I, J, L1, L2   !  counters and indices
+        INTEGER         I, J, L1, L2   !  CNTRers and indices
 
-        INTEGER         COUNT       !  count of records numbers
+        INTEGER         CNTR       !  CNTR of records numbers
         INTEGER         IOS         !  i/o/ status
         INTEGER         FILFMT      !  file format code
         INTEGER         NLINE       !  number of lines
@@ -88,8 +88,10 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of function GETISIZE
 
-C.........   Initialize count of lines to read in
-        COUNT = 0
+c note: must be updated for all source categories.  note PTINV file name below
+
+C.........   Initialize CNTR of lines to read in
+        CNTR = 0
 
         IF( INVFMT .EQ. LSTFMT ) THEN
 
@@ -106,11 +108,11 @@ C.............  Allocate memory for storing contents of list-formatted PTINV fil
 C.............  Store lines of inventory file in list format
             CALL RDLINES( FDEV, MESG, NLINE, LSTSTR )
 
-C.............   Initialize count of lines to read in
-            COUNT = 0
+C.............   Initialize CNTR of lines to read in
+            CNTR = 0
 
 C.............  Loop through lines of PTINV file.  Must use this loop structure
-C               to be able to change J count for EMS95 format
+C               to be able to change J CNTR for EMS95 format
             J = 0
             DO
                 J = J + 1
@@ -133,13 +135,13 @@ C.................  Open INFILE
                 OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD' )
 
 C.................  Determine format of INFILE
-                FILFMT = GETFMTPT( TDEV )
+                FILFMT = GETFORMT( TDEV )
 
                 IF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. IDAFMT ) THEN
 
                     MESG = CATEGORY( 1:TRIMLEN( CATEGORY ) ) // 
      &                     ' inventory file "' // LINE( 1:L2 ) // '"'
-                    COUNT = COUNT + GETFLINE( TDEV, MESG )
+                    CNTR = CNTR + GETFLINE( TDEV, MESG )
 
                 ELSEIF( FILFMT .EQ. EMSFMT ) THEN
 
@@ -157,14 +159,14 @@ C......................... Close previous file, get unit, and open this file
                         CLOSE( TDEV )  
                         TDEV = JUNIT()
                         OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD')
-                        FILFMT = GETFMTPT( TDEV )
+                        FILFMT = GETFORMT( TDEV )
                         IF( FILFMT .NE. EMSFMT ) GO TO 1008  ! Error
                         J = J + 3 ! Skip past other three files
 
                     ENDIF
 
 C.....................  Sum number of lines in EMS-95 emission files
-                    COUNT = COUNT + GETFLINE( TDEV, MESG )
+                    CNTR = CNTR + GETFLINE( TDEV, MESG )
 
                     CLOSE( TDEV )
 
@@ -185,7 +187,7 @@ C.....................  Sum number of lines in EMS-95 emission files
 
             MESG = CATEGORY( 1:TRIMLEN( CATEGORY ) ) // 
      &             ' inventory file'
-            COUNT = GETFLINE( TDEV, MESG )
+            CNTR = GETFLINE( TDEV, MESG )
 
             CLOSE( TDEV )
 
@@ -196,7 +198,13 @@ C.....................  Sum number of lines in EMS-95 emission files
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
         ENDIF
 
-        GETISIZE = COUNT
+        IF( CNTR .EQ. 0 ) THEN
+            MESG = FMTNAMES( INVFMT ) // '-formatted inventory ' //
+     &             'file has no valid lines of inventory data.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        GETISIZE = CNTR
 
         RETURN
 

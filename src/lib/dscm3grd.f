@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -90,11 +90,11 @@ C...........   Grid types and names arrays
      &                                           , STEGRD3
      &                                           , UTMGRD3 / )
 
-        CHARACTER*6  :: GRDNAMES( MXGRDTYP ) = ( / 'LATGRD'
-     &                                           , 'LAMGRD'
-     &                                           , 'MERGRD'
-     &                                           , 'STEGRD'
-     &                                           , 'UTMGRD' / )
+        CHARACTER*15 :: GRDNAMES( MXGRDTYP ) = ( / 'LAT-LON        '
+     &                                           , 'LAMBERT        '
+     &                                           , 'MERCATOR       '
+     &                                           , 'STEREOGRAPHIC  '
+     &                                           , 'UTM            ' / )
 
 C...........   File units and logical/physical names:
         INTEGER, SAVE :: IDEV    !  unit number of grid information file
@@ -196,21 +196,27 @@ C               value(s) and cycle to the next line...
 C.............  Grid name
             I = INDEX( LINE, 'GDNAME_GD' )
             IF( I .GT. 0 ) THEN
-                GNBUF = ADJUSTL( LINE( I+9:L2 ) )
+                I = INDEX( LINE, '0' )
+                GNBUF = ADJUSTL( LINE( I+1:L2 ) )
+                CALL UPCASE( GNBUF )
                 CYCLE
             END IF
 
 C.............  Grid description
             I = INDEX( LINE, 'GDDESC_GD' )
             IF( I .GT. 0 ) THEN
-                GDBUF = ADJUSTL( LINE( I+9:L2 ) )
+                I = INDEX( LINE, '0' )
+                GDBUF = ADJUSTL( LINE( I+1:L2 ) )
+                CALL UPCASE( GDBUF )
                 CYCLE
             END IF
 
 C.............  Coordinate system type
             I = INDEX( LINE, 'GDTYP_GD' )
             IF( I .GT. 0 ) THEN
-                CNAME = ADJUSTL( LINE( I+8:L2 ) )
+                I = INDEX( LINE, '0' )
+                CNAME = ADJUSTL( LINE( I+1:L2 ) )
+                CALL UPCASE( CNAME )
 
 C.................  Look for coordinate system type in known types
                 J = INDEX1( CNAME, MXGRDTYP, GRDNAMES )
@@ -229,7 +235,9 @@ C.................  Look for coordinate system type in known types
 C.............  Grid units
             I = INDEX( LINE, 'GDUNT_GD' )
             IF( I .GT. 0 ) THEN
-                PUNIT = ADJUSTL( LINE( I+8:L2 ) )
+                I = INDEX( LINE, '0' )
+                PUNIT = ADJUSTL( LINE( I+1:L2 ) )
+                CALL UPCASE( PUNIT )
                 CYCLE
             END IF
 
@@ -373,27 +381,27 @@ C..........................................................................
 
             IF( I .GT. 0 ) THEN
 
-                L = LEN_TRIM( KEYWORD )
+                I = INDEX( LINE, '0' )
                 IF( OUTTYPE .EQ. M3INT ) THEN
 
-                    IF( .NOT. CHKINT( LINE( I+L:L2 ) ) ) THEN
+                    IF( .NOT. CHKINT( LINE( I+1:L2 ) ) ) THEN
                         EFLAG = .TRUE.
                         MESG = 'ERROR: ' // KEYWORD // ' value is ' // 
      &                         'invalid in grid information file.'
                         CALL M3MSG2( MESG )
                     ELSE
-                        IOUT = STR2INT( LINE( I+L:L2 ) )
+                        IOUT = STR2INT( LINE( I+1:L2 ) )
                     END IF
 
                 ELSE IF( OUTTYPE .EQ. M3DBLE ) THEN
 
-                    IF( .NOT. CHKREAL( LINE( I+L:L2 ) ) ) THEN
+                    IF( .NOT. CHKREAL( LINE( I+1:L2 ) ) ) THEN
                         EFLAG = .TRUE.
                         MESG = 'ERROR: ' // KEYWORD // ' value is ' // 
      &                         'invalid in grid information file.'
                         CALL M3MSG2( MESG )
                     ELSE
-                        ROUT = DBLE( STR2REAL( LINE( I+L:L2 ) ) )
+                        ROUT = DBLE( STR2REAL( LINE( I+1:L2 ) ) )
                     END IF
 
                 END IF

@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDSPROF( FDEV, POLNAM, NPROFMAX, NPROF, NMPOL,
+        SUBROUTINE RDSPROF( FDEV, POLNAM, NPROFMAX, NPROF, NMSPC,
      &                      INPRF, SPECID, MOLEFACT, MASSFACT )
 
 C***********************************************************************
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -55,7 +55,7 @@ C...........   Subroutine arguments
         CHARACTER(*), INTENT    (IN) :: POLNAM      ! pol name of interest
         INTEGER     , INTENT    (IN) :: NPROFMAX    ! max no. expected profiles
         INTEGER     , INTENT   (OUT) :: NPROF       ! no. profiles found
-        INTEGER     , INTENT   (OUT) :: NMPOL       ! no. unique speciess IDs
+        INTEGER     , INTENT   (OUT) :: NMSPC       ! no. unique species IDs
         CHARACTER(*), INTENT   (OUT) :: INPRF   ( NPROFMAX ) ! spec prof numbers
         CHARACTER(*), INTENT(IN OUT) :: SPECID  ( NPROFMAX ) ! names of species
         REAL        , INTENT(IN OUT) :: MOLEFACT( NPROFMAX ) ! mole-based facs
@@ -158,8 +158,8 @@ C...........  Read in speciation profile
             
             INPRF   ( I ) = INPSPA( J )( 1:SPNLEN3 )
             SPECID  ( I ) = SPCIDA( J )
-            MOLEFACT( I ) = FACTRA( J ) / DIVISA( J )
-            MASSFACT( I ) = XMFA( J )
+            MOLEFACT( I ) = TON2GM * FACTRA( J ) / DIVISA( J )
+            MASSFACT( I ) = TON2GM * XMFA( J )
 
         ENDDO
         
@@ -170,17 +170,17 @@ C...........  Read in speciation profile
  
 C........... Sort the species names in order to loop through and count
 C            the number of times the name changes. This will give us the
-C            number of unique species names, NMPOL 
+C            number of unique species names, NMSPC 
         
         CALL SORTIC( IPS, INDXA, SPECID )       ! Sort on SPECID
         
         SPCIDTMP = EMCMISS3  ! Initialize temporary 
-        NMPOL   = 0
+        NMSPC   = 0
         DO I = 1, NPROF
             
             J = INDXA ( I )
             IF ( SPECID( J ) .NE. SPCIDTMP ) THEN
-                NMPOL = NMPOL + 1
+                NMSPC = NMSPC + 1
                 SPCIDTMP = SPECID( J )
             END IF
             

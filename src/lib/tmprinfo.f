@@ -69,9 +69,15 @@ C...........   Other local variables
         INTEGER     NMINALL     ! no. of all possible minimum values
         INTEGER     T1, T2      ! tmp counters for min/max tmpr setting
 
-        REAL        TDIFF       ! tmp temperature difference
-        REAL        TMAX        ! tmp maximum temperature value
-        REAL        TMIN        ! tmp mimimum temperature value
+        DOUBLE PRECISION :: MNTMN       ! tmp min tmpr min
+        DOUBLE PRECISION :: MNTMX       ! tmp min tmpr max
+        DOUBLE PRECISION :: MXTMN       ! tmp max tmpr min
+        DOUBLE PRECISION :: MXTMX       ! tmp max tmpr max
+        DOUBLE PRECISION :: TMXIT       ! tmp max interval
+        DOUBLE PRECISION :: TINTV       ! tmp tmpr interval
+        DOUBLE PRECISION :: TDIFF       ! tmp temperature difference
+        DOUBLE PRECISION :: TMAX        ! tmp maximum temperature value
+        DOUBLE PRECISION :: TMIN        ! tmp mimimum temperature value
 
         CHARACTER*300   MESG    !  message buffer
 
@@ -131,75 +137,93 @@ C.........  Get the values from the FDESC3D array
 
         END IF
 
+C.........  Store temperatures as double precision variables
+        MNTMN = DBLE( MINT_MIN )
+        MNTMX = DBLE( MINT_MAX )
+        MXTMN = DBLE( MAXT_MIN )
+        MXTMX = DBLE( MAXT_MAX )
+        TINTV = DBLE(  TMMINVL )
+        TMXIT = DBLE(  TMXINVL )
+
 C.........  For non min-max type call, create list of value temperatures, and
 C           return to calling routine
         IF ( CONTROL .NE. 'MINMAX' ) THEN
 
 C.............  Determine the number of valid temperatures
-            NTMPR = ( MAXT_MAX - MINT_MIN ) / TMMINVL + 1 
+            NTMPR = ( MAXT_MAX - MINT_MIN ) / TMMINVL + 1
 
-C.............  Allocate memory for valid temperatures
-            ALLOCATE( VLDTMPR( NTMPR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'VLDTMPR', PROGNAME )
+C.............  Allocate memory for valid temperatures and set them
+            IF( .NOT. ALLOCATED( VLDTMPR ) ) THEN
+                ALLOCATE( VLDTMPR( NTMPR ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VLDTMPR', PROGNAME )
 
-            DO I = 1, NTMPR
-                VLDTMPR( I ) = MINT_MIN + ( I - 1 ) * TMMINVL
-            END DO
-
-C.............  If not doing minimum/maximum array, then return
-            RETURN
+                DO I = 1, NTMPR
+                    VLDTMPR( I ) = REAL( MNTMN + ( I - 1 ) * TINTV )
+                END DO
+            END IF
 
         END IF
+
+C.............  If not doing minimum/maximum array, then return
+        IF ( CONTROL .EQ. 'NOMINMAX' ) RETURN
 
 C.........  Allocate maximum amount of memory for arrays of min/max
 C           temperatures
         NMINALL = ( MINT_MAX - MINT_MIN ) / TMMINVL + 1
         NMAXALL = ( MAXT_MAX - MAXT_MIN ) / TMMINVL + 1 
 
-        ALLOCATE( VLDTMIN( NMINALL * NMAXALL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'VLDTMIN', PROGNAME )
-        ALLOCATE( VLDTMAX( NMINALL * NMAXALL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'VLDTMAX', PROGNAME ) 
+C.........  Allocate memory for valid temperatures and set them
+        IF( .NOT. ALLOCATED( VLDTMIN ) ) THEN
+            ALLOCATE( VLDTMIN( NMINALL * NMAXALL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VLDTMIN', PROGNAME )
+            ALLOCATE( VLDTMAX( NMINALL * NMAXALL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VLDTMAX', PROGNAME ) 
 
-C.........  Initialize
-        VLDTMIN = 0.
-        VLDTMAX = 0.
+c STOPPED HERE: For some reason, the NVLDTMM is not getting set correctly, so
+c RDEFACS can't work. Other wierd thing happens when I set break points in this
+C routine.  6 breaks are set at the same line!
 
-C.........  Build arrays of min/max temperatures
-        K = 0        
-        T1 = 0
-        TMIN = MINT_MIN
-        DO WHILE( TMIN .LE. MINT_MAX )
+C.............  Initialize
+            VLDTMIN = 0.
+            VLDTMAX = 0.
 
-            T2 = 0
-            TMAX = MAXT_MIN
-            DO WHILE( TMAX .LE. MAXT_MAX )
+C.............  Build arrays of min/max temperatures
+            K = 0        
+            T1 = 0
+            TMIN = MNTMN
+            DO WHILE( TMIN .LE. MNTMX )
 
-                TDIFF = TMAX - TMIN
+        	T2 = 0
+        	TMAX = REAL( MXTMN )
+        	DO WHILE( TMAX .LE. MXTMX )
 
-C.................  Increment table and store for valid temperature combos
-                IF( TMAX  .GT. TMIN   .AND.
-     &              TDIFF .LE. TMXINVL      ) THEN
+                    TDIFF = TMAX - TMIN
 
-                    K = K + 1
-                    VLDTMIN( K ) = TMIN
-                    VLDTMAX( K ) = TMAX
+C.....................  Increment table and store for valid temperature combos
+                    IF( TMAX  .GT. TMIN  .AND.
+     &                  TDIFF .LE. TMXIT      ) THEN
 
-                END IF
+                	K = K + 1
+                	VLDTMIN( K ) = REAL( TMIN )
+                	VLDTMAX( K ) = REAL( TMAX )
 
-C.................  Increase maximum
-                T2 = T2 + 1
-                TMAX = MAXT_MIN + T2 * TMMINVL
+                    END IF
+
+C.....................  Increase maximum
+                    T2 = T2 + 1
+                    TMAX = MXTMN + T2 * TINTV
+
+                END DO
+ 
+C.................  Increase minimum
+        	T1 = T1 + 1
+        	TMIN = MNTMN + T1 * TINTV
 
             END DO
 
-C.............  Increase minimum
-            T1 = T1 + 1
-            TMIN = MINT_MIN + T1 * TMMINVL
+            NVLDTMM = K
 
-        END DO
-
-        NVLDTMM = K
+        END IF  ! already been set or not
         
         RETURN
 
