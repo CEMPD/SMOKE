@@ -58,8 +58,8 @@ C.........  Separator for speciation "variables" (stored in description field)
 C.........  Separator for emission type names
         CHARACTER*2, PARAMETER :: ETJOIN = '__'
 
-C.........  Units for speciation matrices
-        CHARACTER*16, PARAMETER :: SMASUNIT = 'gm/ton'
+C.........  Units for speciation matrice
+        CHARACTER*16, PARAMETER :: SMASUNIT = 'g/ton'
         CHARACTER*16, PARAMETER :: SMOLUNIT = 'moles/ton'
 
 C.........  Packet names and settings
