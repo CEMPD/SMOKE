@@ -93,6 +93,9 @@ C   begin body of subroutine RDMAPMASK
 
         PNAME = 'IOAPI_DAT'
 
+C........  Initialize output emissions
+        OUTVALS = 0.   ! array
+
         DO I = 1, NLOOP
 
 C.............  Do not read variable if mask is zero
@@ -143,9 +146,6 @@ C................  Allocate memory for local read arrays
 
             IF( SFLAG ) EFLAG = .TRUE.
             IF( EFLAG ) CYCLE
-
-C...........  Initialize output emissions
-            OUTVALS = 0.   ! array
 
 C...........  Transfer sparse-storage pollutant to output arrays
             DO N = 1, NSPARSE
