@@ -289,46 +289,8 @@ C.........  Write out list of legal hydrocarbon species
 
         CALL M3MSG2( MESG )
 
-C.........  Prompt for type of organic compound to use (numbers match
-C.........  MOBILE5 numbers
-
-        DO 30 I = 5, 1, -1
-            CALL GETSTR( 'Enter type of hydrocarbon emissions', 
-     &                   VOLTYP( 3 ), VOLNAM )
- 
-            VOLORG = INDEX1( VOLNAM, NUMVOL, VOLTYP )
-
-            IF( VOLORG .GT. 0 ) GO TO 31  ! Valid reponse found
-
-            WRITE( MESG,94010 ) 'Invalid response, get', I-1, 
-     &                          'more tries'
-            CALL M3MSG2( MESG )
- 
-30      CONTINUE
-
-        WRITE( MESG,94010 ) 'Bad hydrocarbon emissions type'
-        CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
-
-31      CONTINUE
-
-C.........  Find VOLNAM in EMTLST for setting output variable names
-
-        EMTIDX( 1 ) = 1   ! For CO
-        EMTIDX( 2 ) = 2   ! For NOX
-        K = 2
-
-        DO 33 I = 3, MXEALL
-
-            L = INDEX( EMTLST( I ), '_' )
-            IF( EMTLST( I )(L+1:7 ) .EQ. VOLNAM ) THEN
-                K = K + 1
-                EMTIDX( K ) = I
-            ENDIF
-
-33      CONTINUE
-
-C.........  Set start and ending temperature depending on input file
-C.........  If it exists, use the parameters from the file.
+C.........  If starting with existing non-diurnal emission factors file,
+C.........  set parameters that would otherwise get from prompt
         IF( ENAME .NE. 'NONE' ) THEN
 
 C.............  Get file description
@@ -340,6 +302,7 @@ C.............  Get file description
 
             ENDIF
 
+C.........  Set start and ending temperature depending on input file
 C.............  Set output file name to same as input
             ONAME = ENAME
 
@@ -347,7 +310,7 @@ C.............  Set modeling year
             JYEAR = SDATE3D / 1000
 
             WRITE( MESG,94010 ) 
-     &          'NOTE: Emission factors are being calculated for', JYEAR
+     &          'NOTE: Emission factors are for year', JYEAR
             CALL M3MSG2( MESG )
 
 C.............  Check that file delta temperature is same as compiled value
@@ -365,12 +328,73 @@ C.............  Check that file delta temperature is same as compiled value
             BTEMP = XORIG3D
             ETEMP = BTEMP + TINTV * FLOAT( NTEMP - 1 ) 
 
-            DO 44 I = 1, NTEMP
+            DO 33 I = 1, NTEMP
                 TEMPIN( I ) = BTEMP + ( I - 1 ) * TINTV
-44          CONTINUE
+33          CONTINUE
 
-C.........  If it does not exist, build the parameters from scratch
+C.............  Set the volatile pollutant used in this file
+
+            L = TRIMLEN( FDESC3D( 7 ) )
+            J = INDEX1 ( FDESC3D( 7 )( 1:L ), NUMVOL, VOLTYP )
+
+            IF( J .GT. 0 ) THEN
+                VOLORG = J
+                CALL M3MSG2( 
+     &               'NOTE: Emissions factors are for organic pollutant'
+     &               // 'for "' // VOLTYP(J)( 1:TRIMLEN( VOLTYP(J) ) )
+     &               // '"' )
+            ELSE
+
+                WRITE( MESG,94010 ) 
+     &             'ERROR: Volatile pollutant type "' //
+     &             FDESC3D( 7 )( 1:L ) // '" in file "' //
+     &             ENAME( 1:TRIMLEN( ENAME ) ) // 
+     &             '" is not a valid volatile pollutant type.'
+
+                CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+                  
+            ENDIF
+
+C.........  If ENAME does _not_ exist, build the parameters from scratch
         ELSE 
+
+C.........  Prompt for type of volatile pollutant to use (numbers match
+C.........  MOBILE5 numbers)
+
+            DO 40 I = 5, 1, -1
+                CALL GETSTR( 'Enter type of hydrocarbon emissions', 
+     &                       VOLTYP( 3 ), VOLNAM )
+ 
+                VOLORG = INDEX1( VOLNAM, NUMVOL, VOLTYP )
+
+                IF( VOLORG .GT. 0 ) GO TO 41  ! Valid reponse found
+
+                WRITE( MESG,94010 ) 'Invalid response, get', I-1, 
+     &                              'more tries'
+                CALL M3MSG2( MESG )
+ 
+40          CONTINUE
+
+            WRITE( MESG,94010 ) 'Bad hydrocarbon emissions type'
+            CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+
+41          CONTINUE
+
+C............  Find VOLNAM in EMTLST for setting output variable names
+
+            EMTIDX( 1 ) = 1   ! For CO
+            EMTIDX( 2 ) = 2   ! For NOX
+            K = 2
+
+            DO 44 I = 3, MXEALL
+
+                L = INDEX( EMTLST( I ), '_' )
+                IF( EMTLST( I )(L+1:7 ) .EQ. VOLNAM ) THEN
+                    K = K + 1
+                    EMTIDX( K ) = I
+                ENDIF
+
+44          CONTINUE
 
 C.............  Prompt for modeling year
             JYEAR = 1988
@@ -440,7 +464,11 @@ C.............  Set up non-diurnal master list file description
             WRITE  ( MESG, 94080 ) NTEMP
             FDESC3D( 5 ) = MESG
 
-            DO 55 J = 6, MXDESC3
+            FDESC3D( 6 ) = ' '
+
+            FDESC3D( 7 ) = VOLTYP( VOLORG )
+
+            DO 55 J = 8, MXDESC3
                 FDESC3D( J ) = ' '
 55          CONTINUE 
 
@@ -488,6 +516,23 @@ C.............  Check modeling year to ensure same as ENAME
 
             ENDIF 
 
+C.............  Check volatile organic in this file is same as non-diurnal
+            L = TRIMLEN( FDESC3D( 7 ) )
+            J = INDEX1 ( FDESC3D( 7 )( 1:L ), NUMVOL, VOLTYP )
+
+            IF( J .NE. VOLORG ) THEN
+
+                WRITE( MESG,94010 ) 
+     &             'ERROR: Volatile pollutant type "' //
+     &             FDESC3D( 7 )( 1:L ) // '" in file "' //
+     &             DNAME( 1:TRIMLEN( DNAME ) ) // 
+     &             '" is different from "' // VOLTYP( VOLORG ) //
+     &             '" in file "' // ENAME( 1:TRIMLEN( ENAME ) ) //
+     &             '".'
+
+                CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+                  
+            ENDIF
         ELSE
 
 C.............  Set up diurnal master List file description
@@ -522,7 +567,9 @@ C.............  Set up diurnal master List file description
             WRITE( FDESC3D( 5 ),94030 ) 'MAXT_MAX = ', MAXT_MAX, 'deg F'
             WRITE( FDESC3D( 6 ),94030 ) 'INCREMENT= ', TINTV, 'deg F'
 
-            DO 66 J = 7, MXDESC3
+            FDESC3D( 7 ) = VOLTYP( VOLORG )
+
+            DO 66 J = 8, MXDESC3
                 FDESC3D( J ) = ' '
 66          CONTINUE 
 
