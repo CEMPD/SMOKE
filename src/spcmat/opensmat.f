@@ -127,14 +127,9 @@ C.................  End inner loop if species is blank
 C.................  Count total number of output variables
                 ICNT = ICNT + 1
 
-C.................  Check total number of output variables with I/O API max
-                IF( ICNT .LE. MXVARS3 ) THEN
-
-                    NCNT = NCNT + 1
-                    WRITE( SVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
-                    WRITE( LVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
-
-                ENDIF
+                NCNT = NCNT + 1
+                WRITE( SVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
+                WRITE( LVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
 
             END DO
 
@@ -180,7 +175,6 @@ C.........  Get header information from inventory file
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
 C.........  Allocate memory for file description information
-        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
         ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
         ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
@@ -193,8 +187,10 @@ C.........  Allocate memory for file description information
 C.........  Set up variable descriptions that will be used to indicate the 
 C           inventory pollutant and model species names
 
-        VDESCSET = ' '  ! array initialization
         VTYPESET = 0    ! array initialization
+        VNAMESET = ' '  ! array initialization
+        VUNITSET = ' '  ! array initialization
+        VDESCSET = ' '  ! array initialization
 
         I = 0
         DO K = 1, NIPPA
