@@ -9,6 +9,7 @@ C        REFUEL, RVPEXH, OBD_HI_FRCN and TAMPER.
 C
 C  Changes: (Last change first)
 C
+C  05 Apr 02: AIR Task Bug Fix 388, Modification of constants via QUITER.
 C  15 Nov 01 AIR Task 27: Added INERR support due to PMFLECON update.
 C  27 Nov 00 @EPA-elg Added No Clean Air Act condition for tampering.
 C  04 Dec 00 @EPA-bag Task X6, removed MY, JDX, and IDX from MYCODE.I; removed
@@ -274,7 +275,7 @@ C
 C  Call OBD_HI_FRCN to calculate the OBD high emitter fraction arrays for 1994+ 
 C  model year LDGV/Ts. 
 C 
-      IF (ICY.GE.1994) CALL OBD_HI_FRCN(ICY) 
+      IF (ICY.GE.1994) CALL OBD_HI_FRCN(ICY,INERR)
 C 
 C   Build Tier2 50K Certification Standard array CRT50KT2(IV,IP,IDX) 
 C 
@@ -370,6 +371,11 @@ C     If start emissions are in g/mi, TF can be used for the model year
 C     weighting. If they are in g/start, use MEVMYR for the weighting. 
 C 
             STARTEF(IP,IV)=STARTEF(IP,IV)+STARTMYR*TF(IDX,IV) 
+C
+C     Abort whenever any errors occur.
+C
+          IF(INERR.GT.0) GOTO 99
+          
    70     CONTINUE 
 C         END OF YEARLY LOOP, IDX 
 C 
@@ -390,16 +396,16 @@ C  Assign composite light duty gas truck emission factor.
 C 
         IF(EFFTP(IP,2).GT.0.0.AND.EFFTP(IP,3).GT.0.0.AND. 
      *   EFFTP(IP,4).GT.0.0.AND.EFFTP(IP,5).GT.0.0) 
-     *   EFFTP(IP,ILDGT)= EFCVT(ILDGT,IEFFTP,IP) 
+     *   EFFTP(IP,ILDGT)= EFCVT(ILDGT,IEFFTP,IP,INERR) 
         IF(STARTEF(IP,2).GT.0.0.AND.STARTEF(IP,3).GT.0.0.AND. 
      *   STARTEF(IP,4).GT.0.0.AND.STARTEF(IP,5).GT.0.0) 
-     *   STARTEF(IP,ILDGT)= EFCVT(ILDGT,ISTARTEF,IP) 
+     *   STARTEF(IP,ILDGT)= EFCVT(ILDGT,ISTARTEF,IP,INERR) 
         IF(RUNEF(IP,2).GT.0.0.AND.RUNEF(IP,3).GT.0.0.AND. 
      *   RUNEF(IP,4).GT.0.0.AND.RUNEF(IP,5).GT.0.0) 
-     *   RUNEF(IP,ILDGT)= EFCVT(ILDGT,IRUNEF,IP) 
+     *   RUNEF(IP,ILDGT)= EFCVT(ILDGT,IRUNEF,IP,INERR) 
 C 
    90 CONTINUE 
 C     END OF POLLUTANT LOOP, IP 
 C 
-      RETURN 
+   99 RETURN
       END 

@@ -9,6 +9,9 @@ C        HRLOOP, IEVPTR, PCTLEV, and QUITER.
 C
 C  Changes:
 C
+C  03 Jun 02 AIR Task Bug Fix 390 When spreadsheet output is requested,
+C            the Expand Evap arrays (G_MI_EVP) must be calculated.
+C  05 Apr 02 AIR Task Bug Fix 388, Modification of constants via QUITER.
 C  12 Mar 02 AIR Task Bug384: Compute All Veh evap components so that
 C            diesel evap and All Veh can be output properly(Note that
 C            MOBILE6 does not calculate evaporative emissions for
@@ -94,6 +97,7 @@ C    MAXVEH from include file IVTYPE.I
 C
 C    argument list: ICY,INERR
 C    common blocks:
+C    /ATOX1 / SSFLAG
 C    /CUMCOM/ CUMMIL
 C    /CVNAMS/ ILDGT   (IVTYPE.I)
 C    /EVAPACT/SAWFLAG
@@ -206,6 +210,7 @@ C
       USE DATABASE, ONLY : DBFLAG, DBAGGR
 C
       IMPLICIT NONE
+      INCLUDE 'ATOX1.I'
       INCLUDE 'BYMYC2.I'
       INCLUDE 'BYMYC3.I'
       INCLUDE 'CUMCOM.I'
@@ -502,9 +507,11 @@ C
 C         EXPANDED EVAPORATIVE OUTPUT(HCFLAG=2, 3, or 4)
 C         For gas vehicles use the results from EVP_HRLY to determine composite
 C         evaporative sums, GREVP(EVAP_TYPE,IV), over 25 years in grams/mile
-          IF((HCFLAG.GE.EXPND_HC).OR.DBAGGR) THEN  ! output in grams/mile and
-                                                   ! no refueling in composite sums
-                                                   ! the database aggregate output also
+          IF((HCFLAG.GE.EXPND_HC)
+     *       .OR. DBAGGR .OR. SSFLAG) THEN  ! output in grams/mile and
+                                            ! no refueling in composite sums.
+                                            ! The database aggregate and
+                                            ! spreadsheet output also
                                                    ! needs these arrays
 C
             G_MI_EVP(IDIURNAL,IV)=G_MI_EVP(IDIURNAL,IV)
@@ -638,6 +645,10 @@ C         weighting for composite emissions sum output.
 C
           EFFTP(IP,IV) = EFFTP(IP,IV) + (COMPEF*TF(IDX,IV))
 C
+C     Abort whenever any errors occur.
+C
+          IF(INERR.GT.0) GOTO 99
+C
    70   CONTINUE   !End of yearly loop
 C
         IF(EFFTP(IP,IV).LT.0.0.AND.VMTMIX(IV).GT.0.0)
@@ -675,67 +686,71 @@ C     EXHAUST EMISSIONS:
 C      FTP
       IF(EFFTP(IP,2).GE.0.0.AND.EFFTP(IP,3).GE.0.0.AND.
      * EFFTP(IP,4).GE.0.0.AND.EFFTP(IP,5).GE.0.0)
-     * EFFTP(IP,ILDGT) = EFCVT(ILDGT,IEFFTP,IP)
+     * EFFTP(IP,ILDGT) = EFCVT(ILDGT,IEFFTP,IP,INERR)
 C
 C      START
       IF(STARTEF(IP,2).GE.0.0.AND.STARTEF(IP,3).GE.0.0.AND.
      * STARTEF(IP,4).GE.0.0.AND.STARTEF(IP,5).GE.0.0)
-     * STARTEF(IP,ILDGT) = EFCVT(ILDGT,ISTARTEF,IP)
+     * STARTEF(IP,ILDGT) = EFCVT(ILDGT,ISTARTEF,IP,INERR)
 C
 C      RUNNING
       IF(RUNEF(IP,2).GE.0.0.AND.RUNEF(IP,3).GE.0.0.AND.
      * RUNEF(IP,4).GE.0.0.AND.RUNEF(IP,5).GE.0.0)
-     * RUNEF(IP,ILDGT) =  EFCVT(ILDGT,IRUNEF,IP)
+     * RUNEF(IP,ILDGT) =  EFCVT(ILDGT,IRUNEF,IP,INERR)
 C
 C      TOTAL EXHAUST
       IF(EFEXH(2).GE.0.0.AND.EFEXH(3).GE.0.0.AND.EFEXH(4).GE.0.0.AND.
-     * EFEXH(5).GE.0.0) EFEXH(ILDGT)= EFCVT(ILDGT,IEFEXH,IP)
+     * EFEXH(5).GE.0.0) EFEXH(ILDGT)= EFCVT(ILDGT,IEFEXH,IP,INERR)
 C
 C     diurnal, hot soak, resting loss, and crank case sum
       IF(EFEVAP(2).GE.0.0.AND.EFEVAP(3).GE.0.0.AND.EFEVAP(4).GE.0.0
-     * .AND.EFEVAP(5).GE.0.0) EFEVAP(ILDGT) = EFCVT(ILDGT,IEFEVAP,IP)
+     * .AND.EFEVAP(5).GE.0.0)
+     * EFEVAP(ILDGT) = EFCVT(ILDGT,IEFEVAP,IP,INERR)
 C
 C     refueling (grams/mile)
       IF(REFL_GM_MI(2).GE.0.0.AND.REFL_GM_MI(3).GE.0.0
      * .AND.REFL_GM_MI(4).GE.0.0
      * .AND.REFL_GM_MI(5).GE.0.0)
-     * REFL_GM_MI(ILDGT) = EFCVT(ILDGT,IEFREFL,IP)
+     * REFL_GM_MI(ILDGT) = EFCVT(ILDGT,IEFREFL,IP,INERR)
 C
 C     refueling (grams/gal)
       IF(RLGGAL(2).GE.0.0.AND.RLGGAL(3).GE.0.0.AND.RLGGAL(4).GE.0.0
-     * .AND.RLGGAL(5).GE.0.0) RLGGAL(ILDGT) = EFCVT(ILDGT,IRLGGAL,IP)
+     * .AND.RLGGAL(5).GE.0.0)
+     * RLGGAL(ILDGT) = EFCVT(ILDGT,IRLGGAL,IP,INERR)
 C
 C     hot soak(grams/mile)
       IF(G_MI_EVP(IHOTSOAK,2).GE.0.0.AND.G_MI_EVP(IHOTSOAK,3).GE.0.0
      *.AND.G_MI_EVP(IHOTSOAK,4).GE.0.0
      *.AND.G_MI_EVP(IHOTSOAK,5).GE.0.0)
-     *G_MI_EVP(IHOTSOAK,ILDGT) = EFCVT(ILDGT,IGMIEVP,IHOTSOAK)
+     *G_MI_EVP(IHOTSOAK,ILDGT) = EFCVT(ILDGT,IGMIEVP,IHOTSOAK,INERR)
 C
 C     diurnal loss(grams/mile)
       IF(G_MI_EVP(IDIURNAL,2).GE.0.0.AND.G_MI_EVP(IDIURNAL,3).GE.0.0
      *.AND.G_MI_EVP(IDIURNAL,4).GE.0.0
      *.AND.G_MI_EVP(IDIURNAL,5).GE.0.0)
-     *G_MI_EVP(IDIURNAL,ILDGT) = EFCVT(ILDGT,IGMIEVP,IDIURNAL)
+     *G_MI_EVP(IDIURNAL,ILDGT) = EFCVT(ILDGT,IGMIEVP,IDIURNAL,INERR)
 C
 C     resting loss(grams/mile)
       IF(G_MI_EVP(IRESTLOSS,2).GE.0.0.AND.G_MI_EVP(IRESTLOSS,3).GE.0.0
      *.AND.G_MI_EVP(IRESTLOSS,4).GE.0.0
      *.AND.G_MI_EVP(IRESTLOSS,5).GE.0.0)
-     *G_MI_EVP(IRESTLOSS,ILDGT) = EFCVT(ILDGT,IGMIEVP,IRESTLOSS)
+     *G_MI_EVP(IRESTLOSS,ILDGT) = EFCVT(ILDGT,IGMIEVP,IRESTLOSS,INERR)
 C
 C     crank case(grams/mile)
       IF(G_MI_EVP(ICRNCASE,2).GE.0.0.AND.G_MI_EVP(ICRNCASE,3).GE.0.0
      *.AND.G_MI_EVP(ICRNCASE,4).GE.0.0
      *.AND.G_MI_EVP(ICRNCASE,5).GE.0.0)
-     *G_MI_EVP(ICRNCASE,ILDGT) = EFCVT(ILDGT,IGMIEVP,ICRNCASE)
+     *G_MI_EVP(ICRNCASE,ILDGT) = EFCVT(ILDGT,IGMIEVP,ICRNCASE,INERR)
 C
 C     resting loss(grams/hr)
       IF(RSTGPH(2).GE.0.0.AND.RSTGPH(3).GE.0.0.AND.RSTGPH(4).GE.0.0
-     * .AND.RSTGPH(5).GE.0.0) RSTGPH(ILDGT) = EFCVT(ILDGT,IRSTGPH,IP)
+     * .AND.RSTGPH(5).GE.0.0)
+     * RSTGPH(ILDGT) = EFCVT(ILDGT,IRSTGPH,IP,INERR)
 C
 C     running loss
       IF(EFRUNL(2).GE.0.0.AND.EFRUNL(3).GE.0.0.AND.EFRUNL(4).GE.0.0
-     * .AND.EFRUNL(5).GE.0.0) EFRUNL(ILDGT) = EFCVT(ILDGT,IEFRUNL,IP)
+     * .AND.EFRUNL(5).GE.0.0)
+     * EFRUNL(ILDGT) = EFCVT(ILDGT,IEFRUNL,IP,INERR)
 C
 C     total evaporative emissions composite light duty trucks
       IF(TOTEVAP(2).GE.0.0.AND.TOTEVAP(3).GE.0.0.AND.
@@ -765,8 +780,8 @@ C
 C
         IF(GREVP(4,2).GE.0.0.AND.GREVP(4,3).GE.0.0.AND.
      *    GREVP(4,4).GE.0.0.AND.GREVP(4,5).GE.0.0)
-     *    GREVP(4,ILDGT) = EFCVT(ILDGT,IGREVP,4)
+     *    GREVP(4,ILDGT) = EFCVT(ILDGT,IGREVP,4,INERR)
       ENDIF
 C
-      RETURN
+  99  RETURN
       END

@@ -11,6 +11,7 @@ C  Calls LOCAL,REGMOD,EFCALX,OUTPUT,RDT12C
 C 
 C  Changes: (last change first) 
 C 
+C  15 Apr 02 AIR Task Bug Fix 388, modification of constants via QUITER.
 C 14 Jan 02 @EPA-bag  Bug375   Added INERR to parameter list of AVGSPD 
 C  03 Dec 01 AIR Task 27: Added call for calculation of CO2. 
 C  27 Nov 01 AIR Task 28: Added OUTSS for spreadsheet output. 
@@ -190,7 +191,7 @@ C
       IF(IOUOUT.EQ.6.OR.IOUOUT.EQ.9) WRITE(IOUOUT,150) 
   150 FORMAT(' Preparing output.') 
       IF (INERR.EQ.0 .AND. (.NOT.NODESC) ) THEN 
-        CALL OUTDSC(ICY) 
+        CALL OUTDSC(ICY,INERR)
       ENDIF 
 C 
       IF (INERR.EQ.0.AND.DBFLAG.EQ.2.AND.DBAGGR) THEN 

@@ -34,6 +34,10 @@ C        SOAKCF
 C 
 C  Changes:  (Last change first) 
 C 
+C  08 Jul 02 AIR Task 36: added hourly absolute humidity processing to
+C            NOx humidity corrections.
+C  15 Apr 02 AIR Task Bug Fix 388, Modification of constants via QUITER.
+C  20 Mar 02 AIR Task 32: added NO HIGH EMITTERS support.
 C  31 Dec 01 @EPA-BAG     Changed .GE. to >= in IMPROG conditionals 
 C  15 Nov 01 AIR Task 27: DBEXHRS now includes INERR. 
 C  17 Dec 01 @EPA-BAG        Remove I&M sawtooth 
@@ -193,7 +197,7 @@ C     /CUMCOM/  CUMMIL
 C     /DDDATA/  FIRST_DEFEAT 
 C     /FLAGS1/  SCFUSER 
 C     /FLAGS2/  IMFLAG 
-C     /FLAGS5/  AC_FLAG, SOAK_FLAG, SPD_FLAG 
+C     /FLAGS5/  AC_FLAG, SOAK_FLAG, SPD_FLAG, NOHIGH
 C     /IMBLOCK1/ FUELCF 
 C     /INJECT/  TBI, PFI 
 C     /IVPCOM/  IVPTRS, IVPTRT 
@@ -328,6 +332,7 @@ C
       REAL, EXTERNAL :: IMPROG 
       REAL, EXTERNAL :: PCLEFT 
       REAL, EXTERNAL :: SOAKCF 
+      REAL, EXTERNAL :: CABSHUM
 C 
 C     Declare local variables. 
 C 
@@ -350,7 +355,7 @@ C
       REAL, DIMENSION(2,2)         :: NGV1 
       REAL     NGV2 
       REAL     NGV_EF 
-      REAL     NOXHH 
+      REAL, DIMENSION(24)          :: NOXHH
       REAL     P3W 
       REAL     POX 
       REAL     SKCF 
@@ -359,6 +364,8 @@ C
       REAL     TEF 
       REAL     TPHR 
       REAL     VMTAGE 
+      REAL, DIMENSION(24,2)        :: HREF
+      REAL     HRABSHUM
 C 
       INTEGER  IFDS 
       INTEGER  IG5 
@@ -384,7 +391,8 @@ C  Call BIGIN2 to initialize the pointers, arrays and variables used
 C  by METHANE, BIGCFX and the IH loop below. 
 C 
       JDX = (MAXYRS + 1) - IDX 
-      CALL BIGIN2(IV,MY,JDX,IDX,IP) 
+      CALL BIGIN2(IV,MY,JDX,IDX,IP,INERR)
+      IF(INERR.GT.0) GOTO 99
 C 
 C  Initialize DEFEAT values, when necessary  
 C 
@@ -473,16 +481,25 @@ C
          END DO 
       END DO 
 C 
-C     NOx humidity Correction carried over from MOBILE5. 
-C 
-      IF((VVLDGAS(IV).EQ.1. OR. IV.EQ.VTMC) .AND. IP.EQ.3) THEN 
-          HUMIDITY=MAX(ABSHUM,21.)    !humidity test data lower limit 
-          HUMIDITY=MIN(ABSHUM,124.)   !humidity test data upper limit 
-          NOXHH = 1.0 - (HUMIDITY - 75.0)/263.2 
-          NOXHH = MAX(NOXHH, 0.0) 
-      ELSE 
-          NOXHH = 1.0 
-      END IF 
+C     NOx humidity Correction carried over from MOBILE5.
+C     Use actual abshum whenever user input rel hum is available.
+C     (User-supplied Rel Hum data supercedes user-supplied abshum entry.)
+C
+      IF((VVLDGAS(IV).EQ.1. OR. IV.EQ.VTMC) .AND. IP.EQ.3) THEN
+          DO IH=1,MAXIH
+            IF(RH_DIST) THEN
+              HRABSHUM=CABSHUM(IH) ! Use user-supplied data, when available
+            ELSE
+              HRABSHUM=ABSHUM
+            END IF
+            HUMIDITY=MAX(HRABSHUM,21.)    !humidity test data lower limit
+            HUMIDITY=MIN(HRABSHUM,124.)   !humidity test data upper limit
+            NOXHH(IH) = 1.0 - (HUMIDITY - 75.0)/263.2
+            NOXHH(IH) = MAX(NOXHH(IH), 0.0)
+          END DO
+      ELSE
+          NOXHH = 1.0  ! Set array to no corrections
+      END IF
 C 
 C     Find the percentage of the current model year's vehicles 
 C     using different fuel delivery system technologies. 
@@ -510,12 +527,13 @@ C
 C 
 C       1=Carb, 2=TBI, 3=PFI 
 C 
-        IVTEMP = IVPTRT(IV) 
-        IF (IV.EQ.VTGASBUS) IVTEMP = 14 
-        IG5 = IEVPTR(MY,IVTEMP,2) 
-        FDSWT(2) = TBI(IG5,IVTEMP) 
-        FDSWT(3) = PFI(IG5,IVTEMP) 
-        FDSWT(1) = 1.00 - FDSWT(2) - FDSWT(3) 
+        IVTEMP = IVPTRT(IV)
+        IF (IV.EQ.VTGASBUS) IVTEMP = 14
+        IG5 = IEVPTR(MY,IVTEMP,2,INERR)
+        IF(INERR.GT.0) GOTO 99
+        FDSWT(2) = TBI(IG5,IVTEMP)
+        FDSWT(3) = PFI(IG5,IVTEMP)
+        FDSWT(1) = 1.00 - FDSWT(2) - FDSWT(3)
 C 
       ENDIF 
 C 
@@ -526,6 +544,10 @@ C
           HIGHER(HIGH,IFDS,ISTD) = 0.0 
         END DO 
       END DO 
+C
+C     Initialize the emission factor arrays
+C
+      EMFAC=0.0
 C 
 C     Calculate and Store the Basic Emission Factors and High Emitter Fraction. 
 C 
@@ -567,8 +589,9 @@ C
 C     Find the proportion of high and normal emitters in 
 C     this MY/IP/IV/IFDS/ISTD grouping.  Always calculate 
 C     the emitter fractions for the first two ISTD groups. 
+C     No High Emitters flag also prevents calculations.
 C 
-            IF (VVLDGAS(IV).EQ.0.OR.MY.LT.1981) THEN 
+            IF (VVLDGAS(IV).EQ.0.OR.MY.LT.1981.OR.NOHIGH.EQ.1) THEN
               HIGHER(HIGH,IFDS,JSTD)   = 0.0 
             ELSE 
               IF(VVLDGAS(IV) .EQ. 1 .AND. MY .LE. 1993) THEN 
@@ -601,13 +624,19 @@ C
 C           Skip Normal/High cases with no fraction. 
 C 
             IF((INH.EQ.2) .AND. 
-     &         (VVLDGAS(IV).NE.1 .OR. MY.LT.1981)) CYCLE 
+     &        (VVLDGAS(IV).NE.1 .OR. MY.LT.1981 .OR. NOHIGH.EQ.1)) CYCLE
 C 
              DO ISR = 1,2 
+C
+C     Initialize
+C
+                BASEF(ISR) = 0.0
+                DO IH=1,MAXIH
+                  HREF(IH,ISR)=0.0
+                END DO
 C 
 C     Heavy duty vehicles and buses do not have engine start emissions. 
 C 
-                BASEF(ISR) = 0.0 
                 IF(VVHEAVY(IV).EQ.1 .AND. ISR.EQ.2) CYCLE 
 C 
 C     The basic emisssion factors are obtained from EF_CASE. 
@@ -615,12 +644,12 @@ C
                 IF(VVLDGAS(IV).EQ.1) THEN 
                   IF(ISTD.EQ.1 .AND. MY.LT.1994) THEN 
                     BASEF(ISR) = EF_CASE(MY,JDX,IP,IV,ISR, 
-     *                                   VMTAGE,ISTD,INH,IFDS) 
+     *                                   VMTAGE,ISTD,INH,IFDS,INERR) 
                     IF(BASEF(ISR).LT.0.00001) BASEF(ISR) = 0.0 
                   ELSE 
                     IF(ISTD.GE.1 .AND. MY.GE.1994) THEN 
                       BASEF(ISR) = EF_CASE(MY,JDX,IP,IV,ISR, 
-     *                                     VMTAGE,ISTD,INH,IFDS) 
+     *                                     VMTAGE,ISTD,INH,IFDS,INERR) 
                       IF(BASEF(ISR).LT.0.00001) BASEF(ISR) = 0.0 
                     ELSE 
                       CYCLE 
@@ -628,9 +657,10 @@ C
                   ENDIF 
                 ELSE 
                   BASEF(ISR) = EF_CASE(MY,JDX,IP,IV,ISR, 
-     *                                 VMTAGE,ISTD,INH,IFDS) 
+     *                                 VMTAGE,ISTD,INH,IFDS,INERR) 
                   IF(BASEF(ISR).LT.0.00001) BASEF(ISR) = 0.0 
                 ENDIF 
+                IF(INERR.GT.0) GOTO 99
 C 
 C     Add Tampering Offset to the basic emission factors. 
 C 
@@ -659,22 +689,25 @@ C
                     CALL METHANE(IV,IP,MY,ISTD,IFDS,IDX,ISR,BASEF) 
                   ENDIF 
                 ENDIF 
-C 
-                BASEF(ISR) = BASEF(ISR) * NOXHH 
-C 
-C     EMFAC now contains the Base Emission Factor corrected for 
-C           Tampering, Methane and Humidity. 
-C 
-                EMFAC(ISR,ISTD,IFDS,INH) = BASEF(ISR) 
-C 
-             END DO   !ISR LOOP 
-C 
-             CALL FUEL(MY,IP,IV,ICY,IFDS,INH,IDX,ISTD,BASEF,FUELCF) 
-C 
-          END DO      !ISTD 
-        END DO        !INH LOOP 
-      END DO          !IFDS 
-C 
+C
+C     Loop over hours to store basic EFs corrected for Tampering,
+C     Methane and hourly humidity
+C
+                DO IH=1,MAXIH
+                  HREF(IH,ISR) = BASEF(ISR) * NOXHH(IH)
+                  EMFAC(ISR,ISTD,IFDS,INH,IH) = HREF(IH,ISR)
+                END DO
+C
+             END DO   !ISR LOOP
+C
+             CALL FUEL(MY,IP,IV,ICY,IFDS,INH,IDX,ISTD,HREF,FUELCF,
+     *                 INERR)
+             IF(INERR.GT.0) GOTO 99
+C
+          END DO      !ISTD
+        END DO        !INH LOOP
+      END DO          !IFDS
+C
       CONV=HDCPIC(ACTUAL_MY,IV) 
 C 
 C     Begin Main Looping Structure of HRLOOP. 
@@ -684,7 +717,8 @@ C
 C       Call BIGCFX to compute the Start and Running Temperature Corrections 
 C       and Offsets applicatable for this hour. 
 C 
-        CALL BIGCFX(IDX,MY,IV,IP,IH) 
+        CALL BIGCFX(IDX,MY,IV,IP,IH,INERR)
+        IF(INERR.GT.0) GOTO 99
 C 
         DO ISR = 1,2 
 C 
@@ -714,8 +748,8 @@ C
      *                CYCLE 
                   INHWT(INH) =  HIGHER(INH,IFDS,JSTD) 
 C 
-                  BASEF(ISR) = EMFAC(ISR,ISTD,IFDS,INH) 
-C 
+                  BASEF(ISR) = EMFAC(ISR,ISTD,IFDS,INH,IH) ! Emission factors are hourly dependent
+C
 C  *******************   START EMISSIONS SECTION  ******************** 
 C 
                IF(ISR.EQ.START .AND. IROAD.EQ.1) THEN !FOR START EMISSIONS 
@@ -743,7 +777,7 @@ C
 C 
 C     Apply the NOx humidity correction factor to NGVs. 
 C 
-                    NGV_EF = NGV_EF * NOXHH 
+                    NGV_EF = NGV_EF * NOXHH(IH)
 C 
                     EF = NGV_EF*NGVFRAC + EF*(1.0-NGVFRAC) 
 C 
@@ -758,9 +792,10 @@ C
      *                   VMTAGE,ISR,IFDS,ISTD,INERR,IDX,IH,IROAD,CAT,EF) 
                        ELSEIF((VVLDGAS(IV).EQ.1 .AND. MY.LT.1981) .OR. 
      *                     VVHDGV(IV)==1 ) THEN 
-                         EF = EF * PCLEFT(MY,ICY,IP,IV) 
+                         EF = EF * PCLEFT(MY,ICY,IP,IV,INERR)
                        ENDIF 
                     ENDIF 
+                    IF(INERR.GT.0) GOTO 99
 C 
 C 
                     EF = EF * TPHR / MPHR                                ! Starts in g/mi units 
@@ -790,9 +825,10 @@ C     Conditioning Effect.
 C 
                     EF = BASEF(RUN) 
                     IF(SPD_FLAG.EQ.1)THEN 
-                      IF(IV.EQ.VTMC) CALL SCFTABMC(IP,IV,MY,IDX,RUN) 
-                      IF(VVLDGAS(IV).EQ.1.AND.SCFUSER.EQ.1) 
-     *                CALL SCFSLOW(IP,IV,MY) 
+                      IF(IV.EQ.VTMC) 
+     *                CALL SCFTABMC(IP,IV,MY,IDX,RUN,INERR)
+                      IF(VVLDGAS(IV).EQ.1.AND.SCFUSER.EQ.1)
+     *                CALL SCFSLOW(IP,IV,MY,INERR)
                     END IF 
 C 
                     IF(SPD_FLAG.EQ.1) THEN 
@@ -830,7 +866,7 @@ C
 C 
 C     Apply the NOx humidity correction factor to NGVs. 
 C 
-                    NGV2 = NGV2 * NOXHH 
+                    NGV2 = NGV2 * NOXHH(IH)
 C 
                     TEF = TEF + AC_CORR + DDNOX(IROAD)*CONV 
 C 
@@ -850,9 +886,10 @@ C
      *                        IFDS,ISTD,INERR,IDX,IH,IROAD,CAT,TEF) 
                       ELSEIF((VVLDGAS(IV)==1 .AND. MY<1981) .OR. 
      *                     VVHDGV(IV)==1 ) THEN 
-                        TEF = TEF * PCLEFT(MY,ICY,IP,IV) 
+                        TEF = TEF * PCLEFT(MY,ICY,IP,IV,INERR) 
                       ENDIF 
                     ENDIF 
+                    IF(INERR.GT.0) GOTO 99
 C 
                     TEF = TEF * INHWT(INH) * 
      &                        FDSWT(IFDS) * STDWT(ISTD) 
@@ -876,5 +913,5 @@ C
 ccs   add call to new output function for special aggregation
       IF( DBFLAG == 2 ) CALL SMKEXOUT(HEF,IP,IV,JDX)
 
-      RETURN 
+   99 RETURN
       END SUBROUTINE HRLOOP 

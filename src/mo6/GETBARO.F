@@ -1,6 +1,6 @@
-      SUBROUTINE GETE300(INPREC,INERR,RC)
+      SUBROUTINE GETBARO(INPREC,INERR,RC)
 C
-C  GETE300 processes the E300 labeled input record.
+C  GETBARO processes the BAROMETRIC PRES labeled input record.
 C
 C  Called by DSPTCH.
 C
@@ -8,8 +8,8 @@ C  Calls NXTTOK,QUITER
 C
 C  Changes: (Last change first)
 C
-C 02 Jul 02 AIR Task Bug Fix 27: Added limits on AT inputs.
-C 30 Jan 01 AIR Task 11: New routine.
+C 11 Oct 02 @epa-bag bug 36: Extended values of limits on barometeric pressure
+C 02 Jul 02 AIR Task 36: New Routine
 C
 C  Input on call:
 C
@@ -21,7 +21,7 @@ C  Output on return:
 C
 C    argument list: INERR,RC
 C    common blocks:
-C    /ATOX1/ E300,TOXCHK
+C    /ALUHIN/ BARO, BARO_FLAG
 C
 C  Local variable / array dictionary:
 C
@@ -35,7 +35,7 @@ C  Notes:
 C
 C
       IMPLICIT NONE
-      INCLUDE 'ATOX1.I'
+      INCLUDE 'ALUHIN.I'
 C
       CHARACTER*(*)  INPREC
       INTEGER        INERR
@@ -50,6 +50,8 @@ C .....................................................................
 C
       RC = 0
 C
+      BARO_FLAG=.FALSE.
+C
 C     Look for the first data field following the delimiter in column 20.
 C     Initialize by setting PTR2 to 21 (the position of the blank following
 C     the delimiter). PTR1 does not need to be initialized.
@@ -57,19 +59,17 @@ C
       PTR2 = 21
       CALL NXTTOK(INPREC,DATAFIELD,PTR1,PTR2)
 C
-C     Read and check the E300 data. Warm user if outside limits.
+C     Read and check the barometric pressure. Error out if outside limits.
 C
-      READ(DATAFIELD,*,ERR=95,END=95,IOSTAT=IOS) E300
+      READ(DATAFIELD,*,ERR=95,END=95,IOSTAT=IOS) BARO
 C
-      IF (E300.LT.70. .OR. E300.GT.100.) THEN
-        CALL QUITER(E300,0,143,INERR)
+      IF (BARO.LT.13.00 .OR. BARO.GT.33.00) THEN
+        CALL QUITER(BARO,0,4,INERR)
         RC = 1
         GOTO 99
-      ENDIF
-C
-C     Show that the required E300 was entered for this air toxic program.
-C
-      TOXCHK(2) = 2
+      END IF
+      
+      BARO_FLAG=.TRUE.
 C
       GOTO 99
 C
