@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
+LIBS          = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
@@ -20,7 +20,8 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
 TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
-     temporal.o tmnamunt.o tmpintrp.o updtmat.o 
+     setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o 
+#qatmpr.o
 
 #
 temporal: $(TMP) $(ALLI) $(LIBPATH)
@@ -34,12 +35,12 @@ temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
-asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODINFO)
+asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-genhemis.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO) \
+genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
-mktmat.o: $(MODTPRO) $(MODDAYHR)
+mktmat.o: $(MODTMPRL) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<     
 opentmp.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -47,14 +48,18 @@ opentmpin.o: $(MODMET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdefacs.o: $(MODMOBIL) $(MODEMFAC) $(MODINFO) $(MODMET) $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ $<
-temporal.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO) \
-            $(MODDAYHR)
+setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
+            $(MODDAYHR) $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ $<
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 tmpintrp.o: $(MODSOURC) $(MODMET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-updtmat.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODDAYHR)
+qatmpr.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
