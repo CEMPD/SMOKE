@@ -2,7 +2,7 @@
         PROGRAM CSGMOBIL
 
 C***********************************************************************
-C  program body starts at line 133
+C  program body starts at line 134
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -106,7 +106,7 @@ C..........    Naming and matrix/vector matching arrays
 C...........   Other local variables
         
         INTEGER         ICNT               ! Counter
-        INTEGER         JDATE, JTIME, TSTEP
+        INTEGER         LDATE, JDATE, JTIME, TSTEP
         INTEGER         NETYPE             ! No. of scenario-spec MV emis types
         INTEGER         NMPOL              ! No. of scenario-spec model species
         INTEGER         NSNAME             ! No. of speciation factor names
@@ -366,10 +366,11 @@ C.......   Transform and write out mobile source emissions values:
         END IF
 
 C.........  Calculate emissions for all time steps available from MTMP
+        LDATE = 0
         DO  199  T = 1, NSTEPS
 
 C...............   If this is a new month, or new day, write message
-            IF ( MOD( T,24 ) .EQ. 1 ) THEN
+            IF ( LDATE .NE. JDATE ) THEN
                     
                 MESG = 'Processing ' //
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
@@ -444,6 +445,7 @@ C.................  Write out model species emissions
 
   189       CONTINUE  !  End of loop on output model species
 
+            LDATE = JDATE
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
   199   CONTINUE          !  end loop on time steps
