@@ -43,11 +43,12 @@
 !.........  Sizes of the arrays...
 
         INTEGER, PUBLIC :: MXXACTV   ! max. no. activities in EFs xref
-        INTEGER, PUBLIC :: MXXNPSI   ! max. no. PSIs in EFs xref
-        INTEGER, PUBLIC :: MXPPGRP   ! max no. PSIs in a group of scenarios
-        INTEGER, PUBLIC :: NDIU      ! no. diurnal EFs
+C        INTEGER, PUBLIC :: MXXNPSI   ! max. no. PSIs in EFs xref
+C        INTEGER, PUBLIC :: MXPPGRP   ! max no. PSIs in a group of scenarios
+C        INTEGER, PUBLIC :: NDIU      ! no. diurnal EFs
         INTEGER, PUBLIC :: NEPROC    ! no. emission processes (e.g., exhaust)
-        INTEGER, PUBLIC :: NNDI      ! no. non-diurnal EFs
+C        INTEGER, PUBLIC :: NNDI      ! no. non-diurnal EFs
+        INTEGER, PUBLIC :: NEFS      ! no. EFs
         INTEGER, PUBLIC :: NMMTEF    ! no. ef-ref/temperature combinations
 
 !.........  Unique lists of source characteristics and associated arrays...
@@ -62,12 +63,15 @@
         INTEGER, ALLOCATABLE :: PSIALL  ( : )  ! master list of PSIs to process
 
 !.........  Emission factor names, units, and descriptions
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: DIUDSC( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: DIUNAM( : )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: DIUUNT( : )
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: NDIDSC( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: NDINAM( : )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: NDIUNT( : )
+C        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: DIUDSC( : )
+C        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: DIUNAM( : )
+C        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: DIUUNT( : )
+C        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: NDIDSC( : )
+C        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: NDINAM( : )
+C        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: NDIUNT( : )
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EFSDSC( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EFSNAM( : )
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EFSUNT( : )
 
 !.........  Emission processes and emission types (proccess//pol) and related
 !.........  Second dimension is number of activities in the inventory
