@@ -61,7 +61,7 @@ C.........  Initialize IREC on first time through for this Mobile6 run
         	
 C.............  Make sure we don't try to read past the end of the file
             IF( IREC + 1 > NLINES ) THEN
-            	ROADTYPE = LOCAL
+            	ROADTYPE = M6LOCAL
             	SPEED = 0.
             	EXIT
             END IF
@@ -95,7 +95,7 @@ C.............  Check that county from SPDSUM is still current county
             IF( STR2INT( CURRCOUNTY ) /= COUNTY ) THEN
                 BACKSPACE( SDEV )
                 IREC = IREC - 1
-            	ROADTYPE = LOCAL
+            	ROADTYPE = M6LOCAL
             	SPEED = 0.
                 EXIT
             END IF
@@ -106,7 +106,7 @@ C.............  Store scenario numbers with sources
                     SRCCT = SRCCT + 1
 
 C.....................  Stick local sources in with previous scenario                    
-                    IF( ROADTYPE == LOCAL ) THEN
+                    IF( ROADTYPE == M6LOCAL ) THEN
                         SCENLIST( SOURCES( J ),1 ) = SCENNUM - 1
                     ELSE
                         SCENLIST( SOURCES( J ),1 ) = SCENNUM
