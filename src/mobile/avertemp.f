@@ -2,6 +2,42 @@
         SUBROUTINE AVERTEMP( NSRC, NCNTY, CNTYCODE, SRCARRAY,  
      &                       TSTEP, HOURTEMP, CNTYTEMP, NDAYSRC ) 
 
+C***********************************************************************
+C  subroutine body starts at line 78
+C
+C  DESCRIPTION:
+C       Averages hourly temperatures based on number of sources
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -22,7 +58,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT   (IN) :: SRCARRAY( NSRC )       ! county codes for each source
         INTEGER, INTENT   (IN) :: TSTEP                  ! current time step
         REAL,    INTENT(INOUT) :: HOURTEMP( NSRC, 24 )   ! hourly temps by source
-        REAL,    INTENT  (OUT) :: CNTYTEMP( NCNTY,24 )   ! hourly temps by county
+        REAL,    INTENT  (OUT) :: CNTYTEMP( NCNTY )      ! averaged temps by county
         INTEGER, INTENT(INOUT) :: NDAYSRC( NSRC,24 )     ! no. days to average over
 
 C...........   Other local variables
@@ -59,7 +95,7 @@ C.........  Loop through all counties
 
             END DO
             	
-            CNTYTEMP( I,TSTEP ) = TEMPSUM / NUMSRC
+            CNTYTEMP( I ) = TEMPSUM / NUMSRC
         END DO
 
         RETURN
