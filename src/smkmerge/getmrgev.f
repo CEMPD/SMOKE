@@ -243,21 +243,16 @@ C.........  Strange to have elevated ASCII and layer merge at the same time
 
         END IF
 
-C.........  Don't output gridded if gridded biogenics is only input
-        IF( BFLAG .AND. .NOT. XFLAG .AND. LGRDOUT ) THEN
-
-            MESG = 'NOTE: Turning off gridded outputs because no ' //
-     &             'merging is taking place'
-            CALL M3MSG2( MESG )
-            LGRDOUT = .FALSE.
-
-        END IF
-
 C.........  Cannot have BFLAG without TFLAG
         IF( BFLAG ) TFLAG = .TRUE.
 
 C.........  Cannot have LFLAG without PFLAG
-        IF( .NOT. PFLAG ) LFLAG = .FALSE.
+C.........  Cannot have elevated or PinG either
+        IF( .NOT. PFLAG ) THEN
+            LFLAG = .FALSE.
+            ELEVFLAG = .FALSE.
+            PINGFLAG = .FALSE.
+        END IF
 
 C.........  Report that flags for reporting inventory emissions, speciated
 C           emissions or not, and controlled emissions or not do not work yet
