@@ -126,6 +126,8 @@ mbsccadj.o  : $(MODMOBIL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ mbsccadj.f
 normtpro.o: $(MODTMPRL)
 	$(FC) $(FFLAGS) -c -o $@ normtpro.f
+prclinrc.o: $(MODREPRT) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ prclinrc.f
 procspro.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ procspro.f
 rdcodnam.o: $(MODLISTS)
