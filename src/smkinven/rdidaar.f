@@ -102,10 +102,6 @@ C              of pollutant fields.
         INTEGER, PARAMETER :: IEINIT( NARPPOL3 ) = 
      &                              ( / 25,35,46,53,56,62 / )
 
-C...........   Local allocatable arrays
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPNAM( : )! pol names for file
-        INTEGER               , ALLOCATABLE :: POLPOS( : )! pol pos in INVPNAM
-
 C...........   Local arrays
         INTEGER          IS( NARPPOL3 )  ! start position for each pol char
         INTEGER          IE( NARPPOL3 )  ! end position for each pol char
@@ -189,114 +185,26 @@ C.............  Read a line of IDA file as a character string
 C.............  Skip blank lines
             IF( L .EQ. 0 ) CYCLE
 
-C.............  Scan for header lines
-            IF( LINE( 1:1 ) .EQ. '#' ) THEN
+C.............  Scan for header lines and check to ensure all are set 
+C               properly
+            CALL GETHDR( MXPOLFIL, MXIPOL, .TRUE., .TRUE., .TRUE., 
+     &                   INVPNAM, LINE, ICC, INY, NPOL, IOS )
 
-                IF ( LINE(2:8) .EQ. 'COUNTRY' ) THEN  ! read in country-name
-                    CNTRY = ADJUSTL( LINE( 9:L ) )
-                    ICC   = INDEX1( CNTRY, NCOUNTRY, CTRYNAM )
+C.............  Interpret error status
+            IF( IOS .EQ. 4 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'Maximum allowed data variables ' //
+     &                 '(MXPOLFIL=', MXPOLFIL, CRLF() // BLANK10 //
+     &                 ') exceeded in input file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                    IF ( ICC .LE. 0 ) THEN
-                        EFLAG = .TRUE.
-                        L = LEN_TRIM( CNTRY )
-                        WRITE( MESG, 94010 )
-     &                         'Unknown country name "' // CNTRY( 1:L )
-     &                         // '" encountered at line', IREC,
-     &                         '. Must edit EMCNST3.EXT and recompile.'
-                        CALL M3MESG( MESG )
-                        CYCLE
-                    END IF
-
-                    ICC   = CTRYCOD( ICC )
-          
-                ELSEIF ( LINE(2:5) .EQ. 'YEAR' ) THEN ! read in inventory year
-                    INY = STR2INT( LINE( 6:L ) )
-                    IF ( INY .LT. 1971 ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG, 94010 ) 'Invalid year ', INY, 
-     &                         'encountered at line ', IREC
-                        CALL M3MESG( MESG )
-                    END IF
-
-                ELSEIF ( LINE(2:6) .EQ. 'POLID' ) THEN ! read in pollutants
-
-C..................... Deallocate names for pollutant, if needed
-                    IF(ALLOCATED( TMPNAM )) DEALLOCATE( TMPNAM,POLPOS )
-
-C.....................  Allocate memory for current file for reading pol names
-C                       and storing positions in master list
-                    LINE = LINE( 7:L )
-                    L = LEN_TRIM( LINE )
-                    NPOL = GETNLIST( L, LINE )
-                    ALLOCATE( TMPNAM( NPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'TMPNAM', PROGNAME )
-                    ALLOCATE( POLPOS( NPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'POLPOS', PROGNAME )
-
-                    IF( NPOL .GT. MXPOLFIL ) THEN
-                        WRITE( MESG,94010 ) 'INTERNAL ERROR: Maximum '//
-     &                         'pollutants allowed (MXPOLFIL) is', 
-     &                         MXPOLFIL, 'but file has', NPOL
-                        CALL M3MSG2( MESG )
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-
-C.....................  Parse the header line into the pollutant names
-                    CALL PARSLINE( LINE, NPOL, TMPNAM )
-
-C.....................  Store the position in master list of each pollutant
-C.....................  Write error if pollutant is not found.
-                    DO V = 1, NPOL
-
-                        CPOL = TMPNAM( V )
-                        L = LEN_TRIM( CPOL )
-                        COD = INDEX1( CPOL, MXIPOL, INVPNAM )
-                        IF( COD .LE. 0 ) THEN
-                            EFLAG = .TRUE.
-                            MESG = 'ERROR: Pollutant "' // CPOL( 1:L )//
-     &                             '" not in master pollutant list!'
-                            CALL M3MSG2( MESG )
-                        ELSE
-                            POLPOS( V ) = COD
-                        END IF
-
-                    END DO
-
-                END IF
-
-                CYCLE   ! to next iteration
-
-            END IF
-
-C.............  If the line is not a header line, make sure that all of the 
-C               important header lines have been read in...
-
-C.............  Check for country header
-            IF( ICC .LT. 0 ) THEN
+            ELSE IF( IOS .GT. 0 ) THEN
                 EFLAG = .TRUE.
-                ICC = 9         ! to turn off error message
-                MESG = 'ERROR: Country name was not set with ' //
-     &                 '#COUNTRY header before first data line.'
-                CALL M3MSG2( MESG )
+
             END IF
 
-C.............  Check for inventory year header
-            IF( INY .EQ. 0 ) THEN
-                EFLAG = .TRUE.
-                INY = 1       ! to turn off error message
-                MESG = 'ERROR: Inventory year was not set with ' //
-     &                 '#YEAR header before first data line.'
-                CALL M3MSG2( MESG )
-            END IF
-
-C.............  Check for pollutant names header
-            IF( NPOL .EQ. 0 ) THEN
-                EFLAG = .TRUE. 
-                NPOL = -1       ! to turn off error message
-                MESG = 'ERROR: Pollutants were not set with ' //
-     &                 '#POLID header before first data line.'
-                CALL M3MESG( MESG )
-            END IF
+C.............  If a header line was encountered, go to next line
+            IF( IOS .GE. 0 ) CYCLE
 
 C.............  Make sure that all of the needed integer values are integers...
 

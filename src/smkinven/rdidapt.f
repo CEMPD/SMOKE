@@ -106,10 +106,6 @@ C              of pollutant fields.
         INTEGER, PARAMETER :: IEINIT( NPTPPOL3 ) = 
      &                              ( / 262,275,282,285,295,298,301 / )
 
-C...........   Local allocatable arrays
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPNAM( : )! pol names for file
-        INTEGER               , ALLOCATABLE :: POLPOS( : )! pol pos in INVPNAM
-
 C...........   Local arrays
         INTEGER          IS( NPTPPOL3 )  ! start position for each pol char
         INTEGER          IE( NPTPPOL3 )  ! end position for each pol char
@@ -141,7 +137,6 @@ C...........   Other local variables
         INTEGER         MXWARN  !  maximum number of warnings
         INTEGER         NPOL    !  number of pollutants in file
         INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
-        INTEGER         ORIS    !  tmp oris ID code
         INTEGER         SS      !  counter for sources
         INTEGER         TPF     !  tmp temporal adjustments setting
 
@@ -164,6 +159,7 @@ C...........   Other local variables
         CHARACTER(LEN=BLIDLEN) BLID  ! tmp boiler ID
         CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVPNAM
         CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
+        CHARACTER(LEN=ORSLEN3) CORS  ! tmp DOE plant ID
         CHARACTER(LEN=IOVLEN3) CPOL  ! tmp pollutant code
         CHARACTER(LEN=DESCLEN) DESC  ! tmp plant description
         CHARACTER(LEN=LINSIZ)  LINE  ! input line from inventory file
@@ -226,114 +222,26 @@ C.............  Read a line of IDA file as a character string
 C.............  Skip blank lines
             IF( L .EQ. 0 ) CYCLE
 
-C.............  Scan for header lines
-            IF( LINE( 1:1 ) .EQ. '#' ) THEN
+C.............  Scan for header lines and check to ensure all are set 
+C               properly
+            CALL GETHDR( MXPOLFIL, MXIPOL, .TRUE., .TRUE., .TRUE., 
+     &                   INVPNAM, LINE, ICC, INY, NPOL, IOS )
 
-                IF ( LINE(2:8) .EQ. 'COUNTRY' ) THEN  ! read in country-name
-                    CNTRY = ADJUSTL( LINE( 9:L ) )
-                    ICC   = INDEX1( CNTRY, NCOUNTRY, CTRYNAM )
+C.............  Interpret error status
+            IF( IOS .EQ. 4 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'Maximum allowed data variables ' //
+     &                 '(MXPOLFIL=', MXPOLFIL, CRLF() // BLANK10 //
+     &                 ') exceeded in input file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                    IF ( ICC .LE. 0 ) THEN
-                        EFLAG = .TRUE.
-                        L = LEN_TRIM( CNTRY )
-                        WRITE( MESG, 94010 )
-     &                         'Unknown country name "' // CNTRY( 1:L )
-     &                         // '" encountered at line', IREC,
-     &                         '. Must edit EMCNST3.EXT and recompile.'
-                        CALL M3MESG( MESG )
-                        CYCLE
-                    END IF
-
-                    ICC   = CTRYCOD( ICC )
-          
-                ELSEIF ( LINE(2:5) .EQ. 'YEAR' ) THEN ! read in inventory year
-                    INY = STR2INT( LINE( 6:L ) )
-                    IF ( INY .LT. 1971 ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG, 94010 ) 'Invalid year ', INY, 
-     &                         'encountered at line ', IREC
-                        CALL M3MESG( MESG )
-                    END IF
-
-                ELSEIF ( LINE(2:6) .EQ. 'POLID' ) THEN ! read in pollutants
-
-C..................... Deallocate names for pollutant, if needed
-                    IF(ALLOCATED( TMPNAM )) DEALLOCATE( TMPNAM,POLPOS )
-
-C.....................  Allocate memory for current file for reading pol names
-C                       and storing positions in master list
-                    LINE = LINE( 7:L )
-                    L = LEN_TRIM( LINE )
-                    NPOL = GETNLIST( L, LINE )
-                    ALLOCATE( TMPNAM( NPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'TMPNAM', PROGNAME )
-                    ALLOCATE( POLPOS( NPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'POLPOS', PROGNAME )
-
-                    IF( NPOL .GT. MXPOLFIL ) THEN
-                        WRITE( MESG,94010 ) 'INTERNAL ERROR: Maximum '//
-     &                         'pollutants allowed (MXPOLFIL) is', 
-     &                         MXPOLFIL, 'but file has', NPOL
-                        CALL M3MSG2( MESG )
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-
-C.....................  Parse the header line into the pollutant names
-                    CALL PARSLINE( LINE, NPOL, TMPNAM )
-
-C.....................  Store the position in master list of each pollutant
-C.....................  Write error if pollutant is not found.
-                    DO V = 1, NPOL
-
-                        CPOL = TMPNAM( V )
-                        L = LEN_TRIM( CPOL )
-                        COD = INDEX1( CPOL, MXIPOL, INVPNAM )
-                        IF( COD .LE. 0 ) THEN
-                            EFLAG = .TRUE.
-                            MESG = 'ERROR: Pollutant "' // CPOL( 1:L )//
-     &                             '" not in master pollutant list!'
-                            CALL M3MSG2( MESG )
-                        ELSE
-                            POLPOS( V ) = COD
-                        END IF
-
-                    END DO
-
-                END IF
-
-                CYCLE   ! to next iteration
-
-            END IF
-
-C.............  If the line is not a header line, make sure that all of the 
-C               important header lines have been read in...
-
-C.............  Check for country header
-            IF( ICC .LT. 0 ) THEN
+            ELSE IF( IOS .GT. 0 ) THEN
                 EFLAG = .TRUE.
-                ICC = 9         ! to turn off error message
-                MESG = 'ERROR: Country name was not set with ' //
-     &                 '#COUNTRY header before first data line.'
-                CALL M3MSG2( MESG )
-            END IF
 
-C.............  Check for inventory year header
-            IF( INY .EQ. 0 ) THEN
-                EFLAG = .TRUE.
-                INY = 1       ! to turn off error message
-                MESG = 'ERROR: Inventory year was not set with ' //
-     &                 '#YEAR header before first data line.'
-                CALL M3MSG2( MESG )
-            END IF
+            END IF                
 
-C.............  Check for pollutant names header
-            IF( NPOL .EQ. 0 ) THEN
-                EFLAG = .TRUE. 
-                NPOL = -1       ! to turn off error message
-                MESG = 'ERROR: Pollutants were not set with ' //
-     &                 '#POLID header before first data line.'
-                CALL M3MESG( MESG )
-            END IF
+C.............  If a header line was encountered, go to next line
+            IF( IOS .GE. 0 ) CYCLE
 
 C.............  Make sure that all of the needed integer values are integers...
 
@@ -360,15 +268,6 @@ C.............  Check SIC code, warning for missing
                 WRITE( MESG,94010 ) 'WARNING: Missing SIC code at ' //
      &                 'line', IREC, '. Default 0000 will be used.'
                 NWARN = NWARN + 1
-                CALL M3MESG( MESG )
-
-            END IF
-
-C.............  Check ORIS code, missing okay
-            IF( .NOT. CHKINT( LINE( 48:53 ) ) ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: ORIS code is non-' //
-     &                 'integer at line', IREC
                 CALL M3MESG( MESG )
 
             END IF
@@ -491,12 +390,12 @@ C               the various data fields...
             FCID = ADJUSTL( LINE(   6:20  ) )  ! plant ID
             PTID = ADJUSTL( LINE(  21:35  ) )  ! point ID
             SKID = ADJUSTL( LINE(  36:47  ) )  ! stack ID
+            CORS = ADJUSTL( LINE(  48:53  ) )  ! DOE plant ID
             BLID = ADJUSTL( LINE(  54:59  ) )  ! boiler ID
             SGID = ADJUSTL( LINE(  60:61  ) )  ! segment ID
             DESC = ADJUSTL( LINE(  62:101 ) )  ! plant description
             TSCC = ADJUSTL( LINE( 102:111 ) )  ! SCC code
 
-            ORIS = STR2INT ( LINE( 48:53 ) )
             SIC  = MAX( STR2INT ( LINE( 227:230 ) ), 0 )
             HT   = STR2REAL( LINE( 120:123 ) ) * FT2M  ! ft to m
             DM   = STR2REAL( LINE( 124:129 ) ) * FT2M  ! ft to m
@@ -526,7 +425,6 @@ C.............  Store source characteristics if dimension is okay
 
                 IFIPA  ( SS ) = FIP
                 ISICA  ( SS ) = SIC
-                IORISA ( SS ) = ORIS
                 TPFLGA ( SS ) = TPF
                 INVYRA ( SS ) = INY
                 STKHTA ( SS ) = HT
@@ -536,6 +434,7 @@ C.............  Store source characteristics if dimension is okay
                 XLOCAA ( SS ) = LON
                 YLOCAA ( SS ) = LAT
                 CSCCA  ( SS ) = TSCC
+                CORISA ( SS ) = CORS
                 CBLRIDA( SS ) = BLID
                 CPDESCA( SS ) = DESC
 
