@@ -214,10 +214,9 @@ C.......   Borrow most of the file description from the input file.
         END IF
 
 
-        ENAME = PROMPTMFILE( 
-     &          'Enter logical name for OUTPUT EMIS file ' //
-     &          'or "NONE"',
-     &          FSUNKN3, 'ETSC', 'CSELEV' )
+        MESG = 'Enter logical name for OUTPUT EMIS file, or "NONE"'
+
+        ENAME = PROMPTMFILE( MESG, FSUNKN3, 'ETSC', 'CSELEV' )
 
         OUTPUTFLAG = ( ENAME .NE. NONE )
 
