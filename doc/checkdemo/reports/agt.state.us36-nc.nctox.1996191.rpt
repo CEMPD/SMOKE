@@ -7,10 +7,10 @@ Temporal factors applied for episode from
      Tuesday July 9, 1996   at 000000 to
      Tuesday July 9, 1996   at 230000
 Annual total data basis in report
-Date       | Region| State         | CO           | NOX          | VOC          | NH3          | SO2          | PM10         | PM2_5        | PMC
-           |       |               | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]
+Date       ; Region; State         ; CO           ; NOX          ; VOC          ; NH3          ; SO2          ; PM10         ; PM2_5        ; PMC
+           ;       ;               ; [tons/day]   ; [tons/day]   ; [tons/day]   ; [tons/day]   ; [tons/day]   ; [tons/day]   ; [tons/day]   ; [tons/day]
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
- 07/09/1996|  037000|North Carolina|    0.22462E+04|   0.10646E+03|   0.10296E+04|   0.41641E+03|   0.89843E+02|   0.45125E+03|   0.22257E+03|   0.22868E+03
+ 07/09/1996;  037000;North Carolina;    0.26161E+03;   0.39104E+02;   0.72822E+03;   0.62752E+03;   0.73222E+02;   0.34028E+03;   0.11533E+03;   0.22495E+03
 
 ############################################################################################################################################################
 
