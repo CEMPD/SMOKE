@@ -2,7 +2,7 @@
          PROGRAM PDEMSPT
 
 C***********************************************************************
-C  program body starts at line 206
+C  program body starts at line 214
 C
 C  DESCRIPTION:
 C       Process data contained in EMS-95 hour-specific source files,
@@ -53,7 +53,6 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
-
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
@@ -85,16 +84,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   PARAMETERS and their descriptions
 
         CHARACTER*5     BLANK5
-        INTEGER         MXHR    ! Maximum number of hours possible
         INTEGER         NPHRIP  ! Maximum number of hourly sources by inv pol
         INTEGER         NZONE   ! Maximum number of time zones
 
         PARAMETER     ( BLANK5  = ' ',
-     &                  MXHR    = 24 * 365,
      &                  NPHRIP  = NPHR * NIPOL, 
      &                  NZONE   = 9  )
-
-
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...............   Time zone tables:  FIP-independent; state-only; state-county
@@ -108,7 +103,6 @@ C...........   Point sources table for process.pt files  (unsorted; sorted)
 
         CHARACTER*40   PSKEY ( NPEMAX )  ! FIP // SCC  // FCID // SKID
         CHARACTER*56   PSLST ( NPEMAX )  ! FIP // FCID // SKID // DVID // PRID
-
 
 C.......   Source list for matching 
 
@@ -151,7 +145,6 @@ C...........   File units and logical/physical names
 
         CHARACTER*16    ENAME   ! point source inventory file
         CHARACTER*16    HNAME   !  hour-specific output emissions file
-
 
 C...........   Other local variables
 
