@@ -210,33 +210,34 @@ C.............  Read and check coordinates
             XVAL = STR2REAL( LINE( 72:80 ) )
             YVAL = STR2REAL( LINE( 81:89 ) )
     
-C.............  If invalid values, pull previously stored values from facility file
+C.............  If invalid values, pull previously stored (and already
+C               converted values from facility file
             IF( XVAL <= 0.0 .OR. YVAL <= 0.0 ) THEN
                 XVAL = XLOCA( K1 )
                 YVAL = YLOCA( K1 )
     
 C.................  Still no values, skip to next line
                 IF( XVAL <= 0.0 .OR. YVAL <= 0.0 ) CYCLE
+
+C.............  If valid, convert coordinates from UTM to lat-lon
+            ELSE
+                ZONE = UTMZONE( K1 )
+                IF( ZONE > 0 ) CALL UTM2LL( XVAL, YVAL, ZONE, XX, YY )
+
             END IF
     
-C.............  Convert coordinates from UTM to lat-lon
-            ZONE = UTMZONE( K1 )
-            
-            IF( ZONE > 0 ) THEN
-                CALL UTM2LL( XVAL, YVAL, ZONE, XX, YY )
-            
+C.............  Make sure coordinates are within lat-lon range
+            IF( ABS( XVAL ) > 180. .OR. ABS( YVAL ) > 180. ) THEN
+                WRITE( MESG,94010 ) 'WARNING: Invalid (X,Y) ' //
+     &                 'coordinates at line', IREC, 'in stack file'
+                CALL M3MESG( MESG )
+                CYCLE
+
+C............   Otherwise, convert to western hemisphere, if requested
             ELSE
-C.................  Make sure coordinates are within lat-lon range
-                IF( ABS( XVAL ) > 180. .OR. ABS( YVAL ) > 180. ) THEN
-                    WRITE( MESG,94010 ) 'Invalid (X,Y) coordinates ' //
-     &                     'at line', IREC, 'in facility file'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                ELSE
-                    XX = XVAL
-                    YY = YVAL
-                    IF( WFLAG .AND. XX > 0 ) XX = -XX  ! convert to western hemisphere
-                END IF
+                XX = XVAL
+                YY = YVAL
+                IF( WFLAG .AND. XX > 0 ) XX = -XX  ! convert to western hemisphere
             END IF
             
 C.............  Increment count of actual records            

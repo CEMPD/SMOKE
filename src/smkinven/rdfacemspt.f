@@ -76,8 +76,10 @@ C...........   Other local variables
         INTEGER              KEYLEN                 ! length of source key
         INTEGER              ZONE                   ! UTM zone
 
-        REAL                 XVAL                   ! UTM X coordinate
-        REAL                 YVAL                   ! UTM Y coordinate
+        REAL                 XVAL                   ! tmp X coordinate
+        REAL                 YVAL                   ! tmp Y coordinate
+        REAL                 XX                     ! Longitude
+        REAL                 YY                     ! Latitude
         
         CHARACTER(LEN=FIPLEN3) CFIP      ! fip code
         CHARACTER(LEN=PLTLEN3) FCID      ! facility ID
@@ -172,16 +174,18 @@ C.............  Read and check coordinates
 C.............  Increment count of actual records            
             ACTCNT = ACTCNT + 1
             
+            IF( ZONE > 0 ) CALL UTM2LL( XVAL, YVAL, ZONE, XX, YY )
+
 C.............  Loop through matching sources and set values
             DO
             
 C.................  Check for end of array or end of matching sources
                 IF( K1 > NSRC ) EXIT
                 IF( CSOURC( K1 )( 1:KEYLEN ) /= SRCKEY ) EXIT
-                
+
                 UTMZONE( K1 ) = ZONE
-                XLOCA  ( K1 ) = XVAL    ! still UTM coords, will convert after reading stack file
-                YLOCA  ( K1 ) = YVAL
+                XLOCA  ( K1 ) = XX             ! in lat-lon
+                YLOCA  ( K1 ) = YY             ! in lat-lon
                 CPDESC ( K1 ) = LINE( 45:84 )
                 
                 K1 = K1 + 1
