@@ -42,7 +42,9 @@ setenv RUN_SMKREPORT Y        # Y runs reporting for state reports
 setenv FILL_ANNUAL          N  # Y fills annual value when only average day is provided
 setenv IMPORT_GRDIOAPI_YN   N  # Y imported gridded I/O API inventory
 setenv RAW_DUP_CHECK        N  # Y errors on duplicate records
+setenv SMK_ARTOPNT_YN       Y  # Y uses area-to-point conversions 
 setenv SMK_BASEYR_OVERRIDE  0  # Enter year of the base year when future-year inven provided
+setenv SMK_NHAPEXCLUDE_YN   Y  # Y uses NonHAP exclusions file
 setenv SMKINVEN_FORMULA     "PMC=PM10-PM2_5" # Internal PMC calculation
 setenv WEST_HSPHERE         Y  # Y converts ALL stack coords to western hemisphere
 setenv WKDAY_NORMALIZE      N  # Y normalizes weekly profiles by weekdays
@@ -80,6 +82,9 @@ setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     SMK_AVEDAY_YN               # see multiple-program controls
 
+# For Smk2emis
+setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
+
 # Multiple-program controls
 setenv OUTZONE              0     # output time zone of emissions
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
@@ -98,9 +103,9 @@ setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
-setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-# setenv YEAR_OVERRIDE          # Overrides YEAR (base) in Assigns file
-# setenv INVTABLE_OVERRIDE      # Inventory table override
+# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
+# setenv YEAR_OVERRIDE              # Overrides YEAR (base) in Assigns file
+# setenv INVTABLE_OVERRIDE          # Inventory table override
 
 ##############################################################################
 
@@ -108,6 +113,12 @@ setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
 #
 setenv RUN_PART1 Y
 source $ASSIGNS_FILE   # Invoke Assigns file
+
+# Reset NHAPEXCLUDE file to exclude all sources
+# This is needed for now because the stationary area criteria and non-point 
+#    toxics inventories are not consistent and should not be integrated.
+setenv NHAPEXCLUDE $INVDIR/other/nhapexclude.all.txt
+
 source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 1
 setenv RUN_PART1 N
