@@ -99,6 +99,11 @@ C.........  For mobile sources ...
             LSCCEND  = 7
             RSCCBEG  = 8
 
+            SELECT CASE( FILFMT )
+            CASE( EMSFMT )
+                NEMSFILE = 1    ! Number of required EMS-95 file types
+            END SELECT
+
 C.........  For point sources ...
         CASE ( 'POINT' )
 
