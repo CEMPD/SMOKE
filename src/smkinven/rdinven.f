@@ -1,14 +1,14 @@
 
-        SUBROUTINE RDINVEN( FDEV, VDEV, SDEV, FNAME, MXIDAT, INVDCOD, 
-     &                      INVDNAM, FILFMT, NRAWBP, PRATIO, TFLAG )
+        SUBROUTINE RDINVEN( FDEV, VDEV, SDEV, FNAME,
+     &                      FILFMT, NRAWBP, TFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line 131
+C  subroutine body starts at line 134
 C
 C  DESCRIPTION:
-C      This subroutine controls reading an inventory file for any source 
+C      This subroutine controls reading an ASCII inventory file for any source 
 C      category from one of many formats.  It determines the format and 
-C      call the appropriate reader subroutines. It controls the looping 
+C      calls the appropriate reader subroutines. It controls the looping 
 C      through multiple files when a list-formatted file is used as input.
 C
 C  PRECONDITIONS REQUIRED:
@@ -24,7 +24,7 @@ C
 C  REVISION  HISTORY:
 C      Created 10/98 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -53,6 +53,9 @@ C...........   This module is the inventory arrays
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL
+
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -84,12 +87,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: VDEV              ! unit no. of vmtmix file
         INTEGER     , INTENT (IN) :: SDEV              ! unit no. of speeds file
         CHARACTER(*), INTENT (IN) :: FNAME             ! logical name of file
-        INTEGER     , INTENT (IN) :: MXIDAT            ! max no. inv pols/actvty
-        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) ! 5-dig pol/act codes
-        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) ! name of pols/actvtys
         INTEGER     , INTENT(OUT) :: FILFMT            ! file format code
         INTEGER     , INTENT(OUT) :: NRAWBP            ! no. raw records x pol
-        REAL        , INTENT(OUT) :: PRATIO            ! position ratio
         LOGICAL     , INTENT(OUT) :: TFLAG             ! true: PTREF output
 
 C...........   Contents of PTFILE 
@@ -248,11 +247,6 @@ C           number of vehicle types
             NEDIM1 = NEDIM1 * NVTYPE
         END IF
 
-C.........  Set ratio of NRAWIN and NEDIM1 to use in saving file source arrays
-C           which are in different data structures for EMS-95 ibput than IDA
-C           input.
-        PRATIO = REAL( NRAWIN ) / MAX( 1,NEDIM1 )
-
 C.........  Allocate memory for (unsorted) input arrays using dimensions set
 C           based on the source category and type of inventory being input
         CALL SRCMEM( CATEGORY, 'UNSORTED', .TRUE., .FALSE., NRAWIN, 
@@ -261,9 +255,13 @@ C           based on the source category and type of inventory being input
         CALL SRCMEM( CATEGORY, 'UNSORTED', .TRUE., .TRUE., NRAWIN, 
      &               NEDIM1, NPPOL )
 
-C.........   Initialize sorting index
+C.........   Initialize sorting index and input record index
+C.........   For EMS-95 and EPS formats, these arrays are simply arrays of
+C            ones.  They are used to restructure the IDA formatted data that
+C            contain multiple data records on each line, in any order.
         DO I = 1, NEDIM1
             INDEXA( I ) = I
+            INRECA( I ) = I
         END DO
 
 C.........  Initialize pollutant-specific values as missing
@@ -276,17 +274,17 @@ C.........  IDA format (single file)
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIDAT, WKSET, 
-     &                        INVDNAM, NRAWOUT, EFLAG, NDROP, EDROP )
+                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, WKSET, 
+     &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'MOBILE' )
                 
-                CALL RDIDAMB( FDEV, NRAWIN,NEDIM1, MXIDAT, WKSET, 
-     &                        INVDNAM, NRAWOUT, EFLAG, NDROP, EDROP )
+                CALL RDIDAMB( FDEV, NRAWIN, NEDIM1, WKSET, 
+     &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'POINT' )
-                CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIDAT, WKSET, 
-     &                        INVDNAM, NRAWOUT, EFLAG, NDROP, EDROP )
+                CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, WKSET, 
+     &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             END SELECT
 
@@ -297,16 +295,16 @@ C.........  EPS format (single file)
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-                CALL RDEPSAR( FDEV, NRAWIN, MXIDAT, WKSET, INVDCOD,
-     &                        INVDNAM, INY, NRAWOUT, ERRIOS, ERRREC, 
-     &                        ERFILDSC, EFLAG, NDROP, EDROP )
+                CALL RDEPSAR( FDEV, NRAWIN, WKSET, INY, NRAWOUT, 
+     &                        ERRIOS, ERRREC, ERFILDSC, EFLAG, 
+     &                        NDROP, EDROP )
 
             CASE( 'MOBILE' )
 c                CALL RDEPSMV(  )
 
             CASE( 'POINT' )
-                CALL RDEPSPT( FDEV, NRAWIN, MXIDAT, WKSET, INVDCOD,
-     &                        INVDNAM, INY, NRAWOUT, ERRIOS, ERRREC, 
+                CALL RDEPSPT( FDEV, NRAWIN, WKSET, 
+     &                        INY, NRAWOUT, ERRIOS, ERRREC, 
      &                        ERFILDSC, EFLAG, NDROP, EDROP )
 
             END SELECT
@@ -357,19 +355,17 @@ C.................  Read file based on format set above
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-                        CALL RDIDAAR( TDEV, NRAWIN, NEDIM1, MXIDAT, 
-     &                                WKSET, INVDNAM, NRAWOUT, EFLAG, 
-     &                                NDROP, EDROP )
+                        CALL RDIDAAR( TDEV, NRAWIN, NEDIM1, WKSET, 
+     &                                NRAWOUT, EFLAG, NDROP, EDROP )
 
                     CASE( 'MOBILE' )
-                        CALL RDIDAMB( TDEV, NRAWIN, MXIDAT, WKSET, 
-     &                                INVDNAM, NRAWOUT, EFLAG, NDROP, 
-     &                                EDROP  )
+                        CALL RDIDAMB( TDEV, NRAWIN, NEDIM1, WKSET, 
+     &                                NRAWOUT, EFLAG, NDROP, EDROP  )
+     &                                
 
                     CASE( 'POINT' )
-                        CALL RDIDAPT( TDEV, NRAWIN, NEDIM1, MXIDAT, 
-     &                                WKSET, INVDNAM, NRAWOUT, EFLAG, 
-     &                                NDROP, EDROP )
+                        CALL RDIDAPT( TDEV, NRAWIN, NEDIM1, WKSET, 
+     &                                NRAWOUT, EFLAG, NDROP, EDROP )
 
                     END SELECT
 
@@ -379,8 +375,7 @@ C.................  Read file based on format set above
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-                        CALL RDEPSAR( TDEV, NRAWIN, MXIDAT, WKSET, 
-     &                                INVDCOD, INVDNAM, INY, NRAWOUT, 
+                        CALL RDEPSAR( TDEV, NRAWIN, WKSET, INY, NRAWOUT, 
      &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
      &                                NDROP, EDROP )
 
@@ -388,8 +383,7 @@ C.................  Read file based on format set above
 c                        CALL RDEPSMV(  )
 
                     CASE( 'POINT' )
-                        CALL RDEPSPT( TDEV, NRAWIN, MXIDAT, WKSET, 
-     &                                INVDCOD, INVDNAM, INY, NRAWOUT, 
+                        CALL RDEPSPT( TDEV, NRAWIN, WKSET, INY, NRAWOUT, 
      &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
      &                                NDROP, EDROP )
 
@@ -424,8 +418,7 @@ C.....................  These calls populate the unsorted inventory
 C                       variables in the module MODSOURC
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-                        CALL RDEMSAR( EDEV, INY, NRAWIN, MXIDAT, WKSET,
-     &                                INVDCOD, INVDNAM, NRAWOUT, 
+                        CALL RDEMSAR( EDEV, INY, NRAWIN, WKSET, NRAWOUT, 
      &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
      &                                NDROP, EDROP )
 
@@ -433,10 +426,9 @@ C.....................  The mobile call can be for EMS-95 format or for
 C                       a list-formatted format that is similar and that was
 C                       used in the SMOKE prototype
                     CASE( 'MOBILE' )
-                        CALL RDEMSMB( EDEV, INY, NRAWIN, NEDIM1, MXIDAT,
-     &                                WKSET, INVDCOD, INVDNAM, NRAWOUT, 
-     &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
-     &                                NDROP, EDROP  )
+                        CALL RDEMSMB( EDEV, INY, NRAWIN, NEDIM1, WKSET, 
+     &                                NRAWOUT, ERRIOS, ERRREC, ERFILDSC, 
+     &                                EFLAG, NDROP, EDROP )
 
 c note: Will have set a flag above so that after the VMT data are read
 C    n: in, the process of converting the SCCs and expanding using the
@@ -444,8 +436,7 @@ C    n: vehicle mix will take place.
 
                     CASE( 'POINT' )
                         TFLAG = .TRUE.
-                        CALL RDEMSPT( EDEV, INY, NRAWIN, MXIDAT, WKSET,
-     &                                INVDCOD, INVDNAM, NRAWOUT, 
+                        CALL RDEMSPT( EDEV, INY, NRAWIN, WKSET,NRAWOUT, 
      &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
      &                                NDROP, EDROP )
  
