@@ -17,7 +17,7 @@ C       PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL
 C
 C  REVISION  HISTORY:
 C       Prototype adapted from rawarea.F 8/96 by CJC 
-C	Version 9/96 by CJC now produces ASCC actual-SCC file.
+C	Version 9/96 by CJC now produces ASCS actual-SCC file.
 C
 C***********************************************************************
 C
@@ -658,7 +658,7 @@ C........   Get file name; open and construct output actual-ASC file
 
         SDEV = PROMPTFFILE( 
      &      'Enter logical name for ACTUAL-ASC output file',
-     &      .FALSE., .TRUE., 'ASCC', 'EMSAREA' )
+     &      .FALSE., .TRUE., 'ASCS', 'EMSAREA' )
 
         CALL SORTI2( NSRC, INDEXA, ISCC7A, ISCC3A )
 
