@@ -48,11 +48,12 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2  CRLF 
+        LOGICAL      ENVYN
         INTEGER      FIND1
         LOGICAL      GETYN
         INTEGER      TRIMLEN
 
-        EXTERNAL     CRLF, FIND1, GETYN, TRIMLEN
+        EXTERNAL     CRLF, ENVYN, FIND1, GETYN, TRIMLEN
 
 C...........   LOCAL PARAMETERS and their descriptions:
         CHARACTER*5  BLANK5
@@ -158,8 +159,7 @@ C. . . . . . . . I/M program tables:
 
         SAVE    IMEC1, IMEC2, UIME1, UIME2
 
-        CHARACTER*256 FNAME
-        CHARACTER*16  TNAME1, TNAME2
+        CHARACTER*12  FNAME
         CHARACTER*4   CCUT( 3 )
         DATA CCUT / '220.', '1.20', '999.' /    ! MOBILE5 Default cutpoints
 
@@ -218,7 +218,7 @@ C...........   Other local variables
         INTEGER B1, B2, E1, E2
         INTEGER G7, G8, G9
         INTEGER I, ICUT, IMP, IPPREV, J, JDSL, JJ, JJ2, JK, K
-        CHARACTER*256 MESG, BUFFER
+        CHARACTER*256 MESG, BUFFER, LOCDIR
 
 C***********************************************************************
 C   begin body of program MOINBLD
@@ -349,9 +349,23 @@ c       ENDIF
      &                     NEFIM, IEFIM, 16, TEFIM )
             FIRSTIME( 13 ) = .FALSE.
 
-C.............  Prompt for default I/M credits or not
-            MESG = 'Use default I/M Credit files throughout?'
-            ONEFILE = GETYN ( MESG, .TRUE. )
+C.............  Determine if default I/M credits or not
+            ONEFILE = ENVYN ( 'DEFAULT_IM',
+     &                        'EMISFAC use DEFAULT_IM throughout ' //
+     &                        'simulation', .TRUE., ISTAT )
+
+C.............  Get value of EMS_LOC for output messages
+            CALL ENVSTR( 'EMS_LOC', 'Path for I/M tables',
+     &                   '.', LOCDIR, ISTAT )
+
+            IF( ISTAT .NE. 0 ) THEN
+                CALL M3MSG2( 'Must set EMS_LOC environment variable ' //
+     &                       'to path for I/M tables' )
+
+                CALL M3EXIT( 'MOINBLD', 0, 0, 
+     &                       'Set variable and restart using emission'//
+     &                       'factors files created so far.', 2 )
+            ENDIF
 
         ENDIF
 
@@ -359,31 +373,34 @@ C.............  Prompt for default I/M credits or not
 C.............  Set default I/M credits file settings
             IMCX1  = 0   ! Index to default Tech I-II read indicator
             IMCX2  = 0   ! Index to default Tech IV+ read indicator
-            TNAME1 = 'DEFAULT'
-            TNAME2 = 'DEFAULT'
 
 C.............  Set I/M credit file settings individually
             IF( .NOT. ONEFILE ) THEN  
 
                 IMCX1 = CIDX( IP,5 )
                 IMCX2 = CIDX( IP,6 )
-                IF( CIDX( IP,5 ) .GT. 0 ) THEN 
-                    TNAME1 = 'NON-DEFAULT'
-                ENDIF
+                IF( IMCX1 .LT. 0 .OR. IMCX1 .GT. MAXT12 ) THEN
+                    WRITE( MESG, 94010 )
+     &               'ERROR: Non-default Tech I-II indicator out of ' //
+     &               'range 0->(MAXT12) =', MAXT12, CRLF() // BLANK5 //
+     &               '       for PSI', IPARM
 
-                IF( CIDX( IP,6 ) .GT. 0 ) THEN
-                    TNAME2 = 'NON-DEFAULT'
+                    CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+            
+                ELSEIF( IMCX2 .LT. 0 .OR. IMCX2 .GT. MAXT12 ) THEN
+                    WRITE( MESG, 94010 )
+     &               'ERROR: Non-default Tech IV+ indicator out of ' //
+     &               'range 0->(MAXT12) =', MAXT12, CRLF() // BLANK5 //
+     &               '       for PSI', IPARM
+
+                    CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
                 ENDIF
 
             ENDIF
 
 C.............  Read Tech I-II file
             IF( READIMC1( IMCX1 ) ) THEN
-
-   44           WRITE( MESG, 94010 ) 
-     &                'Enter logical name of '// 
-     &                TNAME1( 1:TRIMLEN( TNAME1 ) ) // ' TECH I-II '//
-     &                'FILE', IMCX1
 
                 IF( IMCX1 .GE. 0 .AND. IMCX1 .LE. 9 ) 
      &              WRITE( FNAME, '(A,I1)') 'TECH12_',IMCX1
@@ -392,28 +409,31 @@ C.............  Read Tech I-II file
                 IF( IMCX1 .GE. 99 .AND. IMCX1 .LE. 999 ) 
      &              WRITE( FNAME, '(A,I3)') 'TECH12_',IMCX1
 
-                CALL GETSTR( MESG, FNAME, FNAME )
-                CALL ENVSTR( FNAME, 'Non-default Tech I-II file name',
+                CALL ENVSTR( FNAME, 'Tech I-II file name',
      &                       'TECH12.D', IMENV1, ISTAT )
 
                 IMEC1 = TRIMLEN( IMENV1 )
+C.................  Convert to string of single characters because SGI problems
                 DO 50 IC = 1, IMEC1
                     UIME1( IC ) = IMENV1( IC:IC )
    50           CONTINUE
 
-                IF( ISTAT .LT. 0 ) THEN
+                IF( ISTAT .EQ. 1 ) THEN
 
                     WRITE( MESG, 94010 )
-     &                   'ERROR: Could not open input file "' //
-     &                    FNAME( 1:TRIMLEN( FNAME ) ) // '"'
+     &                   'ERROR: Environment variable "' //
+     &                    FNAME( 1:TRIMLEN( FNAME ) ) // 
+     &                   '" improperly set.' 
                     CALL M3MSG2( MESG )
 
-                    IF( GETYN( '     Try again', .TRUE. ) ) THEN
-                        GO TO 44
-                    ELSE
-                        MESG = 'Ending program MOINBLD.'
-                        CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
-                    ENDIF
+                    CALL M3EXIT( 'MOINBLD', 0, 0, 
+     &                           'Ending program EMISFAC.', 2 )
+
+                ELSE 
+
+                    CALL M3MSG2( 'NOTE: Using Tech I-II file "'//
+     &                           LOCDIR( 1:TRIMLEN( LOCDIR ) ) // '/' //
+     &                           IMENV1( 1:IMEC1 ) // '"' )
 
                 ENDIF
 
@@ -423,10 +443,6 @@ C.............  Read Tech I-II file
 
 C.............  Read Tech IV+ file
             IF( READIMC2( IMCX2 ) ) THEN
-   55           WRITE( MESG, 94010 ) 
-     &                'Enter logical name of '// 
-     &                TNAME2( 1:TRIMLEN( TNAME2 ) ) // ' TECH IV+ '//
-     &                'FILE', IMCX2
 
                 IF( IMCX2 .GE. 0 .AND. IMCX2 .LE. 9 ) 
      &              WRITE( FNAME, '(A,I1)') 'TECH4P_',IMCX2
@@ -435,29 +451,31 @@ C.............  Read Tech IV+ file
                 IF( IMCX2 .GE. 99 .AND. IMCX2 .LE. 999 ) 
      &              WRITE( FNAME, '(A,I3)') 'TECH4P_',IMCX2
 
-                CALL GETSTR( MESG, FNAME, FNAME )
-                CALL ENVSTR( FNAME, 'Non-default Tech IV+ file name',
+                CALL ENVSTR( FNAME, 'Tech IV+ file name',
      &                       'IMDATA.D', IMENV2, ISTAT )
 
                 IMEC2 = TRIMLEN( IMENV2 )
+C.................  Convert to string of single characters because SGI problems
                 DO 60 IC = 1, IMEC2
                     UIME2( IC ) = IMENV2( IC:IC )
    60           CONTINUE
 
-                IF( ISTAT .LT. 0 ) THEN
+                IF( ISTAT .EQ. 1 ) THEN
 
                     WRITE( MESG,94010  )
-     &                    'ERROR: Could not open input file "' //
-     &                    FNAME( 1:TRIMLEN( FNAME ) ) // '"'
+     &                   'ERROR: Environment variable "' //
+     &                    FNAME( 1:TRIMLEN( FNAME ) ) // 
+     &                   '" improperly set.' 
                     CALL M3MSG2( MESG )
 
-                    IF( GETYN( '     Try again', .TRUE. ) ) THEN
-                        GO TO 55
-                    ELSE
-                        MESG = 'Ending program MOINBLD'
-                        CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
-                    ENDIF
+                    CALL M3EXIT( 'MOINBLD', 0, 0, 
+     &                           'Ending program EMISFAC.', 2 )
 
+                ELSE
+
+                    CALL M3MSG2( 'NOTE: Using Tech IV+ file "' //
+     &                           LOCDIR( 1:TRIMLEN( LOCDIR ) ) // '/' //
+     &                           IMENV2( 1:IMEC2 ) // '"' )
                 ENDIF
 
                 READIMC2( IMCX2 ) = .FALSE.
