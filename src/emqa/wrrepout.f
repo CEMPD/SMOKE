@@ -307,7 +307,7 @@ C.............  Include source characteristics
                 S = BINSMKID( I ) 
 
 C.................  Disaggregate source characteristics
-                CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, 
+                CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP, LOC_ENDP, 
      &                         LF, NC, CHARS )
 
 C.................  Write characteristics
