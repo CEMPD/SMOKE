@@ -119,14 +119,11 @@ C...........   Other local variables:
         INTEGER    F, H, I, J, JJ, K, L, S, T  ! Counters and pointers
         INTEGER    FIP     !  temporary FIP code
         INTEGER    IFIL    !  counter for temperature files
-        INTEGER    IZONE   !  zone of time stamps in input temperature files
         INTEGER    JDATE   !  output date counter (YYYYDDD) in GMT
         INTEGER    JTIME   !  output time counter (HHMMSS)  in GMT
         INTEGER    KU      !  counter of grid cells per source
         INTEGER    LNK     !  temporary FIP code
         INTEGER    MAXTL   !  intermediate temperature index value
-        INTEGER    MDATE   !  temperature time zone date counter (YYYYDDD)
-        INTEGER    MTIME   !  temperature time zone time counter (HHMMSS)
         INTEGER    NSTEPS  !  number of time steps to process temperature data
         INTEGER    NTFIL   !  total number of input temperature files
         INTEGER    OSRC    !  number of sources outside grid
@@ -186,7 +183,7 @@ C.........  Prompt for SMOKE mobile inventory file
 C.........  Prompt for Ungridding matrix
         UNAME = PROMPTMFILE(
      &          'Enter logical name for UNGRIDDING MATRIX input file',
-     &          FSREAD3, 'MUGMAT', 'PREDIUR' )
+     &          FSREAD3, 'MUMAT', 'PREDIUR' )
 
 C.........  Prompt for MPLIST (scenario specific parameter scheme list)
         NLDEV = PROMPTFFILE(
@@ -221,17 +218,13 @@ C.........  Read Ungridding Matrix
             CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
         END IF
 
-C.........  Prompt for time zone of temperature data.
-        IZONE  = 0
-        IZONE  = GETNUM( -12, 12, IZONE,
-     &             'Enter time zone of temperature files '//
-     &             '(0 for GMT, 5 for EST, etc.)' )
-
 C.........  Loop for prompting for temperature data files:
         WRITE( *,92000 )
      &  ' ',
-     &  'Now enter the list of logical file names for ',
-     &  'surface temperature input files',
+     &  'Now enter the list of logical file names for surface',
+     &  'temperature input files.',
+     &  ' ',
+     &  'NOTE: Time stamps assumed to be in GMT.',
      &  ' '
 
         IFIL =    0
@@ -275,46 +268,41 @@ C.........  Read header of first temperature file
 
 C.........  Save time step for processing temperatures
         TSTEP = TSTEP3D
+
 C.........  Prompt for time zone for output file (to get local time to use
 C.........     for beginning of the day)
+
         TZONE  = 0  ! Keep data in MINMAXT in GMT for increased portability
-C        TZONE  = GETNUM( -12, 12, TZONE,
-C     &             'Enter time zone for output min/max '//
-C     &             'per day (0 for GMT)' )
+
         JDATE  = GETNUM( 0, 9999999, SDATE3D,
      &                   'Enter starting date in GMT (YYYYDDD)' )
         JTIME  = GETNUM( 0, 999999, STIME3D,
      &                   'Enter starting time in GMT (HHMMSS)' )
         IDATE = JDATE
         ITIME = JTIME
+
 75      NSTEPS = GETNUM( 1, 999999, 24,
      &                   'Enter output duration (hours)' )
+
         IF ( MOD( NSTEPS, 24 ) .NE. 0 ) THEN
            WRITE( *,92000 ) 'Output duration has to be a multiple of 24'
            GO TO 75
         END IF 
  
-C.........  Prompt for temperature increment to use in output file
-cmh     TINTV = GETREAL( 0.0001, 50., 2.,
-cmh  &                   'Enter temperature increment [deg F]' )
-
-C.........  Set date/time for temperature based on start date/time
-        MDATE = JDATE
-        MTIME = JTIME
-        CALL NEXTIME( MDATE, MTIME, (TZONE - IZONE)*10000 )
-
 C.........  Abort if start time is < than first time for temperatures
-        IF( ( MDATE .EQ. SDATE3D .AND. MTIME .LT. STIME3D ) .OR.
-     &        MDATE .LT. SDATE3D ) THEN
+        IF( ( JDATE .EQ. SDATE3D .AND. JTIME .LT. STIME3D ) .OR.
+     &        JDATE .LT. SDATE3D ) THEN
 
             WRITE( *,92010 )
-     &      ' ',
-     &      'Requested start date/time:', MDATE, MTIME, IZONE,
-     &      'First temperature data data/time:',SDATE3D,STIME3D,IZONE,
-     &      ' '
+     &          ' ',
+     &          'Requested start date/time       :', 
+     &          JDATE  , JTIME  , 'GMT', 
+     &          'First temperature data data/time:', 
+     &          SDATE3D, STIME3D, 'GMT', ' '
+
             CALL M3EXIT( 'PREDIUR', 0, 0,
-     &                  'Requested start is earlier than start '
-     &                  // 'of first temperature file', 2 )
+     &                   'Requested start is earlier than start '
+     &                   // 'of first temperature file', 2 )
 
         ENDIF
 
@@ -526,7 +514,7 @@ C    &          .AND. H .NE. 1 ) THEN
 
 C.................  Try to read current temperature file
                 IF ( .NOT. READ3( TNAME( IFIL ),
-     &               'TA', 1, MDATE, MTIME, TA ) ) THEN
+     &               'TA', 1, JDATE, JTIME, TA ) ) THEN
 
 C.....................  If last read failed, check if can go to next file
                     IF( IFIL .LT. NTFIL ) THEN
@@ -534,16 +522,16 @@ C.....................  If last read failed, check if can go to next file
 
 C.........................  Read next file if possible
                         IF ( .NOT. READ3( TNAME( IFIL ),
-     &                       'TA', 1, MDATE, MTIME, TA ) ) THEN
+     &                       'TA', 1, JDATE, JTIME, TA ) ) THEN
                             MESG = 'Could not read TA from ' // 
      &                             TNAME( IFIL )
                             CALL M3EXIT 
-     &                           ( 'PREDIUR', MDATE, MTIME, MESG, 2 )
+     &                           ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
                         ENDIF
 
                     ELSE
                         MESG = 'Could not read TA from '//TNAME( IFIL )
-                        CALL M3EXIT ( 'PREDIUR', MDATE, MTIME, MESG, 2 )
+                        CALL M3EXIT ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
                     ENDIF
                 END IF
 
@@ -765,7 +753,7 @@ C           ELSEIF( JTIME .EQ. 0 .OR. H .EQ. 1 ) THEN
 
 C.................  Try to read current temperature file
                 IF ( .NOT. READ3( TNAME( IFIL ),
-     &               'TA', 1, MDATE, MTIME, TA ) ) THEN
+     &               'TA', 1, JDATE, JTIME, TA ) ) THEN
 
 C.....................  If last read failed, check if can go to next file
                     IF( IFIL .LT. NTFIL ) THEN
@@ -773,16 +761,16 @@ C.....................  If last read failed, check if can go to next file
 
 C.........................  Read next file if possible
                         IF ( .NOT. READ3( TNAME( IFIL ),
-     &                       'TA', 1, MDATE, MTIME, TA ) ) THEN
+     &                       'TA', 1, JDATE, JTIME, TA ) ) THEN
                             MESG = 'Could not read TA from ' // 
      &                             TNAME( IFIL )
                             CALL M3EXIT 
-     &                           ( 'PREDIUR', MDATE, MTIME, MESG, 2 )
+     &                           ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
                         ENDIF
 
                     ELSE
                         MESG = 'Could not read TA from '//TNAME( IFIL )
-                        CALL M3EXIT ( 'PREDIUR', MDATE, MTIME, MESG, 2 )
+                        CALL M3EXIT ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
                     ENDIF
                 END IF
 
@@ -813,7 +801,7 @@ C.................................................................
 
 C.................  Try to read current temperature file
                 IF ( .NOT. READ3( TNAME( IFIL ),
-     &               'TA', 1, MDATE, MTIME, TA ) ) THEN
+     &               'TA', 1, JDATE, JTIME, TA ) ) THEN
 
 C.....................  If last read failed, check if can go to next file
                     IF( IFIL .LT. NTFIL ) THEN
@@ -821,16 +809,16 @@ C.....................  If last read failed, check if can go to next file
 
 C.........................  Read next file if possible
                         IF ( .NOT. READ3( TNAME( IFIL ),
-     &                       'TA', 1, MDATE, MTIME, TA ) ) THEN
+     &                       'TA', 1, JDATE, JTIME, TA ) ) THEN
                             MESG = 'Could not read TA from ' // 
      &                             TNAME( IFIL )
                             CALL M3EXIT 
-     &                           ( 'PREDIUR', MDATE, MTIME, MESG, 2 )
+     &                           ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
                         ENDIF
 
                     ELSE
                         MESG = 'Could not read TA from '//TNAME( IFIL )
-                        CALL M3EXIT ( 'PREDIUR', MDATE, MTIME, MESG, 2 )
+                        CALL M3EXIT ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
                     ENDIF
                 END IF
 
@@ -863,7 +851,6 @@ C.....................  Update minimum and maximum per source
             ENDIF  !  If end of day, last hour, first hour of day, or other
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
-            CALL NEXTIME( MDATE, MTIME, TSTEP )
 
   499   CONTINUE   !  End loop on hours of temperature files
  
@@ -899,7 +886,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Informational (LOG) message formats... 92xxx
  
 92000   FORMAT( 5X, A )
-92010   FORMAT( 5X, A, 2( /, 5X, A, 1X, I7.7, 1X, I6.6, 1X, I2 ) )
+92010   FORMAT( 5X, A, 2( /, 5X, A, 1X, I7.7, 1X, I6.6, 1X, A ) )
  
 C...........   Formatted file I/O formats............ 93xxx
  
