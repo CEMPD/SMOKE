@@ -231,6 +231,7 @@ endif
 if ( $RUN_TMPBEIS3 == Y && $RUN_PART2 == 'Y' ) then
     /bin/rm -f $B3GTS_L
     /bin/rm -f $B3GTS_S
+    /bin/rm -f $SOILOUT
 endif
 
 if ( $RUN_ELEVPOINT == Y && $RUN_PART3 == 'Y' ) then
