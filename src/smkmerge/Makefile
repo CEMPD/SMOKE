@@ -2,12 +2,12 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	  = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
-LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libiotools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
-LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -liotools -lioapi_new -lnetcdf -lpvm3 -mp
-LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -liotools.debug -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS	  = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
+LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -ledsstools -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -ledsstools.debug -lioapi_new -lnetcdf -lpvm3 -mp
 
 #
 
@@ -54,7 +54,7 @@ mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
-include $(IOMOD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
 
 allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ $<
