@@ -89,8 +89,8 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv APROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt         # Projection factors
    setenv AGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Area gridding surrogates
    setenv AGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt   # Area gridding x-ref 
-   setenv ATPRO     $GE_DAT/amptpro.m3.062801.us+can.txt        # Temporal profiles
-   setenv ATREF     $GE_DAT/amptref.m3.032502.us+can.txt        # Area temporal x-ref
+   setenv ATPRO     $GE_DAT/amptpro.m3.us+can.txt               # Temporal profiles
+   setenv ATREF     $GE_DAT/amptref.m3.us+can.txt               # Area temporal x-ref
 endif
 #
 ## Biogenic input files
@@ -123,8 +123,8 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv REPCONFIG $INVDIR/mobile/REPCONFIG.mobile.txt    # Default report configurations
    setenv MGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt # Mobile gridding surrogates
    setenv MGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt  # Mobile gridding x-ref 
-   setenv MTPRO     $GE_DAT/amptpro.m3.062801.us+can.txt       # Temporal profiles
-   setenv MTREF     $GE_DAT/amptref.m3.032502.us+can.txt       # Mobile temporal x-ref
+   setenv MTPRO     $GE_DAT/amptpro.m3.us+can.txt          # Temporal profiles
+   setenv MTREF     $GE_DAT/amptref.m3.us+can.txt          # Mobile temporal x-ref
    setenv GCNTL     $INVDIR/other/gcntl.control.txt        # Scenario-specific controls
    setenv MPROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt    # Projection factors
 endif
@@ -134,14 +134,14 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PTINV      $INVDIR/point/ptinv.lst                 # EMS-95 point emissions
    setenv PTDAY      $INVDIR/point/ptday.lst                 # daily point emis
    setenv PTHOUR     $INVDIR/point/pthour.lst                # hourly point emis
-   setenv PELVCONFIG $INVDIR/point/pelvconfig.top50.txt     # elevated source selection
+   setenv PELVCONFIG $INVDIR/point/pelvconfig.top50.txt      # elevated source selection
    setenv REPCONFIG  $INVDIR/point/repconfig.point.txt       # Default report configurations
    #      PTMPLIST                                           # Set automatically by script
    setenv GCNTL      $INVDIR/other/gcntl.control.txt         # Scenario-specific controls
    setenv PPROJ      $INVDIR/other/gcntl.proj.$BYFYR.txt     # Projection factors
-   setenv PTPRO      $GE_DAT/amptpro.m3.062801.us+can.txt    # Temporal profiles
-   setenv PTREF      $GE_DAT/amptref.m3.032502.us+can.txt    # Point temporal x-ref
-   setenv PSTK       $GE_DAT/pstk.m3.txt               # Replacement stack params
+   setenv PTPRO      $GE_DAT/amptpro.m3.us+can.txt           # Temporal profiles
+   setenv PTREF      $GE_DAT/amptref.m3.us+can.txt           # Point temporal x-ref
+   setenv PSTK       $GE_DAT/pstk.m3.txt                     # Replacement stack params
 endif
 #
 ## Shared input files
