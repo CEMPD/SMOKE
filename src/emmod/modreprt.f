@@ -20,7 +20,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -176,7 +176,11 @@
         CHARACTER(LEN=LENLAB3), ALLOCATABLE, PUBLIC :: REGNNAM( : ) ! region group names
         CHARACTER(LEN=LENLAB3), ALLOCATABLE, PUBLIC :: SUBGNAM( : ) ! subgrid names
 
-!.........  Report characteristics arrays, dimenioned by NREPORT
+!.........  Allocatable arrays available across all reports
+        INTEGER, ALLOCATABLE, PUBLIC :: LOC_BEGP( : )  ! actual src char string starts
+        INTEGER, ALLOCATABLE, PUBLIC :: LOC_ENDP( : )  ! actual src char string ends
+
+!.........  Report characteristics arrays, dimensioned by NREPORT
 
         TYPE( EACHRPT ), ALLOCATABLE, PUBLIC :: ALLRPT( : )     ! integer recs
 
