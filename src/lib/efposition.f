@@ -50,7 +50,8 @@ C.........  Check that input values are correct range
      	END IF
 
 C.........  Check that no facility is used for non-road emission processes
-        IF( ETYPE /= 1 .AND. ETYPE /= 6 ) THEN
+        IF( ETYPE /= 1 .AND. ETYPE /= 6 .AND. 
+     &      ETYPE /= 9 .AND. ETYPE /= 10 ) THEN
             IF( FTYPE /= 5 ) THEN
                 EFLAG = .TRUE.
                 MESG = 'INTERNAL ERROR: Cannot use specified ' //
