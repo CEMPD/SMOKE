@@ -90,6 +90,7 @@ C             that are appropriate for a given degree are actually populated.
         INTEGER                PIFIP (   NXTYPES ) ! previous co/st/cy code
 
         CHARACTER(LEN=SCCLEN3) PTSCC ( NXTYPES )  ! previous SCC
+        CHARACTER(LEN=SICLEN3) PCSIC ( NXTYPES )  ! previous SIC
         CHARACTER(LEN=SRCLEN3) PCSRC ( NXTYPES )  ! previous CSRC
         CHARACTER(LEN=SS5LEN3) PCSSC ( NXTYPES )  ! previous CSRC(part) // SCC
 
@@ -97,7 +98,7 @@ C...........   Array of source characeristics
         CHARACTER*300           CHARS( MXCHRS )
 
 C...........   Other local variables
-        INTEGER       I, J, J1, J2, L  ! counter and indices
+        INTEGER       I, J, J1, J2, K, L  ! counter and indices
 
         INTEGER       ICYID            ! temporary county code
         INTEGER       IDUM             ! dummy integer
@@ -106,6 +107,7 @@ C...........   Other local variables
         INTEGER       ISP              ! temporary pollutant position in EANAM
         INTEGER       LOPT             ! length of OPTYPE
         INTEGER       L1R, L2R, L3R    ! SCC level 1, 2, and 3 right positions
+        INTEGER       NCHKCHR          ! position of last non-SCC src char
         INTEGER       NT               ! code for specificity of x-ref entry
         INTEGER    :: PISP = IMISS3    ! previous iteration ISP
 
@@ -122,6 +124,7 @@ C...........   Other local variables
         LOGICAL    :: PFLAG = .FALSE.  ! true: operation type is speeds
         LOGICAL    :: POADFLT          ! true: okay to have pol/act-spec dfaults
         LOGICAL    :: RFLAG = .FALSE.  ! true: operation type is reactivty cntls
+        LOGICAL    :: SAMEFLAG = .FALSE. ! true: same x-ref chars as previous iter
         LOGICAL    :: SFLAG = .FALSE.  ! true: operation type is speciation
         LOGICAL    :: TFLAG = .FALSE.  ! true: operation type is temporal
         LOGICAL    :: XFLAG = .FALSE.  ! true: operation type is nonhapVOC exclusion
@@ -149,6 +152,11 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) SCCZ_B        ! buffer for level 2 zero string
         CHARACTER(LEN=SCCLEN3) SCCZ_C        ! buffer for level 3 zero string
         CHARACTER(LEN=SS5LEN3) CSRCSCC       ! buffer for source // SCC
+        CHARACTER(LEN=SICLEN3) CSIC          ! buffer for SIC
+        CHARACTER(LEN=SICLEN3) CSICL         ! buffer for left 2-digit SIC
+        CHARACTER(LEN=SICLEN3) CSICR         ! buffer for right SIC
+        CHARACTER(LEN=SICLEN3) SICZERO       ! buffer for SIC zero
+        CHARACTER(LEN=SICLEN3) SICRZERO      ! buffer for right SIC zero
 
         CHARACTER*16 :: PROGNAME = 'XREFTBL' ! program name
 
@@ -195,14 +203,14 @@ C.........  Check for valid operation type
             POADFLT = .FALSE.
             IFLAG   = .TRUE.
             NFLAG   = .FALSE.
-        CASE( 'PROJECTION' )
-            POADFLT = .FALSE.
-            JFLAG   = .TRUE.
-            OFLAG   = .TRUE.
         CASE( 'NONHAP' )
             POADFLT = .FALSE.
             XFLAG   = .TRUE.
             NFLAG   = .FALSE.
+            OFLAG   = .TRUE.
+        CASE( 'PROJECTION' )
+            POADFLT = .TRUE.
+            JFLAG   = .TRUE.
             OFLAG   = .TRUE.
         CASE( 'REACTIVITY' )
             POADFLT = .FALSE.
@@ -243,6 +251,8 @@ C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         SCCZ_A = REPEAT( '0', SCCLEN3 - SCCLEV1 )
         SCCZ_B = REPEAT( '0', SCCLEN3 - SCCLEV2 )
         SCCZ_C = REPEAT( '0', SCCLEN3 - SCCLEV3 )
+        SICZERO = REPEAT ( '0', SICLEN3 )
+        SICRZERO = REPEAT ( '0', SICLEN3 - 2 )
 
 C.........  Initialize default array
         DEFAULT = .FALSE.   ! array
@@ -258,6 +268,10 @@ C           degree of matching
 C.........  Initialize source characteristics
         CHARS = ' '  ! array
 
+C.........  Initialize index check
+        NCHKCHR = NCHARS
+        IF( JSCC .GT. 0 ) NCHKCHR = NCHARS - 1
+
 C.........  Loop through and count entries of each type. Store type.
 C.........  For CSRC, don't include pollutant for grouping.
         ISP    = 0
@@ -265,7 +279,6 @@ C.........  For CSRC, don't include pollutant for grouping.
         DO I = 1, NXREF
 
             J = INDXTA( I )
-
             CSRC    = CSRCTA( J )( 1:SC_ENDP( NCHARS ) )
             TSCC    = CSCCTA( J )
             IF( NFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
@@ -286,25 +299,47 @@ C               in tables (i.e., use CSRC)
                 CHARS( NCHARS ) = ' '
             END IF
 
-C.............  Set up partial strings for checking
+C.............  Set up partial strings for checking country/state/county
             CFIP    = CHARS( 1 )
             IFIP    = STR2INT( CFIP )         ! For checking previous
             CSTA    = CFIP( 1:STALEN3 )
             ICYID   = IFIP - STR2INT( CSTA ) * 1000
-            SCCL    = TSCC(       1:LSCCEND )
-            SCCR    = TSCC( RSCCBEG:SCCLEN3 )
-            CSRCSCC = CSRC // TSCC
-            
             IF( PLTIDX /= 0 ) THEN
                 CNFIP = CSRC( SC_BEGP( PLTIDX ):SC_ENDP( NCHARS ) )
             ELSE
                 CNFIP = ' '
             END IF
 
-C.............  More partial strings for special SCC levels matching
-            SCCR_A = TSCC( L1R:SCCLEN3 )
-            SCCR_B = TSCC( L2R:SCCLEN3 )
-            SCCR_C = TSCC( L3R:SCCLEN3 )
+C.............  Determine whether SIC is imbedded in SCC field
+            K = INDEX( TSCC, SICNOTE )
+
+C.............  If SIC imbedded, setup SIC fields
+            IF( K .GT. 0 ) THEN
+                L = K + LEN( SICNOTE )
+                CSIC  = TSCC( L : L + SICLEN3 - 1 )
+                TSCC  = SCCZERO
+                CSICL = CSIC( 1:2 )
+                CSICR = CSIC( 3:SICLEN3 )
+
+C.............  If SIC *not* imbedded, setup SCC fields
+            ELSE
+                CSIC  = SICZERO
+                CSICR = SICRZERO
+
+C...............  Standard strings for SCC 7/10 level matching
+                SCCL    = TSCC(       1:LSCCEND )
+                SCCR    = TSCC( RSCCBEG:SCCLEN3 )
+
+C...............  More partial strings for special SCC levels matching
+                SCCR_A = TSCC( L1R:SCCLEN3 )
+                SCCR_B = TSCC( L2R:SCCLEN3 )
+                SCCR_C = TSCC( L3R:SCCLEN3 )
+
+            END IF
+
+C.............  Reset flag for identifying when a record with the same
+C               info but different pollutant is encountered
+            SAMEFLAG = .FALSE.
 
 C.............  Select cases
 C.............  Note that since these are sorted in order of increasing FIPS
@@ -312,20 +347,44 @@ C               code, SCC, pollutant index, etc., that the entries with zero for
 C               these characteristics will appear earlier in the sorted list
             IF( IFIP .EQ. 0 ) THEN                       ! FIPS code is default
 
-                IF( TSCC .EQ. SCCZERO ) THEN                   ! SCC is default
+                IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
 
-                    IF( POADFLT ) THEN           ! Pollutant-specific permitted
+                    NT = 27
+                    IF( CSIC .NE. PCSIC( NT ) ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PCSIC( NT ) = CSIC
+
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
+                        NT = 0
+                    END IF
+
+                ELSE IF( CSIC .NE. SICZERO ) THEN            ! Left SIC defined
+
+                    NT = 26
+                    IF( CSICL .NE. PCSIC( NT ) ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PCSIC( NT ) = CSICL
+
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
+                        NT = 0
+                    END IF
+
+                ELSE IF( TSCC .EQ. SCCZERO ) THEN              ! SCC is default
+
+                    IF( POADFLT ) THEN          ! Pollutant-specific permitted
 
                         IF( ISP .EQ. 0 ) THEN
                             NT = 1
-                            N( NT ) = N( NT ) + 1
+                            N( NT ) = 1
 
                         ELSEIF( ISP .NE. 0 .AND. .NOT.    ! Pollutant specified
      &                          DEFAULT( ISP )         ) THEN
 
                             DEFAULT( ISP ) = .TRUE.
                             NT = 1
-                            N( NT ) = N( NT ) + 1
+                            N( NT ) = 1
 
                         ELSE                                  ! Report and skip
                             CALL REPORT_DUP_XREF
@@ -339,7 +398,7 @@ C               these characteristics will appear earlier in the sorted list
 
                             DEFAULT( 1 ) = .TRUE.
                             NT = 1
-                            N( NT ) = N( NT ) + 1
+                            N( NT ) = 1
 
                         ELSE IF( ISP .NE. 0 ) THEN            ! Report and skip
                             MESG = 'Cannot use pollutant-specific ' //
@@ -364,6 +423,8 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
+                    ELSE
+                        SAMEFLAG = .TRUE.
                     END IF
 
                 ELSE                                         ! Complete SCC
@@ -376,6 +437,8 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
+                    ELSE
+                        SAMEFLAG = .TRUE.
                     END IF
 
                 END IF
@@ -383,11 +446,12 @@ C               these characteristics will appear earlier in the sorted list
 C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
-                IF ( OFLAG .AND. NT .NE. 1 ) THEN
+                IF ( OFLAG .AND. NT .NE. 1 .AND. TSCC .NE. SCCZERO )THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  Level-1 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG ) 
+     &                      N( NT ) = N( NT ) - 1
                         NT = 17
                         IF( TSCC .NE. PTSCC( NT ) ) THEN
                             N( NT ) = N( NT ) + 1
@@ -400,7 +464,8 @@ C                   as the old Right-left method is still needed.
 
                     ELSE IF( SCCR_B .EQ. SCCZ_B ) THEN    !  Level-2 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG ) 
+     &                      N( NT ) = N( NT ) - 1
                         NT = 18
                         IF( TSCC .NE. PTSCC( NT ) ) THEN
                             N( NT ) = N( NT ) + 1
@@ -413,7 +478,8 @@ C                   as the old Right-left method is still needed.
 
                     ELSE IF( SCCR_C .EQ. SCCZ_C ) THEN    !  Level-3 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG ) 
+     &                      N( NT ) = N( NT ) - 1
                         NT = 19
                         IF( TSCC .NE. PTSCC( NT ) ) THEN
                             N( NT ) = N( NT ) + 1
@@ -430,7 +496,35 @@ C                   as the old Right-left method is still needed.
 
             ELSEIF( ICYID .EQ. 0 ) THEN            ! County code is default
 
-                IF( TSCC .EQ. SCCZERO ) THEN         ! SCC code is default
+                IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+
+                    NT = 29
+                    IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                  CSIC .NE. PCSIC( NT )      ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PIFIP( NT ) = IFIP
+                        PCSIC( NT ) = CSIC
+
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
+                        NT = 0
+                    END IF
+
+                ELSE IF( CSIC .NE. SICZERO ) THEN            ! Left SIC defined
+
+                    NT = 28
+                    IF( IFIP  .NE. PIFIP( NT ) .OR.
+     &                  CSICL .NE. PCSIC( NT )      ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PIFIP( NT ) = IFIP
+                        PCSIC( NT ) = CSICL
+
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
+                        NT = 0
+                    END IF
+
+                ELSE IF( TSCC .EQ. SCCZERO ) THEN         ! SCC code is default
 
                     NT = 4
                     IF( IFIP .NE. PIFIP( NT ) ) THEN
@@ -441,13 +535,6 @@ C                   as the old Right-left method is still needed.
                         CALL REPORT_DUP_XREF
                         NT = 0
                     END IF
-
-c                    ELSE                                  ! Report and skip
-c                        MESG = 'Cannot use pollutant-specific ' //
-c     &                         'Country/State-default'
-c                        CALL REPORT_INVALID_XREF( MESG )
-c                        NT = 0
-c                    END IF
 
                 ELSEIF( SCCR .EQ. SCRZERO ) THEN         ! left SCC
 
@@ -461,6 +548,9 @@ c                    END IF
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
+
+                    ELSE
+                        SAMEFLAG = .TRUE.
                     END IF
 
                 ELSE                                     ! Complete SCC
@@ -475,6 +565,9 @@ c                    END IF
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
+
+                    ELSE
+                        SAMEFLAG = .TRUE.
                     END IF
 
                 END IF
@@ -482,11 +575,12 @@ c                    END IF
 C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
-                IF ( OFLAG .AND. NT .NE. 4 ) THEN
+                IF ( OFLAG .AND. NT .NE. 4 .AND. TSCC .NE. SCCZERO) THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  State/Level-1 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG )
+     &                      N( NT ) = N( NT ) - 1
                         NT = 20
                         IF( IFIP .NE. PIFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
@@ -501,7 +595,8 @@ C                   as the old Right-left method is still needed.
 
                     ELSE IF( SCCR_B .EQ. SCCZ_B ) THEN    !  State/Level-2 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG )
+     &                      N( NT ) = N( NT ) - 1
                         NT = 21
                         IF( IFIP .NE. PIFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
@@ -516,7 +611,8 @@ C                   as the old Right-left method is still needed.
 
                     ELSE IF( SCCR_C .EQ. SCCZ_C ) THEN    !  State/Level-3 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG )
+     &                      N( NT ) = N( NT ) - 1
                         NT = 22
                         IF( IFIP .NE. PIFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
@@ -536,7 +632,35 @@ C                   as the old Right-left method is still needed.
             ELSEIF( CNFIP .EQ. ' ' .OR.
      &              CNFIP .EQ. TSCC     ) THEN  ! Country/St/Co code is complete
 
-                IF( TSCC .EQ. SCCZERO ) THEN            ! SCC code is default
+                IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+
+                    NT = 31
+                    IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                  CSIC .NE. PCSIC( NT )      ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PIFIP ( NT ) = IFIP
+                        PCSIC( NT ) = CSIC
+
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
+                        NT = 0
+                    END IF
+
+                ELSE IF( CSIC .NE. SICZERO ) THEN            ! Left SIC defined
+
+                    NT = 30
+                    IF( IFIP  .NE. PIFIP( NT ) .OR.
+     &                  CSICL .NE. PCSIC( NT )      ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PIFIP ( NT ) = IFIP
+                        PCSIC( NT ) = CSICL
+
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
+                        NT = 0
+                    END IF
+
+                ELSE IF( TSCC .EQ. SCCZERO ) THEN         ! SCC code is default
 
                     NT = 7
                     IF( IFIP .NE. PIFIP( NT ) ) THEN
@@ -547,13 +671,6 @@ C                   as the old Right-left method is still needed.
                         CALL REPORT_DUP_XREF
                         NT = 0
                     END IF
-
-c                    ELSE                                  ! Report and skip
-c                        MESG = 'Cannot use pollutant-specific ' //
-c     &                         'Country/State/County-default'
-c                        CALL REPORT_INVALID_XREF( MESG )
-c                        NT = 0
-c                    END IF
 
                 ELSEIF( SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 
@@ -567,6 +684,9 @@ c                    END IF
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
+
+                    ELSE
+                        SAMEFLAG = .TRUE.
                     END IF
 
                 ELSE                                         ! Complete SCC
@@ -581,6 +701,9 @@ c                    END IF
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
+
+                    ELSE
+                        SAMEFLAG = .TRUE.
                     END IF
 
                 END IF                                              ! End SCC 
@@ -588,11 +711,12 @@ c                    END IF
 C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
-                IF ( OFLAG .AND. NT .NE. 7 ) THEN
+                IF ( OFLAG .AND. NT .NE. 7 .AND. TSCC .NE. SCCZERO) THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  FIPS/Level-1 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG )
+     &                      N( NT ) = N( NT ) - 1
                         NT = 23
                         IF( IFIP .NE. PIFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
@@ -607,7 +731,8 @@ C                   as the old Right-left method is still needed.
 
                     ELSE IF( SCCR_B .EQ. SCCZ_B ) THEN    !  FIPS/Level-2 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG )
+     &                      N( NT ) = N( NT ) - 1
                         NT = 24
                         IF( IFIP .NE. PIFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
@@ -622,7 +747,8 @@ C                   as the old Right-left method is still needed.
 
                     ELSE IF( SCCR_C .EQ. SCCZ_C ) THEN    !  FIPS/Level-3 SCC
 
-                        N( NT ) = N( NT ) - 1
+                        IF( .NOT. SAMEFLAG )
+     &                      N( NT ) = N( NT ) - 1
                         NT = 25
                         IF( IFIP .NE. PIFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
@@ -645,10 +771,11 @@ C                   as the old Right-left method is still needed.
 
 C.....................  Loop through plant-specific characteristics. Only the
 C                       plant is permitted to not have an SCC not specified
-                    NT = 9 + MXCHRS - 1
+C.....................  Process NT 16 through 12, and 10
+                    NT = 9 + MXCHRS
                     DO J = MXCHRS, 2, -1
 
-                        IF( NT .EQ. 10 .AND. CHARS( J ) .NE. ' ' ) THEN
+                        IF( CHARS( J ) .NE. ' ' ) THEN
 
                             IF( CSRC .NE. PCSRC( NT ) ) THEN
                                 N( NT ) = N( NT ) + 1
@@ -664,26 +791,14 @@ C                       plant is permitted to not have an SCC not specified
                                 EXIT                      ! End loop with NT
                            END IF
 
-                        ELSEIF( NT         .GT. 10  .AND. 
-     &                          CHARS( J ) .NE. ' '       ) THEN
-
-                            MESG = 'SCC is not specified'
-                            CALL REPORT_INVALID_XREF( MESG )
-                            NT = 0
-                            EXIT                      ! End loop with NT
-
-                        ELSEIF( NT .EQ. 10 ) THEN
-                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-
-                            MESG = 'INTERNAL ERROR: Check XREFTBL ' //
-     &                             'for processing record: ' //
-     &                             CRLF() // BLANK10 // BUFFER( 1:L ) //
-     &                             ' POA:' // EANAM( ISP )
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
                         END IF
 
                         NT = NT - 1
+
+C......................  Adjust NT for indexing quirk.  Since NT=11 must have
+C                        an SCC match, we're really processing for NT=10
+C                        since in this section, SCC=0
+                        IF( NT .EQ. 11 ) NT = 10
 
                     ENDDO           ! End loop on plant characteristics
 
@@ -699,12 +814,16 @@ C                       plant is permitted to not have an SCC not specified
                 ELSE                                          ! Complete SCC
 C.....................  Loop through plant-specific characteristics,
 C                       and store the most specific entries first.
+C.....................  Only the most specific and plant-only can have
+C                       full TSCC assignment.
 C.....................  Process NT 16 through 11
                     NT = 9 + MXCHRS
                     DO J = MXCHRS, 2, -1
 
-                        IF( CHARS( J ) .NE. ' ' ) THEN
+                        IF( ( J .EQ. NCHKCHR .OR. J .EQ. 2  ) .AND.
+     &                      CHARS( J ) .NE. ' '                   ) THEN
 
+                            CSRCSCC = CSRC( 1:PTENDL3( J ) ) // TSCC
                             IF( CSRCSCC .NE. PCSSC( NT ) ) THEN
                                 N( NT ) = N( NT ) + 1
                                 PCSSC( NT ) = CSRCSCC
@@ -718,6 +837,12 @@ C.....................  Process NT 16 through 11
                                 NT = 0
                                 EXIT                      ! End loop with NT
                             END IF
+
+                        ELSE IF( CHARS( J ) .NE. ' ' ) THEN
+                            MESG = 'Non-zero SCC is not allowed to ' //
+     &                             'be specified'
+                            CALL REPORT_INVALID_XREF( MESG )
+                            NT = 0
 
                         END IF
 
