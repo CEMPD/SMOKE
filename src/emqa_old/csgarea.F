@@ -2,7 +2,7 @@
         PROGRAM CSGAREA
 
 C***********************************************************************
-C  program body starts at line 154
+C  program body starts at line 156
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -511,6 +511,7 @@ C.......   Transform and write out area source emissions values:
             CALL M3MSG2( 'Calculating speciated gridded emissions...' )
         END IF
 
+        BTIME = JTIME
         LDATE = 0
         DO  199  T = 1, NSTEPS
 
@@ -599,7 +600,7 @@ C.............  Write report if report flag is switched on
 
 C.................  Convert summary emissions from moles/day to tons/day
 
-                DO 220 S = 1, NMPOL
+                DO 155 S = 1, NMPOL
 
 C.....................  Conversion factor for AREA as input file
                     IF( S .NE. INO ) THEN
@@ -608,13 +609,13 @@ C.....................  Conversion factor for AREA as input file
                         FAC = EMWT( INO2 ) / TON2GM
                     ENDIF
 
-                    DO 222 I = 1, NSTA
+                    DO 144 I = 1, NSTA
 
                        EMSUM( I,S ) = EMSUM( I,S ) * FAC
 
-222                 CONTINUE
+144                 CONTINUE
 
-220             CONTINUE
+155             CONTINUE
 
                 IF( TSTEP .NE. 0 )
      &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
