@@ -97,7 +97,7 @@ C...........   Other local variables
         INTEGER         OUNIT, SUNIT, FUNIT, RUNIT
 
         REAL            YR2DAY
-        INTEGER         I, J, K, POSN, LOC
+        INTEGER         I, J, K, POSN, LOC, L2
         INTEGER         LASTSCC   ! The last SCC number
                                   ! encountered when summing the emmis.
         INTEGER         TOT_SCC   ! Total number of SCC codes/names 
@@ -310,7 +310,7 @@ C        PRINT *, 'Summing emissions...'
         DO 80 I = 1, NIPOL
             WRITE ( OUNIT, 820 ) EINAM ( I )( 1:TRIMLEN ( EINAM ( I ) ))
 80      CONTINUE
-        WRITE ( OUNIT, 810 ) ''
+        WRITE ( OUNIT, 810 ) ' '
 
         DO 90 J = 1, ACT_SCC
             WRITE ( OUNIT, 830 ) ISCCLIST ( J ), 
@@ -377,16 +377,21 @@ C        PRINT *, 'Summing emissions...'
                 LOC = FIND1 ( ISCC ( POSN ), TOT_SCC, IALLSCC )
 
                 IF ( LOC .LE. 0 ) THEN
-                    SCCNAME = "*** no SCC description available"
+                    SCCNAME = '*** no SCC description available'
+                    L2 = 32 
+
                 ELSE
+                    L2 = INDEX ( SCCDESC ( LOC ), ',' ) - 1
+
                     SCCNAME = SCCDESC ( LOC )
-                    IF ( SCCNAME .EQ. ' ' ) THEN
-                    	SCCNAME = "*** no SCC description available"
+
+                    IF ( L2 .LE. 0 ) THEN
+                    	SCCNAME = '*** no SCC description available'
+                        L2 = 32 
                     END IF 
                 END IF
 
-                LOC = INDEX ( SCCNAME, ',' ) - 1
-                DESC = SCCNAME ( 1 : MIN( LOC, 45 ) )
+                DESC = SCCNAME ( 1 : MIN( L2, 45 ) )
             END IF 
             
             ! Sum the emissions 
