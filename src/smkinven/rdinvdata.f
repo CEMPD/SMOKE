@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDINVDATA( FDEV, FNAME, NRAWBP )
+        SUBROUTINE RDINVDATA( FDEV, FNAME, NRAWBP, NONPOINT )
 
 C***********************************************************************
 C  subroutine body starts at line 133
@@ -48,15 +48,17 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: INRECA, POLVLA, TPFLAG, INDEXA,
-     &                      NSTRECS, SRCSBYREC, RECIDX, IPOSCODA, 
-     &                      SRCIDA, INVYR, ICASCODA, ISIC, STKHT, 
-     &                      STKDM, STKTK, STKVE, XLOCA, YLOCA, CORIS,
-     &                      CBLRID, CPDESC, IDIU, IWEK, XLOC1, YLOC1,
-     &                      XLOC2, YLOC2
+        USE MODSOURC, ONLY: NSTRECS, SRCSBYREC, RECIDX,         ! file numbers and records
+     &                      INDEXA, IPOSCODA, ICASCODA,         ! unsorted source characteristics
+     &                      INRECA, SRCIDA, POLVLA,   
+     &                      ISIC, INVYR, IDIU, IWEK, TPFLAG,    ! sorted integer characteristics
+     &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2,  ! sorted real characteristics
+     &                      YLOC2, STKHT, STKDM, STKTK, STKVE, 
+     &                      CORIS, CBLRID, CPDESC, CERPTYP,     ! sorted character characteristics
+     &                      CMACT, CNAICS, CSRCTYP                  
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NEM, NOZ, NEF, NCE, NRE, NRP, 
+        USE MODINFO, ONLY: CATEGORY, NEM, NDY, NEF, NCE, NRE, NRP, 
      &                     NC1, NC2, NPPOL, NSRC, NPACT
         
 C.........  This module contains the lists of unique inventory information
@@ -98,6 +100,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,          INTENT (IN) :: FDEV         ! unit no. of inv file
         CHARACTER(LEN=*), INTENT (IN) :: FNAME        ! logical name of file
         INTEGER,          INTENT (IN) :: NRAWBP       ! no. sources with pollutants
+        LOGICAL,          INTENT(OUT) :: NONPOINT     ! true: proccessing nonpoint inventory
 
 C...........   Local parameters
         INTEGER, PARAMETER :: DATALEN3 = 25  ! length of data field
@@ -128,6 +131,7 @@ C...........   Other local variables
         INTEGER         IZONE       !  UTM zone
         INTEGER         LSTYR       !  inventory year from list file
         INTEGER         MXWARN      !  maximum number of warnings
+        INTEGER         NLINE       !  no. of lines in list file
         INTEGER         NPOLPERCAS  !  no. of pollutants per CAS number
         INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
         INTEGER      :: NWARN = 0   !  current number of warnings
@@ -140,7 +144,7 @@ C...........   Other local variables
         REAL            CEFF        !  tmp control effectiveness
         REAL            EANN        !  annual-ave emission value
         REAL            EMFC        !  emission factor
-        REAL            EOZN        !  ozone-season-ave emission value
+        REAL            EDAY        !  average day emission value
         REAL            REFF        !  rule effectiveness
         REAL            RPEN        !  rule penetration
         REAL            CPRI        !  primary control code
@@ -163,7 +167,7 @@ C...........   Other local variables
         LOGICAL      :: EFLAG   = .FALSE. ! true: error occured
         LOGICAL      :: EMSFLAG = .FALSE. ! true: at least one file is EMS-95 format
         LOGICAL      :: DFLAG   = .FALSE. ! true: weekday (not full week) nrmlizr 
-        LOGICAL      :: FFLAG   = .FALSE. ! true: fill annual data with seasonal
+        LOGICAL      :: FFLAG   = .FALSE. ! true: fill annual data with average day data 
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
         LOGICAL      :: LNKFLAG = .FALSE. ! true: current line has link information
         LOGICAL      :: LSTFLG  = .FALSE. ! true: using list-fmt inventory file
@@ -185,12 +189,17 @@ C...........   Other local variables
         CHARACTER(LEN=ORSLEN3)  CORS      ! DOE plant ID
         CHARACTER(LEN=6)        BLID      ! boiler ID
         CHARACTER(LEN=40)       DESC      ! plant description
+        CHARACTER(LEN=ERPLEN3)  ERPTYP    ! emissions release point type
         CHARACTER(LEN=4)        HT        ! stack height
         CHARACTER(LEN=6)        DM        ! stack diameter
         CHARACTER(LEN=4)        TK        ! exit temperature
         CHARACTER(LEN=10)       FL        ! flow rate
         CHARACTER(LEN=9)        VL        ! exit velocity
         CHARACTER(LEN=SICLEN3)  SIC       ! SIC
+        CHARACTER(LEN=MACLEN3)  MACT      ! MACT code
+        CHARACTER(LEN=NAILEN3)  NAICS     ! NAICS code
+        CHARACTER(LEN=STPLEN3)  SRCTYP    ! source type code
+        CHARACTER(LEN=1)        CTYPE     ! coordinate type
         CHARACTER(LEN=9)        LAT       ! stack latitude
         CHARACTER(LEN=9)        LON       ! stack longitude
 
@@ -205,16 +214,35 @@ C***********************************************************************
 C   begin body of subroutine RDINVDATA
 
 C.........  Check if inventory file is list format
-        IF( ALLOCATED( LSTSTR ) ) LSTFLG = .TRUE.
+        IF( ALLOCATED( LSTSTR ) ) THEN
+            LSTFLG = .TRUE.
+            
+            NLINE = SIZE( LSTSTR )
+            
+            DO I = 1, SIZE( LSTSTR )
+                IF( LSTSTR( I ) == ' ' ) THEN
+                    NLINE = I - 1
+                    EXIT
+                END IF
+            END DO
+        ELSE
+            NLINE = 1
+        END IF
         
 C.........   Initialize variables for keeping track of dropped emissions
         NDROP = 0
         EDROP = 0.  ! array
 
-C.........  Check if any files are EMS-95 format
-        DO I = 1, SIZE( FILFMT )
+C.........  Initialize nonpoint flag to false
+        NONPOINT = .FALSE.
+
+C.........  Check if any files are EMS-95 or SMOKE toxics nonpoint format
+        DO I = 1, NLINE
             IF( FILFMT( I ) == EMSFMT ) THEN
                 EMSFLAG = .TRUE.
+                EXIT
+            ELSE IF( FILFMT( I ) == TOXNPFMT ) THEN
+                NONPOINT = .TRUE.
                 EXIT
             END IF
         END DO
@@ -270,8 +298,8 @@ C           the weekly profiles
         END IF
 
 C.........  Get annual data setting from environment
-        MESG = 'Fill in 0. annual data based on seasonal data.'
-        FFLAG = ENVYN( 'FILL_ANN_WSEAS', MESG, .FALSE., IOS )
+        MESG = 'Fill in 0. annual data based on average day data.'
+        FFLAG = ENVYN( 'FILL_ANNUAL', MESG, .FALSE., IOS )
 
 C.........  Get point specific settings
         IF( CATEGORY == 'POINT' ) THEN
@@ -289,7 +317,7 @@ C.........  Get maximum number of warnings
 
 C.........  Set default inventory characteristics (declared in MODINFO) used
 C           by the IDA and EPS formats, including NPPOL
-        DO I = 1, SIZE( FILFMT )
+        DO I = 1, NLINE
             IF( FILFMT( I ) > 0 ) THEN
                 CALL INITINFO( FILFMT( 1 ) )
                 EXIT
@@ -312,6 +340,13 @@ C.........  Allocate memory for storing inventory data
         CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
         ALLOCATE( INVYR( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
+
+        IF( CATEGORY == 'AREA' ) THEN
+            ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
+            
+            ISIC = 0         ! array
+        END IF
         
         IF( CATEGORY == 'MOBILE' ) THEN
             ALLOCATE( XLOC1( NSRC ), STAT=IOS )
@@ -327,6 +362,19 @@ C.........  Allocate memory for storing inventory data
             YLOC1 = BADVAL3  ! array
             XLOC2 = BADVAL3  ! array
             YLOC2 = BADVAL3  ! array
+        END IF
+        
+        IF( CATEGORY == 'POINT' .OR. NONPOINT ) THEN
+            ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+            ALLOCATE( CMACT( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CMACT', PROGNAME )
+            ALLOCATE( CNAICS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CNAICS', PROGNAME )
+        
+            CSRCTYP = ' '       ! array
+            CMACT   = ' '       ! array
+            CNAICS  = ' '       ! array
         END IF
         
         IF( CATEGORY == 'POINT' ) THEN
@@ -354,19 +402,22 @@ C.........  Allocate memory for storing inventory data
             CALL CHECKMEM( IOS, 'CBLRID', PROGNAME )
             ALLOCATE( CPDESC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )
+            ALLOCATE( CERPTYP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CERPTYP', PROGNAME )
 
-            ISIC   = 0         ! array
-            IDIU   = 0         ! array
-            IWEK   = 0         ! array
-            STKHT  = 0.        ! array
-            STKDM  = 0.        ! array
-            STKTK  = 0.        ! array
-            STKVE  = 0.        ! array
-            XLOCA  = IMISS3    ! array
-            YLOCA  = IMISS3    ! array
-            CORIS  = ORSBLNK3  ! array
-            CBLRID = BLRBLNK3  ! array
-            CPDESC = ' '       ! array
+            ISIC     = 0         ! array
+            IDIU     = 0         ! array
+            IWEK     = 0         ! array
+            STKHT    = 0.        ! array
+            STKDM    = 0.        ! array
+            STKTK    = 0.        ! array
+            STKVE    = 0.        ! array
+            XLOCA    = IMISS3    ! array
+            YLOCA    = IMISS3    ! array
+            CORIS    = ORSBLNK3  ! array
+            CBLRID   = BLRBLNK3  ! array
+            CPDESC   = ' '       ! array
+            CERPTYP  = ' '       ! array
         END IF
 
 C.........  Initialize pollutant-specific values as missing
@@ -383,11 +434,15 @@ C.........  If inventory is list format, open first file for reading
         IF( LSTFLG ) THEN
             LINE = LSTSTR( CURFIL )
 
-C.............  Check if line is year packet
-            LSTYR = GETINVYR( LINE )
-            
-            IF( LSTYR > 0 ) THEN
+C.............  Skip #LIST lines (must be first)
+            IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
                 CURFIL = CURFIL + 1
+                LINE = LSTSTR( CURFIL )
+            END IF
+
+C.............  Check for inventory year packet
+            IF( GETINVYR( LINE ) > 0 ) THEN
+                CURFIL = CURFIL + 1  ! move to next file in list
             END IF
 
 C.............  For EMS point inventory, skip ahead to emission file
@@ -442,19 +497,6 @@ C           (will change if format is IDA or mobile EMS)
 
 C.........  Loop through inventory files and read data
         DO
-
-C.............  If reached end of SRCSBYREC array, make sure we finished the file
-            IF( ISTREC == NSTRECS ) THEN
-!                READ( FDEV, 93000, IOSTAT=IOS ) LINE
-!                IF( IOS == 0 ) THEN   ! successful read -> not the end of the file
-!                    WRITE( MESG,94010 ) 'INTERNAL ERROR:' //
-!     &                  'reached end of records before end ' //
-!     &                  'of file.'
-!                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-!                ELSE
-                    EXIT
-!                END IF
-            END IF
         
             READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
@@ -486,8 +528,14 @@ C.....................  Advance to next file
                     END IF
 
 C.....................  Check if there are more files to read
-                    IF( CURFIL <= SIZE( FILFMT ) ) THEN 
+                    IF( CURFIL <= NLINE ) THEN 
                         LINE = LSTSTR( CURFIL )
+
+C.........................  Check for #LIST line
+                        IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
+                            CURFIL = CURFIL + 1  ! move to next file in list
+                            LINE = LSTSTR( CURFIL )
+                        END IF
 
 C.........................  Check for INVYEAR packet                
                         IF( GETINVYR( LINE ) > 0 ) THEN
@@ -501,7 +549,7 @@ C.........................  Advance to emission file for EMS point
                         END IF
 
 C.........................  Make sure there are still files to read                            
-                        IF( CURFIL > SIZE( FILFMT ) ) THEN
+                        IF( CURFIL > NLINE ) THEN
                             LSTTIME = .TRUE.
                             EXIT
                         END IF
@@ -597,7 +645,7 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                NPOLPERLN, TIMEPERIOD, 
      &                                HDRFLAG, EFLAG )
                 END SELECT
-            CASE( NTIFMT )
+            CASE( TOXFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
                     CALL RDDATANTIAR( LINE, READDATA, READPOL, 
@@ -608,7 +656,20 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                INVYEAR, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
+                CASE( 'POINT' )
+                    CALL RDDATANTIPT( LINE, READDATA, READPOL,
+     &                                INVYEAR, DESC, ERPTYP, SRCTYP, 
+     &                                HT, DM, TK, FL, VL, SIC, MACT, 
+     &                                NAICS, CTYPE, LAT, LON, ZONE,
+     &                                HDRFLAG, EFLAG )
+                    NPOLPERLN = 1
                 END SELECT
+            CASE( TOXNPFMT )
+                
+                CALL RDDATANTINP( LINE, READDATA, READPOL,
+     &                            INVYEAR, SIC, MACT, SRCTYP, NAICS, 
+     &                            HDRFLAG, EFLAG )
+                NPOLPERLN = 1
             END SELECT
             
 C.............  Check for header lines
@@ -728,7 +789,10 @@ C.............  Check that point source information is correct
      &                     'longitude are missing at line', IREC
                     CALL M3MSG2( MESG )
                 END IF
+            END IF
                 
+            IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
+     &          CURFMT == TOXNPFMT ) THEN
                 IF( .NOT. CHKINT( SIC ) ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: SIC code is non-' //
@@ -743,7 +807,29 @@ C.............  Check that point source information is correct
                         NWARN = NWARN + 1
                     END IF
                     SIC = '0000'
-                END IF            
+                END IF
+                
+C.................  Check NTI specific values
+                IF( CURFMT == TOXFMT ) THEN
+                                        
+                    IF( CTYPE /= 'U' .AND. CTYPE /= 'L' ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Invalid ' //
+     &                         'coordinate type at line', IREC,
+     &                         CRLF() // BLANK10 // 'Valid ' //
+     &                         'values are "U" or "L"'
+                        CALL M3MESG( MESG )
+                    END IF
+                    
+                    IF( CTYPE == 'U' .AND. 
+     &                  ( ZONE == ' ' .OR. ZONE == '0' ) ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Missing ' //
+     &                         'or invalid UTM zone at line', IREC
+                        CALL M3MESG( MESG )
+                    END IF
+                    
+                END IF
             END IF
 
 C.............  Check that data values are numbers
@@ -772,7 +858,7 @@ C                   require an extra search to get the pollutant code
      &              READDATA( I,2 ) == ' '       ) THEN
                     IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Missing annual' //
-     &                     ' AND seasonal emissions for ' // 
+     &                     ' AND average day emissions for ' // 
      &                     TRIM( POLNAM ) // ' at line', IREC
                         CALL M3MESG( MESG )
                         NWARN = NWARN + 1
@@ -786,7 +872,7 @@ C.............  Skip rest of loop if an error has occured
             IF( EFLAG ) CYCLE
 
 C.............  Get current CAS number position and check that it is valid
-            IF( CURFMT == NTIFMT ) THEN
+            IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
@@ -822,25 +908,37 @@ C.............  Increment number of stored records and double check that we are
 C               where we're supposed to be
             IF( .NOT. NOPOLFLG ) THEN
                 ISTREC = ISTREC + 1
+
+C.................  Make sure ISTREC isn't more than NSTRECS (shouldn't ever happen)
+                IF( ISTREC > NSTRECS ) THEN
+                    MESG = 'INTERNAL ERROR: Reached end of records ' //
+     &                     'while file still being read'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
                 IF( SRCSBYREC( RECIDX( ISTREC ),1 ) /= CURFIL .OR.
      &              SRCSBYREC( RECIDX( ISTREC ),2 ) /= IREC       ) THEN
                     MESG = 'INTERNAL ERROR: Current record does ' //
      &                 'not match expected record'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
+                
+C.................  Get source ID for current source
+                CURSRC = SRCIDA( SRCSBYREC( RECIDX( ISTREC ),3 ) )
+                
+            ELSE
+                CURSRC = 0
+                
             END IF   
-
-C.............  Get source ID for current source
-            CURSRC = SRCIDA( SRCSBYREC( RECIDX( ISTREC ),3 ) )
 
 C.............  Loop through all pollutants for current line
             DO I = 1, NPOLPERLN
                         
                 POLNAM = READPOL( I )
 
-C.................  If format is not NTI, find code corresponding to current pollutant
+C.................  If format is not toxics, find code corresponding to current pollutant
                 ACTFLAG = .FALSE.
-                IF( CURFMT /= NTIFMT ) THEN
+                IF( CURFMT /= TOXFMT .AND. CURFMT /= TOXNPFMT ) THEN
                     POLCOD = INDEX1( POLNAM, MXIDAT, INVDNAM )
                     IF( POLCOD == 0 ) THEN
                         WRITE( MESG,94010 ) 'ERROR: Unknown  ' //
@@ -876,18 +974,18 @@ C.................  Convert data to real numbers and check for missing values
                 END IF
                 
                 IF( .NOT. ACTFLAG ) THEN
-                    EOZN = STR2REAL( READDATA( I,NOZ ) )
+                    EDAY = STR2REAL( READDATA( I,NDY ) )
                 
-                    IF( EOZN < AMISS3 .OR. EOZN == -9 ) THEN
+                    IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
                         IF( NWARN < MXWARN ) THEN
                             WRITE( MESG,94010 ) 'WARNING: ' //
-     &                          'Missing seasonal emissions for ' //
+     &                          'Missing average day emissions for ' //
      &                          TRIM( POLNAM ) // ' at line', IREC
                             CALL M3MESG( MESG )
                             NWARN = NWARN + 1
                         END IF
                         
-                        EOZN = BADVAL3
+                        EDAY = BADVAL3
                     END IF
                 END IF
 
@@ -998,39 +1096,39 @@ C.................  Set the default temporal resolution of the data
                     TPF = MTPRFAC * WKSET
                 END IF
 
-C.................  Replace annual data with ozone-season information
+C.................  Replace annual data with average day information
 C                   Only do this if current pollutant is not an activity, flag is set,
-C                   annual data is less than or equal to zero and ozone
+C                   annual data is less than or equal to zero and average day
 C                   data is greater than zero
                 IF( .NOT. ACTFLAG .AND. 
      &                      FFLAG .AND. 
      &                 EANN <= 0. .AND. 
-     &                 EOZN >  0.       ) THEN
-                    WRITE( MESG,94010 ) 'NOTE: Using seasonal ' //
+     &                 EDAY >  0.       ) THEN
+                    WRITE( MESG,94010 ) 'NOTE: Using average day ' //
      &                 'emissions to fill in annual emissions' //
      &                 CRLF() // BLANK10 // 'for ' // TRIM( POLNAM ) //
      &                 ' at line', IREC
                     CALL M3MESG( MESG )
                     
-                    EANN = EOZN * DAY2YR
+                    EANN = EDAY * DAY2YR
 
 C.....................  Remove monthly factors for this source
                     TPF = WKSET
                 END IF
 
-C.................  Calculate season emissions from annual data if needed
+C.................  Calculate average day emissions from annual data if needed
 C                   Only do this if current pollutant is not an activity,
-C                   annual data is greater than zero, and ozone data is
+C                   annual data is greater than zero, and average day data is
 C                   zero or negative
                 IF( .NOT. ACTFLAG .AND. 
      &                 EANN >  0. .AND. 
-     &                 EOZN <= 0.       ) THEN
-                    EOZN = EANN * YEAR2DAY
+     &                 EDAY <= 0.       ) THEN
+                    EDAY = EANN * YEAR2DAY
                 END IF
 
-C.................  If current format is NTI, check if current CAS number
+C.................  If current format is toxics, check if current CAS number
 C                   is split
-                IF( CURFMT == NTIFMT ) THEN
+                IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
@@ -1044,8 +1142,8 @@ C.....................  Store emissions by CAS number for reporting
                     
                 DO J = 0, NPOLPERCAS - 1
 
-C.....................  If NTI format, set current pollutant
-                    IF( CURFMT == NTIFMT ) THEN
+C.....................  If toxic format, set current pollutant
+                    IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 
@@ -1123,10 +1221,10 @@ C.............................  Match FIP, road, and link with vehicle mix table
      &                                         POLANN
                             
                             IF( .NOT. ACTFLAG ) THEN
-                                IF( EOZN > 0. ) THEN
-                                    POLVLA( SP,NOZ ) = EOZN * POLFAC
+                                IF( EDAY > 0. ) THEN
+                                    POLVLA( SP,NDY ) = EDAY * POLFAC
                                 ELSE
-                                    POLVLA( SP,NOZ ) = EOZN
+                                    POLVLA( SP,NDY ) = EDAY
                                 END IF
                             END IF
                         
@@ -1151,6 +1249,9 @@ C.............................  Match FIP, road, and link with vehicle mix table
                 END DO  ! end loop through pols per CAS number
 
             END DO  ! end loop through pols per line
+
+C.............  Skip rest of loop if no pollutants are kept
+            IF( NOPOLFLG ) CYCLE
             
 C.............  Store source specific values in sorted order
             IF( CATEGORY == 'MOBILE' .AND. CURFMT == EMSFMT ) THEN
@@ -1203,55 +1304,84 @@ C.................  Skip rest of loop
             INVYR ( CURSRC ) = INVYEAR
             TPFLAG( CURSRC ) = TPF
             
-            IF( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) THEN
-                ISIC  ( CURSRC ) = STR2INT( SIC )
-                STKHT ( CURSRC ) = STR2REAL( HT )
-                STKDM ( CURSRC ) = STR2REAL( DM )
-                STKTK ( CURSRC ) = STR2REAL( TK )
-                STKVE ( CURSRC ) = STR2REAL( VL )
-                XLOCA ( CURSRC ) = STR2REAL( LON )
-                YLOCA ( CURSRC ) = STR2REAL( LAT )
-                CORIS ( CURSRC ) = ADJUSTR( CORS )
-                CBLRID( CURSRC ) = ADJUSTR( BLID )
-                CPDESC( CURSRC ) = DESC
-
-C.................  Convert units on values                
-                IF( CURFMT == IDAFMT ) THEN
-                    IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
-                    STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m
-                    
-                    IF( STKDM( CURSRC ) < 0. ) STKDM( CURSRC ) = 0.
-                    STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
-                    
-                    IF( STKTK( CURSRC ) < 0. ) THEN
-                        STKTK( CURSRC ) = 0.
-                    ELSE
-                        STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32 ) *   ! F to K
-     &                                    FTOC + CTOK
-                    END IF
-                    
-C.....................  Recompute velocity if that option has been set
-                    IF( CFLAG .OR. STKVE( CURSRC ) == 0. ) THEN
-                        RBUF = 0.25 * PI * 
-     &                         STKDM( CURSRC ) * STKDM( CURSRC )
-                        
-                        REALFL = STR2REAL( FL )
-                        IF( REALFL < 0. ) REALFL = 0.
-                        REALFL = REALFL * FT2M3                 ! ft^3/s to m^3/s
-                        
-                        IF( RBUF > 0 ) THEN
-                            STKVE( CURSRC ) = REALFL / RBUF
-                        END IF
-                    ELSE
-                        STKVE( CURSRC ) = STKVE( CURSRC ) * FT2M  ! ft/s to m/s
-                    END IF
-
-C.....................  Correct hemisphere for stack longitude
-                    IF( WFLAG .AND. XLOCA( CURSRC ) > 0. ) THEN
-                        XLOCA( CURSRC ) = -XLOCA( CURSRC )
-                    END IF
-                    
+            IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
+     &          CURFMT == TOXNPFMT ) THEN
+                ISIC( CURSRC ) = STR2INT( SIC )
+                
+                IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
+                    CALL PADZERO( SRCTYP )
+                    CALL PADZERO( MACT )
+                    CALL PADZERO( NAICS )
+                    CSRCTYP( CURSRC ) = SRCTYP
+                    CMACT  ( CURSRC ) = MACT
+                    CNAICS ( CURSRC ) = NAICS
                 END IF
+                
+                IF( CURFMT == TOXFMT ) THEN
+                    CALL PADZERO( ERPTYP )
+                    CERPTYP( CURSRC ) = ERPTYP
+                    
+C.....................  Convert UTM values to lat-lon
+                    IF( CTYPE == 'U' ) THEN
+                        IZONE = STR2INT( ZONE )
+                        XLOCA1 = STR2REAL( LON )
+                        YLOCA1 = STR2REAL( LAT )
+                        CALL UTM2LL( XLOCA1, YLOCA1, IZONE, XLOC, YLOC )
+                        WRITE( LON,* ) XLOC
+                        WRITE( LAT,* ) YLOC
+                    END IF
+                END IF
+            END IF
+            
+            IF( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) THEN
+                STKHT   ( CURSRC ) = STR2REAL( HT )
+                STKDM   ( CURSRC ) = STR2REAL( DM )
+                STKTK   ( CURSRC ) = STR2REAL( TK )
+                STKVE   ( CURSRC ) = STR2REAL( VL )
+                XLOCA   ( CURSRC ) = STR2REAL( LON )
+                YLOCA   ( CURSRC ) = STR2REAL( LAT )
+                CPDESC  ( CURSRC ) = DESC
+                
+                IF( CURFMT == IDAFMT ) THEN
+                    CORIS   ( CURSRC ) = ADJUSTR( CORS )
+                    CBLRID  ( CURSRC ) = ADJUSTR( BLID )
+                END IF
+                
+C.................  Convert units on values 
+                IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
+                STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m
+                
+                IF( STKDM( CURSRC ) < 0. ) STKDM( CURSRC ) = 0.
+                STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
+                
+                IF( STKTK( CURSRC ) < 0. ) THEN
+                    STKTK( CURSRC ) = 0.
+                ELSE
+                    STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32 ) *   ! F to K
+     &                                FTOC + CTOK
+                END IF
+                
+C.................  Recompute velocity if that option has been set
+                IF( CFLAG .OR. STKVE( CURSRC ) == 0. ) THEN
+                    RBUF = 0.25 * PI * 
+     &                     STKDM( CURSRC ) * STKDM( CURSRC )
+                    
+                    REALFL = STR2REAL( FL )
+                    IF( REALFL < 0. ) REALFL = 0.
+                    REALFL = REALFL * FT2M3                 ! ft^3/s to m^3/s
+                    
+                    IF( RBUF > 0 ) THEN
+                        STKVE( CURSRC ) = REALFL / RBUF
+                    END IF
+                ELSE
+                    STKVE( CURSRC ) = STKVE( CURSRC ) * FT2M  ! ft/s to m/s
+                END IF
+
+C.................  Correct hemisphere for stack longitude
+                IF( WFLAG .AND. XLOCA( CURSRC ) > 0. ) THEN
+                    XLOCA( CURSRC ) = -XLOCA( CURSRC )
+                END IF
+                    
             END IF
             
         END DO  ! end loop through records array
