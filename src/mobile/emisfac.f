@@ -114,6 +114,7 @@ C.........  Unit numbers and logical file names
         INTEGER         SDEV     ! unit number for ASCII inventory file
         INTEGER         TDEV     ! unit number for emission processes file
         INTEGER         VDEV     ! unit number for inventory data table
+        INTEGER         ZDEV     ! unit number for speed profiles file
         
         CHARACTER*16    ANAME   !  logical name for ASCII inventory file
         CHARACTER*16    ENAME   !  logical name for I/O API inventory file   
@@ -145,6 +146,7 @@ C.........   Other local variables
         LOGICAL :: FILEOPEN = .FALSE.    ! true: emisfacs file is open
         LOGICAL :: FNDINPUT = .FALSE.    ! true: found input hydrocarbon
         LOGICAL :: FNDOUTPUT = .FALSE.   ! true: found output hydrocarbon
+        LOGICAL :: SPDFLAG  = .TRUE.     ! true: use speed profiles
         
         CHARACTER*20           MODELNAM  ! emission factor model name
         CHARACTER*20           GRP_NAME  ! temperature aggregation group
@@ -197,6 +199,11 @@ C.........  Get temperature aggregation length
         MESG = 'Temperature aggregation group'
         CALL ENVSTR( 'GROUP_TYPE', MESG, 'daily', GRP_NAME, IOS )
      
+C.........  Check if speed profiles are to be used
+        SPDFLAG = ENVYN( 'USE_SPEED_PROFILES', 
+     &            'Use speed profiles instead of inventory speeds', 
+     &            .FALSE., IOS )
+     
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
@@ -238,6 +245,12 @@ C           do not store the pollutants as separate
      &           'Enter logical name for INVENTORY DATA TABLE file',
      &           .TRUE., .TRUE., 'INVTABLE', PROGNAME )
 
+        IF( SPDFLAG ) THEN
+            ZDEV = PROMPTFFILE(
+     &           'Enter logical name for SPDPRO speed profiles file',
+     &           .TRUE., .TRUE., 'SPDPRO', PROGNAME )
+        END IF
+        
         SELECT CASE( GRP_NAME )
         CASE( 'daily' )
            GDEV = PROMPTFFILE(
@@ -448,6 +461,9 @@ C.........  Read the M6LIST file into an array
 
         CALL RDM6LIST( CDEV )
 
+C.........  Read speed profiles file
+        IF( SPDFLAG ) CALL RDSPDPROF( ZDEV )
+        
 C.........  Allocate memory for the source/scenario number array
         ALLOCATE( SCENLIST( NSRC,2 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCENLIST', PROGNAME )
@@ -558,7 +574,7 @@ C.............  Open new input file
             NUMSRC  = 0
             CALL WRM6INPUT( GRPLIST, NGRPLINES, PDEV, MDEV, 
      &                      TEMPCTY, TKHOUR, NROWS, VOLNAM, 
-     &                      NUMSCEN, NUMSRC, TEMPFLAG )
+     &                      NUMSCEN, NUMSRC, TEMPFLAG, SPDFLAG )
             
             CLOSE( MDEV )
             
