@@ -17,6 +17,7 @@ setenv BYFYR `echo $YEAR | cut -c3-4`
 # If future year processing requested, add future year to the scenario name
 if ( $?SMK_FUTURE_YN ) then
 
+   #  If using the future-year files as INPUT
    if ( $SMK_FUTURE_YN == Y ) then
 
       if ( $?FYEAR ) then
@@ -42,25 +43,40 @@ if ( $?SMK_FUTURE_YN ) then
 
 endif
 
-# If 4-digit future year set, at 2-digit year to the FYINV variable
-if ( $?FYEAR ) then
+if ( $?SMK_CONTROL_YN ) then
 
-   set fyr2 = `echo $FYEAR | cut -c3-4`
+   #  If using the controlled-year files as INPUT
+   if ( $SMK_CONTROL_YN == Y ) then
 
-   setenv FYINV ${FYINV}_${fyr2}
-   setenv BYFYR ${BYFYR}_${fyr2}
+      if ( $?CNTLCASE ) then
 
+          setenv ASCEN   ${ASCEN}_${CNTLCASE}
+          setenv MSCEN   ${MSCEN}_${CNTLCASE}
+          setenv PSCEN   ${PSCEN}_${CNTLCASE}
+          setenv ESCEN   ${ESCEN}_${CNTLCASE}
+          setenv FYIOP   ${INVOP}_${CNTLCASE}
+
+      else
+
+          echo 'ERROR: SMK_CONTROL_YN set to Y without CNTLCASE being set\!'
+          echo '       Rerun with CNTLCASE set to the control case name.'   
+          exit( 1 )
+
+      endif
+
+   endif
 endif
 
-# If control case name is defined, add it to the scenario name
+# If 4-digit future year set, at 2-digit year to the FYINV variable
+if ( $?FYEAR ) then
+   set fyr2 = `echo $FYEAR | cut -c3-4`
+   setenv FYINV ${FYINV}_${fyr2}
+   setenv BYFYR ${BYFYR}_${fyr2}
+endif
+
+# If control case name is defined, add it to the FYINV variable
 if ( $?CNTLCASE ) then
-
-   setenv ASCEN ${ASCEN}_${CNTLCASE}
-   setenv MSCEN ${MSCEN}_${CNTLCASE}
-   setenv PSCEN ${PSCEN}_${CNTLCASE}
-   setenv ESCEN ${ESCEN}_${CNTLCASE}
    setenv FYINV ${FYINV}_${CNTLCASE}
-
 endif
 
 setenv MSB ${METSCEN}_${BSCEN}
