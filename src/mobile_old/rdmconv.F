@@ -5,7 +5,7 @@
      &                                  RDT3, FAC3, N3  )
 
 C***********************************************************************
-C  function body starts at line  118
+C  function body starts at line  124
 C
 C  FUNCTION:
 C       Reads the indicated volatile organic conversion file,
@@ -76,13 +76,19 @@ C...........   ARGUMENTS and their descriptions:
         REAL  FAC3( NRCLAS, NVTYPE, MXEPRC ) ! sorted conv factors in group 3
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        CHARACTER*2 CRLF
         INTEGER     CSVNAME
         INTEGER     FIND1
         INTEGER     INDEX1
         INTEGER     STR2INT
         REAL        STR2REAL
 
-        EXTERNAL    CSVNAME, FIND1, INDEX1, STR2INT, STR2REAL
+        EXTERNAL    CRLF, CSVNAME, FIND1, INDEX1, STR2INT, STR2REAL
+
+C...........   PARAMETERS
+
+        CHARACTER*5 BLANK5
+        PARAMETER ( BLANK5 = ' ' )
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
@@ -123,8 +129,9 @@ C.........  Read volatile pollutants conversion factors file
         EFLAG = .FALSE.
 77      CONTINUE        !  head of the KDEV-read loop
 
-            IREC = IREC + 1
             READ( KDEV, 93010, END=99, IOSTAT=IOS ) LINE
+
+            IREC = IREC + 1
 
             IF ( IOS .NE. 0 ) THEN
 
@@ -148,18 +155,22 @@ C.........  Read volatile pollutants conversion factors file
                     NRDT = 1
                 ENDIF
 
-                IF( EM .EQ. 0 ) THEN
-                    GO TO 77   !  to head of the KDEV-read loop
+C.................  NOTE: roundabout gotos prevent HP compiler bug
+                IF( NRDT .LE. 0 ) THEN
+                    GO TO 88   !  to head of the KDEV-read loop
 
-                ELSEIF( NRDT .LT. 0 ) THEN
-                    GO TO 77   !  to head of the KDEV-read loop
+                ELSEIF( EM .LE. 0 ) THEN
+                    GO TO 88   !  to head of the KDEV-read loop
 
                 ELSEIF( FAC .LT. 0. ) THEN
                     EFLAG = .TRUE.
+
                     WRITE( MESG,94020 )
      &                'Bad factor at line', IREC,
      &                'of VOLATILE CONVERSION FACTOR file =', FAC
-                    GO TO 77  ! to head of KDEV-read loop
+                    CALL M3MSG2( MESG )
+
+                    GO TO 88  ! to head of KDEV-read loop
                 ENDIF
 
                 I = I + 1
@@ -172,21 +183,23 @@ C.........  Read volatile pollutants conversion factors file
                     EMA ( I ) = EM
                     FACA( I ) = FAC
 
-                ELSE
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 )
-     &                  'Max CONVERSION table size', MXSCNV, 
-     &                  'exceeded at line', IREC
-                    CALL M3MESG( MESG )
-
                 END IF
 
             END IF
 
-            GO TO  77   !  to head of loop
+88          GO TO  77   !  to head of loop
 
 99      CONTINUE        !  end of the KDEV-read loop
+
+        NTOT = I
+
+        IF( NTOT .GT. MXSCNV ) THEN                
+            EFLAG = .TRUE.
+            WRITE( MESG, 94010 ) 
+     &        'Max VOLATILE CONVERSION FACTOR table size (MXSCNV)=', 
+     &        MXSCNV, CRLF() // BLANK5 // 'Actual number = ', NTOT
+            CALL M3MESG( MESG )
+        ENDIF
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'RDMCONV', 0, 0, 
@@ -194,8 +207,6 @@ C.........  Read volatile pollutants conversion factors file
 
         ENDIF
 
-        NTOT = I
-                
         CALL SORTI2( NTOT, INDX, FIPA, RDTA )
 
 C.......   Initialize category-specific conversion factors
