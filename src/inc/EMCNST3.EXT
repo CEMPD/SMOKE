@@ -81,6 +81,9 @@ C.........  Separator for speciation "variables" (stored in description field)
 C.........  Separator for emission type names
         CHARACTER*2, PARAMETER :: ETJOIN = '__'
 
+C.........  Separator for SIC imbedded in SCC field
+        CHARACTER*5, PARAMETER :: SICNOTE = '--SIC'
+
 C.........  Units for speciation matrice
         CHARACTER*16, PARAMETER :: SMASUNIT = 'g/ton'
         CHARACTER*16, PARAMETER :: SMOLUNIT = 'moles/ton'
