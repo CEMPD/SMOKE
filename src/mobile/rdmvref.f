@@ -1,10 +1,50 @@
 
         SUBROUTINE RDMVREF( MDEV )
 
+C***********************************************************************
+C  subroutine body starts at line 99
+C
+C  DESCRIPTION:
+C       Reads MVREF file, checks that settings are given for each 
+C       reference county, ignores counties not specified in the MCREF
+C       file, and sorts the data
+C
+C  PRECONDITIONS REQUIRED:
+C       MDEV has been opened
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC
-        
+
+C.........  This module is used for MOBILE6 setup information        
         USE MODMBSET
                 
         IMPLICIT NONE
@@ -174,7 +214,10 @@ C.............  Check for duplicate references, then store sorted MVREF array
             
             REFCOUNTY = MVREFRAW( J,1 )
 
-            IF( REFCOUNTY == PRCOUNTY .AND. REFCOUNTY /= 0 ) THEN
+C.............  Skip any entries equal to zero due to blank lines
+            IF( REFCOUNTY == 0 ) CYCLE
+            
+            IF( REFCOUNTY == PRCOUNTY ) THEN
      	
      	        DUPFLAG = .TRUE.
      	        EFLAG   = .TRUE.
@@ -189,7 +232,7 @@ C.............  Check for duplicate references, then store sorted MVREF array
 C.............  Check that current reference county is in the county cross-reference list
                 K = FIND1( REFCOUNTY, NREFC, MCREFIDX( :,1 ) )
                 
-                IF( K < 0 .AND. REFCOUNTY /= 0 ) THEN
+                IF( K < 0 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Ignoring ' //
      &                     'settings for reference county',
      &                     REFCOUNTY, ',' // CRLF() // BLANK10 // 
@@ -250,7 +293,7 @@ C.............  Get county from MCREF index array
 
 999     MESG = 'End of file'
         MESG = 'End of file reached unexpectedly. ' //
-     &         'Check format of MCREF' // CRLF() // BLANK5 //
+     &         'Check format of MVREF' // CRLF() // BLANK5 //
      &         'input file.'
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )   
              
