@@ -2,7 +2,7 @@
         PROGRAM REPPLHT
 
 C***********************************************************************
-C  program body starts at line 126
+C  program body starts at line 123
 C
 C  DESCRIPTION:
 C       Report minimum and maximum plume heights for utilities with 
@@ -117,7 +117,6 @@ C...........   Other local variables
 
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
 
-
 C***********************************************************************
 C   begin body of program REPPLHT
 
@@ -137,7 +136,6 @@ C.......   Get file name; open input point sources
      &                  // ENAME( 1:TRIMLEN( ENAME ) ) // '"', 2 )
         END IF
 
-
         NPTS = NROWS3D
         IF ( NPTS .GT. NPSRC ) THEN
             WRITE ( BUF1, 600 ) NPTS
@@ -150,14 +148,12 @@ C.......   Get file name; open input point sources
      &                   ')', 2 )
         END IF
 
-
-
         HNAME = PROMPTMFILE( 
      &          'Enter name for POINT-SOURCES HOURLY EMISSIONS file',
      &          FSREAD3, 'PTMP', 'REPPLHT' )
 
         IF ( .NOT. DESC3( HNAME ) ) THEN
-            CALL M3EXIT( 'REPTPRO', 0, 0, 
+            CALL M3EXIT( 'REPPLHT', 0, 0, 
      &                   'Could not get description of file "' 
      &                   // HNAME( 1:TRIMLEN( HNAME ) ) // '"', 2 )
         END IF
@@ -187,19 +183,16 @@ C                NOXVAR = I
 C            END IF
         END DO
 
-
-
-
         PNAME = PROMPTMFILE( 
      &         'Enter name for POINT-SOURCES PLUME RISE FRACTIONS file',
      &          FSREAD3, 'PLAY', 'REPPLHT' )
-
 
         IF ( .NOT. DESC3( PNAME ) ) THEN
             CALL M3EXIT( 'REPPLHT', 0, 0, 
      &                   'Could not get description of file "' 
      &                   // PNAME( 1:TRIMLEN( PNAME ) ) // '"', 2 )
         END IF
+
         IF ( NROWS3D .NE. NPTS ) THEN
             WRITE ( BUF1, 600 ) NROWS3D
             WRITE ( BUF2, 600 ) NPTS
@@ -242,8 +235,6 @@ C.......... RePort Daily PLume Height.
      &          'Enter name for PLUME RISE MAX-HEIGHT REPORT file',
      &          .FALSE., .TRUE., 'PLRMXHT', 'REPPLHT' )
 
-
-
 C.......... Get time period of input files and check the number of sources
 C.......... Determine how many days are covered in the plume rise fractions
 C.......... file.
@@ -262,7 +253,6 @@ C.......... file.
      &                   ')', 2 )
         END IF
 
-
 C.......... Set the min and max layer values for each source for each day.
         DO CURDAY = 1, MAXDAYS
             DO J = 1, MAXLARGE
@@ -270,7 +260,6 @@ C.......... Set the min and max layer values for each source for each day.
                 MAXLAYER ( J, CURDAY ) = MINVAL
             END DO
         END DO
-
 
 C...........   Read in emissions indexing data:  IFIP, ISCC, 
 C...........   IPLANT, ISTACK
@@ -315,7 +304,6 @@ C...........   IPLANT, ISTACK
      &                   'Error reading STKVE from file' // ENAME, 2 )
         END IF
 
-
         CURDATE = HDATE
         CURTIME = HTIME
         LASTDATE = CURDATE
@@ -326,7 +314,7 @@ C.......... any given day.
 C.............. Read NOx for the current date and time.
             IF ( .NOT. READ3 ( HNAME, 'NOX', ALLAYS3, CURDATE, 
      &                         CURTIME, SPECBUF ( 1, 1 ) ) ) THEN
-                CALL M3EXIT ( 'REPTPRO', 0, 0, 
+                CALL M3EXIT ( 'REPPLHT', 0, 0, 
      &                        'Error reading NOX from file ' // 
      &                        HNAME, 2 )
             END IF
@@ -338,7 +326,6 @@ C.............. Sum the current hour's NOx into the total for all sources
 
 C.............. Increment to the next time step.
             CALL NEXTIME ( CURDATE, CURTIME, HTSTEP )
-
 
 C.............. If we've gone to a new day (or we're done), then check the total
 C.............. NOx for the "previous" day to see if it exceeds the maximum.
@@ -355,7 +342,7 @@ C.......................... Check to see if we have too many large sources.
                         IF ( CURSRC .GE. MAXLARGE ) THEN
                             WRITE ( BUF1, 600 ) CURSRC
                             WRITE ( BUF2, 600 ) MAXLARGE
-                            CALL M3EXIT( 'REPTPRO', 0, 0, 
+                            CALL M3EXIT( 'REPPLHT', 0, 0, 
      &                          'Number of large sources (' // 
      &                          BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
      &                          ') exceeds program limits (MAXLARGE=' //
@@ -384,7 +371,7 @@ C.......... emissions for each time step.
         DO TS = 1, HNSTEPS
             IF ( .NOT. READ3 ( HNAME, ALLVAR3, ALLAYS3, CURDATE, 
      &                         CURTIME, SPECBUF ) ) THEN
-                CALL M3EXIT ( 'REPTPRO', 0, 0, 
+                CALL M3EXIT ( 'REPPLHT', 0, 0, 
      &                        'Error reading ALLVARS from file ' //
      &                        HNAME, 2 )
             END IF
@@ -401,7 +388,6 @@ C.......... emissions for each time step.
 
             CALL NEXTIME ( CURDATE, CURTIME, HTSTEP )
         END DO
-
 
 C.......... Start writing the report headers.
         WRITE (OUNIT, 720) 'Plume rise minimum and maximum height and '
@@ -473,7 +459,6 @@ C.......... Write the report headers.
         END DO
         WRITE ( MUNIT, 920 ) ' '
 
-
 C.......... First, determine the minimum and maximum plume heights
         CURDATE = PDATE
         CURTIME = PTIME
@@ -517,8 +502,6 @@ C.............. Increment to the next time step.
             END IF
 
         END DO
-
-C        PRINT *, 'Done reading and min/maxing layers'
 
 C.......... For each large source, write the identifying info as well as
 C.......... the min and max plume heights for each day.
@@ -564,34 +547,52 @@ C.......... the min and max plume heights for each day.
             END IF
         END DO
 
-
 999     CONTINUE          !  exit program
 
         MESG = 'Normal completion of REPPLHT'
         CALL M3EXIT( 'REPPLHT', 0, 0, MESG, 0 )
 
-
 C******************  FORMAT  STATEMENTS   ******************************
 
 600     FORMAT ( I10 )
+
 700     FORMAT ( 3X, A, F6.3, A )
+
 705     FORMAT ( 3X, A, I3, A )
+
 710     FORMAT ( /, A, I3, / )
+
 720     FORMAT ( A, $ )
+
 730     FORMAT ( A )
+
 740     FORMAT ( I7, 4X, I6.5, $ )
+
 745     FORMAT ( 4X, I6.5 )
+
 760     FORMAT ( A9, $ )
+
 770     FORMAT ( /, 65X, A, 3X, A )
+
 800     FORMAT ( I6, 1X, I5.5, 1X, I8.8, 1X, I6, 1X, I6, <NIPOL>F9.3, $)
+
 805     FORMAT ( 1X, I5, 1X, I5, 1X, A3 )
+
 810     FORMAT ( 63X, I5, 1X, I5, 1X, A3 )
+
 820     FORMAT ( I6, 1X, I5.5, 1X, I8.8, 1X, I6, 1X, I6, 1X,
      &           F7.2, 1X, F7.2, 1X, F7.2, 1X, F7.2, <NIPOL>F10.4 )
+
 900     FORMAT ( /, 39X, A, 5X, A, 5X, A, 4X, A )
+
 910     FORMAT ( A10, $ )
+
 920     FORMAT ( A )
+
 930     FORMAT ( A, A, $ )
+
 940     FORMAT ( A, $ )
+
 950     FORMAT ( /, A, A, $ )
+
         END
