@@ -42,10 +42,10 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
-     &                      IWEK, IDIU, SPPROF 
+     &                      IWEK, IDIU, SPPROF, ISIC 
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVSCC, INVSCC
+        USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, AFLAG, ALLRPT, NSPCPOL,
@@ -57,7 +57,8 @@ C.........  This module contains report arrays for each output bin
      &                      BINSCC, BINSRGID1, BINSRGID2, BINSNMIDX,
      &                      BINRCL, BINMONID, BINWEKID, BINDIUID,
      &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
-     &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL, OUTSRC
+     &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL, OUTSRC,
+     &                      BINSIC, BINSICIDX
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS
@@ -85,7 +86,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT    ! current report number
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SPNLEN3
+        INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SICLEN3 + SPNLEN3
 
 C...........   Sorting arrays
         INTEGER              , ALLOCATABLE :: SORTIDX( : )
@@ -105,6 +106,7 @@ C...........   Local variables
         INTEGER         PREVSRCID         ! previous source ID
         INTEGER         RCL               ! tmp road class code
         INTEGER         ROW               ! tmp row number
+        INTEGER         SIC               ! tmp SIC
         INTEGER         SRCID             ! tmp source ID
         INTEGER         SRGID1            ! tmp primary surrogate ID
         INTEGER         SRGID2            ! tmp fallback surrogate ID
@@ -141,9 +143,9 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF, '(A,I2.2,A,I2.2,A,I2.2,A)' ) 
-     &         '(4I8, A', SCCLEN3, ',5I8,A', SPNLEN3, ',A', PLTLEN3,
-     &         ',I8,A)'
+        WRITE( FMTBUF, '(A,I2.2,A,I1,A,I2.2,A,I2.2,A)' ) 
+     &         '(4I8, A', SCCLEN3, ',I',SICLEN3,',5I8,A', SPNLEN3,
+     &               ',A', PLTLEN3,',I8,A)'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -152,6 +154,7 @@ C           report
         SRCID  = 0
         FIP    = 0
         RCL    = 0
+        SIC    = 0
         SRGID1 = 0
         SRGID2 = 0
         MONID  = 0
@@ -183,6 +186,7 @@ C.............  If BY SOURCE, then nothing else needed
                 FIP   = IFIP( SRCID )
 		IF( .NOT. AFLAG ) THEN
                     SCC   = CSCC( SRCID )
+                    IF( RPT_%BYSIC ) SIC = ISIC( SRCID )
 		END IF
 
             ELSE
@@ -220,6 +224,8 @@ C.................  If BY ROADCLASS, insert roadclass code
 
                 END IF  ! End by source or by roadclass
 
+C.................  If BY SIC, insert full SIC
+                IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
 
             END IF      ! End by source or not
 
@@ -297,7 +303,7 @@ C.................  If BY ELEVSTAT, insert elevated status code
             END IF  ! End by elevated status
 
 C.............  Store sorting information for current record
-            WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, 
+            WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, SIC,
      &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
      &                             SPCID, PLANT, RCL, ESTAT
 
@@ -334,6 +340,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINREGN   ) ) DEALLOCATE( BINREGN )
         IF( ALLOCATED( BINSMKID  ) ) DEALLOCATE( BINSMKID )
         IF( ALLOCATED( BINSCC    ) ) DEALLOCATE( BINSCC )
+        IF( ALLOCATED( BINSIC    ) ) DEALLOCATE( BINSIC )
         IF( ALLOCATED( BINSRGID1 ) ) DEALLOCATE( BINSRGID1 )
         IF( ALLOCATED( BINSRGID2 ) ) DEALLOCATE( BINSRGID2 )
         IF( ALLOCATED( BINSNMIDX ) ) DEALLOCATE( BINSNMIDX )
@@ -381,6 +388,14 @@ C.........  Allocate memory for bins
         IF( RPT_%SCCNAM  ) THEN
             ALLOCATE( BINSNMIDX( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSNMIDX', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSIC   ) THEN
+            ALLOCATE( BINSIC   ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSIC', PROGNAME )
+        ENDIF
+        IF( RPT_%SICNAM   ) THEN
+            ALLOCATE( BINSICIDX( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSICIDX', PROGNAME )
         ENDIF
         IF( RPT_%SRGRES .EQ. 1 ) THEN
             ALLOCATE( BINSRGID1( NOUTBINS ), STAT=IOS )
@@ -447,7 +462,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( B .NE. LB ) THEN
 
                 READ( BUFFER,FMTBUF ) 
-     &                COL, ROW, SRCID, FIP, SCC, SRGID1, SRGID2, 
+     &                COL, ROW, SRCID, FIP, SCC, SIC, SRGID1, SRGID2, 
      &                MONID, WEKID, DIUID, SPCID, PLANT, RCL, ESTAT
 
 C.................  Store region code
@@ -532,6 +547,15 @@ C.................  Store SCC name index
                 IF( RPT_%SCCNAM ) THEN
                     K = FINDC( SCC, NINVSCC, INVSCC )
                     BINSNMIDX( B ) = K
+                END IF
+
+C.................  Store SIC
+                IF( RPT_%BYSIC ) BINSIC( B ) = SIC
+
+C.................  Store SIC name index
+                IF( RPT_%SICNAM ) THEN
+                    K = FIND1( SIC, NINVSIC, INVSIC )
+                    BINSICIDX( B ) = K
                 END IF
 
 C.................  Store surrogate codes

@@ -1,8 +1,8 @@
 
         SUBROUTINE RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
-     &                      EDEV, YDEV, NDEV, ADEV, ENAME, CUNAME,
-     &                      GNAME, LNAME, PRNAME, SLNAME, SSNAME, NX,
-     &                      IX, CX, SSMAT, SLMAT )
+     &                      EDEV, YDEV, NDEV, NIDEV, ADEV, ENAME, 
+     &                      CUNAME, GNAME, LNAME, PRNAME, SLNAME, 
+     &                      SSNAME, NX, IX, CX, SSMAT, SLMAT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -55,7 +55,7 @@ C.........  This module contains Smkreport-specific settings
      &                      NSTEPS, TSTEP, LOC_BEGP, LOC_ENDP,
      &                      ASCREC, PRRPTFLG, PRFLAG, MINC,
      &                      NSPCPOL, SPCPOL, NMAJOR, NPING, ALLRPT,
-     &                      STKX, STKY, LSPCPOL
+     &                      STKX, STKY, LSPCPOL, NIFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, SPCOUT
@@ -111,6 +111,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: EDEV   ! unit no.: elevated ID file (PELV)
         INTEGER     , INTENT (IN) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT (IN) :: NDEV   ! unit no.: SCC descriptions
+        INTEGER     , INTENT (IN) :: NIDEV  ! unit no.: SIC descriptions
 	INTEGER     , INTENT (IN) :: ADEV   ! unit no.: ASCII elevated file
         CHARACTER(*), INTENT (IN) :: ENAME  ! name for I/O API inven input
 	CHARACTER(*), INTENT (IN) :: CUNAME ! mulitplicative control matrix name
@@ -209,6 +210,12 @@ C.........  Road class code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYRCL ) ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'IRCLAS'
+            END IF
+
+C.........  SIC code
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYSIC ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'ISIC'
             END IF
 
 C.........  SCC code
@@ -776,6 +783,9 @@ C.........  If needed, read in elevated source indentification file
 
 C.........  If needed, read in SCC descriptions file
         IF( NFLAG ) CALL RDSCCDSC( NDEV )
+
+C.........  If needed, read in SIC descriptions file
+        IF( NIFLAG ) CALL RDSICDSC( NIDEV )
 
 C.........  If needed, read in layer fractions file to identify elevated
 C           sources

@@ -2,7 +2,7 @@
         SUBROUTINE OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, 
      &                        PRNAME, SLNAME, SSNAME, TNAME, RDEV, 
      &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
-     &                        ADEV )
+     &                        NIDEV, ADEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -50,7 +50,7 @@ C.........  This module contains Smkreport-specific settings
      &                      PRBYR, PRPYR, PYEAR, CHKPFX, CUFLAG,
      &                      LFLAG, EMLAYS, VFLAG, YFLAG, NFLAG,
      &                      ASCREC, ASCDATA, STIME, SDATE, ETIME,
-     &                      EDATE, TZONE
+     &                      EDATE, TZONE, NIFLAG
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NTPDAT, TPNAME, TPUNIT, TPDESC
@@ -107,6 +107,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: EDEV   ! unit no.: elevated ID file (PELV)
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
+        INTEGER     , INTENT(OUT) :: NIDEV  ! unit no.: SIC descriptions
 	INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
 
 C.........  Temporary array for speciation variable names
@@ -521,6 +522,14 @@ C.........  Get SCC descriptions, if needed
 
             MESG = 'Enter logical name for SCC DESCRIPTIONS'
             NDEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'SCCDESC',PROGNAME )
+
+        END IF
+
+C.........  Get SIC descriptions, if needed
+        IF( NIFLAG ) THEN
+
+            MESG = 'Enter logical name for SIC DESCRIPTIONS'
+            NIDEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'SICDESC',PROGNAME )
 
         END IF
 
