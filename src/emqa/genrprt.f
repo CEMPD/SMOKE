@@ -1,6 +1,6 @@
 
         SUBROUTINE GENRPRT( FDEV, RCNT, HWID, ADEV, ENAME, TNAME,
-     &                      LNAME, OUTFMT, SMAT, EFLAG )
+     &                      LNAME, OUTFMT, SMAT, ZEROFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -88,13 +88,14 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT    ! report number
         INTEGER     , INTENT (IN) :: HWID    ! header width
-	INTEGER     , INTENT (IN) :: ADEV    ! unit no. ASCII elevated file
+        INTEGER     , INTENT (IN) :: ADEV    ! unit no. ASCII elevated file
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT (IN) :: TNAME   ! hourly data file name
         CHARACTER(*), INTENT (IN) :: LNAME   ! layer fractions file name
         CHARACTER(LEN=QAFMTL3),
      &                INTENT (IN) :: OUTFMT  ! output record format
         REAL        , INTENT (IN) :: SMAT( NSRC, NSVARS ) ! mole spc matrix
+        LOGICAL     , INTENT (IN) :: ZEROFLAG! true: report zero values
         LOGICAL     , INTENT(OUT) :: EFLAG   ! true: error occured
 
 C...........   Local allocatable arrays
@@ -115,17 +116,17 @@ C...........   Other local variables
         INTEGER         LOUT              ! number of output layers
         INTEGER         NDATA             ! number of data columns
         INTEGER         NV                ! number data or spc variables
-	INTEGER		SRCNO		  ! source no. from ASCII elevated file
+        INTEGER         SRCNO             ! source no. from ASCII elevated file
 
-	REAL		EMISVAL		  ! emissions values from ASCII elevated file
+        REAL            EMISVAL           ! emissions values from ASCII elevated file
 
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL      :: SFLAG    = .FALSE. ! true: speciation applies to rpt
 
-	CHARACTER*10		  POL         ! species from ASCII elevated file
+        CHARACTER*10              POL         ! species from ASCII elevated file
         CHARACTER*16           :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
         CHARACTER*256             MESG        !  message buffer
-	CHARACTER*300		  LINE        !  tmp line buffer
+        CHARACTER*300             LINE        !  tmp line buffer
         CHARACTER(LEN=IOVLEN3) :: VBUF        !  tmp variable name
 
         CHARACTER*16 :: PROGNAME = 'GENRPRT' ! program name
@@ -193,54 +194,54 @@ C..............  From temporal file
                 END DO
 
 C.............  From ASCII elevated file
-	    ELSE IF( RPT_%BYHOUR .AND. AFLAG ) THEN
-		DO V = 1, NIPPA
-		    DO S = 1, NSRC
+            ELSE IF( RPT_%BYHOUR .AND. AFLAG ) THEN
+                DO V = 1, NIPPA
+                    DO S = 1, NSRC
 
-			VBUF = EANAM( V )
-			READ( ADEV, 93010 ) SRCNO, POL, EMISVAL
-			ASCREC = ASCREC + 1
+                        VBUF = EANAM( V )
+                        READ( ADEV, 93010 ) SRCNO, POL, EMISVAL
+                        ASCREC = ASCREC + 1
 
-			IF( SRCNO .NE. S ) THEN
-			    POLVAL( S, V ) = 0.
-			    BACKSPACE( ADEV )
-			    CYCLE
+                        IF( SRCNO .NE. S ) THEN
+                            POLVAL( S, V ) = 0.
+                            BACKSPACE( ADEV )
+                            CYCLE
 
-			ELSE
-			    POLVAL( S, V ) = EMISVAL
-	
-			END IF
+                        ELSE
+                            POLVAL( S, V ) = EMISVAL
+        
+                        END IF
 
-			IF( POL .NE. VBUF ) THEN
-			    WRITE( MESG, '(A,I5)' )
+                        IF( POL .NE. VBUF ) THEN
+                            WRITE( MESG, '(A,I5)' )
      &                      'Reading in pollutant "' //
      &                      TRIM( VBUF ) // '", but found ' //
      &                      'pollutant "' // TRIM( POL ) //
      &                      '" at line ', ASCREC
-			    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-			END IF
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
 
-		    END DO
-		END DO
+                    END DO
+                END DO
 
-		IF( T .NE. RPTNSTEP ) THEN
-		    DO I = 1, 12
+                IF( T .NE. RPTNSTEP ) THEN
+                    DO I = 1, 12
                         ASCREC = ASCREC + 1
                         READ( ADEV, '(A)' ) LINE
                     END DO
-		END IF
+                END IF
 
 C...........  Otherwise, read inventory emissions
             ELSE IF( .NOT. RPT_%USEHOUR .AND. .NOT. AFLAG ) THEN
                 CALL RDMAPPOL( NSRC, NIPPA, 1, EAREAD, POLVAL )
 
-	    ELSE IF( .NOT. RPT_%USEHOUR .AND. AFLAG ) THEN
-		POLVAL = 0.
-		DO I = 1, NSTEPS
-		    DO V = 1, NIPPA
-			DO S = 1, NSRC
+            ELSE IF( .NOT. RPT_%USEHOUR .AND. AFLAG ) THEN
+                POLVAL = 0.
+                DO I = 1, NSTEPS
+                    DO V = 1, NIPPA
+                        DO S = 1, NSRC
 
-			  VBUF = EANAM( V )
+                          VBUF = EANAM( V )
                           READ( ADEV, 93010 ) SRCNO, POL, EMISVAL
                           ASCREC = ASCREC + 1
 
@@ -263,16 +264,16 @@ C...........  Otherwise, read inventory emissions
                             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                           END IF
 
-                    	END DO
-               	    END DO
+                        END DO
+                    END DO
 
-		    IF( I .NE. NSTEPS ) THEN
+                    IF( I .NE. NSTEPS ) THEN
                         DO J = 1, 12
                           ASCREC = ASCREC + 1
                           READ( ADEV, '(A)' ) LINE
                         END DO
                     END IF
-		END DO
+                END DO
 
             END IF
 
@@ -450,7 +451,8 @@ C.....................  Convert units of output data
 
 C.....................  Write emission totals
                     CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, 
-     &                             L,  RPT_%DELIM, OUTFMT, EFLAG )
+     &                             L,  RPT_%DELIM, OUTFMT, ZEROFLAG, 
+     &                             EFLAG )
 
 C.....................  Reinitialize sum array
                     BINDATA = 0  ! array
@@ -486,7 +488,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93010 	FORMAT( I10, A10, F10.3 )
+93010   FORMAT( I10, A10, F10.3 )
 
 C...........   Internal buffering formats............ 94xxx
 
