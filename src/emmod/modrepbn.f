@@ -109,7 +109,8 @@
         REAL   , ALLOCATABLE, PUBLIC :: BINDATA  ( :,: ) ! output data values
 
         CHARACTER*1, ALLOCATABLE, PUBLIC :: BINELEV( : )! elevated flag
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC( : )   ! SCC
+        CHARACTER(LEN=PLTLEN3), ALLOCATABLE, PUBLIC :: BINPLANT( : ) ! Plant ID
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC  ( : ) ! SCC
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: BINSPCID( : ) ! spec prof
 
 !.........  Arrays for determining output from emission types to report columns
@@ -145,7 +146,7 @@
         INTEGER, ALLOCATABLE, PUBLIC :: SPCIDX( : )  ! index global-to-input
         INTEGER, ALLOCATABLE, PUBLIC :: SPCTOINV( : )! index spc-to-inven
         INTEGER, ALLOCATABLE, PUBLIC :: SPCTOTPR( : )! index spc-to-temporal
-        INTEGER, ALLOCATABLE, PUBLIC :: TPACTIDX( : )! index etype-to-activity
+        INTEGER, ALLOCATABLE, PUBLIC :: TPACTCTIDX( : )! index etype-to-activity
 
         LOGICAL, ALLOCATABLE, PUBLIC :: DATOUT( : )  ! true: inven data needed
         LOGICAL, ALLOCATABLE, PUBLIC :: SPCOUT( : )  ! true: spc factors needed
