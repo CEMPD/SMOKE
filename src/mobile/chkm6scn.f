@@ -91,7 +91,8 @@ C.............  Comment out unused commands (this can be added to as needed)
             IF( INDEX( COMMAND, 'SCENARIO RECORD' ) > 0 .OR.
      &          INDEX( COMMAND, 'PARTICLE SIZE' ) > 0 .OR.
      &          INDEX( COMMAND, 'AVERAGE SPEED' ) > 0 .OR.
-     &          INDEX( COMMAND, 'SPEED VMT' ) > 0 ) THEN
+     &          INDEX( COMMAND, 'SPEED VMT' ) > 0 .OR.
+     &          INDEX( COMMAND, 'I/M CREDIT FILE' ) > 0 ) THEN
                 RPLCLINE( 1:1 ) = '*'
                 RPLCLINE( 2:150 ) = CURRLINE( 1:149 )
                 SCENARIO( I ) = RPLCLINE
