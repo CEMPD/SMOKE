@@ -1,0 +1,22 @@
+# This file is the report configuration file for running Smkreport for
+# points sources as by-cell and by-source, for a specific cell.
+
+# All reports 
+# Output file logical names are:
+#	REPORT1: (P.1)  By cell and source for inline subgrid
+
+SMK_SOURCE P
+
+/NEWFILE/ REPORT1
+
+/CREATE REPORT/
+    BY CELL
+    BY STATE NAME
+    BY COUNTY NAME
+    BY SOURCE NAME STACKPARM
+    SELECT SUBGRID ( 35,19 ) TO ( 35 ,19)
+    NUMBER F10.2 
+    UNITS ALL tons/day
+    SELECT DATA NOX
+/END/
+

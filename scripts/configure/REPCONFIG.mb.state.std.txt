@@ -1,0 +1,64 @@
+# This file is the report configuration file for running Smkreport for
+# mobile sources for running state reports at each stage of processing.
+
+# All reports 
+# Output file logical names are:
+#	REPORT1:    (M.1)  No spec, no gridding, no hourly by state
+#	REPORT1:  (MGT.1)  No spec, gridding, with hourly by state
+#       REPORT3:  (MST.1)  With spec, no gridding, with hourly by state
+#       REPORT4:   (MT.1)  No spec, no gridding, with hourly by state
+#       REPORT5: (MGTS.1)  With spec, gridding, with hourly by state
+
+SMK_SOURCE M
+
+/NEWFILE/ REPORT1
+
+/CREATE REPORT/
+    BY STATE NAME
+    NUMBER F13.1
+    SELECT DATA VMT
+    UNITS ALL tons/day
+/END/
+
+/NEWFILE/ REPORT2
+
+/CREATE REPORT/
+    BY STATE NAME
+    GRIDDING
+    TEMPORAL
+    NUMBER F13.3
+    UNITS ALL tons/day
+/END/
+
+/NEWFILE/ REPORT3
+
+/CREATE REPORT/
+    BY STATE NAME
+    SPECIATION MASS
+    TEMPORAL
+    NUMBER F13.3
+    UNITS ALL tons/day
+/END/
+
+/NEWFILE/ REPORT4
+
+/CREATE REPORT/
+    BY STATE NAME
+    TEMPORAL
+    NUMBER F13.3
+    UNITS ALL tons/day
+/END/
+
+/NEWFILE/ REPORT5
+
+/CREATE REPORT/
+    BY STATE NAME
+    TEMPORAL
+    GRIDDING
+    SPECIATION MASS
+    NUMBER F13.3
+    UNITS ALL tons/day
+/END/
+
+
+
