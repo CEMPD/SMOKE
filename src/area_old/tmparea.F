@@ -79,6 +79,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         CHKXLIN
         CHARACTER*2     CRLF
+        INTEGER         ENVINT
         LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3
         INTEGER         GETDATE
@@ -98,10 +99,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL  CHKXLIN, CRLF, ENVYN, FIND1, FIND2, FIND3, GETDATE, 
-     &            GETEFILE, GETNUM, GETYN, HHMMSS, INDEX1, ISDSTIME,
-     &            JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE, RDTPROF, 
-     &            STR2INT, TIME2SEC, TRIMLEN, WKDAY
+        EXTERNAL  CHKXLIN, CRLF, ENVINT, ENVYN, FIND1, FIND2, FIND3, 
+     &            GETDATE, GETEFILE, GETNUM, GETYN, HHMMSS, INDEX1, 
+     &            ISDSTIME, JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
+     &            RDTPROF, STR2INT, TIME2SEC, TRIMLEN, WKDAY
 
 
 C...........   PARAMETERS and their descriptions
@@ -230,7 +231,7 @@ C...........   Logical names and unit numbers
 
 C...........   Other local variables
 
-        INTEGER         H, I, J, K, C0, C1, F, S, T, V
+        INTEGER         H, I, J, K, F, S, T, V
         INTEGER         DCNT    !  count of uses for default profiles
         INTEGER         IOS
         INTEGER         IREC
@@ -256,6 +257,8 @@ C...........   Other local variables
         LOGICAL         DAYLIT  !  iff ZONES changed to daylight time
         LOGICAL         DSTNOW  !  iff currently daylight time now
         LOGICAL         EFLAG   !  error-flag
+        LOGICAL         OUTMSG  !  iff time to write out what day we are on
+        LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
         LOGICAL         TMATCALC!  iff need to calculate new TMAT
         LOGICAL         ZONE4WM !  iff use zone for applying week/mon temp prof
 
@@ -304,6 +307,9 @@ C   begin body of program TMPAREA
 C.......   Get environment variable logical variables
         ZONE4WM = ENVYN ( 'ZONE4WM', 'Assign weekly/monthly ' //
      &                    'using time zones', .TRUE., IOS         )
+
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
 
         DO  2  S = 1, NMCOD
         DO  1  I = 1, 12
@@ -377,39 +383,68 @@ C.......   data structure to just those variables desired):
         END IF
 
 
-C.......   Determine whether input represents peak-day emissions or
-C.......   annual total emissions:
+C.......   Get default time characteristic for output file:
+C.......   If we're going to prompt, then set the defaults as best we can
+C.......      otherwise, use environment variables to set defaults
 
-        C0 =   1 + INDEX( FDESC3D( 6 ),        '"' )
-        IF ( C0 .EQ. 0 ) THEN
-            MESG = 'Bad field [' // FDESC3D( 6 )( 1:24 ) //
-     &             '] in file description -- no leading quote'
-            CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
-        END IF
-        C1 =  INDEX( FDESC3D( 6 )( C0 : 24 ) , '"' )
-        IF ( C1 .EQ. 0 ) THEN
-            MESG = 'Bad field [' // FDESC3D( 6 )( 1:24 ) //
-     &             '] in file description -- no trailing quote'
-            CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
-        END IF
+        EFLAG = .FALSE.
+        IF( PROMPTF ) THEN
+            IF ( ISDSTIME( SDATE3D ) ) THEN
+                TZONE = 4
+            ELSE 
+                TZONE = 5
+            END IF
 
-C.......   Get time period for output file:
+            JDATE = 1995182
+            JTIME = 0
+            NSTEPS= 24
+        ELSE
 
-        IF ( ISDSTIME( SDATE3D ) ) THEN
-            TZONE = 4
-        ELSE 
-            TZONE = 5
-        END IF
+            TZONE  = ENVINT( 'OUTZONE', 'Output time zone', 5, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but OUTZONE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            JDATE  = ENVINT( 'ESDATE', 'Start date', 1995182, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but ESDATE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            JTIME  = ENVINT( 'STIME' , 'Start time', 0 , IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but STIME is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+
+            NSTEPS = ENVINT( 'DURATION', 'Duration', 24, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but DURATION is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            IF( EFLAG ) THEN
+                CALL M3EXIT( 'TMPAREA', 0, 0,
+     &                       'Bad environment variable setting(s)', 2 )
+            ENDIF
+
+        ENDIF
+
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone for output emissions (0 for GMT)' )
 
-        JDATE  = GETDATE( 1995182, 
+        JDATE  = GETDATE( JDATE, 
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
 
-        JTIME  = GETNUM( 0, 999999, 0, 
-     &           'Enter simulation starting time  (HHMMSS)' )
+        JTIME  = GETNUM( 0, 235959, JTIME, 
+     &                   'Enter simulation starting time (HHMMSS)' )
         TSTEP  = 10000
-        NSTEPS = GETNUM( 1, 999999, 24,
+        NSTEPS = GETNUM( 1, 999999, NSTEPS,
      &                   'Enter output duration (hours)' )
 
         DTBUF = MMDDYY( JDATE )
@@ -1013,7 +1048,7 @@ C.................  Use same loop for case where this feature is turned off
                 DO 155 I = TZMIN, TZMAX
 
                     TDATE = JDATE
-                    TTIME = JTIME
+                    TTIME = 0     ! Set for loop below from 1 to 24
                     CALL NEXTIME( TDATE, TTIME, ( TZONE - I ) * 10000 )
 
                     DO 151 J = 1, 24
@@ -1037,6 +1072,9 @@ C.................  Use same loop for case where this feature is turned off
 
 C...............   Set day of week based on output day
                 DAY = WKDAY( JDATE )
+ 
+C...............   Turn on message for day of week and date
+                OUTMSG = .TRUE.
 
             ENDIF
 
@@ -1089,9 +1127,11 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
 C.................  If there are no weekend packets...
                 IF ( NEND .EQ. 0 ) THEN !  no weekend packet
 
-                    IF( JDATE .NE. LDATE ) 
-     &                  CALL M3MSG2( 'Processing ' //
+                    IF( OUTMSG ) THEN
+                        CALL M3MSG2( 'Processing ' //
      &                               DAYS( DAY ) // MMDDYY( JDATE ) )
+                        OUTMSG = .FALSE.
+                    ENDIF
 
                     CALL MKTMATSI( NASRC,  JDATE, MONTH,  DAYOW, 
      &                             TZONE,  ZONES, TFLAG,
@@ -1104,9 +1144,11 @@ C.................  If there are weekend packets, and it's a weekend...
                                                 !  in SAI's brain-damaged
                                                 !  day-of-week conventions.
 
-                    IF( JDATE .NE. LDATE ) 
-     &                  CALL M3MSG2( 'Processing weekend day ' //
+                    IF( OUTMSG ) THEN
+                        CALL M3MSG2( 'Processing weekend day ' //
      &                               DAYS( DAY ) // MMDDYY( JDATE ) )
+                        OUTMSG = .FALSE.
+                    ENDIF
 
                     CALL MKTMATSI( NASRC,  JDATE, MONTH, DAYOW, 
      &                             TZONE,  ZONES, TFLAG,
@@ -1117,9 +1159,11 @@ C.................  If there are weekend packets, and it's a weekend...
 C.................  If there are weekend packets, and it's not a weekend...
                 ELSE
 
-                    IF( JDATE .NE. LDATE ) 
-     &                  CALL M3MSG2( 'Processing midweek day ' //
+                    IF( OUTMSG ) THEN
+                        CALL M3MSG2( 'Processing midweek day ' //
      &                               DAYS( DAY ) // MMDDYY( JDATE ) )
+                        OUTMSG = .FALSE.
+                    ENDIF
 
                     CALL MKTMATSI( NASRC,  JDATE, MONTH, DAYOW, 
      &                             TZONE,  ZONES, TFLAG,
