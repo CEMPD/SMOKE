@@ -1,6 +1,6 @@
 
-       SUBROUTINE RDIDAMB ( FDEV, NRAWIN, MXIDAT, WKSET, INVDNAM, 
-     &                      NRAWOUT, EFLAG, NDROP, VDROP )
+       SUBROUTINE RDIDAMB ( FDEV, NRAWIN, NRAWBV, MXIDAT, WKSET, 
+     &                      INVDNAM, NRAWOUT, EFLAG, NDROP, VDROP )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -15,7 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -60,6 +60,9 @@ C...........   Include files
 	
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        LOGICAL         CHKINT
+        LOGICAL         CHKREAL
+        INTEGER         ENVINT
         INTEGER         INDEX1
         INTEGER         FIND1
         INTEGER         FINDC
@@ -67,54 +70,84 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         CHARACTER*2     CRLF
 
-        EXTERNAL        CRLF, INDEX1, FIND1, FINDC, PADZERO, STR2INT, 
-     &                  STR2REAL
+        EXTERNAL        CHKINT, CHKREAL, ENVINT, CRLF, INDEX1, FIND1, 
+     &                  FINDC, PADZERO, STR2INT, STR2REAL
 
 C...........   Subroutine arguments. Note that number and amount of dropped
 C              VMT is initialied in calling program.
 
         INTEGER     , INTENT (IN) :: FDEV        ! file unit number
-        INTEGER     , INTENT (IN) :: NRAWIN      ! toal raw record count
+        INTEGER     , INTENT (IN) :: NRAWIN      ! total raw record count
+        INTEGER     , INTENT (IN) :: NRAWBV      ! total rec x data var count
         INTEGER     , INTENT (IN) :: MXIDAT      ! max no of inventory pols/act
         INTEGER     , INTENT (IN) :: WKSET       ! weekly profile interpretation
         CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) ! inv pol/actvty names
         INTEGER     , INTENT(OUT) :: NRAWOUT     ! valid raw record count
         INTEGER     , INTENT(OUT) :: NDROP       ! number of records dropped
-        REAL        , INTENT(OUT) :: VDROP       ! sum of VMT dropped
+        REAL        , INTENT(OUT) :: VDROP( MXIDAT ) ! sum of VMT dropped
         LOGICAL     , INTENT(OUT) :: EFLAG       ! error flag
+
+C...........   Local parameters, indpendent
+        INTEGER, PARAMETER :: MXVARFIL = 113 ! maximum data variables in file
+        INTEGER, PARAMETER :: MBOTWIDE = 26  ! total width of all data fields
+        INTEGER, PARAMETER :: MBNONDWD = 22  ! width of non-data fields
+
+C...........   Local parameters, dependent
+        INTEGER, PARAMETER :: LINSIZ  = MBNONDWD + MXVARFIL * MBOTWIDE
+
+C...........   Local parameter arrays...
+C...........   Start and end positions in the file format of the first set
+C              of pollutant fields.
+        INTEGER  :: ISINIT( NMBPPOL3 ) = ( / 23,36 / )
+
+        INTEGER  :: IEINIT( NMBPPOL3 ) = ( / 35,48 / )
+
+C...........   Local arrays
+        INTEGER          IS( NMBPPOL3 )  ! start position for each pol char
+        INTEGER          IE( NMBPPOL3 )  ! end position for each pol char
+
+C...........   Counters of total number of input records
+        INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
+        INTEGER, SAVE :: NSRCVAR = 0 ! cumulative source x pollutants count
 
 C...........   Local variables
 
-        INTEGER       I, J           ! indices
+        INTEGER         I, J, K, L, V     ! indices
 
-        INTEGER       CYID           ! tmp county code
-        INTEGER       FIP            ! tmp country/state/county
-        INTEGER       ICC            ! tmp country code
-        INTEGER       IDROP          ! local dropped raw record counter
-        INTEGER       IOS            ! I/O status
-        INTEGER       IRAWOUT        ! valid raw record counter
-        INTEGER       IREC           ! record counter
-        INTEGER       ISPEED         ! tmp speed, integer
-        INTEGER       IVT            ! tmp vehicle type code
-        INTEGER       IYEAR          ! data year
-        INTEGER       RWT            ! roadway type
-        INTEGER       SCCLEN         ! length of SCC string 
-        INTEGER       STID           ! tmp state code
-        INTEGER       TPF            ! tmp temporal adjustments setting
+        INTEGER         CYID           ! tmp county code
+        INTEGER         ES             ! valid raw record counter
+        INTEGER         FIP            ! tmp country/state/county
+        INTEGER         ICC            ! tmp country code
+        INTEGER         IDROP          ! local dropped raw record counter
+        INTEGER         INY            ! inventory year
+        INTEGER         IOS            ! I/O status
+        INTEGER         IREC           ! record counter
+        INTEGER         ISPEED         ! tmp speed, integer
+        INTEGER         IVT            ! tmp vehicle type code
+        INTEGER, SAVE:: MXWARN         ! maximum number of warnings
+        INTEGER         NVAR           ! number of data variables
+        INTEGER, SAVE:: NWARN =0       ! number of warnings in this routine
+        INTEGER         SS             ! counter for sources
+        INTEGER         RWT            ! roadway type
+        INTEGER         SCCLEN         ! length of SCC string 
+        INTEGER         STID           ! tmp state code
+        INTEGER         TPF            ! tmp temporal adjustments setting
 
-        REAL          VMTR           ! tmp vehicle miles traveled (10^6 VMT/yr)
+        REAL            DANN      ! tmp annual-ave data value
+        REAL         :: DOZN = 0. ! tmp ozone-season-ave data value
+        REAL            VMTR      ! tmp vehicle miles traveled (10^6 VMT/yr)
 
-        LOGICAL       INVALID        ! tmp error flag for current record
-        LOGICAL       INVCNTRY       ! tmp error flag for country name
-        LOGICAL       INVYEAR        ! tmp error flag for year
+        LOGICAL    :: FIRSTIME = .TRUE.! true: first time routine called
+        LOGICAL       INVALID          ! tmp error flag for current record
+        LOGICAL    :: SFLAG  = .FALSE. ! true: blank or zero speeds  found
+        LOGICAL    :: OLDFMT = .FALSE. ! true: old mobile IDA format used
 
         CHARACTER*2   SPEEDCHR       ! tmp speed, character
-        CHARACTER*20  CNTRY          ! tmp country name
         CHARACTER*20  VIDFMT         ! vehicle type ID format
         CHARACTER*20  RWTFMT         ! roadway type number format
-        CHARACTER*35  LINE           ! read buffer for a line
         CHARACTER*300 MESG           ! message buffer
 
+        CHARACTER(LEN=LINSIZ)  LINE  ! read buffer for a line
         CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVDNAM
         CHARACTER(LEN=FIPLEN3) CFIP  ! character FIPS code
         CHARACTER(LEN=VIDLEN3) CIVT  ! tmp vehicle type ID
@@ -128,34 +161,17 @@ C...........   Local variables
 C***********************************************************************
 C   Begin body of subroutine RDIDAMB
 
-C Note: I need to remove this and use the POLID flag.  Make sure that both the
-C    n: activities and pollutants are in the same array.
-
-C.........  Find 'VMT' in "pollutants" names list
-        I =  INDEX1( 'VMT', MXIDAT, INVDNAM )
-
-C.........  Internal error if it has not been put in the pollutant names array
-        IF( I .LE. 0 ) THEN
-
-            MESG = 'INTERNAL ERROR: "VMT" has not been added to ' //
-     &             'pollutant names list.'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-C.........  Store for use later
-        ELSE
-            WRITE( CCOD,94125 ) I
-
+C.........  Firstime routine is called, get the number of warnings
+        IF( FIRSTIME ) THEN
+            MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
+            FIRSTIME = .FALSE.
         END IF
 
-C.........  Initialize before loop
-        IREC     = 0
-	IDROP    = 0
-        IRAWOUT  = 0
-	EFLAG    = .FALSE.
-        INVCNTRY = .FALSE.
-        TPF      = MTPRFAC * WKSET
-        CLNK     = ' '
+C.........  Reinitialize for multiple subroutine calls
+        ICC   = -9
+	IDROP = 0
+        INY   = 0
+        NVAR  = 0
 
 C.........  Create formats
         WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
@@ -164,202 +180,333 @@ C.........  Create formats
 C.........  Make sure the file is at the beginning
         REWIND( FDEV )
 
-C.........  Loop through lines of mobile inventory file
+C........................................................................
+C.............  Head of the main read loop  .............................
+C........................................................................
+
+        SS   = NSRCSAV
+        ES   = NSRCVAR
+        IREC = 0
+        TPF  = MTPRFAC * WKSET
+        CLNK = ' '
         DO
 
-            READ( FDEV, 93000, END=12, IOSTAT=IOS ) LINE
-	
             INVALID = .FALSE.
+
+            READ( FDEV, 93000, END=12, IOSTAT=IOS ) LINE
             IREC = IREC + 1
  
             IF ( IOS .GT. 0 ) THEN
+
+                EFLAG = .TRUE.
                 WRITE( MESG, 94010)
-     &              'I/O error', IOS, 'reading VMT inventory '//
+     &              'I/O error', IOS, 'reading inventory '//
      &              'file at line', IREC
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                CALL M3MESG( MESG )
+
             END IF
 	
-            IF ( LINE .EQ. ' ' ) CYCLE      ! skip if line is blank
-	
-            IF ( LINE(1:1) .EQ. '#' ) THEN  ! determine if line is a header
+            L = LEN_TRIM( LINE )  ! store width of line and check
 
-	        IF ( LINE(2:8) .EQ. 'COUNTRY' ) THEN  ! read in 'country-name'
-                    CNTRY   = LINE(9:35)
-                    CNTRY   = ADJUSTL( CNTRY )
-                    ICC     = INDEX1( CNTRY, NCOUNTRY, CTRYNAM )
-	     
-                    IF ( ICC .EQ. 0 ) THEN
-                        WRITE( MESG, 94010 ) 'Invalid country name ' //
-     &	                       'encountered on line ', IREC
-                        CALL M3MESG( MESG )
-                        INVCNTRY = .TRUE.
-                    ELSE
-                        ICC      = CTRYCOD( ICC )
-                        INVCNTRY = .FALSE.
-                    END IF 
-	   
-                ELSEIF ( LINE(2:5) .EQ. 'YEAR' ) THEN ! read in 'datayear'
-                    IYEAR = STR2INT( LINE(6:35) )
-                    IF ( IYEAR .LT. 1971 ) THEN
-                        WRITE( MESG, 94010 )
-     &	                   'Invalid year encountered on line ', IREC
-                        CALL M3MESG( MESG )
-                        INVYEAR = .TRUE.
-                    ELSE
-                        INVYEAR = .FALSE.
-                    END IF
+C.............  Skip blank lines
+            IF( L .EQ. 0 ) CYCLE
 
-                ELSE
-                    CYCLE   ! cycle if header line does not contain 'country-
-                            !    name' or 'datayear' information
-                END IF      ! on type of header
-	   
-            ELSE   ! Continue for not header
+C.............  Scan for header lines and check to ensure all are set 
+C               properly
+            CALL GETHDR( MXVARFIL, MXIDAT, .TRUE., .TRUE., .FALSE., 
+     &                   INVDNAM, LINE, ICC, INY, NVAR, IOS )
 
-                IF ( INVCNTRY .OR. INVYEAR ) THEN   ! if invalid country code or
-                    EFLAG = .TRUE.       ! invalid year has been encountered, 
-                    INVALID = .TRUE.     ! set EFLAG=.TRUE and INVALID = .TRUE.
-                    WRITE( MESG, 94010 ) ! for all associated records
-     &                  'ERROR: Record being dropped due to invalid ' //
-     &                  'country code ' // CRLF() // BLANK5 //
-     &                  'and/or invalid inventory year'
-                    CALL M3MESG( MESG )       
+C.............  Interpret error status
+            IF( IOS .EQ. 4 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'Maximum allowed data variables ' //
+     &                 '(MXVARFIL=', MXVARFIL, CRLF() // BLANK10 //
+     &                 ') exceeded in input file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ELSE IF( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+
+            END IF
+
+C.............  If a header line was encountered, go to next line
+            IF( IOS .GE. 0 ) CYCLE
+
+C.............  If NVAR was not set, then we are using the old format
+C.............  Set the header parameters that we'd be setting otherwise
+            IF( NVAR .EQ. 0 ) THEN
+
+                NVAR = 1
+                ALLOCATE( TMPNAM( NVAR ), STAT=IOS )
+	        CALL CHECKMEM( IOS, 'TMPNAM', PROGNAME )
+                ALLOCATE( POLPOS( NVAR ), STAT=IOS )
+	        CALL CHECKMEM( IOS, 'POLPOS', PROGNAME )
+                ALLOCATE( INVDUNT( 1,NMBPPOL3 ), STAT=IOS )
+	        CALL CHECKMEM( IOS, 'INVDUNT', PROGNAME )
+                ALLOCATE( INVDCNV( 1,NMBPPOL3 ), STAT=IOS )
+	        CALL CHECKMEM( IOS, 'INVDCNV', PROGNAME )
+                TMPNAM( 1 ) = 'VMT'                
+                POLPOS( 1 ) = 1
+                INVDUNT( 1,1 ) = 'mi/yr'
+                INVDUNT( 1,2 ) = 'mi/day'
+                INVDCNV      = 1000000     ! array
+                ISINIT( 1 ) = 16
+                IEINIT( 1 ) = 28
+                OLDFMT = .TRUE.
+
+            END IF
+
+C.............  Check state/county codes, error for missing
+            IF( .NOT. CHKINT( LINE( 1:2 ) ) .OR. 
+     &          .NOT. CHKINT( LINE( 3:5 ) ) .OR.
+     &          LINE( 1:2 ) .EQ. ' '        .OR.
+     &          LINE( 3:5 ) .EQ. ' '             ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: State and/or county ' //
+     &                 'code is non-integer or missing at line', IREC
+                CALL M3MESG( MESG )
+            END IF
+
+C.............  Initialize start and end positions
+            IS = ISINIT - MBOTWIDE  ! array
+            IE = IEINIT - MBOTWIDE  ! array
+
+C.............  Make sure that all of the needed real values are real...
+
+C.............  Emissions and associated data
+            DO V = 1, NVAR
+
+C.................  Update start and end positions
+                DO K = 1, NMBPPOL3
+                    IS( K ) = IS( K ) + MBOTWIDE
+                    IE( K ) = IE( K ) + MBOTWIDE
+                END DO
+
+                IF( .NOT. CHKREAL( LINE( IS(1):IE(1) ) ) .OR.
+     &              .NOT. CHKREAL( LINE( IS(2):IE(2) ) )      ) THEN
+
+                    EFLAG = .TRUE.
+                    L = LEN_TRIM( TMPNAM( V ) )
+                    WRITE( MESG,94010 ) 'ERROR: Inventory data for "' //
+     &                     TMPNAM( V )( 1:L ) // '" are not a number '//
+     &                     'or have bad formatting at line', IREC
+                    CALL M3MESG( MESG )
+
                 END IF
 
-C.................    Fill temporary fields using current record line
+                IF( NWARN .LT. MXWARN .AND.
+     &              LINE( IS(1):IE(1) ) .EQ. ' ' .AND.
+     &              LINE( IS(2):IE(2) ) .EQ. ' '       ) THEN
 
-                STID     = STR2INT ( LINE( 1:2 ) )
-	        CYID     = STR2INT ( LINE( 3:5 ) )
-                TSCC     = ADJUSTL ( LINE( 6:15) )
-                VMTR     = STR2REAL( LINE(16:28) )
-                VTYPE    = ADJUSTL ( LINE(29:33) )
-                SPEEDCHR = ADJUSTL ( LINE(34:35) )
+                    L = LEN_TRIM( TMPNAM( V ) )
+                    WRITE( MESG,94010 ) 'WARNING: All emissions ' //
+     &                     'data for ' // TMPNAM( V )( 1:L ) //  
+     &                     ' are missing at line', IREC
+                    CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
+                    LINE( IS(1):IE(1) ) = '0.'
+                    LINE( IS(2):IE(2) ) = '0.'
 
-C.................    Determine if vehicle type is valid
-	        J = FINDC( VTYPE, NVTYPE, CVTYPLST )
+                END IF
 
-                IF ( J .LE. 0 ) THEN   ! determine if vehicle type is blank
-                     EFLAG = .TRUE.
-	             INVALID = .TRUE.
-                     WRITE( MESG, 94010 )
+            END DO
+
+C.............  If there has been an error, do not try to store any of the
+C               records.  Instead  go to next line of file.
+            IF( EFLAG ) CYCLE
+       
+C.............  Now use the file format definition to parse the LINE into
+C               the various data fields...
+
+            FIP  = ICC * 100000 + 1000 * STR2INT( LINE( 1:2 ) ) +
+     &             STR2INT( LINE( 3:5 ) )
+
+            TSCC = ADJUSTL ( LINE( 6:15 ) )
+
+C.............  Extract vehicle type and speeds
+            IF( OLDFMT ) THEN
+                VTYPE    = ADJUSTL ( LINE( 29:33 ) )
+                SPEEDCHR = ADJUSTL ( LINE( 34:35 ) )
+            ELSE
+                VTYPE    = ADJUSTL ( LINE( 16:20 ) )
+                SPEEDCHR = ADJUSTL ( LINE( 21:22 ) )
+            END IF
+
+C.............    Determine if vehicle type is valid
+	    J = FINDC( VTYPE, NVTYPE, CVTYPLST )
+
+            IF ( J .LE. 0 ) THEN 
+                EFLAG = .TRUE.
+	        INVALID = .TRUE.
+                WRITE( MESG, 94010 )
      &	              'ERROR: Vehicle type "' // VTYPE // 
      &                '" not found in list of valid types at line', IREC
-                     CALL M3MESG( MESG )
-                ELSE
-                    IVT = IVTIDLST( J )
+                CALL M3MESG( MESG )
+            ELSE
+                IVT = IVTIDLST( J )
 
-                END IF
+            END IF
 
-C.................    Determine if road class is valid
-                RWT = STR2INT( TSCC( 8:10 ) )
-                J = FIND1( RWT, NRCLAS, AMSRDCLS )
+C.............    Determine if road class is valid
+            RWT = STR2INT( TSCC( 8:10 ) )
+            J = FIND1( RWT, NRCLAS, AMSRDCLS )
 
-                IF ( J .LE. 0 ) THEN   ! determine if vehicle type is blank
-                     EFLAG = .TRUE.
-	             INVALID = .TRUE.
-                     WRITE( MESG, 94010 )
+            IF ( J .LE. 0 ) THEN
+                EFLAG = .TRUE.
+	        INVALID = .TRUE.
+                WRITE( MESG, 94010 )
      &	              'ERROR: Road class "' // TSCC( 8:10 ) // 
      &                '" not found in list of valid types at line', IREC
-                     CALL M3MESG( MESG )
-                ELSE
-                    RWT = RDWAYTYP( J )
+                CALL M3MESG( MESG )
+            ELSE
+                RWT = RDWAYTYP( J )
 
-                END IF
+            END IF
 
-C.................    Determine if speed is valid
+C.............  Determine if speed is valid - blank or zero will prompt
+C               message that speeds from another file will be used
 
-                IF ( SPEEDCHR .EQ. ' ' ) THEN   ! determine if speed is blank
-                     EFLAG = .TRUE.
-	             INVALID = .TRUE.
-                     WRITE( MESG, 94010 )
-     &	             'Invalid (blank) speed encountered on line ', IREC
-                     CALL M3MESG( MESG )
-                END IF
+            IF ( NWARN .LT. MXWARN .AND. 
+     &         ( SPEEDCHR .EQ. ' ' .OR.  
+     &           SPEEDCHR .EQ. '0'      ) ) THEN
+                SFLAG = .TRUE.
+                WRITE( MESG, 94010 )
+     &	               'WARNING: Blank or zero speed found ' //
+     &                 'on line ', IREC
+                CALL M3MESG( MESG )
+                NWARN = NWARN + 1
+                ISPEED = 0
+            ELSE
 
                 ISPEED = STR2INT( SPEEDCHR )
 
-                IF ( ISPEED .EQ. 0 ) THEN   ! determine if speed=0
-                     EFLAG = .TRUE.
-	             INVALID = .TRUE.
-                     WRITE( MESG, 94010 )
-     &	             'Invalid (zero) speed encountered on line ', IREC
-                     CALL M3MESG( MESG )
-                END IF
+            END IF
 
-C.................    Determine if SCC is valid
+C.............  Determine if SCC is valid
 
-                SCCLEN = LEN_TRIM( TSCC )
+            SCCLEN = LEN_TRIM( TSCC )
 
-                IF ( SCCLEN .NE. 10 ) THEN   ! check if SCC is 10 char. wide
-                    EFLAG = .TRUE.
-	            INVALID = .TRUE.
-                    WRITE( MESG, 94010 )
+            IF ( SCCLEN .NE. 10 ) THEN   ! check if SCC is 10 char. wide
+                EFLAG = .TRUE.
+	        INVALID = .TRUE.
+                WRITE( MESG, 94010 )
      &	                   'SCC not 10 characters wide on line ', IREC
-                    CALL M3MESG( MESG )
+                CALL M3MESG( MESG )
+            END IF
+
+C.............  Initialize start and end positions
+            IS = ISINIT - MBOTWIDE  ! array
+            IE = IEINIT - MBOTWIDE  ! array
+
+C.............  Sum emissions for invalid records
+            IF ( INVALID ) THEN
+
+                IDROP = IDROP + 1
+                DO V = 1, NVAR
+                    VDROP( V ) = VDROP( V ) + 
+     &                           STR2REAL( LINE( IS(1):IE(1) ) )
+                END DO
+                CYCLE
+
+            END IF
+	
+C.............  Create string source characteristics. Pad with zeros,
+C               if needed
+C.............  Make adjustments to pad with zeros, if needed
+            WRITE( CFIP,94120 ) FIP
+            CALL PADZERO( CFIP )
+            CALL PADZERO( TSCC )
+            WRITE( CRWT,RWTFMT ) RWT
+            WRITE( CIVT,VIDFMT ) IVT
+
+C.............  Store source characteristics if dimension is okay
+            SS = SS + 1
+
+            IF( SS .LE. NRAWIN ) THEN
+                IFIPA  ( SS ) = FIP
+                IRCLASA( SS ) = RWT
+                IVTYPEA( SS ) = IVT
+                CLINKA ( SS ) = CLNK
+                CSCCA  ( SS ) = TSCC
+                CVTYPEA( SS ) = VTYPE
+                SPEEDA ( SS ) = REAL( ISPEED )
+                TPFLGA ( SS ) = TPF
+                INVYRA ( SS ) = INY
+                XLOC1A ( SS ) = BADVAL3
+                YLOC1A ( SS ) = BADVAL3
+                XLOC2A ( SS ) = BADVAL3
+                YLOC2A ( SS ) = BADVAL3
+            END IF 
+
+                
+            DO V = 1, NVAR
+
+C.................  Update start and end positions
+                DO K = 1, NMBPPOL3
+                    IS( K ) = IS( K ) + MBOTWIDE
+                    IE( K ) = IE( K ) + MBOTWIDE
+                END DO
+
+                DANN = STR2REAL( LINE( IS(1):IE(1) ) )
+                IF( .NOT. OLDFMT ) 
+     &              DOZN = STR2REAL( LINE( IS(2):IE(2) ) )
+                 
+                ES = ES + 1
+
+                IF ( ES .LE. NRAWBV ) THEN
+
+                    I = POLPOS( V )
+                    POLVLA ( ES,NEM ) = INVDCNV( I,1 ) * DANN
+                    POLVLA ( ES,NOZ ) = INVDCNV( I,2 ) * DOZN
+
+                    WRITE( CCOD,94125 ) I
+
+                    CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, ' ', 
+     &                            ' ', CCOD, CSOURCA( ES ) )
+
                 END IF
 
-                IF ( INVALID ) THEN
+            END DO     ! loop through data variables
 	
-                    IDROP = IDROP + 1
-                    VDROP = VDROP + VMTR
-	     
-                ELSE
-	
-C.....................  Create string source characteristics. Pad with zeros,
-C                       if needed
-                    FIP = ICC*100000+ STID*1000+ CYID
-                    WRITE( CFIP,94120 ) FIP
-                    CALL PADZERO( TSCC )
-                    WRITE( CRWT,RWTFMT ) RWT
-                    WRITE( CIVT,VIDFMT ) IVT
-
-                    IRAWOUT = IRAWOUT + 1
-
-                    IF ( IRAWOUT .LE. NRAWIN ) THEN
-
-                        IFIPA  ( IRAWOUT ) = FIP
-                        IRCLASA( IRAWOUT ) = RWT
-                        IVTYPEA( IRAWOUT ) = IVT
-                        CLINKA ( IRAWOUT ) = CLNK
-                        CSCCA  ( IRAWOUT ) = TSCC
-                        CVTYPEA( IRAWOUT ) = VTYPE
-                        SPEEDA ( IRAWOUT ) = REAL( ISPEED )
-                        TPFLGA ( IRAWOUT ) = TPF
-                        INVYRA ( IRAWOUT ) = IYEAR
-                        XLOC1A ( IRAWOUT ) = BADVAL3
-                        YLOC1A ( IRAWOUT ) = BADVAL3
-                        XLOC2A ( IRAWOUT ) = BADVAL3
-                        YLOC2A ( IRAWOUT ) = BADVAL3
-                        POLVLA ( IRAWOUT,1 ) = VMTR * 1000000
-
-                        CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, ' ', ' ', 
-     &                                ' ', CCOD, CSOURCA( IRAWOUT ) )
-
-                    END IF
-	     
-                END IF   ! if valid record or not
-	
-            END IF       ! if header or not
-
-        END DO           ! end of loop for reading input file
+        END DO             ! end of loop for reading input file
               
-12      CONTINUE         ! end of read on input file
+12      CONTINUE           ! end of read on input file
 
-        NRAWOUT = IRAWOUT
+C.........  Update saved cumulative counts
+        NSRCSAV = SS       !  source
+        NSRCVAR = ES       !  source*pollutant
+
 	NDROP   = NDROP + IDROP
 
-        IF( NRAWOUT .GT. NRAWIN ) THEN  ! Check for memory overflow
+C.........  Write message if overflow occurred
+        IF( NSRCSAV .GT. NRAWIN ) THEN
+
+            EFLAG = .TRUE.
+            MESG = 'INTERNAL ERROR: Source memory allocation ' //
+     &             'insufficient for IDA inventory'
+            CALL M3MSG2( MESG )
+
+        END IF
+
+        IF( NSRCVAR .GT. NRAWBV ) THEN  ! Check for memory overflow
 
             WRITE( MESG, 94010 )
-     &        'INTERNAL ERROR: Number of valid raw records ' //
+     &        'INTERNAL ERROR: Number of valid src x variables ' //
      &        'encountered: ', NRAWOUT, CRLF() // BLANK5 //
-     &        'Maximum number of raw records allowed: ', NRAWIN
+     &        'Maximum number of raw records allowed: ', NRAWBV
 
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )      
 
+        ELSE
+            NRAWOUT = NSRCVAR
+
         END IF
 	
+C.........  Deallocate local allocatable arrays 
+        DEALLOCATE( TMPNAM, POLPOS )
+
+C.........  Return from subroutine 
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
