@@ -111,7 +111,7 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) REFCOUNTY             ! ref. county FIPS code for curr. county
         CHARACTER(LEN=6)       SCENARIO              ! scenario number
         
-        CHARACTER(LEN=60),SAVE :: SPDDIR   ! directory for creating speed vmt files
+        CHARACTER(LEN=200),SAVE:: SPDDIR   ! directory for creating speed vmt files
         CHARACTER(LEN=80)         SPDFILE  ! name of SPEED VMT file for M6 input file
         CHARACTER(LEN=300)        SCENFILE !  M6 scenario file name
         CHARACTER(LEN=300)        MESG     !  message buffer
