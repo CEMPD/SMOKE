@@ -98,7 +98,6 @@ C...........   Other local variables
         INTEGER          MMDD1             ! tmp start month and day 
         INTEGER          MMDD2             ! tmp end month and day 
         INTEGER, SAVE :: NFILE             ! no. files in the list
-        INTEGER          MM                ! tmp month
 
         LOGICAL, SAVE :: EFLAG = .FALSE.   ! true: error found
         LOGICAL          DFLAG             ! true: retrieve date/time & pol/act 
