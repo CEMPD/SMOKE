@@ -47,16 +47,30 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, IRCLAS, IVTYPE, ISIC, CMACT
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: TXCNT, CHRT02, CHRT03, CHRT04, 
+     &          CHRT05, CHRT06, CHRT07, CHRT08, CHRT09, CHRT10,
+     &          CHRT11, CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
+     &          CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
+     &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37,
+     &          CSPT01, CSPT02, CSPT03, CSPT04, 
+     &          CSPT05, CSPT06, CSPT07, CSPT08, CSPT09, CSPT10,
+     &          CSPT11, CSPT12, CSPT13, CSPT14, CSPT15, CSPT16,
+     &          CSPT26, CSPT27, CSPT28, CSPT29, CSPT30, CSPT31,
+     &          CSPT32, CSPT33, CSPT34, CSPT35, CSPT36, CSPT37
 
 C...........   This module contains the speciation profile tables
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPEC, CNVRT01, CNVRT02, CNVRT03,
+     &                     NCNV1, NCNV2, NCNV3, NSPROF, SPROFN,
+     &                     CNVFC00, CNVFC01, CNVFC02, CNVFC03,
+     &                     IDXSPRO, IDXSSPEC, NSPECIES,
+     &                     MASSFACT, MOLEFACT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, NIPPA, EANAM, 
+     &                     LSCCEND
 
         IMPLICIT NONE
 
@@ -69,8 +83,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         INTEGER         FINDC
         INTEGER         INDEX1
+        LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVYN, FINDC, INDEX1
+        EXTERNAL CRLF, ENVYN, FINDC, INDEX1, SETSCCTYPE
 
 C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: MASSOUT        ! true: create mass-based
@@ -83,7 +98,7 @@ C.........  SUBROUTINE ARGUMENTS
         REAL        , INTENT(IN OUT) :: MOLEMATX( NSRCIN,* )! mole spec matx
 
 C.........  Other local variables
-        INTEGER          L2, LV, S, V    !  counters and indices
+        INTEGER          K, L, L2, LV, S, V    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER       :: F0B = 0      ! extra find index for mobile
@@ -95,12 +110,16 @@ C.........  Other local variables
 
         REAL             CNVFAC       ! tmp pol-to-pol conversion factor
 
-        LOGICAL       :: EFLAG    = .FALSE.
-        LOGICAL, SAVE :: FIRSTIME = .TRUE.
-        LOGICAL, SAVE :: REPDEFLT = .TRUE.
+        LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
+        LOGICAL, SAVE :: MACTFLAG = .TRUE.  ! true: MACT codes available in inventory
+        LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
+        LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
+        LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
         CHARACTER*10, SAVE    :: RWTFMT  ! fmt to write roadway type to string
         CHARACTER*10, SAVE    :: VIDFMT  ! format to write veh ID to string
+        CHARACTER*10, SAVE    :: SICFMT  ! format to write SIC code to string
         CHARACTER*300            BUFFER  ! source fields buffer
         CHARACTER*300            MESG    ! message buffer
         CHARACTER(LEN=FIPLEN3)   CFIP    ! tmp (character) FIPS code
@@ -131,8 +150,20 @@ C.........  Other local variables
         CHARACTER(LEN=STSLEN3):: CHK05=' '! tmp Country/state code // left SCC
         CHARACTER(LEN=STSLEN3):: CHK05B=' '! tmp Country/state code// veh ID SCC
         CHARACTER(LEN=SCCLEN3):: CHK02B=' '! tmp veh ID SCC
+        CHARACTER(LEN=STILEN3):: CHK28=' '! tmp Country/state code // left SIC
+        CHARACTER(LEN=STILEN3):: CHK29=' '! tmp Country/state code // SIC
+        CHARACTER(LEN=FPILEN3):: CHK30=' '! tmp FIPS code // left SIC
+        CHARACTER(LEN=FPILEN3):: CHK31=' '! tmp FIPS code // SIC
+        CHARACTER(LEN=MSCLEN3):: CHK33=' '! tmp SCC // MACT
+        CHARACTER(LEN=MSTLEN3):: CHK34=' '! tmp Country/state code // MACT
+        CHARACTER(LEN=MSSLEN3):: CHK35=' '! tmp Country/state code // SCC // MACT
+        CHARACTER(LEN=MFPLEN3):: CHK36=' '! tmp FIPS code // MACT
+        CHARACTER(LEN=MFSLEN3):: CHK37=' '! tmp FIPS code // SCC // MACT
+        CHARACTER(LEN=MACLEN3)   CMCT    ! tmp MACT code
         CHARACTER(LEN=RWTLEN3)   CRWT    ! tmp char roadway type
         CHARACTER(LEN=RWTLEN3)   RWTZERO ! zero roadway type
+        CHARACTER(LEN=SICLEN3)   CSIC    ! tmp SIC code
+        CHARACTER(LEN=SICLEN3)   CSICL   ! tmp left SIC code
         CHARACTER(LEN=VIDLEN3)   CVID    ! tmp vehicle type
         CHARACTER(LEN=VIDLEN3)   VIDZERO ! zero vehicle type
 
@@ -148,10 +179,15 @@ C.............  Retrieve environment variables
             MESG = 'Switch for reporting default speciation profiles'
             REPDEFLT = ENVYN ( 'REPORT_DEFAULTS', MESG, .TRUE., IOS )
 
-C.............  Set up format for writing roadway type and vehicle ID to strings
+C.............  Set up format for writing roadway type, vehicle ID, and SIC to strings
             WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
             WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
+            WRITE( SICFMT, 94300 ) '(I', SICLEN3, '.', SICLEN3, ')'
 
+C.............  Figure out if SIC and/or MACT codes are available
+            IF ( ALLOCATED ( ISIC  ) ) SICFLAG  = .TRUE.
+            IF ( ALLOCATED ( CMACT ) ) MACTFLAG = .TRUE.
+            
             FIRSTIME = .FALSE.
 
         ENDIF
@@ -194,13 +230,36 @@ C.........  Find index in complete list of pollutants and set length of name
 
             CSRC  = CSOURC( S )
             CFIP  = CSRC( 1:FIPLEN3 )
-            CSTA  = CFIP( 1:STALEN3 )            
-            TSCC  = CSCC( S )
+            CSTA  = CFIP( 1:STALEN3 )                 
+            TSCC  = CSCC( S )         
+            
+C.............  Set type of SCC                
+            SCCFLAG = SETSCCTYPE ( TSCC )
             TSCCL = TSCC( 1:LSCCEND )
+            
             CHK09 = CFIP // TSCC
             CHK08 = CFIP // TSCCL 
             CHK06 = CSTA // TSCC
             CHK05 = CSTA // TSCCL 
+            
+            IF( SICFLAG ) THEN
+                WRITE( CSIC, SICFMT ) ISIC( S )
+                CSICL = CSIC( 1:2 )
+                CHK28 = CSTA // CSICL
+                CHK29 = CSTA // CSIC
+                CHK30 = CFIP // CSICL
+                CHK31 = CFIP // CSIC
+            END IF
+            
+            IF( MACTFLAG ) THEN
+                CMCT  = CMACT( S )
+                CHK33 = TSCC // CMCT
+                CHK34 = CSTA // CMCT
+                CHK35 = CSTA // TSCC // CMCT
+                CHK36 = CFIP // CMCT
+                CHK37 = CFIP // TSCC // CMCT
+            END IF
+            
             TSCCINIT = TSCC
 
 C.............  Create selection 
@@ -378,6 +437,105 @@ C                       pollutant-specific PLANT non-blank       match
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
+            END IF
+
+C.............  If MACT available in inventory...
+            IF ( MACTFLAG ) THEN
+                
+C.............  Try for pollutant-specific FIPS code, SCC match, & MACT code; then
+C                       pollutant-specific FIPS code & MACT code; then
+C                       pollutant-specific Cy/st code, SCC match, & MACT code; then
+C                       pollutant-specific Cy/st code & MACT code; then
+C                       pollutant-specific SCC match & MACT code; then
+C                       pollutant-specific MACT code
+                F5 = FINDC( CHK37, TXCNT( 37 ), CHRT37 )
+                F4 = FINDC( CHK36, TXCNT( 36 ), CHRT36 )
+                F3 = FINDC( CHK35, TXCNT( 35 ), CHRT35 )
+                F2 = FINDC( CHK34, TXCNT( 34 ), CHRT34 )
+                F1 = FINDC( CHK33, TXCNT( 33 ), CHRT33 )
+                F0 = FINDC( CMCT , TXCNT( 32 ), CHRT32 )
+                
+                IF( F5 .GT. 0 .AND. CSPT37( F5,V ) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT37( F5,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F4 .GT. 0 .AND. CSPT36(F4,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT36( F4,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F3 .GT. 0 .AND. CSPT35(F3,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT35( F3,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F2 .GT. 0 .AND. CSPT34(F2,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT34( F2,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F1 .GT. 0 .AND. CSPT33(F1,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT33( F1,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F0 .GT. 0 .AND. CSPT32(F0,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT32( F0,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                END IF
+            END IF
+
+C.............  If SIC available in inventory...
+            IF ( SICFLAG ) THEN
+            
+C.............  Try for pollutant-specific FIPS code & SIC match; then
+C                       pollutant-specific FIPS code & left SIC match; then
+C                       pollutant-specific Cy/st code & SIC match; then
+C                       pollutant-specific Cy/st code & left SIC match; then
+C                       pollutant-specific SIC match; then
+C                       pollutant-specific left SIC match
+
+                F5 = FINDC( CHK31, TXCNT( 31 ), CHRT31 )
+                F4 = FINDC( CHK30, TXCNT( 30 ), CHRT30 )
+                F3 = FINDC( CHK29, TXCNT( 29 ), CHRT29 )
+                F2 = FINDC( CHK28, TXCNT( 28 ), CHRT28 )
+                F1 = FINDC( CSIC , TXCNT( 27 ), CHRT27 )
+                F0 = FINDC( CSICL, TXCNT( 26 ), CHRT26 )
+                
+                IF( F5 .GT. 0 .AND. CSPT31( F5,V ) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT31( F5,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F4 .GT. 0 .AND. CSPT30(F4,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT30( F4,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F3 .GT. 0 .AND. CSPT29(F3,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT29( F3,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F2 .GT. 0 .AND. CSPT28(F2,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT28( F2,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F1 .GT. 0 .AND. CSPT27(F1,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT27( F1,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                ELSEIF(F0 .GT. 0 .AND. CSPT26(F0,V) .NE. EMCMISS3 ) THEN
+                    SPCODE = CSPT26( F0,V )
+                    CALL SETSOURCE_SMATS
+                    CYCLE                       !  to end of sources-loop
+    
+                END IF
             END IF
 
 C.............  Try for pollutant-specific FIPS code & SCC match; then
