@@ -54,7 +54,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LIN_SUBDATA, LIN_SUBGRID, LIN_SUBREGN,
      &                      LIN_TITLE, LIN_UNIT, LIN_SPCIFY, PCKTNAM,
      &                      PKT_IDX, NALLPCKT, ALLPCKTS, PKTSTART, 
-     &                      TIM_IDX, PKTEND, ADY_IDX, FIL_IDX, FIL_ONAME,
+     &                      TIM_IDX, PKTEND, ADY_IDX, FIL_IDX, 
      &                      DEL_IDX, REG_IDX, SBG_IDX, GRP_INCLSTAT,
      &                      GRP_LABEL, YFLAG, ELG_IDX, PNG_IDX, ELV_IDX,
      &                      SPCF_NOR, SPCF_NAND, RPT_IDX, LREGION,
@@ -62,7 +62,7 @@ C.........  This module contains Smkreport-specific settings
      &                      PRFLAG, PRRPTFLG, CUFLAG, GFLAG, CRFLAG,
      &                      SSFLAG, SLFLAG, TFLAG, LFLAG, NFLAG, PSFLAG,
      &                      GSFLAG, TSFLAG, UNITSET, MXRPTNVAR,
-     &                      ELEVOUT3, PINGOUT3, NOELOUT3
+     &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC
