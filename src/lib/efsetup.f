@@ -1,5 +1,5 @@
 
-        SUBROUTINE EFSETUP( FNAME, MODELNAM, TYPNAM, MXVAR, NVAR, 
+        SUBROUTINE EFSETUP( FNAME, MODELNAM, MXVAR, NVAR, 
      &                      VNAMES, VUNITS, VDESCS )
    
 C***********************************************************************
@@ -48,7 +48,7 @@ C.........  This module contains emission factor tables and related
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'M5CNST3.EXT'   !  Mobile5a/b constants
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data stru
@@ -60,7 +60,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME           ! logical file or 'NONE'
         CHARACTER(*), INTENT (IN) :: MODELNAM        ! name of EF model
-        CHARACTER(*), INTENT (IN) :: TYPNAM          ! factor type from EF model
         INTEGER     , INTENT (IN) :: MXVAR           ! max no of variables
         INTEGER     , INTENT(OUT) :: NVAR            ! actual no of variables
         CHARACTER(*), INTENT(OUT) :: VNAMES( MXVAR ) ! variable names
@@ -75,7 +74,6 @@ C...........   Local variables
         INTEGER         ML      ! length of MODELNAM buffer
         INTEGER         PINDX   ! polluntant index
 
-        LOGICAL       :: DFLAG    = .FALSE.  ! true: process for diurnal emis
         LOGICAL       :: EFLAG    = .FALSE.  ! true: processing error found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
         LOGICAL       :: IFLAG    = .FALSE.  ! true: input file available
@@ -88,22 +86,6 @@ C...........   Local variables
 C***********************************************************************
 C   begin body of subroutine EFSETUP
 
-C.........  Set flag for diurnal or non-diurnal
-        SELECT CASE( TYPNAM )
-        CASE( 'DIURNAL' )
-            DFLAG = .TRUE.
-
-        CASE( 'NONDIURNAL' )
-            DFLAG = .FALSE.
-
-        CASE DEFAULT
-            MESG = 'INTERNAL ERROR: TYPNAM must by "DIURNAL" or ' //
-     &             '"NONDIURNAL" in program ' // PROGNAME
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-        END SELECT
-
 C.........  Set flag for no input file available
         IFLAG = ( FNAME .EQ. 'NONE' ) 
 
@@ -111,10 +93,10 @@ C.........  Get length of model name
         ML = LEN_TRIM( MODELNAM )
 
 C.........  Process for MOBILE5 model
-        IF ( MODELNAM .EQ. 'MOBILE5' ) THEN
+        IF ( MODELNAM .EQ. 'MOBILE6' ) THEN
 
 C.............  For new file, get environment variable for the volatile pol 
-C               for mobile sources. For now, this routine only knows MOBILE5
+C               for mobile sources. For now, this routine only knows MOBILE6
             IF( IFLAG ) THEN
                 IF( FIRSTIME ) THEN
                     MESG = 'Volatile pollutant type'
@@ -152,10 +134,10 @@ C           selected.
         IF( IFLAG ) THEN
             SELECT CASE( MODELNAM )
 
-            CASE( 'MOBILE5' )
+            CASE( 'MOBILE6' )
 
                 L = LEN_TRIM( VOLNAM )
-                PINDX = INDEX1( VOLNAM( 1:L ), NM5VPOL, M5VPOLS ) 
+                PINDX = INDEX1( VOLNAM( 1:L ), NM6VPOL, M6VPOLS ) 
 
                 IF( PINDX .LE. 0 ) THEN
 
@@ -184,59 +166,61 @@ C.........  Store variable names, units, and descriptions, depending on the
 C           model being used.
         SELECT CASE( MODELNAM )
 
-        CASE( 'MOBILE5' )
-
-C.................  Set maximum number of PSIs per scenario group
-            MXPPGRP = MXM5SCEN
+        CASE( 'MOBILE6' )
 
             IF( IFLAG ) THEN
 
-C.................  Set variable names, units, description for CO and NOX from
-C                   arrays defined in the MOBILE5 include file
+C.................  Set variable names, units, description for CO and NOx from
+C                   arrays defined in the MOBILE6 include file
                 K = 0
-                IF ( .NOT. DFLAG ) THEN
-                    VNAMES( 1 ) = M5EFLST( 1 )   ! For CO
-                    VNAMES( 2 ) = M5EFLST( 2 )   ! For NOX
+                
+                VNAMES( 1 ) = M6EFLST( 1 )   ! ex. running CO
+                VNAMES( 2 ) = M6EFLST( 2 )   ! ex. running NOx
+                VNAMES( 4 ) = M6EFLST( 9 )   ! ex. start CO
+                VNAMES( 5 ) = M6EFLST( 10 )  ! ex. start NOx
 
-                    VUNITS( 1 ) = M5EFUNT( 1 )
-                    VUNITS( 2 ) = M5EFUNT( 2 )
+                VUNITS( 1 ) = M6EFUNT( 1 )
+                VUNITS( 2 ) = M6EFUNT( 2 )
+                VUNITS( 4 ) = M6EFUNT( 9 )
+                VUNITS( 5 ) = M6EFUNT( 10 )
 
-                    VDESCS( 1 ) = M5EFDSC( 1 )
-                    VDESCS( 2 ) = M5EFDSC( 2 )
-                    K = 2
-                END IF
+                VDESCS( 1 ) = M6EFDSC( 1 )
+                VDESCS( 2 ) = M6EFDSC( 2 )
+                VDESCS( 4 ) = M6EFDSC( 9 )
+                VDESCS( 5 ) = M6EFDSC( 10 )
 
-C.................  Find volatile pol name in list of Mobile5 emission factor 
+                K = 2
+
+C.................  Find volatile pol name in list of Mobile6 emission factor 
 C                   names
-C.................  Assign for diurnal OR non-diurnal (not both)
                 LJ = LEN_TRIM( ETJOIN )
-                DO I = 3, MXM5ALL
+                DO I = 3, MXM6ALL
 
-                    L  = INDEX( M5EFLST( I ), ETJOIN )
-                    L2 = LEN_TRIM( M5EFLST( I ) )
-                    IF( M5EFLST( I )( L+LJ:L2 ) .EQ. VOLNAM .AND.
-     &                ( ( .NOT. DFLAG .AND. .NOT. M5DIURNL(I) ) .OR.
-     &                  ( DFLAG .AND. M5DIURNL( I ) ) ) ) THEN
+C.....................  Skip ex. start CO and NOx since we've already dealt with them
+                    IF( I == 9 .OR. I == 10 ) THEN
                         K = K + 1
-                        VNAMES( K ) = M5EFLST( I )
-                        VUNITS( K ) = M5EFUNT( I )
-                        VDESCS( K ) = M5EFDSC( I )
+                        CYCLE
+                    END IF             
+
+                    L  = INDEX( M6EFLST( I ), ETJOIN )
+                    L2 = LEN_TRIM( M6EFLST( I ) )
+                    IF( M6EFLST( I )( L+LJ:L2 ) .EQ. VOLNAM ) THEN
+                        K = K + 1
+                        VNAMES( K ) = M6EFLST( I )
+                        VUNITS( K ) = M6EFUNT( I )
+                        VDESCS( K ) = M6EFDSC( I )
                     END IF
 
                 END DO
 
-                IF( DFLAG ) THEN
-                    NDIU = MXM5DIU
-                ELSE
-                    NNDI = MXM5NDI
-                END IF
+                NEFS = MXM6EFS
 
 C.............  If file available
             ELSE 
 
                 IF( .NOT. DESC3( FNAME ) ) THEN
                     MESG = 'Could not get description of ' //
-     &                     TYPNAM // ' emission factors input file.'
+     &                     'emission factors input file.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
                 END IF
 
@@ -244,43 +228,23 @@ C.............  If file available
                 VUNITS( 1:NVARS3D ) = VNAME3D( 1:NVARS3D )
                 VDESCS( 1:NVARS3D ) = VNAME3D( 1:NVARS3D )
 
-                IF( DFLAG ) THEN
-                    NDIU = NVARS3D
-                ELSE
-                    NNDI = NVARS3D
-                END IF
+                NEFS = NVARS3D
 
             END IF
 
-C.............  Allocate memory for and set the public variable for the 
-C               non-diurnal and diurnal EF names...
-C.............  For diurnal
-            IF( DFLAG ) THEN
-                ALLOCATE( DIUNAM( NDIU ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'DIUNAM', PROGNAME )
-                ALLOCATE( DIUUNT( NDIU ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'NDIUNT', PROGNAME )
-                ALLOCATE( DIUDSC( NDIU ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'NDIDSC', PROGNAME )
+C.............  Allocate memory for and set the public variables for the 
+C               EF names, units, and descriptions...
 
-                DIUNAM( 1:NDIU ) = VNAMES( 1:NDIU )
-                DIUUNT( 1:NDIU ) = VUNITS( 1:NDIU )
-                DIUDSC( 1:NDIU ) = VDESCS( 1:NDIU )
+            ALLOCATE( EFSNAM( NEFS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EFSNAM', PROGNAME )
+            ALLOCATE( EFSUNT( NEFS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EFSUNT', PROGNAME )
+            ALLOCATE( EFSDSC( NEFS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EFSDSC', PROGNAME )
 
-C.............  Otherwise, for non-diurnal
-            ELSE 
-                ALLOCATE( NDINAM( NNDI ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'NDINAM', PROGNAME )
-                ALLOCATE( NDIUNT( NNDI ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'NDIUNT', PROGNAME )
-                ALLOCATE( NDIDSC( NNDI ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'NDIDSC', PROGNAME )
-
-                NDINAM( 1:NNDI ) = VNAMES( 1:NNDI )
-                NDIUNT( 1:NNDI ) = VUNITS( 1:NNDI )
-                NDIDSC( 1:NNDI ) = VDESCS( 1:NNDI )
-
-            END IF
+            EFSNAM( 1:NEFS ) = VNAMES( 1:NEFS )
+            EFSUNT( 1:NEFS ) = VUNITS( 1:NEFS )
+            EFSDSC( 1:NEFS ) = VDESCS( 1:NEFS )
 
         END SELECT
 

@@ -1,6 +1,6 @@
 
         SUBROUTINE SETSRCDY( NSRC, SDATE, TZONES, LDAYSAV, 
-     &                       DAYBEGT, DAYENDT, MODELNAM )
+     &                       DAYBEGT, DAYENDT )
 
 C***********************************************************************
 C  subroutine SETSRCDY body starts at line < >
@@ -52,7 +52,6 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL,      INTENT (IN) :: LDAYSAV ( NSRC ) ! true: use daylight time
         INTEGER,      INTENT(OUT) :: DAYBEGT( NSRC )  ! start time of SDATE
         INTEGER,      INTENT(OUT) :: DAYENDT( NSRC )  ! end time of SDATE
-        CHARACTER(*), INTENT (IN) :: MODELNAM         ! emission factor model name
 
 C...........   Other local variables
 
@@ -131,13 +130,8 @@ C               source is affected by daylight savings
                 
             END IF
 
-C.............  If Mobile6 processing requested, set start time to 
-C               6 A.M. local time
-            IF ( MODELNAM == 'MOBILE6' ) THEN
-            	
-            	CALL NEXTIME( JDATE, STIME, 60000 )
-             
-            END IF
+C.............  Set start time to  6 A.M. local time for Mobile6 processing
+            CALL NEXTIME( JDATE, STIME, 60000 )
 
 C.............  Store start time
             DAYBEGT( S ) = STIME
