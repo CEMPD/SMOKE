@@ -125,6 +125,7 @@
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
+	    LOGICAL       :: BYSTACK       ! true: by stack
             LOGICAL       :: BYSTAT        ! true: by state code
             LOGICAL       :: BYSTNAM       ! true: by state name
             LOGICAL       :: BYSRG         ! true: by surrogate codes
@@ -139,6 +140,7 @@
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
+	    LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
             LOGICAL       :: USECRMAT      ! true: use reactivity controls
             LOGICAL       :: USECUMAT      ! true: use multiplicative controls
             LOGICAL       :: USEGMAT       ! true: use gridding
@@ -170,8 +172,12 @@
         INTEGER, PUBLIC :: TSTEP  = 0       ! time step (HHMMSS)
         INTEGER, PUBLIC :: TZONE  = 0       ! time zone of hourly data (0-23)
 
+	INTEGER, PUBLIC, ALLOCATABLE :: STKX( : )   ! x cell no. of stack
+	INTEGER, PUBLIC, ALLOCATABLE :: STKY( : )   ! y cell no. of stack
+
 !.........  Controls for whether input files are needed
 !.........  These variables are set once, and never reset
+	LOGICAL, PUBLIC :: AFLAG  = .FALSE. ! true: read in ASCII elevated file
         LOGICAL, PUBLIC :: CUFLAG = .FALSE. ! true: read in multipl. control matrix
         LOGICAL, PUBLIC :: CURPTFLG = .FALSE. ! true: read mult. cntl report
         LOGICAL, PUBLIC :: CRFLAG = .FALSE. ! true: read in reactivity control matrix
@@ -229,6 +235,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 
         LOGICAL, ALLOCATABLE, PUBLIC :: LSPCPOL ( : )  ! true: spc pol in *SSUP file
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: SPCPOL( : ) ! pols for BYSPC
+	CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ASCNAM( : ) ! pols from ASCII elevated file
 
 !.........  Report characteristics arrays, dimensioned by NREPORT
 
@@ -312,6 +319,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 !.........  Temporary report-specific settings
         TYPE( EACHRPT ), PUBLIC :: RPT_
 
+	INTEGER, PUBLIC :: ASCDATA       ! no. of data from ASCII elevated file
+	INTEGER, PUBLIC :: ASCREC        ! line no. of ASCII elevated file
         INTEGER, PUBLIC :: EDATE         ! Julian ending date
         INTEGER, PUBLIC :: ETIME         ! ending time (HHMMSS)
         INTEGER, PUBLIC :: RPTNSTEP      ! no. of time steps for current report
