@@ -102,7 +102,7 @@ fillstbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillstbl.f
 fillttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillttbl.f
-fillutbl.o: $(MODXREF)
+fillutbl.o: $(MODXREF) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ fillutbl.f
 fltrxref.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ fltrxref.f
