@@ -137,6 +137,8 @@ C.........  Write out second report to REPINVEN file
         WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
         
         DO I = 1, NINVTBL
+          IF( SORTCAS( I ) .EQ. '        ' ) CYCLE
+          
           K = INDEX1( SORTCAS( I ), NUNIQCAS, UNIQCAS )
           IF( K .LE. 0 ) THEN
             WRITE( MESG, 94010 )
@@ -148,6 +150,7 @@ C.........  Write out second report to REPINVEN file
           IF( .NOT. ITKEEPA( SCASIDX( I ) ) ) CYCLE
           
           J = SCASIDX( I )
+          
           VALCHECK = EMISBYCAS( K ) * ITFACA( J )
           DIFF = VALCHECK - EMISBYPOL( I )
           IF( ABS( DIFF ) .GT. 0.000001 ) THEN
