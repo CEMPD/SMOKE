@@ -244,10 +244,15 @@ C...........   Other local variables
         INTEGER         IMON    !  Temporary monthly profile number
         INTEGER         IOS     !  input status placeholder
         INTEGER         IWEK    !  Temporary weekly profile number
+        INTEGER         IZONE   !  Zone of time stamps in temperature file
         INTEGER         FIP     !  Temporary state/county code
         INTEGER         FDATE
         INTEGER         JDATE	!  for output file
         INTEGER         JTIME	!  for output file
+        INTEGER         JMDATE	!  Met date using output zone
+        INTEGER         JMTIME	!  Met time using output zone
+        INTEGER         JWDATE	!  Min/max temp date using output zone
+        INTEGER         JWTIME	!  Min/max temp time using output zone
         INTEGER         JYEAR
         INTEGER         LNK     !  Temporary user defined link code
         INTEGER         MAXTL   !  Intermediate temperature indice variable
@@ -264,6 +269,8 @@ C...........   Other local variables
         INTEGER         TZONE
         INTEGER         VHT     !  Temporary vehicle type number
         INTEGER         VID     !  Index for volatile inventory pollutant
+        INTEGER         WDATE	!  Date of min/max temperature file
+        INTEGER         WTIME	!  Time of min/max temperature file
 
         INTEGER         LDEV
         INTEGER         FDEV    ! unit number for emissions factors xref file
@@ -273,7 +280,7 @@ C...........   Other local variables
         INTEGER         TDEV    ! ...speciation list file
 
         INTEGER         H, HCORR, I, II, IREC  
-        INTEGER         J, K, KU, L, M, N1, N2, C0, C1, F, S, T, V
+        INTEGER         J, K, KU, L, M, N1, N2, F, S, T, V
         INTEGER         J1, J2, J3, J4   
         INTEGER         MONTH, DAY, LDATE
         REAL            TMMIDV
@@ -359,20 +366,14 @@ C.......   and temporal profiles files
      &          'Enter logical name for DIURNAL EMISSIONS ' //
      &          'FACTOR input file', FSREAD3, 'MEFSD', 'TMPMOBIL' )
 
+C.........  Prompt for time zone of temperature data.
+        IZONE  = 0
+        IZONE  = GETNUM( -12, 12, IZONE,
+     &             'Enter time zone of temperature files (0 for GMT)' )
+
         MNAME = PROMPTMFILE( 
      &          'Enter logical name for SURFACE TEMPERATURE input file',
      &          FSREAD3, 'TKDAT01', 'TMPMOBIL' )
-
-C.........  Get starting date and time from met data file
-        IF ( .NOT. DESC3( MNAME ) ) THEN
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
-     &                  'Could not get description of file "' 
-     &                  // MNAME( 1:TRIMLEN( MNAME ) ) // '"',
-     &                  2 )
-        END IF
-
-        MDATE  = SDATE3D
-        MTIME  = STIME3D
 
         UNAME = PROMPTMFILE( 
      &          'Enter logical name for UNGRIDDING MATRIX input file',
@@ -403,32 +404,6 @@ C.........  Get starting date and time from met data file
      &           .TRUE., .TRUE., 'MSLST', 'TMPMOBIL' )
 
 
-C.......   Get list of output variables (shrink list in file description
-C.......   data structure to just those variables desired):
-
-        IF ( .NOT. DESC3( ANAME ) ) THEN
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
-     &                  'Could not get description of file "' 
-     &                  // ANAME( 1:TRIMLEN( ANAME ) ) // '"',
-     &                  2 )
-        END IF
-
-C.......   Determine whether input represents peak-day emissions or
-C.......   annual total emissions:
-
-cmh     C0 =   1 + INDEX( FDESC3D( 6 ),           '"' )
-cmh     IF ( C0 .EQ. 0 ) THEN
-cmh         MESG = 'Bad field [' // FDESC3D( 6 )( 1:24 ) //
-cmh  &             '] in file description -- no leading quote'
-cmh         CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
-cmh     END IF
-cmh     C1 =  INDEX( FDESC3D( 6 )( C0 : 24 ) , '"' )
-cmh     IF ( C1 .EQ. 0 ) THEN
-cmh         MESG = 'Bad field [' // FDESC3D( 6 )( 1:24 ) //
-cmh  &             '] in file description -- no trailing quote'
-cmh         CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
-cmh     END IF
-
 C.......   Get time period for output file:
 
         IF ( ISDSTIME( SDATE3D ) ) THEN
@@ -437,7 +412,7 @@ C.......   Get time period for output file:
             TZONE = 5
         END IF
         TZONE  = GETNUM( -12, 12, TZONE, 
-     &                   'Enter output time zone  (0 for GMT)' )
+     &           'Enter time zone for output emissions (0 for GMT)' )
         JDATE  = GETNUM( 0, 9999999, 1988200, 
      &                   'Enter simulation starting date (YYYYDDD)' )
         JTIME  = GETNUM( 0, 999999, 0, 
@@ -448,15 +423,109 @@ C.......   Get time period for output file:
         TSTEP  = 10000
         JYEAR  = JDATE / 1000
 
-        IF( JDATE .NE. MDATE .OR. JTIME .NE. MTIME ) THEN
+C.........  Get starting date and time from met data file
+        IF ( .NOT. DESC3( MNAME ) ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+     &                  'Could not get description of file "' 
+     &                  // MNAME( 1:TRIMLEN( MNAME ) ) // '"',
+     &                  2 )
+        END IF
+
+C.........  Set   date/time for temperature based on simulation
+C........   start date/time
+        MDATE = JDATE
+        MTIME = JTIME
+        CALL NEXTIME( MDATE, MTIME, (TZONE - IZONE )*10000 )
+
+C.........  Calculate start meterology date/time using TZONE
+        JMDATE = SDATE3D
+        JMTIME = STIME3D
+        CALL NEXTIME( JMDATE, JMTIME, (IZONE - TZONE )*10000 )
+
+C.........  Abort if (start time) < (first time for temperatures)
+        IF( ( MDATE .EQ. SDATE3D .AND. MTIME .LT. STIME3D ) .OR.
+     &        MDATE .LT. SDATE3D ) THEN
+ 
+            WRITE( *,92000 ) ' '
+            WRITE( *,92000 ) 'For file ' // MNAME // ' ...'
+            WRITE( *,92000 ) ' '
+            WRITE( *,92010 ) 'Given time zone       :', IZONE
+            WRITE( *,92010 ) 'Requested date & time :', MDATE  , MTIME
+            WRITE( *,92010 ) 'Actual    date & time :', SDATE3D, STIME3D
+
+            CALL M3EXIT( 'TMPMOBIL', 0, 0,
+     &                   'Requested starting date & time too early', 2 )
+ 
+C.........  Give warning if modeling start date/time is not the same as 
+C.........  the meterology start date/time
+
+        ELSEIF( JDATE .NE. JMDATE .OR. JTIME .NE. JMTIME ) THEN
 
             WRITE( *,92000 ) ' '
-            WRITE( *,92010 ) 'Simulation  date & time: ', JDATE, JTIME
-            WRITE( *,92010 ) 'Meteorology date & time: ', MDATE, MTIME
+            WRITE( *,92000 ) 'For file ' // MNAME // ' ...'
+            WRITE( *,92000 ) ' '
+            WRITE( *,92010 ) 'Given time zone       :', TZONE
+            WRITE( *,92010 ) 'Requested date & time :', JDATE , JTIME
+            WRITE( *,92010 ) 'Actual    date & time :', JMDATE, JMTIME
+
             CALL M3WARN( 'TMPMOBIL', 0, 0, 
-     &                   'Inconsistent file time stamps' )
+     &                   'Inconsistent starting date and/or time' )
 
         ENDIF
+
+C.........  Get starting date and time min/max temperature file (in GMT)
+        IF ( .NOT. DESC3( WNAME ) ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+     &                  'Could not get description of file "' 
+     &                  // WNAME( 1:TRIMLEN( WNAME ) ) // '"',
+     &                  2 )
+        END IF
+
+        WDATE = SDATE3D   ! From latest DESC3
+        WTIME = STIME3D   ! From latest DESC3
+
+C.........  Calculate start min/max temperature date/time using TZONE
+C.........  the min/max temperature file is guaranteed to be in GMT
+        JWDATE = WDATE
+        JWTIME = WTIME
+        CALL NEXTIME( JWDATE, JWTIME, (0 - TZONE)*10000 )
+
+C.........  Abort if simulation date is less than date in MINMAXT file
+        IF( JDATE .LT. JWDATE ) THEN   
+
+            WRITE( *,92000 ) ' '
+            WRITE( *,92000 ) 'For file ' // WNAME // ' ...'
+            WRITE( *,92000 ) ' '
+            WRITE( *,92010 ) 'Given time zone :', TZONE
+            WRITE( *,92010 ) 'Requested date  :', JDATE
+            WRITE( *,92010 ) 'Actual    date  :', JWDATE
+
+            CALL M3EXIT( 'TMPMOBIL', 0, 0,
+     &                   'Requested starting date too early', 2 )
+
+        ELSEIF( WTIME .NE. 0 ) THEN
+
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Error: time in ' // 
+     &                   WNAME( 1:TRIMLEN( WNAME ) ) // 
+     &                   ' is not 00000!', 2 )
+
+        ELSEIF( JDATE .NE. JWDATE .OR. JTIME .NE. JWTIME ) THEN
+
+            WRITE( *,92000 ) ' '
+            WRITE( *,92000 ) 'For file ' // WNAME // ' ...'
+            WRITE( *,92000 ) ' '
+            WRITE( *,92010 ) 'Given time zone       :', TZONE
+            WRITE( *,92010 ) 'Requested date & time :', JDATE , JTIME
+            WRITE( *,92010 ) 'Actual    date & time :', JWDATE, JWTIME
+
+            CALL M3WARN( 'TMPMOBIL', 0, 0, 
+     &                   'Inconsistent starting date and/or time' )
+
+        ENDIF
+
+C.........  Update first min/max read date based on JDATE in GMT
+C.........  Don't update time because time should always be zero
+        WDATE = JWDATE
 
 C.........  Get list of scenario-specific emission types in compiled order
 
@@ -468,8 +537,15 @@ C.........  Get list of scenario-specific emission types in compiled order
             CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         ENDIF
 
-C.......   Get file name; open output time-stepped area sources file
+C.........  Get description of MRAW file for initialization of MTMP
+        IF ( .NOT. DESC3( ANAME ) ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+     &                  'Could not get description of file "' 
+     &                  // ANAME( 1:TRIMLEN( ANAME ) ) // '"',
+     &                  2 )
+        END IF
 
+C.........  Get file name; open output time-stepped area sources file
         SDATE3D = JDATE
         STIME3D = JTIME
         TSTEP3D = TSTEP
@@ -1397,8 +1473,8 @@ C.................  Create temporal adjustment matrix for current day
 
 C.................  Read ungridded MIN/MAX temperature indices for the day
 
-                IF( .NOT. 
-     &               READ3( WNAME, ALLVAR3, 1, MDATE, 0, TMMI ) ) THEN
+                IF( .NOT. READ3( 
+     &              WNAME, ALLVAR3, 1, WDATE, WTIME, TMMI ) ) THEN
 
                      MESG = 'Could not read TMMI from ' // 
      &                      WNAME( 1:TRIMLEN( WNAME ) )
@@ -1670,12 +1746,11 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
 
-92010   FORMAT( 5X, A, I7.7, ':', I6.6 )
+92010   FORMAT( 5X, A, 1X, I7.7, 1X, I6.6, 1X, I2 )
 
 92011   FORMAT( /5X, A, I10 )
 
 92020   FORMAT( 5X, A, I9 )
-
 
 C...........   Formatted file I/O formats............ 93xxx
 
