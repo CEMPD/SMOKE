@@ -1,13 +1,14 @@
 
 C Version "@(#)$Id$ $Source$ $Date$ 
 
-        SUBROUTINE MOINBLD( MODEV, IPARM, YEAR, TMPRTR )
+        SUBROUTINE MOINBLD( MODEV, IPARM, VOLATIL, YEAR, 
+     &                      TMPRTR, TMIN, TMAX )
 
 C***********************************************************************
 C  program body starts at line
 C
 C  DESCRIPTION:
-C      This program accepts a parameter scheme index IPARM  
+C      This program accepts a parameter scheme index IPARM, a volatile type
 C      and an ambient temperature, and creates an input file for 
 C      MOBILE5a.  The parameter x-ref arrays are provided through a common 
 C      block.
@@ -39,16 +40,20 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Subroutine arguments
         INTEGER MODEV                    ! Unit number for MOBILE5a file
         INTEGER IPARM                    ! Scenario specific parameter index no.
+        INTEGER VOLATIL                  ! Volatile type
         INTEGER YEAR                     ! Year for calculating EFs
         REAL    TMPRTR                   ! Ambient temperature
+        REAL    TMIN                     ! Minimum daily temperature
+        REAL    TMAX                     ! Maximum daily temperature
 
 C...........   Normal MOBILE5a parameter x-ref variables
+        INTEGER MRNUM                    ! Actual no. of normal x-ref entries
         INTEGER IPSI  ( NPREF )          ! Normal x-ref scheme index
+        INTEGER ISTYPE( NPREF, 2     )   ! Type-specifier (1), and pointer (2)
         INTEGER NIDX  ( NPREF, NNFAC )   ! Normal x-ref entries
         INTEGER CIDX  ( NPREF, NCFAC )   ! Control Normal x-ref entries
-        INTEGER MRNUM                    ! Actual no. of normal x-ref entries
 
-        COMMON / MPARMS / MRNUM, IPSI, NIDX, CIDX 
+        COMMON / MPARMS / MRNUM, IPSI, ISTYPE, NIDX, CIDX 
 
 C...........   Main data table indices
         INTEGER IACCUM( MXFACS )
@@ -196,17 +201,23 @@ C.........  Set defaults to control variables
         OUTFMT = 3
         PRTFLG = 4
         IDLFLG = 1
-        NMHFLG = 3
+        NMHFLG = VOLATIL
         HCFLAG = 3
 
 
-C.........  Find normal parameters from x-ref index
+C.........  Find parameters from full x-ref index
         IP = FIND1( IPARM, MRNUM, IPSI )
 
         IF( IP .LT. 0 ) THEN
             WRITE( MESG,94100 ) 'Parameter profile', IPARM, 
      &                          'not found in MPREF'
             CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
+C.........  Update IP to reflect "normal" parameter index location
+        ELSE
+
+            IP = ISTYPE( IP,2 )
+
         ENDIF
 
 C.........  Make sure parameter set in consistent
@@ -860,7 +871,7 @@ C........... Check LAP/Month code for consistencies, get index
 
             WRITE( MESG, 94100 ) 
      &            'LAP/month record number', NIDX( IP,4 ), 
-     &            'from parameter scheme', IP,
+     &            'from parameter scheme', IPARM,
      &            'not allowed.  Value MUST be positive.'
             CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
 
@@ -870,7 +881,7 @@ C........... Check LAP/Month code for consistencies, get index
             IF( JLAPMO .LT. 0 ) THEN
                 WRITE( MESG,94100 ) 
      &                 'LAP/month profile', NIDX( IP,4 ),
-     &                 'from parameter scheme', IP,
+     &                 'from parameter scheme', IPARM,
      &                 'not found in LAP/month table.'
                 CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
             ENDIF
@@ -884,7 +895,7 @@ C........... Check LAP/Month code for consistencies, get index
 
                  WRITE( MESG,94100 ) 
      &            'Month in LAPMO record', NIDX( IP,4 ),
-     &            'from parameter scheme', IP,
+     &            'from parameter scheme', IPARM,
      &            'must be 1 or 7.'
                  CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
 
@@ -897,7 +908,7 @@ C........... Check LAP/Month code for consistencies, get index
 
                      WRITE( MESG,94100 ) 
      &                 'Fuel volatility in LAPMO record', NIDX( IP,4 ),
-     &                 'from parameter scheme', IP,
+     &                 'from parameter scheme', IPARM,
      &                 'must be A, B, C, D, or E when RFG controls '//
      &                 'are present.'
 
@@ -1014,15 +1025,28 @@ C........... OPERATING MODE FRACTIONS
 
 C.........  Write out scenario record: Set no diurnal/diurnal to 'N'
 C              
-        IF( NSPEED .EQ. 1 ) THEN
+        IF( NSPEED .EQ. 1 .AND. TMPRTR .LT. 100. ) THEN
 
             WRITE( MODEV, 93400 ) 
      &            REGION, YEAR-1900, SPEED( 1 ), TMPRTR,
      &            ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
 
-        ELSE
+        ELSEIF( NSPEED .EQ. 1 .AND. TMPRTR .GE. 100. ) THEN
+
+            WRITE( MODEV, 93405 ) 
+     &            REGION, YEAR-1900, SPEED( 1 ), TMPRTR,
+     &            ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
+
+        ELSEIF( TMPRTR .LT. 100. ) THEN
 
             WRITE( MODEV, 93410 ) 
+     &              REGION, YEAR-1900, 
+     &              ( SPEED ( K ), K=1,8 ), TMPRTR,
+     &              ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
+
+        ELSEIF( TMPRTR .GE. 100. ) THEN
+
+            WRITE( MODEV, 93415 ) 
      &              REGION, YEAR-1900, 
      &              ( SPEED ( K ), K=1,8 ), TMPRTR,
      &              ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
@@ -1063,8 +1087,7 @@ C...........  Blank out fuel volatility if missing
 
         WRITE( MODEV, 93500 ) 
      &         'Road Class Name', 
-     &         TFUELV( JLAPMO ), 
-     &         TMPRTR - 1., TMPRTR + 1.0,     !  Min/Max temp unimportant
+     &         TFUELV( JLAPMO ), TMIN, TMAX,
      &         ( TREIDS( K,JLAPMO ), K = 1,2 ), 
      &         INT( TREIDS( 3, JLAPMO ) ),
      &         OXYFLG, DSFLAG, RFGFLG
@@ -1150,9 +1173,11 @@ C******************  FORMAT  STATEMENTS   ******************************
 93102   FORMAT( F4.1 )
 93103   FORMAT( F4.0 )
 93200   FORMAT( 3( I2, 1X ), 4I1, 1X, 2I1, 1X, I4, 1X, 8I1 )
-93400   FORMAT( I1,1X,I2,5 (1X,F4.1),2X,I1,15X,A1 )
+93400   FORMAT( I1,1X,I2,1X,F4.1,1X,F4.1,3(1X,F4.1),2X,I1,15X,A1 )
+93405   FORMAT( I1,1X,I2,1X,F4.1,1X,F4.0,3(1X,F4.1),2X,I1,15X,A1 )
 93410   FORMAT( I1,1X,I2,12(1X,F4.1),2X,I1,15X,A1 )
-93500   FORMAT( A, 1X, A1, 2F5.0, 2F5.1, 1X, I2, 3(1X,I1) )
+93415   FORMAT( I1,1X,I2,8(1X,F4.1),1X,F4.0,3(1X,F4.1),2X,I1,15X,A1 )
+93500   FORMAT( A16, 1X, A1, 2F5.0, 2F5.1, 1X, I2, 3(1X,I1) )
 93510   FORMAT( 4( F4.3, 1X ), I1 )
 93520   FORMAT( 20F4.3 / 20F4.3 / 10F4.3 )
 93530   FORMAT( 6(1X,F4.1) )
