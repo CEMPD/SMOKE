@@ -15,13 +15,13 @@ C
 C  REVISION  HISTORY:
 C      Created 10/98 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -83,6 +83,7 @@ C   begin body of subroutine CHKLSTFL
 
         FLEN = LEN_TRIM( FNAME )
 
+        FIRSTITER = .TRUE.
 C.........  Loop through lines of list-formatted file to check the formats
         DO J = 1, NLINE
 
