@@ -166,6 +166,7 @@ C...........   Other local variables
         LOGICAL         NONPOINT         ! true: importing nonpoint inventory
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
         LOGICAL         TOXFLG           ! true: toxics are being processed
+        LOGICAL         STKFLG           ! true: check stack parameters
 
         CHARACTER(5)          TYPNAM      !  'day' or 'hour' for import
         CHARACTER(60)         VAR_FORMULA !  formula string
@@ -318,7 +319,12 @@ C.............  These are for opening output file and processing output data
 C.............   Fix stack parameters for point sources
 C.............   Some of these arguments are variables that are defined in the
 C                module MODSOURC
-            IF( CATEGORY .EQ. 'POINT' ) CALL FIXSTK( RDEV, NSRC )
+            IF( CATEGORY .EQ. 'POINT' ) THEN
+                MESG = 'Check stack parameter values'
+                STKFLG = ENVYN( 'CHECK_STACKS_YN', MESG, .TRUE., IOS )
+                
+                IF( STKFLG ) CALL FIXSTK( RDEV, NSRC )
+            END IF
 
 C.............  Set time zones based on country/state/county code. Note that a
 C               few counties in the Western U.S. are divided by a time zone, so 
