@@ -247,7 +247,7 @@ C.........  Rewind files
         IF ( VDEV .NE. 0 ) REWIND( VDEV )
 
 C.........  Deallocate local memory
-        DEALLOCATE( INDX1A, INDX2A, CODESA, ISTATA, NAMESA )
+        DEALLOCATE( INDX1A, INDX2A, CODESA, ISTATA, NAMESA, UNITSA )
 
         RETURN
 
