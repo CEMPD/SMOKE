@@ -496,7 +496,11 @@ C                   inventory emissions.
                         IDXSRC( HS,T ) = HS
                         SPDIDA( HS,T ) = S
                         CODEA ( HS,T ) = CEMPIDX(V)
-                        EMISVA( HS,T ) = CEMEMIS(V) * EMIS(S,V) * DENOM
+    	    	    	IF( CEMEMIS( V ) .LT. 0 ) THEN
+    	    	    	    EMISVA( HS,T ) = BADVAL3
+    	    	    	ELSE
+                            EMISVA( HS,T )= CEMEMIS(V)* EMIS(S,V)* DENOM
+    	    	    	END IF
 
                     END IF
 
