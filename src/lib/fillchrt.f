@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -56,7 +56,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: XTCNT ( NXREF ) ! pos. in x-ref group
 
 C...........   Local field position array
-        INTEGER       ENDLEN( MXPTCHR3 )   ! NOTE: MXPTCHR3 is max of ar,mb,pt
+        INTEGER, ALLOCATABLE :: ENDLEN( : ) 
 
 C...........   Other local variables
         INTEGER       I, J, K, T       ! counter and indices
@@ -78,18 +78,24 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine FILLCHRT
 
-C.........  Initialize the local field position array
-        ENDLEN = 1  ! array
-
 C.........  Set the local field position array based on the source category
         SELECT CASE ( CATEGORY )
         CASE( 'AREA' ) 
+            ALLOCATE( ENDLEN( MXARCHR3 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ENDLEN', PROGNAME )
+            ENDLEN = 1  ! array
             ENDLEN( 1:MXARCHR3 ) = ARENDL3( 1:MXARCHR3 )
 
         CASE( 'MOBILE' )
+            ALLOCATE( ENDLEN( MXMBCHR3 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ENDLEN', PROGNAME )
+            ENDLEN = 1  ! array
             ENDLEN( 1:MXMBCHR3 ) = MBENDL3( 1:MXMBCHR3 )
 
         CASE( 'POINT' )
+            ALLOCATE( ENDLEN( MXPTCHR3 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ENDLEN', PROGNAME )
+            ENDLEN = 1  ! array
             ENDLEN( 1:MXPTCHR3 ) = PTENDL3( 1:MXPTCHR3 )
 
         END SELECT
