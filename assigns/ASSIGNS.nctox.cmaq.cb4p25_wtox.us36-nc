@@ -61,23 +61,23 @@
    setenv SMKDAT      $EDSS_ROOT/data                # Data root dir
    setenv ASSIGNS     $SMKROOT/assigns               # smoke assigns files
 #
-## Make changes to names for future year and/or control strategy
-set outstat = 0
-source $ASSIGNS/set_case.scr
-if ( $status > 0 ) then
-   set outstat = 1
-endif
-
 ## Override speciation setting, if override variable is set
 if ( $?SPC_OVERRIDE ) then
    if ( $SPC != " " ) then
       setenv SPC $SPC_OVERRIDE
    endif
 endif
-
+#
 ## Override year setting, if override variable is set
 if ( $?YEAR_OVERRIDE ) then
    setenv YEAR $YEAR_OVERRIDE
+endif
+#
+## Make changes to names for future year and/or control strategy
+set outstat = 0
+source $ASSIGNS/set_case.scr
+if ( $status > 0 ) then
+   set outstat = 1
 endif
 
 ## Set dependent directory names
