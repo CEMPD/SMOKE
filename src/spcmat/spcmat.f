@@ -243,7 +243,9 @@ C.........  Set inventory variables to read for all source categories
 
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 2
+            NINVARR = 4
+            IVARNAMS( 3 ) = 'CMACT'
+            IVARNAMS( 4 ) = 'ISIC'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
             NINVARR = 5
@@ -252,7 +254,9 @@ C.........  Set inventory variables to read for specific source categories
             IVARNAMS( 5 ) = 'CVTYPE'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-            NINVARR = 2
+            NINVARR = 4
+            IVARNAMS( 3 ) = 'CMACT'
+            IVARNAMS( 4 ) = 'ISIC'
         END IF
 
 C.........  Allocate memory for and read required inventory characteristics
