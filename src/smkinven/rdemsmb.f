@@ -517,11 +517,11 @@ C.................  Store data variable values
                     ES = ES + 1
 
                     IF( ES .LE. NRAWBP ) THEN
-                        POLVLA ( ES,1 ) = DATAVAL( V )
+                        POLVLA ( ES,1 ) = DAY2YR * DATAVAL( V )
 
                         WRITE( CCOD,94125 ) POLPOS( V )
 
-                        CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, ' ', ' ', 
+                        CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, ' ', 
      &                                ' ', CCOD, CSOURCA( ES ) )
                     END IF
 
