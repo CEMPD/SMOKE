@@ -509,11 +509,9 @@ C.............................  Update country, state, & county totals
 C.............................  Also convert the units from the gridded output
 C                               units to the totals output units
                             IF( LREPANY ) THEN
-                                CALL GRD2CNTY( 0, KB, NGRID, NCOUNTY,
-     &                                         BEMGRD, BEBCNY )
-
                                 FB = BIOTFAC / BIOGFAC
-                                BEBCNY( :,KB ) = BEBCNY( :,KB ) * FB    ! array
+                                CALL GRD2CNTY( 0, KB, NGRID, NCOUNTY, 
+     &                                         FB, BEMGRD, BEBCNY )
 
                             END IF
                         END IF
