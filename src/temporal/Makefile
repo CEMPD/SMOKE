@@ -4,8 +4,7 @@
 LIBS          = $(LDIRS) $(LIBS_SYS) 
 LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
 LIBPATH       = $(SMK_BIN)/libsmoke.a
-#LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
 
 all: temporal
@@ -13,7 +12,6 @@ all: temporal
 debug: temporal.debug
 
 .f.o:
-	
 	$(FC) $(FFLAGS) -c -o $@ $< 
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
@@ -48,12 +46,14 @@ opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ setdaylt.f
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
-            $(MODDAYHR) $(MODLISTS) $(MODGRID)
+            $(MODDAYHR) $(MODLISTS) $(MODGRID) $(MODMBSET)
 	$(FC) $(FFLAGS) -c -o $@ temporal.f
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ tmnamunt.f
 updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ updtmat.f
+wrtsup.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
+	$(FC) $(FFLAGS) -c -o $@ wrtsup.f
 #
 clean:
 	/bin/rm *.o
