@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDMCREF( MDEV )
+        SUBROUTINE RDMCREF( MDEV, GRIDCTY, NCTY )
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
@@ -29,7 +29,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CHKINT, GETFLINE, STR2INT, FIND1, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: MDEV     ! MCREF file unit no.
+        INTEGER, INTENT (IN) :: MDEV             ! MCREF file unit no.
+        INTEGER, INTENT (IN) :: GRIDCTY( NCTY )  ! counties in grid
+        INTEGER, INTENT (IN) :: NCTY             ! no. counties
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: MCREFRAW ( :,: )  ! raw MCREF data
@@ -65,16 +67,15 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDMCREF
 
-C.........  Store no. inv. counties        	
-        NINVC = NINVIFIP
+        NINVC = NCTY
 
-C.........  Allocate arrays that use NINVC as dimension (sorted arrays and index)
-        ALLOCATE( MCREFINV ( NINVC ), STAT=IOS )
+C.........  Allocate arrays that use NCTY as dimension (sorted arrays and index)
+        ALLOCATE( MCREFINV ( NCTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MCREFINV', PROGNAME )
-        ALLOCATE( IDX2 ( NINVC ), STAT=IOS )
+        ALLOCATE( IDX2 ( NCTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDX2', PROGNAME )
         
-        ALLOCATE( MCREFSORT ( NINVC,2 ), STAT=IOS ) 
+        ALLOCATE( MCREFSORT ( NCTY,2 ), STAT=IOS ) 
         CALL CHECKMEM( IOS, 'MCREFSORT', PROGNAME )
         
 C.........  Get the number of lines in the file     
@@ -161,7 +162,8 @@ C.........  Abort if error found while reading cross-reference file
 C.........  Sort MCREF index array by reference county
         CALL SORTI2( NLINES, IDX, MCREFRAW(:,2), MCREFRAW(:,1) )
 
-C.........  Check for duplicate references, then store sorted MCREF array
+C.........  Check for duplicate references and counties outside grid,
+C           then store sorted MCREF array
         PRCOUNTY = 0
         PICOUNTY = 0
         N = 0
@@ -188,14 +190,14 @@ C.............  Skip any entries equal to zero due to blank lines
                 CALL M3MESG( MESG )
             ELSE
             	
-C.............  Check that current county is in the inventory
-                K = FIND1( INVCOUNTY, NINVC, INVIFIP )
+C.............  Check that current county is inside the grid (and in the inventory)
+                K = FIND1( INVCOUNTY, NCTY, GRIDCTY )
                 
                 IF( K < 0 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Ignoring county ' //
      &                     'cross-reference for inventory county',
      &                     INVCOUNTY, ',' // CRLF() // BLANK10 // 
-     &                     ' since it is not in the mobile inventory.'
+     &                     ' since it is not inside the grid.'
                     CALL M3MESG( MESG )
                     
                 ELSE    
@@ -220,25 +222,25 @@ C.............  Check that current county is in the inventory
         END IF
 
 C.........  Initialize index for sorting
-        DO I = 1, NINVC
+        DO I = 1, NCTY
             IDX2( I ) = I
         END DO
         	
 C.........  Sort list of inv. counties in MCREF        	
-        CALL SORTI1( NINVC, IDX2, MCREFSORT( :,1 ) )
+        CALL SORTI1( NCTY, IDX2, MCREFSORT( :,1 ) )
 
 C.........  Created sorted array
-        DO I = 1, NINVC
+        DO I = 1, NCTY
             MCREFINV( I ) = MCREFSORT( IDX2( I ),1 )
         END DO
 
-C.........  Check that all counties in the inventory have a reference county
-        DO I = 1, NINVIFIP
+C.........  Check that all counties inside the grid have a reference county
+        DO I = 1, NCTY
         
-C.............  Get county from inventory        
-            INVCOUNTY = INVIFIP( I )
+C.............  Get county from grid list        
+            INVCOUNTY = GRIDCTY( I )
             
-            J = FIND1( INVCOUNTY, NINVC, MCREFINV ) 
+            J = FIND1( INVCOUNTY, NCTY, MCREFINV ) 
 
             IF( J < 0 ) THEN
                 EFLAG = .TRUE.	
@@ -259,7 +261,7 @@ C.............  Get county from inventory
 C.........  Count total number of reference counties
         PRCOUNTY = 0
 
-        DO I = 1, NINVC
+        DO I = 1, NCTY
             REFCOUNTY = MCREFSORT( I,2 )
             
             IF( REFCOUNTY /= PRCOUNTY ) THEN
@@ -279,7 +281,7 @@ C.........  Create reference county index array
         PRCOUNTY = 0
         N = 0
         
-        DO I = 1, NINVC
+        DO I = 1, NCTY
             REFCOUNTY = MCREFSORT( I,2 )
             
             IF( REFCOUNTY /= PRCOUNTY ) THEN
