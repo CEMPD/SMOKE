@@ -22,17 +22,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -49,14 +49,16 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
@@ -246,19 +248,19 @@ C               compare or initialize grid information.
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable descriptions, and store mass or moles.
             IF( SFLAG ) THEN
-                ASNAME = PROMPTMFILE( 
+                ASNAME = PROMPTSET( 
      &           'Enter logical name for the AREA SPECIATION MATRIX',
      &           FSREAD3, 'ASMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( ASNAME )
+                CALL RETRIEVE_SET_HEADER( ASNAME )
                 CALL CHKSRCNO( 'area', 'ASMAT', NROWS3D, NASRC, EFLAG )
-                ANSMATV = NVARS3D
+                ANSMATV = NVARSET
                 ALLOCATE( ASVDESC( ANSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ASVDESC', PROGNAME )
                 ALLOCATE( ASVUNIT( ANSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ASVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, ANSMATV, ASVDESC )
-                CALL STORE_VUNITS( 1, 1, ANSMATV, ASVUNIT )
+                CALL STORE_VDESCSET( 1, 1, ANSMATV, ASVDESC )
+                CALL STORE_VUNITSET( 1, 1, ANSMATV, ASVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'area' )
@@ -461,24 +463,40 @@ C               compare or initialize grid information.
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable descriptions, and store mass or moles.
             IF( SFLAG ) THEN
-                MSNAME = PROMPTMFILE( 
+                MSNAME = PROMPTSET( 
      &           'Enter logical name for the MOBILE SPECIATION MATRIX',
      &           FSREAD3, 'MSMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( MSNAME )
+                CALL RETRIEVE_SET_HEADER( MSNAME )
                 CALL CHKSRCNO( 'mobile', 'MSMAT', NROWS3D, NMSRC, EFLAG)
-                MNSMATV = NVARS3D
+                MNSMATV = NVARSET
                 ALLOCATE( MSVDESC( MNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MSVDESC', PROGNAME )
                 ALLOCATE( MSVUNIT( MNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MSVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, MNSMATV, MSVDESC )
-                CALL STORE_VUNITS( 1, 1, MNSMATV, MSVUNIT )
+                CALL STORE_VDESCSET( 1, 1, MNSMATV, MSVDESC )
+                CALL STORE_VUNITSET( 1, 1, MNSMATV, MSVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'mobile' )
 
             END IF  ! end of speciation open
+
+C.............  Open multiplicative control matrix, compare number of sources, 
+C               and store control variable names.
+            IF( MUFLAG ) THEN
+                MESG = 'Enter logical name for the MOBILE ' //
+     &                 'MULTIPLICATIVE CONTROL MATRIX'
+                MUNAME = PROMPTMFILE( MESG, FSREAD3, 'MCMAT', PROGNAME )
+
+                CALL RETRIEVE_IOAPI_HEADER( MUNAME )
+                CALL CHKSRCNO( 'mobile', 'MCMAT', NROWS3D, NMSRC, EFLAG)
+                MNUMATV = NVARS3D
+                ALLOCATE( MUVNAMS( MNUMATV ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MUVNAMS', PROGNAME )
+                CALL STORE_VNAMES( 1, 1, MNUMATV, MUVNAMS )
+
+            END IF  ! end of multiplicative control open
 
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
@@ -596,19 +614,19 @@ C               compare or initialize grid information.
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable names, and store mass or moles.
             IF( SFLAG ) THEN
-                PSNAME = PROMPTMFILE( 
+                PSNAME = PROMPTSET( 
      &           'Enter logical name for the POINT SPECIATION MATRIX',
      &           FSREAD3, 'PSMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( PSNAME )
+                CALL RETRIEVE_SET_HEADER( PSNAME )
                 CALL CHKSRCNO( 'point','PSMAT',NROWS3D,NPSRC,EFLAG )
-                PNSMATV = NVARS3D
+                PNSMATV = NVARSET
                 ALLOCATE( PSVDESC( PNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PSVDESC', PROGNAME )
                 ALLOCATE( PSVUNIT( PNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PSVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, PNSMATV, PSVDESC )
-                CALL STORE_VUNITS( 1, 1, PNSMATV, PSVUNIT )
+                CALL STORE_VDESCSET( 1, 1, PNSMATV, PSVDESC )
+                CALL STORE_VUNITSET( 1, 1, PNSMATV, PSVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'point' )
@@ -852,6 +870,27 @@ C----------------------------------------------------------------------
             ENDIF
  
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram tries to retrieve the description for a file
+C               set and aborts if it was not successful
+            SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. DESCSET( FILNAM, ALLFILES ) ) THEN
+
+                MESG = 'Could not get description of file set "' //
+     &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ENDIF
+ 
+            END SUBROUTINE RETRIEVE_SET_HEADER
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
@@ -1515,6 +1554,36 @@ C----------------------------------------------------------------------
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
+C.............  This subprogram stores variable descriptions for a file set into
+C               a local array based on indices in subprogram call.
+            SUBROUTINE STORE_VDESCSET( ISTART, INCRMT, NDESC, DESCS )
+
+C.............  Subprogram arguments
+            INTEGER      ISTART        ! starting position in VDESCS of names
+            INTEGER      INCRMT        ! increment of VDESCS for names
+            INTEGER      NDESC         ! number of descriptions
+            CHARACTER(*) DESCS( NDESC )! stored variable descriptions
+
+C.............  Local variables
+            INTEGER  I, J, L
+
+C----------------------------------------------------------------------
+
+            DESCS = ' '
+
+            J = ISTART
+            DO I = 1, NDESC
+
+                L = LEN_TRIM( VDESCSET( J ) )
+                DESCS( I ) = VDESCSET( J )( 1:L )
+                J = J + INCRMT
+
+            END DO
+ 
+            END SUBROUTINE STORE_VDESCSET
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable units into
 C               a local array based on indices in subprogram call.
             SUBROUTINE STORE_VUNITS( ISTART, INCRMT, NUNIT, UNITS )
@@ -1542,5 +1611,35 @@ C----------------------------------------------------------------------
             END DO
  
             END SUBROUTINE STORE_VUNITS
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram stores variable units for a file set into
+C               a local array based on indices in subprogram call.
+            SUBROUTINE STORE_VUNITSET( ISTART, INCRMT, NUNIT, UNITS )
+
+C.............  Subprogram arguments
+            INTEGER      ISTART        ! starting position in VDESCS of names
+            INTEGER      INCRMT        ! increment of VDESCS for names
+            INTEGER      NUNIT         ! number of units
+            CHARACTER(*) UNITS( NUNIT )! stored variable units
+
+C.............  Local variables
+            INTEGER  I, J, L
+
+C----------------------------------------------------------------------
+
+            UNITS = ' '
+
+            J = ISTART
+            DO I = 1, NUNIT
+
+                L = LEN_TRIM( VUNITSET( J ) )
+                UNITS( I ) = VUNITSET( J )( 1:L )
+                J = J + INCRMT
+
+            END DO
+ 
+            END SUBROUTINE STORE_VUNITSET
 
         END SUBROUTINE OPENMRGIN
