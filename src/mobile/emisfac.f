@@ -173,8 +173,9 @@ C.........  End program if source category is not mobile sources
 C.........  Obtain settings from the environment...
 
 C.........  Get the name of the emission factor model to use
-        MESG = 'Emission factor model'
-        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE6', MODELNAM, IOS )
+ccs        MESG = 'Emission factor model'
+ccs        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE6', MODELNAM, IOS )
+        MODELNAM = 'MOBILE6'
 
 C.........  Get environment variables that control program behavior
         TEMPFLAG = ENVYN( 'REPLACE_TEMPERATURES', 
