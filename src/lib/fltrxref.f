@@ -118,7 +118,7 @@ C.............  Set flags indicating which source category is being processed
 C.............  Check length of SCC string
             L = LEN( TSCC )
             IF( L .NE. SCCLEN3 ) THEN
-                MESG = 'INTERNAL ERROR: Length of SCC string not'//
+                MESG = 'INTERNAL ERROR: Length of SCC string not '//
      &                 'correct in call to ' // PROGNAME
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
