@@ -72,8 +72,8 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Local allocatable arrays
-        REAL,    ALLOCATABLE :: SRCEFS( : )   ! per-source emission factors
-        INTEGER, ALLOCATABLE :: EFIDX( : )    ! index of source numbers
+        REAL,    ALLOCATABLE, SAVE :: SRCEFS( : )   ! per-source emission factors
+        INTEGER, ALLOCATABLE, SAVE :: EFIDX( : )    ! index of source numbers
 
 C.........   Other local variables
         INTEGER    I, J, K          ! counters and indices        
