@@ -72,7 +72,7 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
 
             T      = XTYPE ( I )
             K      = XTCNT ( I )
-
+	
 C.............  Skip invalid or duplicate records
             IF( T .LE. 0 ) CYCLE
 
