@@ -158,6 +158,8 @@ C           surrogate
 
         END IF
 
+        LCSRC = CSRC
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
