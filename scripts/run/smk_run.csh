@@ -495,6 +495,8 @@ if ( $?RUN_PREMOBL ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
 
+      if ( -e $METLIST ) /bin/rm -rf $METLIST
+
       ls $METDAT/METCRO2D* > $METLIST
 
       if ( $exitstat == 0 ) then         # Run program
@@ -610,6 +612,9 @@ if ( $?RUN_TEMPORAL ) then
          setenv MEFLIST $SMK_EMISPATH/meflist.txt
          set ef_cnt = `ls $SMK_EMISPATH/emisfacs*ncf | wc -l`
          if ( $ef_cnt > 0 ) then
+
+            if ( -e $SMK_EMISPATH/meflist.txt ) /bin/rm -rf $SMK_EMISPATH/meflist.txt
+
             set extension = `ls $SMK_EMISPATH/emisfacs*ncf | cut -d. -f4`
             if ( $extension[1] == 'ncf' ) then
                ls $SMK_EMISPATH/emisfacs*ncf > $SMK_EMISPATH/meflist.txt
@@ -673,6 +678,8 @@ if ( $?RUN_ELEVPOINT ) then
       # Create PTMPLIST file, in case it is needed.
       if ( -e $PTMP ) then
          setenv PTMPLIST $INVDIR/other/ptmplist.txt
+         if ( -e $PTMPLIST ) /bin/rm -rf $PTMPLIST
+
          ls $SMKDAT/run_$PSCEN/*/ptmp*$PSCEN*ncf > $PTMPLIST
       endif
 
@@ -783,6 +790,9 @@ if ( $?RUN_TMPBIO ) then
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
+
+      if ( -e $METLIST ) /bin/rm -rf $METLIST
+      if ( -e $RADLIST ) /bin/rm -rf $RADLIST
 
       ls $MET_FILE1 > $METLIST
       ls $MET_FILE2 > $RADLIST
@@ -977,6 +987,11 @@ if ( $?RUN_MRGGRID ) then
 
       ## If Mrggrid file list defined, create list file
       if ( $?MRGFILES ) then
+
+         ## Remove existing file list, if it is there
+         if ( -e $FILELIST ) then
+            /bin/rm -rf $FILELIST
+         endif
          set mrg_cnt = 0
          foreach f ( $MRGFILES )
             @ mrg_cnt = $mrg_cnt + 1

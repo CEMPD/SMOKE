@@ -59,6 +59,7 @@ if ( $?RUN_EMISFAC ) then
       endif
       set ef_cnt = `ls -1 $m6_input_dir/*.in | wc -l`
       if ( $ef_cnt > 0 ) then
+         if ( -e $M6LIST ) /bin/rm -rf $M6LIST
          ls $m6_input_dir/*.in > $M6LIST
       else
          echo "SCRIPT ERROR: No MOBILE6 *.in scenario files found in the directory:"

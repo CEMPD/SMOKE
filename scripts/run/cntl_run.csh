@@ -121,6 +121,7 @@ if ( $?RUN_CNTLMAT ) then
       endif
    
       ## Remove any existing tmp files
+      if ( -e $SMK_TMPDIR/filelist.txt ) /bin/rm -rf $SMK_TMPDIR/filelist.txt
       ls -1 $SMK_TMPDIR > $SMK_TMPDIR/filelist.txt
       set list = ( `cat $SMK_TMPDIR/filelist.txt | grep cntlmat` )
       if ( $status == 0 ) then
@@ -167,6 +168,7 @@ if ( $?RUN_CNTLMAT ) then
       endif
 
       ## Remove any existing tmp files
+      if ( -e $SMK_TMPDIR/filelist.txt )  /bin/rm -rf $SMK_TMPDIR/filelist.txt
       ls -1 $SMK_TMPDIR > $SMK_TMPDIR/filelist.txt
       set list = ( `cat $SMK_TMPDIR/filelist.txt | grep cntlmat` )
       if ( $status == 0 ) then
@@ -224,6 +226,7 @@ if ( $?RUN_GRWINVEN ) then
       set exitstat = $status
 
       ## Remove any existing tmp files
+      if ( -e $SMK_TMPDIR/filelist.txt )  /bin/rm -rf $SMK_TMPDIR/filelist.txt
       ls -1 $SMK_TMPDIR > $SMK_TMPDIR/filelist.txt
       set list = ( `cat $SMK_TMPDIR/filelist.txt | grep grwinven` )
       if ( $status == 0 ) then
@@ -270,6 +273,7 @@ if ( $?RUN_GRWINVEN ) then
       endif
 
       ## Remove any existing tmp files
+      if ( -e $SMK_TMPDIR/filelist.txt )  /bin/rm -rf $SMK_TMPDIR/filelist.txt
       ls -1 $SMK_TMPDIR > $SMK_TMPDIR/filelist.txt
       set list = ( `cat $SMK_TMPDIR/filelist.txt | grep grwinven` )
       if ( $status == 0 ) then
