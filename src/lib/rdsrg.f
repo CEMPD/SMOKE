@@ -481,7 +481,7 @@ C.................  Give a warning message for significant counties
                 WRITE( MESG,94030 ) 'WARNING: County surrogate total '//
      &                 'greater than 1. for county' // CRLF() // 
      &                 BLANK10, SRGFIPS( I ), ':',
-     &                 ( ( SRGLIST( K ), SRGCSUM( K,I ) ), K= 1, NSRGS )
+     &                 ( SRGLIST( K ), SRGCSUM( K,I ), K= 1, NSRGS )
                 CALL M3MESG( MESG )
 
 C.................  Renormalize all surrogates with totals > 1...
