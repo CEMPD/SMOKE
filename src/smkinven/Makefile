@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) 
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
+LIBS          = -lfileset $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG    = -lfileset $(LDIRS) $(LIBS_DEBUG_SYS)
 
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
@@ -39,12 +39,12 @@ RAW=adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o  \
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
 	echo SMKINVEN:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(RAW) $(LIBS)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(RAW) $(LIBS)
 #
 #
 smkinven.debug: $(RAW) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKINVEN \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(RAW) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(@) $(RAW) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
@@ -68,8 +68,8 @@ initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ initinfo.f
 opengrwout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opengrwout.f
-openinvout.o: $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ openinvout.f
+openinvout.o: $(MODLISTS) $(MODINFO) $(MODFILESET)
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ openinvout.f
 openpdout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openpdout.f
 procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
@@ -110,10 +110,12 @@ smkinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ smkinven.f
 srcmem.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ srcmem.f
-wrinvchr.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ wrinvchr.f
+wrinvchr.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ wrinvchr.f
 wrinvemis.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrinvemis.f
+wrinvpol.o: $(MODFILESET)
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ wrinvpol.f
 wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
 	$(FC) $(FFLAGS) -c -o $@ wrpdemis.f
 wrptref.o: $(MODINFO)
