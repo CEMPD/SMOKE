@@ -333,11 +333,12 @@ C.............  Include stack parameters
 C.............  Include elevated sources flag
             IF( RPT_%BYELEV ) THEN
                 L = ELEVWIDTH
-                L1 = L - LV - 1                        ! 1 for space
+                L1 = L - LV  - 2      ! 1 for space, minus 1 for how used
                 STRING = STRING( 1:LE ) // 
-     &                   ' ' // BINELEV( I )( 1:L1 ) // DELIM
-                MXLE = MXLE + L
+     &                   BLANK16( 1:L1 ) // BINELEV( I ) // DELIM
+                MXLE = MXLE + L + LX
                 LE = MIN( MXLE, STRLEN )
+                LX = 0
             END IF
 
 C.............  Include plant description (for point sources)
