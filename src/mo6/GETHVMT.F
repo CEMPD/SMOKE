@@ -221,7 +221,7 @@ C
 C 
                 IF(NSCEN==0) GLHVMT=HVMT ! for scenario/run level user input 
 C 
-                IF (EXTDATA) CLOSE(IOUALT) 
+                IF (EXTDATA) CLOSE(SOURCE) 
 C 
               END IF 
             END IF 
