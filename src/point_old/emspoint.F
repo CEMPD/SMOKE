@@ -237,6 +237,7 @@ C...........   sorted final version (image EMISREC of data record)
         REAL           CTLEFA( NPEMAX ) !  control efficiency fraction
         REAL           EMISVA( NPEMAX ) !  emissions values (tons/yr)
         CHARACTER*15   EMFCID( NPEMAX ) !  facility IDs
+        CHARACTER*12   EMDVID( NPEMAX ) !  device IDs
         CHARACTER*12   EMSKID( NPEMAX ) !  stack IDs
         CHARACTER*40   EMDESC( NPEMAX ) !  facility name from facility files
 
@@ -1507,6 +1508,7 @@ C...................   Fix up missing stack parameters:
                     RULPEA( ES ) = RPEN
                     EMISVA( ES ) = EMIS
                     EMFCID( ES ) = FCID
+                    EMDVID( ES ) = DVID
                     EMSKID( ES ) = SKID
                     EMDESC( ES ) = FCDESC( K1 )
 
@@ -1630,12 +1632,10 @@ C.............  If first time got to this source...
                 J    = J + 1		!  actual-sources counter
 
 C.................  Write out ASCII EMS-95 / SMOKE facility-stack table,
-C.................  temporal profiles file for source:
-C.................  ("1" is hardcoded monthly profile)
 
                 WRITE( CDEV, 93050 ) 
      &              FIP, SCC, PLANT, STACK,
-     &              EMFCID( I ), EMSKID( I ), EMDESC( I )
+     &              EMFCID( I ), EMSKID( I ), EMDVID( I ), EMDESC( I )
 
                 IF( J .LE. NPSRC ) THEN
 
@@ -2037,7 +2037,7 @@ C...........   Formatted file I/O formats............ 93xxx
 C93041   FORMAT( I5, X, I5, X, I3, X, I8, X, I5.5, 3( X, I3 ) )
 
 93050   FORMAT( I5.5, ',', I8.8, ',', 2 (I6, ','), 
-     &          A15 , ',', A12 , ',', A40 )
+     &          A15 , ',', A12 , ',', A12 , ',', A40 )
 
 C...........   Internal buffering formats............ 94xxx
 
