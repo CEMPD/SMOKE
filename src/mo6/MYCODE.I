@@ -6,4 +6,4 @@ C
 C The data is initialized in BD25. 
 C 
       INTEGER LDXSY,LMYRVT,IAY,IMDXSY,IMKINK 
-      COMMON /MYCODE/ LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,IDX,JDX,LDXSY,LMYRVT,IAY,IMDXSY,IMKINK                                           COMMON /MYCODE/ MY,ID 
+      COMMON /MYCODE/ LDXSY,LMYRVT,IAY,IMDXSY,IMKINK 
