@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
          PROGRAM PDPOINT
 
 C***********************************************************************
-C  program body starts at line 133
+C  program body starts at line 135
 C
 C  DESCRIPTION:
 C       Construct Models3/EDSS day- or hour-specific point source file 
@@ -43,6 +21,27 @@ C  REVISION  HISTORY:
 C       Prototype  10/95 by CJC.
 C
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                  System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C************************************************************************
 
       IMPLICIT NONE
 
@@ -68,6 +67,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*24    DT2STR
         LOGICAL         ENVYN
         INTEGER         FIND1   !  returns -1 for failure
+        INTEGER         GETDATE
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         JULIAN
@@ -79,9 +79,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         
-        EXTERNAL    DT2STR, ENVYN, FIND1, GETNUM, GETYN, JULIAN, 
-     &              PROMPTFFILE, PROMPTMFILE, SECSDIFF, SEC2TIME,
-     &              STR2INT, STR2REAL, TIME2SEC
+        EXTERNAL    DT2STR, ENVYN, FIND1, GETDATE, GETNUM, GETYN,
+     &              JULIAN, PROMPTFFILE, PROMPTMFILE, SECSDIFF, 
+     &              SEC2TIME, STR2INT, STR2REAL, TIME2SEC
 
 C...........   Parameters
         INTEGER     YEARBRK     ! Break-point for century 1900 vs. 2000
@@ -154,8 +154,7 @@ C   begin body of program PDPOINT
      &' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program PDPOINT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'PDPOINT', 0, 0, 'Ending Program.', 2 )
         END IF
 
 
@@ -173,14 +172,14 @@ C.......   Get file name; open input raw point source file
 C.......   Read the point source files
 C.......   Get starting date (default borrowed from input file:
         
-        WRITE( *,92000 ) ' ', 'Reading POINT SOURCE input files...', ' '
+        CALL M3MSG2( 'Reading POINT SOURCE input files...' )
 
         READ( PDEV, 93000, END=122, IOSTAT=IOS ) LINE
         IF ( IOS .NE. 0 ) THEN
             WRITE( MESG, 94010 ) 
      &          'Error ', IOS, 
      &          'reading POINT INPUT file at line', IREC
-            CALL M3EXIT( 'PDPOINT', 0, 0, 2 )
+            CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 2 )
         ELSE
             REWIND( PDEV )
         END IF
@@ -202,7 +201,7 @@ C.......   Get starting date (default borrowed from input file:
         JDATE = SDT
 
         EDT   = STR2INT( LINE( 69:76 ) )
-        ETIME = 10000 * + MOD( EDT , 100 )
+        ETIME = 10000 * MOD( EDT , 100 )
         EDT   = EDT / 100
         DD    = MOD( EDT , 100 )
         MM    = MOD( EDT / 100, 100 )
@@ -219,10 +218,10 @@ C.......   Get starting date (default borrowed from input file:
 
         TSTEP = SEC2TIME( SECSDIFF( JDATE, JTIME, EDATE, ETIME ) )
         
-        JDATE = GETNUM( SDT, 9999366, SDT, 
-     &          'Enter starting date YYYYDDD  for DAY-POINT file' )
+        JDATE = GETDATE( SDT, 
+     &        'Enter start date (YYYYDDD|YYYYMMDD) for DAY-POINT file' )
         JTIME = GETNUM( 0, 240000, JTIME, 
-     &          'Enter starting time  HHMMSS  for DAY-POINT file' )
+     &          'Enter start time  HHMMSS  for DAY-POINT file' )
 
         TSTEP = GETNUM( 0, 240000, TSTEP, 
      &          'Enter time step      HHMMSS  for DAY-POINT file' )
@@ -251,6 +250,11 @@ C.......   get file name; open output day-point file
             CALL M3EXIT( 'PDPOINT', 0, 0, 
      &                   'Could not read file description for ' // 
      &                   ENAME, 2 )
+        ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  EMISSIONS file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 2 )
         END IF
 
         FTYPE3D = IDDATA3
@@ -298,7 +302,7 @@ C...........   Read the input file:
                 WRITE( MESG, 94010 ) 
      &              'Error ', IOS, 
      &              'reading DAY-POINT file at line', IREC
-                CALL M3EXIT( 'PDPOINT', JDATE, JTIME, 2 )
+                CALL M3EXIT( 'PDPOINT', JDATE, JTIME, MESG, 2 )
 
             END IF
 
@@ -371,7 +375,7 @@ C.............  date, reset date, and initialize number of sources
                 IF ( S .GT. NSMAX ) THEN
                     WRITE( MESG, 94020 ) 
      &                  'Number of sources', S, 
-     &                  'Exceeds MAX', NSMAX,
+     &                  'Exceeds MAX (NSMAX)=', NSMAX,
      &                  'for', JDATE, JTIME,
      &                  'at line', IREC
                     CALL M3MESG( MESG )
@@ -465,7 +469,7 @@ C.............  date, reset date, and initialize number of sources
 
                 WRITE( MESG, 94020 ) 
      &              'Number of sources', S, 
-     &              'Exceeds MAX', NSMAX,
+     &              'Exceeds MAX (NSMAX)=', NSMAX,
      &              'for', JDATE, JTIME, 
      &              'at line', IREC
                 CALL M3MESG( MESG )
@@ -488,7 +492,7 @@ C.............  date, reset date, and initialize number of sources
 
                 WRITE( MESG, 94020 )
      &              'Number of sources', S, 
-     &              'Exceeds MAX', NSMAX,
+     &              'Exceeds MAX (NSMAX)=', NSMAX,
      &              'for', JDATE, JTIME, 
      &              'at line', IREC
                 CALL M3MESG( MESG )
@@ -539,9 +543,9 @@ C...........   Internal buffering formats............ 94xxx
 94020   FORMAT( A, I5, X, A, I5, X, A, I9, ':', I6.6, :, X, A, I5  )
 
 94030   FORMAT( 'Emis set to zero for source ', 
-     &           I5, ':',I7, ':', I4, ':' I2, 2X, A, '--', A )
+     &           I5, ':',I7, ':', I4, ':', I2, 2X, A, '--', A )
 
-94040   FORMAT( 2( A, I9, ':', I6.6, 2X ) A, I5 )
+94040   FORMAT( 2( A, I9, ':', I6.6, 2X ), A, I5 )
 
 94050   FORMAT( A, I5.5, A )
 
