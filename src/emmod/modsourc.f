@@ -1,0 +1,93 @@
+        MODULE MODSOURC
+
+!***********************************************************************
+!  Module body starts at line 40
+!
+!  DESCRIPTION:
+!     This module contains the public allocatable arrays for the source
+!     characteristics (both sorted and unsorted)
+!
+!  PRECONDITIONS REQUIRED:
+!
+!  SUBROUTINES AND FUNCTIONS CALLED:
+!
+!  REVISION HISTORY:
+!     Created 1/99 by M. Houyoux
+!
+!***************************************************************************
+!
+! Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+!                System
+! File: @(#)$Id$
+!
+! COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+! All Rights Reserved
+!
+! See file COPYRIGHT for conditions of use.
+!
+! Environmental Programs Group
+! MCNC--North Carolina Supercomputing Center
+! P.O. Box 12889
+! Research Triangle Park, NC  27709-2889
+!
+! env_progs@mcnc.org
+!
+! Pathname: $Source$
+! Last updated: $Date$ 
+!
+!****************************************************************************
+
+        INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
+
+!.........  Sorted list of point sources for SMOKE inventory file
+        INTEGER, ALLOCATABLE, PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
+        INTEGER, ALLOCATABLE, PUBLIC:: ISIC  ( : )  !  source SIC
+        INTEGER, ALLOCATABLE, PUBLIC:: IORIS ( : )  !  source ORIS ID code
+        INTEGER, ALLOCATABLE, PUBLIC:: IPOSCOD( : ) !  positn of pol in INVPCOD
+        INTEGER, ALLOCATABLE, PUBLIC:: TZONES( : )  !  time zones
+        INTEGER, ALLOCATABLE, PUBLIC:: TPFLAG( : )  !  temporal profile types
+        INTEGER, ALLOCATABLE, PUBLIC:: INVYR ( : )  !  inv year for this record
+        INTEGER, ALLOCATABLE, PUBLIC:: IDIU  ( : )  !  Hr prof code per source
+        INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
+        INTEGER, ALLOCATABLE, PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
+
+        REAL   , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  UTM X-location (m)
+        REAL   , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  UTM Y-location (m)
+        REAL   , ALLOCATABLE, PUBLIC:: STKHT ( : )  !  stack height   (m)
+        REAL   , ALLOCATABLE, PUBLIC:: STKDM ( : )  !  stack diameter (m)
+        REAL   , ALLOCATABLE, PUBLIC:: STKTK ( : )  !  exhaust temp   (deg K)
+        REAL   , ALLOCATABLE, PUBLIC:: STKVE ( : )  !  exhaust veloc  (m/s)
+        REAL   , ALLOCATABLE, PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
+
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCC  ( : ) !  SCC
+        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID( : ) !  boiler ID
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC( : ) !  plant desc
+        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURC( : ) !  concat src
+
+
+!.........  Unsorted list of point sources for SMOKE inventory file
+        INTEGER, ALLOCATABLE, PUBLIC:: INDEXA( : ) !  subscript table for SORTIC()
+        INTEGER, ALLOCATABLE, PUBLIC:: IFIPA ( : ) !  raw state/county FIPS code
+        INTEGER, ALLOCATABLE, PUBLIC:: ISICA ( : ) !  raw SIC
+        INTEGER, ALLOCATABLE, PUBLIC:: IORISA( : ) !  raw ORIS ID code
+        INTEGER, ALLOCATABLE, PUBLIC:: TPFLGA( : ) !  temporal resolution code
+        INTEGER, ALLOCATABLE, PUBLIC:: INVYRA( : ) !  inventory year
+        INTEGER, ALLOCATABLE, PUBLIC:: IDIUA ( : ) !  Hourly profile code for each source
+        INTEGER, ALLOCATABLE, PUBLIC:: IWEKA ( : ) !  Weekly profile code for each source
+        INTEGER, ALLOCATABLE, PUBLIC:: NPCNTA( : ) !  No. of pollutants per raw record
+        INTEGER, ALLOCATABLE, PUBLIC:: SRCIDA( : ) !  Source ID
+
+        REAL,    ALLOCATABLE, PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
+        REAL,    ALLOCATABLE, PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
+        REAL,    ALLOCATABLE, PUBLIC:: STKHTA( : ) !  stack height   (m)
+        REAL,    ALLOCATABLE, PUBLIC:: STKDMA( : ) !  stack diameter (m)
+        REAL,    ALLOCATABLE, PUBLIC:: STKTKA( : ) !  exhaust temperature (deg K)
+        REAL,    ALLOCATABLE, PUBLIC:: STKVEA( : ) !  exhaust velocity    (m/s)
+        REAL,    ALLOCATABLE, PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
+
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCA  ( : ) !  SCC
+        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) !  boiler ID
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) !  plant desc
+        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURCA( : ) !  concat src
+
+        END MODULE MODSOURC
