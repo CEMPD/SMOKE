@@ -80,9 +80,10 @@ C.........  Loop through lines of scenario
         DO I = 1, NLINES
             CURRLINE = SCENARIO( I )
             
-C.............  Skip comment lines
+C.............  Skip comment and blank lines
             IF( CURRLINE( 1:1 ) == '*' ) CYCLE
             IF( CURRLINE( 1:1 ) == '>' ) CYCLE
+            IF( CURRLINE == ' ' ) CYCLE
 
 C.............  Get Mobile6 command                   
             COMMAND = CURRLINE( 1:19 )
