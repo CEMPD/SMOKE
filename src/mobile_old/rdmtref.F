@@ -33,7 +33,6 @@ C***********************************************************************
 
 C...........   INCLUDES:
         
-        INCLUDE 'CHDIMS3.EXT'   !  chemical dimensioning parameters
         INCLUDE 'TMDIMS3.EXT'   !  temporal parameters
         INCLUDE 'MBDIMS3.EXT'   !  mobile-source dimensioning parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API constants

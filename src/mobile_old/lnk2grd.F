@@ -30,11 +30,10 @@ C***********************************************************************
 
 C...........   INCLUDES:
 
+        INCLUDE 'MBDIMS3.EXT'   ! mobile-source dimensioning parameters
         INCLUDE 'PARMS3.EXT'    ! I/O API constants
         INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
-        INCLUDE 'CHDIMS3.EXT'   !  chemistry dimensioning parameters
-        INCLUDE 'MBDIMS3.EXT'   !  mobile-source dimensioning parameters
 
 
 C...........   ARGUMENTS and their descriptions:

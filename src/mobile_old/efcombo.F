@@ -25,7 +25,6 @@ C***********************************************************************
 
         IMPLICIT NONE
 
-        INCLUDE 'CHDIMS3.EXT'
         INCLUDE 'MBDIMS3.EXT'
         INCLUDE 'PARMS3.EXT'     !  I/O API parameters
         INCLUDE 'IODECL3.EXT'    !  I/O API function declarations
@@ -33,12 +32,14 @@ C***********************************************************************
 
 C.........  Subroutine call variables
 
+        INTEGER       MPTYPE             ! number of factors in combination
+        INTEGER       JDATE              ! date ID for reading EF files
+        INTEGER       NTEMP              ! non-diurnal number of temperatures
+
+        INTEGER       LIST   ( MPTYPE )  ! list of PSIs in combo
+
         REAL          PERCENT( MPTYPE )  ! percentage of each PSI in combo
 
-        INTEGER       JDATE              ! date ID for reading EF files
-        INTEGER       LIST   ( MPTYPE )  ! list of PSIs in combo
-        INTEGER       MPTYPE             ! number of factors in combination
-        INTEGER       NTEMP              ! non-diurnal number of temperatures
 
         CHARACTER*16  FNAME1             ! File name for non-diurnal EF file
         CHARACTER*16  FNAME2             ! File name for diurnal EF file

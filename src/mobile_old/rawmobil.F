@@ -26,7 +26,6 @@ C***********************************************************************
 
 C...........   INCLUDES:
        
-        INCLUDE 'CHDIMS3.EXT' 
         INCLUDE 'TMDIMS3.EXT'
         INCLUDE 'MBDIMS3.EXT'
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
