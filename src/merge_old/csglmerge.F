@@ -398,7 +398,7 @@ C.......   Open mobile-related files; set appropriate flags:
 C.......   Open point-related files; set appropriate flags:
 
         PNAME = PROMPTMFILE( 
-     &          'Enter logical name for POINT SOURCE file, or "NONE"',
+     &          'Enter logical name for required POINT SOURCE file"',
      &          FSREAD3, 'PTMP', 'CSGLMERGE' )
 
         IF ( PNAME .NE. NONE ) THEN
@@ -472,13 +472,27 @@ C.......   Open point-related files; set appropriate flags:
             CALL M3EXIT( 'CSGLMERGE', 0, 0, 'No input files', 2 )
         END IF
 
+C.........  NOTE: have horizontal grid description from DESC3 calls above
 
-C.......   Build description of output file, and optionally open it:
+C.........  Get vertical description fro PLNAME file
+C.........  Create 3D file if have point sources
+        IF( PFLAG ) THEN
 
-        IF ( .NOT. DESC3( AGNAME ) ) THEN
+            IF ( .NOT. DESC3( PLNAME ) ) THEN
+                CALL M3EXIT( 'CSGLMERGE', 0, 0,
+     &                  'Could not get description of file "'
+     &                  // PLNAME( 1:TRIMLEN( PLNAME ) ) // '"', 2 )
+
+            END IF
+            
+C.........  If no point sources, someone has changed the code, so give error
+        ELSE
+
             CALL M3EXIT( 'CSGLMERGE', 0, 0, 
-     &           'Could not get description of file ' // ANAME, 2 )
-        END IF
+     &         'ERROR: point sources required for vertical parameters',
+     &         2 )
+
+        ENDIF
 
         IF ( .NOT. DSCGRID( GRDNM, SCRBUF,
      &                      GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D, 
@@ -493,13 +507,11 @@ C.......   Build description of output file, and optionally open it:
 
         NVARS3D = NMPOL
         FTYPE3D = GRDDED3   !  shares most of file-description with input file.
-        NLAYS3D = 1
-        TSTEP3D = TSTEP
+        TSTEP3D = TSTEP     !  vertical description from PLNAME
         SDATE3D = JDATE
         STIME3D = JTIME
         GDNAM3D = GRDNM
-        VGTYP3D = IMISS3
-        VGTOP3D = BADVAL3
+        NLAYS3D = EMLAYS    !  Should be EMLAYS already, but just in case
 
         DO  22 V = 1, NMPOL
             VNAME3D( V ) = EMNAM( V )
@@ -1059,8 +1071,7 @@ C...................   set to zero:
                     IF ( PFLAG ) THEN
 
                         CALL DMATVEC( NPSRC, SP( 1,K ), POINTV, POINTC )
-                        CALL PLMVEC ( FRACL, POINTC, NP, IP, 
-     &                                NGRID, EMISG )
+                        CALL PLMVEC ( FRACL, POINTC, NP, IP, EMISG )
 
                     END IF      !  if pflag
 
