@@ -101,7 +101,7 @@ C.........  Other local variables
 
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
-        LOGICAL, SAVE :: MACTFLAG = .TRUE.  ! true: MACT and src type available in inventory
+        LOGICAL, SAVE :: MACTFLAG = .FALSE. ! true: MACT and src type available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
         LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
         LOGICAL       :: SICXREF  = .FALSE. ! true: SIC assignments in x-ref
