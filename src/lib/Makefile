@@ -14,15 +14,15 @@ FILES_A = \
   applumat.o   evalcrit.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
   alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o   blkorcmt.o \
-  alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o  \
+  alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o    rdar2pt.o \
   alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
   alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
 
 FILES_B = \
   alocstbl.o   chksrcno.o   rdstcy.o     rdgmat.o     rdinvchr.o \
   alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
-  applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o    rdsccdsc.o \
-  dscsprof.o   getformt.o   rdlines.o    verchar.o  \
+  alocatbl.o   applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o    rdsccdsc.o \
+  dscsprof.o   fillatbl.o   getformt.o   rdlines.o    verchar.o  \
   efsetup.o    getidasz.o   normtpro.o   rdpelv.o \
   getdysav.o   ingrid.o     rdrmat.o    
 
@@ -61,6 +61,8 @@ debug: $(MODALL) $(MODGRID) $(FILES_A) $(FILES_B) $(FILES_C) $(FILES_TMP) Makefi
 # Module dependencies
 #
 
+alocatbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ alocatbl.f
 alocchrt.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocchrt.f
 alocctbl.o: $(MODXREF)
@@ -87,6 +89,8 @@ dscsprof.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ dscsprof.f
 efsetup.o : $(MODEMFAC) $(INC)/M6CNST3.EXT
 	$(FC) $(FFLAGS) -c -o $@ efsetup.f
+fillatbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ fillatbl.f
 fillchrt.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ fillchrt.f
 fillctbl.o: $(MODXREF) 
@@ -131,6 +135,8 @@ prclinrc.o: $(MODREPRT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ prclinrc.f
 procspro.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ procspro.f
+rdar2pt.o: $(MODLISTS) $(MODAR2PT)
+	$(FC) $(FFLAGS) -c -o $@ rdar2pt.f
 rdcodnam.o: $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdcodnam.f
 rdeproc.o: $(MODEMFAC) $(MODINFO)

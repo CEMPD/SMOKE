@@ -70,10 +70,14 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local parameters
         INTEGER, PARAMETER :: SNFLEN3 = SRCLEN3 - FIPLEN3
 
+C...........  Local allocatable arrays...
+    
 C...........   Arrays for intial pass through x-ref to determine degree of 
 C              each record and store the type and count of that type
-        INTEGER         XTYPE( NXREF )  ! group number of x-ref entry
-        INTEGER         XTCNT( NXREF )  ! position in group of x-ref entry
+        INTEGER, ALLOCATABLE :: XTYPE( : )  ! group number of x-ref entry
+        INTEGER, ALLOCATABLE :: XTCNT( : )  ! position in group of x-ref entry
+
+        LOGICAL, ALLOCATABLE :: DEFAULT( : ) ! true: if default entry in x-ref
 
 C...........  Arrays for counting number of x-ref records in each matching
 C             degree and comparing current record with previous record as part
@@ -104,7 +108,6 @@ C...........   Other local variables
         INTEGER    :: PISP = IMISS3    ! previous iteration ISP
 
         LOGICAL    :: CFLAG = .FALSE.  ! true: operation type is control cntls
-        LOGICAL    :: DEFAULT( NIPPA ) ! true: if default entry in x-ref
         LOGICAL    :: DFLAG = .FALSE.  ! true: operation type is additive cntls
         LOGICAL    :: EFLAG = .FALSE.  ! true: error has occurred
         LOGICAL    :: FFLAG = .FALSE.  ! true: operation type is emis. factors
@@ -120,10 +123,12 @@ C...........   Other local variables
         LOGICAL    :: RFLAG = .FALSE.  ! true: operation type is reactivty cntls
         LOGICAL    :: SFLAG = .FALSE.  ! true: operation type is speciation
         LOGICAL    :: TFLAG = .FALSE.  ! true: operation type is temporal
+        LOGICAL    :: XFLAG = .FALSE.  ! true: operation type is nonhapVOC exclusion
+        LOGICAL    :: YFLAG = .FALSE.  ! true: operation type is area-to-point
 
         CHARACTER*1            CDUM          ! dummy character string
-        CHARACTER*300          BUFFER        ! source definition buffer
-        CHARACTER*300          MESG          ! message buffer
+        CHARACTER*256          BUFFER        ! source definition buffer
+        CHARACTER*256          MESG          ! message buffer
 
         CHARACTER(LEN=STALEN3) CSTA          ! temporary (character) state code
         CHARACTER(LEN=SCCLEN3) SCCL          ! left digits of TSCC
@@ -151,6 +156,14 @@ C   begin body of subroutine XREFTBL
 
         LOPT = LEN_TRIM( OPTYPE )
 
+C.........  Allocate local memory
+        ALLOCATE( XTYPE( NXREF ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'XTYPE', PROGNAME )
+        ALLOCATE( XTCNT( NXREF ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'XTCNT', PROGNAME )
+        ALLOCATE( DEFAULT( MAX( 1, NIPPA ) ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'DEFAULT', PROGNAME )
+
 C.........  Check for valid operation type
         SELECT CASE( OPTYPE )
 
@@ -162,6 +175,10 @@ C.........  Check for valid operation type
             POADFLT = .TRUE.
             LFLAG   = .TRUE.
             OFLAG   = .TRUE.
+        CASE( 'AR2PT' )
+            POADFLT = .FALSE.
+            YFLAG   = .TRUE.
+            NFLAG   = .FALSE.
         CASE( 'CONTROL' )
             POADFLT = .TRUE.
             CFLAG   = .TRUE.
@@ -185,6 +202,9 @@ C.........  Check for valid operation type
             POADFLT = .FALSE.
             JFLAG   = .TRUE.
             OFLAG   = .TRUE.
+        CASE( 'NONHAP' )
+            POADFLT = .FALSE.
+            XFLAG   = .TRUE.
         CASE( 'REACTIVITY' )
             POADFLT = .FALSE.
             RFLAG   = .TRUE.
@@ -756,6 +776,16 @@ C.........  Speeds
 c             CALL ALOCPTBL( N( 1 ) )
 c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
+C.........  NONHAP excluding
+        ELSE IF( XFLAG ) THEN
+c            CALL ALOCXTBL( N( 1 ) )
+c            CALL FILLXTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) ) 
+
+C.........  Area-to-point factors assignment
+        ELSE IF( YFLAG ) THEN
+            CALL ALOCATBL( N( 1 ) )
+            CALL FILLATBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) ) 
+
 C.........  All control x-ref tables
         ELSE
 
@@ -767,7 +797,10 @@ C.........  All control x-ref tables
 C.........  Store count of records in each group in final variable
         DO I = 1, NXTYPES
             TXCNT( I ) = N( I )
-        ENDDO
+        END DO
+
+C.........  Deallocate local memory
+        DEALLOCATE( XTYPE, XTCNT, DEFAULT )
 
         RETURN
 
