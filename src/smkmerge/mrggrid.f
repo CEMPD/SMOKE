@@ -707,11 +707,12 @@ C.................  Output array
 
 C.....................  Set read date
                     IF( MRGDIFF .AND. USEFIRST( F ) ) THEN
-                        RDATE = SDATEA( F ) + ( JDATE - SDATE )
-                        
-C.........................  Normalize read date (i.e. could be 2000367 -> 2001001)
                         DUMMY = 0
-                        CALL NEXTIME( RDATE, DUMMY, 0 )
+                        STEPS = SEC2TIME( 
+     &                            SECSDIFF( 
+     &                              SDATE, DUMMY, JDATE, DUMMY ) )
+                        RDATE = SDATEA( F )
+                        CALL NEXTIME( RDATE, DUMMY, STEPS )
                         
                     ELSE
                         RDATE = JDATE
