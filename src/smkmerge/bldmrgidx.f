@@ -293,6 +293,7 @@ C.........  Loop through pollutants (if no speciation) or pol-to-species names
         VCNT = 0         ! initialize variable count
         GCNT = 1         ! initialize group count
         PJ   = 0
+        PSPC = ' '
         DO V = 1, NLOOP
 
 C.............  Extract pollutant name and species name (for speciation only)
