@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENMRGOUT( NGRP )
+        SUBROUTINE OPENMRGOUT( NGRP, RLZN )
 
 C***********************************************************************
 C  subroutine OPENMRGOUT body starts at line 86
@@ -48,6 +48,9 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
@@ -73,6 +76,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
+       INTEGER, INTENT (IN) :: RLZN     ! uncertainty realization
 
 C...........  Local parameters
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -447,44 +451,94 @@ C.............  Subroutine arguments
 
 C.............  Local variables
             INTEGER         L, L2
+            INTEGER,SAVE :: U1, U2 
+            INTEGER         U3           ! for uncertainty file
             INTEGER         IOS
 
+            CHARACTER*8     TMPBUF       ! temporary buffer
             CHARACTER*128   DUMSTR       ! dummy string
             CHARACTER*256   MESG         ! output string buffer
             CHARACTER*512   PHYSNAME     ! output path & file buffer
+
+            CHARACTER*8,    SAVE    :: FNAM         ! file name
+            CHARACTER*256,  SAVE    :: DIRBUF = ' ' ! output string buffer
             
             LOGICAL ::      ENVFLAG = .FALSE. ! true: could not set env variable
 
 C------------------------------------------------------------------------
 
-            FDEV = 0
+            IF( .NOT.( FDEV .GT. 0 ) ) FDEV = 0
             ENVFLAG = .FALSE.
+            L = LEN_TRIM( LNAME )
 
 C.............  Check if logical output file name is defined
             CALL ENVSTR( LNAME, FILEDESC, ' ', DUMSTR, IOS )
 
-C.............  If not defined, give note, build physical output file name 
-C              and set environment variable
-            IF( IOS1 .EQ. 0 .AND. 
-     &          IOS2 .EQ. 0 .AND. 
-     &          IOS  .NE. 0       ) THEN
+            WRITE( TMPBUF,94010 ) '', RLZN
+            TMPBUF = ADJUSTL( TMPBUF )
+            CALL PADNZERO( RMXLEN, TMPBUF )
+            U3 = LEN_TRIM( TMPBUF )
 
-                L = LEN_TRIM( LNAME )
-                PHYSNAME = OUTDIR( 1:L3 ) // '/' // LNAME( 1:L ) //
-     &                     '.' // OUTSCEN( 1:L4 ) // '.ncf'
+C.............  For processing an uncertainty realization
+            IF( FTYPE .EQ. 'NETCDF' ) THEN
 
-                MESG = 'NOTE: Opening "' // LNAME( 1:L ) //
-     &                 '" file using Smkmerge-defined physical ' //
-     &                 'file name.'
-                CALL M3MSG2( MESG )
-
-                IF( .NOT. SETENVVAR( LNAME, PHYSNAME ) ) THEN
-                    ENVFLAG = .TRUE.
-                    MESG = 'ERROR: Could not set logical file name ' //
-     &                     CRLF() // BLANK10 // 'for file ' // 
-     &                     TRIM( PHYSNAME )
-                    CALL M3MSG2( MESG )
+                IF( RLZN .GT. 0 ) THEN
+                    IF( .NOT.( CLOSE3( LNAME ) ) ) THEN
+                        WRITE( MESG, 94010 ) 
+     &                         'WARNING: Unable to close file' 
+     &                         // LNAME( 1:L ), RLZN
+                        CALL M3MSG2( MESG )
+                    END IF
                 END IF
+
+C.................  If not defined, give note, build physical output file name 
+C                  and set environment variable
+                IF( ( IOS1 .EQ. 0 .AND. 
+     &                IOS2 .EQ. 0 .AND. 
+     &                IOS  .NE. 0     ) .OR. RLZN .GT. 0 ) THEN
+
+                     PHYSNAME = OUTDIR( 1:L3 ) // '/' 
+     &                          // LNAME( 1:L ) // TMPBUF( 1:U3 ) //
+     &                          '.' // OUTSCEN( 1:L4 ) // '.ncf'
+                ELSE
+                     PHYSNAME = OUTDIR( 1:L3 ) // '/' 
+     &                         // LNAME( 1:L ) //
+     &                         '.' // OUTSCEN( 1:L4 ) // '.ncf'
+                END IF
+
+
+            ELSE IF( FTYPE .EQ. 'ASCII' ) THEN
+
+            IF( FDEV .GT. 0 ) CLOSE( FDEV )
+
+C.................  If not defined, give note, build physical output file name 
+C                  and set environment variable
+                IF( ( IOS1 .EQ. 0 .AND. 
+     &                IOS2 .EQ. 0 .AND. 
+     &                IOS  .NE. 0     ) .OR. RLZN .GT. 0 ) THEN
+
+                     PHYSNAME = OUTDIR( 1:L3 ) // '/' 
+     &                          // LNAME( 1:L ) // TMPBUF( 1:U3 ) //
+     &                          '.' // OUTSCEN( 1:L4 ) // '.txt'
+                ELSE
+                     PHYSNAME = OUTDIR( 1:L3 ) // '/' 
+     &                         // LNAME( 1:L ) //
+     &                         '.' // OUTSCEN( 1:L4 ) // '.txt'
+                END IF
+
+            END IF
+
+            MESG = 'NOTE: Opening "' // LNAME( 1:L ) //
+     &             '" file using Smkmerge-defined physical ' //
+     &             'file name.'
+            CALL M3MSG2( MESG )
+       
+            IF( .NOT. SETENVVAR( LNAME, PHYSNAME ) ) THEN
+                ENVFLAG = .TRUE.
+                MESG = 'ERROR: Could not set logical file name ' //
+     &                 CRLF() // BLANK10 // 'for file ' // 
+     &                 TRIM( PHYSNAME )
+                CALL M3MSG2( MESG )
             END IF
 
             IF( .NOT. ENVFLAG ) THEN
@@ -508,6 +562,10 @@ C.............  Logical name is defined, open file.
             END IF
 
             RETURN
+
+C...........   Internal buffering formats.............94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE OPEN_LNAME_OR_PNAME
 
