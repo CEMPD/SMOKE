@@ -2,7 +2,7 @@
         PROGRAM TMPPOINT
 
 C***********************************************************************
-C  program body starts at line 310
+C  program body starts at line 318
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -53,7 +53,6 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C*************************************************************************
-
       IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -128,13 +127,13 @@ C...........   Day-specific, hour-specific, elevated point source data:
 
         INTEGER       NDAYPT            !  current source-count
         INTEGER       INDXD( NPDAY )    !  subscript into netCDF inventory file
-        REAL          EMISD( NPDAY, NIPOL )  !  emissions values (tons/yr)
+        REAL          EMISD( NPDAY, MXIPOL )  !  emissions values (tons/yr)
 
         COMMON / DAYREC / NDAYPT, INDXD, EMISD
 
         INTEGER       NHRPT            !  current source-count
         INTEGER       INDXH( NPHR )    !  subscript into netCDF inventory file
-        REAL          EMISH( NPHR, NIPOL )  !  emissions values (tons/yr)
+        REAL          EMISH( NPHR, MXIPOL )  !  emissions values (tons/yr)
 
         COMMON / HOURREC / NHRPT, INDXH, EMISH
 
@@ -247,6 +246,12 @@ C...........   TMAT update variables
         INTEGER         MONTH ( 24, 0:23 )  ! source time zone's 1 ... 12
         INTEGER         DAYOW ( 24, 0:23 )  ! source time zone's 1 ... 7
 
+C...........   Arrays for flexible application of day- and hour-specific data
+        INTEGER         NVARS_D             ! no. of variables in day-spec file
+        INTEGER         NVARS_H             ! no. of varsables in hour-spec file
+        INTEGER         EIPTR_D( MXIPOL )   ! Pointer to EINAM from day-spec vars
+        INTEGER         EIPTR_H( MXIPOL )   ! Pointer to EINAM from day-spec vars
+
 C...........   Logical names and unit numbers
 
         INTEGER         CDEV    !  for actual-SCC file
@@ -292,12 +297,16 @@ C...........   Other local variables
         INTEGER         LS, EC
         INTEGER         MON, DAY            ! temporary month no. and day-of-wk
         INTEGER         NSTEPS              ! number of output time steps
+        INTEGER         NSTEPS_D, NSTEPS_H  ! no. hr steps in day- & hour-spec
+        INTEGER         SDATE_D, SDATE_H    ! start date in day- & hour-specific
+        INTEGER         STIME_H             ! start time of hour-specific
         INTEGER         TDATE               ! temporary Julian date
         INTEGER         TSTEP               ! output time step
         INTEGER         TTIME               ! temporary time
         INTEGER         TZONE               ! output-file time zone
         INTEGER         TZMIN, TZMAX        ! min/max time zones in inventory
 
+        CHARACTER*5     FFORMAT !  Indicator for type of XREF file
         CHARACTER*5     FFORMAT !  Indicator for type of XREF file
         CHARACTER*14    DTBUF   !  buffer for MMDDYY
         CHARACTER*80    LINE    !  buffer for XREF input lines
@@ -440,6 +449,43 @@ C.......   and temporal profiles files
      &                   'Could not open ELEVATED SOURCES file', 2 )
         END IF
 
+C.......   Get header descriptions of day- and hour- specific input file
+C.......   Store header info to facilitate flexible application of day- and hour-
+C.......   specific data.
+        IF ( DFLAG ) THEN
+          IF( .NOT. DESC3( DNAME ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Could not get description of file "' 
+     &                   // DNAME( 1:TRIMLEN( DNAME ) ) // '"', 2 )
+          ELSE
+
+            SDATE_D = SDATE3D
+            NSTEPS_D= 24*MXREC3D
+            NVARS_D = NVARS3D
+
+            CALL SETVPTR( 'MXIPOL', 'pollutant', 
+     &                    'Day-specific emissions file', MXIPOL, NIPOL,
+     &                    NVARS_D, EINAM, VNAME3D, EIPTR_D )
+          END IF
+        END IF
+
+        IF ( HFLAG ) THEN
+          IF ( .NOT. DESC3( HNAME ) ) THEN
+             CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                    'Could not get description of file "' 
+     &                    // HNAME( 1:TRIMLEN( HNAME ) ) // '"', 2 )
+          ELSE
+
+            SDATE_H = SDATE3D
+            STIME_H = STIME3D
+            NSTEPS_H= MXREC3D
+            NVARS_H = NVARS3D
+
+            CALL SETVPTR( 'MXIPOL', 'pollutant ', 
+     &                    'Hour-specific emissions file', MXIPOL, NIPOL,
+     &                    NVARS_H, EINAM, VNAME3D, EIPTR_H )
+          END IF
+        END IF
 
 C.......   Get default time characteristic for output file:
 C.......   If we're going to prompt, then set the defaults as best we can
@@ -447,32 +493,23 @@ C.......      otherwise, use environment variables to set defaults
         EFLAG = .FALSE.
         IF( PROMPTF ) THEN
 
+            JTIME  = 0
+            TZONE  = 5
+
             IF ( DFLAG ) THEN
-                IF ( .NOT. DESC3( DNAME ) ) THEN
-                    CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                      'Could not get description of file "' 
-     &                      // DNAME( 1:TRIMLEN( DNAME ) ) // '"', 2 )
-                END IF
-                JDATE  = SDATE3D
-                NSTEPS = 24 * MXREC3D
+                JDATE  = SDATE_D
+                NSTEPS = NSTEPS_D
 
             ELSEIF ( HFLAG ) THEN
-                IF ( .NOT. DESC3( HNAME ) ) THEN
-                    CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                      'Could not get description of file "' 
-     &                      // HNAME( 1:TRIMLEN( HNAME ) ) // '"', 2 )
-                END IF
-                JDATE  = SDATE3D
-                NSTEPS = MXREC3D
+                JDATE  = SDATE_H
+                JTIME  = STIME_H
+                NSTEPS = NSTEPS_H
 
             ELSE
                 JDATE  = 1995182
                 NSTEPS = 24
 
             END IF          !  if using day-specific info, or not
-
-            JTIME  = 0
-            TZONE  = 5
 
         ELSE
 
@@ -550,7 +587,7 @@ C.......   data structure to just those variables desired):
 
 C...........   Compute offset of pollutant codes within input VNAME3D:
 
-        DO  11  V = 1, NIPOL
+        DO  17  V = 1, NIPOL
 
             I = INDEX1( EINAM( V ), NVARS3D, VNAME3D )
             IF( I .LE. 0 ) THEN
@@ -567,7 +604,7 @@ C...........   Compute offset of pollutant codes within input VNAME3D:
             VDESC3D( V ) = VDESC3D( I )
             VTYPE3D( V ) = M3REAL
 
-11      CONTINUE
+17      CONTINUE
 
         NVARS3D = NIPOL
         SDATE3D = JDATE
@@ -1556,30 +1593,39 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
 
                 ENDIF 
                 
-C...............   If day-specific emissions, prepare day-corrections:
+C.................   If day-specific emissions, prepare day-corrections:
                 
-                IF ( DFLAG ) THEN
+                IF( DFLAG ) THEN
                 
+                    DO  113  V = 1, NIPOL
+                        DO  111  S = 1, NPSRC
+
+                            EMISV( S,V ) = EMIS( S,V )
+
+111                     CONTINUE
+113                 CONTINUE
+
+C.....................  Read all variables from day-specific file because
+C.....................  file structure is IDDATA3
                     IF ( .NOT. READ3( DNAME, ALLVAR3, ALLAYS3,
      &                                JDATE, JTIME, NDAYPT ) ) THEN
 
-                        CALL M3EXIT( 'TMPPOINT', JDATE, JTIME,
-     &                       'Could not read "' // 
-     &                       DNAME( 1 : TRIMLEN( DNAME ) ) // '".', 2 )
+                        MESG= 'Could not read from file "' // 
+     &                        DNAME( 1:TRIMLEN( DNAME ) )//'".'
+
+                        CALL M3EXIT( 'TMPPOINT', JDATE, JTIME, MESG, 2 )
 
                     END IF      !  if read3() failed on dname
 
-                    DO  122  V = 1, NIPOL
+                    DO  125  J = 1, NVARS_D
+                        DO  122  I = 1, NDAYPT
 
-                        DO  111  S = 1, NPSRC
-                            EMISV( S,V ) = EMIS( S,V )
-111                     CONTINUE
+                            V = EIPTR_D( J )
+                            S = INDXD( I )
+                            EMISV( S,V ) = EMISD( I,J )
 
-                        DO  112  S = 1, NDAYPT
-                            EMISV( INDXD( S ),V ) = EMISD( S,V )
-112                     CONTINUE
-
-122                 CONTINUE
+122                     CONTINUE
+125                 CONTINUE
 
                 END IF          ! if using day-specific emissions
 
@@ -1639,61 +1685,63 @@ C.................  If there are weekend packets, and it's not a weekend...
 C.............  Write to screen because WRITE3 only writes to LDEV
             WRITE( *, 94030 ) HHMMSS( JTIME )
 
-C...............   If HFLAG, prepare hour-corrections:
+C.............  Apply diurnal factors to all sources and pollutants
+            DO  155  V = 1, NIPOL
+                DO  151  S = 1, NPSRC
 
+                    EMIST( S,V ) = EMISV( S,V ) * TMAT( S,V,H )
+
+151             CONTINUE
+155         CONTINUE
+
+C.............  If HFLAG, overwrite hourly emissions with hour-specific data
+C.............    only for species in the hour-specific input file
             IF ( HFLAG ) THEN
 
+C.....................  Read all variables from hour-specific file because
+C.....................  file structure is IDDATA3
                 IF ( .NOT. READ3( HNAME, ALLVAR3, ALLAYS3,
      &                            JDATE, JTIME, NHRPT ) ) THEN
 
-                    CALL M3EXIT( 'TMPPOINT', JDATE, JTIME,
-     &                   'Could not read "' // 
-     &                   HNAME( 1 : TRIMLEN( HNAME ) ) // '".', 2 )
+                    MESG= 'Could not read from file "' // 
+     &                    HNAME( 1:TRIMLEN( HNAME ) ) // '"."'
 
-                END IF  !  if read3() failed on dname
+                    CALL M3EXIT( 'TMPPOINT', JDATE, JTIME, MESG, 2 )
 
-                DO  177  V = 1, NIPOL
+                END IF      !  if read3() failed on hname
+
+                DO  166  J = 1, NVARS_H
+                    DO  161  I = 1, NHRPT
+
+                        V = EIPTR_H( J )
+                        S = INDXH( I )
+                        EMIST( S,V ) = EMISH( I,J )
+
+161                 CONTINUE
+166             CONTINUE
                    
-                    DO  174  S = 1, NPSRC
-                        EMIST( S,V ) = EMISV( S,V ) * TMAT( S,V,H )
-174                 CONTINUE
-                   
-                    DO  175  S = 1, NHRPT
-                        EMIST( INDXH( S ),V ) = EMISH( S,V )
-175                 CONTINUE
+            ENDIF   ! if using hour-specific emissions 
 
-                    DO  176  S = 1, NELPT       !  elevated sources
-                        I = INDXE( S )
-                        EMISE( S,V ) = EMIST( I,V )
-                        EMIST( I,V ) = 0.0
-176                 CONTINUE
 
-177             CONTINUE
+C.............  Separate sources if there are pre-set elevated sources
+            DO  177  V = 1, NIPOL
+                DO  171  S = 1, NELPT  ! NELPT = 0 for case of no preset elev.
 
-             ELSE               ! else not hflag:
+                    I = INDXE( S )
+                    EMISE( S,V ) = EMIST( I,V )
+                    EMIST( I,V ) = 0.0
 
-                DO  188  V = 1, NIPOL
+171             CONTINUE
+177         CONTINUE
 
-                    DO  186  S = 1, NPSRC
-                        EMIST( S,V ) = EMISV( S,V ) * TMAT( S,V,H )
-186                 CONTINUE
-
-                    DO  187  S = 1, NELPT       !  elevated sources
-                        I = INDXE( S )
-                        EMISE( S,V ) = EMIST( I,V )
-                        EMIST( I,V ) = 0.0
-187                 CONTINUE
-
-188             CONTINUE
-
-             END IF             ! if using hour-specific emissions or not
-
+C.............  Write hourly pollutant emissions to NetCDF file
             IF ( .NOT.WRITE3( TNAME, 'ALL', JDATE, JTIME, EMIST ) ) THEN
                 CALL M3EXIT( 'TMPPOINT', JDATE, JTIME,
      &                       'Could not write timestep to "' // 
      &                       TNAME( 1 : TRIMLEN( TNAME ) ) // '".', 2 )
             END IF
 
+C.............  Write elevated hourly pollutant emissions to NetCDF file
             IF ( UFLAG ) THEN   !  writing elevated sources file
 
                 IF ( .NOT.WRITE3( UNAME, 'ALL', 
