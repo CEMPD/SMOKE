@@ -357,13 +357,13 @@ C.......   If we don't have a list, get location of MET_FILE1 to use
                 MESG = 'No setting for gridded temperature file'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-        END IF
-
-C.......   Get number of lines in met list file
-        IF( MDEV > 0 ) THEN
-            NMETLINES = GETFLINE( MDEV, 'METLIST file' )
+            
+            NMETLINES = 1  ! set one line in file
+            
+C.......   Otherwise, get number of lines in met list file
         ELSE
-            NMETLINES = 1
+            NMETLINES = GETFLINE( MDEV, 'METLIST file' )
+            
         END IF
 
 C.......   Allocate and initialize arrays for storing met list and met check        
@@ -389,14 +389,7 @@ C.......   Read lines from met list file
 
 C.......   Loop through met files and check time period
         DO N = 1, NMETLINES
-            METFILE = METLIST( N )
-
-C.............  Reset duplicate warning - prints error once per met file
-            DUPWARN = .TRUE.    
-            
-C.............  Skip any blank lines
-            IF( METFILE == ' ' ) CYCLE
-
+        
 C.............  Close previous file if needed
             IF( METOPEN ) THEN
                 IF( .NOT. CLOSE3( MNAME ) ) THEN
@@ -408,7 +401,16 @@ C.............  Close previous file if needed
                 END IF
             END IF
 
-C.............  Set env variable
+C.............  Get current file name
+            METFILE = METLIST( N )
+
+C.............  Reset duplicate warning - prints error once per met file
+            DUPWARN = .TRUE.    
+            
+C.............  Skip any blank lines
+            IF( METFILE == ' ' ) CYCLE
+
+C.............  Set logical file name
             IF( .NOT. SETENVVAR( MNAME, METFILE ) ) THEN
             	EFLAG = .TRUE.
             	MESG = 'INTERNAL ERROR: Could not set logical file ' //
@@ -579,13 +581,13 @@ C.................  If we don't have a list, get location of MET_FILE2 to use
      &                         'radiation/cloud file'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
-                END IF
-
-C.................  Get number of lines in met list file
-                IF( DDEV > 0 ) THEN
-                    NRADLINES = GETFLINE( DDEV, 'RADLIST file' )
-                ELSE
+                    
                     NRADLINES = 1
+
+C.................  Otherwise, get number of lines in met list file                    
+                ELSE
+                    NRADLINES = GETFLINE( DDEV, 'RADLIST file' )
+                    
                 END IF
 
 C.................  Allocate and initialize arrays for storing rad list and rad check        
@@ -612,13 +614,6 @@ C.................  Read lines from rad list file
 
 C.................  Loop through radiation files and check time period
                 DO N = 1, NRADLINES
-                    RADFILE = RADLIST( N )
-
-C.....................  Reset duplicate warning - prints error once per met file
-                    DUPWARN = .TRUE.    
-            
-C.....................  Skip any blank lines
-                    IF( RADFILE == ' ' ) CYCLE
 
 C.....................  Close previous file if needed
                     IF( RADOPEN ) THEN
@@ -631,6 +626,15 @@ C.....................  Close previous file if needed
                         END IF
                     END IF
 
+C.....................  Get current file name
+                    RADFILE = RADLIST( N )
+
+C.....................  Reset duplicate warning - prints error once per met file
+                    DUPWARN = .TRUE.    
+            
+C.....................  Skip any blank lines
+                    IF( RADFILE == ' ' ) CYCLE
+                    
 C.....................  Set env variable
                     IF( .NOT. SETENVVAR( RNAME, RADFILE ) ) THEN
                     	EFLAG = .TRUE.
