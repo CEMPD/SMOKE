@@ -2,7 +2,7 @@
         SUBROUTINE RDTREF( FDEV, FFORMAT )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 149
 C
 C  DESCRIPTION:
 C     Reads the temporal cross-reference file for any source category.  It
@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -252,7 +252,9 @@ C.................  Make sure SCC is set to SCCZERO if it is missing
 
 C.................  Get SCC from source definition if it is defined already
                 IF( JS .GT. 0 .AND. TSCC .EQ. SCCZERO ) THEN
-                    TSCC = SEGMENT( 5 + JS )    ! from source definition
+                    TSCC = SEGMENT( JS )    ! from source definition
+                    CALL FLTRNEG( TSCC )
+                    CALL PADZERO( TSCC )
                 END IF
 
                 CPOA = SEGMENT( 5 )   ! pollutant/emission type name
@@ -397,7 +399,9 @@ C.................  Make sure SCC is set to SCCZERO if it is missing
 
 C.................  Get SCC from source definition if it is defined already
                 IF( JS .GT. 0 .AND. TSCC .EQ. SCCZERO ) THEN
-                    TSCC = SEGMENT( 5 + JS )    ! from source definition
+                    TSCC = SEGMENT( JS )    ! from source definition
+                    CALL FLTRNEG( TSCC )
+                    CALL PADZERO( TSCC )
                 END IF
 
                 CPOA = SEGMENT( 5 )   ! pollutant/emission type name
