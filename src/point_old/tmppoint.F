@@ -748,7 +748,7 @@ C.............  Ensure valid pollutant code
             EC = TRIMLEN( LINE( 21:30 ) )  ! Size without ending blanks
  
 C............. Convert character SCC field to integer SCC number
-            IF( LS .EQ. 0 .AND. EC .EQ. 10 ) THEN  ! Area x-ref entry
+            IF( LS .EQ. 0 .AND. EC .EQ. 10 ) THEN  ! Area or MV x-ref entry
                 GO TO 44
 
             ELSEIF( LINE( 21:21) .GT. '9' ) THEN   ! Motor vehicle ASC code
@@ -768,65 +768,65 @@ C.............  Allow for default SCC entries
 
             ENDIF
 
+C.............  Ensure SCC needed
+            IF ( J .LE. 0 ) THEN
+                GO TO 44
+            ENDIF
+
+            FIP  = STR2INT( LINE(  1: 5 ) )
+            PLT  = STR2INT( LINE(  7:11 ) )
+            STK  = STR2INT( LINE( 13:15 ) )
             IMON = STR2INT( LINE( 38:40 ) )
             IWEK = STR2INT( LINE( 42:44 ) )
             IDIU = STR2INT( LINE( 45:48 ) )
 
-C.............  Ensure SCC needed
-            IF ( J .LE. 0 ) THEN
-                GO TO 44
-
 C.............  Ensure temporal profile numbers are valid
-            ELSE IF ( IMON .LE. 0 ) THEN  ! Bad monthly profile code
+            IF ( IMON .LE. 0 ) THEN  ! Bad monthly profile code
  
                 WRITE( MESG,94010 )
-     &                 'Bad IMON=', IMON,
-     &                 'at line', IREC,
-     &                 'for FIP', FIP,
-     &                 'and SCC', SCC
+     &                 'Bad IMON=', IMON, 'at line', IREC,
+     &                 'for FIP', FIP, 'and SCC', SCC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 GO TO  44
- 
-            ELSE IF ( IWEK .LE. 0 ) THEN  ! Bad weekly profile code
+            ENDIF
+
+            IF ( IWEK .LE. 0 ) THEN  ! Bad weekly profile code
  
                 WRITE( MESG,94010 )
-     &                 'Bad IWEK=', IWEK,
-     &                 'at line', IREC,
-     &                 'for FIP', FIP,
-     &                 'and SCC', SCC
+     &                 'Bad IWEK=', IWEK, 'at line', IREC,
+     &                 'for FIP', FIP, 'and SCC', SCC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 GO TO  44
+            ENDIF
  
-            ELSE IF ( IDIU .LE. 0 ) THEN  ! Bad diurnal profile code
+            IF ( IDIU .LE. 0 ) THEN  ! Bad diurnal profile code
  
                 WRITE( MESG,94010 )
-     &                 'Bad IDIU=', IDIU,
-     &                 'at line', IREC,
-     &                 'for FIP', FIP,
-     &                 'and SCC', SCC
+     &                 'Bad IDIU=', IDIU, 'at line', IREC, 
+     &                 'for FIP', FIP, 'and SCC', SCC
                     CALL M3MESG( MESG )
                     EFLAG = .TRUE.
                     GO TO  44
+            ENDIF
 
-            ELSEIF ( K .GE. MXREC ) THEN
+            IF( K .GE. MXREC ) THEN
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
      &                 'Max XREF table size', MXREC,
      &                 'exceeded at line', IREC
                 CALL M3MESG( MESG )
-                GO TO 44
 
             ELSE    !  else incremented K within bounds:
 
                 K = K + 1
                 INDXA( K ) = K
                 ICODA( K ) = I
-                IFIPA( K ) = STR2INT( LINE(  1: 5 ) )
-                IPLTA( K ) = STR2INT( LINE(  7:11 ) )
-                ISTKA( K ) = STR2INT( LINE( 13:15 ) )
+                IFIPA( K ) = FIP
+                IPLTA( K ) = PLT
+                ISTKA( K ) = STK
                 ISCCA( K ) = SCC
                 MPRNA( K ) = IMON
                 WPRNA( K ) = IWEK
