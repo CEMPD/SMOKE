@@ -21,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+! COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.

@@ -19,7 +19,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.

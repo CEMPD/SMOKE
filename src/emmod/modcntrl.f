@@ -20,7 +20,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -93,11 +93,17 @@
 !.........  Output pollutants (variable names) for control matrices
         INTEGER, PUBLIC :: NVCMULT = 0  ! number of multultiplicative variables
         INTEGER, PUBLIC :: NVCADD  = 0  ! number of additive variables
-
+	INTEGER, PUBLIC :: NVPROJ  = 0  ! number of projection variables
+                                        !    (not yet used in Cntlmat)
         LOGICAL, ALLOCATABLE, PUBLIC :: PCTLFLAG( :,: ) ! control flags
 
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMMULT( : ) ! mult
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: VNAMADD ( : ) ! add
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMADD ( : ) ! add
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMPROJ( : ) ! projectn
+
+!.........  Generic projection matrix (used in Smkreport, structure
+!           plans for future 2-d structure)
+        REAL   , ALLOCATABLE, PUBLIC :: PRMAT  ( :,: )
 
 !.........  Multiplicative control matrices, dim n*src, mxpolpgp
         REAL   , ALLOCATABLE, PUBLIC :: ACUMATX( :,: ) ! area
@@ -154,5 +160,9 @@
         REAL   , ALLOCATABLE, PUBLIC :: PCRFAC( :,: ) ! point: pnsreac, pnsmatv
         REAL   , ALLOCATABLE, PUBLIC :: RMTXMASS( :,: ) ! general mass-based
         REAL   , ALLOCATABLE, PUBLIC :: RMTXMOLE( :,: ) ! general mole-based
+
+!.........  OTHER SHARED CONTROL PROGRAM VARIABLES ...
+        INTEGER, PARAMETER :: NCNTLRPT = 4    ! no. of Cntlmat reports
+        INTEGER            :: RPTDEV( NCNTLRPT ) = ( / 0, 0, 0, 0 / )
 
         END MODULE MODCNTRL

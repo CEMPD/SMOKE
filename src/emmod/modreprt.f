@@ -20,7 +20,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -42,7 +42,7 @@
 !.........  Packet-specific parameters
         INTEGER, PARAMETER, PUBLIC :: NALLPCKT = 10
         INTEGER, PARAMETER, PUBLIC :: RPKTLEN  = 21
-        INTEGER, PARAMETER, PUBLIC :: NCRTSYBL = 11
+        INTEGER, PARAMETER, PUBLIC :: NCRTSYBL = 12
         INTEGER, PARAMETER, PUBLIC :: RPT_IDX  = 1  ! pos. report pkt in master
         INTEGER, PARAMETER, PUBLIC :: TIM_IDX  = 2  ! pos. report time in mstr
         INTEGER, PARAMETER, PUBLIC :: O3S_IDX  = 3  ! pos. O3 season in master
@@ -53,9 +53,9 @@
         INTEGER, PARAMETER, PUBLIC :: ELG_IDX  = 8  ! pos. elevated grp in mstr
         INTEGER, PARAMETER, PUBLIC :: PNG_IDX  = 9  ! pos. ping in master
         INTEGER, PARAMETER, PUBLIC :: ELV_IDX  = 10 ! pos. elevated in master
-        INTEGER, PARAMETER, PUBLIC :: ELEVOUT3 = 1  ! code for elevated only
-        INTEGER, PARAMETER, PUBLIC :: PINGOUT3 = 2  ! code for PinG only
-        INTEGER, PARAMETER, PUBLIC :: NOELOUT3 = 3  ! code for low-level only
+        INTEGER, PARAMETER, PUBLIC :: NOELOUT3 = 1  ! code for low-level only
+        INTEGER, PARAMETER, PUBLIC :: ELEVOUT3 = 2  ! code for elevated only
+        INTEGER, PARAMETER, PUBLIC :: PINGOUT3 = 3  ! code for PinG only
         INTEGER, PARAMETER, PUBLIC :: LENLAB3  = 200! length of group labels
         INTEGER, PARAMETER, PUBLIC :: LENELV3  = 1  ! length of elev status
         INTEGER, PARAMETER, PUBLIC :: LENTTL3  = 300! length of titles
@@ -85,7 +85,8 @@
      &                                      '>   ',
      &                                      '+/- ',
      &                                      '-/+ ',
-     &                                      'TOP '  / )
+     &                                      'TOP ',
+     &                                      'IS  '  / )
 
 !.........  Define types needed for module
         TYPE :: EACHRPT
@@ -312,6 +313,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         LOGICAL, PUBLIC :: LIN_GROUP        ! true: line is group entry
         LOGICAL, PUBLIC :: LIN_SPCIFY       ! true: line is specification entry
         LOGICAL, PUBLIC :: LIN_SUBDATA      ! true: line is SELECT DATA
+        LOGICAL, PUBLIC :: LIN_SUBGRID      ! true: line is SELECT SUBGRID
+        LOGICAL, PUBLIC :: LIN_SUBREGN      ! true: line is SELECT REGION
         LOGICAL, PUBLIC :: LIN_TITLE        ! true: line is TITLE
         LOGICAL, PUBLIC :: LIN_UNIT         ! true: line is UNITS
 
