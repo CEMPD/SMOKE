@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -111,6 +111,9 @@ C...........   Other local variables
         LOGICAL    :: IFLAG = .FALSE.  ! true: operation type is gridding
         LOGICAL    :: JFLAG = .FALSE.  ! true: operation type is projection
         LOGICAL    :: LFLAG = .FALSE.  ! true: operation type is allowable cntls
+        LOGICAL    :: MFLAG = .FALSE.  ! true: operation type is VMT mix
+        LOGICAL    :: NFLAG = .TRUE.   ! true: has pol or activity-specific
+        LOGICAL    :: PFLAG = .FALSE.  ! true: operation type is speeds
         LOGICAL    :: POADFLT          ! true: okay to have pol/act-spec dfaults
         LOGICAL    :: RFLAG = .FALSE.  ! true: operation type is reactivty cntls
         LOGICAL    :: SFLAG = .FALSE.  ! true: operation type is speciation
@@ -164,18 +167,27 @@ C.........  Check for valid operation type
         CASE( 'GRIDDING' )
             POADFLT = .FALSE.
             IFLAG   = .TRUE.
+            NFLAG   = .FALSE.
         CASE( 'PROJECTION' )
             POADFLT = .FALSE.
             JFLAG   = .TRUE.
         CASE( 'REACTIVITY' )
             POADFLT = .FALSE.
             RFLAG   = .TRUE.
+        CASE( 'SPEED' ) 
+            POADFLT = .FALSE.
+            PFLAG   = .TRUE.
+            NFLAG   = .FALSE.
         CASE( 'SPECIATION' )
             POADFLT = .TRUE.
             SFLAG   = .TRUE.
         CASE( 'TEMPORAL' ) 
             POADFLT = .FALSE.
             TFLAG   = .TRUE.
+        CASE( 'VMTMIX' ) 
+            POADFLT = .FALSE.
+            MFLAG   = .TRUE.
+            NFLAG   = .FALSE.
 
         CASE DEFAULT
 
@@ -216,7 +228,7 @@ C.........  For CSRC, don't include pollutant for grouping.
 
             CSRC    = CSRCTA( J )( 1:SC_ENDP( NCHARS ) )
             TSCC    = CSCCTA( J )
-            IF( .NOT. IFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
+            IF( NFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
 
             DO J = 1, NCHARS
                 CHARS( J ) = CSRC( SC_BEGP( J ):SC_ENDP( J ) )
@@ -248,7 +260,7 @@ C.............  Select cases
 C.............  Note that since these are sorted in order of increasing FIPS
 C               code, SCC, pollutant index, etc., that the entries with zero for
 C               these characteristics will appear earlier in the sorted list
-            IF( CHARS( 1 ) .EQ. FIPZERO ) THEN           ! FIPS code is default
+            IF( IFIP .EQ. 0 ) THEN                       ! FIPS code is default
 
                 IF( TSCC .EQ. SCCZERO ) THEN                   ! SCC is default
 
@@ -553,6 +565,16 @@ C.........  Emission factor x-ref tables
         ELSE IF( FFLAG ) THEN
             CALL ALOCETBL( NIACT, N )
             CALL FILLETBL( NIACT, NXREF, N( 1 ), XTYPE, XTCNT ) 
+
+C.........  Vehicle mix
+        ELSE IF( MFLAG ) THEN
+             CALL ALOCMTBL( N )
+             CALL FILLMTBL( NXREF, N( 1 ), XTYPE, XTCNT )
+
+C.........  Speeds
+        ELSE IF( PFLAG ) THEN
+c             CALL ALOCPTBL( N )
+c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT )
 
 C.........  All control x-ref tables
         ELSE
