@@ -55,6 +55,7 @@
    setenv EPI_STDATE 1996191     # Julian start date
    setenv EPI_STTIME  000000     # start time (HHMMSS)
    setenv EPI_RUNLEN 0750000     # run length (HHHMMSS)
+   setenv EPI_NDAY   2           # number of full run days
 
 ## User-defined I/O directory settings
    setenv EDSS_SUBSYS $EDSS_ROOT/subsys              # EDSS subsystem dir
