@@ -75,23 +75,6 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: IDNAME    ! day-specific inventory 
         CHARACTER(*), INTENT(OUT) :: IHNAME    ! hour-specific inventory name 
 
-C...........   LOCAL PARAMETERS
-        INTEGER    , PARAMETER :: NCAT = 3          ! number src categories
-        CHARACTER*6, PARAMETER :: CATLIST( NCAT ) = ! src categories
-     &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
-
-        CHARACTER*2, PARAMETER :: GNAMLIST( NCAT ) = ! gridded inven input names
-     &                         ( / 'AG', 'MG', 'PG' / )
-
-        CHARACTER*5, PARAMETER :: ANAMLIST( NCAT ) = ! ave data input names
-     &                         ( / 'ARINV' , 'MBINV' , 'PTINV'  / )
-
-        CHARACTER*5, PARAMETER :: DNAMLIST( NCAT ) = ! daily data input names
-     &                         ( / 'ARDAY' , 'MBDAY' , 'PTDAY'  / )
-
-        CHARACTER*6, PARAMETER :: HNAMLIST( NCAT ) = ! hourly data input names
-     &                         ( / 'ARHOUR' , 'MBHOUR' , 'PTHOUR'  / )
-
 C...........   Other local variables
 
         INTEGER       IOS    ! i/o status
