@@ -72,11 +72,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*14  MMDDYY
         INTEGER       PROMPTFFILE
         CHARACTER*16  PROMPTMFILE
+        INTEGER       SECSDIFF
         INTEGER       TRIMLEN
         REAL          YR2DAY
  
         EXTERNAL      FIND1, GETMENU, GETNUM, GETYN, INDEX1, LBLANK,
-     &                MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN, YR2DAY
+     &                MMDDYY, PROMPTFFILE, PROMPTMFILE, SECSDIF,
+     &                TRIMLEN, YR2DAY
 
 C.........  Define PNTS variables
         INTEGER     INDEXA( MXESRC )   !  index for sorting, if needed
@@ -88,36 +90,57 @@ C.........  Define PNTS variables
         INTEGER     TZONES( MXESRC )   !  time zones
         INTEGER     TPFLAG( MXESRC )   !  applicability of temprl profile types
         INTEGER     INVYR ( MXESRC )   !  Inventory year
-        REAL        XLOCA ( MXESRC )   !  UTM X-location (m)
-        REAL        YLOCA ( MXESRC )   !  UTM Y-location (m)
-        REAL        STKHT ( MXPSRC )  !  stack height   (m)
-        REAL        STKDM ( MXPSRC )  !  stack diameter (m)
-        REAL        STKTK ( MXPSRC )  !  exhaust temperature (deg K)
-        REAL        STKVE ( MXPSRC )  !  exhaust velocity    (m/s)
-        REAL        EMISV ( MXESRC, MXIPOL )  !  emissions values (tons/yr) 
+        REAL        XLOCA ( MXESRC )   !  stack UTM X-location (m)
+        REAL        YLOCA ( MXESRC )   !  stack UTM Y-location (m)
+        REAL        XLOC1 ( MXESRC )   !  link start UTM X-location (m)
+        REAL        YLOC1 ( MXESRC )   !  link start UTM Y-location (m)
+        REAL        XLOC2 ( MXESRC )   !  link end UTM X-location (m)
+        REAL        YLOC2 ( MXESRC )   !  link end UTM Y-location (m)
+        REAL        STKHT ( MXPSRC )   !  stack height   (m)
+        REAL        STKDM ( MXPSRC )   !  stack diameter (m)
+        REAL        STKTK ( MXPSRC )   !  exhaust temperature (deg K)
+        REAL        STKVE ( MXPSRC )   !  exhaust velocity    (m/s)
+        REAL        EMISV ( MXESRC, MXIPOL )  !  emissions values (tons/yr)
+        REAL        VMT   ( MXESRC )   !  mobile VMT from inventory 
+        REAL        VMTDIS( NMSRC, NVTYPE ) ! VMT per vehicle type
 
-        CHARACTER*15  CPLANT( MXPSRC )
-        CHARACTER*15  CSTACK( MXPSRC )
-        CHARACTER*40  CPDESC( MXPSRC )
+        EQUIVALENCE ( XLOCA, XLOC1 )
+        EQUIVALENCE ( YLOCA, YLOC1 )
+        EQUIVALENCE ( STKHT, XLOC2 )
+        EQUIVALENCE ( STKDM, YLOC2 )
+        EQUIVALENCE ( STKTK, VMT   )
+
+        CHARACTER*15   CPLANT( MXPSRC )
+        CHARACTER*15   CSTACK( MXPSRC )
+        CHARACTER*40   CPDESC( MXPSRC )
 
 C.........  Define temporary source variable
 
-        REAL        CRITVAL( MXESRC ) !  Criterion for sorting output
-        REAL        STKFL  ( MXPSRC ) !  Stack flow
+        REAL           CRITVAL( MXESRC ) !  Criterion for sorting output
+        REAL           STKFL  ( MXPSRC ) !  Stack flow
 
-C.........  Define PTMP variables
-        REAL        EMIST ( MXESRC )  !  ptmp emissions values (tons/yr) 
+C.........  Define hourly emissions variables
+        REAL           EMIST ( MXESRC )  !  hourly emissions values (tons/yr) 
+        REAL           TMAT  ( NMSRC, NVTYPE, MXTMV )  !  hourly mobile values
+        CHARACTER*16   TPRLNAM( MXTMV ) !  temporal emis variable names
 
-C.........  Define SMAT variables
+        EQUIVALENCE( TMAT, EMIST )
+
+C.........  Define speciation matrix variables
 
         REAL            SS( MXESRC, MXMPOL )
-        INTEGER         NSPCOUT( MXIPOL )        !  # of active rows in SPCREF
-        INTEGER         SPCREF ( MXIPOL, MXMPOL )
-        CHARACTER*16    INVNAME( MXMPOL )        !  inv-spc part of name
+        REAL            SM( NMSRC*NVTYPE, MXSMV )
+        INTEGER         NSPCOUT( MXIPOL*MXEPRC )! no. smat vars per var  
+        INTEGER         SPCREF ( MXTMV, MXSMV ) ! which species per tmprl var
+        INTEGER         SVARREF( MXTMV, MXSMV ) ! which smat var per tmprl var
+        INTEGER         SMREFM ( MXSMV )        ! species indx for each SMAT var
+        CHARACTER*16    SPCNAM ( MXSMV )        !  smat variable names
 
-C.........  Define GMAT variables
+        EQUIVALENCE( SM, SS )
 
-        INTEGER         NA( NGRID )   ! area source gridding matrix
+C.........  Gridding matrix variables
+
+        INTEGER         NA( NGRID )   ! area or mobile source gridding matrix
         INTEGER         IA( NMATX )
         REAL            MA( NMATX )
 
@@ -133,7 +156,17 @@ C.........  Define GMAT variables
 
         INTEGER         PG( NGRID )   ! Points to start of IA/IP for each cell
 
-C.........  Define CMAT variables
+C.........   Ungridding matrix variables (for mobile only)
+ 
+        INTEGER         NU( NMSRC )
+        INTEGER         IU( NMATX )
+        REAL            CU( NMATX )
+ 
+        COMMON  / UGRIDMAT / NU, IU, CU
+
+        INTEGER         PU( NMSRC )   ! Points to start of IU for each source
+
+C.........  Define control matrix variables
 
         REAL            CC( MXESRC, MXIPOL )
 
@@ -158,10 +191,11 @@ C.........  Local arrays
         INTEGER         CCNT ( MXEOUT )   ! Count of cells per output src
         INTEGER         EINX ( MXEOUT )   !   sorted index for output sources
         INTEGER         EINXA( MXEOUT )   ! unsorted index for output sources
+        INTEGER         EVIDX( MXTMV  )   ! inventory pol index for TMAT vars  
         INTEGER         IINX ( MXEOUT )   ! index of index for output sources
         INTEGER         ISLOC( NMATX  )   ! Cell specific IS values
         INTEGER         NOUT              ! actual number of output emis
-        INTEGER         SPNT ( MXMPOL )   ! pointer to speciation factors
+        INTEGER         NSCNT( MXMPOL )   ! no. of emis procs for each species 
         INTEGER         XNUM ( MXEOUT, NGRID )   ! X-cell for output sources
         INTEGER         YNUM ( MXEOUT, NGRID )   ! Y-cell for output sources
 
@@ -171,13 +205,17 @@ C.........  Local arrays
         REAL            ETMP ( MXEOUT, MXIPOL, MXTSTEP) ! out tmprl inv emission
         REAL            GCOEF( MXEOUT, NGRID ) ! gridding coef for output srcs
         REAL            OFRAC( MXEOUT, EMLAYS, MXTSTEP)! output layer fractions
+        REAL            SFACS( MXMPOL, NVTYPE )! tmp output mb spec factors
 
-        CHARACTER*7     GSTATE( MXEOUT ) ! state of gridding matrix for output
+        CHARACTER*7     GSTATE ( MXEOUT  ) ! state of gridding matrix for output
+        CHARACTER*16    VNAMINV( MXVARS3 ) ! inventory file var names
 
 C.........  Logical names and unit numbers
+        INTEGER         ADEV             ! Area-source ASCT descriptions file
         INTEGER         LDEV             ! IO/API initialization unit #
         INTEGER         ODEV             ! number for output file
         INTEGER         SDEV             ! PSRC file
+        INTEGER         VDEV             ! VMT mix file
 
         CHARACTER*16    CNAME   !  logical name for control    matrix input file
         CHARACTER*16    ENAME   !  logical name for inventory         input file
@@ -185,6 +223,7 @@ C.........  Logical names and unit numbers
         CHARACTER*16    LNAME   !  logical name for layer fractions   input file
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    TNAME   !  logical name for temporal point source file
+        CHARACTER*16    UNAME   !  logical name for ungridding matrix
 
 C.........  Other variables
         REAL            CFAC, DDX, DDY, DX, DY, SFAC, VAL
@@ -192,14 +231,15 @@ C.........  Other variables
         REAL            MEANVAL      ! Mean of criterion output values
         REAL            MINVAL       ! Min non-zero of criterion output values
         REAL            MINDIFF      ! Minimum difference between src and mean
+        REAL            RDUM         ! Dummy real var
         REAL            THISDIFF     ! Current difference between src and mean
 
-        INTEGER         I, C, F, J, K, L, N, S, T, V   ! pointers and counters
+        INTEGER         I, C, E, F, J, K, L, N, S, T, V   ! pntrs and counters
 
         INTEGER         RN, SCNT, TSTEP, XN, YN
         INTEGER         EMMTHD       ! method of sorting based on emissions
         INTEGER         ENDSRC       ! Ending source count for output
-        INTEGER         FIP, PLANT, SCC, SIC, SID, STACK  ! Temporary vars
+        INTEGER         FIP, SID     ! Temporary vars
         INTEGER         IDCELL       ! Cell number from X and Y cells
         INTEGER         INCSRC       ! Increment for processing sources
         INTEGER         ICNT         ! counter for output sources
@@ -208,17 +248,20 @@ C.........  Other variables
         INTEGER         KEY2, KEY3, KEY4, KEY5 ! tmp src chars for matching
         INTEGER         L1, L2
         INTEGER         LDATE        ! Previous date
+        INTEGER         LPARS        ! String length of NAMPARS
         INTEGER         MEANCNT      ! count of sources contibuting to mean val
         INTEGER         MEANSRC      ! source ID that has value closest to mean
         INTEGER         METHOD       ! method of source selection
         INTEGER         MINSRC       ! source ID that has min non-zero value
         INTEGER         NCINVP       ! number of inventory pols in ctl matrix
+        INTEGER         NEVAR        ! number of vars in temporal file
         INTEGER         NIPOL        ! number of inventory pollutants
-        INTEGER         NIVAR        ! number of variables in inventory file
+        INTEGER         NIVAR        ! number of inventory file variables
         INTEGER         NMPOL        ! number of model species
         INTEGER         NSTEPS       ! number of time steps
         INTEGER         NRPRT        ! number of sources to report
         INTEGER         NSRCS        ! actual number of sources in inventory
+        INTEGER         NVSMAT       ! actual number of variables in SMAT
         INTEGER         OUTCEL       ! tmp number of output cells per source
         INTEGER         PTR          ! tmp index for gridding matrix
         INTEGER         RANGE        ! method of selecting range of sorted srcs
@@ -226,6 +269,7 @@ C.........  Other variables
         INTEGER         SRTSRC       ! Starting source count for output
         INTEGER         STKMTHD      ! method of sorting based on stack parms
         INTEGER         TMPSRC       ! tmp count of sources
+        INTEGER         UZONE        ! UTM zone
 
         LOGICAL         CTRLFLAG     ! control file input or not
         LOGICAL         EFLAG        ! error flag
@@ -236,13 +280,14 @@ C.........  Other variables
         CHARACTER*1     CRL             ! category root letter (A/M/P)
         CHARACTER*3     CTLINV( MXIPOL ) ! inventory pollutants in control matrix
         CHARACTER*3     EINAM( MXIPOL ) ! actual list of inventory pollutants
+        CHARACTER*4     NAMPARS         ! string for parsing SMAT variable names
         CHARACTER*6     CATEGORY        ! emissions category (AREA/MOBILE/POINT)
         CHARACTER*8     EMNAM( MXMPOL ) ! actual list of model species
         CHARACTER*8     TONSUNIT
         CHARACTER*8     MOLEUNIT
         CHARACTER*15    CPLT, CSTK
-        CHARACTER*16    SCRBUF  !  scratch point
-        CHARACTER*16    SPCNAM( MXMPOL )  !  speciation matrix variable names
+        CHARACTER*16    PRVNAM  !  variable name from previous iteration
+        CHARACTER*16    SCRBUF  !  scratch buffer
         CHARACTER*40    CDESC
         CHARACTER*80    MENULST( NMETHOD )
         CHARACTER*80    RNGMENU( NRANGE )
@@ -277,7 +322,7 @@ C   begin body of program GETRECS
      &  ' ',
      &  'Program GETRECS searches for a specific source, for all',
      &  'sources in a specific cell, or for combinations of source',
-     &  'keys.  It creates a ascii file which lists all details about',
+     &  'keys.  It creates an ASCII file which lists all details about',
      &  'the source including source number, grid cell, if found in',
      &  'gridding matrix, temporalization factors, control factors,',
      &  'inventory pollutant emissions, and model species emissions.',
@@ -305,8 +350,17 @@ C.........  Prompt for inventory file
 
         IF ( .NOT. DESC3( ENAME ) ) THEN
             CALL M3EXIT( 'GETRECS', 0, 0,
-     &                  'Error reading HEADER from INVENTORY file "'
+     &                  'Error reading header from file "'
      &                  // ENAME( 1:TRIMLEN( ENAME ) ) // '"', 2 )
+
+C.........  Check dimensions of input inventory file
+        ELSEIF( NROWS3D .GT. MXESRC ) THEN
+            WRITE( MESG, 94010 )
+     &          'Dimension overflow.  INVENTORY file:', NROWS3D,
+     &          'program (MXESRC):', MXESRC
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
+C.........  Determine source category
         ELSE
             I = 0
             I = INDEX1( 'ASC7', NVARS3D, VNAME3D )
@@ -322,94 +376,117 @@ C.........  Prompt for inventory file
             ENDIF
         ENDIF
 
+C.........  Store some of the contents of the inventory file header
         NSRCS = NROWS3D
         NIVAR = NVARS3D
+        DO 66 I = 1, NIVAR
+            VNAMINV( I ) = VNAME3D( I )
+66      CONTINUE
 
-C.........  Perform category-specific operations
-        IF( CATEGORY .EQ. 'AREA' .OR. CATEGORY .EQ. 'POINT' ) THEN
-
-            IF( NSRCS .GT. MXESRC ) THEN
-                WRITE( MESG, 94010 )
+C.........  For mobile, source number must be exact and must store UTM zone
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            IF( NSRCS .NE. NMSRC ) THEN
+                WRITE( MESG,94010 )
      &              'Dimension overflow.  INVENTORY file:', NSRCS,
-     &              'program (MXESRC):', MXESRC
-                CALL M3EXIT( 'FULLSPEC', 0, 0, MESG, 2 )
+     &              'program (NMSRC):', NMSRC
+                CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
             ENDIF
-
-            IF( CATEGORY .EQ. 'POINT' ) THEN
-
-                NIPOL = ( NIVAR - 14 ) / 4
-                CRL = 'P'
-
-                IF( UPNAM3D .EQ. 'EMSPOINT' ) THEN
-                    SDEV = PROMPTFFILE(
-     &                     'Enter name for PSRC file',
-     &                     .TRUE., .TRUE., 'PSRC', 'GETRECS' )
-                    EMSFLAG = .TRUE.
-                ELSE
-                    EMSFLAG = .FALSE. 
-                ENDIF
- 
-            ELSEIF( CATEGORY .EQ. 'AREA' ) THEN
-                NIPOL = ( NIVAR - 6 ) / 4
-                CRL = 'A'
-            ENDIF
-           
-        ELSEIF( CATEGORY .EQ. 'MOBILE' ) THEN
-
-            WRITE( MESG, 94010 )
-     &      'Program does not support MOBILE inputs'
-            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+            UZONE = REAL( P_ALP3D )
 
         ENDIF
 
-C.........  Check inventory pollutant names and create list EINAM
-        J = 0
-        DO 88 V = NIVAR-NIPOL+1, NIVAR
-            SCRBUF = VNAME3D( V )
-            I = INDEX1( SCRBUF, MXIPOL, INVSPEC )
-            IF ( I .LT. 0 ) THEN
-                EFLAG = .TRUE.
-                MESG = 'Bad inventory pollutant "' //
-     &                 SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
-     &                 '" in "' // ENAME( 1:TRIMLEN( ENAME ) ) // '"'
-                CALL M3MSG2( MESG )
-            ELSE
-                J = J + 1
-                EINAM( J ) = SCRBUF
-            END IF
-88      CONTINUE
-
-        IF( EFLAG ) THEN
-            MESG = 'Bad inventory file'
-            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
-        ENDIF
+C.........  Set flag for EMS-95 point sources inventory input
+        EMSFLAG = .FALSE.
+        IF( UPNAM3D .EQ. 'EMSPOINT' ) EMSFLAG = .TRUE.
+                 
+C.........  Set first letter for file names based on category
+        CRL = CATEGORY( 1:1 )
 
 C.........  Prompt for temporalized emissions
 
         TNAME = PROMPTMFILE(
      &          'Enter logical name for TEMPORAL EMISSIONS file',
      &          FSREAD3, CRL//'TMP', 'GETRECS' )
+        L = TRIMLEN ( TNAME )
 
 C.........  Get header information from temporalized emissions
-
+C.........  Use this for inventory emissions variable names and no.; default 
+C.........  start date, time, and duration; and time step
         IF ( .NOT. DESC3( TNAME ) ) THEN
             CALL M3EXIT( 'GETRECS', 0, 0,
      &                  'Could not get description of file "'
-     &                  // TNAME( 1:TRIMLEN( TNAME ) ) // '"', 2 )
+     &                  // TNAME( 1:L ) // '"', 2 )
 
         ELSEIF( NROWS3D .NE. NSRCS ) THEN
             WRITE( MESG, 94010 )
-     &      'Dimension mismatch.  ' // CRL // 'TMP file:', NROWS3D,
-     &      'inventory file= ', NSRCS
+     &         'Source dimension mismatch. '// CRL// 'TMP file:', 
+     &         NROWS3D, 'inventory file= ', NSRCS
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
+        ELSEIF( NVARS3D .GT. MXTMV ) THEN
+            WRITE( MESG, 94010 )
+     &         'Variables dimension mismatch. '// CRL// 'TMP file:', 
+     &         NVARS3D, 'program = ', MXTMV
             CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
 
         ELSE
-            SDATE = SDATE3D
-            STIME = STIME3D
+            JDATE = SDATE3D
+            JTIME = STIME3D
             TSTEP = TSTEP3D
+            NSTEPS= MXREC3D
+            NEVAR = NVARS3D  ! Store number of variables in temporal file
+
+C.............  Set pollutant names. Need to handle mobile inputs that have
+C.............  names of the form EXH_CO, and create a pointer for mobile
+C.............  input variables to pollutant names
+            J = 0
+            PRVNAM = '-9'
+            DO 88 V = 1, NEVAR
+
+                SCRBUF = VNAME3D( V )
+                TPRLNAM( V ) = SCRBUF
+                L2 = TRIMLEN( SCRBUF )
+
+                IF( CATEGORY .NE. 'MOBILE' ) THEN ! no pollutants in mobile file
+                    I = INDEX1( SCRBUF, NIVAR, VNAMINV )
+                    L1 = 0
+                ELSE
+                    I = 1 
+                    L1 = INDEX( SCRBUF, '_' )
+                END IF
+
+                IF ( I .LT. 0 ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'Pollutant "' //
+     &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+     &                     '" in "' // TNAME( 1:L ) // 
+     &                     '" is not in inventory file!'
+                    CALL M3MSG2( MESG )
+                ELSE
+                    SCRBUF =  SCRBUF( L1+1:L2 )
+                    IF( SCRBUF .NE. PRVNAM ) THEN
+                       J = J + 1                 
+                       EINAM( J ) = SCRBUF
+                       PRVNAM = SCRBUF
+                    ENDIF
+
+                    EVIDX( V ) = J
+
+                END IF
+
+88          CONTINUE
+
         ENDIF
 
-C.........  Prompt for PLAY
+        IF( EFLAG ) THEN
+            MESG = 'Inconsistent hourly and inventory files'
+            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
+        ELSE
+            NIPOL = J
+        ENDIF
+
+C.........  Prompt for remaining files
         LNAME = 'NONE'
         IF( CATEGORY .EQ. 'POINT' ) THEN
             LNAME = PROMPTMFILE( 
@@ -418,40 +495,64 @@ C.........  Prompt for PLAY
         ENDIF
         LAYRFLAG = ( LNAME .NE. 'NONE' ) 
 
-C.........  Prompt for SMAT
         SNAME = PROMPTMFILE(
      &          'Enter logical name for SPECIATION MATRIX file ' //
      &          'or "NONE"', FSREAD3, CRL//'SMAT', 'GETRECS' )
 
         SPCFLAG = ( SNAME .NE. 'NONE' )
 
-C.........  Prompt for GMAT
         GNAME = PROMPTMFILE(
-     &          'Enter logical name for GRID MATRIX file',
+     &          'Enter logical name for GRIDDING MATRIX file',
      &          FSREAD3, CRL//'GMAT', 'GETRECS' )
 
-C.........  Prompt for CMAT
-        CNAME = PROMPTMFILE(
-     &          'Enter logical name for CONTROL MATRIX file ' //
-     &          'or "NONE"', FSREAD3, CRL//'CMAT', 'GETRECS' )
-
+C.........  Prompt for control matrix for area and point sources only
+        IF( CATEGORY .NE. 'MOBILE' ) THEN
+            CNAME = PROMPTMFILE(
+     &              'Enter logical name for CONTROL MATRIX file ' //
+     &              'or "NONE"', FSREAD3, CRL//'CMAT', 'GETRECS' )
+        ELSE
+           CNAME = 'NONE'
+        ENDIF
         CTRLFLAG = ( CNAME .NE. 'NONE' )
 
-C.........  Prompt for starting date
+C.........  Get special files for certain source categories
+        IF( EMSFLAG .EQ. .TRUE. ) THEN
+            SDEV = PROMPTFFILE(
+     &             'Enter name for PSRC file',
+     &             .TRUE., .TRUE., 'PSRC', 'GETRECS' )
+ 
+        ELSEIF( CATEGORY .EQ. 'AREA' ) THEN
+            ADEV = PROMPTFFILE(
+     &             'Enter name for ASCT DESCRIPTION file',
+     &             .TRUE., .TRUE., 'ASCTNAM', 'GETRECS' )
 
-        SDATE  = GETNUM( 0, 9999999, SDATE,
+        ELSEIF( CATEGORY .EQ. 'MOBILE' ) THEN
+
+            UNAME = PROMPTMFILE( 
+     &              'Enter logical name for UNGRIDDING MATRIX file',
+     &              FSREAD3, 'MUMAT', 'GETRECS' )
+
+            VDEV = PROMPTFFILE(
+     &             'Enter logical name for VMT MIX file',
+     &             .TRUE., .TRUE., 'MVMTM', 'GETRECS' )
+
+        ENDIF
+
+C.........  Prompt for starting date
+        SDATE  = GETNUM( JDATE, 9999999, JDATE,
      &                  'Enter starting date (YYYYDDD)' )
 
-C.........  Prompt for starting time
+        IF( SDATE .NE. JDATE ) JTIME = 0  ! Reset because now could be 0-24
 
-        STIME  = GETNUM( 0, 235959, STIME,
+C.........  Prompt for starting time
+        STIME  = GETNUM( JTIME, 235959, JTIME,
      &                  'Enter starting time (HHMMSS)' )
 
 C.........  Prompt for time number of time steps
-
-        NSTEPS = MXREC3D
+        I = SECSDIFF( JDATE, JTIME, SDATE, STIME ) / 3600
+        NSTEPS = NSTEPS - I
         MESG   = 'Enter number of time steps'
-        NSTEPS = GETNUM( 1, MXTSTEP, NSTEPS, MESG )
+        NSTEPS = GETNUM( 1, NSTEPS, NSTEPS, MESG )
         
 C.........  Prompt for Cell or Source or Record number
         N = NMETHOD
@@ -466,6 +567,7 @@ C.........  Prompt for Cell or Source or Record number
      &                     ', SCC, Plant ID, and Stack ID'
 
         ELSEIF( CATEGORY .EQ. 'MOBILE' ) THEN
+            N = N - 1  ! Can't select by stack parms
             MENULST( 2 ) = MENULST( 2 )(1:L) // 
      &                     ', road type, and link ID'
 
@@ -498,15 +600,19 @@ C.........  Prompt for FIP, SIC, SCC, PLANT, STACK
             KEY4 = 0
             KEY5 = 0
 
-            IF( CATEGORY .EQ. 'POINT' ) THEN
-                KEY2 = GETNUM( 0, 99999999, SCC, 'Enter SCC' )
-                KEY3 = GETNUM( 0, 9999, SIC, 'Enter SIC' )
-                KEY4 = GETNUM( 0, 99999999, PLANT, 'Enter PLANT' )
-                KEY5 = GETNUM( 0, 99999999, STACK, 'Enter STACK' )
+            IF( CATEGORY .EQ. 'AREA' ) THEN
+                KEY2 = GETNUM( 0, 9999999, 0, 'Enter ASCT7' )
+                KEY3 = GETNUM( 0, 999, 0, 'Enter ASCT3' )
 
-            ELSEIF( CATEGORY .EQ. 'AREA' ) THEN
-                KEY2 = GETNUM( 0, 9999999, SCC, 'Enter ASCT7' )
-                KEY3 = GETNUM( 0, 999, SCC, 'Enter ASCT3' )
+            ELSEIF( CATEGORY .EQ. 'MOBILE' ) THEN
+                KEY2 = GETNUM( 0, 9999999, 0, 'Enter ROAD CLASS' )
+                KEY3 = GETNUM( 0, 9999999, 0, 'Enter LINK ID (if any)' )
+
+            ELSEIF( CATEGORY .EQ. 'POINT' ) THEN
+                KEY2 = GETNUM( 0, 99999999, 0, 'Enter SCC' )
+                KEY3 = GETNUM( 0, 9999, 0, 'Enter SIC' )
+                KEY4 = GETNUM( 0, 99999999, 0, 'Enter PLANT' )
+                KEY5 = GETNUM( 0, 99999999, 0, 'Enter STACK' )
 
             ENDIF
 
@@ -514,9 +620,8 @@ C.........  Prompt for source ID
 
         ELSEIF( METHOD .EQ. 3 ) THEN
 
-            RN  = 1
-            RN  = GETNUM( 1, NSRCS, RN,
-     &                    'Enter record number' )
+            RN  = GETNUM( 1, NSRCS, 1,
+     &                    'Enter SMOKE source ID number' )
 
 C.........  Prompt for emissions based selection
 
@@ -552,11 +657,27 @@ C.........  Check layer fractions file dimensions, if needed
         ENDIF
 
 C.........  Read required variables depending on source category
+C.........  For mobile sources, XLOC1 equiv to XLOCA, YLOC1 equiv to YLOCA,
+C.........  XLOC2 equiv to STKHT, YLOC2 equiv to STKDM, and VMT equiv to STKTK
+        IF( CATEGORY .NE. 'MOBILE' ) THEN
+            CALL RDINVEN2( CATEGORY, ENAME, MXESRC, NSRCS, NIPOL, 
+     &                     EINAM, IFIP, VAR2, VAR3, VAR4, VAR5,
+     &                     TZONES, TPFLAG, INVYR, XLOCA, YLOCA, STKHT, 
+     &                     STKDM, STKTK, STKVE, EMISV )
+        ELSE
+            CALL RDINVEN2( CATEGORY, ENAME, MXESRC, NSRCS, 1, 
+     &                     'VMT', IFIP, VAR2, VAR3, VAR4, VAR5,
+     &                     TZONES, TPFLAG, INVYR, XLOC1, YLOC1, XLOC2, 
+     &                     YLOC2, RDUM, RDUM, VMT )
 
-        CALL RDINVEN2( CATEGORY, ENAME, MXESRC, NSRCS, NIPOL, 
-     &                 EINAM, IFIP, VAR2, VAR3, VAR4, VAR5,
-     &                 TZONES, TPFLAG, INVYR, XLOCA, YLOCA, STKHT, 
-     &                 STKDM, STKTK, STKVE, EMISV )
+C.............  Initialize EMISV for mobile because will use it later
+            DO 105 V = 1, NIPOL
+                DO 101 S = 1, NSRCS
+                    EMISV( S,V ) = 0.
+101             CONTINUE
+105         CONTINUE
+
+        ENDIF
 
 C.........  Get header information from gridding matrix
         SCRBUF = GRDNM
@@ -600,7 +721,7 @@ C.........  Read gridding matrix
             CALL RDGRIDM( CATEGORY, GNAME,
      &                    NGRID, NSRCS, NSRCS, NP, IP, MP )
 
-        ELSEIF( CATEGORY .EQ. 'AREA' ) THEN
+        ELSE  ! for AREA and MOBILE
 
             CALL RDGRIDM( CATEGORY, GNAME,
      &                    NGRID, NMATX, NSRCS, NA, IA, MA )
@@ -609,24 +730,111 @@ C.........  Read gridding matrix
 
 C.........  Pre-process the gridding matrix. For all sources, create pointer
 C.........    to exact position of IA/IP from NA/NP.
-      K = 0
-      DO 111 I = 1, NGRID
-          DO 109 J = 1, NA( I ) ! Use ar source array, but pt source is equivalcd
-              K = K + 1
-              IF( J .EQ. 1 ) PG( I ) = K
-109       CONTINUE
-111   CONTINUE
+        K = 0
+        DO 111 I = 1, NGRID
+            DO 109 J = 1, NA( I ) ! Use ar source array, but pt source is equiv
+                K = K + 1
+                IF( J .EQ. 1 ) PG( I ) = K
+109         CONTINUE
+111     CONTINUE
 
+C.........  Read mobile-specific files
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
 
-c NOTE: Remember that I switched number 4 and 5 in the menu, so I must
-c       switch these everywhere in the program_
+C.........  Read vehicle mix fractions tables, and multiply with
+C.........  source VMT totals
+            CALL RDVMIX( VDEV, INVYR, IFIP, VAR2, VAR3, VMT, VMTDIS )
+
+C.............  Get header information from ungridding matrix
+            IF( .NOT. DESC3( UNAME ) ) THEN
+                MESG = 'Could not get description for file ' // UNAME
+                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+ 
+            ELSEIF ( NROWS3D .NE. NMSRC ) THEN
+                WRITE( MESG, 94010 )
+     &           'Dimension mismatch.  Ungridding matrix:', NROWS3D,
+     &           'program (NMSRC)=', NMSRC
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            ENDIF
+            IF( NCOLS3D .NE. NMATX ) THEN
+                WRITE( MESG, 94010 )
+     &           'Dimension mismatch.  Ungridding matrix:', NCOLS3D,
+     &           'program (NMATX)=', NMATX
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            ENDIF
+            IF( NTHIK3D .NE. NGRID ) THEN
+                WRITE( MESG, 94010 )
+     &           'Dimension mismatch.  Ungridding matrix:', NTHIK3D,
+     &           'program (NROWS * NCOLS)=', NGRID
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            ENDIF
+ 
+            IF( EFLAG ) THEN
+              MESG = 'Bad file dimensions.'
+              CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+            END IF
+
+C.............  Read ungridding matrix
+            IF ( .NOT. READ3( UNAME, ALLVAR3, ALLAYS3, 0, 0, NU ) ) THEN
+                MESG = 'Could not read ungridding matrix from "' // 
+     &                 UNAME( 1:TRIMLEN( UNAME ) ) // '"'
+                CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+            END IF
+
+C.............  Pre-process the ungridding matrix.  Create pointer
+C.............    to exact position of IU from NU
+            K = 0
+            DO 115 I = 1, NSRCS
+                DO 113 J = 1, NU( I )
+                    K = K + 1
+                    IF( J .EQ. 1 ) PU( I ) = K
+113             CONTINUE
+115         CONTINUE
+       
+
+C.............  In order to sort mobile by emissions, and report total 
+C.............  inventory emissions, must sum up emissions from MTMP and
+C.............  aggregate across pollutants over all of the hours in the time
+C.............  range.  Do this and store in EMISV array.
+
+            JDATE = SDATE
+            JTIME = STIME
+            DO 121 T = 1, NSTEPS
+
+C.................  Read all temporal emissions for given
+                IF( .NOT. READ3( TNAME, ALLVAR3, ALLAYS3,
+     &                           JDATE, JTIME, TMAT )    ) THEN
+                    MESG = 'Could not read hourly emissions from "' //
+     &                     TNAME( 1:TRIMLEN( TNAME ) ) // '"'
+                    CALL M3EXIT( 'GETRECS', JDATE, JTIME, MESG, 2 )
+                ENDIF
+
+C.................  For all sources,sum over vehicle classes and emissions processes
+                DO 119 E = 1, NEVAR
+                    J = EVIDX( E )
+                    DO 118 V = 1, NVTYPE
+                        DO 117 S = 1, NSRCS
+                            EMISV( S,J ) = EMISV( S,J ) + TMAT ( S,V,E )
+           
+117                     CONTINUE
+118                 CONTINUE
+119             CONTINUE
+
+                CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+121         CONTINUE
+
+        ENDIF  ! for mobile only
 
 C.........  Create unsorted index and preprocess stack parms
         IF( METHOD .EQ. 4 .OR. METHOD .EQ. 5 ) THEN
 
             MEANVAL = 0.
             MEANCNT = 0
-            DO 117 I = 1, NSRCS  ! If area sources, remember METHOD won't = 5
+            DO 125 I = 1, NSRCS  ! If area sources, remember METHOD won't = 5
                 INDEXA( I ) = I
 
                 IF( CATEGORY .EQ. 'POINT' ) THEN
@@ -659,21 +867,21 @@ C.........  Create unsorted index and preprocess stack parms
                     MEANCNT = MEANCNT + 1
                 ENDIF
 
-117         CONTINUE  
+125         CONTINUE  
 
             MEANVAL = MEANVAL / REAL( MEANCNT )
 
         ELSE ! still need index for area processing
 
-            DO 122 I = 1, NSRCS
+            DO 127 I = 1, NSRCS
                 INDEXA( I ) = I
-122         CONTINUE
+127         CONTINUE
 
             IF( CATEGORY .EQ. 'POINT' ) THEN
-                DO 124 I = 1, NSRCS
+                DO 129 I = 1, NSRCS
                     STKFL( I ) = 0.25 * PI * STKVE( I ) *
      &                                       STKDM( I ) * STKDM( I )
-124             CONTINUE
+129             CONTINUE
             ENDIF
 
         ENDIF
@@ -812,8 +1020,9 @@ C.........  Process using source-based loop
 
 C.........  Create pointer based on cell
 C.........  Process using cell-based loop
-C.........  NOTE: Using area source arrays NA and IA, but these will map to 
-C.........        point source arrays NP and IP because of equivalence.
+C.........  NOTE: Using area & mobile source arrays NA and IA, but these will
+C.........  map to point source arrays NP and IP because of equivalence.
+
         IF( METHOD .EQ. 1 ) THEN
 
             IDCELL = ( YN-1 ) * NCOLS + XN  ! Cell selected by user
@@ -844,64 +1053,81 @@ C.........        point source arrays NP and IP because of equivalence.
 
         ENDIF
 
-C.........  Read speciation matrix
+C.........  Read and process speciation matrix file
 
         IF( SPCFLAG ) THEN
 
-            CALL RDSPECM( CATEGORY, SNAME, MXESRC, TMPSRC, MXMPOL,
-     &                    NMPOL, SS, SPCNAM )
+C.............  Category-specific pre-read setup
+            IF( CATEGORY .NE. 'MOBILE' ) THEN  ! maximum dims different 
+                V = MXMPOL
+                N = MXESRC
+            ELSE 
+                V = MXSMV
+                N = NMSRC * NVTYPE
+            ENDIF
+
+C.............   Read file
+            CALL RDSPECM( CATEGORY, SNAME, N, TMPSRC, V,
+     &                    NVSMAT, SS, SPCNAM )
 
 C.............   Check if actual number of sources is consistent
             IF( TMPSRC .NE. NSRCS ) THEN
                 WRITE( MESG, 94010 )
-     &            'Source number mismatch.  ' // CRL // 'SMAT file:', 
+     &            'Source number mismatch. Speciation matrix:', 
      &            TMPSRC, '. Inventory file=', NSRCS
                 CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
             END IF
 
+C.............  Category-specific post-read setup
+            IF( CATEGORY .NE. 'MOBILE' ) THEN 
+                NAMPARS = '_to_'
+                LPARS = 4
+            ELSE 
+                NAMPARS = '_'
+                LPARS = 1
+            END IF
+
+
             DO 161 V = 1, NIPOL
                 NSPCOUT( V ) = 0
-161          CONTINUE
+161         CONTINUE
 
 C.............  Check speciation variable names to make sure they are consisent
-            EFLAG = .FALSE. 
-            DO 166 V = 1, NMPOL
- 
-                K = INDEX( SPCNAM( V ), '_to_' )
+            L2 = TRIMLEN( SNAME )
+            NMPOL = 0
+            DO 166 V = 1, NVSMAT
+
+                K = INDEX( SPCNAM( V ), NAMPARS(1:LPARS) ) ! postn of 1st parser
+                L = TRIMLEN( SPCNAM( V ) )
                 IF( K .LT. 1 ) THEN
-                    EFLAG = .TRUE.
+                   EFLAG = .TRUE.
                     MESG = 'Bad conversion factor name "' //
-     &                     SPCNAM( V )( 1:TRIMLEN( SPCNAM( V ) ) ) //
-     &                     '" in ' // SNAME
+     &                     SPCNAM( V )( 1:L ) // '" in file "' //
+     &                     SNAME( 1:L2 ) // '"'
                     CALL M3MSG2( MESG )
                 END IF
-                INVNAME( V ) = SPCNAM( V )( 1:K-1 )
- 
-                I = INDEX1( INVNAME( V ), NIPOL, EINAM )
-                IF ( I .LT. 0 ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'Bad inv pol in speciation matrix "' //
-     &                     INVNAME( V )( 1:TRIMLEN( INVNAME(V) ) ) //
-     &                     '" in ' // SNAME
-                    CALL M3MSG2( MESG )
+
+                IF ( CATEGORY .EQ. 'MOBILE' ) THEN
+                    K = K + 
+     &                  INDEX( SPCNAM( V )( K+1:L ), NAMPARS(1:LPARS) )
                 END IF
- 
-                SCRBUF = SPCNAM( V )( K+4:16 )
-                J = INDEX1( SCRBUF, MXMPOL, MODSPEC )
-                IF ( J .LT. 0 ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'Bad output species "' //
-     &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
-     &                     '" in ' // SNAME
-                    CALL M3MSG2( MESG )
-                END IF
- 
-                IF( I .GT. 0 ) THEN
-                    F = NSPCOUT( I ) + 1
-                    SPCREF ( I,F ) = V
-                    NSPCOUT( I )   = F
-                    EMNAM( V )     = SCRBUF
+
+                SCRBUF = SPCNAM( V )( 1:K-1 )   ! get emis mode (e.g., EXH_CO)
+                I = INDEX1( SCRBUF, NEVAR, TPRLNAM ) ! create index
+
+                SCRBUF = SPCNAM( V )( K+LPARS:L )        ! get species name
+                J = INDEX1( SCRBUF, NMPOL, EMNAM )
+                IF ( J .LE. 0 ) THEN
+                    NMPOL = NMPOL + 1      ! add 1 to list of species
+                    EMNAM( NMPOL ) = SCRBUF ! store new species
+                    J = NMPOL
                 ENDIF
+
+                F = NSPCOUT( I ) + 1 ! count no of smat vars per tmprl variable
+                SVARREF( I,F ) = V   ! store which smat vars per tmprl variable
+                SPCREF ( I,F ) = J   ! store which species for tmprl variable
+                SMREFM ( V )   = J   ! store which species for smat variable
+                NSPCOUT( I )   = F
  
 166         CONTINUE
 
@@ -912,7 +1138,7 @@ C.............  Check speciation variable names to make sure they are consisent
 
         ENDIF   ! whether speciation matrix read in or not
 
-C.........  Read CMAT
+C.........  Read control matrix
 
         IF( CTRLFLAG ) THEN
 
@@ -992,8 +1218,9 @@ C.........  Populate plant and stack character arrays (different if have PSRC)
 181         CONTINUE
         ENDIF
 
-C.........  Preprocess gridding matrix for area source processing
-        IF( CATEGORY .EQ. 'AREA' ) THEN
+C.........  Preprocess gridding matrix for area and mobile source processing
+
+        IF( CATEGORY .NE. 'POINT' ) THEN
 
 C.............  Set range of cells to check for sources based on method
             IF( METHOD .EQ. 1 ) THEN
@@ -1099,10 +1326,10 @@ C.................  Create sorted source list for cell
                     GSTATE( I ) = 'UNFOUND'
                 ENDIF
 
-            ELSEIF( CATEGORY .EQ. 'AREA' .AND. CCNT(I) .EQ. 0 ) THEN
+            ELSEIF( CATEGORY .NE. 'POINT' .AND. CCNT(I) .EQ. 0 ) THEN
                GSTATE( I ) = 'OUTSIDE'
 
-            ENDIF ! if point sources or area sources
+            ENDIF ! if point sources or not
 
 199     CONTINUE
 
@@ -1132,52 +1359,88 @@ C.............  Read layer fractions for given hour
 
             ENDIF
 
+C............  Initialize output emissions
+            DO 218 I = 1, NOUT
+
+                DO 216 S = 1, NMPOL
+                    EOUT( I,S,T ) = 0.
+216             CONTINUE
+
+                DO 217 J = 1, NIPOL
+                    ETMP( I,J,T ) = 0.
+217             CONTINUE
+
+218         CONTINUE
+
 C.............  Loop over inventory species present in inventory file
-            DO 233 V = 1, NIPOL    
+            DO 241 V = 1, NEVAR 
 
 C.................  Read temporal emissions for given hour and species
-                IF( READ3( TNAME, EINAM( V ), ALLAYS3,
+C.................  NOTE: EMIST equivalenced to TMAT
+                IF( READ3( TNAME, TPRLNAM( V ), ALLAYS3,
      &                     JDATE, JTIME, EMIST ) ) THEN
 
 C.....................  Loop over list of sources
-                    DO 222 I = 1, NOUT
+                    DO 233 I = 1, NOUT
 
-C.........................  Loop over model species per inventory species
+C.........................  Loop over model species for this variable
                         IF( SPCFLAG ) THEN
-                            DO 211 J = 1,  NSPCOUT( V )
+                            DO 225 J = 1,  NSPCOUT( V )
 
-                                K = SPCREF( V,J )
+                                K = SVARREF( V,J ) ! spc variable index
+                                S = SPCREF ( V,J ) ! species index
 
 C.................................  Multiply PTMP, SMAT, and CMAT for source
 
-                                SFAC = SS( EINX( I ), K ) 
-                                IF( CTRLFLAG ) THEN
+                                IF( CATEGORY .NE. 'MOBILE' ) THEN
+                                    SFAC = SS( EINX( I ), K ) 
+                                ELSE
+                                    SFAC = SM( EINX( I ), K ) 
+                                ENDIf
+
+                                IF( CTRLFLAG ) THEN  ! always false for mobile
                                     CFAC = CC( EINX( I ), V )
                                 ELSE
                                     CFAC = 1.0
                                 ENDIF
                              
-                                EOUT( I, K, T ) = 
-     &                                EMIST( EINX( I ) ) * SFAC * CFAC
+                                IF( CATEGORY .NE. 'MOBILE' ) THEN
+                                    EOUT( I,S,T ) = EMIST( EINX(I) ) * 
+     &                                              SFAC * CFAC
+                                ELSE
+                                    DO 222 L = 1, NVTYPE
+                                      EOUT( I,S,T )=EOUT( I,S,T ) +
+     &                                              TMAT( EINX(I),L,1 )*
+     &                                              SFAC * CFAC
+222                                 CONTINUE
+                                ENDIF
 
-211                         CONTINUE
+225                         CONTINUE
 
                         ENDIF
 
-                        ETMP( I, V, T ) = EMIST( EINX( I ) )
+                        J = EVIDX( V )
+                        IF( CATEGORY .NE. 'MOBILE' ) THEN
+                            ETMP( I,J,T ) = EMIST( EINX( I ) )
+                        ELSE
+                            DO 231 L = 1, NVTYPE
+                                ETMP( I,J,T ) = ETMP( I,J,T ) +
+     &                                          TMAT( EINX( I ),L,1 )
+231                         CONTINUE
+                        ENDIF
 
-222                 CONTINUE
+233                 CONTINUE
 
                 ELSE ! Read failed
 
-                    CALL M3EXIT( 'GETRECS', JDATE, JTIME,
-     &                           'Could not read "' //
-     &                           EINAM( V )( 1:TRIMLEN( EINAM( K ))) //
-     &                           '" from ' // TNAME, 2 )
- 
+                    MESG = 'Could not read "' //
+     &                     TPRLNAM( V )( 1:TRIMLEN( TPRLNAM(V) ) ) //
+     &                     '" from file "' // TNAME // '"'
+                    CALL M3EXIT( 'GETRECS', JDATE, JTIME, MESG, 2 ) 
+
                 ENDIF 
 
-233         CONTINUE
+241         CONTINUE
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
@@ -1207,6 +1470,9 @@ C.........  Write header to give file a title
         ELSEIF( METHOD .EQ. 2 .AND. CATEGORY .EQ. 'AREA' ) THEN
             WRITE( ODEV, 93220 ) FIP, KEY2, KEY3
 
+        ELSEIF( METHOD .EQ. 2 .AND. CATEGORY .EQ. 'MOBILE' ) THEN
+            WRITE( ODEV, 93223 ) FIP, KEY2, KEY3
+
         ELSEIF( METHOD .EQ. 2 .AND. CATEGORY .EQ. 'POINT' ) THEN
             WRITE( ODEV, 93225 ) FIP, KEY2, KEY3, KEY4, KEY5
 
@@ -1234,10 +1500,25 @@ C.........  Loop over list of sources and output details
             S = EINX( I )
 
 C.............  Write out all time INdependant data
-            IF( CATEGORY .EQ. 'AREA' ) THEN
-                WRITE( ODEV, 93002 ) 
-     &                 I, S, IFIP( S ), VAR2( S ), VAR3( S ),
-     &                 INVYR( S ), TZONES( S ), TPFLAG( S )
+
+            IF( CATEGORY .NE. 'POINT' ) THEN
+                IF( CATEGORY .EQ. 'AREA' ) THEN
+                    WRITE( ODEV, 93002 ) 
+     &                     I, S, IFIP( S ), VAR2( S ), VAR3( S ),
+     &                     INVYR( S ), TZONES( S ), TPFLAG( S )
+
+                ELSEIF( VAR3( S ) .LE. 0 ) THEN ! mobile non-link
+                    WRITE( ODEV, 93003 ) 
+     &                     I, S, IFIP( S ), VAR2( S ),
+     &                     INVYR( S ), TZONES( S ), TPFLAG( S )
+
+                ELSE ! mobile link
+                    WRITE( ODEV, 93004 ) 
+     &                     I, S, IFIP( S ), VAR2( S ), VAR3( S ),
+     &                     INVYR( S ), TZONES( S ), TPFLAG( S ),
+     &                     XLOC1( S ), YLOC1( S ), 
+     &                     XLOC2( S ), YLOC2( S ), UZONE
+                ENDIF
 
                 OUTCEL = CCNT( I )
 
@@ -1248,9 +1529,14 @@ C.............  Write out all time INdependant data
                     WRITE( ODEV, 93008 ) GSTATE( I ),
      &                                 ( XNUM ( I,C ), YNUM( I,C ), 
      &                                   GCOEF( I,C ), C = 1,OUTCEL )
+
+C                    IF( CATEGORY .EQ. 'MOBILE' ) THEN
+C For ungridding matrix
+c                    ENDIF
+
                 ENDIF
 
-            ELSEIF( CATEGORY .EQ. 'POINT' ) THEN
+            ELSE
 
                 L1 = LBLANK( CPLANT( S ) ) + 1
                 L2 = LBLANK( CSTACK( S ) ) + 1
@@ -1278,7 +1564,8 @@ C.............  Write out control coefficients
 C.............  Convert inventory emissions based on type of input temporal
 C.............  Write out time independent inventory emissions
 C.............  Week-normal data - input was on day-basis
-            IF ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 .OR.
+            IF ( CATEGORY .NE. 'MOBILE' .AND.
+     &           MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 .OR.
      &           MOD( TPFLAG( S ), WDTPFAC ) .EQ. 0      ) THEN
 
                 DO 255 V = 1, NIPOL
@@ -1289,32 +1576,70 @@ C.............  Week-normal data - input was on day-basis
      &               ( EINAM( V )( 1:TRIMLEN( EINAM( V ) ) ),
      &                 EMISV( S,V ), V = 1, NIPOL ), 'tons/day'
 
-            ELSE  
+            ELSEIF( CATEGORY .NE. 'MOBILE' ) THEN  
 
                 WRITE( ODEV, 93020 ) 
      &               ( EINAM( V )( 1:TRIMLEN( EINAM( V ) ) ),
      &                 EMISV( S,V ), V = 1, NIPOL ), 'tons/yr'
+
+            ELSE
+
+                WRITE( ODEV,93023 ) 
+     &               ( EINAM( V )( 1:TRIMLEN( EINAM( V ) ) ),
+     &                 EMISV( S,V ), V = 1, NIPOL ), 'tons/period'
+
+                WRITE( ODEV, 93025 ) 'mi/day', VMT( S ), 
+     &               ( VTYPE3( L   ), L=1,NVTYPE ),
+     &               ( VMTDIS( S,L ), L=1,NVTYPE )
 
             ENDIF
 
 C.............  For speciation...
             IF( SPCFLAG ) THEN
 
-C.............  Create pointer for model species
-                ICNT = 0
-                DO 277 V = 1, NIPOL
-                     DO 273 J = 1,  NSPCOUT( V )
+C.................  Average mobile speciation matrix over all processes for all
+C.................     nehicle types
+C.................  NOTE: It is a bit weird to average the speciation factors
+C.................        because they do not all get equal weighting when 
+C.................        actually applied (weight depends on emissions from 
+C.................        each process).  Leave for future improvement.
+                IF( CATEGORY .EQ. 'MOBILE' ) THEN
 
-                         K = SPCREF( V,J )
-                         ICNT = ICNT + 1
-                         SPNT( ICNT ) = K
+                    DO 277 V = 1, NVTYPE
 
-273                 CONTINUE
-277             CONTINUE
+                        DO 272 F = 1, NMPOL   ! Initialize
+                            SFACS( F,V ) = 0.
+                            NSCNT( F   ) = 0
+272                     CONTINUE
 
-C.................  Write out speciation coefficients
-                WRITE( ODEV, 93030 ) (  EMNAM( SPNT( J ) ),
-     &                                  SS( S, SPNT( J ) ), J=1, NMPOL )
+                        DO 273 J = 1, NVSMAT  ! Loop over smat vars
+
+                            F = SMREFM( J )   ! F is model species ID
+                            K = ( V-1 )*NSRCS + S
+                            SFACS( F,V ) = SFACS( F,V ) + SM( K,J )
+                            NSCNT( F ) = NSCNT( F ) + 1
+
+273                     CONTINUE
+
+                        DO 275 F = 1, NMPOL
+                            SFACS( F,V ) = SFACS( F,V ) / NSCNT( F )
+275                     CONTINUE
+
+277                 CONTINUE 
+
+C.....................  Write out speciation coefficients for mobile
+                    WRITE( ODEV,93030 ) ( VTYPE3( V ), V=1, NVTYPE )
+
+                    DO 279 F = 1, NMPOL
+                        WRITE( ODEV,93032 )
+     &                       EMNAM(F),(  SFACS( F,V ), V=1,NVTYPE )
+279                 CONTINUE 
+                ELSE
+
+C.....................  Write out speciation coefficients for area/point
+                    WRITE( ODEV,93035 ) 
+     &                   ( EMNAM( F ), SS( S,F ), F=1,NMPOL )
+                ENDIF
 
             ENDIF
 
@@ -1324,10 +1649,10 @@ C.............  If the source is outside the domain, don't output time-stepped
 C.................  Write out header for temporal emissions
                 IF ( SPCFLAG ) THEN
                     WRITE( ODEV, 93040 ) MMDDYY( SDATE ),
-     &                           ( EINAM( V )        , V = 1, NIPOL ), 
-     &                           ( EMNAM( SPNT( J ) ), J = 1, NMPOL ),
-     &                           ( TONSUNIT          , K = 1, NIPOL ),
-     &                           ( MOLEUNIT          , L = 1, NMPOL )
+     &                           ( EINAM( V ), V = 1, NIPOL ), 
+     &                           ( EMNAM( J ), J = 1, NMPOL ),
+     &                           ( TONSUNIT  , K = 1, NIPOL ),
+     &                           ( MOLEUNIT  , L = 1, NMPOL )
 
                 ELSE
                     WRITE( ODEV, 93042 ) MMDDYY( SDATE ),
@@ -1345,7 +1670,7 @@ C.................  Write out time dependent emissions
                         WRITE( ODEV, 93050 ) 
      &                         JDATE-SDATE+1, JTIME/10000, 
      &                         ( ETMP( I, V, T ), V=1,NIPOL ),
-     &                         ( EOUT( I, SPNT( J ), T ), J=1, NMPOL )
+     &                         ( EOUT( I, J, T ), J=1,NMPOL )
                     ELSE
                         WRITE( ODEV, 93050 )
      &                         JDATE-SDATE+1, JTIME/10000, 
@@ -1354,13 +1679,13 @@ C.................  Write out time dependent emissions
 
                     IF( JDATE .NE. LDATE ) THEN
 
-                        DO 288 V = 1, NIPOL
+                        DO 288 V = 1, NIPOL     ! Initialize
                             EISUM( V ) = ETMP( I, V, T )
 288                     CONTINUE
 
                         IF ( SPCFLAG ) THEN
-                            DO 291 J = 1, NMPOL
-                                EMSUM( J ) = EOUT( I, SPNT( J ), T )
+                            DO 291 J = 1, NMPOL ! Initialize
+                                EMSUM( J ) = EOUT( I, J, T )
 291                         CONTINUE
                         ENDIF
 
@@ -1369,13 +1694,12 @@ C.................  Write out time dependent emissions
                     ELSE
 
                         DO 295 V = 1, NIPOL
-                            EISUM( V ) = EISUM( V ) + ETMP( I, V, T )
+                            EISUM( V ) = EISUM( V ) + ETMP( I,V,T )
 295                     CONTINUE
 
                         IF ( SPCFLAG ) THEN
                             DO 299 J = 1, NMPOL
-                                EMSUM( J ) = EMSUM( J )+
-     &                                       EOUT( I, SPNT( J ), T )
+                                EMSUM( J ) = EMSUM( J ) + EOUT( I,J,T )
 299                         CONTINUE
                         ENDIF
 
@@ -1471,22 +1795,47 @@ C...........   Formatted file I/O formats............ 93xxx
      &          5X, ' FIP:', I5.5, ' ASCT:', I7.7, I3.3,
      &              ' YR:' , I4, ' ZON:', I2.2, ' TPF:', I1 )
 
+93003   FORMAT( I5, ' Src ID:', I7, / ,
+     &          5X, ' FIP:', I5.5, ' RDCLAS:', I8,
+     &              ' YR:' , I4, ' ZON:', I2.2, ' TPF:', I1 )
+
+93004   FORMAT( I5, ' Src ID:', I7, / ,
+     &          5X, ' FIP:', I5.5, ' RDCLAS:', I8, ' ILINK:', I8,
+     &              ' YR:' , I4, ' ZON:', I2.2, ' TPF:', I1, /,
+     &          5X, ' Link info...   (X1,Y1): (', F10.1, ',', F10.1, 
+     &              ')  (X2,Y2): (', F10.1, ',', F10.1, ') UTM Zone= ',
+     &              I2 )
+
 93005   FORMAT( 29X, A15, 1X, A12, 14X, A40 )
 
 93007   FORMAT( 5X, ' Gridding... Status:', A7 )
 
 93008   FORMAT( 5X, ' Gridding... Status:', A7, 
-     &              ' Cell (X,Y) / gridding factor', / ,
-     &              <OUTCEL>( 18X, 3( '(', I3, ',', I3, ') / ', 
-     &                                E11.5, 3X ) /             ) ) 
+     &              ' Cell (X,Y) / gridding factor', / , <OUTCEL>
+     &              ( 18X, 3( '(', I3,',', I3, ') / ',E11.5, 3X, : )/ ))
 
 93010   FORMAT( 5X, ' Control facs...  ',
-     &              30( 1X, A, ': ', E11.5 )   )
+     &              30( 1X, A, ': ', E11.5 ) )
 
 93020   FORMAT( 5X, ' Inv emissions...',
-     &              <NIPOL>( 1X, A, ': ', E11.5 ), '[', A, ']' )
+     &              <NIPOL>( 1X, A, ': ', E11.5 ), ' [', A, ']' )
 
-93030   FORMAT( 5X, ' Speciation coefficients [gm mol/tons]...', /,
+93023   FORMAT( 5X, ' Total emissions...',
+     &              <NIPOL>( 1X, A, ': ', E11.5 ) ' [', A, ']' )
+
+93025   FORMAT( 5X, ' Inventory VMT [', A, ']...' / 
+     &          7X, ' Total:', 1X, E11.5, /, 
+     &          15X, <NVTYPE>( 4X, A5, :, 3X ), /,
+     &          7X, ' Disag:' <NVTYPE>( 1X, E11.5, : ) )
+
+93030   FORMAT( 5X, ' Speciation coefficients, VOC values are means',
+     &              ' over exhaust, evap, diurnal processes',
+     &              ' [gm mol/tons]...', /,
+     &              5X, '   VTYPE: ', <NVTYPE>( 4X, A5, 3X ) )
+
+93032   FORMAT( 8X, A5, ':', <NVTYPE>( 1X, E11.5 ) )
+
+93035   FORMAT( 5X, ' Speciation coefficients [gm mol/tons]...', /,
      &          5( 9X, 7( 1X, A4, ': ', E11.5 ), / ) )
 
 93040   FORMAT( 5X, ' Hourly emissions starting ', A14, '...' /,
@@ -1523,6 +1872,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93220   FORMAT( 5X, 'St/Co FIPS code= ', I5.5, ' and ASCT= ', 
      &          I7.7, I3.3 )
+
+93223   FORMAT( 5X, 'St/Co FIPS code= ', I5.5, ', Road class= ', 
+     &          I8, ', and Link= ', I8 )
 
 93225   FORMAT( 5X, 'St/Co FIPS code= ', I5.5, ', SCC= ', I8.8,
      &          ', SIC= ', I4.4, ', Plant ID= ', I8, 
