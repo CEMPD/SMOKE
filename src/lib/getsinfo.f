@@ -210,6 +210,10 @@ C              this array in the loops below that fill EINAM and NIACT
             CALL CHECKMEM( IOS, 'EAUNIT', PROGNAME )
             ALLOCATE( EADESC( NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EADESC', PROGNAME )
+            EANAM  = ' '  ! array
+            EAREAD = ' '  ! array
+            EAUNIT = ' '  ! array
+            EADESC = ' '  ! array            
 
 C.............  Allocate memory for and store pollutant names 
             ALLOCATE( EINAM( NIPOL ), STAT=IOS )
@@ -233,6 +237,7 @@ C           consistent with the inventory file header
      &             'file.'
             CALL M3MSG2( MESG )
             NIPOL = NIPOL - ( NIPPA - NMAP )
+            NIPPA = NIPOL + NIACT
 
         ELSE IF ( NMAP .GT. 0 .AND. NMAP .GT. NIPPA ) THEN
             WRITE( MESG,94010 ) 'Number of map-formatted ' //
