@@ -1,0 +1,204 @@
+      SUBROUTINE SMKHAPS(IV,JDX,IP,EFIDX,IH,IFAC,XEF,NPOL,OUTPUT)
+
+C  SMKHAPS aggregates user-defined toxic emission factors by vehicle
+C  age and type.
+
+      USE DATABASE, ONLY : DBUNIT,TABCHAR,DBSCTITLE 
+      USE ATHEAP, ONLY : ATHPOL, ATHSNAME
+      
+      IMPLICIT NONE
+      
+      INCLUDE 'CEVBMY.I' ! BMYMPD      
+      INCLUDE 'MAXIMA.I' ! MAXIH
+      INCLUDE 'MYRCAL.I' ! MEVMYR
+      INCLUDE 'SPEED9.I' ! HVMT
+      INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
+       
+      INTEGER, INTENT(IN) :: IV      ! vehicle type (1 - 28)
+      INTEGER, INTENT(IN) :: JDX     ! age
+      INTEGER, INTENT(IN) :: IP      ! pollutant
+      INTEGER, INTENT(IN) :: EFIDX   ! emission factor type (1 - 6)
+      INTEGER, INTENT(IN) :: IH      ! hour
+      INTEGER, INTENT(IN) :: IFAC    ! facility type (1 - 5)
+      REAL,    INTENT(IN) :: XEF     ! mg/mile emission factor
+      INTEGER, INTENT(IN) :: NPOL    ! total number of pollutants
+      LOGICAL, INTENT(IN) :: OUTPUT  ! true: output data to file or memory
+      
+      REAL, ALLOCATABLE, SAVE :: HAPAGGR (:,:,:,:,:)  ! aggregated toxics emission factors
+                                                      ! dimensions: (IV,IP,EFIDX,IH,IFAC)
+      REAL, ALLOCATABLE, SAVE :: ZMILES (:,:,:,:)     ! summed miles
+                                                      ! dimensions: (IP,EFIDX,IH,IFAC)
+      REAL, ALLOCATABLE, SAVE :: ZGMHOUR(:,:,:,:)     ! summed gm/hour
+                                                      ! dimensions: (IP,EFIDX,IH,IFAC)
+      
+      INTEGER :: IVEH        ! vehicle type (1 - 8)
+      INTEGER :: EFTYPE      ! emission factor type (1 - 8)
+      INTEGER :: IPOL        ! pollutant number from ADD HAPS file (50 - 99)
+      INTEGER :: IOS         ! I/O status
+      INTEGER :: IPTMP       ! pollutant loop variable
+      INTEGER :: IHTMP       ! hour loop variable
+      INTEGER :: IFTMP       ! facility loop variable
+      INTEGER :: IEF         ! emission factor type for output
+      INTEGER :: SFAC, EFAC  ! start and end facility types
+      INTEGER, SAVE :: PREVVEH     ! previous vehicle type
+
+      REAL :: MILES          ! hourly miles
+      REAL :: SUMVMT         ! vmt fraction for one of 8 vehicle types
+      REAL :: ZGMMILE        ! summed gm/mile
+      
+      LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
+
+C  Begin body of subroutine SMKHAPS
+
+C  Allocate and initialize arrays first time
+      IF (INITIAL) THEN
+      	  ALLOCATE( HAPAGGR( 8,NPOL,6,MAXIH,5 ), STAT=IOS )
+      	  ALLOCATE(  ZMILES(   NPOL,6,MAXIH,5 ), STAT=IOS )
+      	  ALLOCATE( ZGMHOUR(   NPOL,6,MAXIH,5 ), STAT=IOS )
+      	
+      	  HAPAGGR = 0.0
+      	  ZMILES  = 0.0
+      	  ZGMHOUR = 0.0
+      	  
+      	  PREVVEH = IV
+          INITIAL = .FALSE.
+      END IF
+
+C  If the vehicle type has changed, need to aggregate previous values
+      IF( PREVVEH /= IV ) THEN
+          	
+C  Select appropriate vehicle class (8 types) for vehicle type (28)
+          SELECT CASE (PREVVEH)
+          CASE (1)
+             IVEH = 1
+             SUMVMT = VMTMIX(1)
+          CASE (2,3)
+             IVEH = 2
+             SUMVMT = VMTGT12
+          CASE (4,5)
+             IVEH = 3
+             SUMVMT = VMTGT34
+          CASE (6:13,25)
+             IVEH = 4
+             SUMVMT = VMTHDG
+          CASE (14)
+             IVEH = 5
+             SUMVMT = VMTMIX(14)
+          CASE (15,28)
+             IVEH = 6
+             SUMVMT = VMTLDDT
+          CASE (16:23,26,27)
+             IVEH = 7
+             SUMVMT = VMTHDD
+          CASE (24)
+             IVEH = 8
+             SUMVMT = VMTMIX(24)
+          END SELECT
+          	
+          DO IPTMP = 1,NPOL
+              DO IEF = 1,6
+                  
+C  Set start and end facility based on emission factor type
+                  SFAC = 5
+                  EFAC = 5
+                      
+                  IF( IEF == 1 .OR. IEF == 4 ) THEN
+                      SFAC = 1
+                  END IF
+                      
+                  IF( IEF == 4 ) THEN
+                      EFAC = 4
+                  END IF
+                  
+                  DO IHTMP = 1,MAXIH
+                  
+                      DO IFTMP = SFAC,EFAC
+                          IF (ZMILES(IPTMP,IEF,IHTMP,IFTMP) < 
+     &                                            0.000001) THEN
+                              ZGMMILE = 0.0
+                          ELSE
+                              ZGMMILE =
+     &                            ZGMHOUR(IPTMP,IEF,IHTMP,IFTMP)/
+     &                            ZMILES( IPTMP,IEF,IHTMP,IFTMP)
+                          END IF
+                        
+                          HAPAGGR(IVEH,IPTMP,IEF,IHTMP,IFTMP) =
+     &                        HAPAGGR(IVEH,IPTMP,IEF,IHTMP,IFTMP) +
+     &                        (ZGMMILE*VMTMIX(PREVVEH))/SUMVMT
+     
+                          ZMILES (IPTMP,IEF,IHTMP,IFTMP) = 0.0
+                          ZGMHOUR(IPTMP,IEF,IHTMP,IFTMP) = 0.0
+                      END DO
+                  END DO
+              END DO
+          END DO
+      END IF
+          
+      PREVVEH = IV
+
+      IF (.NOT. OUTPUT) THEN
+                          
+C  Calculate and store miles and gm/hour
+          MILES = BMYMPD(JDX,IV)*HVMT(IH)*MEVMYR(JDX,IV)
+          ZMILES (IP,EFIDX,IH,IFAC) = ZMILES (IP,EFIDX,IH,IFAC) + MILES
+          ZGMHOUR(IP,EFIDX,IH,IFAC) = 
+     &                            ZGMHOUR(IP,EFIDX,IH,IFAC) + XEF*MILES
+
+      ELSE
+   
+          DO IPTMP = 1,NPOL
+              DO IVEH = 1,8
+                  DO EFTYPE = 1,8
+                  
+C  Skip evap crankcase since there are toxics are not available
+                      IF( EFTYPE == 7 ) CYCLE
+                      
+C  Map emission factor type to toxics EF types
+C    EFTYPE = 1 -> EFIDX = 1  ! ex. running
+C    EFTYPE = 2 -> EFIDX = 1  ! ex. start
+C    EFTYPE = 3 -> EFIDX = 2  ! evp. hot soak
+C    EFTYPE = 4 -> EFIDX = 3  ! evp. diurnal
+C    EFTYPE = 5 -> EFIDX = 5  ! evp. resting
+C    EFTYPE = 6 -> EFIDX = 4  ! evp. running
+C    EFTYPE = 7 -> N/A        ! evp. crankcase
+C    EFTYPE = 8 -> EFIDX = 6  ! evp. refueling
+
+                      SELECT CASE( EFTYPE )
+                      CASE( 1 )
+                           IEF = 1
+                      CASE( 2 )
+                           IEF = 1
+                      CASE( 3 )
+                           IEF = 2
+                      CASE( 4 )
+                           IEF = 3
+                      CASE( 5 )
+                           IEF = 5
+                      CASE( 6 )
+                           IEF = 4
+                      CASE( 8 )
+                           IEF = 6
+                      END SELECT
+          
+C  Set facility types based on EF type
+                      IF( EFTYPE == 1 .OR. EFTYPE == 6 ) THEN
+                          SFAC = 1
+                          EFAC = 4
+                      ELSE
+                          SFAC = 5
+                          EFAC = 5
+                      END IF
+                      
+                      DO IFTMP = SFAC,EFAC
+                       WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IPTMP+50,
+     &                   TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFTMP,
+     &                   TABCHAR,IHTMP,TABCHAR,
+     &                   HAPAGGR(IVEH,IPTMP,IEF,IHTMP,IFTMP),IHTMP=1,24)
+  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
+                      END DO  ! facility loop
+                  END DO  ! ef type loop
+              END DO  ! vehicle loop 
+          END DO  ! pollutant loop
+      END IF  ! check for output
+
+      END SUBROUTINE SMKHAPS
