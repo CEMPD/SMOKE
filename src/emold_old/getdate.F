@@ -69,15 +69,30 @@ C.......   LOCAL VARIABLES:
 C......................................................................
 C       begin GETDATE
 
-        JDATE = GETNUM( 1970001, 25000101, DEFAULT, PROMPT )
+11      CONTINUE
 
+        JDATE = GETNUM( 0, 99999999, DEFAULT, PROMPT )
+
+C.........  For Gregorian input date - convert to Julian
         IF( JDATE .GT. 9999999 ) THEN
+
             YEAR = JDATE/10000
             MONTH = ( JDATE-YEAR*10000 ) / 100
             DAY   = MOD( JDATE-YEAR*10000, 100 )
             JDATE = YEAR*1000 + JULIAN( YEAR, MONTH, DAY )
+
         ENDIF
 
+C.........  Check range
+        IF( JDATE .LT. 1970001 .OR. JDATE .GT. 2500365 ) THEN
+
+            CALL M3ERR( 'GETDATE', 0, 0, 'ERROR: Date is out of ' //
+     &                  'acceptable modeling range', .FALSE. )
+
+            GO TO 11   ! Read in date again.
+
+        ENDIF
+        
         GETDATE = JDATE
 
         RETURN
