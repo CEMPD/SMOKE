@@ -9,7 +9,7 @@ C  DESCRIPTION:
 C      This subroutine creates the point source gridding matrix and
 C      writes it to a NetCDF file.  This subroutine is created to be
 C      consisent with those for area and mobile sources, which are needed
-C      to ensure that the sparse matrix is store contiguously in memory. 
+C      to ensure that the sparse matrix is stored contiguously in memory. 
 C
 C  PRECONDITIONS REQUIRED:
 C      File must be opened and its logical name input through the FNAME
@@ -20,6 +20,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C      Created by M. Houyoux 1/99
 C
 C****************************************************************************/
 C
@@ -48,18 +49,16 @@ C***************************************************************************
 
 C...........   INCLUDES
 
-        INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         DSCM3GRD
-c       CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         INTEGER         TRIMLEN
-c       CHARACTER*16    VERCHAR
 
-        EXTERNAL CRLF, PROMPTFFILE, PROMPTMFILE, TRIMLEN, VERCHAR
+        EXTERNAL DSCM3GRD, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(LEN=NAMLEN3) FNAME ! matrix output inventory logical name
@@ -71,7 +70,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER       IX( NPSRC )    ! Source number, w/ order based on NX
         INTEGER       NCOEF          ! Number of coefficients
         INTEGER       CMAX           ! Maximum number of sources per cell
-        INTEGER       CMIN           ! min number srcs per cell
+        INTEGER       CMIN           ! Minimum number of sources per cell
 
 C...........   Scratch Gridding Matrix
 
@@ -85,16 +84,13 @@ C...........   Other local variables
 
         INTEGER         COL   ! tmp column number
         INTEGER         ROW   ! tmp row number
-        INTEGER         CMAX  ! max number srcs per cell
-        INTEGER         CMIN  ! min number srcs per cell
         INTEGER         CSAV  ! saved value of C
         INTEGER         IOS   ! i/o status
         INTEGER         KSAV  ! saved value of K
         INTEGER         K2SAV ! saved value of K2
         INTEGER         NEXCLD! number of sources not in grid.  Will
                               !    appear as blanks in SN( ) and GN( )
-        INTEGER         NPSRC ! No of point sources
-        INTEGER         NROWS, NCOLS, NGRID  ! No of rows, columns, and cells
+        INTEGER         NROWS, NCOLS  ! No. of rows, columns, and cells
 
         REAL            XX, YY, XDUM, YDUM ! tmp X and Y coordinates
         REAL            XX0, YY0  ! X and Y origin in coordinates of grid
@@ -104,8 +100,10 @@ C...........   Other local variables
         LOGICAL         GFLAG     !  generate output gridding matrix if true
 
         CHARACTER*16    COORD     !  coordinate system name
+        CHARACTER*16    COORUNIT  !  coordinate system projection units
         CHARACTER*16    GRDNM     !  grid name
-        CHARACTER*300   MESG      ! message buffer 
+        CHARACTER*80    GDESC     !  grid description
+        CHARACTER*300   MESG      !  message buffer 
 
         CHARACTER*16 :: PROGNAME = 'GENPGMAT' ! program name
 
@@ -113,7 +111,7 @@ C***********************************************************************
 C   begin body of subroutine GENPGMAT
 
 C.........  Get grid name from the environment and read grid parameters
-        IF( .NOT. DSCM3GRD( GRDNM, COORD, GDTYP3D, 
+        IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD, GDTYP3D, COORUNIT, 
      &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
      &                      XORIG3D, YORIG3D, XCELL3D, YCELL3D,
      &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
@@ -130,14 +128,16 @@ C.........  Store grid parameters for later processing
             YY1   = YY0 + FLOAT( NROWS3D ) * SNGL( YCELL3D )
             DDX   = 1.0 / SNGL( XCELL3D )
             DDY   = 1.0 / SNGL( YCELL3D )
-            NROWS = YCELL3D
-            NCOLS = XCELL3D
+            NROWS = NROWS3D
+            NCOLS = NCOLS3D
 
             IF( NCOLS * NROWS .NE. NGRID ) THEN
  
-                MESG = 'ERROR: Number of cells inconsistent with ' //
-     &                 'calling program'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                MESG = 'INTERNAL ERROR: Number of cells in "' //
+     &                 PROGNAME( 1:16 ) // '" are inconsistent '//
+     &                 'with calling program'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
             ENDIF
 
@@ -187,8 +187,10 @@ C.........  Initialize temporary storage table
 
             IF( C .LE. NGRID ) THEN
                 NX( C ) = NX( C ) + 1
+
             ELSEIF( C .GT. CSAV ) THEN
                 CSAV = C
+
             ENDIF
 
             GN( I ) = C
@@ -206,7 +208,6 @@ C.........  Initialize temporary storage table
 
         CMAX = NX( 1 )
         CMIN = CMAX
-
 
 C.........  Sort temporary gridding matrix
         CALL SORTI2( NPSRC, INDX, GN, SN )
@@ -230,11 +231,11 @@ C.............   Compute statistics
             
                 J = NX( R )
                    
-                IF (      J .GT. CMAX ) THEN
+                IF( J .GT. CMAX ) THEN
                     CMAX = J
-                ELSE IF ( J .LT. CMIN ) THEN
+                ELSEIF( J .LT. CMIN ) THEN
                     CMIN = J
-                END IF
+                ENDIF
 
                 IF( J .NE. 0 ) THEN
                    
@@ -254,57 +255,59 @@ C.............   Compute statistics
                    
             ENDDO    !  end of loop on cells K for this FIP
             
-            IF ( K .GT. NPSRC ) THEN
+C.............  Give error(s) if memory allocation exceeded 
+            IF( K .GT. NPSRC ) THEN
                 WRITE( MESG,94010 ) 
      &                  'INTERNAL ERROR: Number of gridding ' //
      &                  'coefficients K=', K, 
      &                  'exceeds NPSRC=', NPSRC
                 CALL M3MSG2( MESG ) 
-            END IF
+            ENDIF
                    
-            IF ( K2 .GT. NPSRC ) THEN
+            IF( K2 .GT. NPSRC ) THEN
                 WRITE( MESG,94010 ) 
      &                  'INTERNAL ERROR: Number of gridding ' //
      &                  'coefficients K2=', K2, 
      &                  'exceeds NPSRC=', NPSRC
                 CALL M3MSG2( MESG ) 
-            END IF
+            ENDIF
 
+C.............  Stop program if memory exceedance errors were written
             IF( K .GT. NPSRC .OR. K2 .GT. NPSRC ) 
      &          CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 ) 
 
             CALL M3MSG2( 'Writing out GRIDDING MATRIX file...' )
 
-            IF ( .NOT. WRITE3( FNAME, 'ALL', 0, 0, NX ) ) THEN
+            IF( .NOT. WRITE3( FNAME, 'ALL', 0, 0, NX ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, 
      &              'Error writing GRIDDING MATRIX file.', 2 )
-            END IF
+            ENDIF
 
         ELSE            !....  not GFLAG:  report matrix stats only
                             
             CALL M3MSG2( 'Computing gridding statistics...' )
 
-            DO R = 2, NGRID
+            DO R = 1, NGRID  ! Must start loop at 1 to get correct K value
             
                 J = NX( R )
                 K = K + J
                    
-                IF      ( J .GT. CMAX ) THEN
+                IF( J .GT. CMAX ) THEN
                     CMAX = J
-                ELSE IF ( J .LT. CMIN ) THEN
+                ELSEIF ( J .LT. CMIN ) THEN
                     CMIN = J
-                END IF
+                ENDIF
 
             ENDDO    !  end of loop on cells K for this FIP
 
-        END IF  !  if gflag, or not
+        ENDIF  !  if gflag, or not
 
         NCOEF = K
 
         WRITE( MESG,94010 ) 
      &      'NOTE: Number of sources excluded from grid was', NEXCLD
 
-        CALL M3MESG( MESG )
+        CALL M3MSG2( MESG )
 
         RETURN
 
