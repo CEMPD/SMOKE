@@ -115,6 +115,7 @@ C...........   Other local variables
         LOGICAL      :: CHKMINUS = .FALSE. ! true: formula uses a - sign
         LOGICAL      :: EFLAG    = .FALSE. ! true: error found
         LOGICAL      :: FFLAG    = .FALSE. ! true: formula in use
+        LOGICAL         ZFLAG              ! true: write zeros to output file
 
         CHARACTER(16)   NAME1            ! tmp file name component
         CHARACTER(16)   NAME2            ! tmp file name component
@@ -155,6 +156,9 @@ C..........  Get environment variables
             MESG = 'Problem with input environment variables'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+
+        MESG = 'Write zero values to annual emissions inventory'
+        ZFLAG = ENVYN( 'WRITE_ANN_ZERO', MESG, .FALSE., IOS )
 
 C.........  Compute real value of integer missing
         RIMISS3 = REAL( IMISS3 )
@@ -507,8 +511,10 @@ C                       pollutant of iteration I.
                         IPPTR( S ) = K + 1  ! pointer for source S
 
 C......................  Skip records with zero data or missing data
-                        IF( POLVAL( K,1 ) .LE. 0 . AND.
-     &                      POLVAL( K,2 ) .LE. 0        ) CYCLE
+                        IF( .NOT. ZFLAG ) THEN
+                            IF( POLVAL( K,1 ) .LE. 0 . AND.
+     &                          POLVAL( K,2 ) .LE. 0        ) CYCLE
+                        END IF
 
                         N = N + 1
                         SRCID( N ) = S
@@ -641,42 +647,46 @@ C                 sparse storage.  Populate sparse arrays.
                 MINANN = 0.
                 MINAVD = 0.
                 DO S = 1, NSRC
-                    IF( COMPUTED( S,1 ) /= 0. .OR. 
-     &                  COMPUTED( S,2 ) /= 0.      ) THEN
-                        NREC = NREC + 1
-                        SRCID ( NREC ) = S
+
+C.....................  Skip records with zero data
+                    IF( .NOT. ZFLAG ) THEN
+                        IF( COMPUTED( S,1 ) == 0 .AND.
+     &                      COMPUTED( S,2 ) == 0       ) CYCLE
+                    END IF
+
+                    NREC = NREC + 1
+                    SRCID ( NREC ) = S
 
 C......................  Check for negative values for annual value
-                        IF( COMPUTED( S,1 ) .LT. 0 ) THEN
-                            L = LEN_TRIM( VNAMFORM( 1 ) )
-                            CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
-                            WRITE( MESG,94020 ) 
-     &                        'WARNING: Resetting negative value of "'//
-     &                        VNAMFORM(1)(1:L)//'" from', COMPUTED(S,1),
-     &                        'to 0. for source:'// CRLF() // BLANK10// 
-     &                        BUFFER( 1:L2 )
-                            CALL M3MESG( MESG )
-                            MINANN = MIN( MINANN, COMPUTED( S,1 ) )
-                            COMPUTED( S,1 ) = 0.
-                        END IF
+                    IF( COMPUTED( S,1 ) .LT. 0 ) THEN
+                        L = LEN_TRIM( VNAMFORM( 1 ) )
+                        CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
+                        WRITE( MESG,94020 ) 
+     &                    'WARNING: Resetting negative value of "'//
+     &                    VNAMFORM(1)(1:L)//'" from', COMPUTED(S,1),
+     &                    'to 0. for source:'// CRLF() // BLANK10// 
+     &                    BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        MINANN = MIN( MINANN, COMPUTED( S,1 ) )
+                        COMPUTED( S,1 ) = 0.
+                    END IF
 
 C......................  Check for negative values for average day value
-                        IF( COMPUTED( S,2 ) .LT. 0 ) THEN
-                            L = LEN_TRIM( VNAMFORM( 2 ) )
-                            CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
-                            WRITE( MESG,94020 ) 
-     &                        'WARNING: Resetting negative value of "'//
-     &                        VNAMFORM(2)(1:L)//'" from', COMPUTED(S,2),
-     &                        'to 0. for source:'// CRLF() // BLANK10// 
-     &                        BUFFER( 1:L2 )
-                            CALL M3MESG( MESG )
-                            MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
-                            COMPUTED( S,2 ) = 0.
-                        END IF
-                        
-                        SRCPOL( NREC,1:NPVAR ) = COMPUTED( S,1:NPVAR )
+                    IF( COMPUTED( S,2 ) .LT. 0 ) THEN
+                        L = LEN_TRIM( VNAMFORM( 2 ) )
+                        CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
+                        WRITE( MESG,94020 ) 
+     &                    'WARNING: Resetting negative value of "'//
+     &                    VNAMFORM(2)(1:L)//'" from', COMPUTED(S,2),
+     &                    'to 0. for source:'// CRLF() // BLANK10// 
+     &                    BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
+                        COMPUTED( S,2 ) = 0.
+                    END IF
+                    
+                    SRCPOL( NREC,1:NPVAR ) = COMPUTED( S,1:NPVAR )
 
-                    END IF      ! If non-zero value for COMPUTED
                 END DO          ! End loop through sources for sparse storage
 
 C...............  Give warning for that includes negative annual value
