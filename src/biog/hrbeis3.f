@@ -1,7 +1,9 @@
  
-        SUBROUTINE  HRBEIS3( JDATE, JTIME, NX, NY, COSZEN,
-     &                      SISOP, SMONO, SOVOC, SNO, SLAI,
-     &                      TA, TSOLAR, PRES, EMPOL )
+        SUBROUTINE HRBEIS( JDATE, JTIME, NX, NY, MSPCS, PX_VERSION, 
+     &                     INITIAL_HOUR, COSZEN, SEMIS,
+     &                     GROWAGNO, NGROWAGNO, NONAGNO, SLAI,
+     &                     TA, SOILM, SOILT, ISLTYP, RAIN, TSOLAR,
+     &                     PRES, PTYPE, PULSEDATE, PULSETIME, EMPOL )
 
 C***********************************************************************
 C  subroutine body starts at line  143
@@ -9,9 +11,8 @@ C
 C  DESCRIPTION:
 C  
 C     Uses PAR and sfc temperature data to calculate
-C     biogenic ISOP emissions.  OVOC, MONO and NO emissions are
-C     calculated using the temperature data only.  OVOC and MONO
-C     are not speciated in this rountine. 
+C     biogenic ISOP and MBO emissions.  Other emissions are
+C     calculated using the temperature data only.  
 C
 C  PRECONDITIONS REQUIRED:
 C     PAR and Surface Temperature
@@ -19,7 +20,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C    3/01 : Prototype by JMV
+C    4/01 : Prototype by JMV
 C 
 C***********************************************************************
 C
@@ -42,51 +43,57 @@ C Last updated: $Date$
 C
 C***********************************************************************
 
-      IMPLICIT NONE
+        IMPLICIT NONE
 
-C...........   INCLUDES:
+C.........  INCLUDES
+!        INCLUDE 'PARMS3.EXT'      ! I/O API constants
+!        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
+!        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
+!        INCLUDE 'EMCNST3.EXT'     ! Emissions constants
+!        INCLUDE 'CONST3.EXT'      ! More constants
+        INCLUDE 'B3V12DIMS3.EXT'  ! biogenic-related constants
 
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
-        INCLUDE 'EMCNST3.EXT'     ! Emissions constants
-        INCLUDE 'CONST3.EXT'      ! More constants
-        INCLUDE 'B3DIMS3.EXT'     ! biogenic-related constants
-
-C...........   EXTERNAL FUNCTIONS and their descriptions:
-
-        INTEGER         INDEX1
-        EXTERNAL        INDEX1
-
-C...........   ARGUMENTS and their descriptions:
-
+C.........  ARGUMENTS and their descriptions
         INTEGER, INTENT (IN)  :: JDATE   !  current simulation date (YYYYDDD)
         INTEGER, INTENT (IN)  :: JTIME   !  current simulation time (HHMMSS)
-        INTEGER, INTENT (IN)  :: NX      !  no. columnse
+        INTEGER, INTENT (IN)  :: NX      !  no. columns
         INTEGER, INTENT (IN)  :: NY      !  no. rows
+        INTEGER, INTENT (IN)  :: MSPCS   !  no. of output species
 
-        REAL, INTENT (IN)  ::  TA    ( NX, NY )    !  air temperature (K)
-        REAL, INTENT (IN)  ::  TSOLAR( NX, NY )    !  PAR
-        REAL, INTENT (IN)  ::  SISOP ( NX, NY )    ! norm ISOP emissions
-        REAL, INTENT (IN)  ::  SMONO ( NX, NY )    !  norm MONO emissions
-        REAL, INTENT (IN)  ::  SOVOC ( NX, NY )    !  norm OVOC emissions
-        REAL, INTENT (IN)  ::  SNO   ( NX, NY )    !  nor NO emissions
-        REAL, INTENT (IN)  ::  SLAI  ( NX, NY )    !  leaf area index
-        REAL, INTENT (IN)  ::  COSZEN( NX, NY )    !  cosine of zenith angle
-        REAL, INTENT (IN)  ::  PRES  ( NX, NY )    !  surface pressure (mb)
+        LOGICAL, INTENT (IN)  :: PX_VERSION    ! true: using PX version of MCIP
+        LOGICAL, INTENT (IN)  :: INITIAL_HOUR  ! true: 
+        
+        REAL, INTENT (IN)  ::  COSZEN   ( NX, NY )    !  cosine of zenith angle
+        REAL, INTENT (IN)  ::  SEMIS    ( NX, NY, NSEF-1 ) ! norm emissions
+        REAL, INTENT (IN)  ::  GROWAGNO ( NX, NY )    ! growing season NO emissions
+        REAL, INTENT (IN)  ::  NGROWAGNO( NX, NY )    ! non-growing season NO emissions
+        REAL, INTENT (IN)  ::  NONAGNO  ( NX, NY )    ! non-agriculuture NO emissions
+        REAL, INTENT (IN)  ::  SLAI  ( NX, NY, NLAI ) ! leaf area indices
+        REAL, INTENT (IN)  ::  TA    ( NX, NY )       ! air temperature (K)
+        REAL, INTENT (IN)  ::  SOILM ( NX, NY )       ! soil moisture
+        REAL, INTENT (IN)  ::  SOILT ( NX, NY )       ! soil temperature
+        REAL, INTENT (IN)  ::  ISLTYP( NX, NY )       ! soil type
+        REAL, INTENT (IN)  ::  RAIN  ( NX, NY)        ! rainfall rate (cm/ 24hr)
+        REAL, INTENT (IN)  ::  TSOLAR( NX, NY )       ! PAR
+        REAL, INTENT (IN)  ::  PRES  ( NX, NY )       ! surface pressure (mb)
+        
+        INTEGER, INTENT (IN OUT) :: PTYPE(NX, NY)      ! 'pulse' type
+        INTEGER, INTENT (IN OUT) :: PULSEDATE (NX, NY) ! date of pulse start
+        INTEGER, INTENT (IN OUT) :: PULSETIME (NX, NY) ! date of pulse end
 
-        REAL, INTENT (OUT)  ::  EMPOL ( NX, NY, BSPCS )      !  output pol emissions
+        REAL, INTENT (OUT)  ::  EMPOL( NX, NY, MSPCS ) !  output pol emissions
 
-C...........   SCRATCH LOCAL VARIABLES and their descriptions:
-
-        INTEGER         R, C, L      !  counters
+C.........  SCRATCH LOCAL VARIABLES and their descriptions
+        INTEGER         R, C, L, I      !  counters
+        INTEGER         IAFTER
+        
         REAL            CFOTHR       !  isop corr fac -- non-forest
         REAL            CFCLAI       !  ISOP CORR FAC -- LAI
         REAL            CFNO         !  NO correction factor
         REAL            CFOVOC       !  non-isop corr fac
         REAL            PAR          !  photo. actinic flux (UE/M**2-S)
         REAL            CT, DT       !  temperature correction
-        REAL            TAIR         ! surface temperature
+        REAL            TAIR         !  surface temperature
         REAL            RK           !  k from Geron and Guenther
         REAL            CSUBL        !  C sub l
         REAL            TLAI         !  temporary storage of LAI
@@ -96,172 +103,140 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            PARDB        !  par direct beam
         REAL            PARDIF       !  par diffuse
 
-        CHARACTER(16) :: PROGNAME = 'HRBEIS3'   !  program name
-
-        CHARACTER(256)  MESG
+        CHARACTER(5)    BTMP         !  temporary variable name
+        CHARACTER(256)  MESG         !  message buffer
+        
+        CHARACTER(16) :: PROGNAME = 'HRBEIS'   !  program name
 
 C***********************************************************************
-C   begin body of subroutine  HRBIOS
-
-C........... Find indices from BIOSPC array
-
-            NISO  = INDEX1 ('ISOP', BSPCS, BIOSPC)
-            NNO   = INDEX1 ( 'NO' , BSPCS, BIOSPC) 
-            NMONO = INDEX1 ('MONO', BSPCS, BIOSPC) 
-            NOVOC = INDEX1 ('OVOC', BSPCS, BIOSPC) 
-
-             
-C...........   loop thru cells
-
-            DO R = 1, NY
-               DO C = 1, NX
+C   begin body of subroutine HRBEIS
+        
+C.........  Loop through cells
+        DO R = 1, NY
+            DO C = 1, NX
                 
-                  TAIR = TA( C, R )         ! unit in degree K
+                TAIR = TA( C, R )         ! unit in degree K
 
+C..................  Check max and min bounds for temperature
+                IF (TAIR .LT. 200.0) THEN
+                    WRITE( MESG, 94010 ) 'TAIR=', TAIR,
+     &                  'out of range at (C,R)=', C, R
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
 
-C..........    Perform checks on max and min bounds for temperature
+                IF (TAIR .GT. 315.0 ) THEN
+                    WRITE( MESG, 94020 ) 'TAIR=', TAIR,
+     &                  'out of range at (C,R)=', C, R,
+     &                  ' resetting to 315K'
+                    CALL M3WARN( PROGNAME, JDATE, JTIME, MESG )
+                    TAIR = 315.0
+                END IF
 
-                  IF (TAIR .LT. 200.0) THEN
+C.................  Calculate temperature correction term
+                DT = 28668.514 / TAIR
+                CT = EXP( 37.711 - 0.398570815 * DT ) /
+     &                  (1.0 + EXP( 91.301 - DT ) )
 
-                      WRITE( MESG, 94010 )
-     &                 'TAIR=', TAIR,
-     &                 'out of range at (C,R)=',  C, R
-                      CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                SOLTMP = TSOLAR( C, R )
 
-                  END IF
+C.................  Cosine of zenith angle to zenith angle (radians)
+                ZEN =  ACOS( COSZEN( C, R ) ) 
+                PSFC = PRES( C, R )
 
-                  IF (TAIR .GT. 315.0 ) THEN
-                      WRITE( MESG, 94020 )
-     &                 'TAIR=', TAIR,
-     &                 'out of range at (C,R)=',  C, R,
-     &                 ' resetting to 315K'
-                      CALL M3WARN( PROGNAME, JDATE, JTIME, MESG )
-                      TAIR = 315.0
-                  ENDIF
-
-C..............  Calculate temperature correction term
-
-                  DT   = 28668.514 / TAIR
-                  CT   = EXP( 37.711 - 0.398570815 * DT ) /
-     &                   (1.0 + EXP( 91.301 - DT ) )
-
-                  SOLTMP   = TSOLAR( C, R )
-
-C...................   cosine of zenith angle to zenith angle (radians)
-
-                  ZEN =  ACOS( COSZEN( C, R ) ) 
-                  TLAI = SLAI( C, R )
-
-                  IF ( TLAI .GT. 10.0 ) THEN
-                      WRITE( MESG, 94010 )
-     &                 'LAI=', TLAI, 
-     &                 'out of range at (C,R)=',  C, R
-                      CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                  ENDIF
-
-                  PSFC = PRES( C, R )
-
-                  CALL GETPAR( SOLTMP, PSFC, ZEN, PARDB, PARDIF )
+                CALL GETPAR( SOLTMP, PSFC, ZEN, PARDB, PARDIF )
           
-                  PAR = PARDB + PARDIF
+                PAR = PARDB + PARDIF
 
-C................... Check max/min bounds of PAR and calculate
-C................... biogenic ISOP          
+C.................  Check max/min bounds of PAR and calculate
+C                   biogenic ISOP          
+                IF ( PAR .LT. 0.00 .OR. PAR .GT. 2600.0 ) THEN
+                    WRITE( MESG, 94010 ) 'PAR=', PAR,
+     &                  'out of range at (C,R)=', C, R
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
 
-                  IF ( PAR .LT. 0.00  ) THEN
+C.................  Compute ISOP and MBO and METH emissions first
+C                   Note assumption that these are the first 3
+C                   species in LAITYPE and BIOTYPE arrays
+                DO I = 1, NLAI
 
-                      WRITE( MESG, 94010 )
-     &                 'PAR=', PAR, 
-     &                 'out of range at (C,R)=',  C, R
-                      CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    BTMP = LAITYPES( I )
+                    TLAI = SLAI( C, R, I )
 
-                  ENDIF
+C.....................  Adjust methanol based on T. Pierce recommendation (1-16-03)
+                    IF( TRIM( BTMP ) == 'METH' ) THEN
+                        TLAI = MAX( 3.0, TLAI )
+                    END IF
 
-                  IF ( PAR .GT. 2550.00 ) THEN
+                    IF ( TLAI .GT. 10.0 ) THEN
+                        WRITE( MESG, 94010 ) 'LAI=', TLAI,
+     &                  'out of range at (C,R)=', C, R
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
 
-                      WRITE( MESG, 94020 )
-     &                 'PAR=', PAR,
-     &                 'out of range at (C,R)=',  C, R,
-     &                 ' resetting to 2550.'
-                      CALL M3WARN( PROGNAME, JDATE, JTIME, MESG  )
-                      PAR = 2550.00
+C.....................  Initialize csubl 
+                    CSUBL = 0.0
 
-                  ENDIF
+                    IF ( PAR .LE. 0.01 .OR. 
+     &                   COSZEN( C,R ) .LE. 0.02079483 ) THEN
+     
+                        EMPOL( C, R, I ) = 0.0
 
-
-C................... Initialize csubl 
-                  CSUBL = 0.0
-
-                  IF ( PAR .LE. 0.01 .OR. COSZEN( C,R) .LE. 0.02079483 ) 
-     &                THEN
-
-                      EMPOL( C,R, NISO ) = 0.0
-
-                  ELSE
-                     
-                      IF ( TLAI .GT. 0.1 ) THEN 
-
-                         CSUBL = CLNEW( ZEN, PARDB, PARDIF, TLAI )
-
-                      ELSE  ! keep this or not?
-
-                         CSUBL  = CGUEN( PAR ) 
-                         
-                      ENDIF
+                    ELSE 
+                        IF ( TLAI .GT. 0.1 ) THEN 
+                            CSUBL = CLNEW( ZEN, PARDB, PARDIF, TLAI )
+                        ELSE  ! keep this or not?
+                            CSUBL  = CGUEN( PAR ) 
+                        END IF
  
-                      EMPOL( C,R, NISO ) = SISOP( C,R ) * CT * CSUBL
+                        EMPOL( C, R, I ) = SEMIS( C,R, I ) * CT * CSUBL
+                    END IF
 
-                  ENDIF
+                END DO ! end ISOP and MBO calculations loop
 
-C..............  calculate OVOC and MONO emissions ; not speciated here
-           
-                  CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
+C.................  Calculate other biogenic emissions except NO 
+C                   Note not speciated here
+                CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
 
-                  EMPOL( C,R, NMONO ) = SMONO( C,R ) * CFOVOC
-                  EMPOL( C,R, NOVOC ) = SOVOC( C,R ) * CFOVOC
-  
-C............. calculate NO emissions by going thru temperature cases
-
-                  IF ( TAIR .GT. 303.00 ) TAIR = 303.00
-
-                  IF ( TAIR .GT. 268.8690 ) THEN  !  most frequent case first
-
-                       CFNO = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
-                       EMPOL( C,R, NNO ) =  SNO( C,R ) * CFNO 
-                  ELSE
-                       EMPOL( C,R, NNO ) = 0.00
-
-                  END IF      
-
-               ENDDO
-            ENDDO
+                IAFTER = NLAI + 1
+                DO I = IAFTER, NSEF - 1
+                    EMPOL( C,R,I ) = SEMIS( C,R,I ) * CFOVOC
+                END DO
+                
+            END DO ! end loop over columns
+        END DO ! end loop over rows
+                
+C.........  Calculate NO emissions
+        CALL HRNO( JDATE, JTIME, NX, NY, MSPCS, TA, SOILM, SOILT, 
+     &             ISLTYP, RAIN, GROWAGNO, NGROWAGNO, NONAGNO, 
+     &             PX_VERSION, INITIAL_HOUR, PTYPE, PULSEDATE, 
+     &             PULSETIME, EMPOL )
 
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-C...........   Informational (LOG) message formats... 92xxx
-
-
 C...........   Internal buffering formats............ 94xxx
-
 
 94010   FORMAT( A, F10.2, 1X, A, I3, ',', I3 )
 94020   FORMAT( A, F10.2, 1X, A, I3, ',', I3, A )
 
 C***************** CONTAINS ********************************************
-            CONTAINS
 
+        CONTAINS
+
+C.............  Function to calculate csubl based on zenith angle, par, and lai
             REAL FUNCTION CLNEW( ZEN, PARDB, PARDIF, TLAI )
-
-C........  Function to calculate csubl based on zenith angle, par, and lai
 
             IMPLICIT NONE
 
+C.............  Function arguments
             REAL, INTENT (IN) :: PARDB    ! direct beam PAR( umol/m2-s)
             REAL, INTENT (IN) :: PARDIF   ! diffuse PAR ( umol/m2-s)
             REAL, INTENT (IN) :: ZEN      ! solar zenith angle (radians)
             REAL, INTENT (IN) :: TLAI     ! leaf area index for grid cell
+            
+C.............  Local variables
             REAL KBE                ! extinction coefficient for direct beam
             REAL CANPARSCAT         ! exponentially wtd scattered PAR (umol/m2-s)
             REAL CANPARDIF          ! exponentially wtd diffuse PAR (umol/m2-s)
@@ -271,56 +246,64 @@ C........  Function to calculate csubl based on zenith angle, par, and lai
             REAL FRACSUN            ! fraction of leaves that are sunlit
             REAL FRACSHADE          ! fraction of leaves that are shaded
 
-C...........  CN98 - eqn 15.4, assume x=1
+C-----------------------------------------------------------------------------
 
+C.............  CN98 - eqn 15.4, assume x=1
             KBE = 0.5 * SQRT(1. + TAN( ZEN ) * TAN( ZEN ))
  
-C..........   CN98 - p. 261 (this is usually small)
-
+C.............  CN98 - p. 261 (this is usually small)
             CANPARSCAT = 0.5 * PARDB * (EXP(-0.894 * KBE * TLAI) - 
-     &               EXP(-1.* KBE * TLAI))
+     &                   EXP(-1.* KBE * TLAI))
 
-C..........   CN98 - p. 261 (assume exponentially wtd avg)
-
+C.............  CN98 - p. 261 (assume exponentially wtd avg)
             CANPARDIF  = PARDIF * (1. - EXP(-0.61 * TLAI))/(0.61 * TLAI)
 
-C.........    CN98 - p. 261 (for next 3 eqns)
-
+C.............  CN98 - p. 261 (for next 3 eqns)
             PARSHADE   = CANPARDIF + CANPARSCAT
             PARSUN     = KBE * (PARDB + PARDIF) + PARSHADE
-            LAISUN     = (1. - EXP( -KBE * TLAI))/KBE
-            FRACSUN    = LAISUN/TLAI
-            FRACSHADE  = 1. - FRACSUN
+	        LAISUN     = (1. - EXP( -KBE * TLAI))/KBE
+	        FRACSUN    = LAISUN/TLAI
+	        FRACSHADE  = 1. - FRACSUN
 
-C..........  cguen is guenther's eqn for computing light correction as a 
-C..........  function of PAR...fracSun should probably be higher since 
-C..........  sunlit leaves tend to be thicker than shaded leaves.  But 
-C..........  since we need to make crude asmptns regarding leave 
-C..........  orientation (x=1), will not attempt to fix at the moment.
+C...........  cguen is guenther's eqn for computing light correction as a 
+C             function of PAR...fracSun should probably be higher since 
+C             sunlit leaves tend to be thicker than shaded leaves.  But 
+C             since we need to make crude asmptns regarding leave 
+C             orientation (x=1), will not attempt to fix at the moment.
 
-            CLNEW =FRACSUN * CGUEN(PARSUN) + FRACSHADE * CGUEN(PARSHADE)
+            CLNEW = FRACSUN * CGUEN( PARSUN ) + 
+     &              FRACSHADE * CGUEN( PARSHADE )
 
             RETURN 
+
             END FUNCTION CLNEW
 
+C-----------------------------------------------------------------------------
+
+C.............  Function to calculate Guenther's equation for computing 
+C               light correction
             REAL FUNCTION CGUEN( PARTMP ) 
 
-C..........  Guenther's equation for computing light correction
-
             IMPLICIT NONE
+
+C.............  Function arguments            
             REAL, INTENT (IN) :: PARTMP
             REAL, PARAMETER :: ALPHA2 = 0.00000729 
 
+C-----------------------------------------------------------------------------
+
             IF ( PARTMP .LE. 0.01) THEN
-               CGUEN = 0.0
+                CGUEN = 0.0
             ELSE
-               CGUEN = (0.0028782 * PARTMP) /
-     &             SQRT(1. + ALPHA2 * PARTMP * PARTMP)
-            ENDIF
+                CGUEN = (0.0028782 * PARTMP) /
+     &                  SQRT(1. + ALPHA2 * PARTMP * PARTMP)
+            END IF
  
             RETURN
+
             END FUNCTION CGUEN
 
+C-----------------------------------------------------------------------------
 
-        END SUBROUTINE HRBEIS3
+        END SUBROUTINE HRBEIS
 
