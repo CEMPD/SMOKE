@@ -73,7 +73,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY
         REAL            YR2DAY
 
-        EXTERNAL        DSCGRID, ENVINY, ENVYN, GETYN, HHMMSS, INDEX1,
+        EXTERNAL        DSCGRID, ENVINT, ENVYN, GETYN, HHMMSS, INDEX1,
      &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN, 
      &                  WKDAY, YR2DAY
 
