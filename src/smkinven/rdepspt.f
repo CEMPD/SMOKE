@@ -486,10 +486,6 @@ C               if needed...
 C.............  Data already provided in lat/lon
             IF( ZONE .LT. 0 ) THEN
 
-C.................  Trade XLOC/YLOC because of EPS format. This is not an error.
-        	LAT = XLOC  ! XLOC stored latitude in format
-        	LON = YLOC  ! YLOC stored longitude in format
-
 C.................  Convert longitude if WEST_HSPHERE environment
 C.................  variable is true, and longitude is negative.
                 IF( WFLAG .AND. XLOC .GT. 0 ) THEN
@@ -498,6 +494,10 @@ C.................  variable is true, and longitude is negative.
 
                 END IF
  
+C.................  Trade XLOC/YLOC because of EPS format. This is not an error.
+        	LAT = XLOC  ! XLOC stored latitude in format
+        	LON = YLOC  ! YLOC stored longitude in format
+
 C.............  Convert to lat/lon from UTM
             ELSE
                 XLOC = 1000.0 * XLOC                     ! km to meters
