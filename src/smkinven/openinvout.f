@@ -1,8 +1,8 @@
 
-        SUBROUTINE OPENPNTS( NPSRC, NIPOL, EINAM, ENAME, SDEV )
+        SUBROUTINE OPENPNTS( ENAME, ANAME, SDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 99
+C  subroutine body starts at line 
 C
 C  DESCRIPTION:
 C      This subroutine sets up the header and variables for the I/O API 
@@ -10,7 +10,6 @@ C      inventory file, and opens the I/O API and ASCII files for the SMOKE
 C      point source inventory.
 C
 C  PRECONDITIONS REQUIRED:
-C      Correct number of sources NPSRC is set
 C      Correct number of pollutants and names EINAM are set
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -43,6 +42,13 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS
+
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -61,17 +67,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         EXTERNAL CRLF, PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER       NPSRC          ! Actual source count
-        INTEGER       NIPOL          ! Actual no of inv pollutants
-        CHARACTER(LEN=IOVLEN3) EINAM( NIPOL ) ! Name of actual pollutants
-        CHARACTER(LEN=NAMLEN3) ENAME ! Emissions output inventory logical name
-        INTEGER       SDEV           ! For ASCII output inventory file
+        CHARACTER(*), INTENT(IN OUT) :: ENAME ! emis i/o api inven logical name
+        CHARACTER(*), INTENT(IN OUT) :: ANAME ! emis ASCII inven logical name
+        INTEGER     , INTENT(OUT)    :: SDEV  ! ascii output inven file unit no.
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
-
-        PARAMETER   ( SCCSW   = '@(#)$Id$'
-     &              )
+        CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
 
 C...........   Names, Units, types, & descriptions for pollutant-specific 
 C              output variables
@@ -100,6 +101,7 @@ C.........  Check number of output variables against I/O API maximum
         NPOLMAX = INT( ( MXVARS3 - NPTVAR3 ) / NPTPPOL3 )
 
 C.........  If there are too many output variables, reset NIPOL
+
         IF( NIOVARS .GT. MXVARS3 ) THEN
 
             WRITE( MESG,94010 ) 
@@ -120,38 +122,31 @@ C.........  If there are too many output variables, reset NIPOL
 
         ENDIF
 
+C.........  Determine the base year of the inventory
+        CALL GETBASYR( NSRC, BYEAR )
+
 C.........  Set up for opening I/O API output file header
 
-        FTYPE3D = GRDDED3
-        P_ALP3D = DBLE( AMISS3 )
-        P_BET3D = DBLE( AMISS3 )
-        P_GAM3D = DBLE( AMISS3 )
-        XCENT3D = 0.0D0
-        YCENT3D = 0.0D0
-        XORIG3D = DBLE( AMISS3 )
-        YORIG3D = DBLE( AMISS3 )
-        SDATE3D = 0       !  n/a
-        STIME3D = 0       !  n/a
-        TSTEP3D = 0       !  time independent
+        CALL HDRMISS3  ! Initialize for emissions 
+
         NVARS3D = NIOVARS
-        NCOLS3D = 1
-        NROWS3D = NPSRC   !  number of rows = # of point sources.
-        NLAYS3D = 1
-        NTHIK3D = 1
-        GDTYP3D = IMISS3
-        VGTYP3D = IMISS3
-        VGTOP3D = AMISS3
-        GDNAM3D = ' '
+        NROWS3D = NSRC   !  number of rows = # of point sources.
 
         FDESC3D( 1 ) = 'Point source inventory'
         FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
         WRITE( FDESC3D( 4 ),94010 ) '/NON POLLUTANT/ ', NPTVAR3
         WRITE( FDESC3D( 5 ),94010 ) '/PER POLLUTANT/ ', NPTPPOL3 
+        WRITE( FDESC3D( 6 ),94010 ) '/NUMBER CHARS/ ' , NCHARS 
+        WRITE( FDESC3D( 7 ),94010 ) '/SCC POSITION/ ' , JSCC 
+        WRITE( FDESC3D( 8 ),94010 ) '/BASE YEAR/ '    , BYEAR 
 
-        DO I = 6, MXDESC3
-            FDESC3D( I ) = ' '
-        ENDDO
+C NOTE: Add /BASE YEAR/ packet to FDESC3D.  If more than one base year is used,
+C       use the most common one.  In either case, write a message about 
+C       which is being used.
+C NOTE: Need to add packet to FDESC that has the "base year" from the
+C environment variable G_SDATE
+
 
 C.........  Define source characteristic variables that are not strings
 
@@ -249,12 +244,12 @@ C.........  Get names, units, etc. of output pollutant-specific records
 C.........  Prompt for and open I/O API output file
         ENAME= PROMPTMFILE( 
      &       'Enter logical name for the I/O API INVENTORY output file',
-     &       FSUNKN3, 'PNTS', PROGNAME )
+     &       FSUNKN3, ENAME, PROGNAME )
         
 C.........  Prompt for and open ASCII output file
         SDEV= PROMPTFFILE( 
      &      'Enter logical name for the ASCII INVENTORY output file',
-     &      .FALSE., .TRUE., 'PSRC', PROGNAME )
+     &      .FALSE., .TRUE., ANAME, PROGNAME )
 
         RETURN
 
