@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM CSGPOINT
 
 C***********************************************************************
-C  program body starts at line 127
+C  program body starts at line 131
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -42,6 +20,27 @@ C  REVISION  HISTORY:
 C       Prototype  7/95 by CJC.
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C************************************************************************
 
       IMPLICIT NONE
 
@@ -50,6 +49,7 @@ C...........   INCLUDES:
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
+        INCLUDE 'TMDIMS3.EXT'   !  grid parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -59,12 +59,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
+        INTEGER         WKDAY
 
-        EXTERNAL        DSCGRID, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
-
+        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTMFILE, TRIMLEN, WKDAY
 
 C...........   PARAMETER
 
@@ -118,7 +121,10 @@ C...........   Other local variables
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
 
-        CHARACTER*16    SCRBUF  !  scratch point
+        CHARACTER*5     OUTNAM  !  contains default logical output name
+        CHARACTER*16    SCRBUF  !  scratch buffer
+        CHARACTER*16    UNITS   !  temporary units buffer
+        CHARACTER*256   MESG    !  message buffer
 
 
 C***********************************************************************
@@ -152,8 +158,7 @@ C   begin body of program CSGPOINT
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program CSGPOINT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'CSGPOINT', 0, 0, 'Ending Program', 2 )
         END IF
 
 
@@ -185,6 +190,13 @@ C.......   Build description of output file, and optionally open it:
         IF ( .NOT. DESC3( PNAME ) ) THEN
             CALL M3EXIT( 'CSGPOINT', 0, 0, 
      &          'Could not get description of file ' // PNAME, 2 )
+
+        ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  EMISSIONS file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'CSGPOINT', 0, 0, MESG, 2 )
+
         END IF
 
         IF ( .NOT. DSCGRID( GRDNM, SCRBUF,
@@ -193,7 +205,7 @@ C.......   Build description of output file, and optionally open it:
      &                      XCELL3D, YCELL3D, 
      &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
 
-            CALL M3EXIT( 'CSGAREA', 0, 0,
+            CALL M3EXIT( 'CSGPOINT', 0, 0,
      &              'Could not get description of grid ' // GRDNM, 2 )
 
         END IF
@@ -207,32 +219,58 @@ C.......   Build description of output file, and optionally open it:
         JDATE   = SDATE3D
         JTIME   = STIME3D
         TSTEP   = TSTEP3D
-        IF ( TSTEP .EQ. 0 ) THEN
+
+C.........  Annual inventory file as input with controls
+        IF ( TSTEP .EQ. 0 .AND. CONTROLFLAG ) THEN
             NSTEPS  = 1
+            FDESC3D( 1 ) = 'Point gridded, controlled model species'
+            OUTNAM = 'PGSC'
+            UNITS  = 'mole/year'
+
+C.........  Annual inventory file as input with NO controls
+        ELSEIF( TSTEP .EQ. 0 ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Point gridded model species'
+            OUTNAM = 'PGS'
+            UNITS  = 'mole/year'
+
+C.........  Hourly inventory file as input with controls
+        ELSEIF ( TSTEP .GT. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 
+     &        'Point gridded, hourly, controlled model species'
+            OUTNAM = 'PGTSC'
+            UNITS  = 'mole/hour'
+
+C.........  Hourly inventory file as input with NO controls
         ELSE
             NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 'Point gridded, hourly model species'
+            OUTNAM = 'PGTS'
+            UNITS  = 'mole/hour'
+
         END IF
 
         DO  33 V = 1, NMPOL
             VNAME3D( V ) = EMNAM( V )
-            UNITS3D( V ) = 'moles/hour'
+            UNITS3D( V ) = UNITS
             VDESC3D( V ) = 'gridded speciated emissions'
             VTYPE3D( V ) = m3REAL
 33      CONTINUE
-        FDESC3D( 1 ) = 'point source speciated gridded emissions.'
 
 
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for OUTPUT EMIS file ' //
      &          'or "NONE"',
-     &          FSUNKN3, 'PGTS', 'CSGPOINT' )
+     &          FSUNKN3, OUTNAM, 'CSGPOINT' )
 
         OUTPUTFLAG = ( ENAME .NE. NONE )
 
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
-        WRITE( *,92000 ) ' ', 'Reading GRIDDING matrix.', ' '
+        CALL M3MSG2( 'Reading GRIDDING matrix...' )
+
         IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NS ) ) THEN
 
             CALL M3ERR( 'CSGPOINT', 0, 0,
@@ -242,7 +280,8 @@ C.......   Read gridding, speciation, and (optional) control matrices:
 
         END IF      !  if read3() failed for gridding matrix
 
-        WRITE( *,92000 ) ' ','Reading SPECIATION matrix.',' '
+        CALL M3MSG2( 'Reading SPECIATION matrix...' )
+
         IF ( .NOT. READ3( SNAME, 'ALL', 1, 0, 0, SS ) ) THEN
 
             CALL M3ERR( 'CSGPOINT', 0, 0,
@@ -259,6 +298,11 @@ C.......   Build description of how to use speciation matrix:
             CALL M3EXIT( 'CSGPOINT', 0, 0, 
      &                   'Could not get description of file ' // SNAME,
      &                  .TRUE. )
+        ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  S-MATRIX file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'CSGPOINT', 0, 0, MESG, 2 )
         END IF
 
         DO  54  V = 1, NIPOL
@@ -305,8 +349,18 @@ C.......   If CONTROLFLAG, read and apply control matrix:
 
         IF( CONTROLFLAG ) THEN
 
-            WRITE( *,92000 ) 
-     &      ' ', 'Reading CONTROL matrix.', ' '
+            CALL M3MSG2( 'Reading CONTROL matrix...' )
+
+            IF ( .NOT. DESC3( CNAME ) ) THEN
+                WRITE( MESG, '(2A)' )
+     &          'Could not get description of file ', CNAME
+                CALL M3EXIT( 'CSGPOINT', 0, 0, MESG, 2 )
+            ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+                WRITE( MESG, 94010 )
+     &          'Dimension mismatch.  C-MATRIX file:', NROWS3D,
+     &          'program:', NPSRC
+                CALL M3EXIT( 'CSGPOINT', 0, 0, MESG, 2 )
+            END IF
 
             DO  66 S = 1, NIPOL
 
@@ -338,25 +392,31 @@ C.......   If CONTROLFLAG, read and apply control matrix:
 C.......   Transform and write out point source emissions values:
 
         IF ( CONTROLFLAG .AND. OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing ' //
-     &      'controlled speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating and writing ' //
+     &                   'controlled speciated gridded emissions...' )
         ELSE IF ( CONTROLFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating controlled speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating controlled ' //
+     &                   'speciated gridded emissions...' )
         ELSE IF ( OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating and writing ' //
+     &                   'speciated gridded emissions...' )
         ELSE 
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating speciated gridded emissions...' )
         END IF
 
         DO  199  T = 1, NSTEPS
+
+C...............   If this is a new month, or new day, write message
+            IF ( JDATE .GT. 0 .AND. MOD( T,24 ) .EQ. 1 ) THEN
+ 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
+            END IF
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            IF( JDATE .GT. 0 ) WRITE( *, 93020 ) HHMMSS( JTIME )
 
             DO  198  V = 1, NIPOL
 
@@ -421,7 +481,14 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A16 )
 
+93020   FORMAT( 8X, 'at time ', A8 )
+ 
 
+C...........   Internal buffering formats............ 94xxx
+ 
+94010   FORMAT( 10( A, :, I7, :, 1X ) )
+
+ 
 C...........   Miscellaneous formats................. 95xxx
 
 95000   FORMAT ( /5X , A , $ )          !  generic prompt format.
