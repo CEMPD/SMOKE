@@ -161,7 +161,7 @@ C   begin body of subroutine  CLDATEN
             CALL M3MESG( 'Using OBSERVATIONAL MET version of CLDATEN' )
             SDEV = PROMPTFFILE( 
      &              'Enter name for SURFACE MET input file',
-     &              .TRUE., .TRUE., , 'SURMET', 'TMPBIO:CLDATEN' )
+     &              .TRUE., .TRUE., 'SURMET', 'TMPBIO:CLDATEN' )
 
             NBORD = MAX( LAT( 1, NROWS ), LAT( NCOLS, NROWS ) ) + 10.0
             SBORD = MIN( LAT( 1,     1 ), LAT( NCOLS,     1 ) ) - 10.0
