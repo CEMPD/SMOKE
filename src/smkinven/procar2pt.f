@@ -43,7 +43,8 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, NPCNT, IPOSCOD, TPFLAG, INVYR,
      &                      POLVAL, CSOURC, CSCC,
-     &                      XLOCA, YLOCA, CELLID
+     &                      XLOCA, YLOCA, CELLID,
+     &                      ISIC, CSRCTYP, CMACT, CNAICS
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: AR2PTIDX, AR2PTTBL, AR2PTCNT
@@ -70,6 +71,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local pointers
         INTEGER, POINTER :: OLDIFIP   ( : )   !  source FIPS ID
+        INTEGER, POINTER :: OLDISIC   ( : )   !  source SIC
         INTEGER, POINTER :: OLDNPCNT  ( : )   !  number of pollutants per source
         INTEGER, POINTER :: OLDIPOSCOD( : )   !  positn of pol in INVPCOD
         INTEGER, POINTER :: OLDTPFLAG ( : )   ! temporal profile types
@@ -79,6 +81,10 @@ C...........   Local pointers
 
         CHARACTER(LEN=ALLLEN3), POINTER :: OLDCSOURC( : ) ! concat src
         CHARACTER(LEN=SCCLEN3), POINTER :: OLDCSCC  ( : ) ! scc code
+        
+        CHARACTER(LEN=MACLEN3), POINTER :: OLDCMACT  ( : )  ! MACT code
+        CHARACTER(LEN=NAILEN3), POINTER :: OLDCNAICS ( : )  ! NAICS code
+        CHARACTER(LEN=STPLEN3), POINTER :: OLDCSRCTYP( : )  ! source type code
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: REPIDX( : )      ! index for sorting
@@ -165,6 +171,7 @@ C.............  Update total number of sources and records
 
 C.............  Associate temporary pointers with sorted arrays
             OLDIFIP    => IFIP
+            OLDISIC    => ISIC
             OLDNPCNT   => NPCNT
             OLDIPOSCOD => IPOSCOD
             OLDTPFLAG  => TPFLAG
@@ -175,9 +182,15 @@ C.............  Associate temporary pointers with sorted arrays
             OLDCSOURC  => CSOURC
             OLDCSCC    => CSCC
 
+            IF( ASSOCIATED( CMACT ) ) THEN
+                OLDCMACT   => CMACT
+                OLDCSRCTYP => CSRCTYP
+                OLDCNAICS  => CNAICS
+            END IF
+
 C.............  Nullify original sorted arrays
-            NULLIFY( IFIP, NPCNT, IPOSCOD, TPFLAG, INVYR,
-     &               POLVAL, CSOURC, CSCC )
+            NULLIFY( IFIP, ISIC, NPCNT, IPOSCOD, TPFLAG, INVYR,
+     &               POLVAL, CSOURC, CSCC, CMACT, CSRCTYP, CNAICS )
 
 C.............  Deallocate original X and Y location arrays
 C               Don't need to store old values since they aren't set
@@ -186,6 +199,8 @@ C               Don't need to store old values since they aren't set
 C.............  Allocate memory for larger sorted arrays
             ALLOCATE( IFIP( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+            ALLOCATE( ISIC( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
             ALLOCATE( NPCNT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
             ALLOCATE( IPOSCOD( NRAWBP ), STAT=IOS )
@@ -203,6 +218,19 @@ C.............  Allocate memory for larger sorted arrays
             ALLOCATE( CSCC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
             
+            IF( ASSOCIATED( OLDCMACT ) ) THEN
+                ALLOCATE( CMACT( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CMACT', PROGNAME )
+                ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+                ALLOCATE( CNAICS( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CNAICS', PROGNAME )
+                
+                CMACT   = ' '   ! array
+                CSRCTYP = ' '   ! array
+                CNAICS  = ' '   ! array
+            END IF
+            
             ALLOCATE( XLOCA( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
             ALLOCATE( YLOCA( NSRC ), STAT=IOS )
@@ -210,6 +238,7 @@ C.............  Allocate memory for larger sorted arrays
             ALLOCATE( CELLID( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
             
+            ISIC = 0          ! array
             NPCNT = 0         ! array
             
             POLVAL = BADVAL3  ! array
@@ -277,11 +306,18 @@ C.........................  Increment source position and copy source info
                         NEWSRCPOS = NEWSRCPOS + 1
                         
                         IFIP( NEWSRCPOS ) = OLDIFIP( S )
+                        ISIC( NEWSRCPOS ) = OLDISIC( S )
                         NPCNT( NEWSRCPOS ) = OLDNPCNT( S )
                         TPFLAG( NEWSRCPOS ) = OLDTPFLAG( S )
                         INVYR( NEWSRCPOS ) = OLDINVYR( S )
                         CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
                         CSCC( NEWSRCPOS ) = OLDCSCC( S )
+                        
+                        IF( ASSOCIATED( OLDCMACT ) ) THEN
+                            CMACT  ( NEWSRCPOS ) = OLDCMACT  ( S )
+                            CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
+                            CSRCTYP( NEWSRCPOS ) = OLDCSRCTYP( S )
+                        END IF
                         
 C.........................  Store X and Y locations
                         XLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LON
@@ -348,11 +384,18 @@ C                   then need to copy information to new arrays
                     NEWSRCPOS = NEWSRCPOS + 1
                     
                     IFIP( NEWSRCPOS ) = OLDIFIP( S )
+                    ISIC( NEWSRCPOS ) = OLDISIC( S )
                     NPCNT( NEWSRCPOS ) = OLDNPCNT( S )
                     TPFLAG( NEWSRCPOS ) = OLDTPFLAG( S )
                     INVYR( NEWSRCPOS ) = OLDINVYR( S )
                     CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
                     CSCC( NEWSRCPOS ) = OLDCSCC( S )
+                        
+                    IF( ASSOCIATED( OLDCMACT ) ) THEN
+                        CMACT  ( NEWSRCPOS ) = OLDCMACT  ( S )
+                        CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
+                        CSRCTYP( NEWSRCPOS ) = OLDCSRCTYP( S )
+                    END IF
                     
                     DO K = OLDRECPOS, OLDRECPOS + OLDNPCNT( S ) - 1
                         
@@ -372,8 +415,9 @@ C                   then need to copy information to new arrays
 
 C.........  Deallocate old source and emissions arrays
         IF( NA2PSRCS > 0 ) THEN
-            DEALLOCATE( OLDIFIP, OLDNPCNT, OLDIPOSCOD, OLDTPFLAG,
-     &                  OLDINVYR, OLDPOLVAL, OLDCSOURC, OLDCSCC )   
+            DEALLOCATE( OLDIFIP, OLDISIC, OLDNPCNT, OLDIPOSCOD, 
+     &                  OLDTPFLAG, OLDINVYR, OLDPOLVAL, OLDCSOURC, 
+     &                  OLDCSCC, OLDCMACT, OLDCNAICS, OLDCSRCTYP )   
         END IF
 
 C.........  Sort source information for reporting
