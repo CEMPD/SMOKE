@@ -348,13 +348,22 @@ C.............  Exit to line 141 if read is EOF
             IF( L1 .GT. 0 ) THEN
 
                 INY = STR2INT( LINE( L1+7:L2 ) )
-                GO TO 101                       ! To head of ANLST read loop
 
-            ELSEIF( INY .LE. 0 ) THEN
+                IF( INY .LE. 0 ) THEN
 
-                CALL M3EXIT( 'EMSAREA', 0, 0, 
+                    CALL M3EXIT( 'EMSAREA', 0, 0, 
      &               'Must set inventory year using INVYEAR packet ' //
      &               'in ANLST file', 2 )
+
+                ELSEIF( INY .LT. 1970 ) THEN
+
+                    CALL M3EXIT( 'EMSAREA', 0, 0, 
+     &               'INVYEAR packet has set bad 4-digit year' //
+     &               'in ANLST file', 2 )
+
+                ENDIF
+
+                GO TO 101                       ! To head of ANLST read loop
 
             ELSE
 
