@@ -1,8 +1,47 @@
 
-        SUBROUTINE SELECTSRC
+        SUBROUTINE SELECTSRC( RCNT )
 
-c The SELECTSRC routine is responsible for selecting the sources from the
-c inventory records based on the settings for a given report.
+C***********************************************************************
+C  subroutine body starts at line 
+C
+C  DESCRIPTION:
+C    The SELECTSRC routine is responsible for selecting the sources from the
+C    inventory records based on the settings for a given report.  If no 
+C    groups are used in the current report, then all sources are selected. 
+C    Selected sources will have INDEXA( S ) = 1, while unselected sources will
+C    have INDEXA( S ) = 0.
+C
+C  PRECONDITIONS REQUIRED:
+C    The inventory data are already required to have been read in prior to
+C    this routine being called
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:
+C
+C  REVISION  HISTORY:
+C     Created 4/2001 by M Houyoux
+C
+C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$
+C  
+C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
@@ -14,6 +53,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -22,40 +64,67 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
+C...........  EXTERNAL FUNCTIONS and their descriptions:
+        CHARACTER*2 CRLF
+        INTEGER     INDEX1
+        INTEGER     FIND1
+
+        EXTERNAL   CRLF, INDEX1, FIND1
+
+C...........   SUBROUTINE ARGUMENTS
+        INTEGER     , INTENT (IN) :: RCNT    ! current report number
+
 C...........  Local variables
-        INTEGER         S          ! counters and indices
+        INTEGER         J, L, S    ! counters and indices
 
+        INTEGER         FIP        ! tmp country/state/county code
         INTEGER         IOS        ! i/o status
+        INTEGER         REGNIDX    ! index to list of region groups for this rpt 
 
+
+        LOGICAL      :: EFLAG = .FALSE.  ! True: error has been detected
+
+        CHARACTER*256   MESG                   ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'SELECTSRC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SELECTSRC
 
-c The inventory data are already required to have been read in prior to
-c this routine being called
+C.........  Set report-specific local settings
+        RPT_    = ALLRPT( RCNT )
+        LREGION = .FALSE.
+ 
+C.........  Determine current report has any groups
+        REGNIDX = 0
+        IF( RPT_%REGNNAM .NE. ' ' ) THEN
+            REGNIDX = INDEX1( RPT_%REGNNAM, NREGNGRP, REGNNAM( : ) )
+            LREGION = .TRUE.
 
-c The routine should only be called if the report contains SELECT statements 
-c other than SUBGRID
+            IF( REGNIDX .LE. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( RPT_%REGNNAM )
+                MESG = 'INTERNAL ERROR: Group "'// RPT_%REGNNAM( 1:L )//
+     &             '"' // CRLF() // BLANK10 // 'not found in list '//
+     &             'of groups.'
+                CALL M3MSG2( MESG )
+            END IF
 
-c Processing steps:
+        END IF
 
-c       - Loop through sources
-c		- If SELECT REGION, search for source Region number in 
-c                 group and if found, EXCLUDE it
-c		- If ELEVATED used, EXCLUDE if a low-level source
-c		- If NOELEVATED used, EXCLUDE if an elevated source
-c		- If other SELECT (future), exclude as appropriate
-c		- Keep a count of the number of selected sources
-c       - End loop
-c
-c	- Allocate memory for a list of source IDs
-c	- Create a list of source IDs of the selected sources.
+C.........  NOTE - if adding group types, do it here and in errors below
 
+C.........  Report internal errors if group name is not found
+        IF ( EFLAG ) THEN
+            MESG = 'Problems using groups'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF 
+
+C.........  Deallocate arrays if they've been allocated before
         IF( ALLOCATED( OUTSRC ) ) DEALLOCATE( OUTSRC, OUTBIN, INDEXA )
 
-        NOUTREC = NSRC
+C.........  Allocate memory for a list of source IDs
+        NOUTREC  = NSRC
         NSRCDROP = 0
         ALLOCATE( OUTSRC( NOUTREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'OUTSRC', PROGNAME )
@@ -65,13 +134,90 @@ c	- Create a list of source IDs of the selected sources.
         ALLOCATE( INDEXA( NOUTREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
 
-C.........  Select all sources
+C......... Initialize list of selected sources
         DO S = 1, NSRC
 
             OUTSRC( S ) = S
             INDEXA( S ) = 1
 
         END DO
+
+C.........  If need to select sources, loop through sources to identify 
+C.........  the ones not to output
+        IF( LREGION .OR. RPT_%ELEVSTAT .GT. 0 ) THEN
+
+            DO S = 1, NSRC
+
+
+C.................  If using a region group, search for FIPS code in list
+                IF( LREGION ) THEN
+                    FIP = IFIP( S )
+                    J = FIND1( FIP, NREGREC( REGNIDX ), 
+     &                         EXCLDRGN ( 1,REGNIDX )   )
+
+                    IF ( J .GT. 0 ) INDEXA( S ) = 0
+                END IF
+
+C.................  If selecting elevated srcs...
+                IF( RPT_%ELEVSTAT .EQ. ELEVOUT3 ) THEN
+
+C.....................  If selecting PinG sources and source is non-PinG, exclude it
+                    IF( RPT_%ELEVSTAT .EQ. PINGOUT3 ) THEN
+                        IF ( .NOT. LPING( S ) ) INDEXA( S ) = 0
+
+C.....................  Otherwise, exclude non-elevated sources
+                    ELSE IF ( .NOT. LMAJOR( S ) ) THEN
+                        INDEXA( S ) = 0
+
+                    END IF
+                END IF
+        
+C.................  If selecting non-elevated srcs and source is elevated, exclude
+                IF ( RPT_%ELEVSTAT .EQ. NOELOUT3 ) THEN
+
+                    INDEXA( S ) = 0
+
+                END IF
+
+C.................  NOTE - this should always be at end of select statements
+C.................  Keep a count of the number of selected sources
+                IF( INDEXA( S ) .EQ. 0 ) NSRCDROP = NSRCDROP + 1
+
+            END DO   ! End loop through sources
+
+        END IF
+
+C.........  Now create compressed list of sources, but leave INDEXA as is 
+C           for use by REPMRGGRD
+        IF( NSRCDROP .GT. 0 ) THEN
+
+            NOUTREC = NSRC - NSRCDROP
+
+            DEALLOCATE( OUTSRC, OUTBIN )
+
+            ALLOCATE( OUTSRC( NOUTREC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OUTSRC', PROGNAME )
+            ALLOCATE( OUTBIN( NOUTREC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OUTBIN', PROGNAME )
+
+            J = 0            
+            DO S = 1, NSRC
+
+                IF( INDEXA( S ) .EQ. 0 ) CYCLE
+                J = J + 1
+
+                IF( J .GT. NOUTREC ) THEN
+                    MESG = 'INTERNAL ERROR: Not enough memory '//
+     &                     'allocated for compressed source list.'
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                END IF
+
+                OUTSRC( J ) = S
+
+            END DO
+
+        END IF
 
         RETURN
 

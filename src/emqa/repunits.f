@@ -6,7 +6,9 @@ C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C      The REPUNITS routine is reponsible for generating column header
-C      units and data conversion factors
+C      units and data conversion factors. Does not create conversion factors
+C      for cell area normalization (included in gridding factor array) or
+C      population normalization (BINPOPDIV).
 C
 C  PRECONDITIONS REQUIRED:
 C      From previous subroutines, we should have indices defined for 
@@ -323,6 +325,17 @@ C.............  Set conversion factor to 1
                 FACTOR( OUTCOL ) = 1.
 
             END IF
+
+C.............  Update output units with population normalization
+            IF( RPT_%NORMPOP ) THEN
+                UNITS( OUTCOL )= MULTUNIT( UNITS( OUTCOL ), '1/person' )
+            END IF
+
+C.................  Update output units with cell area normalization
+            IF( RPT_%NORMCELL ) THEN
+                UNITS( OUTCOL ) = MULTUNIT( UNITS( OUTCOL ), '1/m^2' )
+            END IF
+
 
             RETURN
  

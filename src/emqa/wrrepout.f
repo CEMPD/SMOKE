@@ -434,7 +434,8 @@ C.............  Output error message of string is getting shortened
                 CALL M3MSG2( MESG )
             END IF
 
-
+C.............  If current bin has bad values, update those now.
+            IF( BINBAD( I ) .GT. 0 ) BINDATA( I,1:NDATA ) = -9.
 
 C.............  Write out this record
             WRITE( FDEV, OUTFMT ) STRING( 1:LE ), 

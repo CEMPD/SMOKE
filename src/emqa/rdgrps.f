@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -54,6 +54,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
 
@@ -71,7 +74,7 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV       ! output file unit number
 
-C...........   Local allocatable arrays...
+C...........   Local allocatable arrays... 
 
 C...........   Region group input allocatable arrays
         INTEGER, ALLOCATABLE :: REGNREC ( : )    ! no. records per group
@@ -411,8 +414,8 @@ C.............  Local variables
             CHARACTER*300 LINE     ! tmp line buffer
             CHARACTER*300 MESG     ! mesg buffer
 
-            CHARACTER(LEN=LENLAB3) :: PREGNNAM
-            CHARACTER(LEN=LENLAB3) :: PSUBGNAM
+            CHARACTER(LEN=LENLAB3) :: PREGNNAM   ! previous region name
+            CHARACTER(LEN=LENLAB3) :: PSUBGNAM   ! previous subgrid name
 
 C----------------------------------------------------------------------
 
@@ -420,7 +423,9 @@ C.............  Rewind input file
             REWIND( FDEV )
 
 C.............  Loop though file to store local array of labeled group names
-            SEGMENT = ' '     ! array
+            SEGMENT  = ' '     ! array
+            PREGNNAM = ' '
+            PSUBGNAM = ' '
             IREC = 0
             DO I = 1, NLINE_RC
             
@@ -484,6 +489,21 @@ C                   regions.  Determine those that coorespond to valid
 C                   entries and those that should be ignored.
                 CASE( 'SELECT LABELS' )
             
+C.....................  Get current count of current packet 
+                    RCNT = PKTCOUNT( PKT_IDX )
+                
+                    SELECT CASE( PKT_IDX )
+
+C.....................  Store region group label
+                    CASE( REG_IDX )
+                        IF( LIN_DEFGRP ) REGNNAM( RCNT ) = GRP_LABEL
+                
+C.....................  Store subgrid label in local array
+                    CASE( SBG_IDX )
+                        IF( LIN_DEFGRP ) SUBGNAM( RCNT ) = GRP_LABEL
+                
+                    END SELECT
+
 C.....................  Skip if report section not started yet.
                     IF( .NOT. INREPORT ) CYCLE
 

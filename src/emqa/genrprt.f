@@ -56,11 +56,8 @@ C.........  This module contains report arrays for each output bin
 C.........  This module contains the temporal profile tables
         USE MODTMPRL
 
-C.........  This module contains arrays for plume-in-grid and major sources
-c       USE MODELEV
-
-C.........  This module contains the lists of unique source characteristics
-c       USE MODLISTS
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -232,6 +229,7 @@ C.............................  Set index from global to actually input spc vars
                             K = SPCIDX( V )
 
 C.............................  Sum gridded output records into temporary bins
+C.............................  Gridding factor has normalization by cell area
                             IF( RPT_%USEGMAT ) THEN
                                 DO I = 1, NOUTREC
                                     S = OUTSRC( I )
@@ -240,7 +238,8 @@ C.............................  Sum gridded output records into temporary bins
      &                                            OUTGFAC( I )   *
      &                                            POLVAL ( S,J ) * 
      &                                            SMAT   ( S,K ) *
-     &                                            LFRAC1L( S )
+     &                                            LFRAC1L( S )   *
+     &                                          BINPOPDIV( N )
                                 END DO
 
 C.............................  Sum non-gridded output records into tmp bins
@@ -251,7 +250,8 @@ C.............................  Sum non-gridded output records into tmp bins
                                     BINARR( N ) = BINARR ( N ) + 
      &                                            POLVAL ( S,J ) * 
      &                                            SMAT   ( S,K ) *
-     &                                            LFRAC1L( S )
+     &                                            LFRAC1L( S )   *
+     &                                          BINPOPDIV( N )
                                 END DO
 
                             END IF
@@ -283,6 +283,7 @@ C.........................  Initialize temporary bin sum array
                         BINARR = 0   ! array
 
 C.........................  Sum gridded output records into temporary bins
+C..........................  Gridding factor has normalization by cell area
                         IF( RPT_%USEGMAT ) THEN
                             DO I = 1, NOUTREC
                                 S = OUTSRC( I )
@@ -290,7 +291,8 @@ C.........................  Sum gridded output records into temporary bins
                                 BINARR( N ) = BINARR ( N ) + 
      &                                        OUTGFAC( I )   *
      &                                        POLVAL ( S,J ) *
-     &                                        LFRAC1L( S )
+     &                                        LFRAC1L( S )   *
+     &                                      BINPOPDIV( N )
                             END DO
 
 C.........................  Sum non-gridded output records into temporary bins
@@ -300,7 +302,8 @@ C.........................  Sum non-gridded output records into temporary bins
                                 N = OUTBIN( I )
                                 BINARR( N ) = BINARR ( N ) + 
      &                                        POLVAL ( S,J ) *
-     &                                        LFRAC1L( S )
+     &                                        LFRAC1L( S )   *
+     &                                      BINPOPDIV( N )
                             END DO
 
                         END IF

@@ -2,7 +2,7 @@
         PROGRAM SMKREPORT
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 129
 C
 C  DESCRIPTION:
 C    The SMKREPORT routine create emissions and activity reports for one 
@@ -49,6 +49,9 @@ C.........  This module contains Smkreport-specific settings
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
 C...........  This module contains the information about the source category
         USE MODINFO
@@ -185,6 +188,12 @@ C.........  Read and store all group definitions
 
 C.........  QA reports configuration file settings (note: maybe do this when
 c  n: storing report info)
+c note: this needs to include:
+c    n: checking when population normalization is used that by state
+c    n:     or by county is used for that report
+c    n: checking that when pop norm is used, the STCY file has pop (use
+c    n:     MODSTCY variable that flags when pop is present). Also compare
+C    n:     year to inventory year.
 
 C.........  Loop through reports
 
@@ -218,19 +227,15 @@ C.....................  Close output file
 
 C.................  Open new output file if current file number is different 
 C                   previous file number.
-c                ODEV - set this with special opening routine
-c note: Need to write this
-c note: Need to deal with the logical vs. physical file name stuff by checking
-c    n: if the name is a defined environment variable. If not, use name as a
-c    n: physical file name.
                 CALL OPENREPOUT( FNAME, ODEV )
+
             END IF
 
             MESG = BLANK10 // 'Selecting records...'
             CALL M3MSG2( MESG )
 C.............  Select inventory records
-            CALL SELECTSRC
-c            note: Need to write this
+            CALL SELECTSRC( N )
+c NOTE: EDIT here
 
 C.............  Apply gridding information
             IF( RPT_%USEGMAT ) THEN

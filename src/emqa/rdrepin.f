@@ -57,6 +57,9 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -199,8 +202,9 @@ C.........  Initialize all to 1 for point sources
 
             CALL RDGMAT( GNAME, NGRID, NMATX, NMATX, NX, IX, CX )
 
+C.............  Initialize part of gridding matrix array for point sources
             IF( CATEGORY .EQ. 'POINT' ) THEN
-                CX = 1   ! array
+                CX = 1   ! array            
             END IF
 
         END IF
