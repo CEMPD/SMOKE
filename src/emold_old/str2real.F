@@ -28,6 +28,11 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'
 
 
+C...........   EXTERNAL functions
+        INTEGER         TRIMLEN
+        EXTERNAL        TRIMLEN
+
+
 C...........   ARGUMENTS and their descriptions:
 
         CHARACTER*(*)   STRING
@@ -49,7 +54,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 C***********************************************************************
 C   begin body of function  STR2REAL
 
-        L = LEN( STRING )
+        L = TRIMLEN( STRING )
             
         DO  11  I = 1, L        !  skip leading whitespace
             IF ( STRING( I:I ) .GT. BLANK ) GO TO 12
@@ -64,9 +69,9 @@ C.......   If you get to here:  no number there
         N = L - I + 1
         P = INDEX( STRING( I:L ), '.' )
         IF ( P .GT. 0 ) THEN
-            WRITE( FMT, 94010 ) N, L - P
+            WRITE( FMT, 94010 ) L, N - P
         ELSE
-            WRITE( FMT, 94010 ) N, 0
+            WRITE( FMT, 94010 ) L, 0
         END IF
 
         READ( STRING( I:L ), FMT, IOSTAT = IOS ) VAL
