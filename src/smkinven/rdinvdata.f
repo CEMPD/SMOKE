@@ -375,7 +375,7 @@ C.........  Initialize pollutant-specific values as missing
 
 C.........  Read and process EMS-95 point source characteristics
         IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-            CALL PROCEMSPT( FDEV, CFLAG, WFLAG )
+            CALL PROCEMSPT( FDEV, FNAME, CFLAG, WFLAG )
         END IF
 
 C.........  If inventory is list format, open first file for reading
