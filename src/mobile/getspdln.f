@@ -1,6 +1,44 @@
 
         SUBROUTINE GETSPDLN( SDEV, COUNTY, NLINES, CURRLINE )
         
+C***********************************************************************
+C  subroutine body starts at line 68
+C
+C  DESCRIPTION:
+C       Finds line number in SPDSUM file where current county information
+C       begins.
+C
+C  PRECONDITIONS REQUIRED:
+C       SDEV must be open.
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+        
         IMPLICIT NONE
 
 C...........   INCLUDES:
