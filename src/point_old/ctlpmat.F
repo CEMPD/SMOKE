@@ -55,6 +55,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        INTEGER         ENVYN
         INTEGER         FIND1, FIND2, FIND3, FIND4
         LOGICAL         GETYN
         LOGICAL         GETPKT
@@ -66,8 +67,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETYN, GETPKT,
-     &                  INDEX1, PROMPTFFILE, PROMPTMFILE, 
+        EXTERNAL        ENVYN, FIND1, FIND2, FIND3, FIND4, GETYN, 
+     &                  GETPKT, INDEX1, PROMPTFFILE, PROMPTMFILE, 
      &                  SKIPCTL, STR2INT, STR2REAL, TRIMLEN
 
 
@@ -103,6 +104,7 @@ C...........   follow this scheme with parallel arrays
         INTEGER     NFIP        !  subscript for JFIP
         INTEGER     NSID        !  subscript for JSID
         INTEGER     DYR         !  desination year for projection factor
+        INTEGER     SAVDYR      !  saved desination year for projection factor
         INTEGER     YEAR        !  inventory year for projection factor
                                  
 C.......   Control matrix:
@@ -220,37 +222,6 @@ C.......   Get file name; open input point sources, control definitions files
 
         END IF
 
-C.......   Read in description of point-source file
-        
-        IF ( .NOT. DESC3( ENAME ) ) THEN
-            CALL M3EXIT( 'CTLPMAT', 0, 0, 
-     &          'Could not get description of file ' // ENAME, 3 )
-        END IF
-        
-        
-C.......   Open control matrix file:  reuse much of POINT file description
-        
-        NVARS3D = 3
-        FTYPE3D = GRDDED3
-
-        DO 11 V = 1, NIPOL
-            VNAME3D( V ) = 'CONTROL_' // EINAM( V )
-            UNITS3D( V ) = 'n/a'
-            VDESC3D( V ) = 'Control factor for this source, variable ' 
-     &                     // EINAM( V )( 1:TRIMLEN( EINAM( V ) ) )
-            VTYPE3D( V ) = M3REAL
-11      CONTINUE
-
-        FDESC3D( 1 ) = 'Matrix of control factors, by source'
-        DO  22  I = 2, MXDESC3
-            FDESC3D( I ) = ' '
-22      CONTINUE
-
-        MNAME = PROMPTMFILE( 
-     &          '...for CONTROL MATRIX output file',
-     &          FSUNKN3, 'PCMAT', 'CTLPMAT' )
-
-
 C............................................................................
 C...........   Read in emissions indexing data IFIP, ISCC, ISIC;
 C...........   existing-control data CTLEFF, RULEFF, RULPEN:
@@ -321,8 +292,12 @@ C...........   existing-control data CTLEFF, RULEFF, RULPEN:
         END IF
 
         IF ( .NOT. READ3( ENAME, 'VOC', ALLAYS3, 0, 0, VOC ) ) THEN
-            CALL M3EXIT( 'CTLPMAT', 0, 0, 
-     &                  'Error reading VOC from file' // ENAME, 2 )
+
+            IF ( .NOT. READ3( ENAME, 'ROG', ALLAYS3, 0, 0, VOC ) ) THEN
+
+                CALL M3EXIT( 'CTLPMAT', 0, 0, 'Error reading VOC or '//
+     &                       'ROG from file' // ENAME, 2 )
+            END IF
         END IF
 
         
@@ -363,6 +338,7 @@ C.......   percent to purely-numeric fraction
         LSID = -1
         NFIP =  0
         NSID =  0
+        SAVDYR = 0
 
         DO  55  S = 1, NPSRC
 
@@ -1608,10 +1584,11 @@ C.......   Process PROJECT PTS packet of control file:
 
 C.........  Prompt for type of projection entries: default (EPS) or 
 C           modified EPS (with year)
-        PFLAG = GETYN(
-     &        'Are projection entries in year-specific format?', .TRUE.)
+        PFLAG = ENVYN( 'YEAR_SPEC_PROJECT', 
+     &                 'Projection entries in year-specific format',
+     &                 .TRUE., IOS )
 
-141     CONTINUE        !  head of loop reading lines in the PROJECT PTS packet
+141     CONTINUE   !  head of loop reading lines in the PROJECT PTS packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=900 ) LINE
             IREC = IREC + 1
@@ -1662,6 +1639,7 @@ C           modified EPS (with year)
                     ENDIF
 
                     PRJFAC( S ) = PFAC
+                    SAVDYR = DYR
 
 142             CONTINUE       !  end loop on S
 
@@ -1693,6 +1671,7 @@ C           modified EPS (with year)
                     ENDIF
 
                     PRJFAC( S ) = PFAC
+                    SAVDYR = DYR
 
 143             CONTINUE       !  end loop on S
 
@@ -1721,6 +1700,7 @@ C           modified EPS (with year)
                     ENDIF
 
                     PRJFAC( S ) = PFAC
+                    SAVDYR = DYR
 
 144             CONTINUE       !  end loop on S
 
@@ -1936,10 +1916,10 @@ C.......   Process RULE EFFECTIVENESS packet of control file:
                 
                 DO  162 S = 1, NPSRC
 
-                    IF( SCC .NE. ISCC( S ) ) GO TO 162  ! n/a control
+                    IF( SCC .NE. ISCC( S ) .AND. SCC .NE. 0 ) GO TO 162  ! n/a control
                     IF( SIC .NE. ISIC( S ) .AND.
      &                  SIC .NE. ISI3( S ) .AND.
-     &                  SIC .NE. ISI2( S ) ) GO TO 162
+     &                  SIC .NE. ISI2( S ) .AND. SIC .NE. 0 ) GO TO 162
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93010 ) 
@@ -1963,10 +1943,10 @@ C.......   Process RULE EFFECTIVENESS packet of control file:
 
                 DO  163 S = JSID( I ), JSID( I+1 ) -1
 
-                    IF( SCC .NE. ISCC( S ) ) GO TO 163  ! n/a control
+                    IF( SCC .NE. ISCC( S ) .AND. SCC .NE. 0 ) GO TO 163  ! n/a control
                     IF( SIC .NE. ISIC( S ) .AND.
      &                  SIC .NE. ISI3( S ) .AND.
-     &                  SIC .NE. ISI2( S ) ) GO TO 163
+     &                  SIC .NE. ISI2( S ) .AND. SIC .NE. 0 ) GO TO 163
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93010 ) 
@@ -2010,11 +1990,11 @@ C.......   Process RULE EFFECTIVENESS packet of control file:
 
                 DO  164 S = JFIP( I ), JFIP( I+1 ) -1
 
-                    IF( PLT .NE. IPLANT( S ) ) GO TO 164  ! n/a control
-                    IF( SCC .NE. ISCC  ( S ) ) GO TO 164  ! n/a control
+                    IF( PLT .NE. IPLANT( S ) .AND. PLT .NE. 0) GO TO 164  ! n/a control
+                    IF( SCC .NE. ISCC  ( S ) .AND. SCC .NE. 0) GO TO 164  ! n/a control
                     IF( SIC .NE. ISIC  ( S ) .AND.
      &                  SIC .NE. ISI3  ( S ) .AND.
-     &                  SIC .NE. ISI2  ( S ) ) GO TO 164
+     &                  SIC .NE. ISI2  ( S ) .AND. SIC .NE. 0) GO TO 164
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93010 ) 
@@ -2037,10 +2017,10 @@ C.......   Process RULE EFFECTIVENESS packet of control file:
 
                 DO  165 S = JFIP( I ), JFIP( I+1 ) -1
 
-                    IF( SCC .NE. ISCC( S ) ) GO TO 165  ! n/a control
+                    IF( SCC .NE. ISCC( S ) .AND. SCC .NE. 0 ) GO TO 165  ! n/a control
                     IF( SIC .NE. ISIC( S ) .AND.
      &                  SIC .NE. ISI3( S ) .AND.
-     &                  SIC .NE. ISI2( S ) ) GO TO 165
+     &                  SIC .NE. ISI2( S ) .AND. SIC .NE. 0 ) GO TO 165
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93010 ) 
@@ -2621,6 +2601,40 @@ C.......   Compute the control matrix:
 
 211     CONTINUE
 222     CONTINUE
+
+C.......   Read in description of point-source file
+        
+        IF ( .NOT. DESC3( ENAME ) ) THEN
+            CALL M3EXIT( 'CTLPMAT', 0, 0, 
+     &          'Could not get description of file ' // ENAME, 3 )
+        END IF
+        
+        
+C.......   Open control matrix file:  reuse much of POINT file description
+        
+        NVARS3D = 3
+        FTYPE3D = GRDDED3
+
+        DO 11 V = 1, NIPOL
+            VNAME3D( V ) = 'CONTROL_' // EINAM( V )
+            UNITS3D( V ) = 'n/a'
+            VDESC3D( V ) = 'Control factor for this source, variable ' 
+     &                     // EINAM( V )( 1:TRIMLEN( EINAM( V ) ) )
+            VTYPE3D( V ) = M3REAL
+11      CONTINUE
+
+        DO  22  I = 1, MXDESC3
+            FDESC3D( I ) = ' '
+22      CONTINUE
+        FDESC3D( 1 ) = 'Matrix of control factors, by source'
+        IF( SAVDYR .GT. 0 )
+     &      WRITE( FDESC3D( 2 ), '(A,I4)' ) '/YEAR/', SAVDYR
+
+        MNAME = PROMPTMFILE( 
+     &          '...for CONTROL MATRIX output file',
+     &          FSUNKN3, 'PCMAT', 'CTLPMAT' )
+
+
 
 C............................................................................
 C.......   Write out the control matrix:
