@@ -1,5 +1,5 @@
 
-        PROGRAM CROSSGRID
+        PROGRAM SURGTOOL
 
 C***********************************************************************
 C  program body starts at line 
@@ -162,10 +162,10 @@ C...........   Other local variables
         CHARACTER*16     SRGFMT                 !  surrogates format
         CHARACTER*256    MESG                   !  message buffer
 
-        CHARACTER*16  :: PROGNAME = 'CROSSGRID'  !  program name
+        CHARACTER*16  :: PROGNAME = 'SURGTOOL'  !  program name
 
 C***********************************************************************
-C   begin body of program CROSSGRID
+C   begin body of program SURGTOOL
 
         LDEV = INIT3()
 
@@ -593,4 +593,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 2X ) )
 
-        END PROGRAM CROSSGRID
+        END PROGRAM SURGTOOL
