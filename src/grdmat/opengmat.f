@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -49,7 +49,7 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
 
-c        INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -85,6 +85,8 @@ C...........   Other local variables
         CHARACTER*16  COORUN3D  ! coordinate system projection units
         CHARACTER*80  GDESC     ! grid description
         CHARACTER*300 MESG      ! message buffer 
+
+        CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
 
         CHARACTER*16 :: PROGNAME = 'OPENGMAT' ! program name
 
@@ -131,9 +133,10 @@ C.........  Set up I/O API output file header for gridding matrix
 
 C.........  Get name of gridding matrix
 
-        GNAME = PROMPTMFILE( 
-     &          'Enter logical name for GRIDDING MATRIX output file',
-     &          FSUNKN3, CRL // 'GMAT', PROGNAME )
+        NAMBUF = PROMPTMFILE( 
+     &           'Enter logical name for GRIDDING MATRIX output file',
+     &           FSUNKN3, CRL // 'GMAT', PROGNAME )
+        GNAME = NAMBUF
 
 C.........  Set up I/O API output file header for ungridding matrix
 C.........  Leave everything the same as for the gridding matrix, but a couple
@@ -151,9 +154,10 @@ C           of header items
             VDESC3D( 1 ) = CATDESC // ' source ungridding coefficients'
             VTYPE3D( 1 ) = M3REAL
 
-            UNAME = PROMPTMFILE( 
+            NAMBUF = PROMPTMFILE( 
      &           'Enter logical name for UNGRIDDING MATRIX output file',
      &           FSUNKN3, CRL // 'UMAT', PROGNAME )
+            UNAME = NAMBUF
 
         END IF
 
