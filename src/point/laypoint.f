@@ -21,17 +21,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -153,7 +153,7 @@ C.........  Fixed-dimension arrays
         REAL         LFULLHT( 0:MXLAYS3 )     !  full-level heights [m]
         REAL         LHALFHT( 1:MXLAYS3 )     !  half-level heights [m]
         REAL         SIGH   ( 0:MXLAYS3-1 )   !  half-level sigma values
-        REAL         VGLVSXG( 0:MXLAYS3 )     !  vertical coord values.
+        REAL         VGLVSXG( 0:MXLAYS3 )     !  vertical coord values
         REAL         WEIGHTS( 1:MXLAYS3 )     !  tmp weights for vertical aloc
 
 C...........   Logical names and unit numbers
@@ -241,9 +241,9 @@ C...........   Other local variables
         CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
         CHARACTER*80  :: GDESC     !  grid description
-        CHARACTER*200    OUTFMT    !  output format for RDEV report
-        CHARACTER*200    BUFFER    !  source characteristics buffer
-        CHARACTER*300    MESG      !  buffer for M3EXIT() messages
+        CHARACTER*256    OUTFMT    !  output format for RDEV report
+        CHARACTER*256    BUFFER    !  source characteristics buffer
+        CHARACTER*256    MESG      !  buffer for M3EXIT() messages
 
         CHARACTER(LEN=IOVLEN3) VNAME      ! variable name buffer 
         CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name
@@ -378,7 +378,7 @@ C.............  Check for layer-1 fraction
             I = INDEX1( SPDATNAM( 1 ), NVARS3D, VNAME3D )
             IF ( I .GT. 0 ) THEN
                 LFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'NOTE: Plume top and bottom in ' //
+                WRITE( MESG,94010 ) 'NOTE: Layer-1 fraction ' //
      &                 'hourly input will be used '//CRLF()// BLANK10//
      &                 'to allocate plumes for some sources.'
                 CALL M3MSG2( MESG )
@@ -577,12 +577,14 @@ C               that is "meters above ground."
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
+C...........  The following useless do loop is so that the SGI compiler will not
+C             give a core dump.  Yes, very strange.
             DO I = 1, NLAYS3D
                 J = J + 1
                 SIGH   ( I-1 ) = 0.5 * ( VGLVSXG( J ) + VGLVSXG( J-1 ) )
             END DO
 
-        END IF
+        END IF      ! If using met data or not (not only for explicit plumes)
 
 C.........  Get horizontal grid structure from the G_GRIDPATH file
         IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUN3D,
@@ -621,6 +623,12 @@ C.........  Compare number of meteorology layers to number of emissions layers
 
             EMLAYS = NLAYS
 
+        END IF
+
+C.........  Abort if error found analyzing inputs
+        IF ( EFLAG ) THEN
+            MESG = 'Problem with inputs.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Update start date/time and duration from the environment
@@ -860,7 +868,7 @@ C                   the current hour
 
 C.............  Layer-1 fraction
             IF ( LFLAG .AND. IFLAG ) 
-     ^           CALL SAFE_READ3( HNAME, SPDATNAM(1), ALLAYS3, 
+     &           CALL SAFE_READ3( HNAME, SPDATNAM(1), ALLAYS3, 
      &                            JDATE, JTIME, LAY1F )
 
 C.............  Plume bottom and top
@@ -1115,7 +1123,8 @@ C.................  Allocate plume to layers
 
 C.................  If hourly layer-1 fraction is present, reset this and re-
 C                   normalize
-C.................  Must account for the case where
+C.................  Must account for the case where LAY1F value is 
+C                   missing
                 IF( LFLAG .AND. K .GT. 0 ) THEN
                     IF( LAY1F( K ) .GT. 0. .AND.
      &                  TFRAC( 1 ) .LT. 1.       ) THEN
@@ -1128,11 +1137,31 @@ C.................  Must account for the case where
                     END IF
                 END IF
 
+C.................  Check if layer fractions are negative and reset
+C                   to output in the first layer if they are.
+                X = MINVAL( TFRAC( 1:EMLAYS ) )
+                IF( X .LT. 0 ) THEN
+
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                    WRITE( MESG,94010 ) 
+     &                     'WARNING: One or more negative plume ' //
+     &                     'fractions found for:'//
+     &                     CRLF() // BLANK10 // BUFFER( 1:L2 )//'.'//
+     &                     CRLF() // BLANK10 // 'Plume reset to '//
+     &                     'have all emissions in surface layer.'
+                    CALL M3MESG( MESG )
+
+                    TFRAC( 1 ) = 1.0
+                    TFRAC( 2:EMLAYS ) = 0.0
+
+                END IF
+
 C.................  Store layer fractions
                 IF( XFLAG ) THEN
                     LFRAC( K,1:EMLAYS ) = TFRAC( 1:EMLAYS )  ! array
                 ELSE 
                     LFRAC( S,1:EMLAYS ) = TFRAC( 1:EMLAYS )  ! array
+
                 END IF
 
 C.................  Check if LTOP out of range, and report (will only work

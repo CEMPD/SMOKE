@@ -25,20 +25,20 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
-C Last updated: %G 
+C Last updated: $Date$
 C  
 C***********************************************************************
 
@@ -136,20 +136,18 @@ C...........   Other allocatable arrays
         REAL   , ALLOCATABLE :: RANK( : )  ! tmp ranked value
         LOGICAL, ALLOCATABLE :: EVSTAT( :,:,: ) ! tmp status of elev checks
         LOGICAL, ALLOCATABLE :: PGSTAT( :,:,: ) ! tmp status of PiNG checks
+        CHARACTER(LEN=PLTLEN3), ALLOCATABLE :: CHRS( : ) ! tmp test character strings
 
 C...........   File units and logical/physical names
         INTEGER         CDEV    !  elevated source configuration file
-c        INTEGER         GDEV    !  stack groups file
         INTEGER         LDEV    !  log-device
         INTEGER         PDEV    !  for output major/mepse src ID file
         INTEGER         RDEV    !  ASCII output report
         INTEGER         SDEV    !  ASCII part of inventory unit no.
-c        INTEGER         TDEV    !  stack splits file
 
         CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
         CHARACTER*16    ENAME   !  logical name for i/o api inventory input file
         CHARACTER*16    MNAME   !  plume-in-grid srcs stack groups output file
-        CHARACTER*16    TNAME   !  logical name for hourly inventory input file
 
 C...........   Other local variables
         INTEGER         G, I, J, K, S, L, L2, N, V    ! indices and counters
@@ -157,6 +155,7 @@ C...........   Other local variables
         INTEGER         COL           ! tmp column number
         INTEGER      :: ELEVTYPE = 0  ! code for elevated source approach
         INTEGER         ENLEN         ! inventory file name length
+        INTEGER         FIP           ! tmp country/st/county code
         INTEGER         IGRP          ! tmp group ID
         INTEGER         IOS           ! i/o status
         INTEGER         IOSCUT        ! i/o status for cutoff E.V.
@@ -171,8 +170,10 @@ C...........   Other local variables
         INTEGER      :: NSTEPS = 24   ! no. time steps
         INTEGER         OUTG          ! group number for output report
         INTEGER         MS            ! tmp src ID for major sources
+        INTEGER         PEGRP         ! grp no. for elev/ping from prev iteratn
         INTEGER         PGRP          ! group no. from previous iteration
         INTEGER      :: PINGTYPE = 0  ! code for PinG source approach
+        INTEGER         PLTEND        ! end position for plant string
         INTEGER         PS            ! tmp src ID for plume in grid sources
         INTEGER         ROW           ! tmp row number
         INTEGER      :: SDATE = 0     ! Julian start date
@@ -205,6 +206,7 @@ C...........   Other local variables
         CHARACTER(LEN=IOVLEN3) COORD3D  !  coordinate system name
         CHARACTER(LEN=IOVLEN3) COORUN3D !  coordinate system units 
         CHARACTER(LEN=ALLLEN3) CSRC     !  buffer for source char, incl pol/act
+        CHARACTER(LEN=PLTLEN3) PLT      !  tmp plant code
 
         CHARACTER*16 :: PROGNAME = 'ELEVPOINT'   !  program name
 
@@ -398,14 +400,15 @@ C.........  If needed, read config file
      &      PINGTYPE .EQ. PELVCONFIG_APPROACH      ) THEN
 
             CALL RPELVCFG( CDEV )
-c NOTE: Need to debug this when spaces are not in PELVCFG file correctly
-c    N: Known bad response for example "SO2 >=90." (missing space after =)
+
         END IF
 
 C.........  Allocate memory for temporary arrays for use in Evalcrit
         I = MAX( NGRPVAR, NEVPVAR )
         ALLOCATE( VALS( I ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VALS', PROGNAME )
+        ALLOCATE( CHRS( I ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRS', PROGNAME )
         ALLOCATE( RANK( I ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RANK', PROGNAME )
         ALLOCATE( EVSTAT( NELVCRIT, MXELVCHK, NEVPVAR ), STAT=IOS )
@@ -413,6 +416,7 @@ C.........  Allocate memory for temporary arrays for use in Evalcrit
         ALLOCATE( PGSTAT( NPNGCRIT, MXPNGCHK, NEVPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PGSTAT', PROGNAME )
         VALS = 0.
+        CHRS = ' '
         RANK = 0
 
 C.........  Allocate memory for analytical plume rise array, if it's needed
@@ -429,10 +433,11 @@ C           major and PinG sources that aren't in the inventory groups will
 C           get assigned their own group.
 C.........  This routine populates arrays in MODELEV that contain the group-
 C           specific information.  It allocates some of the group arrays.
-        IF( NGRPCRIT .GT. 0 ) THEN
-            CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
-     &                     GRPVALS, GRPTYPES, NINVGRP   )
-        END IF
+C.........  NGRPCRIT may be zero if no grouping criteria have been set, but
+C           the routine will still set groups for facility stacks that match
+C           exactly
+        CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
+     &                 GRPVALS, GRPTYPES, NINVGRP   )
 
 C.........  If emissions are needed as a criteria, determine maximum daily 
 C           emissions over the time period being processed for each source
@@ -453,7 +458,7 @@ C.............  Create maximum daily emissions by stack group.  The stack
 C               groups have already been set, and now the emissions for those
 C               groups must be computed to assign MEPSEs and MPSs.
             CALL MXGRPEMIS( NINVGRP, TSTEP, SDATE, STIME, 
-     &                      NSTEPS, TNAME ) 
+     &                      NSTEPS ) 
 
         ELSE
             MESG = 'NOTE: Getting date/time information only for ' //
@@ -468,9 +473,11 @@ C.........  Loop through sources to determine elevated and PinG sources.  If
 C           source is in a stack group, use group settings to compare to
 C           the elevated and/or PinG criteria.
 C.........  Also, update stack parameters and emissions permanently for
-C           program duration if it's in an inventory group
+C           program duration if source is in an inventory group
         NGROUP = 0
         PGRP   = -9
+        PEGRP  = -9
+        PLTEND = CH1POS3 - 1
         DO J = 1, NSRC
 
             S    = GINDEX ( J )
@@ -493,7 +500,9 @@ C.............  Store reordered group IDs
             SRCGROUP( S ) = IGRP
 
 C.............  Set temporary values for the current source
+            FIP  = IFIP   ( S )
             CSRC = CSOURC ( S )
+            PLT  = CSRC   ( PLTPOS3:PLTEND )
             HT   = STKHT  ( S )
             DM   = STKDM  ( S )
             TK   = STKTK  ( S )
@@ -508,6 +517,9 @@ C               (include emissions TOTAL for group).
             VALS( TK_IDX ) = TK
             VALS( VE_IDX ) = VE
             VALS( FL_IDX ) = 0.25 * PI * DM * DM * VE
+            VALS( SRC_IDX )= S
+            VALS( FIP_IDX )= FIP
+            CHRS( PLT_IDX )= ADJUSTL( PLT )
 
 C.............  If cutoff approach is used, compute and store plume rise
             IF( LCUTOFF ) THEN
@@ -547,7 +559,8 @@ C.............  Otherwise, set value of rise to zero
 
 C.............  Add pollutant value to VALS and set RANK for pollutants
             IF( NEVPEMV .GT. 0 ) THEN
-                N = MAX( HT_IDX,DM_IDX,TK_IDX,VE_IDX,FL_IDX,RISE_IDX ) ! in case of code alteration
+                N = MAX( HT_IDX,DM_IDX,TK_IDX,VE_IDX,FL_IDX,RISE_IDX,
+     &                   SRC_IDX, FIP_IDX, PLT_IDX  ) ! in case of code alteration
                 DO K = 1, NEVPEMV
                     N = N + 1                    
                     VALS( N ) = MXEMIS( S,K )
@@ -562,7 +575,8 @@ C               criteria given
 C.................  See if source matches criteria for elevated sources
                 EVSTAT = .FALSE.  ! array
                 IF ( EVALCRIT( NEVPVAR, NELVCRIT, MXELVCHK, VALS, VALS, 
-     &                         RANK, ELVVALS, ELVTYPES, EVSTAT ) ) THEN
+     &                         RANK, CHRS, ELVVALS, ELVCHRS, ELVTYPES, 
+     &                         EVSTAT ) ) THEN
                     IF ( IGRP .NE. PGRP ) NMJRGRP = NMJRGRP + 1
                     NMAJOR = NMAJOR + 1
                     LMAJOR( S ) = .TRUE.
@@ -578,7 +592,8 @@ C               criteria given
 C.................  See if source matches criteria for PinG sources
                 PGSTAT = .FALSE.  ! array
                 IF ( EVALCRIT( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, VALS, 
-     &                         RANK, PNGVALS, PNGTYPES, PGSTAT ) ) THEN
+     &                         RANK, CHRS, PNGVALS, PNGCHRS, PNGTYPES, 
+     &                         PGSTAT ) ) THEN
                     NPING = NPING + 1
                     IF ( IGRP .NE. PGRP ) NPINGGRP = NPINGGRP + 1
                     LPING( S ) = .TRUE.
@@ -587,13 +602,16 @@ C.................  See if source matches criteria for PinG sources
             END IF     ! End whether PinG approach is to use PELVCONFIG or not
 
 C.............  If source is a major source or a PinG source, but it's not in 
-C               a group, increase the total maximum group count. Since the
-C               sources are not currently sorted by group number, this count
-C               is a maximum value, not an actual value
-            IF( ( LMAJOR( S )    .OR. 
-     &            LPING ( S )         ) .AND.
-     &          ( IGRP .EQ. 0    .OR. 
-     &            IGRP .NE. PGRP      )      ) NGROUP = NGROUP + 1
+C               a group, increase the total maximum group count. 
+            IF( ( LMAJOR( S ) .OR. 
+     &            LPING ( S )      ) ) THEN
+
+                IF ( IGRP .EQ. 0 .OR. IGRP .NE. PEGRP ) 
+     &               NGROUP = NGROUP + 1
+
+                PEGRP = IGRP
+
+            END IF
 
             PGRP = IGRP
 
@@ -687,6 +705,7 @@ C.........  Source arrays have already been updated with group info.
 C.........  OUTG is used because G is not necessarily going to stay in order
 C           with the LOCGID construct.
         G = 0
+        CHRS = ' '      ! array
         DO S = 1, NSRC
 
 C.............  If major or PinG
@@ -732,7 +751,7 @@ C.................  If source not in an inventory group, it needs a grp no.
                     OUTG = G 
                     SFLAG = .TRUE.    ! controller for later in loop
 
-                    IF ( G .LE. NGROUP ) THEN
+                   IF ( G .LE. NGROUP ) THEN
                         GROUPID( S ) = G
                         GRPIDX ( G ) = G
                         GRPGIDA( G ) = G
@@ -765,10 +784,16 @@ C.................  Get setup for another call to EVALCRIT to get STATUS
                 VALS( VE_IDX ) = GRPVE ( OUTG )
                 VALS( FL_IDX ) = GRPFL ( OUTG )
                 IF( LCUTOFF ) VALS( RISE_IDX ) = RISE( S )
+                VALS( SRC_IDX )= S
+                VALS( FIP_IDX )= IFIP( S )
+
+                PLT = CSOURC( S )( PLTPOS3:PLTEND )
+                CHRS( PLT_IDX )= ADJUSTL( PLT )
 
 C.................  Add pollutant value to VALS and set RANK for pollutants
                 IF( NEVPEMV .GT. 0 ) THEN
-                    N = MAX(HT_IDX,DM_IDX,TK_IDX,VE_IDX,FL_IDX,RISE_IDX) ! in case of code alteration
+                    N = MAX(HT_IDX,DM_IDX,TK_IDX,VE_IDX,FL_IDX,RISE_IDX,
+     &                      SRC_IDX, FIP_IDX, PLT_IDX  ) ! in case of code alteration
                     DO K = 1, NEVPEMV
                         N = N + 1                    
                         VALS( N ) = MXEMIS( S,K )
@@ -782,12 +807,12 @@ C.................  If source is PinG, write out for PinG
 C..................... Evaluate PinG criteria again to get PGSTAT for writing;
 C                      if valid, then write report fields
                     IF ( EVALCRIT( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, 
-     &                             VALS, RANK, PNGVALS, PNGTYPES, 
-     &                             PGSTAT ) ) THEN
+     &                             VALS, RANK, CHRS, PNGVALS, PNGCHRS,
+     &                             PNGTYPES, PGSTAT ) ) THEN
 
                         CALL WRITE_REPORT( RDEV, S, OUTG, NEVPVAR, 
-     &                       NPNGCRIT, MXPNGCHK, 'P', VALS, RANK, 
-     &                       PNGVALS, PNGTYPES, PGSTAT )
+     &                       NPNGCRIT, MXPNGCHK, 'P', VALS, RANK, CHRS,
+     &                       PNGVALS, PNGCHRS, PNGTYPES, PGSTAT )
 
 C.....................  Otherwise, internal error
                     ELSE
@@ -803,13 +828,13 @@ C..................... Evaluate elevated criteria again to get PGSTAT for
 C                      writing; if valid, then write report fields
                 ELSE 
                     IF ( EVALCRIT( NEVPVAR, NELVCRIT, MXELVCHK, VALS, 
-     &                             VALS, RANK, ELVVALS, ELVTYPES, 
-     &                             EVSTAT ) ) THEN
+     &                             VALS, RANK, CHRS, ELVVALS, ELVCHRS,
+     &                             ELVTYPES, EVSTAT ) ) THEN
 
 C.........................  Add source to report
                         CALL WRITE_REPORT( RDEV, S, OUTG, NEVPVAR, 
-     &                       NELVCRIT, MXELVCHK, 'E', VALS, RANK, 
-     &                       ELVVALS, ELVTYPES, EVSTAT )
+     &                       NELVCRIT, MXELVCHK, 'E', VALS, RANK, CHRS,
+     &                       ELVVALS, ELVCHRS, ELVTYPES, EVSTAT )
 
 C.....................  Otherwise, internal error
                     ELSE
@@ -829,8 +854,9 @@ C.....................  Otherwise, internal error
 
 C.........  Ensure that all is well with memory allocation
         IF ( G .NE. NGROUP ) THEN
-            MESG = 'INTERNAL ERROR: Maximum number of groups was '//
-     &             'wrong for memory allocation!'
+            WRITE( MESG,94010 ) 'INTERNAL ERROR: Expected number ' //
+     &             'of groups was', NGROUP, 'but actual number was',
+     &             G
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
         END IF
@@ -1005,8 +1031,8 @@ C.............  This internal subprogram writes one report record based
 C               on interpretation of the STATUS argument using the 
 C               contents of the other array arguments.
             SUBROUTINE WRITE_REPORT( FDEV, S, IGRP, NV, NORS, MXAND, 
-     &                               LABEL, VALS, RANK, COMPARE, 
-     &                               TYPES, STATUS )
+     &                               LABEL, VALS, RANK, CHRS, COMPARE, 
+     &                               COMCHRS, TYPES, STATUS )
 
 C.............  Subprogram arguments
             INTEGER     , INTENT(IN):: FDEV    ! report file unit number
@@ -1018,7 +1044,9 @@ C.............  Subprogram arguments
             CHARACTER(*), INTENT(IN):: LABEL   ! E=elevated, P=PinG
             REAL        , INTENT(IN):: VALS   ( NV )       ! Data values
             REAL        , INTENT(IN):: RANK   ( NV )       ! Ranking order
+            CHARACTER(*), INTENT(IN):: CHRS   ( NV )       ! String values
             REAL        , INTENT(IN):: COMPARE( NORS, MXAND, NV ) ! Formula values
+            CHARACTER(*), INTENT(IN):: COMCHRS( NORS, MXAND, NV ) ! Condition
             CHARACTER(*), INTENT(IN):: TYPES  ( NORS, MXAND, NV ) ! Condition
             LOGICAL     , INTENT(IN):: STATUS ( NORS, MXAND, NV ) ! true: condition met
 
@@ -1082,8 +1110,12 @@ C.................  Initialize variable names for report
                 VNAME( VE_IDX )   = 'VE'
                 VNAME( FL_IDX )   = 'FL'
                 VNAME( RISE_IDX ) = 'RISE'
+                VNAME( SRC_IDX )  = 'SOURCE'
+                VNAME( FIP_IDX )  = 'FIPS'
+                VNAME( PLT_IDX )  = 'PLANT'
 
-                NM = MAX( HT_IDX,DM_IDX,TK_IDX,VE_IDX,FL_IDX,RISE_IDX ) ! in case of code alteration
+                NM = MAX( HT_IDX,DM_IDX,TK_IDX,VE_IDX,FL_IDX,RISE_IDX,
+     &                    SRC_IDX, FIP_IDX, PLT_IDX  ) ! in case of code alteration
                 N = NM
                 DO K = 1, NEVPEMV
                     N = N + 1                    
@@ -1195,11 +1227,24 @@ C.............................  Exit after this OR
 C.............................  Add to report for this OR and AND (if any)
                             L2 = LEN_TRIM( BUFFER )
                             IF ( TYPES( L,M,N ) .EQ. 'TOP' ) THEN
-
                                 WRITE( BUFFER, 94793 ) BUFFER( 1:L2 ), 
      &                                 VNAME( N ), ' RANK;      =;', 
      &                                 INT( RANK( N ) )
 
+C.............................  For integer values stored as reals
+                            ELSE IF ( N .EQ. SRC_IDX .OR.
+     &                                N .EQ. FIP_IDX      ) THEN 
+                                WRITE( BUFFER, 94796 ) BUFFER( 1:L2 ), 
+     &                                 VNAME( N ), TYPES( L,M,N ),  
+     &                                 INT( COMPARE( L,M,N ) )
+
+C.............................  Use "IS" type as way to I.D. string criteria
+                            ELSE IF ( TYPES( L,M,N ) .EQ. 'IS' ) THEN
+                                WRITE( BUFFER, 94795 ) BUFFER( 1:L2 ), 
+     &                                 VNAME( N ), TYPES( L,M,N ),
+     &                                 COMCHRS( L,M,N )
+
+C.............................  For all reals
                             ELSE IF ( TYPES( L,M,N ) .NE. ' ' ) THEN
                                 WRITE( BUFFER, 94794 ) BUFFER( 1:L2 ), 
      &                                 VNAME( N ), TYPES( L,M,N ),  
@@ -1248,7 +1293,11 @@ C---------------------  FORMAT  STATEMENTS  -------------------------
 
 94793       FORMAT( A, 1X, A16, ';', A, I10, ';' )
 
-94794       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', F10.2 ';' )
+94794       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', F10.2, ';' )
+
+94795       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', A15, ';' )
+
+94796       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', I10, ';' )
 
             END SUBROUTINE WRITE_REPORT
 
