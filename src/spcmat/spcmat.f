@@ -19,7 +19,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -99,7 +99,7 @@ C.........  Names for output variables in mass-based and mole-based files
 C.........  Unit numbers and logical file names
         INTEGER         KDEV    !  unit no. for optional pol to pol conversion
         INTEGER         LDEV    !  unit number for log file
-        INTEGER         MDEV    !  unit number for mobile codes file
+        INTEGER      :: MDEV = 0!  unit number for mobile codes file
         INTEGER         RDEV    !  unit number for speciation profiles file
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for ASCII emission process file
@@ -248,7 +248,7 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
 C.........  When mobile codes file is being used read mobile codes file
-        IF( MFLAG ) CALL RDMVINFO( MDEV )
+        IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
 
 C.........  Perform the steps needed for using activities and emission types
 C           instead of pollutants
@@ -357,13 +357,15 @@ C           emission types/pollutants names for input and output.
             IF( IDX .NE. PIDX ) THEN
                 K = K + 1                    
 
-                L1 = MAX( INDEX( EANAM( I ), ETJOIN ), 1 )
+                L1 = INDEX( EANAM( I ), ETJOIN )
+                L1 = MAX( L1, 1 )
                 IF( L1 .GT. 1 ) L1 = L1 + LT
 
                 L2 = LEN_TRIM( EANAM( I ) )
                 IINAM( K ) = EANAM( I )( L1:L2 )
 
-                L1 = MAX( INDEX( SANAM( I ), ETJOIN ), 1 )
+                L1 = INDEX( SANAM( I ), ETJOIN )
+                L1 = MAX( L1, 1 )
                 IF( L1 .GT. 1 ) L1 = L1 + LT
 
                 L2 = LEN_TRIM( SANAM( I ) )
@@ -380,7 +382,8 @@ C.........  The species names are sorted in ABC order for each pollutant, and
 C           and the pollutants are in the same order as SINAM.
 C.........  Also retrieve the maximum number of species per pollutant and 
 C           maximum number of profile entries per pollutant.
-
+        MESG = 'Scanning speciation profiles file for species...'
+        CALL M3MSG2( MESG )
         CALL DSCSPROF( RDEV, NOPOL, SINAM )
 
 C.........  Give warning if some pollutants won't be speciated, and keep track
