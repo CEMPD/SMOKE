@@ -42,7 +42,7 @@ if ( $ar_stat != 0 || $bg_stat != 0 || $mb_stat != 0 || $pt_stat != 0 ) then
    echo ' '
 else
    echo ' '
-   echo 'No difference found between your log files and the comparison files.'
+   echo 'No difference found between your smoke report files and the comparison files.'
    echo 'Your installation and example SMOKE run have completed successfully\!'
    echo ' '
    rm -rf $errfile
