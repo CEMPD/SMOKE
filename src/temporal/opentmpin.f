@@ -19,6 +19,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created 7/99 by M. Houyoux
+C      Modifieded 3/02 by G. Cano
 C
 C**************************************************************************
 C
@@ -210,15 +211,15 @@ C           logic would need to be used that evaluates the emission factor
 C           model assigned to each activity, and opens files depending on the
 C           emission factor model.
 C.........  Use NAMBUF for the HP
-        IF( NIACT .GT. 0 ) THEN
+        IF ( CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 ) THEN
 
             L = LEN_TRIM( MODELNAM )
-
+       
             MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
      &             ' NON-DIURNAL EMISSION FACTORS file'
             NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSND', PROGNAME )
             FNAME = NAMBUF
-    
+       
             MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
      &             ' DIURNAL EMISSION FACTORS file'
             NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSD', PROGNAME )
@@ -363,11 +364,12 @@ C.............  Compare all min/max temperatures
      &             'Enter logical name for EMISSION FACTORS X-REF file',
      &             .TRUE., .TRUE., CRL // 'PLIST', PROGNAME )
 
-            TDEV = PROMPTFFILE( 
-     &             'Enter logical name for EMISSION PROCESSES file',
-     &             .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
+        END IF ! (CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 )
 
-        END IF
+        TDEV = PROMPTFFILE( 
+     &         'Enter logical name for EMISSION PROCESSES file',
+     &         .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
+
 
 C.........  Open files that are specific to mobile sources
         IF( CATEGORY .EQ. 'MOBILE' ) THEN
