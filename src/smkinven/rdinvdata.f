@@ -356,8 +356,18 @@ C.........  Allocate memory for storing inventory data
             ALLOCATE( CPDESC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )
 
+            ISIC   = 0         ! array
+            IDIU   = 0         ! array
+            IWEK   = 0         ! array
+            STKHT  = 0.        ! array
+            STKDM  = 0.        ! array
+            STKTK  = 0.        ! array
+            STKVE  = 0.        ! array
+            XLOCA  = IMISS3    ! array
+            YLOCA  = IMISS3    ! array
             CORIS  = ORSBLNK3  ! array
             CBLRID = BLRBLNK3  ! array
+            CPDESC = ' '       ! array
         END IF
 
 C.........  Initialize pollutant-specific values as missing
