@@ -369,33 +369,22 @@ C           information from existing inventory files, which will be used
 C           for day- and hour-specific data import.
         ELSE
 
-C.............  Get header description of inventory file 
-            IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
-                MESG = 'Could not get description of file "' //
-     &                 ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.............  Store source-category-specific header information, 
+C           including the inventory pollutants in the file (if any).  Note that 
+C           the I/O API head info is passed by include file and the
+C           results are stored in module MODINFO.
+            CALL GETSINFO( ENAME )
 
-C.............  Otherwise, store source-category-specific header information, 
-C               including the inventory pollutants in the file (if any).   
-C               Note that the I/O API head info is passed by include file and 
-C               the results are stored in module MODINFO.
-            ELSE
+            NINVARR = 6
+            IVARNAMS( 1 ) = 'IFIP'    ! In case CEM input
+            IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
+            IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
+            IVARNAMS( 4 ) = 'CORIS'   ! In case CEM input
+            IVARNAMS( 5 ) = 'CBLRID'  ! In case CEM input
+            IVARNAMS( 6 ) = 'CPDESC'  ! In case CEM input
 
-                NSRC    = NROWS3D
-                NINVARR = 6
-                IVARNAMS( 1 ) = 'IFIP'    ! In case CEM input
-                IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
-                IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
-                IVARNAMS( 4 ) = 'CORIS'   ! In case CEM input
-                IVARNAMS( 5 ) = 'CBLRID'  ! In case CEM input
-                IVARNAMS( 6 ) = 'CPDESC'  ! In case CEM input
-
-                CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 
-     &                         NINVARR, IVARNAMS )
-
-        	CALL GETSINFO
-
-            END IF
+            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 
+     &                     NINVARR, IVARNAMS )
 
         END IF !   End processing of average annual import or not
 

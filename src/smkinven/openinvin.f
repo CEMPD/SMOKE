@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
+        SUBROUTINE OPENINVIN( CATEGORY, ADEV, DDEV, HDEV, RDEV, SDEV, 
      &                        XDEV, EDEV, PDEV, ZDEV, CDEV, ODEV, UDEV,
      &                        YDEV, ENAME, INNAME, IDNAME, IHNAME )
 
@@ -60,7 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
-        INTEGER     , INTENT(OUT) :: IDEV      ! unit number for inven file
+        INTEGER     , INTENT(OUT) :: ADEV     ! unit number for inven file
         INTEGER     , INTENT(OUT) :: DDEV      ! unit no. for day-specific file
         INTEGER     , INTENT(OUT) :: HDEV      ! unit no. for hr-specific file
         INTEGER     , INTENT(OUT) :: RDEV      ! unit no. for stack replacements
@@ -79,7 +79,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: IHNAME    ! hour-specific inventory name 
 
 C...........   Other local variables
-
+        INTEGER       IDEV   ! tmp unit number if ENAME is map file
         INTEGER       IOS    ! i/o status
         INTEGER       J      ! counter and indices
         INTEGER       LCAT   ! length of CATEGORY string
@@ -95,7 +95,8 @@ C...........   Other local variables
 
         CHARACTER(LEN=NAMLEN3) ANAME
         CHARACTER(LEN=NAMLEN3) NAMBUF      ! file name buffer
-        CHARACTER*300          MESG        ! message buffer 
+        CHARACTER(LEN=NAMLEN3) INAME       ! tmp name for inven file of unknown fmt
+        CHARACTER*256          MESG        ! message buffer 
 
         CHARACTER*16 :: PROGNAME = 'OPENINVIN' ! program name
 
@@ -204,7 +205,7 @@ C           inventory is to be imported
             MESG = 'Enter logical name of the RAW ' // 
      &             CATEGORY( 1:LCAT ) // ' AVERAGE INVENTORY ' // 'file'
 
-            IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INNAME, PROGNAME )
+            ADEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INNAME, PROGNAME )
 
 C.........  If SMOKE inventory already exists, open files for reading later
         ELSE
@@ -213,14 +214,29 @@ C.............  Get input inventory file names given source category
 C.............  Use NAMBUF for HP safety
             CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-            NAMBUF = PROMPTMFILE( 
-     &              'Enter logical name for the I/O API INVENTORY file',
-     &              FSREAD3, ENAME, PROGNAME )
-            ENAME = NAMBUF
+C.........  Prompt for and open input I/O API and ASCII files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            SDEV = PROMPTFFILE( 
-     &               'Enter logical name for the ASCII INVENTORY file',
-     &               .TRUE., .TRUE., ANAME, PROGNAME )
+C.............  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.............  Otherwise, open separate I/O API and ASCII files that
+C               do not store the pollutants as separate 
+            ELSE
+                ENAME = INAME
+                SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+            END IF
         END IF
 
 C.........  Get file name and open daily input inventory file

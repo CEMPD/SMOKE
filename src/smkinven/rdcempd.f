@@ -235,21 +235,11 @@ C.............  Read emissions from inventory file
 
                 IF ( CEMPIDX( V ) .LE. 0 ) CYCLE
 
-                CBUF = EANAM( CEMPIDX( V ) )
-                IF( .NOT. READSET( ENAME, CBUF, 1, ALLFILES, 0, 
-     &                           0, EMIS( 1,V )     ) ) THEN
+                CBUF = EANAM ( CEMPIDX( V ) )
 
-C.....................  Write error if data could not be read
-                    EFLAG = .TRUE.
-                    L  = LEN_TRIM( CBUF )
-                    L2 = LEN_TRIM( ENAME )
-                    MESG = 'ERROR: Could not read "' // CBUF( 1:L ) //
-     &                     '" from file ' // ENAME( 1:L2 ) // '".'
-     &                     
-                    CALL M3MSG2( MESG )
+                CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                         1, 1, CBUF, CBUF, 1, EMIS( 1,V )   )
 
-                END IF
-                
             END DO
 
             FIRSTIME = .FALSE.
