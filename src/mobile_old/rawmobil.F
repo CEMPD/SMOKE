@@ -242,11 +242,11 @@ C.............  Exit to line 51 if read is EOF
      &               'Must set inventory year using INVYEAR packet ' //
      &               'in MLKLST file', 2 )
  
-                ELSEIF( INY .LT. 1970 ) THEN
-
+                ELSEIF( INY .LT. 1950 .OR. INY .GT. 2030 ) THEN
+ 
                     CALL M3EXIT( 'RAWMOBIL', 0, 0,
-     &               'INVYEAR packet has set bad 4-digit year' //
-     &               'in MLKLST file', 2 )
+     &               'INVYEAR packet set 4-digit year outside range ' //
+     &               '1950 to 2030 in MLKLST file', 2 )
 
                 ENDIF
 
@@ -430,11 +430,11 @@ C.............  Exit to line 111 if read is EOF
      &               'Must set inventory year using INVYEAR packet ' //
      &               'in MNLST file', 2 )
  
-                ELSEIF( INY .LT. 1970 ) THEN
+                ELSEIF( INY .LT. 1950 .OR. INY .GT. 2030 ) THEN
  
                     CALL M3EXIT( 'RAWMOBIL', 0, 0,
-     &               'INVYEAR packet has set bad 4-digit year' //
-     &               'in MNLST file', 2 )
+     &               'INVYEAR packet set 4-digit year outside range ' //
+     &               '1950 to 2030 in MNLST file', 2 )
  
                 ENDIF
 

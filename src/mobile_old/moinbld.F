@@ -3,7 +3,7 @@
      &                      YEAR , WARNON  )
 
 C***********************************************************************
-C  program body starts at line 227
+C  program body starts at line 228
 C
 C  DESCRIPTION:
 C      This program accepts a parameter scheme index IPARM, a volatile type
@@ -218,6 +218,7 @@ C...........   Other local variables
         INTEGER B1, B2, E1, E2
         INTEGER G7, G8, G9
         INTEGER I, ICUT, IMP, IPPREV, J, JDSL, JJ, JJ2, JK, K
+        INTEGER YY   ! 2-digit year
         CHARACTER*256 MESG, BUFFER, LOCDIR
 
 C***********************************************************************
@@ -1185,16 +1186,29 @@ C.........  Write out scenario record: Set no diurnal/diurnal to 'N'
 C.........  Hard code temperature, because it's overridden in MOBILE5 anyway
 C             
         TMPRTR = 80. 
+        IF( YEAR .GT. 2000 ) THEN
+            YY = YEAR - 2000
+
+        ELSEIF( YEAR .GT. 1900 ) THEN
+            YY = YEAR - 1900 
+
+        ELSE
+            WRITE( MESG,94010 ) 'Do not know how to convert year', YEAR,
+     &                          'to a 2-digit year'
+            CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
+        ENDIF
+
         IF( NSPEED .EQ. 1 ) THEN
 
             WRITE( MODEV, 93400 ) 
-     &            REGION, YEAR-1900, SPEED( 1 ), TMPRTR,
+     &            REGION, YY, SPEED( 1 ), TMPRTR,
      &            ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
 
         ELSE
 
             WRITE( MODEV, 93410 ) 
-     &              REGION, YEAR-1900, 
+     &              REGION, YY, 
      &              ( SPEED ( K ), K=1,8 ), TMPRTR,
      &              ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
 
