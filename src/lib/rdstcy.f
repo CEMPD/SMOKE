@@ -395,29 +395,54 @@ C.............  Find the time zone in the list and retrieve the integer value
 C.............  Store the county code and name.  If the time zone is not
 C               defined, apply default.
             K = K + 1
-            CNTYCOD( K ) = FIP
-            CNTYNAM( K ) = ADJUSTL( LINE( 5:24 ) )
 
-            IF( J .GT. 0 ) THEN
-                CNTYTZON( K ) = TZONNUM( J )
-            ELSE
-                IF( FIP .NE. LFIP ) THEN
-                    WRITE( MESG,94010 ) 
-     &                   'WARNING: Applying default time zone', TZONE0,
-     &                   'to country/state/county code:', FIP
-                    CALL M3MESG( MESG )
+            IF( K .LE. NDIMCY ) THEN 
+                CNTYCOD( K ) = FIP
+                CNTYNAM( K ) = ADJUSTL( LINE( 5:24 ) )
+
+                IF( J .GT. 0 ) THEN
+                    CNTYTZON( K ) = TZONNUM( J )
+                ELSE
+                    IF( FIP .NE. LFIP ) THEN
+                        WRITE( MESG,94010 ) 
+     &                    'WARNING: Applying default time zone', TZONE0,
+     &                    'to country/state/county code:', FIP
+                        CALL M3MESG( MESG )
+                    END IF
+                    CNTYTZON( K ) = TZONE0
                 END IF
-                CNTYTZON( K ) = TZONE0
             END IF
 
             LFIP = FIP
 
         END DO
 
-        IF( K .NE. NDIMCY ) THEN
+C.........  Error if the counties read are less than the expected number
+        IF( NDIM .LE. 0 .AND. K .NE. NDIMCY ) THEN
             MESG = 'INTERNAL ERROR: Actual count of county codes in ' //
      &             'error'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........  Error if the counties read are less than the number requested
+C           by the calling program.
+        ELSE IF( K .LT. NDIMCY ) THEN
+            MESG = 'ERROR:  Some requested counties not found in ' //
+     &             'county names file:'
+            CALL M3MSG2( MESG )
+
+            DO J = 1, NDIM
+                FIP = INCNTYS( J )
+                I = FIND1( FIP, K, CNTYCOD )
+
+                IF( I .LE. 0 ) THEN
+                    WRITE( MESG,94010 ) BLANK10 // 'Code:', FIP
+                    CALL M3MSG2( MESG )
+                END IF
+
+            END DO
+
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
         END IF
 
 C.........  Set final sizes that are stored in module
