@@ -545,7 +545,7 @@ C.................  Check for bad road class number
 
             GO TO 66  ! To head of current ADEV-read loop
 
-  110       CLOSE( MDEV )
+  110       CLOSE( ADEV )
 
         GO TO 55      ! To head of MNLST read loop
 
