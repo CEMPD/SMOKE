@@ -1,25 +1,3 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         SUBROUTINE  PLMRIS( ZH, ZF, WSPD, TA, DTHDZ,
      &                      USTAR, HMIX, HFX,
@@ -28,7 +6,7 @@ C ****************************************************************************/
      &                      TOP, BOT )
 
 C***********************************************************************
-C  subroutine body starts at line  156
+C  subroutine body starts at line  155
 C
 C  FUNCTION:  
 C       computes elevation TOP, BOT of plume top and bottom.
@@ -45,6 +23,27 @@ C       RADM 2.6 subroutine PLUMER() (but with completely different
 C       data structuring).
 C
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C***********************************************************************
 
       IMPLICIT NONE
 
@@ -56,7 +55,7 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'TMDIMS3.EXT'   !  emis temporal modeling parms
-        INCLUDE 'LADIMS3.EXT'   !  emis temporal modeling parms
+        INCLUDE 'VGRD3.EXT'     !  vertical direction parms
 
 
 C...........   ARGUMENTS and their descriptions:
