@@ -1,5 +1,7 @@
 
-        SUBROUTINE ALLOCMRG( MXGRP, MXVARPGP )
+        SUBROUTINE ALLOCMRG( MXGRP, MXVARPGP, AMULSIZ, MMULSIZ, PMULSIZ,
+     &                       ASPCSIZ, MSPCSIZ, PSPCSIZ, APOLSIZ, 
+     &                       MPOLSIZ, PPOLSIZ )
 
 C***********************************************************************
 C  subroutine ALLOCMRG body starts at line
@@ -64,29 +66,20 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
 
         INTEGER, INTENT(OUT) :: MXGRP    ! max possible no. of processing groups
         INTEGER, INTENT(OUT) :: MXVARPGP ! maximum number of variables per group
+        INTEGER, INTENT(OUT) :: AMULSIZ  ! ar multipl control matrix array size
+        INTEGER, INTENT(OUT) :: MMULSIZ  ! mb multipl control matrix array size
+        INTEGER, INTENT(OUT) :: PMULSIZ  ! pt multipl control matrix array size
+        INTEGER, INTENT(OUT) :: ASPCSIZ  ! area speciation matrix array size
+        INTEGER, INTENT(OUT) :: MSPCSIZ  ! mobile speciation matrix array size
+        INTEGER, INTENT(OUT) :: PSPCSIZ  ! point speciation matrix array size
+        INTEGER, INTENT(OUT) :: APOLSIZ  ! area inventory emissions array size
+        INTEGER, INTENT(OUT) :: MPOLSIZ  ! mobile inventory emissions array size
+        INTEGER, INTENT(OUT) :: PPOLSIZ  ! point inventory emissions array size
 
 C...........   EXTERNAL FUCNTIONS:
 
         CHARACTER*2    CRLF
         EXTERNAL       CRLF
-   
-C...........   Temporary matrix array sizes
-
-        INTEGER         APOLSIZ ! work area inventory emissions array size
-        INTEGER         MPOLSIZ ! work mobile inventory emissions array size
-        INTEGER         PPOLSIZ ! work point inventory emissions array size
-
-        INTEGER         ASPCSIZ ! work area speciation matrix array size
-        INTEGER         MSPCSIZ ! work mobile speciation matrix array size
-        INTEGER         PSPCSIZ ! work point speciation matrix array size
-
-        INTEGER         AMULSIZ ! work area multipl control matrix array size
-        INTEGER         MMULSIZ ! work mobile multipl control matrix array size
-        INTEGER         PMULSIZ ! work point multipl control matrix array size
-
-        INTEGER         AADDSIZ ! work area additive control matrix array size
-        INTEGER         MADDSIZ ! work mobile additive control matrix array size
-        INTEGER         PADDSIZ ! work point additive control matrix array size
 
 C...........   Array of allocation statuses
         INTEGER         IOSA( 100 )
@@ -147,56 +140,32 @@ C........  Allocate memory for fixed-size area source arrays
                     CALL CHECKMEM( IOS, 'AEUSTA', PROGNAME )
                 ENDIF
 
-                IF( LREPCTL .AND. AAFLAG ) THEN
-                    ALLOCATE( AEASTA( NSTA,NDIM ), STAT=IOS )   ! state add tot
-                    CALL CHECKMEM( IOS, 'AEASTA', PROGNAME )
-                ENDIF
-
                 IF( LREPCTL .AND. ARFLAG ) THEN
                     ALLOCATE( AERSTA( NSTA,NDIM ), STAT=IOS )  ! state reac tot
                     CALL CHECKMEM( IOS, 'AERSTA', PROGNAME )
                 ENDIF
 
                 IF( LREPCTL .AND. 
-     &            ( AUFLAG .OR. AAFLAG .OR. ARFLAG ) ) THEN
+     &            ( AUFLAG .OR. ARFLAG ) ) THEN
                     ALLOCATE( AECSTA( NSTA,NDIM ), STAT=IOS )  ! state ctrl tot
                     CALL CHECKMEM( IOS, 'AECSTA', PROGNAME )
                 ENDIF
 
             END IF
 
-            ALLOCATE( AEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( AEBCNY( NCNY,NDIM ), STAT=IOS ) ! county total 
             CALL CHECKMEM( IOS, 'AEBCNY', PROGNAME )
 
-            IF( AUFLAG ) THEN
-                ALLOCATE( AEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-            ELSE
-                ALLOCATE( AEUCNY( 1,1 ), STAT=IOS )
-            END IF
+            ALLOCATE( AEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             CALL CHECKMEM( IOS, 'AEUCNY', PROGNAME )
-
-            IF( AAFLAG ) THEN
-                ALLOCATE( AEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-            ELSE
-                ALLOCATE( AEACNY( 1,1 ), STAT=IOS )
-            END IF
-            CALL CHECKMEM( IOS, 'AEACNY', PROGNAME )
 
 C.............  The reactivity controls sum is used when there is speciation,
 C               even if no reactivity controls are applied to prevent IF
 C               statements in the merge loops in MRGMULT.
-            IF( SFLAG ) THEN 
-                ALLOCATE( AERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-            ELSE
-                ALLOCATE( AERCNY( 1,1 ), STAT=IOS )
-            END IF
+            ALLOCATE( AERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             CALL CHECKMEM( IOS, 'AERCNY', PROGNAME )
 
-            IF( AUFLAG .OR. AAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( AECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-            ELSE
-                ALLOCATE( AECCNY( 1,1 ), STAT=IOS )
-            END IF
+            ALLOCATE( AECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             CALL CHECKMEM( IOS, 'AECCNY', PROGNAME )
 
 
@@ -257,55 +226,30 @@ C.........  Mobile source fixed-size arrays
                     CALL CHECKMEM( IOS, 'MEUSTA', PROGNAME )
                 ENDIF
 
-                IF( LREPCTL .AND. MAFLAG ) THEN
-                    ALLOCATE( MEASTA( NSTA,NDIM ), STAT=IOS )   ! state add tot
-                    CALL CHECKMEM( IOS, 'MEASTA', PROGNAME )
-                ENDIF
-
                 IF( LREPCTL .AND. MRFLAG ) THEN
                     ALLOCATE( MERSTA( NSTA,NDIM ), STAT=IOS )  ! state reac tot
                     CALL CHECKMEM( IOS, 'MERSTA', PROGNAME )
                 ENDIF
 
                 IF( LREPCTL .AND. 
-     &            ( MUFLAG .OR. MAFLAG .OR. MRFLAG ) ) THEN
+     &            ( MUFLAG .OR. MRFLAG ) ) THEN
                     ALLOCATE( MECSTA( NSTA,NDIM ), STAT=IOS )  ! state ctrl tot
                     CALL CHECKMEM( IOS, 'MECSTA', PROGNAME )
                 ENDIF
 
             ENDIF
 
-            ALLOCATE( MEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( MEBCNY( NCNY,NDIM ), STAT=IOS ) ! county total 
             CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
 
-            IF( MUFLAG ) THEN
-                ALLOCATE( MEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-            ELSE
-                ALLOCATE( MEUCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( MEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             CALL CHECKMEM( IOS, 'MEUCNY', PROGNAME )
 
-            IF( MAFLAG ) THEN
-                ALLOCATE( MEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-            ELSE
-                ALLOCATE( MEACNY( 1,1 ), STAT=IOS )
-            ENDIF
-            CALL CHECKMEM( IOS, 'MEACNY', PROGNAME )
-
-            IF( SFLAG ) THEN   ! See note on AERCNY definition
-                ALLOCATE( MERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-            ELSE
-                ALLOCATE( MERCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( MERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             CALL CHECKMEM( IOS, 'MERCNY', PROGNAME )
 
-            IF( MUFLAG .OR. MAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( MECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-            ELSE
-                ALLOCATE( MECCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( MECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             CALL CHECKMEM( IOS, 'MECCNY', PROGNAME )
-
 
             IF( MRFLAG ) THEN
                 ALLOCATE( MCRIDX( MNSREAC ), STAT=IOS )      ! reactivity index
@@ -353,53 +297,29 @@ C.........  Point source fixed-size arrays
                     CALL CHECKMEM( IOS, 'PEUSTA', PROGNAME )
                 ENDIF
 
-                IF( LREPCTL .AND. PAFLAG ) THEN
-                    ALLOCATE( PEASTA( NSTA,NDIM ), STAT=IOS )   ! state add tot
-                    CALL CHECKMEM( IOS, 'PEASTA', PROGNAME )
-                ENDIF
-
                 IF( LREPCTL .AND. PRFLAG ) THEN
                     ALLOCATE( PERSTA( NSTA,NDIM ), STAT=IOS )  ! state reac tot
                     CALL CHECKMEM( IOS, 'PERSTA', PROGNAME )
                 ENDIF
 
                 IF( LREPCTL .AND. 
-     &            ( PUFLAG .OR. PAFLAG .OR. PRFLAG ) ) THEN
+     &            ( PUFLAG .OR. PRFLAG ) ) THEN
                     ALLOCATE( PECSTA( NSTA,NDIM ), STAT=IOS )  ! state ctrl tot
                     CALL CHECKMEM( IOS, 'PECSTA', PROGNAME )
                 ENDIF
 
             ENDIF
 
-            ALLOCATE( PEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( PEBCNY( NCNY,NDIM ), STAT=IOS ) ! county total 
             CALL CHECKMEM( IOS, 'PEBCNY', PROGNAME )
 
-            IF( PUFLAG ) THEN
-                ALLOCATE( PEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-            ELSE
-                ALLOCATE( PEUCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( PEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             CALL CHECKMEM( IOS, 'PEUCNY', PROGNAME )
 
-            IF( PAFLAG ) THEN
-                ALLOCATE( PEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-            ELSE
-                ALLOCATE( PEACNY( 1,1 ), STAT=IOS )
-            ENDIF
-            CALL CHECKMEM( IOS, 'PEACNY', PROGNAME )
-
-            IF( SFLAG ) THEN   ! See note on AERCNY definition
-                ALLOCATE( PERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-            ELSE
-                ALLOCATE( PERCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( PERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             CALL CHECKMEM( IOS, 'PERCNY', PROGNAME )
 
-            IF( PUFLAG .OR. PAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( PECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-            ELSE
-                ALLOCATE( PECCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( PECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             CALL CHECKMEM( IOS, 'PECCNY', PROGNAME )
 
             IF( PRFLAG ) THEN
@@ -486,53 +406,29 @@ C.........  Total emissions, fixed-size arrays.
                     CALL CHECKMEM( IOS, 'TEUSTA', PROGNAME )
                 ENDIF
 
-                IF( LREPCTL .AND. TAFLAG ) THEN
-                    ALLOCATE( TEASTA( NSTA,NDIM ), STAT=IOS )   ! state add tot
-                    CALL CHECKMEM( IOS, 'TEASTA', PROGNAME )
-                ENDIF
-
                 IF( LREPCTL .AND. TRFLAG ) THEN
                     ALLOCATE( TERSTA( NSTA,NDIM ), STAT=IOS )  ! state reac tot
                     CALL CHECKMEM( IOS, 'TERSTA', PROGNAME )
                 ENDIF
 
                 IF( LREPCTL .AND. 
-     &            ( TUFLAG .OR. TAFLAG .OR. TRFLAG ) ) THEN
+     &            ( TUFLAG .OR. TRFLAG ) ) THEN
                     ALLOCATE( TECSTA( NSTA,NDIM ), STAT=IOS )  ! state ctrl tot
                     CALL CHECKMEM( IOS, 'TECSTA', PROGNAME )
                 ENDIF
 
             ENDIF
 
-            ALLOCATE( TEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( TEBCNY( NCNY,NDIM ), STAT=IOS ) ! county total 
             CALL CHECKMEM( IOS, 'TEBCNY', PROGNAME )
 
-            IF( TUFLAG ) THEN
-                ALLOCATE( TEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-            ELSE
-                ALLOCATE( TEUCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( TEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             CALL CHECKMEM( IOS, 'TEUCNY', PROGNAME )
 
-            IF( TAFLAG ) THEN
-                ALLOCATE( TEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-            ELSE
-                ALLOCATE( TEACNY( 1,1 ), STAT=IOS )
-            ENDIF
-            CALL CHECKMEM( IOS, 'TEACNY', PROGNAME )
-
-            IF( SFLAG ) THEN   ! See note on AERCNY definition
-                ALLOCATE( TERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-            ELSE
-                ALLOCATE( TERCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( TERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             CALL CHECKMEM( IOS, 'TERCNY', PROGNAME )
 
-            IF( TUFLAG .OR. TAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( TECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-            ELSE
-                ALLOCATE( TECCNY( 1,1 ), STAT=IOS )
-            ENDIF
+            ALLOCATE( TECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             CALL CHECKMEM( IOS, 'TECCNY', PROGNAME )
 
         END IF
@@ -544,14 +440,8 @@ C....................................................................
 C.........  Initialize size for multiplicative control pollutants as the actual
 C           number in in matrix for each source category
         AMULSIZ = MAX( MIN( ANIPOL, ANUMATV ), 1 )
-        MMULSIZ = MAX( MIN( MNIPOL, MNUMATV ), 1 )
+        MMULSIZ = MAX( MIN( MNIPPA, MNUMATV ), 1 )
         PMULSIZ = MAX( MIN( PNIPOL, PNUMATV ), 1 )
-
-C.........  Initialize size for additive control pollutants as the actual
-C           number in in matrix for each source category
-        AADDSIZ = MAX( MIN( ANIPOL, ANAMATV ), 1 )
-        MADDSIZ = MAX( MIN( MNIPOL, MNAMATV ), 1 )
-        PADDSIZ = MAX( MIN( PNIPOL, PNAMATV ), 1 )
 
 C.........  Initialize size for species as all pol-to-species combos for each 
 C           source category.
@@ -622,25 +512,6 @@ C.............  Point
             PMULSIZ = MIN( PMULSIZ, MXVARPGP )
             ALLOCATE( PCUMATX( NPSRC,PMULSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'PCUMATX', PROGNAME )
-
-C.............  Allocate additive control matrices
-C.............  Area
-            J = J + 1
-            AADDSIZ = MIN( AADDSIZ, MXVARPGP )
-            ALLOCATE( ACAMATX( NASRC,AADDSIZ ), STAT=IOSA( J ) )
-            CALL CHECKMEM( IOSA( J ), 'ACAMATX', PROGNAME )
-
-C.............  Mobile
-            J = J + 1
-            MADDSIZ = MIN( MADDSIZ, MXVARPGP )
-            ALLOCATE( MCAMATX( NMSRC,MADDSIZ ), STAT=IOSA( J ) )
-            CALL CHECKMEM( IOSA( J ), 'MCAMATX', PROGNAME )
-
-C.............  Point
-            J = J + 1
-            PADDSIZ = MIN( PADDSIZ, MXVARPGP )
-            ALLOCATE( PCAMATX( NPSRC,PADDSIZ ), STAT=IOSA( J ) )
-            CALL CHECKMEM( IOSA( J ), 'PCAMATX', PROGNAME )
 
 C.............  Allocate emissions arrays
 C.............  Area

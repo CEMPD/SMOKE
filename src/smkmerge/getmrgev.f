@@ -64,7 +64,6 @@ C...........   Other local variables
 
         CHARACTER*5     MRGSRC   ! value of MRG_SOURCE E.V.
         CHARACTER*5     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
-        CHARACTER*5     CTLADD   ! value of MRG_CTLMAT_ADD  E.V.
         CHARACTER*5     CTLREAC  ! value of MRG_CTLMAT_REAC E.V.
         CHARACTER*5     TMPBYDAY ! value of MRG_BYDAY E.V.
         CHARACTER*100   BUFFER   ! text buffer
@@ -96,10 +95,6 @@ C           the environment variable(s), nothing will happen with the program
         CALL ENVSTR( 'MRG_CTLMAT_MULT', BUFFER, ' ', CTLMULT, IOS  )
 
         BUFFER = 'Setting for which source categories get ' //
-     &           'additive control matrix'
-        CALL ENVSTR( 'MRG_CTLMAT_ADD', BUFFER, ' ', CTLADD, IOS  )
-
-        BUFFER = 'Setting for which source categories get ' //
      &           'reactivity control matrix'
         CALL ENVSTR( 'MRG_CTLMAT_REAC', BUFFER, ' ', CTLREAC, IOS  )
 
@@ -116,10 +111,6 @@ C.........  Process the character strings to set the various control flags
         AUFLAG = ( INDEX( CTLMULT, 'A' ) .GT. 0 .AND. AFLAG )
         MUFLAG = ( INDEX( CTLMULT, 'M' ) .GT. 0 .AND. MFLAG ) 
         PUFLAG = ( INDEX( CTLMULT, 'P' ) .GT. 0 .AND. PFLAG )
-
-        AAFLAG = ( INDEX( CTLADD, 'A' ) .GT. 0 .AND. AFLAG )
-        MAFLAG = ( INDEX( CTLADD, 'M' ) .GT. 0 .AND. MFLAG )
-        PAFLAG = ( INDEX( CTLADD, 'P' ) .GT. 0 .AND. PFLAG )
 
         ARFLAG = ( INDEX( CTLREAC, 'A' ) .GT. 0 .AND. AFLAG )
         MRFLAG = ( INDEX( CTLREAC, 'M' ) .GT. 0 .AND. MFLAG )

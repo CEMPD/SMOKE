@@ -281,15 +281,6 @@ C               and store control variable names.
 
             END IF  ! end of multiplicative control open
 
-C.............  Open additive control matrix, compare number of sources, 
-C               and store control variable names.
-            IF( AAFLAG ) THEN
-                MESG= 'INTERNAL ERROR: Area additive controls not ' //
-     &                'yet implemented in ' // PROGNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            END IF  ! end of additive control open
-
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( ARFLAG ) THEN
@@ -646,15 +637,6 @@ C               and store control variable names.
                 CALL STORE_VNAMES( 1, 1, PNUMATV, PUVNAMS )
 
             END IF  ! end of multiplicative control open
-
-C.............  Open additive control matrix, compare number of sources, 
-C               and store control variable names.
-            IF( PAFLAG ) THEN
-                MESG= 'INTERNAL ERROR: Point additive controls not ' //
-     &                'yet implemented in ' // PROGNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            END IF  ! end of additive control open
 
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.

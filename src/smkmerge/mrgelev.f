@@ -1,16 +1,16 @@
 
         SUBROUTINE MRGELEV( NSRC, NMAJOR, NPING, 
-     &                      KEY1, KEY2, KEY3, KEY4, CNV )
+     &                      KEY1, KEY2, KEY4, CNV )
 
 C***********************************************************************
 C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C      This subroutine multiplies a source-emissions vector with optionally 
-C      a speciation array and multiplicative control array. An additive 
-C      control array can be added to the emissions.  The first time this
-C      routine is called, a PinG- and elevated-source-specific set of arrays are
-C      allocated for storing and processing the PinG and elevated emissions.
+C      a speciation array and multiplicative control array. 
+C      The first time this routine is called, a PinG- and elevated-source-
+C      specific set of arrays are allocated for storing and processing the 
+C      PinG and elevated emissions.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -68,7 +68,6 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NPING       ! no. plume-in-grid sources
         INTEGER     , INTENT (IN) :: KEY1        ! inven emissions index
         INTEGER     , INTENT (IN) :: KEY2        ! mult controls index
-        INTEGER     , INTENT (IN) :: KEY3        ! additive controls index
         INTEGER     , INTENT (IN) :: KEY4        ! speciation index
         REAL        , INTENT (IN) :: CNV         ! units conversion factor
 
@@ -79,7 +78,6 @@ C.........  Other local variables
 
         REAL*8          SUM1            ! sum for GOUT1   
         REAL*8          SUM2            ! sum for GOUT2 
-        REAL*8          ADD             ! tmp value with additive controls
         REAL*8          MULT            ! tmp value with multiplictv controls
         REAL*8          REAC            ! tmp value with reactivity controls
         REAL*8          VAL             ! tmp value  
@@ -171,51 +169,8 @@ C.........  Initialize emissions values
 C.........  Check if this is a valid inventory pollutant for this call
         IF( KEY1 .GT. 0 ) THEN
 
-C............. If multiplicative controls, additive controls, and speciation
-            IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
-
-                DO K = 1, NMAJOR
-
-                    S   = ELEVSIDX( K )   ! index to source arrays
-
-                    VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) 
-                    MULT = VAL * PCUMATX( S,KEY2 )
-
-                    ADD = PCAMATX( S,KEY3 ) * PSMATX( S,KEY4 )
-
-                    VAL  = ADD + MULT
-                    VMP  = PRINFO( S,2 )
-                    VAL = ( VAL * (1.-VMP) + PRINFO( S,1 ) * VMP )
-
-                    IDX = PINGGIDX( K )   ! index to group arrays
-                    IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
-
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV                   
-
-                END DO
-
-C............. If multiplicative controls & additive controls
-            ELSE IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 ) THEN
-
-                DO K = 1, NMAJOR
-
-                    S   = ELEVSIDX( K )   ! index to source arrays
-
-                    MULT = PEMSRC ( S,KEY1 ) * PCUMATX( S,KEY2 )
-                    ADD  = PCAMATX( S,KEY3 )
-                    VAL  = ADD + MULT
-
-                    IDX = PINGGIDX( K ) 
-                    IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
-
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV                    
-
-                END DO
-
 C............. If multiplicative controls & speciation
-            ELSE IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
+            IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
 
                 DO K = 1, NMAJOR
 
@@ -226,28 +181,6 @@ C............. If multiplicative controls & speciation
 
                     VMP  = PRINFO( S,2 )
                     VAL = ( MULT * (1.-VMP) + PRINFO( S,1 ) * VMP )
-
-                    IDX = PINGGIDX( K )
-                    IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
-
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
-
-                END DO
-
-C............. If additive controls & speciation
-            ELSE IF( KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
-
-                DO K = 1, NMAJOR
-
-                    S   = ELEVSIDX( K )   ! index to source arrays
-
-                    VAL = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) 
-                    ADD = PCAMATX( S,KEY3 ) * PSMATX( S,KEY4 )
-
-                    VAL = ADD + VAL
-                    VMP  = PRINFO( S,2 )
-                    VAL = ( VAL * (1.-VMP) + PRINFO( S,1 ) * VMP )
 
                     IDX = PINGGIDX( K )
                     IF( IDX .GT. 0 ) 
@@ -272,22 +205,6 @@ C............. If multiplicative controls only
 
                     ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
 
-                END DO
-
-C............. If additive controls only
-            ELSE IF( KEY3 .GT. 0 ) THEN
-
-                DO K = 1, NMAJOR
-
-                    S   = ELEVSIDX( K )   ! index to source arrays
-
-                    VAL = PEMSRC( S,KEY1 ) + PCAMATX( S,KEY3 )
-
-                    IDX = PINGGIDX( K )
-                    IF( IDX .GT. 0 ) 
-     &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
-
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
                 END DO
 
 C.............  If speciation only
