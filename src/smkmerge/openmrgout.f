@@ -173,7 +173,16 @@ C.................  Open by logical name or physical name
            END IF 
 
             IF( MFLAG ) THEN
-                CALL SETUP_VARIABLES( MNIPPA, MNMSPC, MEANAM, MEMNAM )
+
+ccs...............  Check if the number of mobile species exceeds the
+ccs                 number of total species (can happen if there are 
+ccs                 more species in the speciation matrix than desired
+ccs                 in the output)
+            	IF( MNMSPC > NMSPC ) THEN
+            	    CALL SETUP_VARIABLES( MNIPPA, NMSPC, MEANAM, EMNAM )
+            	ELSE
+                    CALL SETUP_VARIABLES( MNIPPA, MNMSPC,MEANAM, MEMNAM)
+                ENDIF
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Mobile source emissions data'
 
