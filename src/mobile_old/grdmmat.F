@@ -58,10 +58,6 @@ C...........   PARAMETER:
      &                  MXLNKD = NRCLAS * MXFIP )
 
 C...........   LOCAL VARIABLES and their descriptions:
-C...........   NOTE that ASC (mobile-source-category) ID's are 10-digit
-C...........   unsigned integers which may be treated as a leading 7-digit
-C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
-C...........   follow this scheme with parallel arrays
 
         INTEGER     FIP
         INTEGER     SID
@@ -133,8 +129,8 @@ C...........   Surrogate-cell::FIPS table
 C...........   Mobile Sources Table
         
         INTEGER     IFIP  ( NMSRC )  !  source FIPS (county) ID
-        INTEGER     IRCLAS( NMSRC )  !  leading-7  digits of source ASC
-        INTEGER     ILINK ( NMSRC )  !  trailing-3 digits of source ASC
+        INTEGER     IRCLAS( NMSRC )  !  EPA roadclass code
+        INTEGER     ILINK ( NMSRC )  !  Link number
         REAL        XLOC1 ( NMSRC )  !   X coordinate for start of link
         REAL        XLOC2 ( NMSRC )  !   X coordinate for   end of link
         REAL        YLOC1 ( NMSRC )  !   Y coordinate for start of link
@@ -157,6 +153,7 @@ C...........   Scratch Ungridding Matrix (subscripted by cell, source)
 
         INTEGER     IT( MXCFIP , NMSRC )
         REAL        CT( MXCFIP , NMSRC )
+        REAL        DN( NMSRC )           ! Source Normalization coefficient
 
 C...........   Ungridding Matrix
 
@@ -264,7 +261,7 @@ C...........   in FDESC3 commons for opening MGMAT, MUGMAT files):
             CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
 
         END IF          !  if dscgrid() failed
-        
+
         IF ( GDTYP3D .EQ. LAMGRD3 ) THEN
 
             IF ( .NOT. SETLAM( P_ALP3D, P_BET3D, P_GAM3D, 
@@ -342,7 +339,7 @@ C.......   Get file name; open output UNgridding matrix file
         VTYPE3D( 1 ) = M3REAL
 
         UNAME = PROMPTMFILE( 
-     &          'Enter logical name for GRIDDING MATRIX output file',
+     &          'Enter logical name for UNGRIDDING MATRIX output file',
      &          FSUNKN3, 'MUGMAT', 'GRDMMAT' )
 
         UFLAG = ( UNAME( 1:5 ) .NE. 'NONE ' )
@@ -502,6 +499,19 @@ C.......   Rescale (normalize) the LNKFAC's:
             END IF
 55      CONTINUE        !  end loop on S normalizing LNKFACs
 
+C.......   Get grid description for use in check
+        IF ( .NOT. DSCGRID( GRDNM, CNAME, GDTYP3D, 
+     &             P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
+     &             XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
+     &             NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
+            GNAME = GRDNM
+            MESG  = 'Could not get description of grid "' //
+     &              GNAME( 1:TRIMLEN( GNAME ) ) // 
+     &              '" from GRIDDESC file.'
+            CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
+
+        END IF          !  if dscgrid() failed
 
 C...........   Read the surrogate coefficient file
 C.......   Initializations:
@@ -561,11 +571,11 @@ C.......   ASSUMPTION:  sorted by FIP
         ELSE IF ( YY .LT. -1.0E-4 * YCELL ) THEN
             CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                   'Bad Y-origin placement in SURROGATE file', 2 )
-        ELSE IF ( XDUM .LT. 
+        ELSE IF ( XDUM .GT. 
      &            XORIG3D + ( NCOLS3D + 1.0E-4 ) * XCELL ) THEN
             CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                   'Bad grid X-placement in SURROGATE file', 2 )
-        ELSE IF ( YDUM .LT.
+        ELSE IF ( YDUM .GT.
      &            YORIG3D + ( NROWS3D + 1.0E-4 ) * YCELL ) THEN
             CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                   'Bad grid Y-placement in SURROGATE file', 2 )
@@ -586,7 +596,7 @@ C.......   ASSUMPTION:  sorted by FIP
 77      CONTINUE        !  head of the SDEV-read loop
         
             IREC = IREC + 1
-            READ( SDEV, 93010 , END=79, IOSTAT=IOS ) 
+            READ( SDEV, * , END=79, IOSTAT=IOS ) 
      &          FIP, XX, YY, ZONE, ( FRAC( C ), C = 1, MXSRG )
 
             IF ( IOS .NE. 0 ) THEN
@@ -624,8 +634,14 @@ C.......   ASSUMPTION:  sorted by FIP
             
 
 C...........   Find this FIP and record this cell for it
-        
-            IF ( FIP .NE. LFIP ) THEN
+            IF ( LFIP .GT. FIP ) THEN
+ 
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 )
+     &              'SURG COEFF file out of order at line', IREC
+                CALL M3MESG( MESG )
+ 
+            ELSEIF ( FIP .NE. LFIP ) THEN
                 
                 IF ( S .GE. MXFIP ) THEN
                     WRITE( MESG,94010 ) 
@@ -883,7 +899,7 @@ C.......       sixth case:   fallback default
 
                 DD = 1.0 / ALEN
                 DO  111  K = 1, NCEL
-                    C = ACEL( J )
+                    C = ACEL( K )
                     J = NX( C ) + 1
                     IF ( J .GT. MXSCEL ) THEN
                         OFLAG = .TRUE.      !  overflow occurred.
@@ -1122,36 +1138,54 @@ C...........   IF UFLAG and no errors, generate the UNgridding matrix:
         IF (       EFLAG ) GO TO  999	!  to exit from program
         IF ( .NOT. UFLAG ) GO TO  999	!  to exit from program
         
+C.......   Initialize ungridding matrix related arrays
         DO  301  S = 1, NMSRC
             NU( S ) = 0
+            DN( S ) = 0.
 301     CONTINUE
 
+C.......   Create renormalization factors for each source
+        DO  311  C = 1, NGRID
+            DO 310 K = 1, NX( C )
+
+                S = IS( K,C )
+                DN( S ) = DN( S ) + CS( K,C )
+
+310         CONTINUE
+311     CONTINUE
+
+C.......   Pre-divide normalization factors
+        DO  312 S = 1, NMSRC
+
+            IF( DN( S ) .EQ. 0. ) THEN
+                WRITE( MESG,94010 ) 
+     &                'No gridding factors for Source Number', S
+                CALL M3WARN( 'GRDMMAT', 0, 0, MESG )
+            ELSE 
+                DN( S ) = 1.0 / DN( S )
+            ENDIF
+
+312     CONTINUE
 
 C.......   Renormalize and Transpose ((IS,CS) into scratch arrays (IT,CT):
-
         DO  333  C = 1, NGRID
             
-            DD = 0.0
+            DO  322  K = 1, NX( C )
 
-            DO  311  S = 1, NX( C )
-                DD = DD + CS( S,C )
-311         CONTINUE
-
-            IF ( NX( C ) .GT. 0 )  DD = 1.0 / DD
-
-            DO  322  S = 1, NX( C )
-
+                S = IS( K,C )
                 J = NU( S ) + 1
 
                 IF ( J .LE. MXCFIP ) THEN
-                    K         = IS( S,C )
-                    IT( K,J ) = C
-                    CT( K,J ) = DD * CS( S,C )
+                    IT( J,S ) = C
+                    CT( J,S ) = DN( S ) * CS( K,C )
                 ELSE
                     OFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'Overflow for source', K
+                    WRITE( MESG, 94010 ) 'Overflow for source', S
                     CALL M3MESG( MESG )
                 END IF
+
+                NU( S ) = J
+
 322         CONTINUE
 
 333     CONTINUE
@@ -1211,7 +1245,7 @@ C.......   Compute statistics.
 
 377         CONTINUE
 
-            WRITE( *,92000 ) ' ', 'Writing out GRIDDING MATRIX file...'
+            WRITE( *,92000 ) ' ','Writing out UNGRIDDING MATRIX file...'
 
             IF ( .NOT. WRITE3( UNAME, 'ALL', 0, 0, NU ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0, 
