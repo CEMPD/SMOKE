@@ -71,12 +71,12 @@ C...........   Arrays for getting pollutant-specific information from file
         INTEGER       NENTRA ( NIPOL )   ! number of table entries per pollutant
         INTEGER       NSPECA ( NIPOL )   ! number of species per pollutant
         CHARACTER*16  POLNAMA( NIPOL )   ! unsorted pollutant names
-        LOGICAL       LMOLAR ( NIPOL )   ! true: moles conversion is not mass
 
 C...........   Arrays for getting species-specific information from file
         INTEGER     , ALLOCATABLE :: INDX1A ( : ) ! sorting index for SPECNMA
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SPECNMA ( : )   ! unsort spcs names
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPNAMES( :,: ) ! unsort names per pollutant
+        LOGICAL     , ALLOCATABLE :: LMOLAR ( : ) ! true: moles conversion is not mass
                 
         INTEGER        IPOS( 10 )       ! position in input pollutant list
 
@@ -122,8 +122,8 @@ C...........  Make sure routine arguments are valid
        
 C...........   Determine length of input file and allocate memory for
 C              a temporary species names array, an array that
-C              associates a pollutant with each species name, and an
-C              index array
+C              associates a pollutant with each species name, an
+C              index array, and an array to determine output units
 
         NLINES = GETFLINE( FDEV, 'Speciation profile file' )
         ALLOCATE( SPECNMA( NLINES ), STAT=IOS )
@@ -132,6 +132,8 @@ C              index array
         CALL CHECKMEM( IOS, 'INDX1A', PROGNAME )
         ALLOCATE( TMPNAMES( MXVARS3,NIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TMPNAMES', PROGNAME )
+        ALLOCATE( LMOLAR( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LMOLAR', PROGNAME )
 
 C...........   Initialize species count per pollutant and flag for indicating
 C              true molar conversions (NOTE - for some pollutants like PM10,
@@ -263,9 +265,6 @@ C.............  Search for pollutant unique list of all pollutants
                 POLNAMA( IPOL ) = POLNAM    ! add POLNAM to POLNAMA
                 NENTRA ( IPOL ) = 1         ! init for first entry per pol
 
-C.................  If mole-based = mass based, then use molar transform
-                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS( 1 ) ) = .TRUE.
-
                 PPOS = IPOL   ! Set for storing species count, below
                
             ELSE     ! if current POLNAM is already in POLNAMA, then
@@ -273,9 +272,6 @@ C.................  If mole-based = mass based, then use molar transform
 C.................  If a new profile number, then add to count of table entries
 C                   for this pollutant
                 NENTRA( PPOS ) = NENTRA( PPOS ) + 1
-
-C.................  If mole-based = mass based, then use molar transform
-                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS( 1 ) ) = .TRUE.
         
             END IF
             
@@ -286,6 +282,9 @@ C.................  If mole-based = mass based, then use molar transform
                 ISP = ISP + 1
                 INDX1A ( ISP )  = ISP
                 SPECNMA( ISP )  = SPECNM
+
+C.................  If mole-based = mass based, then use molar transform
+                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( ISP ) = .TRUE.
      
             END IF
 
@@ -372,9 +371,9 @@ C.................  Find species in list of valid species per pollutant
                      ICOUNT = ICOUNT + 1
                      SPCNAMES( ICOUNT, I ) = SPECNMA( K )
 
-C......................  When the pollutant does not have molar factors, store
+C......................  When the species does not have molar factors, store
 C                        the molar units as mass units
-                     IF( LMOLAR( I ) ) THEN
+                     IF( LMOLAR( K ) ) THEN
                          MOLUNITS( ICOUNT, I ) = SMOLUNIT
                      ELSE
                          MOLUNITS( ICOUNT, I ) = SMASUNIT
