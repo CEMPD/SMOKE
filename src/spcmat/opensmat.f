@@ -22,17 +22,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center  
+C Environmental Modeling Center
+C MCNC  
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -43,13 +43,15 @@ C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
@@ -86,6 +88,7 @@ C.........  Count of species per inventory pollutant/emission type
 
 C.........  Other local variables
         INTEGER          I, J, K, V     !  counters and indices
+        INTEGER          IOS            !  I/O status
 
         INTEGER          ICNT     ! cntr for the total number of output vars
         INTEGER          NCNT     ! cntr for number of species per inv pol
@@ -142,14 +145,14 @@ C.................  Check total number of output variables with I/O API max
 C.........  Print Error if number of variables is passed maximum.
 C.........  DO NOT end program here because it will be ended when the write
 C           attempt is made for these extra variables.
-        IF( ICNT .GT. MXVARS3 ) THEN
-            WRITE( MESG, 94010 ) 
-     &             'ERROR: maximum I/O API variables exceeded:' //
-     &             CRLF() // BLANK10 // 'Max: ', MXVARS3, 'Actual:',ICNT
-            CALL M3MSG2( MESG )
-
-            ICNT = MXVARS3
-        END IF
+!        IF( ICNT .GT. MXVARS3 ) THEN
+!            WRITE( MESG, 94010 ) 
+!     &             'ERROR: maximum I/O API variables exceeded:' //
+!     &             CRLF() // BLANK10 // 'Max: ', MXVARS3, 'Actual:',ICNT
+!            CALL M3MSG2( MESG )
+!
+!            ICNT = MXVARS3
+!        END IF
 
 C.........  Set up file header(s) for opening I/O API output(s). Base this on
 C           inventory header...
@@ -165,7 +168,7 @@ C.........  Get header information from inventory file
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
 
-        NVARS3D = ICNT
+        NVARSET = ICNT
 
         FDESC3D = ' '   ! array
 
@@ -176,12 +179,22 @@ C.........  Get header information from inventory file
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
+C.........  Allocate memory for file description information
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
 
 C.........  Set up variable descriptions that will be used to indicate the 
 C           inventory pollutant and model species names
 
-        VDESC3D = ' '  ! array initialization
-        VTYPE3D = 0    ! array initialization
+        VDESCSET = ' '  ! array initialization
+        VTYPESET = 0    ! array initialization
 
         I = 0
         DO K = 1, NIPPA
@@ -191,8 +204,8 @@ C           inventory pollutant and model species names
             DO J = 1, NSPEC( K )
 
                 I = I + 1
-                VDESC3D( I ) = EALLOUT( K )// SPJOIN// SPCNAMES( J,V )
-                VTYPE3D( I ) = M3REAL
+                VDESCSET( I ) = EALLOUT( K )// SPJOIN// SPCNAMES( J,V )
+                VTYPESET( I ) = M3REAL
 
             END DO
         END DO
@@ -207,14 +220,14 @@ C.........  Set up variables specifically for mass-based file, and open it
                 DO J = 1, NSPEC( K )
 
                     I = I + 1
-                    VNAME3D( I ) =  SVNAMES( J,K ) 
-                    UNITS3D( I ) = SMASUNIT
+                    VNAMESET( I ) =  SVNAMES( J,K ) 
+                    VUNITSET( I ) = SMASUNIT
 
                 END DO
             END DO
 
 C.............  Open with NAMBUF for HP
-            NAMBUF = PROMPTMFILE( 
+            NAMBUF = PROMPTSET( 
      &        'Enter logical name for MASS-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_S', PROGNAME )
             SNAME = NAMBUF
@@ -234,14 +247,14 @@ C.........  Set up variables specifically for mole-based file, and open it
                 DO J = 1, NSPEC( K )
 
                     I = I + 1
-                    VNAME3D( I ) =  LVNAMES( J,K ) 
-                    UNITS3D( I ) = MOLUNITS( J,V )
+                    VNAMESET( I ) =  LVNAMES( J,K ) 
+                    VUNITSET( I ) = MOLUNITS( J,V )
 
                 END DO
             END DO
 
 C.............  Open with NAMBUF for HP
-            NAMBUF = PROMPTMFILE( 
+            NAMBUF = PROMPTSET( 
      &        'Enter logical name for MOLE-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_L', PROGNAME )
             LNAME = NAMBUF
