@@ -43,7 +43,7 @@ C***************************************************************************
         IMPLICIT NONE
 
 C.........  INCLUDES:
-        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IOSTRG3.EXT'   !  i/o API strings
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: UNIT1    ! first unit
