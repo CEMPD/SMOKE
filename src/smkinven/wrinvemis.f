@@ -226,6 +226,8 @@ C.........  If needed, check for negative values and output computed variable
         IF( FFLAG ) THEN
 
 C.............  Check for negative values
+C.............  NOTE - negative values won't happen since the MAX was added
+C               in the loop for output routine.
             DO S = 1, NSRC
 
                 IF( COMPUTED( S,1 ) .LT. 0 ) THEN
@@ -339,11 +341,17 @@ C.................  Write data to inventory file
 C.................  If current data variable is the first variable in the
 C                   formula, then store data in formula arrays
                 IF( NAMES( I ) .EQ. VIN_A ) THEN
-                    COMPUTED( :,1 ) = COMPUTED( :,1 ) + SRCPOL( :,1 )
+                    COMPUTED( :,1 ) = COMPUTED( :,1 ) + 
+     &                                MAX( 0., SRCPOL( :,1 ) )
                     IF ( NPVAR .GT. 1 ) THEN
-                        COMPUTED( :,2 )= COMPUTED( :,2 ) + SRCPOL( :,2 )
+                        COMPUTED( :,2 )= COMPUTED( :,2 ) + 
+     &                                   MAX( 0., SRCPOL( :,2 ) )
                     END IF
 
+C.....................  For area and point sources, set other variables for
+C                       the pollutant the same as the first variable in the
+C                       formula. Note - this is not very rigorous, especially
+C                       for emission factors.
                     IF ( NPVAR .GT. 2 ) THEN
                         COMPUTED( :,3:NPVAR ) = SRCPOL( :,3:NPVAR )
                     END IF
@@ -354,15 +362,19 @@ C                   formula, then use data in formula to compute output value
                 IF( NAMES( I ) .EQ. VIN_B ) THEN
 
                     IF( CHKPLUS ) THEN
-                        COMPUTED( :,1 )= COMPUTED( :,1 ) + SRCPOL( :,1 )
+                        COMPUTED( :,1 )= COMPUTED( :,1 ) + 
+     &                                   MAX( 0., SRCPOL( :,1 ) )
                         IF ( NPVAR .GT. 1 ) THEN
-                            COMPUTED(:,2)= COMPUTED(:,2) + SRCPOL(:,2)
+                            COMPUTED(:,2)= COMPUTED(:,2) + 
+     &                                     MAX( 0., SRCPOL(:,2) )
                         END IF
 
                     ELSE IF( CHKMINUS ) THEN
-                        COMPUTED( :,1 )= COMPUTED( :,1 ) - SRCPOL( :,1 )
+                        COMPUTED( :,1 )= COMPUTED( :,1 ) - 
+     &                                   MAX( 0., SRCPOL( :,1 ) )
                         IF ( NPVAR .GT. 1 ) THEN
-                             COMPUTED(:,2)= COMPUTED(:,2) - SRCPOL(:,2)
+                             COMPUTED(:,2)= COMPUTED(:,2) - 
+     &                                      MAX( 0., SRCPOL(:,2) )
                         END IF
 
                    END IF
