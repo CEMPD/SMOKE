@@ -61,107 +61,107 @@ debug: $(MODALL) $(MODGRID) $(FILES_A) $(FILES_B) $(FILES_C) $(FILES_TMP) Makefi
 #
 
 alocchrt.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ alocchrt.f
 alocctbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ alocctbl.f
 alocetbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ alocetbl.f
 alocgtbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ alocgtbl.f
 alocmtbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ alocmtbl.f
 alocstbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ alocstbl.f
 alocttbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ alocttbl.f
 asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ asgnpsi.f
 bldenams.o  : $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ bldenams.f
 chkptdef.o: $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ chkptdef.f
 dscsprof.o: $(MODSPRO) 
-	$(FC) $(FFLAGS) -c -o $@ $<     
+	$(FC) $(FFLAGS) -c -o $@ dscsprof.f
 efsetup.o : $(MODEMFAC) $(INC)/M5CNST3.EXT
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ efsetup.f
 fillchrt.o: $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fillchrt.f
 fillctbl.o: $(MODXREF) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fillctbl.f
 filletbl.o: $(MODXREF) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ filletbl.f
 fillgtbl.o: $(MODXREF) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fillgtbl.f
 fillmtbl.o: $(MODXREF) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fillmtbl.f
 fillstbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fillstbl.f
 fillttbl.o: $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fillttbl.f
 fltrxref.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fltrxref.f
 fmtcsrc.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fmtcsrc.f
 genuslst.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ genuslst.f
 getbasyr.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ getbasyr.f
 getctgry.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ getctgry.f
 getformt.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ getformt.f
 getsinfo.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ getsinfo.f
 gettzone.o: $(MODSTCY)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ gettzone.f
 getvmix.o: $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ getvmix.f
 grd2cnty.o: $(MODSTCY) $(MODSURG)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ grd2cnty.f
 lambert.o: 
-	$(FC) -static $(FFLAGS) -c -o $@ $<
+	$(FC) -static $(FFLAGS) -c -o $@ lambert.f
 mbsccadj.o  : $(MODMOBIL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<     
+	$(FC) $(FFLAGS) -c -o $@ mbsccadj.f
 normtpro.o: $(MODTMPRL)
-	$(FC) $(FFLAGS) -c -o $@ $<     
+	$(FC) $(FFLAGS) -c -o $@ normtpro.f
 procspro.o: $(MODSPRO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ procspro.f
 rdcodnam.o: $(MODLISTS)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdcodnam.f
 rdefxref.o: $(MODMOBIL) $(MODXREF) $(MODEMFAC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdefxref.f
 rdeproc.o: $(MODEMFAC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdeproc.f
 rdgref.o : $(MODXREF) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdgref.f
 rdinvchr.o: $(MODSOURC) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdinvchr.f
 rdmvinfo.o: $(MODMOBIL)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
 rdpelv.o : $(MODINFO) $(MODELEV)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdpelv.f
 rdsconv.o : $(MODSPRO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdsconv.f
 rdsref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdsref.f
 rdsrg.o   : $(MODSURG)
-	$(FC) $(FFLAGS) -c -o $@ $<  
+	$(FC) $(FFLAGS) -c -o $@ rdsrg.f
 rdstcy.o  : $(MODSTCY) 
-	$(FC) $(FFLAGS) -c -o $@ $<  
+	$(FC) $(FFLAGS) -c -o $@ rdstcy.f
 rdtprof.o : $(MODTMPRL)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdtprof.f
 rdtref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<     
+	$(FC) $(FFLAGS) -c -o $@ rdtref.f
 rdvmix.o  : $(MODMOBIL) $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<     
+	$(FC) $(FFLAGS) -c -o $@ rdvmix.f
 tmprinfo.o  : $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ tmprinfo.f
 wrchrscc.o: $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wrchrscc.f
 wridaout.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wridaout.f
 xreftbl.o: $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ xreftbl.f
 
 clean:
 	/bin/rm *.o

@@ -33,11 +33,11 @@ spcmat.debug: $(SPC) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ asgnspro.f
 opensmat.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ opensmat.f
 spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ spcmat.f
 
 
 #

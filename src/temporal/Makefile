@@ -36,31 +36,31 @@ temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ asgntpro.f
 genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ genhemis.f
 mktmat.o: $(MODTMPRL) 
-	$(FC) $(FFLAGS) -c -o $@ $<     
+	$(FC) $(FFLAGS) -c -o $@ mktmat.f
 opentmp.o: $(MODEMFAC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ opentmp.f
 opentmpin.o: $(MODMET) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ opentmpin.f
 rdefacs.o: $(MODMOBIL) $(MODEMFAC) $(MODINFO) $(MODMET) $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdefacs.f
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ setdaylt.f
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR) $(MODLISTS)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ temporal.f
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ tmnamunt.f
 tmpintrp.o: $(MODSOURC) $(MODMET) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ tmpintrp.f
 qatmpr.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ qatmpr.f
 updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ updtmat.f
 #
 clean:
 	/bin/rm *.o

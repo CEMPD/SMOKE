@@ -57,39 +57,39 @@ MODSOURC = $(MD_SRC)/modsourc.o
 include $(MD_SRC)/modmake.inc
 
 adjsmet.o  : $(MODSOURC) $(MODINFO)          # This should not get optimization
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ adjsmet.f
 chkefhdr.o: $(INC)/M5CNST3.EXT
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ chkefhdr.f
 chkemfac.o : $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ chkemfac.f
 efcombo.o : $(MODEMFAC) $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ efcombo.f
 emfacio.o : $(MODEMFAC) $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ emfacio.f
 emisfac.o : $(MODEMFAC) $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ emisfac.f
 expndeft.o : $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ expndeft.f
 expndpsi.o : $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ expndpsi.f
 genefmet.o: $(MODXREF) $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ genefmet.f
 mobil5b.o : $(MODEMFACS) $(MODINFO) $(MODMET) $(INC)/M5CNST3.EXT
-	$(FC) $(FFLAGS) -I$(M5_SRC) -c -o $@ $<
+	$(FC) $(FFLAGS) -I$(M5_SRC) -c -o $@ mobil5b.f
 opensmet.o  : $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ opensmet.f
 premobl.o  : $(MODSOURC) $(MODXREF) $(MODEMFAC) $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ premobl.f
 rdefdat.o : $(MODEMFAC) $(INC)/M5CNST3.EXT
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdefdat.f
 rdeftmpr.o : $(MODEMFAC) $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdeftmpr.f
 seteftmpr.o : $(MODEMFAC) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ seteftmpr.f
 setefupd.o : $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ setefupd.f
 wremfacs.o : $(MODEMFAC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wremfacs.f
 
 clean:
 	/bin/rm *.o

@@ -55,15 +55,15 @@ tmpbio.pvm.debug: $(TBIO) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 rawbio.o: $(MODSURG) $(MODBIOG)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rawbio.f
 cybio.o: $(MODSURG) $(MODBIOG)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ cybio.f
 grdbio.o: $(MODBIOG)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ grdbio.f
 tmpbio.o: $(MODSPRO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ tmpbio.f
 rdbpro.o:$(MODSPRO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdbpro.f
 #
 clean:
 	/bin/rm *.o 

@@ -57,37 +57,37 @@ include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
 
 allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV) $(MODGRID) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ allocmrg.f
 bldmrgidx.o : $(MODMERGE)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ bldmrgidx.f
 getmrgev.o  : $(MODMERGE)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ getmrgev.f
 initstcy.o  : $(MODMERGE) $(MODSTCY)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ initstcy.f
 mrgelev.o   : $(MODMERGE) $(MODCNTL) $(MODELEV)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ mrgelev.f
 mrgmult.o   : $(MODMERGE) $(MODSTCY) $(MODELEV)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ mrgmult.f
 mrgonams.o  : $(MODMERGE)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ mrgonams.f
 mrgunits.o  : $(MODMERGE)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ mrgunits.f
 mrgvnams.o  : $(MODMERGE)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ mrgvnams.f
 openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ openmrgin.f
 openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ openmrgout.f
 rdmrginv.o: $(MODMERGE)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdmrginv.f
 smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ smkmerge.f
 wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV) $(MODGRID) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wmrgelev.f
 wmrgemis.o  : $(MODMERGE) $(MODELEV)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wmrgemis.f
 wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wrmrgrep.f
 
 
 clean:

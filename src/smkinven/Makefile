@@ -48,63 +48,63 @@ smkinven.debug: $(RAW) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 fixstk.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ fixstk.f
 genpdout.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ genpdout.f
 genpdinfo.o: $(MODINFO) $(MODDAYHR)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ genpdinfo.f
 gethdr.o: $(MODINFO) $(MODLISTS) $(MODSTCY)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ gethdr.f
 grwinven.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ grwinven.f
 initinfo.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ initinfo.f
 opengrwout.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ opengrwout.f
 openinvout.o: $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ openinvout.f
 openpdout.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ openpdout.f
 procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ procinven.f
 rdemsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdemsar.f
 rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdemsmb.f
 rdemspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdemspd.f
 rdemspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdemspt.f
 rdepsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdepsar.f
 rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODLISTS)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdepspd.f
 rdepspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdepspt.f
 rdgrdapi.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ rdgrdapi.f
 rdidaar.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdidaar.f
 rdidamb.o: $(MODSOURC) $(MODMOBIL) $(MODLISTS) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdidamb.f
 rdidapt.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdidapt.f
 rdinven.o: $(MODSOURC) $(MODLISTS) $(MODMOBIL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdinven.f
 rdlooppd.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ rdlooppd.f
 smkinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	$(FC) $(FFLAGS) -c -o $@ smkinven.f
 srcmem.o: $(MODSOURC)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ srcmem.f
 wrinvchr.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wrinvchr.f
 wrinvemis.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wrinvemis.f
 wrptref.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wrptref.f
 wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wrpdemis.f
 
 clean:
 	/bin/rm *.o

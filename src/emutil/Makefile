@@ -69,10 +69,10 @@ MODSOURC = $(MD_SRC)/modsourc.o
 include $(MD_SRC)/modmake.inc
 
 mvcondns.o  : $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ mvcondns.f
 
 smk2emis.o  : $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ smk2emis.f
 
 clean:
 	/bin/rm *.o

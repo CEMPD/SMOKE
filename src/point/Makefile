@@ -55,13 +55,13 @@ elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 laypoint.o: $(MODSOURC) $(MODELEV) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ laypoint.f
 elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ elevpoint.f
 openeout.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ openeout.f
 wpingstk.o: $(MODELEV)
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ wpingstk.f
 #
 clean:
 	/bin/rm *.o 
