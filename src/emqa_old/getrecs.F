@@ -1,10 +1,30 @@
-C
-C Version @(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
  
         PROGRAM GETRECS
 
 C***********************************************************************
-C  program body starts at line 143
+C  program body starts at line 164
 C
 C  DESCRIPTION:
 C       Searches for a specific source, for all sources in a 
@@ -41,12 +61,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER       FIND1
         INTEGER       GETNUM
+        LOGICAL       GETYN
         INTEGER       INDEX1
         INTEGER       PROMPTFFILE
         CHARACTER*16  PROMPTMFILE
         INTEGER       TRIMLEN
 
-        EXTERNAL      FIND1, GETNUM, INDEX1, PROMPTFFILE, 
+        EXTERNAL      FIND1, GETNUM, GETYN, INDEX1, PROMPTFFILE, 
      &                PROMPTMFILE, TRIMLEN
 
 C.........  Define PNTS variables
@@ -147,9 +168,9 @@ C   begin body of program GETRECS
      &  'Program GETRECS searches for a specific source, for all',
      &  'sources in a specific cell, or for combinations of source',
      &  'keys.  It creates a ascii file which lists all details about',
-     &  'the source including source number, grid cell, if found in
-     &  'gridding matrix, temporalization factors, control factors,
-     &  'inventory pollutant emissions, and model species emissions.
+     &  'the source including source number, grid cell, if found in',
+     &  'gridding matrix, temporalization factors, control factors,',
+     &  'inventory pollutant emissions, and model species emissions.',
      &  ' ',
      &  'You will need to enter the logical names for the input and',
      &  'output files (and to have set them prior to program launch,',
