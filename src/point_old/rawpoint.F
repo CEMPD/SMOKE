@@ -4,7 +4,7 @@ C Version @(#)$Id$ $Source$ $Date$
          PROGRAM RAWPOINT
 
 C***********************************************************************
-C  program body starts at line 173
+C  program body starts at line 186
 C
 C  DESCRIPTION:
 C       Sort data contained in EPS/AFS-style point source file and 
@@ -23,6 +23,7 @@ C       Version  10/95 does sorting internally on FIPS,SCC,PLANT,STACK.
 C       Version  11/95 reads, combines, and sorts multiple input files
 C       PRAW01, PRAW02, ..., each with its own inventory-year.
 C       Supports both UTM and Lambert-based coordinate systems.
+C       Version 5/96 uses base-36 ID representation for plant IDs
 C***********************************************************************
 
       IMPLICIT NONE
@@ -51,6 +52,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FIND1   !  returns -1 for failure
         INTEGER         GETNUM
         LOGICAL         GETYN
+        CHARACTER*7     I362STR
         INTEGER         JULIAN
         LOGICAL         SETLAM
         LOGICAL         LL2LAM
@@ -61,12 +63,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*16    PROMPTMFILE
         INTEGER         SECSDIFF
         INTEGER         STR2INT
+        INTEGER         STR2I36
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN, 
+        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, I362STR, JULIAN,
      &           SETLAM, LL2LAM, UTM2LAM, PROMPTFFILE, PROMPTMFILE,
-     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN
+     &           SECSDIFF, STR2INT, STR2I36, STR2REAL, TRIMLEN
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -318,7 +321,7 @@ C.......   Get file name; open input raw point source file
                 FIP   = STR2INT ( LINE(  12: 16 ) )
                 SIC   = STR2INT ( LINE(  24: 27 ) )
                 SCC   = STR2INT ( LINE(  29: 38 ) )
-                PLANT = STR2INT ( LINE(  40: 44 ) )
+                PLANT = STR2I36 ( LINE(  40: 44 ) )
                 STACK = STR2INT ( LINE(  46: 48 ) )
                 XLOC  = STR2REAL( LINE(  78: 87 ) )
                 YLOC  = STR2REAL( LINE(  89: 98 ) )
@@ -399,7 +402,8 @@ C.......   Get file name; open input raw point source file
 
                     EMIS = 0.0      !  note ZERO for day-specific "SP" records
 
-                    WRITE( MESG, 94030 ) FIP, SCC, PLANT, STACK, IREC
+                    WRITE( MESG, 94030 ) 
+     &                  FIP, SCC, I362STR( PLANT ), STACK, IREC
                     CALL M3MESG( MESG )
 
                 ELSE                                        !  unrecognized type
@@ -651,7 +655,7 @@ C.......   then permute the records according to the result:
                     WRITE( MESG,94020 )
      &                  'Missing record:  FIP:', IFIP( S ),
      &                  'SCC:',     ISCC( S ), 
-     &                  'Plant:',   IPLANT( S ),
+     &                  'Plant:',   I362STR( IPLANT( S ) ),
      &                  'Stack:',   ISTACK( S ),
      &                  'Species:', PCODE( V )
                     CALL M3MESG( MESG )
@@ -945,10 +949,10 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 3( A, :, I7, :, 1X ) )
 
-94020   FORMAT( A, I7, X, A, I10, X, A, I7, X, A, I4, X, A, I6 )
+94020   FORMAT( A, I7, X, A, I10, X, A, A, X, A, I4, X, A, I6 )
 
 94030   FORMAT( 'Emis set to zero for source ', 
-     &           I5, ':',I8, ':', I5.5, ':', I3.3, ' at line ', I6 )
+     &           I5, ':',I8, ':', A, ':', I3.3, ' at line ', I6 )
 
 94040   FORMAT( A, I2.2 )
 
