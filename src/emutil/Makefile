@@ -8,9 +8,9 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 geofac mvcondns smk2emis uam2ncf 
+all: beld3to2 geofac mvcondns mvsetup smk2emis uam2ncf 
 
-debug: beld3to2.debug geofac.debug mvcondns.debug smk2emis.debug uam2ncf.debug 
+debug: beld3to2.debug geofac.debug mvcondns.debug mvsetup.debug smk2emis.debug uam2ncf.debug 
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -68,6 +68,16 @@ uam2ncf: $(UAMC) $(ALLI) $(LIBPATH)
 uam2ncf.debug: $(UAMC) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'UAM2NCF (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(UAMC) $(LIBS_DEBUG)
+
+MVS = mvsetup.o
+
+mvsetup: $(MVS) $(ALLI) $(LIBPATH)
+	echo MVSETUP:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MVS) $(LIBS)
+
+mvsetup.debug: $(MVS) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'MVSETUP (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(MVS) $(LIBS_DEBUG)
 
 #
 #
