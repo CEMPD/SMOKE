@@ -753,8 +753,8 @@ C.........  Vehicle mix
 
 C.........  Speeds
         ELSE IF( PFLAG ) THEN
-c             CALL ALOCPTBL( N( 1 ) )
-c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
+             CALL ALOCPTBL( N( 1 ) )
+             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
 C.........  All control x-ref tables
         ELSE
