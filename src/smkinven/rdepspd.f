@@ -47,6 +47,9 @@ C...........   This module is the inventory arrays
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
 
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -164,7 +167,6 @@ C...........   Other local variables
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: dates set by data
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
-        LOGICAL       :: LXMPT    = .FALSE.  ! true: record exempt from dl time
         LOGICAL       :: WARNOUT  = .FALSE.  ! true: then output warnings
 
         CHARACTER*2            TMPAA !  tmp time period code
@@ -429,10 +431,7 @@ C               daily, or part-day data
             EDIV = 1. / RSTEPS
 
 C.............  Determine if this FIPS code is exempt from daylight time
-c            K = FIND1( FIP, NINVIFIP, INVIFIP )
-c            LXMPT = DLEXEMPT( K )
-            LXMPT = .FALSE.
-c note: for now, this feature is not set up.
+            K = FIND1( FIP, NCOUNTY, CNTYCOD )
             
 C.............  Loop through time steps for this record
             JDATE  = SDATE
@@ -449,13 +448,13 @@ C                       already been converted, and if this FIPS code is
 C                       exempt from daylight time or not.
                     IF(       ISDSTIME( JDATE ) .AND. 
      &                  .NOT. DAYLIT            .AND.
-     &                  .NOT. LXMPT                   ) THEN
+     &                  USEDAYLT( K )                   ) THEN
                 	DAYLIT = .TRUE.
                 	ZONE = ZONE - 1
 
                     ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. 
      &                             DAYLIT            .AND.
-     &                       .NOT. LXMPT                   ) THEN
+     &                       USEDAYLT( K )                  ) THEN
                 	DAYLIT = .FALSE.
                 	ZONE = ZONE + 1
                     END IF
