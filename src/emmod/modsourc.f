@@ -52,6 +52,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: INVYR ( : )  !  inv year for this record
         INTEGER, ALLOCATABLE, PUBLIC:: IDIU  ( : )  !  Hr prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
+        INTEGER, ALLOCATABLE, PUBLIC:: IMON  ( : )  !  Mn prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
         INTEGER, ALLOCATABLE, PUBLIC:: FLTRDAYL( : )!  daylight time filter
         INTEGER, ALLOCATABLE, PUBLIC:: SRGID ( :,: )!  primary & fallbk surg ID
@@ -78,7 +79,7 @@
         CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC( : ) ! plant desc
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURC( : ) ! concat src
         CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE( : ) ! vehicle type
-
+        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, ALLOCATABLE, PUBLIC:: INDEXA( : ) !  subscript table for SORTIC

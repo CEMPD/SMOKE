@@ -878,8 +878,8 @@ C.........  Loop thru the number of time steps (hourly)
  
         DO  HR = 1, BSTEPS
 
-           EMISL = 0
-           EMISS = 0
+           EMISL = 0        ! array
+           EMISS = 0        ! array
 
            IF( JDATE .NE. LDATE ) THEN
 
