@@ -1,0 +1,137 @@
+#!/bin/csh -f
+
+# This scripts tests Spcmat for a variety of input file formats and
+# source categories, and compares to the results achived previously.
+
+# General settings
+setenv RUN_SPCMAT Y
+setenv REPORT_DEFAULTS N
+setenv PROMPTFLAG N
+
+set debugmode = Y
+
+# Dependent settings
+if ( $debugmode == Y ) then
+   set command = 'dbx $SP_SRC/spcmat.debug'
+else
+   set command = '$SMK_BIN/spcmat
+endif
+
+# Case descriptions
+# Case 1: m3demo case (IDA input formats for area, mobile, and point sources)
+# Case 2: Texas case (EPS input formats for area and point sources)
+# Case 3: Utah case (EMS-95 input formats for ar,mb,& pt sources, w/day-spec pt)
+
+# Case controls
+set case1_ar = N
+set case1_mb = N
+set case1_pt = N
+
+set case2_ar = N
+set case2_pt = N
+
+set case3_ar = Y
+set case3_mb = Y
+set case3_pt = Y
+
+
+# Case 1
+########################################################################
+
+setenv POLLUTANT_CONVERSION N     # Y uses ROG to TOG file, for example
+setenv SMK_GSREF_FIXED      N     # Y uses fixed-format speciation x-ref
+setenv SPEC_OUTPUT          ALL   # [ALL|MASS|MOLE] controls program outputs
+
+if ( $case1_ar == Y ) then
+
+    setenv SMK_SOURCE A
+    source /env/proj/smoke/assigns/ASSIGNS.m3demo.cb-iv.ed36
+
+    $command 
+
+endif
+
+if ( $case1_mb == Y ) then
+
+    setenv SMK_SOURCE M
+    source /env/proj/smoke/assigns/ASSIGNS.m3demo.cb-iv.ed36
+
+    $command 
+
+endif
+
+if ( $case1_pt == Y ) then
+
+    setenv SMK_SOURCE P
+    source /env/proj/smoke/assigns/ASSIGNS.m3demo.cb-iv.ed36
+
+    $command 
+
+endif
+
+
+# Case 2
+########################################################################
+
+if ( $case2_ar == Y ) then
+
+    setenv SMK_SOURCE A
+
+    $command 
+
+endif
+
+if ( $case2_pt == Y ) then
+
+    setenv SMK_SOURCE P
+    setenv WKDAY_NORMALIZE      Y
+    setenv IMPORT_AVEINV_YN     N 
+    setenv HOUR_SPECIFIC_YN     Y
+    setenv DAY_SPECIFIC_YN      Y
+    setenv INVDIR /env/data/smoke/inventory/dfw96
+    setenv INVOPD /env/data/smoke/inventory/dfw96ba
+    setenv PTINV  $INVDIR/pnlst.v1.dfw96.txt
+    setenv PTDAY  $INVDIR/ptday.dfw96.txt
+    setenv PTHOUR $INVDIR/pthour.dfw96.txt
+    setenv SIPOLS $INVDIR/sipols.txt
+    setenv COSTCY /env/data/smoke/ge_dat/costcy.txt
+    setenv PSCC   $INVOPD/PSCC.dfw96ba02.txt
+    setenv PSRC   $INVOPD/PSRC.dfw96ba02.txt
+    setenv PNTS   $INVOPD/pnts.dfw96ba02.ncf
+    setenv PDAY   $INVOPD/pday.dfw96ba02.ncf        
+    setenv PHOUR  $INVOPD/phour.dfw96ba02.ncf
+    setenv PSTK   /env/data/smoke/ge_dat/stack_defaults_old.txt
+
+    $command 
+
+endif
+
+# Case 3
+########################################################################
+
+if ( $case3_ar == Y ) then
+
+    setenv SMK_SOURCE A
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.aero96.ut_aero
+
+    $command 
+
+endif
+
+if ( $case3_mb == Y ) then
+
+    setenv SMK_SOURCE M
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.aero96.ut_aero
+
+    $command 
+
+endif
+
+if ( $case3_pt == Y ) then
+
+    setenv SMK_SOURCE P
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.aero96.ut_aero
+
+    $command 
+
+endif

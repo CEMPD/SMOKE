@@ -1,0 +1,44 @@
+#!/bin/csh -f
+#
+## HEADER ########################################################
+#
+#  This script sets the dependent i/o directories for SMOKE for an EDSS
+#  configuration
+#
+   setenv INVDIR   $SMKDAT/inventory/$INVID    # Inventory dir
+   setenv INVOPD   $SMKDAT/inventory/$INVEN    # Inventory output dir
+   setenv GE_DAT   $SMKDAT/ge_dat              # General input dir
+   setenv METDAT   $SMKDAT/met                 # Met data dir
+   setenv REPORTS  $SMKDAT/reports             # Output reports root dir
+   setenv REPSCEN  $REPORTS/$ESCEN/$ESDATE     # Output reports scenario dir
+   setenv REPSTAT  $REPORTS/$ESCEN/static      # Output reports dir
+#
+   setenv BGDAT    $INVDIR/biog                # Raw biogenics inputs
+   setenv ARDAT    $INVDIR/area                # area data path
+   setenv MBDAT    $INVDIR/mobile              # mobile data path
+   setenv PTDAT    $INVDIR/point               # point data path
+#
+   setenv SCENARIO $SMKDAT/run_$ESCEN/$ESDATE  # Scen-spec daily data
+   setenv STATIC   $SMKDAT/run_$ESCEN/static   # Scen-spec static data
+   setenv BASSCN   $SMKDAT/run_$INVEN/$ESDATE  # Episode-specific daily data
+   setenv BASDIR   $SMKDAT/run_$INVEN/static   # Episode-specific static data
+   setenv OUTPUT   $SCENARIO/output/$SPC       # Scen-spec output data
+#
+   setenv SCRIPTS  $SMKROOT/scripts            # smoke scripts
+   setenv INC      $SMKROOT/src/inc            # source code for include files 
+   setenv BG_SRC   $SMKROOT/src/biog           # source code for biogenics
+   setenv CL_SRC   $SMKROOT/src/cntlmat        # source code for controls
+   setenv EL_SRC   $SMKROOT/src/lib            # source code for lib routines
+   setenv GD_SRC   $SMKROOT/src/grdmat         # source code for gridding
+   setenv IV_SRC   $SMKROOT/src/smkinven       # source code for inven import
+   setenv MB_SRC   $SMKROOT/src/mobile         # source code for mobile
+   setenv MD_SRC   $SMKROOT/src/emmod          # source code for modules
+   setenv MG_SRC   $SMKROOT/src/smkmerge       # source code for merge prgms
+   setenv PT_SRC   $SMKROOT/src/point          # source code for point
+   setenv QA_SRC   $SMKROOT/src/emqa           # source code for qa prgms
+   setenv SP_SRC   $SMKROOT/src/spcmat         # source code for speciation
+   setenv TM_SRC   $SMKROOT/src/temporal       # source code for temporal  
+   setenv UT_SRC   $SMKROOT/src/emutil         # source code for utility prgms
+   setenv M5_SRC   $SMKROOT/src/mo5b           # source code for Mobile5b
+   setenv CONFIG   $SCENARIO/config            # control files
+   setenv LOGS     $STATIC/logs                # log files

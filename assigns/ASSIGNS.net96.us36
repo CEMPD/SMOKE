@@ -1,0 +1,373 @@
+#!/bin/csh -fx
+#
+## HEADER ########################################################
+#
+#  SMOKE ASSIGNS file (sets up for area, biogenic, mobile, and point sources)
+#
+#  Scenario Description:
+#     This assigns file sets up the environment variables for use of 
+#     SMOKE Version 1.0 outside of the Models-3 system.
+#
+## I/O Naming roots
+#
+   setenv INVID     net96        # Inventory input identifier
+   setenv INVOP     net96e       # Inventory output name (file)
+   setenv INVEN     net96_311    # Inventory name with version (dir)
+   setenv ESCEN     cmaq1        # Emissions Scenario  name
+   setenv MSCEN     mepa         # Met scenario name
+   setenv BSCEN     beld         # Biogenics scenario name
+   setenv GRID      us36         # Gridding root
+   setenv SPC       cb+pm        # Speciation type
+   setenv ESDATE    19950714     # Start date of emis time-based files
+   setenv MSDATE    19950714     # Start date of met  time-based files
+   setenv NDAYS     1            # Duration in days of emis time-based files
+   setenv MDAYS     1            # Duration in days of met  time-based files
+   setenv YEAR      1995         # Year for year-specific files
+   setenv MSS       ${MSCEN}_${ESCEN}# Met scenario & emissions scenario
+   setenv MSB       ${MSCEN}_${BSCEN}# Met scenario & biogenics scenario
+
+## Models-3 episode environment variables
+#
+   setenv G_STDATE  1995195      # Julian start date
+   setenv G_STTIME   000000      # start time (HHMMSS)
+   setenv G_TSTEP     10000      # time step  (HHMMSS)
+   setenv G_RUNLEN   250000      # run length (HHMMSS)
+
+## User-defined I/O directory settings
+   setenv SMKROOT  /env/proj/smoke                    # System root dir
+   setenv SMKDAT   /env/data/smoke                    # Data root dir
+   setenv ASSIGNS  $SMKROOT/assigns                # smoke assigns files
+#
+## Set dependent directory names
+#
+source $ASSIGNS/set_dirs.scr
+
+## Check script settings
+
+source $ASSIGNS/check_settings.scr
+
+## User-defined mobile settings
+#
+if ( $SMK_SOURCE == 'M' ) then
+   setenv EF_YEAR      1995
+   setenv EMS_LOC      $MBDAT # Path of credits files TECH* for MOBILE5a
+endif
+
+#
+## Area-source input settings
+if ( $SMK_SOURCE == 'A' ) then
+   setenv ARINV      $ARDAT/arinv.$INVID.ida.txt       # IDA area emissions
+   setenv APROJ_ID   $INVEN
+   setenv AGREF_ID   m3.$INVEN
+   setenv AGPRO_ID   m3.$GRID
+   setenv ATREF_ID   $INVEN
+   setenv ATPRO_ID   m3
+endif
+
+#
+## Biogenic input settings
+if ( $SMK_SOURCE == 'B' ) then
+   setenv BGUSE      $BGDAT/BEIS2.luse.$GRID.txt # Gridded landuse
+   setenv BFAC_ID    summer
+   setenv BGPRO_ID   m3.$GRID
+   setenv AGPRO_ID   m3.$GRID
+endif
+
+#
+## Mobile source input settings
+if ( $SMK_SOURCE == 'M' ) then
+   setenv MBINV      $MBDAT/mbinv.$INVID.ida.txt      # IDA mobile vmt
+   setenv VMTMIX     $MBDAT/mvmtm.$INVID.txt          # VMT mix file
+
+   setenv MGREF_ID   m3.$INVEN
+   setenv MGPRO_ID   m3.$GRID
+
+   setenv MTREF_ID   $INVEN
+   setenv MTPRO_ID   m3
+endif
+
+#
+## Point source input settings
+if ( $SMK_SOURCE == 'P' ) then
+   setenv PTINV     $PTDAT/ptinv.$INVID.ida.txt      # IDA point emissions
+   setenv PTDAY     $PTDAT/ptday.$INVID.list.txt     # daily point emis
+   setenv PTHOUR    $PTDAT/pthour.$INVID.list.txt    # hourly point emis
+
+   setenv PTREF_ID  $INVEN
+   setenv PTPRO_ID  m3
+
+   setenv PSTK_ID   m3
+
+endif
+
+#
+## General input settings
+   setenv GSREF_ID $INVEN
+   setenv GSPRO_ID $SPC
+
+## Meteorology IO/API input files (MCIP output files)
+#
+   setenv METDAT $SMKDAT/met/run_$MSCEN
+   setenv GRID_CRO_2D $METDAT/GRID_CRO_2D_G1
+   setenv MET_CRO_2D  $METDAT/MET_CRO_2D_G1
+   setenv GRID_CRO_3D $METDAT/GRID_CRO_3D_G1
+   setenv MET_CRO_3D  $METDAT/MET_CRO_3D_G1
+   setenv MET_DOT_3D  $METDAT/MET_DOT_3D_G1
+
+##########  SMOKE formatted raw inputs #############
+
+#
+## Area-source input files
+if ( $SMK_SOURCE == 'A' ) then
+   setenv APROJ  $ARDAT/aproj.$APROJ_ID.txt     # Projection factors
+
+   setenv AGREF  $GE_DAT/agref.$AGREF_ID.txt    # Area gridding x-ref 
+   setenv AGPRO  $GE_DAT/srg.$AGPRO_ID.txt      # Area   gridding   surrogts
+
+   setenv ATREF  $GE_DAT/atref.$ATREF_ID.txt    # Area temporal x-ref
+   setenv ATPRO  $GE_DAT/atpro.$ATPRO_ID.txt    # Temporal   profiles
+
+   unsetenv APROJ_ID AGREF_ID AGPRO_ID ATREF_ID ATPRO_ID
+endif
+
+#
+## Biogenic source input files
+if ( $SMK_SOURCE == 'B' ) then
+   setenv BFAC   $GE_DAT/bfac.$BFAC_ID.txt         # Biogenic emission factors
+   setenv BCUSE  $GE_DAT/landuse.dat               # County  landuse
+   setenv BGPRO  $GE_DAT/srg.$BGPRO_ID.txt         # Biogenic gridding surrogts
+   setenv AGPRO  $GE_DAT/srg.$AGPRO_ID.txt         # Area   gridding   surrogts
+
+   unsetenv BFAC_ID BGPRO_ID
+endif
+
+#
+## Mobile source input files
+if ( $SMK_SOURCE == 'M' ) then
+   setenv MPROJ    $MBDAT/mproj.$INVID.txt        # Projection factors
+   setenv MEPROC   $MBDAT/meproc.txt              # Mobile emission processes
+   setenv MCODES   $MBDAT/mcodes.txt              # mobile codes
+
+   setenv MPREF    $STATIC/mpref.$ESCEN.txt       # Parameters x-ref file
+   setenv MPLIST   $STATIC/mplist.$ESCEN.txt      # Scenario-spec PSI list
+
+   setenv MGREF    $GE_DAT/mgref.$MGREF_ID.txt    # Mobile gridding x-ref
+   setenv MGPRO    $GE_DAT/srg.$MGPRO_ID.txt      # Mobile gridding surrogates
+
+   setenv MTREF    $GE_DAT/mtref.$MTREF_ID.txt    # Mobile temporal x-ref
+   setenv MTPRO    $GE_DAT/mtpro.$MTPRO_ID.txt    # Temporal   profiles
+
+   unsetenv MGREF_ID MGPRO_ID MTREF_ID MTPRO_ID
+endif
+
+#
+## Point source input files
+if ( $SMK_SOURCE == 'P' ) then
+   setenv PGROUP    $PTDAT/pgroup.$INVID.txt      # stack groups file
+   setenv PSPLIT    $PTDAT/psplit.$INVID.txt      # stack splits file
+   setenv PPROJ     $PTDAT/pproj.$INVEN.txt       # Projection factors
+ 
+   setenv PTREF_ALT $INVOPD/ptref.smkout.txt      # Point temporal x-ref
+
+   setenv PTREF     $GE_DAT/ptref.$PTREF_ID.txt   # Point temporal x-ref
+   setenv PTPRO     $GE_DAT/ptpro.$PTPRO_ID.txt   # Temporal   profiles
+
+   setenv PSTK      $GE_DAT/pstk.$PSTK_ID.txt     # Replacement stack params
+
+   unsetenv PTREF_ID PTPRO_ID PSTK_ID
+endif
+
+#
+## Shared input files - always set
+   setenv SIPOLS     $INVDIR/sipols.txt           # Master pollutants file
+   setenv ACTVNAMS   $INVDIR/actvnams.txt         # Master activities file
+   setenv G_GRIDPATH $BASDIR/G_GRIDPATH.${GRID}   # Grid descriptions.
+   setenv ZONES      $GE_DAT/zones                # time zones by state&county
+   setenv USERIN     $SCENARIO/userin.utm.$YEAR   # EPS userin file
+   setenv COSTCY     $GE_DAT/costcy.txt           # country/state/county info
+
+#
+## Shared input files - conditionally set
+if ( $RUN_SPCMAT == 'Y' || $RUN_TMPBIO == 'Y' ) then
+   setenv GSREF      $GE_DAT/gsref.$GSREF_ID.txt   # Speciation x-ref
+   setenv GSPRO      $GE_DAT/gspro.$GSPRO_ID.txt   # Speciation profiles
+   setenv GSCNV      $GE_DAT/gscnv.txt             # ROG to TOG conversion facs
+   unsetenv GSREF_ID GSPRO_ID
+endif
+
+if ( $RUN_CNTLMAT == 'Y' ) then
+   setenv GCNTL      $STATIC/controls.dat         # Scenario-specific controls
+   setenv PCNTL      $STATIC/pcntl.dat            # Scen-specific pt-source
+endif
+
+#
+##########################################################################
+#
+## Output and Intermediate files
+#
+## Area source intermediate and output files
+#
+if ( $SMK_SOURCE == 'A' || $MRG_AREA == 'Y' ) then
+   setenv AREA     $INVOPD/area.$INVOP.ncf       # Area NetCDF inv
+   setenv ASRC     $INVOPD/ASRC.$INVOP.txt       # Area ASCII inventory file
+   setenv ASCC     $INVOPD/ASCC.$INVOP.txt       # Area unique SCC list
+
+   if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' ) then
+      setenv ATMP  $SCENARIO/atmp.$ESDATE.$NDAYS.$ESCEN.ncf
+   endif
+
+   if ( $RUN_SPCMAT == 'Y' || $MRG_SPCMAT_YN == 'Y' ) then
+      setenv ASMAT_S  $STATIC/asmat.mass.$SPC.$ESCEN.ncf    # Area speciation
+      setenv ASMAT_L  $STATIC/asmat.mole.$SPC.$ESCEN.ncf    # Area speciation
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $MRG_AREA_REAC == 'Y' ) then
+      setenv ARMAT_L  $STATIC/armat.mole.$SPC.$ESCEN.ncf    # Area   reactivity
+      setenv ARMAT_S  $STATIC/armat.mass.$SPC.$ESCEN.ncf    # Area   reactivity
+      setenv ARSUP    $STATIC/arsup.$ESCEN.txt
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $MRG_AREA_MULT == 'Y' ) then
+      setenv ACMAT  $STATIC/acmat.$ESCEN.ncf           # Area   control
+   endif 
+
+   if ( $RUN_GRDMAT == 'Y' || $MRG_AREA == 'Y' ) then
+      setenv AGMAT  $STATIC/agmat.$GRID.$ESCEN.ncf     # Area   gridding
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $RUN_GRWINVEN == 'Y' ) then
+      setenv APMAT  $STATIC/apmat.$ESCEN.ncf           # Area   projection
+   endif
+
+endif
+
+## Biogenic source intermediate and output files
+#
+if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
+   setenv BGRD     $INVOPD/bgrd.$GRID.$BSCEN.ncf         # Grd normlzd bio emis
+   setenv BGTS_L   $OUTPUT/bgts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+   setenv BGTS_S   $OUTPUT/bgts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+endif
+
+# Mobile source intermediate and output files
+#
+if ( $SMK_SOURCE == 'M' || $MRG_MOBILE == 'Y' ) then
+   setenv MOBL     $INVOPD/mobl.$INVOP.ncf       # Mobile NetCDF inv
+   setenv MSRC     $INVOPD/MSRC.$INVOP.txt       # Mobile ASCII inventory file
+   setenv MSCC     $INVOPD/MSCC.$INVOP.txt       # Mobile unique SCC list
+
+   if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' ) then
+      setenv MTMP  $SCENARIO/mtmp.$ESDATE.$NDAYS.$GRID.$MSS.ncf
+   endif
+
+   if ( $RUN_SPCMAT == 'Y' || $MRG_SPCMAT_YN == 'Y' ) then
+      setenv MSMAT_L  $STATIC/msmat.mole.$SPC.$ESCEN.ncf    # Mobile speciation
+      setenv MSMAT_S  $STATIC/msmat.mass.$SPC.$ESCEN.ncf    # Mobile speciation
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $MRG_MOBILE_REAC == 'Y' ) then
+      setenv MRMAT_L  $STATIC/mrmat.mole.$SPC.$ESCEN.ncf    # Mobile reactivity
+      setenv MRMAT_S  $STATIC/mrmat.mass.$SPC.$ESCEN.ncf    # Mobile reactivity
+      setenv MRSUP    $STATIC/mrsup.$ESCEN.txt
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $MRG_MOBILE_MULT == 'Y' ) then
+      setenv MCMAT  $STATIC/mcmat.$ESCEN.ncf           # Mobile control
+   endif
+
+   if ( $RUN_GRDMAT == 'Y'  || $RUN_TEMPORAL == 'Y' ||  \
+        $RUN_PREMOBL == 'Y' || $MRG_MOBILE == 'Y'         ) then
+      setenv MUMAT  $STATIC/mumat.$GRID.$ESCEN.ncf     # Mobile un-gridding
+      setenv MGMAT  $STATIC/mgmat.$GRID.$ESCEN.ncf     # Mobile gridding
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $RUN_GRWINVEN == 'Y' ) then
+      setenv MPMAT  $STATIC/mpmat.$ESCEN.ncf           # Mobile projection
+   endif
+
+   if ( $RUN_EMISFAC == 'Y' ) then
+      setenv TECH12_0  tech12.d # 40 characters or less   # Standard tech12 data 
+      setenv TECH4P_0  imdata.d # 40 characters or less   # Standard tech4p data
+   endif
+
+   if ( $RUN_EMISFAC == 'Y' || $RUN_TEMPORAL == 'Y' ) then
+      setenv MEFSND  $BASDIR/mefsnd.$INVEN.ncf           # Non-diurnal emis factors
+      setenv MEFSD   $BASDIR/mefsd.$INVEN.ncf            # Diurnal     emis factors
+   endif
+
+   if ( $RUN_PREMOBL == 'Y' || $RUN_EMISFAC == 'Y' || $RUN_TEMPORAL == 'Y' ) \
+   then
+      setenv MEFTEMP $SCENARIO/meftemp.$ESDATE.$NDAYS.$GRID.$MSS.txt
+      setenv MINMAXT $SCENARIO/minmaxt.$ESDATE.$NDAYS.$GRID.$MSS.ncf
+   endif
+
+endif
+
+## Point source intermediate and output files
+#
+if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
+   setenv PNTS     $INVOPD/pnts.$INVOP.ncf       # Point NetCDF inventory file
+   setenv PSRC     $INVOPD/PSRC.$INVOP.txt       # Point ASCII inventory file
+   setenv PSCC     $INVOPD/PSCC.$INVOP.txt       # Point unique SCC list
+
+   if ( $RUN_SMKINVEN == 'Y' || $RUN_TEMPORAL == 'Y' ) then
+      setenv PDAY     $INVOPD/pday.$INVOP.ncf       # Point NetCDF day-specific
+      setenv PHOUR    $INVOPD/phour.$INVOP.ncf      # Point NetCDF hour-specific
+      setenv PHOURPRO $INVOPD/phourpro.$INVOP.ncf   # Pt NetCDF src-spec dnl profs
+   endif
+
+   if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' ) then
+      setenv PTMP  $SCENARIO/ptmp.$ESDATE.$NDAYS.$ESCEN.ncf
+   endif
+
+   if ( $RUN_SPCMAT == 'Y' || $MRG_SPCMAT_YN == 'Y' ) then
+      setenv PSMAT_L  $STATIC/psmat.mole.$SPC.$ESCEN.ncf    # Point  speciation
+      setenv PSMAT_S  $STATIC/psmat.mass.$SPC.$ESCEN.ncf    # Point  speciation
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $MRG_POINT_REAC == 'Y' ) then
+      setenv PRMAT_L  $STATIC/prmat.mole.$SPC.$ESCEN.ncf    # Point  reactivity
+      setenv PRMAT_S  $STATIC/prmat.mass.$SPC.$ESCEN.ncf    # Point  reactivity
+      setenv PRSUP    $STATIC/prsup.$ESCEN.txt
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $MRG_POINT_MULT == 'Y' ) then
+      setenv PCMAT    $STATIC/pcmat.$ESCEN.ncf           # Point  control
+   endif
+
+   if ( $RUN_GRDMAT == 'Y' || $MRG_POINT == 'Y' ) then
+      setenv PGMAT    $STATIC/pgmat.$GRID.$ESCEN.ncf     # Point  gridding
+   endif
+
+   if ( $RUN_CNTLMAT == 'Y' || $RUN_GRWINVEN == 'Y' ) then
+      setenv PPMAT    $STATIC/ppmat.$ESCEN.ncf           # Point  projection
+   endif
+
+   if ( $RUN_ELEVPOINT == 'Y' || $RUN_SMKMERGE == 'Y' ) then
+      setenv PELV         $STATIC/PELV.$INVOP.txt  # Elev/PinG pt source list
+      setenv STACK_GROUPS $OUTPUT/stack_groups.$GRID.$INVOP.ncf
+   endif
+   
+   if ( $RUN_LAYPOINT == 'Y' || $RUN_SMKMERGE == 'Y' || $SMK_PING_YN == 'Y' ) \
+   then   
+      setenv PLAY   $SCENARIO/play.$ESDATE.$NDAYS.$GRID.$MSS.ncf
+   endif
+
+endif
+
+#
+#  Merge output files
+   source $ASSIGNS/setmerge_files.scr
+#
+#  Unset temporary environment variables
+   source $ASSIGNS/unset.scr
+#
+#  Create and change permissions for output directories
+   $ASSIGNS/smk_mkdir
+#
+#  Get system-specific flags
+   source $ASSIGNS/sysflags
+#
+#  Set up Monday-Weekday-Saturday-Sunday files
+#  source $ASSIGNS/MWDSS.demo
+#

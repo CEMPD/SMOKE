@@ -1,0 +1,235 @@
+#!/bin/csh -fx
+#
+## HEADER ######################################################################
+#
+#  This script sets the output environment variables for the Smkmerge program
+#
+################################################################################
+
+if ( $RUN_SMKMERGE == 'Y' ) then
+
+   if ( $MRG_GRDOUT_YN == 'Y' ) then
+
+      if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+
+         if ( $MRG_AREA == 'Y' ) then
+	    setenv AGTS_L   $OUTPUT/agts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv AGTS_S   $OUTPUT/agts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+
+         if ( $MRG_MOBILE == 'Y' ) then
+	    setenv MGTS_L   $OUTPUT/mgts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv MGTS_S   $OUTPUT/mgts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+
+         if ( $MRG_POINT == 'Y' ) then
+	    setenv PGTS_L   $OUTPUT/pgts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv PGTS_S   $OUTPUT/pgts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv PGTS3D_L $OUTPUT/pgts3d_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv PGTS3D_S $OUTPUT/pgts3d_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+
+         if ( $MRG_MULTI == 'Y' ) then
+	    setenv EGTS_L   $OUTPUT/egts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv EGTS_S   $OUTPUT/egts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv EGTS3D_L $OUTPUT/egts3d_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv EGTS3D_S $OUTPUT/egts3d_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+
+         if ( $MRG_AREA_CNTL == 'Y' ) then
+	    setenv AGTSC_L   $OUTPUT/agtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv AGTSC_S   $OUTPUT/agtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+
+         if ( $MRG_MOBILE_CNTL == 'Y' ) then
+	    setenv MGTSC_L   $OUTPUT/mgtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv MGTSC_S   $OUTPUT/mgtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+
+         if ( $MRG_POINT_CNTL == 'Y' ) then
+	    setenv PGTSC_L   $OUTPUT/pgtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv PGTSC_S   $OUTPUT/pgtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv PGTSC3D_L $OUTPUT/pgtsc3d_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv PGTSC3D_S $OUTPUT/pgtsc3d_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+
+         if ( $MRG_MULTI_CNTL == 'Y' ) then
+	    setenv EGTSC_L   $OUTPUT/egtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv EGTSC_S   $OUTPUT/egtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv EGTSC3D_L $OUTPUT/egtsc3d_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	    setenv EGTSC3D_S $OUTPUT/egtsc3d_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+         endif 
+      endif
+
+      if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+	 setenv AGS_S    $REPSTAT/ags_s.$GRID.$ESCEN.ncf
+	 setenv MGS_S    $REPSTAT/mgs_s.$GRID.$ESCEN.ncf
+	 setenv PGS_S    $REPSTAT/pgs_s.$GRID.$ESCEN.ncf
+	 setenv PGS3D_S  $REPSTAT/pgs3d_s.$GRID.$ESCEN.ncf
+	 setenv EGS_S    $REPSTAT/egs_s.$GRID.$ESCEN.ncf
+	 setenv EGS3D_S  $REPSTAT/egs3d_s.$GRID.$ESCEN.ncf
+
+	 setenv AGSC_S   $REPSTAT/ags_s.$GRID.$ESCEN.ncf
+	 setenv MGSC_S   $REPSTAT/mgs_s.$GRID.$ESCEN.ncf
+	 setenv PGSC_S   $REPSTAT/pgs_s.$GRID.$ESCEN.ncf
+	 setenv PGSC3D_S $REPSTAT/pgs3d_s.$GRID.$ESCEN.ncf
+	 setenv EGSC_S   $REPSTAT/egs_s.$GRID.$ESCEN.ncf
+	 setenv EGSC3D_S $REPSTAT/egs3d_s.$GRID.$ESCEN.ncf
+
+	 setenv AGS_L    $REPSTAT/ags_l.$GRID.$ESCEN.ncf
+	 setenv MGS_L    $REPSTAT/mgs_l.$GRID.$ESCEN.ncf
+	 setenv PGS_L    $REPSTAT/pgs_l.$GRID.$ESCEN.ncf
+	 setenv PGS3D_L  $REPSTAT/pgs3d_l.$GRID.$ESCEN.ncf
+	 setenv EGS_L    $REPSTAT/egs_l.$GRID.$ESCEN.ncf
+	 setenv EGS3D_L  $REPSTAT/egs3d_l.$GRID.$ESCEN.ncf
+
+	 setenv AGSC_L   $REPSTAT/ags_l.$GRID.$ESCEN.ncf
+	 setenv MGSC_L   $REPSTAT/mgs_l.$GRID.$ESCEN.ncf
+	 setenv PGSC_L   $REPSTAT/pgs_l.$GRID.$ESCEN.ncf
+	 setenv PGSC3D_L $REPSTAT/pgs3d_l.$GRID.$ESCEN.ncf
+	 setenv EGSC_L   $REPSTAT/egs_l.$GRID.$ESCEN.ncf
+	 setenv EGSC3D_L $REPSTAT/egs3d_l.$GRID.$ESCEN.ncf
+      endif
+
+      if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+	 setenv AGT    $REPSCEN/agt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv MGT    $REPSCEN/mgt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv PGT    $REPSCEN/pgt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv PGT3D  $REPSCEN/pgt3d.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv EGT    $REPSCEN/egt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv EGT3D  $REPSCEN/egt3d.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv AGTC   $REPSCEN/agt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv MGTC   $REPSCEN/mgt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv PGTC   $REPSCEN/pgt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv PGTC3D $REPSCEN/pgt3d.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv EGTC   $REPSCEN/egt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+	 setenv EGTC3D $REPSCEN/egt3d.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
+      endif
+
+      if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+         setenv AG   $REPSTAT/ag.$GRID.$INVEN.ncf
+         setenv MG   $REPSTAT/mg.$GRID.$INVEN.ncf
+	 setenv PG   $REPSTAT/pg.$GRID.$INVEN.ncf
+	 setenv EG   $REPSTAT/eg.$GRID.$INVEN.ncf
+         setenv AGC  $REPSTAT/agc.$GRID.$INVEN.ncf
+         setenv MGC  $REPSTAT/mgc.$GRID.$INVEN.ncf
+	 setenv PGC  $REPSTAT/pgc.$GRID.$INVEN.ncf
+	 setenv EGC  $REPSTAT/egc.$GRID.$INVEN.ncf
+      endif
+
+   endif
+
+#
+## State and county reports
+#
+   if ( $MRG_REPSTA_YN == 'Y' || $MRG_REPCNY_YN == 'Y' ) then
+
+       if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+
+         if ( $MRG_AREA == 'Y' ) then
+	    setenv REPAGTS_L $REPSCEN/repagts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPAGTS_S $REPSCEN/repagts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+         endif 
+
+         if ( $MRG_BIOG == 'Y' ) then
+	    setenv REPBGTS_L $REPSCEN/repbgts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	    setenv REPBGTS_S $REPSCEN/repbgts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+         endif 
+
+         if ( $MRG_MOBILE == 'Y' ) then
+	    setenv REPMGTS_L $REPSCEN/repmgts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPMGTS_S $REPSCEN/repmgts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+         endif 
+
+         if ( $MRG_POINT == 'Y' ) then
+	    setenv REPPGTS_L $REPSCEN/reppgts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPPGTS_S $REPSCEN/reppgts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+        endif 
+
+         if ( $MRG_MULTI == 'Y' ) then
+	    setenv REPEGTS_L $REPSCEN/repegts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPEGTS_S $REPSCEN/repegts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+         endif 
+
+         if ( $MRG_AREA_CNTL == 'Y' ) then
+	    setenv REPAGTSC_L $REPSCEN/repagtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPAGTSC_S $REPSCEN/repagtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+         endif 
+
+         if ( $MRG_MOBILE_CNTL == 'Y' ) then
+	    setenv REPMGTSC_L $REPSCEN/repmgtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPMGTSC_S $REPSCEN/repmgtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+         endif 
+
+         if ( $MRG_POINT_CNTL == 'Y' ) then
+	    setenv REPPGTSC_L $REPSCEN/reppgtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPPGTSC_S $REPSCEN/reppgtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+         endif 
+
+         if ( $MRG_MULTI_CNTL == 'Y' ) then
+	    setenv REPEGTSC_L $REPSCEN/repegtsc_l.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	    setenv REPEGTSC_S $REPSCEN/repegtsc_s.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+         endif 
+      endif
+
+      if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+	 setenv REPAGS_S    $REPSTAT/repags_s.$GRID.$ESCEN.rpt
+	 setenv REPMGS_S    $REPSTAT/repmgs_s.$GRID.$ESCEN.rpt
+	 setenv REPPGS_S    $REPSTAT/reppgs_s.$GRID.$ESCEN.rpt
+	 setenv REPEGS_S    $REPSTAT/repegs_s.$GRID.$ESCEN.rpt
+
+	 setenv REPAGSC_S   $REPSTAT/repags_s.$GRID.$ESCEN.rpt
+	 setenv REPMGSC_S   $REPSTAT/repmgs_s.$GRID.$ESCEN.rpt
+	 setenv REPPGSC_S   $REPSTAT/reppgs_s.$GRID.$ESCEN.rpt
+	 setenv REPEGSC_S   $REPSTAT/repegs_s.$GRID.$ESCEN.rpt
+
+	 setenv REPAGS_L    $REPSTAT/repags_l.$GRID.$ESCEN.rpt
+	 setenv REPMGS_L    $REPSTAT/repmgs_l.$GRID.$ESCEN.rpt
+	 setenv REPPGS_L    $REPSTAT/reppgs_l.$GRID.$ESCEN.rpt
+	 setenv REPEGS_L    $REPSTAT/repegs_l.$GRID.$ESCEN.rpt
+
+	 setenv REPAGSC_L   $REPSTAT/repags_l.$GRID.$ESCEN.rpt
+	 setenv REPMGSC_L   $REPSTAT/repmgs_l.$GRID.$ESCEN.rpt
+	 setenv REPPGSC_L   $REPSTAT/reppgs_l.$GRID.$ESCEN.rpt
+	 setenv REPEGSC_L   $REPSTAT/repegs_l.$GRID.$ESCEN.rpt
+      endif
+
+      if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+	 setenv REPAGT    $REPSCEN/repagt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	 setenv REPMGT    $REPSCEN/repmgt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	 setenv REPPGT    $REPSCEN/reppgt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	 setenv REPEGT    $REPSCEN/repegt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	 setenv REPAGTC   $REPSCEN/repagt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	 setenv REPMGTC   $REPSCEN/repmgt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	 setenv REPPGTC   $REPSCEN/reppgt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+	 setenv REPEGTC   $REPSCEN/repegt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
+      endif
+
+      if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+         setenv REPAG   $REPSTAT/repag.$GRID.$INVEN.rpt
+         setenv REPMG   $REPSTAT/repmg.$GRID.$INVEN.rpt
+	 setenv REPPG   $REPSTAT/reppg.$GRID.$INVEN.rpt
+	 setenv REPEG   $REPSTAT/repeg.$GRID.$INVEN.rpt
+         setenv REPAGC  $REPSTAT/repagc.$GRID.$INVEN.rpt
+         setenv REPMGC  $REPSTAT/repmgc.$GRID.$INVEN.rpt
+	 setenv REPPGC  $REPSTAT/reppgc.$GRID.$INVEN.rpt
+	 setenv REPEGC  $REPSTAT/repegc.$GRID.$INVEN.rpt
+      endif
+
+   endif
+
+#
+## Elevated sources
+#
+   if ( $MRG_POINT == 'Y' && $SMK_PING_YN == 'Y' ) then
+      setenv PINGT      $OUTPUT/pingt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf    
+      setenv PINGTS_L   $OUTPUT/pingts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf 
+      setenv PINGTS_S   $OUTPUT/pingts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf 
+   endif
+
+   if ( $MRG_POINT == 'Y' && $SMK_ASCIIELEV_YN == 'Y' ) then
+      setenv ELEVTS_L   $OUTPUT/elevts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.txt 
+      setenv ELEVTS_S   $OUTPUT/elevts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.txt 
+   endif
+
+endif

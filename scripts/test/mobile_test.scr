@@ -1,0 +1,65 @@
+#!/bin/csh -f
+
+# This scripts tests Premobl and Emisfac for a variety of cases, and compares 
+# to the results achived previously.
+
+# General settings
+setenv RUN_PREMOBL Y
+setenv RUN_EMISFAC Y
+setenv REPORT_DEFAULTS N
+
+set debugmode = Y
+
+# Dependent settings
+if ( $debugmode == Y ) then
+   set command1 = 'dbx $MB_SRC/premobl.debug'
+   set command2 = 'dbx $MB_SRC/emisfac.debug'
+else
+   set command1 = '$SMK_BIN/premobl
+   set command2 = '$SMK_BIN/emisfac
+endif
+
+# Case descriptions
+# Case 1: m3demo case (IDA input formats for area, mobile, and point sources)
+
+# Case controls
+set case1_mb_premobl = Y
+set case1_mb_emisfac = Y
+
+
+
+# Case 1
+########################################################################
+
+setenv SMK_MAXT_MAX         120.  # upper limit for maximum temperature
+setenv SMK_MAXT_MIN         52.   # lower limit for maximum temperature
+setenv SMK_MINT_MAX         100.  # upper limit for minimum temperature
+setenv SMK_MINT_MIN         52.   # lower limit for minimum temperature
+setenv SMK_TF_INTERVAL      2.0   # temperature interval
+setenv SMK_TF_MAXINTVL      40.   # maximum allowed temperature interval
+setenv UNIFORM_STIME        -1    # Uniform start hour to use for all srcs/days
+setenv EF_FORCE_UPDATE      N     # Y uses of emission factor forced updates
+setenv REUSE_DIURNAL        N     # Y reuses diurnal emission factors 
+setenv REUSE_NONDIURNAL     N     # Y reuses nondiurnal emission factors
+setenv MB_HC_TYPE           VOC   # hydrocarbon type from MOBILE5b
+setenv SMK_EF_ACTIVITY      VMT   # name of activity data for emission factors
+setenv TVARNAME             TEMPG # [TGD|TEMPG|TA] name of temperature variable
+
+if ( $case1_mb_premobl == Y  || $case1_mb_emisfac == Y ) then
+
+    setenv SMK_SOURCE M
+    source /env/proj/smoke/assigns/ASSIGNS.m3demo.cb-iv.ed36
+
+    if ( $case1_mb_premobl == Y ) then
+        $command1
+    endif
+
+    if ( $case1_mb_emisfac == Y ) then
+        $command2
+    endif
+
+endif
+
+# Case 2
+########################################################################
+
