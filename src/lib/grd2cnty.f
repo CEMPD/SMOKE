@@ -2,7 +2,7 @@
         SUBROUTINE GRD2CNTY( IDXINV, IDXSPC, NGRID, NCNTY, CNVFAC,
      &                       GRDDAT, CNYDAT )
 
-C***********************************************************************
+C************************************************************************
 C  subroutine GRD2CNTY body starts at line
 C
 C  DESCRIPTION:
@@ -16,13 +16,13 @@ C
 C  REVISION  HISTORY:
 C       Created 8/99 by M. Houyoux
 C
-C***********************************************************************
+C************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -37,7 +37,7 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
-C****************************************************************************
+C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the arrays for state and county summaries
@@ -73,7 +73,7 @@ C...........   Local allocatable arrays
 
 C...........   Other local variables
 
-        INTEGER          C, F, K, N        ! counter and indices
+        INTEGER          C, F, J, K, N     ! counters and indices
         INTEGER          IDX               ! index to 2nd dim of CNYDAT
         INTEGER          IOS               ! i/o status
         INTEGER          SSC               ! 
@@ -166,14 +166,21 @@ C.........  If this pollutant or species is not valid for current call, return
         END IF
 
 C.........  Loop through county codes and compute county total emissions
-        DO F = 1, NSRGFIPS
+        DO J = 1, NCOUNTY
 
+C.............  Make sure county is in surrogates file
+            F = FIND1( CNTYCOD( J ), NSRGFIPS, SRGFIPS )
+
+C.............  Skip county if its not in surrogates file
+            IF( F .LE. 0 ) CYCLE
+
+C.............  Otherwise, loop through cells in county and get total
             DO N = 1, NCELLS( F )
 
                 C    = FIPCELL( N,F )        ! Retrieve cell number
                 FRAC = SRGFRAC( SRGID,N,F )
 
-                CNYDAT( F,IDX ) = CNYDAT( F,IDX ) + 
+                CNYDAT( J,IDX ) = CNYDAT( J,IDX ) + 
      &                            CNVFAC * GRDDAT( C ) * FRAC
 
             END DO  ! End loop on cells in county
