@@ -13,7 +13,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C Portions COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C Portions COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -85,6 +85,9 @@ C
 C****************************************************************************
 
 C...........   MODULES for public variables
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
+
 C.........  This module contains emission factor tables and related
         USE MODEMFAC
 
@@ -383,10 +386,13 @@ cmh           EFACT( JJ,11) = RSTGPH( JJ )     ! Resting Loss VOC g/hr
           DFACT( 8, 2 ) = EFDNL (   8 )  
           DFACT( 8, 3 ) = GREVP ( 1,8 )
           DFACT( 8, 4 ) = GREVP ( 4,8 )   ! May always be zero (?)
-          DFACT( 9, 1 ) = GREVP ( 2,9 )   ! Note: 9 is MC, 9 is combined trucks
-          DFACT( 9, 2 ) = EFDNL (   9 )  
-          DFACT( 9, 3 ) = GREVP ( 1,9 )
-          DFACT( 9, 4 ) = GREVP ( 4,9 )   ! May always be zero (?)
+
+          IF( NVTYPE .GT. 8 ) THEN
+              DFACT( 9, 1 ) = GREVP ( 2,9 )! Note: 8 is MC, 9 is combined trucks
+              DFACT( 9, 2 ) = EFDNL (   9 )  
+              DFACT( 9, 3 ) = GREVP ( 1,9 )
+              DFACT( 9, 4 ) = GREVP ( 4,9 )! May always be zero (?)
+          END IF
 
       END IF
 
@@ -426,10 +432,13 @@ C             factors
               EFSAVDI( 8, MCNT, TMMI, 2 ) = EFDNL (   8 )
               EFSAVDI( 8, MCNT, TMMI, 3 ) = GREVP ( 1,8 )
               EFSAVDI( 8, MCNT, TMMI, 4 ) = GREVP ( 4,8 )
-              EFSAVDI( 9, MCNT, TMMI, 1 ) = GREVP ( 2,9 )
-              EFSAVDI( 9, MCNT, TMMI, 2 ) = EFDNL (   9 )
-              EFSAVDI( 9, MCNT, TMMI, 3 ) = GREVP ( 1,9 )
-              EFSAVDI( 9, MCNT, TMMI, 4 ) = GREVP ( 4,9 )
+
+              IF( NVTYPE .GT. 8 ) THEN
+                  EFSAVDI( 9, MCNT, TMMI, 1 ) = GREVP ( 2,9 )
+                  EFSAVDI( 9, MCNT, TMMI, 2 ) = EFDNL (   9 )
+                  EFSAVDI( 9, MCNT, TMMI, 3 ) = GREVP ( 1,9 )
+                  EFSAVDI( 9, MCNT, TMMI, 4 ) = GREVP ( 4,9 )
+              END IF
 
           END IF
 
