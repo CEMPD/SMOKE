@@ -35,12 +35,12 @@ C...........   INCLUDES:
 C...........   ARGUMENTS and their descriptions:
 
         INTEGER   FDEV
-        INTEGER   MPFIP( NLIST )
-        INTEGER   MPRDT( NLIST )
-        INTEGER   MPLNK( NLIST )
-        INTEGER   MPREF( 0:23, NLIST )    !  hour&source-specific xrefs
+        INTEGER   MPFIP( MXPLST )
+        INTEGER   MPRDT( MXPLST )
+        INTEGER   MPLNK( MXPLST )
+        INTEGER   MPREF( 0:23, MXPLST )    !  hour&source-specific xrefs
         INTEGER   REFCNT
-        INTEGER   REFLIST( NLIST )
+        INTEGER   REFLIST( MXPLST )
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -52,11 +52,11 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         INTEGER   IREC
         INTEGER   MPCNT
-        INTEGER   MPDEXA( NLIST )
-        INTEGER   MPFIPA( NLIST )
-        INTEGER   MPRDTA( NLIST )
-        INTEGER   MPLNKA( NLIST )
-        INTEGER   MPREFA( 0:23, NLIST )   !  hour&source-specific xrefs
+        INTEGER   MPDEXA( MXPLST )
+        INTEGER   MPFIPA( MXPLST )
+        INTEGER   MPRDTA( MXPLST )
+        INTEGER   MPLNKA( MXPLST )
+        INTEGER   MPREFA( 0:23, MXPLST )   !  hour&source-specific xrefs
         INTEGER   ISTAT
         INTEGER   I, J, K, L
         INTEGER	  FIP, RDT, LNK, REF( 0:23 )
@@ -94,7 +94,7 @@ C   begin body of subroutine  RDMPLIST
 
             I = I + 1
 
-            IF ( I .GT. NLIST ) THEN
+            IF ( I .GT. MXPLST ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
      &          'Emission Factor XREF table overflow at line', IREC
