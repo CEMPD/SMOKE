@@ -40,7 +40,7 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: CSOURC
+        USE MODSOURC, ONLY: CSOURC, ISIC
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: POLSFLAG, NVPROJ, FACTOR, RPTDEV,
@@ -90,6 +90,7 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.   ! true: error has occurred
         LOGICAL, SAVE :: APPLFLAG = .FALSE.  ! true: something has been applied
 
+        CHARACTER(LEN=SICLEN3) :: CSIC    ! SIC code
         CHARACTER*200          :: PATHNM  ! path name for tmp file
         CHARACTER*220             FILENM  ! file name
         CHARACTER*256             MESG    ! message buffer
@@ -178,12 +179,20 @@ C....................  Format source characteristic information
 
 C.................  Write out projection information for all sources
 C                   that are getting projected
+                    IF( ASSOCIATED( ISIC ) ) THEN
+                        WRITE( CSIC, '(I4)' ) ISIC( S )
+                    ELSE
+                        CSIC = ''
+                    END IF
+
                     IF( POLSFLAG ) THEN
                         WRITE( MESG, 94015 ) PNAM, 
-     &                    ( CHARS(J)(1:SC_ENDP(J)-SC_BEGP(J)+1),J=1,NC )
+     &                   ( CHARS(J)(1:SC_ENDP(J)-SC_BEGP(J)+1),J=1,NC ),
+     &                   CSIC
                     ELSE
                         WRITE( MESG, 94016 ) 
-     &                    ( CHARS(J)(1:SC_ENDP(J)-SC_BEGP(J)+1),J=1,NC )
+     &                   ( CHARS(J)(1:SC_ENDP(J)-SC_BEGP(J)+1),J=1,NC ),
+     &                   CSIC
                     END IF
                     
                     WRITE( RDEV, 94020 ) TRIM( MESG ), FACTOR( S )
