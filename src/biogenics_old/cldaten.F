@@ -21,7 +21,7 @@ C * Last updated: $Date$
 C *
 C ****************************************************************************/
 
-        SUBROUTINE  CLDATEN( JDATE, JTIME, LAT, LON, CLDATN )
+        SUBROUTINE  CLDATEN( JDATE, JTIME, LAT, LON, CLOUDTYPE, CLDATN )
 
 C***********************************************************************
 C  subroutine body starts at line 179
@@ -69,6 +69,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER         JTIME   	!  current simulation time (HHMMSS)
         REAL            LAT   ( NCOLS, NROWS )	!  latitude,  deg
         REAL            LON   ( NCOLS, NROWS )	!  longitude, deg
+        CHARACTER*16    CLOUDTYPE               !  Obs., KUO, KF
         REAL            CLDATN( NCOLS, NROWS )	!  cloud attenuation factor
 
 C...........   PARAMETERS and their descriptions:
