@@ -222,7 +222,7 @@ C            END IF
         PNSTEPS = MXREC3D - 1
 
         CALL M3MSG2( 'Sources with NOx totals above the ' //
-    &                'cutoff will be included in reports...' )
+     &                'cutoff will be included in reports...' )
 
         MAXNOX = ENVREAL ( 'MAXNOX', 'NOX cutoff point', 1.0, STATUS )
         MAXNOX = GETREAL ( 0.0, 99999.0, MAXNOX, 
