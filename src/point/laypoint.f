@@ -375,7 +375,7 @@ C.........  Get file name and open daily input inventory file
      &               FSREAD3, CRL // 'HOUR', PROGNAME )
 
 C.............  Check to see if appropriate variable list exists
-            CALL RETRIEVE_SET_HEADER( HNAME )
+            CALL RETRIEVE_IOAPI_HEADER( HNAME )
 
             NHRSRC = NROWS3D
 
