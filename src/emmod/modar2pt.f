@@ -37,6 +37,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'   !  private emissions string widths parameters
 
 !.........  Define types needed for module

@@ -38,6 +38,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'
 
 !.........  Mobile source characteristics tables

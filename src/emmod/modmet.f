@@ -37,7 +37,7 @@
 !
 !****************************************************************************
 
-        INCLUDE 'EMPRVT3.EXT'
+        IMPLICIT NONE
 
 !...........   Setting for range of valid min/max temperatures
         REAL, PUBLIC :: MINTEMP = 0.   ! minimum temperature

@@ -38,6 +38,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
 !.........  Sorted list of point sources for SMOKE inventory file

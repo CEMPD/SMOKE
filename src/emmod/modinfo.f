@@ -40,6 +40,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'
 
 !.........  Source-category-specific variables

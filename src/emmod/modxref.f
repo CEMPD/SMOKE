@@ -37,6 +37,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'   !  private emissions string widths parameters
 
 !.........  Per-source arrays with temporal profile indices to tables

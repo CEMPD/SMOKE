@@ -38,6 +38,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
 !.........  Sparsely stored day-specific or hour-specific emissions array

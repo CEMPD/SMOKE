@@ -37,6 +37,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'
 
 !.........  NOTE: The unique speciation profiles and speciation tables are

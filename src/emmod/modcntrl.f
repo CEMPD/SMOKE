@@ -37,6 +37,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'
 
 !.........  CONTROL PACKET DATA ARRAYS...

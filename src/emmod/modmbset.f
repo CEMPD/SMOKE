@@ -38,6 +38,8 @@ C smoke@emc.mcnc.org
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
 !.........  Arrays for storing file information
         INTEGER, ALLOCATABLE, PUBLIC :: MCREFSORT ( :,: ) ! sorted MCREF data  
         INTEGER, ALLOCATABLE, PUBLIC :: MCREFIDX ( :,: )  ! index into MCREF by ref. county

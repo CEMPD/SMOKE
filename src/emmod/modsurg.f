@@ -36,6 +36,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INTEGER, PUBLIC :: NSRGREC      ! Number of surrogate file entries
 
         INTEGER, ALLOCATABLE, PUBLIC :: IDXSRGA( : )   ! Sorting index

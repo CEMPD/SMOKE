@@ -37,6 +37,8 @@
 !
 !****************************************************************************
 
+        IMPLICIT NONE
+
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
 !.........  Indices from per-source inventory arrays to county array

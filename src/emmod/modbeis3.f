@@ -36,6 +36,9 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***********************************************************************
+
+        IMPLICIT NONE
+
 C...........   Emission factor, vegetation types tables:
 
         INTEGER, PUBLIC ::    NVEG                     !  Number of veg types
