@@ -153,11 +153,11 @@ C.........  Save date and time settings
         STIME = STIME3D
         TSTEP = TSTEP3D
         NSTEPS = MXREC3D
-        
+ 
 C.........  Check that requested variables are in file
         DO I = 1, NVARS        
             J = INDEX1( VARLIST( I ), NVARS3D, VNAME3D )
-            IF( J > 1 ) THEN
+            IF( J > 0 ) THEN
                 VARFOUND( I ) = 1
                 VARUNIT( I ) = UNITS3D( J )
                 VARDESC( I ) = VDESC3D( J )
@@ -208,7 +208,7 @@ C.........  Check date and time settings
 C.........  Check for requested variables
         DO I = 1, NVARS
             J = INDEX1( VARLIST( I ), NVARS3D, VNAME3D )
-            IF( J > 1 ) THEN
+            IF( J > 0 ) THEN
                 IF( VARFOUND( I ) == 1 ) THEN
                     MESG = 'Variable ' // TRIM( VARLIST( I ) ) //
      &                     ' is in both meteorology files.'
