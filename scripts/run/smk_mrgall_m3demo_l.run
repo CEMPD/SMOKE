@@ -8,9 +8,8 @@
 # categories together in SMOKE, and calls the script that runs the SMOKE
 # programs. 
 #
-# Script created by : M. Houyoux, North Carolina 
-#                     Supercomputing Center
-#
+# Script created by : M. Houyoux, MCNC Environmental Modeling Center 
+#                     April, 2002
 #*********************************************************************
 
 # set Assigns file name
@@ -19,6 +18,9 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.m3demo.cb-iv.ed36
 # set source category
 setenv MRG_SOURCE ABMP       # [A|B|M|P|ABMP] source categories to merge
 setenv SRCABBR    abmp       # abbreviation for naming log files   
+
+setenv MRG_BYDAY       ' '    # [A|M|P] use a by-day approach for the hourly input files
+
 setenv MRG_CTLMAT_MULT ' '   # [A|P|AP] for merging with multiplier controls
 setenv MRG_CTLMAT_ADD  ' '   # [A|P|AP] for merging with additive controls
 setenv MRG_CTLMAT_REAC ' '   # [A|M|P|AMP] for merging with reactivity controls
@@ -35,11 +37,12 @@ setenv MRG_GRDOUT_YN        Y          # Y outputs gridded file
 setenv MRG_REPSTA_YN        N          # Y outputs state totals
 setenv MRG_REPCNY_YN        N          # Y outputs county totals
 setenv SMK_O3SEASON_YN      N          # Y uses O3-season emis, not annual
-setenv SMK_PING_YN          Y          # Y processes and outputs for PinG 
+setenv SMK_PING_METHOD      0          # 1 processes and outputs for PinG, 0 no PING used 
 setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
 setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
 setenv SMK_EMLAYS           12         # number of emissions layers
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
+setenv OUTZONE              0          # output time zone of emissions, 0 = GMT
 setenv SMK_DEFAULT_TZONE    5          # time zone to fix in missing COSTCY file
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 setenv AREA_SURROGATE_NUM   60         # land area surg code for biogenic totals
@@ -50,10 +53,25 @@ setenv PROMPTFLAG           N     # Y (never set to Y for batch processing)
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_USE_ACTVNAMS     ' '   # Y force use of activities list
 setenv SMK_USE_SIPOLS       ' '   # Y force use if pollutants list
-setenv AUTO_DELETE_LOG      Y     # Y automatically deletes logs without asking
+setenv AUTO_DELETE_LOG      N     # Y automatically deletes logs without asking
 
 # Invoke Assigns file
 source $ASSIGNS_FILE
+
+if ( $RUN_MRGGRID == Y ) then
+    setenv FILELIST $STATIC/filelist.txt
+    setenv OUTFILE  $OUTPUT/egts3d_l.$ESDATE.1.$GRID.$ESCEN.ncf	
+    setenv BGTS $OUTPUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf 
+    setenv MGTS $OUTPUT/mgts_l.$ESDATE.1.$GRID.$MSCEN.ncf
+    setenv AGTS $OUTPUT/agts_l.$ESDATE.1.$GRID.$ASCEN.ncf
+    setenv PGTS $OUTPUT/pgts3d_l.$ESDATE.1.$GRID.$PSCEN.ncf
+    
+    # Create file list
+    /bin/rm -rf $FILELIST
+    foreach f ( BGTS MGTS AGTS PGTS )
+    echo $f >> $FILELIST
+    end     
+endif
 
 ##############################################################################
 #
