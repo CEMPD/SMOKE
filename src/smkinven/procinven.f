@@ -371,7 +371,12 @@ C                       statement is for new pollutants
                     POLVAL( K, NRE ) = POLVLA( J, NRE )
                     IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
 
-                    PIPCOD = IPOSCOD( I ) 
+C.....................  Update IPOSCOD (the position of the pol/act in the 
+C                       master list) to align properly with summed emissions.
+C.....................  NOTE- K is always <= to I, so there is no conflict for
+C                       reassigning IPOSCOD.
+                    IPOSCOD( K ) = IPOSCOD( I )
+                    PIPCOD       = IPOSCOD( I ) 
 
 C.................  If the existing value is defined, sum with new emissions
 C                   or activity and use weighted average for control factors
