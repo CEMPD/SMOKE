@@ -149,3 +149,81 @@ C.........  If the key is found, search backward until the first entry is reache
         RETURN 
     
         END FUNCTION FINDR1FIRST
+        
+C..........................................................
+        
+        INTEGER FUNCTION FINDCFIRST( KEY, N, LIST )
+
+C***********************************************************************
+C  function body starts at line 132
+C
+C  DESCRIPTION:
+C       Returns first instance of character KEY in LIST
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED: FINDC
+C
+C  REVISION  HISTORY:
+C     11/02: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+    
+        IMPLICIT NONE
+        
+C...........   EXTERNAL FUNCTIONS 
+        INTEGER   FINDC
+        
+        EXTERNAL  FINDC   
+
+C.........  Function arguments
+        CHARACTER(LEN=*), INTENT (IN) :: KEY        ! key to search for
+        INTEGER,          INTENT (IN) :: N          ! number of entries in LIST
+        CHARACTER(LEN=*), INTENT (IN) :: LIST( N )  ! table to be searched
+        
+C.........  Local function variables            
+        INTEGER INDEX
+
+C***********************************************************************
+C   begin body of function FINDCFIRST
+
+C.........  Use FINDC to get location of key        
+        INDEX = FINDC( KEY, N, LIST )
+        
+C.........  If the key is found, search backward until the first entry is reached            
+        IF( INDEX > 0 ) THEN
+            DO
+                IF( INDEX < 1 .OR. LIST( INDEX ) /= KEY ) EXIT
+                INDEX = INDEX - 1
+            END DO
+            	
+            INDEX = INDEX + 1	
+        END IF
+
+        FINDCFIRST = INDEX
+        
+        RETURN 
+    
+        END FUNCTION FINDCFIRST
+        
