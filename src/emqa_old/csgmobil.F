@@ -270,7 +270,7 @@ C.......   Optionally open an output file
 C.......   Read gridding, speciation, and (optional) control matrices:
 
         WRITE( *,92000 ) ' ', 'Reading GRIDDING matrix.', ' '
-        IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NX ) ) THEN
+        IF ( .NOT. READ3( GNAME, ALLVAR3, 1, 0, 0, NX ) ) THEN
 
             CALL M3EXIT( 'CSGMOBIL', 0, 0,
      &           'Could not read gridding matrix from file "' //
@@ -279,7 +279,7 @@ C.......   Read gridding, speciation, and (optional) control matrices:
         END IF      !  if read3() failed for gridding matrix
 
         WRITE( *,92000 ) ' ','Reading SPECIATION matrix.',' '
-        IF ( .NOT. READ3( SNAME, 'ALL', 1, 0, 0, SS ) ) THEN
+        IF ( .NOT. READ3( SNAME, ALLVAR3, ALLAYS3, 0, 0, SS ) ) THEN
 
             CALL M3EXIT( 'CSGMOBIL', 0, 0,
      &           'Could not read SPECIATION matrix from file "'//
@@ -316,7 +316,7 @@ C.........  Calculate emissions for all time steps available from MTMP
         DO  199  T = 1, NSTEPS
 
 C.............   Read in entire emissions field
-            IF( .NOT. READ3( ANAME, 'ALL', ALLAYS3, 
+            IF( .NOT. READ3( ANAME, ALLVAR3, ALLAYS3, 
      &                 JDATE, JTIME, EMISV ) ) THEN
 
                 MESG = 'Could not read emissions from ' // ANAME
