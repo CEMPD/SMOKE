@@ -23,7 +23,7 @@ C ****************************************************************************/
  
         SUBROUTINE  HRBIO( JDATE, JTIME, LAT, LON, PRES, TA, 
      &                     PINE, DECD, CONF, LAI, OTHR, AVLAI, NORNO,
-     &                     EMIS )
+     &                     PARTYPE, EMIS )
 
 C***********************************************************************
 C  subroutine body starts at line  202
@@ -85,6 +85,7 @@ C...........   ARGUMENTS and their descriptions:
 
         INTEGER         JDATE   !  current simulation date (YYYYDDD)
         INTEGER         JTIME   !  current simulation time (HHMMSS)
+        INTEGER         PARTYPE !  Obs. cloud, KUO, or KF (1,3,or 4)
         REAL            LAT  ( NCOLS, NROWS )  !  lat (deg) -90 <= LAT <= 90
         REAL            LON  ( NCOLS, NROWS )  !  lon (deg) -180 <= LON <= 180 
         REAL            PRES ( NCOLS, NROWS )  !  pressure (Pa)
@@ -151,7 +152,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            FCLAI
         REAL            BISOP, BMONO, BOVOC        !  biogenic VOC spcs emis.
         REAL            DRCT0, TOTAL
-
+        CHARACTER*16    CLDTYPE    !  Observational, KUO, or KF
 C...........   SAVED LOCAL VARIABLES and their descriptions:
 
         LOGICAL      FIRSTIME
@@ -250,7 +251,20 @@ C.......   Interpolate [ A | B | C ]DAY to this JDATE:
                  CC = CDAY(I-1) + (CDAY(I)-CDAY(I-1))*DAYINC
               END IF
 
-            CALL CLDATEN( JDATE, JTIME, LAT, LON, CLDATN )
+              IF ( PARTYPE .EQ. 1 ) THEN  ! observational cloud
+                 CLDTYPE = 'OBSERVATIONAL'
+                 CALL CLDATEN( JDATE, JTIME, LAT, LON, 
+     &                         CLDTYPE, CLDATN )
+              ELSE IF (PARTYPE .EQ. 3 ) THEN ! KUO cloud
+                 CLDTYPE = 'ANTHES-KUO'
+                 CALL CLDATEN_CALC( JDATE, JTIME, LAT, LON, 
+     &                              CLDTYPE, CLDATN )
+
+              ELSE IF (PARTYPE .EQ. 4 ) THEN ! KF cloud
+                 CLDTYPE = 'KAIN-FRITSCH'
+                 CALL CLDATEN_CALC( JDATE, JTIME, LAT, LON, 
+     &                              CLDTYPE, CLDATN )
+              END IF
 
 C...........   compute direct horizontal radiation, attenuation:
 C...........   first, perform the table look up
