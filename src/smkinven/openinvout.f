@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENINVOUT( MXIDAT, INVDNAM, ENAME, ANAME, SDEV )
+        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV )
 
 C*************************************************************************
 C  subroutine body starts at line 119
@@ -10,7 +10,7 @@ C      inventory file, and opens the I/O API and ASCII files for the SMOKE
 C      area, mobile, or point source inventory.
 C
 C  PRECONDITIONS REQUIRED:
-C      Correct number of pollutants and names EINAM are set
+C      Correct number of pollutants and names EANAM are set
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C      Subroutines: I/O API subroutines, BLDENAMS
@@ -68,8 +68,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         EXTERNAL CRLF, INDEX1, PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT(IN)  :: MXIDAT ! max. inventory data names
-        CHARACTER(*), INTENT(IN)  :: INVDNAM( MXIDAT ) ! inv. data names
+        CHARACTER(*), INTENT(IN)  :: GRDNM  ! grid name if any gridded data
         CHARACTER(*), INTENT(OUT) :: ENAME  ! emis i/o api inven logical name
         CHARACTER(*), INTENT(OUT) :: ANAME  ! emis ASCII inven logical name
         INTEGER     , INTENT(OUT) :: SDEV   ! ascii output inven file unit no.
@@ -79,12 +78,13 @@ C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
 
 C...........   Names, Units, types, & descriptions for pollutant-specific 
-C              output variables
+C              output variables.  NOTE - second dimension will work so long
+C              as NPPOL > NPACT, which is expected to always be the case
 
-        CHARACTER(LEN=IOVLEN3) EONAMES( NIPOL+NIACT,NPPOL ) ! Names 
-        INTEGER                EOTYPES( NIPOL+NIACT,NPPOL ) ! Types (Real|Int)
-        CHARACTER(LEN=IOULEN3) EOUNITS( NIPOL+NIACT,NPPOL ) ! Units  
-        CHARACTER(LEN=IODLEN3) EODESCS( NIPOL+NIACT,NPPOL ) ! Dscriptions  
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: EONAMES( :,: ) ! Names 
+        INTEGER               , ALLOCATABLE :: EOTYPES( :,: ) ! Types (Real|Int)
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units  
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Dscriptions  
 
 C...........   Other local variables
 
@@ -132,9 +132,11 @@ C           inventory variables
             NNPVAR = NPTVAR3
         END SELECT
 
-C.........  Check number of output variables against I/O API maximum
+C.........  Compute actual request output variables based on input data
+        NIOVARS = NNPVAR + NIPOL * NPPOL + NIACT * NPACT
 
-        NIOVARS = NNPVAR + NPPOL * ( NIPOL + NIACT )
+C.........  Compute conservative maximum number of pollutants and activities
+C           (conservative b/c NPPOL > NPACT )
         NDATMAX = INT( ( MXVARS3 - NNPVAR ) / NPPOL )
 
 C.........  If there are too many output variables, reset NIPOL
@@ -146,13 +148,12 @@ C.........  If there are too many output variables, reset NIPOL
      &             'activities that can be be'// CRLF()// BLANK10//
      &             'written to the I/O API file is', NDATMAX, 
      &             '. This limitation is caused by'// CRLF()// BLANK10//
-     &             'the I/O API variable limit of', MXVARS3,'.'
+     &             'the I/O API variable limit of', MXVARS3, '.'
             CALL M3MSG2( MESG )
  
             WRITE( MESG,94010 ) 
-     &             'WARNING: Reseting number of output pollutants '//
-     &             'and activities to',
-     &             NDATMAX
+     &             'WARNING: Reseting total number of output '//
+     &             'pollutants and activities to', NDATMAX
             CALL M3MSG2( MESG )
 
 C.............  If the number of pollutants alone are too much, then reset
@@ -167,7 +168,7 @@ C               number of pollutants from the maximum allowed number of
 C               variables
             ELSE
                 NIACT = NDATMAX - NIPOL
-                NIOVARS = NNPVAR + NPPOL * ( NIPOL + NIACT )
+                NIOVARS = NNPVAR + NIPOL * NPPOL + NIACT * NPACT
 
             END IF
 
@@ -190,18 +191,20 @@ C.........  Set up for opening I/O API output file header
 
         IF( NIPOL .GT. 0 ) THEN
             WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL
-            WRITE( FDESC3D( 6 ),94010 ) '/PER POLLUTANT/ ', NPPOL    
+            WRITE( FDESC3D( 6 ),94010 ) '/PER POLLUTANT/ ', NPPOL
         END IF
 
         IF( NIACT .GT. 0 ) THEN
             WRITE( FDESC3D( 7 ),94010 ) '/ACTIVITIES/', NIACT
-            WRITE( FDESC3D( 8 ),94010 ) '/PER ACTIVITY/ ', NPPOL
+            WRITE( FDESC3D( 8 ),94010 ) '/PER ACTIVITY/ ', NPACT
         END IF
 
         WRITE( FDESC3D( 9  ),94010 ) '/NUMBER CHARS/ ' , NCHARS 
         WRITE( FDESC3D( 10 ),94010 ) '/SCC POSITION/ ' , JSCC 
         WRITE( FDESC3D( 11 ),94010 ) '/STACK POSITION/ ' , JSTACK 
-        WRITE( FDESC3D( 12 ),94010 ) '/BASE YEAR/ '    , BYEAR 
+        WRITE( FDESC3D( 12 ),94010 ) '/BASE YEAR/ '    , BYEAR
+
+        IF( GRDNM .NE. ' ' ) FDESC3D( 13 ) = '/GRIDNAME/ ' // GRDNM
 
 c note: now that FDESC for the inven file goes passed 10 fields, must check
 C n:    other programs to avoid conflicts with FDESC
@@ -233,7 +236,16 @@ C.........  Define source characteristic variables that are not strings
         VDESC3D( J ) = 'Year of inventory for this record'
         J = J + 1
 
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+        SELECT CASE( CATEGORY )
+
+        CASE( 'AREA' )
+            VNAME3D( J ) = 'CELLID'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Cell number'
+            J = J + 1
+
+        CASE( 'MOBILE' )
 
             VNAME3D( J ) = 'IRCLAS'
             VTYPE3D( J ) = M3INT
@@ -271,13 +283,7 @@ C.........  Define source characteristic variables that are not strings
             VDESC3D( J ) = 'Latitude at end of link'
             J = J + 1
 
-            VNAME3D( J ) = 'SPEED'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'miles/hr'
-            VDESC3D( J ) = 'Average speed of vehicles'
-            J = J + 1
-
-        ELSE IF ( CATEGORY .EQ. 'POINT' ) THEN
+        CASE( 'POINT' )
 
             VNAME3D( J ) = 'ISIC'
             VTYPE3D( J ) = M3INT
@@ -321,23 +327,36 @@ C.........  Define source characteristic variables that are not strings
             VDESC3D( J ) = 'Stack exhaust velocity'
             J = J + 1
 
-        END IF
+        END SELECT
 
-C.........  Get names, units, etc. of output pollutant-specific and activity-
-C           specific records
-        CALL BLDENAMS( CATEGORY, NIPPA, NPPOL, EANAM, 
+C.........  Allocate memory for temporary variable names etc.
+        ALLOCATE( EONAMES( NIPOL,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EONAMES', PROGNAME )
+        ALLOCATE( EOUNITS( NIPOL,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EOUNITS', PROGNAME )
+        ALLOCATE( EOTYPES( NIPOL,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EOTYPES', PROGNAME )
+        ALLOCATE( EODESCS( NIPOL,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EODESCS', PROGNAME )
+
+C.........  Get names, units, etc. of output pollutant-specific records
+        CALL BLDENAMS( CATEGORY, NIPOL, NPPOL, EINAM, 
      &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
 
-        DO V = 1 , NIPPA
+C.........  Create output variables for pollutants
+        DO V = 1 , NIPOL
             
             DO I = 1, NPPOL ! Loop through number of variables per pollutant
 
-C.................  Reset units from inventory input file, if they are available
-                IF( ALLOCATED( INVDUNT ) ) THEN
+C.................  Set units for the primary data value
+                IF( I .EQ. 1 ) THEN
                     K = INDEX1( EONAMES( V, 1 ), MXIDAT, INVDNAM )
-                    UNITS = INVDUNT( K, I )
+                    UNITS = INVDUNT( K )
+
+C.................  Set units for the other data values (per activity)
                 ELSE
                     UNITS = EOUNITS( V, I )
+
                 END IF
 
 C.................  Store variable names and information
@@ -350,6 +369,49 @@ C.................  Store variable names and information
             END DO    !  end loop on number of variables per pollutant
 
         END DO        !  end loop on inventory pollutants V
+
+C.........  Deallocate and reallocate names (etc.) for activities
+        DEALLOCATE( EONAMES, EOUNITS, EOTYPES, EODESCS )
+
+        ALLOCATE( EONAMES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EONAMES', PROGNAME )
+        ALLOCATE( EOUNITS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EOUNITS', PROGNAME )
+        ALLOCATE( EOTYPES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EOTYPES', PROGNAME )
+        ALLOCATE( EODESCS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EODESCS', PROGNAME )
+
+C.........  Get names, units, etc. of output activity-specific records
+        CALL BLDENAMS( CATEGORY, NIACT, NPACT, ACTVTY, 
+     &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
+
+C.........  Create output variables for activities
+        DO V = 1 , NIACT
+            
+            DO I = 1, NPACT ! Loop through number of variables per activity
+
+C.................  Set units for the primary data value
+                IF( I .EQ. 1 ) THEN
+                    K = INDEX1( EONAMES( V, 1 ), MXIDAT, INVDNAM )
+                    UNITS = INVDUNT( K )
+
+C.................  Set units for the other data values (per activity)
+                ELSE
+                    UNITS = EOUNITS( V, I )
+
+                END IF
+
+C.................  Store variable names and information
+                VNAME3D( J ) = EONAMES( V, I )
+                VTYPE3D( J ) = EOTYPES( V, I )
+                UNITS3D( J ) = UNITS
+                VDESC3D( J ) = EODESCS( V, I )
+                J = J + 1
+
+            END DO    !  end loop on number of variables per activity
+
+        END DO        !  end loop on inventory activities V
 
 C.........  If there is a computed output variable, add it to the variable list.
 C           Base the other variable settings (besides the name) on the first 
