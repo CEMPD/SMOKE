@@ -25,7 +25,6 @@ C***********************************************************************
  
 C...........   INCLUDES:
 
-        INCLUDE 'CHDIMS3.EXT'    !  Gridding include parameters
         INCLUDE 'GRDIMS3.EXT'    !  Gridding include parameters
         INCLUDE 'MBDIMS3.EXT'    !  Mobile include paramaters
         INCLUDE 'PARMS3.EXT'     !  I/O API parameters
@@ -71,10 +70,10 @@ C...........   Minimum and maximum source temperature variables
 
 C...........   Temperature index per emission factor PSI variables
         INTEGER   NPSI   (        NMSRC )  ! Intrmdt number of PSIs per source
-        INTEGER   PSI    ( MXPSI, NMSRC )  ! Intrmdt storage of PSIs per source
+        INTEGER   PSI    ( MXPPS, NMSRC )  ! Intrmdt storage of PSIs per source
 
-        INTEGER   NTIDX  (        NLIST )  !
-        INTEGER   TIDXPSI( MXTMMI, NLIST )  !
+        INTEGER   NTIDX  (        MXPSI )  !
+        INTEGER   TIDXPSI( MXTMMI, MXPSI )  !
 
 C...........   Mobile Sources input and output arrays
  
@@ -85,12 +84,12 @@ C...........   Mobile Sources input and output arrays
 C...........   MPLIST scenario-specific emissions factor XREF tables:
  
         INTEGER   NMPLIST                 !  number of XREF entries
-        INTEGER   MPFIP( NLIST )          !  FIP codes in XREF entries
-        INTEGER   MPRDT( NLIST )          !  road class codes in XREF entries
-        INTEGER   MPLNK( NLIST )          !  link IDs in XREF entries
-        INTEGER   MPREF( 0:23, NLIST )    !  hour&source-specific xrefs
+        INTEGER   MPFIP( MXPSI )          !  FIP codes in XREF entries
+        INTEGER   MPRDT( MXPSI )          !  road class codes in XREF entries
+        INTEGER   MPLNK( MXPSI )          !  link IDs in XREF entries
+        INTEGER   MPREF( 0:23, MXPSI )    !  hour&source-specific xrefs
         INTEGER   REFCNT                  !  count of total unique PSIs
-        INTEGER   REFLIST( NLIST )        !  list of unique PSIs
+        INTEGER   REFLIST( MXPSI )        !  list of unique PSIs
 
 C...........   Gridded Temperature
         REAL      TA( NGRID )             !  one-layer slice of temperature
@@ -98,8 +97,8 @@ C...........   Gridded Temperature
 C...........   Ungridding matrix:
  
         INTEGER   NU( NMSRC )
-        INTEGER   IU( MXGCOF )
-        REAL      CU( MXGCOF )
+        INTEGER   IU( NMATX )
+        REAL      CU( NMATX )
  
         COMMON  / UGRIDMAT / NU, IU, CU
 
@@ -138,7 +137,6 @@ C...........   Other local variables:
         REAL       TMIN   !  deg F temporary source min temperature on interval
         REAL       MSAV   !  temporary saved minimum temperature
         REAL       TASRC  !  temporary temperature, interpolated to sources
-        REAL       TINTV  !  deg F incr. to use in for rounding mix/max temps
         REAL       TF     !  deg F temporary temperature storage
 
         LOGICAL         EFLAG   !  Error flag 
@@ -450,9 +448,9 @@ C.............  Loop through all time steps for this source's PSIs
                 ELSEIF( K .GT. 0 ) THEN
 
 C.....................  Check for overflow...
-                    IF( J .EQ. MXPSI ) THEN
+                    IF( J .EQ. MXPPS ) THEN
                         WRITE( MESG, 94010 )
-     &                         'Maximum dimension MXPSI=', MXPSI,
+     &                         'Maximum dimension MXPPS=', MXPPS,
      &                         'was exceeded'
                         CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
  
@@ -861,7 +859,8 @@ C...........   Informational (LOG) message formats... 92xxx
  
 C...........   Formatted file I/O formats............ 93xxx
  
-93010   FORMAT( I5, ',', I8, 100( ',', I4, ) )
+93010   FORMAT( I5, ',', I8, ',' 20( I4, ',' ) /, 
+     &                  49( 15X, 20( I4, ',' ) / ) )
  
 C...........   Internal buffering formats............ 94xxx
  
