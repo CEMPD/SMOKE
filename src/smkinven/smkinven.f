@@ -75,6 +75,7 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -366,7 +367,7 @@ C           for day- and hour-specific data import.
         ELSE
 
 C.............  Get header description of inventory file 
-            IF( .NOT. DESC3( ENAME ) ) THEN
+            IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
                 MESG = 'Could not get description of file "' //
      &                 ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
         	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
