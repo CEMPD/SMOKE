@@ -27,9 +27,9 @@ C***********************************************************************
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures
 
 C.........  External
-        INTEGER  PROMPTFFILE
+        INTEGER  GETEFILE
         INTEGER  TRIMLEN
-        EXTERNAL PROMPTFFILE, TRIMLEN
+        EXTERNAL GETEFILE, TRIMLEN
 
 C.........  Program arguments
         INTEGER N, NCOL, NMAX
@@ -65,11 +65,22 @@ C   begin body of program GETFACR
 C......... Set buffer for writing messages
         BUFFER = NAME
 
-C.........  Prompt for input file
+C.........  Open input file
+        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACR' )
 
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
-     &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACR' )
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+ 
+            MESG = 'Could not open input file "' //
+     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+            CALL M3EXIT( 'GETFACR', 0, 0, MESG, 2 )
+
+        ELSE
+
+            CALL M3MSG2( 'NOTE: File "' // 
+     &                   NAME( 1 : TRIMLEN( NAME ) ) //
+     &                   '" opened successfully.'         )
+ 
+        END IF      !  if getefile() failed
 
 C.........  First time through file, establish sorted order, second time
 C.........  through file, store profiles in that sorted order
@@ -179,9 +190,9 @@ C***********************************************************************
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures
 
 C.........  External
-        INTEGER  PROMPTFFILE
+        INTEGER  GETEFILE
         INTEGER  TRIMLEN
-        EXTERNAL PROMPTFFILE, TRIMLEN
+        EXTERNAL GETEFILE, TRIMLEN
 
 C.........  Program arguments
         INTEGER N, NCOL1, NCOL2, NMAX
@@ -218,11 +229,22 @@ C   begin body of program GETFACRR
 C......... Set buffer for writing messages
         BUFFER = NAME
 
-C.........  Prompt for input file
-
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
-     &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACRR' )
+C.........  Open input file
+        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACRR' )
+ 
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+ 
+            MESG = 'Could not open input file "' //
+     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+            CALL M3EXIT( 'GETFACRR', 0, 0, MESG, 2 )
+ 
+        ELSE
+ 
+            CALL M3MSG2( 'NOTE: File "' // 
+     &                   NAME( 1 : TRIMLEN( NAME ) ) //
+     &                   '" opened successfully.'         )
+ 
+        END IF      !  if getefile() failed
 
 C.........  First time through file, establish sorted order, second time
 C.........  through file, store profiles in that sorted order
@@ -248,7 +270,7 @@ C.........  through file, store profiles in that sorted order
      &                   ') was exceeded while reading '// 
      &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
                     CALL  M3MESG( MESG )
-                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+                    CALL  M3EXIT( 'GETFACRR', 0, 0, 
      &                      'Change CMAX in GETFACRR and recompile', 2 )
 
                 ELSE
@@ -336,9 +358,9 @@ C***********************************************************************
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures
 
 C.........  EXTERNAL
-        INTEGER  PROMPTFFILE
+        INTEGER  GETEFILE
         INTEGER  TRIMLEN
-        EXTERNAL PROMPTFFILE, TRIMLEN
+        EXTERNAL GETEFILE, TRIMLEN
 
 C.........  Program arguments
         INTEGER       N, NCOL1, NMAX
@@ -374,11 +396,22 @@ C   begin body of program GETFACI
 C......... Set buffer for writing messages
         BUFFER = NAME
 
-C.........  Prompt for input file
-
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
-     &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACI' )
+C.........  Open input file
+        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACI' )
+ 
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+ 
+            MESG = 'Could not open input file "' //
+     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+            CALL M3EXIT( 'GETFACI', 0, 0, MESG, 2 )
+ 
+        ELSE
+ 
+            CALL M3MSG2( 'NOTE: File "' // 
+     &                   NAME( 1 : TRIMLEN( NAME ) ) //
+     &                   '" opened successfully.'         )
+ 
+        END IF      !  if getefile() failed
 
 C.........  First time through file, establish sorted order, second time
 C.........  through file, store profiles in that sorted order
@@ -404,7 +437,7 @@ C.........  through file, store profiles in that sorted order
      &                   ') was exceeded while reading '// 
      &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
                     CALL  M3MESG( MESG )
-                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+                    CALL  M3EXIT( 'GETFACI', 0, 0, 
      &                      'Change CMAX in GETFACI and recompile', 2 )
 
                 ELSE
@@ -490,9 +523,9 @@ C***********************************************************************
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures
 
 C.........  EXTERNAL
-        INTEGER  PROMPTFFILE
+        INTEGER  GETEFILE
         INTEGER  TRIMLEN
-        EXTERNAL PROMPTFFILE, TRIMLEN
+        EXTERNAL GETEFILE, TRIMLEN
 
 C.........  Program arguments
         INTEGER       N, NCOL1, NCOL2, NCOL3, NMAX
@@ -532,11 +565,22 @@ C   begin body of program GETFACICR
 C......... Set buffer for writing messages
         BUFFER = NAME
 
-C.........  Prompt for input file
-
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
-     &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACICR' )
+C.........  Open input file
+        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACICR' )
+ 
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+ 
+            MESG = 'Could not open input file "' //
+     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+            CALL M3EXIT( 'GETFACICR', 0, 0, MESG, 2 )
+ 
+        ELSE
+ 
+            CALL M3MSG2( 'NOTE: File "' // 
+     &                   NAME( 1 : TRIMLEN( NAME ) ) //
+     &                   '" opened successfully.'         )
+ 
+        END IF      !  if getefile() failed
 
 C.........  First time through file, establish sorted order, second time
 C.........  through file, store profiles in that sorted order
@@ -562,7 +606,7 @@ C.........  through file, store profiles in that sorted order
      &                   ') was exceeded while reading '// 
      &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
                     CALL  M3MESG( MESG )
-                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+                    CALL  M3EXIT( 'GETFACICR', 0, 0, 
      &                     'Change CMAX in GETFACICR and recompile', 2 )
 
                 ELSE
@@ -654,9 +698,9 @@ C***********************************************************************
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures
 
 C.........  External
-        INTEGER  PROMPTFFILE
+        INTEGER  GETEFILE
         INTEGER  TRIMLEN
-        EXTERNAL PROMPTFFILE, TRIMLEN
+        EXTERNAL GETEFILE, TRIMLEN
 
 C.........  Program arguments
         INTEGER N, NCOL1, NCOL2, NMAX
@@ -694,11 +738,22 @@ C   begin body of program GETFACIR
 C......... Set buffer for writing messages
         BUFFER = NAME
 
-C.........  Prompt for input file
-
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
-     &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACIR' )
+C.........  Open input file
+        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACIR' )
+ 
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+ 
+            MESG = 'Could not open input file "' //
+     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+            CALL M3EXIT( 'GETFACIR', 0, 0, MESG, 2 )
+ 
+        ELSE
+ 
+            CALL M3MSG2( 'NOTE: File "' // 
+     &                   NAME( 1 : TRIMLEN( NAME ) ) //
+     &                   '" opened successfully.'         )
+ 
+        END IF      !  if getefile() failed
 
 C.........  First time through file, establish sorted order, second time
 C.........  through file, store profiles in that sorted order
@@ -724,7 +779,7 @@ C.........  through file, store profiles in that sorted order
      &                   ') was exceeded while reading '// 
      &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
                     CALL  M3MESG( MESG )
-                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+                    CALL  M3EXIT( 'GETFACIR', 0, 0, 
      &                      'Change CMAX in GETFACIR and recompile', 2 )
 
                 ELSE
@@ -759,7 +814,7 @@ C.........  through file, store profiles in that sorted order
             GO TO 11
 
    33       IF( EFLAG ) 
-     &      CALL M3EXIT( 'GETFACR', 0, 0, 'Error in file format', 2 )
+     &      CALL M3EXIT( 'GETFACIR', 0, 0, 'Error in file format', 2 )
 
             IF( READTHRU .EQ. 1 ) THEN
 
@@ -812,9 +867,9 @@ C***********************************************************************
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures
 
 C.........  External
-        INTEGER  PROMPTFFILE
+        INTEGER  GETEFILE
         INTEGER  TRIMLEN
-        EXTERNAL PROMPTFFILE, TRIMLEN
+        EXTERNAL GETEFILE, TRIMLEN
 
 C.........  Program arguments
         INTEGER N, N2D, NCOL1, NCOL2, NCOL3, NMAX
@@ -853,11 +908,22 @@ C   begin body of program GETIIR3D
 C......... Set buffer for writing messages
         BUFFER = NAME
 
-C.........  Prompt for input file
-
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
-     &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETIIR3D' )
+C.........  Open input file
+        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETIIR3D' )
+ 
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+ 
+            MESG = 'Could not open input file "' //
+     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+            CALL M3EXIT( 'GETIIR3D', 0, 0, MESG, 2 )
+ 
+        ELSE
+ 
+            CALL M3MSG2( 'NOTE: File "' // 
+     &                   NAME( 1 : TRIMLEN( NAME ) ) //
+     &                   '" opened successfully.'         )
+ 
+        END IF      !  if getefile() failed
 
 C.........  First time through file, establish sorted order, second time
 C.........  through file, store profiles in that sorted order
@@ -1000,9 +1066,9 @@ C***********************************************************************
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures
 
 C.........  External
-        INTEGER  PROMPTFFILE
+        INTEGER  GETEFILE
         INTEGER  TRIMLEN
-        EXTERNAL PROMPTFFILE, TRIMLEN
+        EXTERNAL GETEFILE, TRIMLEN
 
 C.........  Program arguments
         INTEGER N, NCOL, NMAX
@@ -1040,11 +1106,22 @@ C   begin body of program GETFACD
 C......... Set buffer for writing messages
         BUFFER = NAME
 
-C.........  Prompt for input file
-
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
-     &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACD' )
+C.........  Open input file
+        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACD' )
+ 
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+ 
+            MESG = 'Could not open input file "' //
+     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+            CALL M3EXIT( 'GETFACD', 0, 0, MESG, 2 )
+ 
+        ELSE
+ 
+            CALL M3MSG2( 'NOTE: File "' // 
+     &                   NAME( 1 : TRIMLEN( NAME ) ) //
+     &                   '" opened successfully.'         )
+ 
+        END IF      !  if getefile() failed
 
 C.........  First time through file, establish sorted order, second time
 C.........  through file, store profiles in that sorted order
