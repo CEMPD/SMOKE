@@ -77,6 +77,9 @@ C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE :: DEFFIP( : ) ! Cy/St/Co codes for default out
         INTEGER, ALLOCATABLE :: DEFRCL( : ) ! Road class codes for default out
         REAL   , ALLOCATABLE :: DEFSPD( : ) ! Speeds for default outputs
+        REAL   , ALLOCATABLE :: RFIP  ( : ) ! FIPS codes converted to reals
+        REAL   , ALLOCATABLE :: RRCLAS( : ) ! road classes converted to reals
+        REAL   , ALLOCATABLE :: RVTYPE( : ) ! road classes converted to reals
 
 C...........   File units and logical/physical names
         INTEGER         LDEV    !  log-device
@@ -181,11 +184,23 @@ C.........  Initialize sorting index
             INDX( S ) = S
         END DO
 
-C.........  Sort sources by cy/st/co code, roadclass, and speed
+C.........  Copy integer codes to real arrays for sorting
+        ALLOCATE( RFIP( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RFIP', PROGNAME )
+        ALLOCATE( RRCLAS( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RRCLAS', PROGNAME )
+        ALLOCATE( RVTYPE( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RVTYPE', PROGNAME )
+        
+        RFIP   = REAL( IFIP   ) ! array
+        RRCLAS = REAL( IRCLAS ) ! array
+        RVTYPE = REAL( IVTYPE ) ! array
+
+C.........  Sort sources by cy/st/co code, roadclass, vehicle type, and speed
         IF ( SFLAG ) THEN
-            CALL SORTR3( NSRC, INDX, IFIP, IRCLAS, SPEED )
+            CALL SORTR4( NSRC, INDX, RFIP, RRCLAS, RVTYPE, SPEED )
         ELSE
-            CALL SORTR2( NSRC, INDX, IFIP, IRCLAS )
+            CALL SORTI3( NSRC, INDX, IFIP, IRCLAS, IVTYPE )
         END IF
 
 C.........  Loop through sorted sources and count the number of different
@@ -287,7 +302,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93300   FORMAT( I6.6, ',', I8, ',', I5, ',', F5.1 )
+93300   FORMAT( I6.6, ',', I8.2, ',', I5.4, ',', F5.1 )
 
 C...........   Internal buffering formats............ 94xxx
 
