@@ -127,6 +127,8 @@ C...........   Other local variables
         REAL             RACT     ! reasonably achiev. cntrl tech. cntrl factor
         REAL             REPLACE  ! replacement emissions
 
+        LOGICAL          LO3SEAS  ! true: use ozone-season emissions
+
         CHARACTER*100          OUTFMT     ! header format buffer
         CHARACTER*300          MESG       ! message buffer
         CHARACTER(LEN=FPLLEN3) CPLT       ! tmp point src info through plant
@@ -138,6 +140,10 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine GENMULTC
+
+C...........  Get environment variables that control program behavior
+          MESG = 'Use annual or ozone season emissions'
+          LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
 
 C...........  Get set up for reporting...
           IF( CATEGORY .EQ. 'POINT' ) THEN
@@ -268,9 +274,20 @@ C............  Initialize control factor array
 
 C...........  Read in emissions data from inventory file
 
-           IF ( .NOT. 
-     &          READ3( ENAME, OUTNAMES(I,1), 1, 0, 0, EMIS )  ) THEN
-              CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
+           IF( LO3SEAS ) THEN
+
+               IF ( .NOT. 
+     &              READ3( ENAME, OUTNAMES(I,2), 1, 0, 0, EMIS )  ) THEN
+                   CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
+               END IF
+
+           ELSE 
+
+               IF ( .NOT. 
+     &              READ3( ENAME, OUTNAMES(I,1), 1, 0, 0, EMIS )  ) THEN
+                   CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
+               END IF
+
            END IF
 
            DO S = 1, NSRC
@@ -533,9 +550,13 @@ C........................  Overwrite temporary file line with new info
  
 C.....................  If no controls, then overwrite temporary line only
                     ELSE
-                       WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
+                       WRITE( GDEV,93300 ) 0, 'D', 0., 0., 0.
 
                     END IF
+
+                 ELSE ! If K = 0 (for sources not having applied "Controls"
+
+                     WRITE( GDEV,93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
 
@@ -589,7 +610,7 @@ C.....................  Overwrite temporary file line with new info
 
 C..................  If no controls, then overwrite temporary line only
                  ELSE
-                     WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
+                     WRITE( LDEV,93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
 
