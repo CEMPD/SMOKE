@@ -48,6 +48,7 @@ C...........   INCLUDES:
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
         INCLUDE 'MBDIMS3.EXT'   !  mobil-source dimensioning parameters
         INCLUDE 'TMDIMS3.EXT'   !  temporal dimensioning parameters
+        INCLUDE 'CHDGEN3.EXT'   !  Generalized chemistry parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -101,7 +102,8 @@ C...........   Inventory arrays
         INTEGER         STATES( MXSTA )   ! Unique list of state IDs
  
 C...........   Report arrays
-        REAL            EMSUM( MXSTA, MXEMIS ) ! Summed emissions by state
+        REAL            EMSUM ( MXSTA, MXEMIS+1 ) ! Summed emissions by state
+        INTEGER         VOLIDX( MXEMIS )
            
 C...........   Other local variables
 
@@ -110,14 +112,15 @@ C...........   Other local variables
         INTEGER         BEGBLK  !  beg of array of blanks in output file desc
         INTEGER         BTIME
         INTEGER         IOS
-        INTEGER         I, L, K, S, T, V
+        INTEGER         I, J, K, L, S, T, V
         INTEGER         JDATE, JTIME, TSTEP
         INTEGER         LDATE, LTIME
         INTEGER         LDEV
         INTEGER         LSTA               ! previous state code
         INTEGER         NSTA               ! actual number of states
         INTEGER         NSTEPS
-        INTEGER         NSUM
+        INTEGER         NSUM               ! No. of emis types to report
+        INTEGER         NVOL               ! No. of emis types w/ volatile pol
         INTEGER         RDEV               ! output report unit number
         INTEGER         RTIME              ! time for reporting state totals
         INTEGER         STA
@@ -125,6 +128,7 @@ C...........   Other local variables
         LOGICAL         OUTPUTFLAG
         LOGICAL         ST_REPORT  ! Output state-based emissions totals
 
+        CHARACTER*3     INVPOL  !  buffer for inventory pollutant
         CHARACTER*4     OUTDESC !  contains descriptor of output file type
         CHARACTER*4     OUTNAM  !  contains default  logical output name
         CHARACTER*5     OUTFMT  !  contains output report format
@@ -176,7 +180,8 @@ C.......   Get environment variable settings
      &                      .TRUE., IOS )
 
         RTIME = ENVINT( 'ST_REPTIME', 
-     &                  'Per-State summation reporting time', 0, IOS )
+     &                  'Per-State summation reporting time (HHMMSS)',
+     &                   230000, IOS )
 
 C.......   Get file names; open input gridding matrix, mobile source, and
 C.......   output files.
@@ -217,7 +222,7 @@ C.........  Annual inventory VMT file as input
 C.........  Hourly inventory file as input
         ELSE
             REPNAM = 'MGRTREP'
-            NSUM   = MXEMIS
+            NSUM   = NVARS3D
         END IF
 
 C.......   Read FIPS code for reporting purpose
@@ -283,7 +288,7 @@ C............  Create state codes arrays
  
 C............  Initialize emission summary array
             DO 28 I = 1, MXSTA
-                DO 27 S = 1, NSUM 
+                DO 27 S = 1, MXEMIS
                     EMSUM( I,S ) = 0.
 27              CONTINUE
 28          CONTINUE
@@ -359,6 +364,32 @@ C.............  Copy vehicle type descriptions from MTMP file
 
         OUTPUTFLAG = ( ENAME .NE. NONE )
 
+C.......   Create pointer for which input variables are volatile
+        I    = 0
+        NVOL = 0 
+        IF( NVARS3D .GT. 1 ) THEN
+            DO 44 V = 1, NVARS3D
+
+C.................  Check if pollutant part of name is in volatile pol list
+                L = INDEX  ( VNAME3D( V ), '_' ) 
+                J = TRIMLEN( VNAME3D( V ) ) 
+                K = INDEX1 ( VNAME3D( V )( L+1: J ), NUMVOL, VOLTYP )
+
+C.................  If so, store pointer
+                IF( K .GT. 0 ) THEN
+                    I = I + 1
+                    VOLIDX( I ) = V
+                    INVPOL = VNAME3D( V )( L+1: J )
+                ENDIF 
+
+44          CONTINUE
+            NVOL = I
+            NSUM = NSUM + 1
+
+C..........   Create title for the statelst report, and use VNAME3D array for it
+            IF( NVOL .GT. 0 ) VNAME3D( NSUM ) = 'TOT_' // INVPOL
+
+        ENDIF
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
@@ -481,14 +512,26 @@ C.................  Convert from grams to tons
 
                     FAC = 1.0 / TON2GM
                     DO 191 I = 1, MXSTA
-                        DO 190 S = 1, NSUM
+                        DO 190 S = 1, NVARS3D
                             EMSUM( I,S ) = EMSUM( I,S ) * FAC
+
+
 190                     CONTINUE
 191                 CONTINUE
 
+C.................  Sum volatile component
+                    IF( NVOL .GT. 1 ) THEN
+                        DO 194 I = 1, MXSTA
+                            DO 193 J = 1, NVOL
+                                EMSUM( I, NSUM ) = EMSUM( I, NSUM ) + 
+     &                                             EMSUM( I, VOLIDX(J) )
+193                         CONTINUE
+194                     CONTINUE
+                    ENDIF
+
                 ENDIF
                 IF( RDEV .GT. 0)  
-     &          CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NVARS3D,
+     &          CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NSUM,
      &                         OUTFMT, VNAME3D, STATES, EMSUM        )
  
 C.................  Reinitialize emissions summary
