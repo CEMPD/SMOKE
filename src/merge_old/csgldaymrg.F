@@ -1236,8 +1236,8 @@ C           make sure they are using the same met file
 
                 IF ( AFLAG ) THEN
 
-                    IF( WKDAY( JDATE ) .EQ. 5 ) THEN
-                        ANAME = 'ATMP_FRI'
+                    IF( WKDAY( JDATE ) .EQ. 1 ) THEN
+                        ANAME = 'ATMP_MON'
 
                     ELSEIF( WKDAY( JDATE ) .EQ. 6 ) THEN
                         ANAME = 'ATMP_SAT'
@@ -1255,8 +1255,8 @@ C           make sure they are using the same met file
                 END IF
 
                 IF ( PFLAG ) THEN
-                    IF( WKDAY( JDATE ) .EQ. 5 ) THEN
-                        PNAME = 'PTMP_FRI'
+                    IF( WKDAY( JDATE ) .EQ. 1 ) THEN
+                        PNAME = 'PTMP_MON'
 
                     ELSEIF( WKDAY( JDATE ) .EQ. 6 ) THEN
                         PNAME = 'PTMP_SAT'
