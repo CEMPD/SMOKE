@@ -161,14 +161,14 @@ C...........   SAVED LOCAL VARIABLES and their descriptions:
 
 
 C***********************************************************************
-C   begin body of subroutine  HRBIO
+C   begin body of subroutine  HRBIOS
 
 C...........   first, perform the table look up
 
             DO  122  R = 1, NROWS
             DO  111  C = 1, NCOLS
                 
-                TAIR = TSFC(C,R) + 273.16     ! Convert temp from C to K
+                TAIR = TSFC(C,R)         ! unit in degree K
                 DT   = 28668.514 / TAIR
                 CT   = EXP( 37.711 - 0.398570815 * DT ) /
      &                 (1.0 + EXP( 91.301 - DT ) )
