@@ -128,10 +128,6 @@ C........  Set rule effectiveness and rule penetration to inventory defaults
         REFF = 100.0
         RPEN = 100.0
 
-C.........  Initialize units as converstion from day to year, in case units
-C           are not provided by file
-        INVDCNV = 1. / YR2DAY( INY )    ! Array
-
 C........................................................................
 C.............  Head of the input file read loop  .......................
 C........................................................................
@@ -254,7 +250,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 TPFLGA ( ES ) = TPF
                 INVYRA ( ES ) = INY
                 CSCCA  ( ES ) = TSCC
-                POLVLA ( ES,NEM ) = INVDCNV( COD ) * EMIS
+                POLVLA ( ES,NEM ) = EMIS
                 POLVLA ( ES,NCE ) = CEFF
                 POLVLA ( ES,NRE ) = REFF
                 POLVLA ( ES,NRP ) = RPEN
