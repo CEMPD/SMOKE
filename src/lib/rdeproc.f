@@ -2,7 +2,7 @@
         SUBROUTINE RDEPROC( FDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 103
 C
 C  DESCRIPTION:
 C     This subroutine reads the emission processes file, which contains columns
@@ -72,7 +72,7 @@ C...........   Local allocatable arrays
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: POLA   ( : )  ! all unsorted pols
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, L2, V    !  counters and indices
+        INTEGER         I, J, K, L, V    !  counters and indices
 
         INTEGER         IOS     !  i/o status
         INTEGER         L1, L2  !  tmp string lengths
