@@ -3,7 +3,7 @@
      &                       OUTNAMES, OUTUNITS, OUTTYPES, OUTDESCS )
 
 C***********************************************************************
-C  subroutine body starts at line 141
+C  subroutine body starts at line 151
 C
 C  DESCRIPTION:
 C      This subroutine builds names for pollutant-specific inventory variables
@@ -56,21 +56,50 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
-        INTEGER         TRIMLEN
-
-        EXTERNAL        CRLF, TRIMLEN
+        EXTERNAL        CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*)       CATEGORY                !  source category
-        INTEGER                NIPOL                   !  number of pollutants
-        INTEGER                NPPOL                   !  number vars per pol
-        CHARACTER(LEN=*)       EINAM   ( NIPOL )       !  pollutant names
-        CHARACTER(LEN=*)       OUTNAMES( NIPOL,NPPOL ) !  output names
-        CHARACTER(LEN=*)       OUTUNITS( NIPOL,NPPOL ) !  output units
-        INTEGER                OUTTYPES( NIPOL,NPPOL ) !  output types int/real
-        CHARACTER(LEN=*)       OUTDESCS( NIPOL,NPPOL ) !  output descriptions
+        CHARACTER(*), INTENT (IN) :: CATEGORY                ! source category
+        INTEGER     , INTENT (IN) :: NIPOL                   ! no. of pols
+        INTEGER     , INTENT (IN) :: NPPOL                   ! no. vars per pol
+        CHARACTER(*), INTENT (IN) :: EINAM   ( NIPOL )       ! pollutant names
+        CHARACTER(*), INTENT(OUT) :: OUTNAMES( NIPOL,NPPOL ) ! var names
+        CHARACTER(*), INTENT(OUT) :: OUTUNITS( NIPOL,NPPOL ) ! var units
+        INTEGER     , INTENT(OUT) :: OUTTYPES( NIPOL,NPPOL ) ! var type:int/real
+        CHARACTER(*), INTENT(OUT) :: OUTDESCS( NIPOL,NPPOL ) ! var descriptions
 
 C.........  Data arrays for variable names...
+
+C.........  Area source variable name parameters
+        CHARACTER(LEN=CPRTLEN3) ARPREFIX( 2:NARPPOL3 )
+        DATA ARPREFIX / OZNSEART, EMISFCRT, CTLEFFRT, 
+     &                  RULEFFRT, RULPENRT /
+
+        CHARACTER(LEN=IOULEN3) ARUNITS( NARPPOL3 )
+        DATA ARUNITS / 'tons/year', 'tons/day', 
+     &                 'SCC units', '%', '%', '%' /
+
+        INTEGER ARTYPES( NARPPOL3 )
+        DATA ARTYPES / M3REAL, M3REAL, M3REAL, M3REAL, M3REAL, M3REAL /
+
+        CHARACTER(LEN=IODLEN3) ARDESCS( NARPPOL3 )
+        DATA ARDESCS / 'Annual Emissions'
+     &               , 'Ozone Season Emissions'
+     &               , 'Emission Factors'
+     &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
+     &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
+     &      , 'Rule penetration (in [0,100], or "MISSING": < -9.0E36)'
+     &               /
+
+C.........  Mobile source variable name parameters
+        CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
+        DATA MBUNITS / 'VMT/year' /
+
+        INTEGER MBTYPES( NPTPPOL3 )
+        DATA MBTYPES / M3REAL /
+
+        CHARACTER(LEN=IODLEN3) MBDESCS( NMBPPOL3 )
+        DATA MBDESCS / 'Annual Vehicle Miles Traveled' /
 
 C.........  Point source variable name parameters
         CHARACTER(LEN=CPRTLEN3) PTPREFIX( 2:NPTPPOL3 )
@@ -95,27 +124,6 @@ C.........  Point source variable name parameters
      &               , 'Secondary Control Equipment Code'
      &               /
 
-C.........  Area source variable name parameters
-        CHARACTER(LEN=CPRTLEN3) ARPREFIX( 2:NARPPOL3 )
-        DATA ARPREFIX / OZNSEART, EMISFCRT, CTLEFFRT, 
-     &                  RULEFFRT, RULPENRT /
-
-        CHARACTER(LEN=IOULEN3) ARUNITS( NARPPOL3 )
-        DATA ARUNITS / 'tons/year', 'tons/day', 
-     &                 'SCC units', '%', '%', '%' /
-
-        INTEGER ARTYPES( NARPPOL3 )
-        DATA ARTYPES / M3REAL, M3REAL, M3REAL, M3REAL, M3REAL, M3REAL /
-
-        CHARACTER(LEN=IODLEN3) ARDESCS( NARPPOL3 )
-        DATA ARDESCS / 'Annual Emissions'
-     &               , 'Ozone Season Emissions'
-     &               , 'Emission Factors'
-     &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule penetration (in [0,100], or "MISSING": < -9.0E36)'
-     &               /
-
 C...........   Unsorted pollutant records
         INTEGER       INDEXA ( NIPOL )
         CHARACTER(LEN=IOVLEN3) ABRNAMA( NIPOL )    !  pollutant names
@@ -136,16 +144,6 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine BLDENAMS
-
-C.........  Check to see if someone has modified include file in calling prog
-        IF( NPPOL .NE. NPTPPOL3 ) THEN
-             WRITE( MESG,94010 ) 'INTERNAL ERROR: ' //
-     &         'Subroutine ' // PROGNAME // ' needs to be modified ' //
-     &         CRLF() // BLANK16 // 'to be consistent with ' //
-     &         'changed value of NPTPPOL3 in EMCNST3.EXT' //
-     &         CRLF() // BLANK16 // 'in include file EMDIMS3.EXT'
-             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
 
 C.........  Truncate variable names based on original length and length of
 C.........  fields to be inserted
@@ -172,8 +170,8 @@ C.........  Search for duplicates and rename them
                 WRITE( BUFFER, '(I10)' ) LCNT  ! turn in to string
                 BUFFER = ADJUSTL( BUFFER )     ! left justify
 
-                L  = TRIMLEN( BUFFER )         ! get length of trailer
-                L2 = MIN( IDIF -L -1, TRIMLEN( NAM ) )  ! remaining name
+                L  = LEN_TRIM( BUFFER )         ! get length of trailer
+                L2 = MIN( IDIF -L -1, LEN_TRIM( NAM ) )  ! remaining name
                 ABRNAMA( J ) = NAM( 1:L2 ) // '_' // BUFFER( 1:L ) ! store name
             ELSE
                LCNT = 0
@@ -187,10 +185,30 @@ C.........  Build output names
 
             OUTNAMES( I,1 ) = EINAM( I )  ! Annual emis name is same as pol
 
-            L  = TRIMLEN( ABRNAMA( I ) )
-            L2 = TRIMLEN( CATEGORY )
+            L  = LEN_TRIM( ABRNAMA( I ) )
+            L2 = LEN_TRIM( CATEGORY )
 
-            IF( CATEGORY(1:L2) .EQ. 'POINT' ) THEN
+
+            SELECT CASE( CATEGORY )
+            CASE( 'AREA' )
+                OUTUNITS( I,1 ) = ARUNITS( 1 )          
+                OUTTYPES( I,1 ) = ARTYPES( 1 )           
+                OUTDESCS( I,1 ) = ARDESCS( 1 )
+         
+                DO J = 2, NARPPOL3
+                    OUTNAMES( I,J ) = ARPREFIX( J )//ABRNAMA( I )( 1:L )
+                    OUTUNITS( I,J ) = ARUNITS( J )          
+                    OUTTYPES( I,J ) = ARTYPES( J )           
+                    OUTDESCS( I,J ) = ARDESCS( J )          
+                ENDDO
+
+            CASE( 'MOBILE' )
+
+                OUTUNITS( I,1 ) = MBUNITS( 1 )          
+                OUTTYPES( I,1 ) = MBTYPES( 1 )           
+                OUTDESCS( I,1 ) = MBDESCS( 1 )
+
+            CASE( 'POINT' )
 
                 OUTUNITS( I,1 ) = PTUNITS( 1 )          
                 OUTTYPES( I,1 ) = PTTYPES( 1 )           
@@ -203,26 +221,13 @@ C.........  Build output names
                     OUTDESCS( I,J ) = PTDESCS( J )          
                 ENDDO
 
-            ELSEIF( CATEGORY(1:L2) .EQ. 'AREA' ) THEN
-
-                OUTUNITS( I,1 ) = ARUNITS( 1 )          
-                OUTTYPES( I,1 ) = ARTYPES( 1 )           
-                OUTDESCS( I,1 ) = ARDESCS( 1 )
-         
-                DO J = 2, NARPPOL3
-                    OUTNAMES( I,J ) = ARPREFIX( J )//ABRNAMA( I )( 1:L )
-                    OUTUNITS( I,J ) = ARUNITS( J )          
-                    OUTTYPES( I,J ) = ARTYPES( J )           
-                    OUTDESCS( I,J ) = ARDESCS( J )          
-                ENDDO
-
-            ELSE
+            CASE DEFAULT
                 MESG = 'INTERNAL ERROR: Do not know how to build ' //
      &                 'names for category ' // CATEGORY( 1:L2 )
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
-            ENDIF
+            END SELECT
 
         ENDDO
 
