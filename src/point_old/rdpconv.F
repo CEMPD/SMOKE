@@ -1,31 +1,9 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
  
         SUBROUTINE RDPCONV( KDEV, FIP1, SCC1, FAC1, N1,
      &                      SCC2, FAC2, N2 )
 
 C***********************************************************************
-C  function body starts at line  101
+C  function body starts at line  100
 C
 C  FUNCTION:
 C       Reads the indicated volatile organic conversion file,
@@ -43,6 +21,27 @@ C  REVISION  HISTORY:
 C       prototype 6/96 by MRH
 C	Revised 8/96 by CJC:  calls to M3MESG()
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C************************************************************************
 
       IMPLICIT NONE
 
@@ -141,14 +140,6 @@ C.........  Read volatile pollutants conversion factors file
                     SCCA( I ) = SCC
                     FACA( I ) = FAC
 
-                ELSE
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 )
-     &                  'Max CONVERSION table size', MXSCNV, 
-     &                  'exceeded at line', IREC
-                    CALL M3MESG( MESG )
-
                 END IF
 
             END IF	!  if ios nonzero (read error) or not
@@ -156,6 +147,14 @@ C.........  Read volatile pollutants conversion factors file
             GO TO  77   !  to head of loop
 
 99      CONTINUE        !  end of the KDEV-read loop
+
+        IF ( I .GT. MXSCNV ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG, 94010 )
+     &          'Actual CONVERSION table size:', I,
+     &          'Dimensioned (MXSCNV):', MXSCNV
+            CALL M3MSG2( MESG )
+        END IF          !  if I not in bounds
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'RDPCONV', 0, 0, 
