@@ -104,11 +104,11 @@ C...........   Scratch local variables and their descriptions:
             
         INTEGER         I, J, L, L2  !  indices and string lengths
         INTEGER         IOS      !  I/O status return
-        INTEGER         IDUM     !  integer dummy variable
+        INTEGER      :: IDUM = 0 !  integer dummy variable
         INTEGER         IREC     !  record counter
         INTEGER         LEGAL    !  valid length of string
 
-        REAL*8          RDUM     !  double precision dummy variable
+        REAL*8       :: RDUM = 0 !  double precision dummy variable
         REAL*8          DMISS3   !  double precision missing value
 
         LOGICAL      :: CFLAG = .FALSE.   ! true: time to cycle in loop
