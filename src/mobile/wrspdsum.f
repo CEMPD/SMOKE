@@ -40,13 +40,13 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, IRCLAS, SPEED, VMT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC
 
 C.........  This module is used for MOBILE6 setup information         
-        USE MODMBSET
+        USE MODMBSET, ONLY: NINVC, NREFC, MCREFIDX, MCREFSORT, MVREFSORT
         
         IMPLICIT NONE
 
@@ -290,10 +290,8 @@ C.................  Store source number
 C.................  Convert facility type to road class and store
                 SPDARRAY( N,3 ) = CVTRDTYPE( IRCLAS( K ), LASAFLAG )
 
-C.................  Make sure we need to calculate emission factors for this source; 
-C                   ideally we would check for VMT data, but for now check that 
-C                   speed is not zero
-                IF( SPEED( K ) == 0 ) THEN
+C.................  Make sure we need to calculate emission factors for this source
+                IF( VMT( K ) == 0 ) THEN
                     SPDARRAY( N,2 ) = IMISS3
                     N = N + 1
                     CYCLE
