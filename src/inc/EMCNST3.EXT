@@ -77,14 +77,20 @@ C.........  Time zones
      &                            'PST' / )
 
 C.........  Packet information
-        INTEGER     , PARAMETER :: NPACKET = 6
+        INTEGER     , PARAMETER :: NPACKET = 7
         CHARACTER*20, PARAMETER :: PKTLIST( NPACKET ) = 
      &                          (  / 'CTG                 ',
      &                               'CONTROL             ',
      &                               'ALLOWABLE           ',
      &                               'ADD                 ',
      &                               'REACTIVITY          ',
-     &                               'PROJECTION          '  / )
+     &                               'PROJECTION          ',
+     &                               'EMS_CONTROL         '  / )
+
+        LOGICAL, PARAMETER :: PKTFIXED( NPACKET ) =
+     &                     (  / .FALSE., .FALSE., .FALSE., 
+     &                          .FALSE., .FALSE., .FALSE.,
+     &                          .TRUE. / )
 
 C.........  Variable dimensioning components, independent
 
