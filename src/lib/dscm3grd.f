@@ -44,7 +44,7 @@ C***************************************************************************
 
         IMPLICIT NONE
         
-        INCLUDE 'EMCNST3.EXT'               
+        INCLUDE 'IOCNST3.EXT'               
         INCLUDE 'PARMS3.EXT'               
         
 C...........   ARGUMENTS and their descriptions.  All are output variables:
@@ -312,10 +312,10 @@ C.........  Check length of character variables that matter
         LEGAL = LEN( GNAME )
         IF ( L .GT. LEGAL ) THEN
  
-            WRITE( MESG,94010 ) 'Grid name "', BUFFER( 1:L ), 
-     &             '" Has maximum allowable length of', LEGAL, '.' //
+            WRITE( MESG,94010 ) 'Grid name "' // BUFFER( 1:L ) //
+     &             '" has maximum allowable length of', LEGAL, '.' //
      &             CRLF() // BLANK10 // 'Truncating to "' // 
-     &             BUFFER( 1:LEGAL ) // '"'
+     &             BUFFER( 1:LEGAL ) // '".'
             CALL M3WARN( PROGNAME, 0, 0, MESG )
 
         END IF
