@@ -40,10 +40,10 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: IFIP, IRCLAS, SPEED, VMT
+        USE MODSOURC, ONLY: CSOURC, IFIP, IRCLAS, SPEED, VMT
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC
+        USE MODINFO, ONLY: NSRC, NCHARS
 
 C.........  This module is used for MOBILE6 setup information         
         USE MODMBSET, ONLY: NINVC, NREFC, MCREFIDX, MCREFSORT, MVREFSORT
@@ -54,6 +54,7 @@ C.........  This module is for cross reference tables
         IMPLICIT NONE
 
 C.........  INCLUDES:
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
@@ -277,10 +278,15 @@ C.............  Subprogram arguments
             LOGICAL, INTENT (IN)  :: LASAFLAG             ! true: treat local roads as arterial
             
 C.............  Local subprogram variables
-            INTEGER :: K, N                ! counters and indices
+            INTEGER :: K, L2, N                ! counters and indices
+
+            LOGICAL              EFLAG         ! true: an error has occurred
+
+            CHARACTER(LEN=100)   BUFFER        ! message buffer
 
 C.............................................................................
             
+            EFLAG = .FALSE.
             N = STPOS
 
 C.............  Loop through sources and store information                
@@ -305,13 +311,21 @@ C.................  If current source is not a local road, then store speed info
                 IF( SPDARRAY( N,3 ) /= M6LOCAL ) THEN
 
 C.....................  Store speed from inventory
-C                       Rounding of speeds could be added here       
-                    SPDARRAY( N,2 ) = SPEED( K )
-
-C.....................  If current source uses a speed profile, store the negative ID
-                    IF( SPDFLAG ) THEN
+C                       Rounding of speeds could be added here
+                    IF( .NOT. SPDFLAG ) THEN
+                        SPDARRAY( N,2 ) = SPEED( K )
+                    ELSE
+C.........................  If current source uses a speed profile, store the negative ID
                         IF( SPDPROFID( K ) > 0 ) THEN
                             SPDARRAY( N,2 ) = -SPDPROFID( K )
+                        ELSE
+                            EFLAG = .TRUE.
+                            CALL FMTCSRC( CSOURC( K ), NCHARS, 
+     &                                    BUFFER, L2 )
+                            MESG = 'ERROR: No speed data found for ' //
+     &                             'source:' // CRLF() // BLANK5 //
+     &                             BUFFER( 1:L2 )
+                            CALL M3MESG( MESG )
                         END IF
                     END IF
                     
@@ -320,6 +334,12 @@ C.....................  If current source uses a speed profile, store the negati
                 N = N + 1
 
             END DO
+     
+C.............  Check for errors
+            IF( EFLAG ) THEN
+                MESG = 'Missing speed data for one or more sources'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
      
             END SUBROUTINE STORE_SOURCE_INFO
 
