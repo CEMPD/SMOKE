@@ -80,6 +80,10 @@ C
 C
       INTEGER  RC, ITALD, ICTECH, INERR, IAGE1, ISTR, ITECH, IMSKIP, 
      *ISMART, IBY, IOS 
+
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
       RC = 0 
 C 
@@ -103,9 +107,13 @@ C     the variable TNAME. Otherwise, we can use TNAME to hold the standard
 C     credit file name 'TECH12.D.' 
 C 
       IF(IFILET.EQ.1) TNAME='TECH12.D' 
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+
+      M6FILE = TRIM( M6DIR ) // '/' // TNAME
+      TNAME = M6FILE
       
-      IOUIMD = JUNIT()
-            
+      IOUIMD = JUNIT()            
       OPEN(IOUIMD,FILE=TNAME,STATUS='OLD',ACTION='READ', 
      * IOSTAT=IOS,ERR=96) 
 C 

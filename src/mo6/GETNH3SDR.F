@@ -77,7 +77,10 @@ C
       INTEGER       SECTION 
       LOGICAL,SAVE::RDFLG=.FALSE. 
       REAL          DUMMY(3) 
-       
+      
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE           
 C 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
@@ -100,9 +103,13 @@ C
 C 
 C     Open the external data file PMNH3SDR.D. 
 C 
-      IOUALT = JUNIT()
 
-      OPEN(IOUALT,FILE='PMNH3SDR.D',STATUS='OLD',ACTION='READ', 
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/PMNH3SDR.D'
+
+      IOUALT = JUNIT()
+      OPEN(IOUALT,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,120)  
   120 FORMAT(/'* Reading Ammonia (NH3) Sulfur Deterioration Rates '/ 

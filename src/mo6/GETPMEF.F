@@ -46,9 +46,17 @@ C
       CHARACTER*80   FILENAME 
       INTEGER        PTR1 
       INTEGER        PTR2 
+
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
 C ..................................................................... 
 C 
+
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+
 C    Initially set PRTCHK for PARTICULATE EF to abort in routine PMCALX. 
 C 
       PRTCHK(3) = 1 
@@ -64,6 +72,9 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Process this filename via GETPMGZML. 
 C 
+      M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
+      FILENAME = M6FILE
+      
       CALL GETPMGZML(TRIM(FILENAME),INERR,RC) 
 C 
 C     If any error occurs, abort 
@@ -78,6 +89,9 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Process this filename via GETPMGDR1. 
 C 
+      M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
+      FILENAME = M6FILE
+      
       CALL GETPMGDR1(TRIM(FILENAME),INERR,RC) 
 C 
 C     If any error occurs, abort 
@@ -92,6 +106,9 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Process this filename via GETPMGDR2. 
 C 
+      M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
+      FILENAME = M6FILE
+      
       CALL GETPMGDR2(TRIM(FILENAME),INERR,RC) 
 C 
 C     If any error occurs, abort 
@@ -106,6 +123,9 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Process this filename via GETPMDZML. 
 C 
+      M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
+      FILENAME = M6FILE
+      
       CALL GETPMDZML(TRIM(FILENAME),INERR,RC) 
 C 
 C     If any error occurs, abort 
@@ -120,6 +140,9 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Process this filename via GETDPMDDR1. 
 C 
+      M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
+      FILENAME = M6FILE
+      
       CALL GETPMDDR1(TRIM(FILENAME),INERR,RC) 
 C 
 C     If any error occurs, abort 
@@ -134,6 +157,9 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Process this filename via GETPMDDR2. 
 C 
+      M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
+      FILENAME = M6FILE
+      
       CALL GETPMDDR2(TRIM(FILENAME),INERR,RC) 
 C 
 C     If any error occurs, abort 

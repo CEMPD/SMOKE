@@ -62,6 +62,10 @@ C
       INTEGER IMY, IP,IAGE,IBLK,ITEST,IT,INERR 
       REAL  ASMCRD(7,3,18,25) 
       CHARACTER*1  JUNK 
+
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
@@ -70,9 +74,12 @@ C
 C 
 C     Open the external data file. 
 C 
-      IOUIMD = JUNIT()
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/ASMDATA.D'
       
-      OPEN(IOUIMD, FILE='ASMDATA.D', STATUS='OLD',ACTION='READ', 
+      IOUIMD = JUNIT()      
+      OPEN(IOUIMD, FILE=M6FILE, STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC, ERR=97) 
 C 
       WRITE(IOUREP,120) 
