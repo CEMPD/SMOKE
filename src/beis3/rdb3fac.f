@@ -43,7 +43,14 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     !
-        INCLUDE 'B3DIMS3.EXT'    ! biogenic parameters
+        INCLUDE 'B3V1DIMS3.EXT'    ! biogenic parameters
+
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+ 
+        INTEGER         STR2INT
+        REAL            STR2REAL
+
+        EXTERNAL        STR2INT, STR2REAL
 
 C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 
@@ -58,23 +65,29 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
         REAL, INTENT (OUT)           :: FACS( NLINES, NSEF ) ! emis facs
  
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
+        INTEGER      :: MXSEG = NSEF + 4   ! # of potential line segments
+
         INTEGER       I, J               !  counters
         INTEGER       ISTAT              !  iostat error
 
+        CHARACTER*20, ALLOCATABLE :: SEGMENT( : )   ! Segments of parsed lines
         CHARACTER*300   MESG             !  message buffer
+        CHARACTER*200   LINE             !  buffer for variables
 
         CHARACTER*16 :: PROGNAME = 'RDB3FAC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDB3FAC
 
-C.......... Read in emissions factors for each veg id
+ 
+        ALLOCATE( SEGMENT( MXSEG ), STAT=ISTAT )
+        CALL CHECKMEM( ISTAT, 'SEGMENT', PROGNAME )
 
+C.......... Read in emissions factors for each veg id
+     
         DO I = 1, NLINES
 
-          READ( FDEV, 93010, IOSTAT=ISTAT )
-     &          VGID( I ), LINDX( I ), LFAC( I ), WNTF( I ),
-     &          LWGT( I ) , ( FACS( I, J ) , J = 1, NSEF )   
+          READ( FDEV, 93010, IOSTAT=ISTAT ) VGID( I ) , LINE
 
           IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
@@ -84,6 +97,20 @@ C.......... Read in emissions factors for each veg id
                CALL M3MESG( MESG )
           END IF
 
+C.............  Separate the line of data into each part
+          CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+          LINDX( I ) = STR2INT ( SEGMENT ( 1 ) )  
+          LFAC ( I ) = STR2REAL( SEGMENT ( 2 ) )
+          WNTF ( I ) = STR2REAL( SEGMENT ( 3 ) )
+          LWGT ( I ) = STR2REAL( SEGMENT ( 4 ) )
+
+          DO J = 1, NSEF
+ 
+            FACS( I , J ) = STR2REAL( SEGMENT ( J + 4 )  ) 
+ 
+          ENDDO
+ 
         ENDDO
 
         IF( EFLAG ) THEN
@@ -97,7 +124,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93010   FORMAT( 8X, A16, 8x, I1, F8.0, F8.1, 5F8.0 )
+93010   FORMAT( A16, A )
 
 C...........   Internal buffering formats............ 94xxx
 
