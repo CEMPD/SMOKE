@@ -24,7 +24,7 @@ C ****************************************************************************/
         PROGRAM SPCPMAT
 
 C***********************************************************************
-C  program body starts at line 244
+C  program body starts at line 243
 C
 C  DESCRIPTION:
 C       Construct point source chemical speciation matrix from data 
@@ -50,7 +50,7 @@ C***********************************************************************
       IMPLICIT NONE
 
 C...........   INCLUDES:
-        
+
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
@@ -59,7 +59,7 @@ C...........   INCLUDES:
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
         INTEGER         FIND1, FIND2, FIND3, FIND4
         LOGICAL         GETYN
         INTEGER         GETMENU 
@@ -70,7 +70,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
-        
+
         EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETYN, GETMENU, 
      &                  LBLANK, PROMPTFFILE, PROMPTMFILE, RDSPROF,
      &                  STR2INT, STR2REAL, TRIMLEN
@@ -80,7 +80,7 @@ C...........   PARAMETERS and their descriptions:
 
         REAL        TON2GM
         PARAMETER ( TON2GM = 907184.74 )
-        
+
 C...........   LOCAL VARIABLES and their descriptions:
 
         INTEGER     FIP ! state/county ID
@@ -90,15 +90,14 @@ C...........   LOCAL VARIABLES and their descriptions:
 
         INTEGER     XID ! stack ID
         INTEGER     LID ! last ID read
-                                 
+
 C...........   Speciation profiles table
-        
+
         REAL        VREACT
         REAL        ETHADJ
         REAL        FRMADJ
         REAL        ALLADJ
-        REAL        VOLADJ   ! volatile conversion factor (e.g. ROG to TOG)
-       
+
         INTEGER     NPROFS                      !  actual number of profiles
         INTEGER     SXREF( MXSPRO )             !  profile indexes (sorted)
         REAL        SCOEF( MXSPRO, NMPOL )      ! profile coefficients
@@ -200,18 +199,18 @@ C........ Second part depends on scc only
         REAL        CONVV2( MXSCNV )  !  conversion factor
 
 C.......   Speciation matrix:
-        
+
         REAL        SPCFACS( NPSRC, NMPOL )    !  speciation coefficients
 
 C...........   Area Sources Table
-        
+
         INTEGER      IFIP( NPSRC )  !  source FIPS (county) ID
         INTEGER      ISCC( NPSRC )  !  source SCC
         INTEGER      IPLT( NPSRC )  !  source plant ID
         INTEGER      ISTK( NPSRC )  !  source stack ID
 
 C...........   Other local variables
-        
+
         INTEGER         S, F, I, J, V       !  loop counters.
         INTEGER         CHOICE              !  Choice from menu call
         INTEGER         CDEV                !  for actual-SCC file
@@ -219,7 +218,7 @@ C...........   Other local variables
         INTEGER         SDEV                !  for surrogate coeff file
         INTEGER         XDEV                !  for surrogate xref  file
         INTEGER         LDEV                !  log-device
-        
+
         INTEGER         IOS                 !  I/O status
         INTEGER         IREC                !  input line (record) number
         INTEGER         I1, I2, I3, I4, I5  !  for counting XREFs
@@ -233,16 +232,16 @@ C...........   Other local variables
         CHARACTER*16    MNAME   !  logical name for spec matrix output file
         CHARACTER*256   MESG    !  message buffer for M3MESG(), M3EXIT()
         CHARACTER*80    LINE    !  input line from XREF file
-        
+
         LOGICAL         EFLAG   !  error flag
         LOGICAL         KFLAG   !  if volatile format conversion factor or not
 
 
 C***********************************************************************
 C   begin body of program SPCPMAT
-        
+
         LDEV = INIT3()
-        
+
         WRITE( *,92000 ) 
      &  ' ',
      &  'Program SPCPMAT to take the netCDF POINT SOURCES file, the',
@@ -258,7 +257,7 @@ C   begin body of program SPCPMAT
      &  'You may use END_OF-FILE (control-D) to quit the program',
      &  'during logical-name entry. ',
      &  ' '
-        
+
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'SPCPMAT', 0, 0, 'Ending program SPCPMAT', 2 )
         END IF
@@ -267,23 +266,23 @@ C   begin body of program SPCPMAT
 C.......   Get file name; open input point sources file
 
         PNAME = PROMPTMFILE( 
-     &          'Enter logical name for POINT SOURCE input file >> ',
+     &          'Enter logical name for POINT SOURCE input file',
      &          FSREAD3, 'PNTS', 'SPCPMAT' )
 
         CDEV = PROMPTFFILE( 
-     &           'Enter logical name for ACTUAL SCC file >> ',
+     &           'Enter logical name for ACTUAL SCC file',
      &           .TRUE., .TRUE., 'PSCC', 'SPCPMAT' )
 
         XDEV = PROMPTFFILE( 
-     &           'Enter logical name for SPECIATION XREF file >> ',
+     &           'Enter logical name for SPECIATION XREF file',
      &           .TRUE., .TRUE., 'PSREF', 'SPCPMAT' )
 
         SDEV = PROMPTFFILE( 
-     &           'Enter logical name for SPECIATION PROFILES file >> ',
+     &           'Enter logical name for SPECIATION PROFILES file',
      &           .TRUE., .TRUE., 'PSPRO', 'SPCPMAT' )
 
 C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
-        
+
         IF ( .NOT. READ3( PNAME, 'IFIP', ALLAYS3, 0, 0, IFIP ) ) THEN
             CALL M3EXIT( 'SPCPMAT', 0, 0, 
      &                   'Error reading IFIP from file' // PNAME, 2 )
@@ -383,34 +382,31 @@ C.......   volatile pollutant in inventory.  If not the same, prompt for
 C.......   a conversion file.
 
 C.......   Prompt for which inventory pollutant is volatile
-        
+C.......   If needed, read the volatile pollutant conversion file
+
         CHOICE = GETMENU( NIPOL, 1, 
      &                    'Which inventory pollutant is volatile?',
      &                    EINAM )
 
-        POLV = EINAM( CHOICE )
+        POLV  = EINAM( CHOICE )
+        KFLAG = ( INVPRO .NE. POLV )
 
-        IF( INVPRO .NE. POLV ) THEN
+        IF( KFLAG ) THEN
 
             MESG = 'Enter logical name for ' //
      &              POLV ( 1:TRIMLEN( POLV ) ) // ' TO ' //
      &              INVPRO ( 1:TRIMLEN( INVPRO ) ) // 
-     &             ' CONVERSION file >> '
+     &             ' CONVERSION file'
             KDEV = PROMPTFFILE( 
      &             MESG, .TRUE., .TRUE., 'PSCNV', 'SPCPMAT' )
 
             KFLAG = .TRUE.
-             
-        ENDIF
-
-C.......   If needed, read the volatile pollutant conversion file
-
-        IF( KFLAG ) THEN
 
             CALL RDCONV( KDEV, FIPSV1, SCCSV1, CONVV1, NCNV1,
      &                   SCCSV2, CONVV2, NCNV2 )
 
-        ENDIF
+        END IF		!  if invpro not polv
+
 
 C.......   Read the speciation cross-reference file
 
@@ -434,12 +430,13 @@ C.......   Read the speciation cross-reference file
      &              'reading SPECIATION XREF file at line', IREC
                 CALL M3MESG( MESG )
 
-            ENDIF
+            END IF
 
             LS = LBLANK ( LINE( 17:26 ) )   ! Number of leading spaces
             EC = TRIMLEN( LINE( 17:26 ) )   ! Size without ending blanks
 
 C............. Convert character SCC field to integer SCC number
+
             IF( LS .EQ. 0 .AND. EC .EQ. 10 ) THEN  ! Area x-ref entry
                 GO TO 77
 
@@ -449,7 +446,7 @@ C............. Convert character SCC field to integer SCC number
             ELSE
                 SCC = STR2INT( LINE( 17:26 ) )
 
-            ENDIF
+            END IF
 
 
             IF( SCC .GT. 0 ) THEN
@@ -458,7 +455,7 @@ C............. Convert character SCC field to integer SCC number
             ELSE
                 J = 1                           ! Default SCC
 
-            ENDIF
+            END IF
 
             IF ( J .LE. 0 ) THEN  ! SCC code not found in SCC LIST file
                 GO TO  77
@@ -596,7 +593,7 @@ C.........  Sort and process the speciation cross-reference file
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I1
             CALL M3MESG( MESG )
-        ENDIF
+        END IF
         IF ( I2 .GT. NSREF ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )  
@@ -638,15 +635,15 @@ C.........  Sort and process the speciation cross-reference file
         NREF5 = I5
 
 C.......   Read in description of point-source file
-        
+
         IF ( .NOT. DESC3( PNAME ) ) THEN
             MESG = 'Could not get description of file ' // PNAME
             CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
 
         END IF
-        
+
 C.......   Open speciation matrix file:  reuse much of point file description
-        
+
         NVARS3D = NMPOL
         FTYPE3D = GRDDED3
         DO  11  V = 1, NMPOL
@@ -671,7 +668,7 @@ C.......   Open speciation matrix file:  reuse much of point file description
 45      CONTINUE
 
         MNAME = PROMPTMFILE( 
-     &    'Enter logical name for SPECIATION MATRIX output file >> ',
+     &    'Enter logical name for SPECIATION MATRIX output file',
      &          FSUNKN3, 'PSMAT', 'SPCPMAT' )
 
 
@@ -689,7 +686,7 @@ C...........       else by SCC only.
 
         EFLAG = .FALSE.
         DO  144  S = 1, NPSRC
-                
+
             FIP = IFIP( S )
             SCC = ISCC( S )
             PID = IPLT( S )
@@ -710,55 +707,55 @@ C...........       else by SCC only.
 
                 F = FIND3( FIP, SCC, PID,
      &                     NREF2, FIPSF2, SCCSF2, PLANT2 )
-                   
+
                 IF ( F .GT. 0 ) THEN
-                   
+
                     XID    = SPXRF2( F )
                     ETHADJ = ETHAD2( F )
                     FRMADJ = FRMAD2( F )
                     ALLADJ = ALLAD2( F )
                     VREACT = VREAC2( F )
-                   
+
                 ELSE            !  no plant,fip,scc match
-                     
+
                     F = FIND2( FIP, SCC, 
      &                         NREF3, FIPSF3, SCCSF3 )
-                       
+
                     IF ( F .GT. 0 ) THEN
-                       
+
                         XID    = SPXRF3( F )
                         ETHADJ = ETHAD3( F )
                         FRMADJ = FRMAD3( F )
                         ALLADJ = ALLAD3( F )
                         VREACT = VREAC3( F )
-                       
+
                     ELSE        !  no state+county,scc match
-                         
+
                         F = FIND2( (FIP/1000)*1000, SCC, 
      &                             NREF4, FIPSF4, SCCSF4 )
-                           
+
                         IF ( F .GT. 0 ) THEN
-                           
+
                             XID    = SPXRF4( F )
                             ETHADJ = ETHAD4( F )
                             FRMADJ = FRMAD4( F )
                             ALLADJ = ALLAD4( F )
                             VREACT = VREAC4( F )
-                           
+
                         ELSE    !  no state,scc match
-                             
+
                             F = FIND1( SCC, NREF5, SCCSF5 )
-                               
+
                             IF ( F .GT. 0 ) THEN
-                               
+
                                 XID    = SPXRF5( F )
                                 ETHADJ = ETHAD5( F )
                                 FRMADJ = FRMAD5( F )
                                 ALLADJ = ALLAD5( F )
                                 VREACT = VREAC5( F )
-                               
+
                             ELSE        !  no scc match:  WARNING
-                                
+
                                 WRITE( MESG,94010 )
      &                              'No XREF for FIP', FIP,
      &                              'SCC', SCC, 'plant', PID,
@@ -774,62 +771,24 @@ C...........       else by SCC only.
                                 FRMADJ = 0.0
                                 ALLADJ = 1.0
                                 VREACT = 1.0
-                                 
+
                             END IF      !  if find4:fip,scc,pid,scc succeeded or not
-                               
+
                         END IF      !  if find4:fip,scc,pid,scc succeeded or not
-                           
+
                     END IF      !  if find4:fip,scc,pid,scc succeeded or not
-                       
+
                 END IF      !  if find4:fip,scc,pid,scc succeeded or not
-                   
+
             END IF      !  if find4:fip,scc,pid,scc succeeded or not
 
-C...........   Finding the the correct volatile conversion factor is a
-C...........       Two stage process:
-C...........       by      FIP(state),SCC
-C...........       by      SCC only
-
-            VOLADJ = 1.0     ! Initialize volatile conversion factor
-    
-            IF( KFLAG ) THEN
-
-                F = FIND2( (FIP/1000)*1000, SCC, NCNV1, 
-     &                     FIPSV1, SCCSV1 )
-
-                IF ( F .GT. 0 ) THEN
-
-                    VOLADJ = CONVV1( F )
-
-                ELSE                      ! no state,scc match
-
-                    F = FIND1( SCC, NCNV2, SCCSV2 )
-
-                    IF ( F .GT. 0 ) THEN
-
-                        VOLADJ = CONVV2( F )
-
-                    ELSE                  !  no scc match:  WARNING
-
-                        WRITE( MESG,94010 )
-     &                   'Default ' // POLV( 1:TRIMLEN( POLV ) ) // 
-     &                   ' TO ' // INVPRO ( 1:TRIMLEN( INVPRO ) ) // 
-     &                  ' of 1.0 used for FIP= ', FIP, 'SCC=', SCC
-                        CALL M3MESG( MESG )
-
-                        CALL M3MESG( MESG )
-
-                    ENDIF  ! scc only match or not
-                ENDIF      ! state and scc match or not
-            ENDIF          ! KFLAG is true
-
 C...........   Now use this cross-reference index to compute this source's
-C...........   entries in the speciation matrix
+C...........   speciation profile:
 
             I   = FIND1( XID, NPROFS, SXREF )
 
             IF ( I .LE. 0 ) THEN   !  error:  XREF index not found
-           
+
                 WRITE( MESG,94010 ) 
      &              'Profile', XID, 
      &              'not found for FIP', FIP,
@@ -852,28 +811,70 @@ C...........   entries in the speciation matrix
                 END IF  !  if i<0
             END IF      !  if i<0
 
+C...........   Processing for INORGANICS:
+
             FAC = TON2GM * ALLADJ
+
             SPCFACS( S, 1 ) = FAC * COFAC     ! 1/molwt for CO
             SPCFACS( S, 2 ) = FAC * NOFAC     ! 90% of 1/molwt for NO2
             SPCFACS( S, 3 ) = FAC * NO2FAC    ! 10% of 1/molwt for NO2
 
-            !  if TCH supported:  use FAC = FAC * VREACT here
+C...........   Processing for ORGANICS:
+C...........   If KFLAG, find the the correct volatile conversion factor --
+C...........   a two stage process:
+C...........       either by      FIP(state),SCC
+C...........       else   by      SCC only
+C...........   Then multiply the conversion mass/molecular-wt. factor FAC 
+C...........   by this volatile conversion factor
+
+            IF( KFLAG ) THEN
+
+                SID = ( FIP / 1000 ) * 1000
+                F   = FIND2( SID, SCC, NCNV1, FIPSV1, SCCSV1 )
+
+                IF ( F .GT. 0 ) THEN
+
+                    FAC = FAC * CONVV1( F )
+
+                ELSE                      ! no state,scc match
+
+                    F = FIND1( SCC, NCNV2, SCCSV2 )
+
+                    IF ( F .GT. 0 ) THEN
+
+                        FAC = FAC * CONVV2( F )
+
+                    ELSE                  !  no scc match:  WARNING
+
+                        WRITE( MESG,94010 )
+     &                   'Default ' // POLV( 1:TRIMLEN( POLV ) ) // 
+     &                   ' TO ' // INVPRO ( 1:TRIMLEN( INVPRO ) ) // 
+     &                  ' of 1.0 used for FIP= ', FIP, 'SCC=', SCC
+
+                        CALL M3MESG( MESG )
+
+                    END IF  ! scc only match or not
+
+                END IF      ! state and scc match or not
+
+            END IF          ! KFLAG is true
+
             DO  143  V = 4, NMPOL
-                SPCFACS( S,V ) = FAC * VOLADJ * SCOEF( I,V )
+                SPCFACS( S,V ) = FAC * SCOEF( I,V )
 143         CONTINUE
 
             SPCFACS( S, 8 ) = FRMADJ * SPCFACS( S, 8 )
             SPCFACS( S,10 ) = ETHADJ * SPCFACS( S,10 )
-           
+
 144     CONTINUE        ! end loop on point sources, computing speciation matrix
 
         IF ( EFLAG ) THEN
             MESG = 'Error computing SPECIATION MATRIX'
             CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
         END IF
-        
+
 C.......   Write out the speciation matrix:
-        
+
         WRITE( *,92000 ) ' ', 'Writing out SPECIATION MATRIX...', ' '
 
         IF ( .NOT. WRITE3( MNAME, 'ALL', 0, 0, SPCFACS ) ) THEN
@@ -884,7 +885,7 @@ C.......   Write out the speciation matrix:
 
 
 999   CONTINUE          !  spcamat completed:  exit program
-     
+
       MESG = 'Normal completion of SPCPMAT' 
       CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 0 )
 
