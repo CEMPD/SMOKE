@@ -42,18 +42,34 @@ endif
 
 ### Ensure new controller variables are set
 if ( $?RUN_PART1 ) then
+   if ( $RUN_PART1 == Y || $RUN_PART1 == y ) then
+      setenv RUN_PART1 Y
+      echo 'Running part 1...'
+   endif
 else
    setenv RUN_PART1 Y 
 endif
 if ( $?RUN_PART2 ) then
+   if ( $RUN_PART2 == Y || $RUN_PART2 == y ) then
+      setenv RUN_PART2 Y
+      echo 'Running part 2, for $ESDATE ...'
+   endif
 else
    setenv RUN_PART2 Y 
 endif
 if ( $?RUN_PART3 ) then
+   if ( $RUN_PART3 == Y || $RUN_PART3 == y ) then
+      setenv RUN_PART3 Y
+      echo 'Running part 3 ...'
+   endif
 else
    setenv RUN_PART3 Y 
 endif
 if ( $?RUN_PART4 ) then
+   if ( $RUN_PART4 == Y || $RUN_PART4 == y ) then
+      setenv RUN_PART4 Y
+      echo 'Running part 4, for $ESDATE...'
+   endif
 else
    setenv RUN_PART4 Y 
 endif
@@ -522,8 +538,8 @@ endif
 set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/elevpoint.$SRCABBR.$INVEN.log
-if ( $?RUN_ELEVPOINT &&  ) then
-   if ( $RUN_ELEVPOINT == 'Y' && $RUN_PART3 == Y ) then      
+if ( $?RUN_ELEVPOINT ) then
+   if ( $RUN_ELEVPOINT == Y && $RUN_PART3 == Y ) then      
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.csh
@@ -532,7 +548,7 @@ if ( $?RUN_ELEVPOINT &&  ) then
       # Create PTMPLIST file, in case it is needed.
       if ( -e $PTMP ) then
          setenv PTMPLIST $INVDIR/other/ptmplist.txt
-         ls $SCENARIO/ptmp*$PSCEN*ncf > $PTMPLIST
+         ls $SMKDAT/run_$PSCEN/*/ptmp*$PSCEN*ncf > $PTMPLIST
       endif
 
       if ( $exitstat == 0 ) then         # Run program

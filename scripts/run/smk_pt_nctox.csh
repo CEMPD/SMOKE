@@ -26,12 +26,12 @@ setenv RUN_SMKINVEN  Y        #  run inventory import program
 setenv RUN_SPCMAT    Y        #  run speciation matrix program
 setenv RUN_GRDMAT    Y        #  run gridding matrix program
 setenv RUN_CNTLMAT   N        #  run control matrix program
-setenv RUN_ELEVPOINT N        #  run elevated/PinG sources selection program
 
 ## time-dependent programs
-setenv RUN_LAYPOINT  N        #  run layer fractions program
-setenv RUN_TEMPORAL  N        #  run temporal allocation program
-setenv RUN_SMKMERGE  N        #  run merge program
+setenv RUN_TEMPORAL  Y        #  run temporal allocation program
+setenv RUN_ELEVPOINT Y        #  run elevated/PinG sources selection program
+setenv RUN_LAYPOINT  Y        #  run layer fractions program
+setenv RUN_SMKMERGE  Y        #  run merge program
 setenv RUN_SMK2EMIS  N        #  run conversion of 2-d to UAM binary
 
 ## quality assurance
@@ -137,8 +137,8 @@ setenv RUN_PART4 N    # Laypoint, Smkmerge, Smk2emis
 
 ## Run Smkinven, Spcmat, Grdmat, Cntlmat, if needed
 #
-source $ASSIGNS_FILE   # Invoke Assigns file
 setenv RUN_PART1 Y
+source $ASSIGNS_FILE   # Invoke Assigns file
 source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 1
 setenv RUN_PART1 N
@@ -146,40 +146,41 @@ setenv RUN_PART1 N
 ## Loop through days to run Temporal
 #
 setenv RUN_PART2 Y
-set day = 0
 set cnt = 0
+set g_stdate_sav = $G_STDATE
 while ( $cnt < $EPI_NDAY )
 
    @ cnt = $cnt + $NDAYS
-   setenv DAY_COUNT $cnt
-   @ day = $EPI_STDATE + $cnt
-   setenv G_STDATE  $day
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
    source smk_run.csh     # Run programs
    source qa_run.csh      # Run QA for part 2
 
+   setenv G_STDATE_ADVANCE $NDAYS
+
 end
 setenv RUN_PART2 N
+unsetenv G_STDATE_ADVANCE
 
 ## Run Elevpoint
 #
 setenv RUN_PART3 Y
+setenv G_STDATE  $g_stdate_sav
+setenv ESDATE `$IOAPIDIR/datshift $G_STDATE 0`
+source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
 source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 3
-setenv RUN_PART3 Y
+setenv RUN_PART3 N
 
 ## Loop through dats to run Laypoint and Smkmerge
 setenv RUN_PART4 Y
-set day = 0
 set cnt = 0
 while ( $cnt < $EPI_NDAY )
 
    @ cnt = $cnt + $NDAYS
-   setenv DAY_COUNT $cnt
-   @ day = $EPI_STDATE + $cnt
-   setenv G_STDATE  $day
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
    source smk_run.csh     # Run programs
+
+   setenv G_STDATE_ADVANCE $NDAYS
 
 end
 setenv RUN_PART4 N
@@ -187,5 +188,5 @@ setenv RUN_PART4 N
 #
 ## Ending of script
 #
-exit( $status )
+exit( $outstat )
 
