@@ -465,10 +465,9 @@ C.................  If DOE plant ID not present but has been requested, then
 C                   internal err
                 IF( .NOT. ORSIN .AND. ORSFLAG ) THEN
 
-                    MESG = 'INTERNAL ERROR: ORIS ID requested, but ' //
+                    MESG = 'WARNING: ORIS ID requested, but ' //
      &                     'is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
-                    EFLAG = .TRUE.
 
                 END IF
 
@@ -476,10 +475,9 @@ C.................  If boiler not present but has been requested, then
 C                   internal err
                 IF( .NOT. BLRIN .AND. BLRFLAG ) THEN
 
-                    MESG = 'INTERNAL ERROR: Boiler requested, but ' //
+                    MESG = 'WARNING: Boiler requested, but ' //
      &                     'is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
-                    EFLAG = .TRUE.
 
                 END IF
 
@@ -489,29 +487,35 @@ C                   internal err
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 END IF
+                
+                CORS = ' '
+                CBLR  = ' '
+                CPDS  = ' '
 
                 DO S = 1, NSRC
 
 C.....................  Initialize temporary characteristics
                     CHARS = ' '  ! array
-                    CBLR  = ' '
-                    CPDS  = ' '
 
 C.....................  Read in line of character data
 
-                    IF( BLRIN .AND. PDSIN ) THEN
+                    IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CPDS
 
-                    ELSE IF( PDSIN ) THEN
+                    ELSE IF( ORSIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS
 
-                    ELSE IF( BLRIN ) THEN
+                    ELSE IF( ORSIN .AND. BLRIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
+     
+                    ELSE IF( PDSIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS      
 
-                    ELSE
+                    ELSE 
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS
 
