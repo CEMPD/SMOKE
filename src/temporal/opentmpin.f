@@ -1,6 +1,6 @@
 
-        SUBROUTINE OPENTMPIN( MODELNAM, ENAME, ANAME, DNAME, HNAME, 
-     &                        FNAME, NNAME, MNAME, GNAME, WNAME,
+        SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, ENAME, ANAME, DNAME, 
+     &                        HNAME, FNAME, NNAME, MNAME, GNAME, WNAME,
      &                        TVARNAME, SDEV, XDEV, RDEV, UDEV, FDEV,
      &                        TDEV, MDEV )
 
@@ -73,6 +73,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: MODELNAM ! name for EF model
+        LOGICAL     , INTENT    (IN) :: UFLAG    ! use uniform temporal profile
         CHARACTER(*), INTENT(IN OUT) :: ENAME ! name for I/O API inven input
         CHARACTER(*), INTENT(IN OUT) :: ANAME ! name for ASCII inven input 
         CHARACTER(*), INTENT   (OUT) :: DNAME ! day-spec file
@@ -142,13 +143,15 @@ C.........  Prompt for and open input I/O API and ASCII files
      &          'Enter logical name for HOUR-SPECIFIC file',
      &          FSREAD3, CRL // 'HOUR', PROGNAME )
 
-        XDEV = PROMPTFFILE( 
-     &           'Enter logical name for TEMPORAL XREF file',
+        IF( .NOT. UFLAG ) THEN
+            XDEV = PROMPTFFILE( 
+     &           'Enter logical name for TEMPORAL CROSS-REFERENCE file',
      &           .TRUE., .TRUE., CRL // 'TREF', PROGNAME )
 
-        RDEV = PROMPTFFILE( 
+            RDEV = PROMPTFFILE( 
      &           'Enter logical name for TEMPORAL PROFILES file',
      &           .TRUE., .TRUE., CRL // 'TPRO', PROGNAME )
+        END IF
 
 C.........  Get source category information from the inventory files
 C.........  Get header description of inventory file
@@ -377,6 +380,8 @@ C----------------------------------------------------------------------------
 C.............  This subroutine compares the minimum/maximum temperatures
 C               and sets an error flag
             SUBROUTINE COMPARE_TMPRS( CHECKTYP )
+
+            INCLUDE 'FLTERR.EXT'    ! error filter statement function
 
             CHARACTER(*), INTENT( IN ) :: CHECKTYP
 
