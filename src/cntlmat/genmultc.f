@@ -60,9 +60,10 @@ C...........   INCLUDES
         INCLUDE 'FLTERR.EXT'    !  functions for comparing two numbers
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER         GETEFILE
+        LOGICAL   ENVYN
+        INTEGER   GETEFILE
 
-        EXTERNAL   GETEFILE
+        EXTERNAL  ENVYN, GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS
 
