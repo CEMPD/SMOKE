@@ -82,8 +82,10 @@ C.........  Otherwise, we need to create the file
             RETURN
         END IF
 
+C.........  Write header line to file
         WRITE( SDEV, 93000 ) 'SPEED VMT'
         
+C.........  Write arrays to file
         DO I = 1, 24
             WRITE( SDEV, 93010 ) FREEWAY, I, FREEPROF
         END DO
@@ -91,7 +93,8 @@ C.........  Otherwise, we need to create the file
         DO I = 1, 24
             WRITE( SDEV, 93010 ) ARTERIAL, I, ARTPROF
         END DO
-        
+
+C.........  Close the file        
         CLOSE( SDEV )
 
         RETURN
