@@ -183,6 +183,7 @@ C...........   Other local variables
         INTEGER         TSTEP               ! output time step
         INTEGER         TZONE               ! output-file time zone
         INTEGER      :: WDATE               ! source min/max tmpr current date
+        INTEGER      :: WEDATE = 0          ! source min/max tmpr end date
         INTEGER      :: WSDATE = 0          ! source min/max tmpr start date
         INTEGER      :: WSTIME = 0          ! source min/max tmpr start time
         INTEGER      :: WTIME               ! source min/max tmpr current time
@@ -299,7 +300,8 @@ C.........  Set up gridded and min/max temperature files dates and times and
 C           retrieve the number of grid cells
         IF( MNAME .NE. ' ' ) THEN
             CALL PRETMPR( MNAME, WNAME, TZONE, TSTEP, SDATE, STIME, 
-     &                    NSTEPS, MSDATE, MSTIME, WSDATE, WSTIME, NGRID)
+     &                    NSTEPS, MSDATE, MSTIME, WSDATE, WSTIME, 
+     &                    WEDATE, NGRID)
         END IF
 
 C.........  For day-specific data input...
@@ -743,19 +745,19 @@ C               file (if any), and write layer-1 emissions file (or all data).
 
                IF( .NOT. READ3( WNAME, 'TKMIN', 1,
      &                          0, 0, TKMIN ) ) THEN
-                 MESG = 'Could not read TKMIN from' // WNAME
+                 MESG = 'Could not read TKMIN from ' // WNAME
                  CALL M3EXIT( PROGNAME,0,0,MESG,2 )
                END IF
 
               IF( .NOT. READ3( WNAME, 'TKMAX', 1,
      &                         0, 0, TKMAX ) ) THEN
-                MESG = 'Could not read TKMAX from' // WNAME
+                MESG = 'Could not read TKMAX from ' // WNAME
                 CALL M3EXIT( PROGNAME,0,0,MESG,2 )
               END IF
 
               IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3,
      &                         0, 0, METIDX ) ) THEN
-                MESG = 'Could not read TMMI from' // WNAME
+                MESG = 'Could not read TMMI from ' // WNAME
                 CALL M3EXIT( PROGNAME,0 ,0, MESG,2 )
               END IF
 
@@ -794,19 +796,19 @@ C                       day when there is a new day in GMT (met ) time zone
 
                 	IF( .NOT. READ3( WNAME, 'TKMIN', 1, 
      &                                   WDATE, WTIME, TKMIN ) ) THEN
-                	    MESG = 'Could not read TKMIN from' // WNAME
+                	    MESG = 'Could not read TKMIN from ' // WNAME
                             CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
                 	END IF
 
                 	IF( .NOT. READ3( WNAME, 'TKMAX', 1, 
      &                                   WDATE, WTIME, TKMAX ) ) THEN
-                	    MESG = 'Could not read TKMAX from' // WNAME
+                	    MESG = 'Could not read TKMAX from ' // WNAME
                             CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
                 	END IF
 
                 	IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3, 
      &                                   WDATE, WTIME, METIDX ) ) THEN
-                	    MESG = 'Could not read TMMI from' // WNAME
+                	    MESG = 'Could not read TMMI from ' // WNAME
                             CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
                 	END IF
 
@@ -847,8 +849,14 @@ C                   old date
 
 C.................  Advance the min/max date/time by one day when the GMT date
 C                   of the meterology has changed
-                IF( MDATE .NE. MLDATE ) THEN 
+C.................  Only advance time if the min/max file date is less than
+C                   the ending date. Pretmpr has already given a warning about
+C                   the mismatch.
+                IF( MDATE .NE. MLDATE .AND. 
+     &              WDATE .LT. WEDATE      ) THEN
+
                     CALL NEXTIME( WDATE, WTIME, 240000 )
+
                 END IF
 
 C.................  Call QA report routine

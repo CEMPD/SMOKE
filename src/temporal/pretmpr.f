@@ -1,6 +1,7 @@
 
         SUBROUTINE PRETMPR( MNAME, WNAME, TZONE, TSTEP, SDATE, STIME, 
-     &                      NSTEPS, MDATE, MTIME, WDATE, WTIME, NGRID )
+     &                      NSTEPS, MDATE, MTIME, WDATE, WTIME, 
+     &                      WEDATEZ, NGRID )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -56,6 +57,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
+        CHARACTER*14    MMDDYY
         INTEGER         SECSDIFF
         INTEGER         TIME2SEC
 
@@ -73,6 +75,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: MTIME  ! 1st valid time - MNAME file
         INTEGER     , INTENT   (OUT) :: WDATE  ! 1st valid date - WNAME file
         INTEGER     , INTENT   (OUT) :: WTIME  ! 1st valid time - WNAME file
+        INTEGER     , INTENT   (OUT) :: WEDATEZ! last valid date- WNAME file
         INTEGER     , INTENT   (OUT) :: NGRID  ! number of grid cells in MNAME
 
 C...........   Other local variables
@@ -93,7 +96,6 @@ C...........   Other local variables
         INTEGER         METIMEZ      ! MNAME ending time
         INTEGER         MSDATEZ      ! MNAME start date 
         INTEGER         MSTIMEZ      ! MNAME start time
-        INTEGER         WEDATEZ      ! WNAME ending date 
         INTEGER         WETIMEZ      ! WNAME ending time
         INTEGER         WSDATEZ      ! WNAME start date 
         INTEGER         WSTIMEZ      ! WNAME start time
@@ -194,16 +196,6 @@ C           and adjust simulation start date, if needed.
 
         END IF
 
-C.........  Check if simulation end date < min/max temperature ending date and
-C           adjust simulation ending date, if needed.
-        IF( EDATEZ .GT. WEDATEZ ) THEN
-
-            WADJUST = .TRUE.
-            EDATEZ = WEDATEZ
-            ETIMEZ = 230000   ! min/max files are always one full day at a time
-
-        END IF
-
 C.........  Compute start date/time in output time zone
         SDATENEW = SDATEZ
         STIMENEW = STIMEZ
@@ -215,7 +207,8 @@ C.........  Compute new number of time steps
         NSTEPSNEW = ISDIFF / ISECS + 1
 
 C.........  Write messages stating changes because of meteorology files
-        IF( MADJUST .OR. WADJUST ) THEN
+c        IF( MADJUST .OR. WADJUST ) THEN
+        IF( MADJUST ) THEN
 
             IF( MADJUST ) THEN
         	MESG = 'WARNING: Adjusting simulation start and/or '//
@@ -250,7 +243,7 @@ C           data and give a warning if met file starts sooner.
 C.........  Reset output met start date and time based on simulation
         IF( SDATEZ .NE. MSDATEZ .OR. STIMEZ .NE. MSTIMEZ ) THEN
 
-            ISDIFF = SECSDIFF( SDATEZ, STIMEZ, MSDATEZ, MSTIMEZ )
+            ISDIFF = SECSDIFF( MSDATEZ, MSTIMEZ, SDATEZ, STIMEZ )
             SECS   = TIME2SEC( TSTEP )
             HRS    = ISDIFF / SECS
             
@@ -273,7 +266,7 @@ C           give a warning if met file starts sooner
 C.........  Reset output min/max start date and time based on simulation
         IF( SDATEZ .NE. WSDATEZ ) THEN
 
-            ISDIFF = SECSDIFF( SDATEZ, 0, WSDATEZ, 0 )
+            ISDIFF = SECSDIFF( WSDATEZ, 0, SDATEZ, 0 )
             SECS   = TIME2SEC( TSTEP )
             DYS    = ISDIFF / ( SECS * 24 )
             
@@ -288,6 +281,23 @@ C.........  Otherwise, set min/max start date and time based on min/max file
         ELSE
             WDATE = WSDATEZ
             WTIME = 0
+
+        END IF
+
+C.........  Check if simulation end date < min/max temperature ending date and
+C           give a warning about how many hours will be affected.
+        ISDIFF = SECSDIFF( WEDATEZ, 230000, EDATEZ, ETIMEZ )
+
+        IF( ISDIFF .GT. 0 ) THEN
+
+            HRS = ISDIFF / 3600
+
+            WRITE( MESG,'(A,I3,A)' ) 
+     &         'WARNING: The last ', HRS, ' hour(s) of the '//
+     &         'simulation will reuse min/max ' // CRLF() // BLANK10 // 
+     &         'temperatures from ' // MMDDYY( WSDATEZ )
+
+            CALL M3MSG2( MESG )
 
         END IF
 
