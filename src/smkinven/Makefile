@@ -34,7 +34,7 @@ RAW=adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o  \
     openinvin.o openinvout.o openpdout.o procinven.o rdcempd.o rdemsar.o \
     rdemsmb.o rdemspd.o rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o \
     rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o rdntimb.o smkinven.o \
-    srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
+    srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -120,6 +120,8 @@ wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ wrpdemis.f
 wrptref.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrptref.f
+wrepinven.o: $(MODINFO) $(MODLISTS) $(MODAR2PT)
+	$(FC) $(FFLAGS) -c -o $@ wrepinven.f
 
 clean:
 	/bin/rm *.o
