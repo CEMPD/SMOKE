@@ -608,9 +608,14 @@ if ( $?RUN_TEMPORAL ) then
       #    to put into the list
       if ( $SMK_SOURCE == M ) then
          setenv MEFLIST $SMK_EMISPATH/meflist.txt
-         set ef_cnt = `ls $SMK_EMISPATH/emisfacs.*ncf | wc -l`
+         set ef_cnt = `ls $SMK_EMISPATH/emisfacs*ncf | wc -l`
          if ( $ef_cnt > 0 ) then
-             ls $SMK_EMISPATH/emisfacs*ncf > $SMK_EMISPATH/meflist.txt
+            set extension = `ls $SMK_EMISPATH/emisfacs*ncf | cut -d. -f4`
+            if ( $extension[1] == 'ncf' ) then
+               ls $SMK_EMISPATH/emisfacs*ncf > $SMK_EMISPATH/meflist.txt
+            else 
+               ls $SMK_EMISPATH/emisfacs*ncf | cut -d. -f1,2,3,5 > $SMK_EMISPATH/meflist.txt
+            endif
          endif
       endif
 
