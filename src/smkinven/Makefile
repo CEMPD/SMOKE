@@ -115,7 +115,7 @@ scanuncert.o: $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ scanuncert.f
 rduncert.o: $(MODUNCERT) $(MODXREF) $(MODINFO) $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rduncert.f
-prclinuc.o: $(MODUNCERT)
+prclinuc.o: $(MODUNCERT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ prclinuc.f
 wrucout.o: $(MODUNCERT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrucout.f        
