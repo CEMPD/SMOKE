@@ -70,7 +70,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: FNAME     ! logical file name
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
+        CHARACTER*50, PARAMETER :: SCCSW  = '$Revision$' ! CVS version
 
 C...........   Other local variables
 

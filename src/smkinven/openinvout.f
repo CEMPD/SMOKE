@@ -75,7 +75,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   LOCAL PARAMETERS
         CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
-        CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
+        CHARACTER*50, PARAMETER :: SCCSW  = '$Revision$'
 
 C...........   Names, Units, types, & descriptions for pollutant-specific 
 C              output variables.  NOTE - second dimension will work so long
