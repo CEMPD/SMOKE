@@ -2,7 +2,7 @@
 #
 all: opts
 #
-opts: csgmerge.debug csglmerge.debug
+opts: csgmerge.debug csglmerge.debug csglmerge2.debug
 #
 LDIRS=-L$(em) \
       -L$(io) \
