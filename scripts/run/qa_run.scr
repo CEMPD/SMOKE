@@ -122,6 +122,19 @@ if ( $exitstat == 1 ) then
    exit( $exitstat )
 endif
 
+# Check if QA label is set, and initialize file
+if ( $?QA_LABEL ) then
+
+   set ilabl = $INVOP.$QA_LABEL
+   set slabl = $ESCEN.$QA_LABEL
+
+else
+
+   set ilabl = $INVOP
+   set slabl = $ESCEN
+
+endif
+
 # Set up input file for Smkreport depending on settings
 
 switch ( $QA_TYPE ) 
@@ -131,38 +144,38 @@ case inventory:
    switch ( $SMK_SOURCE )
    case A:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.ar.inv.txt
-      setenv REPORT1 $REPSTAT/a.state.$INVOP.rpt
-      setenv REPORT2 $REPSTAT/a.county.$INVOP.rpt
-      setenv REPORT3 $REPSTAT/a.scc.$INVOP.rpt
-      setenv REPORT4 $REPSTAT/a.state_scc.$INVOP.rpt
-      setenv REPORT5 $REPSTAT/ag.state.$GRID.$INVOP.rpt
-      setenv REPORT6 $REPSTAT/ag.scc.$GRID.$INVOP.rpt
+      setenv REPORT1 $REPSTAT/a.state.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/a.county.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/a.scc.$ilabl.rpt
+      setenv REPORT4 $REPSTAT/a.state_scc.$ilabl.rpt
+      setenv REPORT5 $REPSTAT/ag.state.$GRID.$ilabl.rpt
+      setenv REPORT6 $REPSTAT/ag.scc.$GRID.$ilabl.rpt
       breaksw
       
    case M:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.inv.txt
-      setenv REPORT1 $REPSTAT/m.state.$INVOP.rpt
-      setenv REPORT2 $REPSTAT/m.county.$INVOP.rpt
-      setenv REPORT3 $REPSTAT/m.scc.$INVOP.rpt
-      setenv REPORT4 $REPSTAT/m.state_scc.$INVOP.rpt
-      setenv REPORT5 $REPSTAT/m.state_rclas.$INVOP.rpt
-      setenv REPORT6 $REPSTAT/mg.state.$GRID.$INVOP.rpt
-      setenv REPORT7 $REPSTAT/mg.scc.$GRID.$INVOP.rpt
+      setenv REPORT1 $REPSTAT/m.state.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/m.county.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/m.scc.$ilabl.rpt
+      setenv REPORT4 $REPSTAT/m.state_scc.$ilabl.rpt
+      setenv REPORT5 $REPSTAT/m.state_rclas.$ilabl.rpt
+      setenv REPORT6 $REPSTAT/mg.state.$GRID.$ilabl.rpt
+      setenv REPORT7 $REPSTAT/mg.scc.$GRID.$ilabl.rpt
       breaksw
       
    case P:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.pt.inv.txt
-      setenv REPORT1 $REPSTAT/p.state.$INVOP.rpt
-      setenv REPORT2 $REPSTAT/p.county.$INVOP.rpt
-      setenv REPORT3 $REPSTAT/p.scc.$INVOP.rpt
-      setenv REPORT4 $REPSTAT/p.state_scc.$INVOP.rpt
-      setenv REPORT5 $REPSTAT/pg.state.$GRID.$INVOP.rpt
-      setenv REPORT6 $REPSTAT/pg.scc.$GRID.$INVOP.rpt
+      setenv REPORT1 $REPSTAT/p.state.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/p.county.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/p.scc.$ilabl.rpt
+      setenv REPORT4 $REPSTAT/p.state_scc.$ilabl.rpt
+      setenv REPORT5 $REPSTAT/pg.state.$GRID.$ilabl.rpt
+      setenv REPORT6 $REPSTAT/pg.scc.$GRID.$ilabl.rpt
       breaksw
       
    endsw
    
-   set logabbr = inv.$INVOP
+   set logabbr = inv.$ilabl
    
    breaksw
    
@@ -171,58 +184,58 @@ case monthly:
    switch ( $SMK_SOURCE )
    case A:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.ar.monthly.txt
-      setenv REPORT1  $REPSCEN/at.state.$ESCEN.rpt
-      setenv REPORT2  $REPSCEN/at.county.$ESCEN.rpt
-      setenv REPORT3  $REPSCEN/at.scc.$ESCEN.rpt
-      setenv REPORT4  $REPSCEN/at.state_scc.$ESCEN.rpt
-      setenv REPORT5  $REPSCEN/at.hour_scc.$ESCEN.rpt
-      setenv REPORT6  $REPSCEN/agt.state.$GRID.$ESCEN.rpt
-      setenv REPORT7  $REPSCEN/agt.county.$GRID.$ESCEN.rpt
-      setenv REPORT8  $REPSCEN/agt.scc.$GRID.$ESCEN.rpt
-      setenv REPORT9  $REPSCEN/ats.state.$ESCEN.rpt
-      setenv REPORT10 $REPSCEN/ats.scc.$ESCEN.rpt
-      setenv REPORT11 $REPSCEN/ats.state_scc.$ESCEN.rpt
+      setenv REPORT1  $REPSCEN/at.state.$slabl.rpt
+      setenv REPORT2  $REPSCEN/at.county.$slabl.rpt
+      setenv REPORT3  $REPSCEN/at.scc.$slabl.rpt
+      setenv REPORT4  $REPSCEN/at.state_scc.$slabl.rpt
+      setenv REPORT5  $REPSCEN/at.hour_scc.$slabl.rpt
+      setenv REPORT6  $REPSCEN/agt.state.$GRID.$slabl.rpt
+      setenv REPORT7  $REPSCEN/agt.county.$GRID.$slabl.rpt
+      setenv REPORT8  $REPSCEN/agt.scc.$GRID.$slabl.rpt
+      setenv REPORT9  $REPSCEN/ats.state.$slabl.rpt
+      setenv REPORT10 $REPSCEN/ats.scc.$slabl.rpt
+      setenv REPORT11 $REPSCEN/ats.state_scc.$slabl.rpt
       breaksw
       
    case M:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.monthly.txt
-      setenv REPORT1  $REPSCEN/mt.state.$ESCEN.rpt
-      setenv REPORT2  $REPSCEN/mt.county.$ESCEN.rpt
-      setenv REPORT3  $REPSCEN/mt.scc.$ESCEN.rpt
-      setenv REPORT4  $REPSCEN/mt.state_scc.$ESCEN.rpt
-      setenv REPORT5  $REPSCEN/mt.hour_scc.$ESCEN.rpt
-      setenv REPORT6  $REPSCEN/mt.state_rclas.$ESCEN.rpt
-      setenv REPORT7  $REPSCEN/mt.county_rclas.$ESCEN.rpt
-      setenv REPORT8  $REPSCEN/mgt.state.$GRID.$ESCEN.rpt
-      setenv REPORT9  $REPSCEN/mgt.county.$GRID.$ESCEN.rpt
-      setenv REPORT10 $REPSCEN/mgt.scc.$GRID.$ESCEN.rpt
-      setenv REPORT11 $REPSCEN/mgt.state_rclas.$GRID.$ESCEN.rpt
-      setenv REPORT12 $REPSCEN/mgt.county_rclas.$GRID.$ESCEN.rpt
-      setenv REPORT13 $REPSCEN/mts.state.$ESCEN.rpt
-      setenv REPORT14 $REPSCEN/mts.scc.$ESCEN.rpt
-      setenv REPORT15 $REPSCEN/mts.state_scc.$ESCEN.rpt
+      setenv REPORT1  $REPSCEN/mt.state.$slabl.rpt
+      setenv REPORT2  $REPSCEN/mt.county.$slabl.rpt
+      setenv REPORT3  $REPSCEN/mt.scc.$slabl.rpt
+      setenv REPORT4  $REPSCEN/mt.state_scc.$slabl.rpt
+      setenv REPORT5  $REPSCEN/mt.hour_scc.$slabl.rpt
+      setenv REPORT6  $REPSCEN/mt.state_rclas.$slabl.rpt
+      setenv REPORT7  $REPSCEN/mt.county_rclas.$slabl.rpt
+      setenv REPORT8  $REPSCEN/mgt.state.$GRID.$slabl.rpt
+      setenv REPORT9  $REPSCEN/mgt.county.$GRID.$slabl.rpt
+      setenv REPORT10 $REPSCEN/mgt.scc.$GRID.$slabl.rpt
+      setenv REPORT11 $REPSCEN/mgt.state_rclas.$GRID.$slabl.rpt
+      setenv REPORT12 $REPSCEN/mgt.county_rclas.$GRID.$slabl.rpt
+      setenv REPORT13 $REPSCEN/mts.state.$slabl.rpt
+      setenv REPORT14 $REPSCEN/mts.scc.$slabl.rpt
+      setenv REPORT15 $REPSCEN/mts.state_scc.$slabl.rpt
       breaksw
       
    case P:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.pt.monthly.txt
-      setenv REPORT1  $REPSCEN/pt.state.$ESCEN.rpt
-      setenv REPORT2  $REPSCEN/pt.county.$ESCEN.rpt
-      setenv REPORT3  $REPSCEN/pt.scc.$ESCEN.rpt
-      setenv REPORT4  $REPSCEN/pt.state_scc.$ESCEN.rpt
-      setenv REPORT5  $REPSCEN/pt.hour_scc.$ESCEN.rpt
-      setenv REPORT6  $REPSCEN/pt.source.$ESCEN.rpt
-      setenv REPORT7  $REPSCEN/pgt.state.$GRID.$ESCEN.rpt
-      setenv REPORT8  $REPSCEN/pgt.county.$GRID.$ESCEN.rpt
-      setenv REPORT9  $REPSCEN/pgt.scc.$GRID.$ESCEN.rpt
-      setenv REPORT10 $REPSCEN/pgt.source.$GRID.$ESCEN.rpt
-      setenv REPORT11 $REPSCEN/pts.state.$ESCEN.rpt
-      setenv REPORT12 $REPSCEN/pts.scc.$ESCEN.rpt
-      setenv REPORT13 $REPSCEN/pts.state_scc.$ESCEN.rpt
+      setenv REPORT1  $REPSCEN/pt.state.$slabl.rpt
+      setenv REPORT2  $REPSCEN/pt.county.$slabl.rpt
+      setenv REPORT3  $REPSCEN/pt.scc.$slabl.rpt
+      setenv REPORT4  $REPSCEN/pt.state_scc.$slabl.rpt
+      setenv REPORT5  $REPSCEN/pt.hour_scc.$slabl.rpt
+      setenv REPORT6  $REPSCEN/pt.source.$slabl.rpt
+      setenv REPORT7  $REPSCEN/pgt.state.$GRID.$slabl.rpt
+      setenv REPORT8  $REPSCEN/pgt.county.$GRID.$slabl.rpt
+      setenv REPORT9  $REPSCEN/pgt.scc.$GRID.$slabl.rpt
+      setenv REPORT10 $REPSCEN/pgt.source.$GRID.$slabl.rpt
+      setenv REPORT11 $REPSCEN/pts.state.$slabl.rpt
+      setenv REPORT12 $REPSCEN/pts.scc.$slabl.rpt
+      setenv REPORT13 $REPSCEN/pts.state_scc.$slabl.rpt
       breaksw
       
    endsw
    
-   set logabbr = $ESDATE.$ESCEN
+   set logabbr = $ESDATE.$slabl
    
    breaksw
 
@@ -231,38 +244,119 @@ case state
    switch ( $SMK_SOURCE )
    case A:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.ar.state.txt
-      setenv REPORT1 $REPSTAT/a.state.$INVOP.rpt
-      setenv REPORT2 $REPSTAT/ag.state.$INVOP.rpt
-      setenv REPORT3 $REPSTAT/as.state.$INVOP.rpt
-      setenv REPORT4 $REPSCEN/at.state.$ESCEN.rpt
+      setenv REPORT1 $REPSTAT/a.$QA_TYPE.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/ag.$QA_TYPE.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/as.$QA_TYPE.$ilabl.rpt
+      setenv REPORT4 $REPSCEN/at.$QA_TYPE.$slabl.rpt
       breaksw
       
    case M:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.state.txt
-      setenv REPORT1 $REPSTAT/m.state.$INVOP.rpt
-      setenv REPORT2 $REPSTAT/mg.state.$INVOP.rpt
-      setenv REPORT3 $REPSTAT/ms.state.$INVOP.rpt
-      setenv REPORT4 $REPSCEN/mt.state.$ESCEN.rpt
+      setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/mg.$QA_TYPE.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/ms.$QA_TYPE.$ilabl.rpt
+      setenv REPORT4 $REPSCEN/mt.$QA_TYPE.$slabl.rpt
       breaksw
       
    case P:
       setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.pt.state.txt
-      setenv REPORT1 $REPSTAT/p.state.$INVOP.rpt
-      setenv REPORT2 $REPSTAT/pg.state.$INVOP.rpt
-      setenv REPORT3 $REPSTAT/ps.state.$INVOP.rpt
-      setenv REPORT4 $REPSCEN/pt.state.$ESCEN.rpt
+      setenv REPORT1 $REPSTAT/p.$QA_TYPE.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/pg.$QA_TYPE.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/ps.$QA_TYPE.$ilabl.rpt
+      setenv REPORT4 $REPSCEN/pt.$QA_TYPE.$slabl.rpt
       breaksw
       
    endsw
    
-   set logabbr = st.$INVOP
+   set logabbr = st.$ilabl
    
    breaksw
    
+case county
+
+   switch ( $SMK_SOURCE )
+   case A:
+      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.ar.county.txt
+      setenv REPORT1 $REPSTAT/a.$QA_TYPE.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/ag.$QA_TYPE.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/as.$QA_TYPE.$ilabl.rpt
+      setenv REPORT4 $REPSCEN/at.$QA_TYPE.$slabl.rpt
+      setenv REPORT5 $REPSCEN/agts.$QA_TYPE.$slabl.rpt
+      breaksw
+      
+   case M:
+
+      set standard = yes
+      if ( $?QA_MOBILE ) then
+
+         switch ( $QA_MOBILE  ) 
+         case emis:
+
+            set standard = no    
+            setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.emis.county.txt
+            setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
+            setenv REPORT2 $REPSTAT/mg.$QA_TYPE.$ilabl.rpt
+            setenv REPORT3 $REPSTAT/ms.$QA_TYPE.$ilabl.rpt
+            setenv REPORT4 $REPSCEN/mt.$QA_TYPE.$slabl.rpt
+            setenv REPORT5 $REPSCEN/mgts.$QA_TYPE.$slabl.rpt
+
+            breaksw
+
+         case emis_o3:
+
+            set standard = no    
+            setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.emis_o3.county.txt
+            setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
+            setenv REPORT2 $REPSTAT/mg.$QA_TYPE.$ilabl.rpt
+            setenv REPORT3 $REPSTAT/ms.$QA_TYPE.$ilabl.rpt
+            setenv REPORT4 $REPSCEN/mt.$QA_TYPE.$slabl.rpt
+            setenv REPORT5 $REPSCEN/mgts.$QA_TYPE.$slabl.rpt
+
+            breaksw
+
+         default
+            echo 'SCRIPT ERROR: Environment variable QA_MOBILE is set to'
+            echo '              an unknown setting.  Valid values are'
+            echo '              "emis" or "emis_o3".'
+            set exitstat = 1
+            breaksw
+
+         endsw
+
+      endif
+
+      if ( $standard == yes ) then
+
+         setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.county.txt
+         setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
+         setenv REPORT2 $REPSTAT/mgt.$QA_TYPE.$ilabl.rpt
+         setenv REPORT3 $REPSTAT/mst.$QA_TYPE.$ilabl.rpt
+         setenv REPORT4 $REPSCEN/mt.$QA_TYPE.$slabl.rpt
+         setenv REPORT5 $REPSCEN/mgts.$QA_TYPE.$slabl.rpt
+
+      endif
+
+      breaksw
+      
+   case P:
+      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.pt.county.txt
+      setenv REPORT1 $REPSTAT/p.$QA_TYPE.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/pg.$QA_TYPE.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/ps.$QA_TYPE.$ilabl.rpt
+      setenv REPORT4 $REPSCEN/pt.$QA_TYPE.$slabl.rpt
+      setenv REPORT5 $REPSCEN/pgts.$QA_TYPE.$slabl.rpt
+      breaksw
+      
+   endsw
+   
+   set logabbr = cy.$ilabl
+   
+   breaksw
+
 default
    echo 'SCRIPT ERROR: Environment variable QA_TYPE is set to'
    echo '              an unknown setting.  Valid values are'
-   echo '              "state", "inventory", or "monthly".'
+   echo '              "state", "county", "inventory", or "monthly".'
    set exitstat = 1
    breaksw
       
