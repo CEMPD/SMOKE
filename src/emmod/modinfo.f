@@ -22,7 +22,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -99,13 +99,8 @@
         INTEGER               , PUBLIC :: INVPIDX = 0    ! annual/O3 season idx
         REAL, ALLOCATABLE, PUBLIC :: EACNV( : )          ! units conv factors
 
-!.........  Mobile source characteristics tables
-        INTEGER                                     :: NVTYPE ! no. veh types
-        INTEGER               , ALLOCATABLE, PUBLIC :: IVTIDLST( : ) ! IDs
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC :: CVTYPLST( : ) ! names
-
-        INTEGER                                     :: NRCLAS ! no. road classes
-        INTEGER               , ALLOCATABLE, PUBLIC :: AMSRDCLS( : ) ! AIRS rclas
-        INTEGER               , ALLOCATABLE, PUBLIC :: RDWAYTYP( : ) ! roadway type
+!.........  Arrays for reading inventory file headers
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC  :: TMPNAM( : )! var names
+        INTEGER               , ALLOCATABLE, PUBLIC  :: POLPOS( : )! var positn
 
         END MODULE MODINFO
