@@ -5,13 +5,13 @@ C***********************************************************************
 C  program body starts at line 113
 C
 C  DESCRIPTION:
-C       Report area emissions summed by state and county.
+C       Report area emissions summed by ASCT and state.
 C
 C  PRECONDITIONS REQUIRED:  
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O; 
-C       GETREAL, ENVREAL, PROMPTMFILE, PROMPTFFILE, TRIMLEN, LBLANK, 
+C       GETREAL, PROMPTMFILE, PROMPTFFILE, TRIMLEN, LBLANK, 
 C       ENVINT, FIND2
 C
 C  REVISION  HISTORY:
@@ -53,62 +53,85 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER         ENVINT
-        REAL            ENVREAL
+        CHARACTER*2     CRLF
+        LOGICAL         ENVYN
         INTEGER         FIND2
         REAL            GETREAL
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         LBLANK
         INTEGER         TRIMLEN
+        REAL            YR2DAY
 
-        EXTERNAL        ENVINT, ENVREAL, FIND2, GETREAL, PROMPTFFILE, 
-     &                  PROMPTMFILE, LBLANK, TRIMLEN
+        EXTERNAL        CRLF, ENVYN, FIND2, GETREAL, PROMPTFFILE, 
+     &                  PROMPTMFILE, LBLANK, TRIMLEN, YR2DAY
                                             
-C...........   PARAMETERS and their descriptions
-        INTEGER MAXASCT, NASCPOL
-        PARAMETER ( MAXASCT = 3000, NASCPOL = NASCC * NIPOL )
+C...........   LOCAL PARAMETERS 
+        INTEGER     MAXASCT, NASCPOL
+        CHARACTER*5 BLANK5
+
+        PARAMETER ( MAXASCT = 3000
+     &            , NASCPOL = NASID * NASCC * NIPOL
+     &            , BLANK5  = ' '
+     &            )
 
 C...........   LOCAL VARIABLES and their descriptions:
-C...........   Point Sources input and output arrays
 
-        INTEGER      IALLASC7 ( MAXASCT )  !  All ASCT codes
-        INTEGER      IALLASC3 ( MAXASCT )
-        CHARACTER*40 ASCTNAMES( MAXASCT )  !  All ASCT names
-        LOGICAL      HAS_SUM  ( MAXASCT ) / MAXASCT * .FALSE. /
-        INTEGER      IASC7LIST( NASCC )
-        INTEGER      IASC3LIST( NASCC )
-        REAL         SPECSUM  ( NASCC, NIPOL ) / NASCPOL * 0.0 /
+C...........   Area Sources inventory characteristics
+        INTEGER      SINDX    ( NASRC )  ! Sorting index
+        INTEGER      IFIPS    ( NASRC )
+        INTEGER      STIDS    ( NASRC )
         INTEGER      IASC7    ( NASRC )
         INTEGER      IASC3    ( NASRC )
         INTEGER      INVYR    ( NASRC )
-        INTEGER      ASCINDEX ( NASRC )
+
+C...........   Area Sources inventory emissions
         REAL         SPECBUF  ( NASRC, NIPOL )
+
+C...........   ASCTs and FIPS found in the inventory for summing
+        INTEGER      STATLIST( NASID )  ! list of state codes
+        INTEGER      NASCT   ( NASID )  ! no. ASCTs in inventory
+        INTEGER      IASC7LST( NASID, NASCC )
+        INTEGER      IASC3LST( NASID, NASCC )
+
+C...........   ASCT names table
+        INTEGER      IALLASC7 ( MAXASCT )  !  All ASCT codes
+        INTEGER      IALLASC3 ( MAXASCT )
+        CHARACTER*40 ASCTNAMES( MAXASCT )  !  All ASCT names
+
+C...........   Output emissions
+        REAL         SPECSUM  ( NASID, NASCC, NIPOL ) / NASCPOL * 0.0 /
+
+C...........   File names and unit numbers
+        INTEGER         LDEV    !  unit number for log file
+        INTEGER         OUNIT, FUNIT
+        CHARACTER*16    ENAME   !  logical name for point-source input file
 
 C...........   Other local variables
 
-        INTEGER         NSRCS
+        INTEGER         F, I, J, K, S, N   ! counters and indices
 
-        INTEGER         LDEV    !  unit number for log file
-        INTEGER         OUNIT, FUNIT
+        INTEGER         ID3, ID7, STA ! tmp source characteristics
+        INTEGER         INASC7, INASC3 
+        INTEGER         IOS                ! i/o status
+        INTEGER         LASTASC7, LASTASC3 ! Previous ASCTs in loop
+        INTEGER         LSTA               ! Previous state code in loop
+        INTEGER         MAXN               ! max number of ASCTs by state
+        INTEGER         NSRCS              ! No. sources
+        INTEGER         NSTATE             ! No. states in inventory
+        INTEGER         TOT_ASCT           ! No. of ASCT codes in  ASCTNAM file
+        INTEGER         YR                 ! tmp inventory year
 
-        REAL            YR2DAY
-        INTEGER         I, J, K, INDEX
-        INTEGER         LASTASC7, LASTASC3 ! The last  ASCT numbers
-                                           ! encountered when summing the emmis.
-        INTEGER         TOT_ASCT  ! Total number of ASCT codes/names 
-                                  ! in the ASCTNAM file.
-        INTEGER         ACT_ASCT  ! Actual number of ASCT codes
-                                  ! in the area source file
+        LOGICAL         SFLAG              ! true: output by state codes
+        LOGICAL         EFLAG              ! true: error found
+        DATA            EFLAG / .FALSE. / 
 
-        CHARACTER*16    ENAME   !  logical name for point-source input file
         CHARACTER*10    BUF1,BUF2
-        INTEGER         INASC7, INASC3  
         CHARACTER*10    INASC    !  Buffer for reading the ASCT code
         CHARACTER*40    ASCTNAME !  Buffer for reading the ASCT name
 
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
-		CHARACTER*256   FMT
+        CHARACTER*256   FMT
 
 C***********************************************************************
 C   begin body of program ASCTSUM
@@ -117,8 +140,11 @@ C   begin body of program ASCTSUM
 
         CALL INITEM( LDEV )
 
-C.......   Get file name; open input area source
+C.......   Get environment variable settings
+        MESG = 'Sum area sources by ASCT and state codes'
+        SFLAG = ENVYN ( 'ASCTSUM_BYSTATE', MESG, .TRUE., IOS )
 
+C.......   Get file name; open input area source
         ENAME = PROMPTMFILE( 
      &          'Enter name for AREA SOURCE input file',
      &          FSREAD3, 'AREA', 'ASCTSUM' )
@@ -150,7 +176,7 @@ C.......   Get file name; open input area source
      &          .FALSE., .TRUE., 'ASCTRPT', 'ASCTSUM' )
 
 
-
+C.........  Read in list of ASCs and the descriptions
         TOT_ASCT = 0
 30      CONTINUE ! Begin "infinite" loop; until EOF.
             READ ( FUNIT, 700, END = 40 ) INASC, ASCTNAME
@@ -179,6 +205,13 @@ C     &            IALLASC7 ( TOT_ASCT ), IALLASC3 ( TOT_ASCT ), ')'
         GO TO 30
 40      CONTINUE
 
+C.........  Read in inventory characteristics
+
+        IF ( .NOT. READ3 ( ENAME, 'FIP', ALLAYS3,0,0, IFIPS ) ) THEN
+            CALL M3EXIT( 'ASCTSUM', 0, 0, 
+     &                   'Error reading FIP from file' // ENAME, 2)
+        END IF
+
         IF ( .NOT. READ3 ( ENAME, 'ASC7', ALLAYS3,0,0, IASC7 ) ) THEN
             CALL M3EXIT( 'ASCTSUM', 0, 0, 
      &                   'Error reading IASC7 from file' // ENAME, 2)
@@ -194,9 +227,8 @@ C     &            IALLASC7 ( TOT_ASCT ), IALLASC3 ( TOT_ASCT ), ')'
      &                   'Error reading INVYR from file' // ENAME, 2)
         END IF
 
-
+C.........  Read in inventory emissions
         DO 50 I = 1, NIPOL
-C           PRINT *, 'Reading ' // EINAM (I) // '...'
             IF ( .NOT. READ3 ( ENAME, EINAM ( I ), ALLAYS3, 0, 0, 
      &                         SPECBUF ( 1, I ) ) ) THEN
                 CALL M3EXIT( 'ASCTSUM', 0, 0, 
@@ -205,57 +237,97 @@ C           PRINT *, 'Reading ' // EINAM (I) // '...'
             END IF
 50      CONTINUE
 
+C.........  Initialize index for sorting inventory and state codes
         DO 45 J = 1, NSRCS
-            ASCINDEX ( J ) = J
+            SINDX ( J ) = J
+            STIDS ( J ) = IFIPS( J ) / 1000
 45      CONTINUE
-        CALL SORTI2 ( NSRCS, ASCINDEX, IASC7, IASC3 )
 
+        IF( SFLAG ) THEN
+            CALL SORTI3 ( NSRCS, SINDX, STIDS, IASC7, IASC3 )
 
-        LASTASC3 = 0
-        LASTASC7 = 0
-        ACT_ASCT = 0
+C.........  If output is not by state, resort the inventory by ASCT
+        ELSE 
+            CALL SORTI2 ( NSRCS, SINDX, IASC7, IASC3 )
+        END IF
 
+        F = 0
+        LSTA = -9
+        MAXN = 0
         DO 60 J = 1, NSRCS
-            INDEX = ASCINDEX ( J )
 
-            K = INVYR( INDEX )
-            IF ( MOD( K,4 ) .NE. 0 ) THEN           !  nonleap years
-                YR2DAY = 1.0 / 365.0
-            ELSE IF ( MOD( K,100 ) .NE. 0 ) THEN    !  noncentury leap years
-                YR2DAY = 1.0 / 366.0
-            ELSE IF ( MOD( K,400 ) .NE. 0 ) THEN    !  century nonleap years
-                YR2DAY = 1.0 / 365.0
-            ELSE                                    !  leap centuries
-                YR2DAY = 1.0 / 366.0
+            S = SINDX( J )
+
+            YR  = INVYR( S )
+            STA = STIDS( S ) 
+            ID7 = IASC7( S )
+            ID3 = IASC3( S )
+
+            IF( J .EQ. 1 .OR.
+     &        ( SFLAG .AND. STA .NE. LSTA ) ) THEN
+                F = F + 1
+                N = 0
+                LASTASC3 = 0
+                LASTASC7 = 0
+                LSTA = STA
             END IF
 
-            IF ( ( IASC3 ( INDEX ) .NE. LASTASC3 ) .OR. 
-     &           ( IASC7 ( INDEX ) .NE. LASTASC7 ) ) THEN
-                ! We've moved to a new ASCT code...
-                LASTASC7 = IASC7 ( INDEX )
-                LASTASC3 = IASC3 ( INDEX )
+C.............  If we've moved to a new ASCT code...
+            IF ( ( ID7 .NE. LASTASC7 ) .OR. 
+     &           ( ID3 .NE. LASTASC3 ) ) THEN
 
-                ACT_ASCT = ACT_ASCT + 1
-                IF ( ACT_ASCT .GT. NASCC ) THEN
-                    WRITE ( BUF1, 600 ) ACT_ASCT
-                    WRITE ( BUF2, 600 ) NASCC
-                    CALL M3EXIT( 'ASCTSUM', 0, 0, 
-     &                      'Number of ASCT codes in AREA (' // 
-     &                      BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
-     &                      ') exceeds program limits (NASCC=' //
-     &                      BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
-     &                      ')', 2 )
+                LASTASC7 = ID7
+                LASTASC3 = ID3
+
+                N = N + 1
+                IF ( N .LE. NASCC .AND. F .LE. NASID ) THEN
+                    IASC7LST ( F,N ) = ID7
+                    IASC3LST ( F,N ) = ID3
+                    STATLIST  ( F )  = STA 
+                ELSE
+                    IF( N .GT. MAXN ) MAXN = N
+                    GO TO 60
                 END IF
-                IASC7LIST ( ACT_ASCT ) = IASC7 ( INDEX )
-                IASC3LIST ( ACT_ASCT ) = IASC3 ( INDEX )
+
             END IF
-            
+
             DO 70 I = 1, NIPOL
-                SPECSUM ( ACT_ASCT, I ) = SPECSUM ( ACT_ASCT, I ) + 
-     &                                 ( SPECBUF ( INDEX, I ) * YR2DAY )
+                SPECSUM ( F,N,I ) = SPECSUM ( F,N,I ) + 
+     &                              SPECBUF ( S,I ) * YR2DAY( YR )
 70          CONTINUE
+
+            NASCT( F ) = N
+
 60      CONTINUE
 
+        IF( MAXN .GT. NASCC ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 
+     &             'ERROR: Number of ASCT codes in AREA file: ', MAXN,
+     &             CRLF() // BLANK5 //
+     &             'exceeds program limits, NASCC=', NASCC
+            CALL M3MSG2( MESG )
+
+        END IF
+
+        IF( F .GT. NASID ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 
+     &             'ERROR: Number of state codes in AREA file: ', F,
+     &             CRLF() // BLANK5 //
+     &             'exceeds program limits, NASID=', NASID
+            CALL M3MSG2( MESG )
+
+        ELSE
+            NSTATE = F
+        END IF
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem with program dimensions'
+            CALL M3EXIT( 'ASCTSUM', 0, 0, MESG, 2 )
+        END IF
+
+C.........  Output emissions by State code and/or ASCT code  
 
         WRITE ( OUNIT, 800 ) 'Area source emissions (tons/day)'
         WRITE ( OUNIT, 850 ) '------------------------------ ',
@@ -267,32 +339,40 @@ C           PRINT *, 'Reading ' // EINAM (I) // '...'
 80      CONTINUE
         WRITE ( OUNIT, 810 ) '  ASCT DESCRIPTION'
 
-        DO 90 J = 1, ACT_ASCT
-            ! Find this code in the master ASCT list
-            INDEX = FIND2 ( IASC7LIST ( J ), IASC3LIST ( J ), TOT_ASCT, 
-     &                      IALLASC7, IALLASC3 )
+        DO 101 F = 1, NSTATE 
 
-            IF ( INDEX .LE. 0 ) THEN
-                ASCTNAME = "*** no ASCT name available"
-            ELSE
-                ASCTNAME = ASCTNAMES ( INDEX )
-                IF ( ASCTNAME .EQ. ' ' ) THEN
+            IF( SFLAG ) THEN
+                WRITE( OUNIT, 93050 ) 'For state code: ', STATLIST( F )
+                WRITE ( OUNIT, 850 ) '-------------------------'
+            ENDIF
+
+            DO 90 J = 1, NASCT( F )
+
+C................. Find this code in the master ASCT list to get the name
+                K = FIND2 ( IASC7LST ( F,J ), IASC3LST ( F,J ), 
+     &                      TOT_ASCT, IALLASC7, IALLASC3 )
+
+                IF ( K .LE. 0 ) THEN
+                    ASCTNAME = "*** no ASCT name available"
+                ELSE
+                    ASCTNAME = ASCTNAMES ( K )
+                    IF ( ASCTNAME .EQ. ' ' ) THEN
                 	ASCTNAME = "*** no ASCT name available"
-                END IF 
-            END IF
-C           04/07/99 wts - Create format.
-            WRITE ( FMT, 831 ) NIPOL
-C           WRITE ( OUNIT, 830 ) IASC7LIST ( J ), IASC3LIST ( J ), 
-			WRITE ( OUNIT, FMT ) IASC7LIST ( J ), IASC3LIST ( J ),
-     &            ( SPECSUM ( J, I ), I = 1, NIPOL ), ASCTNAME
-90      CONTINUE
-        
+                    END IF 
+                END IF
 
+                WRITE ( FMT, 831 ) NIPOL
+                WRITE ( OUNIT, FMT ) IASC7LST ( F,J ), IASC3LST ( F,J ),
+     &                ( SPECSUM ( F,J,I ), I = 1, NIPOL ), ASCTNAME
+
+90          CONTINUE
+        
+101     CONTINUE
         
 999     CONTINUE          !  exit program
 
-        MESG = 'Normal completion of ASCTSUM'
-        CALL M3EXIT( 'ASCTSUM', 0, 0, MESG, 0 )
+C......... Normal completion
+        CALL M3EXIT( 'ASCTSUM', 0, 0, ' ', 0 )
 
 
 C******************  FORMAT  STATEMENTS   ******************************
@@ -306,5 +386,9 @@ C830    FORMAT ( I7.7, I3.3, 1X, <NIPOL>F9.2, 2X, A )
 831     FORMAT ( '( I7.7, I3.3, 1X, ', I8, 'F9.2, 2X, A )' )
 840     FORMAT ( A, $ )
 850     FORMAT ( A, A, / )
+
+93050   FORMAT ( A, I2.2 )
+
+94010   FORMAT ( 10( A, :, I8, :, 1X ) )
 
         END
