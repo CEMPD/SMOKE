@@ -186,14 +186,19 @@ C.............  Initialize various counters before following loop
             DLEN = SICLEN3 + LEN( SICNOTE )
    
 C.............  Loop through lines of current packet to read them
-            DO I = 1, PKTCNT( K )
+            I = 0
+            DO
 
+C.................  Exit if we've read all the lines in this packet
+                IF( I == PKTCNT( K ) ) EXIT
+            
 C.................  Read packet information (populates CPKTDAT.EXT common)
                 CALL RDPACKET( FDEV, PKTLIST( K ), PKTFIXED( K ), 
      &                         USEPOL, IREC, PKTINFO, CFLAG, EFLAG )
 
 C.................  Skip comment lines
                 IF( CFLAG ) CYCLE
+                I = I + 1
 
 C.................  Format SIC to turn blank and negative values to 0000 - ensure
 C                   SICs provided as 2-digits get left-justified.
