@@ -921,8 +921,14 @@ C.................  inventory species is volatile
 C.................  Set factors with consideration to model species
 
                 IF( MSPC_PRC( EMT,P ) .EQ. 'FORM' ) THEN
+
+                    IF( FRMADJ .NE. 0. ) THEN
+                        CALL M3MESG(
+     &                  'WARNING: Formaldehyde adjustment is non-zero' )
+                    ENDIF
+
                     SPCFACS( S,VHT,K ) = 
-     &                          FRMADJ * FAC * SCOEF( I,V )
+     &                          ( 1. + FRMADJ ) * FAC * SCOEF( I,V )
             
                 ELSEIF( MSPC_PRC( EMT,P ) .EQ. 'ETH' ) THEN
                     SPCFACS( S,VHT,K ) = 
