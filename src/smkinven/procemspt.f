@@ -40,10 +40,10 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC
+        USE MODINFO, ONLY: NSRC, NCHARS
         
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: CSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, XLOCA, YLOCA
         
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: LSTSTR
@@ -52,6 +52,7 @@ C.........  This module contains the lists of unique inventory information
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
@@ -71,14 +72,17 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: FIPTOCSRC( :,: ) ! index by FIP into CSOURC arary
 
 C...........   Other local variables
-        INTEGER              I, J                   ! counter
-        INTEGER              IOS                    ! I/O status
+        INTEGER              I, J, L2             ! counters and indices
+        INTEGER              IOS                  ! I/O status
         INTEGER              PCNTY                ! previous state FIPS code
         INTEGER              CNTY                 ! current state code
         INTEGER              NCNTY                ! no. states in inventory
 
+        LOGICAL           :: EFLAG = .FALSE.        ! true: an error has occurred
+
         CHARACTER(LEN=8)     PFILTYPE               ! previous file type
         CHARACTER(LEN=300)   INFILE                 ! inventory file name
+        CHARACTER(LEN=100)   BUFFER                 ! message buffer
         CHARACTER(LEN=300)   MESG                   ! message buffer
 
         CHARACTER(LEN=16) :: PROGNAME = 'PROCEMSPT' ! program name
@@ -196,6 +200,37 @@ C.............  Call correct reader based on previous file type
 
 C.........  Deallocate local memory
         DEALLOCATE( FIPTOCSRC, UTMZONE )
+
+C.........  Check that required source characteristics are present
+        CALL M3MSG2( 'Checking point source characteristics' )
+
+        DO I = 1, NSRC
+
+C.............  Format information for this source
+            CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
+        
+            IF( CSCC( I ) == ' ' ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Missing SCC for source: ' //
+     &                 CRLF() // BLANK5 // BUFFER( 1:L2 )
+                CALL M3MESG( MESG )
+            END IF
+        
+            IF( XLOCA( I ) == IMISS3 .OR. YLOCA( I ) == IMISS3 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Missing X and/or Y coordinate for ' //
+     &                 'source: ' // CRLF() // BLANK5 // BUFFER( 1:L2 )
+                CALL M3MESG( MESG )
+            END IF
+        
+        END DO
+
+        IF( EFLAG ) THEN
+        
+            MESG = 'Missing required point source characteristics'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        
+        END IF
 
 C******************  FORMAT  STATEMENTS   ******************************
 
