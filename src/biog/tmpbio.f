@@ -79,12 +79,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
-        INTEGER         TRIMLEN
         CHARACTER*16    VERCHAR
 
         EXTERNAL        CRLF, ENVINT, ENVYN, GETDATE, GETFLINE, GETNUM, 
      &                  GETYN, HHMMSS, INDEX1, PROMPTMFILE, 
-     &                  PROMPTFFILE, TRIMLEN, VERCHAR
+     &                  PROMPTFFILE, VERCHAR
 
 C.........  Gridded meteorology data
                 
@@ -183,7 +182,7 @@ C...........   Logical names and unit numbers
 C...........   Other variables and their descriptions:
 
         INTEGER         B, M    !  counters for biogenic, model species
-        INTEGER         I, II, J, JJ, K, L, C, R  !  loop counters and subscripts
+        INTEGER         I, II, III, J, JJ, JJJ, K, L, C, R  !  loop counters and subscripts
         INTEGER         HR      !  current simulation hour
 
         INTEGER         IOS     !  temporay IO status
@@ -202,6 +201,10 @@ C...........   Other variables and their descriptions:
         INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         RDATE   !  met file 2 start date 
         INTEGER         RTIME   !  met file 2 start time
+        INTEGER      :: SWNCOLS = 0   !  bioseason 
+        INTEGER      :: SWNROWS = 0   !  bioseason 
+        INTEGER      :: SWXOFF  = 0   !  bioseason x offset from met grid
+        INTEGER      :: SWYOFF  = 0   !  bioseason y offset from met grid
         INTEGER         TZONE   !  output-file time zone ; not used in program
 
         LOGICAL ::      EFLAG    = .FALSE.  ! error flag
@@ -227,6 +230,10 @@ C.........  Evaluate the environment variables...
 
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
+
+C.......   Check to see if frost date switch file to be used
+        MESG = 'Using a frost date switch file?'
+        SWITCH_FILE = ENVYN ( 'BIOSW_YN', MESG, .TRUE., IOS )
 
 C.........  Write time zone to character string
         WRITE( CTZONE,94000 ) TZONE
@@ -271,9 +278,9 @@ C.......... Find emitting species names
             IF ( K .EQ. 0 ) THEN
                MSPCS = MSPCS + 1
                EMSPC( MSPCS ) = SPCNAMES( J, I )
-            ENDIF
-          ENDDO
-        ENDDO
+            END IF
+          END DO
+        END DO
 
         ALLOCATE( MLFAC ( MSPCS, BSPCS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LAT', PROGNAME )
@@ -297,34 +304,6 @@ C.......   Get the method to calculate PAR
         MESG =  'PAR calculation will ' // PARMENU( PARTYPE )  
         WRITE( LDEV, 92000 ) MESG
 
-C.......   Check to see if frost date switch file to be used
-
-        MESG = 'Using a frost date switch file?'
-        SWITCH_FILE = ENVYN ( 'BIOSW_YN', MESG, .TRUE., IOS )
-
-C.......    Get bioseason switch file, BIOSEASON
-        IF ( SWITCH_FILE ) THEN
-
-           BNAME = PROMPTMFILE( 
-     &          'Enter name for season switch input file',
-     &          FSREAD3, 'BIOSEASON', 'TMPBIO' )
-           
-C......    Read description of switch file
-
-           IF ( .NOT. DESC3( BNAME ) ) THEN
-
-              MESG = 'Could not get description of file "' //
-     &             NNAME( 1:TRIMLEN( BNAME ) ) // '"'
-              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-
-           ENDIF
-
-C.......   Initialize grid definition 
-
-           CALL CHKGRID( BNAME, 'GRID' , 0 , EFLAG )
-
-        END IF
-
 C.......   Get temperature file
 
         M3NAME = PROMPTMFILE( 
@@ -341,22 +320,23 @@ C......    Read description of temperature file
         IF ( .NOT. DESC3( M3NAME ) ) THEN
 
             MESG = 'Could not get description of file "' //
-     &             M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
+     &             M3NAME( 1:LEN_TRIM( M3NAME ) ) // '"'
             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
 
-        ENDIF
+        END IF
 
         J = INDEX1( TMPRNAM , NVARS3D, VNAME3D )
 
         IF ( J .LE. 0 ) THEN
 
              MESG = 'Could not find ' // TMPRNAM // 'in file ' //
-     &                   M3NAME( 1:TRIMLEN( M2NAME ) ) 
+     &                   M3NAME( 1:LEN_TRIM( M2NAME ) ) 
 
              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
  
-        ENDIF
+        END IF
 
+C.........  Initialize reference grid with met file
         CALL CHKGRID( M3NAME, 'GRID' , 0 , EFLAG ) 
 
 C.........  Store met grid settings
@@ -383,11 +363,12 @@ C......    Read description of radiation/cloud file
              IF ( .NOT. DESC3( M2NAME ) ) THEN
 
                 MESG = 'Could not get description of file "' //
-     &             M2NAME( 1:TRIMLEN( M2NAME ) ) // '"'
+     &             M2NAME( 1:LEN_TRIM( M2NAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
 
-             ENDIF
+             END IF
 
+C..............  Check that all met files have the same grid.
              CALL CHKGRID( M2NAME, 'GRID' , 0 , EFLAG )
 
 C........  If grid definition does not match BGRD file then stop
@@ -403,13 +384,13 @@ C........  If grid definition does not match BGRD file then stop
              
              M2NAME = M3NAME
  
-           ENDIF
+           END IF
         
-        ENDIF
+        END IF
 
         IF ( PARTYPE .EQ. 1 ) THEN
 
-C......    Get name of radiation variable to use
+C............. Get name of radiation variable to use
 
             MESG = 'Variable name for radiation'
             CALL ENVSTR( 'RAD_VAR', MESG, 'RGRND', RADNAM, IOS )
@@ -419,12 +400,12 @@ C......    Get name of radiation variable to use
             IF ( J .LE. 0 ) THEN
 
                 MESG = 'Could not find ' // RADNAM // 'in file ' //
-     &                 M2NAME( 1:TRIMLEN( M2NAME ) )
+     &                 M2NAME( 1:LEN_TRIM( M2NAME ) )
 
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
 
-            ENDIF
-         ENDIF
+            END IF
+         END IF
 
 C........  if solar zenith angle calculation needed then get lat-lon
 C........  coordinates from GRID_CRO_2D file
@@ -438,13 +419,42 @@ C........  coordinates from GRID_CRO_2D file
             IF ( .NOT. DESC3( GNAME ) ) THEN
                 CALL M3EXIT( 'TMPBIO', 0, 0,
      &                      'Could not get description of file "'
-     &                      // GNAME( 1:TRIMLEN( GNAME ) ) // '"', 2 )
+     &                      // GNAME( 1:LEN_TRIM( GNAME ) ) // '"', 2 )
 
-            ENDIF 
+            END IF 
 
+C.............  Check that all met files have the same grid.
             CALL CHKGRID( GNAME, 'GRID' , 0 , EFLAG ) 
 
         END IF
+
+C.......    Get bioseason switch file, BIOSEASON
+        IF ( SWITCH_FILE ) THEN
+
+           BNAME = PROMPTMFILE( 
+     &          'Enter name for season switch input file',
+     &          FSREAD3, 'BIOSEASON', 'TMPBIO' )
+           
+C......    Read description of switch file
+
+           IF ( .NOT. DESC3( BNAME ) ) THEN
+
+              MESG = 'Could not get description of file "' //
+     &             NNAME( 1:LEN_TRIM( BNAME ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+
+           END IF
+
+C............  Compare grid definition and call with temporary subgrid flag
+C              (since this subgrid can be different from final subgrid)
+           CALL CHKGRID( BNAME, 'GRID' , 2 , EFLAG )
+           SWXOFF = XOFF_A
+           SWYOFF = YOFF_A
+
+        END IF
+
+        SWNCOLS = NCOLS3D
+        SWNROWS = NROWS3D
 
 C.......   Get normalized emissions file, BGRD
 
@@ -457,10 +467,10 @@ C......    Read description of normalized emissions file
         IF ( .NOT. DESC3( NNAME ) ) THEN
 
             MESG = 'Could not get description of file "' //
-     &             NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &             NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
 
-        ENDIF
+        END IF
 
 C.........  Final grid definition 
         CALL CHKGRID( NNAME, 'GRID' , 1, EFLAG )
@@ -482,12 +492,12 @@ C......    Read description of second normalized emissions file
            IF ( .NOT. DESC3( NNAME2 ) ) THEN
 
               MESG = 'Could not get description of file "' //
-     &             NNAME( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &             NNAME( 1:LEN_TRIM( NNAME2 ) ) // '"'
               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
 
-           ENDIF
+           END IF
 
-C............  Check final grid definition 
+C............  Check normalized emissions are consistent with the subgrid.
            CALL CHKGRID( NNAME2, 'GRID' , 1 , EFLAG )
 
            LUSE2  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
@@ -526,7 +536,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
             UNITS3D( M ) = 'moles/hr'
             VDESC3D( M ) = 'biogenic emissions of the indicated species'
             VTYPE3D( M ) = M3REAL
-        ENDDO
+        END DO
 
         FDESC3D = ' '   ! array
 
@@ -538,7 +548,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
            FDESC3D( 5 ) = '/LANDUSE/ ' // LUSE // LUSE2
         ELSE
            FDESC3D( 5 ) = '/LANDUSE/ ' // LUSE
-        ENDIF
+        END IF
 
         FDESC3D( 6 ) = '/MET SCENARIO/ ' // METSCEN
         FDESC3D( 7 ) = '/CLOUD SCHEME/ ' // CLOUDSHM
@@ -549,7 +559,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
 
         DO M = 1, MSPCS
             UNITS3D( M ) = 'tons/hr'
-        ENDDO
+        END DO
 
         SNAME = PROMPTMFILE(
      &          'Enter name for BGTS output file - mass',
@@ -568,15 +578,15 @@ C........  coordinates from GRID_CRO_2D file
 
             IF ( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, LAT ) ) THEN
               MESG = 'Could not read LAT from file "' //
-     &                GNAME( 1:TRIMLEN( GNAME ) ) // '"'
+     &                GNAME( 1:LEN_TRIM( GNAME ) ) // '"'
               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
 
             IF ( .NOT. READ3( GNAME, 'LON', 1, 0, 0, LON ) ) THEN
               MESG = 'Could not read LON from file "' //
-     &                GNAME( 1:TRIMLEN( GNAME ) ) // '"'
+     &                GNAME( 1:LEN_TRIM( GNAME ) ) // '"'
               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-            ENDIF
+            END IF
 
         END IF    ! Use cloud to calculate PAR
 
@@ -596,14 +606,14 @@ C.......   Build name table for variables in normalized emissions file"
             I = I + 1
             NORMV( I ) = BIOLTYPE( K ) // BIOSPC( B )
 
-          ENDDO
-        ENDDO
+          END DO
+        END DO
 
         DO  L = 1, LUSES
 
-            NORMN( L ) = BIOLUSE( L )( 1:TRIMLEN( BIOLUSE( L )))//'NO'
+            NORMN( L ) = BIOLUSE( L )( 1:LEN_TRIM( BIOLUSE( L )))//'NO'
 
-        ENDDO
+        END DO
 
 
 C.......   Allocate memory for normalized emissions
@@ -662,11 +672,11 @@ C.......   Allocate memory for normalized emissions
            ALLOCATE( NORNOS( NCOLS, NROWS, LUSES ), STAT=IOS )
            CALL CHECKMEM( IOS, 'NORNOW', PROGNAME )
 
-           ALLOCATE( SEASON( METNCOLS, METNROWS), STAT=IOS )
+           ALLOCATE( SEASON( SWNCOLS, SWNROWS), STAT=IOS )
            CALL CHECKMEM( IOS, 'SEASON', PROGNAME )
            SEASON = 0   ! array
 
-        ENDIF
+        END IF
 
 C.......   Loops reading the various categories of normalized emissions:
         I = 0
@@ -678,142 +688,142 @@ C.......   Loops reading the various categories of normalized emissions:
             IF ( .NOT. READ3( NNAME, NORMV( I ), 1, 0, 0, 
      &                      PINE( 1, 1, M ) ) ) THEN
                  MESG = 'Could not read "' // 
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &                  NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
             IF ( SWITCH_FILE ) THEN
                IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
      &                      PINEW( 1, 1, M ) ) ) THEN
                   MESG = 'Could not read "' // 
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &                  NNAME2( 1:LEN_TRIM( NNAME2 ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
                END IF
-            ENDIF
+            END IF
 
             I = I + 1
 
             IF ( .NOT. READ3( NNAME, NORMV( I ), 1, 0, 0,
      &                      DECD( 1, 1, M ) ) ) THEN
                  MESG = 'Could not read "' //
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &                  NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
             IF ( SWITCH_FILE ) THEN
                IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
      &                      DECDW( 1, 1, M ) ) ) THEN
                   MESG = 'Could not read "' // 
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &                  NNAME2( 1:LEN_TRIM( NNAME2 ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
                END IF
-            ENDIF
+            END IF
 
             I = I + 1
 
             IF ( .NOT. READ3( NNAME, NORMV( I ), 1, 0, 0,
      &                      CONF( 1, 1, M ) ) ) THEN
                  MESG = 'Could not read "' //
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &                  NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
             IF ( SWITCH_FILE ) THEN
                IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
      &                      CONFW( 1, 1, M ) ) ) THEN
                   MESG = 'Could not read "' // 
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &                  NNAME2( 1:LEN_TRIM( NNAME2 ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
                END IF
-            ENDIF
+            END IF
 
             I = I + 1
 
             IF ( .NOT. READ3( NNAME, NORMV( I ), 1, 0, 0,
      &                      AGRC( 1, 1, M ) ) ) THEN
                  MESG = 'Could not read "' //
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &                  NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
             IF ( SWITCH_FILE ) THEN
                IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
      &                      AGRCW( 1, 1, M ) ) ) THEN
                   MESG = 'Could not read "' // 
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &                  NNAME2( 1:LEN_TRIM( NNAME2 ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
                END IF
-            ENDIF 
+            END IF 
 
             I = I + 1
 
             IF ( .NOT. READ3( NNAME, NORMV( I ), 1, 0, 0,
      &                      LEAF( 1, 1, M ) ) ) THEN
                  MESG = 'Could not read "' //
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &                  NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
             IF ( SWITCH_FILE ) THEN
                IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
      &                      LEAFW( 1, 1, M ) ) ) THEN
                   MESG = 'Could not read "' // 
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &                  NNAME2( 1:LEN_TRIM( NNAME2 ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
                END IF
-            ENDIF
+            END IF
 
             I = I + 1
 
             IF ( .NOT. READ3( NNAME, NORMV( I ), 1, 0, 0,
      &                      OTHR( 1, 1, M ) ) ) THEN
                  MESG = 'Could not read "' //
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &                  NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
             IF ( SWITCH_FILE ) THEN
                IF ( .NOT. READ3( NNAME2, NORMV( I ), 1, 0, 0, 
      &                      OTHRW( 1, 1, M ) ) ) THEN
                   MESG = 'Could not read "' // 
-     &                  NORMV( I )( 1 : TRIMLEN( NORMV( I ) ) ) //
+     &                  NORMV( I )( 1 : LEN_TRIM( NORMV( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &                  NNAME2( 1:LEN_TRIM( NNAME2 ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
                END IF
-            ENDIF
+            END IF
 
-        ENDDO        !  end loop to read normalized emissions 
+        END DO        !  end loop to read normalized emissions 
 
         IF ( .NOT. READ3( NNAME, 'AVLAI', 1, 0, 0, AVLAI ) ) THEN
              MESG = 'Could not read AVLAI from file "' //
-     &              NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &              NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
         END IF
         IF ( SWITCH_FILE ) THEN
            IF ( .NOT. READ3( NNAME2, 'AVLAI', 1, 0, 0, 
      &                      AVLAIW ) ) THEN
               MESG = 'Could not read AVLAI from file "' //
-     &              NNAME2( 1:TRIMLEN( NNAME ) ) // '"'
+     &              NNAME2( 1:LEN_TRIM( NNAME ) ) // '"'
               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
            END IF
-        ENDIF
+        END IF
 
         I = 0
         DO  J = 1, BSPCS
@@ -822,9 +832,9 @@ C.......   Loops reading the various categories of normalized emissions:
             IF ( .NOT. READ3( NNAME, NORMN( I ), 1, 0, 0, 
      &                      NORNO( 1,1,J ) ) ) THEN
                  MESG = 'Could not read "' // 
-     &                  NORMN( I )( 1 : TRIMLEN( NORMN( I ) ) ) //
+     &                  NORMN( I )( 1 : LEN_TRIM( NORMN( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+     &                  NNAME( 1:LEN_TRIM( NNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
 
@@ -832,14 +842,14 @@ C.......   Loops reading the various categories of normalized emissions:
                IF ( .NOT. READ3( NNAME2, NORMN( I ), 1, 0, 0, 
      &                      NORNOW( 1,1,J ) ) ) THEN
                   MESG = 'Could not read "' // 
-     &                  NORMN( I )( 1 : TRIMLEN( NORMN( I ) ) ) //
+     &                  NORMN( I )( 1 : LEN_TRIM( NORMN( I ) ) ) //
      &                  '" from file "' //
-     &                  NNAME2( 1:TRIMLEN( NNAME2 ) ) // '"'
+     &                  NNAME2( 1:LEN_TRIM( NNAME2 ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
                END IF
-            ENDIF
+            END IF
 
-        ENDDO        !  end loop reading normalized NO's
+        END DO        !  end loop reading normalized NO's
 
 
 C.......   Allocate memory for met
@@ -870,7 +880,7 @@ C.........  Set up gridded met file(s) dates and times for specific time zone
            RDATE = MDATE  
            RTIME = MTIME
   
-        ENDIF 
+        END IF 
 
         LDATE = 0     
 
@@ -894,7 +904,7 @@ C..........  If new date, read season switch
                   IF ( .NOT. READ3( BNAME, 'SEASON', 1, 
      &                JDATE, 0, SEASON ) ) THEN
                      MESG = 'Could not read SEASON from file ' //
-     &               BNAME( 1:TRIMLEN( BNAME ) )
+     &               BNAME( 1:LEN_TRIM( BNAME ) )
                      CALL M3EXIT( 'TMPBIO', JDATE, 0, MESG, 2 )
                   END IF
 
@@ -911,9 +921,14 @@ C..........  If new date, read season switch
                         IF( II .LE. 0 .OR. II .GT. NCOLS .OR.
      &                      JJ .LE. 0 .OR. JJ .GT. NROWS       ) CYCLE
 
-C..........   If switch equal to 0 use winter normalized emissions
+C........................  If switch equal to 0 use winter normalized emissions
+C........................  Allow for subgrid in switch
+C........................  If grid is larger subgrid, then extra cells will
+C                          behave as the nearest available cell on the boundary.
 
-                       IF ( SEASON ( I, J ) .EQ. 0 ) THEN
+                       III = MAX( MIN( I - SWXOFF, SWNCOLS ), 1 )
+                       JJJ = MAX( MIN( J - SWYOFF, SWNROWS ), 1 )
+                       IF ( SEASON ( III, JJJ ) .EQ. 0 ) THEN
                           DO M = 1, BSPCS - 1
                              PINES( II, JJ, M ) = PINEW( II, JJ, M ) 
                              DECDS( II, JJ, M ) = DECDW( II, JJ, M )
@@ -921,13 +936,13 @@ C..........   If switch equal to 0 use winter normalized emissions
                              LEAFS( II, JJ, M ) = LEAFW( II, JJ, M )
                              AGRCS( II, JJ, M ) = AGRCW( II, JJ, M )
                              OTHRS( II, JJ, M ) = OTHRW( II, JJ, M )
-                          ENDDO
+                          END DO
 
                           AVLAIS( II, JJ ) = AVLAIW ( II, JJ )
 
                           DO M = 1, BSPCS
                              NORNOS( II, JJ, M ) = NORNOW( II, JJ, M )
-                          ENDDO
+                          END DO
 
                        ELSE
 
@@ -938,22 +953,22 @@ C..........   If switch equal to 0 use winter normalized emissions
                              LEAFS( II, JJ, M ) = LEAF( II, JJ, M )
                              AGRCS( II, JJ, M ) = AGRC( II, JJ, M )
                              OTHRS( II, JJ, M ) = OTHR( II, JJ, M )
-                          ENDDO
+                          END DO
 
                           AVLAIS( II, JJ ) = AVLAI ( II, JJ )
 
                           DO M = 1, BSPCS
                              NORNOS( II, JJ, M ) = NORNO( II, JJ, M )
-                          ENDDO
+                          END DO
 
-                       ENDIF
+                       END IF
 
-                    ENDDO
-                  ENDDO
+                    END DO
+                  END DO
  
-               ENDIF
+               END IF
 
-           ENDIF
+           END IF
 
 C.............  Write to screen because WRITE3 only writes to LDEV
            WRITE( *, 94030 ) HHMMSS( JTIME )
@@ -963,7 +978,7 @@ C.............  Read temperature data
            IF ( .NOT. READ3( M3NAME, TMPRNAM, 1, 
      &          MDATE, MTIME, TASFC ) ) THEN
               MESG = 'Could not read ' // TMPRNAM // 'from file ' //
-     &                M3NAME( 1:TRIMLEN( M3NAME ) )
+     &                M3NAME( 1:LEN_TRIM( M3NAME ) )
               CALL M3EXIT( 'TMPBIO', MDATE, MTIME, MESG, 2 )
            END IF
 
@@ -975,7 +990,7 @@ C............  If necessary read solar radiation
               IF ( .NOT. READ3( M2NAME, RADNAM, ALLAYS3, RDATE,
      &             RTIME, TSOLAR(1,1) ) ) THEN
                  MESG = 'Could not read ' // RADNAM // 'from file ' //
-     &                M2NAME( 1:TRIMLEN( M2NAME ) ) 
+     &                M2NAME( 1:LEN_TRIM( M2NAME ) ) 
 
                  CALL M3EXIT( 'TMPBIO', RDATE, RTIME, MESG, 2 )
               END IF
@@ -985,7 +1000,7 @@ C...............  Convert shortwave radiation to PAR
               DO I = 1, METNCOLS
                DO J = 1, METNROWS
                     TSOLAR( I, J ) = TSOLAR( I, J ) * SOL2PAR ! Calc. PAR
-               ENDDO
+               END DO
               END DO
 
 C...............  Calculate non-speciated emissions
@@ -1012,7 +1027,7 @@ C..............  Read surface pressure data from M3NAME
               IF ( .NOT. READ3( M3NAME, 'PRES', 1, 
      &                        MDATE, MTIME, PRSFC ) ) THEN
                   MESG = 'Could not read PRES from file "' //
-     &                   M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
+     &                   M3NAME( 1:LEN_TRIM( M3NAME ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', MDATE, MTIME, MESG, 2 )
               END IF
 
@@ -1021,8 +1036,8 @@ C...............  convert to millibars
               DO  C = 1, METNCOLS
               DO  R = 1, METNROWS
                        PRSFC( C, R ) = PRSFC( C, R ) * 0.010  ! Pa to mb
-              ENDDO
-              ENDDO
+              END DO
+              END DO
 
 C............. Calculate non-speciated emissions
 C............. must pass met date and time here
@@ -1038,7 +1053,7 @@ C............. must pass met date and time here
      &                  PRSFC, TASFC, PINE, DECD, CONF, AGRC, LEAF,
      &                  OTHR, AVLAI, NORNO, PARTYPE, EMPOL )
 
-              ENDIF
+              END IF
 
            END IF 
 
@@ -1052,9 +1067,9 @@ C............. Speciate emissions
      &                             EMPOL( I, J, K ) * MLFAC( L, K )
                    EMISS( I, J, L  ) = EMISS( I, J, L ) +
      &                             EMPOL( I, J, K ) * MSFAC( L, K ) 
-                 ENDDO
-               ENDDO
-             ENDDO
+                 END DO
+               END DO
+             END DO
            END DO
 
 C.............  Write out speciated emissions    
@@ -1089,8 +1104,8 @@ C.............. Next time step
 
              CALL NEXTIME( RDATE, RTIME, 10000 ) 
 
-           ENDIF
-      ENDDO                !  end loop on hours HR
+           END IF
+      END DO                !  end loop on hours HR
 
 
 C.........   End of program:
