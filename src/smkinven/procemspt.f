@@ -148,7 +148,10 @@ C.............  Don't read emission file since it will be read in RDINVDATA
             END IF
 
             INFILE = LSTSTR( I )
-            
+
+C.............  Skip #LIST line
+            IF( INDEX( INFILE, '#LIST' ) > 0 ) CYCLE
+ 
 C.............  Check for INVYEAR packet
             IF( GETINVYR( INFILE ) > 0 ) CYCLE
 
