@@ -21,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -75,9 +75,9 @@
         LOGICAL, PUBLIC :: TFLAG   ! use temporalized (hourly) emissions
         LOGICAL, PUBLIC :: SFLAG   ! use speciation
         LOGICAL, PUBLIC :: LFLAG   ! use layer fractions
-        LOGICAL, PUBLIC :: VFLAG   ! process VMT (not emission)
         LOGICAL, PUBLIC :: HFLAG   ! create hourly outputs
         LOGICAL, PUBLIC :: PINGFLAG! create plume-in-grid hourly file
+        LOGICAL, PUBLIC :: ELEVFLAG! create ASCII elevated sources file
         LOGICAL, PUBLIC :: LMETCHK ! compare met information in headers
         LOGICAL, PUBLIC :: LMKTPON ! true: use market penetration
         LOGICAL, PUBLIC :: LGRDOUT ! output gridded I/O API NetCDF file(s)
@@ -91,20 +91,23 @@
 
 !.........  FILE NAMES AND UNIT NUMBERS...
 
-!.........  Unit numbers
-        INTEGER     , PUBLIC :: ARDEV  ! area ASCII report output
+!.........  Input file unit numbers
         INTEGER     , PUBLIC :: ASDEV  ! area ASCII inventory input
-        INTEGER     , PUBLIC :: BRDEV  ! bioegnic ASCII report output
         INTEGER     , PUBLIC :: CDEV   ! state/county names file
         INTEGER     , PUBLIC :: EDEV   ! elevated/PinG ASCII input file
         INTEGER     , PUBLIC :: GDEV   ! gridding surrogates file
-        INTEGER     , PUBLIC :: MRDEV  ! mobile ASCII report output
         INTEGER     , PUBLIC :: MSDEV  ! mobile ASCII inventory input
         INTEGER     , PUBLIC :: PDEV  = 0  ! inventory pollutants list
-        INTEGER     , PUBLIC :: PRDEV  ! point ASCII report output
         INTEGER     , PUBLIC :: PSDEV  ! point ASCII inventory input
-        INTEGER     , PUBLIC :: TRDEV  ! total ASCII report output
         INTEGER     , PUBLIC :: VDEV  = 0  ! activities list
+
+!.........  Output file unit numbers
+        INTEGER     , PUBLIC :: ARDEV  ! area ASCII report output
+        INTEGER     , PUBLIC :: BRDEV  ! bioegnic ASCII report output
+        INTEGER     , PUBLIC :: EVDEV  ! elevated source ASCII output
+        INTEGER     , PUBLIC :: MRDEV  ! mobile ASCII report output
+        INTEGER     , PUBLIC :: PRDEV  ! point ASCII report output
+        INTEGER     , PUBLIC :: TRDEV  ! total ASCII report output
 
 !.........  Logical file names
         CHARACTER*16, PUBLIC :: AENAME ! area inventory input
@@ -139,7 +142,9 @@
         CHARACTER*16, PUBLIC :: PRNAME ! point reactivity control matrix input
         CHARACTER*16, PUBLIC :: PUNAME ! point multiplicative cntl matrix input
         CHARACTER*16, PUBLIC :: PONAME ! point output gridded file
+        CHARACTER*16, PUBLIC :: PVNAME ! point elevated stack groups file
         CHARACTER*16, PUBLIC :: PINGNAME ! plume-in-grid emissions file name
+        CHARACTER*16, PUBLIC :: PELVNAME ! elevated ASCII emissions file name
         CHARACTER*16, PUBLIC :: PREPNAME ! point report file name
 
         CHARACTER*16, PUBLIC :: TONAME ! total output gridded file
@@ -150,6 +155,7 @@
         INTEGER, PUBLIC :: NASRC = 0   ! number of area sources
         INTEGER, PUBLIC :: NMSRC = 0   ! number of mobile sources
         INTEGER, PUBLIC :: NPSRC = 0   ! number of point sources
+        INTEGER, PUBLIC :: JSTACK = 0  ! pt src pos'n of stack in src chars
 
 !.........  Number of inventory pollutants
         INTEGER, PUBLIC :: ANIPOL = 0  ! area
@@ -340,6 +346,8 @@
         INTEGER, PUBLIC :: TZONE  = -1    ! time zone
         INTEGER, PUBLIC :: BYEAR  = 0     ! base inventory year
         INTEGER, PUBLIC :: PYEAR  = 0     ! projected inventory year
+        INTEGER, PUBLIC :: PVSDATE= 0     ! Julian start date in STACK_GROUPS
+        INTEGER, PUBLIC :: PVSTIME= 0     ! start time in STACK_GROUPS
 
 !.........  Units conversions information
         INTEGER               , PUBLIC :: INVPIDX = 1    ! annual/O3 season idx
@@ -376,6 +384,9 @@
 !.........  Layer fractions
         REAL   , ALLOCATABLE, PUBLIC :: LFRAC( :,: )  ! dim: npsrc, emlays
 
+!.........  Elevated adjustments buffer for Mrgmult
+        REAL   , ALLOCATABLE, PUBLIC :: ELEVADJ( : )! max(nasrc,nmsrc,npsrc)
+
 !.........  Gridding matrices, dim depends on src category
         REAL   , ALLOCATABLE, PUBLIC :: AGMATX( : ) ! contiguous area gridding
         REAL   , ALLOCATABLE, PUBLIC :: MGMATX( : ) ! contiguous mobile gridding
@@ -390,9 +401,6 @@
         REAL   , ALLOCATABLE, PUBLIC :: ARINFO( :,: ) ! area
         REAL   , ALLOCATABLE, PUBLIC :: MRINFO( :,: ) ! mobile
         REAL   , ALLOCATABLE, PUBLIC :: PRINFO( :,: ) ! point
-
-!.........  Plume-in-grid arrays
-        REAL   , ALLOCATABLE, PUBLIC :: PGRPEMIS( : ) ! PinG group emissions
 
 !.........  OUTPUT ARRAYS ...
 
