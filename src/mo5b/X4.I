@@ -1,0 +1,5 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      REAL XVFTP,XVEXH,XVEVAP,XVLOSS,XVRUNL,XVRSTL,XVIDLE
+      COMMON /X4/ XVFTP(3,2),XVEXH(2),XVEVAP(2),XVLOSS(2),XVRUNL(2),
+     *            XVRSTL(2),XVIDLE(3,2)

@@ -1,0 +1,4 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      REAL AC,XLOAD,TRAILR,ABSHUM,DB,WB
+      COMMON /ALUHIN/ AC,XLOAD(3),TRAILR(3),ABSHUM,DB,WB

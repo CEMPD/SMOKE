@@ -1,0 +1,4 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      REAL  EFFTP, EFEXH, EFEVAP, EFREFL, EFRUNL
+      COMMON /RESUL1/ EFFTP(3,9),EFEXH(9),EFEVAP(9),EFREFL(9),EFRUNL(9)

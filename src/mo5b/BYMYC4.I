@@ -1,0 +1,8 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      CHARACTER*26 BYVTN
+      CHARACTER*17 YFM
+      CHARACTER*7 PN,U7
+      CHARACTER*3 PSEC
+      CHARACTER*1 VB
+      COMMON /BYMYC4/ BYVTN(8),YFM,PN(10),U7,PSEC(3),VB

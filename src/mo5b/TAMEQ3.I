@@ -1,0 +1,4 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      REAL CUMCAP,CUMALL,CUMNIM,CUMIM,GT50KA,GT50KN,GT50KI 
+      COMMON /TAMEQ3/ CUMCAP,CUMALL,CUMNIM,CUMIM,GT50KA,GT50KN,GT50KI                               

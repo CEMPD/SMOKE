@@ -1,0 +1,5 @@
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+      INTEGER NEWETP,IETPYR,NETPYR
+      REAL ETP,ETPPIV
+      COMMON /ETPPAR/ ETP(7,3),NEWETP,IETPYR(4),ETPPIV(4),NETPYR
