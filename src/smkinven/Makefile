@@ -73,13 +73,13 @@ rdemsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdemsar.f
 rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdemsmb.f
-rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
+rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
 	$(FC) $(FFLAGS) -c -o $@ rdemspd.f
 rdemspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdemspt.f
 rdepsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdepsar.f
-rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
+rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ rdepspd.f
 rdepspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdepspt.f
