@@ -108,9 +108,11 @@ C...........   Other local variables
 
         CHARACTER*5     CPOS               ! char pollutant position in EINAM
         CHARACTER*256   MESG               ! message buffer
+        CHARACTER(LEN=MACLEN3) MACZERO     ! buffer for zero MACT code
         CHARACTER(LEN=SCCLEN3) SCCZERO     ! buffer for zero SCC
         CHARACTER(LEN=SICLEN3) SICZERO     ! buffer for zero SIC
         CHARACTER(LEN=SICLEN3) CSIC        ! buffer for char SIC
+        CHARACTER(LEN=IOVLEN3) POLDUM      ! dummy pollutant variable
 
         CHARACTER*16 :: PROGNAME = 'PKTLOOP' ! program name
 
@@ -120,6 +122,7 @@ C   Begin body of subroutine PKTLOOP
 C.........  Set up zero strings for SCC code of zero and SIC code of zero
         SCCZERO = REPEAT( '0', SCCLEN3 )
         SICZERO = REPEAT( '0', SICLEN3 )
+        MACZERO = REPEAT( '0', MACLEN3 )
 
 C.........  Loop through packets
         DO K = 1, NPACKET
@@ -202,36 +205,44 @@ C                   SICs provided as 2-digits get left-justified.
                 END IF
                 CALL PADZERO( PKTINFO%CSIC )     ! Pad LHS with zeros
 
+C................  Check if invalid SIC is provided in a cross-reference file.
+C                  This reporting is part of the requirements for SMOKE enhancements 
+C                  for toxics (EPA SMOKE/MPEI project, Task 6)
+                IF( ACTION       .EQ. 'COUNT' .AND.
+     &              PKTINFO%CSIC .NE. SICZERO .AND.
+     &              PKTINFO%TSCC .EQ. SCCZERO       ) THEN
+
+C.....................  Use FLTRXREF to check if SIC is in the inventory; pass 
+C                       zero values for SCC, MACT, and pollutant so they don't 
+C                       cause this record to be skipped
+                    POLDUM = ' '                 
+                    CALL FLTRXREF( PKTINFO%CFIP, PKTINFO%CSIC, SCCZERO, 
+     &                             POLDUM, MACZERO, IXSIC, IXSCC, JPOL,
+     &                             LTMP, SKIPREC )
+     
+                    IF( SKIPREC ) THEN
+                        WRITE( MESG, 94010 ) 'WARNING: SIC "' //
+     &                     TRIM( PKTINFO%CSIC ) // '" is in ' //
+     &                     'cross-reference at line', I, 'of ' //
+     &                     CRLF() // BLANK10 // TRIM( PKTLIST( K ) ) //
+     &                     'packet, but it is not in the inventory.'
+                        CALL M3MSG2( MESG )
+                    END IF
+                END IF
+          
+C.................  For CONTROL packet entries, check application control flag
+                IF( PKTLIST( K ) == 'CONTROL' ) THEN
+                    IF( PKTINFO%APPFLAG /= 'Y' ) CYCLE
+                END IF                    
+
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pollutant name 
 C                   with master list.
-                CALL FLTRXREF( PKTINFO%CFIP, CSIC, 
+                CALL FLTRXREF( PKTINFO%CFIP, PKTINFO%CSIC, 
      &                         SCCZERO, PKTINFO%CPOL, 
      &                         PKTINFO%CMCT, IXSIC, 
      &                         IXSCC, JPOL, LTMP, SKIPREC  )
-
-C............  Report that invalid SIC is provided in a cross-reference file.
-C              This reporting is part of the requirements for SMOKE enhancements 
-C              for toxics (EPA SMOKE/MPEI project, Task 6)
-                IF( ACTION   .EQ. 'COUNT' .AND.
-     &              SKIPREC               .AND.
-     &              CSIC     .NE. SICZERO .AND.
-     &              CATEGORY .EQ. 'POINT'       ) THEN
-                    WRITE( MESG, 94010 ) 'WARNING: SIC "'//TRIM(CSIC)//
-     &                     '" is in cross-reference at line', I, 'of '//
-     &                     CRLF()// BLANK10 // TRIM( PKTLIST( K ) ) //
-     &                     'packet, but it is not in the inventory.'
-                    CALL M3MSG2( MESG )
-                END IF
-     
-C.................  For CONTROL packet entries, check application control flag
-                IF( PKTLIST( K ) == 'CONTROL' ) THEN
-                    IF( PKTINFO%APPFLAG /= 'Y' ) THEN
-                        SKIPREC = .TRUE.
-                    END IF
-                END IF
-                    
                 IF( SKIPREC ) CYCLE  ! Skip this record
 
                 SKIPPOL = ( SKIPPOL .OR. LTMP )
@@ -245,14 +256,12 @@ C.................  If SIC is defined, make sure SCC is not defined and fill
 C                   in SCC temporarily with SIC value and special identifier.
                 IF( PKTINFO%CSIC .NE. SICZERO .AND. 
      &              PKTINFO%TSCC .NE. SCCZERO       ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Both SCC and SIC ' //
+                    WRITE( MESG,94010 ) 'WARNING: Both SCC and SIC ' //
      &                     'values are given at line', I, CRLF() // 
      &                     BLANK10 // 'of "' // TRIM( PKTLIST( K ) ) //
-     &                     '" packet. Only one or the other is '//
-     &                     'allowed for each x-ref entry.'
+     &                     '" packet. Only the SCC will be used for ' //
+     &                     'this cross-reference entry.'
                     CALL M3MSG2( MESG )
-                    CYCLE
 
 C.................   If only SIC is given, then change SCC value.
                 ELSE IF ( PKTINFO%CSIC .NE. SICZERO ) THEN
