@@ -136,7 +136,15 @@ C.........  Allocatable, temporary per-layer variables from 0:EMLAYS
 
 C.........  Allocatable cross- OR dot-point meteorology input buffers
         REAL   , ALLOCATABLE :: XBUF( :,: )   ! cross-point
-        REAL   , ALLOCATABLE :: DBUF( :,: )   ! dor-point
+        REAL   , ALLOCATABLE :: DBUF( :,: )   ! dot-point
+
+C.........  Allocatable cross-point surface grid coordinates
+        REAL   , ALLOCATABLE :: XLAT( :,: )   ! latitudes
+        REAL   , ALLOCATABLE :: XLON( :,: )   ! longitudes
+
+C.........  Allocatable dot-point surface grid coordinates
+        REAL   , ALLOCATABLE :: DLAT( :,: )   ! latitudes
+        REAL   , ALLOCATABLE :: DLON( :,: )   ! longitudes
 
 C.........  Allocatable un-gridding matrices (uses bilinear interpolation)
 C           Dimensioned 4 by NSRC
@@ -169,6 +177,7 @@ C...........   Logical names and unit numbers
         INTEGER         SDEV    !  ASCII part of inventory file
 
         CHARACTER(16)   ANAME   !  ASCII point-source inventory file
+        CHARACTER(16)   CNAME   !  cross-point surface grid file
         CHARACTER(16)   DNAME   !  dot-point layered met file name
         CHARACTER(16)   ENAME   !  point-source inventory input file
         CHARACTER(16)   GNAME   !  cross-point layered grid file name
@@ -176,6 +185,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
         CHARACTER(16)   LNAME   !  layer fractions matrix output file
         CHARACTER(16)   SNAME   !  cross-point surface met file name
+        CHARACTER(16)   TNAME   !  dot-point surface grid file
         CHARACTER(16)   XNAME   !  cross-point layered met file name
 
 C...........   Other local variables
@@ -232,6 +242,7 @@ C...........   Other local variables
         LOGICAL     :: COMPUTE = .FALSE.  ! true: compute plume rise 
         LOGICAL       :: EFLAG = .FALSE.  ! error flag
         LOGICAL       :: FFLAG = .FALSE.  ! true: use hourly flow rate
+        LOGICAL       :: GFLAG = .FALSE.  ! true: use variable grid
         LOGICAL       :: HFLAG = .FALSE.  ! true: hourly input used
         LOGICAL       :: IFLAG = .FALSE.  ! true: hr data okay for timestep
         LOGICAL       :: LFLAG = .FALSE.  ! true: use hourly layer 1 fraction
@@ -280,6 +291,9 @@ C.........   Get setting from environment variables
         MESG = 'Indicator for processing ONLY explicit plume ' //
      &         'rise sources'
         XFLAG = ENVYN( 'EXPLICIT_PLUMES_YN', MESG, .FALSE., IOS )
+
+        MESG = 'Use variable grid definition'
+        GFLAG = ENVYN( 'USE_VARIABLE_GRID', MESG, .FALSE., IOS )
 
 C.........  Must have HOUR_PLUMEDATA_YN = Y to have EXPLICIT_PLUMES_YN = Y
         IF ( XFLAG .AND. .NOT. HFLAG ) THEN
@@ -490,9 +504,25 @@ C.........  If not explicit plume rise only, open and process other met files
             DNAME = PROMPTMFILE( 
      &          'Enter name for DOT-POINT LAYERED MET file',
      &          FSREAD3, 'MET_DOT_3D', PROGNAME )
+     
+            IF( GFLAG ) THEN
+                CNAME = PROMPTMFILE(
+     &              'Enter name for CROSS-POINT SURFACE GRID file',
+     &              FSREAD3, 'GRID_CRO_2D', PROGNAME )
+     
+                TNAME = PROMPTMFILE(
+     &              'Enter name for DOT-POINT SURFACE GRID file',
+     &              FSREAD3, 'GRID_DOT_2D', PROGNAME )
+            END IF
 
 C.............  Check multiple met files for consistency
-            EFLAG = ( .NOT. CHKMETEM( 'NONE',SNAME,GNAME,XNAME,DNAME ) )
+            IF( GFLAG ) THEN
+                EFLAG = ( .NOT. CHKMETEM( CNAME, SNAME, TNAME,
+     &                                    XNAME, DNAME, GNAME ) )
+            ELSE
+                EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, 'NONE',
+     &                                     XNAME, DNAME, GNAME ) )
+            END IF
 
             IF ( EFLAG ) THEN
 
@@ -591,7 +621,22 @@ C.........  Get horizontal grid structure from the G_GRIDPATH file
         END IF
 
 C.........  Set subgrid if using met files, define grid if not using met files
-        CALL CHKGRID( 'GRIDDESC', 'GRIDDESC' , 1, EFLAG ) 
+C           If using a variable grid, do not allow subgrids
+        IF( GFLAG ) THEN
+            CALL CHKGRID( 'GRIDDESC', 'GRIDDESC', 0, EFLAG )
+            
+            IF( EFLAG ) THEN
+                MESG = 'Problem with variable grid input data.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        ELSE
+            CALL CHKGRID( 'GRIDDESC', 'GRIDDESC' , 1, EFLAG )
+            
+            IF( EFLAG ) THEN
+                MESG = 'Problem with gridded input data.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END IF
 
 C.........  Store local layer information
         J = LBOUND( VGLVS3D, 1 )
@@ -688,6 +733,18 @@ C.........  Allocate per-source and per-layer arrays
         ALLOCATE( ZSTK( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ZSTK', PROGNAME )
 
+C.........  If variable grid, allocate latitude and longitude arrays
+        IF( GFLAG ) THEN
+            ALLOCATE( XLAT( METNCOLS,METNROWS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLAT', PROGNAME )
+            ALLOCATE( XLON( METNCOLS,METNROWS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLON', PROGNAME )            
+            ALLOCATE( DLAT( METNCOLS+1,METNROWS+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DLAT', PROGNAME )
+            ALLOCATE( DLON( METNCOLS+1,METNROWS+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DLON', PROGNAME )
+        END IF
+
 C.........  If hourly data input, allocate index array
         IF( HFLAG ) THEN
             ALLOCATE( LOCINDXH( NHRSRC,EMLAYS ), STAT=IOS )
@@ -741,12 +798,31 @@ C.............  Allocate array for tmp gridded, layered cross-point met data
             CALL CHECKMEM( IOS, 'DBUF', PROGNAME )
 
 C.............  Compute un-gridding matrices for dot and cross point met data
-            CALL UNGRIDB( METNCOLS+1, METNROWS+1, 
-     &                    XORIGDG, YORIGDG, XCELLDG, YCELLDG,
-     &                    NSRC, XLOCA, YLOCA, ND, CD )
+            IF( GFLAG ) THEN
+                CALL SAFE_READ3( TNAME, 'LAT', 1, 0, 0, DLAT )
+                CALL SAFE_READ3( TNAME, 'LON', 1, 0, 0, DLON )
+                CALL CONVRTXY( (METNCOLS+1)*(METNROWS+1), GDTYP, GRDNM,
+     &                         P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                         DLAT, DLON )
+                CALL UNGRIDBV( METNCOLS+1, METNROWS+1, DLAT, DLON,
+     &                         NSRC, XLOCA, YLOCA, ND, CD )
+     
+                CALL SAFE_READ3( CNAME, 'LAT', 1, 0, 0, XLAT )
+                CALL SAFE_READ3( CNAME, 'LON', 1, 0, 0, XLON )
+                CALL CONVRTXY( METNCOLS*METNROWS, GDTYP, GRDNM,
+     &                         P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                         XLAT, XLON )
+                CALL UNGRIDBV( METNCOLS, METNROWS, XLAT, XLON, 
+     &                         NSRC, XLOCA, YLOCA, NX, CX )            
+            ELSE
+                CALL UNGRIDB( METNCOLS+1, METNROWS+1, 
+     &                        XORIGDG, YORIGDG, XCELLDG, YCELLDG,
+     &                        NSRC, XLOCA, YLOCA, ND, CD )
 
-            CALL UNGRIDB( METNCOLS, METNROWS, METXORIG, METYORIG, 
-     &                    XCELL, YCELL, NSRC, XLOCA, YLOCA, NX, CX )
+                CALL UNGRIDB( METNCOLS, METNROWS, 
+     &                        METXORIG, METYORIG, XCELL, YCELL,
+     &                        NSRC, XLOCA, YLOCA, NX, CX )
+            END IF
 
 C.............  Read time-independent ZF and ZH for non-hydrostatic Met data
 C.............  Compute per-source heights
