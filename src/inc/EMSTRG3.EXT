@@ -22,6 +22,8 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: DSCLEN3 = 40 ! plant description
         INTEGER, PARAMETER :: FIPLEN3 =  6 ! FIPS code
         INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
+        INTEGER, PARAMETER :: MACLEN3 =  6 ! MACT code
+        INTEGER, PARAMETER :: NAILEN3 =  6 ! NAICS code
         INTEGER, PARAMETER :: ORSLEN3 =  6 ! DOE plant ID field
         INTEGER, PARAMETER :: PLTLEN3 = 15 ! plant ID field
         INTEGER, PARAMETER :: PHYLEN3 = 512! physical file name length
