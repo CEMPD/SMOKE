@@ -94,6 +94,7 @@ if ( $?RUN_CNTLMAT ) then
       switch ( $SMK_SOURCE )
          case A:
             set cntl_indir = $ARDAT
+            if ( $NONROAD == Y ) set cntl_indir = $NRDAT
             breaksw
          case M:
             set cntl_indir = $MBDAT
