@@ -13,7 +13,7 @@
 !
 !  REVISION HISTORY:
 !     Created 8/2001 by A. Holland
-!     Modified 3/02 by G. Cano
+!     Modified 5/02 by G. Cano
 !
 !***************************************************************************
 !
@@ -176,22 +176,25 @@ C.............  Local variables
      &                                           'GAMMA    ',
      &                                           'WEIBULL  ',
      &                                           'BETA     ' / )
-       
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: UEINAM( : )   ! uncertainty pollutants
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: UACTVTY( : )  ! uncertainty activities
+
+        LOGICAL, ALLOCATABLE, PUBLIC :: UACTVTY( : )   ! T:uncertainty activities
+        LOGICAL, ALLOCATABLE, PUBLIC :: UEAREAD( : )   ! T:uncertainty polls. & acts.
+        LOGICAL, ALLOCATABLE, PUBLIC :: UEINAM( : )    ! T:uncertainty pollutants
+        LOGICAL, ALLOCATABLE, PUBLIC :: UEFINAM( : )   ! T:uncertainty emission factors
 
         INTEGER, PARAMETER, PUBLIC :: STATDIST = 5  ! Normal, Lognormal, Gamma, Weibull, Beta, resp.
 
-        INTEGER                      :: UNVAR = 0      ! number of uncertainty variables
-        INTEGER                      :: UNIPOL = 0     ! number of uncertainty pollutants
-        INTEGER                      :: UNPPOL = 0     ! number of uncertainty pollutants & activities
-        INTEGER                      :: UNIACT = 0     ! number of uncertainty activities
-        INTEGER                      :: UNPACT = 0     ! 
+        INTEGER                      :: DRAWRLZN = 0   ! realizations to draw (samples)
         INTEGER                         NEMP           ! number of empirical statistics options
         INTEGER                         NPAR           ! number of parametric statistics options
         INTEGER                         NPRB           ! number of probability value entries
-        INTEGER                         SIMDRAWS       ! simulations to draw for sampling
+        INTEGER                      :: UNIACT = 0     ! number of uncertainty activities
+        INTEGER                      :: UNIPOL = 0     ! number of uncertainty pollutants
+        INTEGER                         UNIPPA         ! number of uncertainty polls. & acts.
+        INTEGER                      :: UNPACT = 0     ! number of variables per uncertainy activity
+        INTEGER                      :: UNPPOL = 0     ! number of uncertainty pollutants & activities
         INTEGER                      :: UNSRC = 0      ! sources with uncertainty        
+        INTEGER                      :: UNVAR = 0      ! number of uncertainty variables
         INTEGER                         VEMP           ! number of emp. stat. variables
         INTEGER                         VPAR           ! number of PAR. stat. variables
         INTEGER                         VPRB           ! number of probability value variables
