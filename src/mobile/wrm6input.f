@@ -1,7 +1,7 @@
 
         SUBROUTINE WRM6INPUT( GRPLIST, NLINES, SDEV, MDEV, 
-     &                        TEMPS, NCOUNTY, VOLNAM, 
-     &                        SCENNUM, SRCNUM )
+     &                        CTYLIST, TEMPS, NCOUNTY, VOLNAM, 
+     &                        SCENNUM, SRCNUM, RPLCFLAG )
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
@@ -22,28 +22,27 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER           GETFLINE
         INTEGER           ENVINT
         INTEGER           FIND1
-        INTEGER           GETSPDLN
         INTEGER           STR2INT
         CHARACTER(LEN=80) WRSPDVMT
         CHARACTER(LEN=2)  CRLF    
         
-        EXTERNAL  GETFLINE, ENVINT, FIND1, GETSPDLN, STR2INT, 
-     &            WRSPDVMT, CRLF
+        EXTERNAL  GETFLINE, ENVINT, FIND1, STR2INT, WRSPDVMT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,      INTENT (IN)  :: GRPLIST( NLINES,3 )   ! GROUP file contents
-        INTEGER,      INTENT (IN)  :: NLINES                ! no. lines in GROUP file
-        INTEGER,      INTENT (IN)  :: SDEV                  ! SPDSUM file unit no.
-        INTEGER,      INTENT (IN)  :: MDEV                  ! M6INPUT file unit no.
-        REAL,         INTENT (IN)  :: TEMPS( NCOUNTY, 24 )  ! temps per county
-        INTEGER,      INTENT (IN)  :: NCOUNTY               ! no. counties in temps array
-        CHARACTER(*), INTENT (IN)  :: VOLNAM                ! volatile pollutant name
-        INTEGER,      INTENT (OUT) :: SCENNUM               ! total number of scenarios
-        INTEGER,      INTENT (OUT) :: SRCNUM                ! total number of sources
+        INTEGER,      INTENT (IN)   :: GRPLIST( NLINES,3 )   ! GROUP file contents
+        INTEGER,      INTENT (IN)   :: NLINES                ! no. lines in GROUP file
+        INTEGER,      INTENT (IN)   :: SDEV                  ! SPDSUM file unit no.
+        INTEGER,      INTENT (IN)   :: MDEV                  ! M6INPUT file unit no.
+        INTEGER,      INTENT (IN)   :: CTYLIST( NCOUNTY )    ! counties in temperature file
+        REAL,         INTENT (IN)   :: TEMPS( NCOUNTY, 24 )  ! temps per county
+        INTEGER,      INTENT (IN)   :: NCOUNTY               ! no. counties in temps array
+        CHARACTER(*), INTENT (IN)   :: VOLNAM                ! volatile pollutant name
+        INTEGER,      INTENT(INOUT) :: SCENNUM               ! total number of scenarios
+        INTEGER,      INTENT(INOUT) :: SRCNUM                ! total number of sources
+        LOGICAL,      INTENT (IN)   :: RPLCFLAG              ! true: replace temps in scenario
 
 C...........   Local allocatable arrays
         CHARACTER(LEN=150),     ALLOCATABLE :: M6SCEN( : )    ! M6 scenario file
-        INTEGER, ALLOCATABLE, SAVE :: CTYLIST( : )   ! list of counties in temperature file
 
 C...........   Other local variables
         INTEGER I, J, K                   ! counters and indices                     
@@ -56,8 +55,8 @@ C...........   Other local variables
         INTEGER          PREVCTY          ! previous county number in SPDSUM file
         INTEGER          CURRCTY          ! current county number in SPDSUM file
         INTEGER          CTYNUM           ! number of counties in SPDSUM file
-        INTEGER          CTYPOS           ! position of current county in CTYLIST
-        INTEGER          STLINE           ! starting line in SPDSUM for current county
+        INTEGER          CTYPOS           ! position of county in temperature array
+        INTEGER          CURRLINE         ! current line in SPDSUM
         INTEGER          CURRROAD         ! road type from SPDSUM file
         INTEGER          PREVROAD         ! previous road type
         INTEGER          STSCEN           ! starting line of scenario data in scenario file
@@ -107,32 +106,16 @@ C.............  Write message about which year emission factors will be for
             WRITE( MESG,94010 ) 
      &             'NOTE: Emission factors are for year', JYEAR
             CALL M3MSG2( MESG )
-            
+     
 C.............  Get number of lines in speed summary file
             NLINESPD = GETFLINE( SDEV, 'Speed summary file' )
-            
-C.............  Read county list from SPDSUM file
-            ALLOCATE( CTYLIST( NCOUNTY ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CTYLIST', PROGNAME )
-            
-            PREVCTY = 0
-            CTYNUM  = 0
-            
-            DO I = 1, NLINESPD
-                READ( SDEV,93010 ) CURRCTY
-                
-                IF( CURRCTY /= PREVCTY ) THEN
-                    CTYNUM = CTYNUM + 1
-                    CTYLIST( CTYNUM ) = CURRCTY
-                END IF
-                
-                PREVCTY = CURRCTY
-            END DO
         
             INITIAL = .FALSE.
         END IF
-        
+
+C.........  Reset SPDSUM file and line count        
         REWIND( SDEV )
+        CURRLINE = 1
 
 C.........  Write Mobile6 header info to input file
         CALL WRM6HEADER( MDEV )
@@ -149,15 +132,17 @@ C.............  Get info from GROUP file
             
             LASAFLAG = GRPLIST( I,3 )
 
-C.............  Open M6 scenario file for current county
+C.............  Open M6 scenario file for current reference county
             CALL OPENSCEN( REFCOUNTY, FDEV, SCENFILE )
 
 C.............  Get number of lines in M6 scenario file
             MESG = 'MOBILE6 scenario file for county' // REFCOUNTY
             NLINESCEN = GETFLINE( FDEV, MESG )
-            
-            ALLOCATE( M6SCEN( NLINESCEN ), STAT=IOS )
+
+            IF( ALLOCATED( M6SCEN ) ) DEALLOCATE( M6SCEN )            
+            ALLOCATE( M6SCEN( NLINESCEN + 1 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'M6SCEN', PROGNAME )
+            M6SCEN = ' '
             
 C.............  Read M6 scenario file into array            
             CALL RDLINES( FDEV, MESG, NLINESCEN, M6SCEN )
@@ -171,6 +156,7 @@ C.............  Find beginning of scenario commands
             DO J = 1, NLINESCEN
                 IF( M6SCEN( J )(1:20) == 'SCENARIO RECORD    :' ) THEN
                     STSCEN = J
+                    EXIT
                 END IF
             END DO
 
@@ -183,23 +169,26 @@ C.............  Find beginning of scenario commands
                 CYCLE
             END IF           
 
-C.............  Check calendar year of M6 scenario
-            CALL CHKSCNYR( SCENFILE, M6SCEN, NLINESCEN, JYEAR )
+C.............  Check M6 scenario for unused commands and calendar year
+            CALL CHKM6SCN( SCENFILE, M6SCEN, NLINESCEN, JYEAR )
 
-C.............  Find county in CTYLIST array
-            CTYPOS = FIND1( STR2INT( CURRCOUNTY ), NCOUNTY, CTYLIST )
-            
-            IF( CTYPOS < 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 93000 ) 'ERROR: Could not find county '
-     &                 // CURRCOUNTY // ' in speed summary file.'
-                CALL M3MESG( MESG )
-                CYCLE              
+            IF( RPLCFLAG ) THEN
+            	
+C.................  Find current county in temperatures array
+                CTYPOS = FIND1( STR2INT(CURRCOUNTY), NCOUNTY, CTYLIST )
+                
+                IF( CTYPOS <= 0 ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Could not find county ' // 
+     &                     CURRCOUNTY // ' in hourly temperature file'
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
+             
+C.................  Replace temperatures in M6 scenario
+                CALL RPLCTEMP( CURRCOUNTY, TEMPS, NCOUNTY, 
+     &                         M6SCEN, NLINESCEN, CTYPOS )
             END IF
-            
-C.............  Replace temperatures in M6 scenario
-            CALL RPLCTEMP( CURRCOUNTY, TEMPS, NCOUNTY, 
-     &                     M6SCEN, NLINESCEN, CTYPOS )
 
 C.............  Write run level commands to M6 input file
             DO J = 1, STSCEN - 1
@@ -221,10 +210,10 @@ C.............  Select M6 output based on volatile pollutant name
                 WRITE( MDEV,93000 ) 'EXPRESS HC AS VOC  :'
             END SELECT
 
-C.............  Find starting line for current county in SPDSUM file
-            STLINE = GETSPDLN( SDEV, CURRCOUNTY, NLINESPD )
+C.............  Move to starting line for current county in SPDSUM file
+            CALL GETSPDLN( SDEV, CURRCOUNTY, NLINESPD, CURRLINE )
 
-            IF( STLINE == 0 ) THEN
+            IF( CURRLINE == 0 ) THEN
             	EFLAG = .TRUE.
             	
                 WRITE( MESG, 93000 ) 'ERROR: Could not find county ' 
@@ -234,11 +223,12 @@ C.............  Find starting line for current county in SPDSUM file
             END IF
 
             PREVROAD = M6LOCAL
+            PREVSPD  = 0.0
 
 C.............  Read speeds and sources
             DO
-                CALL RDSPDLINE( SDEV, SCENNUM, CURRCOUNTY, STLINE,
-     &                          NLINESPD, LASAFLAG, CURRROAD, CURRSPD,
+                CALL RDSPDLINE( SDEV, SCENNUM, CURRCOUNTY, NLINESPD,
+     &                          LASAFLAG, CURRROAD, CURRSPD, CURRLINE,
      &                          SRCNUM )
                 
                 IF( CURRROAD == M6LOCAL ) THEN
@@ -278,12 +268,13 @@ C.....................  Write M6 scenario to M6INPUT
                     CALL PADZERO( SCENARIO )
                     WRITE( MDEV, 93000 ) 
      &                      'SCENARIO RECORD    : ' // SCENARIO
-                    DO J = STSCEN, NLINESCEN
+                    DO J = STSCEN, NLINESCEN + 1
+                        IF( M6SCEN( J ) == ' ' ) CYCLE
                         WRITE( MDEV, 93000 ) 
      &                      M6SCEN( J )( 1:LEN_TRIM( M6SCEN( J ) ) )
-                        WRITE( MDEV, 93000 )
-     &                      'PARTICLE SIZE      : 2.5'
                     END DO
+                    WRITE( MDEV, 93000 )
+     &                      'PARTICLE SIZE      : 2.5'
                     WRITE( MDEV, 93000 )
      &                      'SPEED VMT          : ' 
      &                      // SPDFILE( 1:LEN_TRIM( SPDFILE ) )
@@ -301,12 +292,11 @@ C.....................  Increment scenario number
                 PREVROAD = CURRROAD
                 PREVSPD  = CURRSPD
 
-            END DO        
-        
-            DEALLOCATE( M6SCEN )
+            END DO
         
 C.............  Write end of run command to M6 input file
-            WRITE( MDEV,93000 ) 'END OF RUN         :' // CRLF()
+            WRITE( MDEV,93000 ) 'END OF RUN         :'
+            WRITE( MDEV,93000 ) ' '
 
         END DO
 
