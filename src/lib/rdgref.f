@@ -209,9 +209,9 @@ C.................  Make sure SCC is full length
                 TSCC = FIELDARR( 2 )
 
 C.................  Post-process x-ref information to scan for '-9', pad
-C                   with zeros.  Do not include SCC in call below
-C                   because this input file does not use SCC.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, ' ', IDUM, 
+C                   with zeros.  Do not include SCC in call below because
+C                   right SCC will not work.
+                CALL FLTRXREF( CFIP, CDUM, SCCZERO, ' ', IDUM, 
      &                         IDUM, IDUM, LDUM, SKIPREC   )
 
 C.................  Convert TSCC to internal value
