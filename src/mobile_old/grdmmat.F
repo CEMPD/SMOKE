@@ -947,7 +947,7 @@ C.......   Sort and process the surrogate cross-reference file
 
                 IF ( I1 .LT. MXSREF ) THEN  !  FIP-specific
                     I1 = I1 + 1
-                    SRFIPS( I1 ) = FIP / 1000
+                    SRFIPS( I1 ) = ( FIP / 1000 ) * 1000
                     SRGIDS( I1 ) = SID 
                     SRRDTS( I1 ) = RDT
                 ELSE
