@@ -221,8 +221,16 @@ C.............  If header is found, read point source header information
             ELSE IF( INDEX( LINE, PDEFPCKT ) .GT. 0 ) THEN
                 HFLAG = .TRUE.
 
+                IF( L .GT. LPCK ) THEN
+                    READ( LINE( LPCK:L ), * ) NCP, JS
 
-                READ( LINE( LPCK:L ), * ) NCP, JS
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Incomplete point '//
+     &                     'source definition packet at line', IREC
+                    CALL M3MSG2( MESG )
+
+                END IF
 
 C.................  Adjust for FIPS code and Plant ID, which are always there
                 NCP = NCP + 2
@@ -432,6 +440,7 @@ C.................  Check for integers for temporal profile numbers
      &                     'code(s) at line', IREC, 'of temporal'//
      &                     CRLF() // BLANK10 // 
      &                     'cross-reference file are non-integer.'
+                    CALL M3MESG( MESG )
                     CYCLE
 
 C.................  Convert temporal profile numbers

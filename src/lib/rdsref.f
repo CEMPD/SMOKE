@@ -254,15 +254,24 @@ C.............  Skip blank lines
 
 C.............  Read point source header information
             IF( J .GT. 0 ) THEN
-                
-                READ( LINE( LPCK:L ), * ) NCP, JS
+
+                IF( L .GT. LPCK ) THEN
+                    READ( LINE( LPCK:L ), * ) NCP, JS
+
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Incomplete point '//
+     &                     'source definition packet at line', IREC
+                    CALL M3MSG2( MESG )
+
+                END IF
 
 C.................  Adjust for FIPS code and Plant ID, which are always there
                 NCP = NCP + 2
                 IF( JS .GT. 0 ) JS = JS + 2
 
 C.................  Compare point source definition from header to inventory
-                CALL CHKPTDEF( NCP, JS )
+                IF ( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
 
                 CYCLE
 
