@@ -46,10 +46,7 @@
         INTEGER, ALLOCATABLE :: EDEX ( :,: ) ! wkend-diurnal profile subscript
  
 !.........  Per-source arrays with control packet indices to tables.  
-        INTEGER, ALLOCATABLE :: CTGIDX( :,: ) ! index for CTG data tables
-        INTEGER, ALLOCATABLE :: CTLIDX( :,: ) ! index for CONTROL data tables
-        INTEGER, ALLOCATABLE :: ALWIDX( :,: ) ! index for ALLOWABLE data tables
-        INTEGER, ALLOCATABLE :: ADDIDX( :,: ) ! index for ADD data tables
+        INTEGER, ALLOCATABLE :: ASGNINDX( : ) ! index for projection/controls
 
 !.........  Per-source arrays for position in gridding surrogates table
         INTEGER, ALLOCATABLE :: SRGIDPOS( : ) ! surrogate position
@@ -77,8 +74,9 @@
         INTEGER, PARAMETER :: ADDPS = 900000 ! multiple of 9
 
 !.........  Count of number of entries in each (non-default) table
-!           NOTE- Added 9 (from 16) for special SCC-level matching
-        INTEGER, PARAMETER, PUBLIC :: NXTYPES = 25
+!           NOTE- Added 9 (from 16-25) for special SCC-level matching
+!           NOTE- Added 6 (from 26-31) for special SIC matching
+        INTEGER, PARAMETER, PUBLIC :: NXTYPES = 31
         INTEGER, PUBLIC            :: TXCNT( NXTYPES )
 
 !.........  Sorted groups of cross-references
@@ -222,7 +220,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT11( :,: )
         CHARACTER(LEN=SS0LEN3), ALLOCATABLE, PUBLIC :: CHRT11( : )
 
-!.........  CHAR1=non-blank, SCC=all
+!.........  CHAR1=non-blank, SCC=all or zero
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT12( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT12( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT12( :,: )
@@ -233,7 +231,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT12( :,: )
         CHARACTER(LEN=SS1LEN3), ALLOCATABLE, PUBLIC :: CHRT12( : )
 
-!.........  CHAR2=non-blank, SCC=all
+!.........  CHAR2=non-blank, SCC=all or zero
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT13( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT13( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT13( :,: )
@@ -242,7 +240,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT13( :,: )
         CHARACTER(LEN=SS2LEN3), ALLOCATABLE, PUBLIC :: CHRT13( : )
 
-!.........  CHAR3=non-blank, SCC=all
+!.........  CHAR3=non-blank, SCC=all or zero
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT14( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT14( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT14( :,: )
@@ -251,7 +249,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT14( :,: )
         CHARACTER(LEN=SS3LEN3), ALLOCATABLE, PUBLIC :: CHRT14( : )
 
-!.........  CHAR4=non-blank, SCC=all
+!.........  CHAR4=non-blank, SCC=all or zero
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT15( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT15( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT15( :,: )
@@ -260,7 +258,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT15( :,: )
         CHARACTER(LEN=SS4LEN3), ALLOCATABLE, PUBLIC :: CHRT15( : )
 
-!.........  CHAR5=non-blank, SCC=all
+!.........  CHAR5=non-blank, SCC=all or zero
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT16( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT16( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT16( :,: )
@@ -309,7 +307,34 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL08C( :,: )
         CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT08C( : )
 
-!.........  FIPS code=all, SIC = all
+!.........  Additional groups for special SIC handling. Note that these are
+!              put at the end since they were added later and added for
+!              Cntlmat only at first.  Did not want to mess up the numbering
+!              scheme for TXCNT
+!.........  FIPS code = 0, SIC = 2-digit (Type 26)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL26( :,: )
+        CHARACTER(LEN=SICLEN3), ALLOCATABLE, PUBLIC :: CHRT26( : )
+
+!.........  FIPS code = 0, SIC = all (Type 27)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL27( :,: )
+        CHARACTER(LEN=SICLEN3), ALLOCATABLE, PUBLIC :: CHRT27( : )
+
+!.........  FIPS code = state, SIC = 2-digit (Type 28)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL28( :,: )
+        CHARACTER(LEN=STILEN3), ALLOCATABLE, PUBLIC :: CHRT28( : )
+
+!.........  FIPS code = state, SIC = all (Type 29)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL29( :,: )
+        CHARACTER(LEN=STILEN3), ALLOCATABLE, PUBLIC :: CHRT29( : )
+
+!.........  FIPS code = all, SIC = 2-digit (Type 30)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL30( :,: )
+        CHARACTER(LEN=FPILEN3), ALLOCATABLE, PUBLIC :: CHRT30( : )
+
+!.........  FIPS code = all, SIC = all (Type 31)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL31( :,: )
+        CHARACTER(LEN=FPILEN3), ALLOCATABLE, PUBLIC :: CHRT31( : )
+
 
 !.........  Unsorted, unprocessed cross-reference arrays
         INTEGER, ALLOCATABLE, PUBLIC:: INDXTA ( : ) !  sorting index
@@ -328,5 +353,6 @@
 
         CHARACTER(LEN=SS5LEN3+POLLEN3), ALLOCATABLE, PUBLIC:: CSRCTA(:)
                                              ! source chars // SCC // pollutant
+                                             ! SCC can be SIC if SIC is given instead
 
         END MODULE MODXREF
