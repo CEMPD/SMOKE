@@ -8,6 +8,8 @@ C  Called by IMPROG
 C 
 C  Changes: (Last change first) 
 C 
+C 03 Dec 01 @EPA-bag        Fix I/M EXEMPTION AGE conditional for exhaust 
+C                           and evaporative I&M 
 C 30 Oct 00 @EPA-bag bug284 Fix I/M EXEMPTION AGE conditional from G.E. to G.T.; 
 C           exemption age of 1 should exempt all vehicles age 1 or older( emissions  
 C           should be the same as in the no I/M case.) 
@@ -57,7 +59,8 @@ C
 C 
       INTEGER IMPGM 
       INTEGER IVTAM 
-      INTEGER, PARAMETER :: BEGIN_DATE=1,END_DATE=2 
+      INTEGER, SAVE :: EXHAUSTIM=1,EVAPIM=2 
+      INTEGER, SAVE :: BEGIN_DATE=1,END_DATE=2 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
       FINDIM = 0 
@@ -76,10 +79,25 @@ C
 C 
 C       Do not allow exhaust requests to select evap programs and visa-versa 
 C 
-        IF(IEXEV.EQ.1.AND.ITEST(IMPGM).GE.20 .OR. 
-     *     IEXEV.EQ.2.AND.ITEST(IMPGM).LT.20) CYCLE 
+        IF(IEXEV==EXHAUSTIM.AND.ITEST(IMPGM)<20) THEN 
+          IF (ILDT(IVTAM,IMPGM).EQ.2.AND. 
+     *      ICY.GE.ICYIM(BEGIN_DATE,IMPGM).AND. 
+     *      ICY.LE.ICYIM(END_DATE,IMPGM).AND. 
 C 
-        IF (ILDT(IVTAM,IMPGM).EQ.2.AND. 
+     *      MY.GE.MODYR(BEGIN_DATE,IMPGM).AND. 
+     *      MY.LE.MODYR(END_DATE,IMPGM).AND. 
+C 
+     *      ICY.GE.(MY+IMGRACE(IMPGM)).AND. 
+C 
+     *      ICY.LE.(MY+EXEMPTAGE(IMPGM)) ) THEN 
+C 
+            FINDIM = IMPGM 
+            GOTO 99 
+          ENDIF 
+        END IF 
+C 
+        IF(IEXEV==EVAPIM.AND.ITEST(IMPGM)>=20) THEN 
+          IF (ILDT(IVTAM,IMPGM).EQ.2.AND. 
      *      ICY.GE.ICYIM(BEGIN_DATE,IMPGM).AND. 
      *      ICY.LE.ICYIM(END_DATE,IMPGM).AND. 
 C 
@@ -90,10 +108,10 @@ C
 C 
      *      ICY.LE.(MY+EXEMPTAGE(IMPGM)) ) THEN 
 C 
-          FINDIM = IMPGM 
-          GOTO 99 
-C 
-        END IF 
+            FINDIM = IMPGM 
+            GOTO 99 
+          END IF 
+        ENDIF 
 C 
       END DO 
 C     End of loop over IMPGM 
