@@ -42,10 +42,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPPA, EANAM
 
         IMPLICIT NONE
 
@@ -72,7 +72,7 @@ C...........   SUBROUTINE ARGUMENTS:
         LOGICAL        , INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: MXSEG = 16   ! number of potential line segments
+        INTEGER, PARAMETER :: MXSEG = 17   ! number of potential line segments
 
 C...........   Other arrays
         CHARACTER*20 SEGMENT( MXSEG )      ! Segments of parsed packet lines
@@ -121,9 +121,6 @@ C               for "list-formatted" in fortran, but not requiring
 C               quotes around the text strings
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
-C.............  Store country/state/county code for any packet format
-            PKTINFO%CFIP = SEGMENT( 1 )
-
         END IF
 
 C.........  Process the line of data, depending on packet type
@@ -131,6 +128,7 @@ C.........  Process the line of data, depending on packet type
 
         CASE( 'CTG' )
             PKTINFO%CSIC =           ' '
+            PKTINFO%CFIP =           SEGMENT( 1 )
             PKTINFO%TSCC =           SEGMENT( 2 )
             PKTINFO%CPOL =           SEGMENT( 3 )
             PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
@@ -158,21 +156,26 @@ C           set PKTINFO%FAC4 = -9 and issue warning.
             END IF
 
         CASE( 'CONTROL' )
-            PKTINFO%TSCC =           SEGMENT( 2 )
-            PKTINFO%CPOL =           SEGMENT( 3 )
-            PKTINFO%FAC1 = STR2INT ( SEGMENT( 4 ) )
-            PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
-            PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
-            PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
-            PKTINFO%CSIC =           SEGMENT( 8 )
-            PKTINFO%PLT  =           SEGMENT( 9 )
-            PKTINFO%CHAR1=           SEGMENT( 10 )
-            PKTINFO%CHAR2=           SEGMENT( 11 )
-            PKTINFO%CHAR3=           SEGMENT( 12 )
-            PKTINFO%CHAR4=           SEGMENT( 13 )
-            PKTINFO%CHAR5=           SEGMENT( 14 )
+            PKTINFO%CFIP    =           SEGMENT( 1 )
+            PKTINFO%TSCC    =           SEGMENT( 2 )
+            PKTINFO%CPOL    =           SEGMENT( 3 )
+            PKTINFO%FAC1    = STR2INT ( SEGMENT( 4 ) )
+            PKTINFO%FAC2    = STR2REAL( SEGMENT( 5 ) )
+            PKTINFO%FAC3    = STR2REAL( SEGMENT( 6 ) )
+            PKTINFO%FAC4    = STR2REAL( SEGMENT( 7 ) )
+            PKTINFO%CSIC    =           SEGMENT( 8 )
+            PKTINFO%CMCT    =           SEGMENT( 9 )
+            PKTINFO%APPFLAG = ADJUSTL ( SEGMENT( 10 ) )
+            PKTINFO%REPFLAG = ADJUSTL ( SEGMENT( 11 ) )
+            PKTINFO%PLT     =           SEGMENT( 12 )
+            PKTINFO%CHAR1   =           SEGMENT( 13 )
+            PKTINFO%CHAR2   =           SEGMENT( 14 )
+            PKTINFO%CHAR3   =           SEGMENT( 15 )
+            PKTINFO%CHAR4   =           SEGMENT( 16 )
+            PKTINFO%CHAR5   =           SEGMENT( 17 )
 
         CASE( 'ALLOWABLE' )
+            PKTINFO%CFIP =           SEGMENT( 1 )
             PKTINFO%TSCC =           SEGMENT( 2 )
             PKTINFO%CPOL =           SEGMENT( 3 )
             PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
@@ -196,6 +199,7 @@ C           a warning.
             END IF
 
         CASE( 'REACTIVITY' )
+            PKTINFO%CFIP   =           SEGMENT( 1 )
             PKTINFO%TSCC   =           SEGMENT( 2 )
             PKTINFO%CPOL   =           SEGMENT( 3 )
             PKTINFO%FAC1   = STR2REAL( SEGMENT( 4 ) )
@@ -214,10 +218,12 @@ C           a warning.
             CALL PADZERO( PKTINFO%NSCC )
 
         CASE( 'PROJECTION' )
+            PKTINFO%CFIP  =           SEGMENT( 1 )
             PKTINFO%TSCC  =           SEGMENT( 2 )
             PKTINFO%FAC1  = STR2REAL( SEGMENT( 3 ) )
             PKTINFO%CPOL  =           SEGMENT( 4 )
             PKTINFO%CSIC  =           SEGMENT( 5 )
+            PKTINFO%CMCT  =           SEGMENT( 6 )
             PKTINFO%PLT   = ' '
             PKTINFO%CHAR1 = ' '
             PKTINFO%CHAR2 = ' '
@@ -291,6 +297,17 @@ C.........  Check to see if any of the factors are negative
      &                 'penetration misformatted at line', IREC
                 CALL M3MSG2( MESG )
             END IF
+            
+        CASE( 'MACT' )
+            PKTINFO%CFIP   = ' '
+            PKTINFO%CSIC   = ' '
+            PKTINFO%CMCT   =           SEGMENT( 1 )
+            PKTINFO%TSCC   =           SEGMENT( 2 )
+            PKTINFO%CSTYP  =           SEGMENT( 3 )
+            PKTINFO%CPOL   =           SEGMENT( 4 )
+            PKTINFO%FAC1   = STR2REAL( SEGMENT( 5 ) )
+            PKTINFO%FAC2   = STR2REAL( SEGMENT( 6 ) )
+            PKTINFO%FAC3   = STR2REAL( SEGMENT( 7 ) )
 
         CASE DEFAULT
             MESG = 'INTERNAL ERROR: Packet type ' // PKTTYP // 
