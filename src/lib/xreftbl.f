@@ -105,7 +105,6 @@ C...........   Other local variables
 
         LOGICAL    :: CFLAG = .FALSE.  ! true: operation type is control cntls
         LOGICAL    :: DEFAULT( NIPPA ) ! true: if default entry in x-ref
-        LOGICAL    :: DFLAG = .FALSE.  ! true: operation type is additive cntls
         LOGICAL    :: EFLAG = .FALSE.  ! true: error has occurred
         LOGICAL    :: FFLAG = .FALSE.  ! true: operation type is emis. factors
         LOGICAL    :: GFLAG = .FALSE.  ! true: operation type is ctg cntls
@@ -154,10 +153,6 @@ C   begin body of subroutine XREFTBL
 C.........  Check for valid operation type
         SELECT CASE( OPTYPE )
 
-        CASE( 'ADD' )
-            POADFLT = .TRUE.
-            DFLAG   = .TRUE.
-            OFLAG   = .TRUE.
         CASE( 'ALLOWABLE' )
             POADFLT = .TRUE.
             LFLAG   = .TRUE.
