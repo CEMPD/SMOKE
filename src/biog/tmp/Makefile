@@ -18,7 +18,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/BIODIMS3.EXT
 
 
 #
-RBIO=rawbio.o  rdbefac.o  
+RBIO=rawbio.o  cybio.o grdbio.o rdbefac.o  
 #
 rawbio: $(RBIO) $(ALLI) $(LIBPATH)
 	echo RAWBIO:
@@ -41,7 +41,11 @@ tmpbio.debug: $(TBIO) $(ALLI) $(LIBPATH_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
-rawbio.o: $(MODSURG)
+rawbio.o: $(MODSURG) $(MODBIOG)
+	$(FC) $(FFLAGS) -c -o $@ $<
+cybio.o: $(MODSURG) $(MODBIOG)
+	$(FC) $(FFLAGS) -c -o $@ $<
+grdbio.o: $(MODBIOG)
 	$(FC) $(FFLAGS) -c -o $@ $<
 tmpbio.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ $<
