@@ -248,7 +248,13 @@ C               properly
      &                   LINE, ICC, YR4, NPOA, IOS )
 
 C.............  Interpret error status
-            IF( IOS .GT. 0 ) THEN
+            IF( IOS .EQ. 4 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: DATA header entry should not be used'//
+     &                 'for EMS-95 day- or hour-specific files.'
+                CALL M3MSG2( MESG )
+
+            ELSE IF( IOS .GT. 0 ) THEN
                 EFLAG = .TRUE.
 
             END IF
@@ -307,7 +313,7 @@ C.............  If time zone name is not found, thenoutput error
             IF( I .LE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
-     &                'Unrecognized time zone "' // LINE(70:72) // 
+     &                'ERROR: Unrecognized time zone "'// LINE(70:72)// 
      &                '" at line', IREC, 'in file'
                 CALL M3MESG( MESG )
                 CYCLE
@@ -421,7 +427,7 @@ C.............  Check and set emissions values
                 TDAT( J )  = STR2REAL( LINE( L1:L2 ) )
                 IF ( TDAT( J ) .LT. 0.0 )  THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'Bad line', IREC, 
+                    WRITE( MESG,94010 ) 'ERROR: Bad line', IREC, 
      &                     ': data value "' // LINE( L1:L2 ) // '"'
                     CALL M3MESG( MESG )
                     CYCLE  ! to head of read loop
@@ -439,7 +445,7 @@ C.............  If available, set total value
                 TOTAL = STR2REAL( LINE( L2+1:L ) )
                 IF( TOTAL .LT. 0.0 ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'Bad line', IREC, 
+                    WRITE( MESG,94010 ) 'ERROR: Bad line', IREC, 
      &                     ': total value "' // LINE( L2+1:L ) // '"'
                     CALL M3MESG( MESG )
                     CYCLE  ! to head of read loop
