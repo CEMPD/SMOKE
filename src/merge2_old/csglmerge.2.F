@@ -54,9 +54,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         INTEGER         INDEX1
         CHARACTER*16    PROMPTMFILE
+        INTEGER         PROMPTFFILE
         INTEGER         TRIMLEN
+        INTEGER         CSVNAME
         
-        EXTERNAL    DSCGRID, GETNUM, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
+        EXTERNAL    DSCGRID, GETNUM, GETYN, INDEX1, PROMPTMFILE, 
+     &              PROMPTFFILE, TRIMLEN, CSVNAME
 
 
 C...........   PARAMETER
@@ -65,10 +68,12 @@ C...........   PARAMETER
         PARAMETER     ( NONE = 'NONE' )
 
 cmh temp
-        INTEGER NETYPE
+        INTEGER     NETYPE
         PARAMETER (NETYPE=6)
 cmh temp done
 
+        INTEGER     ANETYPE      ! No. of scenario-spec MV emis types
+        INTEGER     ANMPOL       ! Model species derived from CSVNAME
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Emissions Sources input and output arrays (one variable at a time)
@@ -143,21 +148,36 @@ C...........   form "<INV-SPC-NAME>to<MODEL-SPC-NAME>")
         INTEGER         MBLSDEX( NMPOL )
         INTEGER         MBLSCNT( NMPOL )
 
-        INTEGER         NSPCOUT( NIPOL )        !  # of active rows in SPCREF
+        INTEGER         NSPCOUT( NIPOL )      !  # of active rows in SPCREF
         INTEGER         SPCREF ( NIPOL, NMPOL )
+        INTEGER         NPPM( MXMPOL )        !  No. of spcs facs per model spcs
         
-        CHARACTER*16    INVNAME( NMPOL )        !  inv-spc part of name
+        CHARACTER*16    INVNAME( NMPOL )      !  inv-spc part of name
         CHARACTER*16    MSNAMES( MXMPOL*MXEPRC )!  mobile spc-names
+        CHARACTER*16    SPCFNM( MXMPOL*MXEPRC ) !  Names of speciation factors
+        CHARACTER*16    NMATCH                  !  Name for matching
+        CHARACTER*16    EMTNAM( MXEMIS )        ! Names of emission types
+        CHARACTER*16    LNAME            ! Var name from previous loop iteration
+
+C...........   Gridding Matrix, Control Matrix, Speciation Matrix
+
+        INTEGER         NX( NGRID )
+        INTEGER         IX( NMATX )
+        REAL            CX( NMATX )
 
 C...........   Other local variables
         
-        INTEGER         JDATE, JTIME, TSTEP     !  output-file        date&time
-        INTEGER         NSTEPS                  !  number of output time steps
-        INTEGER         LDATE                   !  last output-step's date
-        INTEGER         ADATE, ATIME            !  area-source   file date&time
-        INTEGER         BDATE, BTIME            !  bio-source    file date&time
-        INTEGER         MDATE, MTIME            !  mobile-source file date&time
-        INTEGER         PDATE, PTIME            !  point-source  file date&time
+        INTEGER         JDATE, JTIME, TSTEP   !  output-file        date&time
+        INTEGER         NSTEPS                !  number of output time steps
+        INTEGER         LDATE                 !  last output-step's date
+        INTEGER         ADATE, ATIME          !  area-source   file date&time
+        INTEGER         BDATE, BTIME          !  bio-source    file date&time
+        INTEGER         MDATE, MTIME          !  mobile-source file date&time
+        INTEGER         PDATE, PTIME          !  point-source  file date&time
+        INTEGER         SIDX                  !  Speciation matrix index no.
+        INTEGER         TDEV                  !  Speciation list file unit
+        INTEGER         NSNAME                ! No. of speciation factor names
+        INTEGER         ICNT                  ! Counter
         INTEGER         LDEV
         INTEGER         I, J, K, L, M, N, F, S, T, V
         
@@ -186,15 +206,23 @@ C...........   Other local variables
         CHARACTER*16    MGNAME  !  logical name for grid       matrix input file
         CHARACTER*16    MPNAME  !  logical name for projection matrix input file
         CHARACTER*16    MSNAME  !  logical name for speciation matrix input file
+        CHARACTER*16    MTNAME  !  logical name for time-stepped mb input file
         CHARACTER*16    PCNAME  !  logical name for control    matrix input file
         CHARACTER*16    PGNAME  !  logical name for grid       matrix input file
         CHARACTER*16    PLNAME  !  logical name for layer coefficient input file
         CHARACTER*16    PPNAME  !  logical name for projection matrix input file
         CHARACTER*16    PSNAME  !  logical name for speciation matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
-            
+
         CHARACTER*16    SCRBUF, TMPBUF, ABUF, BBUF  !  scratch vbles for names
+        CHARACTER*80    BMETHEAD( 2 )  ! met headers from BTMP
+        CHARACTER*80    MMETHEAD( 2 )  ! met headers from MTMP
+        CHARACTER*80    PMETHEAD( 2 )  ! met headers from PLAY
+
         CHARACTER*256   MESG
+ 
+        INTEGER         III
+
 
 C.......   EQUIVALENCES/OVERLAYS to reduce executable size:
 C...........   Need only one control matrix at a time; don't need
@@ -210,7 +238,10 @@ C...........   or layer fractions.
 
 C...........   STATEMENT FUNCTION:  floating point "definitely unequal"
         
-        REAL            FLTERR, P, Q
+        LOGICAL         FLTERR
+        REAL            P, Q
+c sl         REAL            FLTERR, P, Q
+
         FLTERR( P, Q ) = 
      &      ( (P - Q)**2  .GT.  1.0E-10*( P*P + Q*Q + 1.0E-5 ) )
 
@@ -251,7 +282,7 @@ C   begin body of program CSGLMERGE
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'CSGLMERGE', 0, 0, 
-     &                   ''Ending program at user request', 0 )
+     &                   'Ending program at user request', 0 )
         END IF
 
 
@@ -382,6 +413,14 @@ C.......   Mobile source matrix files:
      &          'Enter name for MOBILE SPECIATION MATRIX file',
      &          FSREAD3, 'MSMAT', 'CSGLMERGE' )
 
+            TDEV = PROMPTFFILE(
+     &           'Enter logical name for SPECIATION LIST file',
+     &           .TRUE., .TRUE., 'SPCS', 'CSGLMERGE' )
+
+            MTNAME = PROMPTMFILE(
+     &          'Enter logical name for TIME-STEPPED MOBILE EMIS file',
+     &          FSREAD3, 'MTMP', 'CSGLMERGE' )
+
             MCNAME = PROMPTMFILE( 
      &          'Enter name for MOBILE CONTROL MATRIX file ' //
      &          'or "NONE"',
@@ -453,7 +492,7 @@ C.......   Mobile source matrix files:
                 END IF
                 DO  6  I = 1, NIPOL + NEMODE - 1
                     MCNAMES( I ) = VNAME3D( I )( 6:16 )
-5               CONTINUE
+6               CONTINUE
             END IF
 
         ELSE		!  no mobile.  set mobile-related flags to false
@@ -508,13 +547,16 @@ C.......   Point source matrix and layer fraction files:
      &          'and program:', EMLAYS, 'do not match.'
                 CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
             END IF !  if file's dimensionality matches, or niot
+            PMETHEAD( 1 ) = FDESC3D( 2 ) ! save met header to an array
+            PMETHEAD( 2 ) = FDESC3D( 3 ) 
 
             DO  11  L = 0, EMLAYS
-                IF ( FLTERR( SIGMAF( L+1 ), VGLVS3D( L ) ) ) THEN
+c sl                IF ( FLTERR( SIGMAF( L+1 ), VGLVS3D( L ) ) ) THEN
+                IF ( FLTERR( SIGMAF( L ), VGLVS3D( L+1 ) ) ) THEN
                     WRITE( MESG,94020 )
      &              'Layer', L, 'mismatch.  ' //
-     &              'in file:',      VGLVS3D( L ),
-     &              'in program:', SIGMAF ( L+1 )
+     &              'in file:',      VGLVS3D( L+1 ),
+     &              'in program:', SIGMAF ( L )
                     CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
                 END IF
 11          CONTINUE
@@ -703,44 +745,112 @@ C.......   Read relevant gridding and speciation matrices:
 
 C...........   Parse names of the variables in msmat:
 
-            DO  34  V = 1, NVARS3D
+C.......   Start description of output file with ANAME and grid description
 
-                MSNAMES( V ) = VNAME3D( V )
-                SCRBUF       = VNAME3D( V )
-                MBLMODE( V ) = INDEX1( SCRBUF, NEMODE, MEMODE )
-                IF ( MBLMODE( V ) .LE. 0 ) THEN
-                    MESG = 'Bad Mobile mode in vble name "' //
-     &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) // 
-     &                     '" from file ' // MSNAME
-                    CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
-                END IF
+        IF ( .NOT. DESC3( MTNAME ) ) THEN
+            CALL M3EXIT( 'CSGMOBIL', 0, 0,
+     &              'Could not get description of file ' // MTNAME, 2 )
+        END IF
 
-                TMPBUF = SCRBUF( 8:16 )
-                I      = INDEX1( TMPBUF, NMPOL, EMNAM )
-                IF ( I .LE. 0 ) THEN
-                    MESG = 'Bad model spc in spc matrix vble name "' //
-     &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) // 
-     &                     '" from file '// MSNAME
-                    CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
-                END IF
+C sl            IF ( .NOT. DESC3( MSNAME ) ) THEN
+C sl                MESG = 'Could not get description of file ' // MSNAME
+C sl                CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
+C sl            END IF
 
-                MBLSDEX( I ) = MIN( V, MBLSDEX( I ) )
-                MBLSCNT( I ) = MBLSCNT( I ) + 1
+C sl ....... Copied from csgmobil.F but hasn't been modified. Check to see
+C........... if a DESC3(MTMP) is needed
 
-                K    = INDEX( SFNAM( J ), '_to_' )
-                BBUF = SFNAM( I )( 1:K-1 )
-                L    = INDEX1( BBUF, NIPOL, EINAM )
-                IF ( L .LE. 0 ) THEN
-                    MESG = 'No inventory species "' //
-     &                     ABUF( 1:TRIMLEN( ABUF ) ) //
-     &                     '" for spc matrix vble name "' //
-     &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) // 
-     &                     '" from file '// MSNAME
-                    CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
-                END IF
-                MBLIPOL( V ) = L
+C.......   Get speciation naming information from list file TDEV
+C..........  Get number of scenario-specific MV emission types
+C..........     ( Use VNAME3D as dummy so don't have to declare new array)
 
-34          CONTINUE            !  end loop on v, parsing msmat vble-names
+        ANETYPE  = CSVNAME( TDEV, .TRUE., .FALSE., .TRUE., EMTNAM )
+        NSNAME  = CSVNAME( TDEV, .TRUE., .TRUE. , .TRUE., SPCFNM )
+
+C..........  Get number and names of scenario-specific model species
+
+        ANMPOL   = CSVNAME( TDEV, .FALSE., .TRUE. , .FALSE., VNAME3D )
+
+C.........  Initialize "last name" holder "LNAME"
+        L     = TRIMLEN( SPCFNM( 1 ) )
+        J     = INDEX  ( SPCFNM( 1 )(   1:L ), '_' )
+        K     = INDEX  ( SPCFNM( 1 )( J+1:L ), '_' ) + J
+        LNAME = SPCFNM( 1 )( K+1:L )
+
+        V     = 0
+        ICNT  = 0
+C.........  Count tail part of speciation factor variable names
+        DO 42 I = 1, NSNAME
+
+C.............  Find second "_" in variable names
+            L   = TRIMLEN( SPCFNM( I ) )
+            J   = INDEX  ( SPCFNM( I )(   1:L ), '_' )
+            K   = INDEX  ( SPCFNM( I )( J+1:L ), '_' ) + J
+
+C.............  If current name and last name don't match or on last
+            IF ( SPCFNM( I )( K+1:L ) .NE. LNAME ) THEN
+
+C.................  Store count of names
+                V = V + 1
+                NPPM( V ) = ICNT
+
+C.................  Reset last name and counter
+                LNAME = SPCFNM( I )( K+1:L )
+                ICNT  = 1
+
+            ELSE
+                ICNT = ICNT + 1
+
+            ENDIF
+
+   42   CONTINUE  ! End counting model species in speciation factor names
+
+C.........  Store last counter value
+        V = V + 1
+        NPPM( V ) = ICNT
+
+
+C sl           DO  34  V = 1, NVARS3D
+C sl              MSNAMES( V ) = VNAME3D( V )
+C sl               SCRBUF       = VNAME3D( V )
+C sl               MBLMODE( V ) = INDEX1( SCRBUF, NEMODE, MEMODE )
+C sl               IF ( MBLMODE( V ) .LE. 0 ) THEN
+C sl                   DO III = 1,NVARS3D
+C sl                      print*, 'MBLMODE',III,' = ',MBLMODE( III )
+C sl                   END DO
+C sl                   print*, 'SCRBUF',' = ',SCRBUF
+C sl                   MESG = 'Bad Mobile mode in vble name "' //
+C sl    &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) // 
+C sl    &                     '" from file ' // MSNAME
+C sl                   CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
+C sl               END IF
+
+C sl               TMPBUF = SCRBUF( 8:16 )
+C sl               I      = INDEX1( TMPBUF, NMPOL, EMNAM )
+C sl               IF ( I .LE. 0 ) THEN
+C sl                   MESG = 'Bad model spc in spc matrix vble name "' //
+C sl    &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) // 
+C sl    &                     '" from file '// MSNAME
+C sl                   CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
+C sl               END IF
+
+C sl               MBLSDEX( I ) = MIN( V, MBLSDEX( I ) )
+C sl               MBLSCNT( I ) = MBLSCNT( I ) + 1
+
+C sl               K    = INDEX( SFNAM( J ), '_to_' )
+C sl               BBUF = SFNAM( I )( 1:K-1 )
+C sl               L    = INDEX1( BBUF, NIPOL, EINAM )
+C sl               IF ( L .LE. 0 ) THEN
+C sl                   MESG = 'No inventory species "' //
+C sl    &                     ABUF( 1:TRIMLEN( ABUF ) ) //
+C sl    &                     '" for spc matrix vble name "' //
+C sl    &                     SCRBUF( 1:TRIMLEN( SCRBUF ) ) // 
+C sl    &                     '" from file '// MSNAME
+C sl                   CALL M3EXIT( 'CSGLMERGE', 0, 0, MESG, 2 )
+C sl               END IF
+C sl               MBLIPOL( V ) = L
+
+C sl34          CONTINUE            !  end loop on v, parsing msmat vble-names
 
         END IF      !  if mflag
 
@@ -773,23 +883,27 @@ C...........   Apply control and/or projection matrices.
 C.......   Area source controls and projections:
 
         IF( ACFLAG ) THEN
-            CALL CTLSPC( ACNAME, NASRC, SA, CA )
+c sl            CALL CTLSPC( ACNAME, NASRC, SA, CA )
+            CALL CTLSPC( ACNAME, NASRC, SA, CA, INVNAME )
         END IF          !  if acflag:  control area
 
 
         IF( APFLAG ) THEN
-            CALL CTLSPC( APNAME, NASRC, SA, CA )
+c sl            CALL CTLSPC( APNAME, NASRC, SA, CA )
+            CALL CTLSPC( APNAME, NASRC, SA, CA, INVNAME )
         END IF          !  if acflag:  control area
 
 
 C.......   Point source controls and projections:
 
         IF( PCFLAG ) THEN
-            CALL CTLSPC( PCNAME, NPSRC, SP, CP )
+c sl            CALL CTLSPC( PCNAME, NPSRC, SP, CP )
+            CALL CTLSPC( PCNAME, NPSRC, SP, CP, INVNAME )
         END IF          !  if pcflag:  control point sources
 
         IF( PPFLAG ) THEN
-            CALL CTLSPC( PPNAME, NPSRC, SP, CP )
+c sl            CALL CTLSPC( PPNAME, NPSRC, SP, CP )
+            CALL CTLSPC( PPNAME, NPSRC, SP, CP, INVNAME )
         END IF          !  if ppflag:  project point sources
 
 
@@ -880,14 +994,12 @@ C...........   date&time.
         END IF
         CALL M3MESG( MESG )
 
-        BNAME = 'BTMP'
-        MNAME = 'MTMP'
-        ANAME = 'ATMP'
-        PNAME = 'PTMP'
-
         IF ( BFLAG ) THEN
             CALL DAYFILE( BNAME, BDATE, BTIME, JDATE, JTIME,
      &                    NROWS, 'Enter   BIO  SOURCE file' )
+            BMETHEAD( 1 ) = FDESC3D( 2 ) 
+            BMETHEAD( 2 ) = FDESC3D( 3 ) 
+
             DO  101  V = 1, NMPOL	! dayfile() just set vname3d(*)
                 BSPCFLAG( V ) = 
      &          ( INDEX1( EMNAM(V), NVARS3D, VNAME3D ) .GT. 0 )
@@ -897,11 +1009,146 @@ C...........   date&time.
         IF ( MFLAG ) THEN
             CALL DAYFILE( MNAME, MDATE, MTIME, JDATE, JTIME,
      &                    NMSRC, 'Enter MOBILE SOURCE file' )
+            MMETHEAD( 1 ) = FDESC3D( 2 )
+            MMETHEAD( 2 ) = FDESC3D( 3 ) 
         END IF
+
+C.........  Compare the consistency of met headers from BTMP, MTMP, PLAY to
+C           make sure they are using the same met file
+
+            IF ( (BMETHEAD(1).EQ.MMETHEAD(1)) .AND.   ! All three (bo, mb, pt)
+     &           (BMETHEAD(2).EQ.MMETHEAD(2)) .AND.   ! are consistent
+     &           (MMETHEAD(1).EQ.PMETHEAD(1)) .AND.
+     &           (MMETHEAD(2).EQ.PMETHEAD(2))
+     &         ) THEN
+
+               WRITE( MESG,92000 ) 'Met file consistency is verified '
+     &                          // 'among BTMP, MTMP, and PLAY'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+            ELSE IF ( (BMETHEAD(1).EQ.MMETHEAD(1)) .AND.
+     &                (BMETHEAD(2).EQ.MMETHEAD(2)) ) THEN ! bo & mb are consist.
+               IF ( PMETHEAD(1).NE.BMETHEAD(1) ) THEN ! Pt's scen. inconsistent
+                  WRITE( MESG,92000 )
+     &               'Point source has different met scenario ' //
+     &               'than Biogenics and Mobile'
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+               IF ( PMETHEAD(2).NE.BMETHEAD(2) ) THEN ! Pt's scheme incons.
+                  WRITE( MESG,92000 )
+     &               'Point source has different cloud scheme ' //
+     &               'than Biogenics and Mobile'
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+
+               WRITE( MESG,92000 ) 'For Point Sources:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) PMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) PMETHEAD( 2 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92000 ) 'For Biogenics and Mobile:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+            ELSE IF ( (MMETHEAD(1).EQ.PMETHEAD(1)) .AND.
+     &                (MMETHEAD(2).EQ.PMETHEAD(2)) ) THEN ! Try mb & pt
+               IF ( BMETHEAD(1).NE.MMETHEAD(1) ) THEN ! Bo's scen. inconsistent
+                  WRITE( MESG,92000 )
+     &               'Biogenics has different met scenario ' //
+     &               'than Mobile and Point'
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+               IF ( BMETHEAD(2).NE.MMETHEAD(2) ) THEN ! Bo's scheme incons.
+                  WRITE( MESG,92000 )
+     &               'Biogenics has different cloud scheme ' //
+     &               'than Mobile and Point'
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+
+               WRITE( MESG,92000 ) 'For Biogenics:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 2 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92000 ) 'For Mobile and Point:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) MMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) MMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+            ELSE IF ( (PMETHEAD(1).EQ.BMETHEAD(1)) .AND.
+     &                (PMETHEAD(2).EQ.BMETHEAD(2)) ) THEN ! Try pt & bo
+               IF ( MMETHEAD(1).NE.PMETHEAD(1) ) THEN ! Mb's scen. inconsistent
+                  WRITE( MESG,92000 )
+     &               'Mobile has different met scenario ' //
+     &               'than Point and Biogenics'
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+               IF ( MMETHEAD(2).NE.PMETHEAD(2) ) THEN ! Mb's scheme incons.
+                  WRITE( MESG,92000 )
+     &               'Mobile has different cloud scheme ' //
+     &               'than Point and Biogenics'
+                  CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+               END IF
+
+               WRITE( MESG,92000 ) 'For Mobile:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) MMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) MMETHEAD( 2 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92000 ) 'For Point and Biogenics:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) PMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) PMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+            ELSE     ! Neither two inputs use the same met data
+               WRITE( MESG,92000 ) 'Biogenic, Mobile and Point all '
+     &                          // 'used different met inputs '
+               CALL M3WARN( 'CSGLMERGE', 0, 0, MESG )
+
+               WRITE( MESG,92000 )
+     &            'For Biogenics:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) BMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+               WRITE( MESG,92000 )
+     &            'For Mobile:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) MMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) MMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+               WRITE( MESG,92000 )
+     &            'For Point Source:'
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) PMETHEAD( 1 )
+               CALL M3MESG( MESG )
+               WRITE( MESG,92020 ) PMETHEAD( 2 )
+               CALL M3MESG( MESG )
+
+            END IF   ! Met header comparison
+
 
         LDATE = -1
 
-        DO  199  T = 1, NSTEPS
+        DO  229  T = 1, NSTEPS
         
             IF ( LDATE .NE. JDATE ) THEN  !  get new day's input files, etc
 
@@ -924,14 +1171,25 @@ C...........   Read mobile source emissions:
 
             IF ( MFLAG ) THEN
 
-                IF( .NOT. READ3( MNAME, 'ALL', ALLAYS3, 
-     &                     JDATE, JTIME, MOBILV ) ) THEN
+C.............   Read in entire emissions field
+               IF( .NOT. READ3( MNAME, 'ALL', ALLAYS3,
+     &                    JDATE, JTIME, MOBILV ) ) THEN
 
-                    MESG = 'Could not read timestep from ' // MNAME
-                    CALL M3EXIT( 'CSGLMERGE', JDATE, JTIME, MESG, 2 )
-                    GO TO  199
+                   MESG = 'Could not read timestep from ' // MNAME
+                   CALL M3EXIT( 'CSGLMERGE', JDATE, JTIME, MESG, 2 )
+                   GO TO 229
 
-                END IF          !  if read3() failed
+               END IF          !  if read3() succeeds or not
+
+C sl                IF( .NOT. READ3( MNAME, 'ALL', ALLAYS3, 
+C sl     &                     JDATE, JTIME, MOBILV ) ) THEN
+C sl
+C sl                    MESG = 'Could not read timestep from ' // MNAME
+C sl                    CALL M3EXIT( 'CSGLMERGE', JDATE, JTIME, MESG, 2 )
+C sl                    GO TO  229
+
+C sl                END IF          !  if read3() failed
+
             END IF      !  if mflag
 
 
@@ -961,7 +1219,7 @@ C...........   as appropriate, and for each model species dependent upon
 C...........   that species, apply gridding matrices as appropriate and
 C...........   write to output file:
 
-            DO  198  V = 1, NIPOL
+            DO  218  V = 1, NIPOL
 
                 IF( AFLAG ) THEN
                     IF( .NOT. READ3( ANAME, EINAM( V ), ALLAYS3, 
@@ -971,7 +1229,7 @@ C...........   write to output file:
      &                  EINAM( V )( 1:TRIMLEN( EINAM( V ))) //
      &                  '" from file ' // ANAME
                         CALL M3EXIT( 'CSGLMERGE', JDATE,JTIME, MESG, 2 )
-                        GO TO  198
+                        GO TO  218
 
                     END IF          !  if read3() failed
                 END IF          !  if aflag:  merging area emissions
@@ -985,7 +1243,7 @@ C...........   write to output file:
      &                  EINAM( V )( 1:TRIMLEN( EINAM( V ))) //
      &                  '" from ' // PNAME
                         CALL M3EXIT( 'CSGLMERGE', JDATE,JTIME, MESG, 2 )
-                        GO TO  198
+                        GO TO  218
 
                     END IF          !  if read3() failed
 
@@ -994,7 +1252,7 @@ C...........   write to output file:
 
 C...............   Process all output species for this input species:
 
-                DO  197  J = 1,  NSPCOUT( V )
+                DO  207  J = 1,  NSPCOUT( V )
 
                     K = SPCREF( V,J )
 
@@ -1039,13 +1297,79 @@ C...................   set to zero:
 
                     IF ( MFLAG ) THEN   !  combine mobile modes, vehicle
                                         !  types for this model species:
-                        M = MBLSCNT( K ) * NVTYPE  
-                        N = MBLSDEX( K )
-                        CALL MSMATVEC( NMSRC, M, SM( 1,1,N ), 
-     &                                 MOBILV, MOBILC )
+
+C sl ......... Following is adapted from csgmobil.F
+C.............  Loop through all output model species
+            SIDX = 0
+            DO  205 V = 1, ANMPOL
+
+C.................  Initialize output emissions array to 0.
+                DO 197 S = 1, NMSRC
+                    MOBILC( S ) = 0.
+  197           CONTINUE
+
+C.................  Loop through processes associated w/ model species
+                DO 199 J = 1, NPPM( V )
+
+C.....................  Set index of SS for model species and process
+                    SIDX = SIDX + 1
+
+C.....................  Get index of EMISV for model species and process
+C.........................  First find the location of the second "_"
+                    L = TRIMLEN( SPCFNM ( SIDX ) )
+                    N = INDEX  ( SPCFNM ( SIDX )(   1:L ), '_' )
+                    M = INDEX  ( SPCFNM ( SIDX )( N+1:L ), '_' ) + N
+
+C.........................  Then match the first 2 name sections to EMTNAM
+                    NMATCH = SPCFNM( SIDX )( 1:M-1 )
+                    K      = INDEX1( NMATCH, ANETYPE, EMTNAM )
+
+C.....................  Apply SM to MOBILV and add result to current MOBILC
+
+                    CALL MSMATVEC( NMSRC, NVTYPE,
+     &                             SM   ( 1,1,SIDX ),
+     &                             MOBILV( 1,1,K    ), MOBILC )
+
+  199           CONTINUE
+
+C.................  Apply gridding matrix
+                CALL SMATVEC( NMSRC, NGRID, NMATX, NX, IX, CX,
+     &                        MOBILC, EMISG )
+
+C.................  Write out model species emissions
+
+                IF ( OUTFLAG ) THEN
+
+                    IF ( .NOT. WRITE3( ENAME, VNAME3D( V ),
+     &                                 JDATE, JTIME,
+     &                                 EMISG ) ) THEN
+
+                        MESG = 'Could not write ' // VNAME3D( V ) //
+     &                         ' to ' // ENAME
+                        CALL M3EXIT( 'CSGMOBIL', JDATE, JTIME, MESG, 2 )
+
+                    END IF          !  if write3() failed
+
+                END IF          !  if outputflag
+
+  205       CONTINUE  !  End of loop on output model species
+
+
+
+
                         CALL AMRGVEC ( NMSRC, MOBILC, NMATX, 
      &                                 NM, IM, MM,
      &                                 NGRID, EMISG )
+
+
+
+C sl                        M = MBLSCNT( K ) * NVTYPE  
+C sl                        N = MBLSDEX( K )
+C sl                        CALL MSMATVEC( NMSRC, M, SM( 1,1,N ), 
+C sl     &                                 MOBILV, MOBILC )
+C sl                        CALL AMRGVEC ( NMSRC, MOBILC, NMATX, 
+C sl     &                                 NM, IM, MM,
+C sl     &                                 NGRID, EMISG )
 
                     END IF      !  if mflag
 
@@ -1073,9 +1397,9 @@ C...................   set to zero:
 
                     END IF          !  if outputflag
 
-197             CONTINUE    !  end loop on output vbles for this input vble
+207             CONTINUE    !  end loop on output vbles for this input vble
 
-198         CONTINUE            ! end loop on input variables
+218         CONTINUE            ! end loop on input variables
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )         !  update model clock
             CALL NEXTIME( ADATE, ATIME, TSTEP )         !  update  area clock
@@ -1083,7 +1407,7 @@ C...................   set to zero:
             CALL NEXTIME( MDATE, MTIME, TSTEP )         !  update mobil clock
             CALL NEXTIME( PDATE, PTIME, TSTEP )         !  update point clock
 
-199     CONTINUE          !  end loop on time steps
+229     CONTINUE          !  end loop on time steps
 
 999     CONTINUE          !  exit program
       
@@ -1099,6 +1423,7 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
 
+92020   FORMAT ( 10X, A )
 
 C...........   Formatted file I/O formats............ 93xxx
 
@@ -1129,6 +1454,7 @@ C       and for the date&time to be used in FNAME to correspond
 C       with model date&time JDATE:JTIME.  Opens the requested file
 C       and checks consistency of the file's dimensioning with the 
 C       dimensioning expected by the caller.
+C       Sets file description into the FDESC commons.
 C
 C  PRECONDITIONS REQUIRED:  
 C       setenv's for appropriate logical names
@@ -1218,7 +1544,9 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT ( 5X , A )    !  generic string log format
 
+
 92010   FORMAT ( 5X , A, :, I9, ':', I6.6 )
+
 
 
 C...........   Internal buffering formats............ 94xxx
@@ -1233,7 +1561,7 @@ C****************   end subroutine DAYFILE  *****************************
 C***********************************************************************
 
 
-        SUBROUTINE  CTLSPC( FNAME, NSRCS, SPCMAT, CTLMAT )
+        SUBROUTINE  CTLSPC( FNAME, NSRCS, SPCMAT, CTLMAT, INVNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 1166
@@ -1283,6 +1611,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         
         INTEGER         S, I, V
 
+        CHARACTER*16    INVNAME( NMPOL )        ! sl arg passed in from main
 
 C***********************************************************************
 C   begin body of subroutine  CTLSPC
@@ -1325,6 +1654,7 @@ C...........   of the spc-matrix-vble name, multiply this diagonal
 C...........   spc-conversion matrix by this inventory-spc control matrix
 
             DO  22  V = 1, NMPOL
+                print *, 'INVNAME(',V,') = ', INVNAME(V)   ! sl
                 IF ( EINAM( S ) .EQ. INVNAME( V ) ) THEN
                     DO  11  I = 1, NSRCS
                         SPCMAT( I,V ) = CTLMAT( I,S ) * SPCMAT( I,V )
