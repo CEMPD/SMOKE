@@ -1046,36 +1046,51 @@ C.......   Sort and Process temporal cross-references, according to category
 66      CONTINUE        !  end loop processing temporal XREFs
 
         IF( NPRN1 .GT. NPSRC ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &          'Max XREF count', NPSRC,
+     &          'Max XREF count NPSRC=', NPSRC,
      &          'exceeded in XREF file: count=', NPRN1
-            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+            CALL M3MESG( MESG )
+        ENDIF
 
-        ELSE IF( NPRN2 .GT. NPSRC ) THEN
+        IF( NPRN2 .GT. NPSRC ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &          'Max XREF count', NPSRC,
+     &          'Max XREF count NPSRC=', NPSRC,
      &          'exceeded in XREF file: count=', NPRN2
-            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+            CALL M3MESG( MESG )
+        ENDIF
 
-        ELSE IF( NPRN3 .GT. NPSRC ) THEN
+        IF( NPRN3 .GT. NPSRC ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &          'Max XREF count', NPSRC,
+     &          'Max XREF count NPSRC=', NPSRC,
      &          'exceeded in XREF file: count=', NPRN3
-            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+            CALL M3MESG( MESG )
+        ENDIF
 
-        ELSE IF( NPRN4 .GT. NPSRC ) THEN
+        IF( NPRN4 .GT. NPSRC ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &          'Max XREF count', NPSRC,
+     &          'Max XREF count NPSRC=', NPSRC,
      &          'exceeded in XREF file: count=', NPRN4
-            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
-
-        ELSE IF( NPRN5 .GT. NPSRC ) THEN
-            WRITE( MESG,94010 )
-     &          'Max XREF count', NPSRC,
-     &          'exceeded in XREF file: count=', NPRN5
-            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
-
+            CALL M3MESG( MESG )
         END IF
+
+        IF( NPRN5 .GT. NPSRC ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 )
+     &          'Max XREF count NPSRC=', NPSRC,
+     &          'exceeded in XREF file: count=', NPRN5
+            CALL M3MESG( MESG )
+        END IF
+
+C...........   Exit if overflows found
+        IF ( EFLAG ) THEN
+            MESG = 'Error processing TEMPORAL XREF file'
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+        END IF
+
 
 C...........   If requested, write out filled-in XREF file:
 
