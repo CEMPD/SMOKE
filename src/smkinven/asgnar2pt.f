@@ -42,7 +42,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: CSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: AR2PTTBL, AR2PTIDX, AR2PTCNT, TXCNT,
@@ -110,7 +110,7 @@ C.............  Create selection
 
             CASE ( 'AREA', 'MOBILE' )
                 CSRC    = CSOURC( S )
-                TSCC    = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )  ! May only work for area
+                TSCC    = CSCC( S )
                 TSCCL   = TSCC( 1:LSCCEND )
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CFIPSCC = CFIP // TSCC

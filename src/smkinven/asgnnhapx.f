@@ -42,7 +42,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: CSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC
 
 C...........   This module contains the cross-reference tables
         USE MODXREF
@@ -117,8 +117,7 @@ C.............  Create selection
                 CSRC    = CSOURC( S )
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CSTA    = CFIP( 1:STALEN3 )
-                TSCC_D  = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )  ! May only work for area
-!                TSCC_D  = CSCC( S )            ! Level 4 (all)
+                TSCC_D  = CSCC( S )             ! Level 4 (all)
                 TSCC_A  = TSCC_D( 1:SCCLEV1 )   ! Level 1
                 TSCC_B  = TSCC_D( 1:SCCLEV2 )   ! Level 2
                 TSCC_C  = TSCC_D( 1:SCCLEV3 )   ! Level 3
