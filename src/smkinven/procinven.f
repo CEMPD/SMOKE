@@ -102,6 +102,9 @@ C...........   Other local variables
         LOGICAL         A2PFLAG           ! true: using area-to-point processing
         LOGICAL         DFLAG             ! true: if should error on duplicates
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
+        LOGICAL      :: CE_100_FLAG  = .FALSE. ! true: control eff of 100 found
+        LOGICAL      :: RE_ZERO_FLAG = .FALSE. ! true: rule effective of 0 found
+        LOGICAL      :: RP_ZERO_FLAG = .FALSE. ! true: rule penetration of 0 found
 
         CHARACTER*5     TPOLPOS     !  Temporary pollutant position
         CHARACTER*256   BUFFER      !  input file line buffer
@@ -404,14 +407,26 @@ C.............  Check control efficiency, rule effectiveness, and rule
 C               penetration and if missing, set to default value
             IF ( NCE .GT. 0 ) THEN
                 IF( POLVLA( J, NCE ) .LT. 0. ) POLVLA( J, NCE ) = 0.
+                IF( POLVLA( J, NCE ) .EQ. 100. ) THEN
+                    POLVLA( J, NCE ) = 0
+                    CE_100_FLAG = .TRUE.
+                END IF
             END IF
 
             IF ( NRE .GT. 0 ) THEN
                 IF( POLVLA( J, NRE ) .LT. 0. ) POLVLA( J, NRE ) = 100
+                IF( POLVLA( J, NRE ) .EQ. 0. ) THEN
+                    POLVLA( J, NRE ) = 100
+                    RE_ZERO_FLAG = .TRUE.
+                END IF
             END IF
 
             IF ( NRP .GT. 0 ) THEN
                 IF( POLVLA( J, NRP ) .LT. 0. ) POLVLA( J, NRP ) = 100
+                IF( POLVLA( J, NRP ) .EQ. 0. ) THEN
+                    POLVLA( J, NRP ) = 100
+                    RP_ZERO_FLAG = .TRUE.
+                END IF
             END IF
 
 C.............  For a new source or a new pollutant code...
@@ -496,6 +511,36 @@ C                   rule penetration based on the emission values
             LS = S
 
         END DO
+
+C.........  Print warnings about changed control efficiency, rule
+C           effectiveness, and rule penetration
+        IF( CE_100_FLAG ) THEN
+            MESG = 'WARNING: Some base year control efficiency values'//
+     &             ' that were input as 100%' // CRLF() // BLANK10 //
+     &             'were reset to 0%. A control efficiency of 100% ' //
+     &             'would mean a control' // CRLF() // BLANK10 // 
+     &             'is 100% effective and emissions should be zero.'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( RE_ZERO_FLAG ) THEN
+            MESG = 'WARNING: Some base year rule effectiveness values'//
+     &             ' that were input as 0%' // CRLF() // BLANK10 //
+     &             'were reset to 100%. A rule effectiveness of 0% ' //
+     &             'would mean a control' // CRLF() //BLANK10 // 
+     &             'works 0% of the time, and this does not make sense.'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( RP_ZERO_FLAG ) THEN
+            MESG = 'WARNING: Some base year rule penetration values'//
+     &             ' that were input as 0%' // CRLF() // BLANK10 //
+     &             'were reset to 100%. A rule penetration of 0% ' //
+     &             'would mean a control' // CRLF() //BLANK10 // 
+     &             'applies to none of the sources, and this does ' //
+     &             'not make sense.'
+            CALL M3MSG2( MESG )
+        END IF
 
 C.........  Deallocate memory for unsorted pollutant arrays
         CALL SRCMEM( CATEGORY, 'UNSORTED', .FALSE., .TRUE., 1, 1, 1 )
