@@ -1,0 +1,15 @@
+Processed as Point sources
+Base inventory year      1996
+Gridding matrix applied for gridUS36NC_23X12
+No speciation matrix applied
+Temporal factors applied for episode from
+     Tuesday July 9, 1996   at 000000 to
+     Tuesday July 9, 1996   at 230000
+Annual total data basis in report
+Date       | Region| State         | CO           | NOX          | VOC          | NH3          | SO2          | PM10         | PM2_5        | PMC
+           |       |               | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]   | [tons/day]
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 07/09/1996|  037000|North Carolina|    0.21665E+03|   0.86170E+03|   0.22062E+03|   0.32787E+00|   0.14120E+04|   0.86545E+02|   0.53083E+02|   0.33462E+02
+
+############################################################################################################################################################
+
