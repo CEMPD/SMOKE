@@ -2,10 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
-LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libiotools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
+LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 
 all: smkreport
 #
@@ -30,7 +30,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 #
 SMR=smkreport.o asgnbins.o bldrepidx.o blkorcmt.o genrprt.o openrepin.o   \
-    openrepout.o prclinrc.o rdrepin.o rdrprts.o repmrggrd.o repunits.o  \
+    openrepout.o prclinrc.o rdgrps.o rdrepin.o rdrprts.o repmrggrd.o repunits.o\
     rmcommnt.o scanrepc.o selectsrc.o wrrephdr.o wrrepout.o
 
 smkreport: $(SMR) $(ALLI) $(LIBPATH)
@@ -57,10 +57,12 @@ openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 prclinrc.o: $(MODREPRT) $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ $<
+rdgrps.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODLISTS) 
+	$(FC) $(FFLAGS) -c -o $@ $<
 rdrepin.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODELEV) $(MODLISTS) \
            $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdrprts.o: $(MODREPRT)
+rdrprts.o: $(MODREPRT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 repmrggrd.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ $<
