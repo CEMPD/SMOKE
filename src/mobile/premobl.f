@@ -2,7 +2,7 @@
         PROGRAM PREMOBL
  
 C***********************************************************************
-C  program body starts at line 
+C  program body starts at line 178
 C
 C  DESCRIPTION:
 C     This program inputs gridded, time-dependent temperature data, a mobile 
@@ -31,7 +31,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -248,6 +248,14 @@ C           results are stored in module MODINFO.
 
             CALL GETSINFO
 
+C.............  Ensure that there is at least one activity in the inventory 
+C               file, or else this program does not need to be run
+            IF( NIACT .EQ. 0 ) THEN
+                MESG = 'ERROR: No activities are found in the ' //
+     &                 'inventory file!  Program cannot be used.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
         END IF
 
 C.........  Create note about time zone expected in meteorology file
@@ -437,7 +445,8 @@ C.............  When new day...
 
 C.................  Write message for day of week and date
                 DAY = WKDAY( JDATE )
-                MESG = 'Processing ' // DAYS( DAY ) // MMDDYY( JDATE )
+                MESG = 'Processing ' // DAYS( DAY ) // ' ' // 
+     &                 MMDDYY( JDATE )
                 CALL M3MSG2( MESG )
 
 C.................  Set start and end hours of day for all sources
@@ -470,15 +479,17 @@ C.................  Adjust the by-source meteorology data before output
      &                        'temperature', VLDTMPR, VLDTMIN, VLDTMAX, 
      &                        TKMINOUT, TKMAXOUT, METIDX )
 
-C.................  Count these sources (easier, but unecessary, to repeat)
-                DO S = 1, NSRC
+C.................  Count these sources (the first time)
+                IF( .NOT. OFLAG ) THEN
+                    DO S = 1, NSRC
 
-                    IF( UMAT( S ) .EQ. 0 ) THEN
-                        OFLAG = .TRUE.
-                        OSRC = OSRC + 1
-                    END IF
+                	IF( UMAT( S ) .EQ. 0 ) THEN
+                            OFLAG = .TRUE.
+                            OSRC = OSRC + 1
+                	END IF
 
-                END DO
+                    END DO
+                END IF
 
 C.................  Write the by-source meteorology data
                 CALL WRSMET( NSRC, IDATE, ITIME, 'MINMAXT', 
