@@ -166,7 +166,7 @@ C.........  Compare day-specific dates/times to epsiode dates/times
      &             'ending date/time of '// CDATESTR// '@ ' //
      &             CTIMESTR // CRLF() // BLANK10 // 
      &             'is earlier than episode ending date/time of ' //
-     &             EDATESTR // '/' // ETIMESTR 
+     &             EDATESTR // '@ ' // ETIMESTR 
 
             CALL M3MSG2( MESG )
         END IF
