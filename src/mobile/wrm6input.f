@@ -227,6 +227,12 @@ C.................  Find current county in temperatures array
 C.................  Replace temperatures in M6 scenario
                 CALL RPLCTEMP( STR2INT( CURRCOUNTY ), TEMPS, NCOUNTY, 
      &                         M6SCEN, NLINESCEN, CTYPOS )
+     
+C.................  Check if start of scenario has moved
+                IF( M6SCEN( STSCEN )( 2:16 ) /= 'SCENARIO RECORD' ) THEN
+                    STSCEN = STSCEN + 1
+                END IF
+     
             END IF
 
 C.............  Write run level commands to M6 input file
