@@ -103,6 +103,10 @@ C   Begin body of subroutine ALOCPKTS
 C.........  Initialize packet count for all valid packets
         PKTCNT = 0   ! array
 
+C.........  Write status message
+        MESG = 'Scanning control/projection packets input file...'
+        CALL M3MSG2( MESG )
+
 C.........  Loop through control packets file and scan for packets. For each
 C           packet type, count the number of entries.
 C.........  For the projection packet, only pay attention to those that
@@ -289,7 +293,7 @@ C.........  REACTIVITY packet
         CALL CHECKMEM( IOS, 'CSPFREA', PROGNAME )
 
 C.........  PROJECTION packet
-        J = MAX( PKTCNT( 6 ), PKTCNT( 7 ) )
+        J = PKTCNT( 6 )
         ALLOCATE( IPRJSIC( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IPRJSIC', PROGNAME )
         ALLOCATE( PRJFC( J ), STAT=IOS )
