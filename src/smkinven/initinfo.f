@@ -61,6 +61,7 @@ C...........   Other local variables
         INTEGER         I, IOS               ! memory allocation status
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error detected
+        LOGICAL,SAVE :: FIRST = .TRUE.    ! true: first time through subroutine
 
         CHARACTER*300   MESG
 
@@ -69,6 +70,48 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine INITINFO
 
+C.........  Set source information that depends on file format
+C           This section will be executed every time the routine is called
+        SELECT CASE( CATEGORY )
+        
+        CASE ( 'AREA' )
+
+            SELECT CASE( FILFMT )
+            CASE( EMSFMT )
+                NEMSFILE = 1    ! Number of required EMS-95 file types
+            END SELECT
+            
+        CASE ( 'MOBILE' )
+
+            SELECT CASE( FILFMT )
+            CASE( EMSFMT )
+                NEMSFILE = 1    ! Number of required EMS-95 file types
+            END SELECT     
+            
+        CASE( 'POINT' )
+
+            SELECT CASE( FILFMT )
+            CASE( IDAFMT )
+                NCHARS = 6
+                JSCC   = 6
+                JSTACK = 4
+
+            CASE( EPSFMT )
+                NCHARS = 6
+                JSCC   = 6
+                JSTACK = 3
+
+            CASE( EMSFMT )
+                NCHARS   = 5
+                JSTACK   = 3
+                NEMSFILE = 5   ! Number of required EMS-95 file types
+           END SELECT
+           
+        END SELECT
+
+C.........  Skip the rest of the routine if it has been called before           
+        IF( .NOT. FIRST ) RETURN
+           
 C.........  Set category-independent variables
         JSCC  = 0   ! default position of SCC in source description
         NPACT = 1   ! no. variables per activity
@@ -86,16 +129,11 @@ C.........  For area sources ...
             LSCCEND  = 7         ! first 7
             RSCCBEG  = 8         ! last 3
             PLTIDX   = MXARCHR3  ! needed for ar-to-point
-
+        
             SCCLEV1 = 2
             SCCLEV2 = 4
             SCCLEV3 = 7
             SCCLEV4 = 10
-
-            SELECT CASE( FILFMT )
-            CASE( EMSFMT )
-                NEMSFILE = 1    ! Number of required EMS-95 file types
-            END SELECT
 
 C.........  For mobile sources ...
         CASE ( 'MOBILE' ) 
@@ -110,11 +148,6 @@ C.........  For mobile sources ...
             SCCLEV2 = 4
             SCCLEV3 = 7
             SCCLEV4 = 10
-            
-            SELECT CASE( FILFMT )
-            CASE( EMSFMT )
-                NEMSFILE = 1    ! Number of required EMS-95 file types
-            END SELECT
 
 C.........  For point sources ...
         CASE ( 'POINT' )
@@ -128,23 +161,6 @@ C.........  For point sources ...
             SCCLEV2 = 5
             SCCLEV3 = 8
             SCCLEV4 = 10
-            
-            SELECT CASE( FILFMT )
-            CASE( IDAFMT )
-                NCHARS = 6
-                JSCC   = 6
-                JSTACK = 4
-
-            CASE( EPSFMT )
-                NCHARS = 6
-                JSCC   = 6
-                JSTACK = 3
-
-            CASE( EMSFMT )
-                NCHARS   = 5
-                JSTACK   = 3
-                NEMSFILE = 5   ! Number of required EMS-95 file types
-           END SELECT
           
         END SELECT
 
@@ -228,6 +244,8 @@ C.........  Ensure that all of the expect output variable names are present
 
 C.........  Deallocate memory used in this program only
         DEALLOCATE( ENAMES, CDUMARR, IDUMARR )
+
+        FIRST = .FALSE.
 
         RETURN
 
