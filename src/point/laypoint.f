@@ -433,7 +433,7 @@ C           already retrieved
         NROWS3D = NSRC
         NLAYS3D = EMLAYS
         NVARS3D = 1
-        VGLVS3D( 1:EMLAYS ) = VGLVSXG( 1:EMLAYS )  ! array
+        VGLVS3D( 0:EMLAYS ) = VGLVSXG( 0:EMLAYS )  ! array
         VGTYP3D = VGTYP
         VGTOP3D = VGTOP
 
