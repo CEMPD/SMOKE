@@ -188,6 +188,7 @@ C.........  Check for valid operation type
         CASE( 'REACTIVITY' )
             POADFLT = .FALSE.
             RFLAG   = .TRUE.
+            OFLAG   = .TRUE.
         CASE( 'SPEED' ) 
             POADFLT = .FALSE.
             PFLAG   = .TRUE.
