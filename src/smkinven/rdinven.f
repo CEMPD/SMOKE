@@ -317,7 +317,7 @@ c                CALL RDEPSMV(  )
             NRAWBP = NRAWOUT
 
 C.........  NTI 1996 format.  THIS FEATURE IS NOT SUPPORTED IN SMOKE.
-        ELSE IF( INVFMT .EQ. NTIFMTA ) THEN
+        ELSE IF( INVFMT .EQ. NTIFMT ) THEN
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
