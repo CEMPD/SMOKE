@@ -1,10 +1,10 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+ 
+C Version @(#)$Id$ $Source$ $Date$ 
 
          PROGRAM RAWPOINT
 
 C***********************************************************************
-C  program body starts at line 160
+C  program body starts at line 173
 C
 C  DESCRIPTION:
 C       Sort data contained in EPS/AFS-style point source file and 
@@ -15,11 +15,14 @@ C       Input data for point sources.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
-C       DT2STR, FIND1, PROMPTFFILE, PROMPTMFILE, GETYN, TRIMLEN
+C       FIND1, PROMPTFFILE, PROMPTMFILE, GETYN, TRIMLEN
 C
 C  REVISION  HISTORY:
 C       Prototype  6/95 by CJC.
 C       Version  10/95 does sorting internally on FIPS,SCC,PLANT,STACK.
+C       Version  11/95 reads, combines, and sorts multiple input files
+C       PRAW01, PRAW02, ..., each with its own inventory-year.
+C       Supports both UTM and Lambert-based coordinate systems.
 C***********************************************************************
 
       IMPLICIT NONE
@@ -27,6 +30,7 @@ C***********************************************************************
 C...........   INCLUDES:
         
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
+        INCLUDE 'GRDIMS3.EXT'   !  grid dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem info (both inventory and model)
         INCLUDE 'TMDIMS3.EXT'   !  time related parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
@@ -42,12 +46,17 @@ C...........   PARAMETER
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*24    DT2STR
+        LOGICAL         DSCGRID
         LOGICAL         ENVYN
         INTEGER         FIND1   !  returns -1 for failure
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         JULIAN
+        LOGICAL         SETLAM
+        LOGICAL         LL2LAM
+        LOGICAL         UTM2LAM
+        LOGICAL         ENVYN
+        LOGICAL         ENVYN
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         SECSDIFF
@@ -55,9 +64,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL DT2STR, ENVYN, FIND1, GETNUM, GETYN, JULIAN, 
-     &           PROMPTFFILE, PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL,
-     &           TRIMLEN
+        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN, 
+     &           SETLAM, LL2LAM, UTM2LAM, PROMPTFFILE, PROMPTMFILE,
+     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -75,6 +84,7 @@ C...........   follow this scheme with parallel arrays
         INTEGER     STACK
         INTEGER     ZONE
         INTEGER     TPF
+        INTEGER     INY
         INTEGER     SDT, EDT, STM, ETM
         INTEGER     MM, DD, HH, DAYS
         REAL        CEFF
@@ -102,6 +112,7 @@ C...........   sorted final version (image EMISREC of data record)
         INTEGER     ISTACA( NSMAX )  !  Stack ID
         INTEGER     ICODEA( NSMAX )  !  spcecies-subscript
         INTEGER     TPFLGA( NSMAX )  !  applicability of temporal profile types
+        INTEGER     INVYRA( NSMAX )  !  inventory year
         REAL        XLOCAA( NSMAX )  !  UTM X-location (m)
         REAL        YLOCAA( NSMAX )  !  UTM Y-location (m)
         REAL        STKHTA( NSMAX )  !  stack height   (m)
@@ -113,6 +124,10 @@ C...........   sorted final version (image EMISREC of data record)
         REAL        CTLEFA( NSMAX )  !  control efficiency fraction
         REAL        EMISVA( NSMAX )  !  emissions values (tons/yr)
 
+C.......   Common EMISREC holds an entire output record.  
+C.......   Order of arrays in EMISREC _must_ match order of
+C.......   variables in the output file.
+
         INTEGER     NPOINT           !  current source-count
         INTEGER     IFIP  ( NPSRC )  !  source FIPS (county) ID
         INTEGER     ISCC  ( NPSRC )  !  source SCC
@@ -121,6 +136,7 @@ C...........   sorted final version (image EMISREC of data record)
         INTEGER     ISTACK( NPSRC )  !  Stack ID
         INTEGER     TZONES( NPSRC )  !  time zones
         INTEGER     TPFLAG( NPSRC )  !  applicability of temporal profile types
+        INTEGER     INVYR ( NPSRC )  !  inventory year for this record
         REAL        XLOCA ( NPSRC )  !  UTM X-location (m)
         REAL        YLOCA ( NPSRC )  !  UTM Y-location (m)
         REAL        STKHT ( NPSRC )  !  stack height   (m)
@@ -133,8 +149,9 @@ C...........   sorted final version (image EMISREC of data record)
         REAL        EMISV ( NPSRC, NIPOL )  !  emissions values (tons/yr)
 
         COMMON /EMISREC / IFIP, ISIC, ISCC, IPLANT, ISTACK, TZONES,
-     &                    TPFLAG, XLOCA, YLOCA, STKHT, STKDM, STKTK,
-     &                    STKVE, CTLEFF, RULEFF, RULPEN, EMISV
+     &                    TPFLAG, INVYR, XLOCA, YLOCA, 
+     &                    STKHT, STKDM, STKTK, STKVE, 
+     &                    CTLEFF, RULEFF, RULPEN, EMISV
 
         CHARACTER*16  ENAME
         
@@ -152,6 +169,10 @@ C...........   Other local variables
                                 
         INTEGER         IOS     !  I/O status
         INTEGER         IREC    !  input line (record) number
+        INTEGER         IFIL    !  input file counter
+        CHARACTER*16    SCRBUF  !  scratch buffer
+        CHARACTER*16    COORDN  !  coordinate system name
+        CHARACTER*16    RNAME   !  input file name buffer
         CHARACTER*256   MESG    !  text for M3EXIT()
         CHARACTER*240   LINE    !  input line from POINT file
 
@@ -189,11 +210,36 @@ C   begin body of program RAWPOINT
      &                 IOS )
 
 
-C.......   Get file name; open input raw point source file
+C.......   Get the coordinate system name and parameters
+C.......   to put into file header:
 
-        PDEV = PROMPTFFILE( 
-     &         'Enter logical name for RAW POINT SOURCE file',
-     &         .TRUE., .TRUE., 'PRAW', 'RAWPOINT' )
+        IF ( .NOT. DSCGRID( GRDNM, COORDN, GDTYP3D, 
+     &              P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
+     &              XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
+     &              NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
+            SCRBUF = GRDNM
+            MESG   = '"' // SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+     &               '" not found in GRIDDESC file'
+            CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 2 )
+
+        END IF
+
+        IF      ( GDTYP3D .EQ. UTMGRD3 ) THEN
+            UZONE = NINT( P_ALP3D )
+        ELSE IF ( GDTYP3D .EQ. LAMGRD3 ) THEN
+            IF ( .NOT. SETLAM( P_ALP3D, P_BET3D, P_GAM3D, 
+     &                         XCENT3D, YCENT3D ) ) THEN
+                MESG = 'Bad grid ' // GDNAM3D
+                CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 2 )
+            END IF
+        ELSE IF ( GDTYP3D .EQ. LATGRD3 ) THEN
+            !  do nothing -- no setup necessary
+        ELSE
+            WRITE( MESG, 94010 ) 
+     &          'Unsupported coordinate system type', GDTYP3D
+            CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 2 )
+        END IF
 
 
 C.......   Get file name; open input time zone file
@@ -203,214 +249,296 @@ C.......   Get file name; open input time zone file
      &         .TRUE., .TRUE., 'ZONES', 'RAWPOINT' )
 
 
-C...........   Get the UTM zone to put into file header:
+C.......   Read the point source files:
+C.......   Get file name; open input raw point source file
 
-        UZONE = GETNUM( 1, 36, 17, 'Enter UTM zone for this file' )
-        
+        WRITE( *,92000 ) 
+     &  ' ', 
+     &  'Now enter the list of logical file names for ',
+     &  'RAW POINT SOURCE files...', 
+     &  ' '
+        IFIL =    0
+        S    =    0
+        INY  = 1989
 
-C.......   Read the point source file
-        
-        WRITE( *,92000 ) ' ', 'Reading RAW POINT SOURCE file...', ' '
-
-        DO  102  I = 1, NIPOL
-        DO  101  S = 1, NPSRC
-            EMISV ( S,I ) = BADVAL3
-            RULPEN( S,I ) = BADVAL3
-            RULEFF( S,I ) = BADVAL3
-            CTLEFF( S,I ) = BADVAL3
 101     CONTINUE
-102     CONTINUE
 
-        IREC  =  0
-        S     =  0
-        VFLAG = .FALSE.
+            IFIL = IFIL + 1
+            WRITE( RNAME, 94040 ) 'PRAW', IFIL
 
-111     CONTINUE        !  head of the PDEV-read loop
+            PDEV = PROMPTFFILE( 
+     &              'Enter the NEXT FILE, or "NONE" to end list',
+     &              .TRUE., .TRUE., RNAME, 'RAWPOINT' )
+            IF ( PDEV .LT. 0 ) GO TO  123       !  end of loop readin input files
 
-            READ( PDEV, 93000, END=122, IOSTAT=IOS )LINE
-            IREC = IREC + 1
+            INY = GETNUM( IMISS3, -IMISS3, INY + 1,
+     &                    'Enter INVENTORY YEAR for this file' )
 
-            IF ( IOS .NE. 0 ) THEN
-                WRITE( MESG, 94010 ) 
-     &              'Error ', IOS, 
-     &              'reading POINT INPUT file at line', IREC
-                CALL M3EXIT( 'RAWPOINT', 0, 0, 2 )
-            END IF
+            IREC  =  0
+            VFLAG = .FALSE.
 
-            IPOL  = STR2INT ( LINE( 156:160 ) )
-            IF ( IPOL .EQ. 42602 ) IPOL = 42603         !  fix NO2 ~~> NOx
-            I = FIND1( IPOL, NIPOL, PCODE )
-            IF ( I  .LT. 0 ) THEN
-                WRITE( MESG,94010 ) 
-     &              'Bad line', IREC, 
-     &              'Pollutant code "' // LINE( 156:160 ) // '"'
-                CALL M3MESG( MESG )
-                GO TO  111      !  to head of loop
-            END IF
+111         CONTINUE        !  head of the PDEV-read loop
 
-            EMIS  = STR2REAL( LINE( 162:171 ) )
-            IF ( EMIS .LT. 0.0 )  THEN
-                WRITE( MESG,94010 ) 
-     &              'Bad line', IREC, 
-     &              'Emis value "' // LINE( 162:171 ) // '"'
-                CALL M3MESG( MESG )
-                VFLAG = .TRUE.
-                GO TO  111
-            END IF
+                READ( PDEV, 93000, END=122, IOSTAT=IOS )LINE
+                IREC = IREC + 1
 
-            FIP   = STR2INT ( LINE(  12: 16 ) )
-            SIC   = STR2INT ( LINE(  24: 27 ) )
-            SCC   = STR2INT ( LINE(  29: 38 ) )
-            PLANT = STR2INT ( LINE(  40: 44 ) )
-            STACK = STR2INT ( LINE(  46: 48 ) )
-            XLOC  = STR2REAL( LINE(  78: 87 ) )
-            YLOC  = STR2REAL( LINE(  89: 98 ) )
-            ZONE  = STR2INT ( LINE( 100:101 ) )
-            STKH  = STR2REAL( LINE( 103:107 ) )
-            STKD  = STR2REAL( LINE( 109:113 ) )
-            STKT  = STR2REAL( LINE( 115:119 ) )
-            STKV  = STR2REAL( LINE( 121:125 ) )
-
-            CEFF  = STR2REAL( LINE( 177:182 ) )
-            IF ( CEFF .LT. 0.0 )  CEFF = 0.0
-
-            REFF  = STR2REAL( LINE( 184:189 ) )
-            IF ( REFF .LT. 0.0 )  REFF = 100.0
-
-            RPEN  = STR2REAL( LINE( 191:196 ) )
-            IF ( RPEN .LT. 0.0 )  RPEN = 100.0
-
-            SDT  = STR2INT( LINE( 60:67 ) )
-            EDT  = STR2INT( LINE( 69:76 ) )
-            IF ( LINE( 57:58 ) .EQ. '  ' ) THEN         !  annual total
-
-                TPF = MTPRFAC * WTPRFAC         !  use month, week profiles
-
-            ELSE IF ( LINE( 57:57 ) .EQ. 'P' ) THEN     !  peak O3 or CO day
-
-                HH  = MOD( SDT        , 100 )
-                STM = 10000 * HH
-                DD  = MOD( SDT / 100  , 100 )
-                MM  = MOD( SDT / 10000, 100 )
-                YY  = 1900 + SDT / 1000000
-                SDT = 1900 + JULIAN( YY, MM, DD )       !  as Julian date
-
-                HH  = MOD( EDT        , 100 )
-                ETM = 10000 * HH
-                DD  = MOD( EDT / 100  , 100 )
-                MM  = MOD( EDT / 10000, 100 )
-                YY  = 1900 + EDT / 1000000 
-                EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
-                CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
-
-                DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
-                IF ( DAYS .GT. 28 ) THEN
-                    TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
-                ELSE IF ( DAYS .GT. 1 ) THEN
-                    TPF = WTPRFAC               !  use only week profiles
-                ELSE
-                    TPF = 1                     !  use only hourly profiles
-                END IF                                
-
-                EMIS = DAY2YR * EMIS
-
-            ELSE IF ( LINE( 57:57 ) .EQ. 'S' ) THEN     !  special interval
-
-                HH  = MOD( SDT        , 100 )
-                STM = 10000 * HH
-                DD  = MOD( SDT / 100  , 100 )
-                MM  = MOD( SDT / 10000, 100 )
-                YY  = 1900 + SDT / 1000000
-                SDT = 1900 + JULIAN( YY, MM, DD )       !  as Julian date
-
-                HH  = MOD( EDT        , 100 )
-                ETM = 10000 * HH
-                DD  = MOD( EDT / 100  , 100 )
-                MM  = MOD( EDT / 10000, 100 )
-                YY  = 1900 + EDT / 1000000 
-                EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
-                CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
-
-                DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
-                IF ( DAYS .GT. 28 ) THEN
-                    TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
-                ELSE IF ( DAYS .GT. 1 ) THEN
-                ELSE
-                    TPF = 1                     !  use only hourly profiles
+                IF ( IOS .NE. 0 ) THEN
+                    WRITE( MESG, 94010 ) 
+     &                  'Error ', IOS,  'reading "' // 
+     &                  RNAME( 1:TRIMLEN( RNAME ) ) //
+     &                  '" at line', IREC
+                    CALL M3EXIT( 'RAWPOINT', 0, 0, 2 )
                 END IF
 
-                EMIS = 0.0      !  note ZERO for day-specific "SP" records
+                IPOL  = STR2INT ( LINE( 156:160 ) )
+                IF ( IPOL .EQ. 42602 ) IPOL = 42603         !  fix NO2 ~~> NOx
+                I = FIND1( IPOL, NIPOL, PCODE )
+                IF ( I  .LT. 0 ) THEN
+                    WRITE( MESG,94010 ) 
+     &                  'Bad line', IREC, 
+     &                  'Pollutant code "' // LINE( 156:160 ) // 
+     &                  '" in "' //
+     &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"'
+                    CALL M3MESG( MESG )
+                    GO TO  111      !  to head of loop
+                END IF
 
-                WRITE( MESG, 94030 ) FIP, SCC, PLANT, STACK, IREC
-                CALL M3MESG( MESG )
+                EMIS  = STR2REAL( LINE( 162:171 ) )
+                IF ( EMIS .LT. 0.0 )  THEN
+                    WRITE( MESG,94010 ) 
+     &                  'Bad line', IREC, 
+     &                  '" in "' //
+     &                  RNAME( 1:TRIMLEN( RNAME ) ) // 
+     &                  '"--emis value "' // LINE( 162:171 ) // '"'
+                    CALL M3MESG( MESG )
+                    VFLAG = .TRUE.
+                    GO TO  111
+                END IF
 
-            ELSE                                        !  unrecognized type
+                FIP   = STR2INT ( LINE(  12: 16 ) )
+                SIC   = STR2INT ( LINE(  24: 27 ) )
+                SCC   = STR2INT ( LINE(  29: 38 ) )
+                PLANT = STR2INT ( LINE(  40: 44 ) )
+                STACK = STR2INT ( LINE(  46: 48 ) )
+                XLOC  = STR2REAL( LINE(  78: 87 ) )
+                YLOC  = STR2REAL( LINE(  89: 98 ) )
+                ZONE  = STR2INT ( LINE( 100:101 ) )
+                STKH  = STR2REAL( LINE( 103:107 ) )
+                STKD  = STR2REAL( LINE( 109:113 ) )
+                STKT  = STR2REAL( LINE( 115:119 ) )
+                STKV  = STR2REAL( LINE( 121:125 ) )
 
-                WRITE( MESG,94010 ) 
-     &              'Bad line', IREC, 
-     &              'Unsupported time period type "' // 
-     &              LINE( 57:58 ) // '"'
-                CALL M3MESG( MESG )
-                VFLAG = .TRUE.
-                GO TO  111          !  to head of PDEV-read loop
+                CEFF  = STR2REAL( LINE( 177:182 ) )
+                IF ( CEFF .LT. 0.0 )  CEFF = 0.0
 
-            END IF      !  if annual, peak, special, or unrecognized
+                REFF  = STR2REAL( LINE( 184:189 ) )
+                IF ( REFF .LT. 0.0 )  REFF = 100.0
+
+                RPEN  = STR2REAL( LINE( 191:196 ) )
+                IF ( RPEN .LT. 0.0 )  RPEN = 100.0
+
+                SDT  = STR2INT( LINE( 60:67 ) )
+                EDT  = STR2INT( LINE( 69:76 ) )
+
+                IF ( LINE( 57:58 ) .EQ. '  ' ) THEN         !  annual total
+
+                    TPF = MTPRFAC * WTPRFAC         !  use month, week profiles
+
+                ELSE IF ( LINE( 57:57 ) .EQ. 'P' ) THEN     !  peak O3 or CO day
+
+                    HH  = MOD( SDT        , 100 )
+                    STM = 10000 * HH
+                    DD  = MOD( SDT / 100  , 100 )
+                    MM  = MOD( SDT / 10000, 100 )
+                    YY  = 1900 + SDT / 1000000
+                    SDT = 1900 + JULIAN( YY, MM, DD )       !  as Julian date
+
+                    HH  = MOD( EDT        , 100 )
+                    ETM = 10000 * HH
+                    DD  = MOD( EDT / 100  , 100 )
+                    MM  = MOD( EDT / 10000, 100 )
+                    YY  = 1900 + EDT / 1000000 
+                    EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
+                    CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
+
+                    DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
+                    IF ( DAYS .GT. 28 ) THEN
+                        TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
+                    ELSE IF ( DAYS .GT. 1 ) THEN
+                        TPF = WTPRFAC               !  use only week profiles
+                    ELSE
+                        TPF = 1                     !  use only hourly profiles
+                    END IF                                
+
+                    EMIS = DAY2YR * EMIS
+
+                ELSE IF ( LINE( 57:57 ) .EQ. 'S' ) THEN     !  special interval
+
+                    HH  = MOD( SDT        , 100 )
+                    STM = 10000 * HH
+                    DD  = MOD( SDT / 100  , 100 )
+                    MM  = MOD( SDT / 10000, 100 )
+                    YY  = 1900 + SDT / 1000000
+                    SDT = 1900 + JULIAN( YY, MM, DD )       !  as Julian date
+
+                    HH  = MOD( EDT        , 100 )
+                    ETM = 10000 * HH
+                    DD  = MOD( EDT / 100  , 100 )
+                    MM  = MOD( EDT / 10000, 100 )
+                    YY  = 1900 + EDT / 1000000 
+                    EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
+                    CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
+
+                    DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
+                    IF ( DAYS .GT. 28 ) THEN
+                        TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
+                    ELSE IF ( DAYS .GT. 1 ) THEN
+                    ELSE
+                        TPF = 1                     !  use only hourly profiles
+                    END IF
+
+                    EMIS = 0.0      !  note ZERO for day-specific "SP" records
+
+                    WRITE( MESG, 94030 ) FIP, SCC, PLANT, STACK, IREC
+                    CALL M3MESG( MESG )
+
+                ELSE                                        !  unrecognized type
+
+                    WRITE( MESG,94010 ) 
+     &                  'Bad line', IREC, 
+     &                  '" in "' //
+     &                  RNAME( 1:TRIMLEN( RNAME ) ) // 
+     &                  '"--Unsupported time period type "' // 
+     &                  LINE( 57:58 ) // '"'
+                    CALL M3MESG( MESG )
+                    VFLAG = .TRUE.
+                    GO TO  111          !  to head of PDEV-read loop
+
+                END IF          !  tests on record type line( 57:58 )
 
 
 C...........   Normalize the UTM zone and coordinates
 C...........   NOTE that AFS files have the temerity to use KM units
 C...........   and still call what they are doing "UTM":
 
-            IF ( ZONE .EQ. IMISS3 ) THEN
-                CALL LL2UTM( YLOC, XLOC, UZONE, XX, YY )
-                XLOC = XX
-                YLOC = YY
-            ELSE IF ( ZONE .NE. UZONE ) THEN
-                XLOC = 1000.0 * XLOC    ! conversion to meters
-                YLOC = 1000.0 * YLOC    ! conversion to meters
-                CALL UTM2LL( XLOC, YLOC, ZONE, XX,   YY )
-                CALL LL2UTM( YY,   XX,  UZONE, XLOC, YLOC )
-                ZONE = UZONE
-            ELSE
-                XLOC = 1000.0 * XLOC    ! conversion to meters
-                YLOC = 1000.0 * YLOC    ! conversion to meters
+                IF ( GDTYP3D .EQ. UTMGRD3 ) THEN
+
+                    IF ( ZONE .EQ. IMISS3 ) THEN	!  lat-lon input
+
+                        CALL LL2UTM( YLOC, XLOC, UZONE, XX, YY )
+                        XLOC = XX
+                        YLOC = YY
+
+                    ELSE IF ( ZONE .NE. UZONE ) THEN
+
+                        XLOC = 1000.0 * XLOC    ! conversion to meters
+                        YLOC = 1000.0 * YLOC    ! conversion to meters
+                        CALL UTM2LL( XLOC, YLOC, ZONE, XX,   YY )
+                        CALL LL2UTM( YY,   XX,  UZONE, XLOC, YLOC )
+                        ZONE = UZONE
+
+                    ELSE
+
+                        XLOC = 1000.0 * XLOC    ! conversion to meters
+                        YLOC = 1000.0 * YLOC    ! conversion to meters
+
+                    END IF  !  if zone missing (lat-lon), or different, or not
+
+                ELSE IF ( GDTYP3D .EQ. LAMGRD3 ) THEN
+
+                    IF ( ZONE .EQ. IMISS3 ) THEN        !  lat-lon input
+
+                        IF ( .NOT. LL2LAM( YLOC, XLOC, XX, YY ) ) THEN
+                            VFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 
+     &                          'Bad line', IREC, 
+     &                          '" in "' //
+     &                          RNAME( 1:TRIMLEN( RNAME ) ) // 
+     &                          'LL2LAM() failed for "' // 
+     &                          LINE( 57:58 ) // '"'
+                            CALL M3MESG( MESG )
+                            VFLAG = .TRUE.
+                            GO TO  111          !  to head of PDEV-read loop
+                        END IF
+
+                        XLOC = XX
+                        YLOC = YY
+
+                    ELSE				!  utm input
+
+                        XX = 1000.0 * XLOC    ! conversion to meters
+                        YY = 1000.0 * YLOC    ! conversion to meters
+
+                        IF ( .NOT. UTM2LAM( XX, YY, ZONE, 
+     &                                      XLOC, YLOC ) ) THEN
+                            VFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 
+     &                          'Bad line', IREC, 
+     &                          '" in "' //
+     &                          RNAME( 1:TRIMLEN( RNAME ) ) // 
+     &                          'LL2LAM() failed for "' // 
+     &                          LINE( 57:58 ) // '"'
+                            CALL M3MESG( MESG )
+                            VFLAG = .TRUE.
+                            GO TO  111          !  to head of PDEV-read loop
+
+                        END IF
+
+                    END IF	!  if zone missing (lat-lon) or not (utm)
+
+                ELSE IF ( GDTYP3D .EQ. LATGRD3 ) THEN
+
+                    IF ( ZONE .NE. IMISS3 ) THEN
+
+                        XX = 1000.0 * XLOC    ! conversion to meters
+                        YY = 1000.0 * YLOC    ! conversion to meters
+                        CALL UTM2LL( XX, YY, ZONE, XLOC, YLOC )
+
+                    END IF	! if UTM input location
+
+                END IF		!  if coord type UTM or Lambert or Lat-Lon
+
+                S = S + 1
+
+                IF ( S .LE. NSMAX ) THEN
+
+                    INDEXA( S ) = S         !  index-table for use in SORTI4()
+                    IFIPA ( S ) = FIP
+                    ISICA ( S ) = SIC
+                    ISCCA ( S ) = SCC
+                    IPLANA( S ) = PLANT
+                    ISTACA( S ) = STACK
+                    ICODEA( S ) = I         !  subscript into ACODE(*)
+                    INVYRA( S ) = INY
+                    TPFLGA( S ) = TPF
+                    XLOCAA( S ) = XLOC
+                    YLOCAA( S ) = YLOC
+                    STKHTA( S ) = STKH
+                    STKDMA( S ) = STKD
+                    STKTKA( S ) = STKT
+                    STKVEA( S ) = STKV
+
+                    CTLEFA( S ) = CEFF
+                    RULEFA( S ) = REFF
+                    RULPEA( S ) = RPEN
+                    EMISVA( S ) = EMIS
+
+                END IF
+
+                GO TO  111          !  to head of PDEV-read loop
+
+
+122         CONTINUE        !  end of the PDEV-read loop
+
+            IF ( VFLAG ) THEN
+                CALL M3EXIT( 'RAWPOINT', 0, 0, 
+     &                       'Error reading POINT SOURCE file.', 2 )
             END IF
 
-            S = S + 1
-
-            IF ( S .LE. NSMAX ) THEN
-
-                INDEXA( S ) = S         !  index-table for use in SORTI4()
-                IFIPA ( S ) = FIP
-                ISICA ( S ) = SIC
-                ISCCA ( S ) = SCC
-                IPLANA( S ) = PLANT
-                ISTACA( S ) = STACK
-                ICODEA( S ) = I         !  subscript into ACODE(*)
-                XLOCAA( S ) = XLOC
-                YLOCAA( S ) = YLOC
-                STKHTA( S ) = STKH
-                STKDMA( S ) = STKD
-                STKTKA( S ) = STKT
-                STKVEA( S ) = STKV
-
-                CTLEFA( S ) = CEFF
-                RULEFA( S ) = REFF
-                RULPEA( S ) = RPEN
-                EMISVA( S ) = EMIS
-
-            END IF
-
-            GO TO  111          !  to head of PDEV-read loop
-
-
-122     CONTINUE        !  end of the PDEV-read loop
-
-        IF ( VFLAG ) THEN
-            CALL M3EXIT( 'RAWPOINT', 0, 0, 
-     &                   'Error reading POINT SOURCE file.', 2 )
-        END IF
+            GO TO 101   !  to head of loop on input files
         
+123     CONTINUE        !  end loop on input files
+
         NSRC = S
         IF ( NSRC .GT. NSMAX ) THEN
             WRITE( *,92010 ) 
@@ -428,6 +556,15 @@ C.......   then permute the records according to the result:
         WRITE( *,92000 ) ' ', 'Processing RAW POINT SOURCE file...', ' '
 
         CALL SORTI4( NSRC, INDEXA, IFIPA, ISCCA, IPLANA, ISTACA )
+
+        DO  132  I = 1, NIPOL	!  initializations
+        DO  131  S = 1, NPSRC
+            EMISV ( S,I ) = BADVAL3
+            RULPEN( S,I ) = BADVAL3
+            RULEFF( S,I ) = BADVAL3
+            CTLEFF( S,I ) = BADVAL3
+131     CONTINUE
+132     CONTINUE		!  end initializations
 
         LFIP  = -1
         LSCC  = -1
@@ -462,6 +599,7 @@ C.......   then permute the records according to the result:
                 IPLANT( J ) = PLANT
                 ISTACK( J ) = STACK
                 TPFLAG( J ) = TPFLGA( I )
+                INVYR ( J ) = INVYRA( I )
                 XLOCA ( J ) = XLOCAA( I )
                 YLOCA ( J ) = YLOCAA( I )
                 STKHT ( J ) = STKHTA( I )
@@ -473,7 +611,7 @@ C.......   then permute the records according to the result:
 
             V    = ICODEA( I )
             EMIS = EMISVA( I )
-            IF ( EMISV( J,V ) .LT. AMISS3 ) THEN
+            IF ( EMISV( J,V ) .LE. AMISS3 ) THEN
 
                 EMISV ( J,V ) = EMIS
                 CTLEFF( J,V ) = CTLEFA( I )
@@ -601,7 +739,7 @@ C.......   Get file name; open output point sources file
         SDATE3D = 0 !  n/a
         STIME3D = 0 !  n/a
         TSTEP3D = 0             !  time independent
-        NVARS3D = 4 * NIPOL + 13
+        NVARS3D = 4 * NIPOL + 14
         NCOLS3D = 1
         NROWS3D = NPSRC     !  number of rows = # of point sources.
         NLAYS3D = 1
@@ -609,15 +747,15 @@ C.......   Get file name; open output point sources file
         GDTYP3D = UTMGRD3
         VGTYP3D = IMISS3
         VGTOP3D = AMISS3
-        WRITE( GDNAM3D, 94040 ) 'UTM_', UZONE
+        GDNAM3D = COORDN
 
         FDESC3D( 1 ) = 'NC Point Source emissions values.'
         FDESC3D( 2 ) = 'Inventory  type "' // LINE(  1: 1 ) // '"'
-        FDESC3D( 3 ) = 'Projection year "' // LINE(  2: 3 ) // '"'
-        FDESC3D( 4 ) = 'Base year       "' // LINE(  5: 6 ) // '"'
-        FDESC3D( 5 ) = 'Emission   type "' // LINE(  7: 8 ) // '"'
-        FDESC3D( 7 ) = 'Beginning  Date "' // LINE( 40:47 ) // '"'
-        FDESC3D( 8 ) = 'Ending     Date "' // LINE( 49:56 ) // '"'
+        FDESC3D( 3 ) = 'Projection year "' // LINE(  3: 4 ) // '"'
+        FDESC3D( 4 ) = 'Base year       "' // LINE(  6: 7 ) // '"'
+        FDESC3D( 5 ) = 'Emission   type "' // LINE(  9:10 ) // '"'
+        FDESC3D( 7 ) = 'Beginning  Date "' // LINE( 60:67 ) // '"'
+        FDESC3D( 8 ) = 'Ending     Date "' // LINE( 69:76 ) // '"'
 
         IF ( LINE( 57:58 ) .EQ. 'PO' ) THEN
             FDESC3D( 6 ) = 'Period     type "' // LINE( 57:58 ) //
@@ -679,9 +817,15 @@ C.......   Get file name; open output point sources file
         VDESC3D( J ) = 'Use week(2), month(3) temporal profiles or not'
         J = J + 1
 
+        VNAME3D( J ) = 'INVYR'
+        VTYPE3D( J ) = M3INT
+        UNITS3D( J ) = 'year AD'
+        VDESC3D( J ) = 'Year of inventory for this record'
+        J = J + 1
+
         VNAME3D( J ) = 'XLOCA'
         VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'm'
+        UNITS3D( J ) = 'km.'
         VDESC3D( J ) = 'UTM X coordinate for site'
         J = J + 1
 
