@@ -66,17 +66,13 @@ C   Begin body of subroutine WRCTMP
         K = NGSZ*IGRP - NGSZ + I  ! compute index to master pollutant
                                   ! list for current pollutant
 
-C............. If pollutant has controls applied, write indices to control
-C              data tables to a temporary file
-        IF ( VIDX(K) .EQ. 1 ) THEN
-
+C............. Regardless If pollutant has controls applied, write indices to 
+C              control data tables to a temporary file
            DO S = 1,NSRC
 
               WRITE( IDEV, * ) IDX( S, I )
 
            END DO   ! end source loop
-
-        END IF
 
         END DO   ! end pollutant group loop
 
