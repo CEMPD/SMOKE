@@ -166,7 +166,8 @@ C  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
   
                         DO IH = 1,24
                            EMISPOS = EFPOSITION(STR2INT(DBSCTITLE), 
-     &                                  IP, VTYPE, EFTYPE, IFAC, IH)
+     &                                          IP, VTYPE, EFTYPE, IFAC, 
+     &                                          IH, .TRUE. )
                            EMISSIONS(EMISPOS) = EVPOTHER(IH,IVX,EFX)                                                       
                         END DO
   

@@ -164,7 +164,8 @@ C  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
 
                   DO IVEH = 1,8
                      EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
-     &                            IP, IVEH, ETYPE, IFAC, IH)
+     &                                    IP, IVEH, ETYPE, IFAC, 
+     &                                    IH, .TRUE. )
                      EMISSIONS(EMISPOS) = ATAGGR(IVEH)
                   END DO  ! loop over 8 vehicle types
                

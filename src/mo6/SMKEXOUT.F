@@ -123,9 +123,10 @@ C     &               IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,TABCHAR,IH,
 C     &               TABCHAR,EXHAUST(IH,IFAC,IVEH),IH=1,24)
      
                      DO IH = 1,24
-                        EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
-     &                                 IP, IVEH, EFTYPE, IFAC, IH)
-                        EMISSIONS(EMISPOS) = EXHAUST(IH,IFAC,IVEH)                        
+                        EMISPOS = EFPOSITION( STR2INT( DBSCTITLE ),
+     &                                       IP, IVEH, EFTYPE, IFAC, 
+     &                                       IH, .TRUE. )
+                        EMISSIONS( EMISPOS ) = EXHAUST( IH,IFAC,IVEH )
                      END DO
      
      
@@ -143,9 +144,10 @@ C     &            TABCHAR,EXHAUST(IH,IFAC,IVEH),IH=1,24)
 C  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
   
                   DO IH = 1,24
-                     EMISPOS = EFPOSITION(STR2INT(DBSCTITLE), 
-     &                              IP, IVEH, EFTYPE, IFAC, IH)
-                     EMISSIONS(EMISPOS) = EXHAUST(IH,IFAC,IVEH)
+                     EMISPOS = EFPOSITION( STR2INT( DBSCTITLE ), 
+     &                                    IP, IVEH, EFTYPE, IFAC, 
+     &                                    IH, .TRUE. )
+                     EMISSIONS( EMISPOS ) = EXHAUST( IH,IFAC,IVEH )
                   END DO
 
   
