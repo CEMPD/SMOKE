@@ -1,0 +1,56 @@
+# Version "@(#)$Id$ $Source$ $Date$ 
+#
+# Programs listed in alphabetical order
+#
+all: getrecs.debug pntsum.debug repplht.debug reptpro.debug
+#
+# compile-link options for subroutines
+#
+LIBS =$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+#
+LIBS2=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug -leps2.debug
+#
+#
+#
+OBJS = getrecs.F
+
+INCS = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT
+ 
+getrecs.debug: $(OBJS) $(INCS)
+	echo GETRECS:
+	f77 $(DBGFLAGS) -o getrecs.debug $(OBJS) $(LIBS)
+#
+#
+#
+PTS=pntsum.F
+#
+PTSI=PTDIMS3.EXT CHDIMS3.EXT 
+#
+pntsum.debug: $(PTS) $(PTSI)
+	echo PNTSUM:
+	f77 $(FFLAGS)   -o $@ $(PTS) $(LIBS)
+#
+#
+#
+RPH=repplht.F
+#
+RPHI=PTDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT VGRD3.EXT
+#
+repplht.debug: $(RPH) $(RPHI)
+	echo REPPLHT:
+	f77 $(FFLAGS)   -o $@ $(RPH) $(LIBS)
+#
+#
+#
+RTP=reptpro.F
+#
+RTPI=PTDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT 
+#
+reptpro.debug: $(RTP) $(RTPI)
+	echo REPTPRO:
+	f77 $(FFLAGS)   -o $@ $(RTP) $(LIBS)
+#
+#
+#
+clean:
+	rm *.o
