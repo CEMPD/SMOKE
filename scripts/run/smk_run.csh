@@ -841,9 +841,9 @@ endif
 
 set debugexestat = 0
 set exestat = 0
-setenv TMPLOG   $OUTLOG/beis3.$SRCABBR.$INVEN.$ESDATE.$GRID.log
-if ( $?RUN_BEIS3 ) then
-   if ( $RUN_BEIS3 == 'Y' && $RUN_PART2 == Y ) then
+setenv TMPLOG   $OUTLOG/tmpbeis3.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_TMPBEIS3 ) then
+   if ( $RUN_TMPBEIS3 == 'Y' && $RUN_PART2 == Y ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.csh
@@ -852,14 +852,14 @@ if ( $?RUN_BEIS3 ) then
       if ( $exitstat == 0 ) then         # Run program
         setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $BG_SRC/beis3.debug ) then
-               $debug_exe $BG_SRC/beis3.debug
+            if ( -e $BG_SRC/tmpbeis3.debug ) then
+               $debug_exe $BG_SRC/tmpbeis3.debug
             else
                 set debugexestat = 1
             endif
          else
-            if ( -e $SMK_BIN/beis3 ) then
-               time $SMK_BIN/beis3
+            if ( -e $SMK_BIN/tmpbeis3 ) then
+               time $SMK_BIN/tmpbeis3
             else
                set exestat = 1 
             endif
@@ -874,13 +874,13 @@ if ( $?RUN_BEIS3 ) then
       endif
 
       if ( $exestat == 1 ) then
-	 echo 'SCRIPT ERROR: beis3 program does not exist in:'
+	 echo 'SCRIPT ERROR: tmpbeis3 program does not exist in:'
 	 echo '              '$SMK_BIN
          set exitstat = 1
       endif
 
       if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: beis3.debug program does not exist in:'
+	 echo 'SCRIPT ERROR: tmpbeis3.debug program does not exist in:'
 	 echo '              '$BG_SRC
          set exitstat = 1
       endif
