@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -50,6 +50,9 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL
+
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
@@ -94,7 +97,7 @@ C...........   Logical names and unit numbers (not in MODMERGE)
      
 C...........   Other local variables
     
-        INTEGER          J, K, L1, L2, M, N, V, T ! counters and indices
+        INTEGER          J, K, L1, L2, M, N, V, S, T ! counters and indices
 
         INTEGER       :: IDUM = 0      ! dummy integer value
         INTEGER          IDUM1, IDUM2
@@ -111,7 +114,7 @@ C...........   Other local variables
         INTEGER          MXGRP         ! max no. of variable groups
         INTEGER          MXVARPGP      ! max no. of variables per group
         INTEGER          NGRP          ! actual no. of pollutant groups
-        INTEGER          NMAJOR        ! no. elevated sources (not used)
+        INTEGER          NMAJOR        ! no. elevated sources
         INTEGER          NPING         ! no. plum-in-grid sources
         INTEGER          OCNT          ! tmp count output variable names
         INTEGER          PGID          ! previous iteration group ID no.
@@ -195,18 +198,45 @@ C           surrogates file needed for state and county totals
 C.........  Allocate memory for fixed-size arrays by source category...
         CALL ALLOCMRG( MXGRP, MXVARPGP )
 
-C.........  Read in plume-in-grid information, if needed
+C.........  Read in elevated sources and plume-in-grid information, if needed
 C.........  Reset flag for PinG if none in the input file
-        IF( PFLAG .AND. PINGFLAG ) THEN
+        IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG ) ) THEN
 
             CALL RDPELV( EDEV, NPSRC, NMAJOR, NPING )
 
-            IF( NPING .EQ. 0 ) THEN
+            IF( ELEVFLAG .AND. NMAJOR .EQ. 0 ) THEN
+                MESG = 'WARNING: No sources are major elevated ' //
+     &                 'sources in input file, ' // CRLF() // 
+     &                 BLANK10 // 'so elevated source emissions ' //
+     &                 'file will not be written.'
+                CALL M3MSG2( MESG )
+                ELEVFLAG = .FALSE.
+            END IF 
+
+            IF( PINGFLAG .AND. NPING .EQ. 0 ) THEN
                 MESG = 'WARNING: No sources are PinG sources in ' //
-     &                 'input file, so none will be written'
+     &                 'input file, so PinG ' // CRLF() // BLANK10 //
+     &                 'emissions file will not be written.'
                 CALL M3MSG2( MESG )
                 PINGFLAG = .FALSE.
             END IF
+
+C.............  Read stack group IDs
+            IF ( .NOT. READ3( PVNAME, 'ISTACK', 1,
+     &                        PVSDATE, PVSTIME, GRPGID ) ) THEN
+
+                L2 = LEN_TRIM( PVNAME )
+                MESG = 'Could not read "ISTACK" from file "' //
+     &                 PVNAME( 1:L2 ) // '"'
+                CALL M3EXIT( PROGNAME, SDATE, 0, MESG, 2 )
+
+            END IF
+
+C.............  Update elevated sources filter for elevated sources
+            DO S = 1, NPSRC
+                IF( GROUPID( S ) .GT. 0 ) ELEVFLTR( S ) = 1.
+            END DO
+
         END IF
 
 C.........  Read reactivity matrices
@@ -588,10 +618,15 @@ C.........................  Apply valid matrices & store
      &                         PEBCNY, PEUCNY, PEACNY, PERCNY, 
      &                         PECCNY )
 
-C.........................  Apply matrices for plume-in-grid outputs
-                        IF( PINGFLAG ) THEN
-                            CALL MRGPING( NPSRC, NPING, K1, K2, 
-     &                                    K3, K4 )
+
+c NOTE: MERGELEV Needs to be updated to be able to output the same units as the
+c    n: gridded output
+
+C.........................  Apply matrices for elevated and plume-in-grid 
+C                           outputs
+                        IF( ELEVFLAG .OR. PINGFLAG ) THEN
+                            CALL MRGELEV( NPSRC, NMAJOR, NPING, 
+     &                                    K1, K2, K3, K4 )
                         END IF
 
                     END IF
@@ -600,8 +635,13 @@ C.....................  Check the flag that indicates the entries for which
 C                       we need to output the gridded data
                     IF( GVLOUT( V,N ) ) THEN
 
-C.........................  Write out gridded data
+C.........................  Write out gridded data and Models-3 PinG file
                         CALL WMRGEMIS( SBUF, JDATE, JTIME )
+
+C.........................  Write out ASCII elevated sources file
+                        IF( ELEVFLAG ) THEN
+                            CALL WMRGELEV( SBUF, NMAJOR, JDATE, JTIME )
+                        END IF
 
 C.........................  Initialize gridded arrays
                         IF( AFLAG ) THEN
