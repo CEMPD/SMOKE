@@ -379,6 +379,17 @@ C.........  Allocate memory for derived surrogates tables
         ALLOCATE( SRGFRAC( NSRGS, MXCFIP, NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRGFRAC', PROGNAME )
 
+        ALLOCATE( SRGCSUM( NSRGS, NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRGCSUM', PROGNAME )
+
+C.........  Initialize arrays
+        NCELLS  = 0  ! array
+        SRGFIPS = 0  ! array
+        SRGLIST = 0  ! array
+        FIPCELL = 0  ! array
+        SRGFRAC = 0. ! array
+        SRGCSUM = 0. ! array
+
 C.........  Store derived surrogates tables...
 
 C.........  Store the surrogate ID list
@@ -440,6 +451,7 @@ C               the surrogates fraction
             K = FIND1( SSC, NSRGS, SRGLIST )
 
             SRGFRAC( K, CELCNT, NSRGFIPS ) = RATIO
+            SRGCSUM( K, NSRGFIPS ) = SRGCSUM( K, NSRGFIPS ) + RATIO
 
         END DO
 
