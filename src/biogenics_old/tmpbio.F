@@ -95,7 +95,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         JTIME   !  current simulation time (HHMMSS)
         INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         HR      !  current simulation hour
-        INTEGER         I, J, K, L !  loop counters and subscripts
+        INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
         INTEGER         B, M    !  counters for biogenic, model species
         CHARACTER*16    ENAME   !  logical name for emissions output
         CHARACTER*16    NNAME   !  logical name for normalized-emissions input
@@ -363,6 +363,14 @@ C.......   Loop on time steps:
                   MESG = 'Could not read PRES from file "' //
      &                   MNAME( 1:TRIMLEN( MNAME ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
+              END IF
+
+              IF ( (PARTYPE.EQ.3) .OR. (PARTYPE.EQ.4) ) THEN
+                 DO 70 R = 1, NROWS
+                    DO 60 C = 1, NCOLS
+                       PRSFC( C, R ) = PRSFC( C, R ) / 100.0  ! Pa to mb
+60                  END DO
+70               END DO
               END IF
 
               CALL HRBIO( JDATE, JTIME, LAT, LON, PRSFC, TASFC,
