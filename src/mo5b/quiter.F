@@ -124,6 +124,10 @@ C
       INCLUDE 'PRSCH2.I'
       INCLUDE 'QUITXQ.I'
       INCLUDE 'YEARS4.I'
+c
+cmh add includes
+      INCLUDE 'TEMPS.I'
+cmh end add
 C
       INTEGER QFREQ,QINTYP,QAFREQ,QFQTFN,QPGMFN
       INTEGER QAPROG
@@ -733,9 +737,12 @@ C
      *      8X, 14X, 'Purge Check inspection type:       ',A20)
 CC
       GOTO 199
-  111 WRITE(IOUERR,411) NAMTMP(IVALUE),RVALUE
+cmh 111 WRITE(IOUERR,411) NAMTMP(IVALUE),RVALUE
+  111 WRITE(IOUERR,411) NAMTMP(IVALUE),RVALUE,AMBT,TEMMIN, TEMMAX
   411 FORMAT(7X,'+',12X,' The calculated ',A13,'temperature',F6.1,
-     *               ' is < daily min temp or > daily max temp')
+     *               ' is < daily min temp or > daily max temp',
+     *       /20X,' Min=',F6.1,1X,'Ambient=',F6.1,1X,'Max=',F6.1)
+cmh     *               ' is < daily min temp or > daily max temp')
       GOTO 198
 CC
   112 WRITE(IOUERR,412)
