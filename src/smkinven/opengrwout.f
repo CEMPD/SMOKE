@@ -69,7 +69,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: VDEV  ! IDA output acitivty file number
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -118,7 +118,7 @@ C.........  Store non-category-specific header information
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
 
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 
 C.........  If projection year is non-zero, store in FDESC3D
         IF( FYEAR .NE. 0 ) THEN
@@ -153,7 +153,7 @@ C.........  Prompt file activity IDA file
         IF( IFLAG .AND. NIACT .GT. 0 ) THEN
             MESG  = 'Enter logical name for the IDA ACTIVITY ' //
      &              'output file'
-            INAME = ANAMLIST( CATIDX ) // '_ACT_O'
+            INAME = ANAMLIST( CATIDX ) // '_AO'
 
             VDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
         END IF
