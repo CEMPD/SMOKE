@@ -69,7 +69,8 @@ setenv REACTIVITY_POL       ' '   # Set to VOC or ROG (only for reactivity contr
 #     REPORT_DEFAULTS         # see multiple-program controls, below
 #     SMK_O3SEASON_YN         # see multiple-program controls
 
-# For Mbsetup (none)
+# For Mbsetup
+#     USE_SPEED_PROFILES      # see multiple-program controls, below
 #     Temporary file paths    # set automatically
 
 # For Prediur
@@ -86,6 +87,7 @@ setenv REPLACE_TEMPERATURES   Y   # Y: use gridded hourly tmprs; N: use tmprs in
 #     EF_YEAR                 # SMK_FUTURE_YN=N: set to $YEAR from Assigns
 #                             # SMK_FUTURE_YN=Y: set to $FYEAR from scripts
 #     GROUP_TYPE              # set to [daily|weekly|monthly|episode], see below
+#     USE_SPEED_PROFILES      # see multiple-program controls, below
 #     Temporary file paths    # set automatically
 
 # For Temporal
@@ -116,6 +118,7 @@ setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
 setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
 setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
+setenv USE_SPEED_PROFILES   N     # Y uses speed profiles instead of inventory speeds
 
 # Script settings
 setenv SRCABBR            mb      # abbreviation for naming log files
