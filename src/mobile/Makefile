@@ -28,7 +28,7 @@ PRE=premobl.o adjsmet.o chkfulldy.o dyminmax.o \
 
 premobl: $(PRE) $(ALLI) $(LIBPATH)
 	echo PREMOBL:
-	$(FC) $(FFLAGS_NOOPT) -o $(SMK_BIN)/$(@) $(PRE) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(PRE) $(LIBS)
 
 premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'PREMOBL (debug):'
@@ -57,7 +57,7 @@ MODSOURC = $(MD_SRC)/modsourc.o
 include $(MD_SRC)/modmake.inc
 
 adjsmet.o  : $(MODSOURC) $(MODINFO)          # This should not get optimization
-	$(FC) $(FFLAGS_NOOPT) -c -o $@ $<
+	$(FC) $(FFLAGS) -c -o $@ $<
 chkefhdr.o: $(INC)/M5CNST3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $<
 chkemfac.o : $(MODEMFAC)
@@ -76,8 +76,6 @@ genefmet.o: $(MODXREF) $(MODEMFAC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 mobil5b.o : $(MODEMFACS) $(MODINFO) $(MODMET) $(INC)/M5CNST3.EXT
 	$(FC) $(FFLAGS) -I$(M5_SRC) -c -o $@ $<
-openpsiout.o  : $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
 opensmet.o  : $(MODINFO) $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ $<
 premobl.o  : $(MODSOURC) $(MODXREF) $(MODEMFAC) $(MODINFO) $(MODMET)
