@@ -299,7 +299,8 @@ C   begin body of program LAYPOINT
      &'in brackets [LIKE THIS].',
      &' '
 
-        IF ( EMLAYS .LT. 4 ) THEN
+        I = EMLAYS  ! So Alpha compiler will not give errors
+        IF ( I .LT. 4 ) THEN
             CALL M3EXIT( 'LAYPOINT', 0, 0, 
      &                   'EMLAYS must be at least 4', 2 )
         ELSE IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
