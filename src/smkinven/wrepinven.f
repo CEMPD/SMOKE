@@ -65,9 +65,10 @@ C...........   INCLUDES
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+	INTEGER		FIND1
 	INTEGER		INDEX1
         
-        EXTERNAL	INDEX1
+        EXTERNAL	INDEX1, FIND1
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -83,12 +84,16 @@ C...........   Local variables
         CHARACTER(LEN=SDSLEN3)	SCCDC      ! temp. SCC description
         CHARACTER(LEN=SCCLEN3)  PSCC       ! previous SCC code
         
-        INTEGER		I, J, K, L, S, IOS ! counters and indicies
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: PREVSCC( : ) ! previous SCC
+        
+        INTEGER		I, J, K, L, M, S, IOS ! counters and indicies
         INTEGER		STATE              ! temp. state code
         INTEGER		NFIPS              ! temp. number of FIPS codes
         INTEGER		POLL               ! temp. pollutant
         INTEGER		PFIP               ! previous FIPS code
         
+        INTEGER, ALLOCATABLE :: PREVPOLL( : ) ! previous POLL
+        INTEGER, ALLOCATABLE :: PREVSTATE( : )! previous state code
         INTEGER, ALLOCATABLE :: ASSIGNED( : ) ! number of FIPS codes assigned
         INTEGER, ALLOCATABLE :: UNASSIGN( : ) ! number of FIPS codes unassigned
         
@@ -188,8 +193,9 @@ C............  Check value of factored emissions
           DIFF = VALCHECK - EMISBYPOL( I )
           IF( ABS( DIFF ) .NE. 0.0 ) THEN
             WRITE( MESG, 94020 )
-     &         'WARNING: Summed emissions for pollutant, ',
-     &         ITNAMA( J ), ', differ from factored emissions '//
+     &         'WARNING: Summed emissions of ', EMISBYPOL( I ),
+     &         ' for pollutant, ', ITNAMA( J ),
+     &         ', differ from component total '//
      &         'by ', DIFF
             CALL M3MESG( MESG )
           END IF
@@ -238,6 +244,7 @@ C              not found, write SCC to REPINVEN file
           WRITE( ADEV, 93000 ) ' '
           WRITE( ADEV, 93000 ) ' '
         
+	RETURN
 C.........  Write out fourth report to REPINVEN file
 C           Reports the pollutant name, emissions total before and 
 C           after factors are applied, the total number of FIPS codes
@@ -252,6 +259,13 @@ C............  Write out header
      	  WRITE( ADEV, 93080 ) '[tons/year]', '[tons/year]'
         
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+          
+          ALLOCATE( PREVSCC( NCONDSRC ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'PREVSCC', PROGNAME )
+          ALLOCATE( PREVPOLL( NCONDSRC ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'PREVPOLL', PROGNAME )
+          PREVSCC = '9999999999'
+          PREVPOLL = 0
 
           DO I = 1, NCONDSRC
         
@@ -262,7 +276,15 @@ C............  Write out header
             NFIPS = REPAR2PT( I )%NFIPS
             OEMIS = REPAR2PT( I )%ORIGEMIS
             SEMIS = REPAR2PT( I )%SUMEMIS
-           
+            
+            K = INDEX1( SCC, NCONDSRC, PREVSCC )
+            IF( K .GT. 0 ) THEN
+              IF( POLL .EQ. PREVPOLL( K ) ) CYCLE
+            END IF
+            
+            PREVSCC( I ) = SCC
+            PREVPOLL( I ) = POLL
+
 C............  Find SCC in master list of SCC codes
             K = INDEX1( SCC, NINVSCC, INVSCC )
             IF( K .LE. 0 ) THEN
@@ -276,9 +298,7 @@ C............  Find SCC in master list of SCC codes
             L = LEN_TRIM( CBUF )
             SCCDC = CBUF( 1:L )
             
-            DO J = 1, NCONDSRC
-            
-              IF( REPAR2PT( J )%STATE .EQ. STATE ) CYCLE
+            DO J = I + 1, NCONDSRC
         
 C............  Sum emissions and count up FIPS codes by SCC      
               IF( REPAR2PT( J )%SCC .EQ. SCC .AND.
@@ -311,6 +331,12 @@ C............  Write out header
           WRITE( ADEV, 93110 ) '[tons/year]', '[tons/year]'
         
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+          
+          ALLOCATE( PREVSTATE( NCONDSRC ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'PREVSTATE', PROGNAME )
+          PREVSTATE = 0
+          PREVSCC = '9999999999'
+          PREVPOLL = 0
 
           DO I = 1, NCONDSRC
         
@@ -320,6 +346,18 @@ C............  Write out header
             NFIPS = REPAR2PT( I )%NFIPS
             OEMIS = REPAR2PT( I )%ORIGEMIS
             SEMIS = REPAR2PT( I )%SUMEMIS
+            
+            K = FIND1( STATE, NCONDSRC, PREVSTATE )
+
+            IF( K .GT. 0 ) THEN
+              IF( SCC .EQ. PREVSCC( K ) ) THEN
+                IF( POLL .EQ. PREVPOLL( K ) ) CYCLE
+              END IF
+            END IF
+            
+            PREVSTATE( I ) = STATE
+            PREVSCC( I ) = SCC
+            PREVPOLL( I ) = POLL
 
 C............  Find SCC in master list of SCC codes        
             K = INDEX1( SCC, NINVSCC, INVSCC )
@@ -333,12 +371,27 @@ C............  Find SCC in master list of SCC codes
             CBUF = SCCDESC( K )
             L = LEN_TRIM( CBUF )
             SCCDC = CBUF( 1:L )
+            
+            DO J = I + 1, NCONDSRC
+
+C............  Sum emissions and count up FIPS codes by SCC      
+              IF( REPAR2PT( J )%STATE .EQ. STATE .AND.
+     &            REPAR2PT( J )%SCC .EQ. SCC .AND.
+     &            REPAR2PT( J )%POLL .EQ. POLL ) THEN
+                NFIPS = NFIPS + REPAR2PT( J )%NFIPS
+                OEMIS = OEMIS + REPAR2PT( J )%ORIGEMIS
+                SEMIS = SEMIS + REPAR2PT( J )%SUMEMIS
+              END IF
+              
+            END DO
            
 C............  Write out report data fields
             WRITE( ADEV, 93120 ) STATE, SCC, DNAME, NFIPS,
      &            OEMIS, SEMIS, SCCDC
      
           END DO
+          
+          DEALLOCATE( PREVSTATE, PREVSCC, PREVPOLL )
           
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
           WRITE( ADEV, 93000 ) ' '
@@ -455,7 +508,7 @@ C...........   Formatted file I/O formats............ 93xxx
      
 94010	FORMAT( 10( A, :, A8, :, 1X ) )
 
-94020	FORMAT( A, :, A16, :, A, :, F16.10 )
+94020	FORMAT( A, :, E10.3, :, A, :, A16, :, A, :, E10.3 )
 
 
 
