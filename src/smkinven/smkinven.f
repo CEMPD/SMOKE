@@ -154,6 +154,7 @@ C...........   Other local variables
         INTEGER         OUTSTEP    ! output time step HHMMSS for day/hour data
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
+        LOGICAL         A2PFLAG          ! true: using area-to-point processing
         LOGICAL         DFLAG            ! true: day-specific inputs used
         LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
         LOGICAL         HFLAG            ! true: hour-specific inputs used
@@ -191,6 +192,7 @@ C.........  Set controller flags depending on unit numbers
         HFLAG = ( HDEV .NE. 0 )
         IFLAG = ( IDEV .NE. 0 )
         GFLAG = ( .NOT. IFLAG .AND. .NOT. DFLAG .AND. .NOT. HFLAG )
+        A2PFLAG = ( YDEV .NE. 0 )
 
 C.........  Set gridded input file name, if available
         IF( GFLAG ) GNAME = ENAME
@@ -329,7 +331,7 @@ C.........  Output SMOKE inventory files
 
 C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
-            CALL OPENINVOUT( GRDNM, ENAME, ANAME, SDEV )
+            CALL OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG )
 
             MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
      &             ' SOURCE INVENTORY file...'
@@ -338,7 +340,7 @@ C.............  Open output I/O API and ASCII files
 
 C.............  Write source characteristics to inventory files (I/O API and
 C               ASCII)
-            CALL WRINVCHR( ENAME, SDEV )
+            CALL WRINVCHR( ENAME, SDEV, A2PFLAG )
 
 C.............  Deallocate sorted inventory info arrays, except CSOURC
             CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
