@@ -246,8 +246,13 @@ C                   so that they will be in the same order as the global lists
                     LUPDATE( J ) = .FALSE.
 
 C.....................  Set names and units for totals output
-                    L = LEN_TRIM( TOTUNIT( I ) )
-                    CBUF = '[' // TOTUNIT( I )( 1:L ) // ']'
+                    IF( SFLAG ) THEN
+                        L = LEN_TRIM( TOTUNIT( J ) )
+                        CBUF = '[' // TOTUNIT( J )( 1:L ) // ']'
+                    ELSE
+                        L = LEN_TRIM( TOTUNIT( I ) )
+                        CBUF = '[' // TOTUNIT( I )( 1:L ) // ']'
+                    END IF
 
                     TCNT = TCNT + 1
                     NAMES( TCNT ) = SBUF
@@ -433,7 +438,9 @@ C.............  Area sources
                 CALL WRITE_CNY( ARDEV, NC, ACNT, ANAMES, AUNITS, AEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, ACNT, ANAMES, AEBCNY, TEBCNY)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, ACNT, ANAMES, AEBCNY, TEBCNY)
+                END IF
             END IF
 
 C.............  Biogenc sources (speciated by definition)
@@ -443,7 +450,9 @@ C.............  Biogenc sources (speciated by definition)
                 CALL WRITE_CNY( BRDEV, NC, BCNT, BNAMES, BUNITS, BEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, BCNT, BNAMES, BEBCNY, TEBCNY )
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, BCNT, BNAMES, BEBCNY, TEBCNY )
+                END IF
 
             END IF
 
@@ -454,7 +463,9 @@ C.............  Mobile sources
                 CALL WRITE_CNY( MRDEV, NC, MCNT, MNAMES, MUNITS, MEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, MCNT, MNAMES, MEBCNY, TEBCNY)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, MCNT, MNAMES, MEBCNY, TEBCNY)
+                END IF
 
             END IF
 
@@ -465,7 +476,9 @@ C.............  Point sources
                 CALL WRITE_CNY( PRDEV, NC, PCNT, PNAMES, PUNITS, PEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, PCNT, PNAMES, PEBCNY, TEBCNY)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, PCNT, PNAMES, PEBCNY, TEBCNY)
+                END IF
 
             END IF
 
