@@ -9,19 +9,20 @@ C
 C  DESCRIPTION:
 C       Construct mobile source chemical speciation matrix from data 
 C       contained in EPS-style chem-split and chem-xref files.
-C       Uses fixed NOtoNOX  factor of 0.0197  moles  NO/gm NOX (from EPS)
-C       Uses fixed NO2toNOX factor of 0.00217 moles NO2/gm NOX  "
+C       Uses fixed NO to NOX  factor of 0.0197  moles  NO/gm NOX (from EPS)
+C       Uses fixed NO2 to NOX factor of 0.00217 moles NO2/gm NOX  "
 C
 C  PRECONDITIONS REQUIRED:
-C       Sorted, cut-down input data for chem-split and chem-xref files;
 C       M3IO mobile-sources file from program GRDAMAT
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
-C       FIND1, FIND2, FIND3, GETEFILE, GETYN, TRIMLEN
+C       CSVNAME, FIND1, FIND2, FIND3, GETEFILE, GETYN, INDEX1, 
+C       RDSPROF, TRIMLEN
 C
 C  REVISION  HISTORY:
 C       Prototype  1/96 by CJC.
+C       Revisions 5/96 by MRH.
 C
 C***********************************************************************
 
@@ -37,17 +38,22 @@ C...........   INCLUDES:
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
+        INTEGER         CSVNAME
         INTEGER         FIND1, FIND2, FIND3, FIND4
         INTEGER         GETEFILE
         LOGICAL         GETYN
+        INTEGER         INDEX1
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         RDSPROF
+        INTEGER         STR2INT
+        REAL            STR2REAL
         INTEGER         TRIMLEN
         
         EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETEFILE, GETYN, 
-     &                  PROMPTFFILE, PROMPTMFILE, RDSPROF, TRIMLEN
+     &                  INDEX1, PROMPTFFILE, PROMPTMFILE, RDSPROF, 
+     &                  STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   PARAMETERS and their descriptions:
@@ -61,11 +67,11 @@ C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
-        INTEGER     FIP
-        INTEGER     SID
-        INTEGER     RDT
-        INTEGER     EMT
-        INTEGER     VHT
+        INTEGER     FIP    ! State and County code
+        INTEGER     SID    ! State code only
+        INTEGER     RDT    ! Road class number
+        INTEGER     EMT    ! Emission type number
+        INTEGER     VHT    ! Vehicle type number
 
 C...........   Mobile Source attributes from ANAME                                 
 
@@ -82,8 +88,23 @@ C...........   Speciation profiles table
         
         INTEGER     NPROFS                      !  actual number of profiles
         INTEGER     SPROF( NSPRM )              !  profile indexes (sorted)
-        REAL        SCOEF( NSPRM, NMPOL )       !  profile coefficients
+        REAL        SCOEF( NSPRM, MXMPOL )      !  profile coefficients
 
+C...........   Speciation naming and indexing lists
+
+        INTEGER     IDXSPC  ( MXEPRC, MXMPOL )!  Pointer to actual model species
+        INTEGER     IDXVAR  ( MXEPRC, MXMPOL )!  Pointer to SMAT variables
+        INTEGER     NEMODE                    !  No. MV processes (emis modes)
+        INTEGER     NIPOL                     !  No. inventory pollutants
+        INTEGER     NMPOL                     !  No. model species
+        INTEGER     NSNAME                    !  No. of variables in SMAT
+        INTEGER     NSP     ( MXEPRC )        !  No. model spcs per MV process
+        CHARACTER*8 EINAM   ( MXIPOL )        !  Inventory species names
+        CHARACTER*8 EMNAM   ( MXMPOL )        !  Model species names
+        CHARACTER*8 ISPC_PRC( MXEPRC, MXMPOL )!  Inv species per MV process
+        CHARACTER*8 MSPC_PRC( MXEPRC, MXMPOL )!  Model species per MV process
+        CHARACTER*8 MEMODE  ( MXEPRC )        !  Emission modes
+ 
 C...........   Speciation cross-reference table:  
 C.......   Before sorting:
 
@@ -102,9 +123,9 @@ C.......   Before sorting:
 C.......   After sorting -- four parts:   first part independent of road class
             
         INTEGER     NREFV               !  number of actual entries
-        INTEGER     EMTSXV( MXVREF )     !
-        INTEGER     VHTSXV( MXVREF )     !
-        INTEGER     SPPROV( MXVREF )    !  XREF for lookup in ASPRO
+        INTEGER     EMTSXV( MXVREF )    !
+        INTEGER     VHTSXV( MXVREF )    !
+        INTEGER     SPPROV( MXVREF )    !  XREF for lookup in MSPRO
         REAL        VREACV( MXVREF )    !  
         REAL        ETHADV( MXVREF )    !  
         REAL        FRMADV( MXVREF )    !  
@@ -152,10 +173,9 @@ C.......   Speciation matrix variables and their names:
         
         REAL          SPCFACS( NMSRC, NVTYPE, NSMATX ) !  speciation coefficients
 
-
 C...........   Other local variables
         
-        INTEGER         S, E, F, I, J, K, V   !  loop counters.
+        INTEGER         S, F, I, J, K, L, P, V !  index counters
         INTEGER         SDEV            !  for surrogate coeff file
         INTEGER         XDEV            !  for surrogate xref  file
         INTEGER         LDEV            !  log-device
@@ -166,10 +186,15 @@ C...........   Other local variables
         INTEGER         I1              !  for counting RDT-dependent   refs
         INTEGER         I2              !  for counting state-dependent refs
         INTEGER         I3              !  for counting FIP-dependent   refs
+        INTEGER         NRDT            !  index for RDT in MROADS3
         REAL            FAC             !  common factor subexpression
+        CHARACTER*3     INV     !  inventory species name
+        CHARACTER*3     PROC    !  MV process name
+        CHARACTER*8     MODEL   !  model species name
         CHARACTER*16    ANAME   !  logical name for mobile-source  input file
         CHARACTER*16    MNAME   !  logical name for spec matrix output file
         CHARACTER*256   MESG    !  message buffer for M3MESG() and M3EXIT()
+        CHARACTER*80    LINE    !  input line from XREF file
         
         LOGICAL         EFLAG   !  input error flat
 
@@ -214,6 +239,10 @@ C.......   Get file name; open input mobile sources file
      &           'Enter logical name for SPECIATION PROFILES file',
      &           .TRUE., .TRUE., 'MSPRO', 'SPCMMAT' )
 
+        LDEV = PROMPTFFILE(
+     &           'Enter logical name for SPECIATION LIST file',
+     &           .TRUE., .TRUE., 'MSLST', 'SPCMMAT' )
+
 C.......   Read in description of mobile-source file
         
         IF ( .NOT. DESC3( ANAME ) ) THEN
@@ -221,42 +250,60 @@ C.......   Read in description of mobile-source file
      &                   'Could not get description of file ' // ANAME, 
      &                   2 )
         END IF
-        
-        
-C.......   Open speciation matrix file:  reuse much of MOBILE file description
-        
-        NLAYS3D = NVTYPE
-        NVARS3D = NSMATX
-        FTYPE3D = GRDDED3
-            
-C.......   Create table of variable names.  First set of names
-C.......   are CO_to_CO, ..., VOC_to_ISOP (from CHDIMS3.EXT's SFNAM)
+     
+C.......   Read speciation list file to find out what species and emission
+C.......   processes are actually being used in this scenario
 
-        J = 0
-        DO  44  V = 1, NMPOL
+        NIPOL  = CSVNAME( LDEV, .TRUE. , .FALSE., .FALSE., EINAM  )
 
-            J = J + 1
-            VNAME3D( J ) = SFNAM( V )
-            UNITS3D( J ) = 'moles/gm'
-            VDESC3D( J ) = 'Conversion factor, ' // 
-     &              EMTNAM( V )( 1:TRIMLEN( EMTNAM( V ) ) )// 
-     &              ' to ' // EMNAM( V )
-            VTYPE3D( J ) = M3REAL
+C.......   For first time CSVNAME is called, see if there were any errors
+        IF( NIPOL .LE. 0 ) THEN
+            WRITE( MESG,94050 ) 
+     &             'Error reading SPECIATION LIST file'
+            CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
+
+        ENDIF
+
+        NMPOL  = CSVNAME( LDEV, .FALSE., .TRUE. , .FALSE., EMNAM  )
+        NEMODE = CSVNAME( LDEV, .FALSE., .FALSE., .TRUE. , MEMODE )
+
+C.......   Get speciation factor names and the number of names 
+C.......   from the SPECIATION LIST file
+
+        NSNAME = CSVNAME( LDEV, .TRUE., .TRUE., .TRUE., VNAME3D )
+
+C.......   Intialize species per MV process counter
+        DO 44 I = 1, NEMODE
+            NSP( I ) = 0
 44      CONTINUE
 
-C.......   Remaining names are of the form [EVP|RNL|RST]_to_[CO|...|ISOP]
-C.......   (non-running emissions-type _to_ VOC-derived model species)
+C.......   Process the SMAT variable names
+        DO 55 I = 1, NSNAME
 
-        DO  55  K = NIPOL + 1, NETYPE
-        DO  54  V = 4, NMPOL
-            J = J + 1
-            VNAME3D( J ) = EMTNAM( K )( 1:3 ) // '_to_' // EMNAM( V )
-            UNITS3D( J ) = 'moles/gm'
-            VDESC3D( J ) = 'Conversion factor, ' //
-     &              EMTNAM( K )( 1:TRIMLEN( EMTNAM( K ) ) ) // 
-     &              ' to ' // EMNAM( V )
-            VTYPE3D( J ) = M3REAL
-54      CONTINUE
+            L   = TRIMLEN( VNAME3D( I ) )
+            J   = INDEX( VNAME3D( I )(   1:L ), '_' )
+            K   = INDEX( VNAME3D( I )( J+1:L ), '_' ) + J
+
+            PROC = VNAME3D( I )(  1 : J-1)
+            INV  = VNAME3D( I )(J+1 : K-1)
+            MODEL= VNAME3D( I )(K+1 : L  )
+
+C.............  Set other variable properties
+            UNITS3D( I ) = 'moles/gm'
+            VDESC3D( I ) = 'Conversion factor for ' // 
+     &         INV  ( 1:TRIMLEN( INV  ) ) // ' from process ' // 
+     &         PROC ( 1:TRIMLEN( PROC ) ) // ' to species '   //
+     &         MODEL( 1:TRIMLEN( MODEL) ) // ''
+            VTYPE3D( I ) = M3REAL
+
+C.............  Create MV process to model species indicies
+            P = INDEX1( PROC, NEMODE, MEMODE )
+            NSP( P ) = NSP( P ) + 1
+            ISPC_PRC( P, NSP( P ) ) = INV
+            MSPC_PRC( P, NSP( P ) ) = MODEL
+            IDXVAR  ( P, NSP( P ) ) = I
+            IDXSPC  ( P, NSP( P ) ) = INDEX1( MODEL, NMPOL, EMNAM )
+            
 55      CONTINUE
 
         FDESC3D( 1 ) = 
@@ -269,14 +316,19 @@ C.......   (non-running emissions-type _to_ VOC-derived model species)
             FDESC3D( V ) = ' '
 66      CONTINUE
 
+C.......   Open speciation matrix file:  reuse much of MOBILE file description
+        
+        NLAYS3D = NVTYPE
+        NVARS3D = NSNAME
+        FTYPE3D = GRDDED3
+            
         MNAME = PROMPTMFILE( 
      &  'Enter logical name for SPECIATION MATRIX output file',
      &          FSUNKN3, 'MSMAT', 'SPCMMAT' )
 
-
 C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK
         
-        IF ( .NOT. READ3( ANAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+        IF ( .NOT. READ3( ANAME, 'IFIP', ALLAYS3, 0, 0, IFIP ) ) THEN
             CALL M3EXIT( 'SPCMMAT', 0, 0, 
      &                   'Error reading IFIP from file' // ANAME, 2 )
         END IF
@@ -291,24 +343,21 @@ C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK
      &                   'Error reading ILINK from file' // ANAME, 2 )
         END IF
 
-
 C.......   Read/sort the SPECIATION PROFILES FILE
-C...............   ASSUMPTION:  sorted by profile ID
+C...............   ASSUMPTIONS: CSVNAME has provided model species list (EMNAM)
 
         WRITE( *,92000 ) 
      &       ' ', 'Reading SPECIATION PROFILES file...', ' '
 
         
-        NPROFS = RDSPROF( SDEV, NSPRM, SPROF, SCOEF )
+        NPROFS = RDSPROF( SDEV, NMPOL, EMNAM, NSPRM, SPROF, SCOEF )
 
         IF ( NPROFS .LE. 0 ) THEN
             CALL M3EXIT( 'SPCMMAT', 0, 0, 
      &                   'Error reading SPECIATION PROFILE file.', 2 )
         END IF
 
-
-
-C.......   Read the speciation cross-reference file
+C.......   Read and process the speciation cross-reference file
 
         WRITE( *,92000 ) 
      &      ' ', 'Processing SPECIATION XREF file...', ' '
@@ -320,8 +369,7 @@ C.......   Read the speciation cross-reference file
 101     CONTINUE        !  head of the XDEV-read loop
 
             IREC = IREC + 1
-            READ( XDEV, *, END=111, IOSTAT=IOS ) 
-     &          FIP, RDT, EMT, VHT, SID, VREACT, ETHADJ, FRMADJ, ALLADJ
+            READ( XDEV, 93010, END=111, IOSTAT=IOS ) LINE
 
             IF ( IOS .NE. 0 ) THEN
 
@@ -331,27 +379,62 @@ C.......   Read the speciation cross-reference file
      &              'reading SPECIATION XREF file at line', IREC
                 CALL M3MESG( MESG )
 
-            ELSE IF ( I .GE. MXREF ) THEN
+            ENDIF
 
+C.............  Skip x-ref line if not for MV
+            IF ( LINE(17:17) .LE. '9' ) THEN
+                GO TO 101
+
+C.............  Otherwise convert character variables to integer
+            ELSE
+                VHT = STR2INT( LINE( 19:20 ) )
+                RDT = STR2INT( LINE( 21:23 ) )
+                EMT = INDEX1 ( LINE( 24:26 ), NEMODE, MEMODE )
+
+                IF( RDT .NE. 0 ) THEN  ! Make sure we keep the defaults
+                    NRDT = FIND1( RDT, NRCLAS, MROADS3 )
+                ELSE
+                    NRDT = 1
+                ENDIF
+
+            ENDIF
+
+C.............  Warn and skip profile if MV-ASCT is blank
+            IF( VHT .LT. 0 .AND. RDT .LT. 0 .AND. EMT .EQ. 0 ) THEN
+
+                WRITE( MESG,94050 ) 'Speciation x-ref record', IREC,
+     &                              'has blank motor-vehicles code.'
+                CALL M3MESG( MESG )
+
+                GO TO 101  !  to head of the XDEV-read loop
+
+C.............  Skip profile if road class not used
+            ELSE IF( NRDT .LT. 0 ) THEN
+                GO TO 101  !  to head of the XDEV-read loop
+                 
+C.............  Skip profile if emission mode not used
+            ELSE IF( EMT .EQ. 0 ) THEN
+                GO TO 101  !  to head of the XDEV-read loop
+
+            ELSE IF ( I .GE. MXREF ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94050 ) 
-     &              'Max table-size ', MXREF,  
-     &              'exceeded reading XREF file at line', IREC
+     &              'Max XREF table size ', MXREF,  
+     &              'exceeded at line', IREC
                 CALL M3MESG( MESG )
 
             ELSE
-
                 I = I + 1
                 INDEXA( I ) = I
-                FIPSXA( I ) = FIP
+                FIPSXA( I ) = STR2INT ( LINE( 1:5 ) )
                 RDTSXA( I ) = RDT
                 EMTSXA( I ) = EMT
                 VHTSXA( I ) = VHT
-                SPPROA( I ) = SID
-                VREACA( I ) = VREACT
-                ETHADA( I ) = ETHADJ
-                FRMADA( I ) = FRMADJ
-                ALLADA( I ) = ALLADJ
+                SPPROA( I ) = STR2INT ( LINE( 28:32 ) )
+                VREACA( I ) = STR2REAL( LINE( 34:38 ) )
+                ETHADA( I ) = STR2REAL( LINE( 55:59 ) )
+                FRMADA( I ) = STR2REAL( LINE( 61:65 ) )
+                ALLADA( I ) = STR2REAL( LINE( 67:71 ) )
 
             END IF
             
@@ -365,7 +448,6 @@ C.......   Read the speciation cross-reference file
         END IF
 
         NREFA = I
-
 
 C...........   Now sort the XREF inputs and place into appropriate tables:
 
@@ -387,9 +469,8 @@ C...........   Now sort the XREF inputs and place into appropriate tables:
             
             IF ( RDT .EQ. 0  ) THEN !  FIP independent refs
 
-                IF ( I0 .LT. MXVREF ) THEN
-
-                    I0 = I0 + 1
+                I0 = I0 + 1
+                IF ( I0 .LE. MXVREF ) THEN
                     SPPROV( I0 ) = SPPROA( J )
                     EMTSXV( I0 ) = EMT
                     VHTSXV( I0 ) = VHT
@@ -397,22 +478,12 @@ C...........   Now sort the XREF inputs and place into appropriate tables:
                     ETHADV( I0 ) = ETHADA( J )
                     FRMADV( I0 ) = FRMADA( J )
                     ALLADV( I0 ) = ALLADA( J )
-
-                ELSE
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94050 )
-     &                  'Max RDT-independent table-size ', NVTYPE,  
-     &                  'exceeded in XREF file at line', IREC
-                    CALL M3MESG( MESG )
-
                 END IF
 
             ELSE IF ( FIP .EQ. 0  ) THEN !  FIP independent refs
 
-                IF ( I1 .LT. MXRREF ) THEN
-
-                    I1 = I1 + 1
+                I1 = I1 + 1
+                IF ( I1 .LE. MXRREF ) THEN
                     SPPROR( I1 ) = SPPROA( J )
                     RDTSXR( I1 ) = RDT
                     EMTSXR( I1 ) = EMT
@@ -421,22 +492,12 @@ C...........   Now sort the XREF inputs and place into appropriate tables:
                     ETHADR( I1 ) = ETHADA( J )
                     FRMADR( I1 ) = FRMADA( J )
                     ALLADR( I1 ) = ALLADA( J )
-
-                ELSE
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94050 )
-     &                  'Max FIP-independent table-size ', MXRREF,  
-     &                  'exceeded in XREF file at line', IREC
-                    CALL M3MESG( MESG )
-
                 END IF
 
             ELSE IF ( MOD( FIP, 1000 ) .EQ. 0 )  THEN ! state-dependent refs
 
-                IF ( I2 .LT. MXSREF ) THEN
-
-                    I2 = I2 + 1
+                I2 = I2 + 1
+                IF ( I2 .LE. MXSREF ) THEN
                     FIPSXS( I2 ) = FIP/1000
                     SPPROS( I2 ) = SPPROA( J )
                     RDTSXS( I2 ) = RDT
@@ -446,22 +507,12 @@ C...........   Now sort the XREF inputs and place into appropriate tables:
                     ETHADS( I2 ) = ETHADA( J )
                     FRMADS( I2 ) = FRMADA( J )
                     ALLADS( I2 ) = ALLADA( J )
-
-                ELSE
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94050 )
-     &                  'Max state-dependent table-size ', MXSREF,  
-     &                  'exceeded in XREF file at line', IREC
-                    CALL M3MESG( MESG )
-
                 END IF
 
             ELSE                ! fip > 0:  FIP-dep refs
 
-                IF ( I3 .LT. MXFREF ) THEN
-
-                    I3 = I3 + 1
+                I3 = I3 + 1
+                IF ( I3 .LE. MXFREF ) THEN
                     FIPSXF( I3 ) = FIP
                     SPPROF( I3 ) = SPPROA( J )
                     RDTSXF( I3 ) = RDT
@@ -471,43 +522,56 @@ C...........   Now sort the XREF inputs and place into appropriate tables:
                     ETHADF( I3 ) = ETHADA( J )
                     FRMADF( I3 ) = FRMADA( J )
                     ALLADF( I3 ) = ALLADA( J )
-
-                ELSE
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94050 )
-     &                  'Max FIP-dependent table-size ', MXFREF,  
-     &                  'exceeded in XREF file at line', IREC
-                    CALL M3MESG( MESG )
-
                 END IF
 
             END IF
 
-122     CONTINUE        !  end of the SDEV-read loop
+122     CONTINUE        !  X-REF factor tables loop
         
-        IF ( EFLAG ) THEN
-                CALL M3EXIT( 'SPCMMAT', 0, 0, 
-     &                       'Max table-size exceeded in XREF file', 2 )
-        END IF
-        
+        IF ( I0 .GT. MXVREF ) THEN
+
+             WRITE( MESG,94050 )
+     &           'Max RDT-independent table-size ', NVTYPE,  
+     &           'exceeded by XREF file: count=', I0
+             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
+
+        ELSE IF ( I1 .GT. MXRREF ) THEN
+
+             WRITE( MESG,94050 )
+     &           'Max FIP-independent table-size ', MXRREF,  
+     &           'exceeded by XREF file: count=', I1
+             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
+
+        ELSE IF ( I2 .GT. MXSREF ) THEN
+
+             WRITE( MESG,94050 )
+     &           'Max state-dependent table-size ', MXSREF,  
+     &           'exceeded by XREF file: count=', I2
+             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
+
+        ELSE IF ( I3 .GT. MXFREF ) THEN
+
+             WRITE( MESG,94050 )
+     &           'Max FIP-dependent table-size ', MXFREF,  
+     &           'exceeded by XREF file: count=', I3
+             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
+
+        ENDIF
+
         NREFV = I0              !  number of location-independent refs
         NREFR = I1              !  " road class-only    dependent refs
         NREFS = I2              !  " state-only         dependent refs
         NREFF = I3              !  " state-and-county   dependent refs
         EFLAG = .FALSE.
         
-        
 C.......   Compute the speciation coefficient matrix
 C...........   ASSUMPTION:  everything sorted by FIP and ASC, or by XREF ID
 C...........   Two stage process:  first try for cross-referece by FIP and ASC
 C...........   Then if that fails, try by ASC only.
 
-        K = 0                   !  "vars" subscript into SPCFACS
-
-        DO  146  EMT = 1, NEMODE
-        DO  145  VHT = 1, NVTYPE
-        DO  144  S   = 1, NMSRC
+        DO  146  EMT = 1, NEMODE  ! By MV process
+        DO  145  VHT = 1, NVTYPE  ! By VTYPE (X-REF handles bad EMT/VHT combo)
+        DO  144  S   = 1, NMSRC   ! By MV source
 
             FIP = IFIP  ( S )
             RDT = IRCLAS( S )
@@ -524,9 +588,9 @@ C...........   Then if that fails, try by ASC only.
                 VREACT = VREACF( F )
                 GO TO  131
 
-            END IF              !  if full match
+            END IF                      !  if full match
 
-            SID = 1000 * ( FIP / 1000 )     !  state code
+            SID = 1000 * ( FIP / 1000 ) !  state code
             F   = FIND4( SID, RDT, EMT, VHT, 
      &                   NREFS, FIPSXS, RDTSXS, EMTSXS, VHTSXS )
            
@@ -539,8 +603,7 @@ C...........   Then if that fails, try by ASC only.
                 VREACT = VREACS( F )
                 GO TO  131
 
-            END IF              !  if state match
-
+            END IF                      !  if state match
      
             F = FIND3( RDT, EMT, VHT, NREFR, RDTSXR, EMTSXR, VHTSXR )
 
@@ -553,7 +616,7 @@ C...........   Then if that fails, try by ASC only.
                 VREACT = VREACR( F )
                 GO TO  131
 
-            END IF              !  if roadclass matcjh
+            END IF                      !  if roadclass match
 
             F = FIND2( EMT, VHT, NREFV, EMTSXV, VHTSXV )
 
@@ -569,15 +632,14 @@ C...........   Then if that fails, try by ASC only.
             END IF              !  if roadclass matcjh
 
             EFLAG = .TRUE.      !  if you get to here:  no match found
-            WRITE( MESG,94010 ) 
+            WRITE( MESG,94050 ) 
      &          'Source', S, 
      &          '(FIP', FIP,
-     &          'RDT    ', RDT,
-     &          'VHT    ', V, ') not found'
+     &          'RDT', RDT,
+     &          'VHT', VHT, ') not found'
             CALL M3MESG( MESG )
       
             GO TO 144      !  to end of loop
-      
 
 131         CONTINUE            !  Cross-reference lookups succeeded
 
@@ -586,10 +648,10 @@ C...........   Then if that fails, try by ASC only.
             IF ( I .LE. 0 ) THEN        !  error:  XREF index not found
 
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
+                WRITE( MESG,94050 ) 
      &              'XREF for FIPS', FIP,
      &              'RDT', RDT,
-     &              'VHT', V, 
+     &              'VHT', VHT, 
      &              'profile code', SPCPRO, 'not found'
                 CALL M3MESG( MESG )
 
@@ -597,36 +659,42 @@ C...........   Then if that fails, try by ASC only.
 
             END IF      !  if i nonpositive (cross-reference not found)
 
-C...........   If E=1 (EXH), all spcs; otherwise, only VOC-related spcs
+C...........   Loop through species that exist for this MV process
+            DO 141 P = 1, NSP( EMT )
 
-            IF ( E .EQ. 1 ) THEN                        !  EXH
-                SPCFACS( S,V,1 ) = ALLADJ * COFAC       ! 1/molwt for CO
-                SPCFACS( S,V,2 ) = ALLADJ * NOFAC       ! 90% of 1/molwt for NO
-                SPCFACS( S,V,3 ) = ALLADJ * NO2FAC      ! 10% of 1/molwt for NO2
-            END IF
-            
-            FAC = ALLADJ            !  if THC used, need VREACT * ALLADJ
+                K = IDXVAR( EMT, P )
+                V = IDXSPC( EMT, P )
 
-            DO  141  I = 4, NMPOL
-                K = K + 1
-                IF ( I .EQ. 8 ) THEN
-                    SPCFACS( S,V,K ) = FRMADJ * FAC * SCOEF( I,V )
-                ELSE IF ( I .EQ. 10 ) THEN
-                    SPCFACS( S,V,K ) = ETHADJ * FAC * SCOEF( I,V )
+C.................  Set inventory-species specific variables
+                IF( ISPC_PRC( EMT,P ) .EQ. 'THC' ) THEN
+                    FAC = VREACT * ALLADJ
                 ELSE
-                    SPCFACS( S,V,K ) = FAC * SCOEF( I,V )
+                    FAC = ALLADJ
+                ENDIF
+
+C.................  Set factors with consideration to model species
+
+                IF    ( MSPC_PRC( EMT,P ) .EQ. 'FORM' ) THEN
+                    SPCFACS( S,VHT,K ) = FRMADJ * FAC * SCOEF( I,V )
+            
+                ELSEIF( MSPC_PRC( EMT,P ) .EQ. 'ETH' ) THEN
+                    SPCFACS( S,VHT,K ) = ETHADJ * FAC * SCOEF( I,V )
+
+                ELSE
+                    SPCFACS( S,VHT,K ) = FAC * SCOEF( I,V )
+
                 END IF
+
 141         CONTINUE      ! end loop on VOC-related species
 
-144     CONTINUE      ! end loop on mobile sources
-145     CONTINUE      ! end loop on vehicle types
-146     CONTINUE      ! end loop on emissions classes, computing spc matrix
+144     CONTINUE      ! end loop on mobile sources (S)
+145     CONTINUE      ! end loop on vehicle types (VHT)
+146     CONTINUE      ! end loop on emissions modes, computing spc matrix (EMT)
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'SPCMMAT', 0, 0, 
      &                   'Error computing SPECIATION MATRIX', 2 )
         END IF
-
         
 C.......   Write out the speciation matrix:
         
@@ -636,8 +704,6 @@ C.......   Write out the speciation matrix:
             CALL M3EXIT( 'SPCMMAT', 0, 0, 
      &                   'Error writing SPECIATION MATRIX file.', 2 )
         END IF
-
-
 
 999   CONTINUE          !  exit program
       
@@ -655,9 +721,9 @@ C...........   Informational (LOG) message formats... 92xxx
 
 C...........   Formatted file I/O formats............ 93xxx
 
-C...........   Internal buffering formats............ 94xxx
+93010   FORMAT( A )
 
-94010   FORMAT( I5 )
+C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT( I7 )
 
@@ -666,7 +732,6 @@ C...........   Internal buffering formats............ 94xxx
 94040   FORMAT( G10.3 )
 
 94050   FORMAT( 10 ( A, :, I10, :, 2X ) )
-
 
         END
 
