@@ -18,7 +18,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -210,6 +210,7 @@ C...........   Other local variables
 
         LOGICAL       :: EFLAG = .FALSE.  ! error flag
         LOGICAL       :: VFLAG = .FALSE.  ! true: use elevated file (PELV)
+        LOGICAL       :: ZSTATIC = .TRUE. ! true: Get heights from GRID_CRO file
         LOGICAL          LF( 9 )          ! true: source characteristic is valid
 
         CHARACTER*50     CHARS( 9 )!  tmp source characeristics 
@@ -376,6 +377,23 @@ C           header information.  Use time parameters for time defaults.
         METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. ) 
         CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. ) 
 
+C.........  Determine whether height information is time dependent or time
+C           independent. Non-hydrostatic is time-independent and hydrostatic
+C           is time-dependent.
+        SELECT CASE( VGTYP )
+        CASE ( VGSGPH3, VGHVAL3 ) 
+            ZSTATIC = .FALSE.
+
+        CASE ( VGSGPN3 )
+            ZSTATIC = .TRUE.
+
+        CASE DEFAULT
+            WRITE( MESG,94010 ) 'Cannot process vertical ' //
+     &             'coordinate type', VGTYP
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END SELECT
+
         CALL RETRIEVE_IOAPI_HEADER( DNAME )
         XCELLDG = XCELL3D
         YCELLDG = YCELL3D 
@@ -539,39 +557,23 @@ C.........  Compute un-gridding matrices for dot and cross point met data
         CALL UNGRIDB( NCOLS, NROWS, XORIG, YORIG, XCELL, YCELL,
      &                NSRC, XLOCA, YLOCA, NX, CX )
 
-C.........  Read time-independent ZF and ZH
-C.........  Use BMATVEC to convert from a gridded array to a source-based array
+C.........  Read time-independent ZF and ZH for non-hydrostatic Met data
+C.........  Compute per-source heights
+        IF( ZSTATIC ) THEN
 
-        CALL RETRIEVE_IOAPI_HEADER( GNAME )
-        CALL GET_VARIABLE_NAME( 'ZH', VNAME )
-        CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D, STIME3D, XBUF )
-        CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
+            CALL RETRIEVE_IOAPI_HEADER( GNAME )
+            CALL GET_VARIABLE_NAME( 'ZH', VNAME )
+            CALL SAFE_READ3( GNAME,VNAME,ALLAYS3,SDATE3D,STIME3D,XBUF )
+            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
 
-        CALL GET_VARIABLE_NAME( 'ZF', VNAME )
-        CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D, STIME3D, XBUF )
-        CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
+            CALL GET_VARIABLE_NAME( 'ZF', VNAME )
+            CALL SAFE_READ3( GNAME,VNAME,ALLAYS3,SDATE3D,STIME3D,XBUF )
+            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
 
-C.........  Pre-process ZF and ZH to compute DDZH and DDZF
-        DO S = 1, NSRC
+C.............  Pre-process ZF and ZH to compute DDZH and DDZF
+            CALL COMPUTE_DELTA_ZS
 
-            ZZ0 = ZF( 1,S )
-            ZSTK ( 1,S ) = ZZ0 - STKHT( S )
-            ZF0 = ZF( 1,S )
-            DDZF( 1,S ) = 1.0 / ZF0
-
-            DO L = 2, EMLAYS
-
-                ZZ1 = ZF( L,S )
-                ZSTK( L  ,S ) = ZZ1 - STKHT( S )
-                DDZH( L-1,S ) = 1.0 / ( ZZ1 - ZZ0 )
-                ZZ0 = ZZ1
-                ZF1 = ZF( L,S )
-                DDZF( L,S ) = 1.0 / ( ZF1 - ZF0 )
-                ZF0 = ZF1
-
-            END DO
-
-        END DO  ! End processing for 
+        END IF
 
 C.........  Write out header to report, if any. This includes generating
 C           format statement for the 
@@ -629,6 +631,21 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 C.............  Write to report file if report feature is on
             IF( RDEV .GT. 0 ) THEN
                 WRITE( RDEV,93020 ) HHMMSS( JTIME )
+            END IF
+
+C.............  Read time-dependent ZF and ZH for hydrostatic Met data
+C.............  Compute per-source heights
+            IF( .NOT. ZSTATIC ) THEN
+
+                CALL SAFE_READ3( SNAME,'ZH',ALLAYS3,JDATE,JTIME,XBUF )
+                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
+
+                CALL SAFE_READ3( SNAME,'ZF',ALLAYS3,JDATE,JTIME,XBUF )
+                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
+
+C.................  Pre-process ZF and ZH to compute DDZH and DDZF
+                CALL COMPUTE_DELTA_ZS
+
             END IF
 
 C.............  Read and transform meteorology:
@@ -840,9 +857,9 @@ C.............  Set output name
 C.............  Currently there is only one alternative for each
             SELECT CASE( INNAME )
             CASE( 'ZH' )
-                OUTNAME = 'X3HT0F'
-            CASE( 'ZF' )
                 OUTNAME = 'X3HT0M'
+            CASE( 'ZF' )
+                OUTNAME = 'X3HT0F'
             CASE( 'TGD' ) 
                 OUTNAME = 'TEMPG'
             CASE DEFAULT
@@ -886,6 +903,37 @@ C----------------------------------------------------------------------
             END IF
 
             END SUBROUTINE SAFE_READ3
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram computes DDZH and DDZF
+            SUBROUTINE COMPUTE_DELTA_ZS
+
+C----------------------------------------------------------------------
+
+            DO S = 1, NSRC
+
+                ZZ0 = ZF( 1,S )
+                ZSTK ( 1,S ) = ZZ0 - STKHT( S )
+                ZF0 = ZF( 1,S )
+                DDZF( 1,S ) = 1.0 / ZF0
+
+                DO L = 2, EMLAYS
+
+                    ZZ1 = ZF( L,S )
+                    ZSTK( L  ,S ) = ZZ1 - STKHT( S )
+                    DDZH( L-1,S ) = 1.0 / ( ZZ1 - ZZ0 )
+                    ZZ0 = ZZ1
+                    ZF1 = ZF( L,S )
+                    DDZF( L,S ) = 1.0 / ( ZF1 - ZF0 )
+                    ZF0 = ZF1
+
+                END DO
+
+            END DO  ! End processing for intermediate layer height calcs
+
+            END SUBROUTINE COMPUTE_DELTA_ZS
 
         END PROGRAM LAYPOINT
 
