@@ -1,5 +1,6 @@
 
-        SUBROUTINE RDPACKET( FDEV, PKTTYP, IREC, PKTINFO, EFLAG )
+        SUBROUTINE RDPACKET( FDEV, PKTTYP, FIXEDFMT, IREC, PKTINFO, 
+     &                       EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -60,6 +61,7 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   SUBROUTINE ARGUMENTS:
         INTEGER        , INTENT (IN) :: FDEV      ! in file unit number
         CHARACTER(*)   , INTENT (IN) :: PKTTYP    ! packet type
+        LOGICAL        , INTENT (IN) :: FIXEDFMT  ! true: packet has fixed fmt
         INTEGER     , INTENT(IN OUT) :: IREC      ! file line number
         TYPE( CPACKET ), INTENT(OUT) :: PKTINFO   ! packet information
         LOGICAL        , INTENT(OUT) :: EFLAG     ! error flag
@@ -72,14 +74,25 @@ C...........   Other arrays
 
 C...........   Other local variables
         INTEGER         IOS        ! i/o error status
+        INTEGER         CYID       ! tmp county ID
+        INTEGER         FIP        ! tmp state/county FIPS code
+        INTEGER         STID       ! tmp state ID
 
-        CHARACTER*300   LINE       ! line reading buffer
-        CHARACTER*300   MESG       ! message buffer
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
+
+        CHARACTER*8, SAVE :: FMTFIP     ! format for writing FIPS codeSS
+        CHARACTER*300        LINE       ! line reading buffer
+        CHARACTER*300        MESG       ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'RDPACKET' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine RDPACKET
+
+        IF( FIRSTIME ) THEN
+            WRITE( FMTFIP, 94300 ) '(I', FIPLEN3, '.', FIPLEN3, ')'
+            FIRSTIME = .FALSE.
+        END IF
 
         READ( FDEV, 93000, END = 999, IOSTAT=IOS ) LINE
         IREC = IREC + 1
@@ -94,13 +107,19 @@ C   Begin body of subroutine RDPACKET
 
         END IF
 
-C.........  Parse the line of data into segments based on the rules
-C           for "list-formatted" in fortran, but not requiring 
-C           quotes around the text strings
-        CALL PARSLINE( LINE, MXSEG, SEGMENT )
+C.........  When packet has a free format...
+        IF( .NOT. FIXEDFMT ) THEN
 
-C.........  Store country/state/county code for any packet format
-        PKTINFO%CFIP = SEGMENT( 1 )
+C.............  Parse the line of data into segments based on the rules
+C               for "list-formatted" in fortran, but not requiring 
+C               quotes around the text strings
+            CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+C.............  Store country/state/county code for any packet format
+            PKTINFO%CFIP = SEGMENT( 1 )
+
+        END IF
+
 
 C.........  Process the line of data, depending on packet type
         SELECT CASE( PKTTYP )
@@ -127,7 +146,7 @@ C           set PKTINFO%FAC4 = -9 and issue warning.
         CASE( 'CONTROL' )
             PKTINFO%TSCC =           SEGMENT( 2 )
             PKTINFO%CPOL =           SEGMENT( 3 )
-            PKTINFO%FAC1 = STR2INT ( SEGMENT( 4 ))
+            PKTINFO%FAC1 = STR2INT ( SEGMENT( 4 ) )
             PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
             PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
             PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
@@ -203,6 +222,30 @@ C           a warning.
             PKTINFO%CHAR4 = ' '
             PKTINFO%CHAR5 = ' '
 
+        CASE( 'EMS_CONTROL' )
+            STID = STR2INT( LINE( 1:2 ) )
+            CYID = STR2INT( LINE( 3:5 ) )
+            FIP  = STID * 1000 + CYID
+            WRITE( PKTINFO%CFIP, FMTFIP ) FIP
+            PKTINFO%TSCC = ADJUSTL ( LINE(  10:17  ) )
+            PKTINFO%CPOL = ADJUSTL ( LINE(  18:22  ) )
+            PKTINFO%FAC1 = STR2REAL( LINE(  82:85  ) )
+            PKTINFO%FAC2 = STR2REAL( LINE(  86:89  ) )
+            PKTINFO%FAC3 = STR2REAL( LINE(  90:93  ) )
+            PKTINFO%FAC4 = STR2REAL( LINE(  94:97  ) ) * 100
+            PKTINFO%FAC5 = STR2REAL( LINE(  98:101 ) ) * 100
+            PKTINFO%FAC6 = STR2REAL( LINE( 102:105 ) ) * 100
+            PKTINFO%FAC7 = STR2REAL( LINE( 106:110 ) )
+            PKTINFO%FAC8 = STR2REAL( LINE( 151:154 ) )
+            PKTINFO%CSIC = ADJUSTL ( LINE(   6:9   ) )
+            PKTINFO%PLT  = ADJUSTL ( LINE(  23:37  ) )
+            PKTINFO%CHAR1= ADJUSTL ( LINE(  50:61  ) )
+            PKTINFO%CHAR2= ADJUSTL ( LINE(  38:49  ) )
+            PKTINFO%CHAR3= ADJUSTL ( LINE(  62:73  ) )
+            PKTINFO%CHAR4= ' '
+            PKTINFO%CHAR5= ' '
+            PKTINFO%NSCC = ADJUSTL ( LINE(  74:81  ) ) 
+
         CASE DEFAULT
             MESG = 'INTERNAL ERROR: Packet type ' // PKTTYP // 
      &             ' not recognized in program ' // PROGNAME
@@ -227,6 +270,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 94020   FORMAT( A, I8 )
+94300   FORMAT( A, I2.2, A, I2.2, A )
 
         END SUBROUTINE RDPACKET
 
