@@ -1,6 +1,6 @@
 
         SUBROUTINE RDSPDLINE( SDEV, SCENNUM, CURRCOUNTY, STLINE,
-     &                        NLINES, ROADTYPE, SPEED )
+     &                        NLINES, LASAFLAG, ROADTYPE, SPEED, SRCCT )
 
 C.........  MODULES for public variables
         USE MODMBSET
@@ -18,13 +18,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  STR2INT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,                INTENT (IN)  :: SDEV        ! SPDSUM file unit number
-        INTEGER,                INTENT (IN)  :: SCENNUM     ! current scenario number
-        CHARACTER(LEN=FIPLEN3), INTENT (IN)  :: CURRCOUNTY  ! current county being processed
-        INTEGER,                INTENT (IN)  :: STLINE      ! starting line for current county
-        INTEGER,                INTENT (IN)  :: NLINES      ! number of lines in SPDSUM file
-        INTEGER,                INTENT (OUT) :: ROADTYPE    ! road type from SPDSUM file
-        REAL,                   INTENT (OUT) :: SPEED       ! speed value from SPDSUM file
+        INTEGER,                INTENT (IN)   :: SDEV        ! SPDSUM file unit number
+        INTEGER,                INTENT (IN)   :: SCENNUM     ! current scenario number
+        CHARACTER(LEN=FIPLEN3), INTENT (IN)   :: CURRCOUNTY  ! current county being processed
+        INTEGER,                INTENT (IN)   :: STLINE      ! starting line for current county
+        INTEGER,                INTENT (IN)   :: NLINES      ! number of lines in SPDSUM file
+        INTEGER,                INTENT (IN)   :: LASAFLAG    ! local-as-arterial setting for current county
+        INTEGER,                INTENT (OUT)  :: ROADTYPE    ! road type from SPDSUM file
+        REAL,                   INTENT (OUT)  :: SPEED       ! speed value from SPDSUM file
+        INTEGER,                INTENT(INOUT) :: SRCCT       ! total number of sources       
 
 C...........   Local arrays
         INTEGER       SOURCES( 7 )          ! line of sources from SPDSUM file
@@ -53,7 +55,7 @@ C   begin body of subroutine RDSPDLINE
         DO
 
 C.............  Make sure we don't try to read past the end of the file
-            IF( IREC + 1 >= NLINES ) THEN
+            IF( IREC + 1 > NLINES ) THEN
             	ROADTYPE = LOCAL
             	SPEED = 0.
             	EXIT
@@ -96,7 +98,16 @@ C.............  Check that county from SPDSUM is still current county
 C.............  Store scenario numbers with sources
             DO J = 1, 7
                 IF( SOURCES( J ) /= 0 ) THEN
-                    SCENLIST( SOURCES( J ) ) = SCENNUM
+                    SRCCT = SRCCT + 1
+
+C.....................  Stick local sources in with previous scenario                    
+                    IF( ROADTYPE == LOCAL ) THEN
+                        SCENLIST( SOURCES( J ),1 ) = SCENNUM - 1
+                    ELSE
+                        SCENLIST( SOURCES( J ),1 ) = SCENNUM
+                    END IF
+                    
+                    SCENLIST( SOURCES( J ),2 ) = LASAFLAG
                 END IF
             END DO
 
@@ -104,6 +115,14 @@ C.............  Check if there are more lines to read for this speed and road ty
             IF( CONTCHAR /= '\' ) EXIT
 
         END DO
+
+C.........  Abort if error found while reading SPDSUM file
+        IF( EFLAG ) THEN
+            MESG = 'Problem reading SPDSUM file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 

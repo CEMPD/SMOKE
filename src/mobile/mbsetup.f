@@ -33,6 +33,13 @@ C.........  LOCAL PARAMETERS and their descriptions:
 
 C...........   LOCAL VARIABLES and their descriptions:
 
+C...........   Ungridding Matrix
+        INTEGER, ALLOCATABLE :: UMAT( : ) ! Contiguous ungridding matrix
+
+C.........  Arrays to hold counties inside grid
+        INTEGER, ALLOCATABLE :: TMPCTY ( : )  ! temporary holding array
+        INTEGER, ALLOCATABLE :: GRIDCTY( : )  ! counties inside grid 
+        
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
@@ -44,17 +51,19 @@ C.........  Unit numbers and logical file names
         INTEGER         SDEV     ! unit number for ASCII inventory file
         INTEGER         PDEV     ! unit number for speeds summary file
         
-        INTEGER         DAYDEV   ! unit number for daily time period group file 
-        INTEGER         WEEKDEV  ! unit number for weekly group file
-        INTEGER         MONTHDEV ! unit number for monthly group file
-        INTEGER         METDEV   ! unit number for met file length time period group
-        
         CHARACTER*16    ANAME   !  logical name for ASCII inventory file
         CHARACTER*16    ENAME   !  logical name for I/O API inventory file
+        CHARACTER*16    UNAME   ! logical name for ungridding-matrix input file
 
 C.........   Other local variables
-        INTEGER          I, L              ! counters and indices
+        INTEGER          I, K, L, S        ! counters and indices
+        
+        INTEGER          IOS               ! I/O status
         INTEGER          NINVARR           ! number inventory variables to input
+        INTEGER          NMATX             ! size of ungridding matrix
+        INTEGER          CURRCTY           ! current county FIPS code
+        INTEGER          PREVCTY           ! previous county code
+        INTEGER          NUMCTY            ! no. counties inside grid
         
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         
@@ -96,6 +105,10 @@ C.......   Get file names and units; open input files
      &           'Enter logical name for ASCII INVENTORY file',
      &           .TRUE., .TRUE., ANAME, PROGNAME )
 
+        UNAME = PROMPTMFILE(
+     &          'Enter logical name for UNGRIDDING MATRIX file',
+     &          FSREAD3, CRL // 'UMAT', PROGNAME )
+     
         XDEV = PROMPTFFILE( 
      &           'Enter logical name for MCREF cross-reference file',
      &           .TRUE., .TRUE., 'MCREF', PROGNAME )
@@ -106,24 +119,7 @@ C.......   Get file names and units; open input files
      
         PDEV = PROMPTFFILE(
      &           'Enter logical name for SPDSUM speed summary file',
-     &           .FALSE., .TRUE., 'SPDSUM', PROGNAME )
-
-C.........  Get file units for time period group files
-        DAYDEV = PROMPTFFILE(
-     &           'Enter logical name for DAILYGROUP file',
-     &           .FALSE., .TRUE., 'DAILYGROUP', PROGNAME )
-     
-        WEEKDEV = PROMPTFFILE(
-     &           'Enter logical name for WEEKLYGROUP file',
-     &           .FALSE., .TRUE., 'WEEKLYGROUP', PROGNAME )
-     
-        MONTHDEV = PROMPTFFILE(
-     &           'Enter logical name for MONTHLYGROUP file',
-     &           .FALSE., .TRUE., 'MONTHLYGROUP', PROGNAME )
-     
-        METDEV = PROMPTFFILE(
-     &           'Enter logical name for METGROUP file',
-     &           .FALSE., .TRUE., 'METGROUP', PROGNAME )           
+     &           .FALSE., .TRUE., 'SPDSUM', PROGNAME )      
 
 C.........  Get header description of inventory file 
         IF( .NOT. DESC3( ENAME ) ) THEN
@@ -141,6 +137,24 @@ C           results are stored in module MODINFO.
  
         END IF
 
+C.........  Read header of ungridding matrix...
+        IF( .NOT. DESC3( UNAME ) ) THEN
+            MESG = 'Could not get description for file ' // UNAME
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Store number of ungridding factors
+        NMATX = NCOLS3D
+
+C.........  Check the number of sources in ungridding matrix against inventory
+        CALL CHKSRCNO( CATDESC, UNAME, NROWS3D, NSRC, EFLAG )
+
+C......... If the dimensions were in error, abort
+        IF( EFLAG ) THEN
+            MESG = 'Ungridding matrix is inconsistent with inventory.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+        
 C.........  Set inventory variables to read
         IVARNAMS( 1 ) = 'IFIP'
         IVARNAMS( 2 ) = 'IRCLAS'
@@ -153,12 +167,49 @@ C.........  Allocate memory for and read required inventory characteristics
 C.........  Build unique lists of SCCs and country/state/county codes
 C           from the inventory arrays
         CALL GENUSLST
-     
+
+C.........  Allocate memory for ungridding matrix
+        ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
+        ALLOCATE( TMPCTY( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPCTY', PROGNAME )
+
+C.........  Read ungridding matrix 
+        CALL RDUMAT( UNAME, NSRC, NMATX, NMATX, 
+     &               UMAT( 1 ), UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ) )
+
+C.........  Create list of counties inside grid
+        TMPCTY  = 0   ! array
+        PREVCTY = 0
+        CURRCTY = 0
+        NUMCTY  = 0
+
+        DO S = 1, NSRC
+            IF( UMAT( S ) == 0 ) CYCLE
+            
+            CURRCTY = IFIP( S )
+            IF( CURRCTY /= PREVCTY ) THEN
+                NUMCTY = NUMCTY + 1
+                TMPCTY( NUMCTY ) = CURRCTY
+                PREVCTY = CURRCTY
+            END IF            
+        END DO
+
+        ALLOCATE( GRIDCTY( NUMCTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRIDCTY', PROGNAME )
+        GRIDCTY = 0   ! array
+        
+        DO S = 1, NUMCTY
+            GRIDCTY( S ) = TMPCTY( S )
+        END DO
+        	
+        DEALLOCATE( TMPCTY )
+
 C.........  Read the county cross-reference file            
         MESG = 'Reading county cross-reference file...'
         CALL M3MSG2( MESG )
         
-        CALL RDMCREF( XDEV )
+        CALL RDMCREF( XDEV, GRIDCTY, NUMCTY )
         
 C.........  Read the reference county settings file
         MESG = 'Reading reference county settings file...'
@@ -175,17 +226,11 @@ C.........  Loop through all the reference counties
             CALL WRSPDSUM( PDEV, I )
         END DO
 
-C THIS MAY BE MOVED TO PREMOBL LATER
 C.........  Create time period group files
         MESG = 'Writing time period group files...'
         CALL M3MSG2( MESG )
         
-        CALL WRTIMEGR( DAYDEV,   DAILY )
-        CALL WRTIMEGR( WEEKDEV,  WEEKLY )
-        CALL WRTIMEGR( MONTHDEV, MONTHLY )
-        CALL WRTIMEGR( METDEV,   METLEN )
-
-C END PREMOBL SECTION
+        CALL WRTIMEGR
 
 C.........  Exit program with normal completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )

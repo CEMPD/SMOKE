@@ -37,9 +37,12 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine OPENSCEN
         
+        FNDSCEN = .FALSE.
+        
 C.........  Find M6 scenario file in M6LIST
         DO J = 1, SIZE( M6LIST )
-            K = INDEX( M6LIST( J ), COUNTY )                
+            K = INDEX( M6LIST( J ), COUNTY )  
+           
             IF( K >= 1 ) THEN
                 FILENAME = M6LIST( J )
                 FNDSCEN = .TRUE.

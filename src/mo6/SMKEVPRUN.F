@@ -8,6 +8,7 @@ C  file.
      &                     ZGMMILE_EVPRUN
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, DBSCTITLE,
      &                     TABCHAR, DBUNIT, DBSELFAC                
+      USE MODMBSET, ONLY : EMISSIONS, EMISPOS
       
       IMPLICIT NONE
 
@@ -15,6 +16,11 @@ C  file.
       INCLUDE 'MYRCAL.I' ! MEVMYR
       INCLUDE 'SPEED9.I' ! HVMT
       INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
+      
+      INTEGER STR2INT
+      INTEGER EFPOSITION
+      
+      EXTERNAL STR2INT, EFPOSITION
       
       INTEGER,INTENT(IN) ::  IEVAP
       INTEGER,INTENT(IN) ::  IV
@@ -112,10 +118,17 @@ C  If vehicle = 25, age = 0, and road type = 4, we're done, so output array
                   EFTYPE = IEVAP
                   DO IFAC = 1,4
                      IF (DBSELFAC(IFAC) == 2) THEN
-                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
-     &                  TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
-     &                  TABCHAR,IH,TABCHAR,EVPRUN(IH,IFAC,IVEH),IH=1,24)
-  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+C                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
+C     &                  TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
+C     &                  TABCHAR,IH,TABCHAR,EVPRUN(IH,IFAC,IVEH),IH=1,24)
+C  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+
+                        DO IH = 1,24
+                           EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
+     &                                   IP, IVEH, EFTYPE, IFAC, IH)
+                           EMISSIONS(EMISPOS) = EVPRUN(IH,IFAC,IVEH)                           
+                        END DO
+
                      END IF
                   END DO
                END IF

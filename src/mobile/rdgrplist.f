@@ -6,14 +6,17 @@
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER, EXTERNAL :: STR2INT
         
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,                INTENT (IN)  :: GDEV                ! GROUP file unit no.
-        INTEGER,                INTENT (IN)  :: NLINES              ! no. lines in file
-        CHARACTER(LEN=FIPLEN3), INTENT (OUT) :: GRPLIST( NLINES,2 ) ! contents of GROUP file
+        INTEGER, INTENT (IN)  :: GDEV                ! GROUP file unit no.
+        INTEGER, INTENT (IN)  :: NLINES              ! no. lines in file
+        INTEGER, INTENT (OUT) :: GRPLIST( NLINES,3 ) ! contents of GROUP file
 
 C...........   Local arrays
-        CHARACTER(LEN=FIPLEN3) SEGMENT( 2 )          ! parsed input line
+        CHARACTER(LEN=FIPLEN3) SEGMENT( 3 )          ! parsed input line
         
 C...........   Other local variables
         INTEGER I, J, K                   ! counters and indices                     
@@ -59,10 +62,11 @@ C.............  Skip blank lines
             IF( LINE == ' ' ) CYCLE        
 
 C.............  Parse the line into 2 segments
-            CALL PARSLINE( LINE, 2, SEGMENT )
+            CALL PARSLINE( LINE, 3, SEGMENT )
             
-            GRPLIST( I,1 ) = SEGMENT( 1 )
-            GRPLIST( I,2 ) = SEGMENT( 2 )
+            GRPLIST( I,1 ) = STR2INT( SEGMENT( 1 ) )
+            GRPLIST( I,2 ) = STR2INT( SEGMENT( 2 ) )
+            GRPLIST( I,3 ) = STR2INT( SEGMENT( 3 ) )
 
         END DO
 
@@ -79,6 +83,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+93010   FORMAT( I6, 1X, I6, 1X, I1 ) 
 
 C...........   Internal buffering formats............ 94xxx
 

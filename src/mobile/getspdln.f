@@ -30,6 +30,7 @@ C***********************************************************************
 C   begin body of function GETSPDLN
 
         IREC = 0
+        FNDLINE = .FALSE.
 
 C.........  Loop through SPDSUM file
         DO I = 1, NLINES

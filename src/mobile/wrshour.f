@@ -1,5 +1,6 @@
 
-        SUBROUTINE WRSHOUR( NSRC, JDATE, JTIME, FNAME, VHOUR )
+        SUBROUTINE WRSHOUR( NCOUNTY, NSTEPS, JDATE, JTIME, 
+     &                      FNAME, VHOUR )
    
 C***********************************************************************
 C  subroutine WRSHOUR body starts at line < >
@@ -43,11 +44,12 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NSRC           ! no. sources
+        INTEGER     , INTENT (IN) :: NCOUNTY        ! no. counties
+        INTEGER     , INTENT (IN) :: NSTEPS         ! no. steps
         INTEGER     , INTENT (IN) :: JDATE          ! julian date
         INTEGER     , INTENT (IN) :: JTIME          ! time HHMMSS
         CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
-        REAL        , INTENT (IN) :: VHOUR( NSRC,0:23 ) ! hourly value
+        REAL        , INTENT (IN) :: VHOUR( NCOUNTY,0:NSTEPS-1 ) ! hourly values
 
 C...........   Local variables
         INTEGER         I       ! index variable
@@ -59,12 +61,12 @@ C...........   Local variables
 C***********************************************************************
 C   begin body of subroutine WRSHOUR
 
-C...........   Loop through 24 hours
-        DO I = 0, 23
+C...........   Loop through time steps
+        DO I = 0, NSTEPS - 1
 
 C.................  Write out temperature information for the current hour
 
-            IF( .NOT. WRITE3( FNAME, 'TKHOUR', JDATE, JTIME, 
+            IF( .NOT. WRITE3( FNAME, 'TKCOUNTY', JDATE, JTIME, 
      &                        VHOUR(:,I) ) ) THEN 
 
                 MESG = 'Could not write hourly data to "' //

@@ -8,6 +8,7 @@ C  to the database file.
      &                     ZGMMILE_EVP
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, DBSCTITLE,
      &                     TABCHAR, DBUNIT, DBSELFAC                
+      USE MODMBSET, ONLY : EMISSIONS, EMISPOS
       
       IMPLICIT NONE
 
@@ -15,6 +16,11 @@ C  to the database file.
       INCLUDE 'MYRCAL.I' ! MEVMYR
       INCLUDE 'SPEED9.I' ! HVMT
       INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
+      
+      INTEGER STR2INT
+      INTEGER EFPOSITION
+      
+      EXTERNAL STR2INT, EFPOSITION
       
       INTEGER,INTENT(IN) ::  IEVAP
       INTEGER,INTENT(IN) ::  IV
@@ -156,11 +162,18 @@ C....          Convert vehicle index back to vehicle class
                IF (DBSELPOL(IP) == 2) THEN
                   IF (DBSELEFT(EFTYPE) == 2) THEN
                      IF (DBSELFAC(IFAC) == 2) THEN
-                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
-     &                  TABCHAR,VTYPE,TABCHAR,EFTYPE,TABCHAR,IFAC,
-     &                  TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVX,EFX),
-     &                  IH=1,24)
-  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+C                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
+C     &                  TABCHAR,VTYPE,TABCHAR,EFTYPE,TABCHAR,IFAC,
+C     &                  TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVX,EFX),
+C     &                  IH=1,24)
+C  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+  
+                        DO IH = 1,24
+                           EMISPOS = EFPOSITION(STR2INT(DBSCTITLE), 
+     &                                  IP, VTYPE, EFTYPE, IFAC, IH)
+                           EMISSIONS(EMISPOS) = EVPOTHER(IH,IVX,EFX)                                                       
+                        END DO
+  
                      END IF
                   END IF
                END IF
