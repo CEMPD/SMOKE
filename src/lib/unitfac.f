@@ -121,7 +121,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 'ton' )
                         UNITFAC = GM2TON
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'kg' )
@@ -132,7 +132,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 'ton' )
                         UNITFAC = GM2TON / 1000.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'ton' )
@@ -143,7 +143,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 'kg' )
                         UNITFAC = TON2GM / 1000.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'yr' )
@@ -158,7 +158,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 's' )
                         UNITFAC = 365. * 24. * 3600.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'dy' )
@@ -173,7 +173,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 's' )
                         UNITFAC = 24. * 3600.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'hr' )
@@ -188,7 +188,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 's' )
                         UNITFAC = 3600.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'min' )
@@ -203,7 +203,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 's' )
                         UNITFAC = 60.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 's' )
@@ -218,7 +218,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 'min' )
                         UNITFAC = 1. / 60.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'm' )
@@ -227,7 +227,7 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 'km' )
                         UNITFAC = 1. / 1000.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE( 'km' )
@@ -236,11 +236,11 @@ C.........  Set conversion factor by comparing numerators
                     CASE( 'm' )
                         UNITFAC = 1000.
                     CASE DEFAULT
-                        CALL CASE_NOT_FOUND
+                        CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
             CASE DEFAULT
-                CALL CASE_NOT_FOUND
+                CALL CASE_NOT_FOUND( UNITFAC )
 
         END SELECT
         
@@ -288,7 +288,10 @@ C----------------------------------------------------------------------
 
 C.............  This subprogram checks for an internal error of the
 C               units conversion case not being programmed in the code
-            SUBROUTINE CASE_NOT_FOUND
+            SUBROUTINE CASE_NOT_FOUND( FACTOR )
+
+C.............  Subprogram arguments
+            REAL, INTENT (OUT) :: FACTOR
 
 C.............   Local variables
             CHARACTER*300  MESG
@@ -299,7 +302,7 @@ C----------------------------------------------------------------------
      &             BUF1( 1:LB1 ) // '" with "' // BUF2( 1:LB2 ) // '"'//
      &             CRLF() // BLANK10// 'No conversion will be made.'
             CALL M3MSG2( MESG )
-            UNITFAC = 1.
+            FACTOR = 1.
 
             RETURN
 
