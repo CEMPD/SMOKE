@@ -50,6 +50,7 @@
         INTEGER, PUBLIC :: NINVSCL  ! no. unique left SCCs in inventory
         INTEGER, PUBLIC :: NSCCPSIC ! no. all SCCs for all SICs
         INTEGER, PUBLIC :: NINVIFIP ! no. unique country/state/county codes
+        INTEGER, PUBLIC :: NINVMACT ! no. unique MACTs in inventory
         INTEGER, PUBLIC :: NORISBLR ! no. unique ORIS // boilers
         INTEGER, PUBLIC :: NORISPNT ! no. unique ORIS // points
         INTEGER, PUBLIC :: NINVORIS ! no. unique ORIS 
@@ -74,6 +75,9 @@
 
 !.........  Country/state/county codes dimensioned by NINVIFIP
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
+
+!.........  MACT codes dimensioned by NINVMACT
+        CHARACTER(LEN=MACLEN3), ALLOCATABLE, PUBLIC :: INVMACT( : )
 
 !.........  ORIS arrays
         INTEGER               , ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
