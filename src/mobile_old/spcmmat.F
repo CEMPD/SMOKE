@@ -343,7 +343,7 @@ C.......   volatile pollutant in inventory.
      &              INVPRO ( 1:TRIMLEN( INVPRO ) ) //
      &             ' CONVERSION file >> '
             KDEV = PROMPTFFILE(
-     &             MESG, .TRUE., .TRUE., 'MSCNV', 'SPCPMAT' )
+     &             MESG, .TRUE., .TRUE., 'MSCNV', 'SPCMMAT' )
  
             KFLAG = .TRUE.
  
