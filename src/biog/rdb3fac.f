@@ -43,7 +43,7 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     !
-        INCLUDE 'B3V1DIMS3.EXT'    ! biogenic parameters
+        INCLUDE 'B3DIMS3.EXT'    ! biogenic parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
  
@@ -124,7 +124,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93010   FORMAT( A16, A )
+93010   FORMAT( 8x,A16, A )
 
 C...........   Internal buffering formats............ 94xxx
 
