@@ -28,7 +28,7 @@ C             1. observational cloud, 2. RGRND from MM5, 3, KUO cloud,
 C             4. KF cloud
 C
 C       Revised    1/98 by JMV : completed implementation of option 5
-C             for NO CUM param. 
+C             for "No deep convection param". 
 C        
 C       Revised    2/98 by JMV : implemented an option 6 of clear skies
 C             assumption.  Also added AGRC contribution to the HRBIO
@@ -169,7 +169,7 @@ C.......   Name tables for file NNAME
      &             'Use MM5 generated RGND',
      &             'Use KUO cloud attenuation',
      &             'Use KF  cloud attenuation',   
-     &             'Use NO CUM Param'  ,
+     &             'Use No deep convection param'  ,
      &             'Assume Clear Skies' /
             
 

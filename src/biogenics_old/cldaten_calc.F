@@ -9,10 +9,10 @@ C       Computes gridded cloud attenuation factor CLDATN for SMOKE BEIS2
 C       Based on the cloud type string in CLDTYPE, reads cloud cover data
 C       from Met-Chem Interface Processor for either the KUO (ANTHES-KUO)
 C       cloud recalculation, or the McHenry-Kain (KAIN-) cloud recalculation.
-C       If CLDTYPE= 'NO CUM PARAM', it is assumed that MM5 ran a simulation
-C       without a deep convection parameterization. This is typically done
-C       only for urban-scale problems where the grid-resolution is 4km or
-C       less. 
+C       If CLDTYPE= 'No deep convection param', it is assumed that MM5 ran 
+C       a simulation without a deep convection parameterization. This is 
+C       typically done  only for urban-scale problems where the 
+C       grid-resolution is 4km or less.
 C
 C       The file containing the information from the Met-Chem Interface Processor
 C       is MET_CRO_2D.
