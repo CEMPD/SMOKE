@@ -1,13 +1,15 @@
 
-        SUBROUTINE RDLOOPPD( FDEV, TZONE, TSTEP, MXPDSRC, DAYFLAG, 
-     &                       SDATE, STIME, NSTEPS, EASTAT )
+        SUBROUTINE RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, 
+     &                       DAYFLAG, FNAME, INVDCOD, INVDNAM, SDATE, 
+     &                       STIME, NSTEPS, EASTAT )
 
 C***************************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
 C      This subroutine loops through the day-specific or hour-specific input
-C      files and reads them.
+C      files and reads them. It determines whether these files are in EPS
+C      or EMS-95 format, and reads the accordingly
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -23,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -62,32 +64,44 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: FDEV           ! file unit no.
-        INTEGER, INTENT (IN) :: TZONE          ! output time zone
-        INTEGER, INTENT (IN) :: TSTEP          ! time step HHMMSS
-        INTEGER, INTENT (IN) :: MXPDSRC        ! max. day- or hr-specific source
-        LOGICAL, INTENT (IN) :: DAYFLAG        ! true: day-specific
-        INTEGER, INTENT(OUT) :: SDATE          ! Julian starting date in TZONE
-        INTEGER, INTENT(OUT) :: STIME          ! start time of data in TZONE
-        INTEGER, INTENT(OUT) :: NSTEPS         ! no. time steps
-        LOGICAL, INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act appears in data
+        INTEGER,      INTENT (IN) :: FDEV           ! file unit no.
+        INTEGER,      INTENT (IN) :: MXIDAT         ! max no of inventory data
+        INTEGER,      INTENT (IN) :: TZONE          ! output time zone
+        INTEGER,      INTENT (IN) :: TSTEP          ! time step HHMMSS
+        INTEGER,      INTENT (IN) :: MXPDSRC        ! max. day- or hr-spec srcs
+        LOGICAL,      INTENT (IN) :: DAYFLAG        ! true: day-specific
+        CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
+        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) !  inv data 5-digit codes
+        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) !  in data names
+        INTEGER,      INTENT(OUT) :: SDATE          ! Julian start date in TZONE
+        INTEGER,      INTENT(OUT) :: STIME          ! data start time in TZONE
+        INTEGER,      INTENT(OUT) :: NSTEPS         ! no. time steps
+        LOGICAL,      INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act in data
+
+C...........   Character strings of day- or hr-specific list file 
+        CHARACTER*300, ALLOCATABLE, SAVE :: NLSTSTR( : )
 
 C...........   Other local variables
-        INTEGER, SAVE ::EDATE            ! ending date
-        INTEGER, SAVE ::ETIME            ! ending time
-        INTEGER         IFIL             ! file no. counter
-        INTEGER         IDEV             ! input file unit no.
-        INTEGER         IOS              ! i/o status
-        INTEGER         IREC             ! record counter
-        INTEGER         NFILE            ! no. files in the list
+        INTEGER, SAVE :: EDATE             ! ending date
+        INTEGER, SAVE :: ETIME             ! ending time
+        INTEGER, SAVE :: FILFMT            ! file format code
+        INTEGER          IFIL              ! file no. counter
+        INTEGER          IDEV              ! input file unit no.
+        INTEGER          IOS               ! i/o status
+        INTEGER          IREC              ! record counter
+        INTEGER          LP                ! length of period description
+        INTEGER, SAVE :: NFILE             ! no. files in the list
 
-        LOGICAL      :: EFLAG = .FALSE.  ! TRUE iff ERROR
-        LOGICAL         DFLAG            ! true: retrieve date/time & pol/act 
-        LOGICAL         NFLAG            ! true: retrieve no. sources
-        LOGICAL         NEWLOOP          ! true: start of a new read loop
+        LOGICAL, SAVE :: EFLAG = .FALSE.   ! true: error found
+        LOGICAL          DFLAG             ! true: retrieve date/time & pol/act 
+        LOGICAL, SAVE :: DCALLONE = .TRUE. ! true: 1st time called for day-spec
+        LOGICAL, SAVE :: HCALLONE = .TRUE. ! true: 1st time called for hr-spec
+        LOGICAL          NFLAG             ! true: retrieve no. sources
+        LOGICAL          NEWLOOP           ! true: start of a new read loop
 
-        CHARACTER*200   NAMTMP           ! file name buffer
-        CHARACTER*300   MESG             ! message buffer
+        CHARACTER*3      PERIOD            ! tmp period name
+        CHARACTER*200    NAMTMP            ! file name buffer
+        CHARACTER*300    MESG              ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'RDLOOPPD' !  program name
 
@@ -116,24 +130,67 @@ C.........  Otherwise, set to read all data
 
         END IF
 
+C.........  Create label for file name messages
+        PERIOD = 'Hour'
+        IF( DAYFLAG ) PERIOD = 'Day'
+        LP = LEN_TRIM( PERIOD )
+
+C.........  Generate message for GETFLINE and RDLINES calls
+        MESG = CATEGORY( 1:CATLEN ) // ' ' // PERIOD( 1:LP ) // 
+     &         '-specific inventory file in list format'
+
+C.........  Determine format of day- or hour-specific inputs, and store file
+C           names
+C.........  Day-specific inputs...
+C.........  First time called for day-specific
+        IF( DAYFLAG .AND. DCALLONE ) THEN
+
+C.............  Get number of lines of inventory files in list format
+            NFILE = GETFLINE( FDEV, MESG )
+
+C.............  Allocate memory for storing contents of list-format'd file
+            ALLOCATE( NLSTSTR( NFILE ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NLSTSTR', PROGNAME )
+
+C.............  Store lines of day-specific list file
+            CALL RDLINES( FDEV, MESG, NFILE, NLSTSTR )
+
+C.............  Get file format for files listed in day-specific list file
+            CALL CHKLSTFL( NFILE, FNAME, NLSTSTR, FILFMT )
+
+            DCALLONE = .FALSE.
+
+C.........  Hours-specific inputs...
+C.........  First time called for hour-specific
+        ELSE IF( .NOT. DAYFLAG .AND. HCALLONE ) THEN
+
+C.............  Get number of lines of inventory files in list format
+            NFILE = GETFLINE( FDEV, MESG )
+
+C.............  Allocate memory for storing contents of list-format'd file
+            IF( ALLOCATED( NLSTSTR ) ) DEALLOCATE( NLSTSTR )
+            ALLOCATE( NLSTSTR( NFILE ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NLSTSTR', PROGNAME )
+
+C.............  Store lines of hour-specific list file
+            CALL RDLINES( FDEV, MESG, NFILE, NLSTSTR )
+
+C.............  Get file format for files listed in hour-specific list file
+            CALL CHKLSTFL( NFILE, FNAME, NLSTSTR, FILFMT )
+
+            HCALLONE = .FALSE.
+
+        END IF
+
 C.........  Get the number of lines in the input file
-        NFILE = GETFLINE( FDEV, 'Period-specific emissions file' )
+        MESG = PERIOD(1:LP) // '-specific emissions file'
+        NFILE = GETFLINE( FDEV, MESG )
 
         NEWLOOP = .TRUE.
         IREC = 0
         DO IFIL = 1, NFILE
 
-            READ( FDEV, 93000, END=999, IOSTAT=IOS ) NAMTMP
-            IREC = IREC + 1
-
-            IF( IOS .GT. 0 ) THEN
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Could not read list file '//
-     &                 'at line', IREC
-                CALL M3MESG( MESG )
-
-            END IF
+            NAMTMP = NLSTSTR( IFIL )
 
 C.............  Open files, and report status
             IDEV = JUNIT()
@@ -144,10 +201,27 @@ C.............  Open files, and report status
      &             NAMTMP( 1:LEN_TRIM( NAMTMP ) )
             CALL M3MSG2( MESG )
 
-C.............  Read EMS-95 day-specific or hour-specific file
-            CALL RDEMSPD( IDEV, TZONE, TSTEP, MXPDSRC, DFLAG, NFLAG, 
-     &                    NEWLOOP, DAYFLAG, SDATE, STIME, EDATE, ETIME, 
-     &                    EASTAT )
+C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
+            IF( FILFMT .EQ. EMSFMT ) THEN
+
+        	CALL RDEMSPD( IDEV, TZONE, TSTEP, MXPDSRC, DFLAG, NFLAG, 
+     &                        NEWLOOP, DAYFLAG, SDATE, STIME, EDATE, 
+     &                        ETIME, EASTAT )
+
+            ELSE IF( FILFMT .EQ. EPSFMT ) THEN
+
+                CALL RDEPSPD( IDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, 
+     &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, INVDCOD, 
+     &                        INVDNAM, SDATE, STIME, EDATE, ETIME, 
+     &                        EASTAT )
+
+            ELSE
+
+                WRITE( MESG,94010 ) 'File format', FILFMT, 'of ',
+     &                 PERIOD( 1:LP ) // '-specific data not recognized'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
 
             NEWLOOP = .FALSE.
 
