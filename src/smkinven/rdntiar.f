@@ -99,7 +99,7 @@ C...........   Local arrays
 c        INTEGER          IS( NARPPOL3 )  ! start position for each pol char
 c        INTEGER          IE( NARPPOL3 )  ! end position for each pol char
 
-        CHARACTER*15 :: SEGMENT( 3 )
+        CHARACTER*80 :: SEGMENT( 3 )
 
 C...........   Counters of total number of input records
         INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
@@ -129,8 +129,8 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
         CHARACTER(LEN=IOVLEN3) CBUF  ! tmp pollutant code
         CHARACTER(LEN=256)  LINE  ! input line from inventory file
-        CHARACTER(LEN=SCCLEN3) TSCC  ! tmp scc
-        CHARACTER(LEN=SCCLEN3) PSCC  ! previous scc
+        CHARACTER(LEN=80) TSCC  ! tmp scc
+        CHARACTER(LEN=80) PSCC  ! previous scc
 
         CHARACTER*16 :: PROGNAME = 'RDNTIAR' ! Program name
 
