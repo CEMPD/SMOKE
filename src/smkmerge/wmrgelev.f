@@ -49,6 +49,9 @@ C...........   This module is the source inventory arrays
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C.........  INCLUDES:

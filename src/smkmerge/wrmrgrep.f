@@ -5,9 +5,8 @@ C***********************************************************************
 C  subroutine WRMRGREP body starts at line
 C
 C  DESCRIPTION:
-C      The purpose of this subroutine is to convert gridded values to county-
-C      total values for reporting purposes.  Note that this routine still needs
-C      to be updated for writing the intermediate control totals.
+C      The purpose of this subroutine is to write state and county totals
+C      with headers and formatted nicely by column width.
 C
 C  PRECONDITIONS REQUIRED:  
 C
@@ -45,6 +44,9 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
         IMPLICIT NONE
 

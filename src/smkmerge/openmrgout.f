@@ -45,6 +45,9 @@ C.........  This module contains the major data structure and control flags
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C.........  INCLUDES:

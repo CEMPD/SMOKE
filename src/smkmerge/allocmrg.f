@@ -51,6 +51,9 @@ C.........  This module contains the control packet data and control matrices
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
