@@ -1871,7 +1871,7 @@ C93041   FORMAT( I5, X, I5, X, I3, X, I8, X, I5.5, 3( X, I3 ) )
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I7, :, 1X ) )
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94020   FORMAT( A, 1X, I5.5, 1X, A, 1X, I8.8, 1X,
      &          A, I6, X, A, I6, X, A, :, I6 )
