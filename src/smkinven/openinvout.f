@@ -131,22 +131,31 @@ C.........  Get environment variable settings
         BASYR_OVR = ENVINT( 'SMK_BASEYR_OVERRIDE', 
      &                      'Base year override', 0, IOS )
 
+        MESG = 'First name of output inventory files'
+        CALL ENVSTR( 'INVNAME1', MESG, ' ', NAME1, IOS )
+        IF( IOS .NE. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: INVNAME1 environment variable is not' //
+     &             'defined for output file name'
+            CALL M3MSG2( MESG )
+        END IF
+
+        MESG = 'Second name of output inventory files'
+        CALL ENVSTR( 'INVNAME2', MESG, ' ', NAME2, IOS )
+        IF( IOS .NE. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: INVNAME2 environment variable is not' //
+     &             'defined for output file name'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem with input environment variables'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  Get output inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
-
-C.........  Set strings needed for building file names (note-
-C           duplicated in WRINVEMIS and OPENGRWOUT)
-        SELECT CASE( CATEGORY )
-        CASE( 'AREA' )
-            NAME1 = 'area'
-            NAME2 = 'asrc'
-        CASE( 'MOBILE' )
-            NAME1 = 'mobl'
-            NAME2 = 'msrc'
-        CASE( 'POINT' ) 
-            NAME1 = 'pnts'
-            NAME2 = 'psrc'
-        END SELECT
 
 C.........  Open map-formatted inventory file without prompting
         IDEV = GETEFILE( ENAME, .FALSE., .TRUE., PROGNAME )

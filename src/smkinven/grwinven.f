@@ -2,7 +2,7 @@
          PROGRAM GRWINVEN
 
 C***************************************************************************
-C  program body starts at line 
+C  program body starts at line 168
 C
 C  DESCRIPTION:
 C
@@ -182,6 +182,29 @@ C.........  Get environment variables that control this program
      &             CRLF() // BLANK16 // 'A default value of', NCMAT,
      &             'will be used.'
             CALL M3MSG2( MESG )
+        END IF
+
+        MESG = 'First name of output inventory files'
+        CALL ENVSTR( 'INVNAME1', MESG, ' ', NAME1, IOS )
+        IF( IOS .NE. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: INVNAME1 environment variable is not' //
+     &             'defined for output file name'
+            CALL M3MSG2( MESG )
+        END IF
+
+        MESG = 'Second name of output inventory files'
+        CALL ENVSTR( 'INVNAME2', MESG, ' ', NAME2, IOS )
+        IF( IOS .NE. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: INVNAME2 environment variable is not' //
+     &             'defined for output file name'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem with input environment variables'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Set source category based on environment variable setting
@@ -534,20 +557,6 @@ C           set flag
 
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
-
-C.........  Set strings needed for building file names (note-
-C           duplicated in WRINVEMIS and OPENINVOUT)
-        SELECT CASE( CATEGORY )
-        CASE( 'AREA' )
-            NAME1 = 'area_o'
-            NAME2 = 'asrc'
-        CASE( 'MOBILE' )
-            NAME1 = 'mobl_o'
-            NAME2 = 'msrc'
-        CASE( 'POINT' ) 
-            NAME1 = 'pnts_o'
-            NAME2 = 'psrc'
-        END SELECT
 
 C.........  Open output file(s)
         CALL OPENGRWOUT( ENAME, PPYEAR, NAME1, ODEV, DDEV, VDEV, ONAME,

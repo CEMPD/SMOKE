@@ -2,7 +2,7 @@
         SUBROUTINE WRINVEMIS( IDEV, DATPATH, VAR_FORMULA )
 
 C***********************************************************************
-C  subroutine body starts at line 111
+C  subroutine body starts at line 135
 C
 C  DESCRIPTION:
 C      This subroutine writes the average inventory emissions to the inventory
@@ -130,6 +130,30 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program WRINVEMIS
+
+C..........  Get environment variables
+        MESG = 'First name of output inventory files'
+        CALL ENVSTR( 'INVNAME1', MESG, ' ', NAME1, IOS )
+        IF( IOS .NE. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: INVNAME1 environment variable is not' //
+     &             'defined for output file name'
+            CALL M3MSG2( MESG )
+        END IF
+
+        MESG = 'Second name of output inventory files'
+        CALL ENVSTR( 'INVNAME2', MESG, ' ', NAME2, IOS )
+        IF( IOS .NE. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: INVNAME2 environment variable is not' //
+     &             'defined for output file name'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem with input environment variables'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Compute real value of integer missing
         RIMISS3 = REAL( IMISS3 )
@@ -375,20 +399,6 @@ C.........  Deallocate local arrays
 
 C.........  Reset the number of map records, in case some had no data
         NMAP = MCNT
-
-C.........  Set NAME1 and NAME2 based on the source category (note- duplicated
-C           in OPENINVOUT)
-        SELECT CASE( CATEGORY )
-        CASE( 'AREA' )
-            NAME1 = 'area'
-            NAME2 = 'asrc'
-        CASE( 'MOBILE' )
-            NAME1 = 'mobl'
-            NAME2 = 'msrc'
-        CASE( 'POINT' ) 
-            NAME1 = 'pnts'
-            NAME2 = 'psrc'
-        END SELECT
 
 C.........  Write the map inventory file
         WRITE( IDEV, '(A)' ) CATDESC
