@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
          PROGRAM EMSPOINT
 
 C***********************************************************************
-C  program body starts at line 349
+C  program body starts at line 357
 C
 C  DESCRIPTION:
 C       Sort data contained in EMS-95 raw point source files and 
@@ -38,12 +16,34 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
 C       FIND1, FIND2, FINDC, GETYN, PROMPTFFILE, PROMPTMFILE, SORTIC, TRIMLEN
+C       FIXSTK
 C
 C  REVISION  HISTORY:
 C       Prototype  5/96 by MR Houyoux (based on V1.3 rawpoint.F)
 C       Optimizations 8/96 by CJC
 C
 C****************************************************************************/
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***************************************************************************
 
       IMPLICIT NONE
 
@@ -61,18 +61,19 @@ C...........   INCLUDES:
 
 C...........   PARAMETER
 
+        CHARACTER*5     BLANK5
         REAL            FTOC    ! Farenheit to Celcius ratio
         REAL            FT2M    ! Feet to meters conversion
         REAL            FLWE2M  ! Flow in cubic ft per min to cubic m per sec
-        CHARACTER*240   BLANK
 
-        PARAMETER     ( FTOC   = 5./9., 
+        PARAMETER     ( BLANK5  = ' ',
+     &                  FTOC   = 5./9., 
      &                  FT2M   = 0.3048,
-     &                  FLWE2M = FT2M * FT2M * FT2M / 60.0 ,
-     &                  BLANK  = ' ' )
+     &                  FLWE2M = FT2M * FT2M * FT2M / 60.0 )
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        CHARACTER*2     CRLF
         LOGICAL         DSCGRID
         LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FINDC   !  returns -1 for failure
@@ -80,6 +81,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         INTEGER         INDEX1
         INTEGER         JULIAN
+        INTEGER         JUNIT
         LOGICAL         LAMBERT
         INTEGER         LBLANK
         LOGICAL         LL2LAM
@@ -87,15 +89,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         SECSDIFF
-        LOGICAL         SETLAM
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL DSCGRID, ENVYN, FIND1, FIND2, FINDC, GETNUM, GETYN, 
-     &           INDEX1, JULIAN, LAMBERT, LBLANK, LL2LAM, UTM2LAM, 
-     &           PROMPTFFILE, PROMPTMFILE, SECSDIFF, SETLAM, STR2INT,
-     &           STR2REAL, TRIMLEN
+        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, FIND2, FINDC, GETNUM, 
+     &           GETYN, INDEX1, JULIAN, JUNIT, LAMBERT, LBLANK, 
+     &           LL2LAM, UTM2LAM, PROMPTFFILE, PROMPTMFILE, SECSDIFF, 
+     &           STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -198,7 +199,7 @@ C...........   Point sources table for process.pt files  (unsorted; sorted)
 C...........   Point sources table for device.pt files   (unsorted; sorted)
 
         INTEGER        DS                ! Counter & number of device records
-        INTEGER        INDXDVA( NPDMAX ) ! subscript tabale for sort
+        INTEGER        INDXDVA( NPDMAX ) ! subscript table for sort
         INTEGER        DVSICA ( NPDMAX ) ! SIC code from device files
         INTEGER        DVIWEKA( NPDMAX ) ! Weekly profile code from device files
         INTEGER        DVIDIUA( NPDMAX ) ! Hourly profile code...
@@ -278,17 +279,20 @@ C...........   File units and logical/physical names
         INTEGER         EDEV    !  Unit number for emission.pt file
         INTEGER         DDEV    !  Unit number for device.pt
         INTEGER         FDEV    !  Unit number for facility.pt file
+        INTEGER         IDEV    !  List of physical raw input file names
         INTEGER         LDEV    !  log-device
         INTEGER         PDEV    !  Unit number for process.pt
+        INTEGER         RDEV    !  Unit number for default stack parameters
         INTEGER         SDEV    !  Unit number for stack.pt file
         INTEGER         TDEV    !  Unit number for output temporal profile #s
         INTEGER         ZDEV    !  for time zone file
 
-        CHARACTER*16    DVNAME  !  device.pt   file logical name buffer 
-        CHARACTER*16    EMNAME  !  emission.pt file logical name buffer 
-        CHARACTER*16    FCNAME  !  facility.pt file logical name buffer 
-        CHARACTER*16    PSNAME  !  process.pt  file logical name buffer 
-        CHARACTER*16    SKNAME  !  stack.pt    file logical name buffer 
+        CHARACTER*16    ENAME   !  emissions output file logical name
+        CHARACTER*256   DVNAME  !  device.pt   file physical name buffer 
+        CHARACTER*256   EMNAME  !  emission.pt file physical name buffer 
+        CHARACTER*256   FCNAME  !  facility.pt file physical name buffer 
+        CHARACTER*256   PSNAME  !  process.pt  file physical name buffer 
+        CHARACTER*256   SKNAME  !  stack.pt    file physical name buffer 
 
 
 C...........   Other local variables
@@ -309,13 +313,13 @@ C...........   Other local variables
                                 
         INTEGER         S, I, J, K, L, V !  counters and indices
         INTEGER         K1, K2, K3, K4   !  counters and indices
+        INTEGER         L1, L2           !  counters and indices
         INTEGER         FIP,  SCC,  SIC, PLANT, STACK  ! Temporary fip, scc
         INTEGER         LFIP, LSCC, LLSCC, LPLT, LSTK  ! Last fip, scc, etc.
 
         INTEGER         COD     !  Temporary pollutant code number
         INTEGER         CSS     !  Start of non-blank character string
         INTEGER         IDIU    !  Temporary hourly profile code
-        INTEGER         IFIL    !  input file counter
         INTEGER         INY     !  Temporary inventory year
         INTEGER         IOS     !  I/O status
         INTEGER         IREC    !  input line (record) number
@@ -337,15 +341,15 @@ C...........   Other local variables
         CHARACTER*12    PRID    !  Temporary process ID
         CHARACTER*12    SKID    !  Temporary stack ID
         CHARACTER*15    FCID    !  Temporary facility ID
-        CHARACTER*16    ENAME   !  emissions output file logical name
         CHARACTER*16    SCRBUF  !  scratch buffer
         CHARACTER*16    COORDN  !  coordinate system name
         CHARACTER*20    FKEY
         CHARACTER*32    SKEY
         CHARACTER*44    DKEY
         CHARACTER*56    PKEY
-        CHARACTER*240   LINE    !  input line from POINT file
+        CHARACTER*256   LINE    !  input line from POINT file
         CHARACTER*256   MESG    !  text for M3EXIT()
+        CHARACTER*256   NAMTMP  !  Temporary buffer for input file names
 
 C***********************************************************************
 C   begin body of program EMSPOINT
@@ -371,8 +375,7 @@ C   begin body of program EMSPOINT
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program EMSPOINT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'EMSPOINT', 0, 0, 'Ending program.', 2 )
         END IF
 
         SFLAG = ENVYN( 'RAW_SRC_CHECK', 
@@ -411,12 +414,25 @@ C.......   to put into file header:
             CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
         END IF          !  if grid type utm, lambert, lat, or not
 
-C.......   Get file name; open and process input time zone file
+C.......   Get file name for opening input raw point source file
+
+        IDEV = PROMPTFFILE( 
+     &         'Enter the name of the RAW DATA FILENAME LISTING',
+     &          .TRUE., .TRUE., 'PNLST', 'EMSPOINT' )
+
+C.......   Get file name for input replacement stack parameters file
+
+        RDEV = PROMPTFFILE(
+     &          'Enter REPLACEMENT STACK PARAMETERS file',
+     &          .TRUE., .TRUE., 'PSTK', 'EMSPOINT' )
+
+C.......   Get file name for time zones files
 
         ZDEV = PROMPTFFILE( 
      &         'Enter logical name for TIME ZONE file',
      &         .TRUE., .TRUE., 'ZONES', 'EMSPOINT' )
 
+C.......   Process input time zone file
         TZONE0 = 5      !  default:  EST
         NZS    = 0
         NZF    = 0
@@ -427,11 +443,12 @@ C.......   Get file name; open and process input time zone file
             IREC = IREC + 1
 
             IF ( IOS .NE. 0 ) THEN
-                WRITE( *,92010 ) 
+                WRITE( MESG,94010 ) 
      &              'Unit number', ZDEV, 
      &              'I/O Status ', IOS, 
      &              'Line number', IREC
-                    CALL M3EXIT( 'EMSPOINT', 0, 0, 
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( 'EMSPOINT', 0, 0, 
      &              'Error reading TIME ZONE file.', 2 )
             END IF
 
@@ -465,12 +482,12 @@ C.......   Get file name; open and process input time zone file
 
         CLOSE( ZDEV )
         IF ( NZS .GT. NPSID  .OR.  NZF .GT. NPFIP ) THEN
-            WRITE( MESG,94010 ) 'Number of state-only records  :', NZS
-            CALL M3MESG( MESG )
-            WRITE( MESG,94010 ) 'Number of state&county records:', NZF
-            CALL M3MESG( MESG )
-            WRITE( MESG,94010 ) 'Dims-- NPSID:', NPSID, 'NPFIP:', NPFIP
-            CALL M3MESG( MESG )
+            WRITE( MESG,94010 ) 
+     &        'Number of state-only records  :', NZS, CRLF()// BLANK5//
+     &        'Number of state&county records:', NZF, CRLF()// BLANK5//
+     &        'Dims-- NPSID:', NPSID, 'NPFIP:', NPFIP
+
+            CALL M3MSG2( MESG )
             CALL M3EXIT( 'EMSPOINT', 0, 0,
      &                   'Overflow reading time zone file', 2 )
         END IF
@@ -490,123 +507,6 @@ C.......   Get file name; open and process input time zone file
 33      CONTINUE
 
 
-C.......   Read replacement stack parameters file:
-
-        FDEV = PROMPTFFILE(
-     &          'Enter REPLACEMENT STACK PARAMETERS file',
-     &          .TRUE., .TRUE., 'PSTK', 'EMSPOINT' )
-
-        HT0 = DEFSTKH           !  defaults
-        DM0 = DEFSTKD
-        TK0 = DEFSTKT
-        VE0 = DEFSTKV
-
-
-C.......   Now read the rest of the file:
-
-        EFLAG = .FALSE.
-        IREC  =  0
-        NR1   =  0
-        NR2   =  0
-        NR3   =  0
-        FIP   = -1
-        SCC   = -1
-
-44      CONTINUE        !  head of input loop
-
-            LFIP = FIP
-            LSCC = SCC
-            IREC = IREC + 1
-
-            READ( FDEV,*, END=45, IOSTAT=IOS ) FIP, SCC, HT, DM, TK, VE
-
-            IF ( IOS .NE. 0 ) THEN      !  I/O error
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'Error reading PSTK at line', IREC
-                CALL M3MESG( MESG )
-
-            ELSE IF ( ( LFIP .GT. FIP ) .OR.
-     &                ( LFIP .EQ. FIP .AND. LSCC .GT. SCC ) ) THEN !  out of order
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'PSTK out of order at line', IREC
-                CALL M3MESG( MESG )
-
-            ELSE IF ( FIP .EQ. 0 ) THEN         !  SCC only
-
-                IF ( SCC .EQ. 0 ) THEN
-
-                    HT0 = HT
-                    DM0 = DM
-                    TK0 = TK
-                    VE0 = VE
-
-                ELSE
- 
-                    NR1 = NR1 + 1
-                    IF ( NR1 .LE. NPSCC ) THEN
-                        SC1( NR1 ) = FIP
-                        HT1( NR1 ) = HT
-                        DM1( NR1 ) = DM
-                        TK1( NR1 ) = TK
-                        VE1( NR1 ) = VE
-                    END IF
- 
-                END IF                  !  if scc zero or not
- 
-            ELSE IF ( MOD( FIP, 1000 ) .EQ. 0 ) THEN    !  state and SCC
-
-                NR2 = NR2 + 1
-                IF ( NR2 .LE. NPSRC ) THEN
-                    FP2( NR2 ) = FIP / 1000
-                    SC2( NR2 ) = SCC
-                    HT2( NR2 ) = HT
-                    DM2( NR2 ) = DM
-                    TK2( NR2 ) = TK
-                    VE2( NR2 ) = VE
-                END IF
-
-            ELSE                                        !  FIP and SCC
-
-                NR3 = NR3 + 1
-                IF ( NR3 .LE. NPSRC ) THEN
-                    FP3( NR3 ) = FIP
-                    SC3( NR3 ) = SCC
-                    HT3( NR3 ) = HT
-                    DM3( NR3 ) = DM
-                    TK3( NR3 ) = TK
-                    VE3( NR3 ) = VE
-                END IF
-
-            END IF      !  if I/O err, bad order, ...
-
-            GO TO  44   !  to head of replacement stack parameters loop
-
-45      CONTINUE        !  end of input loop
-
-        CLOSE( FDEV )
-        IF ( EFLAG ) THEN
-                CALL M3EXIT( 'EMSPOINT', 0, 0, 
-     &                       'Error reading PSTK file', 1 )
-        ELSE IF ( NR1 .GT. NPSRC ) THEN
-            WRITE( MESG,94010 )
-     &          'SCC-only table overflow -- dimensioned:', NPSRC,
-     &          'actual', NR1
-            CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
-        ELSE IF ( NR2 .GT. NPSRC ) THEN
-            WRITE( MESG,94010 )
-     &          'State-SCC table overflow -- dimensioned:', NPSRC,
-     &          'actual', NR2
-            CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
-        ELSE IF ( NR3 .GT. NPSRC ) THEN
-            WRITE( MESG,94010 )
-     &          'FIP-SCC table overflow -- dimensioned:', NPSRC,
-     &          'actual', NR3
-            CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
-        END IF
-
-        
 C.......   Read the point source files:
 C.......   Initialize variables for keeping track of dropped emissions
 
@@ -615,53 +515,87 @@ C.......   Initialize variables for keeping track of dropped emissions
             EDROP( COD ) = 0.0
 99      CONTINUE
 
-
-        WRITE( *,92000 ) 
-     &  ' ', 
-     &  'Enter the logical file names for ',
-     &  'EMS-95 RAW POINT SOURCE files...', 
-     &  ' '
-        IFIL =    0
+C.........  Loop through all files in the raw point source list
         NSRC =    0
         ES   =    0     ! For sources (emission.pt)
         EFLAG = .FALSE.
 
-101     CONTINUE
+101     CONTINUE     !  Head of IDEV read loop
 
-            INY  = 1994
-            IFIL = IFIL + 1
+C.............  Read file names, but OK to end only on first from group
+C.............  Exit to line 202 if first read is EOF, or error to line 1005
+            READ( IDEV, 93000, END=202  ) LINE    ! device.pt file
 
-            WRITE( EMNAME, 94040 ) 'EMRAW', IFIL
-            WRITE( FCNAME, 94040 ) 'FCRAW', IFIL
-            WRITE( SKNAME, 94040 ) 'SKRAW', IFIL
-            WRITE( PSNAME, 94040 ) 'PSRAW', IFIL
-            WRITE( DVNAME, 94040 ) 'DVRAW', IFIL
+            L1 = INDEX( LINE, 'INVYEAR' )
+            L2 = TRIMLEN( LINE )
+ 
+            IF( L1 .GT. 0 ) THEN
+ 
+                INY = STR2INT( LINE( L1+7:L2 ) )
+ 
+                IF( INY .LE. 0 ) THEN
+ 
+                    CALL M3EXIT( 'EMSPOINT', 0, 0,
+     &               'Must set inventory year using INVYEAR packet ' //
+     &               'in PNLST file', 2 ) 
 
-            EDEV = PROMPTFFILE( 
-     &         'Enter the next EMISSION.PT FILE, or "NONE" to end list',
-     &          .TRUE., .TRUE., EMNAME, 'EMSPOINT' )
-            IF ( EDEV .LT. 0 ) GO TO  202    !  end of loop reading input files
+                ELSEIF( INY .LT. 1970 ) THEN
 
-            FDEV = PROMPTFFILE( 
-     &              'Enter the next FACILITY.PT FILE',
-     &              .TRUE., .TRUE., FCNAME, 'EMSPOINT' )
+                    CALL M3EXIT( 'EMSPOINT', 0, 0,
+     &               'INVYEAR packet has set bad 4-digit year' //
+     &               'in PNLST file', 2 ) 
 
-            SDEV = PROMPTFFILE( 
-     &              'Enter the next STACK.PT FILE',
-     &              .TRUE., .TRUE., SKNAME, 'EMSPOINT' )
+                ENDIF
 
-            PDEV = PROMPTFFILE( 
-     &              'Enter the next PROCESS.PT FILE',
-     &              .TRUE., .TRUE., PSNAME, 'EMSPOINT' )
+                GO TO 101                       ! To head of PNLST read loop
 
-            DDEV = PROMPTFFILE( 
-     &              'Enter the next DEVICE.PT FILE',
-     &              .TRUE., .TRUE., DVNAME, 'EMSPOINT' )
+            ELSE
+                DVNAME = LINE( 1:L2 )             ! device.pt file
 
-            INY = GETNUM( IMISS3, -IMISS3, INY + 1,
-     &                    'Enter INVENTORY YEAR for these files' )
+            ENDIF
 
-            WRITE( *,92000 ) ' '
+            READ( IDEV, 93000, END=1005 ) EMNAME  ! emission.pt file
+            IF( INDEX( EMNAME, 'INVYEAR' ) .GT. 0 ) GO TO 1007
+
+            READ( IDEV, 93000, END=1005 ) FCNAME  ! facility.pt file
+            IF( INDEX( FCNAME, 'INVYEAR' ) .GT. 0 ) GO TO 1007
+
+            READ( IDEV, 93000, END=1005 ) PSNAME  ! process.pt file
+            IF( INDEX( PSNAME, 'INVYEAR' ) .GT. 0 ) GO TO 1007
+
+            READ( IDEV, 93000, END=1005 ) SKNAME  ! stack.pt file
+            IF( INDEX( SKNAME, 'INVYEAR' ) .GT. 0 ) GO TO 1007
+
+C.............  Open files, and report status. Use NAMTMP for ease of
+C.............  making changes
+            DDEV   = JUNIT()
+            NAMTMP = DVNAME
+            OPEN( DDEV, ERR=1006, FILE=NAMTMP, STATUS='OLD' )
+
+            WRITE( MESG,94010 ) 'Successful OPEN using year', INY,
+     &             'for inventory files:' // CRLF() // BLANK5 //
+     &             NAMTMP( 1:TRIMLEN( NAMTMP ) )
+            CALL M3MSG2( MESG )
+
+            EDEV   = JUNIT()
+            NAMTMP = EMNAME
+            OPEN( EDEV, ERR=1006, FILE=NAMTMP, STATUS='OLD' )
+            CALL M3MSG2( NAMTMP( 1:TRIMLEN( NAMTMP ) ) )
+
+            FDEV   = JUNIT()
+            NAMTMP = FCNAME
+            OPEN( FDEV, ERR=1006, FILE=NAMTMP, STATUS='OLD' )
+            CALL M3MSG2( NAMTMP( 1:TRIMLEN( NAMTMP ) ) )
+
+            PDEV   = JUNIT()
+            NAMTMP = PSNAME
+            OPEN( PDEV, ERR=1006, FILE=NAMTMP, STATUS='OLD' )
+            CALL M3MSG2( NAMTMP( 1:TRIMLEN( NAMTMP ) ) )
+
+            SDEV   = JUNIT()
+            NAMTMP = SKNAME
+            OPEN( SDEV, ERR=1006, FILE=NAMTMP, STATUS='OLD' )
+            CALL M3MSG2( NAMTMP( 1:TRIMLEN( NAMTMP ) ) )
 
 C.............   Calculate DAY2YR factor
 
@@ -685,7 +619,7 @@ C........................................................................
 
 C.................  Read a line of facility.pt file; Check input status
 
-                LINE = BLANK
+                LINE = BLANK5
                 IREC = IREC + 1
                 READ( FDEV, 93000, END=112, IOSTAT=IOS ) LINE
                 IF ( IOS .NE. 0 ) THEN
@@ -737,10 +671,12 @@ C.................  Check zone conversion to integer
 
             CLOSE( FDEV )
 
-            CALL M3MESG( 'FACILITY.PT FILE processed' )
-            WRITE( *,92010 ) 
-     &          'Actual FACILITY record count', FS,
-     &          'Max dimensioned record-count', NPFMAX
+            WRITE( MESG,94010 ) 
+     &       'FACILITY.PT FILE processed:' // CRLF() // BLANK5 //
+     &       '   Actual FACILITY record count', FS, CRLF() // BLANK5 //
+     &       '   Max dimensioned record-count', NPFMAX
+
+            CALL M3MSG2( MESG )
 
             IF ( FS .GT. NPFMAX ) THEN
 
@@ -929,10 +865,12 @@ C.................  Store stack file information
 
             CLOSE( SDEV )
 
-            CALL M3MESG( 'STACK.PT FILE processed' )
-            WRITE( *,92010 ) 
-     &          'Actual  STACK   record-count', SS,
-     &          'Max dimensioned record-count', NPSMAX
+            WRITE( MESG,94010 ) 
+     &       'STACK.PT FILE processed:' // CRLF() // BLANK5 //
+     &       '   Actual  STACK   record-count', SS, CRLF() // BLANK5 //
+     &       '   Max dimensioned record-count', NPSMAX
+
+            CALL M3MSG2( MESG )
 
             IF ( SS .GT. NPSMAX ) THEN	!  overflow:
 
@@ -1029,10 +967,12 @@ C.................  Convert and check SCC value
 
             CLOSE( PDEV )
 
-            CALL M3MESG( 'PROCESS.PT FILE processed' )
-            WRITE( *,92010 ) 
-     &          'Actual PROCESS  record-count', PS,
-     &          'Max dimensioned record-count', NPPMAX
+            WRITE( MESG,94010 ) 
+     &       'PROCESS.PT FILE processed' // CRLF() // BLANK5 //
+     &       '   Actual PROCESS  record-count', PS, CRLF() // BLANK5 //
+     &       '   Max dimensioned record-count', NPPMAX
+
+            CALL M3MSG2( MESG )
 
             IF ( PS .GT. NPPMAX ) THEN		!  overflow
 
@@ -1152,10 +1092,12 @@ C temp              DVIMONA( DS ) = IMON
 
             CLOSE( DDEV )
 
-            CALL M3MESG( 'DEVICE.PT FILE processed' )
-            WRITE( *,92010 ) 
-     &          'Actual  DEVICE  record-count', DS,
-     &          'Max dimensioned record-count', NPDMAX
+            WRITE( MESG,94010 ) 
+     &       'DEVICE.PT FILE processed' // CRLF() // BLANK5 //
+     &       '   Actual  DEVICE  record-count', DS, CRLF() // BLANK5 //
+     &       '   Max dimensioned record-count', NPDMAX
+
+            CALL M3MSG2( MESG )
 
             IF ( DS .GT. NPDMAX ) THEN	!  overflow
 
@@ -1360,173 +1302,6 @@ C.............  (later:  Get rule pen, eff from prulefac records)
 
                 IF ( ES .LE. NPEMAX ) THEN
 
-C...................   Fix up missing stack parameters:
-                    
-                    STKH = SKHEIT( K2 )
-                    STKD = SKDIAM( K2 )
-                    STKT = SKTEMP( K2 )
-                    STKV = SKVELO( K2 )
-                    
-                    IF ( STKH .LE. 0.0 ) THEN
-                        K = FIND2( FIP, SCC, NR3, FP3, SC3 )
-                        IF ( K .GT. 0 ) THEN
-                            HT = HT3( K )
-                            DM = DM3( K )
-                            TK = TK3( K )
-                            VE = VE3( K )
-                        ELSE
-                            K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
-                            IF ( K .GT. 0 ) THEN
-                                HT = HT2( K )
-                                DM = DM2( K )
-                                TK = TK2( K )
-                                VE = VE2( K )
-                            ELSE
-                                K = FIND1( SCC, NR1, SC1 )
-                                IF ( K .GT. 0 ) THEN
-                                    HT = HT1( K )
-                                    DM = DM1( K )
-                                    TK = TK1( K )
-                                    VE = VE1( K )
-                                ELSE
-                                    HT = HT0
-                                    DM = DM0
-                                    TK = TK0
-                                    VE = VE0
-
-                                    WRITE( MESG,94080 )    ! sl
-     &                              'No stack parameter for FIP '
-     &                               , FIP, 'SCC',   SCC
-                                    CALL M3MESG( MESG )
-
-                                    WRITE( MESG,93000 )
-     &                              '     Using default SCC'
-                                    CALL M3MESG( MESG )
-
-                                END IF 
-                            END IF 
-                        END IF 
-                       
-                        STKH = HT
-                        IF ( STKD .LE. 0 ) STKD = DM
-                        IF ( STKT .LE. 0 ) STKT = TK
-                        IF ( STKV .LE. 0 ) STKV = VE
-                            
-                    ELSE IF ( STKD .LE. 0.0 ) THEN
-
-                        K = FIND2( FIP, SCC, NR3, FP3, SC3 )
-                       
-                        IF ( K .GT. 0 ) THEN
-                            DM = DM3( K )
-                            TK = TK3( K )
-                            VE = VE3( K )
-                        ELSE
-                            K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
-                            IF ( K .GT. 0 ) THEN
-                                DM = DM2( K )
-                                TK = TK2( K )
-                                VE = VE2( K )
-                            ELSE
-                                K = FIND1( SCC, NR1, SC1 )
-                                IF ( K .GT. 0 ) THEN
-                                    DM = DM1( K )
-                                    TK = TK1( K )
-                                    VE = VE1( K )
-                                ELSE
-                                    DM = DM0
-                                    TK = TK0
-                                    VE = VE0
-
-                                    WRITE( MESG,94080 )    ! sl
-     &                              'No stack parameter for FIP '
-     &                               , FIP, 'SCC',   SCC
-                                    CALL M3MESG( MESG )
-
-                                    WRITE( MESG,93000 )
-     &                              '     Using default SCC'
-                                    CALL M3MESG( MESG )
-
-                                END IF 
-                            END IF 
-                        END IF 
-                       
-                        STKD = DM
-                        IF ( STKT .LE. 0 ) STKT = TK
-                        IF ( STKV .LE. 0 ) STKV = VE
-                       
-                    ELSE IF ( STKT .LE. 0.0 ) THEN
-
-                        K = FIND2( FIP, SCC, NR3, FP3, SC3 )
-                       
-                        IF ( K .GT. 0 ) THEN
-                            TK = TK3( K )
-                            VE = VE3( K )
-                        ELSE
-                            K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
-                            IF ( K .GT. 0 ) THEN
-                                TK = TK2( K )
-                                VE = VE2( K )
-                            ELSE
-                                K = FIND1( SCC, NR1, SC1 )
-                                IF ( K .GT. 0 ) THEN
-                                    TK = TK1( K )
-                                    VE = VE1( K )
-                                ELSE
-                                    TK = TK0
-                                    VE = VE0
-
-                                    WRITE( MESG,94080 )    ! sl
-     &                              'No stack parameter for FIP '
-     &                               , FIP, 'SCC',   SCC
-                                    CALL M3MESG( MESG )
-
-                                    WRITE( MESG,93000 )
-     &                              '     Using default SCC'
-                                    CALL M3MESG( MESG )
-
-
-                                END IF 
-                            END IF 
-                        END IF 
-                       
-                        STKT = TK
-                        IF ( STKV .LE. 0 ) STKV = VE
-                       
-                    ELSE IF ( STKV .LE. 0.0 ) THEN
-
-                        K = FIND2( FIP, SCC, NR3, FP3, SC3 )
-                       
-                        IF ( K .GT. 0 ) THEN
-                            VE = VE3( K )
-                        ELSE
-                            K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
-                            IF ( K .GT. 0 ) THEN
-                                VE = VE2( K )
-                            ELSE
-                                K = FIND1( SCC, NR1, SC1 )
-                                IF ( K .GT. 0 ) THEN
-                                    VE = VE1( K )
-                                ELSE
-                                    VE = VE0
-
-                                    WRITE( MESG,94080 )    ! sl
-     &                              'No stack parameter for FIP '
-     &                               , FIP, 'SCC',   SCC
-                                    CALL M3MESG( MESG )
-
-                                    WRITE( MESG,93000 )
-     &                              '     Using default SCC'
-                                    CALL M3MESG( MESG )
-
-                                END IF 
-                            END IF 
-                        END IF 
-                       
-                        STKV = VE
-                       
-                    END IF      !  if stack ht, dm, tk, or ve bad
-         
-
                     K1 = IFCKEY( K2 )
                     INDEXA( ES ) = ES         !  index-table for use in SORTI4()
                     IFIPA ( ES ) = FIP
@@ -1536,10 +1311,10 @@ C...................   Fix up missing stack parameters:
                     ICODEA( ES ) = COD       !  subscript into EINAM(*)
                     TPFLGA( ES ) = TPF
                     INVYRA( ES ) = INY
-                    STKHTA( ES ) = STKH
-                    STKDMA( ES ) = STKD
-                    STKTKA( ES ) = STKT
-                    STKVEA( ES ) = STKV
+                    STKHTA( ES ) = SKHEIT( K2 )
+                    STKDMA( ES ) = SKDIAM( K2 )
+                    STKTKA( ES ) = SKTEMP( K2 )
+                    STKVEA( ES ) = SKVELO( K2 )
                     XLOCAA( ES ) = SKCRDX( K2 )
                     YLOCAA( ES ) = SKCRDY( K2 )
                     ISICA ( ES ) = DVSIC ( K3 )
@@ -1561,12 +1336,15 @@ C...................   Fix up missing stack parameters:
 
             CLOSE( EDEV )
 
-            CALL M3MESG( 'EMISSION.PT FILE processed' )
-            WRITE( *,92010 ) 
-     &      'This-file   SOURCE  record-count', ES - NSRC,
-     &      'Cumulative  SOURCE  record-count', ES
-            NSRC = ES        !  point source emissions lines
+            WRITE( MESG,94010 ) 
+     &       'EMISSION.PT FILE processed:'  // CRLF() // BLANK5 //
+     &       '   This-file   SOURCE  record-count', ES - NSRC,
+     &        CRLF() // BLANK5 //
+     &       '   Cumulative  SOURCE  record-count', ES
 
+            CALL M3MSG2( MESG )
+
+            NSRC = ES        !  point source emissions lines
 
         GO TO 101   !  to head of loop on input files
 
@@ -1575,16 +1353,17 @@ C........................................................................
 
 202     CONTINUE        !  exit from loop on input files
 
-        WRITE( *,92000 ) ' '
-        WRITE( *,92010 ) 
-     &      'Actual  SOURCE  record-count', NSRC,
+        WRITE( MESG,94010 ) 
+     &      'Actual  SOURCE  record-count', NSRC, CRLF() // BLANK5 //
      &      'Max dimensioned record-count', NPEMAX
+
+        CALL M3MSG2( MESG )
+
         IF ( NSRC .GT. NPEMAX ) THEN
 
             EFLAG = .TRUE.
             CALL M3EXIT( 'EMSPOINT', 0, 0,
      &          'Max record-count exceeded in EMISSION files.', 2 )
-            WRITE( *,92000 ) ' '
 
         ELSE IF ( EFLAG ) THEN
 
@@ -1597,10 +1376,9 @@ C.........  Report how many sources were dropped
 
         IF( NDROP .GT. 0 ) THEN
 
-            WRITE( *,92000 ) ' '
             WRITE( MESG,94010 ) 'NOTE:', NDROP, 
      &           'sources dropped. New source count is', NSRC
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
 
             DO 211 I = 1, NIPOL
 
@@ -1608,10 +1386,9 @@ C.........  Report how many sources were dropped
      &             '     Dropped ' 
      &             // EINAM( I )( 1:TRIMLEN(EINAM( I )) ) //
      &             ' emissions: ', EDROP( I ), 'tons/year'
-                CALL M3MESG( MESG )
+                CALL M3MSG2( MESG )
 
 211         CONTINUE
-            WRITE( *,92000 ) ' '
 
         END IF          !  if ndrop > 0
 
@@ -1778,12 +1555,12 @@ C.............  the correct number of sources
 
         IF ( NPOINT .NE. NPSRC ) THEN
 
-            WRITE( *,92000 ) ' '
-            WRITE( *,92010 ) 
-     &          'Actual      number of sources', NPOINT,
-     &          'Dimensioned number of sources', NPSRC,       
-     &          'Do not match!'
-            WRITE( *,92000 ) ' '
+            WRITE( MESG,94010 ) 
+     &       'Actual      number of sources', NPOINT, CRLF()// BLANK5//
+     &       'Dimensioned number of sources', NPSRC,  CRLF()// BLANK5//
+     &       'Do not match!'
+
+            CALL M3MSG2( MESG )
 
             IF( NPOINT. GT. NPSRC ) NPOINT = NPSRC
 
@@ -1831,6 +1608,10 @@ C...........   Pad rest of record with zeros, if appropriate:
 341     CONTINUE
 342     CONTINUE                !  end initializations
 
+C.......   Fix stack parameters
+
+        CALL FIXSTK( RDEV, NPOINT, IFIP, ISCC, IPLANT, ISTACK,
+     &               STKHT, STKDM, STKTK, STKVE )
 
 C.......   Get file name; open output point sources file
 
@@ -2023,7 +1804,7 @@ C.......   Get file name; open output point sources file
 
 C.......   Write out the point source emissions values:
 
-        CALL M3MESG( 'Writing out POINT output file...' )
+        CALL M3MSG2( 'Writing out POINT output file...' )
 
         IF ( .NOT. WRITE3( ENAME, ALLVAR3, 0, 0,  IFIP ) ) THEN
             CALL M3EXIT( 'EMSPOINT', 0, 0, 
@@ -2055,6 +1836,17 @@ C.......   Sort and write out the point source scc values:
         MESG = 'Successful completion of Program EMSPOINT'
         CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 0 )
 
+C.........  Error because improper grouping of raw input files
+1005    MESG = 'EMS95 input file list ended without complete set'
+        CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
+
+C.........  Error opening raw input file
+1006    MESG = 'Error opening file ' // NAMTMP( 1:TRIMLEN( NAMTMP ) )
+        CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
+
+C.........  Error with INVYEAR packet read
+1007    CALL M3EXIT( 'EMSPOINT', 0, 0, 'ERROR: Can only use INVYEAR ' //
+     &               'packet in PNLST on increments of five files', 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
