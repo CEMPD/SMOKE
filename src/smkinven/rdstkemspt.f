@@ -161,7 +161,16 @@ C.............  Calculate velocity from flow and diameter if needed
      &          STKD >  0.0  .AND.
      &          STKF >  0.0 )      ) THEN
                 
-                STKV = STKF / ( 0.25 * PI * STKD * STKD )
+                IF( STKD > 0.0 ) THEN
+                    STKV = STKF / ( 0.25 * PI * STKD * STKD )
+                ELSE
+                    WRITE( MESG,94010 ) 'Zero or negative stack ' //
+     &                     'diameter at line', IREC, 'in stack ' //
+     &                     'file.' // CRLF() // BLANK10 // 'Using ' //
+     &                     'velocity from file rather than ' //
+     &                     'recalculating from stack flow'
+                    CALL M3MESG( MESG )
+                END IF
     
 C.............  Compare flow to velocity and diameter. Set to exact flow input
 C               value only if it is consistent with velocity and diameter
