@@ -41,15 +41,17 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CATLEN, CRL, NIPPA
+
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
@@ -86,6 +88,7 @@ C.........  Count of species per inventory pollutant/emission type
 
 C.........  Other local variables
         INTEGER          I, J, K, V     !  counters and indices
+        INTEGER          IOS            !  I/O status
 
         INTEGER          ICNT     ! cntr for the total number of output vars
         INTEGER          NCNT     ! cntr for number of species per inv pol
@@ -124,14 +127,9 @@ C.................  End inner loop if species is blank
 C.................  Count total number of output variables
                 ICNT = ICNT + 1
 
-C.................  Check total number of output variables with I/O API max
-                IF( ICNT .LE. MXVARS3 ) THEN
-
-                    NCNT = NCNT + 1
-                    WRITE( SVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
-                    WRITE( LVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
-
-                ENDIF
+                NCNT = NCNT + 1
+                WRITE( SVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
+                WRITE( LVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
 
             END DO
 
@@ -139,24 +137,11 @@ C.................  Check total number of output variables with I/O API max
 
         END DO
 
-C.........  Print Error if number of variables is passed maximum.
-C.........  DO NOT end program here because it will be ended when the write
-C           attempt is made for these extra variables.
-        IF( ICNT .GT. MXVARS3 ) THEN
-            WRITE( MESG, 94010 ) 
-     &             'ERROR: maximum I/O API variables exceeded:' //
-     &             CRLF() // BLANK10 // 'Max: ', MXVARS3, 'Actual:',ICNT
-            CALL M3MSG2( MESG )
-
-            ICNT = MXVARS3
-        END IF
-
 C.........  Set up file header(s) for opening I/O API output(s). Base this on
 C           inventory header...
 
 C.........  Get header information from inventory file
-
-        IF ( .NOT. DESC3( ENAME ) ) THEN
+        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -164,8 +149,6 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-
-        NVARS3D = ICNT
 
         FDESC3D = ' '   ! array
 
@@ -176,12 +159,31 @@ C.........  Get header information from inventory file
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
+C.........  Resset output number of variables
+        NVARSET = ICNT
+
+C.........  Deallocate, then allocate, output arrays
+        DEALLOCATE( VNAMESET, VTYPESET, VUNITSET, VDESCSET )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+C.........  Also deallocate the number of variables per file so
+C           that this will be set automatically by openset
+        DEALLOCATE( VARS_PER_FILE )
 
 C.........  Set up variable descriptions that will be used to indicate the 
 C           inventory pollutant and model species names
 
-        VDESC3D = ' '  ! array initialization
-        VTYPE3D = 0    ! array initialization
+        VTYPESET = 0    ! array initialization
+        VNAMESET = ' '  ! array initialization
+        VUNITSET = ' '  ! array initialization
+        VDESCSET = ' '  ! array initialization
 
         I = 0
         DO K = 1, NIPPA
@@ -191,8 +193,8 @@ C           inventory pollutant and model species names
             DO J = 1, NSPEC( K )
 
                 I = I + 1
-                VDESC3D( I ) = EALLOUT( K )// SPJOIN// SPCNAMES( J,V )
-                VTYPE3D( I ) = M3REAL
+                VDESCSET( I ) = EALLOUT( K )// SPJOIN// SPCNAMES( J,V )
+                VTYPESET( I ) = M3REAL
 
             END DO
         END DO
@@ -207,14 +209,14 @@ C.........  Set up variables specifically for mass-based file, and open it
                 DO J = 1, NSPEC( K )
 
                     I = I + 1
-                    VNAME3D( I ) =  SVNAMES( J,K ) 
-                    UNITS3D( I ) = SMASUNIT
+                    VNAMESET( I ) = SVNAMES( J,K ) 
+                    VUNITSET( I ) = SMASUNIT
 
                 END DO
             END DO
 
 C.............  Open with NAMBUF for HP
-            NAMBUF = PROMPTMFILE( 
+            NAMBUF = PROMPTSET( 
      &        'Enter logical name for MASS-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_S', PROGNAME )
             SNAME = NAMBUF
@@ -234,14 +236,14 @@ C.........  Set up variables specifically for mole-based file, and open it
                 DO J = 1, NSPEC( K )
 
                     I = I + 1
-                    VNAME3D( I ) =  LVNAMES( J,K ) 
-                    UNITS3D( I ) = MOLUNITS( J,V )
+                    VNAMESET( I ) =  LVNAMES( J,K ) 
+                    VUNITSET( I ) = MOLUNITS( J,V )
 
                 END DO
             END DO
 
 C.............  Open with NAMBUF for HP
-            NAMBUF = PROMPTMFILE( 
+            NAMBUF = PROMPTSET( 
      &        'Enter logical name for MOLE-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_L', PROGNAME )
             LNAME = NAMBUF

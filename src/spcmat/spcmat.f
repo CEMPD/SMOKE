@@ -38,25 +38,34 @@ C************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY:
 
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPEC, MXSPFUL, SPCNAMES, INPRF, SPECID,
+     &                     MASSFACT, MOLEFACT, MOLUNITS, NSPFUL, 
+     &                     SPROFN, IDXSPRO, NSPECIES, IDXSSPEC, NPOLSPRO
 
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: INPUTHC, OUTPUTHC, EMTNAM, EMTPOL, NEPOL,
+     &                      NETYPE  
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, NIPPA, NIPOL,
+     &                     EANAM, EINAM
 
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
+        
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+        
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -65,10 +74,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
 
-        EXTERNAL        CRLF, ENVYN, GETFLINE, INDEX1, PROMPTFFILE, 
-     &                  PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, GETFLINE, INDEX1, PROMPTFFILE
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -87,6 +94,7 @@ C.........   Speciation matrices:
 
 C.........  Inventory pollutants actually in the inventory
         LOGICAL               , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
+        LOGICAL               , ALLOCATABLE :: IDXCHK( : ) ! true: EAIDX value accounted for
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: IINAM ( : ) ! initial pols
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! output pollutants
 
@@ -99,6 +107,7 @@ C.........  Names for output variables in mass-based and mole-based files
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MOLEONAM( :,: )
 
 C.........  Unit numbers and logical file names
+        INTEGER         IDEV    ! tmp unit number if ENAME is map file
         INTEGER         KDEV    !  unit no. for optional pol to pol conversion
         INTEGER         LDEV    !  unit number for log file
         INTEGER      :: MDEV = 0!  unit number for mobile codes file
@@ -106,15 +115,17 @@ C.........  Unit numbers and logical file names
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for ASCII emission process file
         INTEGER         UDEV    !  unit number for ASCII supplemental file
+        INTEGER         VDEV    !  unit no. for inventory data table
         INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER*16    ANAME   !  logical name for additive control matrix
         CHARACTER*16    ENAME   !  logical name for point-source input file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
         CHARACTER*16    SNAME   !  logical name for mass spec matrix output file
         CHARACTER*16    LNAME   !  logical name for mole spec matrix output file
 
 C.........   Other local variables
-        INTEGER          I, J, K, L1, L2, L3, L4, LT, N, V !  counters and indices
+        INTEGER          I, J, K, L, L1, L2, L3, L4, LT, N, V !  counters and indices
 
         INTEGER          IDX               ! tmp index value
         INTEGER          IOS               ! i/o status
@@ -131,8 +142,8 @@ C.........   Other local variables
         LOGICAL       :: MOLEOUT = .TRUE.  !  true: output mole-based matrix
         LOGICAL       :: DEFREPRT= .TRUE.  !  true: report default spc profiles
         LOGICAL       :: MULTIPRO= .TRUE.  !  true: multiple profs for pollutant
+        LOGICAL       :: FNDOUTPUT=.FALSE. !  true: found output hydrocarbon
 
-        CHARACTER*4            OUTTYPE   !  output type from the environment
         CHARACTER*300          MESG      !  message buffer 
         CHARACTER(LEN=IOVLEN3) CBUF      !  smat output name temporary buffer 
         CHARACTER(LEN=IOVLEN3) ENAM      !  tmp emission types name
@@ -157,16 +168,6 @@ C.........  Retrieve the whether to prompt for and use pollutant conversion file
      &                 'Use pollutant-to-pollutant conversion file',
      &                 .FALSE., IOS )
 
-        MESG = 'Type of speciation outputs to create'  
-        CALL ENVSTR( 'SPEC_OUTPUT', MESG, 'ALL', OUTTYPE, IOS )
-
-C.........  Set flags that depend on the value of OUTTYPE
-        CALL UPCASE( OUTTYPE )
-        MASSOUT = ( INDEX( OUTTYPE, 'ALL' ) .GT. 0 )
-        MOLEOUT = ( INDEX( OUTTYPE, 'ALL' ) .GT. 0 )
-        MASSOUT = ( INDEX( OUTTYPE, 'MASS' ) .GT. 0 .OR. MASSOUT )
-        MOLEOUT = ( INDEX( OUTTYPE, 'MOLE' ) .GT. 0 .OR. MOLEOUT )
-
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
@@ -174,14 +175,29 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.......   Get file names and units; open input files
+        
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        ENAME = PROMPTMFILE( 
-     &          'Enter logical name for I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
         XDEV = PROMPTFFILE( 
      &           'Enter logical name for SPECIATION XREF file',
@@ -195,22 +211,16 @@ C.......   Get file names and units; open input files
      &  KDEV = PROMPTFFILE( 
      &           'Enter logical name for POLLUTANT CONVERSION file',
      &           .TRUE., .TRUE., 'GSCNV', PROGNAME )
-
-C.........  Get header description of inventory file 
-        IF( .NOT. DESC3( ENAME ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+     
+        VDEV = PROMPTFFILE( 
+     &           'Enter logical name for INVENTORY DATA TABLE file',
+     &           .TRUE., .TRUE., 'INVTABLE', PROGNAME )
 
 C.........  Otherwise, store source-category-specific header information, 
-C           including the inventory pollutants in the file (if any).  Note that 
-C           the I/O API head info is passed by include file and the
-C           results are stored in module MODINFO.
-        ELSE
-
-            CALL GETSINFO
- 
-        END IF
+C           including the inventory pollutants in the file (if any).   
+C           Note that the I/O API head info is passed by include file 
+C           and the results are stored in module MODINFO.
+        CALL GETSINFO( ENAME )
 
 C.........   Open files that depend on inventory characteristics
         IF( NIACT .GT. 0 ) THEN
@@ -233,7 +243,9 @@ C.........  Set inventory variables to read for all source categories
 
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 2
+            NINVARR = 4
+            IVARNAMS( 3 ) = 'CMACT'
+            IVARNAMS( 4 ) = 'ISIC'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
             NINVARR = 5
@@ -242,7 +254,9 @@ C.........  Set inventory variables to read for specific source categories
             IVARNAMS( 5 ) = 'CVTYPE'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-            NINVARR = 2
+            NINVARR = 4
+            IVARNAMS( 3 ) = 'CMACT'
+            IVARNAMS( 4 ) = 'ISIC'
         END IF
 
 C.........  Allocate memory for and read required inventory characteristics
@@ -254,6 +268,9 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
 C.........  When mobile codes file is being used read mobile codes file
         IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
 
+C.........  Read inventory table (used for NONHAP checks)
+        CALL RDCODNAM( VDEV )
+
 C.........  Perform the steps needed for using activities and emission types
 C           instead of pollutants
 C.........  Read emission processes file.  Populate array in MODEMFAC and
@@ -261,6 +278,70 @@ C           set NETYPE
         IF( NIACT .GT. 0 ) THEN
 
             CALL RDEPROC( TDEV )
+
+C.............  Find input hydrocarbon name
+            INPUTHC = ' '
+            DO I = 1, NEPOL
+                SELECT CASE( EMTPOL( I ) )
+                CASE( 'VOC', 'THC', 'NMHC', 'TOG', 'NMOG' )
+                    INPUTHC = EMTPOL( I )
+                    EXIT
+                END SELECT
+            END DO
+            
+            IF( INPUTHC == ' ' ) THEN
+                MESG = 'No valid hydrocarbon pollutant specified ' //
+     &                 'in emission processes file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            OUTPUTHC = 'NONHAP' // TRIM( INPUTHC )
+            
+            FNDOUTPUT = .FALSE.
+            K = 0
+            
+C.............  Check if NONHAP values are processed
+            DO I = 1, MXIDAT
+                
+                IF( INVDNAM( I ) == OUTPUTHC ) THEN
+                    FNDOUTPUT = .TRUE.
+                    CYCLE
+                END IF
+                
+C.................  If requested hydrocarbon is not TOG or VOC, skip rest of loop
+                IF( INPUTHC /= 'TOG' .AND. INPUTHC /= 'VOC' ) EXIT
+                
+                IF( INVDVTS( I ) /= 'N' ) THEN
+
+C.....................  Check that pollutant is generated by MOBILE6
+                    DO J = 1, NEPOL
+                        IF( INVDNAM( I ) == EMTPOL( J ) ) THEN
+                            IF( INVDVTS( I ) == 'V' ) THEN
+                                K = K + 1
+                            ELSE IF( INPUTHC == 'TOG' ) THEN
+                                K = K + 1
+                            END IF
+                            EXIT
+                        END IF
+                    END DO
+                END IF
+            END DO
+
+C.............  If output was not found, set name to blank        
+            IF( .NOT. FNDOUTPUT .OR. K == 0 ) THEN
+                OUTPUTHC = ' '             
+            END IF                            
+
+C.............  Rename emission factors if necessary
+            IF( OUTPUTHC /= ' ' ) THEN
+                DO I = 1, SIZE( EMTNAM,1 )
+                    L = INDEX( EMTNAM( I,1 ), ETJOIN )
+                    L2 = LEN_TRIM( ETJOIN )
+                    
+                    IF( EMTNAM( I,1 )( L+L2:IOVLEN3 ) == INPUTHC ) THEN
+                        EMTNAM( I,1 )( L+L2:IOVLEN3 ) = OUTPUTHC
+                    END IF
+                END DO
+            END IF
 
         END IF
 
@@ -291,7 +372,9 @@ C           pollutants
         CALL CHECKMEM( IOS, 'SINAM', PROGNAME )
         ALLOCATE( SPCOUT( NOPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCOUT', PROGNAME )
-     
+        ALLOCATE( IDXCHK( NOPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IDXCHK', PROGNAME )
+
 C.........  Initialize arrays
         EANAM  = ' '      ! array
         EAIDX  = 1        ! array
@@ -299,6 +382,7 @@ C.........  Initialize arrays
         IINAM  = ' '      ! array
         SINAM  = ' '      ! array
         SPCOUT = .TRUE.   ! array
+        IDXCHK = .FALSE.  ! array
 
 C.........  Create array of pollutant names from emission types and pollutants
 C.........  Put the pollutants from the emission types first so that the
@@ -395,13 +479,13 @@ C.........  Create input and output pollutant names based on output
 C           emission types/pollutants names for input and output.
         J = 0
         K = 0
-        PIDX = 0
         LT = LEN_TRIM( ETJOIN )
         DO I = 1, NIPPA
 
             IDX = EAIDX( I )
 
-            IF( IDX .NE. PIDX ) THEN
+            IF( .NOT. IDXCHK( IDX ) ) THEN
+                K = K + 1                    
 
                 L1 = INDEX( SANAM( I ), ETJOIN )
                 L1 = MAX( L1, 1 )
@@ -420,7 +504,7 @@ C                   sources.
                     SINAM( K ) = CBUF
                 END IF
 
-                PIDX = IDX
+                IDXCHK( IDX ) = .TRUE.
             END IF
 
         END DO
@@ -582,19 +666,24 @@ C.............  Read speciation profiles file
             MESG = BLANK5 // 'Reading speciation profiles file...'
             CALL M3MSG2( MESG )
 
-            CALL RDSPROF( RDEV, SNAM, MXSPFUL, NSPFUL, NMSPC,
-     &                    INPRF, SPECID, MOLEFACT, MASSFACT   )
+            CALL RDSPROF( RDEV, SNAM, NMSPC )
+
+C.............  If current pollutant is a NONHAP* pollutant, compare
+C               its definition from the inventory table to the
+C               definition in the GSPRO file. Note that if the user
+C               provides a different INVTABLE to Spcmat than the one
+C               used to create the inventory, this error will not
+C               be detected.
+            CALL CHKNONHAP( PNAM, EFLAG )
 
 C.............  Initilialize multiple profiles and default reporting to true
             MULTIPRO = .TRUE.
             DEFREPRT = .TRUE.
 
-C.............  When the number of profile table entries is the same as the
-C               number of model species, then we know that there is only
-C               one profile used for all sources, so do simple processing. The
-C               one exception is when there is a pollutant-to-pollutant 
+C.............  When one profile used for all sources, so do simple processing. 
+C               The one exception is when there is a pollutant-to-pollutant 
 C               conversion, then we must still do the standard processing.
-            IF( NSPFUL .EQ. NMSPC ) THEN
+            IF( NPOLSPRO .EQ. 1 ) THEN
 
                 L1 = LEN_TRIM( SNAM )
                 L2 = LEN_TRIM( PNAM )
@@ -676,7 +765,8 @@ C.............  Write out the speciation matrix for current pollutant
                     L3 = LEN_TRIM( SBUF )
                     L4 = LEN_TRIM( SNAME )
                     IF( .NOT. 
-     &                  WRITE3( SNAME, CBUF, 0, 0, MASSMATX(1,J) )) THEN
+     &                  WRITESET( SNAME, CBUF, ALLFILES, 
+     &                            0, 0, MASSMATX(1,J) )) THEN
 
                         EFLAG = .TRUE.
 
@@ -711,7 +801,8 @@ C.............  Write out the speciation matrix for current pollutant
 
                     CBUF = MOLEONAM( J,K )
                     IF( .NOT. 
-     &                  WRITE3( LNAME, CBUF, 0, 0, MOLEMATX(1,J) )) THEN
+     &                  WRITESET( LNAME, CBUF, ALLFILES, 
+     &                            0, 0, MOLEMATX(1,J) )) THEN
 
                         EFLAG = .TRUE.
 
@@ -741,7 +832,8 @@ C.............  Write out the speciation matrix for current pollutant
 C.........  Check error flag for problems and end
         IF( EFLAG ) THEN
 
-            MESG = 'Problem creating speciation matrices'
+            MESG = 'Problem running speciation program. ' //
+     &             'See errors above.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF

@@ -2,10 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) 
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 #
 
 all: spcmat
@@ -18,7 +18,7 @@ debug: spcmat.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-SPC= spcmat.o opensmat.o asgnspro.o
+SPC= spcmat.o opensmat.o asgnspro.o chknonhap.o
      
 #
 spcmat: $(SPC) $(ALLI) $(LIBPATH)
@@ -31,15 +31,25 @@ spcmat.debug: $(SPC) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(SPC) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnspro.f
-opensmat.o: $(MODINFO)
+chknonhap.o: $(MODLISTS) $(MODSPRO)
+	$(FC) $(FFLAGS) -c -o $@ chknonhap.f
+opensmat.o: $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ opensmat.f
-spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC)
+spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC) $(MODFILESET) $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ spcmat.f
 
 
 #
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(FSMODALL)
