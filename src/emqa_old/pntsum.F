@@ -1,10 +1,11 @@
+
         PROGRAM PNTSUM
 
 C***********************************************************************
-C  program body starts at line ?
+C  program body starts at line 113
 C
 C  DESCRIPTION:
-C       Report emissions summed by state and county.
+C       Report point source emissions summed by state and county.
 C
 C  PRECONDITIONS REQUIRED:  
 C
@@ -16,22 +17,19 @@ C
 C  REVISION  HISTORY:
 C       Prototype  2/97 by Chad Barker
 C
-C
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1997, Chad Barker, Turner Engineering
+C COPYRIGHT (C) 1998, Turner Engineering & MCNC - NCSC
 C All Rights Reserved
 C
-C Chad Barker, Senior Computer Scientist
-C Timothy L. Turner, Owner
-C Turner Engineering
-C 1310 Holly Creek Lane
-C Chapel Hill NC 27516
-C (919) 929 6851
+C Turner Engineering               Environmental Programs Group
+C 105 Sudbury Lane                 MCNC--North Carolina Supercomputing Center
+C Chapel Hill NC 27516             P.O. Box 12889
+C (919) 929 6851                   Research Triangle Park, NC  27709-2889
 C
 C env_progs@mcnc.org
 C
@@ -111,6 +109,8 @@ C***********************************************************************
 C   begin body of program PNTSUM
 
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
 
 C.......   Get file name; open input PNTS source
 

@@ -1,7 +1,8 @@
+
         PROGRAM REPTPRO
 
 C***********************************************************************
-C  program body starts at line 104
+C  program body starts at line 111
 C
 C  DESCRIPTION:
 C       Report temporal profiles of utilities with excessive NOX emissions.
@@ -15,24 +16,21 @@ C
 C  REVISION  HISTORY:
 C       Prototype  11/96 by Chad Barker
 C
-C
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1997, Chad Barker, Turner Engineering
+C COPYRIGHT (C) 1998, Turner Engineering & MCNC - NCSC
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Chad Barker, Senior Computer Scientist
-C Timothy L. Turner, Owner
-C Turner Engineering
-C 1310 Holly Creek Lane
-C Chapel Hill NC 27516
-C (919) 929 6851
+C Turner Engineering               Environmental Programs Group
+C 105 Sudbury Lane                 MCNC--North Carolina Supercomputing Center
+C Chapel Hill NC 27516             P.O. Box 12889
+C (919) 929 6851                   Research Triangle Park, NC  27709-2889
 C
 C env_progs@mcnc.org
 C
@@ -110,7 +108,7 @@ C   begin body of program REPTPRO
 
         LDEV = INIT3()
 
-
+        CALL INITEM( LDEV )
 
 C.......   Get file name; open input point sources
 
