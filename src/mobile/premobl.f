@@ -460,8 +460,6 @@ C.................  Write message for day of week and date
                 CALL M3MSG2( MESG )
 
 C.................  Set start and end hours of day for all sources
-C.................  The first time this routine is called, ODATE and OTIME
-C                   are set as well
                 CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, 
      &                         DAYBEGT, DAYENDT )
 
