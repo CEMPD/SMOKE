@@ -776,10 +776,21 @@ C           modified EPS (with year)
                     ID4  = STR2INT ( LINE( 23:32 ) )
                     ID7  = ID4 * 1000
                     ID3  = 0
-                ELSE
+
+                ELSE IF ( L .EQ. 7 ) THEN
+                    ID7  = STR2INT ( LINE( 23:29 ) )
+                    ID3  = 0
+                    ID4  = ID7 / 1000
+
+                ELSE IF ( L .EQ. 10 ) THEN
                     ID7  = STR2INT ( LINE( 23:29 ) )
                     ID3  = STR2INT ( LINE( 30:32 ) )
                     ID4  = ID7 / 1000
+
+                ELSE
+                    WRITE( MESG,94910 ) 
+     &                     'ASC width is not 4, 7, or 10 at line', IREC
+                    CALL M3EXIT( MESG, 0, 0, 'CTLAMAT', 2 )
                 END IF
 
             ELSE
@@ -793,11 +804,23 @@ C           modified EPS (with year)
                     ID4  = STR2INT ( LINE( 16:25 ) )
                     ID7  = ID4 * 1000
                     ID3  = 0
-                ELSE
+
+                ELSE IF ( L .EQ. 7 ) THEN
+                    ID7  = STR2INT ( LINE( 16:25 ) )
+                    ID3  = 0
+                    ID4  = ID7 / 1000
+
+                ELSE IF ( L .EQ. 10 ) THEN
                     ID7  = STR2INT ( LINE( 16:22 ) )
                     ID3  = STR2INT ( LINE( 23:25 ) )
                     ID4  = ID7 / 1000
+
+                ELSE
+                    WRITE( MESG,94910 ) 
+     &                     'ASC width is not 4, 7, or 10 at line', IREC
+                    CALL M3EXIT( MESG, 0, 0, 'CTLAMAT', 2 )
                 END IF
+
             ENDIF
 
             IF ( L .EQ. 4 ) THEN	!  using ID4
@@ -887,14 +910,16 @@ C           modified EPS (with year)
 
                 END IF	! if fip is 0, or nn000, or not.
 
-            ELSE	! using all of ID7,ID3 for SCC
+            ELSE	! using all ID7 or using ID7//ID3 for SCC
 
                 IF ( FIP .EQ. 0 ) THEN      !  all states.
 
                     DO  125 S = 1, NASRC
 
-                        IF( ID7 .NE. ASC7( S ) .OR. 
-     &                      ID3 .NE. ASC3( S )      ) THEN
+                        IF( ID3 .NE. 0 .AND.
+     &                    ( ID7 .NE. ASC7( S ) .OR. 
+     &                      ID3 .NE. ASC3( S )      ) .OR.
+     &                      ID7 .NE. ASC7( S )             ) THEN
                             GO TO 125  ! n/a control
 
                         ELSEIF ( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
@@ -924,8 +949,10 @@ C           modified EPS (with year)
 
                     DO  126 S = ISID( I ), ISID( I+1 ) -1
 
-                        IF( ID7 .NE. ASC7( S ) .OR. 
-     &                      ID3 .NE. ASC3( S )      ) THEN
+                        IF( ID3 .NE. 0 .AND.
+     &                    ( ID7 .NE. ASC7( S ) .OR. 
+     &                      ID3 .NE. ASC3( S )      ) .OR.
+     &                      ID7 .NE. ASC7( S )             ) THEN
                             GO TO 126  ! n/a control
 
                         ELSEIF ( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
@@ -948,7 +975,11 @@ C           modified EPS (with year)
 
                 ELSE	!  fip-ASC specific control
 
-                    S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
+                    IF( ID3 .EQ. 0 ) THEN
+                     S = FIND2( FIP, ID7, NASRC, IFIP, ASC7 )
+                    ELSE
+                     S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
+                    END IF
 
                     IF ( S .GT. 0 ) THEN
                          
