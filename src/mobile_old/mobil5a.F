@@ -1,5 +1,5 @@
 
-      SUBROUTINE MOBILE( INERR, ITEMP, MODEV, EFACT, DFACT )
+      SUBROUTINE MOBILE( INERR, ITEMP, MODEV, NSAV, EFACT, DFACT )
 
 cmh   SUBROUTINE MOBILE(INERR, *)
 C
@@ -112,17 +112,40 @@ C
 cmh add includes
       INCLUDE 'MBDIMS3.EXT'
       INCLUDE 'IODECL3.EXT'
+c
+cmh add external functions
+      CHARACTER*2   CRLF
+      EXTERNAL      CRLF
+ 
+cmh add parameter statements
+      CHARACTER*5   BLANK5
+      PARAMETER   ( BLANK5 = ' ' )
 cmh
 cmh add declarations
       REAL    EFACT( MXNDET, NVTYPE )
       REAL    DFACT( MXDET, NVTYPE )
+      REAL    EFSAVE( NVTYPE, MXM5PSI, SAVTMP, MXEMIS )
+      REAL    TMPRTR  ! Ambient temperature
+      REAL    TMIN    ! Minimum daily temperature
+      REAL    TMAX    ! Maximum daily temperature
       INTEGER MODEV                ! Unit number of MOBILE5a input file
       INTEGER ITEMP   ! When == 0, tmpr is only change from previous call
+      INTEGER MCNT
+      INTEGER NSAV    ! Number of PSIs to save during call to subroutine
+      INTEGER TCNT
       LOGICAL WFLAG
+      CHARACTER*8   M5VRSION
+      CHARACTER*80  VERSON
+      CHARACTER*256 MESG
 cmh
 cmh add commons
       COMMON /WARNING/ WFLAG
-cmh
+      COMMON /TOVRIDE/ TMPRTR, TMIN, TMAX
+      COMMON /MULTISC/ EFSAVE, M5VRSION
+c
+cmh add save
+      SAVE MCNT, TCNT
+c
 
       COMMON /ALUHAC/ ACEQIP(8,3,2),ACCF(2,3,2,3,2)
       COMMON /ALUHIN/ AC,XLOAD(3),TRAILR(3),ABSHUM,DB,WB
@@ -306,8 +329,25 @@ cmh add 14 lines
           IREAD = 0 ! Reset MOBILE5's indicator for reading TECH12 file
           ITEMP = 0 ! Indicate that only temperature is changing
           WFLAG = .TRUE.  ! Turn warning messages on
+          TCNT  = 1 ! Reset temperature counter for EFSAVE
+      ELSE
+          TCNT  = TCNT + 1
       ENDIF
-cmh
+c
+      MCNT  = 0 ! Reset scenario counter for EFSAVE
+
+cmh end add
+
+cmh add comparison of MOBILE5 versions
+      VERSON = 'MOBILE5a'
+      IF( M5VRSION .NE. VERSON( 1:8 ) .AND.
+     &    M5VRSION .NE. ' '                 ) THEN
+          MESG = 'In MPREF, "' // M5VRSION // 
+     &           '" packet found, but program compiled using ' //
+     &           VERSON( 1:8 )
+          CALL M3EXIT( 'MOBILE', 0, 0, MESG, 2 )
+      ENDIF
+C
       IF(JCALL.EQ.0) GOTO 10
 C
 C  Subroutine call, setup run.
@@ -358,7 +398,14 @@ cmh   CALL GETENV("EMS_LOC",ENVL)
 cmh   M5ERR=ENVL(1:LNBLNK(ENVL))//'/M5ERRORS_WARNING_REPORT'
 cmh   OPEN(IOUERR,FILE=M5ERR,STATUS='UNKNOWN')
 cmh   CALL PARSEC(ICY,INERR,*98)
-   20 CALL PARSEC(ICY,INERR,*98)
+cmh20 CALL PARSEC(ICY,INERR,*98)
+
+cmh add if statement which prevents PARSEC from having to
+cmh use the end of file as the indicator to stop running
+ 
+   20 IF( MCNT .EQ. NSAV ) GO TO 98 
+
+      CALL PARSEC(ICY,INERR,*98)
 C
 C  50+ errors is (arbritrary) run limit => stop execution.  Otherwise,
 C  one or more input processing errors => abort current scenario & then do
@@ -417,42 +464,87 @@ C
 C
 cmh   CALL OUTPUT(ICY)
 cmh
-cmh add  6 lines
+cmh add lines
+      MCNT = MCNT + 1
+ 
+      IF( MCNT .EQ. 1 .AND. TCNT .EQ. 1 .AND. NSAV .GT. 1 ) THEN
+ 
+          DO II = 1, MXEMIS
+              DO T = 1, SAVTMP
+                  DO M = 1, MXM5PSI
+                      DO JJ = 1, NVTYPE
+                          EFSAVE( JJ, M, T, II ) = 0.0
+                      ENDDO
+                  ENDDO
+              ENDDO
+          ENDDO
+ 
+      ENDIF
 
+      IF( MCNT .EQ. 1 ) THEN   ! NOTE: NOT and ELSEIF
+ 
 C.......  Initialize EFACT and DFACT
-      DO JJ = 1, NVTYPE
-          DO II = 1, MXNDET
-              EFACT( II,JJ ) = 0.0
+          DO JJ = 1, NVTYPE
+              DO II = 1, MXNDET
+                  EFACT( II,JJ ) = 0.0
+              ENDDO
+              DO II = 1, MXDET
+                  DFACT( II,JJ ) = 0.0
+              ENDDO
           ENDDO
-          DO II = 1, MXDET
-              DFACT( II,JJ ) = 0.0
+
+          DO JJ = 1,NVTYPE
+              EFACT( 1,JJ ) = EFFTP ( 2,JJ )   ! Exhaust CO
+              EFACT( 2,JJ ) = EFFTP ( 3,JJ )   ! Exhaust NOX
+              EFACT( 3,JJ ) = EFEXH ( JJ )     ! Exhaust VOC
+              EFACT( 4,JJ ) = EFEVAP( JJ )     ! Evaporative VOC
+              EFACT( 5,JJ ) = EFRUNL( JJ )     ! Running Loss VOC
+              EFACT( 6,JJ ) = EFRSTL( JJ )     ! Resting Loss VOC
+              EFACT( 7,JJ ) = EFREFL( JJ )     ! Refueling Loss VOC
+cmh           EFACT( 8, JJ ) = RLGGAL( JJ )    ! Refueling loss VOC g/gal
+cmh           EFACT( 11,JJ ) = RSTGPH( JJ )    ! Resting Loss VOC g/hr
           ENDDO
-      ENDDO
 
-      DO JJ = 1,NVTYPE
+          DO JJ = 1,4
+              DFACT( 1, JJ ) = GREVP ( 2,JJ )  ! Weighted Diurnal Evap VOC
+              DFACT( 2, JJ ) = EFDNL (   JJ )  ! LMOS Diurnal Evap VOC
+              DFACT( 3, JJ ) = GREVP ( 1,JJ )  ! Hot Soak Evap VOC
+              DFACT( 4, JJ ) = GREVP ( 4,JJ )  ! Crankcase Evap VOC
+          ENDDO
 
-          EFACT( 1,JJ ) = EFFTP ( 2,JJ )   ! Exhaust CO
-          EFACT( 2,JJ ) = EFFTP ( 3,JJ )   ! Exhaust NOX
-          EFACT( 3,JJ ) = EFEXH ( JJ )     ! Exhaust VOC
-          EFACT( 4,JJ ) = EFEVAP( JJ )     ! Evaporative VOC
-          EFACT( 5,JJ ) = EFRUNL( JJ )     ! Running Loss VOC
-          EFACT( 6,JJ ) = EFRSTL( JJ )     ! Resting Loss VOC
+          DFACT( 1, 8 ) = GREVP ( 2,8 )        ! Note: 8 is MC, 9 is combined trucks
+          DFACT( 2, 8 ) = EFDNL ( 8 )          ! LMOS Diurnal for MC's
+          DFACT( 3, 8 ) = GREVP ( 1,8 )
+          DFACT( 4, 8 ) = GREVP ( 4,8 )        ! May always be zero (?)      
+ 
+      ENDIF
 
-cmh       EFACT( 7,JJ ) = EFREFL( JJ )     ! Refueling Loss VOC
-cmh       EFACT( 8, JJ ) = RLGGAL( JJ )     ! Refueling loss VOC g/gal
-cmh       EFACT( 11,JJ ) = RSTGPH( JJ )     ! Resting Loss VOC g/hr
+      IF( MCNT .LE. MXM5PSI .AND.
+     &    TCNT .LE. SAVTMP  .AND.
+     &    NSAV .GT. 1             ) THEN
+ 
+          DO JJ = 1,NVTYPE
+              EFSAVE( JJ, MCNT, TCNT, 1 ) = EFFTP ( 2,JJ )
+              EFSAVE( JJ, MCNT, TCNT, 2 ) = EFFTP ( 3,JJ )
+              EFSAVE( JJ, MCNT, TCNT, 3 ) = EFEXH ( JJ )
+              EFSAVE( JJ, MCNT, TCNT, 4 ) = EFEVAP( JJ )
+              EFSAVE( JJ, MCNT, TCNT, 5 ) = EFRUNL( JJ )
+              EFSAVE( JJ, MCNT, TCNT, 6 ) = EFRSTL( JJ )
+              EFSAVE( JJ, MCNT, TCNT, 7 ) = EFREFL( JJ )
+          ENDDO
+ 
+          DO JJ = 1,4
+              EFSAVE( JJ, MCNT, TCNT, 8 ) = GREVP ( 2,JJ )
+              EFSAVE( JJ, MCNT, TCNT, 9 ) = EFDNL (   JJ )
+              EFSAVE( JJ, MCNT, TCNT, 10) = GREVP ( 1,JJ )
+              EFSAVE( JJ, MCNT, TCNT, 11 )= GREVP ( 4,JJ )
+          ENDDO
+ 
+          EFSAVE( 8, MCNT, TCNT, 8  ) = GREVP ( 2,8 )
+          EFSAVE( 8, MCNT, TCNT, 9  ) = EFDNL (   8 )
+          EFSAVE( 8, MCNT, TCNT, 10 ) = GREVP ( 1,8 ) 
 
-      ENDDO
-
-      DO JJ = 1,4
-          DFACT( 1, JJ ) = GREVP ( 2,JJ )   ! Weighted Diurnal Evap VOC
-          DFACT( 2, JJ ) = EFDNL (   JJ )   ! LMOS Diurnal Evap VOC
-          DFACT( 3, JJ ) = GREVP ( 1,JJ )   ! Hot Soak Evap VOC
-          DFACT( 4, JJ ) = GREVP ( 4,JJ )   ! Crankcase Evap VOC
-      ENDDO
-
-      DFACT( 2, 8 ) = EFDNL ( 8 )           ! LMOS Diurnal for MC's
-      
+      ENDIF   ! Overflow check for EFSAVE
 cmh end add
 cmh 
       LEAST1=1
@@ -470,6 +562,35 @@ C
    98 IF(LEAST1.EQ.0.AND.
      *  (NEWFLG.EQ.2.OR.NEWFLG.EQ.4.OR.NEWFLG.EQ.6)) CALL OUTNEW
 C
+c
+cmh add bounding exit errors
+      IF( MCNT .GT. MXM5PSI ) THEN
+ 
+            WRITE( MESG, 94010 )
+     &            'Number of scenarios in single MOBILE5 run:', MCNT,
+     &             CRLF() // BLANK5 //
+     &            'Max permitted MOBILE5 scenarios (MXM5PSI):', MXM5PSI,
+     &             CRLF() // BLANK5 //
+     &             'Maximum exceeded.'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'MOBILE', 0, 0, 'Error in MOBILE5 inputs', 2 )
+ 
+      ENDIF
+ 
+      IF( NSAV .GT. 1 .AND. TCNT .GT. SAVTMP ) THEN
+            WRITE( MESG, 94010 )
+     &            'Number of saved temperatures             :', TCNT,
+     &             CRLF() // BLANK5 //
+     &            'Max permitted saved temperatures (SAVTMP):', SAVTMP,
+     &             CRLF() // BLANK5 //
+     &             'Maximum exceeded.'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'MOBILE', 0, 0, 'Redimension and compile', 2 )
+ 
+      ENDIF
+ 
+cmh end add
+c
    99 RETURN
 C
 C  End-of-file on 1st read of call => input for call missing entirely.
@@ -479,5 +600,10 @@ C
 cmh  999 RETURN 1
   999 RETURN
 
-94300 FORMAT ( A, I5, A, A )
+C******************  FORMAT  STATEMENTS   ******************************
+ 
+C...........   Internal buffering formats............ 94xxx
+ 
+94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+
       END
