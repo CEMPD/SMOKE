@@ -2,10 +2,11 @@
         PROGRAM MVEHSUM
 
 C***********************************************************************
-C  program body starts at line 146
+C  program body starts at line 145
 C
 C  DESCRIPTION:
-C       Report mobile-source emissions summed by state and county.
+C       Report mobile-source emissions summed by vehicle type and emissions
+C       type for selected counties.
 C
 C  PRECONDITIONS REQUIRED:  
 C
@@ -86,9 +87,6 @@ C...........   PARAMETERS and their descriptions
      &               MXDAYS = 10 ,
      &               MXOFIP = 50   )
 
-        REAL GM2TON
-        PARAMETER ( GM2TON = 1.102311E-06 )
-
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point Sources input and output arrays
 
@@ -137,6 +135,7 @@ C...........   Other local variables
         INTEGER         FIPNUM  !  Buffer for reading the FIPS code
         CHARACTER*20    FIPNAME !  Buffer for reading the state/county name
 
+        CHARACTER*30    FMTBUF  !  format buffer
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
 
 
@@ -413,6 +412,10 @@ C.............  Don't want spaces here, so no M3MSG2
 
 C.........  Write report of emissions totals 
 
+        WRITE( ODEV, 93020 ) ( EMTNAM( J ), J = 1, NETYPE )
+        WRITE( FMTBUF, '( "(20X,",I2.2,"(1X,A9))" )' ) NETYPE
+        WRITE( ODEV, FMTBUF ) ( '[ton/day]', J = 1, NETYPE )
+
         DO 550 I = 1, NOFIP
 
             NS = ESRC( I ) - BSRC( I ) + 1
@@ -421,10 +424,10 @@ C.........  Write report of emissions totals
 
             DO 540 D = 1, NDAYS
 
-                WRITE( ODEV, 93020 ) D, ( EMTNAM( J ), J = 1, NETYPE )
+                WRITE( ODEV, 93025 ) D
                 DO 530 V = 1, NVTYPE
                     WRITE( ODEV, 93030 ) VTYPE3( V ),  
-     &                   ( EMSUM( I, J, V, D ) * GM2TON, J = 1,NETYPE )
+     &                   ( EMSUM( I, J, V, D ), J = 1,NETYPE )
 
 530             CONTINUE
 540         CONTINUE
@@ -453,12 +456,14 @@ C******************  FORMAT  STATEMENTS   ******************************
 880     FORMAT ( F14.2, 2X, F14.2, 2X, F14.2 )
 890     FORMAT ( A, F12.2, A )
 
-93010   FORMAT ( I5, 'FIP:', I5.5, ': sources ', I6, ' through ', I6,
-     &           ' (', I3, ' sources )' )
+93010   FORMAT ( I5, 1X, I6.5, ' FIPS', /, 6X, I6, ' Src1',/,  
+     &           6X, I6, ' Src2', /, 6X, I6, ' Nsrc' )
 
-93020   FORMAT ( 5X, 'Day =', I2 / 12X, 20( 1X, A7 ) )
+93020   FORMAT ( 20X, 20( 1X, A9 ) )
 
-93030   FORMAT ( 5X, A5, 2X, 20( 1X, F7.3 ) )
+93025   FORMAT ( 6X, 'Day=', I2  )
+
+93030   FORMAT ( 13X, A5, 2X, 20( 1X, E9.3 ) )
 
 94010   FORMAT( 10 (A, :, 1X, I6, :, 1X ) )
 
