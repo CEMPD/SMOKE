@@ -1,15 +1,15 @@
 
-         PROGRAM RAWPOINT
+         PROGRAM SMKINVEN
 
 C***********************************************************************
-C  program body starts at line 151
+C  program body starts at line
 C
 C  DESCRIPTION:
-C    The rawpoint program reads the point source inventory in one of four
+C    The smkinven program reads the any source inventory in one of four
 C    formats: EMS-95, EPS, IDA, and SMOKE list format.  It permits a flexible
 C    definition of a point source, which depends on the inventory input
 C    formats.  It allows any number of inventory pollutants, within the limit
-C    of I/O API (this works out to only 15 pollutants per file). 
+C    of I/O API (this works out to only 15 pollutants per file).
 C
 C  PRECONDITIONS REQUIRED:
 C    Set environment variables:
@@ -31,8 +31,8 @@ C       WPNTSPOL
 C    Functions: I/O API functions, GETFLINE, GETTZONE 
 C
 C  REVISION  HISTORY:
-C    copied by: mhouyoux 10/98
-C    origin: emspoint.F 4.3
+C    started 10/98 by M Houyoux as rawpoint.f from emspoint.F 4.3
+C    smkinven changes started 4/98
 C
 C****************************************************************************
 C
@@ -60,6 +60,9 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
+
+C.........  This module contains the information about the source category
+        USE MODINFO
 
         IMPLICIT NONE
 
@@ -101,9 +104,7 @@ C.........  Full list of inventory pollutants (in output order)
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: INVPNAM( : ) ! Name of pollutant
 
 C.........  Inventory pollutants actually in the inventory
-        INTEGER                               NIPOL      ! Actual no of inv pols
         INTEGER               , ALLOCATABLE:: EIIDX( : ) ! pos in full inven arr
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: EINAM( : ) ! Name of actual pols
 
 C.........  Inventory temporay arrays
         INTEGER, ALLOCATABLE:: IPPTR ( : ) ! position in POLVAL sparse array
@@ -122,32 +123,37 @@ C.........  File units and logical/physical names
         INTEGER         SDEV    !  for ASCII output inventory file
         INTEGER         ZDEV    !  for time zone file
 
-        CHARACTER(LEN=NAMLEN3) ENAME !  emissions output inventory logical name
+        CHARACTER(LEN=NAMLEN3) ANAME !  inventory ASCII output logical name
+        CHARACTER(LEN=NAMLEN3) ENAME !  inventory I/O API output logical name
+        CHARACTER(LEN=NAMLEN3) INAME !  inventory input logical name
 
 C...........   Other local variables
                                 
         INTEGER         S, I, J, K, L, LK, LS, V !  counters and indices
         INTEGER         L1, L2           !  counters and indices
 
+        INTEGER         FILFMT  !  input file(s) format code
         INTEGER         FIP     !  Temporary FIPS code
-        INTEGER         INVFMT  !  Inventory format code
         INTEGER         IOS     !  I/O status
         INTEGER         MAXK    !  test for maximum value of K in output loop
         INTEGER         NFIPLIN !  number of lines in ZDEV
-        INTEGER         NPSRC   !  actual source count
+        INTEGER         NRAWBP  !  number of sources x pollutants
         INTEGER         TZONE   !  tmp time zone
 
-        LOGICAL      :: EFLAG = .FALSE.  !  TRUE iff ERROR
-        LOGICAL         SFLAG   !  input verification:  report missing species
-        LOGICAL         TFLAG   !  TRUE if temporal x-ref output
+        REAL            PRATIO  !  position ratio
+
+        LOGICAL      :: EFLAG = .FALSE.  ! TRUE iff ERROR
+        LOGICAL         SFLAG            ! input check:  report missing species
+        LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
 
         CHARACTER*300   BUFFER  !  input line from POINT file
         CHARACTER*300   MESG    !  text for M3EXIT()
 
-        CHARACTER*16  :: PROGNAME = 'RAWPOINT'   !  program name
+        CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
 
+        integer bdev
 C***********************************************************************
-C   begin body of program RAWPOINT
+C   begin body of program SMKINVEN
 
         LDEV = INIT3()
 
@@ -160,33 +166,16 @@ C.........  Get environment variables that control the program
      &                 'Flag to check for missing species-records',
      &                 .FALSE., IOS )
 
-C.........  Get file name for opening input raw point source file
-        IDEV = PROMPTFFILE( 
-     &         'Enter the name of the RAW POINT INVENTORY file',
-     &          .TRUE., .TRUE., 'PTINV', PROGNAME )
+C.........  Set source category based on environment variable setting
+        CALL GETCTGRY
 
-C.........  Get file name for input replacement stack parameters file
-        RDEV = PROMPTFFILE(
-     &          'Enter REPLACEMENT STACK PARAMETERS file',
-     &          .TRUE., .TRUE., 'PSTK', PROGNAME )
-
-C.........  Get file name for time zones files
-        ZDEV = PROMPTFFILE( 
-     &         'Enter logical name for TIME ZONE file',
-     &         .TRUE., .TRUE., 'ZONES', PROGNAME )
-
-C.........  Get file name for inventory pollutants codes/names
-        PDEV = PROMPTFFILE( 
-     &         'Enter logical name for POLLUTANT CODES & NAMES file',
-     &         .TRUE., .TRUE., 'SIPOLS', PROGNAME )
-
-C.........  Allocate memory for time zone tables based on no. of lines in file
-        NFIPLIN = GETFLINE( ZDEV, 'Time zones file')
-
-C.........  Get number of lines of pollutant codes/names file 
-        MXIPOL = GETFLINE( PDEV, 'Pollutant codes and names file')
+C.........  Get names of input files
+        CALL OPENINVIN( CATEGORY, IDEV, RDEV, PDEV, ZDEV, INAME )
 
         CALL M3MSG2( 'Setting up to read inventory data...' )
+
+C.........  Get no. lines in time zone file for allocating memory
+        NFIPLIN = GETFLINE( ZDEV, 'Time zones file')
 
 C.........  Allocate memory for time zones tables 
         ALLOCATE( TZONST( NFIPLIN ), STAT=IOS )
@@ -198,6 +187,9 @@ C.........  Allocate memory for time zones tables
         ALLOCATE( TFIPEF( NFIPLIN ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TFIPEF', PROGNAME )
 
+C.........  Get no. lines in pollutant codes file for allocating memory
+        MXIPOL = GETFLINE( PDEV, 'Pollutant codes and names file')
+
 C.........  Allocate memory for storing contents of pollutants file
         ALLOCATE( INVPCOD( MXIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVPCOD', PROGNAME )
@@ -208,7 +200,7 @@ C.........  Allocate memory for storing contents of pollutants file
 
 C.........  Read time zone file, separate into categories, and sort tables
         CALL RDTZONE( ZDEV, NFIPLIN, NZS, NZF, TZONE0,
-     &                TZONST, TFIPST, TZONEF, TFIPEF )
+     &                TZONST, TFIPST, TZONEF, TFIPEF   )
 
 C.........  Read and sort pollutant codes/names file
         CALL RDSIPOLS( PDEV, MXIPOL, INVPCOD, INVPNAM )
@@ -218,19 +210,27 @@ C.........  Initialize pollutant status (present in inventory or not)
 
         CALL M3MSG2( 'Reading raw inventory data...' )
 
-C.........  Read the raw inventory data, and store in sorted order
-C.........  The inventory arrays that are populated by this subroutine call
+C.........  Read the raw inventory data, and store in unsorted order
+C.........  The arrays that are populated by this subroutine call
 C           are contained in the module MODSOURC
 
-        CALL RDPTINV( IDEV, MXIPOL, INVPCOD, INVPNAM, INVFMT, 
-     &                NPSRC, TFLAG, EFLAG, INVSTAT )
+        CALL RDINVEN( IDEV, INAME, MXIPOL, INVPCOD, INVPNAM, FILFMT,
+     &                NRAWBP, PRATIO, TFLAG )
 
-        IF( EFLAG ) THEN
-           MESG = 'Error reading raw inventory file(s)'         
-           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
+        CALL M3MSG2( 'Sorting raw inventory data...' )
+
+C.........  Sort inventory and pollutants (sources x pollutants). Note that
+C           sources are sorted based on character string definition of the 
+C           source so that source definition can be consistent with that of
+C           the input format.
+
+        CALL SORTIC( NRAWBP, INDEXA, CSOURCA )
 
         CALL M3MSG2( 'Processing inventory data...' )
+
+C.........  Processing inventory records and store in sorted order
+
+        CALL PROCINVEN( NRAWBP, MXIPOL, FILFMT, PRATIO, INVSTAT )
 
 C.........  Determine memory needed for actual pollutants list and allocate it
         NIPOL = 0
@@ -255,18 +255,18 @@ C           accessing INVPCOD and INVSTAT if needed.
            ENDIF
         ENDDO
 
-C.........   Fix stack parameters. 
+C.........   Fix stack parameters for point sources
 C.........   Some of these arguments are variables that are defined in the
 C            module MODSOURC
-        CALL FIXSTK( RDEV, NPSRC )
+        IF( CATEGORY .EQ. 'POINT' ) CALL FIXSTK( RDEV, NSRC )
 
-C.........  Set time zones based on state and county FIPS code. Note that a
+C.........  Set time zones based on country/state/county code. Note that a
 C           few counties in the Western U.S. are divided by a time zone, so this
 C           is not perfectly accurate for all counties.
-        ALLOCATE( TZONES( NPSRC ), STAT=IOS )
+        ALLOCATE( TZONES( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
 
-        DO S = 1, NPSRC
+        DO S = 1, NSRC
             FIP   = IFIP( S )
             TZONE = GETTZONE( FIP, NZS, NZF, TZONE0,
      &                        TZONST, TFIPST, TZONEF, TFIPEF )
@@ -275,16 +275,6 @@ C           is not perfectly accurate for all counties.
 
         ENDDO
 
-C.........  Allocate memory for local source-specific arrays used for output      
-C.........  Allocate memory for indices IPPTR & IPMAX for pointing to position
-C           in sparsely stored emissions array.  
-        ALLOCATE( IPPTR( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IPPTR', PROGNAME )
-        ALLOCATE( IPMAX( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IPMAX', PROGNAME )
-        ALLOCATE( SRCPOL( NPSRC, NPTPPOL3 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
-       
 C.........  Get unique-SCC output file
         ADEV = PROMPTFFILE( 
      &          'Enter the name of the ACTUAL SCC output file',
@@ -295,10 +285,10 @@ C           that is being provided.
 
         CALL M3MSG2( 'Writing out ACTUAL SCC file...' )
 
-        CALL WRCHRSCC( ADEV, NPSRC, CSCC )
+        CALL WRCHRSCC( ADEV, NSRC, CSCC )
 
-C.........  Write out temporal x-ref file. (TFLAG is true for EMS-95 format)
-
+C.........  Write out temporal x-ref file. (TFLAG is true for EMS-95 format for
+C           point sources only)
         IF( TFLAG ) THEN
 
            TDEV = PROMPTFFILE( 
@@ -307,23 +297,50 @@ C.........  Write out temporal x-ref file. (TFLAG is true for EMS-95 format)
 
            CALL M3MSG2( 'Writing out TEMPORAL CROSS-REFERENCE file...' )
 
-           CALL WRPTREF( TDEV, NPSRC, IDIU, IWEK, IWEK ) ! no monthly 
+           CALL WRPTREF( TDEV, NSRC, IDIU, IWEK, IWEK ) ! no monthly 
 
         ENDIF
 
-C.........  Open output I/O API and ASCII files for PNTS
-        CALL OPENPNTS( NPSRC, NIPOL, EINAM, ENAME, SDEV )
+C.........  Get output inventory file names given source category
+        CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-        CALL M3MSG2( 'Writing SMOKE POINT SOURCE INVENTORY file...' )
+C.........  Generate message to use just before writing out inventory files
+        MESG = 'Writine SMOKE ' // CATEGORY( 1:CATLEN ) // 
+     &         'SOURCE INVENTORY file...'
 
-C.........  Write source characteristics to PNTS file (I/O API and ASCII)
-        CALL WPNTSCHR( ENAME, SDEV, NPSRC )
+C.........  Open output I/O API and ASCII files for the appropriate source, then
+C.........  write source characteristics to inventory files (I/O API and ASCII)
+        SELECT CASE( CATEGORY )
+        CASE ( 'AREA' )
+c            CALL OPENAREA( ENAME, ANAME, SDEV )
+c            CALL M3MSG2( MESG )
+c            CALL WAREACHR( ENAME, SDEV, NSRC )
 
-C.........  Deallocate memory to potentially speed the rest of the program up
-        DEALLOCATE( IFIP, CSCC, ISIC, IORIS, TZONES, TPFLAG, 
-     &              INVYR, XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE, 
-     &              CBLRID, CPDESC )
+        CASE( 'MOBILE' ) 
+c            CALL OPENMOBL( ENAME, ANAME, SDEV )
+c            CALL M3MSG2( MESG )
+c            CALL WMOBLCHR( ENAME, SDEV, NSRC )
 
+        CASE( 'POINT' ) 
+            CALL OPENPNTS( ENAME, ANAME, SDEV )
+            CALL M3MSG2( MESG )
+            CALL WPNTSCHR( ENAME, SDEV )
+
+        END SELECT
+
+C.........  Deallocate sorted inventory info arrays
+        CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
+
+C.........  Allocate memory for local source-specific arrays used for output      
+C.........  Allocate memory for indices IPPTR & IPMAX for pointing to position
+C           in sparsely stored emissions array.  
+        ALLOCATE( IPPTR( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IPPTR', PROGNAME )
+        ALLOCATE( IPMAX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IPMAX', PROGNAME )
+        ALLOCATE( SRCPOL( NSRC, NPTPPOL3 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
+       
 C.........  Initialize global index based on count of number of sources per 
 C           pollutant
 C.........  Since the emission values are already sorted in the output order of
@@ -332,7 +349,7 @@ C           of what pollutant we are on for each source (sources can have
 C           different numbers and types of output pollutants).
         IPPTR( 1 ) = 1
         IPMAX( 1 ) = NPCNT( 1 )
-        DO S = 2, NPSRC
+        DO S = 2, NSRC
             IPPTR( S ) = IPPTR( S-1 ) + NPCNT( S-1 )
             IPMAX( S ) = IPPTR( S )   + NPCNT( S ) - 1
         ENDDO
@@ -345,7 +362,7 @@ C.............  Initialize SRCPOL pollutant-specific data array
 
 C.............  Transfer emissions data to output SRCPOL array
             K = 0
-            DO S = 1, NPSRC
+            DO S = 1, NSRC
 
 C.................  Set position in sparse array by compring pointer to max
                 K = MIN( IPPTR( S ), IPMAX( S ) ) 
@@ -368,15 +385,17 @@ C.....................  If emissions data records are fatal, then set error flag
                         MESG = 'ERROR: Missing emissions for source:' //
      &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
+C NOTE: Change message if reading VMT
                     END IF
 
                 END IF
 
-            ENDDO  ! end of loop through sources x pollutants
+            END DO  ! end of loop through sources x pollutants
 
-            CALL WPNTSPOL( ENAME, NPSRC, 1, EINAM( I ), SRCPOL )
+C NOTE: Can this be updated to write pollutants and VMT for any category?
+            CALL WPNTSPOL( ENAME, NSRC, 1, NPPOL, EINAM( I ), SRCPOL )
 
-        ENDDO  ! end loop through actual output pollutants
+        END DO  ! end loop through actual output pollutants
 
         IF( EFLAG ) THEN
             MESG = 'Missing species for some sources but this is' //
@@ -420,4 +439,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94080   FORMAT( '************  ', A, I7, ' ,  ' , A, I12 )
  
-        END PROGRAM RAWPOINT
+        END PROGRAM SMKINVEN
