@@ -73,7 +73,7 @@ C.........  Local variables
         INTEGER          S, V, IOS, N                !  counters and indices
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER          IDX             !  tmp index to uncert data table
-        INTEGER       :: UINDX( NSRC, NUOVAR )       ! index to uncert table
+        INTEGER       :: UINDX( NSRC, UNVAR )        ! index to uncert table
         
         REAL             RIMISS3            ! real value of integer missing
 
@@ -103,6 +103,7 @@ C.........  Local variables
         CHARACTER*6         :: PKTTYP = 'UNCERT'
         CHARACTER*1            CHARMETH ! local method
         CHARACTER*1            CTYPE    ! local parametric/empirical type
+        CHARACTER*2            CAPRCH   ! local approach
         CHARACTER(LEN=IOVLEN3) CBUF     ! tmp pollutant name
 
         CHARACTER*16 :: PROGNAME = 'ASGNUNCERT' ! program name
@@ -133,14 +134,12 @@ C.........  Initialize UINDX and USTAT
         USTAT = .FALSE.  ! Array
 
 C.........  For each pollutant of interest
-        DO J = 1, NUOVAR
+        DO J = 1, UNVAR
         
 C.............  Find index in complete list of pollutants
-            CBUF = UONAMES( J )
-            V = INDEX1( CBUF, NUOVAR, UONAMES )
-            
-C.............  Skip pollutant if not used in current packet
-            IF( .NOT. USEPOLL( V ) ) CYCLE            
+            CBUF = UNAMES( J )
+            V = INDEX1( CBUF, UNVAR, UNAMES )
+
             
 
             L = LEN_TRIM( CBUF )
@@ -442,18 +441,20 @@ C.........  Get count of all effected sources
         DO S = 1, NSRC
             IF( USTAT( S ) ) UCOUNT = UCOUNT + 1
         END DO
-        
+
 C.........  Allocate and initialize output variables        
         ALLOCATE( SRCNUM( UCOUNT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCNUM', PROGNAME )
-        ALLOCATE( METHOD( UCOUNT, NUOVAR ), STAT=IOS )
+        ALLOCATE( METHOD( UCOUNT, UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'METHOD', PROGNAME )
-        ALLOCATE( EPTYP( UCOUNT, NUOVAR ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PARTYPE', PROGNAME )
-        ALLOCATE( NUMEP( UCOUNT, NUOVAR ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'NUMPAR', PROGNAME )
-        ALLOCATE( UNCIDX( UCOUNT, NUOVAR ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMPREF', PROGNAME )
+        ALLOCATE( EPTYP( UCOUNT, UNVAR ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EPTYP', PROGNAME )
+        ALLOCATE( APRCH( UCOUNT, UNVAR ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'APRCH', PROGNAME )
+        ALLOCATE( NUMEP( UCOUNT, UNVAR ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NUMEP', PROGNAME )
+        ALLOCATE( UNCIDX( UCOUNT, UNVAR ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'UNCIDX', PROGNAME )
         ALLOCATE( PARMS( MXPARDAT, NPPCKT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PARMS', PROGNAME )
         ALLOCATE( EMFVAL( MXEMPDAT, NEPCKT ), STAT=IOS )
@@ -464,6 +465,7 @@ C.........  Allocate and initialize output variables
         SRCNUM  = IMISS3
         METHOD  = IMISS3
         EPTYP   = IMISS3
+        APRCH   = IMISS3
         NUMEP   = IMISS3
         UNCIDX  = IMISS3
         PARMS   = RIMISS3
@@ -483,7 +485,7 @@ C.........  Get source numbers for effected sources
 C.........  Fill output arrays for effected sources and pollutants
         N = 0
         
-        DO J = 1, NUOVAR          
+        DO J = 1, UNVAR          
         
             DO S = 1, NSRC
             
@@ -500,6 +502,13 @@ C.........  Fill output arrays for effected sources and pollutants
                     ELSE
                         METHOD( N, J ) = 1
                     END IF
+                    
+                    CAPRCH = FAPCKT( IDX )%APRCH
+                    
+                    IF( CAPRCH .EQ. 'S'  ) APRCH( N, J ) = 1
+                    IF( CAPRCH .EQ. 'I'  ) APRCH( N, J ) = 2
+                    IF( CAPRCH .EQ. 'ST' ) APRCH( N, J ) = 3
+                    IF( CAPRCH .EQ. 'IT' ) APRCH( N, J ) = 4
                 
                     IF( METHOD( N, J ) .EQ. 1 ) THEN
                 
