@@ -131,7 +131,7 @@ C           that this will be set automatically by openset
 
 C.........  If pollutant-specific assignments, then set up projection matrix
 C           with one variable for each pollutant being projected
-        IF( PSFLAG ) THEN
+        IF( POLSFLAG ) THEN
             NVARSET = NVPROJ
             DO J = 1, NVPROJ
                 VNAMESET( J )= PNAMPROJ( J )  ! Lowercase used to permit inv data named "PFAC"

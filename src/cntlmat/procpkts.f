@@ -349,7 +349,7 @@ C...............  Skip pollutants that do not apply to this packet.
 C......................  Generate projection matrix
                     CALL ASGNCNTL( NSRC, WDEV, PKTTYP, EANAM( V ),
      &                             DSFLAG, ASGNINDX )
-                    IF( DSFLAG ) PSFLAG = .TRUE.
+                    IF( DSFLAG ) POLSFLAG = .TRUE.
 
                     VIDXPROJ = 0 ! array
                     CALL UPDATE_POLLIST( V, ASGNINDX, 0, VIDXPROJ,

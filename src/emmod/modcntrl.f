@@ -114,7 +114,7 @@
         INTEGER, PUBLIC :: NVCMULT = 0  ! number of multultiplicative variables
 	INTEGER, PUBLIC :: NVPROJ  = 0  ! number of projection variables
 
-        LOGICAL, PUBLIC :: PSFLAG = .FALSE. ! true: proj data-spec assignment
+        LOGICAL, PUBLIC :: POLSFLAG = .FALSE. ! true: proj data-spec assignment
         LOGICAL, ALLOCATABLE, PUBLIC :: PCTLFLAG( :,: ) ! control flags
 
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMMULT( : ) ! mult

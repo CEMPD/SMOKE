@@ -124,7 +124,7 @@ C..........  Write header for report.
         WRITE( RDEV, 93390 ) '      from base year    ', BYEAR
         WRITE( RDEV, 93390 ) '      to projected year ', PYEAR
 
-        IF( PSFLAG ) THEN
+        IF( POLSFLAG ) THEN
             WRITE( RDEV, 93000 ) '      using pollutant-specific ' //
      &                           'assignments'
         ELSE
@@ -142,12 +142,12 @@ C.........  Initialize valid columns
         END DO
 
 C.........  If no pollutant-specific assignments, write out single pfac var
-        IF ( .NOT. PSFLAG ) NVPROJ = 1
+        IF ( .NOT. POLSFLAG ) NVPROJ = 1
 
 C.........  Loop through pollutants that are getting projections
         DO V = 1, NVPROJ
 
-            IF( PSFLAG ) THEN
+            IF( POLSFLAG ) THEN
                 PNAM = PNAMPROJ( V )
             ELSE
                 PNAM = 'pfac'
@@ -176,7 +176,7 @@ C....................  Format source characteristic information
 
 C.................  Write out projection information for all sources
 C                   that are getting projected
-                    IF( PSFLAG ) THEN
+                    IF( POLSFLAG ) THEN
                         WRITE( MESG, 94015 ) PNAM, 
      &                    ( CHARS(J)(1:SC_ENDP(J)-SC_BEGP(J)+1),J=1,NC )
                     ELSE
