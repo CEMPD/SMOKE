@@ -106,7 +106,6 @@ C...........   Other local variables
         INTEGER         LDEV    !  unit number for log file
         INTEGER         OUNIT, FUNIT, RUNIT
 
-        REAL            YR2DAY
         INTEGER         I, J, K, L, POSN, LOC
         INTEGER         TOT_ST, LASTST
         INTEGER         LASTPLANT
@@ -319,7 +318,7 @@ C        PRINT *, 'Summing emissions...'
                 WRITE ( OUNIT, 820 ) 
      &                    EINAM ( I )( 1:TRIMLEN ( EINAM ( I ) ) )
 80          CONTINUE
-            WRITE ( OUNIT, 810 ) ''
+            WRITE ( OUNIT, 810 ) ' '
 
             ! Create a list of NOX sums for the current state 
             K = 0
@@ -340,7 +339,7 @@ C        PRINT *, 'Summing emissions...'
             CALL SORTR1 ( K, SORTINDX, TMPSUM )
             
             ! Write the Top LISTSIZE entries by reading the list in reverse
-            DO 240 L = K, AMAX1 ( K - LISTSIZE + 1, 1 ), -1
+            DO 240 L = K, MAX( K - LISTSIZE + 1 , 1 ), -1
                 POSN = SORTINDX ( L ) + J - K - 1
                 WRITE ( OUNIT, 830 ) PLANTLST ( POSN ), 
      &                ( SPECSUM ( POSN, I ), I = 1, NIPOL )
@@ -383,7 +382,7 @@ C        PRINT *, 'Summing emissions...'
                     WRITE ( RUNIT, 820 ) 
      &                    EINAM ( I )( 1:TRIMLEN ( EINAM ( I ) ) )
 130             CONTINUE
-                WRITE ( RUNIT, 810 ) ''
+                WRITE ( RUNIT, 810 ) ' '
             END IF
 
             IF ( ( SPECSUM ( J, NOXVAR ) .GT. MAXEMIS ) .OR.
