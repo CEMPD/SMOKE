@@ -692,12 +692,6 @@ C...........  If surrogates file present, process SURROGATE-TOTAL-BY-FIP file:
 
                 IF ( F .GE. 0 ) THEN
                     FIPSIZE( SSC,F ) = SRG
-
-                ELSE
-                    WRITE( MESG,94010 )
-     &                  'FIP', FIP, 
-     &                  'not found in SURG TOTAL file at line', IREC
-                    CALL M3MESG( MESG )
                 END IF
 
                 GO TO  55           !  to head of loop
