@@ -83,13 +83,12 @@ C...........   Other local variables
 
         INTEGER         S       !  loop counter.
         INTEGER         N       !  elevated sources counter.
-        INTEGER         FDEV    !  unit number for stack parameters file
         INTEGER         LDEV    !  unit number for log file
         INTEGER         PDEV    !  ... output elevated point source file
 
         LOGICAL         EFLAG   !  Error flag
         CHARACTER*16    ENAME   !  logical name for point-source input file
-        CHARACTER*60    MESG
+        CHARACTER*256   MESG
 
 
 C***********************************************************************
@@ -131,13 +130,6 @@ C.......   elevated points file
         IF ( ENAME( 1:5 ) .EQ. 'NNONE ' ) THEN
             CALL M3EXIT( 'ELEVPOINT', 0, 0, 
      &           'Could not open POINT SOURCE input file', 2 )
-        END IF
-
-        FDEV = PROMPTFFILE( 'Enter name for STACK PARAMETER input file',
-     &                      .TRUE., .TRUE., 'PSTK', 'ELEVPOINT' )
-        IF ( FDEV .LE. 0 ) THEN
-            CALL M3EXIT( 'ELEVPOINT', 0, 0, 
-     &           'Could not open input STACK PARAMETER FILE', 2 )
         END IF
 
         PDEV = PROMPTFFILE(  
@@ -214,15 +206,33 @@ C...........   Process the stacks to determine elevated sources:
 
 C.............  Check stack parameters so PLUMRIS doesn't blow up
 C.............  If parameters are bad, skip plume rise calculation
-            IF( STKHT( S ) .LE. 0. .OR. 
+            IF( STKHT( S ) .LT. 0. .OR. 
      &          STKTK( S ) .LE. 0. .OR.
      &          STKVE( S ) .LE. 0. .OR.
      &          STKDM( S ) .LE. 0.      ) THEN
 
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
-     &                 'Bad stack parameter(s) at source', S
+                WRITE( MESG,94015 ) 
+     &                 'Bad stack parameter(s) for source:',
+     &                 S, '( FIP:', IFIP( S ) , 'SCC:', 
+     &                 ISCC( S ), 'PLT:', IPLANT( S ), 
+     &                 'STK:', ISTACK( S ),')'
+                CALL M3MESG( MESG )
+
+                WRITE( MESG,94020 ) STKHT( S ), STKDM( S ),
+     &                              STKTK( S ), STKVE( S )
+                CALL M3MESG( MESG )
+
                 RISE = 0.
+C.............  Give warnings on stack parameters
+            ELSEIF( STKHT( S ) .EQ. 0 ) THEN
+
+                WRITE( MESG,94015 ) 
+     &                 'WARNING: stack height 0. at source:',
+     &                 S, '( FIP:', IFIP( S ) , 'SCC:', 
+     &                 ISCC( S ), 'PLT:', IPLANT( S ), 
+     &                 'STK:', ISTACK( S ),')'
+                CALL M3MESG( MESG )
 
 C.............  Calculate estimated plume rise
             ELSE
@@ -231,21 +241,22 @@ C.............  Calculate estimated plume rise
      &                          STKTK( S ), 
      &                          STKVE( S ), 
      &                          STKDM( S ) )
+
+C.................  Write out source information when plume rise
+C.................  is greater than cutoff
+                IF ( RISE .GT. CUTOFF ) THEN
+
+                    N = N + 1
+                    WRITE( PDEV,93010 )
+     &                      IFIP  ( S ),
+     &                      ISCC  ( S ),
+     &                      IPLANT( S ),
+     &                      ISTACK( S ),
+     &                      RISE
+
+                END IF      !  if rise > cutoff
+
             ENDIF
-
-C.............  Write out source information when plume rise
-C.............  is greater than cutoff
-            IF ( RISE .GT. CUTOFF ) THEN
-
-                N = N + 1
-                WRITE( PDEV,93010 )
-     &                  IFIP  ( S ),
-     &                  ISCC  ( S ),
-     &                  IPLANT( S ),
-     &                  ISTACK( S ),
-     &                  RISE
-
-            END IF      !  if rise > cutoff
 
 11      CONTINUE        !  end loop on sources S
 
@@ -276,8 +287,13 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10 ( A, :, I5, :, 2X  ) )
+94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
 
+94015   FORMAT( A, 1X, I6, 1X, A, 1X, I5.5, 1X, A, 1X, I8.8, 1X,
+     &          A, 1X, I6, 1X, A, 1X, I6,   1X, A )
+
+94020   FORMAT( 5X, 'H[m]:', 1X, F6.2, 1X, 'D[m]:'  , 1X, F4.2, 1X,
+     &              'T[K]:', 1X, F7.1, 1X, 'V[m/s]:', 1X, F10.1 )
 
         END
 
