@@ -1,7 +1,7 @@
 
         SUBROUTINE WRM6INPUT( GRPLIST, NLINES, SDEV, MDEV, 
      &                        CTYLIST, TEMPS, NCOUNTY, VOLNAM, 
-     &                        SCENNUM, SRCNUM, RPLCFLAG )
+     &                        SCENNUM, SRCNUM, RPLCFLAG, SPDFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 121
@@ -78,6 +78,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT(INOUT) :: SCENNUM               ! total number of scenarios
         INTEGER,      INTENT(INOUT) :: SRCNUM                ! total number of sources
         LOGICAL,      INTENT (IN)   :: RPLCFLAG              ! true: replace temps in scenario
+        LOGICAL,      INTENT (IN)   :: SPDFLAG               ! true: read in speed profiles
 
 C...........   Local allocatable arrays
         CHARACTER(LEN=150),     ALLOCATABLE :: M6SCEN( : )    ! M6 scenario file
@@ -292,7 +293,8 @@ C.............  Read speeds and sources
                 IF( NEWSCEN ) THEN               	
                 	
 C.....................  Create speed vmt file
-                    SPDFILE = WRSPDVMT( PREVSPD, CURRSPD, SPDDIR )
+                    SPDFILE = WRSPDVMT( PREVSPD, CURRSPD, SPDDIR, 
+     &                                  SPDFLAG )
                     
                     IF( SPDFILE == '' ) THEN
                     	EFLAG = .TRUE.
