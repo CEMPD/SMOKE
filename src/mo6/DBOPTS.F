@@ -67,6 +67,10 @@ C
       INTEGER              ::  SECTION 
       CHARACTER (LEN=40)   ::  STDLAB 
       INTEGER, SAVE        ::  IYES=1 
+
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
 C ..................................................................... 
 C 
@@ -85,9 +89,13 @@ C
 ccs      CALL UCCOMP(INPREC(21:), FILENAME) 
       CALL LJCOMP(INPREC(21:), FILENAME)
 
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME
+
       IOUALT = JUNIT()
 
-      OPEN(IOUALT,FILE=FILENAME,ACTION='READ',IOSTAT=RC,ERR=85) 
+      OPEN(IOUALT,FILE=M6FILE,ACTION='READ',IOSTAT=RC,ERR=85) 
       WRITE(IOUOUT,120) FILENAME 
   120 FORMAT(/'* Reading database selection criteria from the ', 
      &        'following external',/'* data file: ',A) 
