@@ -2,7 +2,7 @@
         PROGRAM PREDIUR
  
 C***********************************************************************
-C  program body starts at line 176
+C  program body starts at line 172
 C
 C  DESCRIPTION:
 C     This program inputs gridded, time-dependent temperature data, a mobile 
@@ -57,6 +57,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2  CRLF
         INTEGER      FIND1
         INTEGER      FIND3
+        INTEGER      GETDATE
         INTEGER      GETNUM
         REAL         GETREAL
         LOGICAL      GETYN
@@ -66,20 +67,19 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      RDMPLIST
         INTEGER      TRIMLEN
 
-        EXTERNAL     CRLF, FIND1, FIND3, GETNUM, GETREAL, GETYN, LOCAT1,
-     &               PROMPTFFILE, PROMPTMFILE, RDMPLIST, TRIMLEN
+        EXTERNAL     CRLF, FIND1, FIND3, GETDATE, GETNUM, GETREAL, 
+     &               GETYN, LOCAT1, PROMPTFFILE, PROMPTMFILE, RDMPLIST,
+     &               TRIMLEN
 
 C...........   LOCAL PARAMETERS and their descriptions:
 
         CHARACTER*5     BLANK5
         REAL            CTOF   !  Celcius to Fahrnht conversion constant
         REAL            FTOC   !  Fahrnht to Celcius conversion constant
-        INTEGER         MXTFIL !  maximum number of input temperature files
 
         PARAMETER     (   BLANK5 = ' '
      &                  , CTOF   = 9.0 / 5.0 
      &                  , FTOC   = 1.0 / CTOF
-     &                  , MXTFIL = 20 
      &                )
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -132,22 +132,20 @@ C...........   File units and logical names:
         INTEGER         NLDEV  !  unit number for emissions factors xref file
         CHARACTER*16    ANAME  !  logical name for mobile-source input file
         CHARACTER*16    ONAME  !  logical name for output ungridded min/max temp
+        CHARACTER*16    TNAME  !  logical name for surface temp files
         CHARACTER*16    UNAME  !  logical name for ungridding-matrix input file
 
-        CHARACTER*16    TNAME( MXTFIL ) !  logical names for surface temp files
 
 C...........   Other local variables:
 
         INTEGER    F, H, I, J, JJ, K, L, S, T  ! Counters and pointers
         INTEGER    FIP     !  temporary FIP code
-        INTEGER    IFIL    !  counter for temperature files
         INTEGER    JDATE   !  output date counter (YYYYDDD) in GMT
         INTEGER    JTIME   !  output time counter (HHMMSS)  in GMT
         INTEGER    KU      !  counter of grid cells per source
         INTEGER    LNK     !  temporary FIP code
         INTEGER    MAXTL   !  intermediate temperature index value
         INTEGER    NSTEPS  !  number of time steps to process temperature data
-        INTEGER    NTFIL   !  total number of input temperature files
         INTEGER    OSRC    !  number of sources outside grid
         INTEGER    RDT     !  temporary FIP code
         INTEGER    TMMIT(4)!  temporary TMMI indices for all four min/max
@@ -165,8 +163,6 @@ C...........   Other local variables:
         LOGICAL         EFLAG   !  Error flag 
         LOGICAL         OFLAG   !  sources outside grid
 
-        CHARACTER*16    BUFFER  !  Temporary file name buffer 
-        CHARACTER*16    TKDAT   !  logical file name buffer for temperature 
         CHARACTER*256   MESG    !  message buffer
 
         
@@ -201,10 +197,39 @@ C.........  Prompt for SMOKE mobile inventory file
      &          'Enter logical name for VMT INVENTORY input file',
      &          FSREAD3, 'MOBL', 'PREDIUR' )
 
+        IF ( .NOT. DESC3( ANAME ) ) THEN
+            CALL M3EXIT( 'PREDIUR', 0, 0,
+     &                  'Could not get description of file "'
+     &                  // ANAME( 1:TRIMLEN( ANAME ) ) // '"', 2 )
+        END IF
+
+        IF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MOBL file:', NROWS3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
+        END IF
+
 C.........  Prompt for Ungridding matrix
         UNAME = PROMPTMFILE(
      &          'Enter logical name for UNGRIDDING MATRIX input file',
      &          FSREAD3, 'MUMAT', 'PREDIUR' )
+
+C.......   Get file name for opening input raw area source file
+        WRITE( MESG, 94010 )
+     &     'NOTE: For calculating miniumum and maximum ungridded' //
+     &     CRLF() // BLANK5 //
+     &     '      temperatures, input file date/times are assumed' //
+     &     CRLF() // BLANK5 //
+     &     '      to be GMT, but temperature data based on other US' //
+     &     CRLF() // BLANK5 //
+     &     '      time zones will work reasonably well.'
+
+        CALL M3MSG2( MESG )
+
+        TNAME = PROMPTMFILE(
+     &         'Enter logical name for SURFACE TEMPERATURE input file',
+     &          FSREAD3, 'TKDAT', 'PREDIUR' )
 
 C.........  Prompt for MPLIST (scenario specific parameter scheme list)
         NLDEV = PROMPTFFILE(
@@ -239,52 +264,11 @@ C.........  Read Ungridding Matrix
             CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
         END IF
 
-C.........  Loop for prompting for temperature data files:
-        WRITE( MESG, 94010 )
-     &    'Now enter the list of logical file names for surface' //
-     &    CRLF() // BLANK5 //
-     &    'temperature input files...' // CRLF() // CRLF() // BLANK5 //
-     &    'NOTE: Time stamps assumed to be in GMT.'
-
-        CALL M3MSG2( MESG )
-
-        IFIL =    0
-   66   CONTINUE
-
-            IFIL = IFIL + 1
-            WRITE( TKDAT, 94040 ) 'TKDAT', IFIL
-
-C.............  Prompt for next temperature file (Met data file)
-            BUFFER = PROMPTMFILE(
-     &               'Enter the NEXT FILE, or "NONE" to end list',
-     &               FSREAD3, TKDAT, 'PREDIUR' )
-
-            IF ( BUFFER .EQ. 'NONE' ) THEN
-                GO TO 70
-
-            ELSEIF( IFIL .GT. MXTFIL ) THEN
-
-                WRITE( MESG, 94010 ) 
-     &                 'Maximum number of temperature files' //
-     &                 'exceeded: MXTFIL = ', MXTFIL
-                CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
-
-            ELSE
-                TNAME( IFIL ) = BUFFER
-
-            ENDIF
-
-        GO TO 66
-
-   70   CONTINUE  ! End of loop for temperature file names
-        NTFIL = IFIL - 1
-
-C.........  Read header of first temperature file
-        IF ( .NOT. DESC3( TNAME( 1 ) ) ) THEN
+C.........  Read header of temperature file
+        IF ( .NOT. DESC3( TNAME ) ) THEN
             CALL M3EXIT( 'PREDIUR', 0, 0,
      &                  'Could not get description of file "'
-     &                  // TNAME( 1 )( 1:TRIMLEN( TNAME( 1 ) ) )
-     &                  // '"', 2 )
+     &                  // TNAME( 1:TRIMLEN( TNAME ) ) // '"', 2 )
         END IF
 
 C.........  Save time step for processing temperatures
@@ -295,8 +279,9 @@ C.........     for beginning of the day)
 
         TZONE  = 0  ! Keep data in MINMAXT in GMT for increased portability
 
-        JDATE  = GETNUM( 0, 9999999, SDATE3D,
-     &                   'Enter starting date in GMT (YYYYDDD)' )
+        JDATE  = GETDATE( SDATE3D,
+     &           'Enter starting date in GMT (YYYYDDD)|(YYYYMMDD)' )
+
         JTIME  = GETNUM( 0, 999999, STIME3D,
      &                   'Enter starting time in GMT (HHMMSS)' )
         IDATE = JDATE
@@ -316,7 +301,7 @@ C.........  Abort if start time is < than first time for temperatures
 
             WRITE( MESG,94060 )
      &          'Requested start date/time       :', 
-     &          JDATE  , JTIME  , 'GMT', CRLF() // BLANK5 //
+     &          JDATE  , JTIME  , 'GMT' // CRLF() // BLANK5 //
      &          'First temperature data data/time:', 
      &          SDATE3D, STIME3D, 'GMT'
 
@@ -382,7 +367,7 @@ C.........  Initialize source-based output file NetCDF parameters
 
 C.........  Prompt for Source-based Output file
         ONAME = PROMPTMFILE(
-     &      'Enter logical name for UNGRIDDED MIN/MAX TEMPERATURE file',
+     &      'Enter logical name for MIN/MAX TEMPERATURE file',
      &      FSUNKN3, 'MINMAXT', 'PREDIUR' )
 
 C.........  Prompt for EF-based output file of temp combo indices
@@ -520,7 +505,6 @@ C.........  Initialize constants for loop
 
 C.........  Loop through days/hours of temperature files
 
-        IFIL = 1
         DO 499 H = 1, NSTEPS
 
 C.................................................................
@@ -532,26 +516,13 @@ C    &          .AND. H .NE. 1 ) THEN
             IF( MOD( H, 24 ) .EQ. 23 ) THEN
 
 C.................  Try to read current temperature file
-                IF ( .NOT. READ3( TNAME( IFIL ),
+                IF ( .NOT. READ3( TNAME,
      &               'TA', 1, JDATE, JTIME, TA ) ) THEN
 
-C.....................  If last read failed, check if can go to next file
-                    IF( IFIL .LT. NTFIL ) THEN
-                        IFIL = IFIL + 1
+                    MESG = 'Could not read TA from ' //
+     &                     TNAME( 1:TRIMLEN( TNAME ) )
+                    CALL M3EXIT( 'PREDIUR', JDATE, JTIME, MESG, 2 )
 
-C.........................  Read next file if possible
-                        IF ( .NOT. READ3( TNAME( IFIL ),
-     &                       'TA', 1, JDATE, JTIME, TA ) ) THEN
-                            MESG = 'Could not read TA from ' // 
-     &                             TNAME( IFIL )
-                            CALL M3EXIT 
-     &                           ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
-                        ENDIF
-
-                    ELSE
-                        MESG = 'Could not read TA from '//TNAME( IFIL )
-                        CALL M3EXIT ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
-                    ENDIF
                 END IF
 
                 KU = 0
@@ -752,6 +723,8 @@ C                   CALL M3WARN( 'PREDIUR', JDATE, JTIME, MESG )
 
 C               ENDIF
 
+                CALL M3MSG2( 'Writing out MIN/MAX TEMPERATURE file...' )
+
 C.................  Write out min/max information for the current day
 
                 IF( .NOT. WRITE3( 
@@ -773,26 +746,13 @@ C           ELSEIF( JTIME .EQ. 0 .OR. H .EQ. 1 ) THEN
             ELSEIF( MOD( H, 24 ) .EQ. 1 ) THEN
 
 C.................  Try to read current temperature file
-                IF ( .NOT. READ3( TNAME( IFIL ),
+                IF ( .NOT. READ3( TNAME,
      &               'TA', 1, JDATE, JTIME, TA ) ) THEN
 
-C.....................  If last read failed, check if can go to next file
-                    IF( IFIL .LT. NTFIL ) THEN
-                        IFIL = IFIL + 1
+                    MESG = 'Could not read TA from ' // 
+     &                     TNAME( 1:TRIMLEN( TNAME ) )
+                    CALL M3EXIT( 'PREDIUR', JDATE, JTIME, MESG, 2 )
 
-C.........................  Read next file if possible
-                        IF ( .NOT. READ3( TNAME( IFIL ),
-     &                       'TA', 1, JDATE, JTIME, TA ) ) THEN
-                            MESG = 'Could not read TA from ' // 
-     &                             TNAME( IFIL )
-                            CALL M3EXIT 
-     &                           ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
-                        ENDIF
-
-                    ELSE
-                        MESG = 'Could not read TA from '//TNAME( IFIL )
-                        CALL M3EXIT ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
-                    ENDIF
                 END IF
 
                 KU = 0
@@ -821,26 +781,13 @@ C.................................................................
             ELSE  
 
 C.................  Try to read current temperature file
-                IF ( .NOT. READ3( TNAME( IFIL ),
+                IF ( .NOT. READ3( TNAME,
      &               'TA', 1, JDATE, JTIME, TA ) ) THEN
 
-C.....................  If last read failed, check if can go to next file
-                    IF( IFIL .LT. NTFIL ) THEN
-                        IFIL = IFIL + 1
+                    MESG = 'Could not read TA from ' // 
+     &                     TNAME( 1:TRIMLEN( TNAME ) )
+                    CALL M3EXIT( 'PREDIUR', JDATE, JTIME, MESG, 2 )
 
-C.........................  Read next file if possible
-                        IF ( .NOT. READ3( TNAME( IFIL ),
-     &                       'TA', 1, JDATE, JTIME, TA ) ) THEN
-                            MESG = 'Could not read TA from ' // 
-     &                             TNAME( IFIL )
-                            CALL M3EXIT 
-     &                           ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
-                        ENDIF
-
-                    ELSE
-                        MESG = 'Could not read TA from '//TNAME( IFIL )
-                        CALL M3EXIT ( 'PREDIUR', JDATE, JTIME, MESG, 2 )
-                    ENDIF
                 END IF
 
                 KU = 0
@@ -877,7 +824,7 @@ C.....................  Update minimum and maximum per source
  
 C......... Write temp combos indices for each PSI into ASCII file
 
-        CALL M3MSG2( 'Writing out EF-REF/TEMPERATURE file ...' )
+        CALL M3MSG2( 'Writing out EF-REF/TEMPERATURE file...' )
 
         DO 521 K = 1, REFCNT
 
@@ -909,6 +856,8 @@ C...........   Informational (LOG) message formats... 92xxx
 
 C...........   Formatted file I/O formats............ 93xxx
  
+93000   FORMAT( A )
+
 93010   FORMAT( I5, ',', I8, ',', 20( I4, : ',' ), /, 
      &                   49( 15X, 20( I4, : ',' ), / ) )
  
@@ -924,7 +873,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94050   FORMAT( 10 ( A, 1X, F8.2, 2( 1X, A, 1X, I5 ) ) )
 
-94060   FORMAT( A, 2( /, 5X, A, 1X, I7.7, 1X, I6.6, 1X, A ) )
+94060   FORMAT( 10 ( A, :, 1X, I7.7, 1X, I6.6, :, 1X ) )
  
         END
 
