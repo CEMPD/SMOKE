@@ -12,13 +12,13 @@ setenv MRG_SPCMAT_YN Y
 setenv MRG_REPSTA_YN Y
 
 # Get E.V.s from Assigns file
-source $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25.us36-nc
+source $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 
 # Check stationary area sources
 echo 'Stationary area source differences' > $errfile
-diff $REPSCEN/agt.state* $SMKROOT/doc/checkdemo/reports/agt.state* >> $errfile
+diff $REPSCEN/agt.state*191* $SMKROOT/doc/checkdemo/reports/agt.state*191* >> $errfile
 set ar_stat = $status
-diff $REPSCEN/ats.scc* $SMKROOT/doc/checkdemo/reports/ats.scc* >> $errfile
+diff $REPSCEN/ats.scc*191* $SMKROOT/doc/checkdemo/reports/ats.scc*191* >> $errfile
 set ar_stat = $status
 
 # Check biogenic sources
@@ -28,23 +28,23 @@ set bg_stat = $status
 
 # Check mobile sources
 echo 'Mobile source differences' >> $errfile
-diff $REPSCEN/mgt.state* $SMKROOT/doc/checkdemo/reports/mgt.state* >> $errfile
+diff $REPSCEN/mgt.state*191* $SMKROOT/doc/checkdemo/reports/mgt.state*191* >> $errfile
 set mb_stat = $status
-diff $REPSCEN/mts.scc* $SMKROOT/doc/checkdemo/reports/mts.scc* >> $errfile
+diff $REPSCEN/mts.scc*191* $SMKROOT/doc/checkdemo/reports/mts.scc*191* >> $errfile
 set mb_stat = $status
 
 # Check nonroad area sources
 echo 'Nonroad source differences' >> $errfile
-diff $REPSCEN/ngt.state* $SMKROOT/doc/checkdemo/reports/ngt.state* >> $errfile
+diff $REPSCEN/ngt.state*191* $SMKROOT/doc/checkdemo/reports/ngt.state*191* >> $errfile
 set nr_stat = $status
-diff $REPSCEN/nts.scc* $SMKROOT/doc/checkdemo/reports/nts.scc* >> $errfile
+diff $REPSCEN/nts.scc*191* $SMKROOT/doc/checkdemo/reports/nts.scc*191* >> $errfile
 set nr_stat = $status
 
 # Check point sources
 echo 'Point source differences' >> $errfile
-diff $REPSCEN/pgt.state* $SMKROOT/doc/checkdemo/reports/pgt.state* >> $errfile
+diff $REPSCEN/pgt.state*191* $SMKROOT/doc/checkdemo/reports/pgt.state*191* >> $errfile
 set pt_stat = $status
-diff $REPSCEN/pts.scc* $SMKROOT/doc/checkdemo/reports/pts.scc* >> $errfile
+diff $REPSCEN/pts.scc*191* $SMKROOT/doc/checkdemo/reports/pts.scc*191* >> $errfile
 set pt_stat = $status
 
 # Make sure all programs completed successfully
