@@ -5,6 +5,8 @@ C  the SPREADSHEET database table. The output units are g/mi.
 C 
 C  Changes: (Last change first) 
 C 
+C  11 Mar 02: AIR Task Bug384: Change logic so that diesel evaps are 
+C             reported as zero, instead of NA (per ADD HAPS change.) 
 C  04 Dec 01: AIR Task 29: Added ALL VEH, MPG, and EVAP output. 
 C  27 Nov 01: AIR Task 28: New routine. 
 C 
@@ -50,7 +52,7 @@ C
       INCLUDE 'RESUL1.I' ! EFFTP    
       INCLUDE 'RESUL2.I' ! G_MI_EVP    
       INCLUDE 'RESUL3.I' ! VFTP    
-      INCLUDE 'RESUL4.I' ! TOTEVAP, VTEVAP 
+      INCLUDE 'RESUL4.I' ! TOTEVAP, VTEVAP, VDRNL, VHTSK 
       INCLUDE 'SPEED0.I' ! USRSPD 
       INCLUDE 'STRING.I' ! NOYES 
       INCLUDE 'SULFUR.I' ! S_PPM 
@@ -228,10 +230,10 @@ C
 C 
 C  Hot Soak 
 C 
-      CEF='NA' 
       DO IV=1,MAXVEH 
-      IF(VVGASMC(IV).EQ.1) WRITE(CEF(IV),10) G_MI_EVP(IHOTSOAK,IV) 
+      WRITE(CEF(IV),10) G_MI_EVP(IHOTSOAK,IV) 
       END DO 
+      WRITE(CEF(29),10) VHTSK 
 C 
       EVAP='Hot Soak' 
       ETYPE=3 
@@ -245,10 +247,10 @@ C
 C 
 C  Diurnal 
 C 
-      CEF='NA' 
       DO IV=1,MAXVEH 
-      IF(VVGASMC(IV).EQ.1) WRITE(CEF(IV),10) G_MI_EVP(IDIURNAL,IV) 
+      WRITE(CEF(IV),10) G_MI_EVP(IDIURNAL,IV) 
       END DO 
+      WRITE(CEF(29),10) VDRNL 
 C 
       EVAP='Diurnal' 
       ETYPE=4 
@@ -261,10 +263,10 @@ C
 C 
 C  Resting 
 C 
-      CEF='NA' 
       DO IV=1,MAXVEH 
-      IF(VVGASMC(IV).EQ.1) WRITE(CEF(IV),10) G_MI_EVP(IRESTLOSS,IV) 
+      WRITE(CEF(IV),10) G_MI_EVP(IRESTLOSS,IV) 
       END DO 
+      WRITE(CEF(29),10) VRSTLS 
 C 
       EVAP='Resting' 
       ETYPE=5 
@@ -277,10 +279,10 @@ C
 C 
 C  Running 
 C 
-      CEF='NA' 
       DO IV=1,MAXVEH 
-      IF(VVGASMC(IV).EQ.1) WRITE(CEF(IV),10) EFRUNL(IV) 
+      WRITE(CEF(IV),10) EFRUNL(IV) 
       END DO 
+      WRITE(CEF(29),10) VRUNLS 
 C 
       EVAP='Running' 
       ETYPE=6 
@@ -293,10 +295,10 @@ C
 C 
 C  Crankcase 
 C 
-      CEF='NA' 
       DO IV=1,MAXVEH 
-      IF(VVGASMC(IV).EQ.1) WRITE(CEF(IV),10) G_MI_EVP(ICRNCASE,IV) 
+      WRITE(CEF(IV),10) G_MI_EVP(ICRNCASE,IV) 
       END DO 
+      WRITE(CEF(29),10) VCRNK 
 C 
       EVAP='Crankcase' 
       ETYPE=7 
@@ -325,9 +327,8 @@ C
 C 
 C  Total Evap 
 C 
-      CEF='NA' 
       DO IV=1,MAXVEH 
-      IF(VVGASMC(IV).EQ.1) WRITE(CEF(IV),10) TOTEVAP(IV) 
+      WRITE(CEF(IV),10) TOTEVAP(IV) 
       END DO 
       WRITE(CEF(29),10) VTEVAP 
 C 

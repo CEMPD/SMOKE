@@ -8,6 +8,9 @@ C  Calls EFCVT, OUTBUS, OUTDTG, OUTHD3, OUTHDR, OUTHDV, and OUTLDT.
 C 
 C  Changes: (Last change first) 
 C 
+C  11 Mar 02 AIR Task 27: Changed to display diesel evap and All Veh 
+C            (per ADD HAPS change) 
+C  16 Jan 02 AIR Task 27: Added NA for Reformulated Gas if air toxics run 
 C  27 Nov 01 AIR Task 27: Added CO2 and MPG output 
 C  17 Aug 01 EPA bag  Expand the number of significant digits 
 C  23 Oct 00 @EPA-djb Bug288 Added decimal to temperture output. 
@@ -200,6 +203,7 @@ C
       IMPLICIT NONE 
       INCLUDE 'AC.I' 
       INCLUDE 'ALUHIN.I' 
+      INCLUDE 'ATOX1.I' 
       INCLUDE 'BASE10.I' 
       INCLUDE 'CITPAR.I' 
       INCLUDE 'CITRV1.I' 
@@ -273,6 +277,10 @@ C
       CHARACTER(LEN=4), DIMENSION(3) :: NAMREG=(/'Low ','High','Mid '/) 
       CHARACTER(LEN=9) :: DASH8='  ------' 
       CHARACTER(LEN=5) :: EMISS 
+      CHARACTER(LEN=26 ), DIMENSION(3) :: 
+     *  RFGSTAT=(/'No                        ', 
+     *            'Yes                       ', 
+     *            'NA (See Air Toxics Output)'/) 
 C 
 C 
       IF (ILIQUID_LEAKS==INO) THEN 
@@ -315,10 +323,11 @@ C
       ELSE 
         IRFG = 2 
       ENDIF 
+      IF(TOXFLG) IRFG=3 
 C 
    10 WRITE(IOUREP,210) ICY,MONTH(MEVAL),NAMREG(IREJN),TEMMIN,TEMMAX, 
      *                  ABSHUM,RVPBAS,RVPICY,S_PPM,NOYES(IMF), 
-     *                  NOYES(EVIMF),NOYES(IATP),NOYES(IRFG) 
+     *                  NOYES(EVIMF),NOYES(IATP),TRIM(RFGSTAT(IRFG)) 
   210 FORMAT(T15,'      Calendar Year: ',I5/ 
      *       T15,'              Month: ',1X,A4/ 
      *       T15,'           Altitude: ',1X,A4/ 
@@ -331,7 +340,7 @@ C
      *       T15,'Exhaust I/M Program: ',1X,A4/ 
      *       T15,'   Evap I/M Program: ',1X,A4/ 
      *       T15,'        ATP Program: ',1X,A4/ 
-     *       T15,'   Reformulated Gas: ',1X,A4/) 
+     *       T15,'   Reformulated Gas: ',1X,A/) 
 C 
       IF( TEMP_DIST ) THEN 
         WRITE (IOUREP,216) 
@@ -405,7 +414,7 @@ C
         WRITE(IOUREP,FMT0) EMISS,EFFTP(IP,1), 
      *    EFCVT(ILDGT12,IEFFTP,IP),EFCVT(ILDGT34,IEFFTP,IP), 
      *    EFCVT(ILDGT,IEFFTP,IP),EFCVT(IHDGV,IEFFTP,IP),EFFTP(IP,14), 
-     *    EFCVT(ILDDT,IEFFTP,IP),EFCVT(IHDDV,IEFFTP,IP),EFFTP(IP,24), 
+     *    EFCVT(ILDDT,IEFFTP,IP),EFCVT(IHDDV,IEFFTP,IP),EFFTP(IP,IMC), 
      *    VFTP(IP) 
   250   FORMAT(T6,'Composite',A5,':',9F10.2,F10.3) 
   251   FORMAT(T6,'Composite',A5,': ',5F10.3,F9.3,2F10.3,F10.2,F10.3) 
@@ -522,47 +531,60 @@ C
   285     FORMAT('Non-Exhaust Emissions (g/mi):') 
 C 
           WRITE(IOUREP,290) 
-     *     G_MI_EVP(IHOTSOAK,1),EFCVT(ILDGT12,IGMIEVP,IHOTSOAK), 
+     *     G_MI_EVP(IHOTSOAK,ILDGV),EFCVT(ILDGT12,IGMIEVP,IHOTSOAK), 
      *     EFCVT(ILDGT34,IGMIEVP,IHOTSOAK),G_MI_EVP(IHOTSOAK,ILDGT), 
-     *     EFCVT(IHDGV,IGMIEVP,IHOTSOAK),G_MI_EVP(IHOTSOAK,24) 
-  290     FORMAT(T7,'Hot Soak Loss:',5F10.3,30X,F10.3) 
+     *     EFCVT(IHDGV,IGMIEVP,IHOTSOAK),G_MI_EVP(IHOTSOAK,ILDDV), 
+     *     EFCVT(ILDDT,IGMIEVP,IHOTSOAK),EFCVT(IHDDV,IGMIEVP,IHOTSOAK), 
+     *     G_MI_EVP(IHOTSOAK,IMC),VHTSK 
+  290     FORMAT(T7,'Hot Soak Loss:',10F10.3) 
 C 
           WRITE(IOUREP,295) 
-     *     G_MI_EVP(IDIURNAL,1),EFCVT(ILDGT12,IGMIEVP,IDIURNAL), 
+     *     G_MI_EVP(IDIURNAL,ILDGV),EFCVT(ILDGT12,IGMIEVP,IDIURNAL), 
      *     EFCVT(ILDGT34,IGMIEVP,IDIURNAL),G_MI_EVP(IDIURNAL,ILDGT), 
-     *     EFCVT(IHDGV,IGMIEVP,IDIURNAL),G_MI_EVP(IDIURNAL,24) 
-  295     FORMAT(T8,'Diurnal Loss:',5F10.3,30X,F10.3) 
+     *     EFCVT(IHDGV,IGMIEVP,IDIURNAL),G_MI_EVP(IDIURNAL,ILDDV), 
+     *     EFCVT(ILDDT,IGMIEVP,IDIURNAL),EFCVT(IHDDV,IGMIEVP,IDIURNAL), 
+     *     G_MI_EVP(IDIURNAL,IMC),VDRNL 
+  295     FORMAT(T8,'Diurnal Loss:',10F10.3) 
 C 
           WRITE(IOUREP,300) 
-     *     G_MI_EVP(IRESTLOSS,1),EFCVT(ILDGT12,IGMIEVP,IRESTLOSS), 
+     *     G_MI_EVP(IRESTLOSS,ILDGV),EFCVT(ILDGT12,IGMIEVP,IRESTLOSS), 
      *     EFCVT(ILDGT34,IGMIEVP,IRESTLOSS),G_MI_EVP(IRESTLOSS,ILDGT), 
-     *     EFCVT(IHDGV,IGMIEVP,IRESTLOSS),G_MI_EVP(IRESTLOSS,24) 
-  300     FORMAT(T8,'Resting Loss:',5F10.3,30X,F10.3,F10.3) 
+     *     EFCVT(IHDGV,IGMIEVP,IRESTLOSS),G_MI_EVP(IRESTLOSS,ILDDV),  !diesel vehicles do not have evap. emissions 
+     *     EFCVT(ILDDT,IGMIEVP,IRESTLOSS),          !diesel vehicles do not have evap. emissions 
+     *     EFCVT(IHDDV,IGMIEVP,IRESTLOSS),G_MI_EVP(IRESTLOSS,IMC), 
+     *     VRSTLS 
+  300     FORMAT(T8,'Resting Loss:',10F10.3) 
 C 
           WRITE(IOUREP,301) 
      *     EFRUNL(1),EFCVT(ILDGT12,IEFRUNL,IP), 
      *     EFCVT(ILDGT34,IEFRUNL,IP),EFRUNL(ILDGT), 
-     *     EFCVT(IHDGV,IEFRUNL,IP) 
-  301     FORMAT(T8,'Running Loss:',5F10.3,40X,F10.3) 
+     *     EFCVT(IHDGV,IEFRUNL,IP),EFRUNL(ILDDV),       !diesel vehicles do not have evap. emissions 
+     *     EFCVT(ILDDT,IEFRUNL,IP),EFCVT(IHDDV,IEFRUNL,IP),  !diesel vehicles do not have evap. emissions 
+     *     EFRUNL(IMC),VRUNLS 
+  301     FORMAT(T8,'Running Loss:',10F10.3) 
 C 
           WRITE(IOUREP,305) 
-     *     G_MI_EVP(ICRNCASE,1),EFCVT(ILDGT12,IGMIEVP,ICRNCASE), 
+     *     G_MI_EVP(ICRNCASE,ILDGV),EFCVT(ILDGT12,IGMIEVP,ICRNCASE), 
      *     EFCVT(ILDGT34,IGMIEVP,ICRNCASE),G_MI_EVP(ICRNCASE,ILDGT), 
-     *     EFCVT(IHDGV,IGMIEVP,ICRNCASE), G_MI_EVP(ICRNCASE,24) 
-  305     FORMAT(T6,'Crankcase Loss:',5F10.3,30X,F10.3) 
+     *     EFCVT(IHDGV,IGMIEVP,ICRNCASE),G_MI_EVP(ICRNCASE,ILDDV),     !diesel vehicles do not have evap. emissions 
+     *     EFCVT(ILDDT,IGMIEVP,ICRNCASE),EFCVT(IHDDV,IGMIEVP,ICRNCASE),!diesel vehicles do not have evap. emissions 
+     *     G_MI_EVP(ICRNCASE,IMC),VCRNK 
+  305     FORMAT(T6,'Crankcase Loss:',10F10.3) 
 C 
           WRITE(IOUREP,310) 
      *     REFL_GM_MI(1),EFCVT(ILDGT12,IEFREFL,IP), 
      *     EFCVT(ILDGT34,IEFREFL,IP),REFL_GM_MI(ILDGT), 
-     *     EFCVT(IHDGV,IEFREFL,IP) 
-  310     FORMAT(T6,'Refueling Loss:',5F10.3,40X,F10.3) 
+     *     EFCVT(IHDGV,IEFREFL,IP),REFL_GM_MI(ILDDV),       !diesel vehicles do not have evap. emissions 
+     *     EFCVT(ILDDT,IEFREFL,IP),EFCVT(IHDDV,IEFREFL,IP), !diesel vehicles do not have evap. emissions 
+     *     REFL_GM_MI(IMC),VLOSS 
+  310     FORMAT(T6,'Refueling Loss:',10F10.3) 
 C 
         WRITE(IOUREP,320) TOTEVAP(1),EFCVT(ILDGT12,ITEVAP,1), 
      *    EFCVT(ILDGT34,ITEVAP,IP),TOTEVAP(ILDGT), 
-     *    EFCVT(IHDGV,ITEVAP,IP),TOTEVAP(ILDDV), 
-     *    EFCVT(ILDDT,ITEVAP,IP),EFCVT(IHDDV,ITEVAP,IP), 
+     *    EFCVT(IHDGV,ITEVAP,IP),TOTEVAP(ILDDV),          !diesel vehicles do not have evap. emissions 
+     *    EFCVT(ILDDT,ITEVAP,IP),EFCVT(IHDDV,ITEVAP,IP),  !diesel vehicles do not have evap. emissions 
      *    TOTEVAP(24),VTEVAP 
-  320   FORMAT(T3,'Total Non-Exhaust:',9F10.3,F10.3/2X,118('-')) 
+  320   FORMAT(T3,'Total Non-Exhaust:',10F10.3/2X,118('-')) 
 C 
 CCC        IF(HCFLAG.EQ.ALT_EVAP_UNITS) THEN 
 CCC          WRITE(IOUREP,325) 

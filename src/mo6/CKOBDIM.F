@@ -9,6 +9,7 @@ C  Called by TESTIM
 C 
 C  Changes: (Last change first) 
 C 
+C 15 Mar 02 @EPA-djb   : Bug 385, Loop PGM1 from 1 to MAXIMPGM (7). 
 C 09 Jan 02 @EPA-djb   : Bug 356, No OBD I/M for pre-2007 HDGV. 
 C 09 May 01 @EPA-elg   : POST96IM Flag has been effectively disabled. 
 C 16 Apr 00 @EPA-elg   : Allows POST 1996 I/M Input 
@@ -60,7 +61,7 @@ C
 C 
       IF (IMFLAG.LE.1 .AND. EVIMFLAG.LE.1) GOTO 99 
 C 
-      DO PGM1 = 1, MAXIMPGM - 1 
+      DO PGM1 = 1, MAXIMPGM 
 C 
 C       If no data was entered for this program, skip it. 
 C 

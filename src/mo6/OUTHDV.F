@@ -9,6 +9,7 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Mar 02 AIR Task Bug 384: output diesel eveap 
 C  03 Dec 01 AIR Task 28: Added CO2 and MPG output 
 C  17 Aug 01 EPA bag  Expand the number of significant digits 
 C  11 Oct 00 AIR Task 02: Bug Fix 197: Expand VMTMIX precision 
@@ -367,7 +368,7 @@ CCC     *      /'  Refueling (g/gal):',/118('-'))
 C 
 C     Expanded evaporative/HC output, HCFLAG > 1 
 C 
-      IF(HCFLAG.GE.2 .AND. DBSELPOL(1).EQ.2.AND.HDTYPE.EQ.1) THEN 
+      IF(HCFLAG.GE.2 .AND. DBSELPOL(1).EQ.2) THEN 
 C 
           WRITE(IOUREP,285) 
   285     FORMAT('Non-Exhaust Emissions (g/mi):') 

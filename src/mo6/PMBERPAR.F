@@ -6,6 +6,7 @@ C  BERs are at PM30.
 C 
 C  Changes : 
 C 
+C  08 Mar 02 AIR Task 25: Fixed TIER2 LDDV/LDDT Bug 
 C  20 Dec 01 AIR Task 25: The associated diesel sulfur level is now by-model-year. 
 C  04 Dec 01 AIR Task 27-28: Removed 15 ppm diesel sulfur limit from  
 C            HDV 2007 Rule. Did not remove warning message, however. 
@@ -110,17 +111,14 @@ C
       ENDIF 
 C 
 C  Gas BINs are applicable to Tier2 LDGV/T MY2004+ when the TIER2 flag is on. 
-C  Diesel BINs are applicable to LDDV/T MY2007+ when the HDV 2007 rule flag is on. 
+C  Diesel BINs are applicable to LDDV/T MY2004+ when the TIER2 flag is on. 
 C  Note: The associated fuel sulfur content for TIER2 BERs is 30 ppm for 
 C  gas and 8 ppm diesel. 
 C 
-      IF((TIER2_FLAG .EQ. 1         .AND.        ! LDGT/LDGT applicability 
-     *            MY .GE. 2004      .AND. 
-     *            IV .LE. VTLDGT4) 
-     *                              .OR. 
-     *      (HDR2007 .EQ. 1         .AND.        ! LDDV/LDDT applicability 
-     *            MY .GE. 2007      .AND. 
-     *   VVLDDSL(IV) .EQ. 1)) THEN 
+      IF(TIER2_FLAG .EQ. 1         .AND.       ! TIER 2 LDGT/LDGT and LDDV/LDDT applicability 
+     *           MY .GE. 2004      .AND. 
+     *          (IV .LE. VTLDGT4   .OR. 
+     *  VVLDDSL(IV) .EQ. 1)) THEN 
 C 
         IVTEMP=IV                               ! Map IV into BINs 
         IF(IV.EQ.VTLDDV .OR. 
@@ -137,9 +135,6 @@ C
      *                   + T2PM_50K(IVTEMP,IBIN) 
      *                   * T2PM_FRAC(IMY,IBIN,IVTEMP) 
         END DO 
-C 
-        BERMAX(JDX,IV) = BERMAX(JDX,IV) 
-     *                 * HDCPIC(MY,IV)          ! Convert BIN to g/mi, at PM30. 
 C 
           IF(VVDSL(IV).EQ.1) THEN               ! Store associated sulfur level 
             BERSULF(JDX,IV)=8. 

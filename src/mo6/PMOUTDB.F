@@ -9,6 +9,8 @@ C  CallS:  DB_DAILY
 C 
 C  Changes: (Last change first) 
 C 
+C 19 Mar 02: Refixed Bug 21 which caused zero output for tire/brake wear. 
+C            Modified code to print tire/brake wear by facility type. 
 C 15 Nov 01: Added INERR processing. 
 C 19 Apr 01: Added code to prevent output of PM IDLE. 
 C 17 Apr 01: Added code to stop output of GASPM with diesels 
@@ -211,15 +213,15 @@ C
 C 
       END IF 
 C 
-C     Brake or Tire Emissions. Since they are independent of 
-C     road (facility) type, use the arterial value in calls to 
-C     PMDB_DAILY and general DB output (eg HEF(1:24,1) and HEF(IH,1)) 
+C     Brake or Tire Emissions, by facility type 
 C 
       IF (DBSELEFT( 9) .EQ. 2 .AND. IPPM .EQ. 8 .OR. 
      &    DBSELEFT(10) .EQ. 2. AND. IPPM .EQ. 9 ) THEN 
 C 
          EFTYPE = IPPM + 1 
-         IFAC = 5 
+         DO IFAC = 1,4 
+C 
+          IF (DBSELFAC(IFAC) .NE. 2) CYCLE 
 C 
 C        PREPARE HEADER INFORMATION FOR EITHER DATABASE FORMAT 
 C 
@@ -229,7 +231,7 @@ C
 C 
          IF (DBDAILY) THEN 
 C 
-            CALL PMDB_DAILY(HEF(1:24,1),HSRFAC,DBHEADER,RFE, 
+            CALL PMDB_DAILY(HEF(1:24,IFAC),HSRFAC,DBHEADER,RFE, 
      &                    IFAC,IV,JDX,MY) 
 C 
          ELSEIF (.NOT.DBAGGR) THEN 
@@ -240,7 +242,7 @@ C           Miles, MPG, HrVMT, FacVMT, RegDist, VCount, AmbTemp, and
 C           DiurTemp, and MY. Ends is null for all ETypes except Hot Soak. 
 C 
             WRITE(DBUNIT(1),115) (DBHEADER(1:26),IH,TABCHAR, 
-     &        HEF(IH,1),TABCHAR,HEF(IH,1)*BMYMPD(JDX,IV)*HVMT(IH), 
+     &        HEF(IH,IFAC),TABCHAR,HEF(IH,IFAC)*BMYMPD(JDX,IV)*HVMT(IH), 
      &        TABCHAR,STARTSPERDAY(JDX,IV,IW)*STARTDIST(IH,IW),TABCHAR, 
      &        STARTSPERDAY(JDX,IV,IW)*HSRFAC*HS_HRLY_TRP_FRCN(IH,IW), 
      &        TABCHAR,BMYMPD(JDX,IV)*HVMT(IH),TABCHAR,RFE,TABCHAR, 
@@ -248,6 +250,8 @@ C
      &        DBVCOUNT(IV),TABCHAR,TEMHRLY(IH),TABCHAR,TEMHRLY(IH), 
      &        TABCHAR,MY,IH=DBSELHR(LOWER_LMT),DBSELHR(UPPER_LMT)) 
          END IF 
+C 
+         END DO !IFAC 
 C 
       END IF 
 C 

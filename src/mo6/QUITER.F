@@ -12,6 +12,9 @@ C            REFUEL, RDCITY, STOERQ, TFCALX, WTLRNL, YRTEST.
 C 
 C  Changes: (Last change first) 
 C 
+C  18 Jan 02 @EPA-djb Bug381: Changed text content of message 580, added 
+C                     warnings 14, 15 & 16 to the list and changed their 
+C                     device to IOUREP. Added warnings 514,515,581-586. 
 C  15 Jan 02 AIR Task 15: Changed maximum alcohol oxy limit from 3.5% to 3.7% 
 C                         (error message #6) 
 C  14 Jan 02 @EPA-bag Bug377 , Changed "TO" to "T/O" in error message 82. 
@@ -425,7 +428,9 @@ C
 C  Identify type of message. 
 C 
       MTYPE=MERR 
-      IF(MCODE.EQ.10 .OR. MCODE.EQ.21 .OR. MCODE.EQ.22 .OR. MCODE.EQ.31 
+      IF(MCODE.EQ.10 .OR. MCODE.EQ.14 .OR. MCODE.EQ.15 
+     *   .OR. MCODE.EQ.16 
+     *   .OR. MCODE.EQ.21 .OR. MCODE.EQ.22 .OR. MCODE.EQ.31 
      *   .OR. MCODE.EQ.45 .OR. MCODE.EQ.47 
      *   .OR. MCODE.EQ.48 .OR. MCODE.EQ.49 
      *   .OR. MCODE.EQ.52 .OR. (MCODE.GE.56.AND.MCODE.LE.59) 
@@ -436,8 +441,10 @@ C
      *   .OR. MCODE.EQ.135 .OR. MCODE.EQ.146 .OR. MCODE.EQ.152 
      *   .OR. (MCODE.GE.154.AND.MCODE.LE.156) 
      *   .OR. MCODE.EQ.158 .OR. MCODE.EQ.165 .OR. MCODE.EQ.166 
+     *   .OR. MCODE.EQ.514 .OR. MCODE.EQ.515 
      *   .OR. MCODE.EQ.520 .OR. MCODE.EQ.521 
-     *   .OR. (MCODE .GE. 691 .AND. MCODE.LE.699)) 
+     *   .OR. (MCODE .GE. 581 .AND. MCODE.LE. 586) 
+     *   .OR. (MCODE .GE. 691 .AND. MCODE.LE. 699)) 
      *   MTYPE=MWARN 
       IF(MCODE.EQ.44.OR.MCODE.EQ.83.OR.MCODE.EQ.517 
      *   .OR. (MCODE.GE.601 .AND. MCODE.LE.690) ) 
@@ -563,19 +570,19 @@ C
   313 FORMAT(13X,I4,5A4,'MODYR2 (1941 to 2050)') 
       GOTO 198 
 C 
-   14 WRITE(IOUERR,314) RVALUE 
+   14 WRITE(IOUREP,314) RVALUE 
   314 FORMAT(13X,'The combined area wide average speed entered cannot ', 
      *  'be ',/,13X,'less than ',F4.1,' miles per hour.',/, 
      *  13X,'The average speed will be reset to this value.') 
       GOTO 199 
 C 
-   15 WRITE(IOUERR,315) RVALUE 
+   15 WRITE(IOUREP,315) RVALUE 
   315 FORMAT(13X,'The combined area wide average speed entered cannot ', 
      *  'be ',/,13X,'greater than ',F4.1,' miles per hour.',/, 
      *  13X,'The average speed will be reset to this value.') 
       GOTO 199 
 C 
-   16 WRITE(IOUERR,316) RVALUE 
+   16 WRITE(IOUREP,316) RVALUE 
   316 FORMAT( 
      * 13X,'The VMT distribution by facility (',F7.3,') provided',/, 
      * 13X,'with the AVERAGE SPEED command is not equal to one or',/, 
@@ -1514,8 +1521,9 @@ C
      &       ' (0.0 to 100.0).') 
       GOTO 198 
 C 
-  512 CONTINUE 
-      GOTO 199 
+  512 WRITE(IOUERR,712) 
+  712 FORMAT(12X,'A valid AVERAGE SPEED command option was not used.') 
+      GOTO 198 
 C 
   513 WRITE(IOUERR,713) IVALUE 
   713 FORMAT(13X,'The RSD clean screening HC loss for I/M', 
@@ -1523,10 +1531,16 @@ C
      &      /13X,'greater than zero.') 
       GOTO 198 
 C 
-  514 CONTINUE 
+  514 WRITE(IOUREP,714) RVALUE 
+  714 FORMAT(13X,'The combined freeway and ramp average speed entered' 
+     *      /12X,'cannot be less than ',F4.1,' miles per hour.' 
+     *      /12X,'The average speed will be reset to this value.') 
       GOTO 199 
 C 
-  515 CONTINUE 
+  515 WRITE(IOUREP,715) RVALUE 
+  715 FORMAT(12X,'The combined freeway and ramp average speed entered' 
+     *      /12X,'cannot be greater than ',F4.1,' miles per hour.' 
+     *      /12X,'The average speed will be reset to this value.') 
       GOTO 199 
 C 
   516 WRITE(IOUERR,716) IVALUE 
@@ -1893,22 +1907,53 @@ C
       GO TO 198 
 C 
   580 WRITE(IOUERR,780) 
-  780 FORMAT(12X,'The entered values for Freeway VMT and Arterial' 
-     *     /12X,'VMT fractions sum to zero. This is inconsistent with' 
-     *     /12X,'the "FREEWAY" option in the "AVERAGE SPEED" command.') 
+  780 FORMAT(12X,'The entered value for non-ramp Freeway VMT must' 
+     *     /12X,'be greater than zero. A Freeway VMT value of zero is' 
+     *     /12X,'inconsistent with the "FREEWAY" option of the ' 
+     *     /12X,'"AVERAGE SPEED" command.') 
       GO TO 198 
 C 
-  581 CONTINUE 
+  581 WRITE(IOUREP,781) RVALUE 
+  781 FORMAT(12X,'The user supplied freeway average speed of ',F4.1, 
+     &      /12X,'will be used for all hours of the day. 100% of VMT' 
+     &      /12X,'has been assigned to the freeway roadway type for' 
+     &      /12X,'all hours of the day and all vehicle types.') 
+      GO TO 199 
 C 
-  582 CONTINUE 
+  582 WRITE(IOUREP,782) RVALUE 
+  782 FORMAT(12X,'The user supplied freeway average speed of ',F4.1, 
+     &     /12X,'will be used for all hours of the day. 100% of VMT' 
+     &     /12X,'has been assigned to a fixed combination of freeways' 
+     &     /12X,'and freeway ramps for all hours of the day and all' 
+     &     /12X,' vehicle types.') 
+      GO TO 199 
 C 
-  583 CONTINUE 
+  583 WRITE(IOUREP,783) RVALUE 
+  783 FORMAT(12X,'The user supplied arterial average speed of ',F4.1, 
+     &     /12X,'will be used for all hours of the day.  100% of VMT' 
+     &     /12X,'has been assigned to the arterial/collector roadway' 
+     &    /12X,'type for all hours of the day and all vehicle types.') 
+      GO TO 199 
 C 
-  584 CONTINUE 
+  584 WRITE(IOUREP,784) RVALUE 
+  784 FORMAT(12X,'The user supplied area wide average speed of ',F4.1, 
+     &     /12X,'will be used for all hours of the day.  100% of VMT' 
+     &    /12X,'has been assigned to a fixed combination of freeways,' 
+     &     /12X,'freeway ramps, arterial/collector and local roadways' 
+     &     /12X,'for all hours of the day and all vehicle types.') 
+      GO TO 199 
 C 
-  585 CONTINUE 
+  585 WRITE(IOUREP,785) RVALUE 
+  785 FORMAT(12X,'100% of VMT has been assigned to the local roadway' 
+     &    /12X,'type for all hours of the day for all vehicle types' 
+     &    /12X,'with an average speed of ',F4.1,' mph.') 
+      GO TO 199 
 C 
-  586 CONTINUE 
+  586 WRITE(IOUREP,786) RVALUE 
+  786 FORMAT(12X,'100% of VMT has been assigned to the freeway ramp' 
+     &      /12X,'roadway type for all hours of the day for all ' 
+     &    /12X,'vehicle types with an average speed of ',F4.1,' mph.') 
+      GO TO 199 
 C 
   587 CONTINUE 
 C 
@@ -1938,7 +1983,7 @@ C
 C 
   600 CONTINUE 
 C 
-      GO TO 699 
+      GO TO 197 
 C 
   601 WRITE(IOUREP,801) 
   801 FORMAT(15X,'User has enabled STAGE II REFUELING.',/) 
@@ -2168,6 +2213,8 @@ C
 C 
   690 CONTINUE 
 C 
+      GOTO 197 
+C 
   691 WRITE(IOUREP,891) 
   891 FORMAT(/15X,'User has requested OBD RESPONSE.') 
       GOTO 195 
@@ -2227,7 +2274,7 @@ C  Unknown error message numbers land here
 C 
   197 WRITE(IOUERR,497) MESSAG 
   497 FORMAT(13X,' Message code ',I4,' is unknown.') 
-C  Messages 60 and 61 produce excessfive output if not stopped here.  The 
+C  Messages 60 and 61 produce excessive output if not stopped here.  The 
 C  other 
 C  cases stopping execution here are considered "fatal" errors:  The user must 
 C  fix the error-generating input and rerun. 

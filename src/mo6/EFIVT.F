@@ -33,7 +33,6 @@ C            to assist EFCVT in the calculation of emission factors
 C            for composite vehicle types.  
 C 
       IMPLICIT NONE  
-C 
       INCLUDE 'EVAPGR.I' 
       INCLUDE 'PART3.I' 
       INCLUDE 'RESUL1.I' 
@@ -91,7 +90,7 @@ C
                                   ! TIRE=9 
                                   ! EMFACP_PM=10 
                                   ! IDLE PM=11 
-C  
       ENDIF 
+C 
       RETURN 
       END 

@@ -68,8 +68,8 @@ C
         ENDIF 
 C 
         DO 10 UCPTR = 1,26 
-          IF (CH.EQ.LOWCASE(UCPTR:UCPTR)) THEN
-             CH = UPCASE(UCPTR:UCPTR) 
+          IF (CH.EQ.LOWCASE(UCPTR:UCPTR)) THEN 
+            CH = UPCASE(UCPTR:UCPTR) 
             EXIT 
           ENDIF 
    10   CONTINUE 

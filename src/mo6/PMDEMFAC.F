@@ -5,6 +5,7 @@ C  The output values are at particle size PM30.
 C 
 C  Changes : 
 C 
+C  09 Mar 02 AIR Task 28: Moved all ADD HAPS to ATCALX due to expanded role. 
 C  16 Oct 01 AIR Task 25: Changed code so only diesels are processed. 
 C            Removed VMT limits on diesel vehicles. 
 C  11 Sep 01 AIR Task 18: Added HAPS calculations 
@@ -34,9 +35,6 @@ C    /PART3.I/ EFPM,VPM,DBPM
 C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'ATOX1.I' 
-      INCLUDE 'ATOX4.I'     
-      INCLUDE 'ATOX5.I'     
       INCLUDE 'CUMCOM.I'   ! CUMMIL 
       INCLUDE 'IVPCOM.I'   ! IVPTRT 
       INCLUDE 'IVTYPE.I'   ! MAXVEH,VTHDG2B,VTHDG8B,VTHDD2B,VTHDD8B,VTGASBUS,VTSCHOOL,VVLDDSL 

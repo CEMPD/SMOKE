@@ -114,7 +114,6 @@ C     varies from 0.00 to 1.00. Skip the adjustment if the I/M program
 C     effectiveness is no greater than the default value, or if the I/M 
 C     program effectiveness is less than the claimed ATP effectiveness, 
 C     or if there are no test-and-repair IM240 programs.  
-
 C 
       AVGIMF = (DISCNT(1,2) + DISCNT(2,2) + DISCNT(3,2)) / 3.0 
 C 

@@ -9,6 +9,7 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Mar 02 AIR Task Bug 383: Output diesel evap values 
 C  03 Dec 01 AIR Task 28: Added CO2 and MPG output 
 C  17 Aug 01 EPA bag  Expand the number of significant digits 
 C  11 Oct 00 AIR Task 02: Bug Fix 197: Expand VMTMIX precision 
@@ -324,23 +325,23 @@ C
           WRITE(IOUREP,285) 
   285     FORMAT('Non-Exhaust Emissions (g/mi):') 
 C 
-          WRITE(IOUREP,290) G_MI_EVP(IHOTSOAK,VTGASBUS) 
-  290     FORMAT(T7,'Hot Soak Loss:',F10.3) 
+          WRITE(IOUREP,290) (G_MI_EVP(IHOTSOAK,IV),IV=IVFIRST,IVLAST) 
+  290     FORMAT(T7,'Hot Soak Loss:',3F10.3) 
 C 
-          WRITE(IOUREP,295) G_MI_EVP(IDIURNAL,VTGASBUS) 
-  295     FORMAT(T8,'Diurnal Loss:',F10.3) 
+          WRITE(IOUREP,295) (G_MI_EVP(IDIURNAL,IV),IV=IVFIRST,IVLAST) 
+  295     FORMAT(T8,'Diurnal Loss:',3F10.3) 
 C 
-          WRITE(IOUREP,300) G_MI_EVP(IRESTLOSS,VTGASBUS) 
-  300     FORMAT(T8,'Resting Loss:',F10.3) 
+          WRITE(IOUREP,300) (G_MI_EVP(IRESTLOSS,IV),IV=IVFIRST,IVLAST) 
+  300     FORMAT(T8,'Resting Loss:',3F10.3) 
 C 
-          WRITE(IOUREP,315) EFRUNL(VTGASBUS) 
-  315     FORMAT(T8,'Running Loss:',F10.3) 
+          WRITE(IOUREP,315) (EFRUNL(IV),IV=IVFIRST,IVLAST) 
+  315     FORMAT(T8,'Running Loss:',3F10.3) 
 C 
-          WRITE(IOUREP,305) G_MI_EVP(ICRNCASE,VTGASBUS) 
-  305     FORMAT(T6,'Crankcase Loss:',F10.3) 
+          WRITE(IOUREP,305) (G_MI_EVP(ICRNCASE,IV),IV=IVFIRST,IVLAST) 
+  305     FORMAT(T6,'Crankcase Loss:',3F10.3) 
 C 
-          WRITE(IOUREP,310) REFL_GM_MI(VTGASBUS) 
-  310     FORMAT(T6,'Refueling Loss:',F10.3) 
+          WRITE(IOUREP,310) (REFL_GM_MI(IV),IV=IVFIRST,IVLAST) 
+  310     FORMAT(T6,'Refueling Loss:',3F10.3) 
 C 
         WRITE(IOUREP,320) (TOTEVAP(IV),IV=IVFIRST,IVLAST) 
   320   FORMAT(T3,'Total Non-Exhaust:',3F10.3/2X,118('-')) 

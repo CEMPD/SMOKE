@@ -10,6 +10,7 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 May 02 AIR Task Bug383: Output diesel evap values 
 C  03 Dec 01 AIR Task 28: Added CO2 and MPG output 
 C  17 Aug 01 EPA bag  Expand the number of significant digits 
 C  11 Oct 00 AIR Task 02: Bug Fix 197: Expand VMTMIX precision 
@@ -93,6 +94,7 @@ C
       INCLUDE 'FLAGS2.I' 
       INCLUDE 'FLAGS4.I' 
       INCLUDE 'IOUCOM.I' 
+      INCLUDE 'IVTYPE.I' 
       INCLUDE 'MAXIMA.I' 
       INCLUDE 'OPCNTL.I' 
       INCLUDE 'RESUL1.I' 
@@ -130,15 +132,16 @@ C
       CHARACTER(LEN=5),DIMENSION(4)::NAMPOL=(/' HC  ',' CO  ',' NOX ', 
      *                                        ' CO2 '/) 
 C 
-      WRITE(IOUREP,230) NAMVEH,(DASH8,I=1,6),(VMTMIX(IV),IV=2,5), 
-     *                  VMTMIX(15),VMTMIX(28) 
+      WRITE(IOUREP,230) NAMVEH,(DASH8,I=1,6), 
+     *                 (VMTMIX(IV),IV=VTLDGT1,VTLDGT4), 
+     *                  VMTMIX(VTLDDT12),VMTMIX(VTLDDT34) 
   230 FORMAT(T11,'Veh. Type: ',6(2X,A8),/T21,6(2X,A8), 
      *      /T13,'VMT Mix:',6(2X,F8.4)) 
 C 
 C  If CO2 Is selected, print the harmonic mean MPG values. 
 C 
       IF(DBSELPOL(4).EQ.2) WRITE(IOUREP,235)  
-     *   (MPG(IV),IV=2,5),MPG(15),MPG(28) 
+     *   (MPG(IV),IV=VTLDGT1,VTLDGT4),MPG(VTLDDT12),MPG(VTLDDT34) 
   235 FORMAT(T2,'Fuel Economy (mpg):',10F10.1) 
 C 
 C     Print the composite emission factor group. 
@@ -169,8 +172,8 @@ C
         END IF 
         END IF 
 C 
-        WRITE(IOUREP,FMT0) EMISS,(EFFTP(IP,IV),IV=2,5), 
-     *                    EFFTP(IP,15),EFFTP(IP,28) 
+        WRITE(IOUREP,FMT0) EMISS,(EFFTP(IP,IV),IV=VTLDGT1,VTLDGT4), 
+     *                    EFFTP(IP,VTLDDT12),EFFTP(IP,VTLDDT34) 
   250   FORMAT(T6,'Composite',A5,':',6F10.2) 
   251   FORMAT(T6,'Composite',A5,':',6F10.3) 
   252   FORMAT(T6,'Composite',A5,':',F9.2,3F10.2,1X,2F10.3) 
@@ -215,18 +218,23 @@ C
      *       T2,A5,T7 ,'Total Exhaust:',6F10.3) 
       IF(DBSELPOL(1).EQ.2) WRITE(IOUREP,FMT1)  
      * NAMNMH(NMHFLG), 
-     *(STARTEF(1,IV),IV=2,5),STARTEF(1,15),STARTEF(1,28), 
+     *(STARTEF(1,IV),IV=VTLDGT1,VTLDGT4), 
+     * STARTEF(1,VTLDDT12),STARTEF(1,VTLDDT34), 
      * NAMNMH(NMHFLG), 
-     *(RUNEF(1,IV),IV=2,5),RUNEF(1,15),RUNEF(1,28), 
+     *(RUNEF(1,IV),IV=VTLDGT1,VTLDGT4), 
+     * RUNEF(1,VTLDDT12),RUNEF(1,VTLDDT34), 
      * NAMNMH(NMHFLG), 
-     *(EFEXH(IV),IV=2,5),EFEXH(15),EFEXH(28) 
+     *(EFEXH(IV),IV=VTLDGT1,VTLDGT4),EFEXH(VTLDDT12),EFEXH(VTLDDT34) 
 C 
         ASSIGN 270 TO FMT2 
         IF(ICY>1999)  ASSIGN 271 TO FMT2 
       IF(DBSELPOL(2).EQ.2) WRITE(IOUREP,FMT2) 
-     * (STARTEF(2,IV),IV=2,5),STARTEF(2,15),STARTEF(2,28), 
-     * (RUNEF(2,IV),IV=2,5),RUNEF(2,15),RUNEF(2,28), 
-     * (EFFTP(2,IV),IV=2,5),EFFTP(2,15),EFFTP(2,28) 
+     * (STARTEF(2,IV),IV=VTLDGT1,VTLDGT4), 
+     *  STARTEF(2,VTLDDT12),STARTEF(2,VTLDDT34), 
+     * (RUNEF(2,IV),IV=VTLDGT1,VTLDGT4), 
+     *  RUNEF(2,VTLDDT12),RUNEF(2,VTLDDT34), 
+     * (EFFTP(2,IV),IV=VTLDGT1,VTLDGT4), 
+     *  EFFTP(2,VTLDDT12),EFFTP(2,VTLDDT34) 
 C 
   270 FORMAT(/T12,'CO Start:',6F10.2/ 
      *        T10,'CO Running:',6F10.2/ 
@@ -238,9 +246,12 @@ C
         ASSIGN 272 TO FMT3 
         IF(ICY>1999)  ASSIGN 273 TO FMT3 
       IF(DBSELPOL(3).EQ.2) WRITE(IOUREP,FMT3) 
-     * (STARTEF(3,IV),IV=2,5),STARTEF(3,15),STARTEF(3,28), 
-     * (RUNEF(3,IV),IV=2,5),RUNEF(3,15),RUNEF(3,28), 
-     * (EFFTP(3,IV),IV=2,5),EFFTP(3,15),EFFTP(3,28) 
+     * (STARTEF(3,IV),IV=VTLDGT1,VTLDGT4), 
+     *  STARTEF(3,VTLDDT12),STARTEF(3,VTLDDT34), 
+     * (RUNEF(3,IV),IV=VTLDGT1,VTLDGT4), 
+     *  RUNEF(3,VTLDDT12),RUNEF(3,VTLDDT34), 
+     * (EFFTP(3,IV),IV=VTLDGT1,VTLDGT4), 
+     *  EFFTP(3,VTLDDT12),EFFTP(3,VTLDDT34) 
 C 
   272 FORMAT(/T11,'NOx Start:',6F10.2/ 
      *        T9,'NOx Running:',6F10.2/ 
@@ -319,26 +330,36 @@ C
           WRITE(IOUREP,285) 
   285     FORMAT('Non-Exhaust Emissions (g/mi):') 
 C 
-          WRITE(IOUREP,290) (G_MI_EVP(IHOTSOAK,IV),IV=2,5) 
-  290     FORMAT(T7,'Hot Soak Loss:',4F10.3) 
+          WRITE(IOUREP,290) (G_MI_EVP(IHOTSOAK,IV),IV=VTLDGT1,VTLDGT4), 
+     *                       G_MI_EVP(IHOTSOAK,VTLDDT12), 
+     *                       G_MI_EVP(IHOTSOAK,VTLDDT34) 
+  290     FORMAT(T7,'Hot Soak Loss:',6F10.3) 
 C 
-          WRITE(IOUREP,295) (G_MI_EVP(IDIURNAL,IV),IV=2,5) 
-  295     FORMAT(T8,'Diurnal Loss:',4F10.3) 
+          WRITE(IOUREP,295) (G_MI_EVP(IDIURNAL,IV),IV=VTLDGT1,VTLDGT4), 
+     *                       G_MI_EVP(IDIURNAL,VTLDDT12), 
+     *                       G_MI_EVP(IDIURNAL,VTLDDT34) 
+  295     FORMAT(T8,'Diurnal Loss:',6F10.3) 
 C 
-          WRITE(IOUREP,300) (G_MI_EVP(IRESTLOSS,IV),IV=2,5) 
-  300     FORMAT(T8,'Resting Loss:',4F10.3) 
+          WRITE(IOUREP,300) (G_MI_EVP(IRESTLOSS,IV),IV=VTLDGT1,VTLDGT4), 
+     *                       G_MI_EVP(IRESTLOSS,VTLDDT12), 
+     *                       G_MI_EVP(IRESTLOSS,VTLDDT34) 
+  300     FORMAT(T8,'Resting Loss:',6F10.3) 
 C 
-          WRITE(IOUREP,315) (EFRUNL(IV),IV=2,5) 
-  315     FORMAT(T8,'Running Loss:',4F10.3) 
+          WRITE(IOUREP,315) (EFRUNL(IV),IV=VTLDGT1,VTLDGT4), 
+     *                       EFRUNL(VTLDDT12),EFRUNL(VTLDDT34) 
+  315     FORMAT(T8,'Running Loss:',6F10.3) 
 C 
-          WRITE(IOUREP,305) (G_MI_EVP(ICRNCASE,IV),IV=2,5) 
-  305     FORMAT(T6,'Crankcase Loss:',4F10.3) 
+          WRITE(IOUREP,305) (G_MI_EVP(ICRNCASE,IV),IV=VTLDGT1,VTLDGT4), 
+     *                       G_MI_EVP(ICRNCASE,VTLDDT12), 
+     *                       G_MI_EVP(ICRNCASE,VTLDDT34) 
+  305     FORMAT(T6,'Crankcase Loss:',6F10.3) 
 C 
-          WRITE(IOUREP,310) (REFL_GM_MI(IV),IV=2,5) 
-  310     FORMAT(T6,'Refueling Loss:',4F10.3) 
+          WRITE(IOUREP,310) (REFL_GM_MI(IV),IV=VTLDGT1,VTLDGT4), 
+     *                       REFL_GM_MI(VTLDDT12),REFL_GM_MI(VTLDDT34) 
+  310     FORMAT(T6,'Refueling Loss:',6F10.3) 
 C 
-        WRITE(IOUREP,320) (TOTEVAP(IV),IV=2,5), 
-     *   TOTEVAP(15),TOTEVAP(28) 
+        WRITE(IOUREP,320) (TOTEVAP(IV),IV=VTLDGT1,VTLDGT4), 
+     *                     TOTEVAP(VTLDDT12),TOTEVAP(VTLDDT34) 
   320   FORMAT(T3,'Total Non-Exhaust:',6F10.3/2X,118('-')) 
 C 
       ENDIF 

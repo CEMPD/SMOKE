@@ -9,6 +9,7 @@ C  component adjustment factor is computed.
 C 
 C  Changes : 
 C 
+C  11 Mar 02 AIR Task 25: Comments 
 C  14 Jan 02 AIR Task 25: Properly directed error output to IOUERR and 
 C                         corrected error message formatting. 
 C  04 Jan 02 AIT Task 25: Updated negative adjustment error handling. 
@@ -100,7 +101,7 @@ C
 C 
 C  Compute the gasoline BER limit adjustment. Limits are computed by the 
 C  PMBERPAR subroutine. If BERMAX is negative, no limit is applied. 
-C  Warn if adjustment becomes negative. If so, reset to zero.  
+C  Display error if adjustment becomes negative. 
 C 
          IF(BERMAX(JDX,IV).GE.0. .AND. PMBER.GT.BERMAX(JDX,IV)) THEN 
 C 
