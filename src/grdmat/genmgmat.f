@@ -702,12 +702,16 @@ C            VMT by cell/source over County total VMT
                 C   = IC( J )
                 S   = IS( J )
                 N   = NCL( J )
-                IF ( N .EQ. 0 ) CYCLE   ! skip records outside the grid
+                IF ( N .EQ. 0 .OR. C .LE. 0 ) CYCLE  ! skip records outside the grid
 
                 CLIDX( S ) = N
 
-                IF ( N .NE. LN ) CNT = 0
-                IF ( C .NE. LC ) CNT = CNT + 1
+                IF ( N .NE. LN ) THEN
+                    CNT = 1
+                ELSE IF ( C .NE. LC ) THEN
+                    CNT = CNT + 1
+                END IF
+                 
                 IF( CNT .LE. MXCCL ) THEN
                     CNT_CL  ( N )     = CNT
                     VMT_CELL( N,CNT ) = C
