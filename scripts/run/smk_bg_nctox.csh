@@ -46,7 +46,8 @@ setenv BIOMET_SAME      N        # Y: temperature and rad/cld data in same file
 setenv BIOSW_YN         Y        # Y for using seasons file in Tmpbio
 setenv OUTZONE          0        # Output time zone
 setenv RAD_VAR          RGRND    # name of radiation/cloud variable
-setenv TMPR_VAR         TEMP10   # name of temperature variable
+setenv TMPR_VAR         TA       # name of temperature variable
+setenv PRES_VAR         PRES     # name of surface pressure variable
 
 # For Smkmerge - getting county reports
 setenv MRG_TEMPORAL_YN    Y         # Y merges with hourly emissions
@@ -66,7 +67,7 @@ setenv DEBUGMODE        N       # Y changes script to use debugger
 setenv DEBUG_EXE        dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
-setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override 
+# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override 
 # setenv INVTABLE_OVERRIDE          # Inventory table override
 
 ##############################################################################
