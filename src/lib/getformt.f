@@ -195,7 +195,7 @@ C.....................  Skip blank lines
                         EXIT ! To end inner loop
 
                     ELSE IF( CATEGORY .EQ. 'MOBILE' .AND.
-     &                      L .GT. 33 ) THEN            ! Not a perfect test
+     &                      L .GT. 16 ) THEN            ! Not a perfect test
                             
                         GETFORMT = IDAFMT
                         EXIT ! To end inner loop
