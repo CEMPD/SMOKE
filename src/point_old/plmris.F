@@ -53,8 +53,6 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    ! I/O API constants
         INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
-        INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
-        INCLUDE 'TMDIMS3.EXT'   !  emis temporal modeling parms
         INCLUDE 'VGRD3.EXT'     !  vertical direction parms
 
 
