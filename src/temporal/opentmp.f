@@ -1,6 +1,6 @@
 
         SUBROUTINE OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, 
-     &                      NPELV, TNAME )
+     &                      NPELV, TNAME, PDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 103
@@ -61,6 +61,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                GETIFDSC
         CHARACTER(LEN=IOULEN3) MULTUNIT
+        INTEGER                PROMPTFFILE
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
@@ -75,6 +76,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: TZONE  ! zone used for hours in output files
         INTEGER     , INTENT (IN) :: NPELV  ! number of elevated sources
         CHARACTER(*), INTENT(OUT) :: TNAME  ! lay-1 (or all) hourly logical name 
+        INTEGER     , INTENT(OUT) :: PDEV   ! unit number of temporal supmtl file
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
@@ -181,18 +183,15 @@ C.............  Double check that pollutant is in the inventory file
         END DO  ! End loop on pollutants for output
 
 C.........  Prompt for and open I/O API output file(s)...
-
         MESG = 'Enter name for output HOURLY EMISSIONS file'
         NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
         TNAME = NAMBUF
 
-C.........  For now, write message that elevated file is not supported
-        IF( NPELV .GT. 0 ) THEN
-            MESG = 'WARNING: Elevated source file (ETMP) for UAM-'//
-     &             'style elevated emissions ' // CRLF() // BLANK10 //
-     &             'is not yet supported'
-            CALL M3MSG2( MESG )
-        END IF
+C.........  Open supplemental speciation file
+        MESG = 'Enter logical name for the TEMPORAL SUPPLEMENTAL '//
+     &         'file'
+        PDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
+     &                      CRL // 'TSUP', PROGNAME )
 
         RETURN
 

@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -122,11 +122,13 @@ C***********************************************************************
 C   begin body of subroutine OPENTMPIN
 
 C.........  Get environment variables that control program behavior
-        DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', 'Use day-specific data',
-     &                   .FALSE., IOS )
+        IF ( CATEGORY .EQ. 'POINT' ) THEN
+            DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', 'Use day-specific data',
+     &                      .FALSE., IOS )
 
-        HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
-     &                   .FALSE., IOS )
+            HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
+     &                      .FALSE., IOS )
+        END IF
 
         OFLAG = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
 

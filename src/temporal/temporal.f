@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -139,6 +139,7 @@ C...........   Logical names and unit numbers
         INTEGER      :: HDEV = 0!  unit number for holidays file
         INTEGER         LDEV    !  unit number for log file
         INTEGER      :: MDEV = 0!  unit number for mobile codes file
+        INTEGER         PDEV    !  unit number for supplemental tmprl file
         INTEGER         RDEV    !  unit number for temporal profile file
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for emission processes file
@@ -153,7 +154,6 @@ C...........   Logical names and unit numbers
         CHARACTER*16 :: HNAME = 'NONE' !  hour-specific input file, or "NONE"
         CHARACTER*16 :: MNAME = ' '    !  surface temperature file
         CHARACTER*16 :: NNAME = ' '    !  diurnal EF file
-c        CHARACTER*16 :: SNAME = ' '    !  PSIs per source file
         CHARACTER*16 :: TNAME = ' '    !  timestepped (low-level) output file
         CHARACTER*16 :: WNAME = ' '    !  ungridded min/max temperatures
 
@@ -555,7 +555,7 @@ C.........  Reset number of pollutants and emission types based on those used
 
 C.........  Set up and open I/O API output file(s) ...
         CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, NPELV,
-     &                TNAME )
+     &                TNAME, PDEV )
 
         TNLEN = LEN_TRIM( TNAME )
 
@@ -766,8 +766,8 @@ C.............  Abort if error found
             END IF
 
 C.............  For each time step and pollutant or emission type in current 
-C               group, generate hourly emissions, write elevated emissions 
-C               file (if any), and write layer-1 emissions file (or all data).
+C               group, generate hourly emissions, and write layer-1 emissions
+C               file (or all data).
             JDATE = SDATE
             JTIME = STIME
             MDATE = MSDATE
@@ -800,6 +800,10 @@ C               file (if any), and write layer-1 emissions file (or all data).
 
             ENDIF
 
+C.............  Write supplemental temporal profiles file
+            CALL WRTSUP( PDEV, NSRC, NGSZ, EANAM2D( 1,N ) )
+
+C.............  Loop through time steps for current pollutant group
             DO T = 1, NSTEPS
 
 C.................  When there are activity data, assume that there is a 

@@ -262,7 +262,7 @@ C.............  Use same loop for case where this feature is turned off
 C.................  Adjust time zone I based on output time zone and correct
 C                   for negative value.
                 K = I - TZONE
-                IF( K .LT. 0 ) K = 24 + K  !     (e.g., K= -1 -> K= 23)
+c                IF( K .LT. 0 ) K = 24 + K  !     (e.g., K= -1 -> K= 23)
 
 C.................  Convert output time to local time of I time zone, adjusted
 C                   by output time zone.

@@ -720,7 +720,7 @@ C.................  Try for any FIPS code match
                     RETURN                       !  to end of sources-loop
                 END IF
 
-C.................  Try for any country/state code match (not, pol-specific)
+C.................  Try for any country/state code match
                 F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 ) 
 
                 IF( F0 .GT. 0 ) THEN
