@@ -91,7 +91,7 @@ C.........  Parameters for output IDA formats
         INTEGER    , PARAMETER :: ARODIF ( 7 ) = ( /5,5,6,4,3,3,0/ )
         INTEGER    , PARAMETER :: MBOPDIF( 7 ) = ( /5,5,0,0,0,0,0/ )
         INTEGER    , PARAMETER :: MBOADIF( 7 ) = ( /12,0,0,0,0,0,0/ )
-        INTEGER    , PARAMETER :: PTODIF ( 7 ) = ( /8,8,4,3,4,3,3/ )
+        INTEGER    , PARAMETER :: PTODIF ( 7 ) = ( /8,8,4,3,6,3,3/ )
 
         CHARACTER*6, PARAMETER :: AROFMT ( 7 )  = 
      &                        ( / ' F10.4',' F10.4',' F11.4','  F7.2',
@@ -104,7 +104,7 @@ C.........  Parameters for output IDA formats
      &                            '      ','      ','      ' / )
         CHARACTER*6, PARAMETER :: PTOFMT ( 7 ) = 
      &                        ( / ' F13.4',' F13.4','  F7.2','    I3',
-     &                            ' F10.4','    I3','    I3' / )
+     &                            ' F10.3','    I3','    I3' / )
 
 C...........   Local allocatable arrays
         REAL        , ALLOCATABLE :: DATARECS( : )  ! pol/act data
