@@ -114,6 +114,7 @@ C...........   Other local variables
         REAL        ECHECK                    ! tmp sum of emissions in a bin
 
         CHARACTER*12            OUTDATE           !  output date string
+        CHARACTER*100        :: BADRGNM = 'Name unknown'
         CHARACTER*100           BUFFER            !  string building buffer
         CHARACTER*300           MESG              !  message buffer
         CHARACTER(LEN=STRLEN)   STRING            !  output string
@@ -240,16 +241,20 @@ C.............  Include country/state/county code in string
                 LX = 0
             END IF
 
-c note: need to do a check if the BINCOIDX, BINSTIDX, and BINCOIDX are negative
-c    n: If they are, insert "Name unknown"
 
 C.............  Include country name in string
             IF( RPT_%BYCONAM ) THEN
                 J = BINCOIDX( I )
                 L = COWIDTH
                 L1 = L - LV - 1                        ! 1 for space
-                STRING = STRING( 1:LE ) // 
-     &                   CTRYNAM( J )( 1:L1 ) // DELIM
+                IF( J .LE. 0 ) THEN
+                    STRING = STRING( 1:LE ) // 
+     &                       BADRGNM( 1:L1 ) // DELIM
+                ELSE
+                    STRING = STRING( 1:LE ) // 
+     &                       CTRYNAM( J )( 1:L1 ) // DELIM
+                END IF
+
                 MXLE = MXLE + L
                 LE = MIN( MXLE, STRLEN )
             END IF
@@ -259,8 +264,13 @@ C.............  Include state name in string
                 J = BINSTIDX( I )
                 L = STWIDTH
                 L1 = L - LV - 1                        ! 1 for space
-                STRING = STRING( 1:LE ) // 
-     &                   STATNAM( J )( 1:L1 ) // DELIM
+                IF( J .LE. 0 ) THEN
+                    STRING = STRING( 1:LE ) // 
+     &                       BADRGNM( 1:L1 ) // DELIM
+                ELSE
+                    STRING = STRING( 1:LE ) // 
+     &                       STATNAM( J )( 1:L1 ) // DELIM
+                END IF
                 MXLE = MXLE + L
                 LE = MIN( MXLE, STRLEN )
             END IF
@@ -270,8 +280,13 @@ C.............  Include county name in string
                 J = BINCYIDX( I )
                 L = CYWIDTH
                 L1 = L - LV - 1                        ! 1 for space
-                STRING = STRING( 1:LE ) // 
-     &                   CNTYNAM( J )( 1:L1 ) // DELIM
+                IF( J .LE. 0 ) THEN
+                    STRING = STRING( 1:LE ) // 
+     &                       BADRGNM( 1:L1 ) // DELIM
+                ELSE
+                    STRING = STRING( 1:LE ) // 
+     &                       CNTYNAM( J )( 1:L1 ) // DELIM
+                END IF
                 MXLE = MXLE + L
                 LE = MIN( MXLE, STRLEN )
             END IF
