@@ -2,10 +2,10 @@
         SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, ENAME, ANAME, DNAME, 
      &                        HNAME, FNAME, NNAME, MNAME, GNAME, WNAME,
      &                        TVARNAME, SDEV, XDEV, RDEV, FDEV,
-     &                        TDEV, MDEV )
+     &                        CDEV, HDEV, TDEV, MDEV )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 123
 C
 C  DESCRIPTION:
 C      This subroutine opens the file or files for output from the tmppoint
@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -88,7 +88,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: XDEV  ! unit no.: x-ref file
         INTEGER     , INTENT   (OUT) :: RDEV  ! unit no.: tmprl profile file
         INTEGER     , INTENT   (OUT) :: FDEV  ! unit no.: EF x-ref file
-        INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: speciation list file
+        INTEGER     , INTENT   (OUT) :: CDEV  ! unit no.: region codes file
+        INTEGER     , INTENT   (OUT) :: HDEV  ! unit no.: holidays file
+        INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: emissions process file
         INTEGER     , INTENT   (OUT) :: MDEV  ! unit no.: mobile codes file
 
 C...........   LOCAL PARAMETERS
@@ -106,12 +108,16 @@ C...........   Other local variables
         REAL            MAX1, MAX2  ! tmp maximum temperature values
         REAL            MIN1, MIN2  ! tmp minimum temperature values
 
-        LOGICAL         DFLAG       ! day-specific  file available
+        LOGICAL         DFLAG       ! true: day-specific  file available
         LOGICAL         EFLAG       ! true: error found
-        LOGICAL         HFLAG       ! hour-specific file available
+        LOGICAL         HFLAG       ! true: hour-specific file available
+        LOGICAL         XFLAG       ! true: use daylight time exemptions file
+        
 
         CHARACTER*16    MNAME0      ! default gridded temperature file name
         CHARACTER*300   MESG        ! message buffer 
+
+        CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
 
         CHARACTER*16 :: PROGNAME = 'OPENTMPIN' ! program name
 
@@ -126,21 +132,29 @@ C.........  Get environment variables that control program behavior
      &                   .FALSE., IOS )
 
 C.........  Prompt for and open input I/O API and ASCII files
-        ENAME = PROMPTMFILE( 
+C.........  Use NAMBUF for using on the HP
+        NAMBUF = PROMPTMFILE( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
+        ENAME = NAMBUF
 
         SDEV = PROMPTFFILE( 
      &           'Enter logical name for the ASCII INVENTORY file',
      &           .TRUE., .TRUE., ANAME, PROGNAME )
 
-        IF( DFLAG ) DNAME = PROMPTMFILE( 
-     &          'Enter logical name for DAY-SPECIFIC file',
-     &          FSREAD3, CRL // 'DAY', PROGNAME )
+        IF( DFLAG ) THEN
+            NAMBUF = PROMPTMFILE( 
+     &               'Enter logical name for DAY-SPECIFIC file',
+     &               FSREAD3, CRL // 'DAY', PROGNAME )
+            DNAME = NAMBUF
+        END IF
 
-        IF( HFLAG ) HNAME = PROMPTMFILE( 
-     &          'Enter logical name for HOUR-SPECIFIC file',
-     &          FSREAD3, CRL // 'HOUR', PROGNAME )
+        IF( HFLAG ) THEN
+            NAMBUF = PROMPTMFILE( 
+     &               'Enter logical name for HOUR-SPECIFIC file',
+     &               FSREAD3, CRL // 'HOUR', PROGNAME )
+            HNAME = NAMBUF
+        END IF
 
         IF( .NOT. UFLAG ) THEN
             XDEV = PROMPTFFILE( 
@@ -172,7 +186,17 @@ C           results are stored in module MODINFO.
 C.............  Store non-category-specific header information
             NSRC = NROWS3D
 
-        ENDIF        
+        ENDIF
+
+C.........  Open region codes file for determining daylight savings time status
+        CDEV = PROMPTFFILE(
+     &             'Enter logical name for COUNTRY, STATE, AND ' //
+     &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+        
+C.........  Open holidays file for determining holidays by region
+        HDEV = PROMPTFFILE(
+     &             'Enter logical name for HOLIDAYS file',
+     &             .TRUE., .TRUE., 'HOLIDAYS', PROGNAME )
 
 C.........  Open additional files for when activity data are in the inventory.
 C.........  NOTE - this structure currently assumes that all of the
@@ -181,26 +205,30 @@ C           in all cases.  For driving other emission factor models, other
 C           logic would need to be used that evaluates the emission factor
 C           model assigned to each activity, and opens files depending on the
 C           emission factor model.
-
+C.........  Use NAMBUF for the HP
         IF( NIACT .GT. 0 ) THEN
 
             L = LEN_TRIM( MODELNAM )
 
             MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
      &             ' NON-DIURNAL EMISSION FACTORS file'
-            FNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'EFSND', PROGNAME )
+            NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSND', PROGNAME )
+            FNAME = NAMBUF
     
             MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
      &             ' DIURNAL EMISSION FACTORS file'
-            NNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'EFSD', PROGNAME )
+            NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSD', PROGNAME )
+            NNAME = NAMBUF
 
-            GNAME = PROMPTMFILE( 
+            NAMBUF= PROMPTMFILE( 
      &              'Enter logical name for UNGRIDDING MATRIX file',
      &              FSREAD3, CRL // 'UMAT', PROGNAME )
-
-            WNAME = PROMPTMFILE( 
+            GNAME = NAMBUF
+ 
+            NAMBUF= PROMPTMFILE( 
      &              'Enter logical name for UNGRIDDED MIN/MAX ' //
      &              'TEMPERATURE file', FSREAD3, 'MINMAXT', PROGNAME )
+            WNAME = NAMBUF
 
 C.............  Get the header description from the min/max temperatures file
             IF( .NOT. DESC3( WNAME ) ) THEN
@@ -219,9 +247,10 @@ C               for the gridded temperature file
             MNAME0 = 'MET_CRO_2D'
             IF ( TVARNAME .EQ. 'TA' ) MNAME0 = 'MET_CRO_3D'
 
-            MNAME = PROMPTMFILE( 
+            NAMBUF= PROMPTMFILE( 
      &              'Enter logical name for SURFACE TEMPERATURE file',
      &              FSREAD3, MNAME0, PROGNAME )
+            MNAME = NAMBUF
 
 C.............  Get the header of the gridded temperature file
             IF( .NOT. DESC3( MNAME ) ) THEN
