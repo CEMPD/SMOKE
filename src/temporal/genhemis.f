@@ -20,7 +20,7 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 1/99
 C
-C****************************************************************************/
+C************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -51,7 +51,7 @@ C...........   This module contains the cross-reference tables
         USE MODXREF
 
 C...........   This module contains the temporal profile tables
-        USE MODTPRO
+        USE MODTMPRL
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC
@@ -113,7 +113,7 @@ C...........   Local allocatable arrays
 
 C...........   Other local variables
 
-        INTEGER          C, H, I, K, L, M, S, V !  indices and counters
+        INTEGER          C, H, I, J, K, L, M, S, V !  indices and counters
 
         INTEGER, SAVE :: TZMIN   ! minimum time zone in inventory
         INTEGER, SAVE :: TZMAX   ! maximum time zone in inventory
@@ -267,13 +267,29 @@ C                   by output time zone.
 
                 DO H = 1, 24
 
+C.....................  When using time zones to set monthly and weekly profiles
+C.....................  NOTE - this is more correct
                     IF( ZONE4WM ) THEN
-                        CALL DAYMON( TDATE, MON, DAY ) ! month & scratch date
+
+                        CALL DAYMON( TDATE, MON, DAY ) ! month & scratch day
                         DAY = WKDAY( TDATE )           ! get day-of-week
+c                       DAYADJ = EMWKDAY( TDATE )
+
+C.....................  When not using time zones as in previous emissions
+C                       systems
                     ELSE
                         CALL DAYMON( JDATE, MON, DAY )
                         DAY = WKDAY( JDATE )
+                        TDATE = JDATE                  ! set for holiday check
+c                       DAYADJ = EMWKDAY( TDATE )
                     END IF
+
+C.....................  Check if the date is a holiday.  If so, reset the
+C                       day based on the holiday arrays settings.
+C.....................  NOTE - this approach will not work for region-specific
+C                       setting of holidays.
+                    J = FIND1( TDATE, NHOLIDAY, HOLJDATE )
+                    IF( J .GT. 0 ) DAY = HOLALTDY( J )
 
                     MONTH( H,I ) = MON
                     DAYOW( H,I ) = DAY
@@ -286,6 +302,9 @@ C                   by output time zone.
 
 C.............  Set day of week based on output day
             DAY = WKDAY( JDATE )
+c           DAYADJ = EMWKDAY( JDATE )
+cSTOPPED HERE:
+c note: Need to create EMWKDAY and update WRDAYMSG also to use it.
 
 C.............  Write message for day of week and date
             CALL WRDAYMSG( JDATE, MESG )
@@ -354,54 +373,30 @@ C.........  Construct TMAT -- array of effective composite profile coefficients
         IF( TMATCALC ) THEN
 
 C.............  Adjust sources' time zones to account for daylight time...
-C.............  Subtract 1 if date is daylight and TZONES is not and
-C               add 1 if date is not daylight and TZONES is daylight
+C.............  Subtract 1 if date is daylight time and TZONES is not already
+C               converted.  Add 1 if date is standard and TZONES has been
+C               converted.
+C.............  FLTRDAYL is a source-array of 0s and 1s to permit sources
+C               to not get daylight time conversion.
             IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
 
                 DAYLIT = .TRUE.
 
-                TZONES = TZONES - 1  ! array
+                TZONES = TZONES - 1 * FLTRDAYL   ! arrays
 
             ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
 
                 DAYLIT = .FALSE.
 
-                TZONES = TZONES + 1  ! array
+                TZONES = TZONES + 1 * FLTRDAYL   ! arrays
 
             END IF 
                 
-C.............  If there are no weekend packets...
-            IF ( DAY .LT. 6 .OR. NEND .EQ. 0 ) THEN  !  no weekend packet
-
-                IF( WKEMSG ) THEN
-                    MESG = 'NOTE: Weekend-specific profiles have ended.'
-                    CALL M3MSG2( MESG )
-                    WKEMSG = .FALSE.
-                    OUTMSG = .TRUE. 
-                END IF 
-
-                CALL MKTMAT( NSRC, NPLE, JDATE, TZONE, NWKD,
-     &                       TZONES, TPFLAG, MDEX, WDEX, DDEX, 
-     &                       MONTH, DAYOW, WKDFAC, TMAT )
-
-
-C.............  If there are weekend packets, and it's a weekend...
-            ELSE IF( DAY .GE. 6 .AND. NEND .GT. 0 ) THEN
-
-                IF( OUTMSG ) THEN                
-                    MESG = 'NOTE: Weekend-specific profiles start now.'
-                    CALL M3MSG2( MESG )
-                    OUTMSG = .FALSE.
-                    WKEMSG = .TRUE.
-                END IF
-
-                CALL MKTMAT( NSRC, NPLE, JDATE, TZONE, NEND,
-     &                       TZONES, TPFLAG, MDEX, WDEX, EDEX, 
-     &                       MONTH, DAYOW, ENDFAC, TMAT )
-
-            ENDIF      ! End day selection
-
 C.............  Build temporal allocation matrix
+            CALL MKTMAT( NSRC, NPLE, JDATE, TZONE, TZONES, 
+     &                   TPFLAG, MDEX, WDEX, DDEX,
+     &                   MONTH, DAYOW, TMAT )
+
         END IF         ! if TMAT is to be calculated
 
 C.........  Write to screen because WRITE3 only writes to LDEV
