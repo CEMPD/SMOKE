@@ -4,7 +4,7 @@ C Version "@(#)$Id$ $Source$ $Date$
          PROGRAM RAWAREA
 
 C***********************************************************************
-C  program body starts at line 141
+C  program body starts at line 146
 C
 C  DESCRIPTION:
 C       Construct Models3/EDSS area source file from data contained in
@@ -20,13 +20,15 @@ C
 C  REVISION  HISTORY:
 C       Prototype  2/95 by CJC.
 C       Version   11/95 by CJC reads, combines, and sorts multiple input 
-C	files ARAW01, ARAW02, ..., each with its own inventory-year.
-C	Supports both UTM and Lambert-based coordinate systems.
+C       files ARAW01, ARAW02, ..., each with its own inventory-year.
+C       Supports both UTM and Lambert-based coordinate systems.
+C       Version 8/96 by CJC does bounds-checking in loop 144; better
+C       treatment of "missing".
 C***********************************************************************
 
       IMPLICIT NONE
 
-        
+
         INCLUDE 'ARDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
@@ -37,20 +39,20 @@ C***********************************************************************
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
         LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         JULIAN
-        LOGICAL		DSCGRID
+        LOGICAL         DSCGRID
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         SECSDIFF
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
-        
+
         EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN, 
      &           PROMPTFFILE, PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL,
      &           TRIMLEN
@@ -81,11 +83,12 @@ C...........   follow this scheme with parallel arrays
         REAL        REFF
         REAL        RPEN
         REAL        EMIS
+        REAL        VMISS
         INTEGER     LFIP, LID7, LID3
                                  
 C...........   Area Sources Table input unsorted copy (*A); 
 C...........   sorted final version (image EMISREC of data record)
-        
+
         INTEGER     NSRC             !  record-count
         INTEGER     INDEXA( NSMAX )  !  subscript table
         INTEGER     IFIPSA( NSMAX )  !  source FIPS (county) ID
@@ -119,7 +122,7 @@ C.......   variables in the output file.
      &                      TPFLAG, CTLEFF, RULEFF, RULPEN, EMISV
 
 C...........   Other local variables
-        
+
         INTEGER         S, I, J, V      !  loop counters.
         INTEGER         ADEV            !  for area-source file
         INTEGER         ZDEV            !  for time-zone file
@@ -139,9 +142,9 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program RAWAREA
-        
+
         LDEV = INIT3()
-        
+
         WRITE( *,92000 ) 
      &  ' ',
      &  'Program RAWAREA to take multiple EPS/AMS area source files',
@@ -157,7 +160,7 @@ C   begin body of program RAWAREA
      &  'during logical-name entry. Default responses are indicated',
      &  'in brackets [LIKE THIS].',
      &  ' '
-        
+
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             WRITE( *,92000 ) ' ', 'Ending program RAWAREA', ' '
             CALL EXIT( 0 )
@@ -168,7 +171,7 @@ C   begin body of program RAWAREA
      &                 .FALSE.,
      &                 IOS )
 
-        
+
 C.......   Get the coordinate system name and parameters
 C.......   to put into file header:
 
@@ -380,7 +383,7 @@ C                   END IF
                     LID7 = ID7 
                     LID3 = ID3
 
-                END IF
+                END IF              !  if S in bounds
 
                 GO TO  111          !  to head of ADEV-read loop
 
@@ -393,9 +396,9 @@ C                   END IF
             END IF      !  if VFLAG
 
             GO TO 101   !  to process next input file
-        
+
 141     CONTINUE        !  all input files now processed
-        
+
         NSRC = S
         IF ( S .GT. NSMAX ) THEN
             WRITE( *,92010 ) 
@@ -407,23 +410,18 @@ C                   END IF
         END IF
 
 
-C.......   Initialize data structures:
-
-        DO  143  I = 1, NIPOL
-        DO  142  S = 1, NASRC
-            EMISV ( S,I ) = BADVAL3
-            CTLEFF( S,I ) = BADVAL3
-            RULPEN( S,I ) = BADVAL3
-            RULEFF( S,I ) = BADVAL3
-142     CONTINUE
-143     CONTINUE
-
 C.......   Use SORTI3() to perform an indirect sort by FIPS,SCC7,SCC3;
 C.......   then permute the records according to the result:
 
         WRITE( *,92000 ) ' ', 'Sorting RAW AREA SOURCE file...', ' '
 
         CALL SORTI3( NSRC, INDEXA, IFIPSA, ISCC7A, ISCC3A )
+
+        IF ( SFLAG ) THEN
+            VMISS = BADVAL3
+        ELSE
+            VMISS = 0.0
+        END IF
 
         VFLAG = .FALSE.
         LFIP  = IMISS3
@@ -437,6 +435,7 @@ C.......   then permute the records according to the result:
             FIP = IFIPSA( I )
             ID7 = ISCC7A( I )
             ID3 = ISCC3A( I )
+
             IF ( FIP .NE. LFIP  .OR.
      &           ID7 .NE. LID7  .OR.
      &           ID3 .NE. LID3 ) THEN
@@ -446,35 +445,46 @@ C.......   then permute the records according to the result:
                 LID7 = ID7
                 LID3 = ID3
 
-                IFIPS ( J ) = FIP
-                ISCC7 ( J ) = ID7
-                ISCC3 ( J ) = ID3
-                TPFLAG( J ) = TPFLGA( I )
-                INVYR ( J ) = INVYRA( I )
+                IF ( J .LE. NASRC ) THEN
+                    IFIPS ( J ) = FIP
+                    ISCC7 ( J ) = ID7
+                    ISCC3 ( J ) = ID3
+                    TPFLAG( J ) = TPFLGA( I )
+                    INVYR ( J ) = INVYRA( I )
+                END IF      !  if J in bounds
 
-            END IF      !  if new source encountered
+                DO  143  I = 1, NIPOL
+                    EMISV ( J,I ) = VMISS
+                    CTLEFF( J,I ) = BADVAL3
+                    RULPEN( J,I ) = BADVAL3
+                    RULEFF( J,I ) = BADVAL3
+143             CONTINUE
 
-            V = ICODEA( I )
-            IF (EMISV ( J,V ) .LT. AMISS3 ) THEN
-                EMISV ( J,V ) = EMISVA( I )
-                CTLEFF( J,V ) = CTLEFA( I )
-                RULEFF( J,V ) = RULEFA( I )
-                RULPEN( J,V ) = RULPEA( I )
-            ELSE IF ( EMISVA( I ) .GT. 0.0 ) THEN
-                VFLAG = .TRUE.
-                WRITE( MESG,94020 )
-     &              'Duplicate emissions record:  FIP:', FIP,
-     &              'ASC:', ID7, ID3, 
-     &               'Species:', PCODE( V )
-                CALL M3MESG( MESG )
-            END IF
+            ELSE IF ( J .LE. NASRC ) THEN
+
+                V = ICODEA( I )
+
+                IF ( EMISV ( J,V ) .LE. 0.0 ) THEN 
+
+                    EMISV ( J,V ) = EMISVA( I )
+                    CTLEFF( J,V ) = CTLEFA( I )
+                    RULEFF( J,V ) = RULEFA( I )
+                    RULPEN( J,V ) = RULPEA( I )
+
+                ELSE IF ( EMISVA( I ) .GT. 0.0 ) THEN
+
+                    VFLAG = .TRUE.
+                    WRITE( MESG,94020 )
+     &                  'Duplicate emissions record:  FIP:', FIP,
+     &                  'ASC:', ID7, ID3, 
+     &                   'Species:', PCODE( V )
+                    CALL M3MESG( MESG )
+
+                END IF  !  if new pollutant for this source, or not
+
+            END IF      !  if new source encountered; else if J in bounds
 
 144     CONTINUE
-
-        IF ( VFLAG ) THEN
-            CALL M3EXIT( 'RAWAREA', 0, 0, 
-     &                   'Duplicate records found in input file', 2 )
-        END IF
 
         NAREA = J
         IF ( J .NE. NASRC ) THEN
@@ -482,6 +492,11 @@ C.......   then permute the records according to the result:
      &          'Actual=', NAREA, ', Dimensioned=', NASRC,       
      &          'numbers of sources do not match!'
             CALL M3EXIT( 'RAWAREA', 0, 0, MESG, 2 )            
+        END IF
+
+        IF ( VFLAG ) THEN
+            CALL M3EXIT( 'RAWAREA', 0, 0, 
+     &                   'Duplicate records found in input file', 2 )
         END IF
 
         IF ( SFLAG ) THEN
@@ -508,14 +523,6 @@ C.......   then permute the records according to the result:
                 CALL M3EXIT( 'RAWAREA', 0, 0,
      &                       'Missing species recs in input file', 2 )
             END IF
-
-        ELSE            !  not SFLAG:  "missing" ~~~> 0
-
-            DO  148  V = 1, NIPOL
-            DO  147  S = 1, NASRC
-                IF ( EMISV( S,V ) .LT. AMISS3 ) EMISV( S,V ) = 0.0
-147         CONTINUE
-148         CONTINUE
 
         END IF          !  sflag or not:  check for non-set EMIS values
 
@@ -666,14 +673,14 @@ C.......   FDESC3.EXT data structures by DSCGRID().
             VTYPE3D( J ) = M3REAL
             J = J + 1
 214     CONTINUE
-     
+
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for AREA SOURCE output file',
      &          FSUNKN3, 'AREA', 'RAWAREA' )
 
 
 C.......   Write out the area source emissions values:
-        
+
         WRITE( *,92000 ) ' ', 'Writing out AREA SOURCES file...', ' '
 
         IF ( .NOT. WRITE3( ENAME, 'ALL', 0, 0,  IFIPS ) ) THEN
