@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,9 +45,9 @@ C.........  This module contains the major data structure and control flags
 
         IMPLICIT NONE
 
-        INTEGER         I       ! position of '/' in SPCUNIT
+        INTEGER         I, J    ! indices and counters
 
-        CHARACTER*4     TMPUNIT ! tmp first part of SPCUNIT
+        LOGICAL      :: MOLEFLAG = .FALSE.       ! true: outputting moles
         CHARACTER*300   MESG    ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'MRGONAMS' ! program name
@@ -71,6 +71,8 @@ C.........  Initialize - everything will be gridded
         PONAME = 'PG'
         TONAME = 'EG'
 
+        PINGNAME = 'PING'
+
         IF( TFLAG ) THEN
 
             CALL TRIM_AND_CONCAT( AREPNAME, 'T' )
@@ -83,6 +85,7 @@ C.........  Initialize - everything will be gridded
             CALL TRIM_AND_CONCAT( MONAME, 'T' )
             CALL TRIM_AND_CONCAT( PONAME, 'T' )
             CALL TRIM_AND_CONCAT( TONAME, 'T' )
+            CALL TRIM_AND_CONCAT( PINGNAME, 'T' )
 
         END IF
 
@@ -100,6 +103,7 @@ C.........  Initialize - everything will be gridded
             CALL TRIM_AND_CONCAT( MONAME, 'S' )
             CALL TRIM_AND_CONCAT( PONAME, 'S' )
             CALL TRIM_AND_CONCAT( TONAME, 'S' )
+            CALL TRIM_AND_CONCAT( PINGNAME, 'S' )
 
         END IF
 
@@ -158,32 +162,47 @@ C.........  Now append mass or mole for I/O API files, depending on which
 C           inputs were used
         IF( SFLAG ) THEN
 
-            I = INDEX( SPCUNIT, '/' )
-            TMPUNIT = SPCUNIT( 1:I-1 )
+C.............  Set flag if any of the output species are mole-based
+            DO I = 1, NIPPA
+            
+                J = INDEX( GRDUNIT( I ), 'mole' )
+                IF( J .GT. 0 ) THEN
+                    MOLEFLAG = .TRUE.
+                    EXIT
+                END IF
 
-            SELECT CASE ( TMPUNIT )
+            END DO
 
-            CASE( 'gm' ) 
+C.............  Get output file names depending on if there are moles in units
+            IF( MOLEFLAG ) THEN 
 
-                CALL TRIM_AND_CONCAT( AONAME, '_S' )
-                CALL TRIM_AND_CONCAT( MONAME, '_S' )
-                CALL TRIM_AND_CONCAT( PONAME, '_S' )
-                CALL TRIM_AND_CONCAT( TONAME, '_S' )
-
-            CASE( 'mole' ) 
+                CALL TRIM_AND_CONCAT( AREPNAME, '_L' )
+                CALL TRIM_AND_CONCAT( BREPNAME, '_L' )
+                CALL TRIM_AND_CONCAT( MREPNAME, '_L' )
+                CALL TRIM_AND_CONCAT( PREPNAME, '_L' )
+                CALL TRIM_AND_CONCAT( TREPNAME, '_L' )
 
                 CALL TRIM_AND_CONCAT( AONAME, '_L' )
                 CALL TRIM_AND_CONCAT( MONAME, '_L' )
                 CALL TRIM_AND_CONCAT( PONAME, '_L' )
                 CALL TRIM_AND_CONCAT( TONAME, '_L' )
+                CALL TRIM_AND_CONCAT( PINGNAME, '_L' )
 
-            CASE DEFAULT
-                MESG = 'INTERNAL ERROR: SPCUNIT has an unrecognized ' //
-     &                 'value of ' // SPCUNIT // ' in ' // PROGNAME
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+            ELSE 
 
-            END SELECT
+                CALL TRIM_AND_CONCAT( AREPNAME, '_S' )
+                CALL TRIM_AND_CONCAT( BREPNAME, '_S' )
+                CALL TRIM_AND_CONCAT( MREPNAME, '_S' )
+                CALL TRIM_AND_CONCAT( PREPNAME, '_S' )
+                CALL TRIM_AND_CONCAT( TREPNAME, '_S' )
+
+                CALL TRIM_AND_CONCAT( AONAME, '_S' )
+                CALL TRIM_AND_CONCAT( MONAME, '_S' )
+                CALL TRIM_AND_CONCAT( PONAME, '_S' )
+                CALL TRIM_AND_CONCAT( TONAME, '_S' )
+                CALL TRIM_AND_CONCAT( PINGNAME, '_S' )
+
+            END IF
 
         END IF
 

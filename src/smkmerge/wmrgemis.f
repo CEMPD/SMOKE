@@ -1,8 +1,8 @@
 
-        SUBROUTINE WRMRGGRD( VNAME, JDATE, JTIME )
+        SUBROUTINE WMRGEMIS( VNAME, JDATE, JTIME )
 
 C***********************************************************************
-C  subroutine WRMRGGRD body starts at line
+C  subroutine WMRGEMIS body starts at line
 C
 C  DESCRIPTION:
 C      The purpose of this subroutine is to write out all NetCDF files
@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -65,7 +65,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: JTIME   ! time to output (HHMMSS)
 
 C.........  Other local variables
-        INTEGER         J, L, L1, L2
+        INTEGER         J
 
         LOGICAL      :: AOUTFLAG = .FALSE.  ! true: output area sources
         LOGICAL      :: MOUTFLAG = .FALSE.  ! true: output mobile sources
@@ -74,123 +74,70 @@ C.........  Other local variables
         CHARACTER(LEN=IOVLEN3) FILNAM       ! tmp logical file name
         CHARACTER*300          MESG         ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRMRGGRD' ! program name
+        CHARACTER*16 :: PROGNAME = 'WMRGEMIS' ! program name
 
 C***********************************************************************
-C   begin body of subroutine WRMRGGRD
+C   begin body of subroutine WMRGEMIS
 
-! NOTE: For now, this routine will only write a single output file. In the
-!       future, it will write out multiple files.
-
-C.........  Exit subroutine if gridded outputs has been turned off
-        IF( .NOT. LGRDOUT ) RETURN
+C.........  Initialize output flags
+        AOUTFLAG = .FALSE.
+        MOUTFLAG = .FALSE.
+        POUTFLAG = .FALSE.
 
 C.........  Determine the source categories that are valid for output
 C.........  If the subroutine call is for speciated output, use different
 C           indicator arrays for determining output or not.
         IF( SFLAG ) THEN
 
-            IF( AFLAG ) THEN
+            IF( LGRDOUT .AND. AFLAG ) THEN
                 J = INDEX1( VNAME, ANMSPC, AEMNAM )
                 AOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( MFLAG ) THEN
+            IF( LGRDOUT .AND. MFLAG ) THEN
                 J = INDEX1( VNAME, MNMSPC, MEMNAM )
                 MOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( PFLAG ) THEN
+            IF( ( LGRDOUT .OR. PINGFLAG ) .AND. PFLAG ) THEN
                 J = INDEX1( VNAME, PNMSPC, PEMNAM )
                 POUTFLAG = ( J .GT. 0 )
             END IF
 
         ELSE
 
-            IF( AFLAG ) THEN
+            IF( LGRDOUT .AND. AFLAG ) THEN
                 J = INDEX1( VNAME, ANIPOL, AEINAM )
                 AOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( MFLAG ) THEN
-                J = INDEX1( VNAME, MNIPOL, MEINAM )
+            IF( LGRDOUT .AND. MFLAG ) THEN
+                J = INDEX1( VNAME, MNIPPA, MEANAM )
                 MOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( PFLAG ) THEN
+            IF( ( LGRDOUT .OR. PINGFLAG ) .AND. PFLAG ) THEN
                 J = INDEX1( VNAME, PNIPOL, PEINAM )
                 POUTFLAG = ( J .GT. 0 )
-            END IF
+            END IF            
 
         END IF
 
 C.........  For area sources, output file...
-        IF( AOUTFLAG ) THEN
-
-            FILNAM = AONAME
-            IF( .NOT. WRITE3( FILNAM, VNAME,
-     &                        JDATE, JTIME, AEMGRD ) ) THEN
-
-                L  = LEN_TRIM( VNAME )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not write "' // VNAME( 1:L ) //
-     &                 '" to file "'// FILNAM( 1:L2 ) //'"'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-            ENDIF
-
-        END IF
+        IF( AOUTFLAG ) CALL SAFE_WRITE3( AONAME, AEMGRD )
 
 C.........  For mobile sources, output file...
-        IF( MOUTFLAG ) THEN
-
-            FILNAM = MONAME
-            IF( .NOT. WRITE3( FILNAM, VNAME,
-     &                        JDATE, JTIME, MEMGRD ) ) THEN
-
-                L  = LEN_TRIM( VNAME )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not write "' // VNAME( 1:L ) //
-     &                 '" to file "'// FILNAM( 1:L2 ) //'"'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-            ENDIF
-
-        END IF
+        IF( MOUTFLAG ) CALL SAFE_WRITE3( MONAME, MEMGRD )
 
 C.........  For point sources, output file...
-        IF( POUTFLAG ) THEN
+        IF( POUTFLAG ) CALL SAFE_WRITE3( PONAME, PEMGRD )
 
-            FILNAM = PONAME
-            IF( .NOT. WRITE3( FILNAM, VNAME,
-     &                        JDATE, JTIME, PEMGRD ) ) THEN
-
-                L  = LEN_TRIM( VNAME )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not write "' // VNAME( 1:L ) //
-     &                 '" to file "'// FILNAM( 1:L2 ) //'"'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-            ENDIF
-
-        END IF
+C.........  For plume-in-grid, output file...
+        IF( POUTFLAG .AND. PINGFLAG ) 
+     &      CALL SAFE_WRITE3( PINGNAME, PGRPEMIS )
 
 C.........  For multiple source categories, output totals file...
-        IF( XFLAG ) THEN
-
-            FILNAM = TONAME
-            IF( .NOT. WRITE3( FILNAM, VNAME,
-     &                        JDATE, JTIME, TEMGRD ) ) THEN
-
-                L  = LEN_TRIM( VNAME )
-                L2 = LEN_TRIM( FILNAM )
-                MESG = 'Could not write "' // VNAME( 1:L ) //
-     &                 '" to file "'// FILNAM( 1:L2 ) //'"'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-            ENDIF
-
-        END IF
+        IF( XFLAG ) CALL SAFE_WRITE3( TONAME, TEMGRD )
 
         RETURN
 
@@ -200,4 +147,28 @@ C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END SUBROUTINE WRMRGGRD
+C*****************  INTERNAL SUBPROGRAMS  ******************************
+
+        CONTAINS
+
+C.............  This internal subprogram uses WRITE3 and exits gracefully
+C               if a write error occurred
+            SUBROUTINE SAFE_WRITE3( FILNAM, EMDATA )
+
+            CHARACTER(*), INTENT (IN) :: FILNAM
+            REAL        , INTENT (IN) :: EMDATA( * )
+
+            IF( .NOT. WRITE3( FILNAM, VNAME,
+     &                        JDATE, JTIME, EMDATA ) ) THEN
+
+                MESG = 'Could not write "' // VNAME //
+     &                 '" to file "'// FILNAM // '"'
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+            END IF
+
+            RETURN
+
+            END SUBROUTINE SAFE_WRITE3
+
+        END SUBROUTINE WMRGEMIS

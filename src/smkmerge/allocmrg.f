@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALLOCMRG( MXGRP, MXPOLPGP, MXSPPOL )
+        SUBROUTINE ALLOCMRG( MXGRP, MXVARPGP )
 
 C***********************************************************************
 C  subroutine ALLOCMRG body starts at line
@@ -57,8 +57,7 @@ C...........   INCLUDES:
 C.........  SUBROUTINE ARGUMENTS and their descriptions:
 
         INTEGER, INTENT(OUT) :: MXGRP    ! max possible no. of processing groups
-        INTEGER, INTENT(OUT) :: MXPOLPGP ! maximum number of pols per group
-        INTEGER, INTENT(OUT) :: MXSPPOL  ! maximum number of species per pol
+        INTEGER, INTENT(OUT) :: MXVARPGP ! maximum number of variables per group
 
 C...........   EXTERNAL FUCNTIONS:
 
@@ -90,8 +89,7 @@ C...........   Other local variables
 
         INTEGER         I, J         ! counters and indices
         INTEGER         IOS          ! i/o status
-        INTEGER         MXSPPOL_SAV  ! saved MXSPPOL value
-        INTEGER         MXPOLPGP_SAV ! saved MXPOLPGP value
+        INTEGER         MXVARPGP_SAV ! saved MXVARPGP value
         INTEGER         NCNY         ! tmp no. counties
         INTEGER         NDIM         ! tmp dimension        
         INTEGER         NSTA         ! tmp no. states
@@ -122,8 +120,6 @@ C........  Allocate memory for fixed-size area source arrays
             J = NGRID + 2 * ANGMAT
             ALLOCATE( AGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'AGMATX', PROGNAME )
-            ALLOCATE( AIFIP( NASRC ), STAT=IOS )   ! country/state/county codes
-            CALL CHECKMEM( IOS, 'AIFIP', PROGNAME )
 
             ALLOCATE( ARINFO( NASRC,2 ), STAT=IOS )        ! tmp ar react. data
             CALL CHECKMEM( IOS, 'ARINFO', PROGNAME )
@@ -232,8 +228,6 @@ C.........  Mobile source fixed-size arrays
             J = NGRID + 2 * MNGMAT
             ALLOCATE( MGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
-            ALLOCATE( MIFIP( NMSRC ), STAT=IOS )   ! country/state/county codes
-            CALL CHECKMEM( IOS, 'MIFIP', PROGNAME )
 
             ALLOCATE( MRINFO( NMSRC,2 ), STAT=IOS )        ! tmp mb react. data
             CALL CHECKMEM( IOS, 'MRINFO', PROGNAME )
@@ -242,7 +236,7 @@ C.........  Mobile source fixed-size arrays
             CALL CHECKMEM( IOS, 'MEMGRD', PROGNAME )
 
             NDIM = 0
-            IF( LREPINV ) NDIM = NDIM + MNIPOL
+            IF( LREPINV ) NDIM = NDIM + MNIPPA
             IF( LREPSPC ) NDIM = NDIM + MNMSPC
 
             IF( LREPSTA ) THEN
@@ -324,13 +318,11 @@ C.........  Point source fixed-size arrays
             J = NGRID + 2 * NPSRC
             ALLOCATE( PGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'PGMATX', PROGNAME )
-            ALLOCATE( PIFIP( NPSRC ), STAT=IOS )   ! country/state/county codes
-            CALL CHECKMEM( IOS, 'PIFIP', PROGNAME )
 
             ALLOCATE( PRINFO( NPSRC,2 ), STAT=IOS )        ! tmp pt react. data
             CALL CHECKMEM( IOS, 'PRINFO', PROGNAME )
 
-            ALLOCATE( PEMGRD( NGRID ), STAT=IOS ) ! gridded point emissions
+            ALLOCATE( PEMGRD( NGRID,EMLAYS ), STAT=IOS ) ! gridded point emissions
             CALL CHECKMEM( IOS, 'PEMGRD', PROGNAME )
 
             NDIM = 0
@@ -426,7 +418,7 @@ C.........  Total emissions, fixed-size arrays.
         IF( XFLAG ) THEN
 
             NDIM = 0
-            IF( LREPINV ) NDIM = NDIM + NIPOL
+            IF( LREPINV ) NDIM = NDIM + NIPPA
             IF( LREPSPC ) NDIM = NDIM + NMSPC
 
             IF( LREPSTA ) THEN
@@ -493,19 +485,6 @@ C....................................................................
 C........  Allocate memory for variable-sized arrays ...................
 C....................................................................
 
-C.........  Initialize size for species as all pol-to-species combos for each 
-C           source category.
-        ASPCSIZ = ANSMATV
-        MSPCSIZ = MNSMATV
-        PSPCSIZ = PNSMATV
-
-C.........  Initialize maximum number of species per pollutant using all
-C           pollutant-species combinations in the inventory because when this
-C           value is ultimately used, it will be to dimension and index
-C           across all species in the inventory.
-        MXSPPOL = NSMATV
-        MXSPPOL_SAV = MXSPPOL
-
 C.........  Initialize size for multiplicative control pollutants as the actual
 C           number in in matrix for each source category
         AMULSIZ = MIN( ANIPOL, ANUMATV )
@@ -518,18 +497,27 @@ C           number in in matrix for each source category
         MADDSIZ = MIN( MNIPOL, MNAMATV )
         PADDSIZ = MIN( PNIPOL, PNAMATV )
 
-C.........  Initialize size for inventory pollutants as all pollutants for each 
-C           source category
+C.........  Initialize size for species as all pol-to-species combos for each 
+C           source category.
+        ASPCSIZ = ANSMATV
+        MSPCSIZ = MNSMATV
+        PSPCSIZ = PNSMATV
+
+C.........  Initialize size for inventory pollutants, activities, and/or
+C           emission types for each source category
         APOLSIZ = ANIPOL
-        MPOLSIZ = MNIPOL
+        MPOLSIZ = MNIPPA
         PPOLSIZ = PNIPOL
 
-C.........  Initialize maximum number of pollutants per group using all
-C           pollutants in the inventory because when this value is ultimately 
-C           used, it will be to dimension and indexacross all pollutants in the
-C           inventory.
-        MXPOLPGP = NIPOL
-        MXPOLPGP_SAV = MXPOLPGP
+C.........  Initialize maximum number of variables per group using all
+C           pollutants-to-species combinations in the input data, or all 
+C           pollutants in the inventory.
+        IF( SFLAG ) THEN 
+            MXVARPGP = NSMATV
+        ELSE
+            MXVARPGP = NIPPA
+        END IF
+        MXVARPGP_SAV = MXVARPGP
 
 C.........  Head of loop for allocating memory.  When speciation or certain
 C           controls are not being used, the value of the variable used for
@@ -544,76 +532,76 @@ C           if their data values are not accessed.
 C.............  Allocate speciation matrices...
 C.............  Area
             J = 1
-            ASPCSIZ = MIN( ASPCSIZ, MXSPPOL )
+            ASPCSIZ = MIN( ASPCSIZ, MXVARPGP )
             ALLOCATE( ASMATX( NASRC,ASPCSIZ ), STAT=IOSA( J ) )
 	    CALL CHECKMEM( IOSA( J ), 'ASMATX', PROGNAME )
 
 C.............  Mobile
             J = J + 1
-            MSPCSIZ = MIN( MSPCSIZ, MXSPPOL )
+            MSPCSIZ = MIN( MSPCSIZ, MXVARPGP )
             ALLOCATE( MSMATX( NMSRC,MSPCSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'MSMATX', PROGNAME )
 
 C.............  Point
             J = J + 1
-            PSPCSIZ = MIN( PSPCSIZ, MXSPPOL )
+            PSPCSIZ = MIN( PSPCSIZ, MXVARPGP )
             ALLOCATE( PSMATX( NPSRC,PSPCSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'PSMATX', PROGNAME )
 
 C.............  Allocate multiplicative control matrices
 C.............  Area
             J = J + 1
-            AMULSIZ = MIN( AMULSIZ, MXPOLPGP )
+            AMULSIZ = MIN( AMULSIZ, MXVARPGP )
             ALLOCATE( ACUMATX( NASRC,AMULSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'ACUMATX', PROGNAME )
 
 C.............  Mobile
             J = J + 1
-            MMULSIZ = MIN( MMULSIZ, MXPOLPGP )
+            MMULSIZ = MIN( MMULSIZ, MXVARPGP )
             ALLOCATE( MCUMATX( NMSRC,MMULSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'MCUMATX', PROGNAME )
 
 C.............  Point
             J = J + 1
-            PMULSIZ = MIN( PMULSIZ, MXPOLPGP )
+            PMULSIZ = MIN( PMULSIZ, MXVARPGP )
             ALLOCATE( PCUMATX( NPSRC,PMULSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'PCUMATX', PROGNAME )
 
 C.............  Allocate additive control matrices
 C.............  Area
             J = J + 1
-            AADDSIZ = MIN( AADDSIZ, MXPOLPGP )
+            AADDSIZ = MIN( AADDSIZ, MXVARPGP )
             ALLOCATE( ACAMATX( NASRC,AADDSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'ACAMATX', PROGNAME )
 
 C.............  Mobile
             J = J + 1
-            MADDSIZ = MIN( MADDSIZ, MXPOLPGP )
+            MADDSIZ = MIN( MADDSIZ, MXVARPGP )
             ALLOCATE( MCAMATX( NMSRC,MADDSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'MCAMATX', PROGNAME )
 
 C.............  Point
             J = J + 1
-            PADDSIZ = MIN( PADDSIZ, MXPOLPGP )
+            PADDSIZ = MIN( PADDSIZ, MXVARPGP )
             ALLOCATE( PCAMATX( NPSRC,PADDSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'PCAMATX', PROGNAME )
 
 C.............  Allocate emissions arrays
 C.............  Area
             J = J + 1
-            APOLSIZ = MIN( APOLSIZ, MXPOLPGP )
+            APOLSIZ = MIN( APOLSIZ, MXVARPGP )
             ALLOCATE( AEMSRC( NASRC,APOLSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'AEMSRC', PROGNAME )
 
 C.............  Mobile
             J = J + 1
-            MPOLSIZ = MIN( MPOLSIZ, MXPOLPGP )
+            MPOLSIZ = MIN( MPOLSIZ, MXVARPGP )
             ALLOCATE( MEMSRC( NMSRC,MPOLSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'MEMSRC', PROGNAME )
 
 C.............  Point
             J = J + 1
-            PPOLSIZ = MIN( PPOLSIZ, MXPOLPGP )
+            PPOLSIZ = MIN( PPOLSIZ, MXVARPGP )
             ALLOCATE( PEMSRC( NPSRC,PPOLSIZ ), STAT=IOSA( J ) )
             CALL CHECKMEM( IOSA( J ), 'PEMSRC', PROGNAME )
 
@@ -621,7 +609,7 @@ C.............  Allocate emissions arrays needed for reactivity
 C.............  Area
             IF( ARFLAG ) THEN
                 J = J + 1
-                APOLSIZ = MIN( APOLSIZ, MXPOLPGP )
+                APOLSIZ = MIN( APOLSIZ, MXVARPGP )
                 ALLOCATE( AEISRC( NASRC,APOLSIZ ), STAT=IOSA( J ) )
                 CALL CHECKMEM( IOSA( J ), 'AEMSRC', PROGNAME )
             END IF
@@ -629,7 +617,7 @@ C.............  Area
 C.............  Mobile
             IF( MRFLAG ) THEN
                 J = J + 1
-                MPOLSIZ = MIN( MPOLSIZ, MXPOLPGP )
+                MPOLSIZ = MIN( MPOLSIZ, MXVARPGP )
                 ALLOCATE( MEISRC( NMSRC,MPOLSIZ ), STAT=IOSA( J ) )
                 CALL CHECKMEM( IOSA( J ), 'MEMSRC', PROGNAME )
             END IF
@@ -637,7 +625,7 @@ C.............  Mobile
 C.............  Point
             IF( PRFLAG ) THEN
                 J = J + 1
-                PPOLSIZ = MIN( PPOLSIZ, MXPOLPGP )
+                PPOLSIZ = MIN( PPOLSIZ, MXVARPGP )
                 ALLOCATE( PEISRC( NPSRC,PPOLSIZ ), STAT=IOSA( J ) )
                 CALL CHECKMEM( IOSA( J ), 'PEMSRC', PROGNAME )
             END IF
@@ -653,18 +641,10 @@ C               inventory emission matrices sizes
             IF ( RESET ) THEN
                 
 C.................  If there is still room to make it smaller, reduce the 
-C                   maximum number of pol-to-spec combinations, and make sure
-C                   that both odd and even initial numbers will go to 1
-                IF( MXSPPOL .GT. 1 ) THEN
+C                   maximum number of variables per group
+                IF( MXVARPGP .GT. 1 ) THEN
 
-                    MXSPPOL  = MXSPPOL / 2 + MOD( MXSPPOL, 2 )
-                    MXPOLPGP = MIN( MXPOLPGP, MXSPPOL )
-
-C.................  If there is still room to make it smaller, reduce the 
-C                   maximum number of pollutants
-                ELSEIF( MXPOLPGP .GT. 1 ) THEN
-
-                    MXPOLPGP = MXPOLPGP / 2 + MOD( MXPOLPGP, 2 )
+                    MXVARPGP = MXVARPGP / 2 + MOD( MXVARPGP, 2 )
 
 C.................  Not enough memory available
                 ELSE
@@ -696,20 +676,13 @@ C.............  Memory allocation was successfull
 
 C.........  Set the maximum number of processing groups
 C.........  Consider worse case in which each pollutant-species combo is a 
-C           new pollutant.  MXPOLPGP has been set such that this case will be
+C           new pollutant.  MXVARPGP has been set such that this case will be
 C           handled, and the maximum number of groups can simply be set as
 C           the original number of pol-to-spec or pollutants divided by the
 C           current number (plus 1 if there is a remainder)
-        IF( SFLAG ) THEN
-            MXGRP = MXSPPOL_SAV / MXSPPOL
-            IF( MOD( MXSPPOL_SAV, MXSPPOL ) .GT. 0 ) MXGRP = MXGRP + 1
 
-        ELSE
-            MXGRP = MXPOLPGP_SAV / MXPOLPGP
-            IF( MOD( MXPOLPGP_SAV, MXPOLPGP ) .GT. 0 ) MXGRP=MXGRP + 1
-
-        END IF
-
+        MXGRP = MXVARPGP_SAV / MXVARPGP
+        IF( MOD( MXVARPGP_SAV, MXVARPGP ) .GT. 0 ) MXGRP = MXGRP + 1
 
         RETURN
 

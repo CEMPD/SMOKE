@@ -139,6 +139,9 @@ C.........  Retrieve the on/off environment variables
         LFLAG   = ENVYN( 'MRG_LAYERS_YN', 
      &                   'Use layer fractions or not', .FALSE., IOS )
 
+        PINGFLAG = ENVYN( 'SMK_PING_YN',  'Create plume-in-grid ' //
+     &                    'outputs or not', .FALSE., IOS )
+
         VFLAG   = ENVYN( 'MRG_VMT_YN', 
      &                   'Use VMT or not', .FALSE., IOS )
 
@@ -170,6 +173,15 @@ C.........  Retrieve the on/off environment variables
         CTLIOS = IOS
 
         LREPANY = ( LREPSTA .OR. LREPCNY )
+
+C.........  Retrieve variable to indicate whether to use annual or ozone 
+C           season data
+        MESG = 'Use annual or ozone season emissions'
+        LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+
+C.........  Set index for extracting pollutant data
+        INVPIDX = 1
+        IF( .NOT. TFLAG .AND. LO3SEAS ) INVPIDX = 2
 
 C.........  Check output flags to ensure at least some output
         IF( .NOT. LGRDOUT .AND.
