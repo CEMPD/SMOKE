@@ -48,6 +48,7 @@ C...........   INCLUDES:
 
         INCLUDE 'MBDIMS3.EXT'   !  mobile-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'TMDIMS3.EXT'   !  Temporal emis parms (needs DAYS)
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -55,12 +56,20 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        REAL            ENVREAL
+        INTEGER         FIND1
+        REAL            GETREAL
+        CHARACTER*10    HHMMSS
+        INTEGER         LBLANK
+        CHARACTER*14    MMDDYY
+        INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        REAL            GETREAL, ENVREAL
-        INTEGER         LBLANK, TRIMLEN, PROMPTFFILE, FIND1
+        INTEGER         TRIMLEN
+        INTEGER         WKDAY
 
-        EXTERNAL        PROMPTMFILE, TRIMLEN, GETREAL
-        EXTERNAL        LBLANK, PROMPTFFILE, ENVREAL, FIND1
+        EXTERNAL        ENVREAL, FIND1, GETREAL, HHMMSS, LBLANK, 
+     &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN,
+     &                  WKDAY
      
                                             
 C...........   PARAMETERS and their descriptions
@@ -105,13 +114,13 @@ C...........   Point Sources input and output arrays
                                         ! in the MOBL file
 
         ! Variables/arrays to hold various sums.
-        REAL         TOTCOVMT ( MYMXFIP )  / MYMXFIP * 0.0 /
-        REAL         INVLINK  ( MXEMIS ) / MXEMIS * 0 /
-        REAL         INVNLINK ( MXEMIS ) / MXEMIS * 0 /
-        REAL         STLINK   ( MXEMIS, MYMXSTA ) / EMISSTA * 0.0 /
-        REAL         STNLINK  ( MXEMIS, MYMXSTA ) / EMISSTA * 0.0 /
-        REAL         COLINK   ( MXEMIS, MYMXFIP ) / EMISFIP * 0.0 /
-        REAL         CONLINK  ( MXEMIS, MYMXFIP ) / EMISFIP * 0.0 /
+        REAL         TOTCOVMT ( MYMXFIP ) 
+        REAL         INVLINK  ( MXEMIS )
+        REAL         INVNLINK ( MXEMIS )
+        REAL         STLINK   ( MXEMIS, MYMXSTA )
+        REAL         STNLINK  ( MXEMIS, MYMXSTA )
+        REAL         COLINK   ( MXEMIS, MYMXFIP )
+        REAL         CONLINK  ( MXEMIS, MYMXFIP )
 
 
         CHARACTER*16 INVNAMES ( MXEMIS )
@@ -128,13 +137,15 @@ C...........   Other local variables
         INTEGER         OUNIT ( MXEMIS )
         INTEGER         FUNIT
 
-        INTEGER         JDATE, JTIME, TSTEP, NSTEPS
-        INTEGER         NUMVARS, NUMLAYS
-        INTEGER         CURDATE, CURTIME
-        INTEGER         I, J, K, L, LOC, STATUS, POSN
-        REAL            MINVMT
+        INTEGER         BTIME
+        INTEGER         I, J, K, LOC, STATUS, POSN, V
+        INTEGER         JDATE, JTIME
+        INTEGER         LDATE, LTIME
+        INTEGER         NUMVARS, NVEHTYP
+        INTEGER         SDATE, STIME, TSTEP, NSTEPS
         INTEGER         LASTCO, LASTST  ! The last state and county FIPS numbers
                                         ! encountered when summing the VMT.
+        REAL            MINVMT
 
         CHARACTER*16    ENAME   !  logical name for mobile-source input file
         CHARACTER*16    HNAME   !   " for mobile-source emissions input file
@@ -185,12 +196,12 @@ C.......   Get file name; open input area source
      &                  // HNAME( 1:TRIMLEN( HNAME ) ) // '"', 2 )
         END IF
 
-        JDATE = SDATE3D
-        JTIME = STIME3D
+        SDATE = SDATE3D
+        STIME = STIME3D
         TSTEP = TSTEP3D
         NSTEPS = MXREC3D
         NUMVARS = NVARS3D
-        NUMLAYS = NLAYS3D
+        NVEHTYP = NLAYS3D
         IF ( NSRCS .NE. NROWS3D ) THEN
             WRITE ( BUF1, 600 ) NSRCS
             WRITE ( BUF2, 600 ) NROWS3D
@@ -203,7 +214,7 @@ C.......   Get file name; open input area source
         END IF
 
         ! Find the unique inventory pollutant names
-        DO 500 I = 1, NUMVARS
+        DO 20  I = 1, NUMVARS
             ! Look for the underscore in the name
             POSN = INDEX ( VNAME3D ( I ), '_' )
             IF ( POSN .LE. 0 ) THEN
@@ -226,7 +237,7 @@ C.......   Get file name; open input area source
                 INVMAP ( I ) = NUMINV
             END IF
 
-500     CONTINUE
+20      CONTINUE
 
 
         FUNIT = PROMPTFFILE( 
@@ -239,14 +250,14 @@ C.......   Get file name; open input area source
 
 
         ! Prompt for each of the output report file names
-        DO 490 I = 1, NUMINV
+        DO 25  I = 1, NUMINV
             OUNIT ( I ) = PROMPTFFILE( 
      &                  'Enter name for MOBILE ' // 
      &                  INVNAMES( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) //
      &                  ' SUM REPORT file', .FALSE., .TRUE., 'M' // 
      &                  INVNAMES( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) //
      &                  'RPT', 'MOBILSUM' )
-490     CONTINUE
+25      CONTINUE
 
         ! Read complete list of state & County fips codes and names
         TOT_ST = 0
@@ -309,7 +320,10 @@ C.......   Get file name; open input area source
      &                   'Error reading VMT from file' // ENAME, 2)
         END IF
 
-
+C.........  Intialize total county VMT
+        DO 50 I = 1, MYMXFIP
+            TOTCOVMT( I ) = 0.
+50      CONTINUE
 
         ! Figure out the unique list of states and counties in the MOBL file.
         ! Also compute the number of VMT for each county.
@@ -366,137 +380,183 @@ C.......   Get file name; open input area source
 
         ! Read MTMP summing all the data by state and county, making sure
         ! we sum all "layers" (vehicle type) and time steps.
-        CURDATE = JDATE
-        CURTIME = JTIME
-        DO 510 K = 1, NSTEPS
-            IF ( .NOT. READ3 ( HNAME, ALLVAR3, ALLAYS3, CURDATE, 
-     &                         CURTIME, TMAT ) ) THEN
+        JDATE = SDATE
+        JTIME = STIME
+        LDATE = -1
+        LTIME = -1
+        BTIME = JTIME
+        DO 300 K = 1, NSTEPS
+
+            IF ( .NOT. READ3 ( HNAME, ALLVAR3, ALLAYS3, JDATE, 
+     &                         JTIME, TMAT ) ) THEN
                 CALL M3EXIT ( 'MOBILSUM', 0, 0, 
      &                        'Error reading ALLVARS from file ' // 
      &                        HNAME, 2 )
             END IF
- 
-            WRITE( MESG,94010 ) 'Processing time step', K
-            CALL M3MESG( MESG )
- 
-            DO 520 I = 1, NUMVARS
 
-                DO 530 L = 1, NUMLAYS
-                    DO 540 J = 1, NSRCS
+C.............  Perform once-per-day steps
+            IF( JDATE .NE. LDATE ) THEN 
+
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+
+C.................  Initialize summation variables
+
+                DO 160 I = 1, MXEMIS
+
+                    INVNLINK( I ) =  0.
+                    INVLINK ( I ) =  0.
+
+                    DO 140 J = 1, MYMXSTA
+                        STNLINK( I,J ) = 0.
+                        STLINK ( I,J ) = 0.
+140                 CONTINUE
+
+                    DO 150 J = 1, MYMXFIP
+                        CONLINK( I,J ) = 0.
+                        COLINK ( I,J ) = 0.
+150                 CONTINUE
+
+160             CONTINUE
+
+            ENDIF
+
+C.............  Don't want spaces here, so no M3MSG2
+            WRITE( LDEV, 810 ) '        at time ' // HHMMSS( JTIME )
+ 
+            DO 190 I = 1, NUMVARS
+
+                DO 180 V = 1, NVEHTYP
+                    DO 170 J = 1, NSRCS
                         IF ( ILINK ( J ) .EQ. 0 ) THEN
                             INVNLINK ( INVMAP ( I ) ) = 
      &                         INVNLINK ( INVMAP ( I ) ) + 
-     &                         TMAT ( J, L, I )
+     &                         TMAT ( J, V, I )
                             STNLINK ( INVMAP ( I ), STMAP ( J ) ) = 
      &                         STNLINK ( INVMAP ( I ), STMAP ( J ) ) + 
-     &                         TMAT ( J, L, I )
+     &                         TMAT ( J, V, I )
                             CONLINK ( INVMAP ( I ), COMAP ( J ) ) = 
      &                         CONLINK ( INVMAP ( I ), COMAP ( J ) ) + 
-     &                         TMAT ( J, L, I )
+     &                         TMAT ( J, V, I )
                         ELSE
                             INVLINK ( INVMAP ( I ) ) = 
      &                         INVLINK ( INVMAP ( I ) ) + 
-     &                         TMAT ( J, L, I )
+     &                         TMAT ( J, V, I )
                             STLINK ( INVMAP ( I ), STMAP ( J ) ) = 
      &                         STLINK ( INVMAP ( I ), STMAP ( J ) ) + 
-     &                         TMAT ( J, L, I )
+     &                         TMAT ( J, V, I )
                             COLINK ( INVMAP ( I ), COMAP ( J ) ) = 
      &                         COLINK ( INVMAP ( I ), COMAP ( J ) ) + 
-     &                         TMAT ( J, L, I )
+     &                         TMAT ( J, V, I )
                         END IF
-540                 CONTINUE
-530             CONTINUE
-520         CONTINUE
+170                 CONTINUE
+180             CONTINUE
+190         CONTINUE
 
-            ! Increment to the next time step.
-            CALL NEXTIME ( CURDATE, CURTIME, TSTEP )
-510     CONTINUE
+            LDATE = JDATE
+            LTIME = JTIME
+            CALL NEXTIME ( JDATE, JTIME, TSTEP ) ! Next time step.
 
+            IF( JDATE .NE. LDATE .OR. K .EQ. NSTEPS ) THEN
 
-        ! Now generate the reports, one for each inventory pollutant.
-        DO 110 I = 1, NUMINV
-            WRITE ( OUNIT ( I ), 800 ) 
-     &          'Mobile source ' // 
-     &          INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
-     &          ' emissions totals (tons/day)'
-            WRITE ( OUNIT ( I ), 800 ) 
-     &          '-------------------- ' // 
-     &          INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
-     &          ' Inventory ---------------------'
-            WRITE ( OUNIT ( I ), 810 ) 
-     &          '      NON-LINK            LINK           TOTAL'
-            WRITE ( OUNIT ( I ), 880 ) 
-     &          INVNLINK ( I ) * GM2TON, INVLINK ( I ) * GM2TON, 
-     &          ( INVNLINK ( I ) + INVLINK ( I ) ) * GM2TON
+            ! Now generate the reports, one for each inventory pollutant.
+            DO 250 I = 1, NUMINV
+                WRITE ( OUNIT ( I ), 810 ) 
+     &              'Mobile source ' // 
+     &              INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
+     &              ' emissions totals (tons/day)'
 
-            WRITE ( OUNIT ( I ), 850 ) 
-     &          '--------------------- ' // 
-     &          INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
-     &          ' By State ---------------------'
-            WRITE ( OUNIT ( I ), 810 ) 'STATE'
-            WRITE ( OUNIT ( I ), 810 ) 
-     &          'CODE         NON-LINK          LINK         TOTAL' // 
-     &          '    STATE NAME'
+                WRITE( OUNIT( I ), 94010 ) DAYS( WKDAY( LDATE ) ) //
+     &                 MMDDYY( LDATE ) // ' from', BTIME, 'to', LTIME
 
-            DO 90 J = 1, ACT_ST
-                LOC = FIND1 ( ISTLIST ( J ), TOT_ST, ISTFIP )
-                IF ( LOC .GT. 0 ) THEN
-                	FIPNAME = STATES ( LOC )
-                ELSE
-                    FIPNAME = '*** no state name'
-                ENDIF
+                WRITE ( OUNIT ( I ), 800 ) 
+     &              '-------------------- ' // 
+     &              INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
+     &              ' Inventory ---------------------'
+                WRITE ( OUNIT ( I ), 810 ) 
+     &              '      NON-LINK            LINK           TOTAL'
+                WRITE ( OUNIT ( I ), 880 ) 
+     &              INVNLINK ( I ) * GM2TON, INVLINK ( I ) * GM2TON, 
+     &              ( INVNLINK ( I ) + INVLINK ( I ) ) * GM2TON
 
-                WRITE ( OUNIT ( I ), 830 ) 
-     &              ISTLIST ( J ), STNLINK ( I, J ) * GM2TON, 
-     &              STLINK ( I, J ) * GM2TON,
-     &              ( STNLINK ( I, J ) + STLINK ( I, J ) ) * GM2TON, 
-     &              FIPNAME
-90          CONTINUE ! End of state loop
-        
+                WRITE ( OUNIT ( I ), 850 ) 
+     &              '--------------------- ' // 
+     &              INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
+     &              ' By State ---------------------'
+                WRITE ( OUNIT ( I ), 810 ) 'STATE'
+                WRITE ( OUNIT ( I ), 810 ) 
+     &           'CODE         NON-LINK          LINK         TOTAL' // 
+     &           '    STATE NAME'
 
-            WRITE ( OUNIT ( I ), 850 ) 
-     &          '--------------------- ' // 
-     &          INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
-     &          ' By County ---------------------'
-            WRITE ( OUNIT ( I ), 890 ) 
-     &          'Totals for counties with VMT > ', MINVMT, ' miles/day'
-
-            LASTST = 0
-            DO 100 J = 1, ACT_CO
-                IF ( ( ICOLIST ( J ) / 1000 ) .NE. LASTST ) THEN
-                    LASTST = ICOLIST ( J ) / 1000
-                    LOC = FIND1 ( LASTST, TOT_ST, ISTFIP )
+                DO 230 J = 1, ACT_ST
+                    LOC = FIND1 ( ISTLIST ( J ), TOT_ST, ISTFIP )
                     IF ( LOC .GT. 0 ) THEN
                     	FIPNAME = STATES ( LOC )
                     ELSE
                         FIPNAME = '*** no state name'
                     ENDIF
-        
-                    WRITE ( OUNIT ( I ), 860 ) FIPNAME
-                    WRITE ( OUNIT ( I ), 810 ) 'FIPs'
-                    WRITE ( OUNIT ( I ), 810 ) 
-     &                  'CODE         NON-LINK          LINK' //
-     &                  '         TOTAL    COUNTY NAME'
-                END IF
 
-                IF ( TOTCOVMT ( J ) .GE. MINVMT ) THEN
-                    LOC = FIND1 ( ICOLIST ( J ), TOT_CO, ICOFIP )
-                    IF ( LOC .GT. 0 ) THEN
-                    	FIPNAME = COUNTIES ( LOC )
-                    ELSE
-                        FIPNAME = '*** no county name'
-                    ENDIF
-    
-                    WRITE ( OUNIT ( I ), 870 ) 
-     &                  ICOLIST ( J ), CONLINK ( I, J ) * GM2TON, 
-     &                  COLINK ( I, J ) * GM2TON, 
-     &                  ( CONLINK ( I, J ) + COLINK ( I, J ) ) * GM2TON, 
+                    WRITE ( OUNIT ( I ), 830 ) 
+     &                  ISTLIST ( J ), STNLINK ( I, J ) * GM2TON, 
+     &                  STLINK ( I, J ) * GM2TON,
+     &                  ( STNLINK ( I, J ) + STLINK ( I, J ) ) * GM2TON, 
      &                  FIPNAME
-                END IF
-100         CONTINUE ! End of county loop
-
-110     CONTINUE ! End of emissions loop
+230             CONTINUE ! End of state loop
         
+
+                WRITE ( OUNIT ( I ), 850 ) 
+     &           '--------------------- ' // 
+     &           INVNAMES ( I )( 1:TRIMLEN ( INVNAMES ( I ) ) ) // 
+     &           ' By County ---------------------'
+                WRITE ( OUNIT ( I ), 890 ) 
+     &           'Totals for counties with VMT > ', MINVMT, ' miles/day'
+
+                LASTST = 0
+                DO 240 J = 1, ACT_CO
+                    IF ( ( ICOLIST ( J ) / 1000 ) .NE. LASTST ) THEN
+                        LASTST = ICOLIST ( J ) / 1000
+                        LOC = FIND1 ( LASTST, TOT_ST, ISTFIP )
+                        IF ( LOC .GT. 0 ) THEN
+                        	FIPNAME = STATES ( LOC )
+                        ELSE
+                            FIPNAME = '*** no state name'
+                        ENDIF
+        
+                        WRITE ( OUNIT ( I ), 860 ) FIPNAME
+                        WRITE ( OUNIT ( I ), 810 ) 'FIPs'
+                        WRITE ( OUNIT ( I ), 810 ) 
+     &                      'CODE         NON-LINK          LINK' //
+     &                      '         TOTAL    COUNTY NAME'
+                    END IF
+
+                    IF ( TOTCOVMT ( J ) .GE. MINVMT ) THEN
+                        LOC = FIND1 ( ICOLIST ( J ), TOT_CO, ICOFIP )
+                        IF ( LOC .GT. 0 ) THEN
+                        	FIPNAME = COUNTIES ( LOC )
+                        ELSE
+                            FIPNAME = '*** no county name'
+                        ENDIF
+    
+                        WRITE ( OUNIT ( I ), 870 ) 
+     &                   ICOLIST ( J ), CONLINK ( I, J ) * GM2TON, 
+     &                   COLINK ( I, J ) * GM2TON, 
+     &                   ( CONLINK ( I, J ) + COLINK ( I, J ) )* GM2TON, 
+     &                   FIPNAME
+                    END IF
+240             CONTINUE ! End of county loop
+
+                WRITE( OUNIT( I ) , 810 ) ' '
+
+250         CONTINUE ! End of species loop
+
+C.................  Set begining time for next day
+                BTIME = JTIME
+
+            ENDIF
+        
+300     CONTINUE
+
 999     CONTINUE          !  exit program
 
         MESG = 'Normal completion of MOBILSUM'
@@ -518,6 +578,6 @@ C******************  FORMAT  STATEMENTS   ******************************
 880     FORMAT ( F14.2, 2X, F14.2, 2X, F14.2 )
 890     FORMAT ( A, F12.2, A )
 
-94010   FORMAT( 10 (A, :, 1X, I5, :, 1X ) )
+94010   FORMAT( 10 (A, :, 1X, I6, :, 1X ) )
 
         END
