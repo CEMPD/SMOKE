@@ -48,8 +48,8 @@ metscan: $(MSCN) $(ALLI) $(LIBPATH)
         $(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MSCN) $(LIBS)
 #
 metscan.debug: $(MSCN) $(ALLI) $(LIBPATH_DEBUG)
-        echo METSCAN \(debug\):
-        $(FC) $(DBGFLAGS) -o $(@) $(MSCN) $(LIBS_DEBUG)
+        echo 'METSCAN (debug):'
+	$(FC) $(DBGFLAGS) -o $(@) $(MSCN) $(LIBS_DEBUG)
 
 MVC=mvcondns.o
 
