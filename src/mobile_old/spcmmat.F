@@ -109,9 +109,9 @@ C...........   Speciation naming and indexing lists
         INTEGER     NMPOL                     !  No. model species
         INTEGER     NSNAME                    !  No. of variables in SMAT
         INTEGER     NSP     ( MXEPRC )        !  No. model spcs per MV process
-        CHARACTER*8 EINAM   ( MXIPOL )        !  Inventory species names
+        CHARACTER*3 EINAM   ( MXIPOL )        !  Inventory species names
         CHARACTER*8 EMNAM   ( MXMPOL )        !  Model species names
-        CHARACTER*8 ISPC_PRC( MXEPRC, MXMPOL )!  Inv species per MV process
+        CHARACTER*3 ISPC_PRC( MXEPRC, MXMPOL )!  Inv species per MV process
         CHARACTER*8 MSPC_PRC( MXEPRC, MXMPOL )!  Model species per MV process
         CHARACTER*8 MEMODE  ( MXEPRC )        !  Emission modes
  
