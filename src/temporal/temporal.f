@@ -851,7 +851,13 @@ C           warning.
         DO I = 1, NIPOL
 
 C.............  Look for pollutant in list of pollutants created by activities
-            J = INDEX1( EINAM( I ), NEPOL, EMTPOL )
+C               First, make sure that EMTPOL has been allocated; it won't be
+C               when not using emission factors
+            IF( ALLOCATED( EMTPOL ) ) THEN
+                J = INDEX1( EINAM( I ), NEPOL, EMTPOL )
+            ELSE
+                J = 0
+            END IF
 
 C.............  If pollutant created by activity, skip from this list, unless
 C               pollutant is also part of the inventory pollutants
@@ -947,13 +953,7 @@ C.........  Make sure total array size is not larger than maximum
             ALLOCATE( EMAC ( NSRC, NGSZ )    , STAT=IOS6 )
             ALLOCATE( EMACV( NSRC, NGSZ )    , STAT=IOS7 )
             ALLOCATE( EMIST( NSRC, NGSZ )    , STAT=IOS8 )
-            
-C.............  Only need to allocate if we have activities            
-            IF( NIACT .GT. 0 ) THEN
-                ALLOCATE( EMFAC( NSRC, NGSZ )    , STAT=IOS9 )
-            ELSE
-            	IOS9 = 0
-            END IF
+            ALLOCATE( EMFAC( NSRC, NGSZ )    , STAT=IOS9 )
             
             IF( IOS1 .GT. 0 .OR. IOS2 .GT. 0 .OR. IOS3 .GT. 0 .OR.
      &          IOS4 .GT. 0 .OR. IOS6 .GT. 0 .OR.
