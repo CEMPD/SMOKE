@@ -71,7 +71,7 @@ if ( $?QA_LABEL ) then
 
 else
 
-   set ilabl = $INVOP
+   set ilabl = $FYIOP
    set slabl = $ESCEN
 
 endif
@@ -346,7 +346,7 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/smkreport.$SRCABBR.$logabbr.log
 if ( $?RUN_SMKREPORT ) then
-   if ( $RUN_SMKREPORT == 'Y' && -e $SMK_BIN/smkreport ) then
+   if ( $RUN_SMKREPORT == Y ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.csh
