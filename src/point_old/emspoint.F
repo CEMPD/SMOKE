@@ -1393,6 +1393,16 @@ C...................   Fix up missing stack parameters:
                                     DM = DM0
                                     TK = TK0
                                     VE = VE0
+
+                                    WRITE( MESG,94080 )    ! sl
+     &                              'No stack parameter for FIP '
+     &                               , FIP, 'SCC',   SCC
+                                    CALL M3MESG( MESG )
+
+                                    WRITE( MESG,93000 )
+     &                              '     Using default SCC'
+                                    CALL M3MESG( MESG )
+
                                 END IF 
                             END IF 
                         END IF 
@@ -1426,6 +1436,16 @@ C...................   Fix up missing stack parameters:
                                     DM = DM0
                                     TK = TK0
                                     VE = VE0
+
+                                    WRITE( MESG,94080 )    ! sl
+     &                              'No stack parameter for FIP '
+     &                               , FIP, 'SCC',   SCC
+                                    CALL M3MESG( MESG )
+
+                                    WRITE( MESG,93000 )
+     &                              '     Using default SCC'
+                                    CALL M3MESG( MESG )
+
                                 END IF 
                             END IF 
                         END IF 
@@ -1454,6 +1474,17 @@ C...................   Fix up missing stack parameters:
                                 ELSE
                                     TK = TK0
                                     VE = VE0
+
+                                    WRITE( MESG,94080 )    ! sl
+     &                              'No stack parameter for FIP '
+     &                               , FIP, 'SCC',   SCC
+                                    CALL M3MESG( MESG )
+
+                                    WRITE( MESG,93000 )
+     &                              '     Using default SCC'
+                                    CALL M3MESG( MESG )
+
+
                                 END IF 
                             END IF 
                         END IF 
@@ -1477,6 +1508,16 @@ C...................   Fix up missing stack parameters:
                                     VE = VE1( K )
                                 ELSE
                                     VE = VE0
+
+                                    WRITE( MESG,94080 )    ! sl
+     &                              'No stack parameter for FIP '
+     &                               , FIP, 'SCC',   SCC
+                                    CALL M3MESG( MESG )
+
+                                    WRITE( MESG,93000 )
+     &                              '     Using default SCC'
+                                    CALL M3MESG( MESG )
+
                                 END IF 
                             END IF 
                         END IF 
@@ -2049,6 +2090,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94060   FORMAT( 10( A, :, E10.3, :, 1X ) )
 
+94080   FORMAT( '************  ', A, I7, ' ,  ' , A, I12 )
  
         END
 

@@ -1301,6 +1301,18 @@ C...........   Try to get SCC-only match;
                     DREF( V ) = DPR00( V )
 78              CONTINUE
 
+                WRITE( MESG,94010 )    ! sl
+     &              'No profile for FIP ', FIP,
+     &                  'SCC',   SCC,
+     &                  'Plant', PLT,
+     &                  'Stack', STK
+                CALL M3MESG( MESG )
+
+                WRITE( MESG,94010 )
+     &              '     Using default SCC'
+                CALL M3MESG( MESG )
+
+
             END IF      !  if find3() FIP-and-ASC succeeded
 
 C...............   Now look up these refs
