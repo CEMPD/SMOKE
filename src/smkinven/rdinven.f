@@ -101,14 +101,14 @@ C...........   Dropped emissions
 
 C...........   File units and logical/physical names
         INTEGER         EDEV( 5 )   !  up to 5 EMS-95 emissions files
-        INTEGER         TDEV        !  emissions file in list format file
+        INTEGER         TDEV        !  file listed in list formatted input file
 
 C...........   Other local variables
         INTEGER         I, J, L, L1, L2 !  counters and indices
 
         INTEGER         ERRIOS      !  error i/o stat from sub call(s)
         INTEGER         ERRREC      !  record number for error msgs
-        INTEGER         INY         !  tmp inventory year
+        INTEGER      :: INY = 0     !  tmp inventory year
         INTEGER         IOS         !  i/o status
         INTEGER         INVFMT      !  inventory format code
         INTEGER         FLEN        !  length of FNAME string
@@ -206,6 +206,15 @@ C           the weekly profiles
      &             'WKDAY_NORMALIZE to Y and rerunning.'
             CALL M3MSG2( MESG )
 
+        ELSE IF( FILFMT .EQ. EPSFMT .AND. WKSET .NE. WTPRFAC ) THEN
+
+            MESG = 'WARNING: EPS2.0 format files will be using ' //
+     &             'non-standard approach of ' // CRLF() // BLANK10 //
+     &             'weekday normalized weekly profiles.  Can ' //
+     &             'correct by setting ' // CRLF() // BLANK10 //
+     &             'WKDAY_NORMALIZE to N and rerunning.'
+            CALL M3MSG2( MESG )
+
         END IF
 
 C.........  Set default inventory characteristics (declared in MODINFO) used
@@ -272,8 +281,8 @@ C.........  IDA format (single file)
 
             CASE( 'MOBILE' )
                 
-                CALL RDIDAMB( FDEV, NRAWIN, MXIDAT, WKSET, INVDNAM, 
-     &                        NRAWOUT, EFLAG, NDROP, EDROP )
+                CALL RDIDAMB( FDEV, NRAWIN,NEDIM1, MXIDAT, WKSET, 
+     &                        INVDNAM, NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'POINT' )
                 CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIDAT, WKSET, 
@@ -288,18 +297,21 @@ C.........  EPS format (single file)
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-C                CALL RDEPSAR(  )
+                CALL RDEPSAR( FDEV, NRAWIN, MXIDAT, WKSET, INVDCOD,
+     &                        INVDNAM, INY, NRAWOUT, ERRIOS, ERRREC, 
+     &                        ERFILDSC, EFLAG, NDROP, EDROP )
 
             CASE( 'MOBILE' )
 c                CALL RDEPSMV(  )
 
             CASE( 'POINT' )
-C                CALL RDEPSPT(  )
-
-c                CBLRIDA = BLRBLNK3! Internal to rdepspt!
-c                CORISA  = ORSBLNK3
+                CALL RDEPSPT( FDEV, NRAWIN, MXIDAT, WKSET, INVDCOD,
+     &                        INVDNAM, INY, NRAWOUT, ERRIOS, ERRREC, 
+     &                        ERFILDSC, EFLAG, NDROP, EDROP )
 
             END SELECT
+
+            NRAWBP = NRAWOUT 
 
 C.........  SMOKE list format requires a loop for multiple files
 C.........  Includes EMS-95 format
@@ -345,38 +357,45 @@ C.................  Read file based on format set above
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-                        CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIDAT, 
+                        CALL RDIDAAR( TDEV, NRAWIN, NEDIM1, MXIDAT, 
      &                                WKSET, INVDNAM, NRAWOUT, EFLAG, 
      &                                NDROP, EDROP )
 
                     CASE( 'MOBILE' )
-                        CALL RDIDAMB( FDEV, NRAWIN, MXIDAT, WKSET, 
+                        CALL RDIDAMB( TDEV, NRAWIN, MXIDAT, WKSET, 
      &                                INVDNAM, NRAWOUT, EFLAG, NDROP, 
      &                                EDROP  )
 
                     CASE( 'POINT' )
-                        CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIDAT, 
+                        CALL RDIDAPT( TDEV, NRAWIN, NEDIM1, MXIDAT, 
      &                                WKSET, INVDNAM, NRAWOUT, EFLAG, 
      &                                NDROP, EDROP )
 
                     END SELECT
+
+                    CLOSE( TDEV )
 
                 ELSEIF( FILFMT .EQ. EPSFMT ) THEN
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-C                        CALL RDEPSAR(  )
+                        CALL RDEPSAR( TDEV, NRAWIN, MXIDAT, WKSET, 
+     &                                INVDCOD, INVDNAM, INY, NRAWOUT, 
+     &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
+     &                                NDROP, EDROP )
 
                     CASE( 'MOBILE' )
 c                        CALL RDEPSMV(  )
 
                     CASE( 'POINT' )
-C                        CALL RDEPSPT(  )
-
-C                        CBLRIDA = BLRBLNK3  ! Internal to rdepspt!
-C                        CORISA  = ORSBLNK3
+                        CALL RDEPSPT( TDEV, NRAWIN, MXIDAT, WKSET, 
+     &                                INVDCOD, INVDNAM, INY, NRAWOUT, 
+     &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
+     &                                NDROP, EDROP )
 
                     END SELECT
+
+                    CLOSE( TDEV )
 
                 ELSEIF( FILFMT .EQ. EMSFMT ) THEN
 
@@ -446,6 +465,11 @@ C    n: vehicle mix will take place.
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                     END IF
+
+C.....................  Close EMS-95 files
+                    DO I = 1, NEMSFILE
+                        CLOSE( EDEV( I ) )
+                    END DO
 
                 ELSE  ! File format not recognized	
 
