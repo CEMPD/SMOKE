@@ -182,7 +182,7 @@ C.........  Check for valid operation type
             POADFLT = .TRUE.
             SFLAG   = .TRUE.
         CASE( 'TEMPORAL' ) 
-            POADFLT = .FALSE.
+            POADFLT = .TRUE.
             TFLAG   = .TRUE.
         CASE( 'VMTMIX' ) 
             POADFLT = .FALSE.
