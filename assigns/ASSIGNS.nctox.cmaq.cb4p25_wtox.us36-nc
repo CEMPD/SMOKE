@@ -27,7 +27,7 @@
 
    setenv METSCEN      a1a              # Met scenario name
    setenv GRID         us36-nc          # Gridding root for naming
-   setenv IOAPI_GRID_1 US36NC_23X12     # Grid selected from GRIDDESC file
+   setenv IOAPI_GRIDNAME_1 US36NC_23X12 # Grid selected from GRIDDESC file
    setenv SPC          cmaq.cb4p25_wtox # Speciation type
    setenv ESDATE       19960709         # Start date of emis time-based files
    setenv MSDATE       19960709         # Start date of met  time-based files
