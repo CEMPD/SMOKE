@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -227,7 +227,6 @@ C.............  Set source category code
 
 C.............  Set control efficiency
             CEFF = STR2REAL( LINE( 88 : 94 ) )
-            IF ( CEFF .LT. 0 ) CEFF = 0.0
 
 C.............  Check and set time period type (Year/day/hourly)
             TMPAA = LINE( 95:96 )

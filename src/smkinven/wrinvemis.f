@@ -2,7 +2,7 @@
         SUBROUTINE WRINVEMIS( FNAME )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 111
 C
 C  DESCRIPTION:
 C      This subroutine writes the average inventory emissions to the inventory
@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -340,7 +340,13 @@ C.................  If current data variable is the first variable in the
 C                   formula, then store data in formula arrays
                 IF( NAMES( I ) .EQ. VIN_A ) THEN
                     COMPUTED( :,1 ) = COMPUTED( :,1 ) + SRCPOL( :,1 )
-                    COMPUTED( :,1:NPVAR ) = SRCPOL( :,1:NPVAR )
+                    IF ( NPVAR .GT. 1 ) THEN
+                        COMPUTED( :,2 )= COMPUTED( :,2 ) + SRCPOL( :,2 )
+                    END IF
+
+                    IF ( NPVAR .GT. 2 ) THEN
+                        COMPUTED( :,3:NPVAR ) = SRCPOL( :,3:NPVAR )
+                    END IF
                 END IF
 
 C.................  If current data variable is the second variable in the
@@ -349,10 +355,17 @@ C                   formula, then use data in formula to compute output value
 
                     IF( CHKPLUS ) THEN
                         COMPUTED( :,1 )= COMPUTED( :,1 ) + SRCPOL( :,1 )
+                        IF ( NPVAR .GT. 1 ) THEN
+                            COMPUTED(:,2)= COMPUTED(:,2) + SRCPOL(:,2)
+                        END IF
 
                     ELSE IF( CHKMINUS ) THEN
                         COMPUTED( :,1 )= COMPUTED( :,1 ) - SRCPOL( :,1 )
-                    END IF
+                        IF ( NPVAR .GT. 1 ) THEN
+                             COMPUTED(:,2)= COMPUTED(:,2) - SRCPOL(:,2)
+                        END IF
+
+                   END IF
 
                 END IF
 

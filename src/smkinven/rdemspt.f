@@ -967,11 +967,7 @@ C.............  Set source control parameters (will get rule effectiveness
 C.............  from another file.
 
             CEFF  = STR2REAL( LINE( 126:132 ) )
-            IF ( CEFF .LT. 0.0 )  THEN 
-                CEFF = 0.0
-            ELSE
-                CEFF = CEFF * 100.0
-            END IF
+            CEFF = CEFF * 100.0
 
 C.............  Copy source characteristics from strings with local 
 C               length to strings with global lengths

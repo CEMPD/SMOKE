@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -344,13 +344,10 @@ C               the various data fields...
             TSCC = ADJUSTL ( LINE(  26:35 ) )  ! SCC code
 
             CEFF  = STR2REAL( LINE( 79:84 ) )
-            IF ( CEFF .LT. 0.0 )  CEFF = 0.0
 
             REFF  = STR2REAL( LINE( 86:91 ) )
-            IF ( REFF .LT. 0.0 )  REFF = 100.0
 
             RPEN  = STR2REAL( LINE( 93:97 ) )
-            IF ( RPEN .LT. 0.0 )  RPEN = 100.0
 
             EMIS = STR2REAL( LINE( 64:73 ) )
 

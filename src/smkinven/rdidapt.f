@@ -3,7 +3,7 @@
      &                      NRAWOUT, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 180
 C
 C  DESCRIPTION:
 C      This subroutine reads the IDA format point-source inventory
@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
