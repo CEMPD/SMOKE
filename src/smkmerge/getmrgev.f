@@ -66,7 +66,7 @@ C...........   Other local variables
         CHARACTER*4     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
         CHARACTER*4     CTLADD   ! value of MRG_CTLMAT_ADD  E.V.
         CHARACTER*4     CTLREAC  ! value of MRG_CTLMAT_REAC E.V.
-        CHARACTER*300   BUFFER   ! text buffer
+        CHARACTER*100   BUFFER   ! text buffer
         CHARACTER*300   MESG     ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'GETMRGEV' ! program name
