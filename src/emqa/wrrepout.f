@@ -61,7 +61,7 @@ C.........  This module contains Smkreport-specific settings
      &                      SRG1FMT, SRG1WIDTH, SRG2FMT, SRG2WIDTH,
      &                      MONFMT, MONWIDTH, WEKFMT, WEKWIDTH,
      &                      DIUFMT, DIUWIDTH, CHARFMT, CHARWIDTH,
-     &                      STKPFMT, STKPWIDTH, CHARWIDTH, ELEVWIDTH,
+     &                      STKPFMT, STKPWIDTH, ELEVWIDTH,
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
      &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH

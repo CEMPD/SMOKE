@@ -45,7 +45,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LIN_TITLE, LIN_SUBDATA, LIN_UNIT, PSFLAG,
      &                      SPCPOL, LSPCPOL, NREPORT, NSPCPOL, RC_ERROR,
      &                      MXINDAT, MXTITLE, RPT_, PKTEND, PKTSTART,
-     &                      FIL_ONAME, UNITSET, TITLE, PKTCOUNT, INDNAM
+     &                      FIL_ONAME, UNITSET, TITLE, PKTCOUNT
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPOL, EINAM

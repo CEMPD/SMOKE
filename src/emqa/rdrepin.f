@@ -44,7 +44,7 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: SRGID, CSOURC, IDIU, IWEK, IMON,
      &                      SPPROF, IFIP, STKHT, STKDM, STKTK,
-     &                      STKVE, CSOURC
+     &                      STKVE 
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: NMATX, AFLAG, NREPORT, GFLAG, GSFLAG, 
