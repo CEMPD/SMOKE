@@ -183,6 +183,9 @@ C
 C     Perform PM emission factor calculations, if necessary. 
 C 
       IF(INERR.EQ.0 .AND. PARTFLG) CALL PMCALX(ICY,INERR,RC) 
+ccs   Change particulate size and recalculate emission factors
+      PSZCUT = 10
+      IF(INERR.EQ.0 .AND. PARTFLG) CALL PMCALX(ICY,INERR,RC)
 C 
 C     Print the output report. 
 C 
