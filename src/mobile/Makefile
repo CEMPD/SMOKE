@@ -33,7 +33,7 @@ mbsetup.debug: $(MBSET) $(ALLI) $(LIBPATH_DEBUG)
 #
 PRE=premobl.o rdspdsrc.o openshour.o asgngrps.o \
       hourtemp.o avertemp.o wrshour.o opengroup.o \
-      rdgroups.o calcrelhum.o
+      rdgroups.o
 
 premobl: $(PRE) $(ALLI) $(LIBPATH)
 	echo 'PREMOBL:'
@@ -48,7 +48,7 @@ premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 EMS=emisfac.o rdm6list.o wrm6input.o rdgrplist.o \
      openscen.o rdspdline.o chkm6scn.o getspdln.o \
      wrspdvmt.o rdhourtemp.o rplctemp.o wrm6header.o \
-     opensef.o wremfacs.o rplcmet.o
+     opensef.o wremfacs.o rplcmet.o calcrelhum.o
 
 emisfac: $(EMS) $(ALLI) $(LIBPATH)
 	echo 'EMISFAC:'
@@ -69,7 +69,6 @@ include $(FS_ROOT)/modmake.inc
 asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
 asgnspds.o    : $(MODSOURC) $(MODXREF) $(MODINFO)
 avertemp.o    : $(MODMET)
-chkm6scn.o    : $(MODINFO)
 emisfac.o     : $(MODINFO) $(MODLISTS) $(MODMET) $(MODEMFAC) $(MODFILESET)
 hourtemp.o    : $(MODMBSET) $(MODSOURC) $(MODINFO) $(MODMET)
 mbsetup.o     : $(MODSOURC) $(MODINFO) $(MODMBSET)
@@ -82,14 +81,14 @@ rdhourtemp.o  : $(MODMET)
 rdm6list.o    : $(MODEMFAC)
 rdmcref.o     : $(MODMBSET)
 rdmvref.o     : $(MODMBSET)
+rdspdline.o   : $(MODEMFAC)
 rplcmet.o     : $(MODMET)
 rplctemp.o    : $(MODMET)
 wremfacs.o    : $(MODSOURC) $(MODINFO) $(MODEMFAC)
 wrm6header.o  : $(MODEMFAC)
-wrspdvmt.o    : $(MODMOBIL) $(MODMBSET)
-wrtimegr.o    : $(MODMBSET)
-rdspdline.o   : $(MODEMFAC)
 wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET) $(MODXREF)
+wrspdvmt.o    : $(MODMOBIL)
+wrtimegr.o    : $(MODMBSET)
 
 clean:
 	/bin/rm -f *.o
