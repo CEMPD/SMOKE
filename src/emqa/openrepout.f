@@ -14,6 +14,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
 C  
@@ -38,6 +39,11 @@ C Last updated: $Date$
 C  
 C***********************************************************************
 
+C...........   MODULES for public variables
+
+C.........  This module contains Smkreport-specific settings
+        USE MODREPRT
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -49,20 +55,24 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2   CRLF
         INTEGER       GETEFILE
         INTEGER       JUNIT
+	LOGICAL	      SETENVVAR
 
-        EXTERNAL    CRLF, GETEFILE, JUNIT
+        EXTERNAL    CRLF, GETEFILE, JUNIT, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FILNAM   ! physical or logical file name
-        INTEGER     , INTENT(OUT) :: FDEV     ! unit number of file
+        INTEGER     , INTENT(OUT) :: FDEV( RPT_%NUMFILES ) ! unit number of file
 
 C...........   Local variables
-        INTEGER         L               ! counters and indices
+        INTEGER         I, L, L2        ! counters and indices
         INTEGER         IOS             ! i/o status
 
+	CHARACTER*3     FILENO          ! tmp file number buffer
+	CHARACTER*10	FMT             ! tmp format buffer
         CHARACTER*16    VARBUF          ! logical file name buffer
         CHARACTER*300   MESG            ! message buffer
         CHARACTER*300   PNAME           ! physical file name on ENVSTR test
+	CHARACTER*300   NNAME           ! new physical file name buffer
 
         CHARACTER*16 :: PROGNAME = 'OPENREPOUT' ! program name
 
@@ -79,20 +89,60 @@ C           defined environment variable
             CALL ENVSTR( VARBUF, MESG, ' ', PNAME, IOS )
         END IF
 
-C.........  If it is a defined environment variable, open as logical file name
-        IF( IOS .EQ. 0 ) THEN
+C.........  Open output file(s)
+	DO I = 1, RPT_%NUMFILES
 
-            FDEV = GETEFILE( FILNAM, .FALSE., .TRUE., PROGNAME )
+C.........  If it is a defined environment variable, open as logical file name
+            IF( IOS .EQ. 0 ) THEN
+
+C.........  If muliple files are being output then open them
+                IF( RPT_%RPTMODE .EQ. 1 ) THEN
+
+C.........  Create new file name
+                    IF( I .GE. 10 ) THEN
+                        FMT = '( A, I2 )'
+                    ELSE IF( I .GE. 100 ) THEN
+                        FMT = '( A, I3 )'
+                    ELSE
+                        FMT = '( A, I1 )'
+                    END IF
+
+                    L = LEN_TRIM( PNAME )
+                    WRITE( NNAME, FMT ) PNAME( 1:L )//'_', I
+
+C.........  Set logical file name to new file name
+                    IF( .NOT. SETENVVAR( FILNAM, NNAME ) ) THEN
+                        MESG = 'Could not set logical file '//
+     &                         'name for file ' // TRIM( NNAME )
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+                END IF
+
+                FDEV( I ) = GETEFILE( FILNAM, .FALSE.,
+     &                                    .TRUE., PROGNAME )
 
 C.........  If it is not a defined environment variable, open as physical file
 C           name
-        ELSE
+            ELSE
+	
+		IF( RPT_%RPTMODE .EQ. 1 ) THEN
 
-            FDEV = JUNIT()
-            OPEN( FDEV,ERR=1006,FILE=FILNAM,STATUS='UNKNOWN',RECL=2500 )
+		    WRITE( FILENO, '( I3 )' ) I
+		    FILENO = ADJUSTL( FILENO )
+		    NNAME = FILNAM // '_' // FILENO
+		
+		END IF
 
-        END IF
+                FDEV( I ) = JUNIT()
+                OPEN( FDEV( I ),ERR=1006,FILE=NNAME,
+     &                    STATUS='UNKNOWN',RECL=2500 )
 
+
+            END IF
+
+	END DO
+	
         RETURN
 
 C.........  Error opening raw input file
