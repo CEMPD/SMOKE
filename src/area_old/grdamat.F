@@ -138,7 +138,8 @@ C...........   (TWO tables, one for FIP==0; the other for FIP-specific data.
 C...........   Surrogate-cell::FIPS tables (unsorted; sorted and processed)
 
         INTEGER     NSREC		  !  number of (unsorted) entries
-        INTEGER     INDXA( NRMAX )	  !  subscripts for sorti1()
+        INTEGER     INDXA( NRMAX )	  !  subscripts for sorti3()
+        INTEGER     INDXB( NRMAX )	  !  subscripts for sorti1()
         INTEGER     CELLA( NRMAX )        !  cell number,        before sorting
         INTEGER     FIPSA( NRMAX )        !  FIP code,           before sorting
         INTEGER     SSCSA( NRMAX )        !  surrogate ID,       before sorting
@@ -147,6 +148,9 @@ C...........   Surrogate-cell::FIPS tables (unsorted; sorted and processed)
         INTEGER     NFIP( NGRID )         !  number of fips per cell
         INTEGER     CFIP( NSMAX )         !  cell number::index in FIPLIST
         REAL        SFRC( NASRG, NSMAX )  !  surrogate fractions
+
+        INTEGER     NFIPLSRG              !  Actual length of FIPLSRG
+        INTEGER     FIPLSRG( NAFIP )      !  sorted FIPs codes list in SRG file
 
 C...........   Gridding Matrix
 
@@ -182,7 +186,7 @@ C...........   Other local variables
         INTEGER         ID7,  ID3
         INTEGER         IOS                     !  I/O status
         INTEGER         IREC                    !  input line (record) number
-        INTEGER         LFIP, LCEL, LAST
+        INTEGER         LFIP, LCEL, LAST, LFPB
         INTEGER         LO, HI
         INTEGER         NSRG                    ! Count of srgts in EPS2 srgts
         INTEGER         SSCT( NASRG )
@@ -814,6 +818,7 @@ C...........   Loop through the number of surrogates in current record
                 ELSEIF( N .LE. NRMAX ) THEN
 
                     INDXA( N ) = N
+                    INDXB( N ) = N
                     CELLA( N ) = COL  +  NCOLS * ( ROW - 1 )
                     SSCSA( N ) = SSCT( J )
                     FIPSA( N ) = FIP
@@ -851,11 +856,15 @@ C...........   Sort and process the surrogates:
 
         CALL SORTI3( NSREC, INDXA, CELLA, FIPSA, SSCSA )
 
+        CALL SORTI1( NSREC, INDXB, FIPSA )
+
         F    = 0
+        L    = 0
         S    = 0
         T    = 0
         LCEL = IMISS3
         LFIP = IMISS3
+        LFPB = IMISS3
 
         DO  99  J = 1, NSREC
 
@@ -889,18 +898,43 @@ C...........   Sort and process the surrogates:
                 SFRC( SSC , F ) = FRACA( K )
             END IF
 
+C.............  Store list of unique FIPS from surrogates file
+            FIP = FIPSA( INDXB( J ) )
+            IF( FIP .NE. LFPB ) THEN
+                L = L + 1
+                FIPLSRG( L ) = FIP 
+                LFPB = FIP
+            ENDIF
+
 99      CONTINUE
+
+        NFIPLSRG = L
 
         WRITE( MESG,94010 ) 
      &      'SURG COEF table - actual:', F,
      &      'dimensioned:', NSMAX
         CALL M3MESG( MESG )
 
-
         IF ( F .GT. NSMAX ) THEN
             CALL M3EXIT( 'GRDAMAT', 0, 0, 
      &      'Table overflow processing SURG COEFF file', 2 )
         END IF
+
+C.......   Compare FIPs list from inventory with FIPs list from surrogates
+
+        DO 111 F = 1, NFIPLIST
+
+            FIP = FIPLIST( F ) 
+            K   = FIND1( FIP, NFIPLSRG, FIPLSRG )
+
+            IF( K .LE. 0 ) THEN
+                WRITE( MESG,94050 ) 
+     &              'WARNING: Inventory FIPS code "', FIP, '" not in '//
+     &              'surrogate x-ref file.'
+                CALL M3MESG( MESG )
+            ENDIF
+
+111     CONTINUE 
 
 
 C...........   Compute gridding matrix
@@ -1076,5 +1110,7 @@ C...........   Internal buffering formats............ 94xxx
      &          A, :, I9.7, I3.3, :, 2X, A )
 
 94040   FORMAT( A, :, F10.2 )
+
+94050   FORMAT( A, I5.5, A )
 
         END
