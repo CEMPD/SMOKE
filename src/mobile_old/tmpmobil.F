@@ -2,7 +2,7 @@
         PROGRAM TMPMOBIL
 
 C***********************************************************************
-C  program body starts at line 353
+C  program body starts at line 366
 C
 C  DESCRIPTION:
 C       Produces source-level temporally allocated VMT using the 
@@ -65,6 +65,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CHKXLIN
         CHARACTER*2     CRLF
         INTEGER         CSVNAME
+        LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3
         INTEGER         GETDATE 
         INTEGER         GETEFILE
@@ -85,7 +86,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL    CHKXLIN, CRLF, CSVNAME, FIND1, FIND2, FIND3,
+        EXTERNAL    CHKXLIN, CRLF, CSVNAME, ENVYN, FIND1, FIND2, FIND3,
      &              GETDATE, GETEFILE, GETNUM, GETYN, HHMMSS, INDEX1,
      &              ISDSTIME, JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE,
      &              RDMPLIST, RDTPROF, STR2INT, SEC2TIME, TIME2SEC, 
@@ -222,14 +223,14 @@ C.......  FIP, RDT
         INTEGER FIPFC( MXFRC )                  ! FIP assoc w/each profile set
         INTEGER RDTFC( MXFRC )                  ! RDT assoc w/each profile set
 
-C.......  FIP, LNK, (RDT)
+C.......  FIP, LNK, (RDT)  ! Note: do not dimension by FIP*LNK because too big!
         INTEGER NPRFL                           ! Number of actual entries
-        INTEGER MPRFL( MXFLK, NVTYPE, MXEMIS )
-        INTEGER WPRFL( MXFLK, NVTYPE, MXEMIS )
-        INTEGER DPRFL( MXFLK, NVTYPE, MXEMIS )
-        INTEGER FIPFL( MXFLK )                  ! FIP assoc w/each profile set
-        INTEGER RDTFL( MXFLK )                  ! RDT assoc w/each profile set
-        INTEGER LNKFL( MXFLK )                  ! LNK assoc w/each profile set
+        INTEGER MPRFL( MXREF, NVTYPE, MXEMIS )  
+        INTEGER WPRFL( MXREF, NVTYPE, MXEMIS )
+        INTEGER DPRFL( MXREF, NVTYPE, MXEMIS )
+        INTEGER FIPFL( MXREF )                  ! FIP assoc w/each profile set
+        INTEGER RDTFL( MXREF )                  ! RDT assoc w/each profile set
+        INTEGER LNKFL( MXREF )                  ! LNK assoc w/each profile set
 
 c...........   Time-stepping Matrix.  
 C.......   TMAT( S,V,E,H ) is profile coeffs for 
@@ -256,15 +257,24 @@ C...........   Ungridded minimum/maximum temperature arrays
 
         COMMON  / MINMAX / TMMI, TKMIN, TKMAX
 
+C...........   TMAT update variables
+ 
+        INTEGER         NHRCALC             ! No. of entries in HRCALC
+        INTEGER         HRCALC( 24 )        ! List of hrs for calculating TMAT
+        INTEGER         MONTH ( 24, 0:23 )  ! source time zone's 1 ... 12
+        INTEGER         DAYOW ( 24, 0:23 )  ! source time zone's 1 ... 7
+
 C...........   Other local variables
 
-        LOGICAL  DAYLIT  !  true when TZONES have been changed to daylight time
-        DATA     DAYLIT / .FALSE. /
 
+        LOGICAL  DAYLIT  !  true when TZONES have been changed to daylight time
         LOGICAL         EFLAG   !  error-flag
-        LOGICAL         OFLAG   !  sources outside grid
         LOGICAL         MFLAG   !  perform monthly adjustments flag
+        LOGICAL         OFLAG   !  sources outside grid
+        LOGICAL         OUTMSG  !  iff time to write out what day we are on
+        LOGICAL         TMATCALC!  iff need to calculate new TMAT
         LOGICAL         WFLAG   !  perform weekly adjustments flag
+        LOGICAL         ZONE4WM !  iff use zone for applying week/mon temp prof
 
         INTEGER         COD     !  Temporary pollutant code
         INTEGER         EMT     !  Temporary MV emissions type
@@ -301,7 +311,10 @@ C...........   Other local variables
         INTEGER         NSTEPS
         INTEGER         OSRC    !  Number of sources outside grid
         INTEGER         RDT     !  Temporary EPA road class number
+        INTEGER         TDATE   !  Temporary date
         INTEGER         TSTEP
+        INTEGER         TTIME   !  Temporary time
+        INTEGER         TZMIN, TZMAX   ! min/max time zones in inventory
         INTEGER         TZONE
         INTEGER         VHT     !  Temporary vehicle type number
         INTEGER         VID     !  Index for volatile inventory pollutant
@@ -318,7 +331,7 @@ C...........   Other local variables
         INTEGER         H, HCORR, I, II, IREC  
         INTEGER         J, K, KU, L, M, N1, N2, F, S, T, V
         INTEGER         J1, J2, J3, J4   
-        INTEGER         MONTH, DAY
+        INTEGER         MON, DAY
         REAL            TMMIDV
 
         REAL            SCR, PP, QQ
@@ -388,6 +401,11 @@ C   begin body of program TMPMOBIL
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Ending program', 2 )
         END IF
+
+C.......   Get environment variable logical variables
+        ZONE4WM = ENVYN ( 'ZONE4WM', 'Assign weekly/monthly ' //
+     &                    'using time zones', .TRUE., IOS         )
+
 
 C.......   Get file name; open input mobile sources, temporal cross-reference,
 C.......   and temporal profiles files
@@ -951,7 +969,7 @@ C.......   Initialize category-specific xref profile number tables
                 WPRFC( S,I,J ) = IMISS3
                 DPRFC( S,I,J ) = IMISS3
 53          CONTINUE
-            DO  54  S = 1, MXFLK
+            DO  54  S = 1, MXREF
                 MPRFL( S,I,J ) = IMISS3
                 WPRFL( S,I,J ) = IMISS3
                 DPRFL( S,I,J ) = IMISS3
@@ -1043,14 +1061,14 @@ C.........  Group xref profiles by how specifically they are referenced.
      &               LNK   .NE. LNKFL( NPRFL )      )      ! Not previous
      &               NPRFL = NPRFL + 1
 
-                IF ( NPRFL .LE. MXFLK ) THEN
+                IF ( NPRFL .LE. MXREF ) THEN
 
                     FIPFL( NPRFL ) = FIP
                     RDTFL( NPRFL ) = RDT
                     LNKFL( NPRFL ) = LNK
  
                     CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
-     &                          MPRFL, WPRFL, DPRFL, MXFLK, NVTYPE,
+     &                          MPRFL, WPRFL, DPRFL, MXREF, NVTYPE,
      &                          MXEMIS, NPRFL, NVTYPE, NETYPE )
 
                 END IF
@@ -1084,10 +1102,10 @@ C...........   Check for overflows
             CALL M3MESG( MESG )
         ENDIF
 
-        IF( NPRFL .GT. MXFLK ) THEN
+        IF( NPRFL .GT. MXREF ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &             'Max XREF MXFLK=', MXFLK,
+     &             'Max XREF MXREF=', MXREF,
      &             'exceeded in XREF file: count=', NPRFL
             CALL M3MESG( MESG )
         ENDIF
@@ -1512,18 +1530,49 @@ C.......   Read ungridding matrix:
             CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         END IF
 
-C......................................................................
-C...........   Construct TMAT -- array of effective composite 
-C...........   profile coefficients
-C......................................................................
+C...........   Determine the hours in the output time zone for which a new
+C...........   TMAT is necessary (in order to have sources in different time
+C...........   zones all get the start of each day of the week correct)
 
+        TZMIN = TZONES( 1 )   ! Initialize minimum time zone in inventory
+        TZMAX = TZONES( 1 )   ! Initialize maximum time zone in inventory
+        DO 399 S = 1, NMSRC
+
+C.............  Set minimum and maximum time zone in inventory
+            IF    ( TZONES( S ) .LT. TZMIN ) THEN
+                TZMIN = TZONES( S )
+
+            ELSEIF( TZONES( S ) .GT. TZMAX ) THEN
+                TZMAX = TZONES( S )
+
+            ENDIF
+
+399     CONTINUE
+
+C...........   Adjust TZMIN for possibility of daylight savings
+        TZMIN = TZMIN - 1
+
+C...........   Determine hours of output day for updating TMAT
+        J = 0
+        DO 411 I = TZMIN, TZMAX
+
+            J = J + 1    
+            HRCALC( J ) = MOD( I - TZONE + 25, 24 )
+
+411     CONTINUE
+        NHRCALC = J
+
+
+C......................................................................
 C...........   For each time step, write out the area source emissions values:
+C......................................................................
 
         CALL M3MSG2( 'Writing out emissions values...' )
 
-        EFLAG  = .FALSE.
         LDATE  = 0
         LZDATE = 0
+        DAYLIT = .FALSE.
+        EFLAG  = .FALSE.
 
         DO  899  T = 1, NSTEPS
 
@@ -1532,22 +1581,76 @@ C...........   For each time step, write out the area source emissions values:
                 CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
             END IF
 
-C...............   If this is a new month, or new day, calculate
-C...............   new TMAT
-
             IF ( LDATE .NE. JDATE ) THEN
 
-                LDATE = JDATE
+C.................  Store month and day of week for this output date for
+C.................  all source's time zones and hours of day.
+C.................  Use same loop for case where this feature is turned off.
+                DO 755 I = TZMIN, TZMAX
+ 
+                    TDATE = JDATE
+                    TTIME = JTIME
+                    CALL NEXTIME( TDATE, TTIME, ( TZONE - I ) * 10000 )
+ 
+                    DO 751 J = 1, 24
+
+                        IF( ZONE4WM ) THEN  
+                            CALL DAYMON( TDATE, MON, DAY ) ! month & scr date
+                            DAY = WKDAY( TDATE )           ! get day-of-week
+                        ELSE
+                            CALL DAYMON( JDATE, MON, DAY )
+                            DAY = WKDAY( JDATE )
+                        ENDIF
+ 
+                        MONTH( J,I ) = MON
+                        DAYOW( J,I ) = DAY
+ 
+                        CALL NEXTIME( TDATE, TTIME, TSTEP )
+ 
+751                 CONTINUE
+ 
+755             CONTINUE
+
+C...............   Set day of week based on output day
+                DAY = WKDAY( JDATE )
+
+C...............   Turn on message for day of week and date
+                OUTMSG = .TRUE.
+ 
+            ENDIF
+
+C...........   Set integer hour of day for output time
+ 
+            H  = 1 + MOD( JTIME / 10000 , 24 )
+
+C...........   Determine if this hour is one that requires a new TMAT
+C...........   (because one or more sources are starting a new day)
+C...........   Allow for case where ZONE4WM is false, then only
+C...........   need to update TMAT once per day.
+
+            IF( ZONE4WM ) THEN 
+                I        =  FIND1( H, NHRCALC , HRCALC )
+                TMATCALC = ( I .GT. 0 .OR. T .EQ. 1 )
+
+            ELSE
+                TMATCALC = ( JDATE .NE. LDATE  )
+
+            ENDIF
+
+C...........   Construct TMAT -- array of effective composite 
+C...........   profile coefficients
+ 
+            IF ( TMATCALC ) THEN
 
 C...............   Adjust sources' time zones to account for daylight time
-C..................   Add 1 if date is daylight and TZONES is not
-C..................   Subtract 1 if date is not daylight and TZONES is daylight
+C..................   Subtract 1 if date is daylight and TZONES is not
+C..................   Add 1 if date is not daylight and TZONES is daylight
                 IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
  
                     DAYLIT = .TRUE.
  
                     DO 777 S = 1, NMSRC
-                        TZONES( S ) = TZONES( S ) + 1
+                        TZONES( S ) = TZONES( S ) - 1
   777               CONTINUE
  
                 ELSEIF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
@@ -1555,52 +1658,58 @@ C..................   Subtract 1 if date is not daylight and TZONES is daylight
                     DAYLIT = .FALSE.
  
                     DO 778 S = 1, NMSRC
-                        TZONES( S ) = TZONES( S ) - 1
+                        TZONES( S ) = TZONES( S ) + 1
   778               CONTINUE
  
                 ENDIF
 
-C.................  Create temporal adjustment matrix for current day
-
-                CALL DAYMON( JDATE, MONTH, DAY )  !  get month
-                DAY = WKDAY( JDATE )              !  get day-of-week
-
+C.................  If there are no weekend packets...
                 IF ( NEND .EQ. 0 ) THEN  !  no weekend packet
 
-                    MESG = 'Processing ' //
-     &                     DAYS( DAY ) // MMDDYY( JDATE )
+                    IF( OUTMSG ) THEN
+                        MESG = 'Processing ' //
+     &                         DAYS( DAY ) // MMDDYY( JDATE )
+                        OUTMSG = .FALSE.
+                    ENDIF
 
                     CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH,  DAY, 
+                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH,  DAYOW, 
      &                           TZONE,  TZONES,
      &                           MONFAC, NMON, MDEX,
      &                           WEKFAC, NWEK, WDEX,
      &                           DIUFAC, NDIU, DDEX, MXMAT, TMAT )
 
+C.................  If there are weekend packets, and it's a weekend...
                 ELSE IF ( DAY .GE. 6 ) THEN     !  day is Saturday or Sunday
                                                 !  in SAI's brain-damaged
                                                 !  day-of-week conventions.
-
-                    MESG = 'Processing weekend day ' //
-     &                     DAYS( DAY ) // MMDDYY( JDATE )
+                    IF( OUTMSG ) THEN
+                        MESG = 'Processing weekend day ' //
+     &                         DAYS( DAY ) // MMDDYY( JDATE )
+                        OUTMSG = .FALSE.
+                    ENDIF
 
                     CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAY, 
+                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAYOW, 
      &                           TZONE,  TZONES,
      &                           MONFAC, NMON, MDEX,
      &                           WEKFAC, NWEK, WDEX,
      &                           ENDFAC, NEND, EDEX, MXMAT, TMAT )
 
+C.................  If there are weekend packets, and it's not a weekend...
                 ELSE
 
-                    MESG = 'Processing midweek day ' //
-     &                     DAYS( DAY ) // MMDDYY( JDATE )
+                    IF( OUTMSG ) THEN
+                        MESG = 'Processing midweek day ' //
+     &                         DAYS( DAY ) // MMDDYY( JDATE )
+                        OUTMSG = .FALSE.
+                    ENDIF
 
-                    CALL M3MESG( MESG( 1:TRIMLEN( MESG ) ) )
+                    CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAY, 
+                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAYOW, 
      &                           TZONE,  TZONES,
      &                           MONFAC, NMON, MDEX,
      &                           WEKFAC, NWEK, WDEX,
@@ -1630,7 +1739,6 @@ C.................  Read ungridded MIN/MAX temperature indices for the day
 C.............  Write to screen because WRITE3 only writes to LDEV
             WRITE( *, 93020 ) HHMMSS( JTIME )
 
-            H  = 1 + MOD( JTIME / 10000 , 24 )
             KU = 0
             OFLAG = .FALSE.
             OSRC = 0
@@ -1924,6 +2032,8 @@ C.................  Set up if diurnal emissions are zero
      &                       TNAME( 1 : TRIMLEN( TNAME ) ) // '".', 2 )
 
             END IF
+
+            LDATE = JDATE !  reset LDATE (don't move to JDATE .NE. LDATE sec.)
 
             CALL NEXTIME( JZDATE, JZTIME, TSTEP )
             CALL NEXTIME( JDATE , JTIME, TSTEP )
