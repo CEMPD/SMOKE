@@ -516,7 +516,7 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
 63                  CONTINUE
                     ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
-                ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
+                ELSE IF ( TYPE .EQ. 'Urba' ) THEN
 
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
@@ -531,6 +531,7 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                 ELSE    !  Add area to the forest area, add NO to the forest NO
 
                     AFOR = AFOR + AREA
+                    ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     IF     ( LAI( K ) .EQ. 3 ) THEN
                         DO  65  M = 1, BSPCS - 1
@@ -556,7 +557,7 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                         DO  68  M = 1, BSPCS - 1
                             ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 68                      CONTINUE
-                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
+c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !  if lai is 3,5,7, or otherwise
 
@@ -643,11 +644,11 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
 73                  CONTINUE
                     ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
-                ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
+                ELSE IF ( TYPE .EQ. 'Urba' ) THEN
 
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
-                    AOTH   = AAG    + 0.7*AREA
+                    AOTH   = AAG    + 0.6*AREA
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  74  M = 1, BSPCS - 1
@@ -658,6 +659,7 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                 ELSE    !  Add area to the forest area, add NO to the forest NO
 
                     AFOR = AFOR + AREA
+                    ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     IF     ( LAI( K ) .EQ. 3 ) THEN
                         DO  75  M = 1, BSPCS - 1
@@ -683,7 +685,7 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                         DO  78  M = 1, BSPCS - 1
                             ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 78                      CONTINUE
-                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
+c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !!  if lai is 3,5,7, or otherwise
 
