@@ -2,11 +2,11 @@
         PROGRAM EMISFAC
 
 C***********************************************************************
-C  program body starts at line 215
+C  program body starts at line 242
 C
 C  DESCRIPTION:
-C      This program drives the MOBILE5A program by supplying an ambient 
-C      temperature and an input file name from which mobile5a derives 
+C      This program drives the MOBILE5 program by supplying an ambient 
+C      temperature and an input file name from which mobile5 derives 
 C      all of its input information.  Each call to MOBILE is a single 
 C      temperature solution for all input scenarios.
 C
@@ -58,6 +58,9 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2  CRLF 
+        INTEGER      ENVINT
+        REAL         ENVREAL
+        LOGICAL      ENVYN
         INTEGER      FIND1
         INTEGER      GETEFILE
         INTEGER      GETNUM
@@ -71,9 +74,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      STR2INT
         INTEGER      TRIMLEN
 
-        EXTERNAL     CRLF, FIND1, GETEFILE, GETNUM, GETREAL, GETYN,
-     &               INDEX1, LOCAT1, PROMPTFFILE, PROMPTMFILE, 
-     &               SEC2TIME, STR2INT, TRIMLEN
+        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, GETEFILE, GETNUM, 
+     &               GETREAL, GETYN, INDEX1, LOCAT1, PROMPTFFILE, 
+     &               PROMPTMFILE, SEC2TIME, STR2INT, TRIMLEN
 
 C...........   EXTERNAL BLOCK DATA for mobile:
 
@@ -215,13 +218,15 @@ C...........   Other local variables
         LOGICAL FIRSTMPR                  ! First tmptr of current PSI when true
         LOGICAL MOB5AON                   ! MOBILE5A packet has been found
         LOGICAL MOB5BON                   ! MOBILE5B packet has been found
+        LOGICAL PROMPTF                   ! iff PROMPTFLAG E.V. true or not defined
         LOGICAL RFLAG                     ! Diurnal facs _were_ calc'd when true
         LOGICAL SFLAG( MXPSI )            ! Update diurnal combos when true
         LOGICAL TFLAG                     ! Non-diu facs _were_ calc'd when true
         LOGICAL VFLAG( MXPSI )            ! Update non-diu combos when true
         LOGICAL UFLAG                     ! Update EFs when true
 
-        CHARACTER*4   VOLNAM              !  name of Mobile5 hydrocarbon
+        CHARACTER*3   VOLDEFLT            !  Default Mobile hydrocarbon
+        CHARACTER*3   VOLNAM              !  name of Mobile5 hydrocarbon
         CHARACTER*8   M5VRSION            !  Run time MOBILE version
         CHARACTER*30  BUFFER              !  input buffer
         CHARACTER*256 LINE                !  line input buffer
@@ -260,6 +265,10 @@ C   begin body of program EMISFAC
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'EMISFAC', 0, 0, 'Ending program', 2 )
         END IF
+
+C.......   Get environment variable logical variables
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
 
 C.........  Turn off verbose NetCDF to elimiate error messages when using
 C.........  CHECK3 to check for available time steps
@@ -371,6 +380,59 @@ C.............  Set the volatile pollutant used in this file
 C.........  If ENAME does _not_ exist, build the parameters from scratch
         ELSE 
 
+C.......   Get default characteristic for output file:
+C.......   If we're going to prompt, then set the defaults as best we can
+C.......      otherwise, use environment variables to set defaults
+
+            EFLAG = .FALSE.
+            IF( PROMPTF ) THEN
+                VOLDEFLT = VOLTYP( 3 )
+                JYEAR    = 1988
+                BTEMP    = 50.
+                ETEMP    = 110.
+
+            ELSE
+
+                CALL ENVSTR( 'MB_HC_TYPE', 'Volatile pollutant type', 
+     &                       VOLTYP( 3 ) , VOLDEFLT, IOS )
+                IF( IOS .NE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94020 ) 'MB_HC_TYPE'
+                    CALL M3MSG2( MESG )
+                ENDIF
+
+                JYEAR = ENVINT( 'EF_YEAR', 
+     &                          'Emission factors year', 1988, IOS )
+                IF( IOS .NE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94020 ) 'EF_YEAR'
+                    CALL M3MSG2( MESG )
+                ENDIF
+
+                BTEMP = ENVREAL( 'EF_MIN_TEMP', 'Minimum emission ' //
+     &                           'factors temperature', 50., IOS )
+                IF( IOS .NE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94020 ) 'EF_MIN_TEMP'
+                    CALL M3MSG2( MESG )
+                ENDIF
+
+                ETEMP = ENVREAL( 'EF_MAX_TEMP', 'Minimum emission ' //
+     &                           'factors temperature', 100., IOS )
+                IF( IOS .NE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94020 ) 'EF_MAX_TEMP'
+                    CALL M3MSG2( MESG )
+
+                ENDIF
+     
+                IF( EFLAG ) THEN
+                    CALL M3EXIT( 'EMISFAC', 0, 0,
+     &                   'Bad environment variable setting(s)', 2 )
+                ENDIF
+
+            ENDIF
+
 C.............  Write out list of legal hydrocarbon species
             MESG = VOLTYP( 1 )
             DO 33 I = 2, NUMVOL
@@ -385,7 +447,7 @@ C.........  MOBILE5 numbers)
 
             DO 40 I = 5, 1, -1
                 CALL GETSTR( 'Enter type of hydrocarbon emissions', 
-     &                       VOLTYP( 3 ), VOLNAM )
+     &                       VOLDEFLT, VOLNAM )
  
                 VOLORG = INDEX1( VOLNAM, NUMVOL, VOLTYP )
 
@@ -419,7 +481,6 @@ C............  Find VOLNAM in EMTLST for setting output variable names
 44          CONTINUE
 
 C.............  Prompt for modeling year
-            JYEAR = 1988
             JYEAR = GETNUM( 0, 9999, JYEAR,
      &             'Enter modeling year for emission factors (YYYY)' )
 
@@ -427,11 +488,11 @@ C.............  Prompt for modeling year
      &       'Enter temperatures for non-diurnal emission factors:' )
 
 C.............  Prompt for start temperature
-            BTEMP = GETREAL( 50.,110., 1.,
+            BTEMP = GETREAL( 50., 110., BTEMP,
      &                   'Enter minimum temperature [deg F]' )
 
 C.............   Prompt for end temperature
-            ETEMP = GETREAL( BTEMP,110., 110., 
+            ETEMP = GETREAL( BTEMP, 110., ETEMP, 
      &                   'Enter maximum temperature [deg F]' )
 
 C.............  Set temperatures
@@ -952,11 +1013,10 @@ C.........  if PSIs that are NOT first are in update list
 
             IF( MPTYPE .EQ. -1 .AND. PSI .GT.  1 ) THEN
 
-C.................  Check if no UPDATE list or PSI is not in list
-                IF( NUPDAT .EQ. 0 .OR.
-     &            ( NUPDAT .GT. 0 .AND.
+C.................  Check if UPDATE list exists and PSI is not in list
+                IF( NUPDAT .GT. 0 .AND.
      &              FIND1( PSI , NUPDAT, UPDATE ) .GT. 0 .AND.
-     &              FIND1( ROOT, NUPDAT, UPDATE ) .LE. 0       ) ) THEN
+     &              FIND1( ROOT, NUPDAT, UPDATE ) .LE. 0       ) THEN
 
                     J = J + 1
 
@@ -1258,8 +1318,14 @@ C.........................  Find temp index location in list for PSI(L)
                         KK = LOCAT1( TIDXPSI( T,I ), NTIDX( L ), 
      &                               TIDXPSI( 1,L )              )
 
+C.........................  Initialize temperature index list if needed
+                        IF( NTIDX( L ) .EQ. 0 ) THEN
+
+                            NTIDX( L ) = 1
+                            TIDXPSI( 1,L ) = TIDXPSI( T,I )
+
 C.........................  Insert temperature index in list for I
-                        IF( KK .GT. 0 ) THEN
+                        ELSEIF( KK .GT. 0 ) THEN
 
 C.............................  Check for overflow...
                             IF( NTIDX( L ) .EQ. MXTMMI ) THEN
@@ -1423,12 +1489,17 @@ C.................  If exists, initialize by reading existing values
                     ENDIF
                 ENDIF
 
+C.................  Specify that more has changed than just temperature
+C.................  This should not be set inside non-diurnal and diurnal
+C.................  sections individually, because ITEMP = 1 will reset TCNT
+C.................  in MOBILE subroutine.
+                ITEMP = 1
+
 C.................  Check for Non-diurnal EFs for profile indice
 C.................  Also check if an update has been specifically requested
                 IF( .NOT. CHECK3 ( ENAME, ALLVAR3, SDATE3D, IPTIM ) .OR.
      &              UFLAG ) THEN
 
-                    ITEMP    = 1      ! Specify that more has changed than just temp
                     FIRSTMPR = .TRUE. ! Specify first temperature for MOINBLD
 
 C.....................  Loop over temperature range for non-diurnal factors
@@ -1591,8 +1662,6 @@ C.....................  Add non-diurnal EFs to master list
                     CALL M3MESG( MESG )
 
                 ENDIF      ! Non-Diurnal EFs have been created or not
-
-                ITEMP = 1            ! More has changed than just temperature
 
                 VFLAG( K ) = .TRUE.  ! Initialize - default: update non-diu EFs
                 SFLAG( K ) = .TRUE.  ! Initialize - default: update diurnal EFs
@@ -1849,6 +1918,7 @@ c temp
 C...........   Internal buffering formats............ 94xxx
  
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+94020   FORMAT( 'Env var PROMPTFLAG is N, but ', A, ' is bad' )
 94030   FORMAT( A, F10.3, 1X, A )
 94060   FORMAT( 8( F6.2, ', ' ) )
 94070   FORMAT( 5( A, 1X, F6.1, 1X, A, 1X, F6.1, 1X ) )
