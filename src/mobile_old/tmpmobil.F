@@ -1,6 +1,7 @@
 
 C Version "@(#)$Id$ $Source$ $Date$ 
 
+
         PROGRAM TMPMOBIL
 
 C***********************************************************************
@@ -77,20 +78,23 @@ C...........   PARAMETERS and their descriptions
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Mobile Sources input and output arrays
 
-        INTEGER     IFIP  ( NMSRC )        ! FIP codes for sources
-        INTEGER     IRCLAS( NMSRC )        ! EPA road classification code
-        INTEGER     ILINK ( NMSRC )        ! link number or 0 for non-link
+        REAL        TOUT  ( NMSRC, NVTYPE, MXEMIS ) ! timestepped output emssions
         REAL        VMT   ( NMSRC )        ! vehicle miles traveled
+
+        INTEGER     IFIP  ( NMSRC )        ! FIP codes for sources
+        INTEGER     ILINK ( NMSRC )        ! link number or 0 for non-link
+        INTEGER     IRCLAS( NMSRC )        ! EPA road classification code
+        INTEGER     TFLAG ( NMSRC )        ! governs profile type usage
         INTEGER     TZONES( NMSRC )        ! time zones 
-        INTEGER     TFLAG( NMSRC )         ! governs profile type usage
-        INTEGER     MDEX ( NMSRC, NVTYPE, MXEMIS ) ! monthly       prof subscrpt
-        INTEGER     WDEX ( NMSRC, NVTYPE, MXEMIS ) ! weeky         prof subscrpt
-        INTEGER     DDEX ( NMSRC, NVTYPE, MXEMIS ) ! wkday diurnal prof subscrpt
-        INTEGER     EDEX ( NMSRC, NVTYPE, MXEMIS ) ! wkend-diurnal prof subscrpt
-        INTEGER     MREF ( NVTYPE, MXEMIS )        ! monthly temporary prof sub
-        INTEGER     WREF ( NVTYPE, MXEMIS )        ! weekly  temporary prof sub
-        INTEGER     DREF ( NVTYPE, MXEMIS )        ! diurnal temporary prof sub
-        REAL        TOUT ( NMSRC, NVTYPE, MXEPRC ) ! timestepped output emssions
+
+        INTEGER*2   DDEX  ( NMSRC, NVTYPE, MXEMIS ) ! wkday diurnal prof subscrpt
+        INTEGER*2   EDEX  ( NMSRC, NVTYPE, MXEMIS ) ! wkend-diurnal prof subscrpt
+        INTEGER*2   MDEX  ( NMSRC, NVTYPE, MXEMIS ) ! monthly       prof subscrpt
+        INTEGER*2   WDEX  ( NMSRC, NVTYPE, MXEMIS ) ! weeky         prof subscrpt
+
+        INTEGER     DREF  ( NVTYPE, MXEMIS )        ! diurnal temporary prof sub
+        INTEGER     MREF  ( NVTYPE, MXEMIS )        ! monthly temporary prof sub
+        INTEGER     WREF  ( NVTYPE, MXEMIS )        ! weekly  temporary prof sub
 
 C...........   Vehicle Mix transform matrix
 
@@ -156,6 +160,9 @@ C...............   Temporal x-ref arrays
         INTEGER WPRFA( MXREF )      ! Weekly temporal profile for XREF
         INTEGER DPRFA( MXREF )      ! Daily temporal profile for XREF
 
+        COMMON / TXREF / INDXA, FIPFA, RDTFA, LNKFA, VHTFA, 
+     &                   CODEA, MPRFA, WPRFA, DPRFA
+
 C...............  After sorting...
 C.......  Default no-FIP, no-RDT
         INTEGER MPR00( NVTYPE, MXEMIS )
@@ -172,34 +179,38 @@ C.......  no-FIP, just RDT
 
 C.......  State, RDT
         INTEGER NPRNC                           ! Number of actual entries
-        INTEGER MPRNC( MXSREF, NVTYPE, MXEMIS )
-        INTEGER WPRNC( MXSREF, NVTYPE, MXEMIS )
-        INTEGER DPRNC( MXSREF, NVTYPE, MXEMIS )
-        INTEGER FIPNC( MXSREF )                 ! State assoc w/each profile set
-        INTEGER RDTNC( MXSREF )                 ! RDT assoc w/each profile set
+        INTEGER MPRNC( MXSTRC, NVTYPE, MXEMIS )
+        INTEGER WPRNC( MXSTRC, NVTYPE, MXEMIS )
+        INTEGER DPRNC( MXSTRC, NVTYPE, MXEMIS )
+        INTEGER FIPNC( MXSTRC )                 ! State assoc w/each profile set
+        INTEGER RDTNC( MXSTRC )                 ! RDT assoc w/each profile set
 
 C.......  FIP, RDT
         INTEGER NPRFC                           ! Number of actual entries
-        INTEGER MPRFC( MXFREF, NVTYPE, MXEMIS )
-        INTEGER WPRFC( MXFREF, NVTYPE, MXEMIS )
-        INTEGER DPRFC( MXFREF, NVTYPE, MXEMIS )
-        INTEGER FIPFC( MXFREF )                 ! FIP assoc w/each profile set
-        INTEGER RDTFC( MXFREF )                 ! RDT assoc w/each profile set
+        INTEGER MPRFC( MXFRC, NVTYPE, MXEMIS )
+        INTEGER WPRFC( MXFRC, NVTYPE, MXEMIS )
+        INTEGER DPRFC( MXFRC, NVTYPE, MXEMIS )
+        INTEGER FIPFC( MXFRC )                  ! FIP assoc w/each profile set
+        INTEGER RDTFC( MXFRC )                  ! RDT assoc w/each profile set
 
 C.......  FIP, LNK, (RDT)
         INTEGER NPRFL                           ! Number of actual entries
-        INTEGER MPRFL( MXLREF, NVTYPE, MXEMIS )
-        INTEGER WPRFL( MXLREF, NVTYPE, MXEMIS )
-        INTEGER DPRFL( MXLREF, NVTYPE, MXEMIS )
-        INTEGER FIPFL( MXLREF )                 ! FIP assoc w/each profile set
-        INTEGER RDTFL( MXLREF )                 ! RDT assoc w/each profile set
-        INTEGER LNKFL( MXLREF )                 ! RDT assoc w/each profile set
+        INTEGER MPRFL( MXFLK, NVTYPE, MXEMIS )
+        INTEGER WPRFL( MXFLK, NVTYPE, MXEMIS )
+        INTEGER DPRFL( MXFLK, NVTYPE, MXEMIS )
+        INTEGER FIPFL( MXFLK )                  ! FIP assoc w/each profile set
+        INTEGER RDTFL( MXFLK )                  ! RDT assoc w/each profile set
+        INTEGER LNKFL( MXFLK )                  ! LNK assoc w/each profile set
 
 c...........   Time-stepping Matrix.  
 C.......   TMAT( S,V,E,H ) is profile coeffs for 
 C.......                    source S, pollutant V, emis type E, hour H
 
         REAL            TMAT( NMSRC, NVTYPE, MXEMIS, 24 )    ! coeff profiles
+
+C...........   Use equivalence statement to reduce the required memory
+
+        EQUIVALENCE ( TMAT, INDXA )
 
 C...........   Ungridding matrix:
 
@@ -252,6 +263,7 @@ C...........   Other local variables
         INTEGER         TSTEP
         INTEGER         TZONE
         INTEGER         VHT     !  Temporary vehicle type number
+        INTEGER         VID     !  Index for volatile inventory pollutant
 
         INTEGER         LDEV
         INTEGER         FDEV    ! unit number for emissions factors xref file
@@ -261,7 +273,7 @@ C...........   Other local variables
         INTEGER         TDEV    ! ...speciation list file
 
         INTEGER         H, HCORR, I, II, IREC  
-        INTEGER         J, K, KU, L, M, C0, C1, F, S, T, V
+        INTEGER         J, K, KU, L, M, N1, N2, C0, C1, F, S, T, V
         INTEGER         J1, J2, J3, J4   
         INTEGER         MONTH, DAY, LDATE
         REAL            TMMIDV
@@ -273,6 +285,7 @@ C...........   Other local variables
         REAL            TA( NGRID )	!  one-layer slice of temperature
         REAL            TASRC           !  temperature, interpolated to srcs
 
+        CHARACTER*3     EINAM ( MXIPOL ) ! Scenario-specific inventory pollutants
         CHARACTER*3     MEMODE( MXEPRC ) ! Scenario-specific MV processes
         CHARACTER*7     EMTNAM( MXEMIS ) ! Scenario-specific emission type names
   
@@ -347,8 +360,19 @@ C.......   and temporal profiles files
      &          'FACTOR input file', FSREAD3, 'MEFSD', 'TMPMOBIL' )
 
         MNAME = PROMPTMFILE( 
-     &          'Enter logical name for MET_CRO_3D input file',
-     &          FSREAD3, 'MET_CRO_3D', 'TMPMOBIL' )
+     &          'Enter logical name for SURFACE TEMPERATURE input file',
+     &          FSREAD3, 'TKDAT01', 'TMPMOBIL' )
+
+C.........  Get starting date and time from met data file
+        IF ( .NOT. DESC3( MNAME ) ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+     &                  'Could not get description of file "' 
+     &                  // MNAME( 1:TRIMLEN( MNAME ) ) // '"',
+     &                  2 )
+        END IF
+
+        MDATE  = SDATE3D
+        MTIME  = STIME3D
 
         UNAME = PROMPTMFILE( 
      &          'Enter logical name for UNGRIDDING MATRIX input file',
@@ -389,7 +413,6 @@ C.......   data structure to just those variables desired):
      &                  2 )
         END IF
 
-
 C.......   Determine whether input represents peak-day emissions or
 C.......   annual total emissions:
 
@@ -414,23 +437,36 @@ C.......   Get time period for output file:
             TZONE = 5
         END IF
         TZONE  = GETNUM( -12, 12, TZONE, 
-     &                   'Enter time zone   (0 for GMT)' )
+     &                   'Enter output time zone  (0 for GMT)' )
         JDATE  = GETNUM( 0, 9999999, 1988200, 
-     &                   'Enter starting date (YYYYDDD)' )
+     &                   'Enter simulation starting date (YYYYDDD)' )
         JTIME  = GETNUM( 0, 999999, 0, 
-     &                   'Enter starting time  (HHMMSS)' )
+     &                   'Enter simulation starting time  (HHMMSS)' )
         NSTEPS = GETNUM( 1, 999999, 24,
-     &                   'Enter output duration (hours)' )
+     &                   'Enter simulation duration (hours)' )
 
         TSTEP  = 10000
         JYEAR  = JDATE / 1000
 
-        MDATE = JDATE
-        MTIME = JTIME
+        IF( JDATE .NE. MDATE .OR. JTIME .NE. MTIME ) THEN
+
+            WRITE( *,92000 ) ' '
+            WRITE( *,92010 ) 'Simulation  date & time: ', JDATE, JTIME
+            WRITE( *,92010 ) 'Meteorology date & time: ', MDATE, MTIME
+            CALL M3WARN( 'TMPMOBIL', 0, 0, 
+     &                   'Inconsistent file time stamps' )
+
+        ENDIF
 
 C.........  Get list of scenario-specific emission types in compiled order
 
         NETYPE  = CSVNAME( TDEV, .TRUE., .FALSE., .TRUE., EMTNAM )
+
+        IF( NETYPE .LE. 0 ) THEN
+            WRITE( MESG,94010 )
+     &             'Error reading SPECIATION LIST file'
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+        ENDIF
 
 C.......   Get file name; open output time-stepped area sources file
 
@@ -441,7 +477,7 @@ C.......   Get file name; open output time-stepped area sources file
         NCOLS3D = 1
         NTHIK3D = IMISS3
         NLAYS3D = NVTYPE
-        VGTOP3D = AMISS3
+        VGTOP3D = BADVAL3
 
 C.........  Set/process the MTMP variable names
         NVARS3D = NETYPE
@@ -530,11 +566,33 @@ C.........  4 parts (monthly, weekly, weekday diurnal, weekend diurnal)
 C.........  Get list of scenario's emissions modes
         NEMODE = CSVNAME( TDEV, .FALSE., .FALSE., .TRUE. , MEMODE )
 
-        IF( NEMODE .LE. 0 ) THEN
-            WRITE( MESG,94010 )
-     &             'Error reading SPECIATION LIST file'
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
-        ENDIF
+C.........  Get list of scenario's inventory pollutants
+        NIPOL  = CSVNAME( TDEV, .TRUE. , .FALSE., .FALSE., EINAM  )
+
+C.........   Decide which inventory pollutnat is volatile
+        VID  = 0
+        I    = 0
+   33   CONTINUE  ! Loop to find volatile inventory pollutant
+
+            I = I + 1
+            VID = INDEX1( EINAM( I ), NUMVOL, VOLTYP )
+
+            IF( VID .GT. 0 ) THEN 
+                GO TO 35
+
+            ELSEIF( I .EQ. NIPOL ) THEN
+
+                I = I + 1
+                CALL M3WARN( 'SPCMMAT', 0, 0,
+     &                       'No valid volatile inventory pollutant' )
+                GO TO 35
+
+            ENDIF
+
+        GO TO 33  ! To head of finding volatile pollutant type
+
+   35   CONTINUE
+
 
 C.........  Read and process temporal XREF 
 
@@ -548,7 +606,7 @@ C.........  Read and process temporal XREF
  
             IREC = IREC + 1
 
-            READ( XDEV, 93000, END=45, IOSTAT=IOS ) LINE
+            READ( XDEV, 93000, END=50, IOSTAT=IOS ) LINE
 
             IF( CHKXLIN( LINE, IOS, IREC, 'MOBILE' ) .NE. 0 ) THEN
                 GO TO 44
@@ -557,7 +615,7 @@ C.........  Read and process temporal XREF
 C.............  Ensure valid pollutant code
             COD = STR2INT( LINE( 32:36 ) )
             IF( COD .LE. 0 ) THEN
-                ICOD = 0                   ! Profile for all emission types
+                ICOD = 0    ! Profile for all relevant emission types
             ELSE
                 ICOD = FIND1( COD, MXIPOL, PCODE ) 
                 IF ( ICOD .LT. 0 ) THEN    ! Skip if pollutant not on list
@@ -566,22 +624,62 @@ C.............  Ensure valid pollutant code
                 END IF
             END IF
 
-C.............  Perform mobile-specific checks on XREF entry
-            VHT = STR2INT( LINE( 23:24 ) )
-            RDT = STR2INT( LINE( 25:27 ) )
-            EMT = INDEX1 ( LINE( 28:30 ), NEMODE, MEMODE )
- 
+C.............   Perform mobile-specific checks on XREF entry
+            LNK  = MAX ( STR2INT( LINE( 13:15 ) ), 0 ) ! Use stack portion
+            VHT  = STR2INT( LINE( 23:24 ) )
+            RDT  = STR2INT( LINE( 25:27 ) )
+            PROC =          LINE( 28:30 )
 C.............  Inspect emission mode index
-C...............  If mode is not used
-            IF( EMT .EQ. 0 ) THEN
+
+C.............  If process is invalid (numeric, like 000)
+            IF( PROC .LT. 'A' ) THEN   ! Error
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 )
+     &              'Invalid emission process "' // LINE( 28:30 ) //
+     &              '" at line', IREC, 'of TEMPORAL XREF file'
+                CALL M3MESG( MESG )
                 GO TO 44   !  to head of the XDEV-read loop
 
-C...............  Otherwise, combine ICOD and EMT to get index to valid
-C                 emission types list, unless ICOD is set to apply to all
+C.............  Set EMT and counter so will set specific emission type
             ELSEIF( ICOD .NE. 0 ) THEN
 
-                ICOD = INDEX1( MEMODE( EMT ) // '_' // INVSPEC( ICOD ),
-     &                         MXEMIS, EMTLST )
+                EMT = INDEX1 ( PROC, NEMODE, MEMODE )
+
+C.................  Skip if process is not used
+                IF( EMT .LE. 0 ) THEN
+                    GO TO 44
+
+                ELSE
+                    N1 = INDEX1( INVSPEC( ICOD ), MXIPOL, EINAM )
+                    N2 = N1
+                ENDIF
+
+C.............  Unless ICOD is set to apply to all relevant processes, then
+C.............  set parameters to expand xref records to several emission type
+            ELSE
+
+                EMT = INDEX1 ( PROC, NEMODE, MEMODE )
+
+C.................  Skip if process is not used
+                IF( EMT .LE. 0 ) THEN
+                    GO TO 44
+
+C.................  For exhaust, expand to all valid inv pollutants
+                ELSEIF( PROC .EQ. 'EXH' ) THEN
+                    N1 = 1
+                    N2 = NIPOL
+
+C.................  For non-exhaust, use volatile pollutant, if valid
+                ELSEIF( VID .GT. 0 ) THEN
+                    N1 = VID
+                    N2 = VID
+
+C.................  Otherwise, record is useless
+                ELSE            
+                    GO TO 44
+
+                ENDIF
+
             ENDIF
 
 C.............  Inspect road class index 
@@ -604,32 +702,46 @@ C.............  Skip profile if road class not used
             ELSE IF( NRDT .LT. 0 ) THEN
                 GO TO 44   !  to head of the XDEV-read loop
  
-C.............  Check table size for overflow
-            ELSE IF ( K .GE. MXREF ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &              'Max XREF table size ', MXREF,
-     &              'exceeded at line', IREC
-                CALL M3MESG( MESG )
- 
 C.............  Store XREF entry
             ELSE
-                K          = K + 1
-                INDXA( K ) = K
-                FIPFA( K ) = STR2INT( LINE( 1 : 5 ) )
-                RDTFA( K ) = RDT
-                LNKFA( K ) = STR2INT( LINE( 13:15 ) ) ! Use stack portion
-                VHTFA( K ) = VHT
-                CODEA( K ) = ICOD
-                MPRFA( K ) = STR2INT( LINE( 38:40 ) )
-                WPRFA( K ) = STR2INT( LINE( 42:44 ) )
-                DPRFA( K ) = STR2INT( LINE( 45:48 ) )
+
+
+                DO 47 I = N1, N2
+
+                    ICOD = INDEX1( MEMODE( EMT ) // '_' // 
+     &                             EINAM( I ), NETYPE, EMTNAM )
+
+C.....................  Check table size for overflow
+                    IF ( K .GE. MXREF ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 )
+     &                      'Max XREF table size ', MXREF,
+     &                      'exceeded at line', IREC
+                        CALL M3MESG( MESG )
+ 
+                    ELSE
+
+                        K = K + 1
+
+                        INDXA( K ) = K
+                        FIPFA( K ) = STR2INT( LINE( 1 : 5 ) )
+                        RDTFA( K ) = RDT
+                        LNKFA( K ) = LNK
+                        VHTFA( K ) = VHT
+                        CODEA( K ) = ICOD
+                        MPRFA( K ) = STR2INT( LINE( 38:40 ) )
+                        WPRFA( K ) = STR2INT( LINE( 42:44 ) )
+                        DPRFA( K ) = STR2INT( LINE( 45:48 ) )
+
+                    ENDIF   ! x-ref overflow or not
+
+   47          CONTINUE
 
             ENDIF
 
         GO TO 44  ! to head of XDEV read loop
 
-   45   CONTINUE
+   50   CONTINUE
 
         IF ( EFLAG ) THEN
             MESG = 'Error reading TEMPORAL XREF file'
@@ -655,17 +767,17 @@ C.......   Initialize category-specific xref profile number tables
                 WPRNF( S,I,J ) = IMISS3
                 DPRNF( S,I,J ) = IMISS3
 51          CONTINUE
-            DO  52 S = 1, MXSREF
+            DO  52 S = 1, MXSTRC
                 MPRNC( S,I,J ) = IMISS3
                 WPRNC( S,I,J ) = IMISS3
                 DPRNC( S,I,J ) = IMISS3
 52          CONTINUE
-            DO  53 S = 1, MXFREF
+            DO  53 S = 1, MXFRC
                 MPRFC( S,I,J ) = IMISS3
                 WPRFC( S,I,J ) = IMISS3
                 DPRFC( S,I,J ) = IMISS3
 53          CONTINUE
-            DO  54  S = 1, MXLREF
+            DO  54  S = 1, MXFLK
                 MPRFL( S,I,J ) = IMISS3
                 WPRFL( S,I,J ) = IMISS3
                 DPRFL( S,I,J ) = IMISS3
@@ -699,17 +811,16 @@ C.........  Group xref profiles by how specifically they are referenced.
                 ELSE                    !  RDT?-dependent-only profiles
  
                     IF( NPRNF .EQ. 0              .OR.        ! First instance
-     &                  RDT   .NE. RDTNF( NPRNF )      ) THEN ! Not repeat
+     &                  RDT   .NE. RDTNF( NPRNF )      )      ! Not repeat
+     &                  NPRNF = NPRNF + 1
 
-                        NPRNF = NPRNF + 1
-                        IF ( NPRNF .LE. NRCLAS ) THEN
+                    IF ( NPRNF .LE. NRCLAS ) THEN
 
-                            RDTNF( NPRNF ) = RDT
+                        RDTNF( NPRNF ) = RDT
 
-                            CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
+                        CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
      &                              MPRNF, WPRNF, DPRNF, NRCLAS, NVTYPE, 
      &                              MXEMIS, NPRNF, NVTYPE, NETYPE )
-                        END IF
                     END IF
                 END IF
 
@@ -719,58 +830,55 @@ C.........  Group xref profiles by how specifically they are referenced.
  
                 IF( NPRNC .EQ. 0              .OR.         ! First instance
      &              FIP   .NE. FIPNC( NPRNC ) .OR.         ! Not previous
-     &              RDT   .NE. RDTNC( NPRNC )      ) THEN  ! Not previous
+     &              RDT   .NE. RDTNC( NPRNC )      )       ! Not previous
+     &              NPRNC = NPRNC + 1
 
-                    NPRNC = NPRNC + 1
-                    IF ( NPRNC .LE. MXSREF ) THEN
+                IF ( NPRNC .LE. MXSTRC ) THEN
 
-                        FIPNC( NPRNC ) = FIP
-                        RDTNC( NPRNC ) = RDT
+                    FIPNC( NPRNC ) = FIP
+                    RDTNC( NPRNC ) = RDT
 
-                        CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
-     &                          MPRNC, WPRNC, DPRNC, MXSREF, NVTYPE,
+                    CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
+     &                          MPRNC, WPRNC, DPRNC, MXSTRC, NVTYPE,
      &                          MXEMIS, NPRNC, NVTYPE, NETYPE )
 
-                    END IF
                 END IF
  
             ELSE IF ( LNK .EQ. 0 ) THEN    !  FIP-RDT dependent profiles
  
                 IF ( NPRFC .EQ. 0              .OR.        ! First instance
      &               FIP   .NE. FIPFC( NPRFC ) .OR.        ! Not previous
-     &               RDT   .NE. RDTFC( NPRFC )      ) THEN ! Not previous
- 
-                    NPRFC = NPRFC + 1
-                    IF ( NPRFC .LE. MXFREF ) THEN
+     &               RDT   .NE. RDTFC( NPRFC )      )      ! Not previous
+     &               NPRFC = NPRFC + 1
 
-                        FIPFC( NPRFC ) = FIP
-                        RDTFC( NPRFC ) = RDT
+                IF ( NPRFC .LE. MXFRC ) THEN
+
+                    FIPFC( NPRFC ) = FIP
+                    RDTFC( NPRFC ) = RDT
  
-                        CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
-     &                          MPRFC, WPRFC, DPRFC, MXFREF, NVTYPE,
+                    CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
+     &                          MPRFC, WPRFC, DPRFC, MXFRC, NVTYPE,
      &                          MXEMIS, NPRFC, NVTYPE, NETYPE )
 
-                    END IF
                 END IF
 
             ELSE                 !  FIP-LNK dependent profiles
  
                 IF ( NPRFL .EQ. 0              .OR.        ! First instance
      &               FIP   .NE. FIPFL( NPRFL ) .OR.        ! Not previous
-     &               LNK   .NE. LNKFL( NPRFL )      ) THEN ! Not previous
- 
-                    NPRFL = NPRFL + 1
-                    IF ( NPRFL .LE. MXLREF ) THEN
+     &               LNK   .NE. LNKFL( NPRFL )      )      ! Not previous
+     &               NPRFL = NPRFL + 1
 
-                        FIPFL( NPRFL ) = FIP
-                        RDTFL( NPRFL ) = RDT
-                        LNKFL( NPRFL ) = LNK
+                IF ( NPRFL .LE. MXFLK ) THEN
+
+                    FIPFL( NPRFL ) = FIP
+                    RDTFL( NPRFL ) = RDT
+                    LNKFL( NPRFL ) = LNK
  
-                        CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
-     &                          MPRFL, WPRFL, DPRFL, MXLREF, NVTYPE,
+                    CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
+     &                          MPRFL, WPRFL, DPRFL, MXFLK, NVTYPE,
      &                          MXEMIS, NPRFL, NVTYPE, NETYPE )
 
-                    END IF
                 END IF
 
             ENDIF
@@ -786,26 +894,26 @@ C...........   Check for overflows
             CALL M3MESG( MESG )
         ENDIF
 
-        IF( NPRNC .GT. MXSREF ) THEN
+        IF( NPRNC .GT. MXSTRC ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &             'Max XREF MXSREF=', MXSREF,
+     &             'Max XREF MXSTRC=', MXSTRC,
      &             'exceeded in XREF file: count=', NPRNC
             CALL M3MESG( MESG )
         ENDIF
 
-        IF( NPRFC .GT. MXFREF ) THEN
+        IF( NPRFC .GT. MXFRC ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &             'Max XREF MXFREF=', MXFREF,
+     &             'Max XREF MXFRC=', MXFRC,
      &             'exceeded in XREF file: count=', NPRFC
             CALL M3MESG( MESG )
         ENDIF
 
-        IF( NPRFL .GT. MXLREF ) THEN
+        IF( NPRFL .GT. MXFLK ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &             'Max XREF MXLREF=', MXLREF,
+     &             'Max XREF MXFLK=', MXFLK,
      &             'exceeded in XREF file: count=', NPRFL
             CALL M3MESG( MESG )
         ENDIF
@@ -890,26 +998,40 @@ C............. Set using STATE-RDT specific profiles
 
             END IF
  
-C............. Set using RDT specific profiles
-            F = FIND1( RDT, NPRNF, RDTNF )    ! RDT search
+C............. Set using STATE specific profiles
+            F = FIND2( FIP/1000, 0, NPRNC, FIPNC, RDTNC )
             IF ( F .GT. 0 ) THEN
                 DO 107 J = 1, NETYPE
                     DO 106 I = 1, NVTYPE
+                        MREF( I,J ) = MPRNC( F,I,J )
+                        WREF( I,J ) = WPRNC( F,I,J )
+                        DREF( I,J ) = DPRNC( F,I,J )
+  106               CONTINUE
+  107           CONTINUE
+                GO TO 266
+
+            END IF
+ 
+C............. Set using RDT specific profiles
+            F = FIND1( RDT, NPRNF, RDTNF )    ! RDT search
+            IF ( F .GT. 0 ) THEN
+                DO 109 J = 1, NETYPE
+                    DO 108 I = 1, NVTYPE
                         MREF( I,J ) = MPRNF( F,I,J )
                         WREF( I,J ) = WPRNF( F,I,J )
                         DREF( I,J ) = DPRNF( F,I,J )
-  106               CONTINUE
-  107           CONTINUE
+  108               CONTINUE
+  109           CONTINUE
 
 C............. Set using fallback profiles
             ELSE 
-                DO 109 J = 1, NETYPE
-                    DO 108 I = 1, NVTYPE
+                DO 111 J = 1, NETYPE
+                    DO 110 I = 1, NVTYPE
                         MREF( I,J ) = MPR00( I,J )
                         WREF( I,J ) = WPR00( I,J )
                         DREF( I,J ) = DPR00( I,J )
-  108               CONTINUE
-  109           CONTINUE
+  110               CONTINUE
+  111           CONTINUE
 
             END IF
 
@@ -1207,9 +1329,9 @@ C...........   For each time step, write out the area source emissions values:
                 MESG = 'Could not read TA from ' // MNAME
                 CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
             END IF
+
 C...............   If this is a new month, or new day, calculate
 C...............   new TMAT
-
 
             IF ( LDATE .NE. JDATE ) THEN
 
@@ -1246,9 +1368,9 @@ C.................  Create temporal adjustment matrix for current day
                     WRITE( *,92011 ) 'Processing day', DAY
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH,  DAY, 
      &                           TZONE,  TZONES,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, MXMAT, TMAT )
+     &                           MONFAC, NMON, MDEX,
+     &                           WEKFAC, NWEK, WDEX,
+     &                           DIUFAC, NDIU, DDEX, MXMAT, TMAT )
 
                 ELSE IF ( DAY .GE. 6 ) THEN     !  day is Saturday or Sunday
                                                 !  in SAI's brain-damaged
@@ -1257,29 +1379,30 @@ C.................  Create temporal adjustment matrix for current day
                     WRITE( *,92011 ) 'Processing weekend day', DAY
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAY, 
      &                           TZONE,  TZONES,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           ENDFAC, EDEX, MXMAT, TMAT )
+     &                           MONFAC, NMON, MDEX,
+     &                           WEKFAC, NWEK, WDEX,
+     &                           ENDFAC, NEND, EDEX, MXMAT, TMAT )
 
                 ELSE
 
                     WRITE( *,92011 ) 'Processing midweek day', DAY
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAY, 
      &                           TZONE,  TZONES,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, MXMAT, TMAT )
+     &                           MONFAC, NMON, MDEX,
+     &                           WEKFAC, NWEK, WDEX,
+     &                           DIUFAC, NDIU, DDEX, MXMAT, TMAT )
 
                 END IF
+
 
 C.................  Read ungridded MIN/MAX temperature indices for the day
 
                 IF( .NOT. 
-     &               READ3( WNAME, ALLVAR3, 1, JDATE, 0, TMMI ) ) THEN
+     &               READ3( WNAME, ALLVAR3, 1, MDATE, 0, TMMI ) ) THEN
 
                      MESG = 'Could not read TMMI from ' // 
      &                      WNAME( 1:TRIMLEN( WNAME ) )
-                     CALL M3EXIT( 'TMPMOBIL', JDATE, 0, MESG, 2 )
+                     CALL M3EXIT( 'TMPMOBIL', MDATE, 0, MESG, 2 )
                 ENDIF
              
 
@@ -1461,10 +1584,10 @@ C...............   Adjust which hourly EF to use based on time zone
                     DO 824 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
-     &                               S2 * ( R2 * WDL_VOC( J1,V,M ) +
+     &                             ( S2 * ( R2 * WDL_VOC( J1,V,M ) +
      &                                      R1 * WDL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * WDL_VOC( J3,V,M ) +
-     &                                      R1 * WDL_VOC( J4,V,M )   )
+     &                                      R1 * WDL_VOC( J4,V,M )   ) )
   824               CONTINUE
 
                     I = I + 1
@@ -1475,10 +1598,10 @@ C...............   Adjust which hourly EF to use based on time zone
                     DO 825 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
-     &                               S2 * ( R2 * DNL_VOC( J1,V,M ) +
+     &                             ( S2 * ( R2 * DNL_VOC( J1,V,M ) +
      &                                      R1 * DNL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * DNL_VOC( J3,V,M ) +
-     &                                      R1 * DNL_VOC( J4,V,M )   )
+     &                                      R1 * DNL_VOC( J4,V,M )   ) )
   825               CONTINUE
 
                     I = I + 1
@@ -1489,10 +1612,10 @@ C...............   Adjust which hourly EF to use based on time zone
                     DO 826 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
-     &                               S2 * ( R2 * HOT_VOC( J1,V,M ) +
+     &                             ( S2 * ( R2 * HOT_VOC( J1,V,M ) +
      &                                      R1 * HOT_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * HOT_VOC( J3,V,M ) +
-     &                                      R1 * HOT_VOC( J4,V,M )   )
+     &                                      R1 * HOT_VOC( J4,V,M )   ) )
   826               CONTINUE
 
                     I = I + 1
@@ -1503,10 +1626,10 @@ C...............   Adjust which hourly EF to use based on time zone
                     DO 827 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
-     &                               S2 * ( R2 * CRC_VOC( J1,V,M ) +
+     &                             ( S2 * ( R2 * CRC_VOC( J1,V,M ) +
      &                                      R1 * CRC_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * CRC_VOC( J3,V,M ) +
-     &                                      R1 * CRC_VOC( J4,V,M )   )
+     &                                      R1 * CRC_VOC( J4,V,M )   ) )
   827               CONTINUE
 
                     I = I + 1
@@ -1547,7 +1670,7 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
 
-92010   FORMAT( 5X, A, I10 )
+92010   FORMAT( 5X, A, I7.7, ':', I6.6 )
 
 92011   FORMAT( /5X, A, I10 )
 
