@@ -66,9 +66,9 @@ C***********************************************************************
 C   begin body of subroutine ALOCCTBL
 
 C.........  First deallocate if these have previously been allocated
-        IF ( ALLOCATED( ICTL02 ) ) THEN
+        IF ( ALLOCATED( ICTL01 ) ) THEN
 
-            DEALLOCATE( ICTL02, ICTL03, ICTL04, ICTL05, ICTL06 )
+            DEALLOCATE( ICTL01, ICTL02, ICTL03, ICTL04, ICTL05, ICTL06 )
             DEALLOCATE( ICTL07, ICTL08, ICTL09, ICTL10, ICTL11 )
             DEALLOCATE( ICTL12, ICTL13, ICTL14, ICTL15, ICTL16 )
             DEALLOCATE( ICTL02A, ICTL02B, ICTL02C )
