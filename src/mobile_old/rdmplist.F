@@ -39,8 +39,8 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER   MPRDT( MXPLST )
         INTEGER   MPLNK( MXPLST )
         INTEGER   MPREF( 0:23, MXPLST )    !  hour&source-specific xrefs
-        INTEGER   REFCNT
-        INTEGER   REFLIST( MXPLST )
+        INTEGER   REFCNT                   !  count of total unique PSIs
+        INTEGER   REFLIST( MXPSI )         !  list of unique PSIs
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -114,15 +114,20 @@ C   begin body of subroutine  RDMPLIST
                 IF( FIND1( REF( J ), REFCNT, REFLIST ) .LE. 0 ) THEN
 
                     REFCNT = REFCNT + 1
-                    DO  21  K = REFCNT, 1, -1
-                        IF ( REFLIST( K-1 ) .GT. REF( J ) ) THEN
-                            REFLIST( K ) = REFLIST( K-1 )
-                        ELSE
-                            REFLIST( K ) = REF( J )
-                            GO TO  22
-                        END IF
-21                  CONTINUE
-22                  CONTINUE	!  exit from insertion
+                    IF( REFCNT.EQ.1 ) THEN
+                        REFLIST( 1 ) = REF( J )
+                    ELSE
+                        DO  21  K = REFCNT, 2, -1
+                            IF ( REFLIST( K-1 ) .GT. REF( J ) ) THEN
+                                 REFLIST( K ) = REFLIST( K-1 )
+                            ELSE
+                                 REFLIST( K ) = REF( J )
+                                 GO TO  22
+                            END IF
+21                      CONTINUE
+                        REFLIST( 1 ) = REF( J )
+                    END IF
+22                  CONTINUE    !  exit from insertion
 
                 END IF  	!  if new hour index
 
