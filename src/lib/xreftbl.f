@@ -152,6 +152,9 @@ C.........  Check for valid operation type
         CASE( 'CONTROL' )
             POADFLT = .TRUE.
             CFLAG   = .TRUE.
+        CASE( 'EMS_CONTROL' )
+            POADFLT = .TRUE.
+            CFLAG   = .TRUE.
         CASE( 'CTG' )
             POADFLT = .TRUE.
             GFLAG   = .TRUE.
