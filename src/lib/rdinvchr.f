@@ -283,7 +283,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
               ALLOCATE( STKHT( NSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
 
-              IF( .NOT. READSET(INFILE,'STKHT',ALLAYS3,0,0,STKHT)) 
+              IF( .NOT. READSET(INFILE,'STKHT',ALLAYS3,1,0,0,STKHT)) 
      &            THEN
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               ENDIF
@@ -292,7 +292,7 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
               ALLOCATE( STKDM( NSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
 
-              IF( .NOT. READSET(INFILE,'STKDM',ALLAYS3,0,0,STKDM)) 
+              IF( .NOT. READSET(INFILE,'STKDM',ALLAYS3,1,0,0,STKDM)) 
      &            THEN
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               ENDIF
