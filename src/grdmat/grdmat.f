@@ -14,13 +14,13 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -426,16 +426,21 @@ C           is done so the sparse i/o api format can be used.
 
 C.........  Report statistics for gridding matrix
 
+        CAVG = FLOAT( NK ) / FLOAT( NGRID )
         CALL M3MSG2( 'GRIDDING-MATRIX statistics:' )
 
-        CAVG = FLOAT( NK ) / FLOAT( NGRID )
-        WRITE( LDEV,92010 ) 
-     &      'Total number of coefficients   ', NK   ,
-     &      'Max  number of sources per cell', CMAX,
-     &      'Min  number of sources per cell', CMIN
-        WRITE( LDEV,92020 ) 
-     &      'Mean number of sources per cell', CAVG,
-     &      ' '
+        WRITE( MESG,94010 ) 
+     &         'Total number of coefficients   :', NK   ,
+     &         CRLF() // BLANK5 //
+     &         'Max  number of sources per cell:', CMAX,
+     &         CRLF() // BLANK5 //
+     &         'Min  number of sources per cell:', CMIN
+
+        L1 = LEN_TRIM( MESG )
+        WRITE( MESG,94020 ) MESG( 1:L1 ) // CRLF() // BLANK5 //
+     &         'Mean number of sources per cell:', CAVG
+
+        CALL M3MSG2( MESG )
 
 C.........  Report statistics for ungridding matrix
         IF( UFLAG ) THEN
