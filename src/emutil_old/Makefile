@@ -3,7 +3,7 @@
 # Note: Programs smk2emis and smk2pts require library eps2 which is not
 #       provided with the standard SMOKE distribution.
 #
-all: faketemp mappoint mkmplist srggrid smk2emis smk2pts 
+all: faketemp mappoint mkmplist multmat srggrid smk2emis smk2pts 
 #
 # compile-link options for subroutines
 #
@@ -42,6 +42,16 @@ mkmplist: $(MKMP) $(MKMI)
 #
 #
 #
+MULTM = multmat.F
+ 
+MULTI = ARDIMS3.EXT PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT \
+        CHDIMS3.EXT TMDIMS3.EXT 
+ 
+multmat: $(MULTM) $(MULTI)
+	echo MULTMAT:
+	f77 $(FFLAGS) -o $(SCENDIR)/multmat $(MULTM) $(LIBS)
+#
+#
 EMIS = smk2emis.F trans.F chkgrd.F chktmp.F  chkvar.F
 
 SHAREDINC = $(SMKROOT)/inc/Shared
@@ -58,7 +68,7 @@ smk2emis: $(EMIS) $(EINC)
 #
 PTS = smk2pts.F chktmp.F chkvar.F rdepsd.F
 #
-smk2pts: $(OBJS) $(EINC)
+smk2pts: $(PTS) $(EINC)
 	echo SMK2PTS:
 	f77 $(FFLAGS) -I$(SHAREDINC) -o $(SCENDIR)/smk2pts $(PTS) $(LIBS2)
 #
