@@ -620,7 +620,7 @@ C.............  Build format for first field
             FMT = '(' // LOCBUF( 1 ) // ')'
 
 C.............  Initialize output buffer with first value if it is not missing
-            IF( DATAVALS( 1 ) .GT. BADVAL3 ) 
+            IF( DATAVALS( 1 ) .GT. AMISS3 ) 
      &          WRITE( BUFFER, FMT ) DATAVALS( 1 )
             L = FMTLEN( 1 )
 
@@ -630,14 +630,17 @@ C               for non-missing values
 
                 FMT = '(' // LOCBUF( I ) // ')'
 
+C.................  Note - a blank will be written if a missing value occurs
+C.................  Integer value and not missing
                 IF( OUTTYPE ( I ) .EQ. 0      .AND.
      &              DATAVALS( I ) .GT. IMISS3       ) THEN
 
                     WRITE( BUFLOC, FMT ) INT( DATAVALS( I ) )
                     BUFFER = BUFFER( 1:L ) // BUFLOC
 
+C.................  Real value and not missing
                 ELSE IF ( OUTTYPE ( I ) .NE. 0       .AND.
-     &                    DATAVALS( I ) .GT. BADVAL3       ) THEN
+     &                    DATAVALS( I ) .GE. 0.            ) THEN
                     WRITE( BUFLOC, FMT ) DATAVALS( I )
                     BUFFER = BUFFER( 1:L ) // BUFLOC
 
