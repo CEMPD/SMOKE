@@ -776,25 +776,39 @@ C----------------------------------------------------------------------
 
             DDEX( S,J ) = MAX( FIND1( DREF, NWKD, WKDREF ), 0 )
 
-            IF( NEND .GT. 0 ) THEN
-
-                EDEX( S,J ) = MAX( FIND1( DREF, NEND, ENDREF ), 0 )
-
-            END IF  ! If there are weekend diurnal profiles
-
-            IF( DDEX( S,J ) .EQ. 0 .AND. EDEX( S,J ) .EQ. 0 ) THEN
+            IF( DDEX( S,J ) .EQ. 0 ) THEN
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
-     &                 'ERROR: Diurnal profile', DREF, 
+     &                 'ERROR: Weekday diurnal profile', DREF, 
      &                 'is not in profiles, but was assigned' //
      &                 CRLF() // BLANK5 // 'to source:' //
      &                 CRLF() // BLANK5 // BUFFER( 1:L2 )
                 CALL M3MESG( MESG )
 
             END IF
+
+            IF( NEND .GT. 0 ) THEN
+
+                EDEX( S,J ) = MAX( FIND1( DREF, NEND, ENDREF ), 0 )
+
+                IF( EDEX( S,J ) .EQ. 0 ) THEN
+
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 
+     &                 'ERROR: Weekend diurnal profile', DREF, 
+     &                 'is not in profiles, but was assigned' //
+     &                 CRLF() // BLANK5 // 'to source:' //
+     &                 CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+
+                END IF
+
+            END IF  ! If there are weekend diurnal profiles
 
             RETURN
 
