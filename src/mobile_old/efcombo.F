@@ -76,16 +76,17 @@ C...........   Master Non-Diurnal EFs list variables
         REAL    EVP_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC evaporative
         REAL    RNL_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC running
         REAL    RST_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC resting
+        REAL    RFL_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC refueling
  
         COMMON / EFS1 / EXH_CO , EXH_NOX, EXH_VOC, EVP_VOC, RNL_VOC,
-     &                  RST_VOC
+     &                  RST_VOC, RFL_VOC
  
 C...........   Master Diurnal EFs list variables
  
-        REAL    WDL_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC weighted
-        REAL    DNL_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC diurnal
-        REAL    HOT_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC hot soak
-        REAL    CRC_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC crank case
+        REAL    WDL_VOC( NMINMAX, NVTYPE )  ! Diurnal Emis fac: VOC weighted
+        REAL    DNL_VOC( NMINMAX, NVTYPE )  ! Diurnal Emis fac: VOC diurnal
+        REAL    HOT_VOC( NMINMAX, NVTYPE )  ! Diurnal Emis fac: VOC hot soak
+        REAL    CRC_VOC( NMINMAX, NVTYPE )  ! Diurnal Emis fac: VOC crank case
 
         COMMON / EFS2 / WDL_VOC, DNL_VOC, HOT_VOC, CRC_VOC
 
@@ -105,6 +106,7 @@ C.........  Initialize EF sum variables
                 EVP_VOC( T,V ) = 0.
                 RNL_VOC( T,V ) = 0.
                 RST_VOC( T,V ) = 0.
+                RFL_VOC( T,V ) = 0.
 
    11       CONTINUE 
 
@@ -163,6 +165,9 @@ C.................  Loop over non-diurnal temperature range
 
                     RST_VOC( T,V ) = RST_VOC( T,V ) + 
      &                               NDEF( T,V,6 ) * PERCENT( I )
+              
+                    RFL_VOC( T,V ) = RFL_VOC( T,V ) + 
+     &                               NDEF( T,V,7 ) * PERCENT( I )
               
    33           CONTINUE  ! Non-diurnal Temperatures
 
