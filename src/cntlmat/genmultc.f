@@ -452,9 +452,20 @@ C......................  Calculate inventory baseline efficiency
                     NEWCEFF  = MACNWEFF( MACINDX )
                     NEWFRAC  = MACNWFRC( MACINDX )
 
-C.....................  Compute factor for existing and new sources
-                    FAC = (1-NEWFRAC) * ((1-EXSTCEFF)/(1-INVEFF)) + 
-     &                    (NEWFRAC) * ((1-NEWCEFF)/(1-INVEFF))
+C.....................  Compute factor for existing sources
+                    IF( EXSTCEFF > INVEFF ) THEN
+                        FAC = (1-NEWFRAC) * ((1-EXSTCEFF)/(1-INVEFF))
+                    ELSE
+                        FAC = (1-NEWFRAC)
+                    END IF
+
+C.....................  Compute factor for new sources and sum
+C                       with factor for existing sources                    
+                    IF( NEWCEFF > INVEFF ) THEN
+                        FAC = FAC + NEWFRAC * ((1-NEWCEFF)/(1-INVEFF))
+                    ELSE
+                        FAC = FAC + NEWFRAC
+                    END IF
 
 C...................  Overwrite temporary file line with new info
                     E2 = E1 * FAC
