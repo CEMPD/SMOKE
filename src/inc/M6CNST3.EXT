@@ -18,6 +18,8 @@ C....................................................................
 C.........  MOBILE6 constants
         REAL,    PARAMETER :: M6MINTEMP = 0.    ! Minimum temperature allowed
         REAL,    PARAMETER :: M6MAXTEMP = 120.  ! Maximum temperature allowed
+        REAL,    PARAMETER :: RAMPVMT   = 0.08  ! Percentage of VMT on freeway ramps
+        REAL,    PARAMETER :: RAMPSPEED = 34.6  ! Average speed on freeway ramps
                                                 
 C.........  Dimensioning parameters
         INTEGER, PARAMETER :: NM6VPOL  =  5     ! Maximum number of Mobile6 volatile pols
