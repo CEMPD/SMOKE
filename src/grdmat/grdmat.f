@@ -123,6 +123,8 @@ C...........   Other local variables
         INTEGER         MXCSRC  ! max no cells per source
         INTEGER         MXSCEL  ! max no sources per cell
         INTEGER         ROW     ! tmp row
+        INTEGER         SRGNROWS! no. rows in surrogates file
+        INTEGER         SRGNCOLS! no. cols in surrogates file
 
         REAL            CAVG   ! average number sources per cell
 
@@ -134,6 +136,7 @@ C...........   Other local variables
 
         CHARACTER*16            COORUNIT !  coordinate system projection units
         CHARACTER*16         :: INVGRDNM  = ' '  !  inventory grid name
+        CHARACTER*16         :: SRGGRDNM  = ' '  !  surrogates file grid name
         CHARACTER*16            SRGFMT   !  surrogates format
         CHARACTER*80            GDESC    !  grid description
         CHARACTER*300           MESG     !  message buffer
@@ -296,9 +299,9 @@ C.........  Get mobile-specific files
 
         END IF  ! End of mobile file opening
 
-C.........  If surrogates are in use, need to read in the surrogates (which will
-C           set the grid information), read in the gridding cross reference, and
-C           assign the cross-reference information to the sources.
+C.........  If surrogates are in use, read the gridding cross-reference,
+C           and the header of the surrogates file to get the grid on which
+C           the surrogates are available.
         IF( SRGFLAG ) THEN
 
 C.............  Build unique lists of SCCs and country/state/county codes
@@ -313,18 +316,43 @@ C.............  For mobile sources, read the mobile codes
 C.............  Read the gridding cross-reference
             CALL RDGREF( XDEV )
 
-            CALL M3MSG2( 'Reading gridding surrogates file...' )
+            CALL M3MSG2( 'Reading gridding surrogates header...' )
 
-C.............  Read the surrogates header and check that it is consistent
-C               with the grid description from the DSCM3GRD call
+C.............  Read the surrogates header and initialize the grid description
 C.............  Also, obtain the format of the file.
-C.............  note: later change rdsrghdr and rdsrg to use MODGRID module
-            CALL RDSRGHDR( GDEV, SRGFMT, GRDNM, GDESC, XCENT, YCENT, 
-     &                     XORIG, YORIG, XCELL, YCELL, NCOLS, NROWS )
+C.............  Save the name of the input grid
+            CALL RDSRGHDR( GDEV, SRGFMT )
+            SRGGRDNM = GRDNM
+            SRGNCOLS = NCOLS
+            SRGNROWS = NROWS
 
-C.............  Allocate memory for and read the gridding surrogates file
-            CALL RDSRG( GDEV, SRGFMT, XCENT, YCENT, XORIG, 
-     &                  YORIG, XCELL, YCELL, NCOLS, NROWS )
+        END IF   ! If surrogates are being used or not
+
+C.........  Get grid name from the environment and read grid parameters
+        IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUNIT,
+     &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, 
+     &                     YCENT3D, XORIG3D, YORIG3D, XCELL3D,
+     &                     YCELL3D, NCOLS3D, NROWS3D, NTHIK3D)) THEN
+
+            MESG = 'Could not get Models-3 grid description.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
+C.........  Check or initialize the output grid grid settings (depends on
+C           if a surrogates file is being used).
+        CALL CHKGRID( GDNAM3D, 'GRIDDESC', 1, EFLAG )
+
+C.........  If surrogates are needed, read the gridding surrogates,  
+C           allocate memory for the surrogate assignments, and assign
+C           surrogates to each source.
+        IF( SRGFLAG ) THEN
+
+            CALL M3MSG2( 'Reading gridding surrogates...' )
+
+C.............  Allocate memory for and read the gridding surrogates file,
+C               extracting data for a subgrid, if necessary
+            CALL RDSRG( GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
 
 C..............  Read the link definition file
 c            CALL RDLNKDEF( )
@@ -339,26 +367,7 @@ C.............  Assigns the index of the surrogate to each source (stored
 C               in SRGIDPOS passed through MODXREF)
             CALL ASGNSURG
 
-C.........  If surrogates not in use, must get the grid information from the 
-C           Models-3 grid information file
-        ELSE
-
-C.............  Get grid name from the environment and read grid parameters
-            IF(.NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUNIT,
-     &                          P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, 
-     &                          YCENT3D, XORIG3D, YORIG3D, XCELL3D,
-     &                          YCELL3D, NCOLS3D, NROWS3D, NTHIK3D))THEN
-
-                MESG = 'Could not get Models-3 grid description.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Initialize the local grid settings
-            CALL CHKGRID( GDNAM3D, 'GRIDDESC', 0, EFLAG )
-
-        END IF   ! If point sources or not
-
-        NGRID = NCOLS * NROWS
+        END IF   ! If surrogates are being used or not
 
 C.........  Ensure that the output grid is consistent with the input grid
         IF ( INVGRDNM .NE. ' ' .AND.
@@ -373,16 +382,19 @@ C.........  Ensure that the output grid is consistent with the input grid
 
         END IF
 
-c note: Here is where I could add the automatic subgrid feature.  The output
-c    n: grid would always be set by the GRIDPATH file, and the settings would
-c    n: be compared to the settings in the surrogates reader.  The offsets
-c    n: would have to be used in computing the output cells.
-
 C.........  Write message stating grid name and description
         L1 = LEN_TRIM( GRDNM )
         MESG = 'NOTE: Output grid "' // GRDNM( 1:L1 ) // 
-     &         '" set; defined as' // CRLF() // BLANK10 // GDESC
+     &         '" set; described as' // CRLF() // BLANK10 // GDESC
         CALL M3MSG2( MESG )
+
+C.........  If output grid is different from surrogates, write message
+        IF ( OFFLAG ) THEN
+            L1 = LEN_TRIM( SRGGRDNM )
+            MESG = 'NOTE: gridding surrogates extracted for output '//
+     &             'grid from grid "' // SRGGRDNM( 1:L1 ) // '"'
+            CALL M3MSG2( MESG )
+        END IF
 
 C.........  Depending on source category, convert coordinates, determine size
 C           of gridding matrix, and allocate gridding matrix.
@@ -401,10 +413,10 @@ C.............  Allocate memory for mobile source gridding matrix
         CASE( 'MOBILE' )
 
 C.............  Convert mobile source coordinates from lat-lon to output grid
-            CALL CONVRTXY( NSRC, GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D,
-     &                     XCENT3D, YCENT3D, XLOC1, YLOC1 )
-            CALL CONVRTXY( NSRC, GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D, 
-     &                     XCENT3D, YCENT3D, XLOC2, YLOC2 )
+            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
+     &                     XCENT, YCENT, XLOC1, YLOC1 )
+            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, XLOC2, YLOC2 )
 
 C.............  Determine sizes for allocating mobile gridding matrix 
             CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
@@ -420,8 +432,8 @@ C.............  Allocate memory for mobile source ungridding matrix
         CASE( 'POINT' )
 
 C.............  Convert point source coordinates from lat-lon to output grid
-            CALL CONVRTXY( NSRC, GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D, 
-     &                     XCENT3D, YCENT3D, XLOCA, YLOCA )
+            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, XLOCA, YLOCA )
 
 C.............  Set the number of source-cell intersections
             DO S = 1, NSRC
