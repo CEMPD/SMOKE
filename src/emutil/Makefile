@@ -44,11 +44,11 @@ GEOF=geofac.o
 
 geofac: $(GEOF) $(ALLI) $(LIBPATH)
 	echo GEOFAC:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(EXTI) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GEOF) $(LIBS)
 
 geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'GEOFAC (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -o $(@) $(GEOF) $(LIBS_DEBUG)
 
 INVS=invsplit.o
 
