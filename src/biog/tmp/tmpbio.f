@@ -394,7 +394,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
 
         DO  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )
-            UNITS3D( M ) = 'moles/hour'
+            UNITS3D( M ) = 'mole/hr'
             VDESC3D( M ) = 'biogenic emissions of the indicated species'
             VTYPE3D( M ) = M3REAL
         ENDDO
