@@ -55,7 +55,7 @@ C.........  Parameters
         INTEGER       STDOUT
         INTEGER       YEAR
         PARAMETER   ( STDOUT = 6,
-     &                  YEAR = 1998 )
+     &                  YEAR = 1999 )
 
 C.........  External functions
         LOGICAL       GETYN
