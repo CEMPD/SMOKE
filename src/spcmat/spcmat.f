@@ -38,17 +38,24 @@ C************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY:
 
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPEC, MXSPFUL, SPCNAMES, INPRF, SPECID,
+     &                     MASSFACT, MOLEFACT, MOLUNITS, NSPFUL, 
+     &                     SPROFN, IDXSPRO, NSPECIES, IDXSSPEC
 
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: INPUTHC, OUTPUTHC, EMTNAM, EMTPOL, NEPOL,
+     &                      NETYPE  
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, NIPPA, NIPOL,
+     &                     EANAM, EINAM
 
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
+        
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
         
@@ -108,6 +115,7 @@ C.........  Unit numbers and logical file names
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for ASCII emission process file
         INTEGER         UDEV    !  unit number for ASCII supplemental file
+        INTEGER         VDEV    !  unit no. for inventory data table
         INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER*16    ANAME   !  logical name for additive control matrix
@@ -117,7 +125,7 @@ C.........  Unit numbers and logical file names
         CHARACTER*16    LNAME   !  logical name for mole spec matrix output file
 
 C.........   Other local variables
-        INTEGER          I, J, K, L1, L2, L3, L4, LT, N, V !  counters and indices
+        INTEGER          I, J, K, L, L1, L2, L3, L4, LT, N, V !  counters and indices
 
         INTEGER          IDX               ! tmp index value
         INTEGER          IOS               ! i/o status
@@ -134,6 +142,7 @@ C.........   Other local variables
         LOGICAL       :: MOLEOUT = .TRUE.  !  true: output mole-based matrix
         LOGICAL       :: DEFREPRT= .TRUE.  !  true: report default spc profiles
         LOGICAL       :: MULTIPRO= .TRUE.  !  true: multiple profs for pollutant
+        LOGICAL       :: FNDOUTPUT=.FALSE. !  true: found output hydrocarbon
 
         CHARACTER*300          MESG      !  message buffer 
         CHARACTER(LEN=IOVLEN3) CBUF      !  smat output name temporary buffer 
@@ -202,6 +211,10 @@ C           do not store the pollutants as separate
      &  KDEV = PROMPTFFILE( 
      &           'Enter logical name for POLLUTANT CONVERSION file',
      &           .TRUE., .TRUE., 'GSCNV', PROGNAME )
+     
+        VDEV = PROMPTFFILE( 
+     &           'Enter logical name for INVENTORY DATA TABLE file',
+     &           .TRUE., .TRUE., 'INVTABLE', PROGNAME )
 
 C.........  Otherwise, store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).   
@@ -251,6 +264,9 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
 C.........  When mobile codes file is being used read mobile codes file
         IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
 
+C.........  Read inventory table (used for NONHAP checks)
+        CALL RDCODNAM( VDEV )
+
 C.........  Perform the steps needed for using activities and emission types
 C           instead of pollutants
 C.........  Read emission processes file.  Populate array in MODEMFAC and
@@ -258,6 +274,70 @@ C           set NETYPE
         IF( NIACT .GT. 0 ) THEN
 
             CALL RDEPROC( TDEV )
+
+C.............  Find input hydrocarbon name
+            INPUTHC = ' '
+            DO I = 1, NEPOL
+                SELECT CASE( EMTPOL( I ) )
+                CASE( 'VOC', 'THC', 'NMHC', 'TOG', 'NMOG' )
+                    INPUTHC = EMTPOL( I )
+                    EXIT
+                END SELECT
+            END DO
+            
+            IF( INPUTHC == ' ' ) THEN
+                MESG = 'No valid hydrocarbon pollutant specified ' //
+     &                 'in emission processes file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            OUTPUTHC = 'NONHAP' // TRIM( INPUTHC )
+            
+            FNDOUTPUT = .FALSE.
+            K = 0
+            
+C.............  Check if NONHAP values are processed
+            DO I = 1, MXIDAT
+                
+                IF( INVDNAM( I ) == OUTPUTHC ) THEN
+                    FNDOUTPUT = .TRUE.
+                    CYCLE
+                END IF
+                
+C.................  If requested hydrocarbon is not TOG or VOC, skip rest of loop
+                IF( INPUTHC /= 'TOG' .AND. INPUTHC /= 'VOC' ) EXIT
+                
+                IF( INVDVTS( I ) /= 'N' ) THEN
+
+C.....................  Check that pollutant is generated by MOBILE6
+                    DO J = 1, NEPOL
+                        IF( INVDNAM( I ) == EMTPOL( J ) ) THEN
+                            IF( INVDVTS( I ) == 'V' ) THEN
+                                K = K + 1
+                            ELSE IF( INPUTHC == 'TOG' ) THEN
+                                K = K + 1
+                            END IF
+                            EXIT
+                        END IF
+                    END DO
+                END IF
+            END DO
+
+C.............  If output was not found, set name to blank        
+            IF( .NOT. FNDOUTPUT .OR. K == 0 ) THEN
+                OUTPUTHC = ' '             
+            END IF                            
+
+C.............  Rename emission factors if necessary
+            IF( OUTPUTHC /= ' ' ) THEN
+                DO I = 1, SIZE( EMTNAM,1 )
+                    L = INDEX( EMTNAM( I,1 ), ETJOIN )
+                    L2 = LEN_TRIM( ETJOIN )
+                    
+                    IF( EMTNAM( I,1 )( L+L2:IOVLEN3 ) == INPUTHC ) THEN
+                        EMTNAM( I,1 )( L+L2:IOVLEN3 ) = OUTPUTHC
+                    END IF
+                END DO
+            END IF
 
         END IF
 
