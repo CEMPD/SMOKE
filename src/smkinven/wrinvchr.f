@@ -1,5 +1,5 @@
 
-        SUBROUTINE WPNTSCHR( ENAME, SDEV, NPSRC )
+        SUBROUTINE WPNTSCHR( ENAME, SDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 123
@@ -11,7 +11,7 @@ C
 C  PRECONDITIONS REQUIRED:
 C      Logical file ENAME opened
 C      File unit number SDEV opened
-C      Correct number of sources NPSRC
+C      Correct number of sources NSRC
 C      Output arrays populated
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -48,6 +48,9 @@ C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -64,9 +67,8 @@ C.........   LOCAL PARAMETERS and their descriptions:
         INTEGER, PARAMETER :: NASCII = 10 !  no. of columns in the ASCII file
 
 C.........  SUBROIUTINE ARGUMENTS and their descriptions:
-        CHARACTER(*) ENAME  !  I/O API file name
-        INTEGER      SDEV              !  ASCII file unit
-        INTEGER      NPSRC             !  actual source count
+        CHARACTER(*), INTENT (IN) :: ENAME  !  I/O API file name
+        INTEGER     , INTENT (IN) :: SDEV   !  ASCII file unit
 
 C.........  Arrays for column formatting
         INTEGER       COLWID( NASCII ) ! width of source info columns
@@ -90,6 +92,7 @@ C.........  Arrays for column formatting
 
 C.........  Other local variables
         INTEGER       COLWID0          !  width of SMOKE source ID column
+        INTEGER       COLMAX           !  no. of the most specific plant char 
         INTEGER       I, J, K, S       !  counters and indices
         INTEGER       L1, L2, NL       !  counters and indices
         INTEGER       NC               !  number of output fields
@@ -105,7 +108,7 @@ C   begin body of subroutine WPNTSCHR
 
 C.........  Get the maximum column width for each of the columns in ASCII file
         COLWID = 0    ! array
-        DO S = 1, NPSRC
+        DO S = 1, NSRC
 
             DO K = 1, 7   ! Loop through source characteristics
                 L1 = PTBEGL3( K )
@@ -130,10 +133,24 @@ C.........  Get the maximum column width for each of the columns in ASCII file
 
         ENDDO   ! End loop on sources to get maximum column widths
 
-        WRITE( MESG, * ) NPSRC   ! Column width for source IDs
+        WRITE( MESG, * ) NSRC   ! Column width for source IDs
         L1 = LBLANK( MESG ) + 1
         L2 = LEN_TRIM( MESG )
         COLWID0 = L2 - L1 + 1
+
+C.........  It is possible that a source characteristic (such as segment) may
+C           never be used, while SCC is defined and also considered a plant 
+C           characteristic.  So, make sure that if there are no gaps in the
+C           list of source characteristics, even though this means outputting
+C           blank fields.
+C.........  Find the most specific defined plant characteristic
+        DO COLMAX = 7, 3, -1
+            IF( COLWID( COLMAX ) .GT. 0 ) EXIT
+        END DO
+
+        DO I = 3, COLMAX
+            COLWID( I ) = MAX( COLWID( I ), 1 )
+        END DO
 
 C.........  Consider that every source might not have the same thing defined!
 C.........  If a column is defined for _any_ source, then it must be
@@ -171,7 +188,7 @@ C.........  Write the ASCII file header
         ENDDO
 
 C.........  Write the ASCII file data
-        DO S = 1, NPSRC
+        DO S = 1, NSRC
 
             CALL PARSCSRC( CSOURC( S ), LF, CHARS, NC )
 
