@@ -135,7 +135,6 @@ C...........   Other local variables
         INTEGER      :: DSDATE = 0 ! day-specific data start date
         INTEGER      :: DSTIME = 0 ! day-specific data start time
 
-        INTEGER         FILFMT     ! input file(s) format code
         INTEGER         FIP        ! Temporary FIPS code
         INTEGER      :: HNSTEP = 0 ! day-specific data time step number
         INTEGER      :: HSDATE = 0 ! day-specific data start date
@@ -162,6 +161,7 @@ C...........   Other local variables
         LOGICAL         HFLAG            ! true: hour-specific inputs used
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
+        LOGICAL         TOXFLG           ! true: toxics are being processed
 
         CHARACTER*5               TYPNAM      !  'day' or 'hour' for import
         CHARACTER*300             MESG        !  message buffer
@@ -226,7 +226,7 @@ C               are contained in the module MODSOURC
             CALL M3MSG2( 'Reading average raw inventory data...' )
 
             CALL RDINVEN( IDEV, XDEV, EDEV, INAME,  
-     &                    FILFMT, NRAWBP, TFLAG )
+     &                    NRAWBP, TFLAG, TOXFLG )
 
             CALL M3MSG2( 'Sorting raw inventory data...' )
 
@@ -241,7 +241,12 @@ C                the input format.
 
 C.............  Processing inventory records and store in sorted order
 
-            CALL PROCINVEN( NRAWBP, FILFMT, UDEV, YDEV, CDEV, LDEV ) 
+            CALL PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV ) 
+
+C.............  Integrate criteria and toxic pollutants
+            IF( TOXFLG ) THEN
+                CALL SETNONHAP
+            END IF
 
 C.............  Determine memory needed for actual pollutants list and actual
 C               activities list and allocate them. Invstat has been updated
