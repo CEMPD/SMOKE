@@ -38,12 +38,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      GETNUM
         REAL         GETREAL
         LOGICAL      GETYN 
+        INTEGER      INDEX1
         INTEGER      LOCAT1
         INTEGER      PROMPTFFILE
         CHARACTER*16 PROMPTMFILE
         INTEGER      TRIMLEN
 
-        EXTERNAL     FIND1, GETNUM, GETREAL, GETYN, LOCAT1, 
+        EXTERNAL     FIND1, GETNUM, GETREAL, GETYN, INDEX1, LOCAT1, 
      &               PROMPTFFILE, PROMPTMFILE, TRIMLEN
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -58,7 +59,6 @@ C...........   MOBILE5a parameter x-ref variables
         INTEGER IPSI  ( NPREF )          ! Normal x-ref scheme index
         INTEGER NIDX  ( NPREF, NNFAC )   ! Normal x-ref entries
         INTEGER CIDX  ( NPREF, NCFAC )   ! Control Normal x-ref entries
-        INTEGER P1
 
         COMMON / MPARMS / MRNUM, IPSI, NIDX, CIDX
 
@@ -99,13 +99,14 @@ C...........   Local variables
         INTEGER ITEMP                     ! Indicator for MOBILE5 for only temp changing
         INTEGER NTEMP                     ! Actual no. of temps for eval of EFs
         INTEGER IPSIDX( NPREF )           ! Sorting index for IPSIR
+        INTEGER VOLORG                    ! Index of Mobile5 hydrocarbon type
 
 C...........   Other local variables
 
         REAL    PCNTPRO( MXNPT, NPREF )
         INTEGER IPLIST ( MXNPT, NPREF )
         INTEGER ISTYPE ( NPREF, 2     )
-        INTEGER MPTYPE, J, JJ, MCOMBO, MPURE
+        INTEGER MPTYPE, MCOMBO, MPURE
 
         INTEGER T
         INTEGER I, IERR, IM, IPARM, IPM, 
@@ -113,6 +114,7 @@ C...........   Other local variables
 
         INTEGER LDEV, MODEV, NLDEV, NRDEV
 
+        CHARACTER*4   VOLNAM         !  name of Mobile5 hydrocarbon to use
         CHARACTER*16  MNAME, ONAME
         CHARACTER*256 MESG
 
@@ -172,12 +174,40 @@ C.........  Prompt for modeling year
         JYEAR = GETNUM( 0, 9999, JYEAR,
      &         'Enter modeling year for emissions factors (YYYY)' )
 
+C.........  Write out list of legal hydrocarbon species
+        WRITE( *,92000 ) ' '
+        DO 22 I = 1, NUMVOL
+            CALL M3MESG( '     ' // VOLTYP( I ) )
+   22   CONTINUE 
+
+C.........  Prompt for type of organic compound to use (numbers match
+C.........  MOBILE5 numbers
+
+        DO 23 I = 5, 1, -1
+            CALL GETSTR( 'Enter type of hydrocarbon emissions', 
+     &                   VOLTYP( 3 ), VOLNAM )
+ 
+            VOLORG = INDEX1( VOLNAM, NUMVOL, VOLTYP )
+
+            IF( VOLORG .GT. 0 ) GO TO 25  ! Valid reponse found
+
+            WRITE( MESG,94010 ) 'Invalid response, get', I-1, 
+     &                          'more tries'
+            CALL M3MESG( MESG )
+ 
+   23   CONTINUE
+
+        WRITE( MESG,94010 ) 'Bad hydrocarbon emissions type'
+        CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+
+   25   CONTINUE
+
 C.........  Prompt for start temperature
-        BTEMP = GETREAL( 1.,99., 1.,
+        BTEMP = GETREAL( 1.,110., 1.,
      &                   'Enter minimum temperature [deg F]' )
 
 C.........  Prompt for end temperature
-        ETEMP = GETREAL( BTEMP,99., 99., 
+        ETEMP = GETREAL( BTEMP,110., 110., 
      &                   'Enter maximum temperature [deg F]' )
 
 C.........  Prompt for temperature increment
@@ -240,7 +270,7 @@ C.............  Set up Master List file description
             GDTYP3D = IMISS3
             VGTYP3D = IMISS3
             VGTOP3D = AMISS3
-            GDNAM3D = '' 
+            GDNAM3D = ' ' 
 
             FDESC3D( 1 ) = 'Emissions Factors Master list for'
             WRITE  ( MESG, 94070 ) 'temperatures from', BTEMP, 
@@ -457,7 +487,7 @@ C.....................  Loop over temperature range
 
 C.........................  Create input file for MOBILE5a
                         REWIND( MODEV )                  
-                        CALL MOINBLD( MODEV, IPARM,
+                        CALL MOINBLD( MODEV, IPARM, VOLORG,
      &                                JYEAR, TEMPIN( T ) )
 
 C.........................  Create EFs for current NPSI, CPSI, temperature
