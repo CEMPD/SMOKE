@@ -207,10 +207,12 @@ C.............  Allocate memory for computed variable
         END IF
 
 C.........  Loop through pollutants, store, and write to inventory file
-        IF( NIPOL .GT. 0 ) CALL LOOP_FOR_OUTPUT( NIPOL, EIIDX, EINAM )
+        IF( NIPOL .GT. 0 ) 
+     &      CALL LOOP_FOR_OUTPUT( NIPOL, NPPOL, EIIDX, EINAM )
 
 C.........  Loop through activity data, store, and write to inventory file
-        IF( NIACT .GT. 0 ) CALL LOOP_FOR_OUTPUT( NIACT, AVIDX, ACTVTY )
+        IF( NIACT .GT. 0 ) 
+     &      CALL LOOP_FOR_OUTPUT( NIACT, NPACT, AVIDX, ACTVTY )
 
         IF( EFLAG ) THEN
             MESG = 'Missing data for some sources is not allowed ' //
@@ -268,10 +270,11 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C.............  This internal subprogram is for writing out the inventory
 C               data, whether it is the pollutant data or the activity data.
 C.............  Most variables are defined from the main subroutine
-            SUBROUTINE LOOP_FOR_OUTPUT( NOUT, INDX, NAMES )
+            SUBROUTINE LOOP_FOR_OUTPUT( NOUT, NPVAR, INDX, NAMES )
 
 C.............  Subroutine arguments 
             INTEGER     , INTENT (IN) :: NOUT          ! no. pols/act for output
+            INTEGER     , INTENT (IN) :: NPVAR         ! no. vars per data
             INTEGER     , INTENT (IN) :: INDX ( NOUT ) ! index to master list
             CHARACTER(*), INTENT (IN) :: NAMES( NOUT ) ! names of pols/act
 
@@ -307,7 +310,7 @@ C                       pollutant of iteration I.
 
                         IPPTR( S ) = K + 1  ! pointer for source S
 
-                        DO J = 1, NPPOL     ! rearrange pollutant-specific info
+                        DO J = 1, NPVAR     ! rearrange pollutant-specific info
                             SRCPOL( S,J ) = POLVAL( K,J )
                         END DO
 
@@ -328,14 +331,14 @@ C                           then write message and set error flag
                 END DO  ! end of loop through sources
 
 C.................  Write data to inventory file
-                CALL WRINVPOL( FNAME, CATEGORY, NSRC, 1, NPPOL, 
+                CALL WRINVPOL( FNAME, CATEGORY, NSRC, 1, NPVAR, 
      &                         NAMES( I ), SRCPOL )
 
 C.................  If current data variable is the first variable in the
 C                   formula, then store data in formula arrays
                 IF( NAMES( I ) .EQ. VIN_A ) THEN
                     COMPUTED( :,1 ) = COMPUTED( :,1 ) + SRCPOL( :,1 )
-                    COMPUTED( :,1:NPPOL ) = SRCPOL( :,1:NPPOL )
+                    COMPUTED( :,1:NPVAR ) = SRCPOL( :,1:NPVAR )
                 END IF
 
 C.................  If current data variable is the second variable in the
