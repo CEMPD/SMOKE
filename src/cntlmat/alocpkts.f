@@ -384,7 +384,7 @@ C.............  Subprogram arguments
             LOGICAL     , INTENT(OUT) :: YFLAG    ! flag for year-specific pkt
 
 C.............  Local variables
-            INTEGER    J, L, S1, S2    ! indices
+            INTEGER    I, J, L, S1, S2    ! indices
             INTEGER    IOS             ! i/o status
 
             INTEGER, SAVE :: SAVYEAR   ! saved output year
@@ -406,7 +406,7 @@ C.............  Find packet in LINE in list of packets
             DO I = 1, NPACKET
 
                 L = LEN_TRIM( PKTLIST( I ) )
-                J = INDEX( PKTLIST( I )( 1:L ), LINE( S1:S2 )  )
+                J = INDEX( LINE( S1:S2 ), PKTLIST( I )( 1:L ) )
                 IF( J .GT. 0 ) THEN
                     PKTIDX = I
                     EXIT
