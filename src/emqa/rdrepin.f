@@ -24,17 +24,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -63,13 +63,15 @@ C.........  This module contains the global variables for the 3-d grid
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER    GETFLINE
@@ -250,7 +252,7 @@ C.........  NOTE that only the variables that are needed are read in
             IF( SSNAME .NE. ' ' ) BNAME = SSNAME
 
 C.............  Get file header for variable names
-            IF ( .NOT. DESC3( BNAME ) ) THEN
+            IF ( .NOT. DESCSET( BNAME ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 BNAME( 1:LEN_TRIM( BNAME ) ) // '"'
@@ -264,7 +266,7 @@ C.............  Get file header for variable names
                 IF( SPCOUT( V ) ) THEN
 
                     K = K + 1
-                    DBUF = VDESC3D( V )
+                    DBUF = VDESCSET( V )
                     IF( SLFLAG ) THEN
                         CALL RDSMAT( SLNAME, DBUF, SLMAT( 1,K ) )
                     END IF

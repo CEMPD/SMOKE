@@ -24,17 +24,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -57,14 +57,16 @@ C.........  This module contains the global variables for the 3-d grid
 C...........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
@@ -95,7 +97,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
 
 C.........  Temporary array for speciation variable names
-        CHARACTER(LEN=IODLEN3) SLVNAMS( MXVARS3 )
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: SLVNAMS( : )
 
 C.........  Local units and logical file names
         INTEGER      :: MDEV = 0     ! unit no. emission processes file
@@ -243,15 +245,19 @@ C.........  Open mole speciation matrix, compare number of sources, store
 C           speciation variable descriptions, and store mass or moles.
         IF( SLFLAG ) THEN
 
-            SLNAME = PROMPTMFILE( 
+            SLNAME = PROMPTSET( 
      &           'Enter logical name for the MOLE SPECIATION MATRIX',
      &           FSREAD3, CRL//'SMAT_L', PROGNAME )
 
-            CALL RETRIEVE_IOAPI_HEADER( SLNAME )
+            CALL RETRIEVE_SET_HEADER( SLNAME )
             CALL CHKSRCNO( CATDESC, SLNAME, NROWS3D, NSRC, EFLAG )
 
-            NSVARS  = NVARS3D
-            SLVNAMS = VDESC3D  ! array
+            NSVARS = NVARSET
+            
+            ALLOCATE( SLVNAMS( NSVARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SLVNAMS', PROGNAME )
+            
+            SLVNAMS = VDESCSET  ! array
 
         END IF  ! end of mole speciation open
 
@@ -268,23 +274,23 @@ C.........  Open mass speciation matrix, compare number of sources, store
 C           speciation variable descriptions, and store mass or moles.
         IF( SSFLAG ) THEN
 
-            SSNAME = PROMPTMFILE( 
+            SSNAME = PROMPTSET( 
      &           'Enter logical name for the MASS SPECIATION MATRIX',
      &           FSREAD3, CRL//'SMAT_S', PROGNAME )
 
-            CALL RETRIEVE_IOAPI_HEADER( SSNAME )
+            CALL RETRIEVE_SET_HEADER( SSNAME )
             CALL CHKSRCNO( CATDESC, SSNAME, NROWS3D, NSRC, EFLAG )
 
 C.............  Compare matrix header with mole-based, if available
             IF( SLFLAG ) THEN
 
 C.................  Check the number of variables
-                IF( NSVARS .NE. NVARS3D ) THEN
+                IF( NSVARS .NE. NVARSET ) THEN
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Inconsistent number '//
      &                'of speciation variables.'// CRLF()// BLANK10// 
-     &                'Mole file:', NSVARS,'; Mass file:', NVARS3D
+     &                'Mole file:', NSVARS,'; Mass file:', NVARSET
                     CALL M3MSG2( MESG )
 
                 END IF
@@ -292,14 +298,14 @@ C.................  Check the number of variables
 C.................  Check the dscriptions of variables
                 DO V = 1, NSVARS
 
-                    IF( SLVNAMS( V ) .NE. VDESC3D( V ) ) THEN
+                    IF( SLVNAMS( V ) .NE. VDESCSET( V ) ) THEN
 
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'ERROR: Inconsistent '//
      &                    'variable descriptions in speciation '//
      &                    'matrices for variable', V, CRLF() // 
      &                    BLANK10 //'Mole file: ', SLVNAMS( V ) //
-     &                    CRLF() // BLANK10 //'Mass file: ', VDESC3D(V)
+     &                    CRLF() // BLANK10 //'Mass file: ', VDESCSET(V)
                         CALL M3MSG2( MESG )
 
                     END IF
@@ -309,7 +315,7 @@ C.................  Check the dscriptions of variables
 C.............  Otherwise, set number of speciation variables
             ELSE
 
-        	NSVARS  = NVARS3D
+        	NSVARS  = NVARSET
 
             END IF 
 
@@ -464,6 +470,27 @@ C----------------------------------------------------------------------
             ENDIF
  
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram tries to retrieve the description for a file
+C               set and aborts if it was not successful
+            SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. DESCSET( FILNAM, ALLFILES ) ) THEN
+
+                MESG = 'Could not get description of file set "' //
+     &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ENDIF
+ 
+            END SUBROUTINE RETRIEVE_SET_HEADER
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------

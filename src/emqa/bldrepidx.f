@@ -21,17 +21,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -51,13 +51,14 @@ C.........  This module contains the temporal profile tables
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2   CRLF
@@ -259,7 +260,7 @@ C.............  Initialize sorting index for species names
 C.............  Get header of mole speciation matrix
             IF( SLFLAG ) THEN
 
-                IF ( .NOT. DESC3( SLNAME ) ) THEN
+                IF ( .NOT. DESCSET( SLNAME ) ) THEN
 
         	    MESG = 'Could not get description of file "' //
      &                     SLNAME( 1:LEN_TRIM( SLNAME ) ) // '"'
@@ -268,14 +269,14 @@ C.............  Get header of mole speciation matrix
                 ENDIF
 
 C.................  Store units
-                CALL STORE_VUNITS( 1, 1, NVARS3D, SLUNIT )
+                CALL STORE_VUNITSET( 1, 1, NVARSET, SLUNIT )
 
             END IF
 
 C.............  Get header of mass speciation matrix
             IF( SSFLAG ) THEN
 
-                IF ( .NOT. DESC3( SSNAME ) ) THEN
+                IF ( .NOT. DESCSET( SSNAME ) ) THEN
 
         	    MESG = 'Could not get description of file "' //
      &                     SSNAME( 1:LEN_TRIM( SSNAME ) ) // '"'
@@ -284,7 +285,7 @@ C.............  Get header of mass speciation matrix
                 ENDIF
 
 C.................  Store units
-                CALL STORE_VUNITS( 1, 1, NVARS3D, SSUNIT )
+                CALL STORE_VUNITSET( 1, 1, NVARSET, SSUNIT )
 
             END IF
 
@@ -294,7 +295,7 @@ C.............  Count the number of unique species
             NMSPC = 0
             DO V = 1, NSVARS
 
-        	VBUF = VDESC3D( V )
+        	VBUF = VDESCSET( V )
 
         	J  = INDEX( VBUF, ETJOIN )   ! Look for emission type joiner
         	K  = INDEX( VBUF, SPJOIN )   ! Look for speciation joiner
@@ -633,13 +634,13 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
  
         CONTAINS
  
-C.............  This subprogram stores I/O API NetCDF variable units into
-C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VUNITS( ISTART, INCRMT, NUNIT, UNITS )
+C.............  This subprogram stores I/O API NetCDF variable units from
+C               a file set into a local array based on indices in subprogram call.
+            SUBROUTINE STORE_VUNITSET( ISTART, INCRMT, NUNIT, UNITS )
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in UNITS3D of names
-            INTEGER      INCRMT        ! increment of UNITS3D for names
+            INTEGER      ISTART        ! starting position in VUNITSET of names
+            INTEGER      INCRMT        ! increment of VUNITSET for names
             INTEGER      NUNIT         ! number of units
             CHARACTER(*) UNITS( NUNIT )! stored variable units
 
@@ -653,13 +654,13 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NUNIT
 
-                L = LEN_TRIM( UNITS3D( J ) )
-                UNITS( I ) = UNITS3D( J )( 1:L )
+                L = LEN_TRIM( VUNITSET( J ) )
+                UNITS( I ) = VUNITSET( J )( 1:L )
                 J = J + INCRMT
 
             END DO
  
-            END SUBROUTINE STORE_VUNITS
+            END SUBROUTINE STORE_VUNITSET
 
         END SUBROUTINE BLDREPIDX
 
