@@ -1,4 +1,5 @@
       RECURSIVE REAL FUNCTION GLL_WGT(MY,ACTUAL_MY,HOT_DIURN_RUN,AGE) 
+     *    RESULT(RES_GLL_WGT) 
 C 
 C GLL_WGT calculates the HOTSOAK Gross Leakers weighting fraction 
 C       It is written so that it can be used for HOTSOAK Diurnal and 
@@ -10,7 +11,10 @@ C Calls GLL_WGT recursively.
 C 
 C Changes Last First 
 C 
-C  13 Dec 00 @EPA-bag t-x6 MY and ACTUAL_MY added to parameter list for CAA switch 
+C 17 Jun 02 AIR Bug Fix 391: Corrected illegal recursive construct by adding 
+C           RESULT clause, the function result RES_GLL_WGT, and an identifed 
+C           END statement. 
+C 13 Dec 00 @EPA-bag t-x6 MY and ACTUAL_MY added to parameter list for CAA switch 
 C 18 Nov 1999 @Dyntel-nh 1-014 New function 
 C 
 C Input Arguments 
@@ -57,7 +61,7 @@ C
       PARAMETER (IHOTSOAK=1,IDIURNAL=2,IRUNLOSS=3) 
       INTEGER, PARAMETER :: INO=0 
 C 
-      GLL_WGT=0.0 
+      RES_GLL_WGT=0.0 
       IF(ILIQUID_LEAKS == INO ) GOTO 99 
 C 
       SELECT CASE (HOT_DIURN_RUN) 
@@ -65,7 +69,7 @@ C
             WGTDIURN = GLL_WGT(MY,ACTUAL_MY,IDIURNAL,AGE) 
             WGTRUN   = GLL_WGT(MY,ACTUAL_MY,IRUNLOSS,AGE) 
             HOTS_GLL = (WGTDIURN+WGTRUN)-(WGTDIURN*WGTRUN) 
-            GLL_WGT=HOTS_GLL 
+            RES_GLL_WGT=HOTS_GLL 
             RETURN 
           CASE (IDIURNAL,IRUNLOSS) 
  
@@ -78,7 +82,7 @@ C
                     C=GLL_COEF(3,K) 
                     D=GLL_COEF(4,K) 
 C 
-                    GLL_WGT=A/(1+B*EXP((C*AGE)+(D*AGE*AGE))) 
+                    RES_GLL_WGT=A/(1+B*EXP((C*AGE)+(D*AGE*AGE))) 
 C 
                 CASE (1999:) ! Another Coefficient set 1999 and later. 
                     A=GLL_COEF(1,K+1) 
@@ -86,7 +90,7 @@ C
                     C=GLL_COEF(3,K+1) !This C is half that of MY95-, for durability 
                     D=GLL_COEF(4,K+1) 
 C 
-                    GLL_WGT=A/(1+B*EXP((C*AGE)+(D*AGE*AGE))) 
+                    RES_GLL_WGT=A/(1+B*EXP((C*AGE)+(D*AGE*AGE))) 
 C 
                 CASE (1996:1998)! Transition period uses both 
 C 
@@ -108,17 +112,17 @@ C
      &              +(DPOST*AGE*AGE))) 
 C 
                     J=ACTUAL_MY-1995 
-                    GLL_WGT=PHASE_IN(J)*GLLPRE + 
+                    RES_GLL_WGT=PHASE_IN(J)*GLLPRE + 
      &                           (1-PHASE_IN(J))*GLLPOST 
  
              END SELECT 
 C                 
       END SELECT 
-      IF (GLL_WGT<0.0) THEN 
-        GLL_WGT=0.0 
-      ELSEIF (GLL_WGT>1.0) THEN 
-        GLL_WGT=1.0 
+      IF (RES_GLL_WGT<0.0) THEN 
+        RES_GLL_WGT=0.0 
+      ELSEIF (RES_GLL_WGT>1.0) THEN 
+        RES_GLL_WGT=1.0 
       END IF 
 C 
 99    RETURN 
-      END 
+      END FUNCTION GLL_WGT 
