@@ -150,7 +150,7 @@ C           biogenic sources, get gridding surrogates
      &             .TRUE., .TRUE., 'BGPRO', PROGNAME )
 
 C.............  Read surrogate file header    
-            CALL RDSRGHDR( GDEV, SRGFMT )   ! CHKGRID may be initialized here
+            CALL RDSRGHDR( .FALSE., GDEV, SRGFMT )   ! CHKGRID may be initialized here
             SRGGRDNM = GRDNM
             SRGNCOLS = NCOLS
             SRGNROWS = NROWS
