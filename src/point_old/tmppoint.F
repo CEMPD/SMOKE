@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM TMPPOINT
 
 C***********************************************************************
-C  program body starts at line 285
+C  program body starts at line 290
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -54,6 +32,27 @@ C       uses elevated-sources file to generate time-stepped elevated
 C       sources emissions file for input to plume rise.
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C*************************************************************************
 
       IMPLICIT NONE
 
@@ -69,12 +68,16 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         INTEGER         FIND1, FIND2, FIND3, FIND4
+        INTEGER         GETDATE
         INTEGER         GETNUM
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         LOGICAL         ISDSTIME
         INTEGER         INDEX1
         INTEGER         LBLANK
+        CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         RDTPROF
@@ -83,15 +86,18 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-      EXTERNAL      FIND1, FIND2, FIND3, FIND4, GETNUM, GETYN,
-     &              INDEX1, ISDSTIME, LBLANK, PROMPTFFILE, PROMPTMFILE,
-     &              RDTPROF, STR2INT, TIME2SEC, TRIMLEN, WKDAY
+      EXTERNAL      CRLF, FIND1, FIND2, FIND3, FIND4, GETDATE, GETNUM,
+     &              HHMMSS, GETYN, INDEX1, ISDSTIME, LBLANK, MMDDYY,
+     &              PROMPTFFILE, PROMPTMFILE, RDTPROF, STR2INT, 
+     &              TIME2SEC, TRIMLEN, WKDAY
      
                                             
 C...........   PARAMETERS and their descriptions
 
+        CHARACTER*5 BLANK5
         INTEGER     MXREC
-        PARAMETER ( MXREC = NPSRC * NIPOL )
+        PARAMETER ( BLANK5 = ' ',
+     &              MXREC = NPSRC * NIPOL )
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -244,7 +250,6 @@ C...........   Other local variables
         LOGICAL         DFLAG   !  day-specific  file available
         LOGICAL         HFLAG   !  hour-specific file available
         LOGICAL         UFLAG   !  generating upper-level output file
-        LOGICAL         YFLAG   !  generating output xref file
 
         LOGICAL   DAYLIT !  true when TZONES have been changed to daylight time
         DATA      DAYLIT / .FALSE. /
@@ -257,7 +262,6 @@ C...........   Other local variables
         INTEGER         LDEV    !  unit number for log file
         INTEGER         XDEV    !  ...input cross-reference file
         INTEGER         PDEV    !  ...input profile file
-        INTEGER         YDEV    !  ...optional    output cross-reference file
         INTEGER         UDEV    !  ...optional input elevated sources file
         INTEGER         IOS
         INTEGER         IREC
@@ -269,11 +273,12 @@ C...........   Other local variables
         INTEGER         LS, EC
         INTEGER         MONTH, DAY, LDATE
 
+        CHARACTER*5     FFORMAT !  Indicator for type of XREF file
+        CHARACTER*14    DTBUF   !  buffer for MMDDYY
         CHARACTER*16    ENAME   !  logical name for point-source input file
         CHARACTER*16    DNAME   !  " day-specific  input file, or "NONE"
         CHARACTER*16    HNAME   !  " hour-specific input file, or "NONE"
         CHARACTER*16    TNAME   !  " timestepped (low-level)   output file
-        CHARACTER*16    TTYPE   !  Indicator for type of XREF file
         CHARACTER*16    UNAME   !  " (upper-level) output file, or "NONE"
         CHARACTER*80    LINE    !  buffer for XREF input lines
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
@@ -378,41 +383,25 @@ C.......   and temporal profiles files
 
         HNAME = PROMPTMFILE( 
      &          'Enter name for HOUR-SPECIFIC file, or "NONE"',
-     &          FSREAD3, 'NONE', 'TMPPOINT' )
+     &          FSREAD3, 'PHOUR', 'TMPPOINT' )
         HFLAG = ( HNAME( 1:5 ) .NE. 'NONE ' )
 
         CDEV = PROMPTFFILE( 
      &           'Enter logical name for ACTUAL SCC file >> ',
      &           .TRUE., .TRUE., 'PSCC', 'TMPPOINT' )
 
-10      CALL GETSTR(
-     &           'Enter type of TEMPORAL XREF file (LIST/EPS)',
-     &           'LIST', TTYPE )
-
-        IF( TTYPE .NE. 'LIST' .AND. TTYPE .NE. 'EPS' ) THEN
-            CALL M3MESG( TTYPE // ' not valid XREF file type.' )
-            GO TO 10
-        ENDIF 
-
         XDEV = PROMPTFFILE( 
      &           'Enter name for TEMPORAL XREF file',
      &           .TRUE., .TRUE., 'PTREF', 'TMPPOINT' )
-        IF ( XDEV .LE. 0 ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
-     &                   'Could not open TEMPORAL XREF file', 2 )
-        END IF
 
         PDEV = PROMPTFFILE( 
      &           'Enter name for TEMPORAL PROFILES file',
      &           .TRUE., .TRUE., 'PTPRO', 'TMPPOINT' )
-        IF ( PDEV .LE. 0 ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
-     &                   'Could not open TEMPORAL PROFILES file', 2 )
-        END IF
 
         UDEV = PROMPTFFILE( 
      &           'Enter name for ELEVATED SOURCES file, or "NONE"',
      &           .TRUE., .TRUE., 'PELV', 'TMPPOINT' )
+
         IF      ( UDEV .EQ. -2 ) THEN
             UFLAG = .FALSE.
         ELSE IF ( UDEV .GT. 0 ) THEN
@@ -433,27 +422,44 @@ C.......   Get time period for output file:
             END IF
             JDATE  = SDATE3D
             NSTEPS = 24 * MXREC3D
+
+        ELSEIF ( HFLAG ) THEN
+            IF ( .NOT. DESC3( HNAME ) ) THEN
+                CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                      'Could not get description of file "' 
+     &                      // HNAME( 1:TRIMLEN( HNAME ) ) // '"', 2 )
+            END IF
+            JDATE  = SDATE3D
+            NSTEPS = MXREC3D
+
         ELSE
-            JDATE  = 1987200
+            JDATE  = 1995182
             NSTEPS = 24
+
         END IF          !  if using day-specific info, or not
 
-        IF ( ISDSTIME( JDATE ) ) THEN
-            TZONE = 4
-        ELSE 
-            TZONE = 5
-        END IF
-
+        TZONE  = 5
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone (0 for GMT, 5 for EST, 4 for EDT)' )
-        JDATE  = GETNUM( 0, 9999999, JDATE, 
-     &                  'Enter starting date (YYYYDDD)' )
+        JDATE  = GETDATE( JDATE,
+     &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
+
         JTIME  = GETNUM( 0, 999999, 0, 
      &                  'Enter starting time  (HHMMSS)' )
         TSTEP  = 10000
         NSTEPS = GETNUM( 1, 999999, NSTEPS,
      &                   'Enter output duration (hours)' )
 
+        DTBUF = MMDDYY( JDATE )
+        WRITE( MESG,94050 )
+     &  'Output Time Zone :', TZONE,           CRLF() // BLANK5 //
+     &  '       Start Date:', DTBUF( 1:TRIMLEN( DTBUF ) ) //
+     &                                         CRLF() // BLANK5 //
+     &  '       Start Time:', JTIME,'HHMMSS'// CRLF() // BLANK5 //
+     &  '       Time Step :', 1    ,'hour'  // CRLF() // BLANK5 //
+     &  '       Duration  :', NSTEPS, 'hours'
+ 
+        CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
 C.......   Get list of output variables (shrink list in file description
 C.......   data structure to just those variables desired):
@@ -462,6 +468,11 @@ C.......   data structure to just those variables desired):
             CALL M3EXIT( 'TMPPOINT', 0, 0, 
      &                  'Could not get description of file "' 
      &                  // ENAME( 1:TRIMLEN( ENAME ) ) // '"', 2 )
+        ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  EMISSIONS file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
         END IF
 
 
@@ -509,6 +520,7 @@ C...........   Compute offset of pollutant codes within input VNAME3D:
         TSTEP3D = 10000
         WRITE( FDESC3D( 9 ),94010 ) 'Time zone ', TZONE
 
+        CALL M3MSG2( 'Reading source list from PNTS file...' )
 
 C...........   Read in emissions indexing data:  IFIP, ASC7, ASC3, 
 C...........   IPLANT, ISTACK, TZONES
@@ -547,19 +559,6 @@ C...........   IPLANT, ISTACK, TZONES
 C.......   Get file names; open output files
 C.......   Deal with optional elevated point source files
 
-        YDEV = PROMPTFFILE( 
-     &  'Enter name for XREF OUTPUT file, or "NONE"',
-     &           .FALSE., .TRUE., 'NONE', 'TMPPOINT' )
-        IF ( YDEV .EQ. -2 ) THEN
-            YFLAG = .FALSE.
-        ELSE IF ( YDEV .GT. 0 ) THEN
-            YFLAG = .TRUE.
-        ELSE
-            CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                   'Could not open XREF OUTPUT file', 2 )
-        END IF
-
-
         IF ( UFLAG ) THEN       ! generating upper-level point sources file
         
             MESG  = 'Enter name for output LOW-LEVEL EMIS file'
@@ -576,8 +575,7 @@ C.......   Deal with optional elevated point source files
             MESG  = 'Enter name for output ELEVATED EMIS file'
             UNAME = PROMPTMFILE( MESG, FSUNKN3, 'ETMP', 'TMPPOINT' )
 
-            WRITE( *,92000 ) 
-     &             ' ', 'Reading elevated sources file...', ' '
+            CALL M3MSG2( 'Reading elevated sources file...' )
 
             EFLAG = .FALSE.     !  for finding invalid sources
             IREC  = 0
@@ -649,7 +647,7 @@ C.......   Deal with optional elevated point source files
 
 C.......   Read the ACTUAL-SCC FILE
 
-        WRITE( *,92000 ) ' ', 'Reading ACTUAL SCC file...', ' '
+        CALL M3MSG2( 'Reading ACTUAL SCC file...' )
 
         IREC  =  0
         EFLAG = .FALSE.
@@ -706,13 +704,13 @@ C.......   Read the ACTUAL-SCC FILE
 
         NSCC = I
 
+        WRITE( MESG,94010 )
+     &      'Actual-SCC table max:', NPSRC, 'used:', NSCC
+        CALL M3MSG2( MESG )
 
 C.......   Read temporal-profile cross-reference file.
 
-        WRITE( *,92000 ) 
-     &         ' ', 'Reading TEMPORAL XREF file...', ' '
-
-        IF( TTYPE .EQ. 'LIST' ) GO TO 69
+        CALL M3MSG2( 'Reading TEMPORAL XREF file...' )
 
         IREC  = 0
         K     = 0
@@ -722,6 +720,18 @@ C.......   Read temporal-profile cross-reference file.
 
             IREC = IREC + 1
             READ( XDEV, 93000, END=45, IOSTAT=IOS ) LINE
+
+C.............  Auto check for LIST or EPS2.0 formated temporal XREF
+            IF( TRIMLEN( LINE ) .LE. 36 ) THEN
+
+                FFORMAT = 'LIST' 
+                REWIND( XDEV )
+                GO TO  45      ! To end of read loop
+
+            ELSE
+                FFORMAT = 'EPS2.0'
+
+            ENDIF
 
             IF ( IOS .NE. 0 ) THEN
                 EFLAG = .TRUE.
@@ -838,6 +848,12 @@ C.............  Ensure temporal profile numbers are valid
 
 45      CONTINUE        !  exit from loop:  read lines from XREF file
 
+
+C.......  Report format for XREF file
+        CALL M3MSG2( 'NOTE: File read in as ' // FFORMAT // ' format.' )
+
+
+C.......  Check for errors reading XREF file, and abort
         IF ( EFLAG ) THEN
             MESG = 'Error reading TEMPORAL XREF file'
             CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
@@ -847,8 +863,7 @@ C.............  Ensure temporal profile numbers are valid
 
 C.......   Sort and Process temporal cross-references, according to category
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Processing TEMPORAL XREF file...', ' '
+        CALL M3MSG2( 'Processing TEMPORAL XREF file...' )
         
         CALL SORTI4( NPRNA, INDXA, IFIPA, ISCCA, IPLTA, ISTKA )
 
@@ -1128,47 +1143,11 @@ C...........   Exit if overflows found
             CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         END IF
 
-
-C...........   If requested, write out filled-in XREF file:
-
-        IF ( YFLAG ) THEN
-
-            WRITE( YDEV,93020, IOSTAT=IOS )
-     &      ( 0, 0, -9, 0, 
-     &        PCODE( V ), MPR00( V ), WPR00( V ), DPR00( V ), 
-     &              V = 1, NIPOL ),
-     &      ( ( 0, -999, -9, ISCC1( S ), 
-     &          PCODE( V ), MPRN1( S,V ), WPRN1( S,V ), DPRN1( S,V ), 
-     &              V = 1, NIPOL ), S = 1, NPRN1 ),
-     &      ( ( 1000*IFIP2( S ), -999, -9, ISCC2( S ), 
-     &          PCODE( V ), MPRN2( S,V ), WPRN2( S,V ), DPRN2( S,V ), 
-     &              V = 1, NIPOL ), S = 1, NPRN2 ),
-     &      ( ( IFIP3( S ), -999, -9, ISCC3( S ), 
-     &          PCODE( V ), MPRN3( S,V ), WPRN3( S,V ), DPRN3( S,V ), 
-     &              V = 1, NIPOL ), S = 1, NPRN3 ),
-     &      ( ( IFIP4( S ), IPLT4( S ), -9, ISCC4( S ), 
-     &          PCODE( V ), MPRN4( S,V ), WPRN4( S,V ), DPRN4( S,V ), 
-     &              V = 1, NIPOL ), S = 1, NPRN4 ),
-     &      ( ( IFIP5( S ), IPLT5( S ), ISTK5( S ), ISCC5( S ), 
-     &          PCODE( V ), MPRN5( S,V ), WPRN5( S,V ), DPRN5( S,V ), 
-     &              V = 1, NIPOL ), S = 1, NPRN5 )
-
-            IF ( IOS .NE. 0 ) THEN
-                WRITE( MESG,94010 ) 
-     &              'I/O error', IOS, 
-     &              'writing OUTPUT XREF file'
-                CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 1 )
-            END IF
-
-            CLOSE( YDEV )
-
-        END IF  !  if yflag (optional TEMPORAL XREF file being produced)
-
 69      CONTINUE
 
 C...........   Read temporal-profiles file:  3 parts (monthly, weekly, diurnal)
 
-        WRITE( *,92000 ) ' ', 'Reading TEMPORAL PROFILES file...', ' '
+        CALL M3MSG2( 'Reading TEMPORAL-PROFILE file...' )
 
         NMON = RDTPROF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
         NWEK = RDTPROF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
@@ -1185,6 +1164,7 @@ C...........       FIP match;                 else
 C...........       FIP-state-code match;      else 
 C...........       default profile.
 
+        CALL M3MSG2( 'Building source indexes...' )
         EFLAG = .FALSE.         !  for detecting xref-mapping errors
 
         DO  81  S = 1, NPSRC
@@ -1197,7 +1177,7 @@ C.............  Set WFLAG to trur for using weekly temporal adjustments
      &                MOD( TPFLAG( S ), WDTPFAC ) .EQ. 0      )
 
 C.............  Read list formatted, non-species dep temporal profiles
-            IF( TTYPE .EQ. 'LIST' ) THEN
+            IF( FFORMAT .EQ. 'LIST' ) THEN
 
                 READ( XDEV, * ) MREF( 1 ), WREF( 1 ), DREF( 1 )
                 DO 72 V = 2,NIPOL
@@ -1305,11 +1285,9 @@ C...........   Try to get SCC-only match;
      &              'No profile for FIP ', FIP,
      &                  'SCC',   SCC,
      &                  'Plant', PLT,
-     &                  'Stack', STK
-                CALL M3MESG( MESG )
-
-                WRITE( MESG,94010 )
-     &              '     Using default SCC'
+     &                  'Stack', STK,
+     &               CRLF() // BLANK5 //
+     &              '     Using ultimate defaults'
                 CALL M3MESG( MESG )
 
 
@@ -1408,7 +1386,7 @@ C...........   If not using day-specific emissions, set NDAYPT to zero
 
 C...........   For each time step, write out the point source emissions values:
 
-        WRITE( *,92000 ) ' ', 'Writing out emissions values...', ' '
+        CALL M3MSG2( 'Writing out hourly emissions values...' )
 
         LDATE = -1   !  initialization forces TMAT calculation on first iter.
 
@@ -1475,7 +1453,9 @@ C...............   Get day-of-week, month:
 
                 IF ( NEND .EQ. 0 ) THEN           !  no weekend packet
 
-                    WRITE( *,92011 ) 'Processing day', DAY
+                    CALL M3MSG2( 'Processing ' //
+     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+
                     CALL MKTMAT( NPSRC, JDATE, MONTH, DAY,
      &                           TZONE, TZONES, TPFLAG,
      &                           MONFAC, NMON, MDEX, 
@@ -1486,7 +1466,9 @@ C...............   Get day-of-week, month:
                 ELSE IF ( DAY .GE. 6 ) THEN     !  day is Saturday or Sunday
                                                 !  in SAI's brain-damaged
                                                 !  day-of-week conventions.
-                    WRITE( *,92011 ) 'Processing weekend day', DAY
+                    CALL M3MSG2( 'Processing weekend day ' //
+     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+
                     CALL MKTMAT( NPSRC, JDATE, MONTH, DAY,
      &                           TZONE, TZONES, TPFLAG,
      &                           MONFAC, NMON, MDEX,
@@ -1496,7 +1478,9 @@ C...............   Get day-of-week, month:
 
                 ELSE
 
-                    WRITE( *,92011 ) 'Processing midweek day', DAY
+                    CALL M3MSG2( 'Processing midweek day ' //
+     &                           DAYS( DAY ) // MMDDYY( JDATE ) )
+
                     CALL MKTMAT( NPSRC, JDATE,  MONTH, DAY, 
      &                           TZONE, TZONES, TPFLAG,
      &                           MONFAC, NMON, MDEX,
@@ -1507,6 +1491,9 @@ C...............   Get day-of-week, month:
                 END IF
 
             END IF      ! if jdate not ldate
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 94030 ) HHMMSS( JTIME )
 
 C...............   If HFLAG, prepare hour-corrections:
 
@@ -1610,7 +1597,13 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats.............94xxx
 
-94010   FORMAT( 10( A, :, I10, :, 2X ) )
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94030   FORMAT( 8X, 'at time ', A8 )
+
+94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
+     &          A, 1X, I2.2, 1X, A, 1X, I2.2, 1X, A   )
+
 
         END
 
