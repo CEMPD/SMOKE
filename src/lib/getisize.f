@@ -1,11 +1,11 @@
 
-        INTEGER FUNCTION GETISIZE( FDEV, CATEGORY, INVFMT )
+        SUBROUTINE GETISIZE( FDEV, CATEGORY, INVFMT, NREC, NRECDAT )
 
-C***********************************************************************
-C  function body starts at line 92
+C**************************************************************************
+C  subroutine body starts at line 92
 C
 C  DESCRIPTION:
-C      This function returns an approximate dimension needed for reading in
+C      This subroutine returns an approximate dimension needed for reading in
 C      inventory files to be used to allocate memory for the unsorted 
 C      inventory records.
 C
@@ -21,13 +21,13 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 12/98
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -56,25 +56,26 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         GETFORMT
         INTEGER         JUNIT
-        INTEGER         TRIMLEN
 
-        EXTERNAL        CRLF, GETFLINE, GETFORMT, JUNIT, TRIMLEN
+        EXTERNAL        CRLF, GETFLINE, GETFORMT, JUNIT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER       FDEV        !  unit number of input file
-        CHARACTER*(*) CATEGORY    !  description of source category
-        INTEGER       INVFMT      !  inventory format code (from EMDIMS3.EXT)
+        INTEGER     , INTENT (IN)  :: FDEV     !  unit number of input file
+        CHARACTER(*), INTENT (IN)  :: CATEGORY !  desc of src category
+        INTEGER     , INTENT (IN)  :: INVFMT   !  inven format code
+        INTEGER     , INTENT (OUT) :: NREC     !  no. input recs
+        INTEGER     , INTENT (OUT) :: NRECDAT  ! no. recs times data vars
 
 C...........   Contents of file 
         CHARACTER*300,ALLOCATABLE:: LSTSTR( : )! Char strings in PTINV file
 
 C...........   File units and logical/physical names
-        INTEGER         TDEV        !  emissions file
+        INTEGER         TDEV        !  tmp emissions file for multiple input
 
 C...........   Other local variables
-        INTEGER         I, J, L1, L2   !  CNTRers and indices
+        INTEGER         I, J, L1, L2, N1, N2   !  counters and indices
 
-        INTEGER         CNTR       !  CNTR of records numbers
+        INTEGER         CATLEN      !  string length of category
         INTEGER         IOS         !  i/o/ status
         INTEGER         FILFMT      !  file format code
         INTEGER         NLINE       !  number of lines
@@ -86,31 +87,31 @@ C...........   Other local variables
         CHARACTER*16 :: PROGNAME = 'GETISIZE' ! program name
 
 C***********************************************************************
-C   begin body of function GETISIZE
+C   begin body of subroutine GETISIZE
 
-C.........   Initialize CNTR of lines to read in
-        CNTR = 0
+        CATLEN = LEN_TRIM( CATEGORY )
 
         IF( INVFMT .EQ. LSTFMT ) THEN
 
 C.............  Get number of lines of inventory file in list format
-            MESG = CATEGORY( 1:TRIMLEN( CATEGORY ) ) // 
+            MESG = CATEGORY( 1:CATLEN ) // 
      &             ' inventory file in list format'
 
             NLINE = GETFLINE( FDEV, MESG )
 
-C.............  Allocate memory for storing contents of list-formatted PTINV file
+C.............  Allocate memory for storing contents of list-formatted inv file
             ALLOCATE( LSTSTR( NLINE ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LSTSTR', PROGNAME )
 
 C.............  Store lines of inventory file in list format
             CALL RDLINES( FDEV, MESG, NLINE, LSTSTR )
 
-C.............   Initialize CNTR of lines to read in
-            CNTR = 0
+C.............   Initialize counters for input records
+            NREC    = 0
+            NRECDAT = 0
 
-C.............  Loop through lines of PTINV file.  Must use this loop structure
-C               to be able to change J CNTR for EMS95 format
+C.............  Loop through lines of list file.  Must use this loop structure
+C               to be able to change J NREC for EMS95 format
             J = 0
             DO
                 J = J + 1
@@ -119,29 +120,41 @@ C               to be able to change J CNTR for EMS95 format
 
                 LINE = LSTSTR( J )
                 L1 = INDEX( LINE, 'INVYEAR' )
-                L2 = TRIMLEN( LINE )
+                L2 = LEN_TRIM( LINE )
 
 C.................  Store path of file name (if no INVYEAR packet on this line)
                 IF( L1 .LE. 0 ) THEN
                     INFILE = LINE( 1:L2 )
                 ELSE
                     CYCLE  ! To head of loop
-                ENDIF
+                END IF
 
 C.................  Open INFILE
                 TDEV = JUNIT()
                 OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD' )
 
+C.................  Make sure read pointer is at the beginning of the file
+                REWIND( TDEV )
+
 C.................  Determine format of INFILE
                 FILFMT = GETFORMT( TDEV )
 
-                IF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. IDAFMT ) THEN
+C.................  For EPS2 format files inside a SMOKE list file
+                IF( FILFMT .EQ. EPSFMT ) THEN
 
-                    MESG = CATEGORY( 1:TRIMLEN( CATEGORY ) ) // 
+                    MESG = CATEGORY( 1:CATLEN ) // 
      &                     ' inventory file "' // LINE( 1:L2 ) // '"'
-                    CNTR = CNTR + GETFLINE( TDEV, MESG )
+                    NREC = NREC + GETFLINE( TDEV, MESG )
+                    NRECDAT = NREC
 
-                ELSEIF( FILFMT .EQ. EMSFMT ) THEN
+C.................  For IDA format files inside a SMOKE list file
+                ELSE IF( FILFMT .EQ. IDAFMT ) THEN
+                    CALL GETIDASZ( TDEV, CATEGORY, N1, N2 )
+                    NREC = NREC + N1
+                    NRECDAT = NRECDAT + N2
+
+C.................  For EMS-95 format files inside a SMOKE list file
+                ELSE IF( FILFMT .EQ. EMSFMT ) THEN
 
 C.....................  Make sure that next 4 files in list are also EMSFMT
 C.....................  Increment line, scan for INVYEAR, open file, check file,
@@ -150,7 +163,7 @@ C                       write message, and store unit number.
 
                         J = J + 1
                         LINE = LSTSTR( J )
-                        INFILE = LINE( 1:TRIMLEN( LINE ) )
+                        INFILE = LINE( 1:LEN_TRIM( LINE ) )
                         IF( INDEX( INFILE,'INVYEAR' ) .GT. 0 ) GOTO 1007 ! Error
 
 C......................... Close previous file, get unit, and open this file
@@ -161,10 +174,20 @@ C......................... Close previous file, get unit, and open this file
                         IF( FILFMT .NE. EMSFMT ) GO TO 1008  ! Error
                         J = J + 3 ! Skip past other three files
 
-                    ENDIF
+                    END IF
+
+C.....................  Treat mobile sources like the IDA format because it
+C                       can have multiple data values on each line
+                    IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                        CALL GETIDASZ( TDEV, CATEGORY, N1, N2 )
+                        NREC = NREC + N1
+                        NRECDAT = NRECDAT + N2
 
 C.....................  Sum number of lines in EMS-95 emission files
-                    CNTR = CNTR + GETFLINE( TDEV, MESG )
+                    ELSE
+                        NREC = NREC + GETFLINE( TDEV, MESG )
+                        NRECDAT = NREC
+                    END IF
 
                     CLOSE( TDEV )
 
@@ -172,46 +195,53 @@ C.....................  Sum number of lines in EMS-95 emission files
 
                     MESG = 'File format is not recognized for file. ' //
      &                     CRLF() // BLANK10 // 
-     &                     INFILE( 1:TRIMLEN( INFILE ) )
+     &                     INFILE( 1:LEN_TRIM( INFILE ) )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                ENDIF
+                END IF
 
-            ENDDO   ! End of loop through list-formatted PTINV file
+            END DO   ! End of loop through list-formatted PTINV file
 
             DEALLOCATE( LSTSTR )
 
-        ELSEIF( INVFMT .EQ. EPSFMT .OR. INVFMT .EQ. IDAFMT ) THEN
+C.........  For a EPS2 format file or
+C.........  For an EMS-95 format file for non-point sources
+        ELSE IF( INVFMT .EQ. EPSFMT                  .OR.
+     &         ( INVFMT .EQ. EMSFMT           .AND.
+     &         ( CATEGORY .EQ. 'AREA'   .OR.
+     &           CATEGORY .EQ. 'MOBILE'     )       )    ) THEN
 
-            MESG = CATEGORY( 1:TRIMLEN( CATEGORY ) ) // 
-     &             ' inventory file'
-            CNTR = GETFLINE( TDEV, MESG )
+            MESG = CATEGORY( 1:CATLEN ) // ' inventory file'
+            NREC = GETFLINE( FDEV, MESG )
+            NRECDAT = NREC
 
-            CLOSE( TDEV )
+C.........  For an IDA format file
+        ELSE IF( INVFMT .EQ. IDAFMT ) THEN
+            CALL GETIDASZ( FDEV, CATEGORY, NREC, NRECDAT )
 
         ELSE
             WRITE( MESG,94010 ) 'INTERNAL ERROR: Illegal call to ' //
      &             'function ' // PROGNAME // ' with format ', INVFMT
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-        ENDIF
 
-        IF( CNTR .EQ. 0 ) THEN
+        END IF
+
+        IF( NREC .EQ. 0 ) THEN
             MESG = FMTNAMES( INVFMT ) // '-formatted inventory ' //
      &             'file has no valid lines of inventory data.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        GETISIZE = CNTR
-
         RETURN
+
 
 C******************  ERROR MESSAGES WITH EXIT **************************
  
 C.........  Error opening raw input file
 1006    WRITE( MESG,94010 ) 'ERROR at line ', J, 'of PTINV. ' // 
      &         'Could not open file:' //
-     &         CRLF() // BLANK5 // INFILE( 1:TRIMLEN( INFILE ) )
+     &         CRLF() // BLANK5 // INFILE( 1:LEN_TRIM( INFILE ) )
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.........  Error with INVYEAR packet read
