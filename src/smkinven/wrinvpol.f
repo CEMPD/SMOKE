@@ -45,10 +45,6 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-C.........  MODULES for public variables
-C.........  This module is required by the FileSetAPI
-        USE MODFILESET
-  
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -56,6 +52,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
+        INCLUDE 'PARMS3.EXT'
 
 C.........  Subroutine arguments and their descriptions:
         CHARACTER(*), INTENT (IN) :: ENAME            !  I/O API file name
