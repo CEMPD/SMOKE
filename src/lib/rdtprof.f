@@ -1,5 +1,5 @@
 
-        INTEGER FUNCTION RDTPROF( FDEV, PROFTYPE )
+        INTEGER FUNCTION RDTPROF( FDEV, PROFTYPE, UFLAG )
 
 C***********************************************************************
 C  function body starts at line 
@@ -54,6 +54,7 @@ C..........  EXTERNAL FUNCTIONS
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV     ! unit number for profiles file
         CHARACTER(*), INTENT (IN) :: PROFTYPE ! 'MONTHLY', 'WEEKLY', etc.
+        LOGICAL     , INTENT (IN) :: UFLAG    ! true: use uniform profiles
 
 C.........  Unsorted temporal profiles
 
@@ -90,53 +91,64 @@ C   begin body of subroutine  RDTPROF
 C.........  Ensure that profile type name has not yet been found
         FOUND = .FALSE.
 
-C.........  Determine the number of entries for the requested profile type
-        I    = 0
-        IREC = 0
-        DO     ! head of first read loop
+C.........  If using uniform profiles...
+        IF( UFLAG ) THEN
 
-C.............  Read line of profile.  Use END in case the profile type
-C               requested is not in the file - such as weekend
-            READ( FDEV, 93000, END=111, IOSTAT=IOS ) LINE
-            IREC = IREC + 1
+            NPROF = 1
 
-C.............  Check read error status
-            IF( IOS .GT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'I/O error', IOS, 
-     &                 'reading TEMPORAL PROFILE file at line', IREC
+C.........  Otherwise, if not overriding with uniform profiles...
+        ELSE
 
-                CALL M3MESG( MESG )
-                CYCLE
+C.............  Determine the number of entries for the requested profile type
+            I    = 0
+            IREC = 0
+            DO     ! head of first read loop
+
+C.................  Read line of profile.  Use END in case the profile type
+C                   requested is not in the file - such as weekend
+        	READ( FDEV, 93000, END=111, IOSTAT=IOS ) LINE
+        	IREC = IREC + 1
+
+C.................  Check read error status
+        	IF( IOS .GT. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'I/O error', IOS, 
+     &                     'reading TEMPORAL PROFILE file at line', IREC
+ 
+                    CALL M3MESG( MESG )
+                    CYCLE
+        	ENDIF
+
+C.................  Scan line for profile type (e.g., /MONTHLY/)
+        	IF( .NOT. FOUND ) THEN
+                    J = INDEX( LINE, PROFTYPE )
+                    IF( J .GT. 0 ) FOUND = .TRUE.
+                    NSKIP = IREC
+
+C.................  Count records of input profile type, and look of end of 
+C                   section
+        	ELSE
+
+                    K = INDEX( LINE, '/END/' )
+
+                    IF( K .GT. 0 ) EXIT
+
+                    I = I + 1
+
+        	ENDIF
+
+            ENDDO   ! End of first read though to determine memory needs
+
+111         NPROF = I
+
+            REWIND( FDEV )        
+
+            IF( EFLAG ) THEN
+        	MESG = 'Problem reading temporal profiles file.'
+        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ENDIF
 
-C.............  Scan line for profile type (e.g., /MONTHLY/)
-            IF( .NOT. FOUND ) THEN
-                J = INDEX( LINE, PROFTYPE )
-                IF( J .GT. 0 ) FOUND = .TRUE.
-                NSKIP = IREC
-
-C.............  Count records of input profile type, and look of end of section
-            ELSE
-
-                K = INDEX( LINE, '/END/' )
-
-                IF( K .GT. 0 ) EXIT
-
-                I = I + 1
-
-            ENDIF
-
-        ENDDO   ! End of first read though to determine memory needs
-
-111     NPROF = I
-
-        REWIND( FDEV )
-
-        IF( EFLAG ) THEN
-            MESG = 'Problem reading temporal profiles file.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
+        END IF   !  End if uniform profiles or not
 
 C.........  Allocate memory for sorted arrays, depending on profile type. 
 C.........  Initialize factors to 1.0
@@ -199,8 +211,7 @@ C           allocated with zero dimension.
             RDTPROF = NPROF
             RETURN
 
-        ENDIF
-
+        END IF
 
 C.........  Allocate memory for unsorted arrays
         ALLOCATE( INDXA( NPROF ), STAT=IOS )
@@ -212,62 +223,75 @@ C.........  Allocate memory for unsorted arrays
         ALLOCATE( PFACA( NFAC + 1, NPROF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PFACA', PROGNAME )
 
-C.........  Skip irrelevant lines in input profiles file
-        CALL SKIPL( FDEV, NSKIP )
+C.........  If using uniform profiles, set these
+        IF( UFLAG ) THEN
 
-C.........  Read unsorted entries of the requested profile type
-        IREC = NSKIP
-        DO I = 1, NPROF
+            CODEA( 1 ) = 1
+            INDXA( 1 ) = 1
+            PFACA( 1:NFAC,1 ) = 1.
+            PFACA( NFAC+1,1 ) = REAL( NFAC )
 
-            READ( FDEV, 93000, IOSTAT=IOS ) LINE
-            IREC = IREC + 1
+C.........  If not using uniform profiles, read in profiles
+        ELSE
 
-            IF( IOS .GT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'I/O error', IOS, 
-     &                 'reading TEMPORAL PROFILE file at line', IREC
+C.............  Skip irrelevant lines in input profiles file
+            CALL SKIPL( FDEV, NSKIP )
 
-                CALL M3MESG( MESG )
-                CYCLE
-            ENDIF
+C.............  Read unsorted entries of the requested profile type
+            IREC = NSKIP
+            DO I = 1, NPROF
 
-            CODEA( I ) = STR2INT( LINE( 1:5 ) )
-            INDXA( I ) = I
+        	READ( FDEV, 93000, IOSTAT=IOS ) LINE
+        	IREC = IREC + 1
 
-C.............  Convert columns from ASCII to integer in groups of 4
-            J    = 6
-            K    = 9	!  j:k spans 4 characters
-            ISUM = 0
-            DO N = 1, NFAC
-                WT( N ) = STR2INT( LINE( J:K ) )
-                J       = J + 4
-                K       = K + 4
-            ENDDO
+        	IF( IOS .GT. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'I/O error', IOS, 
+     &                     'reading TEMPORAL PROFILE file at line', IREC
 
-C.............  Final field is 1-character wider than others
-            WT( NFAC + 1 ) = STR2INT( LINE( J:K+1 ) )
+                    CALL M3MESG( MESG )
+                    CYCLE
+        	END IF
 
-            IF ( WT( NFAC+1 ) .NE. 0 ) THEN
-                DIV = 1.0 / FLOAT( WT( NFAC+1 ) )
-            ELSE
-                DIV = 0.0
+        	CODEA( I ) = STR2INT( LINE( 1:5 ) )
+        	INDXA( I ) = I
+
+C.................  Convert columns from ASCII to integer in groups of 4
+        	J    = 6
+        	K    = 9	!  j:k spans 4 characters
+        	ISUM = 0
+        	DO N = 1, NFAC
+                    WT( N ) = STR2INT( LINE( J:K ) )
+                    J       = J + 4
+                    K       = K + 4
+        	END DO
+
+C.................  Final field is 1-character wider than others
+        	WT( NFAC + 1 ) = STR2INT( LINE( J:K+1 ) )
+
+        	IF ( WT( NFAC+1 ) .NE. 0 ) THEN
+                    DIV = 1.0 / FLOAT( WT( NFAC+1 ) )
+        	ELSE
+                    DIV = 0.0
+        	END IF
+
+        	DO N = 1, NFAC
+                    PFACA( N,I ) = DIV * FLOAT( WT( N ) )
+        	END DO
+
+            END DO
+
+            REWIND( FDEV )
+
+            IF( EFLAG ) THEN
+        	MESG = 'Problem reading temporal profiles file.'
+        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            DO N = 1, NFAC
-                PFACA( N,I ) = DIV * FLOAT( WT( N ) )
-            ENDDO
-            
-        ENDDO
+C.............  Sort requested profile type
+            CALL SORTI1( NPROF, INDXA, CODEA )
 
-        REWIND( FDEV )
-
-        IF( EFLAG ) THEN
-            MESG = 'Problem reading temporal profiles file.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
-
-C.........  Sort requested profile type
-        CALL SORTI1( NPROF, INDXA, CODEA )
+        END IF  ! End of uniform profiles or not
 
 C.........  Store sorted profiles, depending on profile type
         SELECT CASE( PROFTYPE )
@@ -331,9 +355,9 @@ C----------------------------------------------------------------------
 
                     PFACS( J,I ) = PFACA( J,K )
 
-                ENDDO
+                END DO
 
-            ENDDO
+            END DO
         
             END SUBROUTINE STORE_TPROF
 
