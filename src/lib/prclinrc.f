@@ -21,6 +21,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
+C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
 C  
@@ -404,8 +405,12 @@ C.........................  Reset report settings to defaults
 
                         RPT_%ELEVSTAT = 0
                         RPT_%NUMDATA  = -9   ! zero is legitimate
+			RPT_%NUMFILES = 0
+			RPT_%NUMSECT  = 0
                         RPT_%NUMTITLE = 0
                         RPT_%RENDLIN  = 0    ! init for consistency
+	                RPT_%RPTMODE  = 0
+			RPT_%RPTNVAR  = 0
                         RPT_%RSTARTLIN= 0    ! init for consistency
                         RPT_%SCCRES   = 10
                         RPT_%SRGRES   = 0
@@ -530,6 +535,63 @@ C               MODREPRT
         IF( INREPORT ) THEN
 
             SELECT CASE( SEGMENT( 1 ) )
+
+C.............  Report arrangement
+	    CASE( 'ARRANGE' )
+
+		IF( SEGMENT( 2 ) .EQ. 'MULTIFILE' ) THEN
+		    RPT_%RPTMODE = 1
+		    READ( SEGMENT( 3 ), * ) RPT_%RPTNVAR
+
+C...............  If number of variables per report is greater than the maximum,
+C                 then reset to maximum value
+		    IF( RPT_%RPTNVAR .GT. MXRPTNVAR ) THEN
+			RPT_%RPTNVAR = MXRPTNVAR
+
+			IF( FIRSTLOOP ) THEN
+			  WRITE( MESG, 94010 )
+     &                       'WARNING: Number of variable per report ' //
+     &                       'at line', IREC, ' is greater than the ' //
+     &                       'maximum allowed. Resetting to maximum ' //
+     &                       'value.'
+			  CALL M3MSG2( MESG )
+			END IF
+		    END IF
+		
+		ELSE IF( SEGMENT( 2 ) .EQ. 'ONEFILE' ) THEN
+		    RPT_%RPTMODE = 2
+		    READ( SEGMENT( 3 ), * ) RPT_%RPTNVAR
+
+C...............  If number of variables per report is greater than the maximum,
+C                 then reset to maximum value
+		    IF( RPT_%RPTNVAR .GT. MXRPTNVAR ) THEN
+                        RPT_%RPTNVAR = MXRPTNVAR
+
+			IF( FIRSTLOOP ) THEN
+                          WRITE( MESG, 94010 )
+     &                       'WARNING: Number of variable per report ' //
+     &                       'at line', IREC, ' is greater than the ' //
+     &                       'maximum allowed. Resetting to maximum ' //
+     &                       'value.'
+                          CALL M3MSG2( MESG )
+			END IF
+                    END IF
+
+		ELSE IF( SEGMENT( 2 ) .EQ. 'DATABASE' ) THEN
+		    RPT_%RPTMODE = 3
+
+		ELSE
+		    IF( FIRSTLOOP ) THEN
+		        L = LEN_TRIM( SEGMENT( 2 ) )
+		        WRITE( MESG, 94010 )
+     &			    'WARNING: Arrangement type "'//
+     &                      SEGMENT( 2 )( 1:L )// '" at line', IREC,
+     &                      ' is not known.' // CRLF()// BLANK10 //
+     &                      'Will use no arrangement.'
+		        CALL M3MSG2( MESG )
+	            END IF
+
+		END IF
 
 C.............  Check control or projection matrix versus report
             CASE( 'CHECK' )
