@@ -308,6 +308,10 @@ C...........   Construct mapping of source number to vehicle mixes.
         EFLAG = .FALSE.
 
         DO  299  S = 1, NMSRC
+
+            FIP = IFIP  ( S )
+            RDT = IRCLAS( S )
+            LNK = ILINK ( S )
         
             F = FIND3( FIP, RDT, LNK, NVMXL, VFIPL, VRDTL, VLNKL )
 
