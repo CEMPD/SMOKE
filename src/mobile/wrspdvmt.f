@@ -54,9 +54,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  JUNIT, CRLF
 
 C...........   FUNCTION ARGUMENTS
-        REAL,              INTENT (IN) :: FREESPD ! freeway speed
-        REAL,              INTENT (IN) :: ARTSPD  ! arterial speed
-        CHARACTER(LEN=60), INTENT (IN) :: SPDDIR  ! directory for writing speed files
+        REAL,             INTENT (IN) :: FREESPD ! freeway speed
+        REAL,             INTENT (IN) :: ARTSPD  ! arterial speed
+        CHARACTER(LEN=*), INTENT (IN) :: SPDDIR  ! directory for writing speed files
 
 C...........   Local arrays
         REAL FREEPROF( 14 )                ! speed profile for freeway
