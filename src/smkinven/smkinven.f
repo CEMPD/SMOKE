@@ -14,7 +14,6 @@ C
 C  PRECONDITIONS REQUIRED:
 C    Set environment variables:
 C      PROMPTFLAG:    If N, default inputs are used
-C      RAW_SRC_CHECK: If Y, missing species disallowed
 C      RAW_DUP_CHECK: If Y, duplicate sources disallowed
 C      VELOC_RECALC:  If Y, recalculates velocity based on flow
 C      WEST_HSPHERE:  If N, does not reset positive longitudes to negative
@@ -112,6 +111,7 @@ C.........  File units and logical/physical names
         INTEGER    :: HDEV = 0  !  unit no. for hour-specific input file 
         INTEGER    :: IDEV = 0  !  unit no. for inventory file (various formats)
         INTEGER    :: LDEV = 0  !  unit no. for log file
+        INTEGER    :: MDEV = 0  !  unit no. for map inventory file
         INTEGER    :: ODEV = 0  !  unit number for ORIS description
         INTEGER    :: PDEV = 0  !  unit number for inventory data table
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
@@ -165,8 +165,10 @@ C...........   Other local variables
         LOGICAL         TOXFLG           ! true: toxics are being processed
 
         CHARACTER*5               TYPNAM      !  'day' or 'hour' for import
-        CHARACTER*300             MESG        !  message buffer
+        CHARACTER*60              VAR_FORMULA !  formula string
+        CHARACTER*256             MESG        !  message buffer
         CHARACTER(LEN=IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
+        CHARACTER(LEN=PHYLEN3) :: VARPATH = './' ! path for pol/act files
 
         CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
 
@@ -340,7 +342,8 @@ C.........  Output SMOKE inventory files
 C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
 
-            CALL OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG, ADEV )
+            CALL OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, MDEV, SDEV,
+     &                       ADEV, VARPATH, VAR_FORMULA )
 
             MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
      &             ' SOURCE INVENTORY file...'
@@ -356,7 +359,7 @@ C.............  Deallocate sorted inventory info arrays, except CSOURC
 
 C.............  Write out average inventory data values
 C.............  Compute inventory data values, if needed
-            CALL WRINVEMIS( ENAME )
+            CALL WRINVEMIS( MDEV, VARPATH, VAR_FORMULA )
 
 C.............  Deallocate sorted inventory info arrays
             CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .TRUE., 1, 1, 1 )
