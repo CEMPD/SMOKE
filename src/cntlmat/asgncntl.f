@@ -142,10 +142,16 @@ C.............  Find index in complete list of pollutants
 C.............  Skip pollutant if not used in current packet
             IF( .NOT. USEPOL( V ) ) CYCLE
 
-C.............  Write message
-            L = LEN_TRIM( PNAM( J ) )
-            MESG = BLANK5 // 'Assigning controls for pollutant "' //
-     &             PNAM( J )( 1:L ) // '"...'
+C.............  Write message, with different message for projections because
+C               they are not yet data-specific
+            IF( PKTTYP .NE. 'PROJECTION' ) THEN
+                L = LEN_TRIM( PNAM( J ) )
+                MESG = BLANK5 // 'Assigning controls for pollutant "' //
+     &                 PNAM( J )( 1:L ) // '"...'
+            ELSE
+                MESG = BLANK5 // 'Assigning projection factors to '//
+     &                 'all inventory data...'
+            END IF
             CALL M3MSG2( MESG )
 
             DO S = 1, NSRCIN
