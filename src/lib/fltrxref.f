@@ -87,7 +87,6 @@ C...........   Other local variables
         INTEGER          SIC     ! tmp standard industrial code
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: 1st time subroutine called 
-        LOGICAL, SAVE :: MFLAG    = .FALSE.  ! true: mobile sources
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point sources
 
         CHARACTER*300          MESG         ! message buffer
@@ -114,7 +113,6 @@ C               was already generated.
             END IF
 
 C.............  Set flags indicating which source category is being processed
-            MFLAG = ALLOCATED( IRCLAS )
             PFLAG = ALLOCATED( ISIC )
 
 C.............  Check length of SCC string
@@ -164,8 +162,8 @@ C......... Set left and right portions of SCC
 
 C......... Convert character SCC field to integer SCC number while
 C          allowing for case that SCC is blank.  If non-blank, compare
-C          with master SCC list for area and point sources.
-        IF( TSCC .NE. SCCZERO .AND. .NOT. MFLAG ) THEN
+C          with master SCC list.
+        IF( TSCC .NE. SCCZERO ) THEN
 
             IF( SCCR .EQ. SCRZERO ) THEN
                 IXSCC = FINDC( SCCL, NINVSCL, INVSCL )
