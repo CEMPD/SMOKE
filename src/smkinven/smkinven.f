@@ -112,6 +112,7 @@ C.........  File units and logical/physical names
         INTEGER    :: ODEV = 0  !  unit number for ORIS description
         INTEGER    :: PDEV = 0  !  unit number for inventory data table
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
+        INTEGER    :: UDEV = 0  !  unit no. for non-HAP exclusions file
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
         INTEGER    :: XDEV = 0  !  unit no. for VMT mix file
         INTEGER    :: YDEV = 0  !  unit no. for area-to-point factors file
@@ -182,7 +183,7 @@ C.........  Output time zone
 
 C.........  Get names of input files
         CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
-     &                  EDEV, PDEV, ZDEV, CDEV, ODEV, YDEV,
+     &                  EDEV, PDEV, ZDEV, CDEV, ODEV, UDEV, YDEV,
      &                  ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
@@ -236,7 +237,7 @@ C                the input format.
 
 C.............  Processing inventory records and store in sorted order
 
-            CALL PROCINVEN( NRAWBP, FILFMT, YDEV )
+            CALL PROCINVEN( NRAWBP, FILFMT, UDEV, YDEV ) 
 
 C.............  Determine memory needed for actual pollutants list and actual
 C               activities list and allocate them. Invstat has been updated

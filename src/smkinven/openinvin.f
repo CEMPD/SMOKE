@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
-     &                        XDEV, EDEV, PDEV, ZDEV, CDEV, ODEV, YDEV,
-     &                        ENAME, INNAME, IDNAME, IHNAME )
+     &                        XDEV, EDEV, PDEV, ZDEV, CDEV, ODEV, UDEV,
+     &                        YDEV, ENAME, INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 119
@@ -71,7 +71,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
         INTEGER     , INTENT(OUT) :: CDEV      ! unit no. for SCCs description
         INTEGER     , INTENT(OUT) :: ODEV      ! unit no. for ORIS description
-        INTEGEr     , INTENT(OUT) :: YDEV      ! unit no. for area-to-point
+        INTEGER     , INTENT(OUT) :: UDEV      ! unit no. for non-HAP exclusions
+        INTEGER     , INTENT(OUT) :: YDEV      ! unit no. for area-to-point
         CHARACTER(*), INTENT(OUT) :: ENAME     ! optional netCDF inven input
         CHARACTER(*), INTENT(OUT) :: INNAME    ! average inventory name
         CHARACTER(*), INTENT(OUT) :: IDNAME    ! day-specific inventory 
@@ -83,13 +84,14 @@ C...........   Other local variables
         INTEGER       J      ! counter and indices
         INTEGER       LCAT   ! length of CATEGORY string
 
-        LOGICAL    :: CFLAG = .FALSE.  ! true: import area-to-point file
-        LOGICAL    :: DFLAG = .FALSE.  ! true: import day-specific file
-        LOGICAL    :: GFLAG = .FALSE.  ! true: import gridded I/O API inventory
-        LOGICAL    :: HFLAG = .FALSE.  ! true: import hour-specific file
-        LOGICAL    :: IFLAG = .FALSE.  ! true: import annual/average inventory
-        LOGICAL    :: SFLAG = .FALSE.  ! true: import speeds file
-        LOGICAL    :: XFLAG = .FALSE.  ! true: import VMT mix file
+        LOGICAL    :: CFLAG = .FALSE.  ! true: open area-to-point file
+        LOGICAL    :: DFLAG = .FALSE.  ! true: open day-specific file
+        LOGICAL    :: GFLAG = .FALSE.  ! true: open gridded I/O API inventory
+        LOGICAL    :: HFLAG = .FALSE.  ! true: open hour-specific file
+        LOGICAL    :: IFLAG = .FALSE.  ! true: open annual/average inventory
+        LOGICAL    :: NFLAG = .FALSE.  ! true: open non-HAP exclusions
+        LOGICAL    :: SFLAG = .FALSE.  ! true: open speeds file
+        LOGICAL    :: XFLAG = .FALSE.  ! true: open VMT mix file
 
         CHARACTER(LEN=NAMLEN3) ANAME
         CHARACTER(LEN=NAMLEN3) NAMBUF      ! file name buffer
@@ -113,6 +115,9 @@ C.........  Get value of these controls from the environment
         ELSE
             MESG = 'Read and use area-to-point factors file'
             CFLAG = ENVYN ( 'SMK_ARTOPNT_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Read and use non-HAP exclusions file'
+            NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', MESG, .FALSE., IOS )
         END IF
 
         IF ( CATEGORY .EQ. 'AREA' ) THEN
@@ -297,9 +302,18 @@ C           matches with the inventory
         END IF
 
 C.........  Get file name for area-to-point factors file
-        MESG = 'Enter logical name for AREA-TO-POINT FACTORS file'
-        YDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ARTOPNT',
-     &                      PROGNAME )
+        IF( NFLAG ) THEN
+            MESG = 'Enter logical name for NON-HAP EXCLUSIONS file'
+            UDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'NHAPEXCLUDE',
+     &                          PROGNAME )
+        END IF
+
+C.........  Get file name for area-to-point factors file
+        IF( CFLAG ) THEN
+            MESG = 'Enter logical name for AREA-TO-POINT FACTORS file'
+            YDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ARTOPNT',
+     &                          PROGNAME )
+        END IF
 
 C.........  Get file name for inventory pollutants codes/names
         MESG = 'Enter logical name for INVENTORY DATA TABLE file'

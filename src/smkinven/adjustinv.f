@@ -1,5 +1,5 @@
 
-        SUBROUTINE ADJUSTINV( NRAWBP, YDEV )
+        SUBROUTINE ADJUSTINV( NRAWBP, UDEV, YDEV )
 
 C**************************************************************************
 C  subroutine body starts at line 
@@ -60,6 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NRAWBP  ! no. raw records by pollutant
+        INTEGER     , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
         INTEGER     , INTENT (IN) :: YDEV    ! unit no. for ar-to-point
 
 C...........   Other local variables
@@ -70,19 +71,35 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine ADJUSTINV
 
-C.........  Read and preprocess area-to-point factors file
-C.........  Result of this call is that the NAR2PT and AR2PTABL 
-C           arrays from MODAR2PT and the CHRT09 and ARPT09 arrays
-C           from MODLISTS will be populated.
-        IF( YDEV .GT. 0 ) CALL RDAR2PT( YDEV )
+C..........  If area-to-point factors file is present...
+        IF( YDEV .GT. 0 ) THEN
 
-C.........  Assign area-to-point cross-reference entries to sources
-C.........  Result of this call is that the AR2PTTBL, AR2PTIDX, and
+C.............  Read and preprocess area-to-point factors file
+C.............  Result of this call is that the NAR2PT and AR2PTABL 
+C               arrays from MODAR2PT and the CHRT09 and ARPT09 arrays
+C               from MODLISTS will be populated.
+            CALL RDAR2PT( YDEV )
+
+C.............  Assign area-to-point cross-reference entries to sources
+C.............  Result of this call is that the AR2PTTBL, AR2PTIDX, and
 C           AR2PTCNT arrays from MODLISTS will be populated
-        CALL ASGNAR2PT( NRAWBP )
+            CALL ASGNAR2PT( NRAWBP )
 
-C.........  Read and preprocess NONHAPVOC exclusions cross-reference
-C      CALL RD??
+        END IF
+
+C..........  If non-HAP exclusions file is present...
+        IF( UDEV .GT. 0 ) THEN
+
+C.............  Read and preprocess NONHAPVOC exclusions x-ref
+C.............  Only the CHRT* arrays of the MODXREF will be populated,
+C               because we only need to identify the sources, not assign
+C               anything to them.
+            CALL RDXCLUDE( UDEV )
+
+C.............   Assign array for non-HAP exclusions
+            CALL ASGNNHAPX( NRAWBP )
+
+        END IF
 
         RETURN
 

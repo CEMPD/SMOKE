@@ -83,8 +83,8 @@ C.........  For area sources ...
             MXCHRS = MXARCHR3
             NCHARS = MXCHRS
             JSCC   = 2
-            LSCCEND  = 4
-            RSCCBEG  = 5
+            LSCCEND  = 7         ! first 7
+            RSCCBEG  = 8         ! last 3
             PLTIDX   = MXARCHR3  ! needed for ar-to-point
 
             SCCLEV1 = 2
