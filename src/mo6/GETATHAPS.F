@@ -82,6 +82,10 @@ C
 C    Initially set ATHAPS to abort in routine ATCALX. 
 C 
       ATHAPS = .FALSE. 
+
+ccs  Make sure toxics are being generated
+      IF( .NOT. TOXFLG ) RETURN
+     
 C 
 C    Look for the first data field (Add HAPS filename) following the delimiter 
 C    in column 20. Initialize by setting PTR2 to 21 (the position of the blank 
