@@ -49,7 +49,7 @@ smkinven.debug: $(RAW) $(ALLI) $(LIBPATH_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
-adjustinv.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
+adjustinv.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODAR2PT)
 	$(FC) $(FFLAGS) -c -o $@ adjustinv.f
 asgnar2pt.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnar2pt.f
