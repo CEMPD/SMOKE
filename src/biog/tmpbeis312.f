@@ -970,11 +970,11 @@ C.............  Calculate hourly rainfall totals
             END IF
 
 C.............  Calculate non-speciated emissions
-            CALL HRBEIS312( MDATE, MTIME, NCOLS, NROWS, MSPCS,
-     &                      PX_VERSION, INITIAL_HOUR, COSZEN, SEMIS,
-     &                      GROWAGNO, NGROWAGNO, NONAGNO, SLAI, TASFC,
-     &                      SOILM, SOILT, ISLTYP, RN, TSOLAR, PRES, 
-     &                      PTYPE, PULSEDATE, PULSETIME, EMPOL )
+            CALL HRBEIS( MDATE, MTIME, NCOLS, NROWS, MSPCS,
+     &                   PX_VERSION, INITIAL_HOUR, COSZEN, SEMIS,
+     &                   GROWAGNO, NGROWAGNO, NONAGNO, SLAI, TASFC,
+     &                   SOILM, SOILT, ISLTYP, RN, TSOLAR, PRES, 
+     &                   PTYPE, PULSEDATE, PULSETIME, EMPOL )
 
             IF( INITIAL_RUN ) THEN
                 IF( HR >= RHOURS ) THEN
