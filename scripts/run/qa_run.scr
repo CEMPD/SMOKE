@@ -238,45 +238,13 @@ case monthly:
    set logabbr = $ESDATE.$slabl
    
    breaksw
-
-case state
-
-   switch ( $SMK_SOURCE )
-   case A:
-      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.ar.state.txt
-      setenv REPORT1 $REPSTAT/a.$QA_TYPE.$ilabl.rpt
-      setenv REPORT2 $REPSTAT/ag.$QA_TYPE.$ilabl.rpt
-      setenv REPORT3 $REPSTAT/as.$QA_TYPE.$ilabl.rpt
-      setenv REPORT4 $REPSCEN/at.$QA_TYPE.$slabl.rpt
-      breaksw
-      
-   case M:
-      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.state.txt
-      setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
-      setenv REPORT2 $REPSTAT/mg.$QA_TYPE.$ilabl.rpt
-      setenv REPORT3 $REPSTAT/ms.$QA_TYPE.$ilabl.rpt
-      setenv REPORT4 $REPSCEN/mt.$QA_TYPE.$slabl.rpt
-      breaksw
-      
-   case P:
-      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.pt.state.txt
-      setenv REPORT1 $REPSTAT/p.$QA_TYPE.$ilabl.rpt
-      setenv REPORT2 $REPSTAT/pg.$QA_TYPE.$ilabl.rpt
-      setenv REPORT3 $REPSTAT/ps.$QA_TYPE.$ilabl.rpt
-      setenv REPORT4 $REPSCEN/pt.$QA_TYPE.$slabl.rpt
-      breaksw
-      
-   endsw
    
-   set logabbr = st.$ilabl
-   
-   breaksw
-   
-case county
+case county:
+case state:
 
    switch ( $SMK_SOURCE )
    case A:
-      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.ar.county.txt
+      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.ar.$QA_TYPE.txt
       setenv REPORT1 $REPSTAT/a.$QA_TYPE.$ilabl.rpt
       setenv REPORT2 $REPSTAT/ag.$QA_TYPE.$ilabl.rpt
       setenv REPORT3 $REPSTAT/as.$QA_TYPE.$ilabl.rpt
@@ -293,7 +261,7 @@ case county
          case emis:
 
             set standard = no    
-            setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.emis.county.txt
+            setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.$QA_TYPE.emis.txt
             setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
             setenv REPORT2 $REPSTAT/mg.$QA_TYPE.$ilabl.rpt
             setenv REPORT3 $REPSTAT/ms.$QA_TYPE.$ilabl.rpt
@@ -305,7 +273,7 @@ case county
          case emis_o3:
 
             set standard = no    
-            setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.emis_o3.county.txt
+            setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.$QA_TYPE.emis_o3.txt
             setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
             setenv REPORT2 $REPSTAT/mg.$QA_TYPE.$ilabl.rpt
             setenv REPORT3 $REPSTAT/ms.$QA_TYPE.$ilabl.rpt
@@ -314,10 +282,13 @@ case county
 
             breaksw
 
+         case std:
+            breaksw
+
          default
             echo 'SCRIPT ERROR: Environment variable QA_MOBILE is set to'
             echo '              an unknown setting.  Valid values are'
-            echo '              "emis" or "emis_o3".'
+            echo '              "emis", "emis_o3", or "standard".'
             set exitstat = 1
             breaksw
 
@@ -327,10 +298,10 @@ case county
 
       if ( $standard == yes ) then
 
-         setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.county.txt
+         setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.mb.$QA_TYPE.std.txt
          setenv REPORT1 $REPSTAT/m.$QA_TYPE.$ilabl.rpt
-         setenv REPORT2 $REPSTAT/mgt.$QA_TYPE.$ilabl.rpt
-         setenv REPORT3 $REPSTAT/mst.$QA_TYPE.$ilabl.rpt
+         setenv REPORT2 $REPSCEN/mgt.$QA_TYPE.$ilabl.rpt
+         setenv REPORT3 $REPSCEN/mst.$QA_TYPE.$ilabl.rpt
          setenv REPORT4 $REPSCEN/mt.$QA_TYPE.$slabl.rpt
          setenv REPORT5 $REPSCEN/mgts.$QA_TYPE.$slabl.rpt
 
@@ -339,7 +310,7 @@ case county
       breaksw
       
    case P:
-      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.pt.county.txt
+      setenv REPCONFIG $SCRIPTS/configure/REPCONFIG.pt.$QA_TYPE.txt
       setenv REPORT1 $REPSTAT/p.$QA_TYPE.$ilabl.rpt
       setenv REPORT2 $REPSTAT/pg.$QA_TYPE.$ilabl.rpt
       setenv REPORT3 $REPSTAT/ps.$QA_TYPE.$ilabl.rpt
