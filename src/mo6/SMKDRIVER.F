@@ -1,4 +1,4 @@
-      SUBROUTINE SMKDRIVER( INPFILE, MDEV, LDEV )
+      SUBROUTINE SMKDRIVER( INPFILE, LDEV, EFLAG )
 C 
 C  DRIVER calls MOBILE as a subroutine. 
 C 
@@ -88,8 +88,8 @@ C
      &         BD_SFTP,  BD_TIER2, BD_T2PM   
 C 
       CHARACTER(LEN=80), INTENT (IN) :: INPFILE    ! Mobile6 input file name
-      INTEGER          , INTENT (IN) :: MDEV       ! input file unit number
       INTEGER          , INTENT (IN) :: LDEV       ! SMOKE log file unit number
+      LOGICAL          , INTENT(OUT) :: EFLAG      ! true: an error has occured
 C 
       LOGICAL,PARAMETER         ::  BACK=.TRUE. 
       LOGICAL                   ::  BATMODE 
@@ -120,6 +120,10 @@ ccs      CHARACTER*80              ::  INPFILE
       INTEGER                   ::  TOTERR 
       CHARACTER*80              ::  ROOT 
       LOGICAL                   ::  RUNMODE 
+
+ccs   Add declarations of M6DIR and M6FILE
+      CHARACTER(LEN=50) M6DIR
+      CHARACTER(LEN=80) M6FILE
 C 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
@@ -153,7 +157,7 @@ C
 C See IOUCOM and Block Data 16 for initializations. 
 C 
 C     Input Units: 
-      IOUGEN = MDEV 
+      IOUGEN = 0       ! opened in SMKDRIVER.F 
       IOUXIM = 0       ! opened in GETXIM.F
       IOUIMD = 0       ! opened in GETM5IM.F and RDT12C.F
 ccs      IOUIN  =  5 
@@ -168,8 +172,8 @@ C     NOTE: Unit numbers 51-57 are reserved for the database output
 C           tables and are initialized in MODULE DATABASE. 
 C     Output units: 
       IOUREP = 0       ! opened in PROCHDR.F
-      IOUERR = JUNIT()
-      IOUOUT = LDEV 
+      IOUERR = 0       ! opened in SMKDRIVER.F
+      IOUOUT = LDEV    ! SMOKE log file
       IOUNULL = -1 
 C
       IOUPM = 0 
@@ -179,7 +183,12 @@ C
 C 
 C     Open the IOUERR file and initialize total errors 
 C 
-      OPEN(IOUERR,FILE='M6ERROR.TXT') 
+ccs   All M6 input files live in SMK_M6PATH
+      CALL GETENV( "SMK_M6PATH", M6DIR )
+      M6FILE = TRIM( M6DIR ) // '/' // 'M6ERROR.TXT'
+      
+      IOUERR = JUNIT()
+      OPEN(IOUERR,FILE=M6FILE) 
 C 
       TOTERR = 0 
 C 
@@ -375,6 +384,7 @@ C
 ccs         IF (BATMODE) WRITE(IOUOUT,128) INPFILE(1:LEN_TRIM(INPFILE)) 
 ccs  128    FORMAT(' * Input file:  ',A)     
 C 
+         IOUGEN = JUNIT()
          OPEN(IOUGEN,FILE=INPFILE,STATUS='OLD',ACTION='READ',IOSTAT=RC) 
          IF (RC /= 0) GOTO 80 
          DBINPUT = INPFILE 
@@ -497,8 +507,10 @@ C
 C     GOTO 99 
 C 
    99 IF(TOTERR.EQ.0) THEN 
+        EFLAG = .FALSE.
         CLOSE (IOUERR,STATUS='DELETE') 
       ELSE 
+      	EFLAG = .TRUE.
         WRITE(IOUOUT,595) TOTERR 
         INQUIRE(IOUREP,OPENED=FOPEN)
         IF(FOPEN) WRITE(IOUREP,595) TOTERR 
@@ -509,6 +521,26 @@ C
      *       '            correct the problems, and try again.') 
       ENDIF 
 C 
+ccs   Make sure any files that are open get closed
+      INQUIRE( IOUGEN, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUGEN )
+      INQUIRE( IOUXIM, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUXIM )
+      INQUIRE( IOUIMD, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUIMD )
+      INQUIRE( IOUALT, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUALT )
+      INQUIRE( IOUREP, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUREP )
+      INQUIRE( IOUERR, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUERR )
+      INQUIRE( IOUPM, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUPM )
+      INQUIRE( IOUAT, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUAT )
+      INQUIRE( IOUSS, OPENED=FOPEN )
+      IF( FOPEN ) CLOSE( IOUSS )
+
       RETURN 
 C 
 C # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
