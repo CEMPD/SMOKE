@@ -162,7 +162,7 @@ C.........................  Otherwise, initialize number of diurnal profiles
 C.........................  Message about profiles being used
                         IF( DNPROF( I ) .GT. 0 ) THEN
 
-                            MESG = 'NOTE: Using '// DIURTYPE( I )( 1:L )
+                            MESG = 'NOTE: Storing '// DIURTYPE( I )(1:L)
      &                             // ' temporal profiles'
                             CALL M3MSG2( MESG )
 
