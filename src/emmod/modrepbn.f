@@ -56,6 +56,9 @@
             INTEGER            :: AGG        ! output for either
 
             LOGICAL            :: SPCYN      ! true: speciation applies
+            LOGICAL            :: PRYN       ! true: projection applies
+            LOGICAL            :: CUYN       ! true: mult control applies
+            LOGICAL            :: CRYN       ! true: react control applies
 
         END TYPE
 
@@ -136,6 +139,8 @@
         INTEGER, PUBLIC :: NSPCIN = 0 ! Actual number of speciation vars input
 
         INTEGER, ALLOCATABLE, PUBLIC :: INVIDX( : )  ! index data to inven
+        INTEGER, ALLOCATABLE, PUBLIC :: INVTOCMU( : )! index inv-to-mult cntl
+        INTEGER, ALLOCATABLE, PUBLIC :: INVTOPRJ( : )! index inv-to-projectn
         INTEGER, ALLOCATABLE, PUBLIC :: TPRIDX( : )  ! index data to hourly
         INTEGER, ALLOCATABLE, PUBLIC :: SPCIDX( : )  ! index global-to-input
         INTEGER, ALLOCATABLE, PUBLIC :: SPCTOINV( : )! index spc-to-inven
