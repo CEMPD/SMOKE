@@ -18,8 +18,9 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 RAW=chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o openinvin.o \
     openinvout.o openpdout.o procinven.o rdemsar.o rdemsmb.o rdemspd.o \
-    rdemspt.o rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o smkinven.o \
-    srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
+    rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdidaar.o rdidamb.o rdidapt.o \
+    rdinven.o rdlooppd.o smkinven.o srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o \
+    wrptref.o wrpdemis.o 
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -56,6 +57,10 @@ rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODINFO)
 rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 rdemspt.o: $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+rdepspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+rdepspt.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 rdidaar.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
