@@ -67,6 +67,7 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -310,7 +311,7 @@ C.........  Set up emission process variable names
 
 C.........  Read emission processes file.  Populate array in MODEMFAC.
         CALL RDEPROC( TDEV )
-
+        
 C.........  Read inventory table
         CALL RDCODNAM( VDEV )
 
@@ -386,7 +387,19 @@ C.........  If output was not found, set name to blank and set no. polls to zero
             ALLOCATE( SUBPOLS( NSUBPOL ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SUBPOLS', PROGNAME )
             
-            SUBPOLS = RAWSUBS( 1:NSUBPOL )            
+            SUBPOLS = RAWSUBS( 1:NSUBPOL )
+            
+C.............  Write message to log file with pollutants to be subtracted
+            MESG = 'NOTE: Emissions from the following pollutants ' //
+     &             'will be subtracted from ' // TRIM( INPUTHC ) // 
+     &             ' to create ' // TRIM( OUTPUTHC ) // ':'
+            CALL M3MESG( MESG )
+            
+            DO I = 1, NSUBPOL
+                MESG = BLANK10 // TRIM( SUBPOLS( I ) ) 
+                CALL M3MESG( MESG )
+            END DO
+
         END IF
         
         DEALLOCATE( RAWSUBS )
@@ -562,8 +575,8 @@ C               waste time running Mobile6)
             FNAME = 'EMISFACS'
             
             IF( FILEOPEN ) THEN
-                IF( .NOT. CLOSE3( FNAME ) ) THEN
-                    MESG = 'Could not close file ' // 
+                IF( .NOT. CLOSESET( FNAME ) ) THEN
+                    MESG = 'Could not close file set ' // 
      &                      FNAME( 1:LEN_TRIM( FNAME ) )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ELSE
