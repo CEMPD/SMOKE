@@ -57,10 +57,10 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
         CHARACTER*16           VERCHAR
-        LOGICAL                OPNFULL3
+        LOGICAL                SETENVVAR
         INTEGER                WKDAY
 
-        EXTERNAL        GETCFDSC, VERCHAR, OPNFULL3, WKDAY
+        EXTERNAL        GETCFDSC, VERCHAR, SETENVVAR, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: ENAME    ! name of inventory file
@@ -186,9 +186,17 @@ C.........  Create full file name
         WRITE( FULLNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) //
      &                          '/' // DESC // '.', SDATE, '.ncf'
 
+C.........  Set logical file name
+        IF( .NOT. SETENVVAR( FNAME, FULLNAME ) ) THEN
+            MESG = 'Could not set logical file name for file ' //
+     &             TRIM( FULLNAME )
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  Open new file
-        IF( .NOT. OPNFULL3( FNAME, FSUNKN3, FULLNAME, PROGNAME ) ) THEN
-            MESG = 'Could not create new output file ' // FULLNAME
+        IF( .NOT. OPEN3( FNAME, FSUNKN3, PROGNAME ) ) THEN
+            MESG = 'Could not create new output file ' // 
+     &             TRIM( FULLNAME )
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 

@@ -35,16 +35,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CVTRDTYPE
         INTEGER         CVTVEHTYPE
         CHARACTER*2     CRLF
-        LOGICAL         OPNFULL3
+        LOGICAL         SETENVVAR
         INTEGER         SECSDIFF
-        LOGICAL         ISOPEN
         INTEGER         STR2INT
         LOGICAL         CHKINT
         INTEGER         JUNIT
 
         EXTERNAL        PROMPTFFILE, PROMPTMFILE, ENVYN, GETFLINE, 
-     &                  CVTRDTYPE, CVTVEHTYPE, CRLF, OPNFULL3, 
-     &                  SECSDIFF, ISOPEN, STR2INT, CHKINT, JUNIT
+     &                  CVTRDTYPE, CVTVEHTYPE, CRLF, SETENVVAR
+     &                  SECSDIFF, STR2INT, CHKINT, JUNIT
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -96,6 +95,7 @@ C.........   Other local variables
         LOGICAL :: TEMPFLAG = .TRUE.     ! true: replace temperatures in M6 scenarios 
         LOGICAL :: INITIAL  = .TRUE.     ! true: first time through loop
         LOGICAL :: FEXIST   = .FALSE.    ! true: file exists
+        LOGICAL :: FILEOPEN = .FALSE.    ! true: emisfacs file is open
         
         CHARACTER*20           MODELNAM  ! emission factor model name
         CHARACTER*20           GRP_NAME  ! temperature aggregation group
@@ -408,16 +408,19 @@ C.............  Open file for storing emission factors (check this now rather th
 C               waste time running Mobile6)
             FNAME = 'EMISFACS'
             
-            IF( ISOPEN( FNAME ) ) THEN
+            IF( FILEOPEN ) THEN
                 IF( .NOT. CLOSE3( FNAME ) ) THEN
                     MESG = 'Could not close file ' // 
      &                      FNAME( 1:LEN_TRIM( FNAME ) )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    FILEOPEN = .FALSE.
                 END IF
             END IF
             
             CALL OPENSEF( NUMSRC, GRP_NAME, SDATE, EDATE, 
      &                    EMISDIR, FNAME )
+            FILEOPEN = .TRUE.
             
 C.............  Allocate space for storing emission factors
             IF( INITIAL ) THEN
@@ -473,9 +476,15 @@ C.................  Check if file exists
 C.................  If file does not exist, we're done            
                 IF( .NOT. FEXIST ) EXIT
                 
+C.................  Set logical file name
+                IF( .NOT. SETENVVAR( TNAME, TEMPNAME ) ) THEN
+                    MESG = 'Could not set logical file name for ' //
+     &                     'file ' // TRIM( TEMPNAME )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                                    
 C.................  Open temperature file
-                IF( .NOT. OPNFULL3( TNAME, FSREAD3, 
-     &                              TEMPNAME, PROGNAME ) ) THEN
+                IF( .NOT. OPEN3( TNAME, FSREAD3, PROGNAME ) ) THEN
                     MESG = 'Could not open temperature file ' // 
      &                     TEMPNAME( 1:LEN_TRIM( TEMPNAME ) )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

@@ -37,13 +37,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         SECSDIFF
+        LOGICAL         SETENVVAR
         INTEGER         WKDAY
-        LOGICAL         OPNFULL3
-        LOGICAL         ISOPEN
         
         EXTERNAL     CRLF, GETIFDSC, GETFLINE, ENVINT, 
      &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
-     &               SECSDIFF, WKDAY, OPNFULL3, ISOPEN
+     &               SECSDIFF, SETENVVAR, WKDAY
         
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -158,6 +157,9 @@ C...........   Other local variables:
         LOGICAL :: EPIAVER  = .FALSE.  !  true: episode averaging
         LOGICAL :: LASTTIME = .FALSE.  !  true: final time step
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
+        LOGICAL :: DAYOPEN  = .FALSE.  !  true: daily temp file is open
+        LOGICAL :: WEEKOPEN = .FALSE.  !  true: weekly temp file is open
+        LOGICAL :: MONOPEN  = .FALSE.  !  true: monthly temp file is open
                 
         CHARACTER(LEN=IOVLEN3) :: TVARNAME    !  temperature variable name
         CHARACTER(LEN=256)     :: CURFNM      !  current met file name
@@ -410,10 +412,18 @@ C.............  Skip any blank lines
 C.............  Assign and store logical file name
             WRITE( CURLNM,94030 ) 'MET_FILE_', N
             METLOGS( N ) = CURLNM
+
+C.............  Set logical file name
+            IF( .NOT. SETENVVAR( CURLNM, CURFNM ) ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Could not set logical file name ' //
+     &                 'for file ' // TRIM( CURFNM )
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
             
 C.............  Try to open file   
-            IF( .NOT. OPNFULL3( CURLNM, FSREAD3, CURFNM, 
-     &                          PROGNAME ) ) THEN
+            IF( .NOT. OPEN3( CURLNM, FSREAD3, PROGNAME ) ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Could not open meteorology file ' //
      &                 CURFNM( 1:LEN_TRIM( CURFNM ) )
@@ -748,16 +758,19 @@ C.........  Open output files
             DNAME = 'DAYTEMP'
             CALL OPENSHOUR( ENAME, 'daily', SDATE, EDATE, TVARNAME, 
      &                      NDYCNTY, TEMPDIR, DNAME )
+            DAYOPEN = .TRUE.
         END IF
         IF( WEEKAVER ) THEN
             WNAME = 'WEEKTEMP'
             CALL OPENSHOUR( ENAME, 'weekly', SDATE, EDATE, TVARNAME,
      &                      NWKCNTY, TEMPDIR, WNAME )
+            WEEKOPEN = .TRUE.
         END IF
         IF( MONAVER ) THEN
             MNAME = 'MONTEMP'
             CALL OPENSHOUR( ENAME, 'monthly', SDATE, EDATE, TVARNAME,
      &                      NMNCNTY, TEMPDIR, MNAME )
+            MONOPEN = .TRUE.
         END IF
         IF( EPIAVER ) THEN
             PNAME = 'EPITEMP'
@@ -814,9 +827,15 @@ C.............  If we still don't have met data for current day, quit
 C.............  Get logical file name 
             CURLNM = METLOGS( METCHECK( T2 ) )
 
+C.............  Set logical file name
+            IF( .NOT. SETENVVAR( CURLNM, CURFNM ) ) THEN
+            	MESG = 'Could not set logical file name for file ' //
+     &       	       TRIM( CURFNM )
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+            END IF
+
 C.............  Open the meteorology data file
-            IF ( .NOT. OPNFULL3( CURLNM, FSREAD3, CURFNM, 
-     &                           PROGNAME ) ) THEN
+            IF ( .NOT. OPEN3( CURLNM, FSREAD3, PROGNAME ) ) THEN
                 MESG = 'Could not open meteorology file ' // CURFNM
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
             END IF
@@ -870,10 +889,11 @@ C.....................  Average temperatures across county group
      &                             TDYCNTY, NDAYSRC )
 
 C.....................  Open new file if necessary (1 day per output file)
-                    IF( .NOT. ISOPEN( DNAME ) ) THEN
+                    IF( .NOT. DAYOPEN ) THEN
                         CALL OPENSHOUR( ENAME, 'daily', DDATE, EDATE, 
      &                                  TVARNAME, NDYCNTY, TEMPDIR, 
      &                                  DNAME )
+                        DAYOPEN = .TRUE.
                     END IF  
 
 C.....................  Write time step to file
@@ -887,6 +907,8 @@ C.........................  Close current output file
                             MESG = 'Could not close file ' // 
      &                              DNAME( 1:LEN_TRIM( DNAME ) )
                             CALL M3EXIT( PROGNAME, DDATE, 0, MESG, 2 )
+                        ELSE
+                            DAYOPEN = .FALSE.
                         END IF
                     END IF     
                 END IF
@@ -900,10 +922,11 @@ C.....................  Average temperatures across county group
      &                             TWKCNTY, NDAYSRC )
 
 C.....................  Open new file if necessary (one week per output file)
-                    IF( .NOT. ISOPEN( WNAME ) ) THEN
+                    IF( .NOT. WEEKOPEN ) THEN
                         CALL OPENSHOUR( ENAME, 'weekly', WDATE, EDATE, 
      &                                  TVARNAME, NWKCNTY, TEMPDIR, 
      &                                  WNAME )
+                        WEEKOPEN = .TRUE.
                     END IF       
 
 C.....................  Write time step to file
@@ -921,6 +944,8 @@ C.........................  Close current output file
                             MESG = 'Could not close file ' // 
      &                              WNAME( 1:LEN_TRIM( WNAME ) )
                             CALL M3EXIT( PROGNAME, WDATE, 0, MESG, 2 )
+                        ELSE
+                            WEEKOPEN = .FALSE.
                         END IF
                     END IF                     
                 END IF
@@ -937,10 +962,11 @@ C.....................  Average temperatures across county group
      &                             TMNCNTY, NDAYSRC )
 
 C.....................  Open new file if necessary (one month per output file)
-                    IF( .NOT. ISOPEN( MNAME ) ) THEN                        
+                    IF( .NOT. MONOPEN ) THEN                        
                         CALL OPENSHOUR( ENAME, 'monthly', MDATE, EDATE,
      &                                  TVARNAME, NMNCNTY, TEMPDIR, 
      &                                  MNAME )
+                        MONOPEN = .TRUE.
                     END IF       
 
 C.....................  Write time step to file                     
@@ -958,6 +984,8 @@ C.........................  Close current output file
                             MESG = 'Could not close file ' // 
      &                              MNAME( 1:LEN_TRIM( MNAME ) )
                             CALL M3EXIT( PROGNAME, MDATE, 0, MESG, 2 )
+                        ELSE
+                            MONOPEN = .FALSE.
                         END IF
                     END IF
                 END IF
@@ -972,10 +1000,11 @@ C.............  Final steps on last time through
 C.................  Process remaining week temperatures only if current date is 
 C                   not Saturday; otherwise, this has already been handled above
                 IF( WEEKAVER .AND. WKDAY( DDATE ) /= 6 ) THEN
-                    IF( .NOT. ISOPEN( WNAME ) ) THEN                    
+                    IF( .NOT. WEEKOPEN ) THEN                    
                         CALL OPENSHOUR( ENAME, 'weekly', WDATE, EDATE, 
      &                                  TVARNAME, NWKCNTY, TEMPDIR, 
      &                                  WNAME )
+                        WEEKOPEN = .TRUE.
                     END IF
      
                     DO K = 1, 24                    
@@ -991,10 +1020,11 @@ C                   not Saturday; otherwise, this has already been handled above
 C.................  Process remaining month temperatures only if current date is
 C                   not the last day of the month
                 IF( MONAVER .AND. TMPMNTH == CURRMNTH ) THEN
-                    IF( .NOT. ISOPEN( MNAME ) ) THEN
+                    IF( .NOT. MONOPEN ) THEN
                         CALL OPENSHOUR( ENAME, 'monthly', MDATE, EDATE,
      &                                  TVARNAME, NMNCNTY, TEMPDIR, 
-     &                                  MNAME )                    	
+     &                                  MNAME )
+                        MONOPEN = .TRUE.                 	
                     END IF
                 	
                     DO K = 1, 24

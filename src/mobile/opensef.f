@@ -21,9 +21,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                INDEX1
         CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
-        LOGICAL                OPNFULL3
+        LOGICAL                SETENVVAR
 
-        EXTERNAL        GETCFDSC, INDEX1, PROMPTMFILE, VERCHAR, OPNFULL3
+        EXTERNAL     GETCFDSC, INDEX1, PROMPTMFILE, VERCHAR, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: SRCCT    ! total number of sources
@@ -92,9 +92,17 @@ C.........  Create full file name
      &                          DESC( 1:LEN_TRIM( DESC ) ) // '.', 
      &                          SDATE, '.ncf'
 
+C.........  Set logical file name
+        IF( .NOT. SETENVVAR( FNAME, FULLNAME ) ) THEN
+            MESG = 'Could not set logical file name for file ' //
+     &             TRIM( FULLNAME )
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF       
+
 C.........  Open new file
-        IF( .NOT. OPNFULL3( FNAME, FSUNKN3, FULLNAME, PROGNAME ) ) THEN
-            MESG = 'Could not create new output file ' // FULLNAME
+        IF( .NOT. OPEN3( FNAME, FSUNKN3, PROGNAME ) ) THEN
+            MESG = 'Could not create new output file ' // 
+     &             TRIM( FULLNAME )
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
