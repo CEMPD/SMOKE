@@ -128,7 +128,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: create hourly profiles
         LOGICAL, SAVE :: SFLAG    = .FALSE.  ! true: create daily totals
 
-        CHARACTER(256) :: MESG = ' '         ! message buffer
+        CHARACTER(300) :: MESG = ' '         ! message buffer
         CHARACTER(256) :: FMTBUF = ' '       ! format buffer
         CHARACTER(256) :: FMTBUFB = ' '      ! format buffer B
 
