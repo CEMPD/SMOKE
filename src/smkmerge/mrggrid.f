@@ -55,14 +55,14 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'
       
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         LOGICAL       ENVYN
         INTEGER       GETFLINE
         LOGICAL       GETYN       
         INTEGER       INDEX1
         INTEGER       LBLANK
         INTEGER       PROMPTFFILE
-        CHARACTER*16  PROMPTMFILE
+        CHARACTER(16) PROMPTMFILE
         INTEGER       SEC2TIME
         INTEGER       SECSDIFF
 
@@ -71,7 +71,7 @@ C...........   EXTERNAL FUNCTIONS
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -80,31 +80,31 @@ C...........   Emissions arrays
         REAL, ALLOCATABLE :: EOUT( :,: ) ! output emissions
 
 C...........   Input file descriptors
-        INTEGER     , ALLOCATABLE :: DURATA( : ) ! no. time steps
-        INTEGER     , ALLOCATABLE :: NCOLSA( : ) ! no. columns
-        INTEGER     , ALLOCATABLE :: NROWSA( : ) ! no. rows
-        INTEGER     , ALLOCATABLE :: NVARSA( : ) ! no. variables
-        INTEGER     , ALLOCATABLE :: SDATEA( : ) ! start date
-        INTEGER     , ALLOCATABLE :: STIMEA( : ) ! start time
-        INTEGER     , ALLOCATABLE :: NLAYSA( : ) ! number of layers in the file
-        CHARACTER*16, ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
-        LOGICAL     , ALLOCATABLE :: USEFIRST(:) ! true: use first time step of file
+        INTEGER,       ALLOCATABLE :: DURATA( : ) ! no. time steps
+        INTEGER,       ALLOCATABLE :: NCOLSA( : ) ! no. columns
+        INTEGER,       ALLOCATABLE :: NROWSA( : ) ! no. rows
+        INTEGER,       ALLOCATABLE :: NVARSA( : ) ! no. variables
+        INTEGER,       ALLOCATABLE :: SDATEA( : ) ! start date
+        INTEGER,       ALLOCATABLE :: STIMEA( : ) ! start time
+        INTEGER,       ALLOCATABLE :: NLAYSA( : ) ! number of layers in the file
+        CHARACTER(16), ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
+        LOGICAL,       ALLOCATABLE :: USEFIRST(:) ! true: use first time step of file
 
-        LOGICAL     , ALLOCATABLE :: LVOUTA( :,: ) ! iff out var in input file
-        CHARACTER*16, ALLOCATABLE :: VNAMEA( :,: ) ! variable names
-        CHARACTER*16, ALLOCATABLE :: VUNITA( :,: ) ! variable units
-        CHARACTER*80, ALLOCATABLE :: VDESCA( :,: ) ! var descrip
-        CHARACTER*16                 VNAMEP( MXVARS3 ) ! pt variable names
-        CHARACTER*16                 VUNITP( MXVARS3 ) ! pt variable units
-        CHARACTER*80                 VDESCP( MXVARS3 ) ! pt var descrip
+        LOGICAL,       ALLOCATABLE :: LVOUTA( :,: ) ! iff out var in input file
+        CHARACTER(16), ALLOCATABLE :: VNAMEA( :,: ) ! variable names
+        CHARACTER(16), ALLOCATABLE :: VUNITA( :,: ) ! variable units
+        CHARACTER(80), ALLOCATABLE :: VDESCA( :,: ) ! var descrip
+        CHARACTER(16)                 VNAMEP( MXVARS3 ) ! pt variable names
+        CHARACTER(16)                 VUNITP( MXVARS3 ) ! pt variable units
+        CHARACTER(80)                 VDESCP( MXVARS3 ) ! pt var descrip
 
 C...........   Intermediate output variable arrays
         INTEGER       INDXN ( MXVARS3 ) ! sorting index for OUTIDX
         INTEGER       OUTIDX( MXVARS3 ) ! index to master model species list
 
-        CHARACTER*16  OUTNAM( MXVARS3 ) ! unsorted output variable names
-        CHARACTER*16  VUNITU( MXVARS3 ) ! unsorted output variable units
-        CHARACTER*80  VDESCU( MXVARS3 ) ! unsorted output variable descriptions
+        CHARACTER(16) OUTNAM( MXVARS3 ) ! unsorted output variable names
+        CHARACTER(16) VUNITU( MXVARS3 ) ! unsorted output variable units
+        CHARACTER(80) VDESCU( MXVARS3 ) ! unsorted output variable descriptions
 
         LOGICAL       LVOUTP( MXVARS3 ) ! iff output var exists in point input
 
@@ -113,8 +113,8 @@ C...........   Logical names and unit numbers
         INTEGER       IDEV            ! unit for logical names list for 2d files
         INTEGER       LDEV            ! unit for log file
         INTEGER       RDEV            ! unit for merge report file
-        CHARACTER*16  ONAME           ! Merged output file name
-        CHARACTER*16  PNAME           ! Point source input file name 
+        CHARACTER(16) ONAME           ! Merged output file name
+        CHARACTER(16) PNAME           ! Point source input file name 
 
 C...........   Other local variables 
         INTEGER       C, F, J, K, L, L1, L2, NL, V, T ! pointers and counters
@@ -148,13 +148,13 @@ C...........   Other local variables
         INTEGER       TSTEP                      ! time step
         INTEGER       VLB                        ! VGLVS3D lower bound 
 
-        CHARACTER*16  FDESC                      ! tmp file description
-        CHARACTER*16  NAM                        ! tmp file name
-        CHARACTER*16  VNM                        ! tmp variable name
-        CHARACTER*256 LINE                       ! input buffer
-        CHARACTER*256 MESG                       ! message field
-        CHARACTER*15  RPTCOL                     ! single column in report line
-        CHARACTER*300 RPTLINE                    ! line of report file
+        CHARACTER(16)  FDESC                     ! tmp file description
+        CHARACTER(16)  NAM                       ! tmp file name
+        CHARACTER(16)  VNM                       ! tmp variable name
+        CHARACTER(256) LINE                      ! input buffer
+        CHARACTER(256) MESG                      ! message field
+        CHARACTER(15)  RPTCOL                    ! single column in report line
+        CHARACTER(300) RPTLINE                   ! line of report file
 
         LOGICAL    :: EFLAG   = .FALSE.   ! error flag
         LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
@@ -162,7 +162,7 @@ C...........   Other local variables
         LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
         LOGICAL       MRGDIFF             ! true: merge files from different days
 
-        CHARACTER*16  :: PROGNAME = 'MRGGRID' ! program name
+        CHARACTER(16) :: PROGNAME = 'MRGGRID' ! program name
 
 C***********************************************************************
 C   begin body of program MRGGRID
