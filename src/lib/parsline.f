@@ -9,7 +9,8 @@ C      This subroutine separates a "list-formatted" line of strings in which
 C      the segments may or may not have quotes.  Although fortran requires
 C      the quotes for true list-formatting, this subroutine can be used when
 C      the quotes are only present to enclose a character (such as space, comma,
-C      or semi-colon) that would otherwise be a delimiter.
+C      or semi-colon) that would otherwise be a delimiter.  If an "!" is 
+C      encountered, everything after it is treated as a comment.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -43,11 +44,22 @@ C***************************************************************************
 
         IMPLICIT NONE
 
+C...........   EXTERNAL FUNCTIONS
+        INTEGER    INDEX1
+        EXTERNAL   INDEX1
+
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: LINE         ! character string to parse
         INTEGER     , INTENT (IN) :: N            ! maximum array length
         CHARACTER(*), INTENT(OUT) :: SEGMENT( N ) ! parsed string
 
+C...........   Local parameters
+        INTEGER, PARAMETER :: NXALP = 25
+        CHARACTER*1, PARAMETER :: XALPLIST( NXALP ) =    ! non-delimiters
+     &             ( / '~', '@', '#', '$', '%', '^', '&', '*', '(', 
+     &                 ')', '-', '_', '+', '=', '{', '}', '[', ']',
+     &                 '|', '\', '<', '>', '.', '?', '/' / )
+             
 C...........   Array of 1-char strings for processing
         CHARACTER*1   ARRSTR( 6000 )
 
@@ -73,7 +85,16 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine PARSLINE
 
-        L = LEN_TRIM( LINE )
+        L2 = LEN_TRIM( LINE )
+
+C.........  Check for comments, and use to set the end of the line
+        L = INDEX( LINE, '!' )
+
+        IF( L .LE. 0 ) THEN
+            L = L2
+        ELSE
+            L = L - 1
+        END IF
 
 C.........  Initialize count, flags, and segments (npte, initializing in
 C           the variable definitions is insufficient)
@@ -137,7 +158,8 @@ C.............  In a quoted field, skip everything unless it is an end quote
 C.............  If start of field was a number, but adjacent character is a
 C               alpha, then turn field into an alpha (periods would delimit)
             ELSEIF( NUMBER .AND. 
-     &              CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) THEN
+     &            ( ( CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) .OR.
+     &              INDEX1( CBUF, NXALP, XALPLIST ) .GT. 0 ) ) THEN
                 ALPHA  = .TRUE.
                 NUMBER = .FALSE.
 
@@ -156,7 +178,8 @@ C.............  If start of field was an alpha, and this is not an
 C               alpha-numeric, then end of alpha has been reached.
             ELSEIF( ALPHA .AND.
      &              .NOT. ( CBUF .GE. 'A' .AND. CBUF .LE. 'Z' ) .AND.
-     &              .NOT. ( CBUF .GE. '0' .AND. CBUF .LE. '9' ) ) THEN
+     &              .NOT. ( CBUF .GE. '0' .AND. CBUF .LE. '9' ) .AND.
+     &              INDEX1( CBUF, NXALP, XALPLIST ) .LE. 0 ) THEN
 
                 ALPHA = .FALSE.
                 DELIM = .TRUE.
@@ -169,7 +192,7 @@ C               alpha-numeric, then end of alpha has been reached.
         ENDDO
 
 C.........  Store final segment
-        L2 = LEN_TRIM( LINE )
+        L2 = L
         CALL STORE_SEGMENT
 
         RETURN
