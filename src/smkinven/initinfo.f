@@ -85,6 +85,12 @@ C.........  For area sources ...
             JSCC   = 2
             LSCCEND  = 4
             RSCCBEG  = 5
+            PLTIDX   = MXARCHR3  ! needed for ar-to-point
+
+            SCCLEV1 = 2
+            SCCLEV2 = 4
+            SCCLEV3 = 7
+            SCCLEV4 = 10
 
             SELECT CASE( FILFMT )
             CASE( EMSFMT )
@@ -100,6 +106,11 @@ C.........  For mobile sources ...
             LSCCEND  = 7
             RSCCBEG  = 8
 
+            SCCLEV1 = 2
+            SCCLEV2 = 4
+            SCCLEV3 = 7
+            SCCLEV4 = 10
+            
             SELECT CASE( FILFMT )
             CASE( EMSFMT )
                 NEMSFILE = 1    ! Number of required EMS-95 file types
@@ -113,6 +124,11 @@ C.........  For point sources ...
             LSCCEND  = 5
             RSCCBEG  = 6
 
+            SCCLEV1 = 3   ! Assumes right-justified 10-digit w/ first 2 zero
+            SCCLEV2 = 5
+            SCCLEV3 = 8
+            SCCLEV4 = 10
+            
             SELECT CASE( FILFMT )
             CASE( IDAFMT )
                 NCHARS = 6

@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCINVEN( NRAWBP, FILFMT )
+        SUBROUTINE PROCINVEN( NRAWBP, FILFMT, YDEV )
 
 C**************************************************************************
 C  subroutine body starts at line 114
@@ -66,11 +66,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
         EXTERNAL        CRLF, ENVINT, INDEX1, ENVYN, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NRAWBP            ! no.raw recs x pol/act
-        INTEGER     , INTENT (IN) :: FILFMT            ! input file(s) fmt code
+        INTEGER     , INTENT (IN) :: NRAWBP     ! no.raw recs x pol/act
+        INTEGER     , INTENT (IN) :: FILFMT     ! input file(s) fmt code
+        INTEGER     , INTENT (IN) :: YDEV       ! unit no. for area-to-point
 
 C...........   Variables dimensioned by subroutine arguments
         INTEGER         TMPSTAT( MXIDAT ) ! tmp data status
+c NOTE: GET RID OF THIS ALLOCATION METHOD!
 
 C...........   Other local variables
 
@@ -99,8 +101,8 @@ C...........   Other local variables
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
 
         CHARACTER*5     TPOLPOS     !  Temporary pollutant position
-        CHARACTER*300   BUFFER      !  input file line buffer
-        CHARACTER*300   MESG        ! message buffer 
+        CHARACTER*256   BUFFER      !  input file line buffer
+        CHARACTER*256   MESG        ! message buffer 
 
         CHARACTER(LEN=ALLLEN3)  LSRCCHR     !  previous CSOURC
         CHARACTER(LEN=ALLLEN3)  TSRCCHR     !  tmporary CSOURC
@@ -210,6 +212,10 @@ C           indicator of whether it's present or not
         DO I = 1, MXIDAT
             INVSTAT( I ) = INVSTAT( I ) * TMPSTAT( I )
         END DO
+
+C.........  Call adjustment routine (for now, just a placeholder for a routine
+C           that can call the area-to-point reader
+        CALL ADJUSTINV( NRAWBP, YDEV )
 
 C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
 
