@@ -1,6 +1,6 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 #
-all: getrecs smk2emis smk2pts mkmplist
+all: getrecs smk2emis smk2pts mkmplist faketemp
 #
 # compile-link options for subroutines
 #
@@ -46,6 +46,16 @@ MKMI = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT
 mkmplist: $(MKMP) $(MKMI)
 	echo MKPMLIST:
 	f77 $(FFLAGS) -o $(SCENDIR)/mkmplist $(MKMP) $(LIBS)
+#
+#
+#
+FTMP=faketemp.F
+#
+FTMPI=PARMS3.EXT FDESC3.EXT IODECL3.EXT GRDIMS3.EXT
+#
+faketemp: $(FTMP) $(FTMPI)
+	f77 $(FFLAGS)   -o $(SCENDIR)/faketemp $(FTMP) $(LIBS)
+#
 #
 #
 clean:
