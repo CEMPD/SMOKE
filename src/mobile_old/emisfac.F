@@ -1878,6 +1878,11 @@ C.........................  EFS1 and EFS2
      &                                DEPCNT, PCNTPRO( 1, DEPOINT ),
      &                                IPLIST ( 1, DEPOINT ), SDATE3D )
 
+C.........................  Ensure TFLAG and RFLAG are true in case we got in
+C                           here because of UFLAG
+                        TFLAG = .TRUE.
+                        RFLAG = .TRUE.
+
                         GO TO 383  ! Exit out of loop
 
                     ENDIF
