@@ -2,7 +2,7 @@ C ****************************************************************************
 C *
 C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C *                System
-C * File: @(#)tmpbio.f        1.5
+C * File Version: @(#)$Id$
 C *
 C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
 C * All Rights Reserved
@@ -16,8 +16,8 @@ C * Research Triangle Park, NC  27709-2889
 C *
 C * env_progs@mcnc.org
 C *
-C * Pathname: /pub/storage/edss/framework/src/smoke/biogenics/SCCS/s.tmpbio.f
-C * Last updated: 19 Jul 1996 14:17:07
+C * Pathname: $Source$
+C * Last updated: $Date$ 
 C *
 C ****************************************************************************/
 
