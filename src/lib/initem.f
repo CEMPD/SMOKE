@@ -55,7 +55,7 @@ C.........  Parameters
         INTEGER       STDOUT
         INTEGER       YEAR
         PARAMETER   ( STDOUT = 6,
-     &                  YEAR = 2001 )
+     &                  YEAR = 2002 )
 
 C.........  External functions
         LOGICAL       GETYN
@@ -78,13 +78,13 @@ C   begin body of program INITEM
 
         LINE0 = 'SMOKE ---------------' 
         WRITE( LINE1,94020 ) 'Copyright (c)', YEAR, 
-     &                      'MCNC--North Carolina Supercomputing Center'
+     &                      'MCNC--Environmental Modeling Center'
 
         LINE2 = 'All rights reserved'
         LINE3 = 'See file COPYRIGHT for conditions of use.'
 
         LINE4 = 'Online documentation available at:' 
-        LINE5 = '    http://www.envpro.mcnc.org/products/smoke'
+        LINE5 = '    http://www.emc.mcnc.org/products/smoke'
 
 C.........  Set up program version information
         VERCHAR = ADJUSTL( NAMEVERS )
