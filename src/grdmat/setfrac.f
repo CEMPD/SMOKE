@@ -83,7 +83,9 @@ C...........   Local allocatable arrays...
         CHARACTER*300   BUFFER    !  source fields buffer
         CHARACTER*300   MESG      !  message buffer 
 
-        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC = ' ' ! prev call src chars string
+        CHARACTER(LEN=SRCLEN3), SAVE :: CSRC2  = ' ' ! abridged CSRC
+        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC  = ' ' ! prev call src chars string
+        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC2 = ' ' ! prev call src chars string
 
         CHARACTER*16 :: PROGNAME = 'SETFRAC' ! program name
 
@@ -108,7 +110,10 @@ C.........  Default of 50 is population
 
             FIRSTIME = .FALSE.
 
-        END IF
+        END IF  ! if firstime
+
+C.........  Create abridged name for warning messages
+        CSRC2= CSRC( 1:VIDPOS3-1 )
 
 C.........  Check if surrogate selected by cross-reference for this
 C                   source is non-zero in the country/state/county code of
@@ -117,9 +122,9 @@ C                   interest.
 
 C.............  Write note about changing surrogate used for current
 C               source if it has not yet been written
-            IF( REPORT .AND. CSRC .NE. LCSRC ) THEN
+            IF( REPORT .AND. CSRC2 .NE. LCSRC2 ) THEN
 
-                CALL FMTCSRC( CSRC, NC, BUFFER, L2 )
+                CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
 
                 WRITE( MESG,94010 ) 
      &                 'WARNING: Using fallback surrogate', DEFSRGID,
@@ -132,7 +137,7 @@ C               source if it has not yet been written
 C.................  Write warning for default fraction of zero
                 IF( SRGCSUM( ISDEF,FIPIDX ) .EQ. 0. ) THEN
 
-                    CALL FMTCSRC( CSRC, NC, BUFFER, L2 )
+                    CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
                     MESG = 'WARNING: Fallback surrogate data '//
      &                     'will cause zero emissions' // CRLF() //
      &                     BLANK10 // 'inside the grid for:'//
@@ -157,13 +162,14 @@ C           surrogate
         END IF
 
 C.........  Write surrogate code used for each source
-        IF( FDEV .GT. 0 .AND. CSRC .NE. LCSRC ) THEN
+        IF( FDEV .GT. 0 .AND. CSRC2 .NE. LCSRC2 ) THEN
 
             WRITE( FDEV,93360 ) SRCID, SRGLIST( SRGIDX ), ID2
 
-            LCSRC = CSRC  ! Store source info for next iteration
-
         END IF
+
+        LCSRC  = CSRC   ! Store source info for next iteration
+        LCSRC2 = CSRC2  ! Store abridged source info
 
         RETURN
 
