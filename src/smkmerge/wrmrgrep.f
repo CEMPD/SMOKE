@@ -669,24 +669,24 @@ C               strings will look right-justified in the file.
 
 C.............  Create format statement for output of header
             WIDTHS( 0 ) = MAXCOL1
-            WRITE( HDRFMT, '( "(A",I2.2)' ) WIDTHS( 0 )
+            WRITE( HDRFMT, '( "(A",I2.2,A)' ) WIDTHS( 0 ), ',";"'
             DO J = 1, NDIM
                 TMPFMT = HDRFMT
                 L = LEN_TRIM( TMPFMT ) 
-                WRITE( HDRFMT, '(A, ",1X,A",I2.2)' ) 
-     &                 TMPFMT(1:L), WIDTHS( J )
+                WRITE( HDRFMT, '(A, ",1X,A",I2.2,A)' ) 
+     &                 TMPFMT(1:L), WIDTHS( J ), ',";"'
             END DO
             TMPFMT = HDRFMT
             L = LEN_TRIM( TMPFMT )
             WRITE( HDRFMT, '(A)' ) TMPFMT( 1:L ) // ')'
 
 C.............  Create format statement for output of emissions
-            WRITE( DATFMT, '( "(A",I2.2)' ) WIDTHS( 0 )
+            WRITE( DATFMT, '( "(A",I2.2,A)' ) WIDTHS( 0 ), ',";"'
             DO J = 1, NDIM
                 TMPFMT = DATFMT
                 L = LEN_TRIM( TMPFMT ) 
-                WRITE( DATFMT, '(A, ",1X,E",I2.2,".",I1)' ) 
-     &                 TMPFMT(1:L), WIDTHS( J ), EFMTDEC
+                WRITE( DATFMT, '(A, ",1X,E",I2.2,".",I1,A)' ) 
+     &                 TMPFMT(1:L), WIDTHS( J ), EFMTDEC, ',";"'
             END DO
             TMPFMT = DATFMT
             L = LEN_TRIM( TMPFMT )
@@ -750,15 +750,15 @@ C.............  Write header for state totals
             WRITE( FDEV, '(A)' ) ' '
             WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
 
-C.............  Write column labels
-            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
-     &                          ( OUTNAMS( J ), J=1, NDIM )
+C.............  Write line
+            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
 C.............  Write units for columns
             WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT( J ), J=1, NDIM )
-
-C.............  Write line
-            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
+            
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                          ( OUTNAMS( J ), J=1, NDIM )
 
 C.............  Write state total emissions
             DO I = 1, NSTATE
@@ -797,6 +797,7 @@ C.............  Local variables
 
             REAL          VAL
 
+            CHARACTER(FIPLEN3+8) CDATFIP
             CHARACTER(20) :: STLABEL = 'County'
             CHARACTER(30)    BUFFER
 
@@ -813,16 +814,26 @@ C.............  Get maximum width of numbers
             END DO
 
 C.............  Get column labels and formats
-            CALL CREATE_FORMATS( NDIM, MAXCYWID, VNAMES, INUNIT,
-     &                           MAXWID, OUTNAMS, OUTUNIT )
+            CALL CREATE_FORMATS( NDIM, 15+MAXSTWID+MAXCYWID, VNAMES,
+     &                           INUNIT, MAXWID, OUTNAMS, OUTUNIT )
 
 C.............  Create line format
             L2 = SUM( MAXWID ) + NDIM
             LINFLD = REPEAT( '-', L2 )
 
-C.............  Write header for state totals
+C.............  Write header for county totals
             WRITE( FDEV, '(A)' ) ' '
             WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
+
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                            ( OUTNAMS( J ), J=1, NDIM )
+
+C.............  Write units for columns
+            WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT(J), J=1,NDIM )
+
+C.............  Write line
+            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
 C.............  Write county total emissions
             N = 0
@@ -832,29 +843,13 @@ C.............  Write county total emissions
                 IF( STA .NE. PSTA ) THEN
                     N = N + 1
                     PSTA = STA
-
-C.....................  Write out state name
-                    L = LEN_TRIM( STATNAM( N ) )
-                    L1 = MAX( 1, L2 - L - 8 )
-                    WRITE( FDEV, '(A)' ) ' '
-                    WRITE( FDEV, '(A)' ) '------ '// STATNAM( N )( 1:L )
-     &                     // ' ' // REPEAT( '-', L1 )
-
-C.....................  Write column labels
-                    WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
-     &                                    ( OUTNAMS( J ), J=1, NDIM )
-
-C....................  Write units for columns
-                    WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT(J), J=1,NDIM )
-
-C.....................  Write line
-                    WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
-
                 END IF
 
 C.................  Write out county name and converted emissions
-                WRITE( FDEV, DATFMT ) CNTYNAM( I ), 
-     &                                ( CY_EMIS( I,J ), J=1, NDIM )
+                WRITE( CDATFIP, '(I7.7,1X,I6.6)' ) JDATE, CNTYCOD( I )
+                WRITE( FDEV,DATFMT ) CDATFIP // ' '// STATNAM(N) // 
+     &                               CNTYNAM(I), 
+     &                               ( CY_EMIS( I,J ), J=1, NDIM )
             END DO
 
             RETURN
