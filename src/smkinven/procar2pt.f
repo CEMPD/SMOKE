@@ -417,7 +417,11 @@ C.........  Deallocate old source and emissions arrays
         IF( NA2PSRCS > 0 ) THEN
             DEALLOCATE( OLDIFIP, OLDISIC, OLDNPCNT, OLDIPOSCOD, 
      &                  OLDTPFLAG, OLDINVYR, OLDPOLVAL, OLDCSOURC, 
-     &                  OLDCSCC, OLDCMACT, OLDCNAICS, OLDCSRCTYP )   
+     &                  OLDCSCC )
+     
+            IF( ASSOCIATED( OLDCMACT ) ) THEN
+                DEALLOCATE( OLDCMACT, OLDCNAICS, OLDCSRCTYP )
+            END IF
         END IF
 
 C.........  Sort source information for reporting
