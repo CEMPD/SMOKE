@@ -70,13 +70,14 @@ tmpmobil: $(TMPV) $(TMPI)
 #
 #
 #
-ADJM=adjmobil.f
+ADJM=adjmobil.f ../lib/emlib/initem.F getfline.f padzero.f checkmem.f parsline.f
 #
 ADJI=MBDIMS3.EXT TMDIMS3.EXT
 #
 adjmobil: $(ADJM) $(ADJI)
 	echo ADJMOBIL:
-	f77 $(DBGFLAGS) -o $(SCENDIR)/adjmobil $(ADJM) $(LIBS)
+	f90 $(FFLAGS) -o $(SCENDIR)/adjmobil $(ADJM) \
+         -L/hera/edss/subsys/smokev1/HP_UX11f90 -lioapi.debug -lnetcdf.debug
 #
 #
 #
