@@ -79,6 +79,7 @@ C.........  Allocatable arrays
         LOGICAL,      ALLOCATABLE :: FIXED  ( : )
 
         CHARACTER*66, ALLOCATABLE :: CFSCA  ( : )
+        CHARACTER*66, ALLOCATABLE :: CSSCA  ( : )
         CHARACTER*66, ALLOCATABLE :: CRECA  ( : )
 
 C.........  Fixed-dimension arrays
@@ -120,10 +121,12 @@ C.........  Local variables
         CHARACTER*6             COL1DESC ! description of column 1
         CHARACTER*12            CBUF    ! tmp factor
         CHARACTER*10            FIPFMT  ! format for int->str FIPS code conversion
-        CHARACTER*66            LCREC   ! previous CRECA
         CHARACTER*66            LCFSC   ! previous CFSCA
+        CHARACTER*66            LCREC   ! previous CRECA
+        CHARACTER*66            LCSSC   ! previous CSSCA
         CHARACTER*256           LINE    ! line buffer
         CHARACTER*300           MESG    ! temporary message array
+        CHARACTER(LEN=FIPLEN3)  CFIP    ! char FIPS code
         CHARACTER(LEN=FIPLEN3)  CSTA    ! char state code
         CHARACTER(LEN=SCCLEN3)  TSCC    ! tmp source category code
 
@@ -199,6 +202,8 @@ C.............  Allocated memory for unsorted arrays
             CALL CHECKMEM( IOS, 'FIPSA', PROGNAME )
             ALLOCATE( CFSCA( NRECS( N ) ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CFSCA', PROGNAME )
+            ALLOCATE( CSSCA( NRECS( N ) ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSSCA', PROGNAME )
             ALLOCATE( CRECA( NRECS( N ) ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CRECA', PROGNAME )
             ALLOCATE( RCOUNT( NRECS( N ) ), STAT=IOS )
@@ -215,6 +220,7 @@ C.............  Allocated memory for unsorted arrays
             INDXA   = 0         ! Array
             FIPSA   = 0         ! Array
             CFSCA   = ' '       ! Array
+            CSSCA   = ' '       ! Array
             CRECA   = ' '       ! Array
             RCOUNT  = 0         ! Array
             RMAX    = 0         ! Array
@@ -262,13 +268,13 @@ C                       columns
 
                         ELSE IF ( NSEG .EQ. 3 ) THEN
                             MESG = 'NOTE: Assuming region codes are' //
-     &                             'single values (no spaces)'
+     &                             ' single values (no spaces)'
                             CALL M3MSG2( MESG )
                             COL1DESC = 'Region'
                             SCCCOL = 2
 
                         ELSE IF ( NSEG .EQ. 4 ) THEN
-                            MESG = 'NOTE: Assuming region codes are' //
+                            MESG = 'NOTE: Assuming region codes are ' //
      &                             'separated into country/state and '//
      &                             'county sections (one space)'
                             CALL M3MSG2( MESG )
@@ -316,15 +322,20 @@ C.....................  For region code with no spaces (CSSYYY)
 
                     RBUF = STR2REAL( SEGMENT( NSEG ) )
 
+                    WRITE( CFIP,FIPFMT ) FIP
                     WRITE( CSTA,FIPFMT ) STA
                     WRITE( CBUF,'(F12.6)' ) RBUF
-                    L = LEN_TRIM( SEGMENT( SCCCOL ) )
+
+                    TSCC = SEGMENT( SCCCOL )
+                    TSCC = ADJUSTR( TSCC )
+                    L = LEN_TRIM( TSCC )
 
                     K = K + 1
                     INDXA( K ) = K
                     FIPSA( K ) = FIP
-                    CFSCA( K ) = CSTA// SEGMENT( SCCCOL )( 1:L )
-                    CRECA( K ) = CSTA// SEGMENT( SCCCOL )( 1:L )// CBUF
+                    CFSCA( K ) = CFIP// TSCC( 1:L )
+                    CSSCA( K ) = CSTA// TSCC( 1:L )
+                    CRECA( K ) = CSTA// TSCC( 1:L )// CBUF
 
                 END DO
                 NRECS( N ) = K
@@ -359,22 +370,28 @@ C.....................  Otherwise
 
                     END IF
 
+C.....................  If default is already in file, mark record as 
+C                       not needing a new default.
+                    IF ( CNY .EQ. 0 ) FIXED( J ) = .TRUE.
+
 C.....................  If State-SCC is different from the previous. Note that
 C                       state-SCC will be different when RCOUNT( J ) has just
 C                       been initialized to 1
-                    IF( CFSCA( J ) .NE. LCFSC ) THEN
+                    IF( CSSCA( J ) .NE. LCSSC ) THEN
                         IDXS2 = J
                         RMAX   ( J ) = RCOUNT( J )
                         DEFAULT( J ) = .TRUE.
-                        IF ( CNY .EQ. 0 ) FIXED( J ) = .TRUE.
 
 C.....................  Otherwise, compare with current max for this state-scc 
 C                       combo and reset index if needed
 C.....................  Do not reset counter or position of default if 
 C                       the state default was in the original inputs (county
 C                       code is zero).
-                    ELSE IF ( .NOT. FIXED( IDXS2 ) .AND.
-     &                        RCOUNT( IDXS1 ) .GT. RMAX( IDXS2 ) ) THEN
+C.....................  Cannot assume that the original state default will
+C                       be encountered first in the sorted list.
+                    ELSE IF ( CNY .EQ. 0 .OR. 
+     &                      ( .NOT. FIXED( IDXS2 )   .AND.
+     &                       RCOUNT( IDXS1 ) .GT. RMAX( IDXS2 ) ) ) THEN
 
                         DEFAULT( IDXS2 ) = .FALSE.
                         IDXS2 = IDXS1
@@ -383,10 +400,17 @@ C                       code is zero).
 
                     END IF
 
-                    LCFSC = CFSCA( J )
+                    LCSSC = CSSCA( J )
                     LCREC = CRECA( J )
 
                 END DO
+
+C.................  Resort so that the output order is easier to read.
+                DO I = 1, NRECS( N )
+                    INDXA( I ) = I
+                END DO
+
+                CALL SORTIC( NRECS( N ), INDXA, CFSCA )
 
                 CALL M3MSG2( '    Writing packet info...' )
 
