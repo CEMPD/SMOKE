@@ -57,7 +57,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3
-        INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         INDEX1
         INTEGER         JUNIT
@@ -67,9 +66,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         INTEGER         TRIMLEN
         
-        EXTERNAL  CRLF, ENVYN, FIND1, FIND2, FIND3, GETNUM, GETYN,
-     &            INDEX1, JUNIT, LEN2, PROMPTFFILE, PROMPTMFILE,
-     &            STR2INT, TRIMLEN
+        EXTERNAL  CRLF, ENVYN, FIND1, FIND2, FIND3, GETYN, INDEX1, 
+     &            JUNIT, LEN2, PROMPTFFILE, PROMPTMFILE, STR2INT, 
+     &            TRIMLEN
 
 C...........   LOCAL PARAMETERS and their descriptions:
 
@@ -204,9 +203,10 @@ C.........  Get file name; open input time zone file
      &           'Enter logical name for TIME ZONE file',
      &           .TRUE., .TRUE., 'ZONES', 'RAWMOBIL' )
 
-C.........  Get the UTM zone to put into file header:
+C.........  Assign the UTM zone to put into file header
+C.........  (This should go away after update to store all coordinates as LAT-LON)
 
-        UZONE = GETNUM( 1, 36, 17, 'Enter UTM zone for this file' )
+        UZONE = 17
 
 C.......   Get file name for opening input raw mobile link-source files
         IDEV = PROMPTFFILE( 
