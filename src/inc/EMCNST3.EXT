@@ -75,14 +75,15 @@ C.........  Maximum reasonable inventory year
         INTEGER    , PARAMETER :: MXIYEAR = 2050
 
 C.........  Time zones
-        INTEGER    , PARAMETER :: MXTZONE = 12
+        INTEGER    , PARAMETER :: MXTZONE = 14
         INTEGER    , PARAMETER :: TZONNUM( MXTZONE ) = 
-     &                  ( / 0, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 10 / )
+     &                        ( / 0, 3, 4, 4, 5 , 5 , 6 , 
+     &                            6, 7, 7, 8, 10, 10, 11  / )
 
         CHARACTER*3, PARAMETER :: TZONNAM( MXTZONE ) =
      &                        ( / 'GMT', 'ADT', 'AST', 'EDT', 'EST',
      &                            'CDT', 'CST', 'MDT', 'MST', 'PDT',
-     &                            'PST', 'HST' / )
+     &                            'PST', 'HST', 'CAT', 'NT ' / )
 
 C.........  Packet information
         INTEGER     , PARAMETER :: NPACKET = 7
