@@ -8,6 +8,7 @@ C  DESCRIPTION:
 C       Checks SCC code and resets parameters based on type
 C
 C  PRECONDITIONS REQUIRED:
+C       CATEGORY type must be set in MODINFO
 C       SCC must be 10-digits long and right-justified
 C       8-digit SCCs must start with '00'
 C
@@ -42,7 +43,7 @@ C***********************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: LSCCEND, RSCCBEG, SCCLEV1, SCCLEV2,
-     &                     SCCLEV3
+     &                     SCCLEV3, CATEGORY
             
         IMPLICIT NONE
        
@@ -57,6 +58,9 @@ C***********************************************************************
 C   begin body of function SETSCCTYPE
 
         SETSCCTYPE = .FALSE.
+
+C.........  Don't change any parameters if category is mobile
+        IF( CATEGORY == 'MOBILE' ) RETURN
 
 C.........  Check if first two digits of SCC are zero
         IF( TSCC( 1:2 ) == '00' ) THEN
