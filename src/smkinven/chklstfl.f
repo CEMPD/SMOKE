@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -100,9 +100,20 @@ C.............  Open INFILE
 C.............  Determine format of INFILE
             FILFMT = GETFORMT( TDEV )
 
+C.............  Make sure that file format was found
+            IF( FILFMT .LT. 0 ) THEN
+                
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 
+     &                 'ERROR: In SMOKE list-formatted inventory file, '
+     &                 // FNAME( 1:LEN_TRIM( FNAME ) )// ', could '//
+     &                 CRLF() // BLANK10 // 
+     &                 'not determine format of file listed at line', J
+                CALL M3MESG( MESG )
+
 C.............  If first iteration, save format, if not, make sure 
 C               that different formats are not used in same PTINV list
-            IF( FIRSTITER ) THEN
+            ELSE IF( FIRSTITER ) THEN
                 FIRSTITER = .FALSE.
                 PREVFMT = FILFMT
 
@@ -136,7 +147,7 @@ C******************  ERROR MESSAGES WITH EXIT **************************
  
 C.........  Error opening raw input file
 1006    WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' //
-     &         FNAME( 1:FLEN ) // '.' // 'Could not open file:' //
+     &         FNAME( 1:FLEN ) // '.' // ' Could not open file:' //
      &         CRLF() // BLANK5 // INFILE( 1:LEN_TRIM( INFILE ) )
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 

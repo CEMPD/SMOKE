@@ -1,9 +1,9 @@
 
-        SUBROUTINE RDINVEN( FDEV, FNAME, MXIPOL, INVPCOD, INVPNAM, 
+        SUBROUTINE RDINVEN( FDEV, FNAME, MXIDAT, INVDCOD, INVDNAM, 
      &                      FILFMT, NRAWBP, PRATIO, TFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line 157
+C  subroutine body starts at line 132
 C
 C  DESCRIPTION:
 C      This subroutine controls reading an inventory file for any source 
@@ -13,10 +13,10 @@ C      through multiple files when a list-formatted file is used as input.
 C
 C  PRECONDITIONS REQUIRED:
 C      Input file unit FDEV opened
-C      Inventory pollutant list created: MXIPOL, INVPCOD, and INVPNAM
+C      Inventory pollutant list created: MXIDAT, INVDCOD, and INVDNAM
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C      Subroutines: I/O API subroutines, BLDENAMS, CHECKMEM, FMTCSRC, RDEMSPT, 
+C      Subroutines: I/O API subroutines, CHECKMEM, FMTCSRC, RDEMSPT, 
 C                   RDEPSPT, RDIDAPT, RDLINES
 C      Functions: I/O API functions, GETFLINE, GETFORMT, GETIDASZ, GETINVYR,
 C         GETISIZE
@@ -30,7 +30,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -59,7 +59,7 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'CONST3.EXT'    !  physical constants
+        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -81,9 +81,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV              ! unit no. of inv file
         CHARACTER(*), INTENT (IN) :: FNAME             ! logical name of file
-        INTEGER     , INTENT (IN) :: MXIPOL            ! max no. inv pols
-        INTEGER     , INTENT (IN) :: INVPCOD( MXIPOL ) ! 5-dig pol codes
-        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) ! name of pols
+        INTEGER     , INTENT (IN) :: MXIDAT            ! max no. inv pols/actvty
+        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) ! 5-dig pol/act codes
+        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) ! name of pols/actvtys
         INTEGER     , INTENT(OUT) :: FILFMT            ! file format code
         INTEGER     , INTENT(OUT) :: NRAWBP            ! no.raw records x pol
         REAL        , INTENT(OUT) :: PRATIO            ! position ratio
@@ -94,7 +94,7 @@ C...........   Contents of PTFILE
 
 C...........   Dropped emissions
         INTEGER         NDROP             !  number of records dropped
-        REAL            EDROP  ( MXIPOL ) !  total emis dropped for each pol
+        REAL            EDROP  ( MXIDAT ) !  total dropped for each pol/activity
 
 C...........   File units and logical/physical names
         INTEGER         EDEV( 5 )   !  up to 5 EMS-95 emissions files
@@ -114,8 +114,10 @@ C...........   Other local variables
         INTEGER         NRAWBP      !  actual total raw records by pollutants
         INTEGER         NRAWIN      !  total raw record-count (estimate)
         INTEGER         NRAWOUT     !  no. of valid entries in emis file(s)
+        INTEGER         WKSET       !  setting for wkly profile TPFLAG component
 
-        LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
+        LOGICAL      :: EFLAG  = .FALSE. ! true: error occured
+        LOGICAL      :: DFLAG  = .FALSE. ! true: weekday (not full week) nrmlizr 
 
         CHARACTER*16    ERFILDSC    !  desc of file creating an error from sub
         CHARACTER*300   INFILE      !  input file line buffer
@@ -137,7 +139,7 @@ C.........   Initialize variables for keeping track of dropped emissions
         EDROP = 0.  ! array
 
 C.........  If SMOKE list format, read file and check file for formats.
-C           NOTE: LSTFMT defined in EMCNST3.EXT
+C           NOTE- LSTFMT defined in EMCNST3.EXT
         IF( INVFMT .EQ. LSTFMT ) THEN
 
 C.............  Generate message for GETFLINE and RDLINES calls
@@ -164,6 +166,45 @@ C.........  If not list format, then set FILFMT to the type of file (IDA,EPS)
             FILFMT = INVFMT
  
         ENDIF
+
+C.........  Get setting for interpreting weekly temporal profiles from the
+C           environment. Default is false for non-EMS-95 and true for EMS-95
+C           inventory inputs.
+        DFLAG = .FALSE.
+        IF ( FILFMT .EQ. EMSFMT ) DFLAG = .TRUE.
+        MESG = 'Use weekdays only to normalize weekly profiles'
+        DFLAG = ENVYN( 'WKDAY_NORMALIZE', MESG, DFLAG, IOS )
+
+C.........  Set weekly profile interpretation flag...
+C.........  Weekday normalized
+        IF( DFLAG ) THEN
+            WKSET = WDTPFAC
+            MESG = 'NOTE: Setting inventory to use weekday '//
+     &             'normalizer for weekly profiles'
+
+C.........  Full-week normalized
+        ELSE
+            WKSET = WTPRFAC
+            MESG = 'NOTE: Setting inventory to use full-week '//
+     &             'normalizer for weekly profiles'
+
+        END IF
+
+C.........  Write message
+        CALL M3MSG2( MESG )
+
+C.........  If EMS-95 format, check the setting for the interpretation of
+C           the weekly profiles
+        IF( FILFMT .EQ. EMSFMT .AND. WKSET .NE. WDTPFAC ) THEN
+
+            MESG = 'WARNING: EMS-95 format files will be using ' //
+     &             'non-standard approach of ' // CRLF() // BLANK10 //
+     &             'full-week normalized weekly profiles.  Can ' //
+     &             'correct by setting ' // CRLF() // BLANK10 //
+     &             'WKDAY_NORMALIZE to Y and rerunning.'
+            CALL M3MSG2( MESG )
+
+        END IF
 
 C.........  Set default inventory characteristics (declared in MODINFO) used
 C           by the IDA and EPS formats, including NPPOL
@@ -219,17 +260,17 @@ C.........  IDA format (single file)
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
-     &                        NRAWOUT, EFLAG, NDROP, EDROP )
+                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIDAT, WKSET, 
+     &                        INVDNAM, NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'MOBILE' )
                 
-                CALL RDIDAMB( FDEV, NRAWIN, MXIPOL, INVPNAM, NRAWOUT, 
-     &                        EFLAG, NDROP, EDROP )
+                CALL RDIDAMB( FDEV, NRAWIN, MXIDAT, WKSET, INVDNAM, 
+     &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'POINT' )
-                CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
-     &                        NRAWOUT, EFLAG, NDROP, EDROP )
+                CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIDAT, WKSET, 
+     &                        INVDNAM, NRAWOUT, EFLAG, NDROP, EDROP )
 
             END SELECT
 
@@ -292,26 +333,23 @@ C.................  Open INFILE
      &                 INFILE( 1:LEN_TRIM( INFILE ) )
                 CALL M3MSG2( MESG ) 
 
-c NOTE: If list-format contains IDA or EPS files, there is currently no way
-c       that the memory allocation is correct!
-
 C.................  Read file based on format set above
                 IF( FILFMT .EQ. IDAFMT ) THEN
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-                        CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, 
-     &                                INVPNAM, NRAWOUT, EFLAG, 
+                        CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIDAT, 
+     &                                WKSET, INVDNAM, NRAWOUT, EFLAG, 
      &                                NDROP, EDROP )
 
                     CASE( 'MOBILE' )
-                        CALL RDIDAMB( FDEV, NRAWIN, MXIPOL, INVPNAM, 
-     &                                NRAWOUT, EFLAG, NDROP, EDROP  )
-
+                        CALL RDIDAMB( FDEV, NRAWIN, MXIDAT, WKSET, 
+     &                                INVDNAM, NRAWOUT, EFLAG, NDROP, 
+     &                                EDROP  )
 
                     CASE( 'POINT' )
-                        CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIPOL, 
-     &                                INVPNAM, NRAWOUT, EFLAG, 
+                        CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIDAT, 
+     &                                WKSET, INVDNAM, NRAWOUT, EFLAG, 
      &                                NDROP, EDROP )
 
                     END SELECT
@@ -367,8 +405,8 @@ C                        CALL RDEMSAR(  )
 c                        CALL RDEMSMV(  )
 
                     CASE( 'POINT' )
-                        CALL RDEMSPT( EDEV, INY, NRAWIN, MXIPOL, 
-     &                                INVPCOD, INVPNAM, NRAWOUT, 
+                        CALL RDEMSPT( EDEV, INY, NRAWIN, MXIDAT, WKSET,
+     &                                INVDCOD, INVDNAM, NRAWOUT, 
      &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
      &                                NDROP, EDROP )
  
@@ -405,21 +443,21 @@ C.............  Set exact pollutant times records
 
         END IF
 
-C.........  Report how many records were dropped and the emissions involved
+C.........  Report how many records were dropped and the numbers involved
         IF( NDROP .GT. 0 ) THEN
 
             WRITE( MESG,94010 ) 'WARNING:', NDROP, 
-     &             'input emissions records dropped.  This has' //
-     &             CRLF() // BLANK5 //
-     &             '        resulted in the following amounts of ' //
-     &             'lost emissions in tons/year:'
+     &             'input data records dropped.  This has resulted'  //
+     &             CRLF() // BLANK10 //
+     &             'in the following amounts of ' //
+     &             'lost data (emissions are in tons/year):'
             CALL M3MSG2( MESG )
 
-            DO I = 1, MXIPOL
+            DO I = 1, MXIDAT
 
                 IF( EDROP( I ) .GT. 0. ) THEN
                     WRITE( MESG,94060 ) 
-     &                     BLANK16 // INVPNAM( I ) // ': ', EDROP( I )
+     &                     BLANK16 // INVDNAM( I ) // ': ', EDROP( I )
                     CALL M3MSG2( MESG )
                 ENDIF
 
@@ -439,7 +477,7 @@ C******************  ERROR MESSAGES WITH EXIT **************************
 
 C.........  Error opening raw input file
 1006    WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' //
-     &         FNAME( 1:FLEN ) // '.' // 'Could not open file:' //
+     &         FNAME( 1:FLEN ) // '.' // ' Could not open file:' //
      &         CRLF() // BLANK5 // INFILE( 1:LEN_TRIM( INFILE ) )
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 

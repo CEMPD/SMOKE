@@ -7,6 +7,10 @@ LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 
+all: smkinven
+
+debug: smkinven.debug
+
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
 
@@ -54,4 +58,4 @@ wrinvchr.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
-	rm *.o
+	/bin/rm *.o

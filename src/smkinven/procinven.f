@@ -1,12 +1,14 @@
 
-        SUBROUTINE PROCINVEN( NRAWBP, MXIPOL, FILFMT, PRATIO, INVSTAT )
+        SUBROUTINE PROCINVEN( NRAWBP, MXIDAT, FILFMT, PRATIO, INVSTAT )
 
 C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
 C      This subroutine 
-
+C      Many places in the in-line documentation refers to pollutants, but
+C      means pollutants or activity data
+C
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -20,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -53,22 +55,27 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2     CRLF
+        INTEGER         INDEX1
         LOGICAL         ENVYN
         INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVYN, STR2INT
+        EXTERNAL        CRLF, INDEX1, ENVYN, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NRAWBP            ! no.raw records x pol
-        INTEGER     , INTENT (IN) :: MXIPOL            ! max no. inv pols
+        INTEGER     , INTENT (IN) :: NRAWBP            ! no.raw recs x pol/act
+        INTEGER     , INTENT (IN) :: MXIDAT            ! max no. inv pols/actvty
         INTEGER     , INTENT (IN) :: FILFMT            ! input file(s) fmt code
         REAL        , INTENT (IN) :: PRATIO            ! position ratio
-        INTEGER     , INTENT(OUT) :: INVSTAT( MXIPOL ) ! (0=not in inventory)
+        INTEGER     , INTENT(IN OUT) :: INVSTAT( MXIDAT ) ! (<0 actv, >0 pol)
+
+C...........   Variables dimensioned by subroutine arguments
+        INTEGER         TMPSTAT( MXIDAT ) ! tmp data status
 
 C...........   Other local variables
 
         INTEGER         I, J, K, LK, LS, L2, S    ! counter and indices
 
+        INTEGER         IDUP        !  no. dulicate records
         INTEGER         IOS         !  i/o status
         INTEGER         LCAT        !  length of CATEGORY string
         INTEGER         PE, PS      !  pollutant postn end and start in CSOURCA 
@@ -100,10 +107,13 @@ C.........  Get settings from the environment
      &                 'Check for duplicate species-records',
      &                 .FALSE., IOS )
 
+C.........  Initlialze temporary data status
+        TMPSTAT = 0  ! array
+
 C.........  Loop through sources X pollutants to determine source IDs and check
 C           for duplicates. Also keep a count of the total unique key
 C           combinations (CSOURCA without the pollutant position)
-C.........  NOTE: The last part of the CSOURCA string is the integer position 
+C.........  NOTE the last part of the CSOURCA string is the integer position 
 C           of the pollutant for that record in the INVPNAM pollutant array 
         LSRCCHR = EMCMISS3
         LK = IMISS3
@@ -111,6 +121,7 @@ C           of the pollutant for that record in the INVPNAM pollutant array
         SLEN  = SC_ENDP( MXCHRS )
         PS    = SC_BEGP( MXCHRS + 1 )
         PE    = SC_ENDP( MXCHRS + 1 )
+        IDUP  = 0
         DO I = 1, NRAWBP
             
             J  = INDEXA( I )
@@ -118,10 +129,10 @@ C           of the pollutant for that record in the INVPNAM pollutant array
             TSRCCHR = CSOURCA( J )(  1:SLEN ) ! Source characteristics
             TPOLPOS = CSOURCA( J )( PS:PE   ) ! Pos of pollutant (ASCII)
 
-C.............  Update pointer for list of actual pollutants
-            K = STR2INT( TPOLPOS )  ! Convert pollutant code to integer
+C.............  Update pointer for list of actual pollutants & activities
+            K = STR2INT( TPOLPOS )  ! Convert pol/activity position to integer
             
-            INVSTAT( K ) = 1
+            TMPSTAT( K ) = 2
             IPOSCOD( I ) = K
            
 C.............  Increment source count by comparing this iteration to previous
@@ -133,44 +144,67 @@ C.............  Give message of duplicates are not permitted in inventory
 C.............  This IF also implies TSRCCHR = LSRCCHR
             ELSE IF( K .EQ. LK ) THEN
 
-                CALL FMTCSRC( TSRCCHR, 8, BUFFER, L2 )
+                CALL FMTCSRC( TSRCCHR, NCHARS, BUFFER, L2 )
 
                 IF ( DFLAG ) THEN
                     EFLAG = .TRUE.
-                    MESG = 'ERROR: Duplicate emissions found for' //
+                    MESG = 'ERROR: Duplicate records found for' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
                 ELSE
-                    MESG = 'WARNING: Duplicate emissions found for' //
+                    MESG = 'WARNING: Duplicate records found for' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
                 END IF
 
                 CALL M3MESG( MESG )
 
+                IDUP = IDUP + 1
+
             END IF
 
-            LK = K  ! Store pollutant index for comparison in next iteration
+            LK = K  ! Store pol/activity index for comparison in next iteration
 
-C.............  Assign source ID (to use as an index) for all inv X pol
+C.............  Assign source ID (to use as an index) for all inv X pol/act
             SRCIDA( I ) = S
 
-        END DO  ! On sources x pollutants
+        END DO  ! On sources x pollutants/activities
 
 C.........  Set NSRC in for module MODINFO
         NSRC = S
+
+C.........  Report the number of records that were duplicated
+        IF( IDUP .NE. 0 ) THEN
+            WRITE( MESG,94010 ) 'NOTE: The number of duplicate ' //
+     &             'records was', IDUP, '.' 
+
+            IF( .NOT. DFLAG ) THEN
+                MESG = MESG( 1:LEN_TRIM( MESG ) ) // CRLF()// BLANK10//
+     &                 'The inventory data were summed for ' //
+     &                 'these sources.'
+            END IF
+
+            CALL M3MSG2( MESG )
+
+        END IF
 
         IF( EFLAG ) THEN
            MESG = 'Error in raw inventory file(s)'         
            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
+C.........  Use sign of INVSTAT and value of TMPSTAT to set type (pol/act) and
+C           indicator of whether it's present or not
+        DO I = 1, MXIDAT
+            INVSTAT( I ) = INVSTAT( I ) * TMPSTAT( I )
+        END DO
+
 C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
 
         CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .FALSE., NSRC, 
      &               NRAWBP, NPPOL )
 
-C.........  Loop through sources x pollutants to store sorted arrays for output
-C           to I/O API file. Use PRATIO to determine the appropriate position 
-C           in source-based (non-pollutant) arrays.
+C.........  Loop through sources x pollutants/activities to store sorted arrays
+C           for output to I/O API file. Use PRATIO to determine the appropriate 
+C           position in source-based (non-pollutant, non-activity) arrays.
 C.........  Keep case statement outside the loops to speed processing
         LS = IMISS3
         SELECT CASE ( CATEGORY )
@@ -205,6 +239,8 @@ C.........  Keep case statement outside the loops to speed processing
                 IF( S .NE. LS ) THEN
                     LS  = S
                     IFIP  ( S ) = IFIPA  ( K )
+                    IRCLAS( S ) = IRCLASA( K )
+                    IVTYPE( S ) = IVTYPEA( K ) 
                     TPFLAG( S ) = TPFLGA ( K )
                     INVYR ( S ) = INVYRA ( K )
                     CSCC  ( S ) = CSCCA  ( K )
@@ -269,49 +305,48 @@ C           the memory were allocated at the same time.
         CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .TRUE., NSRC, 
      &               NRAWBP, NPPOL )
 
-C.........  Initialize pollutant-specific values.  Inititalize integer values
-C           with the real version of the missing integer flag, since these
-C           are stored as reals until output
+C.........  Initialize pollutant/activity-specific values.  Inititalize integer
+C           values with the real version of the missing integer flag, since
+C           these are stored as reals until output
         POLVAL  = BADVAL3          ! array
         RIMISS3 = REAL( IMISS3 )
         IF( NC1 .GT. 0 ) POLVAL( :,NC1 ) = RIMISS3 ! array
         IF( NC1 .GT. 0 ) POLVAL( :,NC2 ) = RIMISS3 ! array
 
-C.........  Store pollutant-specific data in sorted order.  For EPS and EMS-95
-C           formats, ensure that any duplicates are aggregated.
-C.........  Aggregate duplicate pollutant-specific data (not possible 
+C.........  Initialize pollutant count per source array
+        NPCNT = 0  ! array
+
+C.........  Store pollutant/activity-specific data in sorted order.  For EPS
+C           and EMS-95 formats, ensure that any duplicates are aggregated.
+C.........  Aggregate duplicate pollutant/activity-specific data (not possible 
 C           for IDA format)
-C.........  NOTE: We have already checked to ensure that if there are duplicate
-C           emissions, they are allowed
-C.........  NOTE: Pollutants are stored in output order because they've been
-C           previously sorted in part based on their position in the master
-C           array of output pollutants
+C.........  Note that we have already checked to ensure that if there are
+C           duplicate data, they are allowed
+C.........  Note that pollutants & activities  are stored in output order
+C           because they've been previously sorted in part based on their
+C           position in the master array of output pollutants/activities
         IF( FILFMT .EQ. IDAFMT ) THEN
             DO I = 1, NRAWBP
 
                 J = INDEXA( I )
+                S = SRCIDA( I )
 
                 DO K = 1, NPPOL
                     POLVAL( I, K ) = POLVLA( J, K )
                 END DO
+
+                NPCNT( S ) = NPCNT( S ) + 1
+
             END DO
 
-c note: is the case where an IDA input file has duplicate source definitions
-C       (same source in 2 or more lines of the file) handled properly?
-
-C.............  Set the number of pollutants per source to the constant value
-            NPCNT = NRAWBP / NSRC   ! NPCNT is array
 
 C.........  For non-IDA formats for mobile sources...
+C.........  None supported currently
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
-
-c NOTE: insert here
 
 C.........  For non-IDA formats for area and point sources...
         ELSE IF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. EMSFMT ) THEN
         
-            NPCNT = 0  ! initialize pollutant count array
-
             K = 0
             PIPCOD = IMISS3  ! Previous iteration IPOSCOD 
             LS = IMISS3      ! Previous iteration S
@@ -322,9 +357,9 @@ C.........  For non-IDA formats for area and point sources...
 
                 IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
 
-C.....................  Sum up the number of pollutants by source, but do this
-C                       here only, because this part of the IF statement is for
-C                       new pollutants
+C.....................  Sum up the number of pollutants/activities by source,
+C                       but do this here only, because this part of the IF
+C                       statement is for new pollutants
                     NPCNT( S ) = NPCNT( S ) + 1
 
                     K = K + 1
@@ -336,8 +371,7 @@ C                       new pollutants
                     PIPCOD = IPOSCOD( I ) 
 
 C.................  If the existing value is defined, sum with new emissions
-C                   and use weighted average for control factors
-C.................  No need to change NPCNT because it is already 1 for all
+C                   or activity and use weighted average for control factors
                 ELSE
 
                     EMISN = POLVLA( J, NEM )
@@ -355,7 +389,6 @@ C.................  No need to change NPCNT because it is already 1 for all
                 LS = S
 
             END DO
-
         END IF
 
 C.........  Deallocate memory for unsorted pollutant arrays

@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -74,12 +74,14 @@ C.........  Source-specific header arrays
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'SCC                 ' / )
 
-        CHARACTER*20 :: MBHEADRS( MXMBCHR3+1 ) = 
+        CHARACTER*20 :: MBHEADRS( MXMBCHR3+3 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
+     &                                        'Roadway type code   ',
+     &                                        'Link ID             ',
+     &                                        'Vehicle type code   ',
      &                                        'SCC                 ', 
-     &                                        'Vehicle Type        ', 
-     &                                        'Link ID             ' / )
+     &                                        'Vehicle Type Name   ' / ) 
 
         CHARACTER*20 :: PTHEADRS( MXPTCHR3+4 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
@@ -121,7 +123,7 @@ C.........  Set the number of potential ASCII columns in SDEV output file
         CASE( 'AREA' )
             NASCII = MXARCHR3
         CASE( 'MOBILE' )
-            NASCII = MXMBCHR3
+            NASCII = MXMBCHR3+2
         CASE( 'POINT' )
             NASCII = MXPTCHR3+3
         END SELECT
@@ -158,7 +160,18 @@ C.........  Get the maximum column width for each of the columns in ASCII file
      &              J .GT. COLWID( K )      ) COLWID( K ) = J 
             END DO
 
-            IF( CATEGORY .EQ. 'POINT' ) THEN
+            SELECT CASE ( CATEGORY )          
+            CASE( 'MOBILE' ) 
+
+                J = LEN_TRIM( CSCC( S ) )                   ! could be blank
+                IF( CSCC( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
+
+                J = LEN_TRIM( CVTYPE( S ) )                   ! could be blank
+                IF( CVTYPE( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M2 ) ) COLWID( M2 ) = J
+
+            CASE( 'POINT' )
 
                 J = LEN_TRIM( CSCC( S ) )                   ! could be blank
                 IF( CSCC( S ) .NE. ' ' .AND.
@@ -172,7 +185,7 @@ C.........  Get the maximum column width for each of the columns in ASCII file
                 IF( CPDESC( S ) .NE. ' ' .AND.
      &              J .GT. COLWID( M3 ) ) COLWID( M3 ) = J
 
-            END IF
+            END SELECT
 
         END DO   ! End loop on sources to get maximum column widths
 
@@ -235,8 +248,19 @@ C.........  Write the ASCII file data
 
             CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, LF, 
      &                     NC, CHARS ) 
-                      
-            IF( CATEGORY .EQ. 'POINT' ) THEN
+            SELECT CASE ( CATEGORY )          
+            CASE( 'MOBILE' )
+                IF( LF( M1 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CSCC( S )
+                END IF
+
+                IF( LF( M2 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CVTYPE( S )
+                END IF
+
+            CASE( 'POINT' ) 
                 IF( LF( M1 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CSCC( S )
@@ -251,7 +275,8 @@ C.........  Write the ASCII file data
                     NC = NC + 1
                     CHARS( NC ) = CPDESC( S )
                 END IF
-            END IF
+
+            END SELECT
                       
             WRITE( SDEV, OUTFMT ) S, ( CHARS( I ), I = 1, NC )
  
@@ -279,6 +304,14 @@ C.........  Write the I/O API file, one variable at a time
         END IF
 
         IF( CATEGORY .EQ. 'MOBILE' ) THEN
+
+            IF ( .NOT. WRITE3( ENAME, 'IRCLAS', 0, 0, IRCLAS ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'IVTYPE', 0, 0, IVTYPE ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
             IF ( .NOT. WRITE3( ENAME, 'XLOC1', 0, 0, XLOC1 ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

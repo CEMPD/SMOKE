@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -77,16 +77,16 @@ C...........   LOCAL PARAMETERS
 C...........   Names, Units, types, & descriptions for pollutant-specific 
 C              output variables
 
-        CHARACTER(LEN=IOVLEN3) EONAMES( NIPOL,NPPOL ) ! Names 
-        INTEGER                EOTYPES( NIPOL,NPPOL ) ! Types (Real or Int) 
-        CHARACTER(LEN=IOULEN3) EOUNITS( NIPOL,NPPOL ) ! Units  
-        CHARACTER(LEN=IODLEN3) EODESCS( NIPOL,NPPOL ) ! Dscriptions  
+        CHARACTER(LEN=IOVLEN3) EONAMES( NIPOL+NIACT,NPPOL ) ! Names 
+        INTEGER                EOTYPES( NIPOL+NIACT,NPPOL ) ! Types (Real|Int)
+        CHARACTER(LEN=IOULEN3) EOUNITS( NIPOL+NIACT,NPPOL ) ! Units  
+        CHARACTER(LEN=IODLEN3) EODESCS( NIPOL+NIACT,NPPOL ) ! Dscriptions  
 
 C...........   Other local variables
 
         INTEGER       I, J, L1, L2, V     ! counter and indices
         INTEGER       NIOVARS   ! Number of I/O API file non-emis variables
-        INTEGER       NPOLMAX   ! Max no of pollutants, based on I/O API
+        INTEGER       NDATMAX   ! Max no of pols+activitys, based on I/O API
         INTEGER       NNPVAR    ! No. non-pollutant inventory variables
 
         CHARACTER*300 MESG      ! message buffer 
@@ -109,28 +109,42 @@ C           inventory variables
 
 C.........  Check number of output variables against I/O API maximum
 
-        NIOVARS = NNPVAR + NPPOL * NIPOL
-        NPOLMAX = INT( ( MXVARS3 - NNPVAR ) / NPPOL )
+        NIOVARS = NNPVAR + NPPOL * ( NIPOL + NIACT )
+        NDATMAX = INT( ( MXVARS3 - NNPVAR ) / NPPOL )
 
 C.........  If there are too many output variables, reset NIPOL
 
         IF( NIOVARS .GT. MXVARS3 ) THEN
 
             WRITE( MESG,94010 ) 
-     &             'WARNING: Maximum number of pollutants that can ' //
-     &             'be written to the' // CRLF() // BLANK5 //
-     &             '         I/O API file is', NPOLMAX, 
-     &             '. This limitation is caused by' // CRLF()// BLANK5//
-     &             '         the I/O API variable limit of', MXVARS3,'.'
+     &             'WARNING: Maximum number of pollutants or ' //
+     &             'activities that can be be'// CRLF()// BLANK10//
+     &             'written to the I/O API file is', NDATMAX, 
+     &             '. This limitation is caused by'// CRLF()// BLANK10//
+     &             'the I/O API variable limit of', MXVARS3,'.'
             CALL M3MSG2( MESG )
  
             WRITE( MESG,94010 ) 
-     &             'WARNING: Reseting number of output pollutants to ',
-     &             NPOLMAX
+     &             'WARNING: Reseting number of output pollutants '//
+     &             'and activities to',
+     &             NDATMAX
             CALL M3MSG2( MESG )
 
-            NIPOL   = NPOLMAX
-            NIOVARS = NNPVAR + NPPOL * NIPOL
+C.............  If the number of pollutants alone are too much, then reset
+C               that number.
+            IF( NIPOL .GT. NDATMAX ) THEN
+                NIPOL   = NDATMAX
+                NIACT   = 0
+                NIOVARS = NNPVAR + NPPOL * NIPOL                
+
+C.............  Otherwise, reset the number of activities by subtracting the
+C               number of pollutants from the maximum allowed number of 
+C               variables
+            ELSE
+                NIACT = NDATMAX - NIPOL
+                NIOVARS = NNPVAR + NPPOL * ( NIPOL + NIACT )
+
+            END IF
 
         ENDIF
 
@@ -148,13 +162,23 @@ C.........  Set up for opening I/O API output file header
         FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
         WRITE( FDESC3D( 4 ),94010 ) '/NON POLLUTANT/ ', NNPVAR
-        WRITE( FDESC3D( 5 ),94010 ) '/PER POLLUTANT/ ', NPPOL 
-        WRITE( FDESC3D( 6 ),94010 ) '/NUMBER CHARS/ ' , NCHARS 
-        WRITE( FDESC3D( 7 ),94010 ) '/SCC POSITION/ ' , JSCC 
-        WRITE( FDESC3D( 8 ),94010 ) '/BASE YEAR/ '    , BYEAR 
 
-C NOTE: Need to add packet to FDESC that has the "base year" from the
-C environment variable G_SDATE
+        IF( NIPOL .GT. 0 ) THEN
+            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL
+            WRITE( FDESC3D( 6 ),94010 ) '/PER POLLUTANT/ ', NPPOL    
+        END IF
+
+        IF( NIACT .GT. 0 ) THEN
+            WRITE( FDESC3D( 7 ),94010 ) '/ACTIVITIES/', NIACT
+            WRITE( FDESC3D( 8 ),94010 ) '/PER ACTIVITY/ ', NPPOL
+        END IF
+
+        WRITE( FDESC3D( 9  ),94010 ) '/NUMBER CHARS/ ' , NCHARS 
+        WRITE( FDESC3D( 10 ),94010 ) '/SCC POSITION/ ' , JSCC 
+        WRITE( FDESC3D( 11 ),94010 ) '/BASE YEAR/ '    , BYEAR 
+
+c note: now that FDESC for the inven file goes passed 10 fields, must check
+C n:    other programs to avoid conflicts with FDESC
 
 C.........  Define source characteristic variables that are not strings
 
@@ -184,6 +208,18 @@ C.........  Define source characteristic variables that are not strings
         J = J + 1
 
         IF( CATEGORY .EQ. 'MOBILE' ) THEN
+
+            VNAME3D( J ) = 'IRCLAS'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Roadway type'
+            J = J + 1
+
+            VNAME3D( J ) = 'IVTYPE'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Vehicle type code'
+            J = J + 1
 
             VNAME3D( J ) = 'XLOC1'
             VTYPE3D( J ) = M3REAL
@@ -285,6 +321,26 @@ C.........  Get names, units, etc. of output pollutant-specific records
             END DO    !  end loop on number of variables per pollutant
 
         END DO        !  end loop on inventory pollutants V
+
+
+C.........  Get names, units, etc. of output activity-specific records
+        CALL BLDENAMS( CATEGORY, NIACT, NPPOL, ACTVTY, 
+     &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
+
+        DO V = 1 , NIACT
+            
+            DO I = 1, NPPOL ! Loop through number of variables per activity
+
+                VNAME3D( J ) = EONAMES( V, I )
+                VTYPE3D( J ) = EOTYPES( V, I )
+                UNITS3D( J ) = EOUNITS( V, I )
+                VDESC3D( J ) = EODESCS( V, I )
+                J = J + 1
+
+            END DO    !  end loop on number of variables per activity
+
+        END DO        !  end loop on inventory activities V
+
 
 C.........  Prompt for and open I/O API output file
         ENAME= PROMPTMFILE( 

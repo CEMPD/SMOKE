@@ -1,12 +1,13 @@
-        SUBROUTINE RDIDAPT( FDEV, NRAWIN, NRAWBP, MXIPOL, 
+
+        SUBROUTINE RDIDAPT( FDEV, NRAWIN, NRAWBP, MXIPOL, WKSET,
      &                      INVPNAM, NRAWOUT, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
-C  subroutine body starts at line XXX
+C  subroutine body starts at line 
 C
 C  DESCRIPTION:
 C      This subroutine reads the IDA format point-source inventory
-C      files. 
+C      files.  It call be called multiple times for multiple files.
 C
 C  PRECONDITIONS REQUIRED:
 C      Files must be opened and their unit numbers stored in FDEV() in the
@@ -44,6 +45,9 @@ C...........   MODULES for public variables
 C...........   This module is the point source inventory arrays
         USE MODSOURC
 
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -52,13 +56,14 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES
 
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-         INCLUDE 'CONST3.EXT'    !  physical constants
+         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
          INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
       	LOGICAL                CHKINT
         LOGICAL                CHKREAL
         CHARACTER*2            CRLF
+        INTEGER                ENVINT
         LOGICAL                ENVYN
         INTEGER                GETFLINE
         INTEGER                GETNLIST
@@ -75,6 +80,7 @@ C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: NRAWIN ! total raw record-count 
         INTEGER     , INTENT (IN) :: NRAWBP ! total raw record times pols
         INTEGER     , INTENT (IN) :: MXIPOL ! max no of inventory pols
+        INTEGER     , INTENT (IN) :: WKSET  ! weekly profile interpretation
         CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) ! inv pol names
         INTEGER     , INTENT(OUT) :: NRAWOUT! outgoing source * pollutants
         LOGICAL     , INTENT(OUT) :: EFLAG  ! outgoing error flag
@@ -128,11 +134,13 @@ C...........   Other local variables
         INTEGER         CSEC    !  tmp secondary control device code
         INTEGER         ES      !  counter for source x pollutants
         INTEGER         FIP, SCC, SIC  ! tmp fip, scc, sic
-        INTEGER         ICC     !  position of CNTRY in CNTRYNM3
+        INTEGER         ICC     !  position of CNTRY in CTRYNAM
         INTEGER         INY     !  inventory year
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  line counter
+        INTEGER         MXWARN  !  maximum number of warnings
         INTEGER         NPOL    !  number of pollutants in file
+        INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
         INTEGER         ORIS    !  tmp oris ID code
         INTEGER         SS      !  counter for sources
         INTEGER         TPF     !  tmp temporal adjustments setting
@@ -141,15 +149,14 @@ C...........   Other local variables
         REAL            EANN    !  tmp annual-ave emission value
         REAL            EMFC    !  tmp emission factor
         REAL            EOZN    !  tmp ozone-season-ave emission value
-        REAL            LAT     !  tmp X-coordinate (lon)
-        REAL            LON     !  tmp Y-coordinate (lat)
+        REAL            LAT     !  tmp Y-coordinate 
+        REAL            LON     !  tmp X-coordinate
         REAL            REFF    !  tmp rule effectiveness
         REAL            DM, HT, FL, TK, VL  ! Temporary stack parms
 
         LOGICAL, SAVE :: CFLAG              ! true: recalc vel w/ flow & diam
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: 1st time routine called
-        LOGICAL       :: NFLAG    = .FALSE. ! true: report pol errors
-        LOGICAL, SAVE :: WFLAG    = .FALSE. ! true: convert bad lat-lons
+        LOGICAL, SAVE :: WFLAG    = .FALSE. ! true: all lat-lons to western hemi
 
         CHARACTER*20    CNTRY   !  country name
         CHARACTER*300   MESG    !  message buffer
@@ -166,6 +173,8 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine RDIDAPT
+
+        MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
 
 C.........  Set up settings the first time the subroutine is called
         IF( FIRSTIME ) THEN
@@ -194,7 +203,7 @@ C........................................................................
         SS   = NSRCSAV
         ES   = NSRCPOL
         IREC = 0
-        TPF  = MTPRFAC * WTPRFAC
+        TPF  = MTPRFAC * WKSET
         DO
 
 C.............  Read a line of IDA file as a character string
@@ -222,7 +231,7 @@ C.............  Scan for header lines
 
                 IF ( LINE(2:8) .EQ. 'COUNTRY' ) THEN  ! read in country-name
                     CNTRY = ADJUSTL( LINE( 9:L ) )
-                    ICC   = INDEX1( CNTRY, MXCNTRY3, CNTRYNM3 )
+                    ICC   = INDEX1( CNTRY, NCOUNTRY, CTRYNAM )
 
                     IF ( ICC .LE. 0 ) THEN
                         EFLAG = .TRUE.
@@ -235,7 +244,7 @@ C.............  Scan for header lines
                         CYCLE
                     END IF
 
-                    ICC   = CNTRYCD3( ICC )
+                    ICC   = CTRYCOD( ICC )
           
                 ELSEIF ( LINE(2:5) .EQ. 'YEAR' ) THEN ! read in inventory year
                     INY = STR2INT( LINE( 6:L ) )
@@ -248,17 +257,18 @@ C.............  Scan for header lines
 
                 ELSEIF ( LINE(2:6) .EQ. 'POLID' ) THEN ! read in pollutants
 
+C..................... Deallocate names for pollutant, if needed
+                    IF(ALLOCATED( TMPNAM )) DEALLOCATE( TMPNAM,POLPOS )
+
 C.....................  Allocate memory for current file for reading pol names
 C                       and storing positions in master list
-                    IF( .NOT. ALLOCATED( TMPNAM ) ) THEN
-                        LINE = LINE( 7:L )
-                        L = LEN_TRIM( LINE )
-                        NPOL = GETNLIST( L, LINE )
-                        ALLOCATE( TMPNAM( NPOL ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'TMPNAM', PROGNAME )
-                        ALLOCATE( POLPOS( NPOL ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'POLPOS', PROGNAME )
-                    END IF
+                    LINE = LINE( 7:L )
+                    L = LEN_TRIM( LINE )
+                    NPOL = GETNLIST( L, LINE )
+                    ALLOCATE( TMPNAM( NPOL ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'TMPNAM', PROGNAME )
+                    ALLOCATE( POLPOS( NPOL ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'POLPOS', PROGNAME )
 
                     IF( NPOL .GT. MXPOLFIL ) THEN
                         WRITE( MESG,94010 ) 'INTERNAL ERROR: Maximum '//
@@ -345,9 +355,11 @@ C.............  Check SIC code, warning for missing
      &                 'integer at line', IREC
                 CALL M3MESG( MESG )
 
-            ELSE IF ( LINE( 227:230 ) .EQ. ' ' ) THEN
+            ELSE IF ( NWARN .LT. MXWARN .AND. 
+     &                LINE( 227:230 ) .EQ. ' ' ) THEN
                 WRITE( MESG,94010 ) 'WARNING: Missing SIC code at ' //
      &                 'line', IREC, '. Default 0000 will be used.'
+                NWARN = NWARN + 1
                 CALL M3MESG( MESG )
 
             END IF
@@ -454,12 +466,13 @@ C.................  Update start and end positions
                 IF( LINE( IS(1):IE(1) ) .EQ. ' ' .AND.
      &              LINE( IS(2):IE(2) ) .EQ. ' '       ) THEN
 
-                    EFLAG = .TRUE.
                     L = LEN_TRIM( TMPNAM( V ) )
-                    WRITE( MESG,94010 ) 'ERROR: All emissions ' //
+                    WRITE( MESG,94010 ) 'WARNING: All emissions ' //
      &                     'data for ' // TMPNAM( V )( 1:L ) //  
      &                     ' are missing at line', IREC
                     CALL M3MESG( MESG )
+                    LINE( IS(1):IE(1) ) = '0.'
+                    LINE( IS(2):IE(2) ) = '0.'
 
                 END IF
 
@@ -491,6 +504,8 @@ C               the various data fields...
             FL   = STR2REAL( LINE( 134:143 ) ) * FT2M3 ! ft^3/s to m^3/s
             LAT  = STR2REAL( LINE( 231:239 ) )
             LON  = STR2REAL( LINE( 240:248 ) )
+
+            IF( WFLAG .AND. LON .GT. 0 ) LON = -LON
 
 C.............  Recalculate velocity if it is bad or if flag is set
             IF( CFLAG .OR. .NOT. CHKREAL( LINE( 144:152 ) ) ) THEN
@@ -533,8 +548,9 @@ C.............  Initialize start and end positions
 C.............  Loop through pollutants and store data so that there is one
 C               record for each pollutant.  This will be consistent with
 C               the other reader routines.
-            NFLAG = .TRUE.   ! turn on reporting for this line's pollutants
             DO V = 1, NPOL
+
+                CPOL = TMPNAM( V )
 
 C.................  Update start and end positions
                 DO K = 1, NPTPPOL3
@@ -550,32 +566,36 @@ C.................  Update start and end positions
                 CPRI = MAX( IMISS3, STR2INT ( LINE( IS(6):IE(6) ) ))
                 CSEC = MAX( IMISS3, STR2INT ( LINE( IS(7):IE(7) ) ))
 
-                IF( NFLAG .AND. EANN .LT. AMISS3 ) THEN
+                IF( NWARN .LT. MXWARN .AND. 
+     &              EANN  .LT. AMISS3 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Missing annual ' //
-     &                 'emissions at line', IREC
+     &                 'emissions for at line', IREC, 'for ' // CPOL
+                    NWARN = NWARN + 1
                     CALL M3MESG( MESG )
                 END IF
 
-                IF( NFLAG .AND. EOZN .LT. AMISS3 ) THEN
+                IF( NWARN .LT. MXWARN .AND. 
+     &              EOZN  .LT. AMISS3 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Missing ozone ' //
-     &                 'season emissions at line', IREC
+     &                 'season emissions at line', IREC, 'for ' // CPOL
+                    NWARN = NWARN + 1
                     CALL M3MESG( MESG )
                 END IF
 
-                IF( CEFF .LT. AMISS3 ) THEN
+                IF( NWARN .LT. MXWARN .AND. 
+     &              CEFF  .LT. AMISS3 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Missing control ' //
-     &                 'efficiency at line', IREC, '.' // CRLF() // 
-     &                 BLANK10 // 'Default of 100. will be used.'
-                    IF( NFLAG ) CALL M3MESG( MESG )
-                    CEFF = 100.
+     &                     'efficiency at line', IREC, 'for ' // CPOL
+                    NWARN = NWARN + 1
+                    CALL M3MESG( MESG )
                 END IF
                 
-                IF( REFF .LT. AMISS3 ) THEN
+                IF( NWARN .LT. MXWARN .AND. 
+     &              REFF .LT. AMISS3 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Missing rule ' //
-     &                 'effectiveness at line', IREC, '.' // CRLF() // 
-     &                 BLANK10 // 'Default of 100. will be used.'
-                    IF( NFLAG ) CALL M3MESG( MESG )
-                    REFF = 100.
+     &                     'effectiveness at line', IREC, 'for '//CPOL
+                    NWARN = NWARN + 1
+                    CALL M3MESG( MESG )
                 END IF
 
 C.................  Store data in final arrays if there is enough memory
@@ -598,8 +618,6 @@ C.................  Store data in final arrays if there is enough memory
      &                            TSCC, CHRBLNK3, CCOD, CSOURCA( ES ) )
 
                 END IF  !  if ES in range
-
-                NFLAG = .FALSE.  ! Turn off reporting for this line's pollutants
 
             END DO      !  end of loop through pollutants
 

@@ -3,7 +3,7 @@
      &                       POLNAM, POLBUF )
 
 C***********************************************************************
-C  subroutine body starts at line 89
+C  subroutine body starts at line 86
 C
 C  DESCRIPTION:
 C      This subroutine writes the inventory pollutant-based variables
@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -72,7 +72,7 @@ C...........   Temporary integer array for output of integer variables
         INTEGER                 INTBUF( NSRC )
 
 C...........   Other local variables
-        INTEGER                 I, J, V
+        INTEGER                 I, J, L, V
 
         CHARACTER*300           MESG    !  message buffer
         CHARACTER(LEN=IOVLEN3 ) VAR     !  tmp variable name
@@ -97,20 +97,22 @@ C.........  Write the I/O API file, one variable at a time
 
                 J = ( V - 1 ) * NPPOL + I
                 VAR = EONAMES( V,I )
+                L   = LEN_TRIM( VAR )
 
 C.................  Convert real variable to an integer, if needed
                 IF( EOUNITS( V,I ) .EQ. M3INT ) THEN
 
                     INTBUF = INT( POLBUF( 1,J ) )  ! arrays
 
-                    IF( .NOT. WRITE3( ENAME,VAR,0,0,INTBUF )) THEN
+                    IF( .NOT. WRITE3( ENAME,VAR(1:L),0,0,INTBUF )) THEN
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
 
 C.................  Simply write out real values directly
                 ELSE
                 
-                    IF( .NOT. WRITE3( ENAME,VAR,0,0,POLBUF(1,J) )) THEN
+                    IF( .NOT. WRITE3( ENAME,VAR(1:L),0,0,
+     &                                POLBUF(1,J)         ) ) THEN
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
 

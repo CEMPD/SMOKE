@@ -5,7 +5,8 @@ C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This subroutine 
+C      This subroutine initializes the source-category-specific inventory
+C      characteristics stored in MODINFO.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -20,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -81,6 +82,8 @@ C.........  For area sources ...
             MXCHRS = MXARCHR3
             NCHARS = MXCHRS
             JSCC   = 2
+            LSCCEND  = 4
+            RSCCBEG  = 5
 
             SELECT CASE( FILFMT )
             CASE( EMSFMT )
@@ -93,13 +96,16 @@ C.........  For mobile sources ...
             NPPOL  = NMBPPOL3
             MXCHRS = MXMBCHR3
             NCHARS = MXCHRS  ! FIPS / SCC (veh type &/or road class) / veh type / lnk
-            JSCC   = 2 
+            LSCCEND  = 7
+            RSCCBEG  = 8
 
 C.........  For point sources ...
         CASE ( 'POINT' )
 
             MXCHRS = MXPTCHR3
             NPPOL  = NPTPPOL3
+            LSCCEND  = 5
+            RSCCBEG  = 6
 
             SELECT CASE( FILFMT )
             CASE( IDAFMT )

@@ -1,3 +1,4 @@
+
         SUBROUTINE SRCMEM( CATEGORY, SORTTYPE, AFLAG, PFLAG, NDIM1, 
      &                     NDIM2, NDIM3 )
 
@@ -5,6 +6,8 @@ C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
+C      This subroutine allocates memory for the inventory sorted and 
+C      unsorted arrays. IT deallocates memory, when necessary.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -19,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -137,6 +140,16 @@ C.............  Allocate specifically based on source category
             CASE( 'AREA' )
             CASE( 'MOBILE' )
  
+                IF( UFLAG .AND. .NOT. ALLOCATED( IRCLASA ) ) THEN
+                    ALLOCATE( IRCLASA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'IRCLASA', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( IVTYPEA ) ) THEN
+                    ALLOCATE( IVTYPEA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'IVTYPEA', PROGNAME )
+                END IF
+ 
                 IF( UFLAG .AND. .NOT. ALLOCATED( CVTYPEA ) ) THEN
                     ALLOCATE( CVTYPEA( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CVTYPEA', PROGNAME )
@@ -174,8 +187,8 @@ C.............  Allocate specifically based on source category
  
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( CVTYPEA ) ) 
-     &              DEALLOCATE( CVTYPEA, CLINKA, SPEEDA, XLOC1A, 
-     &                          YLOC1A, XLOC2A, YLOC2A )
+     &              DEALLOCATE( IRCLASA, IVTYPEA, CVTYPEA, CLINKA, 
+     &                          SPEEDA, XLOC1A, YLOC1A, XLOC2A, YLOC2A )
 
             CASE( 'POINT' )
  
@@ -311,6 +324,16 @@ C.............  Deallocate for any source category
             CASE( 'AREA' )
             CASE( 'MOBILE' )
  
+                IF( UFLAG .AND. .NOT. ALLOCATED( IRCLAS ) ) THEN
+                    ALLOCATE( IRCLAS( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( IVTYPE ) ) THEN
+                    ALLOCATE( IVTYPE( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
+                END IF
+ 
                 IF( UFLAG .AND. .NOT. ALLOCATED( CVTYPE ) ) THEN
                     ALLOCATE( CVTYPE( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
@@ -348,8 +371,8 @@ C.............  Deallocate for any source category
  
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( CVTYPE ) ) 
-     &              DEALLOCATE( CVTYPE, CLINK, SPEED, XLOC1, 
-     &                          YLOC1, XLOC2, YLOC2 )
+     &              DEALLOCATE( IRCLAS, IVTYPE, CVTYPE, CLINK, SPEED, 
+     &                          XLOC1, YLOC1, XLOC2, YLOC2 )
 
             CASE( 'POINT' )
  

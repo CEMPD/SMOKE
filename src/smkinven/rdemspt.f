@@ -1,14 +1,15 @@
 
-        SUBROUTINE RDEMSPT( EDEV, INY, NRAWIN, MXIPOL, INVPCOD, INVPNAM, 
-     &                      NRAWOUT, IOS, IREC, ERFILDSC, EFLAG, 
-     &                      NDROP, EDROP )
+        SUBROUTINE RDEMSPT( EDEV, INY, NRAWIN, MXIPOL, WKSET, INVPCOD, 
+     &                      INVPNAM, NRAWOUT, IOS, IREC, ERFILDSC,
+     &                      EFLAG, NDROP, EDROP )
 
 C***********************************************************************
-C  subroutine body starts at line 225
+C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C      This subroutine reads the EMS-95 format for one set of 5 files
 C      (device.pt, emission.pt, facility.pt, stack.pt, process.pt)
+C      It can be called multiple times for multiple sets of files
 C
 C  PRECONDITIONS REQUIRED:
 C      Files must be opened and their unit numbers stored in EDEV() in the
@@ -27,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -78,19 +79,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: EDEV( 5 ) !  unit numbers for dv, em, fc, sk, pr
-        INTEGER, INTENT (IN) :: INY       !  inv year for this set of files
-        INTEGER, INTENT (IN) :: NRAWIN    !  total raw record-count
-        INTEGER, INTENT (IN) :: MXIPOL    !  max no of inventory pollutants
+        INTEGER     , INTENT (IN) :: EDEV( 5 ) !  unit no.: dv, em, fc, sk, pr
+        INTEGER     , INTENT (IN) :: INY       !  inv year for this set of files
+        INTEGER     , INTENT (IN) :: NRAWIN    !  total raw record-count
+        INTEGER     , INTENT (IN) :: MXIPOL    !  max no of inventory pol
+        INTEGER     , INTENT (IN) :: WKSET     !  weekly profile interpretation
         INTEGER     , INTENT (IN) :: INVPCOD( MXIPOL ) !  inv pol 5-digit codes
         CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) !  in pol names
-        INTEGER, INTENT(OUT) :: NRAWOUT   !  valid raw record-count
-        INTEGER, INTENT(OUT) :: IOS       !  I/O status
-        INTEGER, INTENT(OUT) :: IREC      !  line number
-        CHARACTER(*), INTENT(OUT) :: ERFILDSC   !  file desc of file in error
-        LOGICAL, INTENT(OUT) :: EFLAG     !  error flag 
-        INTEGER, INTENT(OUT) :: NDROP     !  number of records dropped
-        REAL   , INTENT(OUT) :: EDROP( MXIPOL ) !  emis dropped for each pol
+        INTEGER     , INTENT(OUT) :: NRAWOUT   ! valid raw record-count
+        INTEGER     , INTENT(OUT) :: IOS       ! I/O status
+        INTEGER     , INTENT(OUT) :: IREC      ! line number
+        CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
+        LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
+        INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
+        REAL        , INTENT(OUT) :: EDROP( MXIPOL ) ! emis dropped per pol
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: DVIDLEN = 12
@@ -209,10 +211,10 @@ C...........   Other local variables
         INTEGER          TPF     !  Temporary temporal ID
         INTEGER          ZONE    !  Temporary UTM zone
 
-        LOGICAL, SAVE :: CFLAG    !  velocity recalc: TRUE iff VELOC_RECALC = Y
+        LOGICAL, SAVE :: CFLAG    !  true: recalculate the velocity from flow
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
         LOGICAL          RULFLAG  !  Rule effective file(s): TRUE if exist
-        LOGICAL, SAVE :: WFLAG    !  Input verification:  convert bad lat-lons
+        LOGICAL, SAVE :: WFLAG    !  true: convert lat-lons to Western hemisphr
 
         CHARACTER*10, SAVE  :: FMTSCC!  format for writing integer SCC to char
         CHARACTER*300          LINE  !  Input line from POINT file
@@ -233,11 +235,11 @@ C.........  Set up settings the first time the subroutine is called
             FIRSTIME = .FALSE.
 
 C.............  Get settings from the environment
-            CFLAG = ENVYN( 'VELOC_RECALC', 
-     &                 'Flag for recalculating velocity', .FALSE., IOS )
+            MESG = 'Flag for recalculating velocity'
+            CFLAG = ENVYN( 'VELOC_RECALC', MESG, .FALSE., IOS )
 
-            WFLAG = ENVYN( 'WEST_HSPHERE',
-     &                 'Western hemisphere flag', .TRUE., IOS )
+            MESG = 'Western hemisphere flag'
+            WFLAG = ENVYN( 'WEST_HSPHERE', MESG, .TRUE., IOS )
 
 C.............  Create format for writing SCC to character
             WRITE( FMTSCC, 94300 ) '(I', SCCLEN3, '.', SCCLEN3, ')'
@@ -796,17 +798,12 @@ C temp          DVIMONA( DS ) = TMON
 
 
 C........  Read rule effectiveness file
-C............. NOTE: Will be added later.  Not needed for SESARM
-
         RULFLAG = .FALSE.   ! No rule effectiveness files
-C NOTE: Add this ??
+        REFF    = 100.0
 
 C........................................................................
 C.............  Head of the MDEV-read loop  .............................
 C........................................................................
-
-C.........  NOTE: later, Get rule eff from prulefac files
-        REFF = 100.0
 
         ES   = NSRCSAV
         IREC = 0
@@ -820,7 +817,7 @@ C.............  Read a line of emission.pt file and check input status
             IF ( IOS .GT. 0 ) GO TO 999
 
 C.............  Find pollutant name in master list to set index COD
-C.............  NOTE: Pollutant names here and in INVPNAM converted to uppercase
+C.............  NOTE- Pollutant names here and in INVPNAM converted to uppercase
             CSS  = LBLANK ( LINE( 57:61 ) )
             CPOL = LINE   ( MIN(CSS+57,61):61 )
             CALL UPCASE( CPOL )
@@ -936,11 +933,11 @@ C.............  Check and set time period type (Year/day/hourly)
 
             IF ( LINE( 114:115 ) .EQ. 'AA' ) THEN 
 
-                TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
+                TPF = MTPRFAC * WKSET       !  use month, week profiles
 
             ELSE IF ( LINE( 114:115 ) .EQ. 'AD' ) THEN 
 
-                TPF  = WTPRFAC              !  use week profiles
+                TPF  = WKSET                !  use week profiles
                 EMIS = DAY2YR * EMIS
 
             ELSE IF ( LINE( 114:115 ) .EQ. 'DS' ) THEN
