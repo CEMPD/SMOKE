@@ -174,8 +174,8 @@ C.............  Set up format for creating character SIC code
             WRITE( FMTSIC, 94300 ) '(I', SICLEN3, '.', SICLEN3, ')'
 
 C.............  Figure out if SIC and/or MACT and src type codes are available
-            IF ( ALLOCATED ( ISIC  ) ) SICFLAG  = .TRUE.
-            IF ( ALLOCATED ( CMACT ) ) MACTFLAG = .TRUE.
+            IF ( ASSOCIATED ( ISIC  ) ) SICFLAG  = .TRUE.
+            IF ( ASSOCIATED ( CMACT ) ) MACTFLAG = .TRUE.
 
             FIRSTIME = .FALSE.
 
