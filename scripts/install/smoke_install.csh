@@ -29,7 +29,7 @@ endif
 if ( $found1 == n ) then
    echo "ERROR: No smoke installation file for a specific platform"
    echo "       is available. Please download that file and retry."
-   echo "       
+   echo " "     
    set exitstat = 1
 endif
 
@@ -37,14 +37,7 @@ if ( $exitstat > 0 ) then
    exit( $exitstat )
 endif
 
-set edssstat = 0
-if ( $?EDSS_ROOT ) then
-      set cnt = `echo $EDSS_ROOT | wc -c`
-      @ cnt = $cnt - 1
-      if ( $cnt > 24 ) then
-         set edssstat = 1
-      endif
-else
+if ( ! $?EDSS_ROOT ) then
     echo "ERROR: You must define the EDSS_ROOT environment variable"
     echo "       prior to running this script.  Use the command line"
     echo "       instruction as follows:"
@@ -65,6 +58,7 @@ if ( $nline > 0 ) then
        echo "       these files using the pkzip or zip utilities, if these"
        echo "       are available instead.  Then rerun this script."
        echo " "
+       exit( 1 )
    endif
 
    gunzip smoke*tar.gz
@@ -97,13 +91,13 @@ endif
 
 if ( $found1 == n ) then
    echo "ERROR: Cannot find any executable tar files in directory"
-   echo "       "$blah_foo_arg"
-   echo "       "
+   echo "       $blah_foo_arg"
+   echo " "
    set exitstat = 1
 endif
 
 cd subsys/smokev1/assigns
-source ASSIGNS.nctox.cmaq.cb4p25.us36-nc
+source ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 if ( $status > 0 ) then
    set exitstat = 1
 endif
@@ -116,27 +110,23 @@ else
 endif
 
 cd $ARDAT
-ls $ARDAT/arinv.stationary.nei96_NC.ida.txt > arinv.stationary.lst
+echo "#LIST" > arinv.stationary.lst
+ls $ARDAT/arinv.nonpoint.nti99_NC.txt >> arinv.stationary.lst
+ls $ARDAT/arinv.stationary.nei96_NC.ida.txt >> arinv.stationary.lst
 cd $MBDAT
-ls $MBDAT/mbinv99v1_vmt_NC.ida > mbinv.lst
+echo "#LIST" > mbinv.lst
+ls $MBDAT/mbinv.nei99_NC.ida.txt >> mbinv.lst
 cd $INVDIR/nonroad
-ls $INVDIR/nonroad/arinv.nonroad.n* > arinv.nonroad.lst
+echo "#LIST" > arinv.nonroad.lst
+ls $INVDIR/nonroad/arinv.nonroad.n* >> arinv.nonroad.lst
 cd $PTDAT
-ls $PTDAT/ptinv.nei96_NC.ida.txt > ptinv.lst
-echo "DATERANGE 0709 0710" > pthour.lst
+echo "#LIST" > ptinv.lst
+ls $PTDAT/ptinv.n* >> ptinv.lst
+echo "#LIST" > pthour.lst
+echo "DATERANGE 0709 0710" >> pthour.lst
 ls $SMKDAT/cem/1996/q3/* >> pthour.lst
 
 cd $blah_foo_arg
-
-if ( $edssstat > 0 ) then
-     echo "NOTE: EDSS_ROOT may be too long to be able to run"
-     echo "      MOBILE6.  The SMK_M6PATH will need to be"
-     echo "      50 characters or less, and this will happen"
-     echo "      when EDSS_ROOT > 24 characters and ESCEN >=5"
-     echo "      characters. If you plan to use MOBILE6, reinstall"
-     echo "      with a shorter EDSS_ROOT path. This limitation"
-     echo "      will be removed in future releases."
-endif
 
 exit( 0 )
 

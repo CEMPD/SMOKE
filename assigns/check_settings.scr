@@ -72,6 +72,16 @@ else
 
 endif
 
+if( $?RUN_MBSETUP ) then
+   if ( $RUN_MBSETUP == 'y' ) then
+      setenv RUN_MBSETUP Y
+   endif
+
+else
+   setenv RUN_MBSETUP N
+
+endif
+
 if( $?RUN_PREMOBL ) then
    if ( $RUN_PREMOBL == 'y' ) then
       setenv RUN_PREMOBL Y
@@ -142,13 +152,13 @@ else
 
 endif
 
-if( $?RUN_BEIS3 ) then
-   if ( $RUN_BEIS3 == 'y' ) then
-      setenv RUN_BEIS3 Y
+if( $?RUN_TMPBEIS3 ) then
+   if ( $RUN_TMPBEIS3 == 'y' ) then
+      setenv RUN_TMPBEIS3 Y
    endif
 
 else
-   setenv RUN_BEIS3 N
+   setenv RUN_TMPBEIS3 N
 
 endif
 
@@ -176,9 +186,41 @@ if( $?RUN_SMK2EMIS ) then
    if ( $RUN_SMK2EMIS == 'y' ) then
       setenv RUN_SMK2EMIS Y
    endif
-
 else
    setenv RUN_SMK2EMIS N
+endif
+
+if( $?RUN_GEOFAC ) then
+   if ( $RUN_GEOFAC == 'y' ) then
+      setenv RUN_GEOFAC Y
+   endif
+else
+   setenv RUN_GEOFAC N
+endif
+
+if( $?RUN_PKTREDUC ) then
+   if ( $RUN_PKTREDUC == 'y' ) then
+      setenv RUN_PKTREDUC Y
+   endif
+else
+   setenv RUN_PKTREDUC N
+endif
+
+if( $?RUN_UAMEMIS ) then
+   if ( $RUN_UAMEMIS == 'y' ) then
+      setenv RUN_UAMEMIS Y
+   endif
+else
+   setenv RUN_UAMEMIS N
+endif
+
+if( $?SMK_CONTROL_YN ) then
+   if ( $SMK_CONTROL_YN == 'y' ) then
+      setenv SMK_CONTROL_YN Y
+   endif
+
+else
+   setenv SMK_CONTROL_YN N
 
 endif
 
@@ -221,6 +263,14 @@ if ( $?SMK_ASCIIELEV_YN ) then
    endif
 else
    setenv SMK_ASCIIELEV_YN ' ' 
+endif
+
+if ( $?NONROAD ) then
+   if ( $NONROAD == y ) then
+      setenv NONROAD Y
+   endif
+else
+   setenv NONROAD N
 endif
 
 if ( $?SMK_PING_METHOD ) then
@@ -443,12 +493,3 @@ if ( $MRG_POINT_MULT == 'Y' || $MRG_POINT_ADD == 'Y' || \
 endif
 
 exit( $status )
-
-
-
-
-
-
-
-
-
