@@ -160,6 +160,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: CFLAG              ! true: recalc vel w/ flow & diam
         LOGICAL, SAVE :: FFLAG    = .FALSE. ! true: fill in 0. annual with seasonal
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: 1st time routine called
+        LOGICAL, SAVE :: LEOR     = .FALSE. ! true: end of record reached
         LOGICAL, SAVE :: WFLAG    = .FALSE. ! true: all lat-lons to western hemi
 
         CHARACTER*20    CNTRY   !  country name
@@ -216,10 +217,10 @@ C........................................................................
 
 C.............  Read a line of IDA file as a character string
 C.............  If line is a header line or blank, it will advance anyway
-            READ( FDEV, 93010, END=199, IOSTAT=IOS, ADVANCE="NO", 
-     &            EOR=1001 ) 
+            READ( FDEV, 93010, END=199, IOSTAT=IOS, ADVANCE="NO" ) 
      &            LINPT1
             IREC = IREC + 1
+            LEOR = ( IOS .EQ. -2 )
 
             IF ( IOS .GT. 0 ) THEN
 
@@ -258,6 +259,15 @@ C.............  Interpret error status
 
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
+
+C...........  If end of record reached already, error
+            IF( LEOR ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Unexpected end of line '//
+     &                 'at line', IREC
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
 
 C.............  Read state and county code
             CALL READ_INTEGER( 2, IREC, .FALSE.,  LINPT1( 1:2 ), 
@@ -358,9 +368,11 @@ C               the other reader routines.
 
 C.................  Non-advancing read for all but the last pollutant and
 C                   advancing read for the last pollutant
+                LEOR = .FALSE.
                 IF ( V .LE. NPOL ) THEN
                     READ( FDEV, 93020, END=199, IOSTAT=IOS, 
-     &                    ADVANCE="NO", EOR = 1003 ) LINEMS
+     &                    ADVANCE="NO" ) LINEMS
+                    LEOR = ( IOS .EQ. -2 )
                 ELSE
                     READ( FDEV, 93020, END=199, IOSTAT=IOS ) 
      &                  LINEMS
@@ -369,6 +381,15 @@ C                   advancing read for the last pollutant
 
                 CBUF = TMPNAM( V )
                 L = LEN_TRIM( CBUF )
+
+C...............  If end of record reached already, error
+                IF( LEOR ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Unexpected end of '//
+     &                     'line at line', IREC
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
 
 C.................  Read annual emissions for pollutant V
                 CALL READ_REAL( 13, IREC, .TRUE., LINEMS( 1:13 ), 
@@ -544,13 +565,6 @@ C.........  Make sure routine knows it's been called already
 C.........  Return from subroutine 
         RETURN
 
-1001    WRITE( MESG,94010 ) 'End of line encountered ' //
-     &                      'unexpectedly at line', IREC
-        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-1003    WRITE( MESG,94010 ) 'End of line encountered ' //
-     &                      'unexpectedly for variable', V, 
-     &                      'at line', IREC
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
