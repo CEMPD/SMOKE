@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM CSELEV
 
 C***********************************************************************
-C  program body starts at line 123
+C  program body starts at line 128
 C
 C  DESCRIPTION:
 C       Use model-speciation and control matrices from programs 
@@ -42,6 +20,27 @@ C  REVISION  HISTORY:
 C       Prototype  10/95 by CJC.
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C************************************************************************
 
       IMPLICIT NONE
 
@@ -49,6 +48,7 @@ C...........   INCLUDES:
 
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'TMDIMS3.EXT'   !  temporal
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -56,12 +56,16 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER         INDEX1
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
+        INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
+        INTEGER         WKDAY
 
-        EXTERNAL        INDEX1, GETYN, PROMPTMFILE, TRIMLEN
+        EXTERNAL        GETYN, HHMMSS, INDEX1, MMDDYY, PROMPTMFILE,
+     &                  TRIMLEN, WKDAY
 
 
 C...........   PARAMETER
@@ -115,6 +119,7 @@ C...........   Other local variables
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
         CHARACTER*16    SCRBUF  !  scratch point
+        CHARACTER*256   MESG    !  message buffer
 
 
 C***********************************************************************
@@ -147,8 +152,7 @@ C   begin body of program CSELEV
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program CSELEV', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'CSELEV', 0, 0, 'Ending Program.', 2 )
         END IF
 
 
@@ -218,7 +222,8 @@ C.......   Borrow most of the file description from the input file.
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
-        WRITE( *,92000 ) ' ','Reading SPECIATION matrix.',' '
+        CALL M3MSG2( 'Reading SPECIATION matrix...' )
+
         IF ( .NOT. READ3( SNAME, 'ALL', 1, 0, 0, SS ) ) THEN
 
             CALL M3EXIT( 'CSELEV', 0, 0,
@@ -233,6 +238,11 @@ C.......   Build description of how to use speciation matrix:
         IF ( .NOT. DESC3( SNAME ) ) THEN
             CALL M3EXIT( 'CSELEV', 0, 0, 
      &      'Could not get description of file ' // SNAME, 2 )
+        ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  S-MATRIX file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'CSELEV', 0, 0, MESG, 2 )
         END IF
 
         DO  54  V = 1, NIPOL
@@ -243,7 +253,7 @@ C.......   Build description of how to use speciation matrix:
 
             K = INDEX( VNAME3D( V ), '_to_' )
             IF( K .LT. 1 ) THEN
-                CALL M3EXIT( 'CSGAREA', 0, 0,
+                CALL M3EXIT( 'CSELEV', 0, 0,
      &              'Bad conversion factor name "' // 
      &              VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) ) //
      &              '" in ' // SNAME, 2 )
@@ -278,8 +288,18 @@ C.......   If CONTROLFLAG, read and apply control matrix:
 
         IF( CONTROLFLAG ) THEN
 
-            WRITE( *,92000 ) 
-     &      ' ', 'Reading CONTROL matrix.', ' '
+            CALL M3MSG2( 'Reading CONTROL matrix...' )
+
+            IF ( .NOT. DESC3( CNAME ) ) THEN
+                WRITE( MESG, '(2A)' )
+     &          'Could not get description of file ', CNAME
+                CALL M3EXIT( 'CSELEV', 0, 0, MESG, 2 )
+            ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+                WRITE( MESG, 94010 )
+     &          'Dimension mismatch.  C-MATRIX file:', NROWS3D,
+     &          'program:', NPSRC
+                CALL M3EXIT( 'CSELEV', 0, 0, MESG, 2 )
+            END IF
 
             DO  66 S = 1, NIPOL
 
@@ -309,25 +329,31 @@ C.......   If CONTROLFLAG, read and apply control matrix:
 C.......   Transform and write out point source emissions values:
 
         IF ( CONTROLFLAG .AND. OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing ' //
-     &      'controlled speciated elevated emissions...'
+            CALL M3MSG2( 'Calculating and writing ' //
+     &      'controlled speciated elevated emissions...' )
         ELSE IF ( CONTROLFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating controlled speciated elevated emissions...'
+            CALL M3MSG2( 
+     &      'Calculating controlled speciated elevated emissions...' )
         ELSE IF ( OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing speciated elevated emissions...'
+            CALL M3MSG2(
+     &      'Calculating and writing speciated elevated emissions...' )
         ELSE 
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating speciated elevated emissions...'
+            CALL M3MSG2( 'Calculating speciated elevated emissions...' )
         END IF
 
         DO  199  T = 1, NSTEPS
+
+C...............   If this is a new month, or new day, write message
+            IF ( MOD( T,24 ) .EQ. 1 ) THEN
+ 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
+            END IF
+ 
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 93020 ) HHMMSS( JTIME )
 
             IF( READ3( PNAME, ALLVAR3, ALLAYS3, 
      &                 JDATE, JTIME, NELVIN ) ) THEN
@@ -394,6 +420,15 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
+
+C...........   Formatted file I/O formats............ 93xxx
+ 
+93020   FORMAT( 8X, 'at time ', A8 )
+
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 3( A, :, I7, :, 1X ) )
 
 
         END
