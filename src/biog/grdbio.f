@@ -38,10 +38,12 @@ C*************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the biogenic variables
-        USE MODBIOG
+        USE MODBIOG, ONLY: NVEG, VEGID, PINE, DECD, CONF, AGRC, LEAF,
+     &                     OTHR, GRASNO, FORENO, WETLNO, AGRINO, AVLAI,
+     &                     LAI, EMFAC   
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NCOLS, NROWS, XOFF, YOFF
 
         IMPLICIT NONE
 

@@ -42,7 +42,7 @@ C***********************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
-        USE MODSPRO
+        USE MODSPRO, ONLY:
 
         IMPLICIT NONE
 

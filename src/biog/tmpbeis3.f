@@ -46,10 +46,10 @@ C***********************************************************************
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
 
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPEC, SPCNAMES
 
 C...........   This module contains BEIS3 specific arrays
-        USE MODBEIS3
+        USE MODBEIS3, ONLY: AVGISOP, AVGMONO, AVGOVOC, AVGNO, AVGLAI
 
         IMPLICIT NONE
 

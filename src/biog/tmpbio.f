@@ -45,10 +45,10 @@ C***********************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPEC, SPCNAMES
 
 C...........   This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NCOLS, NROWS, XOFF_A, YOFF_A, XOFF, YOFF
 
         IMPLICIT NONE
 
