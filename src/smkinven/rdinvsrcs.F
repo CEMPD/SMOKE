@@ -668,6 +668,51 @@ C.....................  Ensure that road class is valid and convert from road cl
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
+                    IF( CURFMT == IDAFMT ) THEN
+                    
+C.........................  Make sure we have a plant ID
+                        IF( PTID == ' ' ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+     &                          'plant ID code at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
+
+                    END IF
+                    
+                    IF( CURFMT == EMSFMT ) THEN
+
+C.........................  Check for facility, stack, device, and process IDs
+                        IF( FCID == ' ' ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+     &                          'facility ID code at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
+                        
+                        IF( SKID == ' ' ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+     &                          'stack ID code at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
+                        
+                        IF( DVID == ' ' ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+     &                          'device ID code at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
+                        
+                        IF( PRID == ' ' ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+     &                          'process ID code at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
+                    
+                    END IF
+                
                 END IF
 
 C.................  Skip rest of loop if an error has occured
