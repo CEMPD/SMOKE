@@ -28,6 +28,7 @@ setenv RUN_SMKMERGE  N        #  run merge program
 ## For merging from previously generated gridded Smkmerge outputs
 setenv RUN_MRGGRID   Y        #  run pre-gridded merge program
 #      MRGFILES           #  see script settings, below
+#      MRGGRID_MOLE       #  see script settings, below
 #      NOTE: in nctox script, mrggrid used to create merged model-ready CMAQ files
 
 ## For converting to UAM binary format from either
@@ -66,6 +67,7 @@ setenv SMK_PING_METHOD      1     # 1 outputs for PinG (using Elevpoint outputs)
 
 # Script settings
 setenv MRGFILES   "AGTS_L NGTS_L BGTS_L_O MGTS_L PGTS3D_L"  # Logical files for Mrggrid
+setenv MRGGRID_MOLE       Y       # Y=mole, musy be consistent w/ MRGFILES
 setenv SRCABBR            abmp    # abbreviation for naming log files
 setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
 setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
@@ -94,6 +96,13 @@ while ( $cnt < $EPI_NDAY )
 
    @ cnt = $cnt + $NDAYS
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
+
+   if ( $MRGGRID_MOLE == Y ) then
+      setenv OUTFILE $EGTS_L
+   else 
+      setenv OUTFILE $EGTS_S
+   endif
+
    source smk_run.csh     # Run programs
    setenv G_STDATE_ADVANCE $cnt
 
