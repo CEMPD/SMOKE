@@ -1,6 +1,6 @@
 
         SUBROUTINE EFSETUP( FNAME, MODELNAM, MXVAR, NVAR, 
-     &                      VNAMES, VUNITS, VDESCS )
+     &                      VNAMES, VUNITS, VDESCS, VOLNAM )
    
 C***********************************************************************
 C  subroutine EFSETUP body starts at line < >
@@ -65,6 +65,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: VNAMES( MXVAR ) ! variable names
         CHARACTER(*), INTENT(OUT) :: VUNITS( MXVAR ) ! variable units
         CHARACTER(*), INTENT(OUT) :: VDESCS( MXVAR ) ! variable descriptions
+        CHARACTER(*), INTENT(OUT) :: VOLNAM          ! volatile pollutant name
 
 C...........   Local variables
         INTEGER         I, K, L, L2 ! counters and indices
@@ -78,7 +79,6 @@ C...........   Local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
         LOGICAL       :: IFLAG    = .FALSE.  ! true: input file available
 
-        CHARACTER(LEN=IOVLEN3), SAVE :: VOLNAM = ' ' ! name of vol pollutant
         CHARACTER*300                   MESG         ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'EFSETUP' ! program name
