@@ -1,14 +1,34 @@
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
-        SUBROUTINE  MKTMAT( NSRC,  JDATE, MON, DAY, TZONE, ZONES,
+        SUBROUTINE  MKTMAT( NSRC,  JDATE, MON, DAY, TZONE, ZONES, TPF,
      &                      MFAC,  MDEX, 
      &                      WFAC,  WDEX, 
      &                      DFAC,  DDEX, 
      &                      NDAY,  INDD, TMAT )
 
 C***********************************************************************
-C  subroutine body starts at line  93
+C  subroutine body starts at line  117
 C
 C  FUNCTION:
 C       Construct temporal-coefficient-transform matrices for 
@@ -44,6 +64,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER         DAY                     ! 1 ... 7
         INTEGER         TZONE                   ! time zone (5 for Eastern)
         INTEGER         ZONES( NSRC )           ! source time zones
+        INTEGER         TPF  ( NSRC )           ! source temporal treatment flag
         REAL            MFAC( 12, NMCOD )       ! Monthly profile factors
         REAL            WFAC(  7, NWCOD )       ! Weekly    "       "
         REAL            DFAC( 24, NDCOD  )      ! Diurnal   "       "
@@ -69,7 +90,9 @@ C...........   Scratch Local variables:
         INTEGER         S               !  source counter
         INTEGER         V               !  chemistry variable counter
         INTEGER         HCORR           !  daylight savings time correction
+        REAL            DNORM           !  re-normalization parameter
         REAL            FAC             !  partial matrix factor
+        REAL            WESUM           !  sum of weekend profiles
         REAL            YR2DAY          !  year-to-day conversion factor
 
 
@@ -136,24 +159,40 @@ C.......   Compute correct year-to-day conversion factor:
 C.......   Compute index correction (offset by 1 because of
 C.......   1 + MOD(...) needed below
 
-        HCORR = TZONE + 25
+        HCORR = TZONE + 23
 
 C.......   Compute TMAT:
 
         DO  133  V = 1, NIPOL
         DO  122  S = 1, NSRC
 
+C.............  Use day-specific data (no adjustments)
             IF ( FIND1( S, NDAY, INDD ) .GT. 0 ) THEN
 
                 FAC = 1.0
 
-            ELSE IF ( MDEX( S,V ) .GT. 0 ) THEN
+C.............  Adjust for year-normal data
+            ELSE IF ( MOD( TPF( S ), MTPRFAC ) .EQ. 0 ) THEN
 
                 FAC = MFAC( MON,MDEX( S,V ) ) * WFAC( DAY,WDEX( S,V ) )
 
-            ELSE IF ( WDEX( S,V ) .GT. 0 ) THEN
+C.............  Adjust for week-normal data assuming whole week normalizer
+            ELSE IF ( MOD( TPF( S ), WTPRFAC ) .EQ. 0 ) THEN
 
-                FAC = YR2DAY * WFAC( DAY,WDEX( S,V ) )
+               FAC = YR2DAY * WFAC( DAY,WDEX( S,V ) )
+
+C.............  Adjust for week-normal data assuming week-days normalizer
+            ELSE IF ( MOD( TPF( S ), WDTPFAC ) .EQ. 0 ) THEN
+
+                WESUM = WFAC( 6,WDEX( S,V ) ) + WFAC( 7,WDEX( S,V ) )
+
+                IF( WESUM .NE. 7. ) THEN
+                    DNORM = 5. / ( 7. - WESUM )  ! Inverse of ave weekday
+                ELSE
+                    DNORM = 2. / WESUM           ! Inverse of ave weekend
+                ENDIF
+
+                FAC = YR2DAY * WFAC( DAY,WDEX( S,V ) ) * DNORM
 
             ELSE
 
