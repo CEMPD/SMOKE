@@ -241,9 +241,9 @@ C...........   Other local variables
         CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
         CHARACTER*80  :: GDESC     !  grid description
-        CHARACTER*200    OUTFMT    !  output format for RDEV report
-        CHARACTER*200    BUFFER    !  source characteristics buffer
-        CHARACTER*300    MESG      !  buffer for M3EXIT() messages
+        CHARACTER*256    OUTFMT    !  output format for RDEV report
+        CHARACTER*256    BUFFER    !  source characteristics buffer
+        CHARACTER*256    MESG      !  buffer for M3EXIT() messages
 
         CHARACTER(LEN=IOVLEN3) VNAME      ! variable name buffer 
         CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name
@@ -378,7 +378,7 @@ C.............  Check for layer-1 fraction
             I = INDEX1( SPDATNAM( 1 ), NVARS3D, VNAME3D )
             IF ( I .GT. 0 ) THEN
                 LFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'NOTE: Plume top and bottom in ' //
+                WRITE( MESG,94010 ) 'NOTE: Layer-1 fraction ' //
      &                 'hourly input will be used '//CRLF()// BLANK10//
      &                 'to allocate plumes for some sources.'
                 CALL M3MSG2( MESG )
@@ -868,7 +868,7 @@ C                   the current hour
 
 C.............  Layer-1 fraction
             IF ( LFLAG .AND. IFLAG ) 
-     ^           CALL SAFE_READ3( HNAME, SPDATNAM(1), ALLAYS3, 
+     &           CALL SAFE_READ3( HNAME, SPDATNAM(1), ALLAYS3, 
      &                            JDATE, JTIME, LAY1F )
 
 C.............  Plume bottom and top
@@ -1123,7 +1123,8 @@ C.................  Allocate plume to layers
 
 C.................  If hourly layer-1 fraction is present, reset this and re-
 C                   normalize
-C.................  Must account for the case where
+C.................  Must account for the case where LAY1F value is 
+C                   missing
                 IF( LFLAG .AND. K .GT. 0 ) THEN
                     IF( LAY1F( K ) .GT. 0. .AND.
      &                  TFRAC( 1 ) .LT. 1.       ) THEN
@@ -1134,6 +1135,25 @@ C.................  Must account for the case where
                         TFRAC( 1 ) = LAY1F( K )
                         TFRAC( 2:EMLAYS ) = TFRAC( 2:EMLAYS ) * FAC
                     END IF
+                END IF
+
+C.................  Check if layer fractions are negative and reset
+C                   to output in the first layer if they are.
+                X = MINVAL( TFRAC( 1:EMLAYS ) )
+                IF( X .LT. 0 ) THEN
+
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                    WRITE( MESG,94010 ) 
+     &                     'WARNING: One or more negative plume ' //
+     &                     'fractions found for:'//
+     &                     CRLF() // BLANK10 // BUFFER( 1:L2 )//'.'//
+     &                     CRLF() // BLANK10 // 'Plume reset to '//
+     &                     'have all emissions in surface layer.'
+                    CALL M3MESG( MESG )
+
+                    TFRAC( 1 ) = 1.0
+                    TFRAC( 2:EMLAYS ) = 0.0
+
                 END IF
 
 C.................  Store layer fractions
