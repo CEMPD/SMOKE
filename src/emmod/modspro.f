@@ -80,6 +80,13 @@
 
 	CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: MOLUNITS( :,: )
 
+!.........  Header definitions for NONHAP<pollutants>
+        INTEGER                            , PUBLIC :: NSPDEF   ! no. pols with def'ns
+        INTEGER                            , PUBLIC :: MXSPLST  ! max items per def'n list
+        INTEGER               , ALLOCATABLE, PUBLIC :: NSPLST   ( : ) ! no. item in each (nspdef)
+        CHARACTER(LEN=POLLEN3), ALLOCATABLE, PUBLIC :: SPCDEFPOL( : ) ! pols with def'ns (nspdef)
+        CHARACTER(LEN=POLLEN3), ALLOCATABLE, PUBLIC :: SPCDEFLST( :,: ) ! the def'ns (mxsplst,nspdef)
+
 !.........  Sorted groups of pollutant to pollutant conversion factors
 
 !.........  Default FIPS code=0, SCC=0 (for all pollutants)
