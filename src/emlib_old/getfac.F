@@ -33,15 +33,27 @@ C.........  External
 
 C.........  Program arguments
         INTEGER N, NCOL, NMAX
-        INTEGER INDEX( NMAX )
+        INTEGER INDEX( NMAX )       ! Sorted profile ID codes
 
-        REAL    RTAB1( NCOL, NMAX )
+        REAL    RTAB1( NCOL, NMAX ) ! Sorted profile of real numbers
  
         CHARACTER*(*) NAME, DEFAULT
 
+C.........  Parameters
+        INTEGER  CMAX
+        PARAMETER  ( CMAX = 200 )   ! Constant maximum thanks to FORTRAN
+
 C.........  Local variables
-        INTEGER IDEV, IOS, IREC, J1 
-        LOGICAL EFLAG
+        INTEGER  INDEXA( CMAX )     ! Unsorted profile ID codes
+        INTEGER  MOVETO( CMAX )     ! Index for rearranging profiles
+        INTEGER  SORTER( CMAX )     ! Index for sorting profile ID codes
+
+        INTEGER IDEV, IREC, J1, K   ! Counters and pointers
+        INTEGER IDUM                ! Dummy integer code
+        INTEGER IOS                 ! Read status
+        INTEGER READTHRU            ! Loop counter for reading through file
+        REAL    RPDUM               ! Dummy real profile
+        LOGICAL EFLAG               ! Error flag
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
@@ -59,46 +71,81 @@ C.........  Prompt for input file
      &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
      &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACR' )
 
-        IREC = 0
-   11   CONTINUE
+C.........  First time through file, establish sorted order, second time
+C.........  through file, store profiles in that sorted order
+        DO 44 READTHRU = 1, 2
 
-            IREC = IREC + 1
+            IREC = 0
+   11       CONTINUE
 
-            IF( IREC .GT. NMAX ) THEN
+                IREC = IREC + 1
 
-                WRITE( MESG, 94010 ) 
-     &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// 
-     &               BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
-                CALL  M3EXIT( 'GETFACR', 0, 0, MESG, 2 )
+                IF( IREC .GT. NMAX ) THEN
 
-            ELSE
+                    WRITE( MESG, 94010 ) 
+     &                   'Maximum dimension =', NMAX,
+     &                   'was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
+                    CALL  M3EXIT( 'GETFACR', 0, 0, MESG, 2 )
 
-                READ( IDEV, *, END = 33, IOSTAT=IOS ) 
-     &                INDEX( IREC ), ( RTAB1( J1, IREC ), J1=1,NCOL )
+                ELSEIF( IREC .GT. CMAX ) THEN
 
-                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG, 94010 ) 
+     &                   'Code parameter CMAX (=', CMAX,
+     &                   ') was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
+                    CALL  M3MESG( MESG )
+                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+     &                            'Change CMAX in and recompile', 2 )
 
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 )
-     &                 'I/O Error:', IOS, ', while reading ' //
-     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) // 
-     &                 ' file record ', IREC
-                    CALL M3MESG( MESG )
+                ELSE
+
+                    IF( READTHRU .EQ. 1 ) THEN
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) 
+     &                      INDEXA( IREC ), ( RPDUM, J1=1,NCOL )
+
+                      SORTER( IREC ) = IREC
+
+                    ELSE
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
+     &                    ( RTAB1( J1, MOVETO( IREC )), J1=1,NCOL )
+
+                    ENDIF
+    
+                    IF( IOS .NE. 0 ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG, 94010 )
+     &                     'I/O Error:', IOS, ', while reading ' //
+     &                     BUFFER( 1:TRIMLEN( BUFFER ) ) // 
+     &                     ' file record ', IREC
+                        CALL M3MESG( MESG )
+
+                    ENDIF
 
                 ENDIF
 
+            GO TO 11
+
+   33       IF( EFLAG ) 
+     &      CALL M3EXIT( 'GETFACR', 0, 0, 'Error in file format', 2 )
+
+            IF( READTHRU .EQ. 1 ) THEN
+
+                N = IREC - 1
+
+                CALL SORTI1( N, SORTER, INDEXA )
+
+                DO 41 K = 1, N
+                    INDEX( K ) = INDEXA( SORTER( K ) )
+                    MOVETO( SORTER( K ) ) = K
+   41           CONTINUE
+
+                REWIND( IDEV )
+
             ENDIF
 
-        GO TO 11
-
-   33   IF( EFLAG ) THEN
-
-            CALL M3EXIT( 'GETFACR', 0, 0, 'Error in file format', 2 )
-
-        ENDIF
-
-        N = IREC - 1
+   44   CONTINUE
 
         RETURN
 
@@ -138,16 +185,28 @@ C.........  External
 
 C.........  Program arguments
         INTEGER N, NCOL1, NCOL2, NMAX
-        INTEGER INDEX( NMAX )
+        INTEGER INDEX( NMAX )        ! Sorted profile ID codes
 
-        REAL    RTAB1( NCOL1, NMAX )
-        REAL    RTAB2( NCOL2, NMAX )
+        REAL    RTAB1( NCOL1, NMAX ) ! Sorted 1st profile of real numbers
+        REAL    RTAB2( NCOL2, NMAX ) ! Sorted 2nd profile of real numbers
  
         CHARACTER*(*) NAME, DEFAULT
 
+C.........  Parameters
+        INTEGER  CMAX
+        PARAMETER  ( CMAX = 200 )   ! Constant maximum thanks to FORTRAN
+
 C.........  Local variables
-        INTEGER IDEV, IOS, IREC, J1, J2
-        LOGICAL EFLAG
+        INTEGER  INDEXA( CMAX )     ! Unsorted profile ID codes
+        INTEGER  MOVETO( CMAX )     ! Index for rearranging profiles
+        INTEGER  SORTER( CMAX )     ! Index for sorting profile ID codes
+
+        INTEGER IDEV, IREC, J1, J2, K   ! Counters and pointers
+        INTEGER IDUM                ! Dummy integer code
+        INTEGER IOS                 ! Read status
+        INTEGER READTHRU            ! Loop counter for reading through file
+        REAL    RPDUM               ! Dummy real profile
+        LOGICAL EFLAG               ! Error flag
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
@@ -165,47 +224,84 @@ C.........  Prompt for input file
      &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
      &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACRR' )
 
-        IREC = 0
-   11   CONTINUE
+C.........  First time through file, establish sorted order, second time
+C.........  through file, store profiles in that sorted order
+        DO 44 READTHRU = 1, 2
 
-            IREC = IREC + 1
+            IREC = 0
+   11       CONTINUE
 
-            IF( IREC .GT. NMAX ) THEN
+                IREC = IREC + 1
 
-                WRITE( MESG, 94010 ) 
-     &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// 
-     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
-                CALL  M3EXIT( 'GETFACRR', 0, 0, MESG, 2 )
+                IF( IREC .GT. NMAX ) THEN
 
-            ELSE
+                    WRITE( MESG, 94010 ) 
+     &                   'Maximum dimension =', NMAX,
+     &                   'was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
+                    CALL  M3EXIT( 'GETFACRR', 0, 0, MESG, 2 )
 
-                READ( IDEV, *, END = 33, IOSTAT=IOS ) INDEX( IREC ),
-     &                ( RTAB1( J1, IREC ), J1=1,NCOL1 ),
-     &                ( RTAB2( J2, IREC ), J2=1,NCOL2 ) 
+                ELSEIF( IREC .GT. CMAX ) THEN
 
-                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG, 94010 ) 
+     &                   'Code parameter CMAX (=', CMAX,
+     &                   ') was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
+                    CALL  M3MESG( MESG )
+                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+     &                            'Change CMAX in and recompile', 2 )
 
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 )
-     &                 'I/O Error:', IOS, ', while reading ' //
-     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
-     &                 ' file record ', IREC
-                    CALL M3MESG( MESG )
+                ELSE
+
+                    IF( READTHRU .EQ. 1 ) THEN
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) 
+     &                    INDEXA( IREC ), ( RPDUM, J1=1,NCOL1 ),
+     &                                    ( RPDUM, J2=1,NCOL2 )
+
+                      SORTER( IREC ) = IREC
+
+                    ELSE
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
+     &                    ( RTAB1( J1, MOVETO( IREC )), J1=1,NCOL1 ),
+     &                    ( RTAB2( J2, MOVETO( IREC )), J2=1,NCOL2 ) 
+
+                    ENDIF
+
+
+                    IF( IOS .NE. 0 ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG, 94010 )
+     &                     'I/O Error:', IOS, ', while reading ' //
+     &                     BUFFER( 1:TRIMLEN( BUFFER ) ) //
+     &                     ' file record ', IREC
+                        CALL M3MESG( MESG )
+
+                    ENDIF
 
                 ENDIF
 
+            GO TO 11
+
+   33       IF( EFLAG )
+     &      CALL M3EXIT( 'GETFACRR', 0, 0, 'Error in file format', 2 )
+
+            IF( READTHRU .EQ. 1 ) THEN
+
+                N = IREC - 1
+
+                CALL SORTI1( N, SORTER, INDEXA )
+
+                DO 41 K = 1, N
+                    INDEX( K ) = INDEXA( SORTER( K ) )
+                    MOVETO( SORTER( K ) ) = K
+   41           CONTINUE
+
+                REWIND( IDEV )
+
             ENDIF
 
-        GO TO 11
-
-   33   IF( EFLAG ) THEN
-
-            CALL M3EXIT( 'GETFACRR', 0, 0, 'Error in file format', 2 )
-
-        ENDIF
-
-        N = IREC - 1
+   44   CONTINUE
 
         RETURN
 
@@ -247,14 +343,26 @@ C.........  EXTERNAL
 C.........  Program arguments
         INTEGER       N, NCOL1, NMAX
 
-        INTEGER       INDEX( NMAX )
-        INTEGER       ITAB1( NCOL1, NMAX )
+        INTEGER       INDEX( NMAX )        ! Sorted profile ID codes
+        INTEGER       ITAB1( NCOL1, NMAX ) ! Sorted profile of integers
 
         CHARACTER*(*) NAME, DEFAULT
 
+C.........  Parameters
+        INTEGER  CMAX
+        PARAMETER  ( CMAX = 200 )   ! Constant maximum thanks to FORTRAN
+
 C.........  Local variables
-        INTEGER IDEV, IOS, IREC, J1
-        LOGICAL EFLAG
+        INTEGER  INDEXA( CMAX )     ! Unsorted profile ID codes
+        INTEGER  MOVETO( CMAX )     ! Index for rearranging profiles
+        INTEGER  SORTER( CMAX )     ! Index for sorting profile ID codes
+
+        INTEGER IDEV, IREC, J1, K   ! Counters and pointers
+        INTEGER IDUM                ! Dummy integer code
+        INTEGER IPDUM               ! Dummy integer profile
+        INTEGER IOS                 ! Read status
+        INTEGER READTHRU            ! Loop counter for reading through file
+        LOGICAL EFLAG               ! Error flag
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
@@ -272,47 +380,81 @@ C.........  Prompt for input file
      &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
      &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACI' )
 
-        IREC = 0
-   11   CONTINUE
+C.........  First time through file, establish sorted order, second time
+C.........  through file, store profiles in that sorted order
+        DO 44 READTHRU = 1, 2
 
-            IREC = IREC + 1
+            IREC = 0
+   11       CONTINUE
 
-            IF( IREC .GT. NMAX ) THEN
+                IREC = IREC + 1
 
-                WRITE( MESG, 94010 ) 
-     &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// 
-     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
-                CALL M3EXIT( 'GETFACI', 0, 0, MESG, 2 )
+                IF( IREC .GT. NMAX ) THEN
 
-            ELSE
+                    WRITE( MESG, 94010 ) 
+     &                   'Maximum dimension =', NMAX,
+     &                   'was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
+                    CALL M3EXIT( 'GETFACI', 0, 0, MESG, 2 )
 
-                READ( IDEV, *, END = 33, IOSTAT=IOS ) 
-     &              INDEX( IREC ),
-     &              ( ITAB1( J1, IREC ), J1=1,NCOL1 )
+                ELSEIF( IREC .GT. CMAX ) THEN
 
-                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG, 94010 ) 
+     &                   'Code parameter CMAX (=', CMAX,
+     &                   ') was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
+                    CALL  M3MESG( MESG )
+                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+     &                            'Change CMAX in and recompile', 2 )
 
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 )
-     &                 'I/O Error:', IOS, ', while reading ' //
-     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
-     &                 ' file record ', IREC
-                    CALL M3MESG( MESG )
+                ELSE
+
+                    IF( READTHRU .EQ. 1 ) THEN
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) 
+     &                    INDEXA( IREC ), ( IPDUM, J1=1,NCOL1 )
+
+                      SORTER( IREC ) = IREC
+
+                    ELSE
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
+     &                    ( ITAB1( J1, MOVETO( IREC )), J1=1,NCOL1 )
+
+                    ENDIF
+
+                    IF( IOS .NE. 0 ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG, 94010 )
+     &                     'I/O Error:', IOS, ', while reading ' //
+     &                     BUFFER( 1:TRIMLEN( BUFFER ) ) //
+     &                     ' file record ', IREC
+                        CALL M3MESG( MESG )
+
+                    ENDIF
 
                 ENDIF
 
+            GO TO 11
+
+   33       IF( EFLAG )
+     &      CALL M3EXIT( 'GETFACI', 0, 0, 'Error in file format', 2 )
+
+            IF( READTHRU .EQ. 1 ) THEN
+
+                N = IREC - 1
+
+                CALL SORTI1( N, SORTER, INDEXA )
+
+                DO 41 K = 1, N
+                    INDEX( K ) = INDEXA( SORTER( K ) )
+                    MOVETO( SORTER( K ) ) = K
+   41           CONTINUE
+
+                REWIND( IDEV )
+
             ENDIF
 
-        GO TO 11
-
-   33   IF( EFLAG ) THEN
-
-            CALL M3EXIT( 'GETFACI', 0, 0, 'Error in file format', 2 )
-
-        ENDIF
-
-        N = IREC - 1
+   44   CONTINUE
 
         RETURN
 
@@ -363,9 +505,22 @@ C.........  Program arguments
         CHARACTER*(*) CTAB2( NCOL2, NMAX )
         CHARACTER*(*) NAME, DEFAULT
 
+C.........  Parameters
+        INTEGER  CMAX
+        PARAMETER  ( CMAX = 200 )   ! Constant maximum thanks to FORTRAN
+
 C.........  Local variables
-        INTEGER IDEV, IOS, IREC, J1, J2, J3
-        LOGICAL EFLAG
+        INTEGER  INDEXA( CMAX )     ! Unsorted profile ID codes
+        INTEGER  MOVETO( CMAX )     ! Index for rearranging profiles
+        INTEGER  SORTER( CMAX )     ! Index for sorting profile ID codes
+
+        INTEGER IDEV, IREC, J1, J2, J3, K   ! Counters and pointers
+        INTEGER IDUM                ! Dummy integer code
+        INTEGER IPDUM               ! Dummy integer profile
+        INTEGER IOS                 ! Read status
+        INTEGER READTHRU            ! Loop counter for reading through file
+        REAL    RPDUM               ! Dummy real profile
+        LOGICAL EFLAG               ! Error flag
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
@@ -383,49 +538,89 @@ C.........  Prompt for input file
      &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
      &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACICR' )
 
-        IREC = 0
-   11   CONTINUE
+C.........  First time through file, establish sorted order, second time
+C.........  through file, store profiles in that sorted order
+        DO 44 READTHRU = 1, 2
 
-            IREC = IREC + 1
+            IREC = 0
+   11       CONTINUE
 
-            IF( IREC .GT. NMAX ) THEN
+                IREC = IREC + 1
 
-                WRITE( MESG, 94010 ) 
-     &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '//
-     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
-                CALL M3EXIT( 'GETFACICR', 0, 0, MESG, 2 )
+                IF( IREC .GT. NMAX ) THEN
 
-            ELSE
+                    WRITE( MESG, 94010 ) 
+     &                   'Maximum dimension =', NMAX,
+     &                   'was exceeded while reading '//
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
+                    CALL M3EXIT( 'GETFACICR', 0, 0, MESG, 2 )
 
-                READ( IDEV, *, END = 33, IOSTAT=IOS ) 
-     &              INDEX( IREC ),
-     &              ( ITAB1( J1, IREC ), J1=1,NCOL1 ),
-     &              ( CTAB2( J2, IREC ), J2=1,NCOL2 ),
-     &              ( RTAB3( J3, IREC ), J3=1,NCOL3 )
+                ELSEIF( IREC .GT. CMAX ) THEN
 
-                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG, 94010 ) 
+     &                   'Code parameter CMAX (=', CMAX,
+     &                   ') was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
+                    CALL  M3MESG( MESG )
+                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+     &                            'Change CMAX in and recompile', 2 )
 
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 )
-     &                 'I/O Error:', IOS, ', while reading ' //
-     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
+                ELSE
+
+C..................... For character dummy read, need to use actual array
+C..................... to get the length correct.  The first read will be
+C..................... overwritten by the second.
+                    IF( READTHRU .EQ. 1 ) THEN
+                      READ( IDEV, *, END=33, IOSTAT=IOS )
+     &                      INDEXA( IREC ), ( IPDUM, J1=1,NCOL1 ),
+     &                           ( CTAB2( J2,IREC ), J2=1,NCOL2 ),
+     &                                      ( RPDUM, J3=1,NCOL3 )
+
+                      SORTER( IREC ) = IREC
+
+                    ELSE
+
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
+     &                    ( ITAB1( J1, MOVETO( IREC )), J1=1,NCOL1 ),
+     &                    ( CTAB2( J2, MOVETO( IREC )), J2=1,NCOL2 ),
+     &                    ( RTAB3( J3, MOVETO( IREC )), J3=1,NCOL3 )
+
+                    ENDIF
+
+                    IF( IOS .NE. 0 ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG, 94010 )
+     &                     'I/O Error:', IOS, ', while reading ' //
+     &                     BUFFER( 1:TRIMLEN( BUFFER ) ) //
      &                 ' file record ', IREC
-                    CALL M3MESG( MESG )
+                        CALL M3MESG( MESG )
+
+                    ENDIF
 
                 ENDIF
 
+            GO TO 11
+
+   33       IF( EFLAG )
+     &      CALL M3EXIT( 'GETFACICR', 0, 0, 'Error in file format', 2 )
+
+            IF( READTHRU .EQ. 1 ) THEN
+
+                N = IREC - 1
+
+                CALL SORTI1( N, SORTER, INDEXA )
+
+                DO 41 K = 1, N
+                    INDEX( K ) = INDEXA( SORTER( K ) )
+                    MOVETO( SORTER( K ) ) = K
+   41           CONTINUE
+
+                REWIND( IDEV )
+
             ENDIF
 
-        GO TO 11
-
-   33   IF( EFLAG ) THEN
-
-            CALL M3EXIT( 'GETFACICR', 0, 0, 'Error in file format', 2 )
-
-        ENDIF
-
-        N = IREC - 1
+   44   CONTINUE
 
         RETURN
 
@@ -472,9 +667,22 @@ C.........  Program arguments
  
         CHARACTER*(*) NAME, DEFAULT
 
+C.........  Parameters
+        INTEGER  CMAX
+        PARAMETER  ( CMAX = 200 )   ! Constant maximum thanks to FORTRAN
+
 C.........  Local variables
-        INTEGER IDEV, IOS, IREC, J1, J2
-        LOGICAL EFLAG
+        INTEGER  INDEXA( CMAX )     ! Unsorted profile ID codes
+        INTEGER  MOVETO( CMAX )     ! Index for rearranging profiles
+        INTEGER  SORTER( CMAX )     ! Index for sorting profile ID codes
+
+        INTEGER IDEV, IREC, J1, J2, K   ! Counters and pointers
+        INTEGER IDUM                ! Dummy integer code
+        INTEGER IPDUM               ! Dummy integer profile
+        INTEGER IOS                 ! Read status
+        INTEGER READTHRU            ! Loop counter for reading through file
+        REAL    RPDUM               ! Dummy real profile
+        LOGICAL EFLAG               ! Error flag
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
@@ -492,47 +700,83 @@ C.........  Prompt for input file
      &         'Enter logical name for '// NAME( 1:TRIMLEN( NAME ) )
      &         //' input file', .TRUE., .TRUE., DEFAULT, 'GETFACIR' )
 
-        IREC = 0
-   11   CONTINUE
+C.........  First time through file, establish sorted order, second time
+C.........  through file, store profiles in that sorted order
+        DO 44 READTHRU = 1, 2
 
-            IREC = IREC + 1
+            IREC = 0
+   11       CONTINUE
 
-            IF( IREC .GT. NMAX ) THEN
+                IREC = IREC + 1
 
-                WRITE( MESG, 94010 ) 
-     &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '//
-     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
-                CALL  M3EXIT( 'GETFACIR', 0, 0, MESG, 2 )
+                IF( IREC .GT. NMAX ) THEN
 
-            ELSE
+                    WRITE( MESG, 94010 ) 
+     &                   'Maximum dimension =', NMAX,
+     &                   'was exceeded while reading '//
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
+                    CALL  M3EXIT( 'GETFACIR', 0, 0, MESG, 2 )
 
-                READ( IDEV, *, END = 33, IOSTAT=IOS ) INDEX( IREC ),
-     &                ( ITAB1( J1, IREC ), J1=1,NCOL1 ),
-     &                ( RTAB2( J2, IREC ), J2=1,NCOL2 ) 
+                ELSEIF( IREC .GT. CMAX ) THEN
 
-                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG, 94010 ) 
+     &                   'Code parameter CMAX (=', CMAX,
+     &                   ') was exceeded while reading '// 
+     &                   BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
+                    CALL  M3MESG( MESG )
+                    CALL  M3EXIT( 'GETFACR', 0, 0, 
+     &                            'Change CMAX in and recompile', 2 )
 
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 )
-     &                 'I/O Error:', IOS, ', while reading ' //
-     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
-     &                 ' file record ', IREC
-                    CALL M3MESG( MESG )
+                ELSE
+
+                    IF( READTHRU .EQ. 1 ) THEN
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) 
+     &                    INDEXA( IREC ), ( IPDUM, J1=1,NCOL1 ),
+     &                                    ( RPDUM, J2=1,NCOL2 )
+
+                      SORTER( IREC ) = IREC
+
+                    ELSE
+                      READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
+     &                    ( ITAB1( J1, MOVETO( IREC )), J1=1,NCOL1 ),
+     &                    ( RTAB2( J2, MOVETO( IREC )), J2=1,NCOL2 ) 
+
+                    ENDIF
+
+                    IF( IOS .NE. 0 ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG, 94010 )
+     &                     'I/O Error:', IOS, ', while reading ' //
+     &                     BUFFER( 1:TRIMLEN( BUFFER ) ) //
+     &                     ' file record ', IREC
+                        CALL M3MESG( MESG )
+
+                    ENDIF
 
                 ENDIF
 
+            GO TO 11
+
+   33       IF( EFLAG ) 
+     &      CALL M3EXIT( 'GETFACR', 0, 0, 'Error in file format', 2 )
+
+            IF( READTHRU .EQ. 1 ) THEN
+
+                N = IREC - 1
+
+                CALL SORTI1( N, SORTER, INDEXA )
+
+                DO 41 K = 1, N
+                    INDEX( K ) = INDEXA( SORTER( K ) )
+                    MOVETO( SORTER( K ) ) = K
+   41           CONTINUE
+
+                REWIND( IDEV )
+
             ENDIF
 
-        GO TO 11
-
-   33   IF( EFLAG ) THEN
-
-            CALL M3EXIT( 'GETFACR', 0, 0, 'Error in file format', 2 )
-
-        ENDIF
-
-        N = IREC - 1
+   44   CONTINUE
 
         RETURN
 
