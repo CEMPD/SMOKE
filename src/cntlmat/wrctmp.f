@@ -63,8 +63,8 @@ C   Begin body of subroutine WRCTMP
 
         DO I = 1,NGSZ
 
-        K = NGSZ*IGRP - NGSZ + I  ! compute index to master pollutant
-                                  ! list for current pollutant
+            K = NGSZ*IGRP - NGSZ + I  ! compute index to master pollutant
+                                      ! list for current pollutant
 
 C............. Regardless If pollutant has controls applied, write indices to 
 C              control data tables to a temporary file
