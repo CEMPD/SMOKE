@@ -431,6 +431,9 @@ C
             XEF = ATHEF(IH,IROAD,IVT) 
      *          * ATHBER(1,JDX,JXV,IVT,IV,IMAP)  ! Ratios are in mg/mi per g/mi 
 C 
+ccs  Call SMOKE routine to store individual values
+            CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,NMAP,.FALSE.)
+
              IF(IROAD.LE.4) THEN  
                SUMIH = SUMIH + XEF * FVMT(IROAD,IH,IV) ! Road 
              ELSE 
@@ -452,6 +455,13 @@ C
      *    + ATHBER(2,JDX,JXV,3,IV,IMAP)  !DET, mg/mi/10K mi 
      *    * CUMMIL(JDX,IV)/10000.        !10K miles 
 C 
+ccs  Call SMOKE routine to store individual values
+      DO IH = 1,MAXIH
+          DO IROAD = 1,4  ! only include exhaust running (no start)
+              CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,NMAP,.FALSE.)
+          END DO
+      END DO
+            
       EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV) 
      *                 + XEF * TF(IDX,IV) 
 C 
@@ -469,6 +479,9 @@ C
          XEF = DBPM(10,IROAD,IH,JDX,IV) ! Total PM at user-specified particle size and in-use sulfur level 
      *       * ATHBER(1,JDX,JXV,4,IV,IMAP) ! Ratios are in mg/mi per g/mi 
 C 
+ccs  Call SMOKE routine to store individual values
+            CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,NMAP,.FALSE.)
+            
          SUMIH = SUMIH + XEF * FVMT(IROAD,IH,IV) ! Road 
         END DO !IROAD 
 C 
@@ -581,6 +594,9 @@ C
              XEF = ATHEV(IH,IROAD,IEVAP)  
      *           * ATHBER(1,JDX,JXV,IVT,IV,IMAP) ! mg/mi 
 C 
+ccs  Call SMOKE routine to store individual values
+            CALL SMKHAPS(IV,JDX,IMAP,IXV,IH,IROAD,XEF,NMAP,.FALSE.)
+            
              IF(IROAD.LE.4) THEN 
                SUMIH = SUMIH  
      *               + XEF * FVMT(IROAD,IH,IV) 
@@ -609,6 +625,22 @@ C
 C 
       DO IEVAP=1,5  ! BERs are currently independent of evap type 
        IXV = IEVAP + 1 ! IXV=1 for Exhaust only, 2-6 for the five Evaps 
+       
+ccs  Call SMOKE routine to store individual values
+       DO IH=1,MAXIH
+           IF(IEVAP == 3) THEN  ! Only Running Evap is road dependent 
+               IB = 1 
+               IE = 4   ! Do not include IROAD=5 to avoid double counting 
+           ELSE 
+               IB = 5 
+               IE = 5 
+           END IF 
+           
+           DO IROAD=IB,IE
+               CALL SMKHAPS(IV,JDX,IMAP,IXV,IH,IROAD,XEF,NMAP,.FALSE.)
+           END DO
+       END DO
+            
        EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV) 
      *                  + XEF * TF(IDX,IV) 
       END DO 
@@ -648,6 +680,7 @@ C  Output the database results.
 C 
 ccs      CALL ATOUTDB(ICY,INERR) 
       CALL SMKATOUT
+      CALL SMKHAPS(0,0,0,0,0,0,0,NMAP,.TRUE.)
 C 
 C  Output the spreadsheet results. 
 C 
