@@ -239,6 +239,9 @@ C.............  Make sure duplicates are not used
 
             END IF
 
+C...........  Count profiles used in this call of subroutine
+            IF( TMPPRF .NE. PPRF ) NPOLSPRO = NPOLSPRO + 1
+
             PPRF   = TMPPRF
             PSPCNM = SPECNM
 
