@@ -110,17 +110,18 @@ C.........  Find the file to use as a base-line file for checking the others...
 C.........  Determine if any of the 3-d files are used. If so, find one to
 C           use as the base-line
         IF( GNAM3D .NE. 'NONE' .OR. 
-     &      MNAM3D .NE. 'NONE' .OR. 
-     &      DNAM3D .NE. 'NONE'      ) THEN
+     &      MNAM3D .NE. 'NONE'      ) THEN
+c     &      MNAM3D .NE. 'NONE' .OR. 
+c     &      DNAM3D .NE. 'NONE'      ) THEN
 
             THREE_D = .TRUE.
 
             IF( MNAM3D .NE. 'NONE'  ) THEN
                 FILNAM = MNAM3D
 
-            ELSE IF( DNAM3D .NE. 'NONE' ) THEN
-                DOT_BASIS = .TRUE.
-                FILNAM = DNAM3D
+c            ELSE IF( DNAM3D .NE. 'NONE' ) THEN
+c                DOT_BASIS = .TRUE.
+c                FILNAM = DNAM3D
 
             ELSE IF( GNAM3D .NE. 'NONE' ) THEN
                 FILNAM = GNAM3D
@@ -131,9 +132,9 @@ C.........  If only 2-d files, then find one to use as the base-line
         ELSE IF( MNAM2D .NE. 'NONE' ) THEN
             FILNAM = MNAM2D
             
-        ELSE IF( DNAM2D .NE. 'NONE' ) THEN
-            DOT_BASIS = .TRUE.
-            FILNAM = DNAM2D
+c        ELSE IF( DNAM2D .NE. 'NONE' ) THEN
+c            DOT_BASIS = .TRUE.
+c            FILNAM = DNAM2D
 
         ELSE IF( GNAM2D .NE. 'NONE' ) THEN
             FILNAM = GNAM2D
@@ -173,8 +174,8 @@ C.............  Adjust rows and columns if file being used as basis is dot-point
             IF( DOT_BASIS ) THEN
                 NCOLS = NCOLS - 1
                 NROWS = NROWS - 1
-                XORIG = XORIG + 0.5 * XCELL
-                YORIG = YORIG + 0.5 * YCELL
+c                XORIG = XORIG + 0.5 * XCELL
+c                YORIG = YORIG + 0.5 * YCELL
             END IF
 
 C.............  Set 3d file settigs
@@ -266,8 +267,10 @@ C.............  Adjust columns and rows for comparison if file is a dot-point
             IF( DOT_STATUS ) THEN
                 NCOLS3D = NCOLS3D - 1
                 NROWS3D = NROWS3D - 1
-                XORIG3D = XORIG3D + 0.5D0 * XCELL3D
-                YORIG3D = YORIG3D + 0.5D0 * YCELL3D
+                XORIG3D = XORIG
+                YORIG3D = YORIG
+c                XORIG3D = XORIG3D + 0.5D0 * XCELL3D
+c                YORIG3D = YORIG3D + 0.5D0 * YCELL3D
             END IF
 
             L2 = LEN_TRIM( FILNAM )
