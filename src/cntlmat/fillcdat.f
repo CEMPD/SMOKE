@@ -40,7 +40,14 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: FACCTG, CUTCTG, FACMACT, FACRACT, 
+     &                      ICTLEQUP, ICTLSIC, FACCEFF, FACREFF, 
+     &                      FACRLPN, IALWSIC, FACALW, EMCAPALW,
+     &                      EMREPALW, EMREPREA, PRJFCREA, MKTPNREA,
+     &                      CSCCREA, CSPFREA, IPRJSIC, PRJFC, IEMSSIC,
+     &                      BASCEFF, BASREFF, BASRLPN, EMSCEFF, EMSREFF,
+     &                      EMSRLPN, EMSPTCF, EMSTOTL, CTLRPLC,
+     &                      MACEXEFF, MACNWEFF, MACNWFRC, CMACSRCTYP
 
         IMPLICIT NONE
         
@@ -77,6 +84,9 @@ C   Begin body of subroutine FILLCDAT
             FACCEFF ( JT ) = PKTINFO%FAC2
             FACREFF ( JT ) = PKTINFO%FAC3
             FACRLPN ( JT ) = PKTINFO%FAC4
+            IF( PKTINFO%REPFLAG == 'R' ) THEN
+                CTLRPLC = .TRUE.
+            END IF
 
         CASE( 'ALLOWABLE' )
             IALWSIC ( JT ) = STR2INT( PKTINFO%CSIC )
@@ -107,6 +117,20 @@ C   Begin body of subroutine FILLCDAT
      &          EMSPTCF ( JT ) = PKTINFO%FAC7
             IF( PKTINFO%FAC8 .GT. 0. ) 
      &          EMSTOTL ( JT ) = PKTINFO%FAC8
+
+        CASE( 'MACT' )
+            MACEXEFF( JT ) = PKTINFO%FAC1
+            MACNWEFF( JT ) = PKTINFO%FAC2
+            MACNWFRC( JT ) = PKTINFO%FAC3
+            
+            CMACSRCTYP( JT ) = PKTINFO%CSTYP
+            CALL PADZERO( CMACSRCTYP( JT ) )
+            
+C.............  Make sure src type is only 00, 01, or 02            
+            IF( CMACSRCTYP( JT ) /= '01' .AND.
+     &          CMACSRCTYP( JT ) /= '02'       ) THEN
+                CMACSRCTYP( JT ) = '00'
+            END IF
 
         END SELECT
 
