@@ -21,6 +21,7 @@ C  PRTCHK    I    checklist of required particulate run inputs (1=not input, 2=i
 C                 (1=particle size, 2=diesel sulfur level, 3=ZML/DR files) 
 C  PSZCUT    R    particle size cutoff, in micrometers (required input) 
 C  BERSULF   R    Fuel sulfur level associated with the basic emission factor (BER). 
+C  BERMAX    R    The maximum PM BER allowed if certain regulations are enforced. 
 C 
 C The data is initialized in BD43. 
 C 
@@ -28,6 +29,7 @@ C
       INTEGER MAXIPPM 
       INTEGER PRTCHK 
       LOGICAL PARTFLG 
+      REAL    BERMAX 
       REAL    BERSULF 
       REAL    D_PPM 
       REAL    FUEL_S 
@@ -35,4 +37,4 @@ C
 C 
       COMMON /PART1/ PRTCHK(3),PSZCUT,D_PPM,MAXIPPM, 
      *               IVEHWL(28),FUEL_S(3,29),PARTFLG, 
-     *               BERSULF(25,28) 
+     *               BERSULF(25,28),BERMAX(25,28) 

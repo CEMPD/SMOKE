@@ -18,8 +18,10 @@ C   VPM     R     PM Emissions weighted over all vehicle classes
 C 
 C The data is initialized in BD43. 
 C 
+      REAL     BERADJ 
       REAL     DBPM 
       REAL     EFPM 
       REAL     VPM 
 C 
-      COMMON /PART3/ EFPM(11,28),VPM(11),DBPM(10,4,24,25,28) 
+      COMMON /PART3/ EFPM(11,28),VPM(11),DBPM(10,4,24,25,28), 
+     *               BERADJ(4,24,25,28) 

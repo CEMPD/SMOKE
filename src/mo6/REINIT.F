@@ -13,8 +13,8 @@ C  Calls INITAP
 C 
 C  Changes: (Last change first) 
 C 
-C  15 May 01 @EPA-BAG Bug120, Removed SSFLAG and SSONLY. 
 C  10 May 01 AIR Task 11/5: added initialization of IDLEPMFLG 
+C  15 May 01 @EPA-BAG Bug120, Removed SSFLAG and SSONLY. 
 C  06 Oct 00 @EPA-BAG BUG155 Remove OBDPC 
 C  06 Oct 00 @EPA-BG  BUG155 removed NEWETP flag previously used for user input 
 C            of ETP phase in 
@@ -338,6 +338,9 @@ C  /IMPAR4/
       CUTCO     = 20.0 
       CUTNO     =  3.0 
 C 
+C     INTYP (test only or test & repair) is a required I/M input, so 
+C     run level reinitialization is not required 
+C  /IMPAR6/ 
       INTYP(1)  = 1 
       INTYP(2)  = 1 
 C 

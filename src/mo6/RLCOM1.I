@@ -1,6 +1,7 @@
 C 
 C  Changes: (Last change first) 
 C 
+C 06 Nov 01 AIR Task 27: Updated road fuel economy arrays. 
 C 26 Feb 01 @EPA-djb Added HDGV2b to the ORVR arrays (OBIPY & OBPIP). 
 C  2 Jun 99 @DynTel-MLA 2-694  Removed obsolete variable OBDF. 
 C 14 Apr 97 - DynTel@MLA  Expanded arrays OBDF and ROADFE to accomodate  
@@ -12,7 +13,8 @@ C
 C 
 C The data is initialized in BD28. 
 C 
+      LOGICAL MPGFLAG 
       INTEGER OBPIY 
       REAL ROADFE, DISPL, SPILL, OBED, OBES, OBPIP 
-      COMMON /RLCOM1/ ROADFE(32,14),DISPL,SPILL,OBED,OBES, 
-     *                OBPIY(3,6), OBPIP(3,6) 
+      COMMON /RLCOM1/ ROADFE(99,28,2),DISPL,SPILL,OBED,OBES, 
+     *                OBPIY(3,6), OBPIP(3,6), MPGFLAG 

@@ -1,10 +1,11 @@
-      SUBROUTINE PMDB_AGGR(ICY) 
+      SUBROUTINE PMDB_AGGR(ICY,INERR) 
 C 
 C     This subroutine outputs a aggregated daily PM emissions 
 C     to the database output file. 
 C 
 C     CHANGES  :  (LAST CHANGE FIRST) 
 C 
+C  15 Nov 01 AIR Task 27: Added INERR support due to PMFLECON update. 
 C  04 Sep 01 AIR Task 15-22: Applied Bug Fix 331. 
 C  06 Mar 01 AIR Task 11: New MOBILE6 routine. 
 C 
@@ -48,6 +49,7 @@ C
 C Input arguments 
 C 
       INTEGER, INTENT(IN) :: ICY 
+      INTEGER, INTENT(INOUT) :: INERR 
 C 
 C  Declare external functions. 
 C 
@@ -132,7 +134,7 @@ C             Daily miles traveled
 C 
 C             Fleet average fuel economy (miles per gallon) 
               MY=ICY-JDX+1 
-              RFE = PMFLECON(MY,IV) 
+              RFE = PMFLECON(MY,IV,INERR) 
 C             Convert mi/gal to gal/mi, weight and sum. (harmonic mean) 
               IF(RFE.GT.0.0) THEN 
                  IDX=(MAXYRS+1)-JDX 

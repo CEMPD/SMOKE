@@ -4,6 +4,10 @@ C  Directs to calculation of EMFAC-PM, RCP, SOF, SO4, NH3, SO2.
 C 
 C  Changes : 
 C 
+C  04 Jan 02 AIR Task 25: Added INERR to PMBERADJ, removed unused varaibles 
+C  20 Dec 01 AIR Task 25: Added INERR to PMDRCPSOF and added INERR traps 
+C  16 Oct 01 AIR Task 25: Changed Gas PM calculations back to PART5 method. 
+C  28 Sep 01 AIR Task 24: Added call to PMOUTSS. 
 C  29 Aug 01 AIR Task 17: Added call to FUELPAR to be sure the in-use 
 C            fuel parameters are current. 
 C  24 Aug 01 AIR Task 17: Removed duplicate INERR update. 
@@ -104,14 +108,14 @@ C
          S_PPM = S_FUEL(1,FUEL_P,IYR,IT2) ! Post-1999, use matrix 
       END IF 
 C 
+C  Set up the BER limits and associated sulfur levels 
+C 
+      CALL PMBERPAR(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
+C 
 C  Compute the particle size distribution 
 C 
       CALL PMPARSIZ 
-C 
-C  Compute the EPA-based PM emission factors. 
-C  Note: EMFAC PM = SOF + RCP + SO4. 
-C 
-      CALL PMEMFAC(ICY,INERR) 
 C 
 C  Compute the ammonia emission factors. 
 C 
@@ -126,28 +130,56 @@ C  Compute the lead emission factors, adjusted for
 C  particle size. 
 C 
       CALL PMLEAD(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
 C 
-C  Compute the gasoline SO4 and SO2 emission factors. 
+C  Compute the gasoline SO4 and SO2 emission factors 
+C  at the associated BER sulfur level. 
 C 
       CALL PMGSO4SO2(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
 C 
-C  Compute the diesel SO4 and SO2 emission factors. 
+C  Compute GASPM (which is based on the PART5 carbon method). 
+C  The values are NOT adjusted for particle size. 
 C 
-      CALL PMDSO4SO2(ICY) 
+      CALL PMGASPM30(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
 C 
-C  Compute GASPM (which is EMFAC PM - SO4 or more simply RCP+SOF),  
-C  adjusted for particle size. 
+C  Determine the GASPM adjustment factors for BER limits. 
+C  Limits are at PM30 for Total PM. 
 C 
-      CALL PMGASPM(ICY) 
+      CALL PMBERADJ(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
+C 
+C  Compute GASPM (which is based on the PART5 carbon method). 
+C  The values are adjusted for BER limits and particle size. 
+C 
+      CALL PMGASPM(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
+C 
+C  Compute the EPA-based Diesel Total PM emission factors. 
+C  Note: EMFAC PM = SOF + RCP + SO4.  
+C 
+      CALL PMDEMFAC(ICY) 
+C 
+C  Compute the diesel SO4 and SO2 emission factors at the 
+C  associated BER sulfur levels. 
+C 
+      CALL PMDSO4SO2(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
 C 
 C  Compute diesel RCP and SOF, adjusted for particle size. 
 C 
-      CALL PMDRCPSOF(ICY) 
+      CALL PMDRCPSOF(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
 C 
 C  Adjust the gas and diesel SO4 and SO2 emission factors 
 C  for in-use fuel sulfur content. 
 C 
       CALL PMSO4SO2(ICY) 
+C 
+C  Compute the final Total PM values, and Air Toxics. 
+C 
+      CALL PMTEMFAC 
 C 
 C  Compute idle PM emissions, if requested 
 C 
@@ -159,7 +191,12 @@ C
 C 
 C  Output the database results. 
 C 
-      CALL PMOUTDB(ICY) 
+      CALL PMOUTDB(ICY,INERR) 
+      IF(INERR.GT.0) RETURN 
+C 
+C  Output the spreadsheet output. 
+C 
+      CALL PMOUTSS(ICY) 
 C 
       RETURN 
       END 

@@ -1,4 +1,4 @@
-      SUBROUTINE PMDSO4SO2(ICY) 
+      SUBROUTINE PMDSO4SO2(ICY,INERR) 
 C 
 C  This routine computes the diesel SO4 and SO2 based on the PART5 model. 
 C  It uses the BERs associated sulfur level from PMEMFAC so that the 
@@ -6,6 +6,7 @@ C  associated SO4 can be subtracted from the EMFAC-based EFs.
 C 
 C Changes: 
 C 
+C 15 Nov 01 AIR Task 27: Added INERR support due to PMFLECON update. 
 C 03 May 01 AIR Task 12: Apply assocated fuel suflur 
 C 14 Feb 01 AIR Task 11: New routine for MOBILE6. 
 C 14 Feb 01 AIR Task 11: Removed code for indirect sulfur, 
@@ -62,6 +63,7 @@ C
 C  Declare parameter list. 
 C 
       INTEGER ICY 
+      INTEGER INERR 
 C 
 C  Declare local variables/arrays. 
 C 
@@ -132,7 +134,7 @@ C
 C  Obtain the diesel fuel economy for the model year and vehicle class. 
 C  (The diesel fuel economies, in miles/gallon, are from PART5.) 
 C 
-          FECONM = PMFLECON(MY,IV) 
+          FECONM = PMFLECON(MY,IV,INERR) 
 C 
 C     Compute the grams/mile emission factor of the direct sulfate material (SO4): 
 C  

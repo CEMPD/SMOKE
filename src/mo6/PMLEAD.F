@@ -4,6 +4,7 @@ C  Calculates Lead Particulate Emission Factors, based on PART5.
 C 
 C Changes: 
 C 
+C 15 Nov 01 AIR Task 27: Added INERR support to PMLEADED. 
 C 09 Feb 01 AIR Task 11: Modified and merged into MOBIL6.1 Explicit 
 C                        use of PART5 vehicle class IVPART. 
 C 17 Nov 00 AIR Task 06: Removed Dead Code. 
@@ -163,7 +164,7 @@ C
 C 
 C  Determine the lead particulate emission rates 
 C 
-      CALL PMLEADED(MY,ICY,IV,PLNOCT,PUNOCT,PLYSCT,PUYSCT) 
+      CALL PMLEADED(MY,ICY,IV,PLNOCT,PUNOCT,PLYSCT,PUYSCT,INERR) 
 C 
 C  MC use lead and carbon 
 C 

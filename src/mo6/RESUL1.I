@@ -1,6 +1,7 @@
 C 
 C  Changes : (Last change first) 
 C 
+C 03 Dec 01 AIR Task 27: Increased EFFTP size from 3 to 4 to include CO2. 
 C 19 Feb 01 AIR Task 11: Added IEFPM, particules. 
 C 29 Aug 00 @EPA-elg Removed PCTREM 
 C 27 Jul 00 @EPA-djb Added PCTREM and removed HOUREF. 
@@ -35,6 +36,6 @@ C The data is initialized in BD27.
 C 
       INTEGER IEFFTP, IEFEXH, IEFEVAP, IEFREFL, IEFRUNL, IEFPM 
       REAL  EFFTP, EFEXH, EFEVAP, REFL_GM_MI, EFRUNL 
-      COMMON /RESUL1/ EFFTP(3,29),EFEXH(29),EFEVAP(29), 
+      COMMON /RESUL1/ EFFTP(4,29),EFEXH(29),EFEVAP(29), 
      *                REFL_GM_MI(29),EFRUNL(29), IEFFTP, 
      *                IEFEXH, IEFEVAP, IEFREFL,IEFRUNL, IEFPM 

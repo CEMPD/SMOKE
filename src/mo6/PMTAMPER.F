@@ -8,6 +8,9 @@ C     This subroutine also finds the catalyst removal rate
 C 
 C Changes: 
 C 
+C 20 Dec 01 AIR Task 15-28: Corrected a long-standing PART5 logic error which 
+C                        allowed misfueling to continue even though leaded 
+C                        fuel availability ended after CY1994.         
 C 21 Feb 01 AIR Task 11: Added OBD effect to tampering. 
 C 10 Feb 01 AIR Task 11: New MOBILE6 routine. 
 C 10 Feb 01 AIR Task 11: Updated and merged into MOBILE6.1. Explicit 
@@ -134,10 +137,13 @@ C  Multiple the second rate times the first rate
 C 
      3   TAMRAT(IMFLAG,2,IG,IVA,1) * TAMRAT(IMFLAG,3,IG,IVA,1) * XXMILE 
 C 
-C  Calculate the misfueling rates 
+C  Calculate the misfueling rates. Leaded fuel is not available for 
+C  CY1995+. Therefore, only allow misfueling to occur for model years 
+C  which could have been misfueled. 
 C 
-      RMIS =   TAMRAT(IMFLAG,1,IG,IVA,2) +  
-     2         TAMRAT(IMFLAG,2,IG,IVA,2) * XMILE + 
+      IF(ICY-IAGE.LT.1995)  
+     1 RMIS =   TAMRAT(IMFLAG,1,IG,IVA,2) +  
+     2          TAMRAT(IMFLAG,2,IG,IVA,2) * XMILE + 
 C 
 C  Multiple the second rate times the first rate 
 C 
@@ -151,7 +157,6 @@ C
 C  If rates are greater than one reset the rates to 1.0 
 C 
       IF (RMIS .GT. 1.0) RMIS = 1.0 
-
       IF (TAMFRC .GT. 1.0) TAMFRC = 1.0 
 C 
 C  Only need to make this check once here in PMTAMPER 

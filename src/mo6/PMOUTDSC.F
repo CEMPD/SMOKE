@@ -8,6 +8,7 @@ C  Calls EFCVT, OUTBUS, OUTDTG, OUTHD3, OUTHDR, OUTHDV, and OUTLDT.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Sep 01 AIR Task 11-22: Fixed HDGV output bug. 
 C  17 Apr 01 AIR Task 11: Changed code to always print all PM 
 C            components, regardless of database selections. 
 C  19 Feb 01 AIR Task 11: New routine. 
@@ -200,7 +201,7 @@ C
      *    EFCVT(ILDGT12,IEFPM,IPPM), 
      *    EFCVT(ILDGT34,IEFPM,IPPM), 
      *    EFCVT(ILDGT,IEFPM,IPPM), 
-     *    EFPM(IPPM,IHDGV), 
+     *    EFCVT(IHDGV,IEFPM,IPPM), 
      *    EFPM(IPPM,VTLDDV), 
      *    EFCVT(ILDDT,IEFPM,IPPM), 
      *    EFCVT(IHDDV,IEFPM,IPPM), 
@@ -215,7 +216,7 @@ C
      *    EFCVT(ILDGT12,IEFPM,IPPM), 
      *    EFCVT(ILDGT34,IEFPM,IPPM), 
      *    EFCVT(ILDGT,IEFPM,IPPM), 
-     *    EFPM(IPPM,IHDGV), 
+     *    EFCVT(IHDGV,IEFPM,IPPM), 
      *    (DASH8,ITER=1,3), 
      *    EFPM(IPPM,VTMC), 
      *    VPM(IPPM) 
@@ -253,7 +254,7 @@ C
         TOTPM( 2)=TOTPM( 2)+EFCVT(ILDGT12,IEFPM,IPPM) 
         TOTPM( 3)=TOTPM( 3)+EFCVT(ILDGT34,IEFPM,IPPM) 
         TOTPM( 4)=TOTPM( 4)+EFCVT(ILDGT,IEFPM,IPPM) 
-        TOTPM( 5)=TOTPM( 5)+EFPM(IPPM,IHDGV) 
+        TOTPM( 5)=TOTPM( 5)+EFCVT(IHDGV,IEFPM,IPPM) 
         TOTPM( 6)=TOTPM( 6)+EFPM(IPPM,VTLDDV) 
         TOTPM( 7)=TOTPM( 7)+EFCVT(ILDDT,IEFPM,IPPM) 
         TOTPM( 8)=TOTPM( 8)+EFCVT(IHDDV,IEFPM,IPPM) 

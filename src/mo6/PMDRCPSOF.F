@@ -1,4 +1,4 @@
-      SUBROUTINE PMDRCPSOF(ICY) 
+      SUBROUTINE PMDRCPSOF(ICY,INERR) 
 C 
 C  Computes the diesel RCP and SOF from the 
 C  difference of EMFAC_PM and SO4. (Note that 
@@ -10,6 +10,8 @@ C  in the descriptive output.
 C 
 C  Changes : 
 C 
+C  20 DeC 01 AIR Task 25: Extended the negative RCPSOF error message 
+C            to include INERR and abort. 
 C  17 Apr 01 AIR Task 11: Changed code to handle expanded 
 C            FVMT dimensions and prevent negative RCP+SOF 
 C  02 Mar 01 AIR Task 11: New Routine 
@@ -50,7 +52,8 @@ C
 C 
 C  Declare parameter list 
 C 
-      INTEGER ICY 
+      INTEGER, INTENT(IN)    :: ICY 
+      INTEGER, INTENT(INOUT) :: INERR 
 C 
 C  Declare local variables/arrays 
 C 
@@ -60,6 +63,7 @@ C
       INTEGER IV 
       INTEGER IVPART 
       INTEGER JDX 
+      INTEGER KDX 
       INTEGER MY 
       REAL    RCPSOF 
       REAL    SUMRCPIH 
@@ -130,14 +134,25 @@ C
           RCPSOF = DBPM(10,IROAD,IH,JDX,IV) - DBPM(1,IROAD,IH,JDX,IV) 
 C 
 C  Produce an error message when negative RCPSOF values occur.  
-C  Rest such values to zero. 
+C  This error is likely caused by the by-model-year associated diesel sulfur 
+C  level not matching the ZML's (both are input via	PMDZML.CSV)  
 C 
         IF(RCPSOF.LT.0.) THEN 
-CDFK        WRITE(IOUOUT,10) RCPSOF,ICY,MY,IV 
-CDFK        WRITE(IOUERR,10) RCPSOF,ICY,MY,IV 
-CDFK  10    FORMAT('*** Error:  a negative Diesel RCPSOF value of ',F8.3,/ 
-CDFK     &         '    occurred for CY=',I4,' MY=,',I4,' and IV=',I2) 
-        RCPSOF=0.0 
+        WRITE(IOUOUT,10) RCPSOF,ICY,MY,IV 
+        WRITE(IOUERR,10) RCPSOF,ICY,MY,IV,IROAD,IH,JDX 
+  10    FORMAT('*** Error:  a negative Diesel RCPSOF value of ',F8.3,/ 
+     &         '    was calculated for CY=',I4,' MY=,',I4,' IV=',I2/ 
+     &         '    IROAD=',I1,' IH=',I2,' JDX=',I2/ 
+     &         '    This is likely caused by a mismatch between the'/ 
+     &         '    diesel sulfur level and ZML values entered via'/ 
+     &         '    the file PMDZML.CSV') 
+        DO KDX=1,25 
+        WRITE(IOUERR,1)KDX, DBPM(10,IROAD,IH,KDX,IV), ! Total PM 
+     &                      DBPM( 1,IROAD,IH,KDX,IV)  ! SO4 
+   1    FORMAT(I3,2F10.6) 
+        END DO 
+        INERR=INERR+1 
+        RETURN 
         END IF 
 C 
 C  Adjust for particle size 

@@ -1,9 +1,10 @@
-      SUBROUTINE PMLEADED(MY,ICY,IV,PLNOCT,PUNOCT,PLYSCT,PUYSCT) 
+      SUBROUTINE PMLEADED(MY,ICY,IV,PLNOCT,PUNOCT,PLYSCT,PUYSCT,INERR) 
 C 
 C  LEADED calculates Lead Particulate Emission Factors 
 C 
 C Changes: 
 C 
+C 15 Nov 01 AIR Task 27: Added INERR support due to PMFLECON update. 
 C 12 Feb 01 AIR Task 11: Modified to 28 vehicle classes and 
 C                        now uses MOBILE6 fuel economy values. 
 C 10 Nov 00 AIR Task 06: Updated code to MOBILE6 standards. 
@@ -53,6 +54,7 @@ C
 C  Declare parameter list. 
 C 
       INTEGER ICY 
+      INTEGER INERR 
       INTEGER IV 
       INTEGER MY 
       REAL    PLNOCT 
@@ -96,7 +98,7 @@ C
 C     for each Vehicle Type get the corresponding fuel economy 
 C     (Use MOBILE6 values instead of PART5 values.) 
 C 
-      FECONM=PMFLECON(MY,IV) 
+      FECONM=PMFLECON(MY,IV,INERR) 
 C 
 C     Partical weight ratios: 
 C     1.557  = PbClBr / Pb 

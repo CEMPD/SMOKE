@@ -5,7 +5,6 @@ C  SPEED_CF calculates the speed correction for different road types
 C  (facilities), applies the temperature correction factor and 
 C  determines the air conditioning effect. 
 C 
-C 12 Oct 00 AIR Task 01: Optimizations 
 C 25 Sep 00 AIR Task 07: Converted all code to upper case to remove 
 C           problems between platforms (Mac, PC, Unix). 
 C 30 Aug 00 @EPA-djb Bug 243, Tier 2 uses LEV for calculations of cfs. 
@@ -145,10 +144,6 @@ C     Apply the temperature correction factor
 C 
          SPEED_CF = SPEED_CF * TCF 
 C 
-CDFK 
-CDFK      WRITE(99,99) IV,MY,SPEED_CF,TCF 
-CDFK   99 FORMAT(' SPEED CF: ',I3,I5,2F10.5) 
-C 
 C calculate idl bef  
 C 
          BEFIDL(IP,IDX,IV,IH)=BEFT2*M5SCF(1,IP) 
@@ -216,8 +211,7 @@ C
               BEF_SPD = BEFN*(PLEVEL1*SCFF(1,I,IPI) + 
      &          PLEVEL2*SCFF(2,I,IPI)+PLEVEL3*SCFF(3,I,IPI)) 
                 BEF_SPD = BEF_SPD * TCF  ! Apply temperature correction 
-                IF(BEF_SPD.GT.0..OR.MY.GE.2001)  
-     &           AC_DUM = AC_DUM + 
+                 AC_DUM = AC_DUM + 
      &             ACCF(IV,IP,INH,MY,IROAD,ISTD,BEF_SPD, 
      &                  AVESPD(I,IROAD)) * SVMT(1,I,IH) 
               END IF 
@@ -247,8 +241,7 @@ C
               BEF_SPD = BEFN*(PLEVEL1*SCFAC(1,I,IPI) + 
      &          PLEVEL2*SCFAC(2,I,IPI)+PLEVEL3*SCFAC(3,I,IPI)) 
                 BEF_SPD = BEF_SPD * TCF  ! Apply temperature correction 
-                IF(BEF_SPD.GT.0..OR.MY.GE.2001)  
-     &          AC_DUM = AC_DUM + 
+                AC_DUM = AC_DUM + 
      &             ACCF(IV,IP,INH,MY,IROAD,ISTD,BEF_SPD, 
      &                  AVESPD(I,IROAD)) * SVMT(2,I,IH) 
               END IF 
@@ -277,8 +270,7 @@ C
               BEFL = (LOCAL(1,IPI)+(BEF_AVSP)*(LOCAL(2,IPI) + 
      *               LOCAL(3,IPI)*(BEF_AVSP)))/AVSPL 
               BEFL = BEFL * TCF        ! Apply temperature correction 
-                IF(BEFL.GT.0..OR.MY.GE.2001)  
-     &         AC_DUM = AC_DUM + 
+               AC_DUM = AC_DUM + 
      &                  ACCF(IV,IP,INH,MY,IROAD,ISTD,BEFL,AVSPL) 
             END IF 
 C    Calculate the speed/temperature corrected BEF for return to HRLOOP. 
@@ -321,8 +313,7 @@ C    emissions.
 C 
             BEFR = BEF + BEFRC*SFTP_SPD(INH,MY,IV,IP,ISTD) 
             BEFR = BEFR * TCF          ! Apply temperature correction 
-                IF(BEFR.GT.0..OR.MY.GE.2001)  
-     &      AC_DUM = AC_DUM + 
+            AC_DUM = AC_DUM + 
      &                 ACCF(IV,IP,INH,MY,IROAD,ISTD,BEFR,AVSPR) 
             END IF 
 C 

@@ -8,6 +8,7 @@ C  Calls CALCUM, CEVMPD, DSFIDX, GETCUM, TFCALX and VEHCOUNT.
 C 
 C  Changes: (Last change first) 
 C 
+C 29 Oct 01 @EPA-djb    Changed all code to upper case letters. 
 C  14 May 01 @EPA-djb Bug 323, Added JDX=1 to the loop which calculates 
 C            AGED for motorcycles and diesel transit busses (IVC=15 and 16). 
 C  26 Feb 01 @EPA-bag bug315 added checks for division by JANSUM(=0.) 

@@ -1,4 +1,4 @@
-      SUBROUTINE PMOUTDB(ICY) 
+      SUBROUTINE PMOUTDB(ICY,INERR) 
 C 
 C  PMOUTDB writes the PM emissions data to 
 C  the EMISSIONS database table. 
@@ -9,6 +9,8 @@ C  CallS:  DB_DAILY
 C 
 C  Changes: (Last change first) 
 C 
+C 15 Nov 01: Added INERR processing. 
+C 19 Apr 01: Added code to prevent output of PM IDLE. 
 C 17 Apr 01: Added code to stop output of GASPM with diesels 
 C            and ECARBON/OCARBON with gas. 
 C 06 Mar 01: New MOBILE6 routine. 
@@ -79,6 +81,7 @@ C
       INCLUDE  'WEEKLY.I'     ! IWEEK 
 C 
       INTEGER,INTENT(IN)               ::  ICY 
+      INTEGER,INTENT(INOUT)            ::  INERR 
 C 
       REAL, EXTERNAL :: PMFLECON 
 C 
@@ -119,6 +122,8 @@ C
 C 
        IF(DBSELPART(IPPM).EQ.1) CYCLE 
 C 
+       IF(IPPM.EQ.11) CYCLE ! Prevent DB output for PM Idle 
+C 
        IP=IPPM+6 
 C 
        DO IV=1,MAXVEH 
@@ -145,7 +150,7 @@ C
 C 
       MY=ICY-JDX+1 
 C 
-      RFE = PMFLECON(MY,IV) 
+      RFE = PMFLECON(MY,IV,INERR) 
 C 
 C     Load the 24-hour array HEF, for use with PMDB_DAILY and PMDB_AGGR below 
 C 
@@ -250,7 +255,7 @@ C
       END DO !IV 
       END DO !IPPM 
 C 
-      IF(DBAGGR) CALL PMDB_AGGR(ICY) 
+      IF(DBAGGR) CALL PMDB_AGGR(ICY,INERR) 
 C 
    99 RETURN 
 C 

@@ -9,6 +9,7 @@ C  Calls QUITER
 C 
 C  Changes: (Last change first) 
 C 
+C 06 Nov 01 AIR Task 27: Updated all fuel economy calculations via PMFLECON. 
 C 06 Mar 01 @EPA-djb Applied CAAFLG to ORVR refueling emissions by 
 C           setting RLFLAG.  This replaces NEWFLG completely. 
 C 26 Feb 01 @EPA-djb Added HDGV2b to the ORVR calculations (OBIPY & OBPIP). 
@@ -34,7 +35,7 @@ C    common blocks:
 C    /CITRV1/ RVPUWX 
 C    /FLAGS3/ RLFLAG, CAAFLG 
 C    /MAXIMA/ MAXYRS 
-C    /RLCOM1/ ROADFE,SPILL,OBED,OBES,OBPIP,OBPIY 
+C    /RLCOM1/ SPILL,OBED,OBES,OBPIP,OBPIY 
 C    /RLCOM2/ IS2SY,NPHASE,S2EFF(4) 
 C    /TAMOU2/ TOB 
 C    /TEMPS/  TEMMIN,TEMMAX,TEMEVP 
@@ -66,7 +67,6 @@ C                Stage II vrs.
 C  IOBCHK   I    check for ob vrs installation, given ob vrs program exists: 
 C                    1 = no ob vrs    2 = ob vrs installed 
 C  DFTEMP   R    dispensed fuel temperature (F). 
-C  MDX      I    model year index into refueling loss rate arrays 
 C  RVP      R    RVP of the fuel in use that calendar year 
 C  S2LEFT   R    percentage left of uncontrolled refueling losses after Stage 
 C                II controls are applied. 
@@ -75,6 +75,7 @@ C  TDFDIF   R    difference in temperature of fuel in vehicle
 C                tank and dispensed fuel 
 C  IDXOB    I    Index to the ob vrs phase-in tables 
 C  I        I    index for OBPIY, Onboard VRS phase-in years 
+C  RFE      I    Road fuel economy 
 C 
 C  Notes: 
 C 
@@ -143,6 +144,7 @@ C
 C 
 C     Declare called functions 
 C 
+      REAL, EXTERNAL :: PMFLECON 
 C 
 C     Declare parameter list 
 C 
@@ -156,7 +158,6 @@ C
       INTEGER I 
       INTEGER IDX 
       INTEGER IDXOB 
-      INTEGER MDX 
       INTEGER IALLYR 
       INTEGER MY 
       INTEGER IOBCHK 
@@ -166,6 +167,7 @@ C
       REAL    S2VOL 
       REAL    DFTEMP 
       REAL    TDFDIF 
+      REAL    RFE 
 C 
 C  Initialize 
 C 
@@ -262,13 +264,11 @@ C
 C 
           DO 30 IDX=1,MAXYRS 
 C 
-C  Set the road fuel economy MY pointer. 
+C  Set the road fuel economy. 
 C 
             MY=ICY+IDX-MAXYRS 
 C 
-            IF(MY.LE.1969)MDX=1 
-            IF(MY.GT.1969.AND.MY.LT.2000)MDX=MY-1969+1 
-            IF(MY.GE.2000)MDX=32 
+            RFE=PMFLECON(MY,IV,INERR) 
 C 
 C  Set the onboard refueling vapor recovery (ORVR) system flag (IOBCHK), 
 C    1 : No ORVR system 
@@ -289,13 +289,12 @@ C
 C  RLFLAG = 1: Use uncontrolled refueling loss. 
 C 
           IF(RLFLAG.EQ.1.OR.(RLFLAG.EQ.3.AND.IOBCHK.EQ.1)) THEN 
-            RLRATE(IDX,IVTAM,IH)=(DISPL+SPILL)/ROADFE(MDX,IVTAM) 
+            RLRATE(IDX,IVTAM,IH)=(DISPL+SPILL)/RFE 
 C 
 C  RLFLAG = 2: Calculate Stage II only vrs controlled loss. 
 C 
           ELSE IF((RLFLAG.EQ.2.OR.(RLFLAG.EQ.4.AND.IOBCHK.EQ.1))) THEN 
-            RLRATE(IDX,IVTAM,IH)=(S2LEFT(IVTAM)*DISPL+SPILL)/ 
-     *                   ROADFE(MDX,IVTAM) 
+            RLRATE(IDX,IVTAM,IH)=(S2LEFT(IVTAM)*DISPL+SPILL)/RFE 
 C 
 C  RLFLAG = 3: Calculate an onboard only vrs controlled refueling loss. 
 C 
@@ -309,11 +308,11 @@ C  recovery regulations of 1994.
 C 
           ELSE IF(RLFLAG.GE.3.AND.IOBCHK.EQ.2) THEN 
             RLRATE(IDX,IVTAM,IH) = 
-     *    (DISPL/ROADFE(MDX,IVTAM))*((1-OBED)*(1-TOB(IDX,IVTAM)) 
+     *    (DISPL/RFE)*((1-OBED)*(1-TOB(IDX,IVTAM)) 
      *      *OBPIP(IDXOB,IVTAM) + TOB(IDX,IVTAM) 
      *      *OBPIP(IDXOB,IVTAM)*S2LEFT(IVTAM) 
      *      + (1 - OBPIP(IDXOB,IVTAM))*S2LEFT(IVTAM) ) 
-     *      + (SPILL/ROADFE(MDX,IVTAM))*((1 - OBES) 
+     *      + (SPILL/RFE)*((1 - OBES) 
      *      *OBPIP(IDXOB,IVTAM) + (1 - OBPIP(IDXOB,IVTAM))) 
           ENDIF 
 C 

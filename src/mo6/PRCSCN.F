@@ -11,11 +11,15 @@ C  Calls LOCAL,REGMOD,EFCALX,OUTPUT,RDT12C
 C 
 C  Changes: (last change first) 
 C 
+C 14 Jan 02 @EPA-bag  Bug375   Added INERR to parameter list of AVGSPD 
+C  03 Dec 01 AIR Task 27: Added call for calculation of CO2. 
+C  27 Nov 01 AIR Task 28: Added OUTSS for spreadsheet output. 
+C  11 Jul 01 AIR Task 15: Added call to ATCALX. 
+C  07 Feb 01 AIR Task 11: Added call to PMCALX. 
+C  14 Dec 01 @EPA-BAG        Added NO_IM_PGM 
 C  19 Jul 01 @EPA-djb Wish235, Add call to AVGSPD. 
 C  17 Jul 01 @EPA-bag Bug , Changed the subroutine name of LOCAL to FUELPAR 
 C            to avoid conflict with array name in BDSPEED9.I 
-C  11 Jul 01 AIR Task 15: Added call to ATCALX. 
-C  07 Feb 01 AIR Task 11: Added call to PMCALX. 
 C  19 Oct 00 @EPA-djb Task W2, Added call to DB_AGGR. 
 C  06 Oct 00 @EPA-BG  Bug 155, Removed call to IDLCAL and IDLFLG 
 C  25 Sep 00 @EPA-djb Bug 238, Removed call to DBWSCN (database output). 
@@ -61,6 +65,7 @@ C
 C    common blocks: 
 C    /CHKLST/ CHKLIST,GLCHECK,MAXREQ 
 C    /EVAL/   MEVAL 
+C    /FLAGS2/ IMFLAG 
 C    /FLAGS4/ HCFLAG 
 C    /IOUCOM/ IOUOUT 
 C    /REGION/ IREJN 
@@ -80,12 +85,13 @@ C  Notes:
 C 
 C  This subroutine is new for Mobile6. 
 C 
-      USE DATABASE, ONLY: DBFLAG, DBAGGR 
+      USE DATABASE, ONLY: DBFLAG, DBAGGR, DBSELPOL 
 C 
       IMPLICIT NONE 
       INCLUDE 'ATOX1.I' 
       INCLUDE 'CHKLST.I' 
       INCLUDE 'EVAL.I' 
+      INCLUDE 'FLAGS2.I' 
       INCLUDE 'FLAGS3.I' 
       INCLUDE 'FLAGS4.I' 
       INCLUDE 'IOUCOM.I' 
@@ -106,6 +112,7 @@ C
      &  (/  'min and max temps.  ', 
      &      'fuel RVP.           ', 
      &      'calendar year.      '/) 
+      INTEGER, SAVE :: NO_IM_PGM = 1 
 C 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
@@ -143,11 +150,11 @@ C
 C 
 C     Set FVMT and SVMT arrays is an average speed has been specified. 
 C 
-      IF(AVGFLG.EQ.1) CALL AVGSPD() 
+      IF(AVGFLG==1) CALL AVGSPD(INERR) 
 C 
 C     Read the Tech1&2 I/M credit file. 
 C 
-      CALL RDT12C(INERR,RC) 
+      IF(IMFLAG/=NO_IM_PGM) CALL RDT12C(INERR,RC) 
 C 
       IF(IOUOUT.EQ.6.OR.IOUOUT.EQ.9) THEN 
         WRITE(IOUOUT,145) 
@@ -169,6 +176,10 @@ C
         CALL EFCALX(ICY,INERR) 
       ENDIF 
 C 
+C     Perform CO2 emission factor calculations, if necessary. 
+C 
+      IF(INERR.EQ.0.AND.DBSELPOL(4).EQ.2) CALL CO2CALX(ICY,INERR) 
+C 
 C     Perform PM emission factor calculations, if necessary. 
 C 
       IF(INERR.EQ.0 .AND. PARTFLG) CALL PMCALX(ICY,INERR,RC) 
@@ -182,8 +193,10 @@ C
       ENDIF 
 C 
       IF (INERR.EQ.0.AND.DBFLAG.EQ.2.AND.DBAGGR) THEN 
-        CALL DB_AGGR(ICY) 
+        CALL DB_AGGR(ICY,INERR) 
       ENDIF 
+C 
+      IF (INERR.EQ.0) CALL OUTSS(ICY) 
 C 
 C     Perform Air Toxic emission factor calculations and produce output, 
 C     when necessary. Must perform these calculations AFTER the output  
