@@ -5,6 +5,8 @@ C  to allocatable status.
 C 
 C  Changes: (Last change first) 
 C 
+C 21 Jun 02  AIR Task Bug Fix: added logic to prevent reallocation of arrays during batch runs. 
+C 15 Apr 02  AIR Task Bug Fix: removed unused code 
 C 08 Mar 02: AIR Task 28: Moved ADDITIONAL HAPS related arrays to ATWORK. Updated Comments 
 C 28 Nov 01: AIR Task 28: Moved ATHBER to ATWORK. 
 C 04 Sep 01: AIR Task 28: New MODULE. 
@@ -88,64 +90,30 @@ C  This routine allocates the large DBAT, ATHBER, and ADDITIONAL HAPS arrays
 C 
 C  Changes: (Last change first) 
 C 
+C 21 Jun 02: AIR Task Bug Fix: added logic to prevent reallocation during batch runs. 
 C 08 Mar 02: AIR Task 28: Moved ADDITIONAL HAPS related arrays to ATWORK. 
 C 28 Nov 01: AIR Task 28: Moved ATHBER to ATWORK. 
 C 04 Sep 01: AIR Task 28: New Subroutine. 
 C 
       USE ATHEAP 
 C 
-      ALLOCATE (ATHBER(2,25,2,4,28,50)) 
-      ALLOCATE (DBAT  (25,24,5,6,6,28)) 
-      ALLOCATE (EFAT  (6,56,28)) 
-      ALLOCATE (VAT   (6,56)) 
-      ALLOCATE (ATHIV (2,4,50,28)) 
-C 
-      ALLOCATE (ATHBEGMY (1400)) 
-      ALLOCATE (ATHDET   (1400)) 
-      ALLOCATE (ATHEKIND (1400)) 
-      ALLOCATE (ATHENDMY (1400)) 
-      ALLOCATE (ATHPMAP  (1400)) 
-      ALLOCATE (ATHPNAME (1400)) 
-      ALLOCATE (ATHPOL   (1400)) 
-      ALLOCATE (ATHRATIO (1400)) 
-      ALLOCATE (ATHRATZML(1400)) 
-      ALLOCATE (ATHSNAME (1400)) 
-      ALLOCATE (ATHVTYPE (1400)) 
-C 
-      RETURN 
-      END 
-C 
-C---------------------------------------------------------------------- 
-C 
-      SUBROUTINE ATDEALLOC 
-C 
-C  This routine deallocates the large DBAT, ATHBER, and ADDITIONAL HAPS arrays 
-C 
-C  Changes: (Last change first) 
-C 
-C 08 Mar 02: AIR Task 28: Moved ADDITIONAL HAPS related arrays to ATWORK. 
-C 28 Nov 01: AIR Task 28: Moved ATHBER to ATWORK. 
-C 04 Sep 01: AIR Task 28: New Subroutine. 
-C 
-      USE ATHEAP 
-C 
-      DEALLOCATE (ATHBER) 
-      DEALLOCATE (DBAT) 
-      DEALLOCATE (EFAT) 
-      DEALLOCATE (VAT) 
-C 
-      DEALLOCATE (ATHBEGMY) 
-      DEALLOCATE (ATHDET) 
-      DEALLOCATE (ATHEKIND) 
-      DEALLOCATE (ATHENDMY) 
-      DEALLOCATE (ATHIV) 
-      DEALLOCATE (ATHPMAP) 
-      DEALLOCATE (ATHPNAME) 
-      DEALLOCATE (ATHPOL) 
-      DEALLOCATE (ATHRATIO) 
-      DEALLOCATE (ATHRATZML) 
-      DEALLOCATE (ATHSNAME) 
-      DEALLOCATE (ATHVTYPE) 
+      IF(.NOT. ALLOCATED(ATHBER))    ALLOCATE (ATHBER(2,25,2,4,28,50)) 
+      IF(.NOT. ALLOCATED(DBAT))      ALLOCATE (DBAT  (25,24,5,6,6,28)) 
+      IF(.NOT. ALLOCATED(EFAT))      ALLOCATE (EFAT  (6,56,28)) 
+      IF(.NOT. ALLOCATED(VAT))       ALLOCATE (VAT   (6,56)) 
+      IF(.NOT. ALLOCATED(ATHIV))     ALLOCATE (ATHIV (2,4,50,28)) 
+C
+      IF(.NOT. ALLOCATED(ATHBEGMY))  ALLOCATE (ATHBEGMY (1400)) 
+      IF(.NOT. ALLOCATED(ATHDET))    ALLOCATE (ATHDET   (1400)) 
+      IF(.NOT. ALLOCATED(ATHEKIND))  ALLOCATE (ATHEKIND (1400)) 
+      IF(.NOT. ALLOCATED(ATHENDMY))  ALLOCATE (ATHENDMY (1400)) 
+      IF(.NOT. ALLOCATED(ATHPMAP))   ALLOCATE (ATHPMAP  (1400)) 
+      IF(.NOT. ALLOCATED(ATHPNAME))  ALLOCATE (ATHPNAME (1400)) 
+      IF(.NOT. ALLOCATED(ATHPOL))    ALLOCATE (ATHPOL   (1400)) 
+      IF(.NOT. ALLOCATED(ATHRATIO))  ALLOCATE (ATHRATIO (1400)) 
+      IF(.NOT. ALLOCATED(ATHRATZML)) ALLOCATE (ATHRATZML(1400)) 
+      IF(.NOT. ALLOCATED(ATHSNAME))  ALLOCATE (ATHSNAME (1400)) 
+      IF(.NOT. ALLOCATED(ATHVTYPE))  ALLOCATE (ATHVTYPE (1400)) 
 C 
       RETURN 
       END 
