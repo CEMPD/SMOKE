@@ -127,6 +127,7 @@ C...........   Other local variables
 
         LOGICAL       :: LRDREGN = .FALSE.  !  true: read region code
         LOGICAL       :: EFLAG   = .FALSE.  !  true: error found
+        LOGICAL       :: LTMP    = .FALSE.  !  true: temporary logical
 
         CHARACTER*1            TTYP         !  temporal profile entry type
         CHARACTER*16  ::       BNAME = ' '  !  name buffer
@@ -428,7 +429,8 @@ C.........  If needed, read in country, state, county file
 
 C.........  If needed, read in elevated source indentification file
         IF( VFLAG ) THEN
-            CALL RDPELV( EDEV, NSRC, .TRUE., NMAJOR, NPING )
+            LTMP = ( .NOT. LFLAG )
+            CALL RDPELV( EDEV, NSRC, LTMP, NMAJOR, NPING )
         END IF
 
 C.........  If needed, read in SCC descriptions file
@@ -438,15 +440,20 @@ C.........  If needed, read in layer fractions file to identify elevated
 C           sources
         IF( LFLAG ) THEN
 
-            ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
-            ALLOCATE( LPING( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'LPING', PROGNAME )
+            IF( .NOT. ALLOCATED( LMAJOR ) ) THEN
+                ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
+                LMAJOR = .FALSE.   ! array
+            END IF
+
+            IF( .NOT. ALLOCATED( LPING ) ) THEN
+                ALLOCATE( LPING( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LPING', PROGNAME )
+                LPING  = .FALSE.   ! array
+            END IF
+
             ALLOCATE( LFRAC1L( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LFRAC1L', PROGNAME )
-
-            LMAJOR = .FALSE.   ! array
-            LPING  = .FALSE.   ! array
 
             JDATE = SDATE
             JTIME = STIME
