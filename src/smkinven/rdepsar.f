@@ -121,10 +121,12 @@ C...........   Other local variables
         INTEGER          HH      !  tmp hour
         INTEGER          ICC     !  position of CNTRY in CTRYNAM
         INTEGER          IYY     !  tmp emissions year
+        INTEGER          LDEV    !  unit no. for log file
         INTEGER          MM      !  tmp month
         INTEGER, SAVE :: MXWARN  !  maximum number of warnings
         INTEGER          NDAYS   !  tmp no days
         INTEGER, SAVE :: NWARN =0!  number of warnings in this routine
+        INTEGER          NWRLINE !  number of lines of file written to log
         INTEGER, SAVE :: NSRCPOL = 0 ! cumulative source x data variables
         INTEGER          SDT     !  tmp start date
         INTEGER          STM     !  tmp start time
@@ -140,6 +142,8 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP  !  Character FIP code
         CHARACTER(LEN=POLLEN3) CCOD  !  Character pollutant index to INVDNAM
         CHARACTER(LEN=SCCLEN3) TSCC  !  Temporary character SCC
+        
+        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME = 'RDEPSAR' ! Program name
 
@@ -181,6 +185,10 @@ C.........  Reinitialize for multiple subroutine calls
         EFLAG  = .FALSE.
         ICC    = -9
         FIRSTP = .TRUE.
+        
+C.........  Get log file number for reports
+        LDEV = INIT3()        
+        NWRLINE = 0
 
 C........................................................................
 C.............  Head of the FDEV-read loop  .............................
@@ -227,6 +235,21 @@ C.............  Interpret error status
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
+C.............  Write first ten lines to log file
+            IF( NWRLINE < 10 ) THEN
+            	NWRLINE = NWRLINE + 1
+            	TENLINES( NWRLINE ) = TRIM( LINE )
+            
+                IF( NWRLINE == 10 ) THEN
+                    MESG = 'First 10 lines of EPS area inventory:'
+                    WRITE( LDEV,* ) TRIM( MESG )
+             
+                    DO I = 1,NWRLINE
+                        WRITE( LDEV,* ) TRIM( TENLINES( I ) )
+                    END DO
+                END IF
+            END IF
+            
 C.............  Set pollutant name
             CPOL = ADJUSTL( LINE( 58:62 ) )
             L    = LEN_TRIM( CPOL )

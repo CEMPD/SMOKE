@@ -103,8 +103,10 @@ C...........   Other local variables
         INTEGER          ES          !  counter for emission file
         INTEGER          FIP         !  temporary fip, scc, sic
         INTEGER       :: ICC     = 0 !  country code, def = 0
+        INTEGER          LDEV        !  unit no. for log file
         INTEGER       :: NPOA    = 0 !  number of input data variables
         INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
+        INTEGER          NWRLINE     !  number of lines of file written to log
         INTEGER          TPF         !  temporary temporal ID
         INTEGER          YR4         !  tmp year from current file
 
@@ -116,6 +118,8 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP  !  Character FIP code
         CHARACTER(LEN=POLLEN3) CCOD  !  Character pollutant index to INVDNAM
         CHARACTER(LEN=SCCLEN3) TSCC  !  Temporary character SCC
+        
+        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME = 'RDEMSAR' ! Program name
 
@@ -128,6 +132,10 @@ C.........  Set internal formats
 C........  Set rule effectiveness and rule penetration to inventory defaults
         REFF = 100.0
         RPEN = 100.0
+        
+C.........  Get log file number for reports
+        LDEV = INIT3()        
+        NWRLINE = 0
 
 C........................................................................
 C.............  Head of the input file read loop  .......................
@@ -194,6 +202,21 @@ C               and year in file header
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
+C.............  Write first ten lines to log file
+            IF( NWRLINE < 10 ) THEN
+            	NWRLINE = NWRLINE + 1
+            	TENLINES( NWRLINE ) = TRIM( LINE )
+            
+                IF( NWRLINE == 10 ) THEN
+                    MESG = 'First 10 lines of EMS-95 area inventory:'
+                    WRITE( LDEV,* ) TRIM( MESG )
+             
+                    DO I = 1,NWRLINE
+                        WRITE( LDEV,* ) TRIM( TENLINES( I ) )
+                    END DO
+                END IF
+            END IF
+            
 C.............  Define day to year conversion factor and real type for integer 
 C               missing value
             DAY2YR  = 1. / YR2DAY( YR4 )

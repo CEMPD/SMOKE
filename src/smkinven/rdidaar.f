@@ -59,6 +59,7 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
          INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
          INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
       	LOGICAL                CHKINT
@@ -117,9 +118,11 @@ C...........   Other local variables
         INTEGER         INY     !  inventory year
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  line counter
+        INTEGER         LDEV    !  unit no. for log file
         INTEGER, SAVE:: MXWARN  !  maximum number of warnings
         INTEGER         NPOL    !  number of pollutants in file
         INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
+        INTEGER         NWRLINE !  number of lines of file written to log
         INTEGER         TPF     !  tmp temporal adjustments setting
 
         REAL            CEFF    !  tmp control effectiveness
@@ -141,6 +144,8 @@ C...........   Other local variables
         CHARACTER(LEN=IOVLEN3) CBUF  ! tmp pollutant code
         CHARACTER(LEN=LINSIZ)  LINE  ! input line from inventory file
         CHARACTER(LEN=SCCLEN3) TSCC  ! tmp scc
+        
+        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME = 'RDIDAAR' ! Program name
 
@@ -161,6 +166,10 @@ C.........  Reinitialize for multiple subroutine calls
         ICC   = -9
         INY   = 0
         NPOL  = 0
+        
+C.........  Get log file number for reports
+        LDEV = INIT3()        
+        NWRLINE = 0
 
 C........................................................................
 C.............  Head of the main read loop  .............................
@@ -211,6 +220,21 @@ C.............  Interpret error status
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
+C.............  Write first ten lines to log file
+            IF( NWRLINE < 10 ) THEN
+            	NWRLINE = NWRLINE + 1
+            	TENLINES( NWRLINE ) = TRIM( LINE )
+            
+                IF( NWRLINE == 10 ) THEN
+                    MESG = 'First 10 lines of IDA area inventory:'
+                    WRITE( LDEV,* ) TRIM( MESG )
+             
+                    DO I = 1,NWRLINE
+                        WRITE( LDEV,* ) TRIM( TENLINES( I ) )
+                    END DO
+                END IF
+            END IF
+            
 C.............  Make sure that all of the needed integer values are integers...
 
 C.............  Check state/county codes, error for missing

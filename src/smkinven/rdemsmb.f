@@ -119,10 +119,12 @@ C...........   Other local variables
         INTEGER          FMTCASE     !  code for format case
         INTEGER       :: ICC  = 0    !  country code, def = 0
         INTEGER          IVT         !  tmp vehicle type number
+        INTEGER          LDEV        !  unit no. for log file
         INTEGER          MXTCOL      !  maximum number of table columns
         INTEGER       :: NPOA = 0    !  number of input data variables
         INTEGER          NPRECOL     !  no. src char columns for list-directed
         INTEGER, SAVE :: NSRCDAT = 0 !  cumulative source x pollutants count
+        INTEGER          NWRLINE     !  number of lines of file written to log
         INTEGER          ROAD        !  temporary road class code
         INTEGER          RWT         !  temporary roadway type
         INTEGER          STID        !  tmp state ID
@@ -162,6 +164,8 @@ C...........   Other local variables
         CHARACTER(LEN=VIDLEN3) CIVT     ! tmp character vehicle ID
         CHARACTER(LEN=SCCLEN3) TSCC     ! tmp character SCC
         CHARACTER(LEN=VTPLEN3) VTYPE    ! tmp vehicle type
+        
+        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME = 'RDEMSMB' ! Program name
 
@@ -275,6 +279,10 @@ C.........  Set the description of the file type and format
 C.........  Make sure the file is at the beginning
         REWIND( EDEV )
 
+C.........  Get log file number for reports
+        LDEV = INIT3()        
+        NWRLINE = 0
+        
 C.........  Initialize before loop
         ES   = NSRCDAT
         IREC = 0
@@ -340,6 +348,21 @@ C               and year in file header
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
+C.............  Write first ten lines to log file
+            IF( NWRLINE < 10 ) THEN
+            	NWRLINE = NWRLINE + 1
+            	TENLINES( NWRLINE ) = TRIM( LINE )
+            
+                IF( NWRLINE == 10 ) THEN
+                    MESG = 'First 10 lines of EMS-95 mobile inventory:'
+                    WRITE( LDEV,* ) TRIM( MESG )
+             
+                    DO I = 1,NWRLINE
+                        WRITE( LDEV,* ) TRIM( TENLINES( I ) )
+                    END DO
+                END IF
+            END IF
+            
 C.............  Set the number of table columns and allocate memory
             IF( .NOT. ALLOCATED( SEGMENT ) ) THEN
 

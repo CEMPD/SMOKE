@@ -58,6 +58,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL                CHKINT
@@ -99,11 +100,13 @@ C...........   Other local variables
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  line counter
         INTEGER         IVT     ! tmp vehicle type code
+        INTEGER         LDEV    !  unit no. for log file
         INTEGER, SAVE:: MXWARN  !  maximum number of warnings
         INTEGER         NCASPOLS!  number of pollutants per CAS
         INTEGER      :: NSEG = 6!  number of segments in line
         INTEGER         NPOA    !  number of pollutants in file
         INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
+        INTEGER         NWRLINE !  number of lines of file written to log
         INTEGER         SCCLEN  ! length of SCC string 
         INTEGER         RWT     ! roadway type
         INTEGER         TPF     !  tmp temporal adjustments setting
@@ -139,6 +142,8 @@ C...........   Other local variables
         CHARACTER(LEN=CASLEN3) TCAS  ! tmp cas number
         CHARACTER(LEN=VTPLEN3) VTYPE ! tmp vehicle type
 
+        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
+        
         CHARACTER*16 :: PROGNAME = 'RDNTIMB' ! Program name
 
 C***********************************************************************
@@ -158,6 +163,10 @@ C.........  Reinitialize for multiple subroutine calls
         ICC   = -9
         INY   = 0
         NPOA  = 0
+        
+C.........  Get log file number for reports
+        LDEV = INIT3()        
+        NWRLINE = 0
 
 C.........  Create formats
         WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
@@ -215,6 +224,21 @@ C.............  Interpret error status
 
 C.............  If a header line was encountered, go to next line
             IF( IOS >= 0 ) CYCLE
+
+C.............  Write first ten lines to log file
+            IF( NWRLINE < 10 ) THEN
+            	NWRLINE = NWRLINE + 1
+            	TENLINES( NWRLINE ) = TRIM( LINE )
+            
+                IF( NWRLINE == 10 ) THEN
+                    MESG = 'First 10 lines of NTI mobile inventory:'
+                    WRITE( LDEV,* ) TRIM( MESG )
+             
+                    DO I = 1,NWRLINE
+                        WRITE( LDEV,* ) TRIM( TENLINES( I ) )
+                    END DO
+                END IF
+            END IF
 
 C.............  Separate line into segments
             CALL PARSLINE( LINE, NSEG, SEGMENT )

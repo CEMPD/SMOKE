@@ -60,6 +60,7 @@ C...........   Include files
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 	
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -123,12 +124,14 @@ C...........   Local variables
         INTEGER         IOS            ! I/O status
         INTEGER         IREC           ! record counter
         INTEGER         IVT            ! tmp vehicle type code
+        INTEGER         LDEV    !  unit no. for log file
         INTEGER, SAVE:: MXWARN         ! maximum number of warnings
         INTEGER, SAVE:: NNOTE =0       ! number of notes in this routine
         INTEGER         NPVAR          ! number of variables per data
         INTEGER         NSEG           ! number of input segments
         INTEGER         NVAR           ! number of data variables
         INTEGER, SAVE:: NWARN =0       ! number of warnings in this routine
+        INTEGER         NWRLINE !  number of lines of file written to log
         INTEGER         STA            ! state code
         INTEGER         RWT            ! roadway type
         INTEGER         SCCLEN         ! length of SCC string 
@@ -157,6 +160,8 @@ C...........   Local variables
         CHARACTER(LEN=RWTLEN3) CRWT  ! tmp roadway type
         CHARACTER(LEN=SCCLEN3) TSCC  ! tmp source classification code
         CHARACTER(LEN=VTPLEN3) VTYPE ! tmp vehicle type
+        
+        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME = 'RDIDAMB'   ! program name
 
@@ -179,6 +184,10 @@ C.........  Reinitialize for multiple subroutine calls
         INY   = 0
         NVAR  = 0
         FIXED = .TRUE.
+        
+C.........  Get log file number for reports
+        LDEV = INIT3()        
+        NWRLINE = 0
 
 C.........  Create formats
         WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
@@ -265,6 +274,21 @@ C.................  Go to next line
 
             END IF
 
+C.............  Write first ten lines to log file
+            IF( NWRLINE < 10 ) THEN
+            	NWRLINE = NWRLINE + 1
+            	TENLINES( NWRLINE ) = TRIM( LINE )
+            
+                IF( NWRLINE == 10 ) THEN
+                    MESG = 'First 10 lines of IDA/EPS mobile inventory:'
+                    WRITE( LDEV,* ) TRIM( MESG )
+             
+                    DO I = 1,NWRLINE
+                        WRITE( LDEV,* ) TRIM( TENLINES( I ) )
+                    END DO
+                END IF
+            END IF
+            
             IF( FIRSTIME ) DAY2YR  = 1. / YR2DAY( INY )
 
 C.............  Allocate memory for line segments if not already done

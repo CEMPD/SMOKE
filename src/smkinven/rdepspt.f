@@ -139,10 +139,12 @@ C...........   Other local variables
         INTEGER          HH      !  tmp hour
         INTEGER          ICC     !  position of CNTRY in CTRYNAM
         INTEGER          IYY     !  tmp emissions year
+        INTEGER          LDEV    !  unit no. for log file
         INTEGER          MM      !  tmp month
         INTEGER, SAVE :: MXWARN  !  maximum number of warnings
         INTEGER          NDAYS   !  tmp no days
         INTEGER, SAVE :: NWARN =0!  number of warnings in this routine
+        INTEGER          NWRLINE !  number of lines of file written to log
         INTEGER, SAVE :: NSRCPOL = 0 ! cumulative source x data variables
         INTEGER          SDT     !  tmp start date
         INTEGER          SEGMENT !  tmp integer segment number
@@ -167,6 +169,8 @@ C...........   Other local variables
         CHARACTER(LEN=DSCLEN3) DESC  !  plant description
         CHARACTER(LEN=SCCLEN3) TSCC  !  Temporary character SCC
         CHARACTER(LEN=CHRLEN3) CHAR4 !  tmp 4th plant characteristic
+        
+        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME = 'RDEPSPT' ! Program name
 
@@ -212,6 +216,10 @@ C.............  Create sorted data codes
 C.........  Reinitialize for multiple subroutine calls
         ICC    = -9
         FIRSTP = .TRUE.
+        
+C.........  Get log file number for reports
+        LDEV = INIT3()        
+        NWRLINE = 0
 
 C........................................................................
 C.............  Head of the FDEV-read loop  .............................
@@ -257,6 +265,21 @@ C.............  Interpret error status
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
+C.............  Write first ten lines to log file
+            IF( NWRLINE < 10 ) THEN
+            	NWRLINE = NWRLINE + 1
+            	TENLINES( NWRLINE ) = TRIM( LINE )
+            
+                IF( NWRLINE == 10 ) THEN
+                    MESG = 'First 10 lines of EPS point inventory:'
+                    WRITE( LDEV,* ) TRIM( MESG )
+             
+                    DO I = 1,NWRLINE
+                        WRITE( LDEV,* ) TRIM( TENLINES( I ) )
+                    END DO
+                END IF
+            END IF
+            
 C.............  Define day to year conversion factor and real type for integer 
 C               missing value
             DAY2YR  = 1. / YR2DAY( INY )
