@@ -201,9 +201,8 @@ C.........  Abort if error found while reading cross-reference file
 C.........  Sort MCREF index array by reference county
         CALL SORTI2( NLINES, IDX, MCREFRAW(:,2), MCREFRAW(:,1) )
 
-C.........  Check for duplicate references and counties outside grid,
+C.........  Check for duplicate entries and counties outside grid,
 C           then store sorted MCREF array
-        PRCOUNTY = 0
         PICOUNTY = 0
         N = 0
 
@@ -216,9 +215,8 @@ C           then store sorted MCREF array
 C.............  Skip any entries equal to zero due to blank lines
             IF( REFCOUNTY == 0 .OR. INVCOUNTY == 0 ) CYCLE
 
-C.............  Check if current counties are duplicates (match previous)
-            IF( REFCOUNTY == PRCOUNTY .AND. 
-     &          INVCOUNTY == PICOUNTY ) THEN
+C.............  Check if current inventory county is duplicate (match previous)
+            IF( INVCOUNTY == PICOUNTY ) THEN
      	
      	        DUPFLAG = .TRUE.
      	        EFLAG   = .TRUE.
@@ -249,7 +247,6 @@ C.............  Check that current county is inside the grid (and in the invento
                 
             END IF
             
-            PRCOUNTY = REFCOUNTY
             PICOUNTY = INVCOUNTY
             
         END DO
