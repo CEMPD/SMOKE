@@ -2,7 +2,7 @@
          PROGRAM RAWAREA
 
 C***********************************************************************
-C  program body starts at line 175
+C  program body starts at line 182
 C
 C  DESCRIPTION:
 C       Construct Models3/EDSS area source file from data contained in
@@ -74,10 +74,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
+        INTEGER         YEAR4
+        REAL            YR2DAY
 
         EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN,
      &           JUNIT, PROMPTFFILE, PROMPTMFILE, SECSDIFF, STR2INT,
-     &           STR2REAL, TRIMLEN
+     &           STR2REAL, TRIMLEN, YEAR4, YR2DAY
 
 
 C...........   PARAMETER:
@@ -163,6 +165,7 @@ C...........   Other local variables
         REAL            RPEN
         REAL            VMISS
         LOGICAL         EFLAG   !  input verification:  TRUE iff ERROR
+        LOGICAL         FIRSTP  !  iff INY mismatches YY
         LOGICAL         MFLAG   !  sum duplicate emissions flag
         LOGICAL         SFLAG   !  input verification:  report missing species
         CHARACTER*16    COORDN  !  coordinate system name
@@ -257,8 +260,8 @@ C.............  Exit to line 141 if read is EOF
                 ELSEIF( INY .LT. 1970 ) THEN
  
                     CALL M3EXIT( 'RAWAREA', 0, 0,
-     &               'INVYEAR packet has set bad 4-digit year' //
-     &               'in ANLST file', 2 )
+     &               'INVYEAR packet has set 4-digit year below 1970 '//
+     &               'minimum in ANLST file', 2 )
  
                 ENDIF
  
@@ -282,19 +285,12 @@ C.............  Exit to line 141 if read is EOF
 C.......   Factors for annualizing the emissions from daily totals
 C.......   (corrected for leap-year)
 
-            IF (      MOD( INY,   4 ) .NE. 0 ) THEN  !  nonleap years
-                DAY2YR = 365.0
-            ELSE IF ( MOD( INY, 100 ) .NE. 0 ) THEN  !  noncentury leap years
-                DAY2YR = 366.0
-            ELSE IF ( MOD( INY, 400 ) .NE. 0 ) THEN  !  century nonleap years
-                DAY2YR = 365.0
-            ELSE                                     !  leap centuries
-                DAY2YR = 366.0
-            END IF
+            DAY2YR = 1. / YR2DAY( INY )
 
 C.......   Process this area source file
 
             IREC = 0
+            FIRSTP = .TRUE. !  For reporting year-mismatches
 
 111         CONTINUE        !  head of the ADEV-read loop
 
@@ -319,7 +315,7 @@ C.......   Process this area source file
                 IF ( I .LE. 0 ) THEN
                     WRITE( MESG,94020 ) 
      &                  'Bad line', IREC, 
-     &                  'Pollutant code "' // LINE( 162:171 ) // 
+     &                  'Pollutant code "' // LINE( 58:62 ) // 
      &                  '" in "' //
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"'
                     CALL M3MESG( MESG )
@@ -330,7 +326,7 @@ C.......   Process this area source file
                 IF ( EMIS .LT. 0.0 )  THEN
                     WRITE( MESG,94020 ) 
      &                  'Bad line', IREC, 
-     &                  'Emis value "' // LINE( 162:171 ) // 
+     &                  'Emis value "' // LINE( 64:73 ) // 
      &                  '" in "' //
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"'
                     CALL M3MESG( MESG )
@@ -364,15 +360,15 @@ C.......   Process this area source file
                     STM = 10000 * HH
                     DD  = MOD( SDT / 100  , 100 )
                     MM  = MOD( SDT / 10000, 100 )
-                    YY  = 1900 + SDT / 1000000
-                    SDT = 1900 + JULIAN( YY, MM, DD )   !  as Julian date
+                    YY  = YEAR4( SDT / 1000000 )
+                    SDT = (YY/100)*100 + JULIAN( YY, MM, DD )   !  as Julian date
 
                     HH  = MOD( EDT        , 100 )
                     ETM = 10000 * HH
                     DD  = MOD( EDT / 100  , 100 )
                     MM  = MOD( EDT / 10000, 100 )
-                    YY  = 1900 + EDT / 1000000 
-                    EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
+                    YY  = YEAR4( EDT / 1000000 )
+                    EDT = (YY/100)*100 + JULIAN( YY, MM, DD )   !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 )     ! ETM means *through* hr HH
 
                     NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
@@ -386,21 +382,30 @@ C.......   Process this area source file
 
                     EMIS = DAY2YR * EMIS
 
-                ELSE IF ( LINE( 37:37 ) .EQ. 'S' ) THEN !  special intervalC
+                    IF( FIRSTP .AND. INY .NE. YY ) THEN
+                        FIRSTP = .FALSE.
+                        WRITE( MESG,94010 ) 'WARNING: Year', INY, 
+     &                         'given in ANLST, but year', YY, 
+     &                         'appears in file:' // CRLF() // BLANK5 //
+     &                         RNAME( 1:TRIMLEN( RNAME ) ) 
+                        CALL M3MSG2( MESG )
+                    ENDIF
+
+                ELSE IF ( LINE( 37:38 ) .EQ. 'S' ) THEN !  special intervalC
 
                     HH  = MOD( SDT        , 100 )
                     STM = 10000 * HH
                     DD  = MOD( SDT / 100  , 100 )
                     MM  = MOD( SDT / 10000, 100 )
-                    YY  = 1900 + SDT / 1000000
-                    SDT = 1900 + JULIAN( YY, MM, DD )   !  as Julian date
+                    YY  = YEAR4( SDT / 1000000 )
+                    SDT = (YY/100)*100 + JULIAN( YY, MM, DD )   !  as Julian date
 
                     HH  = MOD( EDT        , 100 )
                     ETM = 10000 * HH
                     DD  = MOD( EDT / 100  , 100 )
                     MM  = MOD( EDT / 10000, 100 )
-                    YY  = 1900 + EDT / 1000000 
-                    EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
+                    YY  = YEAR4( EDT / 1000000 )
+                    EDT = (YY/100)*100 + JULIAN( YY, MM, DD )   !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 )     ! ETM means *through* hr HH
 
                     NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
@@ -410,7 +415,7 @@ C                        TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
 C                   ELSE IF ( NDAYS .GT. 1 ) THEN
 C                        TPF = WTPRFAC          !  use only week profiles
 C                   ELSE
-C                        TPF = 1                        !  use only hourly profiles
+                         TPF = 1                        !  use only hourly profiles
 C                   END IF
 
                     IF ( NDAYS .GT. 1 ) THEN
@@ -423,6 +428,15 @@ C                   END IF
                         GO TO  111
                     END IF
                     EMIS = DAY2YR * EMIS
+
+                    IF( FIRSTP .AND. INY .NE. YY ) THEN
+                        FIRSTP = .FALSE.
+                        WRITE( MESG,94010 ) 'WARNING: Year', INY, 
+     &                         'given in ANLST, but year', YY, 
+     &                         'appears in file:' // CRLF() // BLANK5 //
+     &                         RNAME( 1:TRIMLEN( RNAME ) ) 
+                        CALL M3MSG2( MESG )
+                    ENDIF
 
                 ELSE                                    !  unrecognized type
 
@@ -489,7 +503,7 @@ C                   END IF
 
         SDEV = PROMPTFFILE(
      &          'Enter the name of the ACTUAL ASCT output file',
-     &          .FALSE., .TRUE., 'ASCC', 'RAWAREA' )
+     &          .FALSE., .TRUE., 'ASCS', 'RAWAREA' )
 
 C.......   Use SORTI3() to perform an indirect sort by FIPS,SCC7,SCC3;
 C.......   then permute the records according to the result:
@@ -696,7 +710,11 @@ C.......   FDESC3.EXT data structures by DSCGRID().
         FDESC3D( 6 ) = 'Period     type "' // LINE( 37:38 ) // '"'
         FDESC3D( 7 ) = 'Beginning  Date "' // LINE( 40:47 ) // '"'
         FDESC3D( 8 ) = 'Ending     Date "' // LINE( 49:56 ) // '"'
-           
+        
+        DO 201 I = 9, MXDESC3
+            FDESC3D( I ) = ' '
+201     CONTINUE   
+
         J = 1
         VNAME3D( J ) = 'FIP'
         UNITS3D( J ) = 'n/a'
