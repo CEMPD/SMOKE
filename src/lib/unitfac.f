@@ -58,6 +58,10 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Other local variables
         INTEGER         K1, K2, L1, L2, LB1, LB2
+        INTEGER         EXP1       ! exponent on first unit
+        INTEGER         EXP2       ! exponent on second unit
+
+        REAL            PRECNV     ! Conversion for exponential prefixes
 
         CHARACTER(LEN=IOULEN3 ) :: BUF1 = ' '
         CHARACTER(LEN=IOULEN3 ) :: BUF2 = ' '
@@ -102,8 +106,8 @@ C           value of LNUM
         LB1  = LEN_TRIM( BUF1 )
         LB2  = LEN_TRIM( BUF2 )
 
-        CALL GET_CONSISTENT( BUF1 )
-        CALL GET_CONSISTENT( BUF2 )
+        CALL UNITMATCH( BUF1 )
+        CALL UNITMATCH( BUF2 )
 
 C.........  Check if units are the same and return a 1.
         IF( BUF1 .EQ. BUF2 ) THEN
@@ -111,7 +115,32 @@ C.........  Check if units are the same and return a 1.
             RETURN
         END IF
 
-C.........  Set conversion factor by comparing numerators
+C.........  Separate out any leading adjustments (e.g., 10E6)
+        EXP1 = 0
+        EXP2 = 0
+        K1 = INDEX( BUF1, '10E' )
+        K2 = INDEX( BUF2, '10E' )
+
+        IF( K1 .GT. 0 ) THEN
+            I = INDEX( BUF1, ' ' ) 
+            IF( I .GT. 0 ) THEN
+                EXP1 = STR2INT( BUF1( K1+3:I ) )
+                BUF1 = BUF1( I+1:LB1 )
+            END IF
+        END IF
+
+        IF( K2 .GT. 0 ) THEN
+            I = INDEX( BUF2, ' ' ) 
+            IF( I .GT. 0 ) THEN
+                EXP2 = STR2INT( BUF2( K2+3:I ) )
+                BUF1 = BUF2( I+1:LB2 )
+            END IF
+        END IF
+
+C.........  Set conversion factor by comparing units prefixes
+        PRECNV = 10**( EXP1 - EXP2 )
+
+C.........  Set conversion factor by comparing numerators of main units
         SELECT CASE( BUF1 )
 
             CASE( 'g' )
@@ -119,7 +148,7 @@ C.........  Set conversion factor by comparing numerators
                 SELECT CASE( BUF2 )
                     CASE( 'kg' )
                         UNITFAC = 1. / 1000.
-                    CASE( 'ton' )
+                    CASE( 'tons' )
                         UNITFAC = GM2TON
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
@@ -130,13 +159,13 @@ C.........  Set conversion factor by comparing numerators
                 SELECT CASE( BUF2 )
                     CASE( 'g' )
                         UNITFAC = 1000.
-                    CASE( 'ton' )
+                    CASE( 'tons' )
                         UNITFAC = GM2TON / 1000.
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
-            CASE( 'ton' )
+            CASE( 'tons' )
 
                 SELECT CASE( BUF2 )
                     CASE( 'g' )
@@ -150,7 +179,7 @@ C.........  Set conversion factor by comparing numerators
             CASE( 'yr' )
 
                 SELECT CASE( BUF2 )
-                    CASE( 'dy' )
+                    CASE( 'day' )
                         UNITFAC = 365.
                     CASE( 'hr' )
                         UNITFAC = 365. * 24.
@@ -162,7 +191,7 @@ C.........  Set conversion factor by comparing numerators
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
-            CASE( 'dy' )
+            CASE( 'day' )
 
                  SELECT CASE( BUF2 )
                     CASE( 'yr' )
@@ -182,7 +211,7 @@ C.........  Set conversion factor by comparing numerators
                 SELECT CASE( BUF2 )
                     CASE( 'yr' )
                         UNITFAC = 1. / ( 365. * 24. )
-                    CASE( 'dy' )
+                    CASE( 'day' )
                         UNITFAC = 1. / 24.
                     CASE( 'min' )
                         UNITFAC = 60.
@@ -197,7 +226,7 @@ C.........  Set conversion factor by comparing numerators
                 SELECT CASE( BUF2 )
                     CASE( 'yr' )
                         UNITFAC = 1. / ( 365. * 24. * 60. )
-                    CASE( 'dy' )
+                    CASE( 'day' )
                         UNITFAC = 1. / ( 24. * 60. )
                     CASE( 'hr' )
                         UNITFAC = 1. / 60.
@@ -212,7 +241,7 @@ C.........  Set conversion factor by comparing numerators
                 SELECT CASE( BUF2 )
                     CASE( 'yr' )
                         UNITFAC = 1. / ( 365. * 24. * 3600. )
-                    CASE( 'dy' )
+                    CASE( 'day' )
                         UNITFAC = 1. / ( 24. * 3600. )
                     CASE( 'hr' )
                         UNITFAC = 1. / 3600.
@@ -222,20 +251,53 @@ C.........  Set conversion factor by comparing numerators
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
-            CASE( 'm' )
+            CASE( 'km' )
 
                 SELECT CASE( BUF2 )
-                    CASE( 'km' )
-                        UNITFAC = 1. / 1000.
+                    CASE( 'mile' )
+                        UNITFAC = 0.6213712
+                    CASE( 'm' )
+                        UNITFAC = 1000.
+                    CASE( 'ft' )
+                        UNITFAC = 3280.84
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
-            CASE( 'km' )
+            CASE( 'mile' )
+                SELECT CASE( BUF2 )
+                    CASE( 'km' )
+                        UNITFAC = 1.609344
+                    CASE( 'm' )
+                        UNITFAC = 1609.344
+                    CASE( 'ft' )
+                        UNITFAC = 5280.
+                    CASE DEFAULT
+                        CALL CASE_NOT_FOUND( UNITFAC )
+                END SELECT
+
+            CASE( 'm' )
 
                 SELECT CASE( BUF2 )
+                    CASE( 'km' )
+                        UNITFAC = 0.001
+                    CASE( 'mile' )
+                        UNITFAC = 6.213712E-4
+                    CASE( 'ft' )
+                        UNITFAC = 3.2808399
+                    CASE DEFAULT
+                        CALL CASE_NOT_FOUND( UNITFAC )
+                END SELECT
+
+            CASE( 'ft' )
+
+                SELECT CASE( BUF2 )
+                    CASE( 'km' )
+                        UNITFAC = 0.0003048
+                    CASE( 'mile' )
+                        UNITFAC = 1.893939E-4
                     CASE( 'm' )
-                        UNITFAC = 1000.
+                        UNITFAC = 0.3048
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
@@ -244,48 +306,15 @@ C.........  Set conversion factor by comparing numerators
                 CALL CASE_NOT_FOUND( UNITFAC )
 
         END SELECT
+
+C.........  Inckude any prefix adjustments
+        UNITFAC = UNITFAC * PRECNV
         
         RETURN
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
         CONTAINS
-
-C.............  This subprogram remove the plural extensions from the
-C               units
-            SUBROUTINE GET_CONSISTENT( BUFFER )
-
-C.............  Subprogram arguments
-            CHARACTER(*), INTENT (IN OUT) :: BUFFER
-
-C----------------------------------------------------------------------
-
-            IF( BUFFER .EQ. 'gms' )      BUFFER = 'g'
-            IF( BUFFER .EQ. 'gm' )       BUFFER = 'g'
-            IF( BUFFER .EQ. 'kgs' )      BUFFER = 'kg'
-            IF( BUFFER .EQ. 'tons' )     BUFFER = 'ton'
-            IF( BUFFER .EQ. 'moles' )    BUFFER = 'mole'
-            IF( BUFFER .EQ. 'gm mole' )  BUFFER = 'mole'
-            IF( BUFFER .EQ. 'gm moles' ) BUFFER = 'mole'
-            IF( BUFFER .EQ. 'years' )    BUFFER = 'yr'
-            IF( BUFFER .EQ. 'year' )     BUFFER = 'yr'
-            IF( BUFFER .EQ. 'yrs' )      BUFFER = 'yr'
-            IF( BUFFER .EQ. 'hours' )    BUFFER = 'hr'
-            IF( BUFFER .EQ. 'hour' )     BUFFER = 'hr'
-            IF( BUFFER .EQ. 'hrs' )      BUFFER = 'hr'
-            IF( BUFFER .EQ. 'dys' )      BUFFER = 'dy'
-            IF( BUFFER .EQ. 'day' )      BUFFER = 'dy'
-            IF( BUFFER .EQ. 'days' )     BUFFER = 'dy'
-            IF( BUFFER .EQ. 'mins' )     BUFFER = 'min'
-            IF( BUFFER .EQ. 'secs' )     BUFFER = 's'
-            IF( BUFFER .EQ. 'sec' )      BUFFER = 's'
-
-            RETURN
-
-            END SUBROUTINE GET_CONSISTENT
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
 
 C.............  This subprogram checks for an internal error of the
 C               units conversion case not being programmed in the code
