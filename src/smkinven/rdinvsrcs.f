@@ -519,7 +519,7 @@ C.........................  Check if SCC has proper length
 
 C.........................  Set vehicle type and road class
                         IVT = STR2INT( TSCC( 3:6 ) )
-                        RWT = STR2INT( TSCC( 8:10 ) )
+                        ROAD = STR2INT( TSCC( 8:10 ) )
                                                 
 C.........................  Ensure that vehicle type is valid
                         DO J = 1, NVTYPE
