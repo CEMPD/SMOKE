@@ -4,7 +4,7 @@ C Version "@(#)$Id$ $Source$ $Date$
         PROGRAM GRDAMAT
 
 C***********************************************************************
-C  program body starts at line 157
+C  program body starts at line 171
 C
 C  DESCRIPTION:
 C       Construct area source gridding matrix from data contained in
@@ -22,6 +22,8 @@ C       Prototype  2/95 by CJC.
 C
 C       Version   11/95 by CJC sorts GREF on the fly; more sophisticated
 C       error trapping.
+C
+C       Version   1/96 by CJC reads FIP-X-Y surrogate coeff files
 C***********************************************************************
 
       IMPLICIT NONE
@@ -42,10 +44,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
+        LOGICAL         DSCGRID
+        INTEGER         STR2INT
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, FIND3, GETYN, 
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN
+        EXTERNAL        DSCGRID, FIND1, FIND2, FIND3, GETYN, 
+     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, TRIMLEN
 
 
 C...........   PARAMETER:
@@ -68,9 +72,13 @@ C...........   follow this scheme with parallel arrays
         INTEGER     ROW
         INTEGER     ZONE
         INTEGER     CMAX, CMIN
-        REAL        XDUM, YDUM
+        REAL        XDUM, YDUM, SDUM, TDUM, UDUM, VDUM
+        REAL        DDX, DDY
         REAL        FRAC( NASRG )         !  (scratch) surrogate fractions
 
+        CHARACTER*7 ID7C
+        CHARACTER*3 ID3C
+ 
 C.......   Actually-occurring ASC table (used for filtering out 
 C.......   irrelevant xrefs
 
@@ -146,10 +154,20 @@ C...........   Other local variables
 
         LOGICAL         GFLAG   !  generate output gridding matrix if true
         LOGICAL         OFLAG   !  Did overflow occur
-        CHARACTER*256   MSGBUF
+        CHARACTER*16    SCRBUF
+        CHARACTER*256   MESG
 
         LOGICAL         EFLAG   !  input error flat
 
+
+C...........   STATEMENT FUNCTIONS:  
+C.......   floating point "unequal" -- true iff 
+C.......   | P - Q | > 1e-5 * sqrt( p*p + q*q + 1e-5 )
+
+        REAL            P, Q
+        LOGICAL         FLTERR
+        FLTERR( P, Q ) = 
+     &  ( (P - Q)**2  .GT.  1.0E-10*( P*P + Q*Q + 1.0E-5 ) )
 
 C***********************************************************************
 C   begin body of program GRDAMAT
@@ -158,11 +176,10 @@ C   begin body of program GRDAMAT
         
         WRITE( *,92000 ) 
      &  ' ',
-     &  'Program GRDAMAT to take the sorted col-row surrogate ',
-     &  'coefficient file produced by FIPXY2CR, the EPS surrogate',
-     &  'cross reference file, the AREA SOURCE file produced by',
-     &  'RAWAREA, and the ACTUAL-ASC file, and produce the',
-     &  'AREA SOURCE GRIDDING MATRIX file.', 
+     &'Program GRDAMAT to take the sorted EPS surrogate coefficient',
+     &'file, the EPS surrogate cross reference file, the AREA SOURCE',
+     &'file produced by RAWAREA, and the ACTUAL-ASC file, and produce',
+     &'the AREA SOURCE GRIDDING MATRIX file.', 
      &  ' '
         WRITE( *,92000 ) 
      &  'You will need to enter the logical names for the input and',
@@ -212,6 +229,18 @@ C.......   Initializations:
             NCELLS( S ) = 0     !  for Surrogate  cell::FIPS table
 12      CONTINUE
 
+cmh add: Get grid description for use in check
+
+        IF ( .NOT. DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
+     &              P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
+     &              XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
+     &              NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+            SCRBUF = GRDNM
+            MESG   = '"' // SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+     &               '" not found in GRIDDESC file'
+            CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+
+        END IF          ! if dscgrid() failed
 
 C.......   Read the surrogate coefficient file
 C...............   ASSUMPTION:  sorted by FIP
@@ -220,15 +249,35 @@ C...............   ASSUMPTION:  sorted by FIP
      &  ' ', 'Reading GRIDDING SURROGATE COEFFICIENT file...', ' '
 
         READ( SDEV, *, IOSTAT=IOS ) !  read file header
-     &          XORIG3D, YORIG3D,
-     &          XDUM, YDUM, ZONE,
-     &          XCELL3D, YCELL3D
+     &          SDUM, TDUM, 
+     &          UDUM, VDUM, ZONE,
+     &          XDUM, YDUM
         
         IF ( IOS .NE. 0 ) THEN
-            WRITE( MSGBUF,94050 ) 
+            WRITE( MESG,94010 ) 
      &          'I/O error ', IOS, 
      &          'reading SURG COEFF file header at line', IREC
-            CALL M3EXIT( 'GRDAMAT', 0, 0, MSGBUF, 1 )
+            CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 1 )
+        END IF
+
+C.......   Check grid compatibility:
+
+        DDX  = 1.0 / XCELL3D
+        DDY  = 1.0 / YCELL3D
+        SDUM = DDX * ( SDUM - XORIG3D )
+        TDUM = DDY * ( TDUM - YORIG3D )
+        IF ( FLTERR( XDUM, XCELL3D ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &                   'Bad XCELL in SURROGATE file', 2 )
+        ELSE IF ( FLTERR( YDUM, YCELL3D ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &                   'Bad YCELL in SURROGATE file', 2 )
+        ELSE IF ( FLTERR( SDUM, FLOAT( NINT( SDUM ) ) ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &                   'Bad X alignment in SURROGATE file', 2 )
+        ELSE IF ( FLTERR( TDUM, FLOAT( NINT( TDUM ) ) ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &                   'Bad Y alignment in SURROGATE file', 2 )
         END IF
                            
         IREC     =  1
@@ -241,32 +290,36 @@ C...............   ASSUMPTION:  sorted by FIP
         
             IREC = IREC + 1
             READ( SDEV, *, END=24, IOSTAT=IOS ) 
-     &          FIP, COL, ROW, ZONE, ( FRAC( C ), C = 1, NASRG )
+     &          FIP, XDUM, YDUM, ZONE, ( FRAC( C ), C = 1, NASRG )
 
             IF ( IOS .NE. 0 ) THEN
 
-                WRITE( MSGBUF,94050 ) 
+                WRITE( MESG,94010 ) 
      &              'I/O error ', IOS, 
      &              'reading SURG COEFF file at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 GO TO  22
 
-            ELSE IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
+            END IF
 
-                WRITE( MSGBUF,94050 )
+            COL = NINT( DDX * ( XDUM - XORIG3D ) )  +  1
+            ROW = NINT( DDY * ( YDUM - YORIG3D ) )  +  1
+            IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
+
+                WRITE( MESG,94010 )
      &              'Column ', COL,
      &              'out of range in SURG COEFF file at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 GO TO  22
 
             ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
 
-                WRITE( MSGBUF,94050 )
+                WRITE( MESG,94010 )
      &              'Row ', ROW,
      &              'out of range in SURG COEFF file at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 GO TO  22
 
@@ -277,13 +330,20 @@ C...............   ASSUMPTION:  sorted by FIP
 
 C...........   Find this FIP and record this cell for it
         
-            IF ( FIP .NE. LFIP ) THEN
+            IF ( LFIP .GT. FIP ) THEN
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 )
+     &              'SURG COEFF file out of order at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSEIF( FIP .NE. LFIP ) THEN
                 
                 IF ( S .GE. NAFIP ) THEN
-                    WRITE( MSGBUF,94050 ) 
+                    WRITE( MESG,94010 ) 
      &                  'FIP max', NAFIP, 
      &                  'exceeded in SURG COEF file at line', IREC
-                    CALL M3MESG( MSGBUF )
+                    CALL M3MESG( MESG )
                     EFLAG = .TRUE.
                     GO TO  22
                 END IF
@@ -297,12 +357,12 @@ C...........   Find this FIP and record this cell for it
             K = NCELLS( S ) + 1
        
             IF ( K .GT. NCFIP ) THEN
-                WRITE( MSGBUF,94050 )
+                WRITE( MESG,94010 )
      &             'Cell:FIP max', NCFIP, 
      &             'exceeded in SURG COEF file for FIP', FIP,
      &             'Cell', C,
      &             ' at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 GO TO  22
             
@@ -349,26 +409,26 @@ C.......   Read the ACTUAL ASC FILE
             IF ( IOS .NE. 0 ) THEN
 
                 EFLAG = .TRUE.
-                WRITE( MSGBUF,94050 ) 
+                WRITE( MESG,94010 ) 
      &              'I/O error', IOS, 
      &              'reading ACTUAL ASC file at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
 
             ELSE IF ( I .GE. NASCC ) THEN 
 
                 EFLAG = .TRUE.
-                WRITE( MSGBUF,94050 )
+                WRITE( MESG,94010 )
      &              'Max ASC TABLE size', NASCC, 
      &              'exceeded at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
 
             ELSE IF ( ( LID7 .GT. ID7 ) .OR.
      &                ( LID7 .EQ. ID7 .AND. LID3 .GE. ID3 ) ) THEN 
 
                 EFLAG = .TRUE.
-                WRITE( MSGBUF,94050 )
+                WRITE( MESG,94010 )
      &              'ASC table out of order at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
 
             ELSE
 
@@ -403,20 +463,44 @@ C.......   Read the surrogate cross-reference file
 
 44     CONTINUE        !  head of the XDEV-read loop
 
-            READ( XDEV, 93030, END=45, IOSTAT=IOS ) FIP, SID, ID7, ID3
+            READ( XDEV, 93030, END=45, IOSTAT=IOS ) FIP, SID, ID7C, ID3C
             IREC = IREC + 1
 
             IF ( IOS .NE. 0 ) THEN
 
-                WRITE( MSGBUF,94050 ) 
+                WRITE( MESG,94010 ) 
      &              'I/O Status ', IOS, 
      &              'reading SURG XREF file at line', IREC
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
                 EFLAG = .TRUE.
 
-            ELSE IF( FIND2( ID7, ID3, NASC, ASCA7, ASCA3 ) .GT. 0 )THEN
+            ELSE IF ( ID7C(1:1) .GT. '9' ) THEN  ! Motor vehicles x-ref entry
 
-                IF ( I .LT. NAMAX ) THEN  !  dimension-check OK
+                GO TO 44
+
+            ELSE
+
+                ID7 = STR2INT( ID7C )
+                ID3 = STR2INT( ID3C )
+
+                IF( ID7 .GT. 0 .AND. ID3 .GE. 0 ) THEN
+                    J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )
+                ELSE
+                    J = 1
+                ENDIF
+
+                IF ( J .LE. 0 ) THEN  ! ASC code not found in ASCC LIST file
+
+                    GO TO 44
+
+                ELSEIF ( I .GE. NAMAX ) THEN  !  Overflow
+
+                    WRITE( MESG,94010 ) 
+     &                     'XREF table overflow at record', IREC
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+
+                ELSE 
 
                     I = I + 1
                     INDEXA( I ) = I
@@ -425,21 +509,13 @@ C.......   Read the surrogate cross-reference file
                     ASCI7A( I ) = ID7
                     ASCI3A( I ) = ID3
 
-                ELSE    !  overflow
+                END IF  !  No overflow, ASC found in list
 
-                    EFLAG = .TRUE.
-                    WRITE( MSGBUF,94050 ) 
-     &              'Max rec-cnt exceeded in XREF file at line', IREC
-                    CALL M3MESG( MSGBUF )
+            END IF      !  Not motor vehicles record
 
-                END IF
+        GO TO  44       !  to head of XDEV-read loop
 
-            END IF
-
-            GO TO  44
-
-
-45      CONTINUE        !  end of the SDEV-read loop
+45      CONTINUE        !  end of the XDEV-read loop
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'GRDAMAT', 0, 0, 
@@ -478,10 +554,10 @@ C.......   Sort and process the surrogate cross-reference file
                     ASCI30( I0 ) = ID3
                 ELSE
                     EFLAG = .TRUE.
-                    WRITE( MSGBUF,94050 )
+                    WRITE( MESG,94010 )
      &                  'Max FIP-ind XREF exceeded for ID7', ID7,
      &                  'and ID3', ID3
-                    CALL M3MESG( MSGBUF )
+                    CALL M3MESG( MESG )
                 END IF
 
             ELSE        !  FIP > 0:  fip-dependent case
@@ -494,11 +570,11 @@ C.......   Sort and process the surrogate cross-reference file
                     ASCI3( I1 ) = ID3
                 ELSE
                     EFLAG = .TRUE.
-                    WRITE( MSGBUF,94050 )
+                    WRITE( MESG,94010 )
      &                  'Max FIP-dep XREF exceeded for FIP', FIP,
      &                  'ID7', ID7,
      &                  'and ID3', ID3
-                    CALL M3MESG( MSGBUF )
+                    CALL M3MESG( MESG )
                 END IF
 
             END IF      !  if fip zero, or not
@@ -514,6 +590,22 @@ C.......   Sort and process the surrogate cross-reference file
         NUMSCC = I1
 
 
+C.......   Get the grid name and parameters
+C.......   to put into file header:
+
+        IF ( .NOT. DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
+     &              P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
+     &              XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
+     &              NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
+            SCRBUF = GRDNM
+            MESG   = '"' // SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+     &               '" not found in GRIDDESC file'
+            CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+
+        END IF          ! if dscgrid() failed
+
+
 C.......   Get file name; open output gridding matrix file
 
         FTYPE3D = SMATRX3
@@ -526,21 +618,15 @@ C.......   Get file name; open output gridding matrix file
         NLAYS3D = 1
         NTHIK3D = NASRC
         GDNAM3D = GRDNM
-        GDTYP3D = UTMGRD3
-        P_ALP3D = DBLE( ZONE )
-        P_BET3D = DBLE( BADVAL3 )
-        P_GAM3D = DBLE( BADVAL3 )
-        XCENT3D =       0.0D0           !  [x|y][orig|cell]3d read from AGPRO
-        YCENT3D =       0.0D0
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
-        FDESC3D( 1 ) = 'Area Source gridding-coefficient matrix'
+        FDESC3D( 1 ) = 'NC Area Source gridding-coefficient matrix'
         DO  167  K = 2, MXDESC3
             FDESC3D( K ) = ' '
 167     CONTINUE
         VNAME3D( 1 ) = 'AGRDMAT'
         UNITS3D( 1 ) = 'n/a'
-        VDESC3D( 1 ) = 'Area Source gridding-coefficient matrix'
+        VDESC3D( 1 ) = 'NC Area Source gridding-coefficient matrix'
         VTYPE3D( 1 ) = M3REAL
            
         GNAME = PROMPTMFILE( 
@@ -620,9 +706,9 @@ C...........   with multiple entries per FIP.
             F = FIND1( FIP, NFIPLIST, FIPLIST )
             
             IF ( F .LT. 0 ) THEN
-                WRITE( MSGBUF,94050 )  
+                WRITE( MESG,94010 )
      &          'FIP code ', FIP, 'not found in surrogate list'
-                CALL M3MESG( MSGBUF )
+                CALL M3MESG( MESG )
                 GO TO  266
             END IF
 
@@ -714,10 +800,10 @@ C.......   Compute statistics.
 299         CONTINUE    !  end of loop on cells K for this FIP
             
             IF ( K .GT. NMATX ) THEN
-                WRITE( MSGBUF,94050 ) 
+                WRITE( MESG,94010 ) 
      &                  'Number of coeffs', K, 
      &                  'exceeds NMATX=', NMATX
-                CALL M3EXIT( 'GRDAMAT', 0, 0, MSGBUF, 3 ) 
+                CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 3 ) 
             END IF
                    
 C.......   Write out the gridding matrix:
@@ -785,13 +871,14 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( I7, I3 )
 
-93030   FORMAT( I5, I4, I8, I3 )        !  for surrogate XREF file
+93030   FORMAT( I5, I4, 1X, A7, A3 )        !  for surrogate XREF file
 
 
 C...........   Internal buffering formats............ 94xxx
 
-94050   FORMAT( 5(A, :, I10, :,2X) )
+94010   FORMAT( 10( A, :, I10, :, 2X ) )
 
 
         END
+
 
