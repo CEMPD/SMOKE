@@ -130,7 +130,7 @@ C.........  Perform case-specific settings
         END SELECT
 
 C.........  Ensure that input file is a list-formatted file
-        INVFMT = GETFORMT( FDEV )
+        INVFMT = GETFORMT( FDEV, -1 )
 
         IF( INVFMT .NE. LSTFMT ) THEN
             MESG = TYPNAM// '-specific input file is not provided by '//
