@@ -2,7 +2,7 @@
         SUBROUTINE FLTRXREF( CFIP, CSIC, TSCC, CPOA, IXSIC, IXSCC,
      &                       IXPOA, SKIPPOA, SKIPREC )
 
-C***********************************************************************
+C**************************************************************************
 C  subroutine body starts at line
 C
 C  DESCRIPTION:
@@ -19,13 +19,13 @@ C
 C  REVISION  HISTORY:
 C      Started 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -114,8 +114,7 @@ C               was already generated.
             END IF
 
 C.............  Set flags indicating which source category is being processed
-C            MFLAG = ALLOCATED( IRCLAS )
-            MFLAG = .FALSE.
+            MFLAG = ALLOCATED( IRCLAS )
             PFLAG = ALLOCATED( ISIC )
 
 C.............  Check length of SCC string
