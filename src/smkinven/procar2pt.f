@@ -41,8 +41,9 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, NPCNT, IPOSCOD, POLVAL, 
-     &                      XLOCA, YLOCA
+        USE MODSOURC, ONLY: IFIP, NPCNT, IPOSCOD, TPFLAG, INVYR,
+     &                      POLVAL, CSOURC, CSCC,
+     &                      XLOCA, YLOCA, CELLID
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: AR2PTIDX, AR2PTTBL, AR2PTCNT
@@ -51,7 +52,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, NEM, NOZ, NEF, NRP, NPPOL
 
 C.........  This module contains the arrays for the area-to-point x-form
-        USE MODAR2PT, ONLY: AR2PTABL
+        USE MODAR2PT, ONLY: AR2PTABL, NCONDSRC, REPAR2PT
         
         IMPLICIT NONE
 
@@ -60,25 +61,37 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-!        CHARACTER*2     CRLF
-!        INTEGER         STR2INT
+        INTEGER         STR2INT
         
-!        EXTERNAL        CRLF, STR2INT
+        EXTERNAL        STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (INOUT) :: NRAWBP  ! no. raw records by pollutant
 
 C...........   Local pointers
-        INTEGER, POINTER :: OLDNPCNT ( : ) !  number of pollutants per source
-        INTEGER, POINTER :: OLDIPOSCOD( : ) !  positn of pol in INVPCOD
+        INTEGER, POINTER :: OLDIFIP   ( : )   !  source FIPS ID
+        INTEGER, POINTER :: OLDNPCNT  ( : )   !  number of pollutants per source
+        INTEGER, POINTER :: OLDIPOSCOD( : )   !  positn of pol in INVPCOD
+        INTEGER, POINTER :: OLDTPFLAG ( : )   ! temporal profile types
+        INTEGER, POINTER :: OLDINVYR  ( : )   ! inventory year
 
         REAL   , POINTER :: OLDPOLVAL( :,: )   ! emission values
 
         CHARACTER(LEN=ALLLEN3), POINTER :: OLDCSOURC( : ) ! concat src
+        CHARACTER(LEN=SCCLEN3), POINTER :: OLDCSCC  ( : ) ! scc code
+
+C...........   Local allocatable arrays
+        INTEGER, ALLOCATABLE :: REPIDX( : )      ! index for sorting
+        INTEGER, ALLOCATABLE :: REPSRC( : )      ! source number
+        INTEGER, ALLOCATABLE :: REPPOL( : )      ! pollutant number
+        REAL   , ALLOCATABLE :: REPORIGEMIS( : ) ! original emissions
+        REAL   , ALLOCATABLE :: REPSUMEMIS ( : ) ! split and summed emissions
 
 C...........   Other local variables
         INTEGER         I,J,K,S     ! counters
         INTEGER         IOS         ! I/O error status
+        INTEGER         LSTA        ! last state code
+        INTEGER         LPOL        ! last pollutant code
         INTEGER         NA2PSRCS    ! no. of area-to-point sources to add
         INTEGER         NA2PRECS    ! no. of sources with pollutants to add
         INTEGER         NEWSRCPOS   ! position in new source arrays
@@ -86,11 +99,18 @@ C...........   Other local variables
         INTEGER         OLDRECPOS   ! position in old source w/ pollutant arrays
         INTEGER         NREPSRCS    ! total no. of area-to-point sources
         INTEGER         TBLE        ! current area-to-point table number
+        INTEGER         TSTA        ! temporary state code
+        INTEGER         TPOL        ! temporary pollutant code
+        INTEGER         REPPOS      ! position in reporting arrays
+        INTEGER         TMPPOS      ! temporary position in reporting arrays
         INTEGER         ROW         ! current area-to-point row
         INTEGER         OLDNSRC     ! old number of srcs
 
         REAL            FACTOR      ! factor for area-to-point conversion
 
+        CHARACTER(LEN=SRCLEN3)  CSRC        !  temporary source information
+        CHARACTER(LEN=SCCLEN3)  LSCC        !  last scc code
+        CHARACTER(LEN=SCCLEN3)  TSCC        !  temporary scc code
         CHARACTER(LEN=256    )  MESG        !  message buffer 
 
         CHARACTER*16 :: PROGNAME = 'PROCAR2PT' ! program name
@@ -104,17 +124,29 @@ C           create additional memory for it
         NA2PSRCS = 0
         NA2PRECS = 0
         NREPSRCS = 0
-
+        
         DO S = 1, NSRC
             IF( AR2PTTBL( S ) /= 0 ) THEN
                 NA2PSRCS = NA2PSRCS + AR2PTCNT( S ) - 1
                 NA2PRECS = NA2PRECS + (AR2PTCNT( S ) - 1)*NPCNT( S )
-                NREPSRCS = NREPSRCS + 1
+                NREPSRCS = NREPSRCS + NPCNT( S )
             END IF
         END DO
 
 C.........  Check if any sources need to be processed
         IF( NREPSRCS == 0 ) RETURN
+
+C.........  Allocate memory for reporting
+        ALLOCATE( REPIDX ( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPIDX', PROGNAME )
+        ALLOCATE( REPSRC( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPSRC', PROGNAME )
+        ALLOCATE( REPPOL( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPPOL', PROGNAME )
+        ALLOCATE( REPORIGEMIS( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPORIGEMIS', PROGNAME )
+        ALLOCATE( REPSUMEMIS( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPSUMEMIS', PROGNAME )
 
 C.........  Store old number of sources
         OLDNSRC = NSRC
@@ -126,39 +158,66 @@ C.............  Update total number of sources and records
             NRAWBP = NRAWBP + NA2PRECS
 
 C.............  Associate temporary pointers with sorted arrays
-            OLDCSOURC  => CSOURC
+            OLDIFIP    => IFIP
             OLDNPCNT   => NPCNT
-            OLDPOLVAL  => POLVAL
             OLDIPOSCOD => IPOSCOD
+            OLDTPFLAG  => TPFLAG
+            OLDINVYR   => INVYR
+            
+            OLDPOLVAL  => POLVAL
+            
+            OLDCSOURC  => CSOURC
+            OLDCSCC    => CSCC
 
 C.............  Nullify original sorted arrays
-            NULLIFY( CSOURC, POLVAL, NPCNT, IPOSCOD )
+            NULLIFY( IFIP, NPCNT, IPOSCOD, TPFLAG, INVYR,
+     &               POLVAL, CSOURC, CSCC )
+
+C.............  Deallocate original X and Y location arrays
+C               Don't need to store old values since they aren't set
+            DEALLOCATE( XLOCA, YLOCA, CELLID )
 
 C.............  Allocate memory for larger sorted arrays
-            ALLOCATE( CSOURC( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+            ALLOCATE( IFIP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
             ALLOCATE( NPCNT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
-            ALLOCATE( POLVAL( NRAWBP,NPPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
             ALLOCATE( IPOSCOD( NRAWBP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
+            ALLOCATE( TPFLAG( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
+            ALLOCATE( INVYR( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
+            
+            ALLOCATE( POLVAL( NRAWBP,NPPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
+            
+            ALLOCATE( CSOURC( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+            ALLOCATE( CSCC( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
+            
+            ALLOCATE( XLOCA( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
+            ALLOCATE( YLOCA( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
+            ALLOCATE( CELLID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
+            
             NPCNT = 0         ! array
+            
             POLVAL = BADVAL3  ! array
             
+            XLOCA = BADVAL3   ! array
+            YLOCA = BADVAL3   ! array
+            CELLID = 0        ! array
+            
         END IF
-
-C.........  Allocate memory for X and Y locations (in sorted order)
-        ALLOCATE( XLOCA( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
-        ALLOCATE( YLOCA( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
-        XLOCA = BADVAL3  ! array
-        YLOCA = BADVAL3  ! array
         
         NEWSRCPOS = 0
         NEWRECPOS = 0
         OLDRECPOS = 1
+        REPPOS = 0
 
 C.........  Loop through original sources
         DO S = 1, OLDNSRC
@@ -175,25 +234,28 @@ C.................  If no sources are actually added, just modify existing value
                     XLOCA( S ) = AR2PTABL( ROW,TBLE )%LON
                     YLOCA( S ) = AR2PTABL( ROW,TBLE )%LAT
                     
-                    FACTOR = AR2PTABL( ROW,TBLE )%ALLOC
+                    FACTOR = AR2PTABL( ROW,TBLE )%ALLOC                 
+
+C.....................  Loop through pollutants for this source                    
+                    DO K = OLDRECPOS, OLDRECPOS + NPCNT( S ) - 1
                     
-C.....................  If not adding sources, factor should be 1.0, so skip 
-C                       adjusting emissions
-                    IF( FACTOR /= 1. ) THEN                    
-                    
-                        DO K = OLDRECPOS, OLDRECPOS + NPCNT( S ) - 1
-                            
-                            IF( POLVAL( K,NEM ) /= BADVAL3 ) THEN
-                                POLVAL( K,NEM ) = POLVAL( K,NEM )*FACTOR
-                            END IF
-                            
-                            IF( POLVAL( K,NOZ ) /= BADVAL3 ) THEN
-                                POLVAL( K,NOZ ) = POLVAL( K,NOZ )*FACTOR
-                            END IF
-                            
-                        END DO
+C.........................  Store information for reporting
+                        REPPOS = REPPOS + 1
+                        REPIDX( REPPOS ) = REPPOS
+                        REPSRC( REPPOS ) = S
+                        REPPOL( REPPOS ) = IPOSCOD( K )
+                        REPORIGEMIS( REPPOS ) = POLVAL( K,NEM )
                         
-                    END IF
+C.........................  If not adding sources, factor should be 1.0, so skip 
+C                           adjusting emissions                        
+                        IF( FACTOR /= 1. ) THEN
+                            POLVAL( K,NEM ) = POLVAL( K,NEM ) * FACTOR
+                            POLVAL( K,NOZ ) = POLVAL( K,NOZ ) * FACTOR
+                        END IF
+
+                        REPSUMEMIS( REPPOS ) = POLVAL( K,NEM )
+                        
+                    END DO
                     
                     OLDRECPOS = OLDRECPOS + NPCNT( S )
                 
@@ -204,9 +266,14 @@ C.....................  Loop through all locations for this source
 
 C.........................  Increment source position and copy source info
                         NEWSRCPOS = NEWSRCPOS + 1
-                        CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
+                        
+                        IFIP( NEWSRCPOS ) = OLDIFIP( S )
                         NPCNT( NEWSRCPOS ) = OLDNPCNT( S )
-
+                        TPFLAG( NEWSRCPOS ) = OLDTPFLAG( S )
+                        INVYR( NEWSRCPOS ) = OLDINVYR( S )
+                        CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
+                        CSCC( NEWSRCPOS ) = OLDCSCC( S )
+                        
 C.........................  Store X and Y locations
                         XLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LON
                         YLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LAT
@@ -222,19 +289,33 @@ C.............................  Increment record position and store pollutant co
                             IPOSCOD( NEWRECPOS ) = OLDIPOSCOD( K )
 
 C.............................  Adjust annual and ozone season emissions based on ar2pt factor
-                            IF( OLDPOLVAL( K,NEM ) /= BADVAL3 ) THEN
-                                POLVAL( NEWRECPOS, NEM ) = 
-     &                              OLDPOLVAL( K,NEM ) * FACTOR
-                            END IF
+                            POLVAL( NEWRECPOS, NEM ) = 
+     &                          OLDPOLVAL( K,NEM ) * FACTOR
                 
-                            IF( OLDPOLVAL( K,NOZ ) /= BADVAL3 ) THEN
-                                POLVAL( NEWRECPOS,NOZ ) = 
-     &                              OLDPOLVAL( K,NOZ ) * FACTOR
-                            END IF
+                            POLVAL( NEWRECPOS,NOZ ) = 
+     &                          OLDPOLVAL( K,NOZ ) * FACTOR
 
 C.............................  Copy remaining values to new array
                             POLVAL( NEWRECPOS,NEF:NRP ) = 
      &                          OLDPOLVAL( K,NEF:NRP )
+
+C.............................  Store information for reporting
+                            IF( J == 0 ) THEN
+                                REPPOS = REPPOS + 1
+                                REPIDX( REPPOS ) = REPPOS
+                                REPSRC( REPPOS ) = S
+                                REPPOL( REPPOS ) = OLDIPOSCOD( K )
+                                REPORIGEMIS( REPPOS ) = 
+     &                              OLDPOLVAL( K,NEM )
+                                REPSUMEMIS( REPPOS ) =
+     &                              POLVAL( NEWRECPOS,NEM )
+                            ELSE
+                                TMPPOS = REPPOS - OLDNPCNT( S ) + 
+     &                                   K - OLDRECPOS + 1
+                                REPSUMEMIS( TMPPOS ) = 
+     &                              REPSUMEMIS( TMPPOS ) + 
+     &                              POLVAL( NEWRECPOS,NEM )
+                            END IF
                         
                         END DO  ! loop through pollutants
                     
@@ -251,8 +332,13 @@ C                   then need to copy information to new arrays
                 IF( NA2PSRCS > 0 ) THEN
                 
                     NEWSRCPOS = NEWSRCPOS + 1
-                    CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
+                    
+                    IFIP( NEWSRCPOS ) = OLDIFIP( S )
                     NPCNT( NEWSRCPOS ) = OLDNPCNT( S )
+                    TPFLAG( NEWSRCPOS ) = OLDTPFLAG( S )
+                    INVYR( NEWSRCPOS ) = OLDINVYR( S )
+                    CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
+                    CSCC( NEWSRCPOS ) = OLDCSCC( S )
                     
                     DO K = OLDRECPOS, OLDRECPOS + OLDNPCNT( S ) - 1
                         
@@ -270,11 +356,92 @@ C                   then need to copy information to new arrays
             
         END DO  ! loop through sources
 
-C.........  Deallocate old arrays
+C.........  Deallocate old source and emissions arrays
         IF( NA2PSRCS > 0 ) THEN
-            DEALLOCATE( OLDCSOURC, OLDNPCNT, OLDPOLVAL, OLDIPOSCOD )
+            DEALLOCATE( OLDIFIP, OLDNPCNT, OLDIPOSCOD, OLDTPFLAG,
+     &                  OLDINVYR, OLDPOLVAL, OLDCSOURC, OLDCSCC )   
         END IF
 
+C.........  Sort source information for reporting
+        CALL SORTI2( NREPSRCS, REPIDX, REPPOL, REPSRC )
+        
+C.........  Determine total number of sources accounting for multiple
+C           pollutants and counties
+        LSTA = 0
+        LSCC = EMCMISS3
+        LPOL = 0
+        NCONDSRC = 0
+        
+        DO I = 1,NREPSRCS
+            J = REPIDX( I )
+            CSRC = CSOURC( REPSRC( J ) )
+            
+            TSTA = STR2INT( CSRC( 2:3 ) )
+            TSCC = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )
+            TPOL = REPPOL( J )
+            
+            IF( TSTA /= LSTA .OR.
+     &          TSCC /= LSCC .OR.
+     &          TPOL /= LPOL      ) THEN
+                NCONDSRC = NCONDSRC + 1
+            END IF
+            
+            LSTA = TSTA
+            LSCC = TSCC
+            LPOL = TPOL
+        END DO
+
+C.........  Allocate final size for reporting array
+        ALLOCATE( REPAR2PT( NCONDSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPAR2PT', PROGNAME )
+        REPAR2PT%NFIPS    = 0
+        REPAR2PT%ORIGEMIS = 0.
+        REPAR2PT%SUMEMIS  = 0.
+
+C.........  Loop through and store final reporting information   
+        LSTA = 0
+        LSCC = EMCMISS3
+        LPOL = 0
+        K    = 0
+        
+        DO I = 1,NREPSRCS
+            J = REPIDX( I )
+            CSRC = CSOURC( REPSRC( J ) )
+            
+            TSTA = STR2INT( CSRC( 2:3 ) )
+            TSCC = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )
+            TPOL = REPPOL( J )
+            
+            IF( TSTA /= LSTA .OR.
+     &          TSCC /= LSCC .OR.
+     &          TPOL /= LPOL      ) THEN
+     
+                K = K + 1
+                REPAR2PT( K )%STATE = TSTA
+                REPAR2PT( K )%SCC   = TSCC
+                REPAR2PT( K )%POLL  = TPOL
+                REPAR2PT( K )%NFIPS = 1
+                
+                REPAR2PT( K )%ORIGEMIS = REPORIGEMIS( J )
+                REPAR2PT( K )%SUMEMIS  = REPSUMEMIS ( J )
+            ELSE
+                REPAR2PT( K )%NFIPS = REPAR2PT( K )%NFIPS + 1
+                
+                REPAR2PT( K )%ORIGEMIS = REPAR2PT( K )%ORIGEMIS +
+     &              REPORIGEMIS( J )
+                REPAR2PT( K )%SUMEMIS = REPAR2PT( K )%SUMEMIS +
+     &              REPSUMEMIS( J )
+            END IF
+            
+            LSTA = TSTA
+            LSCC = TSCC
+            LPOL = TPOL
+
+        END DO
+
+C.........  Deallocate temporary reporting arrays
+        DEALLOCATE( REPIDX, REPSRC, REPPOL, REPORIGEMIS, REPSUMEMIS )
+            
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
