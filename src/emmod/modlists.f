@@ -87,16 +87,61 @@
         CHARACTER(LEN=OPTLEN3), ALLOCATABLE, PUBLIC :: ORISPNT( : ) ! ORIS // point
 
 !.........  For valid pollutants and activities...
+        INTEGER, PUBLIC :: MXIDAT = 0   ! Max no of inv pols & acvtys
+        INTEGER, PUBLIC :: NINVTBL = 0  ! Number of entries in inventory table
+	  INTEGER, PUBLIC :: NUNIQCAS = 0 ! Number of unique CAS codes
+	  INTEGER, PUBLIC :: NINVKEEP = 0 ! Number of kept pols/acts (KEEP=Y)
+	  INTEGER, PUBLIC :: NINVDROP = 0 ! Number of dropped pols/acts (KEEP=N)
 
 C.........  Full list of inventory pollutants/activities (in output order)
-        INTEGER, PUBLIC :: MXIDAT = 0   ! Max no of inv pols & acvtys
-
-        INTEGER, ALLOCATABLE, PUBLIC :: INVDCOD( : ) ! 5-digit pollutant/actvty code
+C.........  Dimensioned by MXIDAT
+        INTEGER, ALLOCATABLE, PUBLIC :: INVDCOD( : ) ! 5-digit SAROAD code (if any)
         INTEGER, ALLOCATABLE, PUBLIC :: INVSTAT( : ) ! Status (<0 activity; >0 pol)
 
         REAL   , ALLOCATABLE, PUBLIC :: INVDCNV( : ) ! local conversion factor
 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INVDNAM( : ) ! name 
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: INVDUNT( : ) ! units
+        CHARACTER(LEN=1)      , ALLOCATABLE, PUBLIC :: INVDVTS( : ) ! V=VOC, T=TOG, N=not
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INVDNAM( : ) ! data name 
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: INVDUNT( : ) ! units for SMOKE intmdt inventory
+        CHARACTER(LEN=DDSLEN3), ALLOCATABLE, PUBLIC :: INVDDSC( : ) ! inventory data description
+
+C.........  Inventory table arrays - unsorted raw data, dimensioned by NINVTBL
+        INTEGER, ALLOCATABLE, PUBLIC :: ITIDXA ( : ) ! Sorting index 1
+        INTEGER, ALLOCATABLE, PUBLIC :: ITIDXA2( : ) ! Sorting index 2
+	  INTEGER, ALLOCATABLE, PUBLIC :: ITLINNO( : ) ! Line number of input file for record
+        INTEGER, ALLOCATABLE, PUBLIC :: ITCODA ( : ) ! 5-digit SAROAD code (if any)
+        INTEGER, ALLOCATABLE, PUBLIC :: ITNTIA ( : ) ! NTI HAP number
+        INTEGER, ALLOCATABLE, PUBLIC :: ITREAA ( : ) ! Reactivity group
+        INTEGER, ALLOCATABLE, PUBLIC :: ITSTATA( : ) ! Status (<0 activity; >0 pol)
+
+        LOGICAL, ALLOCATABLE, PUBLIC :: ITKEEPA( : ) ! true: keep record data
+
+        REAL   , ALLOCATABLE, PUBLIC :: ITFACA ( : ) ! fraction of CAS emissions in pollutant
+
+        CHARACTER(LEN=1)      , ALLOCATABLE, PUBLIC :: ITVTSA ( : ) ! V=VOC, T=TOG, N=not
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ITNAMA ( : ) ! data name 
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: ITUNTA ( : ) ! units for SMOKE intmdt inventory
+        CHARACTER(LEN=CASLEN3), ALLOCATABLE, PUBLIC :: ITCASA ( : ) ! CAS code (left justified)
+        CHARACTER(LEN=DDSLEN3), ALLOCATABLE, PUBLIC :: ITDSCA ( : ) ! inventory data description
+        CHARACTER(LEN=DDSLEN3), ALLOCATABLE, PUBLIC :: ITCASDSCA( : ) ! CAS code description
+        CHARACTER(LEN=CDTLEN3), ALLOCATABLE, PUBLIC :: ITCASDNMA( : ) ! CAS code // data name
+
+C.........  CAS codes in sorted order WITH DUPLICATES and reference index back to 
+C           input order - dimensioned by NINVTBL
+        INTEGER               , ALLOCATABLE, PUBLIC :: SCASIDX( : ) ! index to ITNAMA
+        CHARACTER(LEN=CASLEN3), ALLOCATABLE, PUBLIC :: SORTCAS( : ) ! CAS code (left justified)
+	 
+C.........  CAS codes in sorted order WITHOUT DUPLICATES and count of pollutants
+C           for each CAS code (0 pollutants indicates that no pollutants for that
+C           CAS are kept) - dimensioned by NUNIQCAS
+        INTEGER               , ALLOCATABLE, PUBLIC :: UCASIDX ( : ) ! index to first entry in SORTCAS
+        INTEGER               , ALLOCATABLE, PUBLIC :: UCASNPOL( : ) ! pol count per CAS code
+	  INTEGER               , ALLOCATABLE, PUBLIC :: UCASNKEP( : ) ! kept pol count per CAS code
+        CHARACTER(LEN=CASLEN3), ALLOCATABLE, PUBLIC :: UNIQCAS ( : ) ! CAS code (left justified)
+
+C.........  SAROAD numbers in sorted order and reference index back to input order
+C           Dimensioned by MXIDAT
+        INTEGER, ALLOCATABLE, PUBLIC :: IDXCOD ( : ) ! index to INVDNAM
+        INTEGER, ALLOCATABLE, PUBLIC :: SORTCOD( : ) ! SAROAD number 
 
         END MODULE MODLISTS
