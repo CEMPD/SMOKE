@@ -145,7 +145,7 @@ C...............   Temporal x-ref arrays
         INTEGER RDTFA( MXREF )      ! Road class code in XREF list
         INTEGER LNKFA( MXREF )      ! Link number (user defined) in XREF list
         INTEGER VHTFA( MXREF )      ! Vehicle class in XREF list
-        INTEGER CODEA( MXREF )      ! Pollutant code in XREF list 
+        INTEGER CODEA( MXREF )      ! Emission type code in XREF list 
         INTEGER MPRFA( MXREF )      ! Monthly temporal profile for XREF
         INTEGER WPRFA( MXREF )      ! Weekly temporal profile for XREF
         INTEGER DPRFA( MXREF )      ! Daily temporal profile for XREF
@@ -205,13 +205,16 @@ C...........   Ungridding matrix:
 
 C...........   Other local variables
 
+        LOGICAL  DAYLIT  !  true when TZONES have been changed to daylight time
+        DATA     DAYLIT / .FALSE. /
+
         LOGICAL         EFLAG   !  error-flag
         LOGICAL         MFLAG   !  perform monthly adjustments flag
         LOGICAL         WFLAG   !  perform weekly adjustments flag
 
         INTEGER         COD     !  Temporary pollutant code
         INTEGER         EMT     !  Temporary MV emissions type
-        INTEGER         ICOD    !  Index to pollutant code in list
+        INTEGER         ICOD    !  Index to pollutant code/emission type in list
         INTEGER         IDIU    !  Temporary diurnal profile number
         INTEGER         IMON    !  Temporary monthly profile number
         INTEGER         IOS     !  input status placeholder
@@ -226,6 +229,7 @@ C...........   Other local variables
         INTEGER         MTIME	!  for met input file
         INTEGER         NEMODE  !  Number of scenario-specific emission modes
         INTEGER         NETYPE  !  Number of scenario-specific emission types
+        INTEGER         NIPOL   !  Number of scenario-specific inventory spcs
         INTEGER         NRDT    !  Index to road class in list
         INTEGER         NSTEPS
         INTEGER         RDT     !  Temporary EPA road class number
@@ -248,7 +252,6 @@ C...........   Other local variables
         REAL            TA( NGRID )	!  one-layer slice of temperature
         REAL            TASRC           !  temperature, interpolated to srcs
 
-        INTEGER         EMTIDX( MXEMIS ) ! Index for actual emis type to valid
         CHARACTER*3     MEMODE( MXEPRC ) ! Scenario-specific MV processes
         CHARACTER*7     EMTNAM( MXEMIS ) ! Scenario-specific emission type names
   
@@ -393,32 +396,10 @@ C.......   Get time period for output file:
 
         MDATE = JDATE
         MTIME = JTIME
-        CALL NEXTIME( MDATE, MTIME, TZONE*10000 )   !  GMT for met file
 
-
-C.........  Get list of scenario-specific emission types
+C.........  Get list of scenario-specific emission types in compiled order
 
         NETYPE  = CSVNAME( TDEV, .TRUE., .FALSE., .TRUE., EMTNAM )
-
-C.........  Create index of emission types to valid list
-        DO 33 I = 1, NETYPE
-
-             EMTIDX( I ) = INDEX1( EMTNAM( I ), NETYPE, EMTLST )
-
-             IF( EMTIDX( I ) .EQ. 0 ) THEN
-                 EFLAG = .TRUE.
-                 WRITE( MESG,94010 ) 'Emission type name ' //
-     &                  EMTNAM( I )( 1:TRIMLEN( EMTNAM(I) ) ) // 
-     &                  ' not valid in current version EMTLST'
-                 CALL M3MESG( MESG )
-             ENDIF
- 
-   33   CONTINUE
-
-C.........  Abort if error in emission type names
-        IF( EFLAG )
-     &      CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Check MBDIMS3.EXT', 2 )
-
 
 C.......   Get file name; open output time-stepped area sources file
 
@@ -429,12 +410,13 @@ C.......   Get file name; open output time-stepped area sources file
         NCOLS3D = 1
         NTHIK3D = IMISS3
         NLAYS3D = NVTYPE
+        VGTOP3D = AMISS3
 
 C.........  Set/process the MTMP variable names
         NVARS3D = NETYPE
         DO 16 I = 1, NVARS3D
 
-            VNAME3D( I ) = EMTNAM( EMTIDX( I ) )
+            VNAME3D( I ) = EMTNAM( I )
 
             L = TRIMLEN( VNAME3D( I ) )
             J = INDEX  ( VNAME3D( I )( 1:L ), '_' )
@@ -544,11 +526,12 @@ C.........  Read and process temporal XREF
 C.............  Ensure valid pollutant code
             COD = STR2INT( LINE( 32:36 ) )
             IF( COD .LE. 0 ) THEN
-                ICOD = 0
+                ICOD = 0                   ! Profile for all emission types
             ELSE
-                ICOD = FIND1( COD, MXIPOL, PCODE )
-                IF ( ICOD .LT. 0 ) THEN
+                ICOD = FIND1( COD, MXIPOL, PCODE ) 
+                IF ( ICOD .LT. 0 ) THEN    ! Skip if pollutant not on list
                     GO TO  44
+
                 END IF
             END IF
 
@@ -557,6 +540,20 @@ C.............  Perform mobile-specific checks on XREF entry
             RDT = STR2INT( LINE( 25:27 ) )
             EMT = INDEX1 ( LINE( 28:30 ), NEMODE, MEMODE )
  
+C.............  Inspect emission mode index
+C...............  If mode is not used
+            IF( EMT .EQ. 0 ) THEN
+                GO TO 44   !  to head of the XDEV-read loop
+
+C...............  Otherwise, combine ICOD and EMT to get index to valid
+C                 emission types list, unless ICOD is set to apply to all
+            ELSEIF( ICOD .NE. 0 ) THEN
+
+                ICOD = INDEX1( MEMODE( EMT ) // '_' // INVSPEC( ICOD ),
+     &                         MXEMIS, EMTLST )
+            ENDIF
+
+C.............  Inspect road class index 
             IF( RDT .NE. 0 ) THEN  ! Make sure we keep the defaults
                 NRDT = FIND1( RDT, NRCLAS, MROADS3 )
             ELSE
@@ -574,10 +571,6 @@ C.............  Warn and skip profile if MV-ASCT is blank
 
 C.............  Skip profile if road class not used
             ELSE IF( NRDT .LT. 0 ) THEN
-                GO TO 44   !  to head of the XDEV-read loop
- 
-C.............  Skip profile if emission mode not used
-            ELSE IF( EMT .EQ. 0 ) THEN
                 GO TO 44   !  to head of the XDEV-read loop
  
 C.............  Check table size for overflow
@@ -704,7 +697,7 @@ C.........  Group xref profiles by how specifically they are referenced.
                         RDTNC( NPRNC ) = RDT
 
                         CALL GRPXREF( VHT, ICOD, IMON, IWEK, IDIU, 
-     1                          MPRNC, WPRNC, DPRNC, MXSREF, NVTYPE,
+     &                          MPRNC, WPRNC, DPRNC, MXSREF, NVTYPE,
      &                          MXEMIS, NPRNC, NVTYPE, NETYPE )
 
                     END IF
@@ -1150,6 +1143,29 @@ C...............   weekday and weekend, calculate a new TMAT
 
                 LDATE = JDATE
 
+C...............   Adjust sources' time zones to account for daylight time
+C..................   Add 1 if date is daylight and TZONES is not
+C..................   Subtract 1 if date is not daylight and TZONES is daylight
+                IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
+ 
+                    DAYLIT = .TRUE.
+ 
+                    DO 777 S = 1, NMSRC
+                        TZONES( S ) = TZONES( S ) + 1
+  777               CONTINUE
+ 
+                ELSEIF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
+ 
+                    DAYLIT = .FALSE.
+ 
+                    DO 778 S = 1, NMSRC
+                        TZONES( S ) = TZONES( S ) - 1
+  778               CONTINUE
+ 
+                ENDIF
+
+C.................  Create temporal adjustment matrix for current day
+
                 CALL DAYMON( JDATE, MONTH, DAY )  !  get month
                 DAY = WKDAY( JDATE )              !  get day-of-week
 
@@ -1231,35 +1247,81 @@ C...............   Ungrid temperature:
                 HCORR = MOD( H + TZONE + 25 - TZONES( S ), 24 )
                 M     = EFDEX( HCORR, S )
 
-                DO  818  V = 1, NVTYPE
+                I = 1 
 
-                    TOUT( S,V,1 ) = TMAT( S,V,1,H ) *
+                IF( EMTNAM( I ) .EQ. 'EXH_CO' ) THEN
+
+                    DO  818  V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                              ( PP * EXH_CO( II  ,V,M ) +
      &                                QQ * EXH_CO( II+1,V,M ) )
+  818               CONTINUE
 
-                    TOUT( S,V,2 ) = TMAT( S,V,2,H ) *
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'EXH_NOX' ) THEN
+
+                    DO 819 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                              ( PP * EXH_NOX( II  ,V,M ) +
      &                                QQ * EXH_NOX( II+1,V,M ) )
+  819               CONTINUE
 
-                    TOUT( S,V,3 ) = TMAT( S,V,3,H ) *
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'EXH_VOC' ) THEN
+
+                    DO 820 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                              ( PP * EXH_VOC( II  ,V,M ) +
      &                                QQ * EXH_VOC( II+1,V,M ) )
+  820               CONTINUE
 
-                    TOUT( S,V,4 ) = TMAT( S,V,4,H ) *
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'EVP_VOC' ) THEN
+
+                    DO 821 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                              ( PP * EVP_VOC( II  ,V,M ) +
      &                                QQ * EVP_VOC( II+1,V,M ) )
+  821               CONTINUE
 
-                    TOUT( S,V,5 ) = TMAT( S,V,5,H ) *
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'RNL_VOC' ) THEN
+
+                    DO 822 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                              ( PP * RNL_VOC( II  ,V,M ) +
      &                                QQ * RNL_VOC( II+1,V,M ) )
+  822               CONTINUE
 
-                    TOUT( S,V,6 ) = TMAT( S,V,6,H ) *
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'RST_VOC' ) THEN
+
+                    DO 823 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                              ( PP * RST_VOC( II  ,V,M ) +
      &                                QQ * RST_VOC( II+1,V,M ) )
+  823               CONTINUE
 
-818             CONTINUE	!  end loop calculating emissions for S
+                    I = I + 1
+                ENDIF
 
-888         CONTINUE		!  end loop on sources S
+  888       CONTINUE		!  end loop on sources S
 
             IF ( .NOT.WRITE3( TNAME, 'ALL', JDATE, JTIME, TOUT ) ) THEN
 
