@@ -102,7 +102,10 @@
         REAL, ALLOCATABLE, PUBLIC :: EACNV( : )          ! units conv factors
 
 !.........  Arrays for reading inventory file headers
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC  :: TMPNAM( : )! var names
-        INTEGER               , ALLOCATABLE, PUBLIC  :: DATPOS( : )! var positn
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: TMPNAM( : )! var names
+        INTEGER               , ALLOCATABLE, PUBLIC :: DATPOS( : )! var positn
+
+!.........  Units for source attributes (such as stack parms)
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: ATTRUNIT( : )
 
         END MODULE MODINFO
