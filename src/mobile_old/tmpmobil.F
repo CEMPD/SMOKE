@@ -2,7 +2,7 @@
         PROGRAM TMPMOBIL
 
 C***********************************************************************
-C  program body starts at line 354
+C  program body starts at line 353
 C
 C  DESCRIPTION:
 C       Produces source-level temporally allocated VMT using the 
@@ -154,6 +154,7 @@ C...........   Emissions factor tables:
         REAL	EVP_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
         REAL	RNL_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
         REAL	RST_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
+        REAL    RFL_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
         REAL	WDL_VOC( NMINMAX, NVTYPE, MXPSI )  !  diurnal emissions factor
         REAL	DNL_VOC( NMINMAX, NVTYPE, MXPSI )  !  diurnal emissions factor
         REAL	HOT_VOC( NMINMAX, NVTYPE, MXPSI )  !  diurnal emissions factor
@@ -275,19 +276,24 @@ C...........   Other local variables
         INTEGER         IZONE   !  Zone of time stamps in temperature file
         INTEGER         EDATE	!  Simulation ending date
         INTEGER         ETIME	!  Simulation ending time 
+        INTEGER         EZDATE  !  Simulation ending time in GMT
         INTEGER         FIP     !  Temporary state/county code
         INTEGER         FDATE
         INTEGER         JDATE	!  for output file
         INTEGER         JTIME	!  for output file
         INTEGER         JMDATE	!  Met date using output zone
         INTEGER         JMTIME	!  Met time using output zone
+        INTEGER         JZDATE	!  Simulation starting date in GMT
+        INTEGER         JZTIME	!  Simulation starting time in GMT
         INTEGER         YEAR    !  Simulation output year
+        INTEGER         LDATE   !  Previous simulation date
         INTEGER         LNK     !  Temporary user defined link code
+        INTEGER         LZDATE  !  Previous simulation date in GMT
         INTEGER         MAXTL   !  Intermediate temperature indice variable
-        INTEGER         NDATE	!  Ending date for min/max temp file
-        INTEGER         NTIME	!  Ending time for min/max temp file
         INTEGER         MDATE	!  Counting date for met input file
         INTEGER         MTIME	!  Counting time for met input file
+        INTEGER         NDATE	!  Ending date for min/max temp file
+        INTEGER         NTIME	!  Ending time for min/max temp file
         INTEGER         NEMODE  !  Number of scenario-specific emission modes
         INTEGER         NETYPE  !  Number of scenario-specific emission types
         INTEGER         NIPOL   !  Number of scenario-specific inventory spcs
@@ -329,7 +335,6 @@ C...........   Other local variables
         CHARACTER*3     INV     !  temporary string for inventory species name
         CHARACTER*3     PROC    !  temporary string for process name
         CHARACTER*14    DTBUF   !  Buffer for MMDDYY 
-        CHARACTER*16    BUFFER  !  Temporary buffer
         CHARACTER*16    ANAME   !  logical name for mobile-source     input file
         CHARACTER*16    DNAME   !  logical name for diurnal EFs       input file
         CHARACTER*16    FNAME   !  logical name for non-diurnal EFs input file
@@ -446,12 +451,19 @@ C.........  Get starting date and time from met data file
         SCEN_STR = FDESC3D( 2 )
         SCHE_STR = FDESC3D( 3 )
 
-        TZONE  = 0
+        TZONE  = 5
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone for output emissions (0 for GMT)' )
-        JDATE  = GETDATE( SDATE3D, 
+
+C.........  Convert starting date and time from Met file based on zone
+        JDATE = SDATE3D
+        JTIME = STIME3D
+        CALL NEXTIME( JDATE, JTIME, -TZONE*10000 )
+
+C.........  Prompt for date and time
+        JDATE  = GETDATE( JDATE, 
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
-        JTIME  = GETNUM( 0, 999999, STIME3D, 
+        JTIME  = GETNUM( 0, 999999, JTIME, 
      &                   'Enter simulation starting time  (HHMMSS)' )
         NSTEPS = GETNUM( 1, 999999, MXREC3D,
      &                   'Enter simulation duration (hours)' )
@@ -488,6 +500,14 @@ C.........  Calculate start meterology date/time using TZONE
         JMDATE = SDATE3D
         JMTIME = STIME3D
         CALL NEXTIME( JMDATE, JMTIME, (IZONE - TZONE )*10000 )
+
+C.........  Calculate start and end sim date using GMT time zone (0)
+        JZDATE = MDATE
+        JZTIME = MTIME
+
+        EZDATE = EDATE
+        H      = ETIME
+        CALL NEXTIME( EZDATE, H, (TZONE - IZONE )*10000 ) 
 
 C.........  Abort if (start time) < (first time for temperatures)
         IF( ( MDATE .EQ. SDATE3D .AND. MTIME .LT. STIME3D ) .OR.
@@ -546,20 +566,23 @@ C.........  Calculate ending date and time from MINMAXT
 
 C.........  Check that simulation dates are in range of MINMAXT file
 C.........  This is intentionally comparing dates from different time zones
-        IF( JDATE .LT. WDATE .OR. EDATE .GT. NDATE ) THEN
+        IF( JZDATE .LT. WDATE .OR. EZDATE .GT. NDATE ) THEN
 
             EFLAG = .TRUE.
 
-            CALL M3MESG( 'Simulation starting date out of range '   //
+            CALL M3MSG2( 'Simulation dates out of range '   //
      &                   'for file ' // WNAME( 1:TRIMLEN( WNAME ) ) //
      &                   ' ...' )
 
             WRITE( MESG,94040 ) 
-     &             'Sim  start date:', JDATE, CRLF() // BLANK5 //
-     &             'Sim  end   date:', EDATE, CRLF() // BLANK5 //
-     &             'File start date:', WDATE, CRLF() // BLANK5 //
-     &             'File end   date:', NDATE
-            CALL M3MESG( MESG )
+     &             'Sim  start date:', JZDATE, CRLF() // BLANK5 //
+     &             'Sim  end   date:', EZDATE, CRLF() // BLANK5 //
+     &             'File start date:',  WDATE, CRLF() // BLANK5 //
+     &             'File end   date:',  NDATE
+            CALL M3MSG2( MESG )
+
+            CALL M3EXIT( 'TMPMOBIL', JDATE, JTIME, 
+     &                   'Input file insufficient.', 2 )         
 
         ENDIF
 
@@ -1356,7 +1379,7 @@ C.......   Get starting point, increment, number of items for
 C.......   non-diurnal emissions factor temperature tables:
 
         NTEMP  = STR2INT( FDESC3D( 5 ) )
-        TEMP0  = CTOK  +  SNGL( FTOC * ( XORIG3D - 32.0D0 ) )
+        TEMP0  = CTOK  +  SNGL( FTOC * ( -XORIG3D - 32.0D0 ) )
         DTEMP  = SNGL( FTOC * XCELL3D )
         TEMP1  = TEMP0 +  DTEMP * FLOAT( NTEMP - 1 )
         DDTEMP = 1.0 / DTEMP
@@ -1428,6 +1451,15 @@ C.......   Read emissions factor tables:
                 EFLAG = .TRUE.
             END IF
 
+            IF ( .NOT. READ3( FNAME, 'RFL_VOC', ALLAYS3, 
+     &                        FDATE, SEC2TIME( REFLIST( T ) ),
+     &                        RFL_VOC( 1,1,T ) ) ) THEN
+                WRITE( MESG,94010 ) 
+     &          'Could not read RFL_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // FNAME
+                EFLAG = .TRUE.
+            END IF
+
             IF ( .NOT. READ3( DNAME, 'WDL_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        WDL_VOC( 1,1,T ) ) ) THEN
@@ -1489,7 +1521,9 @@ C...........   For each time step, write out the area source emissions values:
 
         CALL M3MSG2( 'Writing out emissions values...' )
 
-        EFLAG = .FALSE.
+        EFLAG  = .FALSE.
+        LDATE  = 0
+        LZDATE = 0
 
         DO  899  T = 1, NSTEPS
 
@@ -1501,7 +1535,9 @@ C...........   For each time step, write out the area source emissions values:
 C...............   If this is a new month, or new day, calculate
 C...............   new TMAT
 
-            IF ( MOD( T,24 ) .EQ. 1 ) THEN
+            IF ( LDATE .NE. JDATE ) THEN
+
+                LDATE = JDATE
 
 C...............   Adjust sources' time zones to account for daylight time
 C..................   Add 1 if date is daylight and TZONES is not
@@ -1571,7 +1607,13 @@ C.................  Create temporal adjustment matrix for current day
      &                           DIUFAC, NDIU, DDEX, MXMAT, TMAT )
                 END IF
 
+            END IF      ! if jdate not ldate
+
 C.................  Read ungridded MIN/MAX temperature indices for the day
+
+            IF( LZDATE .NE. JZDATE ) THEN
+
+                LZDATE = JZDATE
 
                 IF( .NOT. READ3( 
      &              WNAME, ALLVAR3, 1, WDATE, WTIME, TMMI ) ) THEN
@@ -1581,7 +1623,7 @@ C.................  Read ungridded MIN/MAX temperature indices for the day
                      CALL M3EXIT( 'TMPMOBIL', MDATE, 0, MESG, 2 )
                 ENDIF
              
-                CALL NEXTIME( WDATE, WTIME, 230000 )
+                CALL NEXTIME( WDATE, WTIME, 240000 )
 
             END IF      ! if jdate not ldate
 
@@ -1805,58 +1847,70 @@ C.................  Set up if diurnal emissions are zero
                     I = I + 1
                 ENDIF
 
-                IF( EMTNAM( I ) .EQ. 'WDL_VOC' ) THEN
+                IF( EMTNAM( I ) .EQ. 'RFL_VOC' ) THEN
 
                     DO 824 V = 1, NVTYPE
+
+                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+     &                              ( PP * RFL_VOC( II  ,V,M ) +
+     &                                QQ * RFL_VOC( II+1,V,M ) )
+  824               CONTINUE
+
+                    I = I + 1
+                ENDIF
+
+                IF( EMTNAM( I ) .EQ. 'WDL_VOC' ) THEN
+
+                    DO 825 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * WDL_VOC( J1,V,M ) +
      &                                      R1 * WDL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * WDL_VOC( J3,V,M ) +
      &                                      R1 * WDL_VOC( J4,V,M )   ) )
-  824               CONTINUE
+  825               CONTINUE
 
                     I = I + 1
                 ENDIF
 
                 IF( EMTNAM( I ) .EQ. 'DNL_VOC' ) THEN
 
-                    DO 825 V = 1, NVTYPE
+                    DO 826 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * DNL_VOC( J1,V,M ) +
      &                                      R1 * DNL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * DNL_VOC( J3,V,M ) +
      &                                      R1 * DNL_VOC( J4,V,M )   ) )
-  825               CONTINUE
+  826               CONTINUE
 
                     I = I + 1
                 ENDIF
 
                 IF( EMTNAM( I ) .EQ. 'HOT_VOC' ) THEN
 
-                    DO 826 V = 1, NVTYPE
+                    DO 827 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * HOT_VOC( J1,V,M ) +
      &                                      R1 * HOT_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * HOT_VOC( J3,V,M ) +
      &                                      R1 * HOT_VOC( J4,V,M )   ) )
-  826               CONTINUE
+  827               CONTINUE
 
                     I = I + 1
                 ENDIF
 
                 IF( EMTNAM( I ) .EQ. 'CRC_VOC' ) THEN
 
-                    DO 827 V = 1, NVTYPE
+                    DO 828 V = 1, NVTYPE
 
                         TOUT( S,V,I ) = TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * CRC_VOC( J1,V,M ) +
      &                                      R1 * CRC_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * CRC_VOC( J3,V,M ) +
      &                                      R1 * CRC_VOC( J4,V,M )   ) )
-  827               CONTINUE
+  828               CONTINUE
 
                     I = I + 1
                 ENDIF
@@ -1871,8 +1925,9 @@ C.................  Set up if diurnal emissions are zero
 
             END IF
 
-            CALL NEXTIME( JDATE, JTIME, TSTEP )
-            CALL NEXTIME( MDATE, MTIME, TSTEP )
+            CALL NEXTIME( JZDATE, JZTIME, TSTEP )
+            CALL NEXTIME( JDATE , JTIME, TSTEP )
+            CALL NEXTIME( MDATE , MTIME, TSTEP )
 
 899     CONTINUE
 
@@ -1923,7 +1978,7 @@ C...........   Internal buffering formats............ 94xxx
 94040   FORMAT( 10 ( A, :, I8, :, 1X ) )
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
-     &          A, 1X, I2.2, 1X, A, 1X, I2.2, 1X, A   )
+     &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
 
         END
 
