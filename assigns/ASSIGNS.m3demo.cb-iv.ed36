@@ -42,12 +42,9 @@
    setenv G_RUNLEN   250000      # run length (HHMMSS)
 
 ## User-defined I/O directory settings
-#  setenv EDSS_SUBSYS $EDSS_ROOT/subsys              # EDSS subsystem dir
-   setenv EDSS_SUBSYS /env/proj/edss/work/mrh        # EDSS subsystem dir
-#  setenv SMKROOT     $EDSS_SUBSYS/smokev1           # System root dir
-   setenv SMKROOT     /env/proj/smoke/work/mrh       # System root dir
-#  setenv SMKDAT      $EDSS_ROOT/data/smoke          # Data root dir
-   setenv SMKDAT      /env/data/smoke          # Data root dir
+   setenv EDSS_SUBSYS $EDSS_ROOT/subsys              # EDSS subsystem dir
+   setenv SMKROOT     $EDSS_SUBSYS/smokev1           # System root dir
+   setenv SMKDAT      $EDSS_ROOT/data/smoke          # Data root dir
    setenv ASSIGNS     $SMKROOT/assigns               # smoke assigns files
 #
 ## Make changes to names for future year and/or control strategy
