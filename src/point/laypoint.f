@@ -2,7 +2,7 @@
         PROGRAM LAYPOINT
 
 C***********************************************************************
-C  program body starts at line 
+C  program body starts at line 262
 C
 C  DESCRIPTION:
 C     This program computes the layer fractions for point sources.  It uses
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -185,6 +185,9 @@ C...........   Other local variables
         INTEGER          LPBL      ! first L: ZF(L) above mixing layer
         INTEGER          LSTK      ! first L: ZF(L) > STKHT
         INTEGER          LTOP      ! plume top    layer
+        INTEGER          METNCOLS  ! met grid number of columns
+        INTEGER          METNGRID  ! met grid number of cells
+        INTEGER          METNROWS  ! met grid number of rows
         INTEGER          NDOTS     ! dot grid number of cells
         INTEGER          NHR       ! no. hour-specific sources for current hour
         INTEGER          NMAJOR    ! no. major sources
@@ -211,6 +214,8 @@ C...........   Other local variables
         REAL             ZBOT      !  plume bottom elevation (m)
         REAL             ZTOP      !  plume top    elevation (m)
 
+        REAL*8           METXORIG  ! cross grid X-coord origin of met grid 
+        REAL*8           METYORIG  ! cross grid Y-coord origin of met grid
         REAL*8           XCELLDG   ! dot grid X-coordinate cell dimension
         REAL*8           YCELLDG   ! dot grid Y-coordinate cell dimension
         REAL*8           XORIGDG   ! dot grid X-coordinate origin of grid 
@@ -222,6 +227,7 @@ C...........   Other local variables
         LOGICAL       :: EFLAG = .FALSE.  ! error flag
         LOGICAL       :: FFLAG = .FALSE.  ! true: use hourly flow rate
         LOGICAL       :: HFLAG = .FALSE.  ! true: hourly input used
+        LOGICAL       :: IFLAG = .FALSE.  ! true: hr data okay for timestep
         LOGICAL       :: LFLAG = .FALSE.  ! true: use hourly layer 1 fraction
         LOGICAL       :: PFLAG = .FALSE.  ! true: compute plm ris for iteration
         LOGICAL       :: TFLAG = .FALSE.  ! true: use hourly temperatures
@@ -506,26 +512,22 @@ C.............  Get grid parameters from 3-d cross-point met file and store
 C               needed header information.  Use time parameters for time 
 C               defaults.
             CALL RETRIEVE_IOAPI_HEADER( XNAME )
+
+C.............  Initialize reference grid with met file
+            CALL CHKGRID( XNAME, 'GRID', 0, EFLAG )
+
             SDATE  = SDATE3D
             STIME  = STIME3D
             NSTEPS = MXREC3D
-            NCOLS  = NCOLS3D
-            NROWS  = NROWS3D
             NLAYS  = NLAYS3D
-            GDTYP  = GDTYP3D
-            P_ALP  = P_ALP3D
-            P_BET  = P_BET3D
-            P_GAM  = P_GAM3D
-            XCENT  = XCENT3D
-            YCENT  = YCENT3D
-            XORIG  = XORIG3D
-            YORIG  = YORIG3D
-            XCELL  = XCELL3D
-            YCELL  = YCELL3D
             VGTYP  = VGTYP3D
             VGTOP  = VGTOP3D
+            METNCOLS = NCOLS
+            METNROWS = NROWS
+            METNGRID = NGRID
+            METXORIG = XORIG
+            METYORIG = YORIG
 
-            NGRID = NCOLS * NROWS
             NDOTS = ( NCOLS + 1 ) * ( NROWS + 1 )
 
             METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. ) 
@@ -557,17 +559,6 @@ C           is time-dependent.
 C.........  If not using met data (for explicit plume rise only...)
         ELSE
  
-C.............  Get horizontal grid structure from the G_GRIDPATH file
-            IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD3D, GDTYP, COORUN3D,
-     &                          P_ALP, P_BET, P_GAM, XCENT, YCENT,
-     &                          XORIG, YORIG, XCELL, YCELL,
-     &                          NCOLS, NROWS, NTHIK3D ) ) THEN
-
-                MESG = 'Could not get Models-3 grid description.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-            NGRID = NCOLS * NROWS
-
 C.............  Get vertical layer structure from the G_GRIDPATH file
             IF ( .NOT. DSCM3LAY( NLAYS, VGTYP, VGTOP, VGLVS3D ) )
      &           THEN
@@ -592,6 +583,19 @@ C               that is "meters above ground."
             END DO
 
         END IF
+
+C.........  Get horizontal grid structure from the G_GRIDPATH file
+        IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD3D, GDTYP, COORUN3D,
+     &                      P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                      XORIG, YORIG, XCELL, YCELL,
+     &                      NCOLS, NROWS, NTHIK3D ) ) THEN
+
+            MESG = 'Could not get Models-3 grid description.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Set subgrid if using met files, define grid if not using met files
+        CALL CHKGRID( 'GRIDDESC', 'GRIDDESC' , 1, EFLAG ) 
 
 C.........  Store local layer information
         J = LBOUND( VGLVS3D, 1 )
@@ -725,18 +729,18 @@ C.............  Allocate per-layer arrays from 0:EMLAYS
             CALL CHECKMEM( IOS, 'ZZF', PROGNAME )
 
 C.............  Allocate array for tmp gridded, layered cross-point met data
-            ALLOCATE( XBUF( NGRID,NLAYS ), STAT=IOS )
+            ALLOCATE( XBUF( METNGRID,NLAYS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'XBUF', PROGNAME )
             ALLOCATE( DBUF( NDOTS,NLAYS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DBUF', PROGNAME )
 
 C.............  Compute un-gridding matrices for dot and cross point met data
-            CALL UNGRIDB( NCOLS+1, NROWS+1, 
+            CALL UNGRIDB( METNCOLS+1, METNROWS+1, 
      &                    XORIGDG, YORIGDG, XCELLDG, YCELLDG,
      &                    NSRC, XLOCA, YLOCA, ND, CD )
 
-            CALL UNGRIDB( NCOLS, NROWS, XORIG, YORIG, XCELL, YCELL,
-     &                    NSRC, XLOCA, YLOCA, NX, CX )
+            CALL UNGRIDB( METNCOLS, METNROWS, METXORIG, METYORIG, 
+     &                    XCELL, YCELL, NSRC, XLOCA, YLOCA, NX, CX )
 
 C.............  Read time-independent ZF and ZH for non-hydrostatic Met data
 C.............  Compute per-source heights
@@ -746,12 +750,12 @@ C.............  Compute per-source heights
                 CALL GET_VARIABLE_NAME( 'ZH', VNAME )
                 CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D, 
      &                           STIME3D, XBUF )
-                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
+                CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
 
                 CALL GET_VARIABLE_NAME( 'ZF', VNAME )
                 CALL SAFE_READ3( GNAME, VNAME, ALLAYS3, SDATE3D,
      &                           STIME3D, XBUF )
-                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
+                CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
 
 C.................  Pre-process ZF and ZH to compute DDZH and DDZF
                 CALL COMPUTE_DELTA_ZS
@@ -825,12 +829,19 @@ C.............  If needed, read hourly plume rise and/or stack parameters...
 C.............  Read source index
             IF ( HFLAG ) THEN
 
+C.................  Do not give an error if could not read data, because it 
+C                   might not be there
+                IFLAG = .TRUE.
                 IF( .NOT. READ3( HNAME, 'INDXH', ALLAYS3, 
      &                           JDATE, JTIME, LOCINDXH( 1,1 ) ) ) THEN
                     L1 = LEN_TRIM( HNAME )
-                    MESG = 'Could not read "IDXH" from file "' //
-     &                     HNAME( 1:L1 ) // '."'
-                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    WRITE( MESG,94010 ) 'WARNING: Could not read '//
+     &                     '"IDXH" from file "' //
+     &                     HNAME( 1:L1 ) // '", at', JDATE, ':', JTIME
+                    CALL M3MESG( MESG )
+
+                    LOCINDXH = 0       ! 2-d array
+                    IFLAG = .FALSE. 
 
                 END IF
 
@@ -844,11 +855,12 @@ C                   the current hour
             END IF
 
 C.............  Layer-1 fraction
-            IF ( LFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(1), ALLAYS3, 
-     &                                    JDATE, JTIME, LAY1F )
+            IF ( LFLAG .AND. IFLAG ) 
+     ^           CALL SAFE_READ3( HNAME, SPDATNAM(1), ALLAYS3, 
+     &                            JDATE, JTIME, LAY1F )
 
 C.............  Plume bottom and top
-            IF ( BFLAG ) THEN
+            IF ( BFLAG .AND. IFLAG ) THEN
                 CALL SAFE_READ3( HNAME, SPDATNAM(2), ALLAYS3, 
      &                           JDATE, JTIME, PLMBOT )
                 CALL SAFE_READ3( HNAME, SPDATNAM(3), ALLAYS3, 
@@ -856,26 +868,29 @@ C.............  Plume bottom and top
             END IF
 
 C.............  Temperatures
-            IF ( TFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(4), ALLAYS3, 
-     &                                    JDATE, JTIME, HRSTKTK )
+            IF ( TFLAG .AND. IFLAG ) 
+     &           CALL SAFE_READ3( HNAME, SPDATNAM(4), ALLAYS3, 
+     &                            JDATE, JTIME, HRSTKTK )
 
 C.............  Velocity
-            IF ( CFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(5), ALLAYS3, 
-     &                                    JDATE, JTIME, HRSTKVE )
+            IF ( CFLAG .AND. IFLAG ) 
+     &           CALL SAFE_READ3( HNAME, SPDATNAM(5), ALLAYS3, 
+     &                            JDATE, JTIME, HRSTKVE )
 
 C.............  Flow rate
-            IF ( FFLAG ) CALL SAFE_READ3( HNAME, SPDATNAM(6), ALLAYS3, 
-     &                                    JDATE, JTIME, HRSTKFL )
+            IF ( FFLAG .AND. IFLAG ) 
+     &           CALL SAFE_READ3( HNAME, SPDATNAM(6), ALLAYS3, 
+     &                            JDATE, JTIME, HRSTKFL )
 
 C.............  Read time-dependent ZF and ZH for hydrostatic Met data
 C.............  Compute per-source heights
             IF( .NOT. XFLAG .AND. .NOT. ZSTATIC ) THEN
 
                 CALL SAFE_READ3( XNAME,'ZH',ALLAYS3,JDATE,JTIME,XBUF )
-                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
+                CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
 
                 CALL SAFE_READ3( XNAME,'ZF',ALLAYS3,JDATE,JTIME,XBUF )
-                CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
+                CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
 
 C.................  Pre-process ZF and ZH to compute DDZH and DDZF
                 CALL COMPUTE_DELTA_ZS
@@ -885,26 +900,26 @@ C.................  Pre-process ZF and ZH to compute DDZH and DDZF
 C.............  Read and transform meteorology:
             IF ( .NOT. XFLAG ) THEN
             CALL SAFE_READ3( SNAME, 'HFX', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, HFX )
+            CALL BMATVEC( METNGRID, NSRC, 1, NX, CX, XBUF, HFX )
 
             CALL SAFE_READ3( SNAME, 'PBL', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, HMIX )
+            CALL BMATVEC( METNGRID, NSRC, 1, NX, CX, XBUF, HMIX )
 
             CALL GET_VARIABLE_NAME( 'TGD', VNAME )
             CALL SAFE_READ3( SNAME, VNAME, ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, TSFC )
+            CALL BMATVEC( METNGRID, NSRC, 1, NX, CX, XBUF, TSFC )
 
             CALL SAFE_READ3( SNAME, 'USTAR', ALLAYS3, JDATE,JTIME,XBUF )
-            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, USTAR )
+            CALL BMATVEC( METNGRID, NSRC, 1, NX, CX, XBUF, USTAR )
 
             CALL SAFE_READ3( XNAME, 'TA', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, TA )
+            CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, TA )
 
             CALL SAFE_READ3( XNAME, 'QV', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, QV )
+            CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, QV )
 
             CALL SAFE_READ3( XNAME, 'PRES', ALLAYS3, JDATE, JTIME,XBUF )
-            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, PRES )
+            CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, PRES )
 
             CALL SAFE_READ3( DNAME, 'UWIND', ALLAYS3, JDATE,JTIME,DBUF )
             CALL BMATVEC( NDOTS, NSRC, EMLAYS, ND, CD, DBUF, UWIND )
@@ -912,8 +927,8 @@ C.............  Read and transform meteorology:
             CALL SAFE_READ3( DNAME, 'VWIND', ALLAYS3, JDATE,JTIME,DBUF )
             CALL BMATVEC( NDOTS, NSRC, EMLAYS, ND, CD, DBUF, VWIND )
             END IF
-C.............  Precompute constants before starting source loop
 
+C.............  Precompute constants before starting source loop
             P  = ( SIGH(0) - VGLVSXG(0) ) / ( SIGH( 1 ) - SIGH( 0 ) )
             PP = 1.0 + P 
             QQ =     - P 
@@ -939,7 +954,7 @@ C.................  Skip source if explicit processing and source not on list
                 IF ( XFLAG .AND. K .LE. 0 ) THEN
                     CYCLE
 
-C.................  Skip source if it is outside grid
+C.................  Skip source if it is outside output grid
                 ELSE IF( XL .LT. XBEG .OR. XL .GT. XEND .OR.
      &              YL .LT. YBEG .OR. YL .GT. YEND     ) THEN
                     CYCLE
