@@ -45,7 +45,8 @@ C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: IFIP, SPEED, VMT
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, CATDESC, CRL, NSRC, NIACT
+        USE MODINFO, ONLY: CATEGORY, CATDESC, CRL, MAPNAM, 
+     &                     NMAP, NSRC, NIACT
 
 C.........  This module is used for MOBILE6 setup information        
         USE MODMBSET, ONLY: NREFC
@@ -62,11 +63,13 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
+        INTEGER         INDEX1
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         LOGICAL         ENVYN
 
-        EXTERNAL        PROMPTFFILE, PROMPTMFILE, ENVYN
+        EXTERNAL        CRLF, INDEX1, PROMPTFFILE, PROMPTMFILE, ENVYN
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -100,7 +103,7 @@ C.........  Unit numbers and logical file names
         CHARACTER*16    UNAME    ! logical name for ungridding-matrix input file
 
 C.........   Other local variables
-        INTEGER          I, K, L, S        ! counters and indices
+        INTEGER          I, K, L, M, S     ! counters and indices
         
         INTEGER          IOS               ! I/O status
         INTEGER          NINVARR           ! number inventory variables to input
@@ -238,11 +241,29 @@ C.........  Allocate memory for and read required inventory characteristics
 
 C.........  Read speed and VMT information from inventory
         IF( .NOT. SPDFLAG ) THEN
+
+C.............  Make sure speed is in the inventory
+            M = INDEX1( 'SPEED', NMAP, MAPNAM )
+            IF( M <= 0 ) THEN
+                MESG = 'Mobile inventory does not include speed ' //
+     &                 'data' // CRLF() // BLANK5 // 'Set the ' //
+     &                 'USE_SPEED_PROFILES environment variable ' //
+     &                 'to Y and try again.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
             ALLOCATE( SPEED( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
             CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
         END IF
         
+C.........  Make sure VMT is in the inventory
+        M = INDEX1( 'VMT', NMAP, MAPNAM )
+        IF( M <= 0 ) THEN
+            MESG = 'Mobile inventory does not include VMT data'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+                   
         ALLOCATE( VMT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VMT', PROGNAME )
         CALL RDMAPPOL( NSRC, 1, 1, 'VMT', VMT )
@@ -317,7 +338,7 @@ C.............  Assign speed profile to each source
 
 C.........  Loop through all the reference counties
         DO I = 1, NREFC
-            CALL WRSPDSUM( PDEV, I )
+            CALL WRSPDSUM( PDEV, I, SPDFLAG )
         END DO
 
         WRITE( PDEV,94010 ) ' '
