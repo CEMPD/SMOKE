@@ -22,10 +22,10 @@ C *
 C ****************************************************************************/
 
         SUBROUTINE  MKTMAT( NSRC,  JDATE, MON, DAY, TZONE, ZONES, TPF,
-     &                      MFAC,  MDEX, 
-     &                      WFAC,  WDEX, 
-     &                      DFAC,  DDEX, 
-     &                      NDAY,  INDD, TMAT )
+     &                      MFAC,  NMON, MDEX, 
+     &                      WFAC,  NWEK, WDEX, 
+     &                      DFAC,  NDAY, DDEX, 
+     &                      NDSP,  INDD, TMAT )
 
 C***********************************************************************
 C  subroutine body starts at line  117
@@ -45,7 +45,7 @@ C  REVISION  HISTORY:
 C       Prototype 3/95 by CJC
 C       Revised   8/95 by CJC:  daylight savings time correction
 C       Revised  10/95 by CJC:  treatment of profile-independence,
-C               substitution of day-specific data NDAY,INDD
+C               substitution of day-specific data NDSP,INDD
 C***********************************************************************
 
       IMPLICIT NONE
@@ -65,13 +65,16 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER         TZONE                   ! time zone (5 for Eastern)
         INTEGER         ZONES( NSRC )           ! source time zones
         INTEGER         TPF  ( NSRC )           ! source temporal treatment flag
-        REAL            MFAC( 12, NMCOD )       ! Monthly profile factors
-        REAL            WFAC(  7, NWCOD )       ! Weekly    "       "
-        REAL            DFAC( 24, NDCOD  )      ! Diurnal   "       "
+        INTEGER         NMON                    ! actual number of monthly profs
+        INTEGER         NWEK                    ! actual number of weekly profs
+        INTEGER         NDAY                    ! actual number of diurnal profs
+        REAL            MFAC( 12, NMON )        ! Monthly profile factors
+        REAL            WFAC(  7, NWEK )        ! Weekly    "       "
+        REAL            DFAC( 24, NDAY )        ! Diurnal   "       "
         INTEGER         MDEX( NSRC, NIPOL )     ! Monthly profile codes
         INTEGER         WDEX( NSRC, NIPOL )     ! weekly  profile codes
         INTEGER         DDEX( NSRC, NIPOL )     ! diurnal profile codes
-        INTEGER         NDAY                    ! # of day-specific obs
+        INTEGER         NDSP                    ! # of day-specific obs
         INTEGER         INDD( * )     ! subscripts: day-specific obs
         REAL            TMAT( NSRC, NIPOL, 24 ) ! temporal-profile coeffs
 
@@ -118,7 +121,7 @@ C.......   Firstime:  renormalize MFAC, WFAC
 
             FIRSTIME = .FALSE.
 
-            DO  13 S = 1, NMCOD
+            DO  13 S = 1, NMON
 
                 FAC = 0.0
                 DO  11 K = 1, 12
@@ -133,7 +136,7 @@ C.......   Firstime:  renormalize MFAC, WFAC
 
 13          CONTINUE
 
-            DO  23 S = 1, NWCOD
+            DO  23 S = 1, NWEK
             DO  22 K = 1, 7
                 WFAC( K,S ) = 7.0 * WFAC( K,S )
 22          CONTINUE
@@ -167,7 +170,7 @@ C.......   Compute TMAT:
         DO  122  S = 1, NSRC
 
 C.............  Use day-specific data (no adjustments)
-            IF ( FIND1( S, NDAY, INDD ) .GT. 0 ) THEN
+            IF ( FIND1( S, NDSP, INDD ) .GT. 0 ) THEN
 
                 FAC = 1.0
 
