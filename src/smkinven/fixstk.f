@@ -1,6 +1,5 @@
 
-        SUBROUTINE  FIXSTK( FDEV, NSRC, IFIP, ISCC, CSOURC,
-     &                      STKHT, STKDM, STKTK, STKVE )
+        SUBROUTINE  FIXSTK( FDEV, NSRC )
 
 C***********************************************************************
 C  subroutine body starts at line 157
@@ -47,11 +46,15 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains the inventory arrays
+        USE MODSOURC
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -59,94 +62,93 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2     CRLF
-        INTEGER		FIND1, FIND2
+        INTEGER		FINDC
         INTEGER		GETFLINE
 
-        EXTERNAL	CRLF, FIND1, FIND2, GETFLINE
+        EXTERNAL	CRLF, FINDC, GETFLINE
 
 C...........   ARGUMENTS and their descriptions:
 
-        INTEGER       FDEV             ! unit number for stack parameter file PSTK
+        INTEGER       FDEV             ! unit no. for stack parameter file PSTK
         INTEGER       NSRC             ! actual number of sources
-        INTEGER       IFIP  ( NSRC )   ! FIP codes
-        INTEGER       ISCC  ( NSRC )   ! SCC codes
-        CHARACTER*(*) CSOURC( NSRC )   ! concat source chars
-        REAL	      STKHT ( NSRC )   ! stack height (m)
-        REAL	      STKDM ( NSRC )   ! stack diameter (m)
-        REAL	      STKTK ( NSRC )   ! stack exhaust temperature (K)
-        REAL	      STKVE ( NSRC )   ! stack exhaust velocity (m/s)
 
-C...........   PARAMETERS and their descriptions:
-
-        REAL       MINHT        ! Mininum stack height (m)
-        REAL       MINDM        ! Mininum stack diameter (m)
-        REAL       MINTK        ! Mininum stack exit temperature (K)
-        REAL       MINVE        ! Mininum stack exit velocity (m/s)
-        REAL       MAXHT        ! Maximum stack height (m)
-        REAL       MAXDM        ! Maximum stack diameter (m)
-        REAL       MAXTK        ! Maximum stack exit temperature (K)
-        REAL       MAXVE        ! Maximum stack exit velocity (m/s)
-
-        PARAMETER( MINHT = 0.5,
-     &             MINDM = 0.01,
-     &             MINTK = 260.,
-     &             MINVE = 0.0001,
-     &             MAXHT = 2100.,
-     &             MAXDM = 100.,
-     &             MAXTK = 2000.,
-     &             MAXVE = 500.    )
+C...........   LOCAL PARAMETERS and their descriptions:
+        REAL   , PARAMETER :: MINHT =    0.5    ! Min stack height (m)
+        REAL   , PARAMETER :: MINDM =    0.01   ! Min stack diameter (m)
+        REAL   , PARAMETER :: MINTK =  260.0    ! Min stack exit temperature (K)
+        REAL   , PARAMETER :: MINVE =    0.0001 ! Min stack exit velocity (m/s)
+        REAL   , PARAMETER :: MAXHT = 2100.0    ! Max stack height (m)
+        REAL   , PARAMETER :: MAXDM =  100.0    ! Max stack diameter (m)
+        REAL   , PARAMETER :: MAXTK = 2000.0    ! Max stack exit temperature (K)
+        REAL   , PARAMETER :: MAXVE =  500.0    ! Max stack exit velocity (m/s)
 
 C...........    LOCAL VARIABLES and their descriptions:
 
-        INTEGER, ALLOCATABLE:: INDXA( : ) !  Sorting index
-        INTEGER, ALLOCATABLE:: SFIPA( : ) !  Unsorted FIP state code from PSTK
-        INTEGER, ALLOCATABLE:: SSCCA( : ) !  Unsorted SCC code from PSTK
-        REAL   , ALLOCATABLE:: SHTA ( : ) !  Unsorted height from PSTK
-        REAL   , ALLOCATABLE:: SDMA ( : ) !  Unsorted diameter from PSTK
-        REAL   , ALLOCATABLE:: STKA ( : ) !  Unsorted temperature from PSTK
-        REAL   , ALLOCATABLE:: SVEA ( : ) !  Unsorted velocity from PSTK
+C.........  Unsorted arrays from stack replacements file
 
+        INTEGER               , ALLOCATABLE :: INDXA( : ) ! sorting index
+        REAL                  , ALLOCATABLE :: SHTA ( : ) ! stack height 
+        REAL                  , ALLOCATABLE :: SDMA ( : ) ! stack diameter
+        REAL                  , ALLOCATABLE :: STKA ( : ) ! stack temperature 
+        REAL                  , ALLOCATABLE :: SVEA ( : ) ! stack velocity 
+        CHARACTER(LEN=FPSLEN3), ALLOCATABLE :: SFSCA( : ) ! FIPS code // SCC 
+
+C.........  Tables of stack parameter updates
+C.........  Ultimate defaults
         REAL                   HT0      !  ultimate fallback height
         REAL                   DM0      !  ultimate fallback diameter
         REAL                   TK0      !  ultimate fallback temperature
         REAL                   VE0      !  ultimate fallback velocity
 
-        INTEGER                NR1      !  size of SCC-only table
-        INTEGER, ALLOCATABLE:: SC1( : ) !  SCC code
-        INTEGER, ALLOCATABLE:: ID1( : ) !  Index to unsorted arrays from PSTK
+C.........  SCC-only table
+        INTEGER                                NR1       ! number
+        INTEGER               , ALLOCATABLE :: ID1 ( : ) ! index to unsorted 
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: TBL1( : ) ! SCC
 
-        INTEGER                NR2      !  size of SCC-state table
-        INTEGER, ALLOCATABLE:: FP2( : ) !  FIP state code
-        INTEGER, ALLOCATABLE:: SC2( : ) !  SCC code
-        INTEGER, ALLOCATABLE:: ID2( : ) !  Index to unsorted arrays from PSTK
+C.........  SCC-country/state table
+        INTEGER                                NR2       ! number
+        INTEGER               , ALLOCATABLE :: ID2 ( : ) ! index to unsorted
+        CHARACTER(LEN=STSLEN3), ALLOCATABLE :: TBL2( : ) ! co/st // scc
 
-        INTEGER                NR3      !  size of FIP-SCC table
-        INTEGER, ALLOCATABLE:: FP3( : ) !  FIP code
-        INTEGER, ALLOCATABLE:: SC3( : ) !  SCC code
-        INTEGER, ALLOCATABLE:: ID3( : ) !  Index to unsorted arrays from PSTK
-        
+C.........  SCC-FIPS code table
+        INTEGER                                NR3       ! number
+        INTEGER               , ALLOCATABLE :: ID3 ( : ) ! index to unsorted
+        CHARACTER(LEN=FPSLEN3), ALLOCATABLE :: TBL3( : ) ! FIPS code // scc
+         
+C.........  Other local variables
+        INTEGER		I, J, K, L1, L2, L3, S   !  counters and indices
+
+        INTEGER		FIP	!  temporary FIPs code
+        INTEGER		IOS	!  I/O error status
+        INTEGER		IREC	!  current record number
+        INTEGER		LDEV	!  log file unit number
+        INTEGER		NLINE	!  Number of lines
+        INTEGER		NPSTK	!  Number of PSTK entries
+        INTEGER		SID	!  temporary state ID
+
         REAL		HT	!  temporary height
         REAL		DM	!  temporary diameter
         REAL		TK	!  temporary exit temperature
         REAL		VE	!  temporary velocity
 
-        INTEGER		FIP	!  temporary FIPs code
-        INTEGER		I, J, S, K	!  source subscript
-        INTEGER		IOS	!  I/O error status
-        INTEGER		IREC	!  current record number
-        INTEGER		L2	!  buffer length
-        INTEGER		LDEV	!  log file unit number
-        INTEGER		NLINE	!  Number of lines
-        INTEGER		NPSTK	!  Number of PSTK entries
-        INTEGER		SCC	!  temporary SCC code
-        INTEGER		SID	!  temporary state ID
+        LOGICAL	     :: EFLAG = .FALSE.  !  error flag
+        LOGICAL		DFLAG( NSRC )    ! true if source getting default parms
 
-        LOGICAL		EFLAG   !  error flag
-        LOGICAL		DFLAG( NSRC ) ! true if source getting default parms 
-        DATA            EFLAG / .FALSE. /
+        CHARACTER*8            FMTFIP    !  format for converting FIPs code
+        CHARACTER*8            FMTSTA    !  format for converting cntry/state
+        CHARACTER*300          BUFFER    !  temporary buffer
+        CHARACTER*300	       MESG      !  message buffer
+        CHARACTER(LEN=FIPLEN3) CFIP      !  tmp character-string FIP
+        CHARACTER(LEN=FIPLEN3) FIPZERO   !  zero buffer for FIPS code
+        CHARACTER(LEN=STALEN3) CSTA      !  tmp country/state
+        CHARACTER(LEN=CNYLEN3) CCNY      !  tmp county
+        CHARACTER(LEN=SCCLEN3) TSCC      !  tmp SCC
+        CHARACTER(LEN=SCCLEN3) SCCZERO   !  zero buffer for SCC
+        CHARACTER(LEN=STSLEN3) CSTASCC   !  tmp country/state // SCC
+        CHARACTER(LEN=STSLEN3) CSTASCCZ  !  zero buffer for cntry/state // SCC
+        CHARACTER(LEN=FPSLEN3) CFIPSCC   !  tmp FIPS code // SCC
+        CHARACTER(LEN=FPSLEN3) CFIPSCCZ  !  zero buffer for FIPS code // SCC
 
-        CHARACTER*300	BUFFER  !  temporary buffer
-        CHARACTER*300	MESG    !  message buffer
         CHARACTER*16 :: PROGNAME = 'FIXSTK'  ! program name
      
 C***********************************************************************
@@ -165,10 +167,6 @@ C.........  Allocate memory for arrays.  Since this file is not likely to be
 C           large, allocate all arrays based on number of lines in the file.
         ALLOCATE( INDXA( NLINE ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXA', PROGNAME )
-        ALLOCATE( SFIPA( NLINE ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SFIPA', PROGNAME )
-        ALLOCATE( SSCCA( NLINE ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SSCCA', PROGNAME )
         ALLOCATE( SHTA( NLINE ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SHTA', PROGNAME )
         ALLOCATE( SDMA( NLINE ), STAT=IOS )
@@ -177,45 +175,59 @@ C           large, allocate all arrays based on number of lines in the file.
         CALL CHECKMEM( IOS, 'STKA', PROGNAME )
         ALLOCATE( SVEA( NLINE ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SVEA', PROGNAME )
-        ALLOCATE( SC1( NLINE ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SC1', PROGNAME )
+        ALLOCATE( SFSCA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SFSCA', PROGNAME )
+
+C.........  Simply allocate for all lines. These inputs will not be large,
+C           so the wasted memory will not matter
+        ALLOCATE( TBL1( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TBL1', PROGNAME )
         ALLOCATE( ID1( NLINE ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ID1', PROGNAME )
-        ALLOCATE( FP2( NLINE ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'FP2', PROGNAME )
-        ALLOCATE( SC2( NLINE ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SC2', PROGNAME )
+        ALLOCATE( TBL2( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TBL2', PROGNAME )
         ALLOCATE( ID2( NLINE ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ID2', PROGNAME )
-        ALLOCATE( FP3( NLINE ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'FP3', PROGNAME )
-        ALLOCATE( SC3( NLINE ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SC3', PROGNAME )
+        ALLOCATE( TBL3( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TBL3', PROGNAME )
         ALLOCATE( ID3( NLINE ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ID3', PROGNAME )
 
+C.........  Create format for writing FIPS code and country/state code
+        WRITE( FMTFIP, 94300 ) '(I', FIPLEN3  , '.', FIPLEN3, ')'
+        WRITE( FMTSTA, 94300 ) '(I', FIPLEN3-3, '.', FIPLEN3-3, ')'
+
+C.........  Create zero-filled buffers
+        FIPZERO  = REPEAT( '0', FIPLEN3 )
+        SCCZERO  = REPEAT( '0', SCCLEN3 )
+        CSTASCCZ = REPEAT( '0', STSLEN3 )
+        CFIPSCCZ = REPEAT( '0', FPSLEN3 )
+
 C.........  Read the PSTK file until hit the end of the file
+C.........  For now, require the SCC to be in quotes to use list formatting
 
         IREC  = 0
-        I = 0
-        DO        !  head of input loop
+        DO I = 1, NLINE       !  head of input loop
 
-            READ( FDEV, *, END=22, IOSTAT=IOS ) FIP, SCC, HT, DM, TK, VE
+            READ( FDEV, *, IOSTAT=IOS ) 
+     &            FIP, TSCC, HT, DM, TK, VE
 
             IREC = IREC + 1
 
             IF ( IOS .GT. 0 ) THEN	!  I/O error
 
-                WRITE( MESG,94010 ) 'Error', IOS, 
-     &                              'reading PSTK at line', IREC
+                WRITE( MESG,94010 ) 'I/O Error', IOS, 
+     &                 'reading stack replacements file at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             ELSE
 
-                I = I + 1
+                WRITE( CFIP, FMTFIP ) FIP
+
+                CALL PADZERO( TSCC )
+
                 INDXA( I ) = I
-                SFIPA( I ) = FIP
-                SSCCA( I ) = SCC
+                SFSCA( I ) = CFIP // TSCC
                 SHTA ( I ) = HT
                 SDMA ( I ) = DM
                 STKA ( I ) = TK
@@ -223,47 +235,49 @@ C.........  Read the PSTK file until hit the end of the file
 
             ENDIF
 
-        ENDDO
+        ENDDO  
 
-22      CONTINUE        !  end of input loop
-
-        NPSTK = I
+        NPSTK = NLINE
 
 C.........  Sort PSTK data 
-        CALL SORTI2( NPSTK, INDXA, SFIPA, SSCCA )
+        CALL SORTIC( NPSTK, INDXA, SFSCA )
 
 C.........  Disaggregate PSTK data into 4 categories
         NR1   = 0
         NR2   = 0
         NR3   = 0
+        L1    = FIPLEN3 - 3  ! without county
+        L2    = L1 + 1
+        L3    = FIPLEN3 + 1
         DO I = 1, NPSTK
 
-            J   = INDXA( I )
-            FIP = SFIPA( J )
-            SCC = SSCCA( J ) 
+            J    = INDXA( I )
+            CFIP = SFSCA( J )( 1 :FIPLEN3 )
+            CSTA = SFSCA( J )( 1 :L1 )
+            CCNY = SFSCA( J )( L2:FIPLEN3 )
+            TSCC = SFSCA( J )( L3:FPSLEN3 ) 
 
-            IF( FIP .EQ. 0 .AND. SCC .EQ. 0 ) THEN  ! fallback default
+            IF( CFIP .EQ. FIPZERO .AND. 
+     &          TSCC .EQ. SCCZERO       ) THEN  !  fallback default
                 HT0 = SHTA ( J )
                 DM0 = SDMA ( J )
                 TK0 = STKA ( J )
                 VE0 = SVEA ( J )
 
-            ELSEIF( FIP .EQ. 0 ) THEN               !  SCC only
+            ELSEIF( CFIP .EQ. FIPZERO ) THEN    !  SCC only
                 NR1 = NR1 + 1
-                SC1( NR1 ) = SCC
-                ID1( NR1 ) = J
+                TBL1( NR1 ) = TSCC
+                ID1 ( NR1 ) = J
 
-            ELSE IF( MOD( FIP, 1000 ) .EQ. 0 ) THEN !  state and SCC
+            ELSE IF( CCNY .EQ. '000' ) THEN     !  state and SCC
                 NR2 = NR2 + 1
-                FP2( NR2 ) = FIP / 1000
-                SC2( NR2 ) = SCC
-                ID2( NR2 ) = J
+                TBL2( NR2 ) = CSTA // TSCC
+                ID2 ( NR2 ) = J
 
-            ELSE                                    !  FIP and SCC
+            ELSE                                !  FIP and SCC
                 NR3 = NR3 + 1
-                FP3( NR3 ) = FIP
-                SC3( NR3 ) = SCC
-                ID3( NR3 ) = J
+                TBL3( NR3 ) = CFIP // TSCC
+                ID3 ( NR3 ) = J
 
             END IF
 
@@ -278,10 +292,11 @@ C.........  the missing stack parameters, which should get defaults.
 
         DO S = 1, NSRC
 
-            HT = STKHT( S )
-            DM = STKDM( S )
-            TK = STKTK( S )
-            VE = STKVE( S )
+            HT   = STKHT( S )
+            DM   = STKDM( S )
+            TK   = STKTK( S )
+            VE   = STKVE( S )
+            TSCC = CSCC ( S )
 
             IF ( HT .GT. MAXHT .OR.
      &         ( HT .LT. MINHT .AND. HT .GT. 0 ) .OR.
@@ -293,7 +308,7 @@ C.........  the missing stack parameters, which should get defaults.
      &         ( VE .LT. MINVE .AND. VE .GT. 0 ) ) THEN
 
                 CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
-                WRITE( MESG,94010 ) BUFFER( 1:L2 ) // ' SCC: ', ISCC(S)
+                WRITE( MESG,94010 ) BUFFER( 1:L2 ) // ' SCC: '// TSCC
                 CALL M3MESG( MESG )
 
             ENDIF
@@ -356,12 +371,23 @@ C...........   Treat parameters equal to 0 as missing
             K = 0                ! Initialize K to test if replacements made
             DFLAG( S ) = .FALSE. ! Initialize DFLAG to test if defaults used
 
+C.............  Set up temporary character strings
+            FIP = IFIP( S )
+            SID = FIP / 1000
+            WRITE( CFIP, FMTFIP ) FIP
+            WRITE( CSTA, FMTSTA ) SID
+            TSCC = CSCC( S )
+            CFIPSCC  = CFIP // TSCC
+            CFIPSCCZ = CFIP // SCCZERO
+            CSTASCC  = CSTA // TSCC
+            CSTASCCZ = CSTA // SCCZERO
+            
             IF ( STKHT( S ) .LE. 0.0 ) THEN
-                FIP = IFIP( S )
-                SCC = ISCC( S )
-                K = FIND2( FIP, SCC, NR3, FP3, SC3 )
+                
+                K = FINDC( CFIPSCC, NR3, TBL3 )
 
-                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
+                IF( K .LE. 0 ) 
+     &              K = FINDC( CFIPSCCZ, NR3, TBL3 )
 
                 IF ( K .GT. 0 ) THEN
                     J  = ID3 ( K )
@@ -370,10 +396,10 @@ C...........   Treat parameters equal to 0 as missing
                     TK = STKA( J )
                     VE = SVEA( J )
                 ELSE
-                    SID = FIP/1000
-                    K   = FIND2( SID, SCC, NR2, FP2, SC2 )
+                    K = FINDC( CSTASCC, NR2, TBL2 )
 
-                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+                    IF( K .LE. 0 ) 
+     &                  K = FINDC( CSTASCCZ, NR2, TBL2 )
 
                     IF ( K .GT. 0 ) THEN
                         J  = ID2 ( K )
@@ -383,7 +409,7 @@ C...........   Treat parameters equal to 0 as missing
                         VE = SVEA( J )
                     ELSE
 
-                        K = FIND1( SCC, NR1, SC1 )
+                        K = FINDC( TSCC, NR1, TBL1 )
                         IF ( K .GT. 0 ) THEN
                             J  = ID1 ( K )
                             HT = SHTA( J )
@@ -401,7 +427,7 @@ C...........   Treat parameters equal to 0 as missing
 
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
-     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
                     CALL M3MESG( MESG )
@@ -428,11 +454,10 @@ C...........   Treat parameters equal to 0 as missing
             END IF	!  if stack height bad
 
             IF ( STKDM( S ) .LE. 0.0 ) THEN
-                FIP = IFIP( S )
-                SCC = ISCC( S )
-                K = FIND2( FIP, SCC, NR3, FP3, SC3 )
+                K = FINDC( CFIPSCC, NR3, TBL3 )
 
-                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
+                IF( K .LE. 0 ) 
+     &              K = FINDC( CFIPSCCZ, NR3, TBL3 )
 
                 IF ( K .GT. 0 ) THEN
                     J  = ID3 ( K )
@@ -440,10 +465,10 @@ C...........   Treat parameters equal to 0 as missing
                     TK = STKA( J )
                     VE = SVEA( J )
                 ELSE
-                    SID = FIP/1000
-                    K   = FIND2( SID, SCC, NR2, FP2, SC2 )
+                    K = FINDC( CSTASCC, NR2, TBL2 )
 
-                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+                    IF( K .LE. 0 ) 
+     &                  K = FINDC( CSTASCCZ, NR2, TBL2 )
 
                     IF ( K .GT. 0 ) THEN
                         J  = ID2 ( K )
@@ -451,7 +476,7 @@ C...........   Treat parameters equal to 0 as missing
                         TK = STKA( J )
                         VE = SVEA( J )
                     ELSE
-                        K = FIND1( SCC, NR1, SC1 )
+                        K = FINDC( TSCC, NR1, TBL1 )
                         IF ( K .GT. 0 ) THEN
                             J  = ID1 ( K )
                             DM = SDMA( J )
@@ -468,7 +493,7 @@ C...........   Treat parameters equal to 0 as missing
 
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
-     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
                     CALL M3MESG( MESG )
@@ -490,28 +515,27 @@ C...........   Treat parameters equal to 0 as missing
             END IF  	!  if stack diameter bad
 
             IF ( STKTK( S ) .LE. 0.0 ) THEN
-                FIP = IFIP( S )
-                SCC = ISCC( S )
-                K = FIND2( FIP, SCC, NR3, FP3, SC3 )
+                K = FINDC( CFIPSCC, NR3, TBL3 )
 
-                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
+                IF( K .LE. 0 ) 
+     &              K = FINDC( CFIPSCCZ, NR3, TBL3 )
 
                 IF ( K .GT. 0 ) THEN
                     J  = ID3 ( K )
                     TK = STKA( J )
                     VE = SVEA( J )
                 ELSE
-                    SID = FIP/1000
-                    K   = FIND2( SID, SCC, NR2, FP2, SC2 )
+                    K   = FINDC( CSTASCC, NR2, TBL2 )
 
-                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+                    IF( K .LE. 0 ) 
+     &                  K = FINDC( CSTASCCZ, NR2, TBL2 )
 
                     IF ( K .GT. 0 ) THEN
                         J  = ID2 ( K )
                         TK = STKA( J )
                         VE = SVEA( J )
                     ELSE
-                        K = FIND1( SCC, NR1, SC1 )
+                        K = FINDC( TSCC, NR1, TBL1 )
                         IF ( K .GT. 0 ) THEN
                             J  = ID1 ( K )
                             TK = STKA( J )
@@ -527,7 +551,7 @@ C...........   Treat parameters equal to 0 as missing
 
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
-     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
                     CALL M3MESG( MESG )
@@ -544,26 +568,25 @@ C...........   Treat parameters equal to 0 as missing
             END IF	!  if stack exhaust temperature bad
 
             IF ( STKVE( S ) .LE. 0.0 ) THEN
-                FIP = IFIP( S )
-                SCC = ISCC( S )
-                K = FIND2( FIP, SCC, NR3, FP3, SC3 )
+                K = FINDC( CFIPSCC, NR3, TBL3 )
 
-                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
+                IF( K .LE. 0 ) 
+     &              K = FINDC( CFIPSCCZ, NR3, TBL3 )
 
                 IF ( K .GT. 0 ) THEN
                     J  = ID3 ( K )
                     VE = SVEA( J )
                 ELSE
-                    SID = FIP/1000
-                    K   = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
+                    K = FINDC( CSTASCC, NR2, TBL2 )
 
-                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+                    IF( K .LE. 0 ) 
+     &                  K = FINDC( CSTASCCZ, NR2, TBL2 )
 
                     IF ( K .GT. 0 ) THEN
                         J  = ID2 ( K )
                         VE = SVEA( J )
                     ELSE
-                        K = FIND1( SCC, NR1, SC1 )
+                        K = FINDC( TSCC, NR1, TBL1 )
                         IF ( K .GT. 0 ) THEN
                             J  = ID1 ( K )
                             VE = SVEA( J )
@@ -578,7 +601,7 @@ C...........   Treat parameters equal to 0 as missing
 
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
-     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
                     CALL M3MESG( MESG )
@@ -600,9 +623,10 @@ C.........  This is in a separate loop to permit better reporting
 
             IF( DFLAG( S ) ) THEN
 
-                CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
+                CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
+
                 WRITE( MESG,94010 ) 
-     &                 BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                 BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                 CRLF() // BLANK5 // 
      &                 '             Old        New'
                 CALL M3MESG( MESG )
@@ -632,19 +656,16 @@ C.........  This is in a separate loop to permit better reporting
         ENDDO  ! Loop through sources for applying ultimate fallbacks
 
         DEALLOCATE( INDXA )
-        DEALLOCATE( SFIPA )
-        DEALLOCATE( SSCCA )
+        DEALLOCATE( SFSCA )
         DEALLOCATE( SHTA )
         DEALLOCATE( SDMA )
         DEALLOCATE( STKA )
         DEALLOCATE( SVEA )
-        DEALLOCATE( SC1 )
+        DEALLOCATE( TBL1 )
         DEALLOCATE( ID1 )
-        DEALLOCATE( FP2 )
-        DEALLOCATE( SC2 )
+        DEALLOCATE( TBL2 )
         DEALLOCATE( ID2 )
-        DEALLOCATE( FP3 )
-        DEALLOCATE( SC3 )
+        DEALLOCATE( TBL3 )
         DEALLOCATE( ID3 )
 
         RETURN
@@ -663,5 +684,9 @@ C...........   Internal buffering formats............ 94xxx
 94040   FORMAT( 7X, A6, 1X, '< min.  Change from ', 
      &          E10.3, ' to ', E10.3 )
 
-        END
+94050   FORMAT( A4, A6 )
+
+94300   FORMAT( A, I2.2, A, I2.2, A )
+
+        END SUBROUTINE FIXSTK
 

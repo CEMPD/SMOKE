@@ -48,13 +48,14 @@ C
 C***************************************************************************
 
 C...........   MODULES for public variables
-C...........   This module is the point source inventory arrays
-        USE PTMODULE           !  NOTE: includes EMCNST3.EXT
+C...........   This module is the inventory arrays
+        USE MODSOURC 
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical constants
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
@@ -88,7 +89,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER       INVSTAT( MXIPOL ) ! status (0=not in inventory) (out)
 
 C...........   Contents of PTFILE 
-        CHARACTER*256,ALLOCATABLE:: PNLSTSTR( : )! Char strings in PTINV file
+        CHARACTER*300,ALLOCATABLE:: PNLSTSTR( : )! Char strings in PTINV file
 
 C...........   Dropped emissions
         INTEGER         NDROP             !  number of records dropped
@@ -135,8 +136,8 @@ C...........   Other local variables
         LOGICAL         DFLAG       !  input verification:  TRUE iff ERROR
         LOGICAL         FIRSTITER   !  true when on first iteration of a loop
 
-        CHARACTER(LEN=SRCLEN3)  LSRCCHR     !  previous CSOURC
-        CHARACTER(LEN=SRCLEN3)  TSRCCHR     !  tmporary CSOURC
+        CHARACTER(LEN=ALLLEN3)  LSRCCHR     !  previous CSOURC
+        CHARACTER(LEN=ALLLEN3)  TSRCCHR     !  tmporary CSOURC
 
         CHARACTER*5     TPOLPOS     !  Temporary pollutant position
         CHARACTER*16    ERFILDSC    !  desc of file creating an error from sub
@@ -267,8 +268,6 @@ C.........  Allocate memory for (unsorted) input arrays using dimensions set
 C           based on type of inventory being input
         ALLOCATE( IFIPA( NRAWIN ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IFIPA', PROGNAME )
-        ALLOCATE( ISCCA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISCCA', PROGNAME )
         ALLOCATE( ISICA( NRAWIN ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ISICA', PROGNAME )
         ALLOCATE( IORISA( NRAWIN ), STAT=IOS )
@@ -297,6 +296,8 @@ C           based on type of inventory being input
         CALL CHECKMEM( IOS, 'STKTKA', PROGNAME )
         ALLOCATE( STKVEA( NRAWIN ), STAT=IOS )
         CALL CHECKMEM( IOS, 'STKVEA', PROGNAME )
+        ALLOCATE( CSCCA( NRAWIN ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSCCA', PROGNAME )
         ALLOCATE( CBLRIDA( NRAWIN ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CBLRIDA', PROGNAME )
         ALLOCATE( CPDESCA( NRAWIN ), STAT=IOS )
@@ -366,6 +367,10 @@ C            CALL RDEPSPT(  )
 C.........  SMOKE list format requires a loop for multiple files
 C.........  Includes EMS-95 format
         ELSEIF( INVFMT .EQ. LSTFMT ) THEN  
+
+C............. Set variables that will not be set By RDEMSPT call
+            CBLRIDA = BLRBLNK3
+            IORISA  = IMISS3
 
             INY = IMISS3
             J   = 0
@@ -513,10 +518,9 @@ C           of the pollutant for that record in the INVPNAM pollutant array
         DO I = 1, NRAWBP
             
             J  = INDEXA( I )
-            L1 = POLPOS3 - 1
 
-            TSRCCHR = CSOURCA( J )(    1:L1 )      ! Source characteristics
-            TPOLPOS = CSOURCA( J )( L1+1:SRCLEN3 ) ! Pos of pollutant (ASCII)
+            TSRCCHR = CSOURCA( J )(       1:SRCLEN3 ) ! Source characteristics
+            TPOLPOS = CSOURCA( J )( POLPOS3:ALLLEN3 ) ! Pos of pollutant (ASCII)
 
 C.............  Update pointer for list of actual pollutants
             K = STR2INT( TPOLPOS )  ! Convert pollutant code to integer
@@ -564,8 +568,6 @@ C.............  Assign source ID (to use as an index) for all inv X pol
 C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
         ALLOCATE( IFIP( NPSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
-        ALLOCATE( ISCC( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISCC', PROGNAME )
         ALLOCATE( ISIC( NPSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
         ALLOCATE( IORIS( NPSRC ), STAT=IOS )
@@ -592,6 +594,8 @@ C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
         CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
         ALLOCATE( STKVE( NPSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
+        ALLOCATE( CSCC( NPSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSCC', PROGNAME )  
         ALLOCATE( CBLRID( NPSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CBLRID', PROGNAME )  
         ALLOCATE( CPDESC( NPSRC ), STAT=IOS )
@@ -603,7 +607,6 @@ C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
 C.........  Loop through sources x pollutants to store sorted arrays for output
 C           to I/O API file.
         LS = IMISS3
-        L  = POLPOS3 - 1
         DO I = 1, NRAWBP
 
             J = INDEXA( I )
@@ -612,7 +615,6 @@ C           to I/O API file.
             IF( S .NE. LS ) THEN
                 LS  = S
                 IFIP  ( S )  = IFIPA  ( J )
-                ISCC  ( S )  = ISCCA  ( J )
                 ISIC  ( S )  = ISICA  ( J )
                 IORIS ( S )  = IORISA ( J )
                 IDIU  ( S )  = IDIUA  ( J )
@@ -625,18 +627,19 @@ C           to I/O API file.
                 STKDM ( S )  = STKDMA ( J )
                 STKTK ( S )  = STKTKA ( J )
                 STKVE ( S )  = STKVEA ( J )
+                CSCC  ( S )  = CSCCA  ( J )
                 CBLRID( S )  = CBLRIDA( J )
                 CPDESC( S )  = CPDESCA( J )
-                CSOURC( S )  = CSOURCA( J )( 1:L )
+                CSOURC( S )  = CSOURCA( J )( 1:SRCLEN3 )
             ENDIF
 
         ENDDO
 
 C.........  Deallocate local memory for per-source temporal x-ref      
 
-        DEALLOCATE( IFIPA, ISCCA, ISICA, IORISA, IDIUA, IWEKA, 
-     &              NPCNTA, TPFLGA, INVYRA, XLOCAA, YLOCAA, STKHTA,
-     &              STKDMA, STKTKA, STKVEA, CBLRIDA, CPDESCA, 
+        DEALLOCATE( IFIPA, ISICA, IORISA, IDIUA, IWEKA, NPCNTA, 
+     &              TPFLGA, INVYRA, XLOCAA, YLOCAA, STKHTA, STKDMA, 
+     &              STKTKA, STKVEA, CSCCA, CBLRIDA, CPDESCA, 
      &              CSOURCA, PNLSTSTR )
 
 C.........  Allocate memory for aggregating any duplicate pol-specific data
@@ -758,4 +761,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94060   FORMAT( 10( A, :, E10.3, :, 1X ) )
 
-        END
+        END SUBROUTINE RDPTINV

@@ -34,7 +34,7 @@ C  REVISION  HISTORY:
 C    copied by: mhouyoux 10/98
 C    origin: emspoint.F 4.3
 C
-C****************************************************************************/
+C****************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -58,12 +58,13 @@ C
 C***************************************************************************
 
 C...........   MODULES for public variables
-C...........   This module is the point source inventory arrays
-        USE PTMODULE          ! NOTE: includes EMCNST3.EXT
+C...........   This module is the inventory arrays
+        USE MODSOURC
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -219,7 +220,7 @@ C.........  Initialize pollutant status (present in inventory or not)
 
 C.........  Read the raw inventory data, and store in sorted order
 C.........  The inventory arrays that are populated by this subroutine call
-C           are contained in the module PTMODULE
+C           are contained in the module MODSOURC
 
         CALL RDPTINV( IDEV, MXIPOL, INVPCOD, INVPNAM, INVFMT, 
      &                NPSRC, TFLAG, EFLAG, INVSTAT )
@@ -256,9 +257,8 @@ C           accessing INVPCOD and INVSTAT if needed.
 
 C.........   Fix stack parameters. 
 C.........   Some of these arguments are variables that are defined in the
-C            module PTMODULE
-        CALL FIXSTK( RDEV, NPSRC, IFIP, ISCC, CSOURC,
-     &               STKHT, STKDM, STKTK, STKVE )
+C            module MODSOURC
+        CALL FIXSTK( RDEV, NPSRC )
 
 C.........  Set time zones based on state and county FIPS code. Note that a
 C           few counties in the Western U.S. are divided by a time zone, so this
@@ -278,8 +278,6 @@ C           is not perfectly accurate for all counties.
 C.........  Allocate memory for local source-specific arrays used for output      
 C.........  Allocate memory for indices IPPTR & IPMAX for pointing to position
 C           in sparsely stored emissions array.  
-        ALLOCATE( IDXSCC( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IDXSCC', PROGNAME )
         ALLOCATE( IPPTR( NPSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IPPTR', PROGNAME )
         ALLOCATE( IPMAX( NPSRC ), STAT=IOS )
@@ -287,14 +285,6 @@ C           in sparsely stored emissions array.
         ALLOCATE( SRCPOL( NPSRC, NPTPPOL3 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
        
-C.........  Initialize SCC sorting index     
-        DO S = 1, NPSRC
-            IDXSCC( S ) = S
-        ENDDO
-
-C.........  Sort all SCCs in the point sources inventory in increasing order
-        CALL SORTI1( NPSRC, IDXSCC, ISCC )
-
 C.........  Get unique-SCC output file
         ADEV = PROMPTFFILE( 
      &          'Enter the name of the ACTUAL SCC output file',
@@ -303,9 +293,9 @@ C.........  Get unique-SCC output file
 C.........  Write out SCCs list (this subroutine expect the data structure
 C           that is being provided.
 
-        CALL M3MSG2( 'Writing out UNIQUE SCC file...' )
+        CALL M3MSG2( 'Writing out ACTUAL SCC file...' )
 
-        CALL WRPTSCC( ADEV, NPSRC, IDXSCC, ISCC )
+        CALL WRCHRSCC( ADEV, NPSRC, CSCC )
 
 C.........  Write out temporal x-ref file. (TFLAG is true for EMS-95 format)
 
@@ -327,15 +317,12 @@ C.........  Open output I/O API and ASCII files for PNTS
         CALL M3MSG2( 'Writing SMOKE POINT SOURCE INVENTORY file...' )
 
 C.........  Write source characteristics to PNTS file (I/O API and ASCII)
-        CALL WPNTSCHR( ENAME, SDEV, NPSRC, IFIP, ISCC, ISIC, 
-     &                 IORIS, TZONES, TPFLAG, INVYR, XLOCA, 
-     &                 YLOCA, STKHT, STKDM, STKTK, STKVE,
-     &                 CBLRID, CPDESC, CSOURC )
+        CALL WPNTSCHR( ENAME, SDEV, NPSRC )
 
 C.........  Deallocate memory to potentially speed the rest of the program up
-        DEALLOCATE( IFIP, ISCC, ISIC, IORIS, TZONES, TPFLAG, INVYR,
-     &              XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE, CBLRID,
-     &              CPDESC )
+        DEALLOCATE( IFIP, CSCC, ISIC, IORIS, TZONES, TPFLAG, 
+     &              INVYR, XLOCA, YLOCA, STKHT, STKDM, STKTK, STKVE, 
+     &              CBLRID, CPDESC )
 
 C.........  Initialize global index based on count of number of sources per 
 C           pollutant
@@ -433,4 +420,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94080   FORMAT( '************  ', A, I7, ' ,  ' , A, I12 )
  
-        END
+        END PROGRAM RAWPOINT
