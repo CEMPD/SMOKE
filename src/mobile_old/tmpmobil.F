@@ -582,15 +582,16 @@ C.............  Set other variable properties
         FDESC3D( 1 ) = 
      &  'Temporally allocated source level mobile source VMT values.'
         DO  20 V = 1, NVTYPE
-            WRITE( FDESC3D( V+1 ), 94010 )
+C.............   V+3 moves NVTYPE after the primary and the two met headers
+            WRITE( FDESC3D( V+3 ), 94010 ) 
      &      'Layer', V, 'represents vehicle type ' // VTYPE3( V )
 20      CONTINUE
         DO  21 V = NVTYPE+2, MXDESC3
             FDESC3D( V ) = ' '
 21      CONTINUE
 
-        FDESC3D( 21 ) = SCEN_STR
-        FDESC3D( 22 ) = SCHE_STR
+        FDESC3D( 2 ) = SCEN_STR
+        FDESC3D( 3 ) = SCHE_STR
 
         TNAME = PROMPTMFILE( 
      &  'Enter logical name for output TIME-STEPPED MOBILE EMIS file',
