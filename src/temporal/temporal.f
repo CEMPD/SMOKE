@@ -402,6 +402,16 @@ C.........  Set inventory variables to read for specific source categories
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
+C.........  Reset TPFLAG if ozone-season emissions are being used since
+C           we don't want to apply the monthly adjustment factors in this case.
+        IF ( INVPIDX .EQ. 1 ) THEN
+            DO S = 1, NSRC
+                IF ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 ) THEN
+                    TPFLAG( S ) = TPFLAG( S ) / MTPRFAC
+                END IF
+            END DO
+        END IF
+
 C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
