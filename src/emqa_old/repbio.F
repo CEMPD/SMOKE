@@ -14,12 +14,13 @@ C       Sorted, cut-down input data for surrogate coeffs.
 C       EPS2 Formatted Surrogate file (will not work with EMS95 surgs)
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C       CRLF, DSCGRID, INDEX1,
+C       CRLF, DSCGRID, INDEX1, MMDDYY,
 C       PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
-C       TRIMLEN, ENVINT
+C       TRIMLEN, ENVINT, ENVYN
 C
 C  REVISION  HISTORY:
 C       Prototype  4/97 by JMV.
+C       County totals 8/98 by JMV.
 C
 C***************************************************************************
 C 
@@ -108,6 +109,7 @@ C...........   Logical file names and unit numbers
    
         INTEGER         RDEV    !  output hourly report file
         INTEGER         SDEV    !  for surrogate coeff file
+        INTEGER         FDEV    !  for state-county names
         INTEGER         TDEV    !  output daily report file  
         INTEGER         LDEV    !  log-device
         CHARACTER*16    ANAME   !  logical name for emission source gridded file
@@ -121,6 +123,7 @@ C.......   Name tables for file ANAME
         REAL            CYEM( NBFIP, MSPCS )    !  summed county emissions
         REAL            STEM( NASID, MSPCS )    !  hourly state emissions 
         REAL            STDAY( NASID, MSPCS )   !  daily totals for states
+        REAL            CYDAY( NBFIP, MSPCS )   !  daily totals for counties
 
 C...........   Other local variables
 
@@ -152,6 +155,8 @@ C...........   Other local variables
 
         LOGICAL         EFLAG      ! Input error flat
         LOGICAL         ST_REPORT  ! Output state-based emissions totals
+        LOGICAL         CY_REPORT  ! Output county-based emissions totals
+
         LOGICAL         BSPCFLAG( NMPOL )  ! Flag for BEIS2 species
 
         CHARACTER*5     FFORMAT !  temporary indicator for input formats
@@ -187,6 +192,10 @@ C
      &  'Enter logical name for GRIDDING SURROGATE COEFF file',
      &           .TRUE., .TRUE., 'AGPRO', 'REPBIO' )
 
+        FDEV = PROMPTFFILE(
+     &          'Enter name for STATE/COUNTY FIPS CODE file',
+     &          .TRUE., .TRUE., 'STCYNAM', 'REPBIO' )
+
         RDEV  = PROMPTFFILE(
      &             'Enter logical name for HOURLY REPORT or "NONE"',
      &             .FALSE., .TRUE., 'BHRREP' , 'REPBIO' )
@@ -207,6 +216,9 @@ C
 C.......   Get environment variable settings
 
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
+
+        CY_REPORT= ENVYN( 'CY_REPORT', 'Per-county report writing flag',
      &                      .TRUE., IOS )
 
         RTIME = ENVINT( 'ST_REPTIME', 'Per-State summation reporting '
@@ -718,6 +730,69 @@ C.................  Set begining time for next day
 
 
             ENDIF
+
+C.................  write county totals 
+ 
+            IF( CY_REPORT ) THEN
+
+               DO 393 S = 1, MSPCS
+
+                   FAC = RWT( S ) * GM2TON
+
+                   DO 391 I = 1, MFIP
+
+                       CYEM( I,S ) = CYEM( I,S ) * FAC
+                       CYDAY( I,S ) = CYDAY( I,S ) + CYEM( I,S )
+
+391                CONTINUE
+
+393            CONTINUE
+
+               WRITE(CTIME,92010)LDATE, LTIME
+
+C................ write hourly totals
+
+               MESG = 'For date / hour ' //
+     &                CTIME
+
+               IF( RDEV .GT. 0 )
+     &         CALL CYLST( RDEV , FDEV , MESG , NBFIP , MFIP ,
+     &              MSPCS, 'F8.1', EMSPC , KFIP, CYEM )
+
+
+C.............  Write totals report if previous time equals the report time
+C.............  Write daily totals
+
+               IF ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) THEN
+
+                  IF( TDEV .GT. 0 )
+     &            WRITE( TDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
+     &                               MMDDYY( LDATE ) // ' from',
+     &                               BTIME, 'to', LTIME
+
+                  MESG = 'Biogenic emissions (tons/specific day) ' //
+     &                 'within grid ' // GRDNM
+
+                  IF( RDEV .GT. 0 )
+     &            CALL CYLST( TDEV , FDEV , MESG , NBFIP , MFIP ,
+     &              MSPCS, 'F8.2', EMSPC , KFIP, CYDAY )
+
+                  DO 398 I = 1, MFIP
+
+                    DO 397 S = 1, MSPCS
+                        CYDAY( I,S ) = 0.
+397                 CONTINUE
+
+398               CONTINUE
+
+C.................  Set begining time for next day
+                  BTIME = JTIME
+
+               ENDIF
+
+
+            ENDIF
+
 
 
 199     CONTINUE
