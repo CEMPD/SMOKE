@@ -65,12 +65,11 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         JUNIT
         CHARACTER*16    MULTUNIT
         INTEGER         PROMPTFFILE  
-        CHARACTER*16    PROMPTMFILE  
         LOGICAL         SETENVVAR
         CHARACTER*16    VERCHAR
 
         EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
-     &            PROMPTMFILE, SETENVVAR, VERHCAR
+     &            SETENVVAR, VERHCAR
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
@@ -249,7 +248,7 @@ C.............  Override gridded file settings
 
             FDESC3D = ' '   ! array
             
-            PINGNAME = PROMPTMFILE( 
+            PINGNAME = PROMPTSET( 
      &                     'Enter name for PING EMISSIONS OUTPUT file',
      &                     FSUNKN3, PINGNAME, PROGNAME )
         END IF
