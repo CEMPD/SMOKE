@@ -1,5 +1,6 @@
 
-        SUBROUTINE  MKVMAT( NSRC, NETYPE, JDATE, MON, DAY, TZONE, ZONES,
+        SUBROUTINE  MKVMAT( NSRC, NETYPE, JDATE, MONTH, DAYOW, 
+     &                      TZONE, ZONES,
      &                      MFAC,  NMON, MDEX, 
      &                      WFAC,  NWEK, WDEX, 
      &                      DFAC,  NDAY, DDEX, VMAT, TMAT )
@@ -59,8 +60,8 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER    NWEK                    ! number of weekly profiles
         INTEGER    NDAY                    ! number of diurnal profiles
         INTEGER    JDATE                   ! date YYYYDDD
-        INTEGER    MON                     ! 1 ... 12
-        INTEGER    DAY                     ! 1 ... 7
+        INTEGER    MONTH( 24, 0:23 )       ! source time zone's 1 ... 12
+        INTEGER    DAYOW( 24, 0:23 )       ! source time zone's 1 ... 7
         INTEGER    TZONE                   ! time zone (5 for Eastern)
         INTEGER    ZONES( NSRC )           ! source time zones
         REAL       MFAC( 12, NMON )        ! Monthly profile factors
@@ -75,22 +76,25 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS:
 
         INTEGER         FIND1
-        LOGICAL         ISDSTIME        !  true iff daylight savings time( date)
+        LOGICAL         ISDSTIME       !  true iff daylight savings time( date)
+        REAL            YR2DAY
 
-        EXTERNAL        FIND1, ISDSTIME
+        EXTERNAL        FIND1, ISDSTIME, YR2DAY
 
 C...........   Scratch Local variables:
 
+        INTEGER         DAY             !  day for source and hour pointer 
+        INTEGER         E               !  emissions mode counter
         INTEGER         H               !  hour-loop counter
+        INTEGER         HCORR           !  daylight savings time correction
         INTEGER         I               !  counter
         INTEGER         K               !  diurnal-profile index
         INTEGER         L               !  diurnal-xref index
+        INTEGER         MON             !  month for source and hour pointer
         INTEGER         S               !  source counter
         INTEGER         V               !  chemistry variable counter
-        INTEGER         E               !  emissions mode counter
-        INTEGER         HCORR           !  daylight savings time correction
         REAL            FAC             !  partial matrix factor
-        REAL            YR2DAY          !  year-to-day conversion factor
+        REAL            YRFAC           !  year-to-day conversion factor
 
 
 C.......   SAVED Local Variables
@@ -104,7 +108,7 @@ C.......   SAVED Local Variables
         DATA            FIRSTIME / .TRUE. /
         LOGICAL         EFLAG
 
-        SAVE            MWFAC, FIRSTIME, YR2DAY
+        SAVE            MWFAC, FIRSTIME
 
         CHARACTER*256   MESG
 
@@ -118,18 +122,7 @@ C.......   Firstime:  renormalize MFAC, WFAC
             FIRSTIME = .FALSE.
             EFLAG    = .FALSE.
 
-C...........   Compute correct year-to-day conversion factor:
-
-            K = JDATE / 1000        !  year-number
-            IF ( MOD( K,4 ) .NE. 0 ) THEN           !  nonleap years
-                YR2DAY = 1.0 / 365.0
-            ELSE IF ( MOD( K,100 ) .NE. 0 ) THEN    !  noncentury leap years
-                YR2DAY = 1.0 / 366.0
-            ELSE IF ( MOD( K,400 ) .NE. 0 ) THEN    !  century nonleap years
-                YR2DAY = 1.0 / 365.0
-            ELSE                                    !  leap centuries
-                YR2DAY = 1.0 / 366.0
-            END IF
+            YRFAC = YR2DAY( JDATE / 1000 )  ! year-to-day conversion
 
             DO  13 I = 1, NMON
 
@@ -146,7 +139,7 @@ C...........   Compute correct year-to-day conversion factor:
                     CALL M3MESG( MESG )
 
                 ELSE
-                    FAC = 1.0 / ( FAC * YR2DAY )
+                    FAC = 1.0 / ( FAC * YRFAC )
 
                 ENDIF
 
@@ -174,7 +167,7 @@ C...........   Compute correct year-to-day conversion factor:
 C.......   Compute index correction (offset by 1 because of
 C.......   1 + MOD(...) needed below
 
-        HCORR = TZONE + 25
+        HCORR = TZONE + 23
 
 C.......   Compute TMAT:
 
@@ -182,29 +175,43 @@ C.......   Compute TMAT:
         DO  133  V = 1, NVTYPE
         DO  122  S = 1, NSRC
 
+            L = DDEX( S,V,E )
+
             IF ( MDEX( S,V,E ) .GT. 0 ) THEN
 
-                FAC = VMAT( S,V ) * MFAC( MON,MDEX( S,V,E ) ) 
-     &                            * WFAC( DAY,WDEX( S,V,E ) )
+                DO 44 H = 1, 24
+
+                    MON = MONTH( H, ZONES( S ) )
+                    DAY = DAYOW( H, ZONES( S ) )
+                    FAC = VMAT( S,V ) * MFAC( MON,MDEX( S,V,E ) ) 
+     &                                * WFAC( DAY,WDEX( S,V,E ) )
+                    K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,V,E,H ) = FAC * DFAC( K,L )
+
+44              CONTINUE   
 
             ELSE IF ( WDEX( S,V,E ) .GT. 0 ) THEN
 
-                FAC = VMAT( S,V ) * WFAC( DAY,WDEX( S,V,E ) )
+                DO 55 H = 1, 24
+
+                    DAY = DAYOW( H, ZONES( S ) )
+                    FAC = VMAT( S,V ) * WFAC( DAY,WDEX( S,V,E ) )
+                    K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,V,E,H ) = FAC * DFAC( K,L )
+
+55              CONTINUE   
 
             ELSE
 
-                FAC = VMAT( S,V )
+                DO 66 H = 1, 24
+
+                    FAC = VMAT( S,V )
+                    K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,V,E,H ) = FAC * DFAC( K,L )
+
+66              CONTINUE   
 
             END IF
-
-            L = DDEX( S,V,E )
-
-            DO  111  H = 1, 24
-
-                K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
-                TMAT( S,V,E,H ) = FAC * DFAC( K,L )
-
-111         CONTINUE
 
 122     CONTINUE
 133     CONTINUE
