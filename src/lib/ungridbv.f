@@ -1,5 +1,5 @@
 
-        SUBROUTINE UNGRIDBV( NC, NR, LAT, LON, 
+        SUBROUTINE UNGRIDBV( NC, NR, XREFS, YREFS, 
      &                       NPTS, XLOC, YLOC, NU, CU )
 
 C***************************************************************************
@@ -43,8 +43,8 @@ C***************************************************************************
 C.........  SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: NC           ! number of columns in grid
         INTEGER,      INTENT (IN) :: NR           ! number of rows in grid
-        REAL,         INTENT (IN) :: LAT( NC,NR ) ! grid cell center latitudes
-        REAL,         INTENT (IN) :: LON( NC,NR ) ! grid cell center longitudes
+        REAL,         INTENT (IN) :: XREFS( NC,NR ) ! grid cell center x coordinates
+        REAL,         INTENT (IN) :: YREFS( NC,NR ) ! grid cell center y coordinates
         INTEGER,      INTENT (IN) :: NPTS         ! number of point-source locations
         REAL,         INTENT (IN) :: XLOC( NPTS ) ! X point coordinates
         REAL,         INTENT (IN) :: YLOC( NPTS ) ! Y point coordinates
@@ -69,58 +69,54 @@ C.........  Loop through point-source locations
         DO S = 1, NPTS
 
 C.............  Find column
-            DO I = 1, NC
-            
-C.................  Check if point is to the left of the grid
-                IF( I == 1 .AND. XLOC( S ) < LON( I,1 ) ) THEN
-                    COL = 0
-                    X = 0.
-                    EXIT
-                END IF
-               
-C.................  Check if point is to the right of the grid
-                IF( I == NC .AND. XLOC( S ) > LON( I,1 ) ) THEN
-                    COL = NC
-                    X = 1.
-                    EXIT
-                END IF
 
-C.................  Check if point is between current and next location               
-                IF( XLOC( S ) >= LON( I,1 ) .AND. 
-     &              XLOC( S ) <= LON( I+1,1 ) ) THEN
-                    COL = I
-                    X = ( XLOC( S ) - LON( I,1 ) ) / 
-     &                  ( LON( I+1,1 ) - LON( I,1 ) )
-                    EXIT
-                END IF            
-            END DO
+C.............  Check if point is to the left of the grid
+            IF( XLOC( S ) < XREFS( 1,1 ) ) THEN
+                COL = 0
+                X = 0.
+                
+C.............  Check if point is to the right of the grid
+            ELSE IF( XLOC( S ) > XREFS( NC, 1 ) ) THEN
+                COL = NC
+                X = 1.
+
+C.............  Loop through columns to find the correct one                
+            ELSE
+                DO I = 1, NC-1
+                    IF( XLOC( S ) >= XREFS( I,1 ) .AND. 
+     &                  XLOC( S ) <= XREFS( I+1,1 ) ) THEN
+                        COL = I
+                        X = ( XLOC( S ) - XREFS( I,1 ) ) / 
+     &                      ( XREFS( I+1,1 ) - XREFS( I,1 ) )
+                        EXIT
+                    END IF            
+                END DO
+            END IF
             
 C.............  Find row
-            DO I = 1, NR
-                
-C.................  Check if point is below the grid
-                IF( I == 1 .AND. YLOC( S ) < LAT( 1,I ) ) THEN
-                    ROW = 0
-                    Y = 0.
-                    EXIT
-                END IF
-                
-C.................  Check if point is above the grid
-                IF( I == NR .AND. YLOC( S ) > LAT( 1,I ) ) THEN
-                    ROW = NR
-                    Y = 1.
-                    EXIT
-                END IF
 
-C.................  Check if point is between current and next locations                
-                IF( YLOC( S ) >= LAT( 1,I ) .AND. 
-     &              YLOC( S ) <= LAT( 1,I+1 ) ) THEN
-                    ROW = I
-                    Y = ( YLOC( S ) - LAT( 1,I ) ) /
-     &                  ( LAT( 1,I+1 ) - LAT( 1,I ) )
-                    EXIT
-                END IF
-            END DO
+C.............  Check if point is below the grid
+            IF( YLOC( S ) < YREFS( 1,I ) ) THEN
+                ROW = 0
+                Y = 0.
+            
+C.............  Check if point is above the grid
+            ELSE IF( YLOC( S ) > YREFS( NR, 1 ) ) THEN
+                ROW = NR
+                Y = 1.
+
+C.............  Loop through rows to find the correct one
+            ELSE
+                DO I = 1, NR-1
+                    IF( YLOC( S ) >= YREFS( 1,I ) .AND. 
+     &                  YLOC( S ) <= YREFS( 1,I+1 ) ) THEN
+                        ROW = I
+                        Y = ( YLOC( S ) - YREFS( 1,I ) ) /
+     &                      ( YREFS( 1,I+1 ) - YREFS( 1,I ) )
+                        EXIT
+                    END IF
+                END DO
+            END IF
 
 C.............  Set grid cells surrounding point location
             IF( ROW == 0 ) THEN               ! row below grid
