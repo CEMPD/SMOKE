@@ -96,7 +96,7 @@ C.........  Mobile source variable name parameters
         CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
         DATA MBUNITS / 'VMT/year' /
 
-        INTEGER MBTYPES( NPTPPOL3 )
+        INTEGER MBTYPES( NMBPPOL3 )
         DATA MBTYPES / M3REAL /
 
         CHARACTER(LEN=IODLEN3) MBDESCS( NMBPPOL3 )
