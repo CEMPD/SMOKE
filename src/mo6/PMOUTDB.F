@@ -240,7 +240,7 @@ C           Miles, MPG, HrVMT, FacVMT, RegDist, VCount, AmbTemp, and
 C           DiurTemp, and MY. Ends is null for all ETypes except Hot Soak. 
 C 
             WRITE(DBUNIT(1),115) (DBHEADER(1:26),IH,TABCHAR, 
-     &        HEF(IH,1),TABCHAR,HEF(IH,5)*BMYMPD(JDX,IV)*HVMT(IH), 
+     &        HEF(IH,1),TABCHAR,HEF(IH,1)*BMYMPD(JDX,IV)*HVMT(IH), 
      &        TABCHAR,STARTSPERDAY(JDX,IV,IW)*STARTDIST(IH,IW),TABCHAR, 
      &        STARTSPERDAY(JDX,IV,IW)*HSRFAC*HS_HRLY_TRP_FRCN(IH,IW), 
      &        TABCHAR,BMYMPD(JDX,IV)*HVMT(IH),TABCHAR,RFE,TABCHAR, 
