@@ -13,7 +13,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -57,6 +57,13 @@ C   begin body of subroutine PROGDESC
      &      ' '
 
         ELSEIF( NAME .EQ. 'RAWBIO' ) THEN
+            WRITE( LDEV,92000 )
+     &      ' ',
+     &  'Program RAWBIO to take the county level biomass,',
+     &  'the emissions factors, and the surrogate factors,',
+     &  'and produce gridded normalized biogenic emissions.',
+     &  ' '
+
         ELSEIF( NAME .EQ. 'GRDBIO' ) THEN
         ELSEIF( NAME .EQ. 'SPCMAT' ) THEN
             WRITE( LDEV,92000 ) 
@@ -106,6 +113,14 @@ C   begin body of subroutine PROGDESC
      &      ' '
 
         ELSEIF( NAME .EQ. 'TMPBIO' ) THEN
+            WRITE( LDEV,92000 )
+     &      ' ',
+     &  'Program TMPBIO takes postprocessed MM5 meteorology and ',
+     &  'normalized gridded emissions from RAWBIO or GRDBIO, and ', 
+     &  'produces time stepped gridded speciated biogenic ',
+     &  'emissions.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'CNTLMAT' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
