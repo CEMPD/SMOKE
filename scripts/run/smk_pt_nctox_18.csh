@@ -27,7 +27,7 @@ setenv RUN_GRWINVEN  Y         # Y runs control application program
 
 # time-dependent programs
 setenv RUN_TEMPORAL  Y         # Y runs temporal allocation program
-setenv RUN_ELEVPOINT Y        #  run elevated/PinG sources selection program
+setenv RUN_ELEVPOINT Y         # Y runs elevated/PinG sources selection program
 setenv RUN_SMKMERGE  Y         # Y runs merge program
 setenv RUN_SMK2EMIS  N         # run conversion of 2-d to UAM binary
 
