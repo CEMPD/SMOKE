@@ -43,7 +43,7 @@ C***************************************************************************
 
 C...........   INCLUDES
 
-        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IOCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2  CRLF
