@@ -81,7 +81,7 @@ C...........   Local variables
         
         LOGICAL      :: EFLAG = .FALSE.           ! true: error found
         
-        CHARACTER*80    LINE                      ! Read buffer for a line
+        CHARACTER*150   LINE                      ! Read buffer for a line
         CHARACTER*256   MESG                      ! message buffer
         CHARACTER*16 :: PROGNAME = 'RDSPDPROF'    ! program name
 
