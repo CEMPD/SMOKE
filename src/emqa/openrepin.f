@@ -119,6 +119,7 @@ C.........  Other local variables
         INTEGER         TSTEP_T       ! unused time step from environment
 
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
+        LOGICAL      :: TIMEFLAG = .FALSE.  ! true: time info already init
 
         CHARACTER*16    NAMBUF       ! tmp file name buffer
         CHARACTER*256   MESG         ! message buffer
@@ -744,7 +745,7 @@ C               projected.
             END IF
 
 C.............  If time information has already been initialized...
-            IF( YFLAG ) THEN
+            IF( TIMEFLAG ) THEN
 
                 YY = GETIFDSC( IODESC, '/PROJECTED YEAR/', .FALSE. )
                 IF( YY .LE. 0 ) THEN
@@ -786,7 +787,7 @@ C.............  If year information needs to be initialized...
 
                 SAVNAM = FNAME
                 FLEN   = LEN_TRIM( SAVNAM )
-                YFLAG  = .TRUE.
+                TIMEFLAG  = .TRUE.
 
             END IF
 
