@@ -60,17 +60,21 @@ C.........  Find M6 scenario file in M6LIST
         END IF
         
 C.........  Open M6 scenario file
-        FDEV = JUNIT()
-        OPEN( FDEV, FILE=FILENAME, STATUS='OLD', IOSTAT=IOS )
-        
-        IF( IOS /= 0 ) THEN
-            EFLAG = .TRUE.
-            WRITE( MESG, 94010 ) 'ERROR: Could not open MOBILE6 '
-     &              // 'scenario file' // CRLF() // BLANK5
-     &              // FILENAME( 1:LEN_TRIM( FILENAME ) )
-     &              // CRLF() // BLANK5 // 'for county '
-     &              // COUNTY
-            CALL M3MESG( MESG )
+        IF( .NOT. EFLAG ) THEN
+            FDEV = JUNIT()
+     
+            OPEN( FDEV, FILE=FILENAME( 1:LEN_TRIM( FILENAME ) ), 
+     &            ACTION='READ', STATUS='OLD', IOSTAT=IOS )
+     
+            IF( IOS /= 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Could not open MOBILE6 '
+     &                 // 'scenario file' // CRLF() // BLANK5
+     &                 // FILENAME( 1:LEN_TRIM( FILENAME ) )
+     &                 // CRLF() // BLANK5 // 'for county '
+     &                 // COUNTY
+                CALL M3MESG( MESG )
+            END IF
         END IF
 
 C.........  Abort if error found while opening scenario file
