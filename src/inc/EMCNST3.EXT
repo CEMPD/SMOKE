@@ -21,6 +21,7 @@ C.........   Physical constants and conversion factors
         REAL, PARAMETER :: TON2GM  = 907184.74    ! Tons to grams 
         REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons
         REAL, PARAMETER :: LB2TON  = 1. / 2000.   ! Pounds to short tons
+        REAL, PARAMETER :: PA2INHG = 1. / 3386.39 ! Pascals to inches of Hg
 
 C.........  Source-category flags 
         INTEGER    , PARAMETER :: NCAT = 3          ! number src categories
