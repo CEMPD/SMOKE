@@ -144,7 +144,7 @@ C.............  Get the maximum width for the state names
 
 C.............  Get the maximum width for the county names
             MAXCYWID = 0 
-            DO I = 1, NS
+            DO I = 1, NC
                 L = LEN_TRIM( CNTYNAM( I ) )
                 MAXCYWID = MAX( MAXCYWID, L )
             END DO
@@ -481,7 +481,7 @@ C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: CATNAME
 
 C.............  Local variables
-            INTEGER   L, L2
+            INTEGER   K1, K2, L, LD1, LD2
 
             CHARACTER*10 TYPENAM
 
@@ -498,11 +498,16 @@ C..............................................................................
 
             IF( JDATE .NE. 0 ) THEN
 
+                K1  = WKDAY( PDATE )
+                K2  = WKDAY( JDATE )
+                LD1 = LEN_TRIM( DAYS( K1 ) )
+                LD2 = LEN_TRIM( DAYS( K2 ) )
+
                 WRITE( HEADER,94010 ) HEADER( 1:L ) // ' from ' //
      &             CRLF() // BLANK5 // 
-     &             DAYS( WKDAY( PDATE ) ) // MMDDYY( PDATE ) //
+     &             DAYS( K1 )( 1:LD1 ) // ' ' // MMDDYY( PDATE ) //
      &             ' at', PTIME, 'to' // CRLF() // BLANK5 // 
-     &             DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE ) //
+     &             DAYS( K2 )( 1:LD2 ) // ' '// MMDDYY( JDATE ) //
      &             ' at', JTIME
                 L = LEN_TRIM( HEADER )
 
@@ -678,7 +683,7 @@ C.............  Arrays allocated by subprogram argument
             CHARACTER(LEN=IOULEN3) OUTUNIT( NDIM )
 
 C.............  Local variables
-            INTEGER       I, J, L, L2, N
+            INTEGER       I, J, L, L1, L2, N
             INTEGER       PSTA, STA
 
             REAL          VAL
@@ -721,9 +726,10 @@ C.............  Write county total emissions
 
 C.....................  Write out state name
                     L = LEN_TRIM( STATNAM( N ) )
+                    L1 = MAX( 1, L2 - L - 8 )
                     WRITE( FDEV, '(A)' ) ' '
                     WRITE( FDEV, '(A)' ) '------ '// STATNAM( N )( 1:L )
-     &                     // ' ' // REPEAT( '-', L2 - L - 8 )
+     &                     // ' ' // REPEAT( '-', L1 )
 
 C.....................  Write column labels
                     WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
