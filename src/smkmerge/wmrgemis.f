@@ -137,7 +137,7 @@ C.........  For plume-in-grid, output file...
      &      CALL SAFE_WRITE3( PINGNAME, PGRPEMIS )
 
 C.........  For multiple source categories, output totals file...
-        IF( XFLAG ) CALL SAFE_WRITE3( TONAME, TEMGRD )
+        IF( LGRDOUT .AND. XFLAG ) CALL SAFE_WRITE3( TONAME, TEMGRD )
 
         RETURN
 
