@@ -216,6 +216,13 @@ C                   right SCC will not work.
                 CALL FLTRXREF( CFIP, CDUM, SCCZERO, ' ', CDUM2, 
      &                         IDUM, IDUM, IDUM, LDUM, SKIPREC )
 
+C.................  Ignore SCCs that are not on-road mobile
+                IF( TSCC /= SCCZERO ) THEN
+                    IF( TSCC( 1:2 ) /= '22' ) THEN
+                        SKIPREC = .TRUE.
+                    END IF
+                END IF
+                
 C.................  Convert TSCC to internal value
                 CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
 
