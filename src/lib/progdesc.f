@@ -207,6 +207,20 @@ C   begin body of subroutine PROGDESC
      &  'Program MVCONDNS condenses a mobile source inventory file to',
      &  'preprocess for preparing the MPLIST and MPREF files.'
 
+        ELSEIF( NAME .EQ. 'SMK2EMIS' ) THEN
+            WRITE( LDEV,92000 )
+     &  ' ',
+     &  'Program SMK2EMIS converts a NetCDF gridded, hourly emissions ',
+     &  'file into a UAM ready gridded emissions file.  Program has ', 
+     &  'been tested for lat-lon and UTM projections only.'
+
+        ELSEIF( NAME .EQ. 'UAM2NCF' ) THEN
+            WRITE( LDEV,92000 )
+     &  ' ',
+     &  'Program UAM2NCF converts a UAM gridded, hourly emissions ',
+     &  'into a NetCDF gridded, hourly emissions file.  Program has ',
+     &  'been tested for the lat-lon projection only.'
+
         ELSE
             WRITE( LDEV,92000 ) 
      &      ' ',
