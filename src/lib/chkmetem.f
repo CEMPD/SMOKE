@@ -51,9 +51,10 @@ C.........  INCLUDE FILES
 
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
+        LOGICAL       FLTERR
         CHARACTER(50) GETCFDSC
 
-        EXTERNAL      CRLF, GETCFDSC
+        EXTERNAL      CRLF, FLTERR, GETCFDSC
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAM2D ! name of grid cross-point 2d file
@@ -343,23 +344,5 @@ C               there, compare to the original settings.
             RETURN
 
             END SUBROUTINE CHECK_MET_INFO
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
-
-C.............  This internal subprogram tries to retrieve the I/O API header
-C               and aborts if it was not successful
-            LOGICAL FUNCTION FLTERR( P, Q )
-
-            REAL, INTENT (IN) ::  P, Q
-
-C----------------------------------------------------------------------
-
-            FLTERR =
-     &          ( (P - Q)**2  .GT.  1.0E-12*( P*P + Q*Q + 1.0E-5 ) )
-
-            RETURN
-
-            END FUNCTION FLTERR
 
         END FUNCTION CHKMETEM
