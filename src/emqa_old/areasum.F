@@ -337,7 +337,7 @@ C           WRITE ( OUNIT, 830 )
             ENDIF
 
 C           05/04/99 wgs - Create format.
-            WRITE ( 871, FMT ) NIPOL
+            WRITE ( FMT, 871 ) NIPOL
 C           WRITE ( OUNIT, 870 )
 			WRITE ( OUNIT, FMT ) 
      &           ICOLIST ( J ), ( COSUM ( J, I ), I = 1, NIPOL ),
