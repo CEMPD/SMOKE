@@ -590,7 +590,6 @@ C.................  Deallocate existing allocations to prepare for next
 C                   iteration 
                 DEALLOCATE( ASMATX , MSMATX , PSMATX  )
                 DEALLOCATE( ACUMATX, MCUMATX, PCUMATX )
-                DEALLOCATE( ACAMATX, MCAMATX, PCAMATX )
                 DEALLOCATE( AEMSRC , MEMSRC , PEMSRC  )
 
 C.............  Memory allocation was successfull
