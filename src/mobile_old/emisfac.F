@@ -89,7 +89,9 @@ C...........   EXTERNAL BLOCK DATA for mobile:
 C...........   LOCAL PARAMETERS and their descriptions:
 
         CHARACTER*5   BLANK5
-        PARAMETER(    BLANK5 = ' ' )
+        CHARACTER*16  BLANK16
+        PARAMETER(    BLANK5  = ' '
+     &           ,    BLANK16 = ' ' )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -1549,7 +1551,7 @@ C.........................  for this PSI), and diurnal emissions are not zero
                         IF( MMTC( K ) .LE. NTIDX( K ) .AND. 
      &                      TMMI      .NE. 0                ) THEN
 
-                            TMMIDV = INT( TMMI / MAXTL ) 
+                            TMMIDV = INT( ( TMMI-1 ) / MAXTL ) 
                             TF_MIN = MINT_MIN + TINTV * TMMIDV
                             TF_MAX = MAXT_MIN + TINTV *
      &                                       ( TMMI - MAXTL*TMMIDV - 1)
@@ -1598,6 +1600,16 @@ C.........................  Set ambient temperature
 
 C.........................  Initialize error count
                         IERR = 0 
+
+C.........................  Perform extra check on temperatures
+                        IF( TF_MAX .LT. TF .OR. TF_MAX .LE. TF_MIN .OR.
+     &                      TF_MIN .GT. TF ) THEN
+                            WRITE( MESG, 94070 ) 
+     &                        'Temperatures are in error!' // CRLF() //
+     &                        BLANK16 // 'Tmin=', TF_MIN, 'T=', TF,
+     &                        'Tmax=', TF_MAX
+                            CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+                        ENDIF
 
 C.......................  For pure EFs from tables, create input for MOBILE5.
 C.......................  Also, turn off first temperature after first call. 
@@ -1714,7 +1726,7 @@ C.....................  Get temperature index for PSI(K) and count(K)
 
 C.....................  Check if diurnal emissions for this PSI are zero
                     IF( TMMI .NE. 0 ) THEN
-                        TMMIDV = INT( TMMI / MAXTL ) 
+                        TMMIDV = INT( ( TMMI-1 ) / MAXTL ) 
 
 C.........................  Specify min and max temperatures
                         TF_MIN = MINT_MIN + TINTV * TMMIDV
@@ -1735,6 +1747,16 @@ C.........................  min/max temperature combination
 
 C...........................  Initialize error count
                           IERR = 0 
+
+C.........................  Perform extra check on temperatures
+                        IF( TF_MAX .LT. TF .OR. TF_MAX .LE. TF_MIN .OR.
+     &                      TF_MIN .GT. TF ) THEN
+                            WRITE( MESG, 94070 ) 
+     &                        'Temperatures are in error!' // CRLF() //
+     &                        BLANK16 // 'Tmin=', TF_MIN, 'T=', TF,
+     &                        'Tmax=', TF_MAX
+                            CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+                        ENDIF
 
 C.........................  For pure EFs from tables, create input for MOBILE5.
 C.........................  Also, turn off first temperature after first call. 
