@@ -115,16 +115,43 @@ endif
 
 if ( $RUN_SPCMAT == Y && $RUN_PART1 == 'Y' ) then
    if ( $SMK_SOURCE == A ) then
-      /bin/rm -f $ASMAT_S
-      /bin/rm -f $ASMAT_L
+      set file = $ASMAT_S
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+      
+      set file = $ASMAT_L
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
    endif
    if ( $SMK_SOURCE == M ) then
-      /bin/rm -f $MSMAT_S
-      /bin/rm -f $MSMAT_L
+      set file = $MSMAT_S
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+      
+      set file = $MSMAT_L
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
    endif
    if ( $SMK_SOURCE == P ) then
-      /bin/rm -f $PSMAT_S
-      /bin/rm -f $PSMAT_L
+      set file = $PSMAT_S
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+ 
+      set file = $PSMAT_L
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
    endif
 endif
 
