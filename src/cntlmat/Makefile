@@ -15,7 +15,7 @@ debug: cntlmat.debug
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
 
-ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
+ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
 #
 CTL=cntlmat.o aloccmat.o alocpkts.o asgncntl.o errpkts.o \
@@ -43,9 +43,9 @@ asgncntl.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 cntlmat.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-fillcdat.o: $(MODCNTRL)
+fillcdat.o: $(MODCNTRL) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ $< 
-fillcntl.o: $(MODXREF) $(MODLISTS) $(MODINFO)
+fillcntl.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ $<
 genmultc.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -59,11 +59,11 @@ openpmat.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 openrmat.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO)
+pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ $< 
 procpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdpacket.o: $(MODCNTRL)
+rdpacket.o: $(MODCNTRL) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ $<
 wrctmp.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
