@@ -137,7 +137,7 @@ C.............  Compare population year to inventory year.
         END IF
 
 C.........  Set ending date and time and number of time steps for report
-C.........  When using hourly inputs
+C.........  When using hourly inputs but reporting daily totals
         IF( RPT_%USEHOUR ) THEN
             JDATE = SDATE
             JTIME = STIME
@@ -156,9 +156,12 @@ C               of time steps so that the reporting ends on the previous day
             IF( I .GT. 0 ) THEN
                 ! Workaround - NEXTIME does not properly subtract 24 hours so have
                 !   to use two steps
-                CALL NEXTIME( EDATE, ETIME, -23 * TSTEP )
-                CALL NEXTIME( EDATE, ETIME, -1 * TSTEP )
-                ETIME = RPT_%OUTTIME
+
+                IF( .NOT. RPT_%BYHOUR ) THEN
+                    CALL NEXTIME( EDATE, ETIME, -23 * TSTEP )
+                    CALL NEXTIME( EDATE, ETIME, -1 * TSTEP )
+                    ETIME = RPT_%OUTTIME
+                END IF
 
                 I =  SECSDIFF( SDATE, STIME, EDATE, ETIME )
                 RPTNSTEP = I / 3600 + 1
@@ -169,12 +172,12 @@ C               reporting hour
 C.............  Also set reporting time steps for reporting time matches
 C               ending time.
             ELSE IF( I .LE. 0 ) THEN
-                RPTNSTEP = NSTEPS + I / 3600
+                IF( .NOT. RPT_%BYHOUR ) RPTNSTEP = NSTEPS + I / 3600
 
             END IF
 
 C.............  Print message if time steps have changed
-            IF( I .NE. 0 ) THEN
+            IF( I .NE. 0 .AND. .NOT. RPT_%BYHOUR ) THEN
                 WRITE( MESG,94010 ) BLANK5 // 
      &                 'WARNING: Resetting number of time steps for ' //
      &                 'report to ', RPTNSTEP, CRLF() // BLANK16 // 
