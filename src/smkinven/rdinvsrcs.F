@@ -527,6 +527,7 @@ C.................  Process line depending on file format and source category
      &                                   NPOLPERLN, HDRFLAG, EFLAG )
                         TSCC = ' '   ! set fake SCC code
                     CASE( 'POINT' )
+                        TFLAG = .TRUE. 
                         CALL RDSRCEMSPT( LINE, CFIP, FCID, SKID, DVID, 
      &                                   PRID, NPOLPERLN, 
      &                                   HDRFLAG, EFLAG )
