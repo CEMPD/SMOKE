@@ -169,16 +169,22 @@ endif
    # For cases when GSREF and GSPRO is not a shared file.
    if ( $?SMK_SOURCE && $?SPC_SRC_SPECIFIC ) then
       if ( $SMK_SOURCE == A && $SPC_SRC_SPECIFIC == Y ) then
-         setenv GSREF $GE_DAT/gsref.$SPC.a.txt
-         setenv GSPRO $GE_DAT/gspro.$SPC.a.txt
+         set file1 = $GE_DAT/gsref.$SPC.a.txt
+         set file2 = $GE_DAT/gspro.$SPC.a.txt
       endif
       if ( $SMK_SOURCE == M && $SPC_SRC_SPECIFIC == Y ) then
-         setenv GSREF $GE_DAT/gsref.$SPC.m.txt
-         setenv GSPRO $GE_DAT/gspro.$SPC.m.txt
+         set file1 = $GE_DAT/gsref.$SPC.m.txt
+         set file2 = $GE_DAT/gspro.$SPC.m.txt
       endif
       if ( $SMK_SOURCE == P && $SPC_SRC_SPECIFIC == Y ) then
-         setenv GSREF $GE_DAT/gsref.$SPC.p.txt
-         setenv GSPRO $GE_DAT/gspro.$SPC.p.txt
+         set file1 = $GE_DAT/gsref.$SPC.p.txt
+         set file2 = $GE_DAT/gspro.$SPC.p.txt
+      endif
+      if ( -e $file1 ) then
+         setenv GSREF $file1
+      endif
+      if ( -e $file2 ) then
+         setenv GSPRO $file2
       endif
    endif
 #
