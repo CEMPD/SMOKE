@@ -403,7 +403,7 @@ C.............  Local variables
 
 C......................................................................
 
-            WRITE( MESG,94010 ) 'ERROR: PSI ', PSIROOT, 
+            WRITE( MESG,94010 ) 'ERROR: PSI ', PSI, 
      &             'is not found in MEFTEMP file. This can occur'//
      &             CRLF() // BLANK10 // 'when the sources using this '//
      &             'PSI are not in the inventory.'
