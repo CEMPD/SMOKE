@@ -104,9 +104,9 @@ C.........  Allocate the MODELEV arrays for identifying major/PinG sources
         CALL CHECKMEM( IOS, 'GROUPID', PROGNAME )
 
 C.........  Initialize arrays
-        LMAJOR  = .FALSE.   ! arrays 
-        LPING   = .FALSE.
-        GROUPID = 0 
+        LMAJOR   = .FALSE.   ! arrays 
+        LPING    = .FALSE.
+        GROUPID  = 0 
 
 C......... If there is not a PELV file, then possible reset LMAJOR and return
         IF( FDEV .LE. 0 ) THEN
@@ -150,14 +150,15 @@ C           spacing
 C.............  Set sources that are major sources
             IF( IMAJR .GT. 0 .AND. IMAJR .LE. NSRC ) THEN
                 NMAJOR = NMAJOR + 1
-        	LMAJOR ( IMAJR ) = .TRUE.
+        	LMAJOR  ( IMAJR ) = .TRUE.
+                GROUPID ( IMAJR ) = IGRP
             END IF 
 
 C.............  Set sources that are PinG sources
             IF( IPING .GT. 0 .AND. IPING .LE. NSRC ) THEN
                 NPING = NPING + 1                
-                LPING  ( IPING ) = .TRUE.
-                GROUPID( IPING ) = IGRP
+                LPING   ( IPING ) = .TRUE.
+                GROUPID ( IPING ) = IGRP
             END IF 
 
 C.............  If index is out of range, ELEVPOINT needs rerunning
@@ -207,45 +208,6 @@ C.........  Abort if error occured on read
             MESG = 'Problem reading elevated sources file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-
-C.........  Create sorting index for GROUPID (from MODELEV)
-        DO S = 1, NSRC
-            SINDX( S ) = S
-        END DO
-
-C.........  Sort list of group IDs
-        CALL SORTI1( NSRC, SINDX, GROUPID )
-
-C.........  Count up unique groups
-        NGROUP = 0
-        PGRP   = 0   !  Set to zero so zero will be excluded from count
-        DO S = 1, NSRC
-
-            J = SINDX( S )
-            IF( GROUPID( J ) .NE. PGRP ) THEN
-                NGROUP = NGROUP + 1
-                PGRP = GROUPID( J )
-            END IF
-
-        END DO
-
-C.........  Allocate memory for group list and PinG emissions by group
-        ALLOCATE( GRPGID( NGROUP ), STAT=IOS )       ! from MODELEV
-        CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
-
-C.........  Store sorted list of groups
-        NGROUP = 0
-        PGRP   = 0   !  Set to zero so zero will be excluded from count
-        DO S = 1, NSRC
-
-            J = SINDX( S )
-            IF( GROUPID( J ) .NE. PGRP ) THEN
-                NGROUP = NGROUP + 1
-                GRPGID( NGROUP ) = GROUPID( J )
-                PGRP = GROUPID( J )
-            END IF
-
-        END DO
 
         RETURN
 
