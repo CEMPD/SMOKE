@@ -79,8 +79,10 @@ C.........  Widths that depend on other widths
         PRIVATE :: CDTLEN3
         PRIVATE :: FPLLEN3
         PRIVATE :: FPSLEN3
+        PRIVATE :: FPILEN3
         PRIVATE :: STALEN3
         PRIVATE :: STSLEN3
+        PRIVATE :: STILEN3
         PRIVATE :: SRCLEN3
         PRIVATE :: OBRLEN3
         PRIVATE :: OPTLEN3
