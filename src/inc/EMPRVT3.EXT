@@ -23,6 +23,7 @@ C.........  Width of source information strings (ABC order)
         PRIVATE :: CNYLEN3
         PRIVATE :: DDSLEN3
         PRIVATE :: DSCLEN3
+        PRIVATE :: ERPLEN3
         PRIVATE :: FIPLEN3
         PRIVATE :: LNKLEN3
         PRIVATE :: MACLEN3
@@ -35,6 +36,7 @@ C.........  Width of source information strings (ABC order)
         PRIVATE :: RWTLEN3
         PRIVATE :: SCCLEN3
         PRIVATE :: SICLEN3
+        PRIVATE :: STPLEN3
         PRIVATE :: VIDLEN3
         PRIVATE :: VTPLEN3
 
