@@ -974,6 +974,22 @@ C...........   Compute gridding matrix
                             CX( T ) = SRG
 
                         END IF		!  if T in bounds
+                  
+                    ELSEIF ( SRG .EQ. 0.0000000 ) THEN
+
+                        WRITE( MESG, 94010 )
+     &                  'Zero surrogate fraction for surrogate code ',
+     &                  SSC, 'FIP =', FIPLIST(F),' ASC7 = ',ISCC7( S),
+     &                  ' ASC3 = ', ISCC3( S )
+                        CALL M3WARN( 'GRDAMAT', 0, 0, MESG )
+
+                    ELSE
+
+                        WRITE( MESG, 94010 )
+     &                  'Missing surrogate fraction for surrogate code '
+     &                  ,SSC, 'FIP =', FIPLIST(F),' ASC7 = ',ISCC7( S),
+     &                  ' ASC3 = ', ISCC3( S )
+                         CALL M3WARN( 'GRDAMAT', 0, 0, MESG )
 
                     END IF		!  if SRG ok
 
