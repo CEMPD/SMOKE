@@ -104,6 +104,7 @@ C...........   Other local variables
 
         CHARACTER*300  MESG    !  message buffer
 
+        CHARACTER(LEN=NAMLEN3)  NAMBUF           ! file name buffer
         CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from INVEN FDESC
 
         CHARACTER*16 :: PROGNAME = 'EMFACIO' ! program name
@@ -240,7 +241,8 @@ C.............  Set up non-default header options for non-diurnal EF file
             MESG = 'Enter logical name for output NON-DIURNAL ' //
      &             'EMISSION FACTORS file'
             NNAME = CRL // 'EFSND'
-            NNAME = PROMPTMFILE( MESG, FSNEW3, NNAME, PROGNAME ) 
+            NAMBUF = PROMPTMFILE( MESG, FSNEW3, NNAME, PROGNAME ) 
+            NNAME = NAMBUF
 
         END IF  ! File exists already or not
 
@@ -318,8 +320,8 @@ C.............  Set up diurnal master List file description
             MESG = 'Enter logical name for output DIURNAL ' //
      &             'EMISSION FACTORS file'
             DNAME = CRL // 'EFSD'
-            DNAME = PROMPTMFILE( MESG, FSNEW3, DNAME, PROGNAME )
-
+            NAMBUF = PROMPTMFILE( MESG, FSNEW3, DNAME, PROGNAME )
+            DNAME = NAMBUF
         ENDIF
 
 C.........  Write message about which year emission factors will be for
