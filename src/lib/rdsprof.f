@@ -78,7 +78,7 @@ C...........   Other arrays
 
 C...........   Other local variables
 
-        INTEGER         I, J      ! counters and indices
+        INTEGER         I, J, L1, L2, N   ! counters and indices
         INTEGER         IPS       ! counter for records in which POLID = POLNAM
         INTEGER         IOS       ! i/o error status
         INTEGER         IREC      ! record counter
@@ -87,14 +87,18 @@ C...........   Other local variables
         REAL            FACTRATP          ! tmp split factor
         REAL            XMFATP            ! tmp mass fraction
 
-        LOGICAL      :: EFLAG = .FALSE.   ! error flag
+        LOGICAL      :: DUPFLAG = .FALSE.   ! true: duplicate entries found
+        LOGICAL      :: EFLAG   = .FALSE.   ! true: error found
+        LOGICAL      :: ZFLAG   = .FALSE.   ! true: divisor of zero found
 
         CHARACTER*200   LINE              ! read buffer for a line
         CHARACTER*300   MESG              ! text for M3EXIT()
 
-        CHARACTER(LEN=SPNLEN3)  TMPPRF    ! tmp profile number
+        CHARACTER(LEN=SPNLEN3)  PPRF      ! previous profile code
+        CHARACTER(LEN=SPNLEN3)  TMPPRF    ! tmp profile code
         CHARACTER(LEN=IOVLEN3)  POLID     ! tmp pollutant name
         CHARACTER(LEN=IOVLEN3)  SPECNM    ! tmp species name
+        CHARACTER(LEN=IOVLEN3)  PSPCNM    ! previous species name
 
         CHARACTER*16 :: PROGNAME = 'RDSPROF' ! program name
        
@@ -161,25 +165,67 @@ C.............  Check for current pollutant of interest
        
         CALL SORTIC( NPROF, INDXA, INPSPA )    ! Sort on INPSPA
         
+        PPRF   = ' '
+        PSPCNM = ' '
+        N = 0
         DO I = 1, NPROF
 
             J = INDXA( I )        
             IF ( DIVISA( J ) .EQ. 0 ) THEN
-                EFLAG = .TRUE.
+                ZFLAG = .TRUE.
                 CYCLE
             END IF
         
             J = INDXA( I )
             
-            INPRF   ( I ) = INPSPA( J )( 1:SPNLEN3 )
-            SPECID  ( I ) = SPCIDA( J )
-            MOLEFACT( I ) = TON2GM * FACTRA( J ) / DIVISA( J )
-            MASSFACT( I ) = TON2GM * XMFA( J )
+            TMPPRF = INPSPA( J )( 1:SPNLEN3 )
+            SPECNM = SPCIDA( J )
+
+C.............  Make sure duplicates are not used
+            IF( TMPPRF .EQ. PPRF   .AND. 
+     &          SPECNM .EQ. PSPCNM       ) THEN
+
+                DUPFLAG = .TRUE.
+                EFLAG   = .TRUE.
+                L1 = LEN_TRIM( TMPPRF )
+                L2 = LEN_TRIM( SPECNM )
+                MESG = 'ERROR: Duplicate entries in speciation ' //
+     &                 'profiles file for profile ' // CRLF() //
+     &                 BLANK10 // TMPPRF( 1:L1 ) // ', species ' //
+     &                 SPECNM( 1:L2 ) // '.'
+                CALL M3MESG( MESG ) 
+
+            ELSE
+                N = N + 1
+
+                INPRF   ( N ) = TMPPRF
+                SPECID  ( N ) = SPECNM
+                MOLEFACT( N ) = TON2GM * FACTRA( J ) / DIVISA( J )
+                MASSFACT( N ) = TON2GM * XMFA( J )
+
+            END IF
+
+            PPRF   = TMPPRF
+            PSPCNM = SPECNM
 
         END DO
+
+        IF( DUPFLAG ) THEN
+            MESG = 'ERROR: Duplicate speciation profile entries ' //
+     &             'found. ' //CRLF()// BLANK10 // 
+     &             'Remove duplicate entries and try again.'
+            CALL M3MSG2( MESG )
+        END IF
         
+        IF( ZFLAG ) THEN
+            MESG = 'ERROR: At least one of the divisors was zero ' //
+     &             'in the speciation profiles.' // CRLF()// BLANK10 // 
+     &             'Correct column 5 of input file and try again.'
+            CALL M3MSG2( MESG )
+        END IF
+
         IF( EFLAG ) THEN
-            MESG = 'At least one of the divisors was zero.'
+            MESG = 'Problem(s) found in speciation profiles.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
  
