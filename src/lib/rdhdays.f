@@ -216,7 +216,7 @@ C.............  Determine Julian date
             JDATE = YY * 1000 + JULIAN( YY, MM, DD )
 
 C.............  If date is outside episode range, ignore
-            IF( JDATE .LT. SDATE .OR. JDATE .GT. EDATE ) CYCLE
+c            IF( JDATE .LT. SDATE .OR. JDATE .GT. EDATE ) CYCLE
 
 C.............  Determine alternative day of the week
             CALL UPCASE( SEGMENT( 5 ) )
