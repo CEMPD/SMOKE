@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -68,8 +68,8 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL      FIND1, FINDC, INDEX1, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS:
-        CHARACTER(*), INTENT(IN OUT) :: CFIP   ! country/state/county code
-        CHARACTER(*), INTENT(IN OUT) :: CSIC   ! standard industrial code
+        CHARACTER(*), INTENT(IN OUT) :: CFIP   ! cntry/state/county code
+        CHARACTER(*), INTENT(IN OUT) :: CSIC   ! standard indust. code
         CHARACTER(*), INTENT(IN OUT) :: TSCC   ! source category code
         CHARACTER(*), INTENT(IN OUT) :: CPOL   ! pollutant name
         INTEGER     , INTENT   (OUT) :: IXSIC  ! index of SIC in SIC list
@@ -80,6 +80,8 @@ C...........   SUBROUTINE ARGUMENTS:
 
 C...........   Other local variables
 
+        INTEGER          IXACT   ! index to master activity names array
+        INTEGER          L       ! tmp string length
         INTEGER          SIC     ! tmp standard industrial code
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: 1st time subroutine called 
@@ -114,6 +116,16 @@ C            MFLAG = ALLOCATED( IRCLAS )
             MFLAG = .FALSE.
             PFLAG = ALLOCATED( ISIC )
 
+C.............  Check length of SCC string
+            L = LEN( TSCC )
+            IF( L .NE. SCCLEN3 ) THEN
+                MESG = 'INTERNAL ERROR: Length of SCC string not'//
+     &                 'correct in call to ' // PROGNAME
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+            END IF
+
 C.............  Set up zero strings for FIPS code of zero and SCC code of zero
             SCCZERO = REPEAT( '0', SCCLEN3 )
             SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
@@ -130,19 +142,19 @@ C.........  Initialize call subroutine outputs
         SKIPPOL = .FALSE.
 
 C.........  Smart interpretation of country/state/county code
-        CALL FLTRNEG( CFIP )     ! Filter -9 to blank
+        CALL FLTRNEG( CFIP )     ! Filter 0 and -9 to blank
         CALL PADZERO( CFIP )     ! Pad with zeros
 
 C.........  Smart interpretation of pollutant name
-        CALL FLTRNEG( CPOL )     ! Filter -9 to blank
+        CALL FLTRNEG( CPOL )     ! Filter 0 and -9 to blank
 
 C.........  Smart interpretation of SIC
-        CALL FLTRNEG( CSIC )     ! Filter -9 to blank
+        CALL FLTRNEG( CSIC )     ! Filter 0 and -9 to blank
         CALL PADZERO( CSIC )     ! Pad with zeros
         SIC = STR2INT( CSIC )    ! Convert to integer
 
 C.........  Smart interpretation of SCC
-        CALL FLTRNEG( TSCC )     ! Filter -9 to blank
+        CALL FLTRNEG( TSCC )     ! Filter 0 and -9 to blank
         CALL PADZERO( TSCC )     ! Pad with zeros
 
 C......... Set left and right portions of SCC
@@ -155,6 +167,7 @@ C          with master SCC list for area and point sources.
         IF( TSCC .EQ. SCCZERO ) THEN
 c   ???         RDT   = 0
 c   ???         VTYPE = 0
+c note: do I need to have this here?
 
         ELSE IF( .NOT. MFLAG ) THEN
 
@@ -180,20 +193,31 @@ C           based on SCC, but maybe by SIC.
 
         END IF
 
-C.........  Ensure that pollutant is in master list of pollutants or
-C           skip the pollutant-specific entry 
 C.........  Filter the case where the pollutant code is not present
         IF( CPOL .EQ. ' ' ) THEN
 
             IXPOL = 0
 
+C.........  Ensure that pollutant is in master list of pollutants or
+C           skip the pollutant-specific entry
+C.........  If pollutant is not there, check the master list of activities
         ELSE
 
             IXPOL = INDEX1( CPOL, NIPOL, EINAM )
 
             IF( IXPOL .LE. 0 ) THEN
-                SKIPPOL = .TRUE.   ! indicates skipped pol-spec entries
-                SKIPREC = .TRUE.   ! indicates skip this record in calling prgm
+
+                IXACT = INDEX1( CPOL, NIACT, ACTVTY )
+
+                IF( IXACT .LE. 0 ) THEN
+            
+                    SKIPPOL = .TRUE.   ! indicates skipped pol-spec entries
+                    SKIPREC = .TRUE.   ! indicates skip this rec in calling prgm
+
+                ELSE
+                    IXPOL = IXACT
+
+                END IF
             END IF
 
         END IF
@@ -205,22 +229,5 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010  FORMAT( 10( A, :, I8, :, 1X ) )
-
-C******************  INTERNAL SUBPROGRAMS  *****************************
-
-        CONTAINS
-
-C.............  This internal subprogram filters the valid "missing" terms
-C               that can be in a cross-reference file.
-            SUBROUTINE FLTRNEG( STRING )
-
-C.............  Subprogram arguments
-            CHARACTER(*), INTENT (IN OUT) :: STRING   ! string for filter '-9'
-
-C----------------------------------------------------------------------
-
-            IF( INDEX( STRING, '-9' ) .GT. 0 ) STRING = ' '
-
-            END SUBROUTINE FLTRNEG
 
        END SUBROUTINE FLTRXREF
