@@ -25,8 +25,6 @@ C***********************************************************************
 
 C...........   INCLUDES:
 
-c       INCLUDE 'EFS.EXT'        !  Emissions factors include paramaters
-        INCLUDE 'CHDIMS3.EXT'
         INCLUDE 'MBDIMS3.EXT'    !  Mobile include paramaters
         INCLUDE 'PARMS3.EXT'     !  I/O API parameters
         INCLUDE 'IODECL3.EXT'    !  I/O API function declarations
@@ -53,17 +51,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Simulation-specific MOBILE5a parmeter list variables
-        INTEGER IPSIDX( NPREF )          ! Sorting index for IPSIR
-        INTEGER IPSIR ( NLIST*24 )       ! Unique parameter scheme indices list
+        INTEGER IPSIDX( MXPREF )          ! Sorting index for IPSIR
+        INTEGER IPSIR ( MXPSI*24 )       ! Unique parameter scheme indices list
         INTEGER MPNUM                    ! Actual no. in IPSIR
         INTEGER P1, P2, P3, P4( 24 )     ! Dummies
 
 C...........   MOBILE5a parameter x-ref variables
         INTEGER MRNUM                    ! Actual no. of normal x-ref entries
-        INTEGER IPSI  ( NPREF )          ! Normal x-ref scheme index
-        INTEGER ISTYPE( NPREF, 2     )   ! Type-specifier (1), and pointer (2)
-        INTEGER NIDX  ( NPREF, NNFAC )   ! Normal x-ref entries
-        INTEGER CIDX  ( NPREF, NCFAC )   ! Control Normal x-ref entries
+        INTEGER IPSI  ( MXPREF )          ! Normal x-ref scheme index
+        INTEGER ISTYPE( MXPREF, 2     )   ! Type-specifier (1), and pointer (2)
+        INTEGER NIDX  ( MXPREF, NNFAC )   ! Normal x-ref entries
+        INTEGER CIDX  ( MXPREF, NCFAC )   ! Control Normal x-ref entries
 
         COMMON / MPARMS / MRNUM, IPSI, ISTYPE, NIDX, CIDX
 
@@ -99,17 +97,17 @@ C...........   Variables to carry over from one MOBILE5 call to the next
 
 C...........   Variables for storing PSI descriptors:
 
-        REAL    PCNTPRO( MXNPT, NPREF )
-        INTEGER IPLIST ( MXNPT, NPREF )
+        REAL    PCNTPRO( MXNPT, MXPREF )
+        INTEGER IPLIST ( MXNPT, MXPREF )
         INTEGER MPTYPE, MCOMBO, MPURE
 
 C...........   Variables for storing temperature index:
 
         INTEGER   NTREF                     ! No of temperature index entries
-        INTEGER   MMTC   (         NLIST )  ! Counter for current temp combo
-        INTEGER   MMTREF (         NLIST )  ! EF reference IDs with temp index
-        INTEGER   NTIDX  (         NLIST )  ! number of indices per EF ref
-        INTEGER   TIDXPSI( MXTMMI, NLIST )  ! temperature indices
+        INTEGER   MMTC   (         MXPSI )  ! Counter for current temp combo
+        INTEGER   MMTREF (         MXPSI )  ! EF reference IDs with temp index
+        INTEGER   NTIDX  (         MXPSI )  ! number of indices per EF ref
+        INTEGER   TIDXPSI( MXTMMI, MXPSI )  ! temperature indices
 
 C...........   Unit numbers and logical names
 
@@ -135,7 +133,6 @@ C...........   Other local variables
         REAL    TF                        ! temporary temperature
         REAL    TF_MAX                    ! temporary maximum temperature
         REAL    TF_MIN                    ! temporary minimum temperature
-        REAL    TINTV                     ! temperature interval for non-diurnal
 
         INTEGER I, II, IM, IPM            ! Counters and pointers
         INTEGER J, JJ, K, KK, L, T        ! Counters and pointers
@@ -154,7 +151,7 @@ C...........   Other local variables
         LOGICAL DFLAG                     ! Calculate diurnal factors when true
         LOGICAL EFLAG                     ! Error exists when true
         LOGICAL NFLAG                     ! Calculate non-dnl factors when true
-        LOGICAL SFLAG( NLIST )            ! Update diurnal combos when true
+        LOGICAL SFLAG( MXPSI )            ! Update diurnal combos when true
 
         CHARACTER*4   VOLNAM              !  name of Mobile5 hydrocarbon
         CHARACTER*256 MESG                !  message buffer
@@ -482,9 +479,9 @@ C.............  Create sorted list of unique parameter scheme indices
                 IF( IM .GT. 0 ) THEN
                     I = I + 1
 
-                    IF( I .GT. NLIST ) THEN
+                    IF( I .GT. MXPSI ) THEN
                         WRITE( MESG, 94010 ) 
-     &                     'Maximum dimension NLIST=', NLIST, 
+     &                     'Maximum dimension MXPSI=', MXPSI, 
      &                     'was exceeded while reading MPLIST'
                         CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 1 )
 
@@ -541,9 +538,9 @@ C.........  Read in MPREF ..........................................
      &            'Error ', IOS, 'reading MPREF file at line', I*2+1
                 CALL M3MESG( MESG )
 
-            ELSEIF( I .EQ. NPREF ) THEN
+            ELSEIF( I .EQ. MXPREF ) THEN
                 WRITE( MESG, 94010 ) 
-     &                 'Maximum dimension NPREF=', NPREF, 
+     &                 'Maximum dimension MXPREF=', MXPREF, 
      &                 'was exceeded while reading MPREF'
                 CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 1 )
 
@@ -627,9 +624,9 @@ C.........  Ensure that all PSI on which others depend are in IPSIR
                     IF( IM .GT. 0 ) THEN
                         MPNUM = MPNUM + 1
 
-                        IF( MPNUM .GT. NLIST ) THEN
+                        IF( MPNUM .GT. MXPSI ) THEN
                             WRITE( MESG, 94010 ) 
-     &                         'Maximum dimension NLIST=', NLIST, 
+     &                         'Maximum dimension MXPSI=', MXPSI, 
      &                         'was exceeded while reading MPLIST'
                             CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
 
