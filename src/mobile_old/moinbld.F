@@ -25,8 +25,6 @@ C***********************************************************************
         IMPLICIT NONE
 
 C...........   INCLUDES:
-c       INCLUDE 'EFS.EXT'
-        INCLUDE 'CHDIMS3.EXT'
         INCLUDE 'MBDIMS3.EXT'
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -48,10 +46,10 @@ C...........   Subroutine arguments
 
 C...........   Normal MOBILE5a parameter x-ref variables
         INTEGER MRNUM                    ! Actual no. of normal x-ref entries
-        INTEGER IPSI  ( NPREF )          ! Normal x-ref scheme index
-        INTEGER ISTYPE( NPREF, 2     )   ! Type-specifier (1), and pointer (2)
-        INTEGER NIDX  ( NPREF, NNFAC )   ! Normal x-ref entries
-        INTEGER CIDX  ( NPREF, NCFAC )   ! Control Normal x-ref entries
+        INTEGER IPSI  ( MXPREF )         ! Normal x-ref scheme index
+        INTEGER ISTYPE( MXPREF, 2     )  ! Type-specifier (1), and pointer (2)
+        INTEGER NIDX  ( MXPREF, NNFAC )  ! Normal x-ref entries
+        INTEGER CIDX  ( MXPREF, NCFAC )  ! Control Normal x-ref entries
 
         COMMON / MPARMS / MRNUM, IPSI, ISTYPE, NIDX, CIDX 
 
