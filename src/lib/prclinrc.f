@@ -368,6 +368,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYCNTY   = .FALSE.
                         RPT_%BYELEV   = .FALSE.
                         RPT_%BYHOUR   = .FALSE.
+                        RPT_%BYLAYER  = .FALSE.
                         RPT_%BYMON    = .FALSE.
                         RPT_%BYSCC    = .FALSE.
                         RPT_%BYSPC    = .FALSE.
