@@ -678,7 +678,7 @@ C.............  Update sources if no duplicate and no overflow
      &             'Record count                        ', NSRC,
      &             'Max dimensioned record-count (NMSRC)', NMSRC
             CALL M3EXIT( 'RAWMOBIL', 0, 0,
-     &        'Max record-count exceeded in POINT SOURCE file.', 2 )
+     &        'Max record-count exceeded in MOBILE SOURCE file.', 2 )
 
         ENDIF
 
