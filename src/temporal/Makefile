@@ -13,14 +13,14 @@ all: temporal
 debug: temporal.debug
 
 .f.o:
-	
 	$(FC) $(FFLAGS) -c -o $@ $< 
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
 TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
-     setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o wrtsup.o
+     setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o wrtsup.o opentmp_u.o \
+     rdustati.o getrnums.o
 #qatmpr.o
 
 #
@@ -44,6 +44,8 @@ mktmat.o: $(MODTMPRL)
 	$(FC) $(FFLAGS) -c -o $@ mktmat.f
 opentmp.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opentmp.f
+opentmp_u.o: $(MODEMFAC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ opentmp_u.f
 opentmpin.o: $(MODMET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opentmpin.f
 rdefacs.o: $(MODMOBIL) $(MODEMFAC) $(MODINFO) $(MODMET) $(MODXREF)
@@ -61,6 +63,10 @@ qatmpr.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ qatmpr.f
 updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ updtmat.f
+rdustati.o: $(MODINFO) $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ rdustati.f
+getrnums.o:  $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ getrnums.f
 #
 clean:
 	/bin/rm *.o
