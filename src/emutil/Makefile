@@ -8,11 +8,10 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 metscan mvcondns mvsetup pktreduc smk2emis surgtool \
-     uam2ncf 
+all: beld3to2 metscan pktreduc smk2emis surgtool uam2ncf 
 
-debug: beld3to2.debug metscan.debug mvcondns.debug mvsetup.debug \
-       pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug 
+debug: beld3to2.debug metscan.debug pktreduc.debug smk2emis.debug \
+       surgtool.debug uam2ncf.debug 
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -39,16 +38,6 @@ metscan: $(MSCN) $(ALLI) $(LIBPATH)
 #
 metscan.debug: $(MSCN) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(DBGFLAGS) -o $(@) $(MSCN) $(LIBS_DEBUG)
-
-MVC=mvcondns.o
-
-mvcondns: $(MVC) $(ALLI) $(LIBPATH)
-	echo MVCONDNS:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MVC) $(LIBS)
-
-mvcondns.debug: $(MVC) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'MVCONDNS (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(MVC) $(LIBS_DEBUG)
 
 PKT=pktreduc.o
 
@@ -90,16 +79,6 @@ uam2ncf.debug: $(UAMC) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'UAM2NCF (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(UAMC) $(LIBS_DEBUG)
 
-MVS = mvsetup.o
-
-mvsetup: $(MVS) $(ALLI) $(LIBPATH)
-	echo MVSETUP:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MVS) $(LIBS)
-
-mvsetup.debug: $(MVS) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'MVSETUP (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(MVS) $(LIBS_DEBUG)
-
 #
 #
 # Modules
@@ -112,9 +91,6 @@ include $(MD_SRC)/modmake.inc
 
 surgtool.o : $(MODGRID) $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ surgtool.f
-
-mvcondns.o  : $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ mvcondns.f
 
 smk2emis.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ smk2emis.f
