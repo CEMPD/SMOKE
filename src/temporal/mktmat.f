@@ -51,9 +51,6 @@ C.........  MODULES for public variables
 C.........  This module contains the temporal profile tables
         USE MODTMPRL
 
-C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR
-
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -116,20 +113,8 @@ C.......   Compute TMAT for current group of pollutants
 
                 L = DDEX( S,V )
 
-C.................  Use day-specific data (no adjustments for month or weekday)
-                J = FIND1( S, NDYSRC, INDXD )
-                IF ( LDSPOA( V ) .AND. J .GT. 0 ) THEN
-
-                    DO H = 1, 24
-
-                        DAY = DAYOW( H, ZONES( S ) )                        
-                        K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
-                        TMAT( S,V,H ) = HRLFAC( K, L, DAY )
-
-                    END DO
-
 C.................  Adjust for year-normal data and whole week normlizer 
-                ELSE IF ( MOD( TPF( S ), MTPRFAC ) .EQ. 0 .AND.
+                IF ( MOD( TPF( S ), MTPRFAC ) .EQ. 0 .AND.
      &                    MOD( TPF( S ), WTPRFAC ) .EQ. 0       ) THEN
 
                     DO H = 1, 24
