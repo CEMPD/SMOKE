@@ -161,6 +161,7 @@ C............. If multiplicative controls, additive controls, and speciation
                     ADD = PCAMATX( S,KEY3 ) * PSMATX( S,KEY4 )
 
                     VAL  = ADD + MULT
+                    VMP  = PRINFO( S,2 )
                     VAL = ( VAL * (1.-VMP) + PRINFO( S,1 ) * VMP )
 
                     PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
@@ -194,6 +195,7 @@ C............. If multiplicative controls & speciation
                     VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) 
                     MULT = VAL * PCUMATX( S,KEY2 )
 
+                    VMP  = PRINFO( S,2 )
                     VAL = ( MULT * (1.-VMP) + PRINFO( S,1 ) * VMP )
 
                     PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
@@ -212,6 +214,7 @@ C............. If additive controls & speciation
                     ADD = PCAMATX( S,KEY3 ) * PSMATX( S,KEY4 )
 
                     VAL = ADD + VAL
+                    VMP  = PRINFO( S,2 )
                     VAL = ( VAL * (1.-VMP) + PRINFO( S,1 ) * VMP )
 
                     PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
@@ -255,6 +258,7 @@ C.............  If speciation only
                     IDX = PINGGIDX( K )   ! index to group arrays
 
                     VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) 
+                    VMP  = PRINFO( S,2 )
                     VAL = ( VAL * (1.-VMP) + PRINFO( S,1 ) * VMP )
 
                     PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
