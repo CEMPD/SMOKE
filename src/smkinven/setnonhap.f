@@ -44,7 +44,7 @@ C...........   This module is the inventory arrays
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: INVSTAT, MXIDAT, INVDNAM, INVDVTS,
-     &                      ITMSPC, ITEXPL
+     &                      ITMSPC, ITEXPL, ITNAMA, NINVTBL
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: LNONHAP
@@ -84,6 +84,7 @@ C.........   Other local variables
         INTEGER  IOS          ! I/O status
         INTEGER  CPOL         ! current pollutant number
         INTEGER  PPOL         ! previous pollutant number
+        INTEGER  CPOLRAW      ! pollutant number in raw arrays
         INTEGER  CURRPOS      ! current position in POLVAL and IPOSCOD arrays
         INTEGER  VNMPOS       ! position of VOC in pollutant names array
         INTEGER  TNMPOS       ! position of TOG in pollutant names array
@@ -207,13 +208,16 @@ C.....................  Store pollutant for this position
 C.....................  If pollutant is not part of VOC or TOG, cycle
                     IF( INVDVTS( CPOL ) == 'N' ) CYCLE
 
+C.....................  Find pollutant position in raw list
+                    CPOLRAW = INDEX1( INVDNAM( CPOL ), NINVTBL, ITNAMA )
+
 C.....................  If pollutant is not a model species, set it to zero
-                    IF( .NOT. ITMSPC( CPOL ) ) THEN
+                    IF( .NOT. ITMSPC( CPOLRAW ) ) THEN
                         POLVAL( CURRPOS,NEM ) = 0.0
                         POLVAL( CURRPOS,NOZ ) = 0.0
 
 C..................... Otherwise, if pollutant is not an explicit species, rename to NOI
-                    ELSE IF( .NOT. ITEXPL( CPOL ) ) THEN
+                    ELSE IF( .NOT. ITEXPL( CPOLRAW ) ) THEN
                 
 C.........................  Create NOI name
                         POLNAM = INVDNAM( CPOL )
