@@ -52,6 +52,12 @@ case Linux2_alpha:
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
     breaksw
+case Linux2_x86ifc:
+    setenv FC  ifc
+    setenv FFLAGS   "$FFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
+    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    breaksw
 default:
     echo "Do not know about executable format "$EDSS_EXE
     exit( 2 )
