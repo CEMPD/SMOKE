@@ -92,14 +92,15 @@ C...........   Other local variables
         
         INTEGER         L1, K     !  indices and counters.
 
-        INTEGER         CMAX  ! max number srcs per cell
-        INTEGER         CMIN  ! min number srcs per cell
-        INTEGER         IOS   ! i/o status
-        INTEGER         NK    ! Number of coeficients
-        INTEGER         NPSRC ! No of point sources
-        INTEGER         NGRID ! No of cells
+        INTEGER         CMAX   ! max number srcs per cell
+        INTEGER         CMIN   ! min number srcs per cell
+        INTEGER         IOS    ! i/o status
+        INTEGER         NK     ! Number of coeficients
+        INTEGER         NCHARS ! number of point-source chars
+        INTEGER         NPSRC  ! No of point sources
+        INTEGER         NGRID  ! No of cells
                                  
-        REAL            CAVG  ! average number sources per cell
+        REAL            CAVG   ! average number sources per cell
 
         CHARACTER*16            COORD    !  coordinate system name
         CHARACTER*16            COORUNIT !  coordinate system projection units
@@ -135,8 +136,8 @@ C.........  Try to get header information from inventory file
 C.........  Store header information that will be needed later
         ELSE
             NPSRC   = NROWS3D
-            IFDESC2 = GETCFDSC( FDESC3D, '/FROM/' )
-            IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/' )
+            IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+            IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
 
         ENDIF
 
@@ -170,7 +171,7 @@ C.........  Read point source characteristics
         CALL M3MSG2( 'Reading in POINT SOURCES file...' )
 
 C.........  Allocate memory for and read in required inventory characteristics
-        CALL RPNTSCHR( ENAME, 0, NPSRC, NINVARR, IVARNAMS )
+        CALL RPNTSCHR( ENAME, 0, NPSRC, NINVARR, IVARNAMS, NCHARS )
 
 C.........  Call subroutine to convert grid coordinates from lat-lon to
 C           coordinate system of the destination grid
@@ -179,6 +180,20 @@ C           coordinate system of the destination grid
 
 C.........  Get file name; open output gridding matrix file
 C.........      with grid characteristics from DSCM3GRD() above        
+        DO K = 1, MXDESC3
+            FDESC3D( K ) = ' '
+        ENDDO
+
+        FDESC3D( 1  ) = 'Point source gridding matrix'
+        FDESC3D( 2  ) = '/FROM/ ' // PROGNAME
+        FDESC3D( 3  ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 4  ) = '/GDESC/ ' // GDESC
+        WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS3D
+        WRITE( FDESC3D(6), 94010 ) '/NROWS3D/ ', NROWS3D
+
+        FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
+        FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
+
         FTYPE3D = SMATRX3
         SDATE3D = 0
         STIME3D = 0
@@ -191,17 +206,6 @@ C.........      with grid characteristics from DSCM3GRD() above
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
         GDNAM3D = GRDNM         
-
-        DO K = 1, MXDESC3
-            FDESC3D( K ) = ' '
-        ENDDO
-
-        FDESC3D( 1  ) = 'Point source gridding matrix'
-        FDESC3D( 2  ) = '/FROM/ ' // PROGNAME
-        FDESC3D( 3  ) = '/VERSION/ ' // VERCHAR( SCCSW )
-        FDESC3D( 4  ) = '/GDESC/ ' // GDESC
-        FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
-        FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
 
         GNAME = PROMPTMFILE( 
      &          'Enter logical name for GRIDDING MATRIX output file',
