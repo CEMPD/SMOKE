@@ -82,8 +82,6 @@ C           arrays for all activities in the inventory
         CALL CHECKMEM( IOS, 'EMTUNT', PROGNAME )
         ALLOCATE( EMTDSC( MXETYPE, NIACT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMTDSC', PROGNAME )
-        ALLOCATE( EMTEFT( MXETYPE, NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMTEFT', PROGNAME )
 
 C.........  Allocate memory for units conversions for inventory pollutants and
 C           activities (stored in MODINFO)
@@ -93,7 +91,6 @@ C           activities (stored in MODINFO)
 C.........  Initialize arrays
         EMTUNT = ' '  ! array
         EMTDSC = ' '  ! array
-        EMTEFT = ' '  ! array
         EACNV  = 1.   ! array
 
 C.........  Loop through the emission types for each activity and determine 
@@ -109,52 +106,30 @@ C           conversion to annual data here.
 
             DO K = 1, NETYPE( I )
 
-C.................  Search for emission type in non-diurnal emission factors
-                J = INDEX1( EMTNAM( K,I ), NNDI, NDINAM )
+C.................  Search for emission type in emission factors
+                J = INDEX1( EMTNAM( K,I ), NEFS, EFSNAM )
 
-C.................  Store info if this emissions type is non-diurnal
+C.................  Store info if this emissions type is found
 C.................  For the units, multiply the emission factor units with the
 C                   activity units
                 IF( J .GT. 0 ) THEN
 
 C.....................  Ensure that emission factor units are consistent
-                    CALL UNITMATCH( NDIUNT( J ) )
+                    CALL UNITMATCH( EFSUNT( J ) )
 
-                    L  = INDEX( NDIDSC( J ), 'for' )
-                    L2 = LEN_TRIM( NDIDSC( J ) )
-
-C.....................  Store for emission types
-                    EMTUNT( K,I ) = MULTUNIT( NDIUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = NDIDSC( J )( L+3:L2 ) // 
-     &                              ' from ' // ACTVTY( I )
-                    EMTEFT( K,I ) = 'N'
-
-                END IF
-
-C.................  Search for emission type in diurnal emission factors
-                J = INDEX1( EMTNAM( K,I ), NDIU, DIUNAM )
-
-C.................  Store info if this emissions type is diurnal
-C.................  For the units, multiply the emission factor units with the
-C                   activity units
-                IF( J .GT. 0 ) THEN
-C.....................  Ensure that emission factor units are consistent
-                    CALL UNITMATCH( DIUUNT( J ) )
-
-                    L = INDEX( DIUDSC( J ), 'for' )
-                    L2 = LEN_TRIM( NDIDSC( J ) )
+                    L  = INDEX( EFSDSC( J ), 'for' )
+                    L2 = LEN_TRIM( EFSDSC( J ) )
 
 C.....................  Store for emission types
-                    EMTUNT( K,I ) = MULTUNIT( DIUUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = DIUDSC( J )( L+3:L2 )// 
+                    EMTUNT( K,I ) = MULTUNIT( EFSUNT( J ), EAUNIT( M ) )
+                    EMTDSC( K,I ) = EFSDSC( J )( L+3:L2 ) // 
      &                              ' from ' // ACTVTY( I )
-                    EMTEFT( K,I ) = 'D'
 
                 END IF
 
 C.................  If emission type has not been associated with an emission
 C                   factor, then error
-                IF( EMTEFT( K,I ) .EQ. ' ' ) THEN
+                IF( EMTDSC( K,I ) .EQ. ' ' ) THEN
 
                     EFLAG = .TRUE.
                     L = LEN_TRIM( EMTNAM( K,I ) )
