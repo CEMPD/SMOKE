@@ -704,7 +704,7 @@ C           data in beginning or end.
      &                  TZONES, LDAYSAV )
 
 C.........  Get output directory information from the environment
-        MESG = 'Path where PREMOBL temperature files will be written'
+        MESG = 'Path where hourly temperature files will be written'
         CALL ENVSTR( 'SMK_TEMPATH', MESG, '.', TEMPDIR, IOS )
 
         IF( IOS /= 0 ) THEN
