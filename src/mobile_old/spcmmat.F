@@ -65,12 +65,6 @@ C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
-        INTEGER     FIP    ! State and County code
-        INTEGER     SID    ! State code only
-        INTEGER     RDT    ! Road class number
-        INTEGER     EMT    ! Emission type number
-        INTEGER     VHT    ! Vehicle type number
-
 C...........   Mobile Source attributes from ANAME                                 
 
         INTEGER         IFIP  ( NMSRC )        ! FIP codes for sources
@@ -78,11 +72,6 @@ C...........   Mobile Source attributes from ANAME
         INTEGER         ILINK ( NMSRC )        ! link number or 0 for non-link
 
 C...........   Speciation profiles table
-        
-        REAL        VREACT
-        REAL        ETHADJ
-        REAL        FRMADJ
-        REAL        ALLADJ
         
         INTEGER     NPROFS                      !  actual number of profiles
         INTEGER     SXREF( MXSPRO )              !  profile indexes (sorted)
@@ -120,52 +109,43 @@ C.......   Before sorting:
 
 C.......   After sorting -- four parts:   first part independent of road class
             
-        INTEGER     NREFV               !  number of actual entries
-        INTEGER     EMTSXV( MXVREF )    !
-        INTEGER     VHTSXV( MXVREF )    !
-        INTEGER     SPPROV( MXVREF )    !  XREF for lookup in MSPRO
-        REAL        VREACV( MXVREF )    !  
-        REAL        ETHADV( MXVREF )    !  
-        REAL        FRMADV( MXVREF )    !  
-        REAL        ALLADV( MXVREF )    !  
+        INTEGER     SPPR00 ( NVTYPE, MXEMIS )        !  XREF for lookup in MSPRO
+        REAL        VREAC00( NVTYPE, MXEMIS )
+        REAL        ETHAD00( NVTYPE, MXEMIS )
+        REAL        FRMAD00( NVTYPE, MXEMIS )
+        REAL        ALLAD00( NVTYPE, MXEMIS )
 
-C.......   Second part depends on road class (and vehicle type) only
+C.......   Second part depends on road class only (no FIP)
 
-        INTEGER     NREFR                !  number of actual entries
-        INTEGER     RDTSXR( MXRREF )     !
-        INTEGER     EMTSXR( MXRREF )     !
-        INTEGER     VHTSXR( MXRREF )     !
-        INTEGER     SPPROR( MXRREF )     !
-        REAL        VREACR( MXRREF )     !  
-        REAL        ETHADR( MXRREF )     !  
-        REAL        FRMADR( MXRREF )     !  
-        REAL        ALLADR( MXRREF )     !  
+        INTEGER     NPRNF                            !  number of actual entries
+        INTEGER     RDTNF  ( NRCLAS )
+        INTEGER     SPPRNF ( NRCLAS, NVTYPE, MXEMIS )!  XREF for lookup in MSPRO
+        REAL        VREACNF( NRCLAS, NVTYPE, MXEMIS )
+        REAL        ETHADNF( NRCLAS, NVTYPE, MXEMIS )
+        REAL        FRMADNF( NRCLAS, NVTYPE, MXEMIS )
+        REAL        ALLADNF( NRCLAS, NVTYPE, MXEMIS )
 
-C.......   Third part depends on state, road class, and vehicle type
+C.......   Third part depends on state and road class
 
-        INTEGER     NREFS
-        INTEGER     FIPSXS( MXSREF )
-        INTEGER     RDTSXS( MXSREF )
-        INTEGER     EMTSXS( MXSREF )
-        INTEGER     VHTSXS( MXSREF )
-        INTEGER     SPPROS( MXSREF )
-        REAL        VREACS( MXSREF )
-        REAL        ETHADS( MXSREF )
-        REAL        FRMADS( MXSREF )
-        REAL        ALLADS( MXSREF )
+        INTEGER     NPRNC                            !  number of actual entries
+        INTEGER     FIPNC  ( MXSTRC )
+        INTEGER     RDTNC  ( MXSTRC )
+        INTEGER     SPPRNC ( MXSTRC, NVTYPE, MXEMIS )!  XREF for lookup in MSPRO
+        REAL        VREACNC( MXSTRC, NVTYPE, MXEMIS )
+        REAL        ETHADNC( MXSTRC, NVTYPE, MXEMIS )
+        REAL        FRMADNC( MXSTRC, NVTYPE, MXEMIS )
+        REAL        ALLADNC( MXSTRC, NVTYPE, MXEMIS )
 
-C.......   Fourth part depends on FIP, road class, and vehicle type
+C.......   Fourth part depends on FIP and road class
 
-        INTEGER     NREFF
-        INTEGER     FIPSXF( MXFREF )
-        INTEGER     RDTSXF( MXFREF )
-        INTEGER     EMTSXF( MXFREF )
-        INTEGER     VHTSXF( MXFREF )
-        INTEGER     SPPROF( MXFREF )
-        REAL        VREACF( MXFREF )
-        REAL        ETHADF( MXFREF )
-        REAL        FRMADF( MXFREF )
-        REAL        ALLADF( MXFREF )
+        INTEGER     NPRFC                           !  number of actual entries
+        INTEGER     FIPFC  ( MXFRC )
+        INTEGER     RDTFC  ( MXFRC )
+        INTEGER     SPPRFC ( MXFRC, NVTYPE, MXEMIS )!  XREF for lookup in MSPRO
+        REAL        VREACFC( MXFRC, NVTYPE, MXEMIS )
+        REAL        ETHADFC( MXFRC, NVTYPE, MXEMIS )
+        REAL        FRMADFC( MXFRC, NVTYPE, MXEMIS )
+        REAL        ALLADFC( MXFRC, NVTYPE, MXEMIS )
 
 C...........   Volatile Pollutant Type Conversion Table
 C........ After sorting, two parts
@@ -198,24 +178,30 @@ C.......   Speciation matrix variables and their names:
 C...........   Other local variables
         
         INTEGER         S, F, I, J, K, L, P, V !  index counters
-        INTEGER         SDEV            !  unit for surrogate coeff file
-        INTEGER         XDEV            !  unit for surrogate xref  file
-        INTEGER         KDEV            !  unit for conversion file
-        INTEGER         LDEV            !  log-device
-        INTEGER         TDEV            !  for list file
-        INTEGER         SPCPRO          !  scratch xref value
-        INTEGER         IOS             !  I/O status
-        INTEGER         IREC            !  input line (record) number
-        INTEGER         I0              !  for counting RDT-independent refs
-        INTEGER         I1              !  for counting RDT-dependent   refs
-        INTEGER         I2              !  for counting state-dependent refs
-        INTEGER         I3              !  for counting FIP-dependent   refs
-        INTEGER         NRDT            !  index for RDT in MROADS3
-        INTEGER         VID             !  id index of volatile pollutant
+        INTEGER         EMT             ! temporaray emission type number
+        INTEGER         FIP             ! state and County code
+        INTEGER         IOS             ! I/O status
+        INTEGER         IREC            ! input line (record) number
+        INTEGER         KDEV            ! unit for conversion file
+        INTEGER         LDEV            ! log-device
+        INTEGER         LNK             ! temporary link ID
+        INTEGER         NRDT            ! index for RDT in MROADS3
+        INTEGER         RDT             ! temporaray road class number
+        INTEGER         SDEV            ! unit for surrogate coeff file
+        INTEGER         SID             ! temporaray state code only
+        INTEGER         SPCPRO          ! scratch xref value
+        INTEGER         TDEV            ! for list file
+        INTEGER         XDEV            ! unit for surrogate xref  file
+        INTEGER         VHT             ! temporaray vehicle type number
+        INTEGER         VID             ! id index of volatile pollutant
 
-        REAL            FAC             !  common factor subexpression
-        REAL            VOLADJ          !  common volatile adjustment 
-
+        REAL            ALLADJ          ! temporary overall correction factor1j
+        REAL            ETHADJ          ! temporary ethane correction factor
+        REAL            FAC             ! common factor subexpression
+        REAL            FRMADJ          ! temporary FORM correction factor
+        REAL            VOLADJ          ! common volatile adjustment 
+        REAL            VREACT          ! temporary VOC fraction profile
+        
         CHARACTER*3     INV     !  inventory species name
         CHARACTER*3     PROC    !  MV process name
         CHARACTER*5     INVPRO  !  Inventory pollutant from speciation profile
@@ -228,7 +214,6 @@ C...........   Other local variables
         
         LOGICAL         EFLAG   !  input error flat
         LOGICAL         KFLAG   !  if volatile format conversion factor or not 
-
 
 C***********************************************************************
 C   begin body of program SPCMMAT
@@ -289,7 +274,7 @@ C.......   processes are actually being used in this scenario
 
 C.......   For first time CSVNAME is called, see if there were any errors
         IF( NIPOL .LE. 0 ) THEN
-            WRITE( MESG,94050 ) 
+            WRITE( MESG,94010 ) 
      &             'Error reading SPECIATION LIST file'
             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
 
@@ -390,22 +375,15 @@ C...............   ASSUMPTIONS: CSVNAME has provided model species list (EMNAM)
         END IF
 
 C.......   Compare inventory pollutant in the speciation profile with
-C.......   volatile pollutant in inventory.  If not the same, prompt for
-C.......   a conversion file.
+C.......   volatile pollutant in inventory.
  
-C.......   Prompt for which inventory pollutant is volatile
- 
-cmh     CHOICE = GETMENU( NIPOL, 1,
-cmh  &                    'Which inventory pollutant is volatile?',
-cmh  &                    EINAM )
-
         VID  = 0
         I    = 0
         POLV = ' '
 77      CONTINUE  ! Loop to find volatile inventory pollutant
 
             I = I + 1
-            VID = FIND1( EINAM( I ), NUMVOL, VOLTYP )
+            VID = INDEX1( EINAM( I ), NUMVOL, VOLTYP )
             IF( VID .GT. 0 ) THEN
 
                 POLV = EINAM( VID )
@@ -465,7 +443,7 @@ C.......   Read and process the speciation cross-reference file
             IF ( IOS .NE. 0 ) THEN
 
                 EFLAG = .TRUE.
-                WRITE( MESG,94050 ) 
+                WRITE( MESG,94010 ) 
      &              'Error ', IOS, 
      &              'reading SPECIATION XREF file at line', IREC
                 CALL M3MESG( MESG )
@@ -493,7 +471,7 @@ C.............  Otherwise convert character variables to integer
 C.............  Warn and skip profile if MV-ASCT is blank
             IF( VHT .LT. 0 .AND. RDT .LT. 0 .AND. EMT .EQ. 0 ) THEN
 
-                WRITE( MESG,94050 ) 'Speciation x-ref record', IREC,
+                WRITE( MESG,94010 ) 'Speciation x-ref record', IREC,
      &                              'has blank motor-vehicles code.'
                 CALL M3MESG( MESG )
 
@@ -509,7 +487,7 @@ C.............  Skip profile if emission mode not used
 
             ELSE IF ( I .GE. MXREF ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94050 ) 
+                WRITE( MESG,94010 ) 
      &              'Max XREF table size ', MXREF,  
      &              'exceeded at line', IREC
                 CALL M3MESG( MESG )
@@ -544,115 +522,157 @@ C...........   Now sort the XREF inputs and place into appropriate tables:
 
         CALL SORTI4( NREFA, INDEXA, FIPSXA, RDTSXA, EMTSXA, VHTSXA )
 
-        I0    = 0
-        I1    = 0
-        I2    = 0
-        I3    = 0
-        EFLAG = .FALSE.
+C.......   Initialize category-specific xref profiles no. and factors tables
+        DO 120 J = 1, MXEMIS
+          DO 119 I = 1, NVTYPE
+            SPPR00 ( I,J ) = IMISS3
+            VREAC00( I,J ) = BADVAL3
+            ETHAD00( I,J ) = BADVAL3
+            FRMAD00( I,J ) = BADVAL3
+            ALLAD00( I,J ) = BADVAL3
 
+            DO 115 S = 1, NRCLAS
+                SPPRNF ( S,I,J ) = IMISS3
+                VREACNF( S,I,J ) = BADVAL3
+                ETHADNF( S,I,J ) = BADVAL3
+                FRMADNF( S,I,J ) = BADVAL3
+                ALLADNF( S,I,J ) = BADVAL3
+  115       CONTINUE
+            DO 116 S = 1, MXSTRC
+                SPPRNC ( S,I,J ) = IMISS3
+                VREACNC( S,I,J ) = BADVAL3
+                ETHADNC( S,I,J ) = BADVAL3
+                FRMADNC( S,I,J ) = BADVAL3
+                ALLADNC( S,I,J ) = BADVAL3
+  116       CONTINUE
+            DO 117 S = 1, MXFRC
+                SPPRFC ( S,I,J ) = IMISS3
+                VREACFC( S,I,J ) = BADVAL3
+                ETHADFC( S,I,J ) = BADVAL3
+                FRMADFC( S,I,J ) = BADVAL3
+                ALLADFC( S,I,J ) = BADVAL3
+  117       CONTINUE
+  119     CONTINUE
+  120   CONTINUE
+
+C.........  Group xref profiles by how specifically they are referenced.
+
+        EFLAG = .FALSE.
         DO  122  I = 1, NREFA
         
-            J   = INDEXA( I )
-            FIP = FIPSXA( J ) 
-            RDT = RDTSXA( J )
-            EMT = EMTSXA( J )
-            VHT = VHTSXA( J )
+            J      = INDEXA( I )
+            FIP    = FIPSXA( J ) 
+            RDT    = RDTSXA( J )
+            EMT    = EMTSXA( J )
+            VHT    = VHTSXA( J )
+            SPCPRO = SPPROA( J )
+            VREACT = VREACA( J )
+            ETHADJ = ETHADA( J )
+            FRMADJ = FRMADA( J )
+            ALLADJ = ALLADA( J )
+
+            IF( FIP .EQ. 0 ) THEN
+
+                IF( RDT .EQ. 0 ) THEN
+
+                    CALL GRPSREF( VHT, EMT,
+     &               SPCPRO, VREACT , ETHADJ , FRMADJ , ALLADJ ,
+     &               SPPR00, VREAC00, ETHAD00, FRMAD00, ALLAD00,
+     &               1, NVTYPE, MXEMIS, 1, NVTYPE, MXEMIS )
+
+                ELSE                                     ! RDT dependent
+
+                    IF( NPRNF .EQ. 0              .OR.        ! First instance
+     &                  RDT   .NE. RDTNF( NPRNF )      )      ! Not repeat
+     &                  NPRNF = NPRNF + 1
+
+                    IF ( NPRNF .LE. NRCLAS ) THEN
+
+                        RDTNF( NPRNF ) = RDT
+
+                        CALL GRPSREF( VHT, EMT, 
+     &                   SPCPRO, VREACT , ETHADJ , FRMADJ , ALLADJ ,
+     &                   SPPRNF, VREACNF, ETHADNF, FRMADNF, ALLADNF, 
+     &                   NRCLAS, NVTYPE, MXEMIS, NPRNF, NVTYPE, MXEMIS )
+
+                    END IF
+                END IF
+
+            ELSE IF ( MOD( FIP,1000 ) .EQ. 0 ) THEN     ! State dependent
+
+                FIP = FIP/1000
+
+                IF( NPRNC .EQ. 0              .OR.         ! First instance
+     &              FIP   .NE. FIPNC( NPRNC ) .OR.         ! Not previous
+     &              RDT   .NE. RDTNC( NPRNC )      )       ! Not previous
+     &              NPRNC = NPRNC + 1
+
+                IF ( NPRNC .LE. MXSTRC ) THEN
+
+                    FIPNC( NPRNC ) = FIP
+                    RDTNC( NPRNC ) = RDT
+
+                    CALL GRPSREF( VHT, EMT,
+     &               SPCPRO, VREACT , ETHADJ , FRMADJ , ALLADJ ,
+     &               SPPRNC, VREACNC, ETHADNC, FRMADNC, ALLADNC, 
+     &               MXSTRC, NVTYPE, MXEMIS, NPRNC, NVTYPE, MXEMIS )
+
+                END IF
+
+            ELSE                                       ! FIP dependent
+
+                IF ( NPRFC .EQ. 0              .OR.        ! First instance
+     &               FIP   .NE. FIPFC( NPRFC ) .OR.        ! Not previous
+     &               RDT   .NE. RDTFC( NPRFC )      )      ! Not previous
+     &               NPRFC = NPRFC + 1
+
+                IF ( NPRFC .LE. MXFRC ) THEN
+
+                    FIPFC( NPRFC ) = FIP
+                    RDTFC( NPRFC ) = RDT
+    
+                    CALL GRPSREF( VHT, EMT,
+     &               SPCPRO, VREACT , ETHADJ , FRMADJ , ALLADJ ,
+     &               SPPRFC, VREACFC, ETHADFC, FRMADFC, ALLADFC, 
+     &               MXFRC, NVTYPE, MXEMIS, NPRFC, NVTYPE, MXEMIS )
+
+                END IF
+
+            ENDIF
             
-            IF ( RDT .EQ. 0  ) THEN !  FIP independent refs
-
-                I0 = I0 + 1
-                IF ( I0 .LE. MXVREF ) THEN
-                    SPPROV( I0 ) = SPPROA( J )
-                    EMTSXV( I0 ) = EMT
-                    VHTSXV( I0 ) = VHT
-                    VREACV( I0 ) = VREACA( J )
-                    ETHADV( I0 ) = ETHADA( J )
-                    FRMADV( I0 ) = FRMADA( J )
-                    ALLADV( I0 ) = ALLADA( J )
-                END IF
-
-            ELSE IF ( FIP .EQ. 0  ) THEN !  FIP independent refs
-
-                I1 = I1 + 1
-                IF ( I1 .LE. MXRREF ) THEN
-                    SPPROR( I1 ) = SPPROA( J )
-                    RDTSXR( I1 ) = RDT
-                    EMTSXR( I1 ) = EMT
-                    VHTSXR( I1 ) = VHT
-                    VREACR( I1 ) = VREACA( J )
-                    ETHADR( I1 ) = ETHADA( J )
-                    FRMADR( I1 ) = FRMADA( J )
-                    ALLADR( I1 ) = ALLADA( J )
-                END IF
-
-            ELSE IF ( MOD( FIP, 1000 ) .EQ. 0 )  THEN ! state-dependent refs
-
-                I2 = I2 + 1
-                IF ( I2 .LE. MXSREF ) THEN
-                    FIPSXS( I2 ) = FIP/1000
-                    SPPROS( I2 ) = SPPROA( J )
-                    RDTSXS( I2 ) = RDT
-                    EMTSXS( I2 ) = EMT
-                    VHTSXS( I2 ) = VHT
-                    VREACS( I2 ) = VREACA( J )
-                    ETHADS( I2 ) = ETHADA( J )
-                    FRMADS( I2 ) = FRMADA( J )
-                    ALLADS( I2 ) = ALLADA( J )
-                END IF
-
-            ELSE                ! fip > 0:  FIP-dep refs
-
-                I3 = I3 + 1
-                IF ( I3 .LE. MXFREF ) THEN
-                    FIPSXF( I3 ) = FIP
-                    SPPROF( I3 ) = SPPROA( J )
-                    RDTSXF( I3 ) = RDT
-                    EMTSXF( I3 ) = EMT
-                    VHTSXF( I3 ) = VHT
-                    VREACF( I3 ) = VREACA( J )
-                    ETHADF( I3 ) = ETHADA( J )
-                    FRMADF( I3 ) = FRMADA( J )
-                    ALLADF( I3 ) = ALLADA( J )
-                END IF
-
-            END IF
-
 122     CONTINUE        !  X-REF factor tables loop
         
-        IF ( I0 .GT. MXVREF ) THEN
-
-             WRITE( MESG,94050 )
-     &           'Max RDT-independent table-size ', NVTYPE,  
-     &           'exceeded by XREF file: count=', I0
-             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
-
-        ELSE IF ( I1 .GT. MXRREF ) THEN
-
-             WRITE( MESG,94050 )
-     &           'Max FIP-independent table-size ', MXRREF,  
-     &           'exceeded by XREF file: count=', I1
-             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
-
-        ELSE IF ( I2 .GT. MXSREF ) THEN
-
-             WRITE( MESG,94050 )
-     &           'Max state-dependent table-size ', MXSREF,  
-     &           'exceeded by XREF file: count=', I2
-             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
-
-        ELSE IF ( I3 .GT. MXFREF ) THEN
-
-             WRITE( MESG,94050 )
-     &           'Max FIP-dependent table-size ', MXFREF,  
-     &           'exceeded by XREF file: count=', I3
-             CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
-
+C...........   Check for overflows
+        IF( NPRNF .GT. NRCLAS ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 )
+     &             'Max XREF NRCLAS=', NRCLAS,
+     &             'exceeded in XREF file: count=', NPRNF
+            CALL M3MESG( MESG )
         ENDIF
 
-        NREFV = I0              !  number of location-independent refs
-        NREFR = I1              !  " road class-only    dependent refs
-        NREFS = I2              !  " state-only         dependent refs
-        NREFF = I3              !  " state-and-county   dependent refs
+        IF( NPRNC .GT. MXSTRC ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 )
+     &             'Max XREF MXSTRC=', MXSTRC,
+     &             'exceeded in XREF file: count=', NPRNC
+            CALL M3MESG( MESG )
+        ENDIF
+
+        IF( NPRFC .GT. MXFRC ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 )
+     &             'Max XREF MXFRC=', MXFRC,
+     &             'exceeded in XREF file: count=', NPRFC
+            CALL M3MESG( MESG )
+        ENDIF
+
+C...........   Exit if overflows found
+        IF ( EFLAG ) THEN
+            MESG = 'Error processing SPECIATION XREF file'
+            CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
+        END IF
+
         EFLAG = .FALSE.
         
 C.......   Compute the speciation coefficient matrix
@@ -661,73 +681,94 @@ C...........   Two stage process:  first try for cross-referece by FIP and ASC
 C...........   Then if that fails, try by ASC only.
 
         DO  146  EMT = 1, NEMODE  ! By MV process
-        DO  145  VHT = 1, NVTYPE  ! By VTYPE (X-REF handles bad EMT/VHT combo)
+        DO  145  VHT = 1, NVTYPE  ! By vehicle type
         DO  144  S   = 1, NMSRC   ! By MV source
 
             FIP = IFIP  ( S )
             RDT = IRCLAS( S )
+            LNK = ILINK ( S )
 
-            F = FIND4( FIP, RDT, EMT, VHT, 
-     &                 NREFF, FIPSXF, RDTSXF, EMTSXF, VHTSXF )
+            F = FIND2( FIP, RDT, NPRFC, FIPFC, RDTFC )
 
             IF ( F .GT. 0 ) THEN        !  full match:
 
-                SPCPRO = SPPROF( F )
-                ALLADJ = ALLADF( F )
-                FRMADJ = FRMADF( F )
-                ETHADJ = ETHADF( F )
-                VREACT = VREACF( F )
+                SPCPRO = SPPRFC ( F, VHT, EMT )
+                ALLADJ = ALLADFC( F, VHT, EMT )
+                FRMADJ = FRMADFC( F, VHT, EMT )
+                ETHADJ = ETHADFC( F, VHT, EMT )
+                VREACT = VREACFC( F, VHT, EMT )
                 GO TO  131
 
             END IF                      !  if full match
 
-            SID = 1000 * ( FIP / 1000 ) !  state code
-            F   = FIND4( SID, RDT, EMT, VHT, 
-     &                   NREFS, FIPSXS, RDTSXS, EMTSXS, VHTSXS )
-           
-            IF ( F .GT. 0 ) THEN        !  state match
-           
-                SPCPRO = SPPROS( F )
-                ALLADJ = ALLADS( F )
-                FRMADJ = FRMADS( F )
-                ETHADJ = ETHADS( F )
-                VREACT = VREACS( F )
+            F = FIND2( FIP, 0, NPRFC, FIPFC, RDTFC )
+
+            IF ( F .GT. 0 ) THEN        !  FIP only
+
+                SPCPRO = SPPRFC ( F, VHT, EMT )
+                ALLADJ = ALLADFC( F, VHT, EMT )
+                FRMADJ = FRMADFC( F, VHT, EMT )
+                ETHADJ = ETHADFC( F, VHT, EMT )
+                VREACT = VREACFC( F, VHT, EMT )
                 GO TO  131
 
-            END IF                      !  if state match
+            END IF                      !  if FIP match
+
+            SID = FIP / 1000            !  state code
+            F   = FIND2( SID, RDT, NPRNC, FIPNC, RDTNC )
+           
+            IF ( F .GT. 0 ) THEN        !  state-RDT match
+           
+                SPCPRO = SPPRNC ( F, VHT, EMT )
+                ALLADJ = ALLADNC( F, VHT, EMT )
+                FRMADJ = FRMADNC( F, VHT, EMT )
+                ETHADJ = ETHADNC( F, VHT, EMT )
+                VREACT = VREACNC( F, VHT, EMT )
+                GO TO  131
+
+            END IF                      !  if state-RDT match
      
-            F = FIND3( RDT, EMT, VHT, NREFR, RDTSXR, EMTSXR, VHTSXR )
+            F   = FIND2( SID, 0, NPRNC, FIPNC, RDTNC )
+           
+            IF ( F .GT. 0 ) THEN        !  state-only match
+           
+                SPCPRO = SPPRNC ( F, VHT, EMT )
+                ALLADJ = ALLADNC( F, VHT, EMT )
+                FRMADJ = FRMADNC( F, VHT, EMT )
+                ETHADJ = ETHADNC( F, VHT, EMT )
+                VREACT = VREACNC( F, VHT, EMT )
+                GO TO  131
+
+            END IF                      !  if state-only match
+
+            F = FIND1( RDT, NPRNF, RDTNF )
 
             IF ( F .GT. 0 ) THEN        !  roadclass match
 
-                SPCPRO = SPPROR( F )
-                ALLADJ = ALLADR( F )
-                FRMADJ = FRMADR( F )
-                ETHADJ = ETHADR( F )
-                VREACT = VREACR( F )
+                SPCPRO = SPPRNF ( F, VHT, EMT )
+                ALLADJ = ALLADNF( F, VHT, EMT )
+                FRMADJ = FRMADNF( F, VHT, EMT )
+                ETHADJ = ETHADNF( F, VHT, EMT )
+                VREACT = VREACNF( F, VHT, EMT )
                 GO TO  131
 
             END IF                      !  if roadclass match
 
-            F = FIND2( EMT, VHT, NREFV, EMTSXV, VHTSXV )
-
-            IF ( F .GT. 0 ) THEN        !  vehicletype/emissionmode-only match
-
-                SPCPRO = SPPROV( F )
-                ALLADJ = ALLADV( F )
-                FRMADJ = FRMADV( F )
-                ETHADJ = ETHADV( F )
-                VREACT = VREACV( F )
+            IF( SPPR00( VHT, EMT ) .GT. IMISS3 ) THEN
+                SPCPRO = SPPR00 ( VHT, EMT )
+                ALLADJ = ALLAD00( VHT, EMT )
+                FRMADJ = FRMAD00( VHT, EMT )
+                ETHADJ = ETHAD00( VHT, EMT )
+                VREACT = VREAC00( VHT, EMT )
                 GO TO  131
 
             END IF              !  if roadclass match
 
             EFLAG = .TRUE.      !  if you get to here:  no match found
-            WRITE( MESG,94050 ) 
-     &          'Source', S, 
-     &          '(FIP', FIP,
-     &          'RDT', RDT,
-     &          'VHT', VHT, ') not found'
+            CALL M3MESG( 'Default XREF required, but none found for' )
+            WRITE( MESG,94010 ) 
+     &          '  FIP:', FIP, 'RDT:', RDT, 'LNK:', LNK, 
+     &            'VHT:', VHT, 'EMT:', EMT
             CALL M3MESG( MESG )
       
             GO TO 144      !  to end of loop
@@ -785,7 +826,7 @@ C...........   Process volatile conversion factors if necessary
             IF ( I .LE. 0 ) THEN        !  error:  XREF index not found
 
                 EFLAG = .TRUE.
-                WRITE( MESG,94050 ) 
+                WRITE( MESG,94010 ) 
      &              'XREF for FIPS', FIP,
      &              'RDT', RDT,
      &              'VHT', VHT, 
@@ -872,13 +913,13 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
+94010   FORMAT( 10 ( A, :, I10, :, 2X ) )
+
 94020   FORMAT( I7 )
 
 94030   FORMAT( I3 )
 
 94040   FORMAT( G10.3 )
-
-94050   FORMAT( 10 ( A, :, I10, :, 2X ) )
 
         END
 
