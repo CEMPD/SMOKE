@@ -227,7 +227,7 @@ C.............  Get output inventory file names given source category
 C.............  Allocate memory for inventory emissions for creating weights
             ALLOCATE( EMIS( NSRC, NCEMPOL ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EMIS', PROGNAME )
-            EMIS = AMISS3  ! array
+            EMIS = BADVAL3  ! array
 
 C.............  Read emissions from inventory file
             DO V = 1, NCEMPOL
@@ -473,8 +473,8 @@ C.............  Make sure that if the emissions are zero, weights are uniform.
 
                 DENOM = SUM( EMIS( S1:S2,V ) )
                 IF ( DENOM .EQ. 0. ) THEN
-                    DENOM = 1.
                     EMIS( S1:S2,V ) = 1.  ! array
+                    DENOM = SUM( EMIS( S1:S2,V ) )
 
                 ELSE IF ( DENOM .LT. 0. ) THEN
                     EFLAG = .TRUE.
@@ -485,10 +485,10 @@ C.............  Make sure that if the emissions are zero, weights are uniform.
      &                     'near source', S
                     CALL M3MESG( MESG )
 
-                ELSE
-                    DENOM = 1. / DENOM
-
                 END IF
+
+                DENOM = 1. / DENOM
+
 
 C.................  Loop through sources that match this ORIS/boiler
 C.................  Store hourly emissions using weights if multiple sources
