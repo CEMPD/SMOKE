@@ -65,18 +65,16 @@ ccs  (check if this is available as a function somewhere)
       CASE (6:13,25)
          IVEH = 4
          SUMVMT = VMTHDG
+
+C  The remaining types are not used for evaporative running emissions.
       CASE (14)
-         IVEH = 5
-         SUMVMT = VMTMIX(14)
+         RETURN      
       CASE (15,28)
-         IVEH = 6
-         SUMVMT = VMTLDDT
+         RETURN 
       CASE (16:23,26,27)
-         IVEH = 7
-         SUMVMT = VMTHDD
+         RETURN  
       CASE (24)
-         IVEH = 8
-         SUMVMT = VMTMIX(24)
+         RETURN 
       CASE DEFAULT
 ccs  Print some error message
       END SELECT

@@ -86,15 +86,12 @@ ccs  (check if this is available as a function somewhere)
          SUMVMT = VMTHDG
 
 C  The following types are not used for evaporative emissions.
-C      CASE (14)
-C         IVEH = 5
-C         SUMVMT = VMTMIX(14)
-C      CASE (15,28)
-C         IVEH = 6
-C         SUMVMT = VMTLDDT
-C      CASE (16:23,26,27)
-C         IVEH = 7
-C         SUMVMT = VMTHDD
+      CASE (14)
+         RETURN
+      CASE (15,28)
+         RETURN
+      CASE (16:23,26,27)
+         RETURN
 
 C  Motorcycles are a special case, but will need to be stored in the arrays
       CASE (24)                
