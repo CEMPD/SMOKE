@@ -1,3 +1,4 @@
+
         MODULE MODLISTS
 
 !***********************************************************************
@@ -22,7 +23,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -59,6 +60,7 @@
 !.........  SCC arrays dimensioned by NINVSCC
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCC( : ) ! SCCs
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCL( : ) ! left SCCs
+        CHARACTER(LEN=SDSLEN3), ALLOCATABLE, PUBLIC :: SCCDESC( : ) ! descrptn
 
 !.........  SCCs for all SICs
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: SCCPSIC( : )
