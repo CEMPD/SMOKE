@@ -312,39 +312,39 @@ C80              CONTINUE
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
                     CFNOF = EXP( 0.05964 * TAIR  -  18.16535 ) !  forest
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.82480 ) !  agriculture
+                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
                     EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
      &                                   NORNO( C,R,FORE ) * CFNOF +
      &                                   NORNO( C,R,WETL ) * CFNOW +
      &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENISO
+     &                                 ) * DENNO     ! sl
 
                 ELSE IF ( TAIR .GT. 268.3804 ) THEN     !  no forest NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.82480 ) !  agriculture
+                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
                     EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
      &                                   NORNO( C,R,WETL ) * CFNOW +
      &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENISO
+     &                                 ) * DENNO     ! sl
 
                 ELSE IF ( TAIR .GT. 265.11111 ) THEN    !  no forest, wet NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.82480 ) !  agriculture
+                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
                     EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
      &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENISO
+     &                                 ) * DENNO     ! sl
 
                 ELSE IF ( TAIR .GT. 259.8333 ) THEN     ! NO from grass only
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
 
-                    EMIS( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG*DENISO
+                    EMIS( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG*DENNO  ! sl
 
                 ELSE       !  else tair <= 259.8333
 
@@ -391,39 +391,39 @@ C...........   Compute correction factors for NO (see note, above)
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
                     CFNOF = EXP( 0.05964 * TAIR  -  18.16535 ) !  forest
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.82480 ) !  agriculture
+                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
                     EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
      &                                   NORNO( C,R,FORE ) * CFNOF +
      &                                   NORNO( C,R,WETL ) * CFNOW +
      &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENISO
+     &                                 ) * DENNO
 
                 ELSE IF ( TAIR .GT. 268.3804 ) THEN     !  no forest NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.82480 ) !  agriculture
+                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
                     EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
      &                                   NORNO( C,R,WETL ) * CFNOW +
      &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENISO
+     &                                 ) * DENNO
 
                 ELSE IF ( TAIR .GT. 265.11111 ) THEN    !  no forest, wetl NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.82480 ) !  agriculture
+                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
                     EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
      &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENISO
+     &                                 ) * DENNO
 
                 ELSE IF ( TAIR .GT. 259.8333 ) THEN     !  only grass NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
 
-                    EMIS( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG*DENISO
+                    EMIS( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG*DENNO
 
                 ELSE            !  tair <= 259.8333; no NO
 
