@@ -360,9 +360,6 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PHOUR     $INVOPD/phour.$INVOP.ncf      # Point NetCDF hour-specific
    setenv PHOURPRO  $INVOPD/phourpro.$INVOP.ncf   # Pt NetCDF src-spec dnl profs
    setenv REPINVEN  $REPSTAT/repinven.p.$INVOP.txt
-   setenv PDAY      $INVOPD/pday.$INVOP.ncf       # Point NetCDF day-specific
-   setenv PHOUR     $INVOPD/phour.$INVOP.ncf      # Point NetCDF hour-specific
-   setenv PHOURPRO  $INVOPD/phourpro.$INVOP.ncf   # Pt NetCDF src-spec dnl profs
    setenv PTREF_ALT $INVOPD/ptref.smkout.txt      # Point temporal x-ref
    setenv PTSUP     $SMKDAT/run_${PSCEN}/scenario/ptsup.$ESDATE.$PSCEN.txt
    setenv PSSUP     $SMKDAT/run_${PBASE}/static/pssup.$SPC.$PBASE.txt
@@ -371,7 +368,6 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PREACREP  $REPSTAT/preacrep.$PSCEN.rpt
    setenv PCSUMREP  $REPSTAT/pcsumrep.$PSCEN.rpt
    setenv PCTLWARN  $REPSTAT/pctlwarn.$PSCEN.txt
-   setenv PELV      $STATIC/PELV.$PBASE.txt       # Elev/PinG pt source list
    setenv PNTS_O    $INVOPD/pnts.map.$FYINV.txt
    setenv PTINV_O   $PTDAT/ptinv_o.$FYINV.ida.txt
    setenv REPPELV   $REPSTAT/reppelv.$PSCEN.rpt
@@ -392,6 +388,7 @@ if ( $SMK_SOURCE == P || $RUN_SMKMERGE == Y && $MRG_POINT == Y ) then
    setenv STACK_GROUPS $OUTPUT/stack_groups.$GRID.$PBASE.ncf
    setenv PLAY     $SMKDAT/run_$PBASE/scenario/play.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
    setenv PLAY_EX  $SMKDAT/run_$PBASE/scenario/play_ex.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
+   setenv PELV     $STATIC/PELV.$PBASE.txt       # Elev/PinG pt source list
 endif
 
 #
