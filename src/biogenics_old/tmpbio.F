@@ -70,15 +70,15 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        INTEGER         GETDATE
+        INTEGER         GETMENU
         INTEGER         GETNUM
         LOGICAL         GETYN
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
-        INTEGER         GETMENU
         INTEGER         TRIMLEN
-
-        EXTERNAL        GETNUM, GETYN, PROMPTMFILE, 
-     &                  PROMPTFFILE, GETMENU, TRIMLEN
+        EXTERNAL        GETDATE, GETMENU,GETNUM, GETYN, PROMPTMFILE, 
+     &                  PROMPTFFILE, TRIMLEN
 
 C...........   LOCAL VARIABLES and their descriptions:
 
