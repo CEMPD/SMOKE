@@ -154,8 +154,10 @@ C.............  Compare data end time with output end time
 C.............  If reporting time is after data ending time, reset the no.
 C               of time steps so that the reporting ends on the previous day
             IF( I .GT. 0 ) THEN
-                CALL NEXTIME( EDATE, ETIME, -25 * TSTEP )  
-                CALL NEXTIME( EDATE, ETIME, TSTEP )         ! Workaround
+                ! Workaround - NEXTIME does not properly subtract 24 hours so have
+                !   to use two steps
+                CALL NEXTIME( EDATE, ETIME, -23 * TSTEP )
+                CALL NEXTIME( EDATE, ETIME, -1 * TSTEP )
                 ETIME = RPT_%OUTTIME
 
                 I =  SECSDIFF( SDATE, STIME, EDATE, ETIME )
