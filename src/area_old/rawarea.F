@@ -66,6 +66,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         JULIAN
+        INTEGER         JUNIT
         LOGICAL         DSCGRID
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
@@ -75,8 +76,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
 
         EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN,
-     &           PROMPTFFILE, PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL,
-     &           TRIMLEN
+     &           JUNIT, PROMPTFFILE, PROMPTMFILE, SECSDIFF, STR2INT,
+     &           STR2REAL, TRIMLEN
 
 
 C...........   PARAMETER:
@@ -93,23 +94,6 @@ C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
-        INTEGER     DAY2YR      !  Conversion factor for day to year
-        INTEGER     TZONE       !  time zone
-        INTEGER     FIP
-        INTEGER     ID7
-        INTEGER     ID3
-        INTEGER     IPOL
-        INTEGER     TPF
-        INTEGER     INY
-        INTEGER     SDT, EDT, STM, ETM
-        INTEGER     MM, DD, HH, YY, DAYS
-        REAL        CEFF
-        REAL        REFF
-        REAL        RPEN
-        REAL        EMIS
-        REAL        VMISS
-        INTEGER     LFIP, LID7, LID3
-                                 
 C...........   Area Sources Table input unsorted copy (*A); 
 C...........   sorted final version (image EMISREC of data record)
 
@@ -146,24 +130,44 @@ C.......   variables in the output file.
         COMMON  / EMISREC / IFIPS,  ISCC7,  ISCC3,  ZONES, INVYR, 
      &                      TPFLAG, CTLEFF, RULEFF, RULPEN, EMISV
 
+C...........   File unit numbers and logical names
+        INTEGER         ADEV            !  for area-source file
+        INTEGER         IDEV            !  Raw input file list file
+        INTEGER         LDEV            !  log-device
+        INTEGER         SDEV            !  for actual ASC file
+        INTEGER         ZDEV            !  for time-zone file
+        CHARACTER*16    ENAME   !  logical name for emission source output file
+        CHARACTER*256   RNAME   !  physical name for emission source input file
+ 
+
 C...........   Other local variables
 
+        INTEGER         FIP             !  temporary FIPs code
+        INTEGER         ID7             !  temporary leading  7-dig ASC
+        INTEGER         ID3             !  temporary trailing 3-dig ASC
+        INTEGER         INY             !  inventory year
+        INTEGER         IPOL            !  temporary pollutant code
+        INTEGER         TPF             !  temporary time period type
+        INTEGER         SDT, EDT, STM, ETM
+        INTEGER         MM, DD, HH, YY, NDAYS
         INTEGER         S, I, J, V      !  loop counters.
-        INTEGER         ADEV            !  for area-source file
-        INTEGER         SDEV            !  unit number for output actual ASCTs
-        INTEGER         ZDEV            !  for time-zone file
-        INTEGER         LDEV            !  log-device
         INTEGER         IOS             !  I/O status
         INTEGER         IREC            !  input line (record) number
-        INTEGER         IFIL            !  input file counter
-        LOGICAL         MFLAG   !  sum duplicate emissions flag
+        INTEGER         L1, L2          !  start/end position of input LINE
+        INTEGER         LFIP, LID7, LID3
+        INTEGER         TZONE           !  time zone
+        REAL            CEFF
+        REAL            DAY2YR          !  Conversion factor for day to year
+        REAL            EMIS
+        REAL            REFF
+        REAL            RPEN
+        REAL            VMISS
         LOGICAL         EFLAG   !  input verification:  TRUE iff ERROR
+        LOGICAL         MFLAG   !  sum duplicate emissions flag
         LOGICAL         SFLAG   !  input verification:  report missing species
-        CHARACTER*16    SCRBUF  !  scratch name buffer
         CHARACTER*16    COORDN  !  coordinate system name
-        CHARACTER*16    RNAME   !  logical name for emission source input file
-        CHARACTER*16    ENAME   !  logical name for emission source output file
-        CHARACTER*240   LINE    !  input line from AREA file
+        CHARACTER*16    SCRBUF  !  scratch name buffer
+        CHARACTER*256   LINE    !  input line from AREA file
         CHARACTER*256   MESG    !  for M3EXIT() output
 
         LOGICAL FIRSTSUM  !  TRUE if no duplicate emissions
@@ -222,45 +226,76 @@ C.......   Get file name; open input time zone file
      &           'Enter logical name for TIME ZONE file',
      &           .TRUE., .TRUE., 'ZONES', 'RAWAREA' )
 
+C.......   Get file name for opening input raw area source file
+        IDEV = PROMPTFFILE(
+     &         'Enter the name of the RAW DATA FILENAME LISTING',
+     &          .TRUE., .TRUE., 'ANLST', 'RAWAREA' )
+ 
+        CALL M3MSG2( 'Reading RAW AREA SOURCE files...' )
 
-C.......   Get file name; open input raw area source file
-
-        CALL M3MSG2( 'Now enter the list of logical file names for'
-     &               // CRLF() // BLANK5 // 'RAW AREA SOURCE files...' )
-
-        IFIL =    0
         S    =    0
-        INY  = 1989
-
+        INY  = IMISS3
 101     CONTINUE
 
-            IFIL = IFIL + 1
-            WRITE( RNAME, 94040 ) 'ARAW', IFIL
+C.............  Read file names
+C.............  Exit to line 141 if read is EOF
+            READ( IDEV, 93000, END=141  ) LINE
+ 
+            L1 = INDEX( LINE, 'INVYEAR' )
+            L2 = TRIMLEN( LINE )
 
-            ADEV = PROMPTFFILE( 
-     &          'Enter the NEXT FILE, or "NONE" to end list',
-     &          .TRUE., .TRUE., RNAME, 'RAWAREA' )
+            IF( L1 .GT. 0 ) THEN
+ 
+                INY = STR2INT( LINE( L1+7:L2 ) )
+ 
+                IF( INY .LE. 0 ) THEN
+ 
+                    CALL M3EXIT( 'RAWAREA', 0, 0,
+     &               'Must set inventory year using INVYEAR packet ' //
+     &               'in ANLST file', 2 )
+ 
+                ELSEIF( INY .LT. 1970 ) THEN
+ 
+                    CALL M3EXIT( 'RAWAREA', 0, 0,
+     &               'INVYEAR packet has set bad 4-digit year' //
+     &               'in ANLST file', 2 )
+ 
+                ENDIF
+ 
+                GO TO 101                       ! To head of ANLST read loop
 
-            IF ( ADEV .LT. 0 ) GO TO 141        !  end of input files.
+            ELSE
+ 
+                RNAME = LINE( 1:L2 )   ! Set inventory file name
+ 
+            ENDIF
 
-            INY = GETNUM( IMISS3, -IMISS3, INY+1,
-     &                    'Enter INVENTORY YEAR for this file' )
+            ADEV   = JUNIT()
+            OPEN( ADEV, ERR=1006, FILE=RNAME, STATUS='OLD' )
 
-C.............   Calculate DAY2YR factor
-            I = INY / 1000        !  year-number
-            IF ( MOD( I,4 ) .NE. 0 ) THEN           !  nonleap years
+            WRITE( MESG,94010 )
+     &             'Successful OPEN using year', INY,
+     &             'for inventory file:' // CRLF() // BLANK5 //
+     &             RNAME( 1:TRIMLEN( RNAME ) )
+            CALL M3MSG2( MESG )
+
+C.......   Factors for annualizing the emissions from daily totals
+C.......   (corrected for leap-year)
+
+            IF (      MOD( INY,   4 ) .NE. 0 ) THEN  !  nonleap years
                 DAY2YR = 365.0
-            ELSE IF ( MOD( I,100 ) .NE. 0 ) THEN    !  noncentury leap years
+            ELSE IF ( MOD( INY, 100 ) .NE. 0 ) THEN  !  noncentury leap years
                 DAY2YR = 366.0
-            ELSE IF ( MOD( I,400 ) .NE. 0 ) THEN    !  century nonleap years
+            ELSE IF ( MOD( INY, 400 ) .NE. 0 ) THEN  !  century nonleap years
                 DAY2YR = 365.0
-            ELSE                                    !  leap centuries
+            ELSE                                     !  leap centuries
                 DAY2YR = 366.0
             END IF
 
 C.......   Process this area source file
 
             IREC = 0
+
 111         CONTINUE        !  head of the ADEV-read loop
 
                 READ( ADEV, 93000, END=133, IOSTAT=IOS )LINE
@@ -340,10 +375,10 @@ C.......   Process this area source file
                     EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 )     ! ETM means *through* hr HH
 
-                    DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
-                    IF ( DAYS .GT. 28 ) THEN
+                    NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
+                    IF ( NDAYS .GT. 28 ) THEN
                         TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
-                    ELSE IF ( DAYS .GT. 1 ) THEN
+                    ELSE IF ( NDAYS .GT. 1 ) THEN
                         TPF = WTPRFAC           !  use only week profiles
                     ELSE
                         TPF = 1                 !  use only hourly profiles
@@ -368,21 +403,21 @@ C.......   Process this area source file
                     EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 )     ! ETM means *through* hr HH
 
-                    DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
+                    NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
 
-C                   IF ( DAYS .GT. 28 ) THEN
+C                   IF ( NDAYS .GT. 28 ) THEN
 C                        TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
-C                   ELSE IF ( DAYS .GT. 1 ) THEN
+C                   ELSE IF ( NDAYS .GT. 1 ) THEN
 C                        TPF = WTPRFAC          !  use only week profiles
 C                   ELSE
 C                        TPF = 1                        !  use only hourly profiles
 C                   END IF
 
-                    IF ( DAYS .GT. 1 ) THEN
+                    IF ( NDAYS .GT. 1 ) THEN
                         WRITE( MESG,94020 ) 
      &                  'Bad line', IREC,  
      &                  'SPECIAL time period type for', 
-     &                  DAYS, ' days not supported'
+     &                  NDAYS, ' days not supported'
                         CALL M3MESG( MESG )
                         EFLAG = .TRUE.
                         GO TO  111
@@ -774,6 +809,8 @@ C.......   Sort and Write out the area source ASCTs:
       CALL M3EXIT( 'RAWAREA', 0, 0,
      &             'Normal completion of Program RAWAREA', 0 )
 
+1006    MESG = 'Error opening file ' // RNAME( 1:TRIMLEN( RNAME ) )
+        CALL M3EXIT( 'RAWAREA', 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
