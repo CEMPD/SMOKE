@@ -138,11 +138,12 @@ C.........  Get the values from the FDESC3D array
 
 C.........  Store temperatures as double precision variables
         MNTMN = DBLE( MINT_MIN )
-        MNTMX = DBLE( MINT_MAX )
+        MNTMX = DBLE( MINT_MAX ) + 1.0D-04
         MXTMN = DBLE( MAXT_MIN )
-        MXTMX = DBLE( MAXT_MAX )
+        MXTMX = DBLE( MAXT_MAX ) + 1.0D-04
         TINTV = DBLE(  TMMINVL )
-        TMXIT = DBLE(  TMXINVL )
+        TMXIT = DBLE(  TMXINVL ) + 1.0D-04  ! extra factor to prevent numerical
+                                            ! problems on PC Linux (unknown origin)
 
 C.........  For non min-max type call, create list of value temperatures, and
 C           return to calling routine
