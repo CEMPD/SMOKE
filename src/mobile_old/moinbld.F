@@ -51,7 +51,7 @@ C...........   Main data table indices
         INTEGER IACCUM( MXFACS )
         INTEGER IATP  ( MXFACS )
         INTEGER IAVSPD( MXFACS )
-c       INTEGER IBSEXH( MXFACS )
+        INTEGER IBSEXH( MXFACS )
         INTEGER ICTOFF( MXFACS )
         INTEGER IDIESL( MXFACS )
         INTEGER IEFIM ( MXFACS )
@@ -64,7 +64,7 @@ c       INTEGER IBSEXH( MXFACS )
         INTEGER ITAMRT( MXFACS )
         INTEGER ITPLEN( MXFACS )
 
-        SAVE    IACCUM, IATP  , IAVSPD, ICTOFF, IDIESL, IEFIM ,
+        SAVE    IACCUM, IATP  , IAVSPD, ICTOFF, IDIESL, IEFIM , IBSEXH,
      &          ILAPMO, IOMODE, IOXYGF, IPREST, IPURGT, IRDIST, ITAMRT,
      &          ITPLEN
 
@@ -79,7 +79,7 @@ C...........   Main data tables ! number of rows second to help with indexing
         REAL    TDIESL( 51 , MXFACS )  ! Dsl sales % for 25 years LDVs & LDTs
                                        !   Addtional space for year.
         REAL    TOMODE( 3  , MXFACS )  ! 3 operating mode parameters
-        REAL    TOXYGF( 5 , MXFACS )   ! Oxygenated fuels params, 5 is integer
+        REAL    TOXYGF( 5  , MXFACS )  ! Oxygenated fuels params, 5 is integer
         REAL    TRDIST( 200, MXFACS )  ! Registration dist'n: 25 yrs, 8 vtype
         REAL    TTPLEN( 7  , MXFACS )  ! Speed, Trip lengths for 6 trip types
 
@@ -98,6 +98,13 @@ C. . . . . . . . Tampering rates: 3 time categroies, 4 vehicle types, 8 kinds
 
         SAVE    TTRZML, TTRDR
 
+C. . . . . . . . Basic emissions tables:
+        INTEGER IBSCNT( MXFACS )            ! Count of BER records
+        INTEGER IBASIC( 5, MXBER, MXFACS )  ! Integer componenets of BER
+        REAL    TBASIC( 3, MXBER, MXFACS )  ! ZML, DR1, and DR2
+
+        SAVE    IBSCNT, IBASIC, TBASIC
+
 C. . . . . . . . I/M program tables:
         INTEGER TEFIM ( 16, MXFACS )   !  Table of I/M integers
         INTEGER IMCX1, IMCX2, ISTAT, TTYPE
@@ -105,7 +112,6 @@ C. . . . . . . . I/M program tables:
         REAL    CUTOFF
         LOGICAL ONEFILE
         LOGICAL READIMC1( 0:MAXT12 ), READIMC2( 0:MAXT4P )
-
 
         INTEGER T12P1, T4PP1
         PARAMETER( T12P1 = MAXT12 + 1 )
@@ -139,11 +145,11 @@ C. . . . . . . . Anti-Tampering program tables:
 
 C...........   Numbers of actual entries in tables 
         INTEGER NACCUM, NRDIST, NTAMRT, NLAPMO, NTPLEN, NAVSPD,
-     &          NOMODE, NEFIM, NDIESL, NCTOFF, NOXYGF, NATP, 
+     &          NOMODE, NBSEXH, NEFIM, NDIESL, NCTOFF, NOXYGF, NATP, 
      &          NPREST, NPURGT 
 
         SAVE    NACCUM, NRDIST, NTAMRT, NLAPMO, NTPLEN, NAVSPD,
-     &          NOMODE, NEFIM, NDIESL, NCTOFF, NOXYGF, NATP,
+     &          NOMODE, NBSEXH, NEFIM, NDIESL, NCTOFF, NOXYGF, NATP,
      &          NPREST, NPURGT
 
         INTEGER IOXY, JOPM, JTPLEN, JLAPMO, JOXY, IRFG
@@ -286,22 +292,25 @@ C.........  Read in main factor matrices and indices, unless already have
 
         ENDIF
 
-c           IF ( READFAC( 9 ) ) THEN
+c       IF ( READFAC( 10 ) .AND. FIRSTIME( 10 ) ) THEN
+c           CALL GETFAC( 'A/C, EXTRA LOADING, HUMIDITY', 'MLOAD',
+c    &                    MXFACS, , ,  ... )
+c           FIRSTIME( 10 ) = .FALSE.
+c       ENDIF
 
-c           ENDIF
+        IF ( READFAC( 11 ) .AND. FIRSTIME( 11 ) ) THEN
+            CALL GETIIR3D( 'BASIC EMISSIONS RATES', 'MBSEXH',
+     &                      MXFACS, NBSEXH, IBSEXH, 1, IBSCNT, 
+     &                      MXBER, 5, IBASIC, 3, TBASIC )
+            FIRSTIME( 11 ) = .FALSE.
+        ENDIF
 
-c           IF ( READFAC( 11 ) .AND. FIRSTIME( 10 ) ) THEN
-c               CALL GETFAC ( 'BASIC EMISSIONS RATES', 'MBSEXH',
-c    &                        MXFACS, NBSEXH, IBSEXH,  ... )
-c               FIRSTIME( 10 ) = .FALSE.
-c           ENDIF
-
-c           IF ( READFAC( 12 ) .AND. FIRSTIME( 11 ) ) THEN
-c               CALL GETFACIR( 'NEW EVAPORATIVE EMISSIONS TESTS',
-c    &                         'MNEVAP', MXFACS, NNEVAP, INEVAP,
-c    &                         #, , #, )
-c               FIRSTIME( 11 ) = .FALSE.
-c           ENDIF
+c       IF ( READFAC( 12 ) .AND. FIRSTIME( 11 ) ) THEN
+c           CALL GETFACIR( 'NEW EVAPORATIVE EMISSIONS TESTS',
+c    &                     'MNEVAP', MXFACS, NNEVAP, INEVAP,
+c    &                     #, , #, )
+c           FIRSTIME( 11 ) = .FALSE.
+c       ENDIF
 
         IF ( ( READFAC ( 13 ) .OR. READFAC( 14 ) ) .AND.
      &         FIRSTIME( 13 )                            ) THEN
@@ -465,7 +474,10 @@ C.............  Set control flags
             MYMRFG = 2
         ENDIF
 
-        IF(     CIDX( IP,1 ) .GT. 0 .AND. CIDX( IP,2 ) .GT. 0 ) THEN
+        IF(     CIDX( IP,1 ) .LT. 0 ) THEN   ! Turn off new Clean Air Act
+            NEWFLG = 6
+            CIDX( IP,1 ) = -CIDX( IP,1 )
+        ELSEIF( CIDX( IP,1 ) .GT. 0 .AND. CIDX( IP,2 ) .GT. 0 ) THEN
             NEWFLG = 4
         ELSEIF( CIDX( IP,1 ) .EQ. 0 .AND. CIDX( IP,2 ) .GT. 0 ) THEN
             NEWFLG = 3
@@ -709,9 +721,26 @@ C.........  Registration distributions
         ENDIF
 
 C.........  Basic emissions rates
-c           IF( CIDX( IP,1 ) .GT. 0 ) THEN
-C! Hard - integer and real
-c           ENDIF
+        IF( CIDX( IP,1 ) .GT. 0 ) THEN
+
+            K = FIND1( CIDX( IP,1 ), NBSEXH, IBSEXH )
+            IF( K .LT. 0 ) THEN
+                WRITE( MESG,94100 ) 
+     &                 'BASIC EMISSIONS profile', CIDX( IP,1 ),
+     &                 'from parameter scheme', IP,
+     &                 'not found in basic emission rates table.'
+                CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+            ENDIF
+
+            WRITE( MODEV, 93050 ) IBSCNT( K ) ! Count of profiles
+
+            DO 129 J = 1, IBSCNT( K ) ! Loop through count and write
+
+                WRITE( MODEV, 93052 ) ( IBASIC( I,J,K ), I = 1,5 ),
+     &                                ( TBASIC( I,J,K ), I = 1,3 )
+ 129        CONTINUE
+
+        ENDIF
 
 C.........  New Evaporative Emissions test procedure
 c           IF( CIDX( IP,2 ) .GT. 0 ) THEN
@@ -1225,6 +1254,8 @@ C******************  FORMAT  STATEMENTS   ******************************
      &          10F7.5 / 10F7.5 / 5F7.5 )
 93040   FORMAT( 7( 10(1X,F4.3) / 10(1X,F4.3) / 5(1X,F4.3) / ),
      &             10(1X,F4.3) / 10(1X,F4.3) / 5(1X,F4.3)      )
+93050   FORMAT( I3 )
+93052   FORMAT( 3( I1,1X ), 2( I2,1X ), 2( F6.3,1X ), F6.3 )
 93090   FORMAT( 4(I2,1X),2(I2,1X),I3,1X,2(I1,1X),4I1,1X,4I1 )
 93100   FORMAT( 4(I2,1X),2(I2,1X),I3,1X,2(I1,1X),4I1,1X,4I1,3(1X,A4) )
 93101   FORMAT( F4.2 )
