@@ -79,7 +79,7 @@ C.........  Condensed source list
         INTEGER, ALLOCATABLE :: SRCROAD  ( : )  ! Roadtype code
         INTEGER, ALLOCATABLE :: SRCVTC   ( : )  ! Vehicle codes
         REAL   , ALLOCATABLE :: SRCSPD   ( : )  ! Speeds
-        INTEGER, ALLOCATABLE :: SRCREFFIP( : )  ! Ref FIPS for MOBILE inputs
+        REAL   , ALLOCATABLE :: SRCREFFIP( : )  ! Ref FIPS for MOBILE inputs
         INTEGER, ALLOCATABLE :: SRCFILIDX( : )  ! Index to MOBILE input file
         INTEGER, ALLOCATABLE :: SRCPSI   ( : )  ! parameter scheme index
 
@@ -227,7 +227,7 @@ C.........  Allocate memory for input files
         SRCROAD   = 0   ! array
         SRCVTC    = 0   ! array
         SRCSPD    = 0.  ! array
-        SRCREFFIP = 0   ! array
+        SRCREFFIP = 0.  ! array
         SRCFILIDX = 0   ! array
         SRCPSI    = 0   ! array
 
@@ -642,7 +642,7 @@ C.....................  If file exists, close it
             LFIP = FIP
             LSTA = STID
 
-            SRCREFFIP( N ) = MVAREFFIP( JJ )
+            SRCREFFIP( N ) = REAL( MVAREFFIP( JJ ) )
             SRCFILIDX( N ) = KK
             CYCLE
 
@@ -670,7 +670,7 @@ C.........  Assign PSIs to sources
         DO N = 1, NCSRC
 
             J = INDX( N )
-            REFFIP = SRCREFFIP( J )
+            REFFIP = INT( SRCREFFIP( J ) )
             SPD    = SRCSPD   ( J )
 
             IF ( REFFIP .NE. LREFFIP .OR.
@@ -756,7 +756,7 @@ C               out only once, otherwise, write out all
 C.............  pre-MPREF file...
             J = INDX( N )
             ROAD2  = SRCROAD  ( J )
-            REFFIP = SRCREFFIP( J )
+            REFFIP = INT( SRCREFFIP( J ) )
             SPD    = SRCSPD   ( J )
             PSI    = SRCPSI   ( J )
 
