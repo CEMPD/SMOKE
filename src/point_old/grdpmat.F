@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM GRDPMAT
 
 C***********************************************************************
-C  program body starts at line 125
+C  program body starts at line 124
 C
 C  DESCRIPTION:
 C       Construct point source gridding matrix from data contained in
@@ -43,6 +21,27 @@ C       Prototype  2/95 by CJC.
 C       Revised   11/95 by CJC -- nonUTM coordinate systems
 C       Revised    5/96 by M Houyoux -- more compact temporary storage
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C************************************************************************
 
       IMPLICIT NONE
 
@@ -112,11 +111,11 @@ C...........   Other local variables
         INTEGER         LDEV    !  log-device
         LOGICAL         GFLAG   !  generate output gridding matrix if true
         LOGICAL         OFLAG   !  Did array overflow occur
-        CHARACTER*160   MESG    !  message buffer for m3err(), m3exit()
 
-        CHARACTER*16    GRIDN   !  GRIDDESC  grid-name -- PGMAT file
         CHARACTER*16    CORDN   !  GRIDDESC coord-name -- PNTS  file
         CHARACTER*16    COORD   !  GRIDDESC coord-name -- PGMAT file
+        CHARACTER*16    SCRBUF  !  Scratch buffer
+        CHARACTER*256   MESG    !  message buffer for m3err(), m3exit()
 
 
 C***********************************************************************
@@ -143,8 +142,7 @@ C   begin body of program GRDPMAT
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program GRDPMAT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'GRDPMAT', 0, 0, 'Ending Program.', 2 )
         END IF
 
 
@@ -167,51 +165,41 @@ C.......   Initializations:
             NX( C ) = 0         !  for Gridding Matrix
 11      CONTINUE
 
-22      CONTINUE        !  loop:  get valid grid name for dscgrid()
+C.......   Read the grid parameters from GRIDDESC
 
-            CALL GETSTR( 'Enter grid name for gridding matrix', 
-     &                   GRDNM, GRIDN )
+        IF ( .NOT. DSCGRID( GRDNM, COORD, GDTYP3D, 
+     &                 P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
+     &                 XORIG3D, YORIG3D, XCELL3D, YCELL3D,
+     &                 NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
 
-            IF ( .NOT. DSCGRID( GRIDN, COORD, GDTYP3D, 
-     &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
-     &                     XORIG3D, YORIG3D, XCELL3D, YCELL3D,
-     &                     NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+            SCRBUF = GRDNM
+            MESG   = '"' // SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+     &               '" not found in GRIDDESC file'
+            CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
 
-                IF ( GETYN( 'Could not find "' //
-     &                      GRIDN( 1:TRIMLEN( GRIDN ) ) // 
-     &                      '" in GRIDDESC.  ' //
-     &                      'Try again?',  .TRUE. ) ) THEN
 
-                    GO TO  22
+        ELSE IF ( CORDN .NE. COORD ) THEN
 
-                ELSE
-
-                    CALL M3EXIT( 'GRDPMAT', 0,0, 'Exiting program', 1 )
-
-                END IF
-
-            ELSE IF ( CORDN .NE. COORD ) THEN
-
-                MESG = 'Coord system mismatch--input "' // 
+            MESG = 'Coord system mismatch--input "' // 
      &              CORDN( 1:TRIMLEN( CORDN ) ) //
      &              '", output "' // COORD( 1:TRIMLEN( COORD ) )
-                CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
 
-            ELSE IF ( NCOLS .NE. NCOLS3D ) THEN
+        ELSE IF ( NCOLS .NE. NCOLS3D ) THEN
 
-                WRITE( MESG, 94050 ) 
+            WRITE( MESG, 94050 ) 
      &              'Grid-cols mismatch:  dim=', NCOLS,
      &              'GRIDDESC=', NCOLS3D
-                CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
 
-            ELSE IF ( NROWS .NE. NROWS3D ) THEN
+        ELSE IF ( NROWS .NE. NROWS3D ) THEN
 
-                WRITE( MESG, 94050 ) 
+            WRITE( MESG, 94050 ) 
      &              'Grid-rows mismatch:  dim=', NROWS,
      &              'GRIDDESC=', NROWS3D
-                CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
 
-            END IF      !  if dscgrid() failed
+        END IF      !  if dscgrid() failed
 
 C.......   Store grid parameters for later processing
         
@@ -239,7 +227,7 @@ C.......   Get file name; open output gridding matrix file
         VGTOP3D = BADVAL3
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
-        GDNAM3D = GRIDN         !  grid characteristics from DSCGRID() above
+        GDNAM3D = GRDNM         !  grid characteristics from DSCGRID() above
 
         FDESC3D( 1 ) = 'NC Point Source gridding-coefficient matrix'
         DO  33  K = 2, MXDESC3
@@ -255,7 +243,7 @@ C.......   Get file name; open output gridding matrix file
 
 C.......   Read in the area source emissions FIP and ASC tables:
         
-        WRITE( *,92000 ) ' ', 'Reading in POINT SOURCES file...', ' '
+        CALL M3MSG2( 'Reading in POINT SOURCES file...' )
 
         IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3, 0, 0,  IFIPS ) ) THEN
             CALL M3EXIT( 'GRDPMAT', 0, 0, 
@@ -275,7 +263,7 @@ C.......   Read in the area source emissions FIP and ASC tables:
 
 C...........   Compute gridding matrix
         
-        WRITE( *,92000 ) ' ', 'Computing gridding matrix...', ' '
+        CALL M3MSG2( 'Computing gridding matrix...' )
 
         OFLAG = .FALSE.
         NBLANK = 0
@@ -365,7 +353,7 @@ C.......   Compute statistics.
                 CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 3 ) 
             END IF
                    
-            WRITE( *,92000 ) ' ', 'Writing out GRIDDING MATRIX file...'
+            CALL M3MSG2( 'Writing out GRIDDING MATRIX file...' )
 
             IF ( .NOT. WRITE3( GNAME, 'ALL', 0, 0, NX ) ) THEN
                 CALL M3EXIT( 'GRDPMAT', 0, 0, 
