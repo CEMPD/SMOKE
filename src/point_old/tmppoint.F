@@ -1,10 +1,30 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         PROGRAM TMPPOINT
 
 C***********************************************************************
-C  program body starts at line 258
+C  program body starts at line 285
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -225,6 +245,10 @@ C...........   Other local variables
         LOGICAL         HFLAG   !  hour-specific file available
         LOGICAL         UFLAG   !  generating upper-level output file
         LOGICAL         YFLAG   !  generating output xref file
+
+        LOGICAL   DAYLIT !  true when TZONES have been changed to daylight time
+        DATA      DAYLIT / .FALSE. /
+
         INTEGER         TZONE   !  output-file time zone
         INTEGER         TSTEP   !  output time step
         INTEGER         JDATE, JTIME
@@ -419,6 +443,7 @@ C.......   Get time period for output file:
         ELSE 
             TZONE = 5
         END IF
+
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone (0 for GMT, 5 for EST, 4 for EDT)' )
         JDATE  = GETNUM( 0, 9999999, JDATE, 
@@ -628,7 +653,7 @@ C.......   Read the ACTUAL-SCC FILE
 
         IREC  =  0
         EFLAG = .FALSE.
-        I     =  1
+        I     =  0
         LID   =  0
         ASCC( 1 ) = 0
 
@@ -1164,20 +1189,12 @@ C...........       default profile.
 
         DO  81  S = 1, NPSRC
 
+C.............  Set MFLAG to true for using monthly temporal adjustments
             MFLAG = ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 )
-            WFLAG = ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 )
 
-            IF ( .NOT. MFLAG ) THEN
-                DO  70  V = 1, NIPOL
-                    MDEX( S,V ) = 0
-70              CONTINUE
-            END IF
-
-            IF ( .NOT. WFLAG ) THEN
-                DO  71  V = 1, NIPOL
-                    WDEX( S,V ) = 0
-71              CONTINUE
-            END IF
+C.............  Set WFLAG to trur for using weekly temporal adjustments
+            WFLAG = ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 .OR.
+     &                MOD( TPFLAG( S ), WDTPFAC ) .EQ. 0      )
 
 C.............  Read list formatted, non-species dep temporal profiles
             IF( TTYPE .EQ. 'LIST' ) THEN
@@ -1300,6 +1317,8 @@ C...............   Now look up these refs
                         CALL M3MESG( MESG )
                         EFLAG = .TRUE.
                     END IF
+                ELSE
+                    MDEX( S,V ) = 0
                 END IF
 
                 IF ( WFLAG ) THEN
@@ -1311,6 +1330,8 @@ C...............   Now look up these refs
                         CALL M3MESG( MESG )
                         EFLAG = .TRUE.
                     END IF
+                ELSE
+                    WDEX( S,V ) = 0
                 END IF
 
                 DDEX( S,V ) = FIND1( DREF( V ), NDIU, DIUREF )
@@ -1381,15 +1402,34 @@ C...........   For each time step, write out the point source emissions values:
 
         DO  199  T = 1, NSTEPS
 
-C...............   If this is a new month, or transitions between
-C...............   weekday and weekend, calculate a new TMAT
-
+C...............   If this is a new day, calculate a new TMAT
 
             IF ( LDATE .NE. JDATE ) THEN
 
                 LDATE = JDATE
 
-C...............   If DFLAG, prepare day-corrections:
+C...............   Adjust sources' time zones to account for daylight time
+C..................   Add 1 if date is daylight and TZONES is not
+C..................   Subtract 1 if date is not daylight and TZONES is daylight
+                IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
+
+                    DAYLIT = .TRUE.
+
+                    DO 101 S = 1, NPSRC
+                        TZONES( S ) = TZONES( S ) + 1
+  101               CONTINUE
+
+                ELSEIF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
+
+                    DAYLIT = .FALSE.
+
+                    DO 103 S = 1, NPSRC
+                        TZONES( S ) = TZONES( S ) - 1
+  103               CONTINUE
+
+                ENDIF 
+                
+C...............   If day-specific emissions, prepare day-corrections:
                 
                 IF ( DFLAG ) THEN
                 
@@ -1425,7 +1465,7 @@ C...............   Get day-of-week, month:
 
                     WRITE( *,92011 ) 'Processing day', DAY
                     CALL MKTMAT( NPSRC, JDATE, MONTH, DAY,
-     &                           TZONE, TZONES,
+     &                           TZONE, TZONES, TPFLAG,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
      &                           DIUFAC, DDEX, 
@@ -1436,7 +1476,7 @@ C...............   Get day-of-week, month:
                                                 !  day-of-week conventions.
                     WRITE( *,92011 ) 'Processing weekend day', DAY
                     CALL MKTMAT( NPSRC, JDATE, MONTH, DAY,
-     &                           TZONE, TZONES,
+     &                           TZONE, TZONES, TPFLAG,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
      &                           ENDFAC, EDEX, 
@@ -1446,7 +1486,7 @@ C...............   Get day-of-week, month:
 
                     WRITE( *,92011 ) 'Processing midweek day', DAY
                     CALL MKTMAT( NPSRC, JDATE,  MONTH, DAY, 
-     &                           TZONE, TZONES,
+     &                           TZONE, TZONES, TPFLAG,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
      &                           DIUFAC, DDEX, 
