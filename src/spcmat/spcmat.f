@@ -63,10 +63,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         LOGICAL         ENVYN   
         INTEGER         GETFLINE
+        INTEGER         INDEX1
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
 
-        EXTERNAL        CRLF, ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, GETFLINE, INDEX1, PROMPTFFILE, 
+     &                  PROMPTMFILE
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -111,13 +113,14 @@ C.........  Unit numbers and logical file names
         CHARACTER*16    LNAME   !  logical name for mole spec matrix output file
 
 C.........   Other local variables
-        INTEGER          I, J, K, L1, L2, L3, L4, LT, V !  counters and indices
+        INTEGER          I, J, K, L1, L2, L3, L4, LT, N, V !  counters and indices
 
         INTEGER          IDX               ! tmp index value
         INTEGER          IOS               ! i/o status
         INTEGER          NINVARR           ! number inventory variables to input
         INTEGER          NMSPC             ! number of model species
         INTEGER          NOPOL             ! no. pollutants for output
+        INTEGER       :: NP    = 0         ! no. all pollutants (size of IINAM)
         INTEGER          PIDX              ! previous index value
 
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
@@ -301,28 +304,71 @@ C.........  Put the pollutants from the emission types first so that the
 C           index from the emisson type names (EMTIDX) will be valid with 
 C           SINAM and EMTPOL.
 C.........  Also, restructure the index.  First, for emission types...
-        J = 1
+        J  = 0
+        NP = 0
         DO I = 1, NIACT
 
-            K = NETYPE( I )
-            IF( K .GT. 0 ) THEN
-                EANAM( J:J+K-1 ) = EMTNAM( 1:K, I )
-                EAIDX( J:J+K-1 ) = EMTIDX( 1:K, I )
-            END IF
-            J = J + K
+C.............  Loop through emission types and add pollutants to master list
+C               in order of appearance
+            DO K = 1, NETYPE( I )
+
+                J = J + 1
+                ENAM = EMTNAM( K,I )
+                EANAM( J ) = ENAM
+
+        	L1 = INDEX( ENAM, ETJOIN )
+        	L2 = LEN_TRIM( ENAM )
+        	IF( L1 .GT. 0 ) PNAM = ENAM( L1+2:L2 )
+
+C.................  If it does not already appear in list, store pollutant name
+        	N = INDEX1( PNAM, NP, IINAM )
+
+        	IF( N .LE. 0 ) THEN
+                    NP = NP + 1
+                    IINAM( NP ) = PNAM
+                    N = NP
+        	END IF
+
+C.................  Set index back to master list (IINAM) position 
+                EAIDX( J ) = N
+
+            END DO
 
         END DO
 
-C.........  Now for pollutants...
+C.........  Now assign index numbers for pollutants and add pollutants (which
+C           may also be emission types) to EANAM
+        K    = 0
         DO I = 1, NIPOL
-            EANAM( J ) = EINAM( I )
-            EAIDX( J ) = NEPOL + I
+
             J = J + 1
+
+            PNAM = EINAM( I )
+            EANAM( J ) = PNAM
+
+C.............  First extract pollutant name from emission type, if any
+            L1 = INDEX( PNAM, ETJOIN )
+            L2 = LEN_TRIM( PNAM )
+            IF( L1 .GT. 0 ) PNAM = PNAM( L1+2:L2 )
+            
+C.............  Find pollutant name in master list
+            N = INDEX1( PNAM, NP, IINAM )
+
+C.............  If not in list, then add to it
+            IF( N .LE. 0 ) THEN
+                NP = NP + 1
+                IINAM( NP ) = PNAM
+                N = NP
+            END IF
+
+C.................  Set index back to master list (IINAM) position 
+            EAIDX( J ) = N
+
         END DO
 
 C.........  Confirm that counter is equal to total number of emission types
 C           and pollutants
-        IF( J-1 .NE. NIPPA ) THEN
+        IF( J .NE. NIPPA ) THEN
             WRITE( MESG,94010 ) 'INTERNAL ERROR: number of emission ' //
      &             'types and pollutants ', J, CRLF() // BLANK10 //
      &             'is inconsistent with dimensioned value', NIPPA
@@ -356,13 +402,6 @@ C           emission types/pollutants names for input and output.
 
             IF( IDX .NE. PIDX ) THEN
                 K = K + 1                    
-
-                L1 = INDEX( EANAM( I ), ETJOIN )
-                L1 = MAX( L1, 1 )
-                IF( L1 .GT. 1 ) L1 = L1 + LT
-
-                L2 = LEN_TRIM( EANAM( I ) )
-                IINAM( K ) = EANAM( I )( L1:L2 )
 
                 L1 = INDEX( SANAM( I ), ETJOIN )
                 L1 = MAX( L1, 1 )
