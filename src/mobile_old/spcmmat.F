@@ -42,7 +42,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CSVNAME
         INTEGER         FIND1, FIND2, FIND3, FIND4
         INTEGER         GETEFILE
-        INTEGER         GETMENU
         LOGICAL         GETYN
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
@@ -52,7 +51,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETEFILE, GETMENU,
+        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETEFILE, 
      &                  GETYN, INDEX1, PROMPTFFILE, PROMPTMFILE, 
      &                  RDSPROF, STR2INT, STR2REAL, TRIMLEN
 
@@ -199,7 +198,6 @@ C.......   Speciation matrix variables and their names:
 C...........   Other local variables
         
         INTEGER         S, F, I, J, K, L, P, V !  index counters
-        INTEGER         CHOICE          !  selection from menu 
         INTEGER         SDEV            !  unit for surrogate coeff file
         INTEGER         XDEV            !  unit for surrogate xref  file
         INTEGER         KDEV            !  unit for conversion file
@@ -213,6 +211,7 @@ C...........   Other local variables
         INTEGER         I2              !  for counting state-dependent refs
         INTEGER         I3              !  for counting FIP-dependent   refs
         INTEGER         NRDT            !  index for RDT in MROADS3
+        INTEGER         VID             !  id index of volatile pollutant
 
         REAL            FAC             !  common factor subexpression
         REAL            VOLADJ          !  common volatile adjustment 
@@ -396,13 +395,36 @@ C.......   a conversion file.
  
 C.......   Prompt for which inventory pollutant is volatile
  
-        CHOICE = GETMENU( NIPOL, 1,
-     &                    'Which inventory pollutant is volatile?',
-     &                    EINAM )
+cmh     CHOICE = GETMENU( NIPOL, 1,
+cmh  &                    'Which inventory pollutant is volatile?',
+cmh  &                    EINAM )
+
+        VID  = 0
+        I    = 0
+        POLV = ' '
+77      CONTINUE  ! Loop to find volatile inventory pollutant
+
+            I = I + 1
+            VID = FIND1( EINAM( I ), NUMVOL, VOLTYP )
+            IF( VID .GT. 0 ) THEN
+
+                POLV = EINAM( VID )
+                GO TO 88
+
+            ELSEIF( I .EQ. NIPOL ) THEN
  
-        POLV = EINAM( CHOICE )
- 
-        IF( INVPRO .NE. POLV ) THEN
+                I = I + 1
+                CALL M3WARN( 'SPCMMAT', 0, 0, 
+     &                       'No valid volatile inventory pollutant' )
+                GO TO 88
+
+            ENDIF
+
+        GO TO 77  ! To head of finding volatile pollutant type
+
+88      CONTINUE
+
+        IF( INVPRO .NE. POLV .AND. I .LE. NIPOL) THEN
  
             MESG = 'Enter logical name for ' //
      &              POLV ( 1:TRIMLEN( POLV ) ) // ' TO ' //
