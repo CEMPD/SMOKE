@@ -25,17 +25,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -118,7 +118,7 @@ C.............  Set flags indicating which source category is being processed
 C.............  Check length of SCC string
             L = LEN( TSCC )
             IF( L .NE. SCCLEN3 ) THEN
-                MESG = 'INTERNAL ERROR: Length of SCC string not'//
+                MESG = 'INTERNAL ERROR: Length of SCC string not '//
      &                 'correct in call to ' // PROGNAME
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )

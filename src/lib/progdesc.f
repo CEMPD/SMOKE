@@ -13,17 +13,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -63,7 +63,7 @@ C.........  SMOKE programs - listed in alphabetical order
      &  '     5) controls report ',
      &      ' '
 
-        CASE( 'ELEVPOINT' ) 
+       CASE( 'ELEVPOINT' ) 
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program ELEVPOINT specifies elevated point sources in the',
@@ -79,12 +79,10 @@ C.........  SMOKE programs - listed in alphabetical order
         CASE( 'EMISFAC' )
             WRITE( *,92000 )
      &      ' ',
-     &  'Program EMISFAC drives the MOBILE5a/b program by supplying',
-     &  'a range of ambient temperatures and a scenario-specific',
-     &  'MOBILE5 parameter file MPREF. Using multiple calls to',
-     &  'MOBILE5, EMISFAC creates a diurnal and non-diurnal emission',
-     &  'factors table for the specified temperatures and input',
-     &  'parameter combinations.',
+     &  'Program EMISFAC drives the MOBILE6 program by supplying',
+     &  'hourly temperature profiles and scenario-specific',
+     &  'MOBILE6 input files. Using multiple calls to',
+     &  'MOBILE6, EMISFAC creates source-based emission factors.',
      &      ' '
  
         CASE( 'GETRECS' )
@@ -130,6 +128,13 @@ C.........  SMOKE programs - listed in alphabetical order
      &  'adapted for multiple layers. ',
      &      ' '
 
+        CASE( 'MBSETUP' )
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program MBSETUP prepares intermediate files needed to run',
+     &  'PREMOBL and EMISFAC. ',
+     &      ' '
+
         CASE( 'METSCAN' )
             WRITE( LDEV,92000 ) 
      &      ' ',
@@ -150,18 +155,26 @@ C.........  SMOKE programs - listed in alphabetical order
 
         CASE( 'MVCONDNS' ) 
             WRITE( LDEV,92000 ) 
-     &  ' ',
+     &      ' ',
      &  'Program MVCONDNS condenses a mobile source inventory file to',
-     &  'preprocess for preparing the MPLIST and MPREF files.'
+     &  'preprocess for preparing the MPLIST and MPREF files.',
+     &      ' '
+
+        CASE( 'MVSETUP' ) 
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program MVSETUP uses the SMOKE mobile source file to create',
+     &  'a condensed list of all sources in the inventory by FIPS',
+     &  'code, roadtype, vehicle type, and including the speed',
+     &  'from the inventory (if any).',
+     &      ' '
 
         CASE( 'PREMOBL' )
             WRITE( LDEV,92000 ) 
      &      ' ',
-     &  'Program PREMOBL to input gridded, time-dependent temperature',
-     &  'data, an emission factors cross-reference, and an ungridding',
-     &  'matrix. Program determines the minimum and maximum ',
-     &  'temperatures per day for each source and for each emission',
-     &  'factor.',
+     &  'Program PREMOBL uses gridded, time-dependent temperature',
+     &  'data and an ungridding matrix to create county-based',
+     &  '24-hour temperature profiles.',
      &      ' '
 
         CASE( 'RAWBIO' ) 
@@ -228,6 +241,21 @@ C.........  SMOKE programs - listed in alphabetical order
      &  'speciation profiles file, permitting support of any chemical',
      &  'mechanism.',
      &      ' '
+
+         CASE( 'SURGTOOL' )       
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program CROSSGRID to take a SMOKE gridding surrogate file ',
+     &  'for a "fine" grid, a grid definition for a "coarse" grid, ',
+     &  'and produce the approximate "coarse" gridding surrogate file.',
+     &  ' ',
+     &  'NOTES:',
+     &  '   (1)  Current version is for Lat-Lon, Lambert, and UTM',
+     &  '        projections only. Can perform Lambert-to-Lambert',
+     &  '        and UTM zone-to-zone transformations)',
+     &  ' ',
+     &  '   (4)  Inputs and outputs only SMOKE formatted files.',
+     &  ' '
 
         CASE( 'TEMPORAL' ) 
             WRITE( LDEV,92000 ) 
