@@ -125,11 +125,16 @@ C...........   Unsorted record-days characteristics
 C...........   Hour-specific point Sources Table input 
 C...........   sorted final version (image EMISREC of data record)
  
-        INTEGER       NDAYPT              ! current source-count
-        INTEGER       INDXD( NPHR )       ! subscript into netCDF inventory file
-        REAL          EMISD( NPHR, NIPOL )! emissions values (tons/hr)
+        INTEGER       NHRPT               ! current source-count
+        INTEGER       INDXH( NPHR )       ! subscript into netCDF inventory file
+        REAL          EMISH( NPHR, MXIPOL )! emissions values (tons/hr)
  
-        COMMON / EMISREC / NDAYPT, INDXD, EMISD
+        COMMON / EMISREC / NHRPT, INDXH, EMISH
+
+C...........   For flexible output of only species for which there are inputs
+        INTEGER       INDXO ( MXIPOL ) ! For each inv pol, how map to OUTVAR
+        LOGICAL       OVFLAG( MXIPOL ) ! For each inv pol, will OUTVAR exist?
+        CHARACTER*16  OUTVAR( MXIPOL ) ! Output variable names
 
 C...........   File units and logical/physical names
 
@@ -139,7 +144,7 @@ C...........   File units and logical/physical names
         INTEGER         LDEV    !  log-device
 
         CHARACTER*16    ENAME   !  point source inventory file
-        CHARACTER*16    DNAME   !  hour-specific output emissions file
+        CHARACTER*16    HNAME   !  hour-specific output emissions file
 
 
 C...........   Other local variables
@@ -165,6 +170,7 @@ C...........   Other local variables
         INTEGER         MINPTR  !  minimum time step pointer
         INTEGER         MONTH   !  temporary month code
         INTEGER         NHFIL   !  number of hour-specific data files
+        INTEGER         NOUTV   !  number of output variables
         INTEGER         NPFIL   !  number of process data files
         INTEGER         NSTEPS  !  number of output time steps
         INTEGER         PTR     !  time step pointer
@@ -416,8 +422,7 @@ C.........  Get output starting time
             CALL M3EXIT( 'PDEMSPT', 0, 0, MESG, 2 )
         ENDIF
 
-C.........  Set up and open output hour-specific point source file
-
+C.........  Check dimensions of the input inventory file
         IF ( .NOT. DESC3( ENAME ) ) THEN
             CALL M3EXIT( 'PDEMSPT', 0, 0,
      &                   'Could not read file description for ' //
@@ -428,31 +433,6 @@ C.........  Set up and open output hour-specific point source file
      &      'program:', NPSRC
             CALL M3EXIT( 'PDEMSPT', 0, 0, MESG, 2 )
         END IF
-
-        FTYPE3D = IDDATA3
-        SDATE3D = SDATE
-        STIME3D = STIME
-        TSTEP3D = TSTEP
-        NVARS3D = NIPOL
-        NROWS3D = NPHR      !  number of rows = # of point sources.
-
-        DO  57   V = 1, NIPOL
-            VNAME3D( V ) = 'DAY' // EINAM( V )
-            VTYPE3D( V ) = M3REAL
-            UNITS3D( V ) = 'tons/hour'
-            VDESC3D( V ) = 'specific period emissions totals'
-57      CONTINUE
-
-        FDESC3D( 1 ) = 'Point source hour-specific from EMS-95 data'
-
-        DO 61 I = 2, MXDESC3 
-            FDESC3D( I ) = ' '
-61      CONTINUE
-
-        DNAME = PROMPTMFILE(
-     &          'Enter logical name for DAY-POINT output file',
-     &          FSUNKN3, 'PHOUR', 'PDEMSPT' )
-
 
 C.........  Read in source list FIPS code, SCC, Plant, Stack, EMS Plt, EMS Stk
 
@@ -854,6 +834,63 @@ C.........  Reset number of time steps, because not enough data
             
         ENDIF
 
+C.........  Loop through pollutant codes and flag all codes that are present
+        DO 307 V = 1, NIPOL
+           OVFLAG( V ) = .FALSE.
+307     CONTINUE
+
+        DO 311 T = 1, NSTEPS
+            DO 309 J = 1, NPHR
+
+                V = CODEA( J,T ) 
+                IF( V .GT. 0 ) OVFLAG( V ) = .TRUE.
+
+309         CONTINUE
+311     CONTINUE
+
+C.........  Set up output variable names in appropriate order
+        J = 0
+        DO 315 V = 1, NIPOL
+            IF( OVFLAG( V ) ) THEN
+                J = J + 1
+                OUTVAR( J ) = EINAM( V )
+                INDXO ( V ) = J
+            ELSE
+                INDXO ( V ) = 0
+            ENDIF
+315     CONTINUE 
+        NOUTV = J  
+
+C.........  Set up and open output hour-specific point source file
+        IF ( .NOT. DESC3( ENAME ) ) THEN
+            CALL M3EXIT( 'PDEMSPT', 0, 0,
+     &                   'Could not read file description for ' //
+     &                   ENAME, 2 )
+        ENDIF
+
+        FTYPE3D = IDDATA3
+        SDATE3D = SDATE
+        STIME3D = STIME
+        TSTEP3D = TSTEP
+        NVARS3D = NOUTV
+        NROWS3D = NPHR      !  number of rows = # of point sources.
+
+        DO 322 V = 1, NOUTV
+            VNAME3D( V ) = OUTVAR( V )
+            VTYPE3D( V ) = M3REAL
+            UNITS3D( V ) = 'tons/hour'
+            VDESC3D( V ) = 'specific period emissions totals'
+322     CONTINUE
+
+        FDESC3D( 1 ) = 'Point source hour-specific from EMS-95 data'
+
+        DO 325 I = 2, MXDESC3 
+            FDESC3D( I ) = ' '
+325     CONTINUE
+
+        HNAME = PROMPTMFILE(
+     &          'Enter logical name for HOUR-POINT output file',
+     &          FSUNKN3, 'PHOUR', 'PDEMSPT' )
 
 C........................................................................
 C.............  Head of the hourly output loop  .........................
@@ -865,33 +902,39 @@ C........................................................................
 
         DO 401 T = 1, NSTEPS
 
-            DO  333  V = 1, NIPOL
+            DO  333  V = 1, NOUTV
             DO  332  S = 1, NPHR 
-                EMISD( S,V ) = BADVAL3
+                EMISH( S,V ) = BADVAL3
 332         CONTINUE
 333         CONTINUE
 
             CALL SORTI1( NPDPT( T ), IDXSRC( 1,T ), SRCIDA( 1,T ) )
 
-C.............  Store sorted reocords for this hour
+C.............  Store sorted records for this hour
             LS = 0
             K  = 0
             DO 344 I = 1, NPDPT( T )
 
                 J = IDXSRC( I,T )
                 S = SRCIDA( J,T )
-                V = CODEA ( J,T )
+                V = INDXO( CODEA ( J,T ) )
+
+                IF( V .LE. 0 ) THEN
+                    MESG = 'Internal error indexing input pollutants '//
+     &                     'to output pollutants'
+                    CALL M3EXIT( 'PDEMSPT', JDATE, JTIME, MESG, 2 )
+                ENDIF
 
                 IF( S .NE. LS ) THEN
 
                     K = K + 1
-                    INDXD( K ) = S
+                    INDXH( K ) = S
                     LS         = S
 
                 ENDIF
 
-                IF( EMISD( K,V ) .LT. AMISS3 ) THEN
-                    EMISD( K,V ) = EMISVA( J,T )
+                IF( EMISH( K,V ) .LT. AMISS3 ) THEN
+                    EMISH( K,V ) = EMISVA( J,T )
 
                 ELSE
                     L2 = TRIMLEN( SRCLST( S ) )
@@ -907,7 +950,7 @@ C.............  Store sorted reocords for this hour
                 
 344         CONTINUE
 
-            NDAYPT = K
+            NHRPT = K
 
             IF ( VFLAG ) THEN
  
@@ -921,12 +964,12 @@ C.............  Store sorted reocords for this hour
  
                 VFLAG = .FALSE.
  
-                DO  366  V = 1, NIPOL
-                DO  365  K = 1, NDAYPT
+                DO  366  V = 1, NOUTV
+                DO  365  K = 1, NHRPT
  
-                   IF ( EMISD( K,V ) .LT. AMISS3 ) THEN
+                   IF ( EMISH( K,V ) .LT. AMISS3 ) THEN
  
-                        S = INDXD( K )
+                        S = INDXH( K )
 
                         VFLAG = .TRUE.
                         WRITE( MESG,94010 )
@@ -934,7 +977,7 @@ C.............  Store sorted reocords for this hour
      &                      SRCLST( S )(  1:5  ) // ' SCC:' //
      &                      SRCLST( S )(  6:13 ) // ' Plant&Stack:' //
      &                      SRCLST( S )( 14:L2 ) // ' Species:',
-     &                      EINAM( COD )
+     &                      OUTVAR( V )
                         CALL M3MESG( MESG )
  
                     END IF
@@ -949,22 +992,21 @@ C.............  Store sorted reocords for this hour
  
             ELSE            !  "missing" ~~~> 0
  
-                DO  368  V = 1, NIPOL
+                DO  368  V = 1, NOUTV
                 DO  367  S = 1, NPHR 
-                    IF ( EMISD( S,V ) .LT. AMISS3 ) EMISD( S,V ) = 0.0
+                    IF ( EMISH( S,V ) .LT. AMISS3 ) EMISH( S,V ) = 0.0
 367             CONTINUE
 368             CONTINUE
  
             END IF          !  sflag or not:  check for non-set EMIS values
 
-
 C.............  Write emissions for this hour
 
-            IF ( .NOT. WRITE3( DNAME, ALLVAR3, JDATE, JTIME,
-     &                         NDAYPT) ) THEN
+            IF ( .NOT. WRITE3( HNAME, ALLVAR3, JDATE, JTIME,
+     &                         NHRPT) ) THEN
                 CALL M3EXIT( 'PDEMSPT', JDATE, JTIME,
      &                       'Error writing output file "' //
-     &                       DNAME( 1:TRIMLEN( DNAME ) ) // '"',  2 )
+     &                       HNAME( 1:TRIMLEN( HNAME ) ) // '"',  2 )
             END IF
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
