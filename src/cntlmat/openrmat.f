@@ -64,7 +64,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   LOCAL PARAMETERS
         INTEGER     , PARAMETER :: NBASVAR = 4
-        CHARACTER*50, PARAMETER :: SCCSW   = '@(#)$Id$' ! SCCS string w/ vers no.
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
@@ -124,7 +124,7 @@ C.........  Set I/O API header parms that need values
 
         FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' reactivity matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 
         WRITE( FDESC3D( 4 ), '(A,I4)' ) '/CTYPE/ ', CTYPREAC
         WRITE( FDESC3D( 5 ), '(A,I4)' ) '/BASE YEAR/ ', BYEARIN
