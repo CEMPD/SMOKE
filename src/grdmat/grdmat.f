@@ -96,6 +96,7 @@ c        INTEGER         ADEV    !  for adjustments file
         INTEGER         KDEV    !  for link defs file
         INTEGER         GDEV    !  for surrogate coeff file
         INTEGER      :: MDEV = 0!  mobile sources codes file
+        INTEGER      :: RDEV = 0!  report file for surrogates usage
         INTEGER      :: SDEV = 0!  ASCII part of inventory unit no.
         INTEGER         XDEV    !  for surrogate xref  file
 
@@ -398,8 +399,9 @@ C.............  Allocate memory for point source gridding matrix
         END SELECT
 
 C.........  Get file names; open output gridding matrix (and ungridding matrix
-C           for mobile) using grid characteristics from DSCM3GRD() above        
-        CALL OPENGMAT( NMATX, IFDESC2, IFDESC3, GNAME, UNAME )
+C           for mobile) using grid characteristics from DSCM3GRD() above 
+C.........  Also open report file       
+        CALL OPENGMAT( NMATX, IFDESC2, IFDESC3, GNAME, UNAME, RDEV )
         UFLAG = ( UNAME .NE. 'NONE' )
 
         CALL M3MSG2( 'Generating gridding matrix...' )
@@ -413,14 +415,14 @@ C           is done so the sparse i/o api format can be used.
 
         CASE( 'AREA' )
 
-            CALL GENAGMAT( GNAME, MXSCEL, NSRC, NGRID, NMATX, 
+            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NGRID, NMATX, 
      &                     GMAT( 1 ), GMAT( NGRID+1 ), 
      &                     GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
 
         CASE( 'MOBILE' )
 
-            CALL GENMGMAT( GNAME, UNAME, MXSCEL, MXCSRC, NSRC, NGRID, 
-     &                     NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
+            CALL GENMGMAT( GNAME, UNAME, RDEV, MXSCEL, MXCSRC, NSRC, 
+     &                     NGRID, NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
      &                     GMAT( NGRID+NMATX+1 ), UMAT( 1 ), 
      &                     UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
      &                     NK, CMAX, CMIN, NKU, CMAXU, CMINU )
