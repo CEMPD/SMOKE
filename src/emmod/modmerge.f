@@ -87,7 +87,7 @@
         LOGICAL, PUBLIC :: LREPINV ! include inventory emissions in report(s)
         LOGICAL, PUBLIC :: LREPSPC ! include speciated emissions in report(s)
         LOGICAL, PUBLIC :: LREPCTL ! include controlled emissions in report(s)
-        LOGICAL, PUBLIC :: LO3SEAS ! use ozone season emissions from the inven
+        LOGICAL, PUBLIC :: LAVEDAY ! use average day emissions from the inven
 
 !.........  FILE NAMES AND UNIT NUMBERS...
 
@@ -97,9 +97,8 @@
         INTEGER     , PUBLIC :: EDEV   ! elevated/PinG ASCII input file
         INTEGER     , PUBLIC :: GDEV   ! gridding surrogates file
         INTEGER     , PUBLIC :: MSDEV  ! mobile ASCII inventory input
-        INTEGER     , PUBLIC :: PDEV  = 0  ! inventory pollutants list
+        INTEGER     , PUBLIC :: PDEV  = 0  ! inventory table
         INTEGER     , PUBLIC :: PSDEV  ! point ASCII inventory input
-        INTEGER     , PUBLIC :: VDEV  = 0  ! activities list
 
 !.........  Output file unit numbers
         INTEGER     , PUBLIC :: ARDEV  ! area ASCII report output
@@ -268,6 +267,21 @@
 !.........  Index between all model species names and all inventory pollutants
         INTEGER, ALLOCATABLE, PUBLIC :: EMIDX( : )
 
+!.........  Number of unique units needed
+!           If using speciation, NUNITS = NMPSC; otherwise, NUNITS = NIPPA
+        INTEGER, PUBLIC :: NUNITS = 0
+
+!.........  Map file pollutants list and physical file names
+        INTEGER                            , PUBLIC :: ANMAP = 0
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AMAPNAM( : )
+        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: AMAPFIL( : )
+        INTEGER                            , PUBLIC :: MNMAP = 0
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MMAPNAM( : )
+        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: MMAPFIL( : )
+        INTEGER                            , PUBLIC :: PNMAP = 0
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PMAPNAM( : )
+        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: PMAPFIL( : )
+
 !.........  NAMES AND INDICES FOR GROUP STRUCTURE
 
 !.........  Grouped variable arrays
@@ -320,7 +334,7 @@
         INTEGER, PUBLIC :: PSDATE( 7 )    ! Julian start dates of each ptmp file
 
 !.........  Units conversions information
-        INTEGER               , PUBLIC :: INVPIDX = 1    ! annual/O3 season idx
+        INTEGER               , PUBLIC :: INVPIDX = 1    ! annual/average day idx
 
         REAL             , PUBLIC :: BIOGFAC     ! conv fac for gridded bio
         REAL             , PUBLIC :: BIOTFAC     ! conv fac for bio totals

@@ -60,4 +60,9 @@
         CHARACTER(LEN=VTPLEN3+RWTLEN3),ALLOCATABLE, PUBLIC:: SCCRVC( : )
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: SCCTBL ( : )
 
+!.........  Sorted speed profiles
+        INTEGER                                     :: NSPDPROF        ! no. speed profiles
+        INTEGER               , ALLOCATABLE, PUBLIC :: SPDNUMS ( : )   ! profile numbers
+        REAL                  , ALLOCATABLE, PUBLIC :: SPDPROFS( :,: ) ! 24 hour speed profiles
+
         END MODULE MODMOBIL

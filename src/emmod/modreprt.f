@@ -13,6 +13,7 @@
 !
 !  REVISION HISTORY:
 !     Created 7/2000 by M. Houyoux
+!     Revised 7/2003 by A. Holland
 !
 !***************************************************************************
 !
@@ -45,7 +46,7 @@
         INTEGER, PARAMETER, PUBLIC :: NCRTSYBL = 12
         INTEGER, PARAMETER, PUBLIC :: RPT_IDX  = 1  ! pos. report pkt in master
         INTEGER, PARAMETER, PUBLIC :: TIM_IDX  = 2  ! pos. report time in mstr
-        INTEGER, PARAMETER, PUBLIC :: O3S_IDX  = 3  ! pos. O3 season in master
+        INTEGER, PARAMETER, PUBLIC :: ADY_IDX  = 3  ! pos. average day in master
         INTEGER, PARAMETER, PUBLIC :: FIL_IDX  = 4  ! pos. file pkt in master
         INTEGER, PARAMETER, PUBLIC :: DEL_IDX  = 5  ! pos. delimiter pkt in mstr
         INTEGER, PARAMETER, PUBLIC :: REG_IDX  = 6  ! pos. region pkt in master
@@ -67,7 +68,7 @@
      &                          ALLPCKTS( NALLPCKT ) = 
      &                                  ( / '/CREATE REPORT/      ',
      &                                      '/REPORT TIME/        ',
-     &                                      '/O3SEASON/           ',
+     &                                      '/AVEDAY/             ',
      &                                      '/NEWFILE/            ',
      &                                      '/DELIMITER/          ',
      &                                      '/DEFINE GROUP REGION/',
@@ -99,8 +100,12 @@
             INTEGER       :: ELEVSTAT      ! elev/no-elev/all status
             INTEGER       :: OUTTIME       ! end hour for summing
             INTEGER       :: NUMDATA       ! number of data values
+	    INTEGER       :: NUMFILES      ! number of files per report
+	    INTEGER       :: NUMSECT       ! number of sections per report
             INTEGER       :: NUMTITLE      ! number of titles
             INTEGER       :: RENDLIN       ! rpt packet end line
+	    INTEGER       :: RPTMODE       ! rpt mode
+	    INTEGER       :: RPTNVAR       ! no. of variables per rpt or section
             INTEGER       :: RSTARTLIN     ! rpt packet start line
             INTEGER       :: SCCRES        ! SCC resolution
             INTEGER       :: SRGRES        ! surrogate resolution (1st or 2nd)
@@ -120,6 +125,7 @@
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
+	    LOGICAL       :: BYSTACK       ! true: by stack
             LOGICAL       :: BYSTAT        ! true: by state code
             LOGICAL       :: BYSTNAM       ! true: by state name
             LOGICAL       :: BYSRG         ! true: by surrogate codes
@@ -130,10 +136,11 @@
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
             LOGICAL       :: NORMCELL      ! true: normalize by cell area
             LOGICAL       :: NORMPOP       ! true: normalize by county pop
-            LOGICAL       :: O3SEASON      ! true: use O3 seas data
+            LOGICAL       :: AVEDAY        ! true: use average day data
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
+	    LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
             LOGICAL       :: USECRMAT      ! true: use reactivity controls
             LOGICAL       :: USECUMAT      ! true: use multiplicative controls
             LOGICAL       :: USEGMAT       ! true: use gridding
@@ -165,8 +172,12 @@
         INTEGER, PUBLIC :: TSTEP  = 0       ! time step (HHMMSS)
         INTEGER, PUBLIC :: TZONE  = 0       ! time zone of hourly data (0-23)
 
+	INTEGER, PUBLIC, ALLOCATABLE :: STKX( : )   ! x cell no. of stack
+	INTEGER, PUBLIC, ALLOCATABLE :: STKY( : )   ! y cell no. of stack
+
 !.........  Controls for whether input files are needed
 !.........  These variables are set once, and never reset
+	LOGICAL, PUBLIC :: AFLAG  = .FALSE. ! true: read in ASCII elevated file
         LOGICAL, PUBLIC :: CUFLAG = .FALSE. ! true: read in multipl. control matrix
         LOGICAL, PUBLIC :: CURPTFLG = .FALSE. ! true: read mult. cntl report
         LOGICAL, PUBLIC :: CRFLAG = .FALSE. ! true: read in reactivity control matrix
@@ -196,6 +207,7 @@
         INTEGER, PUBLIC :: NSBGRAW  = 0   ! no. raw file subgrids 
         INTEGER, PUBLIC :: NSPCPOL  = 0   ! no. pollutants specified for BYSPC
         INTEGER, PUBLIC :: MINC     = 0   ! minimum output source chars
+	INTEGER, PUBLIC :: MXRPTNVAR= 30  ! max. number of variables per report
 
         LOGICAL, PUBLIC :: RC_ERROR = .FALSE.  ! true: error found reading file
         LOGICAL, PUBLIC :: DATAMISS = .FALSE.  ! true: no SELECT DATA instrs
@@ -223,6 +235,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 
         LOGICAL, ALLOCATABLE, PUBLIC :: LSPCPOL ( : )  ! true: spc pol in *SSUP file
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: SPCPOL( : ) ! pols for BYSPC
+	CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ASCNAM( : ) ! pols from ASCII elevated file
 
 !.........  Report characteristics arrays, dimensioned by NREPORT
 
@@ -258,6 +271,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: SRG2WIDTH=0 ! width of fallback surg column
         INTEGER      , PUBLIC :: STWIDTH  =0 ! width of state name column
         INTEGER      , PUBLIC :: STKPWIDTH=0 ! width of stack parameters columns
+	INTEGER      , PUBLIC :: UNITWIDTH=0 ! width of unit column
+	INTEGER      , PUBLIC :: VARWIDTH=0  ! width of variable column
         INTEGER      , PUBLIC :: WEKWIDTH =0 ! width of weekly profile label
 
         CHARACTER*50 , PUBLIC :: CELLFMT     ! format string for cell columns
@@ -304,6 +319,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 !.........  Temporary report-specific settings
         TYPE( EACHRPT ), PUBLIC :: RPT_
 
+	INTEGER, PUBLIC :: ASCDATA       ! no. of data from ASCII elevated file
+	INTEGER, PUBLIC :: ASCREC        ! line no. of ASCII elevated file
         INTEGER, PUBLIC :: EDATE         ! Julian ending date
         INTEGER, PUBLIC :: ETIME         ! ending time (HHMMSS)
         INTEGER, PUBLIC :: RPTNSTEP      ! no. of time steps for current report

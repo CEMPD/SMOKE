@@ -40,28 +40,27 @@
         INCLUDE 'EMPRVT3.EXT'
 
 !...........   Setting for range of valid min/max temperatures
-        REAL   , PUBLIC :: MINT_MIN = 0.  ! min of range of minima
-        REAL   , PUBLIC :: MINT_MAX = 0.  ! max of range of minima
-        REAL   , PUBLIC :: MAXT_MIN = 0.  ! min of range of maxima
-        REAL   , PUBLIC :: MAXT_MAX = 0.  ! max of range of maxima
-        REAL   , PUBLIC :: TMMINVL  = 0.  ! temperature interval
-        REAL   , PUBLIC :: TMXINVL  = 0.  ! maximum temperature interval
-        INTEGER, PUBLIC :: NTMPR    = 0   ! number of valid single temperatures
-        INTEGER, PUBLIC :: NVLDTMM  = 0   ! number of valid combos
-
-!...........   Valid list of temperatures (dim: NTMPR)
-        REAL   , ALLOCATABLE, PUBLIC :: VLDTMPR( : )   ! valid temperatures
-
-!...........   Valid list of min/max temperature combinations (dim: NVLDTMM)
-        REAL   , ALLOCATABLE, PUBLIC :: VLDTMIN( : )   ! valid mins
-        REAL   , ALLOCATABLE, PUBLIC :: VLDTMAX( : )   ! valid maxs
+        REAL, PUBLIC :: MINTEMP = 0.   ! minimum temperature
+        REAL, PUBLIC :: MAXTEMP = 0.   ! maximum temperature
 
 !...........   Daily min/max temperatures [K] (dim: NSRC)
-        REAL   , ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! per-source tmprs
-        REAL   , ALLOCATABLE, PUBLIC :: TKMAX   ( : )   ! working max
-        REAL   , ALLOCATABLE, PUBLIC :: TKMIN   ( : )   ! working min
-        REAL   , ALLOCATABLE, PUBLIC :: TKMAXOUT( :,: )   ! output  max
-        REAL   , ALLOCATABLE, PUBLIC :: TKMINOUT( :,: )   ! output  min
-        INTEGER, ALLOCATABLE, PUBLIC :: METIDX  ( :,: ) ! idx to master min/max
+        REAL, ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! per-source tmprs
+
+!...........   Hourly temperatures [K] (dim: NSRC)
+!...              for Mobile5 processing, index 0 = 12 AM local time
+!...              for Mobile6 processing, index 0 = 6 AM local time
+        REAL,    ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour 
+
+        REAL,    ALLOCATABLE, PUBLIC :: TDYCNTY ( : )   ! daily temps by county
+        INTEGER, ALLOCATABLE, PUBLIC :: DYCODES ( : )   ! FIPS codes for daily counties
+
+        REAL,    ALLOCATABLE, PUBLIC :: TWKCNTY ( : )   ! weekly temps by county
+        INTEGER, ALLOCATABLE, PUBLIC :: WKCODES ( : )   ! FIPS codes for weekly counties
+
+        REAL,    ALLOCATABLE, PUBLIC :: TMNCNTY ( : )   ! monthly temps by county
+        INTEGER, ALLOCATABLE, PUBLIC :: MNCODES ( : )   ! FIPS codes for monthly counties
+
+        REAL,    ALLOCATABLE, PUBLIC :: TEPCNTY ( : )   ! episode temps by county
+        INTEGER, ALLOCATABLE, PUBLIC :: EPCODES ( : )   ! FIPS codes for episode counties
 
         END MODULE MODMET

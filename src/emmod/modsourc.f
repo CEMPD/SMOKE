@@ -41,19 +41,19 @@
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
 !.........  Sorted list of point sources for SMOKE inventory file
-        INTEGER, ALLOCATABLE, PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
-        INTEGER, ALLOCATABLE, PUBLIC:: ISIC  ( : )  !  source SIC
+        INTEGER, POINTER,     PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
+        INTEGER, POINTER,     PUBLIC:: ISIC  ( : )  !  source SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: CELLID( : )  !  Cell ID
-        INTEGER, ALLOCATABLE, PUBLIC:: IPOSCOD( : ) !  positn of pol in INVPCOD
+        INTEGER, POINTER,     PUBLIC:: IPOSCOD( : ) !  positn of pol in INVPCOD
         INTEGER, ALLOCATABLE, PUBLIC:: TZONES( : )  !  time zones
-        INTEGER, ALLOCATABLE, PUBLIC:: TPFLAG( : )  !  temporal profile types
-        INTEGER, ALLOCATABLE, PUBLIC:: INVYR ( : )  !  inv year for this record
+        INTEGER, POINTER,     PUBLIC:: TPFLAG( : )  !  temporal profile types
+        INTEGER, POINTER,     PUBLIC:: INVYR ( : )  !  inv year for this record
         INTEGER, ALLOCATABLE, PUBLIC:: IDIU  ( : )  !  Hr prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IMON  ( : )  !  Mn prof code per source
-        INTEGER, ALLOCATABLE, PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
+        INTEGER, POINTER,     PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
         INTEGER, ALLOCATABLE, PUBLIC:: FLTRDAYL( : )!  daylight time filter
         INTEGER, ALLOCATABLE, PUBLIC:: SRGID ( :,: )!  primary & fallbk surg ID
 
@@ -70,32 +70,39 @@
         REAL   , ALLOCATABLE, PUBLIC:: STKVE ( : )  !  exhaust veloc  (m/s)
         REAL   , ALLOCATABLE, PUBLIC:: VMT   ( : )  !  vehicle miles traveled (miles/day)
 
-        REAL   , ALLOCATABLE, PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
+        REAL   , POINTER,     PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
 
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCC  ( : ) ! SCC
-        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC:: CORIS ( : ) ! DOE plant ID
-        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID( : ) ! boiler ID
-        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK ( : ) ! link
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC( : ) ! plant desc
-        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURC( : ) ! concat src
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE( : ) ! vehicle type
+        CHARACTER(LEN=SCCLEN3), POINTER,     PUBLIC:: CSCC   ( : ) ! SCC
+        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC:: CORIS  ( : ) ! DOE plant ID
+        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID ( : ) ! boiler ID
+        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK  ( : ) ! link
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC ( : ) ! plant desc
+        CHARACTER(LEN=ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
+        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE ( : ) ! vehicle type
+        CHARACTER(LEN=ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
+        CHARACTER(LEN=MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
+        CHARACTER(LEN=NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
+        CHARACTER(LEN=STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
+        
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
 
 !.........  Unsorted list of point sources for SMOKE inventory file
-        INTEGER, ALLOCATABLE, PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
-        INTEGER, ALLOCATABLE, PUBLIC:: IFIPA ( : ) !  raw state/county FIPS code
+        INTEGER, POINTER,     PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
+        INTEGER, POINTER,     PUBLIC:: IFIPA ( : ) !  raw state/county FIPS code
         INTEGER, ALLOCATABLE, PUBLIC:: ISICA ( : ) !  raw SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLASA( : )!  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPEA( : )!  vehicle type code
-        INTEGER, ALLOCATABLE, PUBLIC:: TPFLGA( : ) !  temporal resolution code
-        INTEGER, ALLOCATABLE, PUBLIC:: INVYRA( : ) !  inventory year
+        INTEGER, POINTER,     PUBLIC:: IPOSCODA(:) !  positn of pol in INVPCOD
+        INTEGER, POINTER,     PUBLIC:: ICASCODA(:) !  positn of CAS num. in UNIQCAS
+        INTEGER, POINTER,     PUBLIC:: TPFLGA( : ) !  temporal resolution code
+        INTEGER, POINTER,     PUBLIC:: INVYRA( : ) !  inventory year
         INTEGER, ALLOCATABLE, PUBLIC:: IDIUA ( : ) !  Hrly prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IWEKA ( : ) !  Wkly prof code per source
-        INTEGER, ALLOCATABLE, PUBLIC:: INRECA( : ) !  Input record per src x pol
-        INTEGER, ALLOCATABLE, PUBLIC:: SRCIDA( : ) !  Source ID
+        INTEGER, POINTER,     PUBLIC:: INRECA( : ) !  Input record per src x pol
+        INTEGER, POINTER,     PUBLIC:: SRCIDA( : ) !  Source ID
 
-        REAL   , ALLOCATABLE, PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
-        REAL   , ALLOCATABLE, PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
+        REAL   , POINTER,     PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
+        REAL   , POINTER,     PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
         REAL   , ALLOCATABLE, PUBLIC:: XLOC1A( : ) !  lon X-location link start 
         REAL   , ALLOCATABLE, PUBLIC:: YLOC1A( : ) !  lat Y-location link start
         REAL   , ALLOCATABLE, PUBLIC:: XLOC2A( : ) !  lon X-location link end 
@@ -105,15 +112,21 @@
         REAL   , ALLOCATABLE, PUBLIC:: STKDMA( : ) !  stack diameter (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKTKA( : ) !  exhaust temperature (deg K)
         REAL   , ALLOCATABLE, PUBLIC:: STKVEA( : ) !  exhaust velocity    (m/s)
-        REAL   , ALLOCATABLE, PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
+        REAL   , POINTER,     PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
         REAL   , ALLOCATABLE, PUBLIC:: VMTA  ( : ) !  vehicle miles traveled
 
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCA  ( : ) ! SCC
+        CHARACTER(LEN=SCCLEN3), POINTER,     PUBLIC:: CSCCA  ( : ) ! SCC
         CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC:: CORISA ( : ) ! DOE plant ID
         CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) ! boiler ID
         CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINKA ( : ) ! link
         CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) ! plant desc
-        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURCA( : ) ! concat src
+        CHARACTER(LEN=ALLCAS3), POINTER,     PUBLIC:: CSOURCA( : ) ! concat src
         CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) ! vehicle type
+
+!.........  Unsorted list of file numbers and records by source
+        INTEGER, PUBLIC :: NSTRECS                      ! size of SRCSBYREC
+        INTEGER, ALLOCATABLE, PUBLIC:: SRCSBYREC( :,: ) ! file number, record number, and
+                                                        ! src number for each inventory record
+        INTEGER, ALLOCATABLE, PUBLIC:: RECIDX( : )      ! index for SRCSBYREC
 
         END MODULE MODSOURC
