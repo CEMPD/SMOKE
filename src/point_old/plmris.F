@@ -1,5 +1,25 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         SUBROUTINE  PLMRIS( ZH, ZF, WSPD, TA, DTHDZ,
      &                      USTAR, HMIX, HFX,
@@ -8,7 +28,7 @@ C Version "@(#)$Id$ $Source$ $Date$
      &                      TOP, BOT )
 
 C***********************************************************************
-C  subroutine body starts at line  138
+C  subroutine body starts at line  156
 C
 C  FUNCTION:  
 C       computes elevation TOP, BOT of plume top and bottom.
@@ -99,7 +119,6 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER M               !  layer counter
         INTEGER IQ              !  stab class:  1-unstbl,2-neut,3-stbl
         INTEGER LPLM            !  first L: ZH(L) > STKHT
-        INTEGER NITER           !  iteration counter
         REAL    HSTAR           !  convective scale at stack (m?)
         REAL    TPLM            !  temperature at top of plume (m/s)
         REAL    WPLM            !  wind speed  at top of plume (m/s)
@@ -143,18 +162,13 @@ C.......   Compute buoyancy flux, convective scale.
 C.......   Compute initial plume rise from stack top to next level surface:
 
         IF( HSTAR .GT. HCRIT ) THEN		!  unstable case:
-            
+
             ZMIX = HMIX - STKHT
 
             IF ( ZMIX .LE. 0.0 ) THEN           !  Stack above mixing height:
 
                 LPLM = MIN( EMLAYS-1, LPBL+1 )
-                S    = MAX( GRAV * DTHDZ( LPLM ) / TSTK, SMALL )
-                
-                IF ( LPLM .NE. LSTK ) THEN
-                    M    = MIN( MAX( 1, LPLM - 2 ), EMLAYS - 3 )
-                    WSTK = POLY( ZSTK( LPLM ), ZH( M ), WSPD( M ), 3 )
-                END IF
+                S    = GRAV * DTHDZ( LPLM ) / TSTK
 
                 IF ( S .LE. SMALL ) THEN
                     DH = 1.5 * NEUTRL( STKHT, BFLX, WSTK, USTAR )
@@ -186,7 +200,6 @@ C.......   Compute initial plume rise from stack top to next level surface:
 
             ELSE				!  unstable case:
 
-                S   = MAX( GRAV * DTHDZ( LSTK ) / TSTK, SMALL )
                 DH  = 1.5 * UNSTBL( BFLX, WSTK )
                 DHN = 1.5 * NEUTRL( STKHT, BFLX, WSTK, USTAR )
 
@@ -206,7 +219,7 @@ C.......   Compute initial plume rise from stack top to next level surface:
 
             S   = MAX( GRAV * DTHDZ( LSTK ) / TSTK, SMALL )
             DH  = 1.5 * STABLE( BFLX, WSTK, S )
-            DHN = 1.5 * NEUTRL( STKHT, RBFLX, WSTK, USTAR )
+            DHN = 1.5 * NEUTRL( STKHT, BFLX, WSTK, USTAR )
 
             IF ( DHN .LT. DH ) THEN
                 DH = DHN
@@ -217,8 +230,7 @@ C.......   Compute initial plume rise from stack top to next level surface:
 
         ELSE					!  neutral case:
 
-            S   = MAX( GRAV * DTHDZ( LSTK ) / TSTK, SMALL )
-            DH  = 1.5 * NEUTRL( STKHT, RBFLX, WSTK, USTAR )
+            DH  = 1.5 * NEUTRL( STKHT, BFLX, WSTK, USTAR )
             IQ  = 2
             
         END IF			!  hstar ==> unstable, stable, or neutral
@@ -226,14 +238,14 @@ C.......   Compute initial plume rise from stack top to next level surface:
 
 C.......   Compute further plume rise from between level surfaces:
 
-        NITER = 0
         RBFLX = BFLX
         ZPLM  = DH
         LPLM  = LSTK
 
 101     CONTINUE	!  loop computing further plume rise
 
-            IF( ZPLM .LE. ZSTK( LPLM ) ) THEN
+            R = ZPLM - ZSTK( LPLM )
+            IF( R .LE. 0.0 ) THEN
                 GO TO  199  ! exit plume rise loop
             ELSE IF ( LPLM .LT. EMLAYS ) THEN
                 LPLM = LPLM + 1
@@ -241,34 +253,30 @@ C.......   Compute further plume rise from between level surfaces:
                 ZPLM = MIN( ZPLM, ZF( EMLAYS ) - STKHT )
                 GO TO  199  ! exit plume rise loop
             END IF
-            NITER = NITER + 1
-            
+
+C...........   Re-interpolate met data:
+
+            M    = MIN( MAX( 1, LPLM - 2 ), EMLAYS - 3 )
+            WPLM = POLY( ZPLM,  ZH( M ), WSPD( M ), 3 )
+            TPLM = POLY( ZPLM,  ZH( M ),   TA( M ), 3 )
+
 C...........   compute residual bflx by stability case IQ:
-            
-            R = ZPLM
-            IF ( R .LE. 0.0 ) THEN
-                RBFLX = 0.0
-            ELSE IF( IQ .EQ. 1 ) THEN	!  now compute resid bflx by stab case:
+
+            IF( IQ .EQ. 1 ) THEN	!  now compute resid bflx by stab case:
                 R     = D30 * R
                 RBFLX = WPLM * R**FIVETHD
             ELSE IF ( IQ .EQ. 2 ) THEN
                 P = STKHT + TWOTHD * ZPLM
-                RBFLX = D2664 * R * WPLM * USTAR**2 * (R / P )**TWOTHD
+                RBFLX = D2664 * R * WPLM * USTAR**2 * ( R / P )**TWOTHD
             ELSE	!  else iq = 3:
                 RBFLX = D59319 * WPLM * S * R**3
             END IF	!  if stability flag iq is 1, 2, or 3
-            
-C...........   Re-interpolate met data:
-            
-            M    = MIN( MAX( 1, LPLM - 2 ), EMLAYS - 3 )
-            WPLM = POLY( ZPLM,  ZH( M ), WSPD( M ), 3 )
-            TPLM = POLY( ZPLM,  ZH( M ),   TA( M ), 3 )
-            S    = GRAV * DTHDZ( LPLM ) / TPLM
-            
+
 C...........   Process according to stability cases:
-            
+
+            S    = GRAV * DTHDZ( LPLM ) / TPLM
             IF( S .GT. SMALL ) THEN               ! stable case:
-                
+
                 DH  = 1.5 * STABLE( RBFLX, WPLM, S )
                 DHN = 1.5 * NEUTRL( STKHT, RBFLX, WPLM, USTAR )
                 IF ( DHN .LT. DH ) THEN
@@ -279,13 +287,12 @@ C...........   Process according to stability cases:
                 END IF
 
             ELSE          ! if upper layer is not stable, use neutral formula
-
-                S  = SMALL
+                            
                 DH = 1.5 * NEUTRL( STKHT, RBFLX, WPLM, USTAR )
                 IQ = 2
-                
+
             END IF
-            
+
             ZPLM = ZSTK( LPLM-1 ) + DH
 
             GO TO  101
