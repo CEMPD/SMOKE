@@ -900,7 +900,7 @@ C.............  Store sorted reocords for this hour
      &                  'Duplicate emissions record:  FIP:' //
      &                  SRCLST( S )(  1:5  ) // ' SCC:' //
      &                  SRCLST( S )(  6:13 ) // ' Plant&Stack:' //
-     &                  SRCLST( S )( 14:L2 ) // ' Species:',
+     &                  SRCLST( S )( 14:L2 ) // ' Species:' //
      &                  EINAM( V )
                     CALL M3MESG( MESG )
                 END IF
