@@ -232,8 +232,8 @@ C.............  Check for negative values
                     L = LEN_TRIM( VNAME )
                     CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
                     WRITE( MESG,94020 ) 
-     &                     'WARNING: Resetting negative value of "',
-     &                     VNAME( 1:L )// '" from', COMPUTED( S,1 ),
+     &                     'WARNING: Resetting negative value of "' //
+     &                     VNAME( 1:L ) // '" from', COMPUTED( S,1 ),
      &                     'to 0. for source:'// CRLF() // BLANK5 // 
      &                     BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
