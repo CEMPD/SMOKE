@@ -1,9 +1,24 @@
- 
-C Version @(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
  
       SUBROUTINE TRANS( IERR )
-C
-C    The program was taken from EPS2, which has the following header 
+ 
+C    This program was taken from EPS2, which has the following header 
 C    information:
 C
 C            SYSTEMS APPLICATIONS INTERNATIONAL
