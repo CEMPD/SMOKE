@@ -107,7 +107,7 @@ C...........   Other local variables
         INTEGER         SDEV    !  SCC-file unit number
         CHARACTER*16    CORDN   !  GRIDDESC coord-name -- PNTS  file
         CHARACTER*16    COORD   !  GRIDDESC coord-name -- GRIDDESC file
-
+        CHARACTER*256   MESG    !  message buffer
 
 C***********************************************************************
 C   begin body of program MAPPOINT
@@ -269,17 +269,26 @@ C...........   Read SCC list
             READ( SDEV,*,END=45 ) K
                 
             I = I + 1
-            SCCS( I ) = K
+
+            IF( I .LE. NPSCC ) THEN
+                SCCS( I ) = K
+            ENDIF
 
         GO TO 44
 
 45	CONTINUE		!  end read-scc-list loop
 
         NSCC = I
-        
+
+        IF( NSCC .GT. NPSCC ) THEN
+            WRITE( MESG,94010 )
+     &             'SCC list overflow; actual', NSCC,
+     &             'dimensioned NPSCC=', NPSCC
+            CALL M3EXIT( 'MAPPOINT', 0, 0, MESG, 2 ) 
+
+        ENDIF 
         
         L = -1
-
         DO  111  I = 1, NPSRC
 
             J = INDEXA( I )
@@ -331,6 +340,10 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
+
+C...........   Internal buffering formats............ 94xxx
+ 
+94010   FORMAT ( 10 ( A, :, I10, :, 2X ) )
 
         END
 
