@@ -5,7 +5,7 @@
 !
 !  DESCRIPTION:
 !     This module contains the public allocatable arrays for doing country, 
-C     state and county summaries
+!     state and county summaries
 !
 !  PRECONDITIONS REQUIRED:
 !
@@ -14,7 +14,7 @@ C     state and county summaries
 !  REVISION HISTORY:
 !     
 !
-!***************************************************************************
+!***********************************************************************
 !
 ! Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 !                System
@@ -33,7 +33,7 @@ C     state and county summaries
 ! env_progs@mcnc.org
 !
 ! Pathname: $Source$
-! Last updated: $Date$  
+! Last updated: $Date$ 
 !
 !****************************************************************************
 

@@ -2,7 +2,7 @@
 #
 # Include file for making modules and doing needed copies, etc.
 #
-MD_OUT = $(MD_SRC)/$(EDSS_EXE)
+MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
 
 MODSOURC = $(MD_OUT)/modsourc.o
 MODXREF  = $(MD_OUT)/modxref.o
@@ -16,12 +16,11 @@ MODEMFAC = $(MD_OUT)/modemfac.o
 MODSTCY  = $(MD_OUT)/modstcy.o
 MODMERGE = $(MD_OUT)/modmerge.o
 MODELEV  = $(MD_OUT)/modelev.o
-MODMET   = $(MB_SRC)/modmet.o
+MODMET   = $(MD_OUT)/modmet.o
 #
 MODALL   = $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODSPRO) $(MODCNTRL) \
            $(MODLISTS) $(MODINFO) $(MODMERGE) $(MODSTCY) $(MODSURG) \
-           $(MODEMFAC) $(MODELEV)
-
+           $(MODEMFAC) $(MODELEV) $(MODMET)
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
@@ -89,8 +88,8 @@ $(MODELEV): $(MD_SRC)/modelev.f
 	if ( test -f modelev.mod ) ; then mv modelev.mod $(MD_OUT) ; fi
 	if ( test -f MODELEV.mod ) ; then mv MODELEV.mod $(MD_OUT) ; fi
 
-$(MODMET): $(MB_SRC)/modmet.f
-	$(FC) $(FFLAGS) -c -o $@ $(MB_SRC)/modmet.f
+$(MODMET): $(MD_SRC)/modmet.f
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modmet.f
 	if ( test -f modmet.mod ) ; then mv modmet.mod $(MD_OUT) ; fi
 	if ( test -f MODMET.mod ) ; then mv MODMET.mod $(MD_OUT) ; fi
 
