@@ -1,6 +1,7 @@
 
-        SUBROUTINE GETPDINFO( FDEV, TZONE, TSTEP, TYPNAM, SDATE, STIME, 
-     &                        NSTEPS, NPDVAR, MXPDSRC, EAIDX )
+        SUBROUTINE GETPDINFO( FDEV, MXIDAT, TZONE, TSTEP, TYPNAM, FNAME, 
+     &                        SDATE, STIME, NSTEPS, NPDVAR, MXPDSRC, 
+     &                        EAIDX, INVDCOD, INVDNAM )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -57,24 +58,38 @@ C.........  INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+        
+        CHARACTER*2     CRLF
+        INTEGER         GETFLINE
+        INTEGER         GETFORMT
+
+        EXTERNAL        CRLF, GETFLINE, GETFORMT
+
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN):: FDEV          ! file unit no.
+        INTEGER     , INTENT (IN):: MXIDAT        ! max no of inventory data
         INTEGER     , INTENT (IN):: TZONE         ! output time zone
         INTEGER     , INTENT (IN):: TSTEP         ! time step HHMMSS
         CHARACTER(*), INTENT (IN):: TYPNAM        ! name of processing type
+        CHARACTER(*), INTENT (IN):: FNAME         ! logical file name
         INTEGER     , INTENT(OUT):: SDATE         ! Julian start date in TZONE
         INTEGER     , INTENT(OUT):: STIME         ! start time of data in TZONE
         INTEGER     , INTENT(OUT):: NSTEPS        ! no. time steps
         INTEGER     , INTENT(OUT):: NPDVAR        ! no. pol/act variables
         INTEGER     , INTENT(OUT):: MXPDSRC       ! max. no. srcs over all times
         INTEGER     , INTENT(OUT):: EAIDX( NIPPA )! index to EANAM
+        INTEGER     , INTENT (IN):: INVDCOD( MXIDAT ) !  inv data 5-digit codes
+        CHARACTER(*), INTENT (IN):: INVDNAM( MXIDAT ) !  in data names
 
-C.........  Local allocatable arrays
+C.........  Local allocatable arrays...
         LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
 
 C.........  Other local variables
         INTEGER         N, V             ! counters and indices
+        INTEGER         INVFMT           ! inventory format code
         INTEGER         IOS              ! i/o status
+        INTEGER         NLINE            ! number of lines
 
         LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific
 
@@ -108,9 +123,19 @@ C.........  Perform case-specific settings
 
         END SELECT
 
+C.........  Ensure that input file is a list-formatted file
+        INVFMT = GETFORMT( FDEV )
+
+        IF( INVFMT .NE. LSTFMT ) THEN
+            MESG = TYPNAM// '-specific input file is not provided by '//
+     &             'a list of files.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+         
 C.........  Get the dates (in the output time zone) from the files and
 C           flag the pollutants of interest
-        CALL RDLOOPPD( FDEV, TZONE, TSTEP, MXPDSRC, DFLAG, SDATE, STIME,
+        CALL RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, DFLAG, 
+     &                 FNAME, INVDCOD, INVDNAM, SDATE, STIME, 
      &                 NSTEPS, EASTAT )
 
 C.........  Allocate memory and initialize for the maximum number of 
@@ -125,7 +150,8 @@ C           records per time step
 
 C.........  Get the maximum number of records per time step - i.e., populate
 C           MXSRCPD
-        CALL RDLOOPPD( FDEV, TZONE, TSTEP, MXPDSRC, DFLAG, SDATE, STIME, 
+        CALL RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, DFLAG, 
+     &                 FNAME, INVDCOD, INVDNAM, SDATE, STIME, 
      &                 NSTEPS, EASTAT )
 
 C.........  Create index to pollutant/activity names for current data files
