@@ -123,7 +123,7 @@ C...........   Area Sources Table
         REAL        VOC   ( NASRC )  !  VOC emissions
         REAL        CO    ( NASRC )  !  VOC emissions
 
-C.......   Auxilliary tables:
+C...........   Auxilliary tables:
 
         INTEGER     ASC4  ( NASRC )  !  leading-4  digits of source ASC
         INTEGER     SIDS  ( NASID )  !  source FIPS (state-only) ID
@@ -131,34 +131,41 @@ C.......   Auxilliary tables:
         INTEGER     FFIP  ( NAFIP )  !  source FIPS list
         INTEGER     CFIP  ( NAFIP+1) !  Subscript at which FIP occurs
 
+C...........   Packet names 
+        INTEGER         NPACKETS         ! Number of packets found
+        INTEGER         PBEGYR( MAXPKT ) ! projection begin year
+        INTEGER         PENDYR( MAXPKT ) ! projection begin year
+        LOGICAL         PPROCD( MAXPKT ) ! true: packet was processed
+        CHARACTER*25    PNAME            ! tmp packet name 
+        CHARACTER*25    PNAMES( MAXPKT ) ! all packet names in input file
 
-C...........   Other local variables
-        
-        INTEGER         S, I, J, L, V!  loop counters.
+C...........   Unit numbers and logical names
         INTEGER         CDEV         !  for control file
         INTEGER         LDEV         !  log-device
         INTEGER         RDEV         !  report-file device
         INTEGER         TDEV         !  device for report-these-sources file
 
+        CHARACTER*16    ENAME   !  logical name for area-source input file
+        CHARACTER*16    CNAME   !  logical name for control     input file
+        CHARACTER*16    MNAME   !  logical name for ctl matrix output file
+        CHARACTER*16    VNAME   !  scratch buffer for variable-names
+
+C...........   Other local variables
+        
+        INTEGER         S, I, J, K, L, V!  loop counters.
+
+        INTEGER         IOS          !  I/O status
+        INTEGER         IREC         !  input line (record) number
+        INTEGER         YR1, YR2     !  tmp start and destination years
+
+        LOGICAL         EFLAG        !  true: processing error found
         LOGICAL         KFLAG        !  true: prompt for tracking file
         LOGICAL         PFLAG        !  true if projection entries have years
         LOGICAL         RFLAG        !  flag:  make report-file
         LOGICAL         TFLAG( NASRC )  !  flags:  track these sources
         
-        INTEGER         IOS          !  I/O status
-        INTEGER         IREC         !  input line (record) number
-
-        CHARACTER*16    ENAME   !  logical name for area-source input file
-        CHARACTER*16    CNAME   !  logical name for control     input file
-        CHARACTER*16    MNAME   !  logical name for ctl matrix output file
-        CHARACTER*16    VNAME   !  scratch buffer for variable-names
         CHARACTER*240   LINE    !  input line buffer
         CHARACTER*256   MESG    !  error message buffer
-
-        INTEGER         NPACKETS
-        CHARACTER*20    PNAMES( MAXPKT )
-        CHARACTER*20    PNAME
-
 
 C***********************************************************************
 C   begin body of program CTLAMAT
@@ -191,16 +198,14 @@ C   begin body of program CTLAMAT
             CALL M3EXIT( 'CTLAMAT', 0, 0, 'Ending program.', 2 )
         END IF
 
-
 C.........  Get environment variable values...
-C.........  Get type of projection entries: with year or without it (EPS)
-        PFLAG = ENVYN( 'YEAR_SPEC_PROJECT', 
-     &                 'Projection entries in year-specific format',
-     &                 .TRUE., IOS )
-
         KFLAG = ENVYN( 'ACTRACKING', 
      &                 'Use a special file to track specific sources',
      &                 .FALSE., IOS )
+
+C.........  Initiallize flags
+        EFLAG = .FALSE.
+        PFLAG = .FALSE.
 
 C.......   Get file name; open input area sources, control definitions files
 
@@ -466,12 +471,14 @@ C.......        CTG packet
 C.......   
 C.......   First, get list of packet names in the control file
         
-        IREC     = 1
+        IREC     = 0
         NPACKETS = 0
  
 90      CONTINUE
  
             READ( CDEV,93000, IOSTAT=IOS, END=99 ) LINE
+            IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &                  'Error reading', CNAME( 1:TRIMLEN( CNAME ) ),
@@ -494,22 +501,48 @@ C.......   First, get list of packet names in the control file
      &              IREC
                 CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
  
-            ELSE IF ( J .GT. 22 ) THEN
+            ELSE IF ( J .GT. 24 ) THEN   ! one less than max length
  
                 WRITE( MESG,94010 )
-     &              'Packet name too long in ',
+     &              'Packet name too long in ' //
      &              CNAME( 1:TRIMLEN( CNAME ) ) // ' at line',
      &              IREC, CRLF() // BLANK5 // 
      &              'Please change name or remove extra spaces.'
                 CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
  
             END IF
- 
+             
             IF ( NPACKETS .LT. MAXPKT ) THEN
                 NPACKETS = NPACKETS + 1
                 PNAMES( NPACKETS ) = LINE( I:I+J )
-                WRITE( LDEV,92000 )
-     &              'Control packet ', PNAMES( NPACKETS ), ' present'
+
+                MESG = 'Control packet ' // LINE( I:I+J ) // ' present'
+                CALL M3MESG( MESG )
+
+C.................  Initialize usage flag
+                PPROCD( NPACKETS ) = .FALSE.
+
+C.................  Adjust for year-to-year-specific and store years
+                K = INDEX( LINE, 'PROJECT AMS' )
+                IF( K .GT. 0 ) THEN
+                    L = TRIMLEN( LINE )
+                    PNAMES( NPACKETS ) = '/PROJECT AMS/'
+
+                    IF( L .GT. I+13 ) THEN
+                        READ( LINE( I+12:L ), *, IOSTAT=IOS ) YR1, YR2
+                        IF( IOS .NE. 0 ) THEN
+                            WRITE( MESG,94010 ) 'Problem reading ' //
+     &                             'year from PROJECT AMS packet at ' //
+     &                             'line', IREC
+                            CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 2 )
+                        ELSE
+                            PFLAG = .TRUE.
+                            PBEGYR( NPACKETS ) = YR1
+                            PENDYR( NPACKETS ) = YR2
+                        END IF
+                    END IF
+                END IF
+
                 GO TO 90
             ELSE
                 WRITE( MESG,94910 )
@@ -525,18 +558,22 @@ C............................................................................
 C.......   Process SOURCE CATEGORY packet of control file:
 
         PNAME = '/SOURCE CATEGORY/'
-        IF ( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) )  GO TO 109
- 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF ( K .EQ. 0  )  GO TO 109
+         
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
  
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 101     CONTINUE        !  head of loop reading lines in the SOURCE CATEGORY packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=109 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -590,7 +627,7 @@ C.......   Process SOURCE CATEGORY packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 101
+                IF ( I .LE. 0 ) GO TO 101
 
                 DO  103 S = ISID( I ), ISID( I+1 ) - 1
 
@@ -641,18 +678,22 @@ C............................................................................
 C.......   Process FIPS CODE packet of control file:
 
         PNAME = '/FIPS CODE/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 119
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0  ) GO TO 119
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 111     CONTINUE        !  head of loop reading lines in the FIPS CODE packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=119 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -691,7 +732,7 @@ C.......   Process FIPS CODE packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 111
+                IF ( I .LE. 0 ) GO TO 111
 
                 DO  113 S = ISID( I ), ISID( I+1 ) - 1
 
@@ -712,7 +753,7 @@ C.......   Process FIPS CODE packet of control file:
 
                 I = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 ) GO TO 111
+                IF ( I .LE. 0 ) GO TO 111
 
                 DO  114 S = CFIP( I ), CFIP( I+1 ) - 1
 
@@ -740,18 +781,22 @@ C............................................................................
 C.......   Process PROJECT AMS packet of control file:
 
         PNAME = '/PROJECT AMS/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 129
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 129
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 121     CONTINUE        !  head of loop reading lines in the PROJECT AMS packet
 
-            READ( CDEV,93000,IOSTAT=IOS,END=129 ) LINE
+            READ( CDEV, 93000, IOSTAT=IOS, END=129 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -764,62 +809,35 @@ C.......   Process PROJECT AMS packet of control file:
             IF( 0 .NE. INDEX( LINE, 'END' ) )  GO TO 129
 
             IF( PFLAG ) THEN
-                YEAR = STR2INT ( LINE(  1: 4 ) )
-                DYR  = STR2INT ( LINE(  6: 9 ) )
-                FIP  = STR2INT ( LINE( 11:15 ) )
-                PFAC = STR2REAL( LINE( 37:46 ) )
+                YEAR = PBEGYR( K )
+                DYR  = PENDYR( K )
+            END IF
 
-                L    = TRIMLEN( LINE( 23:32 ) ) - 
-     &                 LBLANK ( LINE( 23:32 ) )
+            FIP  = STR2INT ( LINE(  1: 5 ) )
+            PFAC = STR2REAL( LINE( 24:33 ) )
 
-                IF ( L .EQ. 4 ) THEN
-                    ID4  = STR2INT ( LINE( 23:32 ) )
-                    ID7  = ID4 * 1000
-                    ID3  = 0
+            L    = TRIMLEN( LINE( 13:22 ) ) - 
+     &             LBLANK ( LINE( 13:22 ) )
 
-                ELSE IF ( L .EQ. 7 ) THEN
-                    ID7  = STR2INT ( LINE( 23:29 ) )
-                    ID3  = 0
-                    ID4  = ID7 / 1000
+            IF ( L .EQ. 4 ) THEN
+                ID4  = STR2INT ( LINE( 13:22 ) )
+                ID7  = ID4 * 1000
+                ID3  = 0
 
-                ELSE IF ( L .EQ. 10 ) THEN
-                    ID7  = STR2INT ( LINE( 23:29 ) )
-                    ID3  = STR2INT ( LINE( 30:32 ) )
-                    ID4  = ID7 / 1000
+            ELSE IF ( L .EQ. 7 ) THEN
+                ID7  = STR2INT ( LINE( 13:22 ) )
+                ID3  = 0
+                ID4  = ID7 / 1000
 
-                ELSE
-                    WRITE( MESG,94910 ) 
-     &                     'ASC width is not 4, 7, or 10 at line', IREC
-                    CALL M3EXIT( MESG, 0, 0, 'CTLAMAT', 2 )
-                END IF
+            ELSE IF ( L .EQ. 10 ) THEN
+        	ID7  = STR2INT ( LINE( 13:19 ) )
+        	ID3  = STR2INT ( LINE( 20:22 ) )
+        	ID4  = ID7 / 1000
 
             ELSE
-                FIP  = STR2INT ( LINE(  1: 5 ) )
-                PFAC = STR2REAL( LINE( 27:36 ) )
-
-                L    = TRIMLEN( LINE( 16:25 ) ) - 
-     &                 LBLANK ( LINE( 16:25 ) )
-
-                IF ( L .EQ. 4 ) THEN
-                    ID4  = STR2INT ( LINE( 16:25 ) )
-                    ID7  = ID4 * 1000
-                    ID3  = 0
-
-                ELSE IF ( L .EQ. 7 ) THEN
-                    ID7  = STR2INT ( LINE( 16:25 ) )
-                    ID3  = 0
-                    ID4  = ID7 / 1000
-
-                ELSE IF ( L .EQ. 10 ) THEN
-                    ID7  = STR2INT ( LINE( 16:22 ) )
-                    ID3  = STR2INT ( LINE( 23:25 ) )
-                    ID4  = ID7 / 1000
-
-                ELSE
-                    WRITE( MESG,94910 ) 
-     &                     'ASC width is not 4, 7, or 10 at line', IREC
-                    CALL M3EXIT( MESG, 0, 0, 'CTLAMAT', 2 )
-                END IF
+                WRITE( MESG,94010 ) 
+     &                 'ASC width is not 4, 7, or 10 at line', IREC
+                CALL M3EXIT( MESG, 0, 0, 'CTLAMAT', 2 )
 
             ENDIF
 
@@ -854,7 +872,7 @@ C.......   Process PROJECT AMS packet of control file:
 
                     SID = FIP / 1000        !  state code only
                     I = FIND1( SID, NSID, SIDS )
-                    IF ( I .EQ. 0 ) GO TO 121
+                    IF ( I .LE. 0 ) GO TO 121
 
                     DO  123 S = ISID( I ), ISID( I+1 ) -1
 
@@ -883,7 +901,7 @@ C.......   Process PROJECT AMS packet of control file:
 
                     I = FIND1( FIP, NFIP, FFIP )
 
-                    IF ( I .EQ. 0 ) GO TO 121
+                    IF ( I .LE. 0 ) GO TO 121
 
                     DO 124 S = CFIP( I ), CFIP( I+1 ) - 1
 
@@ -945,7 +963,7 @@ C.......   Process PROJECT AMS packet of control file:
                     SID = FIP / 1000        !  state code only
                     I   = FIND1( SID, NSID, SIDS )
 
-                    IF ( I .EQ. 0 ) GO TO 121
+                    IF ( I .LE. 0 ) GO TO 121
 
                     DO  126 S = ISID( I ), ISID( I+1 ) -1
 
@@ -1014,18 +1032,22 @@ C............................................................................
 C.......   Process the RULE PENETRATION packet of control file
 
         PNAME = '/RULE PENETRATION/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 139
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 139
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 131     CONTINUE
 
             READ( CDEV,93000,IOSTAT=IOS,END=139 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -1078,7 +1100,7 @@ C.......   Process the RULE PENETRATION packet of control file
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 131
+                IF ( I .LE. 0 ) GO TO 131
 
                 DO  133 S = ISID( I ), ISID( I+1 ) -1
 
@@ -1102,7 +1124,7 @@ C.......   Process the RULE PENETRATION packet of control file
 
                 I   = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 ) GO TO 131
+                IF ( I .LE. 0 ) GO TO 131
 
                 DO  134 S = CFIP( I ), CFIP( I+1 ) - 1
 
@@ -1149,18 +1171,22 @@ C............................................................................
 C.......   Process the RULE EFFECTIVENESS packet of control file
 
         PNAME = '/RULE EFFECTIVENESS/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 149
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 149
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 141     CONTINUE
 
             READ( CDEV,93000,IOSTAT=IOS,END=149 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -1212,7 +1238,7 @@ C.......   Process the RULE EFFECTIVENESS packet of control file
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 141
+                IF ( I .LE. 0 ) GO TO 141
 
                 DO  143 S = ISID( I ), ISID( I+1 ) -1
 
@@ -1236,7 +1262,7 @@ C.......   Process the RULE EFFECTIVENESS packet of control file
 
                 I   = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 ) GO TO 141
+                IF ( I .LE. 0 ) GO TO 141
 
                 DO  144 S = CFIP( I ), CFIP( I+1 ) - 1
 
@@ -1283,18 +1309,22 @@ C............................................................................
 C.......   Process the CONTROL EFFICIENCY packet of control file
 
         PNAME = '/CONTROL EFFICIENCY/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 159
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 159
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 151     CONTINUE
 
             READ( CDEV,93000,IOSTAT=IOS,END=159 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -1346,7 +1376,7 @@ C.......   Process the CONTROL EFFICIENCY packet of control file
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 151
+                IF ( I .LE. 0 ) GO TO 151
 
                 DO  153 S = ISID( I ), ISID( I+1 ) -1
 
@@ -1370,7 +1400,7 @@ C.......   Process the CONTROL EFFICIENCY packet of control file
 
                 I   = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 ) GO TO 151
+                IF ( I .LE. 0 ) GO TO 151
 
                 DO  154 S = CFIP( I ), CFIP( I+1 ) - 1
 
@@ -1417,18 +1447,22 @@ C............................................................................
 C.......   Process RACT packet of control file:
 
         PNAME = '/RACT/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 169
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 169
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 161     CONTINUE        !  head of loop reading lines in the RACT packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=169 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -1477,7 +1511,7 @@ C.......   Process RACT packet of control file:
                 
                 SID = FIP / 1000        !  state code only
                 I = FIND1( SID, NSID, SIDS )
-                IF ( I .EQ. 0 ) GO TO 161
+                IF ( I .LE. 0 ) GO TO 161
                 
                 DO  163 S = ISID( I ), ISID( I+1 ) -1
 
@@ -1523,18 +1557,22 @@ C............................................................................
 C.......   Process MACT packet of control file:
 
         PNAME = '/MACT/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 179
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 179
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 171     CONTINUE        !  head of loop reading lines in the MACT packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=179 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -1580,7 +1618,7 @@ C.......   Process MACT packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 171
+                IF ( I .LE. 0 ) GO TO 171
 
                 DO  173 S = ISID( I ), ISID( I+1 ) -1
 
@@ -1622,9 +1660,10 @@ C............................................................................
 C.......   Process CTG packet of control file:
         
         PNAME = '/CTG/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 189
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 189
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLAMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
@@ -1632,10 +1671,13 @@ C.......   Process CTG packet of control file:
 
         CALL M3MSG2( 'Reading CONTROL PACKETS file...' )
 
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
+
 181     CONTINUE        !  head of loop reading this category of packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=189 ) LINE
             IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
      &              'Error reading',
@@ -1715,7 +1757,7 @@ C.......   Process CTG packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 )  GO TO  181
+                IF ( I .LE. 0 )  GO TO  181
                 
                 DO  183 S = ISID( I ), ISID( I+1 ) -1
 
@@ -1813,6 +1855,22 @@ C.......   Process CTG packet of control file:
 
 189     CONTINUE        !  exit from / skip around loop 181
 
+C.........  Double check that all packets in input file were processed
+        DO 201 K = 1, NPACKETS
+            IF ( PPROCD( K ) .EQ. .FALSE. ) THEN
+                EFLAG = .TRUE.
+                L = TRIMLEN( PNAMES( K ) )
+                MESG = 'ERROR: Packet "' // PNAMES( K )( 1:L ) //
+     &                 '" not processed because program did not '//
+     &                 'recognize it!'
+                CALL M3MSG2( MESG )
+            END IF
+201     CONTINUE
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem with one or more packets (see above).'
+            CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 2 )
+        END IF
 
 C............................................................................
 C.......   Compute the control matrix:

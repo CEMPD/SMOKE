@@ -133,42 +133,50 @@ C...........   Point Sources Table
         REAL        VOC   ( NPSRC )  !  VOC emissions values (tons/yr)
         REAL        CO    ( NPSRC )  !  VOC emissions values (tons/yr)
 
-C.......   Auxilliary tables:
+C...........   Auxilliary tables:
 
         INTEGER     SIDS  ( NPSID )  !  source FIPS (state-only) ID
         INTEGER     JSID  ( NPSID+1 )  !  Subscript at which state ID occurs
         INTEGER     FFIP  ( NPFIP )  !  source FIPS list
         INTEGER     JFIP  ( NPFIP+1 )  !  Subscript at which FIP occurs
 
+C...........   Packet names 
 
-C...........   Other local variables
-        
-        INTEGER         S, I, J      !  loop counters.
+        INTEGER         NPACKETS         ! Number of packets found
+        INTEGER         PBEGYR( MAXPKT ) ! projection begin year
+        INTEGER         PENDYR( MAXPKT ) ! projection begin year
+        LOGICAL         PPROCD( MAXPKT ) ! true: packet was processed
+        CHARACTER*25    PNAME            ! tmp packet name 
+        CHARACTER*25    PNAMES( MAXPKT ) ! all packet names in input file
+
+C...........   Unit numbers and logical names
         INTEGER         CDEV         !  for control file
         INTEGER         LDEV         !  log-device
         INTEGER         RDEV         !  report-file device
         INTEGER         TDEV         !  device for report-these-sources file
-        LOGICAL         KFLAG        !  true: prompt for tracking file
-        LOGICAL         PFLAG        !  true if projection entries have years
-        LOGICAL         RFLAG        !  flag:  make report-file
-        LOGICAL         TFLAG( NPSRC )  !  flags:  track these sources
-        
-        INTEGER         IOS          !  I/O status
-        INTEGER         IREC         !  input line (record) number
-
-        REAL            T, U, V      !  scratch-subexpression variables
 
         CHARACTER*16    ENAME   !  logical name for point-source input file
         CHARACTER*16    CNAME   !  logical name for control     input file
         CHARACTER*16    MNAME   !  logical name for ctl matrix output file
         CHARACTER*16    VNAME   !  buffer for variable-names
+
+C...........   Other local variables
+        
+        INTEGER         S, I, J, K, L !  loop counters.
+        INTEGER         IOS          !  I/O status
+        INTEGER         IREC         !  input line (record) number
+        INTEGER         YR1, YR2     !  tmp start and destination years
+
+        REAL            T, U, V      !  scratch-subexpression variables
+
+        LOGICAL         EFLAG        !  true: processing error found
+        LOGICAL         KFLAG        !  true: prompt for tracking file
+        LOGICAL         PFLAG        !  true if projection entries have years
+        LOGICAL         RFLAG        !  flag:  make report-file
+        LOGICAL         TFLAG( NPSRC )  !  flags:  track these sources
+
         CHARACTER*240   LINE    !  input line buffer
         CHARACTER*256   MESG    !  error message buffer
-        
-        INTEGER         NPACKETS
-        CHARACTER*20    PNAMES( MAXPKT )
-        CHARACTER*20    PNAME
-
         
 C***********************************************************************
 C   begin body of program CTLPMAT
@@ -203,17 +211,15 @@ C   begin body of program CTLPMAT
 
 
 C.........  Get environment variable values...
-C.........  Get type of projection entries: with year or without it (EPS)
-        PFLAG = ENVYN( 'YEAR_SPEC_PROJECT', 
-     &                 'Projection entries in year-specific format',
-     &                 .TRUE., IOS )
-
         KFLAG = ENVYN( 'PCTRACKING', 
      &                 'Use a special file to track specific sources',
      &                 .FALSE., IOS )
 
-C.......   Get file name; open input point sources, control definitions files
+C.........  Initiallize flags
+        EFLAG = .FALSE.
+        PFLAG = .FALSE.
 
+C.......   Get file name; open input point sources, control definitions files
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for POINT SOURCE input file',
      &          FSREAD3, 'PNTS', 'CTLPMAT' )
@@ -424,7 +430,7 @@ C.......   REPORT file (if any).
                     
                 I = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 )  GO TO 75
+                IF ( I .LE. 0 )  GO TO 75
 
                 DO  76  S = JFIP( I ), JFIP( I+1 ) - 1
                     IF( SCC .EQ. ISCC ( S ) )  TFLAG( S ) = .TRUE.
@@ -473,9 +479,10 @@ C.......   First, get list of packet names in the control file
 
 90      CONTINUE
 
-            IREC = IREC + 1
 
             READ( CDEV,93000, IOSTAT=IOS, END=99 ) LINE
+            IREC = IREC + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94920 ) 
      &                  'Error reading', CNAME( 1:TRIMLEN( CNAME ) ),
@@ -498,10 +505,10 @@ C.......   First, get list of packet names in the control file
      &              IREC
                 CALL M3EXIT( 'CTLPMAT', 0, 0, MESG, 1 )
 
-            ELSE IF ( J .GT. 22 ) THEN
+            ELSE IF ( J .GT. 24 ) THEN   ! one less than max length
 
                 WRITE( MESG,94010 )
-     &              'Packet name too long in ',
+     &              'Packet name too long in ' // 
      &              CNAME( 1:TRIMLEN( CNAME ) ) // ' at line',
      &              IREC, CRLF() // BLANK5 //
      &              'Please change name or remove extra spaces.'
@@ -512,8 +519,34 @@ C.......   First, get list of packet names in the control file
             IF ( NPACKETS .LT. MAXPKT ) THEN
                 NPACKETS = NPACKETS + 1
                 PNAMES( NPACKETS ) = LINE( I:I+J )
-                WRITE( LDEV,92000 )
-     &              'Control packet ', PNAMES( NPACKETS ), ' present'
+
+                MESG = 'Control packet ' // LINE( I:I+J ) // ' present'
+                CALL M3MESG( MESG )
+
+C.................  Initialize usage flag
+                PPROCD( NPACKETS ) = .FALSE.
+
+C.................  Adjust for year-to-year-specific and store years
+                K = INDEX( LINE, 'PROJECT PTS' )
+                IF( K .GT. 0 ) THEN
+                    L = TRIMLEN( LINE )
+                    PNAMES( NPACKETS ) = '/PROJECT PTS/'
+
+                    IF( L .GT. I+13 ) THEN
+                        READ( LINE( I+12:L ), *, IOSTAT=IOS ) YR1, YR2
+                        IF( IOS .NE. 0 ) THEN
+                            WRITE( MESG,94010 ) 'Problem reading ' //
+     &                             'year from PROJECT PTS packet at ' //
+     &                             'line', IREC
+                            CALL M3EXIT( 'CTLPMAT', 0, 0, MESG, 2 )
+                        ELSE
+                            PFLAG = .TRUE.
+                            PBEGYR( NPACKETS ) = YR1
+                            PENDYR( NPACKETS ) = YR2
+                        END IF
+                    END IF
+                END IF
+
                 GO TO 90
             ELSE
                 WRITE( MESG,94920 )
@@ -529,15 +562,16 @@ C............................................................................
 C.......   Process SOURCE CATEGORY packet of control file:
 
         PNAME = '/SOURCE CATEGORY/'
-        IF ( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) )  GO TO 109
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF ( K .EQ. 0 )  GO TO 109
 
-        IF ( .NOT.  GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT.  GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
 
-        IREC = 1
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 101     CONTINUE        !  head of loop reading lines in the SOURCE CATEGORY packet
 
@@ -585,7 +619,7 @@ C.......   Process SOURCE CATEGORY packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 101
+                IF ( I .LE. 0 ) GO TO 101
 
                 DO  103 S = JSID( I ), JSID( I+1 ) - 1
 
@@ -640,13 +674,16 @@ C............................................................................
 C.......   Process FIPS CODE packet of control file:
 
         PNAME = '/FIPS CODE/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 119
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 119
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 111     CONTINUE        !  head of loop reading lines in the IFIP CODE packet
 
@@ -690,7 +727,7 @@ C.......   Process FIPS CODE packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 111
+                IF ( I .LE. 0 ) GO TO 111
 
                 DO  113 S = JSID( I ), JSID( I+1 ) - 1
 
@@ -712,7 +749,7 @@ C.......   Process FIPS CODE packet of control file:
 
                 I = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 ) GO TO 111
+                IF ( I .LE. 0 ) GO TO 111
 
                 DO  114 S = JFIP( I ), JFIP( I+1 ) - 1
 
@@ -741,13 +778,16 @@ C............................................................................
 C.......   Process ALLOWABLE packet of control file:
 
         PNAME = '/ALLOWABLE/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 140
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 140
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 121     CONTINUE        !  head of loop reading lines in the RULPEN packet
 
@@ -827,7 +867,7 @@ C.......   Process ALLOWABLE packet of control file:
 
                         SID = FIP / 1000        !  state code only
                         I   = FIND1( SID, NSID, SIDS )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  123 S = JSID( I ), JSID( I+1 ) -1
 
@@ -904,7 +944,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE IF ( PLT .GT. 0 ) THEN !  match plant,fip,scc,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  124 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -946,7 +986,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE        !  plant=o:  all matches for this fip,scc,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  125 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1027,7 +1067,7 @@ C.......   Process ALLOWABLE packet of control file:
 
                         SID = FIP / 1000        !  state code only
                         I   = FIND1( SID, NSID, SIDS )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  127 S = JSID( I ), JSID( I+1 ) -1
 
@@ -1101,7 +1141,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE IF ( PLT .GT. 0 ) THEN !  match plant,fip,scc,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  128 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1140,7 +1180,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE        !  plant=o:  all matches for this fip,scc,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  129 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1224,7 +1264,7 @@ C.......   Process ALLOWABLE packet of control file:
 
                         SID = FIP / 1000        !  state code only
                         I   = FIND1( SID, NSID, SIDS )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  131 S = JSID( I ), JSID( I+1 ) -1
 
@@ -1264,7 +1304,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE IF ( STK .GT. 0 ) THEN !  match plant,stack,fip
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  132 S = JFIP( I ), JFIP( I+1 ) - 1
 
@@ -1306,7 +1346,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE IF ( PLT .GT. 0 ) THEN !  match plant,fip,scc,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  133 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1347,7 +1387,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE        !  plant=o:  all matches for this fip,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  134 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1425,7 +1465,7 @@ C.......   Process ALLOWABLE packet of control file:
 
                         SID = FIP / 1000        !  state code only
                         I   = FIND1( SID, NSID, SIDS )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  136 S = JSID( I ), JSID( I+1 ) -1
 
@@ -1461,7 +1501,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE IF ( STK .GT. 0 ) THEN !  match plant,stack,fip
 
                         I   = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  137 S = JFIP( I ), JFIP( I+1 ) - 1
 
@@ -1500,7 +1540,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE IF ( PLT .GT. 0 ) THEN !  match plant,fip,scc,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  138 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1538,7 +1578,7 @@ C.......   Process ALLOWABLE packet of control file:
                     ELSE        !  plant=o:  all matches for this fip,scc,sic
 
                         I = FIND1( FIP, NFIP, FFIP )
-                        IF ( I .EQ. 0 ) GO TO 121
+                        IF ( I .LE. 0 ) GO TO 121
 
                         DO  139 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1586,13 +1626,16 @@ C............................................................................
 C.......   Process PROJECT PTS packet of control file:
 
         PNAME = '/PROJECT PTS/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 149
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 149
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 141     CONTINUE   !  head of loop reading lines in the PROJECT PTS packet
 
@@ -1609,18 +1652,13 @@ C.......   Process PROJECT PTS packet of control file:
             IF( 0 .NE. INDEX( LINE, 'END' ) ) GO TO 149
 
             IF( PFLAG ) THEN
-                YEAR = STR2INT ( LINE(  1: 4 ) )
-                DYR  = STR2INT ( LINE(  6: 9 ) )
-                FIP  = STR2INT ( LINE( 11:15 ) )
-                SIC  = STR2INT ( LINE( 26:35 ) )
-                PFAC = STR2REAL( LINE( 37:46 ) )
+                YEAR = PBEGYR( K )
+                DYR  = PENDYR( K )
+            END IF
 
-            ELSE
-                FIP  = STR2INT ( LINE(  1: 5 ) )
-                SIC  = STR2INT ( LINE( 16:25 ) )
-                PFAC = STR2REAL( LINE( 27:36 ) )
-
-            ENDIF
+            FIP  = STR2INT ( LINE(  1: 5 ) )
+            SIC  = STR2INT ( LINE( 13:22 ) )
+            PFAC = STR2REAL( LINE( 24:33 ) )
 
             IF ( FIP .LE. 0 ) THEN      !  all states.
 
@@ -1654,7 +1692,7 @@ C.......   Process PROJECT PTS packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 141
+                IF ( I .LE. 0 ) GO TO 141
 
                 DO  143 S = JSID( I ), JSID( I+1 ) - 1
 
@@ -1685,6 +1723,8 @@ C.......   Process PROJECT PTS packet of control file:
             ELSE        !  fip-specific control
 
                 I = FIND1( FIP, NFIP, FFIP )
+
+                IF( I .LE. 0 ) GO TO 141
 
                 DO  144 S = JFIP( I ), JFIP( I+1 ) - 1
 
@@ -1723,13 +1763,16 @@ C............................................................................
 C.......   Process RULE PENETRATION packet of control file:
 
         PNAME = '/RULE PENETRATION/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 159
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 159
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 151     CONTINUE        !  head of loop reading lines in the RULPEN packet
 
@@ -1781,7 +1824,7 @@ C.......   Process RULE PENETRATION packet of control file:
                 
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
-                IF ( I .EQ. 0 ) GO TO 151
+                IF ( I .LE. 0 ) GO TO 151
 
                 DO  153 S = JSID( I ), JSID( I+1 ) -1
 
@@ -1828,7 +1871,7 @@ C.......   Process RULE PENETRATION packet of control file:
             ELSE IF ( PLT .GT. 0 ) THEN !  match plant,fip,scc,sic
 
                 I = FIND1( FIP, NFIP, FFIP )
-                IF ( I .EQ. 0 ) GO TO 151
+                IF ( I .LE. 0 ) GO TO 151
 
                 DO  154 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1855,7 +1898,7 @@ C.......   Process RULE PENETRATION packet of control file:
             ELSE        !  plant=o:  all matches for this fip,scc,sic
 
                 I = FIND1( FIP, NFIP, FFIP )
-                IF ( I .EQ. 0 ) GO TO 151
+                IF ( I .LE. 0 ) GO TO 151
 
                 DO  155 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -1889,13 +1932,16 @@ C............................................................................
 C.......   Process RULE EFFECTIVENESS packet of control file:
 
         PNAME = '/RULE EFFECTIVENESS/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 169
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 169
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 161     CONTINUE        !  head of loop reading lines in the RULEFF packet
 
@@ -1947,7 +1993,7 @@ C.......   Process RULE EFFECTIVENESS packet of control file:
                 
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
-                IF ( I .EQ. 0 ) GO TO 161
+                IF ( I .LE. 0 ) GO TO 161
 
                 DO  163 S = JSID( I ), JSID( I+1 ) -1
 
@@ -1994,7 +2040,7 @@ C.......   Process RULE EFFECTIVENESS packet of control file:
             ELSE IF ( PLT .GT. 0 ) THEN !  match plant,fip,scc,sic
 
                 I = FIND1( FIP, NFIP, FFIP )
-                IF ( I .EQ. 0 ) GO TO 161
+                IF ( I .LE. 0 ) GO TO 161
 
                 DO  164 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -2021,7 +2067,7 @@ C.......   Process RULE EFFECTIVENESS packet of control file:
             ELSE        !  plant=o:  all matches for this fip,scc,sic
 
                 I = FIND1( FIP, NFIP, FFIP )
-                IF ( I .EQ. 0 ) GO TO 161
+                IF ( I .LE. 0 ) GO TO 161
 
                 DO  165 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -2055,13 +2101,16 @@ C............................................................................
 C.......   Process CONTROL EFFICIENCY packet of control file:
 
         PNAME = '/CONTROL EFFICIENCY/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 179
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 179
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV , IREC) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 171     CONTINUE        !  head of loop reading lines in the CTLEFF packet
 
@@ -2113,7 +2162,7 @@ C.......   Process CONTROL EFFICIENCY packet of control file:
                 
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
-                IF ( I .EQ. 0 ) GO TO 171
+                IF ( I .LE. 0 ) GO TO 171
 
                 DO  173 S = JSID( I ), JSID( I+1 ) -1
 
@@ -2160,7 +2209,7 @@ C.......   Process CONTROL EFFICIENCY packet of control file:
             ELSE IF ( PLT .GT. 0 ) THEN !  match plant,fip,scc,sic
 
                 I = FIND1( FIP, NFIP, FFIP )
-                IF ( I .EQ. 0 ) GO TO 171
+                IF ( I .LE. 0 ) GO TO 171
 
                 DO  174 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -2187,7 +2236,7 @@ C.......   Process CONTROL EFFICIENCY packet of control file:
             ELSE        !  plant=o:  all matches for this fip,scc,sic
 
                 I = FIND1( FIP, NFIP, FFIP )
-                IF ( I .EQ. 0 ) GO TO 171
+                IF ( I .LE. 0 ) GO TO 171
 
                 DO  175 S = JFIP( I ), JFIP( I+1 ) -1
 
@@ -2221,13 +2270,16 @@ C............................................................................
 C.......   Process RACT packet of control file:
 
         PNAME = '/RACT/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 189
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 189
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 181     CONTINUE        !  head of loop reading lines in the RACT packet
 
@@ -2270,7 +2322,7 @@ C.......   Process RACT packet of control file:
                 
                 SID = FIP / 1000        !  state code only
                 I = FIND1( SID, NSID, SIDS )
-                IF ( I .EQ. 0 ) GO TO 181
+                IF ( I .LE. 0 ) GO TO 181
 
                 DO  183 S = JSID( I ), JSID( I+1 ) - 1
 
@@ -2291,7 +2343,7 @@ C.......   Process RACT packet of control file:
             ELSE        !  fip-ASC specific control
             
                 I = FIND1( FIP, NFIP, FFIP )
-                IF ( I .EQ. 0 ) GO TO 181
+                IF ( I .LE. 0 ) GO TO 181
 
                 DO  184 S = JFIP( I ), JFIP( I+1 ) - 1
 
@@ -2320,13 +2372,16 @@ C............................................................................
 C.......   Process MACT packet of control file:
 
         PNAME = '/MACT/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 199
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 199
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 191     CONTINUE        !  head of loop reading lines in the MACT packet
 
@@ -2367,7 +2422,7 @@ C.......   Process MACT packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 ) GO TO 191
+                IF ( I .LE. 0 ) GO TO 191
 
                 DO  195 S = JSID( I ), JSID( I+1 ) -1
 
@@ -2387,7 +2442,7 @@ C.......   Process MACT packet of control file:
 
                 I = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 ) GO TO 191
+                IF ( I .LE. 0 ) GO TO 191
 
                 DO  197 S = JFIP( I ), JFIP( I+1 ) - 1
 
@@ -2414,13 +2469,16 @@ C............................................................................
 C.......   Process CTG packet of control file:
         
         PNAME = '/CTG/'
-        IF( 0 .EQ. INDEX1( PNAME, NPACKETS, PNAMES ) ) GO TO 209
+        K = INDEX1( PNAME, NPACKETS, PNAMES )
+        IF( K .EQ. 0 ) GO TO 209
 
-        IF ( .NOT. GETPKT( PNAME, CDEV ) ) THEN
+        IF ( .NOT. GETPKT( PNAME, CDEV, IREC ) ) THEN
             CALL M3EXIT( 'CTLPMAT', 0, 0,
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        PPROCD( K ) = .TRUE.  ! set flag for indicating packet processed
 
 201     CONTINUE        !  head of loop reading this category of packet
 
@@ -2494,7 +2552,7 @@ C.......   Process CTG packet of control file:
                 SID = FIP / 1000        !  state code only
                 I   = FIND1( SID, NSID, SIDS )
 
-                IF ( I .EQ. 0 )  GO TO  201
+                IF ( I .LE. 0 )  GO TO  201
 
                 DO  203 S = JSID( I ), JSID( I+1 ) -1
 
@@ -2541,11 +2599,9 @@ C.......   Process CTG packet of control file:
 
             ELSE        !  fip-ASC specific control
             
-                S = FIND1( FIP, NPSRC, IFIP )
-
                 I   = FIND1( FIP, NFIP, FFIP )
 
-                IF ( I .EQ. 0 )  GO TO  201
+                IF ( I .LE. 0 )  GO TO  201
 
                 DO  204 S = JFIP( I ), JFIP( I+1 ) - 1
 
@@ -2597,6 +2653,23 @@ C.......   Process CTG packet of control file:
 
 209     CONTINUE        !  exit from / skip around loop 201
 
+
+C.........  Double check that all packets in input file were processed
+        DO 210 K = 1, NPACKETS
+            IF ( PPROCD( K ) .EQ. .FALSE. ) THEN
+                EFLAG = .TRUE.
+                L = TRIMLEN( PNAMES( K ) )
+                MESG = 'ERROR: Packet "' // PNAMES( K )( 1:L ) //
+     &                 '" not processed because program did not '//
+     &                 'recognize it!'
+                CALL M3MSG2( MESG )
+            END IF
+210     CONTINUE
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem with one or more packets (see above).'
+            CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 2 )
+        END IF
 
 C............................................................................
 C.......   Compute the control matrix:
