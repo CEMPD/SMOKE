@@ -1704,6 +1704,21 @@ C.......   Report statistics for ungridding matrix:
      &      'Mean number of cells per source:', XDUM
 
         CALL M3MSG2( MESG )
+
+C.........  Write out source information for sources that are outside the grid.
+        IF( NLKOGRD .GT. 0 ) THEN
+            MESG='WARNING: The following link sources were outside ' //
+     &           'the grid.'
+            CALL M3MESG( MESG )
+            WRITE( LDEV, 93040 )
+
+            DO 444 I = 1, NLKOGRD
+
+                WRITE( LDEV,93045 ) FOGRD( I ), ROGRD( I ), LOGRD( I )
+
+444         CONTINUE
+
+        END IF
                   
 C...............   End of program
 
@@ -1732,6 +1747,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93030   FORMAT( I5, I4, I8, I3 )        !  for surrogate XREF file
 
+93040   FORMAT( 10X, 'FIPS code', 1X, 'Road class', 1X, 'Link ID' )
+
+93045   FORMAT( 12X, I5.5, 7X, I3.3, 4X, I7 )
 
 C...........   Internal buffering formats............ 94xxx
 
