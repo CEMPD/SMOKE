@@ -150,8 +150,6 @@ C.............  Find index in complete list of pollutants
                 CSTASCC = CSTA // TSCC
                 CSTASL  = CSTA // TSCCL
 
-C: NOTE: Since I do this in several places, this should be a subroutine
-
 C.................  Create selection 
                 SELECT CASE ( CATEGORY )
 
@@ -186,9 +184,6 @@ C                           pollutant-specific CHAR2 non-blank// SCC match; then
 C                           pollutant-specific CHAR1 non-blank// SCC match; then
 C                           pollutant-specific PLANT non-blank// SCC match; then
 C                           pollutant-specific PLANT non-blank       match
-
-c note: On the Sun, the code dies on the next line with a "subscript out of
-c    n: range" message
 
                 F6 = FINDC( CSSC5  , TXCNT( 16 ), CHRT16 ) 
                 F5 = FINDC( CSSC4  , TXCNT( 15 ), CHRT15 ) 

@@ -306,9 +306,6 @@ C                       and indices retrieved for SPCODE
 
                 END IF  ! End check for overflow
 
-C NOTE: Add output of the information to temporary file on which to base control
-C       reports
-
                 SIC = IREASIC( K ) ! (use for report)
 
             END IF      ! End check if reactivity applies to this source
@@ -344,10 +341,6 @@ C.........  Write reactivity matrices for current pollutant
 
 C.........  Deallocate memory used to generate reactivity matrices
         DEALLOCATE( INPRF, SPECID, MOLEFACT, MASSFACT )
-
-c note: these deallocations cause an unexplained error on SGI.  There is
-c    n: a memory problem somewhere that is probably causing this, but
-c    n: I was not able to find it.
 
 c        DEALLOCATE( PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRCSCC )
 c     &              PCRSPROF )
