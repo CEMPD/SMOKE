@@ -970,6 +970,29 @@ if ( $?RUN_MRGGRID ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
 
+      ## If Mrggrid file list defined, create list file
+      if ( $?MRGFILES ) then
+         set mrg_cnt = 0
+         foreach f ( $MRGFILES )
+            @ mrg_cnt = $mrg_cnt + 1
+            if ( $mrg_cnt == 1 ) then
+               echo $f > $FILELIST
+            else
+               echo $f >> $FILELIST
+            endif
+         end
+
+         if ( $mrg_cnt == 0 ) then
+             echo "SCRIPT ERROR: MRGFILES defined, but no logical file names included."
+             echo "              MRGFILES script variable = "${MRGFILES}.
+             echo "              Please reset and rerun script
+             set exitstat = 1
+         echo
+             echo "SCRIPT NOTE: File FILELIST created with logical files:"
+             echo "             "$MRGFILES
+         endif
+      endif
+
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          if ( $debugmode == Y ) then
