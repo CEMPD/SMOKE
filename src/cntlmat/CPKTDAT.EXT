@@ -1,0 +1,54 @@
+
+C***********************************************************************
+C  common variables start at line 40
+C
+C  DESCRIPTION:
+C      This include file defines the TYPE CPACKET for reading control packets
+C
+C  REVISION  HISTORY:
+C     Created 3/99 by M. Houyoux
+C
+C************************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center  
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C************************************************************************
+
+        TYPE :: CPACKET
+
+            REAL                   :: FAC1    ! tmp factors from packets
+            REAL                   :: FAC2
+            REAL                   :: FAC3
+            REAL                   :: FAC4  
+            CHARACTER*5            :: CPOS    ! tmp sorted position of pol
+            CHARACTER(LEN=FIPLEN3) :: CFIP    ! tmp char country/state/co code
+            CHARACTER(LEN=CHRLEN3) :: CHAR1   ! tmp plant characteristic 1
+            CHARACTER(LEN=CHRLEN3) :: CHAR2   ! tmp plant characteristic 2
+            CHARACTER(LEN=CHRLEN3) :: CHAR3   ! tmp plant characteristic 3
+            CHARACTER(LEN=CHRLEN3) :: CHAR4   ! tmp plant characteristic 4
+            CHARACTER(LEN=CHRLEN3) :: CHAR5   ! tmp plant characteristic 5
+            CHARACTER(LEN=IOVLEN3) :: CPOL    ! tmp pollutant name
+            CHARACTER(LEN=SICLEN3) :: CSIC    ! tmp char SIC ID
+            CHARACTER(LEN=SCCLEN3) :: NSCC    ! tmp plant ID
+            CHARACTER(LEN=PLTLEN3) :: PLT     ! tmp plant ID
+            CHARACTER(LEN=SCCLEN3) :: TSCC    ! tmp 10-digit SCC
+            CHARACTER(LEN=SPNLEN3) :: TMPPRF  ! tmp speciation profile code
+
+        END TYPE
