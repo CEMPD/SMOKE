@@ -61,7 +61,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER     SXREF( N )  !  profile indexes (sorted)
         REAL        SCOEF( N, MXMPOL )!  profile coefficients
         CHARACTER*8 PLIST( NP ) !  actual model species list
-        CHARACTER*5 IPOL        !  inventory pollutant for speciation profile
+        CHARACTER*8 IPOL        !  inventory pollutant for speciation profile
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -177,23 +177,24 @@ C.........  Find and index actual species to profile format
 
         DO 55 I = 1, NP
 
-            V = INDEX1( PLIST( I ), NSPEC, MSPEC )
+            ASPEC = PLIST( I )
+            V     = INDEX1( ASPEC, NSPEC, MSPEC )
 
             INDX( I ) = V
 
             IF( V .EQ. 0 ) THEN		!  clasify inorganics; rest are errors
 
-                IF     ( PLIST( L ) .EQ. 'CO' ) THEN
-                    ICO  = L
-                ELSE IF( PLIST( L ) .EQ. 'NO' ) THEN
-                    INO  = L
-                ELSE IF( PLIST( L ) .EQ. 'NO2' ) THEN
-                    INO2 = L
+                IF     ( ASPEC .EQ. 'CO' ) THEN
+                    ICO  = I
+                ELSE IF( ASPEC .EQ. 'NO' ) THEN
+                    INO  = I
+                ELSE IF( ASPEC .EQ. 'NO2' ) THEN
+                    INO2 = I
                 ELSE
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
      &                     'Program does not handle species "'
-     &                      // PLIST( L ) // '" correctly. ' //
+     &                      // ASPEC // '" correctly. ' //
      &                     'See rdsprof library program.'
                     CALL M3WARN( 'RDSPROF', 0, 0, MESG )
                 END IF
@@ -219,7 +220,8 @@ C.........  File body:  Read SPECIATION PROFILE table
 77      CONTINUE        !  head of the SDEV-read loop
 
             READ( SDEV, *, END=99, IOSTAT=IOS ) 
-     &          SID, ( FACS( V ), V = 1, NSPEC )
+     &          SID, 
+     &        ( FACS( V ), V = 1, NSPEC )
 
             IREC = IREC + 1
 
