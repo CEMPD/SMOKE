@@ -2,9 +2,12 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 
+C  program body starts at line 224
 C
 C  DESCRIPTION:
+C    This program computes the hourly emissions data from inventory emissions 
+C    and/or activity and emission factor data. It can read average-inventory,
+C    day-specific and hour-specific emissions and activity data.
 C
 C  PRECONDITIONS REQUIRED:  
 C
@@ -49,6 +52,9 @@ C.........  This module contains the temporal profile tables
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC
+
+C.........  This module contains data for day- and hour-specific data
+        USE MODDAYHR
 
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET
@@ -107,27 +113,10 @@ C.........  Actual-SCC  table
 C.........  Day-specific, hour-specific data, and elevated sources data. 
 C.........  These need only to allow enough dimensions for one read per 
 C           pollutant per time step.
-        INTEGER                 NDAYPT       ! actual no. day-specific sources
-        INTEGER, ALLOCATABLE :: INDXD( : )   ! SMOKE source IDs
-        REAL   , ALLOCATABLE :: EMACD( : )   ! day-specific emis or activities
-
-        INTEGER                 NHRPT        ! actual no. hour-specific sources
-        INTEGER, ALLOCATABLE :: INDXH( : )   ! SMOKE source IDs
-        REAL   , ALLOCATABLE :: EMACH( : )   ! hour-specific emis or activities
 
         INTEGER                 NPELV        ! optional elevated source-count
         INTEGER, ALLOCATABLE :: INDXE( : )   ! SMOKE source IDs
         REAL   , ALLOCATABLE :: EMISE( : )   ! elevated source emissions
-
-C...........   Arrays for flexible application of day- and hour-specific data
-        INTEGER                 NDAYPOL     ! no. of pols in day-spec file
-        INTEGER                 NHRPOL      ! no. of pols in hr-spec file
-
-        LOGICAL, ALLOCATABLE :: LDSPOL( : ) ! flags for day-spec pollutants
-        LOGICAL, ALLOCATABLE :: LHSPOL( : ) ! flags for hr-spec pollutants
-
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: DAYPNAM( : ) ! dy-spec pol names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: HRPNAM ( : ) ! hr-spec pol names
 
 C...........   Gridded meteorology data
         REAL   , ALLOCATABLE :: TA( : )     ! one layer of temperature
@@ -199,12 +188,13 @@ C...........   Other local variables
         INTEGER      :: WSTIME = 0          ! source min/max tmpr start time
         INTEGER      :: WTIME               ! source min/max tmpr current time
 
-        LOGICAL         DFLAG   !  day-specific  file available
+        LOGICAL         DFLAG   !  true: day-specific  file available
         LOGICAL      :: EFLAG = .FALSE.  !  error-flag
         LOGICAL      :: EFLAG2= .FALSE.  !  error-flag (2)
-        LOGICAL         HFLAG   !  hour-specific file available
-        LOGICAL         MFLAG   !  mobile codes file available
-        LOGICAL         UFLAG   !  generating upper-level output file
+        LOGICAL         HFLAG   !  true: hour-specific file available
+        LOGICAL         MFLAG   !  true: mobile codes file available
+        LOGICAL         NFLAG   !  true: use all uniform temporal profiles
+        LOGICAL         UFLAG   !  true: generating upper-level output file
 
         CHARACTER*8              TREFFMT ! tmprl x-ref format (SOURCE|STANDARD)
         CHARACTER*14             DTBUF   ! buffer for MMDDYY
@@ -229,6 +219,10 @@ C.........  Obtain settings from the environment...
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
+C.........  Get environment variable that overrides temporal profiles and 
+C               uses only uniform profiles.
+        NFLAG = ENVYN( 'UNIFORM_TPROF_YN', MESG, .FALSE., IOS )
+
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
@@ -250,8 +244,8 @@ C.........  Also, determine name of temperature variable in the temperature
 C           files (if any)
 C.........  Also, compare min/max temperature settings from any files that have
 C           them and populate the valid temperature arrays
-        CALL OPENTMPIN( MODELNAM, ENAME, ANAME, DNAME, HNAME, FNAME, 
-     &                  NNAME, MNAME, GNAME, WNAME, TVARNAME, 
+        CALL OPENTMPIN( MODELNAM, NFLAG, ENAME, ANAME, DNAME, HNAME, 
+     &                  FNAME, NNAME, MNAME, GNAME, WNAME, TVARNAME, 
      &                  SDEV, XDEV, RDEV, UDEV, FDEV, TDEV, MDEV )
 
 C.........  Determine status of some files for program control purposes
@@ -269,6 +263,11 @@ C.........  Get episode settings from the Models-3 environment variables
         NSTEPS = 1
         TSTEP  = 10000  
         CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
+
+C.........  Calculate the ending date and time
+        EDATE = SDATE
+        ETIME = STIME
+        CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
 
 C.........  Set up gridded and min/max temperature files dates and times and
 C           retrieve the number of grid cells
@@ -288,20 +287,26 @@ C.............  Get header description of day-specific input file
             END IF
 
 C.............  Allocate memory for pollutant pointer
-            ALLOCATE( DAYPNAM( NVARS3D ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'DAYPNAM', PROGNAME )
-           
-C.............  Set day-specific file dates, check dates, and report problems
-            CALL PDSETUP( DNAME, SDATE, STIME, EDATE, ETIME, NIPOL,  
-     &                    EINAM, NDAYPOL, NDAYPT, EFLAG, DAYPNAM )
+            ALLOCATE( DYPNAM( NVARS3D ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DYPNAM', PROGNAME )
+            ALLOCATE( DYPDSC( NVARS3D ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DYPDSC', PROGNAME )
+            DYPNAM = ' '  ! array
+            DYPDSC = ' '  ! array
 
-C.............  Allocate memory for reading day-specific emissions data
-            ALLOCATE( INDXD( NDAYPT ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INDXD', PROGNAME )
-            ALLOCATE( EMACD( NDAYPT ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EMACD', PROGNAME )
+C.............  Set day-specific file dates, check dates, and report problems
+            CALL PDSETUP( DNAME, SDATE, STIME, EDATE, ETIME, TZONE,  
+     &                    NIPPA, EANAM, NDYPOA, NDYSRC, EFLAG, DYPNAM,
+     &                    DYPDSC )
 
         ENDIF
+
+C.........  Allocate memory for reading day-specific emissions data
+C.........  NDYSRC is initialized to zero in case DFLAG is false
+        ALLOCATE( INDXD( NDYSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDXD', PROGNAME )
+        ALLOCATE( EMACD( NDYSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMACD', PROGNAME )
 
 C.........  For hour-specific data input...
         IF( HFLAG ) THEN
@@ -316,18 +321,24 @@ C............. Get header description of hour-specific input file
 C.............  Allocate memory for pollutant pointer
             ALLOCATE( HRPNAM( NVARS3D ), STAT=IOS )
             CALL CHECKMEM( IOS, 'HRPNAM', PROGNAME )
-           
-C.............  Set day-specific file dates, check dates, and report problems
-            CALL PDSETUP( HNAME, SDATE, STIME, EDATE, EDATE, NIPOL,  
-     &                    EINAM, NHRPOL, NHRPT, EFLAG2, HRPNAM )
+            ALLOCATE( HRPDSC( NVARS3D ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'HRPDSC', PROGNAME )
+            HRPNAM = ' '  ! array
+            HRPDSC = ' '  ! array
 
-C.............  Allocate memory for reading hour-specific emissions data
-            ALLOCATE( INDXH( NHRPT ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INDXH', PROGNAME )
-            ALLOCATE( EMACH( NHRPT ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EMACH', PROGNAME )
+C.............  Set day-specific file dates, check dates, and report problems
+            CALL PDSETUP( HNAME, SDATE, STIME, EDATE, ETIME, TZONE,  
+     &                    NIPPA, EANAM, NHRPOA, NHRSRC, EFLAG2, HRPNAM,
+     &                    HRPDSC )
 
         ENDIF
+
+C.........  Allocate memory for reading hour-specific emissions data
+C.........  NHRSRC is initialized to 0 in case HFLAG is false
+        ALLOCATE( INDXH( NHRSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDXH', PROGNAME )
+        ALLOCATE( EMACH( NHRSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMACH', PROGNAME )
 
         IF( EFLAG .OR. EFLAG2 ) THEN
             MESG = 'Problem with day- or hour-specific inputs'
@@ -502,16 +513,17 @@ C.........  Create 1-d arrays of I/O pol names, activities, & emission types
 
 C.........  Read temporal-profile cross-reference file and put into tables
 C.........  Only read entries for pollutants that are in the inventory.
-        CALL RDTREF( XDEV, TREFFMT )
+C.........  Only read if not using uniform temporal profiles
+        IF( .NOT. NFLAG ) CALL RDTREF( XDEV, TREFFMT )
 
 C.........  Read temporal-profiles file:  4 parts (monthly, weekly, 
 C           weekday diurnal, and weekend diurnal)
         CALL M3MSG2( 'Reading temporal profiles file...' )
 
-        NMON = RDTPROF( RDEV, 'MONTHLY' )
-        NWEK = RDTPROF( RDEV, 'WEEKLY'  )
-        NWKD = RDTPROF( RDEV, 'WEEKDAY' )
-        NEND = RDTPROF( RDEV, 'WEEKEND' )
+        NMON = RDTPROF( RDEV, 'MONTHLY', NFLAG )
+        NWEK = RDTPROF( RDEV, 'WEEKLY' , NFLAG )
+        NWKD = RDTPROF( RDEV, 'WEEKDAY', NFLAG )
+        NEND = RDTPROF( RDEV, 'WEEKEND', NFLAG )
 
 C.........  Adjust temporal profiles for use in generating temporal emissions
 C.........  NOTE - All variables are passed by modules.
@@ -575,10 +587,12 @@ C           arrays exceed the total memory limit.
         CALL CHECKMEM( IOS, 'ALLIN2D', PROGNAME )
         ALLOCATE( EANAM2D( NGSZ, NGRP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EANAM2D', PROGNAME )
-        ALLOCATE( LDSPOL( NGSZ ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LDSPOL', PROGNAME )
-        ALLOCATE( LHSPOL( NGSZ ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LHSPOL', PROGNAME )
+        ALLOCATE( LDSPOA( NGSZ ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LDSPOA', PROGNAME )
+        ALLOCATE( LHSPOA( NGSZ ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LHSPOA', PROGNAME )
+        ALLOCATE( LHPROF( NGSZ ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LHPROF', PROGNAME )
 
 C.........  Create 2-d arrays of I/O pol names, activities, & emission types 
         ALLIN2D  = ' '
@@ -599,18 +613,25 @@ C.........  Loop through pollutant/emission-type groups
 C.............  Write message stating the pols/emission-types being processed
             CALL POLMESG( NGSZ, EANAM2D( 1,N ) )
 
-C.............  Set up logical arrays that indicate which pollutants are day-
-C               specific and which are hour-specific
-            LDSPOL = .FALSE.   ! array
-            DO I = 1, NDAYPOL
-                J = INDEX1( DAYPNAM( I ), NGSZ, ALLIN2D( 1,N ) )
-                LDSPOL( J ) = .TRUE.
+C.............  Set up logical arrays that indicate which pollutants/activities
+C               are day-specific and which are hour-specific.
+C.............  Also set flag for which hour-specific pollutants/activities
+C               are actually diurnal profiles instead of emissions
+            LDSPOA = .FALSE.   ! array
+            DO I = 1, NDYPOA
+                J = INDEX1( DYPNAM( I ), NGSZ, ALLIN2D( 1,N ) )
+                LDSPOA( J ) = .TRUE.
             END DO
 
-            LHSPOL = .FALSE.   ! array
-            DO I = 1, NHRPOL
+            LHSPOA = .FALSE.   ! array
+            LHPROF = .FALSE.   ! array
+            DO I = 1, NHRPOA
                 J = INDEX1( HRPNAM( I ), NGSZ, ALLIN2D( 1,N ) )
-                LHSPOL( J ) = .TRUE.
+                LHSPOA( J ) = .TRUE.
+
+                CALL UPCASE( HRPDSC( I ) )
+                K = INDEX( HRPDSC( I ), 'PROFILE' )
+                IF( K .GT. 0 ) LHPROF( J ) = .TRUE.
             END DO
 
 C.............  Initialize emissions, activities, and other arrays for this
@@ -627,7 +648,18 @@ C               pollutant/emission-type group
 C.............  Assign temporal profiles by source and pollutant
             CALL M3MSG2( 'Assigning temporal profiles to sources...' )
 
-            CALL ASGNTPRO( NGSZ, EANAM2D( 1,N ), TREFFMT )
+C.............  If using uniform profiles, set all temporal profile number
+C               to 1; otherwise, assign profiles with cross-reference info
+            IF( NFLAG ) THEN
+                MDEX = 1
+        	WDEX = 1
+        	DDEX = 1
+        	EDEX = 1
+
+            ELSE
+                CALL ASGNTPRO( NGSZ, EANAM2D( 1,N ), TREFFMT )
+
+            END IF
 
 C.............  Read in pollutant emissions or activities from inventory for 
 C               current group
@@ -704,11 +736,9 @@ C                       day when there is a new day in GMT (met ) time zone
                 END IF
 
 C.................  Generate hourly emissions for current hour
-                CALL GENHEMIS( NGSZ, NDAYPT, NHRPT, JDATE, JTIME, 
-     &                         TZONE, DNAME, HNAME, LDSPOL, LHSPOL, 
-     &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), TPFLAG, 
-     &                         EMAC, TZONES, INDXD, INDXH, EMACD, 
-     &                         EMACH, EMACV, TMAT, EMIST )
+                CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
+     &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), 
+     &                         EMAC, EMACV, TMAT, EMIST )
 
 C.................  Write index to elevated emissions file. Note that this
 C                   is written for every time step, even though it currently
