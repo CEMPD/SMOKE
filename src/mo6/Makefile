@@ -446,6 +446,9 @@ mobile6.debug: $(MODOBJS) $(OBJS) DRIVER.o
 lib: $(MODOBJS) $(OBJS) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(MODOBJS) $(OBJS) SMKDRIVER.o
 
+debug: $(MODOBJS) $(OBJS) SMKDRIVER.o
+	ar rv $(SMK_BIN)/libmo6.debug.a $(MODOBJS) $(OBJS) SMKDRIVER.o
+
 ## Module dependencies
 include $(MD_SRC)/modmake.inc
 
