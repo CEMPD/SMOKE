@@ -79,6 +79,7 @@ C...........  ALLOCATABLE VARIABLES and their decriptions...
 C...........  Variables for reading and writing inventory pollutants
         INTEGER, ALLOCATABLE :: SRCID  ( : ) ! source numbers
         REAL   , ALLOCATABLE :: DATAVAR( :,: ) ! emissions and associated vars
+        REAL   , ALLOCATABLE :: SRCDAT ( :,: ) ! emissions and associated vars
 
 C...........  Variables for each control/projection matrix
         INTEGER, ALLOCATABLE :: CCNTRA ( : ) ! unsorted original position
@@ -476,14 +477,59 @@ C           named "ALL" and "PFAC"
 c note: the "all" feature is not documented in cntlmat because it has not
 C    n: been implemented
 
-C.........  Set inventory variables to read depending on source category
-        IVARNAMS( 1:NINVARR ) = IVNAMES( 1:NINVARR )
+        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 2 ) = 'TZONES'
+        IVARNAMS( 3 ) = 'TPFLAG'
+        IVARNAMS( 4 ) = 'INVYR'
+
+        SELECT CASE ( CATEGORY )
+
+        CASE ( 'AREA' )
+            NINVARR = 7
+            IVARNAMS( 5 ) = 'CELLID'
+            IVARNAMS( 6 ) = 'CSCC'
+            IVARNAMS( 7 ) = 'CSOURC'
+
+        CASE ( 'MOBILE' )
+            NINVARR = 14
+            IVARNAMS( 5  ) = 'IRCLAS'
+            IVARNAMS( 6  ) = 'IVTYPE'
+            IVARNAMS( 7  ) = 'XLOC1'
+            IVARNAMS( 8  ) = 'YLOC1'
+            IVARNAMS( 9  ) = 'XLOC2'
+            IVARNAMS( 10 ) = 'YLOC2'
+            IVARNAMS( 11 ) = 'CSCC'
+            IVARNAMS( 12 ) = 'CLINK'
+            IVARNAMS( 13 ) = 'CVTYPE'
+            IVARNAMS( 14 ) = 'CSOURC'
+
+        CASE ( 'POINT' )
+            NINVARR = 16
+            IVARNAMS( 5  ) = 'ISIC'
+            IVARNAMS( 6  ) = 'XLOCA'
+            IVARNAMS( 7  ) = 'YLOCA'
+            IVARNAMS( 8  ) = 'STKHT'
+            IVARNAMS( 9  ) = 'STKDM'
+            IVARNAMS( 10 ) = 'STKTK'
+            IVARNAMS( 11 ) = 'STKVE'
+            IVARNAMS( 12 ) = 'CSCC'
+            IVARNAMS( 13 ) = 'CORIS'
+            IVARNAMS( 14 ) = 'CBLRID'
+            IVARNAMS( 15 ) = 'CPDESC'
+            IVARNAMS( 16 ) = 'CSOURC'
+
+        END SELECT
 
 C.........  If area sources and XLOC and YLOC are being used, then
 C           set flag
         IF( CATEGORY  .EQ. 'AREA' ) THEN
             J = INDEX1( 'XLOCA', NINVARR, IVNAMES )
-            IF( J .GT. 0 ) LAR2PT = .TRUE.
+            IF( J .GT. 0 ) THEN
+                NINVARR = 9
+                IVARNAMS( 8  ) = 'XLOCA'
+                IVARNAMS( 9  ) = 'YLOCA'
+                LAR2PT = .TRUE.
+            END IF
         END IF
 
 C.........  Allocate memory for and read in required inventory characteristics
@@ -526,7 +572,9 @@ C           able to build relative file names for the map file.
 
 C.........  Update the year of the data if the projection year is non-zero
         IF( PPYEAR .NE. 0 ) THEN
-            INVYR = PPYEAR       ! array
+            DO S = 1, NSRC
+                IF( INVYR( S ) .EQ. PBYEAR ) INVYR( S ) = PPYEAR
+            END DO
         END IF
 
 C.........  Write out I/O API file source characteristics, if the file has been
@@ -542,6 +590,15 @@ C.............  Allocate memory for unit numbers for IDA temporary files
             CALL CHECKMEM( IOS, 'TDEV', PROGNAME )
             TDEV = 0   ! array
  
+        END IF
+
+C.........  Write out the map-formatted intermedaite inven header
+        IF( ODEV .GT. 0 ) THEN
+            WRITE( ODEV, '(A)' ) CATDESC
+            WRITE( ODEV, '(A)' ) '/IOAPI/ '// TRIM( NAME1 )// '.ncf'
+            WRITE( ODEV, '(A)' ) '/TEXT/ '// TRIM( NAME2 )// '.txt'
+            WRITE( ODEV, '(A,I8)' ) '/NDAT/ ', NMAP
+            WRITE( ODEV, '(A)' ) '/DATMAP/'
         END IF
 
         MESG = 'Processing inventory data...'
@@ -622,6 +679,10 @@ C                   loop through sources, applying factors as needed
                         IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
                         IF( K .GT. 0 ) PSFAC  = CFAC( S )
 
+C.........................  Skip if the base year is the same as the
+C                           base year of the projection matrix...
+                        IF( INVYR( S ) .NE. PBYEAR ) CYCLE
+
 C.........................  Adjust annual emissions or activity
                         DATAVAR( C,1 ) = DATAVAR( C,1 ) * ALLFAC* PSFAC
 
@@ -664,25 +725,27 @@ C                   to reset the header before opening.
                 CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NREC,
      &                         NPVAR, VARBUF, SRCID, DATAVAR, EFLAG )
 
-C.................  Write the map inventory file
-                WRITE( ODEV, '(A)' ) CATDESC
-                WRITE( ODEV, '(A)' ) '/IOAPI/ '// TRIM( NAME1 )// '.ncf'
-                WRITE( ODEV, '(A)' ) '/TEXT/ '// TRIM( NAME2 )// '.txt'
-                WRITE( ODEV, '(A,I8)' ) '/NDAT/ ', NMAP
-                WRITE( ODEV, '(A)' ) '/DATMAP/'
-
-                DO I = 1, NMAP
-                    WRITE( ODEV, '(A)' ) RFNAME
-                END DO
-
-                WRITE( ODEV, '(A)' ) '/END/'
+C.................  Write the map inventory file entry
+                WRITE( ODEV, '(A)' ) MAPNAM( M ), TRIM( RFNAME )
 
             END IF
 
 C.............  Write out pollutant-based variables to temporary files for IDA
             IF( IDAFLAG ) THEN
+
+C...............  ALlocate memory for arc-based output arrays, if needed
+                IF( .NOT. ALLOCATED( SRCDAT ) ) THEN
+                    ALLOCATE( SRCDAT( NSRC,NPVAR ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'SRCDAT', PROGNAME )
+                END IF
+
+                SRCDAT = 0.    ! array
+                DO C = 1, NREC
+                    S = SRCID( C )
+                    SRCDAT( S, 1:NPVAR ) = DATAVAR( C, 1:NPVAR )
+                END DO
                     
-                CALL WRIDAPOL( CATEGORY, VARBUF, NSRC, NPVAR, DATAVAR, 
+                CALL WRIDAPOL( CATEGORY, VARBUF, NSRC, NPVAR, SRCDAT, 
      &                         TDEV( V ), IOS )
 
             END IF
@@ -691,6 +754,11 @@ C.............  Write out pollutant-based variables to temporary files for IDA
 
         END DO  ! End loop on inventory variables
             
+C.........  Write out the map-formatted intermedaite inven header
+        IF( ODEV .GT. 0 ) THEN
+            WRITE( ODEV, '(A)' ) '/END/'
+        END IF
+
         IF( EFLAG ) THEN
             MESG = 'ERROR: Could not read and write all pollutant-' //
      &             'specific variables'
