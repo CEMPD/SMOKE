@@ -47,6 +47,7 @@ setenv HOURLY_TO_PROFILE    N # Y converts hourly data to source-specific profs
 setenv IMPORT_AVEINV_YN     Y # Y then import annual/average inventory
 setenv RAW_DUP_CHECK        N # Y errors on duplicate records
 setenv SMK_BASEYR_OVERRIDE  0 # Enter year of the base year when future-year inven provided
+setenv SMK_NHAPEXCLUDE_YN   Y # Y uses NonHAP exclusions file
 setenv SMKINVEN_FORMULA     "PMC=PM10-PM2_5" # Internal PMC calculation
 setenv SMK_SWITCH_EPSXY     N # Y corrects x-y location in file for for EPS format
 setenv WEST_HSPHERE         Y # Y converts ALL stack coords to western hemisphere
@@ -107,6 +108,9 @@ setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     SMK_AVEDAY_YN               # see multiple-program controls
 #     SMK_PING_METHOD             # see multiple-program controls, below
 
+# For Smk2emis
+setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
+
 # Multiple-program controls
 setenv DAY_SPECIFIC_YN      N     # Y imports and uses day-specific inventory
 setenv EXPLICIT_PLUME_YN    N     # Y for special wildfire processing for UAM/REMSAD/CAMx
@@ -132,9 +136,9 @@ setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
-setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-# setenv YEAR_OVERRIDE          # Overrides YEAR (base) in Assigns file
-# setenv INVTABLE_OVERRIDE      # Inventory table override
+# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
+# setenv YEAR_OVERRIDE              # Overrides YEAR (base) in Assigns file
+# setenv INVTABLE_OVERRIDE          # Inventory table override
 
 ##############################################################################
 
@@ -142,7 +146,14 @@ setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
 #
 setenv RUN_PART1 Y
 source $ASSIGNS_FILE   # Invoke Assigns file
+
+# Reset NHAPEXCLUDE file to exclude all sources 
+# This is needed for now because the criteria and toxics point source
+#    inventories are not consistent and should not be integrated.
+setenv NHAPEXCLUDE $INVDIR/other/nhapexclude.all.txt
+
 source smk_run.csh     # Run programs
+
 source qa_run.csh      # Run QA for part 1
 setenv RUN_PART1 N
 
