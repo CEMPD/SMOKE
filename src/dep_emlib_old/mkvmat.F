@@ -2,9 +2,9 @@
 C Version "@(#)$Id$ $Source$ $Date$ 
 
         SUBROUTINE  MKVMAT( NSRC, NETYPE, JDATE, MON, DAY, TZONE, ZONES,
-     &                      MFAC,  MDEX, 
-     &                      WFAC,  WDEX, 
-     &                      DFAC,  DDEX, VMAT, TMAT )
+     &                      MFAC,  NMON, MDEX, 
+     &                      WFAC,  NWEK, WDEX, 
+     &                      DFAC,  NDAY, DDEX, VMAT, TMAT )
 
 C***********************************************************************
 C  subroutine body starts at line  92
@@ -36,17 +36,20 @@ C...........   ARGUMENTS and their descriptions:
 
         INTEGER    NSRC                    ! number of sources
         INTEGER    NETYPE                  ! number of emission types
+        INTEGER    NMON                    ! number of monthly profiles
+        INTEGER    NWEK                    ! number of weekly profiles
+        INTEGER    NDAY                    ! number of diurnal profiles
         INTEGER    JDATE                   ! date YYYYDDD
         INTEGER    MON                     ! 1 ... 12
         INTEGER    DAY                     ! 1 ... 7
         INTEGER    TZONE                   ! time zone (5 for Eastern)
         INTEGER    ZONES( NSRC )           ! source time zones
-        REAL       MFAC( 12, NMCOD )       ! Monthly profile factors
-        REAL       WFAC(  7, NWCOD )       ! Weekly    "       "
-        REAL       DFAC( 24, NDCOD  )      ! Diurnal   "       "
-        INTEGER    MDEX( NSRC, NVTYPE, MXEMIS )    ! Monthly profile codes
-        INTEGER    WDEX( NSRC, NVTYPE, MXEMIS )    ! weekly  profile codes
-        INTEGER    DDEX( NSRC, NVTYPE, MXEMIS )    ! diurnal profile codes
+        REAL       MFAC( 12, NMON )        ! Monthly profile factors
+        REAL       WFAC(  7, NWEK )        ! Weekly    "       "
+        REAL       DFAC( 24, NDAY )        ! Diurnal   "       "
+        INTEGER*2  MDEX( NSRC, NVTYPE, MXEMIS )    ! Monthly profile codes
+        INTEGER*2  WDEX( NSRC, NVTYPE, MXEMIS )    ! weekly  profile codes
+        INTEGER*2  DDEX( NSRC, NVTYPE, MXEMIS )    ! diurnal profile codes
         REAL       VMAT( NSRC, NVTYPE )            ! VMT adjusted by VMTmix
         REAL       TMAT( NSRC, NVTYPE, MXEMIS, 24 ) ! temporal-profile coeffs
 
@@ -105,7 +108,7 @@ C...........   Compute correct year-to-day conversion factor:
                 YR2DAY = 1.0 / 366.0
             END IF
 
-            DO  13 S = 1, NMCOD
+            DO  13 S = 1, NMON
 
                 FAC = 0.0
                 DO  11 K = 1, 12
@@ -120,7 +123,7 @@ C...........   Compute correct year-to-day conversion factor:
 
 13          CONTINUE
 
-            DO  23 S = 1, NWCOD
+            DO  23 S = 1, NWEK
             DO  22 K = 1, 7
                 WFAC( K,S ) = 7.0 * WFAC( K,S )
 22          CONTINUE
