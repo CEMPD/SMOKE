@@ -1193,7 +1193,7 @@ C.....................  Convert lat-lon coords to western hemisphere
                         XLOC1( CURSRC ) = XLOCA1
                         YLOC1( CURSRC ) = YLOCA1
                         XLOC2( CURSRC ) = XLOCA2
-                        YLOC2( CURSRC ) = YLOCA1
+                        YLOC2( CURSRC ) = YLOCA2
                     END IF
                 END DO
 
