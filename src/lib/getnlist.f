@@ -56,8 +56,8 @@ C...........   Array of 1-char strings for processing
         CHARACTER*1   ARRSTR( ILENGTH )
 
 C...........   Other local variables
-        INTEGER         I, L   !  counters and indices
-        INTEGER         NCNT   !  count of fields
+        INTEGER         I, L             !  counters and indices
+        INTEGER      :: NCNT   = 0       !  count of fields
 
         LOGICAL      :: ALPHA  = .FALSE. !  true when within alpha-numeric 
         LOGICAL      :: DELIM  = .FALSE. !  true when within or past delimiter 
