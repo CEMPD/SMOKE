@@ -2,14 +2,20 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+LIBS          = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug-lioapi.debug -lnetcdf.debug
+LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -liotools -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -liotools.debug -lioapi_new -lnetcdf -lpvm3 -mp
+
+LIBPATH       = $(SMK_BIN)/libsmoke.a   $(TOOLS_BIN)/libiotools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
+
 #
 all: rawbio tmpbio 
 
 debug: rawbio.debug tmpbio.debug 
+
+pvm: tmpbio.pvm
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -26,7 +32,7 @@ rawbio: $(RBIO) $(ALLI) $(LIBPATH)
 #
 rawbio.debug: $(RBIO) $(ALLI) $(LIBPATH_DEBUG)
 	echo RAWBIO \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(RBIO) $(LIBS_DEBUG)
+	$(FC) $(DBGFLAGS) -o $(@) $(RBIO) $(LIBS_DEBUG)
 #
 TBIO=tmpbio.o czangle.o cldaten_calc.o hrbio.o hrbios.o prebmet.o rdbpro.o
 
@@ -36,8 +42,15 @@ tmpbio: $(TBIO) $(ALLI) $(LIBPATH)
 
 tmpbio.debug: $(TBIO) $(ALLI) $(LIBPATH_DEBUG)
 	echo TMPBIO \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(TBIO) $(LIBS_DEBUG)
+	$(FC) $(DBGFLAGS) -o $(@) $(TBIO) $(LIBS_DEBUG)
 
+tmpbio.pvm: $(TBIO) $(ALLI) $(LIBPATH)
+	echo TMPBIO \(pvm\):
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(TBIO) $(LIBS_PVM)
+
+tmpbio.pvm.debug: $(TBIO) $(ALLI) $(LIBPATH_DEBUG)
+	echo TMPBIO \(pvmdb\):
+	$(FC) $(DBGFLAGS) -o $(SMK_BIN)/$(@) $(TBIO) $(LIBS_PVMDB)
 
 include $(MD_SRC)/modmake.inc
 
