@@ -65,7 +65,7 @@ setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv SMK_PING_METHOD      1     # 1 outputs for PinG (using Elevpoint outputs), 0 no PING
 
 # Script settings
-setenv MRGFILES   "AGTS_L NGTS_L BGTS_L MGTS_L PGTS3D_L"  # Logical files for Mrggrid
+setenv MRGFILES   "AGTS_L NGTS_L BGTS_L_O MGTS_L PGTS3D_L"  # Logical files for Mrggrid
 setenv SRCABBR            abmp    # abbreviation for naming log files
 setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
 setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
@@ -79,7 +79,7 @@ setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 setenv A_SPC_OVERRIDE cmaq.cb4p25
 setenv N_SPC_OVERRIDE cmaq.cb4p25_wtox
 setenv B_SPC_OVERRIDE cmaq.cb4p25
-setenv M_SPC_OVERRIDE cmaq.cb4p25_wtox
+setenv M_SPC_OVERRIDE cmaq.cb4p25_wtox.m
 setenv P_SPC_OVERRIDE cmaq.cb4p25
 
 ##############################################################################
