@@ -3,7 +3,8 @@
      &                      KEY1, KEY2, KEY3, KEY4, ISPC, FG, FT, 
      &                      EMSRC, RINFO, CUMATX, CAMATX, SMATX,
      &                      NX, IX, GMATX, ICNY, GOUT1, GOUT2,
-     &                      COUT1, COUT2, COUT3, COUT4, COUT5 )
+     &                      COUT1, COUT2, COUT3, COUT4, COUT5,
+     &                      RLZN )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -90,6 +91,7 @@ C.........  SUBROUTINE ARGUMENTS
         REAL     , INTENT(IN OUT) :: COUT3 ( NCOUNTY, * )! additive cntl county
         REAL     , INTENT(IN OUT) :: COUT4 ( NCOUNTY, * )! reactivity cntl cnty
         REAL     , INTENT(IN OUT) :: COUT5 ( NCOUNTY, * )! all control cntl cnty
+        INTEGER     , INTENT (IN) :: RLZN        ! realization
 
 C.........  Other local variables
         INTEGER         C, J, K, L, S   ! counters and indicies
@@ -103,6 +105,10 @@ C.........  Other local variables
         REAL*8          REAC            ! tmp value with reactivity controls
         REAL*8          VAL             ! tmp value  
         REAL*8          VMP             ! tmp market penetration value  
+
+        REAL            xsum1,xsum2
+
+        CHARACTER*300   MESG
 
         CHARACTER*16 :: PROGNAME = 'MRGMULT' ! program name
 
@@ -369,6 +375,7 @@ C.............  If speciation only
                     SUM1 = GOUT1( C,1 )
                     SUM2 = GOUT2( C,1 )
 
+
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
@@ -390,6 +397,9 @@ C.............  If speciation only
 
                     GOUT1( C,1 ) = SUM1
                     GOUT2( C,1 ) = SUM2
+
+                    xsum1 = xsum1 + sum1
+                    xsum2 = xsum2 + sum2
 
                 END DO
 
@@ -749,5 +759,8 @@ C.............  If inventory pollutant and layer fractions
         END IF      ! End if no inventory emissions or L > 1
 
         RETURN
+
+94010   FORMAT( 10 ( A, :, I10, :, 2X ) )
+98010   FORMAT( 10 ( A, :, F8.3, :, 2X ) )
 
         END SUBROUTINE MRGMULT
