@@ -2,7 +2,7 @@
         PROGRAM TMPAREA
 
 C***********************************************************************
-C  program body starts at line 255
+C  program body starts at line 248
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -242,13 +242,6 @@ C...........   Other local variables
         LOGICAL         FIRSTCOD  !  iff haven't yet encounter CODE > 0
         DATA            FIRSTCOD / .TRUE. /
 
-        CHARACTER*10    DAYS( 7 )
-        DATA            DAYS
-     &          /
-     &          'Monday', 'Tuesday', 'Wednesday', 'Thursday', 
-     &          'Friday', 'Saturday', 'Sunday'
-     &          /
-
 C***********************************************************************
 C   begin body of program TMPAREA
 
@@ -385,7 +378,7 @@ C.......   Get time period for output file:
         END IF
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone for output emissions (0 for GMT)' )
-        JDATE  = GETDATE( 1988200, 
+        JDATE  = GETDATE( 1995182, 
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
 
         JTIME  = GETNUM( 0, 999999, 0, 
@@ -452,7 +445,7 @@ C.......   Read the ACTUAL ASC FILE
 
 C...........   Read temporal-profiles file:  3 parts (monthly, weekly, diurnal)
 
-        CALL M3MSG2( 'Reading temporal-profile file...' )
+        CALL M3MSG2( 'Reading TEMPORAL-PROFILE file...' )
 
         NMON = RDTPROF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
         NWEK = RDTPROF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
@@ -462,7 +455,7 @@ C...........   Read temporal-profiles file:  3 parts (monthly, weekly, diurnal)
 
 C.......   Read temporal-profile cross-reference file.
 
-        CALL M3MSG2( 'Reading temporal-profile XREF file...' )
+        CALL M3MSG2( 'Reading TEMPORAL XREF file...' )
 
         EFLAG = .FALSE.
         IREC  =  0
