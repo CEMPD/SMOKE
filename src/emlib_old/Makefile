@@ -7,7 +7,7 @@ lib:
 	rm *.o
 
 debug:
-	f77 -g -C -c *.F
+	f77 $(DBGFLAGS) -c *.F
 	cc -g -C -c *.c
 	ar rv $(DISTDIR)/libemstuff.debug.a *.o
 	rm *.o
