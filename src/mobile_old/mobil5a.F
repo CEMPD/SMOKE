@@ -88,14 +88,17 @@ C
       LOGICAL RFGON
 C
 cmh add includes
-c     INCLUDE 'EFS.EXT'
       INCLUDE 'MBDIMS3.EXT'
 cmh
 cmh add declarations
       REAL    EFACT( MXNDET, NVTYPE )
       REAL    DFACT( MXDET, NVTYPE )
       INTEGER MODEV                ! Unit number of MOBILE5a input file
-      INTEGER ITEMP                ! Indicates if just temperature has changed
+      INTEGER ITEMP   ! When == 0, tmpr is only change from previous call
+      LOGICAL WFLAG
+cmh
+cmh add commons
+      COMMON /WARNING/ WFLAG
 cmh
 
       COMMON /ALUHAC/ ACEQIP(8,3,2),ACCF(2,3,2,3,2)
@@ -266,7 +269,7 @@ c
       COMMON /SCENE3/ ndi_di
 c
 C
-cmh add 11 lines
+cmh add 14 lines
       IOUGEN = MODEV
       IOUGET = 5
       IOUREP = 7
@@ -274,9 +277,12 @@ cmh add 11 lines
       IOUERR = 6
       IOBAT = 19
 
+      WFLAG = .FALSE.     ! Initialize warning message write to off
+
       IF( ITEMP .EQ. 1 ) THEN
           IREAD = 0 ! Reset MOBILE5's indicator for reading TECH12 file
           ITEMP = 0 ! Indicate that only temperature is changing
+          WFLAG = .TRUE.  ! Turn warning messages on
       ENDIF
 cmh
       IF(JCALL.EQ.0) GOTO 10
@@ -422,6 +428,8 @@ cmh       EFACT( 11,JJ ) = RSTGPH( JJ )     ! Resting Loss VOC g/hr
           DFACT( 4, JJ ) = GREVP ( 4,JJ )   ! Crankcase Evap VOC
       ENDDO
 
+      DFACT( 2, 8 ) = EFDNL ( 8 )           ! LMOS Diurnal for MC's
+      
 cmh end add
 cmh 
       LEAST1=1
