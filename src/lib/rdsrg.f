@@ -45,13 +45,17 @@ C...........   This module contains the gridding surrogates tables
 
         IMPLICIT NONE
 
+C...........   INCLUDES
+        INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
+
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2    CRLF
         INTEGER        FIND1
         INTEGER        STR2INT
         REAL           STR2REAL
 
-        EXTERNAL       FIND1, STR2INT, STR2REAL
+        EXTERNAL       CRLF, FIND1, STR2INT, STR2REAL
 
 C...........   Subroutine arguments
 
@@ -94,15 +98,16 @@ C...........   Local variables
 
         REAL            RATIO                 ! Temp spatial surrogate Ratio
 
-        LOGICAL      :: EFLAG = .FALSE.       ! true: error found
+        LOGICAL      :: GFLAG = .FALSE.       ! true: per iteration surg > 1
         LOGICAL      :: HFLAG = .FALSE.       ! true: header found
         LOGICAL      :: OFLAG = .FALSE.       ! true: overall warning flag
+        LOGICAL      :: RFLAG = .FALSE.       ! true: renormalized surrogates
         LOGICAL         WFLAG                 ! true: per iteration warning flag
 
         CHARACTER*20    COLRANGE              ! buffer w/ column range
         CHARACTER*20    ROWRANGE              ! buffer w/ row range
         CHARACTER*80    LINE                  ! Read buffer for a line
-        CHARACTER*300   MESG                  ! Message buffer
+        CHARACTER*600   MESG                  ! Message buffer
 
         CHARACTER*16 :: PROGNAME = 'RDSRG'    !  program name
 
@@ -239,7 +244,7 @@ C                   quotes around the text strings
                 WFLAG = .FALSE.
 C.................  Check the value of the column number
                 IF( COL .LT. 0 .OR.  COL .GT. NCOLS  .OR.
-     &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN                    WFLAG = .TRUE.
+     &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN
                     WFLAG = .TRUE.
                     OFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'WARNING: Column value ', COL,
@@ -266,11 +271,12 @@ C.................  Special treatment for cell (0,0)
 
 C.................  Check the value of the ratio value
                 IF( RATIO .GT. 1. ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 )
-     &                     'ERROR: surrogates ratio is greater than ' //
-     &                     '1.0 at line', IREC
+                    WRITE( MESG,94020 )
+     &                     'WARNING: resetting surrogates ratio at ' //
+     &                     'line', IREC, 'from', RATIO, 'to 1.'
+     &                     
                     CALL M3MESG( MESG )
+                    RATIO = 1.
                 END IF
 
 C.................  Skip entry if rows and columns are out of range
@@ -293,9 +299,9 @@ C.................  Skip entry if rows and columns are out of range
 
 C.............  Write out final warning for row/col out of range
             IF( OFLAG ) THEN
-                MESG = 'Lines skipped in surrogate file because ' //
-     &                 'rows or columns were out of range.'
-                CALL M3WARN( PROGNAME, 0, 0, MESG )
+                MESG = 'WARNING: Lines skipped in surrogate file ' //
+     &                 'because rows or columns were out of range.'
+                CALL M3MSG2( MESG )
             END IF
 
         CASE DEFAULT
@@ -304,11 +310,6 @@ C.............  Write out final warning for row/col out of range
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END SELECT
-
-        IF( EFLAG ) THEN
-            MESG = 'Problem reading gridding surrogates file'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
 
 C.........  Now create the derived surrogates tables from the original data...
 
@@ -457,6 +458,58 @@ C               the surrogates fraction
 
         END DO
 
+C.........  Now check to make sure the surrogate totals for each county are 
+C           less than or equal to 1.
+        DO I = 1, NSRGFIPS
+
+            GFLAG = .FALSE.
+            DO K = 1, NSRGS
+
+C.................  Check if county total surrogates greater than 1
+                IF( SRGCSUM( K,I ) .GT. 1. ) THEN
+                    GFLAG = .TRUE.
+                    EXIT
+                END IF
+
+            END DO
+
+C.............  If any surrogates were greater than 1...
+            IF( GFLAG ) THEN
+
+C.................  Give a warning message for significant counties
+                RFLAG = .TRUE.
+                WRITE( MESG,94030 ) 'WARNING: County surrogate total '//
+     &                 'greater than 1. for county' // CRLF() // 
+     &                 BLANK10, SRGFIPS( I ), ':',
+     &                 ( ( SRGLIST( K ), SRGCSUM( K,I ) ), K= 1, NSRGS )
+                CALL M3MESG( MESG )
+
+C.................  Renormalize all surrogates with totals > 1...
+C.................  Loop through surrogates
+                DO K = 1, NSRGS
+
+C.....................  When surrogate total is > 1
+                    IF( SRGCSUM( K,I ) .GT. 1. ) THEN
+
+C.........................  Loop through cells in this county
+                        DO C = 1, NCELLS( I )
+                            SRGFRAC( K,C,I ) = SRGFRAC( K,C,I ) /
+     &                                         SRGCSUM( K,I )
+                        END DO
+
+                    END IF
+                END DO
+            END IF
+
+        END DO
+
+        IF( RFLAG ) THEN
+            MESG = 'WARNING: Surrogates renormalized when total ' //
+     &             'of surrogates by county were ' // CRLF() //
+     &             BLANK10 // 'greater than 1.'
+            CALL M3MSG2( MESG )
+        END IF
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
@@ -465,6 +518,13 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
+
+C...........   Internal buffering formats............ 94xxx
+
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+94020   FORMAT( A, 1X, I8, 1X, A, 1X, F10.6, 1X, A )
+
+94030   FORMAT( A, 1X, I6.6, A, 100( ' SSC(', I2.2, '):', F10.6, : ) )
+
+        END SUBROUTINE RDSRG
