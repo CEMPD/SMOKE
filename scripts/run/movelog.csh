@@ -29,17 +29,6 @@ if ( -e $TMPLOG ) then
       echo '      '$TMPLOG
       echo ' '
       /bin/rm -rf $TMPLOG
-
-   #
-   ## If no automatic deleting, prompt user to delete file manually
-   # 
-   else
-      echo ' '
-      echo 'SCRIPT NOTE:'
-      echo 'Existing log file must be removed or moved.  If it is not removed, it'
-      echo 'will be automatically moved to a new name.'
-      /bin/rm -i $TMPLOG
-
    endif
 
    #

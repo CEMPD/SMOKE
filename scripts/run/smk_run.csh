@@ -12,7 +12,7 @@
 #
 # Script created by : M. Houyoux and J. Vukovich, MCNC
 #                     Environmental Modeling Center 
-# Last edited : April 2002
+# Last edited : February 2003
 #
 #*********************************************************************
 
@@ -40,6 +40,40 @@ else
    set debug_exe = dbx
 endif
 
+### Ensure new controller variables are set
+if ( $?RUN_PART1 ) then
+   if ( $RUN_PART1 == Y || $RUN_PART1 == y ) then
+      setenv RUN_PART1 Y
+      echo 'Running part 1...'
+   endif
+else
+   setenv RUN_PART1 N
+endif
+if ( $?RUN_PART2 ) then
+   if ( $RUN_PART2 == Y || $RUN_PART2 == y ) then
+      setenv RUN_PART2 Y
+      echo "Running part 2, for $ESDATE ..."
+   endif
+else
+   setenv RUN_PART2 N 
+endif
+if ( $?RUN_PART3 ) then
+   if ( $RUN_PART3 == Y || $RUN_PART3 == y ) then
+      setenv RUN_PART3 Y
+      echo 'Running part 3 ...'
+   endif
+else
+   setenv RUN_PART3 N 
+endif
+if ( $?RUN_PART4 ) then
+   if ( $RUN_PART4 == Y || $RUN_PART4 == y ) then
+      setenv RUN_PART4 Y
+      echo "Running part 4, for $ESDATE..."
+   endif
+else
+   setenv RUN_PART4 N 
+endif
+
 #
 ### Raw Inventory processing
 #
@@ -47,11 +81,15 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/smkinven.$SRCABBR.$INVEN.log
 if ( $?RUN_SMKINVEN ) then
-   if ( $RUN_SMKINVEN == 'Y' ) then
+   if ( $RUN_SMKINVEN == 'Y' && $RUN_PART1 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
+
+      ##  Create output directories, if needed
+      source $SCRIPTS/run/make_invdir.csh
+      set exitstat = $status
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
@@ -69,6 +107,13 @@ if ( $?RUN_SMKINVEN ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -94,7 +139,7 @@ set exestat = 0
 setenv TMPLOG   $OUTLOG/rawbio.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_RAWBIO ) then
 
-   if ( $RUN_RAWBIO == 'Y' ) then
+   if ( $RUN_RAWBIO == 'Y' && $RUN_PART1 == Y ) then
 
       # Use summer emission factors, if they are set for first rawbio run
       if ( $?S_BFAC ) then
@@ -125,7 +170,7 @@ if ( $?RUN_RAWBIO ) then
       endif  
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program for standard or summer
@@ -146,6 +191,13 @@ if ( $?RUN_RAWBIO ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       # Now do winter-specific processing, if season-switch option in use
       if ( $season == y ) then
 
@@ -156,7 +208,7 @@ if ( $?RUN_RAWBIO ) then
             setenv TMPLOG $OUTLOG/rawbio.$SRCABBR.wntr.$INVEN.$GRID.log
 
             if ( -e $TMPLOG ) then
-	       source $SCRIPTS/run/movelog.scr
+	       source $SCRIPTS/run/movelog.csh
             endif
 
             if ( $exitstat == 0 ) then         # Run program for winter
@@ -176,6 +228,13 @@ if ( $?RUN_RAWBIO ) then
                   endif
                endif
             endif
+
+         if ( -e $SCRIPTS/fort.99 ) then
+            mv $LOGFILE $LOGFILE.tmp
+            cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+            /bin/rm -rf $LOGFILE.tmp
+            /bin/rm -rf $SCRIPTS/fort.99
+         endif
 
          else
       	    echo 'SCRIPT ERROR: BIOSW_YN (biogenics seasonality switch) set to'
@@ -211,7 +270,7 @@ set exestat = 0
 setenv TMPLOG   $OUTLOG/normbeis3.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_NORMBEIS3 ) then
 
-   if ( $RUN_NORMBEIS3 == 'Y' ) then
+   if ( $RUN_NORMBEIS3 == 'Y' && $RUN_PART1 == Y ) then
 
       set season = n
       # Use summer-specific processing if season-switch option in use
@@ -223,7 +282,7 @@ if ( $?RUN_NORMBEIS3 ) then
       endif  
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program for standard or summer
@@ -242,6 +301,13 @@ if ( $?RUN_NORMBEIS3 ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
    endif
@@ -267,10 +333,10 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/spcmat.$SRCABBR.$INVEN.$SPC.log
 if ( $?RUN_SPCMAT ) then
-   if ( $RUN_SPCMAT == 'Y' ) then
+   if ( $RUN_SPCMAT == 'Y' && $RUN_PART1 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -289,6 +355,13 @@ if ( $?RUN_SPCMAT ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -313,10 +386,10 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/grdmat.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_GRDMAT ) then
-   if ( $RUN_GRDMAT == 'Y' ) then
+   if ( $RUN_GRDMAT == 'Y' && $RUN_PART1 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -337,6 +410,13 @@ if ( $?RUN_GRDMAT ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: grdmat program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -352,17 +432,72 @@ if ( $?RUN_GRDMAT ) then
 endif
 
 #
+### Mobile setup for MOBILE6 runs
+#
+set debugexestat = 0
+set exestat = 0
+setenv TMPLOG   $OUTLOG/mbsetup.$SRCABBR.$INVEN.log
+if ( $?RUN_MBSETUP ) then
+   if ( $RUN_MBSETUP == 'Y' && $RUN_PART1 == Y ) then
+
+      if ( -e $TMPLOG ) then
+         source $SCRIPTS/run/movelog.csh
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         if ( $debugmode == Y ) then
+            if ( -e $MB_SRC/mbsetup.debug ) then
+               $debug_exe $MB_SRC/mbsetup.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/mbsetup ) then
+               time $SMK_BIN/mbsetup
+            else
+               set exestat = 1 
+            endif
+         endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: mbsetup program does not exist in:'
+	 echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: mbsetup.debug program does not exist in:'
+	 echo '              '$MB_SRC
+         set exitstat = 1
+      endif
+   endif
+endif
+
+#
 ### Pre-mobile-source processing
 #
 set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/premobl.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_PREMOBL ) then
-   if ( $RUN_PREMOBL == 'Y' ) then
+   if ( $RUN_PREMOBL == 'Y' && $RUN_PART1 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
+
+      if ( -e $METLIST ) /bin/rm -rf $METLIST
+
+      ls $METDAT/METCRO2D* > $METLIST
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
@@ -382,6 +517,13 @@ if ( $?RUN_PREMOBL ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: premobl program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -397,58 +539,53 @@ if ( $?RUN_PREMOBL ) then
 endif
 
 #
-### Emission factor creation
-#
+### Meteorology scan for bioseason file
+# 
 set debugexestat = 0
 set exestat = 0
-setenv TMPLOG   $OUTLOG/emisfac.$SRCABBR.$INVEN.$GRID.log
-if ( $?RUN_EMISFAC ) then
-   if ( $RUN_EMISFAC == 'Y' ) then
-
-      # 
-      ### Remove output files unless the update flags are set
-      #
-      if ( $REUSE_DIURNAL != 'Y' ) then
-         /bin/rm -i $MEFSD
-      endif
-
-      if ( $REUSE_NONDIURNAL != 'Y' ) then
-         /bin/rm -i $MEFSND
-      endif
+setenv TMPLOG   $OUTLOG/metscan.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_METSCAN ) then
+   if ( $RUN_METSCAN == 'Y' && $RUN_PART1 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program
-         setenv LOGFILE $TMPLOG
+        setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $MB_SRC/emisfac.debug ) then
-               $debug_exe $MB_SRC/emisfac.debug
+            if ( -e $UT_SRC/metscan.debug ) then
+               $debug_exe $UT_SRC/metscan.debug
             else
                 set debugexestat = 1
             endif
          else
-            if ( -e $SMK_BIN/emisfac ) then
-               time $SMK_BIN/emisfac
+            if ( -e $SMK_BIN/metscan ) then
+               time $SMK_BIN/metscan
             else
                set exestat = 1 
             endif
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
-	 echo 'SCRIPT ERROR: emisfac program does not exist in:'
+	 echo 'SCRIPT ERROR: metscan program does not exist in:'
 	 echo '              '$SMK_BIN
          set exitstat = 1
       endif
 
       if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: emisfac.debug program does not exist in:'
-	 echo '              '$MB_SRC
+	 echo 'SCRIPT ERROR: metscan.debug program does not exist in:'
+	 echo '              '$UT_SRC
          set exitstat = 1
       endif
-
    endif
 endif
 
@@ -463,10 +600,28 @@ else
    setenv TMPLOG   $OUTLOG/temporal.$SRCABBR.$INVEN.$ESDATE.log
 endif
 if ( $?RUN_TEMPORAL ) then
-   if ( $RUN_TEMPORAL == 'Y' ) then
+   if ( $RUN_TEMPORAL == 'Y' && $RUN_PART2 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
+      endif
+
+      ## For mobile sources, create MEFLIST file if there are any files
+      #    to put into the list
+      if ( $SMK_SOURCE == M ) then
+         setenv MEFLIST $SMK_EMISPATH/meflist.txt
+         set ef_cnt = `ls $SMK_EMISPATH/emisfacs*ncf | wc -l`
+         if ( $ef_cnt > 0 ) then
+
+            if ( -e $SMK_EMISPATH/meflist.txt ) /bin/rm -rf $SMK_EMISPATH/meflist.txt
+
+            set extension = `ls $SMK_EMISPATH/emisfacs*ncf | cut -d. -f4`
+            if ( $extension[1] == 'ncf' ) then
+               ls $SMK_EMISPATH/emisfacs*ncf > $SMK_EMISPATH/meflist.txt
+            else 
+               ls $SMK_EMISPATH/emisfacs*1.ncf | cut -d. -f1,2,3,5 > $SMK_EMISPATH/meflist.txt
+            endif
+         endif
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -484,6 +639,13 @@ if ( $?RUN_TEMPORAL ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -507,10 +669,18 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/elevpoint.$SRCABBR.$INVEN.log
 if ( $?RUN_ELEVPOINT ) then
-   if ( $RUN_ELEVPOINT == 'Y' ) then
+   if ( $RUN_ELEVPOINT == Y && $RUN_PART3 == Y ) then      
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
+      endif
+
+      # Create PTMPLIST file, in case it is needed.
+      if ( -e $PTMP ) then
+         setenv PTMPLIST $INVDIR/other/ptmplist.txt
+         if ( -e $PTMPLIST ) /bin/rm -rf $PTMPLIST
+
+         ls $SMKDAT/run_$PSCEN/*/ptmp*$PSCEN*ncf > $PTMPLIST
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -528,6 +698,13 @@ if ( $?RUN_ELEVPOINT ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -551,7 +728,7 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/laypoint.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_LAYPOINT ) then
-   if ( $RUN_LAYPOINT == 'Y' ) then
+   if ( $RUN_LAYPOINT == 'Y' && $RUN_PART4 == Y ) then
 
       if ( $?SMK_PING_METHOD ) then
          if ( $SMK_PING_METHOD == 2 ) then
@@ -560,7 +737,7 @@ if ( $?RUN_LAYPOINT ) then
       endif
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -578,6 +755,13 @@ if ( $?RUN_LAYPOINT ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -601,11 +785,17 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/tmpbio.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_TMPBIO ) then
-   if ( $RUN_TMPBIO == 'Y' ) then
+   if ( $RUN_TMPBIO == 'Y' && $RUN_PART2 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
+
+      if ( -e $METLIST ) /bin/rm -rf $METLIST
+      if ( -e $RADLIST ) /bin/rm -rf $RADLIST
+
+      ls $MET_FILE1 > $METLIST
+      ls $MET_FILE2 > $RADLIST
 
       if ( $exitstat == 0 ) then         # Run program
         setenv LOGFILE $TMPLOG
@@ -622,6 +812,13 @@ if ( $?RUN_TMPBIO ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -644,39 +841,46 @@ endif
 
 set debugexestat = 0
 set exestat = 0
-setenv TMPLOG   $OUTLOG/beis3.$SRCABBR.$INVEN.$ESDATE.$GRID.log
-if ( $?RUN_BEIS3 ) then
-   if ( $RUN_BEIS3 == 'Y' ) then
+setenv TMPLOG   $OUTLOG/tmpbeis3.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_TMPBEIS3 ) then
+   if ( $RUN_TMPBEIS3 == 'Y' && $RUN_PART2 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program
         setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then
-            if ( -e $BG_SRC/beis3.debug ) then
-               $debug_exe $BG_SRC/beis3.debug
+            if ( -e $BG_SRC/tmpbeis3.debug ) then
+               $debug_exe $BG_SRC/tmpbeis3.debug
             else
                 set debugexestat = 1
             endif
          else
-            if ( -e $SMK_BIN/beis3 ) then
-               time $SMK_BIN/beis3
+            if ( -e $SMK_BIN/tmpbeis3 ) then
+               time $SMK_BIN/tmpbeis3
             else
                set exestat = 1 
             endif
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
-	 echo 'SCRIPT ERROR: beis3 program does not exist in:'
+	 echo 'SCRIPT ERROR: tmpbeis3 program does not exist in:'
 	 echo '              '$SMK_BIN
          set exitstat = 1
       endif
 
       if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: beis3.debug program does not exist in:'
+	 echo 'SCRIPT ERROR: tmpbeis3.debug program does not exist in:'
 	 echo '              '$BG_SRC
          set exitstat = 1
       endif
@@ -692,40 +896,44 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/smkmerge.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_SMKMERGE ) then
-   if ( $RUN_SMKMERGE == 'Y' ) then
+   if ( $RUN_SMKMERGE == 'Y' && $RUN_PART4 == Y ) then
 
-      # Set mole/mass-based speciation matrices.  Default, mole.
-      if ( $?ASMAT_L ) then
-         setenv ASMAT $ASMAT_L
+      # Set mole/mass-based speciation matrices.
+      set unit = tons
+      if( $?MRG_GRDOUT_UNIT ) then 
+         set unit = `echo $MRG_GRDOUT_UNIT | cut -c1-4`
       endif
-      if ( $?BGTS_L ) then
-         setenv BGTS $BGTS_L
-      endif
-      if ( $?MSMAT_L ) then
-         setenv MSMAT $MSMAT_L
-      endif
-      if ( $?PSMAT_L ) then
-         setenv PSMAT $PSMAT_L
-      endif
-      if ( $?SPC_INPUT ) then
-         if ( $SPC_INPUT == 'mass' ) then
-            if ( $?ASMAT_S ) then
-               setenv ASMAT $ASMAT_S
-            endif
-            if ( $?BGTS_S ) then
-               setenv BGTS $BGTS_S
-            endif
-            if ( $?MSMAT_S ) then
-               setenv MSMAT $MSMAT_S
-            endif
-            if ( $?PSMAT_S ) then
-               setenv PSMAT $PSMAT_S
-            endif
+      if ( $unit == mole ) then   # mole
+         if ( $?ASMAT_L ) then
+            setenv ASMAT $ASMAT_L
+         endif
+         if ( $?BGTS_L ) then
+            setenv BGTS $BGTS_L
+         endif
+         if ( $?MSMAT_L ) then
+            setenv MSMAT $MSMAT_L
+         endif
+         if ( $?PSMAT_L ) then
+            setenv PSMAT $PSMAT_L
+         endif
+
+      else                       # mass
+         if ( $?ASMAT_S ) then
+            setenv ASMAT $ASMAT_S
+         endif
+         if ( $?BGTS_S ) then
+            setenv BGTS $BGTS_S
+         endif
+         if ( $?MSMAT_S ) then
+            setenv MSMAT $MSMAT_S
+         endif
+         if ( $?PSMAT_S ) then
+            setenv PSMAT $PSMAT_S
          endif
       endif
 
       if ( -e $TMPLOG ) then
-         source $SCRIPTS/run/movelog.scr
+         source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -743,6 +951,13 @@ if ( $?RUN_SMKMERGE ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -763,10 +978,38 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/mrggrid.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_MRGGRID ) then
-   if ( $RUN_MRGGRID == 'Y' ) then
+   if ( $RUN_MRGGRID == 'Y' && $RUN_PART4 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
+      endif
+
+      ## If Mrggrid file list defined, create list file
+      if ( $?MRGFILES ) then
+
+         ## Remove existing file list, if it is there
+         if ( -e $FILELIST ) then
+            /bin/rm -rf $FILELIST
+         endif
+         set mrg_cnt = 0
+         foreach f ( $MRGFILES )
+            @ mrg_cnt = $mrg_cnt + 1
+            if ( $mrg_cnt == 1 ) then
+               echo $f > $FILELIST
+            else
+               echo $f >> $FILELIST
+            endif
+         end
+
+         if ( $mrg_cnt == 0 ) then
+             echo "SCRIPT ERROR: MRGFILES defined, but no logical file names included."
+             echo "              MRGFILES script variable = "${MRGFILES}.
+             echo "              Please reset and rerun script"
+             set exitstat = 1
+         echo
+             echo "SCRIPT NOTE: File FILELIST created with logical files:"
+             echo "             "$MRGFILES
+         endif
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -784,6 +1027,13 @@ if ( $?RUN_MRGGRID ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -807,10 +1057,10 @@ set debugexestat = 0
 set exestat = 0
 setenv TMPLOG   $OUTLOG/smk2emis.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_SMK2EMIS ) then
-   if ( $RUN_SMK2EMIS == 'Y' ) then
+   if ( $RUN_SMK2EMIS == 'Y' && $RUN_PART4 == Y ) then
 
       if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+	 source $SCRIPTS/run/movelog.csh
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -830,6 +1080,13 @@ if ( $?RUN_SMK2EMIS ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: smk2emis program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -838,107 +1095,6 @@ if ( $?RUN_SMK2EMIS ) then
 
       if ( $debugexestat == 1 ) then
 	 echo 'SCRIPT ERROR: smk2emis.debug program does not exist in:'
-	 echo '              '$UT_SRC
-         set exitstat = 1
-      endif
-   endif
-endif
-
-#
-### Mobile inventory condensing
-#
-set debugexestat = 0
-set exestat = 0
-setenv TMPLOG   $OUTLOG/mvcondns.$SRCABBR.$INVEN.log
-if ( $?RUN_MVCONDNS ) then
-   if ( $RUN_MVCONDNS == 'Y' ) then
-
-      if ( -e $TMPLOG ) then
-         source $SCRIPTS/run/movelog.scr
-      endif
-
-      if ( $exitstat == 0 ) then         # Run program
-         setenv LOGFILE $TMPLOG
-         if ( $debugmode == Y ) then
-            if ( -e $MG_SRC/mvcondns.debug ) then
-               $debug_exe $MG_SRC/mvcondns.debug
-            else
-                set debugexestat = 1
-            endif
-         else
-            if ( -e $SMK_BIN/mvcondns ) then
-               time $SMK_BIN/mvcondns
-            else
-               set exestat = 1 
-            endif
-         endif
-
-         if ( $debugexestat == 0 && $exestat == 0 ) then
-             ### Sort output file to a file of the same name
-            if ( -e ${OUTFILE}_tmp ) then
-               /bin/rm -rf  ${OUTFILE}_tmp
-            endif
-            if ( -e $OUTFILE ) then
-               mv $OUTFILE ${OUTFILE}_tmp
-               sort ${OUTFILE}_tmp > $OUTFILE
-            endif
-         endif
-
-      endif
-
-      if ( $exestat == 1 ) then
-	 echo 'SCRIPT ERROR: mvcondns program does not exist in:'
-	 echo '              '$SMK_BIN
-         set exitstat = 1
-      endif
-
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: mvcondns.debug program does not exist in:'
-	 echo '              '$UT_SRC
-         set exitstat = 1
-      endif
-
-   endif
-endif
-
-#
-### Mobile setup for MOBILE5 runs
-#
-set debugexestat = 0
-set exestat = 0
-setenv TMPLOG   $OUTLOG/mvsetup.$SRCABBR.$INVEN.log
-if ( $?RUN_MVSETUP ) then
-   if ( $RUN_MVSETUP == 'Y' ) then
-
-      if ( -e $TMPLOG ) then
-         source $SCRIPTS/run/movelog.scr
-      endif
-
-      if ( $exitstat == 0 ) then         # Run program
-         setenv LOGFILE $TMPLOG
-         if ( $debugmode == Y ) then
-            if ( -e $UT_SRC/mvsetup.debug ) then
-               $debug_exe $UT_SRC/mvsetup.debug
-            else
-                set debugexestat = 1
-            endif
-         else
-            if ( -e $SMK_BIN/mvsetup ) then
-               time $SMK_BIN/mvsetup
-            else
-               set exestat = 1 
-            endif
-         endif
-      endif
-
-      if ( $exestat == 1 ) then
-	 echo 'SCRIPT ERROR: mvsetup program does not exist in:'
-	 echo '              '$SMK_BIN
-         set exitstat = 1
-      endif
-
-      if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: mvsetup.debug program does not exist in:'
 	 echo '              '$UT_SRC
          set exitstat = 1
       endif
