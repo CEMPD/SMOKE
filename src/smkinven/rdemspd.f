@@ -84,8 +84,8 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL, INTENT (IN) :: GETCOUNT       ! true: get max no. srcs per time
         LOGICAL, INTENT (IN) :: FIRSTCALL      ! true: first call of a loop
         LOGICAL, INTENT (IN) :: DAYFLAG        ! true: day-, false: hour-spec
-        INTEGER, INTENT(OUT) :: SDATE          ! Julian starting date in TZONE
-        INTEGER, INTENT(OUT) :: STIME          ! start time of data in TZONE
+        INTEGER,INTENT(INOUT):: SDATE          ! Julian starting date in TZONE
+        INTEGER,INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT) :: EDATE          ! Julian ending date in TZONE
         INTEGER, INTENT(OUT) :: ETIME          ! ending time of data in TZONE
         LOGICAL, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
