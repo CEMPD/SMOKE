@@ -120,13 +120,17 @@ C.........  Abort if error
             IF ( EISTAT( V ) ) NEVPEMV = NEVPEMV + 1
         END DO  
 
+C.........  Limit group criteria to 1 for later usage in ASGNGRPS
+        NGRPCRIT = MAX( NGRPCRIT, 1 )
+        MXGRPCHK = MAX( MXGRPCHK, 1 )
+
 C.........  Allocate memory for criteria arrays
         ALLOCATE( GRPVALS( NGRPCRIT, MXGRPCHK, NGRPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRPVALS', PROGNAME )
         ALLOCATE( GRPTYPES( NGRPCRIT, MXGRPCHK, NGRPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRPTYPES', PROGNAME )
         GRPVALS  = 0.
-        GRPTYPES = ' '
+        GRPTYPES = '<' ! bogus comparison type. By default, no groups get set.
 
         ALLOCATE( ELVVALS( NELVCRIT, MXELVCHK, NEVPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ELVVALS', PROGNAME )
@@ -570,6 +574,16 @@ C.....................  Store value of each AND component as a real value
                 END DO  ! End loop over ANDs on line
 
             END DO      ! End loop over lines of file
+
+C.............  Check if there are no group criteria and write warning
+            IF( READTYPE .EQ. 'COUNT' .AND.
+     &          NGRPCRIT .LE. 0             ) THEN
+                MESG = 'WARNING: No grouping criteria in PELVCONFIG ' //
+     &                 'will likely result in wasteful ' //
+     &                 CRLF() // BLANK10 // ' separation of PinG '//
+     &                 'and/or elevated records that could be grouped.'
+                CALL M3MSG2( MESG )     
+            END IF
 
             RETURN
 
