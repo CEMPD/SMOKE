@@ -723,79 +723,79 @@ C            VMT by cell/source over County total VMT
                 LC = C
             END DO
 
-        END IF
-
-        IF( CNTMAX .GT. MXCCL ) THEN
-            WRITE( MESG,94010 )
-     &       'INTERNAL ERROR: Ungridding matrix not written'
-     &       // CRLF() // BLANK10 //
-     &       'Arrays would have overflowed.' 
-     &       // CRLF() // BLANK10 // 
-     &       'Current maximum cells per county/link (MXCCL) =', MXCCL,
-     &       '.' // CRLF() // BLANK10 // 
-     &       'Actual  maximum cells per county/link    =', CNTMAX  , '.'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-        END IF
-
-C.........  Create ungridding matrix. The factors have been created so that any 
-C           non-link sources within a county have the same factors used for
-C           computing temperatures.  This means that a source (e.g., urban 
-C           interstates) that appear in only some cells in the county will
-C           use temperatures that are based on all sources in the county).
-C           The link sources within a county have different factors than the
-C           non-link sources, and these use only the cells that the link intersects.
-
-        K  = 0
-        DO S = 1, NSRC
-            N = CLIDX( S )
-
-C............  Skip sources that are outside the grid
-            IF( N .EQ. 0 ) THEN
-                NU( S ) = 0
-                CYCLE
-
-C............  Store the number of cells per source as the number of cell 
-C              intersections with the county or link
-            ELSE
-                NU( S ) = CNT_CL( N )
+            IF( CNTMAX .GT. MXCCL ) THEN
+                WRITE( MESG,94010 )
+     &           'INTERNAL ERROR: Ungridding matrix not written'
+     &           // CRLF() // BLANK10 //
+     &           'Arrays would have overflowed.' 
+     &           // CRLF() // BLANK10 // 
+     &           'Current maximum cells per county/link (MXCCL) =', MXCCL,
+     &           '.' // CRLF() // BLANK10 // 
+     &           'Actual  maximum cells per county/link    =', CNTMAX  , '.'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
             END IF
 
-            sum = 0
-C............  Store the cell numbers and VMT fractions into the ungridding matrix
-            DO I = 1, CNT_CL( N )
-                K = K + 1
-                IU( K ) = VMT_CELL( N,I )
-                CU( K ) = VMT_FRAC( N,I )
+C.............  Create ungridding matrix. The factors have been created so that any 
+C               non-link sources within a county have the same factors used for
+C               computing temperatures.  This means that a source (e.g., urban 
+C               interstates) that appear in only some cells in the county will
+C               use temperatures that are based on all sources in the county).
+C               The link sources within a county have different factors than the
+C               non-link sources, and these use only the cells that the link intersects.
+
+            K  = 0
+            DO S = 1, NSRC
+                N = CLIDX( S )
+
+C................  Skip sources that are outside the grid
+                IF( N .EQ. 0 ) THEN
+                    NU( S ) = 0
+                    CYCLE
+
+C................  Store the number of cells per source as the number of cell 
+C                  intersections with the county or link
+                ELSE
+                    NU( S ) = CNT_CL( N )
+                END IF
+
+                sum = 0
+C................  Store the cell numbers and VMT fractions into the ungridding matrix
+                DO I = 1, CNT_CL( N )
+                    K = K + 1
+                    IU( K ) = VMT_CELL( N,I )
+                    CU( K ) = VMT_FRAC( N,I )
+                END DO
+                
             END DO
-            
-        END DO
-        NCOEFU = K
+            NCOEFU = K
 
-C.........  Check for overflow
-        IF( NCOEFU .GT. NMATXU ) THEN
+C.............  Check for overflow
+            IF( NCOEFU .GT. NMATXU ) THEN
 
-            WRITE( MESG,94010 )
-     &       'INTERNAL ERROR: Ungridding matrix not written'
-     &       // CRLF() // BLANK10 //
-     &       'Arrays would have overflowed.' 
-     &       // CRLF() // BLANK10 // 
-     &       'Current cell-source intersections (NMATXU) =', NMATXU, '.'
-     &       // CRLF() // BLANK10 // 
-     &       'Actual  cell-source intersections          =', NCOEFU, '.'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                WRITE( MESG,94010 )
+     &           'INTERNAL ERROR: Ungridding matrix not written'
+     &           // CRLF() // BLANK10 //
+     &           'Arrays would have overflowed.' 
+     &           // CRLF() // BLANK10 // 
+     &           'Current cell-source intersections (NMATXU) =', NMATXU, '.'
+     &           // CRLF() // BLANK10 // 
+     &           'Actual  cell-source intersections          =', NCOEFU, '.'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
-        END IF
+            END IF
 
-C.........  Write out ungridding matrix
+C.............  Write out ungridding matrix
  
-        MESG = 'Writing out UNGRIDDING MATRIX file...'
-        CALL M3MSG2( MESG )
+            MESG = 'Writing out UNGRIDDING MATRIX file...'
+            CALL M3MSG2( MESG )
 
-        IF ( .NOT. WRITE3( UNAME, 'ALL', 0, 0, NU ) ) THEN
-            MESG = 'Problem writing UNGRIDDING MATRIX file.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            IF ( .NOT. WRITE3( UNAME, 'ALL', 0, 0, NU ) ) THEN
+                MESG = 'Problem writing UNGRIDDING MATRIX file.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
         END IF
 
 C.........  Report FIPS that don't have surrogate data
@@ -803,8 +803,9 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, NLKOGRD, FIPNOSRG, LKOGRD )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( IS, CS, NCL, IDXSRT2, INDOMAIN )
+        DEALLOCATE( IS, CS, NCL, INDOMAIN )
         DEALLOCATE( ACEL, AFAC, FIPNOSRG, LKOGRD )
+        IF( UFLAG ) DEALLOCATE( IDXSRT2 )
 
         RETURN
 
