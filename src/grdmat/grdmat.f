@@ -266,21 +266,6 @@ C.................  Make sure we're not using a variable grid
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
-C.........  Check if we have link data for mobile sources
-        IF( MAXVAL( XLOC1 ) .GT. AMISS3 ) THEN
-            IF( VFLAG ) THEN
-                MESG = 'Cannot use link-based data ' //
-     &                 'with a variable grid.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-        END IF
-
-C.........  Check if we only have link data for mobile sources
-C           (could use this to avoid reading unneeded surrogate data)
-c        IF( MINVAL( XLOC1 ) .GT. AMISS3 ) THEN
-c            LINKFLAG = .TRUE.
-c        END IF
-
 C.........  Define source-category-specific settings
         SELECT CASE( CATEGORY )
 
@@ -294,7 +279,20 @@ C               values are defined or not
             END DO
 
         CASE( 'MOBILE' )
-            SRGFLAG = .TRUE.  ! Need surrogates
+        
+C.............  Check for link-based sources when using a variable grid        
+            IF( MAXVAL( XLOC1 ) .GT. AMISS3 .AND. VFLAG ) THEN
+                MESG = 'Cannot use link-based data ' //
+     &                 'with a variable grid.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  If all sources are link-based, don't need surrogates (needs to be tested)
+c            IF( MINVAL( XLOC1 ) .GT. AMISS3 ) THEN
+c                SRGFLAG = .FALSE.
+c            ELSE
+               SRGFLAG = .TRUE.
+c            END IF
 
         CASE( 'POINT' )
 
@@ -392,8 +390,8 @@ C           surrogates to each source.
 
 C.............  Allocate memory for and read the gridding surrogates file,
 C               extracting data for a subgrid, if necessary
-            CALL RDSRG( GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
-
+            CALL RDSRG( VFLAG, GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
+            
 C..............  Read the link definition file
 c            CALL RDLNKDEF( )
 
