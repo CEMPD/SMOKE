@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -61,6 +61,9 @@ C...........   Subroutine arguments
         REAL        , INTENT(IN OUT) :: MOLEFACT( NPROFMAX ) ! mole-based facs
         REAL        , INTENT(IN OUT) :: MASSFACT( NPROFMAX ) ! mass-based facs
                                 
+C.........  Local parameters
+        INTEGER, PARAMETER :: MXSEG = 6        ! # of potential line segments
+
 C...........   Local unsorted arrays
 
         INTEGER        INDXA ( NPROFMAX )   ! sorting index
@@ -70,6 +73,9 @@ C...........   Local unsorted arrays
         CHARACTER*21   INPSPA( NPROFMAX )   ! unsorted profile no. // species ID
         CHARACTER*16   SPCIDA( NPROFMAX )   ! unsorted species IDs
         
+C...........   Other arrays
+        CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
+
 C...........   Other local variables
 
         INTEGER         I, J      ! counters and indices
@@ -83,10 +89,12 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.   ! error flag
 
-        CHARACTER*16    POLID             ! tmp pollutant ID
-        CHARACTER*16    SPCIDTMP          ! tmp species ID
         CHARACTER*200   LINE              ! read buffer for a line
         CHARACTER*300   MESG              ! text for M3EXIT()
+
+        CHARACTER(LEN=SPNLEN3)  TMPPRF    ! tmp profile number
+        CHARACTER(LEN=IOVLEN3)  POLID     ! tmp pollutant name
+        CHARACTER(LEN=IOVLEN3)  SPECNM    ! tmp species name
 
         CHARACTER*16 :: PROGNAME = 'RDSPROF' ! program name
        
@@ -103,13 +111,19 @@ C...........  Read in speciation profile
             IREC = IREC + 1
              
             IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
                 WRITE( MESG, 94010)
      &              'I/O error', IOS, 'reading speciation profile '//
      &              'file at line', IREC
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                CALL M3MESG( MESG )
+                CYCLE
             END IF
 
-            POLID = ADJUSTL( LINE( 7:22 ) )           
+C.............  Separate the line of data into each part
+            CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+C.............  Check for current pollutant of interest
+            POLID = ADJUSTL( SEGMENT( 2 ) )           
             IF ( POLID .NE. POLNAM ) CYCLE
             
             IPS = IPS + 1
@@ -117,16 +131,17 @@ C...........  Read in speciation profile
             IF ( IPS .LE. NPROFMAX ) THEN
             
                 INDXA ( IPS ) = IPS
-                SPCIDTMP      = ADJUSTL ( LINE( 24:39 ) )
-                INPSPA( IPS ) = ADJUSTR ( LINE(  1:5  ) ) // SPCIDTMP
-                SPCIDA( IPS ) = SPCIDTMP
-                FACTRA( IPS ) = STR2REAL( LINE( 41:53 ) )
-                DIVISA( IPS ) = STR2REAL( LINE( 55:67 ) )
-                XMFA  ( IPS ) = STR2REAL( LINE( 69:77 ) )
+                TMPPRF        = ADJUSTL ( SEGMENT( 1 ) ) 
+                SPECNM        = ADJUSTL ( SEGMENT( 3 ) )
+                INPSPA( IPS ) = ADJUSTR ( TMPPRF ) // SPECNM
+                SPCIDA( IPS ) = SPECNM
+                FACTRA( IPS ) = STR2REAL( SEGMENT( 4 ) )
+                DIVISA( IPS ) = STR2REAL( SEGMENT( 5 ) )
+                XMFA  ( IPS ) = STR2REAL( SEGMENT( 6 ) )
 
             END IF
 
-        END DO
+        END DO 
             
 12      CONTINUE    !End of read on input file
      
@@ -142,9 +157,9 @@ C...........  Read in speciation profile
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )      
 
-        ENDIF
+        END IF
        
-        CALL SORTIC( IPS, INDXA, INPSPA )    ! Sort on INPSPA
+        CALL SORTIC( NPROF, INDXA, INPSPA )    ! Sort on INPSPA
         
         DO I = 1, NPROF
 
@@ -161,7 +176,7 @@ C...........  Read in speciation profile
             MOLEFACT( I ) = TON2GM * FACTRA( J ) / DIVISA( J )
             MASSFACT( I ) = TON2GM * XMFA( J )
 
-        ENDDO
+        END DO
         
         IF( EFLAG ) THEN
             MESG = 'At least one of the divisors was zero.'
@@ -174,23 +189,23 @@ C            number of unique species names, NMSPC
         
         CALL SORTIC( IPS, INDXA, SPECID )       ! Sort on SPECID
         
-        SPCIDTMP = EMCMISS3  ! Initialize temporary 
+        SPECNM = EMCMISS3  ! Initialize temporary 
         NMSPC   = 0
         DO I = 1, NPROF
             
             J = INDXA ( I )
-            IF ( SPECID( J ) .NE. SPCIDTMP ) THEN
+            IF ( SPECID( J ) .NE. SPECNM ) THEN
                 NMSPC = NMSPC + 1
-                SPCIDTMP = SPECID( J )
+                SPECNM = SPECID( J )
             END IF
             
-        ENDDO
+        END DO
         
 C......... Rewind file
 
-       REWIND( FDEV )
+        REWIND( FDEV )
        
-       RETURN
+        RETURN
        
 C******************  FORMAT  STATEMENTS   ******************************
 
