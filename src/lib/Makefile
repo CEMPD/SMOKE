@@ -32,9 +32,9 @@ FILES_C = \
   fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
   fillmtbl.o   rdsprof.o    prclinrc.o   rmcommnt.o   rdorsdsc.o \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
-  fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
+  fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o  rdiusrc.o
 
-FILES_TMP = 
+FILES_TMP =
 
 INCLUDES = $(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
@@ -100,7 +100,7 @@ fillstbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillstbl.f
 fillttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillttbl.f
-fltrxref.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
+fltrxref.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ fltrxref.f
 fmtcsrc.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ fmtcsrc.f
@@ -140,6 +140,8 @@ rdgref.o : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdgref.f
 rdinvchr.o: $(MODSOURC) 
 	$(FC) $(FFLAGS) -c -o $@ rdinvchr.f
+rdiusrc.o: $(MODUNCERT) 
+	$(FC) $(FFLAGS) -c -o $@ rdiusrc.f
 rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
 rdorsdsc.o : $(MODLISTS)
@@ -170,7 +172,7 @@ wrchrscc.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrchrscc.f
 wridaout.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wridaout.f
-xreftbl.o: $(MODXREF) $(MODINFO)
+xreftbl.o: $(MODXREF) $(MODINFO) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ xreftbl.f
 
 clean:
