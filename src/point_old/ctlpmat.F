@@ -2,7 +2,7 @@
         PROGRAM CTLPMAT
 
 C***********************************************************************
-C  program body starts at line 170
+C  program body starts at line 176
 C
 C  DESCRIPTION:
 C       Construct point source control matrix from data 
@@ -54,7 +54,8 @@ C...........   INCLUDES:
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
+        CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3, FIND4
         LOGICAL         GETYN
@@ -67,7 +68,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        ENVYN, FIND1, FIND2, FIND3, FIND4, GETYN, 
+        EXTERNAL        CRLF, ENVYN, FIND1, FIND2, FIND3, FIND4, GETYN, 
      &                  GETPKT, INDEX1, PROMPTFFILE, PROMPTMFILE, 
      &                  SKIPCTL, STR2INT, STR2REAL, TRIMLEN
 
@@ -75,7 +76,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   PARAMETERS and their descriptions:
 
         INTEGER		MAXPKT		!  max # of packets in control file
-        PARAMETER     ( MAXPKT = 20 )
+        CHARACTER*5     BLANK5
+        PARAMETER     ( MAXPKT = 20,
+     &                  BLANK5 = ' ' )
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -215,9 +218,10 @@ C.......   Get file name; open input point sources, control definitions files
      &          'Enter logical name for POINT SOURCE input file',
      &          FSREAD3, 'PNTS', 'CTLPMAT' )
 
+        CNAME = 'PCTRL'
         CDEV = PROMPTFFILE( 
      &           'Enter logical name for CONTROL file',
-     &           .TRUE., .TRUE., 'PCTRL', 'CTLPMAT' )
+     &           .TRUE., .TRUE., CNAME, 'CTLPMAT' )
 
         RDEV = PROMPTFFILE( 
      &           'Enter logical name for REPORT file, or "NONE"',
@@ -494,12 +498,13 @@ C.......   First, get list of packet names in the control file
      &              IREC
                 CALL M3EXIT( 'CTLPMAT', 0, 0, MESG, 1 )
 
-            ELSE IF ( J .GT. 20 ) THEN
+            ELSE IF ( J .GT. 22 ) THEN
 
-                WRITE( MESG,94920 )
+                WRITE( MESG,94010 )
      &              'Packet name too long in ',
-     &              CNAME( 1:TRIMLEN( CNAME ) ),
-     &              IREC
+     &              CNAME( 1:TRIMLEN( CNAME ) ) // ' at line',
+     &              IREC, CRLF() // BLANK5 //
+     &              'Please change name or remove extra spaces.'
                 CALL M3EXIT( 'CTLPMAT', 0, 0, MESG, 1 )
 
             END IF
@@ -2680,6 +2685,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 
 C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94910   FORMAT( A, :, ' at line', I7, :,  '; IOSTAT=', I7 )
 
