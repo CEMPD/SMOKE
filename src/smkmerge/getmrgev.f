@@ -181,7 +181,9 @@ C           season data
 
 C.........  Set index for extracting pollutant data
         INVPIDX = 1
-        IF( .NOT. TFLAG .AND. LO3SEAS ) INVPIDX = 2
+        IF( ( AFLAG .OR. PFLAG ) .AND. 
+     &      .NOT. TFLAG          .AND. 
+     &      LO3SEAS                    ) INVPIDX = 2
 
 C.........  Check output flags to ensure at least some output
         IF( .NOT. LGRDOUT .AND.
