@@ -91,8 +91,8 @@ C...........   LNKDEF tables:
         REAL        LNKTOT( MXLNKD )
         
         INTEGER     NCEL
-        INTEGER     ACEL( MXCFIP )
-        REAL        AFAC( MXCFIP )
+        INTEGER     ACEL( MXCFIP )   !  cell number of intersection of link
+        REAL        AFAC( MXCFIP )   !  fraction of link in cell
         REAL        ALEN
 
 C...........   XREF before sorting:                                 
@@ -202,6 +202,7 @@ C...........   Other local variables
         INTEGER         I1         !  for counting state-dependent   srcs
         INTEGER         I2         !  for counting FIP-dependent   srcs
         INTEGER         LFIP, LRDT !  previous FIPs code and road class
+        INTEGER         LNKOGRD    !  number of links sources outside grid
         INTEGER         ROW, COL   !  temporary row, column
         INTEGER         NOS        !  number of FIPs w/o surrogates
         INTEGER         NSRG       !  number of surrogates in SDEV
@@ -767,7 +768,7 @@ C...........   Find this FIP and record in sorted surrogates FIPs list
                 
                 IF ( S .GE. MXFIP ) THEN
                     WRITE( MESG,94010 ) 
-     &                  'Max number FIPs', MXFIP, 
+     &                  'Max number FIPs (MXFIP)=', MXFIP, 
      &                  'exceeded in SURG COEF file at line', IREC
                     CALL M3MESG( MESG )
                     EFLAG = .TRUE.
@@ -787,10 +788,10 @@ C...........   Update number of cells for this source
             K = NCELLS( S ) + 1
        
 C...........   Check number of cells for this source versus maximum
-            IF ( K .GT. MXFIP ) THEN
+            IF ( K .GT. MXCFIP ) THEN
 
                 WRITE( MESG,94010 )
-     &             'Max number FIPs', MXFIP, 
+     &             'Max number cells per FIP (MXCFIP)=', MXCFIP,
      &             'exceeded in SURG COEF file for FIP', FIP,
      &             'Cell', C,
      &             ' at line', IREC
@@ -1002,6 +1003,7 @@ C.......       sixth case:   fallback default
         EFLAG = .FALSE.         !  flag to detect other errors
         LFIP  = 0
         NOS   = 0
+        LNKOGRD = 0
 
         DO  155  I = 1, NMSRC
             
@@ -1064,19 +1066,23 @@ C.................  Convert coordinate system from UTM to required system
      &                  'LNK:CEL table overflow for source', S
                     CALL M3MESG( MESG )
                     GO TO  155
-                END IF
 
-                IF( ALEN .NE. 0 ) THEN
-                    DD = 1.0 / ALEN
+                ELSEIF( NCEL .EQ. 0 ) THEN
 
-                ELSE
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 )
-     &                  'Bad coordinates for source', I
-                    CALL M3MESG( MESG )
+                    LNKOGRD = LNKOGRD + 1
                     GO TO  155
                     
+                ELSEIF( NCEL .EQ. -1 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                  'Zero-length link for FIP:', FIP, 'RCL:', 
+     &                  RDT, 'LNK:', LNK
+                    CALL M3MESG( MESG )
+                    GO TO  155
+
                 ENDIF
+
 
                 DO  111  K = 1, NCEL
                     C = ACEL( K )
@@ -1088,7 +1094,7 @@ C.................  Convert coordinate system from UTM to required system
                         CALL M3MESG( MESG )
                     ELSE  
                         IS( J,C ) = I 
-                        CS( J,C ) = DD * AFAC( K )
+                        CS( J,C ) = AFAC( K )
                     END IF
                     NX( C )   = J
 111             CONTINUE
@@ -1221,6 +1227,14 @@ C.....................  Store list of unfound FIPs
         
         CMAX = NX( 1 )
         CMIN = CMAX
+
+        IF( LNKOGRD .NE. 0 ) THEN
+
+            WRITE( MESG,94010 ) 'NOTE: ', LNKOGRD, 
+     &                          'link sources were outside grid.'
+            CALL M3MSG2( MESG )
+
+        ENDIF
         
         IF ( OFLAG ) THEN   !  overflow occurred:  just compute statistics.
             
@@ -1392,8 +1406,10 @@ C.......   Renormalize and Transpose ((IS,CS) into scratch arrays (IT,CT):
                     IT( J,S ) = C
                     CT( J,S ) = DN( S ) * CS( K,C )
                 ELSE
-                    OFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'Overflow for source', S
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 ) 
+     &                  'Maximum cells per FIP (MXCFIP)=', MXCFIP,
+     &                  ', actual=', J, 'at source', S
                     CALL M3MESG( MESG )
                 END IF
 
@@ -1403,6 +1419,10 @@ C.......   Renormalize and Transpose ((IS,CS) into scratch arrays (IT,CT):
 
 333     CONTINUE
 
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'GRDMMAT', 0, 0, 
+     &                   'Error processing gridding factors.', 2 )
+        END IF
 
         CMAX = NU( 1 )
         CMIN = CMAX
