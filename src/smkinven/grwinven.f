@@ -47,9 +47,10 @@ C...........   This module contains the information about the source category
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -98,7 +99,7 @@ C...........  Temporary IDA pollutant files unit nos.
 C...........  FIXED DIMENSION VARIABLES and their descriptions...
 
 C...........  Inventory file variable names
-        CHARACTER(LEN=IOVLEN3) :: IVNAMES( MXVARS3 )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: IVNAMES( : )
 
 C...........  Matrix variables not matching any inventory pollutants
         CHARACTER(LEN=IOVLEN3) CVODDLST( MXVARS3 ) 
@@ -177,7 +178,7 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Prompt for and open I/O API inventory input file
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
 
@@ -191,7 +192,7 @@ C.........  Prompt for and open ASCII inventory input file
      &         'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
 
 C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             L2 = LEN_TRIM( ENAME )
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:L2 ) // '"'
@@ -206,7 +207,9 @@ C           results are stored in module MODINFO.
             CALL GETSINFO
 
 C.............  Store varible names
-            IVNAMES( 1:NVARS3D ) = VNAME3D( 1:NVARS3D )
+            ALLOCATE( IVNAMES( NVARSET ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IVNAMES', PROGNAME )
+            IVNAMES( 1:NVARSET ) = VNAMESET( 1:NVARSET )
 
 C.............  Check to see if the file has already been projected, and if
 C               so, update the inventory year and print a warning
@@ -231,7 +234,7 @@ C.........  Read country, state, and county file for country codes
         CALL RDSTCY( ZDEV, 1, 0 )
 
 C.........  Set number of non-pollutant inventory variables
-        NNPVAR = NVARS3D - NIPOL * NPPOL - NIACT * NPACT
+        NNPVAR = NVARSSET - NIPOL * NPPOL - NIACT * NPACT
 
 C.........  Allocate memory based on number of control/projection matrices
         ALLOCATE( CNAMEA( NCMAT ), STAT=IOS )

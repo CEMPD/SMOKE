@@ -56,11 +56,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER(LEN=IODLEN3)  GETCFDSC
         INTEGER                 INDEX1
         INTEGER                 PROMPTFFILE
-        CHARACTER(LEN=NAMLEN3)  PROMPTMFILE
+        CHARACTER(LEN=NAMLEN3)  PROMPTSET  
         CHARACTER*16            VERCHAR
 
         EXTERNAL CRLF, ENVYN, GETCFDSC, INDEX1, PROMPTFFILE, 
-     &           PROMPTMFILE, VERCHAR
+     &           PROMPTSET, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER*16, INTENT (IN) :: ENAME ! emis input inven logical name
@@ -107,7 +107,7 @@ C.........  Initialize outputs
         VDEV  = 0
 
 C.........  Re-read header for input inventory file
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             L = LEN_TRIM( ENAME )
             MESG = 'Could not read description for "' //
      &             ENAME( 1:L ) // '"'
@@ -135,7 +135,7 @@ C.........  Prompt file output SMOKE file
      &            'output file'
             L = LEN_TRIM( ENAME )
             ONAME = ENAME( 1:L ) // '_O'
-            ONAME = PROMPTMFILE( MESG, FSUNKN3, ONAME, PROGNAME )
+            ONAME = PROMPTSET( MESG, FSUNKN3, ONAME, PROGNAME )
         END IF
 
 C.........  Get index for source category to use for output file names
