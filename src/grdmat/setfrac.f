@@ -1,6 +1,6 @@
 
-        SUBROUTINE SETFRAC( FDEV, SRCID, SRGIDX, CELIDX, FIPIDX, NC, 
-     &                      REPORT, CSRC, FRAC )
+        SUBROUTINE SETFRAC( SRCID, SRGIDX, CELIDX, FIPIDX, NC, 
+     &                      REPORT, CSRC, OUTID1, OUTID2, FRAC )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -43,7 +43,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGS, SRGLIST, SRGCSUM, SRGFRAC
 
         IMPLICIT NONE
 
@@ -59,7 +59,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        CRLF, ENVINT, FIND1
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: FDEV          ! unit no. for report file
         INTEGER     , INTENT (IN) :: SRCID         ! source ID
         INTEGER     , INTENT (IN) :: SRGIDX        ! surrogate index
         INTEGER     , INTENT (IN) :: CELIDX        ! cell index
@@ -67,12 +66,13 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NC            ! no. src chars for msg
         LOGICAL     , INTENT (IN) :: REPORT        ! true: okay to report
         CHARACTER(*), INTENT (IN) :: CSRC          ! source chars
+        INTEGER     , INTENT(OUT) :: OUTID1        ! primary srg ID
+        INTEGER     , INTENT(OUT) :: OUTID2        ! secondary srg ID
         REAL        , INTENT(OUT) :: FRAC          ! surrogate fraction
 
 C...........   Local allocatable arrays...
 
         INTEGER          L2       !  indices and counters.
-        INTEGER, SAVE :: ID2      !  tmp saved surrogate ID fallback
         INTEGER          IOS      !  i/o status
 
         INTEGER, SAVE :: DEFSRGID !  default surrogate ID
@@ -150,21 +150,16 @@ C.................  Write warning for default fraction of zero
 
 C.............  Set surrogate fraction using default surrogate
             FRAC = SRGFRAC( ISDEF,CELIDX,FIPIDX )
-            ID2  = DEFSRGID
+            OUTID1 = SRGLIST( SRGIDX )
+            OUTID2 = DEFSRGID
 
 C.........  Set surrogate fraction with cross-reference-selected
 C           surrogate
         ELSE
 
             FRAC = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
-            ID2 = 0
-
-        END IF
-
-C.........  Write surrogate code used for each source
-        IF( FDEV .GT. 0 .AND. CSRC2 .NE. LCSRC2 ) THEN
-
-            WRITE( FDEV,93360 ) SRCID, SRGLIST( SRGIDX ), ID2
+            OUTID1 = SRGLIST( SRGIDX )
+            OUTID2 = 0
 
         END IF
 
@@ -174,10 +169,6 @@ C.........  Write surrogate code used for each source
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Formatted file I/O formats............ 93xxx
-
-93360   FORMAT( I8, 1X, I4, 1X, I4 )
 
 C...........   Internal buffering formats............ 94xxx
 

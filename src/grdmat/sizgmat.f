@@ -1,6 +1,6 @@
 
-        SUBROUTINE SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, 
-     &                      MXCSRC, NMATX )
+        SUBROUTINE SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, 
+     &                      MXCCL, NMATX, NMATXU )
 
 C***********************************************************************
 C  subroutine body starts at line 102
@@ -41,34 +41,37 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: XLOCA, YLOCA, IFIP, CELLID, CLINK,
+     &                      XLOC1, YLOC1, XLOC2, YLOC2
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: SRGIDPOS, SGFIPPOS
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS
 
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NCELLS, FIPCELL
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-c        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
-c        INTEGER         
-
-c        EXTERNAL        
+        LOGICAL   INGRID
+        EXTERNAL  INGRID
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: CATEGORY  !  source category
-        INTEGER     , INTENT (IN) :: NSRC      !  local number of sources
-        INTEGER     , INTENT (IN) :: NGRID     !  number of grid cells   
-        INTEGER     , INTENT(OUT) :: MXSCEL    !  max sources per cell   
-        INTEGER     , INTENT(OUT) :: MXCSRC    !  max cells per source   
-        INTEGER     , INTENT(OUT) :: NMATX     !  no. src-cell intersections   
+        CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
+        INTEGER     , INTENT (IN) :: NSRC      ! local number of sources
+        INTEGER     , INTENT(OUT) :: MXSCEL    ! max sources per cell   
+        INTEGER     , INTENT(OUT) :: MXCSRC    ! max cells per source   
+        INTEGER     , INTENT(OUT) :: MXCCL     ! max cells per county or link   
+        INTEGER     , INTENT(OUT) :: NMATX     ! no. src-cell intersections   
+        INTEGER     , INTENT(OUT) :: NMATXU    ! no. county-cell intrsctns for all sources
 
 C...........   Local arrays dimensioned by subroutine arguments
 C...........   Note that the NGRID dimension could conceivably be too small if 
@@ -82,17 +85,25 @@ C...........   Other local variables
         INTEGER         C, F, J, K, I, N, S          ! counters and indices
 
         INTEGER         CCNT             ! counters for no. non-zero-surg cells
-        INTEGER         CELLSRC          ! cell number as source char
+        INTEGER      :: CELLSRC = 0      ! cell number as source char
+        INTEGER         COL              ! tmp column
+        INTEGER         FIP              ! tmp country/state/county code
+        INTEGER         ID1, ID2         ! primary and 2ndary surg codes
         INTEGER         ISIDX            ! tmp surrogate ID code index
+        INTEGER         LFIP             ! previous country/state/county code
         INTEGER         NCEL             ! tmp number of cells
+        INTEGER         ROW              ! tmp row
 
         REAL            ALEN        ! link length
 
         LOGICAL      :: EFLAG = .FALSE. ! true: error flag
+        LOGICAL      :: LFLAG = .FALSE. ! true: location data available
+        LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
-        CHARACTER*300   MESG        ! message buffer
+        CHARACTER*256   MESG        ! message buffer
 
         CHARACTER(LEN=LNKLEN3) :: CLNK = ' '   ! tmp link ID
+        CHARACTER(LEN=LNKLEN3) :: LLNK = ' '   ! previous link ID
 
         CHARACTER*16 :: PROGNAME = 'SIZGMAT' ! program name
 
@@ -103,16 +114,28 @@ C.........  Print status message
         MESG = 'Computing gridding matrix size...'
         CALL M3MSG2( MESG )
 
+C.........  Set flag to indicate that XLOCA/YLOCA are available
+        LFLAG = ALLOCATED( XLOCA )
+
 C.........  Initialize the count of sources per cell
         NX = 0   ! array
 
 C.........  Loop through sources
         MXCSRC  = 0
+        MXCCL   = 0
+        NMATXU  = 0
         CELLSRC = 0
+        LFIP = 0
+        LLNK = ' '
         DO S = 1, NSRC
 
+            FIP = IFIP( S )
             IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
             IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
+
+C.............  Determine if x/y location is available
+            XYSET = .FALSE.
+            IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
 
 C.............  If cell-specific source...
             IF ( CELLSRC .GT. 0 ) THEN
@@ -120,7 +143,25 @@ C.............  If cell-specific source...
                 ACEL( 1 ) = CELLID( S )
                 AFAC( 1 ) = 1.
 
-C............  If non-link source...
+C.............  Check if source has been converted to point src
+            ELSE IF( XYSET ) THEN
+
+C................  If source is in the domain....
+                IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
+
+C....................  Set as 1 cell and get the cell number
+                    NCEL = 1
+                    ACEL( 1 ) = ( ROW-1 ) * NCOLS + COL
+                    AFAC( 1 ) = 1.
+
+C.................  Otherwise, skip this source because it's outside the grid
+                ELSE
+                    NCEL = 0
+                    
+                END IF
+
+C............  If area/non-link source...
             ELSE IF( CLNK .EQ. ' ' ) THEN
 
 C.................  Retrieve the index to the surrogates cy/st/co list
@@ -135,8 +176,8 @@ C                   surrogates tables from MODSURG
                     ACEL( 1:NCEL ) = FIPCELL( 1:NCEL, F )      ! arrays
 
                     DO K = 1, NCEL
-                        CALL SETFRAC( 0, S, ISIDX, K, F, 1, .FALSE., 
-     &                                ' ', AFAC( K ) )
+                        CALL SETFRAC( S, ISIDX, K, F, 1, .FALSE., 
+     &                                ' ', ID1, ID2, AFAC( K ) )
                     END DO
 
 C.................  Otherwise, skip this source because it's outside the grid
@@ -172,10 +213,20 @@ C               of sources per cell.
                     CCNT = CCNT + 1
                 END IF
 
+C...............  Count all county/cell intersections for all sources.  This
+C                 is needed for ungridding matrix.
+                NMATXU = NMATXU + 1
+
             END DO    ! End loop on cells for this source
 
 C.............  Update the maximum number of cells per source
             IF( CCNT .GT. MXCSRC ) MXCSRC = CCNT
+
+C.............  Update the maximum number of cells per county or link
+            IF ( NCEL .GT. MXCCL ) MXCCL = NCEL
+
+            LFIP = FIP
+            LLNK = CLNK
  
         END DO        ! End loop on sources
 

@@ -45,16 +45,20 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, CSOURC, CSCC, CLINK, IRCLAS, IVTYPE
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: CHRT02, CHRT03, CHRT04, CHRT05, 
+     &                     CHRT06, CHRT07, CHRT08, CHRT09,
+     &                     ISRG01, ISRG02, ISRG03, ISRG04, ISRG05,
+     &                     ISRG06, ISRG07, ISRG08, ISRG09,
+     &                     SRGIDPOS, SGFIPPOS, TXCNT
 
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGS, SRGLIST, NSRGFIPS, SRGFIPS
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, LSCCEND, NCHARS, NSRC
 
         IMPLICIT NONE
 
@@ -67,8 +71,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         FINDC
+        LOGICAL         SETSCCTYPE
 
-        EXTERNAL    CRLF, ENVYN, FIND1, FINDC
+        EXTERNAL    CRLF, ENVYN, FIND1, FINDC, SETSCCTYPE
 
 C.........  Other local variables
         INTEGER          I, J, L2, S    !  counters and indices
@@ -80,6 +85,7 @@ C.........  Other local variables
         LOGICAL       :: EFLAG    = .FALSE.
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
         LOGICAL, SAVE :: REPDEFLT = .TRUE.
+        LOGICAL          SCCFLAG           ! true: SCC type is different from previous
 
         CHARACTER*8               FMTFIP   ! format for writing FIPS code
         CHARACTER*10              RWTFMT   ! formt to write rdway type to string
@@ -134,7 +140,11 @@ C.............  Create selection
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CSTA    = CFIP( 1:STALEN3 )
                 TSCC    = CSCC( S )
+                
+C.................  Set type of SCC                
+                SCCFLAG = SETSCCTYPE ( TSCC )
                 TSCCL   = TSCC( 1:LSCCEND )
+                
                 CFIPSCC = CFIP // TSCC
                 CFIPSL  = CFIP // TSCCL
                 CSTASCC = CSTA // TSCC

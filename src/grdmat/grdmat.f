@@ -39,25 +39,32 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
+     &                      CELLID   
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: SRGIDPOS, SGFIPPOS
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, COORD, GDTYP, 
+     &                     P_ALP, P_BET, P_GAM, XCENT, YCENT, NGRID,
+     &                     OFFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIPPA, EANAM
+
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
+c      INCLUDE 'PARMS3.EXT'    !  I/O API parameters (in modfileset)
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations 
+c      INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures (in modfileset)
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -65,13 +72,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL                DSCM3GRD
         LOGICAL                ENVYN
         CHARACTER(LEN=IODLEN3) GETCFDSC
+        INTEGER                INDEX1
         LOGICAL                INGRID
         INTEGER                PROMPTFFILE
-        CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
    
-        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INGRID, PROMPTFFILE, 
-     &            PROMPTMFILE, VERCHAR
+        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, INGRID, 
+     &            PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -92,6 +99,7 @@ C           for this program
 
 C...........   File units and logical/physical names
 c        INTEGER         ADEV    !  for adjustments file
+        INTEGER         IDEV    ! tmp unit number if ENAME is map file
         INTEGER         LDEV    !  log-device
         INTEGER         KDEV    !  for link defs file
         INTEGER         GDEV    !  for surrogate coeff file
@@ -102,24 +110,25 @@ c        INTEGER         ADEV    !  for adjustments file
 
         CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
         CHARACTER*16    ENAME   !  logical name for i/o api inventory input file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
         CHARACTER*16    GNAME   !  logical name for grid matrix output file
         CHARACTER*16    UNAME   !  logical name for ungrid matrix output file
 
 C...........   Other local variables
         
-        INTEGER         L1, L2, K, S !  indices and counters.
+        INTEGER         I, L1, L2, K, S !  indices and counters.
 
         INTEGER         COL     ! tmp column
         INTEGER         CMAX    ! max number srcs per cell
         INTEGER         CMIN    ! min number srcs per cell
-        INTEGER         CMAXU   ! max number cells per source
-        INTEGER         CMINU   ! min number cells per source
         INTEGER         ENLEN   ! length of the emissions inven name
         INTEGER         IOS     ! i/o status
         INTEGER         NK      ! Number of gridding coefficients 
         INTEGER         NKU     ! Number of ungridding coefficients
         INTEGER         NINVARR ! no. of inventory characteristics
         INTEGER         NMATX   ! no cell-source intersections
+        INTEGER         NMATXU  ! no county-source intrsctns for all sources
+        INTEGER         MXCCL   ! max no cells per county or link
         INTEGER         MXCSRC  ! max no cells per source
         INTEGER         MXSCEL  ! max no sources per cell
         INTEGER         ROW     ! tmp row
@@ -128,6 +137,7 @@ C...........   Other local variables
 
         REAL            CAVG   ! average number sources per cell
 
+        LOGICAL      :: A2PFLAG = .FALSE.  ! true: inv has ar-to-pt locations
         LOGICAL      :: AFLAG   = .FALSE.  ! true: use grid adjustments file
         LOGICAL      :: DFLAG   = .FALSE.  ! true: use link defs file
         LOGICAL      :: EFLAG   = .FALSE.  ! true: error found
@@ -182,18 +192,31 @@ C.........  Set source category based on environment variable setting
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.........   Get file names and open files
-        ENAME = PROMPTMFILE( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENLEN = LEN_TRIM( ENAME )
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-C.........  Get ASCII inventory file, if needed
-        IF( CATEGORY .NE. 'POINT' ) THEN
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
 
-            SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            ENLEN = LEN_TRIM( ENAME )
+
+            IF( CATEGORY .NE. 'POINT' ) THEN
+                SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+            END IF
 
         END IF
 
@@ -202,26 +225,12 @@ c     &  ADEV = PROMPTFFILE(
 c     &           'Enter logical name for ADJUSTMENT FACTORS file',
 c     &           .TRUE., .TRUE., CRLF // 'ADJUST', PROGNAME )
 
-C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESC3( ENAME ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:ENLEN ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.............  Store source specific information based on header
+        CALL GETSINFO( ENAME )
 
-C.........  Otherwise, store source-category-specific header information, 
-C           including the inventory pollutants in the file (if any).  Note that 
-C           the I/O API head info is passed by include file and the
-C           results are stored in module MODINFO.
-        ELSE
-
-            CALL GETSINFO
-
-C.............  Store non-category-specific header information
-            IFDESC2  = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
-            IFDESC3  = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-            INVGRDNM = GETCFDSC( FDESC3D, '/GRIDNAME/', .FALSE. )
-
-        END IF
+        IFDESC2  = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+        IFDESC3  = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
+        INVGRDNM = GETCFDSC( FDESC3D, '/GRIDNAME/', .FALSE. )
 
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'IFIP'
@@ -234,6 +243,17 @@ C.........  Set inventory variables to read for all source categories
             IVARNAMS( 3 ) = 'CELLID'
             IVARNAMS( 4 ) = 'CSOURC'
 
+C............  Check to see if the point locations are in the AREA
+C              file.  This makes the code backwards compatible with
+C              AREA files created by an older version of SMOKE.
+            K = INDEX1( 'XLOCA', NVARSET, VNAMESET )
+            IF ( K .GT. 0 ) THEN
+                A2PFLAG = .TRUE.
+                NINVARR = 6
+                IVARNAMS( 5 ) = 'XLOCA'
+                IVARNAMS( 6 ) = 'YLOCA'
+            END IF
+
         CASE ( 'MOBILE' )
             NINVARR = 10
             IVARNAMS( 2 ) = 'IRCLAS'
@@ -245,6 +265,17 @@ C.........  Set inventory variables to read for all source categories
             IVARNAMS( 8 ) = 'YLOC1'
             IVARNAMS( 9 ) = 'XLOC2'
             IVARNAMS( 10 ) = 'YLOC2'
+
+C............  Check to see if the point locations are in the AREA
+C              file.  This makes the code backwards compatible with
+C              AREA files created by an older version of SMOKE.
+            K = INDEX1( 'XLOCA', NVARSET, VNAMESET )
+            IF ( K .GT. 0 ) THEN
+                A2PFLAG = .TRUE.
+                NINVARR = 13
+                IVARNAMS( 12 ) = 'XLOCA'
+                IVARNAMS( 13 ) = 'YLOCA'
+            END IF
 
         CASE ( 'POINT' )
             NINVARR = 3
@@ -401,6 +432,25 @@ C.........  If output grid is different from surrogates, write message
             CALL M3MSG2( MESG )
         END IF
 
+C.........  If area or mobile inventory has point source locations,
+C           convert point source coordinates from lat-lon to output grid
+        IF( A2PFLAG ) THEN
+            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, XLOCA, YLOCA )
+        END IF
+
+C.........  Determine if ungridding matrix is needed
+        I = INDEX1( 'VMT', NIPPA, EANAM )
+        IF( I .GT. 0 ) THEN
+            UFLAG = .TRUE.
+            MESG = 'NOTE: VMT detected in inventory, ungridding matrix '
+     &             //'will be created'
+        ELSE
+            MESG = 'NOTE: VMT not detected in inventory, ungridding ' //
+     &             'matrix will NOT be created'
+        END IF
+        CALL M3MSG2( MESG )
+
 C.........  Depending on source category, convert coordinates, determine size
 C           of gridding matrix, and allocate gridding matrix.
 
@@ -409,7 +459,8 @@ C           of gridding matrix, and allocate gridding matrix.
         CASE( 'AREA' )
 
 C.............  Determine sizes for allocating area gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
+            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, 
+     &                    MXCCL, NMATX, NMATXU )
 
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
@@ -424,14 +475,16 @@ C.............  Convert mobile source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOC2, YLOC2 )
 
 C.............  Determine sizes for allocating mobile gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
+            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC,  
+     &                    MXCCL, NMATX, NMATXU )
  
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
 
 C.............  Allocate memory for mobile source ungridding matrix
-            ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
+            IF( .NOT. UFLAG ) NMATXU = 1
+            ALLOCATE( UMAT( NSRC + 2*NMATXU ), STAT=IOS )
             CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
 
         CASE( 'POINT' )
@@ -463,8 +516,8 @@ C.........  Abort of there are no source-cell intersections
 C.........  Get file names; open output gridding matrix (and ungridding matrix
 C           for mobile) using grid characteristics from DSCM3GRD() above        
 C.........  Also open report file 
-        CALL OPENGMAT( NMATX, IFDESC2, IFDESC3, GNAME, UNAME, RDEV )
-        UFLAG = ( UNAME .NE. 'NONE' )
+        CALL OPENGMAT( NMATX, NMATXU, UFLAG, IFDESC2, IFDESC3, GNAME, 
+     &                 UNAME, RDEV )
 
         CALL M3MSG2( 'Generating gridding matrix...' )
 
@@ -477,17 +530,17 @@ C           is done so the sparse i/o api format can be used.
 
         CASE( 'AREA' )
 
-            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NGRID, NMATX, 
+            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX, 
      &                     GMAT( 1 ), GMAT( NGRID+1 ), 
      &                     GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
 
         CASE( 'MOBILE' )
 
-            CALL GENMGMAT( GNAME, UNAME, RDEV, MXSCEL, MXCSRC, NSRC, 
-     &                     NGRID, NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
-     &                     GMAT( NGRID+NMATX+1 ), UMAT( 1 ), 
-     &                     UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
-     &                     NK, CMAX, CMIN, NKU, CMAXU, CMINU )
+            CALL GENMGMAT( ENAME, GNAME, UNAME, RDEV, MXSCEL, MXCSRC, 
+     &                     MXCCL, NSRC, NMATX, NMATXU, UFLAG, GMAT( 1 ),
+     &                     GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ), 
+     &                     UMAT( 1 ), UMAT( NSRC+1 ), 
+     &                     UMAT( NSRC+NMATXU+1 ),NK, CMAX, CMIN, NKU )
 
         CASE( 'POINT' )
    
@@ -502,15 +555,15 @@ C.........  Report statistics for gridding matrix
         CALL M3MSG2( 'GRIDDING-MATRIX statistics:' )
 
         WRITE( MESG,94010 ) 
-     &         'Total number of coefficients   :', NK   ,
+     &         'Total number of coefficients    :', NK   ,
      &         CRLF() // BLANK5 //
-     &         'Max  number of sources per cell:', CMAX,
+     &         'Max  number of sources per cell :', CMAX,
      &         CRLF() // BLANK5 //
-     &         'Min  number of sources per cell:', CMIN
+     &         'Min  number sources per cell > 0:', CMIN
 
         L1 = LEN_TRIM( MESG )
         WRITE( MESG,94020 ) MESG( 1:L1 ) // CRLF() // BLANK5 //
-     &         'Mean number of sources per cell:', CAVG
+     &         'Mean number of sources per cell :', CAVG
 
         CALL M3MSG2( MESG )
 
@@ -521,11 +574,7 @@ C.........  Report statistics for ungridding matrix
             CALL M3MSG2( 'UNGRIDDING-MATRIX statistics:' )
 
             WRITE( MESG,94010 ) 
-     &        'Total number of coefficients   :', NKU ,
-     &        CRLF() // BLANK5 //
-     &        'Max  number of cells per source:', CMAXU,
-     &        CRLF() // BLANK5 //
-     &        'Min  number of cells per source:', CMINU
+     &        'Total number of coefficients   :', NKU 
 
             WRITE( MESG, 94020 ) MESG( 1:LEN_TRIM( MESG ) ) //
      &        CRLF() // BLANK5 //
@@ -561,7 +610,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
 
-94020   FORMAT( A, :, F8.2 )
+94020   FORMAT( A, :, F10.2 )
 
         END PROGRAM GRDMAT
 
