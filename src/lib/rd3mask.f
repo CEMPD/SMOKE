@@ -84,14 +84,14 @@ C.............  Check variable index to see if this variable is to be read
             IF( J .EQ. 0 ) CYCLE  ! to go bottom of loop
 
 C.............  Read variable and print nice error message if cannot
-            VBUF = VNAMES( J )
+            VBUF = VNAMES( V )
             IF ( .NOT. READ3( 
      &           FNAME, VBUF, 1, JDATE, JTIME, OUTVAR( 1,J ) ) ) THEN
 
                 L  = LEN_TRIM( FNAME )
                 L1 = LEN_TRIM( VBUF )
                 MESG = 'Could not read variable "' // VBUF( 1:L1 ) //
-     &                 '" from file "' // FNAME( 1:L )
+     &                 '" from file "' // FNAME( 1:L ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             END IF    !  if read3() failed for file
