@@ -2,7 +2,7 @@
         PROGRAM TMPMOBIL
 
 C***********************************************************************
-C  program body starts at line 366
+C  program body starts at line 369
 C
 C  DESCRIPTION:
 C       Produces source-level temporally allocated VMT using the 
@@ -65,6 +65,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CHKXLIN
         CHARACTER*2     CRLF
         INTEGER         CSVNAME
+        INTEGER         ENVINT 
         LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3
         INTEGER         GETDATE 
@@ -86,11 +87,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL    CHKXLIN, CRLF, CSVNAME, ENVYN, FIND1, FIND2, FIND3,
-     &              GETDATE, GETEFILE, GETNUM, GETYN, HHMMSS, INDEX1,
-     &              ISDSTIME, JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE,
-     &              RDMPLIST, RDTPROF, STR2INT, SEC2TIME, TIME2SEC, 
-     &              TRIMLEN, WKDAY
+        EXTERNAL    CHKXLIN, CRLF, CSVNAME, ENVINT, ENVYN, FIND1, FIND2,
+     &              FIND3, GETDATE, GETEFILE, GETNUM, GETYN, HHMMSS, 
+     &              INDEX1, ISDSTIME, JULIAN, MMDDYY, PROMPTFFILE, 
+     &              PROMPTMFILE, RDMPLIST, RDTPROF, STR2INT, SEC2TIME, 
+     &              TIME2SEC, TRIMLEN, WKDAY
 
 
 C...........   PARAMETERS and their descriptions
@@ -236,7 +237,7 @@ c...........   Time-stepping Matrix.
 C.......   TMAT( S,V,E,H ) is profile coeffs for 
 C.......                    source S, pollutant V, emis type E, hour H
 
-        REAL            TMAT( NMSRC, NVTYPE, MXEMIS, 24 )    ! coeff profiles
+        REAL            TMAT( NMSRC, NVTYPE, MXEMIS, ONEOR24 ) ! coeff profiles
 
 C...........   Use equivalence statement to reduce the required memory
 
@@ -272,6 +273,8 @@ C...........   Other local variables
         LOGICAL         MFLAG   !  perform monthly adjustments flag
         LOGICAL         OFLAG   !  sources outside grid
         LOGICAL         OUTMSG  !  iff time to write out what day we are on
+        LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
+        LOGICAL         TMATBYHR!  iff need to calculate new TMAT for every hour
         LOGICAL         TMATCALC!  iff need to calculate new TMAT
         LOGICAL         WFLAG   !  perform weekly adjustments flag
         LOGICAL         ZONE4WM !  iff use zone for applying week/mon temp prof
@@ -406,6 +409,38 @@ C.......   Get environment variable logical variables
         ZONE4WM = ENVYN ( 'ZONE4WM', 'Assign weekly/monthly ' //
      &                    'using time zones', .TRUE., IOS         )
 
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
+ 
+C.......   Make sure TMAT is dimensioned properly
+        IF( ONEOR24 .EQ. 1 ) THEN
+            TMATBYHR = .TRUE.
+            WRITE( *,92000 ) 
+     &      'NOTE: Parameter ONEOR24 is set to 1, which reduces the',
+     &      '      required memory but increases the execution time.',
+     &      ' '
+
+        ELSEIF( ONEOR24 .EQ. 24 ) THEN
+            TMATBYHR = .FALSE.
+            WRITE( *,92000 ) 
+     &      'NOTE: Parameter ONEOR24 is set to 24, which reduces the',
+     &      '      execution time but increases the required memory.',
+     &      ' '
+
+        ELSE
+            WRITE( *,92000 ) 
+     &      'The parameter ONEOR24 in MBDIMS3.EXT allows you to reduce',
+     &      'the memory required by the TMPMOBIL program.  If ONEOR24',
+     &      'is set to 1, the memory requirements will be smaller, but',
+     &      'the program will run slower.  If it is set to 24 the',
+     &      'memory requirements will be much greater, and the program',
+     &      'will run faster (as long as the memory is available).',
+     &      ' '
+          
+            MESG= 'Set ONEOR24 in MBDIMS3.EXT to 1 or 24 and recompile!'
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+
+        ENDIF
 
 C.......   Get file name; open input mobile sources, temporal cross-reference,
 C.......   and temporal profiles files
@@ -469,22 +504,70 @@ C.........  Get starting date and time from met data file
         SCEN_STR = FDESC3D( 2 )
         SCHE_STR = FDESC3D( 3 )
 
-        TZONE  = 5
+C.......   Get default time characteristic for output file:
+C.......   If we're going to prompt, then set the defaults based on met file
+C.......      otherwise, use environment variables to set defaults
+
+        EFLAG = .FALSE.
+        IF( PROMPTF ) THEN
+
+            TZONE  = 5
+            JDATE  = SDATE3D
+            JTIME  = STIME3D
+            NSTEPS = MXREC3D
+
+        ELSE
+
+            TZONE  = ENVINT( 'OUTZONE', 'Output time zone', 5, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but OUTZONE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            JDATE  = ENVINT( 'ESDATE', 'Start date', 1995182, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but ESDATE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            JTIME  = ENVINT( 'STIME' , 'Start time', 0 , IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but STIME is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            NSTEPS = ENVINT( 'DURATION', 'Duration', 24, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but DURATION is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            IF( EFLAG ) THEN
+                CALL M3EXIT( 'TMPMOBIL', 0, 0,
+     &                       'Bad environment variable setting(s)', 2 )
+            ENDIF
+ 
+        ENDIF
+
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone for output emissions (0 for GMT)' )
 
 C.........  Convert starting date and time from Met file based on zone
-        JDATE = SDATE3D
-        JTIME = STIME3D
-        CALL NEXTIME( JDATE, JTIME, -TZONE*10000 )
+        IF( PROMPTF ) THEN
+            CALL NEXTIME( JDATE, JTIME, -TZONE*10000 )
+        ENDIF
 
 C.........  Prompt for date and time
         JDATE  = GETDATE( JDATE, 
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
-        JTIME  = GETNUM( 0, 999999, JTIME, 
-     &                   'Enter simulation starting time  (HHMMSS)' )
-        NSTEPS = GETNUM( 1, 999999, MXREC3D,
-     &                   'Enter simulation duration (hours)' )
+        JTIME  = GETNUM( 0, 235959, JTIME, 
+     &                   'Enter simulation starting time (HHMMSS)' )
+        NSTEPS = GETNUM( 1, 999999, NSTEPS,
+     &                   'Enter output duration (hours)' )
 
 C.........  Record integer entries in LDEV
         DTBUF = MMDDYY( JDATE )
@@ -1530,15 +1613,11 @@ C.......   Read ungridding matrix:
             CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         END IF
 
-C...........   Determine the hours in the output time zone for which a new
-C...........   TMAT is necessary (in order to have sources in different time
-C...........   zones all get the start of each day of the week correct)
 
+C.........   Find the minimum and maximum time zones of the sources
         TZMIN = TZONES( 1 )   ! Initialize minimum time zone in inventory
         TZMAX = TZONES( 1 )   ! Initialize maximum time zone in inventory
         DO 399 S = 1, NMSRC
-
-C.............  Set minimum and maximum time zone in inventory
             IF    ( TZONES( S ) .LT. TZMIN ) THEN
                 TZMIN = TZONES( S )
 
@@ -1549,10 +1628,12 @@ C.............  Set minimum and maximum time zone in inventory
 
 399     CONTINUE
 
-C...........   Adjust TZMIN for possibility of daylight savings
+C.........   Adjust TZMIN for possibility of daylight savings
         TZMIN = TZMIN - 1
 
-C...........   Determine hours of output day for updating TMAT
+C.........   Determine the hours in the output time zone for which a new
+C.........   TMAT is necessary (in order to have sources in different time
+C.........   zones all get the start of each day of the week correct).
         J = 0
         DO 411 I = TZMIN, TZMAX
 
@@ -1561,7 +1642,6 @@ C...........   Determine hours of output day for updating TMAT
 
 411     CONTINUE
         NHRCALC = J
-
 
 C......................................................................
 C...........   For each time step, write out the area source emissions values:
@@ -1589,7 +1669,7 @@ C.................  Use same loop for case where this feature is turned off.
                 DO 755 I = TZMIN, TZMAX
  
                     TDATE = JDATE
-                    TTIME = JTIME
+                    TTIME = 0     ! Set for loop below from 1 to 24
                     CALL NEXTIME( TDATE, TTIME, ( TZONE - I ) * 10000 )
  
                     DO 751 J = 1, 24
@@ -1619,21 +1699,30 @@ C...............   Turn on message for day of week and date
  
             ENDIF
 
-C...........   Set integer hour of day for output time
- 
-            H  = 1 + MOD( JTIME / 10000 , 24 )
-
-C...........   Determine if this hour is one that requires a new TMAT
-C...........   (because one or more sources are starting a new day)
-C...........   Allow for case where ZONE4WM is false, then only
-C...........   need to update TMAT once per day.
-
-            IF( ZONE4WM ) THEN 
-                I        =  FIND1( H, NHRCALC , HRCALC )
-                TMATCALC = ( I .GT. 0 .OR. T .EQ. 1 )
+C.............  Set hour and TMATCALC depending on dimensioning of TMAT
+            IF( TMATBYHR ) THEN
+                H = 1
+                TMATCALC = .TRUE.
 
             ELSE
-                TMATCALC = ( JDATE .NE. LDATE  )
+
+C...............   Set integer hour of day for output time
+ 
+                H  = 1 + MOD( JTIME / 10000 , 24 )
+
+C...............   Determine if this hour is one that requires a new TMAT
+C...............   (because one or more sources are starting a new day)
+C...............   Allow for case where ZONE4WM is false, then only
+C...............   need to update TMAT once per day.
+
+                IF( ZONE4WM ) THEN 
+                    I        =  FIND1( H, NHRCALC , HRCALC )
+                    TMATCALC = ( I .GT. 0 .OR. T .EQ. 1 )
+
+                ELSE
+                    TMATCALC = ( JDATE .NE. LDATE  )
+
+                ENDIF
 
             ENDIF
 
@@ -1674,8 +1763,8 @@ C.................  If there are no weekend packets...
 
                     CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH,  DAYOW, 
-     &                           TZONE,  TZONES,
+                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, JTIME, MONTH,  
+     &                           DAYOW, TZONE,  TZONES, ONEOR24,
      &                           MONFAC, NMON, MDEX,
      &                           WEKFAC, NWEK, WDEX,
      &                           DIUFAC, NDIU, DDEX, MXMAT, TMAT )
@@ -1692,8 +1781,8 @@ C.................  If there are weekend packets, and it's a weekend...
 
                     CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAYOW, 
-     &                           TZONE,  TZONES,
+                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, JTIME, MONTH,
+     &                           DAYOW, TZONE,  TZONES, ONEOR24,
      &                           MONFAC, NMON, MDEX,
      &                           WEKFAC, NWEK, WDEX,
      &                           ENDFAC, NEND, EDEX, MXMAT, TMAT )
@@ -1709,8 +1798,8 @@ C.................  If there are weekend packets, and it's not a weekend...
 
                     CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAYOW, 
-     &                           TZONE,  TZONES,
+                    CALL MKVMAT( NMSRC,  NETYPE, JDATE, JTIME, MONTH,
+     &                           DAYOW, TZONE,  TZONES, ONEOR24,
      &                           MONFAC, NMON, MDEX,
      &                           WEKFAC, NWEK, WDEX,
      &                           DIUFAC, NDIU, DDEX, MXMAT, TMAT )
@@ -1824,7 +1913,8 @@ C                   available in emission factors file
                 END IF		!  tasrc trapped; coeffs & index found.
 
 C...............   Adjust which hourly EF to use based on time zone
-                HCORR = MOD( H + TZONE + 25 - TZONES( S ), 24 )
+                HCORR = 1 + MOD( JTIME / 10000 , 24 )
+                HCORR = MOD( HCORR + TZONE + 25 - TZONES( S ), 24 )
                 M     = EFDEX( HCORR, S )
 
 C...............   Get factors for interpolating diurnal emission factors
