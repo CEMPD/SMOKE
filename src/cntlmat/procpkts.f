@@ -104,8 +104,8 @@ C...........   Other local variables
                                                     ! been opened
 
         CHARACTER*5     CPOS        ! tmp sorted position of pol
-        CHARACTER*300   LINE        ! read buffer for a line
-        CHARACTER*300   MESG        ! message buffer
+        CHARACTER*256   LINE        ! read buffer for a line
+        CHARACTER*256   MESG        ! message buffer
 
         CHARACTER(LEN=IOVLEN3), SAVE :: RPOL ! pol name for reactivity controls
 
@@ -116,11 +116,7 @@ C   Begin body of subroutine PROCPKTS
 
         IF( FIRSTIME ) THEN
 
-            MESG = 'Pollutant for creating reactivity matrix'
-            CALL ENVSTR( 'REACTIVITY_POL', MESG, 'VOC', RPOL, IOS )
-
             SFLAG = .FALSE.     ! Initialize status as no packets applied
-
             FIRSTIME = .FALSE.
    
         END IF
@@ -129,6 +125,10 @@ C   Begin body of subroutine PROCPKTS
 
 C.........  Reactivity packet...
         CASE( 'REACTIVITY' )
+
+C.............  Get environment variable setting for reactivity pollutant
+            MESG = 'Pollutant for creating reactivity matrix'
+            CALL ENVSTR( 'REACTIVITY_POL', MESG, 'VOC', RPOL, IOS )
 
 C.............  Make sure that the pollutant for the reactivity packet is 
 C               in the inventory
@@ -195,21 +195,24 @@ C                   iteration
 
             END IF
 
-C.................  Create array for names of pollutants that receive controls
+            IF( .NOT. ALLOCATED( PNAMMULT ) ) THEN
+
+C................  Create array for names of pollutants that receive controls
                 ALLOCATE( PNAMMULT( NIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PNAMMULT', PROGNAME )
+                PNAMMULT = ' '    ! array
 
 C.................  Create array of flags indicating which controls are
 C                   applied to each pollutant receiving at least one type
 C                   of control
                 ALLOCATE( PCTLFLAG( NIPPA, 4 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PCTLFALG', PROGNAME )
+                PCTLFLAG = .FALSE.    ! array
+
+            END IF
 
 C.............  Initialize pollutant indictor to zero
             IPSTAT = 0          ! Array
-
-C.............  Initialize control flags to false
-            PCTLFLAG = .FALSE.  ! Array
  
 C.............  Loop through the pollutant groups...
 
@@ -296,23 +299,6 @@ C                     do not have the base-year control effectiveness
 
                     SFLAG = .TRUE.
 
-c                CASE( 'ADD' )
-
-c                    ADDIDX = 0   ! array
-c                    VIDXMULT = 0 ! array
-c                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
-c     &                             EANAM2D( 1,N ), IPSTAT, ADDIDX )
-
-c                    CALL UPDATE_POLLIST( N, NGSZ, ADDIDX,
-c     &                                   VIDXMULT, 4 )
-c                    IF ( .NOT. OFLAG(4) ) THEN
-c                       CALL OPENCTMP( PKTTYPE, ADEV )
-c                       OFLAG(4) = .TRUE.
-c                    END IF
-c                    CALL WRCTMP( ADEV, N, NGSZ, ADDIDX, VIDXMULT )
-
-c                    SFLAG = .TRUE.
-
                 END SELECT
 
             END DO   ! End loop on pollutant groups
@@ -337,9 +323,6 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010  FORMAT( 10( A, :, I8, :, 1X ) )
-
-C STOPPED HERE:  Need to add UPDATE_POLLIST to maintain the lists of 
-C       variable names for the mult control matrix and addative control matrix
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 

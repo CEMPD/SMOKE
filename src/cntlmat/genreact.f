@@ -170,7 +170,7 @@ C.............  Get environment variables that control program behavior
 
 C.........  Open reports file
             RPTDEV( 3 ) = PROMPTFFILE( 
-     &                     'Enter logical name for PROJECTION REPORT', 
+     &                     'Enter logical name for REACTIVITY REPORT', 
      &                    .FALSE., .TRUE., CRL // 'REACREP', PROGNAME )
             RDEV = RPTDEV( 3 )
 
@@ -444,11 +444,13 @@ C           sources or mobile sources as well.
         IF( MASSOUT ) THEN
             ALLOCATE( RMTXMASS( NSREAC, NMSPC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'RMTXMASS', PROGNAME )
+            RMTXMASS = 0.
         END IF
 
         IF( MOLEOUT ) THEN
             ALLOCATE( RMTXMOLE( NSREAC, NMSPC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'RMTXMOLE', PROGNAME )
+            RMTXMOLE = 0.
         END IF
 
 C.........  Allocate memory for names of output variables
@@ -463,35 +465,25 @@ C           more than 13 characters - must use BLDENAMS routine to
 C           do this correctly.
         IF( LO3SEAS ) THEN
             VNAM = OZNSEART // RPOL( 1:MIN( LEN_TRIM( RPOL ), 13 ) )
-            IF( .NOT. READSET( ENAME, VNAM, ALLAYS3, ALLFILES,
-     &                         0, 0, EMIS ) ) THEN
-                MESG = 'Could not read "' // TRIM( RPOL ) //
-     &                '" from inventory file ' // ENAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
         ELSE
-            IF( .NOT. READSET( ENAME, RPOL, ALLAYS3, ALLFILES,
-     &                         0, 0, EMIS ) ) THEN
-                MESG = 'Could not read "' // TRIM( RPOL ) //
-     &                '" from inventory file ' // ENAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C...........  Convert to tons/day
-            YFAC = YR2DAY( BYEAR )
-            EMIS = YFAC * EMIS      ! array
-
+            VNAM = RPOL
         END IF
+
+        CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                 1, 1, RPOL, VNAM, 1, EMIS )
 
 C.........  Loop through all sources and store reactivity information for
 C           those that have it
+        YFAC = YR2DAY( BYEAR )  ! for loop below
         N = 0
         DO S = 1, NSRC
 
             K = ISREA( S )       ! index to reactivity data tables
 
             IF( K .GT. 0 ) THEN 
+
+C................. Adjust annual emissions values
+                IF( .NOT. LO3SEAS ) EMIS( S ) = EMIS( S ) * YFAC
 
 C.................  For storing inventory emissions, use the value from the
 C                   reactivity table only if it is greater than zero. Otherwise,

@@ -125,7 +125,6 @@ C...........   Other local variables
         INTEGER          SCCBEG   ! begining of SCC in CSOURC string
         INTEGER          SCCEND   ! end of SCC in CSOURC string
 
-        REAL             ALWFAC   ! allowable control factor
         REAL             ALWEMIS  ! allowable emissions
         REAL             CAP      ! emissions cap
         REAL             CTGFAC   ! control technology control factor
@@ -152,6 +151,8 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) PSCC       ! previous SCC
         CHARACTER(LEN=SRCLEN3) CSRC       ! tmp source chars
         CHARACTER(LEN=IOVLEN3) PNAM       ! tmp pollutant name
+        CHARACTER(LEN=IOVLEN3) CBUF       ! pollutant name temporary buffer 
+        CHARACTER(LEN=IOVLEN3) EBUF       ! pollutant name temporary buffer 
 
         CHARACTER*16  :: PROGNAME = 'GENMULTC' ! program name
 
@@ -161,6 +162,7 @@ C   begin body of subroutine GENMULTC
 C.........  Get environment variables that control program behavior
         MESG = 'Use annual or ozone season emissions'
         LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+        IF( LO3SEAS ) INVPIDX = 1
 
 C.........  Open reports file
         RPTDEV( 1 ) = PROMPTFFILE( 
@@ -327,41 +329,27 @@ C...........  Loop through pollutants that receive controls
         DO I = 1, NVCMULT
 
 C............  Set tmp pollutant name 
-           PNAM = PNAMMULT( I )
+            PNAM = PNAMMULT( I )
+            EBUF = OUTNAMES(I,1)
+            CBUF = OUTNAMES(I,1+INVPIDX)
 
 C............  Initialize control factor array
-           FACTOR = 1.0  ! array
+            FACTOR = 1.0  ! array
 
-C...........  Read in emissions data from inventory file
-C...........  Ozone-season emissions
-           IF( LO3SEAS ) THEN
+C...........  Read in emissions data from inventory file...
+C...........  From map-formatted inventory or old format
+            CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                     1, 1, EBUF, CBUF, 1, EMIS )
 
-               IF ( .NOT. 
-     &              READSET( ENAME, OUTNAMES(I,2), 1, -1, 
-     &                       0, 0, EMIS ) ) THEN
-                   CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
-               END IF
-
-C...........  Annual emissions
-           ELSE 
-
-               IF ( .NOT. 
-     &              READSET( ENAME, OUTNAMES(I,1), 1, -1,
-     &                       0, 0, EMIS )  ) THEN
-                   CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
-               END IF
-
-C...............  Divide annual emissions to get average day
-              FAC = YR2DAY( BYEAR )
-              EMIS = EMIS * FAC      ! array
-
-            END IF
-
+C...........  Adjust emissions values and compute group values
+            FAC = YR2DAY( BYEAR )  ! year to day factor for later
             DO S = 1, NSRC
 
-                IF ( EMIS( S ) .LT. AMISS3 ) THEN
-                    EMIS( S ) = 0.0
-                END IF
+C...............  Check for missing values and reset to zero
+                IF( EMIS( S ) .LT. AMISS3 ) EMIS( S ) = 0.0
+
+C...............  Divide annual emissions to get average day
+                IF( .NOT. LO3SEAS ) EMIS( S ) = EMIS( S ) * FAC
 
 C.................  Compute group emissions before controls
                 J = GRPINDX( S )
@@ -379,20 +367,14 @@ C             AREA sources, rule penetration.
 C.............  Area sources...
               CASE( 'AREA' )
 
-              IF ( .NOT. READSET( ENAME, OUTNAMES(I,4), 1, -1,
-     &                          0, 0, CTLEFF ) ) THEN
-                 CALL WRITE_MESG_EXIT( OUTNAMES(I,4), PROGNAME )
-              END IF
+              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                       1, 1, EBUF, OUTNAMES(I,4), 1, CTLEFF )
 
-              IF ( .NOT. READSET( ENAME, OUTNAMES(I,5), 1, -1,
-     &                          0, 0, RULEFF ) ) THEN
-                 CALL WRITE_MESG_EXIT( OUTNAMES(I,5), PROGNAME )
-              END IF
+              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                       1, 1, EBUF, OUTNAMES(I,5), 1, RULEFF )
 
-              IF ( .NOT. READSET( ENAME, OUTNAMES(I,6), 1, -1,
-     &                          0, 0, RULPEN ) ) THEN
-                 CALL WRITE_MESG_EXIT( OUTNAMES(I,6), PROGNAME )
-              END IF
+              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                       1, 1, EBUF, OUTNAMES(I,6), 1, RULPEN )
 
 C.............  Mobile sources...
               CASE( 'MOBILE' ) 
@@ -404,15 +386,11 @@ C.............  Mobile sources...
 C.............  Point sources...
               CASE( 'POINT' )
 
-              IF ( .NOT. READSET( ENAME, OUTNAMES(I,3), 1, -1,
-     &                          0, 0, CTLEFF ) ) THEN
-                 CALL WRITE_MESG_EXIT( OUTNAMES(I,3), PROGNAME )
-              END IF
+              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                       1, 1, EBUF, OUTNAMES(I,3), 1, CTLEFF )
 
-              IF ( .NOT. READSET( ENAME, OUTNAMES(I,4), 1, -1,
-     &                          0, 0, RULEFF ) ) THEN
-                 CALL WRITE_MESG_EXIT( OUTNAMES(I,4), PROGNAME )
-              END IF
+              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                       1, 1, EBUF, OUTNAMES(I,4), 1, RULEFF )
 
               RULPEN = 100.0  ! array
 
@@ -514,7 +492,8 @@ C..................  Overwrite temporary file line with new info
            END IF
 
 C.............................................................................
-C...........  Compute CTL factor using EMS-95 inputs
+C...........  Apply /EMSCONTROL/ packet controls if present for the current 
+C             pollutant
 C.............................................................................
 C...........  NOTE - SFLAG and CFLAG cannot both be true
            IF ( SFLAG .AND. PCTLFLAG( I, 1 ) ) THEN
@@ -629,23 +608,24 @@ C.....................  If no controls, then overwrite temporary line only
 
            END IF
 
+C.............................................................................
+C............  Apply /ALLOWABLE/ packet
+C.............................................................................
            IF ( LFLAG .AND. PCTLFLAG( I, 3 ) ) THEN
 
 C...........  Process ALW packet
-
               DO S = 1, NSRC
 
                  E1 = EMIS( S )
 
                  K = ALWINDX( S, I ) 
                  IF ( K .GT. 0 ) THEN
-                    ALWFAC  = FACALW  ( K )
                     CAP     = EMCAPALW( K )
                     REPLACE = EMREPALW( K )
 
 C.....................  Both Cap value and Replace value are defined, then
 C                       compare emissions to Cap and set factor with Replace.
-                    IF ( CAP .GE. 0 .AND. REPLACE .GE. 0 ) THEN
+                    IF ( CAP .GE. 0. .AND. REPLACE .GE. 0. ) THEN
 
                        IF ( EMIS( S ) .GT. CAP ) THEN
                           FACTOR( S ) = REPLACE/EMIS( S )
@@ -653,7 +633,7 @@ C                       compare emissions to Cap and set factor with Replace.
 
 C.....................  Only Cap value is defined, then compare emissions to Cap
 C                       set factor with Cap
-                    ELSE IF ( CAP .GE. 0 .AND. REPLACE .LT. 0 ) THEN
+                    ELSE IF ( CAP .GE. 0. .AND. REPLACE .LT. 0. ) THEN
 
                        IF ( EMIS( S ) .GT. CAP ) THEN
                           FACTOR( S ) = CAP/EMIS( S )
@@ -661,7 +641,7 @@ C                       set factor with Cap
 
 C.....................  Only Replace value is defined, then set factor with
 C                       Replace.
-                    ELSE IF ( CAP .LT. 0 .AND. REPLACE .GE. 0 ) THEN
+                    ELSE IF ( CAP .LT. 0. .AND. REPLACE .GE. 0. ) THEN
 
                        IF ( EMIS( S ) .GT. REPLACE ) THEN
                           FACTOR( S ) = REPLACE/EMIS( S )
@@ -707,7 +687,8 @@ C.............  Open control matrix, if needed and if not opened before
 
 C.............  Write multiplicative controls for current pollutant
             IF( OPENFLAG ) THEN
-                IF( .NOT. WRITE3( MNAME, PNAM, 0, 0, FACTOR ) ) THEN
+                IF( .NOT. WRITESET( MNAME, PNAM, ALLFILES, 0, 0, 
+     &                              FACTOR )                     ) THEN
                     MESG = 'Failed to write multiplicative control ' // 
      &                     'factors for pollutant ' // PNAM
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

@@ -77,7 +77,6 @@ C.........  Other local variables
         CHARACTER*300          MESG     ! message buffer
 
         CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
-        CHARACTER(LEN=IOVLEN3) UNITS    ! emissions units
 
         CHARACTER*16 :: PROGNAME = 'OPENPMAT' ! program name
 
@@ -94,8 +93,6 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-        J       = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        UNITS   = VUNITSET( J + 1 )
 
 C.........  Initialize I/O API output file headers
         CALL HDRMISS3

@@ -91,14 +91,15 @@ C...........   Logical names and unit numbers
         INTEGER         CDEV         !  control file unit no.
         INTEGER         CTMPDEV      !  file unit no. for tmp CTL file
         INTEGER         GTMPDEV      !  file unit no. for tmp CTG file
+        INTEGER         IDEV         !  tmp unit number if inven is map-formatted
         INTEGER         LDEV         !  log file unit no.
         INTEGER         LTMPDEV      !  file unit no. for tmp ALW file
         INTEGER         SDEV         !  ASCII part of inventory unit no.
         INTEGER         TDEV         !  tracking file unit no.
 
-        CHARACTER*16    ANAME   ! logical name for additive control matrix
+        CHARACTER*16    ANAME   ! logical name for ASCII inventory input file
         CHARACTER*16    ENAME   ! logical name for i/o api inventory input file
-        CHARACTER*16    INAME   ! logical name for ASCII inventory input file
+        CHARACTER*16    INAME   ! tmp logical name for inven file of unknown fmt
         CHARACTER*16    MNAME   ! logical name for multiplicative control matrix
         CHARACTER*16    PNAME   ! logical name for projection matrix
         CHARACTER*16    SNAME   ! logical name for ascii inventory input file
@@ -162,47 +163,46 @@ C.........  Set source category based on environment variable setting
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.........   Get file names and open files
-        ENAME = PROMPTSET( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENLEN = LEN_TRIM( ENAME )
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
+
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
         CDEV = PROMPTFFILE( 
      &           'Enter logical name for ASCII CONTROL PACKETS file',
      &           .TRUE., .TRUE., 'GCNTL', PROGNAME )
 
-C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESCSET( ENAME, -1 ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:ENLEN ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Otherwise, store source-category-specific header information, 
+C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
-        ELSE
+        CALL GETSINFO( ENAME )
 
-            CALL GETSINFO
+C.........  Check for future-year inventory file
+        PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
-c note: should BYEAR be set in GETSINFO since it is part of MODINFO?  This
-c    n: would affect a number of other programs as well.
-
-C.............  Determine if file is a base or future-year inventory file
-            BYEAR = GETIFDSC( FDESC3D, '/BASE YEAR/'     , .TRUE.  )
-            PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
-
-C.............  Set starting year on which to base possible projections created
-C               in this program
-            SYEAR = BYEAR
-            IF( PYEAR .GT. 0 ) SYEAR = PYEAR
-
-        ENDIF
+C.........  Set starting year on which to base possible projections created
+C           in this program
+        SYEAR = BYEAR
+        IF( PYEAR .GT. 0 ) SYEAR = PYEAR
 
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'INVYR'
@@ -277,20 +277,7 @@ C.............  Write-out control matrix
             CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV,
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG )
-
-C STOPPED HERE: Need to write opencmat, genaddc, report post-processor
         END IF
-
-C.........  Additive matrix
-        IF( DFLAG ) THEN
-
-C            CALL OPENCMAT( ENAME, NPOLADD, 'ADDITIVE', PNAMADD )
-
-C            CALL GENADDC( )
-
-        END IF
-
-C.........  Open final report file
 
 C.........  Post-process temporary files to create final report file
         CALL WCNTLREP( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV )

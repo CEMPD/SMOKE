@@ -92,7 +92,6 @@ C.........  Other local variables
 
         CHARACTER(LEN=IOVLEN3) CPOL     ! pollutant name buffer
         CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
-        CHARACTER(LEN=IOVLEN3) UNITS    ! emissions units
 
         CHARACTER*16 :: PROGNAME = 'OPENRMAT' ! program name
 
@@ -109,8 +108,6 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-        J       = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        UNITS   = VUNITSET( J + 1 )
 
 C.........  Initialize variable names for I/O API files
         SVNAMES = ' '  ! Array
@@ -146,7 +143,7 @@ C.........  Set up non-speciation variables
 
         VNAME3D( J )= 'REPEMIS'
         VTYPE3D( J )= M3REAL
-        UNITS3D( J )= UNITS
+        UNITS3D( J )= 'tons/day'
         VDESC3D( J )= 'Reactivity base-year emissions' 
         J = J + 1
 

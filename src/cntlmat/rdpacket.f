@@ -137,13 +137,22 @@ C.........  Process the line of data, depending on packet type
             PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
             PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
 
+C.........  Check to see if cutoff value is missing, and give error
+C           if it is.
+            IF ( PKTINFO%FAC1 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: CUTOFF value missing '//
+     &                'from CTG packet record at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
 C.........  Check to see if last column is blank. If blank, then
 C           set PKTINFO%FAC4 = -9 and issue warning.
             IF ( SEGMENT( 7 ) .EQ. ' ' ) THEN
                PKTINFO%FAC4 = -9
-               WRITE( MESG, 94020 ) 'RACT value missing from CTG' 
-     &         // ' packet record at line', IREC
-               CALL M3WARN( PROGNAME, 0, 0, MESG )
+               WRITE( MESG, 94020 ) 'WARNING: RACT value missing from'//
+     &                ' CTG packet record at line', IREC
+               CALL M3MESG( MESG )
             ELSE
                PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
             END IF
@@ -179,23 +188,12 @@ C           set PKTINFO%FAC4 = -9 and issue warning.
 
 C.........  Check to see if both CAP and REPLACE are missing. If so, issue
 C           a warning.
-            IF ( PKTINFO%FAC2 .LT. 0 .AND. PKTINFO%FAC3 .LT. 0) THEN
-               WRITE( MESG, 94020 ) 'Neither CAP or REPLACE defined'
-     &         // ' in allowable packet record at line', IREC
-               CALL M3WARN( PROGNAME, 0, 0, MESG )
+            IF ( PKTINFO%FAC2 .LT. 0 .AND. PKTINFO%FAC3 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Neither CAP or REPLACE '//
+     &                'defined in allowable packet record at line', IREC
+                CALL M3MSG2( MESG )
             END IF
-
-        CASE( 'ADD' )
-            PKTINFO%TSCC =           SEGMENT( 2 )
-            PKTINFO%CPOL =           SEGMENT( 3 )
-            PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
-            PKTINFO%CSIC =           SEGMENT( 5 )
-            PKTINFO%PLT  =           SEGMENT( 6 )
-            PKTINFO%CHAR1=           SEGMENT( 7 )
-            PKTINFO%CHAR2=           SEGMENT( 8 )
-            PKTINFO%CHAR3=           SEGMENT( 9 )
-            PKTINFO%CHAR4=           SEGMENT( 10 )
-            PKTINFO%CHAR5=           SEGMENT( 11 )
 
         CASE( 'REACTIVITY' )
             PKTINFO%TSCC   =           SEGMENT( 2 )
