@@ -82,6 +82,9 @@ C
       CHARACTER*1 NUMBER(10)
       DATA NUMBER/'0','1','2','3','4','5','6','7','8','9'/
       DATA LOWUYR/1970/
+cmh  Add declarations and common for temperature overide
+      REAL             TMPRTR, TMIN, TMAX
+      COMMON /TOVRIDE/ TMPRTR, TMIN, TMAX
 C
 C  Acquire inputs.
 C
@@ -94,6 +97,10 @@ CC   *    ' ','diesel flag, reform flag & base fuel flag: ')
       READ(IOUGEN,100,ERR=96,END=96) (SCNAME(I),I=1,4),ASTMCL,TEMMIN,
      *    TEMMAX,RVPBAS,RVPIUS,IUSESY,OXYCHR,DSFCHR,RFGCHR,IAFCHR,WINCHR
   100 FORMAT(4A4,1X,A1,2F5.0,2F5.1,1X,I2,3(1X,A1),1X,3A1,1X,A1)
+c
+cmh Add temperature overide
+      TEMMIN = TMIN
+      TEMMAX = TMAX
 C
 C  Parse OXYFLG, DSFLAG, RFGFLG, WINFLG and IAFCNT columns to prevent input
 C  errors.

@@ -93,6 +93,10 @@ c  Added FLAGS3 common block so the the temperature flag could be modified
 c
       COMMON /FLAGS3/ ATPFLG,TPDFLG,RLFLAG,LOCFLG,TEMFLG,OUTFMT
 c
+cmh  Add declarations and common block for temperature overide
+      REAL             TMPRTR, TMIN, TMAX
+      COMMON /TOVRIDE/ TMPRTR, TMIN, TMAX
+c
       COMMON /IMPAR2/ ILDT(4,2),ITEST(2)
       COMMON /IMPAR6/ IFREQ(2),INTYP(2),IFILET(2)
       COMMON /IMPAR7/ TNAME,IREAD
@@ -147,6 +151,8 @@ c  100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0)
      *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3),ndi_di
   100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0,A1)
 c
+cmh add temperature override
+      AMBT = TMPRTR
 C
 C     check for irejn = 3 or 4 and the Processing of the LEVs
       IF(IREJN.EQ.3.OR.IREJN.EQ.4) THEN
@@ -314,7 +320,7 @@ C
 C        Loop for the two (2) ITECHs to be stored in the record.
 C
    30    WRITE(IOUASK,240) DTNAME
-  240    FORMAT(' Reading TECH1&2 I/M Credit Data File...'/A80)
+  240    FORMAT(7X, ' Reading TECH1&2 I/M Credit Data File...'/ 7X,A80)
          DO 45 ITECH=1,2
 C
 C          Loop for the five (5) stringency values in the record.

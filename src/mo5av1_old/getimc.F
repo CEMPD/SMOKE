@@ -74,6 +74,14 @@ C
       COMMON /IMPAR6/ IFREQ(2),INTYP(2),IFILET(2)
       COMMON /IMPAR7/ TNAME,IREAD
       COMMON /IOUCOM/ IOUIMD,IOUGEN,IOUREP,IOUERR,IOUASK
+
+cmh add declarations
+      LOGICAL WFLAG
+cmh
+cmh add commons
+      COMMON /WARNING/ WFLAG
+cmh
+
 C
       IMPNO1 = 1
       IMPNO2 = 1
@@ -158,8 +166,12 @@ C
             GOTO 70
       ENDIF
 C
-      WRITE(IOUASK,220) IMNAME
-  220 FORMAT(' Reading I/M credits information'/' ',A80)
+cmh add conditional
+      IF( WFLAG ) THEN
+          WRITE(IOUASK,220) IMNAME
+      ENDIF
+
+  220 FORMAT( 7X,' Reading I/M credits information'/ 8X, A80)
 C
 C     Now that the data are being read in set the flag to indicate.
 C
@@ -233,9 +245,14 @@ C
 C  Set the read indicator flag
 C
       IMPNO2=2
-      WRITE(IOUASK,230) IMNAME
+
+cmh add conditional
+      IF( WFLAG ) THEN
+          WRITE(IOUASK,230) IMNAME
+      ENDIF
+
   230 FORMAT
-     *(' Reading second I/M program credits information'/' ',A80)
+     *( 7X,' Reading second I/M program credits information'/ 8X,A80)
 C
 C     Loop for the 18 ITECH to be stored in the record.
 C
