@@ -76,8 +76,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
 
-        PARAMETER   ( SCCSW   = '@(#)$Id$'
-     &              )
+        PARAMETER   ( SCCSW   = '$Revision$' ) ! CVS revision number
 
 C...........   LOCAL VARIABLES and their descriptions:
 

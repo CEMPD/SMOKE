@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: FDEV    ! report file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
+        CHARACTER*50, PARAMETER :: SCCSW  = '$Revision$'  ! CVS revision no.
 
 C...........   Other local variables
 
