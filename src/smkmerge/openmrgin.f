@@ -819,7 +819,7 @@ C.............  If not layer-fractions file, retrieve and compare time zone
      &                 'with initialized value of', TZONE
                     CALL M3MSG2( MESG )
 
-                ELSE
+                ELSE IF( .NOT. ZFLAG ) THEN
                     ZFLAG = .TRUE.
                     TZONE = LOCZONE
 
@@ -865,7 +865,7 @@ C               match.  This is used for reactivity matrices, which will
 C               always have a projection year, even if the inventory isn't
 C               projected.
             IF( .NOT. PRJFLAG ) THEN
-                BUFFER = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+                BUFFER = GETCFDSC( FDESC3D, '/FROM/', .FALSE. )
                 IF( BUFFER .EQ. 'OPENRMAT' ) STRICT = .FALSE.
             END IF
 
@@ -875,7 +875,7 @@ C.............  If time information has already been initialized...
                 YY = GETIFDSC( IODESC, '/PROJECTED YEAR/', .FALSE. )
                 IF( YY .LE. 0 ) THEN
 
-                    YY = GETIFDSC( IODESC, '/BASE YEAR/', .TRUE. ) 
+                    YY = GETIFDSC( IODESC, '/BASE YEAR/', .FALSE. ) 
                     IF( YY .NE. BYEAR ) THEN
                         WRITE( MESG,94010 ) 
      &                        'Base year of ' // FNAME // ' file:', YY,
@@ -901,7 +901,7 @@ C.............  If time information has already been initialized...
 C.............  If year information needs to be initialized...
             ELSE
                 
-                BYEAR = GETIFDSC( IODESC, '/BASE YEAR/', .TRUE. ) 
+                BYEAR = GETIFDSC( IODESC, '/BASE YEAR/', .FALSE. ) 
                 PYEAR = GETIFDSC( IODESC, '/PROJECTED YEAR/', .FALSE. )
 
                 IF( YY .GT. 0 ) THEN
