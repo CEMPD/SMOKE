@@ -26,6 +26,7 @@ C.........  Width of source information strings
         INTEGER, PARAMETER :: SICLEN3 =  4 ! SIC 
         INTEGER, PARAMETER :: VIDLEN3 =  4 ! vehicle type ID
         INTEGER, PARAMETER :: VTPLEN3 =  5 ! vehicle type
+        INTEGER, PARAMETER :: BVGLEN3 =  4 ! biogenic veg ID
 
 C.........  Width of other global character strings 
         INTEGER, PARAMETER :: IOVLEN3 = 16 ! length of I/O API variables
