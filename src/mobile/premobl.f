@@ -5,10 +5,10 @@ C***********************************************************************
 C  program body starts at line 205
 C
 C  DESCRIPTION:
-C       Creates county-based 24-hour temperature and relative humidity 
+C       Creates county-based 24-hour temperature and mixing ratio 
 C       profiles based on gridded meteorology data. Temperatures and 
-C       humidity can be averaged across counties and different time periods. 
-C       Also outputs average daily barometric pressure values. Tries to 
+C       mixing ratios can be averaged across counties and different time periods. 
+C       Also outputs hourly barometric pressure values. Tries to 
 C       account for missing meteorology data as much as possible.
 C
 C  PRECONDITIONS REQUIRED:
@@ -51,10 +51,10 @@ C...........   This module contains the information about the source category
 
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET, ONLY: MINTEMP, MAXTEMP, TASRC, QVSRC, PRESSRC,
-     &                    TKHOUR, RHHOUR, BPHOUR, 
+     &                    TKHOUR, QVHOUR, BPHOUR, 
      &                    DYCODES, WKCODES, MNCODES, EPCODES,
      &                    TDYCNTY, TWKCNTY, TMNCNTY, TEPCNTY,
-     &                    RHDYCNTY, RHWKCNTY, RHMNCNTY, RHEPCNTY,
+     &                    QVDYCNTY, QVWKCNTY, QVMNCNTY, QVEPCNTY,
      &                    BPDYCNTY, BPWKCNTY, BPMNCNTY, BPEPCNTY
 
 C.........  This module contains the global variables for the 3-d grid
@@ -254,15 +254,7 @@ C.........  Get the time zone for output of the emissions
                 
 C.........  Get the name of the temperature variable
         MESG = 'Temperature variable name'
-        CALL ENVSTR( 'TVARNAME', MESG, 'TA', TVARNAME, IOS )
-
-C.........  Print warning if temperature variable is not from 3D file
-        IF( TVARNAME /= 'TA' ) THEN
-            MESG = 'WARNING: Selected temperature variable ' //
-     &             TRIM( TVARNAME ) // ' may be inconsistent with ' //
-     &             'data used for calculating relative humidity.'
-            CALL M3MSG2( MESG )
-        END IF
+        CALL ENVSTR( 'TVARNAME', MESG, 'TEMPG', TVARNAME, IOS )
 
 C.........  Set default names for additional variables
         PRESNAME = 'PRES'
@@ -320,10 +312,6 @@ C.........  Set inventory variables to read
 
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
-
-C.........  Build unique lists of SCCs and country/state/county codes
-C           from the inventory arrays
-ccs        CALL GENUSLST
 
 C.........  Define the minimum and maximum time zones in the inventory
         TZMIN = MINVAL( TZONES )
@@ -880,7 +868,6 @@ C.........  Make sure min and max fall within range allowed by MOBILE6
 
 C.........  Convert temperature parameters to proper units
 C.........  Kelvin for now - future can be dependant on met input units
-
         MINTEMP = FTOC * ( MINTEMP - 32. ) + CTOK
         MAXTEMP = FTOC * ( MAXTEMP - 32. ) + CTOK
 
@@ -953,36 +940,36 @@ C.........  Read ungridding matrix
 C.........  Allocate memory for storing meteorology profiles
         ALLOCATE( TKHOUR( NSRC, 24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
-        ALLOCATE( RHHOUR( NSRC, 24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RHHOUR', PROGNAME )
+        ALLOCATE( QVHOUR( NSRC, 24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'QVHOUR', PROGNAME )
         ALLOCATE( BPHOUR( NSRC, 24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BPHOUR', PROGNAME )
         
         ALLOCATE( TDYCNTY( NDYCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TDYCNTY', PROGNAME )
-        ALLOCATE( RHDYCNTY( NDYCNTY ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RHDYCNTY', PROGNAME )
+        ALLOCATE( QVDYCNTY( NDYCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'QVDYCNTY', PROGNAME )
         ALLOCATE( BPDYCNTY( NDYCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BPDYCNTY', PROGNAME )
         
         ALLOCATE( TWKCNTY( NWKCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TWKCNTY', PROGNAME )
-        ALLOCATE( RHWKCNTY( NWKCNTY ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RHWKCNTY', PROGNAME )
+        ALLOCATE( QVWKCNTY( NWKCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'QVWKCNTY', PROGNAME )
         ALLOCATE( BPWKCNTY( NWKCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BPWKCNTY', PROGNAME )
         
         ALLOCATE( TMNCNTY( NMNCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TMNCNTY', PROGNAME )
-        ALLOCATE( RHMNCNTY( NMNCNTY ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RHMNCNTY', PROGNAME )
+        ALLOCATE( QVMNCNTY( NMNCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'QVMNCNTY', PROGNAME )
         ALLOCATE( BPMNCNTY( NMNCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BPMNCNTY', PROGNAME )
         
         ALLOCATE( TEPCNTY( NEPCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TEPCNTY', PROGNAME )
-        ALLOCATE( RHEPCNTY( NEPCNTY ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RHEPCNTY', PROGNAME )
+        ALLOCATE( QVEPCNTY( NEPCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'QVEPCNTY', PROGNAME )
         ALLOCATE( BPEPCNTY( NEPCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BPEPCNTY', PROGNAME )
 
@@ -1171,7 +1158,7 @@ C.................  Process daily averages
 C.....................  Average temperatures across county group                
                     CALL AVERTEMP( NSRC, NDYCNTY, DYCODES, 
      &                             COUNTYSRC( :,1 ), ARRAYPOS, 
-     &                             TDYCNTY, RHDYCNTY, BPDYCNTY, 
+     &                             TDYCNTY, QVDYCNTY, BPDYCNTY, 
      &                             NDAYSRC )
 
 C.....................  Open new file if necessary (1 day per output file)
@@ -1184,7 +1171,7 @@ C.....................  Open new file if necessary (1 day per output file)
 
 C.....................  Write time step to file
                     CALL WRSHOUR( DNAME, DDATE, OTIME, NDYCNTY, 
-     &                            DYCODES, TDYCNTY, RHDYCNTY, BPDYCNTY )
+     &                            DYCODES, TDYCNTY, QVDYCNTY, BPDYCNTY )
      
                     IF( OTIME == 230000 ) THEN
 
@@ -1205,7 +1192,7 @@ C.............  If current output day is Saturday, process weekly averages
 C.....................  Average temperatures across county group 
                     CALL AVERTEMP( NSRC, NWKCNTY, WKCODES, 
      &                             COUNTYSRC( :,1 ), ARRAYPOS,
-     &                             TWKCNTY, RHWKCNTY, BPWKCNTY, 
+     &                             TWKCNTY, QVWKCNTY, BPWKCNTY, 
      &                             NDAYSRC )
 
 C.....................  Open new file if necessary (one week per output file)
@@ -1218,7 +1205,7 @@ C.....................  Open new file if necessary (one week per output file)
 
 C.....................  Write time step to file
                     CALL WRSHOUR( WNAME, WDATE, OTIME, NWKCNTY, 
-     &                            WKCODES, TWKCNTY, RHWKCNTY, BPWKCNTY )
+     &                            WKCODES, TWKCNTY, QVWKCNTY, BPWKCNTY )
                     
                     IF( OTIME == 230000 ) THEN
                     	
@@ -1247,7 +1234,7 @@ C.................  If last day of month, process monthly averages
 C.....................  Average temperatures across county group 
                     CALL AVERTEMP( NSRC, NMNCNTY, MNCODES, 
      &                             COUNTYSRC( :,1 ), ARRAYPOS,
-     &                             TMNCNTY, RHMNCNTY, BPMNCNTY,
+     &                             TMNCNTY, QVMNCNTY, BPMNCNTY,
      &                             NDAYSRC )
 
 C.....................  Open new file if necessary (one month per output file)
@@ -1260,7 +1247,7 @@ C.....................  Open new file if necessary (one month per output file)
 
 C.....................  Write time step to file                     
                     CALL WRSHOUR( MNAME, MDATE, OTIME, NMNCNTY, 
-     &                            MNCODES, TMNCNTY, RHMNCNTY, BPMNCNTY )               
+     &                            MNCODES, TMNCNTY, QVMNCNTY, BPMNCNTY )               
                     
                     IF( OTIME == 230000 ) THEN
                     	
@@ -1298,12 +1285,12 @@ C                   not Saturday; otherwise, this has already been handled above
                     DO K = 1, 24                    
                         CALL AVERTEMP( NSRC, NWKCNTY, WKCODES, 
      &                                 COUNTYSRC( :,1 ), K,
-     &                                 TWKCNTY, RHWKCNTY, BPWKCNTY, 
+     &                                 TWKCNTY, QVWKCNTY, BPWKCNTY, 
      &                                 NDAYSRC )
                        
                         CALL WRSHOUR( WNAME, WDATE, ( K-1 )*10000, 
      &                                NWKCNTY, WKCODES, TWKCNTY, 
-     &                                RHWKCNTY, BPWKCNTY )
+     &                                QVWKCNTY, BPWKCNTY )
                     END DO
                 END IF
 
@@ -1320,12 +1307,12 @@ C                   not the last day of the month
                     DO K = 1, 24
                         CALL AVERTEMP( NSRC, NMNCNTY, MNCODES, 
      &                                 COUNTYSRC( :,1 ), K,
-     &                                 TMNCNTY, RHMNCNTY, BPMNCNTY, 
+     &                                 TMNCNTY, QVMNCNTY, BPMNCNTY, 
      &                                 NDAYSRC )
                         
                         CALL WRSHOUR( MNAME, MDATE, ( K-1 )*10000, 
      &                                NMNCNTY, MNCODES, TMNCNTY, 
-     &                                RHMNCNTY, BPMNCNTY )  
+     &                                QVMNCNTY, BPMNCNTY )  
                     END DO
                 END IF
 
@@ -1334,12 +1321,12 @@ C.................  Output episode averaged temperatures
                     DO K = 1, 24
                         CALL AVERTEMP( NSRC, NEPCNTY, EPCODES, 
      &                                 COUNTYSRC( :,1 ), K,
-     &                                 TEPCNTY, RHEPCNTY, BPEPCNTY, 
+     &                                 TEPCNTY, QVEPCNTY, BPEPCNTY, 
      &                                 NDAYSRC )
      
                         CALL WRSHOUR( PNAME, SDATE, ( K-1 )*10000, 
      &                                NEPCNTY, EPCODES, TEPCNTY,
-     &                                RHEPCNTY, BPEPCNTY )
+     &                                QVEPCNTY, BPEPCNTY )
                     END DO    
                 END IF
 
