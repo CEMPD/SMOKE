@@ -22,7 +22,7 @@ FILES_B = \
   alocstbl.o   chksrcno.o   rdstcy.o     rdgmat.o     rdinvchr.o \
   alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
   applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o    rdsccdsc.o \
-  asgnpsi.o    dscsprof.o   getformt.o   rdlines.o    verchar.o  \
+  dscsprof.o   getformt.o   rdlines.o    verchar.o  \
   efsetup.o    getidasz.o   normtpro.o   rdpelv.o \
   getdysav.o   ingrid.o     rdrmat.o    
 
@@ -77,8 +77,6 @@ alocttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocttbl.f
 applumat.o: $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ applumat.f
-asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ asgnpsi.f
 bldenams.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ bldenams.f
 chkptdef.o: $(MODINFO) 
@@ -135,8 +133,6 @@ procspro.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ procspro.f
 rdcodnam.o: $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdcodnam.f
-rdefxref.o: $(MODMOBIL) $(MODXREF) $(MODEMFAC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdefxref.f
 rdeproc.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdeproc.f
 rdgref.o : $(MODXREF) $(MODLISTS) $(MODINFO)
@@ -167,8 +163,6 @@ rdtref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdtref.f
 rdvmix.o  : $(MODMOBIL) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdvmix.f
-tmprinfo.o  : $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ tmprinfo.f
 wrchrscc.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrchrscc.f
 wridaout.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
