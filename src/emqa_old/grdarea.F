@@ -2,7 +2,7 @@
         PROGRAM GRDAREA
 
 C***********************************************************************
-C  program body starts at line  146
+C  program body starts at line  160
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDAMAT to grid
@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
 C                Modeling System
 C File Version @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -95,40 +95,56 @@ C...........   Gridding Matrix
 
         COMMON  / GRIDMAT / NS, IS, CS
 
+C...........   Control Matrix
+
+        REAL            CC( NASRC, NIPOL )
+
 C...........   Inventory arrays
         INTEGER         IFIP  ( NASRC )   ! FIPs  code for each source
         INTEGER         INVYR ( NASRC )   ! Inventory year code for each source
         INTEGER         ISPTR ( NASRC )   ! Pointer for each state
         INTEGER         STATES( NASID )   ! Unique list of state IDs
+        INTEGER         ICPTR ( NASRC )   ! Pointer for each county
+        INTEGER         CTYS  ( NAFIP )   ! Unique list of county IDs
 
 C...........   Report arrays
         REAL            EMSUM( NASID, NIPOL ) ! Summed emissions by state
+        REAL            CYSUM( NAFIP, NIPOL ) ! Summed emissions by county
 
 C...........   Other local variables
  
         INTEGER         BTIME   !  beginning time of day in run
         INTEGER         IOS
-        INTEGER         I, K, L, S, T, V
+        INTEGER         I, K, L, M, S, T, V
         INTEGER         JDATE, JTIME, TSTEP
         INTEGER         LDATE, LTIME       ! previous date and time in loop
         INTEGER         LDEV
+        INTEGER         FDEV               ! state, county names unit number
+
         INTEGER         LSTA               ! previous state code
         INTEGER         NSTA               ! actual number of states
+        INTEGER         LCTY               ! previous county code
+        INTEGER         NCTY               ! actual number of counties
         INTEGER         NSTEPS
         INTEGER         RDEV               ! output report unit number
         INTEGER         RTIME              ! time for reporting state totals
         INTEGER         STA                ! temporay state code
+        INTEGER         CTY                ! temporary county code
+
         INTEGER         VTYPE( NIPOL )
 
         LOGICAL         EFLAG   !  Error flag
         LOGICAL         OUTPUTFLAG
         LOGICAL         ST_REPORT  ! Output state-based emissions totals
+        LOGICAL         CY_REPORT  ! Output county-based emissions totals
+        LOGICAL         CONTROLFLAG  ! control-matrix usage flag
  
-        CHARACTER*4     OUTNAM  !  contains default  logical output name
-        CHARACTER*7     REPNAM  !  contains default logical report output name
+        CHARACTER*5     OUTNAM  !  contains default  logical output name
+        CHARACTER*8     REPNAM  !  contains default logical report output name
         CHARACTER*16    ANAME   !  logical name for area-source      input file
         CHARACTER*16    ENAME   !  logical name for emission source output file
         CHARACTER*16    GNAME   !  logical name for grid matrix      input file
+        CHARACTER*16    CNAME   !  logical name for control    matrix input file
         CHARACTER*16    INAME   !  logical name for inventory input file
 
         CHARACTER*16    SCRBUF  !  scratch name buffer
@@ -177,13 +193,32 @@ C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
 
+        CY_REPORT = ENVYN( 'CY_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
+
+C.......   If county report desired, get state and county names
+        IF ( CY_REPORT )
+     &          FDEV = PROMPTFFILE(
+     &          'Enter name for STATE/COUNTY FIPS CODE file',
+     &          .TRUE., .TRUE., 'STCYNAM', 'GRDAREA' )
+
         RTIME = ENVINT( 'ST_REPTIME', 
      &                  'Per-State summation reporting time (HHMMSS)',
      &                   230000, IOS )
 
+C........  Read in gridding matrix
         GNAME = PROMPTMFILE( 
      &          'Enter logical name for input GRID MATRIX file',
      &          FSREAD3, 'AGMAT', 'GRDAREA' )
+
+C........  Read in control matrix if desired. 
+        CNAME = PROMPTMFILE(
+     &          'Enter logical name for CONTROL MATRIX file ' //
+     &          'or "NONE"',
+     &          FSREAD3, 'ACMAT', 'GRDAREA' )
+
+C........  If control matrix file to be used set CONTROLFLAG 
+        CONTROLFLAG = ( CNAME .NE. NONE )
 
         ANAME = PROMPTMFILE( 
      &          'Enter logical name for ANNUAL or TIME-STEPPED ' //
@@ -214,24 +249,41 @@ C.......   data structure to just those variables desired):
 C.........  Based on input files and control status so far, set default
 C........   output file names
 
-C.........  Annual inventory file as input
-        IF ( TSTEP .EQ. 0 ) THEN
+C.........  Annual inventory file as input with controls
+
+        IF ( TSTEP .EQ. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Area gridded controlled inv pollutants'
+            OUTNAM = 'AGRDC'
+            REPNAM = 'AGRDCREP'
+
+C.........  Annual inventory file as input with NO controls
+ 
+        ELSEIF ( TSTEP .EQ. 0 ) THEN
             NSTEPS  = 1
             FDESC3D( 1 ) = 'Area gridded inventory pollutants'
             OUTNAM = 'AGRD'
             REPNAM = 'AGRDREP'
- 
-C.........  Hourly inventory file as input
+
+C.........  Hourly inventory file as input with controls
+
+        ELSEIF ( TSTEP .GT. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) =
+     &        'Area gridded, hourly, controlled inv pollutants'
+            OUTNAM = 'AGTC'
+            REPNAM = 'AGTCREP'
+
+C.........  Hourly inventory file as input with NO controls
+
         ELSE
             NSTEPS  = MXREC3D
             FDESC3D( 1 ) = 'Area gridded hourly inventory pollutants'
             OUTNAM = 'AGRT'
             REPNAM = 'AGRTREP'
- 
         END IF
 
-C.......   Read FIPS code for reporting purpose
-        IF( ST_REPORT ) THEN
+        IF( ST_REPORT .OR. CY_REPORT ) THEN
  
 C............  If we've read in temporal file, must get inventory file name
             IF ( TSTEP .NE. 0 ) THEN
@@ -243,6 +295,8 @@ C............  If we've read in temporal file, must get inventory file name
                 INAME = ANAME
  
             ENDIF
+
+C.......   Read FIPS code for reporting purpose
  
             IF( .NOT. READ3( INAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
  
@@ -258,7 +312,8 @@ C............  If we've read in temporal file, must get inventory file name
      &               'Error reading INVYR from file' // ANAME, 2 )
  
             END IF
- 
+
+C........   Open report file 
             RDEV  = PROMPTFFILE(
      &             'Enter logical name for TOTALS REPORT or "NONE"',
      &             .FALSE., .TRUE., REPNAM, 'GRDAREA' )
@@ -299,6 +354,47 @@ C............  Initialize emission summary array
 28          CONTINUE
  
         ENDIF
+
+        IF ( CY_REPORT ) THEN
+
+C............  Create county codes arrays
+              LCTY = -9
+              K    = 0
+              DO 32 I = 1, NASRC
+
+                CTY = IFIP( I )
+
+                IF( CTY .GT. LCTY ) THEN
+
+                    K = K + 1
+                    CTYS( K ) = CTY
+                    LCTY      = CTY
+
+                ENDIF
+
+                ICPTR ( I ) = K
+
+32            CONTINUE
+
+              NCTY = K
+
+              IF( NCTY .GT. NAFIP ) THEN
+                WRITE( MESG,94010 )
+     &                'Number of counties is ', NCTY,
+     &                'but maximum (NAFIP) is', NAFIP
+                CALL M3EXIT( 'GRDAREA', JDATE, JTIME, MESG, 2 )
+
+              ENDIF
+
+C............  Initialize county emission summary array
+              DO 38 I = 1, NAFIP
+                DO 37 S = 1, NIPOL
+                    CYSUM( I,S ) = 0.
+37              CONTINUE
+38            CONTINUE
+
+            ENDIF
+
 
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
      &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D, 
@@ -373,6 +469,41 @@ C.......   Read gridding-transform matrix:
 
         END IF
 
+C.......   If CONTROLFLAG, read and apply control matrix:
+
+        IF( CONTROLFLAG ) THEN
+
+            CALL M3MSG2( 'Reading CONTROL matrix...' )
+
+            IF ( .NOT. DESC3( CNAME ) ) THEN
+                WRITE( MESG, '(2A)' )
+     &          'Could not get description of file ', CNAME
+                CALL M3EXIT( 'GRDAREA', 0, 0, MESG, 2 )
+            ELSE IF ( NROWS3D .NE. NASRC ) THEN
+                WRITE( MESG, 94010 )
+     &          'Dimension mismatch.  C-MATRIX file:', NROWS3D,
+     &          'program:', NASRC
+                CALL M3EXIT( 'GRDAREA', 0, 0, MESG, 2 )
+            END IF
+            DO  66 S = 1, NIPOL
+
+                SCRBUF = 'CONTROL_' // EINAM( S )( 1:8 )
+                IF ( .NOT. READ3( CNAME, SCRBUF, 1, 0, 0, CC( 1,S ) )
+     &             ) THEN
+
+                    CALL M3EXIT( 'GRDAREA', 0, 0,
+     &                   'Could not read "' // SCRBUF( 1:12 ) //
+     &                   '" from CONTROL FILE "' //
+     &                   CNAME( 1 : TRIMLEN( CNAME ) ) // '".',
+     &                   2 )
+
+                END IF      !  if read3() failed for control matrix
+
+66          CONTINUE
+
+        END IF          !  if controlflag
+
+
 C.......   Write out the area source emissions values:
 
         CALL M3MSG2( 'Calculating gridded area source emissions...' )
@@ -397,6 +528,16 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
                 IF( READ3( ANAME, EINAM( V ), ALLAYS3, 
      &                     JDATE, JTIME, EMISV ) ) THEN
+
+C..............  Apply control matrix if one exists
+
+                    IF ( CONTROLFLAG) THEN
+
+                     DO M = 1, NASRC
+                        EMISV( M ) = EMISV( M ) * CC( M, V ) 
+                     ENDDO
+
+                    ENDIF
 
                     CALL SMATVEC( NASRC, NGRID, NMATX, NS, IS, CS,
      &                            EMISV, EMISG )
@@ -423,9 +564,10 @@ C.............  Write to screen because WRITE3 only writes to LDEV
                 END IF  !  if read3() succeeds or not
 
 C.................  When reporting is switched on, calculate emissions
-C.................  summaries by state and report to output QA file
-C.................  EMSUM must be initialized
-                IF( ST_REPORT ) THEN
+C.................  summaries by state and/or county and report to output 
+C.................   QA file
+C.................  EMSUM and CYSUM must be initialized
+                IF( ST_REPORT .OR. CY_REPORT ) THEN
  
 C.....................  For annual values, convert to day-specific
                     IF( TSTEP .EQ. 0 ) THEN
@@ -437,8 +579,17 @@ C.....................  For annual values, convert to day-specific
  
                     ENDIF
 
-                    CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
+C................... Sum emissions by state
+                    IF ( ST_REPORT ) THEN
+
+                      CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
      &                            CS, ISPTR, EMISV, EMSUM( 1,V ) )
+                    ENDIF
+C...................  Sum emissions by county
+                    IF ( CY_REPORT ) THEN
+                      CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
+     &                            CS, ICPTR, EMISV, CYSUM( 1,V ) )
+                    ENDIF
                 ENDIF
 
 133          CONTINUE   ! End loop on output variables
@@ -450,9 +601,11 @@ C.....................  For annual values, convert to day-specific
 
 C.............  Write report if report flag is switched on and previous
 C.............  time equals the report time
+
+            IF ( ST_REPORT .OR. CY_REPORT ) THEN
+
+              IF  ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS )  THEN
  
-            IF( ST_REPORT .AND.
-     &          ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) ) THEN
  
                 IF( TSTEP .NE. 0 .AND. RDEV .GT. 0)
      &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
@@ -468,19 +621,32 @@ C.............  time equals the report time
      &                     '(tons/specific day) within grid ' // GRDNM
                 ENDIF
 
-                IF( RDEV .GT. 0) 
-     &          CALL STATELST( RDEV  , MESG , NASID , NSTA , NIPOL,
+                IF( RDEV .GT. 0) THEN
+                  IF ( ST_REPORT ) 
+     &            CALL STATELST( RDEV  , MESG , NASID , NSTA , NIPOL,
      &                         'F7.1', EINAM, STATES, EMSUM         )
 
+                  IF ( CY_REPORT ) 
+     &            CALL CYLST( RDEV  , FDEV, MESG , NAFIP , NCTY , 
+     &                  NIPOL,'F7.2', EINAM, CTYS, CYSUM         )
+
+                ENDIF
+ 
 C.................  Reinitialize emissions summary
-                DO 198 I = 1, NASID
-                    DO 197 S = 1, NIPOL
+                 DO 197 S = 1, NIPOL
+                      DO 196 I = 1, NASID
                         EMSUM( I,S ) = 0.
-197                 CONTINUE
-198             CONTINUE
+196                   CONTINUE
+                      DO 198 I = 1, NAFIP
+                        CYSUM( I,S ) = 0.
+198                   CONTINUE
+
+197              CONTINUE
  
 C.................  Set begining time for next day
                 BTIME = JTIME
+
+              ENDIF
  
             ENDIF
  
