@@ -144,8 +144,10 @@ rdsconv.o : $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ rdsconv.f
 rdsref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsref.f
-rdsrg.o   : $(MODSURG)
+rdsrg.o   : $(MODSURG) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ rdsrg.f
+rdsrghdr.o: $(MODGRID)
+	$(FC) $(FFLAGS) -c -o $@ rdsrghdr.f
 rdstcy.o  : $(MODSTCY) 
 	$(FC) $(FFLAGS) -c -o $@ rdstcy.f
 rdtprof.o : $(MODTMPRL)
