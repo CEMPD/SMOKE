@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -82,13 +82,17 @@ C.........  LOCAL PARAMETERS and their descriptions:
 
 C...........   LOCAL VARIABLES and their descriptions:
 
+C...........   Local temporary array for species names
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SPNAMES( : )
+
 C...........   Logical names and unit numbers (not in MODMERGE)
         INTEGER         LDEV
      
 C...........   Other local variables
     
-        INTEGER          J, K, L1, L2, L3, N, V, T ! counters and indices
+        INTEGER          J, K, L1, L2, M, N, V, T ! counters and indices
 
+        INTEGER          ICNT          ! tmp count of species names
         INTEGER       :: IDUM = 0      ! dummy integer value
         INTEGER          IDUM1, IDUM2
         INTEGER          IOS           ! tmp I/O status
@@ -105,6 +109,8 @@ C...........   Other local variables
         INTEGER          MXPOLPGP      ! max no. of pols per group
         INTEGER          MXSPPOL       ! max no. of spcs per pol/group
         INTEGER          NGRP          ! actual no. of pollutant groups
+        INTEGER          NMAJOR        ! no. elevated sources (not used)
+        INTEGER          NPING         ! no. plum-in-grid sources
         INTEGER          PGID          ! previous iteration group ID no.
         INTEGER          NPPGP         ! tmp actual no. pols per group
 
@@ -141,18 +147,23 @@ C.........  Open input files and retrieve episode information
 C.........  Do setup for state and county reporting
         IF( LREPANY ) THEN
 
+C.............  Read the state and county names file and store for the 
+C               states and counties in the grid
+            CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
+
+        END IF
+
+C.........  Do setup for biogenic state and county reporting
+        IF( BFLAG .AND. LREPANY ) THEN
+
 C.............  Read gridding surrogates header (to get srg format only)
             CALL RDSRGHDR( GDEV, SRGFMT, GRDNMBUF, GDESCBUF, RDUM1, 
      &                     RDUM2, RDUM3, RDUM4, RDUM5, RDUM6, 
      &                     IDUM1, IDUM2 )
-
+    
 C.............  Read gridding surrogates
             CALL RDSRG( GDEV, SRGFMT, XCENT, YCENT, XORIG, YORIG, 
      &                  XCELL, YCELL, NCOLS, NROWS )
-
-C.............  Read the state and county names file and store for the 
-C               states and counties in the grid
-            CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
 
         END IF
 
@@ -166,6 +177,20 @@ C.........  Allocate memory for fixed-size arrays by source category...
 
 C.........  Read in any needed source characteristics
         CALL RDMRGINV
+
+C.........  Read in plume-in-grid information, if needed
+C.........  Reset flag for PinG if none in the input file
+        IF( PFLAG .AND. PINGFLAG ) THEN
+
+            CALL RDPELV( EDEV, NPSRC, NMAJOR, NPING )
+
+            IF( NPING .EQ. 0 ) THEN
+                MESG = 'WARNING: No sources are PinG sources in ' //
+     &                 'input file, so none will be written'
+                CALL M3MSG2( MESG )
+                PINGFLAG = .FALSE.
+            END IF
+        END IF
 
 C.........  Read reactivity matrices
         IF( ARFLAG ) CALL RDRMAT( ARNAME, ANSREAC, ARNMSPC, ACRIDX, 
@@ -209,9 +234,11 @@ C           more conditionals in the matrix multiplication step.
         IF( PFLAG ) PRINFO = 0.  ! array
 
 C.........  Intialize state/county summed emissions to zero
-        IF( LREPANY ) THEN
-            CALL INITSTCY
-        END IF
+        CALL INITSTCY
+
+C.........  Allocate memory for temporary list of species names
+        ALLOCATE( SPNAMES( MXSPPOL*MXPOLPGP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPNAMES', PROGNAME )
 
 C.........  Loop through processing groups (if speciation, this will be specia-
 C           tion groups, but if no speciation, this will be pollutant groups,  
@@ -273,8 +300,7 @@ C               this group.
 C.............  Also, Print message about which species are being processed
             IF( SFLAG ) THEN
 
-                MESG = ' '
-                L3 = 0
+                ICNT = 0
                 DO V = 1, NPPGP
 
                     DO J = 1, NSMPPG( V,N )
@@ -283,19 +309,18 @@ C.............  Also, Print message about which species are being processed
                         IF( K .LE. 0 ) THEN
                             EXIT   ! End this loop
                         ELSE
+C.............................  Set name for calls to RDSMAT
                             SVBUF = TSVDESC( SMINDEX( J,V,N ) )
-                            SBUF  = EMNAM  ( SPINDEX( J,V,N ) )
-                            L1 = LEN_TRIM( MESG )
-                            L2 = LEN_TRIM( SBUF )
-                            L3 = L3 + L2 + 3
-                            IF( L3 .GT. 60 ) THEN
-                                MESG = MESG( 1:L1 )// CRLF()// BLANK10// 
-     &                                 ' "' // SBUF( 1:L2 ) // '"'
-                                L3 = 0
-                            ELSE
-                                MESG = MESG( 1:L1 ) // ' "' // 
-     &                                 SBUF( 1:L2 ) // '"'
+
+C.............................  Update list of species names for message
+                            SBUF = EMNAM( SPINDEX( J,V,N ) )
+                            M = INDEX1( SBUF, ICNT, SPNAMES )
+
+                            IF( M .LE. 0 ) THEN
+                        	ICNT = ICNT + 1                            
+                        	SPNAMES( ICNT ) = SBUF
                             END IF
+
                         END IF
 
 C.........................  Set position for input of speciation matrix
@@ -316,35 +341,13 @@ C                           position
 
                 END DO      ! End pollutant loop
 
-                MESG = 'Processing species:'// CRLF()// BLANK10// 
-     &                 MESG( 1:LEN_TRIM( MESG ) )
-                CALL M3MSG2( MESG )
-
-c note: is there any way to use the pollutant-message routine for reporting 
-c    n: the species here and in the speciation program?
+                CALL POLMESG( ICNT, SPNAMES )
 
 C.............  Otherwise, print message about which pollutants are being 
 C               processed
             ELSE
 
-                MESG = ' '
-                L3 = 0
-                DO V = 1, NPPGP
-                    PBUF = PLNAMES( V,N )
-                    L1 = LEN_TRIM( MESG )
-                    L2 = LEN_TRIM( PBUF )
-                    L3 = L3 + L2 + 3
-                    IF( L3 .GT. 60 ) THEN
-                        MESG = MESG( 1:L1 ) // CRLF() // BLANK10 // 
-     &                         ' "'// PBUF( 1:L2 ) // '"'
-                        L3 = 0
-                    ELSE
-                        MESG = MESG( 1:L1 )// ' "'// PBUF( 1:L2 )// '"'
-                    END IF
-                END DO
-
-                MESG = 'Processing pollutants:'//CRLF()//BLANK10//MESG
-                CALL M3MSG2( MESG )
+                CALL POLMESG( NPPGP, PLNAMES( 1,N ) )
 
             END IF
 
@@ -372,10 +375,7 @@ C.....................  Write out message for new day.  Note, For time-
 C                       independent, LDATE and JDATE will both be zero.
                     IF( JDATE .NE. LDATE ) THEN
 
-                        J = WKDAY( JDATE )
-                        MESG = 'Processing ' // DAYS( J ) // 
-     &                         MMDDYY( JDATE )
-                        CALL M3MSG2( MESG )
+                        CALL WRDAYMSG( JDATE, MESG )
 
                     END IF
 
@@ -427,6 +427,8 @@ C.....................  Loop through pol-to-species for this pollutant/group
 C.....................  Note that NSMPPG is 1 when there is no speciation, so
 C                       that a single loop iteration will be done.
                     DO J = 1, NSMPPG( V,N )
+
+C.........................
 
 C......................... Initialized gridded, merged emissions
                         TEMGRD = 0.  ! array
@@ -500,6 +502,7 @@ C                           source array of reacvty emissions and mkt pntrtn
 C.........................  Process for mobile sources...
                         IF( MFLAG ) THEN
 
+c note: need to add some extra looping for multiple pollutants per species?
                             K1 = M_EXIST ( V,N )
                             K2 = MU_EXIST( V,N )
                             K3 = MA_EXIST( V,N )
@@ -550,6 +553,12 @@ C.............................  Apply valid matrices & store
      &                             PEBCNY, PEUCNY, PEACNY, PERCNY, 
      &                             PECCNY )
 
+C.............................  Apply matrices for plume-in-grid outputs
+                            IF( PINGFLAG ) THEN
+                                CALL MRGPING( NPSRC, NPING, K1, K2, 
+     &                                        K3, K4 )
+                            END IF
+
                         END IF
 
 C.........................  Update total emissions for multi-source categories
@@ -563,17 +572,22 @@ C.........................  Update total emissions for multi-source categories
 
                         END IF
                             
-C.........................  Set output variable name
+C.........................  Set output variable names
                         IF ( SFLAG ) THEN
                             VBUF = EMNAM( SPINDEX( J,V,N ) )
                         ELSE
                             VBUF = PLNAMES( V,N )
                         END IF
 
-C.........................  Write gridded emissions (all that apply)
-                        CALL WRMRGGRD( VBUF, JDATE, JTIME )
-
+c note: this is not correct, because what if there are multiple pollutants
+c    n: contributing to the same species, as for mobile sources?
+ 
                     END DO   ! End loop on pol-to-species (or single loop)
+
+C.....................  Write emissions (all that apply)
+                    CALL WMRGEMIS( VBUF, JDATE, JTIME )
+c note: this moved from inside pol-to-species loop.  Must change to write an
+c    n: array of species.
 
                 END DO      ! End loop on pollutants in group
             
