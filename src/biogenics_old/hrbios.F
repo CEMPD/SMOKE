@@ -45,6 +45,9 @@ C       Version 8/96 by SL and CJC to use Dyntel-style ASCII solar radiation
 C       and surface temperature file instead of MCIP meteorology.
 C       Name change HRBIO ~~> HRBIOS to accompany arg-list change.
 C
+C       Modified error message if TAIR > 315.0 K to a warning message
+C       and resetting of TAIR to 315.0 K.  07/98 by JMV
+C 
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -177,14 +180,23 @@ C...................   photosynthetic activity:
 
                 PAR   = TSOLAR( C, R )
  
-                IF (TAIR .LT. 200.0  .OR. TAIR .GT. 315.0) THEN
+                IF (TAIR .LT. 200.0) THEN
 
-                    WRITE( MESG, 94010 ) 
-     &               'TAIR=', TAIR, 
+                    WRITE( MESG, 94010 )
+     &               'TAIR=', TAIR,
      &               'out of range at (C,R)=',  C, R
                     CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
 
                 END IF
+
+                IF (TAIR .GT. 315.0 ) THEN
+                    WRITE( MESG, 94020 )
+     &               'TAIR=', TAIR,
+     &               'out of range at (C,R)=',  C, R,
+     &               ' resetting to 315K'
+                    CALL M3WARN( 'TMPBIO', JDATE, JTIME, MESG )
+                    TAIR = 315.0
+                ENDIF
  
                 IF (PAR .LT. 0.0 .OR. PAR .GT. 2500.0) THEN
 
@@ -316,5 +328,7 @@ C...................   photosynthetic activity:
 
         RETURN
 94010   FORMAT( A, F10.2, 1X, A, I3, ',', I3 )
+94020   FORMAT( A, F10.2, 1X, A, I3, ',', I3, A )
+
         END
 
