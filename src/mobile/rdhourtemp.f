@@ -1,14 +1,17 @@
 
-        SUBROUTINE RDHOURTEMP( TNAME, NCOUNTY, JDATE, JTIME, 
-     &                         COUNTYTEMP )
+        SUBROUTINE RDHOURTEMP( TNAME, NCOUNTY, JDATE, JTIME )
 
 C***********************************************************************
 C  subroutine body starts at line 74
 C
 C  DESCRIPTION:
-C       Reads hourly by county temperatures, converts from K to F
+C       Reads hourly temperatures, relative humidity values, and barometric
+C       pressures from county file. Converts temperatures from K to F;
+C       calculates average daily barometric pressure and converts from Pa
+C       to inHG
 C
 C  PRECONDITIONS REQUIRED:
+C       TKHOUR, RDHOUR, and BPHOUR must be allocated
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
@@ -37,6 +40,11 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***********************************************************************
+                
+C.........  MODULES for public variables
+
+C...........   This module is the derived meteorology data for emission factors
+        USE MODMET, ONLY: TKHOUR, RHHOUR, BPHOUR, BPDAY
         
         IMPLICIT NONE
 
@@ -51,11 +59,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=16), INTENT (IN) :: TNAME    ! logical name for temperature file
-        INTEGER,           INTENT (IN) :: NCOUNTY  ! no. counties in temp file
+        CHARACTER(LEN=16), INTENT (IN) :: TNAME    ! logical name for meteorology file
+        INTEGER,           INTENT (IN) :: NCOUNTY  ! no. counties in met file
         INTEGER,           INTENT (IN) :: JDATE    ! starting date (YYYYDDD)
         INTEGER,           INTENT (IN) :: JTIME    ! starting time (HHMMSS)
-        REAL, INTENT(INOUT) :: COUNTYTEMP( NCOUNTY, 24 ) ! array of hourly temperatures by county
 
 C...........   Local allocatable arrays
 
@@ -73,29 +80,55 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDHOURTEMP
         
-C.........  Initialize array
-        COUNTYTEMP = 0.
+C.........  Initialize data arrays
+        TKHOUR = 0.
+        RHHOUR = 0.
+        BPHOUR = 0.
+        BPDAY  = 0.
 
 C.........  Loop through the time steps        
         DO I = 1, 24
-        
+
+C.............  Read temperature values        
             IF( .NOT. READ3( TNAME, 'TKCOUNTY', 1, JDATE, JTIME, 
-     &                       COUNTYTEMP( :,I ) ) ) THEN
+     &                       TKHOUR( :,I ) ) ) THEN
                 MESG = 'Could not read TKCOUNTY' //
      &                 ' from ' // TNAME 
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
             END IF
-        
-C.............  Convert temps from Kelvin to Fahrenheit 
-            DO J = 1, NCOUNTY
-                COUNTYTEMP( J,I ) = CTOF * 
-     &                              ( COUNTYTEMP( J,I ) - CTOK ) + 32.
-            END DO
+                   
+C.............  Read relative humidity values
+            IF( .NOT. READ3( TNAME, 'RHCOUNTY', 1, JDATE, JTIME,
+     &                       RHHOUR( :,I ) ) ) THEN
+                MESG = 'Could not read RHCOUNTY' //
+     &                 ' from ' // TNAME
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+            END IF
+            
+C.............  Read barometric pressure values
+            IF( .NOT. READ3( TNAME, 'BPCOUNTY', 1, JDATE, JTIME,
+     &                       BPHOUR( :,I ) ) ) THEN
+                MESG = 'Could not read BPCOUNTY' //
+     &                 ' from ' // TNAME
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+            END IF
                    
             CALL NEXTIME( JDATE, JTIME, 10000 )
         
         END DO
+        
+C.........  Convert temps from Kelvin to Fahrenheit
+        TKHOUR = CTOF * ( TKHOUR - CTOK ) + 32.
+
+C.........  Calculate average daily barometric pressure values
+        DO I = 1, 24        
+            BPDAY = BPDAY + BPHOUR( :,I )
+        END DO
+
+        BPDAY = BPDAY/24.
+
+C.........  Convert pressure from Pa to inHG
+        BPDAY = BPDAY * PA2INHG
 
         END SUBROUTINE RDHOURTEMP
         
