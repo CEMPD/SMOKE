@@ -89,6 +89,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETNUM
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
+        INTEGER         INDEX1
         CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
@@ -96,8 +97,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY           !  day of week (1...7)
 
         EXTERNAL        CRLF, ENVINT, ENVYN, GETDATE, GETMENU, GETNUM, 
-     &                  GETYN, HHMMSS, MMDDYY, PROMPTMFILE, PROMPTFFILE,
-     &                  TRIMLEN, WKDAY
+     &                  GETYN, HHMMSS, INDEX1, MMDDYY, PROMPTMFILE, 
+     &                  PROMPTFFILE, TRIMLEN, WKDAY
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -121,6 +122,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
         CHARACTER*16    M3NAME  !  logical name for MET_CRO_3D
         CHARACTER*16    M2NAME  !  logical name for MET_CRO_2D
+        CHARACTER*16    RADG    !  string for net radiation at ground
         CHARACTER*256   MESG    !  message buffer for M3EXIT()
 
 C.......   Input met and grid variables:
@@ -130,7 +132,7 @@ C.......   Input met and grid variables:
         REAL TASFC  ( NCOLS, NROWS )    !  level-1 air  temperature (K)
         REAL PRSFC  ( NCOLS, NROWS )    !  pressure (Pa)
         REAL TSOLAR ( NCOLS, NROWS)     !  Photosynthetic Active Radiation (PAR)
-        REAL WM2LY, LY2UE, SOL2PAR      !  coefficients to convert RGRND to PAR
+        REAL WM2LY, LY2UE, SOL2PAR      !  coefficients to convert RADG to PAR
         PARAMETER   ( WM2LY  = 0.001433,
      &                LY2UE  = 2916.0
      &              )
@@ -166,7 +168,7 @@ C.......   Name tables for file NNAME
         CHARACTER*72    PARMENU( 6 )            ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use observational clouds',
-     &             'Use MM5 generated RGND',
+     &             'Use MM5 generated RGND or RSD',
      &             'Use KUO cloud attenuation',
      &             'Use KF  cloud attenuation',   
      &             'Use No deep convection param'  ,
@@ -248,7 +250,33 @@ C.......   Get input files
 
         ELSE
             MXSTEPS = MXREC3D 
+            J = INDEX1( 'RGRND', NVARS3D, VNAME3D )
+            IF ( J .LE. 0 ) THEN
+               J = INDEX1( 'RSD', NVARS3D, VNAME3D )
+               IF ( J .LE. 0 ) THEN
 
+                  MESG = 'Could not find RGRND or RSD in file "' //
+     &                   M2NAME( 1:TRIMLEN( M2NAME ) ) // '"'
+
+                  CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+  
+               ELSE
+
+                 RADG = 'RSD'
+
+               ENDIF
+
+            ELSE
+
+               RADG = 'RGRND'
+
+            ENDIF 
+
+            IF ( PARTYPE .EQ. 2 ) THEN
+              MESG = 'Using "' // RADG // '" from "' //
+     &             M2NAME( 1:TRIMLEN( M2NAME ) ) // '"'
+              CALL M3MSG2 ( MESG )
+            ENDIF
         END IF
 
 
@@ -477,15 +505,15 @@ C.............  Write to screen because WRITE3 only writes to LDEV
               CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
            END IF
 
-           IF ( PARTYPE .EQ. 2 ) THEN      ! Use RGRND
- 
-              IF ( .NOT. READ3( M2NAME, 'RGRND', ALLAYS3, JDATE,
+           IF ( PARTYPE .EQ. 2 ) THEN      ! Use RADG
+
+              IF ( .NOT. READ3( M2NAME, RADG, ALLAYS3, JDATE,
      &             JTIME, TSOLAR(1,1) ) ) THEN
                  MESG = 'Could not read from file MET_CRO_2D'
                  CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
               END IF
 
-              SOL2PAR = 0.5 * WM2LY * LY2UE  ! RGRND to PAR conversion factor
+              SOL2PAR = 0.5 * WM2LY * LY2UE  ! RADG to PAR conversion factor
 
               DO 50 I = 1, NCOLS
                  DO 40 J = 1, NROWS
