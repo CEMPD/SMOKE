@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV )
+        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG )
 
 C*************************************************************************
 C  subroutine body starts at line 119
@@ -69,10 +69,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         EXTERNAL CRLF, ENVINT, INDEX1, PROMPTFFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT(IN)  :: GRDNM  ! grid name if any gridded data
-        CHARACTER(*), INTENT(OUT) :: ENAME  ! emis i/o api inven logical name
-        CHARACTER(*), INTENT(OUT) :: ANAME  ! emis ASCII inven logical name
-        INTEGER     , INTENT(OUT) :: SDEV   ! ascii output inven file unit no.
+        CHARACTER(*), INTENT(IN)  :: GRDNM   ! grid name if any gridded data
+        CHARACTER(*), INTENT(OUT) :: ENAME   ! emis i/o api inven logical name
+        CHARACTER(*), INTENT(OUT) :: ANAME   ! emis ASCII inven logical name
+        INTEGER     , INTENT(OUT) :: SDEV    ! ascii output inven file unit no.
+        LOGICAL     , INTENT(IN)  :: A2PFLAG ! true: using area-to-point processing
 
 C...........   LOCAL PARAMETERS
         CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
@@ -142,7 +143,11 @@ C.........  Depending on source category, set number of non-pollutant
 C           inventory variables
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
-            NNPVAR = NARVAR3
+            IF( A2PFLAG ) THEN
+                NNPVAR = NARVAR3 + 2
+            ELSE
+                NNPVAR = NARVAR3
+            END IF
         CASE( 'MOBILE' )
             NNPVAR = NMBVAR3
         CASE( 'POINT' )
@@ -281,6 +286,21 @@ C.........  Define source characteristic variables that are not strings
         SELECT CASE( CATEGORY )
 
         CASE( 'AREA' )
+        
+            IF( A2PFLAG ) THEN
+                VNAMESET( J ) = 'XLOCA'
+                VTYPESET( J ) = M3REAL
+                VUNITSET( J ) = 'degrees'
+                VDESCSET( J ) = 'longitude'
+                J = J + 1
+                
+                VNAMESET( J ) = 'YLOCA'
+                VTYPESET( J ) = M3REAL
+                VUNITSET( J ) = 'degrees'
+                VDESCSET( J ) = 'latitude'
+                J = J + 1
+            END IF
+
             VNAMESET( J ) = 'CELLID'
             VTYPESET( J ) = M3INT
             VUNITSET( J ) = 'n/a'
