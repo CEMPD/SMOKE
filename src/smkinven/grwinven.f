@@ -417,20 +417,22 @@ C.........  Read in control matrix variables that are "all".  First, store
 C           position of data in storage array, then read.
 C.........  NOTE - lowercase variable names are used to permit pollutants
 C           named "ALL" and "PFAC"
-        J = 0
+        N = 0
         DO I = 1, NCMAT
 
-            K1 = INDEX1( 'all' , NCPVARS( I ), CPVNAMS( 1,I ) )
-            K2 = INDEX1( 'pfac', NCPVARS( I ), CPVNAMS( 1,I ) )
+            J = CINDXA( I )
+
+            K1 = INDEX1( 'all' , NCPVARS( J ), CPVNAMS( 1,J ) )
+            K2 = INDEX1( 'pfac', NCPVARS( J ), CPVNAMS( 1,J ) )
             IF( K1 .GT. 0 .OR. K2 .GT. 0 ) THEN
 
-                J = J + 1
-                IDXALL( I ) = J
+                N = N + 1
+                IDXALL( I ) = N
 
                 IF( K1 .GT. 0 ) VARBUF = 'all'
                 IF( K2 .GT. 0 ) VARBUF = 'pfac'
                 IF( .NOT. READ3( CNAME( I ), VARBUF, ALLAYS3, 
-     &                           0, 0, CFACALL( 1,J )         ) ) THEN
+     &                           0, 0, CFACALL( 1,N )         ) ) THEN
 
                     L = LEN_TRIM( VARBUF )
                     MESG = 'ERROR: Could not read variable "' // 
