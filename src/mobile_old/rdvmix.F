@@ -3,7 +3,7 @@
      &                     MXMAT )
 
 C***********************************************************************
-C  program body starts at line 132
+C  program body starts at line 136
 C
 C  DESCRIPTION:
 C       Read MVTVM vehicle mix factors file and map vehicle
@@ -110,10 +110,10 @@ C.......   After sorting and filtering into different classes:
         REAL            MFACF( NVTYPE, MXFRC )
 
         INTEGER         NVMXL                   !  FIP&roadclass&link veh mixes
-        INTEGER         VFIPL( MXFLK )
-        INTEGER         VRDTL( MXFLK )
-        INTEGER         VLNKL( MXFLK )
-        REAL            MFACL( NVTYPE, MXFLK )
+        INTEGER         VFIPL( MXREF )
+        INTEGER         VRDTL( MXREF )
+        INTEGER         VLNKL( MXREF )
+        REAL            MFACL( NVTYPE, MXREF )
 
 
 C...........   Other local variables
@@ -285,7 +285,7 @@ C...........   Sort and process the vehicle mix factor arrays:
 
                 NVMXL = NVMXL + 1
 
-                IF ( NVMXL .LE. MXFLK ) THEN
+                IF ( NVMXL .LE. MXREF ) THEN
 
                     VFIPL( NVMXL ) = FIP
                     VRDTL( NVMXL ) = RDT
@@ -321,7 +321,7 @@ C.........  Write out dimensioning situation
 
         WRITE( MESG,94010 )
      &      'Number of VEHICLE MIX by LINK entries--' //
-     &      CRLF() // BLANK5 // '   dimensioned (MXFLK):', MXFLK,
+     &      CRLF() // BLANK5 // '   dimensioned (MXREF):', MXREF,
      &      'actual:', NVMXL
         CALL M3MSG2( MESG )
 
@@ -329,7 +329,7 @@ C...........   If there is an overflow, abort
         IF( NVMXR .GT. NRCLAS .OR.
      &      NVMXS .GT. MXSTRC .OR.
      &      NVMXF .GT. MXFRC  .OR. 
-     &      NVMXL .GT. MXFLK       ) THEN
+     &      NVMXL .GT. MXREF       ) THEN
 
             CALL M3EXIT( 'RDVMIX', 0, 0, 
      &                   'VEHICLE MIX table overflow', 2 )
@@ -391,7 +391,7 @@ C...........   Construct mapping of source number to vehicle mixes.
 
                 WRITE( MESG,94010 )
      &                 'Default VMT MIX applied for FIP:', FIP, 
-     &                 'RDT::', RDT, 'LNK:', LNK
+     &                 'RDT:', RDT, 'LNK:', LNK
                 CALL M3MESG( MESG )
 
             ELSE                        !  Error
