@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -174,6 +174,7 @@ C...........   Other local variables
         CHARACTER(LEN=IOULEN3)  :: TMPUNIT    ! tmp units buffer
         CHARACTER(LEN=OLINELEN) :: HDRBUF     ! labels line buffer
         CHARACTER(LEN=OLINELEN) :: UNTBUF     ! units line buffer
+        CHARACTER(LEN=QAFMTL3)  :: TMPFMT ! temporary format for Linux PG compiler
 
         CHARACTER*16 :: PROGNAME = 'WRREPHDR' ! program name
 
@@ -579,10 +580,11 @@ C           characteristics, and NCHARS reset accordingly.
             DO K = MINC, NCHARS
 
 C.................  Build source characteristics output format for WRREPOUT
-                L  = LEN_TRIM( CHARFMT )
+                TMPFMT = CHARFMT
+                L  = LEN_TRIM( TMPFMT )
                 J  = LEN_TRIM( CHRHDRS( K ) )
                 W1 = MAX( LOC_ENDP( K ) - LOC_BEGP( K ) + 1, J )
-                WRITE( CHARFMT, '(A,I2.2,A)' ) CHARFMT( 1:L )// 
+                WRITE( CHARFMT, '(A,I2.2,A)' ) TMPFMT( 1:L )// 
      &                 '1X,A', W1, ',"'//RPT_%DELIM//'",'
 
                 CALL ADD_TO_HEADER( W1, CHRHDRS( K ), LH, HDRBUF )
@@ -592,8 +594,9 @@ C.................  Build source characteristics output format for WRREPOUT
 
             END DO
 
-            L = LEN_TRIM( CHARFMT )
-            CHARFMT = CHARFMT( 1:L ) // ')'
+            TMPFMT = CHARFMT
+            L = LEN_TRIM( TMPFMT )
+            CHARFMT = TMPFMT( 1:L ) // ')'
 
         END IF
 
@@ -738,9 +741,10 @@ C                       and units header
 
 C.....................  Build the array of output formats for the data in 
 C                       current report
-                    L2 = LEN_TRIM( OUTFMT )
+                    TMPFMT = OUTFMT 
+                    L2 = LEN_TRIM( TMPFMT )
                     WRITE( OUTFMT, '(A,I2.2,A,I2.2)' ) 
-     &                     OUTFMT( 1:L2 ) // 'F', W1, '.', NDECI
+     &                     TMPFMT( 1:L2 ) // 'F', W1, '.', NDECI
 
 C.................  If exponential output format
                 ELSE
@@ -752,17 +756,19 @@ C                       and units header
                     W1 = MAX( NLEFT, W1, L2, LN )
 
                     L1 = LEN_TRIM( RPT_%DATAFMT )
-                    L2 = LEN_TRIM( OUTFMT )
-                    WRITE( OUTFMT, '(A)' ) OUTFMT( 1:L2 ) // 
+                    TMPFMT = OUTFMT
+                    L2 = LEN_TRIM( TMPFMT )
+                    WRITE( OUTFMT, '(A)' ) TMPFMT( 1:L2 ) // 
      &                     RPT_%DATAFMT( 1:L1 ) 
 
                 END IF
 
 C.................  Add delimeter to output formats except for last value
-                L1 = LEN_TRIM( OUTFMT )
+                TMPFMT = OUTFMT
+                L1 = LEN_TRIM( TMPFMT )
                 IF( J .NE. RPT_%NUMDATA ) THEN
                     IF( L1 .LT. QAFMTL3-8 ) THEN
-                        OUTFMT = OUTFMT( 1:L1 ) // ',"' // 
+                        OUTFMT = TMPFMT( 1:L1 ) // ',"' // 
      &                           RPT_%DELIM // '",1X,'
                     ELSE
                         GO TO 988
@@ -770,8 +776,8 @@ C.................  Add delimeter to output formats except for last value
 
 C.................  Otherwise add the ending parenthese
                 ELSE
-                    IF( L1 .LT. QAFMTL3-1 ) THEN
-                        OUTFMT = OUTFMT( 1:L1 ) // ')'
+                    IF( L1 .LT. QAFMTL3-1 ) THEN                        
+                        OUTFMT = TMPFMT( 1:L1 ) // ')'
                     ELSE
                         GO TO 988
                     END IF
