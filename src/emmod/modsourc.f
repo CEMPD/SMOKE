@@ -51,6 +51,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IDIU  ( : )  !  Hr prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
+        INTEGER, ALLOCATABLE, PUBLIC:: FLTRDAYL( : )!  daylight time filter
 
         REAL   , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
         REAL   , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
