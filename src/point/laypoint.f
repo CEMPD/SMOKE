@@ -211,11 +211,11 @@ C...........   Other local variables
         REAL             TDIFF     !  tmp layer frac diff for renormalizing
         REAL             TSTK      !  temperature at top of stack (K)
         REAL             TSUM      !  tmp layer frac sum for renormalizing
-        REAL             USTMP     !  tmp Ustar
         REAL             WSTK      !  wind speed  at top of stack (m/s)
         REAL             ZZ0, ZZ1, ZF0, ZF1
         REAL             ZBOT      !  plume bottom elevation (m)
         REAL             ZTOP      !  plume top    elevation (m)
+        REAL             ZPLM      !  plume height above stack
 
         REAL*8           METXORIG  ! cross grid X-coord origin of met grid 
         REAL*8           METYORIG  ! cross grid Y-coord origin of met grid
@@ -1071,9 +1071,6 @@ C.....................  Compute derived met vars needed before layer assignments
      &                           PRES( 1,S ), LSTK, LPBL, TSTK, WSTK,
      &                           DTHDZ, WSPD, ZZF )
 
-C.....................  Trap USTAR at a minimum realistic value
-                    USTMP = MAX( USTAR( S ), USTARMIN )
-
                     COMPUTE = .TRUE.
 
 C.....................  If available, assign hourly plume top and plume bottom
@@ -1094,9 +1091,13 @@ C.....................  Compute plume rise for this source, if needed
                     IF ( COMPUTE ) THEN
 
                         CALL PLMRIS( EMLAYS, LPBL, LSTK, HFX(S), 
-     &                           HMIX(S), DM, HT, TK, VE, TSTK, USTMP, 
+     &                           HMIX(S), DM, HT, TK, VE, TSTK, 
      &                           DTHDZ, TA(1,S), WSPD, ZZF(0), ZH(1,S), 
-     &                           ZSTK(1,S), WSTK, ZTOP, ZBOT )
+     &                           ZSTK(1,S), WSTK, ZPLM )
+     
+C.........................  Compute plume top and bottom heights
+                        CALL PLSPRD( DTHDZ, ZZF, EMLAYS, ZPLM, HMIX(S),
+     &                               ZTOP, ZBOT )
                     END IF
 
 C.....................  Setup for computing plume fractions, assuming uniform
@@ -1321,7 +1322,7 @@ C.............  Currently there is only one alternative for each
             CASE( 'ZF' )
                 OUTNAME = 'X3HT0F'
             CASE( 'TGD' ) 
-                OUTNAME = 'TEMPG'
+                OUTNAME = 'TEMP10'
             CASE DEFAULT
                 MESG = 'INTERNAL ERROR: Do not have an alternative ' //
      &                 'name for met variable ' // INNAME
@@ -1396,4 +1397,8 @@ C----------------------------------------------------------------------
             END SUBROUTINE COMPUTE_DELTA_ZS
 
         END PROGRAM LAYPOINT
+
+
+
+
 
