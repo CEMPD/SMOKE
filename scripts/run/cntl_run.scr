@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/bin/csh -fx
 
 # Version %W%
 # Path    %P%
@@ -70,14 +70,24 @@ if ( $?RUN_CNTLMAT ) then
 	 source $SCRIPTS/run/movelog.scr
       endif
 
-      /bin/rm -rf $SMK_TMPPATH/cntlmat* # Remove any existing tmp files
+      ## Remove any existing tmp files
+      ls -1 $SMK_TMPPATH > $SMK_TMPPATH/filelist.txt
+      set list = ( `cat $SMK_TMPPATH/filelist.txt | grep cntlmat` )
+      if ( $status == 0 ) then
+         /bin/rm -rf $SMK_TMPPATH/cntlmat*
+      endif
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/cntlmat 
+         time $SMK_BIN/cntlmat
       endif
 
-      /bin/rm -rf $SMK_TMPPATH/cntlmat* # Clean up generated tmp files
+      ## Remove any existing tmp files
+      ls -1 $SMK_TMPPATH > $SMK_TMPPATH/filelist.txt
+      set list = ( `cat $SMK_TMPPATH/filelist.txt | grep cntlmat` )
+      if ( $status == 0 ) then
+         /bin/rm -rf $SMK_TMPPATH/cntlmat*
+      endif
 
    else 
       if ( $RUN_CNTLMAT == 'Y' ) then
@@ -99,14 +109,24 @@ if ( $?RUN_GRWINVEN ) then
 	 source $SCRIPTS/run/movelog.scr
       endif
 
-      /bin/rm -rf $SMK_TMPPATH/grwinven* # Remove any existing tmp files
+      ## Remove any existing tmp files
+      ls -1 $SMK_TMPPATH > $SMK_TMPPATH/filelist.txt
+      set list = ( `cat $SMK_TMPPATH/filelist.txt | grep grwinven` )
+      if ( $status == 0 ) then
+         /bin/rm -rf $SMK_TMPPATH/grwinven*
+      endif
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          time $SMK_BIN/grwinven 
       endif
 
-      /bin/rm -rf $SMK_TMPPATH/grwinven* # Clean up generated tmp files
+      ## Remove any existing tmp files
+      ls -1 $SMK_TMPPATH > $SMK_TMPPATH/filelist.txt
+      set list = ( `cat $SMK_TMPPATH/filelist.txt | grep grwinven` )
+      if ( $status == 0 ) then
+         /bin/rm -rf $SMK_TMPPATH/grwinven*
+      endif
 
    else 
       if ( $RUN_GRWINVEN == 'Y' ) then
