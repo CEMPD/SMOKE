@@ -296,7 +296,7 @@ C.............  Include SCC code in string
                 L = SCCWIDTH
                 L1 = L - LV - 1                        ! 1 for space
                 STRING = STRING( 1:LE ) // 
-     &                   ' ' // BINSCC( I )( 1:L1 ) // DELIM
+     &                   BINSCC( I )( 1:L1 ) // DELIM
                 MXLE = MXLE + L + LX
                 LE = MIN( MXLE, STRLEN )
                 LX = 0
@@ -363,6 +363,17 @@ C.............  Include speciation profile
                 LX = 0
             END IF
 
+C.............  Include plant ID
+            IF( RPT_%BYPLANT ) THEN
+                L = CHARWIDTH
+                L1 = L - LV - 1                        ! 1 for space
+                STRING = STRING( 1:LE ) //
+     &                   BINPLANT( I )( 1:L1 ) // DELIM
+                MXLE = MXLE + L + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
 C.............  Include road class code
             IF( RPT_%BYRCL ) THEN
 
@@ -420,7 +431,7 @@ C.............  Include plant description (for point sources)
                 L = PDSCWIDTH
                 L1 = L - LV - 1                        ! 1 for space
                 STRING = STRING( 1:LE ) // 
-     &                   ' ' // CPDESC( S )( 1:L1 ) // DELIM
+     &                   CPDESC( S )( 1:L1 ) // DELIM
                 MXLE = MXLE + L
                 LE = MIN( MXLE, STRLEN )
             END IF
@@ -432,8 +443,8 @@ C.............  This is knowingly including extra blanks before final quote
                 L = SDSCWIDTH
                 L1 = L - LV - 1                        ! 1 for space
                 STRING = STRING( 1:LE ) // 
-     &                   ' "'// SCCDESC( J )( 1:L1 )// '"' // DELIM
-                MXLE = MXLE + L
+     &                   '"'// SCCDESC( J )( 1:L1 )// '"' // DELIM
+                MXLE = MXLE + L + 2
                 LE = MIN( MXLE, STRLEN )
             END IF
 

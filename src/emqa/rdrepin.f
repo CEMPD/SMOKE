@@ -172,6 +172,7 @@ C.........  Set local variables for determining input inventory variables
         LRDREGN = ( ANY_TRUE( NREPORT, ALLRPT%BYCNRY ) .OR.
      &              ANY_TRUE( NREPORT, ALLRPT%BYSTAT ) .OR.
      &              ANY_TRUE( NREPORT, ALLRPT%BYCNTY ) .OR.
+     &              ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
      &              ANY_CVAL( NREPORT, ALLRPT%REGNNAM )     )
 
 C.........  Build array of inventory variable names based on report settings
@@ -194,7 +195,8 @@ C.........  SCC code
         END IF
 
 C.........  Source description
-        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC ) ) THEN
+        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC ) .OR.
+     &      ANY_TRUE( NREPORT, ALLRPT%BYPLANT )    ) THEN
             NINVARR = NINVARR + 1
             IVARNAMS( NINVARR ) = 'CSOURC'
         END IF
@@ -699,7 +701,8 @@ C.........  Reformat source characteristics and set widths.  Do this once
 C           for the entire run of the program, so that it doesn't have to be
 C           done for each report (it is slow)
 
-        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC  ) ) THEN
+        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC  ) .OR.
+     &      ANY_TRUE( NREPORT, ALLRPT%BYPLANT )    ) THEN
 
 C.............  Determine width of source chararactistic columns over the
 C               whole inventory

@@ -56,6 +56,9 @@ C.........  This module contains report arrays for each output bin
 C.........  This module contains the temporal profile tables
         USE MODTMPRL
 
+C.........  This module contains the control packet data and control matrices
+        USE MODCNTRL
+
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
 
@@ -102,6 +105,8 @@ C...........   Other local variables
         INTEGER         IOS               ! i/o status
         INTEGER         JDATE             ! Julian date
         INTEGER         JTIME             ! time (HHMMSS)
+        INTEGER      :: KM    = 1         ! index to mult control matrix
+        INTEGER      :: KP    = 1         ! index to projection matrix
         INTEGER         LOUT              ! number of output layers
         INTEGER         NDATA             ! number of data columns
         INTEGER         NV                ! number data or spc variables
@@ -216,8 +221,22 @@ C.....................  Set index from global to actually input pol/act/etype
                     J = INVIDX( E )
                     IF( RPT_%USEHOUR ) J = TPRIDX( E )
 
-C.....................  Skip variable if it isn't used for this report
+C.....................  Skip variable if it isn't used for any reports
                     IF( J .EQ. 0 ) CYCLE
+
+C..................  Determine index to projection matrix
+                    KP = 1
+                    IF( TODOUT( E,RCNT )%PRYN ) 
+     &                  KP = MAX( 1, INVTOPRJ( E ) + 1 )
+
+C..................  Determine index to mult control matrix
+C..................  Note that first columns is an array of ones
+                    KM = 1
+                    IF( TODOUT( E,RCNT )%CUYN ) 
+     &                  KM = MAX( 1, INVTOCMU( E ) + 1 )
+
+C NOTE: Insert here for reactivity controls.  More formula changes will be needed in
+C   N: the formulas below (may be a good idea to apply in separate section?)
 
 C.....................  If speciation, apply speciation factors to appropriate
 C                       pollutant and emission types.
@@ -243,6 +262,8 @@ C.............................  Gridding factor has normalization by cell area
      &                                            POLVAL ( S,J ) * 
      &                                            SMAT   ( S,K ) *
      &                                            LFRAC1L( S )   *
+     &                                            PRMAT  ( S,KP) *
+     &                                            ACUMATX( S,KM) *
      &                                          BINPOPDIV( N )
                                 END DO
 
@@ -255,6 +276,8 @@ C.............................  Sum non-gridded output records into tmp bins
      &                                            POLVAL ( S,J ) * 
      &                                            SMAT   ( S,K ) *
      &                                            LFRAC1L( S )   *
+     &                                            PRMAT  ( S,KP) *
+     &                                            ACUMATX( S,KM) *
      &                                          BINPOPDIV( N )
                                 END DO
 
@@ -269,7 +292,7 @@ C.............................  Add temporary bins values to output columns
 
                         END IF
 
-                    END IF
+                    END IF       ! end if speciation
 
 C.....................  If used for this report, transfer emission values  
 C                       without speciation to temporary bin array
@@ -296,6 +319,8 @@ C..........................  Gridding factor has normalization by cell area
      &                                        OUTGFAC( I )   *
      &                                        POLVAL ( S,J ) *
      &                                        LFRAC1L( S )   *
+     &                                        PRMAT  ( S,KP) *
+     &                                        ACUMATX( S,KM) *
      &                                      BINPOPDIV( N )
                             END DO
 
@@ -307,6 +332,8 @@ C.........................  Sum non-gridded output records into temporary bins
                                 BINARR( N ) = BINARR ( N ) + 
      &                                        POLVAL ( S,J ) *
      &                                        LFRAC1L( S )   *
+     &                                        PRMAT  ( S,KP) *
+     &                                        ACUMATX( S,KM) *
      &                                      BINPOPDIV( N )
                             END DO
 

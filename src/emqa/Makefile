@@ -47,20 +47,21 @@ include $(MD_SRC)/modmake.inc
 asgnbins.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODELEV) \
             $(MODSTCY) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ asgnbins.f
-bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO)
+bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODCNTRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ bldrepidx.f
-genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) $(MODSTCY)
+genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODINFO) $(MODSTCY) 
 	$(FC) $(FFLAGS) -c -o $@ genrprt.f
 getrecs.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getrecs.f
-openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID)
+openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID) \
+             $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ openrepin.f
 qarepin.o: $(MODREPRT) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ qarepin.f
 rdgrps.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODLISTS) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ rdgrps.f
 rdrepin.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODELEV) $(MODLISTS) \
-           $(MODINFO) $(MODGRID)
+           $(MODINFO) $(MODGRID) $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ rdrepin.f
 rdrprts.o: $(MODREPRT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdrprts.f

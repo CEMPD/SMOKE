@@ -1,7 +1,7 @@
 
-        SUBROUTINE OPENREPIN( ENAME, ANAME, GNAME, LNAME, SLNAME, 
-     &                        SSNAME, TNAME, SDEV, GDEV, PDEV, TDEV, 
-     &                        EDEV, YDEV, NDEV )
+        SUBROUTINE OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, 
+     &                        PRNAME, SLNAME, SSNAME, TNAME, RDEV, 
+     &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -51,6 +51,9 @@ C.........  This module contains the temporal profile tables
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the control packet data and control matrices
+        USE MODCNTRL
+
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
 
@@ -81,11 +84,14 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: ENAME  ! name for I/O API inven input
         CHARACTER(*), INTENT(OUT) :: ANAME  ! name for ASCII inven input 
+	CHARACTER(*), INTENT(OUT) :: CUNAME ! multiplicative control matrix name
         CHARACTER(*), INTENT(OUT) :: GNAME  ! gridding matrix name
         CHARACTER(*), INTENT(OUT) :: LNAME  ! layer fractions file name
+        CHARACTER(*), INTENT(OUT) :: PRNAME ! projection matrix name
         CHARACTER(*), INTENT(OUT) :: SLNAME ! speciation matrix name
         CHARACTER(*), INTENT(OUT) :: SSNAME ! speciation matrix name
         CHARACTER(*), INTENT(OUT) :: TNAME  ! hourly emissions file
+        INTEGER     , INTENT(OUT) :: RDEV(3)! control report files
         INTEGER     , INTENT(OUT) :: SDEV   ! unit no.: ASCII inven file
         INTEGER     , INTENT(OUT) :: GDEV   ! gridding supplemental file
         INTEGER     , INTENT(OUT) :: PDEV   ! speciation supplemental file
@@ -315,22 +321,107 @@ C.............  Otherwise, set number of speciation variables
 
         END IF  ! end of mass speciation open
 
+C.............  Open projection matrix, compare number of sources, 
+C               and store projection variable names.
+        IF( PRFLAG ) THEN
+
+            MESG = 'Enter logical name for the ' //
+     &             'PROJECTION MATRIX'
+            PRNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'PMAT', PROGNAME )
+
+            CALL RETRIEVE_IOAPI_HEADER( PRNAME )
+            CALL CHKSRCNO( CATDESC, PRNAME, NROWS3D, NSRC, EFLAG )
+            NVPROJ = NVARS3D
+
+C...........  Set allocation size depending on whether report is also
+C             read in.
+            I = NVPROJ
+            IF( PRRPTFLG ) I = 2 * I
+
+C...........  Allocate memory for variables (including possible 
+C             other variables for report check) and store names
+            ALLOCATE( PNAMPROJ( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PNAMPROJ', PROGNAME )
+            PNAMPROJ = ' '  ! array
+
+            CALL STORE_VNAMES( 1, 1, NVPROJ, PNAMPROJ )
+
+            IF( NVPROJ .NE. 1 ) THEN
+                MESG = 'INTERNAL ERROR: Smkreport is not set up to ' //
+     &                 'support more than 1 variable in ' //
+     &                 CRLF() // BLANK10 // 'the projection matrix.'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            PRBYR = GETIFDSC( FDESC3D, '/BASE YEAR/', .TRUE. )
+            PRPYR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .TRUE. )
+
+            IF( PYEAR .LE. 0 ) THEN
+                IF ( PRBYR .NE. BYEAR ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Inventory base'//
+     &                     ' year', BYEAR, 'is not consistent '//
+     &                     'with projection base year', PRBYR
+                    CALL M3MSG2( MESG )
+
+                ELSE
+                    WRITE( MESG,94010 ) 'NOTE: Base year', BYEAR, 
+     &                     'is consistent between the inventory and '//
+     &                     CRLF() // BLANK10 // 'projection matrix.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+            ELSE 
+
+                IF ( PRBYR .NE. PYEAR ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Inventory projected'//
+     &                     ' data year', PYEAR, 'is not consistent '//
+     &                     'with projection base year', PRBYR
+                    CALL M3MSG2( MESG )
+
+                ELSE
+                    WRITE( MESG,94010 ) 'WARNING: Inventory projected'//
+     &                     ' year', PYEAR, 'is being projected to',
+     &                     PRPYR, 'by projection matrix.'
+                    CALL M3MSG2( MESG )
+
+                END IF
+            END IF
+        END IF  ! end of multiplicative control open
+
+C.............  Open projections report
+        IF( PRRPTFLG ) THEN
+
+            MESG = 'Enter logical name for input PROJECTION REPORT '//
+     &             'from Cntlmat'
+            RDEV(1) = PROMPTFFILE( MESG, .TRUE., .TRUE., 
+     &                             CRL // 'PROJRPT', PROGNAME )
+
+            DO V = NVPROJ+1, 2*NVPROJ
+                J = V - NVPROJ
+                PNAMPROJ( V ) = CHKPFX // PNAMPROJ( J )
+            END DO
+
+        END IF
+
 C.............  Open multiplicative control matrix, compare number of sources, 
 C               and store control variable names.
-c        IF( CUFLAG ) THEN
+        IF( CUFLAG ) THEN
 
-c            MESG = 'Enter logical name for the ' //
-c     &             'MULTIPLICATIVE CONTROL MATRIX'
-c            UNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'CMAT', PROGNAME )
+            MESG = 'Enter logical name for the ' //
+     &             'MULTIPLICATIVE CONTROL MATRIX'
+            CUNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'CMAT', PROGNAME )
 
-c            CALL RETRIEVE_IOAPI_HEADER( UNAME )
-c            CALL CHKSRCNO( 'area', UNAME, NROWS3D, NASRC, EFLAG )
-c            NUMATV = NVARS3D
-c            ALLOCATE( UVNAMS( NUMATV ), STAT=IOS )
-c            CALL CHECKMEM( IOS, 'UVNAMS', PROGNAME )
-c            CALL STORE_VNAMES( 1, 1, NUMATV, UVNAMS )
+            CALL RETRIEVE_IOAPI_HEADER( CUNAME )
+            CALL CHKSRCNO( CATDESC, CUNAME, NROWS3D, NSRC, EFLAG )
+            NVCMULT = NVARS3D
+            ALLOCATE( PNAMMULT( NVCMULT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PNAMMULT', PROGNAME )
+            CALL STORE_VNAMES( 1, 1, NVCMULT, PNAMMULT )
 
-c        END IF  ! end of multiplicative control open
+        END IF  ! end of multiplicative control open
 
 C.............  Open additive control matrix, compare number of sources, 
 C               and store control variable names.

@@ -48,6 +48,9 @@ C.........  This module contains report arrays for each output bin
 C.........  This module contains the temporal profile tables
         USE MODTMPRL
 
+C.........  This module contains the control packet data and control matrices
+        USE MODCNTRL
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -69,12 +72,17 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: SLNAME     ! mole-based spec matrix name
         CHARACTER(*), INTENT (IN) :: SSNAME     ! mass-based spec matrix name
 
+C...........   Local paramaters
+        CHARACTER*7, PARAMETER :: RPRTPRE = 'ProjRep'   ! Check prjctn prefix
+        CHARACTER*8, PARAMETER :: DIFFPRE = 'ProjDiff'  ! Check prjctn diff
+
 C...........   Sorting index for creating unique species list
         INTEGER  :: SRTIDX( NSVARS )
 
 C...........   Other local variables
         INTEGER          E, I, I1, I2, I3, J, K, L, L2, N, V ! counters and indices
 
+        INTEGER          IDX     !  temporary index
         INTEGER          IOS     !  i/o status
         INTEGER          LS      !  length of speciation name joiner
         INTEGER          LT      !  length of emission type name joiner
@@ -99,10 +107,13 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine BLDREPIDX
 
-C.........  Set the maximum number of outputs variables, depending on whether 
+C.........  Set the maximum number of output variables, depending on whether 
 C           hourly data are in use for any reports
+C.........  Also, increase further if any projection or control checks
+C           are being run
         MXDATALL = NIPPA
         IF( TFLAG ) MXDATALL = NIPPA + NTPDAT
+        IF( PRRPTFLG ) MXDATALL = MXDATALL * 3
 
 C.........  Allocate memory for the data indexing and labeling arrays...
 
@@ -117,15 +128,27 @@ C.........  Pollutant/activity/emission type arrays
         CALL CHECKMEM( IOS, 'INVIDX', PROGNAME )
         ALLOCATE( TPRIDX( MXDATALL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TPRIDX', PROGNAME )
+        ALLOCATE( INVTOPRJ( MXDATALL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INVTOPRJ', PROGNAME )
+        ALLOCATE( INVTOCMU( MXDATALL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INVTOCMU', PROGNAME )
+
+c NOTE: will have to adjust MXDATALL to be larger when a CHECK instruction
+C   N: is included
 
         TODOUT%ETP   = 0        ! array
         TODOUT%DAT   = 0        ! array
         TODOUT%AGG   = 0        ! array
         TODOUT%SPCYN = .FALSE.  ! array
+        TODOUT%PRYN  = .FALSE.  ! array
+        TODOUT%CUYN  = .FALSE.  ! array
+        TODOUT%CRYN  = .FALSE.  ! array
         ETPNAM       = ' '      ! array
         DATNAM       = ' '      ! array
         INVIDX       = 0        ! array
         TPRIDX       = 0        ! array
+        INVTOPRJ     = 0        ! array
+        INVTOCMU     = 0        ! array
 
 C.........  Speciation variable arrays
         ALLOCATE( TOSOUT( NSVARS, NREPORT ), STAT=IOS )
@@ -175,28 +198,56 @@ C.........  Set the length of the emission type joiner
 
 C.........  Populate the emission type list and the pollutant list from the
 C           reporting bins module
+C.........  Will add variables when a CHECK instruction is included
+c NOTE: Will have to index differently so that the CHECK variables can be
+C    N: added in during the loop.
+        N = 0
         DO V = 1, NIPPA
 
             EBUF = EANAM( V )
 
             K = INDEX( EBUF, ETJOIN )   ! Look for emission type joiner
 
+            N = N + 1
             IF( K .GT. 0 ) THEN         ! Store emission type and pol from it
         	L2 = LEN_TRIM( EBUF )
-                ETPNAM( V ) = EBUF
-                DATNAM( V ) = EBUF( K+LT:L2 )
+                ETPNAM( N ) = EBUF
+                DATNAM( N ) = EBUF( K+LT:L2 )
+
+C..............  See if pollutant projection is being checked and add
+C                for all pollutants (since that's how it's implemented
+C                in Cntlmat)
+                IF( PRRPTFLG ) THEN
+                    N = N + 1
+                    ETPNAM( N ) = RPRTPRE // EBUF
+                    DATNAM( N ) = RPRTPRE // EBUF( K+LT:L2 )
+
+                    N = N + 1
+                    ETPNAM( N ) = DIFFPRE // EBUF
+                    DATNAM( N ) = DIFFPRE // EBUF( K+LT:L2 )
+                ENDIF
 
             ELSE                        ! Store pollutant only
-                DATNAM( V ) = EBUF
+                DATNAM( N ) = EBUF
                 
+C..............  See if pollutant projection is being checked and add
+C                for all pollutants (since that's how it's implemented
+C                in Cntlmat)
+                IF( PRRPTFLG ) THEN
+                    N = N + 1
+                    DATNAM( N ) = RPRTPRE // EBUF
+                    N = N + 1
+                    DATNAM( N ) = DIFFPRE // EBUF
+                ENDIF
+
             END IF
 
 C.............  Store index from "all" list to inventory file variables
-            INVIDX( V ) = V
+            INVIDX( N ) = V
 
         END DO
 
-        NDATALL = NIPPA
+        NDATALL = N
 
 C.........  If temporal allocated used during program...
         IF( TFLAG ) THEN
@@ -486,7 +537,7 @@ C.............  Loop through requested data for this report
 
                 ANYOUT = .FALSE.
 
-C.................  Loop through names of emission types
+C.................  Loop through names of emission types, emis, or act
                 DO E = 1, NDATALL
 
 C.....................  Skip "all" list entry if index is inventory and
@@ -510,7 +561,35 @@ C.....................  To pollutant/activity column
                         ANYOUT = .TRUE.
                     END IF
 
-                END DO
+C..................  If projection matrix applies to this report
+                    IF( RPT_%USEPRMAT ) THEN
+                        IF( PNAMPROJ( 1 ) .EQ. 'pfac' ) THEN
+                            TODOUT( E,N )%PRYN = .TRUE.
+                            INVTOPRJ( E ) = 1
+                        ELSE
+                            IDX = INDEX1( DATNAM(E), NVPROJ, PNAMPROJ )
+                            IF( IDX .GT. 0 ) THEN
+                                TODOUT( E,N )%PRYN = .TRUE.
+                                INVTOPRJ( E ) = IDX
+                            END IF
+                        END IF
+                    END IF
+
+C..................  If mult. control matrix applies to this report
+                    IF( RPT_%USECUMAT ) THEN
+                        IF( PNAMMULT( 1 ) .EQ. 'all' ) THEN
+                            TODOUT( E,N )%CUYN = .TRUE.
+                            INVTOCMU( E ) = 1
+                        ELSE
+                            IDX = INDEX1( DATNAM(E), NVCMULT, PNAMMULT )
+                            IF( IDX .GT. 0 ) THEN
+                                TODOUT( E,N )%CUYN = .TRUE.
+                                INVTOCMU( E ) = IDX
+                            END IF
+                        END IF
+                    END IF
+
+                END DO  ! End loop over emission types, emis, or act
 
 C.................  If speciation for current report
                 IF( RPT_%USESLMAT .OR.
@@ -522,16 +601,16 @@ C.....................  Loop through names of speciation variables
 C.........................  Get species to inventory data index
                         E = SPCTOINV( V )
 
-C..........................  Set inventory variable as having speciation
-                        IF( E .GT. 0 )
-     &                      TODOUT( E,N )%SPCYN= ( RPT_%USESLMAT .OR.
-     &                                             RPT_%USESSMAT    )
+C.....................  Set inventory variable as having speciation
+                       IF( E .GT. 0 )
+     &                      TODOUT( E,N )%SPCYN = ( RPT_%USESLMAT .OR.
+     &                                              RPT_%USESSMAT    )
 
 C.........................  Get species to hourly data index
                         E = SPCTOTPR( V )
 
-C..........................  Set hourly variable as having speciation
-                        IF( E .GT. 0 )
+C......................  Set hourly variable as having speciation
+                        IF( E .GT. 0 ) 
      &                      TODOUT( E,N )%SPCYN= ( RPT_%USESLMAT .OR.
      &                                             RPT_%USESSMAT    )
 

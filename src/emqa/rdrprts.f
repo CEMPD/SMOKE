@@ -101,34 +101,40 @@ C.........  Allocate and initialize report arrays
         ALLOCATE( TITLES( MXTITLE, NREPORT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TITLES', PROGNAME )
 
-        ALLRPT%BEGSUMHR = 0
-        ALLRPT%ELEVSTAT = 0
-        ALLRPT%OUTTIME  = 0
-        ALLRPT%NUMDATA  = -9      ! zero is legitimate
-        ALLRPT%NUMTITLE = 0
-        ALLRPT%RENDLIN  = 0
-        ALLRPT%RSTARTLIN= 0
         ALLRPT%BYCELL   = .FALSE.
         ALLRPT%BYCNRY   = .FALSE.
         ALLRPT%BYCNTY   = .FALSE.
         ALLRPT%BYCONAM  = .FALSE.
         ALLRPT%BYCYNAM  = .FALSE.
         ALLRPT%BYDATE   = .FALSE.
+        ALLRPT%BYDIU    = .FALSE.
         ALLRPT%BYELEV   = .FALSE.
         ALLRPT%BYHOUR   = .FALSE.
+        ALLRPT%BYLAYER  = .FALSE.
+        ALLRPT%BYMON    = .FALSE.
+        ALLRPT%BYPLANT  = .FALSE.
+        ALLRPT%BYRCL    = .FALSE.
         ALLRPT%BYSCC    = .FALSE.
+        ALLRPT%BYSPC    = .FALSE.
         ALLRPT%BYSRC    = .FALSE.
+        ALLRPT%BYSRG    = .FALSE.
         ALLRPT%BYSTAT   = .FALSE.
         ALLRPT%BYSTNAM  = .FALSE.
-        ALLRPT%BYRCL    = .FALSE.
+        ALLRPT%BYWEK    = .FALSE.
+        ALLRPT%CHKPROJ  = .FALSE.
+        ALLRPT%CHKCNTL  = .FALSE.
         ALLRPT%LAYFRAC  = .FALSE.
         ALLRPT%NORMCELL = .FALSE.
+        ALLRPT%NORMPOP  = .FALSE.
         ALLRPT%O3SEASON = .FALSE.
         ALLRPT%SCCNAM   = .FALSE.
         ALLRPT%SRCNAM   = .FALSE.
         ALLRPT%STKPARM  = .FALSE.
+        ALLRPT%USECRMAT = .FALSE.
+        ALLRPT%USECUMAT = .FALSE.
         ALLRPT%USEGMAT  = .FALSE.
         ALLRPT%USEHOUR  = .FALSE.
+        ALLRPT%USEPRMAT = .FALSE.
         ALLRPT%USESLMAT = .FALSE.
         ALLRPT%USESSMAT = .FALSE.
         ALLRPT%DELIM    = ' '
@@ -136,6 +142,17 @@ C.........  Allocate and initialize report arrays
         ALLRPT%OFILENAM = ' '
         ALLRPT%REGNNAM  = ' '
         ALLRPT%SUBGNAM  = ' '
+
+        ALLRPT%BEGSUMHR = 0
+        ALLRPT%ELEVSTAT = 0
+        ALLRPT%NUMDATA  = -9      ! zero is legitimate
+        ALLRPT%NUMTITLE = 0
+        ALLRPT%OUTTIME  = 0
+        ALLRPT%RENDLIN  = 0
+        ALLRPT%RSTARTLIN= 0
+        ALLRPT%SCCRES   = 10
+        ALLRPT%SRGRES   = 0
+
         ALLOUTHR = .FALSE.
         ALLUSET  = ' '
         INDNAM  = ' '
