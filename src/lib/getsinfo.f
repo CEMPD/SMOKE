@@ -280,7 +280,7 @@ C............  For map-formatted inventory
 
 C................  Ensure that map variable name and file variable 
 C                  name are the same
-                IF( MAPNAM( I ) .NE. VNAMESET( 2 ) ) THEN
+                IF( MAPNAM( K ) .NE. VNAMESET( 2 ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Variable name "'// TRIM(MAPNAM(I))//
      &                    '" in map-formatted inventory is mapped to '//
@@ -355,7 +355,7 @@ C............  For map-formatted inventory
 
 C................  Ensure that map variable name and file variable 
 C                  name are the same
-                IF( MAPNAM( I ) .NE. VNAMESET( 2 ) ) THEN
+                IF( MAPNAM( K ) .NE. VNAMESET( 2 ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Variable name "'// TRIM(MAPNAM(I))//
      &                    '" in map-formatted inventory is mapped to '//
