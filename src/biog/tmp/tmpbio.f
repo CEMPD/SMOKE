@@ -414,7 +414,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
      &          FSUNKN3, 'BGTS_L', 'TMPBIO' )
 
         DO M = 1, MSPCS
-            UNITS3D( M ) = 'tons/hour'
+            UNITS3D( M ) = 'ton/hr'
         ENDDO
 
         SNAME = PROMPTMFILE(
