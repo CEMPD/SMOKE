@@ -90,7 +90,7 @@ C.........  Write out first report to REPINVEN file
      
         WRITE( ADEV, 93020 ) '[tons/year]'
         
-        WRITE( ADEV, 93000 ) REPEAT( '-', 100 )
+        WRITE( ADEV, 93000 ) REPEAT( '-', 85 )
           
         DO I = 1, NUNIQCAS
           IF( UCASNPOL( I ) .EQ. UCASNKEP( I ) ) THEN
@@ -123,11 +123,11 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93010   FORMAT( 1X, A8, 4X, A4, 4X, A5, 4X, A9, 7X, A15 )
+93010   FORMAT( 1X, A8, 4X, A4, 4X, A5, 6X, A9, 9X, A15 )
 
-93020   FORMAT( 30X, A11 )
+93020   FORMAT( 32X, A11 )
 
-93030   FORMAT( 1X, A8, 4X, A1, 7X, I5, 4X, F13.8, 4X, A25 )
+93030   FORMAT( 1X, A8, 4X, A1, 7X, I5, 4X, F16.10, 4X, A40 )
 
 
 
