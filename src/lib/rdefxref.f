@@ -128,6 +128,8 @@ C...........    LOCAL VARIABLES and their descriptions:
         CHARACTER(LEN=FIPLEN3) FIPZERO  !  buffer for zero FIPS code
         CHARACTER(LEN=RWTLEN3) CRWT     !  buffer for roadway type
         CHARACTER(LEN=VIDLEN3) CVID     !  buffer for vehicle type number
+        CHARACTER(LEN=VIDLEN3) VIDHOLD  !  buffer to get around XREFTBL check
+        CHARACTER(LEN=VIDLEN3) VIDZERO  !  buffer for zero vehicle type number
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
         CHARACTER(LEN=SCCLEN3) SCCBLNK  !  blank SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO  !  buffer for zero SCC
@@ -143,6 +145,8 @@ C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         SCCZERO = REPEAT( '0', SCCLEN3 )
         SCCBLNK = REPEAT( ' ', SCCLEN3 )
         LNKZERO = REPEAT( '0', LNKLEN3 )
+        VIDHOLD = REPEAT( '-', VIDLEN3 )
+        VIDZERO = REPEAT( '0', VIDLEN3 )
 
 C.........  Set up roadway type format
         WRITE( RWTFMT, '("(I",I2.2,")")' ) RWTLEN3
@@ -296,10 +300,11 @@ C.............  For now this is configured for mobile source only
             CVID = SEGMENT( 4 )
             ACT  = SEGMENT( 5 )
 
-C.............  Filter -9 and pad fields with zeros for roadway type, link ID
+C.............  Filter -9 and zeros for roadway type, veh type, link ID
             CALL FLTRNEG( CRWT )
             CALL FLTRNEG( CLNK )
             CALL FLTRNEG( CVID )
+            CALL PADZERO( CVID )
 
 C.............  Convert roadway type to integer
             RWT = 0
@@ -326,18 +331,32 @@ C.............  Make sure roadway type is not road class
                     RWT = RDWAYTYP( K )
                     WRITE( CRWT, RWTFMT ) RWT
                 END IF 
+            ELSE
+                CRWT = REPEAT( '0', RWTLEN3 )
+ 
             END IF 
 
-C.............  Set "SCC" as the roadway type and pad with zeros
-            TSCC = CRWT
+C.............  Build internal SCC (can't use MBSCCADJ because input file
+C               does not use SCCs). Use VIDHOLD to work around check in 
+C               Xreftbl for no SCC when more than road class is given.  This
+C               will allow use of Link-specific without vehicle type.
+            IF( RWT  .NE. 0       .AND. 
+     &          CVID .EQ. VIDZERO .AND. 
+     &          CLNK .NE. ' '           ) THEN
+                CVID = VIDHOLD
+            END IF
+            TSCC = CRWT // CVID
             CALL PADZERO( TSCC )
-            
-C.................  Post-process x-ref information to scan for '-9', pad
-C                   with zeros, compare SCC version master list, compare
-C                   SIC version to master list, and compare activity name 
-C                   with master list.
-            CALL FLTRXREF( CFIP, CDUM, SCCBLNK, ACT, IDUM, 
-     &                     IDUM, JACT, AFLAG, SKIPREC   )
+
+C.................  Post-process country/state/county code for blank and
+C                   missing values
+            CALL FLTRNEG( CFIP )
+            CALL PADZERO( CFIP )
+
+C.................  Compare activity name with master list.
+            JACT = FINDC( ACT, NIACT, SRTACT )
+
+            IF( JACT .LE. 0 ) CYCLE
 
 C.................  Skip lines that are not valid for this inven and src cat
             IF( SKIPREC ) CYCLE
@@ -387,13 +406,16 @@ C.................  Write activity name position to a character string
 
             IF ( C .LE. NREF ) THEN
 
+C.................  If link ID is not set, then set road class to blank
+                IF( CLNK .EQ. ' ' ) CRWT = ' '
+
 C.................  Store sorting criteria as right-justified in fields
 C.................  For mobile, we are using "CSCCTA" to store the roadway
 C                   type so that we can use the XREFTBL subroutine.  
                 CSRCALL = ' '
-                CALL BLDCSRC( CFIP, RWTBLNK3, CLNK, CVID, CHRBLNK3, 
+                CALL BLDCSRC( CFIP, CRWT, CLNK, CHRBLNK3, CHRBLNK3, 
      &                        CHRBLNK3, CHRBLNK3, POLBLNK3, CSRCALL )
-  
+
                 INDXTA( C ) = C
                 ISPTA ( C ) = JACT
                 CSCCTA( C ) = TSCC
