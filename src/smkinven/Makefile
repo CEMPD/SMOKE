@@ -2,10 +2,11 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+LIBS          = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
+
+LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libiotools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
 
 all: smkinven
 
@@ -18,9 +19,9 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 RAW=chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o openinvin.o \
     openinvout.o openpdout.o procinven.o rdemsar.o rdemsmb.o rdemspd.o \
-    rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdidaar.o rdidamb.o rdidapt.o \
-    rdinven.o rdlooppd.o smkinven.o srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o \
-    wrptref.o wrpdemis.o 
+    rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o rdidaar.o rdidamb.o \
+    rdidapt.o rdinven.o rdlooppd.o smkinven.o srcmem.o wrinvchr.o wrinvemis.o \
+    wrinvpol.o wrptref.o wrpdemis.o 
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -40,7 +41,7 @@ genpdout.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
 genpdinfo.o: $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
-gethdr.o: $(MODINFO) $(MODSTCY)
+gethdr.o: $(MODINFO) $(MODLISTS) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ $<
 initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -48,37 +49,41 @@ openinvout.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 openpdout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-procinven.o: $(MODSOURC) $(MODINFO)
+procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdemsar.o: $(MODSOURC) $(MODINFO)
+rdemsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODINFO)
+rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
+rdemspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdemspt.o: $(MODSOURC) $(MODINFO)
+rdemspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdepspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) $(MODLISTS)
+rdepsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdepspt.o: $(MODSOURC) $(MODINFO)
+rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdidaar.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
+rdepspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+rdgrdapi.o: $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+rdidaar.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdidamb.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
+rdidamb.o: $(MODSOURC) $(MODMOBIL) $(MODLISTS) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdidapt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
+rdidapt.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdinven.o: $(MODSOURC) $(MODMOBIL) $(MODINFO)
+rdinven.o: $(MODSOURC) $(MODLISTS) $(MODMOBIL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdlooppd.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-smkinven.o: $(MODSOURC) $(MODINFO)
+smkinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 srcmem.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 wrinvchr.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-wrinvemis.o: $(MODINFO)
+wrinvemis.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 wrptref.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
