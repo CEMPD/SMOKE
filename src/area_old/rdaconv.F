@@ -94,6 +94,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         LOGICAL         EFLAG            ! Error flag
 
+        CHARACTER*1     LETR
         CHARACTER*128   LINE
         CHARACTER*256   MESG
 
@@ -130,13 +131,24 @@ C.........  Read volatile pollutants conversion factors file
 
             IF ( INDEX( LINE( 3 : 17 ), '.' ) .EQ. 0 ) THEN
 
-                COL = 3 + LBLANK( LINE( 3 : 17 ) )
-                IF ( LINE( COL : COL ) .GE. 'A' .AND.
-     &               LINE( COL : COL ) .LE. 'Z' )  GO TO  11	! motor vehicles
-                SIZ = TRIMLEN( LINE( COL : 17 ) )
-                IF ( SIZ .LT. 10 )  GO TO  11			! point sources
-                ASC7 = STR2INT( LINE( COL   : COL+6 ) )
-                ASC3 = STR2INT( LINE( COL+7 : COL+9 ) )
+                COL  = 3 + LBLANK( LINE( 3 : 17 ) )
+                LETR = LINE( COL : COL )
+
+                IF ( LETR .LT. 'A' .OR. LETR .GT. 'Z' ) THEN ! no MV sources
+
+                    SIZ = TRIMLEN( LINE( COL : 17 ) )
+
+                    IF ( SIZ .GE. 10 )  THEN ! exclude point sources
+
+                        ASC7 = STR2INT( LINE( COL   : COL+6 ) )
+                        ASC3 = STR2INT( LINE( COL+7 : COL+9 ) )
+
+                    ELSE
+                        GO TO 11
+                    ENDIF
+                ELSE
+                    GO TO 11
+                ENDIF
 
             ELSE		!  else "fallback" ASC
 
