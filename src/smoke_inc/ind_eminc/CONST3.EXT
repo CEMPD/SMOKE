@@ -88,7 +88,7 @@ C.......   Mathematical Constants
      &  DALR   =  GRAV/CP            , GOVRD  =  GRAV/RDGAS         ,
      &  RDOVG  = RDGAS/GRAV          , ROVCP  =  RDGAS/CP           ,
      &  LVOCP  =  LV/CP              , AMISS  =  -9999.9            ,
-     &  STDATMCB = 101.325           , STDATMMB = 0.1 * STDATMCB    ,
+     &  STDATMCB = 101.325           , STDATMMB = 10.0 * STDATMCB   ,
      &  EPSILON = 1.0E-10            , AVO     = 6.02257E23         , 
      &  BOLTZ   = 1.38E-16 )
 
