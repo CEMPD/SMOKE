@@ -106,6 +106,9 @@ C.........  Initialize arrays
         LPING    = .FALSE.
         GROUPID  = 0 
 
+C.........  If no input file, then return
+        IF( FDEV .LE. 0 ) RETURN
+
         MESG = 'Reading elevated/plume-in-grid sources file...'
         CALL M3MSG2( MESG )
 
