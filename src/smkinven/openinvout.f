@@ -262,13 +262,6 @@ C.........  Define source characteristic variables that are not strings
             VDESC3D( J ) = 'Source Industrial Code'
             J = J + 1
 
-            VNAME3D( J )= 'IORIS'
-            VTYPE3D( J )= M3INT
-            UNITS3D( J )= 'n/a'
-            VDESC3D( J )= 'Office of the Regulatory Information ' //
-     &                    'System code'
-            J = J + 1
-
             VNAME3D( J ) = 'XLOCA'
             VTYPE3D( J ) = M3REAL
             UNITS3D( J ) = 'degrees'
