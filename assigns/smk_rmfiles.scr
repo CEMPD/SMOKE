@@ -219,9 +219,18 @@ if ( $RUN_RAWBIO == Y && $RUN_PART1 == 'Y' ) then
     /bin/rm -f $BGRDW
 endif
 
+if ( $RUN_NORMBEIS3 == Y && $RUN_PART1 == 'Y' ) then
+    /bin/rm -f $B3GRD
+endif
+
 if ( $RUN_TMPBIO == Y && $RUN_PART2 == 'Y' ) then
     /bin/rm -f $BGTS_S
     /bin/rm -f $BGTS_L
+endif
+
+if ( $RUN_TMPBEIS3 == Y && $RUN_PART2 == 'Y' ) then
+    /bin/rm -f $B3GTS_L
+    /bin/rm -f $B3GTS_S
 endif
 
 if ( $RUN_ELEVPOINT == Y && $RUN_PART3 == 'Y' ) then
