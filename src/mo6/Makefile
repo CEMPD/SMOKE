@@ -118,6 +118,7 @@ OBJS = \
 	BIGTCF.o \
 	C1TO7.o \
 	C8TO12.o \
+	CABSHUM.o \
 	CALAER.o \
 	CALCUM.o \
 	CALEFR.o \
@@ -218,6 +219,7 @@ OBJS = \
 	GETATP.o \
 	GETATWAV.o \
 	GETAVG.o \
+	GETBARO.o \
 	GETBENZ.o \
 	GETCONV.o \
 	GETCPL.o \
@@ -239,6 +241,7 @@ OBJS = \
 	GETGLLRDC.o \
 	GETGRA.o \
 	GETHSACT.o \
+	GETHSGLL.o \
 	GETHVMT.o \
 	GETIMV.o \
 	GETIMY.o \
@@ -257,7 +260,6 @@ OBJS = \
 	GETOIC.o \
 	GETOLEF.o \
 	GETORE.o \
-	GETORR.o \
 	GETOXY.o \
 	GETPMDDR1.o \
 	GETPMDDR2.o \
@@ -270,6 +272,7 @@ OBJS = \
 	GETPRS.o \
 	GETPSC.o \
 	GETREG.o \
+	GETRELHUM.o \
 	GETRJN.o \
 	GETRVP.o \
 	GETSCF.o \
@@ -286,11 +289,13 @@ OBJS = \
 	GETTAM.o \
 	GETTEF.o \
 	GETTTC.o \
+	GETVORR.o \
 	GETVMT.o \
 	GETWAV.o \
 	GETWIN.o \
 	GETWRR.o \
 	GETXIM.o \
+	GETXORR.o \
 	GETXMP.o \
 	GET_8193.o \
 	GET_SULFUR.o \

@@ -14,6 +14,8 @@ C          PCTLEV, QUITER, RNLOSSSUM, RSTLOS, CNVRT_U
 C
 C  Changes:  (Last change first)
 C
+C  15 Apr 02 AIR Task Bug Fix 389: restored MY to CNVRT_U parameter list
+C  05 Apr 02: AIR Task Bug Fix 388, Modification of constants via QUITER.
 C  21 Dec 01 M6011221: Changes to CNVRT_U parameters.
 C  15 Nov 01 AIR Task 27: Added INERR processing due to PMFLECON update.
 C  13 Dec 00 @EPA-bag t-x6 MY and ACTUAL_MY added to parameter list for CAA switch
@@ -288,7 +290,7 @@ C
 C     Warn and exit evaporative calculations if the miles per day is zero.
 C
       IF(BMYMPD(JDX,IV).LE.0.0) THEN
-        CALL QUITER(FLOAT(MY),IVGAS,58,0)
+        CALL QUITER(FLOAT(MY),IVGAS,58,INERR)
         GOTO 99
       ENDIF
 C
@@ -303,7 +305,8 @@ C
 C     Look up model year group pointers:
 C     Carb
       IFDS=1
-      ISTDC=IEVPTR(MY,IVGAS,1)
+      ISTDC=IEVPTR(MY,IVGAS,1,INERR)
+      IF(INERR.GT.0) GOTO 99
       FINJ=0.0   ! initialize all vehicles to carbureted vehicles
       IF(VVGAS(IV).EQ.1.AND.MY.GE.1981) THEN
         IVTEMP = IVGAS
@@ -311,16 +314,20 @@ C     Carb
 C
 C       TBI
         IFDS=2
-        ISTDT=IEVPTR(MY,IVGAS,1)
+        ISTDT=IEVPTR(MY,IVGAS,1,INERR)
+        IF(INERR.GT.0) GOTO 99
 C
-        IG5=IEVPTR(MY,IVGAS,2)
+        IG5=IEVPTR(MY,IVGAS,2,INERR)
+        IF(INERR.GT.0) GOTO 99
         FINJ(1)=TBI(IG5,IVTEMP)
 C
 C       PFI
         IFDS=3
-        ISTDP=IEVPTR(MY,IVGAS,1)
+        ISTDP=IEVPTR(MY,IVGAS,1,INERR)
+        IF(INERR.GT.0) GOTO 99
 C
-        IG5=IEVPTR(MY,IVGAS,2)
+        IG5=IEVPTR(MY,IVGAS,2,INERR)
+        IF(INERR.GT.0) GOTO 99
         FINJ(2)=PFI(IG5,IVTEMP)
       ENDIF
 C
@@ -329,7 +336,8 @@ C     Find the crankcase evaporative losses in units of grams/mile; crank
 C     case losses are zero when miles per day are zero. (Only MOBILE5 daily
 C     crank case emissions are calculated.)
 C
-      EVAP_GM_MI(ICRNCASE) = ZEV*CRANKC(MY,IV)
+      EVAP_GM_MI(ICRNCASE) = ZEV*CRANKC(MY,IV,INERR)
+      IF(INERR.GT.0) GOTO 99
 C
 C     GV/T => tampering crankcase HC effects are to be added.
 C     Note that IVGAS, used by the evap code, includes MC, while IVTAM, used
@@ -357,7 +365,7 @@ C       need hourly resting losses for hot soak, diurnals, and running losses
 C       (units conversions, ZEV, and oxygenated fuel adjustments will be
 C        applied to resting losses at the end of the hourly loop)
 C
-        CALL RSTLOS(IH,MY,ACTUAL_MY,ICY,IVGAS)   !units of grams/hour
+        CALL RSTLOS(IH,MY,ACTUAL_MY,ICY,IVGAS,INERR)   !units of grams/hour
 C
 C       DIURNAL LOSSES:
         IF ( IH .LE. MAX_DIURNL_HR ) THEN  !no diurnals past midnight
@@ -372,7 +380,7 @@ C
 C
           DRNL_GM_HR(IH) = DRNL
           DRNL_GM_MI(IH) = DRNL*
-     *              CNVRT_U(GPH,GPM,JDX,IV,IH,IDIURNAL,INERR)
+     *              CNVRT_U(GPH,GPM,JDX,IV,MY,IH,IDIURNAL,INERR)
 C
 C         average daily diurnal losses in units of grams/day:
           EVAP_GM_MI(IDIURNAL)=EVAP_GM_MI(IDIURNAL)+
@@ -398,9 +406,9 @@ C
 C       HOT SOAK hourly numbers
         HS_GM_TRP(IH) =  HSK  !hot soak units are in gram/trip
         HS_GM_MI(IH)  =  HSK*
-     *           CNVRT_U(GPT,GPM,JDX,IV,IH,IHOTSOAK,INERR)
+     *           CNVRT_U(GPT,GPM,JDX,IV,MY,IH,IHOTSOAK,INERR)
         HS_GM_HR(IH)  =  HSK*
-     *           CNVRT_U(GPT,GPH,JDX,IV,IH,IHOTSOAK,INERR)
+     *           CNVRT_U(GPT,GPH,JDX,IV,MY,IH,IHOTSOAK,INERR)
 C
 C       HOT SOAK average daily numbers
         EVAP_GM_MI(IHOTSOAK) =EVAP_GM_MI(IHOTSOAK)+HS_GM_MI(IH)*HVMT(IH)
@@ -417,7 +425,7 @@ C
         IF( VVGAS(IV).EQ.1 ) THEN               !no motorcycles
 C
 C         RUNNING LOSSES:
-          CALL RNLOSSSUM(IH,IV,MY,ACTUAL_MY,JDX,RUNLOSS)
+          CALL RNLOSSSUM(IH,IV,MY,ACTUAL_MY,JDX,RUNLOSS,INERR)
 C
           DO IROAD = IFREEWAY,IALLROADS
             RUNLOSS(IROAD)=ZEV*RUNLOSS(IROAD)   !units of grams/mile for a particular hour of the day
@@ -425,7 +433,7 @@ C
 C           RUNNING LOSS hourly numbers
             RN_GM_MI(IH,IROAD) = RUNLOSS(IROAD) !running loss units are in grams/mile
             RN_GM_HR(IH,IROAD) = RUNLOSS(IROAD)*
-     *              CNVRT_U(GPM,GPH,JDX,IV,IH,IRUNLOSS,INERR)
+     *              CNVRT_U(GPM,GPH,JDX,IV,MY,IH,IRUNLOSS,INERR)
 C
           END DO
 C
@@ -439,9 +447,9 @@ C         REFUELING LOSSES:
 C         the hourly array is built in REFUEL called by EFCALX
           RFL_GM_MI(IH)=ZEV*RLRATE(IDX,IVTAM,IH)
           RFL_GM_HR(IH)=ZEV*RLRATE(IDX,IVTAM,IH)*
-     *               CNVRT_U(GPM,GPH,JDX,IV,IH,IREFUEL,INERR)
+     *               CNVRT_U(GPM,GPH,JDX,IV,MY,IH,IREFUEL,INERR)
           RFL_GM_GA(IH)=ZEV*RLRATE(IDX,IVTAM,IH)*
-     *               CNVRT_U(GPM,GPG,JDX,IV,IH,IREFUEL,INERR)
+     *               CNVRT_U(GPM,GPG,JDX,IV,MY,IH,IREFUEL,INERR)
 C
 C         average daily numbers
           EVAP_GM_MI(IREFUEL)=EVAP_GM_MI(IREFUEL) + RFL_GM_MI(IH)
@@ -477,9 +485,9 @@ C
 C       CRANK CASE LOSSES:
 C       hourly numbers need to be converted
         CC_GM_MI(IH) = EVAP_GM_MI(ICRNCASE)*
-     *       CNVRT_U(GPM_D,GPM,JDX,IV,IH,ICRNCASE,INERR) ! CNVRT_U=1 for this case
+     *       CNVRT_U(GPM_D,GPM,JDX,IV,MY,IH,ICRNCASE,INERR) ! CNVRT_U=1 for this case
         CC_GM_HR(IH) = CC_GM_MI(IH)*
-     *       CNVRT_U(GPM,GPH,JDX,IV,IH,ICRNCASE,INERR)
+     *       CNVRT_U(GPM,GPH,JDX,IV,MY,IH,ICRNCASE,INERR)
 C
 C       average daily numbers
         EVAP_GM_HR(ICRNCASE)=EVAP_GM_HR(ICRNCASE)+CC_GM_HR(IH)/24.0
@@ -492,7 +500,7 @@ C
 C       units conversions :
         RSTLS_GM_HR(IH) = RSTLSS_EF   !resting losses are in grams/hour
         RSTLS_GM_MI(IH) = RSTLSS_EF*
-     *             CNVRT_U(GPH,GPM,JDX,IV,IH,IRESTLOSS,INERR)
+     *             CNVRT_U(GPH,GPM,JDX,IV,MY,IH,IRESTLOSS,INERR)
 C
 C       daily averages :
         EVAP_GM_MI(IRESTLOSS)=EVAP_GM_MI(IRESTLOSS)+
@@ -500,6 +508,9 @@ C       daily averages :
         EVAP_GM_HR(IRESTLOSS)=EVAP_GM_HR(IRESTLOSS)+
      *                        RSTLS_GM_HR(IH)/24.0
 C
+C     Abort if any errors were found during IH looping
+C
+        IF(INERR.GT.0) GOTO 99
 C
       END DO
 C     End of hourly loop.

@@ -4,6 +4,7 @@ C  Directs to calculation of EMFAC-PM, RCP, SOF, SO4, NH3, SO2.
 C 
 C  Changes : 
 C 
+C  05 Apr 02: AIR Task Bug Fix 388, Modification of constants via QUITER.
 C  08 Mar 02 AIR Task 28: Moved all air toxic calcs to ATCALX. Comments. 
 C  04 Jan 02 AIR Task 25: Added INERR to PMBERADJ, removed unused varaibles 
 C  20 Dec 01 AIR Task 25: Added INERR to PMDRCPSOF and added INERR traps 
@@ -189,7 +190,7 @@ C
 C 
 C  Output the descriptive results. 
 C 
-      CALL PMOUTDSC(ICY) 
+      CALL PMOUTDSC(ICY,INERR)
 C 
 C  Output the database results. 
 C 

@@ -8,6 +8,10 @@ C  Called by MOBILE.
 C 
 C  Changes: (Last change first) 
 C 
+C 02 Jul 02 AIR Task 36: Added RELATIVE HUMIDITY and BAROMETRIC PRES processing
+C 20 Mar 02 AIR Task 32: Added NO HIGH EMITTERS, OBD EXH RESPONSE,
+C           OBD EVAP RESPONSE, removed OBD RESPONSE
+C  02 May 02 @EPA-bag Added HOT SOAK LQD LEAK
 C 13 Mar 02 AIR Task 27: MPG ESTIMATES is now scenario only. 
 C 06 Nov 01 AIR Task 27: Added MPG ESTIMATES for CO2. 
 C 31 Aug 01 AIR Task 18: Added ADDITIONAL HAPS. 
@@ -304,6 +308,9 @@ C
           HDCGPM_FLAG = 0 
         CASE ('1981-93 LDG EFS') 
           CALL GET_8193(INPREC,INERR,RC) 
+        CASE ('NO HIGH EMITTERS')
+          NOHIGH = 1
+          CALL QUITER(0.0,0,623,INERR)
 C 
         CASE ('NGV FRACTION') 
           NGVFLG1 = 1 
@@ -374,9 +381,10 @@ ccs          CALL UCCOMP(INPREC(22:),TNAME)
         CASE ('OBD WORKING MIL') 
           CALL GETMIL(INPREC,INERR,RC) 
           CALL QUITER(0.0,0,693,INERR) 
-        CASE ('OBD RESPONSE') 
-          CALL GETORR(INPREC,INERR,RC) 
-          CALL QUITER(0.0,0,691,INERR) 
+        CASE ('OBD EXH RESPONSE')
+          CALL GETXORR(INPREC,INERR,RC)
+        CASE ('OBD EVAP RESPONSE')
+          CALL GETVORR(INPREC,INERR,RC)
         CASE ('OBD I/M COVERAGE') 
           CALL GETOIC(INPREC,INERR,RC) 
           CALL QUITER(0.0,0,692,INERR) 
@@ -623,6 +631,8 @@ C
         CASE ('FIXED PP RATES') 
           CALL GETFPPR(INPREC,INERR,RC) 
           IF(RC.EQ.0) CALL QUITER(0.0,0,698,INERR) 
+        CASE ('HOT SOAK LQD LEAK')
+          CALL GETHSGLL(INPREC,INERR,RC)
         CASE ('HOT SOAK ACTIVITY') 
           CALL GETHSACT(INPREC,INERR,RC) 
         CASE ('DIURN SOAK ACTIVITY') 
@@ -638,6 +648,10 @@ C
           POST96IM = 1 
           WRITE(IOUREP,124) 
   124     FORMAT(/' Exhaust I/M Requested on 1996+ MYs',/) 
+        CASE ('RELATIVE HUMIDITY')
+          CALL GETRELHUM(INPREC,INERR,RC)
+        CASE ('BAROMETRIC PRES')
+          CALL GETBARO(INPREC,INERR,RC)
         CASE ('END OF RUN', 
      &        '0000000000') 
           RC = 0 

@@ -9,7 +9,9 @@ C  Calls CHKLAB,  QUITER.
 C 
 C 
 C  Changes: (Last change first) 
-C 
+C
+C  22 Oct 02 @EPA added logic to prevent divide by zero error in TSUM.
+C  15 Apr 02  AIR Task Bug Fix 388: modification of constants via QUITER.
 C 16 Feb 01 @EPA-elg Changed GETFVMT input routine to allow input of FVMT as a 
 C                    function of vehicle class. 
 C 22 Nov 00 @EPA-bag bug301 added GFVMT to enable scenario and run level 
@@ -142,6 +144,7 @@ C
         IF(RC.LT.0) EXIT 
         IF (IVC.GT.28 .OR. IVC.LT.1) THEN 
           CALL QUITER(0.,IVC,174,INERR) 
+          IF(INERR.GT.0) GOTO 99
         ENDIF 
         BACKSPACE(IOUALT) 
 C 
@@ -160,6 +163,14 @@ C
           END DO 
           IF(ABS(1.-TSUM)>0.0025) THEN 
             DO I = 1,4 
+C
+              IF(TSUM .EQ. 0.) THEN
+                WRITE(IOUERR,10)
+   10           FORMAT(' ERROR: The Facility VMT (FVMT) ',
+     *                   'incorrectly sums to zero ')
+                GOTO 98
+              END IF
+C
               FVMT(I,J,IVC) = FVMT(I,J,IVC) / TSUM 
             END DO 
           ENDIF 

@@ -5,6 +5,8 @@ C  miles per gallon, from the user-supplied file.
 C 
 C  Changes: (Last change first) 
 C 
+C  06 Aug 02 @EPA-bag bug 22: Renamed label in external file
+C             from ROADFE to MPG ESTIMATES
 C  13 Mar 02 AIR Task 27: Replaced MPG.I with RLCOM.I. 
 C  06 Nov 01 AIR Task 27: New Subroutone 
 C 
@@ -109,7 +111,7 @@ C
 C     Find the token number of the record label that must appear 
 C     on a record somewhere in the header of the external data file. 
 C 
-      CALL CHKLAB('ROADFE',STDLAB,LDGIMP,SECTION) 
+      CALL CHKLAB('MPG ESTIMATES',STDLAB,LDGIMP,SECTION)
 C 
 C     The next two assignment statements are present solely to suppress 
 C     compiler generated warnings. They have no functional importance. 

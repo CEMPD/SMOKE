@@ -5,6 +5,9 @@ C  evap Air Toxic and HAPS emission factors. For PM based Air Toxics, the
 C  particle size is at that selected by the user. 
 C 
 C  Changes (Last change first): 
+C  10 Oct 02  ELG MTBE marketshare is now in the MTBE evaporative emission
+C                 calculations. Added ATOXY(2,1).  This is Bug Fix #29 of M6.2 list.
+C  15 Apr 02  AIR Task Bug Fix 388: modification of constants via QUITER.
 C  08 Mar 02  AIR Task 28: Updated comments due to move of ADD HAPS arrays 
 C             to ATWORK. Moved PM RATIO calcs to here. 
 C  26 Feb 02: AIR Task 28: Added special calls to ATTAMPER, ATRVPEXH 
@@ -46,8 +49,8 @@ C
 C 
 C  Declare parameter list. 
 C 
-      INTEGER ICY 
-      INTEGER INERR 
+      INTEGER, INTENT(IN) :: ICY
+      INTEGER, INTENT(INOUT) :: INERR
 C 
 C  Declare local variables/arrays. 
 C 
@@ -205,7 +208,7 @@ C  Compute the MTBE evap fractions. Oxygen content (ATWTOXY) is in wt%.
 C  However, the MTBE values must be in vol% 
 C 
       IF(ATOXY(1,1).GT.0.) THEN 
-      MTBEVOL=ATOXY(1,1)/VOLTOWT(1) 
+      MTBEVOL=ATOXY(1,1)*ATOXY(2,1)/VOLTOWT(1)
       ATEVAP(1,2) = (24.2050 - 1.7460 * RVP) * MTBEVOL / 1000. !Hot Soak     
       ATEVAP(2,2) = (22.1980 - 1.7460 * RVP) * MTBEVOL / 1000. !Diurnal     
       ATEVAP(3,2) = (17.8538 - 1.6622 * RVP) * MTBEVOL / 1000. !Running     
@@ -677,8 +680,8 @@ C
 C ********************** End of Vehicle Loop ************************* 
 C 
 C  Output the descriptive results. 
-C 
-      CALL ATOUTDSC(ICY) 
+C
+      CALL ATOUTDSC(ICY,INERR)
 C 
 C  Output the database results. 
 C 
