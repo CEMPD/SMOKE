@@ -2,7 +2,7 @@
         SUBROUTINE TMPINTRP( S, SRCTMPR, OSRC, T1, T2, PP, QQ )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 93
 C
 C  DESCRIPTION:
 C 
@@ -55,7 +55,9 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
-        EXTERNAL        CRLF
+        INTEGER         ENVINT
+
+        EXTERNAL        CRLF, ENVINT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: S       ! source ID
@@ -68,7 +70,10 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Other local variables
 
-        INTEGER         L     ! counters and indices
+        INTEGER          L     ! counters and indices
+        INTEGER, SAVE :: MAXCNT = 0     ! count of min warning
+        INTEGER, SAVE :: MINCNT = 0     ! count of max warning
+        INTEGER, SAVE :: MXWARN = 0     !  max warning messages to output
 
         REAL             SCR        ! scratch value
         REAL   , SAVE :: TINCINV    ! tmpr increment inverse
@@ -87,6 +92,7 @@ C   begin body of subroutine TMPINTRP
 C.........  Compute the inverse temperature increment
         IF( FIRSTIME ) THEN
             TINCINV = 1./ TMMINVL
+            MXWARN = ENVINT( WARNSET, ' ', 100, L )
             FIRSTIME = .FALSE.
         END IF
 
@@ -107,13 +113,19 @@ C.........  Trap source's temperature against minimum temperature available
 C           in emission factors file
         ELSEIF ( SRCTMPR .LT. MINT_MIN ) THEN   
 
-            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-            WRITE( MESG,94010 )
+            IF( MINCNT .LE. MXWARN ) THEN
+
+        	CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
+        	WRITE( MESG,94020 )
      &             'WARNING: Bounding source temperature ', SRCTMPR, 
      &             'at minimum'// CRLF()// BLANK10 //
      &             'allowable value of ', MINT_MIN, ' for source:'//
      &             CRLF() // BLANK10 // BUFFER( 1:L )
-            CALL M3MESG( MESG )
+        	CALL M3MESG( MESG )
+
+                MINCNT = MINCNT + 1
+
+            END IF
 
             PP = 1.0
             QQ = 0.0
@@ -124,13 +136,19 @@ C.........  Trap source's temperature against maximum temperature available
 C           in emission factors file
         ELSE IF( SRCTMPR .GT. MAXT_MAX ) THEN
 
-            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-            WRITE( MESG,94010 )
-     &             'WARNING: Bounding source temperature ', SRCTMPR, 
+            IF( MAXCNT .LE. MXWARN ) THEN
+
+        	CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
+        	WRITE( MESG,94020 )
+     &             'WARNING: Bounding source temperature', SRCTMPR, 
      &             'at maximum'// CRLF()// BLANK10 //
-     &             'allowable value of ', MAXT_MAX, ' for source:'//
+     &             'allowable value of', MAXT_MAX, 'for source:'//
      &             CRLF() // BLANK10 // BUFFER( 1:L )
-            CALL M3MESG( MESG )
+        	CALL M3MESG( MESG )
+
+                MAXCNT = MAXCNT + 1
+
+            END IF
 
             PP = 0.0
             QQ = 1.0
@@ -156,7 +174,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94000   FORMAT( I2.2 )
  
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
+94020   FORMAT( A, 2( 1X, F8.2, 1X, A ) )
 
         END SUBROUTINE TMPINTRP
 
