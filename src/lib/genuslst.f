@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENUSLST( NSRC )
+        SUBROUTINE GENUSLST
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -60,11 +60,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         EXTERNAL   CRLF, FINDC
 
-C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NSRC          !  actual source count
-
 C...........   Sorting index
-        INTEGER       INDX( NSRC )
+        INTEGER, ALLOCATABLE :: INDX( : )
 
 C...........   Other local variables
         INTEGER          J, J1, J2, S
@@ -90,8 +87,12 @@ C.........  Include all processing in a firstime loop, because this information
 C           only needs to be created once per program run, and all of the
 C           outputs are stored in MODLISTS
 
-        IF( FIRSTIME ) THEN 
+        IF( FIRSTIME ) THEN
 
+C.............  Allocate memory for sorting index
+            ALLOCATE( INDX( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INDX', PROGNAME )
+            
 C.............  Check if CSCC is allocated.  
 C.............  If it is, generate unique list of SCCs and left SCCs
             IF( ALLOCATED( CSCC ) ) THEN
@@ -233,6 +234,9 @@ C.....................  Find this SCC in SCC list
             END IF   ! End SIC processing
 
             FIRSTIME = .FALSE.
+
+C.............  Deallocate local allocatable arrays
+            DEALLOCATE( INDX )
 
         END IF  ! End of firstime
 
