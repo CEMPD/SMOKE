@@ -44,7 +44,7 @@ C***********************************************************************
 C.........  MODULES for public variables
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TKHOUR, RHHOUR, BPHOUR, BPDAY
+        USE MODMET, ONLY: TKHOUR, QVHOUR, BPHOUR, BPDAY, RHHOUR
         
         IMPLICIT NONE
 
@@ -54,9 +54,10 @@ C...........   INCLUDES:
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
                 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        REAL              CALCRELHUM
         CHARACTER(LEN=2)  CRLF    
         
-        EXTERNAL  CRLF
+        EXTERNAL  CALCRELHUM, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(LEN=16), INTENT (IN) :: TNAME    ! logical name for meteorology file
@@ -82,9 +83,10 @@ C   begin body of subroutine RDHOURTEMP
         
 C.........  Initialize data arrays
         TKHOUR = 0.
-        RHHOUR = 0.
+        QVHOUR = 0.
         BPHOUR = 0.
         BPDAY  = 0.
+        RHHOUR = 0.
 
 C.........  Loop through the time steps        
         DO I = 1, 24
@@ -98,9 +100,9 @@ C.............  Read temperature values
             END IF
                    
 C.............  Read relative humidity values
-            IF( .NOT. READ3( TNAME, 'RHCOUNTY', 1, JDATE, JTIME,
-     &                       RHHOUR( :,I ) ) ) THEN
-                MESG = 'Could not read RHCOUNTY' //
+            IF( .NOT. READ3( TNAME, 'QVCOUNTY', 1, JDATE, JTIME,
+     &                       QVHOUR( :,I ) ) ) THEN
+                MESG = 'Could not read QVCOUNTY' //
      &                 ' from ' // TNAME
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
             END IF
@@ -116,9 +118,6 @@ C.............  Read barometric pressure values
             CALL NEXTIME( JDATE, JTIME, 10000 )
         
         END DO
-        
-C.........  Convert temps from Kelvin to Fahrenheit
-        TKHOUR = CTOF * ( TKHOUR - CTOK ) + 32.
 
 C.........  Calculate average daily barometric pressure values
         DO I = 1, 24        
@@ -126,6 +125,17 @@ C.........  Calculate average daily barometric pressure values
         END DO
 
         BPDAY = BPDAY/24.
+        
+C.........  Calculate relative humidity values
+        DO I = 1, 24
+            DO J = 1, SIZE( BPDAY )
+                RHHOUR( J,I ) = CALCRELHUM( TKHOUR( J,I ), BPDAY( J ), 
+     &                                      QVHOUR( J,I ) )
+            END DO
+        END DO
+        
+C.........  Convert temps from Kelvin to Fahrenheit
+        TKHOUR = CTOF * ( TKHOUR - CTOK ) + 32.
 
 C.........  Convert pressure from Pa to inHG
         BPDAY = BPDAY * PA2INHG
