@@ -1,0 +1,114 @@
+#!/bin/csh -f
+
+# Version @(#)$Id$
+# Path    $Source$
+# Date    $Date$
+
+# This script sets up needed environment variables for running elevated point 
+# source emissions in SMOKE for UAM format, and calls the script that runs the 
+# SMOKE programs. 
+#
+#*********************************************************************
+
+# set Assigns file name
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.aero96.ut_aero
+
+# set source category
+setenv SMK_SOURCE P           # source category to process
+setenv MRG_SOURCE P           # source category to merge
+setenv SRCABBR    ptelev      # abbreviation for naming log files
+setenv MRG_CTLMAT_MULT ' '    # [A|P|AP] for merging with multiplier controls
+setenv MRG_CTLMAT_ADD  ' '    # [A|P|AP] for merging with additive controls
+setenv MRG_CTLMAT_REAC ' '    # [A|M|P|AMP] for merging with reactivity controls
+
+# time independent programs
+setenv RUN_ELEVPOINT N        #  run elevated/PinG sources selection program
+
+# time-dependent programs
+setenv RUN_LAYPOINT  N        #  run layer fractions program
+setenv RUN_SMKMERGE  Y        #  run merge program
+
+#
+# Program-specific controls...
+
+# For Elevpoint
+setenv SMK_CUTOFF_HT        40.   # Elev source cutoff ht [m] or 0. if not used
+setenv SMK_ENG2METRIC_YN    N     # Y converts stack parameters to metric units
+
+# For Laypoint
+setenv REP_LAYER_MAX        ' '   # Layer no. for reporting high plume rise
+
+# For Smkmerge
+setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
+setenv MRG_SPCMAT_YN        Y          # Y merges with speciation matrix
+setenv MRG_LAYERS_YN        N          # Y merges with layer fractions
+setenv MRG_GRDOUT_YN        Y          # Y outputs gridded file
+setenv MRG_REPSTA_YN        N          # Y outputs state totals
+setenv MRG_REPCNY_YN        N          # Y outputs county totals
+setenv SMK_ASCIIELEV_YN     Y          # Y outputs ASCII elevated file
+setenv MRG_GRDOUT_UNIT   "gm moles/hr" # units for gridded output file
+setenv MRG_TOTOUT_UNIT  "gm moles/day" # units for state and/or county totals
+setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
+setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
+setenv SPC_INPUT            mole       # [mass|mole] controls speciation merge
+setenv SMK_ASCIIELEV_FMT    UAM        # [UAM] format of ASCII elevated file
+
+setenv UAM_LAYERS           5          # total number of layers
+setenv UAM4_LAYBELOW        2          # below the diffbreak
+setenv UAM4_LAYABOVE        3          # above the diffbreak
+setenv UAM4_HTSFC           0          # height of surface layer in meters
+setenv UAM4_HTLOWR          40         # minimum height below diffbreak in m.
+setenv UAM4_HTUPPR          200        # minimum height between diffbreak and
+setenv UAM_VERTICAL_METHOD  PLUMERISE  # STACKHGT is default
+
+setenv UAM4_DIFFBREAK_UNIT  11         # default is 0
+setenv UAM4_REGIONTOP_UNIT  12         # default is 0
+
+# Multiple-program controls
+setenv PROMPTFLAG           N     # Y (never set to Y for batch processing)
+setenv REPORT_DEFAULTS      Y     # Y reports default profile application
+setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
+setenv SMK_PING_YN          N     # Y processes and outputs for PinG 
+setenv SMK_SPECELEV_YN      N     # Y uses the indicator for major/minor sources
+setenv WEST_HSPHERE         Y     # Y converts stack coords to wst hemisphere
+setenv SMK_USE_ACTVNAMS     N     # Y force use of activities list
+setenv SMK_USE_SIPOLS       Y     # Y force use if pollutants list
+setenv SMK_EMLAYS           12    # number of emissions layers
+setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
+setenv SMK_MAXERROR         100   # maximum number of errors in log file
+setenv OUTZONE              7     # output time zone of emissions
+setenv SMK_DEFAULT_TZONE    7     # time zone to fix in missing COSTCY file
+setenv AUTO_DELETE_LOG      Y     # Y automatically deletes logs without asking
+
+##############################################################################
+
+set days  = (  0211  0212  0213  0214  0215 )
+set jdays = (   042   043   044   045   046 )
+set arday = (   211   212   213   214   215 )
+set abbi  = $SRCABBR
+
+# Loop through days of interest
+foreach i ( 1 2 3 4 5 )
+
+   set  day = $days[$i]
+   set jday = $jdays[$i]
+   set  ard = $arday[$i]
+
+   ## Invoke Assigns file
+   source $ASSIGNS_FILE
+
+   ## Override settings
+   setenv SRCABBR  $abbi.$ard
+   setenv PTMP         $SMKDAT/run_$ESCEN/19960211/ptmp*.5.*ncf
+   setenv STACK_GROUPS $SMKDAT/run_$ESCEN/19960211/output/$SPC/stack_groups*
+
+   ## Run programs
+   source smk_run.scr
+
+end
+
+#
+## Ending of script
+#
+exit( $status )
+
