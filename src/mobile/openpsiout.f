@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENPSIOUT( ENAME, TNAME, FNAME, FDEV, VNAME )
+        SUBROUTINE OPENPSIOUT( ENAME, TNAME, FDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -7,9 +7,7 @@ C
 C  DESCRIPTION:
 C      This subroutine opens the intermediate files for processing 
 C      parameter scheme indices (PSIs). One file contains the min/max
-C      temperature combinations used for each PSI and activity, and 
-C      one file contains the PSIs to be used for each source for
-C      24 hours.
+C      temperature combinations used for each PSI and activity.
 C 
 C  PRECONDITIONS REQUIRED:
 C
@@ -41,13 +39,6 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-C...........   MODULES for public variables
-C...........   This module contains the information about the source category
-        USE MODINFO
-
-C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
-
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -57,83 +48,24 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                PROMPTFFILE
-        CHARACTER*16           PROMPTMFILE
-        CHARACTER*16           VERCHAR
 
-        EXTERNAL        GETCFDSC, PROMPTFFILE, PROMPTMFILE, VERCHAR
+        EXTERNAL       PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: ENAME  ! name of inventory file
         CHARACTER(*), INTENT(IN OUT) :: TNAME  ! name of output tmpr/PSIs file
-        CHARACTER(*), INTENT(IN OUT) :: FNAME  ! name of output src/PSIs file
         INTEGER     , INTENT   (OUT) :: FDEV   ! Unit no. of output tmpr/PSIs
-        CHARACTER(*), INTENT   (OUT) :: VNAME( NIACT ) ! variable names
-
-C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW = ! SCCS string with version no. at end
-     &               '@(#)$Id$'
 
 C...........   Other local variables
-        INTEGER     J, L        ! counters and indices
-
-        CHARACTER*2     NUM     ! tmp variable number
         CHARACTER*300   MESG    ! message buffer
-
-        CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from INVEN FDESC
 
         CHARACTER*16 :: PROGNAME = 'OPENPSIOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENPSIOUT
 
-C.........  Get header from inventory file
-        IF ( .NOT. DESC3( ENAME ) ) THEN
-            MESG = 'Could not get description of file "' 
-     &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
-        IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-
-C.........  Initialize source/PSI I/O API output file headers
-        CALL HDRMISS3
-
-        FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) //
-     &                 ' PSI by source'
-        FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
-
-        FDESC3D( 21 ) = '/INVEN FROM/ ' // IFDESC2
-        FDESC3D( 22 ) = '/INVEN VERSION/ ' // IFDESC3
-
-C.........  Set header values that cannot be default
-
-        TSTEP3D = 240000
-        NVARS3D = 1
-        NROWS3D = NSRC  
-        NCOLS3D = 24
- 
-        DO J = 1, NIACT
-
-            L = LEN_TRIM( ACTVTY( J ) )
-
-            WRITE( NUM, '(I2.2)' ) J
-            VNAME  ( J ) = 'SRCPSI' // NUM
-            VNAME3D( J ) = VNAME( J )
-            UNITS3D( J ) = 'n/a' 
-            VDESC3D( J ) = ACTVTY( J )( 1:L ) // ' PSI' // 
-     &                     ', by source & 24 hours'          
-            VTYPE3D( J ) = M3INT
-
-        END DO
-
-C.........  Prompt for source-based output file of PSIs
-        FNAME = PROMPTMFILE(
-     &          'Enter logical name for SOURCE PSIs file',
-     &          FSUNKN3, FNAME, PROGNAME )
+C.........  NOTE- This is so simple because source/PSIs file was removed
 
 C.........  Prompt for file with min-max temperatures per PSI
         FDEV  = PROMPTFFILE(
