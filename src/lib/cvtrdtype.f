@@ -22,24 +22,24 @@ C   begin body of function CVTRDTYPE
 
        SELECT CASE( SMKROAD )
        CASE( RURALINTERSTATE ) 
-           CVTRDTYPE = FREEWAY
+           CVTRDTYPE = M6FREEWAY
        CASE( RURALPRINCART:RURALMINORCOLL )    ! rural arterials through collectors
-           CVTRDTYPE = ARTERIAL
+           CVTRDTYPE = M6ARTERIAL
        CASE( RURALLOCAL )
            IF( LASAFLAG ) THEN
-               CVTRDTYPE = ARTERIAL
+               CVTRDTYPE = M6ARTERIAL
            ELSE
-               CVTRDTYPE = LOCAL
+               CVTRDTYPE = M6LOCAL
            END IF
        CASE( URBANINTERSTATE:URBANFREEWAY )    ! urban interstate and freeway
-           CVTRDTYPE = FREEWAY
+           CVTRDTYPE = M6FREEWAY
        CASE( URBANPRINCART:URBANCOLL )         ! urban arterials through collectors
-           CVTRDTYPE = ARTERIAL
+           CVTRDTYPE = M6ARTERIAL
        CASE( URBANLOCAL )
            IF( LASAFLAG ) THEN
-               CVTRDTYPE = ARTERIAL
+               CVTRDTYPE = M6ARTERIAL
            ELSE
-               CVTRDTYPE = LOCAL
+               CVTRDTYPE = M6LOCAL
            END IF
        CASE DEFAULT                   
            EFLAG = .TRUE.
