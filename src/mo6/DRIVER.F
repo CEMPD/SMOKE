@@ -252,6 +252,14 @@ C     Open the IOUERR file
 C 
 ccs   All M6 input files live in SMK_M6PATH 
       CALL GETENV( "SMK_M6PATH", M6DIR ) 
+      
+ccs   Make sure SMK_M6PATH is set
+      IF( M6DIR == ' ' ) THEN
+          WRITE( *,* ) 'ERROR: Environment variable SMK_M6PATH ' //
+     &                 'is not set.'
+          STOP
+      END IF
+      
       M6FILE = TRIM( M6DIR ) // '/' // 'M6ERROR.TXT' 
        
       IOUERR = JUNIT() 
