@@ -106,10 +106,7 @@ C.........  Initialize arrays
         LPING    = .FALSE.
         GROUPID  = 0 
 
-C.........  If no input file, then return
-        IF( FDEV .LE. 0 ) RETURN
-
-        MESG = 'Reading elevated/plume-in-grid sources file...'
+        MESG = 'Determining elevated/plume-in-grid sources...'
         CALL M3MSG2( MESG )
 
 C.........  Read in lines knowing that they are formatted in the CSOURC
@@ -118,6 +115,9 @@ C           spacing
         NPING  = 0
         IREC   = 0
         DO           !  head of the FDEV-read loop
+
+C.............  If no input file, then end read loop
+            IF( FDEV .LE. 0 ) EXIT
 
             READ( FDEV, *, END=23, IOSTAT=IOS ) IMAJR, IPING, IGRP
             IREC = IREC + 1
@@ -170,12 +170,41 @@ C.............  If index is out of range, ELEVPOINT needs rerunning
 
 23      CONTINUE    !  end of read loop
 
-C.........  If there are no major sources specifically identified, then 
-C           change array to make all sources potentially elevated (unless
-C           the environment variable override has been set)
+C.........  If there are no major sources specifically identified...
         IF( NMAJOR .EQ. 0 ) THEN
-            LMAJOR = .TRUE.  ! array
-            MESG = 'NOTE: All non-PinG sources are potentially elevated'
+
+C.............  Error if ASCII elevated file being created and no PELV file
+C.............  Note that when called from Laypoint, ASCIFLAG is never true,
+C               even if Laypoint is being run for UAM-style explicit plumerise
+            IF( ASCIFLAG .AND. FDEV .LE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: No PELV file input, but it is ' //
+     &                 'required for UAM-style processing.'
+
+C.............  Error if ASCII elevated file being created and major sources
+            ELSE IF( ASCIFLAG ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: No elevated sources identified in ' //
+     &                 'PELV input file.'
+
+C.............  For CMAQ-style, change array to make all sources potentially
+C               elevated when there is no PELV file used
+            ELSE IF( FDEV .LE. 0 ) THEN
+                NMAJOR = NSRC
+                LMAJOR = .TRUE.  ! array
+                MESG = 'NOTE: All non-PinG sources are potentially '//
+     &                 'elevated'
+
+C.............  For CMAQ-style, with a PELV file, change all to major, but
+C               give a warning.
+            ELSE
+                NMAJOR = NSRC
+                LMAJOR = .TRUE.  ! array
+                MESG = 'WARNING: No major/PinG sources in PELV file, '//
+     &                 CRLF() // BLANK10 // 'All non-PinG sources ' //
+     &                 'potentially elevated'
+
+            END IF
 
         ELSE
             WRITE( MESG,94010 ) 'NOTE:', NMAJOR,' sources ' //
@@ -195,7 +224,7 @@ C           the environment variable override has been set)
 
 C.........  Abort if error occured on read
         IF( EFLAG ) THEN
-            MESG = 'Problem reading elevated sources file'
+            MESG = 'Problem with elevated sources file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
