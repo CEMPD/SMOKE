@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -157,6 +157,9 @@ C.........  Set up column starts and ends
         CS3 = CE2 + 2
         CE3 = CS3 + 4
 
+        MESG = 'Reading pollutant to pollutant conversion file...'
+        CALL M3MSG2( MESG )
+
 C.........  Read pollutant pollutants conversion factors file
         STLP1 = STALEN3 + 1
         N    = 0   ! array
@@ -277,29 +280,29 @@ C.........  Allocate memory for pollutant conversion and initialize to 1.0
         CNVFC00 = 1.0
 
         NCNV1 = N( 1 )
+        ALLOCATE( CNVFC01( NCNV1, NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVFC01', PROGNAME )
+        ALLOCATE( CNVRT01( NCNV1 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVRT01', PROGNAME )
         IF( NCNV1 .GT. 0 ) THEN
-            ALLOCATE( CNVFC01( NCNV1, NIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CNVFC01', PROGNAME )
-            ALLOCATE( CNVRT01( NCNV1 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CNVRT01', PROGNAME )
             CNVFC01 = 1.0
         ENDIF
 
         NCNV2 = N( 2 )
+        ALLOCATE( CNVFC02( NCNV2, NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVFC02', PROGNAME )
+        ALLOCATE( CNVRT02( NCNV2 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVRT02', PROGNAME )
         IF( NCNV2 .GT. 0 ) THEN
-            ALLOCATE( CNVFC02( NCNV2, NIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CNVFC02', PROGNAME )
-            ALLOCATE( CNVRT02( NCNV2 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CNVRT02', PROGNAME )
             CNVFC02 = 1.0
         ENDIF
 
         NCNV3 = N( 3 )
+        ALLOCATE( CNVFC03( NCNV3, NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVFC03', PROGNAME )
+        ALLOCATE( CNVRT03( NCNV3 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVRT03', PROGNAME )
         IF( NCNV3 .GT. 0 ) THEN
-            ALLOCATE( CNVFC03( NCNV3, NIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CNVFC03', PROGNAME )
-            ALLOCATE( CNVRT03( NCNV3 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CNVRT03', PROGNAME )
             CNVFC03 = 1.0
         ENDIF
 
