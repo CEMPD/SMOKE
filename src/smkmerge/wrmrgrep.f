@@ -625,6 +625,10 @@ C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN OUT) :: OUTNAMS( NDIM )
             CHARACTER(*), INTENT (IN OUT) :: OUTUNIT( NDIM )
 
+C.............  Local parameters
+            INTEGER, PARAMETER :: EFMTWID = 10  ! minimum width of fields
+            INTEGER, PARAMETER :: EFMTDEC = 4   ! number of decimal places
+
 C.............  Local variables
             INTEGER       I1, I2, J, L, L1, L2
             CHARACTER*30  :: SPACE = ' '
@@ -638,7 +642,7 @@ C.............  Also, move the position of the names and units so that output
 C               strings will look right-justified in the file.
             DO J = 1, NDIM
                 L1 = LEN_TRIM( INNAMS( J ) )
-                WIDTHS ( J ) = MAX( WIDTHS( J ), L1 )
+                WIDTHS ( J ) = MAX( WIDTHS( J ), L1, EFMTWID )
                 L2 = LEN_TRIM( INUNIT( J ) )
                 WIDTHS ( J ) = MAX( WIDTHS( J ), L2 )
 
@@ -678,8 +682,8 @@ C.............  Create format statement for output of emissions
             DO J = 1, NDIM
                 TMPFMT = DATFMT
                 L = LEN_TRIM( TMPFMT ) 
-                WRITE( DATFMT, '(A, ",1X,F",I2.2,".1")' ) 
-     &                 TMPFMT(1:L), WIDTHS( J )
+                WRITE( DATFMT, '(A, ",1X,E",I2.2,".",I1)' ) 
+     &                 TMPFMT(1:L), WIDTHS( J ), EFMTDEC
             END DO
             TMPFMT = DATFMT
             L = LEN_TRIM( TMPFMT )
