@@ -1,4 +1,4 @@
-
+ 
 C Version "@(#)$Id$ $Source$ $Date$ 
 
         SUBROUTINE GETFACR( NAME, DEFAULT, NMAX, N, 
@@ -118,6 +118,8 @@ C.........  through file, store profiles in that sorted order
                       SORTER( IREC ) = IREC
 
                     ELSE
+                      IF( IREC .GT. N ) GO TO 33  ! Just to be safe (IBM-debug)
+
                       READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
      &                    ( RTAB1( J1, MOVETO( IREC )), J1=1,NCOL )
 
@@ -283,6 +285,8 @@ C.........  through file, store profiles in that sorted order
                       SORTER( IREC ) = IREC
 
                     ELSE
+                      IF( IREC .GT. N ) GO TO 33  ! Just to be safe (IBM-debug)
+
                       READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
      &                    ( RTAB1( J1, MOVETO( IREC )), J1=1,NCOL1 ),
      &                    ( RTAB2( J2, MOVETO( IREC )), J2=1,NCOL2 ) 
@@ -449,6 +453,8 @@ C.........  through file, store profiles in that sorted order
                       SORTER( IREC ) = IREC
 
                     ELSE
+                      IF( IREC .GT. N ) GO TO 33  ! Just to be safe (IBM-debug)
+
                       READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
      &                    ( ITAB1( J1, MOVETO( IREC )), J1=1,NCOL1 )
 
@@ -624,6 +630,8 @@ C..................... overwritten by the second.
 
                     ELSE
 
+                      IF( IREC .GT. N ) GO TO 33  ! Just to be safe (IBM-debug)
+
                       READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
      &                    ( ITAB1( J1, MOVETO( IREC )), J1=1,NCOL1 ),
      &                    ( CTAB2( J2, MOVETO( IREC )), J2=1,NCOL2 ),
@@ -792,6 +800,8 @@ C.........  through file, store profiles in that sorted order
                       SORTER( IREC ) = IREC
 
                     ELSE
+                      IF( IREC .GT. N ) GO TO 33  ! Just to be safe (IBM-debug)
+
                       READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM,
      &                    ( ITAB1( J1, MOVETO( IREC )), J1=1,NCOL1 ),
      &                    ( RTAB2( J2, MOVETO( IREC )), J2=1,NCOL2 ) 
@@ -979,6 +989,8 @@ C.........  through file, store profiles in that sorted order
 
                     ELSE
 
+                      IF( IREC .GT. N ) GO TO 33  ! Just to be safe (IBM-debug)
+
                       READ( IDEV, *, END=33, IOSTAT=IOS )
      &                    IDUM, ITAB1( 1, MOVETO( IREC ) )
 
@@ -1164,6 +1176,8 @@ C.......................  Initialize parameter array to zero
    22                 CONTINUE
 
                     ELSE
+                      IF( IREC .GT. N ) GO TO 33  ! Just to be safe (IBM-debug)
+
                       READ( IDEV, *, END=33, IOSTAT=IOS ) IDUM, NTMP,
      &                    ( RTAB1( J1, MOVETO( IREC )), J1=1,NTMP )
 
