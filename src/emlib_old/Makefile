@@ -2,12 +2,12 @@
 
 lib:
 	f77 $(FFLAGS) -c *.F
-	ar rv $(DISTDIR)/libemlib.a *.o
+	ar rv $(EDSS_LIB)/libemlib.a *.o
 	rm *.o
 
 debug:
 	f77 $(DBGFLAGS) -c *.F
-	ar rv $(DISTDIR)/libemlib.debug.a *.o
+	ar rv $(EDSS_LIB)/libemlib.debug.a *.o
 	rm *.o
 
 
