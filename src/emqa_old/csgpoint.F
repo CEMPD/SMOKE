@@ -2,7 +2,7 @@
         PROGRAM CSGPOINT
 
 C***********************************************************************
-C  program body starts at line 167
+C  program body starts at line 173
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -19,7 +19,7 @@ C
 C  REVISION  HISTORY:
 C       Prototype  7/95 by CJC.
 C       Report added 4/97 by JMV.
-C       copied by: vukovich
+C       County totals added 6/99 by JMV.
 C       origin: csgpoint.F 3.1
 C
 C***********************************************************************
@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -120,11 +120,13 @@ C...........   Inventory arrays
         INTEGER         IFIP  ( NPSRC )   ! FIPs  code for each source
         INTEGER         INVYR ( NPSRC )   ! Inventory year code for each source
         INTEGER         ISPTR ( NPSRC )   ! Pointer for each state
+        INTEGER         ICPTR ( NPSRC )   ! Pointer for each county
         INTEGER         STATES( NPSID )   ! Unique list of state IDs
+        INTEGER         CTYS  ( NPFIP )   ! Unique list of county IDs
 
 C...........   Report arrays
         REAL            EMSUM( NPSID, NMPOL ) ! Summed emissions by state
-
+        REAL            CYSUM( NPFIP, NMPOL ) ! Summed emissions by county
 C...........   Other local variables
 
         REAL            FAC     !  temporary conversion factor
@@ -132,20 +134,24 @@ C...........   Other local variables
         INTEGER         BTIME   !  beginning time of day in run
         INTEGER         IOS
         INTEGER         NSTA               ! actual number of states
-
+        INTEGER         NCTY               ! actual number of counties
         INTEGER         INO, INO2          ! position in list of pollutants
         INTEGER         STA                ! temporay state code
+        INTEGER         CTY                ! temporary county code
 
         INTEGER         LDATE, LTIME, JDATE, JTIME, TSTEP
         INTEGER         RDEV               ! output report unit number
+        INTEGER         FDEV               ! state, county names unit number
+     
         INTEGER         RTIME              ! time for reporting state totals
         INTEGER         LSTA               ! previous state code
+        INTEGER         LCTY               ! previous county code
 
         INTEGER         NSTEPS
         INTEGER         LDEV
         INTEGER         I, J, K, F, S, T, V
 
-        LOGICAL         CONTROLFLAG, OUTPUTFLAG, ST_REPORT
+        LOGICAL         CONTROLFLAG, OUTPUTFLAG, CY_REPORT, ST_REPORT
 
         CHARACTER*16    PNAME   !  logical name for point-source      input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
@@ -200,6 +206,17 @@ C   begin body of program CSGPOINT
 C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
+
+        CY_REPORT = ENVYN( 'CY_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
+
+C........  If county totals desired, get county names    
+
+        IF ( CY_REPORT )
+     &          FDEV = PROMPTFFILE(
+     &          'Enter name for STATE/COUNTY FIPS CODE file',
+     &          .TRUE., .TRUE., 'STCYNAM', 'CSGPOINT' )
+
 
         RTIME = ENVINT( 'ST_REPTIME', 
      &                  'Per-State summation reporting time (HHMMSS)',
@@ -282,7 +299,7 @@ C.........  Hourly inventory file as input with NO controls
         END IF
 
 C.......   Read FIPS code for reporting purpose
-        IF( ST_REPORT ) THEN
+        IF( ST_REPORT .OR. CY_REPORT ) THEN
 
 C............  If we've read in temporal file, must get inventory file name
             IF ( TSTEP .NE. 0 ) THEN
@@ -314,9 +331,11 @@ C............  If we've read in temporal file, must get inventory file name
      &             'Enter logical name for TOTALS REPORT or "NONE"',
      &             .FALSE., .TRUE., REPNAM, 'CSGPOINT' )
 C............  Create state codes arrays
-            LSTA = -9
-            K    = 0
-            DO 22 I = 1, NPSRC
+            IF ( ST_REPORT ) THEN
+
+              LSTA = -9
+              K    = 0
+              DO 22 I = 1, NPSRC
 
                 STA = IFIP( I ) / 1000
 
@@ -330,28 +349,69 @@ C............  Create state codes arrays
 
                 ISPTR ( I ) = K
 
-22          CONTINUE
+22            CONTINUE
 
-            NSTA = K
+              NSTA = K
 
-            IF( NSTA .GT. NPSID ) THEN
+              IF( NSTA .GT. NPSID ) THEN
 
                 WRITE( MESG,94010 )
      &                'Number of states is ', NSTA,
      &                'but maximum (NPSID) is', NPSID
                 CALL M3EXIT( 'CSGPOINT', JDATE, JTIME, MESG, 2 )
-            ENDIF
+              ENDIF
 
 C............  Initialize emission summary array
-            DO 28 I = 1, NPSID
+              DO 28 I = 1, NPSID
                 DO 27 S = 1, NMPOL
                     EMSUM( I,S ) = 0.
 27              CONTINUE
-28          CONTINUE
+28            CONTINUE
 
 C............  Set position of "special" species in name list
-            INO  = INDEX1( 'NO' , NMPOL, EMNAM )
-            INO2 = INDEX1( 'NO2', NMPOL, EMNAM )
+              INO  = INDEX1( 'NO' , NMPOL, EMNAM )
+              INO2 = INDEX1( 'NO2', NMPOL, EMNAM )
+
+            ENDIF
+
+            IF ( CY_REPORT ) THEN
+
+C............  Create county codes arrays
+              LCTY = -9
+              K    = 0
+              DO 32 I = 1, NPSRC
+
+                CTY = IFIP( I )
+
+                IF( CTY .GT. LCTY ) THEN
+
+                    K = K + 1
+                    CTYS( K ) = CTY
+                    LCTY      = CTY
+
+                ENDIF
+
+                ICPTR ( I ) = K
+
+32            CONTINUE
+
+              NCTY = K
+
+              IF( NCTY .GT. NPFIP ) THEN
+                WRITE( MESG,94010 )
+     &                'Number of counties is ', NCTY,
+     &                'but maximum (NPFIP) is', NPFIP
+                CALL M3EXIT( 'CSGPOINT', JDATE, JTIME, MESG, 2 )
+              ENDIF
+
+C............  Initialize emission summary array
+              DO 38 I = 1, NPFIP
+                DO 37 S = 1, NMPOL
+                    CYSUM( I,S ) = 0.
+37              CONTINUE
+38            CONTINUE
+
+            ENDIF
 
         ENDIF
 
@@ -573,9 +633,10 @@ C.............  Write to screen because WRITE3 only writes to LDEV
                         END IF          !  if outputflag
 
 C.........................  When reporting is switched on, calculate emissions
-C.........................  summaries by state and report to output QA file
-C.........................  EMSUM must be initialized
-                        IF( ST_REPORT ) THEN
+C.........................  summaries by state and/or state and report to 
+C.........................  output QA file
+C.........................  EMSUM and CYSUM  must be initialized
+                        IF( ST_REPORT .OR. CY_REPORT ) THEN
 
 C.............................  For annual values, convert to day-specific
                             IF( TSTEP .EQ. 0 ) THEN
@@ -587,9 +648,20 @@ C.............................  For annual values, convert to day-specific
 
                             ENDIF
 
-                            CALL PGRDSUM( NPSRC, NGRID, NMATX, NS, IS,
+                            IF ( ST_REPORT ) THEN
+
+                             CALL PGRDSUM( NPSRC, NGRID, NMATX, NS, IS,
      &                                    ISPTR, EMISC,
      &                                    EMSUM( 1,K ) )
+                            ENDIF
+
+                            IF ( CY_REPORT ) THEN
+
+                             CALL PGRDSUM( NPSRC, NGRID, NMATX, NS, IS,
+     &                                    ICPTR, EMISC,
+     &                                    CYSUM( 1,K ) )
+                            ENDIF
+
                         ENDIF
 
 197                 CONTINUE    !  end loop on output vbles for this input vble
@@ -613,8 +685,9 @@ C.............................  For annual values, convert to day-specific
 C.............  Write report if report flag is switched on and previous
 C.............  time equals the report time
 
-            IF( ST_REPORT .AND.
-     &          ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) ) THEN
+            IF( ST_REPORT .OR. CY_REPORT ) THEN
+
+              IF ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) THEN
 
 C.................  Convert summary emissions from moles/day to tons/day
 
@@ -626,13 +699,27 @@ C.....................  Conversion factor for AREA as input file
                     ELSE
                         FAC = EMWT( INO2 ) * GM2TON
                     ENDIF
+ 
+                    IF ( ST_REPORT ) THEN
 
-                    DO 144 I = 1, NSTA
+                     DO 144 I = 1, NSTA
 
                        EMSUM( I,S ) = EMSUM( I,S ) * FAC
 
-144                 CONTINUE
+144                  CONTINUE
 
+                    ENDIF
+
+                    IF ( CY_REPORT ) THEN
+
+                     DO 146 I = 1, NCTY
+
+                       CYSUM( I,S ) = CYSUM( I,S ) * FAC
+
+146                  CONTINUE
+ 
+                    ENDIF
+ 
 155             CONTINUE
 
                 IF( TSTEP .NE. 0 .AND. RDEV .GT. 0)
@@ -648,19 +735,38 @@ C.....................  Conversion factor for AREA as input file
                     MESG = 'Point source emissions ' //
      &                     '(tons/specific day) within grid ' // GRDNM
                 ENDIF
-                IF( RDEV .GT. 0) 
-     &          CALL STATELST( RDEV  , MESG , NPSID , NSTA , NMPOL,
-     &                         'F7.1', EMNAM, STATES, EMSUM         )
+                IF( RDEV .GT. 0 ) THEN
+
+                 IF ( ST_REPORT ) 
+     &            CALL STATELST( RDEV  , MESG , NPSID , NSTA , NMPOL,
+     &                        'F7.1', EMNAM, STATES, EMSUM         )
+
+                 IF ( CY_REPORT )
+     &            CALL CYLST( RDEV , FDEV,  MESG , NPFIP , NCTY ,
+     &                         NMPOL,  'F7.2', EMNAM, CTYS, CYSUM   )
+
+                ENDIF
+
 
 C.................  Reinitialize emissions summary
-                DO 298 I = 1, NPSID
-                    DO 297 S = 1, NMPOL
+
+                DO 298 S = 1, NMPOL
+
+                   DO 295 I = 1, NPSID
                         EMSUM( I,S ) = 0.
-297                 CONTINUE
+295                CONTINUE
+
+                   DO 296 I = 1, NPFIP
+                        CYSUM( I,S ) = 0.
+296                CONTINUE
+
 298             CONTINUE
+
 
 C.................  Set begining time for next day
                 BTIME = JTIME
+
+               ENDIF
 
             ENDIF
  
