@@ -508,7 +508,7 @@ C.................  Build source characteristics output format for WRREPOUT
                 J  = LEN_TRIM( CHRHDRS( K ) )
                 W1 = MAX( LOC_ENDP( K ) - LOC_BEGP( K ) + 1, J )
                 WRITE( CHARFMT, '(A,I2.2,A)' ) CHARFMT( 1:L )// 
-     &                 '1X,A', W1, ',"'//RPT_%DELIM//'"'
+     &                 '1X,A', W1, ',"'//RPT_%DELIM//'",'
 
                 CALL ADD_TO_HEADER( W1, CHRHDRS( K ), LH, HDRBUF )
                 CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
@@ -524,7 +524,6 @@ C.................  Build source characteristics output format for WRREPOUT
 
 C.........  Stack parameters.  +3 for decimal and 2 significant figures
         IF( RPT_%STKPARM ) THEN
-            S = BINSMKID( I )
 
             J = LEN_TRIM( HEADERS( IHDRHT ) )
             PWIDTH( 1 ) = MAX( PWIDTH( 1 ) + 3, J )
