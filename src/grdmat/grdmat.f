@@ -4,6 +4,9 @@
 C***********************************************************************
 C  program body starts at line 
 C
+C  NOTE to mrh: should there be explicit prompting of the grid definition
+C   file?
+C
 C  DESCRIPTION:
 C     Creates the point source gridding matrix
 C
@@ -36,23 +39,30 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C...........   MODULES for public variables
+C...........   This module is the source inventory arrays
+        USE MODSOURC
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
         
-        INCLUDE 'EMCNST3.EXT'   !  Emissions constant parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        LOGICAL         DSCM3GRD
-        CHARACTER*16    PROMPTMFILE
-        INTEGER         TRIMLEN
-        CHARACTER*16    VERCHAR
+        CHARACTER*2            CRLF
+        LOGICAL                DSCM3GRD
+        CHARACTER(LEN=IODLEN3) GETCFDSC
+        CHARACTER*16           PROMPTMFILE
+        INTEGER                TRIMLEN
+        CHARACTER*16           VERCHAR
    
-        EXTERNAL  DSCM3GRD, PROMPTMFILE, TRIMLEN, VERCHAR
+        EXTERNAL  CRLF, DSCM3GRD, GETCFDSC, PROMPTMFILE, 
+     &            TRIMLEN, VERCHAR
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
@@ -62,27 +72,26 @@ C...........   LOCAL PARAMETERS
 
 C...........   LOCAL VARIABLES and their descriptions:
 
-C...........   Point source characteristics
-        
-        INTEGER, ALLOCATABLE:: IFIP ( : )  !  FIPS state and county code
-        REAL   , ALLOCATABLE:: XLOCA( : )  !  x-coordinate (longitude)
-        REAL   , ALLOCATABLE:: YLOCA( : )  !  y-coordinate (latitude)
-        
 C...........   Gridding Matrix
 
-        INTEGER, ALLOCATABLE:: GMAT( : ) ! Congtiguous gridding matrix
+        INTEGER, ALLOCATABLE :: GMAT( : ) ! Contiguous gridding matrix
+
+C...........   Indicator for which public inventory arrays need to be read
+        INTEGER               , PARAMETER :: NINVARR = 3
+        CHARACTER(LEN=IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
+     &                                 ( / 'IFIP           '
+     &                                   , 'XLOCA          '
+     &                                   , 'YLOCA          ' / )
 
 C...........   File units and logical/physical names
-
         INTEGER         LDEV    !  log-device
         CHARACTER*16    ENAME   !  logical name for point inventory input file
         CHARACTER*16    GNAME   !  logical name for grid matrix output file
 
 C...........   Other local variables
         
-        INTEGER         K     !  indices and counters.
+        INTEGER         L1, K     !  indices and counters.
 
-        INTEGER         CAVG  ! average number sources per cell
         INTEGER         CMAX  ! max number srcs per cell
         INTEGER         CMIN  ! min number srcs per cell
         INTEGER         IOS   ! i/o status
@@ -90,10 +99,15 @@ C...........   Other local variables
         INTEGER         NPSRC ! No of point sources
         INTEGER         NGRID ! No of cells
                                  
-        CHARACTER*16            COORD   !  coordinate system name
-        CHARACTER*16            GRDNM   !  grid name
+        REAL            CAVG  ! average number sources per cell
+
+        CHARACTER*16            COORD    !  coordinate system name
+        CHARACTER*16            COORUNIT !  coordinate system projection units
+        CHARACTER*16            GRDNM    !  grid name
+        CHARACTER*80            GDESC    !  grid description
+        CHARACTER*300           MESG     !  message buffer
+
         CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 !  fields 2 & 3 from PNTS FDESC
-        CHARACTER*300           MESG    !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'GRDPMAT'   !  program name
 
@@ -121,13 +135,13 @@ C.........  Try to get header information from inventory file
 C.........  Store header information that will be needed later
         ELSE
             NPSRC   = NROWS3D
-            IFDESC2 = FDESC3D( 2 )
-            IFDESC3 = FDESC3D( 3 )
+            IFDESC2 = GETCFDSC( FDESC3D, '/FROM/' )
+            IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/' )
 
         ENDIF
 
 C.........  Get grid name from the environment and read grid parameters
-        IF( .NOT. DSCM3GRD( GRDNM, COORD, GDTYP3D, 
+        IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD, GDTYP3D, COORUNIT,
      &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
      &                      XORIG3D, YORIG3D, XCELL3D, YCELL3D,
      &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
@@ -138,38 +152,25 @@ C.........  Get grid name from the environment and read grid parameters
 C.........  Store grid parameters for later processing
         ELSE
 
-            NGRID = XCELL3D * YCELL3D
+            NGRID = NCOLS3D * NROWS3D
 
         ENDIF
 
-C.........  Allocate memory for reading in point-source characteristics, for
-C           scratch gridding matrix, and for gridding matrix
-        ALLOCATE( IFIP( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
-        ALLOCATE( XLOCA( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
-        ALLOCATE( YLOCA( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
-        ALLOCATE( GMAT( NGRID + NPSRC), STAT=IOS )
+C.........  Write message stating grid name and description
+        L1 = TRIMLEN( GRDNM )
+        MESG = 'Grid "' // GRDNM( 1:L1 ) // '" set; defined as' // 
+     &         CRLF() // BLANK5 // GDESC
+        CALL M3MSG2( MESG )
+
+C.........  Allocate memory for gridding matrix
+        ALLOCATE( GMAT( NGRID + NPSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
 
 C.........  Read point source characteristics
         CALL M3MSG2( 'Reading in POINT SOURCES file...' )
 
-        IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3, 0, 0,  IFIP ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, 
-     &      'Error reading variable IFIP from POINT SOURCES file', 2 )
-        END IF
-
-        IF ( .NOT. READ3( ENAME, 'XLOCA', ALLAYS3, 0, 0,  XLOCA ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, 
-     &      'Error reading variable XLOCA from POINT SOURCES file', 2 )
-        END IF
-
-        IF ( .NOT. READ3( ENAME, 'YLOCA', ALLAYS3, 0, 0,  YLOCA ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, 
-     &      'Error reading variable YLOCA from POINT SOURCES file', 2 )
-        END IF
+C.........  Allocate memory for and read in required inventory characteristics
+        CALL RPNTSCHR( ENAME, 0, NPSRC, NINVARR, IVARNAMS )
 
 C.........  Call subroutine to convert grid coordinates from lat-lon to
 C           coordinate system of the destination grid
@@ -198,6 +199,7 @@ C.........      with grid characteristics from DSCM3GRD() above
         FDESC3D( 1  ) = 'Point source gridding matrix'
         FDESC3D( 2  ) = '/FROM/ ' // PROGNAME
         FDESC3D( 3  ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 4  ) = '/GDESC/ ' // GDESC
         FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
 
