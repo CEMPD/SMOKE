@@ -319,7 +319,9 @@ C.............  Area sources
                 CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AEBSTA)
 
 C.....................  Update state totals
-                CALL TOT_UPDATE( NS, ACNT, ANAMES, AEBSTA, TEBSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, ACNT, ANAMES, AEBSTA, TEBSTA)
+                END IF
 
             END IF
 
@@ -330,7 +332,9 @@ C.............  Controlled area sources
                 CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AECSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, ACNT, ANAMES, AECSTA, TECSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, ACNT, ANAMES, AECSTA, TECSTA)
+                END IF
 
             END IF
 
@@ -342,7 +346,9 @@ C.............  Biogenic sources (speciated by definition)
                 CALL WRITE_STA( BRDEV, NS, BCNT, BNAMES, BUNITS, BEBSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, BCNT, BNAMES, BEBSTA, TEBSTA )
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, BCNT, BNAMES, BEBSTA, TEBSTA )
+                END IF
 
             END IF
 
@@ -354,7 +360,9 @@ C.............  Mobile sources
                 CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MEBSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, MCNT, MNAMES, MEBSTA, TEBSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, MCNT, MNAMES, MEBSTA, TEBSTA)
+                END IF
 
             END IF
 
@@ -365,7 +373,9 @@ C.............  Controlled mobile sources
                 CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MECSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, MCNT, MNAMES, MECSTA, TECSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, MCNT, MNAMES, MECSTA, TECSTA)
+                END IF
 
             END IF
 
@@ -377,7 +387,9 @@ C.............  Point sources
                 CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PEBSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, PCNT, PNAMES, PEBSTA, TEBSTA )
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, PCNT, PNAMES, PEBSTA, TEBSTA )
+                END IF
 
             END IF
 
@@ -388,7 +400,9 @@ C.............  Controlled point sources
                 CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PECSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, PCNT, PNAMES, PECSTA, TECSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, PCNT, PNAMES, PECSTA, TECSTA)
+                END IF
 
             END IF
 
