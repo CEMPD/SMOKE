@@ -381,7 +381,7 @@ if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
       setenv STACK_GROUPS $OUTPUT/stack_groups.$GRID.$PBASE.ncf
    endif
    
-   if ( $RUN_LAYPOINT == 'Y' || $RUN_SMKMERGE == 'Y' || $SMK_PING_YN == 'Y' ) \
+   if ( $RUN_LAYPOINT == 'Y' || $RUN_SMKMERGE == 'Y' ) \
    then   
       setenv PLAY   $SMKDAT/run_$PBASE/$ESDATE/play.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
    endif

@@ -200,7 +200,7 @@ endif
 ## Shared input files - always set
    setenv SIPOLS     $INVDIR/sipols.txt           # Master pollutants file
    setenv ACTVNAMS   $INVDIR/actvnams.txt         # Master activities file
-   setenv G_GRIDPATH $BASDIR/G_GRIDPATH.${GRID}   # Grid descriptions.
+   setenv GRIDDESC   $GE_DAT/GRIDDESC.m3demo      # Grid descriptions.
    setenv ZONES      $GE_DAT/zones                # time zones by state&county
    setenv USERIN     $SCENARIO/userin.utm.$YEAR   # EPS userin file
    setenv COSTCY     $GE_DAT/costcy.013102.txt    # country/state/county info
@@ -403,7 +403,7 @@ if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
       setenv REPPELV      $REPSTAT/reppelv.$PBASE.txt
       setenv PELV         $STATIC/PELV.$PBASE.txt  # Elev/PinG pt source list
       setenv STACK_GROUPS $OUTPUT/stack_groups.$GRID.$PBASE.ncf
-      setenv PELVCONFIG   $SCRIPTS/configure/PELVCONFIG.txt
+      setenv PELVCONFIG   $SCRIPTS/configure/PELVCONFIG.m3demo.txt
    endif
    
    if ( $RUN_LAYPOINT == 'Y' || $RUN_SMKMERGE == 'Y' ) then  # Vertical allocation
