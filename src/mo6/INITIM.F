@@ -10,6 +10,10 @@ C
 C  Calls 
 C 
 C  Changes : 
+C  03 Dec 01 @EPA-djb Bug342 Cap IM240 IDR rates. 
+C  03 Dec 01 @EPA-BAG        Remove AGEIM, VMTIM, and associated variables/ see 
+C                            also IMPROG and FINDIM 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C  02 Nov 00 @EPA-djb Bug299, initialized AGEIM array. 
 C  15 Sep 00 AIR Task 08: Expanded I/M arrays to MAXIMPGM possible programs. 
 C            Added code to process exhaust and evap I/M programs separately. 
@@ -22,7 +26,7 @@ C            gasoline vehicle and truck I/M benefits.
 C 
 C  Input on call: 
 C 
-C    argument list: ICY 
+C    argument list: 
 C    common blocks: 
 C    /IMPAR1/ IMGRACE, EXEMPTAGE 
 C    /IMPAR4/ CUTHC, CUTCO, CUTNO 
@@ -35,16 +39,15 @@ C
 C  Output on return: 
 C 
 C    common blocks: 
+C    /IMPAR1/ OLDFRAC, NEWFRAC 
 C    /IMPAR2/ ITEST 
-C    /LDGIMC/ IDR240, VMTIM, AGEIM 
+C    /LDGIMC/ IDR240 
 C    /LDGSIM/ RSDCVR1 
 C 
 C  Local variable / array dictionary: 
 C 
 C   Name   Type              Description 
 C  ------  ----  ------------------------------------------------------- 
-C  AGEIM    I    Integer age of a vehicle in years on the date of its 
-C                previous periodic I/M test. 
 C  EPART    R    Fraction of vehicles that RSD does not cover because of 
 C                an insufficient number of RSD tests 
 C  IAIM     I    The integer part age of the vehicle in years on the 
@@ -64,11 +67,10 @@ C                expressed as a fraction of the total number of vehicles
 C                in the fleet and weighted by the mileage accumulation 
 C                rate. 
 C  NFCTRL   I    Factorial: NFCTRL(X)=X! 
-C  VMTIM    R    Vehicle miles traveled in units of 10 thousand miles as 
-C                function of the integer age of the vehicle in years. 
 C 
       IMPLICIT NONE 
       INCLUDE 'CHKLST.I' 
+      INCLUDE 'EVAL.I' 
       INCLUDE 'IMPAR1.I' 
       INCLUDE 'IMPAR2.I' 
       INCLUDE 'IMPAR4.I' 
@@ -80,87 +82,12 @@ C
       INCLUDE 'RSDINF.I' 
 C 
       REAL    LAMBDA,EPART 
-      INTEGER JDX,IV,IAIM,KY,IY,IMPGM,IMTT,ITN,NFCTRL,IMVG 
+      REAL, DIMENSION(26,5) :: VMTIM 
+      INTEGER JDX,IV,IAIM,IMPGM,IMTT,ITN,NFCTRL,IMVG 
       INTEGER, SAVE :: RUN=1,START=2 
       INTEGER, SAVE :: HC=1,CO=2,NOX=3 
-      INTEGER, SAVE :: JAN_SEP=1,OCT_DEC=2 
 C 
-C Calculate the October 1 accummulated vehicle miles traveled. 
-C AMAR(JDX,IV) 
-C 
-      DO IV=1,5 
-        VMTIM(1,IV)=10.0*AMAR(1,IV) 
-        DO JDX=2,MAXYRS 
-          VMTIM(JDX,IV)=VMTIM(JDX-1,IV)+10.0*AMAR(JDX,IV) 
-        END DO 
-      END DO 
-C 
-C Determine vehicle ages as a function of model year. The 
-C model year is divided in two [ISEG=JAN_SEP(=1),OCT_DEC(=2)] 
-C because new vehicle sales(model year MY) start Oct. 1(model 
-C year MY-1). (See pages 30-37 and 77-79 of M6.IM.001.) 
-C Only perform for exhaust I/M programs. 
-C 
-C 
-      DO IMPGM =1,MAXIMPGM 
-C 
-        DO JDX=1,EXEMPTAGE(IMPGM) 
-          AGEIM(IMPGM,JDX,JAN_SEP)=0 
-          AGEIM(IMPGM,JDX,OCT_DEC)=0 
-        END DO 
-        IF(ITEST(IMPGM).GE.20) CYCLE 
-C 
-        DO JDX=1,EXEMPTAGE(IMPGM) 
-C 
-C         set AGEIM to zero when no I&M is required 
-          IF (JDX.LE.IMGRACE(IMPGM)) THEN 
-            AGEIM(IMPGM,JDX,JAN_SEP)=0 
-            AGEIM(IMPGM,JDX,OCT_DEC)=0 
-C 
-C         first year eligibility for an I&M has no Jan.-Sep. I&M's 
-          ELSE IF (JDX.EQ.IMGRACE(IMPGM)+1) THEN 
-            AGEIM(IMPGM,JDX,JAN_SEP)=0 
-            AGEIM(IMPGM,JDX,OCT_DEC)=JDX-1 
-C 
-C         all vehicles with ages greater than or equal two years 
-C         beyond the new vehicle grace period are eligible for I&M 
-          ELSE IF (JDX.GE.IMGRACE(IMPGM)+2) THEN 
-C 
-C           determine the number of I&M's tests performed for a given 
-C           vehicle type, IV, and model year index/age, JDX 
-            KY = INT((JDX-IMGRACE(IMPGM)-2)/IFREQ(IMPGM)) 
-C 
-C           use KY to count the number of years from the last I&M test 
-            IY = JDX-IMGRACE(IMPGM)-KY*IFREQ(IMPGM)-1 
-C 
-C           detemine vehicle age since the last I&M test when vehicle 
-C           is not yet eligible for a test 
-            IF (IY.LT.IFREQ(IMPGM)) THEN 
-              AGEIM(IMPGM,JDX,JAN_SEP)=JDX-1-IY 
-              AGEIM(IMPGM,JDX,OCT_DEC)=JDX-1-IY 
-C 
-C           determine vehicle age since the last I&M test when the vehicle 
-C           type is eligible for a test; distinguish between Oct. and Jan. 
-            ELSE IF (IY.EQ.IFREQ(IMPGM)) THEN 
-              AGEIM(IMPGM,JDX,JAN_SEP)=JDX-1-IFREQ(IMPGM) 
-              AGEIM(IMPGM,JDX,OCT_DEC)=JDX-1 
-            END IF 
-C 
-          END IF 
-        END DO 
-C 
-C Exempt vehicles with model year index greater than EXEMPTAGE(IMPGM) 
-C from taking I/M tests. 
-C 
-        IF (EXEMPTAGE(IMPGM).LT.MAXYRS) THEN 
-          DO JDX=EXEMPTAGE(IMPGM)+1,MAXYRS 
-            AGEIM(IMPGM,JDX,JAN_SEP)= 
-     *            AGEIM(IMPGM,EXEMPTAGE(IMPGM),JAN_SEP) 
-            AGEIM(IMPGM,JDX,OCT_DEC)= 
-     *            AGEIM(IMPGM,EXEMPTAGE(IMPGM),OCT_DEC) 
-          END DO 
-        END IF 
-      END DO 
+      VMTIM = 0.0 
 C 
 C Set the final cutpoints for ASM tests (See page 57 
 C 2nd paragraph of M6.IM.001) 
@@ -190,36 +117,70 @@ C
         DO IMVG=1,4 
           DO JDX=1,MAXYRS 
 C 
+C           Cap HC and CO cutpoints. 
+            IF(CUTHC(JDX,IMVG,IMPGM).GT.5.0) THEN 
+              CUTHC(JDX,IMVG,IMPGM)=5.0 
+            ENDIF 
+            IF(CUTCO(JDX,IMVG,IMPGM).GT.100.0) THEN 
+              CUTCO(JDX,IMVG,IMPGM)=100.0 
+            ENDIF 
+C 
 C           IDR for HC running emissions 
             IDR240(JDX,RUN,HC,IMVG,IMPGM) 
      *          =1.1451 - 0.1365*LOG(CUTHC(JDX,IMVG,IMPGM)) 
      *                  - 0.1069*LOG(CUTCO(JDX,IMVG,IMPGM)) 
+            IF(IDR240(JDX,RUN,HC,IMVG,IMPGM).LT.0.0) THEN 
+              IDR240(JDX,RUN,HC,IMVG,IMPGM)=0.0             !Set Minimum 
+            ENDIF 
 C 
 C           IDR for CO running emissions 
             IDR240(JDX,RUN,CO,IMVG,IMPGM) 
      *          = 1.1880 - 0.1073*LOG(CUTHC(JDX,IMVG,IMPGM)) 
      *                   - 0.1298*LOG(CUTCO(JDX,IMVG,IMPGM)) 
+            IF(IDR240(JDX,RUN,CO,IMVG,IMPGM).LT.0.0) THEN 
+              IDR240(JDX,RUN,CO,IMVG,IMPGM)=0.0             !Set Minimum 
+            ENDIF 
 C 
 C           IDR for NOx running emissions 
             IDR240(JDX,RUN,NOX,IMVG,IMPGM) 
      *          = 0.5453 + 0.7568*CUTNO(JDX,IMVG,IMPGM) 
      *                   - 0.3687*CUTNO(JDX,IMVG,IMPGM)**2 
      *                   + 0.0406*CUTNO(JDX,IMVG,IMPGM)**3 
+            IF(CUTNO(JDX,IMVG,IMPGM).GT.4.5) THEN 
+              IDR240(JDX,RUN,NOX,IMVG,IMPGM)=0.0             !Set Minimum 
+            ENDIF 
 C 
 C           IDR for HC start emissions 
             IDR240(JDX,START,HC,IMVG,IMPGM) 
      *          = 0.9814 - 0.1590*LOG(CUTHC(JDX,IMVG,IMPGM)) 
      *                   - 0.1409*LOG(CUTCO(JDX,IMVG,IMPGM)) 
+            IF(IDR240(JDX,START,HC,IMVG,IMPGM).LT.0.0) THEN 
+              IDR240(JDX,START,HC,IMVG,IMPGM)=0.0           !Set Minimum 
+            ENDIF 
 C 
 C           IDR for CO start emissions 
             IDR240(JDX,START,CO,IMVG,IMPGM) 
      *          = 1.1460 - 0.1593*LOG(CUTHC(JDX,IMVG,IMPGM)) 
      *                   - 0.1707*LOG(CUTCO(JDX,IMVG,IMPGM)) 
+            IF(IDR240(JDX,START,CO,IMVG,IMPGM).LT.0.0) THEN 
+              IDR240(JDX,START,CO,IMVG,IMPGM)=0.0           !Set Minimum 
+            ENDIF 
 C 
 C           IDR for NOx start emissions 
             IDR240(JDX,START,NOX,IMVG,IMPGM) = 0.0 
 C 
           END DO 
+        END DO 
+      END DO 
+C 
+C 
+C Calculate the October 1 accummulated vehicle miles traveled. 
+C AMAR(JDX,IV) 
+C 
+      DO IV=1,5 
+        VMTIM(1,IV)=10.0*AMAR(1,IV) 
+        DO JDX=2,MAXYRS 
+          VMTIM(JDX,IV)=VMTIM(JDX-1,IV)+10.0*AMAR(JDX,IV) 
         END DO 
       END DO 
 C 
@@ -249,6 +210,9 @@ C             with the other 1 thru NTF(IMPGM)-1 test probabilities
           END DO 
         END IF 
       END DO 
+C 
+      OLDFRAC=(REAL(MEVAL)+2.0)/12.0 
+      NEWFRAC=1.0-OLDFRAC 
 C 
       RETURN 
       END 

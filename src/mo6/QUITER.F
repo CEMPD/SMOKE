@@ -12,11 +12,16 @@ C            REFUEL, RDCITY, STOERQ, TFCALX, WTLRNL, YRTEST.
 C 
 C  Changes: (Last change first) 
 C 
+C  15 Jan 02 AIR Task 15: Changed maximum alcohol oxy limit from 3.5% to 3.7% 
+C                         (error message #6) 
+C  14 Jan 02 @EPA-bag Bug377 , Changed "TO" to "T/O" in error message 82. 
+C 14 Jan 02 @EPA-bag Bug375 , Added messages 577, 578, 579, &580 for the 
+C                             AVERAGE SPEED command 
+C  09 Jan 02 @EPA-djb Bug 356, No OBD I/M for pre-2007 HDGV (531). 
+C  13 Dec 01 AIR Task 27-28: Fixed error message 83. 
+C  04 Dec 01 AIR Task 27-28: Added CO2 error when NGV are selected. 
+C  02 Oct 01 AIR Task 15-21: Extended the input AT Oxygenate from 5% to 20 vol% 
 C  24 Aug 01 AIR Task 15-21: Added NAMEAT and aix toxic messages 115 and 116. 
-C  19 Jul 01 @EPA-djb Wish235, Changed unused warnings 14, 15 and 16 
-C            to average speed command warning messages. 
-C  10 Jul 01 @EPA-djb Wish130, Changed errors 183 and 186 for use in GETSPD. 
-C  25 May 01 @EPA-ELG message 567 for post 1996 I&M 
 C 23 May 01 ARI Task 17: Added message for PM speed correction. Expanded 
 C           NAMEPART to 3 for the PARTICULATE EF (ZML/DR FILENAMES). 
 C 30 Apr 01 AIR Task 12: Added messages for GETT2PMFRC. 
@@ -24,6 +29,10 @@ C 11 Apr 01 AIR Task 11: Changed messages that are true errors to GOTO 198
 C           and output via IOUERR file, while warnings/comments GOTO 199 
 C           and output via IOUREP/IOUOUT.  
 C 07 Feb 01 AIR Task 11: Added messages for Particulates and Air Toxics. 
+C  19 Jul 01 @EPA-djb Wish235, Changed unused warnings 14, 15 and 16 
+C            to average speed command warning messages. 
+C  10 Jul 01 @EPA-djb Wish130, Changed errors 183 and 186 for use in GETSPD. 
+C  25 May 01 @EPA-ELG message 567 for post 1996 I&M 
 C  21 Feb 01 @EPA-bag QUITER message 174 for user supplied faclity mileage fractions 
 C  19 Jan 01 @EPA-bag QUITER message for NO 2007 HEAVY DUTY DIESEL VEHICLE RULE; 
 C            removed obsolete error message #83; error message #53 used for fatal 
@@ -403,6 +412,7 @@ C
 C  Aug-18-1994 @ CSC-bsg Request 2-462 Added QUITER messages 157-160, for  
 C  non-FTP related error messages 
 C 
+C 
       INTEGER, PARAMETER :: MAXMES = 699 
 C 
       MCODE=MESSAG 
@@ -504,32 +514,38 @@ C
     3 WRITE(IOUERR,303) RVALUE,IOOFBD 
   303 FORMAT(13X,G10.3,5A4,'Alcohol Blend Market Share (0. to 1.)') 
       GOTO 198 
-    4 WRITE(IOUERR,304) RVALUE,IOOFBD 
-  304 FORMAT(13X,G10.3,5A4,'Total Oxy Fuel Market Share (0. to 1.)') 
-      GOTO 198 
+C 
+    4 GOTO 199 
+C 
     5 WRITE(IOUERR,305) RVALUE,IOOFBD 
-  305 FORMAT(13X,G10.3,5A4,'Ether Blend Oxygen Content', 
+  305 FORMAT(13X,G10.3,5A4,'Ether Blend Oxygen Weight Fraction', 
      *    ' (0 to 0.027)') 
       GOTO 198 
+C 
     6 WRITE(IOUERR,306) RVALUE,IOOFBD 
-  306 FORMAT(13X,G10.3,5A4,'Alcohol Blend Oxygen Content', 
-     *    ' (0 to 0.035)') 
+  306 FORMAT(13X,G10.3,5A4,'Alcohol Blend Oxygen Weight Fraction', 
+     *    ' (0 to 0.037)') 
       GOTO 198 
+C 
     7 WRITE(IOUERR,307) IVALUE,IOOFBD 
   307 FORMAT(13X,I4,5A4,'Alcohol Blend RVP Waiver switch (1 or 2)') 
       GOTO 198 
+C 
     8 WRITE(IOUERR,308) 
   308 FORMAT(13X,'Inconsistent Ether Blend input encountered') 
       GOTO 198 
+C 
     9 WRITE(IOUERR,309) 
   309 FORMAT(13X,'Inconsistent Alcohol Blend input encountered') 
       GOTO 198 
+C 
    10 WRITE(IOUREP,310) 
   310 FORMAT( 
      *15X,'Error occurred in reading the hourly output filename.' 
      */15X,'The filename specified for hourly output already exists.' 
      */15X,'No hourly output will be produced for this scenario.') 
       GOTO 199 
+C 
    11 WRITE(IOUERR,311) RVALUE 
   311 FORMAT( 
      *'+',12X,' Error occurred in reading user supplied', 
@@ -542,6 +558,7 @@ C
    12 WRITE(IOUERR,312) IVALUE,IOOFBD,IY1960,IYEND 
   312 FORMAT(13X,I4,5A4,'MODYR1 (1941 to 2050)') 
       GOTO 198 
+C 
    13 WRITE(IOUERR,313) IVALUE,IOOFBD,IY1960,IYEND 
   313 FORMAT(13X,I4,5A4,'MODYR2 (1941 to 2050)') 
       GOTO 198 
@@ -796,14 +813,15 @@ C
       GOTO 198 
    82 WRITE(IOUERR,382) 
   382 FORMAT(13X,'An invalid I/M program type was specified.', 
-     *       ' (Use ''TO'' for', 
+     *       ' (Use ''T/O'' for', 
      *      /13X,'test-only, ''TRC'' for computerized test-and', 
      *       '-repair, or ''TRM''', 
      *      /13X,'for manual test-and-repair.)') 
       GOTO 198 
-C 
-   83 GOTO 199 
-C 
+   83 WRITE(IOUERR,383)  
+  383 FORMAT(13X,'CO2 cannot be calculated when NGVs are selected ',  
+     *           'via the commands NGV FRACTION or NGV EF') 
+      GOTO 198 
    84 WRITE(IOUERR,384) IVALUE,IOOFBD 
   384 FORMAT(13X,I4,5A4,'onboard VRS vehicle class flag (1 to 2)') 
       GOTO 198 
@@ -1609,7 +1627,13 @@ C
      & /,12X,'Default Tier2 50K Certification Standards will be used.') 
       GO TO 199 
 C 
-  531 GOTO 199 
+  531 WRITE(IOUERR,731) IVALUE 
+  731 FORMAT( 
+     *15X,'I/M Program Description',I2,' :',/, 
+     *15X,'MOBILE6 Does NOT Support Evap OBD or OBD & GC I/M Programs '/ 
+     *15X,'for Pre-2007 Model Years for HDGV.  Choose a Different '/ 
+     *15X,'Test Type for these Model Year HDGVs.') 
+      GOTO 198 
 C 
   532 WRITE(IOUERR,732) IVALUE,IOOFBD 
   732 FORMAT(13X,I4,5A4,'NGV EF Vehicle Type Index.') 
@@ -1822,8 +1846,8 @@ C
       GO TO 198 
 C 
   572 WRITE(IOUERR,772) RVALUE 
-  772 FORMAT(1X/12X,'The Air Toxic OXYGENATE weight percent ',F6.3, 
-     &       ' is out of bounds. It must be between 0.0 and 5.0') 
+  772 FORMAT(1X/12X,'The Air Toxic OXYGENATE volume percent ',F6.3, 
+     &       ' is out of bounds. It must be between 0.0 and 20.0') 
       GO TO 198 
 C 
   573 WRITE(IOUERR,773) RVALUE 
@@ -1846,13 +1870,33 @@ C
      &       ' for MY ',I4,' ',A8,' is equal to zero.') 
       GO TO 199 
 C 
-  577 CONTINUE 
+  577 WRITE(IOUERR,777) 
+  777 FORMAT(12X,'The entered values for Freeway VMT and Arterial' 
+     *     /12X,'VMT fractions sum to zero. This is inconsistent with' 
+     *     /12X,'the "AREAWIDE" option in the "AVERAGE SPEED" command.') 
+      GO TO 198 
 C 
-  578 CONTINUE 
+  578 WRITE(IOUERR,778) 
+  778 FORMAT(12X,'The entered values for Freeway VMT and Freeway' 
+     *     /12X,'Ramp VMT fractions sum to zero. This is inconsistent' 
+     *     /12X,'with the "FREEWAY" option in the "AVERAGE SPEED"' 
+     *     /12X,'command.') 
+      GO TO 198 
 C 
-  579 CONTINUE 
+  579 WRITE(IOUERR,779) 
+  779 FORMAT(12X,'The combination of facility VMT values input in the' 
+     *     /12X, 'in the "AVERAGE SPEED" command lead to singularities' 
+     *     /12X, 'in the average speed calculation. Please check the' 
+     *     /12X, 'the "FREEWAY" option in the "AVERAGE SPEED" command.' 
+     *     /12X, 'The values have been reset to the MOBILE6 default' 
+     *     /12X, 'values.') 
+      GO TO 198 
 C 
-  580 CONTINUE 
+  580 WRITE(IOUERR,780) 
+  780 FORMAT(12X,'The entered values for Freeway VMT and Arterial' 
+     *     /12X,'VMT fractions sum to zero. This is inconsistent with' 
+     *     /12X,'the "FREEWAY" option in the "AVERAGE SPEED" command.') 
+      GO TO 198 
 C 
   581 CONTINUE 
 C 

@@ -909,8 +909,6 @@ C                          = LDGT1 + LDGT2, each weighted by its vmt share
 C 
 C     IWK       IWK_DAY-IWK_END(iniscn) 
 C 
-C     IY        IVAGEIM (ISEG), JDX-1,7(improg) 
-C 
 C     IYR       9-MAXLYR (no_tier2) 
 C 
 C     I2ND      1-4    secondary index (pointer into a pointer vector) 

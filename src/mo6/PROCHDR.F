@@ -1,4 +1,4 @@
-       SUBROUTINE PROCHDR(INPFILE,CMDOUTPUT,CMDACTION,RC) 
+       SUBROUTINE PROCHDR(INPFILE,CMDOUTPUT,CMDACTION,INERR,RC) 
 C 
 C  PROCHDR reads the header section of a Mobile6 input file. 
 C 
@@ -8,13 +8,23 @@ C  Calls DBOPTS,DBSELE,DBSELF,DBSELP,DBSELV,LJCOMP,NXTREC,NXTTOK,UCCOMP.
 C 
 C  Changes: (Last change first) 
 C 
+C 16 Jan 02 AIR Task 27: Improved error handling via INERR updates and 
+C           inclusion in parameter list. 
+C 14 Jan 02 EPA-bag bug376: Format statement in FIELDNAMES output for aggregated output 
+C                        and remove space, 1X, in FORMAT statement for all FIELDNAMES. 
+C 13 Dec 01 AIR Task 27: Changed CO2 so that it is not selected by default. 
+C 27 Nov 01 AIR Task 28: Changed SPREADSHEET to apply to all pollutants. 
+C           Added dynamic array call for AT. 
+C 28 Sep 01 AIR Task 25: Changed TOXICS SPREADSHEET to SPREADSHEET to 
+C           accomodate both AT and PM outputs. Also changed spreadsheet 
+C           naming methodology. 
 C 30 Aug 01 AIR Task 22: Added TOXICS SPREADSHEET 
 C 24 Aug 01 AIR Task 15-21: Added warning that the hourly database  
 C           output for each AIR TOXICS scenario is 100+mb.  
 C 16 Aug 01 AIR Task 15-21: Changed suffix from .AT to .TOX for Air Toxics. 
 C 30 Jan 01 AIR Task 11: Added PARTICULATES and AIR TOXICS headers and files. 
-C 29 Nov 00 @EPA-BG  renamed database age to database ages 
-C 24 Oct 00 @EPA-BG  New labels for database age, model year and hour selection 
+C  29 Nov 00 @EPA-BG  renamed database age to database ages 
+C  24 Oct 00 @EPA-BG  New labels for database age, model year and hour selection 
 C 19 Oct 00 @EPA-djb Task W2, Added AGGREGATED OUTPUT command. 
 C 20 Oct 00 AIR Task 03: Added MYR to daily and hourly output 
 C 12 Sep 00 @EPA-djb Bug 245, Initialized DBSELFAC, DBSELPOL, DBSELVEH and 
@@ -45,13 +55,13 @@ C 23 Aug 99 @DynTel-MLA 2-684  This is a new routine for Mobile6.
 C 
 C  Input on call: 
 C 
-C    argument list: INPFILE, CMDOUTPUT, CMDACTION 
+C    argument list: INPFILE, CMDOUTPUT, CMDACTION, INERR, RC 
 C    common blocks: 
 C    /IOUCOM/ IOUOUT, IOUGEN 
 C 
 C  Output on return: 
 C 
-C    argument list:  RC 
+C    argument list:  INERR, RC 
 C    common blocks: 
 C    /DATABASE/  DBACTION,DBFNAMES,DBSELEFT,DBSELFAC,DBSELPOL,DBSELVEH 
 C                DBHEAD, DBDAILY, DBAGGR 
@@ -99,18 +109,17 @@ C
       CHARACTER (LEN=*),INTENT(IN)   ::  CMDOUTPUT 
       CHARACTER (LEN=*),INTENT(IN)   ::  INPFILE 
       INTEGER,INTENT(OUT)            ::  RC 
- 
+      INTEGER,INTENT(INOUT)          ::  INERR 
       INCLUDE 'ATOX1.I' 
-      INCLUDE 'FLAGS5.I' 
       INCLUDE 'IOUCOM.I' 
+      INCLUDE 'PRINTC.I' 
       INCLUDE 'OPCNTL.I' 
       INCLUDE 'PART1.I' 
-      INCLUDE 'PRINTC.I' 
+      INCLUDE 'FLAGS5.I' 
 C 
 C     Declare external function. 
-      INTEGER, EXTERNAL :: JUNIT
-
-      CHARACTER (LEN=1)              ::  YORN 
+      INTEGER, EXTERNAL :: JUNIT 
+C 
       CHARACTER (LEN=19)             ::  LABEL 
       CHARACTER (LEN=20)             ::  EXTENSION 
       CHARACTER (LEN=20)             ::  RPTACTION 
@@ -121,7 +130,7 @@ C     Declare external function.
       CHARACTER (LEN=140)            ::  LINE1 
       CHARACTER (LEN=140)            ::  LINE2 
       CHARACTER (LEN=150)            ::  ATRPTFILE 
-      CHARACTER (LEN=150)            ::  ATSSFILE 
+      CHARACTER (LEN=150)            ::  SSFILE 
       CHARACTER (LEN=150)            ::  DATAFIELD 
       CHARACTER (LEN=150)            ::  INPLINE 
       CHARACTER (LEN=150)            ::  PMRPTFILE 
@@ -131,7 +140,6 @@ C     Declare external function.
       INTEGER                        ::  I 
       INTEGER                        ::  IDB 
       INTEGER                        ::  IDX 
-      INTEGER                        ::  INERR 
       INTEGER                        ::  IOS 
       INTEGER                        ::  LABTYPE 
       INTEGER                        ::  PTR1 
@@ -162,6 +170,7 @@ C
      &           ' contains a BATCH FILE label.', 
      &          /' Batch files can not be listed inside of other', 
      &           ' batch files in Mobile6.') 
+         INERR=INERR+1 
          GOTO 99 
       ENDIF 
       IF (LABEL /= 'MOBILE6 INPUT FILE') THEN 
@@ -175,6 +184,7 @@ C
      &          /' *** upper or lower case, in the label field of', 
      &           ' the first data record in', 
      &          /' *** every Mobile6 input file.') 
+         INERR=INERR+1 
          GOTO 99 
       ENDIF 
 C 
@@ -198,6 +208,7 @@ C
      &             /' *** files in Mobile6. Please rename the file', 
      &              ' and repeat the run.') 
             RC = 11 
+            INERR=INERR+1 
             GOTO 99 
          ENDIF 
       ENDIF 
@@ -227,6 +238,7 @@ C
       DBSELEFT = 2 
       DBSELFAC = 2 
       DBSELPOL = 2 
+      DBSELPOL(4) = 1 ! CO2 is not selected by default 
       DBSELVEH = 2 
       DBSELAGE(LOWER_LMT) = 0 
       DBSELAGE(UPPER_LMT) = 24 
@@ -243,7 +255,7 @@ C     Initialize Particulate and Air Toxic flags.
 C 
       PARTFLG=.FALSE. 
       TOXFLG=.FALSE. 
-      ATSSFLAG=.FALSE. 
+      SSFLAG=.FALSE. 
 C 
 C     Read and interpret the remaining lines in the header. 
 C 
@@ -254,13 +266,14 @@ C
          IF (RC /= 0) GOTO 99 
 C 
          CALL UCCOMP(INPLINE(1:19), LABEL) 
-
 ccs         CALL UCCOMP(INPLINE(21:), DATAFIELD) 
-         CALL LJCOMP(INPLINE(21:), DATAFIELD)
-
+         CALL LJCOMP(INPLINE(21:), DATAFIELD) 
 C 
          CALL CHKLAB(LABEL,STDLAB,LABTYPE,SECTION) 
-         IF (RC /= 0) GOTO 99 
+         IF (RC /= 0) THEN 
+           INERR=INERR+1 
+           GOTO 99 
+         END IF 
 C 
          PTR2 = 0 
          CALL NXTTOK(DATAFIELD,FIELD1,PTR1,PTR2) 
@@ -338,8 +351,9 @@ C
                CALL DBSELPRT(INPLINE,INERR,RC) 
             CASE ('AIR TOXICS') 
                CALL DBSELTX(INPLINE,INERR,RC) 
-            CASE ('TOXICS SPREADSHEET') 
-               ATSSFLAG = .TRUE. 
+               CALL ATALLOC 
+            CASE ('SPREADSHEET') 
+               SSFLAG = .TRUE. 
             CASE ('RUN DATA')   ! End of the header section. 
                EXIT 
             CASE DEFAULT 
@@ -357,6 +371,7 @@ C
      &                    /' *** ',A) 
                ENDIF 
                RC = 3 
+               INERR=INERR+1 
                GOTO 99 
          END SELECT 
 C 
@@ -376,31 +391,11 @@ C
             WRITE(IOUERR,140) INPLINE(1:LEN_TRIM(INPLINE)) 
   140       FORMAT(' *** The following input record caused the', 
      &             ' error.',/' *** ',A) 
+            INERR=INERR+1 
             GOTO 99 
          ENDIF 
 C 
       END DO 
-C 
-C     Hourly database output from **each** AIR TOXICS run is over 100mb.  
-C     Therefore, ask user to verify the request.  
-C  
-      IF((DBFLAG.EQ.2 .AND. TOXFLG) .AND. 
-     &   (.NOT.DBDAILY .AND. .NOT.DBAGGR)) THEN 
-        WRITE(IOUOUT,242) 
-  242   FORMAT( 
-     &  ' WARMING: The hourly DATABASE OUTPUT from **each** AIR'/ 
-     &  '          TOXICS scenario can be over 100 mb in size.'/  
-     &  ' Do you still want this voluminous output? (Y or N):') 
-        READ(*,*) YORN 
-        IF(YORN.NE.'Y'.AND.YORN.NE.'y') THEN 
-          WRITE(IOUOUT,243) 
-  243     FORMAT(' DATABASE OUTPUT Cancelled'/) 
-          DBFLAG = 1 
-        ELSE 
-          WRITE(IOUOUT,244) 
-  244     FORMAT(' DATABASE OUTPUT Confirmed'/) 
-        END IF 
-      END IF 
 C 
 C     Write runtime warning about NO EVAP disabling the user-selected 
 C     or default database output, then disable it. 
@@ -435,11 +430,10 @@ ccs         ELSE
 ccs            ROOT = CMDOUTPUT(1:IDX-1) 
 ccs         ENDIF 
 C 
-
 ccs         CALL UCCOMP(ROOT,RPTFILE) 
-ccs         CALL LJCOMP(ROOT,RPTFILE)
-
+ccs         CALL LJCOMP(ROOT,RPTFILE) 
 ccs         CALL UCCOMP(CMDACTION,RPTACTION) 
+ccs         CALL LJCOMP(CMDACTION,RPTACTION) 
 C 
 ccs         WMOUT = ROOT 
 C 
@@ -464,6 +458,7 @@ C
      &           ' for the descriptive', 
      &          /' *** output (report) file. The action must be', 
      &           ' APPEND or REPLACE.') 
+         INERR=INERR+1 
          RC = 5 
       ENDIF 
 C 
@@ -477,6 +472,7 @@ C
      &              ' action for the ',A10, 
      &             /' *** database table. The action must be', 
      &              ' APPEND or REPLACE.') 
+            INERR=INERR+1 
             RC = 5 
          ENDIF 
       END DO 
@@ -500,8 +496,7 @@ C
          RPTFILE = RPTFILE(1:LEN_TRIM(RPTFILE)) // '.TXT' 
       ENDIF 
 C 
-      IOUREP = JUNIT()
-
+      IOUREP = JUNIT() 
       IF (PREFIX(RPTACTION,'APPEND ')) THEN 
          OPEN(IOUREP,FILE=RPTFILE,POSITION='APPEND',ERR=80,IOSTAT=IOS) 
       ELSE 
@@ -511,7 +506,7 @@ C
       WRITE(IOUOUT,165) RPTFILE(1:LEN_TRIM(RPTFILE)) 
   165 FORMAT(' * Report file: ',A) 
 C 
-C     Repeat file actions for PM output, if necessary   
+C     Repeat file actions for PM output, if necessary 
 C 
       IF(PARTFLG) THEN 
         IDX = INDEX(RPTFILE,'.',BACK) 
@@ -551,21 +546,26 @@ C
   167   FORMAT(' * AT Report file: ',A) 
       ENDIF 
 C 
-C     Repeat file actions for Air Toxic (AT) spreadsheet output, if necessary   
+C     Repeat file actions for spreadsheet output, if necessary 
 C 
-      IF(TOXFLG.AND.ATSSFLAG) THEN 
-           ATSSFILE = RPTFILE(1:LEN_TRIM(RPTFILE(1:4))) // '_TOX.TAB' 
+      IF(SSFLAG) THEN 
+        IDX = INDEX(RPTFILE,'.',BACK) 
+        IF (IDX == 0) THEN 
+           SSFILE = RPTFILE(1:LEN_TRIM(RPTFILE)) // '.TAB' 
+        ELSE 
+           SSFILE = RPTFILE(1:LEN_TRIM(RPTFILE(1:IDX-1))) // '.TAB' 
+        ENDIF 
 C 
         IF (PREFIX(RPTACTION,'APPEND ')) THEN 
-          OPEN(IOUATSS,FILE=ATSSFILE,POSITION='APPEND',ERR=80, 
+          OPEN(IOUSS,FILE=SSFILE,POSITION='APPEND',ERR=80, 
      *         IOSTAT=IOS) 
         ELSE 
-          OPEN(IOUATSS,FILE=ATSSFILE,STATUS='REPLACE',ERR=80, 
+          OPEN(IOUSS,FILE=SSFILE,STATUS='REPLACE',ERR=80, 
      *         IOSTAT=IOS) 
         ENDIF 
 C 
-        WRITE(IOUOUT,168) ATSSFILE(1:LEN_TRIM(ATSSFILE)) 
-  168   FORMAT(' * AT Spreadsheet file: ',A) 
+        WRITE(IOUOUT,168) SSFILE(1:LEN_TRIM(SSFILE)) 
+  168   FORMAT(' * Spreadsheet file: ',A) 
       ENDIF 
 C 
 C     Write warning about NO EVAP in the report file. 
@@ -596,15 +596,15 @@ C
         IF (DBDAILY) THEN 
                 WRITE(DBUNIT(1),180) 
      &          (DBDAYCOLS(I), TABCHAR, I=1,17), DBDAYCOLS(18) 
-180             FORMAT(1X,17(A8,A1),A8) 
+180             FORMAT(17(A8,A1),A8) 
         ELSEIF(DBAGGR) THEN 
-                WRITE(DBUNIT(1),180) 
+                WRITE(DBUNIT(1),185) 
      &          (DBAGGRCOLS(I), TABCHAR, I=1,12), DBAGGRCOLS(13) 
-185             FORMAT(1X,12(A8,A1),A8) 
+185             FORMAT(12(A8,A1),A8) 
         ELSE 
                 WRITE(DBUNIT(1),190) 
      &          (DBHOURCOLS(I), TABCHAR, I=1,21), DBHOURCOLS(22) 
-190             FORMAT(1X,21(A8,A1),A8) 
+190             FORMAT(21(A8,A1),A8) 
         END IF 
  
       END IF 
@@ -623,25 +623,27 @@ C
       GOTO 99 
 C 
    80 WRITE(LINE1,280) IOS,RPTFILE 
-  280 FORMAT('*** ERROR ',I9,' opening the descriptive output', 
+  280 FORMAT(' *** ERROR ',I9,' opening the descriptive output', 
      &       ' file ',A80) 
       CALL LJCOMP(LINE1,LINE2) 
       WRITE(IOUOUT,'(" "/A)') LINE2 
       WRITE(IOUERR,'(" "/A)') LINE2 
       RC = 7 
+      INERR=INERR+1 
       GOTO 99 
 C 
    85 WRITE(LINE1,285) IOS,DBFNAMES(TNUM) 
-  285 FORMAT('*** ERROR ',I9,' opening database output file ',A80) 
+  285 FORMAT(' *** ERROR ',I9,' opening database output file ',A80) 
       CALL LJCOMP(LINE1,LINE2) 
       WRITE(IOUOUT,'(" "/A)') LINE2 
       WRITE(IOUERR,'(" "/A)') LINE2 
+      INERR=INERR+1 
       RC = 8 
       GOTO 99 
 C 
    90 WRITE(IOUOUT,290) INPFILE 
       WRITE(IOUERR,290) INPFILE 
-  290 FORMAT(/'*** ERROR: Unexpected end of file before header', 
+  290 FORMAT(/' *** ERROR: Unexpected end of file before header', 
      &        ' processing is complete', 
      &       /'*** for file ',A80) 
 C 

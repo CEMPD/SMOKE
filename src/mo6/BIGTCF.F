@@ -100,7 +100,6 @@ C
       INCLUDE 'INJECT.I' 
       INCLUDE 'IVPCOM.I' 
       INCLUDE 'IVTYPE.I' 
-cccc      INCLUDE 'MYCODE.I' 
       INCLUDE 'OMTCOM.I' 
       INCLUDE 'OFFSET.I' 
       INCLUDE 'SOAK.I' 
