@@ -40,6 +40,16 @@ extractida.debug: $(EXTI) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'EXTRACTIDA (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
 
+GEOF=geofac.o
+
+geofac: $(GEOF) $(ALLI) $(LIBPATH)
+	echo GEOFAC:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(EXTI) $(LIBS)
+
+geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'GEOFAC (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
+
 INVS=invsplit.o
 
 invsplit: $(INVS) $(ALLI) $(LIBPATH)
