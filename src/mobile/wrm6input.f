@@ -1,7 +1,7 @@
 
         SUBROUTINE WRM6INPUT( GRPLIST, NLINES, SDEV, MDEV, 
-     &                        CTYLIST, TEMPS, NCOUNTY, VOLNAM, 
-     &                        SCENNUM, SRCNUM, RPLCFLAG, SPDFLAG )
+     &                        CTYLIST, NCOUNTY, VOLNAM, SCENNUM, 
+     &                        SRCNUM, TEMPFLAG, RHFLAG, SPDFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 121
@@ -40,14 +40,6 @@ C
 C***********************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY:
-
-C.........  This module contains the information about the source category
-        USE MODINFO, ONLY:
-        
-C...........   This module contains emission factor tables and related
-        USE MODEMFAC, ONLY:
 
         IMPLICIT NONE
 
@@ -74,12 +66,12 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN)   :: SDEV                  ! SPDSUM file unit no.
         INTEGER,      INTENT (IN)   :: MDEV                  ! M6INPUT file unit no.
         INTEGER,      INTENT (IN)   :: CTYLIST( NCOUNTY )    ! counties in temperature file
-        REAL,         INTENT (IN)   :: TEMPS( NCOUNTY, 24 )  ! temps per county
         INTEGER,      INTENT (IN)   :: NCOUNTY               ! no. counties in temps array
         CHARACTER(*), INTENT (IN)   :: VOLNAM                ! volatile pollutant name
         INTEGER,      INTENT(INOUT) :: SCENNUM               ! total number of scenarios
         INTEGER,      INTENT(INOUT) :: SRCNUM                ! total number of sources
-        LOGICAL,      INTENT (IN)   :: RPLCFLAG              ! true: replace temps in scenario
+        LOGICAL,      INTENT (IN)   :: TEMPFLAG              ! true: replace temps in scenario
+        LOGICAL,      INTENT (IN)   :: RHFLAG                ! true: replace humidity in scenario
         LOGICAL,      INTENT (IN)   :: SPDFLAG               ! true: read in speed profiles
 
 C...........   Local allocatable arrays
@@ -91,6 +83,7 @@ C...........   Other local variables
         INTEGER          IOS              ! I/O status
         INTEGER, SAVE :: JYEAR            ! emission factor year
         INTEGER          NLINESCEN        ! number of lines in M6 scenario file
+        INTEGER          NTOTLINES        ! total number of lines in scenario array
         INTEGER, SAVE :: NLINESPD         ! number of lines in speed summary file
         INTEGER          FDEV             ! unit no. for M6 scenario file
         INTEGER          PREVCTY          ! previous county number in SPDSUM file
@@ -191,8 +184,12 @@ C.............  Get number of lines in M6 scenario file
             MESG = 'MOBILE6 scenario file for county' // REFCOUNTY
             NLINESCEN = GETFLINE( FDEV, MESG )
 
+C.............  Allocate space to read in scenario file;
+C               add extra lines for additional commands to be added
+            NTOTLINES = NLINESCEN + 5
+
             IF( ALLOCATED( M6SCEN ) ) DEALLOCATE( M6SCEN )            
-            ALLOCATE( M6SCEN( NLINESCEN + 1 ), STAT=IOS )
+            ALLOCATE( M6SCEN( NTOTLINES ), STAT=IOS )
             CALL CHECKMEM( IOS, 'M6SCEN', PROGNAME )
             M6SCEN = ' '
             
@@ -224,26 +221,29 @@ C.............  Find beginning of scenario commands
 C.............  Check M6 scenario for unused commands and calendar year
             CALL CHKM6SCN( SCENFILE, M6SCEN, NLINESCEN, JYEAR )
 
-            IF( RPLCFLAG ) THEN
+            IF( TEMPFLAG .OR. RHFLAG ) THEN
             	
-C.................  Find current county in temperatures array
+C.................  Find current county in meteorology array
                 CTYPOS = FIND1( STR2INT(CURRCOUNTY), NCOUNTY, CTYLIST )
                 
                 IF( CTYPOS <= 0 ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not find county ' // 
-     &                     CURRCOUNTY // ' in hourly temperature file'
+     &                     CURRCOUNTY // ' in hourly meteorology file'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
              
 C.................  Replace temperatures in M6 scenario
-                CALL RPLCTEMP( STR2INT( CURRCOUNTY ), TEMPS, NCOUNTY, 
-     &                         M6SCEN, NLINESCEN, CTYPOS )
-     
-C.................  Check if start of scenario has moved
-                IF( M6SCEN( STSCEN )( 2:16 ) /= 'SCENARIO RECORD' ) THEN
-                    STSCEN = STSCEN + 1
+                IF( TEMPFLAG ) THEN
+                    CALL RPLCTEMP( CTYPOS, NLINESCEN, NTOTLINES, 
+     &                             M6SCEN, STSCEN )
+                END IF
+
+C.................  Replace humidity and barometric pressure data
+                IF( RHFLAG ) THEN
+                    CALL RPLCMET( CTYPOS, NLINESCEN, NTOTLINES, 
+     &                            M6SCEN, STSCEN )
                 END IF
      
             END IF
@@ -330,11 +330,12 @@ C.....................  Write M6 scenario to M6INPUT
                     CALL PADZERO( SCENARIO )
                     WRITE( MDEV, 93000 ) 
      &                      'SCENARIO RECORD    : ' // SCENARIO
-                    DO J = STSCEN, NLINESCEN + 1
+                    
+                    DO J = STSCEN, NLINESCEN
                         IF( M6SCEN( J ) == ' ' ) CYCLE
-                        WRITE( MDEV, 93000 ) 
-     &                      M6SCEN( J )( 1:LEN_TRIM( M6SCEN( J ) ) )
+                        WRITE( MDEV, 93000 ) TRIM( M6SCEN( J ) )
                     END DO
+                    
                     WRITE( MDEV, 93000 )
      &                      'PARTICLE SIZE      : 2.5'
                     WRITE( MDEV, 93000 )
