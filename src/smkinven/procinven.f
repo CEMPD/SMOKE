@@ -41,9 +41,12 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: INRECA, POLVLA, TPFLGA, INDEXA,
+        USE MODSOURC, ONLY: INRECA, POLVLA, INDEXA,
      &                      IPOSCODA, SRCIDA, ICASCODA, CSOURCA, 
-     &                      CSOURC, NPCNT, POLVAL, IPOSCOD
+     &                      CSOURC, NPCNT, POLVAL, IPOSCOD, IFIP,
+     &                      CSCC, XLOCA, YLOCA, CELLID, IRCLAS,
+     &                      IVTYPE, CLINK, CVTYPE, XLOC1, XLOC2,
+     &                      YLOC1, YLOC2
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT
@@ -51,6 +54,9 @@ C.........  This module contains the lists of unique inventory information
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NOZ, NEF, NCE, NRE, NRP, 
      &                     NPPOL, NSRC, NC1, NC2, NCHARS 
+
+C.........  This module is for mobile-specific data
+        USE MODMOBIL, ONLY: IVTIDLST, CVTYPLST, NVTYPE
 
         IMPLICIT NONE
 
@@ -62,8 +68,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2     CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN
+        INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVINT, ENVYN
+        EXTERNAL        CRLF, ENVINT, ENVYN, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: NRAWBP   ! no. raw recs x pol/act
@@ -99,15 +106,16 @@ C...........   Other local variables
         REAL            EMIST       !  total old and new emissions
         REAL            RIMISS3     !  real typed integer missing value
 
-        LOGICAL         A2PFLAG           ! true: using area-to-point processing
+        LOGICAL         ACTFLAG           ! true: current pollutant is activity
         LOGICAL         DFLAG             ! true: if should error on duplicates
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
         LOGICAL      :: CE_100_FLAG  = .FALSE. ! true: control eff of 100 found
         LOGICAL      :: RE_ZERO_FLAG = .FALSE. ! true: rule effective of 0 found
         LOGICAL      :: RP_ZERO_FLAG = .FALSE. ! true: rule penetration of 0 found
 
-        CHARACTER*256   BUFFER      !  input file line buffer
-        CHARACTER*256   MESG        !  message buffer 
+        CHARACTER(LEN=ALLLEN3) TSRC        !  tmp source information 
+        CHARACTER(LEN=256)     BUFFER      !  input file line buffer
+        CHARACTER(LEN=256)     MESG        !  message buffer 
 
         CHARACTER*16 :: PROGNAME = 'PROCINVEN' ! program name
 
@@ -122,13 +130,47 @@ C.........  Get settings from the environment
         MXERR  = ENVINT( ERRSET  , ' ', 100, I )
         MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
-        IF( YDEV > 0 ) A2PFLAG = .TRUE.
-
 C.........  Allocate memory for sorted inventory arrays
-        ALLOCATE( CSOURC( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+        ALLOCATE( IFIP( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
         ALLOCATE( NPCNT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
+        ALLOCATE( CSCC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
+        ALLOCATE( CSOURC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+        
+        SELECT CASE( CATEGORY )
+        CASE( 'AREA' )
+            ALLOCATE( XLOCA( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
+            ALLOCATE( YLOCA( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
+            ALLOCATE( CELLID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
+        CASE( 'MOBILE' )
+            ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
+            ALLOCATE( IVTYPE( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
+            ALLOCATE( CLINK( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
+            ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
+            ALLOCATE( XLOC1( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
+            ALLOCATE( YLOC1( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOC1', PROGNAME )
+            ALLOCATE( XLOC2( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
+            ALLOCATE( YLOC2( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
+        CASE( 'POINT' )
+!            ALLOCATE( IDIU( NSRC ), STAT=IOS )
+!            CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
+!            ALLOCATE( IWEK( NSRC ), STAT=IOS )
+!            CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
+        END SELECT
 
 C.........  Loop through sources to store sorted arrays
 C           for output to I/O API file.
@@ -138,15 +180,69 @@ C.........  Keep case statement outside the loops to speed processing
 
              DO I = 1, NRAWSRCS
 
-                S = SRCIDA( I )
-                CSOURC( S ) = CSOURCA( I )
+                 S = SRCIDA( I )
+                 TSRC = CSOURCA( I )
+                
+                 IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
+                 CSCC( S ) = TSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )
+                 CSOURC( S ) = TSRC
 
+            END DO
+            
+            XLOCA = BADVAL3   ! array
+            YLOCA = BADVAL3   ! array
+            CELLID = 0        ! array
+
+        CASE( 'MOBILE' )
+        
+            DO I = 1, NRAWSRCS
+            
+                S = SRCIDA( I )
+                TSRC = CSOURCA( I )
+                
+                IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
+                IRCLAS( S ) = 
+     &              STR2INT( TSRC( RWTPOS3:RWTPOS3+RWTLEN3-1 ) )
+                IVTYPE( S ) = 
+     &              STR2INT( TSRC( VIDPOS3:VIDPOS3+VIDLEN3-1 ) )
+                CSCC( S ) = TSRC( MSCPOS3:MSCPOS3+SCCLEN3-1 )
+                CLINK( S ) = TSRC( LNKPOS3:LNKPOS3+LNKLEN3-1 )
+                CSOURC( S ) = TSRC
+
+C.................  Set vehicle type based on vehicle ID                
+                DO J = 1, NVTYPE
+                    IF( IVTYPE( S ) == IVTIDLST( J ) ) EXIT
+                END DO
+                
+                CVTYPE( S ) = CVTYPLST( J )
+                
+            END DO
+            
+            XLOC1 = BADVAL3   ! array
+            YLOC1 = BADVAL3   ! array
+            XLOC2 = BADVAL3   ! array
+            YLOC2 = BADVAL3   ! array
+
+        CASE( 'POINT' )
+        
+            DO I = 1, NRAWSRCS
+            
+                S = SRCIDA( I )
+                TSRC = CSOURCA( I )
+                
+                IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
+!                IDIU( S )
+!                IWEK( S )
+                CSCC( S ) = TSRC( CH4POS3:CH4POS3+SCCLEN3-1 )
+                
+                CSOURC( S ) = TSRC
+            
             END DO
 
         END SELECT
 
 C.........  Deallocate per-source unsorted arrays
-        DEALLOCATE( CSOURCA )
+        DEALLOCATE( CSOURCA, SRCIDA )
 
 C.........  Allocate memory for sorted inventory data
         ALLOCATE( POLVAL( NRAWBP,NPPOL ), STAT=IOS )
@@ -228,33 +324,45 @@ C.............  Skip rest of loop if duplicates are not allowed
                 PCAS   = CASNUM
                 CYCLE
             END IF
+
+C.............  Check if current pollutant is an activity
+            ACTFLAG = .FALSE.
+            IF( INVSTAT( POLCOD ) < 0 ) ACTFLAG = .TRUE.
             
 C.............  Reset emissions values to zero, if it's negative
             IF ( POLVLA( J, NEM ) < 0 .AND.
-     &           POLVLA( J, NEM ) > IMISS3 ) THEN
+     &           POLVLA( J, NEM ) > AMISS3 ) THEN
                 POLVLA( J, NEM ) = 0.
 
                 IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                    MESG = 'WARNING: Negative annual data reset' //
-     &                     'to zero for:' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    IF( ACTFLAG ) THEN
+                        MESG = 'WARNING: Negative inventory data' //
+     &                         'reset to zero for:' // CRLF() //
+     &                         BLANK5 // BUFFER( 1:L2 )
+                    ELSE
+                        MESG = 'WARNING: Negative annual data reset' //
+     &                         'to zero for:' //
+     &                          CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    END IF
                     CALL M3MESG( MESG )
                     NWARN = NWARN + 1
                 END IF
             END IF
-                
-            IF ( POLVLA( J, NOZ ) < 0 .AND.
-     &           POLVLA( J, NOZ ) > IMISS3 ) THEN
-                POLVLA( J, NOZ ) = 0.
 
-                IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
-                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                    MESG = 'WARNING: Negative seasonal data ' //
-     &                     'reset to zero for:' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-                    NWARN = NWARN + 1
+            IF( .NOT. ACTFLAG ) THEN                
+                IF ( POLVLA( J, NOZ ) < 0 .AND.
+     &               POLVLA( J, NOZ ) > AMISS3 ) THEN
+                    POLVLA( J, NOZ ) = 0.
+    
+                    IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
+                        CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                        MESG = 'WARNING: Negative seasonal data ' //
+     &                         'reset to zero for:' //
+     &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
                 END IF
             END IF
 
@@ -308,7 +416,13 @@ C                   statement is for new pollutants
                 K = K + 1
 
                 POLVAL( K, NEM ) = POLVLA( J, NEM )
-                POLVAL( K, NOZ ) = POLVLA( J, NOZ )
+                
+                IF( .NOT. ACTFLAG ) THEN
+                    POLVAL( K, NOZ ) = POLVLA( J, NOZ )
+                ELSE
+                    POLVAL( K, NOZ ) = BADVAL3
+                END IF
+                    
                 IF( NCE > 0 ) POLVAL( K, NCE ) = POLVLA( J, NCE )
                 IF( NRE > 0 ) POLVAL( K, NRE ) = POLVLA( J, NRE )
                 IF( NEF > 0 ) POLVAL( K, NEF ) = POLVLA( J, NEF )
@@ -333,15 +447,17 @@ C               or activity and use weighted average for control factors
                     POLVAL( K, NEM ) = EMISO + EMISN
                 END IF
 
-                IF( POLVAL( K, NOZ ) >= 0. ) THEN
-                    EMISN_OZ = POLVLA( J, NOZ )
-                    EMISO_OZ = POLVAL( K, NOZ )
-                    POLVAL( K, NOZ ) = EMISO_OZ + EMISN_OZ
-
-C.....................  Use ozone season emissions for weighting if 
-C                       annual emissions are not available.
-                    IF( EMISN == 0. ) EMISN = EMISN_OZ
-                    IF( EMISO == 0. ) EMISO = EMISO_OZ
+                IF( .NOT. ACTFLAG ) THEN
+                    IF( POLVAL( K, NOZ ) >= 0. ) THEN
+                        EMISN_OZ = POLVLA( J, NOZ )
+                        EMISO_OZ = POLVAL( K, NOZ )
+                        POLVAL( K, NOZ ) = EMISO_OZ + EMISN_OZ
+    
+C.........................  Use ozone season emissions for weighting if 
+C                           annual emissions are not available.
+                        IF( EMISN == 0. ) EMISN = EMISN_OZ
+                        IF( EMISO == 0. ) EMISO = EMISO_OZ
+                    END IF
                 END IF
 
 C.................  Compute inverse only once
@@ -430,8 +546,8 @@ C           effectiveness, and rule penetration
         END IF
 
 C.........  Deallocate memory for unsorted pollutant arrays
-        DEALLOCATE( POLVLA, SRCIDA, IPOSCODA, INDEXA, 
-     &              INRECA, TPFLGA, ICASCODA )
+        DEALLOCATE( POLVLA, IPOSCODA, INDEXA, 
+     &              INRECA, ICASCODA )
 
 C.........  Use sign of INVSTAT and value of TMPSTAT to set type (pol/act) and
 C           indicator of whether it's present or not
