@@ -522,7 +522,8 @@ C     GOTO 99
 C 
    99 IF(TOTERR.EQ.0) THEN 
         EFLAG = .FALSE.
-        INQUIRE(FILE='M6ERROR.TXT',EXIST=FEXIST)  ! Ensure file exists before trying to delete it 
+        M6FILE = TRIM( M6DIR ) // '/' // 'M6ERROR.TXT'
+        INQUIRE(FILE=M6FILE,EXIST=FEXIST)  ! Ensure file exists before trying to delete it 
         IF(FEXIST) CLOSE (IOUERR,STATUS='DELETE') 
       ELSE 
       	EFLAG = .TRUE.
