@@ -1,9 +1,9 @@
 
-        SUBROUTINE RDINVEN( FDEV, FNAME, MXIDAT, INVDCOD, INVDNAM, 
-     &                      FILFMT, NRAWBP, PRATIO, TFLAG )
+        SUBROUTINE RDINVEN( FDEV, VDEV, SDEV, FNAME, MXIDAT, INVDCOD, 
+     &                      INVDNAM, FILFMT, NRAWBP, PRATIO, TFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line 132
+C  subroutine body starts at line 131
 C
 C  DESCRIPTION:
 C      This subroutine controls reading an inventory file for any source 
@@ -18,7 +18,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C      Subroutines: I/O API subroutines, CHECKMEM, FMTCSRC, RDEMSPT, 
 C                   RDEPSPT, RDIDAPT, RDLINES
-C      Functions: I/O API functions, GETFLINE, GETFORMT, GETIDASZ, GETINVYR,
+C      Functions: I/O API functions, GETFLINE, GETFORMT, GETINVYR,
 C         GETISIZE
 C
 C  REVISION  HISTORY:
@@ -30,7 +30,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -51,6 +51,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC 
 
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -70,22 +73,22 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         INTEGER         GETFLINE
         INTEGER         GETFORMT
-        INTEGER         GETIDASZ
         INTEGER         GETINVYR
-        INTEGER         GETISIZE
         INTEGER         JUNIT
 
-        EXTERNAL        CRLF, ENVYN, GETFLINE, GETFORMT, GETIDASZ, 
-     &                  GETINVYR, GETISIZE, JUNIT
+        EXTERNAL        CRLF, ENVYN, GETFLINE, GETFORMT,  
+     &                  GETINVYR, JUNIT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV              ! unit no. of inv file
+        INTEGER     , INTENT (IN) :: VDEV              ! unit no. of vmtmix file
+        INTEGER     , INTENT (IN) :: SDEV              ! unit no. of speeds file
         CHARACTER(*), INTENT (IN) :: FNAME             ! logical name of file
         INTEGER     , INTENT (IN) :: MXIDAT            ! max no. inv pols/actvty
         INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) ! 5-dig pol/act codes
         CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) ! name of pols/actvtys
         INTEGER     , INTENT(OUT) :: FILFMT            ! file format code
-        INTEGER     , INTENT(OUT) :: NRAWBP            ! no.raw records x pol
+        INTEGER     , INTENT(OUT) :: NRAWBP            ! no. raw records x pol
         REAL        , INTENT(OUT) :: PRATIO            ! position ratio
         LOGICAL     , INTENT(OUT) :: TFLAG             ! true: PTREF output
 
@@ -130,7 +133,7 @@ C   begin body of subroutine RDINVEN
 
         FLEN   = LEN_TRIM( FNAME )
 
-C.........  Determine file format of PTINV file
+C.........  Determine file format of inventory file
         INVFMT = GETFORMT( FDEV )
 
 C.........   Initialize variables for keeping track of dropped emissions
@@ -145,7 +148,7 @@ C.............  Generate message for GETFLINE and RDLINES calls
             MESG = CATEGORY( 1:CATLEN ) // ' inventory file, ' //
      &             FNAME( 1:FLEN ) // ', in list format'
 
-C.............  Get number of lines of PTINV file in list format
+C.............  Get number of lines of inventory files in list format
             NLINE = GETFLINE( FDEV, MESG )
 
 C.............  Allocate memory for storing contents of list-format'd PTINV file
@@ -164,7 +167,7 @@ C.........  If not list format, then set FILFMT to the type of file (IDA,EPS)
 
             FILFMT = INVFMT
  
-        ENDIF
+        END IF
 
 C.........  Get setting for interpreting weekly temporal profiles from the
 C           environment. Default is false for non-EMS-95 and true for EMS-95
@@ -209,27 +212,32 @@ C.........  Set default inventory characteristics (declared in MODINFO) used
 C           by the IDA and EPS formats, including NPPOL
         CALL INITINFO( FILFMT )
 
+C.........  Read vehicle mix, if it is available
+C.........  The tables are passed through MODMOBIL and MODXREF
+        IF( VDEV .GT. 0 ) THEN
+            CALL RDVMIX( VDEV )
+        END IF
+
+C.........  Read speeds info, if it is available
+C.........  The tables are passed through MODMOBIL and MODXREF
+        IF( SDEV .GT. 0 ) THEN
+c            CALL RDSPEED( SDEV )
+c note: write this routine
+        END IF
+
 C.........  Get the total number of records (Srcs x Non-missing pollutants)
-C.........  Also, make sure file format is known
+C.........  Depending on the format, NRAWIN can equal NEDIM1, or 
+C           NEDIM1 can equal NRAWIN * NIPPA. This second case does not hold
+C           true if there are multiple input files from list format, with 
+C           different number of data variables in each file.
+        CALL GETISIZE( FDEV, CATEGORY, INVFMT, NRAWIN, NEDIM1 ) ! Est records
 
-        IF( FILFMT .EQ. IDAFMT ) THEN
-
-            NRAWIN = GETIDASZ( FDEV, CATEGORY, 1 ) ! No. actual records
-            NEDIM1 = GETIDASZ( FDEV, CATEGORY, 2 ) ! No. actual records x pols
-
-        ELSEIF( FILFMT .EQ. EPSFMT .OR. 
-     &          FILFMT .EQ. EMSFMT      ) THEN
-
-            NRAWIN = GETISIZE( FDEV, CATEGORY, INVFMT ) ! Estimate
-            NEDIM1 = NRAWIN
-
-        ELSE
-            WRITE( MESG,94010 ) 'INTERNAL ERROR: File format ', FILFMT, 
-     &             'not known by program "' // PROGNAME // '"'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-        ENDIF 
+C.........  For EMS-95 mobile sources, need to multiply the sizes by the
+C           number of vehicle types
+        IF( CATEGORY .EQ. 'MOBILE' .AND. FILFMT .EQ. EMSFMT ) THEN
+            NRAWIN = NRAWIN * NVTYPE
+            NEDIM1 = NEDIM1 * NVTYPE
+        END IF
 
 C.........  Set ratio of NRAWIN and NEDIM1 to use in saving file source arrays
 C           which are in different data structures for EMS-95 ibput than IDA
@@ -247,7 +255,7 @@ C           based on the source category and type of inventory being input
 C.........   Initialize sorting index
         DO I = 1, NEDIM1
             INDEXA( I ) = I
-        ENDDO
+        END DO
 
 C.........  Initialize pollutant-specific values as missing
         POLVLA = AMISS3  ! array
@@ -289,7 +297,7 @@ c                CALL RDEPSMV(  )
 C                CALL RDEPSPT(  )
 
 c                CBLRIDA = BLRBLNK3! Internal to rdepspt!
-c                IORISA  = IMISS3
+c                CORISA  = ORSBLNK3
 
             END SELECT
 
@@ -311,14 +319,14 @@ C.........  Includes EMS-95 format
                 IF( I .GT. 0 ) THEN
                     INY = I
                     CYCLE
-                ENDIF
+                END IF
 
 C.................  Final check to ensure the inventory year is set when needed
                 IF( INY .LT. 0 .AND. FILFMT .EQ. EMSFMT ) THEN  
                     MESG = 'Must set inventory year using ' //
      &                     'INVYEAR packet for EMS-95 input.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
+                END IF
      
 C.................  Store path of file name (if no INVYEAR packet on this line)
                 INFILE = LINE
@@ -366,7 +374,7 @@ c                        CALL RDEPSMV(  )
 C                        CALL RDEPSPT(  )
 
 C                        CBLRIDA = BLRBLNK3  ! Internal to rdepspt!
-C                        IORISA  = IMISS3
+C                        CORISA  = ORSBLNK3
 
                     END SELECT
 
@@ -402,8 +410,18 @@ C                       variables in the module MODSOURC
      &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
      &                                NDROP, EDROP )
 
+C.....................  The mobile call can be for EMS-95 format or for
+C                       a list-formatted format that is similar and that was
+C                       used in the SMOKE prototype
                     CASE( 'MOBILE' )
-c                        CALL RDEMSMV(  )
+                        CALL RDEMSMB( EDEV, INY, NRAWIN, NEDIM1, MXIDAT,
+     &                                WKSET, INVDCOD, INVDNAM, NRAWOUT, 
+     &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
+     &                                NDROP, EDROP  )
+
+c note: Will have set a flag above so that after the VMT data are read
+C    n: in, the process of converting the SCCs and expanding using the
+C    n: vehicle mix will take place.
 
                     CASE( 'POINT' )
                         TFLAG = .TRUE.
@@ -424,10 +442,10 @@ c                        CALL RDEMSMV(  )
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                     ELSEIF( EFLAG ) THEN
-                        MESG = 'ERROR reading EMS-95 inventory files.'
+                        MESG = 'Problem reading EMS-95 inventory files.'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                    ENDIF
+                    END IF
 
                 ELSE  ! File format not recognized	
 
@@ -436,9 +454,9 @@ c                        CALL RDEMSMV(  )
      &                     INFILE( 1:LEN_TRIM( INFILE ) )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                ENDIF
+                END IF
 
-            ENDDO     ! End of loop through list-formatted PTINV file
+            END DO     ! End of loop through list-formatted PTINV file
 
 C.............  Set exact pollutant times records
             NRAWBP = NRAWOUT
@@ -461,9 +479,9 @@ C.........  Report how many records were dropped and the numbers involved
                     WRITE( MESG,94060 ) 
      &                     BLANK16 // INVDNAM( I ) // ': ', EDROP( I )
                     CALL M3MSG2( MESG )
-                ENDIF
+                END IF
 
-            ENDDO
+            END DO
 
         END IF          !  if ndrop > 0
 
