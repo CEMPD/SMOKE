@@ -230,11 +230,10 @@ C.........   Allocate and initialize arrays for storing hourly input file info
 C.........   Read lines from hourly emissions list file
         IF( TDEV .GT. 0 ) THEN
             CALL RDLINES( TDEV, INLGCNAM//' file', NPTLINES, PTMPLIST )
+            CLOSE( TDEV )
         ELSE
             PTMPLIST( 1 ) = PTMPFILE
         END IF
-
-        CLOSE( TDEV )
 
         MESG = 'Checking hourly emissions files...'
         CALL M3MSG2( MESG )
