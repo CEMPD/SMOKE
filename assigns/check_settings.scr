@@ -259,7 +259,7 @@ setenv MRG_MULTI_CNTL  N
 # Parse character strings so can loop through them. Then loop through arrays 
 # and set appropriate variables
 if ( $?MRG_SOURCE ) then
-   set len1 = `echo $MRG_SOURCE | wc -m`
+   set len1 = `echo $MRG_SOURCE | wc -c`
 
    if ( $len1 > 0 ) @ len1 = $len1 - 1
 
@@ -296,7 +296,7 @@ if ( $?MRG_SOURCE ) then
 endif
 
 if ( $?MRG_CTLMAT_MULT ) then
-   set len = `echo $MRG_CTLMAT_MULT | wc -m`
+   set len = `echo $MRG_CTLMAT_MULT | wc -c`
 
    if ( $len > 0 ) @ len = $len - 1
 
@@ -330,7 +330,7 @@ if ( $?MRG_CTLMAT_MULT ) then
 endif
 
 if ( $?MRG_CTLMAT_ADD ) then
-   set len = `echo $MRG_CTLMAT_ADD | wc -m`
+   set len = `echo $MRG_CTLMAT_ADD | wc -c`
 
    if ( $len > 0 ) @ len = $len - 1
 
@@ -364,7 +364,7 @@ if ( $?MRG_CTLMAT_ADD ) then
 endif
 
 if ( $?MRG_CTLMAT_REAC ) then
-   set len = `echo $MRG_CTLMAT_REAC | wc -m`
+   set len = `echo $MRG_CTLMAT_REAC | wc -c`
 
    if ( $len > 0 ) @ len = $len - 1
 
