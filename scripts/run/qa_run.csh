@@ -39,79 +39,6 @@ endif
 # Ensure that SMK_SOURCE is defined
 if ( $?SMK_SOURCE ) then
 
-   # Set up input environment variables, with the help of the Assigns file
-   if ( $SMK_SOURCE == 'A' || $SMK_SOURCE == 'M' || $SMK_SOURCE == 'P' ) then
-
-      # Save existing values of run settings
-      if ( $?RUN_SMKINVEN ) then
-	 set run_smkinven = $RUN_SMKINVEN
-      endif
-
-      if ( $?RUN_GRDMAT ) then
-	 set run_grdmat = $RUN_GRDMAT
-      endif
-
-      if ( $?RUN_SPCMAT ) then
-	 set run_spcmat = $RUN_SPCMAT
-      endif
-
-      if ( $?RUN_TEMPORAL ) then
-	 set run_temporal = $RUN_TEMPORAL
-      endif
-
-      if ( $?RUN_LAYPOINT ) then
-	 set run_laypoint = $RUN_LAYPOINT
-      endif
-
-      # Temporarily set run settings to get input file names for Smkreport
-      setenv RUN_SMKINVEN Y
-      setenv RUN_GRDMAT   Y
-      setenv RUN_SPCMAT   Y
-      setenv RUN_TEMPORAL Y
-
-      if ( $SMK_SOURCE == 'P' ) then
-	 setenv RUN_LAYPOINT Y
-      endif
-
-      # Invoke the Assigns file, if it is defined
-      if ( $?ASSIGNS_FILE ) then
-	 source $ASSIGNS_FILE
-
-      else
-	 echo 'SCRIPT ERROR: Environment variable ASSIGNS_FILE is not set,'
-	 echo '              but it is needed to use the qa_run.csh script!'
-	 set exitstat = 1
-
-      endif
-
-      # If previous values of were set, restore E.V. settings
-      if ( $?run_smkinven ) then
-	 setenv RUN_SMKINVEN $run_smkinven
-      endif
-
-      if ( $?run_grdmat ) then
-	 setenv RUN_GRDMAT $run_grdmat
-      endif
-
-      if ( $?run_spcmat ) then
-	 setenv RUN_SPCMAT $run_spcmat
-      endif
-
-      if ( $?run_temporal ) then
-	 setenv RUN_TEMPORAL $run_temporal
-      endif
-
-      if ( $?run_laypoint ) then
-	 setenv RUN_LAYPOINT $run_laypoint
-      endif
-
-   # Set up for biogenics...   
-   else
-
-      # Nothing for now
-
-   endif
-
 # SMK_SOURCE is not defined   
 else
    echo 'SCRIPT ERROR: Environment variable SMK_SOURCE is not set,'
@@ -121,7 +48,8 @@ else
 endif
 
 # Check if QA_TYPE variable is set
-if ( ! $?QA_TYPE ) then
+if ( $?QA_TYPE ) then
+else
 
    echo 'SCRIPT ERROR: Environment variable QA_TYPE is not set,'
    echo '              but it is needed to use the qa_run.csh script!'

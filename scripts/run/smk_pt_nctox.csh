@@ -146,13 +146,13 @@ setenv RUN_PART1 N
 ## Loop through days to run Temporal
 #
 setenv RUN_PART2 Y
-set dat = 0
+set day = 0
 set cnt = 0
-while ( $cnt < $epi_nday )
+while ( $cnt < $EPI_NDAY )
 
-   @ $cnt = $cnt + 1
+   @ cnt = $cnt + $NDAYS
    setenv DAY_COUNT $cnt
-   @ $day = $EPI_STDATE + $cnt
+   @ day = $EPI_STDATE + $cnt
    setenv G_STDATE  $day
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
    source smk_run.csh     # Run programs
@@ -170,13 +170,13 @@ setenv RUN_PART3 Y
 
 ## Loop through dats to run Laypoint and Smkmerge
 setenv RUN_PART4 Y
-set dat = 0
+set day = 0
 set cnt = 0
-while ( $cnt < $epi_nday )
+while ( $cnt < $EPI_NDAY )
 
-   @ $cnt = $cnt + 1
+   @ cnt = $cnt + $NDAYS
    setenv DAY_COUNT $cnt
-   @ $day = $EPI_STDATE + $cnt
+   @ day = $EPI_STDATE + $cnt
    setenv G_STDATE  $day
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
    source smk_run.csh     # Run programs

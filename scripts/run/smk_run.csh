@@ -722,7 +722,7 @@ if ( $?RUN_SMKMERGE ) then
       else
          set status = 0
       endif
-      if ( $status == 0 ) then   ! mole
+      if ( $status == 0 ) then   # mole
          if ( $?ASMAT_L ) then
             setenv ASMAT $ASMAT_L
          endif
@@ -736,7 +736,7 @@ if ( $?RUN_SMKMERGE ) then
             setenv PSMAT $PSMAT_L
          endif
 
-      else                       ! mass
+      else                       # mass
          if ( $?ASMAT_S ) then
             setenv ASMAT $ASMAT_S
          endif
