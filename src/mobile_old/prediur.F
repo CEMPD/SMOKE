@@ -693,6 +693,9 @@ C.....................  Round max temperature to nearest on interval
      &                               ( FTOC * ( MAXT_MIN - 32.0 ) )
                         TMAX = MAXT_MIN
 
+C.....................  Set to one step *below* max, because we'll be using
+C                       the next highest TMMI to interpolate, so we can
+C                       get the correct temperature this way.
                     ELSEIF( TF .GT. MAXT_MAX ) THEN
                         WRITE( MESG, 94020 )
      &                         'Setting TKMAX for source',
@@ -701,7 +704,7 @@ C.....................  Round max temperature to nearest on interval
 
                         TKMAX( S ) = CTOK + 
      &                               ( FTOC * ( MAXT_MAX - 32.0 ) )
-                        TMAX = MAXT_MAX
+                        TMAX = MAXT_MAX - TINTV
 
                     ELSE  ! Note: round DOWN
                         TMAX = MAXT_MIN + TINTV *
