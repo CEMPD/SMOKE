@@ -1,0 +1,19 @@
+
+C.........  STATEMENT FUNCTION:  floating point "definitely unequal"
+C.........     TRUE iff (PP,QQ) are significantly different (compares square of
+C.........     normalized difference against square of tolerance)        
+
+        LOGICAL         FLTERR
+        REAL            P, Q
+
+        FLTERR( P, Q ) = 
+     &      ( (P - Q)**2  .GT.  1.0E-12*( P*P + Q*Q + 1.0E-5 ) )
+
+C.........  STATEMENT FUNCTION: double float "definately unequal"
+
+        LOGICAL         DBLERR
+        REAL*8          PD, QD
+
+        DBLERR( PD,QD ) = 
+     &    ( ( PD - QD )**2 .GT. 1.0D-12*( PD*PD + QD*QD + 1.0D-5 ) ) 
+

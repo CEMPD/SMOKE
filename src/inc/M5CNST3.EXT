@@ -1,0 +1,165 @@
+
+C Version "@(#)$Id$ $Source$ $Date$ "
+
+C....................................................................
+C  INCLUDE FILE  M5CNST3.EXT
+C
+C  CONTAINS:  
+C       dimensioning parameters for EDSS Mobile Emissions Prototype
+C
+C  DEPENDENT UPON:  None
+C
+C  REVISION HISTORY:
+C       Prototype 1/96 by Marc Houyoux
+C       Updates 9/96 by Marc Houyoux
+C....................................................................
+
+C.........  Dimensioning parameters
+        INTEGER    NM5VPOL          ! Maximum number of Mobile5 volatile pols
+        INTEGER    MXM5EPR          ! Maximum number of emission processes
+        INTEGER    MXM5NDI          ! Maximum number of non-diurnal emis types
+        INTEGER    MXM5DIU          ! Maximum number of diurnal emis types
+        INTEGER    MXM5EFS          ! Maximum number of emis types for one run
+        INTEGER    MXM5ALL          ! Maximum number of all emis types
+        INTEGER    MXM5SCEN         ! Maximum number of scenarios in one M5 run
+        INTEGER    MXM5VTYP         ! Max no of vehicle types in mobile 5
+
+        PARAMETER( NM5VPOL  = 6
+     &           , MXM5EPR  = 9
+     &           , MXM5NDI  = 7
+     &           , MXM5DIU  = 4
+     &           , MXM5EFS  = MXM5NDI + MXM5DIU
+     &           , MXM5ALL  = 2 + NM5VPOL*( MXM5NDI-2 ) + 
+     &                            NM5VPOL*MXM5DIU 
+     &           , MXM5SCEN = 12
+     &           , MXM5VTYP = 9
+     &           )
+
+C.........  Hydrocarbon type (all possible types) - 1st 5 in MOBILE5 order
+        CHARACTER*3 M5VPOLS( NM5VPOL )
+        DATA M5VPOLS / 'THC', 'NMH', 'VOC', 'TOG', 'NMO', 'ROG' /
+
+C.........  Emissions processes (all possible types)
+        CHARACTER*3 MVPROCS( MXM5EPR )
+        DATA MVPROCS / 'EXH', 'EVP', 'RNL', 'RST', 'RFL',
+     &                 'WDL', 'DNL', 'HOT', 'CRC'         /
+
+C.........  Mobile5 vehicle types
+        CHARACTER(LEN=VTPLEN3) M5VTYPES( MXM5VTYP )
+        DATA M5VTYPES / 'LDGV', 'LDGT1', 'LDGT2', 'HDGV', 'LDDV',
+     &                  'LDDT', 'HDDV' , 'MC'   , 'LDGT' /
+
+C.........  Emissions factors names list of all possible types
+
+        CHARACTER*8  M5EFLST ( MXM5ALL )
+        DATA M5EFLST  / 'EXH__CO' , 'EXH__NOX', 
+     &                  'EXH__THC', 'EXH__NMH',
+     &                  'EXH__VOC', 'EXH__TOG', 
+     &                  'EXH__NMO', 'EXH__ROG', 
+     &                  'EVP__THC', 'EVP__NMH', 
+     &                  'EVP__VOC', 'EVP__TOG', 
+     &                  'EVP__NMO', 'EXH__ROG', 
+     &                  'RNL__THC', 'RNL__NMH', 
+     &                  'RNL__VOC', 'RNL__TOG', 
+     &                  'RNL__NMO', 'EXH__ROG', 
+     &                  'RST__THC', 'RST__NMH', 
+     &                  'RST__VOC', 'RST__TOG', 
+     &                  'RST__NMO', 'EXH__ROG', 
+     &                  'RFL__THC', 'RFL__NMH', 
+     &                  'RFL__VOC', 'RFL__TOG', 
+     &                  'RFL__NMO', 'EXH__ROG', 
+     &                  'WDL__THC', 'WDL__NMH', 
+     &                  'WDL__VOC', 'WDL__TOG', 
+     &                  'WDL__NMO', 'EXH__ROG', 
+     &                  'DNL__THC', 'DNL__NMH', 
+     &                  'DNL__VOC', 'DNL__TOG', 
+     &                  'DNL__NMO', 'EXH__ROG', 
+     &                  'HOT__THC', 'HOT__NMH', 
+     &                  'HOT__VOC', 'HOT__TOG', 
+     &                  'HOT__NMO', 'EXH__ROG', 
+     &                  'CRC__THC', 'CRC__NMH', 
+     &                  'CRC__VOC', 'CRC__TOG', 
+     &                  'CRC__NMO', 'EXH__ROG'
+     &               /
+
+C.........  Flag for identifying diurnal emission types
+        LOGICAL  M5DIURNL( MXM5ALL ) 
+        DATA M5DIURNL / 32 * .FALSE., 24 * .TRUE. /
+
+C.........  Emissions factors units for all factors
+
+        CHARACTER*16 M5EFUNT( MXM5ALL )
+        DATA M5EFUNT / 'g/mi', 'g/mi',  
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g'   , 'g'   , 'g'   , 'g'   , 'g'   , 'g'   ,
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi', 'g/mi'
+     &               /
+
+C.........  Emissions factors descriptions for all factors
+
+        CHARACTER*80 M5EFDSC( MXM5ALL )
+        DATA M5EFDSC / 'EFs for Exhaust CO',
+     &                 'EFs for Exhaust NOX',
+     &                 'EFs for Exhaust THC',
+     &                 'EFs for Exhaust NMHC',
+     &                 'EFs for Exhaust VOC',
+     &                 'EFs for Exhaust TOG',
+     &                 'EFs for Exhaust NMOG',
+     &                 'EFs for Exhaust ROG',
+     &                 'EFs for Evaporative THC',
+     &                 'EFs for Evaporative NMHC',
+     &                 'EFs for Evaporative VOC',
+     &                 'EFs for Evaporative TOG',
+     &                 'EFs for Evaporative NMOG',
+     &                 'EFs for Evaporative ROG',
+     &                 'EFs for Running THC',
+     &                 'EFs for Running NMHC',
+     &                 'EFs for Running VOC',
+     &                 'EFs for Running TOG',
+     &                 'EFs for Running NMOG',
+     &                 'EFs for Running ROG',
+     &                 'EFs for Resting THC',
+     &                 'EFs for Resting NMHC',
+     &                 'EFs for Resting VOC',
+     &                 'EFs for Resting TOG',
+     &                 'EFs for Resting NMOG',
+     &                 'EFs for Resting ROG',
+     &                 'EFs for Refueling THC',
+     &                 'EFs for Refueling NMHC',
+     &                 'EFs for Refueling VOC',
+     &                 'EFs for Refueling TOG',
+     &                 'EFs for Refueling NMOG',
+     &                 'EFs for Refueling ROG',
+     &                 'EFs for Weighted Diurnal THC',
+     &                 'EFs for Weighted Diurnal NMHC',
+     &                 'EFs for Weighted Diurnal VOC',
+     &                 'EFs for Weighted Diurnal TOG',
+     &                 'EFs for Weighted Diurnal NMOG',
+     &                 'EFs for Weighted Diurnal ROG',
+     &                 'EFs for Diurnal THC',
+     &                 'EFs for Diurnal NMHC',
+     &                 'EFs for Diurnal VOC',
+     &                 'EFs for Diurnal TOG',
+     &                 'EFs for Diurnal NMOG',
+     &                 'EFs for Diurnal ROG',
+     &                 'EFs for Hot soak evaporative THC',
+     &                 'EFs for Hot soak evaporative NMHC',
+     &                 'EFs for Hot soak evaporative VOC',
+     &                 'EFs for Hot soak evaporative TOG',
+     &                 'EFs for Hot soak evaporative NMOG',
+     &                 'EFs for Hot soak evaporative ROG',
+     &                 'EFs for Crankcase THC',
+     &                 'EFs for Crankcase NMHC',
+     &                 'EFs for Crankcase VOC',
+     &                 'EFs for Crankcase TOG',
+     &                 'EFs for Crankcase NMOG',
+     &                 'EFs for Crankcase ROG'
+     &               /
+
+C................   end   M5CNST3.EXT   ....................................
