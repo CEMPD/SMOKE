@@ -215,7 +215,7 @@ C.......   Get file name; open input point sources, control definitions files
         IF ( RFLAG ) THEN
 
             TDEV = PROMPTFFILE( 
-     &           '...for TRACKING LIST, or "ALL"',
+     &           '...for TRACKING LIST, or "ALL", or "NONE"',
      &           .TRUE., .TRUE., 'TRACK', 'CTLPMAT' )
 
         END IF
@@ -1647,10 +1647,19 @@ C           modified EPS (with year)
      &                  SIC .NE. ISI3( S ) .AND.
      &                  SIC .NE. ISI2( S ) ) GO TO 142
 
-                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) GO TO 142
+                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                        GO TO 142
 
-                    IF ( TFLAG( S ) ) WRITE( RDEV,93020 ) 
-     &                     PNAME, YEAR, DYR, FIP, SIC, PRJFAC( S ), PFAC
+                    ELSEIF( PFLAG .AND. TFLAG( S ) )THEN
+                        WRITE( RDEV,93020 ) 
+     &                    PNAME, YEAR, DYR, IFIP( S ), ISIC( S ),
+     &                    PRJFAC( S ), PFAC
+
+                    ELSEIF( TFLAG( S ) ) THEN
+                        WRITE( RDEV,93030 ) 
+     &                    PNAME, IFIP( S ), ISIC( S ), PRJFAC( S ), PFAC
+
+                    ENDIF
 
                     PRJFAC( S ) = PFAC
 
@@ -1669,10 +1678,19 @@ C           modified EPS (with year)
      &                  SIC .NE. ISI3( S ) .AND.
      &                  SIC .NE. ISI2( S ) ) GO TO 143  ! n/a control
 
-                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) GO TO 143
+                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                        GO TO 143
 
-                    IF ( TFLAG( S ) ) WRITE( RDEV,93020 ) 
-     &                PNAME, YEAR, DYR, SID*1000, SIC, PRJFAC( S ), PFAC
+                    ELSEIF( PFLAG .AND. TFLAG( S ) )THEN
+                        WRITE( RDEV,93020 ) 
+     &                    PNAME, YEAR, DYR, IFIP( S ), ISIC( S ), 
+     &                    PRJFAC( S ), PFAC
+
+                    ELSEIF( TFLAG( S ) ) THEN
+                        WRITE( RDEV,93030 ) 
+     &                    PNAME, IFIP( S ), ISIC( S ), PRJFAC( S ), PFAC
+
+                    ENDIF
 
                     PRJFAC( S ) = PFAC
 
@@ -1688,10 +1706,19 @@ C           modified EPS (with year)
      &                  SIC .NE. ISI3( S ) .AND.
      &                  SIC .NE. ISI2( S ) ) GO TO 144  ! n/a control
 
-                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) GO TO 144
+                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                        GO TO 144
 
-                    IF ( TFLAG( S ) ) WRITE( RDEV,93020 )
-     &                     PNAME, YEAR, DYR, FIP, SIC, PRJFAC( S ), PFAC
+                    ELSEIF( PFLAG .AND. TFLAG( S ) )THEN
+                        WRITE( RDEV,93020 ) 
+     &                    PNAME, YEAR, DYR, IFIP( S ), ISIC( S ), 
+     &                    PRJFAC( S ), PFAC
+
+                    ELSEIF( TFLAG( S ) ) THEN
+                        WRITE( RDEV,93030 ) 
+     &                    PNAME, IFIP( S ), ISIC( S ), PRJFAC( S ), PFAC
+
+                    ENDIF
 
                     PRJFAC( S ) = PFAC
 
@@ -2629,6 +2656,9 @@ C...........   Formatted file I/O formats............ 93xxx
      &          3( F8.5, '~>', F8.5, : '; ' )  )
 
 93020   FORMAT( A, ':', I4, ' to ', I4, 1X, I5.5, 1X, I4,
+     &          3( F8.5, '~>', F8.5, : '; ' )  )
+
+93030   FORMAT( A, ':', 1X, I5.5, 1X, I4,
      &          3( F8.5, '~>', F8.5, : '; ' )  )
 
 
