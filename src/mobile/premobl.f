@@ -167,6 +167,7 @@ C...........   Other local variables:
         CHARACTER(LEN=256)     :: DUPNAME     !  name of overlapping met file
         CHARACTER(LEN=200)     :: TEMPDIR     !  directory for output files
         CHARACTER(LEN=14)      :: DTBUF       !  date buffer
+        CHARACTER(LEN=5)       :: INTBUF      !  integer buffer
         CHARACTER(LEN=300)     :: MESG        !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'PREMOBL'  !  program name
@@ -410,7 +411,8 @@ C.............  Skip any blank lines
             IF( CURFNM == ' ' ) CYCLE
 
 C.............  Assign and store logical file name
-            WRITE( CURLNM,94030 ) 'MET_FILE_', N
+            WRITE( INTBUF,* ) N
+            CURLNM = 'MET_FILE_' // ADJUSTL( INTBUF )
             METLOGS( N ) = CURLNM
 
 C.............  Set logical file name
