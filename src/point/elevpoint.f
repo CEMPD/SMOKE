@@ -621,8 +621,12 @@ C.........  Allocate memory for and save inventory groups in local arrays
         LOCSTAT = .FALSE.  
 
 C.........  Deallocate inventory groups so that these can be allocated 
-        DEALLOCATE( GRPGID, GRPLAT, GRPLON, GRPDM, GRPHT, GRPTK, 
-     &              GRPVE, GRPFL, GRPCNT )
+        IF ( ALLOCATED( GRPLAT ) ) THEN
+
+            DEALLOCATE( GRPLAT, GRPLON, GRPDM, GRPHT, GRPTK, 
+     &                  GRPVE, GRPFL, GRPCNT )
+
+        END IF
 
 C.........  Reallocate group arrays based on inventory groups, major, and 
 C           PinG settings.
