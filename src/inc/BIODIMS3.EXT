@@ -42,14 +42,12 @@ C.......   Chemical-species-related parameters:
       INTEGER   OVOC            !  bioem  subscript for OVOC
       INTEGER   NO              !  bioem  subscript for NO
       INTEGER   NNO             !  output em subscript for NO
-      INTEGER   NPAR            !  output em subscript for NO
-      INTEGER   NOLE            !  output em subscript for NO
-      INTEGER   NALD            !  output em subscript for NO
-      INTEGER   NISO            !  output em subscript for NO
+      INTEGER   NTERP           !  output em subscript for TERP
+      INTEGER   NOVOC           !  output em subscript for OVOC
+      INTEGER   NISO            !  output em subscript for ISOP
 
       PARAMETER ( BSPCS    = 4 ,   
      &            ISOP     = 1, MONO = 2, OVOC = 3, NO   = 4 )  
-C     &            NNO      = 1, NPAR = 2, NOLE = 3, NALD = 4, NISO = 5,
 
 C.......
 
