@@ -14,6 +14,8 @@ debug: grwinven.debug smkinven.debug
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
+.F.o:
+	$(FC) $(FFLAGS) -c -o $@ $<
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
