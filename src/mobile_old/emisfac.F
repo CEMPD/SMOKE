@@ -205,6 +205,10 @@ C...........   Other local variables
         INTEGER ITEMP                     ! Indicator of tmpr status for MOBILE5 
         INTEGER JYEAR                     ! year to calculate emission factors
         INTEGER MA, MB                    ! indicator for MOBILE5A or MOBILE5b packets
+        INTEGER MIMICHK                   ! for checking infile MINT_MIN
+        INTEGER MIMACHK                   ! for checking infile MINT_MAX
+        INTEGER MAMICHK                   ! for checking infile MAXT_MIN
+        INTEGER MAMACHK                   ! for checking infile MAXT_MAX
         INTEGER NTEMP                     ! Actual no. of temps for eval of EFs
         INTEGER P5( MXTMMI )              ! Dummy for reading EF-based TMMI vals
         INTEGER PSI                       ! Temporary PSI
@@ -632,6 +636,36 @@ C.............  Check volatile organic in this file is same as non-diurnal
                 CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
                   
             ENDIF
+
+C.............  Check that file min/max temperatures is same as compiled value
+            MIMICHK = STR2INT( FDESC3D( 2 )( 12:21 ) )
+            MIMACHK = STR2INT( FDESC3D( 3 )( 12:21 ) )
+            MAMICHK = STR2INT( FDESC3D( 4 )( 12:21 ) )
+            MAMACHK = STR2INT( FDESC3D( 5 )( 12:21 ) )
+
+            IF( MIMICHK .NE. MINT_MIN .OR.
+     &          MIMACHK .NE. MINT_MAX .OR.
+     &          MAMICHK .NE. MAXT_MIN .OR.
+     &          MAMACHK .NE. MAXT_MAX      ) THEN
+
+                WRITE( MESG,94010 ) 
+     &           '         Program  File' // CRLF() // BLANK5 //
+     &           'MINT_MIN', MINT_MIN, ' ', MIMICHK, CRLF() // BLANK5 //
+     &           'MINT_MAX', MINT_MAX, ' ', MIMACHK, CRLF() // BLANK5 //
+     &           'MAXT_MIN', MAXT_MIN, ' ', MAMICHK, CRLF() // BLANK5 //
+     &           'MAXT_MAX', MAXT_MAX, ' ', MAMACHK
+
+                CALL M3MSG2( MESG )
+
+                WRITE( MESG,94010 ) 
+     &             'ERROR: File temperature dimensions in file "' //
+     &             DNAME( 1:TRIMLEN( DNAME ) ) // 
+     &             '" are different from program compiled values.'
+
+                CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+
+            ENDIF
+
         ELSE
 
 C.............  Set up diurnal master List file description
@@ -1917,7 +1951,7 @@ c temp
 
 C...........   Internal buffering formats............ 94xxx
  
-94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+94010   FORMAT( 20 ( A, :, I5, :, 2X ) )
 94020   FORMAT( 'Env var PROMPTFLAG is N, but ', A, ' is bad' )
 94030   FORMAT( A, F10.3, 1X, A )
 94060   FORMAT( 8( F6.2, ', ' ) )
