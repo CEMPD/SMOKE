@@ -75,6 +75,8 @@ C...........   ARGUMENTS and their descriptions:
       
 C...........   PARAMETERS and their descriptions:
 C
+      INTEGER   IOS                    ! iostat variable
+
       REAL THIN
       PARAMETER(THIN = 200.)  ! thin cld cover <= 200m thick
       REAL            SIGA, SDEC, D100, D60, ROTDAY
@@ -109,9 +111,9 @@ C
 C
 C...........   LOCAL VARIABLES and their descriptions:
 C
-      REAL, ALLOCATABLE :: CLDT ( :, : )  ! ave. cloud top in meters
-      REAL, ALLOCATABLE :: CLDB ( :, : )  ! ave. cloud bottom in meters
-      REAL, ALLOCATABLE :: CFRAC( :, : )  ! fractional cloud coverage
+      REAL, ALLOCATABLE, SAVE  :: CLDT ( :, : )  ! ave. cloud top in meters
+      REAL, ALLOCATABLE, SAVE  :: CLDB ( :, : )  ! ave. cloud bottom in meters
+      REAL, ALLOCATABLE, SAVE  :: CFRAC( :, : )  ! fractional cloud coverage
       REAL            CBOT, CTOP
       REAL            FRAC, CTHK
       REAL            TTYPE 
@@ -164,6 +166,17 @@ C   begin body of program CLDATEN_CALC
 
           END IF
           CLTYPE(1:5) = CLOUDTYPE(1:5)
+
+C
+C........... Allocate memory for cloud variables
+         ALLOCATE( CLDT( NX, NY ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'CLDT', PNAME )
+
+         ALLOCATE( CLDB( NX, NY ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'CLDB', PNAME )
+
+         ALLOCATE( CFRAC( NX, NY ), STAT=IOS )
+         CALL CHECKMEM( IOS, 'CFRAC', PNAME )
 
       END IF                  !  if firstime
 C
