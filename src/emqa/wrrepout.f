@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, 
+        SUBROUTINE WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, LAYER,
      &                       DELIM, OUTFMT, EFLAG )
 
 C***********************************************************************
@@ -80,6 +80,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NDATA
         INTEGER     , INTENT (IN) :: JDATE
         INTEGER     , INTENT (IN) :: JTIME
+        INTEGER     , INTENT (IN) :: LAYER    ! layer number for output
         CHARACTER(*), INTENT (IN) :: DELIM
         CHARACTER(*), INTENT (IN) :: OUTFMT
         LOGICAL     , INTENT(OUT) :: EFLAG
@@ -109,6 +110,8 @@ C...........   Other local variables
         INTEGER, SAVE :: PRCNT = 0
 
         LOGICAL, SAVE :: FIRSTIME  = .TRUE.   ! true: first time routine called
+
+        REAL        ECHECK                    ! tmp sum of emissions in a bin
 
         CHARACTER*12            OUTDATE           !  output date string
         CHARACTER*100           BUFFER            !  string building buffer
@@ -155,6 +158,10 @@ C               example
 C.........  Loop through entries for all bins for current date and hour
         DO I = 1, NOUTBINS
 
+C.............  Check if emissions are zero and skip record if they are.
+            ECHECK = SUM( BINDATA( I,1:NDATA ) )
+            IF ( ECHECK .EQ. 0. ) CYCLE
+
 C.............  Build tmp string based on date, hour, and other columns that
 c               are included in the output file.  Whether these are included
 c               is determined by the report settings.
@@ -189,6 +196,16 @@ C.............  Include hour in string
                 WRITE( BUFFER, HOURFMT ) OUTHOUR  ! Integer
                 STRING = STRING( 1:LE ) // BUFFER
                 MXLE = MXLE + HOURWIDTH + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
+C.............  Include layer in string
+            IF( RPT_%BYLAYER ) THEN
+                BUFFER = ' '
+                WRITE( BUFFER, LAYRFMT ) LAYER    ! Integer
+                STRING = STRING( 1:LE ) // BUFFER
+                MXLE = MXLE + LAYRWIDTH + LX
                 LE = MIN( MXLE, STRLEN )
                 LX = 0
             END IF
@@ -290,6 +307,47 @@ C.............  Include fallback surrogate code
                 LX = 0
             END IF
 
+C.............  Include monthly temporal profile
+            IF( RPT_%BYMON ) THEN
+                BUFFER = ' '
+                WRITE( BUFFER, MONFMT ) BINMONID( I )  ! Integer
+                STRING = STRING( 1:LE ) // BUFFER
+                MXLE = MXLE + MONWIDTH + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
+C.............  Include weekly temporal profile
+            IF( RPT_%BYWEK ) THEN
+                BUFFER = ' '
+                WRITE( BUFFER, WEKFMT ) BINWEKID( I )  ! Integer
+                STRING = STRING( 1:LE ) // BUFFER
+                MXLE = MXLE + WEKWIDTH + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
+C.............  Include diurnal temporal profile
+            IF( RPT_%BYDIU ) THEN
+                BUFFER = ' '
+                WRITE( BUFFER, DIUFMT ) BINDIUID( I )  ! Integer
+                STRING = STRING( 1:LE ) // BUFFER
+                MXLE = MXLE + DIUWIDTH + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
+C.............  Include speciation profile
+            IF( RPT_%BYSPC ) THEN
+                L = SPCWIDTH
+                L1 = L - LV - 1 - SPNLEN3                  ! 1 for space                
+                STRING = STRING( 1:LE ) // ' ' //
+     &                   BINSPCID( I )// BLANK16( 1:L1 )// DELIM
+                MXLE = MXLE + L + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
 C.............  Include road class code
             IF( RPT_%BYRCL ) THEN
 
@@ -375,6 +433,8 @@ C.............  Output error message of string is getting shortened
      &                 'getting truncated in report', RCNT
                 CALL M3MSG2( MESG )
             END IF
+
+
 
 C.............  Write out this record
             WRITE( FDEV, OUTFMT ) STRING( 1:LE ), 
