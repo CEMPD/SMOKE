@@ -4,9 +4,9 @@ all: opts
 #
 opts: emisfac grdmmat prediur rawmobil spcmmat tmpmobil
 #
-LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf 
+LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf 
 #
-LMOB=$(LDIRS) -lemstuff -lm3io -lnetcdf -lmo5b
+LMOB=$(LDIRS) -lemlib -lioapi -lnetcdf -lmo5b
 #
 #
 #

@@ -6,9 +6,9 @@ opts: emisfac.m5a
 #
 debug: emisfac.m5a.debug
 #
-LMOB=$(LDIRS) -lemstuff -lm3io -lnetcdf -lmo5av1
+LMOB=$(LDIRS) -lemlib -lioapi -lnetcdf -lmo5av1
 #
-LMDB=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug -lmo5av1.debug
+LMDB=$(LDIRS) -lemlib.debug -lioapi.debug -lnetcdf.debug -lmo5av1.debug
 #
 #
 EMIS=emisfac.F efcombo.F moinbld.F mobil5a.F

@@ -5,9 +5,9 @@ all: debug
 debug: emisfac.debug grdmmat.debug prediur.debug rawmobil.debug \
        spcmmat.debug tmpmobil.debug
 #
-LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+LIBS=$(LDIRS) -lemlib.debug -lioapi.debug -lnetcdf.debug
 #
-LMOB=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug -lmo5b.debug
+LMOB=$(LDIRS) -lemlib.debug -lioapi.debug -lnetcdf.debug -lmo5b.debug
 #
 #
 #
