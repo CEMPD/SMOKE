@@ -96,7 +96,7 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv NRINV     $INVDIR/nonroad/arinv.nonroad.lst           # Nonroad mobile emission inventory
    setenv ARTOPNT   $INVDIR/other/artopnt.1999.txt              # area-to-point assignments
    setenv AGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Area gridding surrogates
-   setenv AGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt   # Area gridding x-ref 
+   setenv AGREF     $GE_DAT/amgref.m3.us+mex.txt                # Area gridding x-ref 
    setenv ATPRO     $GE_DAT/amptpro.m3.us+can.txt               # Temporal profiles
    setenv ATREF     $GE_DAT/amptref.m3.us+can.txt               # Area temporal x-ref
 endif
@@ -135,7 +135,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv SPDPRO    $INVDIR/mobile/spdpro.$MSCEN.txt       # Speed profiles file
    setenv REPCONFIG $INVDIR/mobile/REPCONFIG.mobile.txt    # Default report configurations
    setenv MGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt # Mobile gridding surrogates
-   setenv MGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt  # Mobile gridding x-ref 
+   setenv MGREF     $GE_DAT/amgref.m3.us+mex.txt           # Mobile gridding x-ref 
    setenv MTPRO     $GE_DAT/amptpro.m3.us+can.txt          # Temporal profiles
    setenv MTREF     $GE_DAT/amptref.m3.us+can.txt          # Mobile temporal x-ref
 endif
