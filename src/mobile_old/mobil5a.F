@@ -5,7 +5,7 @@ C  All "cmh" comments are modifications for the SMOKE modeling system
 C  made by Marc Houyoux at MCNC.
 
 cmh   SUBROUTINE MOBILE(INERR, *)
-      SUBROUTINE MOBILE( INERR, ITEMP, MODEV, EFACT )
+      SUBROUTINE MOBILE( INERR, ITEMP, MODEV, EFACT, DFACT )
 C
 C  Called by user's program (example: Air Quality Analysis
 C  System).
@@ -89,11 +89,11 @@ C
 C
 cmh add includes
 c     INCLUDE 'EFS.EXT'
-      INCLUDE 'CHDIMS3.EXT'
       INCLUDE 'MBDIMS3.EXT'
 cmh
 cmh add declarations
-      REAL    EFACT( MXEMIS, NVTYPE )
+      REAL    EFACT( MXNDET, NVTYPE )
+      REAL    DFACT( MXDET, NVTYPE )
       INTEGER MODEV                ! Unit number of MOBILE5a input file
       INTEGER ITEMP                ! Indicates if just temperature has changed
 cmh
@@ -390,12 +390,13 @@ cmh   CALL OUTPUT(ICY)
 cmh
 cmh add  6 lines
 
-C.......  Initialize EFACT
-      DO II = 1, MXEMIS
-          DO JJ = 1, NVTYPE
-
+C.......  Initialize EFACT and DFACT
+      DO JJ = 1, NVTYPE
+          DO II = 1, MXNDET
               EFACT( II,JJ ) = 0.0
-
+          ENDDO
+          DO II = 1, MXDET
+              DFACT( II,JJ ) = 0.0
           ENDDO
       ENDDO
 
@@ -407,20 +408,19 @@ C.......  Initialize EFACT
           EFACT( 4,JJ ) = EFEVAP( JJ )     ! Evaporative VOC
           EFACT( 5,JJ ) = EFRUNL( JJ )     ! Running Loss VOC
           EFACT( 6,JJ ) = EFRSTL( JJ )     ! Resting Loss VOC
-          EFACT( 7,JJ ) = EFREFL( JJ )     ! Refueling Loss VOC
+
+cmh       EFACT( 7,JJ ) = EFREFL( JJ )     ! Refueling Loss VOC
+cmh       EFACT( 8, JJ ) = RLGGAL( JJ )     ! Refueling loss VOC g/gal
+cmh       EFACT( 11,JJ ) = RSTGPH( JJ )     ! Resting Loss VOC g/hr
 
       ENDDO
 
       DO JJ = 1,4
-          EFACT( 8, JJ ) = RLGGAL( JJ )     ! Refueling loss VOC g/gal
-          EFACT( 9, JJ ) = GREVP ( 1,JJ )   ! Hot Soak Evap VOC
-          EFACT( 10,JJ ) = GREVP ( 4,JJ )   ! Crankcase Evap VOC
-          EFACT( 11,JJ ) = RSTGPH( JJ )     ! Resting Loss VOC g/hr
+          DFACT( 1, JJ ) = GREVP ( 2,JJ )   ! Weighted Diurnal Evap VOC
+          DFACT( 2, JJ ) = EFDNL (   JJ )   ! LMOS Diurnal Evap VOC
+          DFACT( 3, JJ ) = GREVP ( 1,JJ )   ! Hot Soak Evap VOC
+          DFACT( 4, JJ ) = GREVP ( 4,JJ )   ! Crankcase Evap VOC
       ENDDO
-
-      EFACT( 9 , NVTYPE ) = GREVP ( 1,NVTYPE )
-      EFACT( 11, NVTYPE ) = GREVP ( 4,NVTYPE )
-      EFACT( 12, NVTYPE ) = RSTGPH( NVTYPE )
 
 cmh end add
 cmh 
