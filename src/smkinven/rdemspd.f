@@ -142,7 +142,8 @@ C...........   Other local variables
         CHARACTER(LEN=CHRLEN3) SKID      ! tmp stack ID
         CHARACTER(LEN=CHRLEN3) DVID      ! tmp device ID
         CHARACTER(LEN=CHRLEN3) PRID      ! tmp process ID
-        CHARACTER(LEN=ALLLEN3) CSRC      ! tmp process ID
+        CHARACTER(LEN=SCCLEN3) TSCC      ! tmp source category code
+        CHARACTER(LEN=ALLLEN3) CSRC      ! tmp source string
 
         CHARACTER*16 :: PROGNAME = 'RDEMSPD' !  program name
 
@@ -240,17 +241,17 @@ C               same file.
 C.............  If the file is hourly but the only the daily is to be read, then
 C               behave as if it is a daily file.
             IF( DAYFLAG .AND. 
-     &             ( L .GT. 90 .AND. .NOT. SFLAG ) .OR.
-     &             ( L .LE. 90 .AND.       SFLAG )      ) THEN
+     &             ( L .GT. 101 .AND. .NOT. SFLAG ) .OR.
+     &             ( L .LE. 101 .AND.       SFLAG )      ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: bad format or hourly ' //
+                WRITE( MESG,94010 ) 'ERROR: bad format or daily ' //
      &                 'data found in day-specific file at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
 
             ELSE IF( .NOT. DAYFLAG .AND. L .LT. 240 ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: bad format or daily ' //
+                WRITE( MESG,94010 ) 'ERROR: bad format or hourly ' //
      &                 'data found in hour-specific file at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
@@ -406,9 +407,13 @@ C.............  Set key for searching sources
 
             PRID = ADJUSTL( LINE( 45:56 ) )
 
+            TSCC = ADJUSTL( LINE( 92:101) )
+
+            IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
+
 C.............  Build source characteristics field for searching inventory
             CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                    CHRBLNK3, CHRBLNK3, POLBLNK3, CSRC )
+     &                    TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.............  Search for this record in sources
             S = FINDC( CSRC, NSRC, CSOURC )
