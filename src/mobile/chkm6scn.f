@@ -40,7 +40,7 @@ C
 C***********************************************************************
         
 C.........  MODULES for public variables        
-        USE MODINFO
+        USE MODINFO, ONLY:
         
         IMPLICIT NONE        
 

@@ -42,10 +42,10 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
+        USE MODMET, ONLY: MINTEMP, MAXTEMP
 
         IMPLICIT NONE
 

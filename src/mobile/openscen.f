@@ -41,7 +41,7 @@ C***********************************************************************
 C.........  MODULES for public variables
 
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: M6LIST
 
         IMPLICIT NONE
 

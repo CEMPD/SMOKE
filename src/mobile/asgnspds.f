@@ -40,13 +40,16 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC
         
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: CHRT02, CHRT03, CHRT04, CHRT05, CHRT06,
+     &                     CHRT07, CHRT08, CHRT09, ISPD01,
+     &                     ISPD02, ISPD03, ISPD04, ISPD05, ISPD06,
+     &                     ISPD07, ISPD08, ISPD09, SPDPROFID, TXCNT
         
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, LSCCEND
 
         IMPLICIT NONE
 

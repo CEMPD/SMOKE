@@ -41,13 +41,13 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY:
         
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY:
 
         IMPLICIT NONE
 

@@ -42,16 +42,18 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, TZONES
 
 C...........   This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, CATDESC, CATLEN, NIACT, NSRC
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
+        USE MODMET, ONLY: MINTEMP, MAXTEMP, TASRC, TKHOUR,
+     &                    DYCODES, WKCODES, MNCODES, EPCODES,
+     &                    TDYCNTY, TWKCNTY, TMNCNTY, TEPCNTY   
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID
 
 C.........  This module is used for MOBILE6 setup information        
         USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN
