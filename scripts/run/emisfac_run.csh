@@ -52,22 +52,22 @@ if ( $?RUN_EMISFAC ) then
       # Create M6LIST file...
       # First figure out if there are files in scenario directory
       setenv M6LIST $MBDAT/m6list.$MSCEN.$EF_YEAR.txt
-      set m6_input_dir = $MBDAT/m6_$EF_YEAR
-      if ( $?CNTLCASE ) then
-         setenv M6LIST $MBDAT/m6list.$MSCEN.${EF_YEAR}_$CNTLCASE.txt
-         set $m6_input_dir $MBDAT/mb_${EF_YEAR}_$CNTLCASE
-      endif
-      set ef_cnt = `ls -1 $m6_input_dir/*.in | wc -l`
-      if ( $ef_cnt > 0 ) then
-         if ( -e $M6LIST ) /bin/rm -rf $M6LIST
-         ls $m6_input_dir/*.in > $M6LIST
-      else
-         echo "SCRIPT ERROR: No MOBILE6 *.in scenario files found in the directory:"
-         echo "              $m6_input_dir"
-         echo "              Please put these files in the correct place and"
-         echo "              try again."
-         exit ( 1 )
-      endif
+#      set m6_input_dir = $MBDAT/m6_$EF_YEAR
+#      if ( $?CNTLCASE ) then
+#         setenv M6LIST $MBDAT/m6list.$MSCEN.${EF_YEAR}_$CNTLCASE.txt
+#         set m6_input_dir = $MBDAT/mb_${EF_YEAR}_$CNTLCASE
+#      endif
+#      set ef_cnt = `ls -1 $m6_input_dir/*.in | wc -l`
+#      if ( $ef_cnt > 0 ) then
+#         if ( -e $M6LIST ) /bin/rm -rf $M6LIST
+#         ls $m6_input_dir/*.in > $M6LIST
+#      else
+#         echo "SCRIPT ERROR: No MOBILE6 *.in scenario files found in the directory:"
+#         echo "              $m6_input_dir"
+#         echo "              Please put these files in the correct place and"
+#         echo "              try again."
+#         exit ( 1 )
+#      endif
 
       ## Set HOURLYT input file
       setenv HOURLYT `ls -1 $SMK_METPATH/*${GROUP_TYPE}* | head -1`
