@@ -124,13 +124,13 @@ C.............  Set up partial strings for saving
                 CHRT02( K ) = SCCL
             CASE( 3 )
                 CHRT03( K ) = TSCC
-            CASE( 4 )                   ! NOTE:  pol-specific was excluded
+            CASE( 4 )
                 CHRT04( K ) = CSTA
             CASE( 5 )
                 CHRT05( K ) = CSTA // SCCL
             CASE( 6 )
                 CHRT06( K ) = CSTA // TSCC
-            CASE( 7 )                   ! NOTE:  pol-specific was excluded
+            CASE( 7 )
                 CHRT07( K ) = CFIP
             CASE( 8 )
                 CHRT08( K ) = CFIP // SCCL

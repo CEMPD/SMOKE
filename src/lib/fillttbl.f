@@ -100,10 +100,8 @@ C               digits) so that the pol-specific can be identified later
             CASE( 3 )
                 CALL SET_TCODES( TDIM, NIPOL, MPRT03, WPRT03, DPRT03 )
 
-            CASE( 4 )                   ! NOTE:  pol-specific was excluded
-                MPRT04( K ) = IMON
-                WPRT04( K ) = IWEK
-                DPRT04( K ) = IDIU
+            CASE( 4 )
+                CALL SET_TCODES( TDIM, NIPOL, MPRT04, WPRT04, DPRT04 )
 
             CASE( 5 )
                 CALL SET_TCODES( TDIM, NIPOL, MPRT05, WPRT05, DPRT05 )
@@ -111,10 +109,8 @@ C               digits) so that the pol-specific can be identified later
             CASE( 6 )
                 CALL SET_TCODES( TDIM, NIPOL, MPRT06, WPRT06, DPRT06 )
 
-            CASE( 7 )                   ! NOTE:  pol-specific was excluded
-                MPRT07( K ) = IMON
-                WPRT07( K ) = IWEK
-                DPRT07( K ) = IDIU
+            CASE( 7 )
+                CALL SET_TCODES( TDIM, NIPOL, MPRT07, WPRT07, DPRT07 )
 
             CASE( 8 )
                 CALL SET_TCODES( TDIM, NIPOL, MPRT08, WPRT08, DPRT08 )
