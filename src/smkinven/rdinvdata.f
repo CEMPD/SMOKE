@@ -637,7 +637,7 @@ C.................  Calculate day to year conversion factor
 
 C.............  Set inventory year in case there are no header lines
             IF( INVYEAR == 0 .OR.
-     &        ( LSTYR /= 0 .AND. INVYEAR /= LSTYR ) ) THEN
+     &        ( LSTYR > 0 .AND. INVYEAR /= LSTYR ) ) THEN
                 INVYEAR = LSTYR
                 
                 YEAR2DAY = YR2DAY( INVYEAR )
