@@ -241,10 +241,6 @@ C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
-C.........  Obtain settings from the environment...
-C.........  Get the unceratinty flag
-        UCFLAG = ENVYN( 'SMK_UNCERT', 'Mode for SMOKE' , .FALSE., IOS )
-
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
@@ -256,6 +252,19 @@ C.........  Get environment variable that indicates if the MINMAXT file is
 C           time independent (true) or not
         MESG   = 'MINMAXT is time-independent file? '  
         WTINDP = ENVYN( 'MINMAX_TINDP_YN', MESG, .FALSE., IOS )
+
+C.........  Obtain settings from the environment...
+C.........  Get the temporal unceratinty flag
+        TUCFLAG = ENVYN( 'SMK_TEMPORAL_UNCERT', 
+     &                  'Mode for SMOKE temporal', .FALSE., IOS )
+
+        IF( TUCFLAG ) THEN
+
+C.............  Get the number of simulations to draw from sampling
+            MESG = 'Realizations to draw'
+            DRAWRLZN = ENVINT( 'SMK_REALIZATIONS', MESG, 1, IOS )
+
+        END IF
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
@@ -354,7 +363,7 @@ C.............  Set day-specific file dates, check dates, and report problems
      &                    NIPPA, EANAM, NDYPOA, NDYSRC, EFLAG, DYPNAM,
      &                    DYPDSC )
 
-        ENDIF
+        END IF
 
 C.........  Allocate memory for reading day-specific emissions data
 C.........  NDYSRC is initialized to zero in case DFLAG is false
@@ -561,6 +570,7 @@ C               pollutant is also part of the inventory pollutants
 
         END DO
 
+
 C.........  Add activities, & emission types to read and output lists
         J = NIPOL
         DO I = 1, NIACT
@@ -569,6 +579,7 @@ C.........  Add activities, & emission types to read and output lists
 
 C.............  If any emissions types associated with this activity, store them
             IF ( K .GT. 0 ) THEN
+                L1 = LEN_TRIM( EMTNAM( I , I ) )
                 ALLIN( J+1:J+K ) = ACTVTY( I )
                 EANAM( N+1:N+K ) = EMTNAM( 1:K, I )
                 N = N + K
@@ -681,326 +692,370 @@ C.........  Create 2-d arrays of I/O pol names, activities, & emission types
             END DO
         END DO
 
-c-----------------  EU test section start  -------------------
-c will eventually want this to proceed the final bottom loops
-c-------------------------------------------------------------
-
-c        call lastcall
-
         CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, 
      &                TZONE, NPELV, TNAME, PDEV )
         TNLEN = LEN_TRIM( TNAME )
 
-        MESG = 'DEBUG: ATMP...' // TNAME
-        CALL M3MSG2( MESG )
+c-----------------  EU test section start  -------------------
+c will eventually want this to proceed the final bottom loops
+c-------------------------------------------------------------
 
-C.........  if uncertainty mode is ON initiate random number generation
-C           with a starting point and create uncertainty data structures
-        IF ( UCFLAG ) THEN
-            CALL RANDOM_SEED  ! BUG: want to utilize a seed
-            CALL RDUSTATI( UINAME, UENAME, UPNAME )
-            IF( ALLOCATED( UEMIS ) ) DEALLOCATE( UEMIS )
-            ALLOCATE( UEMIS( UNSRC, UNIPOL ), STAT=IOS )
-            UEMIS  = 0.
-        END IF
 
-        WRITE( TMPSTR,94010 ) '', DRAWRLZN
-        NLEN = LEN_TRIM( ADJUSTL( TMPSTR ) )
 C.........  Loop through pollutant/emission-type groups
         DO R = 0, DRAWRLZN
+
+C.............  if uncertainty mode is ON initiate random number generation
+C               with a starting point and create uncertainty data structures
+            IF ( R .EQ. 1 ) THEN
+
+c            IF( .NOT.( CLOSE3( ENAME ) ) ) THEN
+c                WRITE( MESG,94010 ) 
+c     &                 'WARNING: Unable to close file' // ENAME
+c                CALL M3MSG2( MESG )
+c            END IF
+
+                UCAT = CRL
+                CALL RDIUSRC( NSRC, UINAME )
+                CALL RDMETHS( UINAME, UENAME, UPNAME )
+                IF( ALLOCATED( UEMIS ) ) DEALLOCATE( UEMIS )
+                ALLOCATE( UEMIS( UNSRC, UNIPOL ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'UEMIS', PROGNAME )
+
+            END IF
+
             IF ( R .GT. 0 ) THEN
-                CALL GETRNUMS
+
+                UEMIS  = 0.
 C.................  Set up and open I/O API output file(s) ...
                 CALL OPENTMP_U( ENAME, UINAME, SDATE, STIME, TSTEP, 
-     &                          TZONE, R, NLEN, UNAME, UDEV )
+     &                          TZONE, R, UNAME, UDEV )
                 UNLEN = LEN_TRIM( UNAME )
-c                CALL M3MSG2( UNAME( 1:UNLEN) )
+
             END IF
  
-c        call lastcall
-
-
 c-----------------  EU test section end  -------------------
 
+C.............  Loop through pollutant/emission-type groups
+            DO N = 1, NGRP
 
-C.........  Loop through pollutant/emission-type groups
-        DO N = 1, NGRP
+C.................  Skip group if the first pollutant in group is blank (this
+C                   shouldn't happen, but it is happening, and it's easier to
+C                   make this fix).
+                IF ( EANAM2D( 1,N ) .EQ. ' ' ) CYCLE
 
-C.............  Skip group if the first pollutant in group is blank (this
-C               shouldn't happen, but it is happening, and it's easier to
-C               make this fix).
-            IF ( EANAM2D( 1,N ) .EQ. ' ' ) CYCLE
+C.................  Write message stating the 
+C                   pols/emission-types being processed
+                CALL POLMESG( NGSZ, EANAM2D( 1,N ) )
 
-C.............  Write message stating the pols/emission-types being processed
-            CALL POLMESG( NGSZ, EANAM2D( 1,N ) )
+C.................  Set up logical arrays that indicate which 
+C                   pollutants/activities are day-specific and which 
+C                   are hour-specific.
+C.................  Also set flag for which hour-specific pollutants/activities
+C                   are actually diurnal profiles instead of emissions
+                LDSPOA = .FALSE.   ! array
+                DO I = 1, NDYPOA
+                    J = INDEX1( DYPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
+                    LDSPOA( J ) = .TRUE.
+                END DO
 
-C.............  Set up logical arrays that indicate which pollutants/activities
-C               are day-specific and which are hour-specific.
-C.............  Also set flag for which hour-specific pollutants/activities
-C               are actually diurnal profiles instead of emissions
-            LDSPOA = .FALSE.   ! array
-            DO I = 1, NDYPOA
-                J = INDEX1( DYPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
-                LDSPOA( J ) = .TRUE.
-            END DO
+                LHSPOA = .FALSE.   ! array
+                LHPROF = .FALSE.   ! array
+                DO I = 1, NHRPOA
+                    J = INDEX1( HRPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
+                    LHSPOA( J ) = .TRUE.
+     
+                    CALL UPCASE( HRPDSC( I ) )
+                    K = INDEX( HRPDSC( I ), 'PROFILE' )
+                    IF( K .GT. 0 ) LHPROF( J ) = .TRUE.
+                END DO
 
-            LHSPOA = .FALSE.   ! array
-            LHPROF = .FALSE.   ! array
-            DO I = 1, NHRPOA
-                J = INDEX1( HRPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
-                LHSPOA( J ) = .TRUE.
+C.................  Initialize emissions, activities, and other arrays 
+C                   for this pollutant/emission-type group
+                TMAT   = 0.
+                MDEX   = IMISS3
+                WDEX   = IMISS3
+                DDEX   = IMISS3
+                EMAC   = 0.
+                EMACV  = 0.
+                EMIST  = 0.
+      
+C.................  Assign temporal profiles by source and pollutant
+                CALL M3MSG2( 'Assigning temporal profiles ' //
+     &                       'to sources...' )
 
-                CALL UPCASE( HRPDSC( I ) )
-                K = INDEX( HRPDSC( I ), 'PROFILE' )
-                IF( K .GT. 0 ) LHPROF( J ) = .TRUE.
-            END DO
+C.................  If using uniform profiles, set all temporal profile number
+C                   to 1; otherwise, assign profiles with cross-reference info
 
-C.............  Initialize emissions, activities, and other arrays for this
-C               pollutant/emission-type group
-            TMAT   = 0.
-            MDEX   = IMISS3
-            WDEX   = IMISS3
-            DDEX   = IMISS3
-            EMAC   = 0.
-            EMACV  = 0.
-            EMIST  = 0.
-
-C.............  Assign temporal profiles by source and pollutant
-            CALL M3MSG2( 'Assigning temporal profiles to sources...' )
-
-C.............  If using uniform profiles, set all temporal profile number
-C               to 1; otherwise, assign profiles with cross-reference info
-            IF( NFLAG ) THEN
-                MDEX = 1
-        	WDEX = 1
-        	DDEX = 1
-
-            ELSE
-                CALL ASGNTPRO( NGSZ, EANAM2D( 1,N ), TREFFMT )
-
-            END IF
-
-C.............  Read in pollutant emissions or activities from inventory for 
-C               current group
-            DO I = 1, NGSZ
-
-                CBUF = ALLIN2D( I,N )
-                L1   = LEN_TRIM( CBUF )
-
-C.................  Skip blanks that can occur when NGRP > 1
-                IF ( CBUF .EQ. ' ' ) CYCLE
-
-                IF( .NOT. READ3( ENAME, CBUF, ALLAYS3, 0, 0, 
-     &                           EMAC( 1,I )                ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'Error reading "' // CBUF( 1:L1 ) //
-     &                     '" from file "' // ENAME( 1:ENLEN ) // '."'
-                    CALL M3MSG2( MESG )
-
+c bug: original condition - IF( NFLAG ) THEN
+c                IF( NFLAG .OR. R .EQ. 0) THEN
+                IF( NFLAG ) THEN
+                    MDEX = 1
+                    WDEX = 1
+                    DDEX = 1
+                ELSE
+                    CALL ASGNTPRO( NGSZ, EANAM2D( 1,N ), TREFFMT )
                 END IF
 
-C.................  If there are any missing values in the data, give an
-C                   error to avoid problems in genhemis routine
-                RTMP = MINVAL( EMAC( 1:NSRC,I ) )
-                IF( RTMP .LT. 0 ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Missing or negative emission '//
-     &                     'value(s) in inventory for "' // 
-     &                     CBUF( 1:L1 ) // '".'
-                    CALL M3MSG2( MESG )
-                END IF
-
-C.................  If pollutant name is ozone-season-based, remove the
-C                   prefix from the input pollutant name
-                K = INDEX1( CBUF, NIPPA, EAREAD )
-                J = INDEX( CBUF, OZNSEART )
-                IF( J .GT. 0 ) THEN
-                    CBUF = CBUF( CPRTLEN3+1:L1 )
-                    ALLIN2D( I,N ) = CBUF
-                    EAREAD ( K )   = CBUF
-                END IF
-
-            END DO
-
-C.............  Abort if error found
-            IF( EFLAG ) THEN
-                MESG = 'Problem with input data.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  For each time step and pollutant or emission type in current 
-C               group, generate hourly emissions, and write layer-1 emissions
-C               file (or all data).
-            JDATE = SDATE
-            JTIME = STIME
-            MDATE = MSDATE
-            MTIME = MSTIME
-
-            IF ( CATEGORY .EQ. 'MOBILE' .AND. WTINDP ) THEN
-
-               IF( .NOT. READ3( WNAME, 'TKMIN', 1,
-     &                          0, 0, TKMIN ) ) THEN
-                 MESG = 'Could not read TKMIN from ' // WNAME
-                 CALL M3EXIT( PROGNAME,0,0,MESG,2 )
-               END IF
-
-              IF( .NOT. READ3( WNAME, 'TKMAX', 1,
-     &                         0, 0, TKMAX ) ) THEN
-                MESG = 'Could not read TKMAX from ' // WNAME
-                CALL M3EXIT( PROGNAME,0,0,MESG,2 )
-              END IF
-
-              IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3,
-     &                         0, 0, METIDX ) ) THEN
-                MESG = 'Could not read TMMI from ' // WNAME
-                CALL M3EXIT( PROGNAME,0 ,0, MESG,2 )
-              END IF
-
-            ELSE
-
-              WDATE = WSDATE
-              WTIME = WSTIME
-
-            ENDIF
-
-C.............  Write supplemental temporal profiles file
-            CALL WRTSUP( PDEV, NSRC, NGSZ, EANAM2D( 1,N ) )
-
-C.............  Loop through time steps for current pollutant group
-            DO T = 1, NSTEPS
-
-C.................  When there are activity data, assume that there is a 
-C                   temperature dependence, as with Models-3
-                IF ( CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 ) THEN
-
-C.....................  Read gridded temperature data and convert to
-C                       source-based temperatures using the ungridding matrix
-                    IF ( .NOT. READ3( MNAME, TVARNAME, 1, 
-     &                                MDATE, MTIME, TA    ) ) THEN
-
-                	L = LEN_TRIM( TVARNAME )
-                	MESG = 'Could not read ' // TVARNAME( 1:L ) //
-     &                         'from ' // MNAME 
-                        CALL M3EXIT( PROGNAME, MDATE, MTIME, MESG, 2 )
-
-                    END IF
-
-                    CALL APPLUMAT( NSRC, NMATX, TA, UMAT(1), 
-     &                             UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
-     &                             TASRC )
-
-C.....................  Read source-based min/max temperatures for the current
-C                       day when there is a new day in GMT (met ) time zone
-                    IF( MDATE .NE. MLDATE .AND. .NOT. WTINDP ) THEN
-
-                	IF( .NOT. READ3( WNAME, 'TKMIN', 1, 
-     &                                   WDATE, WTIME, TKMIN ) ) THEN
-                	    MESG = 'Could not read TKMIN from ' // WNAME
-                            CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
-                	END IF
-
-                	IF( .NOT. READ3( WNAME, 'TKMAX', 1, 
-     &                                   WDATE, WTIME, TKMAX ) ) THEN
-                	    MESG = 'Could not read TKMAX from ' // WNAME
-                            CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
-                	END IF
-
-                	IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3, 
-     &                                   WDATE, WTIME, METIDX ) ) THEN
-                	    MESG = 'Could not read TMMI from ' // WNAME
-                            CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
-                	END IF
-
-                    END IF
-
-                END IF ! ( CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 ) 
-
-C.................  Generate hourly emissions for current hour
-                CALL GENHEMIS( R, NGSZ, JDATE, JTIME, TZONE, DNAME, 
-     &                         HNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ),
-     &                         EMAC, EMACV, TMAT, EMIST, UEMIS )
-
-                V = 0
-C.................  Loop through pollutants/emission-types in this group
+C.................  Read in pollutant emissions or activities from inventory for
+C                   current group
                 DO I = 1, NGSZ
-
-                    CBUF = EANAM2D( I,N )
-
+     
+                    CBUF = ALLIN2D( I,N )
+                    L1   = LEN_TRIM( CBUF )
+         
 C.....................  Skip blanks that can occur when NGRP > 1
                     IF ( CBUF .EQ. ' ' ) CYCLE
 
-                    IF (R .EQ. 0) THEN
+                    IF( .NOT. READ3( ENAME, CBUF, ALLAYS3, 0, 0, 
+     &                               EMAC( 1,I )                ) ) THEN
+                        EFLAG = .TRUE.
+                        MESG = 'Error reading "' // CBUF( 1:L1 ) 
+     &                         // '" from file "' // 
+     &                         ENAME( 1:ENLEN ) // '."'
+                        CALL M3MSG2( MESG )
 
-C.........................  Write hourly emissions to I/O API NetCDF file
-                        IF( .NOT. WRITE3( TNAME, CBUF, JDATE, 
-     &                                    JTIME, EMIST( 1,I ) ) ) THEN
-                            L = LEN_TRIM( CBUF )
-                            MESG = 'Could not write "' // CBUF( 1:L ) // 
-     &                             '" to file "'//TNAME( 1:TNLEN )//'."'
-                            CALL M3EXIT(PROGNAME, JDATE, JTIME, MESG, 2)
-                        END IF
+                    END IF
 
-                    ELSE
+C.....................  If there are any missing values in the data, give an
+C                       error to avoid problems in genhemis routine
+                    RTMP = MINVAL( EMAC( 1:NSRC,I ) )
+                    IF( RTMP .LT. 0 ) THEN
+                        EFLAG = .TRUE.
+                        MESG = 'ERROR: Missing or negative emission '//
+     &                         'value(s) in inventory for "' // 
+     &                         CBUF( 1:L1 ) // '".'
+                        CALL M3MSG2( MESG )
+                    END IF
 
-                        U = INDEX1( CBUF , NIPOL , EINAM )
-C.........................  Unceratinty cycle condition: pollutant is not an uncertainty
-                        UCCOND = ( UEFINAM( U ) .OR. UEINAM( U ) )
-                        IF ( .NOT. ( UCCOND ) ) CYCLE 
+C.....................  If pollutant name is ozone-season-based, remove the
+C                       prefix from the input pollutant name
+                    K = INDEX1( CBUF, NIPPA, EAREAD )
+                    J = INDEX( CBUF, OZNSEART )
+                    IF( J .GT. 0 ) THEN
+                        CBUF = CBUF( CPRTLEN3+1:L1 )
+                        ALLIN2D( I,N ) = CBUF
+                        EAREAD ( K )   = CBUF
+                    END IF
+      
+                END DO
 
-                        V = V + 1
-                        IF ( V .GT. UNIPOL ) THEN
-                            WRITE( MESG,94010 ) 
-     &                            'Number of uncertainty pollutants ',V,
-     &                            'exceeded the expected number', UNIPOL
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                        END IF
+C.................  Abort if error found
+                IF( EFLAG ) THEN
+                    MESG = 'Problem with input data.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
-C.........................  Write uncertainty annual emissions to I/O API NetCDF file
-                        IF( .NOT. WRITE3( UNAME, CBUF, JDATE, 
-     &                                    JTIME, UEMIS( 1,V ) ) ) THEN
-                            L = LEN_TRIM( CBUF )
-                            MESG = 'Could not write "' // CBUF( 1:L ) // 
-     &                             '" to file "'//UNAME( 1:UNLEN )//'."'
-                            CALL M3EXIT(PROGNAME, JDATE, JTIME, MESG, 2)
-                        END IF
+C.................  For each time step and pollutant or emission type 
+C                   in current group, generate hourly emissions, and 
+C                   write layer-1 emissions file (or all data).
+                JDATE = SDATE
+                JTIME = STIME
+                MDATE = MSDATE
+                MTIME = MSTIME
 
-                    END IF ! Loop through pollutants/emission-types I
+                IF( CATEGORY .EQ. 'MOBILE' .AND. WTINDP ) THEN
 
-                END DO  ! End loop on pollutants/emission-types I in this group
+                    IF( .NOT. READ3( WNAME, 'TKMIN', 1,
+     &                                   0, 0, TKMIN ) ) THEN
+                        MESG = 'Could not read TKMIN from ' // WNAME
+                        CALL M3EXIT( PROGNAME,0,0,MESG,2 )
+                    END IF
 
-C.................  Advance the output date/time by one time step
-                CALL NEXTIME( JDATE, JTIME, TSTEP )
+                    IF( .NOT. READ3( WNAME, 'TKMAX', 1,
+     &                                   0, 0, TKMAX ) ) THEN
+                        MESG = 'Could not read TKMAX from ' // WNAME
+                        CALL M3EXIT( PROGNAME,0,0,MESG,2 )
+                    END IF
 
-C.................  Advance the met date/time by one time step, saving the
-C                   old date
-                MLDATE = MDATE
-                CALL NEXTIME( MDATE, MTIME, TSTEP )
+                    IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3,
+     &                                       0, 0, METIDX ) ) THEN
+                          MESG = 'Could not read TMMI from ' // WNAME
+                          CALL M3EXIT( PROGNAME,0 ,0, MESG,2 )
+                    END IF
 
-C.................  Advance the min/max date/time by one day when the GMT date
-C                   of the meterology has changed
-C.................  Only advance time if the min/max file date is less than
-C                   the ending date. Pretmpr has already given a warning about
-C                   the mismatch.
-                IF( MDATE .NE. MLDATE .AND. 
-     &              WDATE .LT. WEDATE      ) THEN
+                ELSE
 
-                    CALL NEXTIME( WDATE, WTIME, 240000 )
+                    WDATE = WSDATE
+                    WTIME = WSTIME
+
+                ENDIF
+
+C.................  Write supplemental temporal profiles file
+                IF( R .EQ. 0) THEN
+                    CALL WRTSUP( PDEV, NSRC, NGSZ, EANAM2D( 1,N ) )
+
+                ELSE
+
+c                    call lastcall
 
                 END IF
 
-C.................  Call QA report routine
-c               WFLAG = ( T .EQ. NSTEPS )
-c               CALL QATMPR( LDEV, NGSZ, T, JDATE, JTIME, WFLAG, 
-c    &                       EANAM2D( 1,N ), EMAC )
+C.................  Loop through time steps for current pollutant group
+                DO T = 1, NSTEPS
 
-            END DO      ! End loop on T time steps, NSTEPS
+C.....................  When there are activity data, assume that there is a 
+C                       temperature dependence, as with Models-3
+                    IF ( CATEGORY .EQ. 'MOBILE' 
+     &                      .AND. NIACT .GT. 0 ) THEN
 
-        END DO          ! End loop on N pollutant groups, NGRP
+C.........................  Read gridded temperature data and convert to
+C                           source-based temperatures using the ungridding matrix
+                        IF ( .NOT. READ3( MNAME, TVARNAME, 1,
+     &                                    MDATE, MTIME, TA   ) ) THEN
 
-        END DO          ! End loop on R simulations, DRAWRLZN
+                             L = LEN_TRIM( TVARNAME )
+                             MESG = 'Could not read ' // 
+     &                              TVARNAME( 1:L ) // 'from ' // MNAME
+                             CALL M3EXIT( PROGNAME, MDATE, MTIME, 
+     &                                                    MESG, 2 )
+
+                        END IF
+
+                        CALL APPLUMAT( NSRC, NMATX, TA, 
+     &                                 UMAT(1), UMAT( NSRC+1 ), 
+     &                                 UMAT( NSRC+NMATX+1 ),
+     &                                 TASRC )
+
+C.........................  Read source-based min/max temperatures for 
+C                           the current day when there is a new day in 
+C                           GMT (met ) time zone
+                        IF( MDATE .NE. MLDATE .AND. .NOT. WTINDP ) THEN
+
+                            IF( .NOT. READ3( WNAME, 'TKMIN', 1, 
+     &                                       WDATE, WTIME, 
+     &                                       TKMIN             ) ) THEN
+                	        MESG = 'Could not read TKMIN from ' 
+     &                                 // WNAME
+                                CALL M3EXIT( PROGNAME, WDATE, WTIME,
+     &                                                        MESG,2 )
+                            END IF
+
+                            IF( .NOT. READ3( WNAME, 'TKMAX', 1, 
+     &                                       WDATE, WTIME, 
+     &                                       TKMAX             ) ) THEN
+                	        MESG = 'Could not read TKMAX from ' 
+     &                                 // WNAME
+                                CALL M3EXIT( PROGNAME, WDATE, WTIME,
+     &                                                        MESG,2 )
+                            END IF
+
+                            IF( .NOT. READ3( WNAME, 'TMMI', 
+     &                                       ALLAYS3, 
+     &                                       WDATE, WTIME, 
+     &                                       METIDX        ) ) THEN
+                	        MESG = 'Could not read TMMI from ' 
+     &                                 // WNAME
+                                CALL M3EXIT( PROGNAME, WDATE, WTIME,
+     &                                                        MESG,2 )
+                	    END IF
+
+                        END IF
+
+                    END IF ! ( CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 )
 
 
-        call lastcall
+C.....................  Generate hourly emissions for current hour
+                    CALL GENHEMIS( T, R, NGSZ, JDATE, JTIME, TZONE, 
+     &                             DNAME, HNAME, 
+     &                             ALLIN2D( 1,N ), EANAM2D( 1,N ),
+     &                             EMAC, EMACV, TMAT, EMIST, UEMIS )
+
+                    V = 0
+C.....................  Loop through pollutants/emission-types in this group
+                    DO I = 1, NGSZ
+
+                        CBUF = EANAM2D( I,N )
+
+C.........................  Skip blanks that can occur when NGRP > 1
+                        IF ( CBUF .EQ. ' ' ) CYCLE
+
+                        IF( R .EQ. 0) THEN
+
+                            MESG = 'var written: ' // CBUF 
+                            CALL M3MSG2( MESG )
+
+C.............................  Write hourly emissions to I/O API NetCDF file
+                            IF( .NOT. WRITE3( TNAME, CBUF, 
+     &                                        JDATE, JTIME, 
+     &                                        EMIST( 1,I ) ) ) THEN
+                                L = LEN_TRIM( CBUF )
+                                MESG = 'Could not write "' // 
+     &                                 CBUF( 1:L ) // '" to file "' //
+     &                                 TNAME( 1:TNLEN )//'."'
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, 
+     &                                                       MESG, 2 )
+                            END IF
+
+                        ELSE
+
+C.............................  Unceratinty cycle condition: 
+C                               pollutant is not an uncertainty
+                            U = INDEX1( CBUF , NIPOL , EINAM )
+                            IF ( U .LE. 0 ) CYCLE
+
+c bug need to adjust for ef and emis
+c                            UCCOND = ( UEFINAM( U ) .OR. UEINAM( U ) )
+                            UCCOND = ( UEINAM( U ) )
+                            IF ( .NOT. ( UCCOND ) ) CYCLE
+             
+                            V = V + 1
+                            IF ( V .GT. UNIPOL ) THEN
+                                WRITE( MESG,94010 ) 
+     &                                'Number of uncertainty pollutants'
+     &                                , V,
+     &                                'exceeded the expected number',
+     &                                UNIPOL
+                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                            END IF
+
+C.............................  Write uncertainty annual emissions 
+C                               to I/O API NetCDF file
+                            IF( .NOT. WRITE3( UNAME, CBUF, 
+     &                                        JDATE, JTIME, 
+     &                                        UEMIS( 1,V ) ) ) THEN
+                                L = LEN_TRIM( CBUF )
+                                MESG = 'Could not write "' // 
+     &                                 CBUF( 1:L ) // '" to file "' //
+     &                                 UNAME( 1:UNLEN ) // '."'
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, 
+     &                                                       MESG, 2 )
+                            END IF
+
+                        END IF ! Loop through pollutants/emission-types I
+
+                    END DO  ! End loop on pollutants/emission-types I
+                            ! in this group
+
+C.....................  Advance the output date/time by one time step
+                    CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+C.....................  Advance the met date/time by one time step, 
+C                       saving the old date
+                    MLDATE = MDATE
+                    CALL NEXTIME( MDATE, MTIME, TSTEP )
+
+C.....................  Advance the min/max date/time by one day when 
+C                       the GMT date of the meterology has changed
+C.....................  Only advance time if the min/max file date 
+C                       is less than the ending date. Pretmpr has already 
+C                       given a warning about the mismatch.
+                    IF( MDATE .NE. MLDATE .AND. 
+     &                  WDATE .LT. WEDATE      ) THEN
+           
+                        CALL NEXTIME( WDATE, WTIME, 240000 )
+            
+                    END IF
+
+C.....................  Call QA report routine
+c                   WFLAG = ( T .EQ. NSTEPS )
+c                   CALL QATMPR( LDEV, NGSZ, T, JDATE, JTIME, WFLAG, 
+c    &                           EANAM2D( 1,N ), EMAC )
+
+                END DO ! End loop on T time steps, NSTEPS
+
+            END DO     ! End loop on N pollutant groups, NGRP
+
+        END DO         ! End loop on R simulations, DRAWRLZN
 
 C.........  Exit program with normal completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -1015,27 +1070,12 @@ C...........   Internal buffering formats.............94xxx
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
 
 c**************** Internal Subroutines *******************************
-        CONTAINS
 
-            SUBROUTINE LASTCALL
+        contains
 
-            INTEGER       J, K, U           ! counters and indices
-
-
-            DO J = 1,NSRC
-               TMPEMIST(J) = EMAC(J,4)
-            END DO
+        subroutine lastcall
 
 
-            END SUBROUTINE LASTCALL
-
-c*********************************************************************
-
-            SUBROUTINE SAMPLEF
-
-            INTEGER       J, K, U           ! counters and indices
-
-            END SUBROUTINE SAMPLEF
+        END subroutine lastcall
 
         END PROGRAM TEMPORAL
-
