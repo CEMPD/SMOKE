@@ -322,7 +322,6 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
          else
             setenv REPAG   $REPORTS/$ASCEN/static/repag.$GRID.$FYIOP.rpt
          endif
-            setenv REPAG   $REPORTS/$ASCEN/static/repag.$GRID.$FYIOP.rpt
          setenv REPMG   $REPORTS/$MSCEN/static/repmg.$GRID.$FYIOP.rpt
 	 setenv REPPG   $REPORTS/$PSCEN/static/reppg.$GRID.$FYIOP.rpt
 	 setenv REPEG   $REPSTAT/repeg.$GRID.$FYIOP.rpt
