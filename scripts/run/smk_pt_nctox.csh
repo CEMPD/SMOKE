@@ -7,7 +7,7 @@
 # This script sets up needed environment variables for running point source
 # emissions in SMOKE, and calls the script that runs the SMOKE programs. 
 #
-# Script created by : M. Houyoux, MCNC Environmental Modeling Center 
+# Script created by : M. Houyoux, CEP Environmental Modeling Center 
 #
 #*********************************************************************
 
@@ -22,20 +22,20 @@ setenv MRG_CTLMAT_ADD  ' '    # [A|P|AP] for merging with additive controls
 setenv MRG_CTLMAT_REAC ' '    # [A|M|P|AMP] for merging with reactivity controls
 
 ## time independent programs
-setenv RUN_SMKINVEN  Y        #  run inventory import program
-setenv RUN_SPCMAT    Y        #  run speciation matrix program
-setenv RUN_GRDMAT    Y        #  run gridding matrix program
+setenv RUN_SMKINVEN  N        #  run inventory import program
+setenv RUN_SPCMAT    N        #  run speciation matrix program
+setenv RUN_GRDMAT    N        #  run gridding matrix program
 setenv RUN_CNTLMAT   N        #  run control matrix program
 
 ## time-dependent programs
-setenv RUN_TEMPORAL  Y        #  run temporal allocation program
-setenv RUN_ELEVPOINT Y        #  run elevated/PinG sources selection program
-setenv RUN_LAYPOINT  Y        #  run layer fractions program
-setenv RUN_SMKMERGE  Y        #  run merge program
+setenv RUN_TEMPORAL  N        #  run temporal allocation program
+setenv RUN_ELEVPOINT N        #  run elevated/PinG sources selection program
+setenv RUN_LAYPOINT  N        #  run layer fractions program
+setenv RUN_SMKMERGE  N        #  run merge program
 setenv RUN_SMK2EMIS  N        #  run conversion of 2-d to UAM binary
 
 ## quality assurance
-setenv RUN_SMKREPORT N        # Y runs reporting for state reports
+setenv RUN_SMKREPORT Y        # Y runs reporting for state reports
 
 ## Program-specific controls...
 
@@ -120,7 +120,7 @@ setenv VELOC_RECALC         N     # Y recalculates velocity from diam and flow
 
 # Script settings
 setenv SRCABBR            pt      # abbreviation for naming log files
-setenv QA_TYPE            state   # run state reports at each proc stage
+setenv QA_TYPE            all     # [none, all, part1-part4, or custom]
 setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
 setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
 setenv AUTO_DELETE_LOG    Y       # Y automatically deletes logs without asking
@@ -128,12 +128,6 @@ setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 ##############################################################################
-
-## Set controls to run processing in parts
-setenv RUN_PART1 N    # Smkinven, Spcmat, Grdmat, Cntlmat
-setenv RUN_PART2 N    # Temporal
-setenv RUN_PART3 N    # Elevpoint
-setenv RUN_PART4 N    # Laypoint, Smkmerge, Smk2emis
 
 ## Run Smkinven, Spcmat, Grdmat, Cntlmat, if needed
 #
@@ -154,7 +148,6 @@ while ( $cnt < $EPI_NDAY )
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
    source smk_run.csh     # Run programs
    source qa_run.csh      # Run QA for part 2
-
    setenv G_STDATE_ADVANCE $NDAYS
 
 end
@@ -179,14 +172,16 @@ while ( $cnt < $EPI_NDAY )
    @ cnt = $cnt + $NDAYS
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
    source smk_run.csh     # Run programs
+   source qa_run.csh      # Run QA for part 4
 
    setenv G_STDATE_ADVANCE $NDAYS
 
 end
 setenv RUN_PART4 N
+unsetenv G_STDATE_ADVANCE
 
 #
 ## Ending of script
 #
-exit( $outstat )
+exit( 0 )
 

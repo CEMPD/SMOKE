@@ -47,15 +47,15 @@ if ( $?RUN_PART1 ) then
       echo 'Running part 1...'
    endif
 else
-   setenv RUN_PART1 Y 
+   setenv RUN_PART1 N
 endif
 if ( $?RUN_PART2 ) then
    if ( $RUN_PART2 == Y || $RUN_PART2 == y ) then
       setenv RUN_PART2 Y
-      echo 'Running part 2, for $ESDATE ...'
+      echo "Running part 2, for $ESDATE ..."
    endif
 else
-   setenv RUN_PART2 Y 
+   setenv RUN_PART2 N 
 endif
 if ( $?RUN_PART3 ) then
    if ( $RUN_PART3 == Y || $RUN_PART3 == y ) then
@@ -63,15 +63,15 @@ if ( $?RUN_PART3 ) then
       echo 'Running part 3 ...'
    endif
 else
-   setenv RUN_PART3 Y 
+   setenv RUN_PART3 N 
 endif
 if ( $?RUN_PART4 ) then
    if ( $RUN_PART4 == Y || $RUN_PART4 == y ) then
       setenv RUN_PART4 Y
-      echo 'Running part 4, for $ESDATE...'
+      echo "Running part 4, for $ESDATE..."
    endif
 else
-   setenv RUN_PART4 Y 
+   setenv RUN_PART4 N 
 endif
 
 #
@@ -473,6 +473,50 @@ if ( $?RUN_PREMOBL ) then
       if ( $debugexestat == 1 ) then
 	 echo 'SCRIPT ERROR: premobl.debug program does not exist in:'
 	 echo '              '$MB_SRC
+         set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Meteorology scan for bioseason file
+# 
+set debugexestat = 0
+set exestat = 0
+setenv TMPLOG   $OUTLOG/metscan.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_METSCAN ) then
+   if ( $RUN_METSCAN == 'Y' && $RUN_PART1 == Y ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.csh
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+        setenv LOGFILE $TMPLOG
+        if ( $debugmode == Y ) then
+            if ( -e $UT_SRC/metscan.debug ) then
+               $debug_exe $UT_SRC/metscan.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/metscan ) then
+               time $SMK_BIN/metscan
+            else
+               set exestat = 1 
+            endif
+         endif
+      endif
+
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: metscan program does not exist in:'
+	 echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: metscan.debug program does not exist in:'
+	 echo '              '$UT_SRC
          set exitstat = 1
       endif
    endif
