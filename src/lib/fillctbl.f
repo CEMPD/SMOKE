@@ -165,6 +165,24 @@ C               digits) so that the pol-specific can be identified later
             CASE( 25 )
                 CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL08C )
                                         
+            CASE( 26 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL26 )
+                                        
+            CASE( 27 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL27 )
+                                        
+            CASE( 28 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL28 )
+                                        
+            CASE( 29 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL29 )
+                                        
+            CASE( 30 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL30 )
+                                        
+            CASE( 31 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL31 )
+                                        
             CASE DEFAULT
 
             END SELECT

@@ -65,6 +65,7 @@ C.........  First deallocate if these have previously been allocated
             DEALLOCATE( CHRT02A, CHRT02B, CHRT02C )
             DEALLOCATE( CHRT05A, CHRT05B, CHRT05C )
             DEALLOCATE( CHRT08A, CHRT08B, CHRT08C )
+            DEALLOCATE( CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31 )
 
         END IF
 
@@ -164,6 +165,30 @@ C.........  NOTE- Added later
         J = MAX( 1, ICSIZE( 25 ) )                     ! SCC=level 3, FIP=all
         ALLOCATE( CHRT08C( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT08C', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 26 ) )                     ! SIC=2-digit, FIP=0
+        ALLOCATE( CHRT26( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT26', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 27 ) )                     ! SIC=all, FIP=0
+        ALLOCATE( CHRT27( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT27', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 28 ) )                     ! SIC=2-digit, FIP=state
+        ALLOCATE( CHRT28( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT28', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 29 ) )                     ! SIC=all, FIP=state
+        ALLOCATE( CHRT29( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT29', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 30 ) )                     ! SIC=2-digit, FIP=all
+        ALLOCATE( CHRT30( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT30', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 31 ) )                     ! SIC=all, FIP=all
+        ALLOCATE( CHRT31( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT31', PROGNAME )
 
         RETURN
 

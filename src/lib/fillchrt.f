@@ -59,7 +59,7 @@ C...........   Local field position array
         INTEGER, ALLOCATABLE :: ENDLEN( : ) 
 
 C...........   Other local variables
-        INTEGER       I, J, K, T       ! counter and indices
+        INTEGER       I, J, K, L, T    ! counter and indices
 
         INTEGER       IOS              ! i/o status
 
@@ -72,11 +72,17 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP    ! temporary (character) FIPS code
         CHARACTER(LEN=SRCLEN3) CSRC    ! temporary source char string
         CHARACTER(LEN=SCCLEN3) TSCC    ! temporary SCC
+        CHARACTER(LEN=SCCLEN3) SCCZERO ! buffer for zero SCC
+        CHARACTER(LEN=SICLEN3) CSIC    ! buffer for SIC
+        CHARACTER(LEN=SICLEN3) CSICL   ! buffer for left 2-digit SIC
 
         CHARACTER*16 :: PROGNAME = 'FILLCHRT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine FILLCHRT
+
+C.........  Set up zero string for SCC code of zero
+        SCCZERO = REPEAT( '0', SCCLEN3 )
 
 C.........  Set the local field position array based on the source category
         SELECT CASE ( CATEGORY )
@@ -108,10 +114,24 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
             CSRC   = CSRCTA( J )
             TSCC   = CSCCTA( J )
 
-C.............  Set up partial strings for saving
-            SCCL   = TSCC( 1:LSCCEND )
+C.............  Set up partial strings for country/state/county
             CFIP   = CSRC( 1:FIPLEN3 ) 
             CSTA   = CSRC( 1:STALEN3 )
+
+C.............  Determine whether SIC is imbedded in SCC field
+            K = INDEX( TSCC, SICNOTE )
+
+C.............  If SIC imbedded, setup SIC fields
+            CSIC = ' '
+            IF( K .GT. 0 ) THEN
+                L = K + LEN( SICNOTE )
+                CSIC  = TSCC( L : L + SICLEN3 - 1 )
+                TSCC  = SCCZERO
+                CSICL = CSIC( 1:2 )
+            END IF
+
+C.............  Set up partial SCC strings for saving
+            SCCL   = TSCC( 1:LSCCEND )
 
             T      = XTYPE ( I )  ! extract what group this entry is in
             K      = XTCNT ( I )  ! extract position in that group
@@ -141,14 +161,19 @@ C.............  Set up partial strings for saving
             CASE( 11 )
                 CHRT11( K ) = CSRC( 1:ENDLEN( 2 ) ) // TSCC
             CASE( 12 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT12( K ) = CSRC( 1:ENDLEN( 3 ) ) // TSCC
             CASE( 13 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT13( K ) = CSRC( 1:ENDLEN( 4 ) ) // TSCC
             CASE( 14 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT14( K ) = CSRC( 1:ENDLEN( 5 ) ) // TSCC
             CASE( 15 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT15( K ) = CSRC( 1:ENDLEN( 6 ) ) // TSCC
             CASE( 16 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT16( K ) = CSRC( 1:ENDLEN( 7 ) ) // TSCC
 
 C.............  NOTE- Cases added in version 1.4 (initially) for cntl/proj only
@@ -170,6 +195,18 @@ C.............  NOTE- Cases added in version 1.4 (initially) for cntl/proj only
                 CHRT08B( K ) = CFIP // TSCC( 1:SCCLEV2 )
             CASE( 25 )
                 CHRT08C( K ) = CFIP // TSCC( 1:SCCLEV3 )
+            CASE( 26 )
+                CHRT26( K ) = CSIC( 1:2 ) 
+            CASE( 27 )
+                CHRT27( K ) = CSIC 
+            CASE( 28 )
+                CHRT28( K ) = CSTA // CSIC( 1:2 ) 
+            CASE( 29 )
+                CHRT29( K ) = CSTA // CSIC 
+            CASE( 30 )
+                CHRT30( K ) = CFIP // CSIC( 1:2 ) 
+            CASE( 31 )
+                CHRT31( K ) = CFIP // CSIC 
             CASE DEFAULT
 
                 EFLAG = .TRUE.
