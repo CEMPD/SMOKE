@@ -109,7 +109,7 @@ C...........   Other local variables
         INTEGER         ENLEN        !  length of the emissions inven name
         INTEGER         NCPE         !  no control packet entries
         INTEGER         NINVARR      !  number inventory variables to input
-        INTEGER         PYEAR        !  projected year of inventory
+        INTEGER      :: PYEAR   = 0  !  projected year of inventory
         INTEGER         SYEAR        !  year for projecting from
 
         LOGICAL      :: CFLAG   = .FALSE.  ! true: control cntls in use
@@ -289,7 +289,7 @@ C.............  Open control matrix
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
             CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, RDEV,
-     &                     NCPE, ENAME, MNAME, CFLAG, GFLAG,
+     &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG )
 
 C STOPPED HERE: Need to write opencmat, genaddc, report post-processor
