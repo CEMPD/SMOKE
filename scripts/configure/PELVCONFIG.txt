@@ -22,7 +22,7 @@ SMK_SOURCE P
 #    minus 1 meter.
 
 /SPECIFY ELEV GROUPS/
-HT +/- 2.0 AND DIAMETER 1.0
+HT +/- 10.0 AND DIAMETER +/- 1.0
 /END/
 
 # Specify the criteria for PinG sources. This section is optional.
