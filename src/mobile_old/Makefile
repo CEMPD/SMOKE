@@ -2,7 +2,7 @@
 #
 all: opts
 #
-opts: emisfac grdmmat prediur rawmobil spcmmat tmpmobil
+opts: emisfac grdmmat prediur rawmobil spcmmat tmpmobil adjmobil
 #
 LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf 
 #
@@ -67,6 +67,16 @@ TMPI=MBDIMS3.EXT CHDGEN3.EXT TMDIMS3.EXT GRDIMS3.EXT
 tmpmobil: $(TMPV) $(TMPI)
 	echo TMPMOBIL:
 	f77 $(FFLAGS) -o $(SCENDIR)/tmpmobil $(TMPV) $(LIBS)
+#
+#
+#
+ADJM=adjmobil.f
+#
+ADJI=MBDIMS3.EXT TMDIMS3.EXT
+#
+adjmobil: $(ADJM) $(ADJI)
+	echo ADJMOBIL:
+	f77 $(DBGFLAGS) -o $(SCENDIR)/adjmobil $(ADJM) $(LIBS)
 #
 #
 #
