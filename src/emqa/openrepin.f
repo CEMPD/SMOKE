@@ -123,7 +123,7 @@ C.........  Get inventory file names given source category
 
 C.........  Prompt for and open input I/O API and ASCII files
 C.........  Use NAMBUF for using on the HP
-        NAMBUF = PROMPTMFILE( 
+        NAMBUF = PROMPTSET( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
         ENAME = NAMBUF
@@ -135,7 +135,7 @@ C.........  Use NAMBUF for using on the HP
 C.........  Get source category information from the inventory files
 C.........  Get header description of inventory file
 C.........  Exit if getting the description fails
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
 
             L = LEN_TRIM( ENAME )
             MESG = 'Could not get description of file "' //
@@ -171,10 +171,10 @@ C.........  For temporal inputs, prompt for hourly file
 
             MESG = 'Enter logical name for the HOURLY ' //
      &             'EMISSIONS file'
-            TNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'TMP', PROGNAME )
+            TNAME = PROMPTSET( MESG, FSREAD3, CRL//'TMP', PROGNAME )
 
 C.............  Set parameters and pollutants from hourly file
-            CALL RETRIEVE_IOAPI_HEADER( TNAME )
+            CALL RETRIEVE_SET_HEADER( TNAME )
             CALL CHKSRCNO( CATDESC, TNAME, NROWS3D, NSRC, EFLAG )
             CALL UPDATE_TIME_INFO( TNAME )
 
@@ -188,7 +188,7 @@ C.............  Determine ozone-season emissions status from hourly file
 
 C.............  Store variable number, names, and units from the hourly 
 C               emissions file
-            NTPDAT = NVARS3D
+            NTPDAT = NVARSET
             ALLOCATE( TPNAME( NTPDAT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TPNAME', PROGNAME )
             ALLOCATE( TPUNIT( NTPDAT ), STAT=IOS )
@@ -196,9 +196,9 @@ C               emissions file
             ALLOCATE( TPDESC( NTPDAT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TPDESC', PROGNAME )
 
-            TPNAME = VNAME3D( 1:NTPDAT )  ! array
-            TPUNIT = UNITS3D( 1:NTPDAT )  ! array
-            TPDESC = VDESC3D( 1:NTPDAT )  ! array
+            TPNAME = VNAMESET( 1:NTPDAT )  ! array
+            TPUNIT = VUNITSET( 1:NTPDAT )  ! array
+            TPDESC = VDESCSET( 1:NTPDAT )  ! array
 
 C.............  Determine the year and projection status of the hourly
 c           CALL CHECK_INVYEAR( TNAME, PRJFLAG, FDESC3D )
@@ -461,7 +461,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESC3( FILNAM ) ) THEN
+            IF ( .NOT. DESCSET( FILNAM,-1 ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
@@ -724,7 +724,7 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NNAM
 
-                NAMES( I ) = VNAME3D( J )
+                NAMES( I ) = VNAMESET( J )
                 J = J + INCRMT
 
             END DO
@@ -753,8 +753,8 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NDESC
 
-                L = LEN_TRIM( VDESC3D( J ) )
-                DESCS( I ) = VDESC3D( J )( 1:L )
+                L = LEN_TRIM( VDESCSET( J ) )
+                DESCS( I ) = VDESCSET( J )( 1:L )
                 J = J + INCRMT
 
             END DO

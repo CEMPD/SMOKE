@@ -58,11 +58,10 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                INDEX1
-        CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
         LOGICAL                SETENVVAR
 
-        EXTERNAL     GETCFDSC, INDEX1, PROMPTMFILE, VERCHAR, SETENVVAR
+        EXTERNAL     GETCFDSC, INDEX1, VERCHAR, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: SRCCT    ! total number of sources

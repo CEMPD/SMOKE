@@ -55,9 +55,10 @@ C.........  This module is used for MOBILE6 setup information
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -137,7 +138,7 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.......   Get file names and units; open input files
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
 
@@ -162,7 +163,7 @@ C.......   Get file names and units; open input files
      &           .FALSE., .TRUE., 'SPDSUM', PROGNAME )      
 
 C.........  Get header description of inventory file 
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

@@ -57,9 +57,10 @@ C.........  This module contains the global variables for the 3-d grid
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   ! emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    ! I/O API parameters
-        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    ! I/O API file description data structures.
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'FLTERR.EXT'    ! error filter statement function
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -127,7 +128,7 @@ C.........  Get environment variables that control program behavior
 C.........  Prompt for and open input I/O API and ASCII files
 C.........  Use NAMBUF for using on the HP
 
-        NAMBUF = PROMPTMFILE( 
+        NAMBUF = PROMPTSET( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
         ENAME = NAMBUF

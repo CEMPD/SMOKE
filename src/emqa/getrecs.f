@@ -361,7 +361,7 @@ C.........  Prompt for inventory file
      &           .TRUE., .TRUE., INAME, PROGNAME )
 
 C.........  Retrieve header information
-        IF ( .NOT. DESC3( ENAME ) ) THEN
+        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0,
      &                   'Error reading header from file "'
      &                   // ENAME( 1:LEN_TRIM( ENAME ) ) // '"', 2 )
@@ -1820,7 +1820,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESC3( FILNAM ) ) THEN
+            IF ( .NOT. DESCSET( FILNAM,-1 ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'

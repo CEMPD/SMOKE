@@ -31,6 +31,7 @@ temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
+include $(FSDIR)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgntpro.f
@@ -39,7 +40,7 @@ genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ genhemis.f
 mktmat.o: $(MODTMPRL) 
 	$(FC) $(FFLAGS) -c -o $@ mktmat.f
-opentmp.o: $(MODEMFAC) $(MODINFO)
+opentmp.o: $(MODEMFAC) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ opentmp.f
 opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ opentmpin.f

@@ -75,9 +75,10 @@ C.........  This module is used for MOBILE6 setup information
  
 C.........  INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C..........  EXTERNAL FUNCTIONS and their descriptions:
 
@@ -1001,8 +1002,8 @@ C               current group
 C.................  Skip blanks that can occur when NGRP > 1
                 IF ( CBUF .EQ. ' ' ) CYCLE
 
-                IF( .NOT. READ3( ENAME, CBUF, ALLAYS3, 0, 0, 
-     &                           EMAC( 1,I )                ) ) THEN
+                IF( .NOT. READSET( ENAME, CBUF, ALLAYS3, ALLFILES, 
+     &                             0, 0, EMAC( 1,I )      ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'Error reading "' // CBUF( 1:L1 ) //
      &                     '" from file "' // ENAME( 1:ENLEN ) // '."'

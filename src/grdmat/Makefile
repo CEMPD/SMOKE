@@ -4,8 +4,8 @@
 #
 LIBS	   = $(LDIRS) $(LIBS_SYS)
 LIBS_DEBUG = $(LDIRS) $(LIBS_DEBUG_SYS)
-LIBPATH    = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a $(FSDIR)/libfileset.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a $(FSDIR)/libfileset.debug.a
+LIBPATH    = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a 
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a 
 #
 
 all: grdmat
@@ -32,6 +32,7 @@ grdmat.debug: $(GRD) $(ALLI) $(LIBPATH_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
+include $(FSDIR)/modmake.inc
 
 asgnsurg.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnsurg.f
@@ -39,7 +40,7 @@ genagmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ genagmat.f
 genmgmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ genmgmat.f
-grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODGRID)
+grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODGRID) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ grdmat.f
 opengmat.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opengmat.f

@@ -50,9 +50,10 @@ C.........  This module contains the information about the source category
  
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'
-        INCLUDE 'PARMS3.EXT'
-        INCLUDE 'IODECL3.EXT'
-        INCLUDE 'FDESC3.EXT'
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
       
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER*2   CRLF
@@ -60,10 +61,8 @@ C...........   EXTERNAL FUNCTIONS
         INTEGER       FINDR3
         INTEGER       INDEX1
         INTEGER       PROMPTFFILE
-        CHARACTER*16  PROMPTMFILE
 
-        EXTERNAL      CRLF, FINDR2, FINDR3, INDEX1, PROMPTFFILE, 
-     &                PROMPTMFILE
+        EXTERNAL      CRLF, FINDR2, FINDR3, INDEX1, PROMPTFFILE
 
 C...........   PARAMETERS and their descriptions:
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -134,13 +133,13 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Get file names and open files
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
         ENLEN = LEN_TRIM( ENAME )
 
 C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:ENLEN ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

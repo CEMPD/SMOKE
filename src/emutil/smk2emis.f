@@ -52,11 +52,10 @@ C.........  This module contains the information about the source category
         IMPLICIT NONE
 
 C...........   INCLUDES:
-
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
-        INCLUDE 'EMCNST3.EXT'     !
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   PARAMETERS and their descriptions:
 
@@ -242,7 +241,7 @@ C.........  coordinate info, date, time, timestep , and variables
         IF ( .NOT. DESC3( ENAME ) ) THEN
 
             MESG = 'Could not get description of file "' //
-     &             ENAME( 1:TRIMLEN( ENAME ) ) // '"'
+     &             TRIM( ENAME ) // '"'
             CALL M3EXIT( PROGNAME , 0, 0, MESG, 2 )
 
         END IF
@@ -337,7 +336,7 @@ C.........  Initialize names map as input names
                 CALL PARSLINE( LINE, 2, SEGMENT )
 
 C.................  Find variable name in list of species
-                K = INDEX1( SEGMENT( 1 ), NSPECS, VNAME3D )
+                K = INDEX1( SEGMENT( 1 ), NSPECS, VNAME3D ) 
 
 C.................  If not found, write message
                 IF( K .LE. 0 ) THEN
@@ -448,7 +447,7 @@ C.............  Loop over output variables
 C.....................  Read input file for time and species of interest
 
                 IF ( .NOT. READ3( ENAME, VNAME3D( K ), 1, 
-     &                            SDATE, STIME, EMIS ) ) THEN
+     &                            SDATE, STIME, EMIS )) THEN
                   CALL M3ERR( PROGNAME , 0, 0,
      &                       'Error reading ' // VNAME3D( K ) // 
      &                       ' from file ' // ENAME , .TRUE. )

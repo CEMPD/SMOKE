@@ -55,15 +55,17 @@ C...........   This module is the derived meteorology data for emission factors
 C...........   This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS
 
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -190,7 +192,7 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.......   Get file names and units; open input files
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
 
@@ -256,7 +258,7 @@ C.........  Get MOBILE6 directory from the environment
         END IF        
 
 C.........  Get header description of inventory file 
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -289,8 +291,8 @@ C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Set up emission process variable names
-        CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS, VNAME3D, 
-     &                 UNITS3D, VDESC3D, VOLNAM )
+        CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS, VNAMESET, 
+     &                 VUNITSET, VDESCSET, VOLNAM )
 
 C.........  Read emission processes file.  Populate array in MODEMFAC.
         CALL RDEPROC( TDEV )

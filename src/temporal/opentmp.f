@@ -46,14 +46,16 @@ C.........  This module contains emission factor tables and related
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
@@ -62,11 +64,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                GETIFDSC
         CHARACTER(LEN=IOULEN3) MULTUNIT
         INTEGER                PROMPTFFILE
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
         EXTERNAL        CRLF, INDEX1, GETCFDSC, GETIFDSC, MULTUNIT,
-     &                  PROMPTMFILE, VERCHAR
+     &                  VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME  ! emissions inven logical name
@@ -85,6 +86,7 @@ C...........   Other local variables
 
         INTEGER         I, J, K, V     ! counters and indices
 
+        INTEGER         IOS         ! i/o status
         INTEGER         NINVVAR     ! number of inventory variables
         INTEGER         PYEAR       ! projected year from inventory file (or -1)
 
@@ -106,8 +108,7 @@ C.........  Set up file header(s) for opening I/O API output(s). Base this on
 C           inventory header...
 
 C.........  Get header information from inventory file
-
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -115,11 +116,11 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-        NINVVAR = NVARS3D
+        NINVVAR = NVARSET
         BYEAR   = GETIFDSC( FDESC3D, '/BASE YEAR/', .TRUE. )
         PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
-        NVARS3D = NIPPA
+        NVARSET = NIPPA
         SDATE3D = SDATE
         STIME3D = STIME
         TSTEP3D = TSTEP
@@ -138,6 +139,18 @@ C.........  Get header information from inventory file
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
+C.........  Allocate memory for output arrays
+        DEALLOCATE( VNAMESET, VUNITSET, VTYPESET, VDESCSET )
+        DEALLOCATE( VARS_PER_FILE )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
 C.........  Set variable names and characteristics from the emission types
         K = 0
         DO J = 1, NIACT
@@ -155,10 +168,17 @@ C               expanded to contain the emission types
             DO V = 1, NETYPE( I-NIPOL )
 
         	K = K + 1
-        	VNAME3D( K ) = EMTNAM( V,J )
-        	UNITS3D( K ) = EAUNIT( I )   
-        	VDESC3D( K ) = EMTDSC( V,J )
-        	VTYPE3D( K ) = M3REAL
+                IF( K .GT. NVARSET ) THEN
+                    MESG = 'INTERNAL ERROR: Memory overflow building '//
+     &                     'I/O API output variables'
+                    CALL M3MSG2( MESG )
+                    CYCLE
+                END IF
+
+        	VNAMESET( K ) = EMTNAM( V,J )
+        	VUNITSET( K ) = EAUNIT( I )   
+        	VDESCSET( K ) = EMTDSC( V,J )
+        	VTYPESET( K ) = M3REAL
 
             END DO  ! End loop on emission types for output
         END DO      ! End loop on activities output
@@ -175,16 +195,23 @@ C.............  Double check that pollutant is in the inventory file
             END IF
 
             K = K + 1
-            VNAME3D( K ) = EINAM ( V )
-            UNITS3D( K ) = EAUNIT( I )
-            VDESC3D( K ) = EADESC( I )
-            VTYPE3D( K ) = M3REAL
+            IF( K .GT. NVARSET ) THEN
+                MESG = 'INTERNAL ERROR: Memory overflow building '//
+     &                 'I/O API output variables'
+                CALL M3MSG2( MESG )
+                CYCLE
+            END IF
+
+            VNAMESET( K ) = EINAM ( V )
+            VUNITSET( K ) = EAUNIT( I )
+            VDESCSET( K ) = EADESC( I )
+            VTYPESET( K ) = M3REAL
 
         END DO  ! End loop on pollutants for output
 
 C.........  Prompt for and open I/O API output file(s)...
         MESG = 'Enter name for output HOURLY EMISSIONS file'
-        NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
+        NAMBUF = PROMPTSET( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
         TNAME = NAMBUF
 
 C.........  Open supplemental speciation file

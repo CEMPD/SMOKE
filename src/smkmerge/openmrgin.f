@@ -57,8 +57,8 @@ C.........  This module is required for the FileSetAPI
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
@@ -175,7 +175,7 @@ C.............  Get inventory file names given source category
             CALL GETINAME( 'AREA', AENAME, DUMNAME )
 
 C.............  Prompt for inventory files
-            AENAME = PROMPTMFILE( 
+            AENAME = PROMPTSET( 
      &       'Enter logical name for the I/O API AREA INVENTORY file',
      &       FSREAD3, AENAME, PROGNAME )
 
@@ -199,7 +199,7 @@ C.................  Compare headers to make sure files are consistent.
                 CALL OPEN_TMP_FILES( 'AREA', AFLAG_BD, ATNAME, ASDATE )
 
 C.................  Set pollutants from hourly file
-                ANIPOL = NVARS3D
+                ANIPOL = NVARSET
                 ALLOCATE( AEINAM( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AEINAM', PROGNAME )
                 ALLOCATE( AONAMES( ANIPOL ), STAT=IOS )
@@ -207,8 +207,8 @@ C.................  Set pollutants from hourly file
                 ALLOCATE( AOUNITS( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( 1, 1, ANIPOL, AEINAM )
-                CALL STORE_INVINFO( 1, 1, ANIPOL, 1, INVPIDX,
+                CALL STORE_VNAMES( 1, 1, ANIPOL, .TRUE., AEINAM )
+                CALL STORE_INVINFO( 1, 1, ANIPOL, 1, INVPIDX, .TRUE.,
      &                              AONAMES, AOUNITS )
 
 C.................  Determine the year and projection status of the hourly
@@ -228,9 +228,10 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( AOUNITS( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( NVAR+1, NPPOL, ANIPOL, AEINAM )
+                CALL STORE_VNAMES( NVAR+1, NPPOL, ANIPOL, .TRUE., 
+     &                             AEINAM )
                 CALL STORE_INVINFO( NVAR+1, NPPOL, ANIPOL, 1, INVPIDX,
-     &                              AONAMES, AOUNITS )
+     &                              .TRUE., AONAMES, AOUNITS )
 
             END IF
 
@@ -259,8 +260,8 @@ C               speciation variable descriptions, and store mass or moles.
                 CALL CHECKMEM( IOS, 'ASVDESC', PROGNAME )
                 ALLOCATE( ASVUNIT( ANSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ASVUNIT', PROGNAME )
-                CALL STORE_VDESCSET( 1, 1, ANSMATV, ASVDESC )
-                CALL STORE_VUNITSET( 1, 1, ANSMATV, ASVUNIT )
+                CALL STORE_VDESCS( 1, 1, ANSMATV, .TRUE., ASVDESC )
+                CALL STORE_VUNITS( 1, 1, ANSMATV, .TRUE., ASVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'area' )
@@ -279,7 +280,7 @@ C               and store control variable names.
                 ANUMATV = NVARS3D
                 ALLOCATE( AUVNAMS( ANUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, ANUMATV, AUVNAMS )
+                CALL STORE_VNAMES( 1, 1, ANUMATV, .FALSE., AUVNAMS )
 
             END IF  ! end of multiplicative control open
 
@@ -305,7 +306,7 @@ C               store control variable descriptions, and store mass or moles.
                 ANSREAC = NROWS3D
                 ALLOCATE( ARVDESC( ANRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ARVDESC', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, ANRMATV, ARVDESC )
+                CALL STORE_VDESCS( 1, 1, ANRMATV, .FALSE., ARVDESC )
 
 C.................  Retrieve the number of speciation factors 
                 ARNMSPC = GETIFDSC( FDESC3D, '/SPECIES VARS/', .TRUE. )
@@ -372,7 +373,7 @@ C.............  Get inventory file names given source category
             CALL GETINAME( 'MOBILE', MENAME, DUMNAME )
 
 C.............  Prompt for inventory files
-            MENAME = PROMPTMFILE( 
+            MENAME = PROMPTSET( 
      &       'Enter logical name for the I/O API MOBILE INVENTORY file',
      &       FSREAD3, MENAME, PROGNAME )
 
@@ -395,7 +396,7 @@ C                   processing.
 C.................  Compare headers to make sure files are consistent.
                 CALL OPEN_TMP_FILES( 'MOBILE', MFLAG_BD, MTNAME, MSDATE)
 
-                MNIPPA = NVARS3D
+                MNIPPA = NVARSET
                 ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
                 ALLOCATE( MONAMES( MNIPPA ), STAT=IOS )
@@ -403,8 +404,8 @@ C.................  Compare headers to make sure files are consistent.
                 ALLOCATE( MOUNITS( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MOUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( 1, 1, MNIPPA, MEANAM )
-                CALL STORE_INVINFO( 1, 1, MNIPPA, 1, INVPIDX,
+                CALL STORE_VNAMES( 1, 1, MNIPPA, .TRUE., MEANAM )
+                CALL STORE_INVINFO( 1, 1, MNIPPA, 1, INVPIDX, .TRUE., 
      &                              MONAMES, MOUNITS )
 
 C.................  Determine the year and projection status of the hourly
@@ -434,18 +435,19 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 CALL CHECKMEM( IOS, 'MOUNITS', PROGNAME )
 
 C.................  Store pollutant names and other information
-                CALL STORE_VNAMES( NVAR+1, NPPOL, MNIPOL, MEANAM )
+                CALL STORE_VNAMES( NVAR+1, NPPOL, MNIPOL, .TRUE., 
+     &                             MEANAM )
                 CALL STORE_INVINFO( NVAR+1, NPPOL, MNIPOL, 1, INVPIDX,
-     &                              MONAMES, MOUNITS )
+     &                              .TRUE., MONAMES, MOUNITS )
 
 C.................  Store activity names and other information
                 I    = MNIPOL * NPPOL
                 NVAR = NVAR + I
-                CALL STORE_VNAMES( NVAR+1, NPACT, MNIACT, 
+                CALL STORE_VNAMES( NVAR+1, NPACT, MNIACT, .TRUE., 
      &                             MEANAM( MNIPOL+1 )     )
-                CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, 1, 1,
+                CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, 1, 1, .TRUE., 
      &                              MONAMES( MNIPOL+1 ), 
-     &                              MOUNITS( MNIPOL+1 )             )
+     &                              MOUNITS( MNIPOL+1 )                )
 
             END IF
 
@@ -474,8 +476,8 @@ C               speciation variable descriptions, and store mass or moles.
                 CALL CHECKMEM( IOS, 'MSVDESC', PROGNAME )
                 ALLOCATE( MSVUNIT( MNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MSVUNIT', PROGNAME )
-                CALL STORE_VDESCSET( 1, 1, MNSMATV, MSVDESC )
-                CALL STORE_VUNITSET( 1, 1, MNSMATV, MSVUNIT )
+                CALL STORE_VDESCS( 1, 1, MNSMATV, .TRUE., MSVDESC )
+                CALL STORE_VUNITS( 1, 1, MNSMATV, .TRUE., MSVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'mobile' )
@@ -494,7 +496,7 @@ C               and store control variable names.
                 MNUMATV = NVARS3D
                 ALLOCATE( MUVNAMS( MNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, MNUMATV, MUVNAMS )
+                CALL STORE_VNAMES( 1, 1, MNUMATV, .FALSE., MUVNAMS )
 
             END IF  ! end of multiplicative control open
 
@@ -511,7 +513,7 @@ C               store control variable descriptions, and store mass or moles.
                 MNSREAC = NROWS3D
                 ALLOCATE( MRVDESC( MNRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MRVDESC', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, MNRMATV, MRVDESC )
+                CALL STORE_VDESCS( 1, 1, MNRMATV, .FALSE., MRVDESC )
 
 C.................  Retrieve the number of speciation factors 
                 MRNMSPC = GETIFDSC( FDESC3D, '/SPECIES VARS/', .TRUE. )
@@ -538,7 +540,7 @@ C.............  Get inventory file names given source category
             CALL GETINAME( 'POINT', PENAME, DUMNAME )
 
 C.............  Prompt for inventory files
-            PENAME = PROMPTMFILE( 
+            PENAME = PROMPTSET( 
      &       'Enter logical name for the I/O API POINT INVENTORY file',
      &       FSREAD3, PENAME, PROGNAME )
 
@@ -566,7 +568,7 @@ C                   processing.
 C.................  Compare headers to make sure files are consistent.
                 CALL OPEN_TMP_FILES( 'POINT', PFLAG_BD, PTNAME, PSDATE)
 
-                PNIPOL = NVARS3D
+                PNIPOL = NVARSET
                 ALLOCATE( PEINAM( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PEINAM', PROGNAME )
                 ALLOCATE( PONAMES( PNIPOL ), STAT=IOS )
@@ -574,8 +576,8 @@ C.................  Compare headers to make sure files are consistent.
                 ALLOCATE( POUNITS( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( 1, 1, PNIPOL, PEINAM )
-                CALL STORE_INVINFO( 1, 1, PNIPOL, 1, INVPIDX,
+                CALL STORE_VNAMES( 1, 1, PNIPOL, .TRUE., PEINAM )
+                CALL STORE_INVINFO( 1, 1, PNIPOL, 1, INVPIDX, .TRUE., 
      &                              PONAMES, POUNITS )
 
 C.................  Determine the year and projection status of the hourly 
@@ -595,9 +597,10 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( POUNITS( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( NPTVAR3+1, NPTPPOL3, PNIPOL, PEINAM )
+                CALL STORE_VNAMES( NPTVAR3+1, NPTPPOL3, PNIPOL, .TRUE., 
+     &                             PEINAM )
                 CALL STORE_INVINFO( NVAR+1, NPPOL, PNIPOL, 1, INVPIDX,
-     &                              PONAMES, POUNITS )
+     &                              .TRUE., PONAMES, POUNITS )
 
             END IF
 
@@ -625,8 +628,8 @@ C               speciation variable names, and store mass or moles.
                 CALL CHECKMEM( IOS, 'PSVDESC', PROGNAME )
                 ALLOCATE( PSVUNIT( PNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PSVUNIT', PROGNAME )
-                CALL STORE_VDESCSET( 1, 1, PNSMATV, PSVDESC )
-                CALL STORE_VUNITSET( 1, 1, PNSMATV, PSVUNIT )
+                CALL STORE_VDESCS( 1, 1, PNSMATV, .TRUE., PSVDESC )
+                CALL STORE_VUNITS( 1, 1, PNSMATV, .TRUE., PSVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'point' )
@@ -645,7 +648,7 @@ C               and store control variable names.
                 PNUMATV = NVARS3D
                 ALLOCATE( PUVNAMS( PNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, PNUMATV, PUVNAMS )
+                CALL STORE_VNAMES( 1, 1, PNUMATV, .FALSE., PUVNAMS )
 
             END IF  ! end of multiplicative control open
 
@@ -671,7 +674,7 @@ C               store control variable descriptions, and store mass or moles.
                 PNSREAC = NROWS3D
                 ALLOCATE( PRVDESC( PNRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PRVDESC', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, PNRMATV, PRVDESC )
+                CALL STORE_VDESCS( 1, 1, PNRMATV, .FALSE., PRVDESC )
 
 C.................  Retrieve the number of speciation factors 
                 PRNMSPC = GETIFDSC( FDESC3D, '/SPECIES VARS/', .TRUE. )
@@ -861,7 +864,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESC3( FILNAM ) ) THEN
+            IF ( .NOT. DESCSET( FILNAM,-1 ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
@@ -1055,7 +1058,7 @@ C.............  For by-day processing...
      &                     // ' ' // LOCCAT // ' HOURLY EMISSIONS file'
                     TMPNAM = CRL // 'TMP_' // SUFFIX( D )
 
-                    FNAME( D ) = PROMPTMFILE( MESG,FSREAD3,
+                    FNAME( D ) = PROMPTSET( MESG,FSREAD3,
      &                                        TMPNAM,PROGNAME )
                     IDX( D ) = D
                 END DO
@@ -1068,7 +1071,7 @@ C.............  For standard processing...
      &                 ' HOURLY EMISSIONS file'
                 TMPNAM = CRL // 'TMP'
 
-                FNAME = PROMPTMFILE( MESG,FSREAD3,TMPNAM,PROGNAME ) ! array
+                FNAME = PROMPTSET( MESG,FSREAD3,TMPNAM,PROGNAME ) ! array
                 IDX( NFILE ) = 1
 
             END IF
@@ -1168,25 +1171,25 @@ C                   making comparisons with other files.
                     ALLOCATE( LOCVUNIT( LOCNVAR ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'LOCVUNIT', PROGNAME )
 
-                    LOCVNAM ( 1:LOCNVAR ) = VNAME3D( 1:LOCNVAR )
-                    LOCVUNIT( 1:LOCNVAR ) = UNITS3D( 1:LOCNVAR )
+                    LOCVNAM ( 1:LOCNVAR ) = VNAMESET( 1:LOCNVAR )
+                    LOCVUNIT( 1:LOCNVAR ) = VUNITSET( 1:LOCNVAR )
 
 C.................  Compare the pollutant names and units
                 ELSE
 
 C.....................  Check to make sure the number is consistent first
-                    IF( NVARS3D .NE. LOCNVAR ) NFLAG = .TRUE.
+                    IF( NVARSET .NE. LOCNVAR ) NFLAG = .TRUE.
 
 C.....................  Make sure no overflows                    
-                    N = MIN( NVARS3D, LOCNVAR )
+                    N = MIN( NVARSET, LOCNVAR )
 
 C.....................  compare variable names and units among files
-                   DO V = 1, N
-                        IF( LOCVNAM( V ) .NE. VNAME3D( V ) ) THEN
+                    DO V = 1, N
+                        IF( LOCVNAM( V ) .NE. VNAMESET( V ) ) THEN
                             VFLAG = .TRUE.
                         END IF
 
-                        IF( LOCVUNIT( V ) .NE. UNITS3D( V ) ) THEN
+                        IF( LOCVUNIT( V ) .NE. VUNITSET( V ) ) THEN
                             UFLAG = .TRUE.
                         END IF
                     END DO
@@ -1464,13 +1467,14 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable names into
 C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VNAMES( ISTART, INCRMT, NNAM, NAMES )
+            SUBROUTINE STORE_VNAMES( ISTART, INCRMT, NNAM, LFSET, NAMES)
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VNAMES of names
-            INTEGER      INCRMT        ! increment of VNAMES for names
-            INTEGER      NNAM          ! number of names
-            CHARACTER(*) NAMES( NNAM ) ! stored variable names
+            INTEGER,      INTENT (IN) :: ISTART ! starting position in VNAMES of names
+            INTEGER,      INTENT (IN) :: INCRMT ! increment of VNAMES for names
+            INTEGER,      INTENT (IN) :: NNAM   ! number of names
+            LOGICAL,      INTENT (IN) :: LFSET  ! true: input file is FileSetAPI
+            CHARACTER(*), INTENT(OUT) :: NAMES( NNAM ) ! stored variable names
 
 C.............  Local variables
             INTEGER  I, J
@@ -1480,7 +1484,12 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NNAM
 
-                NAMES( I ) = VNAME3D( J )
+                IF( LFSET ) THEN    ! From FileSetAPI
+                    NAMES( I ) = VNAMESET( J )
+                ELSE                ! From standard I/O API
+                    NAMES( I ) = VNAME3D( J )
+                END IF
+
                 J = J + INCRMT
 
             END DO
@@ -1493,16 +1502,17 @@ C.............  This subprogram stores I/O API NetCDF variable names and
 C               units from the inventory file into a local array based 
 C               on indices in subprogram call.
             SUBROUTINE STORE_INVINFO( ISTART, NPER, NPOA, IDX1, IDX2,
-     &                                NAMES, UNITS )
+     &                                LFSET, NAMES, UNITS )
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VNAMES of names
-            INTEGER      NPER          ! no. variables per pollutant
-            INTEGER      NPOA          ! number of pollutants or activities
-            INTEGER      IDX1          ! start index for output variables
-            INTEGER      IDX2          ! index to which pol-assoc variable
-            CHARACTER(*) NAMES( NPOA ) ! stored variable names
-            CHARACTER(*) UNITS( NPOA ) ! stored variable units
+            INTEGER,       INTENT (IN) :: ISTART ! starting position in VNAMES of names
+            INTEGER,       INTENT (IN) :: NPER   ! no. variables per pollutant
+            INTEGER,       INTENT (IN) :: NPOA   ! number of pollutants or activities
+            INTEGER,       INTENT (IN) :: IDX1   ! start index for output variables
+            INTEGER,       INTENT (IN) :: IDX2   ! index to which pol-assoc variable
+            LOGICAL,       INTENT (IN) :: LFSET  ! true: input file is FileSetAPI
+            CHARACTER(*), INTENT (OUT) :: NAMES( NPOA ) ! stored variable names
+            CHARACTER(*), INTENT (OUT) :: UNITS( NPOA ) ! stored variable units
 
 C.............  Local variables
             INTEGER  I, J, K
@@ -1515,8 +1525,17 @@ C----------------------------------------------------------------------
 
                 J = J + NPER
                 K = K + 1
-                NAMES( K ) = VNAME3D( J )
-                UNITS( K ) = UNITS3D( J )
+
+C................  If input file is from the FileSetAPI
+                IF( LFSET ) THEN
+                    NAMES( K ) = VNAMESET( J )
+                    UNITS( K ) = VUNITSET( J )
+
+C................  If input file is from the standard I/O
+                ELSE
+                    NAMES( K ) = VNAME3D( J )
+                    UNITS( K ) = UNITS3D( J )
+                END IF
 
             END DO
  
@@ -1526,16 +1545,17 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable descriptions into
 C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VDESCS( ISTART, INCRMT, NDESC, DESCS )
+            SUBROUTINE STORE_VDESCS( ISTART,INCRMT,NDESC,LFSET,DESCS )
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VDESCS of names
-            INTEGER      INCRMT        ! increment of VDESCS for names
-            INTEGER      NDESC         ! number of descriptions
-            CHARACTER(*) DESCS( NDESC )! stored variable descriptions
+            INTEGER     , INTENT (IN) :: ISTART   ! starting position in VDESCS of names
+            INTEGER     , INTENT (IN) :: INCRMT   ! increment of VDESCS for names
+            INTEGER     , INTENT (IN) :: NDESC    ! number of descriptions
+            LOGICAL     , INTENT (IN) :: LFSET    ! number of descriptions
+            CHARACTER(*), INTENT(OUT) :: DESCS( NDESC )! stored variable descriptions
 
 C.............  Local variables
-            INTEGER  I, J, L
+            INTEGER  I, J
 
 C----------------------------------------------------------------------
 
@@ -1544,8 +1564,12 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NDESC
 
-                L = LEN_TRIM( VDESC3D( J ) )
-                DESCS( I ) = VDESC3D( J )( 1:L )
+                IF( LFSET ) THEN  ! From FileSetAPI
+                    DESCS( I ) = TRIM( VDESCSET( J ) )
+                ELSE              ! From standard I/O API
+                    DESCS( I ) = TRIM( VDESC3D( J ) )
+                END IF
+
                 J = J + INCRMT
 
             END DO
@@ -1554,45 +1578,16 @@ C----------------------------------------------------------------------
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
-C.............  This subprogram stores variable descriptions for a file set into
-C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VDESCSET( ISTART, INCRMT, NDESC, DESCS )
-
-C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VDESCS of names
-            INTEGER      INCRMT        ! increment of VDESCS for names
-            INTEGER      NDESC         ! number of descriptions
-            CHARACTER(*) DESCS( NDESC )! stored variable descriptions
-
-C.............  Local variables
-            INTEGER  I, J, L
-
-C----------------------------------------------------------------------
-
-            DESCS = ' '
-
-            J = ISTART
-            DO I = 1, NDESC
-
-                L = LEN_TRIM( VDESCSET( J ) )
-                DESCS( I ) = VDESCSET( J )( 1:L )
-                J = J + INCRMT
-
-            END DO
- 
-            END SUBROUTINE STORE_VDESCSET
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable units into
 C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VUNITS( ISTART, INCRMT, NUNIT, UNITS )
+            SUBROUTINE STORE_VUNITS( ISTART,INCRMT,NUNIT,LFSET,UNITS )
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VDESCS of names
-            INTEGER      INCRMT        ! increment of VDESCS for names
-            INTEGER      NUNIT         ! number of units
-            CHARACTER(*) UNITS( NUNIT )! stored variable units
+            INTEGER     , INTENT (IN) :: ISTART        ! starting position in VDESCS of names
+            INTEGER     , INTENT (IN) :: INCRMT        ! increment of VDESCS for names
+            INTEGER     , INTENT (IN) :: NUNIT         ! number of units
+            LOGICAL     , INTENT (IN) :: LFSET         ! number of descriptions
+            CHARACTER(*), INTENT(OUT) :: UNITS( NUNIT )! stored variable units
 
 C.............  Local variables
             INTEGER  I, J, L
@@ -1604,42 +1599,16 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NUNIT
 
-                L = LEN_TRIM( UNITS3D( J ) )
-                UNITS( I ) = UNITS3D( J )( 1:L )
+                IF( LFSET ) THEN  ! From FileSetAPI
+                    UNITS( I ) = TRIM( VUNITSET( J ) )
+                ELSE              ! From standard I/O API
+                    UNITS( I ) = TRIM( UNITS3D( J ) )
+                END IF 
+
                 J = J + INCRMT
 
             END DO
  
             END SUBROUTINE STORE_VUNITS
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
-C.............  This subprogram stores variable units for a file set into
-C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VUNITSET( ISTART, INCRMT, NUNIT, UNITS )
-
-C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VDESCS of names
-            INTEGER      INCRMT        ! increment of VDESCS for names
-            INTEGER      NUNIT         ! number of units
-            CHARACTER(*) UNITS( NUNIT )! stored variable units
-
-C.............  Local variables
-            INTEGER  I, J, L
-
-C----------------------------------------------------------------------
-
-            UNITS = ' '
-
-            J = ISTART
-            DO I = 1, NUNIT
-
-                L = LEN_TRIM( VUNITSET( J ) )
-                UNITS( I ) = VUNITSET( J )( 1:L )
-                J = J + INCRMT
-
-            END DO
- 
-            END SUBROUTINE STORE_VUNITSET
 
         END SUBROUTINE OPENMRGIN

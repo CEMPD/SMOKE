@@ -64,6 +64,7 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -264,7 +265,7 @@ C.............  Assign bin numbers to selected records
 
 C.............  Update inventory input names and units, depending on status of 
 C               ozone-season emissions.
-            IF( .NOT. DESC3( ENAME ) ) THEN
+            IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
 
                 L = LEN_TRIM( ENAME )
                 MESG = 'Could not get description of file "' //

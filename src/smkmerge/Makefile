@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	      = $(LDIRS) $(LIBS_SYS) -lfileset
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) -lfileset.debug 
+LIBS	      = $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
 LIBS2         = $(LDIRS) $(LIBS_SYS)
 LIBS_DEBUG2   = $(LDIRS) $(LIBS_DEBUG_SYS)
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
@@ -32,11 +32,11 @@ MRG= smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o mrgmult.o mrgonams.o \
 #
 smkmerge: $(MRG) $(ALLI) $(LIBPATH)
 	echo SMKMERGE:
-	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS)
 #
 smkmerge.debug: $(MRG) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKMERGE \(debug\):
-	$(FC) $(DBGFLAGS) -L$(FSDIR) -o $(@) $(MRG) $(LIBS_DEBUG)
+	$(FC) $(DBGFLAGS) -o $(@) $(MRG) $(LIBS_DEBUG)
 #
 #
 smkmerge.pvm: $(MRG) $(ALLI) $(LIBPATH)
@@ -58,6 +58,7 @@ mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 #
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
+include $(FSDIR)/modmake.inc
 
 allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ allocmrg.f
@@ -79,8 +80,8 @@ mrgunits.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ mrgunits.f
 mrgvnams.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ mrgvnams.f
-openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) 
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ openmrgin.f
+openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) $(MODFILESET)
+	$(FC) $(FFLAGS) -c -o $@ openmrgin.f
 openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ openmrgout.f
 rdmrginv.o: $(MODMERGE)
