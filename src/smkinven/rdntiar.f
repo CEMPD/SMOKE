@@ -211,7 +211,7 @@ C.............  If source is new
 C.................  Write out previous source number of pollutants
 C.................  and compute stats
                 IF( NSRC .GT. 0 ) THEN
-                    WRITE( 70, ('(I8)') ) NPOL
+                    WRITE( 70, '(I8)' ) NPOL
                     MXPOL = MAX( MXPOL, NPOL )
                     MNPOL = MIN( MNPOL, NPOL )
                 END IF
@@ -231,7 +231,7 @@ C.............  If same source, count pollutants
 
 199     CONTINUE        !  exit from the FDEV-read loop
 
-        WRITE( 70,('(I8)') ) NPOL
+        WRITE( 70,'(I8)' ) NPOL
 
         print *, 'min pol per source=', MNPOL
         print *, 'max pol per source=', MXPOL
