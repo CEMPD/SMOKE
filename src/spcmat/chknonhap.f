@@ -84,7 +84,7 @@ C...........   Other local variables
 C***********************************************************************
 C   Begin body of subroutine CHKNONHAP
 
-        J = INDEX( 'NONHAP', PNAM )
+        J = INDEX( PNAM, 'NONHAP' )
 
 C.........  If current pollutant is not a NONHAP* pollutant, exit
         IF( J .LE. 0 .OR. PNAM .EQ. PREV_PNAM ) RETURN
@@ -147,14 +147,17 @@ C                     that are in the GSPRO def'n, but not the inven's
 
                 DO K = 1, NSPLST(I)
                     PBUF = SPCDEFLST(K,I)
-                    J = INDEX1( PBUF, MXIDAT, INVDNAM )
+                    J = INDEX1( PBUF, MXIDAT, ITNAMA )
                     IF( J .GT. 0 ) THEN
-                        EFLAG = .TRUE.
-                        MESG = 'ERROR: Pollutant "' // TRIM( PBUF )//
+                        IF( ITKEEPA( J ) .AND.
+     &                      ITVTSA ( J ) .EQ. 'N' ) THEN
+                            EFLAG = .TRUE.
+                            MESG = 'ERROR: Pollutant "'// TRIM( PBUF )//
      &                         '" part of ' // TRIM( PNAM ) // 
-     &                         'definition in GSPRO but not in ' //
-     &                         'INVTABLE.'
-                        CALL M3MSG2( MESG )
+     &                         ' definition in GSPRO but '// CRLF()//
+     &                         BLANK10 // 'not in INVTABLE.'
+                            CALL M3MSG2( MESG )
+                        END IF
                     END IF
                 END DO
 

@@ -137,24 +137,11 @@ C.................  Count total number of output variables
 
         END DO
 
-C.........  Print Error if number of variables is passed maximum.
-C.........  DO NOT end program here because it will be ended when the write
-C           attempt is made for these extra variables.
-!        IF( ICNT .GT. MXVARS3 ) THEN
-!            WRITE( MESG, 94010 ) 
-!     &             'ERROR: maximum I/O API variables exceeded:' //
-!     &             CRLF() // BLANK10 // 'Max: ', MXVARS3, 'Actual:',ICNT
-!            CALL M3MSG2( MESG )
-!
-!            ICNT = MXVARS3
-!        END IF
-
 C.........  Set up file header(s) for opening I/O API output(s). Base this on
 C           inventory header...
 
 C.........  Get header information from inventory file
-
-        IF ( .NOT. DESC3( ENAME ) ) THEN
+        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -162,8 +149,6 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-
-        NVARSET = ICNT
 
         FDESC3D = ' '   ! array
 
@@ -174,15 +159,23 @@ C.........  Get header information from inventory file
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
-C.........  Allocate memory for file description information
-        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+C.........  Resset output number of variables
+        NVARSET = ICNT
+
+C.........  Deallocate, then allocate, output arrays
+        DEALLOCATE( VNAMESET, VTYPESET, VUNITSET, VDESCSET )
         ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
         ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
         ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+C.........  Also deallocate the number of variables per file so
+C           that this will be set automatically by openset
+        DEALLOCATE( VARS_PER_FILE )
 
 C.........  Set up variable descriptions that will be used to indicate the 
 C           inventory pollutant and model species names
@@ -216,7 +209,7 @@ C.........  Set up variables specifically for mass-based file, and open it
                 DO J = 1, NSPEC( K )
 
                     I = I + 1
-                    VNAMESET( I ) =  SVNAMES( J,K ) 
+                    VNAMESET( I ) = SVNAMES( J,K ) 
                     VUNITSET( I ) = SMASUNIT
 
                 END DO

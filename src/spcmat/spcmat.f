@@ -58,7 +58,7 @@ C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -67,10 +67,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
 
-        EXTERNAL        CRLF, ENVYN, GETFLINE, INDEX1, PROMPTFFILE, 
-     &                  PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, GETFLINE, INDEX1, PROMPTFFILE
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -178,7 +176,7 @@ C.........  Get inventory file names given source category
 
 C.......   Get file names and units; open input files
 
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
 
@@ -200,7 +198,7 @@ C.......   Get file names and units; open input files
      &           .TRUE., .TRUE., 'GSCNV', PROGNAME )
 
 C.........  Get header description of inventory file 
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -577,8 +575,15 @@ C.............  Read speciation profiles file
             MESG = BLANK5 // 'Reading speciation profiles file...'
             CALL M3MSG2( MESG )
 
-            CALL RDSPROF( RDEV, SNAM, MXSPFUL, NSPFUL, NMSPC,
-     &                    INPRF, SPECID, MOLEFACT, MASSFACT   )
+            CALL RDSPROF( RDEV, SNAM, NMSPC )
+
+C.............  If current pollutant is a NONHAP* pollutant, compare
+C               its definition from the inventory table to the
+C               definition in the GSPRO file. Note that if the user
+C               provides a different INVTABLE to Spcmat than the one
+C               used to create the inventory, this error will not
+C               be detected.
+            CALL CHKNONHAP( PNAM, EFLAG )
 
 C.............  Initilialize multiple profiles and default reporting to true
             MULTIPRO = .TRUE.
@@ -738,7 +743,8 @@ C.............  Write out the speciation matrix for current pollutant
 C.........  Check error flag for problems and end
         IF( EFLAG ) THEN
 
-            MESG = 'Problem creating speciation matrices'
+            MESG = 'Problem running speciation program. ' //
+     &             'See errors above.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
