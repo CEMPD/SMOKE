@@ -20,6 +20,7 @@ MODMERGE = $(MD_OUT)/modmerge.o
 MODELEV  = $(MD_OUT)/modelev.o
 MODMET   = $(MD_OUT)/modmet.o
 MODBIOG  = $(MD_OUT)/modbiog.o
+MODBEIS3 = $(MD_OUT)/modbeis3.o
 MODREPRT = $(MD_OUT)/modreprt.o
 MODREPBN = $(MD_OUT)/modrepbn.o
 MODMBSET = $(MD_OUT)/modmbset.o
@@ -28,7 +29,8 @@ MODMBSET = $(MD_OUT)/modmbset.o
 MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF)  $(MODTMPRL) $(MODSPRO)  \
            $(MODCNTRL) $(MODLISTS) $(MODINFO)  $(MODDAYHR) \
            $(MODMERGE) $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV)  \
-           $(MODMET)   $(MODBIOG)  $(MODREPRT) $(MODREPBN) $(MODMBSET)
+           $(MODMET)   $(MODBIOG)  $(MODBEIS3) $(MODREPRT) $(MODREPBN) \
+           $(MODMBSET)
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
@@ -131,6 +133,12 @@ $(MODBIOG): $(MD_SRC)/modbiog.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	if ( test -f modbiog.mod ) ; then mv modbiog.mod $(MD_OUT) ; fi
 	if ( test -f modbiog.M   ) ; then mv modbiog.M   $(MD_OUT) ; fi
 	if ( test -f MODBIOG.mod ) ; then mv MODBIOG.mod $(MD_OUT) ; fi
+
+$(MODBEIS3): $(MD_SRC)/modbeis3.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modbeis3.f
+	if ( test -f modbeis3.mod ) ; then mv modbeis3.mod $(MD_OUT) ; fi
+	if ( test -f modbeis3.M   ) ; then mv modbeis3.M   $(MD_OUT) ; fi
+	if ( test -f MODBEIS3.mod ) ; then mv MODBEIS3.mod $(MD_OUT) ; fi
 
 $(MODREPRT): $(MD_SRC)/modreprt.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modreprt.f
