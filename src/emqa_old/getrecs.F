@@ -997,7 +997,7 @@ C.............  Write out speciation coefficients
 C.............  Write out header for temporal emissions
 C           04/10/1999 wts Create format.
 C           WRITE( ODEV, 93040 ) MMDDYY( SDATE ),
-            WRITE (FMT, 93041 ) (NIPOL+NMPOL)
+            WRITE (FMT, 93041 ) (NIPOL+NMPOL), (NIPOL+NMPOL)
             WRITE( ODEV, FMT ) MMDDYY( SDATE ),
      &                           ( EINAM( V )        , V = 1, NIPOL ), 
      &                           ( EMNAM( SPNT( J ) ), J = 1, NMPOL ),
