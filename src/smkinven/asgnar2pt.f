@@ -1,5 +1,5 @@
 
-        SUBROUTINE ASGNAR2PT( NRAWBP )
+        SUBROUTINE ASGNAR2PT
 
 C***********************************************************************
 C  subroutine body starts at line 109
@@ -42,13 +42,14 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: AR2PTTBL, AR2PTIDX, AR2PTCNT, TXCNT,
+     &                     CHRT09, CHRT08, ARPT09, ARPT08
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NSRC, LSCCEND
 
         IMPLICIT NONE
 
@@ -63,10 +64,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        CRLF, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: NRAWBP  ! no. raw records by pollutant
 
 C.........  Other local variables
-        INTEGER          I, J, LS, S    !  counters and indices
+        INTEGER          S           !  counters and indices
 
         INTEGER          IOS         ! i/o status
         INTEGER          F4, F5      ! tmp find indices
@@ -99,14 +99,8 @@ C.........  Initialize arrays
         AR2PTIDX = 0  ! array
         AR2PTCNT = 0  ! array
 
-C.........  Loop through the unsorted sources
-        LS = 0
-        DO I = 1, NRAWBP
-
-            J = INDEXA( I )
-            S = SRCIDA( I )
-
-            IF ( S .EQ. LS ) CYCLE
+C.........  Loop through the sorted sources
+        DO S = 1, NSRC
 
 c NOTE: Perhaps change this to be a generic routine for both cross-reference need?  The
 C N: only problem with this is that CHRT* will be shared by both steps :(
@@ -115,8 +109,8 @@ C.............  Create selection
             SELECT CASE ( CATEGORY )
 
             CASE ( 'AREA', 'MOBILE' )
-                CSRC    = CSOURCA( J )
-                TSCC    = CSCCA  ( J )
+                CSRC    = CSOURC( S )
+                TSCC    = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )  ! May only work for area
                 TSCCL   = TSCC( 1:LSCCEND )
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CFIPSCC = CFIP // TSCC
@@ -139,9 +133,7 @@ C.................  Try for FIPS code & SCC match
 
             END IF
 
-            LS = S
-
-        END DO        !  end loop on source x pollutants
+        END DO        !  end loop on sources
 
         RETURN
 

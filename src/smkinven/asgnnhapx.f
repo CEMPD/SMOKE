@@ -1,5 +1,5 @@
 
-        SUBROUTINE ASGNNHAPX( NRAWBP )
+        SUBROUTINE ASGNNHAPX
 
 C***********************************************************************
 C  subroutine body starts at line 107
@@ -42,13 +42,13 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C...........   This module contains the cross-reference tables
         USE MODXREF
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, CATEGORY, SCCLEV1, SCCLEV2, SCCLEV3
 
         IMPLICIT NONE
 
@@ -63,7 +63,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        CRLF, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: NRAWBP  ! no. raw records by pollutant
 
 C.........  Other local variables
         INTEGER          I, J, LS, S    !  counters and indices
@@ -108,29 +107,18 @@ C.........  Allocate memory for source-based array from MODLISTS
         CALL CHECKMEM( IOS, 'LNONHAP', PROGNAME )
         LNONHAP = .TRUE.   ! array
 
-C.........  Loop through the unsorted sources
-        S  = 0
-        DO I = 1, NRAWBP
-
-C............  Set source number from previous iteration
-            LS = S
-
-C............  Get sorted position and source number for this source
-            J = INDEXA( I )
-            S = SRCIDA( I )
-
-C............  If record has the same source as the previous iteration, 
-C              skip it
-            IF ( S .EQ. LS ) CYCLE
+C.........  Loop through the sorted sources
+        DO S = 1, NSRC
 
 C.............  Create selection 
             SELECT CASE ( CATEGORY )
 
             CASE ( 'AREA', 'MOBILE' )
-                CSRC    = CSOURCA( J )
+                CSRC    = CSOURC( S )
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CSTA    = CFIP( 1:STALEN3 )
-                TSCC_D  = CSCCA( J )            ! Level 4 (all)
+                TSCC_D  = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )  ! May only work for area
+!                TSCC_D  = CSCC( S )            ! Level 4 (all)
                 TSCC_A  = TSCC_D( 1:SCCLEV1 )   ! Level 1
                 TSCC_B  = TSCC_D( 1:SCCLEV2 )   ! Level 2
                 TSCC_C  = TSCC_D( 1:SCCLEV3 )   ! Level 3
