@@ -79,10 +79,12 @@
         INTEGER    , ALLOCATABLE, PUBLIC :: SC_BEGP( : )
         INTEGER    , ALLOCATABLE, PUBLIC :: SC_ENDP( : )
 
-!.........  Inventory pollutants dimensioned by NIPOL
+!.........  Inventory pollutants and index to master list dimensioned by NIPOL
+        INTEGER               , ALLOCATABLE, PUBLIC :: EIIDX( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM( : )
 
-!.........  Inventory activities and units, dimensioned by NIACT
+!.........  Inventory activities and index to master list, dimensioned by NIACT
+        INTEGER               , ALLOCATABLE, PUBLIC :: AVIDX ( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ACTVTY( : )
 
 !.........  Inventory pollutants and inventory activies, dimensioned by NIPPA
