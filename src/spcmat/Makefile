@@ -45,4 +45,4 @@ spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC) $(MODFILESET)
 
 #
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o

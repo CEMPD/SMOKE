@@ -50,4 +50,4 @@ sizgmat.o: $(MODSOURC) $(MODXREF) $(MODGRID) $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ sizgmat.f
 #
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o

@@ -79,4 +79,4 @@ wpingstk.o: $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ wpingstk.f
 #
 clean:
-	/bin/rm *.o 
+	/bin/rm -f *.o 

@@ -74,4 +74,4 @@ wcntlrep.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
 
 #
 clean:
-	rm *.o
+	/bin/rm -f *.o

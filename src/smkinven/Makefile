@@ -133,4 +133,4 @@ wrepinven.o: $(MODINFO) $(MODLISTS) $(MODAR2PT)
 	$(FC) $(FFLAGS) -c -o $@ wrepinven.f
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o

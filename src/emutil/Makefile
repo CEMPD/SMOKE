@@ -120,4 +120,4 @@ smk2emis.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ smk2emis.f
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o

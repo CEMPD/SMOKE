@@ -87,4 +87,4 @@ wrspdvmt.o    : $(MODMBSET)
 wrtimegr.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o

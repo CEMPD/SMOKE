@@ -97,4 +97,4 @@ wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID)
 
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o

@@ -5,6 +5,8 @@
 LIBS          = $(LDIRS) -lioapi
 LIBS_DEBUG    = $(LDIRS) -lioapi.debug
 
+all: lib     
+
 MODOBJS = \
 	ATWORK.o \
 	DATABASE.o \
@@ -16,7 +18,7 @@ MODOBJS = \
 	LEAKYDAT.o \
 	USERDAT.o
 
-OBJS = \
+OBJS1 = \
 	A8TO11.o \
 	ACCF.o \
 	AC_ADJ.o \
@@ -50,7 +52,8 @@ OBJS = \
 	ATRVPEXH.o \
 	ATSPEED_CF.o \
 	ATTAMPER.o \
-	AVGSPD.o \
+	AVGSPD.o 
+OBJS2 = \
 	BAGEME.o \
 	BD01.o \
 	BD01P5.o \
@@ -115,7 +118,8 @@ OBJS = \
 	BIGSC2.o \
 	BIGSC3.o \
 	BIGSCMC.o \
-	BIGTCF.o \
+	BIGTCF.o 
+OBJS3 = \
 	C1TO7.o \
 	C8TO12.o \
 	CALAER.o \
@@ -202,7 +206,8 @@ OBJS = \
 	EVUNC.o \
 	EVWTENH.o \
 	EVWTPRE.o \
-	EXMPTR.o \
+	EXMPTR.o  
+OBJS4 = \
 	FINDIM.o \
 	FINDPB.o \
 	FNDLAB.o \
@@ -294,7 +299,8 @@ OBJS = \
 	GETXMP.o \
 	GET_8193.o \
 	GET_SULFUR.o \
-	GLL_WGT.o \
+	GLL_WGT.o
+OBJS5 = \
 	HCCALX.o \
 	HCOXY.o \
 	HDCGPM.o \
@@ -394,7 +400,8 @@ OBJS = \
 	RNLOSS.o \
 	RNLOSSSU.o \
 	RSTLOS.o \
-	RVPEXH.o \
+	RVPEXH.o 
+OBJS6 = \
 	SAVEPB.o \
 	SAWTOOTH.o \
 	SCFCO.o \
@@ -437,17 +444,27 @@ OBJS = \
 .F.o:
 	$(FC) $(FFLAGS) -DM6LIB -c -o $@ $<
 
-mobile6: $(MODOBJS) $(OBJS) DRIVER.o
+mobile6: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) iBDRIVER.o
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS)
 
-mobile6.debug: $(MODOBJS) $(OBJS) DRIVER.o
+mobile6.debug: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) DRIVER.o
 	$(FC) $(DBGFLAGS) -o $(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS_DEBUG)
 
 lib: $(MODOBJS) $(OBJS) SMKDRIVER.o
-	ar rv $(SMK_BIN)/libmo6.a $(MODOBJS) $(OBJS) SMKDRIVER.o
+	ar rv $(SMK_BIN)/libmo6.a $(OBJS1) SMKDRIVER.o
+	ar rv $(SMK_BIN)/libmo6.a $(OBJS2)
+	ar rv $(SMK_BIN)/libmo6.a $(OBJS3)
+	ar rv $(SMK_BIN)/libmo6.a $(OBJS4)
+	ar rv $(SMK_BIN)/libmo6.a $(OBJS5)
+	ar rv $(SMK_BIN)/libmo6.a $(OBJS6) $(MODOBJS)
 
 debug: $(MODOBJS) $(OBJS) SMKDRIVER.o
-	ar rv $(SMK_BIN)/libmo6.debug.a $(MODOBJS) $(OBJS) SMKDRIVER.o
+	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS1) SMKDRIVER.o
+	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS2)
+	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS3)
+	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS4)
+	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS5)
+	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS6) $(MODOBJS)
 
 ## Module dependencies
 include $(MD_SRC)/modmake.inc
@@ -461,5 +478,5 @@ SMKHAPSETUP.o  : $(MODEMFAC)
 SMKPMOUT.o     : $(MODEMFAC)
 
 clean:
-	/bin/rm *.o
-	/bin/rm *.mod
+	/bin/rm -f *.o
+	/bin/rm -f *.mod

@@ -57,4 +57,4 @@ wrtsup.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ wrtsup.f
 #
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o

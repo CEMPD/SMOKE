@@ -99,4 +99,4 @@ rdbpro.o:$(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ rdbpro.f
 #
 clean:
-	/bin/rm *.o 
+	/bin/rm -f *.o 

@@ -190,4 +190,4 @@ xreftbl.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ xreftbl.f
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o $MD_SRC/$(EDSS_EXE)/*.o $MD_SRC/$(EDSS_EXE)/*.mod $MD_SRC/$(EDSS_EXE)/*.M

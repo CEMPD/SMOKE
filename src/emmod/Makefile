@@ -16,4 +16,4 @@ INCLUDES = $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 include $(MD_SRC)/modmake.inc
 
 clean:
-	/bin/rm $(MD_OUT)/*.o $(MD_OUT)/*.mod $(MD_OUT)/*.M
+	/bin/rm -f $(MD_OUT)/*.o $(MD_OUT)/*.mod $(MD_OUT)/*.M

@@ -84,4 +84,4 @@ wrrepout.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) \
 #
 #
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o
