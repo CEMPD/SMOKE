@@ -1,9 +1,9 @@
 
-        SUBROUTINE OPENTMP( ENAME, UFLAG, SDATE, STIME, TSTEP, TZONE, 
-     &                      NPELV, TNAME, UNAME )
+        SUBROUTINE OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, 
+     &                      NPELV, TNAME )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 102
 C
 C  DESCRIPTION:
 C      This subroutine opens the file or files for output from the tmppoint
@@ -69,15 +69,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME  ! emissions inven logical name
-        LOGICAL     , INTENT (IN) :: UFLAG  ! true if elevated output
         INTEGER     , INTENT (IN) :: SDATE  ! episode start date 
         INTEGER     , INTENT (IN) :: STIME  ! episode start time
         INTEGER     , INTENT (IN) :: TSTEP  ! episode time step
         INTEGER     , INTENT (IN) :: TZONE  ! zone used for hours in output files
         INTEGER     , INTENT (IN) :: NPELV  ! number of elevated sources
         CHARACTER(*), INTENT(OUT) :: TNAME  ! lay-1 (or all) hourly logical name 
-        CHARACTER(*), INTENT(OUT) :: UNAME  ! elevated hourly logical name 
-
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
 
@@ -197,8 +194,6 @@ C.........  For now, write message that elevated file is not supported
      &             'is not yet supported'
             CALL M3MSG2( MESG )
         END IF
-
-        UNAME = ' '
 
         RETURN
 
