@@ -8,10 +8,10 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 geofac metscan mvcondns mvsetup pktreduc smk2emis surgtool \
+all: beld3to2 metscan mvcondns mvsetup pktreduc smk2emis surgtool \
      uam2ncf 
 
-debug: beld3to2.debug geofac.debug metscan.debug mvcondns.debug mvsetup.debug \
+debug: beld3to2.debug metscan.debug mvcondns.debug mvsetup.debug \
        pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug 
 
 .f.o:
@@ -31,24 +31,13 @@ beld3to2.debug: $(B3TO2) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(B3TO2) $(LIBS_DEBUG)
 
 
-GEOF=geofac.o
-
-geofac: $(GEOF) $(ALLI) $(LIBPATH)
-	echo GEOFAC:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GEOF) $(LIBS)
-
-geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'GEOFAC (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(GEOF) $(LIBS_DEBUG)
-
 MSCN=metscan.o
 #
 metscan: $(MSCN) $(ALLI) $(LIBPATH)
-        echo METSCAN:
-        $(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MSCN) $(LIBS)
+	echo METSCAN:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MSCN) $(LIBS)
 #
 metscan.debug: $(MSCN) $(ALLI) $(LIBPATH_DEBUG)
-        echo 'METSCAN (debug):'
 	$(FC) $(DBGFLAGS) -o $(@) $(MSCN) $(LIBS_DEBUG)
 
 MVC=mvcondns.o
