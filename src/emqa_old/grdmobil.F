@@ -58,8 +58,8 @@ C...........   Area Sources input and output arrays (one variable at a time)
 C...........   Gridding Matrix, Control Matrix, Speciation Matrix
       
         INTEGER         NX( NGRID )
-        INTEGER         IX( MXGCOF )
-        REAL            CX( MXGCOF )
+        INTEGER         IX( NMATX )
+        REAL            CX( NMATX )
         
         COMMON  / GRIDMAT / NX, IX, CX
            
@@ -197,7 +197,7 @@ C...................   Read in entire emissions field
 
                 DO  197  L = 1, NLAYS3D
 
-                    CALL SMATVEC( NMSRC, NGRID, MXGCOF, NX, IX, CX,
+                    CALL SMATVEC( NMSRC, NGRID, NMATX, NX, IX, CX,
      &                            EMISV( 1,L ), EMISG( 1,L ) )
 
 197             CONTINUE
