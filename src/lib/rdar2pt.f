@@ -282,6 +282,9 @@ C           the ARPT09 array (full FIPs and full SCC matches only)
 C.........  Deallocate local memory
         DEALLOCATE( IDXA2P, NUMSCC, UNSRTA2P, AR2PTSCC )
 
+C.........  Deallocate cross-reference sorting arrays
+        DEALLOCATE( INDXTA, IFIPTA, CSCCTA, CSRCTA, IARPTA )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
