@@ -1,6 +1,6 @@
 
         SUBROUTINE RDPACKET( FDEV, PKTTYP, FIXEDFMT, USEPOL, IREC, 
-     &                       PKTINFO, EFLAG )
+     &                       PKTINFO, CFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -69,6 +69,7 @@ C...........   SUBROUTINE ARGUMENTS:
         LOGICAL     , INTENT(IN OUT) :: USEPOL( NIPPA ) ! true: use pollutant
         INTEGER     , INTENT(IN OUT) :: IREC      ! file line number
         TYPE( CPACKET ), INTENT(OUT) :: PKTINFO   ! packet information
+        LOGICAL        , INTENT(OUT) :: CFLAG     ! true: line is a comment
         LOGICAL        , INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters
@@ -111,6 +112,13 @@ C   Begin body of subroutine RDPACKET
      &             'reading control packets file at line', IREC
             CALL M3MESG( MESG )
 
+        END IF
+
+C.........  Check for comment lines
+        CFLAG = .FALSE.
+        IF( LINE( 1:1 ) == CINVHDR ) THEN
+            CFLAG = .TRUE.
+            RETURN
         END IF
 
 C.........  When packet has a free format...
@@ -299,15 +307,16 @@ C.........  Check to see if any of the factors are negative
             END IF
             
         CASE( 'MACT' )
-            PKTINFO%CFIP   = ' '
-            PKTINFO%CSIC   = ' '
-            PKTINFO%CMCT   =           SEGMENT( 1 )
-            PKTINFO%TSCC   =           SEGMENT( 2 )
-            PKTINFO%CSTYP  =           SEGMENT( 3 )
-            PKTINFO%CPOL   =           SEGMENT( 4 )
-            PKTINFO%FAC1   = STR2REAL( SEGMENT( 5 ) )
-            PKTINFO%FAC2   = STR2REAL( SEGMENT( 6 ) )
-            PKTINFO%FAC3   = STR2REAL( SEGMENT( 7 ) )
+            PKTINFO%CFIP    = ' '
+            PKTINFO%CSIC    = ' '
+            PKTINFO%CMCT    =           SEGMENT( 1 )
+            PKTINFO%TSCC    =           SEGMENT( 2 )
+            PKTINFO%CSTYP   =           SEGMENT( 3 )
+            PKTINFO%APPFLAG = ADJUSTL ( SEGMENT( 4 ) )
+            PKTINFO%CPOL    =           SEGMENT( 5 )
+            PKTINFO%FAC1    = STR2REAL( SEGMENT( 6 ) )
+            PKTINFO%FAC2    = STR2REAL( SEGMENT( 7 ) )
+            PKTINFO%FAC3    = STR2REAL( SEGMENT( 8 ) )
 
         CASE DEFAULT
             MESG = 'INTERNAL ERROR: Packet type ' // PKTTYP // 
