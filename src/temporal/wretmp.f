@@ -13,7 +13,7 @@ C
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C      Subroutines: I/O API subroutines, PARSCSRC
+C      Subroutines: I/O API subroutines
 C      Functions: I/O API functions
 C
 C  REVISION  HISTORY:
