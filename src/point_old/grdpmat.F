@@ -160,7 +160,7 @@ C.......   Get file name; open actual-scc file
      &                   ENAME( 1:TRIMLEN( ENAME ) ) // '"', 2 )
 
         ELSEIF( NROWS3D .NE. NPSRC ) THEN
-            WRITE( MESG, 94010 )
+            WRITE( MESG, 94050 )
      &      'Dimension mismatch.  EMISSIONS file:', NROWS3D,
      &      'program:', NPSRC
             CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
