@@ -63,7 +63,7 @@ C   begin body of subroutine GRPFAC
                     FTR( N,I,KEY3 ) = FAC
 
                     DO 112  J = 1, CNT3
-                        IF( FTR(N,I,J) .EQ. AMISS3 ) FTR(N,I,J)= FAC
+                        IF( FTR(N,I,J) .LT. AMISS3 ) FTR(N,I,J)= FAC
   112               CONTINUE
 
   113           CONTINUE
@@ -79,7 +79,7 @@ C   begin body of subroutine GRPFAC
                     FTR( N,KEY2,J ) = FAC
 
                     DO  114  I = 1, CNT2
-                        IF( FTR(N,I,J) .EQ. AMISS3 ) FTR(N,I,J)= FAC
+                        IF( FTR(N,I,J) .LT. AMISS3 ) FTR(N,I,J)= FAC
   114               CONTINUE
 
   115           CONTINUE
@@ -90,7 +90,7 @@ C   begin body of subroutine GRPFAC
 
                 DO 117  I = 1, CNT2
                     DO 116  J = 1, CNT3
-                        IF( FTR(N,I,J) .EQ. AMISS3 ) FTR(N,I,J)= FAC
+                        IF( FTR(N,I,J) .LT. AMISS3 ) FTR(N,I,J)= FAC
   116               CONTINUE
   117           CONTINUE
             END IF
