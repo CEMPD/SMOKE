@@ -1,10 +1,30 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         PROGRAM SPCPMAT
 
 C***********************************************************************
-C  program body starts at line 199
+C  program body starts at line 242
 C
 C  DESCRIPTION:
 C       Construct point source chemical speciation matrix from data 
@@ -41,6 +61,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         INTEGER         FIND1, FIND2, FIND3, FIND4
         LOGICAL         GETYN
+        INTEGER         GETMENU 
         INTEGER         LBLANK
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
@@ -49,8 +70,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETYN, LBLANK,
-     &                  PROMPTFFILE, PROMPTMFILE, RDSPROF,
+        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETYN, GETMENU, 
+     &                  LBLANK, PROMPTFFILE, PROMPTMFILE, RDSPROF,
      &                  STR2INT, STR2REAL, TRIMLEN
 
 
@@ -176,7 +197,6 @@ C........ Second part depends on scc only
         INTEGER     SCCSV2( MXSCNV )  !  conversion factor SCC
         REAL        CONVV2( MXSCNV )  !  conversion factor
 
-
 C.......   Speciation matrix:
         
         REAL        SPCFACS( NPSRC, NMPOL )    !  speciation coefficients
@@ -191,6 +211,7 @@ C...........   Area Sources Table
 C...........   Other local variables
         
         INTEGER         S, F, I, J, V       !  loop counters.
+        INTEGER         CHOICE              !  Choice from menu call
         INTEGER         CDEV                !  for actual-SCC file
         INTEGER         KDEV                !  volatile form conversion file
         INTEGER         SDEV                !  for surrogate coeff file
@@ -350,21 +371,22 @@ C...............   ASSUMPTION:  sorted by profile ID
         NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, MXSPRO, 
      &                    SXREF, SCOEF, INVPRO )
 
+        IF ( NPROFS .LE. 0 ) THEN
+            CALL M3EXIT( 'SPCMMAT', 0, 0,
+     &                   'Error reading SPECIATION PROFILE file.', 2 )
+        END IF
+
 C.......   Compare inventory pollutant in the speciation profile with
 C.......   volatile pollutant in inventory.  If not the same, prompt for
 C.......   a conversion file.
 
 C.......   Prompt for which inventory pollutant is volatile
+        
+        CHOICE = GETMENU( NIPOL, 1, 
+     &                    'Which inventory pollutant is volatile?',
+     &                    EINAM )
 
-        CALL M3MESG( ' ' )
-        DO 55 I = 1, NIPOL
-            CALL M3MESG( EINAM( I )( 1:TRIMLEN( EINAM( I ) ) ) )
-55      CONTINUE
-
-        WRITE( MESG,94010 ) 
-     &         'Which of the above inventory pollutants is volatile?'
-
-        CALL GETSTR( MESG, EINAM( NIPOL ), POLV )
+        POLV = EINAM( CHOICE )
 
         IF( INVPRO .NE. POLV ) THEN
 
