@@ -420,14 +420,14 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( 32X, A11 )
 
-93030   FORMAT( 1X, A8, 4X, A1, 2X, I10, 4X, F16.10, 4X, A40 )
+93030   FORMAT( 1X, A8, 4X, A1, 2X, I10, 4X, E16.10, 4X, A40 )
 
 93040	FORMAT( 1X, A8, 6X, A13, 4X, A6, 2X, A9, 13X, A14, 4X,
      &          A16, 28X, A15 )
      
 93050	FORMAT( 15X, A11, 36X, A11 )
 
-93060	FORMAT( 1X, A8, 4X, F16.10, 4X, F3.1, 4X, A16, 4X, F16.10,
+93060	FORMAT( 1X, A8, 4X, E16.10, 4X, F3.1, 4X, A16, 4X, E16.10,
      &          4X, A40, 4X, A40 )
      
 93070	FORMAT( 1X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
@@ -435,16 +435,16 @@ C...........   Formatted file I/O formats............ 93xxx
      
 93080	FORMAT( 43X, A11, 9X, A11 )
 
-93090	FORMAT( 1X, A10, 4X, A16,4X, I3, 4X, F16.10, 4X,
-     &          F16.10, 4X, A )
+93090	FORMAT( 1X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
+     &          E16.10, 4X, A )
      
 93100	FORMAT( 1X, A5, 2X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
      &          4X, A16 )
      
 93110	FORMAT( 50X, A11, 9X, A11 )
 
-93120	FORMAT( 1X, I2.2, 4X, A10, 4X, A16,4X, I3, 4X, F16.10, 4X,
-     &          F16.10, 4X, A )
+93120	FORMAT( 1X, I2.2, 4X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
+     &          E16.10, 4X, A )
      
 93130	FORMAT( 1X, A10 )
 
