@@ -13,6 +13,7 @@
 !
 !  REVISION HISTORY:
 !     Created 8/2001 by A. Holland
+!     Modified 3/02 by G. Cano
 !
 !***************************************************************************
 !
@@ -145,24 +146,55 @@
 !.........  Output file variables
 
 	CHARACTER(LEN=IOVLEN3), PUBLIC, ALLOCATABLE :: UONAMES( : )  ! output variable names
-        
-        INTEGER, PUBLIC, ALLOCATABLE :: SRCNUM( : )   ! source number array
-        INTEGER, PUBLIC, ALLOCATABLE :: METHOD( :, : )! empirical or parametric
-        INTEGER, PUBLIC, ALLOCATABLE :: EPTYP( :, : ) ! parametric/emp. type
-        INTEGER, PUBLIC, ALLOCATABLE :: NUMEP( :, : ) ! no. of parameters/
-                                                        ! empirical entires
-        INTEGER, PUBLIC, ALLOCATABLE :: UNCIDX( :, : )! empirical/parametric reference no.                                                         
-        INTEGER                      :: UCOUNT = 0    ! sources with uncertainty
-        INTEGER                      :: NUOVAR        ! no. of output variables
+
+        INTEGER, PUBLIC, ALLOCATABLE :: SRCNUM( : )    ! source number array
+        INTEGER, PUBLIC, ALLOCATABLE :: METHOD( :, : ) ! empirical or parametric
+        INTEGER, PUBLIC, ALLOCATABLE :: EPTYP( :, : )  ! parametric/emp. type
+        INTEGER, PUBLIC, ALLOCATABLE :: NUMEP( :, : )  ! no. of parameters/
+        INTEGER, PUBLIC, ALLOCATABLE :: UNCIDX( :, : ) ! empirical/parametric reference no.
+                                                       ! empirical entires
+        INTEGER                      :: NUOVAR         ! no. of output variables
+        INTEGER                      :: UCOUNT = 0     ! sources with uncertainty
          
-        REAL,    PUBLIC, ALLOCATABLE :: PARMS( :, : )   ! parameters 
-        REAL,    PUBLIC, ALLOCATABLE :: EMFVAL( :, : )  ! emission factor values
-        REAL,    PUBLIC, ALLOCATABLE :: PROBVAL( :, : ) ! probability values    
+        REAL,    PUBLIC, ALLOCATABLE :: PARMS( :, : )  ! parameters 
+        REAL,    PUBLIC, ALLOCATABLE :: EMFVAL( :, : ) ! emission factor values
+        REAL,    PUBLIC, ALLOCATABLE :: PROBVAL( :, : )! probability values
+
         
 !.........  Other variables
 
 	LOGICAL, PUBLIC  ::  UCFLAG = .FALSE.   ! true: use uncertainty
         
         LOGICAL, PUBLIC, ALLOCATABLE :: USTAT( : )  ! true: source is affected
+
+C.........  Gabe's additions
+C.............  Local variables
+        CHARACTER*9, PARAMETER :: PDF( 5 ) = ( / 'NORMAL   ',
+     &                                           'LOGNORMAL',
+     &                                           'GAMMA    ',
+     &                                           'WEIBULL  ',
+     &                                           'BETA     ' / )
+       
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: UEINAM( : )   ! uncertainty pollutants
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: UACTVTY( : )  ! uncertainty activities
+
+        INTEGER, PARAMETER, PUBLIC :: STATDIST = 5  ! Normal, Lognormal, Gamma, Weibull, Beta, resp.
+
+        INTEGER                         UNVAR = 0      ! number of uncertainty variables
+        INTEGER                         UNIPOL = 0     ! number of uncertainty pollutants
+        INTEGER                         UNPPOL = 0     ! number of uncertainty pollutants & activities
+        INTEGER                         UNIACT = 0     ! number of uncertainty activities
+        INTEGER                         UNPACT = 0     ! 
+        INTEGER                         NEMP           ! number of empirical statistics options
+        INTEGER                         NPAR           ! number of parametric statistics options
+        INTEGER                         NPRB           ! number of probability value entries
+        INTEGER                         SIMDRAWS       ! simulations to draw for sampling
+        INTEGER                      :: UNSRC = 0      ! sources with uncertainty        
+        INTEGER                         VEMP           ! number of emp. stat. variables
+        INTEGER                         VPAR           ! number of PAR. stat. variables
+        INTEGER                         VPRB           ! number of probability value variables
+
+        REAL,    PUBLIC, ALLOCATABLE :: SAMPGEN( :, : )! numbers generated for sampling
+
 
         END MODULE MODUNCERT
