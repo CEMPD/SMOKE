@@ -64,9 +64,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
+        LOGICAL         ENVYN
 
-        EXTERNAL        PROMPTFFILE, 
-     &                  PROMPTMFILE
+        EXTERNAL        PROMPTFFILE, PROMPTMFILE, ENVYN
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -92,6 +92,7 @@ C.........  Unit numbers and logical file names
         INTEGER         SDEV     ! unit number for ASCII inventory file
         INTEGER         VDEV     ! unit number for ref. county settings file
         INTEGER         XDEV     ! unit number for county cross-reference file
+        INTEGER         ZDEV     ! unit number for speed cross-reference file
         
         CHARACTER*16    ANAME    ! logical name for ASCII inventory file
         CHARACTER*16    INAME    ! tmp name for inven file of unknown fmt
@@ -109,6 +110,7 @@ C.........   Other local variables
         INTEGER          NGRDCTY           ! no. counties inside grid
         
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
+        LOGICAL       :: SPDFLAG = .FALSE. !  true: use speed profiles
         
         CHARACTER*300          MESG      !  message buffer 
         
@@ -139,6 +141,11 @@ C.........  Obtain settings from the environment...
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
+C.........  Check if speed profiles are to be used
+        SPDFLAG = ENVYN( 'USE_SPEED_PROFILES', 
+     &            'Use speed profiles instead of inventory speeds', 
+     &            .FALSE., IOS )
+     
 C.......   Get file names and units; open input files
 C.........  Prompt for and open input I/O API and ASCII files
         MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
@@ -174,7 +181,14 @@ C           do not store the pollutants as separate
         VDEV = PROMPTFFILE(
      &           'Enter logical name for MVREF settings file',
      &           .TRUE., .TRUE., 'MVREF', PROGNAME )
-     
+
+        IF( SPDFLAG ) THEN
+            ZDEV = PROMPTFFILE(
+     &           'Enter logical name for SPDREF speed profile ' //
+     &           'cross-reference file',
+     &           .TRUE., .TRUE., 'SPDREF', PROGNAME );
+        END IF
+             
         PDEV = PROMPTFFILE(
      &           'Enter logical name for SPDSUM speed summary file',
      &           .FALSE., .TRUE., 'SPDSUM', PROGNAME )      
@@ -213,19 +227,24 @@ C......... If the dimensions were in error, abort
         
 C.........  Set inventory variables to read
         IVARNAMS( 1 ) = 'IFIP'
-        IVARNAMS( 2 ) = 'IRCLAS'
-        NINVARR = 2
+        IVARNAMS( 2 ) = 'CSOURC'
+        IVARNAMS( 3 ) = 'CSCC'
+        IVARNAMS( 4 ) = 'IRCLAS'
+        IVARNAMS( 5 ) = 'IVTYPE'
+        NINVARR = 5
 
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Read speed and VMT information from inventory
-        ALLOCATE( SPEED( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
+        IF( .NOT. SPDFLAG ) THEN
+            ALLOCATE( SPEED( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
+            CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
+        END IF
+        
         ALLOCATE( VMT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VMT', PROGNAME )
-        
-        CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
         CALL RDMAPPOL( NSRC, 1, 1, 'VMT', VMT )
 
 C.........  Build unique lists of SCCs and country/state/county codes
@@ -284,6 +303,17 @@ C.........  Read the reference county settings file
 C.........  Create speeds summary file
         MESG = 'Processing speed information...'
         CALL M3MSG2( MESG )
+
+C.........  Process speed profiles
+        IF( SPDFLAG ) THEN
+        
+C.............  Read speed profile cross-reference file
+            CALL RDSPDREF( ZDEV )
+
+C.............  Assign speed profile to each source
+            CALL ASGNSPDS
+            
+        END IF
 
 C.........  Loop through all the reference counties
         DO I = 1, NREFC
