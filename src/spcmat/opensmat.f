@@ -78,8 +78,7 @@ C.........  SUBROUTINE ARGUMENTS
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
 
-        PARAMETER   ( SCCSW   = '@(#)$Id$'
-     &              )
+        PARAMETER   ( SCCSW   = '$Revision$' ) ! CVS revision number.
 
 C.........  Count of species per inventory pollutant/emission type
         INTEGER    NSPEC( NIPPA )

@@ -72,7 +72,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: SCCSW = '$Revision$'  ! CVS revision number
 
 C...........   LOCAL VARIABLES and their descriptions:
 
