@@ -172,7 +172,18 @@ C.............  Make sure that the speed profile number is an integer
      &                 'is not an integer at line', IREC
                 CALL M3MESG( MESG )
             END IF
-            
+
+C.............  Convert speed profile code to an integer
+            ISPD = STR2INT( SEGMENT( 3 ) )
+
+C.............  Check that profile number is greater than zero
+            IF( ISPD <= 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Speed profile code ' //
+     &                 'is less than or equal to zero at line', IREC
+                CALL M3MESG( MESG )
+            END IF
+
 C.............  Skip rest of loop if there has been an error
             IF( EFLAG ) CYCLE
             
@@ -182,9 +193,6 @@ C.............  Create co/st/cy code string with leading zeros
 C.............  Save SCC in string
             TSCC = SEGMENT( 2 )
             
-C.............  Convert speed profile code to an integer
-            ISPD = STR2INT( SEGMENT( 3 ) )
-
             N = N + 1
             IF( N .GT. NLINES ) CYCLE  ! Ensure no overflow
             
