@@ -211,7 +211,7 @@ C               MXSPFUL, which is from module MODSPRO
             CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
 
 C...........  Determine if source category is point sources, or other
-            PFLAG = ALLOCATED( ISIC )
+            PFLAG = ASSOCIATED( ISIC )
 
 C...........  Allocate memory for source-based arrays and initialize
             ALLOCATE( ISREA( NSRC ), STAT=IOS )
