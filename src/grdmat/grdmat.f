@@ -394,6 +394,8 @@ C           for mobile) using grid characteristics from DSCM3GRD() above
         CALL OPENGMAT( NMATX, IFDESC2, IFDESC3, GNAME, UNAME )
         UFLAG = ( UNAME .NE. 'NONE' )
 
+        CALL M3MSG2( 'Generating gridding matrix...' )
+
 C.........  Generate gridding matrix for given source category, and write it
 C           out.  It is necessary to write it out while in the subroutine,
 C           because of the type transformation from real to integer that
