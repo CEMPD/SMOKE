@@ -420,14 +420,17 @@ C.............  Print warning about sources not found in the inventory
 C.................  Search for source in list of bad sources
                 S = INDEX1( CSRC, NBADSRC, BADSRC )
 
-                IF( WARNOUT .AND. S .LE. 0 ) THEN                
+C.................  If source is not found, give a message.  Don't need the
+C                   WARNOUT controller because this section only gets
+C                   invoked once.
+                IF( S .LE. 0 ) THEN
 
                     NBADSRC = NBADSRC + 1
                     BADSRC( NBADSRC ) = CSRC
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    MESG = 'WARNING: Source will be dropped since it '//
-     &                     'is not in the inventory:' //
+                    MESG = 'WARNING: Period-specific record does ' //
+     &                     'not match inventory sources: '//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
 
