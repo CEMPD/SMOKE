@@ -4,12 +4,17 @@
 #
 LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
 LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
+LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -lioapi_new -lnetcdf -lpvm3 -mp
+
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
 all: laypoint elevpoint
 
 debug: laypoint.debug elevpoint.debug
+
+pvm: laypoint.pvm
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -26,6 +31,15 @@ laypoint: $(LAY) $(ALLI) $(LIBPATH)
 laypoint.debug: $(LAY) $(ALLI) $(LIBPATH_DEBUG)
 	echo LAYPOINT \(debug\):
 	$(FC) $(FFLAGS) -o $(@) $(LAY) $(LIBS_DEBUG)
+
+laypoint.pvm: $(LAY) $(ALLI) $(LIBPATH)
+	echo LAYPOINT \(pvm\):
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(LAY) $(LIBS_PVM)
+#
+laypoint.pvm.debug: $(LAY) $(ALLI) $(LIBPATH_DEBUG)
+	echo LAYPOINT \(pvmdb\):
+	$(FC) $(FFLAGS) -o $(@) $(LAY) $(LIBS_PVMDB)
+
 #
 ELV=elevpoint.o openeout.o plumesti.o wpingstk.o
 #
