@@ -84,8 +84,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         WKDAY
         INTEGER         ENVINT
+        LOGICAL         ENVYN
 
-        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY, ENVINT
+        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY, ENVINT, ENVYN
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -138,7 +139,7 @@ C...........   Other local variables
         INTEGER       :: SRGNROWS = 0  ! no. rows in surrogates file
         INTEGER       :: SRGNCOLS = 0  ! no. cols in surrogates file
 
-        LOGICAL          RFLAG         ! realization shutdown status
+        LOGICAL          WRTUNCERT     ! true: write uncertainty statistics 
 
         REAL          :: RDUM = 0      ! dummy real value
         REAL             RDUM1, RDUM2, RDUM3, RDUM4, RDUM5, RDUM6
@@ -148,11 +149,13 @@ C...........   Other local variables
         CHARACTER*16 :: SRGGRDNM = ' ' ! surrogates file grid name
         CHARACTER*16 :: UINAME = ' '   ! uncertainty input file
 
+        CHARACTER*300          BUFFER  ! message buffer
         CHARACTER*300          MESG    ! message buffer
         CHARACTER(LEN=IOVLEN3) LBUF    ! previous species or pollutant name
         CHARACTER(LEN=IOVLEN3) PBUF    ! tmp pollutant or emission type name
         CHARACTER(LEN=IOVLEN3) SBUF    ! tmp species or pollutant name
         CHARACTER(LEN=PLSLEN3) VBUF    ! pol to species or pol description buffer
+
 
         CHARACTER*16  :: PROGNAME = 'SMKMERGE' ! program name
 
@@ -234,6 +237,9 @@ C               surrogates file needed for state and county totals
      
 C.............  Allocate memory for fixed-size arrays by source category...
             CALL ALLOCMRG( MXGRP, MXVARPGP )
+
+c            IF( AFLAG .AND. TUCFLAG) CALL ALLOCAQA
+c            IF( PFLAG .AND. TUCFLAG) CALL ALLOCPQA
 
 C.............  Read in elevated sources and plume-in-grid information, if needed
 C.............  Reset flag for PinG if none in the input file
@@ -382,33 +388,30 @@ c        END IF ! end uncertainty if block
 C.........  Open NetCDF output files, open ASCII report files, and write headers
         CALL OPENMRGOUT( NGRP, R )
 
-c        IF( R .EQ. 0 ) THEN
+C.........  In case reactivity does not exist, initialize temporary arrays
+C           for reactivity information anyway.  These are used even without
+C           reactivity matrix inputs so that the code does not need even
+C           more conditionals in the matrix multiplication step.
+        IF( AFLAG ) ARINFO = 0.  ! array
+        IF( MFLAG ) MRINFO = 0.  ! array
+        IF( PFLAG ) PRINFO = 0.  ! array
+    
+C.........  Intialize state/county summed emissions to zero
+        IF( ALLOCATED( AICNY ) ) DEALLOCATE( AICNY )
+        IF( ALLOCATED( MICNY ) ) DEALLOCATE( MICNY )
+        IF( ALLOCATED( PICNY ) ) DEALLOCATE( PICNY )
+    
+        CALL INITSTCY( R )
+    
+C.........  Allocate memory for temporary list of species and pollutant names
+        IF( ALLOCATED( OUTNAMES ) ) DEALLOCATE( OUTNAMES )
+        IF( ALLOCATED( INNAMES  ) ) DEALLOCATE( INNAMES  )
+    
+        ALLOCATE( OUTNAMES( MXVARPGP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'OUTNAMES', PROGNAME )
+        ALLOCATE( INNAMES( MXVARPGP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INNAMES', PROGNAME )
 
-C.............  In case reactivity does not exist, initialize temporary arrays
-C               for reactivity information anyway.  These are used even without
-C               reactivity matrix inputs so that the code does not need even
-C               more conditionals in the matrix multiplication step.
-            IF( AFLAG ) ARINFO = 0.  ! array
-            IF( MFLAG ) MRINFO = 0.  ! array
-            IF( PFLAG ) PRINFO = 0.  ! array
-
-C.............  Intialize state/county summed emissions to zero
-            IF( ALLOCATED( AICNY ) ) DEALLOCATE( AICNY )
-            IF( ALLOCATED( MICNY ) ) DEALLOCATE( MICNY )
-            IF( ALLOCATED( PICNY ) ) DEALLOCATE( PICNY )
-   
-            CALL INITSTCY( R )
-
-C.............  Allocate memory for temporary list of species and pollutant names
-            IF( ALLOCATED( OUTNAMES ) ) DEALLOCATE( OUTNAMES )
-            IF( ALLOCATED( INNAMES  ) ) DEALLOCATE( INNAMES  )
-
-            ALLOCATE( OUTNAMES( MXVARPGP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'OUTNAMES', PROGNAME )
-            ALLOCATE( INNAMES( MXVARPGP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INNAMES', PROGNAME )
-
-c        ELSE IF ( TUCFLAG ) THEN
         IF ( R .GT. 0 ) THEN
 
             CALL GETUNCRT( R, MXGRP, MXVARPGP, NGRP, UINAME )
@@ -644,10 +647,34 @@ C                   current pol group
 
 C.................  If point sources, read inventory emissions for this time 
 C                   step for all point-source pollutants in current pol group
-                IF( PFLAG )
-     &              CALL RD3MASK( PTNAME( DAY ), PJDATE, JTIME, NPSRC, 
-     &                            NVPGP, INNAMES( 1 ), P_EXIST( 1,N ), 
-     &                            PEMSRC )
+                IF( PFLAG ) THEN
+
+                    IF( TUCFLAG ) THEN
+
+                        IF( R .EQ. 0 ) THEN
+
+                            CALL RDU3MASK( PTNAME( DAY ), PJDATE, JTIME,
+     &                                     NPSRC,  NVPGP, INNAMES( 1 ), 
+     &                                     P_EXIST( 1,N ), PEMSRC )
+
+                        ELSE
+
+                            CALL RDTMPU( UINAME, UTNAME( DAY ), AJDATE, 
+     &                                   JTIME, NPSRC, NVPGP, 
+     &                                   INNAMES( 1 ),
+     &                                   UI_EXIST( 1,N ), PEMSRC )
+
+                        END IF
+
+                    ELSE
+
+                        CALL RD3MASK( PTNAME( DAY ), PJDATE, JTIME, 
+     &                                NPSRC, NVPGP, INNAMES( 1 ), 
+     &                                P_EXIST( 1,N ), PEMSRC )
+
+                    END IF
+
+                END IF
 
 C.................  If layer fractions, read them for this time step
                 IF( LFLAG ) THEN
@@ -747,7 +774,6 @@ C                       add to totals and store
                             CALL MRGBIO( SBUF, BTNAME, JDATE, JTIME, 
      &                                   NGRID, BIOGFAC, BEMGRD, 
      &                                   TEMGRD( 1,1 ) )
-                    
 
 C.............................  Update country, state, & county totals  
 C.............................  Also convert the units from the gridded output
@@ -847,7 +873,9 @@ C                       we need to output the gridded data
                     IF( GVLOUT( V,N ) ) THEN
 
 C.........................  Write out gridded data and Models-3 PinG file
-                        CALL WMRGEMIS( SBUF, JDATE, JTIME )
+                        CALL WMRGEMIS( SBUF, JDATE, JTIME)
+c                        IF( R .GT. 0) 
+c     &                      CALL GET_STATS( N, NVPGP, UI_EXIST( 1,N ) )
 
 C.........................  Write out ASCII elevated sources file
                         IF( ELEVFLAG ) THEN
@@ -887,16 +915,12 @@ C                   will reinitialize the totals after output
 
         END DO   ! End of loop on pollutant/pol-to-spcs groups
 
-C.............  Successful completion of program
-c            WRITE( MESG, 94010 ) 'Process ', R, 'terminated'
-c            L1 = LEN_TRIM( MESG )
-c            RFLAG = SHUT3()
-c            IF( .NOT.( RFLAG ) ) THEN
-c                MESG = MESG( 1:L1 ) // ' with errors'
-c            END IF
-c            CALL M3MSG2( MESG )
-
         END DO   ! End of loop on realizations
+
+        BUFFER = 'Setting for writing uncertainty statistics'
+        WRTUNCERT = ENVYN( 'SMK_PRINT_STATS', BUFFER, .FALSE. , IOS )
+
+        IF( WRTUNCERT ) CALL REPTQA
 
 C.............  Successful completion of program
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -918,4 +942,157 @@ C...........   Internal buffering formats............ 94xxx
 
 94030   FORMAT( 8X, 'at time ', A8 )
 
+        CONTAINS
+
+            SUBROUTINE REPTQA
+
+            INTEGER     I, J
+
+C***********************************************************************
+
+c            IF( PFLAG ) THEN
+c                DO J = 1, 1  ! change to emlays
+c                    DO I = 1, NGRID
+c                        WRITE( MESG , 98000 )
+c                    END DO
+c                END DO
+c            END IF
+
+98000   FORMAT( 10 ( A, :, I10, :, 2X ) )
+
+            END SUBROUTINE REPTQA
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
+
+C.............  This internal subprogram gathers the uncertainty 
+C               statistics for point sources.
+
+            SUBROUTINE GET_STATS( PIDX, NVLIST, VINDX )
+
+            USE MODUNCERT
+
+            INTEGER     , INTENT (IN) :: PIDX             ! variable description to read
+            INTEGER     , INTENT (IN) :: NVLIST           ! var index to OUTVAR
+            INTEGER     , INTENT (IN) :: VINDX ( NVLIST ) ! var index to OUTVAR
+
+            INTEGER     I, J, V
+
+C-----------------------------------------------------------------------
+
+            V = VINDX( PIDX ) 
+            IF( AFLAG ) THEN
+
+                DO I = 1, NGRID
+C.....................  Get nonzero minimum value
+                    IF( AQAMIN( I,V ) .GT. 0. .AND.
+     &                  AEMGRD( I   ) .GT. 0.      ) THEN
+            
+                        AQAMIN( I,V ) = MIN( AQAMIN( I,V ),
+     &                                       AEMGRD( I   ) )
+            
+                    ELSE IF( AQAMIN( I,V ) .LE. 0. .AND.
+     &                       AEMGRD( I   ) .GT. 0.      ) THEN
+            
+                        AQAMIN( I,V ) = AEMGRD( I )
+  
+                    END IF
+              
+C.....................  Get maximum value
+                    AQAMAX( I,V ) = MAX( AQAMIN( I,V ), 
+     &                                    AEMGRD( I  ) )
+
+                    IF( AEMGRD( I   ) .GE. 0. ) 
+     &                  AQAAVG( I,V ) = AQAAVG( I,V ) + AEMGRD( I )
+            
+                END DO
+
+            ELSE IF( PFLAG ) THEN
+
+                DO J = 1, EMLAYS
+                    DO I = 1, NGRID
+
+C.........................  Get nonzero minimum value
+                        IF( PQAMIN( I,J,V ) .GT. 0. .AND.
+     &                      PEMGRD( I,J   ) .GT. 0.      ) THEN
+            
+                            PQAMIN( I,J,V ) = MIN( PQAMIN( I,J,V ),
+     &                                             PEMGRD( I,J   ) )
+  
+                        ELSE IF( PQAMIN( I,J,V ) .LE. 0. .AND.
+     &                           PEMGRD( I,J   ) .GT. 0.      ) THEN
+            
+                            PQAMIN( I,J,V ) = PEMGRD( I,J )
+            
+                        END IF
+                  
+C.........................  Get maximum value
+                        PQAMAX( I,J,V ) = MAX( PQAMIN( I,J,V ), 
+     &                                         PEMGRD( I,J   ) )
+  
+                        IF( PEMGRD( I,J ) .GE. 0. ) 
+     &                      PQAAVG( I,J,V ) = PQAAVG( I,J,V ) + 
+     &                                        PEMGRD( I,J   )
+                    END DO
+            
+                END DO
+
+            END IF
+
+            RETURN
+
+            END SUBROUTINE GET_STATS
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
+            SUBROUTINE ALLOCAQA
+
+            INTEGER            IOS 
+
+C***********************************************************************
+
+            IF( R .EQ. 1 ) THEN
+
+                ALLOCATE( AQAMIN( NGRID, NVPGP ), STAT=IOS ) ! gridded stats
+                CALL CHECKMEM( IOS, 'AQAMIN', PROGNAME )
+                AQAMIN = 0.
+                ALLOCATE( AQAMAX( NGRID, NVPGP ), STAT=IOS ) ! gridded stats
+                CALL CHECKMEM( IOS, 'AQAMAX', PROGNAME )
+                AQAMAX = 0.
+                ALLOCATE( AQAAVG( NGRID, NVPGP ), STAT=IOS ) ! gridded stats
+                CALL CHECKMEM( IOS, 'AQAAVG', PROGNAME )
+                AQAAVG = 0.
+
+            END IF
+
+            END SUBROUTINE ALLOCAQA
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
+            SUBROUTINE ALLOCPQA
+
+            INTEGER            IOS 
+
+C***********************************************************************
+
+            IF( R .EQ. 1 ) THEN
+
+                ALLOCATE( PQAMIN( NGRID, EMLAYS, NVPGP ), STAT=IOS ) ! gridded stats
+                CALL CHECKMEM( IOS, 'PQAMIN', PROGNAME )
+                PQAMIN = 0.
+                ALLOCATE( PQAMAX( NGRID, EMLAYS, NVPGP ), STAT=IOS ) ! gridded stats
+                CALL CHECKMEM( IOS, 'PQAMAX', PROGNAME )
+                PQAMAX = 0.
+                ALLOCATE( PQAAVG( NGRID, EMLAYS, NVPGP ), STAT=IOS ) ! gridded stats
+                CALL CHECKMEM( IOS, 'PQAAVG', PROGNAME )
+                PQAAVG = 0.
+
+            END IF
+
+            END SUBROUTINE ALLOCPQA
+
         END PROGRAM SMKMERGE
+
