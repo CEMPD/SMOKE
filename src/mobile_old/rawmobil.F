@@ -2,7 +2,7 @@
          PROGRAM RAWMOBIL
 
 C***********************************************************************
-C  program body starts at line 180
+C  program body starts at line 164
 C
 C  DESCRIPTION:
 C       This program reads the county and link VMT data and creates
@@ -93,32 +93,18 @@ C.........  Sorted Source variables
         COMMON  / EMISREC / IFIP, IRCLAS, TZONES, TPFLAG, INVYR, ILINK,
      &                      XLOC1, YLOC1, XLOC2, YLOC2, VMT
 
-C.........  Unsorted non-link source variables
-        INTEGER     INDEXA ( MXNSRC )  ! Non-link sorting index
-        INTEGER     IFIPA  ( MXNSRC )
-        INTEGER     IRCLSA ( MXNSRC )
-        INTEGER     TPFLGA ( MXNSRC )
-        INTEGER     INVYRA ( MXNSRC )
-        INTEGER     ILINKA ( MXNSRC )
-        REAL        XLOC1A ( MXNSRC )
-        REAL        XLOC2A ( MXNSRC )
-        REAL        YLOC1A ( MXNSRC )
-        REAL        YLOC2A ( MXNSRC )
-        REAL        VMTA   ( MXNSRC )
-
-C.........  Unsorted link sources variables
-
-        INTEGER     LINDXA ( MXLSRC )         ! Sorting index for links list
-        INTEGER     LFIPA  ( MXLSRC )         ! Unsorted LFIP
-        INTEGER     LRCLSA ( MXLSRC )         ! Unsorted LRCL
-        INTEGER     LLINKA ( MXLSRC )         ! Unsorted LLINK
-        INTEGER     LTPFGA ( MXLSRC )         ! Unsorted temporal profile type
-        INTEGER     LINVYA ( MXLSRC )         ! Unsorted YEAR
-        REAL        LX1A   ( MXLSRC )         ! Unsorted LX1
-        REAL        LX2A   ( MXLSRC )         ! Unsorted LX2
-        REAL        LY1A   ( MXLSRC )         ! Unsorted LY1
-        REAL        LY2A   ( MXLSRC )         ! Unsorted LY2
-        REAL        LVMTA  ( MXLSRC )         ! Unsorted LVMT
+C.........  Unsorted non-link and link source variables
+        INTEGER     INDEXA ( MXNSRC + MXLSRC )  ! Non-link and link sorting index
+        INTEGER     IFIPA  ( MXNSRC + MXLSRC )
+        INTEGER     IRCLSA ( MXNSRC + MXLSRC )
+        INTEGER     TPFLGA ( MXNSRC + MXLSRC )
+        INTEGER     INVYRA ( MXNSRC + MXLSRC )
+        INTEGER     ILINKA ( MXNSRC + MXLSRC )
+        REAL        XLOC1A ( MXNSRC + MXLSRC )
+        REAL        XLOC2A ( MXNSRC + MXLSRC )
+        REAL        YLOC1A ( MXNSRC + MXLSRC )
+        REAL        YLOC2A ( MXNSRC + MXLSRC )
+        REAL        VMTA   ( MXNSRC + MXLSRC )
 
 C.........  File units and logical names
 
@@ -132,27 +118,25 @@ C.........  File units and logical names
 
 C.........  Other Local variables
 
-        INTEGER     IREC, J, L, LC, N, NC, S  ! Counters and pointers
+        INTEGER     IREC, I, J, N, S  ! Counters and pointers
         INTEGER     L1, L2                    ! Counters and pointers
 
         INTEGER     FIP               ! Temporary read in FIP
         INTEGER     IOS               ! Error status on read
         INTEGER     INY               ! Temporary inventory year
         INTEGER     LFIP              ! Previous FIP in loop
-        INTEGER     LRCL              ! Previous road class in loop
+        INTEGER     LINY              ! Previous inventory year
         INTEGER     LLNK              ! Previous link ID in loop
-        INTEGER     LYR               ! Previous year in loop
         INTEGER     LNK               ! Temporary link number
-        INTEGER     LNK_FIP           ! Fip for link source
-        INTEGER     LNK_RCL           ! Road class for link source
-        INTEGER     NLK_FIP           ! Fip for non-link source
-        INTEGER     NLK_RCL           ! Road class for non-link source
+        INTEGER     LRCL              ! Previous road class in loop
+        INTEGER     NLFIP             ! Fip for non-link source
+        INTEGER     NLRCL             ! Road class for non-link source
         INTEGER     MLNUM             ! Actual number link sources
         INTEGER     MNNUM             ! Actual number non-link sources
+        INTEGER     MTOT              ! Preliminary number of total sources
         INTEGER     NSRC              ! Actual number of total sources
         INTEGER     RCL               ! Temporary road class
         INTEGER     ROAD              ! Temporary read-in road code
-        INTEGER     TPF               ! Temporary temporal flag
         INTEGER     TZONE             ! Input TZONE for output data file
         INTEGER     UZONE             ! UTM zone to put into file header
         INTEGER     ZONE              ! Temporary UTM zone for link coords
@@ -161,15 +145,15 @@ C.........  Other Local variables
         REAL        X1, X2, Y1, Y2    ! Temporary link start and end coord [m]
         REAL        XX, YY            ! Temporary LAT/LON coords
 
+        LOGICAL     DFLAG             ! True if link FIP/RDT can = non-link
         LOGICAL     EFLAG             ! Error flag
         LOGICAL     LFLAG             ! True if link sources exist
         LOGICAL     NFLAG             ! True if non-link sources exist
+        LOGICAL     OVERFLAG          ! True if okay to replace non-link w/link 
 
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*2   RR              ! Temporary area/facility type
-        CHARACTER*8   LTYPE           ! The previous type of source in process
-        CHARACTER*8   TYPE            ! The current type of source in process
         CHARACTER*256 FNAME           ! Temporary logical raw datafile name
         CHARACTER*256 LINE            ! Line-read buffer
         CHARACTER*256 MESG
@@ -199,6 +183,11 @@ C   begin body of program RAWMOBIL
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'RAWMOBIL', 0, 0, 'Ending program.', 2 )
         END IF
+
+C.........  Get environment variables
+        DFLAG = ENVYN( 'ADD_LINK_NONLINK',
+     &                 'RAWMOBIL permits link/non-link in same FIP/RDT',
+     &                 .FALSE., IOS )
 
 C.........  Get file name; open input time zone file
         ZDEV = PROMPTFFILE( 
@@ -361,18 +350,18 @@ C.................  Ensure no overflow
 
                 ELSE
 
-                    LINDXA( S ) = S     ! Index for sorting
+                    INDEXA( S ) = S       ! Index for sorting
 
-                    LFIPA ( S ) = FIP
-                    LRCLSA( S ) = RCL
-                    LLINKA( S ) = LNK
-                    LTPFGA( S ) = MTPRFAC*WTPRFAC
-                    LINVYA( S ) = INY
-                    LX1A  ( S ) = X1
-                    LX2A  ( S ) = X2
-                    LY1A  ( S ) = Y1
-                    LY2A  ( S ) = Y2
-                    LVMTA ( S ) = TVMT
+                    IFIPA ( S ) = FIP
+                    IRCLSA( S ) = RCL
+                    ILINKA( S ) = LNK
+                    TPFLGA( S ) = MTPRFAC*WTPRFAC
+                    INVYRA( S ) = INY
+                    XLOC1A( S ) = X1
+                    XLOC2A( S ) = X2
+                    YLOC1A( S ) = Y1
+                    YLOC2A( S ) = Y2
+                    VMTA  ( S ) = TVMT
 
                 ENDIF
 
@@ -412,7 +401,8 @@ C.........  Loop over non-link input files
 
         INY   = IMISS3
         NFLAG = .FALSE.
-        S     = 0
+        S     = MLNUM
+        N     = 0
    55   CONTINUE
 
 C.............  Read file names
@@ -517,9 +507,10 @@ C.................  Check for bad road class number
                     ENDIF
                 ENDIF
 
-                S = S + 1   
+                S = S + 1
+                N = N + 1   
 
-                IF( S .GT. MXNSRC ) THEN  ! Error
+                IF( N .GT. MXNSRC ) THEN  ! Error
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
@@ -553,7 +544,8 @@ C.................  Check for bad road class number
 
   111   CONTINUE
 
-        MNNUM = S 
+        MNNUM = N
+        MTOT  = S 
 
 C.........  Check for overflow and drop sources if necessary
         IF ( MNNUM .GT. MXNSRC ) THEN
@@ -569,209 +561,141 @@ C.........  Check for overflow and drop sources if necessary
 
             CALL M3MESG( 'Max record-count exceeded in RAW VMT files')
 
-        END IF
+        ELSEIF( MTOT .EQ. 0 ) THEN
+
+            EFLAG = .TRUE.
+            MESG = 'Blank or missing VMT input data - no sources found'
+            CALL M3MSG2( MESG )
+
+        ENDIF
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'RAWMOBIL', 0, 0,
      &                   'Error reading RAW VMT file(s)', 2 )
         END IF
 
-C.........  Sort and merge raw VMT data (both link and non-link)
         CALL M3MSG2( 'Processing the RAW MOBILE SOURCE data...' )
 
-C.........  Sort link data
-        IF( LFLAG ) THEN
-            CALL SORTI3( MLNUM, LINDXA, LFIPA, LRCLSA, LLINKA )
-        ENDIF
+C.........  Sort raw VMT data (both link and non-link) and check for cases
+C           with link VMT for FIP/RDT using county data
 
-C.........  Sort non-link data
-        IF( NFLAG ) THEN
-            CALL SORTI2( MNNUM, INDEXA, IFIPA, IRCLSA )
-        ENDIF
+        CALL SORTI3( MTOT, INDEXA, IFIPA, IRCLSA, ILINKA )
 
 C.........  Merge and store sorted link and non-link sources
 
-        LC    = 0       ! Link-source     counter
-        NC    = 0       ! Non-link-source counter
-        S     = 0       ! Total source    counter
         LFIP  = -9      ! Previous FIP
         LRCL  = -9      ! Previous road class
         LLNK  = -9      ! Previous link ID
-        LYR   = -9      ! Previous inventory year
-        LTYPE = 'LINK'  ! Initialize type for last source to link
+        LINY  = -9      ! Previous inventory year
+        NLFIP = -9      ! Previous non-link FIP
+        NLRCL = -9      ! Previous non-link road class
+        S     = 0
+        DO 122 I = 1, MTOT
 
-  122   CONTINUE   ! Continue processing link and non-link sources
+            J   = INDEXA( I )
 
-            IF( LC .EQ. MLNUM .AND.
-     &          NC .EQ. MNNUM       ) THEN
+            FIP = IFIPA ( J )
+            RCL = IRCLSA( J )
+            LNK = ILINKA( J )
+            INY = INVYRA( J )
 
-                GO TO 133 ! End loop (no more sources)
+C.............  Same source as previous iteration
+            IF( FIP .EQ. LFIP .AND.
+     &          RCL .EQ. LRCL .AND.
+     &          LNK .EQ. LLNK       ) THEN  ! Error
 
-            ENDIF
+C.................  Same inventory year
+                IF( INY .EQ. LINY ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 
+     &                'ERROR: Duplicate sources for'// CRLF()// BLANK5//
+     &                BLANK5// 'FIP:', FIP, 'RCL:', RCL,
+     &                'LNK:', LNK, 'INY:', INY
+                    CALL M3MESG( MESG )
+                    GO TO 122  ! To end of loop
 
-            IF( LC .EQ. MLNUM ) LFLAG = .FALSE.  ! No more links sources
-            IF( NC .EQ. MNNUM ) NFLAG = .FALSE.  ! No more non-link sources
-
-C.............  Process for link and non-link both exist
-            IF( LFLAG .AND. NFLAG ) THEN
-
-C.................  Set temporary source characteristics for link and non-link
-                L = LINDXA( LC + 1 )
-
-                LNK_FIP = LFIPA ( L )
-                LNK_RCL = LRCLSA( L )
-
-                N = INDEXA( NC + 1 )
-
-                NLK_FIP = IFIPA ( N )
-                NLK_RCL = IRCLSA( N )
-
-
-C.................  Link will take precedence if link FIPs code is less than
-C.................  non-link FIPs code, OR if FIPs codes are equal, but
-C.................  link road class code is less than non-link road class code
-                IF( LNK_FIP .LT. NLK_FIP .OR.
-     &            ( LNK_FIP .EQ. NLK_FIP .AND.
-     &              LNK_FIP .LE. NLK_FIP       ) ) THEN
-
-                    TYPE = 'LINK'
-                    LC   = LC + 1       ! Increase link counter
-                    J    = L
-                    FIP  = LNK_FIP
-                    RCL  = LNK_RCL
-                    LNK  = LLINKA( J )
-                    TPF  = LTPFGA( J )
-                    INY  = LINVYA( J )
-                    X1   = LX1A  ( J )
-                    X2   = LX2A  ( J )
-                    Y1   = LY1A  ( J )
-                    Y2   = LY2A  ( J )
-                    TVMT = LVMTA ( J )
-
-C.....................  Link superceeds non-link when equal so skip non-link
-                    
-                    IF( LNK_RCL .EQ. NLK_RCL ) NC = NC + 1
-
-C.................  When no link, go to next non-link source
+C.................  Different inventory year
                 ELSE
 
-                    TYPE = 'NON-LINK'
-                    NC   = NC + 1
-                    J    = N
-                    FIP  = NLK_FIP
-                    RCL  = NLK_RCL
-                    LNK  = ILINKA( J )
-                    TPF  = TPFLGA( J )
-                    INY  = INVYRA( J )
-                    X1   = XLOC1A( J )
-                    X2   = XLOC2A( J )
-                    Y1   = YLOC1A( J )
-                    Y2   = YLOC2A( J )
-                    TVMT = VMTA  ( J )
+                    WRITE( MESG,94010 ) 
+     &                'WARNING: Not recommended to use same source ' //
+     &                'for multiple years...' // CRLF() // BLANK5 // 
+     &                BLANK5 // 'FIP:', FIP, 'RCL:', RCL,
+     &                'LNK:', LNK, 'YR(1):', INY, 'YR(2):', LINY
+                    CALL M3MESG( MESG )
 
                 ENDIF
 
-C.............  Process for link only
-            ELSEIF( LFLAG ) THEN
+C.............  Same FIP/RDT for link as previous non-link is okay, with warning
+            ELSEIF( DFLAG           .AND.
+     &              OVERFLAG        .AND. ! use here to prevent excessive output
+     &              FIP  .EQ. NLFIP .AND.
+     &              RCL  .EQ. NLRCL .AND.
+     &              LNK  .NE. 0           ) THEN  ! Warning
 
-                TYPE = 'LINK'
-                LC   = LC + 1
-                J    = LINDXA( LC )
-     
-                FIP  = LFIPA ( J )
-                RCL  = LRCLSA( J )
-                LNK  = LLINKA( J )
-                TPF  = LTPFGA( J )
-                INY  = LINVYA( J )
-                X1   = LX1A  ( J )
-                X2   = LX2A  ( J )
-                Y1   = LY1A  ( J )
-                Y2   = LY2A  ( J )
-                TVMT = LVMTA ( J )
+                OVERFLAG = .FALSE. ! Turn off reporting
 
-C.............  Process for non-link only
-            ELSEIF( NFLAG ) THEN
+                WRITE( MESG,94010 )
+     &               'WARNING: Link VMT added to non-link VMT for' 
+     &                 // CRLF() // BLANK5 //
+     &                 'FIP:', FIP, 'RCL:', RCL
+                CALL M3MESG( MESG )
 
-                TYPE = 'NON-LINK'
-                NC   = NC + 1
-                J    = INDEXA( NC )
+C.............  Same FIP/RDT for link as previous non-link, then non-link unused
+            ELSEIF( .NOT. DFLAG      .AND.   ! link superceeds non-link
+     &              OVERFLAG         .AND.   ! iff okay to overwrite (1st link)
+     &              FIP   .EQ. NLFIP .AND.   ! same as previous non-link FIP
+     &              RCL   .EQ. NLRCL .AND.   ! same as previous non-link RDT
+     &              LNK   .NE. 0           ) THEN  ! Warning
 
-                FIP  = IFIPA ( J )
-                RCL  = IRCLSA( J )
-                LNK  = ILINKA( J )
-                TPF  = TPFLGA( J )
-                INY  = INVYRA( J )
-                X1   = XLOC1A( J )
-                X2   = XLOC2A( J )
-                Y1   = YLOC1A( J )
-                Y2   = YLOC2A( J )
-                TVMT = VMTA  ( J )
+                S = S - 1          ! Back up one so link will overwrite non-link
+                OVERFLAG = .FALSE. ! Turn off one-back-step per FIP/RDT
 
-C.............  Error
+                WRITE( MESG,94010 )
+     &               'WARNING: Link VMT overwriting non-link VMT for'
+     &               // CRLF() // BLANK5 //
+     &               'FIP:', FIP, 'RCL:', RCL
+                CALL M3MESG( MESG )
+
             ELSE
 
-                CALL M3EXIT( 'RAWMOBIL', 0, 0,
-     &                       'No raw input data files provided', 2 )
+C.................  If new FIP/RDT combo, store FIP/RDT for last encountered
+C                   non-link source
+                IF( ( FIP .NE. LFIP .OR.
+     &                RCL .NE. LRCL     ) .AND.
+     &                LNK .EQ. 0                ) THEN
+
+                    NLFIP = FIP
+                    NLRCL = RCL
+                    OVERFLAG = .TRUE.  ! Reset back-step flag
+
+                ENDIF
+
             ENDIF
 
-C.............  Check for duplicates 
-            IF( TYPE .EQ. LTYPE .AND.
-     &          FIP  .EQ. LFIP  .AND. 
-     &          RCL  .EQ. LRCL  .AND.
-     &          LNK  .EQ. LLNK        ) THEN  ! Error
+C.............  Update previous iteration stored values with this iteration
+            LFIP = FIP
+            LRCL = RCL
+            LLNK = LNK
+            LINY = INY
 
-                EFLAG = .TRUE.
-                CALL M3MESG( 'Duplicate source found:' )
-                WRITE( MESG,94010 )
-     &                 '    Current  source FIP:', FIP, 'RCL:', RCL,
-     &                                     'LNK:', LNK, 'INY:', INY
-                CALL M3MESG( MESG )
+            S = S + 1
 
-                WRITE( MESG,94010 )
-     &                 '    Previous source FIP:', FIP, 'RCL:', RCL,
-     &                                     'LNK:', LNK, 'INY:', INY
-                CALL M3MESG( MESG )
-
-            ELSEIF( S .GE. NMSRC ) THEN       ! Error
-
-                S = S + 1
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &               'Maximum number of MOBILE SOURCES exceeded:' //
-     &               CRLF() // BLANK5 //
-     &                 '    FIP:', FIP, 'RCL:', RCL,
-     &                     'LNK:', LNK, 'INY:', INY
-                CALL M3MESG( MESG )
-
-C.............  Update sources if no duplicate and no overflow
-            ELSE
-
-                LTYPE = TYPE
-                LFIP  = FIP
-                LRCL  = RCL
-                LLNK  = LNK
-                LYR   = INY
-
-                S = S + 1
-
+C.............  Store source information if not out of bounds yet
+            IF( S .LE. NMSRC ) THEN
                 IFIP  ( S ) = FIP
                 IRCLAS( S ) = RCL
                 ILINK ( S ) = LNK
-                TPFLAG( S ) = TPF
-                XLOC1 ( S ) = X1
-                XLOC2 ( S ) = X2
-                YLOC1 ( S ) = Y1
-                YLOC2 ( S ) = Y2
                 INVYR ( S ) = INY
-                TPFLAG( S ) = TPF
-                VMT   ( S ) = TVMT
-
+                TPFLAG( S ) = TPFLGA( J )
+                XLOC1 ( S ) = XLOC1A( J )
+                XLOC2 ( S ) = XLOC2A( J )
+                YLOC1 ( S ) = YLOC1A( J )
+                YLOC2 ( S ) = YLOC2A( J )
+                VMT   ( S ) = VMTA  ( J )
             ENDIF
 
-        GO TO 122  ! To head of MOBILE source processing loop
-
-  133   CONTINUE
+122     CONTINUE   ! To head of MOBILE source processing loop
 
         NSRC = S
 
