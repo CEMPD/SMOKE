@@ -40,7 +40,11 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NEMSFILE, NCHARS, JSCC, JSTACK,
+     &                     NPACT, NPPOL, MXCHRS, LSCCEND, RSCCBEG,
+     &                     PLTIDX, SCCLEV1, SCCLEV2, SCCLEV3, SCCLEV4,
+     &                     NEM, NDY, NCE, NRE, NRP, NEF, NC1, NC2,
+     &                     SC_BEGP, SC_ENDP
 
         IMPLICIT NONE
 
@@ -61,6 +65,7 @@ C...........   Other local variables
         INTEGER         I, IOS               ! memory allocation status
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error detected
+        LOGICAL,SAVE :: FIRST = .TRUE.    ! true: first time through subroutine
 
         CHARACTER*300   MESG
 
@@ -69,52 +74,28 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine INITINFO
 
-C.........  Set category-independent variables
-        JSCC  = 0   ! default position of SCC in source description
-        NPACT = 1   ! no. variables per activity
-
-C.........  Choose the source category for which to set the source information
+C.........  Set source information that depends on file format
+C           This section will be executed every time the routine is called
         SELECT CASE( CATEGORY )
-
-C.........  For area sources ...
+        
         CASE ( 'AREA' )
 
-            NPPOL  = NARPPOL3
-            MXCHRS = MXARCHR3
-            NCHARS = MXCHRS
-            JSCC   = 2
-            LSCCEND  = 4
-            RSCCBEG  = 5
-
             SELECT CASE( FILFMT )
             CASE( EMSFMT )
                 NEMSFILE = 1    ! Number of required EMS-95 file types
             END SELECT
-
-C.........  For mobile sources ...
-        CASE ( 'MOBILE' ) 
-
-            NPPOL  = NMBPPOL3
-            MXCHRS = MXMBCHR3
-            NCHARS = MXCHRS  ! FIPS / SCC (veh type &/or road class) / veh type / lnk
-            LSCCEND  = 7
-            RSCCBEG  = 8
+            
+        CASE ( 'MOBILE' )
 
             SELECT CASE( FILFMT )
             CASE( EMSFMT )
                 NEMSFILE = 1    ! Number of required EMS-95 file types
-            END SELECT
-
-C.........  For point sources ...
-        CASE ( 'POINT' )
-
-            MXCHRS = MXPTCHR3
-            NPPOL  = NPTPPOL3
-            LSCCEND  = 5
-            RSCCBEG  = 6
+            END SELECT     
+            
+        CASE( 'POINT' )
 
             SELECT CASE( FILFMT )
-            CASE( IDAFMT )
+            CASE( IDAFMT, TOXFMT )
                 NCHARS = 6
                 JSCC   = 6
                 JSTACK = 4
@@ -129,6 +110,61 @@ C.........  For point sources ...
                 JSTACK   = 3
                 NEMSFILE = 5   ! Number of required EMS-95 file types
            END SELECT
+           
+        END SELECT
+
+C.........  Skip the rest of the routine if it has been called before           
+        IF( .NOT. FIRST ) RETURN
+           
+C.........  Set category-independent variables
+        NPACT = 1   ! no. variables per activity
+
+C.........  Choose the source category for which to set the source information
+        SELECT CASE( CATEGORY )
+
+C.........  For area sources ...
+        CASE ( 'AREA' )
+
+            NPPOL  = NARPPOL3
+            MXCHRS = MXARCHR3
+            NCHARS = MXCHRS
+            JSCC   = 2
+            LSCCEND  = 7         ! first 7
+            RSCCBEG  = 8         ! last 3
+            PLTIDX   = MXARCHR3  ! needed for ar-to-point
+        
+            SCCLEV1 = 2
+            SCCLEV2 = 4
+            SCCLEV3 = 7
+            SCCLEV4 = 10
+
+C.........  For mobile sources ...
+        CASE ( 'MOBILE' ) 
+
+            NPPOL  = NMBPPOL3
+            MXCHRS = MXMBCHR3
+            NCHARS = MXCHRS  ! FIPS / SCC (veh type &/or road class) / veh type / lnk
+            JSCC   = 0
+            LSCCEND  = 7
+            RSCCBEG  = 8
+
+            SCCLEV1 = 2
+            SCCLEV2 = 4
+            SCCLEV3 = 7
+            SCCLEV4 = 10
+
+C.........  For point sources ...
+        CASE ( 'POINT' )
+
+            MXCHRS = MXPTCHR3
+            NPPOL  = NPTPPOL3
+            LSCCEND  = 5
+            RSCCBEG  = 6
+
+            SCCLEV1 = 3   ! Assumes right-justified 10-digit w/ first 2 zero
+            SCCLEV2 = 5
+            SCCLEV3 = 8
+            SCCLEV4 = 10
           
         END SELECT
 
@@ -174,7 +210,7 @@ C           second dimension of the pollutant-specific data (e.g., POLVLA
 C           and POLVAL)
         DO I = 1, NPPOL
             IF( ENAMES( I )(1:IOVLEN3)  .EQ. 'DUM' )    NEM = I
-            IF( ENAMES( I )(1:CPRTLEN3) .EQ. OZNSEART ) NOZ = I
+            IF( ENAMES( I )(1:CPRTLEN3) .EQ. AVEDAYRT ) NDY = I
             IF( ENAMES( I )(1:CPRTLEN3) .EQ. CTLEFFRT ) NCE = I
             IF( ENAMES( I )(1:CPRTLEN3) .EQ. RULEFFRT ) NRE = I
             IF( ENAMES( I )(1:CPRTLEN3) .EQ. RULPENRT ) NRP = I
@@ -187,7 +223,7 @@ C.........  Ensure that all of the expect output variable names are present
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
 
-            IF( NEM .EQ. 0 .OR. NOZ .EQ. 0 .OR. NCE .EQ. 0 .OR.
+            IF( NEM .EQ. 0 .OR. NDY .EQ. 0 .OR. NCE .EQ. 0 .OR.
      &          NRE .EQ. 0 .OR. NRP .EQ. 0 .OR. NEF .EQ. 0      ) 
      &          EFLAG = .TRUE.
 
@@ -197,7 +233,7 @@ C.........  Ensure that all of the expect output variable names are present
 
         CASE( 'POINT' ) 
 
-            IF( NEM .EQ. 0 .OR. NOZ .EQ. 0 .OR. NCE .EQ. 0 .OR.
+            IF( NEM .EQ. 0 .OR. NDY .EQ. 0 .OR. NCE .EQ. 0 .OR.
      &          NRE .EQ. 0 .OR. NEF .EQ. 0 .OR. NC1 .EQ. 0 .OR.
      &          NC2 .EQ. 0 ) EFLAG = .TRUE.
  
@@ -212,6 +248,8 @@ C.........  Ensure that all of the expect output variable names are present
 
 C.........  Deallocate memory used in this program only
         DEALLOCATE( ENAMES, CDUMARR, IDUMARR )
+
+        FIRST = .FALSE.
 
         RETURN
 

@@ -46,6 +46,9 @@ C.........  MODULES for public variables
 C.........  This module is the inventory arrays
         USE MODSOURC
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -64,6 +67,7 @@ C...........   INCLUDES
 C.........  EXTERNAL FUNCTIONS
         CHARACTER*2  CRLF
         LOGICAL      ENVYN
+        INTEGER      FIND1
         INTEGER      FINDC
         INTEGER      INDEX1
         INTEGER      JULIAN
@@ -72,8 +76,8 @@ C.........  EXTERNAL FUNCTIONS
         REAL         STR2REAL
         INTEGER      YEAR4
 
-        EXTERNAL     CRLF, ENVYN, FINDC, INDEX1, JULIAN, SECSDIFF, 
-     &               STR2INT, STR2REAL, YEAR4
+        EXTERNAL     CRLF, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
+     &               SECSDIFF, STR2INT, STR2REAL, YEAR4
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV           ! file unit no.
@@ -94,12 +98,18 @@ C.........  SUBROUTINE ARGUMENTS
 C...........   Local list of bad sources to prevent duplicate writing of error
 C              messages
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, SAVE :: BADSRC( : )
+
+C...........   Local list of FIPS start/end positions to facilitate
+C              faster lookups
+        INTEGER, ALLOCATABLE, SAVE :: STARTSRC( : )
+        INTEGER, ALLOCATABLE, SAVE :: ENDSRC( : )
         
 C...........   Temporary read arrays
         REAL            TDAT( 24 )       ! temporary data values
 
 C...........   Other local variables
         INTEGER          H, HS, I, J, L, L1, L2, S, T    ! counters and indices
+        INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
@@ -109,6 +119,7 @@ C...........   Other local variables
         INTEGER          IREC             ! record counter
         INTEGER          JDATE            ! tmp Julian date
         INTEGER          JTIME            ! tmp HHMMSS time
+        INTEGER          LFIP             ! previous st/co FIPS code
         INTEGER, SAVE :: LOOPNO = 0       ! no. of loops
         INTEGER, SAVE :: MAXPTR           ! maximum time step reference pointer
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
@@ -183,6 +194,31 @@ C.............  Otherwise, ignore setting because it is an hourly file
 C.............  Allocate memory for bad source storage
             ALLOCATE( BADSRC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BADSRC', PROGNAME )
+
+C.............  Create unique list of FIPS codes and other things
+            CALL GENUSLST
+
+C.............  Build helper arrays for making searching faster
+            ALLOCATE( STARTSRC( NINVIFIP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STARTSRC', PROGNAME )
+            ALLOCATE( ENDSRC( NINVIFIP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ENDSRC', PROGNAME )
+            STARTSRC = 0
+            ENDSRC = 0
+            S = 0
+            DO I = 1, NINVIFIP
+                DO
+                    S = S + 1
+                    IF ( S .GT. NSRC ) EXIT
+                    IF( IFIP( S ) .EQ. INVIFIP( I ) ) THEN
+                        IF( STARTSRC( I ) .EQ. 0 ) STARTSRC( I ) = S
+                        ENDSRC( I ) = S
+                    ELSE
+                        S = S - 1
+                        EXIT   
+                    END IF
+                END DO
+            END DO
 
             FIRSTIME = .FALSE.
 
@@ -468,6 +504,24 @@ C.............  Set key for searching sources
 
             TSCC = ' '
 
+C.............  If FIPS code is not the same as last time, then
+C               look it up and get indidies
+            IF( FIP .NE. LFIP ) THEN
+                J = FIND1( FIP, NINVIFIP, INVIFIP )
+                IF( J .LE. 0 ) THEN
+                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not ',
+     &                     'find FIPS code', FIP, 'in internal list.'
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                END IF
+
+                SS = STARTSRC( J )
+                ES = ENDSRC( J )
+                NS = ES - SS + 1
+                LFIP = FIP
+
+            END IF
+
 C.............  If SCCs are needed for matching...
             IF ( TFLAG ) THEN
                 IF ( DAYFLAG ) THEN
@@ -479,24 +533,24 @@ C.............  If SCCs are needed for matching...
                 CHAR4 = TSCC
 
                 CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                      CHAR4, CHRBLNK3, POLBLNK3, CSRC )
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
-                S = FINDC( CSRC, NSRC, CSOURC )
+                J = FINDC( CSRC, NS, CSOURC( SS ) )
 
 C.............  If SCCs are not being used for matching (at least not yet)...
             ELSE
 
 C.................  Build source characteristics field for searching inventory
                 CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                      TSCC, CHRBLNK3, POLBLNK3, CSRC )
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
-                S = FINDC( CSRC, NSRC, CSOURC )
+                J = FINDC( CSRC, NS, CSOURC( SS ) )
 
 C.................  If source is not found for day-specific processing, see 
 C                   if reading the SCC in helps (needed for IDA format)
-                IF( S .LE. 0 ) THEN
+                IF( J .LE. 0 ) THEN
 
                     IF ( DAYFLAG ) THEN
                         TSCC = ADJUSTL( LINE( 92:101) )
@@ -507,10 +561,10 @@ C                   if reading the SCC in helps (needed for IDA format)
                     CHAR4 = TSCC
 
                     CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                            CHAR4, CHRBLNK3, POLBLNK3, CSRC )
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
 C.....................  Search for this record in sources
-                    S = FINDC( CSRC, NSRC, CSOURC )
-                    IF ( S .GT. 0 ) TFLAG = .TRUE.
+                    J = FINDC( CSRC, NS, CSOURC( SS ) )
+                    IF ( J .GT. 0 ) TFLAG = .TRUE.
 
                 END IF
 
@@ -518,15 +572,15 @@ C.....................  Search for this record in sources
 
 C.............  Store source in list of bad sources
 C.............  Print warning about sources not found in the inventory
-            IF( S .LE. 0 ) THEN
+            IF( J .LE. 0 ) THEN
 
 C.................  Search for source in list of bad sources
-                S = INDEX1( CSRC, NBADSRC, BADSRC )
+                J = INDEX1( CSRC, NBADSRC, BADSRC )
 
 C.................  If source is not found, give a message.  Don't need the
 C                   WARNOUT controller because this section only gets
 C                   invoked once.
-                IF( S .LE. 0 ) THEN
+                IF( J .LE. 0 ) THEN
 
                     NBADSRC = NBADSRC + 1
                     BADSRC( NBADSRC ) = CSRC
@@ -543,6 +597,7 @@ C                   invoked once.
 
 C.............  Otherwise, update master list of sources in the inventory
             ELSE
+                S = SS - 1 + J         ! calculate source number
                 LPDSRC( S ) = .TRUE.
 
             END IF

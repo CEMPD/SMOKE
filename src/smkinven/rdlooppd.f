@@ -79,6 +79,9 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL,      INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act in data
         LOGICAL,      INTENT(OUT) :: SPSTAT( MXSPDAT )! true: special in data
 
+C...........   Local file formats
+        INTEGER, ALLOCATABLE, SAVE :: FILFMT( : )  ! file format code
+
 C...........   Character strings of day- or hr-specific list file 
         CHARACTER*300, ALLOCATABLE, SAVE :: NLSTSTR( : )
 
@@ -88,7 +91,6 @@ C...........   Other local variables
         INTEGER          DD                ! tmp day
         INTEGER, SAVE :: EDATE             ! ending date
         INTEGER, SAVE :: ETIME             ! ending time
-        INTEGER, SAVE :: FILFMT            ! file format code
         INTEGER          IFIL              ! file no. counter
         INTEGER          IDEV              ! input file unit no.
         INTEGER          IOS               ! i/o status
@@ -147,14 +149,21 @@ C.........  Generate message for GETFLINE and RDLINES calls
         MESG = CATEGORY( 1:CATLEN ) // ' ' // PERIOD( 1:LP ) // 
      &         '-specific inventory file in list format'
 
+C.........  Get number of lines of inventory files in list format
+        NFILE = GETFLINE( FDEV, MESG )
+
+C.........  If not allocated, allocate memory for file format codes
+        IF ( .NOT. ALLOCATED( FILFMT ) ) THEN
+            ALLOCATE( FILFMT( NFILE ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FILFMT', PROGNAME )
+            FILFMT = 0  ! array
+        END IF
+
 C.........  Determine format of day- or hour-specific inputs, and store file
 C           names
 C.........  Day-specific inputs...
 C.........  First time called for day-specific
         IF( DAYFLAG .AND. DCALLONE ) THEN
-
-C.............  Get number of lines of inventory files in list format
-            NFILE = GETFLINE( FDEV, MESG )
 
 C.............  Allocate memory for storing contents of list-format'd file
             ALLOCATE( NLSTSTR( NFILE ), STAT=IOS )
@@ -171,9 +180,6 @@ C.............  Get file format for files listed in day-specific list file
 C.........  Hours-specific inputs...
 C.........  First time called for hour-specific
         ELSE IF( .NOT. DAYFLAG .AND. HCALLONE ) THEN
-
-C.............  Get number of lines of inventory files in list format
-            NFILE = GETFLINE( FDEV, MESG )
 
 C.............  Allocate memory for storing contents of list-format'd file
             IF( ALLOCATED( NLSTSTR ) ) DEALLOCATE( NLSTSTR )
@@ -199,6 +205,9 @@ C.........  Get the number of lines in the input file
         DO IFIL = 1, NFILE
 
             NAMTMP = NLSTSTR( IFIL )
+
+C.............  If line is LIST header, skip to next line
+            IF( INDEX( NAMTMP, 'LIST' ) > 0 ) CYCLE
 
 C.............  If line contains the range of dates, read this packet and
 C               skip to next line
@@ -244,19 +253,19 @@ C.............  Open files, and report status
             CALL M3MSG2( MESG )
 
 C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
-            IF( FILFMT .EQ. EMSFMT ) THEN
+            IF( FILFMT( IFIL ) .EQ. EMSFMT ) THEN
 
         	CALL RDEMSPD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG, 
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME, 
      &                        EDATE, ETIME, EASTAT, SPSTAT )
 
-            ELSE IF( FILFMT .EQ. EPSFMT ) THEN
+            ELSE IF( FILFMT( IFIL ) .EQ. EPSFMT ) THEN
 
                 CALL RDEPSPD( IDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 
      &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, 
      &                        SDATE, STIME, EDATE, ETIME, EASTAT )
 
-            ELSE IF ( FILFMT .EQ. CEMFMT ) THEN
+            ELSE IF ( FILFMT( IFIL ) .EQ. CEMFMT ) THEN
 
                 CALL RDCEMPD( IDEV, TZONE, INSTEP, MXPDSRC, 
      &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, 
@@ -264,7 +273,7 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
 
             ELSE
 
-                WRITE( MESG,94010 ) 'File format', FILFMT, 'of ' //
+                WRITE( MESG,94010 ) 'File format', FILFMT(IFIL), 'of '//
      &                 PERIOD( 1:LP ) // '-specific data not recognized'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
@@ -291,8 +300,9 @@ C.........  Compute number of time steps based on SDATE and EDATE
 C.........  Rewind input file
         REWIND( FDEV )
 
-C.........  Set output format
-        FMTOUT = FILFMT
+C.........  Set output format ( to make sure that any daterange
+C           headers get filtered out)
+        FMTOUT = MAXVAL( FILFMT ) 
 
         RETURN
 

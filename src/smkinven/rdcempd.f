@@ -63,6 +63,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS
         LOGICAL      CHKREAL
@@ -161,14 +162,14 @@ C...........   Other local variables
         LOGICAL       :: BLRFLAG          ! true: matched rec to inv oris/blr
         LOGICAL, SAVE :: DFLAG = .FALSE.  ! true: dates have been set by the data
         LOGICAL       :: EFLAG = .FALSE.  ! TRUE iff ERROR
-        LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
+        LOGICAL       :: MATCHFLG = .FALSE.! true: a CEM/inventory match found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
+        LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: YFLAG  = .FALSE. ! true: year mismatch found
 
         CHARACTER*5      BBUF             ! tmp boiler ID from CEM data
-        CHARACTER*300 :: LINE   = ' '     ! line buffer 
-        CHARACTER*300 :: MESG   = ' '     ! message buffer
+        CHARACTER*256 :: MESG   = ' '     ! message buffer
 
         CHARACTER(LEN=BLRLEN3) BLID       ! tmp boiler ID with inventory length
         CHARACTER(LEN=BLRLEN3) PBLID      ! previous boiler ID
@@ -234,21 +235,10 @@ C.............  Read emissions from inventory file
 
                 IF ( CEMPIDX( V ) .LE. 0 ) CYCLE
 
-                CBUF = EANAM( CEMPIDX( V ) )
-                IF( .NOT. READ3( ENAME, CBUF, 1, 0, 
-     &                           0, EMIS( 1,V )     ) ) THEN
+                CBUF = EANAM ( CEMPIDX( V ) )
 
-C.....................  Write error if data could not be read
-                    EFLAG = .TRUE.
-                    L  = LEN_TRIM( CBUF )
-                    L2 = LEN_TRIM( ENAME )
-                    MESG = 'ERROR: Could not read "' // CBUF( 1:L ) //
-     &                     '" from file ' // ENAME( 1:L2 ) // '".'
-     &                     
-                    CALL M3MSG2( MESG )
+                CALL RDMAPPOL( NSRC, 1, 1, CBUF, EMIS( 1,V ) )
 
-                END IF
-                
             END DO
 
             FIRSTIME = .FALSE.
@@ -295,21 +285,31 @@ C           the second section, determine the number of records per time
 C           step. In the third section, read and store the data.  When storing
 C           data, time step index is computed from the start date/time instead
 C           of the reference date/time so that the indexing will work properly.
+
         IREC = 0
         PCORS = ' '
+        
+C.........  Skip #CEM header line if it is present
+        READ( FDEV, * ) MESG
+        IF( INDEX( MESG, '#CEM' ) < 0 ) THEN
+            BACKSPACE( FDEV )
+        ELSE
+            IREC = IREC + 1
+        END IF
+        
 c        TDAT = 0   !  array
         DO         !  Head of period-specific file read loop
 
-C.............  Read first line of file
 C.............  There is no error checking to help speed things up
-            READ( FDEV, *, END=299 ) 
+            READ( FDEV, *, ERR=1001, END=299 ) 
      &            CORS, BBUF, YYMMDD, HH, CEMEMIS( CO2IDX ),
      &            CEMEMIS( SO2IDX ), CEMEMIS( NOXIDX ), OPTIME,
      &            GLOAD, SLOAD, HTINPUT
+     
             IREC = IREC + 1
 
 C.............  Write message about which record number we're on
-            IF ( IREC .EQ. 1 .OR. MOD( IREC,500000 ) .EQ. 0 ) THEN
+            IF ( IREC <= 2 .OR. MOD( IREC,500000 ) .EQ. 0 ) THEN
 
                 IF( NRECS .GT. 0 .AND. GETCOUNT ) THEN
                     WRITE( MESG, 94010 ) 
@@ -395,6 +395,7 @@ C.................  Skip it
 
 C.............  Otherwise, get FIPs code and time zone
             ELSE
+                MATCHFLG = .TRUE.
                 FIP   = INVORFP( I )
                 ZONE  = GETTZONE( FIP )
             END IF
@@ -506,7 +507,11 @@ C                   inventory emissions.
                         IDXSRC( HS,T ) = HS
                         SPDIDA( HS,T ) = S
                         CODEA ( HS,T ) = CEMPIDX(V)
-                        EMISVA( HS,T ) = CEMEMIS(V) * EMIS(S,V) * DENOM
+    	    	    	IF( CEMEMIS( V ) .LT. 0 ) THEN
+    	    	    	    EMISVA( HS,T ) = BADVAL3
+    	    	    	ELSE
+                            EMISVA( HS,T )= CEMEMIS(V)* EMIS(S,V)* DENOM
+    	    	    	END IF
 
                     END IF
 
@@ -519,6 +524,13 @@ C                   inventory emissions.
 299     CONTINUE   ! Exit from read loop
 
         NRECS = IREC
+
+        IF ( .NOT. MATCHFLG ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: No matches found between CEM data and ' //
+     &             'inventory'
+            CALL M3MSG2( MESG )
+        END IF
 
         IF ( YFLAG ) THEN
             WRITE( MESG,94010 ) 'WARNING: Some excluded CEM records '//
@@ -547,6 +559,10 @@ C.........  Update output starting date/time and ending date/time
         END DO
 
         RETURN
+
+1001    WRITE( MESG,94010 ) 'Problem reading CEM data at line', IREC
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+  
 
 C******************  FORMAT  STATEMENTS   ******************************
 

@@ -43,13 +43,13 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: MXIDAT, INVDUNT, INVDCNV, INVDNAM
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTRY, CTRYNAM, CTRYCOD
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: DATPOS, TMPNAM
 
         IMPLICIT NONE
 

@@ -74,7 +74,7 @@ C...........   Other local variables
 
         INTEGER         FIP         !  tmp region code
         INTEGER         FLEN        !  file name length
-        INTEGER         IDX         !  emissions array index (ann or ozone seas)
+        INTEGER         IDX         !  emissions array index (ann or ave day)
         INTEGER      :: INY = 0     !  tmp inventory year
         INTEGER         IOS         !  i/o status
         INTEGER      :: NCELL       !  tmp cell numbers
@@ -205,7 +205,7 @@ C.........  Set temporal flag based on time step in file
         ELSE IF( TSTEP3D .EQ. 240000 ) THEN  ! Average day data
 
             TPF = WKSET
-            IDX = NOZ
+            IDX = NDY
 
 C.........  Give error if time step is not one of the recognized values.
         ELSE

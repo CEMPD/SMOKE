@@ -1,16 +1,15 @@
 
-        SUBROUTINE WRINVPOL( ENAME, CATEGORY, NSRC, IPCNT, NPPOL, 
-     &                       POLNAM, POLBUF )
+        SUBROUTINE WRINVPOL( CATEGORY, INPATH, INNAM, NREC, 
+     &                       NPVAR, VBUF, SRCID, POLBUF, EFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line 86
+C  subroutine body starts at line 
 C
 C  DESCRIPTION:
 C      This subroutine writes the inventory pollutant-based variables
-C      and/or VMT to the I/O API files
+C      and/or VMT to the I/O API files in sparse storage format
 C
 C  PRECONDITIONS REQUIRED:
-C      Logical file name ENAME opened
 C      Number of sources NSRC defined correctly
 C      Pollutant count IPCNT and output names POLNAM defined correctly
 C      Output array POLVAL populated
@@ -45,90 +44,118 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-      IMPLICIT NONE
+C...........   MODULES for public variables
+        USE MODFILESET
+
+        IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
-C.........  Subroutine arguments and their descriptions:
-        CHARACTER(*), INTENT (IN) :: ENAME            !  I/O API file name
-        CHARACTER(*), INTENT (IN) :: CATEGORY         !  source category
-        INTEGER     , INTENT (IN) :: NSRC             !  no. sources
-        INTEGER     , INTENT (IN) :: IPCNT            !  pollutant count
-        INTEGER     , INTENT (IN) :: NPPOL            !  no. vars per pol
-        CHARACTER(*), INTENT (IN) :: POLNAM( IPCNT )  !  names of output pols
-        REAL        , INTENT (IN) :: POLBUF( NSRC,IPCNT*NPPOL )
-                                            !  pol-based emissions & other data
-C...........   Output variable information
-        INTEGER                 EOTYPES( IPCNT,NPPOL ) ! types output vars
-        CHARACTER(LEN=IOVLEN3)  EONAMES( IPCNT,NPPOL ) ! names for pol-spec
-        CHARACTER(LEN=IODLEN3)  CDUM   ( IPCNT,NPPOL ) ! char dummy
+C.........  EXTERNAL FUNCTIONS
+        CHARACTER*2   CRLF
+        LOGICAL       SETENVVAR
 
-C...........   Temporary integer array for output of integer variables
+        EXTERNAL      CRLF, SETENVVAR
+
+C.............  Subroutine arguments 
+        CHARACTER(*), INTENT (IN) :: CATEGORY        ! source category
+        CHARACTER(*), INTENT (IN) :: INPATH          ! path for output file
+        CHARACTER(*), INTENT (IN) :: INNAM           ! name for output file
+        INTEGER     , INTENT (IN) :: NREC            ! size of output arrays
+        INTEGER     , INTENT (IN) :: NPVAR           ! number variables per pol/act
+        CHARACTER(*), INTENT (IN) :: VBUF            ! names of pols/act
+        INTEGER     , INTENT (IN) :: SRCID( NREC )   ! source IDs
+        REAL        , INTENT (IN) :: POLBUF( NREC,NPVAR )  ! pol or act data
+        LOGICAL     , INTENT(OUT) :: EFLAG           ! true: error found
+
+C.............  Arrays for sparse output
         INTEGER, ALLOCATABLE :: INTBUF ( : )
 
-C...........   Other local variables
-        INTEGER                 I, J, L, V
-        INTEGER                 IOS     !  i/o status
+C.............  Local variables
+        INTEGER      J, L, N
+        INTEGER      IOS      ! i/o status
 
-        CHARACTER*300           MESG    !  message buffer
-        CHARACTER(LEN=IOVLEN3 ) VAR     !  tmp variable name
- 
+        LOGICAL       :: MSGFLAG  = .FALSE.  ! true: need to output error message
+
+        CHARACTER*16           :: FNAME = 'IOAPI_DAT' ! tmp logical name for outputs
+        CHARACTER*256          :: MESG                ! message buffer
+        CHARACTER(LEN=PHYLEN3) :: FPHYS = ' '         ! full physical file name
+
         CHARACTER*16 :: PROGNAME = 'WRINVPOL' !  program name
 
 C***********************************************************************
 C   begin body of program WRINVPOL
 
-C.........  Create message to use in case there is an error
-        MESG = 'Error writing output file "' //
-     &         ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
+C........  Allocate memory for output arrays
+        ALLOCATE( INTBUF( NREC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INTBUF', PROGNAME )
 
-C.........  Get the list of variable names per pollutant
-        CALL BLDENAMS( CATEGORY, IPCNT, NPPOL, POLNAM, EONAMES,
-     &                 CDUM, EOTYPES, CDUM )
+        FPHYS = TRIM( INPATH ) // TRIM( INNAM )
 
-C.........  Write the I/O API file, one variable at a time
-        DO V = 1, IPCNT
+C.........  Set output logical file name
+        IF( .NOT. SETENVVAR( FNAME, FPHYS ) ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: Could not set logical file name ' //
+     &             'for "' // TRIM( VBUF ) // '" file:'// 
+     &             CRLF()// BLANK10// TRIM( FPHYS )
+            CALL M3MSG2( MESG )
 
-            DO I = 1, NPPOL
+C.........  Open I/O API file
+        ELSE IF( .NOT. OPENSET( FNAME, FSNEW3, PROGNAME )) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: Could not open I/O API "' // TRIM( VBUF )//
+     &             '" file for file name:' // CRLF() // BLANK10 // 
+     &             TRIM( FPHYS )
+            CALL M3MSG2( MESG )
 
-                J = ( V - 1 ) * NPPOL + I
-                VAR = EONAMES( V,I )
-                L   = LEN_TRIM( VAR )
+        END IF
 
-C.................  Convert real variable to an integer, if needed
-                IF( EOTYPES( V,I ) .EQ. M3INT ) THEN
+C.........  Write source ID index
+        IF( .NOT. WRITESET( FNAME, 'SRCID', ALLFILES, 
+     &                      0, 0, SRCID               )) THEN
+            EFLAG = .TRUE.
+            MESG = 'Could not write "SRCID" to file:'//
+     &              CRLF()//BLANK10// TRIM( FPHYS )
+            CALL M3MSG2( MESG )
+        END IF
 
-                    IF( .NOT. ALLOCATED( INTBUF ) ) THEN
-                        ALLOCATE( INTBUF( NSRC ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'INTBUF', PROGNAME )
-                    END IF
+C.........  Write all variables for each pollutant or activity
+        DO J = 1, NPVAR
 
-                    INTBUF = INT( POLBUF( 1,J ) )  ! arrays
+            MSGFLAG = .FALSE.
+            IF( VTYPESET( J+1 ) .EQ. M3REAL ) THEN
+                IF( .NOT. WRITESET( FNAME, VNAMESET( J+1 ), 
+     &              ALLFILES, 0, 0, POLBUF( 1,J )   ) ) MSGFLAG = .TRUE.
 
-                    IF( .NOT. WRITE3( ENAME,VAR(1:L),0,0,INTBUF )) THEN
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
+            ELSE
+                INTBUF( 1:NREC ) = INT( POLBUF( 1:NREC, J ) )  ! array
+                IF( .NOT. WRITESET( FNAME, VNAMESET( J+1 ), 
+     &              ALLFILES, 0, 0, INTBUF          ) ) MSGFLAG = .TRUE.
+            END IF
 
-C.................  Simply write out real values directly
-                ELSE
-                
-                    IF( .NOT. WRITE3( ENAME,VAR(1:L),0,0,
-     &                                POLBUF(1,J)         ) ) THEN
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-
-                END IF
-
-            END DO
+            IF( MSGFLAG ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Could not write "'// TRIM( VNAMESET(J+1) )
+     &                 // '" to file:'// CRLF()// BLANK10// 
+     &                 TRIM( FPHYS )
+                CALL M3EXIT( MESG )
+            END IF
 
         END DO
 
-        IF( ALLOCATED( INTBUF ) ) DEALLOCATE( INTBUF )
+C........  Close output file for this variable
+        IF( .NOT. CLOSESET( FNAME ) ) THEN
+            MESG = 'Could not close file:'//CRLF()//BLANK10//
+     &                     TRIM( FPHYS )
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C...............  Deallocate memory for temporary write arrays
+        DEALLOCATE( INTBUF )
 
         RETURN
 

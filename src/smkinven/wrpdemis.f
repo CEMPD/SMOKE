@@ -84,7 +84,7 @@ C...........   Local allocatable arrays
         LOGICAL, ALLOCATABLE, SAVE :: NOMISS( :,: )
 
 C...........   Local arrays
-        INTEGER, SAVE :: SPIDX2( MXSPDAT )
+        INTEGER, ALLOCATABLE, SAVE :: SPIDX2( : )
 
 C...........   Other local variables
         INTEGER          I, J, K, L2, LS, S, V, V2
@@ -95,7 +95,6 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: error on duplicates
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
-        LOGICAL, SAVE :: SFLAG    = .FALSE.  ! true: error on missing species
         LOGICAL, SAVE :: LFLAG    = .FALSE.  ! true: iteration on special var
 
         CHARACTER*100    BUFFER           ! src description buffer
@@ -114,10 +113,6 @@ C.............  Get settings from the environment.
      &                     'Error if duplicate inventory records',
      &                     .FALSE., IOS )
 
-            SFLAG = ENVYN( 'RAW_SRC_CHECK',
-     &                     'Error if missing species-records',
-     &                     .FALSE., IOS )
-
 C.............  Allocate memory for flag for writing missing-data messages
             ALLOCATE( NOMISS( NSRC,NVASP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NOMISS', PROGNAME )
@@ -134,6 +129,8 @@ C.............  Create reverse index for pollutants and activities
             END DO
  
 C.............  Create reverse index for special variables
+            ALLOCATE( SPIDX2( MXSPDAT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPIDX2', PROGNAME )
             DO V = 1, MXSPDAT
                 K = SPIDX( V )
                 IF( K .GT. 0 ) SPIDX2( K ) = V       
@@ -244,43 +241,22 @@ C.................  Format source information
 
 C.................  Check for missing values
                 IF ( PDDATA( I,V ) .LT. AMISS3 ) THEN
-                    IF( SFLAG ) THEN
-                	EFLAG = .TRUE.
-                        IF( NOMISS( S,V ) ) THEN
-                            IF ( V .LE. NVAR ) THEN
-                	        MESG = 'ERROR: Data missing for:' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                ' VAR: '// EANAM( EAIDX( V ) )
-                            ELSE
-                                K = V - NVAR
-                	        MESG = 'ERROR: Data missing for:' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                 ' VAR: '//SPDATNAM( SPIDX2( K ) )
-                            END IF
-
-                            CALL M3MESG( MESG )
-                            NOMISS( S,V ) = .FALSE.
-                        END IF
-                        CYCLE
-
-                    ELSE
-                        IF( NOMISS( S,V ) ) THEN
-                            IF ( V .LE. NVAR ) THEN
-               	                MESG = 'WARNING: Data missing for: ' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                 ' VAR: '// EANAM( EAIDX( V ) )
-                            ELSE
-                                K = V - NVAR
-               	                MESG = 'WARNING: Data missing for: ' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                 ' VAR: '//SPDATNAM( SPIDX2( K ) )
-                            END IF
-
-                            CALL M3MESG( MESG )
-                            NOMISS( S,V ) = .FALSE.
+                    IF( NOMISS( S,V ) ) THEN
+                        IF ( V .LE. NVAR ) THEN
+               	            MESG = 'WARNING: Data missing for: ' //
+     &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
+     &                             ' VAR: '// EANAM( EAIDX( V ) )
+                        ELSE
+                            K = V - NVAR
+               	            MESG = 'WARNING: Data missing for: ' //
+     &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
+     &                             ' VAR: '//SPDATNAM( SPIDX2( K ) )
                         END IF
 
+                        CALL M3MESG( MESG )
+                        NOMISS( S,V ) = .FALSE.
                     END IF
+
                 END IF
 
 C.................  Skip next section if special data variable

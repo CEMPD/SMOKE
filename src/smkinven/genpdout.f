@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENPDOUT( FDEV, CDEV, ODEV, TZONE, SDATE, STIME, 
+        SUBROUTINE GENPDOUT( FDEV, CDEV, ODEV, RDEV,TZONE, SDATE, STIME, 
      &                       NSTEPS, INSTEP, OUTSTEP, NVAR, NVSP, 
      &                       MXPDSRC, TYPNAM, FNAME, EAIDX, SPIDX )
 
@@ -79,6 +79,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV      ! hour-specific file unit no.
         INTEGER     , INTENT (IN) :: CDEV      ! SCC desc file unit no.
         INTEGER     , INTENT (IN) :: ODEV      ! ORIS desc file unit no.
+        INTEGER     , INTENT (IN OUT) :: RDEV  ! Report file unit no.
         INTEGER     , INTENT (IN) :: TZONE     ! output time zone
         INTEGER     , INTENT (IN) :: SDATE     ! Julian starting date in TZONE
         INTEGER     , INTENT (IN) :: STIME     ! start time of data in TZONE
@@ -105,13 +106,10 @@ C.........  Local arrays
         CHARACTER*50    CHARS( 9 )
         CHARACTER*40    LABEL( 2 )
 
-C...........   Unit numbers
-        INTEGER       :: RDEV = 0             ! report file 
-
 C...........   Other local variables
         INTEGER          I, J, K, L, N, S, T
 
-        INTEGER          FILFMT               ! format code of files in list
+        INTEGER          INVFMT               ! format code of files in list
         INTEGER          FIP                  ! tmp co/st/cy code
         INTEGER          IOS                  ! i/o status
         INTEGER          JDATE                ! tmp Julian date
@@ -227,7 +225,7 @@ C.........  Message before reading the input file (list of files)
 
 C.........  Loop through input files and actually read the data
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
+     &                 FNAME, SDATE, STIME, NSTEPS, INVFMT, 
      &                 EASTAT, SPSTAT )
 
 C.........  Determine the actual number of day-specific or hour-specific sources
@@ -269,7 +267,7 @@ C           writing with a single WRITE3 statement.
 C.........  Open day-specific or hour-specific output file, depending on value
 C           of TYPNAM
         CALL OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, OUTSTEP, 
-     &                  FILFMT, TYPNAM, OFLAG, EAIDX, SPSTAT, 
+     &                  INVFMT, TYPNAM, OFLAG, EAIDX, SPSTAT, 
      &                  ONAME, RDEV )
 
 C.........  Loop through time steps and output emissions and other data
@@ -300,7 +298,7 @@ C.........  Deallocate global memory
      &              DYTOTA, LPDSRC, PDEMOUT, PDTOTL )
 
 C.........  Exit from subroutin if not writing CEM report...
-        IF ( FILFMT .NE. CEMFMT ) RETURN
+        IF ( INVFMT .NE. CEMFMT ) RETURN
 
 C.........  Read SCC descriptions
         CALL RDSCCDSC( CDEV )

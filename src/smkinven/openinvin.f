@@ -1,7 +1,7 @@
 
-        SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
-     &                        XDEV, EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
-     &                        ENAME, INNAME, IDNAME, IHNAME )
+        SUBROUTINE OPENINVIN( CATEGORY, ADEV, DDEV, HDEV, RDEV, SDEV, 
+     &                        XDEV, EDEV, PDEV, ZDEV, CDEV, ODEV, UDEV,
+     &                        YDEV, ENAME, INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 119
@@ -60,66 +60,50 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
-        INTEGER     , INTENT(OUT) :: IDEV      ! unit number for inven file
+        INTEGER     , INTENT(OUT) :: ADEV     ! unit number for inven file
         INTEGER     , INTENT(OUT) :: DDEV      ! unit no. for day-specific file
         INTEGER     , INTENT(OUT) :: HDEV      ! unit no. for hr-specific file
         INTEGER     , INTENT(OUT) :: RDEV      ! unit no. for stack replacements
         INTEGER     , INTENT(OUT) :: SDEV      ! unit no. for optional inven in
         INTEGER     , INTENT(OUT) :: XDEV      ! unit no. for vmt mix file
         INTEGER     , INTENT(OUT) :: EDEV      ! unit no. for speeds file
-        INTEGER     , INTENT(OUT) :: PDEV      ! unit no. for pol codes & names
-        INTEGER     , INTENT(OUT) :: VDEV      ! unit no. for activity names
+        INTEGER     , INTENT(OUT) :: PDEV      ! unit no. for inven data table
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
         INTEGER     , INTENT(OUT) :: CDEV      ! unit no. for SCCs description
         INTEGER     , INTENT(OUT) :: ODEV      ! unit no. for ORIS description
+        INTEGER     , INTENT(OUT) :: UDEV      ! unit no. for non-HAP exclusions
+        INTEGER     , INTENT(OUT) :: YDEV      ! unit no. for area-to-point
         CHARACTER(*), INTENT(OUT) :: ENAME     ! optional netCDF inven input
         CHARACTER(*), INTENT(OUT) :: INNAME    ! average inventory name
         CHARACTER(*), INTENT(OUT) :: IDNAME    ! day-specific inventory 
         CHARACTER(*), INTENT(OUT) :: IHNAME    ! hour-specific inventory name 
 
 C...........   Other local variables
-
+        INTEGER       IDEV   ! tmp unit number if ENAME is map file
         INTEGER       IOS    ! i/o status
         INTEGER       J      ! counter and indices
         INTEGER       LCAT   ! length of CATEGORY string
 
-        LOGICAL    :: CFLAG = .FALSE.  ! true: use SIPOLS file
-        LOGICAL    :: DFLAG = .FALSE.  ! true: import day-specific file
-        LOGICAL    :: GFLAG = .FALSE.  ! true: import gridded I/O API inventory
-        LOGICAL    :: HFLAG = .FALSE.  ! true: import hour-specific file
-        LOGICAL    :: IFLAG = .FALSE.  ! true: import annual/average inventory
-        LOGICAL    :: SFLAG = .FALSE.  ! true: import speeds file
-        LOGICAL    :: VFLAG = .FALSE.  ! true: use ACTVNAMS file
-        LOGICAL    :: XFLAG = .FALSE.  ! true: import VMT mix file
+        LOGICAL    :: CFLAG = .FALSE.  ! true: open area-to-point file
+        LOGICAL    :: DFLAG = .FALSE.  ! true: open day-specific file
+        LOGICAL    :: GFLAG = .FALSE.  ! true: open gridded I/O API inventory
+        LOGICAL    :: HFLAG = .FALSE.  ! true: open hour-specific file
+        LOGICAL    :: IFLAG = .FALSE.  ! true: open annual/average inventory
+        LOGICAL    :: NFLAG = .FALSE.  ! true: open non-HAP exclusions
+        LOGICAL    :: SFLAG = .FALSE.  ! true: open speeds file
+        LOGICAL    :: XFLAG = .FALSE.  ! true: open VMT mix file
 
         CHARACTER(LEN=NAMLEN3) ANAME
         CHARACTER(LEN=NAMLEN3) NAMBUF      ! file name buffer
-        CHARACTER*300          MESG        ! message buffer 
+        CHARACTER(LEN=NAMLEN3) INAME       ! tmp name for inven file of unknown fmt
+        CHARACTER*256          MESG        ! message buffer 
 
         CHARACTER*16 :: PROGNAME = 'OPENINVIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENINVIN
 
-C.........  Set controls for reading the pollutants and activities files
-C.........  Default is for mobile to read in activities and not pollutants
-C           and for other source categories to read in pollutants and not
-C           activities
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            CFLAG = .FALSE.
-            VFLAG = .TRUE.
-        ELSE
-            CFLAG = .TRUE.
-            VFLAG = .FALSE.
-        END IF
-
 C.........  Get value of these controls from the environment
-        MESG = 'Indicator for using pollutants list'
-        CFLAG = ENVYN( 'SMK_USE_SIPOLS', MESG, CFLAG, IOS )
-
-        MESG = 'Indicator for using activities list'
-        VFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, VFLAG, IOS )
-
         MESG = 'Import average inventory data'
         IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', MESG, .TRUE., IOS )
 
@@ -130,8 +114,14 @@ C.........  Get value of these controls from the environment
             MESG = 'Import hour-specific data'
             HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
         END IF
+        
+        MESG = 'Read and use non-HAP exclusions file'
+        NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', MESG, .FALSE., IOS )
 
         IF ( CATEGORY .EQ. 'AREA' ) THEN
+            MESG = 'Read and use area-to-point factors file'
+            CFLAG = ENVYN ( 'SMK_ARTOPNT_YN', MESG, .FALSE., IOS )
+            
             MESG = 'Import gridded I/O API inventory data'
             GFLAG = ENVYN ( 'IMPORT_GRDIOAPI_YN', MESG, .FALSE., IOS )
         END IF
@@ -162,7 +152,6 @@ C.........  Make sure gridded point source file is not attempted
 C.........  When gridded data are imported, override other settings
         IF( GFLAG ) THEN
             CFLAG = .FALSE.
-            VFLAG = .FALSE.
             IFLAG = .FALSE.
             DFLAG = .FALSE.
             HFLAG = .FALSE.
@@ -202,7 +191,7 @@ C.........  Find name name of raw inventory file
 
         END IF
 
-C.........
+C.........   Get NetCDF gridded inventory file (without SCCs)
         IF( GFLAG ) THEN
 
             MESG = 'Enter logical name of the GRIDDED ' // 
@@ -216,7 +205,7 @@ C           inventory is to be imported
             MESG = 'Enter logical name of the RAW ' // 
      &             CATEGORY( 1:LCAT ) // ' AVERAGE INVENTORY ' // 'file'
 
-            IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INNAME, PROGNAME )
+            ADEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INNAME, PROGNAME )
 
 C.........  If SMOKE inventory already exists, open files for reading later
         ELSE
@@ -225,14 +214,29 @@ C.............  Get input inventory file names given source category
 C.............  Use NAMBUF for HP safety
             CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-            NAMBUF = PROMPTMFILE( 
-     &              'Enter logical name for the I/O API INVENTORY file',
-     &              FSREAD3, ENAME, PROGNAME )
-            ENAME = NAMBUF
+C.........  Prompt for and open input I/O API and ASCII files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            SDEV = PROMPTFFILE( 
-     &               'Enter logical name for the ASCII INVENTORY file',
-     &               .TRUE., .TRUE., ANAME, PROGNAME )
+C.............  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.............  Otherwise, open separate I/O API and ASCII files that
+C               do not store the pollutants as separate 
+            ELSE
+                ENAME = INAME
+                SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+            END IF
         END IF
 
 C.........  Get file name and open daily input inventory file
@@ -301,33 +305,38 @@ C           zones
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
         END IF
 
-C.........  Get list of powerplant SCCs, in case needed for reporting CEM
-C           matches with the inventory
-        IF ( HFLAG ) THEN
+C.........  Get SCC descriptions if needed for reporting purposes
+        IF ( HFLAG .OR. CFLAG ) THEN
             CDEV = PROMPTFFILE(
      &             'Enter logical name for SCC DESCRIPTION file ',
      &             .TRUE., .TRUE., 'SCCDESC', PROGNAME )
+        END IF
 
+C.........  Get ORIS descriptions file
+        IF( HFLAG ) THEN
             ODEV = PROMPTFFILE(
      &             'Enter logical name for ORIS DESCRIPTION file ',
      &             .TRUE., .TRUE., 'ORISDESC', PROGNAME )
         END IF
 
-C.........  Get file name for inventory pollutants codes/names
-        IF( CFLAG ) THEN 
-            MESG = 'Enter logical name for POLLUTANT CODES & ' //
-     &             'NAMES file'
-            PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SIPOLS',
+C.........  Get file name for area-to-point factors file
+        IF( NFLAG ) THEN
+            MESG = 'Enter logical name for NON-HAP EXCLUSIONS file'
+            UDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'NHAPEXCLUDE',
+     &                          PROGNAME )
+        END IF
+
+C.........  Get file name for area-to-point factors file
+        IF( CFLAG ) THEN
+            MESG = 'Enter logical name for AREA-TO-POINT FACTORS file'
+            YDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ARTOPNT',
      &                          PROGNAME )
         END IF
 
 C.........  Get file name for inventory pollutants codes/names
-        IF( VFLAG ) THEN
-            MESG = 'Enter logical name for ACTIVITY CODES & ' //
-     &             'NAMES file'
-            VDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ACTVNAMS',
-     &                          PROGNAME )
-        END IF
+        MESG = 'Enter logical name for INVENTORY DATA TABLE file'
+        PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'INVTABLE',
+     &                      PROGNAME )
 
         RETURN
 
