@@ -48,7 +48,8 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, IFIP, 
+     &                      STKHT, STKDM, STKVE, STKTK
 
         IMPLICIT NONE
 

@@ -40,7 +40,11 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NEMSFILE, NCHARS, JSCC, JSTACK,
+     &                     NPACT, NPPOL, MXCHRS, LSCCEND, RSCCBEG,
+     &                     PLTIDX, SCCLEV1, SCCLEV2, SCCLEV3, SCCLEV4,
+     &                     NEM, NDY, NCE, NRE, NRP, NEF, NC1, NC2,
+     &                     SC_BEGP, SC_ENDP
 
         IMPLICIT NONE
 

@@ -37,10 +37,12 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: INVYR
 
 C...........   This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, CATDESC, BYEAR, 
+     &                     NIPOL, NPPOL, NIACT, NPACT, NIPPA,
+     &                     NSRC, NMAP, MAPNAM, MAPFIL, EANAM, ACTVTY
 
         USE MODFILESET
 

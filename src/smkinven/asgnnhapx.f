@@ -45,7 +45,13 @@ C...........   This module contains the source ararys
         USE MODSOURC, ONLY: CSOURC, CSCC
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: LNONHAP, TXCNT,
+     &                     CHRT02A, CHRT02B, CHRT02C,
+     &                     CHRT03, CHRT04,
+     &                     CHRT05A, CHRT05B, CHRT05C,
+     &                     CHRT06, CHRT07,
+     &                     CHRT08A, CHRT08B, CHRT08C,
+     &                     CHRT09
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, CATEGORY, SCCLEV1, SCCLEV2, SCCLEV3

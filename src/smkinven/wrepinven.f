@@ -43,16 +43,21 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, CSCC, XLOCA, YLOCA
         
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NIPOL
         
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: NUNIQCAS, NINVTBL, ITCASA, UNIQCAS,
+     &                      NINVSCC, INVSCC, UCASNPOL, UCASNKEP,
+     &                      ITCASDSCA, RECSBYCAS, EMISBYCAS,
+     &                      SORTCAS, SCASIDX, ITKEEPA, ITFACA,
+     &                      EMISBYPOL, ITNAMA, INVDNAM, ITDSCA,
+     &                      SCCDESC
         
 C.........  This module contains the arrays for the area-to-point x-form
-        USE MODAR2PT
+        USE MODAR2PT, ONLY: REPAR2PT, NA2PSCC, A2PSCC, NCONDSRC
 
         IMPLICIT NONE
 
