@@ -46,6 +46,9 @@ C.........  This module contains the major data structure and control flags
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
@@ -138,7 +141,7 @@ C.........  Initialize gridded information with grid description file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        CALL CHKGRID( 'general', 'GRIDDESC', EFLAG )   ! Initialization call
+        CALL CHKGRID( 'general', 'GRIDDESC', 0, EFLAG )   ! Initialization call
         
 C.........  For area sources... 
         IF( AFLAG ) THEN
@@ -165,30 +168,10 @@ C.............  Determine the year and projection status of the inventory
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
-C.................  If temporal approach is by-day for area sources...
-                IF( AFLAG_BD ) THEN
-
-C.....................  Open all files for each day of week and compare headers
-C                       to make sure they are the same.
-                    CALL OPEN_TMP_BYDAY( 'AREA', ATNAME, ASDATE )
-
-C.....................  Get header.
-                    CALL RETRIEVE_IOAPI_HEADER( ATNAME( 1 ) )
-
-C.................  If not a by-day approach, set all file names to same
-                ELSE
-
-                    MESG = 'Enter logical name for the AREA HOURLY ' //
-     &                     'EMISSIONS file'
-                    ATNAME = PROMPTMFILE( MESG,FSREAD3,'ATMP',PROGNAME )
-
-C.....................  Get header and compare source number and time range
-                    CALL RETRIEVE_IOAPI_HEADER( ATNAME( 1 ) )
-                    CALL CHKSRCNO( 'area', ATNAME( 1 ), NROWS3D, 
-     &                             NASRC, EFLAG )
-                    CALL UPDATE_TIME_INFO( ATNAME( 1 ) )
-
-                END IF
+C.................  Open all temporal files for either by-day or standard
+C                   processing. 
+C.................  Compare headers to make sure files are consistent.
+                CALL OPEN_TMP_FILES( 'AREA', AFLAG_BD, ATNAME, ASDATE )
 
 C.................  Set pollutants from hourly file
                 ANIPOL = NVARS3D
@@ -234,7 +217,7 @@ C               compare or initialize grid information.
 
             CALL RETRIEVE_IOAPI_HEADER( AGNAME )
             CALL CHKSRCNO( 'area', 'AGMAT', NTHIK3D, NASRC, EFLAG )
-            CALL CHKGRID( 'area', 'GMAT', EFLAG )
+            CALL CHKGRID( 'area', 'GMAT', 0, EFLAG )
             ANGMAT = NCOLS3D
 
 C.............  Open speciation matrix, compare number of sources, store
@@ -326,7 +309,7 @@ C.........  If we have biogenic sources
 
             CALL RETRIEVE_IOAPI_HEADER( BTNAME )
             CALL UPDATE_TIME_INFO( BTNAME )
-            CALL CHKGRID( 'biogenics', 'GRID', EFLAG )
+            CALL CHKGRID( 'biogenics', 'GRID', 0, EFLAG )
 
             IF( LMETCHK ) CALL CHECK_MET_INFO( 'biogenics' ) 
 
@@ -382,30 +365,10 @@ C.............  Determine the year and projection status of the inventory
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
-C.................  If temporal approach is by-day for mobile sources...
-                IF( MFLAG_BD ) THEN
-
-C.....................  Open all files for each day of week and compare headers
-C                       to make sure they are the same.
-                    CALL OPEN_TMP_BYDAY( 'MOBILE', MTNAME, MSDATE )
-
-C.....................  Get header.
-                    CALL RETRIEVE_IOAPI_HEADER( MTNAME( 1 ) )
-
-C.................  If not a by-day approach, set all file names to same
-                ELSE
-
-                    MESG = 'Enter logical name for the MOBILE HOURLY '//
-     &                     'EMISSIONS file'
-                    MTNAME = PROMPTMFILE( MESG,FSREAD3,'MTMP',PROGNAME )
-
-C.....................  Set parameters and pollutants from hourly file
-                    CALL RETRIEVE_IOAPI_HEADER( MTNAME( 1 ) )
-                    CALL CHKSRCNO( 'mobile', MTNAME( 1 ), NROWS3D, 
-     &                             NMSRC, EFLAG )
-                    CALL UPDATE_TIME_INFO( MTNAME( 1 ) )
-
-                END IF
+C.................  Open all temporal files for either by-day or standard
+C                   processing. 
+C.................  Compare headers to make sure files are consistent.
+                CALL OPEN_TMP_FILES( 'MOBILE', MFLAG_BD, MTNAME, MSDATE)
 
                 MNIPPA = NVARS3D
                 ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
@@ -468,7 +431,7 @@ C               compare or initialize grid information.
 
             CALL RETRIEVE_IOAPI_HEADER( MGNAME )
             CALL CHKSRCNO( 'mobile', 'MGMAT', NTHIK3D, NMSRC, EFLAG )
-            CALL CHKGRID( 'mobile', 'GMAT', EFLAG )
+            CALL CHKGRID( 'mobile', 'GMAT', 0, EFLAG )
             MNGMAT = NCOLS3D
 
 C.............  Open speciation matrix, compare number of sources, store
@@ -556,30 +519,10 @@ C.............  Determine the year and projection status of the inventory
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
-C.................  If temporal approach is by-day for point sources...
-                IF( PFLAG_BD ) THEN
-
-C.....................  Open all files for each day of week and compare headers
-C                       to make sure they are the same.
-                    CALL OPEN_TMP_BYDAY( 'POINT', PTNAME, PSDATE )
-
-C.....................  Get header.
-                    CALL RETRIEVE_IOAPI_HEADER( PTNAME( 1 ) )
-
-C.................  If not a by-day approach, set all file names to same
-                ELSE
-
-                    MESG = 'Enter logical name for the POINT HOURLY ' //
-     &                     'EMISSIONS file'
-                    PTNAME = PROMPTMFILE( MESG,FSREAD3,'PTMP',PROGNAME )
-
-C.....................  Set parameters and pollutants from hourly file
-                    CALL RETRIEVE_IOAPI_HEADER( PTNAME( 1 ) )
-                    CALL CHKSRCNO( 'point', PTNAME( 1 ), NROWS3D, 
-     &                             NPSRC, EFLAG )
-                    CALL UPDATE_TIME_INFO( PTNAME( 1 ) )
-
-                END IF
+C.................  Open all temporal files for either by-day or standard
+C                   processing. 
+C.................  Compare headers to make sure files are consistent.
+                CALL OPEN_TMP_FILES( 'POINT', PFLAG_BD, PTNAME, PSDATE)
 
                 PNIPOL = NVARS3D
                 ALLOCATE( PEINAM( PNIPOL ), STAT=IOS )
@@ -623,8 +566,8 @@ C               compare or initialize grid information.
      &       FSREAD3, 'PGMAT', PROGNAME )
 
             CALL RETRIEVE_IOAPI_HEADER( PGNAME )
-            CALL CHKSRCNO( 'point', 'PGMAT', NCOLS3D, NPSRC, EFLAG )
-            CALL CHKGRID( 'point', 'GMAT', EFLAG )
+            CALL CHKSRCNO( 'point', 'PGMAT', NTHIK3D, NPSRC, EFLAG )
+            CALL CHKGRID( 'point', 'GMAT', 0, EFLAG )
 
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable names, and store mass or moles.
@@ -755,7 +698,7 @@ C.................  Open stack groups file output from Elevpoint
                 NGROUP = NROWS3D
                 PVSDATE = SDATE3D
                 PVSTIME = STIME3D
-                CALL CHKGRID( 'point', 'GROUPS', EFLAG )
+                CALL CHKGRID( 'point', 'GROUPS', 0, EFLAG )
 
             END IF
 
@@ -799,7 +742,7 @@ C           biogenic sources, get gridding surrogates
             IF( BFLAG ) THEN
                 GDEV = PROMPTFFILE( 
      &             'Enter logical name for SURROGATE COEFFICIENTS file',
-     &             .TRUE., .TRUE., 'AGPRO', PROGNAME )
+     &             .TRUE., .TRUE., 'BGPRO', PROGNAME )
             END IF
 
         END IF
@@ -959,39 +902,45 @@ C...........   Internal buffering formats.............94xxx
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
-C.............  This subprogram opens a different temporal file for each day
-C               of the week.  It compares the files to make sure that they
+C.............  This subprogram opens the temporal emissions files. If their 
+C               are multiple files, it compares the files to make sure that they
 C               are consistent with each other.  The number of sources
 C               are compared to the master number of sources.
-            SUBROUTINE OPEN_TMP_BYDAY( LOCCAT, FNAME, SDATE )
+            SUBROUTINE OPEN_TMP_FILES( LOCCAT, LBDSTAT, FNAME, SDATE )
 
 C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: LOCCAT
+            LOGICAL     , INTENT (IN) :: LBDSTAT
             CHARACTER(*), INTENT(OUT) :: FNAME( 7 )
             INTEGER     , INTENT(OUT) :: SDATE( 7 )
 
 C.............  Local parameters
             CHARACTER*3, PARAMETER :: SUFFIX( 7 ) = 
-     &                                   ( / 'MON', 'TUE', 'WED', 'THU', 
-     &                                       'FRI', 'SAT', 'SUN' / )
+     &                                ( / 'MON', 'TUE', 'WED', 'THU', 
+     &                                    'FRI', 'SAT', 'SUN'        / )
 
 C.............  Local allocatable arrays
             CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: LOCVNAM ( : )
             CHARACTER(LEN=IOULEN3), ALLOCATABLE :: LOCVUNIT( : )
 
+C.............  Local arrays
+            INTEGER        IDX( 7 )     ! index for per-file arrays
+
 C.............  Local variables
             INTEGER        D, L, N      ! counters and indices
 
+            INTEGER        INVPIDX   ! tmp index for ozone-season or not
             INTEGER        LOCZONE   ! tmp time zone
             INTEGER        LOCNVAR   ! tmp local number of variables in file 
+            INTEGER        NFILE     ! no. hourly emission files
 
             LOGICAL     :: NFLAG = .FALSE.  ! true: no. vars inconsistent
             LOGICAL     :: VFLAG = .FALSE.  ! true: var names inconsistent
             LOGICAL     :: UFLAG = .FALSE.  ! true: var units inconsistent
 
-            CHARACTER*1    CRL
-            CHARACTER*16   TMPNAM
-            CHARACTER*300  MESG
+            CHARACTER*1    CRL      ! 1-letter src category indicator
+            CHARACTER*16   TMPNAM   ! temporary logical file name
+            CHARACTER*300  MESG     ! message buffer
 
 C----------------------------------------------------------------------
 
@@ -999,48 +948,80 @@ C----------------------------------------------------------------------
             IF( LOCCAT .EQ. 'MOBILE' ) CRL = 'M'
             IF( LOCCAT .EQ. 'POINT'  ) CRL = 'P'
 
-C.............  Loop through the days of the week and open a different file
-C               for each.
-            DO D = 1, 7
+C.............  Set the number of files and open the files...
+C.............  For by-day processing...
+            IF( LBDSTAT ) THEN
+                NFILE = 7
 
-                MESG = 'Enter logical name for the ' // SUFFIX( D ) //
-     &                 ' ' // LOCCAT // ' HOURLY EMISSIONS file'
-                TMPNAM = CRL // 'TMP_' // SUFFIX( D )
+                DO D = 1, NFILE
 
-                FNAME( D ) = PROMPTMFILE( MESG,FSREAD3,TMPNAM,PROGNAME )
+                    MESG = 'Enter logical name for the ' // SUFFIX( D )
+     &                     // ' ' // LOCCAT // ' HOURLY EMISSIONS file'
+                    TMPNAM = CRL // 'TMP_' // SUFFIX( D )
 
-            END DO
+                    FNAME( D ) = PROMPTMFILE( MESG,FSREAD3,
+     &                                        TMPNAM,PROGNAME )
+                    IDX( D ) = D
+                END DO
+
+C.............  For standard processing...
+            ELSE
+                NFILE = 1
+
+                MESG = 'Enter logical name for the ' // LOCCAT // 
+     &                 ' HOURLY EMISSIONS file'
+                TMPNAM = CRL // 'TMP'
+
+                FNAME = PROMPTMFILE( MESG,FSREAD3,TMPNAM,PROGNAME ) ! array
+                IDX( NFILE ) = 1
+
+            END IF
 
 C.............  Loop through each file and ensure they are consistent
-            DO D = 1, 7
+            DO D = 1, NFILE
+
+                TMPNAM = FNAME( IDX( D ) )
 
 C.................  Get header and compare source number and time range
-                CALL RETRIEVE_IOAPI_HEADER( FNAME( D ) )
+                CALL RETRIEVE_IOAPI_HEADER( TMPNAM )
 
 C.................  Store the starting date
-                SDATE( D ) = SDATE3D
+                SDATE( IDX( D ) ) = SDATE3D
 
 C.................  Check the number of sources
                 SELECT CASE( LOCCAT )
                 CASE( 'AREA' )
-                    CALL CHKSRCNO( 'area', FNAME( D ), NROWS3D, 
+                    CALL CHKSRCNO( 'area', TMPNAM, NROWS3D, 
      &                             NASRC, EFLAG )
                 CASE( 'MOBILE' ) 
-                    CALL CHKSRCNO( 'mobile', FNAME( D ), NROWS3D, 
+                    CALL CHKSRCNO( 'mobile', TMPNAM, NROWS3D, 
      &                             NMSRC, EFLAG )
 
                 CASE( 'POINT' ) 
-                    CALL CHKSRCNO( 'point', FNAME( D ), NROWS3D, 
+                    CALL CHKSRCNO( 'point', TMPNAM, NROWS3D, 
      &                             NPSRC, EFLAG )
 
                 END SELECT
 
-C.................  Make sure that the file starts at hour 0
-                IF( STIME3D .NE. 0 ) THEN
+C.................  Determine ozone-season emissions status from hourly file
+                INVPIDX = GETIFDSC( FDESC3D, '/OZONE SEASON/', .FALSE. )
+                IF( INVPIDX .EQ. 1 ) THEN
+                    MESG = 'NOTE: Ozone-season emissions in ' //
+     &                     LOCCAT // ' hourly emissions file'
+                    CALL M3MSG2( MESG )
+                END IF
+
+C.................  For standard processing, compare time info to master
+                IF( .NOT. LBDSTAT .AND. D .EQ. 1 ) THEN
+                    CALL UPDATE_TIME_INFO( TMPNAM )
+                END IF
+
+C.................  For by-day files, make sure that the file starts at hour 0
+                IF( LBDSTAT .AND. STIME3D .NE. 0 ) THEN
                     EFLAG = .TRUE.
-                    L = LEN_TRIM( FNAME( D ) )
+                    L = LEN_TRIM( TMPNAM )
                     WRITE( MESG,94010 ) 'ERROR: Start time of', STIME3D,
-     &                     'in file "'// FNAME( D )( 1:L ) // 
+     &                     'in file "'// TMPNAM( 1:L ) // 
      &                     '" is invalid.' // CRLF() // BLANK10 //
      &                     'Only start time of 000000 is valid for' //
      &                     'processing by day.'
@@ -1049,11 +1030,11 @@ C.................  Make sure that the file starts at hour 0
                 END IF
 
 C.................  Make sure that the file has at least 24 hours 
-                IF( MXREC3D .LT. 24 ) THEN
+                IF( LBDSTAT .AND. MXREC3D .LT. 24 ) THEN
                     EFLAG = .TRUE.
-                    L = LEN_TRIM( FNAME( D ) )
+                    L = LEN_TRIM( TMPNAM )
                     WRITE( MESG,94010 ) 'ERROR: Number of hours', 
-     &                     MXREC3D, 'in file "'// FNAME( D )( 1:L ) // 
+     &                     MXREC3D, 'in file "'// TMPNAM( 1:L ) // 
      &                     '" is invalid.' // CRLF() // BLANK10 //
      &                     'Minimum number of 24 hours is needed for' //
      &                     'processing by day.'
@@ -1066,7 +1047,7 @@ C.................  Make sure that the file has at least 24 hours
                 IF( ZFLAG .AND. LOCZONE .NE. TZONE ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
-     &                 'Time zone ', LOCZONE, 'in ' // FNAME( D ) // 
+     &                 'Time zone ', LOCZONE, 'in ' // TMPNAM // 
      &                 ' hourly emissions file is not consistent ' //
      &                 'with initialized value of', TZONE
                     CALL M3MSG2( MESG )
@@ -1076,7 +1057,7 @@ C.................  Make sure that the file has at least 24 hours
                     TZONE = LOCZONE
 
                     MESG = 'NOTE: Time zone initialized using ' // 
-     &                     FNAME( D ) // ' hourly emissions file.'
+     &                     TMPNAM // ' hourly emissions file.'
 
                     CALL M3MSG2( MESG )
                 END IF
@@ -1122,7 +1103,7 @@ C.............  Write message and set error if any inconsistencies
             IF( NFLAG ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: ' // LOCCAT // ' source hourly ' //
-     &                 'by-day emission files have inconsistent ' //
+     &                 'emission files have inconsistent ' //
      &                 CRLF() // BLANK10 // 'number of variables.'
                 CALL M3MSG2( MESG )
             END IF
@@ -1130,7 +1111,7 @@ C.............  Write message and set error if any inconsistencies
             IF( VFLAG ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: ' // LOCCAT // ' source hourly ' //
-     &                 'by-day emission files have inconsistent ' //
+     &                 'emission files have inconsistent ' //
      &                 CRLF() // BLANK10 // 'variable names.'
                 CALL M3MSG2( MESG )
             END IF
@@ -1138,7 +1119,7 @@ C.............  Write message and set error if any inconsistencies
             IF( UFLAG ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: ' // LOCCAT // ' source hourly ' //
-     &                 'by-day emission files have inconsistent ' //
+     &                 'emission files have inconsistent ' //
      &                 CRLF() // BLANK10 // 'variable units.'
                 CALL M3MSG2( MESG )
             END IF
@@ -1154,7 +1135,7 @@ C...........   Internal buffering formats.............94xxx
 
 94010       FORMAT( 10( A, :, I8, :, 1X ) )
 
-            END SUBROUTINE OPEN_TMP_BYDAY
+            END SUBROUTINE OPEN_TMP_FILES
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
