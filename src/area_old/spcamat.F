@@ -59,6 +59,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         INTEGER         FIND1, FIND2, FIND3, INDEX1
         INTEGER         LBLANK
         LOGICAL         ENVYN
@@ -69,14 +70,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         INTEGER         TRIMLEN
 
-        EXTERNAL    FIND1, FIND2, FIND3, ENVYN, GETYN, INDEX1, 
+        EXTERNAL    CRLF, FIND1, FIND2, FIND3, ENVYN, GETYN, INDEX1, 
      &              LBLANK, PROMPTFFILE, PROMPTMFILE, RDSPROF, STR2INT,
      &              TRIMLEN
 
 C...........   PARAMETERS and their descriptions:
 
-        REAL        TON2GM
-        PARAMETER ( TON2GM = 907184.74 )
+        CHARACTER*5     BLANK5
+        REAL            TON2GM
+        PARAMETER (     BLANK5 = ' ',
+     &                  TON2GM = 907184.74 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   NOTE that ASC (area-source-category) ID's are 10-digit
@@ -255,7 +258,7 @@ C.......   Get file name; open input area sources file
 
         ADEV = PROMPTFFILE( 
      &           'Enter logical name for ACTUAL ASC file',
-     &           .TRUE., .TRUE., 'ASCC', 'SPCAMAT' )
+     &           .TRUE., .TRUE., 'ASCS', 'SPCAMAT' )
 
         XDEV = PROMPTFFILE( 
      &           'Enter logical name for SPECIATION XREF file',
@@ -298,12 +301,12 @@ C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
 
 C.......   Read the ACTUAL ASC FILE
         
-        CALL M3MESG( 'Reading ACTUAL ASC file...' )
+        CALL M3MSG2( 'Reading ACTUAL ASC file...' )
         CALL RDASCC( ADEV, NASCC, NASC, ASCA7, ASCA3 )
 
 C.......   Read the SPECIATION PROFILES FILE
 
-        CALL M3MESG( 'Reading SPECIATION PROFILES file...' )
+        CALL M3MSG2( 'Reading SPECIATION PROFILES file...' )
 
         NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, MXSPRO, 
      &                    SXREF, SCOEF, INVPRO )
@@ -360,7 +363,7 @@ C.......   volatile pollutant in inventory.
                 CALL M3EXIT( 'SPCAMAT', 0, 0,
      &                       'Error in RDACONV()', 2 )
             ELSE IF ( NCST .EQ. 0  .AND. NCNN .EQ. 0 ) THEN
-                CALL M3MESG( 'ASCNV file empty' )
+                CALL M3MSG2( 'ASCNV file empty' )
                 KFLAG = .FALSE.
             END IF
 
@@ -368,7 +371,7 @@ C.......   volatile pollutant in inventory.
 
 C.......   Read and process the speciation cross-reference file
 
-        CALL M3MESG( 'Reading SPECIATION XREF file...' )
+        CALL M3MSG2( 'Reading SPECIATION XREF file...' )
 
         IREC  = 0
         I     = 0
@@ -405,7 +408,7 @@ C.......   Read and process the speciation cross-reference file
 
                 IF( ID7 .GT. 0  .AND.  ID3 .GE. 0 ) THEN
                     J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )
-                    IF( J .LE. 0 ) THEN   ! ASC code not found in ASCC LIST file
+                    IF( J .LE. 0 ) THEN   ! ASC code not found in ASCS LIST file
                         GO TO 101
                     END IF
                 ELSE IF ( ID7 .LT. 0  .OR.  ID3 .LT. 0 ) THEN
@@ -454,7 +457,7 @@ C...........   Now sort the XREF inputs and place into appropriate tables:
 
         CALL SORTI3( NREFA, INDEXA, FIPSXA, ASC7XA, ASC3XA )
 
-        CALL M3MESG( 'Processing SPECIATION XREF file...' )
+        CALL M3MSG2( 'Processing SPECIATION XREF file...' )
 
         PRF0 = FIND1( 0, NPROFS, SXREF )		!  fallback profile
 
@@ -545,12 +548,12 @@ C...........   Find the correct SPECIATION PROFILE for this cross-reference:
 
             WRITE( MESG,94010 ) 
      &      'Number of missing profiles from XREF:  ', ECNT,
-     &      'Default profile 0000 used.'
-            CALL M3MESG( MESG )
+     &      CRLF() // BLANK5 // '   Default profile 0000 used.'
+            CALL M3MSG2( MESG )
 
             IF( PRF0 .LE. 0 ) THEN
                 EFLAG = .TRUE.
-                CALL M3MESG( 'Default profile 0000 not found' )
+                CALL M3MSG2( 'Default profile 0000 not found' )
             END IF                   !  if i<0
 
         END IF		!  if ecnt > 0 (defaults substituted)
@@ -558,25 +561,25 @@ C...........   Find the correct SPECIATION PROFILE for this cross-reference:
         IF ( I0 .GT. NASCC ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &          'Max FIP-independent table-size ', NASCC,  
-     &          'exceeded in XREF file.  Needed', I0
-            CALL M3MESG( MESG )
+     &          'Max FIP-independent table-size (NASCC)=', NASCC, 
+     &          CRLF()// BLANK5// 'exceeded in XREF file.  Needed:', I0
+            CALL M3MSG2( MESG )
         END IF
 
         IF ( I1 .GT. NASCC ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
      &          'Max state-dependent table-size ', NASCC,  
-     &          'exceeded in XREF file.  Needed', I1
-            CALL M3MESG( MESG )
+     &          CRLF()// BLANK5// 'exceeded in XREF file.  Needed:', I1
+            CALL M3MSG2( MESG )
         END IF
 
         IF ( I2 .GT. NASCC ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
      &          'Max FIP-dependent table-size ', NASCC,  
-     &          'exceeded in XREF file.  Needed', I2
-            CALL M3MESG( MESG )
+     &          CRLF()// BLANK5// 'exceeded in XREF file.  Needed', I2
+            CALL M3MSG2( MESG )
         END IF
 
         IF ( EFLAG ) THEN
@@ -728,7 +731,7 @@ C...........       or else by SCC only
         IF ( XCNT .GT. 0 ) THEN
             WRITE( MESG,94010 ) 
      &          'Number of sources not found in XREF:  ', XCNT
-            CALL M3MESG( MESG ) 
+            CALL M3MSG2( MESG ) 
         END IF
 
         IF ( EFLAG ) THEN
@@ -773,7 +776,7 @@ C.......   Open speciation matrix file:  reuse much of AREA file description
 
 C.......   Write out the speciation matrix:
 
-        CALL M3MESG( 'Writing out SPECIATION MATRIX...' )
+        CALL M3MSG2( 'Writing out SPECIATION MATRIX...' )
 
         IF ( .NOT. WRITE3( MNAME, 'ALL', 0, 0, SPCFACS ) ) THEN
             CALL M3EXIT( 'SPCAMAT', 0, 0, 
