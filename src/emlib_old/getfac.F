@@ -66,19 +66,19 @@ C......... Set buffer for writing messages
         BUFFER = NAME
 
 C.........  Open input file
-        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACR' )
+        IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETFACR' )
 
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETFACR', 0, 0, MESG, 2 )
 
         ELSE
 
-            CALL M3MSG2( 'NOTE: File "' // 
-     &                   NAME( 1 : TRIMLEN( NAME ) ) //
-     &                   '" opened successfully.'         )
+            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
 
@@ -230,19 +230,19 @@ C......... Set buffer for writing messages
         BUFFER = NAME
 
 C.........  Open input file
-        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACRR' )
+        IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETFACRR' )
  
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETFACRR', 0, 0, MESG, 2 )
  
         ELSE
  
-            CALL M3MSG2( 'NOTE: File "' // 
-     &                   NAME( 1 : TRIMLEN( NAME ) ) //
-     &                   '" opened successfully.'         )
+            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
 
@@ -397,19 +397,19 @@ C......... Set buffer for writing messages
         BUFFER = NAME
 
 C.........  Open input file
-        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACI' )
+        IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETFACI' )
  
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETFACI', 0, 0, MESG, 2 )
  
         ELSE
  
-            CALL M3MSG2( 'NOTE: File "' // 
-     &                   NAME( 1 : TRIMLEN( NAME ) ) //
-     &                   '" opened successfully.'         )
+            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
 
@@ -566,19 +566,19 @@ C......... Set buffer for writing messages
         BUFFER = NAME
 
 C.........  Open input file
-        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACICR' )
+        IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETFACICR' )
  
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETFACICR', 0, 0, MESG, 2 )
  
         ELSE
  
-            CALL M3MSG2( 'NOTE: File "' // 
-     &                   NAME( 1 : TRIMLEN( NAME ) ) //
-     &                   '" opened successfully.'         )
+            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
 
@@ -739,19 +739,19 @@ C......... Set buffer for writing messages
         BUFFER = NAME
 
 C.........  Open input file
-        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACIR' )
+        IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETFACIR' )
  
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETFACIR', 0, 0, MESG, 2 )
  
         ELSE
  
-            CALL M3MSG2( 'NOTE: File "' // 
-     &                   NAME( 1 : TRIMLEN( NAME ) ) //
-     &                   '" opened successfully.'         )
+            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
 
@@ -909,19 +909,19 @@ C......... Set buffer for writing messages
         BUFFER = NAME
 
 C.........  Open input file
-        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETIIR3D' )
+        IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETIIR3D' )
  
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETIIR3D', 0, 0, MESG, 2 )
  
         ELSE
  
-            CALL M3MSG2( 'NOTE: File "' // 
-     &                   NAME( 1 : TRIMLEN( NAME ) ) //
-     &                   '" opened successfully.'         )
+            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
 
@@ -1107,19 +1107,19 @@ C......... Set buffer for writing messages
         BUFFER = NAME
 
 C.........  Open input file
-        IDEV = GETEFILE( NAME, .TRUE., .TRUE., 'GETFACD' )
+        IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETFACD' )
  
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             NAME( 1 : TRIMLEN( NAME ) ) // '".'
+     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETFACD', 0, 0, MESG, 2 )
  
         ELSE
  
-            CALL M3MSG2( 'NOTE: File "' // 
-     &                   NAME( 1 : TRIMLEN( NAME ) ) //
-     &                   '" opened successfully.'         )
+            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
 
