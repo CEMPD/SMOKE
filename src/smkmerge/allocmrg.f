@@ -163,14 +163,14 @@ C........  Allocate memory for fixed-size area source arrays
             IF( AUFLAG ) THEN
                 ALLOCATE( AEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
-                ALLOCATE( AEUCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( AEUCNY( 1,1 ), STAT=IOS )
             END IF
             CALL CHECKMEM( IOS, 'AEUCNY', PROGNAME )
 
             IF( AAFLAG ) THEN
                 ALLOCATE( AEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
-                ALLOCATE( AEACNY( 0,0 ), STAT=IOS )
+                ALLOCATE( AEACNY( 1,1 ), STAT=IOS )
             END IF
             CALL CHECKMEM( IOS, 'AEACNY', PROGNAME )
 
@@ -180,14 +180,14 @@ C               statements in the merge loops in MRGMULT.
             IF( SFLAG ) THEN 
                 ALLOCATE( AERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
-                ALLOCATE( AERCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( AERCNY( 1,1 ), STAT=IOS )
             END IF
             CALL CHECKMEM( IOS, 'AERCNY', PROGNAME )
 
             IF( AUFLAG .OR. AAFLAG .OR. SFLAG ) THEN
                 ALLOCATE( AECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
-                ALLOCATE( AECCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( AECCNY( 1,1 ), STAT=IOS )
             END IF
             CALL CHECKMEM( IOS, 'AECCNY', PROGNAME )
 
@@ -272,28 +272,28 @@ C.........  Mobile source fixed-size arrays
             IF( MUFLAG ) THEN
                 ALLOCATE( MEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
-                ALLOCATE( MEUCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( MEUCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'MEUCNY', PROGNAME )
 
             IF( MAFLAG ) THEN
                 ALLOCATE( MEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
-                ALLOCATE( MEACNY( 0,0 ), STAT=IOS )
+                ALLOCATE( MEACNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'MEACNY', PROGNAME )
 
             IF( SFLAG ) THEN   ! See note on AERCNY definition
                 ALLOCATE( MERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
-                ALLOCATE( MERCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( MERCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'MERCNY', PROGNAME )
 
             IF( MUFLAG .OR. MAFLAG .OR. SFLAG ) THEN
                 ALLOCATE( MECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
-                ALLOCATE( MECCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( MECCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'MECCNY', PROGNAME )
 
@@ -363,28 +363,28 @@ C.........  Point source fixed-size arrays
             IF( PUFLAG ) THEN
                 ALLOCATE( PEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
-                ALLOCATE( PEUCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( PEUCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'PEUCNY', PROGNAME )
 
             IF( PAFLAG ) THEN
                 ALLOCATE( PEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
-                ALLOCATE( PEACNY( 0,0 ), STAT=IOS )
+                ALLOCATE( PEACNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'PEACNY', PROGNAME )
 
             IF( SFLAG ) THEN   ! See note on AERCNY definition
                 ALLOCATE( PERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
-                ALLOCATE( PERCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( PERCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'PERCNY', PROGNAME )
 
             IF( PUFLAG .OR. PAFLAG .OR. SFLAG ) THEN
                 ALLOCATE( PECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
-                ALLOCATE( PECCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( PECCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'PECCNY', PROGNAME )
 
@@ -456,28 +456,28 @@ C.........  Total emissions, fixed-size arrays.
             IF( TUFLAG ) THEN
                 ALLOCATE( TEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
-                ALLOCATE( TEUCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( TEUCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'TEUCNY', PROGNAME )
 
             IF( TAFLAG ) THEN
                 ALLOCATE( TEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
-                ALLOCATE( TEACNY( 0,0 ), STAT=IOS )
+                ALLOCATE( TEACNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'TEACNY', PROGNAME )
 
             IF( SFLAG ) THEN   ! See note on AERCNY definition
                 ALLOCATE( TERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
-                ALLOCATE( TERCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( TERCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'TERCNY', PROGNAME )
 
             IF( TUFLAG .OR. TAFLAG .OR. SFLAG ) THEN
                 ALLOCATE( TECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
-                ALLOCATE( TECCNY( 0,0 ), STAT=IOS )
+                ALLOCATE( TECCNY( 1,1 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'TECCNY', PROGNAME )
 
@@ -489,15 +489,15 @@ C....................................................................
 
 C.........  Initialize size for multiplicative control pollutants as the actual
 C           number in in matrix for each source category
-        AMULSIZ = MIN( ANIPOL, ANUMATV )
-        MMULSIZ = MIN( MNIPOL, MNUMATV )
-        PMULSIZ = MIN( PNIPOL, PNUMATV )
+        AMULSIZ = MAX( MIN( ANIPOL, ANUMATV ), 1 )
+        MMULSIZ = MAX( MIN( MNIPOL, MNUMATV ), 1 )
+        PMULSIZ = MAX( MIN( PNIPOL, PNUMATV ), 1 )
 
 C.........  Initialize size for additive control pollutants as the actual
 C           number in in matrix for each source category
-        AADDSIZ = MIN( ANIPOL, ANAMATV )
-        MADDSIZ = MIN( MNIPOL, MNAMATV )
-        PADDSIZ = MIN( PNIPOL, PNAMATV )
+        AADDSIZ = MAX( MIN( ANIPOL, ANAMATV ), 1 )
+        MADDSIZ = MAX( MIN( MNIPOL, MNAMATV ), 1 )
+        PADDSIZ = MAX( MIN( PNIPOL, PNAMATV ), 1 )
 
 C.........  Initialize size for species as all pol-to-species combos for each 
 C           source category.
@@ -523,7 +523,7 @@ C           pollutants in the inventory.
 
 C.........  Head of loop for allocating memory.  When speciation or certain
 C           controls are not being used, the value of the variable used for
-C           dimensioning will be 0, so no need to use IFs in many cases.
+C           dimensioning will be 1, so no need to use IFs in many cases.
 C.........  Note that the matricies below are allocated whether or not they are
 C           used. If they are not used, the dimensions will be zero, and they
 C           will not actually use memory.  The allocations are necessary
