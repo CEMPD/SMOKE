@@ -156,6 +156,8 @@ C.......       sixth case:   fallback default
         NNOSRG   = 0
         JMAX  = -1
 
+            call lastcall
+
         DO S = 1, NSRC
             
             FIP  = IFIP  ( S )
@@ -194,6 +196,7 @@ C.............  Keep track of sources that are outside the domain
 
             END IF
 
+
 C.............  Loop through all of the cells intersecting this FIPS code. 
             DO K = 1, NCELLS( F )
             
@@ -227,6 +230,9 @@ C.....................  Store the count of sources for current cell
             END DO    !  end of loop on cells K for this FIP
 
         END DO        !  end loop on sources S, computing gridding matrix.
+
+
+       call lastcall
 
 C.........  Abort if overflow occurred
         IF ( JMAX .GT. MXSCEL ) THEN   
@@ -296,6 +302,12 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
- 
+
+        contains
+
+        SUBROUTINE lastcall
+
+        END SUBROUTINE lastcall
+
         END SUBROUTINE GENAGMAT
 
