@@ -2,31 +2,21 @@
 #
 all: opts
 #
-opts: csgmobil emisfac grdmmat grdmobil prediur rawmobil spcmmat tmpmobil
+opts: emisfac grdmmat prediur rawmobil spcmmat tmpmobil
 #
 LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf 
 #
-LMOB=$(LDIRS) -lemstuff -lm3io -lnetcdf -lmo5av1
+LMOB=$(LDIRS) -lemstuff -lm3io -lnetcdf -lmo5b
 #
 #
 #
-CSGV=csgmobil.F msmatvec.F csvname.F
-#
-CSGI=MBDIMS3.EXT CHDGEN3.EXT GRDIMS3.EXT
-#
-csgmobil: $(CSGV) $(CSGI)
-	echo CSGMOBIL:
-	f77 $(FFLAGS) -o $(SCENDIR)/csgmobil $(CSGV) $(LIBS)
-#
-#
-#
-EMIS=emisfac.F efcombo.F moinbld.F mobile.F
+EMIS=emisfac.F efcombo.F moinbld.F mobil5b.F
 
 EMISI=MBDIMS3.EXT CHDGEN3.EXT
 
 emisfac: $(EMIS) $(EMISI)
 	echo EMISFAC:
-	f77 $(FFLAGS) -o $(SCENDIR)/emisfac $(EMIS) $(LMOB)
+	f77 $(FFLAGS)  -I$(SMKROOT)/lib/mo5b -o $(SCENDIR)/emisfac $(EMIS) $(LMOB)
 #
 #
 #
@@ -37,16 +27,6 @@ GRMI=MBDIMS3.EXT GRDIMS3.EXT
 grdmmat: $(GRMS) $(GRMI)
 	echo GRDMMAT:
 	f77 $(FFLAGS) -o $(SCENDIR)/grdmmat $(GRMS) $(LIBS)
-#
-#
-#
-GRDS=grdmobil.F
-#
-GRDI=MBDIMS3.EXT GRDIMS3.EXT
-#
-grdmobil: $(GRD) $(GRDI)
-	echo GRDMOBIL:
-	f77 $(FFLAGS) -o $(SCENDIR)/grdmobil $(GRDS) $(LIBS)
 #
 #
 #

@@ -2,32 +2,22 @@
 #
 all: debug 
 #
-debug: csgmobil.debug emisfac.debug grdmmat.debug grdmobil.debug \
-      prediur.debug rawmobil.debug spcmmat.debug tmpmobil.debug
+debug: emisfac.debug grdmmat.debug prediur.debug rawmobil.debug \
+       spcmmat.debug tmpmobil.debug
 #
-LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf 
+LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
 #
-LMOB=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug -lmo5av1.debug
-#
-#
-#
-CSGV=csgmobil.F msmatvec.F csvname.F
-#
-CSGI=MBDIMS3.EXT CHDGEN3.EXT GRDIMS3.EXT
-#
-csgmobil.debug: $(CSGV) $(CSGI)
-	echo CSGMOBIL:
-	f77 $(DBGFLAGS) -o csgmobil.debug $(CSGV) $(LIBS)
+LMOB=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug -lmo5b.debug
 #
 #
 #
-EMIS=emisfac.F efcombo.F moinbld.F mobile.F
+EMIS=emisfac.F efcombo.F moinbld.F mobil5b.F
 
 EMISI=MBDIMS3.EXT CHDGEN3.EXT
 
 emisfac.debug: $(EMIS) $(EMISI)
 	echo EMISFAC:
-	f77 $(DBGFLAGS) -o emisfac.debug $(EMIS) $(LMOB)
+	f77 $(DBGFLAGS) -I$(SMKROOT)/lib/mo5b -o emisfac.debug $(EMIS) $(LMOB)
 #
 #
 #
@@ -38,16 +28,6 @@ GRMI=MBDIMS3.EXT GRDIMS3.EXT
 grdmmat.debug: $(GRMS) $(GRMI)
 	echo GRDMMAT:
 	f77 $(DBGFLAGS) -o grdmmat.debug $(GRMS) $(LIBS)
-#
-#
-#
-GRDS=grdmobil.F
-#
-GRDI=MBDIMS3.EXT GRDIMS3.EXT
-#
-grdmobil.debug: $(GRD) $(GRDI)
-	echo GRDMOBIL:
-	f77 $(DBGFLAGS) -o grdmobil.debug $(GRDS) $(LIBS)
 #
 #
 #
