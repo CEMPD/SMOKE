@@ -1,7 +1,7 @@
 
         SUBROUTINE RDEMSPD( FDEV, TZONE, TSTEP, MXPDSRC, GETSIZES, 
      &                      GETCOUNT, FIRSTCALL, DAYFLAG, SDATE, STIME, 
-     &                      EDATE, ETIME, EASTAT )
+     &                      EDATE, ETIME, EASTAT, SPSTAT )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -89,18 +89,19 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT(OUT) :: EDATE          ! Julian ending date in TZONE
         INTEGER, INTENT(OUT) :: ETIME          ! ending time of data in TZONE
         LOGICAL, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        LOGICAL, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
 
 C...........   Local list of bad sources to prevent duplicate writing of error
 C              messages
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, SAVE :: BADSRC( : )
         
 C...........   Temporary read arrays
-        REAL            EMIS( 24 )       ! temporary emissions
+        REAL            TDAT( 24 )       ! temporary data values
 
 C...........   Other local variables
         INTEGER          H, HS, I, J, L, L1, L2, S, T    ! counters and indices
 
-        INTEGER          COD              ! pol/act index
+        INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
         INTEGER          FIP              ! tmp co/st/cy code
         INTEGER          IOS              ! i/o status
@@ -112,8 +113,8 @@ C...........   Other local variables
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
-        INTEGER, SAVE :: NFIELD = 0       ! number of emission fields
-        INTEGER, SAVE :: NFM1   = 0       ! number of emission fields minus 1
+        INTEGER, SAVE :: NFIELD = 0       ! number of data fields
+        INTEGER, SAVE :: NFM1   = 0       ! number of data fields minus 1
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
         INTEGER          PTR              ! tmp time step pointer
         INTEGER       :: RDATE = 1980001  ! reference date: Jan 1, 1980
@@ -131,13 +132,15 @@ C...........   Other local variables
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
+        LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
 
         CHARACTER*100 :: BUFFER = ' '     ! src description buffer 
         CHARACTER*300 :: LINE   = ' '     ! line buffer 
         CHARACTER*300 :: MESG   = ' '     ! message buffer
 
         CHARACTER(LEN=FIPLEN3) CFIP      ! tmp co/st/cy code
-        CHARACTER(LEN=POLLEN3) CCOD      ! tmp pol/act name
+        CHARACTER(LEN=POLLEN3) CDAT      ! tmp data name
+        CHARACTER(LEN=CHRLEN3) CHAR4     ! tmp characteristic 4
         CHARACTER(LEN=PLTLEN3) FCID      ! tmp facility ID
         CHARACTER(LEN=CHRLEN3) SKID      ! tmp stack ID
         CHARACTER(LEN=CHRLEN3) DVID      ! tmp device ID
@@ -223,7 +226,7 @@ C           step. In the third section, read and store the data.  When storing
 C           data, time step index is computed from the start date/time instead
 C           of the reference date/time so that the indexing will work properly.
         IREC = 0
-        EMIS = 0   !  array
+        TDAT = 0   !  array
         DO         !  Head of period-specific file read loop
 
 C.............  Read first line of file
@@ -249,7 +252,19 @@ C               behave as if it is a daily file.
                 CALL M3MESG( MESG )
                 CYCLE
 
-            ELSE IF( .NOT. DAYFLAG .AND. L .LT. 240 ) THEN
+C.............  If daily info being read from hourly file, make sure last
+C               column is present
+            ELSE IF( DAYFLAG .AND. SFLAG. AND. L .LT. 240 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: bad format in hour-' //
+     &                 'specific file being used for daily '//
+     &                 CRLF() // BLANK10 // 'data at line', IREC
+                CALL M3MESG( MESG )
+                CYCLE
+
+C.............  Check to make sure that the last hourly field is present. The
+C               daily total field does not have to be there.
+            ELSE IF( .NOT. DAYFLAG .AND. L .LT. 234 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: bad format or hourly ' //
      &                 'data found in hour-specific file at line', IREC
@@ -271,7 +286,7 @@ C.............  Search for time zone name from file in master list
             I = INDEX1( LINE( 70:72 ), MXTZONE, TZONNAM )
 
 C.............  If time zone name is not found, thenoutput error
-            IF( I .LT. 0 ) THEN
+            IF( I .LE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
      &                'Unrecognized time zone "' // LINE(70:72) // 
@@ -304,26 +319,42 @@ C.............  Store minimum time step number as compared to reference
             IF( PTR .LT. MINPTR ) MINPTR = PTR
 
 C.............  Store maximum time step number as compared to reference
-            IF( PTR + NFM1 .GT. MAXPTR ) MAXPTR = PTR + NFM1
+            IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
 C.............  Check pollutant code and set index I
-            CCOD = ADJUSTL( LINE( 57:61 ) )
-            COD  = INDEX1( CCOD, NIPPA, EANAM )
+            CDAT = ADJUSTL( LINE( 57:61 ) )
+            COD  = INDEX1( CDAT, NIPPA, EANAM )
 
+C.............  Check to see if data name is in inventory list
             IF ( COD .LE. 0 ) THEN
 
-                IF( WARNOUT ) THEN
-                    L = LEN_TRIM( CCOD )
-                    WRITE( MESG,94010 ) 
-     &                 'WARNING: Skipping pollutant "'// CCOD( 1:L )//
-     &                 '" at line', IREC, '- not in inventory'
-                    CALL M3MESG( MESG )
+C.................  Check to see if data name is in list of special names
+                COD = INDEX1( CDAT, MXSPDAT, SPDATNAM )
+
+                IF ( COD .LE. 0 ) THEN
+
+                    IF( WARNOUT ) THEN
+                        L = LEN_TRIM( CDAT )
+                        WRITE( MESG,94010 ) 
+     &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
+     &                   '" at line', IREC, '- not in inventory'
+                        CALL M3MESG( MESG )
+                    END IF
+                    CYCLE      !  to head of loop
+
+C.................  Otherwise, store status of special data and flag code with
+C                   special integer so can ID these records later.
+                ELSE
+                    SPSTAT( COD ) = .TRUE.
+                    COD = CODFLAG3 + COD
+
                 END IF
 
-                CYCLE      !  to head of loop
-            END IF
+C.............  If it is, store status of inventory data
+            ELSE 
+                EASTAT( COD ) = .TRUE.
 
-            EASTAT( COD ) = .TRUE.
+            END IF
 
 C.............  If only getting dates and pollutant information, go 
 C               to next loop iteration
@@ -337,7 +368,7 @@ C.............  NOTE - this is only useful if reading only part of data
             IF( PTR. LT. 1 .OR. PTR .GT. NSTEPS ) CYCLE
 
 C.............  Count estimated record count per time step
-            DO T = PTR, MIN( PTR + NFM1, NSTEPS )
+            DO T = PTR, MIN( PTR + 23, NSTEPS )
                 MXPDPT( T ) = MXPDPT( T ) + 1
             END DO
 
@@ -369,8 +400,8 @@ C.............  Check and set emissions values
                 L1 = L1 + WD
                 L2 = L2 + WD
 
-                EMIS( J )  = STR2REAL( LINE( L1:L2 ) )
-                IF ( EMIS( J ) .LT. 0.0 )  THEN
+                TDAT( J )  = STR2REAL( LINE( L1:L2 ) )
+                IF ( TDAT( J ) .LT. 0.0 )  THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'Bad line', IREC, 
      &                     ': data value "' // LINE( L1:L2 ) // '"'
@@ -379,6 +410,9 @@ C.............  Check and set emissions values
                 END IF
 
             END DO
+
+C.............  If daily data, set all TDATs with daily value
+            IF( DAYFLAG ) TDAT( 2:24 ) = TDAT( 1 )  ! array
 
 C.............  If available, set total value
             TOTAL = 0.
@@ -407,16 +441,55 @@ C.............  Set key for searching sources
 
             PRID = ADJUSTL( LINE( 45:56 ) )
 
-            TSCC = ADJUSTL( LINE( 92:101) )
+            TSCC = ' '
 
-            IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
+C.............  If SCCs are needed for matching...
+            IF ( TFLAG ) THEN
+                IF ( DAYFLAG ) THEN
+                    TSCC = ADJUSTL( LINE( 92:101) )
+                ELSE
+                    TSCC = ADJUSTL( LINE( 250:259 ) )
+                END IF
+                IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
+                CHAR4 = TSCC
 
-C.............  Build source characteristics field for searching inventory
-            CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                    TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                      CHAR4, CHRBLNK3, POLBLNK3, CSRC )
 
-C.............  Search for this record in sources
-            S = FINDC( CSRC, NSRC, CSOURC )
+C.................  Search for this record in sources
+                S = FINDC( CSRC, NSRC, CSOURC )
+
+C.............  If SCCs are not being used for matching (at least not yet)...
+            ELSE
+
+C.................  Build source characteristics field for searching inventory
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                      TSCC, CHRBLNK3, POLBLNK3, CSRC )
+
+C.................  Search for this record in sources
+                S = FINDC( CSRC, NSRC, CSOURC )
+
+C.................  If source is not found for day-specific processing, see 
+C                   if reading the SCC in helps (needed for IDA format)
+                IF( S .LE. 0 ) THEN
+
+                    IF ( DAYFLAG ) THEN
+                        TSCC = ADJUSTL( LINE( 92:101) )
+                    ELSE
+                        TSCC = ADJUSTL( LINE( 250:259 ) )
+                    END IF
+                    IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
+                    CHAR4 = TSCC
+
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                            CHAR4, CHRBLNK3, POLBLNK3, CSRC )
+C.....................  Search for this record in sources
+                    S = FINDC( CSRC, NSRC, CSOURC )
+                    IF ( S .GT. 0 ) TFLAG = .TRUE.
+
+                END IF
+
+            END IF
 
 C.............  Store source in list of bad sources
 C.............  Print warning about sources not found in the inventory
@@ -451,7 +524,7 @@ C.............  Otherwise, update master list of sources in the inventory
 
 C.............  Record needed data for this source and time step
             H = 0
-            DO T = PTR, MIN( PTR + NFM1, NSTEPS )
+            DO T = PTR, MIN( PTR + 23, NSTEPS )
 
                 H = H + 1
                 NPDPT( T ) = NPDPT( T ) + 1
@@ -463,7 +536,7 @@ C.............  Record needed data for this source and time step
                     IDXSRC( HS,T ) = HS
                     SPDIDA( HS,T ) = S
                     CODEA ( HS,T ) = COD
-                    EMISVA( HS,T ) = EMIS( H )
+                    EMISVA( HS,T ) = TDAT( H )  ! Store data in emissions
                     DYTOTA( HS,T ) = TOTAL
 
                 END IF

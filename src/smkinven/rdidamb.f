@@ -67,14 +67,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKREAL
         CHARACTER*2     CRLF
         INTEGER         ENVINT
+        LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         INDEX1
         INTEGER         STR2INT
         REAL            STR2REAL
+        REAL            YR2DAY 
 
-        EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, FIND1, FINDC,
-     &                  INDEX1, STR2INT, STR2REAL
+        EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FIND1, 
+     &                  FINDC, INDEX1, STR2INT, STR2REAL, YR2DAY
 
 C...........   Subroutine arguments. Note that number and amount of dropped
 C              VMT is initialied in calling program.
@@ -128,6 +130,7 @@ C...........   Local variables
         INTEGER         IREC           ! record counter
         INTEGER         IVT            ! tmp vehicle type code
         INTEGER, SAVE:: MXWARN         ! maximum number of warnings
+        INTEGER, SAVE:: NNOTE =0       ! number of notes in this routine
         INTEGER         NPVAR          ! number of variables per data
         INTEGER         NSEG           ! number of input segments
         INTEGER         NVAR           ! number of data variables
@@ -137,13 +140,16 @@ C...........   Local variables
         INTEGER         SCCLEN         ! length of SCC string 
         INTEGER         STID           ! tmp state code
         INTEGER         TPF            ! tmp temporal adjustments setting
-
+   
+        REAL            DAY2YR         ! factor to convert from daily data to annual
         REAL            VAL            ! tmp data value
+	REAL            VANN           ! tmp annual data value
 
-        LOGICAL    :: FIRSTIME = .TRUE.! true: first time routine called
-        LOGICAL       FIXED            ! true: input file is fixed-format
-        LOGICAL       INVALID          ! tmp error flag for current record
-        LOGICAL       MISSFLAG         ! true: all emissions missing on line
+        LOGICAL, SAVE:: FFLAG    = .FALSE.! true: fill in 0. annual w/ seasonal
+        LOGICAL      :: FIRSTIME = .TRUE. ! true: first time routine called
+        LOGICAL         FIXED             ! true: input file is fixed-format
+        LOGICAL         INVALID           ! tmp error flag for current record
+        LOGICAL         MISSFLAG          ! true: all emissions missing on line
 
         CHARACTER*20  VIDFMT         ! vehicle type ID format
         CHARACTER*20  RWTFMT         ! roadway type number format
@@ -165,8 +171,15 @@ C   Begin body of subroutine RDIDAMB
 
 C.........  Firstime routine is called, get the number of warnings
         IF( FIRSTIME ) THEN
-            MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
-            FIRSTIME = .FALSE.
+
+            MESG = 'Fill in 0. annual data based on seasonal data.'
+            FFLAG = ENVYN( 'FILL_ANN_WSEAS', MESG, .FALSE., IOS )
+
+            MESG = 'Fill in 0. annual data based on seasonal data.'
+            FFLAG = ENVYN( 'FILL_ANN_WSEAS', MESG, .FALSE., IOS )
+
+            MXWARN = ENVINT( WARNSET, ' ', 100, IOS )  ! max warning
+
         END IF
 
 C.........  Reinitialize for multiple subroutine calls
@@ -257,6 +270,8 @@ C.................  Go to next line
 
             END IF
 
+            IF( FIRSTIME ) DAY2YR  = 1. / YR2DAY( INY )
+
 C.............  Allocate memory for line segments if not already done
             IF( .NOT. ALLOCATED( SEGMENT ) ) THEN
 
@@ -282,10 +297,10 @@ C.................  Initialize fixed-format field positions
                 IS = ISINIT - MBOTWIDE  ! array
                 IE = IEINIT - MBOTWIDE  ! array
 
-                SEGMENT( 1 ) = ADJUSTL( LINE(  1:2  ) )
-                SEGMENT( 2 ) = ADJUSTL( LINE(  3:5  ) )
-                SEGMENT( 3 ) = ADJUSTL( LINE(  6:15 ) )
-                SEGMENT( 4 ) = ADJUSTL( LINE( 16:25 ) )
+                SEGMENT( 1 ) = ADJUSTL( LINE(  1:2  ) ) ! state
+                SEGMENT( 2 ) = ADJUSTL( LINE(  3:5  ) ) ! county
+                SEGMENT( 3 ) = ADJUSTL( LINE(  6:15 ) ) ! link
+                SEGMENT( 4 ) = ADJUSTL( LINE( 16:25 ) ) ! SCC
 
                 K = 4
                 DO V = 1, NVAR
@@ -344,6 +359,7 @@ C.............  Emissions or activity and associated data
 
                     K = K + 1
 
+C.....................  Ensure field is a real
                     IF( .NOT. CHKREAL( SEGMENT( K ) ) ) THEN
 
                         EFLAG = .TRUE.
@@ -353,17 +369,47 @@ C.............  Emissions or activity and associated data
      &                     TMPNAM( V )( 1:L ) // '" are not a number '//
      &                     'or have bad formatting at line', IREC
                         CALL M3MESG( MESG )
+                        CYCLE
 
                     END IF
+		    
+C.....................  Convert field to an numeric value and store annual
+C                       value for next iteration
+                    IF ( N .EQ. 1 ) VANN = STR2REAL( SEGMENT( K ) )
 
-                    IF( SEGMENT( K ) .NE. ' ' ) MISSFLAG = .FALSE.
+                    IF( SEGMENT( K ) .NE. ' ' ) THEN
+
+C.........................  If reading emissions data (fixed) and annual data is
+C                           zero (VANN = 0.) but ozone-season data is not 
+C                           missing (SEGMENT(K)!=' ',N=2), fill in annual data 
+C                           with ozone season data, if user has requested it.
+                        IF( FIXED .AND. VANN .EQ. 0. .AND. 
+     &                      FFLAG .AND. N    .EQ. 2        ) THEN
+
+                            VAL = STR2REAL( SEGMENT( K ) ) * DAY2YR
+                            WRITE( SEGMENT(K-1), '(E10.3)' ) VAL
+
+                            NNOTE = NNOTE + 1
+                            IF ( NNOTE .LE. MXWARN ) THEN
+                                WRITE(MESG,94010) 'NOTE: Using ' //
+     &                            'seasonal data to fill in annual ' //
+     &                            'data'// CRLF()// BLANK10// 'at line', 
+     &                            IREC, 'for ' // TMPNAM( V )
+                                CALL M3MESG( MESG )
+                            END IF
+
+                        END IF
+
+                        MISSFLAG = .FALSE.  ! data not missing for this V
+
+                    END IF
 
                 END DO
 
                 IF( NWARN .LT. MXWARN .AND. MISSFLAG ) THEN
 
                     L = LEN_TRIM( TMPNAM( V ) )
-                    WRITE( MESG,94010 ) 'WARNING: All emissions ' //
+                    WRITE( MESG,94010 ) 'WARNING: All columns of ' //
      &                     'data for ' // TMPNAM( V )( 1:L ) //  
      &                     ' are missing at line', IREC
                     CALL M3MESG( MESG )
@@ -569,6 +615,9 @@ C.........  Deallocate local allocatable arrays
         IF( ALLOCATED( TMPNAM  ) ) DEALLOCATE( TMPNAM )
         IF( ALLOCATED( DATPOS  ) ) DEALLOCATE( DATPOS )
         IF( ALLOCATED( SEGMENT ) ) DEALLOCATE( SEGMENT )
+
+C.........  Make sure routine knows it's been called already
+        FIRSTIME = .FALSE.
 
 C.........  Return from subroutine 
         RETURN

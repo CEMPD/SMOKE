@@ -1,7 +1,7 @@
 
         SUBROUTINE RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 
      &                       DAYFLAG, FNAME, SDATE, STIME, NSTEPS, 
-     &                       EASTAT )
+     &                       EASTAT, SPSTAT )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -75,6 +75,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,     INTENT(INOUT):: STIME          ! data start time in TZONE
         INTEGER,      INTENT(OUT) :: NSTEPS         ! no. time steps
         LOGICAL,      INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act in data
+        LOGICAL,      INTENT(OUT) :: SPSTAT( MXSPDAT )! true: special in data
 
 C...........   Character strings of day- or hr-specific list file 
         CHARACTER*300, ALLOCATABLE, SAVE :: NLSTSTR( : )
@@ -204,7 +205,7 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
 
         	CALL RDEMSPD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG, 
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME, 
-     &                        EDATE, ETIME, EASTAT )
+     &                        EDATE, ETIME, EASTAT, SPSTAT )
 
             ELSE IF( FILFMT .EQ. EPSFMT ) THEN
 

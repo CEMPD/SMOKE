@@ -93,7 +93,9 @@ C.........  LOCAL VARIABLES and their descriptions:
 
 C.........  Day-specific and hour-specific variable indices
         INTEGER         DEAIDX( MXVARS3 )
+        INTEGER         DSPIDX( MXSPDAT )
         INTEGER         HEAIDX( MXVARS3 )
+        INTEGER         HSPIDX( MXSPDAT )
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
@@ -143,7 +145,9 @@ C...........   Other local variables
         INTEGER         NINVARR    ! no. inventory variables to read
         INTEGER         NRAWBP     ! number of sources x pollutants
         INTEGER      :: NVARDY = 0 ! no. day-specific variables
-        INTEGER      :: NVARHR = 0 ! no. day-specific variables
+        INTEGER      :: NVSPDY = 0 ! no. day-specific special variables
+        INTEGER      :: NVARHR = 0 ! no. hour-specific variables
+        INTEGER      :: NVSPHR = 0 ! no. hour-specific special variables
         INTEGER         OUTSTEP    ! output time step HHMMSS for day/hour data
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
@@ -385,13 +389,13 @@ C.........  Read in daily emission values and output to a SMOKE file
 C.............  Preprocess day-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
             CALL GETPDINFO( DDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, DNAME, 
-     &                      DSDATE, DSTIME, DNSTEP, NVARDY, MXSRCDY, 
-     &                      DEAIDX )
+     &                      DSDATE, DSTIME, DNSTEP, NVARDY, NVSPDY, 
+     &                      MXSRCDY, DEAIDX, DSPIDX )
 
 C.............  Read and output day-specific data
             CALL GENPDOUT( DDEV, TZONE, DSDATE, DSTIME, DNSTEP, 
-     &                     INSTEP, OUTSTEP, NVARDY, MXSRCDY, TYPNAM, 
-     &                     DNAME, DEAIDX )
+     &                     INSTEP, OUTSTEP, NVARDY, NVSPDY, MXSRCDY, 
+     &                     TYPNAM, DNAME, DEAIDX, DSPIDX )
 
         END IF
 
@@ -405,13 +409,13 @@ C.........  Read in hourly emission values and output to a SMOKE file
 C.............  Preprocess hour-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
             CALL GETPDINFO( HDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, HNAME, 
-     &                      HSDATE, HSTIME, HNSTEP, NVARHR, MXSRCHR,  
-     &                      HEAIDX )
+     &                      HSDATE, HSTIME, HNSTEP, NVARHR, NVSPHR, 
+     &                      MXSRCHR, HEAIDX, HSPIDX )
 
 C.............  Read and output hour-specific data
             CALL GENPDOUT( HDEV, TZONE, HSDATE, HSTIME, HNSTEP, 
-     &                     INSTEP, OUTSTEP, NVARHR, MXSRCHR, TYPNAM,  
-     &                     HNAME, HEAIDX )
+     &                     INSTEP, OUTSTEP, NVARHR, NVSPHR, MXSRCHR,  
+     &                     TYPNAM, HNAME, HEAIDX, HSPIDX )
 
         END IF
 

@@ -272,7 +272,7 @@ C           it is sorted already.
      &               NEDIM1, NPPOL )
 
 C.........  Initialize emissions data
-        POLVAL = AMISS3    ! array
+        POLVAL = BADVAL3    ! array
 
 C.........  Initialize tmp source characteristics
         FIP     = 0

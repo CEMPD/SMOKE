@@ -351,6 +351,37 @@ C           position in the master array of output pollutants/activities
             J = INDEXA( I )
             S = SRCIDA( I )
 
+C.............  Reset emissions value to zero, if it's negative
+            IF ( POLVLA( J, NEM ) .LT. 0 .AND.
+     &           POLVLA( J, NEM ) .GT. AMISS3 ) THEN
+                POLVLA( J, NEM ) = 0.
+
+                IF ( NWARN .LE. MXWARN .AND.
+     &               IPOSCOD( I ) .NE. PIPCOD ) THEN
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                    MESG = 'WARNING: Negative annual data reset' //
+     &                     'to zero for:' //
+     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
+                END IF
+            END IF
+                
+            IF ( POLVLA( J, NOZ ) .LT. 0 .AND.
+     &           POLVLA( J, NOZ ) .GT. AMISS3 ) THEN
+                POLVLA( J, NOZ ) = 0.
+
+                IF ( NWARN .LE. MXWARN .AND.
+     &               IPOSCOD( I ) .NE. PIPCOD ) THEN
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                    MESG = 'WARNING: Negative seasonal data ' //
+     &                     'reset to zero for:' //
+     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
+                END IF
+            END IF
+                
 C.............  For a new source or a new pollutant code...
             IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
 
@@ -358,13 +389,12 @@ C.................  Sum up the number of pollutants/activities by source,
 C                   but do this here only, because this part of the IF
 C                   statement is for new pollutants
                 NPCNT( S ) = NPCNT( S ) + 1
-
                 K = K + 1
 
                 POLVAL( K, NEM ) = POLVLA( J, NEM )
                 POLVAL( K, NOZ ) = POLVLA( J, NOZ )
-                POLVAL( K, NCE ) = POLVLA( J, NCE )
-                POLVAL( K, NRE ) = POLVLA( J, NRE )
+                IF( NCE .GT. 0 ) POLVAL( K, NCE ) = POLVLA( J, NCE )
+                IF( NRE .GT. 0 ) POLVAL( K, NRE ) = POLVLA( J, NRE )
                 IF( NEF .GT. 0 ) POLVAL( K, NEF ) = POLVLA( J, NEF )
                 IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
 

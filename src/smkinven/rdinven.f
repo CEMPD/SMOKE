@@ -265,7 +265,7 @@ C            contain multiple data records on each line, in any order.
         END DO
 
 C.........  Initialize pollutant-specific values as missing
-        POLVLA = AMISS3  ! array
+        POLVLA = BADVAL3  ! array
 
 C.........  Read emissions from raw file(s) depending on input format...
 

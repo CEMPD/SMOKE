@@ -1,7 +1,7 @@
 
         SUBROUTINE GENPDOUT( FDEV, TZONE, SDATE, STIME, NSTEPS, INSTEP, 
-     &                       OUTSTEP, NVAR, MXPDSRC, TYPNAM, FNAME, 
-     &                       EAIDX )
+     &                       OUTSTEP, NVAR, NVSP, MXPDSRC, TYPNAM, 
+     &                       FNAME, EAIDX, SPIDX )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -74,13 +74,18 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: INSTEP    ! expected data time step HHMMSS
         INTEGER     , INTENT (IN) :: OUTSTEP   ! output time step HHMMSS
         INTEGER     , INTENT (IN) :: NVAR      ! no. period-specific variables
+        INTEGER     , INTENT (IN) :: NVSP      ! no. period-spec special vars
         INTEGER     , INTENT (IN) :: MXPDSRC   ! maximum period-specific sources
         CHARACTER(*), INTENT (IN) :: TYPNAM    ! 'day' or 'hour'
         CHARACTER(*), INTENT (IN) :: FNAME     ! logical file name
         INTEGER     , INTENT (IN) :: EAIDX( NIPPA ) ! index to EANAM
+        INTEGER     , INTENT (IN) :: SPIDX( MXSPDAT ) ! index to SPDATNAM
 
 C.........  Local allocatable arrays
         LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
+
+C.........  Local arrays
+        LOGICAL         SPSTAT( MXSPDAT )     ! true: special data variable used
 
 C...........   Other local variables
         INTEGER          S, T
@@ -173,6 +178,7 @@ C.........  Allocate memory for reading data
         CALL CHECKMEM( IOS, 'LPDSRC', PROGNAME )
 
 C.........  Initialize arrays
+        MXPDPT = 0        ! array
         NPDPT  = 0        ! array
         CODEA  = 0        ! array
         IDXSRC = 0        ! array
@@ -187,7 +193,7 @@ C.........  Message before reading the input file (list of files)
 
 C.........  Loop through input files and actually read the data
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT )
+     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT, SPSTAT )
 
 C.........  Determine the actual number of day-specific or hour-specific sources
         NPDSRC = 0
@@ -201,7 +207,10 @@ C           not exceed the maximum number of sources over all hours
 
             WRITE( MESG,94010 ) 'INTERNAL ERROR: Actual number of ' //
      &             TYPNAM // 'sources, NPDSRC=', NPDSRC, CRLF() // 
-     &             BLANK10 // 'dimensioned number, MXPDSRC =', MXPDSRC
+     &             BLANK10 // 'dimensioned number, MXPDSRC =', MXPDSRC,
+     &             '. Fix by ensuring all period-specific' // CRLF() //
+     &             BLANK10 // 'sources in file for at the same day '//
+     &             'or hour.'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
@@ -216,25 +225,25 @@ C.........  Allocate memory for daily or hourly output arrays.  Allocate
 C           memory as one block which will be separated into an integer section
 C           and a real section when WRPDEMIS is called.  This permits
 C           writing with a single WRITE3 statement.
-        ALLOCATE( PDEMOUT( NPDSRC,NVAR+1 ), STAT=IOS )
+        ALLOCATE( PDEMOUT( NPDSRC,NVAR+NVSP+1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PDEMOUT', PROGNAME )
-        ALLOCATE( PDTOTL( NPDSRC,NVAR ), STAT=IOS )
+        ALLOCATE( PDTOTL( NPDSRC,NVAR+NVSP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PDTOTL', PROGNAME )
 
 C.........  Open day-specific or hour-specific output file, depending on value
 C           of TYPNAM
         CALL OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, OUTSTEP, 
-     &                  TYPNAM, OFLAG, EAIDX, ONAME )
+     &                  TYPNAM, OFLAG, EAIDX, SPSTAT, ONAME )
 
-C.........  Loop through time steps and output emissions
+C.........  Loop through time steps and output emissions and other data
 
         JDATE = SDATE
         JTIME = STIME
         DO T = 1, NSTEPS
 
-            CALL WRPDEMIS( JDATE, JTIME, T, NPDSRC, NVAR, ONAME, 
-     &                     OFLAG, EAIDX, PDEMOUT( 1,1 ), PDEMOUT( 1,2 ),
-     &                     EFLAG )
+            CALL WRPDEMIS( JDATE, JTIME, T, NPDSRC, NVAR, NVSP, ONAME, 
+     &                     OFLAG, EAIDX, SPIDX, PDEMOUT( 1,1 ), 
+     &                     PDEMOUT( 1,2 ), EFLAG )
 
             CALL NEXTIME( JDATE, JTIME, OUTSTEP )
 
