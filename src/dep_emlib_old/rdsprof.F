@@ -1,4 +1,27 @@
-C ****************************************************************************
+
+        INTEGER FUNCTION RDSPROF( SDEV, NP, PLIST, N, 
+     &                            SXREF, SCOEF, IPOL )
+
+C***********************************************************************
+C  function body starts at line  99
+C
+C  FUNCTION:
+C       Reads the indicated speciation profile file from DEV, 
+C       sorts it, and returns the number of profile entries found.
+C       In case of overflow, returns negative of number of profile
+C       entries found.
+C
+C  PRECONDITIONS REQUIRED:
+C       speciation profile file already opened on unit SDEV
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:
+C       M3WARN, SORTI1
+C
+C  REVISION  HISTORY:
+C       prototype 1/96 by CJC
+C       updated for variable species 5/95 by MRH
+C       Fixed bug in sorting-process; style changes and better commenting
+C***********************************************************************
 C *
 C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C *                System
@@ -19,31 +42,7 @@ C *
 C * Pathname: $Source$
 C * Last updated: $Date$ 
 C *
-C ****************************************************************************/
- 
-        INTEGER FUNCTION RDSPROF( SDEV, NP, PLIST, N, 
-     &                            SXREF, SCOEF, IPOL )
-
-C***********************************************************************
-C  function body starts at line  107
-C
-C  FUNCTION:
-C       Reads the indicated speciation profile file from DEV, 
-C       sorts it, and returns the number of profile entries found.
-C       In case of overflow, returns negative of number of profile
-C       entries found.
-C
-C  PRECONDITIONS REQUIRED:
-C       speciation profile file already opened on unit SDEV
-C
-C  SUBROUTINES AND FUNCTIONS CALLED:
-C       M3WARN, SORTI1
-C
-C  REVISION  HISTORY:
-C       prototype 1/96 by CJC
-C       updated for variable species 5/95 by MRH
-C
-C***********************************************************************
+C****************************************************************************/
 
       IMPLICIT NONE
 
@@ -67,22 +66,14 @@ C...........   ARGUMENTS and their descriptions:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER     INDEX1
+        INTEGER     INDEX1	!  (unsorted) name-table lookup
         EXTERNAL    INDEX1
 
-
-C...........   SAVED LOCAL VARIABLES and their descriptions:
-C...........   NOTE:  the ANSI standard requires the use of SAVE statements
-C...........   for variables which must retain their values from call to call.
-
-        LOGICAL         FIRSTIME
-        DATA            FIRSTIME / .TRUE. /
-
-        SAVE   FIRSTIME
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         INTEGER         I, J, K, L, V
+        INTEGER         ICO, INO, INO2	 !  subscripts for these inorganics
         INTEGER         IREC, IOS
         INTEGER         NSPEC            ! number of model spcs in profile file
         INTEGER         SID, LID
@@ -94,8 +85,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         LOGICAL         SORTED
         REAL            FACS ( MXMPOL )
 
-        CHARACTER*5     ISPEC( MXMPOL )  ! temporary for inventory spcs name
-        CHARACTER*5     LSPEC            ! temporary for inventory spcs name
+        CHARACTER*5     ASPEC            ! temporary for inventory spcs name
         CHARACTER*10    MSPEC( MXMPOL )  ! model spcs names in profile file
         CHARACTER*22    LINE
         CHARACTER*256   MESG
@@ -104,16 +94,12 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 C***********************************************************************
 C   begin body of function  RDSPROF
 
-        IF ( FIRSTIME ) THEN
-            FIRSTIME = .FALSE.
-        END IF          !  if firstime
+C.........  File header:  first, read number of species
 
-        EFLAG = .FALSE.
-
-C.........  Read number of species
-        READ( SDEV, * ) NSPEC
+        READ( SDEV, * ) NSPEC				!  first header line
 
         IF( NSPEC .GT. MXMPOL ) THEN
+
             WRITE( MESG,94010 )
      &          'Max model species', MXMPOL,
      &          'exceeded in SPRO file: count=', NSPEC
@@ -121,16 +107,42 @@ C.........  Read number of species
             RDSPROF = IMISS3
             RETURN    
 
-        ENDIF
+        END IF		!  if nspec > max
 
-C.........  Read list of model species
-        DO 44 I = 1, NSPEC
+C.........  File header:  read list of model species
+
+        EFLAG = .FALSE.
+
+        READ( SDEV, 93010, IOSTAT=IOS ) LINE	!  first species line in header
+        MSPEC( 1 ) = LINE(  1:10 )
+        IPOL       = LINE( 18:22 )
+
+        IF( IOS .NE. 0 ) THEN
+
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 )
+     &          'Error', IOS, 
+     &          'reading SPECIATION XREF file at line', 2
+            CALL M3MESG( MESG )
+
+        END IF			!  if bad IOSTAT
+
+        J = INDEX1( IPOL, MXIPOL, INVSPEC )
+        IF( J .EQ. 0 ) THEN
+
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 )
+     &          'ERROR: Pollutant ' // IPOL // 
+     &          ' in SPRO; no match in valid list'
+            CALL M3MESG( MESG )
+
+        END IF			!  if bad HC pollutant name
+
+        DO 44 I = 2, NSPEC			!  rest of header species lines
 
             READ( SDEV, 93010, IOSTAT=IOS ) LINE
             MSPEC( I ) = LINE(  1:10 )
-            ISPEC( I ) = LINE( 18:22 )
-
-            J = INDEX1( ISPEC( I ), MXIPOL, INVSPEC )
+            ASPEC      = LINE( 18:22 )
 
             IF( IOS .NE. 0 ) THEN
 
@@ -140,59 +152,65 @@ C.........  Read list of model species
      &              'reading SPECIATION XREF file at line', I+1
                 CALL M3MESG( MESG )
 
-            ELSEIF( J .EQ. 0 ) THEN   ! Invalid pollutant ID
+            ELSE IF( ASPEC .NE. IPOL ) THEN   ! Invalid pollutant ID
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
-     &              'ERROR: Pollutant ' // ISPEC( I ) // 
-     &              ' in SPRO; no match in valid list'
+     &              'Inconsistent inventory pollutant ' //
+     &              ASPEC // ' found at line ', I,
+     &              'of SPECIATION PROFILE file'
                 CALL M3MESG( MESG )
 
-            ENDIF
+            END IF		!  if bad IOSTAT; else if bad HC
 
 44      CONTINUE
 
 C.........  Abort if problem with species in header
+
         IF( EFLAG ) THEN
             RDSPROF = IMISS3
             RETURN
+        END IF
 
-        ENDIF
 
-C.........  Check to make sure ISPECs are all the same
-        DO 50 I = 1, NSPEC
-            IF( I .EQ. 1 ) THEN
-                LSPEC = ISPEC( I )
-            ELSEIF( ISPEC( I ) .NE. LSPEC ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &              'Inconsistent inventory pollutant ' //
-     &              ISPEC( I ) // ' found at line ', I,
-     &              'of SPECIATION PROFILE file'
-                CALL M3MESG( MESG )
-             
-            ENDIF
-50      CONTINUE
-
-        IPOL = LSPEC
-        
 C.........  Find and index actual species to profile format
-        DO 55 I = 1,NP
 
-            INDX( I ) = INDEX1( PLIST( I ), NSPEC, MSPEC )
+        DO 55 I = 1, NP
 
-            IF( INDX( I ) .EQ. 0 ) THEN
+            V = INDEX1( PLIST( I ), NSPEC, MSPEC )
 
-                WRITE( MESG,94010 )
-     &              'NOTE: Species ' // PLIST( I ) // 
-     &              ' not found in SPRO file'
-                CALL M3MESG( MESG )
+            INDX( I ) = V
 
-            ENDIF
+            IF( V .EQ. 0 ) THEN		!  clasify inorganics; rest are errors
 
-55      CONTINUE
+                IF     ( PLIST( L ) .EQ. 'CO' ) THEN
+                    ICO  = L
+                ELSE IF( PLIST( L ) .EQ. 'NO' ) THEN
+                    INO  = L
+                ELSE IF( PLIST( L ) .EQ. 'NO2' ) THEN
+                    INO2 = L
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 
+     &                     'Program does not handle species "'
+     &                      // PLIST( L ) // '" correctly. ' //
+     &                     'See rdsprof library program.'
+                    CALL M3WARN( 'RDSPROF', 0, 0, MESG )
+                END IF
 
-C.........  Read SPECIATION PROFILE file
+            END IF		!  if indx zero (pollutant not in file header)
+
+55      CONTINUE	!  end loop indexing species
+
+
+        IF( EFLAG ) THEN
+            RDSPROF = IMISS3
+            RETURN
+        END IF
+
+
+C.........  File body:  Read SPECIATION PROFILE table
+
         IREC   =  0
         I      =  0
         EFLAG  = .FALSE.
@@ -225,16 +243,9 @@ C.........  Read SPECIATION PROFILE file
                         SCOEFA( I,V ) = FACS( V )
 88                  CONTINUE
 
-                ELSE
+                END IF		!  if I in bounds
 
-                    WRITE( MESG, 94010 )
-     &                  'Max SPROF table size', MXSPRO, 
-     &                  'exceeded at line', IREC
-                    CALL M3MESG( MESG )
-
-                END IF
-
-            END IF
+            END IF	!  if iostat OK or not
 
             GO TO  77   !  to head of loop
 
@@ -250,8 +261,9 @@ C.........  Read SPECIATION PROFILE file
         ELSE IF ( I .GT. MXSPRO ) THEN
 
             WRITE( MESG,94010 ) 
-     &          'Internal Table Overflow.  Dimensioned', MXSPRO,
-     &          'Needed', I
+     &          'Table Overflow.  Internal dim:', MXSPRO,
+     &          'caller dim:', N, 
+     &          'Needed:', I
             CALL M3WARN( 'RDSPROF', 0, 0, MESG )
             RDSPROF = -I
             RETURN
@@ -268,61 +280,35 @@ C.........  Read SPECIATION PROFILE file
         END IF
 
         RDSPROF = I
-                
 
-C...........   Now sort the profiles:
+
+C...........   If necessary, sort the profiles:
+
         IF ( .NOT. SORTED ) CALL SORTI1( I, INDEXA, SXREFA )
-       
+
 C...........   Use sorted index and actual species index to create
 C...........   properly ordered and adjusted coefficient table.
 
         DO  122  K = 1, I
 
             J = INDEXA( K )
-            SXREF( J ) = SXREFA( K )
+            SXREF( K )       = SXREFA( J )
+            SCOEF( K, ICO  ) = COFAC
+            SCOEF( K, INO  ) = NOFAC
+            SCOEF( K, INO2 ) = NO2FAC
 
             DO  111  L = 1, NP
 
                 V = INDX( L )
+                IF( V .GT. 0 ) THEN
 
-C.................  Non-VOC 
-                IF( V .EQ. 0 ) THEN
+                    SCOEF( K,L ) = SCOEFA( J,V )
 
-                    IF    ( PLIST( L ) .EQ. 'CO' ) THEN
-                        SCOEF( J,L ) = COFAC
-
-                    ELSEIF( PLIST( L ) .EQ. 'NO' ) THEN
-                        SCOEF( J,L ) = NOFAC
-
-                    ELSEIF( PLIST( L ) .EQ. 'NO2' ) THEN
-                        SCOEF( J,L ) = NO2FAC
-
-                    ELSE
-
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 
-     &                         'Program does not handle species "'
-     &                          // PLIST( L ) // '" correctly. ' //
-     &                         'See rdsprof library program.'
-                        CALL M3WARN( 'RDSPROF', 0, 0, MESG )
-
-                    ENDIF
-
-                ELSE
-
-                    SCOEF( J,L ) = SCOEFA( K,V )
-
-                ENDIF
+                END IF
 
 111         CONTINUE
 122     CONTINUE
-        
-        IF( EFLAG ) THEN
-            RDSPROF = IMISS3
-            RETURN
 
-        ENDIF
-        
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
