@@ -82,8 +82,8 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv ARINV     $INVDIR/area/arinv.stationary.lst           # Stationary area emission inventory
    setenv REPCONFIG $INVDIR/area/REPCONFIG.area.txt             # Default report configurations
    setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls 
-   setenv ARINV_NR  $INVDIR/nonroad/arinv.nonroad.lst           # Nonroad mobile emission inventory
-   setenv GCNTL_NR  $INVDIR/nonroad/gcntl.control.txt           # Nonroad scenario-specific controls
+   setenv NRINV     $INVDIR/nonroad/arinv.nonroad.lst           # Nonroad mobile emission inventory
+   setenv NCNTL     $INVDIR/nonroad/gcntl.control.txt           # Nonroad scenario-specific controls
    setenv ARTOPNT   $INVDIR/other/artopnt.txt                   # area-to-point assignments
    setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls
    setenv APROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt         # Projection factors
@@ -182,12 +182,6 @@ endif
       setenv UAMEMIS $OUTPUT/no_file_set
       setenv E2DNCF  $OUTPUT/e2dncf.ncf
    endif
-#
-## Conditional settings
-   if ( $SMK_SOURCE == A && $NONROAD == Y ) then
-      setenv ARINV  $ARINV_NR
-      setenv GCNTL  $GCNTL_NR
-   endif
 
 ## Meteorology IO/API input files (MCIP output files)
 #
@@ -221,6 +215,18 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv ACSUMREP $REPSTAT/acsumrep.$ASCEN.rpt
    setenv AREA_O   $INVOPD/area.map.$FYINV.txt
    setenv ARINV_O  $ARDAT/arinv.$FYINV.ida.txt
+
+   setenv NSCC     $INVOPD/NSCC.$FYIOP.txt
+   setenv NEPINVEN $REPSTAT/repinven.nr.$INVOP.txt
+   setenv NTSUP    $SMKDAT/run_${ASCEN}/$ESDATE/ntsup.$ESDATE.$ASCEN.txt
+   setenv NSSUP    $SMKDAT/run_${ABASE}/static/nssup.$SPC.$ABASE.txt
+   setenv NGSUP    $SMKDAT/run_$ABASE/static/ngsup.$GRID.$ABASE.txt
+   setenv NCREP    $REPSTAT/ncrep.$ASCEN.rpt           
+   setenv NPROJREP $REPSTAT/nprojrep.$ASCEN.rpt
+   setenv NREACREP $REPSTAT/nreacrep.$ASCEN.rpt
+   setenv NCSUMREP $REPSTAT/ncsumrep.$ASCEN.rpt
+   setenv NROAD_O  $INVOPD/nroad.map.$FYINV.txt
+   setenv NRINV_O  $ARDAT/nrinv.$FYINV.ida.txt
 endif
 
 if ( $SMK_SOURCE == 'A' || $MRG_AREA == 'Y' ) then
@@ -234,6 +240,17 @@ if ( $SMK_SOURCE == 'A' || $MRG_AREA == 'Y' ) then
    setenv ACMAT    $SMKDAT/run_$ASCEN/static/acmat.$ASCEN.ncf          
    setenv AGMAT    $SMKDAT/run_$ABASE/static/agmat.$GRID.$ABASE.ncf
    setenv APMAT    $SMKDAT/run_$ASCEN/static/apmat.$ASCEN.ncf
+
+   setenv NROAD    $INVOPD/nroad.map.$FYIOP.txt  # Nonroad inventory map
+   setenv NTMP     $SMKDAT/run_$ASCEN/$ESDATE/ntmp.$ESDATE.$NDAYS.$ASCEN.ncf
+   setenv NSMAT_S  $SMKDAT/run_$ABASE/static/nsmat_s.$SPC.$ABASE.ncf
+   setenv NSMAT_L  $SMKDAT/run_$ABASE/static/nsmat_l.$SPC.$ABASE.ncf
+   setenv NRMAT_L  $SMKDAT/run_$ASCEN/static/nrmat_l.$SPC.$ASCEN.ncf
+   setenv NRMAT_S  $SMKDAT/run_$ASCEN/static/nrmat_s.$SPC.$ASCEN.ncf
+   setenv NRSUP    $SMKDAT/run_$ASCEN/static/nrsup.$ASCEN.txt
+   setenv NCMAT    $SMKDAT/run_$ASCEN/static/ncmat.$ASCEN.ncf          
+   setenv NGMAT    $SMKDAT/run_$ABASE/static/ngmat.$GRID.$ABASE.ncf
+   setenv NPMAT    $SMKDAT/run_$ASCEN/static/npmat.$ASCEN.ncf
 endif
 
 ## Biogenic source intermediate and output files
@@ -306,7 +323,7 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PCSUMREP  $REPSTAT/pcsumrep.$PSCEN.rpt
    setenv PELV      $STATIC/PELV.$PBASE.txt       # Elev/PinG pt source list
    setenv PNTS_O    $INVOPD/pnts.map.$FYINV.txt
-   setenv PTINV_O   $PTDAT/ptinv.$FYINV.ida.txt
+   setenv PTINV_O   $PTDAT/ptinv_o.$FYINV.ida.txt
 endif
 
 if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
@@ -326,6 +343,38 @@ if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
    setenv PLAY_EX  $SMKDAT/run_$PBASE/$ESDATE/play_ex.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
 endif
 
+#
+## Conditional settings
+   if ( $SMK_SOURCE == A && $NONROAD == Y ) then
+      setenv ARINV   $NRINV
+      setenv GCNTL   $NCNTL
+      setenv AREA    $NROAD  
+      setenv ATMP    $NTMP   
+      setenv ASMAT_S $NSMAT_S
+      setenv ASMAT_L $NSMAT_L
+      setenv ARMAT_S $NRMAT_S
+      setenv ARMAT_L $NRMAT_L
+      setenv ARSUP   $NRSUP  
+      setenv ACMAT   $NCMAT 
+      setenv AGMAT   $NGMAT  
+      setenv APMAT   $NPMAT  
+      setenv ASCC    $NSCC     
+      setenv REPINVEN $NEPINVEN 
+      setenv ATSUP    $NTSUP    
+      setenv ASSUP    $NSSUP    
+      setenv AGSUP    $NGSUP    
+      setenv ACREP    $NCREP    
+      setenv APROJREP $NPROJREP 
+      setenv AREACREP $NREACREP
+      setenv ACSUMREP $NCSUMREP
+      setenv AREA_O   $NROAD_O 
+      setenv ARINV_O  $NRINV_O 
+   endif
+
+   if ( $SMK_SOURCE == A ) then
+      unsetenv NRINV NCNTL NROAD NTMP NSMAT_S NSMAT_L NRMAT_S NRMAT_L NRSUP NCMAT NGMAT NPMAT
+      unsetenv NSCC NEPINVEN NTSUP NSSUP NGSUP NCREP NPROJREP NREACREP NCSUMREP NROAD_O NRINV_O
+   endif
 #
 #  Merge output files
    source $ASSIGNS/setmerge_files.scr
