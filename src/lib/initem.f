@@ -96,6 +96,8 @@ C.........  Set up program version information
         ELSE
             J = INDEX( VERCHAR, ' ' )
             VERCHAR = ADJUSTL( VERCHAR( J+1:TRIMLEN( VERCHAR ) ) )
+            J = INDEX( VERCHAR, '$' )
+            VERCHAR = VERCHAR( 1:J-1 )
         ENDIF
 
 C.........  Set up writing loop
