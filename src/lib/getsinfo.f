@@ -60,7 +60,7 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   LOCAL VARIABLES their descriptions:
 
-        INTEGER       I, J        ! counters and indices 
+        INTEGER       I, J, K     ! counters and indices 
         INTEGER       IOS         ! memory allocation status
         INTEGER       NVAR        ! number of non-pollutant variables 
 
@@ -144,15 +144,25 @@ C.............  Allocate memory for pollutant names and/or activities
         NPPOL = MAX( 0, NPPOL )
         NIACT = MAX( 0, NIACT )
         NPACT = MAX( 0, NPACT )
+        NIPPA = NIPOL + NIACT
+
+C............. Allocate memory for the array that stors pollutant
+C............. names and activity names. Populate this array in the
+C............. loops below that fill EINAM and NIACT
+        ALLOCATE( EANAM( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
 
 C.............  Allocate memory for and store pollutant names 
         ALLOCATE( EINAM( NIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
 
+        K = 0
         J = NVAR + 1
         DO I = 1, NIPOL
 
+            K = K + 1
             EINAM( I ) = VNAME3D( J )
+	    EANAM( K ) = EINAM( I )
             J = J + NPPOL   ! skip over other pollutant-spec variables
 
         ENDDO
@@ -163,7 +173,9 @@ C.........  Allocate memory for and store activity names
 
         DO I = 1, NIACT
 
+            K = K + 1
             ACTVTY( I ) = VNAME3D( J )
+            EANAM( K )  = ACTVTY( I )
             J = J + NPACT   ! skip over other activity-spec variables
 
         ENDDO
