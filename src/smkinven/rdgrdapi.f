@@ -244,6 +244,7 @@ C.........  NOTE - Both EINAM and EANAM are created to support WRINVEMIS
         ALLOCATE( EADESC( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EADESC', PROGNAME )
 
+        J = 0
         DO V = 1, NVARS
 
 C.............  Skip special variable names and set output variable info
