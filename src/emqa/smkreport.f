@@ -85,21 +85,24 @@ C...........   Speciation matrices
         INTEGER, ALLOCATABLE :: SSMAT( :,: ) ! mass-based
 
 C...........   File units and logical/physical names
-        INTEGER         CDEV    !  reports configuration file
-        INTEGER         EDEV    !  elevated source ID file
-        INTEGER         GDEV    !  gridding supplemental file
-        INTEGER         LDEV    !  log-device
-        INTEGER         NDEV    !  SCC descriptions
-        INTEGER         ODEV    !  output file unit number
-        INTEGER         PDEV    !  speciation supplemental file
-        INTEGER         SDEV    !  ASCII inven input file
-        INTEGER         TDEV    !  temporal supplemental files
-        INTEGER         YDEV    !  country/state/county names file
+        INTEGER :: CDEV = 0   !  reports configuration file
+        INTEGER :: EDEV = 0   !  elevated source ID file
+        INTEGER :: GDEV = 0   !  gridding supplemental file
+        INTEGER :: LDEV = 0   !  log-device
+        INTEGER :: NDEV = 0   !  SCC descriptions
+        INTEGER :: ODEV = 0   !  output file unit number
+        INTEGER :: PDEV = 0   !  speciation supplemental file
+        INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
+        INTEGER :: SDEV = 0   !  ASCII inven input file
+        INTEGER :: TDEV = 0   !  temporal supplemental files
+        INTEGER :: YDEV = 0   !  country/state/county names file
 
         CHARACTER*16  :: ANAME  = ' '   !  logical name for ASCII inven input 
         CHARACTER*16  :: ENAME  = ' '   !  logical name for I/O API inven input
+        CHARACTER*16  :: CUNAME = ' '   !  multiplicative control matrix input
         CHARACTER*16  :: GNAME  = ' '   !  gridding matrix input
         CHARACTER*16  :: LNAME  = ' '   !  layer fractions input file
+        CHARACTER*16  :: PRNAME = ' '   !  projection matrix input
         CHARACTER*16  :: SLNAME = ' '   !  speciation matrix input
         CHARACTER*16  :: SSNAME = ' '   !  speciation matrix input
         CHARACTER*16  :: TNAME  = ' '   !  hourly emissions input file
@@ -143,8 +146,9 @@ C           values for use in memory allocation.
         CALL SCANREPC( CDEV )
 
 C.........  Prompt for and open all other input files
-        CALL OPENREPIN( ENAME, ANAME, GNAME, LNAME, SLNAME, SSNAME, 
-     &                  TNAME, SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV)
+        CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, PRNAME, 
+     &                  SLNAME, SSNAME, TNAME, RDEV, SDEV, GDEV, PDEV, 
+     &                  TDEV, EDEV, YDEV, NDEV)
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -174,9 +178,9 @@ C           so that arrays can be passed through subroutines).
         CALL CHECKMEM( IOS, 'SSMAT', PROGNAME )
 
 C.........  Read one-time input file data
-        CALL RDREPIN( GDIM, NSLIN, NSSIN, SDEV, GDEV, PDEV, TDEV, EDEV, 
-     &                YDEV, NDEV, ENAME, GNAME, LNAME, SLNAME, SSNAME, 
-     &                GMAT( 1 ), GMAT( NGRID+1 ),
+        CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV, EDEV, 
+     &                YDEV, NDEV, ENAME, CUNAME, GNAME, LNAME, PRNAME, 
+     &                SLNAME, SSNAME, GMAT( 1 ), GMAT( NGRID+1 ),
      &                GMAT( NGRID+NMATX+1 ), SSMAT, SLMAT )
 
 C.........  Preprocess the country/state/county data
@@ -265,19 +269,10 @@ C.............  Assign bin numbers to selected records
 
 C.............  Update inventory input names and units, depending on status of 
 C               ozone-season emissions.
-            IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
-
-                L = LEN_TRIM( ENAME )
-                MESG = 'Could not get description of file "' //
-     &                 ENAME( 1:L ) // '"'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            ELSE
-                INVPIDX = 0
-                IF ( RPT_%O3SEASON ) INVPIDX = 1
-                CALL GETSINFO
-
-            END IF
+            INVPIDX = 0
+            IF ( RPT_%O3SEASON ) INVPIDX = 1
+            CALL GETSINFO( ENAME )
+            IF( JSCC .GT. 0 ) NCHARS = NCHARS - 1  ! duplicate of rdrepin.f
 
 C.............  Determine input units and create conversion factors
             CALL REPUNITS( N )

@@ -27,12 +27,11 @@ C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
-C
+C  
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
-C
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
@@ -97,6 +96,8 @@ C...........   Local variables
         INTEGER         IOS               ! i/o status
         INTEGER         MONID             ! tmp monthly profile number
         INTEGER         NDATA             ! no. output data columns for current
+        INTEGER         PREVFIP           ! previous FIPs code
+        INTEGER         PREVSRCID         ! previous source ID
         INTEGER         RCL               ! tmp road class code
         INTEGER         ROW               ! tmp row number
         INTEGER         SRCID             ! tmp source ID
@@ -112,6 +113,8 @@ C...........   Local variables
         CHARACTER(LEN=BUFLEN)  LBUF       ! previous sorting info buffer
         CHARACTER(LEN=SCCLEN3) SCC        ! tmp SCC
         CHARACTER(LEN=SPNLEN3) SPCID      ! tmp speciation profile
+        CHARACTER(LEN=PLTLEN3) PLANT      ! tmp plant ID
+        CHARACTER(LEN=PLTLEN3) PREVPLT    ! previous plant ID
 
         CHARACTER*16 :: PROGNAME = 'ASGNBINS' ! program name
 
@@ -133,8 +136,9 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF, '(A,I2.2,A,I2.2,A)' ) 
-     &         '(4I8, A', SCCLEN3, ',5I8,A', SPNLEN3, ',I8,A)'
+        WRITE( FMTBUF, '(A,I2.2,A,I2.2,A,I2.2,A)' ) 
+     &         '(4I8, A', SCCLEN3, ',5I8,A', SPNLEN3, ',A', PLTLEN3,
+     &         ',I8,A)'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -149,6 +153,7 @@ C           report
         WEKID  = 0
         DIUID  = 0
         SPCID  = ' '
+        PLANT  = ' '
         SCC    = ' '
         ESTAT  = ' '
 
@@ -243,6 +248,29 @@ C.................  Unless coding error, RPT_%SPCPOL should be found
                 END IF
             END IF
 
+C.................  If BY PLANT, get plant ID and set same source
+C                   number until plant changes
+            IF( RPT_%BYPLANT ) THEN
+                S = OUTSRC( I )
+                PLANT = CSOURC( S ) (LOC_BEGP(2):LOC_ENDP(2))
+
+C...............  If this is the same plant, then set the old source
+C                 ID so that the bins will still be "by plant"
+                IF ( IFIP( S ) .EQ. PREVFIP .AND. 
+     &               PLANT     .EQ. PREVPLT       ) THEN
+                    SRCID = PREVSRCID
+
+C...............  If this is a different plant, the reset SRCID to
+C                 be the first source for the current plant
+                ELSE
+                    SRCID = S
+                    PREVFIP   = IFIP( S )
+                    PREVPLT   = PLANT
+                    PREVSRCID = S
+                END IF
+
+            END IF
+
 C.................  If BY ELEVSTAT, insert elevated status code
             IF( RPT_%BYELEV ) THEN
 
@@ -259,7 +287,7 @@ C.................  If BY ELEVSTAT, insert elevated status code
 C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, 
      &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
-     &                             SPCID, RCL, ESTAT
+     &                             SPCID, PLANT, RCL, ESTAT
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
@@ -302,6 +330,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINWEKID  ) ) DEALLOCATE( BINWEKID )
         IF( ALLOCATED( BINDIUID  ) ) DEALLOCATE( BINDIUID )
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
+        IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
@@ -329,7 +358,7 @@ C.........  Allocate memory for bins
             ALLOCATE( BINREGN  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINREGN', PROGNAME )
         ENDIF
-        IF( RPT_%BYSRC   ) THEN
+        IF( RPT_%BYSRC .OR. RPT_%BYPLANT ) THEN
             ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
         ENDIF
@@ -364,6 +393,10 @@ C.........  Allocate memory for bins
         IF( RPT_%BYSPC   ) THEN
             ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSPCID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYPLANT ) THEN
+            ALLOCATE( BINPLANT ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINPLANT', PROGNAME )
         ENDIF
         IF( RPT_%BYRCL   ) THEN
             ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
@@ -403,7 +436,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
 
                 READ( BUFFER,FMTBUF ) 
      &                COL, ROW, SRCID, FIP, SCC, SRGID1, SRGID2, 
-     &                MONID, WEKID, DIUID, SPCID, RCL, ESTAT
+     &                MONID, WEKID, DIUID, SPCID, PLANT, RCL, ESTAT
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -500,6 +533,12 @@ C.................  Store temporal profiles
 
 C.................  Store speciation profiles
                 IF( RPT_%BYSPC ) BINSPCID( B ) = SPCID
+
+C.................  Store plant ID code
+                IF( RPT_%BYPLANT ) THEN
+                    BINPLANT( B ) = PLANT
+                    BINSMKID( B ) = SRCID   ! Needed for plant names
+                END IF
 
 C.................  Store x-cell and y-cell
                 IF( RPT_%BYCELL ) BINX( B ) = COL

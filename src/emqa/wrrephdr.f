@@ -28,12 +28,12 @@ C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
-C
+C  
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
-C
+C  
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
@@ -290,7 +290,6 @@ C.............  Include plant description (for point sources)
             END IF
 
 C.............  Include SCC description
-C.............  This is knowingly including extra blanks before final quote
             IF( RPT_%SCCNAM ) THEN
                 J = BINSNMIDX( I ) 
                 IF( J .GT. 0 ) LSCCUSE( J ) = .TRUE.
@@ -608,6 +607,24 @@ C.................  Build source characteristics output format for WRREPOUT
 
         END IF
 
+C.........  Plant ID
+        IF( RPT_%BYPLANT ) THEN
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINPLANT( I ) ) )
+            END DO
+
+            J  = LEN_TRIM( CHRHDRS( 2 ) )
+            W1 = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( W1, CHRHDRS( 2 ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( CHARFMT, 94645 ) W1, RPT_%DELIM
+            CHARWIDTH = W1 + LV
+
+        END IF
+
 C.........  Stack parameters.  +3 for decimal and 2 significant figures
         IF( RPT_%STKPARM ) THEN
 
@@ -669,25 +686,27 @@ C.........  Plant descriptions
 C.........  SCC names
         IF( RPT_%SCCNAM ) THEN
 
-C.............  For countries in the inventory, get max name width
+C.............  For SCC descriptions in the inventory, get max name 
+C               width
             NWIDTH = 0
             DO I = 1, NINVSCC
                 IF( LSCCUSE( I ) ) THEN
                     NWIDTH = MAX( NWIDTH, LEN_TRIM( SCCDESC( I ) ) )
+                    IF ( NWIDTH .EQ. 0 ) SCCMISS = .TRUE.
                 END IF
             END DO
 
-C.............  If any missing country names, check widths
+C.............  If any missing SCC names, check widths
             IF( SCCMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
 
 C.............  Set SCC name column width 
-            J = LEN_TRIM( HEADERS( IHDRSCC ) )
-            J = MAX( NWIDTH, J )
+            J = LEN_TRIM( HEADERS( IHDRSNAM ) )
+            J = MAX( NWIDTH, J ) + 2     ! two for quotes
 
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRSCC), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRSNAM), LH, HDRBUF )
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
-            SDSCWIDTH = J + LV
+            SDSCWIDTH = J + LV - 2       ! quotes in count for header print
 
         END IF
 
@@ -812,26 +831,35 @@ C           to the report verbatim.
 C.........  Automatic Titles  ...............................................
 
 C.........  Source category processed
-        L = LEN_TRIM( CATDESC )
-        WRITE( FDEV,93000 ) 'Processed as ' // CATDESC( 1:L ) // 
+        WRITE( FDEV,93000 ) 'Processed as ' // TRIM( CATDESC ) // 
      &                      ' sources'
 
 C.........  The year of the inventory
         WRITE( MESG,94010 ) 'Base inventory year', BYEAR
-        L2 = LEN_TRIM( MESG )
-        WRITE( FDEV,93000 ) MESG( 1:L2 )
+        WRITE( FDEV,93000 ) TRIM( MESG )
 
         IF( PYEAR .NE. 0 ) THEN 
             WRITE( MESG,94010 ) 'Projected inventory year', PYEAR
-            L2 = LEN_TRIM( MESG )
-            WRITE( FDEV,93000 ) MESG( 1:L2 )
+            WRITE( FDEV,93000 ) TRIM( MESG )
+        END IF
+
+C.........  Whether projection factors were applied and for what year
+        IF( RPT_%USEPRMAT ) THEN
+            WRITE( MESG,94010 ) 'Projection factors applied to ' //
+     &             'inventory for converting from', PRBYR, 'to', PRPYR
+            WRITE( FDEV,93000 ) TRIM( MESG )
+        END IF
+
+C.........  Whether multiplicative control factors were applied
+        IF( RPT_%USECUMAT ) THEN
+            WRITE( FDEV,93000 ) 'Multiplicative control factors ' //
+     &             'applied'
         END IF
 
 C.........  Whether a gridding matrix was applied and the grid name
         IF( RPT_%USEGMAT ) THEN
-            L = LEN_TRIM( GRDNM )
             WRITE( FDEV,93000 ) 'Gridding matrix applied for grid' // 
-     &                          GRDNM( 1:L )
+     &                          TRIM( GRDNM )
         ELSE
             WRITE( FDEV,93000 ) 'No gridding matrix applied'
         END IF

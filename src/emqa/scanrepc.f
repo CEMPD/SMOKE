@@ -29,7 +29,7 @@ C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
-C
+C  
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889

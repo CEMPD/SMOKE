@@ -1,7 +1,8 @@
 
-        SUBROUTINE RDREPIN( GDIM, NSLIN, NSSIN, SDEV, GDEV, PDEV, TDEV,
-     &                      EDEV, YDEV, NDEV, ENAME, GNAME, LNAME, 
-     &                      SLNAME, SSNAME, NX, IX, CX, SSMAT, SLMAT )
+        SUBROUTINE RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
+     &                      EDEV, YDEV, NDEV, ENAME, CUNAME, GNAME, 
+     &                      LNAME, PRNAME, SLNAME, SSNAME, NX, IX, CX, 
+     &                      SSMAT, SLMAT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -51,6 +52,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the control packet data and control matrices
+        USE MODCNTRL
+
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV
 
@@ -74,15 +78,22 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER    GETFLINE
-        INTEGER    INDEX1
+        LOGICAL     CHKINT
+        LOGICAL     CHKREAL 
+        CHARACTER*2 CRLF
+        INTEGER     FINDC
+        INTEGER     GETFLINE
+        INTEGER     GETNLIST
+        INTEGER     INDEX1
+        REAL        STR2REAL
 
-        EXTERNAL   GETFLINE, INDEX1
+        EXTERNAL    CHKINT, CHKREAL, CRLF, FINDC, GETFLINE, GETNLIST, 
+     &              INDEX1, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: GDIM   ! no. mass spec input vars
         INTEGER     , INTENT (IN) :: NSLIN  ! no. mass spec input vars
         INTEGER     , INTENT (IN) :: NSSIN  ! no. mass spec input vars
+        INTEGER     , INTENT (IN) :: RDEV(3)! control report files
         INTEGER     , INTENT (IN) :: SDEV   ! unit no.: ASCII inven file
         INTEGER     , INTENT (IN) :: GDEV   ! unit no.: gridding supplemental
         INTEGER     , INTENT (IN) :: PDEV   ! unit no.: speciation supplemental
@@ -91,8 +102,10 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT (IN) :: NDEV   ! unit no.: SCC descriptions
         CHARACTER(*), INTENT (IN) :: ENAME  ! name for I/O API inven input
+	CHARACTER(*), INTENT (IN) :: CUNAME ! mulitplicative control matrix name
         CHARACTER(*), INTENT (IN) :: GNAME  ! gridding matrix name
         CHARACTER(*), INTENT (IN) :: LNAME  ! layer fractions file name
+        CHARACTER(*), INTENT (IN) :: PRNAME ! projection matrix name
         CHARACTER(*), INTENT (IN) :: SLNAME ! speciation matrix name
         CHARACTER(*), INTENT (IN) :: SSNAME ! speciation matrix name
         INTEGER     , INTENT(OUT) :: NX( NGRID ) ! no. srcs per cell
@@ -109,6 +122,10 @@ C.........  Array that contains the names of the inventory variables needed for
 C           this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
 
+C.........  For parsing lines
+        CHARACTER*64              SEGMENT( 10 )
+        CHARACTER(LEN=CHRLEN3) :: CHARS  ( 5 )   ! tmp plant characteristics
+
 C...........   Local variables that depend on module variables
         INTEGER    SWIDTH( NCHARS )
 
@@ -122,6 +139,8 @@ C...........   Other local variables
         INTEGER       :: JTIME = 0          ! time (HHMMSS)
         INTEGER          MON                ! tmp monthly profile number
         INTEGER       :: NINVARR = 0        ! no. actual inventory inputs
+        INTEGER          NREPLIN            ! no. lines in input report
+        INTEGER          NS                 ! tmp no. strings on line
         INTEGER          NV                 ! tmp no. variables in temporal suplm
         INTEGER       :: SRGID1             ! tmp primary surrogate IDs
         INTEGER       :: SRGID2             ! tmp fallback surrogate IDs
@@ -129,15 +148,22 @@ C...........   Other local variables
 
         LOGICAL       :: LRDREGN = .FALSE.  !  true: read region code
         LOGICAL       :: EFLAG   = .FALSE.  !  true: error found
+        LOGICAL       :: MSGFLAG = .FALSE.  !  true: don't repeat message
         LOGICAL       :: LTMP    = .FALSE.  !  true: temporary logical
 
         CHARACTER*1            TTYP         !  temporal profile entry type
         CHARACTER*16  ::       BNAME = ' '  !  name buffer
         CHARACTER*50           BUFFER       !  string buffer
-        CHARACTER*300          MESG         !  message buffer
+        CHARACTER*256          LINE         !  input line
+        CHARACTER*256          MESG         !  message buffer
         CHARACTER(LEN=IOVLEN3) CBUF         !  tmp pollutant name
         CHARACTER(LEN=IODLEN3) DBUF         !  tmp variable name
+        CHARACTER(LEN=FIPLEN3) CFIP         !  tmp ASCII FIPS code
+        CHARACTER(LEN=LNKLEN3) CLNK         !  tmp link code
         CHARACTER(LEN=SRCLEN3) CSRC         !  tmp source chars
+        CHARACTER(LEN=PLTLEN3) PLT          !  tmp plant code
+        CHARACTER(LEN=SRCLEN3) SRCBUF       !  tmp source chars
+        CHARACTER(LEN=SCCLEN3) TSCC         !  tmp SCC code
 
         CHARACTER*16 :: PROGNAME = 'RDREPIN' ! program name
 
@@ -148,6 +174,7 @@ C.........  Set local variables for determining input inventory variables
         LRDREGN = ( ANY_TRUE( NREPORT, ALLRPT%BYCNRY ) .OR.
      &              ANY_TRUE( NREPORT, ALLRPT%BYSTAT ) .OR.
      &              ANY_TRUE( NREPORT, ALLRPT%BYCNTY ) .OR.
+     &              ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
      &              ANY_CVAL( NREPORT, ALLRPT%REGNNAM )     )
 
 C.........  Build array of inventory variable names based on report settings
@@ -170,7 +197,8 @@ C.........  SCC code
         END IF
 
 C.........  Source description
-        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC ) ) THEN
+        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC ) .OR.
+     &      ANY_TRUE( NREPORT, ALLRPT%BYPLANT )    ) THEN
             NINVARR = NINVARR + 1
             IVARNAMS( NINVARR ) = 'CSOURC'
         END IF
@@ -203,6 +231,9 @@ C.........  If needed, read in gridding matrix
 C.........  Initialize all to 1 for point sources
         IF( GFLAG ) THEN
 
+            MESG = 'Reading gridding matrix...'
+            CALL M3MSG2( MESG )
+
             CALL RDGMAT( GNAME, NGRID, NMATX, NMATX, NX, IX, CX )
 
 C.............  Initialize part of gridding matrix array for point sources
@@ -212,8 +243,11 @@ C.............  Initialize part of gridding matrix array for point sources
 
         END IF
 
-C.........  If needed, read in gridding supplementation matrix
+C.........  If needed, read in gridding supplementation fike
         IF( GSFLAG ) THEN
+
+            MESG = 'Reading supplemental gridding file...'
+            CALL M3MSG2( MESG )
 
             ALLOCATE( SRGID( NSRC,2 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SRGID', PROGNAME )
@@ -244,9 +278,186 @@ C.........  If needed, read in gridding supplementation matrix
 
         END IF
 
+C........  Allocate memory for projection factors
+C........  Ensure that NVPROJ = 1 if no controls are being run,
+C          because genrprt.f will still use array. First column
+C          will always be an array of ones.
+        I = NVPROJ
+        IF( PRRPTFLG ) I = 2 * I
+        ALLOCATE( PRMAT( NSRC,1+I ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PRMAT', PROGNAME )
+        PRMAT = 1.
+
+C........  If needed, read in projection matrix
+        IF( PRFLAG ) THEN
+
+            MESG = 'Reading projection matrix...'
+            CALL M3MSG2( MESG )
+
+C...........  Read in projection factors for each projection variable
+C...........  Note that openrepin.f contrains the no. of vars to 1,
+C             since that is how Cntlmat currently works. 
+            DO V = 1, NVPROJ
+                IF( .NOT. READSET( PRNAME, PNAMPROJ( V ), ALLAYS3, 
+     &                           ALLFILES, 0, 0, PRMAT( 1,1+V ) ) ) THEN
+
+                    MESG = 'ERROR: Could not read "' //
+     &                     TRIM( PNAMPROJ( V ) ) //'" from file "' // 
+     &                     TRIM( PRNAME ) // '"'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF           
+            END DO
+        END IF
+
+C........  Read projection factors report...
+        IF( PRRPTFLG ) THEN
+
+            MESG = 'Reading projection report...'
+            CALL M3MSG2( MESG )
+
+C............  Get the number of lines in the file
+            MESG = 'projection report'
+            NREPLIN = GETFLINE( RDEV( 1 ), MESG )
+
+C............  Loop through all lines in the file
+            DO I = 1, NREPLIN
+
+C...............  Read line 
+                READ( RDEV( 1 ), '(A)', END = 9001 ) LINE
+
+C...............  Skip header lines (not very robust way)
+                IF( I .LE. 6 ) CYCLE
+
+                L = LEN_TRIM( LINE )
+                NS = GETNLIST( L, LINE )
+
+C...............  Parse line into parts
+                SEGMENT = ' '  ! array
+                CALL PARSLINE( LINE, NS, SEGMENT )
+                CFIP = SEGMENT( 1 )( 1:FIPLEN3 )
+
+C...............  Build source string
+                SELECT CASE( CATEGORY )
+                CASE ( 'AREA' )
+                    TSCC = SEGMENT( 2 )( 1:SCCLEN3 )
+                    CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                            POLBLNK3, CSRC )
+
+                CASE ( 'MOBILE' )
+                    TSCC = SEGMENT( 2 )( 1:SCCLEN3 )
+                    CLNK = SEGMENT( 3 )( 1:LNKLEN3 )
+                    CALL BLDCSRC( CFIP, TSCC, CLNK, CHRBLNK3,
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                            POLBLNK3, CSRC )
+
+                CASE ( 'POINT' )
+                    PLT = SEGMENT( 2 )( 1:PLTLEN3 )
+                    DO J = 3, MAX( 8,NS-1 )
+                        CHARS( J-2 ) = SEGMENT( J )( 1:CHRLEN3 )
+                    END DO
+                    
+                    IF( JSCC .GT. 0 ) THEN 
+                        TSCC = SEGMENT( JSCC )
+                    ELSE
+                        TSCC = SEGMENT( NS-1 )
+                    END IF
+
+                    CALL BLDCSRC( CFIP, PLT, CHARS( 1 ), CHARS( 2 ),
+     &                            CHARS( 3 ), CHARS( 4 ), CHARS( 5 ),
+     &                            POLBLNK3, SRCBUF )
+                    CSRC = SRCBUF( 1:SRCLEN3 ) // TSCC
+
+                END SELECT
+
+C...............  Search for source string in source list
+                S = FINDC( CSRC, NSRC, CSOURC )
+
+C...............  If not found, give error
+                IF( S .LE. 0 ) THEN
+
+C...................  Check if the first segment is an integer, and
+C                     if not, then there is garbage at the end of
+C                     the report (or an old report with multiple
+C                     reports in one file).  If so, end read loop.
+                    IF( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
+                        EXIT
+                    END IF
+
+C..................  Otherwise, there is an error because the report
+C                    file is not for the inventory used in this run.
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Projection report ' //
+     &                     'entry at line', I, 'could not' //
+     &                     CRLF() // BLANK10 // 'be matched to the ' //
+     &                     'inventory.'
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
+
+C...............  If found store factor
+                MSGFLAG = .FALSE.
+                J = NS - NVPROJ
+                DO V = 1, NVPROJ
+                    J = J + 1
+
+C..................  Check to ensure that segment is a real first.
+                    IF( .NOT. CHKREAL( SEGMENT( J ) ) ) THEN
+                        EFLAG = .TRUE.
+
+C......................  If message hasn't been written for this line...
+                        IF( .NOT. MSGFLAG ) THEN
+                            WRITE( MESG,94010 ) 'ERROR: Bad format ' //
+     &                      'or value at line', IREC, 'of projection '//
+     &                      'report.'
+                            CALL M3MSG2( MESG )
+                        END IF
+                        MSGFLAG = .TRUE.
+                        CYCLE
+
+C..................  If field is a real, store it
+                    ELSE
+                        PRMAT( S,1+NVPROJ+V ) = STR2REAL( SEGMENT( J ) )
+                    END IF
+
+                END DO
+
+            END DO
+        END IF     ! end if projection report or not
+
+C........  Allocate memory for multiplicative control factors
+C........  Ensure that NVCMULT = 1 if no controls are being run,
+C          because genrprt.f will still use array.  First column
+C          will always be an array of ones.
+        ALLOCATE( ACUMATX( NSRC,1+NVCMULT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ACUMATX', PROGNAME )
+        ACUMATX = 1.
+
+C.........  If needed, read in multiplicative control matrix
+        IF( CUFLAG ) THEN
+
+            MESG = 'Reading multiplicative control matrix...'
+            CALL M3MSG2( MESG )
+
+            DO V = 1, NVCMULT
+                IF( .NOT. READSET( CUNAME, PNAMMULT( V ), ALLAYS3, 
+     &                          ALLFILES, 0, 0, ACUMATX( 1,1+V ) )) THEN
+
+                    MESG = 'ERROR: Could not read "' //
+     &                     TRIM( PNAMMULT( V ) ) //'" from file "' // 
+     &                     TRIM( CUNAME ) // '"'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END IF
+            END DO
+        END IF
+
 C.........  If needed, read in speciation matrices
 C.........  NOTE that only the variables that are needed are read in 
         IF( SLFLAG .OR. SSFLAG ) THEN
+
+            MESG = 'Reading speciation matrices...'
+            CALL M3MSG2( MESG )
 
             IF( SLNAME .NE. ' ' ) BNAME = SLNAME
             IF( SSNAME .NE. ' ' ) BNAME = SSNAME
@@ -258,7 +469,7 @@ C.............  Get file header for variable names
      &                 BNAME( 1:LEN_TRIM( BNAME ) ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-            ENDIF
+            END IF
 
             K = 0
             DO V = 1, NSVARS
@@ -281,8 +492,11 @@ C.............  Get file header for variable names
 
         END IF
 
-C.........  If needed, read in speciation supplementation matrix
+C.........  If needed, read in speciation supplementation file
         IF( PSFLAG ) THEN
+
+            MESG = 'Reading supplemental speciation file...'
+            CALL M3MSG2( MESG )
 
             ALLOCATE( SPPROF( NSRC,NSPCPOL ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPPROF', PROGNAME )
@@ -295,7 +509,7 @@ C.........  If needed, read in speciation supplementation matrix
             
             DO I = 1, N
 
-                READ( PDEV, '(A)', END=999, IOSTAT=IOS ) BUFFER
+                READ( PDEV, '(A)', END=1001, IOSTAT=IOS ) BUFFER
                 IREC = IREC + 1
 
                 IF ( IOS .NE. 0 ) THEN
@@ -344,6 +558,9 @@ C.....................  Handle case where spaces have been added to file.
 C.........  If needed, read in temporal supplementation matrix
         IF( TSFLAG ) THEN
 
+            MESG = 'Reading supplemental temporal file...'
+            CALL M3MSG2( MESG )
+
             ALLOCATE( IDIU( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
             ALLOCATE( IWEK( NSRC ), STAT=IOS )
@@ -375,7 +592,7 @@ C.............  Skip file header
             IREC = 1
             DO I = 2, N
 
-                READ( TDEV, *, END=999, IOSTAT=IOS ) 
+                READ( TDEV, *, END=1003, IOSTAT=IOS ) 
      &              TTYP, NV, ( IBUF( V ), V=1, NV )
                 IREC = IREC + 1
 
@@ -457,6 +674,9 @@ C           sources
             ALLOCATE( LFRAC1L( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LFRAC1L', PROGNAME )
 
+            MESG = 'Reading layer fractions...'
+            CALL M3MSG2( MESG )
+
             JDATE = SDATE
             JTIME = STIME
             DO T = 1, NSTEPS
@@ -483,7 +703,8 @@ C.........  Reformat source characteristics and set widths.  Do this once
 C           for the entire run of the program, so that it doesn't have to be
 C           done for each report (it is slow)
 
-        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC  ) ) THEN
+        IF( ANY_TRUE( NREPORT, ALLRPT%BYSRC  ) .OR.
+     &      ANY_TRUE( NREPORT, ALLRPT%BYPLANT )    ) THEN
 
 C.............  Determine width of source chararactistic columns over the
 C               whole inventory
@@ -539,12 +760,18 @@ C.............  Set local start and end fields based on new widths
             DO J = MINC, NCHARS
                 K = K + 1
                 IF( J .EQ. JSCC ) CYCLE
-                LOC_BEGP( J ) = SC_ENDP( J-1 ) + 1
-                LOC_ENDP( J ) = SC_BEGP( J ) + SWIDTH( K ) - 1
+                LOC_BEGP( J ) = LOC_ENDP( J-1 ) + 1
+                LOC_ENDP( J ) = LOC_BEGP( J ) + SWIDTH( K ) - 1
             END DO
 
             IF( JSCC .GT. 0 ) NCHARS = NCHARS - 1
 
+        END IF
+
+C.........  Exit if any errors encountered
+        IF( EFLAG ) THEN
+            MESG = 'Problem(s) reading input files.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Deallocate local memory
@@ -554,6 +781,18 @@ C.........  Deallocate local memory
 
 999     MESG = 'Unexpected end of file reached while reading ' //
      &         'supplementary gridding file.'
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+
+1001    MESG = 'Unexpected end of file reached while reading ' //
+     &         'supplementary speciation file.'
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+
+1003    MESG = 'Unexpected end of file reached while reading ' //
+     &         'supplementary temporal file.'
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+
+9001    MESG = 'Unexpected end of file reached while reading ' //
+     &         'projection report file.'
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
 
 C******************  FORMAT  STATEMENTS   ******************************
