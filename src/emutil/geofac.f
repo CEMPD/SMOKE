@@ -103,7 +103,7 @@ C           to continue running the program.
 
 C.........  Prompt for name of NetCDF input file
 
-        ENAME = PROMPTMFILE(
+        ENAME = PROMPTSET(
      &       'Enter logical name for SMOKE gridded input (NetCDF) file',
      &        FSREAD3, 'INFILE', PROGNAME )
 
@@ -174,7 +174,7 @@ C........   Read in factors for species
 
 C.........  Open output file
 
-        ONAME = PROMPTMFILE(
+        ONAME = PROMPTSET(
      &          'Enter logical name for OUTPUT gridded netCDF file '
      &          , FSUNKN3, 'OUTFILE',  PROGNAME      )
 
@@ -240,15 +240,15 @@ C.............  Finished for this species
 
 C............  Write out new emissions
               
-            IF ( .NOT. WRITE3( ONAME, VNAMESET( L ), SDATE, STIME,
-     &                         EMIS ) ) THEN
+            IF ( .NOT. WRITESET( ONAME, VNAMESET( L ), -1, SDATE,
+     &                           STIME, EMIS ) ) THEN
 
               CALL M3EXIT( PROGNAME , SDATE, STIME,
      &                          'Could not write "' //
      &                           VNAMESET( L ) //
      &                          '" to ' // ONAME, 2 )
 
-            END IF         !  if write3() failed
+            END IF         !  if writeset() failed
 
            ENDDO
 
