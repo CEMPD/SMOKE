@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C 
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C 
 C See file COPYRIGHT for conditions of use.
@@ -67,6 +67,7 @@ C...........   Local variables
         INTEGER         I, J, JJ, K, KK, M, N, NN
 
         INTEGER         CINDX     ! tmp index to contributing PSIs table
+        INTEGER         CINDXB    ! tmp index to contributing PSIs table
         INTEGER         CNTCOMBO  ! tmp count of contributing PSIs in combo PSI
         INTEGER         CPSI      ! tmp contributing PSI
         INTEGER         ICNT      ! tmp counter for new array entries
@@ -174,7 +175,11 @@ C               list for the root PSI
             IF( CNTCOMBO .LE. 0 .AND. CINDX .GT. 1 ) THEN
 
                 N = FIND1( PSIROOT, NPSIALL, PSIALL )
-                IF( N .LE. 0 ) GO TO 999  ! internal error
+                IF( N .LE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    CALL PSI_ERROR( PSIROOT )
+                    CYCLE
+                END IF
                 INDXTMP = MMTEFPTR( N )
                 NTMMI  = MMTEFNUM( N )
 
@@ -215,7 +220,12 @@ C.................  Loop through contributing PSIs
 
 C.....................  Find contributing PSI in list of all PSIs
                     N = FIND1( CPSI, NPSIALL, PSIALL )
-                    IF( N .LE. 0 ) GO TO 999  ! internal error
+                    IF( N .LE. 0 ) THEN
+                        EFLAG = .TRUE.
+                        CALL PSI_ERROR( CPSI ) 
+                        CYCLE
+                    END IF
+
                     INDXTMP = MMTEFPTR( N )
                     NTMMI   = MMTEFNUM( N )
 
@@ -253,9 +263,9 @@ C                           group also.
         		NN = PDATINDX( JJ )  ! sorted position
 
         		PSIROOT  = PDATROOT( NN ) ! root PSI 
-                        CINDX    = PDATPNTR( NN ) ! pointer (see above)
+                        CINDXB   = PDATPNTR( NN ) ! pointer (see above)
 
-                        IF( CINDX .GT. 1 ) THEN
+                        IF( CINDXB .GT. 1 ) THEN
                             ICNT = ICNT + 1
                             IF( ICNT .LE. MXNEW ) THEN
                         	NEWIDX( ICNT ) = ICNT
@@ -280,6 +290,16 @@ C                           group also.
      &             'was', MXNEW, 'but actually needed', MXMMTEF
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+        END IF
+
+C.........  Only error is PSI error from PSI_ERROR call (see below)
+        IF( EFLAG ) THEN
+
+            MESG = 'Update your inventory to include the missing ' //
+     &             'sources, or update your MPREF file to ' //
+     &             CRLF() // BLANK10 // 'to not use the listed PSIs.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         END IF
 
 C.........  Sort the unsorted new arrays
@@ -361,19 +381,38 @@ C.........  Deallocate local memory from the routine
 
         RETURN
 
-C**********************  ABORT MESSAGES   ******************************
-
-999     MESG = 'INTERNAL ERROR: bad PSIALL array in routine ' // 
-     &         PROGNAME
-        CALL M3MSG2( MESG )
-        CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )        
-
-        RETURN
-
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+        CONTAINS
+
+C..............  This internal subprogram provides an error when the PSI
+C                is not found in the PSIs for sources.
+            SUBROUTINE PSI_ERROR( PSI )
+
+C.............  Subroutine arguments
+            INTEGER     , INTENT (IN):: PSI
+
+C.............  Local variables
+            CHARACTER*300 MESG
+
+C......................................................................
+
+            WRITE( MESG,94010 ) 'ERROR: PSI ', PSIROOT, 
+     &             'is not found in MEFTEMP file. This can occur'//
+     &             CRLF() // BLANK10 // 'when the sources using this '//
+     &             'PSI are not in the inventory.'
+            CALL M3MSG2( MESG )
+
+C--------------------  FORMAT  STATEMENTS   ----------------------------
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE PSI_ERROR
 
         END SUBROUTINE EXPNDEFT
