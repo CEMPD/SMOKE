@@ -335,117 +335,100 @@ C           these are stored as reals until output
 C.........  Initialize pollutant count per source array
         NPCNT = 0  ! array
 
-C.........  Store pollutant/activity-specific data in sorted order.  For EPS
-C           and EMS-95 formats, ensure that any duplicates are aggregated.
-C.........  Aggregate duplicate pollutant/activity-specific data (not possible 
-C           for IDA format)
+C.........  Store pollutant/activity-specific data in sorted order. Ensure that
+C           any duplicates are aggregated.
+C.........  Aggregate duplicate pollutant/activity-specific data 
 C.........  Note that we have already checked to ensure that if there are
 C           duplicate data, they are allowed
 C.........  Note that pollutants & activities  are stored in output order
 C           because they've been previously sorted in part based on their
 C           position in the master array of output pollutants/activities
-        IF( FILFMT   .EQ. IDAFMT         .OR.
-     &    ( FILFMT   .EQ. EMSFMT   .AND.
-     &      CATEGORY .EQ. 'MOBILE'      )     ) THEN
-            DO I = 1, NRAWBP
+        K = 0
+        PIPCOD = IMISS3  ! Previous iteration IPOSCOD 
+        LS = IMISS3      ! Previous iteration S
+        DO I = 1, NRAWBP
 
-                J = INDEXA( I )
-                S = SRCIDA( I )
+            J = INDEXA( I )
+            S = SRCIDA( I )
 
-                DO K = 1, NPPOL
-                    POLVAL( I, K ) = POLVLA( J, K )
-                END DO
+C.............  For a new source or a new pollutant code...
+            IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
 
+C.................  Sum up the number of pollutants/activities by source,
+C                   but do this here only, because this part of the IF
+C                   statement is for new pollutants
                 NPCNT( S ) = NPCNT( S ) + 1
 
-            END DO
+                K = K + 1
 
-C.........  For non-IDA formats for area and point sources...
-C.........  NOTE- this section assumes that the ozone-day emissions and emission
-C           factors are not assigned for this format
-        ELSE IF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. EMSFMT ) THEN
-        
-            K = 0
-            PIPCOD = IMISS3  ! Previous iteration IPOSCOD 
-            LS = IMISS3      ! Previous iteration S
-            DO I = 1, NRAWBP
+                POLVAL( K, NEM ) = POLVLA( J, NEM )
+                POLVAL( K, NOZ ) = POLVLA( J, NOZ )
+                POLVAL( K, NCE ) = POLVLA( J, NCE )
+                POLVAL( K, NRE ) = POLVLA( J, NRE )
+                IF( NEF .GT. 0 ) POLVAL( K, NEF ) = POLVLA( J, NEF )
+                IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
 
-                J = INDEXA( I )
-                S = SRCIDA( I )
+C.................  Update IPOSCOD (the position of the pol/act in the 
+C                   master list) to align properly with summed emissions.
+C.................  NOTE- K is always <= to I, so there is no conflict for
+C                   reassigning IPOSCOD.
+                IPOSCOD( K ) = IPOSCOD( I )
+                PIPCOD       = IPOSCOD( I ) 
 
-                IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
+C.............  If the existing value is defined, sum with new emissions
+C               or activity and use weighted average for control factors
+            ELSE
 
-C.....................  Sum up the number of pollutants/activities by source,
-C                       but do this here only, because this part of the IF
-C                       statement is for new pollutants
-                    NPCNT( S ) = NPCNT( S ) + 1
+                EMISN    = 0.
+                EMISO    = 0.
+                EMISN_OZ = 0.
+                EMISO_OZ = 0.
 
-                    K = K + 1
+                IF( POLVAL( K, NEM ) .GE. 0. ) THEN
+                    EMISN = POLVLA( J, NEM )
+                    EMISO = POLVAL( K, NEM )
+                    POLVAL( K, NEM ) = EMISO + EMISN
+                END IF
 
-                    POLVAL( K, NEM ) = POLVLA( J, NEM )
-                    POLVAL( K, NOZ ) = POLVLA( J, NOZ )
-                    POLVAL( K, NCE ) = POLVLA( J, NCE )
-                    POLVAL( K, NRE ) = POLVLA( J, NRE )
-                    IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
+                IF( POLVAL( K, NOZ ) .GE. 0. ) THEN
+                    EMISN_OZ = POLVLA( J, NOZ )
+                    EMISO_OZ = POLVAL( K, NOZ )
+                    POLVAL( K, NOZ ) = EMISO_OZ + EMISN_OZ
 
-C.....................  Update IPOSCOD (the position of the pol/act in the 
-C                       master list) to align properly with summed emissions.
-C.....................  NOTE- K is always <= to I, so there is no conflict for
-C                       reassigning IPOSCOD.
-                    IPOSCOD( K ) = IPOSCOD( I )
-                    PIPCOD       = IPOSCOD( I ) 
+C.....................  Use ozone season emissions for weighting if 
+C                       annual emissions are not available.
+                    IF( EMISN .EQ. 0. ) EMISN = EMISN_OZ
+                    IF( EMISO .EQ. 0. ) EMISO = EMISO_OZ
+                END IF
 
-C.................  If the existing value is defined, sum with new emissions
-C                   or activity and use weighted average for control factors
+C.................  Compute inverse only once
+                EMIST = EMISN + EMISO
+                IF( EMIST .GT. 0. ) THEN
+                    EMISI = 1. / EMIST
+
+C.................  Continue in loop if zero emissions 
                 ELSE
-
-                    EMISN    = 0.
-                    EMISO    = 0.
-                    EMISN_OZ = 0.
-                    EMISO_OZ = 0.
-
-                    IF( POLVAL( K, NEM ) .GT. 0. ) THEN
-                	EMISN = POLVLA( J, NEM )
-                	EMISO = POLVAL( K, NEM )
-                	POLVAL( K, NEM ) = EMISO + EMISN
-                    END IF
-
-                    IF( POLVAL( K, NOZ ) .GT. 0. ) THEN
-                	EMISN_OZ = POLVLA( J, NOZ )
-                	EMISO_OZ = POLVAL( K, NOZ )
-                	POLVAL( K, NOZ ) = EMISO_OZ + EMISN_OZ
-
-                        IF( EMISN .EQ. 0. ) EMISN = EMISN_OZ
-                        IF( EMISO .EQ. 0. ) EMISO = EMISO_OZ
-                    END IF
-
-C.....................  Compute inverse only once
-                    EMIST = EMISN + EMISO
-                    IF( EMIST .GT. 0. ) THEN
-                        EMISI = 1. / EMIST
-
-C.....................  Continue in loop if zero emissions 
-                    ELSE
-                        CYCLE
-
-                    END IF
-
-C.....................  Weight the control efficiency, rule effectiveness, and 
-C                       rule penetration based on the emission values
-                    POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
-     &                                  POLVLA( J,NCE )*EMISN  ) * EMISI
-                    POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
-     &                                  POLVLA( J,NRE )*EMISN  ) * EMISI
-                    IF( NRP .GT. 0 ) 
-     &              POLVAL( K,NRP ) = ( POLVAL( K,NRP )*EMISO + 
-     &                                  POLVLA( J,NRP )*EMISN  ) * EMISI
+                    CYCLE
 
                 END IF
 
-                LS = S
+C.................  Weight the control efficiency, rule effectiveness, and 
+C                   rule penetration based on the emission values
+                POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
+     &                              POLVLA( J,NCE )*EMISN  ) * EMISI
+                POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
+     &                              POLVLA( J,NRE )*EMISN  ) * EMISI
+                IF( NRP .GT. 0 ) 
+     &          POLVAL( K,NRP ) = ( POLVAL( K,NRP )*EMISO + 
+     &                              POLVLA( J,NRP )*EMISN  ) * EMISI
+                IF( NEF .GT. 0 ) 
+     &          POLVAL( K,NEF ) = ( POLVAL( K,NEF )*EMISO + 
+     &                                  POLVLA( J,NEF )*EMISN  ) * EMISI
+            END IF
 
-            END DO
-        END IF
+            LS = S
+
+        END DO
 
 C.........  Deallocate memory for unsorted pollutant arrays
         CALL SRCMEM( CATEGORY, 'UNSORTED', .FALSE., .TRUE., 1, 1, 1 )
