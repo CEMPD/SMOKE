@@ -111,7 +111,7 @@ C...........   Simulation-specific PSIs and related arrays
         LOGICAL, ALLOCATABLE :: UPDATDIU( : )  ! true: should update diurnal
 
 C...........   Variables for targeted update of EFs
-        INTEGER                 NUPDAT      ! No. of PSIs targeted for update
+        INTEGER              :: NUPDAT  = 0 ! No. of PSIs targeted for update
         INTEGER, ALLOCATABLE :: UPDATE( : ) ! Sorted targeted PSI list
 
 C...........   Update st
