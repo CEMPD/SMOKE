@@ -148,7 +148,6 @@ C.........  Rewind file
         REWIND( FDEV )
 
 C.........  Store contents of emissions processes file in output order
-        J = 0
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -173,12 +172,15 @@ C.............  Make sure activity is in the inventory
 C.............  Store emission processes and associated pollutants
             IF( K .GT. 0 ) THEN
 
+                J = 0
                 DO V = 1, NPOL
                     J = J + 1
                     L1 = LEN_TRIM( PRC )
                     L2 = LEN_TRIM( POLNAM( V ) )
+                  
                     EMTNAM( J,K ) = PRC( 1:L1 ) // ETJOIN // 
-     &                              POLNAM( V )( 1:L2 )
+     &                              POLNAM( V )( 1:L2 )                    
+
                 END DO
 
                 NETYPE( K ) = NETYPE( K ) + NPOL
