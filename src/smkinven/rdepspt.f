@@ -3,7 +3,7 @@
      &                      IREC, ERFILDSC, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 175
 C
 C  DESCRIPTION:
 C      This subroutine reads the EPS2.0 AFS format importing point source 
@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -439,8 +439,8 @@ C               the various data fields...
             TK   = STR2REAL( LINE( 115:119 ) )
             VL   = STR2REAL( LINE( 121:125 ) )
             ZONE = STR2INT ( LINE( 100:101 ) )
-            XLOC = STR2REAL( LINE(  78: 87 ) )
-            YLOC = STR2REAL( LINE(  89: 98 ) )
+            YLOC = STR2REAL( LINE(  78: 87 ) )
+            XLOC = STR2REAL( LINE(  89: 98 ) )
 
             CEFF  = STR2REAL( LINE( 177:182 ) )
             IF ( CEFF .LT. 0.0 )  CEFF = 0.0
@@ -483,7 +483,7 @@ C.............  Store latitude and longitude, and make conversions from UTM,
 C               if needed...
 
 C.............  Data already provided in lat/lon
-            IF( ZONE .LT. 0 ) THEN
+            IF( ZONE .LE. 0 ) THEN
 
 C.................  Convert longitude if WEST_HSPHERE environment
 C.................  variable is true, and longitude is negative.
@@ -493,9 +493,8 @@ C.................  variable is true, and longitude is negative.
 
                 END IF
  
-C.................  Trade XLOC/YLOC because of EPS format. This is not an error.
-        	LAT = XLOC  ! XLOC stored latitude in format
-        	LON = YLOC  ! YLOC stored longitude in format
+        	LON = XLOC
+        	LAT = YLOC
 
 C.............  Convert to lat/lon from UTM
             ELSE
@@ -515,7 +514,7 @@ C.............  If interval indicator is blank, emissions are annual total
                 TPF = MTPRFAC * WKSET           !  use month, week profiles
 
 C.............  Emissions are peak day 
-C.............  NOTE: emissions will be stored as tons/day
+C.............  NOTE- emissions will be stored as tons/day
 
             ELSE IF ( TMPAA( 1:1 ) .EQ. 'P' ) THEN
 
