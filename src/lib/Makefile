@@ -118,7 +118,7 @@ getctgry.o: $(MODINFO)
 getformt.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getformt.f
 getsinfo.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ getsinfo.f
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ getsinfo.f
 gettzone.o: $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ gettzone.f
 getvmix.o: $(MODXREF) $(MODINFO)
@@ -144,7 +144,9 @@ rdeproc.o: $(MODEMFAC) $(MODINFO)
 rdgref.o : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdgref.f
 rdinvchr.o: $(MODSOURC) 
-	$(FC) $(FFLAGS) -c -o $@ rdinvchr.f
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ rdinvchr.f
+rdinvpol.o:
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ rdinvpol.f
 rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
 rdorsdsc.o : $(MODLISTS)
