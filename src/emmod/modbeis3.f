@@ -6,7 +6,7 @@ C  Module body starts at line 42
 C
 C  DESCRIPTION:
 C     This module contains the public variables and allocatable arrays 
-C     used only in the biogenic emissions BEIS3v0.9 module.
+C     used in calculating biogenic emissions using BEIS v3.09 or v3.12.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -51,9 +51,11 @@ C...........   Emission factor, vegetation types tables:
         REAL,    ALLOCATABLE, PUBLIC :: AVGOVOC( :, :, : )   ! avg other VOCs
         REAL,    ALLOCATABLE, PUBLIC :: AVGMONO( :, :, : )   ! avg monoterpenes
         REAL,    ALLOCATABLE, PUBLIC :: AVGNO( :, :, : )     ! avg nitric oxide
-        REAL,    ALLOCATABLE, PUBLIC :: AVGLAI( :, :, : )    ! avg leaf index
+        REAL,    ALLOCATABLE, PUBLIC :: AVGLAI( :, :, :, : ) ! avg leaf index
+
+        REAL,    ALLOCATABLE, PUBLIC :: AVGEMIS( :, :, :, : )  ! avg emissions (3.12)
+        REAL,    ALLOCATABLE, PUBLIC ::  NOEMIS( :, :, : )     ! NO emissions (3.12)
 
         CHARACTER(16), ALLOCATABLE, PUBLIC :: VEGID( : )     !  Veg types
-
 
         END MODULE MODBEIS3
