@@ -197,7 +197,7 @@ C.........  Build output names
                 OUTTYPES( I,1 ) = ARTYPES( 1 )           
                 OUTDESCS( I,1 ) = ARDESCS( 1 )
          
-                DO J = 2, NARPPOL3
+                DO J = 2, NPPOA
                     OUTNAMES( I,J ) = ARPREFIX( J )//ABRNAMA( I )( 1:L )
                     OUTUNITS( I,J ) = ARUNITS( J )          
                     OUTTYPES( I,J ) = ARTYPES( J )           
@@ -216,7 +216,7 @@ C.........  Build output names
                 OUTTYPES( I,1 ) = PTTYPES( 1 )           
                 OUTDESCS( I,1 ) = PTDESCS( 1 )
          
-                DO J = 2, NPTPPOL3
+                DO J = 2, NPPOA
                     OUTNAMES( I,J ) = PTPREFIX( J )//ABRNAMA( I )( 1:L )
                     OUTUNITS( I,J ) = PTUNITS( J )          
                     OUTTYPES( I,J ) = PTTYPES( J )           
