@@ -51,7 +51,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL                   GETRFDSC
         CHARACTER(LEN=IODLEN3) GETCFDSC
 
-        EXTERNAL CRLF, GETRDSC, GETCFDSC
+        EXTERNAL CRLF, GETRFDSC, GETCFDSC
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: NNAME  ! Name of non-diurnal file
