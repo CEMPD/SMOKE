@@ -10,6 +10,7 @@ C     the inventory header, which should be read prior to calling this
 C     routine.
 C
 C  PRECONDITIONS REQUIRED:
+C     O3SEASON_YN e.v. to have been checked to set the value of INVPIDX
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:  M3EXIT
 C
@@ -74,16 +75,6 @@ C...........   LOCAL VARIABLES their descriptions:
 C***********************************************************************
 C   begin body of subroutine GETSINFO
 
-C.........  Retrieve variable to indicate whether to use annual or ozone
-C           season data
-        MESG = 'Use annual or ozone season emissions'
-        LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
-
-C.........  Set index to permit reading of ozone season emissions instead of
-C           annual emissions, which is the default
-        INVPIDX = 0
-        IF( LO3SEAS ) INVPIDX = 1
-
 C.........  Set the number of sources 
         NSRC = NROWS3D
 
@@ -93,10 +84,12 @@ C           the field positions
         JSCC     = GETIFDSC( FDESC3D, '/SCC POSITION/', .TRUE. )
         JSTACK   = GETIFDSC( FDESC3D, '/STACK POSITION/', .FALSE. )
 
-        ALLOCATE( SC_BEGP( NCHARS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SC_BEGP', PROGNAME )
-        ALLOCATE( SC_ENDP( NCHARS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SC_ENDP', PROGNAME )
+        IF( .NOT. ALLOCATED( SC_BEGP ) ) THEN
+            ALLOCATE( SC_BEGP( NCHARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SC_BEGP', PROGNAME )
+            ALLOCATE( SC_ENDP( NCHARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SC_ENDP', PROGNAME )
+        END IF
 
 C.........  Set source-category-specific information
         SELECT CASE( CATEGORY )
@@ -146,7 +139,7 @@ C.........  Set source-category-specific information
 
         END SELECT
 
-C.............  Allocate memory for pollutant names and/or activities
+C.............  Get sizes of inventory from the header
 
         NVAR     = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
         NIPOL    = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
@@ -163,21 +156,37 @@ C.............  Allocate memory for pollutant names and/or activities
 C............. Retrieve base year information
         BYEAR = GETIFDSC( FDESC3D, '/BASE YEAR/', .FALSE. )
 
-C............. Allocate memory for the array that stors pollutant
+C............. Allocate memory and store the source attributes units
+        IF( .NOT. ALLOCATED( ATTRUNIT ) ) THEN
+
+            ALLOCATE( ATTRUNIT( NVAR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ATTRUNIT', PROGNAME )
+
+        END IF
+
+        DO I = 1, NVAR
+            ATTRUNIT( I ) = UNITS3D( I )
+        END DO
+
+        IF( .NOT. ALLOCATED( EANAM ) ) THEN
+
+C............. Allocate memory for the array that stores pollutant
 C............. names and activity names, units, and descriptions. Populate 
 C              this array in the loops below that fill EINAM and NIACT
-        ALLOCATE( EANAM( NIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
-        ALLOCATE( EAREAD( NIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EAREAD', PROGNAME )
-        ALLOCATE( EAUNIT( NIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EAUNIT', PROGNAME )
-        ALLOCATE( EADESC( NIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EADESC', PROGNAME )
+            ALLOCATE( EANAM( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
+            ALLOCATE( EAREAD( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EAREAD', PROGNAME )
+            ALLOCATE( EAUNIT( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EAUNIT', PROGNAME )
+            ALLOCATE( EADESC( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EADESC', PROGNAME )
 
 C.............  Allocate memory for and store pollutant names 
-        ALLOCATE( EINAM( NIPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
+            ALLOCATE( EINAM( NIPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
+
+        END IF
 
         K = 0
         J = NVAR + 1
@@ -195,8 +204,10 @@ C.............  Allocate memory for and store pollutant names
         END DO
 
 C.........  Allocate memory for and store activity names
-        ALLOCATE( ACTVTY( NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ACTVTY', PROGNAME )
+        IF( .NOT. ALLOCATED( ACTVTY ) ) THEN
+            ALLOCATE( ACTVTY( NIACT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ACTVTY', PROGNAME )
+        ENDIF
 
         DO I = 1, NIACT
 
