@@ -533,7 +533,9 @@ C.......   Loops reading the various categories of normalized emissions:
 
 
 35      CONTINUE        !  end loop reading normalized NO's
-
+C
+C.......Initialize variables
+C
         DO I = 1, NBFIP
 
           CYLAI( I ) = 0.0
@@ -555,6 +557,7 @@ C.......   Loops reading the various categories of normalized emissions:
         OLDFIP = -9
         M = 0
 
+C.....start calculating county emission totals
 
         DO 94 MREC = 1, N
 
@@ -566,29 +569,50 @@ C.......   Loops reading the various categories of normalized emissions:
           IF (FIPSA( MREC ) .GT. OLDFIP ) THEN
             M = M + 1 
             OLDFIP = FIPSA( MREC )
-            KFIP( M ) = FIPSA( MREC )
           ENDIF
 
-          CYLAI( M ) = CYLAI( M ) + ( AVLAI ( I, J ) * SLAI )    
-          TLAI( M ) = TLAI( M ) + SLAI
+C......if max number of FIPS codes not exceeded then proceed 
 
-          DO  104  K = 1, BTYPES
+          IF ( M .LE. NBFIP ) THEN
 
-           DO  103  B = 1, BSPCS - 1
-             CYVOC( M, B, K ) = CYVOC( M, B, K ) + 
+            KFIP( M ) = FIPSA( MREC )
+            CYLAI( M ) = CYLAI( M ) + ( AVLAI ( I, J ) * SLAI )    
+            TLAI( M ) = TLAI( M ) + SLAI
+
+            DO  104  K = 1, BTYPES
+
+             DO  103  B = 1, BSPCS - 1
+               CYVOC( M, B, K ) = CYVOC( M, B, K ) + 
      &                        ( NVOC( I, J, B, K ) * SNORM ) 
-103        CONTINUE
+103          CONTINUE
 
-104       CONTINUE
+104         CONTINUE
 
-          DO 112 K = 1, LUSES
+            DO 112 K = 1, LUSES
 
              CYNO( M, K ) = CYNO( M, K ) + 
      &                      ( NORNO( I, J, K) * SNORM )
 
-112       CONTINUE
+112         CONTINUE
+
+         ENDIF
 
 94      CONTINUE
+
+C
+C... Make sure we have not exceeded the number of FIPS codes allowed
+C... if we have exit and write message
+ 
+        IF ( M .GT. NBFIP ) THEN
+
+                WRITE( MESG,94010 )
+     &                  'Number of FIPS codes', M,
+     &                  'exceeds NBFIP=', NBFIP
+                CALL M3EXIT( 'REPNORM', 0, 0, MESG, 3 )
+
+        ENDIF
+
+C....Initialize variables
 
         DO I = 1, NASID
 
@@ -734,6 +758,5 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 2X ) )
-
         STOP
         END

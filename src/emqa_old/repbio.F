@@ -613,18 +613,39 @@ C
 
                       M = M + 1 
                       OLDFIP = FIPSA( MREC )
-                      KFIP( M ) = FIPSA( MREC )
 
                   ENDIF
 C
+C...Check to make sure the number of counties has not been exceeded
+C
+                  IF ( M .LE. NBFIP ) THEN
+
+C
 C  Conversion plus molecular weight conversion (moles)
 C 
-                  DO  103  B = 1, MSPCS 
-                    CYEM( M, B ) = CYEM( M, B ) + ( EMISG( IJ, B)
+                    KFIP( M ) = FIPSA( MREC )
+
+                    DO  103  B = 1, MSPCS 
+                      CYEM( M, B ) = CYEM( M, B ) + ( EMISG( IJ, B)
      &                    * SNORM ) 
-103               CONTINUE
+103                 CONTINUE
+
+                  ENDIF
 
 94               CONTINUE
+
+C
+C... Make sure we have not exceeded the number of FIPS codes allowed
+C... if we have exit and write message
+
+                 IF ( M .GT. NBFIP ) THEN
+ 
+                    WRITE( MESG,94010 )
+     &                  'Number of FIPS codes', M,
+     &                  'exceeds NBFIP=', NBFIP
+                    CALL M3EXIT( 'REPBIO', 0, 0, MESG, 3 )
+
+                 ENDIF
 
 C
 C  Initialized state emission totals and other variables
