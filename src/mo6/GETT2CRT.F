@@ -72,6 +72,8 @@ C
 C 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'TIER2.I' 
+C  
+      INTEGER, EXTERNAL :: JUNIT    
 C 
       INTEGER     INERR 
       INTEGER     RC 
@@ -93,6 +95,10 @@ C
       CHARACTER   INPREC*(*) 
       CHARACTER   LASTREC*150 
       CHARACTER   M6REC*150 
+       
+ccs   Add declarations of M6DIR and M6FILE 
+      CHARACTER(LEN=50) M6DIR 
+      CHARACTER(LEN=80) M6FILE 
 C 
 C     Find the token number of the record label that must appear 
 C     on a record somewhere in the header of the external data file. 
@@ -112,13 +118,18 @@ C
 C       Open the external data file. 
 C 
   10  IF ( RC.EQ.0 ) THEN 
-         SOURCE = IOUALT 
-         OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+         SOURCE = JUNIT() 
+ 
+ccs      All M6 input files live in SMK_M6PATH 
+         CALL GETENV( "SMK_M6PATH", M6DIR ) 
+         M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME 
+         
+         OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *        IOSTAT=RC,ERR=80) 
 C 
 C     Read the required header line from the file. 
 C 
-         CALL NXTREC(IOUALT,IOUREP,M6REC,INERR,RC) 
+         CALL NXTREC(SOURCE,IOUREP,M6REC,INERR,RC) 
          IF (RC.EQ.0) THEN 
 C 
 C     Check for a valid labeled input record. 

@@ -52,12 +52,18 @@ c
       INCLUDE 'FLAGS2.I' 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'SULFUR.I' 
+C  
+      INTEGER, EXTERNAL :: JUNIT    
 C 
       INTEGER     INERR, RC, SOURCE, I, NCHAR 
 C 
       CHARACTER   FILENAME*80 
       CHARACTER   INPREC*(*) 
       CHARACTER   LASTREC*150 
+       
+ccs   Add declarations of M6DIR and M6FILE 
+      CHARACTER(LEN=50) M6DIR 
+      CHARACTER(LEN=80) M6FILE 
 C 
 C     Find out whether we are reading from an external data file. 
 C 
@@ -68,8 +74,13 @@ C       Open the external data file.
 C 
   10  IF ( RC.EQ.0 ) THEN 
          SUL_FLAG = 2 
-         SOURCE = IOUALT 
-         OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+         SOURCE = JUNIT() 
+ 
+ccs      All M6 input files live in SMK_M6PATH 
+         CALL GETENV( "SMK_M6PATH", M6DIR ) 
+         M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME 
+         
+         OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *        IOSTAT=RC,ERR=80) 
 C 
          READ(SOURCE,*,ERR=98,END=98,IOSTAT=RC) USSCF 
