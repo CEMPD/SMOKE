@@ -55,6 +55,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
+        LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3
         LOGICAL         GETPKT
         LOGICAL         GETYN
@@ -66,7 +67,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        CRLF, FIND1, FIND2, FIND3, GETPKT, GETYN, 
+        EXTERNAL        CRLF, ENVYN, FIND1, FIND2, FIND3, GETPKT, GETYN, 
      &                  INDEX1, LBLANK, PROMPTFFILE, PROMPTMFILE, 
      &                  STR2INT, STR2REAL, TRIMLEN
 
@@ -138,6 +139,8 @@ C...........   Other local variables
         INTEGER         LDEV         !  log-device
         INTEGER         RDEV         !  report-file device
         INTEGER         TDEV         !  device for report-these-sources file
+
+        LOGICAL         KFLAG        !  true: prompt for tracking file
         LOGICAL         PFLAG        !  true if projection entries have years
         LOGICAL         RFLAG        !  flag:  make report-file
         LOGICAL         TFLAG( NASRC )  !  flags:  track these sources
@@ -189,6 +192,16 @@ C   begin body of program CTLAMAT
         END IF
 
 
+C.........  Get environment variable values...
+C.........  Get type of projection entries: with year or without it (EPS)
+        PFLAG = ENVYN( 'YEAR_SPEC_PROJECT', 
+     &                 'Projection entries in year-specific format',
+     &                 .TRUE., IOS )
+
+        KFLAG = ENVYN( 'ACTRACKING', 
+     &                 'Use a special file to track specific sources',
+     &                 .FALSE., IOS )
+
 C.......   Get file name; open input area sources, control definitions files
 
         ENAME = PROMPTMFILE( 
@@ -201,16 +214,15 @@ C.......   Get file name; open input area sources, control definitions files
      &           .TRUE., .TRUE., CNAME, 'CTLAMAT' )
 
         RDEV = PROMPTFFILE( 
-     &           '...for REPORT file, or "NONE"',
+     &           'Enter logical name for REPORT file, or "NONE"',
      &           .FALSE., .TRUE., 'ACREPT', 'CTLAMAT' )
 
         RFLAG = ( RDEV .GT. 0 )
 
-        IF ( RFLAG ) THEN
+        IF ( RFLAG .AND. KFLAG ) THEN
 
-            TDEV = PROMPTFFILE( 
-     &           '...for TRACKING LIST, or "ALL"',
-     &           .TRUE., .TRUE., 'ACTRACK', 'CTLAMAT' )
+            TDEV = PROMPTFFILE( 'Enter logical name for TRACKING LIST',
+     &                          .TRUE., .TRUE., 'ACTRACK', 'CTLAMAT' )
 
         END IF
 
@@ -398,48 +410,37 @@ C.......   REPORT file (if any).
             TFLAG( S ) = .FALSE.
 66      CONTINUE        !  end loop on sources S
  
-        IF ( RFLAG ) THEN
+        IF ( RFLAG .AND. KFLAG ) THEN
+  
+            IREC = 0
  
-            IF ( TDEV .GT. 0 ) THEN
+75          CONTINUE
  
-                IREC = 0
+                READ( TDEV, 93020, END = 77, IOSTAT=IOS ) FIP, ID7, ID3                  
+                IREC = IREC + 1
  
-75              CONTINUE
- 
-                    IREC = IREC + 1
-                    READ( TDEV, 93020, END = 77, IOSTAT=IOS ) 
-     &                  FIP, ID7, ID3
- 
-                    IF ( IOS .NE. 0 ) THEN
-                        WRITE( MESG,94910 )
-     &                      'Error reading TRACKING LIST', IREC, IOS
-                        CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
-                    END IF
+                IF ( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94910 )
+     &                  'Error reading TRACKING LIST', IREC, IOS
+                    CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
+                END IF
                     
-                    I = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
+                I = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
  
-                    IF ( I .GT. 0 )   TFLAG( I ) = .TRUE.
+                IF ( I .GT. 0 )   TFLAG( I ) = .TRUE.
  
-                    GO TO 75
+                GO TO 75
  
-77              CONTINUE        !  end loop reading file:  target of "END=..."
+77          CONTINUE        !  end loop reading file:  target of "END=..."
  
-            ELSE IF ( TDEV .EQ. -3 ) THEN       ! "ALL"
+        ELSE IF ( RFLAG ) THEN       ! "ALL"
  
-                DO  88  S = 1, NASRC
-                    TFLAG( S ) = .TRUE.
-88              CONTINUE        !  end loop on sources S
- 
-            ELSE
- 
-                CALL M3EXIT( 'CTLAMAT', 0, 0, 
-     &                       'Error opening TRACKING LIST file', 3 )
- 
-            END IF              ! if tdev > 0, or tdev = -3, or not.
- 
-        END IF                  !  if rflag
- 
- 
+            DO  88  S = 1, NASRC
+                TFLAG( S ) = .TRUE.
+88          CONTINUE        !  end loop on sources S
+  
+        END IF                  !  if ( rflag and kflag ) or just rflag
+
 C............................................................................
 C...............   CONTROL PACKET PROCESSING
 C.......   Process packets using "painters algorithm" -- most specific
@@ -746,11 +747,6 @@ C.......   Process PROJECT AMS packet of control file:
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
-
-C.........  Prompt for type of projection entries: default (EPS) or
-C           modified EPS (with year)
-        PFLAG = GETYN(
-     &        'Are projection entries in year-specific format?', .TRUE.)
 
 121     CONTINUE        !  head of loop reading lines in the PROJECT AMS packet
 
