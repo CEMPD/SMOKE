@@ -485,7 +485,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93330   FORMAT( '(I2, I3, A10, A10, ', I3.3, '(A20) )' )           ! mb emis
 
-93335   FORMAT( '(I2, 1X, I3, 1X, A10, A10, 1X', I3.3, '(A17) )' ) ! mb activity
+93335   FORMAT( '(I2, 1X, I3, 1X, A10, A10, 1X,', I3.3, '(A17) )' ) ! mb activity
 
 93340   FORMAT( '(I2, I3, A15, A15, A12, A6, A5, A2, A40, A10, I4, I4,', ! point
      &          'F4.0, F6.2, F4.0, F10.2, F9.2, F8.2, A1, 4F2.0, 2I2, ',
