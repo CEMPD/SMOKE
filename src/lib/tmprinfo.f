@@ -184,30 +184,39 @@ C.............  Initialize
             VLDTMAX = 0.
 
 C.............  Build arrays of min/max temperatures
+C.............  Start TMAX computation from MNTMN to make sure all values use
+C               the same temporal basis.
             K = 0        
             T1 = 0
             TMIN = MNTMN
             DO WHILE( TMIN .LE. MNTMX )
 
         	T2 = 0
-        	TMAX = REAL( MXTMN )
-        	DO WHILE( TMAX .LE. MXTMX )
+        	TMAX = MNTMN
+        	DO 
+                    IF( TMAX                .GT. MXTMN .OR. 
+     &                  ABS( TMAX - MXTMN ) .LE. 0.01        ) THEN
 
-                    TDIFF = TMAX - TMIN
 
-C.....................  Increment table and store for valid temperature combos
-                    IF( TMAX  .GT. TMIN  .AND.
-     &                  TDIFF .LE. TMXIT      ) THEN
+                        TDIFF = TMAX - TMIN
 
-                	K = K + 1
-                	VLDTMIN( K ) = REAL( TMIN )
-                	VLDTMAX( K ) = REAL( TMAX )
+C.........................  Increment table and store for valid tmpr combos
+                        IF( TMAX  .GT. TMIN  .AND.
+     &                      TDIFF .LE. TMXIT      ) THEN
 
+                	    K = K + 1
+                	    VLDTMIN( K ) = REAL( TMIN )
+                	    VLDTMAX( K ) = REAL( TMAX )
+
+                	END IF
                     END IF
+
+                    IF( TMAX                .GT. MXTMX .OR. 
+     &                  ABS( TMAX - MXTMX ) .LE. 0.01        ) EXIT
 
 C.....................  Increase maximum
                     T2 = T2 + 1
-                    TMAX = MXTMN + T2 * TINTV
+                    TMAX = MNTMN + T2 * TINTV
 
                 END DO
  
