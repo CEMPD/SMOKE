@@ -75,6 +75,17 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IPRJSIC ( : )  ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: PRJFC   ( : )  ! projection factor
 
+!.........  EMS_CONTROL-packet-specific data tables
+        INTEGER, ALLOCATABLE, PUBLIC:: IEMSSIC ( : )  ! SIC code
+        REAL   , ALLOCATABLE, PUBLIC:: BASCEFF ( : )  ! base yr CE (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: BASREFF ( : )  ! base yr RE (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: BASRLPN ( : )  ! base yr RP (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: EMSCEFF ( : )  ! control effcncy (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: EMSREFF ( : )  ! rule effectvnss (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: EMSRLPN ( : )  ! rule penetrtion (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: EMSPTCF ( : )  ! pt src conversion fac
+        REAL   , ALLOCATABLE, PUBLIC:: EMSTOTL ( : )  ! aggregated factor
+
 !..............................................................................
 
 !.........  CONTROL MATRICES...
