@@ -1,5 +1,5 @@
 
-        LOGICAL FUNCTION GETPKT( NAME, CDEV )
+        LOGICAL FUNCTION GETPKT( NAME, CDEV, LINENO )
 
 C***********************************************************************
 C  function body starts at line 65
@@ -43,41 +43,55 @@ C Last updated: $Date$
 C
 C****************************************************************************
 
-      IMPLICIT NONE
+        IMPLICIT NONE
+
+C...........   EXTERNAL FUNCTIONS
+        INTEGER     TRIMLEN
+        EXTERNAL    TRIMLEN
 
 C...........   ARGUMENTS and their descriptions:
 
         CHARACTER*(*)   NAME    !  packet name for packet to be skipped
         INTEGER         CDEV    !  unit number for control file
-        
+        INTEGER         LINENO  !  line number of packet
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
-
-        CHARACTER*240   LINE    !  input line buffer
-        INTEGER         IREC    !  current line number
-        CHARACTER*80    MESG    !  error message buffer
+        INTEGER         I, L
         INTEGER         IOS     !  READ-status return
 
+        CHARACTER*240   LINE    !  input line buffer
+        CHARACTER*80    MESG    !  error message buffer
 
 C***********************************************************************
 C   begin body of subroutine  GETPKT
 
+C.........  Remove slashes from name
+        L = TRIMLEN( NAME )
+        I = INDEX( NAME, '/' )
+        NAME = NAME( I+1:L )
+        I = INDEX( NAME, '/' )
+        NAME = NAME( 1:I-1 )
+        L = TRIMLEN( NAME )
+
+C.........  Rewind input file
         REWIND( CDEV )
 
+C.........  Loop through file and search for name
+        LINENO = 0
 11      CONTINUE        !  head of loop reading lines in this packet
 
-            READ( CDEV,93000,IOSTAT=IOS,END=900 ) LINE
-            IREC = IREC + 1
+            READ( CDEV, 93000, IOSTAT=IOS, END=900 ) LINE
+            LINENO = LINENO + 1
+
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94910 ) 
-     &              'Error reading CONTROL FILE at line ',
-     &              IREC, IOS
+     &              'Error', IOS, 'reading CONTROL FILE at line ',
+     &              LINENO
                 CALL M3EXIT( 'GETPKT', 0, 0, MESG, 1 )
             END IF
 
             CALL UPCASE( LINE )
-            IF( 0 .EQ. INDEX( LINE, NAME ) ) GO TO 11  ! to head of read-loop
-
+            IF( 0 .EQ. INDEX( LINE, NAME( 1:L ) ) ) GO TO 11       ! skip
         GETPKT = .TRUE.         !  if you get to here:  NAME found.
         RETURN
                 
@@ -93,10 +107,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-
 C...........   Internal buffering formats............ 94xxx
 
-94910   FORMAT( A, I7,  '; IOSTAT=', I7 )
+94910   FORMAT( 10( A, :, I8, :, 1X ) )
 
         END
 
