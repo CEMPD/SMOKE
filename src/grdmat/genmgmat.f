@@ -4,7 +4,7 @@
      &                       NCOEF, CMAX, CMIN, NCOEFU, CMAXU, CMINU )
 
 C***********************************************************************
-C  subroutine body starts at line 165
+C  subroutine body starts at line 
 C
 C  DESCRIPTION:
 C
@@ -97,9 +97,11 @@ C...........   Local allocatable arrays...
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 
-        INTEGER, ALLOCATABLE :: IS ( :,: )! source IDs for each cell
-        REAL   , ALLOCATABLE :: CS ( :,: )! factors (no adjustments), for ungrid
-        REAL   , ALLOCATABLE :: CSJ( :,: )! factors (with adjustments)
+        INTEGER, ALLOCATABLE :: IDXSRT( : )! sorting index
+        INTEGER, ALLOCATABLE :: IC    ( : )! cell IDs
+        INTEGER, ALLOCATABLE :: IS    ( : )! source IDs
+        REAL   , ALLOCATABLE :: CS    ( : )! facs (no adjustments), for ungrid
+        REAL   , ALLOCATABLE :: CSJ   ( : )! factors (with adjustments)
 
 C...........   Scratch Ungridding Matrix (subscripted by cell, source)
   
@@ -115,7 +117,7 @@ C...........   Arrays for links intersecting with cells
 C...........   Note that the NGRID dimension could conceivably be too small if
 C              a link winds through the whole domain, but this is a case that
 C              is not worth going to extra trouble for.
-        INTEGER, ALLOCATABLE :: ACEL( : )    ! number of cell intersections per src
+        INTEGER, ALLOCATABLE :: ACEL( : )    ! number of cell intersctns per src
         REAL   , ALLOCATABLE :: AFAC( : )    ! fraction of link in cell
 
         INTEGER, ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
@@ -128,12 +130,12 @@ C...........   Other local variables
         INTEGER         FIP      !  tmp country/state/county code
         INTEGER         IOS      !  i/o status
         INTEGER         ISIDX    !  surrogate ID code index
-        INTEGER         JMAX     !  counter for storing correct max dimensions
         INTEGER         L2       !  string length
         INTEGER         LFIP     !  cy/st/co code from previous iteration
         INTEGER         LNKEND   !  width of sourc info to end of link ID
         INTEGER         NCEL     !  tmp number of cells 
         INTEGER         NLKOGRD  !  no. of link sources outside the grid
+        INTEGER         NMAX     !  counter for storing correct max dimensions
         INTEGER         NNOSRG   !  no. of cy/st/co codes with no surrogates
         INTEGER         RWT      !  tmp roadway type
 
@@ -189,11 +191,15 @@ C.........  Initialize number of sources per cell counter
         NX = 0   ! Array
 
 C.........  Allocate memory for temporary gridding matrix and other
-        ALLOCATE( IS( MXSCEL, NGRID ), STAT=IOS )
+        ALLOCATE( IDXSRT( NMATX ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IDXSRT', PROGNAME )
+        ALLOCATE( IC( NMATX ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IC', PROGNAME )
+        ALLOCATE( IS( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IS', PROGNAME )
-        ALLOCATE( CS( MXSCEL, NGRID ), STAT=IOS )
+        ALLOCATE( CS( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CS', PROGNAME )
-        ALLOCATE( CSJ( MXSCEL, NGRID ), STAT=IOS )
+        ALLOCATE( CSJ( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSJ', PROGNAME )
         ALLOCATE( IT( MXCSRC, NMSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IT', PROGNAME )
@@ -223,13 +229,13 @@ C.......       sixth case:   fallback default
         MESG = 'Computing gridding matrix and statistics...'
         CALL M3MSG2( MESG )
 
-        LFIP  = 0
-        NNOSRG   = 0
+        J       = 0
+        LFIP    = 0
+        LNKEND  = VIDPOS3 - 1
+        NNOSRG  = 0
         NLKOGRD = 0
-        JMAX  = -1
-        LNKEND = VIDPOS3 - 1
-        ADJ    = 1.    !  temporary
-        ADJC   = 1.    !  temporary
+        ADJ     = 1.    !  temporary
+        ADJC    = 1.    !  temporary
 
         DO S = 1, NSRC
             
@@ -322,27 +328,24 @@ C.....................  Make sure cell ID is in valid range.
                         CALL M3MESG( MESG )
                         CYCLE    ! to next cell in link
 
-C.....................  Otherwise, increase the count of sources for this cell
+C.....................  Otherwise, increase the count of records and
+C.....................  store the source count for this cell
                     ELSE
-                        J = NX( C ) + 1
+                        J = J + 1
+                        NX( C ) = NX( C ) + 1
 
                     END IF
 
-C.....................  Check that the maximum number of sources per cell is ok
-                    IF ( J .LE. MXSCEL ) THEN
+C.....................  Check that the maximum number of src-cell intersections
+C                       is okay
+                    IF ( J .LE. NMATX ) THEN
 
-                        IS ( J,C ) = S
-                        CS ( J,C ) = AFAC( K )
-                        CSJ( J,C ) = ADJ * ADJC * AFAC( K )
-
-C.........................  Keep track of the maximum sources per cell 
-                    ELSE  
-                        IF( J .GT. JMAX ) JMAX = J
-
+                        IDXSRT( J ) = J
+                        IS    ( J ) = S
+                        IC    ( J ) = C
+                        CS    ( J ) = AFAC( K )
+                        CSJ   ( J ) = ADJ * ADJC * AFAC( K )
                     END IF
-
-C.....................  Store the source count for this cell
-                   NX( C )   = J
 
                 END DO  ! end loop over cells for this link
 
@@ -382,10 +385,6 @@ c                    IF ( J .LE. MXSCEL ) THEN
 c                        IS ( J,C ) = S
 c                        CS ( J,C ) = LNKFAC( K,S )
 c                        CSJ( J,C ) = ADJ * ADJC * LNKFAC( K,S )
-
-C.........................  Keep track of the maximum sources per cell 
-c                    ELSE  
-c                        IF( J .GT. JMAX ) JMAX = J
 c                    END IF
 
 C.....................  Store the count of sources for current cell
@@ -429,7 +428,8 @@ C.................  Set the surrogate fraction
 
                 IF( FRAC .GT. 0 ) THEN
 
-                    J = NX( C ) + 1    ! increment source counter for this cell
+                    J = J + 1              ! increment no. src-cell intersection
+                    NX( C ) = NX( C ) + 1  ! increment no. srcs per cell
 
 C.....................  Find cell-based adjustment for cell C
 c                    ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, ADJFAC2 )
@@ -447,19 +447,15 @@ c                        CALL M3MSG2( MESG )
 c                    END IF
 
 
-C.....................  Check that the maximum number of sources per cell is ok
-                    IF ( J .LE. MXSCEL ) THEN
-                        IS ( J,C ) = S
-                        CS ( J,C ) = FRAC
-                        CSJ( J,C ) = ADJ * ADJC * FRAC
-
-C.....................  Keep track of the maximum sources per cell for reporting
-                    ELSE 
-                        IF( J .GT. JMAX ) JMAX = J
+C.....................  Check that the maximum number of src-cell intersections
+C                       is okay
+                    IF ( J .LE. NMATX ) THEN
+                        IDXSRT( J ) = J
+                        IS    ( J ) = S
+                        IC    ( J ) = C
+                        CS    ( J ) = FRAC
+                        CSJ   ( J ) = ADJ * ADJC * FRAC
                     END IF
-
-C.....................  Store the count of sources for current cell
-                    NX( C )   = J
 
                 END IF  ! if surrogate fraction > 0.
 
@@ -481,65 +477,40 @@ C.........  Abort if error
 
         END IF
 
+        NCOEF = J
+
 C.........  Abort if overflow occurred
-        IF ( JMAX .GT. MXSCEL ) THEN   
+        IF ( NCOEF .GT. NMATX ) THEN   
             
             WRITE( MESG,94010 )
-     &       'INTERNAL ERROR: Gridding and ungridding matrices not ' //
-     &       'written.' // CRLF() // BLANK10 //
-     &       'Arrays would have overflowed.' 
-     &       // CRLF() // BLANK10 // 
-     &       'Current maximum sources per cell (MXSCEL) =', MXSCEL, '.'
-     &       // CRLF() // BLANK10 // 
-     &       'Actual  maximum sources per cell          =', JMAX  , '.'
+     &        'INTERNAL ERROR: Gridding and ungridding matrices not ' //
+     &        'written.' // CRLF() // BLANK10 //
+     &        'Arrays would have overflowed.' 
+     &        // CRLF() // BLANK10 // 
+     &        'Current maximum cell-source intersections (NMATX) =', 
+     &        NMATX, '.' // CRLF() // BLANK10 // 
+     &        'Actual  maximum cell-source intersections         =', 
+     &        NCOEF, '.'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
         END IF
 
-C.........  Compress matrix into I/O representation from scratch 
-C.........  representation and compute statistics.
-                   
-        K    = 0
-        CMAX = NX( 1 )
-        CMIN = CMAX
-        DO C = 1, NGRID  ! Loop through cells
-            
-            J = NX( C )
-                   
-            IF (      J .GT. CMAX ) THEN
-                CMAX = J
-            ELSE IF ( J .LT. CMIN ) THEN
-                CMIN = J
-            END IF
-                   
-            DO N = 1, J  ! Loop through sources in this cell
-                K = K + 1
-                IF ( K .LE. NMATX ) THEN
-                    IX( K ) = IS ( N,C )
-                    CX( K ) = CSJ( N,C )
-                END IF
-            END DO
-                   
-        END DO    !  end of loop on cells C for this FIP
+C.........  Sort the scratch gridding matrix arrays to organize by cell and by
+C           source.
+        CALL SORTI2( NCOEF, IDXSRT, IC, IS )
 
-        NCOEF = K
+C.........  Compress scratch gridding matrix into output representation
+C.........  and compute statistics.  Already NX part of gridding matrix
+        CMAX = MAXVAL( NX )
+        CMIN = MINVAL( NX )
+        DO K = 1, NCOEF  ! Loop through cell-src intersections
 
-C.........  Check for overflow
-        IF( NCOEF .GT. NMATX ) THEN
-
-            WRITE( MESG,94010 )
-     &       'INTERNAL ERROR: Ungridding matrix not written'
-     &       // CRLF() // BLANK10 //
-     &       'Arrays would have overflowed.' 
-     &       // CRLF() // BLANK10 // 
-     &       'Current cell-source intersections (NMATX) =', NMATX, '.'
-     &       // CRLF() // BLANK10 // 
-     &       'Actual  cell-source intersections         =', NCOEF, '.'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-        END IF
+            J = IDXSRT( K )                           
+            IX( K ) = IS ( J )
+            CX( K ) = CSJ( J )
+                   
+        END DO
 
 C.........  Write gridding matrix
         MESG = 'Writing out GRIDDING MATRIX file...'
@@ -559,13 +530,12 @@ C.........  Initialize ungridding matrix related arrays
         DN = 0.  ! array
 
 C.........  Create renormalization factors for each source
-        DO C = 1, NGRID
-            DO K = 1, NX( C )
+        DO K = 1, NCOEF  ! Loop through cell-src intersections
 
-                S = IS( K,C )
-                DN( S ) = DN( S ) + CS( K,C )
+            J = IDXSRT( K ) 
+            S = IS( J )                          
+            DN( S ) = DN( S ) + CS( J )
 
-            END DO
         END DO
 
 C.........  Pre-divide normalization factors - make sure not zero
@@ -577,30 +547,30 @@ C.........  Have already given notes and warnings about zero-surrogates
         END DO
 
 C.........  Renormalize and Transpose ((IS,CS) into scratch arrays (IT,CT):
-        JMAX = -1
-        DO C = 1, NGRID
-            
-            DO K = 1, NX( C )
+        NMAX = -1
+        DO K = 1, NCOEF  ! Loop through cell-src intersections
 
-                S = IS( K,C )
-                J = NU( S ) + 1
+            J = IDXSRT( K ) 
+            C = IC( J )
+            S = IS( J )
 
-C.................  Ensure that the number of sources per cell is okay
-                IF ( J .LE. MXCSRC ) THEN
-                    IT( J,S ) = C
-                    CT( J,S ) = DN( S ) * CS( K,C )
+            N = NU( S ) + 1
 
-C.....................  Keep track of the maximum sources per cell for reporting
-                ELSE
-                    IF( J .GT. JMAX ) JMAX = J
-                END IF
+C.............  Ensure that the number of cells per source is okay
+            IF ( N .LE. MXCSRC ) THEN
+                IT( N,S ) = C
+                CT( N,S ) = DN( S ) * CS( J )
 
-                NU( S ) = J
+C.............  Keep track of the maximum sources per cell for reporting
+            ELSE
+                IF( N .GT. NMAX ) NMAX = N
+            END IF
 
-            END DO
+            NU( S ) = N
+
         END DO
 
-        IF( J .GT. MXCSRC ) THEN
+        IF( NMAX .GT. MXCSRC ) THEN
             WRITE( MESG,94010 )
      &       'INTERNAL ERROR: Ungridding matrix not written'
      &       // CRLF() // BLANK10 //
@@ -608,7 +578,7 @@ C.....................  Keep track of the maximum sources per cell for reporting
      &       // CRLF() // BLANK10 // 
      &       'Current maximum cells per source (MXCSRC) =', MXCSRC, '.'
      &       // CRLF() // BLANK10 // 
-     &       'Actual  maximum cells per source          =', JMAX  , '.'
+     &       'Actual  maximum cells per source          =', NMAX  , '.'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
         END IF
