@@ -70,7 +70,7 @@ if ( $?RUN_EMISFAC ) then
       endif
 
       ## Set HOURLYT input file
-      setenv HOURLYT `ls -1 $SMK_METPATH/*${GROUP_TYPE}* | head -1`
+      setenv HOURLYT `ls -1 $SMK_METPATH/*${GROUP_TYPE}* | head -n 1`
       if ( $HOURLYT == ' ' ) then
          echo 'SCRIPT ERROR: Could not find Premobl output files'
          echo "              for GROUP_TYPE $GROUP_TYPE in SMK_METPATH"
