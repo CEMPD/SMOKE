@@ -35,46 +35,24 @@ include $(FS_ROOT)/modmake.inc
 
 asgnbins.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODELEV) \
             $(MODSTCY) $(MODINFO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ asgnbins.f
 bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODFILESET) $(MODCNTRL)
-	$(FC) $(FFLAGS) -c -o $@ bldrepidx.f
 genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODINFO) $(MODSTCY) 
-	$(FC) $(FFLAGS) -c -o $@ genrprt.f
 openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID) $(MODFILESET) $(MODCNTRL)
-	$(FC) $(FFLAGS) -c -o $@ openrepin.f
 qarepin.o: $(MODREPRT) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ qarepin.f
 rdgrps.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODLISTS) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ rdgrps.f
 rdrepin.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODELEV) $(MODLISTS) \
            $(MODINFO) $(MODGRID) $(MODFILESET) $(MODCNTRL)
-	$(FC) $(FFLAGS) -c -o $@ rdrepin.f
 rdrprts.o: $(MODREPRT) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdrprts.f
 repmrggrd.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ repmrggrd.f
 repunits.o: $(MODREPRT) $(MODREPBN)  $(MODTMPRL) $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ repunits.f
 scanrepc.o: $(MODREPRT) $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ scanrepc.f
 selectsrc.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ selectsrc.f
 smkreport.o: $(MODREPRT) $(MODREPBN) $(MODINFO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ smkreport.f
 wrrephdr.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) \
             $(MODINFO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ wrrephdr.f
 wrrepout.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) \
             $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ wrrepout.f
 #
 #
 clean:
 	/bin/rm -f *.o
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f $(MODALL)
-	/bin/rm -f $(IOMODALL)
-	/bin/rm -f $(FSMODALL)

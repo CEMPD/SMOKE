@@ -59,32 +59,13 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgngrps.o: $(MODSOURC) $(MODELEV) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ asgngrps.f
 laypoint.o: $(MODSOURC) $(MODELEV) $(MODGRID) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ laypoint.f
 mxgrpemis.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ mxgrpemis.f
 elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ elevpoint.f
 openeout.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ openeout.f
 openlayout.o: $(MODELEV) $(MODGRID) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ openlayout.f
-# TEMPORARY ###
-prclinrc.o: $(MODREPRT) $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ prclinrc.f
-###############
 rpelvcfg.o: $(MODREPRT) $(MODELEV) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rpelvcfg.f
 wpingstk.o: $(MODELEV)
-	$(FC) $(FFLAGS) -c -o $@ wpingstk.f
 #
 clean:
 	/bin/rm -f *.o 
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f $(MODALL)
-	/bin/rm -f $(IOMODALL)
-	/bin/rm -f $(FSMODALL)

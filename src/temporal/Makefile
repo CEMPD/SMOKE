@@ -35,34 +35,17 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ asgntpro.f
 genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR)
-	$(FC) $(FFLAGS) -c -o $@ genhemis.f
 mktmat.o: $(MODTMPRL) 
-	$(FC) $(FFLAGS) -c -o $@ mktmat.f
 opentmp.o: $(MODEMFAC) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ opentmp.f
 opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ opentmpin.f
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ setdaylt.f
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR) $(MODLISTS) $(MODGRID) $(MODMBSET)
-	$(FC) $(FFLAGS) -c -o $@ temporal.f
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ tmnamunt.f
 updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
-	$(FC) $(FFLAGS) -c -o $@ updtmat.f
 wrtsup.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
-	$(FC) $(FFLAGS) -c -o $@ wrtsup.f
 #
 clean:
 	/bin/rm -f *.o
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f $(MODALL)
-	/bin/rm -f $(IOMODALL)
-	/bin/rm -f $(FSMODALL)

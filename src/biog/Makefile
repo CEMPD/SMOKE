@@ -82,29 +82,14 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 normbeis3.o:  $(MODBEIS3)
-	$(FC) $(FFLAGS) -c -o $@ normbeis3.f    
 rawbio.o: $(MODSURG) $(MODBIOG) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ rawbio.f
 cybio.o: $(MODSURG) $(MODBIOG)
-	$(FC) $(FFLAGS) -c -o $@ cybio.f
 grdbio.o: $(MODBIOG) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ grdbio.f
 hrbio.o: $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ hrbio.f
 hrbios.o: $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ hrbios.f
 tmpbeis3.o: $(MODSPRO) $(MODBEIS3)
-	$(FC) $(FFLAGS) -c -o $@ tmpbeis3.f
 tmpbio.o: $(MODSPRO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ tmpbio.f
 rdbpro.o:$(MODSPRO)
-	$(FC) $(FFLAGS) -c -o $@ rdbpro.f
 #
 clean:
 	/bin/rm -f *.o  
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f $(MODALL)
-	/bin/rm -f $(IOMODALL)

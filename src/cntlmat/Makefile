@@ -38,46 +38,22 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 alocpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ alocpkts.f
 asgncntl.o: $(MODSOURC) $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ asgncntl.f
 cntlmat.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ cntlmat.f
 fillcdat.o: $(MODCNTRL) $(CL_SRC)/CPKTDAT.EXT
-	$(FC) $(FFLAGS) -c -o $@ fillcdat.f
 fillcntl.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
-	$(FC) $(FFLAGS) -c -o $@ fillcntl.f
 genmultc.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ genmultc.f
 genproj.o:  $(MODSOURC) $(MODCNTRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ genproj.f
 genreact.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ genreact.f
 opencmat.o: $(MODCNTRL) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ opencmat.f
 openpmat.o: $(MODINFO) $(MODCNTRL) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ openpmat.f
 openrmat.o: $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ openrmat.f
 pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
-	$(FC) $(FFLAGS) -c -o $@ pktloop.f
 procpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ procpkts.f
 rdpacket.o: $(MODCNTRL) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
-	$(FC) $(FFLAGS) -c -o $@ rdpacket.f
 wrctmp.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ wrctmp.f
 wcntlrep.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ wcntlrep.f
-
 
 #
 clean:
 	/bin/rm -f *.o
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f $(MODALL)
-	/bin/rm -f $(IOMODALL)
-	/bin/rm -f $(FSMODALL)

@@ -35,21 +35,9 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ asgnspro.f
 chknonhap.o: $(MODLISTS) $(MODSPRO)
-	$(FC) $(FFLAGS) -c -o $@ chknonhap.f
 opensmat.o: $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -c -o $@ opensmat.f
 spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC) $(MODFILESET) $(MODLISTS)
-	$(FC) $(FFLAGS) -c -o $@ spcmat.f
-
-
 #
 clean:
 	/bin/rm -f *.o
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f $(MODALL)
-	/bin/rm -f $(FSMODALL)
