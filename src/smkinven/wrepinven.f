@@ -73,6 +73,9 @@ C...........   Local variables
         
         INTEGER		I, J, K
         
+        REAL		VALCHECK
+        REAL		DIFF
+        
         CHARACTER*1, ALLOCATABLE :: KEEP( : )
 
 C...........   Other local variables
@@ -135,13 +138,26 @@ C.........  Write out second report to REPINVEN file
         
         DO I = 1, NINVTBL
           K = INDEX1( SORTCAS( I ), NUNIQCAS, UNIQCAS )
-          IF( KEEP( K ) .NE. 'Y' .AND. KEEP( K ) .NE. 'P' ) CYCLE
+          IF( K .LE. 0 ) THEN
+            WRITE( MESG, 94010 )
+     &             'Sorted CAS code, ', SORTCAS( I ), ' ,was not '//
+     &             'found in list of unique CAS codes.'
+	    CALL M3WARN( PROGNAME, 0, 0, MESG )
+          END IF
+          
+          IF( .NOT. ITKEEPA( SCASIDX( I ) ) ) CYCLE
           
           J = SCASIDX( I )
+          VALCHECK = EMISBYCAS( K ) * ITFACA( J )
+          DIFF = VALCHECK - EMISBYPOL( I )
+          IF( ABS( DIFF ) .GT. 0.000001 ) THEN
+            MESG = 'EMISBYCAS * ITFACA is not equal to EMISBYPOL.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 1 )
+          END IF
 
           WRITE( ADEV, 93060 ) SORTCAS( I ), EMISBYCAS( K ),
-     &           ITFACA( J ), ITNAMA( J ), ITFACA( J ) *
-     &           EMISBYCAS( K ), ITDSCA( J ), ITCASDSCA( J )
+     &           ITFACA( J ), ITNAMA( J ), EMISBYPOL( I ),
+     &           ITDSCA( J ), ITCASDSCA( J )
      
         END DO
           
@@ -168,6 +184,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93060	FORMAT( 1X, A8, 4X, F16.10, 4X, F3.1, 4X, A16, 4X, F16.10,
      &          4X, A40, 4X, A40 )
+     
+94010	FORMAT( 10( A, :, A8, :, 1X ) )
 
 
 
