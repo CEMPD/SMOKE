@@ -1,6 +1,6 @@
 
-        SUBROUTINE RDB3FAC( FDEV, NLINES, VGID, LINDX, LFAC, WNTF,
-     &                      LWGT, FACS  ) 
+        SUBROUTINE RDB3FAC( B309FLAG, NSEF, FDEV, NLINES, VGID, LINDX,
+     &                      LFAC, WNTF, LWGT, FACS  ) 
 
 C***********************************************************************
 C  subroutine body starts at line XX 
@@ -36,14 +36,6 @@ C***********************************************************************
 
         IMPLICIT NONE
 
-C...........   INCLUDES:
-
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
-        INCLUDE 'EMCNST3.EXT'     !
-        INCLUDE 'B3DIMS3.EXT'    ! biogenic parameters
-
 C...........   EXTERNAL FUNCTIONS and their descriptions:
  
         INTEGER         STR2INT
@@ -52,7 +44,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        STR2INT, STR2REAL
 
 C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
+        LOGICAL, INTENT (IN)  :: B309FLAG  ! true: using v3.09 of BEIS
 
+        INTEGER, INTENT (IN)  :: NSEF    !  no. biogenic emission factors
         INTEGER, INTENT (IN)  :: FDEV    !  unit number for elev srcs file 
         INTEGER, INTENT (IN)  :: NLINES  !  no. veg types
 
@@ -64,7 +58,7 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
         REAL, INTENT (OUT)           :: FACS( NLINES, NSEF ) ! emis facs
  
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
-        INTEGER      :: MXSEG = NSEF + 4   ! # of potential line segments
+        INTEGER      :: MXSEG            ! # of potential line segments
 
         INTEGER       I, J               !  counters
         INTEGER       ISTAT              !  iostat error
@@ -78,6 +72,8 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 C***********************************************************************
 C   begin body of subroutine RDB3FAC
 
+C.........  Set number of potential line segments
+        MXSEG = NSEF + 4
  
         ALLOCATE( SEGMENT( MXSEG ), STAT=ISTAT )
         CALL CHECKMEM( ISTAT, 'SEGMENT', PROGNAME )
@@ -86,7 +82,12 @@ C.......... Read in emissions factors for each veg id
      
         DO I = 1, NLINES
 
-          READ( FDEV, 93010, IOSTAT=ISTAT ) VGID( I ) , LINE
+C...........  Factors files have slightly different formats
+          IF( B309FLAG ) THEN
+             READ( FDEV, 93010, IOSTAT=ISTAT ) VGID( I ) , LINE
+          ELSE
+             READ( FDEV, 93020, IOSTAT=ISTAT ) VGID( I ) , LINE
+          END IF
 
           IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
@@ -123,7 +124,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93010   FORMAT( 8x,A16, A )
+93010   FORMAT( 8X, A16, A )
+93020   FORMAT( A16, A )
 
 C...........   Internal buffering formats............ 94xxx
 
