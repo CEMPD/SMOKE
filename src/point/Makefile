@@ -2,13 +2,13 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -lioapi_new -lnetcdf -lpvm3 -mp
-LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS          = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
+LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -liotools -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -liotools.debug -lioapi_new -lnetcdf -lpvm3 -mp
 
-LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libiotools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
 #
 all: laypoint elevpoint
 
@@ -52,11 +52,7 @@ elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(ELV) $(LIBS_DEBUG)
 #
 
-#include $(MD_SRC)/modmake.inc
-MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
-MODSOURC = $(MD_OUT)/modsourc.o
-MODELEV  = $(MD_OUT)/modelev.o
-MODINFO  = $(MD_OUT)/modinfo.o
+include $(MD_SRC)/modmake.inc
 
 laypoint.o: $(MODSOURC) $(MODELEV) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
