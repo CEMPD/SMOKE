@@ -91,7 +91,7 @@ C...........   PARAMETERS and their descriptions:
      &               LY2UE  = 2916.0,
      &               CN     =    1.0,
      &               PRES0  = 1013.0 ,
-     &               SOLFAC = 0.5 * LY2UE * WM2LY * CN ,
+c    &               SOLFAC = 0.5 * LY2UE * WM2LY * CN ,
      &               DPRES0 = 1.0 / PRES0 ,
      &               D28    = 1.0 / 28.0 ,
      &               D29    = 1.0 / 29.0 ,
@@ -112,7 +112,8 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            CFNOW     !  NO   corr fac for land use WETL
         REAL            CFNOA     !  NO   corr fac for land use AGRI
         REAL            CFOVOC    !  non-isop corr fac
-        INTEGER         JDAY, JMON, R, C, L
+        REAL            DAYINC    !  Day inc. used in interpolating between days
+        INTEGER         JDAY, JMON, R, C, L, I, J
         LOGICAL         GETATN
         REAL            AA, BB, CC
         REAL            P, Q
@@ -127,11 +128,13 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            FCONF
         REAL            FCLAI
         REAL            BISOP, BMONO, BOVOC        !  biogenic VOC spcs emis.
+        REAL            DRCT0, TOTAL
 
 C...........   SAVED LOCAL VARIABLES and their descriptions:
 
         LOGICAL      FIRSTIME
         REAL         DMON(   12 )       !  inverse length of month
+        REAL         IDAY( 0:13 )
         REAL         ADAY( 0:13 )
         REAL         BDAY( 0:13 )
         REAL         CDAY( 0:13 )
@@ -143,7 +146,11 @@ C...........   SAVED LOCAL VARIABLES and their descriptions:
         DATA DMON
      & / D31, D28, D31, D30, D31, D30, 
      &   D31, D31, D30, D31, D30, D31 /
- 
+
+        DATA IDAY
+     & /   1,     21,     52,     81,    112,    142,    173,
+     &   203,    234,    265,    295,    326,    356,    366 /
+     
         DATA ADAY
      & /1203.0, 1202.0, 1187.0, 1164.0, 1130.0, 1106.0, 1092.0,
      &  1093.0, 1107.0, 1136.0, 1136.0, 1190.0, 1204.0, 1203.0 /
@@ -174,33 +181,87 @@ C.......   Fold sfac into ADAY, dpres0 into BDAY
 
             FIRSTIME = .FALSE.
 
-            DO  11  JMON = 0, 13
-                ADAY( JMON ) = SOLFAC * ADAY( JMON )
-                BDAY( JMON ) = DPRES0 * BDAY( JMON )
-11          CONTINUE
+c           DO  11  JMON = 0, 13
+c               ADAY( JMON ) = SOLFAC * ADAY( JMON )
+c               BDAY( JMON ) = DPRES0 * BDAY( JMON )
+c11          CONTINUE
 
         END IF          !  if firstime:  fold sfac into ADAY
 
 C.......   Begin processing for this hour:  look at cos of 
 C.......   zenith angle, and whether sun is above the horizon:
-
+        write(98,*) 'JDATE before CZANGLE = ',JDATE
         CALL CZANGLE( JDATE, JTIME, LAT, LON, COSZEN, GETATN )
 
         IF ( GETATN ) THEN !  sun above horizon:; compute direct radiation: 
 
 C.......   Interpolate [ A | B | C ]DAY to this JDATE:
 
+        write(98,*) 'JDATE before DAYMON = ',JDATE
             CALL DAYMON( JDATE, JMON, JDAY )
-            P  = DMON( JMON ) * FLOAT( JDAY - 1 )
-            Q  = 1.0 - P
-            AA = Q * ADAY( JMON-1 )  +  P * ADAY( JMON )
-            BB = Q * BDAY( JMON-1 )  +  P * BDAY( JMON )
-            CC = Q * CDAY( JMON-1 )  +  P * CDAY( JMON )
+        write(98,*) 'JDATE after  DAYMON = ',JDATE
+
+              write(98,*) 'JDATE   = ', JDATE
+              write(98,*) 'JMON    = ', JMON
+              write(98,*) 'JDAY    = ', JDAY
+              DO 151 I = 0, 13
+                 IF ( MOD(JDATE, 1000) .LE. IDAY(I) ) GO TO 201 
+151           CONTINUE
+
+              WRITE(6, 1001) JDAY
+1001          FORMAT(// 5X, '*** ERROR ABORT in TMPBIO,'
+     &                / 5X, '   Error in subroutine HRBIO: '
+     &                / 5X, '   Table lookup, JDAY out of range: ',
+     &                / 5X, '   JDAY = ', I3)
+              CALL EXIT
+
+201           CONTINUE
+   
+              write(98,*) 'I       = ', I
+              IF ( I .LT. 0 .OR. I .GT. 13 ) THEN
+                 WRITE(6, 2001) I
+2001             FORMAT(// 5X, '*** ERROR ABORT in BEIS2,'
+     &                   / 5X, '   Error in subroutine HRBIO: '
+     &                   / 5X, '   Day index out of range ',
+     &                   / 5X, ' I(day index) = ', I2)
+                 CALL EXIT
+              END IF
+
+              IF ( IDAY(I) .EQ. 1 ) THEN
+                 AA = ADAY(0)
+                 BB = BDAY(0)
+                 CC = CDAY(0)
+              ELSE
+                 J = IDAY( I-1 )
+                 DAYINC = FLOAT( MOD(JDATE, 1000) - J ) 
+     &                    / FLOAT( IDAY(I) - J )
+                 AA = ADAY(I-1) + (ADAY(I)-ADAY(I-1))*DAYINC
+                 BB = BDAY(I-1) + (BDAY(I)-BDAY(I-1))*DAYINC
+                 CC = CDAY(I-1) + (CDAY(I)-CDAY(I-1))*DAYINC
+              END IF
+            write(98,*) AA, BB, CC, BDAY(I-1), BDAY(I), DAYINC 
+
+
+c           P  = DMON( JMON ) * FLOAT( JDAY - 1 )
+c           Q  = 1.0 - P
+
+c           AA = Q * ADAY( JMON-1 )  +  P * ADAY( JMON )
+c           BB = Q * BDAY( JMON-1 )  +  P * BDAY( JMON )
+c           CC = Q * CDAY( JMON-1 )  +  P * CDAY( JMON )
 
             CALL CLDATEN( JDATE, JTIME, LAT, LON, CLDATN )
 
+            write(98,*) '****************************************'
+            write(98,*) 'CLDATN', JTIME 
+            write(98,*) '****************************************'
+c           do r = 1,nrows
+c              write(98,*) (CLDATN(c,r),c=1,ncols) 
+c           end do
 C...........   compute direct horizontal radiation, attenuation:
 C...........   first, perform the table look up
+
+            write (98,*) JTIME, 'TA (43-77,45): ', TA(43,45), 
+     &                    TA(44,45), TA(45,45), TA(46,45), TA(47,45)
 
             DO  122  R = 1, NROWS
             DO  111  C = 1, NCOLS
@@ -210,8 +271,9 @@ C...........   first, perform the table look up
                 DT   = 28668.514 / TAIR
                 CT   = EXP( 37.711 - 0.398570815 * DT ) /
      &                 (1.0 + EXP( 91.301 - DT ) )
+c               write(98,*) 'CT = ', CT
 
-                IF ( COSZEN( C,R ) .LT. 0.02 ) THEN     !  effectively no PAR
+                IF ( COSZEN( C,R ) .LT. 0.02079483 ) THEN !  effectively no PAR
 
 C...................   Biogenic ISOP emissions (due to photo. activity) zero
 
@@ -222,15 +284,36 @@ C...................   Biogenic ISOP emissions (due to photo. activity) zero
 C...................   Compute biogenic VOC emissions, due to
 C...................   photosynthetic activity:
 
-                    EXPA  = AA * EXP( -BB*PRES( C,R ) / COSZEN( C,R ) )
-                    PAR   = EXPA*CLDATN( C,R ) * ( COSZEN( C,R ) + CC )
+                    EXPA  = EXP( -BB * DPRES0 * PRES( C,R ) 
+     &                      / COSZEN( C,R ) )
+                    DRCT0 = CN * AA * EXPA
+                    TOTAL = DRCT0 * ( COSZEN(C,R) + CC )   !  direct + diffuse
+                    TOTAL = TOTAL * WM2LY * CLDATN(C, R)
+                    PAR   = 0.5 * LY2UE * TOTAL ! vis:  assumed 50% of total
+c                   PAR   = EXPA * CLDATN( C,R ) 
+c    &                       * ( COSZEN( C,R ) + CC )
+                    if ( (r.eq.45).and.(c.eq.45) )then
+                       write(98,*) 'JTIME        = ',JTIME
+                       write(98,*) 'COSZEN(C,R)  = ',coszen(c,r)
+                       write(98,*) 'EXPA         = ',EXPA
+                       write(98,*) '-BB          = ',-BB
+                       write(98,*) 'PRES(C,R)    = ',PRES(C,R)
+                       write(98,*) 'COSZEN(C,R)  = ',COSZEN(c,r)
+                       write(98,*) 'EXPA         = ',EXPA
+                       write(98,*) 'CLDATN(C,R)  = ',CLDATN(C,R)
+                       write(98,*) 'CC           = ',CC
+                       write(98,*) 'PAR          = ',PAR
+                    end if
+
                     FPINE = 0.0
                     FDECD = 0.0
                     FCONF = 0.0
                     FCLAI = 0.0
                     
-                    DO  101  L = 1, CLAYS
+c                   write (98,*) 'PAR      CANATN(L,LPINE)'
+c                   write (98,*) PAR, CANATN(L,LPINE)
 
+                    DO  101  L = 1, CLAYS
                         PARZ   = PAR * CANATN( L,LPINE )
                         SQPARZ = PARZ * PARZ
                         FPINE  = FPINE + 0.2 * 0.002878 * PARZ 
@@ -249,14 +332,15 @@ C...................   photosynthetic activity:
                         PARZ   = PAR * EXP(-0.042 * AVLAI( C,R )
      &                                            * FLOAT( 2 * L - 1 ) )
                         SQPARZ = PARZ * PARZ
-                        FCLAI  = FCLAI + PARZ/SQRT( 1.0 + ALPHA*SQPARZ )
+                        FCLAI  = FCLAI + 0.2 * 0.002878 * PARZ
+     &                                  / SQRT( 1.0 + ALPHA*SQPARZ )
 
 101                 CONTINUE
                     
                     CFPINE = CT * FPINE
                     CFDECD = CT * FDECD
                     CFCONF = CT * FCONF
-                    CFCLAI = CT * 0.002878 * 0.2 * FCLAI
+                    CFCLAI = CT * FCLAI
                     CFOTHR = CT * 0.002878 * PAR 
      &                          / SQRT( 1.0 + ALPHA * PAR * PAR )
 
