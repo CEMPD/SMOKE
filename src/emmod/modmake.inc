@@ -10,6 +10,7 @@ MODTPRO  = $(MD_OUT)/modtpro.o
 MODSPRO  = $(MD_OUT)/modspro.o
 MODLISTS = $(MD_OUT)/modlists.o
 MODINFO  = $(MD_OUT)/modinfo.o
+MODSURG  = $(MD_OUT)/modsurg.o
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
@@ -46,4 +47,9 @@ $(MODINFO): $(MD_SRC)/modinfo.f
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modinfo.f
 	if ( test -f modinfo.mod ) ; then mv modinfo.mod $(MD_OUT) ; fi
 	if ( test -f MODINFO.mod ) ; then mv MODINFO.mod $(MD_OUT) ; fi
+
+$(MODSURG): $(MD_SRC)/modsurg.f
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modsurg.f
+	if ( test -f modsurg.mod ) ; then mv modsurg.mod $(MD_OUT) ; fi
+	if ( test -f MODSURG.mod ) ; then mv MODSURG.mod $(MD_OUT) ; fi
 
