@@ -227,6 +227,8 @@ C.............  Local variables
 
             REAL          VAL      ! tmp value
 
+            LOGICAL, SAVE :: FIRSTSET = .TRUE. ! true: 1st time group crit found
+
             CHARACTER*300 BUFFER   ! tmp line buffer as uppercase
             CHARACTER*300 LINE     ! tmp line buffer
             CHARACTER*300 MESG     ! mesg buffer
@@ -518,6 +520,11 @@ C.............................  Make sure TOP is not used for setting groups
                                 CYCLE
 C.............................  Otherwise store it
                             ELSE
+
+                                IF( FIRSTSET ) THEN
+                                    GRPTYPES = ' '
+                                    FIRSTSET = .FALSE.
+                                END IF
                                 GRPTYPES(NGRPCRIT,N,K) = SEGMENT( I2 )
 
                             END IF
