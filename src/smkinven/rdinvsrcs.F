@@ -149,7 +149,7 @@ C...........   Other local variables
         CHARACTER(LEN=VTPLEN3) VTYPE   ! tmp vehicle type        
         CHARACTER(LEN=RWTLEN3+VTPLEN3) CRVC    ! tmp roadway // vehicle type
         
-        CHARACTER(LEN=PLTLEN3) FCID    ! facility ID
+        CHARACTER(LEN=PLTLEN3) FCID    ! facility/plant ID
         CHARACTER(LEN=CHRLEN3) PTID    ! point ID
         CHARACTER(LEN=CHRLEN3) SKID    ! stack ID
         CHARACTER(LEN=CHRLEN3) SGID    ! segment ID
@@ -208,11 +208,11 @@ C.........  Create formats for mobile data
         END IF
         
 C.........  Determine file format of inventory file
-        INVFMT = GETFORMT( FDEV )
+        INVFMT = GETFORMT( FDEV, -1 )
 
 C.........  If SMOKE list format, read file and check file for formats.
 C           NOTE- LSTFMT defined in EMCNST3.EXT
-        IF( INVFMT .EQ. LSTFMT ) THEN
+        IF( INVFMT == LSTFMT ) THEN
 
 C.............  Generate message for GETFLINE and RDLINES calls
             MESG = TRIM( CATEGORY ) // ' inventory file, ' //
@@ -227,8 +227,20 @@ C.............  Allocate memory for storing contents of list-format'd file
             ALLOCATE( LSTSTR( NLINE ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LSTSTR', PROGNAME )
 
+            FILFMT = -1  ! array
+            LSTSTR = ' ' ! array
+
 C.............  Store lines of PTINV file
             CALL RDLINES( FDEV, MESG, NLINE, LSTSTR )
+
+C.................  Reset number of lines to remove blanks
+C                   (RDLINES does not store blank lines)
+                DO I = 1, NLINE
+                    IF( LSTSTR( I ) == ' ' ) THEN
+                        NLINE = I - 1
+                        EXIT
+                    END IF    
+                END DO
 
 C.............  Check the format of the list-formatted inventory file and
 C               return the code for the type of files it contains
@@ -270,7 +282,7 @@ C.........  If EMS-95 point source inventory, check for correct number of files
             DO I = 1, NLINE
                 CURFMT = FILFMT( I )
                 
-C.................  Skip INVYEAR packet lines
+C.................  Skip any non-file lines (INVYEAR, #LIST, etc.)
                 IF( CURFMT < 0 ) CYCLE
                                 
 C.................  Make sure all files are EMS format
@@ -320,10 +332,18 @@ C.............  Check if VMT mix is required
 
         CURFIL = 1
 
-C.........  If file is list format, check for inventory year packet
+C.........  If file is list format, open first file
         IF( INVFMT == LSTFMT ) THEN
+
             LINE = LSTSTR( CURFIL )
-            
+                
+C.............  Skip #LIST lines (must be first)
+            IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
+                CURFIL = CURFIL + 1
+                LINE = LSTSTR( CURFIL )
+            END IF
+
+C.............  Check for inventory year packet
             IF( GETINVYR( LINE ) > 0 ) THEN
                 CURFIL = CURFIL + 1  ! move to next file in list
             ELSE
@@ -367,10 +387,10 @@ C.............  Check for errors while opening file
 
             END IF
 
-C.............  Set default inventory characteristics that depend on file format
-            CALL INITINFO( FILFMT( CURFIL ) )
-            
             CURFMT = FILFMT( CURFIL )
+
+C.............  Set default inventory characteristics that depend on file format
+            CALL INITINFO( CURFMT )
             
         ELSE
 
@@ -433,6 +453,11 @@ C.........................  Advance to next file
 C.........................  Check if there are more files to read
                         IF( CURFIL <= NLINE ) THEN 
                             LINE = LSTSTR( CURFIL )
+
+C.............................  Check for #LIST line
+                            IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
+                                CURFIL = CURFIL + 1  ! move to next file in list
+                            END IF
 
 C.............................  Make sure current line is not INVYEAR packet                    
                             IF( GETINVYR( LINE ) > 0 ) THEN
@@ -533,7 +558,7 @@ C.................  Process line depending on file format and source category
      &                                   HDRFLAG, EFLAG )
                         TSCC = ' '   ! set fake SCC code
                     END SELECT
-                CASE( NTIFMT )
+                CASE( TOXFMT )
                     TOXFLG = .TRUE.
                     
                     SELECT CASE( CATEGORY )
@@ -543,7 +568,16 @@ C.................  Process line depending on file format and source category
                     CASE( 'MOBILE' )
                         CALL RDSRCNTIMB( LINE, CFIP, CLNK, TSCC,
      &                                   NPOLPERLN, HDRFLAG, EFLAG )
+                    CASE( 'POINT' )
+                        CALL RDSRCNTIPT( LINE, CFIP, FCID, PTID, SKID,
+     &                                   SGID, TSCC, NPOLPERLN,
+     &                                   HDRFLAG, EFLAG )
                     END SELECT
+                CASE( TOXNPFMT )
+                    TOXFLG = .TRUE.
+                    
+                    CALL RDSRCNTINP( LINE, CFIP, TSCC, NPOLPERLN,
+     &                               HDRFLAG, EFLAG )
                 END SELECT
 
 C.................  Check for header lines
@@ -603,9 +637,22 @@ c                    CALL M3MESG( MESG )
 c                END IF
 
 C.................  Check source specific characteristics
+                IF( CATEGORY == 'AREA' ) THEN
+                
+C.....................  Make sure SCC is at least 8 characters long
+                    IF( LEN_TRIM( TSCC ) < 8 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: SCC code must ' //
+     &                      'be at least 8 characters long at line', 
+     &                      IREC
+                        CALL M3MESG( MESG )
+                    END IF
+                
+                END IF
+                
                 IF( CATEGORY == 'MOBILE' ) THEN
 
-                    IF( CURFMT == IDAFMT .OR. CURFMT == NTIFMT ) THEN
+                    IF( CURFMT == IDAFMT .OR. CURFMT == TOXFMT ) THEN
 
 C.........................  Check if SCC has proper length
                         IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
@@ -670,10 +717,19 @@ C.....................  Ensure that road class is valid and convert from road cl
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
-                    IF( CURFMT == IDAFMT ) THEN
-                    
-C.........................  Make sure we have a plant ID
-                        IF( PTID == ' ' ) THEN
+                    IF( CURFMT == IDAFMT .OR. CURFMT == TOXFMT ) THEN
+
+C.........................  Make sure SCC is at least 8 characters long
+                        IF( LEN_TRIM( TSCC ) < 8 ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: SCC code ' //
+     &                          'must be at least 8 characters long ' //
+     &                          'at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
+
+C.........................  Make sure we have a facility/plant ID
+                        IF( FCID == ' ' ) THEN
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'ERROR: Missing ' //
      &                          'plant ID code at line', IREC
@@ -807,7 +863,7 @@ C.............................  Update total number of sources with pollutants
                     CALL PADZERO( TSCC )
                 
                     SELECT CASE( CURFMT ) 
-                    CASE( IDAFMT )
+                    CASE( IDAFMT, TOXFMT )
                         CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
      &                                TSCC, CHRBLNK3, CHRBLNK3, 
      &                                TCSOURC )
