@@ -227,17 +227,17 @@ C.............  Check for negative values
             DO S = 1, NSRC
 
                 IF( COMPUTED( S,1 ) .LT. 0 ) THEN
-                    EFLAG = .TRUE.
                     L = LEN_TRIM( VNAME )
                     CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
-                    MESG = 'ERROR: Negative value of computed data ' //
-     &                     'for "' // VNAME( 1:L )// '" for source:'// 
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    WRITE( MESG,94020 ) 
+     &                     'WARNING: Resetting negative value of "',
+     &                     VNAME( 1:L )// '" from', COMPUTED( S,1 ),
+     &                     'to 0. for source:'// CRLF() // BLANK5 // 
+     &                     BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
-                END IF
 
-                IF( EFLAG ) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                    COMPUTED( S,1 ) = 0.
+
                 END IF
 
             END DO
@@ -258,6 +258,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94020   FORMAT( 10( A, :, E10.2, :, 1X ) )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
