@@ -1,9 +1,8 @@
-C Version "@(#)$Id$ $Source$ $Date$ 
 
         PROGRAM EMISFAC
 
 C***********************************************************************
-C  program body starts at line
+C  program body starts at line 215
 C
 C  DESCRIPTION:
 C      This program drives the MOBILE5A program by supplying an ambient 
@@ -23,12 +22,33 @@ C      (1) Need to create better analysis of IPSIR combo emission factors to
 C          ensure that no loops and better yet, no commons using commons.
 C 
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'CHDIMS3.EXT'    !  Mobile include paramaters
+        INCLUDE 'CHDGEN3.EXT'    !  Mobile include paramaters
         INCLUDE 'MBDIMS3.EXT'    !  Mobile include paramaters
         INCLUDE 'PARMS3.EXT'     !  I/O API parameters
         INCLUDE 'IODECL3.EXT'    !  I/O API function declarations
@@ -37,6 +57,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2  CRLF 
         INTEGER      FIND1
         INTEGER      GETEFILE
         INTEGER      GETNUM
@@ -50,7 +71,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      STR2INT
         INTEGER      TRIMLEN
 
-        EXTERNAL     FIND1, GETEFILE, GETNUM, GETREAL, GETYN, 
+        EXTERNAL     CRLF, FIND1, GETEFILE, GETNUM, GETREAL, GETYN,
      &               INDEX1, LOCAT1, PROMPTFFILE, PROMPTMFILE, 
      &               SEC2TIME, STR2INT, TRIMLEN
 
@@ -61,6 +82,11 @@ C...........   EXTERNAL BLOCK DATA for mobile:
      &                BD18, BD19, BD20, BD21, BD22, BD23, BD24,
      &                BD25, BD26, BD27, BD28, BD29, BD30, BD31,
      &                BD32, BD33, BD34, BD35, BD36, BD37, BD38
+
+C...........   LOCAL PARAMETERS and their descriptions:
+
+        CHARACTER*5   BLANK5
+        PARAMETER(    BLANK5 = ' ' )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -210,8 +236,7 @@ C   begin body of program EMISFAC
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program EMISFAC', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'EMISFAC', 0, 0 'Ending program', 2 )
         END IF
 
 C.........  Turn off verbose NetCDF to elimiate error messages when using
@@ -256,32 +281,35 @@ C.........  Prompt for MPREF (general MOBILE5a parameter x-ref file)
      &          .TRUE., .TRUE., 'MPREF', 'EMISFAC' )
 
 C.........  Write out list of legal hydrocarbon species
-        WRITE( *,92000 ) ' '
-        DO 22 I = 1, NUMVOL
-            CALL M3MESG( '     ' // VOLTYP( I ) )
-   22   CONTINUE 
+        MESG = VOLTYP( 1 )
+        DO 22 I = 2, NUMVOL
+            WRITE( MESG, 94010 ) MESG( 1:TRIMLEN( MESG ) ) // 
+     &                           CRLF() // BLANK5 // VOLTYP( I )
+22      CONTINUE 
+
+        CALL M3MSG2( MESG )
 
 C.........  Prompt for type of organic compound to use (numbers match
 C.........  MOBILE5 numbers
 
-        DO 23 I = 5, 1, -1
+        DO 30 I = 5, 1, -1
             CALL GETSTR( 'Enter type of hydrocarbon emissions', 
      &                   VOLTYP( 3 ), VOLNAM )
  
             VOLORG = INDEX1( VOLNAM, NUMVOL, VOLTYP )
 
-            IF( VOLORG .GT. 0 ) GO TO 25  ! Valid reponse found
+            IF( VOLORG .GT. 0 ) GO TO 31  ! Valid reponse found
 
             WRITE( MESG,94010 ) 'Invalid response, get', I-1, 
      &                          'more tries'
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
  
-   23   CONTINUE
+30      CONTINUE
 
         WRITE( MESG,94010 ) 'Bad hydrocarbon emissions type'
         CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
 
-   25   CONTINUE
+31      CONTINUE
 
 C.........  Find VOLNAM in EMTLST for setting output variable names
 
@@ -289,7 +317,7 @@ C.........  Find VOLNAM in EMTLST for setting output variable names
         EMTIDX( 2 ) = 2   ! For NOX
         K = 2
 
-        DO 26 I = 3, MXEALL
+        DO 33 I = 3, MXEALL
 
             L = INDEX( EMTLST( I ), '_' )
             IF( EMTLST( I )(L+1:7 ) .EQ. VOLNAM ) THEN
@@ -297,7 +325,7 @@ C.........  Find VOLNAM in EMTLST for setting output variable names
                 EMTIDX( K ) = I
             ENDIF
 
-   26   CONTINUE
+33      CONTINUE
 
 C.........  Set start and ending temperature depending on input file
 C.........  If it exists, use the parameters from the file.
@@ -319,15 +347,15 @@ C.............  Set modeling year
             JYEAR = SDATE3D / 1000
 
             WRITE( MESG,94010 ) 
-     &          'Emission factors are being calculated for', JYEAR
-            CALL M3MESG( MESG )
+     &          'NOTE: Emission factors are being calculated for', JYEAR
+            CALL M3MSG2( MESG )
 
 C.............  Check that file delta temperature is same as compiled value
             IF( XCELL3D .NE. TINTV ) THEN
                 WRITE( MESG, 94030 ) 
      &                 'Delta temperature for file ' // 
-     &                 ENAME( 1:TRIMLEN( ENAME ) ) // 
-     &                 'not equal to compiled value of', TINTV
+     &                 ENAME( 1:TRIMLEN( ENAME ) ) // CRLF()// BLANK5//
+     &                 '  not equal to compiled value of', TINTV
                 CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
 
             ENDIF
@@ -337,9 +365,9 @@ C.............  Check that file delta temperature is same as compiled value
             BTEMP = XORIG3D
             ETEMP = BTEMP + TINTV * FLOAT( NTEMP - 1 ) 
 
-            DO 28 I = 1, NTEMP
+            DO 44 I = 1, NTEMP
                 TEMPIN( I ) = BTEMP + ( I - 1 ) * TINTV
-   28       CONTINUE
+44          CONTINUE
 
 C.........  If it does not exist, build the parameters from scratch
         ELSE 
@@ -359,18 +387,18 @@ C.............   Prompt for end temperature
 
 C.............  Set temperatures
             I = 0
-   31       CONTINUE
+50          CONTINUE
 
                 TF = BTEMP + TINTV * I
 
-                IF( TF .GT. ETEMP ) GO TO 32
+                IF( TF .GT. ETEMP ) GO TO 51
 
                 I = I + 1
                 TEMPIN( I ) = TF
 
-            GO TO 31
+            GO TO 50
 
-   32       CONTINUE
+51          CONTINUE
             NTEMP = I
 
 C.............  Set up non-diurnal master list file description
@@ -412,20 +440,24 @@ C.............  Set up non-diurnal master list file description
             WRITE  ( MESG, 94080 ) NTEMP
             FDESC3D( 5 ) = MESG
 
+            DO 55 J = 6, MXDESC3
+                FDESC3D( J ) = ' '
+55          CONTINUE 
+
             K = 0
-            DO 33 J = 1, MXNDET
+            DO 61 J = 1, MXNDET
                 K = K + 1
                 VNAME3D( J ) = EMTLST ( EMTIDX( K ) )
                 UNITS3D( J ) = EMTUNIT( EMTIDX( K ) )
                 VDESC3D( J ) = EMTDESC( EMTIDX( K ) )
                 VTYPE3D( J ) = M3REAL
-   33       CONTINUE
+61          CONTINUE
  
             ONAME = PROMPTMFILE(
      &        'Enter logical name for output NON-DIURNAL MASTER EF ' //
      &        'output file', FSNEW3, 'MEFSND', 'EMISFAC' )
 
-        ENDIF
+        ENDIF  ! File exists already or not
 
 C.........  Set output diurnal name if input file exists
         IF( DNAME .NE. 'NONE' ) THEN  ! Master list exists
@@ -445,10 +477,12 @@ C.............  Check modeling year to ensure same as ENAME
             I = SDATE3D / 1000
             IF( I .NE. JYEAR ) THEN
 
-                WRITE( *,92020 ) 'The year of input file ' //
+                WRITE( MESG,94010 ) 'The year of input file ' //
      &              DNAME( 1:TRIMLEN( DNAME ) ) // ' is', I,
-     &              'but the year of input file ' //
+     &              CRLF() // BLANK5 //
+     &              '  but the year of input file ' //
      &              ENAME( 1:TRIMLEN( ENAME ) ) // ' is', JYEAR
+                CALL M3MSG2( MESG )
                 CALL M3EXIT( 'EMISFAC', 0, 0, 
      &                       'Incompatible input files', 2 )
 
@@ -488,14 +522,18 @@ C.............  Set up diurnal master List file description
             WRITE( FDESC3D( 5 ),94030 ) 'MAXT_MAX = ', MAXT_MAX, 'deg F'
             WRITE( FDESC3D( 6 ),94030 ) 'INCREMENT= ', TINTV, 'deg F'
 
+            DO 66 J = 7, MXDESC3
+                FDESC3D( J ) = ' '
+66          CONTINUE 
+
             K = MXNDET
-            DO 34 J = 1, MXDET
+            DO 77 J = 1, MXDET
                 K = K + 1
                 VNAME3D( J ) = EMTLST ( EMTIDX( K ) )
                 UNITS3D( J ) = EMTUNIT( EMTIDX( K ) )
                 VDESC3D( J ) = EMTDESC( EMTIDX( K ) )
                 VTYPE3D( J ) = M3REAL
-   34       CONTINUE
+77          CONTINUE
  
             NNAME = PROMPTMFILE(
      &         'Enter logical name for output DIURNAL MASTER EF ' //
@@ -512,9 +550,9 @@ C...................................................................
             J     = 0
             EFLAG = .FALSE.
 
-   35       CONTINUE
+88          CONTINUE
 
-                READ( SDEV, 93100, END=38, IOSTAT=IOS ) BUFFER
+                READ( SDEV, 93100, END=101, IOSTAT=IOS ) BUFFER
 
                 IREC = IREC + 1
                 L = INDEX( BUFFER, '-' ) 
@@ -526,7 +564,7 @@ C...................................................................
      &                  'Error ', IOS,
      &                  'reading TARGETED EF UPDATE file at line', IREC
                     CALL M3MESG( MESG )
-                    GO TO 35            ! To head of read loop
+                    GO TO 88            ! To head of read loop
 
                 ELSEIF( L .EQ. 0 ) THEN
                     K  = STR2INT( BUFFER( 1:TRIMLEN( BUFFER ) ) )
@@ -538,14 +576,15 @@ C...................................................................
 
                 ENDIF
 
-                DO 37 JJ = K, KK
+                DO 99 JJ = K, KK
 
                     J = J + 1
 
                     IF( J .GT. MXPSI ) THEN
                         WRITE( MESG, 94010 )
      &                     'Maximum number of EF updates', MXPSI, 
-     &                     'exceeded at line', IREC, ', file MEFUPD'
+     &                     CRLF() // BLANK5 //
+     &                     '  exceeded at line', IREC, ', file MEFUPD'
                         CALL M3MESG( MESG )
 
                     ELSE
@@ -557,7 +596,7 @@ C...................................................................
 
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 )
-     &                          'Error: Entries in MEFUPD are not ' //
+     &                          'ERROR: Entries in MEFUPD are not ' //
      &                          'uniquely sorted in ascending order'
                             CALL M3MESG( MESG )
 
@@ -565,21 +604,23 @@ C...................................................................
 
                     ENDIF
 
-   37           CONTINUE
+99              CONTINUE
 
-            GO TO 35  ! To head of read loop
+            GO TO 88  ! To head of read loop
 
-   38       CONTINUE
+101         CONTINUE
             NUPDAT = J
 
             IF( MPNUM .GT. MXPSI ) THEN
 
                 EFLAG = .TRUE.
-                WRITE( *, 92000 ) ' '
-                WRITE( *, 92010 )
+                WRITE( MESG, 94010 )
      &                 'Records count for PSI updates       :', NUPDAT,
+     &                 // CRLF() // BLANK5 //
      &                 'Max dimensioned record-count (MXPSI):', MXPSI,
+     &                 // CRLF() // BLANK5 //
      &                 'Max record-count exceeded.'
+                CALL M3MSG2( MESG )
             ENDIF
 
             IF( EFLAG ) THEN
@@ -598,10 +639,10 @@ C...................................................................
         J     = 0
         JJ    = 0 
         EFLAG = .FALSE.
-   55   CONTINUE   ! Start loop for reading MPREF 
+155     CONTINUE   ! Start loop for reading MPREF 
 
 C.............  Read first line of 2-line records
-            READ( NRDEV, *, END=61, IOSTAT=IOS ) P1, MPTYPE
+            READ( NRDEV, *, END=161, IOSTAT=IOS ) P1, MPTYPE
 
             I    = I + 1
             IREC = IREC + 1
@@ -615,7 +656,8 @@ C.............  Read first line of 2-line records
             ELSEIF( I .GT. MXPREF ) THEN
                 WRITE( MESG, 94010 )
      &                'Maximum number of master PSIs', MXPREF,
-     &                 'exceeded at line', IREC, ', file MPREF'
+     &                 // CRLF() // BLANK5 //
+     &                 '  exceeded at line', IREC, ', file MPREF'
                 CALL M3MESG( MESG )
 
 C.............  If no overflow and no I/O errors...
@@ -645,12 +687,12 @@ C                       the legal number of other PSIs
                         EFLAG = .TRUE.
 
                         WRITE( MESG, 94010 ) 
-     &                         'Problem at line', IREC, ', file MPREF:'
-                        CALL M3MESG( MESG )
-
-                        WRITE( *, 92010 ) 
+     &                   'Problem at line', IREC, ', file MPREF:'
+     &                   // CRLF() // BLANK5 // '  ' //
      &                   'Attmptd # PSIs used in combo        :',MPTYPE,
+     &                   // CRLF() // BLANK5 // '  ' //
      &                   'Max     # PSIs used in combo (MXNPT):',MXNPT
+                        CALL M3MESG( MESG )
 
 C.....................  No overflow, set combo EF properties...
                     ELSE
@@ -679,15 +721,16 @@ C.....................  No overflow, set combo EF properties...
                     EFLAG = .TRUE.
                     WRITE( MESG, 94010 ) 
      &                 'PSI type flag illegal value:', MPTYPE,
-     &                 '(profile', P1, ', line', IREC, ', file MPREF)'
+     &                 CRLF() // BLANK5 //
+     &                 '  (profile', P1, ', line', IREC, ', file MPREF)'
                     CALL M3MESG( MESG )
 
                 ENDIF
 
             ENDIF
 
-        GO TO 55    ! End loop for reading MPREF
-   61   CONTINUE
+        GO TO 155   ! End loop for reading MPREF
+161     CONTINUE
 
         MRNUM  = I
         MPURE  = J  ! Note: J  <= I
@@ -696,11 +739,14 @@ C.....................  No overflow, set combo EF properties...
         IF( MRNUM .GT. MXPREF ) THEN
 
             EFLAG = .TRUE.
-            WRITE( *, 92000 ) ' '
-            WRITE( *, 92010 )
-     &             'Records count for master PSIs        :', MRNUM ,
-     &             'Max dimensioned record-count (MXPREF):', MXPREF,
-     &             'Max record-count exceeded.'
+            WRITE( MESG, 94010 )
+     &       'Records count for master PSIs        :', MRNUM ,
+     &       CRLF() // BLANK5 //
+     &       'Max dimensioned record-count (MXPREF):', MXPREF,
+     &       CRLF() // BLANK5 //
+     &       'Max record-count exceeded.'
+            CALL M3MSG2( MESG )
+
         ENDIF
 
         IF( EFLAG ) THEN
@@ -711,9 +757,9 @@ C.....................  No overflow, set combo EF properties...
 C.........  Sort master PSI list
         CALL SORTI1( MRNUM, INDEXA, IPSIA )
 
-        DO 63 I = 1, MRNUM
+        DO 163 I = 1, MRNUM
            IPSI( I ) = IPSIA( INDEXA( I ) )
-   63   CONTINUE
+163     CONTINUE
 
 C...................................................................
 C.........  Read in and process MPLIST file             ............
@@ -725,14 +771,14 @@ C.........  Do this sorting and uniqueness no to avoid a _huge_ array
         I     = 0 
         IREC  = 0 
         EFLAG = .FALSE.
-   44   CONTINUE   ! Start loop for reading MPLIST
+177     CONTINUE   ! Start loop for reading MPLIST
 
-            READ( NLDEV, *, END=48 ) P1, P2, P3, ( P4( JJ ), JJ=1,24 )
+            READ( NLDEV, *, END=188 ) P1, P2, P3, ( P4( JJ ), JJ=1,24 )
 
             IREC = IREC + 1
 
 C.............  Loop through all entries on line (for all hours)
-            DO 47 JJ = 1, 24
+            DO 181 JJ = 1, 24
  
                 IM = LOCAT1( P4( JJ ), I, IPSIR )
 
@@ -744,15 +790,16 @@ C.................  If PSI not found, and not first entry...
                     IF( I .GT. MXPSI ) THEN        ! Overflow will occur
                         WRITE( MESG, 94010 )
      &                     'Maximum number of unqiue PSIs', MXPSI,
-     &                     'exceeded at line', IREC, ', file MPLIST'
+     &                     CRLF() // BLANK5 //
+     &                     '  exceeded at line', IREC, ', file MPLIST'
                         CALL M3MESG( MESG )
  
                     ELSE
 
 C......................... Shift list by 1, starting from bottom of list
-                        DO 46 K = I, IM+1, -1
+                        DO 179 K = I, IM+1, -1
                             IPSIR( K ) = IPSIR( K-1 )
-   46                   CONTINUE
+179                     CONTINUE
 
 C......................... Inert new PSI into sorted list 
                         IPSIR( IM ) = P4( JJ )
@@ -765,10 +812,10 @@ C.................  First entry...
  
                 ENDIF
  
-   47       CONTINUE    ! End loop on hours
+181         CONTINUE    ! End loop on hours
  
-        GO TO 44        ! End loop for reading MPLIST
-   48   CONTINUE
+        GO TO 177       ! End loop for reading MPLIST
+188     CONTINUE
 
 C.........  Set (current) count of scenario-specific PSIs
         MPNUM = I
@@ -781,7 +828,7 @@ C.........  Set (current) count of scenario-specific PSIs
         ENDIF
 
 C.........  Ensure that all PSI on which others depend are in IPSIR
-        DO 69 N = 1, MRNUM
+        DO 199 N = 1, MRNUM
 
             MPTYPE = ISTYPE( N,1 )
 
@@ -792,7 +839,7 @@ C.................  Set pointer to combo-only lists
                 DEPOINT = ISTYPE( N,2 )
 
 C.................  Loop through all factors depended on by Ith PSI
-                DO 68 J = 1,MPTYPE
+                DO 197 J = 1,MPTYPE
 
 C.....................  Get Jth PSI from list for Ith PSI
                     P1 = IPLIST( J, DEPOINT )
@@ -807,16 +854,17 @@ C.....................  Locate Jth PSI in sorted scenario-specific PSI list
                         IF( MPNUM .GT. MXPSI ) THEN
                             WRITE( MESG, 94010 )
      &                         'Maximum number of unqiue PSIs', MXPSI,
-     &                         'exceeded during list update for ' //
+     &                         CRLF() // BLANK5 //
+     &                         '  exceeded during list update for ' //
      &                         'combo EFs'
                             CALL M3MESG( MESG )
 
                         ELSE
 
 C............................. Shift list by 1, starting from bottom of list
-                            DO 66 K = MPNUM, IM+1, -1
+                            DO 195 K = MPNUM, IM+1, -1
                                 IPSIR( K ) = IPSIR( K-1 )
-   66                       CONTINUE
+195                         CONTINUE
     
 C............................. Inert new PSI into sorted list 
                             IPSIR( IM ) = P1
@@ -824,17 +872,16 @@ C............................. Inert new PSI into sorted list
 
                     ENDIF
 
-   68           CONTINUE
+197             CONTINUE
 
             ENDIF
 
-   69   CONTINUE
+199     CONTINUE
         
         IF( MPNUM .GT. MXPSI ) THEN
 
             EFLAG = .TRUE.
-            WRITE( *, 92000 ) ' '
-            WRITE( *, 92010 )
+            WRITE( MESG, 92010 )
      &             'Records count for unique PSIs       :', MPNUM ,
      &             'Max dimensioned record-count (MXPSI):', MXPSI,
      &             'Max record-count exceeded.'
@@ -853,9 +900,9 @@ C...................................................................
         I     = 0
         IREC  = 0
         EFLAG = .FALSE.
-   39   CONTINUE   ! Start loop for reading MEFTEMP
+211     CONTINUE   ! Start loop for reading MEFTEMP
 
-            READ( EDEV, *, END=41, IOSTAT=IOS ) 
+            READ( EDEV, *, END=222, IOSTAT=IOS ) 
      &            P1, P2, ( P5( JJ ), JJ = 1, P2 )
 
             IREC = IREC + 1
@@ -872,50 +919,58 @@ C...................................................................
             ELSEIF( I .GT. MXPSI ) THEN
                 WRITE( MESG, 94010 )
      &             'Maximum number PSI-based temperature indices', 
-     &             MXPSI, 'exceeded at line', IREC, ', file MEFTEMP'
+     &             MXPSI, CRLF() // BLANK5 //
+     &             '  exceeded at line', IREC, ', file MEFTEMP'
                 CALL M3MESG( MESG )
 
             ELSE    
 
                 MMTREF( I ) = P1
                 NTIDX ( I ) = P2
-                DO 40 J = 1, P2
+                DO 215 J = 1, P2
                     TIDXPSI( J,I ) = P5( J )
-   40           CONTINUE
+215             CONTINUE
 
             ENDIF
 
-        GO TO 39
+        GO TO 211
 
-   41   CONTINUE
+222     CONTINUE
         NTREF = I 
 
         IF( MPNUM .GT. MXPSI ) THEN
 
             EFLAG = .TRUE.
-            WRITE( *, 92000 ) ' '
-            WRITE( *, 92010 )
-     &             'Records count of temperature indices:', NTREF ,
-     &             'Max dimensioned record-count (MXPSI):', MXPSI,
-     &             'Max record-count exceeded.'
+            WRITE( MESG, 94010 )
+     &       'Records count of temperature indices:', NTREF ,
+     &       CRLF() // BLANK5 //
+     &       'Max dimensioned record-count (MXPSI):', MXPSI,
+     &       CRLF() // BLANK5 //
+     &       'Max record-count exceeded.'
+            CALL M3MSG2( MESG )
+
         ENDIF
 
 C.........  Check if the number of entries in the temperature-index file
 C.........  is the same as the number in MPLIST.  If not - give warning.
         IF( MPNUM .NE. NTREF ) THEN
 
-            WRITE( *,92000 ) ' ' 
-            WRITE( *,92010 ) 
+            WRITE( MESG,94010 ) 
      &                 'The number of entries in MEFTEMP is', NTREF 
-            WRITE( *,92010 ) 
+     &                 CRLF() // BLANK5 //
      &                 'The number of entries in MPLIST  is', MPNUM
-            WRITE( *,92000 ) 
-     &        ' ', 
+            CALL M3MSG2( MESG )
+
+            WRITE( MESG,94010 ) 
      &        '*****************************************************',
+     &         CRLF() // BLANK5 //
      &        'WARNING: The parameter scheme indices in MEFTEMP are',
+     &         CRLF() // BLANK5 //
      &        '         inconsistent with those in the MPLIST file',
+     &         CRLF() // BLANK5 //
      &        '*****************************************************',
-     &        ' '
+            CALL M3MSG2( MESG )
+
         ENDIF
 
         IF ( EFLAG ) THEN
@@ -927,7 +982,7 @@ C.........  Update temperature indices lists so pure PSIs include
 C.........  indices for the combo PSIs that use them
 
         EFLAG = .FALSE.
-        DO 75 I = 1, NTREF
+        DO 233 I = 1, NTREF
 
 C.............  Find PSI for temperature index in main PSI list
             K = FIND1 ( MMTREF( I ), MRNUM, IPSI )
@@ -953,13 +1008,13 @@ C.............  If PSI is a combination format
             ELSEIF( DEPCNT .GT. 0 ) THEN
 
 C.................  Loop through all PSIs used by PSI( I )
-                DO 73 J = 1, DEPCNT
+                DO 232 J = 1, DEPCNT
 
 C.....................  Find each PSI used in temperature index
                     L = FIND1( IPLIST( J,DEPOINT ), NTREF, MMTREF )
 
 C.....................  Loop through temp indices for PSI( I ) 
-                    DO 72 T = 1, NTIDX( I )
+                    DO 231 T = 1, NTIDX( I )
 
 C.........................  Find temp index location in list for PSI(L)
                         KK = LOCAT1( TIDXPSI( T,I ), NTIDX( L ), 
@@ -982,9 +1037,9 @@ C.................................  Add one to count of TMMIs for PSI(L)
                                 NTIDX( L ) = NTIDX( L ) + 1
  
 C.................................  Shift stored TMMIs down one for PSl(L)
-                                DO 71 JJ = NTIDX( L ), KK+1, -1
+                                DO 229 JJ = NTIDX( L ), KK+1, -1
                                     TIDXPSI( JJ,L ) = TIDXPSI( JJ-1,L )
-   71                           CONTINUE
+229                             CONTINUE
  
 C.................................  Insert new TMMI for PSI(L) from PSI(I)
                                 TIDXPSI( KK,L ) = TIDXPSI( T,I )
@@ -992,12 +1047,12 @@ C.................................  Insert new TMMI for PSI(L) from PSI(I)
                             ENDIF  ! End overflow check
                         ENDIF
 
-   72               CONTINUE
-   73           CONTINUE
+231                 CONTINUE
+232             CONTINUE
 
             ENDIF 
 
-   75   CONTINUE   !  ... Phew!
+233     CONTINUE   !  ... Phew!
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'EMISFAC', 0, 0,
@@ -1008,7 +1063,7 @@ C.........  Initialize constants for loops
         MAXTL = INT( ( MAXT_MAX - MAXT_MIN ) / TINTV ) + 1
 
 C.........  Create new pure EFs where needed
-        DO 201 IPM = 1, MPNUM
+        DO 333 IPM = 1, MPNUM
 
 C.............  Get indice from MPLIST
             IPARM = IPSIR( IPM )
@@ -1041,8 +1096,8 @@ C.............  Search for MPLIST indice in PSI list used in temperature index
             ENDIF
  
 C.............  Write message to screen
-            WRITE( *,92000 ) ' '
-            WRITE( *,92020 ) 'Processing PSI', IPARM, '...'
+            WRITE( MESG, 94010 ) 'Processing PSI', IPARM, '...'
+            CALL M3MSG2( MESG )
 
 C.............  Initialize MIN/MAX temperature indice counter
             MMTC( K ) = 1
@@ -1069,14 +1124,14 @@ C.................  Check to see any diurnals for this profile indice exist
      $              ( DNAME, ALLVAR3, SDATE3D, IPTIM ) ) THEN
 
 C.....................  Init diurnal arrays b/c blanks will exist on write3
-                    DO 81 I = 1, NVTYPE
-                        DO 80 JJ = 1, NMINMAX
+                    DO 255 I = 1, NVTYPE
+                        DO 253 JJ = 1, NMINMAX
                             WDL_VOC( JJ, I ) = BADVAL3
                             DNL_VOC( JJ, I ) = BADVAL3
                             HOT_VOC( JJ, I ) = BADVAL3
                             CRC_VOC( JJ, I ) = BADVAL3
-   80                   CONTINUE
-   81               CONTINUE
+253                     CONTINUE
+255                 CONTINUE
 
 C.....................  Diurnal emission factors were "calculated"
                     RFLAG = .TRUE.
@@ -1126,7 +1181,7 @@ C.................  Also check if an update has been specifically requested
                     FIRSTMPR = .TRUE. ! Specify first temperature for MOINBLD
 
 C.....................  Loop over temperature range for non-diurnal factors
-                    DO 101 T = 1, NTEMP
+                    DO 266 T = 1, NTEMP
 
                         TMMI   = TIDXPSI( MMTC( K ),K )
 
@@ -1196,7 +1251,7 @@ C.........................  Create EFs for current NPSI, CPSI, temperature
                         REWIND( MODEV )                  
                         CALL MOBILE ( IERR, ITEMP, MODEV, EFACT, DFACT )
 
-                        DO 88 I = 1, NVTYPE
+                        DO 261 I = 1, NVTYPE
 
 C.............................  Put EFACT into non-diurnal arrays
                             EXH_CO ( T, I ) = EFACT( 1, I )
@@ -1218,12 +1273,12 @@ C.................................  Diurnal emission factors were calculated
 
                             ENDIF
 
-   88                   CONTINUE
+261                     CONTINUE
 
 C.........................  Non-diurnal emission factors were calculated 
                         TFLAG = .TRUE. 
 
-  101               CONTINUE  ! T, temperature for non-diurnal factors
+266                 CONTINUE  ! T, temperature for non-diurnal factors
 
 C.....................  Add non-diurnal EFs to master list 
                     IF( .NOT. WRITE3
@@ -1240,7 +1295,8 @@ C.....................  Add non-diurnal EFs to master list
 
                     WRITE( MESG, 94010 )
      &                'Non-diurnal emission factors for set', IPARM,
-     &                'already exist in ' // ENAME( 1:TRIMLEN(ENAME) )
+     &                CRLF() // BLANK5 //
+     &                '  already exist in ' // ENAME( 1:TRIMLEN(ENAME) )
                     CALL M3MESG( MESG )
 
                 ENDIF      ! Non-Diurnal EFs have been created or not
@@ -1253,7 +1309,7 @@ C.....................  Add non-diurnal EFs to master list
 
 C.................  Create remaining diurnal factors for IPARM by
 C.................  looping through remaining temperatures
-                DO 151 T = MMTC( K ), NTIDX( K )
+                DO 288 T = MMTC( K ), NTIDX( K )
 
                     DFLAG = .FALSE.  ! Update for each new T combo
 
@@ -1299,14 +1355,14 @@ C.............................  Create EFs current temperature combo
      &                                    EFACT, DFACT        )
 
 C.............................  Put DFACT into diurnal arrays
-                            DO 121 I = 1, NVTYPE
+                            DO 277 I = 1, NVTYPE
 
                                 WDL_VOC( TMMI, I ) = DFACT( 1, I )
                                 DNL_VOC( TMMI, I ) = DFACT( 2, I )
                                 HOT_VOC( TMMI, I ) = DFACT( 3, I )
                                 CRC_VOC( TMMI, I ) = DFACT( 4, I )
 
-  121                       CONTINUE
+277                         CONTINUE
  
 C.............................  Diurnal emission factors were calculated 
                             RFLAG = .TRUE. 
@@ -1314,7 +1370,7 @@ C.............................  Diurnal emission factors were calculated
                         ENDIF  ! If need to call MOBILE or not
                     ENDIF      ! If valid min/max temp combo or not
  
-  151           CONTINUE       ! Loop through temperature indices for IPARM
+288             CONTINUE       ! Loop through temperature indices for IPARM
 
 C.................  If factors were not calculated, then don't output them
                 IF( .NOT. TFLAG ) VFLAG( K ) = .FALSE.  ! Non-diurnal
@@ -1335,7 +1391,8 @@ C.....................  Add non-diurnal EFs to master list
                 ELSEIF( DNAME .NE. 'NONE' ) THEN
                     WRITE( MESG, 94010 )
      &                'Diurnal     emission factors for set', IPARM,
-     &                'already exist in ' // DNAME( 1:TRIMLEN(DNAME) )
+     &                CRLF() // BLANK5 //
+     &                '  already exist in ' // DNAME( 1:TRIMLEN(DNAME) )
                     CALL M3MESG( MESG )
 
                 ELSE
@@ -1348,7 +1405,7 @@ C.....................  Add non-diurnal EFs to master list
 
             ENDIF          ! EFs are pure or combo
 
-  201   CONTINUE           ! IPM
+333     CONTINUE           ! IPM
 
 C.........  Create new mixed EFs where needed
         DO 401 IPM = 1, MPNUM
@@ -1366,8 +1423,8 @@ C.............  Recognize only indice representing combo EF calculations
             IF( DEPCNT .GT. 0 ) THEN
 
 C.................  Write message to screen
-                WRITE( *,92000 ) ' '
-                WRITE( *,92020 ) 'Processing PSI', IPARM, '...'
+                WRITE( MESG, 94010 ) 'Processing PSI', IPARM, '...'
+                CALL M3MSG2( MESG )
 
 C.................  Set update flag using search of MPLIST indice in update list
                 UFLAG = .FALSE.
@@ -1397,8 +1454,8 @@ C.........................  EFS1 and EFS2
 
                     ENDIF
 
-  381           CONTINUE
-  383           CONTINUE
+381             CONTINUE
+383             CONTINUE
 
 C.................  Store emission factors in master lists
                 IF( TFLAG ) THEN
@@ -1415,7 +1472,8 @@ C.................  Store emission factors in master lists
 
                     WRITE( MESG, 94010 )
      &                'Non-diurnal emission factors for set', IPARM,
-     &                'already exist in ' // ENAME( 1:TRIMLEN(ENAME) )
+     &                CRLF() // BLANK5 //
+     &                '  already exist in ' // ENAME( 1:TRIMLEN(ENAME) )
                     CALL M3MESG( MESG )
 
                 ENDIF      ! Missing non-diurnal for this IPARM or not
@@ -1435,14 +1493,15 @@ C.................  Store emission factors in master lists
 
                     WRITE( MESG, 94010 )
      &                'Diurnal     emission factors for set', IPARM,
-     &                'already exist in ' // DNAME( 1:TRIMLEN(DNAME) )
+     &                CRLF() // BLANK5 //
+     &                '  already exist in ' // DNAME( 1:TRIMLEN(DNAME) )
                     CALL M3MESG( MESG )
 
                 ENDIF      ! Missing diurnal for this IPARM or not
 
             ENDIF          ! EFs are combo or pure
 
-  401   CONTINUE           ! End loop on parameter schemes
+401     CONTINUE           ! End loop on parameter schemes
 
         MESG = 'Normal completion of EMISFAC'
         CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 0 )
