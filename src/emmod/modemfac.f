@@ -72,6 +72,11 @@ C        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: NDIUNT( : )
         CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EFSDSC( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EFSNAM( : )
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EFSUNT( : )
+        
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SUBPOLS( : )   ! final subtraction list
+        CHARACTER(LEN=IOULEN3), PUBLIC :: INPUTHC   ! input hydrocarbon name
+        CHARACTER(LEN=IOULEN3), PUBLIC :: OUTPUTHC  ! output hydrocarbon name
+        INTEGER               , PUBLIC :: NSUBPOL   ! no. pols to subtract
 
 !.........  Emission processes and emission types (proccess//pol) and related
 !.........  Second dimension is number of activities in the inventory
