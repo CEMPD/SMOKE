@@ -4,7 +4,7 @@
      &                      EFLAG, NDROP, EDROP )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 232
 C
 C  DESCRIPTION:
 C      This subroutine reads the EMS-95 format for one set of 5 files
@@ -69,14 +69,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                GETFLINE
         INTEGER                INDEX1
         INTEGER                LBLANK
-        INTEGER                SECSDIFF
         INTEGER                STR2INT
         REAL                   STR2REAL
-        INTEGER                TRIMLEN
         REAL                   YR2DAY  
 
         EXTERNAL CRLF, ENVYN, FINDC, GETFLINE, INDEX1, LBLANK, 
-     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN, YR2DAY
+     &           STR2INT, STR2REAL, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: EDEV( 5 ) !  unit no.: dv, em, fc, sk, pr
@@ -216,6 +214,7 @@ C...........   Other local variables
         LOGICAL          RULFLAG  !  Rule effective file(s): TRUE if exist
         LOGICAL, SAVE :: WFLAG    !  true: convert lat-lons to Western hemisphr
 
+        CHARACTER*2            TMPAA !  tmp time period code
         CHARACTER*10, SAVE  :: FMTSCC!  format for writing integer SCC to char
         CHARACTER*300          LINE  !  Input line from POINT file
         CHARACTER*300          MESG  !  Text for M3EXIT()
@@ -437,7 +436,7 @@ C.............  Find source match in facilities table
             IF( FCID .EQ. ' ' ) FCID = EMCMISS3
             FKEY = CFIP // FCID
             K1   = FINDC( FKEY, FS, FCKEY )
-            LFC  = TRIMLEN( FCID )
+            LFC  = LEN_TRIM( FCID )
                     
             CSS  = LBLANK( LINE( 21:32 ) )
             SKID = LINE( MIN(CSS+21,32):32 )
@@ -634,10 +633,10 @@ C.............  Convert and check SCC value
                 IF( PRID .EQ. ' ' ) PRID = EMCMISS3
 
                 PSKEYA( PS ) = CFIP // 
-     &                         FCID( 1:TRIMLEN( FCID ) ) //
-     &                         SKID( 1:TRIMLEN( SKID ) ) //
-     &                         DVID( 1:TRIMLEN( DVID ) ) //
-     &                         PRID( 1:TRIMLEN( PRID ) )
+     &                         FCID( 1:LEN_TRIM( FCID ) ) //
+     &                         SKID( 1:LEN_TRIM( SKID ) ) //
+     &                         DVID( 1:LEN_TRIM( DVID ) ) //
+     &                         PRID( 1:LEN_TRIM( PRID ) )
 
                 INDXPA( PS ) = PS
                 PSSCCA( PS ) = SCC
@@ -758,9 +757,9 @@ C temp      TMON = STR2INT( LINE( ) )
 
                 INDXDVA( DS ) = DS
                 DVKEYA ( DS ) = CFIP // 
-     &                          FCID( 1:TRIMLEN( FCID ) ) //
-     &                          SKID( 1:TRIMLEN( SKID ) ) //
-     &                          DVID( 1:TRIMLEN( DVID ) )
+     &                          FCID( 1:LEN_TRIM( FCID ) ) //
+     &                          SKID( 1:LEN_TRIM( SKID ) ) //
+     &                          DVID( 1:LEN_TRIM( DVID ) )
 
                 DVSICA ( DS ) = SIC
 C temp          DVIMONA( DS ) = TMON
@@ -824,6 +823,7 @@ C.............  NOTE- Pollutant names here and in INVPNAM converted to uppercase
             COD  = INDEX1( CPOL, MXIPOL, INVPNAM )
 
             IF( COD .LE. 0 ) THEN
+                L2 = LEN_TRIM( CPOL )
                 WRITE( MESG,94010 )  'Source dropped: ' //
      &                 'pollutant name "' // CPOL( 1:L2 ) // 
      &                 '" in emission file at line', IREC,
@@ -855,14 +855,14 @@ C.............  and give warning later if this is not the case.
 
             FCID = LINE( MIN(CSS+6,20):20 )
             IF( FCID .EQ. ' ' ) FCID = EMCMISS3 
-            LFC  = TRIMLEN( FCID )
+            LFC  = LEN_TRIM( FCID )
             FKEY = CFIP // FCID
 
             CSS  = LBLANK( LINE( 21:32 ) )
             SKID = LINE( MIN(CSS+21,32):32 )
             IF( SKID .EQ. ' ' ) SKID = EMCMISS3 
-            LSC  = TRIMLEN( SKID )
-            SKEY = FKEY( 1:TRIMLEN( FKEY ) ) // SKID
+            LSC  = LEN_TRIM( SKID )
+            SKEY = FKEY( 1:LEN_TRIM( FKEY ) ) // SKID
             K2   = FINDC( SKEY, SS, SKKEY )
 
             IF( K2 .LE. 0 ) THEN   ! Key not found
@@ -883,8 +883,8 @@ C.............  and give warning later if this is not the case.
             CSS  = LBLANK( LINE( 33:44 ) )
             DVID = LINE( MIN(CSS+33,44):44 )
             IF( DVID .EQ. ' ' ) DVID = EMCMISS3
-            LDC  = TRIMLEN( DVID )
-            DKEY = SKEY( 1:TRIMLEN( SKEY ) ) // DVID
+            LDC  = LEN_TRIM( DVID )
+            DKEY = SKEY( 1:LEN_TRIM( SKEY ) ) // DVID
             K3   = FINDC( DKEY, DS, DVKEY )
 
             IF( K3 .LE. 0 ) THEN    ! Key not found
@@ -906,8 +906,8 @@ C.............  and give warning later if this is not the case.
             CSS  = LBLANK( LINE( 45:56 ) )
             PRID = LINE( MIN(CSS+45,56):56 )
             IF( PRID .EQ. ' ' ) PRID = EMCMISS3
-            LPC  = TRIMLEN( PRID )
-            PKEY = DKEY( 1:TRIMLEN( DKEY ) ) // PRID
+            LPC  = LEN_TRIM( PRID )
+            PKEY = DKEY( 1:LEN_TRIM( DKEY ) ) // PRID
             K4   = FINDC( PKEY, PS, PSKEY )
 
             IF( K4 .LE. 0 ) THEN    ! Key not found
@@ -930,17 +930,18 @@ C.............  and give warning later if this is not the case.
             WRITE( TSCC, FMTSCC ) PSSCC( K4 )
 
 C.............  Check and set time period type (Year/day/hourly)
-
-            IF ( LINE( 114:115 ) .EQ. 'AA' ) THEN 
+            TMPAA = LINE( 114:115 )
+            CALL UPCASE( TMPAA )
+            IF ( TMPAA .EQ. 'AA' ) THEN 
 
                 TPF = MTPRFAC * WKSET       !  use month, week profiles
 
-            ELSE IF ( LINE( 114:115 ) .EQ. 'AD' ) THEN 
+            ELSE IF ( TMPAA .EQ. 'AD' ) THEN 
 
                 TPF  = WKSET                !  use week profiles
                 EMIS = DAY2YR * EMIS
 
-            ELSE IF ( LINE( 114:115 ) .EQ. 'DS' ) THEN
+            ELSE IF ( TMPAA .EQ. 'DS' ) THEN
 
                 TPF = 1                     !  use only hourly profiles
                 EMIS = DAY2YR * EMIS
@@ -950,7 +951,7 @@ C.............  Check and set time period type (Year/day/hourly)
                 NDROP = NDROP + 1
                 EDROP( COD ) = EDROP( COD ) + EMIS
                 WRITE( MESG,94010 )  'Source dropped: unsupported ' //
-     &                 'time period type "' // LINE( 57:58 ) //
+     &                 'time period type "' // TMPAA //
      &                 '" in emission file at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE          !  to head of MDEV-read loop
