@@ -55,16 +55,12 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-        INCLUDE 'FLTERR.EXT'    !  functions for comparing two numbers
-
+        
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL   ENVYN
-        INTEGER   GETEFILE
-        INTEGER   INDEX1
-        INTEGER   PROMPTFFILE
-        REAL      YR2DAY
 
-        EXTERNAL  ENVYN, GETEFILE, INDEX1, PROMPTFFILE, YR2DAY
+	INTEGER		INDEX1
+        
+        EXTERNAL	INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -89,33 +85,35 @@ C   begin body of subroutine WREPINVEN
 
 C.........  Write out first report to REPINVEN file
 
-          WRITE( ADEV, 93010 ) 'CAS Code', 'Keep', 'Nrecs', 
-     &           'Emissions', 'CAS description'
+        WRITE( ADEV, 93010 ) 'CAS Code', 'Keep', 'Nrecs', 
+     &         'Emissions', 'CAS description'
      
-          WRITE( ADEV, 93020 ) '[tons/year]'
+        WRITE( ADEV, 93020 ) '[tons/year]'
+        
+        WRITE( ADEV, 93000 ) REPEAT( '-', 100 )
           
-          WRITE( ADEV, 93000 ) REPEAT( '-', 100 )
-          
-          DO I = 1, NUNIQCAS
-            IF( UCASNPOL .EQ. UCASNKEP ) THEN
-              KEEP = Y
-            ELSE IF( UCASNPOL .NE. UCASNKEP .AND.
-     &               UCASNKEP .NE. 0 ) THEN
-              KEEP = P
-            ELSE IF( UCASNKEP .EQ. 0 ) THEN
-              KEEP = N
-            END IF
+        DO I = 1, NUNIQCAS
+          IF( UCASNPOL( I ) .EQ. UCASNKEP( I ) ) THEN
+            KEEP = 'Y'
+          ELSE IF( UCASNPOL( I ) .NE. UCASNKEP( I ) .AND.
+     &             UCASNKEP( I ) .NE. 0 ) THEN
+            KEEP = 'P'
+          ELSE IF( UCASNKEP( I ) .EQ. 0 ) THEN
+            KEEP = 'N'
+          END IF
             
-            K = INDEX1( UNIQCAS( I ), NINVTBL, ITCASA )
-            IF( K .GT. 0 ) THEN
-              DESC = ITCASDSCA( K )
-            ELSE
-              MESG = 'CAS code not found in raw list'
-              CALL M3EXIT( PROGNAME, 0, 0, MESG, 1 )
-            END IF
+          K = INDEX1( UNIQCAS( I ), NINVTBL, ITCASA )
+          IF( K .GT. 0 ) THEN
+            DESC = ITCASDSCA( K )
+          ELSE
+            MESG = 'CAS code not found in raw list'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 1 )
+          END IF
           
-            WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP, RECSBYCAS( I ),
+          WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP, RECSBYCAS( I ),
      &             EMISBYCAS( I ), DESC
+
+	END DO
           
         RETURN
 

@@ -1,5 +1,6 @@
 
-        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG, ADEV )
+        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG,
+     &                          ADEV )
 
 C*************************************************************************
 C  subroutine body starts at line 119

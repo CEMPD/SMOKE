@@ -22,12 +22,12 @@ GRW=grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o
 #
 grwinven: $(GRW) $(ALLI) $(LIBPATH)
 	echo GRWINVEN:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GRW) $(LIBS)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(GRW) $(LIBS)
 #
 #
 grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	echo GRWINVEN \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(@) $(GRW) $(LIBS_DEBUG)
 
 RAW=adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o  \
     gethdr.o getpdinfo.o initinfo.o \
