@@ -50,7 +50,7 @@ C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: LNONHAP
         
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, NCHARS, NEM, NOZ
+        USE MODINFO, ONLY: NSRC, NPPOL, NCHARS, NEM, NOZ
 
         IMPLICIT NONE
 
@@ -70,11 +70,20 @@ C.........  Pollutant names
         CHARACTER(LEN=IOVLEN3),PARAMETER :: NHVNAM = 'NONHAPVOC'
         CHARACTER(LEN=IOVLEN3),PARAMETER :: NHTNAM = 'NONHAPTOG'
         CHARACTER(LEN=4      ),PARAMETER :: NOIEND = '_NOI'
+
+C.........   Local allocatable arrays
+        INTEGER, ALLOCATABLE :: TMPIDX( : )      ! sorting index
+        INTEGER, ALLOCATABLE :: TMPPOSCOD( : )   ! tmp pollutant code array
+        
+        REAL,    ALLOCATABLE :: TMPPOLVAL( :,: ) ! tmp emissions array
         
 C.........   Other local variables
-        INTEGER  I,J,S,L2     ! counters and indices
+        INTEGER  I,J,K,S,L2   ! counters and indices
+        
+        INTEGER  IDXSIZE      ! size of sorting index
         INTEGER  IOS          ! I/O status
-        INTEGER  POL          ! pollutant number
+        INTEGER  CPOL         ! current pollutant number
+        INTEGER  PPOL         ! previous pollutant number
         INTEGER  CURRPOS      ! current position in POLVAL and IPOSCOD arrays
         INTEGER  VNMPOS       ! position of VOC in pollutant names array
         INTEGER  TNMPOS       ! position of TOG in pollutant names array
@@ -87,6 +96,8 @@ C.........   Other local variables
         INTEGER :: NWARN = 0   ! current number of warnings
         INTEGER :: NCRNOTOX = 0! number of sources with criteria but no toxics
         INTEGER :: NTOXNOCR = 0! number of sources with toxics but no criteria
+        INTEGER  STIDX        ! starting index into pollutant array for current source
+        INTEGER  ENDIDX       ! ending index into pollutant array
         
         REAL     VOCEANN      ! summed annual VOC emissions
         REAL     TOGEANN      ! summed annual TOG emissions
@@ -96,6 +107,7 @@ C.........   Other local variables
         LOGICAL  FNDTOG       ! true: found TOG entry in inventory
         LOGICAL  EFLAG        ! true: error occured
         LOGICAL  LASTFLAG     ! true: entry is last for current source
+        LOGICAL  NEEDSORT     ! true: need to resort pollutants for current source
         
         CHARACTER(LEN=IOVLEN3) POLNAM   ! temporary pollutant name
         CHARACTER(LEN=100    ) BUFFER   ! message buffer
@@ -157,7 +169,7 @@ C.................  Increment current position in arrays
                 CURRPOS = CURRPOS + 1
 
 C.................  Store pollutant for this position
-                POL = IPOSCOD( CURRPOS )
+                CPOL = IPOSCOD( CURRPOS )
             
 C.................  Check if this is last pollutant for this source
                 IF( J == NPCNT( I ) ) THEN
@@ -168,20 +180,20 @@ C.................  Process source if it is not integrated
                 IF( ALLOCATED( LNONHAP ) .AND. .NOT. LNONHAP( I ) ) THEN
             
 C.....................  Skip rest of loop if pollutant is not part VOC or TOG
-                    IF( INVDVTS( POL ) == 'N' ) CYCLE
+                    IF( INVDVTS( CPOL ) == 'N' ) CYCLE
 
 C.....................  If pollutant is not a model species, set it to zero
-                    IF( .NOT. ITMSPC( POL ) ) THEN
+                    IF( .NOT. ITMSPC( CPOL ) ) THEN
                         POLVAL( CURRPOS,NEM ) = 0.0
                         POLVAL( CURRPOS,NOZ ) = 0.0
 
                     ELSE
 
 C......................... If pollutant is not an explicit species, rename to NOI
-                        IF( .NOT. ITEXPL( POL ) ) THEN
+                        IF( .NOT. ITEXPL( CPOL ) ) THEN
                     
 C.............................  Create NOI name
-                            POLNAM = INVDNAM( POL )
+                            POLNAM = INVDNAM( CPOL )
                             IF( LEN_TRIM( POLNAM ) > 11 ) THEN
                                 POLNAM = POLNAM(1:11)
                             END IF
@@ -210,23 +222,23 @@ C.................  Otherwise current source is to be integrated
                 ELSE
 
 C.....................  If current pollutant is VOC or TOG entry, save position
-                    IF( POL == VNMPOS ) THEN
+                    IF( CPOL == VNMPOS ) THEN
                         VOCPOS = CURRPOS
                         IF( .NOT. LASTFLAG ) CYCLE
                     END IF
                 
-                    IF( POL == TNMPOS ) THEN
+                    IF( CPOL == TNMPOS ) THEN
                         TOGPOS = CURRPOS
                         IF( .NOT. LASTFLAG ) CYCLE
                     END IF
 
 C.....................  Sum toxic emissions for this source
-                    IF( INVDVTS( POL ) == 'V' ) THEN
+                    IF( INVDVTS( CPOL ) == 'V' ) THEN
                         VOCEANN = VOCEANN + POLVAL( CURRPOS,NEM )
                         FNDVOC = .TRUE.
                     END IF
                 
-                    IF( INVDVTS( POL ) == 'T' ) THEN
+                    IF( INVDVTS( CPOL ) == 'T' ) THEN
                         TOGEANN = TOGEANN + POLVAL( CURRPOS,NEM )
                         FNDTOG = .TRUE.
                     END IF
@@ -378,6 +390,73 @@ C.........................  Reset flags and values
      &     'Sources with toxic emissions but no VOC or TOG emissions: ', 
      &     NTOXNOCR
         CALL M3MESG( MESG )
+
+C.........  Sort POLVAL and IPOSCOD to put new pollutants (NONHAP and NOI) in correct order
+
+C.........  Determine maximum size for sorting index, then allocate memory
+        IDXSIZE = MAXVAL( NPCNT )
+        
+        ALLOCATE( TMPIDX( IDXSIZE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPIDX', PROGNAME )
+        ALLOCATE( TMPPOLVAL( IDXSIZE,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPPOLVAL', PROGNAME )
+        ALLOCATE( TMPPOSCOD( IDXSIZE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPPOSCOD', PROGNAME )
+
+        STIDX = 1
+        
+C.........  Loop through sources        
+        DO I = 1, NSRC
+
+C.............  Set ending index for this source
+            ENDIDX = STIDX + NPCNT( I ) - 1
+
+C.............  Initialize sorting index and check if any sorting needs to be done
+            PPOL = 0
+            NEEDSORT = .FALSE.
+            
+            DO J = 1, NPCNT( I )
+                CPOL = IPOSCOD( STIDX + J - 1 )
+
+C.................  If current pollutant is lower than previous, need to resort                
+                IF( CPOL < PPOL ) THEN
+                    NEEDSORT = .TRUE.
+                END IF
+                
+                PPOL = CPOL
+                TMPIDX( J ) = J
+            END DO
+
+C.............  Make sure this source needs to be resorted
+            IF( NEEDSORT ) THEN
+
+C.................  Store current values in temporary arrays
+                TMPPOLVAL( 1:NPCNT( I ),: ) = POLVAL ( STIDX:ENDIDX,: )
+                TMPPOSCOD( 1:NPCNT( I ) )   = IPOSCOD( STIDX:ENDIDX )
+                
+C.................  Sort section of IPOSCOD corresponding to this source
+                CALL SORTI1( NPCNT( I ), TMPIDX( 1:NPCNT( I ) ), 
+     &                       IPOSCOD( STIDX:ENDIDX ) ) 
+
+C.................  Loop through pollutants for current source        
+                DO J = 1, NPCNT( I )
+            
+                    K = TMPIDX( J )
+                    
+                    POLVAL ( STIDX + J - 1,: ) = TMPPOLVAL( K,: )
+                    IPOSCOD( STIDX + J - 1 )   = TMPPOSCOD( K )
+            
+                END DO
+
+            END IF  ! check if pollutants need sorting
+
+C.............  Increment starting index        
+            STIDX = ENDIDX + 1
+        
+        END DO
+
+C.........  Deallocate local memory
+        DEALLOCATE( TMPIDX, TMPPOLVAL, TMPPOSCOD )
 
         RETURN
 
