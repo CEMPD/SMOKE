@@ -173,7 +173,20 @@ C          with master SCC list.
 
             END IF
 
-            SKIPREC = ( IXSCC .LE. 0 )  
+C.................  Mobile sources can have zeros for vehicle types and not 
+C                   road classes, so check to make sure that this isn't the
+C                   case.
+            IF( CATEGORY    .EQ. 'MOBILE' .AND.
+     &          TSCC( 1:2 ) .EQ. '22'     .AND.
+     &          TSCC( 3:6 ) .EQ. '0000'         ) THEN
+
+                SKIPREC = .FALSE.
+
+            ELSE
+
+                SKIPREC = ( IXSCC .LE. 0 )  
+
+            END IF
 
         END IF
 
