@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
          PROGRAM RAWMOBIL
 
 C***********************************************************************
-C  program body starts at line 
+C  program body starts at line 177
 C
 C  DESCRIPTION:
 C       
@@ -21,13 +19,34 @@ C  REVISION  HISTORY:
 C       Prototype  12/95 by MRH
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
        
-        INCLUDE 'TMDIMS3.EXT'
         INCLUDE 'MBDIMS3.EXT'
+        INCLUDE 'TMDIMS3.EXT'
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -35,6 +54,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3
         INTEGER         GETNUM
@@ -45,8 +65,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         
-        EXTERNAL  ENVYN, FIND1, FIND2, FIND3, GETNUM, GETYN, INDEX1,
-     &            LEN2, PROMPTFFILE, PROMPTMFILE, TRIMLEN
+        EXTERNAL  CRLF, ENVYN, FIND1, FIND2, FIND3, GETNUM, GETYN,
+     &            INDEX1, LEN2, PROMPTFFILE, PROMPTMFILE, TRIMLEN
+
+C...........   LOCAL PARAMETERS and their descriptions:
+
+        CHARACTER*5     BLANK5
+        PARAMETER(      BLANK5 = ' ' )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -167,8 +192,7 @@ C   begin body of program RAWMOBIL
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program RAWMOBIL', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'RAWMOBIL', 0, 0, 'Ending program.', 2 )
         END IF
 
 C.........  Get file name; open input time zone file
@@ -182,12 +206,14 @@ C.........  Get the UTM zone to put into file header:
 
 C.........  Loop over link input files
 
-        WRITE( *,92000 )
-     &  ' ',
-     &  'Now enter the list of logical file names for',
-     &  'RAW LINK-VMT (LNKRAW) MOBILE SOURCE files, and',
-     &  'year for each set',
-     &  ' '
+        WRITE( MESG,94010 )
+     &    'Now enter the list of logical file names for' 
+     &     // CRLF() // BLANK5 //
+     &    'RAW LINK-VMT (LNKRAW) MOBILE SOURCE files, and'
+     &     // CRLF() // BLANK5 //
+     &    'year for each set...'
+
+        CALL M3MSG2( MESG )
 
         IFIL   = 0
         INYEAR = 1989
@@ -287,8 +313,10 @@ C.................  If link zone is not file zone, convert coords to zone
 
                 ENDIF
 
+                S = S + 1
+
 C.................  Ensure no overflow
-                IF( S .GE. MXLSRC ) THEN  ! Error
+                IF( S .GT. MXLSRC ) THEN  ! Error
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
@@ -297,8 +325,6 @@ C.................  Ensure no overflow
                     CALL M3MESG( MESG )
 
                 ELSE
-
-                    S = S + 1
 
                     LINDXA( S ) = S     ! Index for sorting
 
@@ -325,23 +351,28 @@ C.................  Ensure no overflow
 
         IF( EFLAG ) THEN   ! Internal dimensions exceeded
 
-            WRITE( *, 92000 ) ' '
-            WRITE( *, 92010 ) 
+            WRITE( MESG, 94010 ) 
      &             'Records count for LINK sources       :', MLNUM ,
+     &             CRLF() // BLANK5 //
      &             'Max dimensioned record-count (MXLSRC):', MXLSRC,
+     &             CRLF() // BLANK5 //
      &             'Max record-count exceeded.'
+
+            CALL M3MSG2( MESG )
             CALL M3MESG( 'Max record-count exceeded in RAW VMT files')
 
         ENDIF
 
 C.........  Loop over non-link input files
 
-        WRITE( *,92000 )
-     &  ' ',
-     &  'Now enter the list of logical file names for',
-     &  'RAW COUNTY-VMT (MRAW) MOBILE SOURCE files,',
-     &  'year for each set',
-     &  ' '
+        WRITE( MESG,94010 )
+     &     'Now enter the list of logical file names for'
+     &     // CRLF() // BLANK5 //
+     &     'RAW COUNTY-VMT (MRAW) MOBILE SOURCE files,'
+     &     // CRLF() // BLANK5 //
+     &     'year for each set...'
+
+        CALL M3MSG2( MESG )
 
         IFIL   = 0
         INYEAR = 1989
@@ -422,7 +453,9 @@ C.................  Check for bad road class number
                     ENDIF
                 ENDIF
 
-                IF( S .GE. MXNSRC ) THEN  ! Error
+                S = S + 1   
+
+                IF( S .GT. MXNSRC ) THEN  ! Error
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
@@ -431,8 +464,6 @@ C.................  Check for bad road class number
                     CALL M3MESG( MESG )
 
                 ELSE
-
-                    S = S + 1   
 
                     INDEXA( S ) = S
 
@@ -458,13 +489,17 @@ C.................  Check for bad road class number
         MNNUM = S 
 
 C.........  Check for overflow and drop sources if necessary
-        IF ( EFLAG ) THEN
+        IF ( MNNUM .GT. MXNSRC ) THEN
 
-            WRITE( *, 92000 ) ' '
-            WRITE( *,92010 )
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 )
      &             'Records count for NON-LINK sources   ', MNNUM ,
+     &              CRLF() // BLANK5 //
      &             'Max dimensioned record-count (MXNSRC)', MXNSRC,
+     &              CRLF() // BLANK5 //
      &             'Max record-count exceeded.'
+            CALL M3MSG2( MESG )
+
             CALL M3MESG( 'Max record-count exceeded in RAW VMT files')
 
         END IF
@@ -475,7 +510,7 @@ C.........  Check for overflow and drop sources if necessary
         END IF
 
 C.........  Sort and merge raw VMT data (both link and non-link)
-        WRITE( *,92000 ) ' ', 'Processing the RAW MOBILE SOURCE data...', ' '
+        CALL M3MSG2( 'Processing the RAW MOBILE SOURCE data...' )
 
 C.........  Sort link data
         IF( LFLAG ) THEN
@@ -673,10 +708,12 @@ C.............  Update sources if no duplicate and no overflow
         IF( NSRC .NE. NMSRC ) THEN
 
             EFLAG = .TRUE.
-            WRITE( *, 92000 ) ' '
-            WRITE( *, 92010 )
+            WRITE( MESG, 94010 )
      &             'Record count                        ', NSRC,
+     &              CRLF() // BLANK5 //
      &             'Max dimensioned record-count (NMSRC)', NMSRC
+
+            CALL M3MSG2( MESG )
             CALL M3EXIT( 'RAWMOBIL', 0, 0,
      &        'Max record-count exceeded in MOBILE SOURCE file.', 2 )
 
@@ -689,7 +726,7 @@ C.............  Update sources if no duplicate and no overflow
 
 C.........  Process the time zone file
  
-        WRITE( *,92000 ) ' ', 'Processing TIME ZONE file...', ' '
+        CALL M3MSG2( 'Processing TIME ZONE file...' )
         IREC = 0
  
   144   CONTINUE        !  head of time-zone loop
@@ -698,11 +735,12 @@ C.........  Process the time zone file
             IREC = IREC + 1
  
             IF ( IOS .NE. 0 ) THEN
-                WRITE( *,92010 )
+                WRITE( MESG,94010 )
      &              'Unit number', ZDEV,
      &              'I/O Status ', IOS,
      &              'Line number', IREC
-                    CALL M3EXIT( 'RAWMOBIL', 0, 0,
+                CALL M3MESG( MESG )
+                CALL M3EXIT( 'RAWMOBIL', 0, 0,
      &              'Error reading TIME ZONE file.', 2 )
             END IF
  
@@ -838,7 +876,7 @@ c       J = J + 1
 
 C.......   Write out the mobile source emissions values:
         
-        WRITE( *,92000 ) ' ', 'Writing out MOBILE SOURCES file...', ' '
+        CALL M3MSG2( 'Writing out MOBILE SOURCES file...' )
 
         IF ( .NOT. WRITE3( ENAME, 'ALL', 0, 0,  IFIP ) ) THEN
             CALL M3EXIT( 'RAWMOBIL', 0, 0,  
