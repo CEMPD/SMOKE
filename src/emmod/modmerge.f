@@ -162,6 +162,9 @@
         INTEGER, PUBLIC :: NPSRC = 0   ! number of point sources
         INTEGER, PUBLIC :: JSTACK = 0  ! pt src pos'n of stack in src chars
 
+!.........  Number of emissions layers
+        INTEGER, PUBLIC :: EMLAYS = 1
+
 !.........  Number of inventory pollutants
         INTEGER, PUBLIC :: ANIPOL = 0  ! area
         INTEGER, PUBLIC :: BNIPOL = 0  ! biogenic
@@ -317,29 +320,7 @@
         INTEGER, ALLOCATABLE, PUBLIC :: MS_EXIST( :,: )   ! mobile
         INTEGER, ALLOCATABLE, PUBLIC :: PS_EXIST( :,: )   ! point
 
-!.........  GRID AND EPISODE SETTINGS...
-!.........  Grid information
-        CHARACTER(LEN=IOVLEN3), PUBLIC :: GRDNM = ' '  ! grid name
-        CHARACTER(LEN=IOVLEN3), PUBLIC :: COORD = ' '  ! coord system name
-        REAL   , PUBLIC :: GDTYP = -1     ! i/o api grid type code
-        REAL   , PUBLIC :: P_ALP = 0.D0   ! projection alpha
-        REAL   , PUBLIC :: P_BET = 0.D0   ! projection beta
-        REAL   , PUBLIC :: P_GAM = 0.D0   ! projection gamma
-        REAL   , PUBLIC :: XCENT = 0.D0   ! x-center of projection
-        REAL   , PUBLIC :: YCENT = 0.D0   ! y-center of projection
-        REAL   , PUBLIC :: XORIG = 0.D0   ! x-origin of grid
-        REAL   , PUBLIC :: YORIG = 0.D0   ! y-origin of grid
-        REAL   , PUBLIC :: XCELL = 0.D0   ! x-dim of cells
-        REAL   , PUBLIC :: YCELL = 0.D0   ! y-dim of cells
-        INTEGER, PUBLIC :: NCOLS = 0      ! number of columns in grid
-        INTEGER, PUBLIC :: NROWS = 0      ! number of rows in grid
-        INTEGER, PUBLIC :: NGRID = 0      ! number of cells in grid
-
-!.........  Vertical structure information
-        INTEGER, PUBLIC :: EMLAYS = 1      ! number of emissions layers
-        INTEGER, PUBLIC :: VGTYP  = -1     ! type of vertical coordinates
-        REAL   , PUBLIC :: VGTOP  = 0.0    ! model-top, for sigma coord types
-        REAL   , ALLOCATABLE, PUBLIC :: VGLVS( : ) ! vertical coordinate values
+!.........  EPISODE SETTINGS...
 
 !.........  Episode information
         INTEGER, PUBLIC :: SDATE  = 0     ! Julian start date of episode

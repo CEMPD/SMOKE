@@ -2,7 +2,7 @@
         MODULE MODTMPRL
 
 !***********************************************************************
-!  Module body starts at line 41
+!  Module body starts at line
 !
 !  DESCRIPTION:
 !     This module contains temporal allocation information. 
@@ -37,6 +37,14 @@
 ! Last updated: $Date$ 
 !
 !****************************************************************************
+
+        INCLUDE 'EMPRVT3.EXT'
+
+!.........  Hourly-emissions file information
+        INTEGER, PUBLIC :: NTPDAT   ! No. data values in hourly emissions file
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: TPNAME( : )  ! data names
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: TPUNIT( : )  ! data units
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: TPDESC( : )  ! data descs
 
 !.........  Holiday dates arrays
         INTEGER, PUBLIC :: NHOLIDAY  ! number of holidays

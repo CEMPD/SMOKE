@@ -80,6 +80,7 @@
             INTEGER       :: RENDLIN       ! rpt packet end line
             INTEGER       :: RSTARTLIN     ! rpt packet start line
             INTEGER       :: SCCRES        ! SCC resolution
+            INTEGER       :: SRGRES        ! surrogate resolution (1st or 2nd)
 
             LOGICAL       :: BYCELL        ! true: by cell
             LOGICAL       :: BYCNRY        ! true: by country code
@@ -93,6 +94,7 @@
             LOGICAL       :: BYSRC         ! true: by source 
             LOGICAL       :: BYSTAT        ! true: by state code
             LOGICAL       :: BYSTNAM       ! true: by state name
+            LOGICAL       :: BYSRG         ! true: by surrogate codes
             LOGICAL       :: BYRCL         ! true: by road class (mb)
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
             LOGICAL       :: NORMCELL      ! true: output SCC name
@@ -114,13 +116,15 @@
         END TYPE
 
 !.........  Input file characteristics not available in MODINFO
+        INTEGER, PUBLIC :: EMLAYS = 0       ! no. emissions layers
         INTEGER, PUBLIC :: NCOLS  = 0       ! no. grid columns
-        INTEGER, PUBLIC :: NGRID  = 0       ! no. grid cells
+        INTEGER, PUBLIC :: NGRID  = 1       ! no. grid cells
         INTEGER, PUBLIC :: NMAJOR = 0       ! no. major sources
-        INTEGER, PUBLIC :: NMATX  = 0       ! size of gridding matrix
+        INTEGER, PUBLIC :: NMATX  = 1       ! size of gridding matrix
         INTEGER, PUBLIC :: NPING  = 0       ! no. PinG sources
         INTEGER, PUBLIC :: NROWS  = 0       ! no. grid rows
-        INTEGER, PUBLIC :: NSTEPS = 0       ! no. time steps
+        INTEGER, PUBLIC :: NSTEPS = 0       ! no. time steps in data file
+        INTEGER, PUBLIC :: PYEAR  = 0       ! projected inventory year
         INTEGER, PUBLIC :: SDATE  = 0       ! Julian start date of run
         INTEGER, PUBLIC :: STIME  = 0       ! start time of run (HHMMSS)
         INTEGER, PUBLIC :: TSTEP  = 0       ! time step (HHMMSS)
@@ -132,6 +136,7 @@
         LOGICAL, PUBLIC :: CAFLAG = .FALSE. ! true: read in additive control matrix
         LOGICAL, PUBLIC :: CRFLAG = .FALSE. ! true: read in reactivity control matrix
         LOGICAL, PUBLIC :: GFLAG  = .FALSE. ! true: read in grd matrix and G_GRIDPATH
+        LOGICAL, PUBLIC :: GSFLAG = .FALSE. ! true: reag gridding supplementary file
         LOGICAL, PUBLIC :: LFLAG  = .FALSE. ! true: read in layer fracs file
         LOGICAL, PUBLIC :: NFLAG  = .FALSE. ! true: read in SCC names file
         LOGICAL, PUBLIC :: SLFLAG = .FALSE. ! true: read in mole speciation matrix
@@ -150,19 +155,22 @@
         INTEGER, PUBLIC :: NREPORT  = 0   ! no. of reports
         INTEGER, PUBLIC :: NREGRAW  = 0   ! no. raw file region groups
         INTEGER, PUBLIC :: NSBGRAW  = 0   ! no. raw file subgrids 
-	INTEGER, PUBLIC :: MINC     = 0   ! minimum output source chars
+        INTEGER, PUBLIC :: MINC     = 0   ! minimum output source chars
 
         LOGICAL, PUBLIC :: RC_ERROR = .FALSE.  ! true: error found reading file
+        LOGICAL, PUBLIC :: DATAMISS = .FALSE.  ! true: no SELECT DATA instrs
 
 !.........  Group dimensions of group characteristic arrays
         INTEGER, PUBLIC :: MXREGREC = 0   ! max no. records in full region grp
         INTEGER, PUBLIC :: MXSUBREC = 0   ! max no. records in full subgrids
         INTEGER, PUBLIC :: NREGNGRP = 0   ! no. region groups
         INTEGER, PUBLIC :: NSUBGRID = 0   ! no. subgrids 
-
+        
 !.........  Group characteristics arrays
+        INTEGER, ALLOCATABLE, PUBLIC :: NREGREC ( : )     ! no. recs per region grp
+        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgrid
         INTEGER, ALLOCATABLE, PUBLIC :: VALIDCEL( :,: )   ! valid cell numbers
-        INTEGER, ALLOCATABLE, PUBLIC :: VALIDRGN( :,: )   ! valid region numbers
+        INTEGER, ALLOCATABLE, PUBLIC :: EXCLDRGN( :,: )   ! excluded region numbers
 
 !.........  Group label arrays
         CHARACTER(LEN=LENLAB3), ALLOCATABLE, PUBLIC :: REGNNAM( : ) ! region group names
@@ -170,14 +178,15 @@
 
 !.........  Report characteristics arrays, dimenioned by NREPORT
 
-        TYPE( EACHRPT ), ALLOCATABLE, PUBLIC :: ALLRPT( : ) ! integer recs
+        TYPE( EACHRPT ), ALLOCATABLE, PUBLIC :: ALLRPT( : )     ! integer recs
 
         LOGICAL        , ALLOCATABLE, PUBLIC :: ALLOUTHR( :,: ) ! true: write
 
         CHARACTER(LEN=LENTTL3), ALLOCATABLE, PUBLIC :: TITLES ( :,: ) ! report titles
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INDNAM ( :,: ) ! var nams
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: OUTDNAM( :,: ) ! var nams
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: ALLUNIT( :,: ) ! units
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: RDNAMES( :,: ) ! for reads
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: ALLUSET( :,: ) ! units
 
 !.........  Temporary output file-specific settings
 !.........  All widths include leading blanks and trailing commas
@@ -193,14 +202,18 @@
         INTEGER      , PUBLIC :: SCCWIDTH =0 ! width of SCC
         INTEGER      , PUBLIC :: SDSCWIDTH=0 ! width of SCC description column
         INTEGER      , PUBLIC :: SRCWIDTH =0 ! width of source IDs column
+        INTEGER      , PUBLIC :: SRG1WIDTH=0 ! width of primary surg column
+        INTEGER      , PUBLIC :: SRG2WIDTH=0 ! width of fallback surg column
         INTEGER      , PUBLIC :: STWIDTH  =0 ! width of state name column
         INTEGER      , PUBLIC :: STKPWIDTH=0 ! width of stack parameters columns
 
         CHARACTER*50 , PUBLIC :: CELLFMT     ! format string for cell columns
-        CHARACTER*50 , PUBLIC :: CELLFMT     ! format string for cell columns
+        CHARACTER*50 , PUBLIC :: DATEFMT     ! format string for date column
         CHARACTER*50 , PUBLIC :: HOURFMT     ! format string for hour column
         CHARACTER*50 , PUBLIC :: REGNFMT     ! format string for region column
         CHARACTER*50 , PUBLIC :: SRCFMT      ! format string for source IDs
+        CHARACTER*50 , PUBLIC :: SRG1FMT     ! format string for primary surg
+        CHARACTER*50 , PUBLIC :: SRG2FMT     ! format string for fallback surg
         CHARACTER*100, PUBLIC :: STKPFMT     ! format string for stack params
         CHARACTER*200, PUBLIC :: CHARFMT     ! format string for source chars
         CHARACTER*300, PUBLIC :: FIL_ONAME   ! output file, physical or logical
@@ -229,18 +242,25 @@
 !.........  Temporary report-specific settings
         TYPE( EACHRPT ), PUBLIC :: RPT_
 
+        INTEGER, PUBLIC :: EDATE         ! Julian ending date
+        INTEGER, PUBLIC :: ETIME         ! ending time (HHMMSS)
+        INTEGER, PUBLIC :: RPTNSTEP      ! no. of time steps for current report
+
         LOGICAL, PUBLIC :: LSUBGRID      ! true: select with a subgrid
         LOGICAL, PUBLIC :: LREGION       ! true: select with a region group
 
+        CHARACTER(LEN=IOULEN3), PUBLIC :: UNITSET  ! current line units
         CHARACTER(LEN=LENTTL3), PUBLIC :: TITLE    ! current line title
 
-        ! Input units for each output data column
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: INUNIT( : ) 
+        ! Output units for each output data column
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: OUTUNIT( : ) 
 
         ! Conversion factors for each output data column
         REAL, ALLOCATABLE, PUBLIC :: UCNVFAC( : )
 
 !.........  Temporary line-specific settings
+        LOGICAL, PUBLIC :: LIN_DEFGRP       ! true: line is DEFINE GROUP
+        LOGICAL, PUBLIC :: LIN_GROUP        ! true: line is group entry
         LOGICAL, PUBLIC :: LIN_SUBDATA      ! true: line is SELECT DATA
         LOGICAL, PUBLIC :: LIN_TITLE        ! true: line is TITLE
         LOGICAL, PUBLIC :: LIN_UNIT         ! true: line is UNITS

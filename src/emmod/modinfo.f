@@ -93,10 +93,6 @@
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EAREAD( : ) ! for read3
 
-!.........  Units and conversion factors for allowed data types
-        REAL                  , ALLOCATABLE, PUBLIC :: INVDCNV( :,: )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: INVDUNT( :,: )
-
 !.........  Inventory pollutants/activies units and descriptions
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EAUNIT( : )
         CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EADESC( : )
@@ -107,6 +103,6 @@
 
 !.........  Arrays for reading inventory file headers
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC  :: TMPNAM( : )! var names
-        INTEGER               , ALLOCATABLE, PUBLIC  :: POLPOS( : )! var positn
+        INTEGER               , ALLOCATABLE, PUBLIC  :: DATPOS( : )! var positn
 
         END MODULE MODINFO

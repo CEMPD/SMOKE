@@ -1,7 +1,8 @@
+
         MODULE MODSOURC
 
 !***********************************************************************
-!  Module body starts at line 40
+!  Module body starts at line 41
 !
 !  DESCRIPTION:
 !     This module contains the public allocatable arrays for the source
@@ -20,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -44,6 +45,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: ISIC  ( : )  !  source SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
+        INTEGER, ALLOCATABLE, PUBLIC:: CELLID( : )  !  Cell ID
         INTEGER, ALLOCATABLE, PUBLIC:: IPOSCOD( : ) !  positn of pol in INVPCOD
         INTEGER, ALLOCATABLE, PUBLIC:: TZONES( : )  !  time zones
         INTEGER, ALLOCATABLE, PUBLIC:: TPFLAG( : )  !  temporal profile types
@@ -52,6 +54,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
         INTEGER, ALLOCATABLE, PUBLIC:: FLTRDAYL( : )!  daylight time filter
+        INTEGER, ALLOCATABLE, PUBLIC:: SRGID ( :,: )!  primary & fallbk surg ID
 
         REAL   , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
         REAL   , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
@@ -87,7 +90,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: INVYRA( : ) !  inventory year
         INTEGER, ALLOCATABLE, PUBLIC:: IDIUA ( : ) !  Hrly prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: IWEKA ( : ) !  Wkly prof code per source
-        INTEGER, ALLOCATABLE, PUBLIC:: NPCNTA( : ) !  No. of pols per raw record
+        INTEGER, ALLOCATABLE, PUBLIC:: INRECA( : ) !  Input record per src x pol
         INTEGER, ALLOCATABLE, PUBLIC:: SRCIDA( : ) !  Source ID
 
         REAL   , ALLOCATABLE, PUBLIC:: XLOCAA( : ) !  UTM X-location (m)

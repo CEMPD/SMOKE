@@ -16,6 +16,7 @@ C.........  Maximum number of source characteristics for each source category
 
 C.........  Width of source information strings 
         PRIVATE :: BLRLEN3
+        PRIVATE :: CELLEN3
         PRIVATE :: CHRLEN3
         PRIVATE :: DSCLEN3
         PRIVATE :: FIPLEN3
@@ -36,6 +37,7 @@ C.........  Width of other global character strings
         PRIVATE :: IOVLEN3
         PRIVATE :: IODLEN3
         PRIVATE :: IOULEN3
+        PRIVATE :: SDSLEN3
         PRIVATE :: SPNLEN3
         PRIVATE :: PLSLEN3
 
@@ -57,6 +59,7 @@ C.........  Start of each field in source definitions
         PRIVATE :: POLPOS3
         PRIVATE :: ALLLEN3
         PRIVATE :: SCCPOS3
+        PRIVATE :: CELPOS3
         PRIVATE :: RWTPOS3
         PRIVATE :: VIDPOS3
         PRIVATE :: LNKPOS3

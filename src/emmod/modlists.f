@@ -68,4 +68,17 @@
 !.........  Country/state/county codes dimensioned by NINVFIP
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
 
+!.........  For valid pollutants and activities...
+
+C.........  Full list of inventory pollutants/activities (in output order)
+        INTEGER, PUBLIC :: MXIDAT = 0   ! Max no of inv pols & acvtys
+
+        INTEGER, ALLOCATABLE, PUBLIC :: INVDCOD( : ) ! 5-digit pollutant/actvty code
+        INTEGER, ALLOCATABLE, PUBLIC :: INVSTAT( : ) ! Status (<0 activity; >0 pol)
+
+        REAL   , ALLOCATABLE, PUBLIC :: INVDCNV( : ) ! local conversion factor
+
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INVDNAM( : ) ! name 
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: INVDUNT( : ) ! units
+
         END MODULE MODLISTS

@@ -42,7 +42,7 @@
         INCLUDE 'EMPRVT3.EXT'
 
 !.........  Module-specific parameters
-        INTEGER, PARAMETER, PUBLIC :: LV1 = IOVLEN3 + 2     ! "S:" len = 2
+        INTEGER, PARAMETER, PUBLIC :: LV1 = IOVLEN3 + 2     ! "S-" len = 2
         INTEGER, PARAMETER, PUBLIC :: LV2 = IOVLEN3 * 2 + 4 ! ETJOIN len = 2
         INTEGER, PARAMETER, PUBLIC :: LV3 = IOVLEN3 * 3 + 6 
 
@@ -73,7 +73,8 @@
         END TYPE
 
 !.........  Output records to be summed into bins
-        INTEGER, PUBLIC :: NOUTREC = 0   ! no. of output records to be summed
+        INTEGER, PUBLIC :: NOUTREC  = 0   ! no. of output records to be summed
+        INTEGER, PUBLIC :: NSRCDROP = 0   ! no. of sources being dropped
 
         INTEGER, ALLOCATABLE, PUBLIC :: OUTSRC ( : )  ! smoke src ID
         INTEGER, ALLOCATABLE, PUBLIC :: OUTBIN ( : )  ! bin number
@@ -91,6 +92,8 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINRCL   ( : )   ! roadclass code
         INTEGER, ALLOCATABLE, PUBLIC :: BINSMKID ( : )   ! SMOKE source ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSNMIDX( : )   ! SCC name index
+        INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID1( : )   ! primary surg ID
+        INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID2( : )   ! fallback surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSTIDX ( : )   ! index to state name
         INTEGER, ALLOCATABLE, PUBLIC :: BINX     ( : )   ! x cell
         INTEGER, ALLOCATABLE, PUBLIC :: BINY     ( : )   ! y cell
@@ -116,8 +119,8 @@
         CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: SPCNAM   ( : )  ! valid species names
         CHARACTER(LEN=LV3), ALLOCATABLE, PUBLIC :: ETPSPCNAM( : )  ! valid emis type || species
         CHARACTER(LEN=LV2), ALLOCATABLE, PUBLIC :: PRCSPCNAM( : )  ! valid process || species
-        CHARACTER(LEN=LV2), ALLOCATABLE, PUBLIC :: SUMETPNAM( : )  ! S: || emis type names
-        CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: SUMPOLNAM( : )  ! S: || pollutant names
+        CHARACTER(LEN=LV2), ALLOCATABLE, PUBLIC :: SUMETPNAM( : )  ! S- || emis type names
+        CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: SUMPOLNAM( : )  ! S- || pollutant names
 
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SLUNIT( : ) ! spc var units
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SSUNIT( : ) ! spc var units
@@ -126,14 +129,14 @@
         INTEGER, PUBLIC :: NDATIN = 0 ! Actual number of data vars input
         INTEGER, PUBLIC :: NSPCIN = 0 ! Actual number of speciation vars input
 
-        INTEGER, ALLOCATABLE, PUBLIC :: DATIDX( : )  ! index global-to-input
+        INTEGER, ALLOCATABLE, PUBLIC :: INVIDX( : )  ! index data to inven
+        INTEGER, ALLOCATABLE, PUBLIC :: TPRIDX( : )  ! index data to hourly
         INTEGER, ALLOCATABLE, PUBLIC :: SPCIDX( : )  ! index global-to-input
         INTEGER, ALLOCATABLE, PUBLIC :: SPCTODAT( : )! index spc-to-data
+        INTEGER, ALLOCATABLE, PUBLIC :: TPACTIDX( : )! index etype-to-activity
 
         LOGICAL, ALLOCATABLE, PUBLIC :: DATOUT( : )  ! true: inven data needed
         LOGICAL, ALLOCATABLE, PUBLIC :: SPCOUT( : )  ! true: spc factors needed
-
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INNAMES( : ) ! emis names
 
 !.........  Unique species list and count
         INTEGER, PUBLIC :: NMSPC = 0  ! no. species in whole run

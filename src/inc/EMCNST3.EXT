@@ -39,11 +39,12 @@ C.......   (The *TPRFAC's should all be distinct primes)
 
 C.........  Input file format constants
 
-        INTEGER, PARAMETER  :: LSTFMT = 0
-        INTEGER, PARAMETER  :: EMSFMT = 1
-        INTEGER, PARAMETER  :: EPSFMT = 2
-        INTEGER, PARAMETER  :: NETFMT = 3
-        INTEGER, PARAMETER  :: IDAFMT = 4
+        INTEGER, PARAMETER  :: LSTFMT = 0    ! List
+        INTEGER, PARAMETER  :: EMSFMT = 1    ! Emissions Modeling System
+        INTEGER, PARAMETER  :: EPSFMT = 2    ! Emissions Preprocessing System
+        INTEGER, PARAMETER  :: NETFMT = 3    ! National Emissions Trends (NET)
+        INTEGER, PARAMETER  :: IDAFMT = 4    ! Inventory Data Analyzer (IDA)
+        INTEGER, PARAMETER  :: IOGFMT = 5    ! I/O API gridded file
 
         CHARACTER*6, PARAMETER :: FMTNAMES( 0:4 ) = 
      &                        ( / 'list  ', 'EMS-95', 'EPS   ', 
@@ -121,8 +122,8 @@ C.........  Variable dimensioning components, independent
         PARAMETER   ( CPRTLEN3 = 3
      &              , MXINVARR = 12
      &              , NARPPOL3 = 6
-     &              , NARVAR3  = 4
-     &              , NMBVAR3  = 11
+     &              , NARVAR3  = 5
+     &              , NMBVAR3  = 10
      &              , NMBPPOL3 = 2   
      &              , NPTPPOL3 = 7
      &              , NPTVAR3  = 11
