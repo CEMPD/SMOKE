@@ -829,13 +829,13 @@ C.......   Get file name; open output point sources file
 
         VNAME3D( J ) = 'XLOCA'
         VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'km.'
+        UNITS3D( J ) = 'meters'
         VDESC3D( J ) = 'UTM X coordinate for site'
         J = J + 1
 
         VNAME3D( J ) = 'YLOCA'
         VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'km.'
+        UNITS3D( J ) = 'meters'
         VDESC3D( J ) = 'UTM Y coordinate for site'
         J = J + 1
 
