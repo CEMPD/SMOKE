@@ -42,7 +42,7 @@ C.........  This module contains the major data structure and control flags
      &                      ARFLAG, MRFLAG, PRFLAG,
      &                      AFLAG_BD, MFLAG_BD, PFLAG_BD,
      &                      XFLAG, TFLAG, SFLAG, LFLAG,
-     &                      PINGFLAG, ELEVFLAG, EXPLFLAG,
+     &                      PINGFLAG, ELEVFLAG, EXPLFLAG, VARFLAG,
      &                      LMETCHK, LMKTPON, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPINV, LREPSPC, LREPCTL, 
      &                      LREPANY, LAVEDAY, INVPIDX
@@ -165,6 +165,10 @@ C.........  Retrieve the on/off environment variables
      &                   'emissions separately or not', .TRUE., IOS )
 
         LREPANY = ( LREPSTA .OR. LREPCNY )
+
+C.........  Check for variable grid
+        VARFLAG = ENVYN( 'USE_VARIABLE_GRID', 'Use variable grid ' //
+     &                 'definition', .FALSE., IOS )
 
 C.........  Point-source specific environment variables
         IF ( PFLAG ) THEN
