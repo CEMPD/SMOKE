@@ -177,36 +177,24 @@ C.........  For area sources...
 C.............  Get inventory file names given source category
             CALL GETINAME( 'AREA', AENAME, DUMNAME )
 
-C.........  Prompt for and open input I/O API and ASCII 
-C           inventory files
-            MESG= 'Enter logical name for the I/O API or MAP ' //
+C.........  Prompt for and open inventory file 
+            MESG= 'Enter logical name for the MAP ' //
      &            'AREA INVENTORY file'
-            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., AENAME,
-     &                       PROGNAME, INAME, IDEV )
+            INAME = AENAME
+            IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INAME, PROGNAME )
 
-C.........  For map-formatted inventory file
-            IF( IDEV .GT. 0 ) THEN
+C.........  Read map-formatted inventory file
+            CALL RDINVMAP( INAME, IDEV, AENAME, DUMNAME, ASDEV )
 
-                CALL RDINVMAP( INAME, IDEV, AENAME, DUMNAME, ASDEV )
-
-C................  Transfer from MODINFO arrays to MODMERGE arrays
-                ALLOCATE( AMAPNAM( NMAP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'AMAPNAM', PROGNAME )
-                ALLOCATE( AMAPFIL( NMAP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'AMAPFIL', PROGNAME )
+C.............  Transfer from MODINFO arrays to MODMERGE arrays
+            ALLOCATE( AMAPNAM( NMAP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'AMAPNAM', PROGNAME )
+            ALLOCATE( AMAPFIL( NMAP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'AMAPFIL', PROGNAME )
                 
-                ANMAP = NMAP
-                AMAPNAM = MAPNAM   ! array
-                AMAPFIL = MAPFIL   ! array
-
-C.........  For traditional inventory file
-            ELSE
-                AENAME = INAME
-                ASDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII AREA INVENTORY file',
-     &           .TRUE., .TRUE., DUMNAME, PROGNAME )
-
-            END IF
+            ANMAP = NMAP
+            AMAPNAM = MAPNAM   ! array
+            AMAPFIL = MAPFIL   ! array
 
 C.............  Get number of sources
             CALL RETRIEVE_SET_HEADER( AENAME )
@@ -396,36 +384,24 @@ C.........  If we have mobile sources
 C.............  Get inventory file names given source category
             CALL GETINAME( 'MOBILE', MENAME, DUMNAME )
 
-C.........  Prompt for and open input I/O API and ASCII 
-C           inventory files
-            MESG= 'Enter logical name for the I/O API or MAP ' //
+C.........  Prompt for and open inventory file 
+            MESG= 'Enter logical name for the MAP ' //
      &            'MOBILE INVENTORY file'
-            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., MENAME,
-     &                       PROGNAME, INAME, IDEV )
+            INAME = MENAME
+            IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INAME, PROGNAME )
 
-C.........  For map-formatted inventory file
-            IF( IDEV .GT. 0 ) THEN
+C.........  Read map-formatted inventory file
+            CALL RDINVMAP( INAME, IDEV, MENAME, DUMNAME, MSDEV )
 
-                CALL RDINVMAP( INAME, IDEV, MENAME, DUMNAME, MSDEV )
-
-C................  Transfer from MODINFO arrays to MODMERGE arrays
-                ALLOCATE( MMAPNAM( NMAP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'MMAPNAM', PROGNAME )
-                ALLOCATE( MMAPFIL( NMAP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'MMAPFIL', PROGNAME )
+C.............  Transfer from MODINFO arrays to MODMERGE arrays
+            ALLOCATE( MMAPNAM( NMAP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MMAPNAM', PROGNAME )
+            ALLOCATE( MMAPFIL( NMAP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MMAPFIL', PROGNAME )
                 
-                MNMAP = NMAP
-                MMAPNAM = MAPNAM   ! array
-                MMAPFIL = MAPFIL   ! array
-
-C.........  For traditional inventory file
-            ELSE
-                MENAME = INAME
-                MSDEV = PROMPTFFILE( 'Enter logical name for ' //
-     &                  'the ASCII MOBILE INVENTORY file',
-     &                  .TRUE., .TRUE., DUMNAME, PROGNAME )
-
-            END IF
+            MNMAP = NMAP
+            MMAPNAM = MAPNAM   ! array
+            MMAPFIL = MAPFIL   ! array
 
 C.............  Get number of sources
             CALL RETRIEVE_SET_HEADER( MENAME )
@@ -600,36 +576,24 @@ C.........  If we have point sources
 C.............  Get inventory file names given source category
             CALL GETINAME( 'POINT', PENAME, DUMNAME )
 
-C.........  Prompt for and open input I/O API and ASCII 
-C           inventory files
-            MESG= 'Enter logical name for the I/O API or MAP ' //
+C.........  Prompt for and open inventory file 
+            MESG= 'Enter logical name for the MAP ' //
      &            'POINT INVENTORY file'
-            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., PENAME,
-     &                       PROGNAME, INAME, IDEV )
+            INAME = PENAME
+            IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INAME, PROGNAME )
 
-C.........  For map-formatted inventory file
-            IF( IDEV .GT. 0 ) THEN
+C.........  Read map-formatted inventory file
+            CALL RDINVMAP( INAME, IDEV, PENAME, DUMNAME, PSDEV )
 
-                CALL RDINVMAP( INAME, IDEV, PENAME, DUMNAME, PSDEV )
-
-C................  Transfer from MODINFO arrays to MODMERGE arrays
-                ALLOCATE( PMAPNAM( NMAP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'PMAPNAM', PROGNAME )
-                ALLOCATE( PMAPFIL( NMAP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'PMAPFIL', PROGNAME )
+C.............  Transfer from MODINFO arrays to MODMERGE arrays
+            ALLOCATE( PMAPNAM( NMAP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PMAPNAM', PROGNAME )
+            ALLOCATE( PMAPFIL( NMAP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PMAPFIL', PROGNAME )
                 
-                PNMAP = NMAP
-                PMAPNAM = MAPNAM   ! array
-                PMAPFIL = MAPFIL   ! array
-
-C.........  For traditional inventory file
-            ELSE
-                PENAME = INAME
-                PSDEV = PROMPTFFILE( 
-     &          'Enter logical name for the ASCII POINT INVENTORY file',
-     &          .TRUE., .TRUE., DUMNAME, PROGNAME )
-
-            END IF
+            PNMAP = NMAP
+            PMAPNAM = MAPNAM   ! array
+            PMAPFIL = MAPFIL   ! array
 
 C.............  Get number of sources
             CALL RETRIEVE_SET_HEADER( PENAME )

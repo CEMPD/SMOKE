@@ -141,29 +141,13 @@ C   begin body of subroutine OPENREPIN
 C.........  Get inventory file names given source category
             CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.........  Prompt for and open input I/O API and ASCII files
-            MESG= 'Enter logical name for the I/O API or '//
-     &            'MAP INVENTORY file'
-            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
-     &                       PROGNAME, INAME, IDEV )
+C.........  Prompt for and open inventory file 
+            INAME = ENAME
+            MESG = 'Enter logical name for the MAP INVENTORY file'
+            IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INAME, PROGNAME )
 
-C.........  If input file is ASCII format, then open and read map 
-C           file to check files, sets environment for ENAME, opens 
-C           files, stores the list of physical file names for the 
-C           pollutant files in the MODINFO module, and stores the map
-C           file switch in MODINFO as well.
-            IF( IDEV .GT. 0 ) THEN
-
-                CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
-
-C.........  Otherwise, open separate I/O API and ASCII files that
-C           do not store the pollutants as separate 
-            ELSE
-                ENAME = INAME
-                SDEV = PROMPTFFILE( 
-     &           'Enter logical name for ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
-            END IF
+C.........  Open and read map file
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
 
 C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
