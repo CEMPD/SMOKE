@@ -15,8 +15,8 @@ FILES_A = \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
   alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o   blkorcmt.o \
   alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o  \
-  alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
-  alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
+  alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  alocutbl.o \
+  alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o fillutbl.o
 
 FILES_B = \
   alocstbl.o   chksrcno.o   rdstcy.o     rdgmat.o     rdinvchr.o \
@@ -74,6 +74,8 @@ alocstbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocstbl.f
 alocttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocttbl.f
+alocutbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ alocutbl.f
 applumat.o: $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ applumat.f
 asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
@@ -100,6 +102,8 @@ fillstbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillstbl.f
 fillttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillttbl.f
+fillutbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ fillutbl.f
 fltrxref.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ fltrxref.f
 fmtcsrc.o: $(MODINFO)
