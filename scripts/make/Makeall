@@ -45,6 +45,9 @@ else
 
 endif
 
+## Activate script argument
+set what = $argv
+
 #
 ## Make EDSS tools library
 #
@@ -60,7 +63,8 @@ endif
 #
 ## Set up for SMOKE compiling
 #
-$assigndir/ASSIGNS.m3demo.cb-iv.us36
+cd $assigndir
+source $assigndir/ASSIGNS.m3demo.cb-iv.ed36
 
 #
 ## Make SMOKE library
