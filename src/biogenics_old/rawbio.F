@@ -238,7 +238,7 @@ C.......   Set up file description and open emissions file:
         GDNAM3D = GRDNM
         FTYPE3D = GRDDED3
         SDATE3D = 1988167       !  n/a
-        STIME3D = 0             !  n/a
+        STIME3D = 050000        !  n/a
         TSTEP3D = 0             !  time independent
         NVARS3D = BTYPES * ( BSPCS - 1 ) + LUSES + 1
         NLAYS3D = 1
