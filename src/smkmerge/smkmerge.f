@@ -228,7 +228,7 @@ C.........  Reset flag for PinG if none in the input file
      &                 'file will not be written.'
                 CALL M3MSG2( MESG )
                 ELEVFLAG = .FALSE.
-            ELSE
+            ELSE IF ( NMAJOR .EQ. 0 ) THEN
                 NMAJOR = NPSRC
             END IF 
 
@@ -761,10 +761,6 @@ C.........................  Apply valid matrices & store
      &                         PGMATX(K5), PICNY, PEMGRD, TEMGRD,
      &                         PEBCNY, PEUCNY, PEACNY, PERCNY, 
      &                         PECCNY )
-
-
-c NOTE: MERGELEV Needs to be updated to be able to output the same units as the
-c    n: gridded output
 
 C.........................  Apply matrices for elevated and plume-in-grid 
 C                           outputs, if this pollutant is used for point srcs.
