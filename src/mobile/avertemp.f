@@ -72,6 +72,8 @@ C...........   Other local variables
 
         LOGICAL :: INITIAL = .TRUE.       ! true: first time through routine
 
+        CHARACTER(LEN=300) MESG           ! message buffer
+
         CHARACTER*16 :: PROGNAME = 'AVERTEMP' ! program name
 
 C***********************************************************************
@@ -86,6 +88,10 @@ C.........  Loop through all counties
             
             DO J = 1, NSRC
                 IF( SRCARRAY( J ) /= CURRCNTY ) CYCLE
+
+C.................  Skip sources with no days; this can happen when the
+C                   gridding surrogates do not contain data for all counties
+                IF( NDAYSRC( J,TSTEP ) == 0 ) CYCLE
                 
                 NUMSRC = NUMSRC + 1
                 TEMPSUM = TEMPSUM + 
@@ -94,8 +100,16 @@ C.........  Loop through all counties
                 NDAYSRC( J,TSTEP ) = 0
 
             END DO
-            	
-            CNTYTEMP( I ) = TEMPSUM / NUMSRC
+            
+            IF( NUMSRC == 0 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'No valid temperatures for reference county',
+     &                 CURRCNTY, '. This is probably due to ',
+     &                 'insufficient surrogate data.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            ELSE
+                CNTYTEMP( I ) = TEMPSUM / NUMSRC
+            END IF
         END DO
 
         RETURN
@@ -104,7 +118,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I9, :, 1X ) )
+94010   FORMAT( 10( A, :, I6, :, 1X ) )
 
 94020   FORMAT( A, 4( 1X, F8.2, 1X, A ) )
  
