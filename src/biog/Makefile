@@ -23,7 +23,8 @@ pvm: tmpbeis3.pvm tmpbio.pvm
 ALLI=$(INC)/EMCNST3.EXT $(INC)/BIODIMS3.EXT
 ALL3=$(INC)/EMCNST3.EXT $(INC)/B3DIMS3.EXT
 
-B3X = czangle.o getpar.o hrbeis3.o prebmet.o rdbpro.o tmpbeis3.o 
+B3X = czangle.o getpar.o hrbeis3.o prebmet.o rdbpro.o tmpbeis3.o \
+      tmpbeis309.o tmpbeis312.o hrbeis309.o hrno.o
 
 tmpbeis3: $(B3X) $(ALL3) $(LIBPATH)
 	echo TMPBEIS3:
@@ -38,7 +39,7 @@ tmpbeis3.pvm: $(B3X) $(ALLI) $(LIBPATH)
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(B3X) $(LIBS_PVM)
 
 #
-NORM3= normbeis3.o rdb3fac.o
+NORM3= normbeis3.o rdb3fac.o normbeis309.o normbeis312.o
 
 normbeis3: $(NORM3) $(ALL3) $(LIBPATH)
 	echo NORMBEIS3:
