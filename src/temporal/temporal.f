@@ -16,6 +16,7 @@ C
 C  REVISION  HISTORY:
 C    copied by: M. Houyoux 01/99
 C    origin: tmppoint.F 4.3
+C    Modified by: G. Cano 5/02 
 C
 C***********************************************************************
 C
@@ -65,6 +66,9 @@ C.........  This module contains the lists of unique source characteristics
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C...........   This module contains the uncertainty arrays and variables
+        USE MODUNCERT
+
         IMPLICIT NONE
  
 C.........  INCLUDES:
@@ -98,6 +102,7 @@ C.........  Point sources work and output arrays
         REAL   , ALLOCATABLE :: EMAC ( :,: ) !  inven emissions or activities
         REAL   , ALLOCATABLE :: EMACV( :,: ) !  day-adjst emis or activities
         REAL   , ALLOCATABLE :: EMIST( :,: ) !  timestepped output emssions
+        REAL   , ALLOCATABLE :: UEMIS( :,: ) !  output uncertainty annual emssions
 
 C.........  Temporal allocation Matrix.  
         REAL, ALLOCATABLE :: TMAT( :, :, : ) ! temporal allocation factors
@@ -144,6 +149,7 @@ C...........   Logical names and unit numbers
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for emission processes file
         INTEGER         FDEV    !  unit number for EF xref file
+        INTEGER         UDEV    !  unit number for uncert. suppl. tmprl file
         INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER*16 :: ANAME = ' '    !  logical name for ASCII inven input 
@@ -157,12 +163,17 @@ C...........   Logical names and unit numbers
         CHARACTER*16 :: TNAME = ' '    !  timestepped (low-level) output file
         CHARACTER*16 :: WNAME = ' '    !  ungridded min/max temperatures
 
+        CHARACTER*16 :: UNAME = ' '    !  I/O API uncertainty output file name
+        CHARACTER*16 :: UINAME = ' '   !  I/O API uncertainty input file - index
+        CHARACTER*16 :: UENAME = ' '   !  I/O API uncertainty input file - empirical
+        CHARACTER*16 :: UPNAME = ' '   !  I/O API uncertainty input file - parametric
+
 C...........   Other local variables
 
-        INTEGER         I, J, K, L, L1, L2, N, S, T
+        INTEGER         I, J, K, L, L1, L2, N, R, S, T, U, V
 
-        INTEGER         IOS, IOS1, IOS2, IOS3, IOS4 ! i/o status
-        INTEGER         IOS6, IOS7, IOS8      ! i/o status
+        INTEGER         IOS,  IOS1, IOS2, IOS3, IOS4 ! i/o status
+        INTEGER         IOS6, IOS7, IOS8, IOS9       ! i/o status
         INTEGER         EDATE, ETIME        ! ending Julian date and time
         INTEGER         ENLEN               ! length of ENAME string
         INTEGER         JDATE, JTIME        ! Julian date and time
@@ -172,6 +183,7 @@ C...........   Other local variables
         INTEGER      :: MSTIME = 0          ! gridded met start time
         INTEGER         NGRID               ! no. grid cells
         INTEGER         NINVARR             ! no. inventory variables to read
+        INTEGER         NLEN                ! temporary space for out file name
         INTEGER         NLINE               ! tmp number of lines in ASCII file 
         INTEGER         NMAJOR              ! no. major sources
         INTEGER         NMATX               ! size of ungridding matrix
@@ -182,6 +194,7 @@ C...........   Other local variables
         INTEGER         TNLEN               ! length of TNAME string
         INTEGER         TSTEP               ! output time step
         INTEGER         TZONE               ! output-file time zone
+        INTEGER         UNLEN               ! length of UNAME string
         INTEGER      :: WDATE               ! source min/max tmpr current date
         INTEGER      :: WEDATE = 0          ! source min/max tmpr end date
         INTEGER      :: WSDATE = 0          ! source min/max tmpr start date
@@ -190,23 +203,34 @@ C...........   Other local variables
 
         REAL            RTMP                ! tmp float
 
-        LOGICAL         DFLAG   !  true: day-specific  file available
+        LOGICAL         DFLAG            !  true: day-specific  file available
         LOGICAL      :: EFLAG = .FALSE.  !  error-flag
         LOGICAL      :: EFLAG2= .FALSE.  !  error-flag (2)
-        LOGICAL         HFLAG   !  true: hour-specific file available
-        LOGICAL         MFLAG   !  true: mobile codes file available
-        LOGICAL         NFLAG   !  true: use all uniform temporal profiles
-        LOGICAL         WFLAG   !  true: write QA on current time step
-        LOGICAL         WTINDP  !  true: MINMAXT file is time-independent
+        LOGICAL         HFLAG            !  true: hour-specific file available
+        LOGICAL         MFLAG            !  true: mobile codes file available
+        LOGICAL         NFLAG            !  true: use all uniform temporal profiles
+        LOGICAL      :: UPCOND = .FALSE. ! true: uncertainty processing cond.
+        LOGICAL      :: UCCOND = .FALSE. ! true: uncertainty cycle cond.
+        LOGICAL         WFLAG            !  true: write QA on current time step
+        LOGICAL         WTINDP           !  true: MINMAXT file is time-independent
 
         CHARACTER*8              TREFFMT ! tmprl x-ref format (SOURCE|STANDARD)
         CHARACTER*14             DTBUF   ! buffer for MMDDYY
         CHARACTER*20             MODELNAM! emission factor model name
         CHARACTER*300            MESG    ! buffer for M3EXIT() messages
+        CHARACTER*300            TMPSTR  ! temporary buffer
         CHARACTER(LEN=IOVLEN3)   CBUF    ! pollutant name temporary buffer 
         CHARACTER(LEN=IOVLEN3):: TVARNAME = ' ' ! temperature variable name
 
+            REAL        TMPEMIST( 7000)     ! hourly emis
+
+
+C...........   Other local variables added for unceratinty
+
+
         CHARACTER*16 :: PROGNAME = 'TEMPORAL' ! program name
+
+
 
 C***********************************************************************
 C   begin body of program TEMPORAL
@@ -218,6 +242,8 @@ C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Obtain settings from the environment...
+C.........  Get the unceratinty flag
+        UCFLAG = ENVYN( 'SMK_UNCERT', 'Mode for SMOKE' , .FALSE., IOS )
 
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
@@ -303,6 +329,7 @@ C           retrieve the number of grid cells
      &                    NSTEPS, MSDATE, MSTIME, WSDATE, WSTIME, 
      &                    WEDATE, NGRID)
         END IF
+
 
 C.........  For day-specific data input...
         IF( DFLAG ) THEN
@@ -421,7 +448,10 @@ C.........  NOTE - the CHRT* variables that are part of the MODXREF module
 C           will be used by RDEFXREF and ASGNPSI and done with before these
 C           variables are again needed by RDTREF and ASGNTPRO.
 
-        IF( NIACT .GT. 0 ) THEN
+C.........  Read emission processes file.  Populate array in MODEMFAC.
+        CALL RDEPROC( TDEV )
+
+        IF( CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 ) THEN
 
 C.............  Read header of ungridding matrix...
             IF( .NOT. DESC3( GNAME ) ) THEN
@@ -457,9 +487,6 @@ C.............  Read the cross-reference for assigning the PSIs
 C               to the sources. This will populate parts of the MODXREF module.
 C.............  Also create the list of unique parameter scheme indices.
             CALL RDEFXREF( FDEV, .TRUE. )
-
-C.............  Read emission processes file.  Populate array in MODEMFAC.
-            CALL RDEPROC( TDEV )
 
 C.............   Map parameter scheme indexes (PSIs) onto sources for all actvty
             CALL ASGNPSI( NIACT, ACTVTY, NETYPE )
@@ -553,12 +580,6 @@ C.............  If any emissions types associated with this activity, store them
 C.........  Reset number of pollutants and emission types based on those used
         NIPPA = N
 
-C.........  Set up and open I/O API output file(s) ...
-        CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, NPELV,
-     &                TNAME, PDEV )
-
-        TNLEN = LEN_TRIM( TNAME )
-
 C.........  Read temporal-profile cross-reference file and put into tables
 C.........  Only read entries for pollutants that are in the inventory.
 C.........  Only read if not using uniform temporal profiles
@@ -592,13 +613,13 @@ C           divide pollutants into even groups and try again.
         NGRP = 1               ! Number of groups
         DO
 
-            ALLOCATE( TMAT ( NSRC, NGSZ, 24 ), STAT=IOS1 )
-            ALLOCATE( MDEX ( NSRC, NGSZ )    , STAT=IOS2 )
-            ALLOCATE( WDEX ( NSRC, NGSZ )    , STAT=IOS3 )
-            ALLOCATE( DDEX ( NSRC, NGSZ )    , STAT=IOS4 )
-            ALLOCATE( EMAC ( NSRC, NGSZ )    , STAT=IOS6 )
-            ALLOCATE( EMACV( NSRC, NGSZ )    , STAT=IOS7 )
-            ALLOCATE( EMIST( NSRC, NGSZ )    , STAT=IOS8 )
+            ALLOCATE( TMAT  ( NSRC, NGSZ, 24 ), STAT=IOS1 )
+            ALLOCATE( MDEX  ( NSRC, NGSZ )    , STAT=IOS2 )
+            ALLOCATE( WDEX  ( NSRC, NGSZ )    , STAT=IOS3 )
+            ALLOCATE( DDEX  ( NSRC, NGSZ )    , STAT=IOS4 )
+            ALLOCATE( EMAC  ( NSRC, NGSZ )    , STAT=IOS6 )
+            ALLOCATE( EMACV ( NSRC, NGSZ )    , STAT=IOS7 )
+            ALLOCATE( EMIST ( NSRC, NGSZ )    , STAT=IOS8 )
 
             IF( IOS1 .GT. 0 .OR. IOS2 .GT. 0 .OR. IOS3 .GT. 0 .OR.
      &          IOS4 .GT. 0 .OR. IOS6 .GT. 0 .OR.
@@ -660,6 +681,48 @@ C.........  Create 2-d arrays of I/O pol names, activities, & emission types
             END DO
         END DO
 
+c-----------------  EU test section start  -------------------
+c will eventually want this to proceed the final bottom loops
+c-------------------------------------------------------------
+
+c        call lastcall
+
+        CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, 
+     &                TZONE, NPELV, TNAME, PDEV )
+        TNLEN = LEN_TRIM( TNAME )
+
+        MESG = 'DEBUG: ATMP...' // TNAME
+        CALL M3MSG2( MESG )
+
+C.........  if uncertainty mode is ON initiate random number generation
+C           with a starting point and create uncertainty data structures
+        IF ( UCFLAG ) THEN
+            CALL RANDOM_SEED  ! BUG: want to utilize a seed
+            CALL RDUSTATI( UINAME, UENAME, UPNAME )
+            IF( ALLOCATED( UEMIS ) ) DEALLOCATE( UEMIS )
+            ALLOCATE( UEMIS( UNSRC, UNIPOL ), STAT=IOS )
+            UEMIS  = 0.
+        END IF
+
+        WRITE( TMPSTR,94010 ) '', DRAWRLZN
+        NLEN = LEN_TRIM( ADJUSTL( TMPSTR ) )
+C.........  Loop through pollutant/emission-type groups
+        DO R = 0, DRAWRLZN
+            IF ( R .GT. 0 ) THEN
+                CALL GETRNUMS
+C.................  Set up and open I/O API output file(s) ...
+                CALL OPENTMP_U( ENAME, UINAME, SDATE, STIME, TSTEP, 
+     &                          TZONE, R, NLEN, UNAME, UDEV )
+                UNLEN = LEN_TRIM( UNAME )
+c                CALL M3MSG2( UNAME( 1:UNLEN) )
+            END IF
+ 
+c        call lastcall
+
+
+c-----------------  EU test section end  -------------------
+
+
 C.........  Loop through pollutant/emission-type groups
         DO N = 1, NGRP
 
@@ -694,13 +757,13 @@ C               are actually diurnal profiles instead of emissions
 
 C.............  Initialize emissions, activities, and other arrays for this
 C               pollutant/emission-type group
-            TMAT  = 0.
-            MDEX  = IMISS3
-            WDEX  = IMISS3
-            DDEX  = IMISS3
-            EMAC  = 0.
-            EMACV = 0.
-            EMIST = 0.
+            TMAT   = 0.
+            MDEX   = IMISS3
+            WDEX   = IMISS3
+            DDEX   = IMISS3
+            EMAC   = 0.
+            EMACV  = 0.
+            EMIST  = 0.
 
 C.............  Assign temporal profiles by source and pollutant
             CALL M3MSG2( 'Assigning temporal profiles to sources...' )
@@ -773,7 +836,7 @@ C               file (or all data).
             MDATE = MSDATE
             MTIME = MSTIME
 
-            IF ( WTINDP ) THEN
+            IF ( CATEGORY .EQ. 'MOBILE' .AND. WTINDP ) THEN
 
                IF( .NOT. READ3( WNAME, 'TKMIN', 1,
      &                          0, 0, TKMIN ) ) THEN
@@ -808,7 +871,7 @@ C.............  Loop through time steps for current pollutant group
 
 C.................  When there are activity data, assume that there is a 
 C                   temperature dependence, as with Models-3
-                IF( NIACT .GT. 0 ) THEN
+                IF ( CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 ) THEN
 
 C.....................  Read gridded temperature data and convert to
 C                       source-based temperatures using the ungridding matrix
@@ -850,13 +913,14 @@ C                       day when there is a new day in GMT (met ) time zone
 
                     END IF
 
-                END IF
+                END IF ! ( CATEGORY .EQ. 'MOBILE' .AND. NIACT .GT. 0 ) 
 
 C.................  Generate hourly emissions for current hour
-                CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
-     &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), 
-     &                         EMAC, EMACV, TMAT, EMIST )
+                CALL GENHEMIS( R, NGSZ, JDATE, JTIME, TZONE, DNAME, 
+     &                         HNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ),
+     &                         EMAC, EMACV, TMAT, EMIST, UEMIS )
 
+                V = 0
 C.................  Loop through pollutants/emission-types in this group
                 DO I = 1, NGSZ
 
@@ -865,16 +929,42 @@ C.................  Loop through pollutants/emission-types in this group
 C.....................  Skip blanks that can occur when NGRP > 1
                     IF ( CBUF .EQ. ' ' ) CYCLE
 
-C.....................  Write hourly emissions to I/O API NetCDF file
-                    IF( .NOT. WRITE3( TNAME, CBUF, JDATE, JTIME, 
-     &                                EMIST( 1,I )              ) ) THEN
+                    IF (R .EQ. 0) THEN
 
-                        L = LEN_TRIM( CBUF )
-                        MESG = 'Could not write "' // CBUF( 1:L ) // 
-     &                         '" to file "' // TNAME( 1:TNLEN ) // '."'
-                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+C.........................  Write hourly emissions to I/O API NetCDF file
+                        IF( .NOT. WRITE3( TNAME, CBUF, JDATE, 
+     &                                    JTIME, EMIST( 1,I ) ) ) THEN
+                            L = LEN_TRIM( CBUF )
+                            MESG = 'Could not write "' // CBUF( 1:L ) // 
+     &                             '" to file "'//TNAME( 1:TNLEN )//'."'
+                            CALL M3EXIT(PROGNAME, JDATE, JTIME, MESG, 2)
+                        END IF
 
-                    END IF
+                    ELSE
+
+                        U = INDEX1( CBUF , NIPOL , EINAM )
+C.........................  Unceratinty cycle condition: pollutant is not an uncertainty
+                        UCCOND = ( UEFINAM( U ) .OR. UEINAM( U ) )
+                        IF ( .NOT. ( UCCOND ) ) CYCLE 
+
+                        V = V + 1
+                        IF ( V .GT. UNIPOL ) THEN
+                            WRITE( MESG,94010 ) 
+     &                            'Number of uncertainty pollutants ',V,
+     &                            'exceeded the expected number', UNIPOL
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+
+C.........................  Write uncertainty annual emissions to I/O API NetCDF file
+                        IF( .NOT. WRITE3( UNAME, CBUF, JDATE, 
+     &                                    JTIME, UEMIS( 1,V ) ) ) THEN
+                            L = LEN_TRIM( CBUF )
+                            MESG = 'Could not write "' // CBUF( 1:L ) // 
+     &                             '" to file "'//UNAME( 1:UNLEN )//'."'
+                            CALL M3EXIT(PROGNAME, JDATE, JTIME, MESG, 2)
+                        END IF
+
+                    END IF ! Loop through pollutants/emission-types I
 
                 END DO  ! End loop on pollutants/emission-types I in this group
 
@@ -903,9 +993,14 @@ c               WFLAG = ( T .EQ. NSTEPS )
 c               CALL QATMPR( LDEV, NGSZ, T, JDATE, JTIME, WFLAG, 
 c    &                       EANAM2D( 1,N ), EMAC )
 
-            END DO      ! End loop on time steps T
+            END DO      ! End loop on T time steps, NSTEPS
 
-        END DO          ! End loop on pollutant groups N
+        END DO          ! End loop on N pollutant groups, NGRP
+
+        END DO          ! End loop on R simulations, DRAWRLZN
+
+
+        call lastcall
 
 C.........  Exit program with normal completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -918,6 +1013,29 @@ C...........   Internal buffering formats.............94xxx
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
+
+c**************** Internal Subroutines *******************************
+        CONTAINS
+
+            SUBROUTINE LASTCALL
+
+            INTEGER       J, K, U           ! counters and indices
+
+
+            DO J = 1,NSRC
+               TMPEMIST(J) = EMAC(J,4)
+            END DO
+
+
+            END SUBROUTINE LASTCALL
+
+c*********************************************************************
+
+            SUBROUTINE SAMPLEF
+
+            INTEGER       J, K, U           ! counters and indices
+
+            END SUBROUTINE SAMPLEF
 
         END PROGRAM TEMPORAL
 
