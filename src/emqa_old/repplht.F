@@ -49,10 +49,10 @@ C...........   INCLUDES:
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'TMDIMS3.EXT'   !  emis temporal modeling parms
-        INCLUDE 'LADIMS3.EXT'   !  emis layer params
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'VGRD3.EXT'     !  emis layer params
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -221,9 +221,12 @@ C            END IF
         PTSTEP = TSTEP3D
         PNSTEPS = MXREC3D - 1
 
+        CALL M3MSG2( 'Sources with NOx totals above the ' //
+    &                'cutoff will be included in reports...' )
+
         MAXNOX = ENVREAL ( 'MAXNOX', 'NOX cutoff point', 1.0, STATUS )
         MAXNOX = GETREAL ( 0.0, 99999.0, MAXNOX, 
-     &                     'Enter cutoff point for NOX emissions' )
+     &                     'Enter NOx emissions cutoff [tons/day]' )
 
         MAXLAY = ENVINT ( 'MAXLAY', 'Max plume rise layer', NLAYERS, 
      &                    STATUS )
@@ -469,7 +472,7 @@ C.......... Write the report headers.
         DO I = 1, NIPOL
             WRITE ( MUNIT, 940 ) ' ---------'
         END DO
-        WRITE ( MUNIT, 920 ) ''
+        WRITE ( MUNIT, 920 ) ' '
 
 
 C.......... First, determine the minimum and maximum plume heights
@@ -496,11 +499,11 @@ C.................. Check to see if this is the min or max layer so far.
                     IF ( ( INDEX .GT. 0 ) .AND. 
      &                   ( LFRAC ( J, LAYER ) .GT. 0.0 ) ) THEN
                         MINLAYER ( INDEX, CURDAY ) = 
-     &                          AMIN1 ( LAYER, 
-     &                                  MINLAYER ( INDEX, CURDAY ) )
+     &                          MIN( LAYER, 
+     &                               MINLAYER ( INDEX, CURDAY ) )
                         MAXLAYER ( INDEX, CURDAY ) = 
-     &                          AMAX1 ( LAYER, 
-     &                                  MAXLAYER ( INDEX, CURDAY ) )
+     &                          MAX( LAYER, 
+     &                               MAXLAYER ( INDEX, CURDAY ) )
                     END IF
                 END DO
 C                PRINT '( A, I3 )', 'Did MIN/MAX for layer ', LAYER
