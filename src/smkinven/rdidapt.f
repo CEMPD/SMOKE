@@ -24,17 +24,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -160,6 +160,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: CFLAG              ! true: recalc vel w/ flow & diam
         LOGICAL, SAVE :: FFLAG    = .FALSE. ! true: fill in 0. annual with seasonal
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: 1st time routine called
+        LOGICAL, SAVE :: LEOR     = .FALSE. ! true: end of record reached
         LOGICAL, SAVE :: WFLAG    = .FALSE. ! true: all lat-lons to western hemi
 
         CHARACTER*20    CNTRY   !  country name
@@ -219,13 +220,15 @@ C.............  If line is a header line or blank, it will advance anyway
             READ( FDEV, 93010, END=199, IOSTAT=IOS, ADVANCE="NO" ) 
      &            LINPT1
             IREC = IREC + 1
+            LEOR = ( IOS .LT. 0 )
 
             IF ( IOS .GT. 0 ) THEN
 
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 )
      &              'I/O error', IOS, 
-     &              'reading inventory file at line', IREC
+     &              'reading inventory file before column ', PTNONPWD,
+     &              'at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
 
@@ -256,6 +259,16 @@ C.............  Interpret error status
 
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
+
+C...........  If end of record reached already, error
+            IF( LEOR ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Unexpected end of line '//
+     &                 'at line', IREC
+                CALL M3MESG( MESG )
+                READ( FDEV, 93000, END=199, ADVANCE = "YES" )
+                CYCLE
+            END IF
 
 C.............  Read state and county code
             CALL READ_INTEGER( 2, IREC, .FALSE.,  LINPT1( 1:2 ), 
@@ -356,9 +369,11 @@ C               the other reader routines.
 
 C.................  Non-advancing read for all but the last pollutant and
 C                   advancing read for the last pollutant
-                IF ( V .LE. NPOL ) THEN
+                LEOR = .FALSE.
+                IF ( V .LT. NPOL ) THEN
                     READ( FDEV, 93020, END=199, IOSTAT=IOS, 
      &                    ADVANCE="NO" ) LINEMS
+                    LEOR = ( IOS .LT. 0 )
                 ELSE
                     READ( FDEV, 93020, END=199, IOSTAT=IOS ) 
      &                  LINEMS
@@ -367,6 +382,16 @@ C                   advancing read for the last pollutant
 
                 CBUF = TMPNAM( V )
                 L = LEN_TRIM( CBUF )
+
+C...............  If end of record reached already, error
+                IF( LEOR ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Unexpected end of '//
+     &                     'line at line', IREC
+                    CALL M3MESG( MESG )
+                    READ( FDEV, 93000, END=199, ADVANCE = "YES" )
+                    EXIT
+                END IF
 
 C.................  Read annual emissions for pollutant V
                 CALL READ_REAL( 13, IREC, .TRUE., LINEMS( 1:13 ), 
@@ -541,6 +566,8 @@ C.........  Make sure routine knows it's been called already
 
 C.........  Return from subroutine 
         RETURN
+
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 

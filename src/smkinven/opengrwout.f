@@ -6,6 +6,7 @@ C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C      This subroutine 
+C
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -19,17 +20,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -122,11 +123,11 @@ C.........  Store non-category-specific header information
 
 C.........  If projection year is non-zero, store in FDESC3D
         IF( FYEAR .NE. 0 ) THEN
-             WRITE( FDESC3D( 13 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
+             WRITE( FDESC3D( 14 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
         END IF
 
-        FDESC3D( 14 ) = '/INVEN FROM/ ' // IFDESC2
-        FDESC3D( 15 ) = '/INVEN VERSION/ ' // IFDESC3
+        FDESC3D( 15 ) = '/INVEN FROM/ ' // IFDESC2
+        FDESC3D( 16 ) = '/INVEN VERSION/ ' // IFDESC3
 
 C.........  Prompt file output SMOKE file
         IF( SFLAG ) THEN

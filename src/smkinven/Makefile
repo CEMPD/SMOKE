@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
+LIBS          = $(LDIRS) $(LIBS_SYS) 
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
 
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
@@ -32,8 +32,8 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 RAW=chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o openinvin.o \
     openinvout.o openpdout.o procinven.o rdcempd.o rdemsar.o rdemsmb.o \
     rdemspd.o rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o rdidaar.o \
-    rdidamb.o rdidapt.o rdinven.o rdlooppd.o smkinven.o srcmem.o wrinvchr.o \
-    wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
+    rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o smkinven.o srcmem.o \
+    wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -73,13 +73,13 @@ rdemsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdemsar.f
 rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdemsmb.f
-rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
+rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
 	$(FC) $(FFLAGS) -c -o $@ rdemspd.f
 rdemspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdemspt.f
 rdepsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdepsar.f
-rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
+rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ rdepspd.f
 rdepspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdepspt.f

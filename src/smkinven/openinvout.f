@@ -25,17 +25,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -60,12 +60,13 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER*2     CRLF
+        INTEGER         ENVINT
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16    VERCHAR
 
-        EXTERNAL CRLF, INDEX1, PROMPTFFILE, PROMPTMFILE, VERCHAR
+        EXTERNAL CRLF, ENVINT, INDEX1, PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN)  :: GRDNM  ! grid name if any gridded data
@@ -98,6 +99,8 @@ C...........   Other local variables
 
         INTEGER       I, J, K, L, L2, V, V1, V2     ! counter and indices
 
+        INTEGER    :: BASYR_OVR = 0     ! base year override
+        INTEGER    :: FYEAR = 0         ! future year
         INTEGER       IOS       ! i/o status
         INTEGER       LEQU      ! position of '=' in formula
         INTEGER       LDIV      ! position of '-' or '+' in formula
@@ -106,6 +109,7 @@ C...........   Other local variables
         INTEGER       NIOVARS   ! Number of I/O API file non-emis variables
         INTEGER       NDATMAX   ! Max no of pols+activitys, based on I/O API
         INTEGER       NNPVAR    ! No. non-pollutant inventory variables
+        INTEGER       YEAR      ! predominant year of inventory
 
         LOGICAL    :: CHKPLUS  = .FALSE. ! true: formula uses a + sign
         LOGICAL    :: CHKMINUS = .FALSE. ! true: formula uses a - sign
@@ -127,6 +131,9 @@ C   begin body of subroutine OPENINVOUT
 
 C.........  Get environment variable settings
         CALL ENVSTR( FORMEVNM, MESG, ' ', VAR_FORMULA, IOS )
+
+        BASYR_OVR = ENVINT( 'SMK_BASEYR_OVERRIDE', 
+     &                      'Base year override', 0, IOS )
 
 C.........  Get output inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
@@ -184,8 +191,16 @@ C               variables
 
         ENDIF
 
-C.........  Determine the base year of the inventory
-        CALL GETBASYR( NSRC, BYEAR )
+C.........  Determine the predominant year of the inventory
+        CALL GETBASYR( NSRC, YEAR )
+
+C.........  Set the base year and past/future year, if needed
+        IF( BASYR_OVR .GT. 0 .AND. YEAR .NE. BASYR_OVR ) THEN
+            BYEAR = BASYR_OVR
+            FYEAR = YEAR
+        ELSE
+            BYEAR = YEAR
+        END IF
 
 C.........  Set up for opening I/O API output file header
 
@@ -216,8 +231,9 @@ C.........  Set up for opening I/O API output file header
 
         IF( GRDNM .NE. ' ' ) FDESC3D( 13 ) = '/GRIDNAME/ ' // GRDNM
 
-c note: now that FDESC for the inven file goes passed 10 fields, must check
-C n:    other programs to avoid conflicts with FDESC
+        IF( FYEAR .GT. 0 ) THEN
+             WRITE( FDESC3D( 14 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
+        END IF
 
 C.........  Define source characteristic variables that are not strings
 

@@ -27,17 +27,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -523,9 +523,24 @@ C.............   If zone is < 0, then assume already in lat-lon
                 CALL UTM2LL( XLOC, YLOC, ZONE, XX, YY )
 
             ELSE
-                XX = XLOC
-                YY = YLOC
-                IF( WFLAG .AND. XX .GT. 0 ) XX = -XX  ! To western hemisphere
+C.................  Make sure coordinates are within lat-lon range
+                IF( ABS( XLOC ) > 180. .OR. ABS( YLOC ) > 180. ) THEN
+                    WRITE( MESG,94010 ) 'Source dropped because ' //
+     &                      'UTM zone less than or equal to 0 ' //
+     &                      CRLF() // BLANK5 //
+     &                      'and source coordinates not Lat-Lon ' //
+     &                      'in facility file for:' //
+     &                      CRLF() // BLANK5 //
+     &                      'FIP=' // CFIP // '; Facility=' //
+     &                      FCID( 1:LFC ) // '; and Stack=' // SKID
+                    CALL M3MESG( MESG )
+                    
+                    CYCLE       ! to end of do-loop
+                ELSE
+                    XX = XLOC
+                    YY = YLOC
+                    IF( WFLAG .AND. XX .GT. 0 ) XX = -XX  ! To western hemisphere
+                END IF   ! if xloc, yloc not lat-lon
             ENDIF
 
 C.............  Store stack file information
