@@ -17,6 +17,7 @@ C.........  Width of source information strings
         INTEGER, PARAMETER :: POLLEN3 =  5 ! pol position field 
         INTEGER, PARAMETER :: SCCLEN3 = 10 ! SCC
         INTEGER, PARAMETER :: SCLLEN3 =  5 ! Left part of SCC
+        INTEGER, PARAMETER :: VTPLEN3 =  5 ! vehicle type
 
 C.........  Width of other global character strings 
         INTEGER, PARAMETER :: IOVLEN3 = 16 ! length of I/O API variables

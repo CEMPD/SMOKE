@@ -20,6 +20,7 @@ C.........  Width of source information strings
         PRIVATE :: POLLEN3
         PRIVATE :: SCCLEN3
         PRIVATE :: SCLLEN3
+        PRIVATE :: VTPLEN3
 
 C.........  Width of other global character strings 
         PRIVATE :: IOVLEN3
