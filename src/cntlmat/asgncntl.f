@@ -95,6 +95,7 @@ C.........  Other local variables
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER          F7, F8, F9, F10, F11        ! tmp find indices
         INTEGER          IDX    !  tmp index to control data table
+        INTEGER          ISTAT  !  tmp indicator for internal subprogram calls
         INTEGER          NCHKCHR          ! position of last non-SCC src char
 
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
@@ -102,6 +103,7 @@ C.........  Other local variables
         LOGICAL, SAVE :: MACTFLAG = .FALSE. ! true: MACT and src type available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
         LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
+        LOGICAL, SAVE :: SICFIRST = .TRUE.  ! true: assign by SIC before SCC
         LOGICAL       :: SICXREF  = .FALSE. ! true: SIC assignments in x-ref
         LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
@@ -162,6 +164,9 @@ C.........  For first time routine is called ...
 C.............  Retrieve environment variables
             MESG = 'Switch for reporting default control factors'
             REPDEFLT = ENVYN ( 'REPORT_DEFAULTS', MESG, .TRUE., I )
+
+            MESG = 'Match sources by SIC before SCC'
+            SICFIRST = ENVYN ( 'XREF_SICOVERSCC', MESG, .TRUE., I )
 
 C.............  Set up format for creating character FIPS code for non-point
             IF( CATEGORY .NE. 'POINT' ) THEN
@@ -514,272 +519,30 @@ C                           any MACT match
                     END IF
                 END IF  ! MACT available in inventory                           
 
-C.................  If SIC available in inventory...
-                IF ( SICFLAG ) THEN
-
-C................. Try for pollutant-specific  FIPS code & SIC matches; then
-C                          pollutant-specific Cy/st code & SIC matches; then
-C                          pollutant-specific SIC matches
-                    F5 = FINDC( CFIPSIC , TXCNT( 31 ), CHRT31 ) 
-                    F4 = FINDC( CFIPSICL, TXCNT( 30 ), CHRT30 ) 
-                    F3 = FINDC( CSTASIC , TXCNT( 29 ), CHRT29 ) 
-                    F2 = FINDC( CSTASICL, TXCNT( 28 ), CHRT28 ) 
-                    F1 = FINDC( CSIC    , TXCNT( 27 ), CHRT27 ) 
-                    F0 = FINDC( CSICL   , TXCNT( 26 ), CHRT26 ) 
-
-                    IF( F5 .GT. 0 .AND. ICTL31(F5,V) .GE. ADDPS ) THEN
-                        IDX = ICTL31( F5,V ) - ADDPS
-                        CALL SETSOURCE_CONTROL_INDEX
-                        DATSPFLAG = .TRUE.
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F4 .GT. 0 .AND. ICTL30(F4,V) .GE. ADDPS) THEN
-                        IDX = ICTL30( F4,V ) - ADDPS
-                        CALL SETSOURCE_CONTROL_INDEX
-                        DATSPFLAG = .TRUE.
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F3 .GT. 0 .AND. ICTL29(F3,V) .GE. ADDPS) THEN
-                        IDX = ICTL29( F3,V ) - ADDPS
-                        CALL SETSOURCE_CONTROL_INDEX
-                        DATSPFLAG = .TRUE.
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F2 .GT. 0 .AND. ICTL28(F2,V) .GE. ADDPS) THEN
-                        IDX = ICTL28( F2,V ) - ADDPS
-                        CALL SETSOURCE_CONTROL_INDEX
-                        DATSPFLAG = .TRUE.
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F1 .GT. 0 .AND. ICTL27(F1,V) .GE. ADDPS) THEN
-                        IDX = ICTL27( F1,V ) - ADDPS
-                        CALL SETSOURCE_CONTROL_INDEX
-                        DATSPFLAG = .TRUE.
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F0 .GT. 0 .AND. ICTL26(F0,V) .GE. ADDPS) THEN
-                        IDX = ICTL26( F0,V ) - ADDPS
-                        CALL SETSOURCE_CONTROL_INDEX
-                        DATSPFLAG = .TRUE.
-                        CYCLE                       !  to end of sources-loop
-
-                    END IF
-
-C.................  Try for any FIPS code & SIC matches; then
-C                           any Cy/st code & SIC matches; then
-C                           any SIC matches; then
-                    IF( F5.GT. 0 .AND. ICTL31(F5,V) .NE. IMISS3 ) THEN
-                        IDX = ICTL31( F5,V )
-                        CALL SETSOURCE_CONTROL_INDEX
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F4.GT. 0 .AND. ICTL30(F4,V) .NE. IMISS3) THEN
-                        IDX = ICTL30( F4,V )
-                        CALL SETSOURCE_CONTROL_INDEX
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F3.GT. 0 .AND. ICTL29(F3,V) .NE. IMISS3) THEN
-                        IDX = ICTL29( F3,V )
-                        CALL SETSOURCE_CONTROL_INDEX
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F2.GT. 0 .AND. ICTL28(F2,V) .NE. IMISS3) THEN
-                        IDX = ICTL28( F2,V )
-                        CALL SETSOURCE_CONTROL_INDEX
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F1.GT. 0 .AND. ICTL27(F1,V) .NE. IMISS3) THEN
-                        IDX = ICTL27( F1,V )
-                        CALL SETSOURCE_CONTROL_INDEX
-                        CYCLE                       !  to end of sources-loop
-
-                    ELSEIF(F0.GT. 0 .AND. ICTL26(F0,V) .NE. IMISS3) THEN
-                        IDX = ICTL26( F0,V )
-                        CALL SETSOURCE_CONTROL_INDEX
-                        CYCLE                       !  to end of sources-loop
-
-                    END IF
-                END IF
-
-C.................  Try for pollutant-specific FIPS code & SCC matches; then
-C                           pollutant-specific Cy/st code & SCC matches; then
-C                           pollutant-specific SCC matches
-
-                F11= FINDC( CFIPS_D, TXCNT( 9 ), CHRT09 ) 
-                F10= FINDC( CFIPS_C, TXCNT( 25), CHRT08C ) 
-                F9 = FINDC( CFIPS_B, TXCNT( 24), CHRT08B ) 
-                F8 = FINDC( CFIPS_A, TXCNT( 23), CHRT08A ) 
-                F7 = FINDC( CSTAS_D, TXCNT( 6 ), CHRT06 ) 
-                F6 = FINDC( CSTAS_C, TXCNT( 22), CHRT05C ) 
-                F5 = FINDC( CSTAS_B, TXCNT( 21), CHRT05B ) 
-                F4 = FINDC( CSTAS_A, TXCNT( 20), CHRT05A ) 
-                F3 = FINDC( TSCC_D , TXCNT( 3 ), CHRT03 ) 
-                F2 = FINDC( TSCC_C , TXCNT( 19), CHRT02C ) 
-                F1 = FINDC( TSCC_B , TXCNT( 18), CHRT02B ) 
-                F0 = FINDC( TSCC_A , TXCNT( 17), CHRT02A ) 
-
-                IF( F11 .GT. 0 .AND. ICTL09(F11,V) .GE. ADDPS ) THEN
-                    IDX = ICTL09( F11,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '09' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F10 .GT. 0 .AND. ICTL08C(F10,V) .GE. ADDPS )THEN
-                    IDX = ICTL08C( F10,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '8C' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F9 .GT. 0 .AND. ICTL08B(F9,V) .GE. ADDPS ) THEN
-                    IDX = ICTL08B( F9,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '8B' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F8 .GT. 0 .AND. ICTL08A(F8,V) .GE. ADDPS ) THEN
-                    IDX = ICTL08A( F8,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '8A' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F7 .GT. 0 .AND. ICTL06(F7,V) .GE. ADDPS ) THEN
-                    IDX = ICTL06( F7,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '06' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F6 .GT. 0 .AND. ICTL05C(F6,V) .GE. ADDPS ) THEN
-                    IDX = ICTL05C( F6,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '5C' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F5 .GT. 0 .AND. ICTL05B(F5,V) .GE. ADDPS ) THEN
-                    IDX = ICTL05B( F5,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '5B' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F4 .GT. 0 .AND. ICTL05A(F4,V) .GE. ADDPS ) THEN
-                    IDX = ICTL05A( F4,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '5A' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F3 .GT. 0 .AND. ICTL03(F3,V) .GE. ADDPS ) THEN
-                    IDX = ICTL03( F3,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '03' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F2 .GT. 0 .AND. ICTL02C(F2,V) .GE. ADDPS ) THEN
-                    IDX = ICTL02C( F2,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '2C' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F1 .GT. 0 .AND. ICTL02B(F1,V) .GE. ADDPS ) THEN
-                    IDX = ICTL02B( F1,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '2B' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F0 .GT. 0 .AND. ICTL02A(F0,V) .GE. ADDPS ) THEN
-                    IDX = ICTL02A( F0,V ) - ADDPS
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '2A' )
-                    DATSPFLAG = .TRUE.
-                    CYCLE                       !  to end of sources-loop
-
-                END IF
-
-C.................  Try for any FIPS code & SCC matches; then
-C                           any Cy/st code & SCC matches; then
-C                           any SCC matches; then
-
-                IF( F11 .GT. 0 .AND. ICTL09(F11,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL09( F11,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '09' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F10 .GT. 0 .AND. ICTL08C(F10,V) .NE. IMISS3)THEN
-                    IDX = ICTL08C( F10,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '8C' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F9 .GT. 0 .AND. ICTL08B(F9,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL08B( F9,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '8B' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F8 .GT. 0 .AND. ICTL08A(F8,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL08A( F8,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '8A' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F7 .GT. 0 .AND. ICTL06(F7,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL06( F7,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '06' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F6 .GT. 0 .AND. ICTL05C(F6,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL05C( F6,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '5C' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F5 .GT. 0 .AND. ICTL05B(F5,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL05B( F5,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '5B' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F4 .GT. 0 .AND. ICTL05A(F4,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL05A( F4,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '5A' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F3 .GT. 0 .AND. ICTL03(F3,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL03( F3,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '03' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F2 .GT. 0 .AND. ICTL02C(F2,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL02C( F2,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '2C' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F1 .GT. 0 .AND. ICTL02B(F1,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL02B( F1,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '2B' )
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( F0 .GT. 0 .AND. ICTL02A(F0,V) .NE. IMISS3 ) THEN
-                    IDX = ICTL02A( F0,V )
-                    CALL SETSOURCE_CONTROL_INDEX
-                    IF ( SICXREF ) CALL REPORT_SCC_USE( '2A' )
-                    CYCLE                       !  to end of sources-loop
-
+C.................  Depending on SIC/SCC switch, match by SIC first, then SCC
+                IF ( SICFIRST ) THEN
+                
+C.....................  If SIC available in inventory, assign by SIC combinations 1st
+                    ISTAT = 0
+                    IF ( SICFLAG ) CALL SET_BY_SIC( ISTAT )
+                    IF ( ISTAT == 1 ) CYCLE
+                    
+C.....................  Assign by SCC combinations 2nd
+                    ISTAT = 0
+                    CALL SET_BY_SCC( ISTAT )
+                    IF ( ISTAT == 1 ) CYCLE
+                    
+                ELSE
+                
+C.....................  Assign by SCC combinations 1st
+                    ISTAT = 0
+                    CALL SET_BY_SCC( ISTAT )
+                    IF ( ISTAT == 1 ) CYCLE
+                    
+C.....................  If SIC available in inventory, assign by SIC combinations 2nd
+                    ISTAT = 0
+                    IF ( SICFLAG ) CALL SET_BY_SIC( ISTAT )
+                    IF ( ISTAT == 1 ) CYCLE
                 END IF
 
 C.................  Try for any FIPS code match
@@ -995,5 +758,332 @@ C----------------------------------------------------------------------
             END IF
 
             END SUBROUTINE CHECK_SRC_TYPE
+
+C......................................................................
+C......................................................................
+
+C.............  This internal subprogram assigns the cross-reference
+C               information by SIC and all combos. All variables are inherited.
+            SUBROUTINE SET_BY_SIC( ISTAT )
+            
+            INTEGER :: ISTAT
+            
+C----------------------------------------------------------------------
+
+C.............  Try for pollutant-specific  FIPS code & SIC matches; then
+C                  pollutant-specific Cy/st code & SIC matches; then
+C                  pollutant-specific SIC matches
+            F5 = FINDC( CFIPSIC , TXCNT( 31 ), CHRT31 ) 
+            F4 = FINDC( CFIPSICL, TXCNT( 30 ), CHRT30 ) 
+            F3 = FINDC( CSTASIC , TXCNT( 29 ), CHRT29 ) 
+            F2 = FINDC( CSTASICL, TXCNT( 28 ), CHRT28 ) 
+            F1 = FINDC( CSIC    , TXCNT( 27 ), CHRT27 ) 
+            F0 = FINDC( CSICL   , TXCNT( 26 ), CHRT26 ) 
+
+            IF( F5 .GT. 0 .AND. ICTL31(F5,V) .GE. ADDPS ) THEN
+                IDX = ICTL31( F5,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F4 .GT. 0 .AND. ICTL30(F4,V) .GE. ADDPS) THEN
+                IDX = ICTL30( F4,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F3 .GT. 0 .AND. ICTL29(F3,V) .GE. ADDPS) THEN
+                IDX = ICTL29( F3,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F2 .GT. 0 .AND. ICTL28(F2,V) .GE. ADDPS) THEN
+                IDX = ICTL28( F2,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F1 .GT. 0 .AND. ICTL27(F1,V) .GE. ADDPS) THEN
+                IDX = ICTL27( F1,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F0 .GT. 0 .AND. ICTL26(F0,V) .GE. ADDPS) THEN
+                IDX = ICTL26( F0,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            END IF
+
+C...........  Try for any FIPS code & SIC matches; then
+C                   any Cy/st code & SIC matches; then
+C                   any SIC matches; then
+            IF( F5.GT. 0 .AND. ICTL31(F5,V) .NE. IMISS3 ) THEN
+                IDX = ICTL31( F5,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F4.GT. 0 .AND. ICTL30(F4,V) .NE. IMISS3) THEN
+                IDX = ICTL30( F4,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F3.GT. 0 .AND. ICTL29(F3,V) .NE. IMISS3) THEN
+                IDX = ICTL29( F3,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F2.GT. 0 .AND. ICTL28(F2,V) .NE. IMISS3) THEN
+                IDX = ICTL28( F2,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F1.GT. 0 .AND. ICTL27(F1,V) .NE. IMISS3) THEN
+                IDX = ICTL27( F1,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF(F0.GT. 0 .AND. ICTL26(F0,V) .NE. IMISS3) THEN
+                IDX = ICTL26( F0,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            END IF
+
+            END SUBROUTINE SET_BY_SIC
+            
+C......................................................................
+C......................................................................
+
+C.............  This internal subprogram assigns the cross-reference
+C               information by SCC and all combos. All variables are inherited.
+
+            SUBROUTINE SET_BY_SCC( ISTAT )
+            
+            INTEGER :: ISTAT
+            
+C----------------------------------------------------------------------
+
+C.............  Try for pollutant-specific FIPS code & SCC matches; then
+C                       pollutant-specific Cy/st code & SCC matches; then
+C                       pollutant-specific SCC matches
+
+            F11= FINDC( CFIPS_D, TXCNT( 9 ), CHRT09 ) 
+            F10= FINDC( CFIPS_C, TXCNT( 25), CHRT08C ) 
+            F9 = FINDC( CFIPS_B, TXCNT( 24), CHRT08B ) 
+            F8 = FINDC( CFIPS_A, TXCNT( 23), CHRT08A ) 
+            F7 = FINDC( CSTAS_D, TXCNT( 6 ), CHRT06 ) 
+            F6 = FINDC( CSTAS_C, TXCNT( 22), CHRT05C ) 
+            F5 = FINDC( CSTAS_B, TXCNT( 21), CHRT05B ) 
+            F4 = FINDC( CSTAS_A, TXCNT( 20), CHRT05A ) 
+            F3 = FINDC( TSCC_D , TXCNT( 3 ), CHRT03 ) 
+            F2 = FINDC( TSCC_C , TXCNT( 19), CHRT02C ) 
+            F1 = FINDC( TSCC_B , TXCNT( 18), CHRT02B ) 
+            F0 = FINDC( TSCC_A , TXCNT( 17), CHRT02A ) 
+
+            IF( F11 .GT. 0 .AND. ICTL09(F11,V) .GE. ADDPS ) THEN
+                IDX = ICTL09( F11,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '09' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F10 .GT. 0 .AND. ICTL08C(F10,V) .GE. ADDPS )THEN
+                IDX = ICTL08C( F10,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '8C' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F9 .GT. 0 .AND. ICTL08B(F9,V) .GE. ADDPS ) THEN
+                IDX = ICTL08B( F9,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '8B' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F8 .GT. 0 .AND. ICTL08A(F8,V) .GE. ADDPS ) THEN
+                IDX = ICTL08A( F8,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '8A' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F7 .GT. 0 .AND. ICTL06(F7,V) .GE. ADDPS ) THEN
+                IDX = ICTL06( F7,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '06' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F6 .GT. 0 .AND. ICTL05C(F6,V) .GE. ADDPS ) THEN
+                IDX = ICTL05C( F6,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '5C' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F5 .GT. 0 .AND. ICTL05B(F5,V) .GE. ADDPS ) THEN
+                IDX = ICTL05B( F5,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '5B' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F4 .GT. 0 .AND. ICTL05A(F4,V) .GE. ADDPS ) THEN
+                IDX = ICTL05A( F4,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '5A' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F3 .GT. 0 .AND. ICTL03(F3,V) .GE. ADDPS ) THEN
+                IDX = ICTL03( F3,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '03' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F2 .GT. 0 .AND. ICTL02C(F2,V) .GE. ADDPS ) THEN
+                IDX = ICTL02C( F2,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '2C' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F1 .GT. 0 .AND. ICTL02B(F1,V) .GE. ADDPS ) THEN
+                IDX = ICTL02B( F1,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '2B' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F0 .GT. 0 .AND. ICTL02A(F0,V) .GE. ADDPS ) THEN
+                IDX = ICTL02A( F0,V ) - ADDPS
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '2A' )
+                DATSPFLAG = .TRUE.
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            END IF
+
+C.............  Try for any FIPS code & SCC matches; then
+C                       any Cy/st code & SCC matches; then
+C                       any SCC matches; then
+
+            IF( F11 .GT. 0 .AND. ICTL09(F11,V) .NE. IMISS3 ) THEN
+                IDX = ICTL09( F11,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '09' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F10 .GT. 0 .AND. ICTL08C(F10,V) .NE. IMISS3)THEN
+                IDX = ICTL08C( F10,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '8C' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F9 .GT. 0 .AND. ICTL08B(F9,V) .NE. IMISS3 ) THEN
+                IDX = ICTL08B( F9,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '8B' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F8 .GT. 0 .AND. ICTL08A(F8,V) .NE. IMISS3 ) THEN
+                IDX = ICTL08A( F8,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '8A' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F7 .GT. 0 .AND. ICTL06(F7,V) .NE. IMISS3 ) THEN
+                IDX = ICTL06( F7,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '06' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F6 .GT. 0 .AND. ICTL05C(F6,V) .NE. IMISS3 ) THEN
+                IDX = ICTL05C( F6,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '5C' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F5 .GT. 0 .AND. ICTL05B(F5,V) .NE. IMISS3 ) THEN
+                IDX = ICTL05B( F5,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '5B' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+                
+            ELSEIF( F4 .GT. 0 .AND. ICTL05A(F4,V) .NE. IMISS3 ) THEN
+                IDX = ICTL05A( F4,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '5A' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F3 .GT. 0 .AND. ICTL03(F3,V) .NE. IMISS3 ) THEN
+                IDX = ICTL03( F3,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '03' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F2 .GT. 0 .AND. ICTL02C(F2,V) .NE. IMISS3 ) THEN
+                IDX = ICTL02C( F2,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '2C' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F1 .GT. 0 .AND. ICTL02B(F1,V) .NE. IMISS3 ) THEN
+                IDX = ICTL02B( F1,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '2B' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            ELSEIF( F0 .GT. 0 .AND. ICTL02A(F0,V) .NE. IMISS3 ) THEN
+                IDX = ICTL02A( F0,V )
+                CALL SETSOURCE_CONTROL_INDEX
+                IF ( SICXREF ) CALL REPORT_SCC_USE( '2A' )
+                ISTAT = 1
+                RETURN                      !  to end of sources-loop
+
+            END IF
+            
+            END SUBROUTINE SET_BY_SCC
 
         END SUBROUTINE ASGNCNTL
