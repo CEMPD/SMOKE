@@ -96,7 +96,6 @@ C...........   ARGUMENTS and their descriptions:
       REAL            LAT  ( NCOLS, NROWS )  ! latitude of cross pt. grid
       REAL            LON  ( NCOLS, NROWS )  ! longitude of cross pt. grid
       CHARACTER*16    CLOUDTYPE
-      CHARACTER*5     CLTYPE
 
 C...........   PARAMETERS and their descriptions:
 C
@@ -149,9 +148,12 @@ C
       DATA            FIRSTIME / .TRUE. /
       SAVE            FIRSTIME
 
+      CHARACTER*5     CLTYPE
       CHARACTER*16    CLDTVAR   ! Name of input variable
       CHARACTER*16    CLDBVAR   ! Name of input variable
       CHARACTER*16    CFRACVAR  ! Name of input variable
+      SAVE            CLTYPE, CLDTVAR, CLDBVAR, CFRACVAR
+
       CHARACTER*16    PNAME
       DATA            PNAME / 'CLDATEN_CALC' /
 C
