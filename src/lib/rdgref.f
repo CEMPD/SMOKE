@@ -110,6 +110,7 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
         CHARACTER(LEN=RWTLEN3) CRWT     !  buffer for roadway type
         CHARACTER(LEN=SICLEN3) CDUM     !  dummy buffer for SIC code
+        CHARACTER(LEN=MACLEN3) CDUM2    !  dummy buffer for MACT code
         CHARACTER(LEN=SCCLEN3) CHKZERO  !  buffer to check for zero SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO  !  zero SCC
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC or roadway type
@@ -156,7 +157,8 @@ C.........  Second pass through file: read lines and store unsorted data for
 C           the source category of interest
         IREC   = 0
         N      = 0
-        CDUM = ' ' 
+        CDUM  = ' '
+        CDUM2 = ' '
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -187,8 +189,8 @@ C               STR2INT to prevent warning messages.
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, ' ', IDUM, 
-     &                         IDUM, IDUM, LDUM, SKIPREC   )
+                CALL FLTRXREF( CFIP, CDUM, TSCC, ' ', CDUM2, 
+     &                         IDUM, IDUM, IDUM, LDUM, SKIPREC )
 
             CASE( 'MOBILE' )
 
@@ -211,8 +213,8 @@ C.................  Make sure SCC is full length
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros.  Do not include SCC in call below because
 C                   right SCC will not work.
-                CALL FLTRXREF( CFIP, CDUM, SCCZERO, ' ', IDUM, 
-     &                         IDUM, IDUM, LDUM, SKIPREC   )
+                CALL FLTRXREF( CFIP, CDUM, SCCZERO, ' ', CDUM2, 
+     &                         IDUM, IDUM, IDUM, LDUM, SKIPREC )
 
 C.................  Convert TSCC to internal value
                 CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
