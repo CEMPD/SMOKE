@@ -214,7 +214,7 @@ C...........   Area Sources Table
 
 C...........   Other local variables
 
-        INTEGER         S, F, I, J, V       !  loop counters.
+        INTEGER         M, S, F, I, J, V    !  loop counters.
         INTEGER         CDEV                !  for actual-SCC file
         INTEGER         KDEV                !  volatile form conversion file
         INTEGER         SDEV                !  for surrogate coeff file
@@ -239,7 +239,7 @@ C...........   Other local variables
 
         LOGICAL         EFLAG   !  error flag
         LOGICAL         KFLAG   !  if volatile format conversion factor or not
-
+        LOGICAL         LVREACT !  if TVC in inventory then must be TRUE
 
 C***********************************************************************
 C   begin body of program SPCPMAT
@@ -320,6 +320,21 @@ C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
      &                   'Error reading ISTACK from file' // PNAME, 2 )
         END IF
 
+C......  if Total VOCs in inventory then flag to use VREACT later
+C......  NOTE: SMOKE not set up to be able to handle TVCs and VOCs
+C......  combined inventories
+
+        LVREACT = .FALSE.
+
+        DO  21  M = 1, NIPOL
+          IF ( EINAM( M ) .EQ. 'TVC' ) LVREACT = .TRUE.
+21      CONTINUE
+
+        IF ( LVREACT ) THEN
+               WRITE( MESG,93000 )
+     &         'Assuming TVC in inventory and no VOC in inventory'
+               CALL M3MESG( MESG )
+        ENDIF
 
 C.......   Read the ACTUAL-SCC FILE
 
@@ -429,6 +444,10 @@ C.......   volatile pollutant in inventory.
 
 88      CONTINUE
 
+C.....  for EPS2 inventories that contain TVC emissions
+
+        IF ( LVREACT ) INVPRO = 'TVC'
+
         IF( INVPRO .NE. POLV .AND. I .LE. NIPOL) THEN
 
             MESG = 'Enter logical name for ' //
@@ -511,7 +530,7 @@ C............. Convert character SCC field to integer SCC number
                 FIPSFA( I ) = STR2INT ( LINE( 1:5 ) )
                 SCCSFA( I ) = SCC
                 PLANTA( I ) = STR2INT ( LINE( 7:11 ) )
-                STACKA( I ) = STR2INT ( LINE( 13:15 ) )
+                STACKA( I ) = STR2INT ( LINE( 12:15 ) )
                 SPXRFA( I ) = STR2INT ( LINE( 28:32 ) )
                 VREACA( I ) = STR2REAL( LINE( 34:38 ) )
                 ETHADA( I ) = STR2REAL( LINE( 55:59 ) )
@@ -904,6 +923,10 @@ C...........   by this volatile conversion factor
                 END IF      ! state and scc match or not
 
             END IF          ! KFLAG is true
+
+C............  if total VOCs in inventory, multiply by VREACT
+
+            IF ( LVREACT ) FAC = FAC * VREACT
 
             DO  143  V = 4, NMPOL
                 SPCFACS( S,V ) = FAC * SCOEF( I,V )
