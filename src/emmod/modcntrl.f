@@ -53,6 +53,8 @@
         REAL   , ALLOCATABLE, PUBLIC:: FACCEFF ( : )  ! control effcncy (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: FACREFF ( : )  ! rule effectvnss (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: FACRLPN ( : )  ! rule penetrtion (0-100)
+        LOGICAL, ALLOCATABLE, PUBLIC:: CTLRPLC ( : )  ! replacement flag
+                                                      !   true: replace, false: add
 
 !.........  ALLOWABLE-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: IALWSIC ( : )  ! SIC code
@@ -82,6 +84,12 @@
         REAL   , ALLOCATABLE, PUBLIC:: EMSRLPN ( : )  ! rule penetrtion (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: EMSPTCF ( : )  ! pt src conversion fac
         REAL   , ALLOCATABLE, PUBLIC:: EMSTOTL ( : )  ! aggregated factor
+
+!.........  MACT-packet-specific data tables
+        CHARACTER(LEN=STPLEN3), ALLOCATABLE, PUBLIC:: CMACSRCTYP( : )  ! source code type
+        REAL   , ALLOCATABLE, PUBLIC:: MACEXEFF( : )  ! CE for existing sources (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: MACNWEFF( : )  ! CE for new sources (0-100)
+        REAL   , ALLOCATABLE, PUBLIC:: MACNWFRC( : )  ! fraction of new sources (0-100)
 
 !..............................................................................
 !.........  Cntlmat work arrays for computing matrices
