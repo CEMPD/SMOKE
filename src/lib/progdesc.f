@@ -79,10 +79,12 @@ C.........  SMOKE programs - listed in alphabetical order
         CASE( 'EMISFAC' )
             WRITE( *,92000 )
      &      ' ',
-     &  'Program EMISFAC drives the MOBILE6 program by supplying',
-     &  'hourly temperature profiles and scenario-specific',
-     &  'MOBILE6 input files. Using multiple calls to',
-     &  'MOBILE6, EMISFAC creates source-based emission factors.',
+     &  'Program EMISFAC drives the MOBILE6 model using custom',
+     &  'input files created from county-based hourly temperature',
+     &  'profiles and MOBILE6 input scenarios. Separate runs of',
+     &  'EMISFAC are needed for each temperature averaging type.',
+     &  'After running MOBILE6, EMISFAC stores the source-based',
+     &  'emission factors.',
      &      ' '
  
         CASE( 'GETRECS' )
@@ -132,7 +134,11 @@ C.........  SMOKE programs - listed in alphabetical order
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program MBSETUP prepares intermediate files needed to run',
-     &  'PREMOBL and EMISFAC. ',
+     &  'PREMOBL and EMISFAC using the county cross-reference and',
+     &  'settings files. It checks that each county in the inventory',
+     &  'and within the grid has been assigned a reference county',
+     &  'and creates the speed summary file grouping sources by county',
+     &  'and speed.',
      &      ' '
 
         CASE( 'METSCAN' )
