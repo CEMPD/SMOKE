@@ -39,7 +39,13 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY:
+     &          CSPT01, CSPT02, CSPT03, CSPT04, CSPT05,
+     &          CSPT06, CSPT07, CSPT08, CSPT09, CSPT10,
+     &          CSPT11, CSPT12, CSPT13, CSPT14, CSPT15, CSPT16,
+     &          CSPT26, CSPT27, CSPT28, CSPT29, CSPT30, CSPT31,
+     &          CSPT32, CSPT33, CSPT34, CSPT35, CSPT36, CSPT37,
+     &          INDXTA, ISPTA, CSPRNA
 
         IMPLICIT NONE
 
@@ -144,6 +150,44 @@ C                   are, by definition, pollutant-specific.
                                         
             CASE( 16 )
                 CSPT16( K,ISP ) = SPCODE
+
+C.............  SIC specific entries
+            CASE( 26 )
+                CSPT26( K,ISP ) = SPCODE
+                
+            CASE( 27 )
+                CSPT27( K,ISP ) = SPCODE
+                
+            CASE( 28 )
+                CSPT28( K,ISP ) = SPCODE
+
+            CASE( 29 )
+                CSPT29( K,ISP ) = SPCODE
+
+            CASE( 30 )
+                CSPT30( K,ISP ) = SPCODE
+
+            CASE( 31 )
+                CSPT31( K,ISP ) = SPCODE
+
+C.............  MACT specific entries
+            CASE( 32 )
+                CSPT32( K,ISP ) = SPCODE
+                                        
+            CASE( 33 )
+                CSPT33( K,ISP ) = SPCODE
+                                        
+            CASE( 34 )
+                CSPT34( K,ISP ) = SPCODE
+                                        
+            CASE( 35 )
+                CSPT35( K,ISP ) = SPCODE
+                                       
+            CASE( 36 )
+                CSPT36( K,ISP ) = SPCODE
+                                        
+            CASE( 37 )
+                CSPT37( K,ISP ) = SPCODE
                                         
             CASE DEFAULT
 
