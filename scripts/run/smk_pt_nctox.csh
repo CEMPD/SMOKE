@@ -133,7 +133,8 @@ setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
 setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-# setenv INVTABLE_OVERRIDE          # Inventory table override
+# setenv YEAR_OVERRIDE          # Overrides YEAR (base) in Assigns file
+# setenv INVTABLE_OVERRIDE      # Inventory table override
 
 ##############################################################################
 

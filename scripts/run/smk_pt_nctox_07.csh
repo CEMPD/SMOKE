@@ -20,14 +20,13 @@ setenv FYEAR 2018              # year of future case
 # set source category
 setenv SMK_SOURCE  P           # source category to process
 setenv MRG_SOURCE  P           # source category to merge
-setenv SRCABBR     pt.$FYEAR   # abbreviation for naming log files
 
 # time independent programs
-setenv RUN_CNTLMAT   N         # Y runs control matrix program
-setenv RUN_GRWINVEN  N         # Y runs control matrix program
+setenv RUN_CNTLMAT   Y         # Y runs control matrix program
+setenv RUN_GRWINVEN  Y         # Y runs control matrix program
 
 # time-dependent programs
-setenv RUN_TEMPORAL  N         # Y runs temporal allocation program
+setenv RUN_TEMPORAL  Y         # Y runs temporal allocation program
 setenv RUN_ELEVPOINT Y        #  run elevated/PinG sources selection program
 setenv RUN_SMKMERGE  Y         # Y runs merge program
 setenv RUN_SMK2EMIS  N         # run conversion of 2-d to UAM binary
@@ -95,7 +94,7 @@ setenv SMK_SPECELEV_YN      N     # Y uses the indicator for major/minor sources
 setenv VELOC_RECALC         N     # Y recalculates velocity from diam and flow
 
 # Script settings
-setenv SRCABBR            pt      # abbreviation for naming log files
+setenv SRCABBR        pt.$FYEAR   # abbreviation for naming log files
 setenv QA_TYPE            all     # [none, all, part1-part4, or custom]
 setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
 setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
@@ -105,8 +104,9 @@ setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings (comment out if not used)
 setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-# setenv CNTLCASE                   # Control case
-# setenv INVTABLE_OVERRIDE          # Inventory table override
+# setenv YEAR_OVERRIDE          # Overrides YEAR (base) in Assigns file
+# setenv INVTABLE_OVERRIDE      # Inventory table override
+# setenv CNTLCASE               # Control case
 
 ##############################################################################
 
@@ -122,6 +122,7 @@ setenv RUN_PART1 Y
 source $ASSIGNS_FILE   # Invoke Assigns file
 
 ## Set projection and control matrices to use in Grwinven
+#      NOTE: Grwinven setting SMK_NUM_CTLMAT > 1 to use PCMAT02-04
 setenv PCMAT01 $PPMAT
 # setenv PCMAT02 
 # setenv PCMAT03 
@@ -129,11 +130,15 @@ setenv PCMAT01 $PPMAT
 
 ## Run Cntlmat and Grwinven
 #
+if ( $?CNTLCASE ) then
+    setenv SRCABBR $SRCABBR.$CNTLCASE 
+endif
 source cntl_run.csh    # Run programs
 
 ## Set up for future-year and/or control processing
 #
 setenv SMK_FUTURE_YN Y
+setenv SMK_CONTROL_YN N
 setenv RUN_PART1 N     # Temporarily end part 1
 source $ASSIGNS_FILE
 
@@ -168,7 +173,7 @@ source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 3
 setenv RUN_PART3 N
 
-## Run Smkmerge and Smk2emis programs
+## Loop through days to run Smkmerge and Smk2emis 
 #
 setenv RUN_PART4 Y
 set cnt = 0
