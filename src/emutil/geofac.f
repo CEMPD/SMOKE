@@ -104,7 +104,7 @@ C.........  Prompt for name of NetCDF input file
 
         ENAME = PROMPTMFILE(
      &       'Enter logical name for SMOKE gridded input (NetCDF) file',
-     &        FSREAD3, 'AGTS', PROGNAME )
+     &        FSREAD3, 'INFILE', PROGNAME )
 
         IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
 
@@ -175,7 +175,7 @@ C.........  Open output file
 
         ONAME = PROMPTMFILE(
      &          'Enter logical name for OUTPUT gridded netCDF file '
-     &          , FSUNKN3, 'AGTSFAC',  PROGNAME      )
+     &          , FSUNKN3, 'OUTFILE',  PROGNAME      )
 
 C.........  Allocate memory for emissions
 
