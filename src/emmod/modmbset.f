@@ -21,7 +21,6 @@
                                                           ! read from SPDSUM and GROUP files
                                                           
         REAL, ALLOCATABLE, PUBLIC :: EMISSIONS( : ) ! array to hold M6 results
-        INTEGER, PUBLIC :: EMISPOS = 0     ! current position in EMISSIONS array
         
 C.........  Various constants for file options, road types, etc.
         INTEGER, PARAMETER, PUBLIC :: RURALINTERSTATE = 1   ! rural interstate
@@ -37,11 +36,11 @@ C.........  Various constants for file options, road types, etc.
         INTEGER, PARAMETER, PUBLIC :: URBANCOLL       = 17  ! urban collector
         INTEGER, PARAMETER, PUBLIC :: URBANLOCAL      = 19  ! urban local
        
-        INTEGER, PARAMETER, PUBLIC :: FREEWAY  = 1    ! MOBILE6 freeway sources
-        INTEGER, PARAMETER, PUBLIC :: ARTERIAL = 2    ! MOBILE6 arterial sources
-        INTEGER, PARAMETER, PUBLIC :: LOCAL    = 3    ! MOBILE6 local sources
-        INTEGER, PARAMETER, PUBLIC :: RAMP     = 4    ! MOBILE6 ramp sources
-        INTEGER, PARAMETER, PUBLIC :: NONE     = 5    ! MOBILE6 non-facility
+        INTEGER, PARAMETER, PUBLIC :: M6FREEWAY  = 1    ! MOBILE6 freeway sources
+        INTEGER, PARAMETER, PUBLIC :: M6ARTERIAL = 2    ! MOBILE6 arterial sources
+        INTEGER, PARAMETER, PUBLIC :: M6LOCAL    = 3    ! MOBILE6 local sources
+        INTEGER, PARAMETER, PUBLIC :: M6RAMP     = 4    ! MOBILE6 ramp sources
+        INTEGER, PARAMETER, PUBLIC :: M6NONE     = 5    ! MOBILE6 non-facility
         
         INTEGER, PARAMETER, PUBLIC :: DAILY    = 1    ! daily temperature profiles
         INTEGER, PARAMETER, PUBLIC :: WEEKLY   = 2    ! weekly temperature averaging
