@@ -306,12 +306,13 @@ C.........  Sorted ...
             END IF
 
 C.............  Deallocate for any source category
+C.............  NOTE - do not deallocate CSOURC, because it may be needed
+C               for reading day- and hour-specific data
             IF( .NOT. AFLAG .AND. .NOT. PFLAG ) THEN
                 IF( ALLOCATED( IFIP )   ) DEALLOCATE( IFIP )
                 IF( ALLOCATED( TPFLAG ) ) DEALLOCATE( TPFLAG )
                 IF( ALLOCATED( INVYR )  ) DEALLOCATE( INVYR )
                 IF( ALLOCATED( CSCC )   ) DEALLOCATE( CSCC )
-                IF( ALLOCATED( CSOURC ) ) DEALLOCATE( CSOURC )
 
             ELSE IF( .NOT. AFLAG ) THEN
                 IF( ALLOCATED( IPOSCOD ) ) DEALLOCATE( IPOSCOD )
