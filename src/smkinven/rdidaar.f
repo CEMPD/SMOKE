@@ -3,7 +3,7 @@
      &                      NRAWOUT, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
-C  subroutine body starts at line XXX
+C  subroutine body starts at line 156
 C
 C  DESCRIPTION:
 C      This subroutine reads the IDA format area-source inventory
@@ -113,7 +113,7 @@ C...........   Counters of total number of input records
         INTEGER, SAVE :: NSRCPOL = 0 ! cumulative source x pollutants count
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, V  ! counters and indices
+        INTEGER         I, J, K, L, N, V  ! counters and indices
 
         INTEGER         COD     !  tmp pollutant position in INVDNAM
         INTEGER         ES      !  counter for source x pollutants
@@ -144,7 +144,7 @@ C...........   Other local variables
 
         CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVDNAM
         CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
-        CHARACTER(LEN=IOVLEN3) CPOL  ! tmp pollutant code
+        CHARACTER(LEN=IOVLEN3) CBUF  ! tmp pollutant code
         CHARACTER(LEN=LINSIZ)  LINE  ! input line from inventory file
         CHARACTER(LEN=SCCLEN3) TSCC  ! tmp scc
 
@@ -175,7 +175,6 @@ C........................................................................
         SS   = NSRCSAV
         ES   = NSRCPOL
         IREC = 0
-        TPF  = MTPRFAC * WKSET
         DO
 
 C.............  Read a line of IDA file as a character string
@@ -299,17 +298,11 @@ C.............  Make adjustments to pad with zeros, if needed
             CALL PADZERO( CFIP )
             CALL PADZERO( TSCC )
 
-C.............  Store source characteristics if dimension is okay
+C.............  Set the default temporal resolution of the data
+            TPF  = MTPRFAC * WKSET
+
+C.............  Increment source number
             SS = SS + 1
-
-            IF( SS .LE. NRAWIN ) THEN
-
-                IFIPA  ( SS ) = FIP
-                TPFLGA ( SS ) = TPF
-                INVYRA ( SS ) = INY
-                CSCCA  ( SS ) = TSCC
- 
-            END IF 
 
 C.............  Initialize start and end positions
             IS = ISINIT - AROTWIDE  ! array
@@ -320,7 +313,8 @@ C               record for each pollutant.  This will be consistent with
 C               the other reader routines.
             DO V = 1, NPOL
 
-                CPOL = TMPNAM( V )
+                CBUF = TMPNAM( V )
+                L = LEN_TRIM( CBUF )
 
 C.................  Update start and end positions
                 DO K = 1, NARPPOL3
@@ -328,18 +322,47 @@ C.................  Update start and end positions
                     IE( K ) = IE( K ) + AROTWIDE
                 END DO
 
-                EANN = STR2REAL( LINE( IS(1):IE(1) ) )
-                EOZN = STR2REAL( LINE( IS(2):IE(2) ) )
-                EMFC = STR2REAL( LINE( IS(3):IE(3) ) )
-                CEFF = STR2REAL( LINE( IS(4):IE(4) ) )
-                REFF = STR2REAL( LINE( IS(5):IE(5) ) )
-                RPEN = STR2REAL( LINE( IS(6):IE(6) ) )
+C.................  Read annual emissions for pollutant V
+                N = IE(1) - IS(1) + 1
+                CALL READ_REAL( N, IREC, .TRUE., LINE( IS(1):IE(1) ), 
+     &                          CBUF( 1:L ) // ' annual emissions', 
+     &                          EANN, EFLAG )
+
+C.................  Read seasonal emissions for pollutant V
+                N = IE(2) - IS(2) + 1
+                CALL READ_REAL( N, IREC, .TRUE., LINE( IS(2):IE(2) ), 
+     &                          CBUF( 1:L ) // ' seasonal emissions', 
+     &                          EOZN, EFLAG )
+
+C.................  Read emission factor for pollutant V
+                N = IE(3) - IS(3) + 1
+                CALL READ_REAL( 10, IREC, .TRUE., LINE( IS(3):IE(3) ), 
+     &                          CBUF( 1:L ) // ' emission factor', 
+     &                          EMFC, EFLAG )
+
+C.................  Read control efficiency for pollutant V
+                N = IE(4) - IS(4) + 1
+                CALL READ_REAL( N, IREC, .TRUE., LINE( IS(4):IE(4) ), 
+     &                          CBUF( 1:L ) // ' control efficiency', 
+     &                          CEFF, EFLAG )
+
+C.................  Read rule effectiveness for pollutant V
+                N = IE(5) - IS(5) + 1
+                CALL READ_REAL( N, IREC, .TRUE., LINE( IS(5):IE(5) ), 
+     &                          CBUF( 1:L ) // ' rule effectiveness', 
+     &                          REFF, EFLAG )
+
+C.................  Read rule penetration for pollutant V
+                N = IE(6) - IS(6) + 1
+                CALL READ_REAL( N, IREC, .TRUE., LINE( IS(6):IE(6) ), 
+     &                          CBUF( 1:L ) // ' rule penetration', 
+     &                          RPEN, EFLAG )
 
                 IF( EANN .LT. AMISS3 ) THEN
 
                     IF( NWARN .LT. MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Missing annual '//
-     &                         'emissions at line', IREC, 'for ' // CPOL
+     &                         'emissions at line', IREC, 'for ' // CBUF
                         NWARN = NWARN + 1
                         CALL M3MESG( MESG )
                     END IF
@@ -347,7 +370,7 @@ C.................  Update start and end positions
                     IF ( EOZN .LT. AMISS3 ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Missing annual '//
      &                         'AND seasonal emissions at ' //
-     &                         'line', IREC, 'for ' // CPOL
+     &                         'line', IREC, 'for ' // CBUF
                         NWARN = NWARN + 1
                         CALL M3MESG( MESG )
                     END IF
@@ -357,7 +380,7 @@ C.................  Update start and end positions
                     IF( NWARN .LT. MXWARN ) THEN
                         WRITE( MESG,94010 ) 
      &                         'WARNING: Missing seasonal '//
-     &                         'emissions at line', IREC, 'for ' // CPOL
+     &                         'emissions at line', IREC, 'for ' // CBUF
                         NWARN = NWARN + 1
                         CALL M3MESG( MESG )
                     END IF
@@ -366,21 +389,21 @@ C.................  Update start and end positions
 
                 IF( CEFF .LT. AMISS3 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Missing control ' //
-     &                     'efficiency at line', IREC, 'for ' // CPOL 
+     &                     'efficiency at line', IREC, 'for ' // CBUF 
                     IF( NWARN .LT. MXWARN ) CALL M3MESG( MESG )
                     NWARN = NWARN + 1
                 END IF
                 
                 IF( REFF .LT. AMISS3 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Missing rule ' //
-     &                     'effectiveness at line', IREC, 'for '// CPOL
+     &                     'effectiveness at line', IREC, 'for '// CBUF
                     IF( NWARN .LT. MXWARN ) CALL M3MESG( MESG )
                     NWARN = NWARN + 1
                 END IF
 
                 IF( RPEN .LT. AMISS3 ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Missing rule ' //
-     &                     'pentration at line', IREC, 'for ' // CPOL 
+     &                     'pentration at line', IREC, 'for ' // CBUF 
                     IF( NWARN .LT. MXWARN ) CALL M3MESG( MESG )
                     NWARN = NWARN + 1
                 END IF
@@ -394,10 +417,16 @@ C                   user option is set
                     WRITE( MESG,94010 ) 'NOTE: Using seasonal ' //
      &                     'emissions to fill in annual emissions' //
      &                     CRLF() // BLANK10 // 'at line', IREC,
-     &                     'for ' // CPOL
+     &                     'for ' // CBUF
                     CALL M3MESG( MESG )
 
                     EANN = EOZN * DAY2YR
+
+C.....................  Remove monthly factors for this source. Note that this
+C                       will impact ALL pollutants, even if only one pollutant
+C                       gets filled. This is necessary unless TPF is changed
+C                       to be pollutant-dependent.
+                    TPF  = WKSET
 
                 END IF
 
@@ -425,6 +454,18 @@ C.................  Store data in final arrays if there is enough memory
                 END IF  !  if ES in range
 
             END DO      !  end of loop through pollutants
+
+C.............  Store source characteristics if dimension is okay
+C.............  This is done after pollutants stored because TPF might change
+C               in pollutants loop
+            IF( SS .LE. NRAWIN ) THEN
+
+                IFIPA  ( SS ) = FIP
+                TPFLGA ( SS ) = TPF
+                INVYRA ( SS ) = INY
+                CSCCA  ( SS ) = TSCC
+ 
+            END IF 
 
         END DO          !  to head of FDEV-read loop
 
@@ -492,5 +533,76 @@ C...........   Internal buffering formats............ 94xxx
 94120   FORMAT( I6.6 )
 
 94125   FORMAT( I5 )
+
+        CONTAINS
+
+            SUBROUTINE READ_REAL( LENGTH, IREC, OFLAG, STRING, DESC, 
+     &                            REALVAL, EFLAG )
+
+            INTEGER      , INTENT ( IN )  :: LENGTH
+            INTEGER      , INTENT ( IN )  :: IREC
+            LOGICAL      , INTENT ( IN )  :: OFLAG  !  true: field is optional 
+            CHARACTER(LEN=LENGTH), INTENT( IN ) :: STRING
+            CHARACTER*(*), INTENT ( IN )  :: DESC
+            REAL         , INTENT ( OUT ) :: REALVAL
+            LOGICAL      , INTENT ( OUT ) :: EFLAG 
+
+C.............  Check to see if the field is blank
+            IF ( STRING .EQ. ' ' ) THEN
+
+C.................  If field is blank and optional, then set to missing
+                IF ( OFLAG ) THEN
+                    REALVAL = BADVAL3
+
+C.................  If field is blank and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' is blank at line', IREC
+                    CALL M3MESG( MESG )
+                    REALVAL = BADVAL3
+                    RETURN
+                END IF
+            END IF
+
+C.............  Try to read value and see what the error status is
+            READ( STRING, *, IOSTAT = IOS ) REALVAL
+
+C.............  If error, then write message and continue
+            IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: ' // DESC //
+     &                 ' has non-readable value "' // STRING //
+     &                 '"' // CRLF() // BLANK 10 // 'at line', IREC
+                CALL M3MESG( MESG )
+                REALVAL = BADVAL3
+
+C.............  Check if missing value
+            ELSE IF ( REALVAL .EQ. -9 ) THEN
+
+C.................  If field is missing and optional, then set to zero
+                IF ( OFLAG ) THEN
+                    REALVAL = BADVAL3
+
+C.................  If field is missing and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' has -9 missing value at line', IREC
+                    CALL M3MESG( MESG )
+                    REALVAL = BADVAL3
+
+                END IF
+
+            END IF
+
+            RETURN
+
+C............................................................................
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE READ_REAL
+
 
         END SUBROUTINE RDIDAAR

@@ -3,7 +3,7 @@
      &                      NRAWOUT, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
-C  subroutine body starts at line 180
+C  subroutine body starts at line 186
 C
 C  DESCRIPTION:
 C      This subroutine reads the IDA format point-source inventory
@@ -124,9 +124,12 @@ C           characteristics definition for use in BLDCSRC.
         CHARACTER(LEN=CHRLEN3) SKID  ! tmp stack ID
         CHARACTER(LEN=CHRLEN3) SGID  ! tmp segment ID
 
+C.........  Local allocatable arrays
+
 C...........   Other local variables
         INTEGER         I, J, K, L, V  ! counters and indices
 
+        INTEGER         CNY     !  county code
         INTEGER         COD     !  tmp pollutant position in INVDNAM
         INTEGER         CPRI    !  tmp primary control device code
         INTEGER         CSEC    !  tmp secondary control device code
@@ -140,6 +143,7 @@ C...........   Other local variables
         INTEGER         NPOL    !  number of pollutants in file
         INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
         INTEGER         SS      !  counter for sources
+        INTEGER         STA     !  state code
         INTEGER         TPF     !  tmp temporal adjustments setting
 
         REAL            CEFF    !  tmp control effectiveness
@@ -149,6 +153,7 @@ C...........   Other local variables
         REAL            EOZN    !  tmp ozone-season-ave emission value
         REAL            LAT     !  tmp Y-coordinate 
         REAL            LON     !  tmp X-coordinate
+        REAL            RBUF    !  tmp real value
         REAL            REFF    !  tmp rule effectiveness
         REAL            DM, HT, FL, TK, VL  ! Temporary stack parms
 
@@ -157,19 +162,20 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: 1st time routine called
         LOGICAL, SAVE :: WFLAG    = .FALSE. ! true: all lat-lons to western hemi
 
-
         CHARACTER*20    CNTRY   !  country name
         CHARACTER*300   MESG    !  message buffer
 
-        CHARACTER(LEN=BLIDLEN) BLID  ! tmp boiler ID
-        CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVDNAM
-        CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
-        CHARACTER(LEN=CHRLEN3) CHAR4 ! tmp characteristic 4
-        CHARACTER(LEN=ORSLEN3) CORS  ! tmp DOE plant ID
-        CHARACTER(LEN=IOVLEN3) CPOL  ! tmp pollutant code
-        CHARACTER(LEN=DESCLEN) DESC  ! tmp plant description
-        CHARACTER(LEN=LINSIZ)  LINE  ! input line from inventory file
-        CHARACTER(LEN=SCCLEN3) TSCC  ! tmp scc
+        CHARACTER(LEN=BLIDLEN)  BLID  ! tmp boiler ID
+        CHARACTER(LEN=IOVLEN3)  CBUF  ! tmp pollutant name
+        CHARACTER(LEN=POLLEN3)  CCOD  ! character pollutant index to INVDNAM
+        CHARACTER(LEN=FIPLEN3)  CFIP  ! character FIP code
+        CHARACTER(LEN=CHRLEN3)  CHAR4 ! tmp characteristic 4
+        CHARACTER(LEN=ORSLEN3)  CORS  ! tmp DOE plant ID
+        CHARACTER(LEN=IOVLEN3)  CPOL  ! tmp pollutant code
+        CHARACTER(LEN=DESCLEN)  DESC  ! tmp plant description
+        CHARACTER(LEN=PTNONPWD) LINPT1 ! non-emissions part of format
+        CHARACTER(LEN=PTOTWIDE) LINEMS ! emissions part of format
+        CHARACTER(LEN=SCCLEN3)  TSCC  ! tmp scc
 
         CHARACTER*16 :: PROGNAME = 'RDIDAPT' ! Program name
 
@@ -206,14 +212,15 @@ C........................................................................
         SS   = NSRCSAV
         ES   = NSRCPOL
         IREC = 0
-        TPF  = MTPRFAC * WKSET
         DO
 
 C.............  Read a line of IDA file as a character string
-            READ( FDEV, 93000, END=199, IOSTAT=IOS ) LINE
+C.............  If line is a header line or blank, it will advance anyway
+            READ( FDEV, 93010, END=199, IOSTAT=IOS, ADVANCE="NO" ) 
+     &            LINPT1
             IREC = IREC + 1
 
-            IF ( IOS .NE. 0 ) THEN
+            IF ( IOS .GT. 0 ) THEN
 
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 )
@@ -224,7 +231,7 @@ C.............  Read a line of IDA file as a character string
 
             END IF
 
-            L = LEN_TRIM( LINE )  ! store width of line and check
+            L = LEN_TRIM( LINPT1 )  ! store width of line and check
 
 C.............  Skip blank lines
             IF( L .EQ. 0 ) CYCLE
@@ -232,7 +239,7 @@ C.............  Skip blank lines
 C.............  Scan for header lines and check to ensure all are set 
 C               properly
             CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .TRUE., 
-     &                   LINE, ICC, INY, NPOL, IOS )
+     &                   LINPT1, ICC, INY, NPOL, IOS )
 
 C.............  Interpret error status
             IF( IOS .EQ. 4 ) THEN
@@ -245,277 +252,169 @@ C.............  Interpret error status
             ELSE IF( IOS .GT. 0 ) THEN
                 EFLAG = .TRUE.
 
-            END IF                
+            END IF
 
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
-C.............  Make sure that all of the needed integer values are integers...
+C.............  Read state and county code
+            CALL READ_INTEGER( 2, IREC, .FALSE.,  LINPT1( 1:2 ), 
+     &                         'state code' , STA, EFLAG )
+            STA = MAX( STA, 0 )
 
-C.............  Check state/county codes, error for missing
-            IF( .NOT. CHKINT( LINE( 1:2 ) ) .OR. 
-     &          .NOT. CHKINT( LINE( 3:5 ) ) .OR.
-     &          LINE( 1:2 ) .EQ. ' '        .OR.
-     &          LINE( 3:5 ) .EQ. ' '             ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: State and/or county ' //
-     &                 'code is non-integer or missing at line', IREC
-                CALL M3MESG( MESG )
-		NDROP = NDROP + 1
+            CALL READ_INTEGER( 3, IREC, .FALSE., LINPT1( 3:5 ), 
+     &                         'county code', CNY, EFLAG )
+            CNY = MAX( CNY, 0 )
+
+C.............  Read stack height and convert units
+            CALL READ_REAL( 4, IREC, .TRUE., LINPT1( 120:123 ), 
+     &                      'stack height' , HT, EFLAG )
+            IF( HT .LT. 0. ) HT = 0.
+            HT   = HT * FT2M                 ! ft to m
+
+C.............  Read stack diameter and convert units
+            CALL READ_REAL( 6, IREC, .TRUE., LINPT1( 124:129 ), 
+     &                      'stack diameter' , DM, EFLAG )
+            IF( DM .LT. 0. ) DM = 0.
+            DM   = DM * FT2M                 ! ft to m
+
+C.............  Read exit temperature and convert units
+            CALL READ_REAL( 4, IREC, .TRUE., LINPT1( 130:133 ), 
+     &                      'stack exit temperature' , TK, EFLAG )
+            IF( TK .LT. 0. ) THEN
+                TK = 0.
+            ELSE
+                TK   = ( TK - 32 ) * FTOC + CTOK ! F to K
             END IF
 
-C.............  Check SIC code, warning for missing
-            IF( .NOT. CHKINT( LINE( 227:230 ) ) ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: SIC code is non-' //
-     &                 'integer at line', IREC
-                CALL M3MESG( MESG )
+C.............  Read exit flow rate and convert units
+            CALL READ_REAL( 10, IREC, .TRUE., LINPT1( 134:143 ), 
+     &                      'stack exit temperature' , FL, EFLAG )
+            IF( FL .LT. 0. ) FL = 0.
+            FL   = FL * FT2M3                ! ft^3/s to m^3/s
 
-            ELSE IF ( NWARN .LT. MXWARN .AND. 
-     &                LINE( 227:230 ) .EQ. ' ' ) THEN
-                WRITE( MESG,94010 ) 'WARNING: Missing SIC code at ' //
-     &                 'line', IREC, '. Default 0000 will be used.'
-                NWARN = NWARN + 1
-                CALL M3MESG( MESG )
+C.............  Read exit velocity and convert units
+            CALL READ_REAL( 7, IREC, .TRUE., LINPT1( 144:152 ), 
+     &                      'stack exit velocity' , VL, EFLAG )
 
+C.............  Recompute velocity if that option has been set
+            IF ( CFLAG .OR. VL .EQ. 0. ) THEN
+                RBUF = ( 0.25 * PI * DM * DM )
+                IF ( RBUF .GT. 0 ) VL = FL / RBUF
+
+C.............  Otherwise, convert units
+            ELSE
+                VL = VL * FT2M   ! ft/s to m/s
             END IF
 
-C.............  Initialize start and end positions
-            IS = ISINIT - PTOTWIDE  ! array
-            IE = IEINIT - PTOTWIDE  ! array
+C.............  Read Standard Industrial Code
+            CALL READ_INTEGER( 4, IREC, .TRUE., LINPT1( 227:230 ), 
+     &                         'SIC', SIC, EFLAG )
 
-C.............  Check primary and secondary control equipment codes
-            DO V = 1, NPOL
+C.............  If SIC is missing, set to zero
+            SIC = MAX( SIC, 0 )
 
-                DO K = 6,7
-                    IS( K ) = IS( K ) + PTOTWIDE
-                    IE( K ) = IE( K ) + PTOTWIDE
-                END DO
+C.............  Read stack latitude
+            CALL READ_REAL( 9, IREC, .FALSE., LINPT1( 231:239 ), 
+     &                      'latitude' , LAT, EFLAG )
 
-C.................  Check for bad values, missing is okay
-                IF( .NOT. CHKINT( LINE( IS(6):IE(6) ) ) .OR.
-     &              .NOT. CHKINT( LINE( IS(7):IE(7) ) )     ) THEN
-
-                    EFLAG = .TRUE.
-                    L = LEN_TRIM( TMPNAM( V ) )
-                    WRITE( MESG,94010 ) 'ERROR: Primary and/or ' //
-     &                     'secondary control codes for ' //
-     &                     TMPNAM( V )( 1:L ) // ' are non-integer ' //
-     &                     'at line', IREC
-                    CALL M3MSG2( MESG )
-
-                END IF
-
-            END DO
-
-C.............  Make sure that all of the needed real values are real...
-
-C.............  Stack height, diam, exit temperature, flow, & velocity
-            IF( .NOT. CHKREAL( LINE( 120:123 ) ) .OR.
-     &          .NOT. CHKREAL( LINE( 124:129 ) ) .OR.
-     &          .NOT. CHKREAL( LINE( 130:133 ) ) .OR.
-     &          .NOT. CHKREAL( LINE( 134:143 ) )      ) THEN
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Stack parameters are ' //
-     &                 'not numbers or have bad formatting' // CRLF() //
-     &                 BLANK10 // 'at line', IREC
-                CALL M3MSG2( MESG )
-
-            END IF
-
-C.............  Check stack coordinates, missing is an error
-            IF( .NOT. CHKREAL( LINE( 231:239 ) ) .OR.
-     &          .NOT. CHKREAL( LINE( 240:248 ) )      ) THEN
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: latitude and/or ' //
-     &                 'longitude are not numbers or have ' // CRLF() //
-     &                 BLANK10 // 'bad formatting at line', IREC
-                CALL M3MESG( MESG )
-
-            ELSE IF( LINE( 231:239 ) .EQ. ' ' .OR.
-     &               LINE( 240:248 ) .EQ. ' '      ) THEN
-      
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: latitude and/or ' //
-     &                 'longitude are missing at line', IREC
-                CALL M3MESG( MESG )
-
-            END IF
-
-C.............  Emissions and associated data
-            DO V = 1, NPOL
-
-C.................  Update start and end positions
-                DO K = 1, NPTPPOL3
-                    IS( K ) = IS( K ) + PTOTWIDE
-                    IE( K ) = IE( K ) + PTOTWIDE
-                END DO
-
-                IF( .NOT. CHKREAL( LINE( IS(1):IE(1) ) ) .OR.
-     &              .NOT. CHKREAL( LINE( IS(2):IE(2) ) ) .OR.
-     &              .NOT. CHKREAL( LINE( IS(3):IE(3) ) ) .OR.
-     &              .NOT. CHKREAL( LINE( IS(4):IE(4) ) ) .OR.
-     &              .NOT. CHKREAL( LINE( IS(5):IE(5) ) )      ) THEN
-
-                    EFLAG = .TRUE.
-                    L = LEN_TRIM( TMPNAM( V ) )
-                    WRITE( MESG,94010 ) 'ERROR: Emission data, ' //
-     &                     'control percentages, and/or emission ' //
-     &                     CRLF() // BLANK10 // 'factor for' //
-     &                     TMPNAM( V )( 1:L ) // ' are not a number ' //
-     &                     'or have bad formatting at line', IREC
-                    CALL M3MESG( MESG )
-
-                END IF
-
-                IF( LINE( IS(1):IE(1) ) .EQ. ' ' .AND.
-     &              LINE( IS(2):IE(2) ) .EQ. ' '       ) THEN
-
-                    L = LEN_TRIM( TMPNAM( V ) )
-                    WRITE( MESG,94010 ) 'WARNING: All emissions ' //
-     &                     'data for ' // TMPNAM( V )( 1:L ) //  
-     &                     ' are missing at line', IREC
-                    CALL M3MESG( MESG )
-                    LINE( IS(1):IE(1) ) = '0.'
-                    LINE( IS(2):IE(2) ) = '0.'
-
-                END IF
-
-            END DO
-
-C.............  If there has been an error, do not try to store any of the
-C               records.  Instead  go to next line of file.
-            IF( EFLAG ) CYCLE
+C.............  Read stack longitude and correct hemisphere if necessary
+            CALL READ_REAL( 9, IREC, .FALSE., LINPT1( 240:248 ), 
+     &                      'longtiude' , LON, EFLAG )
+            IF( WFLAG .AND. LON .GT. 0 ) LON = -LON
        
             IF( FIRSTIME ) DAY2YR  = 1. / YR2DAY( INY )
        
 C.............  Now use the file format definition to parse the LINE into
-C               the various data fields...
+C               the various data fields that remain
 
-            FIP  = ICC * 100000 + 1000 * STR2INT( LINE( 1:2 ) ) +
-     &             STR2INT( LINE( 3:5 ) )
+            FIP  = ICC * 100000 + 1000 * STA + CNY
+            FCID = ADJUSTL( LINPT1(   6:20  ) )  ! plant ID
+            PTID = ADJUSTL( LINPT1(  21:35  ) )  ! point ID
+            SKID = ADJUSTL( LINPT1(  36:47  ) )  ! stack ID
+            CORS = ADJUSTL( LINPT1(  48:53  ) )  ! DOE plant ID
+            BLID = ADJUSTL( LINPT1(  54:59  ) )  ! boiler ID
+            SGID = ADJUSTL( LINPT1(  60:61  ) )  ! segment ID
+            DESC = ADJUSTL( LINPT1(  62:101 ) )  ! plant description
+            TSCC = ADJUSTL( LINPT1( 102:111 ) )  ! SCC code
 
-            FCID = ADJUSTL( LINE(   6:20  ) )  ! plant ID
-            PTID = ADJUSTL( LINE(  21:35  ) )  ! point ID
-            SKID = ADJUSTL( LINE(  36:47  ) )  ! stack ID
-            CORS = ADJUSTL( LINE(  48:53  ) )  ! DOE plant ID
-            BLID = ADJUSTL( LINE(  54:59  ) )  ! boiler ID
-            SGID = ADJUSTL( LINE(  60:61  ) )  ! segment ID
-            DESC = ADJUSTL( LINE(  62:101 ) )  ! plant description
-            TSCC = ADJUSTL( LINE( 102:111 ) )  ! SCC code
+C.............  Set the default temporal resolution of the data
+            TPF  = MTPRFAC * WKSET
 
-            SIC  = MAX( STR2INT ( LINE( 227:230 ) ), 0 )
-            HT   = STR2REAL( LINE( 120:123 ) ) * FT2M  ! ft to m
-            DM   = STR2REAL( LINE( 124:129 ) ) * FT2M  ! ft to m
-            TK   = ( STR2REAL( LINE( 130:133 ) ) - 32 ) * FTOC + CTOK ! F to K
-            FL   = STR2REAL( LINE( 134:143 ) ) * FT2M3 ! ft^3/s to m^3/s
-            LAT  = STR2REAL( LINE( 231:239 ) )
-            LON  = STR2REAL( LINE( 240:248 ) )
-
-            IF( WFLAG .AND. LON .GT. 0 ) LON = -LON
-
-C.............  Recalculate velocity if it is bad or if flag is set
-            IF( CFLAG .OR. .NOT. CHKREAL( LINE( 144:152 ) ) ) THEN
-                VL = FL / ( 0.25 * PI * DM * DM )
-            ELSE
-                VL = STR2REAL( LINE( 144:152 ) ) * FT2M   ! ft/s to m/s
-            END IF
+C.............  Increment source number
+            SS = SS + 1
 
 C.............  Make adjustments to pad with zeros, if needed
             WRITE( CFIP,94120 ) FIP
             CALL PADZERO( CFIP )
             CALL PADZERO( TSCC )
 
-C.............  Store source characteristics if dimension is okay
-            SS = SS + 1
-
-            IF( SS .LE. NRAWIN ) THEN
-
-                IFIPA  ( SS ) = FIP
-                ISICA  ( SS ) = SIC
-                TPFLGA ( SS ) = TPF
-                INVYRA ( SS ) = INY
-                STKHTA ( SS ) = HT
-                STKDMA ( SS ) = DM
-                STKTKA ( SS ) = TK
-                STKVEA ( SS ) = VL
-                XLOCAA ( SS ) = LON
-                YLOCAA ( SS ) = LAT
-                CSCCA  ( SS ) = TSCC
-                CORISA ( SS ) = CORS
-                CBLRIDA( SS ) = BLID
-                CPDESCA( SS ) = DESC
-
-            END IF 
-
-C.............  Initialize start and end positions
-            IS = ISINIT - PTOTWIDE  ! array
-            IE = IEINIT - PTOTWIDE  ! array
-
 C.............  Loop through pollutants and store data so that there is one
 C               record for each pollutant.  This will be consistent with
 C               the other reader routines.
             DO V = 1, NPOL
 
-                CPOL = TMPNAM( V )
-
-C.................  Update start and end positions
-                DO K = 1, NPTPPOL3
-                    IS( K ) = IS( K ) + PTOTWIDE
-                    IE( K ) = IE( K ) + PTOTWIDE
-                END DO
-
-                EANN = STR2REAL( LINE( IS(1):IE(1) ) )
-                EOZN = STR2REAL( LINE( IS(2):IE(2) ) )
-                CEFF = STR2REAL( LINE( IS(3):IE(3) ) )
-                REFF = STR2REAL( LINE( IS(4):IE(4) ) )
-                EMFC = STR2REAL( LINE( IS(5):IE(5) ) )
-                CPRI = MAX( IMISS3, STR2INT ( LINE( IS(6):IE(6) ) ))
-                CSEC = MAX( IMISS3, STR2INT ( LINE( IS(7):IE(7) ) ))
-
-                IF( EANN .LT. AMISS3 ) THEN
-
-                    IF( NWARN .LT. MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Missing annual '//
-     &                         'emissions at line', IREC, 'for ' // CPOL
-                        NWARN = NWARN + 1
-                        CALL M3MESG( MESG )
-                    END IF
-
-                    IF ( EOZN .LT. AMISS3 ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Missing annual '//
-     &                         'AND seasonal emissions at ' //
-     &                         'line', IREC, 'for ' // CPOL
-                        NWARN = NWARN + 1
-                        CALL M3MESG( MESG )
-                    END IF
-
-                ELSE IF ( EOZN .LT. AMISS3 ) THEN
-
-                    IF( NWARN .LT. MXWARN ) THEN
-                        WRITE( MESG,94010 ) 
-     &                         'WARNING: Missing seasonal '//
-     &                         'emissions at line', IREC, 'for ' // CPOL
-                        NWARN = NWARN + 1
-                        CALL M3MESG( MESG )
-                    END IF
+C.................  Non-advancing read for all but the last pollutant and
+C                   advancing read for the last pollutant
+                IF ( V .LE. NPOL ) THEN
+                    READ( FDEV, 93020, END=199, IOSTAT=IOS, 
+     &                    ADVANCE="NO" ) LINEMS
+                ELSE
+                    READ( FDEV, 93020, END=199, IOSTAT=IOS ) 
+     &                  LINEMS
 
                 END IF
 
-                IF( NWARN .LT. MXWARN .AND. 
-     &              CEFF  .LT. AMISS3 ) THEN
-                    WRITE( MESG,94010 ) 'WARNING: Missing control ' //
-     &                     'efficiency at line', IREC, 'for ' // CPOL
-                    NWARN = NWARN + 1
-                    CALL M3MESG( MESG )
-                END IF
-                
-                IF( NWARN .LT. MXWARN .AND. 
-     &              REFF .LT. AMISS3 ) THEN
-                    WRITE( MESG,94010 ) 'WARNING: Missing rule ' //
-     &                     'effectiveness at line', IREC, 'for '//CPOL
+                CBUF = TMPNAM( V )
+                L = LEN_TRIM( CBUF )
+
+C.................  Read annual emissions for pollutant V
+                CALL READ_REAL( 13, IREC, .TRUE., LINEMS( 1:13 ), 
+     &                          CBUF( 1:L ) // ' annual emissions', 
+     &                          EANN, EFLAG )
+
+C.................  Read seasonal emissions for pollutant V
+                CALL READ_REAL( 13, IREC, .TRUE., LINEMS( 14:26 ), 
+     &                          CBUF( 1:L ) // ' seasonal emissions', 
+     &                          EOZN, EFLAG )
+
+C.................  Read control efficiency for pollutant V
+                CALL READ_REAL( 7, IREC, .TRUE., LINEMS( 27:33 ), 
+     &                          CBUF( 1:L ) // ' control efficiency', 
+     &                          CEFF, EFLAG )
+
+C.................  Read rule effectiveness for pollutant V
+                CALL READ_REAL( 3, IREC, .TRUE., LINEMS( 34:36 ), 
+     &                          CBUF( 1:L ) // ' rule effectiveness', 
+     &                          REFF, EFLAG )
+
+C.................  Read emission factor for pollutant V
+                CALL READ_REAL( 10, IREC, .TRUE., LINEMS( 37:46 ), 
+     &                          CBUF( 1:L ) // ' emission factor', 
+     &                          EMFC, EFLAG )
+
+C.................  Read primary control code for pollutant V
+                CALL READ_INTEGER( 3, IREC, .TRUE., LINEMS( 47:49 ), 
+     &                             CBUF(1:L)// ' primary control code', 
+     &                             CPRI, EFLAG )
+
+C.................  Read secondary control code for pollutant V
+                CALL READ_INTEGER( 3, IREC, .TRUE., LINEMS( 50:52 ), 
+     &                             CBUF(1:L)//' secondary control code', 
+     &                             CSEC, EFLAG )
+
+C.................  If there has been an error, do not try to finish storing 
+C                   the records.  Instead  go to next line of file.
+                IF( EFLAG ) CYCLE
+
+C.................  Warning if missing both annual and ozone-season information
+                IF( EANN  .LT. 0.     .AND.
+     &              EOZN  .LT. 0.     .AND.
+     &              NWARN .LT. MXWARN       ) THEN
+
+                    WRITE( MESG,94010 ) 'WARNING: Missing annual '//
+     &                     'AND seasonal emissions at ' //
+     &                     'line', IREC, 'for ' // CPOL
                     NWARN = NWARN + 1
                     CALL M3MESG( MESG )
                 END IF
@@ -529,10 +428,16 @@ C                   user option is set
                     WRITE( MESG,94010 ) 'NOTE: Using seasonal ' //
      &                     'emissions to fill in annual emissions' //
      &                     CRLF() // BLANK10 // 'at line', IREC,
-     &                     'for ' // CPOL
+     &                     'for "' // CBUF( 1:L ) // '"'
                     CALL M3MESG( MESG )
 
                     EANN = EOZN * DAY2YR
+
+C.....................  Remove monthly factors for this source. Note that this
+C                       will impact ALL pollutants, even if only one pollutant
+C                       gets filled.  This is necessary unless TPF is changed
+C                       to be pollutant-dependent.
+                    TPF  = WKSET
 
                 END IF
 
@@ -561,6 +466,28 @@ C.................  Store data in final arrays if there is enough memory
                 END IF  !  if ES in range
 
             END DO      !  end of loop through pollutants
+
+C.............  Store source characteristics if dimension is okay
+C.............  This is done after pollutants stored because TPF might change
+C               in pollutants loop
+            IF( SS .LE. NRAWIN ) THEN
+
+                IFIPA  ( SS ) = FIP
+                ISICA  ( SS ) = SIC
+                TPFLGA ( SS ) = TPF
+                INVYRA ( SS ) = INY
+                STKHTA ( SS ) = HT
+                STKDMA ( SS ) = DM
+                STKTKA ( SS ) = TK
+                STKVEA ( SS ) = VL
+                XLOCAA ( SS ) = LON
+                YLOCAA ( SS ) = LAT
+                CSCCA  ( SS ) = TSCC
+                CORISA ( SS ) = CORS
+                CBLRIDA( SS ) = BLID
+                CPDESCA( SS ) = DESC
+
+            END IF 
 
         END DO          !  to head of FDEV-read loop
 
@@ -621,12 +548,160 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
+93010   FORMAT( A )  
+
+93020   FORMAT( A52 )    ! must match value of PTOTWIDE
+
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94120   FORMAT( I6.6 )
 
-94125   FORMAT( I5 )
+94125   FORMAT( I5 ) 
+
+        CONTAINS
+
+            SUBROUTINE READ_INTEGER( LENGTH, IREC, OFLAG, STRING, DESC, 
+     &                               INTVAL, EFLAG )
+
+            INTEGER      , INTENT ( IN )  :: LENGTH
+            INTEGER      , INTENT ( IN )  :: IREC
+            LOGICAL      , INTENT ( IN )  :: OFLAG  !  true: field is optional 
+            CHARACTER(LEN=LENGTH), INTENT( IN ) :: STRING
+            CHARACTER*(*), INTENT ( IN )  :: DESC
+            INTEGER      , INTENT ( OUT ) :: INTVAL
+            LOGICAL      , INTENT ( OUT ) :: EFLAG 
+
+C.............  Check to see if the field is blank
+            IF ( STRING .EQ. ' ' ) THEN
+
+C.................  If field is blank and optional, then set to missing
+                IF ( OFLAG ) THEN
+                    INTVAL = IMISS3
+
+C.................  If field is blank and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' is blank at line', IREC
+                    CALL M3MESG( MESG )
+                    INTVAL = IMISS3
+                    RETURN
+                END IF
+            END IF
+
+C.............  Try to read value and see what the error status is
+            READ( STRING, *, IOSTAT = IOS ) INTVAL
+
+C.............  If error, then write message and continue
+            IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: ' // DESC //
+     &                 ' has non-integer value "' // STRING //
+     &                 '"' // CRLF() // BLANK 10 // 'at line', IREC
+                CALL M3MESG( MESG )
+                INTVAL = IMISS3
+
+C.............  Check if missing value
+            ELSE IF ( INTVAL .EQ. -9 ) THEN
+
+C.................  If field is missing and optional, then set to missing
+                IF ( OFLAG ) THEN
+                    INTVAL = IMISS3
+
+C.................  If field is missing and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' has -9 missing value at line', IREC
+                    CALL M3MESG( MESG )
+                    INTVAL = IMISS3
+
+                END IF
+
+            END IF
+
+            RETURN
+
+C............................................................................
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE READ_INTEGER
+
+C--------------------------------------------------------------------------
+C--------------------------------------------------------------------------
+
+            SUBROUTINE READ_REAL( LENGTH, IREC, OFLAG, STRING, DESC, 
+     &                            REALVAL, EFLAG )
+
+            INTEGER      , INTENT ( IN )  :: LENGTH
+            INTEGER      , INTENT ( IN )  :: IREC
+            LOGICAL      , INTENT ( IN )  :: OFLAG  !  true: field is optional 
+            CHARACTER(LEN=LENGTH), INTENT( IN ) :: STRING
+            CHARACTER*(*), INTENT ( IN )  :: DESC
+            REAL         , INTENT ( OUT ) :: REALVAL
+            LOGICAL      , INTENT ( OUT ) :: EFLAG 
+
+C.............  Check to see if the field is blank
+            IF ( STRING .EQ. ' ' ) THEN
+
+C.................  If field is blank and optional, then set to missing
+                IF ( OFLAG ) THEN
+                    REALVAL = BADVAL3
+
+C.................  If field is blank and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' is blank at line', IREC
+                    CALL M3MESG( MESG )
+                    REALVAL = BADVAL3
+                END IF
+
+                RETURN
+
+            END IF
+
+C.............  Try to read value and see what the error status is
+            READ( STRING, *, IOSTAT = IOS ) REALVAL
+
+C.............  If error, then write message and continue
+            IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: ' // DESC //
+     &                 ' has non-readable value "' // STRING //
+     &                 '"' // CRLF() // BLANK 10 // 'at line', IREC
+                CALL M3MESG( MESG )
+                REALVAL = BADVAL3
+
+C.............  Check if missing value
+            ELSE IF ( REALVAL .EQ. -9 ) THEN
+
+C.................  If field is missing and optional, then set to zero
+                IF ( OFLAG ) THEN
+                    REALVAL = BADVAL3
+
+C.................  If field is missing and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' has -9 missing value at line', IREC
+                    CALL M3MESG( MESG )
+                    REALVAL = BADVAL3
+
+                END IF
+
+            END IF
+
+            RETURN
+
+C............................................................................
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE READ_REAL
+
 
         END SUBROUTINE RDIDAPT
