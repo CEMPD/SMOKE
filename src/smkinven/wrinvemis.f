@@ -275,6 +275,7 @@ C.........  Set up for opening I/O API sparse pollutant output files
 
 C.........  Set number of variables and allocate file description arrays
         NVARSET = 1 + NPPOL   ! Additional 1 for the SRCID variable
+        WRITE( FDESC3D( 1 ), '(A,1X,I8)' ) '/NSRC/', NSRC
 
         IF( ALLOCATED( VTYPESET ) ) 
      &      DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
@@ -294,10 +295,10 @@ C.........  Set number of variables and allocate file description arrays
 
 C.........  Set up source ID variable information, which is the same for
 C           all pollutant files
-       VTYPESET( 1 ) = M3INT
-       VNAMESET( 1 ) = 'SRCID'
-       VUNITSET( 1 ) = 'n/a'
-       VDESCSET( 1 ) = 'Source ID number'
+        VTYPESET( 1 ) = M3INT
+        VNAMESET( 1 ) = 'SRCID'
+        VUNITSET( 1 ) = 'n/a'
+        VDESCSET( 1 ) = 'Source ID number'
 
 C.........  Loop through pollutants, store, and write to inventory file
         IF( NIPOL .GT. 0 ) 
