@@ -64,12 +64,12 @@ C.........  Input file format constants
         INTEGER, PARAMETER  :: IDAFMT = 4    ! Inventory Data Analyzer (IDA)
         INTEGER, PARAMETER  :: IOGFMT = 5    ! I/O API gridded file
         INTEGER, PARAMETER  :: CEMFMT = 6    ! CEM input file
-        INTEGER, PARAMETER  ::NTIFMTA = 7    ! 1996 National toxics inventory
+        INTEGER, PARAMETER  :: NTIFMT = 7    ! 1996 National toxics inventory
 
-        CHARACTER*6, PARAMETER :: FMTNAMES( 0:6 ) = 
+        CHARACTER*6, PARAMETER :: FMTNAMES( 0:7 ) = 
      &                        ( / 'list  ', 'EMS-95', 'EPS   ', 
      &                            'NET   ', 'IDA   ', 'IO/API',
-     &                            'CEM   '                     / )
+     &                            'CEM   ', 'Toxics'           / )
 
 C.........  Indicator for inventory header fields
         CHARACTER*1, PARAMETER :: CINVHDR = '#'
