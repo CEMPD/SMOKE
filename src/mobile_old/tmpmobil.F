@@ -447,8 +447,8 @@ C.........  Abort if (start time) < (first time for temperatures)
      &        MDATE .LT. SDATE3D ) THEN
  
             WRITE( *,92000 ) ' '
-            WRITE( *,92000 ) 'For file ' // MNAME // ' ...'
-            WRITE( *,92000 ) ' '
+            WRITE( *,92000 ) 'For file ' 
+     &           // MNAME( 1:TRIMLEN( MNAME ) ) // ' ...'
             WRITE( *,92010 ) 'Given time zone       :', IZONE
             WRITE( *,92010 ) 'Requested date & time :', MDATE  , MTIME
             WRITE( *,92010 ) 'Actual    date & time :', SDATE3D, STIME3D
@@ -462,8 +462,8 @@ C.........  the meterology start date/time
         ELSEIF( JDATE .NE. JMDATE .OR. JTIME .NE. JMTIME ) THEN
 
             WRITE( *,92000 ) ' '
-            WRITE( *,92000 ) 'For file ' // MNAME // ' ...'
-            WRITE( *,92000 ) ' '
+            WRITE( *,92000 ) 'For file ' 
+     &           // MNAME( 1:TRIMLEN( MNAME ) ) // ' ...'
             WRITE( *,92010 ) 'Given time zone       :', TZONE
             WRITE( *,92010 ) 'Requested date & time :', JDATE , JTIME
             WRITE( *,92010 ) 'Actual    date & time :', JMDATE, JMTIME
@@ -494,8 +494,8 @@ C.........  Abort if simulation date is less than date in MINMAXT file
         IF( JDATE .LT. JWDATE ) THEN   
 
             WRITE( *,92000 ) ' '
-            WRITE( *,92000 ) 'For file ' // WNAME // ' ...'
-            WRITE( *,92000 ) ' '
+            WRITE( *,92000 ) 'For file ' 
+     &           // WNAME( 1:TRIMLEN( WNAME ) ) // ' ...'
             WRITE( *,92010 ) 'Given time zone :', TZONE
             WRITE( *,92010 ) 'Requested date  :', JDATE
             WRITE( *,92010 ) 'Actual    date  :', JWDATE
@@ -506,8 +506,8 @@ C.........  Abort if simulation date is less than date in MINMAXT file
         ELSEIF( JDATE .NE. JWDATE .OR. JTIME .NE. JWTIME ) THEN
 
             WRITE( *,92000 ) ' '
-            WRITE( *,92000 ) 'For file ' // WNAME // ' ...'
-            WRITE( *,92000 ) ' '
+            WRITE( *,92000 ) 'For file ' 
+     &           // WNAME( 1:TRIMLEN( WNAME ) ) // ' ...'
             WRITE( *,92010 ) 'Given time zone       :', TZONE
             WRITE( *,92010 ) 'Requested date & time :', JDATE , JTIME
             WRITE( *,92010 ) 'Actual    date & time :', JWDATE, JWTIME
