@@ -23,7 +23,7 @@ FILES_B = \
   alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
   applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o \
   asgnpsi.o    dscsprof.o   getformt.o   rdlines.o    verchar.o  \
-  efsetup.o    getidasz.o   normtpro.o   rdpelv.o     tmprinfo.o \
+  efsetup.o    getidasz.o   normtpro.o   rdpelv.o \
                ingrid.o     rdrmat.o    
 
 FILES_C = \
@@ -32,7 +32,8 @@ FILES_C = \
   fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
   fillmtbl.o   rdsprof.o    \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
-  fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
+  fillttbl.o   rdsref.o     genptcel.o   chkemepi.o   \
+  setsrcdy.o   getdysav.o   find1first.o cvtrdtype.o  cvtvehtype.o efposition.o
 
 FILES_TMP = 
 
@@ -80,6 +81,8 @@ bldenams.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ bldenams.f
 chkptdef.o: $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ chkptdef.f
+cvtrdtype.o: $(MODMBSET)
+	$(FC) $(FFLAGS) -c -o $@ cvtrdtype.f
 dscsprof.o: $(MODSPRO) 
 	$(FC) $(FFLAGS) -c -o $@ dscsprof.f
 efsetup.o : $(MODEMFAC) $(INC)/M5CNST3.EXT
