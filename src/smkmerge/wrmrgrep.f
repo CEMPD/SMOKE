@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRMRGREP( JDATE, JTIME, NIDX )
+        SUBROUTINE WRMRGREP( JDATE, JTIME, NIDX, RLZN )
 
 C***********************************************************************
 C  subroutine WRMRGREP body starts at line
@@ -69,6 +69,7 @@ C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
         INTEGER, INTENT (IN) :: JTIME  ! time (HHMMSS)
         INTEGER, INTENT (IN) :: NIDX   ! group index
+        INTEGER, INTENT (IN) :: RLZN   ! realization iteration
 
 C...........   Local allocatable arrays
         LOGICAL, ALLOCATABLE :: LUPDATE( : ) ! true: units/names not yet updated
@@ -97,6 +98,7 @@ C...........   Other local variables
         INTEGER          C, F, I, J, K, L, L2, N, V  ! counters and indices
         INTEGER          IOS            ! i/o status
         INTEGER          KA, KB, KM, KP ! tmp search indices
+        INTEGER, SAVE :: LASTR= -1      ! last realization
         INTEGER, SAVE :: MAXCYWID       ! max width of county names
         INTEGER, SAVE :: MAXSTWID       ! max width of state names
         INTEGER, SAVE :: NC             ! tmp no. counties in domain
@@ -125,7 +127,17 @@ C***********************************************************************
 C   begin body of subroutine WRMRGREP
 
 C.........    If first time the routine is called
-        IF( FIRSTIME ) THEN
+        IF( FIRSTIME .OR. LASTR .NE. RLZN ) THEN
+
+            CALL DEALLOCALL
+
+            LASTR = RLZN
+            ACNT = 0
+            BCNT = 0
+            MCNT = 0
+            PCNT = 0
+            TCNT = 0
+            PGRP = 0
 
             NC = NCOUNTY
             NS = NSTATE
@@ -459,7 +471,7 @@ C.............  Combined sources
         END IF
 
 C.........  Intialize summed emissions to zero
-        CALL INITSTCY
+        CALL INITSTCY( RLZN )
 
 C........  After output, increment date and time one step to set the start
 C          of the next period
@@ -478,6 +490,26 @@ C...........   Internal buffering formats.............94xxx
 C*****************  INTERNAL SUBPROGRAMS   *****************************
 
         CONTAINS
+
+            SUBROUTINE DEALLOCALL
+
+            IF( ALLOCATED( NAMES   ) ) DEALLOCATE( NAMES  ) 
+            IF( ALLOCATED( UNITS   ) ) DEALLOCATE( UNITS  ) 
+            IF( ALLOCATED( ANAMES  ) ) DEALLOCATE( ANAMES ) 
+            IF( ALLOCATED( AUNITS  ) ) DEALLOCATE( AUNITS ) 
+            IF( ALLOCATED( BNAMES  ) ) DEALLOCATE( BNAMES ) 
+            IF( ALLOCATED( BUNITS  ) ) DEALLOCATE( BUNITS ) 
+            IF( ALLOCATED( MNAMES  ) ) DEALLOCATE( MNAMES ) 
+            IF( ALLOCATED( MUNITS  ) ) DEALLOCATE( MUNITS ) 
+            IF( ALLOCATED( PNAMES  ) ) DEALLOCATE( PNAMES ) 
+            IF( ALLOCATED( PUNITS  ) ) DEALLOCATE( PUNITS ) 
+            IF( ALLOCATED( LUPDATE ) ) DEALLOCATE( LUPDATE )
+
+            END SUBROUTINE DEALLOCALL
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
 
             SUBROUTINE CREATE_STATE( NC, NS, NDIM, CY_EMIS, ST_EMIS )
 
