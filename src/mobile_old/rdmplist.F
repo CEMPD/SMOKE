@@ -97,7 +97,7 @@ C   begin body of subroutine  RDMPLIST
             IF ( I .GT. MXPLST ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
-     &          'Emission Factor XREF table overflow at line', IREC
+     &          'MPLIST entries maximum (MXPLST) exceeded at line', IREC
                 CALL M3MESG( MESG )
                 GO TO  11
             END IF
