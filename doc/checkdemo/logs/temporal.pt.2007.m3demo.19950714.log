@@ -1,0 +1,363 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program TEMPORAL, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program TEMPORAL to take a SMOKE area, mobile, or point
+     source inventory file, a temporal profiles file, a temporal
+     cross-reference file, an optional SMOKE day-specific file, 
+     and an optional SMOKE hour-specific point source file, and
+     produce hourly low-level and optionally hourly elevated point
+     source emissions for the requested episode.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for OUTZONE:  0
+     Value for UNIFORM_TPROF_YN:  N returning FALSE
+     Value for MINMAX_TINDP_YN not defined;returning default:  FALSE
+     Value for SMK_SOURCE:  'P'
+     Value for DAY_SPECIFIC_YN not defined;returning default:  FALSE
+     Value for HOUR_SPECIFIC_YN not defined;returning default:  FALSE
+     Value for SMK_O3SEASON_YN:  N returning FALSE
+     Value for PROMPTFLAG:  N returning FALSE
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "PNTS" opened as OLD:READ-ONLY   
+     File name "/stella/scratch/zac/smoke/data/smoke/inventory/m3demo/pnts.m3demo-07.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 154740 rows, 1 cols, 1 lays, 74 vbles
+     NetCDF ID:         4:
+     Time-independent data.
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File PSRC opened for input on unit:  98
+     /stella/scratch/zac/smoke/data/smoke/inventory/m3demo/PSRC.m3demo.txt
+
+
+     File PTREF opened for input on unit:  97
+     /stella/scratch/zac/smoke/data/smoke/ge_dat/amptref.m3.032502.us+can.txt
+
+
+     File PTPRO opened for input on unit:  96
+     /stella/scratch/zac/smoke/data/smoke/ge_dat/amptpro.m3.062801.us+can.txt
+
+
+     File COSTCY opened for input on unit:  95
+     /stella/scratch/zac/smoke/data/smoke/ge_dat/costcy.013102.txt
+
+
+     File HOLIDAYS opened for input on unit:  94
+     /stella/scratch/zac/smoke/data/smoke/ge_dat/holidays.txt
+
+     Value for G_STDATE:  1995195
+     Value for G_STTIME:  0
+     Value for G_TSTEP:  10000
+     Value for G_RUNLEN:  250000
+     Value for PROMPTFLAG:  N returning FALSE
+     Output Time Zone: 00
+           Start Date: July 14, 1995
+           Start Time: 000000 HHMMSS
+            Time Step: 001 hour
+             Duration: 025 hours
+     NOTE: Emissions based on projected year    2007
+     Reading source data from inventory file...
+     Generating unique lists from inventory data...
+     Value for SMK_DEFAULT_TZONE:  5
+     Reading state and county names and time zones...
+     NOTE: Population data read from country/state/county file for year     2000
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "PTMP" opened as UNKNOWN(R-W)    
+     File name "/stella/scratch/zac/smoke/data/smoke/run_m3demo-07/19950714/ptmp.19950714.1.m3demo-07.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 154740 rows, 1 cols, 1 lays, 9 vbles
+     NetCDF ID:        10:
+     Starting date and time  1995195:000000 (0:00:00   July 14, 1995)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number       0
+
+     File "PTSUP" opened for output on unit:  93
+     /stella/scratch/zac/smoke/data/smoke/run_m3demo-07/19950714/ptsup.19950714.m3demo-07.txt
+
+     Reading temporal cross-reference file...
+     NOTE: File read in as STANDARD format.
+     Processing temporal cross-reference file...
+     Reading temporal profiles file...
+     NOTE: Storing WEEKDAY temporal profiles
+     NOTE: Storing WEEKEND temporal profiles
+     Value for RENORM_TPROF:  Y returning TRUE
+     Processing data for: "CO", "NOX", "THC", "VOC", "NH3", "SO2", "PM10",
+                         "PM2_5", "PMC"
+     Assigning temporal profiles to sources...
+     Value for REPORT_DEFAULTS:  N returning FALSE
+     Value for SMK_MAXERROR:  100
+     Value for SMK_MAXWARNING:  100
+     Value for ZONE4WM:  Y returning TRUE
+     Processing Friday July 14, 1995
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     CO written to PTMP for   1995195:000000
+     NOX written to PTMP for   1995195:000000
+     THC written to PTMP for   1995195:000000
+     VOC written to PTMP for   1995195:000000
+     NH3 written to PTMP for   1995195:000000
+     SO2 written to PTMP for   1995195:000000
+     PM10 written to PTMP for   1995195:000000
+     PM2_5 written to PTMP for   1995195:000000
+     PMC written to PTMP for   1995195:000000
+     CO written to PTMP for   1995195:010000
+     NOX written to PTMP for   1995195:010000
+     THC written to PTMP for   1995195:010000
+     VOC written to PTMP for   1995195:010000
+     NH3 written to PTMP for   1995195:010000
+     SO2 written to PTMP for   1995195:010000
+     PM10 written to PTMP for   1995195:010000
+     PM2_5 written to PTMP for   1995195:010000
+     PMC written to PTMP for   1995195:010000
+     CO written to PTMP for   1995195:020000
+     NOX written to PTMP for   1995195:020000
+     THC written to PTMP for   1995195:020000
+     VOC written to PTMP for   1995195:020000
+     NH3 written to PTMP for   1995195:020000
+     SO2 written to PTMP for   1995195:020000
+     PM10 written to PTMP for   1995195:020000
+     PM2_5 written to PTMP for   1995195:020000
+     PMC written to PTMP for   1995195:020000
+     CO written to PTMP for   1995195:030000
+     NOX written to PTMP for   1995195:030000
+     THC written to PTMP for   1995195:030000
+     VOC written to PTMP for   1995195:030000
+     NH3 written to PTMP for   1995195:030000
+     SO2 written to PTMP for   1995195:030000
+     PM10 written to PTMP for   1995195:030000
+     PM2_5 written to PTMP for   1995195:030000
+     PMC written to PTMP for   1995195:030000
+     CO written to PTMP for   1995195:040000
+     NOX written to PTMP for   1995195:040000
+     THC written to PTMP for   1995195:040000
+     VOC written to PTMP for   1995195:040000
+     NH3 written to PTMP for   1995195:040000
+     SO2 written to PTMP for   1995195:040000
+     PM10 written to PTMP for   1995195:040000
+     PM2_5 written to PTMP for   1995195:040000
+     PMC written to PTMP for   1995195:040000
+     CO written to PTMP for   1995195:050000
+     NOX written to PTMP for   1995195:050000
+     THC written to PTMP for   1995195:050000
+     VOC written to PTMP for   1995195:050000
+     NH3 written to PTMP for   1995195:050000
+     SO2 written to PTMP for   1995195:050000
+     PM10 written to PTMP for   1995195:050000
+     PM2_5 written to PTMP for   1995195:050000
+     PMC written to PTMP for   1995195:050000
+     CO written to PTMP for   1995195:060000
+     NOX written to PTMP for   1995195:060000
+     THC written to PTMP for   1995195:060000
+     VOC written to PTMP for   1995195:060000
+     NH3 written to PTMP for   1995195:060000
+     SO2 written to PTMP for   1995195:060000
+     PM10 written to PTMP for   1995195:060000
+     PM2_5 written to PTMP for   1995195:060000
+     PMC written to PTMP for   1995195:060000
+     CO written to PTMP for   1995195:070000
+     NOX written to PTMP for   1995195:070000
+     THC written to PTMP for   1995195:070000
+     VOC written to PTMP for   1995195:070000
+     NH3 written to PTMP for   1995195:070000
+     SO2 written to PTMP for   1995195:070000
+     PM10 written to PTMP for   1995195:070000
+     PM2_5 written to PTMP for   1995195:070000
+     PMC written to PTMP for   1995195:070000
+     CO written to PTMP for   1995195:080000
+     NOX written to PTMP for   1995195:080000
+     THC written to PTMP for   1995195:080000
+     VOC written to PTMP for   1995195:080000
+     NH3 written to PTMP for   1995195:080000
+     SO2 written to PTMP for   1995195:080000
+     PM10 written to PTMP for   1995195:080000
+     PM2_5 written to PTMP for   1995195:080000
+     PMC written to PTMP for   1995195:080000
+     CO written to PTMP for   1995195:090000
+     NOX written to PTMP for   1995195:090000
+     THC written to PTMP for   1995195:090000
+     VOC written to PTMP for   1995195:090000
+     NH3 written to PTMP for   1995195:090000
+     SO2 written to PTMP for   1995195:090000
+     PM10 written to PTMP for   1995195:090000
+     PM2_5 written to PTMP for   1995195:090000
+     PMC written to PTMP for   1995195:090000
+     CO written to PTMP for   1995195:100000
+     NOX written to PTMP for   1995195:100000
+     THC written to PTMP for   1995195:100000
+     VOC written to PTMP for   1995195:100000
+     NH3 written to PTMP for   1995195:100000
+     SO2 written to PTMP for   1995195:100000
+     PM10 written to PTMP for   1995195:100000
+     PM2_5 written to PTMP for   1995195:100000
+     PMC written to PTMP for   1995195:100000
+     CO written to PTMP for   1995195:110000
+     NOX written to PTMP for   1995195:110000
+     THC written to PTMP for   1995195:110000
+     VOC written to PTMP for   1995195:110000
+     NH3 written to PTMP for   1995195:110000
+     SO2 written to PTMP for   1995195:110000
+     PM10 written to PTMP for   1995195:110000
+     PM2_5 written to PTMP for   1995195:110000
+     PMC written to PTMP for   1995195:110000
+     CO written to PTMP for   1995195:120000
+     NOX written to PTMP for   1995195:120000
+     THC written to PTMP for   1995195:120000
+     VOC written to PTMP for   1995195:120000
+     NH3 written to PTMP for   1995195:120000
+     SO2 written to PTMP for   1995195:120000
+     PM10 written to PTMP for   1995195:120000
+     PM2_5 written to PTMP for   1995195:120000
+     PMC written to PTMP for   1995195:120000
+     CO written to PTMP for   1995195:130000
+     NOX written to PTMP for   1995195:130000
+     THC written to PTMP for   1995195:130000
+     VOC written to PTMP for   1995195:130000
+     NH3 written to PTMP for   1995195:130000
+     SO2 written to PTMP for   1995195:130000
+     PM10 written to PTMP for   1995195:130000
+     PM2_5 written to PTMP for   1995195:130000
+     PMC written to PTMP for   1995195:130000
+     CO written to PTMP for   1995195:140000
+     NOX written to PTMP for   1995195:140000
+     THC written to PTMP for   1995195:140000
+     VOC written to PTMP for   1995195:140000
+     NH3 written to PTMP for   1995195:140000
+     SO2 written to PTMP for   1995195:140000
+     PM10 written to PTMP for   1995195:140000
+     PM2_5 written to PTMP for   1995195:140000
+     PMC written to PTMP for   1995195:140000
+     CO written to PTMP for   1995195:150000
+     NOX written to PTMP for   1995195:150000
+     THC written to PTMP for   1995195:150000
+     VOC written to PTMP for   1995195:150000
+     NH3 written to PTMP for   1995195:150000
+     SO2 written to PTMP for   1995195:150000
+     PM10 written to PTMP for   1995195:150000
+     PM2_5 written to PTMP for   1995195:150000
+     PMC written to PTMP for   1995195:150000
+     CO written to PTMP for   1995195:160000
+     NOX written to PTMP for   1995195:160000
+     THC written to PTMP for   1995195:160000
+     VOC written to PTMP for   1995195:160000
+     NH3 written to PTMP for   1995195:160000
+     SO2 written to PTMP for   1995195:160000
+     PM10 written to PTMP for   1995195:160000
+     PM2_5 written to PTMP for   1995195:160000
+     PMC written to PTMP for   1995195:160000
+     CO written to PTMP for   1995195:170000
+     NOX written to PTMP for   1995195:170000
+     THC written to PTMP for   1995195:170000
+     VOC written to PTMP for   1995195:170000
+     NH3 written to PTMP for   1995195:170000
+     SO2 written to PTMP for   1995195:170000
+     PM10 written to PTMP for   1995195:170000
+     PM2_5 written to PTMP for   1995195:170000
+     PMC written to PTMP for   1995195:170000
+     CO written to PTMP for   1995195:180000
+     NOX written to PTMP for   1995195:180000
+     THC written to PTMP for   1995195:180000
+     VOC written to PTMP for   1995195:180000
+     NH3 written to PTMP for   1995195:180000
+     SO2 written to PTMP for   1995195:180000
+     PM10 written to PTMP for   1995195:180000
+     PM2_5 written to PTMP for   1995195:180000
+     PMC written to PTMP for   1995195:180000
+     CO written to PTMP for   1995195:190000
+     NOX written to PTMP for   1995195:190000
+     THC written to PTMP for   1995195:190000
+     VOC written to PTMP for   1995195:190000
+     NH3 written to PTMP for   1995195:190000
+     SO2 written to PTMP for   1995195:190000
+     PM10 written to PTMP for   1995195:190000
+     PM2_5 written to PTMP for   1995195:190000
+     PMC written to PTMP for   1995195:190000
+     CO written to PTMP for   1995195:200000
+     NOX written to PTMP for   1995195:200000
+     THC written to PTMP for   1995195:200000
+     VOC written to PTMP for   1995195:200000
+     NH3 written to PTMP for   1995195:200000
+     SO2 written to PTMP for   1995195:200000
+     PM10 written to PTMP for   1995195:200000
+     PM2_5 written to PTMP for   1995195:200000
+     PMC written to PTMP for   1995195:200000
+     CO written to PTMP for   1995195:210000
+     NOX written to PTMP for   1995195:210000
+     THC written to PTMP for   1995195:210000
+     VOC written to PTMP for   1995195:210000
+     NH3 written to PTMP for   1995195:210000
+     SO2 written to PTMP for   1995195:210000
+     PM10 written to PTMP for   1995195:210000
+     PM2_5 written to PTMP for   1995195:210000
+     PMC written to PTMP for   1995195:210000
+     CO written to PTMP for   1995195:220000
+     NOX written to PTMP for   1995195:220000
+     THC written to PTMP for   1995195:220000
+     VOC written to PTMP for   1995195:220000
+     NH3 written to PTMP for   1995195:220000
+     SO2 written to PTMP for   1995195:220000
+     PM10 written to PTMP for   1995195:220000
+     PM2_5 written to PTMP for   1995195:220000
+     PMC written to PTMP for   1995195:220000
+     CO written to PTMP for   1995195:230000
+     NOX written to PTMP for   1995195:230000
+     THC written to PTMP for   1995195:230000
+     VOC written to PTMP for   1995195:230000
+     NH3 written to PTMP for   1995195:230000
+     SO2 written to PTMP for   1995195:230000
+     PM10 written to PTMP for   1995195:230000
+     PM2_5 written to PTMP for   1995195:230000
+     PMC written to PTMP for   1995195:230000
+     Processing Saturday July 15, 1995
+     CO written to PTMP for   1995196:000000
+     NOX written to PTMP for   1995196:000000
+     THC written to PTMP for   1995196:000000
+     VOC written to PTMP for   1995196:000000
+     NH3 written to PTMP for   1995196:000000
+     SO2 written to PTMP for   1995196:000000
+     PM10 written to PTMP for   1995196:000000
+     PM2_5 written to PTMP for   1995196:000000
+     PMC written to PTMP for   1995196:000000
+      
+     --->>  Normal Completion of program TEMPORAL
+      

@@ -1,0 +1,1687 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program EMISFAC, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for SMK_SOURCE:  'M'
+     Value for SMK_EF_ACTIVITY:  'VMT'
+     Value for SMK_EF_MODEL not defined; returning defaultval ':  'MOBILE5'
+     Value for REUSE_NONDIURNAL:  N returning FALSE
+     Value for REUSE_DIURNAL:  N returning FALSE
+     Value for EF_FORCE_UPDATE:  N returning FALSE
+     Value for EF_YEAR:  2007
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File MEFTEMP opened for input on unit:  98
+     /stella/scratch/zac/smoke/data/smoke/run_m3demo/19950714/meftemp.19950714.1.ed36.mepa_m3demo.txt
+
+
+     File MPLIST opened for input on unit:  97
+     /stella/scratch/zac/smoke/data/smoke/inventory/tut36/mobile/mplist.m3demo-07.txt
+
+
+     File MPREF opened for input on unit:  96
+     /stella/scratch/zac/smoke/data/smoke/inventory/tut36/mobile/mpref.m3demo-07.txt
+
+
+     File MCODES opened for input on unit:  95
+     /stella/scratch/zac/smoke/data/smoke/inventory/tut36/mobile/mcodes.041802.txt
+
+     Value for SMK_MINT_MIN:  52.000000
+     Value for SMK_MINT_MAX:  100.000000
+     Value for SMK_MAXT_MIN:  52.000000
+     Value for SMK_MAXT_MAX:  120.000000
+     Value for SMK_TF_INTERVAL:  2.000000
+     Value for SMK_TF_MAXINTVL:  40.000000
+     Value for MB_HC_TYPE:  'VOC'
+     NOTE: Using mobile volatile pollutant "VOC".
+     Value for PROMPTFLAG:  N returning FALSE
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "MEFSND" opened as NEW(READ-WRITE) 
+     File name "/stella/scratch/zac/smoke/data/smoke/run_m3demo/static/mefsnd.m3demo-07.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 9 rows, 34 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Starting date and time  2007001:000001 (0:00:01   Jan. 1, 2007)
+     Timestep                        000001 (0:00:01 hh:mm:ss)
+     Maximum current record number       0
+     Value for SMK_MINT_MIN:  52.000000
+     Value for SMK_MINT_MAX:  100.000000
+     Value for SMK_MAXT_MIN:  52.000000
+     Value for SMK_MAXT_MAX:  120.000000
+     Value for SMK_TF_INTERVAL:  2.000000
+     Value for SMK_TF_MAXINTVL:  40.000000
+     NOTE: Using mobile volatile pollutant "VOC".
+      
+     "MEFSD" opened as NEW(READ-WRITE) 
+     File name "/stella/scratch/zac/smoke/data/smoke/run_m3demo/static/mefsd.m3demo-07.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 9 rows, 435 cols, 1 lays, 4 vbles
+     NetCDF ID:         9:
+     Starting date and time  2007001:000001 (0:00:01   Jan. 1, 2007)
+     Timestep                        000001 (0:00:01 hh:mm:ss)
+     Maximum current record number       0
+     NOTE: Emission factors are for year    2007
+     Processing PSI       1 through       9 ...
+     Value for EMS_LOC:  '/stella/scratch/zac/smoke/data/smoke/inventory/tut36/mobile'
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     Timestep written to MEFSND for date and time   2007001:000001
+     Timestep written to MEFSD for date and time   2007001:000001
+     Timestep written to MEFSND for date and time   2007001:000002
+     Timestep written to MEFSD for date and time   2007001:000002
+     Timestep written to MEFSND for date and time   2007001:000003
+     Timestep written to MEFSD for date and time   2007001:000003
+     Timestep written to MEFSND for date and time   2007001:000004
+     Timestep written to MEFSD for date and time   2007001:000004
+     Timestep written to MEFSND for date and time   2007001:000005
+     Timestep written to MEFSD for date and time   2007001:000005
+     Timestep written to MEFSND for date and time   2007001:000006
+     Timestep written to MEFSD for date and time   2007001:000006
+     Timestep written to MEFSND for date and time   2007001:000007
+     Timestep written to MEFSD for date and time   2007001:000007
+     Timestep written to MEFSND for date and time   2007001:000008
+     Timestep written to MEFSD for date and time   2007001:000008
+     Timestep written to MEFSND for date and time   2007001:000009
+     Timestep written to MEFSD for date and time   2007001:000009
+     Processing PSI      10 through      18 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000010
+     Timestep written to MEFSD for date and time   2007001:000010
+     Timestep written to MEFSND for date and time   2007001:000011
+     Timestep written to MEFSD for date and time   2007001:000011
+     Timestep written to MEFSND for date and time   2007001:000012
+     Timestep written to MEFSD for date and time   2007001:000012
+     Timestep written to MEFSND for date and time   2007001:000013
+     Timestep written to MEFSD for date and time   2007001:000013
+     Timestep written to MEFSND for date and time   2007001:000014
+     Timestep written to MEFSD for date and time   2007001:000014
+     Timestep written to MEFSND for date and time   2007001:000015
+     Timestep written to MEFSD for date and time   2007001:000015
+     Timestep written to MEFSND for date and time   2007001:000016
+     Timestep written to MEFSD for date and time   2007001:000016
+     Timestep written to MEFSND for date and time   2007001:000017
+     Timestep written to MEFSD for date and time   2007001:000017
+     Timestep written to MEFSND for date and time   2007001:000018
+     Timestep written to MEFSD for date and time   2007001:000018
+     Processing PSI      19 through      27 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000019
+     Timestep written to MEFSD for date and time   2007001:000019
+     Timestep written to MEFSND for date and time   2007001:000020
+     Timestep written to MEFSD for date and time   2007001:000020
+     Timestep written to MEFSND for date and time   2007001:000021
+     Timestep written to MEFSD for date and time   2007001:000021
+     Timestep written to MEFSND for date and time   2007001:000022
+     Timestep written to MEFSD for date and time   2007001:000022
+     Timestep written to MEFSND for date and time   2007001:000023
+     Timestep written to MEFSD for date and time   2007001:000023
+     Timestep written to MEFSND for date and time   2007001:000024
+     Timestep written to MEFSD for date and time   2007001:000024
+     Timestep written to MEFSND for date and time   2007001:000025
+     Timestep written to MEFSD for date and time   2007001:000025
+     Timestep written to MEFSND for date and time   2007001:000026
+     Timestep written to MEFSD for date and time   2007001:000026
+     Timestep written to MEFSND for date and time   2007001:000027
+     Timestep written to MEFSD for date and time   2007001:000027
+     Processing PSI      28 through      34 ...
+        Reading I/M credits information
+        Bien Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000028
+     Timestep written to MEFSD for date and time   2007001:000028
+     Timestep written to MEFSND for date and time   2007001:000029
+     Timestep written to MEFSD for date and time   2007001:000029
+     Timestep written to MEFSND for date and time   2007001:000030
+     Timestep written to MEFSD for date and time   2007001:000030
+     Timestep written to MEFSND for date and time   2007001:000031
+     Timestep written to MEFSD for date and time   2007001:000031
+     Timestep written to MEFSND for date and time   2007001:000032
+     Timestep written to MEFSD for date and time   2007001:000032
+     Timestep written to MEFSND for date and time   2007001:000033
+     Timestep written to MEFSD for date and time   2007001:000033
+     Timestep written to MEFSND for date and time   2007001:000034
+     Timestep written to MEFSD for date and time   2007001:000034
+     Processing PSI      35 through      38 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000035
+     Timestep written to MEFSD for date and time   2007001:000035
+     Timestep written to MEFSND for date and time   2007001:000036
+     Timestep written to MEFSD for date and time   2007001:000036
+     Timestep written to MEFSND for date and time   2007001:000037
+     Timestep written to MEFSD for date and time   2007001:000037
+     Timestep written to MEFSND for date and time   2007001:000038
+     Timestep written to MEFSD for date and time   2007001:000038
+     Processing PSI      39 through      47 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000039
+     Timestep written to MEFSD for date and time   2007001:000039
+     Timestep written to MEFSND for date and time   2007001:000040
+     Timestep written to MEFSD for date and time   2007001:000040
+     Timestep written to MEFSND for date and time   2007001:000041
+     Timestep written to MEFSD for date and time   2007001:000041
+     Timestep written to MEFSND for date and time   2007001:000042
+     Timestep written to MEFSD for date and time   2007001:000042
+     Timestep written to MEFSND for date and time   2007001:000043
+     Timestep written to MEFSD for date and time   2007001:000043
+     Timestep written to MEFSND for date and time   2007001:000044
+     Timestep written to MEFSD for date and time   2007001:000044
+     Timestep written to MEFSND for date and time   2007001:000045
+     Timestep written to MEFSD for date and time   2007001:000045
+     Timestep written to MEFSND for date and time   2007001:000046
+     Timestep written to MEFSD for date and time   2007001:000046
+     Timestep written to MEFSND for date and time   2007001:000047
+     Timestep written to MEFSD for date and time   2007001:000047
+     Processing PSI      48 through      56 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000048
+     Timestep written to MEFSD for date and time   2007001:000048
+     Timestep written to MEFSND for date and time   2007001:000049
+     Timestep written to MEFSD for date and time   2007001:000049
+     Timestep written to MEFSND for date and time   2007001:000050
+     Timestep written to MEFSD for date and time   2007001:000050
+     Timestep written to MEFSND for date and time   2007001:000051
+     Timestep written to MEFSD for date and time   2007001:000051
+     Timestep written to MEFSND for date and time   2007001:000052
+     Timestep written to MEFSD for date and time   2007001:000052
+     Timestep written to MEFSND for date and time   2007001:000053
+     Timestep written to MEFSD for date and time   2007001:000053
+     Timestep written to MEFSND for date and time   2007001:000054
+     Timestep written to MEFSD for date and time   2007001:000054
+     Timestep written to MEFSND for date and time   2007001:000055
+     Timestep written to MEFSD for date and time   2007001:000055
+     Timestep written to MEFSND for date and time   2007001:000056
+     Timestep written to MEFSD for date and time   2007001:000056
+     Processing PSI      57 through      65 ...
+       -M 49 Warning:
+       +                1.02     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+        Reading second I/M program credits information
+        Bien Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+       -M109 Warning:
+       +              The user supplied inspection frequencies are not equal.
+                      ATP inspection frequency:                 Annual  
+                      I/M program #1 inspection frequency:      Annual  
+                      I/M program #2 inspection frequency:      Biennial
+                      Pressure Check inspection frequency:      Annual  
+                      Purge Check inspection frequency:         Annual  
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000057
+     Timestep written to MEFSD for date and time   2007001:000057
+     Timestep written to MEFSND for date and time   2007001:000058
+     Timestep written to MEFSD for date and time   2007001:000058
+     Timestep written to MEFSND for date and time   2007001:000059
+     Timestep written to MEFSD for date and time   2007001:000059
+     Timestep written to MEFSND for date and time   2007001:000100
+     Timestep written to MEFSD for date and time   2007001:000100
+     Timestep written to MEFSND for date and time   2007001:000101
+     Timestep written to MEFSD for date and time   2007001:000101
+     Timestep written to MEFSND for date and time   2007001:000102
+     Timestep written to MEFSD for date and time   2007001:000102
+     Timestep written to MEFSND for date and time   2007001:000103
+     Timestep written to MEFSD for date and time   2007001:000103
+     Timestep written to MEFSND for date and time   2007001:000104
+     Timestep written to MEFSD for date and time   2007001:000104
+     Timestep written to MEFSND for date and time   2007001:000105
+     Timestep written to MEFSD for date and time   2007001:000105
+     Processing PSI      66 through      74 ...
+       -M 49 Warning:
+       +                1.02     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+        Reading second I/M program credits information
+        Bien Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+       -M109 Warning:
+       +              The user supplied inspection frequencies are not equal.
+                      ATP inspection frequency:                 Annual  
+                      I/M program #1 inspection frequency:      Annual  
+                      I/M program #2 inspection frequency:      Biennial
+                      Pressure Check inspection frequency:      Annual  
+                      Purge Check inspection frequency:         Annual  
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000106
+     Timestep written to MEFSD for date and time   2007001:000106
+     Timestep written to MEFSND for date and time   2007001:000107
+     Timestep written to MEFSD for date and time   2007001:000107
+     Timestep written to MEFSND for date and time   2007001:000108
+     Timestep written to MEFSD for date and time   2007001:000108
+     Timestep written to MEFSND for date and time   2007001:000109
+     Timestep written to MEFSD for date and time   2007001:000109
+     Timestep written to MEFSND for date and time   2007001:000110
+     Timestep written to MEFSD for date and time   2007001:000110
+     Timestep written to MEFSND for date and time   2007001:000111
+     Timestep written to MEFSD for date and time   2007001:000111
+     Timestep written to MEFSND for date and time   2007001:000112
+     Timestep written to MEFSD for date and time   2007001:000112
+     Timestep written to MEFSND for date and time   2007001:000113
+     Timestep written to MEFSD for date and time   2007001:000113
+     Timestep written to MEFSND for date and time   2007001:000114
+     Timestep written to MEFSD for date and time   2007001:000114
+     Processing PSI      75 through      83 ...
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+        Reading second I/M program credits information
+        Bien Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+       -M109 Warning:
+       +              The user supplied inspection frequencies are not equal.
+                      ATP inspection frequency:                 Annual  
+                      I/M program #1 inspection frequency:      Annual  
+                      I/M program #2 inspection frequency:      Biennial
+                      Pressure Check inspection frequency:      Annual  
+                      Purge Check inspection frequency:         Annual  
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000115
+     Timestep written to MEFSD for date and time   2007001:000115
+     Timestep written to MEFSND for date and time   2007001:000116
+     Timestep written to MEFSD for date and time   2007001:000116
+     Timestep written to MEFSND for date and time   2007001:000117
+     Timestep written to MEFSD for date and time   2007001:000117
+     Timestep written to MEFSND for date and time   2007001:000118
+     Timestep written to MEFSD for date and time   2007001:000118
+     Timestep written to MEFSND for date and time   2007001:000119
+     Timestep written to MEFSD for date and time   2007001:000119
+     Timestep written to MEFSND for date and time   2007001:000120
+     Timestep written to MEFSD for date and time   2007001:000120
+     Timestep written to MEFSND for date and time   2007001:000121
+     Timestep written to MEFSD for date and time   2007001:000121
+     Timestep written to MEFSND for date and time   2007001:000122
+     Timestep written to MEFSD for date and time   2007001:000122
+     Timestep written to MEFSND for date and time   2007001:000123
+     Timestep written to MEFSD for date and time   2007001:000123
+     Processing PSI      84 through      92 ...
+     Timestep written to MEFSND for date and time   2007001:000124
+     Timestep written to MEFSD for date and time   2007001:000124
+     Timestep written to MEFSND for date and time   2007001:000125
+     Timestep written to MEFSD for date and time   2007001:000125
+     Timestep written to MEFSND for date and time   2007001:000126
+     Timestep written to MEFSD for date and time   2007001:000126
+     Timestep written to MEFSND for date and time   2007001:000127
+     Timestep written to MEFSD for date and time   2007001:000127
+     Timestep written to MEFSND for date and time   2007001:000128
+     Timestep written to MEFSD for date and time   2007001:000128
+     Timestep written to MEFSND for date and time   2007001:000129
+     Timestep written to MEFSD for date and time   2007001:000129
+     Timestep written to MEFSND for date and time   2007001:000130
+     Timestep written to MEFSD for date and time   2007001:000130
+     Timestep written to MEFSND for date and time   2007001:000131
+     Timestep written to MEFSD for date and time   2007001:000131
+     Timestep written to MEFSND for date and time   2007001:000132
+     Timestep written to MEFSD for date and time   2007001:000132
+     Processing PSI      93 through     101 ...
+        Reading I/M credits information
+        Bien Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000133
+     Timestep written to MEFSD for date and time   2007001:000133
+     Timestep written to MEFSND for date and time   2007001:000134
+     Timestep written to MEFSD for date and time   2007001:000134
+     Timestep written to MEFSND for date and time   2007001:000135
+     Timestep written to MEFSD for date and time   2007001:000135
+     Timestep written to MEFSND for date and time   2007001:000136
+     Timestep written to MEFSD for date and time   2007001:000136
+     Timestep written to MEFSND for date and time   2007001:000137
+     Timestep written to MEFSD for date and time   2007001:000137
+     Timestep written to MEFSND for date and time   2007001:000138
+     Timestep written to MEFSD for date and time   2007001:000138
+     Timestep written to MEFSND for date and time   2007001:000139
+     Timestep written to MEFSD for date and time   2007001:000139
+     Timestep written to MEFSND for date and time   2007001:000140
+     Timestep written to MEFSD for date and time   2007001:000140
+     Timestep written to MEFSND for date and time   2007001:000141
+     Timestep written to MEFSD for date and time   2007001:000141
+     Processing PSI     102 through     110 ...
+        Reading I/M credits information
+        Bien Insp Freq & TECH 4+ I/M credit 2500/Idle test data                         
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000142
+     Timestep written to MEFSD for date and time   2007001:000142
+     Timestep written to MEFSND for date and time   2007001:000143
+     Timestep written to MEFSD for date and time   2007001:000143
+     Timestep written to MEFSND for date and time   2007001:000144
+     Timestep written to MEFSD for date and time   2007001:000144
+     Timestep written to MEFSND for date and time   2007001:000145
+     Timestep written to MEFSD for date and time   2007001:000145
+     Timestep written to MEFSND for date and time   2007001:000146
+     Timestep written to MEFSD for date and time   2007001:000146
+     Timestep written to MEFSND for date and time   2007001:000147
+     Timestep written to MEFSD for date and time   2007001:000147
+     Timestep written to MEFSND for date and time   2007001:000148
+     Timestep written to MEFSD for date and time   2007001:000148
+     Timestep written to MEFSND for date and time   2007001:000149
+     Timestep written to MEFSD for date and time   2007001:000149
+     Timestep written to MEFSND for date and time   2007001:000150
+     Timestep written to MEFSD for date and time   2007001:000150
+     Processing PSI     111 through     119 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000151
+     Timestep written to MEFSD for date and time   2007001:000151
+     Timestep written to MEFSND for date and time   2007001:000152
+     Timestep written to MEFSD for date and time   2007001:000152
+     Timestep written to MEFSND for date and time   2007001:000153
+     Timestep written to MEFSD for date and time   2007001:000153
+     Timestep written to MEFSND for date and time   2007001:000154
+     Timestep written to MEFSD for date and time   2007001:000154
+     Timestep written to MEFSND for date and time   2007001:000155
+     Timestep written to MEFSD for date and time   2007001:000155
+     Timestep written to MEFSND for date and time   2007001:000156
+     Timestep written to MEFSD for date and time   2007001:000156
+     Timestep written to MEFSND for date and time   2007001:000157
+     Timestep written to MEFSD for date and time   2007001:000157
+     Timestep written to MEFSND for date and time   2007001:000158
+     Timestep written to MEFSD for date and time   2007001:000158
+     Timestep written to MEFSND for date and time   2007001:000159
+     Timestep written to MEFSD for date and time   2007001:000159
+     Processing PSI     120 through     128 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000200
+     Timestep written to MEFSD for date and time   2007001:000200
+     Timestep written to MEFSND for date and time   2007001:000201
+     Timestep written to MEFSD for date and time   2007001:000201
+     Timestep written to MEFSND for date and time   2007001:000202
+     Timestep written to MEFSD for date and time   2007001:000202
+     Timestep written to MEFSND for date and time   2007001:000203
+     Timestep written to MEFSD for date and time   2007001:000203
+     Timestep written to MEFSND for date and time   2007001:000204
+     Timestep written to MEFSD for date and time   2007001:000204
+     Timestep written to MEFSND for date and time   2007001:000205
+     Timestep written to MEFSD for date and time   2007001:000205
+     Timestep written to MEFSND for date and time   2007001:000206
+     Timestep written to MEFSD for date and time   2007001:000206
+     Timestep written to MEFSND for date and time   2007001:000207
+     Timestep written to MEFSD for date and time   2007001:000207
+     Timestep written to MEFSND for date and time   2007001:000208
+     Timestep written to MEFSD for date and time   2007001:000208
+     Processing PSI     129 through     137 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000209
+     Timestep written to MEFSD for date and time   2007001:000209
+     Timestep written to MEFSND for date and time   2007001:000210
+     Timestep written to MEFSD for date and time   2007001:000210
+     Timestep written to MEFSND for date and time   2007001:000211
+     Timestep written to MEFSD for date and time   2007001:000211
+     Timestep written to MEFSND for date and time   2007001:000212
+     Timestep written to MEFSD for date and time   2007001:000212
+     Timestep written to MEFSND for date and time   2007001:000213
+     Timestep written to MEFSD for date and time   2007001:000213
+     Timestep written to MEFSND for date and time   2007001:000214
+     Timestep written to MEFSD for date and time   2007001:000214
+     Timestep written to MEFSND for date and time   2007001:000215
+     Timestep written to MEFSD for date and time   2007001:000215
+     Timestep written to MEFSND for date and time   2007001:000216
+     Timestep written to MEFSD for date and time   2007001:000216
+     Timestep written to MEFSND for date and time   2007001:000217
+     Timestep written to MEFSD for date and time   2007001:000217
+     Processing PSI     138 through     146 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000218
+     Timestep written to MEFSD for date and time   2007001:000218
+     Timestep written to MEFSND for date and time   2007001:000219
+     Timestep written to MEFSD for date and time   2007001:000219
+     Timestep written to MEFSND for date and time   2007001:000220
+     Timestep written to MEFSD for date and time   2007001:000220
+     Timestep written to MEFSND for date and time   2007001:000221
+     Timestep written to MEFSD for date and time   2007001:000221
+     Timestep written to MEFSND for date and time   2007001:000222
+     Timestep written to MEFSD for date and time   2007001:000222
+     Timestep written to MEFSND for date and time   2007001:000223
+     Timestep written to MEFSD for date and time   2007001:000223
+     Timestep written to MEFSND for date and time   2007001:000224
+     Timestep written to MEFSD for date and time   2007001:000224
+     Timestep written to MEFSND for date and time   2007001:000225
+     Timestep written to MEFSD for date and time   2007001:000225
+     Timestep written to MEFSND for date and time   2007001:000226
+     Timestep written to MEFSD for date and time   2007001:000226
+     Processing PSI     147 through     155 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000227
+     Timestep written to MEFSD for date and time   2007001:000227
+     Timestep written to MEFSND for date and time   2007001:000228
+     Timestep written to MEFSD for date and time   2007001:000228
+     Timestep written to MEFSND for date and time   2007001:000229
+     Timestep written to MEFSD for date and time   2007001:000229
+     Timestep written to MEFSND for date and time   2007001:000230
+     Timestep written to MEFSD for date and time   2007001:000230
+     Timestep written to MEFSND for date and time   2007001:000231
+     Timestep written to MEFSD for date and time   2007001:000231
+     Timestep written to MEFSND for date and time   2007001:000232
+     Timestep written to MEFSD for date and time   2007001:000232
+     Timestep written to MEFSND for date and time   2007001:000233
+     Timestep written to MEFSD for date and time   2007001:000233
+     Timestep written to MEFSND for date and time   2007001:000234
+     Timestep written to MEFSD for date and time   2007001:000234
+     Timestep written to MEFSND for date and time   2007001:000235
+     Timestep written to MEFSD for date and time   2007001:000235
+     Processing PSI     156 through     164 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.996     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000236
+     Timestep written to MEFSD for date and time   2007001:000236
+     Timestep written to MEFSND for date and time   2007001:000237
+     Timestep written to MEFSD for date and time   2007001:000237
+     Timestep written to MEFSND for date and time   2007001:000238
+     Timestep written to MEFSD for date and time   2007001:000238
+     Timestep written to MEFSND for date and time   2007001:000239
+     Timestep written to MEFSD for date and time   2007001:000239
+     Timestep written to MEFSND for date and time   2007001:000240
+     Timestep written to MEFSD for date and time   2007001:000240
+     Timestep written to MEFSND for date and time   2007001:000241
+     Timestep written to MEFSD for date and time   2007001:000241
+     Timestep written to MEFSND for date and time   2007001:000242
+     Timestep written to MEFSD for date and time   2007001:000242
+     Timestep written to MEFSND for date and time   2007001:000243
+     Timestep written to MEFSD for date and time   2007001:000243
+     Timestep written to MEFSND for date and time   2007001:000244
+     Timestep written to MEFSD for date and time   2007001:000244
+     Processing PSI     165 through     173 ...
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Bien Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000245
+     Timestep written to MEFSD for date and time   2007001:000245
+     Timestep written to MEFSND for date and time   2007001:000246
+     Timestep written to MEFSD for date and time   2007001:000246
+     Timestep written to MEFSND for date and time   2007001:000247
+     Timestep written to MEFSD for date and time   2007001:000247
+     Timestep written to MEFSND for date and time   2007001:000248
+     Timestep written to MEFSD for date and time   2007001:000248
+     Timestep written to MEFSND for date and time   2007001:000249
+     Timestep written to MEFSD for date and time   2007001:000249
+     Timestep written to MEFSND for date and time   2007001:000250
+     Timestep written to MEFSD for date and time   2007001:000250
+     Timestep written to MEFSND for date and time   2007001:000251
+     Timestep written to MEFSD for date and time   2007001:000251
+     Timestep written to MEFSND for date and time   2007001:000252
+     Timestep written to MEFSD for date and time   2007001:000252
+     Timestep written to MEFSND for date and time   2007001:000253
+     Timestep written to MEFSD for date and time   2007001:000253
+     Processing PSI     174 through     182 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.996     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Bien Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000254
+     Timestep written to MEFSD for date and time   2007001:000254
+     Timestep written to MEFSND for date and time   2007001:000255
+     Timestep written to MEFSD for date and time   2007001:000255
+     Timestep written to MEFSND for date and time   2007001:000256
+     Timestep written to MEFSD for date and time   2007001:000256
+     Timestep written to MEFSND for date and time   2007001:000257
+     Timestep written to MEFSD for date and time   2007001:000257
+     Timestep written to MEFSND for date and time   2007001:000258
+     Timestep written to MEFSD for date and time   2007001:000258
+     Timestep written to MEFSND for date and time   2007001:000259
+     Timestep written to MEFSD for date and time   2007001:000259
+     Timestep written to MEFSND for date and time   2007001:000300
+     Timestep written to MEFSD for date and time   2007001:000300
+     Timestep written to MEFSND for date and time   2007001:000301
+     Timestep written to MEFSD for date and time   2007001:000301
+     Timestep written to MEFSND for date and time   2007001:000302
+     Timestep written to MEFSD for date and time   2007001:000302
+     Processing PSI     183 through     191 ...
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+       -M108 Warning:
+       +              The user supplied compliance rates are not equal.
+                      ATP compliance rate:                       90.0
+                      I/M program #1 compliance rate:            80.0
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000303
+     Timestep written to MEFSD for date and time   2007001:000303
+     Timestep written to MEFSND for date and time   2007001:000304
+     Timestep written to MEFSD for date and time   2007001:000304
+     Timestep written to MEFSND for date and time   2007001:000305
+     Timestep written to MEFSD for date and time   2007001:000305
+     Timestep written to MEFSND for date and time   2007001:000306
+     Timestep written to MEFSD for date and time   2007001:000306
+     Timestep written to MEFSND for date and time   2007001:000307
+     Timestep written to MEFSD for date and time   2007001:000307
+     Timestep written to MEFSND for date and time   2007001:000308
+     Timestep written to MEFSD for date and time   2007001:000308
+     Timestep written to MEFSND for date and time   2007001:000309
+     Timestep written to MEFSD for date and time   2007001:000309
+     Timestep written to MEFSND for date and time   2007001:000310
+     Timestep written to MEFSD for date and time   2007001:000310
+     Timestep written to MEFSND for date and time   2007001:000311
+     Timestep written to MEFSD for date and time   2007001:000311
+     Processing PSI     192 through     200 ...
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000312
+     Timestep written to MEFSD for date and time   2007001:000312
+     Timestep written to MEFSND for date and time   2007001:000313
+     Timestep written to MEFSD for date and time   2007001:000313
+     Timestep written to MEFSND for date and time   2007001:000314
+     Timestep written to MEFSD for date and time   2007001:000314
+     Timestep written to MEFSND for date and time   2007001:000315
+     Timestep written to MEFSD for date and time   2007001:000315
+     Timestep written to MEFSND for date and time   2007001:000316
+     Timestep written to MEFSD for date and time   2007001:000316
+     Timestep written to MEFSND for date and time   2007001:000317
+     Timestep written to MEFSD for date and time   2007001:000317
+     Timestep written to MEFSND for date and time   2007001:000318
+     Timestep written to MEFSD for date and time   2007001:000318
+     Timestep written to MEFSND for date and time   2007001:000319
+     Timestep written to MEFSD for date and time   2007001:000319
+     Timestep written to MEFSND for date and time   2007001:000320
+     Timestep written to MEFSD for date and time   2007001:000320
+     Processing PSI     201 through     209 ...
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000321
+     Timestep written to MEFSD for date and time   2007001:000321
+     Timestep written to MEFSND for date and time   2007001:000322
+     Timestep written to MEFSD for date and time   2007001:000322
+     Timestep written to MEFSND for date and time   2007001:000323
+     Timestep written to MEFSD for date and time   2007001:000323
+     Timestep written to MEFSND for date and time   2007001:000324
+     Timestep written to MEFSD for date and time   2007001:000324
+     Timestep written to MEFSND for date and time   2007001:000325
+     Timestep written to MEFSD for date and time   2007001:000325
+     Timestep written to MEFSND for date and time   2007001:000326
+     Timestep written to MEFSD for date and time   2007001:000326
+     Timestep written to MEFSND for date and time   2007001:000327
+     Timestep written to MEFSD for date and time   2007001:000327
+     Timestep written to MEFSND for date and time   2007001:000328
+     Timestep written to MEFSD for date and time   2007001:000328
+     Timestep written to MEFSND for date and time   2007001:000329
+     Timestep written to MEFSD for date and time   2007001:000329
+     Processing PSI     210 through     218 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000330
+     Timestep written to MEFSD for date and time   2007001:000330
+     Timestep written to MEFSND for date and time   2007001:000331
+     Timestep written to MEFSD for date and time   2007001:000331
+     Timestep written to MEFSND for date and time   2007001:000332
+     Timestep written to MEFSD for date and time   2007001:000332
+     Timestep written to MEFSND for date and time   2007001:000333
+     Timestep written to MEFSD for date and time   2007001:000333
+     Timestep written to MEFSND for date and time   2007001:000334
+     Timestep written to MEFSD for date and time   2007001:000334
+     Timestep written to MEFSND for date and time   2007001:000335
+     Timestep written to MEFSD for date and time   2007001:000335
+     Timestep written to MEFSND for date and time   2007001:000336
+     Timestep written to MEFSD for date and time   2007001:000336
+     Timestep written to MEFSND for date and time   2007001:000337
+     Timestep written to MEFSD for date and time   2007001:000337
+     Timestep written to MEFSND for date and time   2007001:000338
+     Timestep written to MEFSD for date and time   2007001:000338
+     Processing PSI     219 through     227 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000339
+     Timestep written to MEFSD for date and time   2007001:000339
+     Timestep written to MEFSND for date and time   2007001:000340
+     Timestep written to MEFSD for date and time   2007001:000340
+     Timestep written to MEFSND for date and time   2007001:000341
+     Timestep written to MEFSD for date and time   2007001:000341
+     Timestep written to MEFSND for date and time   2007001:000342
+     Timestep written to MEFSD for date and time   2007001:000342
+     Timestep written to MEFSND for date and time   2007001:000343
+     Timestep written to MEFSD for date and time   2007001:000343
+     Timestep written to MEFSND for date and time   2007001:000344
+     Timestep written to MEFSD for date and time   2007001:000344
+     Timestep written to MEFSND for date and time   2007001:000345
+     Timestep written to MEFSD for date and time   2007001:000345
+     Timestep written to MEFSND for date and time   2007001:000346
+     Timestep written to MEFSD for date and time   2007001:000346
+     Timestep written to MEFSND for date and time   2007001:000347
+     Timestep written to MEFSD for date and time   2007001:000347
+     Processing PSI     228 through     236 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+       -M110 Warning:
+       +              The user supplied inspection types are not equal.
+                      ATP inspection type:               Test & Repair       
+                      I/M program #1 inspection type:    Not Applicable      
+                      I/M program #2 inspection type:    Not Applicable      
+                      Pressure Check inspection type:    Not Applicable      
+                      Purge Check inspection type:       Not Applicable      
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000348
+     Timestep written to MEFSD for date and time   2007001:000348
+     Timestep written to MEFSND for date and time   2007001:000349
+     Timestep written to MEFSD for date and time   2007001:000349
+     Timestep written to MEFSND for date and time   2007001:000350
+     Timestep written to MEFSD for date and time   2007001:000350
+     Timestep written to MEFSND for date and time   2007001:000351
+     Timestep written to MEFSD for date and time   2007001:000351
+     Timestep written to MEFSND for date and time   2007001:000352
+     Timestep written to MEFSD for date and time   2007001:000352
+     Timestep written to MEFSND for date and time   2007001:000353
+     Timestep written to MEFSD for date and time   2007001:000353
+     Timestep written to MEFSND for date and time   2007001:000354
+     Timestep written to MEFSD for date and time   2007001:000354
+     Timestep written to MEFSND for date and time   2007001:000355
+     Timestep written to MEFSD for date and time   2007001:000355
+     Timestep written to MEFSND for date and time   2007001:000356
+     Timestep written to MEFSD for date and time   2007001:000356
+     Processing PSI     237 through     245 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000357
+     Timestep written to MEFSD for date and time   2007001:000357
+     Timestep written to MEFSND for date and time   2007001:000358
+     Timestep written to MEFSD for date and time   2007001:000358
+     Timestep written to MEFSND for date and time   2007001:000359
+     Timestep written to MEFSD for date and time   2007001:000359
+     Timestep written to MEFSND for date and time   2007001:000400
+     Timestep written to MEFSD for date and time   2007001:000400
+     Timestep written to MEFSND for date and time   2007001:000401
+     Timestep written to MEFSD for date and time   2007001:000401
+     Timestep written to MEFSND for date and time   2007001:000402
+     Timestep written to MEFSD for date and time   2007001:000402
+     Timestep written to MEFSND for date and time   2007001:000403
+     Timestep written to MEFSD for date and time   2007001:000403
+     Timestep written to MEFSND for date and time   2007001:000404
+     Timestep written to MEFSD for date and time   2007001:000404
+     Timestep written to MEFSND for date and time   2007001:000405
+     Timestep written to MEFSD for date and time   2007001:000405
+     Processing PSI     246 through     254 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000406
+     Timestep written to MEFSD for date and time   2007001:000406
+     Timestep written to MEFSND for date and time   2007001:000407
+     Timestep written to MEFSD for date and time   2007001:000407
+     Timestep written to MEFSND for date and time   2007001:000408
+     Timestep written to MEFSD for date and time   2007001:000408
+     Timestep written to MEFSND for date and time   2007001:000409
+     Timestep written to MEFSD for date and time   2007001:000409
+     Timestep written to MEFSND for date and time   2007001:000410
+     Timestep written to MEFSD for date and time   2007001:000410
+     Timestep written to MEFSND for date and time   2007001:000411
+     Timestep written to MEFSD for date and time   2007001:000411
+     Timestep written to MEFSND for date and time   2007001:000412
+     Timestep written to MEFSD for date and time   2007001:000412
+     Timestep written to MEFSND for date and time   2007001:000413
+     Timestep written to MEFSD for date and time   2007001:000413
+     Timestep written to MEFSND for date and time   2007001:000414
+     Timestep written to MEFSD for date and time   2007001:000414
+     Processing PSI     255 through     263 ...
+     Timestep written to MEFSND for date and time   2007001:000415
+     Timestep written to MEFSD for date and time   2007001:000415
+     Timestep written to MEFSND for date and time   2007001:000416
+     Timestep written to MEFSD for date and time   2007001:000416
+     Timestep written to MEFSND for date and time   2007001:000417
+     Timestep written to MEFSD for date and time   2007001:000417
+     Timestep written to MEFSND for date and time   2007001:000418
+     Timestep written to MEFSD for date and time   2007001:000418
+     Timestep written to MEFSND for date and time   2007001:000419
+     Timestep written to MEFSD for date and time   2007001:000419
+     Timestep written to MEFSND for date and time   2007001:000420
+     Timestep written to MEFSD for date and time   2007001:000420
+     Timestep written to MEFSND for date and time   2007001:000421
+     Timestep written to MEFSD for date and time   2007001:000421
+     Timestep written to MEFSND for date and time   2007001:000422
+     Timestep written to MEFSD for date and time   2007001:000422
+     Timestep written to MEFSND for date and time   2007001:000423
+     Timestep written to MEFSD for date and time   2007001:000423
+     Processing PSI     264 through     272 ...
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000424
+     Timestep written to MEFSD for date and time   2007001:000424
+     Timestep written to MEFSND for date and time   2007001:000425
+     Timestep written to MEFSD for date and time   2007001:000425
+     Timestep written to MEFSND for date and time   2007001:000426
+     Timestep written to MEFSD for date and time   2007001:000426
+     Timestep written to MEFSND for date and time   2007001:000427
+     Timestep written to MEFSD for date and time   2007001:000427
+     Timestep written to MEFSND for date and time   2007001:000428
+     Timestep written to MEFSD for date and time   2007001:000428
+     Timestep written to MEFSND for date and time   2007001:000429
+     Timestep written to MEFSD for date and time   2007001:000429
+     Timestep written to MEFSND for date and time   2007001:000430
+     Timestep written to MEFSD for date and time   2007001:000430
+     Timestep written to MEFSND for date and time   2007001:000431
+     Timestep written to MEFSD for date and time   2007001:000431
+     Timestep written to MEFSND for date and time   2007001:000432
+     Timestep written to MEFSD for date and time   2007001:000432
+     Processing PSI     273 through     281 ...
+     Timestep written to MEFSND for date and time   2007001:000433
+     Timestep written to MEFSD for date and time   2007001:000433
+     Timestep written to MEFSND for date and time   2007001:000434
+     Timestep written to MEFSD for date and time   2007001:000434
+     Timestep written to MEFSND for date and time   2007001:000435
+     Timestep written to MEFSD for date and time   2007001:000435
+     Timestep written to MEFSND for date and time   2007001:000436
+     Timestep written to MEFSD for date and time   2007001:000436
+     Timestep written to MEFSND for date and time   2007001:000437
+     Timestep written to MEFSD for date and time   2007001:000437
+     Timestep written to MEFSND for date and time   2007001:000438
+     Timestep written to MEFSD for date and time   2007001:000438
+     Timestep written to MEFSND for date and time   2007001:000439
+     Timestep written to MEFSD for date and time   2007001:000439
+     Timestep written to MEFSND for date and time   2007001:000440
+     Timestep written to MEFSD for date and time   2007001:000440
+     Timestep written to MEFSND for date and time   2007001:000441
+     Timestep written to MEFSD for date and time   2007001:000441
+     Processing PSI     282 through     290 ...
+     Timestep written to MEFSND for date and time   2007001:000442
+     Timestep written to MEFSD for date and time   2007001:000442
+     Timestep written to MEFSND for date and time   2007001:000443
+     Timestep written to MEFSD for date and time   2007001:000443
+     Timestep written to MEFSND for date and time   2007001:000444
+     Timestep written to MEFSD for date and time   2007001:000444
+     Timestep written to MEFSND for date and time   2007001:000445
+     Timestep written to MEFSD for date and time   2007001:000445
+     Timestep written to MEFSND for date and time   2007001:000446
+     Timestep written to MEFSD for date and time   2007001:000446
+     Timestep written to MEFSND for date and time   2007001:000447
+     Timestep written to MEFSD for date and time   2007001:000447
+     Timestep written to MEFSND for date and time   2007001:000448
+     Timestep written to MEFSD for date and time   2007001:000448
+     Timestep written to MEFSND for date and time   2007001:000449
+     Timestep written to MEFSD for date and time   2007001:000449
+     Timestep written to MEFSND for date and time   2007001:000450
+     Timestep written to MEFSD for date and time   2007001:000450
+     Processing PSI     291 through     299 ...
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+       -M110 Warning:
+       +              The user supplied inspection types are not equal.
+                      ATP inspection type:               Test & Repair       
+                      I/M program #1 inspection type:    Not Applicable      
+                      I/M program #2 inspection type:    Not Applicable      
+                      Pressure Check inspection type:    Not Applicable      
+                      Purge Check inspection type:       Not Applicable      
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000451
+     Timestep written to MEFSD for date and time   2007001:000451
+     Timestep written to MEFSND for date and time   2007001:000452
+     Timestep written to MEFSD for date and time   2007001:000452
+     Timestep written to MEFSND for date and time   2007001:000453
+     Timestep written to MEFSD for date and time   2007001:000453
+     Timestep written to MEFSND for date and time   2007001:000454
+     Timestep written to MEFSD for date and time   2007001:000454
+     Timestep written to MEFSND for date and time   2007001:000455
+     Timestep written to MEFSD for date and time   2007001:000455
+     Timestep written to MEFSND for date and time   2007001:000456
+     Timestep written to MEFSD for date and time   2007001:000456
+     Timestep written to MEFSND for date and time   2007001:000457
+     Timestep written to MEFSD for date and time   2007001:000457
+     Timestep written to MEFSND for date and time   2007001:000458
+     Timestep written to MEFSD for date and time   2007001:000458
+     Timestep written to MEFSND for date and time   2007001:000459
+     Timestep written to MEFSD for date and time   2007001:000459
+     Processing PSI     300 through     308 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000500
+     Timestep written to MEFSD for date and time   2007001:000500
+     Timestep written to MEFSND for date and time   2007001:000501
+     Timestep written to MEFSD for date and time   2007001:000501
+     Timestep written to MEFSND for date and time   2007001:000502
+     Timestep written to MEFSD for date and time   2007001:000502
+     Timestep written to MEFSND for date and time   2007001:000503
+     Timestep written to MEFSD for date and time   2007001:000503
+     Timestep written to MEFSND for date and time   2007001:000504
+     Timestep written to MEFSD for date and time   2007001:000504
+     Timestep written to MEFSND for date and time   2007001:000505
+     Timestep written to MEFSD for date and time   2007001:000505
+     Timestep written to MEFSND for date and time   2007001:000506
+     Timestep written to MEFSD for date and time   2007001:000506
+     Timestep written to MEFSND for date and time   2007001:000507
+     Timestep written to MEFSD for date and time   2007001:000507
+     Timestep written to MEFSND for date and time   2007001:000508
+     Timestep written to MEFSD for date and time   2007001:000508
+     Processing PSI     309 through     317 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000509
+     Timestep written to MEFSD for date and time   2007001:000509
+     Timestep written to MEFSND for date and time   2007001:000510
+     Timestep written to MEFSD for date and time   2007001:000510
+     Timestep written to MEFSND for date and time   2007001:000511
+     Timestep written to MEFSD for date and time   2007001:000511
+     Timestep written to MEFSND for date and time   2007001:000512
+     Timestep written to MEFSD for date and time   2007001:000512
+     Timestep written to MEFSND for date and time   2007001:000513
+     Timestep written to MEFSD for date and time   2007001:000513
+     Timestep written to MEFSND for date and time   2007001:000514
+     Timestep written to MEFSD for date and time   2007001:000514
+     Timestep written to MEFSND for date and time   2007001:000515
+     Timestep written to MEFSD for date and time   2007001:000515
+     Timestep written to MEFSND for date and time   2007001:000516
+     Timestep written to MEFSD for date and time   2007001:000516
+     Timestep written to MEFSND for date and time   2007001:000517
+     Timestep written to MEFSD for date and time   2007001:000517
+     Processing PSI     318 through     326 ...
+       -M 49 Warning:
+       +               0.996     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.996     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000518
+     Timestep written to MEFSD for date and time   2007001:000518
+     Timestep written to MEFSND for date and time   2007001:000519
+     Timestep written to MEFSD for date and time   2007001:000519
+     Timestep written to MEFSND for date and time   2007001:000520
+     Timestep written to MEFSD for date and time   2007001:000520
+     Timestep written to MEFSND for date and time   2007001:000521
+     Timestep written to MEFSD for date and time   2007001:000521
+     Timestep written to MEFSND for date and time   2007001:000522
+     Timestep written to MEFSD for date and time   2007001:000522
+     Timestep written to MEFSND for date and time   2007001:000523
+     Timestep written to MEFSD for date and time   2007001:000523
+     Timestep written to MEFSND for date and time   2007001:000524
+     Timestep written to MEFSD for date and time   2007001:000524
+     Timestep written to MEFSND for date and time   2007001:000525
+     Timestep written to MEFSD for date and time   2007001:000525
+     Timestep written to MEFSND for date and time   2007001:000526
+     Timestep written to MEFSD for date and time   2007001:000526
+     Processing PSI     327 through     335 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000527
+     Timestep written to MEFSD for date and time   2007001:000527
+     Timestep written to MEFSND for date and time   2007001:000528
+     Timestep written to MEFSD for date and time   2007001:000528
+     Timestep written to MEFSND for date and time   2007001:000529
+     Timestep written to MEFSD for date and time   2007001:000529
+     Timestep written to MEFSND for date and time   2007001:000530
+     Timestep written to MEFSD for date and time   2007001:000530
+     Timestep written to MEFSND for date and time   2007001:000531
+     Timestep written to MEFSD for date and time   2007001:000531
+     Timestep written to MEFSND for date and time   2007001:000532
+     Timestep written to MEFSD for date and time   2007001:000532
+     Timestep written to MEFSND for date and time   2007001:000533
+     Timestep written to MEFSD for date and time   2007001:000533
+     Timestep written to MEFSND for date and time   2007001:000534
+     Timestep written to MEFSD for date and time   2007001:000534
+     Timestep written to MEFSND for date and time   2007001:000535
+     Timestep written to MEFSD for date and time   2007001:000535
+     Processing PSI     336 through     344 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000536
+     Timestep written to MEFSD for date and time   2007001:000536
+     Timestep written to MEFSND for date and time   2007001:000537
+     Timestep written to MEFSD for date and time   2007001:000537
+     Timestep written to MEFSND for date and time   2007001:000538
+     Timestep written to MEFSD for date and time   2007001:000538
+     Timestep written to MEFSND for date and time   2007001:000539
+     Timestep written to MEFSD for date and time   2007001:000539
+     Timestep written to MEFSND for date and time   2007001:000540
+     Timestep written to MEFSD for date and time   2007001:000540
+     Timestep written to MEFSND for date and time   2007001:000541
+     Timestep written to MEFSD for date and time   2007001:000541
+     Timestep written to MEFSND for date and time   2007001:000542
+     Timestep written to MEFSD for date and time   2007001:000542
+     Timestep written to MEFSND for date and time   2007001:000543
+     Timestep written to MEFSD for date and time   2007001:000543
+     Timestep written to MEFSND for date and time   2007001:000544
+     Timestep written to MEFSD for date and time   2007001:000544
+     Processing PSI     345 through     353 ...
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.996     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000545
+     Timestep written to MEFSD for date and time   2007001:000545
+     Timestep written to MEFSND for date and time   2007001:000546
+     Timestep written to MEFSD for date and time   2007001:000546
+     Timestep written to MEFSND for date and time   2007001:000547
+     Timestep written to MEFSD for date and time   2007001:000547
+     Timestep written to MEFSND for date and time   2007001:000548
+     Timestep written to MEFSD for date and time   2007001:000548
+     Timestep written to MEFSND for date and time   2007001:000549
+     Timestep written to MEFSD for date and time   2007001:000549
+     Timestep written to MEFSND for date and time   2007001:000550
+     Timestep written to MEFSD for date and time   2007001:000550
+     Timestep written to MEFSND for date and time   2007001:000551
+     Timestep written to MEFSD for date and time   2007001:000551
+     Timestep written to MEFSND for date and time   2007001:000552
+     Timestep written to MEFSD for date and time   2007001:000552
+     Timestep written to MEFSND for date and time   2007001:000553
+     Timestep written to MEFSD for date and time   2007001:000553
+     Processing PSI     354 through     362 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000554
+     Timestep written to MEFSD for date and time   2007001:000554
+     Timestep written to MEFSND for date and time   2007001:000555
+     Timestep written to MEFSD for date and time   2007001:000555
+     Timestep written to MEFSND for date and time   2007001:000556
+     Timestep written to MEFSD for date and time   2007001:000556
+     Timestep written to MEFSND for date and time   2007001:000557
+     Timestep written to MEFSD for date and time   2007001:000557
+     Timestep written to MEFSND for date and time   2007001:000558
+     Timestep written to MEFSD for date and time   2007001:000558
+     Timestep written to MEFSND for date and time   2007001:000559
+     Timestep written to MEFSD for date and time   2007001:000559
+     Timestep written to MEFSND for date and time   2007001:000600
+     Timestep written to MEFSD for date and time   2007001:000600
+     Timestep written to MEFSND for date and time   2007001:000601
+     Timestep written to MEFSD for date and time   2007001:000601
+     Timestep written to MEFSND for date and time   2007001:000602
+     Timestep written to MEFSD for date and time   2007001:000602
+     Processing PSI     363 through     371 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000603
+     Timestep written to MEFSD for date and time   2007001:000603
+     Timestep written to MEFSND for date and time   2007001:000604
+     Timestep written to MEFSD for date and time   2007001:000604
+     Timestep written to MEFSND for date and time   2007001:000605
+     Timestep written to MEFSD for date and time   2007001:000605
+     Timestep written to MEFSND for date and time   2007001:000606
+     Timestep written to MEFSD for date and time   2007001:000606
+     Timestep written to MEFSND for date and time   2007001:000607
+     Timestep written to MEFSD for date and time   2007001:000607
+     Timestep written to MEFSND for date and time   2007001:000608
+     Timestep written to MEFSD for date and time   2007001:000608
+     Timestep written to MEFSND for date and time   2007001:000609
+     Timestep written to MEFSD for date and time   2007001:000609
+     Timestep written to MEFSND for date and time   2007001:000610
+     Timestep written to MEFSD for date and time   2007001:000610
+     Timestep written to MEFSND for date and time   2007001:000611
+     Timestep written to MEFSD for date and time   2007001:000611
+     Processing PSI     372 through     380 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000612
+     Timestep written to MEFSD for date and time   2007001:000612
+     Timestep written to MEFSND for date and time   2007001:000613
+     Timestep written to MEFSD for date and time   2007001:000613
+     Timestep written to MEFSND for date and time   2007001:000614
+     Timestep written to MEFSD for date and time   2007001:000614
+     Timestep written to MEFSND for date and time   2007001:000615
+     Timestep written to MEFSD for date and time   2007001:000615
+     Timestep written to MEFSND for date and time   2007001:000616
+     Timestep written to MEFSD for date and time   2007001:000616
+     Timestep written to MEFSND for date and time   2007001:000617
+     Timestep written to MEFSD for date and time   2007001:000617
+     Timestep written to MEFSND for date and time   2007001:000618
+     Timestep written to MEFSD for date and time   2007001:000618
+     Timestep written to MEFSND for date and time   2007001:000619
+     Timestep written to MEFSD for date and time   2007001:000619
+     Timestep written to MEFSND for date and time   2007001:000620
+     Timestep written to MEFSD for date and time   2007001:000620
+     Processing PSI     381 through     389 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000621
+     Timestep written to MEFSD for date and time   2007001:000621
+     Timestep written to MEFSND for date and time   2007001:000622
+     Timestep written to MEFSD for date and time   2007001:000622
+     Timestep written to MEFSND for date and time   2007001:000623
+     Timestep written to MEFSD for date and time   2007001:000623
+     Timestep written to MEFSND for date and time   2007001:000624
+     Timestep written to MEFSD for date and time   2007001:000624
+     Timestep written to MEFSND for date and time   2007001:000625
+     Timestep written to MEFSD for date and time   2007001:000625
+     Timestep written to MEFSND for date and time   2007001:000626
+     Timestep written to MEFSD for date and time   2007001:000626
+     Timestep written to MEFSND for date and time   2007001:000627
+     Timestep written to MEFSD for date and time   2007001:000627
+     Timestep written to MEFSND for date and time   2007001:000628
+     Timestep written to MEFSD for date and time   2007001:000628
+     Timestep written to MEFSND for date and time   2007001:000629
+     Timestep written to MEFSD for date and time   2007001:000629
+     Processing PSI     390 through     398 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000630
+     Timestep written to MEFSD for date and time   2007001:000630
+     Timestep written to MEFSND for date and time   2007001:000631
+     Timestep written to MEFSD for date and time   2007001:000631
+     Timestep written to MEFSND for date and time   2007001:000632
+     Timestep written to MEFSD for date and time   2007001:000632
+     Timestep written to MEFSND for date and time   2007001:000633
+     Timestep written to MEFSD for date and time   2007001:000633
+     Timestep written to MEFSND for date and time   2007001:000634
+     Timestep written to MEFSD for date and time   2007001:000634
+     Timestep written to MEFSND for date and time   2007001:000635
+     Timestep written to MEFSD for date and time   2007001:000635
+     Timestep written to MEFSND for date and time   2007001:000636
+     Timestep written to MEFSD for date and time   2007001:000636
+     Timestep written to MEFSND for date and time   2007001:000637
+     Timestep written to MEFSD for date and time   2007001:000637
+     Timestep written to MEFSND for date and time   2007001:000638
+     Timestep written to MEFSD for date and time   2007001:000638
+     Processing PSI     399 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.01     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.998     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000639
+     Timestep written to MEFSD for date and time   2007001:000639
+     Processing PSI     400 through     408 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000640
+     Timestep written to MEFSD for date and time   2007001:000640
+     Timestep written to MEFSND for date and time   2007001:000641
+     Timestep written to MEFSD for date and time   2007001:000641
+     Timestep written to MEFSND for date and time   2007001:000642
+     Timestep written to MEFSD for date and time   2007001:000642
+     Timestep written to MEFSND for date and time   2007001:000643
+     Timestep written to MEFSD for date and time   2007001:000643
+     Timestep written to MEFSND for date and time   2007001:000644
+     Timestep written to MEFSD for date and time   2007001:000644
+     Timestep written to MEFSND for date and time   2007001:000645
+     Timestep written to MEFSD for date and time   2007001:000645
+     Timestep written to MEFSND for date and time   2007001:000646
+     Timestep written to MEFSD for date and time   2007001:000646
+     Timestep written to MEFSND for date and time   2007001:000647
+     Timestep written to MEFSD for date and time   2007001:000647
+     Timestep written to MEFSND for date and time   2007001:000648
+     Timestep written to MEFSD for date and time   2007001:000648
+     Processing PSI     409 through     417 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000649
+     Timestep written to MEFSD for date and time   2007001:000649
+     Timestep written to MEFSND for date and time   2007001:000650
+     Timestep written to MEFSD for date and time   2007001:000650
+     Timestep written to MEFSND for date and time   2007001:000651
+     Timestep written to MEFSD for date and time   2007001:000651
+     Timestep written to MEFSND for date and time   2007001:000652
+     Timestep written to MEFSD for date and time   2007001:000652
+     Timestep written to MEFSND for date and time   2007001:000653
+     Timestep written to MEFSD for date and time   2007001:000653
+     Timestep written to MEFSND for date and time   2007001:000654
+     Timestep written to MEFSD for date and time   2007001:000654
+     Timestep written to MEFSND for date and time   2007001:000655
+     Timestep written to MEFSD for date and time   2007001:000655
+     Timestep written to MEFSND for date and time   2007001:000656
+     Timestep written to MEFSD for date and time   2007001:000656
+     Timestep written to MEFSND for date and time   2007001:000657
+     Timestep written to MEFSD for date and time   2007001:000657
+     Processing PSI     418 through     421 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Bien Insp Freq & TECH 4+ I/M credit Idle test data                              
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000658
+     Timestep written to MEFSD for date and time   2007001:000658
+     Timestep written to MEFSND for date and time   2007001:000659
+     Timestep written to MEFSD for date and time   2007001:000659
+     Timestep written to MEFSND for date and time   2007001:000700
+     Timestep written to MEFSD for date and time   2007001:000700
+     Timestep written to MEFSND for date and time   2007001:000701
+     Timestep written to MEFSD for date and time   2007001:000701
+     Processing PSI     422 through     430 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000702
+     Timestep written to MEFSD for date and time   2007001:000702
+     Timestep written to MEFSND for date and time   2007001:000703
+     Timestep written to MEFSD for date and time   2007001:000703
+     Timestep written to MEFSND for date and time   2007001:000704
+     Timestep written to MEFSD for date and time   2007001:000704
+     Timestep written to MEFSND for date and time   2007001:000705
+     Timestep written to MEFSD for date and time   2007001:000705
+     Timestep written to MEFSND for date and time   2007001:000706
+     Timestep written to MEFSD for date and time   2007001:000706
+     Timestep written to MEFSND for date and time   2007001:000707
+     Timestep written to MEFSD for date and time   2007001:000707
+     Timestep written to MEFSND for date and time   2007001:000708
+     Timestep written to MEFSD for date and time   2007001:000708
+     Timestep written to MEFSND for date and time   2007001:000709
+     Timestep written to MEFSD for date and time   2007001:000709
+     Timestep written to MEFSND for date and time   2007001:000710
+     Timestep written to MEFSD for date and time   2007001:000710
+     Processing PSI     431 through     439 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.997     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +               0.999     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000711
+     Timestep written to MEFSD for date and time   2007001:000711
+     Timestep written to MEFSND for date and time   2007001:000712
+     Timestep written to MEFSD for date and time   2007001:000712
+     Timestep written to MEFSND for date and time   2007001:000713
+     Timestep written to MEFSD for date and time   2007001:000713
+     Timestep written to MEFSND for date and time   2007001:000714
+     Timestep written to MEFSD for date and time   2007001:000714
+     Timestep written to MEFSND for date and time   2007001:000715
+     Timestep written to MEFSD for date and time   2007001:000715
+     Timestep written to MEFSND for date and time   2007001:000716
+     Timestep written to MEFSD for date and time   2007001:000716
+     Timestep written to MEFSND for date and time   2007001:000717
+     Timestep written to MEFSD for date and time   2007001:000717
+     Timestep written to MEFSND for date and time   2007001:000718
+     Timestep written to MEFSD for date and time   2007001:000718
+     Timestep written to MEFSND for date and time   2007001:000719
+     Timestep written to MEFSD for date and time   2007001:000719
+     Processing PSI     440 through     448 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+     Timestep written to MEFSND for date and time   2007001:000720
+     Timestep written to MEFSD for date and time   2007001:000720
+     Timestep written to MEFSND for date and time   2007001:000721
+     Timestep written to MEFSD for date and time   2007001:000721
+     Timestep written to MEFSND for date and time   2007001:000722
+     Timestep written to MEFSD for date and time   2007001:000722
+     Timestep written to MEFSND for date and time   2007001:000723
+     Timestep written to MEFSD for date and time   2007001:000723
+     Timestep written to MEFSND for date and time   2007001:000724
+     Timestep written to MEFSD for date and time   2007001:000724
+     Timestep written to MEFSND for date and time   2007001:000725
+     Timestep written to MEFSD for date and time   2007001:000725
+     Timestep written to MEFSND for date and time   2007001:000726
+     Timestep written to MEFSD for date and time   2007001:000726
+     Timestep written to MEFSND for date and time   2007001:000727
+     Timestep written to MEFSD for date and time   2007001:000727
+     Timestep written to MEFSND for date and time   2007001:000728
+     Timestep written to MEFSD for date and time   2007001:000728
+     Processing PSI     449 through     457 ...
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+       -M 49 Warning:
+       +                1.00     MYR sum not = 1. (will normalize)
+        Reading I/M credits information
+        Annl Insp Freq & TECH 4+ I/M credit Idle test data                              
+       -M109 Warning:
+       +              The user supplied inspection frequencies are not equal.
+                      ATP inspection frequency:                 Biennial
+                      I/M program #1 inspection frequency:      Annual  
+                      I/M program #2 inspection frequency:      NA      
+                      Pressure Check inspection frequency:      NA      
+                      Purge Check inspection frequency:         NA      
+        Reading TECH1&2 I/M Credit Data File...
+        Low alt, Annl and Bien Insp Freq TECH 1 & 2 I/M cred data                      
+     Timestep written to MEFSND for date and time   2007001:000729
+     Timestep written to MEFSD for date and time   2007001:000729
+     Timestep written to MEFSND for date and time   2007001:000730
+     Timestep written to MEFSD for date and time   2007001:000730
+     Timestep written to MEFSND for date and time   2007001:000731
+     Timestep written to MEFSD for date and time   2007001:000731
+     Timestep written to MEFSND for date and time   2007001:000732
+     Timestep written to MEFSD for date and time   2007001:000732
+     Timestep written to MEFSND for date and time   2007001:000733
+     Timestep written to MEFSD for date and time   2007001:000733
+     Timestep written to MEFSND for date and time   2007001:000734
+     Timestep written to MEFSD for date and time   2007001:000734
+     Timestep written to MEFSND for date and time   2007001:000735
+     Timestep written to MEFSD for date and time   2007001:000735
+     Timestep written to MEFSND for date and time   2007001:000736
+     Timestep written to MEFSD for date and time   2007001:000736
+     Timestep written to MEFSND for date and time   2007001:000737
+     Timestep written to MEFSD for date and time   2007001:000737
+      
+     --->>  Normal Completion of program EMISFAC
+      

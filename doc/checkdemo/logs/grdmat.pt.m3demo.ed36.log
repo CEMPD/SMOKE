@@ -1,0 +1,103 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program GRDMAT, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program GRDMAT to take a SMOKE area, mobile, or point source
+     inventory file, gridding surrogates,  surrogate cross-
+     reference, and an optional link definitions file, and produce
+     a SMOKE gridding matrix for a grid defined at run time. For
+     mobile sources, an "ungridding" matrix is also created to
+     allow the use of gridded temperature data in assigning
+     factors to mobile sources.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for GRDMAT_ADJUST not defined;returning default:  FALSE
+     Value for GRDMAT_LINKDEFS not defined;returning default:  FALSE
+     Value for SMK_SOURCE:  'P'
+     Value for PROMPTFLAG:  N returning FALSE
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "PNTS" opened as OLD:READ-ONLY   
+     File name "/stella/scratch/zac/smoke/data/smoke/inventory/m3demo/pnts.m3demo.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 154740 rows, 1 cols, 1 lays, 74 vbles
+     NetCDF ID:         4:
+     Time-independent data.
+     Reading source data from inventory file...
+     Value for GRIDDESC:  '/stella/scratch/'
+
+     File GRIDDESC opened for input on unit:  98
+     /stella/scratch/zac/smoke/data/smoke/ge_dat/GRIDDESC.m3demo
+
+     Value for IOAPI_GRIDNAME_1:  'T2_36_C'
+
+     File GRIDDESC opened for input on unit:  98
+     /stella/scratch/zac/smoke/data/smoke/ge_dat/GRIDDESC.m3demo
+
+     NOTE: Grid settings initialized using T2_36_C          in 
+          grid description file.
+     NOTE: Output grid "T2_36_C" set; described as
+          No description available
+     Value for IOAPI_GRIDNAME_1:  'T2_36_C'
+     Value for IOAPI_GRIDNAME_1:  'T2_36_C'
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "PGMAT" opened as UNKNOWN(R-W)    
+     File name "/stella/scratch/zac/smoke/data/smoke/run_m3demo/static/pgmat.ed36.m3demo.ncf"
+     File type SMATRX3 
+     Execution ID "????????????????"
+     Grid name "T2_36_C"
+     Dimensions: 1620 rows, 149497 cols, 1 lays, 0 vbles
+     NetCDF ID:         6:
+     Time-independent data.
+     Generating gridding matrix...
+     Computing gridding matrix and statistics...
+     Writing out GRIDDING MATRIX file...
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     Record written to PGMAT
+     NOTE: Number of sources excluded from grid was     5243
+     GRIDDING-MATRIX statistics:
+     Total number of coefficients   :    149497 
+     Max  number of sources per cell:      7291 
+     Min  number of sources per cell:         0
+     Mean number of sources per cell:   92.28
+      
+     --->>  Normal Completion of program GRDMAT
+      

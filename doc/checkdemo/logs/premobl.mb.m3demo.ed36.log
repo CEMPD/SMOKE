@@ -1,0 +1,394 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program PREMOBL, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program PREMOBL to input gridded, time-dependent temperature
+     data, an emission factors cross-reference, and an ungridding
+     matrix. Program determines the minimum and maximum 
+     temperatures per day for each source and for each emission
+     factor.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for SMK_SOURCE:  'M'
+     Value for TVARNAME:  'TEMPG'
+     Value for PROMPTFLAG:  N returning FALSE
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "MOBL" opened as OLD:READ-ONLY   
+     File name "/stella/scratch/zac/smoke/data/smoke/inventory/m3demo/mobl.m3demo.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 98110 rows, 1 cols, 1 lays, 12 vbles
+     NetCDF ID:         4:
+     Time-independent data.
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File MSRC opened for input on unit:  98
+     /stella/scratch/zac/smoke/data/smoke/inventory/m3demo/MSRC.m3demo.txt
+
+      
+     "MUMAT" opened as OLD:READ-ONLY   
+     File name "/stella/scratch/zac/smoke/data/smoke/run_m3demo/static/mumat.ed36.m3demo.ncf"
+     File type SMATRX3 
+     Execution ID "????????????????"
+     Grid name "T2_36_C"
+     Dimensions: 98110 rows, 413126 cols, 1 lays, 1 vbles
+     NetCDF ID:         6:
+     Time-independent data.
+      
+     "MET_CRO_2D" opened as OLD:READ-ONLY   
+     File name "/stella/scratch/zac/smoke/data/smoke/met/run_mepa/MET_CRO_2D_G1"
+     File type GRDDED3 
+     Execution ID "MCIP_TGT_NHY"
+     Grid name "METCRO_t2_36_m_C"
+     Dimensions: 36 rows, 45 cols, 1 lays, 49 vbles
+     NetCDF ID:         7:
+     Starting date and time  1995195:000000 (0:00:00   July 14, 1995)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      26
+
+     File MPLIST opened for input on unit:  97
+     /stella/scratch/zac/smoke/data/smoke/inventory/tut36/mobile/mplist.m3demo.txt
+
+
+     File MEPROC opened for input on unit:  96
+     /stella/scratch/zac/smoke/data/smoke/inventory/tut36/mobile/meproc.txt
+
+
+     File MCODES opened for input on unit:  95
+     /stella/scratch/zac/smoke/data/smoke/inventory/tut36/mobile/mcodes.041802.txt
+
+     NOTE: Time stamps of input meteorology file are assumed 
+           to be in GMT
+     NOTE: Grid settings initialized using MET_CRO_2D       in 
+          gridded file.
+     Reading source data from inventory file...
+     Generating unique lists from inventory data...
+     Value for SMK_MINT_MIN:  52.000000
+     Value for SMK_MINT_MAX:  100.000000
+     Value for SMK_MAXT_MIN:  52.000000
+     Value for SMK_MAXT_MAX:  120.000000
+     Value for SMK_TF_INTERVAL:  2.000000
+     Value for SMK_TF_MAXINTVL:  40.000000
+     Value for DAYLIGHT_EXEMPT not defined;returning default:  FALSE
+     Reading ungridding matrix...
+     Value for G_STDATE:  1995195
+     Value for G_STTIME:  0
+     Value for G_TSTEP:  10000
+     Value for G_RUNLEN:  250000
+     Value for PROMPTFLAG:  N returning FALSE
+     Output Time Zone: 00
+           Start Date: July 14, 1995
+           Start Time: 000000 HHMMSS
+            Time Step: 001 hour
+             Duration: 025 hours
+     Value for UNIFORM_STIME:  -1
+     NOTE: The following statistics indicate how well minimum and maximum 
+          values can be computed using the start and end times provided with 
+          input meteorology data.
+          These values should be reviewed to ensure satisfactory minimum
+          and maximum values computation.
+              No. sources affected   Ave. missing hours
+      Zone        Start      End        Start      End
+       05             0    75809         0.00     2.00
+       06             0    22301         0.00     3.00
+     Reading emission factors cross-reference file...
+     Processing emission factor cross-reference file...
+     Value for REPORT_DEFAULTS:  N returning FALSE
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "MINMAXT" opened as UNKNOWN(R-W)    
+     File name "/stella/scratch/zac/smoke/data/smoke/run_m3demo/19950714/minmaxt.19950714.1.ed36.mepa_m3demo.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 98110 rows, 1 cols, 4 lays, 3 vbles
+     NetCDF ID:        11:
+     Starting date and time  1995195:000000 (0:00:00   July 14, 1995)
+     Timestep                        240000 (24:00:00 hh:mm:ss)
+     Maximum current record number       1
+
+ WARNING: output file already exists: MEFTEMP
+ /stella/scratch/zac/smoke/data/smoke/run_m3demo/19950714/meftemp.19950714.1.ed36.mepa_m3demo.txt
+
+
+     File "MEFTEMP" opened for output on unit:  94
+     /stella/scratch/zac/smoke/data/smoke/run_m3demo/19950714/meftemp.19950714.1.ed36.mepa_m3demo.txt
+
+     Processing temperature data for using variable "TEMPG" ...
+     Processing Friday    July 14, 1995
+     Processing Saturday  July 15, 1995
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 2.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 6.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 7.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 8.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 9.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 12.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 14.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 16.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 17.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025001 Road Type: 19.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025007 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025007 Road Type: 2.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025007 Road Type: 6.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025007 Road Type: 7.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025007 Road Type: 8.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025007 Road Type: 9.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 2.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 6.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 7.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 8.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 9.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 12.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 14.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 16.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 17.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 025019 Road Type: 19.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 026017 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 026021 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 026047 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 2.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 6.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 7.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 8.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 9.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 12.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 14.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 16.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 17.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037031 Road Type: 19.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 2.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 6.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 7.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 8.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 9.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 12.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 14.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 16.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 17.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 037055 Road Type: 19.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039085 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039093 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 2.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 6.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 7.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 8.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 9.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 11.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 12.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 14.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 16.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 17.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 039123 Road Type: 19.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 051131 Road Type: 1.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 051131 Road Type: 2.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 051131 Road Type: 6.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 051131 Road Type: 7.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 051131 Road Type: 8.
+          The minumum interval will be used for current day.
+     Max - min temperature is < the processing interval     1.11 for
+          Region: 051131 Road Type: 9.
+          The minumum interval will be used for current day.
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     TKMIN written to MINMAXT for   1995195:000000
+     TKMAX written to MINMAXT for   1995195:000000
+     TMMI written to MINMAXT for   1995195:000000
+     Writing out EF-REF/TEMPERATURE file...
+     NOTE: During ungridding,       96 sources excluded from grid.
+          These sources may be outside the grid.
+      
+     --->>  Normal Completion of program PREMOBL
+      
