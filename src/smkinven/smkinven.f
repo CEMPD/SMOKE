@@ -235,6 +235,11 @@ C               are contained in the module MODSOURC
             CALL RDINVSRCS( IDEV, XDEV, EDEV, INAME,
      &                      NRAWBP, NRAWSRCS, TFLAG, TOXFLG )
 
+C.............  Process source information and store in sorted order
+            CALL M3MSG2( 'Processing inventory sources...' )
+            
+            CALL PROCINVSRCS( NRAWSRCS )
+
 C.............  Read the data from the raw inventory files and store in 
 C               sorted order
             CALL M3MSG2( 'Reading inventory data...' )
@@ -244,7 +249,7 @@ C               sorted order
 C.............  Process inventory records and store in sorted order
             CALL M3MSG2( 'Processing inventory data...' )
 
-            CALL PROCINVEN( NRAWBP, NRAWSRCS, UDEV, YDEV, CDEV, LDEV ) 
+            CALL PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV ) 
 
 C.............  Integrate criteria and toxic pollutants
             IF( TOXFLG ) THEN
