@@ -6,11 +6,11 @@
 #
 ################################################################################
 
-if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
+if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
 
-   if ( $MRG_GRDOUT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
+   if ( $MRG_GRDOUT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
 
-      if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
+      if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
 
          if ( $MRG_AREA == 'Y' || $SMK_SOURCE == 'A' ) then
             if ( $NONROAD == Y ) then
@@ -19,6 +19,8 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
             else
 	       setenv AGTS_L   $A_OUT/agts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
 	       setenv AGTS_S   $A_OUT/agts_s.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	       setenv NGTS_L   $N_OUT/ngts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	       setenv NGTS_S   $N_OUT/ngts_s.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
             endif
          endif 
 
@@ -68,6 +70,8 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
             else
    	       setenv AGTSC_L   $A_OUT/agtsc_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
 	       setenv AGTSC_S   $A_OUT/agtsc_s.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	       setenv NGTSC_L   $N_OUT/ngtsc_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	       setenv NGTSC_S   $N_OUT/ngtsc_s.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
             endif
          endif 
 
@@ -96,6 +100,7 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
    	    setenv AGS_S    $REPORTS/$ASCEN/static/ngs_s.$GRID.$ASCEN.ncf
          else
    	    setenv AGS_S    $REPORTS/$ASCEN/static/ags_s.$GRID.$ASCEN.ncf
+   	    setenv NGS_S    $REPORTS/$ASCEN/static/ngs_s.$GRID.$ASCEN.ncf
          endif
 	 setenv MGS_S    $REPORTS/$MSCEN/static/mgs_s.$GRID.$MSCEN.ncf
 	 setenv PGS_S    $REPORTS/$PSCEN/static/pgs_s.$GRID.$PSCEN.ncf
@@ -106,7 +111,8 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
          if ( $NONROAD == Y ) then
 	    setenv AGSC_S   $REPORTS/$ASCEN/static/ngsc_s.$GRID.$ASCEN.ncf
          else 
-	    setenv AGSC_S   $REPORTS/$ASCEN/static/agsx_s.$GRID.$ASCEN.ncf
+	    setenv AGSC_S   $REPORTS/$ASCEN/static/agsc_s.$GRID.$ASCEN.ncf
+	    setenv NGSC_S   $REPORTS/$ASCEN/static/ngsc_s.$GRID.$ASCEN.ncf
          endif
 	 setenv MGSC_S   $REPORTS/$MSCEN/static/mgsc_s.$GRID.$MSCEN.ncf
 	 setenv PGSC_S   $REPORTS/$PSCEN/static/pgsc_s.$GRID.$PSCEN.ncf
@@ -118,6 +124,7 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 	    setenv AGS_L    $REPORTS/$ASCEN/static/ngs_l.$GRID.$ASCEN.ncf
          else
 	    setenv AGS_L    $REPORTS/$ASCEN/static/ags_l.$GRID.$ASCEN.ncf
+	    setenv NGS_L    $REPORTS/$ASCEN/static/ngs_l.$GRID.$ASCEN.ncf
          endif
 	 setenv MGS_L    $REPORTS/$MSCEN/static/mgs_l.$GRID.$MSCEN.ncf
 	 setenv PGS_L    $REPORTS/$PSCEN/static/pgs_l.$GRID.$PSCEN.ncf
@@ -129,6 +136,7 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 	    setenv AGSC_L   $REPORTS/$ASCEN/static/ngsc_l.$GRID.$ASCEN.ncf
          else
 	    setenv AGSC_L   $REPORTS/$ASCEN/static/agsc_l.$GRID.$ASCEN.ncf
+	    setenv NGSC_L   $REPORTS/$ASCEN/static/ngsc_l.$GRID.$ASCEN.ncf
          endif
 	 setenv MGSC_L   $REPORTS/$MSCEN/static/mgsc_l.$GRID.$MSCEN.ncf
 	 setenv PGSC_L   $REPORTS/$PSCEN/static/pgsc_l.$GRID.$PSCEN.ncf
@@ -139,23 +147,25 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 
       if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
          if ( $NONROAD == Y ) then
-	    setenv AGT    $REPORTS/$ASCEN/$ESDATE/ngt.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	    setenv AGT    $REPORTS/$ASCEN/scenario/ngt.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
          else
-	    setenv AGT    $REPORTS/$ASCEN/$ESDATE/agt.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	    setenv AGT    $REPORTS/$ASCEN/scenario/agt.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	    setenv NGT    $REPORTS/$ASCEN/scenario/ngt.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
          endif
-	 setenv MGT    $REPORTS/$MSCEN/$ESDATE/mgt.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
-	 setenv PGT    $REPORTS/$PSCEN/$ESDATE/pgt.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
-	 setenv PGT3D  $REPORTS/$PSCEN/$ESDATE/pgt3d.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+	 setenv MGT    $REPORTS/$MSCEN/scenario/mgt.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+	 setenv PGT    $REPORTS/$PSCEN/scenario/pgt.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+	 setenv PGT3D  $REPORTS/$PSCEN/scenario/pgt3d.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
 	 setenv EGT    $REPSCEN/egt.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
 	 setenv EGT3D  $REPSCEN/egt3d.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
          if ( $NONROAD == Y ) then
-	    setenv AGTC   $REPORTS/$ASCEN/$ESDATE/ngtc.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	    setenv AGTC   $REPORTS/$ASCEN/scenario/ngtc.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
          else
-	    setenv AGTC   $REPORTS/$ASCEN/$ESDATE/agtc.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	    setenv AGTC   $REPORTS/$ASCEN/scenario/agtc.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
+	    setenv NGTC   $REPORTS/$ASCEN/scenario/ngtc.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
          endif
-	 setenv MGTC   $REPORTS/$MSCEN/$ESDATE/mgtc.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
-	 setenv PGTC   $REPORTS/$PSCEN/$ESDATE/pgtc.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
-	 setenv PGTC3D $REPORTS/$PSCEN/$ESDATE/pgtc3d.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+	 setenv MGTC   $REPORTS/$MSCEN/scenario/mgtc.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+	 setenv PGTC   $REPORTS/$PSCEN/scenario/pgtc.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+	 setenv PGTC3D $REPORTS/$PSCEN/scenario/pgtc3d.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
 	 setenv EGTC   $REPSCEN/egtc.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
 	 setenv EGTC3D $REPSCEN/egtc3d.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
       endif
@@ -165,6 +175,7 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
             setenv AG   $REPORTS/$ASCEN/static/ng.$GRID.$FYIOP.ncf
          else
             setenv AG   $REPORTS/$ASCEN/static/ag.$GRID.$FYIOP.ncf
+            setenv NG   $REPORTS/$ASCEN/static/ng.$GRID.$FYIOP.ncf
          endif
          setenv MG   $REPORTS/$MSCEN/static/mg.$GRID.$FYIOP.ncf
 	 setenv PG   $REPORTS/$PSCEN/static/pg.$GRID.$FYIOP.ncf
@@ -173,6 +184,7 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
             setenv AGC  $REPORTS/$ASCEN/static/ngc.$GRID.$FYIOP.ncf
          else
             setenv AGC  $REPORTS/$ASCEN/static/agc.$GRID.$FYIOP.ncf
+            setenv NGC  $REPORTS/$ASCEN/static/ngc.$GRID.$FYIOP.ncf
          endif
          setenv MGC  $REPORTS/$MSCEN/static/mgc.$GRID.$FYIOP.ncf
 	 setenv PGC  $REPORTS/$PSCEN/static/pgc.$GRID.$FYIOP.ncf
@@ -190,27 +202,27 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 
          if ( $MRG_AREA == 'Y' ) then
             if ( $NONROAD == Y ) then
-	       setenv REPAGTS_L $REPORTS/$ASCEN/$ESDATE/repngts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
-	       setenv REPAGTS_S $REPORTS/$ASCEN/$ESDATE/repngts_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	       setenv REPAGTS_L $REPORTS/$ASCEN/scenario/repngts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	       setenv REPAGTS_S $REPORTS/$ASCEN/scenario/repngts_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
             else
-	       setenv REPAGTS_L $REPORTS/$ASCEN/$ESDATE/repagts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
-	       setenv REPAGTS_S $REPORTS/$ASCEN/$ESDATE/repagts_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	       setenv REPAGTS_L $REPORTS/$ASCEN/scenario/repagts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	       setenv REPAGTS_S $REPORTS/$ASCEN/scenario/repagts_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
             endif
          endif 
 
          if ( $MRG_BIOG == 'Y' ) then
-	    setenv REPBGTS_L $REPORTS/$BSCEN/$ESDATE/repbgts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
-	    setenv REPBGTS_S $REPORTS/$BSCEN/$ESDATE/repbgts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	    setenv REPBGTS_L $REPORTS/$BSCEN/scenario/repbgts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	    setenv REPBGTS_S $REPORTS/$BSCEN/scenario/repbgts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
          endif 
 
          if ( $MRG_MOBILE == 'Y' ) then
-	    setenv REPMGTS_L $REPORTS/$MSCEN/$ESDATE/repmgts_l.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
-	    setenv REPMGTS_S $REPORTS/$MSCEN/$ESDATE/repmgts_s.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
+	    setenv REPMGTS_L $REPORTS/$MSCEN/scenario/repmgts_l.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
+	    setenv REPMGTS_S $REPORTS/$MSCEN/scenario/repmgts_s.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
          endif 
 
          if ( $MRG_POINT == 'Y' ) then
-	    setenv REPPGTS_L $REPORTS/$PSCEN/$ESDATE/reppgts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
-	    setenv REPPGTS_S $REPORTS/$PSCEN/$ESDATE/reppgts_s.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
+	    setenv REPPGTS_L $REPORTS/$PSCEN/scenario/reppgts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
+	    setenv REPPGTS_S $REPORTS/$PSCEN/scenario/reppgts_s.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
         endif 
 
          if ( $MRG_MULTI == 'Y' ) then
@@ -220,22 +232,22 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 
          if ( $MRG_AREA_CNTL == 'Y' ) then
             if ( $NONROAD == Y ) then
-      	       setenv REPAGTSC_L $REPORTS/$ASCEN/$ESDATE/repngtsc_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
-	       setenv REPAGTSC_S $REPORTS/$ASCEN/$ESDATE/repngtsc_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+      	       setenv REPAGTSC_L $REPORTS/$ASCEN/scenario/repngtsc_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	       setenv REPAGTSC_S $REPORTS/$ASCEN/scenario/repngtsc_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
             else
-      	       setenv REPAGTSC_L $REPORTS/$ASCEN/$ESDATE/repagtsc_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
-	       setenv REPAGTSC_S $REPORTS/$ASCEN/$ESDATE/repagtsc_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+      	       setenv REPAGTSC_L $REPORTS/$ASCEN/scenario/repagtsc_l.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	       setenv REPAGTSC_S $REPORTS/$ASCEN/scenario/repagtsc_s.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
             endif
          endif 
 
          if ( $MRG_MOBILE_CNTL == 'Y' ) then
-	    setenv REPMGTSC_L $REPORTS/$MSCEN/$ESDATE/repmgtsc_l.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
-	    setenv REPMGTSC_S $REPORTS/$MSCEN/$ESDATE/repmgtsc_s.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
+	    setenv REPMGTSC_L $REPORTS/$MSCEN/scenario/repmgtsc_l.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
+	    setenv REPMGTSC_S $REPORTS/$MSCEN/scenario/repmgtsc_s.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
          endif 
 
          if ( $MRG_POINT_CNTL == 'Y' ) then
-	    setenv REPPGTSC_L $REPORTS/$PSCEN/$ESDATE/reppgtsc_l.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
-	    setenv REPPGTSC_S $REPORTS/$PSCEN/$ESDATE/reppgtsc_s.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
+	    setenv REPPGTSC_L $REPORTS/$PSCEN/scenario/reppgtsc_l.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
+	    setenv REPPGTSC_S $REPORTS/$PSCEN/scenario/reppgtsc_s.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
          endif 
 
          if ( $MRG_MULTI_CNTL == 'Y' ) then
@@ -284,21 +296,21 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 
       if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
          if ( $NONROAD == Y ) then
-	    setenv REPAGT    $REPORTS/$ASCEN/$ESDATE/repngt.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	    setenv REPAGT    $REPORTS/$ASCEN/scenario/repngt.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
          else
-	    setenv REPAGT    $REPORTS/$ASCEN/$ESDATE/repagt.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	    setenv REPAGT    $REPORTS/$ASCEN/scenario/repagt.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
          endif
-	 setenv REPMGT    $REPORTS/$MSCEN/$ESDATE/repmgt.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
-	 setenv REPPGT    $REPORTS/$PSCEN/$ESDATE/reppgt.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
-	 setenv REPBGT    $REPORTS/$BSCEN/$ESDATE/repbgt.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	 setenv REPMGT    $REPORTS/$MSCEN/scenario/repmgt.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
+	 setenv REPPGT    $REPORTS/$PSCEN/scenario/reppgt.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
+	 setenv REPBGT    $REPORTS/$BSCEN/scenario/repbgt.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
 	 setenv REPEGT    $REPSCEN/repegt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
          if ( $NONROAD == Y ) then
-	    setenv REPAGTC   $REPORTS/$ASCEN/$ESDATE/repngtc.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	    setenv REPAGTC   $REPORTS/$ASCEN/scenario/repngtc.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
          else
-	    setenv REPAGTC   $REPORTS/$ASCEN/$ESDATE/repagtc.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
+	    setenv REPAGTC   $REPORTS/$ASCEN/scenario/repagtc.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
          endif
-	 setenv REPMGTC   $REPORTS/$MSCEN/$ESDATE/repmgtc.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
-	 setenv REPPGTC   $REPORTS/$PSCEN/$ESDATE/reppgtc.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
+	 setenv REPMGTC   $REPORTS/$MSCEN/scenario/repmgtc.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
+	 setenv REPPGTC   $REPORTS/$PSCEN/scenario/reppgtc.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
 	 setenv REPEGTC   $REPSCEN/repegt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
       endif
 

@@ -23,11 +23,11 @@ if ( $?SMK_FUTURE_YN ) then
 
           set fyr2 = `echo $FYEAR | cut -c3-4`
 
-          setenv ASCEN   ${ASCEN}-${fyr2}
-          setenv MSCEN   ${MSCEN}-${fyr2}
-          setenv PSCEN   ${PSCEN}-${fyr2}
-          setenv ESCEN   ${ESCEN}-${fyr2}
-          setenv FYIOP   ${INVOP}-${fyr2}
+          setenv ASCEN   ${ASCEN}_${fyr2}
+          setenv MSCEN   ${MSCEN}_${fyr2}
+          setenv PSCEN   ${PSCEN}_${fyr2}
+          setenv ESCEN   ${ESCEN}_${fyr2}
+          setenv FYIOP   ${INVOP}_${fyr2}
           setenv EF_YEAR $FYEAR
 
       else
@@ -47,19 +47,19 @@ if ( $?FYEAR ) then
 
    set fyr2 = `echo $FYEAR | cut -c3-4`
 
-   setenv FYINV ${FYINV}-${fyr2}
-   setenv BYFYR $BYFYR-${fyr2}
+   setenv FYINV ${FYINV}_${fyr2}
+   setenv BYFYR ${BYFYR}_${fyr2}
 
 endif
 
 # If control case name is defined, add it to the scenario name
 if ( $?CNTLCASE ) then
 
-   setenv ASCEN ${ASCEN}-${CNTLCASE}
-   setenv MSCEN ${MSCEN}-${CNTLCASE}
-   setenv PSCEN ${PSCEN}-${CNTLCASE}
-   setenv ESCEN ${ESCEN}-${CNTLCASE}
-   setenv FYINV ${FYINV}-${CNTLCASE}
+   setenv ASCEN ${ASCEN}_${CNTLCASE}
+   setenv MSCEN ${MSCEN}_${CNTLCASE}
+   setenv PSCEN ${PSCEN}_${CNTLCASE}
+   setenv ESCEN ${ESCEN}_${CNTLCASE}
+   setenv FYINV ${FYINV}_${CNTLCASE}
 
 endif
 

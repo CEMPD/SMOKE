@@ -1,4 +1,4 @@
-#!/bin/csh -fx
+#/bin/csh -fx
 #
 ## HEADER ########################################################
 #
@@ -45,7 +45,7 @@
    setenv MSDATE   19960709      # Start date of met  time-based files
    setenv NDAYS           1      # Duration in days of each emissions file
    setenv MDAYS           1      # Duration in days of met  time-based files
-   setenv YEAR         1996      # Year for year-specific files
+   setenv YEAR         1996      # Base year for year-specific files
 
 ## Reset days if overrides are available
    if ( $?G_STDATE_ADVANCE ) then
@@ -68,6 +68,13 @@ if ( $status > 0 ) then
    set outstat = 1
 endif
 
+## Override speciation setting, if override variable is set
+if ( $?SPC_OVERRIDE ) then
+   if ( $SPC != " " ) then
+      setenv SPC $SPC_OVERRIDE
+   endif
+endif
+
 ## Set dependent directory names
 #
 source $ASSIGNS/set_dirs.scr
@@ -81,12 +88,9 @@ source $ASSIGNS/check_settings.scr
 if ( $SMK_SOURCE == 'A' ) then
    setenv ARINV     $INVDIR/area/arinv.stationary.lst           # Stationary area emission inventory
    setenv REPCONFIG $INVDIR/area/REPCONFIG.area.txt             # Default report configurations
-   setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls 
    setenv NRINV     $INVDIR/nonroad/arinv.nonroad.lst           # Nonroad mobile emission inventory
    setenv NCNTL     $INVDIR/nonroad/gcntl.control.txt           # Nonroad scenario-specific controls
    setenv ARTOPNT   $INVDIR/other/artopnt.1999.txt              # area-to-point assignments
-   setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls
-   setenv APROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt         # Projection factors
    setenv AGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Area gridding surrogates
    setenv AGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt   # Area gridding x-ref 
    setenv ATPRO     $GE_DAT/amptpro.m3.us+can.txt               # Temporal profiles
@@ -96,17 +100,13 @@ endif
 ## Biogenic input files
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
    setenv BGUSE   $SMKDAT/inventory/beld2/beld.5.us36.txt  # Gridded landuse
-   setenv METLIST $INVDIR/biog/metlist.tmpbio.txt   # Meteorology file list for
-temperatures
-   setenv RADLIST $INVDIR/biog/radlist.tmpbio.txt   # Meteorology file list for
-solar radiation
-   setenv BFAC    $GE_DAT/bfac.summer.txt     # Default biogenic emission factor
-s
+   setenv METLIST $INVDIR/biog/metlist.tmpbio.txt   # Meteorology file list for temperatures
+   setenv RADLIST $INVDIR/biog/radlist.tmpbio.txt   # Meteorology file list for solar radiation
+   setenv BFAC    $GE_DAT/bfac.summer.txt     # Default biogenic emission factors
    setenv S_BFAC  $GE_DAT/bfac.summer.txt     # Summer biogenic emission factors
    setenv W_BFAC  $GE_DAT/bfac.winter.txt     # Winter biogenic emission factors
    setenv BCUSE   $GE_DAT/landuse.dat         # County landuse
-   setenv BGPRO   $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Biogenic griddin
-g surrogates
+   setenv BGPRO   $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Biogenic gridding surrogates
    setenv B3FAC   $GE_DAT/b3fac.march2002.beisv3.09.txt
    setenv B3XRF   $GE_DAT/b3tob2B.xrf         # Beld3 to Beld2 cross-reference
    setenv BELD3_TOT $SMKDAT/inventory/beld3/LANDA_c_cmaq_nat.dat
@@ -129,8 +129,6 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt  # Mobile gridding x-ref 
    setenv MTPRO     $GE_DAT/amptpro.m3.us+can.txt          # Temporal profiles
    setenv MTREF     $GE_DAT/amptref.m3.us+can.txt          # Mobile temporal x-ref
-   setenv GCNTL     $INVDIR/other/gcntl.control.txt        # Scenario-specific controls
-   setenv MPROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt    # Projection factors
 endif
 #
 ## Point source input files
@@ -141,8 +139,6 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PELVCONFIG $INVDIR/point/pelvconfig.top50.txt      # elevated source selection
    setenv REPCONFIG  $INVDIR/point/repconfig.point.txt       # Default report configurations
    #      PTMPLIST                                           # Set automatically by script
-   setenv GCNTL      $INVDIR/other/gcntl.control.txt         # Scenario-specific controls
-   setenv PPROJ      $INVDIR/other/gcntl.proj.$BYFYR.txt     # Projection factors
    setenv PTPRO      $GE_DAT/amptpro.m3.us+can.txt           # Temporal profiles
    setenv PTREF      $GE_DAT/amptref.m3.us+can.txt           # Point temporal x-ref
    setenv PSTK       $GE_DAT/pstk.m3.txt                     # Replacement stack params
@@ -160,6 +156,14 @@ endif
    setenv GSREF       $GE_DAT/gsref.$SPC.txt       # Speciation x-ref
    setenv GSPRO       $GE_DAT/gspro.$SPC.txt       # Speciation profiles
    setenv GSCNV       $GE_DAT/gscnv.txt            # ROG to TOG conversion facs
+#
+## Override shared inputs
+if ( $?INVTABLE_OVERRIDE ) then
+   if ( $INVTABLE_OVERRIDE != " " ) then
+      setenv INVTABLE $INVDIR/other/$INVTABLE_OVERRIDE
+   endif
+endif
+
 #
 ## Miscellaeous input files
    if ( $RUN_MRGGRID == Y ) then
@@ -210,7 +214,7 @@ endif
 if ( $SMK_SOURCE == 'A' ) then
    setenv ASCC     $INVOPD/ASCC.$FYIOP.txt
    setenv REPINVEN $REPSTAT/repinven.a.$INVOP.txt
-   setenv ATSUP    $SMKDAT/run_${ASCEN}/$ESDATE/atsup.$ESDATE.$ASCEN.txt
+   setenv ATSUP    $SMKDAT/run_${ASCEN}/scenario/atsup.$ESDATE.$ASCEN.txt
    setenv ASSUP    $SMKDAT/run_${ABASE}/static/assup.$SPC.$ABASE.txt
    setenv AGSUP    $SMKDAT/run_$ABASE/static/agsup.$GRID.$ABASE.txt
    setenv ACREP    $REPSTAT/acrep.$ASCEN.rpt           
@@ -222,7 +226,7 @@ if ( $SMK_SOURCE == 'A' ) then
 
    setenv NSCC     $INVOPD/NSCC.$FYIOP.txt
    setenv NEPINVEN $REPSTAT/repinven.nr.$INVOP.txt
-   setenv NTSUP    $SMKDAT/run_${ASCEN}/$ESDATE/ntsup.$ESDATE.$ASCEN.txt
+   setenv NTSUP    $SMKDAT/run_${ASCEN}/scenario/ntsup.$ESDATE.$ASCEN.txt
    setenv NSSUP    $SMKDAT/run_${ABASE}/static/nssup.$SPC.$ABASE.txt
    setenv NGSUP    $SMKDAT/run_$ABASE/static/ngsup.$GRID.$ABASE.txt
    setenv NCREP    $REPSTAT/ncrep.$ASCEN.rpt           
@@ -235,7 +239,7 @@ endif
 
 if ( $SMK_SOURCE == 'A' || $MRG_AREA == 'Y' ) then
    setenv AREA     $INVOPD/area.map.$FYIOP.txt   # Area inventory map
-   setenv ATMP     $SMKDAT/run_$ASCEN/$ESDATE/atmp.$ESDATE.$NDAYS.$ASCEN.ncf
+   setenv ATMP     $SMKDAT/run_$ASCEN/scenario/atmp.$ESDATE.$NDAYS.$ASCEN.ncf
    setenv ASMAT_S  $SMKDAT/run_$ABASE/static/asmat_s.$SPC.$ABASE.ncf
    setenv ASMAT_L  $SMKDAT/run_$ABASE/static/asmat_l.$SPC.$ABASE.ncf
    setenv ARMAT_L  $SMKDAT/run_$ASCEN/static/armat_l.$SPC.$ASCEN.ncf
@@ -246,7 +250,7 @@ if ( $SMK_SOURCE == 'A' || $MRG_AREA == 'Y' ) then
    setenv APMAT    $SMKDAT/run_$ASCEN/static/apmat.$ASCEN.ncf
 
    setenv NROAD    $INVOPD/nroad.map.$FYIOP.txt  # Nonroad inventory map
-   setenv NTMP     $SMKDAT/run_$ASCEN/$ESDATE/ntmp.$ESDATE.$NDAYS.$ASCEN.ncf
+   setenv NTMP     $SMKDAT/run_$ASCEN/scenario/ntmp.$ESDATE.$NDAYS.$ASCEN.ncf
    setenv NSMAT_S  $SMKDAT/run_$ABASE/static/nsmat_s.$SPC.$ABASE.ncf
    setenv NSMAT_L  $SMKDAT/run_$ABASE/static/nsmat_l.$SPC.$ABASE.ncf
    setenv NRMAT_L  $SMKDAT/run_$ASCEN/static/nrmat_l.$SPC.$ASCEN.ncf
@@ -275,7 +279,7 @@ endif
 if ( $SMK_SOURCE == 'M' ) then
    setenv MSCC     $INVOPD/MSCC.$FYIOP.txt
    setenv REPINVEN $REPSTAT/repinven.m.$INVOP.txt
-   setenv MTSUP    $SMKDAT/run_${MSCEN}/$ESDATE/mtsup.$ESDATE.$MSCEN.txt
+   setenv MTSUP    $SMKDAT/run_${MSCEN}/scenario/mtsup.$ESDATE.$MSCEN.txt
    setenv MSSUP    $SMKDAT/run_${MBASE}/static/mssup.$SPC.$MBASE.txt
    setenv MGSUP    $SMKDAT/run_$MBASE/static/mgsup.$GRID.$MBASE.txt
    setenv MCREP    $REPSTAT/mcrep.$MSCEN.rpt           
@@ -296,7 +300,7 @@ endif
 
 if ( $SMK_SOURCE == 'M' || $MRG_MOBILE == 'Y' ) then
    setenv MOBL     $INVOPD/mobl.map.$FYIOP.txt   # Mobile inventory map
-   setenv MTMP     $SMKDAT/run_$MSCEN/$ESDATE/mtmp.$ESDATE.$NDAYS.$GRID.$MSM.ncf
+   setenv MTMP     $SMKDAT/run_$MSCEN/scenario/mtmp.$ESDATE.$NDAYS.$GRID.$MSM.ncf
    setenv MSMAT_L  $SMKDAT/run_$MBASE/static/msmat_l.$SPC.$MBASE.ncf
    setenv MSMAT_S  $SMKDAT/run_$MBASE/static/msmat_s.$SPC.$MBASE.ncf    
    setenv MRMAT_L  $SMKDAT/run_$MSCEN/static/mrmat_l.$SPC.$MSCEN.ncf    
@@ -319,7 +323,7 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PHOUR     $INVOPD/phour.$INVOP.ncf      # Point NetCDF hour-specific
    setenv PHOURPRO  $INVOPD/phourpro.$INVOP.ncf   # Pt NetCDF src-spec dnl profs
    setenv PTREF_ALT $INVOPD/ptref.smkout.txt      # Point temporal x-ref
-   setenv PTSUP     $SMKDAT/run_${PSCEN}/$ESDATE/ptsup.$ESDATE.$PSCEN.txt
+   setenv PTSUP     $SMKDAT/run_${PSCEN}/scenario/ptsup.$ESDATE.$PSCEN.txt
    setenv PSSUP     $SMKDAT/run_${PBASE}/static/pssup.$SPC.$PBASE.txt
    setenv PCREP     $REPSTAT/pcrep.$PSCEN.rpt           
    setenv PPROJREP  $REPSTAT/pprojrep.$PSCEN.rpt
@@ -334,7 +338,7 @@ endif
 if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
    setenv PNTS     $INVOPD/pnts.map.$FYIOP.txt   # Point inventory map
    setenv PSCC     $INVOPD/PSCC.$FYIOP.txt       # Point unique SCC list
-   setenv PTMP     $SMKDAT/run_$PSCEN/$ESDATE/ptmp.$ESDATE.$NDAYS.$PSCEN.ncf
+   setenv PTMP     $SMKDAT/run_$PSCEN/scenario/ptmp.$ESDATE.$NDAYS.$PSCEN.ncf
    setenv PSMAT_L  $SMKDAT/run_$PBASE/static/psmat_l.$SPC.$PBASE.ncf
    setenv PSMAT_S  $SMKDAT/run_$PBASE/static/psmat_s.$SPC.$PBASE.ncf
    setenv PRMAT_L  $SMKDAT/run_$PSCEN/static/prmat_l.$SPC.$PSCEN.ncf
@@ -344,15 +348,14 @@ if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
    setenv PGMAT    $SMKDAT/run_$PBASE/static/pgmat.$GRID.$PBASE.ncf
    setenv PPMAT    $SMKDAT/run_$PSCEN/static/ppmat.$PSCEN.ncf
    setenv STACK_GROUPS $SMKDAT/run_$PSCEN/static/stack_groups.$GRID.$PBASE.ncf
-   setenv PLAY     $SMKDAT/run_$PBASE/$ESDATE/play.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
-   setenv PLAY_EX  $SMKDAT/run_$PBASE/$ESDATE/play_ex.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
+   setenv PLAY     $SMKDAT/run_$PBASE/scenario/play.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
+   setenv PLAY_EX  $SMKDAT/run_$PBASE/scenario/play_ex.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
 endif
 
 #
 ## Conditional settings
    if ( $SMK_SOURCE == A && $NONROAD == Y ) then
       setenv ARINV   $NRINV
-      setenv GCNTL   $NCNTL
       setenv AREA    $NROAD  
       setenv ATMP    $NTMP   
       setenv ASMAT_S $NSMAT_S
