@@ -1409,14 +1409,14 @@ C...............   If this is a new day, calculate a new TMAT
                 LDATE = JDATE
 
 C...............   Adjust sources' time zones to account for daylight time
-C..................   Add 1 if date is daylight and TZONES is not
-C..................   Subtract 1 if date is not daylight and TZONES is daylight
+C..................   Subtract 1 if date is daylight and TZONES is not
+C..................   Add 1 if date is not daylight and TZONES is daylight
                 IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
 
                     DAYLIT = .TRUE.
 
                     DO 101 S = 1, NPSRC
-                        TZONES( S ) = TZONES( S ) + 1
+                        TZONES( S ) = TZONES( S ) - 1
   101               CONTINUE
 
                 ELSEIF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
@@ -1424,7 +1424,7 @@ C..................   Subtract 1 if date is not daylight and TZONES is daylight
                     DAYLIT = .FALSE.
 
                     DO 103 S = 1, NPSRC
-                        TZONES( S ) = TZONES( S ) - 1
+                        TZONES( S ) = TZONES( S ) + 1
   103               CONTINUE
 
                 ENDIF 
