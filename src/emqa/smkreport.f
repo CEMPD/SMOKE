@@ -112,8 +112,6 @@ C...........   Other local variables
         INTEGER      HWID                 ! header width
         INTEGER      IOS                  ! i/o status
         INTEGER   :: GDIM    = 0          ! dimension of contiguous gridding mat
-        INTEGER      JDATE                ! Julian date
-        INTEGER      JTIME                ! time
         INTEGER   :: NSLIN   = 1          ! no. mole input speciation variables
         INTEGER   :: NSSIN   = 1          ! no. mass input speciation variables
 
@@ -181,20 +179,15 @@ C.........  Read one-time input file data
      &                GMAT( NGRID+NMATX+1 ), SSMAT, SLMAT )
 
 C.........  Preprocess the country/state/county data
+c note: Could add routine to reduce list of co/st/cy data to just records 
+c    n: selected.
 
 C.........  Preprocess the inventory data
+c note: Could add routine to reduce source to just records 
+c    n: selected across all groups.
 
 C.........  Read and store all group definitions
         CALL RDGRPS( CDEV )
-
-C.........  QA reports configuration file settings (note: maybe do this when
-c  n: storing report info)
-c note: this needs to include:
-c    n: checking when population normalization is used that by state
-c    n:     or by county is used for that report
-c    n: checking that when pop norm is used, the STCY file has pop (use
-c    n:     MODSTCY variable that flags when pop is present). Also compare
-C    n:     year to inventory year.
 
 C.........  Loop through reports
 
@@ -202,10 +195,23 @@ C.........  Loop through reports
 
             RPT_ = ALLRPT( N )
 
+            WRITE( MESG,94010 ) 
+     &             '***** CHECKING INPUTS FOR REPORT', N, ' *****'
+            CALL M3MSG2( MESG )
+
+C.............  QA reports configuration file settings
+            CALL QAREPIN( N, IOS )
+
+C.............  Skip report if errors are found
+            IF( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) '***** SKIPPING REPORT', N, ' *****'
+                CALL M3MSG2( MESG )
+                CYCLE
+            END IF
+
 C.............  Write message to log and standard output for report that is
 C               being processed
-            WRITE( MESG,94010 ) '***** CREATING REPORT', N, ' *****'
-            CALL M3MSG2( MESG )
 
 C.............  Get file name 
             FNAME = RPT_%OFILENAM
@@ -236,7 +242,6 @@ C                   previous file number.
             CALL M3MSG2( MESG )
 C.............  Select inventory records
             CALL SELECTSRC( N )
-c NOTE: EDIT here
 
 C.............  Apply gridding information
             IF( RPT_%USEGMAT ) THEN
@@ -276,60 +281,6 @@ C               ozone-season emissions.
 C.............  Determine input units and create conversion factors
             CALL REPUNITS( N )
 
-C.............  NOTE: Move this section to input-consistency routine when that
-C                  N: routine is written
-C.............  Set ending date and time and number of time steps for report
-C.............  When using hourly inputs
-            IF( RPT_%USEHOUR ) THEN
-                JDATE = SDATE
-                JTIME = STIME
-
-C.................  Find ending time
-                EDATE = SDATE
-                ETIME = STIME
-                CALL NEXTIME( EDATE, ETIME, ( NSTEPS-1 ) * TSTEP )
-
-C.................  Compare data end time with output end time
-                I = SECSDIFF( EDATE, ETIME, 
-     &                        EDATE, RPT_%OUTTIME )
-
-C.................  If reporting time is after data ending time, reset the no.
-C                   of time steps so that the reporting ends on the previous day
-                IF( I .GT. 0 ) THEN
-                    CALL NEXTIME( EDATE, ETIME, -25 * TSTEP )  
-                    CALL NEXTIME( EDATE, ETIME, TSTEP )         ! Workaround
-                    ETIME = RPT_%OUTTIME
-
-                    I =  SECSDIFF( SDATE, STIME, EDATE, ETIME )
-                    RPTNSTEP = I / 3600 + 1
-
-C.................  If reporting time is before data ending time, reset the 
-C                   number of time steps so that the reporting ends on the 
-C                   reporting hour
-C.................  Also set reporting time steps for reporting time matches
-C                   ending time.
-                ELSE IF( I .LE. 0 ) THEN
-                    RPTNSTEP = NSTEPS + I / 3600
-
-                END IF
-
-C.................  Print message if time steps have changed
-                IF( I .NE. 0 ) THEN
-                    WRITE( MESG,94010 ) 
-     &                 'WARNING: Resetting number of time steps for ' //
-     &                 'report to ', RPTNSTEP, CRLF() // BLANK10 // 
-     &                 'to make output hour consistent with ' //
-     &                 'reporting time.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-C.............  When not using hourly inputs
-            ELSE
-                JDATE = 0
-                JTIME = 0
-                RPTNSTEP = 1
-            END IF
-
 C.............  Write report header
             CALL WRREPHDR( ODEV, N, HWID, OUTFMT )
 
@@ -350,7 +301,7 @@ C.............  For mass-based and no speciation
 C.............  Save file number to use in next iteration
             PNAME  = FNAME
 
-        END DO
+        END DO   ! end loop over reports
 
 C.........  Completion with errors
         IF( EFLAG ) THEN
