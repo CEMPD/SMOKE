@@ -168,8 +168,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: YFLAG  = .FALSE. ! true: year mismatch found
 
         CHARACTER*5      BBUF             ! tmp boiler ID from CEM data
-        CHARACTER*300 :: LINE   = ' '     ! line buffer 
-        CHARACTER*300 :: MESG   = ' '     ! message buffer
+        CHARACTER*256 :: MESG   = ' '     ! message buffer
 
         CHARACTER(LEN=BLRLEN3) BLID       ! tmp boiler ID with inventory length
         CHARACTER(LEN=BLRLEN3) PBLID      ! previous boiler ID
