@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM ELEVPOINT
 
 C***********************************************************************
-C  program body starts at line  95
+C  program body starts at line  96
 C
 C  DESCRIPTION:
 C       Uses PLUMRIS() and user-selected CUTOFF to determine which point
@@ -41,6 +19,27 @@ C  REVISION  HISTORY:
 C       Prototype 10/95 by CJC
 C       Version   12/95 by CJC uses stack parameters file to fix up missing
 C       stack parameter values.
+C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
 C***********************************************************************
 
       IMPLICIT NONE
@@ -127,7 +126,7 @@ C.......   elevated points file
      &          'Enter name for POINT SOURCE input file',
      &          FSREAD3, 'PNTS', 'TMPPOINT' )
 
-        IF ( ENAME( 1:5 ) .EQ. 'NNONE ' ) THEN
+        IF ( ENAME( 1:5 ) .EQ. 'NONE ' ) THEN
             CALL M3EXIT( 'ELEVPOINT', 0, 0, 
      &           'Could not open POINT SOURCE input file', 2 )
         END IF
