@@ -115,8 +115,8 @@ C.........  Inventory table arrays - unsorted raw data, dimensioned by NINVTBL
         INTEGER, ALLOCATABLE, PUBLIC :: ITSTATA( : ) ! Status (<0 activity; >0 pol)
 
         LOGICAL, ALLOCATABLE, PUBLIC :: ITKEEPA( : ) ! true: keep record data
-        LOGICAL, ALLOCATABLE, PUBLIC :: ITEXPL ( : ) ! true: pollutant is explicit in the mechanism
         LOGICAL, ALLOCATABLE, PUBLIC :: ITMSPC ( : ) ! true: pollutant is a model species
+        LOGICAL, ALLOCATABLE, PUBLIC :: ITEXPL ( : ) ! true: pollutant is explicit in the mechanism
 
         REAL   , ALLOCATABLE, PUBLIC :: ITFACA ( : ) ! fraction of CAS emissions in pollutant
 
