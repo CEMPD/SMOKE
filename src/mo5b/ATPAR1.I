@@ -1,4 +1,0 @@
-C Version "@(#)$Id$ $Source$ $Date$ 
-
-      INTEGER LAPSY,LAP1ST,LAPLST,LVTFLG
-      COMMON /ATPAR1/ LAPSY,LAP1ST,LAPLST,LVTFLG(4)
