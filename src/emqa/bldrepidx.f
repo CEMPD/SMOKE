@@ -232,16 +232,15 @@ C.............  Loop through hourly emissions data variables
                 N = N + 1
                 EBUF = TPNAME( V )
 
-                J = INDEX1( EBUF, NIPPA, DATNAM )  ! See if name stored already 
-                K = INDEX( EBUF, ETJOIN )   ! Look for emission type joiner
+                K  = INDEX( EBUF, ETJOIN )   ! Look for emission type joiner
 
-C.................  Store emission type and/or pollutant if not already in list
-                IF( J. LE. 0 . AND. K .GT. 0 ) THEN
+C.................  Store emission type and/or pollutant
+                IF( K .GT. 0 ) THEN
         	    L2 = LEN_TRIM( EBUF )
                     ETPNAM( N ) = EBUF
                     DATNAM( N ) = EBUF( K+LT:L2 )
 
-                ELSE IF( J .LE. 0 ) THEN
+                ELSE
                     DATNAM( N ) = EBUF
 
                 END IF
@@ -525,6 +524,12 @@ C.............  Loop through requested data for this report
 
 C.................  Loop through names of emission types
                 DO E = 1, NDATALL
+
+C.....................  Skip "all" list entry if index is inventory and
+C                       report is temporal or if index is temporal and
+C                       report is inventory
+                    IF(      RPT_%USEHOUR .AND. INVIDX(E) .GT. 0 ) CYCLE
+                    IF(.NOT. RPT_%USEHOUR .AND. TPRIDX(E) .GT. 0 ) CYCLE
 
 C.....................  To emission type column
                     IF( OUTDNAM( I,N ) .EQ. ETPNAM( E ) ) THEN

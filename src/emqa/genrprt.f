@@ -183,6 +183,9 @@ C.................  Set index from global to actually input pol/act/etype
                 J = INVIDX( E )
                 IF( RPT_%USEHOUR ) J = TPRIDX( E )
 
+C.................  Skip variable if it isn't used for this report
+                IF( J .EQ. 0 ) CYCLE
+
 C.................  If speciation, apply speciation factors to appropriate
 C                   pollutant and emission types.
                 IF( TODOUT( E,RCNT )%SPCYN ) THEN
