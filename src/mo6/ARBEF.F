@@ -1,16 +1,16 @@
-      REAL FUNCTION 
-     * ARBEF(MY,JDX,VAGE_LSTIM,IP,IV,VMTAGE,IFDS,ISR,IMPGM,ISTD) 
+      REAL FUNCTION ARBEF(MY,JDX,IP,IV,VMTAGE,IFDS,ISR,IMPGM,ISTD) 
 C 
 C  ARBEF returns the after repair emission factors for 1981-1996 model 
 C  year light duty gasoline vehicles and trucks. See report M6.IM.001 
 C  pages 16-21 for documentation of running emissions. 
 C 
-C  Called by IMPROG,IMTEST 
+C  Called by IMPROG 
 C 
 C  Calls EF81_93, EF_POST93 
 C 
 C  Changes: 
 C 
+C   17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C   25 May 01 @EPA-elg Loaded idle I&M 
 C   30 Aug 00 @EPA-elg bug244 Technician credit effects are no longer applied 
 C                       just to the IM240 tests, but to ASM and OBD as well. 
@@ -53,7 +53,7 @@ C  Local variable / array dictionary:
 C 
 C   Name    Type              Description 
 C  ------   ----  ----------------------------------------------------- 
-C   AIM       R   Local value of VAGE_LSTIM. 
+C   AIM       R   Local REAL value of JDX. 
 C   ARMAX     R   Maximum after repairs emission factor 
 C   ARMIN     R   Minimum after repairs emission factor 
 C   CERTRATIO R   Adjusts Tier 0 emissions to account for higher 1994+ 
@@ -92,7 +92,6 @@ C
       INTEGER, INTENT(IN) :: ISR 
       INTEGER, INTENT(IN) :: IMPGM 
       INTEGER, INTENT(IN) :: ISTD 
-      REAL,    INTENT(IN) :: VAGE_LSTIM 
       REAL,    INTENT(IN) :: VMTAGE 
 C 
 C     Declare local variables. 
@@ -109,7 +108,7 @@ C
 C 
 C     Initialize local variables 
 C 
-      AIM = VAGE_LSTIM 
+      AIM = REAL(JDX) 
       LFDS = IFDS 
 C 
 C  After repairs running emissions. These are calculated as a 
