@@ -52,6 +52,10 @@ C.........
         ARRAYPOS = 0   ! array
 
         DO I = 1, NSRC
+     
+C.............  Skip unused sources
+            IF( SRCARRAY( IDX( I ),2 ) == 0 ) CYCLE
+        
             CURRAVER = SRCARRAY( IDX( I ),2 )            
             CURRCNTY = SRCARRAY( IDX( I ),1 )
             
