@@ -263,7 +263,7 @@ C              beginning period interval; and do a range checks
 
                         YY = STR2INT( LINE( 60:61 ) )
 
-                        IF( YY .GT. 18 ) THEN
+                        IF( YY .GE. 0 ) THEN
                             GETFORMT = EPSFMT
                             EXIT           ! To rewind and return
                         END IF
@@ -414,8 +414,7 @@ C.....................  Try day-specific emissions file
      &                  YY    = STR2INT( LINE( 68:69 ) )
 
                     IF( MONTH .GT. 0 .AND. MONTH .LE. 12 .AND.
-     &                  DAY   .GT. 0 .AND. DAY   .LE. 31 .AND.
-     &                  YY    .GT. 18 ) THEN
+     &                  DAY   .GT. 0 .AND. DAY   .LE. 31       )  THEN
                         GETFORMT = EMSFMT
                         EXIT           ! To rewind and return
                     END IF
