@@ -32,6 +32,11 @@
          set exitstat = 1
       endsw
 
+      if ( $?FYEAR ) then
+         set fyr2 = `echo $FYEAR | cut -c3-4`
+         setenv INVNAME1 ${INVNAME1}_$fyr2
+      endif
+
       if ( -e $INVOPD ) then
          mkdir -p $INVOPD/${INVNAME1}_dat
       endif
