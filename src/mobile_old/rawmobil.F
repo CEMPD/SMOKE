@@ -587,12 +587,11 @@ C.........  Sort non-link data
             CALL SORTI2( MNNUM, INDEXA, IFIPA, IRCLSA )
         ENDIF
 
-C.........  Reorganize non-link data
+C.........  Merge and store sorted link and non-link sources
+
         LC    = 0       ! Link-source     counter
         NC    = 0       ! Non-link-source counter
         S     = 0       ! Total source    counter
-c       OFIP  = 0
-c       ORCL  = 0
         LFIP  = -9      ! Previous FIP
         LRCL  = -9      ! Previous road class
         LLNK  = -9      ! Previous link ID
@@ -601,15 +600,15 @@ c       ORCL  = 0
 
   122   CONTINUE   ! Continue processing link and non-link sources
 
-            IF( LC + 1 .GT. MLNUM .AND.
-     &          NC + 1 .GT. MNNUM       ) THEN
+            IF( LC .EQ. MLNUM .AND.
+     &          NC .EQ. MNNUM       ) THEN
 
-                GO TO 133 ! End loop
+                GO TO 133 ! End loop (no more sources)
 
             ENDIF
 
-            IF( LC + 1 .GT. MLNUM ) LFLAG = .FALSE.
-            IF( NC + 1 .GT. MNNUM ) NFLAG = .FALSE.
+            IF( LC .EQ. MLNUM ) LFLAG = .FALSE.  ! No more links sources
+            IF( NC .EQ. MNNUM ) NFLAG = .FALSE.  ! No more non-link sources
 
 C.............  Process for link and non-link both exist
             IF( LFLAG .AND. NFLAG ) THEN
@@ -625,9 +624,13 @@ C.................  Set temporary source characteristics for link and non-link
                 NLK_FIP = IFIPA ( N )
                 NLK_RCL = IRCLSA( N )
 
-C.................  Link sources superceed non-link 
-                IF( LNK_FIP .LE. NLK_FIP .AND. 
-     &              LNK_RCL .LE. NLK_RCL       ) THEN
+
+C.................  Link will take precedence if link FIPs code is less than
+C.................  non-link FIPs code, OR if FIPs codes are equal, but
+C.................  link road class code is less than non-link road class code
+                IF( LNK_FIP .LT. NLK_FIP .OR.
+     &            ( LNK_FIP .EQ. NLK_FIP .AND.
+     &              LNK_FIP .LE. NLK_FIP       ) ) THEN
 
                     TYPE = 'LINK'
                     LC   = LC + 1       ! Increase link counter
@@ -643,9 +646,9 @@ C.................  Link sources superceed non-link
                     Y2   = LY2A  ( J )
                     TVMT = LVMTA ( J )
 
-C.....................  Skip non-link source if IDs are equal
-                    IF( LNK_FIP .EQ. NLK_FIP .AND. 
-     &                  LNK_RCL .EQ. NLK_RCL       ) NC = NC + 1
+C.....................  Link superceeds non-link when equal so skip non-link
+                    
+                    IF( LNK_RCL .EQ. NLK_RCL ) NC = NC + 1
 
 C.................  When no link, go to next non-link source
                 ELSE
@@ -732,9 +735,9 @@ C.............  Check for duplicates
                 S = S + 1
 
                 EFLAG = .TRUE.
-                CALL M3MESG( 
-     &               'Maximum number of MOBILE SOURCES exceeded:' )
                 WRITE( MESG,94010 )
+     &               'Maximum number of MOBILE SOURCES exceeded:' //
+     &               CRLF() // BLANK5 //
      &                 '    FIP:', FIP, 'RCL:', RCL,
      &                     'LNK:', LNK, 'INY:', INY
                 CALL M3MESG( MESG )
