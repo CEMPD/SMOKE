@@ -110,6 +110,8 @@ C.........   Other local variables
         LOGICAL  EFLAG        ! true: error occured
         LOGICAL  LASTFLAG     ! true: entry is last for current source
         LOGICAL  NEEDSORT     ! true: need to resort pollutants for current source
+        LOGICAL::PROCVOC=.FALSE. ! true: process VOC pollutants
+        LOGICAL::PROCTOG=.FALSE. ! true: process TOG pollutants
         
         CHARACTER(LEN=IOVLEN3) POLNAM   ! temporary pollutant name
         CHARACTER(LEN=100    ) BUFFER   ! message buffer
@@ -124,20 +126,44 @@ C.........  Get maximum number of warnings
         MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
         NWARN = 0
 
-C.........  Find position of pollutant names in pollutant array
-        VNMPOS  = INDEX1( VOCNAM, MXIDAT, INVDNAM )
-        TNMPOS  = INDEX1( TOGNAM, MXIDAT, INVDNAM )
-        NONVPOS = INDEX1( NHVNAM, MXIDAT, INVDNAM )
-        NONTPOS = INDEX1( NHTNAM, MXIDAT, INVDNAM )
+C.........  Find position of pollutant name in pollutant array
+        VNMPOS = INDEX1( VOCNAM, MXIDAT, INVDNAM )
+
+C.........  Check if VOC is in the inventory
+        IF( VNMPOS /= 0 ) THEN
+            IF( INVSTAT( VNMPOS ) == 0 ) THEN
+                VNMPOS = 0
+            END IF
+        END IF
+        
+        TNMPOS = INDEX1( TOGNAM, MXIDAT, INVDNAM )
+        IF( TNMPOS /= 0 ) THEN
+            IF( INVSTAT( TNMPOS ) == 0 ) THEN
+                TNMPOS = 0
+            END IF
+        END IF
         
 C.........  Check that either VOC or TOG is in the inventory
-        IF( ( VNMPOS == 0 .OR. INVSTAT( VNMPOS ) == 0 ) .AND.
-     &      ( TNMPOS == 0 .OR. INVSTAT( TNMPOS ) == 0 )       ) RETURN
-        
+        IF( VNMPOS == 0 .AND. TNMPOS == 0 ) RETURN
+
+C.........  Find NONHAP names in pollutant array        
+        NONVPOS = INDEX1( NHVNAM, MXIDAT, INVDNAM )
+        NONTPOS = INDEX1( NHTNAM, MXIDAT, INVDNAM )
+
+C.........  Make sure we found NONHAP name
+        IF( NONVPOS == 0 .AND. NONTPOS == 0 ) RETURN
+
+C.........  Set up logical flags based on found pollutants
+        IF( VNMPOS /= 0 .AND. NONVPOS /= 0 ) PROCVOC = .TRUE.
+        IF( TNMPOS /= 0 .AND. NONTPOS /= 0 ) PROCTOG = .TRUE.
+
+        IF( .NOT. PROCVOC .AND. .NOT. PROCTOG ) RETURN
+
 C.........  Check if any toxics pollutants are to be subtracted
         FNDPOL = .FALSE.
         DO I = 1, MXIDAT
             IF( INVDVTS( I ) /= 'N' ) THEN
+                IF( .NOT. PROCTOG .AND. INVDVTS( I ) == 'T' ) CYCLE
                 IF( INVSTAT( I ) /= 0 ) THEN
                     FNDPOL = .TRUE.
                     EXIT
@@ -230,11 +256,11 @@ C.................  Store pollutant for this position
                 CPOL = IPOSCOD( CURRPOS )
 
 C.................  If current pollutant is VOC or TOG entry, save position
-                IF( CPOL == VNMPOS ) THEN
+                IF( PROCVOC .AND. CPOL == VNMPOS ) THEN
                     VOCPOS = CURRPOS
                 END IF
                 
-                IF( CPOL == TNMPOS ) THEN
+                IF( PROCTOG .AND. CPOL == TNMPOS ) THEN
                     TOGPOS = CURRPOS
                 END IF
             
@@ -249,14 +275,15 @@ C.................  Otherwise, if not part of VOC or TOG, skip rest of loop
                 END IF
 
 C.................  Sum toxic emissions for this source
-                IF( INVDVTS( CPOL ) == 'V' ) THEN
+C                   INVDVTS = 'V' => part of VOC and TOG
+C                   INVDVTS = 'T' => part of TOG only
+                IF( PROCVOC .AND. INVDVTS( CPOL ) == 'V' ) THEN
                     VOCEANN = VOCEANN + POLVAL( CURRPOS,NEM )
                     VOCEOZN = VOCEOZN + POLVAL( CURRPOS,NOZ )
                     FNDVOC = .TRUE.
                 END IF
                 
-                IF( INVDVTS( CPOL ) == 'T' .OR. 
-     &              INVDVTS( CPOL ) == 'V' ) THEN
+                IF( PROCTOG ) THEN
                     TOGEANN = TOGEANN + POLVAL( CURRPOS,NEM )
                     TOGEOZN = TOGEOZN + POLVAL( CURRPOS,NOZ )
                     FNDTOG = .TRUE.
@@ -273,7 +300,7 @@ C.................  Format information for this source
                 CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
                 
 C.................  Give warning if source has toxics but no criteria
-                IF( VOCPOS == 0 .AND. FNDVOC ) THEN
+                IF( PROCVOC .AND. VOCPOS == 0 .AND. FNDVOC ) THEN
                     IF( NWARN <= MXWARN ) THEN
                         MESG = 'WARNING: Found toxic emissions ' //
      &                         'but no VOC emissions for source:' // 
@@ -286,7 +313,7 @@ C.................  Give warning if source has toxics but no criteria
                     EFLAG = .TRUE.
                 END IF
                 
-                IF( TOGPOS == 0 .AND. FNDTOG ) THEN
+                IF( PROCTOG .AND. TOGPOS == 0 .AND. FNDTOG ) THEN
                     IF( NWARN <= MXWARN ) THEN
                         MESG = 'WARNING: Found toxic emissions ' //
      &                         'but no TOG emissions for source:' // 
@@ -300,7 +327,7 @@ C.................  Give warning if source has toxics but no criteria
                 END IF
                 
 C.................  Give warning if source has criteria but no toxics
-                IF( VOCPOS /= 0 .AND. .NOT. FNDVOC ) THEN
+                IF( PROCVOC .AND. VOCPOS /= 0 .AND. .NOT. FNDVOC ) THEN
                     IF( NWARN <= MXWARN ) THEN
                         MESG = 'WARNING: Found VOC emissions ' //
      &                         'but no toxic emissions for source:' // 
@@ -313,7 +340,7 @@ C.................  Give warning if source has criteria but no toxics
                     EFLAG = .TRUE.
                 END IF
                 
-                IF( TOGPOS /= 0 .AND. .NOT. FNDTOG ) THEN
+                IF( PROCTOG .AND. TOGPOS /= 0 .AND. .NOT. FNDTOG ) THEN
                     IF( NWARN <= MXWARN ) THEN
                         MESG = 'WARNING: Found TOG emissions ' //
      &                         'but no toxic emissions for source:' //
@@ -326,11 +353,16 @@ C.................  Give warning if source has criteria but no toxics
                     EFLAG = .TRUE.
                 END IF
                 
+C.................  Check if this source had no criteria and no toxics
+C                   This happens for activity only sources
+                IF( PROCVOC .AND. VOCPOS == 0 .AND. .NOT. FNDVOC ) CYCLE
+                IF( PROCTOG .AND. TOGPOS == 0 .AND. .NOT. FNDTOG ) CYCLE
+
 C.................  Skip rest of loop if an error has occured
                 IF( EFLAG ) CYCLE
                 
 C.................  Subtract toxic emissions from criteria emissions  
-                IF( VOCPOS /= 0 ) THEN                  
+                IF( PROCVOC ) THEN                  
                     POLVAL( VOCPOS,NEM ) = 
      &                  POLVAL( VOCPOS,NEM ) - VOCEANN
                     POLVAL( VOCPOS,NOZ ) =
@@ -371,7 +403,7 @@ C.....................  Rename VOC to NONHAPVOC
      
                 END IF
                 
-                IF( TOGPOS /= 0 ) THEN
+                IF( PROCTOG ) THEN
                     POLVAL( TOGPOS,NEM ) = 
      &                  POLVAL( TOGPOS,NEM ) - TOGEANN
                     POLVAL( TOGPOS,NOZ ) =
