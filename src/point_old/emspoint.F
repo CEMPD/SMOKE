@@ -2,7 +2,7 @@
          PROGRAM EMSPOINT
 
 C***********************************************************************
-C  program body starts at line 357
+C  program body starts at line 332
 C
 C  DESCRIPTION:
 C       Sort data contained in EMS-95 raw point source files and 
@@ -77,7 +77,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         DSCGRID
         LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FINDC   !  returns -1 for failure
-        INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         INDEX1
         INTEGER         JULIAN
@@ -92,11 +91,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
+        REAL            YR2DAY  
 
-        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, FIND2, FINDC, GETNUM, 
+        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, FIND2, FINDC, 
      &           GETYN, INDEX1, JULIAN, JUNIT, LAMBERT, LBLANK, 
      &           LL2LAM, UTM2LAM, PROMPTFFILE, PROMPTMFILE, SECSDIFF, 
-     &           STR2INT, STR2REAL, TRIMLEN
+     &           STR2INT, STR2REAL, TRIMLEN, YR2DAY
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -117,36 +117,6 @@ C...............   Time zone tables:  FIP-independent; state-only; state-county
         INTEGER         TFIPFA( NPFIP )
         INTEGER         TZONEF( NPFIP )
         INTEGER         TFIPEF( NPFIP )
-
-C...........   Replacement stack parameters tables:
-
-        REAL            HT0     !  ultimate fallback height
-        REAL            DM0     !  ultimate fallback diameter
-        REAL            TK0     !  ultimate fallback temperature
-        REAL            VE0     !  ultimate fallback velocity
-
-        INTEGER         NR1             !  size of SCC-only table
-        INTEGER         SC1( NPSCC )    !  SCC code
-        REAL            HT1( NPSCC )    !  SCC-only height
-        REAL            DM1( NPSCC )    !  SCC-only diameter
-        REAL            TK1( NPSCC )    !  SCC-only temperature
-        REAL            VE1( NPSCC )    !  SCC-only velocity
-
-        INTEGER         NR2             !  size of SCC-state table
-        INTEGER         FP2( NPSRC )    !  FIP state code
-        INTEGER         SC2( NPSRC )    !  SCC code
-        REAL            HT2( NPSRC )    !  SCC-state height
-        REAL            DM2( NPSRC )    !  SCC-state diameter
-        REAL            TK2( NPSRC )    !  SCC-state temperature
-        REAL            VE2( NPSRC )    !  SCC-state velocity
-
-        INTEGER         NR3             !  size of FIP-SCC table
-        INTEGER         FP3( NPSRC )    !  FIP code
-        INTEGER         SC3( NPSRC )    !  SCC code
-        REAL            HT3( NPSRC )    !  FIP-SCC height
-        REAL            DM3( NPSRC )    !  FIP-SCC diameter
-        REAL            TK3( NPSRC )    !  FIP-SCC temperature
-        REAL            VE3( NPSRC )    !  FIP-SCC velocity
 
 C...........   Point sources table for facility.pt files (unsorted; sorted)
 
@@ -174,7 +144,8 @@ C...........   Point sources table for stack.pt files  (unsorted; sorted)
         REAL           SKTEMPA( NPSMAX ) ! stack exit temp from stack files [C]
         REAL           SKCRDXA( NPSMAX ) ! stack UTM easting coord [m]
         REAL           SKCRDYA( NPSMAX ) ! stack UTM northing coord [m]
-        REAL           SKVELOA( NPSMAX ) ! stack exit velocity [m^3/sec]
+        REAL           SKVELOA( NPSMAX ) ! stack exit velocity [m/sec]
+        REAL           SKFLOWA( NPSMAX ) ! stack flow when not match v [m^3/sec]
         CHARACTER*32   SKKEYA ( NPSMAX ) ! FIP // facility ID // stack ID
 
         INTEGER        IFCKEY( NPSMAX )  ! subscript table for sort
@@ -184,6 +155,7 @@ C...........   Point sources table for stack.pt files  (unsorted; sorted)
         REAL           SKCRDX( NPSMAX )  ! stack UTM easting coord [m]
         REAL           SKCRDY( NPSMAX )  ! stack UTM northing coord [m]
         REAL           SKVELO( NPSMAX )  ! stack exit velocity [m^3/sec]
+        REAL           SKFLOW( NPSMAX )  ! new stack exit velocity [m^3/sec]
         CHARACTER*32   SKKEY ( NPSMAX )  ! FIP // facility ID // stack ID
 
 C...........   Point sources table for process.pt files  (unsorted; sorted)
@@ -233,6 +205,7 @@ C...........   sorted final version (image EMISREC of data record)
         REAL           STKDMA( NPEMAX ) !  stack diameter (m)
         REAL           STKTKA( NPEMAX ) !  exhaust temperature (deg K)
         REAL           STKVEA( NPEMAX ) !  exhaust velocity    (m/s)
+        REAL           STKFLA( NPEMAX ) !  new exhaust velocity    (m/s)
         REAL           RULPEA( NPEMAX ) !  rule penetration   fraction
         REAL           RULEFA( NPEMAX ) !  rule effectiveness fraction
         REAL           CTLEFA( NPEMAX ) !  control efficiency fraction
@@ -297,16 +270,17 @@ C...........   File units and logical/physical names
 
 C...........   Other local variables
 
-        REAL            HT, DM, TK, VE                ! Temporary stack parms
         REAL            STKF, STKH, STKD, STKT, STKV  ! Temporary stack parms
 
         REAL            CEFF    !  Temporary control effectiveness
         REAL            DAY2YR  !  Local, leap-year-able, DAY to YEAR factor
         REAL            EDROP( NIPOL ) ! Sum of dropped emissions
         REAL            EMIS    !  Temporary emission value
+        REAL            FSAV    !  Flow saved
         REAL            REFF    !  Temporary rule effectiveness
         REAL            RPEN    !  Temporary rule penetration
         REAL            VMISS   !  emissons initialization value
+        REAL            VNEW    !  New velocity
         REAL            XLOC    !  Temporary X-coordinate
         REAL            YLOC    !  Temporary Y-coordinate
         REAL            XX, YY  !  scratch location variables
@@ -331,6 +305,7 @@ C...........   Other local variables
         INTEGER         TPF     !  Temporary temporal ID
         INTEGER         ZONE    !  Temporary UTM zone
 
+        LOGICAL         CFLAG   !  velocity recalc: TRUE iff VELOC_RECALC = Y
         LOGICAL         EFLAG   !  input verification:  TRUE iff ERROR
         LOGICAL         RULFLAG !  rule effective file(s): TRUE if exist
         LOGICAL         SFLAG   !  input verification:  report missing species
@@ -380,6 +355,11 @@ C   begin body of program EMSPOINT
 
         SFLAG = ENVYN( 'RAW_SRC_CHECK', 
      &                 'EMSPOINT check for missing species-records',
+     &                 .FALSE.,
+     &                 IOS )
+
+        CFLAG = ENVYN( 'VELOC_RECALC', 
+     &                 'EMSPOINT setting for recalculating velocity',
      &                 .FALSE.,
      &                 IOS )
 
@@ -599,15 +579,7 @@ C.............  making changes
 
 C.............   Calculate DAY2YR factor
 
-            IF ( MOD( INY,4 ) .NE. 0 ) THEN           !  nonleap years
-                DAY2YR = 365.0
-            ELSE IF ( MOD( INY,100 ) .NE. 0 ) THEN    !  noncentury leap years
-                DAY2YR = 366.0
-            ELSE IF ( MOD( INY,400 ) .NE. 0 ) THEN    !  century nonleap years
-                DAY2YR = 365.0
-            ELSE                                      !  leap centuries
-                DAY2YR = 366.0
-            END IF
+            DAY2YR = 1. / YR2DAY( INY )
 
 C........................................................................
 C.............  Head of the FDEV-read loop  .............................
@@ -759,11 +731,20 @@ C.................  Convert units for stack parameters
                 IF ( STKT .GT. 0.0 ) STKT = STKT * FTOC  +  CTOK ! temp, degrees K
                 IF ( STKV .GT. 0.0 ) STKV = STKV * FT2M          ! Veloc ft/s to m/s
                 IF ( STKF .GT. 0.0 ) STKF = STKF * FLWE2M        ! Flow ft^3/min m^3/s
-                
+                FSAV = 0.
+
+C.................  Calculate velocity from flow and diameter                
                 IF ( STKV .LE. 0.0  .AND.
      &               STKD .GT. 0.0  .AND.
      &               STKF .GT. 0.0 ) THEN
                     STKV = STKF / ( 0.25 * PI * STKD * STKD )
+
+C.................  Compare flow to velocity and diameter
+                ELSEIF( ( STKF - STKV*0.25*PI*STKD*STKD ) / STKF
+     &                  .GT. 0.001                               ) THEN
+
+                    FSAV = STKF
+
                 END IF
 
 C.............   Resolve coordinates for this stack:
@@ -855,6 +836,7 @@ C.................  Store stack file information
                     SKHEITA( SS ) = STKH
                     SKTEMPA( SS ) = STKT
                     SKVELOA( SS ) = STKV
+                    SKFLOWA( SS ) = FSAV
                     SKCRDXA( SS ) = XLOC
                     SKCRDYA( SS ) = YLOC
 
@@ -890,6 +872,7 @@ C.................  Store stack file information
                     SKCRDX( I ) = SKCRDXA( J )
                     SKCRDY( I ) = SKCRDYA( J )
                     SKVELO( I ) = SKVELOA( J )
+                    SKFLOW( I ) = SKFLOWA( J )
                     SKKEY ( I ) = SKKEYA ( J )
 124             CONTINUE
 
@@ -1263,7 +1246,7 @@ C.................  Check and set time period type (Year/day/hourly)
                     TPF  = WTPRFAC              !  use week profiles
                     EMIS = DAY2YR * EMIS
 
-                ELSE IF ( LINE( 114:115 ) .EQ. 'AS' ) THEN
+                ELSE IF ( LINE( 114:115 ) .EQ. 'DS' ) THEN
 
                     TPF = 1                     !  use only hourly profiles
 
@@ -1315,6 +1298,7 @@ C.............  (later:  Get rule pen, eff from prulefac records)
                     STKDMA( ES ) = SKDIAM( K2 )
                     STKTKA( ES ) = SKTEMP( K2 )
                     STKVEA( ES ) = SKVELO( K2 )
+                    STKFLA( ES ) = SKFLOW( K2 )
                     XLOCAA( ES ) = SKCRDX( K2 )
                     YLOCAA( ES ) = SKCRDY( K2 )
                     ISICA ( ES ) = DVSIC ( K3 )
@@ -1487,7 +1471,33 @@ C.....................  Set final arrays
                     STKHT ( J ) = STKHTA( I )
                     STKDM ( J ) = STKDMA( I )
                     STKTK ( J ) = STKTKA( I )
-                    STKVE ( J ) = STKVEA( I )
+
+C.....................  Where flow is defined, and option is set to on, need
+C.....................    to reset velocity based on flow, because they are 
+C.....................    inconsistent.
+C.....................  We've waited to do this so that the change can
+C.....................    be reported with FIP, SCC, PLT, STK
+                    IF( CFLAG .AND. STKFLA( I ) .GT. 0. ) THEN
+
+                        VNEW = STKFLA( I ) / 
+     &                         ( 0.25 * PI * STKDMA( I ) * STKDMA( I ) )
+
+                        WRITE( MESG,94020 ) 
+     &                    'Stack V reset using flow. FIP:', FIP, 
+     &                    'SCC:', SCC, 'PLT:', PLANT, 'STK:', STACK
+                        CALL M3MESG( MESG ) 
+
+                        WRITE( LDEV,93060 ) 
+     &                     BLANK5 // '  F:', STKFLA( I ), 'D:', 
+     &                     STKDMA( I ), 'OLD V:', STKVEA( I ),
+     &                     'NEW V:', VNEW
+
+                        STKVE ( J ) = VNEW
+
+                    ELSE
+                        STKVE ( J ) = STKVEA( I )
+
+                    ENDIF
                     
                     K = FIND1( FIP, NZF, TFIPEF )
                     IF ( K .GT. 0 ) THEN
@@ -1503,12 +1513,13 @@ C.....................  Set final arrays
 
                 ELSE            !  would have overflowed arrays:
 
-                    WRITE( MESG,94020 ) 
+                    WRITE( MESG,94010 ) 
      &                'Skipping FIP:', FIP, 
      &                'SCC:',          SCC, 
-     &                'Plant:',        PLANT,
-     &                'Stack:',        STACK,
+     &                'PLT:',          PLANT,
+     &                'STK:',          STACK,
      &                'to avoid overflow.'
+
                     CALL M3MESG( MESG )
 
                     GO TO 322   ! To end of loop
@@ -1562,7 +1573,8 @@ C.............  the correct number of sources
 
             CALL M3MSG2( MESG )
 
-            IF( NPOINT. GT. NPSRC ) NPOINT = NPSRC
+            CALL M3EXIT( 'EMSPOINT', 0, 0, 
+     &                   'Error because of number of sources.', 2 )
 
         END IF
 
@@ -1611,7 +1623,7 @@ C...........   Pad rest of record with zeros, if appropriate:
 C.......   Fix stack parameters
 
         CALL FIXSTK( RDEV, NPOINT, IFIP, ISCC, IPLANT, ISTACK,
-     &               STKHT, STKDM, STKTK, STKVE )
+     &               STKHT, STKDM, STKTK, STKVE, NIPOL, EMISV )
 
 C.......   Get file name; open output point sources file
 
@@ -1636,28 +1648,9 @@ C.......   Get file name; open output point sources file
         VGTOP3D = AMISS3
         GDNAM3D = COORDN
 
-        FDESC3D( 1 ) = 'NC Point Source emissions values.'
-        FDESC3D( 2 ) = 'Inventory  type "' // LINE(  1: 1 ) // '"'
-        FDESC3D( 3 ) = 'Projection year "' // LINE(  3: 4 ) // '"'
-        FDESC3D( 4 ) = 'Base year       "' // LINE(  6: 7 ) // '"'
-        FDESC3D( 5 ) = 'Emission   type "' // LINE(  9:10 ) // '"'
-        FDESC3D( 7 ) = 'Beginning  Date "' // LINE( 60:67 ) // '"'
-        FDESC3D( 8 ) = 'Ending     Date "' // LINE( 69:76 ) // '"'
+        FDESC3D( 1 ) = 'Point Source emissions values.'
 
-        IF ( LINE( 57:58 ) .EQ. 'PO' ) THEN
-            FDESC3D( 6 ) = 'Period     type "' // LINE( 57:58 ) //
-     &                     '" (peak ozone day)'
-        ELSE IF ( LINE( 57:58 ) .EQ. 'PC' ) THEN
-            FDESC3D( 6 ) = 'Period     type "' // LINE( 57:58 ) // 
-     &                     '" (peak CO day)'
-        ELSE IF ( LINE( 57:58 ) .EQ. '  ' ) THEN
-            FDESC3D( 6 ) = 'Period     type "' // LINE( 57:58 ) // 
-     &                     '" (annual total)'
-        ELSE
-            FDESC3D( 6 ) = 'Period     type "' // LINE( 57:58 ) // '"'
-        END IF
-
-        DO  411  I = 9, MXDESC3
+        DO  411  I = 2, MXDESC3
             FDESC3D( I ) = ' '
 411     CONTINUE
 
@@ -1872,11 +1865,14 @@ C93041   FORMAT( I5, X, I5, X, I3, X, I8, X, I5.5, 3( X, I3 ) )
 93050   FORMAT( I5.5, ',', I8.8, ',', 2 (I6, ','), 
      &          A15 , ',', A12 , ',', A12 , ',', A40 )
 
+93060   FORMAT( 10( A, :, E10.3, :, 1X ) )
+
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I7, :, 1X ) )
 
-94020   FORMAT( A, I7, X, A, I10, X, A, I4, X, A, I4, X, A, :, I6 )
+94020   FORMAT( A, 1X, I5.5, 1X, A, 1X, I8.8, 1X,
+     &          A, I6, X, A, I6, X, A, :, I6 )
 
 94040   FORMAT( A, I2.2 )
 
