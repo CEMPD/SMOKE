@@ -53,7 +53,7 @@ setenv SMK_GRWIDAOUT_YN     Y     # Y outputs an IDA-formatted inventory
 #     USE_SPEED_PROFILES      # see multiple-program controls, below
 #     Temporary file paths    # set automatically
 
-# For Prediur
+# For Premobl
 setenv SMK_MINTEMP           0.   # MOBILE6 minimum allowed daily temperature [deg F]
 setenv SMK_MAXTEMP         120.   # MOBILE6 Maximum allowed daily temperature [deg F]
 setenv TVARNAME          TEMPG    # temperature variable name in meteorology files
