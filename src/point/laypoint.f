@@ -265,7 +265,7 @@ C.........   Get setting from environment variables
         EMLAYS = ENVINT( 'SMK_EMLAYS', 'Number of emission layers',
      &                   -1, IOS )
 
-        MESG = 'Indicator for defining major/minor sources'
+        MESG = 'Use Elevpoint output to determine elevated sources'
         VFLAG = ENVYN( 'SMK_SPECELEV_YN', MESG, .FALSE., IOS )
 
         MESG = 'Indicator for defining hourly plume rise data'
@@ -645,7 +645,7 @@ C           coordinate system of the destination grid
 C.........  Call elevated sources indicator file, even thought it might not
 C           be opened - routine will initialize LMAJOR and LPING regardless
 C           of whether the file is available.
-        CALL RDPELV( PDEV, NSRC, NMAJOR, NPING )
+        CALL RDPELV( PDEV, NSRC, .FALSE., NMAJOR, NPING )
 
 C.........  Allocate memory for all remaining variables using dimensions 
 C           obtained previously...
