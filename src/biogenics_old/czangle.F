@@ -16,7 +16,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC, adapted from UAM-BEIS subroutines
-C	SOLAR() and ZANGLE() for SMOKE-BEIS2:  produces COS( ZENITH )
+C       SOLAR() and ZANGLE() for SMOKE-BEIS2:  produces COS( ZENITH )
 C***********************************************************************
 
       IMPLICIT NONE
@@ -41,45 +41,39 @@ C...........   ARGUMENTS and their descriptions:
         LOGICAL     ZFLAG                   !  iff sun above horizon somewhere
 
 
-C...........   PARAMETERS and their descriptions:
-
-        REAL        SIGA, D60, D15, D24, 
-     &              ROTDAY , ROTHR, ROTLON, SDEC
-
-        PARAMETER ( 
-     &            SIGA = 279.9348  ,
-     &            SDEC =   0.39784984 , ! SIN (23^26'37.8") the declination angle
-     &             D60 = 1.0 / 60.0,
-     &             D15 = 1.0 /15.0 ,
-     &             D24 = 1.0 /24.0 ,
-     &          ROTDAY = 360.0 / 365.242,   ! rotation per day
-     &          ROTHR  = D24 * ROTDAY,      ! rotation per hour
-     &          ROTLON = PI180 * ROTHR )    ! rot (radians) per degree lon
-
-
-C...........   SAVED LOCAL VARIABLES and their descriptions:
-C...........   NOTE:  the ANSI standard requires the use of SAVE statements
-C...........   for variables which must retain their values from call to call.
-
-        LOGICAL     FIRSTIME
-        DATA        FIRSTIME / .TRUE. /
-
-        REAL        SINLAT( NCOLS, NROWS )
-        REAL        COSLAT( NCOLS, NROWS )
-
-        SAVE   FIRSTIME, SINLAT, COSLAT
-
-
-C...........   SCRATCH LOCAL VARIABLES and their descriptions:
-
-        REAL        TIMLOC, T, DADM, DF, DESIN, DECOS, DESIN2, DECOS2, 
-     &              SIG, DECSIN, DECCOS, EQT, TST, HRANGL, CZ
-
-        INTEGER    R, C
+C.......   PARAMETERS:
  
+      REAL*4      AA, BB, CC, SIGA, D60, D15, D24, ROTDAY , SDEC
+      PARAMETER ( AA =   0.15    ,
+     &            BB =   3.885   ,
+     &            CC = - 1.253   ,
+     &          SIGA = 279.9348  ,
+     &          SDEC =   0.39784984 , !  SIN (23^26'37.8") the declination angle
+     &           D60 = 1.0 / 60.0,
+     &           D15 = 1.0 /15.0 ,
+     &           D24 = 1.0 /24.0 ,
+     &        ROTDAY = 360.0 / 365.242 ! fraction of a complete rotation per day
+     &           )
  
-C***********************************************************************
-C   begin body of subroutine  CZANGLE
+
+C.........   Scratch Local variables
+
+      INTEGER*4    R, C
+      REAL*4       SLA, GMT,  TK, DAD, DF,
+     &             DESIN, DECOS, DESIN2, DECOS2, SIG, DECSIN, DECCOS,
+     &             EQT, TST, HRANGL
+                     
+C.......   SAVED local variables
+
+        LOGICAL  FIRSTIME
+        DATA     FIRSTIME / .TRUE. /
+        REAL     SINLAT( NCOLS,NROWS )
+        REAL     COSLAT( NCOLS,NROWS )
+        
+        SAVE     FIRSTIME, SINLAT, COSLAT
+
+
+C................  Begin body of program  .........................
 
       IF ( FIRSTIME ) THEN
 
@@ -87,61 +81,62 @@ C   begin body of subroutine  CZANGLE
 
           DO  12  R = 1, NROWS
           DO  11  C = 1, NCOLS
-
-              T = PI180 * LAT( C, R )
-              SINLAT( C, R ) = SIN( T )
-              COSLAT( C, R ) = COS( T )
-
+              SLA = PI180 * LAT( C,R )
+              SINLAT( C,R ) = SIN( SLA )
+              COSLAT( C,R ) = COS( SLA )
 11        CONTINUE
 12        CONTINUE
 
-      END IF          !  if firstime
+      END IF	!  if firstime
 
-      TIMLOC = ROTHR * ( FLOAT( JTIME / 10000 ) +
-     &                   D60 * ( FLOAT( MOD( JTIME / 100 , 100 ) ) +
-     &                           D60 * FLOAT( MOD( JTIME , 100 ) ) ) )
-      DADM   = ROTDAY * FLOAT( MOD( JDATE , 1000 ) ) + TIMLOC
 
-      ZFLAG  = .FALSE.  !  is sun anywhere above horizon?
+C.......   Convert time to hours and add time-zone offset
+      
+      GMT    =  FLOAT( JTIME / 10000 ) +			!  hr part
+     &            D60 * ( FLOAT( MOD( JTIME / 100 , 100 ) ) 	!  min part
+     &                  + D60 * FLOAT( MOD( JTIME, 100 ) ) )	!  sec part
+      DAD    =  GMT * D24 + MOD( JDATE , 1000 )
+      DF     =  ROTDAY * PI180 * DAD      !  The terrestrial-rotation angle
+           
+      DESIN  =  SIN( DF )          !  SINE   of this angle
+      DECOS  =  COS( DF )          !  COSINE of this angle
+           
+      DESIN2 =  SIN( DF + DF )     !  SINE   of twice the angle
+      DECOS2 =  COS( DF + DF )     !  COSINE of twice the angle
+           
+      SIG  =  DF +
+     &        PI180 * ( SIGA +
+     &                  1.914827 * DESIN  - 0.079525 * DECOS +
+     &                  0.019938 * DESIN2 - 0.00162  * DECOS2 )
+           
+C  The sine of the declination
+      
+      DECSIN = SDEC * SIN( SIG )
+      DECCOS = SQRT( 1.0 - DECSIN*DECSIN )
+           
+C  The equation of time adjustment
+      
+      EQT  =  0.123470 * DESIN  - 0.004289 * DECOS
+     &      + 0.153809 * DESIN2 + 0.060783 * DECOS2
 
-      DO  102  R = 1, NROWS
-      DO  101  C = 1, NCOLS
+      ZFLAG = .FALSE.
+      
+      DO 101 R = 1, NROWS
+      DO 100 C = 1, NCOLS
 
-            T      = D15 * LON( C, R )
-            DF     = ROTLON * T +  DADM
-            DESIN  =  SIN( DF )             !  SINE   of this angle
-            DECOS  =  COS( DF )             !  COSINE of this angle
-            DESIN2 =  2.0 * DESIN * DECOS            !  SINE   of double-angle
-            DECOS2 =  DECOS * DECOS - DESIN * DESIN  !  COSINE of double-angle
-            SIG    =  SIGA + DF
-     &                     + 1.914827 * DESIN  - 0.079525 * DECOS
-     &                     + 0.019938 * DESIN2 - 0.00162  * DECOS2
-
-C...........   The equation of time adjustment, uses sine of the declination
-
-            EQT  =  0.123470 * DESIN  - 0.004289 * DECOS
-     &            + 0.153809 * DESIN2 + 0.060783 * DECOS2
-
-C...........   The true solar time
-
-            TST    = T + TIMLOC - EQT
-            HRANGL = 15.0 * PI180 * ( TST - 12.0 )
-
-C...........   Compute the sine of the solar elevation (= cos of zenith angle)
-
-            DECSIN = SDEC * SIN( PI180 * SIG )
-            DECCOS = SQRT( 1.0 - DECSIN )
-
-            CZ = DECSIN * SINLAT( C, R ) + 
-     &           DECCOS * COSLAT( C, R ) * COS( HRANGL )
-
-            COSZEN( C, R ) = CZ
-
-            ZFLAG = ( ZFLAG .OR. ( CZ .GT. -0.01 ) )  !  "sun above horizon"
-
+          TK     =  GMT + LON( C,R ) * D15      !  Distance in hours from LON=0
+          TST    =  TK - EQT                    !  true solar time
+          HRANGL =  PI180 * 15.0 * ABS(TST - 12.0) !  hour angle
+                   
+C  Compute the sine of the solar elevation
+          
+          COSZEN( C,R ) = DECSIN * SINLAT( C,R ) +
+     &                    DECCOS * COSLAT( C,R ) * COS( HRANGL )
+          ZFLAG = ( ZFLAG .OR. ( COSZEN( C,R ) .GT. -0.01 ) )  ! "sun > horizon"
+                   
+100   CONTINUE
 101   CONTINUE
-102   CONTINUE
+
 
       RETURN
       END
-
