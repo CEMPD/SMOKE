@@ -1,35 +1,69 @@
 #!/bin/csh -f
 
 set exitstat = 0
-set blah_foo_arg = `pwd`
+set here = `pwd`
+set tmpfile = .install
 
-/bin/rm -rf .install_log
+/bin/rm -rf $tmpfile
 
-ls smoke.nctox* > .install_log
+# Check that downloaded files are available
+set file = smoke.nctox.data.tar.gz
+echo "Checking for $file file..."
+
+ls $file > $tmpfile
 if ( $status > 0 ) then
-    echo "ERROR: smoke.nctox.data.tar file is not available"
-    echo "       Please download that file and retry."
+    echo "ERROR: Could not find $file"
+    echo "       Please download the file $file and try again"
     set exitstat = 1
 endif
 
-set found1 = n
-if ( -e smoke.IRIXn32f90.tar.gz || -e smoke.IRIXn32f90.tar ) then
-    echo "Installing smoke.IRIXn32f90.tar..."
-    set found1 = y
-endif
-if ( -e smoke.Linux2_x86ifc.tar.gz || -e smoke.Linux2_x86ifc.tar ) then
-    echo "Installing smoke.Linux2_x86ifc.tar..."
-    set found1 = y
-endif
-if ( -e smoke.SunOS5f90.tar.gz || -e smoke.SunOS5f90.tar ) then
-    echo "Installing smoke.SunOS5f90.tar..."
-    set found1 = y
+set file = smoke.Linux2_x86pg.tar.gz
+echo "Checking for $file file..."
+
+ls $file > $tmpfile
+if ( $status > 0 ) then
+    echo "ERROR: Could not find $file"
+    echo "       Please download the file $file and try again"
+    set exitstat = 1
 endif
 
-if ( $found1 == n ) then
-   echo "ERROR: No smoke installation file for a specific platform"
-   echo "       is available. Please download that file and retry."
-   echo " "     
+if ( $exitstat > 0 ) then
+   exit( $exitstat )
+endif
+
+# Check that EDSS_ROOT is set
+if ( ! $?EDSS_ROOT ) then
+    echo "ERROR: You must define the EDSS_ROOT environment variable"
+    echo "       before running this script.  Use the following command"
+    echo "       to set your EDSS_ROOT variable:"
+    echo "          setenv EDSS_ROOT <your chosen SMOKE installation dir>"
+    exit( 1 )
+endif
+
+echo "SMOKE v2.1 will be installed in the following directory:"
+echo "      $EDSS_ROOT"
+echo " "
+
+# Install files
+cd $EDSS_ROOT
+
+set file = smoke.nctox.data.tar.gz
+echo "Unpacking file $file..."
+tar xzvf $here/$file
+if ( $status > 0 ) then
+   echo "ERROR: Could not unpack the file $file"
+   echo "       Confirm that the 'tar' command is available and"
+   echo "       that you have the correct permissions"
+   set exitstat = 1
+endif
+
+set file = smoke.Linux2_x86pg.tar.gz
+echo "Unpacking file $file..."
+tar xzvf $here/$file
+if ( $status > 0 ) then
+   echo "ERROR: Could not unpack the file $file"
+   echo "       Confirm that the 'tar' command is available and"
+   echo "       that you have the correct permissions"
    set exitstat = 1
 endif
 
@@ -37,96 +71,79 @@ if ( $exitstat > 0 ) then
    exit( $exitstat )
 endif
 
-if ( ! $?EDSS_ROOT ) then
-    echo "ERROR: You must define the EDSS_ROOT environment variable"
-    echo "       prior to running this script.  Use the command line"
-    echo "       instruction as follows:"
-    echo "          setenv EDSS_ROOT <your chosen SMOKE installation dir>"
-    exit( 1 )
-endif
-
-# Check if gunzip is needed
-ls smoke*tar* | grep gz > .install_log
-set nline = `cat .install_log | wc -l`
-
-# If needed, unzip files
-if ( $nline > 0 ) then
-   which gunzip
-   if ( $status > 0 ) then
-       echo "ERROR: Your computer does not have the gunzip utility for"
-       echo "       unzipping the SMOKE tar files. You can mannually unzip"
-       echo "       these files using the pkzip or zip utilities, if these"
-       echo "       are available instead.  Then rerun this script."
-       echo " "
-       exit( 1 )
-   endif
-
-   gunzip smoke*tar.gz
-
-endif
-
-# Install files
-cd $EDSS_ROOT
-
-tar xvf $blah_foo_arg/smoke.nctox*tar
-if ( $status > 0 ) then
-   set exitstat = 1
-endif
-
-set found1 = n
-if ( -e $blah_foo_arg/smoke.IRIXn32f90.tar ) then
-   tar xvf $blah_foo_arg/smoke.IRIXn32f90.tar
-   set found1 = y
-endif
-
-if ( -e $blah_foo_arg/smoke.Linux2_x86ifc.tar ) then
-   tar xvf $blah_foo_arg/smoke.Linux2_x86ifc.tar
-   set found1 = y
-endif
-
-if ( -e $blah_foo_arg/smoke.SunOS5f90.tar ) then
-   tar xvf $blah_foo_arg/smoke.SunOS5f90.tar
-   set found1 = y
-endif
-
-if ( $found1 == n ) then
-   echo "ERROR: Cannot find any executable tar files in directory"
-   echo "       $blah_foo_arg"
-   echo " "
-   set exitstat = 1
-endif
-
+# Source the assigns file
 cd subsys/smoke/assigns
+set file = ASSIGNS.nctox.cmaq.cb4p25_wtox.unc36-nc
 source ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 if ( $status > 0 ) then
+   echo "ERROR: Could not source the Assigns file $file"
+   echo "       Please contact the CMAS Help Desk at http://www.cmascenter.org"
    set exitstat = 1
 endif
 
 if ( $exitstat > 0 ) then
-    echo "ERROR: installation did not complete successfully."
-    exit ( $exitstat )
-else
-    echo "CONGRATULATIONS: installation completed successfully."
+   exit( $exitstat )
 endif
+
+# Make necessary symbolic links
+echo "Creating symbolic links..."
+cd $EDSS_SUBSYS
+ln -s ioapi/fixed_src ioapi_includes
+if ( $status > 0 ) then
+   echo "ERROR: Could not create a symbolic link for the I/O API includes"
+   echo "       Please contact the CMAS Help Desk at http://www.cmascenter.org"
+   set exitstat = 1
+endif
+
+cd $SMKROOT/src
+foreach dir ( biog cntlmat emmod emqa emutil grdmat inc lib \
+              mo6 mobile point smkinven smkmerge spcmat temporal )
+    cd $dir
+    ln -s ../../scripts/make/Makeit ./
+    if ( $status > 0 ) then
+       echo "ERROR: Could not create a symbolic link in directory $dir"
+       echo "       Please contact the CMAS Help Desk at http://www.cmascenter.org"
+       set exitstat = 1
+    endif
+    cd ..
+end
+
+if ( $exitstat > 0 ) then
+   exit( $exitstat )
+endif
+
+# Create the inventory list files
+echo "Creating inventory list files..."
 
 cd $ARDAT
 echo "#LIST" > arinv.stationary.lst
 ls $ARDAT/arinv.nonpoint.nti99_NC.txt >> arinv.stationary.lst
 ls $ARDAT/arinv.stationary.nei96_NC.ida.txt >> arinv.stationary.lst
+
 cd $MBDAT
 echo "#LIST" > mbinv.lst
 ls $MBDAT/mbinv.nei99_NC.ida.txt >> mbinv.lst
+ln -s mcref.nctox.txt mcref.nctox_18.txt
+ln -s mvref.nctox.txt mvref.nctox_18.txt
+
 cd $INVDIR/nonroad
 echo "#LIST" > arinv.nonroad.lst
 ls $INVDIR/nonroad/arinv.nonroad.n* >> arinv.nonroad.lst
+
 cd $PTDAT
 echo "#LIST" > ptinv.lst
 ls $PTDAT/ptinv.n* >> ptinv.lst
-echo "#LIST" > pthour.lst
-echo "DATERANGE 0709 0710" >> pthour.lst
-ls $SMKDAT/cem/1996/q3/* >> pthour.lst
 
-cd $blah_foo_arg
+# Return to original directory
+cd $here
+rm -rf $tmpfile
+
+echo "Installation completed successfully."
+echo " "
+echo "Please follow the instructions in Section 4.4 of the SMOKE User's Manual"
+echo "   to run the nctox default case."
+echo "http://www.cep.unc.edu/empd/products/smoke/version2.1/html/ch04s04.html"
+echo " "
 
 exit( 0 )
 
