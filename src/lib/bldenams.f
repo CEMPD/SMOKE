@@ -199,7 +199,11 @@ C.........  Build output names
 C.............  If pol/act name is in inventory table, append its description 
 C               to the annual data description
             NAM = EANAM_L( I )
-            POLLNUM = INDEX1( NAM, MXIDAT, INVDNAM )
+            IF( ALLOCATED( INVDNAM ) ) THEN
+                POLLNUM = INDEX1( NAM, MXIDAT, INVDNAM )
+            ELSE
+                POLLNUM = 0
+            END IF
 
             OUTNAMES( I,1 ) = EANAM_L( I )  ! Annual emis name is same as pol/act
 
