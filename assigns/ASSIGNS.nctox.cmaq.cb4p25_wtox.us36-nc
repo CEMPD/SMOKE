@@ -116,6 +116,7 @@ if ( $SMK_SOURCE == 'B' ) then
    setenv BELD3_TOT $SMKDAT/inventory/beld3/LAND_TOTALS_c_cmaq_nat.dat
    setenv BELD3_A   $SMKDAT/inventory/beld3/LANDA_c_cmaq_nat.dat
    setenv BELD3_B   $SMKDAT/inventory/beld3/LANDB_c_cmaq_nat.dat
+   setenv SOILINP  $STATIC/soilinp.$GRID.$SPC.ncf  # NO soil input file
 endif
 
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
@@ -302,6 +303,7 @@ if ( $SMK_SOURCE == 'B' ) then
    setenv BGRDW     $INVOPD/bgrd.winter.$GRID.$BSCEN.ncf  # Winter grd normalized bio emis
    setenv BIOSEASON $GE_DAT/bioseason.$YEAR.us36.ncf
    setenv B3GRD     $INVOPD/b3grd.$GRID.$BSCEN.ncf
+   setenv SOILOUT   $STATIC/soilout.$GRID.$SPC.ncf  # NO soil output file
 endif
 
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
