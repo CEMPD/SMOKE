@@ -577,12 +577,7 @@ C               that is "meters above ground."
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            DO I = 1, NLAYS3D
-                J = J + 1
-                SIGH   ( I-1 ) = 0.5 * ( VGLVSXG( J ) + VGLVSXG( J-1 ) )
-            END DO
-
-        END IF
+        END IF      ! If using met data or not (not only for explicit plumes)
 
 C.........  Get horizontal grid structure from the G_GRIDPATH file
         IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUN3D,
@@ -623,6 +618,12 @@ C.........  Compare number of meteorology layers to number of emissions layers
 
         END IF
 
+C.........  Abort if error found analyzing inputs
+        IF ( EFLAG ) THEN
+            MESG = 'Problem with inputs.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  Update start date/time and duration from the environment
         CALL GETM3EPI( -1, SDATE, STIME, NSTEPS )
         TSTEP = 10000
@@ -648,7 +649,7 @@ C           of whether the file is available.
         CALL RDPELV( PDEV, NSRC, .FALSE., NMAJOR, NPING )
 
 C.........  If explicit plume rise, only explicit plume sources will be
-C           output, but LMAJOR needs to be true for error checking.  So, set it
+C           output, but LMAJOR needs to be true for error checking.  So, set it.
         IF( XFLAG ) LMAJOR = .TRUE.
 
 C.........  Allocate memory for all remaining variables using dimensions 
@@ -1133,6 +1134,7 @@ C.................  Store layer fractions
                     LFRAC( K,1:EMLAYS ) = TFRAC( 1:EMLAYS )  ! array
                 ELSE 
                     LFRAC( S,1:EMLAYS ) = TFRAC( 1:EMLAYS )  ! array
+
                 END IF
 
 C.................  Check if LTOP out of range, and report (will only work
