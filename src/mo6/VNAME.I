@@ -1,4 +1,4 @@
-      VERSION='MOBILE6.1 Draft (07-Jun-2001)' 
+      VERSION='MOBILE6 (16-Jan-2002)' 
 C 
 C  VNAME sets the name of the version of the model 
 C 
