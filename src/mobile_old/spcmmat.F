@@ -4,7 +4,7 @@ C Version "@(#)$Id$ $Source$ $Date$
         PROGRAM SPCMMAT
 
 C***********************************************************************
-C  program body starts at line 180
+C  program body starts at line 237
 C
 C  DESCRIPTION:
 C       Construct mobile source chemical speciation matrix from data 
@@ -42,6 +42,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CSVNAME
         INTEGER         FIND1, FIND2, FIND3, FIND4
         INTEGER         GETEFILE
+        INTEGER         GETMENU
         LOGICAL         GETYN
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
@@ -51,15 +52,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETEFILE, GETYN, 
-     &                  INDEX1, PROMPTFFILE, PROMPTMFILE, RDSPROF, 
-     &                  STR2INT, STR2REAL, TRIMLEN
+        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETEFILE, GETMENU,
+     &                  GETYN, INDEX1, PROMPTFFILE, PROMPTMFILE, 
+     &                  RDSPROF, STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   PARAMETERS and their descriptions:
 
-        REAL        TON2GM
-        PARAMETER ( TON2GM = 907184.74 )
         
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   NOTE that ASC (mobile-source-category) ID's are 10-digit
@@ -87,7 +86,7 @@ C...........   Speciation profiles table
         REAL        ALLADJ
         
         INTEGER     NPROFS                      !  actual number of profiles
-        INTEGER     SPROF( NSPRM )              !  profile indexes (sorted)
+        INTEGER     SXREF( NSPRM )              !  profile indexes (sorted)
         REAL        SCOEF( NSPRM, MXMPOL )      !  profile coefficients
 
 C...........   Speciation naming and indexing lists
@@ -169,15 +168,41 @@ C.......   Fourth part depends on FIP, road class, and vehicle type
         REAL        FRMADF( MXFREF )
         REAL        ALLADF( MXFREF )
 
+C...........   Volatile Pollutant Type Conversion Table
+C........ After sorting, two parts
+ 
+C........ Default
+ 
+        REAL        CONVV0( NVTYPE, MXEPRC )  !  conversion factor
+ 
+C........ First part depends on FIP,road class
+        INTEGER     NCNV1
+        INTEGER     FIPSV1( MXSCNV )  !  conversion factor FIP
+        INTEGER     RDCLV1( MXSCNV )  !  conversion factor road class
+        REAL        CONVV1( MXSCNV, NVTYPE, MXEPRC )  !  conversion factor
+
+C........ Second part depends on State,road class
+        INTEGER     NCNV2
+        INTEGER     FIPSV2( MXSCNV )  !  conversion factor FIP
+        INTEGER     RDCLV2( MXSCNV )  !  conversion factor road class
+        REAL        CONVV2( MXSCNV, NVTYPE, MXEPRC )  !  conversion factor
+
+C........ Third part depends on road class only
+        INTEGER     NCNV3
+        INTEGER     RDCLV3( NRCLAS )  !  conversion factor road class
+        REAL        CONVV3( NRCLAS, NVTYPE, MXEPRC )  !  conversion factor
+
 C.......   Speciation matrix variables and their names:
         
-        REAL          SPCFACS( NMSRC, NVTYPE, NSMATX ) !  speciation coefficients
+        REAL          SPCFACS( NMSRC, NVTYPE, NSMATX ) ! speciation coefficients
 
 C...........   Other local variables
         
         INTEGER         S, F, I, J, K, L, P, V !  index counters
-        INTEGER         SDEV            !  for surrogate coeff file
-        INTEGER         XDEV            !  for surrogate xref  file
+        INTEGER         CHOICE          !  selection from menu 
+        INTEGER         SDEV            !  unit for surrogate coeff file
+        INTEGER         XDEV            !  unit for surrogate xref  file
+        INTEGER         KDEV            !  unit for conversion file
         INTEGER         LDEV            !  log-device
         INTEGER         TDEV            !  for list file
         INTEGER         SPCPRO          !  scratch xref value
@@ -188,9 +213,14 @@ C...........   Other local variables
         INTEGER         I2              !  for counting state-dependent refs
         INTEGER         I3              !  for counting FIP-dependent   refs
         INTEGER         NRDT            !  index for RDT in MROADS3
+
         REAL            FAC             !  common factor subexpression
+        REAL            VOLADJ          !  common volatile adjustment 
+
         CHARACTER*3     INV     !  inventory species name
         CHARACTER*3     PROC    !  MV process name
+        CHARACTER*5     INVPRO  !  Inventory pollutant from speciation profile
+        CHARACTER*5     POLV    !  volatile inventory pollutant in inventory
         CHARACTER*8     MODEL   !  model species name
         CHARACTER*16    ANAME   !  logical name for mobile-source  input file
         CHARACTER*16    MNAME   !  logical name for spec matrix output file
@@ -198,6 +228,7 @@ C...........   Other local variables
         CHARACTER*80    LINE    !  input line from XREF file
         
         LOGICAL         EFLAG   !  input error flat
+        LOGICAL         KFLAG   !  if volatile format conversion factor or not 
 
 
 C***********************************************************************
@@ -294,14 +325,14 @@ C.............  Set other variable properties
             VDESC3D( I ) = 'Conversion factor for ' // 
      &         INV  ( 1:TRIMLEN( INV  ) ) // ' from process ' // 
      &         PROC ( 1:TRIMLEN( PROC ) ) // ' to species '   //
-     &         MODEL( 1:TRIMLEN( MODEL) ) // ''
+     &         MODEL( 1:TRIMLEN( MODEL) )
             VTYPE3D( I ) = M3REAL
 
 C.............  Create MV process to model species indicies
             P = INDEX1( PROC, NEMODE, MEMODE )
             NSP( P ) = NSP( P ) + 1
-            ISPC_PRC( P, NSP( P ) ) = INV
             MSPC_PRC( P, NSP( P ) ) = MODEL
+            ISPC_PRC( P, NSP( P ) ) = INV
             IDXVAR  ( P, NSP( P ) ) = I
             IDXSPC  ( P, NSP( P ) ) = INDEX1( MODEL, NMPOL, EMNAM )
             
@@ -351,12 +382,49 @@ C...............   ASSUMPTIONS: CSVNAME has provided model species list (EMNAM)
      &       ' ', 'Reading SPECIATION PROFILES file...', ' '
 
         
-        NPROFS = RDSPROF( SDEV, NMPOL, EMNAM, NSPRM, SPROF, SCOEF )
+        NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, NSPRM, 
+     &                    SXREF, SCOEF, INVPRO )
 
         IF ( NPROFS .LE. 0 ) THEN
             CALL M3EXIT( 'SPCMMAT', 0, 0, 
      &                   'Error reading SPECIATION PROFILE file.', 2 )
         END IF
+
+C.......   Compare inventory pollutant in the speciation profile with
+C.......   volatile pollutant in inventory.  If not the same, prompt for
+C.......   a conversion file.
+ 
+C.......   Prompt for which inventory pollutant is volatile
+ 
+        CHOICE = GETMENU( NIPOL, 1,
+     &                    'Which inventory pollutant is volatile?',
+     &                    EINAM )
+ 
+        POLV = EINAM( CHOICE )
+ 
+        IF( INVPRO .NE. POLV ) THEN
+ 
+            MESG = 'Enter logical name for ' //
+     &              POLV ( 1:TRIMLEN( POLV ) ) // ' TO ' //
+     &              INVPRO ( 1:TRIMLEN( INVPRO ) ) //
+     &             ' CONVERSION file >> '
+            KDEV = PROMPTFFILE(
+     &             MESG, .TRUE., .TRUE., 'MSCNV', 'SPCPMAT' )
+ 
+            KFLAG = .TRUE.
+ 
+        ENDIF
+
+C.......   If needed, read the volatile pollutant conversion file
+ 
+        IF( KFLAG ) THEN
+
+            CALL RDMCONV( KDEV, TDEV, 
+     &                    CONVV0, FIPSV1, RDCLV1, CONVV1, NCNV1,
+     &                            FIPSV2, RDCLV2, CONVV2, NCNV2,
+     &                                    RDCLV3, CONVV3, NCNV3  )
+ 
+        ENDIF
 
 C.......   Read and process the speciation cross-reference file
 
@@ -583,7 +651,7 @@ C...........   Then if that fails, try by ASC only.
             IF ( F .GT. 0 ) THEN        !  full match:
 
                 SPCPRO = SPPROF( F )
-                ALLADJ = ALLADF( F ) * TON2GM
+                ALLADJ = ALLADF( F )
                 FRMADJ = FRMADF( F )
                 ETHADJ = ETHADF( F )
                 VREACT = VREACF( F )
@@ -598,7 +666,7 @@ C...........   Then if that fails, try by ASC only.
             IF ( F .GT. 0 ) THEN        !  state match
            
                 SPCPRO = SPPROS( F )
-                ALLADJ = ALLADS( F ) * TON2GM
+                ALLADJ = ALLADS( F )
                 FRMADJ = FRMADS( F )
                 ETHADJ = ETHADS( F )
                 VREACT = VREACS( F )
@@ -611,7 +679,7 @@ C...........   Then if that fails, try by ASC only.
             IF ( F .GT. 0 ) THEN        !  roadclass match
 
                 SPCPRO = SPPROR( F )
-                ALLADJ = ALLADR( F ) * TON2GM
+                ALLADJ = ALLADR( F )
                 FRMADJ = FRMADR( F )
                 ETHADJ = ETHADR( F )
                 VREACT = VREACR( F )
@@ -624,13 +692,13 @@ C...........   Then if that fails, try by ASC only.
             IF ( F .GT. 0 ) THEN        !  vehicletype/emissionmode-only match
 
                 SPCPRO = SPPROV( F )
-                ALLADJ = ALLADV( F ) * TON2GM
+                ALLADJ = ALLADV( F )
                 FRMADJ = FRMADV( F )
                 ETHADJ = ETHADV( F )
                 VREACT = VREACV( F )
                 GO TO  131
 
-            END IF              !  if roadclass matcjh
+            END IF              !  if roadclass match
 
             EFLAG = .TRUE.      !  if you get to here:  no match found
             WRITE( MESG,94050 ) 
@@ -642,9 +710,55 @@ C...........   Then if that fails, try by ASC only.
       
             GO TO 144      !  to end of loop
 
-131         CONTINUE            !  Cross-reference lookups succeeded
+  131       CONTINUE            !  Cross-reference lookups succeeded
 
-            I = FIND1( SPCPRO, NPROFS, SPROF )
+C...........   Finding the the correct volatile conversion factor is a
+C...........       Four stage process:
+C...........       by      FIP,Roadclass
+C...........       by      State,Roadclass
+C...........       by      Roadclass
+C...........       by      Default
+
+C...........   Initialize volatile conversion factor 
+            VOLADJ = 1.0
+ 
+C...........   Process volatile conversion factors if necessary
+            IF( KFLAG ) THEN
+
+                F = FIND2( FIP, RDT, NCNV1, FIPSV1, RDCLV1 )
+
+                IF ( F .GT. 0 ) THEN      ! FIP, road class match
+ 
+                    VOLADJ = CONVV1( F,VHT,EMT )
+ 
+                ELSE                      ! no FIP, road class match
+
+                    F = FIND2( (FIP/1000)*1000, RDT, NCNV2, 
+     &                         FIPSV2, RDCLV2 )
+
+                    IF ( F .GT. 0 ) THEN
+ 
+                        VOLADJ = CONVV2( F,VHT,EMT )
+ 
+                    ELSE                  !  no state, road class match
+
+                        F = FIND2( RDT, NCNV3, RDCLV3 )
+
+                        IF ( F .GT. 0 ) THEN
+ 
+                            VOLADJ = CONVV3( F,VHT,EMT )
+ 
+                        ELSE              !  no road class match
+
+                            VOLADJ = CONVV0( VHT,EMT )
+
+                        ENDIF  ! road class match
+                    ENDIF      ! state-road class match
+                ENDIF          ! FIP-road class match
+
+            ENDIF          ! KFLAG is true
+
+            I = FIND1( SPCPRO, NPROFS, SXREF )
 
             IF ( I .LE. 0 ) THEN        !  error:  XREF index not found
 
@@ -667,19 +781,29 @@ C...........   Loop through species that exist for this MV process
                 V = IDXSPC( EMT, P )
 
 C.................  Set inventory-species specific variables
+C.................  Use VREACT only if the volatile inventory pollutant is THC
                 IF( ISPC_PRC( EMT,P ) .EQ. 'THC' ) THEN
-                    FAC = VREACT * ALLADJ
+                    FAC = VREACT * ALLADJ * VOLADJ
+
+C.................  Use the volatile correct factor only if the current
+C.................  inventory species is volatile
+                ELSEIF( ISPC_PRC( EMT,P ) .EQ. POLV ) THEN
+                    FAC = ALLADJ * VOLADJ
+
                 ELSE
                     FAC = ALLADJ
+
                 ENDIF
 
 C.................  Set factors with consideration to model species
 
-                IF    ( MSPC_PRC( EMT,P ) .EQ. 'FORM' ) THEN
-                    SPCFACS( S,VHT,K ) = FRMADJ * FAC * SCOEF( I,V )
+                IF( MSPC_PRC( EMT,P ) .EQ. 'FORM' ) THEN
+                    SPCFACS( S,VHT,K ) = 
+     &                          FRMADJ * FAC * SCOEF( I,V )
             
                 ELSEIF( MSPC_PRC( EMT,P ) .EQ. 'ETH' ) THEN
-                    SPCFACS( S,VHT,K ) = ETHADJ * FAC * SCOEF( I,V )
+                    SPCFACS( S,VHT,K ) = 
+     &                          ETHADJ * FAC * SCOEF( I,V )
 
                 ELSE
                     SPCFACS( S,VHT,K ) = FAC * SCOEF( I,V )
