@@ -238,6 +238,7 @@ C.............  Determine output types (1=real, 0=int)
 C.............  Write initial header
             L = LEN_TRIM( POLBUF )
             WRITE( DDEV, 93000 ) 
+     &             '#IDA',
      &             '#TYPE     Area Source Emission Inventory',
      &             '#DESC     Output from SMOKE',
      &             '#POLID    ' // POLBUF( 1:L )
@@ -292,6 +293,7 @@ C.............  Set output types (1=real, 0=int)
 C.............  Write initial header
             L = LEN_TRIM( POLBUF )
             IF( DDEV .GT. 0 ) WRITE( DDEV, 93000 ) 
+     &             '#IDA',
      &             '#TYPE     Motor Vehicle Emission Inventory',
      &             '#DESC     Output from SMOKE',
      &             '#POLID    ' // POLBUF( 1:L )
@@ -299,6 +301,7 @@ C.............  Write initial header
             L1 = LEN_TRIM( ACTBUF )
             L2 = LEN_TRIM( UNTBUF )
             IF( VDEV .GT. 0 ) WRITE( VDEV, 93000 ) 
+     &             '#IDA',
      &             '#TYPE     Motor Vehicle Activity Inventory',
      &             '#DESC     Output from SMOKE',
      &             '#DATA     ' // ACTBUF( 1:L1 ),
@@ -412,6 +415,7 @@ C.............  Determine output types (1=real, 0=int)
 C.............  Write initial header
             L = LEN_TRIM( POLBUF )
             WRITE( DDEV, 93000 ) 
+     &             '#IDA',
      &             '#TYPE     Point Source Emission Inventory',
      &             '#DESC     Output from SMOKE',
      &             '#POLID    ' // POLBUF( 1:L )
