@@ -161,13 +161,19 @@ if ( $RUN_CNTLMAT == Y && $RUN_PART1 == 'Y' ) then
    endif
 endif
 
-if ( $RUN_EMISFAC == Y && $RUN_PART2 == 'Y' ) then
+if ( $RUN_EMISFAC == Y && $RUN_PART1 == 'Y' ) then
    if ( $SMK_SOURCE == M ) then
-      /bin/rm -f $HOURLYT
+      /bin/rm -f $SMK_EMISPATH/*
    endif
 endif
 
 if ( $RUN_PREMOBL == Y && $RUN_PART1 == 'Y' ) then
+   if ( $SMK_SOURCE == M ) then
+      /bin/rm -f $SMK_METPATH/*
+   endif
+endif
+
+if ( $RUN_MBSETUP == Y && $RUN_PART1 == 'Y' ) then
    /bin/rm -f $DAILYGROUP  
    /bin/rm -f $WEEKLYGROUP 
    /bin/rm -f $MONTHLYGROUP
