@@ -69,15 +69,15 @@ C...........   Local paramaters
         INTEGER, PARAMETER :: MXMBLBL = 5
 
 C.........  Output labels (note: these could be dynamic if in MODINFO)
-        CHARACTER*5  :: PTLABEL( MXPTLBL ) =  !  message buffer
-     &                ( / 'FIPS ', 'Plant', 'Char1', 'Char2',
-     &                    'Char3', 'Char4', 'Char5', 'Pol  ' / )
+        CHARACTER*6  :: PTLABEL( MXPTLBL ) =  !  message buffer
+     &                ( / 'Region', 'Plant ', 'Char1 ', 'Char2 ',
+     &                    'Char3 ', 'Char4 ', 'Char5 ', 'Pol   ' / )
  
-        CHARACTER*5  :: ARLABEL( MXARLBL ) =  !  message buffer
-     &                ( / 'FIPS ', 'SCC  ', 'Pol  ' / )
+        CHARACTER*6  :: ARLABEL( MXARLBL ) =  !  message buffer
+     &                ( / 'Region', 'SCC   ', 'Pol   ' / )
  
         CHARACTER*9  :: MBLABEL( MXMBLBL ) =  !  message buffer
-     &                ( / 'FIPS     ', 'Road Type', 
+     &                ( / 'Region   ', 'Road Type', 
      &                    'Link     ', 'Vtype    ', 'Pol      ' / )
 
         CHARACTER*9, SAVE :: LABEL( MXPTLBL )
@@ -124,6 +124,7 @@ C.........  Make sure not to exceed NCHARS legal value
         NLOOP = MIN( NCIN, TMPNUM )
 
 C.........  Initialize output buffer
+        OUTBUFF = ' '
         IF( NCHARS .GE. 1 ) THEN
             L1 = SC_BEGP( 1 )
             L2 = SC_ENDP( 1 )
