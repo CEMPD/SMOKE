@@ -73,7 +73,7 @@ C...........   Other local variables
         LOGICAL   :: IDAORNTI  = .FALSE. !  true: at least one file is IDA or NTI format
 
         CHARACTER*300   INFILE      !  input file line buffer
-        CHARACTER*300   MESG        !  message buffer
+        CHARACTER*500   MESG        !  message buffer
 
         CHARACTER*16 :: PROGNAME =  'CHKLSTFL' ! program name
 
