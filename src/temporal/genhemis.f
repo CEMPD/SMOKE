@@ -82,11 +82,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FIND1
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
-        LOGICAL         ISDSTIME
         INTEGER         WKDAY
 
-        EXTERNAL        CRLF, ENVYN, FIND1, HHMMSS, INDEX1, 
-     &                  ISDSTIME, WKDAY
+        EXTERNAL        CRLF, ENVYN, FIND1, HHMMSS, INDEX1, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN)    :: NPLE      ! Number of pols+emis types
@@ -125,6 +123,7 @@ C...........   Other local variables
         INTEGER          HOUR       ! hour of day (1 ... 24)
         INTEGER          IOS        ! i/o status
         INTEGER, SAVE :: LDATE = -1 ! date used in previous subroutine call
+        INTEGER, SAVE :: LTIME = -1 ! time used in previous subroutine call
         INTEGER          MON        ! tmp month number (1=Jan)
         INTEGER          PIDX       ! tmp pollutant/activity index
         INTEGER          TDATE      ! date for computing time zones update arr 
@@ -132,7 +131,6 @@ C...........   Other local variables
 
         REAL             UFAC       ! tmp units conversion factor
 
-        LOGICAL, SAVE :: DAYLIT   = .FALSE. ! true: TZONES are in daylight time
         LOGICAL, SAVE :: DFLAG              ! true: day-specific data
         LOGICAL, SAVE :: EFLAG    = .FALSE. ! true: error found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first call to subrtn
@@ -156,10 +154,12 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine GENHEMIS
 
-C.........  If current date is less than previous date, then we know that the
-C           calling program has started over with a new set of pollutants.  So
-C           reset the flag for first timestep.  This 
-        IF( JDATE .LT. LDATE .OR. FIRSTIME ) FIRSTSTP = .TRUE.
+C.........  If current date is less than previous date or if the date is the
+C           same but the time is earlier, then we know that the calling
+C           program has started over with a new set of pollutants.  So
+C           reset the flag for first timestep.
+        IF( JDATE .LT. LDATE .OR. FIRSTIME .OR.
+     &    ( JDATE .EQ. LDATE .AND. JTIME .LT. LTIME )) FIRSTSTP = .TRUE.
 
 C.........  For the first time the subroutine is called, 
         IF( FIRSTIME ) THEN
@@ -334,26 +334,6 @@ C.........  Determine if this TMAT needs to be updated
 C.........  Construct TMAT -- array of effective composite profile coefficients
 
         IF( TMATCALC ) THEN
-
-C.............  Adjust sources' time zones to account for daylight time...
-C.............  Subtract 1 if date is daylight time and TZONES is not already
-C               converted.  Add 1 if date is standard and TZONES has been
-C               converted.
-C.............  FLTRDAYL is a source-array of 0s and 1s to permit sources
-C               to not get daylight time conversion.
-            IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
-
-                DAYLIT = .TRUE.
-
-                TZONES = TZONES - 1 * FLTRDAYL   ! arrays
-
-            ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
-
-                DAYLIT = .FALSE.
-
-                TZONES = TZONES + 1 * FLTRDAYL   ! arrays
-
-            END IF 
                 
 C.............  Build temporal allocation matrix
             CALL MKTMAT( NSRC, NPLE, JDATE, TZONE, TZONES, 
@@ -511,8 +491,9 @@ C.....................  Convert to tons (assuming EFs are in grams)
 
         END DO                  ! End pollutant loop
 
-C.........  Reset previous date for future iterations
+C.........  Reset previous date and time for future iterations
         LDATE = JDATE
+        LTIME = JTIME
 
 C.........  Set controller to turn off first time step setting
         FIRSTSTP = .FALSE.
