@@ -93,6 +93,7 @@ C.........   Other local variables
         INTEGER    VARPOL           ! pollutant specified by current variable
         
         REAL       EFVAL            ! temporary emission factor value
+        REAL       RAMPEF           ! ramp emission factor, used when creating freeway composite
         
         LOGICAL       :: LASAFLAG = .FALSE. ! true: treat local roads as arterial
         LOGICAL       :: USEHAP  = .FALSE.  ! true: use user-defined toxic value
@@ -177,16 +178,37 @@ C.................  Check if vehicle type is valid for this process
 
 C.................  Store appropriate emission factor in source-based array
                 IF( IPOL <= MXM6POLS ) THEN
+
                     SRCEFS( EFPOS ) = 
      &                 EMISSIONS( IEF )%PTR( SCENNUM,
      &                                       M6POL2EF( IEF,IPOL ), 
      &                                       M6VEH2EF( IEF,VTYPE ),
      &                                       M6FAC2EF( IEF,FTYPE ),IHR )
-                    
+
+C.....................  Adjust for ramp emissions if freeway
+                    IF( FTYPE == M6FREEWAY ) THEN
+                        RAMPEF = 
+     &                     EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                           M6POL2EF( IEF,IPOL ), 
+     &                                           M6VEH2EF( IEF,VTYPE ),
+     &                                           M6FAC2EF( IEF,M6RAMP ),
+     &                                           IHR )
+                        SRCEFS( EFPOS ) = 
+     &                      ADJUST_FREEWAY_EF( SRCEFS( EFPOS ), RAMPEF )
+                    END IF
                 ELSE
                     SRCEFS( EFPOS ) = 
      &                 HAPEFS( SCENNUM, VTYPE, IPOL - MXM6POLS, 
      &                         IEF, IHR, FTYPE )
+     
+C.....................  Adjust for ramp emissions if freeway
+                    IF( FTYPE == M6FREEWAY ) THEN
+                        RAMPEF = 
+     &                      HAPEFS( SCENNUM, VTYPE, IPOL - MXM6POLS, 
+     &                              IEF, IHR, M6RAMP )
+                        SRCEFS( EFPOS ) =
+     &                      ADJUST_FREEWAY_EF( SRCEFS( EFPOS ), RAMPEF )
+                    END IF
                 END IF
                 
 C.................  Create NONHAP hydrocarbon value if needed
@@ -226,6 +248,14 @@ C.........................  Get toxic emission factor
                         IF( USEHAP ) THEN
                             EFVAL = HAPEFS( SCENNUM, VTYPE, VARPOL, 
      &                                      IEF, IHR, FTYPE )
+
+C.............................  Adjust for ramp emissions
+                            IF( FTYPE == M6FREEWAY ) THEN
+                                RAMPEF = HAPEFS( SCENNUM, VTYPE, VARPOL,
+     &                                           IEF, IHR, M6RAMP )
+                                EFVAL = 
+     &                              ADJUST_FREEWAY_EF( EFVAL, RAMPEF )
+                            END IF
                         
                         ELSE
                         
@@ -236,6 +266,18 @@ C.............................  Check that this is a valid pol/ef combo
      &                                       M6POL2EF( IEF,VARPOL ), 
      &                                       M6VEH2EF( IEF,VTYPE ),
      &                                       M6FAC2EF( IEF,FTYPE ),IHR )
+     
+C.............................  Adjust for ramp emissions
+                            IF( FTYPE == M6FREEWAY ) THEN
+                                RAMPEF = EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                       M6POL2EF( IEF,VARPOL ), 
+     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       M6FAC2EF( IEF,M6RAMP ),
+     &                                       IHR )
+                                EFVAL = 
+     &                              ADJUST_FREEWAY_EF( EFVAL, RAMPEF )
+                            END IF
+                            
                         END IF
 
 C.........................  Subtract toxic ef from hydrocarbon ef                        
@@ -308,6 +350,26 @@ C.............  Write source numbers to file
 
 C.........  Reset array for storing user-defined HAPs
         IF( ALLOCATED( HAPEFS ) ) HAPEFS = 0.  ! array
+        
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+        CONTAINS
+        
+C.............  This internal subprogram calculates a composite emission
+C               factor, based on the freeway and ramp emission factors.
+            REAL FUNCTION ADJUST_FREEWAY_EF( FREEWAY_FAC, RAMP_FAC )
+            
+C.............  PRE: FREEWAY_FAC and RAMP_FAC are assigned
+C.............  POST: FNCVAL == (1-Ramp VMT)*FREEWAY_FAC + (Ramp VMT)*RAMP_FAC
+
+C.............  Function arguments
+            REAL, INTENT (IN) :: FREEWAY_FAC    ! freeway emission factor
+            REAL, INTENT (IN) :: RAMP_FAC       ! ramp emission factor
+            
+            ADJUST_FREEWAY_EF = ( 1-RAMPVMT ) * FREEWAY_FAC + 
+     &                          ( RAMPVMT )   * RAMP_FAC
+            
+            END FUNCTION ADJUST_FREEWAY_EF
         
         END SUBROUTINE WREMFACS
         
