@@ -231,6 +231,7 @@ C.......   Build description for, and create/open output file
 C.......   (all but variables-table in description is borrowed from M2NAME)
 
         NVARS3D = MSPCS
+        NLAYS3D = 1
 
         DO  11  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )
@@ -270,7 +271,7 @@ C.......   Build name table for variables in normalized emissions file"
 
 C...........   Read time-independent data:
 
-        IF ( PARTYPE .NE. 2 ) THEN     ! Use cloud to calc. PAR
+        IF ( PARTYPE .NE. 2 ) THEN     ! Use clouds to calc. PAR
            IF ( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, LAT ) ) THEN
               MESG = 'Could not read LAT from file "' //
      &                GNAME( 1:TRIMLEN( GNAME ) ) // '"'
@@ -348,7 +349,7 @@ C.......   Loop on time steps:
               CALL HRBIOS( JDATE, JTIME,
      &                   PINE, DECD, CONF, AGRC, LEAF, OTHR, AVLAI,
      &                   NORNO, TSFC, TSOLAR, EMIS )
-           ELSE
+           ELSE        ! Use clouds to calculate PAR
 
               IF ( .NOT. READ3( MNAME, 'TA', 1, 
      &             JDATE, JTIME, TASFC ) ) THEN
@@ -366,7 +367,7 @@ C.......   Loop on time steps:
 
               CALL HRBIO( JDATE, JTIME, LAT, LON, PRSFC, TASFC,
      &                    PINE, DECD, CONF, LEAF, OTHR, AVLAI, NORNO,
-     &                    EMIS )
+     &                    PARTYPE, EMIS )
            END IF 
 
            IF ( .NOT. WRITE3( ENAME, 'ALL', 
