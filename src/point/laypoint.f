@@ -14,6 +14,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C     Updated Feb. 2005 with changes from J. Godowitch & G. Pouliot
 C
 C***********************************************************************
 C  
@@ -54,13 +55,14 @@ C.........  This module contains the global variables for the 3-d grid
      &                     XORIG, YORIG, COORD, GDTYP, P_ALP, P_BET,
      &                     P_GAM, XCENT, YCENT, XCELL, YCELL, GRDNM
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
@@ -71,6 +73,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         DSCM3GRD
         LOGICAL         DSCM3LAY
         INTEGER         ENVINT
+        REAL            ENVREAL
         LOGICAL         ENVYN
         INTEGER         FIND1
         CHARACTER(50)   GETCFDSC
@@ -81,13 +84,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(16)   PROMPTMFILE
         INTEGER         WKDAY
 
-        EXTERNAL   CHKMETEM, CRLF, DSCM3GRD, DSCM3LAY, ENVINT, ENVYN, 
-     &             FIND1, GETCFDSC, HHMMSS, INDEX1, MMDDYY, 
+        EXTERNAL   CHKMETEM, CRLF, DSCM3GRD, DSCM3LAY, ENVINT, ENVREAL, 
+     &             ENVYN, FIND1, GETCFDSC, HHMMSS, INDEX1, MMDDYY, 
      &             PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        REAL, PARAMETER :: USTARMIN  = 0.1  ! Min valid value for USTAR
+        REAL, PARAMETER :: USTARMIN  = 0.1     ! Min valid value for USTAR
+        REAL, PARAMETER :: CONVPA    = 1.0E-2  ! conversion factor for Pa to mb
+        REAL, PARAMETER :: ZERO      = 0.0     ! dummy zero value
+        REAL, PARAMETER :: BTU2M4PS3 = 0.00000258  ! conv. factor for bouyancy flux
 
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
@@ -107,15 +113,20 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point source stack parameters:
 
 C.........  Allocatable, per-source meteorology variables
-        REAL   , ALLOCATABLE :: HFX  ( : )    !  sensible heat flux (M K / S )
+        REAL   , ALLOCATABLE :: HFX  ( : )    !  sensible heat flux (watts/m^2)
         REAL   , ALLOCATABLE :: HMIX ( : )    !  mixing height (m)
         REAL   , ALLOCATABLE :: TSFC ( : )    !  surface temperature (deg K)
         REAL   , ALLOCATABLE :: USTAR( : )    !  friction velocity (m/s)
+        REAL   , ALLOCATABLE :: PRSFC( : )    !  surface pressure (Pascals)
+
+C.........  Allocatable, per-source fire data variables
+        REAL   , ALLOCATABLE :: BFLX ( : )    !  Briggs bouyancy flux (m^4/s^3)
+        REAL   , ALLOCATABLE :: ACRES( : )    !  area burned (acres)
 
 C.........  Allocatable, per-source and per layer meteorology variables. 
 C           Dimensioned by layers, then sources
         REAL   , ALLOCATABLE :: DDZH ( :,: )  !  1/( zh(l) - zh(l-1) )
-        REAL   , ALLOCATABLE :: DDZF ( :,: )  !  1/( zh(l) - zh(l-1) )
+        REAL   , ALLOCATABLE :: DDZF ( :,: )  !  1/( zf(l) - zf(l-1) )
         REAL   , ALLOCATABLE :: PRES ( :,: )  !  pressure (Pa)
         REAL   , ALLOCATABLE :: QV   ( :,: )  !  mixing ratio (kg/kg)
         REAL   , ALLOCATABLE :: TA   ( :,: )  !  temperature (K)
@@ -124,6 +135,7 @@ C           Dimensioned by layers, then sources
         REAL   , ALLOCATABLE :: ZF   ( :,: )  !  layer surface height (m)
         REAL   , ALLOCATABLE :: ZH   ( :,: )  !  layer center  height (m)
         REAL   , ALLOCATABLE :: ZSTK ( :,: )  !  zf( l,s ) - stkht(s) (m)
+        REAL   , ALLOCATABLE :: DENS ( :,: )  !  air density (kg/m^3)
 
 C.........  Allocatable, temporary per-layer variables from 1:EMLAYS
         REAL   , ALLOCATABLE :: WSPD ( : )    !  wind speed (m/s)
@@ -164,6 +176,7 @@ C           by EMLAYS, so that index can be written to PLAY_EX file
 C.........  Fixed-dimension arrays
         REAL         LFULLHT( 0:MXLAYS3 )     !  full-level heights [m]
         REAL         LHALFHT( 1:MXLAYS3 )     !  half-level heights [m]
+        REAL         TEMPS  ( 1:MXLAYS3 )     !  half-level temps (K)
         REAL         SIGH   ( 0:MXLAYS3-1 )   !  half-level sigma values
         REAL         VGLVSXG( 0:MXLAYS3 )     !  vertical coord values
         REAL         WEIGHTS( 1:MXLAYS3 )     !  tmp weights for vertical aloc
@@ -187,6 +200,8 @@ C...........   Logical names and unit numbers
         CHARACTER(16)   SNAME   !  cross-point surface met file name
         CHARACTER(16)   TNAME   !  dot-point surface grid file
         CHARACTER(16)   XNAME   !  cross-point layered met file name
+        CHARACTER(16)   TNAME   !  temporalized data file name
+        CHARACTER(16) DAYNAME   !  daily inventory file name
 
 C...........   Other local variables
 
@@ -213,8 +228,9 @@ C...........   Other local variables
         INTEGER       :: SDATE = 0 ! Julian start date (YYYYDDD)
         INTEGER       :: STIME = 0 ! start time (HHMMSS)
         INTEGER          TSTEP     ! output time step
+        INTEGER          IPVERT    ! plume vertical spread method
 
-        REAL             X, Y, P, Q, PP, QQ
+        REAL             X, Y, P, Q
         REAL             DM, HT, TK, VE, FL  ! tmp stack parameters
         REAL             XBEG, XEND, XL  ! tmp x-coords
         REAL             YBEG, YEND, YL  ! tmp y-coords
@@ -228,7 +244,11 @@ C...........   Other local variables
         REAL             ZZ0, ZZ1, ZF0, ZF1
         REAL             ZBOT      !  plume bottom elevation (m)
         REAL             ZTOP      !  plume top    elevation (m)
-        REAL             ZPLM      !  plume height above stack
+        REAL             ZPLM      !  plume centerline height above stack (m)
+        REAL             USTMP     !  tmp storage for ustar (m/s)
+        REAL             TMPBFLX   !  tmp Briggs bouyancy (m^4/s^4)
+        REAL             TMPACRE   !  tmp area burned (acres)
+        REAL             SFRACT    !  smouldering fraction
 
         REAL(8)          METXORIG  ! cross grid X-coord origin of met grid 
         REAL(8)          METYORIG  ! cross grid Y-coord origin of met grid
@@ -252,7 +272,9 @@ C...........   Other local variables
         LOGICAL       :: XFLAG = .FALSE.  ! true: process ONLY explicit sources
         LOGICAL       :: YFLAG = .FALSE.  ! true: use hourly velocities
         LOGICAL       :: ZSTATIC = .TRUE. ! true: Get heights from GRID_CRO file
-        LOGICAL          LFG( 9 )          ! true: source characteristic is valid
+        LOGICAL          LFG( 9 )         ! true: source characteristic is valid
+        LOGICAL          FIREFLAG         ! true: calculate plumes for fire data
+        LOGICAL          HOURFIRE         ! true: use hourly fire data
 
         CHARACTER(50)    CHARS( 9 )!  tmp source characeristics 
         CHARACTER(50) :: METSCEN   !  temporary string for met scenario name
@@ -274,7 +296,7 @@ C   begin body of program LAYPOINT
 
         LDEV = INIT3()
 
-C.........  Write out copywrite, version, web address, header info, and prompt
+C.........  Write out copyright, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
@@ -291,6 +313,30 @@ C.........   Get setting from environment variables
         MESG = 'Indicator for processing ONLY explicit plume ' //
      &         'rise sources'
         XFLAG = ENVYN( 'EXPLICIT_PLUMES_YN', MESG, .FALSE., IOS )
+        
+        MESG = 'Vertical spread method'
+        IPVERT = ENVINT( 'VERTICAL_SPREAD', MESG, 0, IOS )
+
+        MESG = 'Use fire plume rise calculations'
+        FIREFLAG = ENVYN( 'FIRE_PLUME_YN', MESG, .FALSE., IOS )
+       
+        IF( FIREFLAG ) THEN 
+            MESG = 'Use hourly fire data'
+            HOURFIRE = ENVYN( 'HOURLY_FIRE_YN', MESG, .FALSE., IOS )
+        END IF
+
+C.........  If processing fire data without hourly data, need area
+C           and heat flux values
+        IF( FIREFLAG .AND. .NOT. HOURFIRE ) THEN
+            MESG = 'Hourly heat flux value (BTU/hr)'
+            TMPBFLX = ENVREAL( 'FIRE_HFLUX', MESG, 0., IOS )
+            
+C.............  Convert BTU/hr to Briggs bouyancy
+            TMPBFLX = TMPBFLX * BTU2M4PS3  ! array
+            
+            MESG = 'Daily area burned (acres/day)'
+            TMPACRE = ENVREAL( 'FIRE_AREA', MESG, 0., IOS )
+        END IF
 
         MESG = 'Use variable grid definition'
         GFLAG = ENVYN( 'USE_VARIABLE_GRID', MESG, .FALSE., IOS )
@@ -484,6 +530,46 @@ C.............  Give warning if no valid data
             PDEV = PROMPTFFILE( 
      &          'Enter logical name for the ELEVATED POINT SOURCE file',
      &          .TRUE., .TRUE., CRL // 'ELV', PROGNAME )
+        END IF
+
+C.........  If using hourly fire data, open hourly and daily files
+C           Will read heat flux from PTMP and area burned from PDAY
+        IF( HOURFIRE ) THEN
+            TNAME = PROMPTSET(
+     &          'Enter logical name for the HOURLY EMISSIONS file',
+     &          FSREAD3, CRL // 'TMP', PROGNAME )
+
+C.............  Check to see if appropriate variable list exists     
+            CALL RETRIEVE_SET_HEADER( TNAME )
+            
+            I = INDEX1( 'HFLUX', NVARSET, VNAMESET )
+            IF( I <= 0 ) THEN
+                MESG = 'ERROR: Cannot find heat flux variable ' //
+     &                 '"HFLUX" in hourly emissions file.'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            END IF
+            
+            DAYNAME = PROMPTMFILE( 
+     &               'Enter logical name for DAY-SPECIFIC file',
+     &               FSREAD3, CRL // 'DAY', PROGNAME )
+
+C.............  Check to see if appropriate variable list exists
+            CALL RETRIEVE_IOAPI_HEADER( DAYNAME )
+
+            I = INDEX1( 'AREA', NVARS3D, VNAME3D )
+            IF( I <= 0 ) THEN
+                MESG = 'ERROR: Cannot find acres burned ' //
+     &                 'variable "AREA" in daily inventory file.'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            END IF
+            
+            IF( EFLAG ) THEN
+                MESG = 'Problem with hourly fire data inputs'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+     
         END IF
 
 C.........  If not explicit plume rise only, open and process other met files
@@ -684,6 +770,12 @@ C           already retrieved
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( 'POINT', ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
+C.........  For fire data, set stack height to zero regardless of inventory
+C           Inventory values may have been "corrected" by Smkinven
+        IF( FIREFLAG ) THEN
+            STKHT = 0.
+        END IF
+
 C.........  Call subroutine to convert grid coordinates from lat-lon to
 C           coordinate system of the destination grid
         CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
@@ -710,6 +802,15 @@ C.........  Allocate per-source arrays
         CALL CHECKMEM( IOS, 'TSFC', PROGNAME )
         ALLOCATE( USTAR( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'USTAR', PROGNAME )
+        ALLOCATE( PRSFC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PRSFC', PROGNAME )
+
+        IF( HOURFIRE ) THEN
+            ALLOCATE( BFLX( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BFLX', PROGNAME )
+            ALLOCATE( ACRES( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ACRES', PROGNAME )
+        END IF
 
 C.........  Allocate per-source and per-layer arrays
         ALLOCATE( DDZH( EMLAYS,NSRC ), STAT=IOS )
@@ -718,6 +819,8 @@ C.........  Allocate per-source and per-layer arrays
         CALL CHECKMEM( IOS, 'DDZF', PROGNAME )
         ALLOCATE( PRES( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PRES', PROGNAME )
+        ALLOCATE( DENS( EMLAYS,NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'DENS', PROGNAME )
         ALLOCATE( QV( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'QV', PROGNAME )
         ALLOCATE( TA( EMLAYS,NSRC ), STAT=IOS )
@@ -965,6 +1068,29 @@ C.............  Flow rate
      &           CALL SAFE_READ3( HNAME, SPDATNAM(6), ALLAYS3, 
      &                            JDATE, JTIME, HRSTKFL )
 
+C.............  If using hourly fire data, read in acres burned and
+C               heat flux
+            IF( HOURFIRE ) THEN
+            
+C.................  Can't use SAFE_READ3 because data is stored in
+C                   a fileset
+                IF( .NOT. READSET( TNAME, 'HFLUX', ALLAYS3, ALLFILES,
+     &                             JDATE, JTIME, BFLX ) ) THEN
+                    MESG = 'Could not read "HFLUX" from file "' //
+     &                     TRIM( TNAME ) // '".'
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+                
+C.................  Convert BTU/hr to Briggs bouyancy
+                BFLX = BFLX * BTU2M4PS3  ! array
+
+C.................  Day-specific file replicates data at each hour
+C                   of the day
+                CALL SAFE_READ3( DAYNAME, 'AREA', ALLAYS3,
+     &                           JDATE, JTIME, ACRES )
+
+            END IF
+
 C.............  Read time-dependent ZF and ZH for hydrostatic Met data
 C.............  Compute per-source heights
             IF( .NOT. XFLAG .AND. .NOT. ZSTATIC ) THEN
@@ -994,6 +1120,9 @@ C.............  Read and transform meteorology:
 
             CALL SAFE_READ3( SNAME, 'USTAR', ALLAYS3, JDATE,JTIME,XBUF )
             CALL BMATVEC( METNGRID, NSRC, 1, NX, CX, XBUF, USTAR )
+            
+            CALL SAFE_READ3( SNAME, 'PRSFC', ALLAYS3, JDATE,JTIME,XBUF )
+            CALL BMATVEC( METNGRID, NSRC, 1, NX, CX, XBUF, PRSFC )
 
             CALL SAFE_READ3( XNAME, 'TA', ALLAYS3, JDATE, JTIME, XBUF )
             CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, TA )
@@ -1003,6 +1132,9 @@ C.............  Read and transform meteorology:
 
             CALL SAFE_READ3( XNAME, 'PRES', ALLAYS3, JDATE, JTIME,XBUF )
             CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, PRES )
+            
+            CALL SAFE_READ3( XNAME, 'DENS', ALLAYS3, JDATE, JTIME,XBUF )
+            CALL BMATVEC( METNGRID, NSRC, EMLAYS, NX, CX, XBUF, DENS )
 
             CALL SAFE_READ3( DNAME, 'UWIND', ALLAYS3, JDATE,JTIME,DBUF )
             CALL BMATVEC( NDOTS, NSRC, EMLAYS, ND, CD, DBUF, UWIND )
@@ -1013,18 +1145,19 @@ C.............  Read and transform meteorology:
 
 C.............  Precompute constants before starting source loop
             P  = ( SIGH(0) - VGLVSXG(0) ) / ( SIGH( 1 ) - SIGH( 0 ) )
-            PP = 1.0 + P 
-            QQ =     - P 
 
 C.............  Loop through sources and compute plume rise
             K = 0
             DO S = 1, NSRC
 
-                DM = STKDM( S )
-                HT = STKHT( S )
-                TK = STKTK( S )
-                VE = STKVE( S )
-                FL = 0.          ! initialize flow
+                IF( .NOT. FIREFLAG ) THEN
+                    DM = STKDM( S )
+                    HT = STKHT( S )
+                    TK = STKTK( S )
+                    VE = STKVE( S )
+                    FL = 0.          ! initialize flow
+                END IF
+                    
                 XL = XLOCA( S )
                 YL = YLOCA( S )
 
@@ -1124,17 +1257,38 @@ C.....................  Otherwise, set top and bottom of plume to be in layer 1.
 C.................  For non-explicit plume rise, preprocess met data...
                 ELSE
 
-C.....................  Compute surface pressure (and convert to mb from Pa)
-                    PSFC = 1.0E-2 * ( PP * PRES( 1,S ) + 
-     &                                QQ * PRES( 2,S )   )
+C.....................  Compute pressures, use sigma values and surface pressures
+                    DO L = EMLAYS, 0, -1
+                        PRESF( L ) = VGLVSXG( L ) *
+     &                               ( PRSFC( S ) - VGTOP ) * CONVPA +
+     &                               VGTOP * CONVPA
+                    END DO
+
+C.....................  Convert surface pressure from Pa to mb                    
+                    PSFC = PRSFC( S ) * CONVPA
 
 C.....................  Compute derived met vars needed before layer assignments
-                    CALL PREPLM( EMLAYS, HMIX( S ), STKHT( S ), PSFC, 
-     &                           TSFC( S ), DDZH( 1,S ), QV( 1,S ), 
+                    IF( FIREFLAG ) THEN
+                        CALL FIRE_PREPLM( EMLAYS, HMIX( S ), ZERO, PSFC, 
+     &                           TSFC( S ), DDZF( 1,S ), QV( 1,S ), 
      &                           TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ), 
      &                           ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ), 
-     &                           PRES( 1,S ), LSTK, LPBL, TSTK, WSTK,
+     &                           PRESF( 1 ), LSTK, LPBL, TSTK, WSTK,
      &                           DTHDZ, WSPD, ZZF )
+                    ELSE
+                        CALL PREPLM( EMLAYS, HMIX( S ), STKHT(S), PSFC, 
+     &                           TSFC( S ), DDZF( 1,S ), QV( 1,S ), 
+     &                           TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ), 
+     &                           ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ), 
+     &                           PRESF( 1 ), LSTK, LPBL, TSTK, WSTK,
+     &                           DTHDZ, WSPD, ZZF )
+                    END IF
+
+C.....................  Trap USTAR at a minimum realistic value
+                    USTMP = MAX( USTAR( S ), USTARMIN )
+                    
+C.....................  Convert heat flux from watts/m^2 to m K/s
+                    HFX( S ) = HFX( S ) / ( CP * DENS( 1,S ) )
 
                     COMPUTE = .TRUE.
 
@@ -1155,14 +1309,42 @@ C                           these and set to skip plume rise computation
 C.....................  Compute plume rise for this source, if needed
                     IF ( COMPUTE ) THEN
 
-                        CALL PLMRIS( EMLAYS, LPBL, LSTK, HFX(S), 
-     &                           HMIX(S), DM, HT, TK, VE, TSTK, 
+                        IF( FIREFLAG ) THEN
+                            IF( HOURFIRE ) THEN
+                                TMPBFLX = BFLX( S )
+                            END IF
+                        
+                            CALL FIRE_PLMRIS( EMLAYS, LPBL, LSTK,
+     &                           HFX(S), HMIX(S), TMPBFLX, TSTK, USTMP,
+     &                           DTHDZ, TA(1,S), WSPD, ZZF(0), ZH(1,S), 
+     &                           ZSTK(1,S), WSTK, ZTOP, ZBOT, ZPLM )
+                        ELSE
+                            CALL PLMRIS( EMLAYS, LPBL, LSTK, HFX(S), 
+     &                           HMIX(S), DM, HT, TK, VE, TSTK, USTMP,
      &                           DTHDZ, TA(1,S), WSPD, ZZF(0), ZH(1,S), 
      &                           ZSTK(1,S), WSTK, ZPLM )
+                        END IF
+
+C.........................  Determine bottom and top heights of the plume
+                        IF( IPVERT == 0 ) THEN
+                        
+C.............................  Default Turner approach: plume thickness = 
+C                               amount of plume rise
+                            IF( FIREFLAG ) THEN
+                                ZTOP = 1.5 * ZPLM
+                                ZBOT = 0.5 * ZPLM
+                            ELSE
+                                ZTOP = STKHT( S ) + 
+     &                                 1.5 * ( ZPLM - STKHT( S ) )
+                                ZBOT = STKHT( S ) +
+     &                                 0.5 * ( ZPLM - STKHT( S ) )
+                            END IF
+                        ELSE
      
-C.........................  Compute plume top and bottom heights
-                        CALL PLSPRD( DTHDZ, ZZF, EMLAYS, ZPLM, HMIX(S),
-     &                               ZTOP, ZBOT )
+C.............................  Otherwise, compute plume top and bottom heights
+                            CALL PLSPRD( DTHDZ, ZZF, EMLAYS, ZPLM, 
+     &                                   HMIX(S), ZTOP, ZBOT )
+                        END IF
                     END IF
 
 C.....................  Setup for computing plume fractions, assuming uniform
@@ -1171,7 +1353,8 @@ C                       hydrostatic assumption) from bottom to top.
                     SURFACE = PSFC
                     LFULLHT( 0:EMLAYS ) = ZZF ( 0:EMLAYS   )
                     LHALFHT( 1:EMLAYS ) = ZH  ( 1:EMLAYS,S )
-                    WEIGHTS( 1:EMLAYS ) = PRES( 1:EMLAYS,S )
+                    WEIGHTS( 1:EMLAYS ) = PRES( 1:EMLAYS,S ) * CONVPA
+                    TEMPS  ( 1:EMLAYS ) = TA  ( 1:EMLAYS,S )
 
                 END IF  ! if computing plume rise
 
@@ -1190,8 +1373,18 @@ C.................  Check plume rise for nonsense values
                 END IF
 
 C.................  Allocate plume to layers
-                CALL POSTPLM( EMLAYS, S, SURFACE, ZBOT, ZTOP, WEIGHTS, 
-     &                        LFULLHT, LHALFHT, LTOP, TFRAC )
+                IF( FIREFLAG ) THEN
+                    IF( HOURFIRE ) THEN
+                        TMPACRE = ACRES( S )
+                    END IF
+                
+                    CALL FIRE_POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, 
+     &                                 LFULLHT, TEMPS, LHALFHT, TMPACRE,
+     &                                 SFRACT, LTOP, TFRAC )
+                ELSE
+                    CALL POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, 
+     &                            LFULLHT, TEMPS, LHALFHT, LTOP, TFRAC )
+                END IF
 
 C.................  If hourly layer-1 fraction is present, reset this and re-
 C                   normalize
@@ -1387,7 +1580,7 @@ C.............  Currently there is only one alternative for each
             CASE( 'ZF' )
                 OUTNAME = 'X3HT0F'
             CASE( 'TGD' ) 
-                OUTNAME = 'TEMP10'
+                OUTNAME = 'TEMP1P5'
             CASE DEFAULT
                 MESG = 'INTERNAL ERROR: Do not have an alternative ' //
      &                 'name for met variable ' // INNAME
@@ -1440,16 +1633,17 @@ C----------------------------------------------------------------------
 
             DO S = 1, NSRC
 
-                ZZ0 = ZF( 1,S )
-                ZSTK ( 1,S ) = ZZ0 - STKHT( S )
+                ZZ0 = ZH( 1,S )
+                DDZH( 1,S ) = 1.0 / ZZ0
+                ZSTK( 1,S ) = ZF( 1,S ) - STKHT( S )
                 ZF0 = ZF( 1,S )
                 DDZF( 1,S ) = 1.0 / ZF0
 
                 DO L = 2, EMLAYS
 
-                    ZZ1 = ZF( L,S )
-                    ZSTK( L  ,S ) = ZZ1 - STKHT( S )
-                    DDZH( L-1,S ) = 1.0 / ( ZZ1 - ZZ0 )
+                    ZZ1 = ZH( L,S )
+                    ZSTK( L,S ) = ZF( L,S ) - STKHT( S )
+                    DDZH( L,S ) = 1.0 / ( ZZ1 - ZZ0 )
                     ZZ0 = ZZ1
                     ZF1 = ZF( L,S )
                     DDZF( L,S ) = 1.0 / ( ZF1 - ZF0 )
