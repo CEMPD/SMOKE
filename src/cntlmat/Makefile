@@ -1,18 +1,16 @@
-# Version "@(#)$Id$ $Source$ $Date$ 
+# Version @(#)$Id$ 
+# Path    $Source$
+# Date    $Date$ 
 #
-all: debug 
+LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
+
+all: cntlmat
+
 debug: cntlmat.debug
-#
-FC=f90
-FFLAGS = $(DBGFLAGS)
-LDFLAGS = -g
-LDIRS = -L/env/proj/ioapi/IRIX6n32f90 \
-        -L$(EDSS_LIB) \
-        -L$(EL_SRC)/$(EDSS_OS)
-LIBS=$(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBPATH= $(EL_SRC)/$(EDSS_OS)/libsmoke.debug.a
-#
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -24,9 +22,13 @@ CTL=cntlmat.o aloccmat.o alocpkts.o asgncntl.o errpkts.o \
     fillcdat.o fillcntl.o  genproj.o genreact.o openpmat.o \
     openrmat.o pktloop.o procpkts.o rdpacket.o wrrmat.o
 #
-cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH)
+cntlmat: $(CTL) $(ALLI) $(LIBPATH)
 	echo CNTLMAT:
-	$(FC) $(FFLAGS) -o $(@) $(CTL) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(CTL) $(LIBS)
+#
+cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH_DEBUG)
+	echo CNTLMAT \(debug\):
+	$(FC) $(FFLAGS) -o $(@) $(CTL) $(LIBS_DEBUG)
 #
 # Module dependencies
 #
