@@ -89,9 +89,9 @@
 !.........  For valid pollutants and activities...
         INTEGER, PUBLIC :: MXIDAT = 0   ! Max no of inv pols & acvtys
         INTEGER, PUBLIC :: NINVTBL = 0  ! Number of entries in inventory table
-	  INTEGER, PUBLIC :: NUNIQCAS = 0 ! Number of unique CAS codes
-	  INTEGER, PUBLIC :: NINVKEEP = 0 ! Number of kept pols/acts (KEEP=Y)
-	  INTEGER, PUBLIC :: NINVDROP = 0 ! Number of dropped pols/acts (KEEP=N)
+        INTEGER, PUBLIC :: NUNIQCAS = 0 ! Number of unique CAS codes
+        INTEGER, PUBLIC :: NINVKEEP = 0 ! Number of kept INVTABLE entries (KEEP=Y)
+        INTEGER, PUBLIC :: NINVDROP = 0 ! Number of dropped INVTABLE entries (KEEP=N)
 
 C.........  Full list of inventory pollutants/activities (in output order)
 C.........  Dimensioned by MXIDAT
@@ -108,7 +108,7 @@ C.........  Dimensioned by MXIDAT
 C.........  Inventory table arrays - unsorted raw data, dimensioned by NINVTBL
         INTEGER, ALLOCATABLE, PUBLIC :: ITIDXA ( : ) ! Sorting index 1
         INTEGER, ALLOCATABLE, PUBLIC :: ITIDXA2( : ) ! Sorting index 2
-	  INTEGER, ALLOCATABLE, PUBLIC :: ITLINNO( : ) ! Line number of input file for record
+        INTEGER, ALLOCATABLE, PUBLIC :: ITLINNO( : ) ! Line number of input file for record
         INTEGER, ALLOCATABLE, PUBLIC :: ITCODA ( : ) ! 5-digit SAROAD code (if any)
         INTEGER, ALLOCATABLE, PUBLIC :: ITNTIA ( : ) ! NTI HAP number
         INTEGER, ALLOCATABLE, PUBLIC :: ITREAA ( : ) ! Reactivity group
@@ -136,12 +136,12 @@ C           for each CAS code (0 pollutants indicates that no pollutants for tha
 C           CAS are kept) - dimensioned by NUNIQCAS
         INTEGER               , ALLOCATABLE, PUBLIC :: UCASIDX ( : ) ! index to first entry in SORTCAS
         INTEGER               , ALLOCATABLE, PUBLIC :: UCASNPOL( : ) ! pol count per CAS code
-	  INTEGER               , ALLOCATABLE, PUBLIC :: UCASNKEP( : ) ! kept pol count per CAS code
+        INTEGER               , ALLOCATABLE, PUBLIC :: UCASNKEP( : ) ! kept pol count per CAS code
         CHARACTER(LEN=CASLEN3), ALLOCATABLE, PUBLIC :: UNIQCAS ( : ) ! CAS code (left justified)
 
 C.........  SAROAD numbers in sorted order and reference index back to input order
 C           Dimensioned by MXIDAT
         INTEGER, ALLOCATABLE, PUBLIC :: IDXCOD ( : ) ! index to INVDNAM
-        INTEGER, ALLOCATABLE, PUBLIC :: SORTCOD( : ) ! SAROAD number 
+        INTEGER, ALLOCATABLE, PUBLIC :: SORTCOD( : ) ! SAROAD number
 
         END MODULE MODLISTS
