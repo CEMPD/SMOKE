@@ -2,7 +2,7 @@
         PROGRAM SRGGRID
 
 C***********************************************************************
-C  program body starts at line 178
+C  program body starts at line 179
 C
 C  DESCRIPTION:
 C       Construct by-FIP and sum-total gridded files containing data from
@@ -76,7 +76,7 @@ C...........   PARAMETERS:
 
         INTEGER          NRMAX                  !  max # of surrogate records
         CHARACTER*5      BLANK5
-        PARAMETER     (  NRMAX = 275 000
+        PARAMETER     (  NRMAX = 600 000
      &                 , BLANK5= ' '     )
 
 
@@ -152,14 +152,16 @@ C...........   Other local variables
         CHARACTER*16    SCRBUF
         CHARACTER*16    NAME, VNAME( NASRG )
         CHARACTER*80    DESC, VDESC( NASRG )
+        CHARACTER*256   BUFFER 
         CHARACTER*256   LINE    !  input buffer 
         CHARACTER*256   MESG
 
-        CHARACTER*72    MENU( 3 )
+        CHARACTER*72    MENU( 4 )
      &  /
      &  'Compute gridded surrogates for ALL COUNTIES',	!  choice 1
      &  '... for all counties in a selected STATE',	!  choice 2
-     &  '... for a selected COUNTY in a selected STATE'	!  choice 3
+     &  '... for a selected COUNTY in a selected STATE',!  choice 3
+     &  '... for ZERO counties'                         !  choice 4
      &  /
 
 C...........   STATEMENT FUNCTIONS:
@@ -458,88 +460,10 @@ C...........   Loop through the number of surrogates in current record
 
         CALL M3MSG2( 'NOTE: File read in as ' // FFORMAT // ' format.' )
 
-
-
-C...........   Read and process the surrogate coefficient file:
-C...............   Must be sorted by FIP (state ID, county ID), surrogate ID,
-C...............   col, and row.  
-C...............   All actually-occurring area source FIP codes must be present.
-
-c        IREC    =  1     
-c        N       =  0
-c        EFLAG   = .FALSE.
-c
-c22      CONTINUE                !  head of the SDEV-read loop
-c
-c            IREC = IREC + 1
-c            READ( SDEV, *, END=23, IOSTAT=IOS ) 
-c     &          SSC,            !  surrogate ID
-c     &          SID, CID,       !  state, county FIP codes
-c     &          COL, ROW,       !  grid col and row
-c     &          SRG             !  surrogate fraction
-c
-c            IF ( IOS .NE. 0 ) THEN
-c
-c                WRITE( MESG,94010 ) 
-c     &              'I/O error ', IOS, 
-c     &              'reading SURG COEFF file at line', IREC
-c                CALL M3MESG( MESG )
-c                EFLAG = .TRUE.
-c                GO TO  22
-c
-c            ELSE IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
-c
-c                WRITE( MESG,94010 )
-c     &              'Column ', COL,
-c     &              'out of range in SURG COEFF file at line', IREC
-c                CALL M3MESG( MESG )
-c                EFLAG = .TRUE.
-c                GO TO  22
-c
-c            ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
-c
-c                WRITE( MESG,94010 )
-c     &              'Row ', ROW,
-c     &              'out of range in SURG COEFF file at line', IREC
-c                CALL M3MESG( MESG )
-c                EFLAG = .TRUE.
-c                GO TO  22
-c
-c            ELSE IF ( SSC .LT. 1  .OR. SSC .GT. NASRG ) THEN
-c
-c                WRITE( MESG,94010 )
-c     &              'Surrogate code ', SSC,
-c     &              'out of range in SURG COEFF file at line', IREC
-c                CALL M3MESG( MESG )
-c                EFLAG = .TRUE.
-c                GO TO  22
-c
-c            END IF              !  if IOS bad, or col,row, or ssc out of range
-c
-c
-cC...........   Record surrogate fraction for this cell.
-c
-c            N = N + 1
-c
-c            IF ( N .LE. NRMAX ) THEN
-c
-c                INDXA( N ) = N
-c                CELLA( N ) = COL  +  NCOLS * ( ROW - 1 )
-c                SSCSA( N ) = SSC
-c                FIPSA( N ) = 1000 * SID + CID
-c                FRACA( N ) = SRG
-c
-c            END IF                      ! if n in bounds
-c
-c            GO TO  22                   !  to head of loop
-c
-c23      CONTINUE                        !  end of the SDEV-read loop
-
-
         NSREC = N
         WRITE( MESG,94010 ) 
      &      'Max SURG COEF records - actual:', N,
-     &      'dimensioned:', NRMAX
+     &      'dimensioned (NRMAX):', NRMAX
         CALL M3MESG( MESG )
 
         IF ( N .GT. NRMAX ) THEN
@@ -651,7 +575,9 @@ C...........  If surrogates file present, process SURROGATE-TOTAL-BY-FIP file:
 
                 ELSEIF( LINE( L1+1:L1+7 ) .EQ. '/STYPE/' ) THEN
 
-                    READ( LINE( L1+8:L2 ), * ) SSC, NAME, DESC
+                    BUFFER = LINE( L1+8:L2 )
+
+                    READ( BUFFER, * ) SSC, NAME, DESC
 
                     IF ( SSC .LT. 1  .OR. SSC .GT. NASRG ) THEN
 
@@ -670,6 +596,18 @@ C...........  If surrogates file present, process SURROGATE-TOTAL-BY-FIP file:
 
                     END IF  !  if IO error, or if SID out of range
 
+C.....................  Handle special case of totals either one or zero for
+C                       airports and ports.  Appropriate cells will be converted
+C                       to 0. b/c of surrogates, but need totals to be 1.
+                    IF( NAME .EQ. 'AIRPORTS' .OR.
+     &                  NAME .EQ. 'PORTS'         ) THEN
+
+                        DO 57 F = 1, NFIPLIST
+                            FIPSIZE( SSC,F ) = 1.
+57                      CONTINUE
+
+                    ENDIF
+
                     GO TO  55
 
                 ELSEIF( SSC .EQ. IMISS3 ) THEN
@@ -681,6 +619,7 @@ C...........  If surrogates file present, process SURROGATE-TOTAL-BY-FIP file:
                     CALL M3EXIT( 'SRGGRID', 0, 0, MESG, 2 )
 
                 ENDIF
+
 
                 FIP = STR2INT( LINE( 1:2 ) ) * 1000 +
      &                STR2INT( LINE( 3:5 ) )
@@ -736,7 +675,7 @@ C...............   Process gridded surrogate-totals:
 
 C...........   Select sublist to compute:
 
-        CHOICE = GETMENU( 3, 2, 'Enter type of county-selection',
+        CHOICE = GETMENU( 4, 2, 'Enter type of county-selection',
      &                    MENU )
 
         IF ( CHOICE .EQ. 1 ) THEN
@@ -767,9 +706,13 @@ C...........   Select sublist to compute:
      &          'The available county codes for this state are:',
      &          ( F, FIPLIST( F ), F = LO, HI )
             F = STAINDX( S ) + GETNUM( 1, NSTALIST, 1, 
-     &                                 'Enter number for state' )
+     &                                 'Enter number for county' )
             LOLIST = F
             HILIST = F
+
+        ELSEIF( CHOICE .EQ. 4 ) THEN   ! no counties
+            LOLIST = 1
+            HILIST = 0
 
         END IF			!  if all counties, else if state, else if fip
 
