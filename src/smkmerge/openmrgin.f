@@ -857,7 +857,8 @@ C.........  If we are using temporalized emissions, then update date/time and
 C           duration using environment variable settings, then prompt.
         IF( TFLAG ) THEN
 
-            CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
+            CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
+            TSTEP = 10000   ! only 1-hour time steps supported
             EDATE = SDATE
             ETIME = STIME
             CALL NEXTIME( EDATE, ETIME, ( NSTEPS-1 ) * TSTEP )
