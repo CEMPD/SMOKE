@@ -76,9 +76,7 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: LVNAMES( MXSPEC, NIPPA )   ! mole out vars
       
 C...........   LOCAL PARAMETERS
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
-
-        PARAMETER   ( SCCSW   = '$Revision$' ) ! CVS revision number.
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C.........  Count of species per inventory pollutant/emission type
         INTEGER    NSPEC( NIPPA )
@@ -170,7 +168,7 @@ C.........  Get header information from inventory file
 
         FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' speciation matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3

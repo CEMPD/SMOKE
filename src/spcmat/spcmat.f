@@ -72,7 +72,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '$Revision$'  ! CVS revision number
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -148,7 +148,7 @@ C   begin body of program SPCMAT
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Get environment variables that control program behavior
 C.........  Retrieve the whether to prompt for and use pollutant conversion file
@@ -386,7 +386,6 @@ C.........  Read the pollutant to pollutant conversion file, if any
 C.........  resulting tables are passed via MODSPRO
         IF ( KFLAG ) THEN
 
-c            CALL RDSCONV( KDEV, NIPOL, CATEGORY, IINAM, SINAM )
             CALL RDSCONV( KDEV, NIPPA, CATEGORY, EANAM, SANAM )
 
         END IF
