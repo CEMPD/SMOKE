@@ -15,13 +15,13 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 4/99
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -72,7 +72,8 @@ C.........  Source-specific header arrays
         CHARACTER*20 :: ARHEADRS( MXARCHR3+1 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
-     &                                        'SCC                 ' / )
+     &                                        'SCC                 ',
+     &                                        'Cell                ' / )
 
         CHARACTER*20 :: MBHEADRS( MXMBCHR3+2 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
@@ -140,7 +141,13 @@ C.........  Write the I/O API file, one variable at a time
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+        SELECT CASE( CATEGORY )
+        CASE( 'AREA' )
+            IF ( .NOT. WRITE3( ENAME, 'CELLID', 0, 0, CELLID ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        CASE( 'MOBILE' )
 
             IF ( .NOT. WRITE3( ENAME, 'IRCLAS', 0, 0, IRCLAS ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -166,11 +173,7 @@ C.........  Write the I/O API file, one variable at a time
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'SPEED', 0, 0, SPEED ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-        ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
+        CASE( 'POINT' )
 
             IF ( .NOT. WRITE3( ENAME, 'ISIC', 0, 0, ISIC ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -200,7 +203,7 @@ C.........  Write the I/O API file, one variable at a time
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-        END IF
+        END SELECT
 
 C.........  End subroutine if ASCII file is not to be written
         IF( SDEV .LE. 0 ) RETURN
@@ -248,7 +251,7 @@ C.........  Get the maximum column width for each of the columns in ASCII file
      &              J .GT. COLWID( K )      ) COLWID( K ) = J 
             END DO
 
-            SELECT CASE ( CATEGORY )          
+            SELECT CASE ( CATEGORY )
             CASE( 'MOBILE' ) 
 
                 J = LEN_TRIM( CVTYPE( S ) )                   ! could be blank
@@ -334,8 +337,11 @@ C.........  Write the ASCII file header
 C.........  Write the ASCII file data
         DO S = 1, NSRC
 
+C.............  Split source characteristics into separate fields (CHARS)
             CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, LF, 
-     &                     NC, CHARS ) 
+     &                     NC, CHARS )
+
+C.............  Store remaining source attributes in separate fields (CHARS)
             SELECT CASE ( CATEGORY )          
             CASE( 'MOBILE' )
                 IF( LF( M1 ) ) THEN
@@ -365,7 +371,8 @@ C.........  Write the ASCII file data
                 END IF
 
             END SELECT
-                      
+
+C.............  Write source characteristics and attributes
             WRITE( SDEV, OUTFMT ) S, ( CHARS( I ), I = 1, NC )
  
         END DO   ! End loop on sources for writing ASCII file
