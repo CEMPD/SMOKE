@@ -179,6 +179,7 @@ C.........  Other local variables
         CHARACTER(LEN=CHRLEN3) SKID         ! tmp stack ID
         CHARACTER(LEN=STKLEN3) ECS          ! stack elevated source chars
         CHARACTER(LEN=STKLEN3) PECS         ! tmp previous ECS
+	CHARACTER(LEN=IOULEN3) GRDENV       ! gridded output units from envrmt
 
         CHARACTER*16 :: PROGNAME = 'WMRGELEV' ! program name
 
@@ -525,8 +526,13 @@ C                   assignments
 
         	END IF
 
+C.................  Get output units from the environment
+		BUFFER = 'Units for output gridded emissions'
+                CALL ENVSTR( 'MRG_GRDOUT_UNIT', BUFFER,
+     &                         ' ', GRDENV, IOS)
+
 C.................  Write header information to the file
-        	WRITE( EVDEV,93000 ) 'CONTROL'
+        	WRITE( EVDEV,93010 ) 'CONTROL', GRDENV
         	WRITE( EVDEV,93000 ) 'PTSOURCE'
         	WRITE( EVDEV,93000 ) FNOTE
     
@@ -815,6 +821,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+
+93010   FORMAT( A7, 3X, A )
 
 93015   FORMAT( 6I10 )
 
