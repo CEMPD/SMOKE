@@ -1,5 +1,5 @@
 
-        SUBROUTINE GETISIZE( FDEV, CATEGORY, INVFMT, NREC, NRECDAT )
+        SUBROUTINE GETISIZE( FDEV, CATEGORY, INVFMT, NREC )
 
 C**************************************************************************
 C  subroutine body starts at line 92
@@ -44,6 +44,9 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES
+        USE MODMOBIL, ONLY: NVTYPE
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -63,8 +66,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN)  :: FDEV     !  unit number of input file
         CHARACTER(*), INTENT (IN)  :: CATEGORY !  desc of src category
         INTEGER     , INTENT (IN)  :: INVFMT   !  inven format code
-        INTEGER     , INTENT (OUT) :: NREC     !  no. input recs
-        INTEGER     , INTENT (OUT) :: NRECDAT  ! no. recs times data vars
+        INTEGER     , INTENT (OUT) :: NREC     !  no. input recs (src x poll)
 
 C...........   Contents of file 
         CHARACTER*300,ALLOCATABLE:: LSTSTR( : )! Char strings in PTINV file
@@ -106,9 +108,8 @@ C.............  Allocate memory for storing contents of list-formatted inv file
 C.............  Store lines of inventory file in list format
             CALL RDLINES( FDEV, MESG, NLINE, LSTSTR )
 
-C.............   Initialize counters for input records
+C.............   Initialize counter for input records
             NREC    = 0
-            NRECDAT = 0
 
 C.............  Loop through lines of list file.  Must use this loop structure
 C               to be able to change J NREC for EMS95 format
@@ -145,13 +146,11 @@ C.................  For EPS2 format files inside a SMOKE list file
                     MESG = CATEGORY( 1:CATLEN ) // 
      &                     ' inventory file "' // LINE( 1:L2 ) // '"'
                     NREC = NREC + GETFLINE( TDEV, MESG )
-                    NRECDAT = NREC
 
 C.................  For IDA format files inside a SMOKE list file
                 ELSE IF( FILFMT .EQ. IDAFMT ) THEN
-                    CALL GETIDASZ( TDEV, CATEGORY, N1, N2 )
+                    CALL GETIDASZ( TDEV, CATEGORY, N1 )
                     NREC = NREC + N1
-                    NRECDAT = NRECDAT + N2
 
 C.................  For EMS-95 format files inside a SMOKE list file
                 ELSE IF( FILFMT .EQ. EMSFMT ) THEN
@@ -180,15 +179,18 @@ C.....................  Treat mobile sources like the IDA format because it
 C                       can have multiple data values on each line
                     IF( CATEGORY .EQ. 'MOBILE' ) THEN
                         CALL GETIDASZ( TDEV, CATEGORY, N1, N2 )
+                        N1 = N1 * NVTYPE  ! multiply by number of vehicle types
                         NREC = NREC + N1
-                        NRECDAT = NRECDAT + N2
 
 C.....................  Sum number of lines in EMS-95 emission files
                     ELSE
                         NREC = NREC + GETFLINE( TDEV, MESG )
-                        NRECDAT = NREC
                     END IF
 
+C.................  For NTI format files inside a SMOKE list file
+                ELSE IF( FILFMT .EQ. NTIFMT ) THEN
+                    CALL GETNTISZ( TDEV, CATEGORY, N1 )
+                    NREC = NREC + N1
 
                 ELSE  ! File format not recognized	
 
@@ -215,16 +217,14 @@ C.........  For an EMS-95 format file for non-point sources
 
             MESG = CATEGORY( 1:CATLEN ) // ' inventory file'
             NREC = GETFLINE( FDEV, MESG )
-            NRECDAT = NREC
 
 C.........  For an IDA format file
         ELSE IF( INVFMT .EQ. IDAFMT ) THEN
-            CALL GETIDASZ( FDEV, CATEGORY, NREC, NRECDAT )
+            CALL GETIDASZ( FDEV, CATEGORY, NREC )
 
 C.........  For a toxics format file
         ELSE IF( INVFMT .EQ. NTIFMT ) THEN
             CALL GETNTISZ( FDEV, CATEGORY, NREC )
-            NRECDAT = NREC
 
         ELSE
             WRITE( MESG,94010 ) 'INTERNAL ERROR: Illegal call to ' //
