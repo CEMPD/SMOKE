@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -47,6 +47,9 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
+
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
@@ -108,6 +111,18 @@ C   begin body of subroutine MRGMULT
 
         FG0 = FG / FT
 
+C.........  If the sources are point sources and their are elevated sources,
+C           transfer ELEVADJ to ELEVADJ
+        IF( NSRC .EQ. NPSRC .AND. ELEVFLAG ) THEN
+
+            ELEVADJ( 1:NPSRC ) = ELEVFLTR( 1:NPSRC )
+
+        ELSE IF( ELEVFLAG ) THEN
+
+            ELEVADJ = 0.
+
+        END IF
+
 C.........  Check if this is a valid inventory pollutant for this call, and
 C           if the number of layers is one.
         IF( NL .EQ. 1 .AND. KEY1 .GT. 0 ) THEN
@@ -145,6 +160,7 @@ C............. If multiplicative controls, additive controls, and speciation
                         VAL = VAL * (1.-VMP) + RINFO( S,1 ) * VMP * GFAC                       
                         COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
 
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
 
@@ -183,6 +199,7 @@ C............. If multiplicative controls & additive controls
 
                         COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + VAL
 
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
 
@@ -223,6 +240,7 @@ C............. If multiplicative controls & speciation
 
                         COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
 
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
 
@@ -263,6 +281,7 @@ C............. If additive controls & speciation
                         VAL = ADD * (1.-VMP) + RINFO( S,1 ) * VMP * GFAC
                         COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
 
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
 
@@ -296,6 +315,7 @@ C............. If multiplicative controls only
                         COUT5( IDX,KEY1 ) = COUT2( IDX,KEY1 )
 
                         VAL  = MULT
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
 
@@ -329,6 +349,7 @@ C............. If additive controls only
                         COUT5( IDX,KEY1 )= COUT3( IDX,KEY1 )
 
                         VAL  = ADD
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
 
@@ -362,6 +383,7 @@ C.............  If speciation only
 
                         COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + VAL
 
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
                     END DO
@@ -387,6 +409,7 @@ C.............  If inventory pollutant only
                         VAL = EMSRC( S,KEY1 ) * GMATX( K ) * FT
                         COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
 
+                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
                     END DO
@@ -437,6 +460,7 @@ C............. If multiplicative controls, additive controls, and speciation
                             VAL = VAL * (1.-VMP) + RINFO(S,1)* VMP* GFAC
                             COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
 
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
 
@@ -478,6 +502,7 @@ C............. If multiplicative controls & additive controls & layer fractions
 
                             COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + VAL
 
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
 
@@ -521,6 +546,7 @@ C............. If multiplicative controls & speciation & layer fractions
 
                             COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
 
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
 
@@ -564,6 +590,7 @@ C............. If additive controls & speciation & layer fractions
                 	    VAL = ADD * (1.-VMP) + RINFO(S,1)* VMP* GFAC
                 	    COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
 
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                 	    SUM1 = SUM1 + VAL * FG0
                 	    SUM2 = SUM2 + VAL * FG0
 
@@ -600,6 +627,7 @@ C............. If multiplicative controls and layer fractoins
                             COUT5( IDX,KEY1 ) = COUT2( IDX,KEY1 )
 
                             VAL  = MULT
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
 
@@ -636,6 +664,7 @@ C............. If additive controls and layer fractions
                             COUT5(IDX,KEY1)= COUT3(IDX,KEY1)
 
                             VAL  = ADD
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
 
@@ -673,6 +702,7 @@ C............. If speciation and layer fraction
 
                             COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + VAL
 
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
                         END DO
@@ -703,6 +733,7 @@ C.............  If inventory pollutant and layer fractions
      &                            EMSRC ( S,KEY1 ) * GMATX( K ) * FT
                             COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
 
+                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
                         END DO
