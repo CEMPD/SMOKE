@@ -1,7 +1,7 @@
  
         SUBROUTINE  HRBIO( JDATE, JTIME, LAT, LON, PRES, TA, 
-     &                     PINE, DECD, CONF, LAI, OTHR, AVLAI, NORNO,
-     &                     PARTYPE, EMIS )
+     &                     PINE, DECD, CONF, AGRC, LAI, OTHR, AVLAI, 
+     &                     NORNO, PARTYPE, EMIS )
 
 C***********************************************************************
 C  subroutine body starts at line  203
@@ -44,6 +44,10 @@ C       CORRECT, and HRLYEM.
 C
 C       Revised 8/96 by SL and CJC: algorithm change to match OTAG BEIS2
 C       algorithm
+C
+C       Revised 2/98 by JMV : Clear skies assumption option 6 and added
+C       AGRC contribution to biogenic emissions to be consistent with
+C       HRBIOS subroutine.
 C
 C***********************************************************************
 C 
@@ -92,6 +96,7 @@ C...........   ARGUMENTS and their descriptions:
         REAL            PINE ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            DECD ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            CONF ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
+        REAL            AGRC ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            LAI  ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            OTHR ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            AVLAI( NCOLS, NROWS )              !  average LAI
@@ -150,7 +155,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            FCONF
         REAL            FCLAI
         REAL            BISOP, BMONO, BOVOC        !  biogenic VOC spcs emis.
-        REAL            DRCT0, TOTAL
+        REAL            DRCT0, TOTAL, ATTEN
         CHARACTER*16    CLDTYPE    !  Observational, KUO, or KF
 C...........   SAVED LOCAL VARIABLES and their descriptions:
 
@@ -299,7 +304,13 @@ C...................   photosynthetic activity:
      &                      / COSZEN( C,R ) )
                     DRCT0 = CN * AA * EXPA
                     TOTAL = DRCT0 * ( COSZEN(C,R) + CC )   !  direct + diffuse
-                    TOTAL = TOTAL * WM2LY * CLDATN(C, R)
+                    IF ( PARTYPE .EQ. 6 ) THEN
+                      ATTEN = 1.0
+                    ELSE
+                      ATTEN = CLDATN( C,R )
+                    ENDIF
+                    TOTAL = TOTAL * WM2LY * ATTEN
+
                     PAR   = 0.5 * LY2UE * TOTAL ! vis:  assumed 50% of total
 
                     FPINE = 0.0
@@ -342,6 +353,7 @@ C...................   photosynthetic activity:
      &                      DECD( C,R,ISOP ) * CFDECD +
      &                      CONF( C,R,ISOP ) * CFCONF +
      &                      LAI ( C,R,ISOP ) * CFCLAI +
+     &                      AGRC( C,R,ISOP ) * CFOTHR +
      &                      OTHR( C,R,ISOP ) * CFOTHR
 
                     EMIS( C,R, NISO ) = DENISO   * BISOP
@@ -353,12 +365,14 @@ C...................   photosynthetic activity:
                 BMONO = ( PINE( C,R,MONO ) +
      &                    DECD( C,R,MONO ) +
      &                    CONF( C,R,MONO ) +
+     &                    AGRC( C,R,MONO ) +  
      &                    LAI ( C,R,MONO ) +
      &                    OTHR( C,R,MONO )  ) * CFOVOC
 
                 BOVOC = ( PINE( C,R,OVOC ) +
      &                    DECD( C,R,OVOC ) +
      &                    CONF( C,R,OVOC ) +
+     &                    AGRC( C,R,OVOC ) + 
      &                    LAI ( C,R,OVOC ) +
      &                    OTHR( C,R,OVOC )  ) * CFOVOC
 
@@ -448,12 +462,14 @@ C...........   (and therefore biogenic ISOP emissions) to zero
                 BMONO  = ( PINE( C,R,MONO ) +
      &                     DECD( C,R,MONO ) +
      &                     CONF( C,R,MONO ) +
+     &                     AGRC( C,R,MONO ) +  
      &                     LAI ( C,R,MONO ) +
      &                     OTHR( C,R,MONO )  ) * CFOVOC
 
                 BOVOC  = ( PINE( C,R,OVOC ) +
      &                     DECD( C,R,OVOC ) +
      &                     CONF( C,R,OVOC ) +
+     &                     AGRC( C,R,OVOC ) +  
      &                     LAI ( C,R,OVOC ) +
      &                     OTHR( C,R,OVOC )  ) * CFOVOC
 
