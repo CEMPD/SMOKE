@@ -82,7 +82,6 @@ C...........   Local variables
         INTEGER         NPSISCN      ! no. PSIs in multi-scenario group
         INTEGER         PSI          ! tmp PSI
         INTEGER         PSIROOT      ! root PSI of multi-scenario group
-        INTEGER         PSIPOSN      ! PSI position
 
         CHARACTER*300   MESG         ! message buffer
 
@@ -154,7 +153,7 @@ C               update arrays accordingly for the affected PSIs.
 C.................  If this PSI is not the first in a multi-scenario input of
 C                   PSIs, then make sure that the first PSI in the multi-
 C                   scenario list will be updated.
-                IF( CNTCOMBO .EQ. 0 .AND. PSIPOSN .GT. 1 ) THEN
+                IF( CNTCOMBO .EQ. 0 .AND. PSI .NE. PSIROOT ) THEN
 
                     M = FIND1( PSIROOT, NPSIALL, PSIALL )
                     UPDATNDI( M ) = .TRUE.
