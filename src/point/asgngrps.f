@@ -76,7 +76,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL    CRLF, EVALCRIT
 
 C...........   LOCAL PARAMETERS and their descriptions:
-        INTEGER, PARAMETER :: MXLOCGRP = 500   ! Max number groups per facility
+        INTEGER, PARAMETER :: MXLOCGRP = 2000  ! Max number groups per facility
         INTEGER, PARAMETER :: MXSPGRP  = 500   ! Max number sources per group
 
 C...........   Local allocatable arrays
@@ -113,7 +113,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         INTEGER     IOS              ! i/o status
         INTEGER     LOCG             ! local G
         INTEGER     MXGCNT           ! max of all GCNT entries
-        INTEGER     NLOCGRP          ! number of local (facility) groups
+        INTEGER  :: NLOCGRP = 1      ! number of local (facility) groups
         INTEGER     PFIP             ! previous FIPS code
         INTEGER     PRVG             ! G for previous interation
 
@@ -124,6 +124,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         REAL        VE               ! tmp stack exit velocity [m/s]
         REAL        W1, W2           ! tmp multipler weights
 
+        LOGICAL :: LANYGRP = .FALSE.  ! true: one or more groups in inventory
         LOGICAL :: LGROUP  = .FALSE.  ! true: group found for this source
         LOGICAL :: LGRPALL = .FALSE.  ! true: group found for previous facility
         LOGICAL :: STATUS  = .FALSE.  ! true: tmp evaluation status
@@ -264,13 +265,15 @@ C                   plant
                 LGROUP = .FALSE.
                 DO I = 1, NLOCGRP
 
-                    REFS( HT_IDX ) = G_HT( I )
-                    REFS( DM_IDX ) = G_DM( I )
-                    REFS( TK_IDX ) = G_TK( I )
-                    REFS( VE_IDX ) = G_VE( I )
-                    REFS( FL_IDX ) = G_FL( I )
+                    IF( I .LE. MXLOCGRP ) THEN
+                        REFS( HT_IDX ) = G_HT( I )  
+                        REFS( DM_IDX ) = G_DM( I )
+                        REFS( TK_IDX ) = G_TK( I )
+                        REFS( VE_IDX ) = G_VE( I )
+                        REFS( FL_IDX ) = G_FL( I )
+                    END IF
 
-C.....................  Check tolerances. Use REDS for RANK field since RANK
+C.....................  Check tolerances. Use REFS for RANK field since RANK
 C                       can't be used to group stacks (it makes no sense)
                     STATUS = EVALCRIT( NSP, NCRIT, MXCHK, VALS, REFS,
      &                                 REFS, CHRS, CRITVALS, COMCHRS,
@@ -298,6 +301,7 @@ C.....................  Exit from loop if a match has been found.
 
                         LGROUP  = .TRUE.
                         LGRPALL = .TRUE.
+                        LANYGRP = .TRUE.
                         EXIT
 
                     END IF  ! If stack parms are meeting group criteria
@@ -354,8 +358,15 @@ C.........  Ensure that we had enough space for the sources per group
         END IF
 
 C.........  Postprocess group IDs to remove gaps in number and to count the 
-C           number of inventory groups.
-        CALL SORTI1( NSRC, GINDEX, GROUPID )
+C           number of inventory groups.  If LANYGRP is false, then GROUPID
+C           will be zeros, so do not want to sort.  GINDEX will be maintained
+C           as the source number.
+        IF( LANYGRP ) THEN
+            CALL SORTI1( NSRC, GINDEX, GROUPID )
+        ELSE
+            MESG = 'NOTE: No stack groups assigned.'
+            CALL M3MSG2( MESG )
+        END IF
 
         PRVG = 0
         G    = 0
