@@ -4,7 +4,7 @@
      &                        INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
-C  subroutine body starts at line 114
+C  subroutine body starts at line 119
 C
 C  DESCRIPTION:
 C      This subroutine opens the appropriate input files for inventory import
@@ -104,6 +104,7 @@ C...........   Other local variables
         LOGICAL       XFLAG  ! true: import VMT mix file
 
         CHARACTER(LEN=NAMLEN3) ANAME
+        CHARACTER(LEN=NAMLEN3) NAMBUF      ! file name buffer
         CHARACTER*300          MESG        ! message buffer 
 
         CHARACTER*16 :: PROGNAME = 'OPENINVIN' ! program name
@@ -193,11 +194,13 @@ C.........  If inventory already exists, open files for reading later
         ELSE
 
 C.............  Get input inventory file names given source category
+C.............  Use NAMBUF for HP safety
             CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-            ENAME = PROMPTMFILE( 
+            NAMBUF = PROMPTMFILE( 
      &              'Enter logical name for the I/O API INVENTORY file',
      &              FSREAD3, ENAME, PROGNAME )
+            ENAME = NAMBUF
 
             SDEV = PROMPTFFILE( 
      &               'Enter logical name for the ASCII INVENTORY file',

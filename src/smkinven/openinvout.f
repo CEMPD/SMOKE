@@ -2,7 +2,7 @@
         SUBROUTINE OPENINVOUT( MXIDAT, INVDNAM, ENAME, ANAME, SDEV )
 
 C*************************************************************************
-C  subroutine body starts at line 118
+C  subroutine body starts at line 119
 C
 C  DESCRIPTION:
 C      This subroutine sets up the header and variables for the I/O API 
@@ -105,8 +105,9 @@ C...........   Other local variables
         CHARACTER*60  VAR_FORMULA
         CHARACTER*300 MESG      ! message buffer 
 
-        CHARACTER(LEN=IOVLEN3 ) VIN_A
-        CHARACTER(LEN=IOVLEN3 ) VNAME
+        CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
+        CHARACTER(LEN=IOVLEN3)  VIN_A
+        CHARACTER(LEN=IOVLEN3)  VNAME
         CHARACTER(LEN=IOULEN3)  UNITS  ! tmp units name
 
         CHARACTER*16 :: PROGNAME = 'OPENINVOUT' ! program name
@@ -416,9 +417,10 @@ C.............  Update header settings
         END IF
 
 C.........  Prompt for and open I/O API output file
-        ENAME= PROMPTMFILE( 
+        NAMBUF= PROMPTMFILE( 
      &       'Enter logical name for the I/O API INVENTORY output file',
      &       FSUNKN3, ENAME, PROGNAME )
+        ENAME = NAMBUF
         
 C.........  Prompt for and open ASCII output file
         SDEV= PROMPTFFILE( 
