@@ -99,9 +99,12 @@ C...........   PARAMETERS and their descriptions
         CHARACTER*5     BLANK5 
         CHARACTER*16    BLANK16
         REAL*8          FTOC
-        PARAMETER     ( BLANK5  = ' ' ,
-     &                  BLANK16 = ' ' ,
-     &                  FTOC    = 5.0D0 / 9.0D0 )
+        REAL            GM2TON
+        PARAMETER   (   BLANK5  = ' '
+     &                , BLANK16 = ' '
+     &                , FTOC    = 5.0D0 / 9.0D0
+     &                , GM2TON = 1. / 907184.74
+     &              )  
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Mobile Sources input and output arrays
@@ -753,7 +756,7 @@ C.........  Set/process the MTMP variable names
             INV  = VNAME3D( I )( J+1 : L   ) 
 
 C.............  Set other variable properties
-            UNITS3D( I ) = 'gm/hour'
+            UNITS3D( I ) = 'tons/hour'
             VDESC3D( I ) = 'Hourly emissions for inventory species ' //
      &                     INV ( 1:TRIMLEN( INV ) ) // ' from process '
      &                     // PROC ( 1:TRIMLEN( PROC ) )
@@ -1977,7 +1980,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO  818  V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EXH_CO( II  ,V,M ) +
      &                                QQ * EXH_CO( II+1,V,M ) )
   818               CONTINUE
@@ -1989,7 +1992,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 819 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EXH_NOX( II  ,V,M ) +
      &                                QQ * EXH_NOX( II+1,V,M ) )
   819               CONTINUE
@@ -2001,7 +2004,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 820 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EXH_VOC( II  ,V,M ) +
      &                                QQ * EXH_VOC( II+1,V,M ) )
   820               CONTINUE
@@ -2013,7 +2016,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 821 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EVP_VOC( II  ,V,M ) +
      &                                QQ * EVP_VOC( II+1,V,M ) )
   821               CONTINUE
@@ -2025,7 +2028,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 822 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * RNL_VOC( II  ,V,M ) +
      &                                QQ * RNL_VOC( II+1,V,M ) )
   822               CONTINUE
@@ -2037,7 +2040,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 823 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * RST_VOC( II  ,V,M ) +
      &                                QQ * RST_VOC( II+1,V,M ) )
   823               CONTINUE
@@ -2049,7 +2052,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 824 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * RFL_VOC( II  ,V,M ) +
      &                                QQ * RFL_VOC( II+1,V,M ) )
   824               CONTINUE
@@ -2061,7 +2064,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 825 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * WDL_VOC( J1,V,M ) +
      &                                      R1 * WDL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * WDL_VOC( J3,V,M ) +
@@ -2075,7 +2078,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 826 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * DNL_VOC( J1,V,M ) +
      &                                      R1 * DNL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * DNL_VOC( J3,V,M ) +
@@ -2089,7 +2092,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 827 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * HOT_VOC( J1,V,M ) +
      &                                      R1 * HOT_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * HOT_VOC( J3,V,M ) +
@@ -2103,7 +2106,7 @@ C.................  Set up if diurnal emissions are zero
 
                     DO 828 V = 1, NVTYPE
 
-                        TOUT( S,V,I ) = TMAT( S,V,I,H ) *
+                        TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * CRC_VOC( J1,V,M ) +
      &                                      R1 * CRC_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * CRC_VOC( J3,V,M ) +
