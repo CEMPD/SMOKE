@@ -281,6 +281,8 @@ C.....................  Write M6 scenario to M6INPUT
                     DO J = STSCEN, NLINESCEN
                         WRITE( MDEV, 93000 ) 
      &                      M6SCEN( J )( 1:LEN_TRIM( M6SCEN( J ) ) )
+                        WRITE( MDEV, 93000 )
+     &                      'PARTICLE SIZE      : 2.5'
                     END DO
                     WRITE( MDEV, 93000 )
      &                      'SPEED VMT          : ' 
