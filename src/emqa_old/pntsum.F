@@ -368,7 +368,7 @@ C.............  Sum emissions for this hour and all species by state and county
 
                     J1 = STIDX( S )
                     J2 = COIDX( S )
-                    EMIS = SPECBUF( S,I ) * YRFAC( S )
+                    EMIS = MAX( 0., SPECBUF( S,I ) * YRFAC( S ) )
                     STSUM( J1,I ) = STSUM( J1,I ) + EMIS
                     COSUM( J2,I ) = COSUM( J2,I ) + EMIS
 
