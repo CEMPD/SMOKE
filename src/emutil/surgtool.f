@@ -64,7 +64,6 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-        INCLUDE 'FLTERR.EXT'    !  error filter statement function
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -83,7 +82,7 @@ C............   Allocatable arrays for computing grid cell intersections
         REAL,    ALLOCATABLE::   YY( :, : )     !  output grid Y
 
 C...........   Allocatable arrays for unsorted output surrogates
-        INTEGER     		OUTNSRG       !  number of output entries
+        INTEGER                 OUTNSRG       !  number of output entries
         INTEGER, ALLOCATABLE :: INDXA( : )    !  sorting index
         INTEGER, ALLOCATABLE :: CELLA( : )    !  cell number
         INTEGER, ALLOCATABLE :: FIPSA( : )    !  region code
@@ -544,7 +543,7 @@ C.............  Otherwise...
                 LSSC = S
                 FRAC = FRACA( K )
             
-            END IF		!  if new record encountered
+            END IF            !  if new record encountered
 
         END DO
 

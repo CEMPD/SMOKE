@@ -42,7 +42,6 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
-        INCLUDE 'FLTERR.EXT'    !  error filter statement function
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -52,7 +51,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        STR2INT
         REAL           STR2REAL
         LOGICAL        CHKINT
-	LOGICAL        CHKREAL
+        LOGICAL        CHKREAL
 
         EXTERNAL       CRLF, DSCM3GRD, INDEX1, STR2INT, STR2REAL, 
      &                 CHKINT, CHKREAL
@@ -187,7 +186,7 @@ C               be either INTEGER or REAL as expected
             IF ( .NOT. CHKREAL( SEGMENT( 15 ) ) ) EFLAG = .TRUE.
             IF ( .NOT. CHKREAL( SEGMENT( 16 ) ) ) EFLAG = .TRUE.
 
-	    IF ( EFLAG ) THEN
+            IF ( EFLAG ) THEN
 
                 WRITE( MESG, 94010 )
      &            'Unexpected data type encountered in header of '//
