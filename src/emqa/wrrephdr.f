@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRREPHDR( FDEV, RCNT, OUTFMT )
+        SUBROUTINE WRREPHDR( FDEV, RCNT, LH, OUTFMT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -24,17 +24,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -79,6 +79,7 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV       ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT       ! report count
+        INTEGER     , INTENT(OUT) :: LH         ! header width
         CHARACTER(LEN=QAFMTL3),
      &                INTENT(OUT) :: OUTFMT     ! output record format
 
@@ -184,6 +185,10 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine WRREPHDR
 
+C.........  Initialize output subroutine arguments
+        LH     = 0
+        OUTFMT = ' '
+
 C.........  Initialize local variables for current report
         CNRYMISS = .FALSE.
         STATMISS = .FALSE.
@@ -194,7 +199,6 @@ C.........  Initialize local variables for current report
         LCNTYUSE = .FALSE.  ! array
         LSCCUSE  = .FALSE.  ! array
         PWIDTH   = 0        ! array
-        LH       = 0
         LU       = 0
 
 C.........  Initialize report-specific settings
@@ -229,6 +233,7 @@ C           parameter and variable-length string columns.
 C.........  For country, state, county, and SCC names, only flag which ones 
 C           are being used by the selected sources.
 C............................................................................
+        PDSCWIDTH = 1
         DO I = 1, NOUTBINS
 
 C.............  Include country name in string
@@ -702,7 +707,6 @@ C           about that here.
 C.........  Data values. Get width for columns that use the "F" format instead
 C           of the "E" format.  The code will not permit the user to specify
 C           a width that is too small for the value requested.
-        OUTFMT = ' '
         IF( RPT_%NUMDATA .GT. 0 ) THEN
 
             OUTFMT = '(A,1X,'            

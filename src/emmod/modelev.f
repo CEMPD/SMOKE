@@ -21,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -96,10 +96,12 @@
 
         REAL       , ALLOCATABLE, PUBLIC :: ELVVALS ( :,:,: ) ! comprisn value
         CHARACTER*6, ALLOCATABLE, PUBLIC :: ELVTYPES( :,:,: ) ! comprisn type
+        CHARACTER(LEN=PLTLEN3), ALLOCATABLE, PUBLIC :: ELVCHRS( :,:,: ) ! cmpr string
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC :: ELVCSRC( : )
 
         REAL       , ALLOCATABLE, PUBLIC :: PNGVALS ( :,:,: ) ! comprisn value
         CHARACTER*6, ALLOCATABLE, PUBLIC :: PNGTYPES( :,:,: ) ! comprisn type
+        CHARACTER(LEN=PLTLEN3), ALLOCATABLE, PUBLIC :: PNGCHRS( :,:,: ) ! cmpr string
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC :: PNGCSRC( : )
 
         INTEGER    , ALLOCATABLE, PUBLIC :: EVPEMIDX( : )  ! indx to EINAM

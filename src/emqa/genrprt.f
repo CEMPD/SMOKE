@@ -1,6 +1,6 @@
 
-        SUBROUTINE GENRPRT( FDEV, RCNT, ENAME, TNAME, LNAME, OUTFMT, 
-     &                      SMAT, EFLAG )
+        SUBROUTINE GENRPRT( FDEV, RCNT, HWID, ENAME, TNAME, LNAME, 
+     &                      OUTFMT, SMAT, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -26,17 +26,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -80,6 +80,7 @@ C...........   EXTERNAL FUNCTIONS
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT    ! report number
+        INTEGER     , INTENT (IN) :: HWID    ! header width
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT (IN) :: TNAME   ! hourly data file name
         CHARACTER(*), INTENT (IN) :: LNAME   ! layer fractions file name
@@ -101,6 +102,7 @@ C...........   Other local variables
         INTEGER         IOS               ! i/o status
         INTEGER         JDATE             ! Julian date
         INTEGER         JTIME             ! time (HHMMSS)
+        INTEGER         LOUT              ! number of output layers
         INTEGER         NDATA             ! number of data columns
         INTEGER         NV                ! number data or spc variables
 
@@ -177,7 +179,9 @@ C.............  Otherwise, read inventory emissions (for all data)
             END IF
 
 C.............  Loop over layers (EMLAYS will be 1 by default)
-            DO L = 1, EMLAYS
+            LOUT = 1
+            IF( RPT_%BYLAYER ) LOUT = EMLAYS
+            DO L = 1, LOUT
 
 C.................  If needed for this report, read layer fractions for current
 C                   layer, otherwise set to 1.
@@ -325,8 +329,8 @@ C.....................  Convert units of output data
                     END DO
 
 C.....................  Write emission totals
-                    CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, L, 
-     &                             RPT_%DELIM, OUTFMT, EFLAG )
+                    CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, 
+     &                             L,  RPT_%DELIM, OUTFMT, EFLAG )
 
 C.....................  Reinitialize sum array
                     BINDATA = 0  ! array
@@ -347,6 +351,9 @@ C.............  Increment time step
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
         END DO    ! End loop over time steps
+
+C.........  Write line to separate reports from each other and from metadata
+        WRITE( FDEV, '(/,A,/)' ) REPEAT( '#', HWID )
 
 C.........  Deallocate routine-specific memory
         DEALLOCATE( POLVAL, LFRAC1L, BINARR )

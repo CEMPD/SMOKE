@@ -26,17 +26,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$
@@ -148,7 +148,6 @@ C.........  the ones not to output
 
             DO S = 1, NSRC
 
-
 C.................  If using a region group, search for FIPS code in list
                 IF( LREGION ) THEN
                     FIP = IFIP( S )
@@ -156,28 +155,21 @@ C.................  If using a region group, search for FIPS code in list
      &                         EXCLDRGN ( 1,REGNIDX )   )
 
                     IF ( J .GT. 0 ) INDEXA( S ) = 0
+
                 END IF
 
 C.................  If selecting elevated srcs...
-                IF( RPT_%ELEVSTAT .EQ. ELEVOUT3 ) THEN
+                SELECT CASE( RPT_%ELEVSTAT )
+                CASE( PINGOUT3 )
+                    IF ( .NOT. LPING( S ) ) INDEXA( S ) = 0
 
-C.....................  If selecting PinG sources and source is non-PinG, exclude it
-                    IF( RPT_%ELEVSTAT .EQ. PINGOUT3 ) THEN
-                        IF ( .NOT. LPING( S ) ) INDEXA( S ) = 0
+                CASE( ELEVOUT3 )
+                    IF ( .NOT. LMAJOR( S ) ) INDEXA( S ) = 0
 
-C.....................  Otherwise, exclude non-elevated sources
-                    ELSE IF ( .NOT. LMAJOR( S ) ) THEN
-                        INDEXA( S ) = 0
+                CASE( NOELOUT3 )
+                    IF ( LMAJOR( S ) ) INDEXA( S ) = 0
 
-                    END IF
-                END IF
-        
-C.................  If selecting non-elevated srcs and source is elevated, exclude
-                IF ( RPT_%ELEVSTAT .EQ. NOELOUT3 ) THEN
-
-                    INDEXA( S ) = 0
-
-                END IF
+                END SELECT
 
 C.................  NOTE - this should always be at end of select statements
 C.................  Keep a count of the number of selected sources

@@ -22,17 +22,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -89,7 +89,8 @@ C.........  Write status message
 C.........  Initialize the number of variables for grouping, selecting PinG
 C           sources, and selecting elevated sources. 
         NGRPVAR = 5     ! The number of stack parmeters
-        NEVPVAR = 6
+        NEVPVAR = MAX( HT_IDX, DM_IDX, TK_IDX, VE_IDX, FL_IDX,
+     &                 SRC_IDX, FIP_IDX, PLT_IDX )
 
 C.........  Get number of lines in file
         NLINES = GETFLINE( FDEV, 'Elevated configuration' )
@@ -129,16 +130,22 @@ C.........  Allocate memory for criteria arrays
 
         ALLOCATE( ELVVALS( NELVCRIT, MXELVCHK, NEVPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ELVVALS', PROGNAME )
+        ALLOCATE( ELVCHRS( NELVCRIT, MXELVCHK, NEVPVAR ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ELVCHRS', PROGNAME )
         ALLOCATE( ELVTYPES( NELVCRIT, MXELVCHK, NEVPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ELVTYPES', PROGNAME )
         ELVVALS  = 0.
+        ELVCHRS  = ' '
         ELVTYPES = ' '
 
         ALLOCATE( PNGVALS( NPNGCRIT, MXPNGCHK, NEVPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PNGVALS', PROGNAME )
+        ALLOCATE( PNGCHRS( NPNGCRIT, MXPNGCHK, NEVPVAR ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PNGCHRS', PROGNAME )
         ALLOCATE( PNGTYPES( NPNGCRIT, MXPNGCHK, NEVPVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PNGTYPES', PROGNAME )
         PNGVALS  = 0.
+        PNGCHRS  = ' '
         PNGTYPES = ' '
 
         ALLOCATE( EVPEMIDX( NEVPEMV ), STAT=IOS )
@@ -226,7 +233,8 @@ C.............  Rewind input file
             REWIND( FDEV )
 
 C.............  Set local constant variables
-            MX_IDX = MAX( HT_IDX,DM_IDX,TK_IDX,VE_IDX,FL_IDX,RISE_IDX )
+            MX_IDX = MAX( HT_IDX, DM_IDX, TK_IDX, VE_IDX, FL_IDX,
+     &                    RISE_IDX, SRC_IDX, FIP_IDX, PLT_IDX )
 
 C.............  Read file with different steps depending on READTYPE arguments
             DO IREC = 1, NLINES
@@ -277,6 +285,7 @@ C                   number of records), and update the number of variables
                     NGRPCRIT = SPCF_NOR
                     MXGRPCHK = MAX( MXGRPCHK, SPCF_NAND )
 
+C.................  Select PinG sources
                 CASE( PNG_IDX )
                     NPNGCRIT = SPCF_NOR
                     MXPNGCHK = MAX( MXPNGCHK, SPCF_NAND )
@@ -306,6 +315,7 @@ C                           pollutant value counter
                         END IF
                     END DO
 
+C.................  Select elevated sources
                 CASE( ELV_IDX )
                     NELVCRIT = SPCF_NOR
                     MXELVCHK = MAX( MXELVCHK, SPCF_NAND )
@@ -349,6 +359,15 @@ C.................  Check fields
                     I2 = ( N-1 )*4 + 2
                     I3 = ( N-1 )*4 + 3
 
+                    IF ( I2 .GT. NS .OR. I3 .GT. NS ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Bad use of ' //
+     &                         'delimeters at line ', IREC, 
+     &                         '. Line skipped.'
+                        CALL M3MSG2( MESG )
+                        CYCLE
+                    END IF
+
 C.....................  Check and store first part of each AND component 
                     SELECT CASE( SEGMENT( I1 ) )
                     CASE( 'HEIGHT', 'HT' )
@@ -376,6 +395,57 @@ C.........................  Make sure RISE is not used for setting groups
 
 C.........................  Flag file as using cutoff approach
                         LCUTOFF = .TRUE.
+
+                    CASE( 'SOURCE' )
+                        K = SRC_IDX
+
+C.........................  Make sure SOURCE is not used for setting groups
+                        IF( PKT_IDX .EQ. ELG_IDX ) THEN
+                            WRITE( MESG,94010 ) 
+     &                            'WARNING: Variable "SOURCE" '// 
+     &                            'cannot be used to set elevated '//
+     &                            'groups at line', IREC  
+                            CALL M3MSG2( MESG )
+                            CYCLE
+                        END IF
+
+                    CASE( 'FIPS' )
+                        K = FIP_IDX
+
+C.........................  Make sure FIPS is not used for setting groups
+                        IF( PKT_IDX .EQ. ELG_IDX ) THEN
+                            WRITE( MESG,94010 ) 
+     &                            'WARNING: Variable "FIPS" '// 
+     &                            'cannot be used to set elevated '//
+     &                            'groups at line', IREC  
+                            CALL M3MSG2( MESG )
+                            CYCLE
+                        END IF
+
+                    CASE( 'PLANT' )
+                        K = PLT_IDX
+
+C.........................  Make sure PLANT is not used for setting groups
+                        IF( PKT_IDX .EQ. ELG_IDX ) THEN
+                            WRITE( MESG,94010 ) 
+     &                            'WARNING: Variable "PLANT" '// 
+     &                            'cannot be used to set elevated '//
+     &                            'groups at line', IREC  
+                            CALL M3MSG2( MESG )
+                            CYCLE
+                        END IF
+
+C.....................  Make sure comparison type is consistent with 
+C                       plant
+                        IF( SEGMENT( I2 ) .NE. 'IS' ) THEN
+                            EFLAG = .TRUE.
+                            L = LEN_TRIM( SEGMENT( I2 ) )
+                            WRITE( MESG,94010 ) 
+     &                        'ERROR: Comparison type "'// 
+     &                        SEGMENT(I2)(1:L) // '" at line', IREC, 
+     &                        'is not allowed with PLANT criteria.'
+                            CALL M3MSG2( MESG )
+                        END IF
 
 C.....................  Otherwise, determine if the field is a pollutant, and
 C                       if so, store index accordingly
@@ -458,8 +528,21 @@ C.............................  Otherwise store it
 
                     END IF
 
-C.....................  Check value of each AND component
-                    IF ( .NOT. CHKREAL( SEGMENT( I3 ) ) ) THEN
+C.....................  Check value of each AND component...
+C.....................  If plant is specified, then store string information...
+                    IF ( K .EQ. PLT_IDX ) THEN
+
+                        SELECT CASE( PKT_IDX )
+                        CASE( ELG_IDX )
+                            
+                        CASE( PNG_IDX )
+                            PNGCHRS( NPNGCRIT, N, K ) = SEGMENT( I3 )
+                        CASE( ELV_IDX )
+                            ELVCHRS( NELVCRIT, N, K ) = SEGMENT( I3 )
+                        END SELECT
+
+C.....................  If plant not specified, then check if integer or real
+                    ELSE IF ( .NOT. CHKREAL( SEGMENT( I3 ) ) ) THEN
                         EFLAG = .TRUE.
                         L = LEN_TRIM( SEGMENT( I3 ) )
                         WRITE( MESG,94010 ) 
@@ -468,7 +551,7 @@ C.....................  Check value of each AND component
      &                         'numeric value.'
                         CALL M3MSG2( MESG )
 
-C.....................  Store value of each AND component
+C.....................  Store value of each AND component as a real value
                     ELSE
 
                         VAL = STR2REAL( SEGMENT( I3 ) )

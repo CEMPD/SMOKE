@@ -1,6 +1,6 @@
 
-        SUBROUTINE ASGNGRPS( NSP, NCRIT, MXCHK, CRITVALS, CRITYPES,
-     &                       NINVGRP )
+        SUBROUTINE ASGNGRPS( NSP, NCRIT, MXCHK, CRITVALS, 
+     &                       CRITYPES, NINVGRP )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -26,17 +26,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -91,6 +91,8 @@ C...........   Local allocatable arrays
         REAL   , ALLOCATABLE :: REFS   ( : ) ! tmp group stack parameter array
 
         LOGICAL, ALLOCATABLE :: GPSTAT( :,:,: ) ! not used except EVALCRIT call
+        CHARACTER(LEN=PLTLEN3), ALLOCATABLE :: CHRS( : )        ! dummy test character strings
+        CHARACTER(LEN=PLTLEN3), ALLOCATABLE :: COMCHRS( :,:,: ) ! dummy formula strings
 
 C...........   Local fixed arrays
         INTEGER     GSRC  ( MXLOCGRP, MXSPGRP ) ! source IDs for local groups
@@ -164,10 +166,16 @@ C.........  Allocate temporary arrays to store group stack parameters
 C.........  Allocate temporary arrays for interpreting formulas
         ALLOCATE( VALS( NSP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VALS', PROGNAME )
+        ALLOCATE( CHRS( NSP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRS', PROGNAME )
         ALLOCATE( REFS( NSP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'REFS', PROGNAME )
         ALLOCATE( GPSTAT( NSP, NCRIT, MXCHK ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GPSTAT', PROGNAME )
+        ALLOCATE( COMCHRS( NSP, NCRIT, MXCHK ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'COMCHRS', PROGNAME )  
+        CHRS    = ' '   ! array
+        COMCHRS = ' '   ! array
 
 C.........  Loop through sources to establish groups
         G    = 0
@@ -265,7 +273,8 @@ C                   plant
 C.....................  Check tolerances. Use REDS for RANK field since RANK
 C                       can't be used to group stacks (it makes no sense)
                     STATUS = EVALCRIT( NSP, NCRIT, MXCHK, VALS, REFS,
-     &                                 REFS, CRITVALS, CRITYPES, GPSTAT)
+     &                                 REFS, CHRS, CRITVALS, COMCHRS,
+     &                                 CRITYPES, GPSTAT)
 
 C.....................  If stack parameters meet the criteria, then recompute
 C                       the group stack parameters as the weighted average.

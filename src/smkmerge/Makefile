@@ -66,6 +66,8 @@ initstcy.o  : $(MODMERGE) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ initstcy.f
 mrgelev.o   : $(MODMERGE) $(MODCNTL) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ mrgelev.f
+mrggrid.o   : $(MODGRID)
+	$(FC) $(FFLAGS) -c -o $@ mrggrid.f
 mrgmult.o   : $(MODMERGE) $(MODSTCY) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ mrgmult.f
 mrgonams.o  : $(MODMERGE)

@@ -13,17 +13,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -63,7 +63,7 @@ C.........  SMOKE programs - listed in alphabetical order
      &  '     5) controls report ',
      &      ' '
 
-        CASE( 'ELEVPOINT' ) 
+       CASE( 'ELEVPOINT' ) 
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program ELEVPOINT specifies elevated point sources in the',
@@ -150,9 +150,19 @@ C.........  SMOKE programs - listed in alphabetical order
 
         CASE( 'MVCONDNS' ) 
             WRITE( LDEV,92000 ) 
-     &  ' ',
+     &      ' ',
      &  'Program MVCONDNS condenses a mobile source inventory file to',
-     &  'preprocess for preparing the MPLIST and MPREF files.'
+     &  'preprocess for preparing the MPLIST and MPREF files.',
+     &      ' '
+
+        CASE( 'MVSETUP' ) 
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program MVSETUP uses the SMOKE mobile source file to create',
+     &  'a condensed list of all sources in the inventory by FIPS',
+     &  'code, roadtype, vehicle type, and including the speed',
+     &  'from the inventory (if any).',
+     &      ' '
 
         CASE( 'PREMOBL' )
             WRITE( LDEV,92000 ) 
@@ -228,6 +238,21 @@ C.........  SMOKE programs - listed in alphabetical order
      &  'speciation profiles file, permitting support of any chemical',
      &  'mechanism.',
      &      ' '
+
+         CASE( 'SURGTOOL' )       
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program CROSSGRID to take a SMOKE gridding surrogate file ',
+     &  'for a "fine" grid, a grid definition for a "coarse" grid, ',
+     &  'and produce the approximate "coarse" gridding surrogate file.',
+     &  ' ',
+     &  'NOTES:',
+     &  '   (1)  Current version is for Lat-Lon, Lambert, and UTM',
+     &  '        projections only. Can perform Lambert-to-Lambert',
+     &  '        and UTM zone-to-zone transformations)',
+     &  ' ',
+     &  '   (4)  Inputs and outputs only SMOKE formatted files.',
+     &  ' '
 
         CASE( 'TEMPORAL' ) 
             WRITE( LDEV,92000 ) 

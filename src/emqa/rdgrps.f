@@ -24,17 +24,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$
@@ -224,7 +224,7 @@ C.........  Same notes as above, but do for subgrids.
             SUBGNAM  = ' '     ! array
             SBGNREC  = 0       ! array
             SBGRAW   = ' '     ! 2-d array
-            SBGSTAT  = .TRUE.  ! 2-d array (initiallize to "include")
+            SBGSTAT  = .TRUE.  ! 2-d array (initialize to "include")
             VALIDCEL = 0       ! 2-d array
 
         END IF
@@ -508,7 +508,7 @@ C.....................  Skip if report section not started yet.
                     IF( .NOT. INREPORT ) CYCLE
 
 C.....................  A region is being selected
-                    IF( LREGION .AND. RPT_%REGNNAM .NE. PREGNNAM ) THEN
+                    IF( LIN_SUBREGN ) THEN
 
 C.........................  Search for region name in defined regions
                         J = INDEX1( RPT_%REGNNAM, NREGRAW, REGNNAM )
@@ -570,13 +570,12 @@ C.........................  Store current region label for use in next iteration
                     END IF         ! If region selected
                                               
 C.....................  A subgrid is being selected
-                    IF( LSUBGRID .AND. RPT_%SUBGNAM .NE. PSUBGNAM ) THEN
+                    IF( LIN_SUBGRID ) THEN
 
 C.........................  Search for subgrid names in defined subgrids
                         J = 0
                         IF( NSBGRAW .GT. 0 ) 
      &                      J = INDEX1( RPT_%SUBGNAM, NSBGRAW, SUBGNAM )
-                    
                     
 C.........................  If subgrid name is not found, then try to interpret
 C                           entry as a subgrid definition.
@@ -609,7 +608,6 @@ C.............................  If subgrid is invalid
 
                             END IF
                     
-
                         END IF        ! If subgrid name not found in list
 
 C.........................  Store current subgrid label for use in next 
@@ -621,8 +619,26 @@ C                           iteration
 C.................  Store the raw information for the groups
                 CASE( 'STORE' )
 
-C.....................  If line is a group entry
-                    IF( LIN_GROUP ) THEN
+C.....................  If line has the group label
+                    IF( LIN_DEFGRP ) THEN
+
+C.........................  Get number of packet type 
+                        RCNT = PKTCOUNT( PKT_IDX )
+
+                        SELECT CASE( PKT_IDX )
+
+C.........................  Store region group label
+                        CASE( REG_IDX )
+                            IF( LIN_DEFGRP ) REGNNAM( RCNT ) = GRP_LABEL
+                
+C.........................  Store subgrid label in local array
+                        CASE( SBG_IDX )
+                            IF( LIN_DEFGRP ) SUBGNAM( RCNT ) = GRP_LABEL
+                
+                        END SELECT
+
+C.....................  If line is inside a group packet
+                    ELSE IF( LIN_GROUP ) THEN
 
 C.........................  Get number of packet type 
                         RCNT = PKTCOUNT( PKT_IDX )
@@ -635,9 +651,6 @@ C.........................  Choose group type
 
 C.........................  Store region 
                         CASE( REG_IDX )
-
-C.............................  Store group label
-                            IF( LIN_DEFGRP ) REGNNAM( RCNT )= GRP_LABEL
 
 C.............................  Make sure region code is an integer
                             IF( CHKINT( SEGMENT( 1 ) ) ) THEN
@@ -668,9 +681,6 @@ C.............................  Give an error if code not an integer
 C.........................  Store subgrid label in local array
                         CASE( SBG_IDX )
 
-C.............................  Store group label
-                            IF( LIN_DEFGRP ) SUBGNAM( RCNT )= GRP_LABEL
-
 C.............................  Make sure subgrid entries are specified properly
                             NINCL = 0
                             LCELSTAT = .FALSE.   ! array 
@@ -690,47 +700,63 @@ C                               store unparsed string
                         END SELECT
 
 C.....................  If not in group, is this line a valid Select-specified
-C                       region?
+C                       region?  If so, make sure not a duplicate in-line and
+C                       store it.
                     ELSE IF( LINECODE( IREC ) .EQ. 1 ) THEN
 
-                        PKTCOUNT( REG_IDX ) = PKTCOUNT( REG_IDX ) + 1
-                        RCNT = PKTCOUNT( REG_IDX ) 
-
+C.........................  Convert in-line code to region code and rename it.
                         FIP = STR2INT( RPT_%REGNNAM )
-
                         CALL CHECK_REGIONS( FIP, LEVEL, IOS )
+                        CALL RENAME_REGION( RPT_%REGNNAM, FIP )
+
+C.........................  Get report number
+                        N = PKTCOUNT( RPT_IDX )
+                        ALLRPT( N )%REGNNAM = RPT_%REGNNAM
+
+C.........................  See if this name is already stored and if not,
+C                           store it.
+                        RCNT = PKTCOUNT( REG_IDX )
+                        J = INDEX1( RPT_%REGNNAM, RCNT, REGNNAM )
 
 C.........................  Store without checking status because LINECODE = 1
 C                           only if code has already been through CHECK_REGIONS
-                        WRITE( REGNNAM( RCNT ), '(A,I3.3)' ) 
-     &                         'IN-LINE ', RCNT
-                        REGNREC( RCNT )   = 1
-                        REGRAW ( 1,RCNT ) = FIP
-                        REGSTAT( 1,RCNT ) = .TRUE.
-                        REGTYPE( 1,RCNT ) = LEVEL
+                        IF( J .LE. 0 ) THEN
+                            RCNT = RCNT + 1
+                            REGNNAM( RCNT ) = RPT_%REGNNAM
+                            PKTCOUNT( REG_IDX ) = RCNT
 
-C.........................  Store internal region group name for in-line group
-C                           for current packet
-                        N = PKTCOUNT( RPT_IDX )
-                        ALLRPT( N )%REGNNAM = REGNNAM( RCNT )
+                            REGNREC( RCNT )   = 1
+                            REGRAW ( 1,RCNT ) = FIP
+                            REGSTAT( 1,RCNT ) = .TRUE.
+                            REGTYPE( 1,RCNT ) = LEVEL
+                        END IF
 
 C.....................  If not in group, is this line a valid Select-specified
-C                       subgrid?
+C                       subgrid?  If so, make sure not a duplicate in-line and
+C                       store it.
                     ELSE IF( LINECODE( IREC ) .EQ. 2 ) THEN
 
-                        PKTCOUNT( SBG_IDX ) = PKTCOUNT( SBG_IDX ) + 1
-                        RCNT = PKTCOUNT( SBG_IDX ) 
+C.........................  Rename subgrid name
+                        CALL RENAME_SUBGRID( RPT_%SUBGNAM )
 
-                        WRITE( SUBGNAM( RCNT ), '(A,I3.3)' ) 
-     &                         'IN-LINE ', RCNT
-                        SBGNREC( RCNT )   = 1 
-                        SBGRAW ( 1,RCNT ) = BUFFER
-                        SBGSTAT( 1,RCNT ) = .TRUE.
-
-C.........................  Store internal subgrid name for in-line subgrid
-C                           for current packet
+C.........................  Get report number
                         N = PKTCOUNT( RPT_IDX )
-                        ALLRPT( N )%SUBGNAM = SUBGNAM( RCNT )
+                        ALLRPT( N )%SUBGNAM = RPT_%SUBGNAM
+
+C.........................  See if this name is already stored and if not,
+C                           store it.
+                        RCNT = PKTCOUNT( SBG_IDX )
+                        J = INDEX1( RPT_%SUBGNAM, RCNT, SUBGNAM )
+
+                        IF ( J .LE. 0 ) THEN
+                            RCNT = RCNT + 1
+                            SUBGNAM( RCNT ) = RPT_%SUBGNAM 
+                            PKTCOUNT( SBG_IDX ) = RCNT
+
+                            SBGNREC( RCNT )   = 1 
+                            SBGRAW ( 1,RCNT ) = BUFFER
+                            SBGSTAT( 1,RCNT ) = .TRUE.
+                        END IF
 
                     END IF  ! If not group entry or SELECT-specified
 
@@ -900,7 +926,7 @@ C.....................  Check minimum value and reset of out of range
                         L = LEN_TRIM( XBUF )
                         WRITE( MESG,94010 )
      &                         'WARNING: resetting x-coordinate "' //
-     &                         XBUF( 1:L ) // '" at input line', IREC, 
+     &                         XBUF( 1:L ) // '" at input line', IREC,
      &                         'to minimum value of 1.'
                         CALL M3MESG( MESG ) 
                         X1 = 1
@@ -1111,6 +1137,39 @@ C...............   Internal buffering formats............ 94xxx
 94010       FORMAT( 10( A, :, I10, :, 1X ) )
 
             END SUBROUTINE PARSE_SUBGRID
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This subprogram renames internal region names
+            SUBROUTINE RENAME_REGION( NAM, FIP )
+
+            CHARACTER*(*), INTENT (IN OUT) :: NAM
+            INTEGER      , INTENT (IN    ) :: FIP
+
+C----------------------------------------------------------------------
+
+            WRITE( NAM, '(A,I6.6)' ) 'In-line region ', FIP
+
+            END SUBROUTINE RENAME_REGION
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This subprogram renames internal subgrid names
+            SUBROUTINE RENAME_SUBGRID( NAM )
+
+            CHARACTER*(*), INTENT (IN OUT) :: NAM
+            CHARACTER(LEN=LENLAB3) TMPNAM
+
+            INTEGER L
+
+C----------------------------------------------------------------------
+            L = LEN_TRIM( NAM )
+            TMPNAM = 'In-line region ' // NAM( 1:L )
+            NAM = TMPNAM
+
+            END SUBROUTINE RENAME_SUBGRID
 
         END SUBROUTINE RDGRPS
 

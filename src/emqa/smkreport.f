@@ -25,17 +25,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -109,6 +109,7 @@ C...........   File units and logical/physical names
 C...........   Other local variables
         INTEGER      I, K, L, N           ! indices and counters
 
+        INTEGER      HWID                 ! header width
         INTEGER      IOS                  ! i/o status
         INTEGER   :: GDIM    = 0          ! dimension of contiguous gridding mat
         INTEGER      JDATE                ! Julian date
@@ -330,20 +331,20 @@ C.............  When not using hourly inputs
             END IF
 
 C.............  Write report header
-            CALL WRREPHDR( ODEV, N, OUTFMT )
+            CALL WRREPHDR( ODEV, N, HWID, OUTFMT )
 
 C.............  Loop through time steps (if any) and sum emissions into bins
 C               for the appropriate time resolution...
 
 C.............  For mole-based speciation...
             IF( RPT_%USESLMAT ) THEN
-                CALL GENRPRT( ODEV, N, ENAME, TNAME, LNAME, OUTFMT,
-     &                        SLMAT, EFLAG )
+                CALL GENRPRT( ODEV, N, HWID, ENAME, TNAME, LNAME, 
+     &                        OUTFMT, SLMAT, EFLAG )
 
 C.............  For mass-based and no speciation
             ELSE
-                CALL GENRPRT( ODEV, N, ENAME, TNAME, LNAME, OUTFMT,
-     &                        SSMAT, EFLAG )
+                CALL GENRPRT( ODEV, N, HWID, ENAME, TNAME, LNAME, 
+     &                        OUTFMT, SSMAT, EFLAG )
             END IF
 
 C.............  Save file number to use in next iteration

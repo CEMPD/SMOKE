@@ -1,6 +1,7 @@
 
         LOGICAL FUNCTION EVALCRIT( NV, NORS, MXAND, VALS, REFS, RANK, 
-     &                             COMPARE, TYPES, STATUS )
+     &                             CHRS, COMPARE, COMPCHR, TYPES, 
+     &                             STATUS )
 
 C***********************************************************************
 C  function body starts at line
@@ -24,17 +25,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -47,10 +48,12 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER     , INTENT (IN) :: NV      ! Number of values
         INTEGER     , INTENT (IN) :: NORS    ! Number of OR conditions
         INTEGER     , INTENT (IN) :: MXAND   ! Max no.  ANDs for single data val
-        REAL        , INTENT (IN) :: VALS   ( NV )       ! Data values
+        REAL        , INTENT (IN) :: VALS   ( NV )       ! Data values (real)
         REAL        , INTENT (IN) :: REFS   ( NV )       ! Reference values
         REAL        , INTENT (IN) :: RANK   ( NV )       ! Ranking order
+        CHARACTER(*), INTENT (IN) :: CHRS   ( NV )       ! String values
         REAL        , INTENT (IN) :: COMPARE( NORS, MXAND, NV ) ! Formula values
+        CHARACTER(*), INTENT (IN) :: COMPCHR( NORS, MXAND, NV ) ! Formula strings
         CHARACTER(*), INTENT (IN) :: TYPES  ( NORS, MXAND, NV ) ! Condition
         LOGICAL     , INTENT(OUT) :: STATUS ( NORS, MXAND, NV ) ! true: condition met
 
@@ -86,6 +89,10 @@ C               if they are present
                     SELECT CASE( TYPES( L,M,N ) )
                     CASE( '=', '==' )
                         IF ( VALS(N) .NE. COMPARE(L,M,N) ) THEN
+                            ANDSTAT = .FALSE.
+                        END IF
+                    CASE( 'IS' )
+                        IF ( CHRS(N) .NE. COMPCHR(L,M,N) ) THEN
                             ANDSTAT = .FALSE.
                         END IF
                     CASE( '=>', '>=' )

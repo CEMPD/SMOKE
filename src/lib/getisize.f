@@ -27,17 +27,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -220,6 +220,12 @@ C.........  For an EMS-95 format file for non-point sources
 C.........  For an IDA format file
         ELSE IF( INVFMT .EQ. IDAFMT ) THEN
             CALL GETIDASZ( FDEV, CATEGORY, NREC, NRECDAT )
+
+C.........  For the 1996 NTI format
+        ELSE IF( INVFMT .EQ. NTIFMTA ) THEN
+            NREC = 1
+            NRECDAT = 1
+c note: temporary
 
         ELSE
             WRITE( MESG,94010 ) 'INTERNAL ERROR: Illegal call to ' //

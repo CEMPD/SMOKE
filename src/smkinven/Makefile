@@ -32,8 +32,8 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 RAW=chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o openinvin.o \
     openinvout.o openpdout.o procinven.o rdcempd.o rdemsar.o rdemsmb.o \
     rdemspd.o rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o rdidaar.o \
-    rdidamb.o rdidapt.o rdinven.o rdlooppd.o smkinven.o srcmem.o wrinvchr.o \
-    wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
+    rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o smkinven.o srcmem.o \
+    wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
