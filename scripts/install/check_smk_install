@@ -47,6 +47,9 @@ set pt_stat = $status
 diff $REPSCEN/pts.scc*191* $SMKROOT/doc/checkdemo/reports/pts.scc*191* >> $errfile
 set pt_stat = $status
 
+# Unset environment variables to allow grep to work:
+unsetenv AG*_L AG*_S MG*_L MG*_S PG*_L PG*_S BG*_L BG*_S NG*_L NG*_S EG*_L EG*_S
+
 # Make sure all programs completed successfully
 set num_log_file = `ls $LOGS | wc -l`
 set num_success = `grep 'Normal Completion' $LOGS/* | wc -l`
