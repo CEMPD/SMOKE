@@ -61,10 +61,6 @@ C.........  This module contains the global variables for the 3-d grid
 C...........  This module contains the information about the source category
         USE MODINFO
 
-C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY:
-     &          PELVNAME, EVDEV
-
 C.........  This module is required for the FileSetAPI
         USE MODFILESET
 
