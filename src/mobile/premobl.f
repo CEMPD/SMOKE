@@ -24,6 +24,7 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
+        INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:        
         CHARACTER*2     CRLF
@@ -31,6 +32,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         ENVINT
         REAL            ENVREAL
+        INTEGER         INDEX1
         CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
@@ -40,7 +42,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ISOPEN
         
         EXTERNAL     CRLF, GETIFDSC, GETFLINE, ENVINT, 
-     &               ENVREAL, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
+     &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
      &               SECSDIFF, WKDAY, OPNFULL3, ISOPEN
         
 C...........   LOCAL PARAMETERS
@@ -433,6 +435,17 @@ C.............  Save description parameters
             SDATE_MET = SDATE3D
             STIME_MET = STIME3D
             NSTEP_MET = MXREC3D
+            
+C.............  Check that requested temperature variable is in file
+            J = INDEX1( TVARNAME, NVARS3D, VNAME3D )
+            IF( J <= 0 ) THEN
+            	EFLAG = .TRUE.
+                MESG = 'ERROR: Could not find ' // TVARNAME // 
+     &                 'in file ' //
+     &                 CURFNM( 1:LEN_TRIM( CURFNM ) )
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
 
 C.............  Compare the met grid with previous settings
 C.............  The subgrid parameters will be set here, if there is a subgrid
@@ -466,12 +479,15 @@ C.................  Check if met data overlaps previous file and print warning
                 IF( METCHECK( J ) /= 0 .AND. DUPWARN ) THEN
                     DUPNAME = METLIST( METCHECK( J ) )
                     MESG = 'WARNING: Time period of meteorology file '//
+     &                     CRLF() // BLANK10 // '"' // 
      &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) //
-     &                     'overlaps that of file ' //
-     &                     DUPNAME( 1:LEN_TRIM( DUPNAME ) ) // '.' //
-     &                     CRLF() // BLANK10 // 'Data from ' // 
+     &                     '" overlaps that of file ' //
+     &                     CRLF() // BLANK10 // '"' //
+     &                     DUPNAME( 1:LEN_TRIM( DUPNAME ) ) // '".'
+                    CALL M3MESG( MESG )
+                    MESG = BLANK5 // 'Data from "' // 
      &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) //
-     &                     'will be used.' 
+     &                     '" will be used.' 
                     CALL M3MESG( MESG )
                     DUPWARN = .FALSE.
                 END IF
@@ -600,7 +616,7 @@ C.............  Adjust metstart for difference between old and new start
             ETIME = ETIME_NEW
             
 C.............  Calculate number of time steps
-            NSTEPS = SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
+            NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
                         
 C.............  Get date buffer field
             DTBUF = MMDDYY( SDATE )
@@ -616,7 +632,7 @@ C.............  Get date buffer field
      
             CALL M3MSG2( MESG )
         END IF
-           
+
 C.........  Get sources and counties from SPDSUM file
         ALLOCATE( COUNTYSRC( NSRC, 2 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'COUNTYSRC', PROGNAME )
@@ -656,6 +672,21 @@ C.........  Retrieve environment variable settings for temperature range
 
         MESG = 'Maximum allowed daily temperature [deg F]'
         MAXTEMP = ENVREAL( 'SMK_MAXTEMP', MESG, 120., IOS )
+
+C.........  Make sure min and max fall within range allowed by MOBILE6
+        IF( MINTEMP < M6MINTEMP ) THEN
+            MINTEMP = M6MINTEMP
+            WRITE( MESG,94070 ) 
+     &          'WARNING: Adjusting minimum temperature to ', 
+     &          M6MINTEMP, ' degrees F.'
+            CALL M3MSG2( MESG )
+        ELSEIF( MAXTEMP > M6MAXTEMP ) THEN
+            MAXTEMP = M6MAXTEMP
+            WRITE( MESG,94070 ) 
+     &          'WARNING: Adjusting maximum temperature to ',
+     &          M6MAXTEMP, ' degrees F.'
+            CALL M3MSG2( MESG )
+        END IF
 
 C.........  Convert temperature parameters to proper units
 C.........  Kelvin for now - future can be dependant on met input units
@@ -699,12 +730,6 @@ C.........  Allocate memory for storing temperature profiles
         CALL CHECKMEM( IOS, 'TMNCNTY', PROGNAME )
         ALLOCATE( TEPCNTY( NEPCNTY, 24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TEPCNTY', PROGNAME )
-        
-C.........  Preprocess dates, times, and time zones.  Write report for
-C           time zones here for zones that do not have a complete day of
-C           data in beginning or end. 
-        CALL CHKFULLDY( NSRC, SDATE, STIME, EDATE, ETIME, 
-     &                  TZONES, LDAYSAV )
 
 C.........  Get output directory information from the environment
         MESG = 'Path where hourly temperature files will be written'
@@ -721,22 +746,22 @@ C.........  Get output directory information from the environment
 C.........  Open output files
         IF( DAYAVER ) THEN
             DNAME = 'DAYTEMP'
-            CALL OPENSHOUR( ENAME, 'daily', SDATE, STIME, TVARNAME, 
+            CALL OPENSHOUR( ENAME, 'daily', SDATE, EDATE, TVARNAME, 
      &                      NDYCNTY, TEMPDIR, DNAME )
         END IF
         IF( WEEKAVER ) THEN
             WNAME = 'WEEKTEMP'
-            CALL OPENSHOUR( ENAME, 'weekly', SDATE, STIME, TVARNAME,
+            CALL OPENSHOUR( ENAME, 'weekly', SDATE, EDATE, TVARNAME,
      &                      NWKCNTY, TEMPDIR, WNAME )
         END IF
         IF( MONAVER ) THEN
             MNAME = 'MONTEMP'
-            CALL OPENSHOUR( ENAME, 'monthly', SDATE, STIME, TVARNAME,
+            CALL OPENSHOUR( ENAME, 'monthly', SDATE, EDATE, TVARNAME,
      &                      NMNCNTY, TEMPDIR, MNAME )
         END IF
         IF( EPIAVER ) THEN
             PNAME = 'EPITEMP'
-            CALL OPENSHOUR( ENAME, 'episode', SDATE, STIME, TVARNAME,
+            CALL OPENSHOUR( ENAME, 'episode', SDATE, EDATE, TVARNAME,
      &                      NEPCNTY, TEMPDIR, PNAME )
         END IF
 
@@ -757,7 +782,7 @@ C.........  Loop through days/hours of temperature files
         JTIME = STIME
         LDATE = -9
         
-        DO T = METSTART, METSTART + NSTEPS
+        DO T = METSTART, METSTART + NSTEPS - 1
 
             POS = T - METSTART + 1
             RDATE = JDATE
@@ -845,23 +870,25 @@ C.....................  Average temperatures across county group
      &                             TDYCNTY, NDAYSRC )
 
 C.....................  Open new file if necessary (1 day per output file)
-                    IF( POS > 24 .AND. 
-     &                  MOD( POS - TSPREAD, 24 ) == 1 ) THEN
-                        IF( .NOT. CLOSE3( DNAME ) ) THEN
-                            MESG = 'Could not close file ' // 
-     &                              DNAME( 1:LEN_TRIM( DNAME ) )
-                            CALL M3EXIT( PROGNAME, DDATE, 0, MESG, 2 )
-                        END IF
-                        
-                        CALL OPENSHOUR( ENAME, 'daily', DDATE, DTIME, 
+                    IF( .NOT. ISOPEN( DNAME ) ) THEN
+                        CALL OPENSHOUR( ENAME, 'daily', DDATE, EDATE, 
      &                                  TVARNAME, NDYCNTY, TEMPDIR, 
      &                                  DNAME )
-                    END IF                            
+                    END IF  
 
 C.....................  Write time step to file
                     CALL WRSHOUR( DNAME, DDATE, DTIME, NDYCNTY, 
      &                            ARRAYPOS, DYCODES, TDYCNTY )
      
+                    IF( DTIME == 230000 ) THEN
+
+C.........................  Close current output file                        
+                        IF( .NOT. CLOSE3( DNAME ) ) THEN
+                            MESG = 'Could not close file ' // 
+     &                              DNAME( 1:LEN_TRIM( DNAME ) )
+                            CALL M3EXIT( PROGNAME, DDATE, 0, MESG, 2 )
+                        END IF
+                    END IF     
                 END IF
 
 C.............  If current output day is Saturday, process weekly averages
@@ -874,7 +901,7 @@ C.....................  Average temperatures across county group
 
 C.....................  Open new file if necessary (one week per output file)
                     IF( .NOT. ISOPEN( WNAME ) ) THEN
-                        CALL OPENSHOUR( ENAME, 'weekly', WDATE, DTIME, 
+                        CALL OPENSHOUR( ENAME, 'weekly', WDATE, EDATE, 
      &                                  TVARNAME, NWKCNTY, TEMPDIR, 
      &                                  WNAME )
                     END IF       
@@ -911,7 +938,7 @@ C.....................  Average temperatures across county group
 
 C.....................  Open new file if necessary (one month per output file)
                     IF( .NOT. ISOPEN( MNAME ) ) THEN                        
-                        CALL OPENSHOUR( ENAME, 'monthly', MDATE, DTIME, 
+                        CALL OPENSHOUR( ENAME, 'monthly', MDATE, EDATE,
      &                                  TVARNAME, NMNCNTY, TEMPDIR, 
      &                                  MNAME )
                     END IF       
@@ -946,7 +973,7 @@ C.................  Process remaining week temperatures only if current date is
 C                   not Saturday; otherwise, this has already been handled above
                 IF( WEEKAVER .AND. WKDAY( DDATE ) /= 6 ) THEN
                     IF( .NOT. ISOPEN( WNAME ) ) THEN                    
-                        CALL OPENSHOUR( ENAME, 'weekly', WDATE, 0, 
+                        CALL OPENSHOUR( ENAME, 'weekly', WDATE, EDATE, 
      &                                  TVARNAME, NWKCNTY, TEMPDIR, 
      &                                  WNAME )
                     END IF
@@ -965,7 +992,7 @@ C.................  Process remaining month temperatures only if current date is
 C                   not the last day of the month
                 IF( MONAVER .AND. TMPMNTH == CURRMNTH ) THEN
                     IF( .NOT. ISOPEN( MNAME ) ) THEN
-                        CALL OPENSHOUR( ENAME, 'monthly', MDATE, 0, 
+                        CALL OPENSHOUR( ENAME, 'monthly', MDATE, EDATE,
      &                                  TVARNAME, NMNCNTY, TEMPDIR, 
      &                                  MNAME )                    	
                     END IF
@@ -1047,5 +1074,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
+     
+94070   FORMAT( A, F5.1, A )
                 
         END PROGRAM PREMOBL
