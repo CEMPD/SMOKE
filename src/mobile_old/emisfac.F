@@ -1,4 +1,3 @@
-
 C Version "@(#)$Id$ $Source$ $Date$ 
 
         PROGRAM EMISFAC
@@ -18,6 +17,10 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Prototype 11/95 by MRH
+C
+C  FUTURE NEEDS:
+C      (1) Need to create better analysis of IPSIR combo emission factors to 
+C          ensure that no loops and better yet, no commons using commons.
 C 
 C***********************************************************************
 
@@ -25,6 +28,7 @@ C***********************************************************************
 
 C...........   INCLUDES:
 
+        INCLUDE 'CHDIMS3.EXT'    !  Mobile include paramaters
         INCLUDE 'MBDIMS3.EXT'    !  Mobile include paramaters
         INCLUDE 'PARMS3.EXT'     !  I/O API parameters
         INCLUDE 'IODECL3.EXT'    !  I/O API function declarations
@@ -61,19 +65,19 @@ C...........   EXTERNAL BLOCK DATA for mobile:
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Simulation-specific MOBILE5a parmeter list variables
-        INTEGER IPSIDX( MXPSI )          ! Sorting index for IPSIR
-        INTEGER IPSIR ( MXPSI*24 )       ! Unique parameter scheme indices list
-        INTEGER MPNUM                    ! Actual no. in IPSIR
-        INTEGER P1, P2, P3, P4( 24 )     ! Dummies
+        INTEGER IPSIDX( MXPSI )      ! Sorting index for IPSIRA
+        INTEGER IPSIR ( MXPSI )      ! Sorted   scenario-specific PSI list
+        INTEGER MPNUM                ! Actual count of scenario-specific PSIs
+        INTEGER P1, P2, P3, P4( 24 ) ! Dummies
 
 C...........   MOBILE5a parameter x-ref variables
-        INTEGER MRNUM                    ! Actual no. of normal x-ref entries
-        INTEGER IPSI  ( MXPREF )          ! Normal x-ref scheme index
+        INTEGER MRNUM                     ! Actual no. of normal x-ref entries
+        INTEGER INDEXA( MXPREF )          ! Index for sorting x-ref scheme index
+        INTEGER IPSI  ( MXPREF )          ! Sorted   x-ref scheme index
+        INTEGER IPSIA ( MXPREF )          ! Unsorted x-ref scheme index
         INTEGER ISTYPE( MXPREF, 2     )   ! Type-specifier (1), and pointer (2)
         INTEGER NIDX  ( MXPREF, NNFAC )   ! Normal x-ref entries
         INTEGER CIDX  ( MXPREF, NCFAC )   ! Control Normal x-ref entries
-
-        COMMON / MPARMS / MRNUM, IPSI, ISTYPE, NIDX, CIDX
 
 C...........   Master Non-Diurnal EFs list variables
         REAL    EXH_CO ( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: CO exhaust
@@ -149,13 +153,16 @@ C...........   Other local variables
         REAL    TF_MAX                    ! temporary maximum temperature
         REAL    TF_MIN                    ! temporary minimum temperature
 
+        INTEGER DEPCNT                    ! Temporary count for combo emis facs
+        INTEGER DEPOINT                   ! Temporary pointer to combo-only lists
         INTEGER EMTIDX( MXEMIS )          ! Index to EMTLST for actual EFs
         INTEGER I, II, IM, IPM            ! Counters and pointers
-        INTEGER J, JJ, K, KK, L, T        ! Counters and pointers
+        INTEGER J, JJ, K, KK, L, N, T     ! Counters and pointers
         INTEGER IERR                      ! MOBILE5 error value
         INTEGER IOS                       ! I/O status
         INTEGER IPARM                     ! temporary PSI value 
         INTEGER IPTIM                     ! IPARM converted to time for file ops
+        INTEGER IREC                      ! Line number when reading ASCII files
         INTEGER ITEMP                     ! Indicator of tmpr status for MOBILE5 
         INTEGER JYEAR                     ! year to calculate emission factors
         INTEGER NTEMP                     ! Actual no. of temps for eval of EFs
@@ -495,20 +502,21 @@ C.............  Set up diurnal master List file description
      &         'output file', FSNEW3, 'MEFSD', 'EMISFAC' )
 
         ENDIF
-
+C...................................................................
 C.........  Read targeted EF update file if it exists ............
+C...................................................................
 
         NUPDAT = 0
         IF( SDEV .GT. 0 ) THEN
-            I = 0
-            J = 0
+            IREC  = 0
+            J     = 0
             EFLAG = .FALSE.
 
    35       CONTINUE
 
                 READ( SDEV, 93100, END=38, IOSTAT=IOS ) BUFFER
 
-                I = I + 1
+                IREC = IREC + 1
                 L = INDEX( BUFFER, '-' ) 
  
                 IF( IOS .NE. 0 ) THEN
@@ -516,7 +524,7 @@ C.........  Read targeted EF update file if it exists ............
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
      &                  'Error ', IOS,
-     &                  'reading TARGETED EF UPDATE file at line', I
+     &                  'reading TARGETED EF UPDATE file at line', IREC
                     CALL M3MESG( MESG )
                     GO TO 35            ! To head of read loop
 
@@ -531,16 +539,28 @@ C.........  Read targeted EF update file if it exists ............
                 ENDIF
 
                 DO 37 JJ = K, KK
+
                     J = J + 1
-                    UPDATE( J ) = JJ
 
-                    IF( UPDATE( J ) .LE. UPDATE( J-1 ) ) THEN
-
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 )
-     &                      'Error: Entries in MEFUPD are not ' //
-     &                      'uniquely sorted in ascending order'
+                    IF( J .GT. MXPSI ) THEN
+                        WRITE( MESG, 94010 )
+     &                     'Maximum number of EF updates', MXPSI, 
+     &                     'exceeded at line', IREC, ', file MEFUPD'
                         CALL M3MESG( MESG )
+
+                    ELSE
+
+                        UPDATE( J ) = JJ
+
+                        IF( UPDATE( J ) .LE. UPDATE( J-1 ) ) THEN
+
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 )
+     &                          'Error: Entries in MEFUPD are not ' //
+     &                          'uniquely sorted in ascending order'
+                            CALL M3MESG( MESG )
+
+                        ENDIF
 
                     ENDIF
 
@@ -551,22 +571,294 @@ C.........  Read targeted EF update file if it exists ............
    38       CONTINUE
             NUPDAT = J
 
+            IF( MPNUM .GT. MXPSI ) THEN
+
+                EFLAG = .TRUE.
+                WRITE( *, 92000 ) ' '
+                WRITE( *, 92010 )
+     &                 'Records count for PSI updates       :', NUPDAT,
+     &                 'Max dimensioned record-count (MXPSI):', MXPSI,
+     &                 'Max record-count exceeded.'
+            ENDIF
+
             IF( EFLAG ) THEN
                 CALL M3EXIT( 'EMISFAC', 0, 0,
-     &                       'Bad TARGETED EF UPDATE file', 2 )
+     &                       'Error in MEFUPD file', 2 )
 
             ENDIF
 
         ENDIF
 
-C.........  Read EF-based file of temp combo indices .............
+C...................................................................
+C.........  Read in and process MPREF  .............................
+C...................................................................
+        I     = 0
+        IREC  = 0
+        J     = 0
+        JJ    = 0 
+        EFLAG = .FALSE.
+   55   CONTINUE   ! Start loop for reading MPREF 
 
-        I = 0
+C.............  Read first line of 2-line records
+            READ( NRDEV, *, END=61, IOSTAT=IOS ) P1, MPTYPE
+
+            I    = I + 1
+            IREC = IREC + 1
+
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 )
+     &            'Error ', IOS, 'reading MPREF file at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSEIF( I .GT. MXPREF ) THEN
+                WRITE( MESG, 94010 )
+     &                'Maximum number of master PSIs', MXPREF,
+     &                 'exceeded at line', IREC, ', file MPREF'
+                CALL M3MESG( MESG )
+
+C.............  If no overflow and no I/O errors...
+            ELSE
+
+                IPSIA ( I )   = P1
+                INDEXA( I )   = I
+                ISTYPE( I,1 ) = MPTYPE
+
+C................  For non-combo (normal) PSIs, increment and store properties
+                IF( MPTYPE .EQ. 0 ) THEN
+                    J = J + 1 
+                    ISTYPE( I,2 ) = J
+
+                    READ( NRDEV, * ) ( NIDX( J,K ), K=1,NNFAC ),
+     &                               ( CIDX( J,K ), K=1,NCFAC )
+
+                    IREC = IREC + 1
+
+C................  For combo PSIs, increment and store properties
+                ELSEIF( MPTYPE .GT. 0 ) THEN
+
+C.....................  Make sure that combination EF doesn't use more than
+C                       the legal number of other PSIs
+                    IF( MPTYPE .GT. MXNPT ) THEN
+
+                        EFLAG = .TRUE.
+
+                        WRITE( MESG, 94010 ) 
+     &                         'Problem at line', IREC, ', file MPREF:'
+                        CALL M3MESG( MESG )
+
+                        WRITE( *, 92010 ) 
+     &                   'Attmptd # PSIs used in combo        :',MPTYPE,
+     &                   'Max     # PSIs used in combo (MXNPT):',MXNPT
+
+C.....................  No overflow, set combo EF properties...
+                    ELSE
+                        JJ = JJ + 1
+                        ISTYPE( I,2 ) = JJ
+
+                        READ( NRDEV, *, IOSTAT=IOS ) 
+     &                                   ( PCNTPRO( K,JJ ), 
+     &                                     IPLIST ( K,JJ ), K=1,MPTYPE )
+
+                        IREC = IREC + 1
+
+                        IF( IOS .NE. 0 ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 )
+     &                        'Error ', IOS,
+     &                        'reading MPREF file at line', IREC
+                            CALL M3MESG( MESG )
+ 
+                        ENDIF
+
+                    ENDIF
+
+                ELSE
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 ) 
+     &                 'PSI type flag illegal value:', MPTYPE,
+     &                 '(profile', P1, ', line', IREC, ', file MPREF)'
+                    CALL M3MESG( MESG )
+
+                ENDIF
+
+            ENDIF
+
+        GO TO 55    ! End loop for reading MPREF
+   61   CONTINUE
+
+        MRNUM  = I
+        MPURE  = J  ! Note: J  <= I
+        MCOMBO = JJ ! Note: JJ <= I
+
+        IF( MRNUM .GT. MXPREF ) THEN
+
+            EFLAG = .TRUE.
+            WRITE( *, 92000 ) ' '
+            WRITE( *, 92010 )
+     &             'Records count for master PSIs        :', MRNUM ,
+     &             'Max dimensioned record-count (MXPREF):', MXPREF,
+     &             'Max record-count exceeded.'
+        ENDIF
+
+        IF( EFLAG ) THEN
+            CALL M3EXIT( 'EMISFAC', 0, 0,
+     &                   'Error in MPREF file', 2 )
+        END IF
+
+C.........  Sort master PSI list
+        CALL SORTI1( MRNUM, INDEXA, IPSIA )
+
+        DO 63 I = 1, MRNUM
+           IPSI( I ) = IPSIA( INDEXA( I ) )
+   63   CONTINUE
+
+C...................................................................
+C.........  Read in and process MPLIST file             ............
+C...................................................................
+
+C.........  Create SORTED list of UNIQUE parameter scheme indices (PSIs)
+C.........  Do this sorting and uniqueness no to avoid a _huge_ array
+
+        I     = 0 
+        IREC  = 0 
+        EFLAG = .FALSE.
+   44   CONTINUE   ! Start loop for reading MPLIST
+
+            READ( NLDEV, *, END=48 ) P1, P2, P3, ( P4( JJ ), JJ=1,24 )
+
+            IREC = IREC + 1
+
+C.............  Loop through all entries on line (for all hours)
+            DO 47 JJ = 1, 24
+ 
+                IM = LOCAT1( P4( JJ ), I, IPSIR )
+
+C.................  If PSI not found, and not first entry...
+                IF( IM .GT. 0 .AND. I .NE. 0 ) THEN
+ 
+                    I = I + 1
+
+                    IF( I .GT. MXPSI ) THEN        ! Overflow will occur
+                        WRITE( MESG, 94010 )
+     &                     'Maximum number of unqiue PSIs', MXPSI,
+     &                     'exceeded at line', IREC, ', file MPLIST'
+                        CALL M3MESG( MESG )
+ 
+                    ELSE
+
+C......................... Shift list by 1, starting from bottom of list
+                        DO 46 K = I, IM+1, -1
+                            IPSIR( K ) = IPSIR( K-1 )
+   46                   CONTINUE
+
+C......................... Inert new PSI into sorted list 
+                        IPSIR( IM ) = P4( JJ )
+                    ENDIF
+
+C.................  First entry...
+                ELSEIF( I .EQ. 0 ) THEN
+                    I = I + 1
+                    IPSIR( I ) = P4( JJ )
+ 
+                ENDIF
+ 
+   47       CONTINUE    ! End loop on hours
+ 
+        GO TO 44        ! End loop for reading MPLIST
+   48   CONTINUE
+
+C.........  Set (current) count of scenario-specific PSIs
+        MPNUM = I
+
+        IF( MPNUM .EQ. 0 ) THEN
+
+            CALL M3EXIT( 'EMISFAC', 0, 0, 
+     &                   'Empty MPLIST file not allowed', 1 )
+
+        ENDIF
+
+C.........  Ensure that all PSI on which others depend are in IPSIR
+        DO 69 N = 1, MRNUM
+
+            MPTYPE = ISTYPE( N,1 )
+
+C.............  For combination emission factors...
+            IF( MPTYPE .GT. 0 ) THEN
+
+C.................  Set pointer to combo-only lists
+                DEPOINT = ISTYPE( N,2 )
+
+C.................  Loop through all factors depended on by Ith PSI
+                DO 68 J = 1,MPTYPE
+
+C.....................  Get Jth PSI from list for Ith PSI
+                    P1 = IPLIST( J, DEPOINT )
+
+C.....................  Locate Jth PSI in sorted scenario-specific PSI list
+                    IM = LOCAT1( P1, MPNUM, IPSIR )
+
+                    IF( IM .GT. 0 ) THEN      ! Jth PSI not in scen-spec list
+
+                        MPNUM = MPNUM + 1
+
+                        IF( MPNUM .GT. MXPSI ) THEN
+                            WRITE( MESG, 94010 )
+     &                         'Maximum number of unqiue PSIs', MXPSI,
+     &                         'exceeded during list update for ' //
+     &                         'combo EFs'
+                            CALL M3MESG( MESG )
+
+                        ELSE
+
+C............................. Shift list by 1, starting from bottom of list
+                            DO 66 K = MPNUM, IM+1, -1
+                                IPSIR( K ) = IPSIR( K-1 )
+   66                       CONTINUE
+    
+C............................. Inert new PSI into sorted list 
+                            IPSIR( IM ) = P1
+                        ENDIF
+
+                    ENDIF
+
+   68           CONTINUE
+
+            ENDIF
+
+   69   CONTINUE
+        
+        IF( MPNUM .GT. MXPSI ) THEN
+
+            EFLAG = .TRUE.
+            WRITE( *, 92000 ) ' '
+            WRITE( *, 92010 )
+     &             'Records count for unique PSIs       :', MPNUM ,
+     &             'Max dimensioned record-count (MXPSI):', MXPSI,
+     &             'Max record-count exceeded.'
+        ENDIF
+
+        IF( EFLAG ) THEN
+            CALL M3EXIT( 'EMISFAC', 0, 0, 
+     &                   'Error in MPLIST file', 1 )
+
+        ENDIF
+
+C...................................................................
+C.........  Read EF-based file of temp combo indices ...............
+C...................................................................
+
+        I     = 0
+        IREC  = 0
         EFLAG = .FALSE.
    39   CONTINUE   ! Start loop for reading MEFTEMP
 
             READ( EDEV, *, END=41, IOSTAT=IOS ) 
      &            P1, P2, ( P5( JJ ), JJ = 1, P2 )
+
+            IREC = IREC + 1
+            I    = I + 1
 
             IF( IOS .NE. 0 ) THEN
 
@@ -576,9 +868,13 @@ C.........  Read EF-based file of temp combo indices .............
      &              'reading TEMPERATURE INDEX file at line', I
                 CALL M3MESG( MESG )
 
-            ELSE
+            ELSEIF( I .GT. MXPSI ) THEN
+                WRITE( MESG, 94010 )
+     &             'Maximum number PSI-based temperature indices', 
+     &             MXPSI, 'exceeded at line', IREC, ', file MEFTEMP'
+                CALL M3MESG( MESG )
 
-                I = I + 1
+            ELSE    
 
                 MMTREF( I ) = P1
                 NTIDX ( I ) = P2
@@ -593,53 +889,18 @@ C.........  Read EF-based file of temp combo indices .............
    41   CONTINUE
         NTREF = I 
 
-        IF ( EFLAG ) THEN
-            CALL M3EXIT( 'EMISFAC', 0, 0,
-     &                   'Bad TEMPERATURE INDEX file', 2 )
-        END IF
+        IF( MPNUM .GT. MXPSI ) THEN
 
-        I = 0 
-C.........  Read in MPLIST .......................................
-   44   CONTINUE   ! Start loop for reading MPLIST
-
-            READ( NLDEV, *, END=48 ) P1, P2, P3, ( P4( JJ ), JJ=1,24 )
-
-C.............  Create sorted list of unique parameter scheme indices
-            DO 47 JJ = 1, 24
-
-                IM = LOCAT1( P4( JJ ), I, IPSIR )
-
-                IF( IM .GT. 0 ) THEN
-                    I = I + 1
-
-                    IF( I .GT. MXPSI ) THEN
-                        WRITE( MESG, 94010 ) 
-     &                     'Maximum dimension MXPSI=', MXPSI, 
-     &                     'was exceeded while reading MPLIST'
-                        CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 1 )
-
-                    ELSE
-                        DO 46 K = I, IM+1, -1
-                            IPSIR( K ) = IPSIR( K-1 )
-   46                   CONTINUE
-
-                        IPSIR( IM ) = P4( JJ )
-                    ENDIF
-                ELSEIF( I. EQ. 0 ) THEN
-
-                    I = I + 1
-                    IPSIR( I ) = P4( JJ )
-
-                ENDIF
-
-   47       CONTINUE
-
-        GO TO 44   ! End loop for reading MPLIST
-   48   MPNUM = I
+            EFLAG = .TRUE.
+            WRITE( *, 92000 ) ' '
+            WRITE( *, 92010 )
+     &             'Records count of temperature indices:', NTREF ,
+     &             'Max dimensioned record-count (MXPSI):', MXPSI,
+     &             'Max record-count exceeded.'
+        ENDIF
 
 C.........  Check if the number of entries in the temperature-index file
 C.........  is the same as the number in MPLIST.  If not - give warning.
-
         IF( MPNUM .NE. NTREF ) THEN
 
             WRITE( *,92000 ) ' ' 
@@ -656,145 +917,10 @@ C.........  is the same as the number in MPLIST.  If not - give warning.
      &        ' '
         ENDIF
 
-C.........  Read in MPREF ..........................................
-        I  = 0
-        J  = 0
-        JJ = 0 
-        EFLAG = .FALSE.
-   55   CONTINUE   ! Start loop for reading MPREF 
-
-            READ( NRDEV, *, END=61, IOSTAT=IOS ) P1, MPTYPE
-
-            IF( IOS .NE. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &            'Error ', IOS, 'reading MPREF file at line', I*2+1
-                CALL M3MESG( MESG )
-
-            ELSEIF( I .EQ. MXPREF ) THEN
-                WRITE( MESG, 94010 ) 
-     &                 'Maximum dimension MXPREF=', MXPREF, 
-     &                 'was exceeded while reading MPREF'
-                CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 1 )
-
-            ELSE
-
-                I = I + 1
-
-                IPSI  ( I ) = P1
-                ISTYPE( I,1 ) = MPTYPE
-
-                IF( MPTYPE .EQ. 0 ) THEN
-                    J = J + 1 
-                    ISTYPE( I,2 ) = J
-
-                    READ( NRDEV, * ) ( NIDX( J,K ), K=1,NNFAC ),
-     &                               ( CIDX( J,K ), K=1,NCFAC )
-
-                ELSEIF( MPTYPE .GT. 0 ) THEN
-
-                    IF( MPTYPE .GT. MXNPT ) THEN
-
-                        WRITE( MESG, 94010 ) 
-     &                     'Maximum dimension MXNPT=', MXNPT, 
-     &                     'was exceeded while reading profile', P1,
-     &                     'in file MPREF'
-                        CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 1 )
-
-                    ELSE
-                        JJ = JJ + 1
-                        ISTYPE( I,2 ) = JJ
-
-                        READ( NRDEV, *, IOSTAT=IOS ) 
-     &                                   ( PCNTPRO( K,JJ ), 
-     &                                     IPLIST ( K,JJ ), K=1,MPTYPE )
-
-                        IF( IOS .NE. 0 ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 )
-     &                        'Error ', IOS,
-     &                        'reading MPREF file at line', I*2+2
-                            CALL M3MESG( MESG )
- 
-                        ENDIF
-
-                    ENDIF
-
-                ELSE
-
-                    WRITE( MESG, 94010 ) 
-     &                 'Profile type flag illegal value:', MPTYPE,
-     &                 'for MPREF profile', P1
-                    CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 1 )
-
-                ENDIF
-
-            ENDIF
-
-        GO TO 55   ! End loop for reading MPREF
-   61   MRNUM  = I
-        MPURE  = J
-        MCOMBO = JJ
-
-
-        IF( EFLAG ) THEN
+        IF ( EFLAG ) THEN
             CALL M3EXIT( 'EMISFAC', 0, 0,
-     &                   'Bad MPREF file', 2 )
+     &                   'Error in MEFTEMP file', 2 )
         END IF
-
-C.........  Ensure that all PSI on which others depend are in IPSIR
-
-        DO 69 I = 1, MRNUM
-
-            MPTYPE = ISTYPE( I,1 )
-            IF( MPTYPE .GT. 0 ) THEN
-
-                DO 68 J = 1,MPTYPE
-
-                    P1 = IPLIST( J, ISTYPE( I,2 ) )
-                    IM = LOCAT1( P1, MPNUM, IPSIR )
-
-                    IF( IM .GT. 0 ) THEN
-                        MPNUM = MPNUM + 1
-
-                        IF( MPNUM .GT. MXPSI ) THEN
-                            WRITE( MESG, 94010 ) 
-     &                         'Maximum dimension MXPSI=', MXPSI, 
-     &                         'was exceeded while reading MPLIST'
-                            CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
-
-                        ELSE
-                            DO 66 K = MPNUM, IM+1, -1
-                                IPSIR( K ) = IPSIR( K-1 )
-   66                       CONTINUE
-    
-                            IPSIR( IM ) = P1
-                        ENDIF
-
-                    ELSEIF( IM. EQ. 0 ) THEN
-
-                        MPNUM = MPNUM + 1
-                        IPSIR( MPNUM ) =  P1
-
-                    ENDIF
-
-   68           CONTINUE
-
-            ENDIF
-
-   69   CONTINUE
-        
-C.........  Initialize sorting index
-        DO 70 I = 1, MPNUM
-            IPSIDX( I ) = I
-   70   CONTINUE
-
-C.........  Sort scenario specific IPSI array
-        CALL SORTI1( MPNUM, IPSIDX, IPSIR )
-
-C.........  Note: I need to create better analysis of IPSIR to make
-C.........        sure that no loops and better yet, no commons using
-C.........        commons.
 
 C.........  Update temperature indices lists so pure PSIs include
 C.........  indices for the combo PSIs that use them
@@ -803,7 +929,10 @@ C.........  indices for the combo PSIs that use them
         DO 75 I = 1, NTREF
 
 C.............  Find PSI for temperature index in main PSI list
-            K = FIND1( MMTREF( I ), MRNUM, IPSI )
+            K = FIND1 ( MMTREF( I ), MRNUM, IPSI )
+
+            DEPCNT  = ISTYPE( INDEXA( K ),1 )
+            DEPOINT = ISTYPE( INDEXA( K ),2 )
 
             IF( K .LE. 0 ) THEN  ! Error
                 EFLAG = .TRUE.
@@ -813,13 +942,13 @@ C.............  Find PSI for temperature index in main PSI list
                 CALL M3MESG( MESG )
 
 C.............  If PSI is a combination format
-            ELSEIF( ISTYPE( K,1 ) .GT. 0 ) THEN
+            ELSEIF( DEPCNT .GT. 0 ) THEN
 
 C.................  Loop through all PSIs used by PSI( I )
-                DO 73 J = 1, ISTYPE( K,1 )
+                DO 73 J = 1, DEPCNT
 
 C.....................  Find each PSI used in temperature index
-                    L = FIND1( IPLIST( J,K ), NTREF, MMTREF )
+                    L = FIND1( IPLIST( J,DEPOINT ), NTREF, MMTREF )
 
 C.....................  Loop through temp indices for PSI( I ) 
                     DO 72 T = 1, NTIDX( I )
@@ -914,8 +1043,12 @@ C.............  Initialize flags to say EFs were not calculated
             TFLAG = .FALSE.  ! Non-diurnal
             RFLAG = .FALSE.  ! Diurnal
 
+C.............  Set count of PSI on which current PSI depends
+            DEPCNT  = ISTYPE( INDEXA( J ),1 )
+            DEPOINT = ISTYPE( INDEXA( J ),2 )
+
 C.............  Recognize only indice representing pure EF calculations
-            IF( ISTYPE( J,1 ) .EQ. 0 ) THEN
+            IF( DEPCNT .EQ. 0 ) THEN
 
 C.................  Set update flag using search of MPLIST indice in update list
                 UFLAG = .FALSE.
@@ -979,7 +1112,7 @@ C.................  If exists, initialize by reading existing values
 C.................  Check for Non-diurnal EFs for profile indice
 C.................  Also check if an update has been specifically requested
                 IF( .NOT. CHECK3 ( ENAME, ALLVAR3, SDATE3D, IPTIM ) .OR.
-     &              UFLAG .EQ. .TRUE. ) THEN
+     &              UFLAG ) THEN
 
 C.....................  Loop over temperature range for non-diurnal factors
                     ITEMP = 1 ! Specify that more has changed than just temp
@@ -1035,10 +1168,13 @@ C............................. Set new temperature index for new min/max
 
                         ENDIF
 
+                        TF = TEMPIN( T )
+
 C.........................  Create input file for MOBILE5a
                         REWIND( MODEV )                  
-                        CALL MOINBLD( MODEV, IPARM, VOLORG, JYEAR,
-     &                                TEMPIN( T ), TF_MIN, TF_MAX  )
+                        CALL MOINBLD( MODEV, IPARM , DEPOINT, NIDX,
+     &                                CIDX , VOLORG, JYEAR, 
+     &                                TF   , TF_MIN, TF_MAX        )
 
 C.........................  Initialize error count
                         IERR = 0 
@@ -1050,12 +1186,12 @@ C.........................  Create EFs for current NPSI, CPSI, temperature
                         DO 88 I = 1, NVTYPE
 
 C.............................  Put EFACT into non-diurnal arrays
-                            EXH_CO ( T   , I ) = EFACT( 1, I )
-                            EXH_NOX( T   , I ) = EFACT( 2, I )
-                            EXH_VOC( T   , I ) = EFACT( 3, I )
-                            EVP_VOC( T   , I ) = EFACT( 4, I )
-                            RNL_VOC( T   , I ) = EFACT( 5, I )
-                            RST_VOC( T   , I ) = EFACT( 6, I )
+                            EXH_CO ( T, I ) = EFACT( 1, I )
+                            EXH_NOX( T, I ) = EFACT( 2, I )
+                            EXH_VOC( T, I ) = EFACT( 3, I )
+                            EVP_VOC( T, I ) = EFACT( 4, I )
+                            RNL_VOC( T, I ) = EFACT( 5, I )
+                            RST_VOC( T, I ) = EFACT( 6, I )
 
 C.............................  Put DFACT into diurnal arrays
                             IF( DFLAG ) THEN
@@ -1101,7 +1237,8 @@ C.....................  Add non-diurnal EFs to master list
                 VFLAG( K ) = .TRUE.  ! Initialize - default: update non-diu EFs
                 SFLAG( K ) = .TRUE.  ! Initialize - default: update diurnal EFs
 
-C.................  Loop through remaining temperature indices for IPARM
+C.................  Create remaining diurnal factors for IPARM by
+C.................  looping through remaining temperatures
                 DO 151 T = MMTC( K ), NTIDX( K )
 
                     DFLAG = .FALSE.  ! Update for each new T combo
@@ -1132,9 +1269,9 @@ C.........................  min/max temperature combination
 
 C.............................  Create input file for MOBILE5a
                             REWIND( MODEV )                  
-                            CALL MOINBLD( MODEV, IPARM, VOLORG, JYEAR,
-cmh  &                                    TF_MIN, TF_MIN, TF_MAX  )
-     &                                    TF, TF_MIN, TF_MAX  )
+                            CALL MOINBLD( MODEV, IPARM , DEPOINT, NIDX,
+     &                                    CIDX , VOLORG, JYEAR, 
+     &                                    TF   , TF_MIN, TF_MAX        )
 
 C.............................  Initialize error count
                             IERR = 0 
@@ -1204,13 +1341,16 @@ C.............  Get indice from MPLIST
             IPTIM = SEC2TIME( IPARM )
 
 C.............  Search for MPLIST indice in MPREF index
-            J  = FIND1( IPARM, MRNUM, IPSI )
-            K  = FIND1( IPARM, NTREF, MMTREF )
-            JJ = ISTYPE( J,2 )
-            KK = ISTYPE( K,2 )
+            J      = FIND1 ( IPARM, MRNUM, IPSI )
+            DEPCNT = ISTYPE( INDEXA( J ),1 )
+            DEPOINT= ISTYPE( INDEXA( J ),2 )
 
 C.............  Recognize only indice representing combo EF calculations
-            IF( ISTYPE( J,1 ) .GT. 0 ) THEN
+            IF( DEPCNT .GT. 0 ) THEN
+
+C.................  Write message to screen
+                WRITE( *,92000 ) ' '
+                WRITE( *,92020 ) 'Processing PSI', IPARM, '...'
 
 C.................  Set update flag using search of MPLIST indice in update list
                 UFLAG = .FALSE.
@@ -1218,15 +1358,11 @@ C.................  Set update flag using search of MPLIST indice in update list
      &               FIND1( IPARM, NUPDAT, UPDATE ) .GT. 0 ) 
      &               UFLAG = .TRUE.
 
-C.................  Write message to screen
-                WRITE( *,92000 ) ' '
-                WRITE( *,92020 ) 'Processing PSI', IPARM, '...'
-
 C.................  Update diurnals or non-diurnal EFs if any related 
 C.................  pure EFs were updated
-                DO 381 I = 1, ISTYPE( J,1 )
+                DO 381 I = 1, DEPCNT         ! Loop has early exit if needed
 
-                    II    = FIND1( IPLIST( I,KK ), NTREF, MMTREF )
+                    II    = FIND1( IPLIST( I,DEPOINT ), NTREF, MMTREF )
                     TFLAG = VFLAG( II )  ! Non-diurnal
                     RFLAG = SFLAG( II )  ! Diurnal
 
@@ -1237,8 +1373,8 @@ C.....................  update both in efcombo, because running it is fast
 C.........................  Create combo profile through common blocks 
 C.........................  EFS1 and EFS2
                         CALL EFCOMBO( ONAME, NNAME, NTEMP, 
-     &                                ISTYPE( J,1 ), PCNTPRO( 1, JJ ),
-     &                                IPLIST ( 1, JJ ), SDATE3D )
+     &                                DEPCNT, PCNTPRO( 1, DEPOINT ),
+     &                                IPLIST ( 1, DEPOINT ), SDATE3D )
 
                         GO TO 383  ! Exit out of loop
 
