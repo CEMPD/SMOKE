@@ -111,16 +111,16 @@ C.................  Scan for pollutant header field
 
                 IF( I1 .GT. 0 ) THEN
                     I1 = I1 + 5
-                    BUFFER = LINE( I1:L )
-                    L = L - I1 - 1
+                    BUFFER = ADJUSTL( LINE( I1:L ) )
+                    L = LEN_TRIM( BUFFER )
   
                     CALL UPCASE( BUFFER )
                     NVAR = GETNLIST( L, BUFFER )
 
                 ELSE IF( I2 .GT. 0 ) THEN
-                    I2 = I2 + 5
-                    BUFFER = LINE( I2:L )
-                    L = L - I2 - 1
+                    I2 = I2 + 4
+                    BUFFER = ADJUSTL( LINE( I2:L ) )
+                    L = LEN_TRIM( BUFFER )
   
                     CALL UPCASE( BUFFER )
                     NVAR = GETNLIST( L, BUFFER )
