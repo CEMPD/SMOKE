@@ -44,7 +44,7 @@ C***************************************************************************
         IMPLICIT NONE
 
 C...........   INCLUDES
-        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IOSTRG3.EXT'   !  I/O API string lengths
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures

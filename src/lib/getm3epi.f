@@ -45,7 +45,7 @@ C****************************************************************************
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IOCNST3.EXT'   !  emissions constant parameters
 
 C...........   ARGUMENTS and their descriptions:
         INTEGER, INTENT(IN    ) :: TZONE     ! Time zone or < 0 if unknown
