@@ -728,11 +728,11 @@ C.................  Convert units for stack parameters
                 STKV = STR2REAL( LINE( 55:61 ) )
                 STKF = STR2REAL( LINE( 62:71 ) )
 
-                IF ( STKD .GT. 0.0 ) STKD = STKD * FT2M          ! Diam ft to m
-                IF ( STKH .GT. 0.0 ) STKH = STKH * FT2M          ! Ht,  ft to m
-                IF ( STKT .GT. 0.0 ) STKT = STKT * FTOC  +  CTOK ! temp, degrees K
-                IF ( STKV .GT. 0.0 ) STKV = STKV * FT2M          ! Veloc ft/s to m/s
-                IF ( STKF .GT. 0.0 ) STKF = STKF * FLWE2M        ! Flow ft^3/min m^3/s
+                IF ( STKD .GT. 0.0 ) STKD= STKD * FT2M     ! Diam ft to m
+                IF ( STKH .GT. 0.0 ) STKH= STKH * FT2M     ! Ht,  ft to m
+                IF ( STKT .GT. 0.0 ) STKT= (STKT-32.)*FTOC + CTOK ! Temp, F to K
+                IF ( STKV .GT. 0.0 ) STKV= STKV * FT2M     ! Veloc ft/s to m/s
+                IF ( STKF .GT. 0.0 ) STKF= STKF * FLWE2M   ! Flow ft^3/min m^3/s
 C.................  Doesn't matter if FSAV is zero, because we're only
 C.................  storing velocity eventually
                 FSAV = 0.
