@@ -290,6 +290,8 @@ C.........  Set number of variables and allocate file description arrays
         ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
         
+        IF( ALLOCATED( VARS_PER_FILE ) ) DEALLOCATE( VARS_PER_FILE )
+        
         VTYPESET = 0    ! array initialization
         VNAMESET = ' '  ! array initialization
         VUNITSET = ' '  ! array initialization
@@ -354,6 +356,8 @@ C.........  Set up for opening I/O API sparse pollutant output files
 
 C.........  Set number of variables and allocate file description arrays
         NVARSET = 1 + NPACT
+        
+        IF( ALLOCATED( VARS_PER_FILE ) ) DEALLOCATE( VARS_PER_FILE )
 
 C.........  Loop through activity data, store, and write to inventory file
         IF( NIACT .GT. 0 ) 
