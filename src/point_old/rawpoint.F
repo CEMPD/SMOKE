@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
          PROGRAM RAWPOINT
 
 C***********************************************************************
-C  program body starts at line 206
+C  program body starts at line 213
 C
 C  DESCRIPTION:
 C       Sort data contained in EPS/AFS-style point source file and 
@@ -44,6 +22,27 @@ C       Version  11/95 reads, combines, and sorts multiple input files
 C       PRAW01, PRAW02, ..., each with its own inventory-year.
 C       Supports both UTM, LAT-LON, and Lambert-based coordinate systems.
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C************************************************************************
 
       IMPLICIT NONE
 
@@ -60,19 +59,24 @@ C...........   INCLUDES:
 
 C...........   PARAMETER
 
+        CHARACTER*5     BLANK5
         INTEGER         NSMAX
-        PARAMETER     ( NSMAX  = NPSRC * NIPOL )
+
+        PARAMETER     ( BLANK5 = ' ',
+     &                  NSMAX  = NPSRC * NIPOL )
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        CHARACTER*2     CRLF
         LOGICAL         DSCGRID
         LOGICAL         ENVYN
         INTEGER         FIND1   !  returns -1 for failure
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         JULIAN
-        LOGICAL         SETLAM
+        INTEGER         JUNIT
+        LOGICAL         LAMBERT
         LOGICAL         LL2LAM
         LOGICAL         UTM2LAM
         INTEGER         PROMPTFFILE
@@ -82,9 +86,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN,
-     &           SETLAM, LL2LAM, UTM2LAM, PROMPTFFILE, PROMPTMFILE,
-     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN
+        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JUNIT,
+     &           JULIAN, LAMBERT, LL2LAM, UTM2LAM, PROMPTFFILE, 
+     &           PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -93,32 +97,6 @@ C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
-        INTEGER     DAY2YR      !  Conversion factor for day to year
-        INTEGER     UZONE       !  UTM zone for the file as a whole
-        INTEGER     TZONE       !  time zone
-        INTEGER     FIP
-        INTEGER     SCC
-        INTEGER     SIC
-        INTEGER     PLANT
-        INTEGER     STACK
-        INTEGER     ZONE
-        INTEGER     TPF
-        INTEGER     INY
-        INTEGER     SDT, EDT, STM, ETM
-        INTEGER     MM, DD, HH, DAYS
-        REAL        CEFF
-        REAL        REFF
-        REAL        RPEN
-        REAL        SLOC
-        REAL        XLOC
-        REAL        YLOC
-        REAL        EMIS
-        REAL        STKH
-        REAL        STKD
-        REAL        STKT
-        REAL        STKV
-        INTEGER     IPOL
-        INTEGER     LFIP, LSCC, LPLT, LSTK
                                  
 C...........   Point Sources Table input unsorted copy (*A); 
 C...........   sorted final version (image EMISREC of data record)
@@ -174,31 +152,60 @@ C.......   variables in the output file.
      &                    STKHT, STKDM, STKTK, STKVE, 
      &                    CTLEFF, RULEFF, RULPEN, EMISV
 
-        CHARACTER*16  ENAME
-        
-C...........   Other local variables
-
-        INTEGER         S, I, J, V !  loop counters.
+C...........   Logical file names and unit numbers
         INTEGER         ADEV    !  Unit number for output actual SCCs
+        INTEGER         IDEV    !  List of physical raw input file names
         INTEGER         PDEV    !  for point-source file
+        INTEGER         RDEV    !  Unit number for default stack parameters
         INTEGER         ZDEV    !  for time zone file
         INTEGER         LDEV    !  log-device
 
+        CHARACTER*16    ENAME   !  Output SMOKE inventory file
+        
+C...........   Other local variables
+
+        REAL        CEFF
+        REAL        DAY2YR      !  Conversion factor for day to year
+        REAL        REFF
+        REAL        RPEN
+        REAL        SLOC
+        REAL        XLOC
+        REAL        YLOC
+        REAL        EMIS
+        REAL        STKH
+        REAL        STKD
+        REAL        STKT
+        REAL        STKV
+        REAL        XX, YY      !  scratch location variables
+                                
+        INTEGER     S, I, J, V  !  pointer and loop counters
+        INTEGER     L1, L2      !  pointer and loop counters
+        INTEGER     IOS         !  I/O status
+        INTEGER     INY         !  temporary inventory year
+        INTEGER     IREC        !  input line (record) number
+        INTEGER     IPOL        !  temporary inventory pollutant code number
+        INTEGER     LFIP, LSCC, LPLT, LSTK  ! previous fip, scc, plant, stack
+        INTEGER     MM, DD, HH, NDAYS        
+        INTEGER     FIP         !  temporary FIPS code
+        INTEGER     SCC         !  temporary SCC code
+        INTEGER     SDT, EDT, STM, ETM 
+        INTEGER     SIC         !  temporary SIC code
+        INTEGER     PLANT       !  temporary plant code
+        INTEGER     STACK       !  temporary stack code
+        INTEGER     ZONE        !  temporary UTM zone
+        INTEGER     TPF         !  temporary temporal type flag
+        INTEGER     UZONE       !  UTM zone for the file as a whole
+        INTEGER     TZONE       !  time zone
+
         LOGICAL         SFLAG   !  input verification:  report missing species
-        LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
+        LOGICAL         EFLAG   !  input verification:  TRUE iff ERROR
         LOGICAL         WFLAG   !  input verification:  convert LON to west hemis
 
-        REAL            XX, YY  !  scratch location variables
-                                
-        INTEGER         IOS     !  I/O status
-        INTEGER         IREC    !  input line (record) number
-        INTEGER         IFIL    !  input file counter
         CHARACTER*16    SCRBUF  !  scratch buffer
         CHARACTER*16    COORDN  !  coordinate system name
-        CHARACTER*16    RNAME   !  input file name buffer
+        CHARACTER*256   RNAME   !  input file name buffer
         CHARACTER*256   MESG    !  text for M3EXIT()
-        CHARACTER*240   LINE    !  input line from POINT file
-
+        CHARACTER*256   LINE    !  input line from POINT file
 
 C***********************************************************************
 C   begin body of program RAWPOINT
@@ -223,8 +230,7 @@ C   begin body of program RAWPOINT
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program RAWPOINT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'RAWPOINT', 0, 0, 'Ending Program.', 2 )
         END IF
 
         SFLAG = ENVYN( 'RAW_SRC_CHECK', 
@@ -236,8 +242,10 @@ C   begin body of program RAWPOINT
      &                 'Western hemisphere flag', .TRUE., IOS )
 
         IF( WFLAG ) THEN
-          CALL M3MESG( 'NOTE: All non-negative longitude values will' )
-          CALL M3MESG( '      be converted to Western Hemisphere.' )
+          CALL M3MESG( 'NOTE: All non-negative longitude values will' //
+     &                        CRLF() // BLANK5 //
+     &                 '      be converted to Western Hemisphere.' )
+
         ENDIF
 
 C.......   Get the coordinate system name and parameters
@@ -258,7 +266,7 @@ C.......   to put into file header:
         IF      ( GDTYP3D .EQ. UTMGRD3 ) THEN
             UZONE = NINT( P_ALP3D )
         ELSE IF ( GDTYP3D .EQ. LAMGRD3 ) THEN
-            IF ( .NOT. SETLAM( P_ALP3D, P_BET3D, P_GAM3D, 
+            IF ( .NOT. LAMBERT( COORDN, P_ALP3D, P_BET3D, P_GAM3D, 
      &                         XCENT3D, YCENT3D ) ) THEN
                 MESG = 'Bad grid ' // GDNAM3D
                 CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 2 )
@@ -272,6 +280,18 @@ C.......   to put into file header:
         END IF
 
 
+C.......   Get file name for opening input raw point source files
+
+        IDEV = PROMPTFFILE(
+     &         'Enter the name of the RAW DATA FILENAME LISTING',
+     &          .TRUE., .TRUE., 'PNLST', 'RAWPOINT' )
+
+C.......   Get file name for input replacement stack parameters file
+ 
+        RDEV = PROMPTFFILE(
+     &          'Enter REPLACEMENT STACK PARAMETERS file',
+     &          .TRUE., .TRUE., 'PSTK', 'RAWPOINT' )
+
 C.......   Get file name; open input time zone file
 
         ZDEV = PROMPTFFILE( 
@@ -281,30 +301,44 @@ C.......   Get file name; open input time zone file
 C.......   Read the point source files:
 C.......   Get file name; open input raw point source file
 
-        WRITE( *,92000 ) 
-     &  ' ', 
-     &  'Now enter the list of logical file names for ',
-     &  'RAW POINT SOURCE files...', 
-     &  ' '
-        IFIL =    0
-        S    =    0
-        INY  = 1989
 
+        S    =    0
+        INY  = IMISS3
 101     CONTINUE
 
-            IFIL = IFIL + 1
-            WRITE( RNAME, 94040 ) 'PRAW', IFIL
+C.............  Read file names
+C.............  Exit to line 123 if read is EOF
+            READ( IDEV, 93000, END=123  ) LINE
 
-            PDEV = PROMPTFFILE( 
-     &              'Enter the NEXT FILE, or "NONE" to end list',
-     &              .TRUE., .TRUE., RNAME, 'RAWPOINT' )
-            IF ( PDEV .LT. 0 ) GO TO  123       !  end of loop readin input files
+            L1 = INDEX( LINE, 'INVYEAR' )
+            L2 = TRIMLEN( LINE )
 
-            INY = GETNUM( IMISS3, -IMISS3, INY + 1,
-     &                    'Enter INVENTORY YEAR for this file' )
 
-            IREC  =  0
-            VFLAG = .FALSE.
+            IF( L1 .GT. 0 ) THEN
+ 
+                INY = STR2INT( LINE( L1+7:L2 ) )
+ 
+                IF( INY .LE. 0 ) THEN
+ 
+                    CALL M3EXIT( 'RAWPOINT', 0, 0,
+     &               'Must set inventory year using INVYEAR packet ' //
+     &               'in PNLST file', 2 )
+
+                ELSEIF( INY .LT. 1970 ) THEN
+ 
+                    CALL M3EXIT( 'RAWPOINT', 0, 0,
+     &                   'INVYEAR packet has set bad 4-digit year' //
+     &                   'in PNLST file', 2 )
+ 
+                ENDIF
+
+                GO TO 101                       ! To head of PNLST read loop
+ 
+            ELSE
+
+                RNAME = LINE( 1:L2 )   ! Set inventory file name
+ 
+            ENDIF
 
 C.............   Calculate DAY2YR factor
             I = INY / 1000        !  year-number
@@ -318,9 +352,22 @@ C.............   Calculate DAY2YR factor
                 DAY2YR = 366.0
             END IF
 
+C.............  Open files, and report status. Use NAMTMP for ease of
+C.............  making changes
+            PDEV   = JUNIT()
+            OPEN( PDEV, ERR=1006, FILE=RNAME, STATUS='OLD' )
+
+            WRITE( MESG,94010 )
+     &             'Successful OPEN using year', INY,
+     &             'for inventory file:' // CRLF() // BLANK5 //
+     &             RNAME( 1:TRIMLEN( RNAME ) )
+            CALL M3MSG2( MESG )
+
+            IREC  =  0
+            EFLAG = .FALSE.
 111         CONTINUE        !  head of the PDEV-read loop
 
-                READ( PDEV, 93000, END=122, IOSTAT=IOS )LINE
+                READ( PDEV, 93000, END=122, IOSTAT=IOS ) LINE
                 IREC = IREC + 1
 
                 IF ( IOS .NE. 0 ) THEN
@@ -352,7 +399,7 @@ C.............   Calculate DAY2YR factor
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // 
      &                  '"--emis value "' // LINE( 162:171 ) // '"'
                     CALL M3MESG( MESG )
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     GO TO  111
                 END IF
 
@@ -402,10 +449,10 @@ C.............   Calculate DAY2YR factor
                     EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
 
-                    DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
-                    IF ( DAYS .GT. 28 ) THEN
+                    NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
+                    IF ( NDAYS .GT. 28 ) THEN
                         TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
-                    ELSE IF ( DAYS .GT. 1 ) THEN
+                    ELSE IF ( NDAYS .GT. 1 ) THEN
                         TPF = WTPRFAC               !  use only week profiles
                     ELSE
                         TPF = 1                     !  use only hourly profiles
@@ -430,10 +477,11 @@ C.............   Calculate DAY2YR factor
                     EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
 
-                    DAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
-                    IF ( DAYS .GT. 28 ) THEN
+                    NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
+                    IF ( NDAYS .GT. 28 ) THEN
                         TPF = MTPRFAC * WTPRFAC     !  use month, week profiles
-                    ELSE IF ( DAYS .GT. 1 ) THEN
+                    ELSE IF ( NDAYS .GT. 1 ) THEN
+                        TPF = WTPRFAC               !  use only week profiles
                     ELSE
                         TPF = 1                     !  use only hourly profiles
                     END IF
@@ -452,7 +500,7 @@ C.............   Calculate DAY2YR factor
      &                  '"--Unsupported time period type "' // 
      &                  LINE( 57:58 ) // '"'
                     CALL M3MESG( MESG )
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     GO TO  111          !  to head of PDEV-read loop
 
                 END IF          !  tests on record type line( 57:58 )
@@ -507,7 +555,7 @@ C...........   and still call what they are doing "UTM":
                     IF ( ZONE .EQ. IMISS3 ) THEN        !  lat-lon input
 
                         IF ( .NOT. LL2LAM( XLOC, YLOC, XX, YY ) ) THEN
-                            VFLAG = .TRUE.
+                            EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 
      &                          'Bad line', IREC, 
      &                          '" in "' //
@@ -515,7 +563,7 @@ C...........   and still call what they are doing "UTM":
      &                          'LL2LAM() failed for "' // 
      &                          LINE( 57:58 ) // '"'
                             CALL M3MESG( MESG )
-                            VFLAG = .TRUE.
+                            EFLAG = .TRUE.
                             GO TO  111          !  to head of PDEV-read loop
                         END IF
 
@@ -529,7 +577,7 @@ C...........   and still call what they are doing "UTM":
 
                         IF ( .NOT. UTM2LAM( XX, YY, ZONE, 
      &                                      XLOC, YLOC ) ) THEN
-                            VFLAG = .TRUE.
+                            EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 
      &                          'Bad line', IREC, 
      &                          '" in "' //
@@ -537,7 +585,7 @@ C...........   and still call what they are doing "UTM":
      &                          'LL2LAM() failed for "' // 
      &                          LINE( 57:58 ) // '"'
                             CALL M3MESG( MESG )
-                            VFLAG = .TRUE.
+                            EFLAG = .TRUE.
                             GO TO  111          !  to head of PDEV-read loop
 
                         END IF
@@ -590,7 +638,7 @@ C...........   and still call what they are doing "UTM":
 
 122         CONTINUE        !  end of the PDEV-read loop
 
-            IF ( VFLAG ) THEN
+            IF ( EFLAG ) THEN
                 CALL M3EXIT( 'RAWPOINT', 0, 0, 
      &                       'Error reading POINT SOURCE file.', 2 )
             END IF
@@ -601,9 +649,11 @@ C...........   and still call what they are doing "UTM":
 
         NSRC = S
         IF ( NSRC .GT. NSMAX ) THEN
-            WRITE( *,92010 ) 
-     &          'Record count                ', IREC,
-     &          'Max dimensioned record-count', NSMAX
+            WRITE( MESG,94010 ) 
+     &          'Record count                ', IREC, CRLF()// BLANK5 //
+     &          'Max dimensioned record-count (NPSRC*NIPOL):', NSMAX
+            CALL M3MSG2( MESG )
+
             CALL M3EXIT( 'RAWPOINT', 0, 0, 
      &        'Max record-count exceeded in POINT SOURCE file.', 2 )
            
@@ -611,12 +661,12 @@ C...........   and still call what they are doing "UTM":
 
         ADEV = PROMPTFFILE(
      &          'Enter the name of the ACTUAL SCC output file',
-     &          .FALSE., .TRUE., 'PSCC', 'EMSPOINT' )
+     &          .FALSE., .TRUE., 'PSCC', 'RAWPOINT' )
         
 C.......   Use SORTI4() to perform an indirect sort by FIPS,SCC,PLANT,STACK
 C.......   then permute the records according to the result:
 
-        WRITE( *,92000 ) ' ', 'Processing RAW POINT SOURCE file...', ' '
+        CALL M3MSG2( 'Processing RAW POINT SOURCE file...' )
 
         CALL SORTI4( NSRC, INDEXA, IFIPA, ISCCA, IPLANA, ISTACA )
 
@@ -695,22 +745,25 @@ C.......   then permute the records according to the result:
 
             WRITE( MESG,94010 ) 
      &          'Actual      number of sources', NPOINT,
+     &          CRLF() // BLANK5 //
      &          'Dimensioned number of sources', NPSRC,       
+     &          CRLF() // BLANK5 //
      &          'Do not match!'
-            CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 2 )
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'RAWPOINT', 0, 0, 'Bad source count', 2 )
 
         END IF
 
         IF ( SFLAG ) THEN       !  if missing records are fatal:
 
-            VFLAG = .FALSE.
+            EFLAG = .FALSE.
 
             DO  146  V = 1, NIPOL
             DO  145  S = 1, NPSRC
 
                IF ( EMISV( S,V ) .LT. AMISS3 ) THEN
 
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     WRITE( MESG,94020 )
      &                  'Missing record:  FIP:', IFIP( S ),
      &                  'SCC:',     ISCC( S ), 
@@ -724,7 +777,7 @@ C.......   then permute the records according to the result:
 145         CONTINUE
 146         CONTINUE
 
-            IF ( VFLAG ) THEN
+            IF ( EFLAG ) THEN
                 CALL M3EXIT( 'RAWPOINT', 0, 0,
      &                       'Missing species recs in input file', 2 )
             END IF
@@ -742,7 +795,7 @@ C.......   then permute the records according to the result:
 
 C.......   Process the time zone file
 
-        WRITE( *,92000 ) ' ', 'Processing TIME ZONE file...', ' '
+        CALL M3MSG2( 'Processing TIME ZONE file...' )
         IREC = 0
 
 144     CONTINUE        !  head of time-zone loop
@@ -751,12 +804,14 @@ C.......   Process the time zone file
             IREC = IREC + 1
 
             IF ( IOS .NE. 0 ) THEN
-                WRITE( *,92010 ) 
+                WRITE( MESG,94010 ) 
      &              'Unit number', ZDEV, 
      &              'I/O Status ', IOS, 
      &              'Line number', IREC
-                    CALL M3EXIT( 'RAWPOINT', 0, 0, 
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( 'RAWPOINT', 0, 0, 
      &              'Error reading TIME ZONE file.', 2 )
+              
             END IF
 
             IF ( FIP .EQ. 0 ) THEN              !  fallback -- all sources
@@ -788,6 +843,10 @@ C.......   Process the time zone file
 
 188     CONTINUE        !  end of time-zone loop
 
+C.......   Fix stack parameters
+ 
+        CALL FIXSTK( RDEV, NPOINT, IFIP, ISCC, IPLANT, ISTACK,
+     &               STKHT, STKDM, STKTK, STKVE )
 
 C.......   Get file name; open output point sources file
 
@@ -981,7 +1040,7 @@ C.......   Get file name; open output point sources file
 
 C.......   Write out the point source emissions values:
 
-        WRITE( *,92000 ) ' ', 'Writing out POINT output file...', ' '
+        CALL M3MSG2( 'Writing out POINT output file...' )
 
         IF ( .NOT. WRITE3( ENAME, ALLVAR3, 0, 0,  IFIP ) ) THEN
             CALL M3EXIT( 'RAWPOINT', 0, 0, 
@@ -1010,6 +1069,10 @@ C.......   Sort and Write out the point source SCCs:
 
         MESG = 'Successful completion of Program RAWPOINT'
         CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 0 )
+
+C.........  Error opening raw input file
+1006    MESG = 'Error opening file ' // RNAME( 1:TRIMLEN( RNAME ) )
+        CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 2 )
 
 
 C******************  FORMAT  STATEMENTS   ******************************
