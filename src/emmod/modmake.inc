@@ -24,13 +24,14 @@ MODBEIS3 = $(MD_OUT)/modbeis3.o
 MODREPRT = $(MD_OUT)/modreprt.o
 MODREPBN = $(MD_OUT)/modrepbn.o
 MODMBSET = $(MD_OUT)/modmbset.o
+MODAR2PT = $(MD_OUT)/modar2pt.o
 
 #
 MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF)  $(MODTMPRL) $(MODSPRO)  \
            $(MODCNTRL) $(MODLISTS) $(MODINFO)  $(MODDAYHR) \
            $(MODMERGE) $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV)  \
            $(MODMET)   $(MODBIOG)  $(MODBEIS3) $(MODREPRT) $(MODREPBN) \
-           $(MODMBSET)
+           $(MODMBSET) $(MODAR2PT)
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
@@ -157,3 +158,9 @@ $(MODMBSET): $(MD_SRC)/modmbset.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	if ( test -f modmbset.mod ) ; then mv modmbset.mod $(MD_OUT) ; fi
 	if ( test -f modmbset.M   ) ; then mv modmbset.M   $(MD_OUT) ; fi
 	if ( test -f MODMBSET.mod ) ; then mv MODMBSET.mod $(MD_OUT) ; fi
+
+$(MODAR2PT): $(MD_SRC)/modar2pt.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modar2pt.f
+	if ( test -f modar2pt.mod ) ; then mv modar2pt.mod $(MD_OUT) ; fi
+	if ( test -f modar2pt.M   ) ; then mv modar2pt.M   $(MD_OUT) ; fi
+	if ( test -f MODAR2PT.mod ) ; then mv MODAR2PT.mod $(MD_OUT) ; fi

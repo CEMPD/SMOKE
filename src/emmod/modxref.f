@@ -59,6 +59,16 @@
 !           pollutant). Index goes to IPSIA.
         INTEGER, ALLOCATABLE :: EFSIDX( :,: ) 
 
+!.........  Per-source arrays with index and number of entries for
+!           assigning multiple point locations to area sources
+        INTEGER, ALLOCATABLE :: AR2PTTBL( : )  ! index to table number
+        INTEGER, ALLOCATABLE :: AR2PTIDX( : )  ! index to position in table
+        INTEGER, ALLOCATABLE :: AR2PTCNT( : )  ! count of entries in table
+
+!.........  Per-source array to indicate whether source receives 
+!           NONHAPVOC or NONHAPTOG calculation
+        LOGICAL, ALLOCATABLE :: LNONHAP( : )   ! true: NONHAP is computed
+
 !.........  Number to add to monthly profile to indicate pollutant-specific
 
         INTEGER, PARAMETER :: ADDPS = 900000 ! multiple of 9
@@ -160,7 +170,7 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ISPD07( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT07( :,: )
         CHARACTER(LEN=FIPLEN3), ALLOCATABLE, PUBLIC :: CHRT07( : )
-        
+
 !.........  FIPS code=all, SCC=left
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT08( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT08( :,: )
@@ -170,6 +180,7 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG08( : )
         INTEGER               , ALLOCATABLE, PUBLIC :: IMVS08( : )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISPD08( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ARPT08( :,: ) ! tbl num, row, & count
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT08( :,: )
         CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT08( : )
 
@@ -182,6 +193,7 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG09( : )
         INTEGER               , ALLOCATABLE, PUBLIC :: IMVS09( : )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISPD09( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ARPT09( :,: ) ! tbl num, row, & count
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT09( :,: )
         CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT09( : )
 
@@ -305,6 +317,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: WPRNA  ( : ) !  weekly profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: DPRNA  ( : ) !  diurnal profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: IPSIA( :,: ) !  24 hours code for EFs
+        INTEGER, ALLOCATABLE, PUBLIC:: IARPTA( :,: )!  tbl num, row, & count
 
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: CSPRNA( : ) ! spec prof #
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCTA( : ) ! SCC
