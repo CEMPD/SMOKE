@@ -81,6 +81,9 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         NTYPE   !  number of land use types
         CHARACTER*4     TYPE    !  land use type
 
+        CHARACTER*20    CO_NAME !  sl add for reading FIP CODES file right
+        REAL            DUMMY1, DUMMY2, DUMMY3
+
 C.......   Source-level variables
 
         REAL    EMIS, AFOR, ENOFOR
@@ -357,10 +360,14 @@ C.......   Loop:  read FIPS list from FIPS CODE file
         I     = 0
         EFLAG = .FALSE.
 
+C sl    Skip the first line in FIPS CODE file
+        READ( CDEV,'(A20)', END = 45, IOSTAT= ISTAT ) CO_NAME
+
 44      CONTINUE                !  head of loop:  read FIPS CODE file
 
-            READ( CDEV, *, END = 45, IOSTAT= ISTAT ) FIP
-            IF ( ISTAT .NE. 0 ) THEN
+            READ( CDEV,92010, END = 45, IOSTAT= ISTAT ) CO_NAME, FIP,
+     &                                  DUMMY1,DUMMY2,DUMMY3    ! sl
+            IF ( ISTAT .EQ. 0 ) THEN    ! sl modify .NE. to .EQ.
                 I = I + 1
                 IF ( I .LE. NBFIP ) THEN
                     FIPS( I ) = FIP
@@ -391,7 +398,7 @@ C.......   Loop:  read county land use file:
 
             READ( UDEV, 93000, END = 122, IOSTAT=ISTAT ) INBUF
             LINE =  LINE + 1
-            IF ( ISTAT .NE. 0 ) THEN
+            IF ( ISTAT .EQ. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
      &          'Error reading FIP from COUNTY LAND USE at line', LINE
@@ -1133,6 +1140,7 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT ( 5X , A )
 
+92010   FORMAT ( A20, I5, 3F11.3 )
 
 C...........   Formatted file I/O formats............ 93xxx
                                    
