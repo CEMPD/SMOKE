@@ -372,6 +372,9 @@ C.........  Write the I/O API file, one variable at a time
 C.........  Deallocate locally allocated memory
         DEALLOCATE( HDRFLDS )
 
+C.........  Close ASCII output file
+        CLOSE( SDEV )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
