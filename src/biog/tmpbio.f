@@ -229,6 +229,7 @@ C...........   Other variables and their descriptions:
         LOGICAL ::      DUPWARN  = .TRUE.   ! warn if duplicate data found
         LOGICAL ::      METOPEN = .FALSE.  ! true: a met I/O API file is open
         LOGICAL ::      RADOPEN = .FALSE.  ! true: a rad I/O API file is open
+        LOGICAL         VFLAG              ! true: use variable grid
 
         CHARACTER(256)  METFILE  !  full gridded temperature file name
         CHARACTER(256)  RADFILE  !  full gridded radiation/cloud file name
@@ -252,6 +253,11 @@ C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Evaluate the environment variables...
+
+C.........  Check if processing variable grid data
+        VFLAG = ENVYN( 'USE_VARIABLE_GRID',
+     &                 'Use variable grid definition',
+     &                 .FALSE., IOS )
 
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
@@ -841,7 +847,13 @@ C......    Read description of switch file
 
 C............  Compare grid definition and call with temporary subgrid flag
 C              (since this subgrid can be different from final subgrid)
-           CALL CHKGRID( BNAME, 'GRID' , 2 , EFLAG )
+
+C............  Don't allow subgrids when using variable grid data
+           IF( VFLAG ) THEN
+               CALL CHKGRID( BNAME, 'GRID', 0, EFLAG )
+           ELSE
+               CALL CHKGRID( BNAME, 'GRID' , 2 , EFLAG )
+           END IF
            SWXOFF = XOFF_A
            SWYOFF = YOFF_A
 
@@ -867,7 +879,12 @@ C......    Read description of normalized emissions file
         END IF
 
 C.........  Final grid definition 
-        CALL CHKGRID( NNAME, 'GRID' , 1, EFLAG )
+C.........  Don't allow subgrids when using variable grid data
+        IF( VFLAG ) THEN
+            CALL CHKGRID( NNAME, 'GRID', 0, EFLAG )
+        ELSE
+            CALL CHKGRID( NNAME, 'GRID' , 1, EFLAG )
+        END IF
 
         LUSE  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
 
@@ -934,6 +951,10 @@ C.......   Build description for, and create/open output file
 
         FDESC3D( 6 ) = '/MET SCENARIO/ ' // METSCEN
         FDESC3D( 7 ) = '/CLOUD SCHEME/ ' // CLOUDSHM
+
+        IF( VFLAG ) THEN
+            FDESC3D( 8 ) = '/VARIABLE GRID/ ' // GDNAM3D
+        END IF
 
         ENAME = PROMPTMFILE(
      &          'Enter name for BGTS output file - moles',
