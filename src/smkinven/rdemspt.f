@@ -15,13 +15,13 @@ C      Files must be opened and their unit numbers stored in EDEV() in the
 C      order listed in the description.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C      Subroutines: I/O API subroutines, CHECKMEM 
-C      Functions: I/O API functions, GETFLINE, BLDCSRC, YR2DAY
+C      Subroutines: I/O API subroutines, BLDCSRC, CHECKMEM 
+C      Functions: I/O API functions, GETFLINE, YR2DAY
 C
 C  REVISION  HISTORY:
 C      Copied from emspoint.F by M. Houyoux (10/98)
 C
-C****************************************************************************/
+C****************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -45,20 +45,20 @@ C
 C***************************************************************************
 
 C...........   MODULES for public variables
-C...........   This module is the point source inventory arrays
-        USE PTMODULE           !  NOTE: includes EMCNST3.EXT
+C...........   This module is the inventory arrays
+        USE MODSOURC
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical constants
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(LEN=SRCLEN3) BLDCSRC
         CHARACTER*2            CRLF
         LOGICAL                ENVYN
         INTEGER                FINDC   !  returns -1 for failure
@@ -71,26 +71,26 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                TRIMLEN
         REAL                   YR2DAY  
 
-        EXTERNAL BLDCSRC, CRLF, ENVYN, FINDC, GETFLINE, INDEX1, LBLANK, 
+        EXTERNAL CRLF, ENVYN, FINDC, GETFLINE, INDEX1, LBLANK, 
      &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER      EDEV( 5 )         !  unit numbers for dv, em, fc, sk, pr
-        INTEGER      INY               !  inventory year for this set of files
-        INTEGER      NRAWIN            !  total raw record-count
-        INTEGER      MXIPOL            !  max no of inventory pollutants
-        INTEGER      NEM               !  pos in POLVLA for annual emissions
-        INTEGER      NCE               !  pos in POLVLA for control efficiency
-        INTEGER      NRE               !  pos in POLVLA for rule effectiveness
-        INTEGER      INVPCOD( MXIPOL ) !  inv pol 5-digit codes
-        CHARACTER(LEN=IOVLEN3) INVPNAM( MXIPOL ) !  in pol names
-        INTEGER      NRAWOUT           !  valid raw record-count (out)
-        INTEGER      IOS               !  I/O status (out)
-        INTEGER      IREC              !  line number (out)
-        CHARACTER*16 ERFILDSC          !  file desc of file causing error (out)
-        LOGICAL      EFLAG             !  error flag (out)
-        INTEGER      NDROP             !  number of records dropped (out)
-        REAL         EDROP( MXIPOL )   !  total emis dropped for each pol (out)
+        INTEGER, INTENT (IN) :: EDEV( 5 ) !  unit numbers for dv, em, fc, sk, pr
+        INTEGER, INTENT (IN) :: INY       !  inv year for this set of files
+        INTEGER, INTENT (IN) :: NRAWIN    !  total raw record-count
+        INTEGER, INTENT (IN) :: MXIPOL    !  max no of inventory pollutants
+        INTEGER, INTENT (IN) :: NEM       !  pos in POLVLA for annual emissions
+        INTEGER, INTENT (IN) :: NCE       !  pos in POLVLA for ctrl efficiency
+        INTEGER, INTENT (IN) :: NRE       !  pos in POLVLA for rule effectvnss
+        INTEGER     , INTENT (IN) :: INVPCOD( MXIPOL ) !  inv pol 5-digit codes
+        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) !  in pol names
+        INTEGER, INTENT(OUT) :: NRAWOUT   !  valid raw record-count
+        INTEGER, INTENT(OUT) :: IOS       !  I/O status
+        INTEGER, INTENT(OUT) :: IREC      !  line number
+        CHARACTER(*), INTENT(OUT) :: ERFILDSC   !  file desc of file in error
+        LOGICAL, INTENT(OUT) :: EFLAG     !  error flag 
+        INTEGER, INTENT(OUT) :: NDROP     !  number of records dropped
+        REAL   , INTENT(OUT) :: EDROP( MXIPOL ) !  emis dropped for each pol
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: DVIDLEN = 12
@@ -113,7 +113,7 @@ C...........   Point sources table for facility.pt files (unsorted; sorted)
         REAL,    ALLOCATABLE:: FCCRDXA( : ) ! Facility X coordinates
         REAL,    ALLOCATABLE:: FCCRDYA( : ) ! Facility Y coordinates
         CHARACTER(LEN=FCKYLEN), ALLOCATABLE:: FCKEYA ( : ) ! FIP // facility ID
-        CHARACTER(LEN=EDSCLEN), ALLOCATABLE:: FCDESCA( : ) ! facname from facility files
+        CHARACTER(LEN=EDSCLEN), ALLOCATABLE:: FCDESCA( : ) ! facility name 
 
         INTEGER,                ALLOCATABLE:: FCIDX( : ) ! index to sort lists
         CHARACTER(LEN=FCKYLEN), ALLOCATABLE:: FCKEY( : ) ! FIP // facility ID
@@ -144,7 +144,7 @@ C...........   Point sources table for process.pt files  (unsorted; sorted)
         INTEGER                PS           ! Ctr & number of pr records
         INTEGER, ALLOCATABLE:: INDXPA( : )  ! subscript table
         INTEGER, ALLOCATABLE:: PSSCCA( : )  ! SCC code from process files
-        CHARACTER(LEN=PRKYLEN), ALLOCATABLE:: PSKEYA( : )! FIP//FCID//SKID/ DVID//PRID
+        CHARACTER(LEN=PRKYLEN), ALLOCATABLE:: PSKEYA( : )! FIP//FCID//SKID//DVID//PRID
 
         INTEGER,                ALLOCATABLE:: PSSCC ( : )! SCC from pt files
         CHARACTER(LEN=PRKYLEN), ALLOCATABLE:: PSKEY( : ) ! FIP//FCID//SKID//DVID//PRID
@@ -189,32 +189,30 @@ C...........   Other local variables
         INTEGER         K1, K2, K3, K4      ! counters and indices
         INTEGER         L2                  ! counters and indices
 
-        INTEGER         CSS     !  Start of non-blank character string
-        INTEGER         COD     !  Temporary pollutant code number
-        INTEGER         DLINE, FLINE, SLINE, PLINE ! Number of lines in files
-        INTEGER         ES      !  counter for emission file
-        INTEGER         FIP, SCC, SIC  ! Temporary fip, scc, sic
-        INTEGER         TDIU    !  Temporary hourly profile code
-        INTEGER         TWEK    !  Temporary weekly profile code
-        INTEGER         LDC, LFC, LSC, LPC  ! Lengths of DVID,FCID,SKID,PRID
-        INTEGER      :: NSRC= 0 ! Cumulative source count
-        INTEGER         TPF     !  Temporary temporal ID
-        INTEGER         ZONE    !  Temporary UTM zone
+        INTEGER          CSS     !  Start of non-blank character string
+        INTEGER          COD     !  Temporary pollutant code number
+        INTEGER          DLINE, FLINE, SLINE, PLINE ! Number of lines in files
+        INTEGER          ES      !  counter for emission file
+        INTEGER          FIP, SCC, SIC  ! Temporary fip, scc, sic
+        INTEGER          TDIU    !  Temporary hourly profile code
+        INTEGER          TWEK    !  Temporary weekly profile code
+        INTEGER          LDC, LFC, LSC, LPC  ! Lengths of DVID,FCID,SKID,PRID
+        INTEGER, SAVE :: NSRC= 0 ! Cumulative source count
+        INTEGER          TPF     !  Temporary temporal ID
+        INTEGER          ZONE    !  Temporary UTM zone
 
-        SAVE            NSRC
+        LOGICAL, SAVE :: CFLAG    !  velocity recalc: TRUE iff VELOC_RECALC = Y
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.
+        LOGICAL          RULFLAG  !  Rule effective file(s): TRUE if exist
+        LOGICAL, SAVE :: WFLAG    !  Input verification:  convert bad lat-lons
 
-        LOGICAL         CFLAG    !  velocity recalc: TRUE iff VELOC_RECALC = Y
-        LOGICAL      :: FIRSTIME = .TRUE.
-        LOGICAL         RULFLAG  !  Rule effective file(s): TRUE if exist
-        LOGICAL         WFLAG    !  Input verification:  convert bad lat-lons
-
-        SAVE            CFLAG, FIRSTIME, WFLAG
-
+        CHARACTER*10, SAVE  :: FMTSCC!  format for writing integer SCC to char
+        CHARACTER*300          LINE  !  Input line from POINT file
+        CHARACTER*300          MESG  !  Text for M3EXIT()
         CHARACTER(LEN=IOVLEN3) CPOL  !  Temporary pollutant code
         CHARACTER(LEN=FIPLEN3) CFIP  !  Character FIP code
         CHARACTER(LEN=POLLEN3) CCOD  !  Character pollutant index to INVPNAM
-        CHARACTER*300   LINE    !  Input line from POINT file
-        CHARACTER*300   MESG    !  Text for M3EXIT()
+        CHARACTER(LEN=SCCLEN3) TSCC  !  Temporary character SCC
 
         CHARACTER*16 :: PROGNAME = 'RDEMSPT' ! Program name
 
@@ -232,6 +230,9 @@ C.............  Get settings from the environment
 
             WFLAG = ENVYN( 'WEST_HSPHERE',
      &                 'Western hemisphere flag', .TRUE., IOS )
+
+C.............  Create format for writing SCC to character
+            WRITE( FMTSCC, 94300 ) '(I', SCCLEN3, '.', SCCLEN3, ')'
 
         ENDIF
 
@@ -582,18 +583,20 @@ C.............  Convert and check SCC value
             SCC = STR2INT( LINE( 57:64 ) )
             IF ( SCC .EQ. IMISS3 ) THEN  ! SCC not there
 
-                WRITE( MESG,94010 ) 'Source dropped: ' //
-     &                 'Missing SCC in process file at line', IREC
+                WRITE( MESG,94010 ) 'WARNING: Source dropped.' //
+     &                 CRLF() // BLANK5 // 'Missing or alpha-' //
+     &                 'numeric SCC in process file at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
 
             ELSEIF ( SCC .LE. 9999999 ) THEN  ! SCC must be 8 digits
 
-                WRITE( MESG,94010 ) 'Source dropped: ' //
+                WRITE( MESG,94010 ) 'WARNING: Source dropped. ' //
      &                 'Invalid SCC "' // LINE( 57:64 ) //
      &                 '" in process file at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
+
             END IF
 
             PS = PS + 1
@@ -675,7 +678,7 @@ C........................................................................
 C.............  Convert and check SIC value
 
             SIC = STR2INT( LINE( 45:48 ) )
-            IF ( SIC .EQ. IMISS3 ) THEN  ! SCC not there
+            IF ( SIC .EQ. IMISS3 ) THEN  ! SIC not there
 
                 WRITE( MESG,94010 ) 
      &                 'Missing SIC in device file at line', IREC,
@@ -919,7 +922,7 @@ C.............  and give warning later if this is not the case.
 
             END IF          !   if process key not found
 
-            SCC = PSSCC( K4 )
+            WRITE( TSCC, FMTSCC ) PSSCC( K4 )
 
 C.............  Check and set time period type (Year/day/hourly)
 
@@ -965,7 +968,6 @@ C.............  Time to store data in unsorted lists if we've made it this far
             IF ( ES .LE. NRAWIN ) THEN
 
                 IFIPA  ( ES ) = FIP
-                ISCCA  ( ES ) = SCC
                 ISICA  ( ES ) = DVSICA( DVIDX( K3 ) )
                 TPFLGA ( ES ) = TPF
                 INVYRA ( ES ) = INY
@@ -981,12 +983,13 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 POLVLA ( ES,NCE ) = CEFF
                 POLVLA ( ES,NRE ) = REFF
                 K1            = IFCKEYA( SKIDX( K2 ) )
+                CSCCA  ( ES ) = TSCC
                 CPDESCA( ES ) = FCDESCA( FCIDX( K1 ) )
 
                 WRITE( CCOD,94125 ) COD
  
-                CSOURCA( ES ) = BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                                   CHRBLNK3, CHRBLNK3, CCOD )
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                        CHRBLNK3, CHRBLNK3, CCOD, CSOURCA( ES ) )
 
             END IF          !  if S in range
 
@@ -1077,4 +1080,6 @@ C...........   Internal buffering formats............ 94xxx
 
 94125   FORMAT( I5 )
 
-        END
+94300   FORMAT( A, I2.2, A, I2.2, A )
+
+        END SUBROUTINE RDEMSPT
