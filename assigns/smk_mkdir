@@ -82,7 +82,7 @@
       set cnt = `echo $SMK_M6PATH | wc -c`
       @ cnt = $cnt - 1
       if ( $cnt > 50 ) then
-         echo "NOTE: your SMK_M6PATH is contrained to 50 characters"
+         echo "NOTE: your SMK_M6PATH is constrained to 50 characters"
          echo "      but yours is $cnt characters."
          echo "      If you are going to run MOBILE6, then you"
          echo "      must reselect an EDSS_ROOT and ESCEN values"
