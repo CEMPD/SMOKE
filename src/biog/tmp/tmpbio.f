@@ -281,8 +281,10 @@ C......    Read description of temperature file
 
         ENDIF
 
+C.......   Initialize grid definition 
+
         CALL CHKGRID( NNAME, 'GRID' , EFLAG )
- 
+
         NCOLS = NCOLS3D 
         NROWS = NROWS3D
         NGRID = NCOLS3D * NROWS3D
@@ -321,6 +323,13 @@ C......    Read description of temperature file
 
         CALL CHKGRID( M3NAME, 'GRID' , EFLAG ) 
 
+C........  If grid definition does not match BGRD file then stop
+
+        IF ( SAMEFILE .AND. EFLAG ) THEN
+           MESG = 'Problems opening input files. See ERROR(S) above.'
+           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C........  Get met and cloud scheme descriptions from M3NAME if they exist
 
         METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. )
@@ -336,7 +345,7 @@ C.........  Open second met file if needed
      &           'Enter name for gridded radiation/cloud input file',
      &           FSREAD3, 'MET_FILE2', 'TMPBIO' )
 
-C......    Read description of temperature file
+C......    Read description of radiation/cloud file
 
              IF ( .NOT. DESC3( M2NAME ) ) THEN
 
@@ -347,6 +356,14 @@ C......    Read description of temperature file
              ENDIF
 
              CALL CHKGRID( M2NAME, 'GRID' , EFLAG )
+
+C........  If grid definition does not match BGRD file then stop
+
+             IF ( EFLAG ) THEN
+              MESG = 'Problems opening input files. See ERROR(S) above.'
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+             END IF
+
              CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. )
         
            ELSE
@@ -442,6 +459,13 @@ C........  coordinates from GRID_CRO_2D file
 
             ENDIF 
             CALL CHKGRID( GNAME, 'GRID' , EFLAG ) 
+
+C........  If grid definition does not match BGRD file then stop
+
+            IF ( EFLAG ) THEN
+              MESG = 'Problems opening input files. See ERROR(S) above.'
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
             ALLOCATE( LAT ( NCOLS, NROWS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LAT', PROGNAME )
