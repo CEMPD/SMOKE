@@ -3,11 +3,12 @@
      &                        NCOUNTY, TEMPDIR, FNAME )
 
 C***********************************************************************
-C  subroutine body starts at line 81
+C  subroutine body starts at line 97
 C
 C  DESCRIPTION:
-C      This subroutine opens the derived meteorology files needed for 
-C      processing activity data with emission factors.
+C      Opens temperature output files. Creates file name based on SMK_TEMPATH
+C      directory, current averaging type, and current start date. Stores
+C      end date in file header.
 C 
 C  PRECONDITIONS REQUIRED:
 C
