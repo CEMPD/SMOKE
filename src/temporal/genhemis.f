@@ -1,6 +1,6 @@
-
-        SUBROUTINE GENHEMIS( NPLE, JDATE, JTIME, TZONE, DNAME, HNAME,
-     &                       NAMIN, NAMOUT, EMAC, EMACV, TMAT, EMIST )  
+        SUBROUTINE GENHEMIS( RLZN,  NPLE,  JDATE,  JTIME, TZONE, DNAME,
+     &                       HNAME, NAMIN, NAMOUT, EMAC,  EMACV, TMAT, 
+     &                       EMIST, UEMIS )  
 
 C***********************************************************************
 C  subroutine body starts at line 173
@@ -19,6 +19,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 1/99
+C      Modified by G. Cano, 5/02
 C
 C************************************************************************
 C
@@ -65,6 +66,9 @@ C...........   This module is the derived meteorology data for emission factors
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C...........   This module contains the uncertainty arrays and variables
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -88,6 +92,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  ISDSTIME, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
+        INTEGER     , INTENT (IN)    :: RLZN      ! uncertainty realization
         INTEGER     , INTENT (IN)    :: NPLE      ! Number of pols+emis types
         INTEGER     , INTENT (IN)    :: JDATE  ! Julian date (YYYYDDD) in TZONE
         INTEGER     , INTENT (IN)    :: JTIME     ! Time (HHMMSS) in TZONE
@@ -100,6 +105,7 @@ C...........   SUBROUTINE ARGUMENTS
         REAL        , INTENT (OUT)   :: EMACV( NSRC, NPLE ) ! work emis/actvy
         REAL        , INTENT (OUT)   :: TMAT ( NSRC, NPLE, 24 ) ! tmprl matrix
         REAL        , INTENT (OUT)   :: EMIST( NSRC, NPLE )     ! hourly emis
+        REAL        , INTENT (OUT)   :: UEMIS( UNSRC, UNIPOL )  ! annual uncert emis
 
 C...........   TMAT update variables
 
@@ -113,7 +119,9 @@ C...........   Local allocatable arrays
 
 C...........   Other local variables
 
-        INTEGER          C, H, I, J, K, L, M, S, V !  indices and counters
+        INTEGER          C, H, I, J, K, L, M, S, U, V, T !  indices and counters
+
+        INTEGER          CA, CEF, CP, UA, UEF, UP !  indices for (un)certainties
 
         INTEGER, SAVE :: TZMIN   ! minimum time zone in inventory
         INTEGER, SAVE :: TZMAX   ! maximum time zone in inventory
@@ -156,6 +164,8 @@ C...........   Other local variables
         LOGICAL, SAVE :: OUTMSG = .TRUE.    ! true: output message for new day
         LOGICAL, SAVE :: TMATCALC           ! true: need to calculate new TMAT
         LOGICAL, SAVE :: UFLAG  = .FALSE.   ! true: use src-spec hr profiles
+        LOGICAL          UPCOND             ! true: uncertainty processing cond.
+        LOGICAL          UCCOND             ! true: uncertainty cycle cond.
         LOGICAL, SAVE :: WKEMSG = .FALSE.   ! true: wkend-profile msg written
         LOGICAL, SAVE :: ZONE4WM        !  True: src zone for week/mon temp prof
 
@@ -396,6 +406,7 @@ C.............  Read source index for this hour
 C.........  Precompute hour/zone correction factor
         HCORR = TZONE + 23
 
+        U = 0
 C.........  Loop through the emissions and emission types and compute the
 C           hourly emissions, depending on if the input data is a pollutant
 C           or an activity
@@ -405,6 +416,26 @@ C           or an activity
 
 C.............  Skip blanks that can occur when NGRP > 1
             IF ( NAMBUF .EQ. ' ' ) CYCLE
+
+            UCCOND = .FALSE.
+            UP = INDEX1( NAMBUF , NIPOL , EINAM )
+            UPCOND = ( RLZN .GT. 0 )
+C.............  Unceratinty cycle condition: pollutant is not an uncertainty
+            IF ( UPCOND .AND. UP .GT. 0 ) UCCOND = ( UEFINAM( UP ) .OR.
+     &                                               UEINAM( UP ) )
+            IF ( UPCOND .AND. .NOT. ( UCCOND ) ) THEN
+
+                 CYCLE  ! current pollutant is not an uncertainty
+
+            ELSE IF ( UPCOND .AND. UCCOND ) THEN
+                U = U + 1
+                IF ( U .GT. UNIPOL ) THEN
+                    WRITE( MESG,94010 ) 
+     &                     'Number of uncertainty pollutants ' , U ,
+     &                     'exceeded the expected number', UNIPOL
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+            END IF
 
 C.............  Find pollutant/activity in list of all.  Use EAREAD b/c
 C               EANAM has been update to contain emission types.
@@ -435,18 +466,29 @@ C.............  If source-specific profiles are being used, update temporal
 C               matrix for the current hour
             IF( LHPROF( V ) ) THEN
 
-                CALL UPDTMAT( NSRC, NPLE, JDATE, TZONE, V, HOUR, MONTH, 
+                CALL UPDTMAT( NSRC, NPLE, JDATE, TZONE, V, HOUR, MONTH,
      &                        DAYOW, TMAT )
 
             END IF
 
 C.............  For all pollutants and activities...
-
 C.............  Apply hourly factors to all sources for current pollutant or
 C               activity. Also apply units conversion.
             DO S = 1, NSRC
-                EMIST( S,V ) = UFAC * EMACV( S,V ) * TMAT( S,V,HOUR )
-            END DO
+
+C.................  Main uncertainty process branches for approaches
+                IF ( .NOT. ( UPCOND ) ) THEN
+
+                    EMIST( S,V )= UFAC * EMACV( S,V ) * TMAT( S,V,HOUR )
+
+                ELSE IF ( USTAT( S ) ) THEN
+C.....................  Main uncertainty process branch conditions follow
+
+                    CALL WRTUNCERT
+  
+                END IF
+
+            END DO ! end S loop over sources
 
 C.............  If day-specific data are available for current pollutant
             IF( LDSPOA( V ) ) THEN
@@ -509,7 +551,12 @@ C.................  Set emission factor type and units conversion
                 EFTYPE = EMTEFT( NETP, NACT )
 
 C.................  If non-diurnal emission type...
-                IF( EFTYPE .EQ. 'N' ) THEN
+                IF( EFTYPE .EQ. 'I' ) THEN
+
+c bug move wrtuncert stuff here
+
+C.................  If non-diurnal emission type...
+                ELSE IF( EFTYPE .EQ. 'N' ) THEN
 
 C.....................  Set position in non-diurnal emission factor list
                     NIDX = INDEX1( NAMOUT( V ), NNDI, NDINAM )
@@ -702,6 +749,78 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
  
 94030   FORMAT( 8X, 'at time ', A8 )
+
+
+C***********************************************************************
+
+        CONTAINS
+
+            SUBROUTINE WRTUNCERT
+
+C.................  Get uncertainty status of activity for this source
+
+C.....................  Setup and prepare to test for uncertainty status of
+C                       emission factors and activities
+                    UA = 0
+                    DO T = 1, NIACT
+                        UA = INDEX1( ACTVTY( T ), NIPPA, EAREAD )
+                        IF ( UA .GT. 0 ) THEN
+                            IF ( UACTVTY( UA ) ) EXIT
+                            UA = 0
+                        END IF
+                    END DO
+
+                    UEF = 0
+                    DO T = 1, NIPOL
+                        UEF = INDEX1( EINAM( T ), NIPPA, EAREAD )
+                        IF ( UEF .GT. 0 ) THEN
+                            IF ( UEAREAD( UEF ) ) EXIT
+                            UEF = 0
+                        END IF
+                    END DO
+
+C.....................  uncertainty emission factor and certainty activity condition
+                    IF ( UEF .GT. 0 .AND. UA .LE. 0 ) THEN
+
+                        CA = 0
+                        DO T = 1, NIACT
+                            CA = INDEX1(ACTVTY( T ), NIPPA, EAREAD)
+                            IF ( CA .GT. 0 ) THEN
+                                IF ( EMACV( S,CA ) .GE. 0.0 ) EXIT
+                                CA = 0
+                            ENDIF
+                        END DO
+
+                        IF ( CA .EQ. 0 ) THEN
+                            WRITE( MESG,94010 ) 
+     &                         'A certainty activity could '//
+     &                         'not be found for source ', S
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+
+                        UEMIS( SRCNUM( S ), U ) = UFAC * 
+     &                       EMACV( S,CA ) * SAMPGEN( SRCNUM( S ), U ) *
+     &                       TMAT( S,V,HOUR )
+
+C.....................  certainty emission factor and uncertainty activity condition
+c                    ELSE IF ( UEF .LE. 0 .AND. UA .GT. 0) THEN
+
+C.....................  uncertainty emission factor and uncertainty activity condition
+c                    ELSE IF ( UEF .GT. 0 .AND. UA .GT. 0) THEN
+
+                    ELSE
+C.....................  Default condition left blank
+
+
+
+                    END IF
+
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I9, :, 1X ) )
+
+            END SUBROUTINE WRTUNCERT
 
         END SUBROUTINE GENHEMIS
 
