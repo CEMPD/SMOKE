@@ -330,7 +330,7 @@ C............. some grid description info obtained from call to RDSRG above
 
         XDEV = PROMPTFFILE(
      &           'Enter logical name for output BELD2 LANDUSE file',
-     &           .FALSE., .TRUE., 'BG2USE', PROGNAME )
+     &           .FALSE., .TRUE., 'BGUSE', PROGNAME )
 
 
         NVARST = NVARSA + NVARSB
