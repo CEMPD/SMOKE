@@ -6,10 +6,6 @@ opts: rawpoint.debug emspoint.debug pdpoint.debug elevpoint.debug grdpmat.debug 
       spcpmat.debug  ctlpmat.debug tmppoint.debug csgpoint.debug cselev.debug   \
       laypoint.debug
 #
-LDIRS=-L$(em) \
-      -L$(io) \
-      -L$(ncf)
-#
 LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
 #
 #

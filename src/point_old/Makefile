@@ -5,10 +5,6 @@ all: opts
 opts: rawpoint emspoint pdpoint elevpoint grdpmat spcpmat \
       ctlpmat tmppoint csgpoint cselev laypoint
 #
-LDIRS=-L$(em) \
-      -L$(io) \
-      -L$(ncf)
-#
 LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
 #
 #
