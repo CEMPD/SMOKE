@@ -1,0 +1,98 @@
+
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+        LOGICAL FUNCTION SKIPCTL( NAME, CDEV, LINE, IREC )
+
+C***********************************************************************
+C  subroutine body starts at line
+C
+C  FUNCTION:  
+C       skip over the control packet with the indicated name, by
+C       reading lines from the indicated device until "END" encountered.
+C       Return immediately if name mismatch.
+C
+C  RETURNS:
+C       TRUE if not end-of-file; FALSE if end-of-file encountered.
+C
+C  PRECONDITIONS REQUIRED:
+C       Control file correctly opened on CDEV
+C       Correctly primed LINE (first line of a new packet should have
+C       been read.
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:
+C       M3EXIT
+C
+C  REVISION  HISTORY:
+C       Prototype 6/95 by CJC for program CTLAMAT.
+C
+C***********************************************************************
+
+      IMPLICIT NONE
+
+C...........   ARGUMENTS and their descriptions:
+
+        CHARACTER*(*)   NAME    !  packet name for packet to be skipped
+        INTEGER         CDEV    !  unit number for control file
+        CHARACTER*240   LINE    !  input line buffer
+        INTEGER         IREC    !  current line number
+        
+
+C...........   SCRATCH LOCAL VARIABLES and their descriptions:
+
+        CHARACTER*80    MESG    !  error message buffer
+        INTEGER         IOS     !  READ-status return
+
+
+C***********************************************************************
+C   begin body of subroutine  SKIPCTL
+
+        IF( 0 .EQ. INDEX( LINE, NAME ) ) THEN
+            SKIPCTL = .TRUE.
+            RETURN
+        END IF
+
+11      CONTINUE        !  head of loop reading lines in this packet
+
+            READ( CDEV,93000,IOSTAT=IOS,END=900 ) LINE
+            IREC = IREC + 1
+            IF( IOS .NE. 0 ) THEN
+                WRITE( MESG,94910 ) 
+     &              'Error reading CONTROL FILE at line ',
+     &              IREC, IOS
+                CALL M3EXIT( 'SKIPCTL', 0, 0, MESG, 1 )
+            END IF
+
+            CALL UPCASE( LINE )
+            IF( 0 .EQ. INDEX( LINE, 'END' ) ) GO TO 11  ! to head of read-loop
+
+        READ( CDEV,93000,IOSTAT=IOS,END=900 ) LINE
+        IREC = IREC + 1
+        IF( IOS .NE. 0 ) THEN
+            WRITE( MESG,94910 ) 
+     &          'Error reading CONTROL FILE at line ',
+     &          IREC, IOS
+            CALL M3EXIT( 'SKIPCTL', 0, 0, MESG, 1 )
+        END IF
+
+        SKIPCTL = .TRUE.
+        RETURN
+                
+
+900     CONTINUE        !  exit from / skip around loop 11
+        SKIPCTL = .FALSE.
+
+        RETURN
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93000   FORMAT( A )
+
+
+C...........   Internal buffering formats............ 94xxx
+
+94910   FORMAT( A, I7,  '; IOSTAT=', I7 )
+
+        END
+
