@@ -138,6 +138,9 @@ C.........   Other local variables
         INTEGER    NROWS         ! no. grid rows   
         INTEGER    NGRPLINES     ! no. lines in GROUP file
         INTEGER    NUMSRC        ! total number of sources
+        INTEGER :: MAXPOL = 0    ! max. number of pollutants
+        INTEGER :: MAXVEH = 0    ! max. number of vehicle types
+        INTEGER :: MAXFAC = 0    ! max. number of facility types
 
         LOGICAL :: EFLAG    = .FALSE.    ! error flag
         LOGICAL :: TEMPFLAG = .TRUE.     ! true: replace temperatures in M6 scenarios 
@@ -604,13 +607,30 @@ C.............  Allocate space for storing emission factors
                 CALL CHECKMEM( IOS, 'EMISSIONS', PROGNAME )
 
                 DO I = 1,MXM6EPR
+                
+C.....................  Calculate maximum values for this emission process
+C                       Can't use MAXVAL on Linux
+                    DO J = 1, MXM6POLS
+                        IF( M6POL2EF( I,J ) > MAXPOL ) THEN
+                            MAXPOL = M6POL2EF( I,J )
+                        END IF
+                    END DO
+                    
+                    DO J = 1, MXM6VTYP
+                        IF( M6VEH2EF( I,J ) > MAXVEH ) THEN
+                            MAXVEH = M6VEH2EF( I,J )
+                        END IF
+                    END DO
+                    
+                    DO J = 1, MXM6FACS
+                        IF( M6FAC2EF( I,J ) > MAXFAC ) THEN
+                            MAXFAC = M6VEH2EF( I,J )
+                        END IF
+                    END DO
+                    
                     ALLOCATE( 
-     &                  EMISSIONS( I )%PTR( NUMSCEN, 
-     &                                      MAXVAL( M6POL2EF( I,: ) ),
-     &                                      MAXVAL( M6VEH2EF( I,: ) ),
-     &                                      MAXVAL( M6FAC2EF( I,: ) ),
-     &                                      24 ), 
-     &                  STAT=IOS )
+     &                  EMISSIONS( I )%PTR( NUMSCEN, MAXPOL, MAXVEH,
+     &                                      MAXFAC, 24 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'EMISSIONS%PTR', PROGNAME )
                 END DO
 
