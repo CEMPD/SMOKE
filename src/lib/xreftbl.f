@@ -157,7 +157,7 @@ C.........  Check for valid operation type
         CASE( 'GRIDDING' )
             POLDFLT = .FALSE.
             IFLAG   = .TRUE.
-        CASE( 'PROJECT PTS' )
+        CASE( 'PROJECTION' )
             POLDFLT = .FALSE.
             JFLAG   = .TRUE.
         CASE( 'REACTIVITY' )
