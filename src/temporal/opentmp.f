@@ -78,7 +78,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
 
-        PARAMETER   ( SCCSW   = '@(#)$Id$'
+        PARAMETER   ( SCCSW   = '@(#)opentmp.f	1.6'
      &              )
 
 C...........   Other local variables
@@ -132,7 +132,8 @@ C.........  Get header information from inventory file
         FDESC3D( 4 ) = '/TZONE/ '   // CTZONE
         WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR 
         IF( PYEAR .GT. 0 ) 
-     &      WRITE( FDESC3D( 5 ),94010 ) '/PROJECTED YEAR/ ', PYEAR 
+     &      WRITE( FDESC3D( 5 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
+	WRITE( FDESC3D( 6 ),94010 ) '/OZONE SEASON/', INVPIDX
 
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
