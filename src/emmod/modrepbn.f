@@ -86,6 +86,7 @@
         INTEGER, PUBLIC :: NOUTBINS = 0  ! no. of output bins
 
 !.........  Grouped output information and data values
+        INTEGER, ALLOCATABLE, PUBLIC :: BINBAD   ( : )   ! code number if something wrong
         INTEGER, ALLOCATABLE, PUBLIC :: BINCOIDX ( : )   ! index to country name
         INTEGER, ALLOCATABLE, PUBLIC :: BINCYIDX ( : )   ! index to county name
         INTEGER, ALLOCATABLE, PUBLIC :: BINDIUID ( : )   ! index to diurnal prof
@@ -101,7 +102,8 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINX     ( : )   ! x cell
         INTEGER, ALLOCATABLE, PUBLIC :: BINY     ( : )   ! y cell
 
-        REAL   , ALLOCATABLE, PUBLIC :: BINDATA ( :,: ) ! output data values
+        REAL   , ALLOCATABLE, PUBLIC :: BINPOPDIV( : )   ! popltn normalize fac
+        REAL   , ALLOCATABLE, PUBLIC :: BINDATA  ( :,: ) ! output data values
 
         CHARACTER*1, ALLOCATABLE, PUBLIC :: BINELEV( : )! elevated flag
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC( : )   ! SCC
@@ -126,8 +128,8 @@
         CHARACTER(LEN=LV2), ALLOCATABLE, PUBLIC :: SUMETPNAM( : )  ! S- || emis type names
         CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: SUMPOLNAM( : )  ! S- || pollutant names
 
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SLUNIT( : ) ! spc var units
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SSUNIT( : ) ! spc var units
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: SLUNIT( : ) ! spc var units
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: SSUNIT( : ) ! spc var units
 
 !.........  Arrays for referencing input data needed across whole program run
         INTEGER, PUBLIC :: NDATIN = 0 ! Actual number of data vars input
