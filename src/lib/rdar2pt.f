@@ -64,7 +64,8 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2    CRLF
-        EXTERNAL       CRLF
+        LOGICAL        ENVYN
+        EXTERNAL       CRLF, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: FDEV   ! area-to-point factors unit no.
@@ -75,7 +76,7 @@ C.............  Parameters
         INTEGER, PARAMETER :: NFIELDS = 10  ! no. input fields
         INTEGER, PARAMETER :: FBEG( NFIELDS ) = 
      &                      ( / 1 , 8, 11, 34, 39, 63,
-     &                          86, 98, 114, 126 / )
+     &                          86, 97, 114, 126 / )
         INTEGER, PARAMETER :: FEND( NFIELDS ) = 
      &                      ( / 6 , 9, 32, 37, 61, 84,
      &                          93, 109, 124, 139 / )
@@ -111,6 +112,7 @@ C...........   Other local variables
         REAL         :: SUMTEST = 0.   ! value to check that factors sum to 1.
 
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error found
+        LOGICAL      :: WFLAG             ! true: convert lat-lons to Western hemisphere
 
         CHARACTER*10              FIPFMT  !  format to write co/st/cy to string
         CHARACTER*256             MESG    !  message buffer
@@ -170,6 +172,10 @@ C.........  Allocate memory for sorted input tables
         AR2PTABL%LON   = BADVAL3  ! array
         AR2PTABL%ALLOC = 1.       ! array
         AR2PTABL%NAME  = ' '      ! array
+
+C.........  Check if lat-lons should be converted to western hemisphere
+        MESG = 'Western hemisphere flag'
+        WFLAG = ENVYN( 'WEST_HSPHERE', MESG, .FALSE., IOS )
 
 C.........  Read and store contents of the file (both the SCC 
 C           entries as well as the tables).
@@ -634,6 +640,7 @@ C........................  Store total count of packet for this table
 C........................  Store contents of this row
                         FIP   = STR2INT ( SEGMENT( 1 ) )
                         LON   = STR2REAL( SEGMENT( 8 ) )
+                        IF( WFLAG .AND. LON > 0 ) LON = -LON  ! convert to western hemisphere
                         LAT   = STR2REAL( SEGMENT( 9 ) )
                         ALLOC = STR2REAL( SEGMENT( 10 ) )
 
