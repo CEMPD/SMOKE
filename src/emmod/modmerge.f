@@ -78,6 +78,7 @@
         LOGICAL, PUBLIC :: PINGFLAG! create plume-in-grid hourly file
         LOGICAL, PUBLIC :: ELEVFLAG! create ASCII elevated sources file
         LOGICAL, PUBLIC :: EXPLFLAG! use PHOUR file to get explicit plume rise
+        LOGICAL, PUBLIC :: VARFLAG ! use variable grid definition
         LOGICAL, PUBLIC :: LMETCHK ! compare met information in headers
         LOGICAL, PUBLIC :: LMKTPON ! true: use market penetration
         LOGICAL, PUBLIC :: LGRDOUT ! output gridded I/O API NetCDF file(s)
