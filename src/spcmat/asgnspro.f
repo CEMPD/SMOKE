@@ -112,7 +112,7 @@ C.........  Other local variables
 
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
-        LOGICAL, SAVE :: MACTFLAG = .TRUE.  ! true: MACT codes available in inventory
+        LOGICAL, SAVE :: MACTFLAG = .FALSE. ! true: MACT codes available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
         LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
         LOGICAL          SCCFLAG            ! true: SCC type is different from previous
