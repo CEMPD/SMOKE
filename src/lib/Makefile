@@ -74,6 +74,8 @@ alocstbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocstbl.f
 alocttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocttbl.f
+applumat.o: $(MODGRID)
+	$(FC) $(FFLAGS) -c -o $@ applumat.f
 asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnpsi.f
 bldenams.o  : $(MODINFO)
