@@ -71,6 +71,7 @@ C.........  Other local variables
         INTEGER         J
 
         LOGICAL      :: AOUTFLAG = .FALSE.  ! true: output area sources
+        LOGICAL      :: BOUTFLAG = .FALSE.  ! true: output biogenic sources
         LOGICAL      :: MOUTFLAG = .FALSE.  ! true: output mobile sources
         LOGICAL      :: POUTFLAG = .FALSE.  ! true: output point sources
 
@@ -84,6 +85,7 @@ C   begin body of subroutine WMRGEMIS
 
 C.........  Initialize output flags
         AOUTFLAG = .FALSE.
+        BOUTFLAG = .FALSE.
         MOUTFLAG = .FALSE.
         POUTFLAG = .FALSE.
 
@@ -97,6 +99,11 @@ C           indicator arrays for determining output or not.
                 AOUTFLAG = ( J .GT. 0 )
             END IF
 
+            IF( LGRDOUT .AND. BFLAG ) THEN
+                J = INDEX1( VNAME, BNMSPC, BEMNAM )
+                BOUTFLAG = ( J .GT. 0 )
+            END IF
+
             IF( LGRDOUT .AND. MFLAG ) THEN
                 J = INDEX1( VNAME, MNMSPC, MEMNAM )
                 MOUTFLAG = ( J .GT. 0 )
@@ -107,7 +114,8 @@ C           indicator arrays for determining output or not.
                 POUTFLAG = ( J .GT. 0 )
             END IF
 
-        ELSE
+C.........  Non-speciated (it's not possible to have biogenics w/o speciation)
+        ELSE  
 
             IF( LGRDOUT .AND. AFLAG ) THEN
                 J = INDEX1( VNAME, ANIPOL, AEINAM )
@@ -128,6 +136,10 @@ C           indicator arrays for determining output or not.
 
 C.........  For area sources, output file...
         IF( AOUTFLAG ) CALL SAFE_WRITE3( AONAME, AEMGRD )
+
+C.........  For biogenic, output file...
+        IF( BOUTFLAG ) 
+     &      CALL SAFE_WRITE3( BONAME, BEMGRD )
 
 C.........  For mobile sources, output file...
         IF( MOUTFLAG ) CALL SAFE_WRITE3( MONAME, MEMGRD )
