@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -95,8 +95,8 @@ C.........  Find road class in list of valid ones, to get index
         IF( RCL .NE. 0 .AND. K .LE. 0 ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 ) 
-     &             'ERROR: Road class ', RCL, 'at line', IREC, 
-     &             'of surrogates cross-reference is' //
+     &             'ERROR: Road class ', RCL, 'for record', IREC, 
+     &             'of cross-reference is' //
      &             CRLF() // BLANK10 // 'not in the list of '//
      &             'valid road class codes.'
             CALL M3MESG( MESG )
