@@ -34,9 +34,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CVTRDTYPE
         INTEGER         CVTVEHTYPE
         CHARACTER*2     CRLF
+        LOGICAL         OPNFULL3
+        INTEGER         SECSDIFF
+        LOGICAL         ISOPEN
 
         EXTERNAL        PROMPTFFILE, PROMPTMFILE, ENVYN, GETFLINE, 
-     &                  CVTRDTYPE, CVTVEHTYPE, CRLF
+     &                  CVTRDTYPE, CVTVEHTYPE, CRLF, OPNFULL3, 
+     &                  SECSDIFF, ISOPEN
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -65,27 +69,35 @@ C.........  Unit numbers and logical file names
         CHARACTER*16    FNAME   !  logical name for I/O API emission factors file
 
 C.........   Other local variables
-        INTEGER    I, L              ! counters and indices
-        INTEGER    IOS               ! i/o status
-        INTEGER    NINVARR           ! number inventory variables to input
-        INTEGER    SDATE_MET ! temperature file start date
-        INTEGER    STIME_MET ! temperature file start time
-        INTEGER    SDATE   !  episode start date
-        INTEGER    STIME   !  episode start time
-        INTEGER    TZONE   !  time zone (not used)
-        INTEGER    TSTEP   !  time step of input temperature data (HHMMSS)
-        INTEGER    NSTEPS  !  no. time steps in temperature data
-        INTEGER    NROWS   !  no. grid rows   
-        INTEGER    NGRPLINES  ! no. lines in GROUP file     
-        INTEGER    NUMSCEN ! total number of M6 scenarios
-        INTEGER    NUMSRC  ! total number of sources
+        INTEGER    I, L          ! counters and indices
+        INTEGER    IOS           ! i/o status
+        INTEGER    NINVARR       ! number inventory variables to input
+        INTEGER    FILEDATE      ! date of current temperature file
+        INTEGER    SDATE         ! current start date
+        INTEGER    STIME         ! current start time
+        INTEGER    TZONE         ! time zone (not used)
+        INTEGER    TSTEP         ! time step of input temperature data (HHMMSS)
+        INTEGER    TIMEDIFF      ! difference between file date and current sdate
+        INTEGER    TEMPDATE      ! temporary date to pass to read routine
+        INTEGER    TEMPTIME      ! temporary time to pass to read routine
+        INTEGER    NSTEPS        ! no. time steps in temperature data
+        INTEGER    NROWS         ! no. grid rows   
+        INTEGER    NGRPLINES     ! no. lines in GROUP file     
+        INTEGER    NUMSCEN       ! total number of M6 scenarios
+        INTEGER    NUMSRC        ! total number of sources
 
-        LOGICAL :: EFLAG    = .FALSE.      ! error flag
-        LOGICAL :: TEMPFLAG = .TRUE.       ! true: replace temperatures in M6 scenarios 
+        LOGICAL :: EFLAG    = .FALSE.    ! error flag
+        LOGICAL :: TEMPFLAG = .TRUE.     ! true: replace temperatures in M6 scenarios 
+        LOGICAL :: INITIAL  = .TRUE.     ! true: first time through loop
+        LOGICAL :: NEWFILE  = .TRUE.     ! true: open new temperature and EF files
+        LOGICAL :: FEXIST   = .FALSE.    ! true: file exists
         
         CHARACTER*20           MODELNAM  ! emission factor model name
         CHARACTER(LEN=IOVLEN3) VOLNAM    ! volatile pollutant name
         CHARACTER(LEN=80)      M6INPUT   ! Mobile6 input file name
+        CHARACTER(LEN=200)     TEMPDIR   ! location of hourly temperature files
+        CHARACTER(LEN=256)     TEMPNAME  ! full temperature file name
+        CHARACTER(LEN=200)     EMISDIR   ! directory for output EF files
         CHARACTER*300          MESG      ! message buffer 
         
         CHARACTER*16  :: PROGNAME = 'EMISFAC' ! program name
@@ -102,10 +114,6 @@ C           to continue running the program.
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
-C.........  Get the name of the emission factor model to use for one run
-        MESG = 'Emission factor model'
-        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE6', MODELNAM, IOS )
-
 C.........  End program if source category is not mobile sources
         IF( CATEGORY /= 'MOBILE' ) THEN
             L = LEN_TRIM( PROGNAME )
@@ -116,6 +124,10 @@ C.........  End program if source category is not mobile sources
         END IF
 
 C.........  Obtain settings from the environment...
+
+C.........  Get the name of the emission factor model to use
+        MESG = 'Emission factor model'
+        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE6', MODELNAM, IOS )
 
 C.........  Get environment variables that control program behavior
         TEMPFLAG = ENVYN( 'REPLACE_TEMPERATURES', 
@@ -139,7 +151,7 @@ C.......   Get file names and units; open input files
      &           .TRUE., .TRUE., 'SPDSUM', PROGNAME )
 
         GDEV = PROMPTFFILE(
-     &           'Enter logical name for time period group file',
+     &           'Enter logical name for time period GROUP file',
      &           .TRUE., .TRUE., 'GROUP', PROGNAME )
         
         IDEV = PROMPTFFILE(
@@ -149,9 +161,13 @@ C.......   Get file names and units; open input files
         MDEV = PROMPTFFILE(
      &           'Enter logical name for MOBILE6 input file',
      &           .FALSE., .TRUE., 'M6INPUT', PROGNAME ) 
+
+C.........  Get temperature file directory from the environment
+        MESG = 'Location of hourly temperature files'
+        CALL ENVSTR( 'SMK_TEMPATH', MESG, '.', TEMPDIR, IOS )
      
         TNAME = PROMPTMFILE(
-     &          'Enter logical name for hourly temperature file',
+     &          'Enter logical name for first hourly temperature file',
      &          FSREAD3, 'HOURLYT', PROGNAME )
         
 C.........  Get header description of inventory file 
@@ -170,22 +186,6 @@ C           results are stored in module MODINFO.
  
         END IF
 
-C.........  Read header of temperature file
-        IF ( .NOT. DESC3( TNAME ) ) THEN
-
-            MESG = 'Could not get description of file ' // TNAME
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Save header information that will be needed later
-        ELSE
-            SDATE_MET = SDATE3D
-            STIME_MET = STIME3D
-            TSTEP = TSTEP3D
-            NSTEPS= MXREC3D
-            NROWS = NROWS3D
-
-        END IF
-
 C.........  Set inventory variables to read
         IVARNAMS( 1 ) = 'IFIP'
         IVARNAMS( 2 ) = 'IRCLAS'
@@ -198,27 +198,19 @@ C.........  Allocate memory for and read required inventory characteristics
 C.........  Set up emission process variable names
         CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS, VNAME3D, 
      &                 UNITS3D, VDESC3D, VOLNAM )
-     
-C.........  Get default episode information for temperature data
-        SDATE = SDATE_MET
-        STIME = STIME_MET
-        TZONE = 0
-        CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
 
-C.........  Set end date and time for run
-C        EDATE = SDATE
-C        ETIME = STIME
-C        CALL NEXTIME( EDATE, ETIME, NSTEPS*10000 )
+C.........  Get output directory information from the environment
+        MESG = 'Path where emission factors files will be written'
+        CALL ENVSTR( 'SMK_EMISPATH', MESG, '.', EMISDIR, IOS )
 
-C.........  Read the hourly temperature file into an array
-        MESG = 'Reading HOURLY temperature file...'
-        CALL M3MSG2( MESG )
-
-        ALLOCATE( TKCOUNTY( NROWS, 0:NSTEPS-1 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKCOUNTY', PROGNAME )
+        IF( IOS /= 0 ) THEN
+            MESG = 'WARNING: Emission factors files being placed in ' //
+     &             'executable directory because ' // CRLF() //
+     &             BLANK10 // 'environment variable SMK_EMISPATH '//
+     &             'is not set properly'
+            CALL M3MSG2( MESG )
+        END IF
         
-        CALL RDHOURTEMP( TNAME, NROWS, NSTEPS, SDATE, STIME, TKCOUNTY )
-
 C.........  Read the GROUP list file into an array
         MESG = 'Reading GROUP list file...'
         CALL M3MSG2( MESG )
@@ -250,46 +242,143 @@ C.........  Allocate memory for the source/scenario number array
         
         SCENLIST = 0
 
-C.........  Create the concatenated MOBILE6 input file
-        MESG = 'Writing MOBILE6 input file...'
-        CALL M3MSG2( MESG )
-        
-        NUMSCEN = 1
-        NUMSRC  = 0
-        
-        CALL WRM6INPUT( GRPLIST, NGRPLINES, PDEV, MDEV, 
-     &                  TKCOUNTY, NROWS, NSTEPS, NUMSCEN, NUMSRC )
+C.........  Start loop over temperature files
+        DO
 
-        NUMSCEN = NUMSCEN - 1
-     
-C.........  Open file for storing emission factors (check this now rather than
-C           waste time running Mobile6)
-        FNAME = 'EMISFACS'
-        CALL OPENSEF( NUMSRC, SDATE, STIME, FNAME )
-        
-C.........  Allocate space for storing emission factors
-        ALLOCATE( EMISSIONS( NUMSCEN*161*24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMISSIONS', PROGNAME )
-        
-        EMISSIONS = 0.
+C.............  Read header of temperature file
+            IF( NEWFILE ) THEN
+                IF ( .NOT. DESC3( TNAME ) ) THEN
+                
+                    MESG = 'Could not get description of file ' // TNAME
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                
+C.................  Save header information that will be needed later
+                ELSE
+                    SDATE = SDATE3D
+                    STIME = STIME3D
+                    TSTEP = TSTEP3D
+                    NSTEPS= MXREC3D
+                    NROWS = NROWS3D
+                
+                    FILEDATE = SDATE
+                END IF
+            END IF
+            
+C.............  Read the hourly temperature file into an array
+            MESG = 'Reading HOURLY temperature file...'
+            CALL M3MSG2( MESG )
+            
+            IF( INITIAL ) THEN
+                ALLOCATE( TKHOUR( NROWS, 24 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
+            END IF
+            
+            TKHOUR = 0.
+            
+            TEMPDATE = SDATE
+            TEMPTIME = STIME
+            CALL RDHOURTEMP( TNAME, NROWS, TEMPDATE, TEMPTIME, TKHOUR )
+            
+C.............  Create the concatenated MOBILE6 input file
+            MESG = 'Writing MOBILE6 input file...'
+            CALL M3MSG2( MESG )
+            
+            NUMSCEN = 1
+            NUMSRC  = 0
+            
+            CALL WRM6INPUT( GRPLIST, NGRPLINES, PDEV, MDEV, 
+     &                      TKHOUR, NROWS, VOLNAM, NUMSCEN, NUMSRC )
+            
+            NUMSCEN = NUMSCEN - 1
+            
+C.............  Open file for storing emission factors (check this now rather than
+C               waste time running Mobile6)
+            IF( NEWFILE ) THEN
+                FNAME = 'EMISFACS'
+                
+                IF( ISOPEN( FNAME ) ) THEN
+                    IF( .NOT. CLOSE3( FNAME ) ) THEN
+                        MESG = 'Could not close file ' // 
+     &                          FNAME( 1:LEN_TRIM( FNAME ) )
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                END IF
+                
+                CALL OPENSEF( NUMSRC, 'daily', SDATE, STIME, 
+     &                        EMISDIR, FNAME )
+            END IF
+            
+C.............  Allocate space for storing emission factors
+            IF( INITIAL ) THEN
+                ALLOCATE( EMISSIONS( NUMSCEN*161*24 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EMISSIONS', PROGNAME )
+            END IF
+            
+            EMISSIONS = 0.
+            
+            INITIAL = .FALSE.
+            
+C.............  Get the full file name for the M6 input file
+            INQUIRE( UNIT=MDEV, NAME=M6INPUT )
+            REWIND( MDEV )
+            
+C.............  Call Mobile6 with M6 input file name and unit number
+C               Custom driver will use SMOKE log file for any screen output
+            MESG = 'Running MOBILE6...' // CRLF()
+            CALL M3MSG2( MESG )
+            
+            CALL SMKDRIVER( M6INPUT, MDEV, LDEV )
+            
+C.............  Match up emission factors with sources and write to file
+            MESG = 'Writing emission factors to file...' // CRLF()
+            CALL M3MSG2( MESG )
+            
+            CALL WREMFACS( FNAME, NUMSRC, SDATE )
 
-C.........  Get the full file name for the M6 input file and close the file
-C           since MOBILE6 will reopen it
-        INQUIRE( UNIT=MDEV, NAME=M6INPUT ) 
-        CLOSE( MDEV )
+C.............  If the file is only one day of daily info, then we're done
+            IF( NSTEPS == 24 ) EXIT
+            
+C.............  Open next temperature file if available
 
-C.........  Call Mobile6 with M6 input file name and unit number
-C           Custom driver will use SMOKE log file for any screen output
-        MESG = 'Running MOBILE6...' // CRLF()
-        CALL M3MSG2( MESG )
+C.............  Increment start date by one day
+            CALL NEXTIME( SDATE, STIME, 24*TSTEP )
 
-        CALL SMKDRIVER( M6INPUT, MDEV, LDEV )
+C.............  Make sure start date is 2 days later than current file date
+            TIMEDIFF = SECSDIFF( FILEDATE, 0, SDATE, 0 ) / 3600 
 
-C.........  Match up emission factors with sources and write to file
-        MESG = 'Writing emission factors to file...' // CRLF()
-        CALL M3MSG2( MESG )
- 
-        CALL WREMFACS( FNAME, NUMSRC, SDATE )
+
+            IF( TIMEDIFF < 48 ) THEN
+                NEWFILE = .FALSE.
+                CYCLE
+            ELSE
+            	NEWFILE = .TRUE.
+            END IF
+
+C.............  Close current temperature file
+            IF( .NOT. CLOSE3( TNAME ) ) THEN
+                MESG = 'Could not close file ' // 
+     &                 TNAME( 1:LEN_TRIM( TNAME ) )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Construct next file name
+            WRITE( TEMPNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) //
+     &                              '/' // 'daily' // '.', SDATE, '.ncf'
+
+C.............  Check if file exists
+            INQUIRE( FILE=TEMPNAME, EXIST=FEXIST )
+
+C.............  If file does not exist, we're done            
+            IF( .NOT. FEXIST ) EXIT
+            
+C.............  Open temperature file
+            IF( .NOT. 
+     &          OPNFULL3( TNAME, FSREAD3, TEMPNAME, PROGNAME ) ) THEN
+                MESG = 'Could not open temperature file ' // TEMPNAME
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        END DO
 
 C.........  Exit program with normal completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -298,6 +387,6 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT ( 10 ( A, :, I10, :, 2X ) )
+94010   FORMAT( A, I7, A )
 
         END PROGRAM EMISFAC
