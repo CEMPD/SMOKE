@@ -1,0 +1,100 @@
+#!/bin/csh -f
+
+## This script creates the MPLIST and MPREF files for mobile processing
+## of CO, NOX, and VOC using VMT.
+
+# The following need to be set before calling this script:
+## Mvsetup settings 
+# setenv OVERRIDE_INV_SPEEDS Y    # Y overrides inventory speeds (if present) 
+                                  #    with speeds in the speeds file
+# setenv DEFAULT_SPEED       30.  # Value of default speed when none other
+## Create_mpref settings
+# setenv MO5PRE   M96                        # Prefix to MOBILE files
+# setenv MO5EXT   .IN                        # Suffix for MOBILE files
+# setenv M5SCENID '30.0 85.0 '  # Field from MOBILE5 files that IDs Scenario recs
+# setenv M5LAPID  '75.  95.'    # Field from MOBILE5 files that IDs LAP recs
+
+# Initialize settings
+set exitstat = 0
+
+# Check setting of source category
+if ( $?SMK_SOURCE ) then
+    if ( $SMK_SOURCE != M ) then
+       echo "SCRIPT ERROR: Environment variable SMK_SOURCE is not set to"
+       echo "              "M" when calling mb_setup.scr script!"
+       set exitstat = 1
+    endif
+else
+    echo "SCRIPT ERROR: Environment variable SMK_SOURCE is not set when"
+    echo "              calling mb_setup.scr script!"
+    set exitstat = 1
+endif
+
+# Set needed environment variables
+if ( $?ASSIGNS_FILE ) then
+    setenv RUN_PREMOBL Y
+    source $ASSIGNS_FILE
+    unsetenv RUN_PREMOBL
+else
+    echo "SCRIPT ERROR: Environment variable ASSIGNS_FILE is not defined"
+    echo "              Aborting mb_setup.scr script!"
+    set exitstat = 1
+endif
+
+setenv RUN_CREATE_MPREF Y    # Y create MPREF file
+
+## Mvcondns files
+setenv OUTFILE $INVOPD/mvcondns.$INVOP.in.txt
+setenv MVCONDS  $OUTFILE                      # Condensed inventory file
+
+## Get the year (YY) and season setting for the mpref file
+if ( $?month ) then
+   if ( $month == nov || $month == dec ) then
+      set NXTYEAR = `echo "$YEAR" | cut -c3-4`
+      @ NXTYEAR = $NXTYEAR + 1
+      set m5yr = $NXTYEAR         # Field for MOBILE5 files that ID's emissions year
+      echo "Mobile5 year is 19$m5yr"
+   else
+      set m5yr = `echo "$YEAR" | cut -c3-4`
+      echo "Mobile5 year is 19$m5yr"
+   endif
+
+   if ( $SEASON == win || $month == mar || $month == apr || $month == nov ) then
+      set seasflag = 1            # Field for MOBILE5 files that flags summer or winter
+      echo "Winter/Summer setting is $seasflag (winter)"
+   else
+      set seasflag = 7            # Field for MOBILE5 files that flags summer or winter
+      echo "Winter/Summer setting is $seasflag (summer)"
+   endif
+else
+   set m5yr = `echo "$YEAR" | cut -c3-4`
+   set seasflag = 1            # Field for MOBILE5 files that flags summer or winter
+   echo "Winter/Summer setting is $seasflag (winter)"
+
+endif
+
+## Create_mpref files
+setenv WORKDIR $M5PATH
+setenv M5YEAR $m5yr
+setenv JANJUL $seasflag
+
+#****************************************************************************
+
+if ( $exitstat == 0 ) then
+    $SCRIPTS/run/source smk_run.scr
+
+    if ( $RUN_CREATE_MPREF == Y ) then
+
+       if ( -e $SCRIPTS/run/create_mpref.scr ) then
+           $SCRIPTS/run/create_mpref.scr
+       else
+
+           echo "SCRIPT ERROR: No create_mpref.scr script available"
+           exit( 1 )
+
+       endif
+
+    endif
+endif
+
+exit( $exitstat )
