@@ -1,3 +1,4 @@
+
         MODULE MODELEV
 
 !***********************************************************************
@@ -20,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -43,9 +44,10 @@
         INTEGER, PUBLIC :: NGROUP
 
 !...........   Allocatable arrays for specifying source type
-        INTEGER, ALLOCATABLE, PUBLIC:: GROUPID( : ) ! stack group ID
-        LOGICAL, ALLOCATABLE, PUBLIC:: LMAJOR ( : ) ! true: src is a major src
-        LOGICAL, ALLOCATABLE, PUBLIC:: LPING  ( : ) ! true: src is a PinG src
+        INTEGER, ALLOCATABLE, PUBLIC:: GROUPID ( : ) ! stack group ID
+        REAL   , ALLOCATABLE, PUBLIC:: ELEVFLTR( : ) ! =0. for lower, =1. elev
+        LOGICAL, ALLOCATABLE, PUBLIC:: LMAJOR  ( : ) ! true: src is a major src
+        LOGICAL, ALLOCATABLE, PUBLIC:: LPING   ( : ) ! true: src is a PinG src
 
 !...........   Allocatable arrays for stack groups
         INTEGER, ALLOCATABLE, PUBLIC:: GRPGID( : ) ! sorted stack group ID
@@ -64,5 +66,13 @@
         REAL   , ALLOCATABLE, PUBLIC:: GRPVE ( : ) ! group exit velocity [m/s]
         REAL   , ALLOCATABLE, PUBLIC:: GRPXL ( : ) ! x-location given projection
         REAL   , ALLOCATABLE, PUBLIC:: GRPYL ( : ) ! y-location given projection
+
+!...........   Allocatable arrays for major and PinG sources indexing
+        INTEGER, ALLOCATABLE, PUBLIC:: ELEVSIDX( : ) ! Elev source -> all srcs
+        INTEGER, ALLOCATABLE, PUBLIC:: PINGGIDX( : ) ! PinG source -> PinG group
+
+!.........  Elevated source and plume-in-grid emissions arrays
+        REAL   , ALLOCATABLE, PUBLIC :: PGRPEMIS( : ) ! PinG group emissions
+        REAL   , ALLOCATABLE, PUBLIC :: ELEVEMIS( : ) ! Major elev srcs emis
 
         END MODULE MODELEV
