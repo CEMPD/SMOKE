@@ -2,7 +2,7 @@
          PROGRAM EMSAREA
 
 C***********************************************************************
-C  program body starts at line 186
+C  program body starts at line 192
 C
 C  DESCRIPTION:
 C       Construct Models3/EDSS area source file from data contained in
@@ -89,20 +89,6 @@ C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
-        INTEGER     TZONE       !  time zone
-        INTEGER     FIP
-        INTEGER     ID7
-        INTEGER     ID3
-        INTEGER     IPOL
-        INTEGER     TPF
-        INTEGER     INY
-        REAL        CEFF
-        REAL        REFF
-        REAL        RPEN
-        REAL        EMIS
-        REAL        VMISS
-        INTEGER     LFIP, LID7, LID3
-
 C...............   Time zone tables:  FIP-independent; state-only; state-county
 
         INTEGER         TZONE0
@@ -169,18 +155,34 @@ C...........   File unit numbers and logical names
 C...........   Other local variables
 
         INTEGER         C, S, I, J, K, V !  loop counters.
+        INTEGER         FIP
+        INTEGER         ID7
+        INTEGER         ID3
         INTEGER         IOS              !  I/O status
+        INTEGER         IPOL
+        INTEGER         INY
         INTEGER         IREC             !  input line (record) number
         INTEGER         L1, L2           !  start/end position of input LINE
-        LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
+        INTEGER         LFIP, LID7, LID3
+        INTEGER         TPF
+        INTEGER         TZONE       !  time zone
+
+        REAL            CEFF
+        REAL            EMIS
+        REAL            REFF
+        REAL            RPEN
+        REAL            TMPFAC  !  factor for annualizing emissions
+        REAL            VMISS
+
+        LOGICAL         EFLAG   !  input verification:  TRUE iff ERROR
         LOGICAL         MFLAG   !  input verification:  report missing species
         LOGICAL         DFLAG   !  input verification:  report duplicate records
         LOGICAL         AFLAG   !  accumulator: report missing species
-        REAL            TMPFAC  !  factor for annualizing emissions
+
         CHARACTER*2     TMPAA   !  temporal basis 'AA' or 'AD'
+        CHARACTER*8     PNAME   !  pollutant name
         CHARACTER*16    SCRBUF  !  scratch name buffer
         CHARACTER*16    COORDN  !  coordinate system name
-        CHARACTER*8     PNAME   !  pollutant name
         CHARACTER*240   LINE    !  input line from AREA file
         CHARACTER*256   MESG    !  for M3EXIT() output
 
@@ -243,7 +245,7 @@ C.......   Get file name; open input time zone file
      &           .TRUE., .TRUE., 'ZONES', 'EMSAREA' )
 
 
-        VFLAG  = .FALSE.
+        EFLAG  = .FALSE.
         TZONE0 = 5      !  default:  EST
         NZS    = 0
         NZF    = 0
@@ -439,7 +441,7 @@ C.......   Process this area source file
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"'
                     CALL M3MESG( MESG )
                     EMIS  =  0.0
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     GO TO  111
                 END IF
 
@@ -468,7 +470,7 @@ C-otag          IF ( RPEN .LT. 0 ) RPEN = 100.0
                 ELSE IF ( TMPAA .NE. 'AA' ) THEN
                     MESG = 'Bad temporal basis "' // TMPAA // '"'
                     CALL M3MESG( MESG )
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     GO TO  111
                 END IF
 
@@ -496,10 +498,10 @@ C-otag          IF ( RPEN .LT. 0 ) RPEN = 100.0
             
             CLOSE( ADEV )
 
-            IF ( VFLAG ) THEN
+            IF ( EFLAG ) THEN
                 CALL M3EXIT( 'EMSAREA', 0, 0, 
      &                       'Error reading AREA SOURCE file.', 2 )
-            END IF      !  if VFLAG
+            END IF      !  if EFLAG
 
             GO TO 101   !  to process next input file
 
@@ -529,7 +531,7 @@ C.......   then permute the records according to the result:
         ELSE
             VMISS = 0.0
         END IF
-        VFLAG = .FALSE.
+        EFLAG = .FALSE.
         AFLAG = .FALSE.
         LFIP  = IMISS3
         LID7  = IMISS3
@@ -626,7 +628,7 @@ C.......   then permute the records according to the result:
 
                 ELSE IF ( EMISVA( I ) .GT. 0.0 ) THEN
 
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     EMISV ( J,V ) = EMISV( J,V ) + EMISVA( I )
                     WRITE( MESG,94020 )
      &                  'Duplicate emissions record:  FIP:', FIP,
@@ -648,12 +650,23 @@ C.......   then permute the records according to the result:
             CALL M3EXIT( 'EMSAREA', 0, 0, MESG, 2 )            
         END IF
 
-        IF ( VFLAG ) THEN
-            MESG = 'Duplicate records found in input file'
+        IF ( EFLAG ) THEN
+            MESG = 'WARNING: Duplicate records found in input file.'
+            CALL M3MSG2( MESG )
+
             IF ( DFLAG ) THEN
-                CALL M3EXIT( 'EMSAREA', 0, 0, MESG, 2 )
+                MESG = 'NOTE: Environment variable RAW_DUP_CHECK is "Y"'
+                CALL M3MSG2( MESG )
+
+                CALL M3EXIT( 'EMSAREA', 0, 0, 
+     &                       'Duplicate sources not allowed because ' //
+     &                        'of RAW_DUP_CHECK', 2 )
             ELSE
-                CALL M3WARN( 'EMSAREA', 0, 0, MESG )
+                MESG = 'NOTE: Environment variable RAW_DUP_CHECK is "N"'
+                CALL M3MSG2( MESG )
+
+                CALL M3MSG2( 'Duplicate sources added because ' //
+     &                       'of RAW_DUP_CHECK' )
             END IF
         END IF
 
