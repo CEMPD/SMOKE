@@ -107,15 +107,16 @@ C
       INCLUDE 'YEARS4.I'
 
 cmh  LMOS Modification from Mobile5a
+cmh  DO NOT Add definition of ndi_di
 cmh  Add definition of ndi_di, TDNAME, ENVL
 c
-      CHARACTER*1 ndi_di
+c     CHARACTER*1 ndi_di
       CHARACTER*132 ENVL,TDNAME
 c
 cmh  LMOS Modification from Mobile5a
-cmh  Add ndi_di in common block SCENE3
+cmh  DO NOT Add ndi_di in common block SCENE3
 c
-      COMMON /SCENE3/ ndi_di
+c     COMMON /SCENE3/ ndi_di
 c
 cmh  LMOS Modification from Mobile5a
 cmh  Added FLAGS3 common block so the the temperature flag could be modified
@@ -160,14 +161,14 @@ C
   200 FORMAT(' ','Enter region, CY,SPD(1),AMBT,PCCN,PCHC,PCCC,Month: ')
 c
 cmh  LMOS Modification from Mobile5a
-cmh  Add the non-diurnal/diurnal flag to the end of the scenario record
+cmh  DO NOT Add the non-diurnal/diurnal flag to the end of the scenario record
 c
-c     READ(IOUGEN,100,ERR=99,END=99)IREJN,ICY,SPD(1),AMBT,PCCN,PCHC,PCCC
-c    *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
-c 100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0)
       READ(IOUGEN,100,ERR=99,END=99)IREJN,ICY,SPD(1),AMBT,PCCN,PCHC,PCCC
-     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3),ndi_di
-  100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0,A1)
+     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
+  100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0)
+c     READ(IOUGEN,100,ERR=99,END=99)IREJN,ICY,SPD(1),AMBT,PCCN,PCHC,PCCC
+c    *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3),ndi_di
+c 100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0,A1)
 c
 cmh add temperature override
       AMBT = TMPRTR
@@ -189,14 +190,14 @@ C
   210 FORMAT(' ','Enter region, CY,SPD(8),AMBT,PCCN,PCHC,PCCC,Month: ')
 c
 cmh  LMOS Modification from Mobile5a
-cmh  Add the non-diurnal/diurnal flag to the end of the scenario record
+cmh  DO NOT Add the non-diurnal/diurnal flag to the end of the scenario record
 c
-c     READ(IOUGEN,120,ERR=97,END=99) IREJN,ICY,SPD,AMBT,PCCN,PCHC,PCCC
-c    *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
-c 120 FORMAT(I1,1X,I2,12(1X,F4.1),I3,3F5.0)
       READ(IOUGEN,120,ERR=97,END=99) IREJN,ICY,SPD,AMBT,PCCN,PCHC,PCCC
-     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3),ndi_di
-  120 FORMAT(I1,1X,I2,12(1X,F4.1),I3,3F5.0,A1)
+     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
+  120 FORMAT(I1,1X,I2,12(1X,F4.1),I3,3F5.0)
+c     READ(IOUGEN,120,ERR=97,END=99) IREJN,ICY,SPD,AMBT,PCCN,PCHC,PCCC
+c    *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3),ndi_di
+c 120 FORMAT(I1,1X,I2,12(1X,F4.1),I3,3F5.0,A1)
 c
 C
 C     check for irejn = 4 and the Processing of the LEVs
@@ -217,14 +218,12 @@ C  A normal end of run also occurs, of course, when the first scenario record
 C  read encounters an end of file marker.
 C
 c
-cmh  LMOS Modification from Mobile5a
+cmh  NOTE: do not include LMOS Modification from Mobile5a
 cmh  Add assignment of temperature flag based on value of ndi_di
+cmh   15 IF(ndi_di .EQ. 'N') THEN TEMFLG=2
+cmh        ELSE TEMFLG = 1
 c
-c  15 IF(IREJN.EQ.0) GOTO 99
-   15 IF(ndi_di .EQ. 'N') THEN TEMFLG=2
-        ELSE TEMFLG = 1
-      IF(IREJN.EQ.0) GOTO 99
-c
+   15 IF(IREJN.EQ.0) GOTO 99
 C
 C  Otherwise, validate inputs.
 C
