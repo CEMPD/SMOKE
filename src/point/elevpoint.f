@@ -106,12 +106,12 @@ C...........   Indicator for which public inventory arrays need to be read
 C...........   Descriptions of plume-in-grid and elevated source approaches
         INTEGER, PARAMETER :: NELEVMTHD = 2
         INTEGER, PARAMETER :: NPINGMTHD = 2
-        CHARACTER*60, PARAMETER :: ELEVMTHD( NELEVMTHD ) = 
+        CHARACTER*60, PARAMETER :: ELEVMTHD( 0:NELEVMTHD-1 ) = 
      &(/ 'Allow Laypoint to determine elevated sources                ',
      &   'Use PELVCONFIG file to determine elevated sources           '
      &/)
 
-        CHARACTER*60, PARAMETER :: PINGMTHD( NPINGMTHD ) = 
+        CHARACTER*60, PARAMETER :: PINGMTHD( 0:NPINGMTHD-1 ) = 
      &(/ 'No PinG sources                                             ',
      &   'Use PELVCONFIG file to determine PinG sources               '
      &/)
@@ -464,9 +464,6 @@ C               groups must be computed to assign MEPSEs and MPSs.
 
         END IF  ! End of whether emissions are needed as a criteria
 
-        open(75,file='file1.txt')
-        open(85,file='file2.txt')
-
 C.........  Loop through sources to determine elevated and PinG sources.  If
 C           source is in a stack group, use group settings to compare to
 C           the elevated and/or PinG criteria.
@@ -597,9 +594,6 @@ C               is a maximum value, not an actual value
      &            LPING ( S )         ) .AND.
      &          ( IGRP .EQ. 0    .OR. 
      &            IGRP .NE. PGRP      )      ) NGROUP = NGROUP + 1
-
-            IF( LMAJOR( S ) .OR. 
-     &          LPING ( S )      )  write( 75,'(3I10)') S,IGRP, J
 
             PGRP = IGRP
 
