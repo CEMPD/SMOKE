@@ -125,6 +125,10 @@ c
 cmh  Add declarations and common block for temperature overide
       REAL             TMPRTR, TMIN, TMAX
       COMMON /TOVRIDE/ TMPRTR, TMIN, TMAX
+
+cmh  Add declarations and common block for flag for writing messages
+      LOGICAL WFLAG
+      COMMON /WARNING/ WFLAG
 C
 C  initilized values for the LEVs
 C
@@ -373,8 +377,12 @@ C        Block Data Subprograms 06, and 07 once did.
 C
 C        Loop for the two (2) ITECHs to be stored in the record.
 C
-   30    WRITE(IOUASK,240) DTNAME
+cmh add if statement
+   30    IF( WFLAG ) THEN
+             WRITE(IOUASK,240) DTNAME
+         ENDIF
   240    FORMAT(7X,' Reading TECH1&2 I/M Credit Data File...'/ 7X,A80)
+
 	 SMRTL1=DTNAME
 	 DO 45 ITECH=1,2
 C
