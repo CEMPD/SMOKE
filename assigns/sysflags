@@ -79,8 +79,8 @@ case Linux2_alpha:
     breaksw
 case Linux2_x86ifc:
     setenv FC  ifc
-    setenv FFLAGS   "$FFLAGS -DDBLBSLASH -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT}"
-    setenv DBGFLAGS "$DBGFLAGS -DDBLBSLASH -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT}"
+    setenv FFLAGS   "$FFLAGS -DDBLBSLASH -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -DDBLBSLASH -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-static -L${SMK_BIN} -L${TOOLS_BIN} -L${FS_BIN} -L${IOAPIDIR} -L${NETCDFDIR}"
     setenv LIBS_SYS     "-lsmoke -lfileset -ledsstools -lioapi -lnetcdf"
     setenv LIBS_DEBUG_SYS "-lsmoke.debug -lfileset.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
