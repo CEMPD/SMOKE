@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENLAYOUT( SDATE, STIME, TSTEP, EMLAYS, REP_LAYR, 
      &                         EXPLONLY, INVPROG, INVVERS, METSCEN, 
-     &                         CLOUDSHM, VGLVSXG, LNAME, RDEV )
+     &                         CLOUDSHM, VGLVSXG, GFLAG, LNAME, RDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -78,6 +78,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: METSCEN  ! met scenario name
         CHARACTER(*), INTENT (IN) :: CLOUDSHM ! cloud scheme name
         REAL        , INTENT (IN) :: VGLVSXG( 0:MXLAYS3 ) !  vertical coord values
+        LOGICAL     , INTENT (IN) :: GFLAG    ! true: using variable grid
         CHARACTER(*), INTENT(OUT) :: LNAME    ! layer fractions logical file nam
         INTEGER     , INTENT(OUT) :: RDEV     ! report unit number
 
@@ -116,6 +117,10 @@ C           already retrieved
 
         FDESC3D( 11 ) = '/PNTS FROM/ ' // INVPROG
         FDESC3D( 12 ) = '/PNTS VERSION/ ' // INVVERS
+        
+        IF( GFLAG ) THEN
+            FDESC3D( 13 ) = '/VARIABLE GRID/'
+        END IF
 
 C.........  Settings that depend on whether the output file is for all sources
 C           or only explicit sources
