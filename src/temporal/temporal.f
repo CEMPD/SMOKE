@@ -60,18 +60,12 @@ C.........  This module contains data for day- and hour-specific data
      &                      LDSPOA, LHSPOA, LHPROF,
      &                      INDXD, EMACD, INDXH, EMACH
 
-C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY:
-
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, MXIDAT, INVDNAM, INVDVTS
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, BYEAR, NIPPA, EANAM, NSRC, 
      &                     NIACT, INVPIDX, NIPOL, EAREAD, EINAM, ACTVTY
-
-C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY:
 
 C.........  This module is used for MOBILE6 setup information 
         USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN

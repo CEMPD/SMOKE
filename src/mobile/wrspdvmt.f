@@ -42,9 +42,6 @@ C.........  MODULES for public variables
 C...........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NSPDPROF, SPDNUMS, SPDPROFS
 
-C.........  This module is used for MOBILE6 setup information 
-        USE MODMBSET, ONLY:
-      
         IMPLICIT NONE
         
 C...........   INCLUDES

@@ -51,9 +51,6 @@ C...........   This module contains the cross-reference tables
 C...........   This module contains the temporal profile tables
         USE MODTMPRL, ONLY: MONREF, WEKREF, HRLREF
 
-C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY:
-
         IMPLICIT NONE
 
 C...........   INCLUDES

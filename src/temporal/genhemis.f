@@ -54,15 +54,9 @@ C...........   This module contains the cross-reference tables
 C...........   This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC
 
-C.........  This module contains emission factor tables and related
-        USE MODEMFAC, ONLY:
-
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: INDXD, INDXH, EMACD, EMACH, NDYSRC, NHRSRC,
      &                      LDSPOA, LHSPOA, LHPROF
-
-C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY:
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, CATEGORY, NIPPA, EAREAD, EACNV
