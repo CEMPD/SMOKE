@@ -312,8 +312,8 @@ C                   with SIC value and special identifier
                 IF( CSIC /= SICZERO .AND. TSCC /= SCCZERO ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Both SCC and SIC ' //
      &                     'values are given at line', I, CRLF() //
-     &                     BLANK10 // '. Only the SCC wil be used ' //
-     &                     'for this x-ref entry.'
+     &                     BLANK10 // '. Only the SCC will be used ' //
+     &                     'for this cross-reference entry.'
                     CALL M3MSG2( MESG )
 
                 ELSE IF( CSIC /= SICZERO ) THEN
