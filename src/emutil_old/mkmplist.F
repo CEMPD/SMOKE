@@ -105,7 +105,6 @@ C.........  Other local variables
 
         INTEGER     CY1, CY2     ! Temporary county IDs
         INTEGER     FIP          ! Temporary FIP ID
-        INTEGER     ST1, ST2     ! Temporary FIP IDs
         INTEGER     LSID         ! Previous state ID
         INTEGER     LSPID        ! Previous speed index
         INTEGER     LMFIP        ! Previous MFIP
@@ -654,8 +653,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93030   FORMAT( I3.3, 1X, '0' )
 
-93040   FORMAT( '0 000 0 001 0 0 ', I4.4,
-     &          ' 001 1 0 0 0 0   0 0 0   0 0 0 0' )
+93040   FORMAT( '0 000 0 001 0 00 ', I4.4,
+     &          ' 001 1 0 0 0 0     0     0 0 0     0 0 0 0' )
 
 C...........   Internal buffering formats............ 94xxx
 
