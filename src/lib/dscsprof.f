@@ -97,10 +97,11 @@ C...........   Local variables
 
         REAL           FAC1, FAC2, FAC3 ! tmp speciation profile factors
 
-        LOGICAL     :: EFLAG = .FALSE.   ! true: error found
+        LOGICAL     :: EFLAG    = .FALSE.   ! true: error found
+        LOGICAL     :: INHEADER = .FALSE.   ! true: in file header
 
-        CHARACTER*200  LINE       ! read buffer for a line
-        CHARACTER*300  MESG       ! message buffer
+        CHARACTER*256  LINE       ! read buffer for a line
+        CHARACTER*256  MESG       ! message buffer
         
         CHARACTER(LEN=SPNLEN3)  TMPPRF     ! tmp profile number
         CHARACTER(LEN=IOVLEN3)  POLNAM     ! tmp pollutant name
@@ -162,6 +163,27 @@ C              mole-based conversions
      &              'file at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
+            END IF
+
+C.................  Skip blank and comment lines
+                IF( LINE .EQ. ' ' ) CYCLE
+                IF( LINE(1:1) .EQ. CINVHDR ) CYCLE
+
+C.............  Skip all lines until the end of the header...
+C.............  Check for header start
+            L = INDEX( LINE, HDRSTART ) 
+            IF( L .GT. 0 ) INHEADER = .TRUE.
+
+            L = INDEX( LINE, HDREND )
+            IF( INHEADER ) THEN
+                IF( L .GT. 0 ) THEN
+                    INHEADER = .FALSE.
+                END IF
+                CYCLE
+            ELSE IF ( L .GT. 0 ) THEN
+                WRITE(MESG,94010) 'Header end found before header '//
+     &                            'started at line', IREC
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
 C.............  Separate the line of data into each part
