@@ -128,7 +128,7 @@ C...........   Other local variables
         INTEGER       LE                         ! location of end of string
         INTEGER       MXNFIL                     ! max no. of 2-d input files
         INTEGER       NCOLS                      ! no. grid columns
-        INTEGER       NF2D                       ! no. of 2-d input files
+        INTEGER       NFILE                      ! no. of 2-d input files
         INTEGER       NGRID                      ! no. grid cells
         INTEGER       NLAYS                      ! no. layers
         INTEGER       NROWS                      ! no. grid rows
@@ -167,16 +167,17 @@ C.........  Retrieve values of environment variables
      &                   'Use layer fractions or not', .FALSE., IOS )
 
 C.........  Read names of input files and open files
-        MESG = 'Enter logical name for 2-D GRIDDED INPUTS list'
+        MESG = 'Enter logical name for 2-D AND 3-D GRIDDED INPUTS list'
 
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
-     &                      'NLST2D', PROGNAME   )
-        IF( LFLAG ) THEN
-            PNAME = PROMPTMFILE(
-     &         'Enter logical name for 3-D GRIDDED INPUT file',
-     &         FSREAD3, 'LGTS', PROGNAME )
-        END IF
+     &                      'FILELIST', PROGNAME   )
  
+STOPPED HERE:
+C I'm in the process of changing input to accept a list of 2d and 3d files, and
+c   being able to merge multiple 3d files as well as output on a different 
+c   grid and permit all input files to be on different grids (with the same
+c   resolution and projection, but different origins).
+
 C.........  Determine maximum number of input files in file
         MXNFIL = GETFLINE( IDEV, 'List of files to merge' )
 
@@ -247,22 +248,22 @@ C.............  Read file names - exit if read is at end of file
         END DO
 27      CONTINUE
 
-        NF2D = F
+        NFILE = F
 
-        IF( NF2D .GT. MXNFIL ) THEN
+        IF( NFILE .GT. MXNFIL ) THEN
             WRITE( MESG,94010 )
      &        'INTERNAL ERROR: Dimension mismatch.  Input file count:',
-     &        NF2D, 'program (MXNFIL):', MXNFIL
+     &        NFFILE, 'program allows (MXNFIL):', MXNFIL
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-        ELSEIF( .NOT. LFLAG .AND. NF2D .EQ. 0 ) THEN
+        ELSEIF( NFILE .EQ. 0 ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, 'No input files!', 2 )
 
         ENDIF
 
 C.........  Get file descriptions and store for all input files
 C.........  Loop through 2D input files
-        DO F = 1, NF2D
+        DO F = 1, NFILE
 
             NAM = FNAME( F )
             IF ( .NOT. DESC3( NAM ) ) THEN
@@ -290,7 +291,7 @@ C.........  Loop through 2D input files
 C.........  Compare grids from all files with each other
         NROWS = NROWSA( 1 )
         NCOLS = NCOLSA( 1 )
-        DO F = 1, NF2D
+        DO F = 1, NFILE
 
             IF( NROWSA( F ) .NE. NROWS .OR. 
      &          NCOLSA( F ) .NE. NCOLS      ) THEN
@@ -361,7 +362,7 @@ C.........  Find maximum seconds count b/w file and reference, using point
 C.........  sources to initialize maximum 
 
         SECSMAX = SECSDIFF( RDATE, STIMEA( 1 ), SDATEP, STIMEP )
-        DO F = 1, NF2D
+        DO F = 1, NFILE
             SECS = SECSDIFF( RDATE, STIMEA( 1 ), 
      &                       SDATEA( F ), STIMEA( F ) )
             SECSMAX = MAX( SECSMAX, SECS )
@@ -382,7 +383,7 @@ C.........  Set duration given shortest file - initialize w/ point
         CALL NEXTIME( EDATE, ETIME, DURATP * 10000 )
         SECSMIN = SECSDIFF( SDATE, STIME, EDATE, ETIME ) ! for point
 
-        DO F = 1, NF2D
+        DO F = 1, NFILE
             EDATE = SDATEA( F )
             ETIME = STIMEA( F )
             CALL NEXTIME( EDATE, ETIME, DURATA( F ) * 10000 )
@@ -399,7 +400,7 @@ C.........  Build master output variables list
         NVOUT = 0
 
 C.........  Loop through 2-D input files
-        DO F = 1, NF2D
+        DO F = 1, NFILE
 
 C.............  Loop through variables in the files
             DO V = 1, NVARSA( F )
@@ -481,7 +482,7 @@ C........  set up logical arrays for which files have which species
                 IF( J .GT. 0 ) LVOUTP( V ) = .TRUE.
             ENDIF
     
-            DO F = 1, NF2D
+            DO F = 1, NFILE
                 LVOUTA( V,F ) = .FALSE.
 
                 J = INDEX1( VNM, NVARSA( F ), VNAMEA( 1,F ) )
@@ -518,7 +519,7 @@ C.............  Loop through species
 C.................  Initialize 2-d variables to zero, in case any are not read
                 E2D = 0.
 
-                DO F = 1, NF2D
+                DO F = 1, NFFILE
 
 C.................  If file has species, read (do this for all files)...
 
@@ -558,7 +559,7 @@ C.................  Initialize
 
 C.................  Add up emissions in layer 1 for hour/species
 
-                DO F = 1, NF2D
+                DO F = 1, NFILE
                     DO C = 1, NGRID
 
                         E3D( C,1 ) = E3D( C,1 ) + E2D( C,F )

@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENMRGIN
+        SUBROUTINE OPENMRGIN( SRGNROWS, SRGNCOLS, SRGGRDNM, SRGFMT )
 
 C***********************************************************************
 C  subroutine OPENMRGIN body starts at line
@@ -72,6 +72,13 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CRLF, ENVYN, GETCFDSC, GETIFDSC, PROMPTFFILE, 
      &            PROMPTMFILE, SECSDIFF
 
+C...........   Subroutine arguments
+
+        INTEGER      , INTENT (OUT) :: SRGNROWS  ! no. rows in surrogates file
+        INTEGER      , INTENT (OUT) :: SRGNCOLS  ! no. columns in surrogates file
+        CHARACTER(*) , INTENT (OUT) :: SRGGRDNM  ! name of srgs grid
+        CHARACTER(*) , INTENT (OUT) :: SRGFMT    ! gridding surrogates format
+
 C.........  Other local variables
 
         INTEGER         I, J, N, V       ! counters and indices
@@ -131,6 +138,22 @@ C.........  Get value of these controls from the environment
         MESG = 'Indicator for using activities list'
         KFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, KFLAG, IOS )
 
+C.........  If reporting state and/or county emissions, and processing for
+C           biogenic sources, get gridding surrogates
+        IF( LREPANY .AND. BFLAG ) THEN
+
+            GDEV = PROMPTFFILE( 
+     &             'Enter logical name for SURROGATE COEFFICIENTS file',
+     &             .TRUE., .TRUE., 'BGPRO', PROGNAME )
+
+C.............  Read surrogate file header    
+            CALL RDSRGHDR( GDEV, SRGFMT )   ! CHKGRID may be initialized here
+            SRGGRDNM = GRDNM
+            SRGNCOLS = NCOLS
+            SRGNROWS = NROWS
+
+        END IF
+
 C.........  Initialize gridded information with grid description file
         IF( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD3D, GDTYP3D, COORUN3D,
      &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
@@ -141,7 +164,7 @@ C.........  Initialize gridded information with grid description file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        CALL CHKGRID( 'general', 'GRIDDESC', 0, EFLAG )   ! Initialization call
+        CALL CHKGRID( 'general', 'GRIDDESC', 1, EFLAG )  ! May get initlzd here
         
 C.........  For area sources... 
         IF( AFLAG ) THEN
@@ -217,7 +240,7 @@ C               compare or initialize grid information.
 
             CALL RETRIEVE_IOAPI_HEADER( AGNAME )
             CALL CHKSRCNO( 'area', 'AGMAT', NTHIK3D, NASRC, EFLAG )
-            CALL CHKGRID( 'area', 'GMAT', 0, EFLAG )
+            CALL CHKGRID( 'area', 'GMAT', 1, EFLAG )
             ANGMAT = NCOLS3D
 
 C.............  Open speciation matrix, compare number of sources, store
@@ -309,7 +332,7 @@ C.........  If we have biogenic sources
 
             CALL RETRIEVE_IOAPI_HEADER( BTNAME )
             CALL UPDATE_TIME_INFO( BTNAME )
-            CALL CHKGRID( 'biogenics', 'GRID', 0, EFLAG )
+            CALL CHKGRID( 'biogenics', 'GRID', 1, EFLAG )
 
             IF( LMETCHK ) CALL CHECK_MET_INFO( 'biogenics' ) 
 
@@ -336,7 +359,7 @@ C.............  Store biogenic pollutant names and units
             BEINAM ( 1 ) = 'BIO' // ETJOIN // 'NOX'
             BEINAM ( 2 ) = 'BIO' // ETJOIN // 'VOC'
             BONAMES      = BEINAM
-            BOUNITS      = UNITS3D( 1 )
+            BOUNITS      = UNITS3D( 1 )  ! array
 
         END IF  ! End of section for biogenic sources
 
@@ -418,8 +441,9 @@ C.................  Store activity names and other information
                 NVAR = NVAR + I
                 CALL STORE_VNAMES( NVAR+1, NPACT, MNIACT, 
      &                             MEANAM( MNIPOL+1 )     )
-                CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, I + 1, 1,
-     &                              MONAMES, MOUNITS )
+                CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, 1, 1,
+     &                              MONAMES( MNIPOL+1 ), 
+     &                              MOUNITS( MNIPOL+1 )             )
 
             END IF
 
@@ -431,7 +455,7 @@ C               compare or initialize grid information.
 
             CALL RETRIEVE_IOAPI_HEADER( MGNAME )
             CALL CHKSRCNO( 'mobile', 'MGMAT', NTHIK3D, NMSRC, EFLAG )
-            CALL CHKGRID( 'mobile', 'GMAT', 0, EFLAG )
+            CALL CHKGRID( 'mobile', 'GMAT', 1, EFLAG )
             MNGMAT = NCOLS3D
 
 C.............  Open speciation matrix, compare number of sources, store
@@ -567,7 +591,7 @@ C               compare or initialize grid information.
 
             CALL RETRIEVE_IOAPI_HEADER( PGNAME )
             CALL CHKSRCNO( 'point', 'PGMAT', NTHIK3D, NPSRC, EFLAG )
-            CALL CHKGRID( 'point', 'GMAT', 0, EFLAG )
+            CALL CHKGRID( 'point', 'GMAT', 1, EFLAG )
 
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable names, and store mass or moles.
@@ -655,6 +679,25 @@ C               met information, and store the vertical coordinates info
 
                 IF( LMETCHK ) CALL CHECK_MET_INFO( 'point' ) 
 
+C.............  Get file name and open daily input inventory file
+            ELSE IF( EXPLFLAG ) THEN
+
+                MESG = 'Enter logical name for EXPLICIT LAYER ' //
+     &                 'FRACTIONS MATRIX'
+                PHNAME = PROMPTMFILE( MESG,FSREAD3,'PLAY_EX',PROGNAME )
+
+C.................  Check to see if appropriate variable list exists
+                CALL RETRIEVE_IOAPI_HEADER( PHNAME )
+                CALL CHKSRCNO( 'point', PHNAME, NTHIK3D, NPSRC, EFLAG )
+                CALL UPDATE_TIME_INFO( PHNAME )
+
+                NHRSRC = NROWS3D
+
+            END IF             ! End of layer fractions open
+
+C.............  If either PLAY or PLAY_EX were just opened, store vertical
+C               layer information from the header of these files.
+            IF ( LFLAG .OR. EXPLFLAG ) THEN
                 EMLAYS = NLAYS3D
                 VGTYP  = VGTYP3D
                 VGTOP  = VGTOP3D
@@ -670,7 +713,7 @@ C                   to the potential for 0-based or 1-based VGLVS3D
                     J = J + 1
                 END DO
 
-            END IF  ! End of layer fractions open
+            END IF
 
 C.............  For plume-in-grid outputs or for UAM-style elevated point
 C               sources (PTSRCE input file)...
@@ -698,7 +741,7 @@ C.................  Open stack groups file output from Elevpoint
                 NGROUP = NROWS3D
                 PVSDATE = SDATE3D
                 PVSTIME = STIME3D
-                CALL CHKGRID( 'point', 'GROUPS', 0, EFLAG )
+                CALL CHKGRID( 'point', 'GROUPS', 1, EFLAG )
 
             END IF
 
@@ -734,18 +777,6 @@ C           when they aren't going to be output
         CDEV = PROMPTFFILE( 
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
-
-C.........  If reporting state and/or county emissions, and processing for
-C           biogenic sources, get gridding surrogates
-        IF( LREPANY ) THEN
-
-            IF( BFLAG ) THEN
-                GDEV = PROMPTFFILE( 
-     &             'Enter logical name for SURROGATE COEFFICIENTS file',
-     &             .TRUE., .TRUE., 'BGPRO', PROGNAME )
-            END IF
-
-        END IF
 
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort
@@ -783,6 +814,13 @@ C.........  Give a note if running for a projected year
             CALL M3MSG2( MESG )
 
         END IF
+
+C.........  Write message stating grid name and description
+        N = LEN_TRIM( GRDNM )
+        MESG = 'NOTE: Output grid "' // GRDNM( 1:N ) // 
+     &         '" set; described as' // CRLF() // BLANK10 // GDESC
+        CALL M3MSG2( MESG )
+
 
         RETURN
 
@@ -1168,6 +1206,7 @@ C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN)     :: IODESC( * )
 
 C.............  Local variables
+            INTEGER           L
             INTEGER           YY      ! tmp year
             LOGICAL           STRICT  ! flag for strict checks or not
             CHARACTER*20      BUFFER  ! program name buffer
@@ -1200,7 +1239,18 @@ C.............  If time information has already been initialized...
      &                        CRLF() // BLANK10 //
      &                        ', does not equal emissions year of ' //
      &                        SAVNAM( 1:FLEN ) // ' file:', BYEAR
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........................  If there is projection, abort
+                        IF ( PRJFLAG ) THEN
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........................  Otherwise, make it a warning
+                        ELSE
+                            L = LEN_TRIM( MESG )
+                            MESG = 'WARNING: ' // MESG( 1:L )
+                            CALL M3MSG2( MESG )
+                        END IF
+
                     END IF
 
                 ELSE IF ( STRICT            .AND. 

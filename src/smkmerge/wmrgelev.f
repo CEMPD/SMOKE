@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -83,7 +83,8 @@ C.........  Local parameters
 
 C.........  Variables allocated by module settings...
         INTEGER, ALLOCATABLE, SAVE :: ESRTIDX( : ) ! major srcs sorting index
-        INTEGER, ALLOCATABLE, SAVE :: EGRPIDX( : ) ! group index
+        INTEGER, ALLOCATABLE, SAVE :: EIDX2  ( : ) ! another index
+        INTEGER, ALLOCATABLE, SAVE :: ELAYER ( : ) ! addt'l srcs for explicit
 
         REAL   , ALLOCATABLE :: EOUTHT ( : ) ! output stack heights [m]
         REAL   , ALLOCATABLE :: EOUTDM ( : ) ! output stack diameters [m]
@@ -95,23 +96,30 @@ C.........  Variables allocated by module settings...
         CHARACTER(LEN=STKLEN3), ALLOCATABLE :: ECSRCA   ( : ) ! FIPS//plt//stk
         CHARACTER(LEN=STKLEN3), ALLOCATABLE :: EOUTCSRC ( : ) ! FIPS//plt//stk
 
+C.........  Allocatable array for fake stack heights for explicit plums
+        REAL, ALLOCATABLE :: LAYRMID( : )
+
+C.........  Fixed size arrays
+        REAL            ESUM   ( MXLAYS3 )  ! emissions data sum
+
 C.........  UAM-format specific variables
         INTEGER         DDEVOUT             ! diffbreak file unit number
         INTEGER         ESWITCH             ! 0=no, 1=yes - print vert mthds tbl
         INTEGER         GSWITCH             ! 0=no, 1=yes - print output grid
         INTEGER         LSWITCH             ! 0=no, 1=yes - print src locs tbl
-        INTEGER         MDEVOUT             ! metscalars file unit number
+        INTEGER      :: MDEVOUT = 0         ! metscalars file unit number
         INTEGER         MSWITCH             ! 0=no, 1=yes - print methods tbl
+        INTEGER         NH                  ! tmp no. explicit sources
         INTEGER         NPARAM              ! no. paramaters for control pkt
         INTEGER         NULAYS              ! no. UAM model layers
         INTEGER         NZLOWR              ! no. layers below Diffbreak height
         INTEGER         NZUPPR              ! no. layers above Diffbreak height
-        INTEGER         PDEVOUT             ! PTSRCE output unit no.
-        INTEGER         RDEVOUT             ! regiontop file unit number
-        INTEGER         TDEVOUT             ! temperatur file unit number
+        INTEGER      :: PDEVOUT = 0         ! PTSRCE output unit no.
+        INTEGER      :: RDEVOUT = 0         ! regiontop file unit number
+        INTEGER      :: TDEVOUT = 0         ! temperatur file unit number
         INTEGER         USWITCH             ! 0=no, 1=yes - print units table
         INTEGER         VSWITCH             ! 0=no, 1=yes - print values tbl
-        INTEGER         WDEVOUT             ! wind file unit number
+        INTEGER      :: WDEVOUT = 0         ! wind file unit number
 
         REAL            HTSUR               ! height of surface layer [m]
         REAL            HTLOWR              ! min cell ht b/w sfc and diffbr [m]
@@ -124,7 +132,7 @@ C.........  UAM-format specific variables
         CHARACTER*60        :: FNOTE        ! UAM file header note
 
 C.........  Other local variables
-        INTEGER          I, J, K, L, LK, N, S 
+        INTEGER          I, J, K, KK, L, LL, LM, LN, M, N, S 
 
         INTEGER          COL                 ! tmp column
         INTEGER          EML                 ! tmp emissions layers
@@ -137,11 +145,13 @@ C.........  Other local variables
         INTEGER          IOS                 ! i/o status
         INTEGER          JDATEP1             ! julian date, plus 1 time step
         INTEGER          JTIMEP1             ! time, plus 1 time step
+        INTEGER          NEXPLOOP            ! no. for explicit plume loop
         INTEGER          NOUT                ! number output stacks
         INTEGER, SAVE :: PTIME = -9          ! previous call's time (HHMMSS)
         INTEGER          ROW                 ! tmp row
 
-        REAL             ESUM                ! emissions data sum
+        REAL             DM                  ! tmp stack diameter [m]
+        REAL             HT                  ! tmp stack height [m]
         REAL             XLOC                ! tmp x location
         REAL             XMAX                ! rightmost x location
         REAL             YLOC                ! tmp y location
@@ -179,30 +189,64 @@ C.............  Get type of plume rise calculation from environment
             CALL ENVSTR( 'SMK_ASCIIELEV_FMT', MESG, 'UAM', OUTFMT, IOS )
             IF( VTYPE .EQ. 'UAM4' ) VTYPE = 'UAM'
 
-C.............  Allocate memory for local elevated sources arrays
-            ALLOCATE( ESRTIDX( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'ESRTIDX', PROGNAME )
-            ALLOCATE( ECSRCA( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'ECSRCA', PROGNAME )
-            ALLOCATE( EOUTCSRC( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EOUTCSRC', PROGNAME )
-            ALLOCATE( EGRPIDX( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EGRPIDX', PROGNAME )
-            ALLOCATE( EOUTHT( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EOUTHT', PROGNAME )
-            ALLOCATE( EOUTDM( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EOUTDM', PROGNAME )
-            ALLOCATE( EOUTTK( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EOUTTK', PROGNAME )
-            ALLOCATE( EOUTVE( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EOUTVE', PROGNAME )
-            ALLOCATE( EOUTXL( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EOUTXL', PROGNAME )
-            ALLOCATE( EOUTYL( NMAJOR ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EOUTYL', PROGNAME )
+C.............  Set size for allocating output elevated arrays
+C.............  Adjustment for EXPLFLAG so that one record for each layer of
+C               each explicit source can be inserted.
+            I = NMAJOR
+            IF ( EXPLFLAG ) I = I - NHRSRC + EMLAYS * NHRSRC
 
-C.............  Initialize local elevated sources arrays
-            EGRPIDX = 0   ! array
+C.............  Allocate memory for local elevated sources arrays
+            ALLOCATE( ESRTIDX( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ESRTIDX', PROGNAME )
+            ALLOCATE( ECSRCA( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ECSRCA', PROGNAME )
+            ALLOCATE( EOUTCSRC( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUTCSRC', PROGNAME )
+            ALLOCATE( EOUTHT( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUTHT', PROGNAME )
+            ALLOCATE( EOUTDM( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUTDM', PROGNAME )
+            ALLOCATE( EOUTTK( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUTTK', PROGNAME )
+            ALLOCATE( EOUTVE( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUTVE', PROGNAME )
+            ALLOCATE( EOUTXL( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUTXL', PROGNAME )
+            ALLOCATE( EOUTYL( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUTYL', PROGNAME )
+            ALLOCATE( EIDX2( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EIDX2', PROGNAME )
+            ALLOCATE( ELAYER( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ELAYER', PROGNAME )
+
+            EIDX2 = 0   ! array
+            ELAYER = 0  ! array
+
+C.............  If needed for explicit plume rise, allocate and set local array
+C               with the mid-point of layers to use as fake stack heights.
+            IF ( EXPLFLAG ) THEN
+
+                ALLOCATE( LAYRMID( EMLAYS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LAYRMID', PROGNAME )
+
+C.................  Method of midpoint depends on vertical structure
+                SELECT CASE ( VGTYP ) 
+                CASE ( VGHVAL3 ) 
+
+                    DO L = 1, EMLAYS
+                        LAYRMID( L ) = VGLVS( L-1 ) + 0.5 *
+     &                               ( VGLVS( L ) - VGLVS( L-1 ) )
+                    END DO
+
+                CASE DEFAULT
+                    WRITE( MESG,94010 ) 'Do not know ' //
+     &                     'how to set layer midpoints for layer '//
+     &                     'structure type', VGTYP
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END SELECT
+
+            END IF
 
 C.............  Read stack groups file variables. Read in group ID using x-loc
 C               array because SAFE_READ3 is expecting a real array to be
@@ -246,8 +290,13 @@ C.............  Sort elevated sources
 
 C.............  Create indices from major-sources list to output list
 C.............  Eliminate sources that are not in the domain
+C.............  Add sources that have explicit plume rise and require fake
+C               stacks to ensure that their emissions get put in the correct
+C               model layers.
+            K  = 0
+            KK = 0
+            M  = 0
             PECS = ' '
-            K = 0
             DO I = 1, NMAJOR
 
                 J   = ESRTIDX ( I )
@@ -306,29 +355,63 @@ c                    CALL FMTCSRC( ECS, 3, BUFFER, L )
 
                 END IF
 
+C.................  If this elevated source is different from the previous one
                 IF( ECS .NE. PECS ) THEN
+
                     K = K + 1
 
-                    EOUTCSRC( K ) = ECS
+C.....................  Check to see if source has explicit plume rise and 
+C                       needs fake stacks
+                    IF ( EXPLFLAG ) M = FIND1( S, NHRSRC, ELEVSRC )
+                    IF ( M .GT. 0 ) THEN
+                        NEXPLOOP = EMLAYS
+                    ELSE
+                        NEXPLOOP = 1
+                    END IF
 
-C.....................  Set stack parameters and coordinates
-                    EOUTHT ( K ) = GRPHT ( N )
-                    EOUTDM ( K ) = GRPDM ( N )
-                    EOUTTK ( K ) = GRPTK ( N )
-                    EOUTVE ( K ) = GRPVE ( N ) * 3600.    ! m/s -> m/hr
-                    EOUTXL ( K ) = XLOC
-                    EOUTYL ( K ) = YLOC
+                    DO L = 1, NEXPLOOP
+                    
+                        KK = KK + 1
+                        EOUTCSRC( KK ) = ECS
+
+C.........................  Set stack height depending on whether the source
+C                           has explicit plume rise or not
+                        IF( M .GT. 0 ) THEN
+                            HT = LAYRMID( L )
+                        ELSE
+                            HT = GRPHT ( N )
+                        END IF
+
+C.........................  Set stack diameter depending on whether the source
+C                           is a PinG source (for UAM-V & CAMx), or whether
+C                           it's an explicit plume rise source (REMSAD).
+                        DM = GRPDM ( N )
+                        IF( ALLOCATED( LPING ) ) THEN
+                            IF( LPING( S ) ) DM = -DM
+                        END IF
+                        IF( M .GT. 0 ) DM = -DM
+
+C.........................  Store arrays for writing emissions
+                        EIDX2  ( KK ) = I
+                        ELAYER ( KK ) = L
+
+C.........................  Set output stack parameters and coordinates
+                        EOUTHT ( KK ) = HT
+                        EOUTDM ( KK ) = DM
+                        EOUTTK ( KK ) = GRPTK ( N )
+                        EOUTVE ( KK ) = GRPVE ( N ) * 3600.    ! m/s -> m/hr
+                        EOUTXL ( KK ) = XLOC
+                        EOUTYL ( KK ) = YLOC
+
+                    END DO
 
                     PECS = ECS
 
-
                 END IF
 
-                EGRPIDX( J ) = K
+            END DO   ! end of major sources
 
-            END DO
-
-            NOUT = K
+            NOUT = KK
 
             IF( EFLAG ) THEN
                 MESG = 'Problem processing elevated sources.'
@@ -345,7 +428,7 @@ C.................  Get type of plume rise calculation from environment
      &                       VTYPE, IOS )
 
 C.................  Get UAM file note
-                NOTEDEF = 'UAM elevated point emissions from ' // 
+                NOTEDEF = 'UAM elev pt emis from ' // 
      &                    PROGNAME
         	MESG = 'UAM file note for output file'
         	CALL ENVSTR( 'UAM_NOTE', MESG, NOTEDEF , UNOTE, IOS )
@@ -542,7 +625,7 @@ C                       the grid is lat-lon or not
 
             FIRSTIME = .FALSE.
 
-        END IF
+        END IF        ! end if firstime routine is called
 
 C.........  Write out date/time-specific data...
 C.........  Data previously merged in MRGELEV
@@ -581,6 +664,13 @@ C.............  Provide same output as PSTPNT with variable plume-rise method
 
         END IF    ! End UAM/CAMx elevated point sources format
 
+C.........  But first determine how many explicit sources
+C           there are for the current hour.
+        DO N = 1, NHRSRC
+            IF ( INDXH( N ) .EQ. 0 ) EXIT
+        END DO
+        NH = N - 1
+
 C.........  Write out emissions data for UAM/CAMx elevated point sources
 
         IF( OUTFMT .EQ. 'UAM' ) THEN
@@ -593,46 +683,101 @@ C               for the next species.
         	WRITE( EVDEV, 93000 ) 'ALL       ALL            0.000'
             END IF
 
-            LK = -9
-            ESUM = 0.
-            DO I = 1, NMAJOR
+            LN = 0
+            LM = 0
+            LL = 0
+            ESUM = 0.  ! array
+            PECS = ' '
+            DO N = 1, NOUT
+
+                I   = EIDX2 ( N )
+                L   = ELAYER( N )
+
+                IF ( I .LE. 0 ) CYCLE   ! record is skipped
 
                 J   = ESRTIDX ( I )
-                K   = EGRPIDX ( J )
+                S   = ELEVSIDX( J )                
+                ECS = ECSRCA  ( J )
 
+                IF ( EXPLFLAG ) M = FIND1( S, NHRSRC, ELEVSRC )
+
+C NOTE: This algorithm will not work if there are explicit elevated sources
+C    N: that have duplicates.
+
+C.................  If K is different from last time, write emissions for
+C                   previous elevated source and initialize
 C.................  If K is zero, then source is being skipped
-                IF( K .EQ. 0 ) THEN
-                    CYCLE
+                IF ( PECS .NE. ECS .OR. L .NE. LL ) THEN
 
-C.................  If current record is new, print out previous value and
-C                   initialize emissions
-                ELSE IF( K .NE. LK ) THEN
-                    
-                    IF( ESUM .NE. 0. ) THEN 
+C.....................  Write emissions for standard sources
+                    IF( LM .LE. 0 ) THEN
 
-                        CALL GET_ESUM_FORMAT( VNAME, ESUM, EFMT )
-                        WRITE( EVDEV, EFMT ) LK, VNAME, ESUM
+                        IF( ESUM( 1 ) .NE. 0. ) THEN 
+                            CALL GET_ESUM_FORMAT( VNAME, ESUM(1), EFMT )
+                            WRITE( EVDEV, EFMT ) LN, VNAME, ESUM(1)
+                        END IF
+                        ESUM( 1 ) = 0.
+
+C.....................  Write emissions for explicit sources
+                    ELSE
+
+                        IF( ESUM( LL ) .NE. 0. ) THEN
+                            CALL GET_ESUM_FORMAT( VNAME,ESUM(LL),EFMT )
+                            WRITE( EVDEV,EFMT ) LN, VNAME, ESUM( LL )
+                        END IF
+                        ESUM( L ) = 0.
 
                     END IF
 
-                    ESUM = ELEVEMIS( I )
+C.....................  Initialize for standard sources
+                    IF( M .LE. 0 ) THEN
+                        ESUM( 1 ) = ELEVEMIS( I )
 
-C.................  If current record is for the same plant and stack, sum
+C.....................  Initialize for explicit sources
+                    ELSE
+                        ESUM( L ) = ELEVEMIS( I ) * LFRAC( M,L )
+
+                    END IF
+
+C.................  If source is the same as the previous iteration, sum 
 C                   emissions
-                ELSE IF( K .EQ. LK ) THEN
-                    ESUM = ESUM + ELEVEMIS( I )
+                ELSE
+
+C.....................  For standard sources
+                    IF( M .LE. 0 ) THEN
+
+                        ESUM( 1 ) = ESUM( 1 ) + ELEVEMIS( I )
+
+C.....................  For explicit sources
+                    ELSE
+                        ESUM(L) = ESUM(L) + ELEVEMIS(I) * LFRAC(M,L)
+
+                    END IF
 
                 END IF
 
-                LK = K
+                LN = N
+                LL = L
+                LM = M
+                PECS = ECS
 
             END DO
 
-C.............  Output for final record...
-            IF( ESUM .NE. 0. ) THEN
+C.............  Output for final record(s)...
+C.............  For standard sources
+            IF( M .LE. 0 ) THEN
 
-                CALL GET_ESUM_FORMAT( VNAME, ESUM, EFMT )
-                WRITE( EVDEV, 93090 ) K, VNAME, ESUM
+                IF( ESUM( 1 ) .NE. 0. ) THEN 
+                    CALL GET_ESUM_FORMAT( VNAME, ESUM(1), EFMT )
+                    WRITE( EVDEV, EFMT ) NOUT, VNAME, ESUM(1)
+                END IF
+
+C.............  For explicit sources
+            ELSE
+                IF( ESUM( L ) .NE. 0. ) THEN
+                    CALL GET_ESUM_FORMAT( VNAME, ESUM( L ), EFMT )
+                    WRITE( EVDEV,EFMT ) NOUT, VNAME, ESUM( L )
+                END IF
 
             END IF
 
@@ -821,6 +966,5 @@ C.............  Value is too large for
 94020       FORMAT( 10( A, :, E12.5, :, 1X ) )
 
             END SUBROUTINE GET_ESUM_FORMAT
-
 
         END SUBROUTINE WMRGELEV

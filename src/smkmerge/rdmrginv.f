@@ -42,6 +42,9 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
 
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
+
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
 
@@ -62,7 +65,7 @@ C.........  Local allocatable parameters
         INTEGER, ALLOCATABLE :: SIDX  ( : )  ! sorting index
 
 C.........  Local parameters
-        INTEGER       J, K, N, S      ! pointers and counters
+        INTEGER       J, K, L, N, S      ! pointers and counters
 
         INTEGER       IOS          ! i/o status
         INTEGER       MXNFIP       ! max no. FIPS codes

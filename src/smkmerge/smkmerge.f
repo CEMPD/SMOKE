@@ -94,12 +94,17 @@ C...........   Local temporary array for input and output variable names
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: OUTNAMES( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: INNAMES ( : )
 
+C...........   Local allocatable arrays for creating list of all explicit srcs
+        INTEGER, ALLOCATABLE :: TMPSRC( : )
+        INTEGER, ALLOCATABLE :: TMPIDX( : )
+        LOGICAL, ALLOCATABLE :: SRCFLG( : )
+
 C...........   Logical names and unit numbers (not in MODMERGE)
         INTEGER         LDEV
      
 C...........   Other local variables
     
-        INTEGER          J, K, L1, L2, M, N, V, S, T ! counters and indices
+        INTEGER          I, J, K, L1, L2, M, N, V, S, T ! counters and indices
 
         INTEGER          AJDATE        ! area-source Julian date for by-day
         INTEGER          DAY           ! day-of-week index (monday=1)
@@ -121,19 +126,20 @@ C...........   Other local variables
         INTEGER          NGRP          ! actual no. of pollutant groups
         INTEGER          NMAJOR        ! no. elevated sources
         INTEGER          NPING         ! no. plum-in-grid sources
+        INTEGER          NVPGP         ! tmp actual no. variables per group
         INTEGER          OCNT          ! tmp count output variable names
         INTEGER       :: PDAY = 0      ! previous iteration day no.
         INTEGER          PGID          ! previous iteration group ID no.
         INTEGER          PJDATE        ! point-source Julian date for by-day
-        INTEGER          NVPGP         ! tmp actual no. variables per group
+        INTEGER      :: SRGNROWS = 0   ! no. rows in surrogates file
+        INTEGER      :: SRGNCOLS = 0   ! no. cols in surrogates file
 
         REAL          :: RDUM = 0      ! dummy real value
         REAL             RDUM1, RDUM2, RDUM3, RDUM4, RDUM5, RDUM6
         REAL             F1, F2, FB    ! tmp conversion factors
 
-        CHARACTER*16     GRDNMBUF !  grid name
-        CHARACTER*16     SRGFMT   ! gridding surrogates format
-        CHARACTER*80     GDESCBUF !  grid description
+        CHARACTER*16      SRGFMT           ! gridding surrogates format
+        CHARACTER*16   :: SRGGRDNM  = ' '  !  surrogates file grid name
         CHARACTER*300          MESG    ! message buffer
         CHARACTER(LEN=IOVLEN3) LBUF    ! previous species or pollutant name
         CHARACTER(LEN=IOVLEN3) PBUF    ! tmp pollutant or emission type name
@@ -156,19 +162,23 @@ C           flags. Use a local module to pass the control flags.
         CALL GETMRGEV
 
 C.........  Open input files and retrieve episode information
-        CALL OPENMRGIN
+        CALL OPENMRGIN( SRGNROWS, SRGNCOLS, SRGGRDNM, SRGFMT )
 
 C.........  Do setup for biogenic state and county reporting
         IF( BFLAG .AND. LREPANY ) THEN
 
-C.............  Read gridding surrogates header (to get srg format only)
-            CALL RDSRGHDR( GDEV, SRGFMT, GRDNMBUF, GDESCBUF, RDUM1, 
-     &                     RDUM2, RDUM3, RDUM4, RDUM5, RDUM6, 
-     &                     IDUM1, IDUM2 )
-    
 C.............  Read gridding surrogates
-            CALL RDSRG( GDEV, SRGFMT, XCENT, YCENT, XORIG, YORIG, 
-     &                  XCELL, YCELL, NCOLS, NROWS )
+            CALL RDSRG( GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
+
+C.........  If output grid is different from surrogates, write message
+            IF ( OFFLAG ) THEN
+                L1 = LEN_TRIM( SRGGRDNM )
+                MESG = 'NOTE: gridding surrogates (for biogenic '//
+     &                 'totals) extracted for output'// CRLF()// 
+     &                 BLANK10 //'grid from grid "' // 
+     &                 SRGGRDNM( 1:L1 ) // '"'
+                CALL M3MSG2( MESG )
+            END IF
 
         END IF
 
@@ -243,6 +253,69 @@ C.............  Update elevated sources filter for elevated sources
             DO S = 1, NPSRC
                 IF( GROUPID( S ) .GT. 0 ) ELEVFLTR( S ) = 1.
             END DO
+
+        END IF
+
+C.........  Create complete source list for explicit elevated sources
+        IF( EXPLFLAG ) THEN
+
+C.............  Allocate memory for temporary unsorted list and index
+            ALLOCATE( SRCFLG( NPSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRCFLG', PROGNAME )
+            ALLOCATE( TMPSRC( NHRSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPSRC', PROGNAME )
+            ALLOCATE( TMPIDX( NHRSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPIDX', PROGNAME )
+            SRCFLG = .FALSE.
+
+C.............  Loop through hours in PLAY_EX file and determine all sources
+C               that are listed for all hours
+            JDATE  = SDATE
+            JTIME  = STIME
+            N      = 0
+            DO T = 1, NSTEPS
+                IF( .NOT. READ3( PHNAME, 'INDXH', ALLAYS3, 
+     &                           JDATE, JTIME, INDXH      ) ) THEN
+
+                    MESG = 'Could not read INDXH from ' // PHNAME
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                END IF   ! if read3() failed
+
+C.................  Loop through this hour's indices, and store any new ones
+                DO I = 1, NHRSRC
+
+                    S = INDXH( I )
+
+C.....................  Exit loop if done sources for this hour
+                    IF ( S .EQ. 0 ) EXIT
+
+C.....................  Store if not already
+                    IF ( .NOT. SRCFLG( S ) ) THEN
+                        SRCFLG( S ) = .TRUE.
+                        N = N + 1
+                        TMPSRC( N ) = S
+                        TMPIDX( N ) = N
+                    END IF
+
+                END DO
+
+                CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+            END DO
+            NHRSRC = N   ! Reset to permit FINDs in case whole PLAY_EX not used
+
+C.............  Sort list index
+            CALL SORTI1( NHRSRC, TMPIDX, TMPSRC )
+
+C.............  Store final sorted list
+            DO I = 1, NHRSRC
+                J = TMPIDX( I )
+                ELEVSRC( I ) = TMPSRC( J )
+            END DO
+
+C.............  Deallocate temporary memory
+            DEALLOCATE( SRCFLG, TMPSRC, TMPIDX )
 
         END IF
 
@@ -515,6 +588,26 @@ C.................  If layer fractions, read them for this time step
 
                     END IF   ! if read3() failed
 
+C.................  Otherwise, if explicit plume rise, read fractions and
+C                   indices from the file
+                ELSE IF ( EXPLFLAG ) THEN
+
+                    IF( .NOT. READ3( PHNAME, 'INDXH', ALLAYS3, 
+     &                               JDATE, JTIME, INDXH      ) ) THEN
+
+                        MESG = 'Could not read INDXH from ' // PHNAME
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                    END IF   ! if read3() failed
+
+                    IF( .NOT. READ3( PHNAME, 'LFRAC', ALLAYS3, 
+     &                               JDATE, JTIME, LFRAC      ) ) THEN
+
+                        MESG = 'Could not read LFRAC from ' // PHNAME
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                    END IF   ! if read3() failed
+
                 END IF
 
 C.................  Loop through variables in the current group
@@ -589,7 +682,7 @@ C.............................  Also convert the units from the gridded output
 C                               units to the totals output units
                             IF( LREPANY ) THEN
                                 FB = BIOTFAC / BIOGFAC
-                                CALL GRD2CNTY( 0, KB, NGRID, NCOUNTY, 
+                                CALL GRD2CNTY( 0, KB, NCOUNTY, 
      &                                         FB, BEMGRD, BEBCNY )
 
                             END IF
@@ -672,10 +765,11 @@ c NOTE: MERGELEV Needs to be updated to be able to output the same units as the
 c    n: gridded output
 
 C.........................  Apply matrices for elevated and plume-in-grid 
-C                           outputs
-                        IF( ELEVFLAG .OR. PINGFLAG ) THEN
+C                           outputs, if this pollutant is used for point srcs.
+                        IF( K1. GT. 0 .AND.
+     &                    ( ELEVFLAG .OR. PINGFLAG ) ) THEN
                             CALL MRGELEV( NPSRC, NMAJOR, NPING, 
-     &                                    K1, K2, K3, K4 )
+     &                                    K1, K2, K3, K4, F1 )
                         END IF
 
                     END IF
