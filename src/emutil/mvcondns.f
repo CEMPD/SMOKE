@@ -5,10 +5,11 @@ C***********************************************************************
 C  program body starts at line
 C
 C  DESCRIPTION:
-C    Program MVCONDNS uses the SMOKE mobile source file to create an input
-C    to the create_mplist_ida.xls spreadsheet.  The file created contains
-C    the speeds for all mobile sources, and uses defaults where the speeds
-C    are the same for all vehicle types in the county/roadclass.
+C    Program MVSETUP uses the SMOKE mobile source file to create an condensed
+C    list of all sources in the inventory by FIPS code, roadtype, vehicle type,
+C    and including the speed from the inventory (if any).  A default speed
+C    is determined for each county and road type, which is not associated 
+C    with a vehicle type.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
@@ -21,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
 C                
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -55,11 +56,14 @@ C...........   INCLUDES:
       
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER*2   CRLF
+        INTEGER       FINDR2
         INTEGER       FINDR3
+        INTEGER       INDEX1
         INTEGER       PROMPTFFILE
         CHARACTER*16  PROMPTMFILE
 
-        EXTERNAL      CRLF, FINDR3, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL      CRLF, FINDR2, FINDR3, INDEX1, PROMPTFFILE, 
+     &                PROMPTMFILE
 
 C...........   PARAMETERS and their descriptions:
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -97,12 +101,13 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         SCNT    ! count of speeds of same value
         INTEGER         VTP     ! tmp vehicle type number
 
-        REAL            SPD     ! tmp speed
+        REAL         :: SPD = 0.    ! tmp speed
         REAL            LSPD    ! speed from previous iteration
         REAL            SPDOFMAX! speed associated with MAXSCNT
 
         LOGICAL    :: EFLAG   = .FALSE.          ! error flag
         LOGICAL    :: NFLAG   = .TRUE.           ! true: new cy/st/co-roadclass
+        LOGICAL    :: SFLAG   = .FALSE.          ! true: speeds in file
 
         CHARACTER*300             MESG           ! message field
 
@@ -145,11 +150,17 @@ C.........  Otherwise, store source-category-specific header information,
         END IF
 
 C.........  Read source characteristics from mobile source inventory files
-        NINVARR = 4
+        NINVARR = 3
         IVARNAMS( 1 ) = 'IFIP'
         IVARNAMS( 2 ) = 'IRCLAS'
         IVARNAMS( 3 ) = 'IVTYPE'
-        IVARNAMS( 4 ) = 'SPEED'
+
+        J = INDEX1( 'SPEED', NIACT, ACTVTY )
+        IF ( J .GT. 0 ) THEN
+            NINVARR = 4
+            IVARNAMS( 4 ) = 'SPEED'
+            SFLAG = .TRUE.
+        END IF
 
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
@@ -171,7 +182,11 @@ C.........  Initialize sorting index
         END DO
 
 C.........  Sort sources by cy/st/co code, roadclass, and speed
-        CALL SORTR3( NSRC, INDX, IFIP, IRCLAS, SPEED )
+        IF ( SFLAG ) THEN
+            CALL SORTR3( NSRC, INDX, IFIP, IRCLAS, SPEED )
+        ELSE
+            CALL SORTR2( NSRC, INDX, IFIP, IRCLAS )
+        END IF
 
 C.........  Loop through sorted sources and count the number of different
 C           cy/st/co code-roadclass-speed combinations, and the total for each.
@@ -188,7 +203,7 @@ C           source characteristics.
            J   = INDX  ( S )
            FIP = IFIP  ( J )
            RCL = IRCLAS( J )
-           SPD = SPEED ( J )
+           IF( SFLAG ) SPD = SPEED ( J )
 
 C............  If new cy/st/co and/or road class group, store info from
 C              previous group and set flag that indicates current source
@@ -238,9 +253,14 @@ C           speeds by vehicle type.
             FIP = IFIP( S )
             RCL = IRCLAS( S )
             VTP = IVTYPE( S )
-            SPD = SPEED( S )
+            IF( SFLAG ) SPD = SPEED( S )
 
-            K = FINDR3( FIP, RCL, SPD, NDEFLT, DEFFIP, DEFRCL, DEFSPD )
+            IF ( SFLAG ) THEN
+                K = FINDR3( FIP, RCL, SPD, NDEFLT, 
+     &                      DEFFIP, DEFRCL, DEFSPD )
+            ELSE
+                K = FINDR2( FIP, RCL, NDEFLT, DEFFIP, DEFRCL )
+            END IF
 
             IF( FIP .NE. LFIP .OR. RCL .NE. LRCL ) NFLAG = .TRUE.
 
