@@ -127,13 +127,13 @@ C.......   Get file name; open emission factors file
 
         FDEV = PROMPTFFILE( 
      &           'Enter logical name for EMISSION FACTORS file',
-     &           .TRUE., .TRUE., 'BFAC', PROGNAME )
+     &           .TRUE., .TRUE., 'B3FAC', PROGNAME )
 
 C.......   Open gridded landuse files 
 
         GNAMET = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE totals file',
-     &           FSREAD3, 'BGPRO_TOT', PROGNAME )
+     &           FSREAD3, 'BELD3_TOT', PROGNAME )
 
         IF ( .NOT. DESC3( GNAMET ) ) THEN
 
@@ -149,7 +149,7 @@ C.......   Initialize grid definition
 
         GNAME1 = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE A file',
-     &           FSREAD3, 'BGPRO_A', PROGNAME )
+     &           FSREAD3, 'BELD3_A', PROGNAME )
 
         IF ( .NOT. DESC3( GNAME1 ) ) THEN
 
@@ -193,7 +193,7 @@ C.......   to km**2
  
         GNAME2 = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE B file',
-     &           FSREAD3, 'BGPRO_B', PROGNAME )
+     &           FSREAD3, 'BELD3_B', PROGNAME )
 
         IF ( .NOT. DESC3( GNAME2 ) ) THEN
 
