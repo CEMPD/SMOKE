@@ -1,4 +1,6 @@
-        SUBROUTINE OPENSMAT( ENAME, SFLAG, LFLAG, MXSPEC, SPCNAMES, 
+
+        SUBROUTINE OPENSMAT( ENAME, SFLAG, LFLAG, NOPOL, MXSPEC, 
+     &                       EALLOUT, EAIDX, SPCNAMES, MOLUNITS, 
      &                       SNAME, LNAME, SVNAMES, LVNAMES )
 
 C***********************************************************************
@@ -20,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -62,12 +64,16 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
         LOGICAL     , INTENT (IN) :: SFLAG      ! true: open mass-based file
         LOGICAL     , INTENT (IN) :: LFLAG      ! true: open mole-based file
+        INTEGER     , INTENT (IN) :: NOPOL      ! no. output pollutants
         INTEGER     , INTENT (IN) :: MXSPEC     ! max no. of spec per pol
-        CHARACTER(*), INTENT (IN) :: SPCNAMES( MXSPEC, NIPOL ) ! model spec nams
+        CHARACTER(*), INTENT (IN) :: EALLOUT ( NIPPA ) ! output pol/emistypes
+        INTEGER     , INTENT (IN) :: EAIDX   ( NIPPA ) ! index to SPCNAMES
+        CHARACTER(*), INTENT (IN) :: SPCNAMES( MXSPEC, NOPOL ) ! model spec nams
+        CHARACTER(*), INTENT (IN) :: MOLUNITS( MXSPEC, NOPOL ) ! mole-based unts
         CHARACTER(*), INTENT(OUT) :: SNAME           ! mass-based spec file name 
         CHARACTER(*), INTENT(OUT) :: LNAME           ! mole-based spec file name
-        CHARACTER(*), INTENT(OUT) :: SVNAMES( MXSPEC, NIPOL )   ! mass out vars
-        CHARACTER(*), INTENT(OUT) :: LVNAMES( MXSPEC, NIPOL )   ! mole out vars
+        CHARACTER(*), INTENT(OUT) :: SVNAMES( MXSPEC, NIPPA )   ! mass out vars
+        CHARACTER(*), INTENT(OUT) :: LVNAMES( MXSPEC, NIPPA )   ! mole out vars
       
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
@@ -75,8 +81,8 @@ C...........   LOCAL PARAMETERS
         PARAMETER   ( SCCSW   = '@(#)$Id$'
      &              )
 
-C.........  Count of species per inventory pollutant
-        INTEGER    NSPEC( NIPOL )
+C.........  Count of species per inventory pollutant/emission type
+        INTEGER    NSPEC( NIPPA )
 
 C.........  Other local variables
         INTEGER          I, J, K, V     !  counters and indices
@@ -104,12 +110,14 @@ C           case where the total number of variables exceeds the I/O API max.
 C.........  The names of the output variables have been set up so that it will 
 C           be easy to make the mass-based and the mole-based ones different.
         ICNT = 0
-        DO V = 1, NIPOL
+        DO K = 1, NIPPA
+
+            V = EAIDX( K )
 
             NCNT = 0
             DO J = 1, MXSPEC
 
-C.................  End loop early if species is blank
+C.................  End inner loop if species is blank
                 IF( SPCNAMES( J,V ) .EQ. ' ' ) EXIT
 
 C.................  Count total number of output variables
@@ -119,14 +127,14 @@ C.................  Check total number of output variables with I/O API max
                 IF( ICNT .LE. MXVARS3 ) THEN
 
                     NCNT = NCNT + 1
-                    WRITE( SVNAMES( J,V ), '(A4,I3.3)' ) 'SVAR', ICNT
-                    WRITE( LVNAMES( J,V ), '(A4,I3.3)' ) 'SVAR', ICNT
+                    WRITE( SVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
+                    WRITE( LVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
 
                 ENDIF
 
             END DO
 
-            NSPEC( V ) = NCNT
+            NSPEC( K ) = NCNT
 
         END DO
 
@@ -140,7 +148,7 @@ C           attempt is made for these extra variables.
             CALL M3MSG2( MESG )
 
             ICNT = MXVARS3
-        ENDIF
+        END IF
 
 C.........  Set up file header(s) for opening I/O API output(s). Base this on
 C           inventory header...
@@ -175,11 +183,14 @@ C           inventory pollutant and model species names
         VTYPE3D = 0    ! array initialization
 
         I = 0
-        DO V = 1, NIPOL
-            DO J = 1, NSPEC( V )
+        DO K = 1, NIPPA
+
+            V = EAIDX( K )
+
+            DO J = 1, NSPEC( K )
 
                 I = I + 1
-                VDESC3D( I ) = EINAM( V ) // SPJOIN // SPCNAMES( J,V )
+                VDESC3D( I ) = EALLOUT( K )// SPJOIN// SPCNAMES( J,V )
                 VTYPE3D( I ) = M3REAL
 
             END DO
@@ -191,12 +202,12 @@ C.........  Set up variables specifically for mass-based file, and open it
             FDESC3D( 4 ) = '/SMATTYPE/ ' // ' Mass'
 
             I = 0
-            DO V = 1, NIPOL
-                DO J = 1, NSPEC( V )
+            DO K = 1, NIPPA
+                DO J = 1, NSPEC( K )
 
                     I = I + 1
-                    VNAME3D( I ) =  SVNAMES( J,V ) 
-                    UNITS3D( I ) = 'gm/ton'
+                    VNAME3D( I ) =  SVNAMES( J,K ) 
+                    UNITS3D( I ) = SMASUNIT
 
                 END DO
             END DO
@@ -205,7 +216,7 @@ C.........  Set up variables specifically for mass-based file, and open it
      &        'Enter logical name for MASS-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_S', PROGNAME )
 
-        ENDIF
+        END IF
 
 C.........  Set up variables specifically for mole-based file, and open it
         IF( LFLAG ) THEN
@@ -213,12 +224,15 @@ C.........  Set up variables specifically for mole-based file, and open it
             FDESC3D( 4 ) = '/SMATTYPE/ ' // ' Mole'
 
             I = 0
-            DO V = 1, NIPOL
-                DO J = 1, NSPEC( V )
+            DO K = 1, NIPPA
+
+                V = EAIDX( K )
+
+                DO J = 1, NSPEC( K )
 
                     I = I + 1
-                    VNAME3D( I ) =  LVNAMES( J,V ) 
-                    UNITS3D( I ) = 'mole/ton'
+                    VNAME3D( I ) =  LVNAMES( J,K ) 
+                    UNITS3D( I ) = MOLUNITS( J,V )
 
                 END DO
             END DO
@@ -227,7 +241,7 @@ C.........  Set up variables specifically for mole-based file, and open it
      &        'Enter logical name for MOLE-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_L', PROGNAME )
 
-        ENDIF
+        END IF
 
         RETURN
 

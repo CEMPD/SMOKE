@@ -1,18 +1,16 @@
-# Version @(#)$Id$ $Source$ $Date$ 
+# Version @(#)$Id$ 
+# Path    $Source$
+# Date    $Date$ 
 #
-all: debug 
+LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
-debug: spcmat.debug 
-#
-FC=f90
-FFLAGS = $(DBGFLAGS)
-LDFLAGS = -g
-LDIRS = -L/env/proj/ioapi/IRIX6n32f90 \
-        -L$(EDSS_LIB) \
-        -L$(EL_SRC)/$(EDSS_OS)
-LIBS=$(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBPATH= $(EL_SRC)/$(EDSS_OS)/libsmoke.debug.a
-#
+
+all: spcmat
+
+debug: spcmat.debug
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -23,9 +21,14 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 SPC= spcmat.o opensmat.o asgnspro.o
      
 #
-spcmat.debug: $(SPC) $(ALLI) $(LIBPATH)
+spcmat: $(SPC) $(ALLI) $(LIBPATH)
 	echo SPCMAT:
-	$(FC) $(FFLAGS) -o $(@) $(SPC) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(SPC) $(LIBS)
+#
+#
+spcmat.debug: $(SPC) $(ALLI) $(LIBPATH_DEBUG)
+	echo SPCMAT \(debug\):
+	$(FC) $(FFLAGS) -o $(@) $(SPC) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
@@ -39,4 +42,4 @@ spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO)
 
 #
 clean:
-	rm *.o
+	/bin/rm *.o

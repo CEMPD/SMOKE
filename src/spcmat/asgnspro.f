@@ -1,5 +1,5 @@
 
-        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, PNAM, 
+        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, ENAM, 
      &                       MASSMATX, MOLEMATX )
 
 C***********************************************************************
@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -77,7 +77,7 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: MOLEOUT        ! true: create mole-based
         LOGICAL     , INTENT    (IN) :: REPORT         ! true: rep defaults
         INTEGER     , INTENT    (IN) :: NSRCIN         ! number of sources
-        CHARACTER(*), INTENT    (IN) :: PNAM           ! pol name of interest
+        CHARACTER(*), INTENT    (IN) :: ENAM    ! pol/emis type name of interest
         REAL        , INTENT(IN OUT) :: MASSMATX( NSRCIN,* )! mass spec matx
         REAL        , INTENT(IN OUT) :: MOLEMATX( NSRCIN,* )! mole spec matx
 
@@ -85,35 +85,48 @@ C.........  Other local variables
         INTEGER          L2, LV, S, V    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
-        INTEGER          IOS         ! i/o status
-        INTEGER          NCOUT       ! no. output source chars for mesgs
+        INTEGER       :: F0B = 0      ! extra find index for mobile
+        INTEGER       :: F2B = 0      ! extra find index for mobile
+        INTEGER       :: F4B = 0      ! extra find index for mobile
+        INTEGER          IOS          ! i/o status
+        INTEGER          NCOUT        ! no. output source chars for mesgs
 
-        REAL             CNVFAC      ! tmp pol-to-pol conversion factor
+        REAL             CNVFAC       ! tmp pol-to-pol conversion factor
 
         LOGICAL       :: EFLAG    = .FALSE.
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
         LOGICAL, SAVE :: REPDEFLT = .TRUE.
 
-        CHARACTER*8               FMTFIP   ! format for writing FIPS code
-        CHARACTER*300             BUFFER   ! source fields buffer
-        CHARACTER*300             MESG     ! message buffer
-        CHARACTER(LEN=FIPLEN3)    CFIP     ! tmp (character) FIPS code
-        CHARACTER(LEN=FPLLEN3) :: CFIPPLT = ' ' ! tmp FIPS code // plant id
-        CHARACTER(LEN=FPSLEN3)    CFIPSCC  ! tmp FIPS code // SCC
-        CHARACTER(LEN=FPSLEN3)    CFIPSL   ! tmp FIPS code // left SCC
-        CHARACTER(LEN=STALEN3)    CSTA     ! tmp Country/state code
-        CHARACTER(LEN=STSLEN3)    CSTASCC  ! tmp Country/state code // SCC
-        CHARACTER(LEN=STSLEN3)    CSTASL   ! tmp Country/state code // left SCC
-        CHARACTER(LEN=SRCLEN3)    CSRC     ! tmp source chars string
-        CHARACTER(LEN=SS0LEN3) :: CSSC0 = ' '! tmp FIPS // Plant // SCC
-        CHARACTER(LEN=SS1LEN3) :: CSSC1 = ' '! tmp src chars -> char1 // SCC
-        CHARACTER(LEN=SS2LEN3) :: CSSC2 = ' '! tmp src chars -> char2 // SCC
-        CHARACTER(LEN=SS3LEN3) :: CSSC3 = ' '! tmp src chars -> char3 // SCC
-        CHARACTER(LEN=SS4LEN3) :: CSSC4 = ' '! tmp src chars -> char4 // SCC
-        CHARACTER(LEN=SS5LEN3) :: CSSC5 = ' '! tmp src chars -> char5 // SCC
-        CHARACTER(LEN=SCCLEN3)    TSCC     ! tmp 10-digit SCC
-        CHARACTER(LEN=SCCLEN3)    TSCCL    ! tmp left digits of TSCC
-        CHARACTER(LEN=SPNLEN3)    SPCODE   ! tmp speciation profile code
+        CHARACTER*10, SAVE    :: RWTFMT  ! fmt to write roadway type to string
+        CHARACTER*10, SAVE    :: VIDFMT  ! format to write veh ID to string
+        CHARACTER*300            BUFFER  ! source fields buffer
+        CHARACTER*300            MESG    ! message buffer
+        CHARACTER(LEN=FIPLEN3)   CFIP    ! tmp (character) FIPS code
+        CHARACTER(LEN=STALEN3)   CSTA    ! tmp Country/state code
+        CHARACTER(LEN=SRCLEN3)   CSRC    ! tmp source chars string
+        CHARACTER(LEN=SCCLEN3)   TSCC    ! tmp 10-digit SCC
+        CHARACTER(LEN=SCCLEN3)   TSCCL   ! tmp left digits of TSCC
+        CHARACTER(LEN=SPNLEN3)   SPCODE  ! tmp speciation profile code
+        CHARACTER(LEN=SCCLEN3)   CHKRWT  ! tmp roadway type only SCC
+        CHARACTER(LEN=SCCLEN3)   CHKVID  ! tmp vehicle-type only SCC
+        CHARACTER(LEN=SS5LEN3):: CHK16=' '! tmp source chars through char5// SCC
+        CHARACTER(LEN=SS4LEN3):: CHK15=' '! tmp source chars through char4// SCC
+        CHARACTER(LEN=SS3LEN3):: CHK14=' '! tmp source chars through char3// SCC
+        CHARACTER(LEN=SS2LEN3):: CHK13=' '! tmp source chars through char2// SCC
+        CHARACTER(LEN=SS1LEN3):: CHK12=' '! tmp source chars through char1// SCC
+        CHARACTER(LEN=SS0LEN3):: CHK11=' '! tmp FIPS // Plant // SCC
+        CHARACTER(LEN=FPLLEN3):: CHK10=' '! tmp FIPS code // plant id
+        CHARACTER(LEN=FPSLEN3):: CHK09=' '! tmp FIPS code // SCC
+        CHARACTER(LEN=FPSLEN3):: CHK08=' '! tmp FIPS code // left SCC
+        CHARACTER(LEN=FPSLEN3):: CHK08B=' '! tmp FIPS code // veh ID SCC
+        CHARACTER(LEN=STSLEN3):: CHK06=' '! tmp Country/state code // SCC
+        CHARACTER(LEN=STSLEN3):: CHK05=' '! tmp Country/state code // left SCC
+        CHARACTER(LEN=STSLEN3):: CHK05B=' '! tmp Country/state code// veh ID SCC
+        CHARACTER(LEN=SCCLEN3):: CHK02B=' '! tmp veh ID SCC
+        CHARACTER(LEN=RWTLEN3)   CRWT    ! tmp char roadway type
+        CHARACTER(LEN=RWTLEN3)   RWTZERO ! zero roadway type
+        CHARACTER(LEN=VIDLEN3)   CVID    ! tmp vehicle type
+        CHARACTER(LEN=VIDLEN3)   VIDZERO ! zero vehicle type
 
         CHARACTER*16 :: PROGNAME = 'ASGNSPRO' ! program name
 
@@ -127,10 +140,9 @@ C.............  Retrieve environment variables
             MESG = 'Switch for reporting default speciation profiles'
             REPDEFLT = ENVYN ( 'REPORT_DEFAULTS', MESG, .TRUE., IOS )
 
-C.............  Set up format for creating character FIPS code for non-point
-            IF( CATEGORY .NE. 'POINT' ) THEN
-                WRITE( FMTFIP, 94300 ) '(I', FIPLEN3, '.', FIPLEN3, ')'
-            ENDIF
+C.............  Set up format for writing roadway type and vehicle ID to strings
+            WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
+            WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
 
             FIRSTIME = .FALSE.
 
@@ -156,51 +168,58 @@ C.........  Initialize matrices to 0.
         END IF
 
 C.........  Find index in complete list of pollutants and set length of name
-        V  = INDEX1( PNAM, NIPOL, EINAM ) 
-        LV = LEN_TRIM( EINAM( V ) )
+        V  = INDEX1( ENAM, NIPPA, EANAM ) 
+        LV = LEN_TRIM( EANAM( V ) )
 
         DO S = 1, NSRCIN
+
+            CSRC  = CSOURC( S )
+            CFIP  = CSRC( 1:FIPLEN3 )
+            CSTA  = CFIP( 1:STALEN3 )
+            TSCC  = CSCC( S )
+            TSCCL = TSCC( 1:LSCCEND )
+            CHK09 = CFIP // TSCC
+            CHK08 = CFIP // TSCCL 
+            CHK06 = CSTA // TSCC
+            CHK05 = CSTA // TSCCL 
 
 C.............  Create selection 
             SELECT CASE ( CATEGORY )
 
-            CASE ( 'AREA' ) 
-
-                CSRC    = CSOURC( S )
-                CFIP    = CSRC( 1:FIPLEN3 )
-                CSTA    = CFIP( 1:STALEN3 )
-                TSCC    = CSCC( S )
-                TSCCL   = TSCC( 1:LSCCEND )
-                CFIPSCC = CFIP // TSCC
-                CFIPSL  = CFIP // TSCCL 
-                CSTASCC = CSTA // TSCC
-                CSTASL  = CSTA // TSCCL 
+            CASE ( 'AREA' )   ! Already set above
 
             CASE ( 'MOBILE' )
 
-                CSRC    = CSOURC( S )
-                CFIP    = CSRC( 1:FIPLEN3 )
-                CSTA    = CFIP( 1:STALEN3 )
-c note: add here when ready for mobile
+         	WRITE( CRWT, RWTFMT ) IRCLAS( S )
+                WRITE( CVID, VIDFMT ) IVTYPE( S )
+
+                TSCC = CRWT // CVID
+                CALL PADZERO( TSCC )
+                TSCCL= TSCC( 1:LSCCEND )
+
+                CHKVID = RWTZERO // CVID
+                CALL PADZERO( CHKVID )
+
+                CHKRWT = CRWT // VIDZERO
+                CALL PADZERO( CHKRWT )
+
+                CHK09  = CFIP // TSCC                   ! County// RWT// VTP
+                CHK08  = CFIP // TSCCL                        ! County// RWT
+                CHK08B = CFIP // CHKVID                       ! County// VTP
+                CHK06  = CSTA // TSCC                   ! State // RWT// VTP
+                CHK05  = CSTA // TSCCL                  ! State // road type
+                CHK05B = CSTA // CHKVID                  ! State // veh type
+                CHK02B = CHKVID                               ! Vehicle type
 
             CASE ( 'POINT' )
 
-                CSRC    = CSOURC( S )
-                CFIP    = CSRC( 1:FIPLEN3 )
-                CSTA    = CSRC( 1:STALEN3 )
-                TSCC    = CSCC( S )
-                CSSC5   = CSRC( 1:PTENDL3( 7 ) ) // TSCC
-                CSSC4   = CSRC( 1:PTENDL3( 6 ) ) // TSCC
-                CSSC3   = CSRC( 1:PTENDL3( 5 ) ) // TSCC
-                CSSC2   = CSRC( 1:PTENDL3( 4 ) ) // TSCC
-                CSSC1   = CSRC( 1:PTENDL3( 3 ) ) // TSCC
-                CSSC0   = CSRC( 1:PTENDL3( 2 ) ) // TSCC
-                CFIPPLT = CSRC( 1:PTENDL3( 2 ) )
-                TSCCL   = TSCC( 1:LSCCEND )
-                CFIPSCC = CFIP // TSCC
-                CFIPSL  = CFIP // TSCCL
-                CSTASCC = CSTA // TSCC
-                CSTASL  = CSTA // TSCCL
+                CHK16 = CSRC( 1:PTENDL3( 7 ) ) // TSCC
+                CHK15 = CSRC( 1:PTENDL3( 6 ) ) // TSCC
+                CHK14 = CSRC( 1:PTENDL3( 5 ) ) // TSCC
+                CHK13 = CSRC( 1:PTENDL3( 4 ) ) // TSCC
+                CHK12 = CSRC( 1:PTENDL3( 3 ) ) // TSCC
+                CHK11 = CSRC( 1:PTENDL3( 2 ) ) // TSCC
+                CHK10 = CSRC( 1:PTENDL3( 2 ) )
                     
             CASE DEFAULT
 
@@ -219,9 +238,9 @@ C.................  Try for pollutant-specific FIPS code & SCC match; then
 C                           pollutant-specific Cy/st code & SCC match; then
 C                           pollutant-specific SCC match
 
-                F3 = FINDC( CFIPSCC, NCNV3, CNVRT03 ) 
-                F2 = FINDC( CSTASCC, NCNV2, CNVRT02 ) 
-                F1 = FINDC( TSCC   , NCNV1, CNVRT01 ) 
+                F3 = FINDC( CHK09, NCNV3, CNVRT03 ) 
+                F2 = FINDC( CHK06, NCNV2, CNVRT02 ) 
+                F1 = FINDC( TSCC , NCNV1, CNVRT01 ) 
 
         	IF( F3 .GT. 0 .AND. CNVFC03(F3,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC03( F3,V )
@@ -262,13 +281,13 @@ C                       pollutant-specific CHAR1 non-blank// SCC match; then
 C                       pollutant-specific PLANT non-blank// SCC match; then
 C                       pollutant-specific PLANT non-blank       match
 
-            F6 = FINDC( CSSC5  , TXCNT( 16 ), CHRT16 ) 
-            F5 = FINDC( CSSC4  , TXCNT( 15 ), CHRT15 ) 
-            F4 = FINDC( CSSC3  , TXCNT( 14 ), CHRT14 ) 
-            F3 = FINDC( CSSC2  , TXCNT( 13 ), CHRT13 ) 
-            F2 = FINDC( CSSC1  , TXCNT( 12 ), CHRT12 ) 
-            F1 = FINDC( CSSC0  , TXCNT( 11 ), CHRT11 ) 
-            F0 = FINDC( CFIPPLT, TXCNT( 10 ), CHRT10 ) 
+            F6 = FINDC( CHK16, TXCNT( 16 ), CHRT16 ) 
+            F5 = FINDC( CHK15, TXCNT( 15 ), CHRT15 ) 
+            F4 = FINDC( CHK14, TXCNT( 14 ), CHRT14 ) 
+            F3 = FINDC( CHK13, TXCNT( 13 ), CHRT13 ) 
+            F2 = FINDC( CHK12, TXCNT( 12 ), CHRT12 ) 
+            F1 = FINDC( CHK11, TXCNT( 11 ), CHRT11 ) 
+            F0 = FINDC( CHK10, TXCNT( 10 ), CHRT10 )
 
             IF( F6 .GT. 0 .AND. CSPT16(F6,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT16( F6,V )
@@ -314,12 +333,24 @@ C                       pollutant-specific Cy/st code & left SCC match; then
 C                       pollutant-specific SCC match; then
 C                       pollutant-specific left SCC match
 
-            F5 = FINDC( CFIPSCC, TXCNT( 9 ), CHRT09 ) 
-            F4 = FINDC( CFIPSL , TXCNT( 8 ), CHRT08 ) 
-            F3 = FINDC( CSTASCC, TXCNT( 6 ), CHRT06 ) 
-            F2 = FINDC( CSTASL , TXCNT( 5 ), CHRT05 ) 
-            F1 = FINDC( TSCC   , TXCNT( 3 ), CHRT03 ) 
-            F0 = FINDC( TSCCL  , TXCNT( 2 ), CHRT02 ) 
+            F5 = FINDC( CHK09, TXCNT( 9 ), CHRT09 ) 
+            F4 = FINDC( CHK08, TXCNT( 8 ), CHRT08 ) 
+            F3 = FINDC( CHK06, TXCNT( 6 ), CHRT06 ) 
+            F2 = FINDC( CHK05, TXCNT( 5 ), CHRT05 ) 
+            F1 = FINDC( TSCC , TXCNT( 3 ), CHRT03 ) 
+            F0 = FINDC( TSCCL, TXCNT( 2 ), CHRT02 ) 
+
+C............. Check for mobile-specific matches that use a TSCC with
+C              road class of zero and vehicle type. The assignment of
+C              temporal profile based on  a vehicle type and no road class
+C              comes after the road class only match (or TSCCL in CHRT08,
+C              for example) but the match uses the full TSCC (or CHRT09, for
+C              example).
+            IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                F4B = FINDC( CHK08B, TXCNT( 9 ), CHRT09 )
+                F2B = FINDC( CHK05B, TXCNT( 6 ), CHRT06 )
+                F0B = FINDC( CHK02B, TXCNT( 3 ), CHRT03 )
+            END IF
 
             IF( F5 .GT. 0 .AND. CSPT09(F5,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT09( F5,V ) 
@@ -328,6 +359,11 @@ C                       pollutant-specific left SCC match
 
             ELSEIF( F4 .GT. 0 .AND. CSPT08(F4,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT08( F4,V ) 
+                CALL SETSOURCE_SMATS
+                CYCLE                       !  to end of sources-loop
+
+            ELSEIF( F4B .GT. 0 .AND. CSPT09(F4B,V) .NE. EMCMISS3 ) THEN
+                SPCODE = CSPT09( F4B,V ) 
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
@@ -341,6 +377,11 @@ C                       pollutant-specific left SCC match
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
+            ELSEIF( F2B .GT. 0 .AND. CSPT06(F2B,V) .NE. EMCMISS3 ) THEN
+                SPCODE = CSPT06( F2B,V )
+                CALL SETSOURCE_SMATS
+                CYCLE                       !  to end of sources-loop
+
             ELSEIF( F1 .GT. 0 .AND. CSPT03(F1,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT03( F1,V ) 
                 CALL SETSOURCE_SMATS
@@ -348,6 +389,11 @@ C                       pollutant-specific left SCC match
 
             ELSEIF( F0 .GT. 0 .AND. CSPT02(F0,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT02( F0,V ) 
+                CALL SETSOURCE_SMATS
+                CYCLE                       !  to end of sources-loop
+
+            ELSEIF( F0B .GT. 0 .AND. CSPT03(F0B,V) .NE. EMCMISS3 ) THEN
+                SPCODE = CSPT03( F0B,V ) 
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
@@ -384,7 +430,7 @@ C               the use of defaults.
      &                 SPCODE // '" for:'//
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCC // ' POL: ' // EINAM( V )
+     &                 'SCC: ' // TSCC // ' POL: ' // EANAM( V )
                 CALL M3MESG( MESG )
 
                 CALL SETSOURCE_SMATS
@@ -431,7 +477,7 @@ C               speciation profile is unavailable for a given pollutant
      &                 'available (and no default) for:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCC // ' POL: ' // EINAM( V )
+     &                 'SCC: ' // TSCC // ' POL: ' // EANAM( V )
 
                 CALL M3MESG( MESG )
 
@@ -468,7 +514,7 @@ C               the default for this pollutant
      &                 CRLF() // BLANK10 // 'to source:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCC // ' POL: ' // EINAM( V )
+     &                 'SCC: ' // TSCC // ' POL: ' // EANAM( V )
 
                 CALL M3MESG( MESG )
 

@@ -1,42 +1,55 @@
-# Version @(#)$Id$ $Source$ $Date$ 
+# Version @(#)$Id$ 
+# Path    $Source$
+# Date    $Date$ 
 #
-all: debug 
-#
-debug: temporal.debug 
-#
-FC=f90
-FFLAGS = $(DBGFLAGS)
-LDFLAGS = -g
-LDIRS = -L/env/proj/ioapi/IRIX6n32f90 \
-        -L$(EDSS_LIB) \
-        -L$(EL_SRC)/$(EDSS_OS)
-LIBS=$(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBPATH= $(EL_SRC)/$(EDSS_OS)/libsmoke.debug.a
+LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
 
+all: temporal
+
+debug: temporal.debug
+
 .f.o:
-	$(FC) $(FFLAGS) -c -o $@ $<
+	
+	$(FC) $(FFLAGS) -c -o $@ $< 
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-TMP= temporal.o asgntpro.o genhemis.o opentmp.o
-     
+TMP= asgntpro.o genhemis.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
+     temporal.o tmnamunt.o tmpintrp.o
+
 #
-temporal.debug: $(TMP) $(ALLI) $(LIBPATH)
+temporal: $(TMP) $(ALLI) $(LIBPATH)
 	echo TEMPORAL:
-	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(TMP) $(LIBS)
+#
+#
+temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
+	echo TEMPORAL \(debug\):
+	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-genhemis.o: $(MODXREF) $(MODTPRO)
+genhemis.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-opentmp.o: $(MODINFO)
+opentmp.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-temporal.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODINFO)
+opentmpin.o: $(MODMET) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+rdefacs.o: $(MODEMFAC) $(MODINFO) $(MODMET)
+	$(FC) $(FFLAGS) -c -o $@ $<
+temporal.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+tmnamunt.o: $(MODEMFAC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+tmpintrp.o: $(MODSOURC) $(MODMET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
-	rm *.o
+	/bin/rm *.o

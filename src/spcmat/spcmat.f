@@ -19,7 +19,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -42,6 +42,9 @@ C.........  This module contains the inventory arrays
 
 C.........  This module contains the speciation profiles
         USE MODSPRO
+
+C.........  This module contains emission factor tables and related
+        USE MODEMFAC
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -82,7 +85,11 @@ C.........   Speciation matrices:
 
 C.........  Inventory pollutants actually in the inventory
         LOGICAL               , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: IINAM ( : ) ! initial pols
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! spro search pols
+
+C.........  Index from EANAM to IINAM
+        INTEGER, ALLOCATABLE :: EAIDX( : )
 
 C.........  Names for output variables in mass-based and mole-based files
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MASSONAM( :,: )
@@ -91,8 +98,10 @@ C.........  Names for output variables in mass-based and mole-based files
 C.........  Unit numbers and logical file names
         INTEGER         KDEV    !  unit no. for optional pol to pol conversion
         INTEGER         LDEV    !  unit number for log file
+        INTEGER         MDEV    !  unit number for mobile codes file
         INTEGER         RDEV    !  unit number for speciation profiles file
-        INTEGER         SDEV    !  unit number  for ASCII inventory file
+        INTEGER         SDEV    !  unit number for ASCII inventory file
+        INTEGER         TDEV    !  unit number for ASCII emission process file
         INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER*16    ANAME   !  logical name for additive control matrix
@@ -101,14 +110,16 @@ C.........  Unit numbers and logical file names
         CHARACTER*16    LNAME   !  logical name for mole spec matrix output file
 
 C.........   Other local variables
-        INTEGER          I, J, L1, L2, L3, L4, V !  counters and indices
+        INTEGER          I, J, K, L1, L2, L3, L4, V !  counters and indices
 
         INTEGER          IOS               ! i/o status
         INTEGER          NINVARR           ! number inventory variables to input
         INTEGER          NMSPC             ! number of model species
+        INTEGER          NOPOL             ! no. pollutants for output
 
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         LOGICAL       :: KFLAG   = .FALSE. !  if pol to pol convert file or not
+        LOGICAL       :: MFLAG   = .FALSE. !  true: mobile codes file needed
         LOGICAL       :: MASSOUT = .TRUE.  !  true: output mass-based matrix
         LOGICAL       :: MOLEOUT = .TRUE.  !  true: output mole-based matrix
         LOGICAL       :: DEFREPRT= .TRUE.  !  true: report default spc profiles
@@ -117,8 +128,10 @@ C.........   Other local variables
         CHARACTER*4            OUTTYPE   !  output type from the environment
         CHARACTER*300          MESG      !  message buffer 
         CHARACTER(LEN=IOVLEN3) CBUF      !  smat output name temporary buffer 
-        CHARACTER(LEN=IOVLEN3) IBUF      !  pollutant name temporary buffer 
+        CHARACTER(LEN=IOVLEN3) ENAM      !  tmp emission types name
+        CHARACTER(LEN=IOVLEN3) PNAM      !  input pol name temporary buffer 
         CHARACTER(LEN=IOVLEN3) SBUF      !  species name temporary buffer 
+        CHARACTER(LEN=IOVLEN3) SNAM      !  speciation pol name temporary buffer
 
         CHARACTER*16  :: PROGNAME = 'SPCMAT' ! program name
 
@@ -189,18 +202,22 @@ C           results are stored in module MODINFO.
         ELSE
 
             CALL GETSINFO
-
-C.............  Store additional pollutant arrays needed for speciation
-            ALLOCATE( SINAM( NIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SINAM', PROGNAME )
-            ALLOCATE( SPCOUT( NIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SPCOUT', PROGNAME )
-
-            DO I = 1, NIPOL
-                SINAM ( I ) = EINAM( I )     ! Initialization
-                SPCOUT( I ) = .TRUE.         ! Initialize assuming output
-            END DO
  
+        END IF
+
+C.........   Open files that depend on inventory characteristics
+        IF( NIACT .GT. 0 ) THEN
+            TDEV = PROMPTFFILE( 
+     &             'Enter logical name for EMISSION PROCESSES file',
+     &             .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
+
+        END IF
+
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            MDEV = PROMPTFFILE( 
+     &             'Enter logical name for MOBILE CODES file',
+     &             .TRUE., .TRUE., 'MCODES', PROGNAME )
+
         END IF
 
 C.........  Set inventory variables to read for all source categories
@@ -212,9 +229,10 @@ C.........  Set inventory variables to read for specific source categories
             NINVARR = 2
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            NINVARR = 4
-            IVARNAMS( 3 ) = 'IRCLAS'  ! ??????
-            IVARNAMS( 4 ) = 'CLINK'   ! ??????
+            NINVARR = 5
+            IVARNAMS( 3 ) = 'IRCLAS'
+            IVARNAMS( 4 ) = 'IVTYPE'
+            IVARNAMS( 5 ) = 'CVTYPE'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
             NINVARR = 2
@@ -226,15 +244,88 @@ C.........  Allocate memory for and read required inventory characteristics
 C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
-C.........   Read the speciation cross-reference file
+C.........  When mobile codes file is being used read mobile codes file
+        IF( MFLAG ) CALL RDMVINFO( MDEV )
 
+C.........  Perform the steps needed for using activities and emission types
+C           instead of pollutants
+C.........  Read emission processes file.  Populate array in MODEMFAC and
+C           set NETYPE
+        IF( NIACT .GT. 0 ) THEN
+
+            CALL RDEPROC( TDEV )
+
+        END IF
+
+C.........  Reset the number of all input variables as the number of pollutants
+C           and emission types, instead of the number of pollutants and 
+C           activities
+        NIPPA = NIPOL
+        DO I = 1, NIACT
+            NIPPA = NIPPA + NETYPE( I )
+        END DO
+
+C.........  Set the number of output pollutants based on the number from the
+C           inventory file and the number coming from emission types
+        NOPOL = NIPOL + NEPOL
+
+C.........  Allocate memory for pollutant names, emission types, and associated
+C           pollutants
+        DEALLOCATE( EANAM )
+        ALLOCATE( EANAM( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EANAM', PROGNAME )  
+        ALLOCATE( EAIDX( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EAIDX', PROGNAME )  
+        ALLOCATE( IINAM( NOPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IINAM', PROGNAME )
+        ALLOCATE( SINAM( NOPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SINAM', PROGNAME )
+        ALLOCATE( SPCOUT( NOPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCOUT', PROGNAME )
+     
+C.........  Create array of pollutant names from emission types and pollutants
+C.........  Put the pollutants from the emission types first so that the
+C           index from the emisson type names (EMTIDX) will be valid with 
+C           SINAM and EMTPOL
+        IF( NEPOL .GT. 0 ) IINAM(       1:NEPOL ) = EMTPOL( 1:NEPOL )
+        IF( NIPOL .GT. 0 ) IINAM( NEPOL+1:NOPOL ) = EINAM ( 1:NIPOL )
+
+        SPCOUT = .TRUE.   ! array
+        SINAM  = IINAM    ! array
+
+C.........  Create list of emission types and pollutants and set an index
+C           that points back to IINAM.  First, for emission types...
+        J = 1
+        DO I = 1, NIACT
+
+            K = NETYPE( I )
+            IF( K .GT. 0 ) THEN
+                EANAM( J:J+K-1 ) = EMTNAM( 1:K, I )
+                EAIDX( J:J+K-1 ) = EMTIDX( 1:K, I )
+            END IF
+            J = J + K
+
+        END DO
+
+C.........  Now for pollutants...
+        IF( NIPOL .GT. 0 ) THEN
+
+            DO I = 1, NIPOL
+                EANAM( J ) = EINAM( I )
+                EAIDX( J ) = NEPOL + I
+                J = J + 1
+            END DO
+
+        END IF
+
+C.........  Read the speciation cross-reference file
         CALL RDSREF( XDEV )
 
 C.........  Read the pollutant to pollutant conversion file, if any
-C.........  Resulting tables are passed via MODSPRO
+C.........  resulting tables are passed via MODSPRO
         IF ( KFLAG ) THEN
 
-            CALL RDSCONV( KDEV, NIPOL, EINAM, SINAM )
+            CALL RDSCONV( KDEV, NIPOL, CATEGORY, IINAM, SINAM )
 
         END IF
 
@@ -245,31 +336,47 @@ C           and the pollutants are in the same order as SINAM.
 C.........  Also retrieve the maximum number of species per pollutant and 
 C           maximum number of profile entries per pollutant.
 
-        CALL DSCSPROF( RDEV, NIPOL, SINAM )
+        CALL DSCSPROF( RDEV, NOPOL, SINAM )
 
 C.........  Give warning if some pollutants won't be speciated, and keep track
 C           of which ones don't get species.
         J = 0
-        DO I = 1, NIPOL
+        DO V = 1, NOPOL
 
-            IF( SPCNAMES( 1,I ) .EQ. ' ' ) THEN
-                L1   = LEN_TRIM( EINAM( I ) )
+            IF( SPCNAMES( 1,V ) .EQ. ' ' ) THEN
+                L1   = LEN_TRIM( IINAM( V ) )
                 J    = J + 1
                 MESG = 'WARNING: No speciation profiles found ' //
-     &                 'for pollutant "' // EINAM( I )( 1:L1 ) // '"' //
+     &                 'for pollutant "' // IINAM( V )( 1:L1 ) // '"' //
      &                 CRLF( )// BLANK10// 'Pollutant ignored!'
                 CALL M3MSG2( MESG )
 
-                SPCOUT( I ) = .FALSE.
+                SPCOUT( V ) = .FALSE.
+
             END IF
 
         END DO
 
 C.........  Make sure at least one pollutant will be speciated
-        IF( J .EQ. NIPOL ) THEN
-            MESG = 'No speciation profiles for pollutants in inventory!'
+        IF( J .EQ. NIPPA ) THEN
+            MESG = 'No speciation profiles for'
+            L1 = LEN_TRIM( MESG )
+
+            IF( NEPOL .EQ. 0 ) THEN
+                MESG = MESG( 1:L1 ) // ' pollutants in inventory!'
+            ELSE IF( NIPOL .EQ. 0 ) THEN
+                MESG = MESG( 1:L1 ) // ' emission types!'
+            ELSE  
+                MESG = MESG( 1:L1 ) // ' pollutants or emission types!'
+            END IF
+
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         END IF
+
+C.........  Determine the number of output species for all pollutants and
+C           emission types. For the case of no emission types, this value
+C           is the same as MXSPEC  
 
 C.........  Allocate memory for speciation factors by source using the maximum
 C           number of species per pollutant, MXSPEC. Also, initialize.
@@ -295,58 +402,87 @@ C           MXSPFUL, which is from module MODSPRO
         CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
 
 C.........  Allocate memory for names of output variables
-        ALLOCATE( MASSONAM( MXSPEC, NIPOL  ), STAT=IOS )
+        ALLOCATE( MASSONAM( MXSPEC, NIPPA  ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MASSONAM', PROGNAME )
-        ALLOCATE( MOLEONAM( MXSPEC, NIPOL ), STAT=IOS )
+        ALLOCATE( MOLEONAM( MXSPEC, NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MOLEONAM', PROGNAME )
 
 C.........  Open speciation matrix file(s).  Depending on MASSOUT and MOLEOUT,
 C           the mass-based and/or mole-based files will be set up and opened.
 
-        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, MXSPEC, SPCNAMES, 
-     &                 SNAME, LNAME, MASSONAM, MOLEONAM )
+        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, NOPOL, MXSPEC, 
+     &                 EANAM, EAIDX, SPCNAMES, MOLUNITS, SNAME, LNAME, 
+     &                 MASSONAM, MOLEONAM )
 
 C.........  Loop through inventory pollutants to create speciation factors for
 C           each species used for each pollutant. In some cases, a pollutant
 C           will have no species (e.g., CO), so the factors will simply be a 
 C           converstion factor from tons to grams or moles.
 
-        DO V = 1, NIPOL
+      
+        DO K = 1, NIPPA
 
-            IBUF = EINAM( V ) 
+            V = EAIDX( K )
+            ENAM = EANAM( K )  ! Emission type name
+            PNAM = IINAM( V )  ! Input pollutant name
+            SNAM = SINAM( V )  ! Speciation pollutant name
 
 C.............  Only process for pollutants we know have at least one species,
 C               otherwise, go to end of loop
             IF( SPCOUT( V ) ) THEN
 
-C.................  Write message stating the pollutant being processed
-                L1 = LEN_TRIM( IBUF )
-                MESG = 'Processing pollutant "' // IBUF( 1:L1 ) // '"'
+C.................  Build message stating the pollutant/emission type being
+C                   processed.
+C.................  For pollutant data...
+                IF( ENAM .EQ. PNAM ) THEN
+                    L1 = LEN_TRIM( PNAM )
+                    MESG = 'Processing pollutant "'// PNAM( 1:L1 )// '"'
 
-                IF( EINAM( V ) .NE. SINAM( V ) ) THEN
-                    L1 = LEN_TRIM( MESG )
-                    L2 = LEN_TRIM( SINAM( V ) )
-                    MESG = MESG( 1:L1 ) // ' using pollutant "' //
-     &                     SINAM( V )( 1:L2 ) // '" for profiles'
-                ENDIF
+                    IF( IINAM( V ) .NE. SNAM ) THEN
+                	L1 = LEN_TRIM( MESG )
+                	L2 = LEN_TRIM( SNAM )
+                	MESG = MESG( 1:L1 ) // ' using pollutant "' //
+     &                         SNAM( 1:L2 ) // '" for profiles'
+                    END IF
+
+C.................  For emission type data...
+                ELSE
+                    L1 = LEN_TRIM( ENAM )
+                    L2 = LEN_TRIM( SNAM )
+                    MESG = 'Processing emission type "'// 
+     &                     ENAM( 1:L1 ) // '" using pollutant "' //
+     &                     SNAM( 1:L2 ) // '" for profiles'
+                END IF
+
+C.................  Write message
                 CALL M3MSG2( MESG )
 
+C.............  Build message stating the pollutant being skipped
             ELSE
 
+C.................  For pollutant data...
+                IF( ENAM .EQ. PNAM ) THEN
+                    L1 = LEN_TRIM( PNAM )
+                    MESG = 'Skipping pollutant "' // PNAM( 1:L1 ) // '"'
+
+C.................  For emission type data...
+                ELSE
+                    L1 = LEN_TRIM( ENAM )
+                    MESG = 'Skipping emission type "'//ENAM( 1:L1 )//'"'
+                END IF
+
 C.................  Write message stating the pollutant being skipped
-                L1 = LEN_TRIM( IBUF )
-                MESG = 'Skipping pollutant "' // IBUF( 1:L1 ) // '"'
                 CALL M3MSG2( MESG )
                 CYCLE
 
             END IF
 
 C.............  Read speciation profiles file
+            MESG = BLANK5 // 'Reading speciation profiles file...'
+            CALL M3MSG2( MESG )
 
-            CALL M3MSG2( '     Reading SPECIATION PROFILES file...' )
-
-            CALL RDSPROF( RDEV, SINAM( V ), MXSPFUL, NSPFUL, NMSPC,
-     &                    INPRF, SPECID, MOLEFACT, MASSFACT )
+            CALL RDSPROF( RDEV, SNAM, MXSPFUL, NSPFUL, NMSPC,
+     &                    INPRF, SPECID, MOLEFACT, MASSFACT   )
 
 C.............  Initilialize multiple profiles and default reporting to true
             MULTIPRO = .TRUE.
@@ -359,22 +495,22 @@ C               one exception is when there is a pollutant-to-pollutant
 C               conversion, then we must still do the standard processing.
             IF( NSPFUL .EQ. NMSPC ) THEN
 
-                L1 = LEN_TRIM( SINAM( V ) )
-                L2 = LEN_TRIM( IBUF )
+                L1 = LEN_TRIM( SNAM )
+                L2 = LEN_TRIM( PNAM )
  
                 IF( NMSPC .EQ. 1 ) THEN
-                    MESG = '     NOTE: "' // IBUF( 1:L2 ) // 
+                    MESG = '     NOTE: "' // PNAM( 1:L2 ) // 
      &                     '" only has a unit conversion ' //
      &                     'using profile "' // INPRF( 1 ) // '"'
                 ELSE
-                    MESG = '     NOTE: "' // IBUF( 1:L2 ) // 
+                    MESG = '     NOTE: "' // PNAM( 1:L2 ) // 
      &                     '" is split for all sources ' //
      &                      'using profile "' // INPRF( 1 ) // '"'
                 END IF
 
 C.................  If there is no pollutant-to-pollutant conversion, then
 C                   set speciation matrices using the one profile and continue
-                IF( IBUF .EQ. SINAM( V ) ) THEN
+                IF( PNAM .EQ. SNAM ) THEN
 
                     IF( MASSOUT ) THEN
                         DO J = 1, NMSPC
@@ -397,7 +533,7 @@ C                   conversion is done (so don't reset multipro)
                     L3 = LEN_TRIM( MESG )
                     MESG = MESG( 1:L3 ) // CRLF() // BLANK10 // 
      &                     'and a pollutant conversion to "' // 
-     &                     SINAM( V )( 1:L1 ) // '"'
+     &                     SNAM( 1:L1 ) // '"'
 
                     DEFREPRT = .FALSE.  ! no default reporting
 
@@ -416,7 +552,7 @@ C.................  Abridge profiles so that there is an array of unique profile
 C.................  Assign speciation profile and populate speciation matrices
 C                   for all sources for this pollutant.
                 CALL ASGNSPRO( MASSOUT, MOLEOUT, DEFREPRT, NSRC, 
-     &                         IBUF, MASSMATX, MOLEMATX )
+     &                         ENAM, MASSMATX, MOLEMATX )
 
 C.................  Deallocate memory for unique profiles arrays
                 DEALLOCATE( SPROFN, IDXSPRO, NSPECIES, IDXSSPEC )
@@ -432,10 +568,10 @@ C.............  Write out the speciation matrix for current pollutant
 
                 DO J = 1, NMSPC
 
-                    CBUF = MASSONAM( J,V )
+                    CBUF = MASSONAM( J,K )
                     SBUF = SPCNAMES( J,V )
                     L1 = LEN_TRIM( CBUF )
-                    L2 = LEN_TRIM( IBUF )
+                    L2 = LEN_TRIM( ENAM )
                     L3 = LEN_TRIM( SBUF )
                     L4 = LEN_TRIM( SNAME )
                     IF( .NOT. 
@@ -444,7 +580,7 @@ C.............  Write out the speciation matrix for current pollutant
                         EFLAG = .TRUE.
 
                         MESG = '     Could not write "' // 
-     &                    IBUF( 1:L2 ) // '"-to-"' // SBUF( 1:L3 ) // 
+     &                    ENAM( 1:L2 ) // '"-to-"' // SBUF( 1:L3 ) // 
      &                    '" speciation factor using name "' //
      &                    CBUF( 1:L1 ) // '" to file "' // 
      &                    SNAME( 1:L4 ) // '"'
@@ -453,7 +589,7 @@ C.............  Write out the speciation matrix for current pollutant
                         CYCLE
 
                     ELSE
-                        MESG = BLANK10 // IBUF( 1:L2 ) // '-to-' // 
+                        MESG = BLANK10 // ENAM( 1:L2 ) // '-to-' // 
      &                         SBUF( 1:L3 ) // ' written to ' // 
      &                         SNAME( 1:L4 ) // ' as variable ' //
      &                         CBUF( 1:L1 ) 
@@ -472,19 +608,19 @@ C.............  Write out the speciation matrix for current pollutant
 
                  DO J = 1, NMSPC
 
-                    CBUF = MOLEONAM( J,V )
+                    CBUF = MOLEONAM( J,K )
                     IF( .NOT. 
      &                  WRITE3( LNAME, CBUF, 0, 0, MOLEMATX(1,J) )) THEN
 
                         EFLAG = .TRUE.
 
-                        IBUF = EINAM( V )
+                        PNAM = EINAM( V )
                         SBUF = SPCNAMES( J,V )
                         L1 = LEN_TRIM( CBUF )
-                        L2 = LEN_TRIM( IBUF )
+                        L2 = LEN_TRIM( ENAM )
                         L3 = LEN_TRIM( SBUF )
                         L4 = LEN_TRIM( LNAME )
-                        MESG = 'Could not write "' // IBUF( 1:L2 ) // 
+                        MESG = 'Could not write "' // ENAM( 1:L2 ) // 
      &                         '"-to-"' // SBUF( 1:L3 ) // 
      &                         '" speciation factor using name "' //
      &                         CBUF( 1:L1 ) // '" to file "' // 
@@ -496,19 +632,6 @@ C.............  Write out the speciation matrix for current pollutant
                     END IF
 
                 END DO ! End write out of model species
-
-C.............  Write out file of speciation profiles used per source
-
-! NOTE: future
-
-C.............  Write out file of non-unity pollutant-to-pollutant conversion
-C               factors for only those source with one such factor for a 
-C               pollutant. NOTE: file contains source ID for easy matching to
-C               inventory using QA programs.
-
-! NOTE: future
-C.............  Write speciation profile codes that were applied per source
-C               to a file
 
             END IF    ! End mole-based output
 
@@ -527,22 +650,6 @@ C.........  Exit program with normal completion
 
 
 C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Informational (LOG) message formats... 92xxx
-
-c92000   FORMAT( 5X, A )
-
-c92010   FORMAT ( 5X , A, :, I10 )
-
-
-C...........   Formatted file I/O formats............ 93xxx
-
-c93000   FORMAT( A )
-
-c93010   FORMAT( A16 )
-
-c93030   FORMAT( I5, I6, I4, 1X, A10, 1X, I5, F6.3, 15X, 3 F6.3 ) ! for ASREF
-
 
 C...........   Internal buffering formats............ 94xxx
 

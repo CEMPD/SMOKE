@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -39,6 +39,10 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C...........   MODULES for public variables
+C.........  This module contains emission factor tables and related
+        USE MODEMFAC
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -52,13 +56,16 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        CHARACTER*2            CRLF
         INTEGER                INDEX1
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                GETIFDSC
+        CHARACTER(LEN=IOULEN3) MULTUNIT
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL        INDEX1, GETCFDSC, GETIFDSC, PROMPTMFILE, VERCHAR
+        EXTERNAL        CRLF, INDEX1, GETCFDSC, GETIFDSC, MULTUNIT,
+     &                  PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME  ! emissions inven logical name
@@ -79,7 +86,7 @@ C...........   LOCAL PARAMETERS
 
 C...........   Other local variables
 
-        INTEGER         I, J, V     ! counters and indices
+        INTEGER         I, J, K, V     ! counters and indices
 
         INTEGER         NINVVAR     ! number of inventory variables
         INTEGER         PYEAR       ! projected year from inventory file (or -1)
@@ -114,7 +121,7 @@ C.........  Get header information from inventory file
         BYEAR   = GETIFDSC( FDESC3D, '/BASE YEAR/', .TRUE. )
         PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
-        NVARS3D = NIPOL
+        NVARS3D = NIPPA
         SDATE3D = SDATE
         STIME3D = STIME
         TSTEP3D = TSTEP
@@ -132,66 +139,66 @@ C.........  Get header information from inventory file
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
-C.........  Define source characteristic variables that are not strings
+C.........  Set variable names and characteristics from the emission types
+        K = 0
+        DO J = 1, NIACT
 
-        DO V = 1, NIPOL
-
-            I = INDEX1( EINAM( V ), NINVVAR, VNAME3D )
+C.............  Double check that pollutant is in the inventory file
+C.............  Use EAREAD, because for mobile sources, EANAM has been
+C               expanded to contain the emission types
+C.............  NOTE - this is sloppy b/c NIPPA has been reset with the
+C               number of emission types
+            I = INDEX1( ACTVTY( J ), NIPPA, EAREAD )
             IF( I .LE. 0 ) THEN
                 MESG='INTERNAL ERROR: inventory file variables changed!'
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
             END IF
 
-            J = INDEX( UNITS3D( I ), '/' )
+            DO V = 1, NETYPE( I )
 
-            VNAME3D( V ) = EINAM( V )
-            UNITS3D( V ) = UNITS3D( I )( 1:J ) // 'hour'
-            VDESC3D( V ) = VDESC3D( I )
-            VTYPE3D( V ) = M3REAL
+        	K = K + 1
+        	VNAME3D( K ) = EMTNAM( V,J )
+        	UNITS3D( K ) = EAUNIT( I )   
+        	VDESC3D( K ) = EMTDSC( V,J )
+        	VTYPE3D( K ) = M3REAL
+
+            END DO  ! End loop on emission types for output
+        END DO      ! End loop on activities output
+
+C.........  Set variable names and characteristics from the pollutants
+        DO V = 1, NIPOL
+
+C.............  Double check that pollutant is in the inventory file
+            I = INDEX1( EINAM( V ), NIPPA, EANAM )
+            IF( I .LE. 0 ) THEN
+                MESG='INTERNAL ERROR: inventory file variables changed!'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+            END IF
+
+            K = K + 1
+            VNAME3D( K ) = EINAM ( V )
+            UNITS3D( K ) = EAUNIT( I )
+            VDESC3D( K ) = EADESC( I )
+            VTYPE3D( K ) = M3REAL
 
         END DO  ! End loop on pollutants for output
 
 C.........  Prompt for and open I/O API output file(s)...
 
-C NOTE: The packets indicating base year and future year should be passed 
-C through to the output file for purposes of controlling the day-of-week.
+        MESG = 'Enter name for output HOURLY EMISSIONS file'
+        TNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
 
+C.........  For now, write message that elevated file is not supported
+        IF( NPELV .GT. 0 ) THEN
+            MESG = 'WARNING: Elevated source file (ETMP) for UAM-'//
+     &             'style elevated emissions ' // CRLF() // BLANK10 //
+     &             'is not yet supported'
+            CALL M3MSG2( MESG )
+        END IF
 
-C.........  If elevated sources are being written to a separate file, reset the
-C           applicable header entries and prompt for both layer-1 and upper-
-C           level point sources files
-        IF( UFLAG ) THEN 
-        
-            FDESC3D( 1 ) = CATDESC // ' source layer-1 hourly ' //
-     &                     'emissions data'
-
-            MESG = 'Enter name for output LAYER-1 HOURLY EMISSIONS file'
-            TNAME= PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME )
-
-            NVARS3D = NIPOL + 1
-            NROWS3D = NPELV
-            VNAME3D( NVARS3D ) = 'INDXE'
-            UNITS3D( NVARS3D ) = 'n/a'
-            VDESC3D( NVARS3D ) = 'SMOKE source ID number'
-            VTYPE3D( NVARS3D ) = M3INT
-
-            FDESC3D( 1 ) = CATDESC // ' source elevated hourly ' //
-     &                     'emissions data'
-
-            MESG ='Enter name for output ELEVATED HOURLY EMISSIONS file'
-            UNAME= PROMPTMFILE( MESG, FSUNKN3, 'ETMP', PROGNAME )
-
-C.........  Without elevated sources, the header is already set, and just need
-C           to prompt for one file.
-        ELSE
-
-            MESG = 'Enter name for output HOURLY EMISSIONS file'
-            TNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
-
-            UNAME = ' '
-
-        END IF      !  if generating upper-level point sources file or not
+        UNAME = ' '
 
         RETURN
 
