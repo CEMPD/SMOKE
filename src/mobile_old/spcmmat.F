@@ -279,7 +279,7 @@ C.......   Get file name; open input mobile sources file
 
         TDEV = PROMPTFFILE(
      &           'Enter logical name for SPECIATION LIST file',
-     &           .TRUE., .TRUE., 'MSLST', 'SPCMMAT' )
+     &           .TRUE., .TRUE., 'SPCS', 'SPCMMAT' )
 
 C.......   Read speciation list file to find out what species and emission
 C.......   processes are actually being used in this scenario
@@ -496,6 +496,13 @@ C.......   Read in description of mobile-source file
             CALL M3EXIT( 'SPCMMAT', 0, 0, 
      &                   'Could not get description of file ' // ANAME, 
      &                   2 )
+        END IF
+
+        IF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MOBL file:', NROWS3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'SPCMMAT', 0, 0, MESG, 2 )
         END IF
      
 C.......   Get speciation factor names and the number of names 
