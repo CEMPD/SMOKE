@@ -123,11 +123,11 @@ C.........  Store non-category-specific header information
 
 C.........  If projection year is non-zero, store in FDESC3D
         IF( FYEAR .NE. 0 ) THEN
-             WRITE( FDESC3D( 13 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
+             WRITE( FDESC3D( 14 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
         END IF
 
-        FDESC3D( 14 ) = '/INVEN FROM/ ' // IFDESC2
-        FDESC3D( 15 ) = '/INVEN VERSION/ ' // IFDESC3
+        FDESC3D( 15 ) = '/INVEN FROM/ ' // IFDESC2
+        FDESC3D( 16 ) = '/INVEN VERSION/ ' // IFDESC3
 
 C.........  Prompt file output SMOKE file
         IF( SFLAG ) THEN
