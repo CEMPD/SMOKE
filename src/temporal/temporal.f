@@ -290,8 +290,8 @@ C.........  Get episode settings from the Models-3 environment variables
         SDATE  = 0
         STIME  = 0
         NSTEPS = 1
-        TSTEP  = 10000  
-        CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
+        CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
+        TSTEP  = 10000  ! Only 1-hour time steps supported
 
 C.........  Compare base year with episode and warn if not consistent
         IF( SDATE / 1000 .NE. BYEAR ) THEN
