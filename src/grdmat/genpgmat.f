@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENPGMAT( FNAME, NPSRC, NGRID, XLOCA, YLOCA,
+        SUBROUTINE GENPGMAT( FNAME, NPSRC, NGRID, XLOCA, YLOCA, VFLAG,
      &                       NX, IX, NCOEF, CMAX, CMIN )
 
 C***********************************************************************
@@ -64,6 +64,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NGRID          ! Actual grid cell count
         REAL        , INTENT (IN) :: XLOCA( NPSRC ) ! X-coordinate in proper coordinate system
         REAL        , INTENT (IN) :: YLOCA( NPSRC ) ! Y-coordinate in proper coordinate system
+        LOGICAL     , INTENT (IN) :: VFLAG          ! true: using variable grid
         INTEGER     , INTENT(OUT) :: NX( NGRID )    ! Number of sources per cell
         INTEGER     , INTENT(OUT) :: IX( NPSRC )    ! Source number, w/ order based on NX
         INTEGER     , INTENT(OUT) :: NCOEF          ! Number of coefficients
@@ -105,8 +106,13 @@ C.........  Allocate local memory
 
 C.........  Initialize temporary storage table. NOTE - uses I/O API
 C           definitions of grid from include file
-        CALL GENPTCEL( NPSRC, NGRID, XLOCA, YLOCA, NEXCLD, NX, 
-     &                 INDX, GN, SN )
+        IF( VFLAG ) THEN
+            CALL GENPTVCEL( NPSRC, NGRID, XLOCA, YLOCA, NEXCLD, NX,
+     &                      INDX, GN, SN )
+        ELSE
+            CALL GENPTCEL( NPSRC, NGRID, XLOCA, YLOCA, NEXCLD, NX, 
+     &                     INDX, GN, SN )
+        END IF
 
 C.........  Initialize statistics
         CMAX = NX( 1 )
