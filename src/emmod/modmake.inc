@@ -7,7 +7,7 @@ MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
 MODSOURC = $(MD_OUT)/modsourc.o
 MODMOBIL = $(MD_OUT)/modmobil.o
 MODXREF  = $(MD_OUT)/modxref.o
-MODTPRO  = $(MD_OUT)/modtpro.o
+MODTMPRL = $(MD_OUT)/modtmprl.o
 MODSPRO  = $(MD_OUT)/modspro.o
 MODLISTS = $(MD_OUT)/modlists.o
 MODINFO  = $(MD_OUT)/modinfo.o
@@ -24,7 +24,7 @@ MODREPRT = $(MD_OUT)/modreprt.o
 MODREPBN = $(MD_OUT)/modrepbn.o
 
 #
-MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODTPRO)  $(MODSPRO) \
+MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODTMPRL) $(MODSPRO) \
            $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODMERGE)  \
            $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV) $(MODMET)   \
            $(MODBIOG)  $(MODREPRT) $(MODREPBN)
@@ -53,11 +53,11 @@ $(MODXREF): $(MD_SRC)/modxref.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	if ( test -f modxref.M   ) ; then mv modxref.M   $(MD_OUT) ; fi
 	if ( test -f MODXREF.mod ) ; then mv MODXREF.mod $(MD_OUT) ; fi
 
-$(MODTPRO):  $(MD_SRC)/modtpro.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
-	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modtpro.f
-	if ( test -f modtpro.mod ) ; then mv modtpro.mod $(MD_OUT) ; fi
-	if ( test -f modtpro.M   ) ; then mv modtpro.M   $(MD_OUT) ; fi
-	if ( test -f MODTPRO.mod ) ; then mv MODTPRO.mod $(MD_OUT) ; fi
+$(MODTMPRL):  $(MD_SRC)/modtmprl.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modtmprl.f
+	if ( test -f modtmprl.mod ) ; then mv modtmprl.mod $(MD_OUT) ; fi
+	if ( test -f modtmprl.M   ) ; then mv modtmprl.M   $(MD_OUT) ; fi
+	if ( test -f MODTMPRL.mod ) ; then mv MODTMPRL.mod $(MD_OUT) ; fi
 
 $(MODSPRO): $(MD_SRC)/modspro.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modspro.f
