@@ -92,7 +92,6 @@ C...........   Logical names and unit numbers
         INTEGER         GTMPDEV      !  file unit no. for tmp CTG file
         INTEGER         LDEV         !  log file unit no.
         INTEGER         LTMPDEV      !  file unit no. for tmp ALW file
-        INTEGER         RDEV         !  report file unit no.
         INTEGER         SDEV         !  ASCII part of inventory unit no.
         INTEGER         TDEV         !  tracking file unit no.
 
@@ -119,7 +118,6 @@ C...........   Other local variables
         LOGICAL      :: JFLAG   = .FALSE.  ! true: projections in use
         LOGICAL      :: KFLAG   = .FALSE.  ! true: tracking file in use
         LOGICAL      :: LFLAG   = .FALSE.  ! true: allowable cntls in use
-        LOGICAL      :: NFLAG   = .TRUE.   ! true: output a report
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
         LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
         LOGICAL      :: OFLAG   = .FALSE.  ! true: create report
@@ -144,9 +142,6 @@ C.........  Get type of projection entries: with year or without it (EPS)
         YFLAG = ENVYN( 'PROJECTION_YR_SPEC', 
      &                 'Projection entries in year-specific format',
      &                 .TRUE., IOS )
-
-        NFLAG = ENVYN( 'CONTROL_REPORT', 
-     &                 'Output a controls report file', .TRUE., IOS )
 
         KFLAG = ENVYN( 'CONTROL_TRACKING', 
      &                 'Use a special file to track specific sources',
@@ -179,13 +174,6 @@ C.........   Get file names and open files
         CDEV = PROMPTFFILE( 
      &           'Enter logical name for ASCII CONTROL PACKETS file',
      &           .TRUE., .TRUE., 'GCNTL', PROGNAME )
-
-C.........  Open reports file
-        IF( NFLAG ) THEN
-            RDEV = PROMPTFFILE( 
-     &           'Enter logical name for ASCII CONTROL REPORTS file',
-     &           .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
-        END IF
 
 C.........  Get header description of inventory file, error if problem
         IF( .NOT. DESC3( ENAME ) ) THEN
@@ -246,7 +234,7 @@ C.........  Initialize arrays
         XRFCNT = 0  ! array
 
 C.........  Allocate memory for control packet information in input file.
-        CALL ALOCPKTS( CDEV, RDEV, SYEAR, CPYEAR, PKTCNT, 
+        CALL ALOCPKTS( CDEV, SYEAR, CPYEAR, PKTCNT, 
      &                 PKTBEG, XRFCNT )
 
 C.........  Set the flags that indicate which packets are valid
@@ -275,7 +263,7 @@ C           each packet type while determining the pollutants to use in opening
 C           the final output files.
 
         ACTION = 'PROCESS'
-        CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, RDEV, 
+        CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV,  
      &                CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Process control matrices that depend on pollutants...
@@ -285,7 +273,7 @@ C.........  Multiplicative matrix
 
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
-            CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, RDEV,
+            CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV,
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG )
 
@@ -304,7 +292,7 @@ C            CALL GENADDC( )
 C.........  Open final report file
 
 C.........  Post-process temporary files to create final report file
-        CALL WCNTLREP( RDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV )
+        CALL WCNTLREP( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV )
 
 C.........  Successful completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
