@@ -19,7 +19,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 4/99 by M. Houyoux
-C     Modified 12/01 by Gabe Cano - deterministic mode
+C     Modified 2/02 by Gabe Cano - deterministic/stochastic mode
 C
 C************************************************************************
 C
@@ -211,6 +211,7 @@ c                ISRG = ISRG09( F5 )
 
             ELSEIF( F1 .GT. 0 ) THEN
                 ISRG = ISRGCDA( ISRG03( F1 ) , 1)
+                ISCI = ISRG03( F1 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
 
@@ -243,7 +244,9 @@ C.............  Try for any country/state code match (not, pol-specific)
             END IF
 
             IF( ISRG01 .NE. IMISS3 .AND. REPDEFLT ) THEN
-                ISRG = ISRG01
+c                ISRG = ISRG01
+                ISRG = ISRGCDA( ISRG01, 1)
+                ISCI = ISRG01
                     
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
@@ -256,7 +259,10 @@ C.............  Try for any country/state code match (not, pol-specific)
                 CALL SETSOURCE_GSURG
 
             ELSEIF( ISRG01 .NE. IMISS3 ) THEN
-                ISRG = ISRG01
+c                ISRG = ISRG01
+                ISRG = ISRGCDA( ISRG01, 1)
+                ISCI = ISRG01
+
                 CALL SETSOURCE_GSURG
 
             ELSE
@@ -329,7 +335,7 @@ C----------------------------------------------------------------------
             END IF
 
             SRGIDPOS( S ) = ISRGPOS
-            SRGCDPOS( S ) = ISCI
+            SGROWPOS( S ) = ISCI
 
 C.............  For non-link sources, find cy/st/co code in surrogates table
 C.............  Only do find if this FIPS code is different from previous, for
