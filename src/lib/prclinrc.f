@@ -97,6 +97,7 @@ C.........  Initialize for start of file
             INPACKET  = .FALSE.
             INGROUP   = .FALSE.
             INREPORT  = .FALSE.
+            INSPCIFY  = .FALSE.
 
             PKTCOUNT  = 0         ! array
             PKTSTATUS = .FALSE.   ! array
@@ -338,6 +339,7 @@ C                       elevated sources
                         INSPCIFY    = .TRUE.
                         LIN_SPCIFY  = .TRUE.
                         SPCF_NOR    = 0
+                        SPCF_NAND   = 0
 
 C.....................  A report packet
                     CASE( RPT_IDX )
@@ -358,16 +360,21 @@ C.........................  Reset report settings to defaults
                         RPT_%BYCELL   = .FALSE.
                         RPT_%BYCNRY   = .FALSE.
                         RPT_%BYDATE   = .FALSE.
+                        RPT_%BYDIU    = .FALSE.
                         RPT_%BYSTAT   = .FALSE.
                         RPT_%BYCNTY   = .FALSE.
                         RPT_%BYELEV   = .FALSE.
                         RPT_%BYHOUR   = .FALSE.
+                        RPT_%BYMON    = .FALSE.
                         RPT_%BYSCC    = .FALSE.
+                        RPT_%BYSPC    = .FALSE.
                         RPT_%BYSRC    = .FALSE.
+                        RPT_%BYSRG    = .FALSE.
                         RPT_%BYCONAM  = .FALSE.
                         RPT_%BYSTNAM  = .FALSE.
                         RPT_%BYCYNAM  = .FALSE.
                         RPT_%BYRCL    = .FALSE.
+                        RPT_%BYWEK    = .FALSE.
                         RPT_%LAYFRAC  = .FALSE.
                         RPT_%NORMCELL = .FALSE.
                         RPT_%SCCNAM   = .FALSE.
@@ -391,6 +398,7 @@ C.........................  Reset report settings to defaults
                         RPT_%OFILENAM = ' '    ! init for consistency
                         RPT_%REGNNAM  = ' '
                         RPT_%SUBGNAM  = ' '
+                        RPT_%SPCPOL   = ' '
                         TITLE         = ' '
 
                     END SELECT
@@ -644,6 +652,18 @@ C.............  BY options affecting inputs needed
                         CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
                     END IF
+
+                CASE( 'MONCODE' )
+                    TSFLAG = .TRUE.
+                    RPT_%BYMON = .TRUE.
+
+                CASE( 'WEKCODE' )
+                    TSFLAG = .TRUE.
+                    RPT_%BYWEK = .TRUE.
+
+                CASE( 'DIUCODE' )
+                    TSFLAG = .TRUE.
+                    RPT_%BYDIU = .TRUE.
 
                 CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE
