@@ -585,8 +585,8 @@ C                   current pol group
 C.................  If using map-formatted inventory for time-independent    
                     IF( MNMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
                         CALL RDMAPMASK( MENAME, MNMAP, MMAPNAM, MMAPFIL, 
-     &                                NMSRC, MPOLSIZ, NVPGP, INNAMES(1), 
-     &                                M_EXIST(1,N), MEMSRC             )
+     &                               NMSRC, MPOLSIZ, NVPGP, VARNAMES(1), 
+     &                                INNAMES(1), M_EXIST(1,N), MEMSRC )
 
 C.................  If using hourly data
                     ELSE
@@ -603,8 +603,8 @@ C                   step for all point-source pollutants in current pol group
 C.................  If using map-formatted inventory for time-independent    
                     IF( PNMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
                         CALL RDMAPMASK( PENAME, PNMAP, PMAPNAM, PMAPFIL, 
-     &                                NPSRC, PPOLSIZ, NVPGP, INNAMES(1), 
-     &                                P_EXIST(1,N), PEMSRC             )
+     &                               NPSRC, PPOLSIZ, NVPGP, VARNAMES(1), 
+     &                                INNAMES(1), P_EXIST(1,N), PEMSRC )
 
 C.................  If using hourly data
                     ELSE
