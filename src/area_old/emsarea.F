@@ -69,10 +69,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
+        REAL            YR2DAY
 
         EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETNUM, GETYN, INDEX1,
      &           JULIAN, JUNIT, LBLANK, PROMPTFFILE, PROMPTMFILE, 
-     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN
+     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN, YR2DAY
 
 
 C...........   PARAMETER:
@@ -385,15 +386,7 @@ C.............  Exit to line 141 if read is EOF
 C.......   Factors for annualizing the emissions from daily totals
 C.......   (corrected for leap-year)
 
-            IF (      MOD( INY,   4 ) .NE. 0 ) THEN
-                TMPFAC = 365.0
-            ELSE IF ( MOD( INY, 100 ) .NE. 0 ) THEN
-                TMPFAC = 366.0
-            ELSE IF ( MOD( INY, 400 ) .NE. 0 ) THEN
-                TMPFAC = 365.0
-            ELSE
-                TMPFAC = 366.0
-            END IF
+            TMPFAC = 1. / YR2DAY( INY )
 
 C.......   Process this area source file
 
@@ -436,7 +429,7 @@ C.......   Process this area source file
                 IF ( EMIS .LT. 0.0 )  THEN
                     WRITE( MESG,94010 ) 
      &                  'Bad line', IREC, 
-     &                  'Emis value "' // LINE( 162:171 ) // 
+     &                  'Emis value "' // LINE( 52:65 ) // 
      &                  '" in "' //
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"'
                     CALL M3MESG( MESG )
@@ -464,10 +457,14 @@ C-otag          IF ( RPEN .LT. 0 ) RPEN = 100.0
                 TMPAA = LINE( 95 : 96 )
                 CALL UPCASE( TMPAA ) 
                 
-                IF      ( TMPAA .EQ. 'AD' ) THEN
+                IF ( TMPAA .EQ. 'AD' ) THEN
                     EMIS = TMPFAC * EMIS
                     TPF  = WDTPFAC
-                ELSE IF ( TMPAA .NE. 'AA' ) THEN
+
+                ELSE IF ( TMPAA .EQ. 'AA' ) THEN
+                    TPF  = MTPRFAC
+
+                ELSE
                     MESG = 'Bad temporal basis "' // TMPAA // '"'
                     CALL M3MESG( MESG )
                     EFLAG = .TRUE.
@@ -727,13 +724,10 @@ C.......   FDESC3.EXT data structures by DSCGRID().
         VGTOP3D = AMISS3
         GDNAM3D = COORDN
         FDESC3D( 1 ) = 'Annual AREA SOURCE emissions values.'
-        FDESC3D( 2 ) = 'Inventory  type "' // LINE(  1: 1 ) // '"'
-        FDESC3D( 3 ) = 'Projection year "' // LINE(  2: 3 ) // '"'
-        FDESC3D( 4 ) = 'Base year       "' // LINE(  5: 6 ) // '"'
-        FDESC3D( 5 ) = 'Emission   type "' // LINE(  7: 8 ) // '"'
-        FDESC3D( 6 ) = 'Period     type "' // LINE( 37:38 ) // '"'
-        FDESC3D( 7 ) = 'Beginning  Date "' // LINE( 40:47 ) // '"'
-        FDESC3D( 8 ) = 'Ending     Date "' // LINE( 49:56 ) // '"'
+
+        DO  177 I = 2, MXDESC3
+            FDESC3D( I ) = ' '
+177     CONTINUE
 
         J = 1
         VNAME3D( J ) = 'FIP'
