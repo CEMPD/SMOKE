@@ -19,7 +19,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -37,8 +37,8 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the information about the source category
-        USE MODINFO
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
 
         IMPLICIT NONE
 
@@ -56,6 +56,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
  
+C...........   Local parameters
+        INTEGER, PARAMETER :: CRVLEN3 = VTPLEN3+RWTLEN3
+
 C...........   Local arrays for reading mobile information file
         INTEGER, ALLOCATABLE :: LTYPE   ( : ) !  type of line infile
         INTEGER, ALLOCATABLE :: RDCLSA  ( : ) !  unsorted AIRS AMS road classes
@@ -63,22 +66,28 @@ C...........   Local arrays for reading mobile information file
         INTEGER, ALLOCATABLE :: RIDXA   ( : ) !  index for sorting road classes
         INTEGER, ALLOCATABLE :: IVTIDA  ( : ) !  vehicle type code
         INTEGER, ALLOCATABLE :: VIDXA   ( : ) !  index for sorting vehicle types
+        INTEGER, ALLOCATABLE :: SIDXA   ( : ) !  index for sorting SCC table
 
         CHARACTER(LEN=VTPLEN3), ALLOCATABLE :: CVTYPA( : ) ! unsorted veh types
+        CHARACTER(LEN=CRVLEN3), ALLOCATABLE :: SCCRVCA( : ) ! unsort CRWT//VTYPE
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: SCCTBLA( : ) ! unsorted SCCs
 
 C...........   Other local variables
-        INTEGER         I, J, K1, K2, N1, N2    !  counters and indices
+        INTEGER         I, J, K1, K2, K3, N1, N2, N3    !  counters and indices
 
         INTEGER         IOS     !  i/o status
         INTEGER         NLINES  !  number of lines
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
         LOGICAL      :: RFLAG = .FALSE.   !  true: in road class section
+        LOGICAL      :: SFLAG = .FALSE.   !  true: in SCC section
         LOGICAL      :: VFLAG = .FALSE.   !  true: in vehicle type section
 
         CHARACTER*300          LINE     !  line buffer
         CHARACTER*300          MESG     !  message buffer
-        CHARACTER(LEN=VTPLEN3) FIELDS( 2 ) !  fields from vehicle type section
+        CHARACTER(LEN=RWTLEN3) CRWT     !  tmp roadway type no.
+        CHARACTER(LEN=VTPLEN3) VTYPE    !  tmp vehicle type
+        CHARACTER(LEN=SCCLEN3) FIELDS( 3 ) !  fields from vehicle type section
 
         CHARACTER*16 :: PROGNAME = 'RDMVINFO' ! program name
 
@@ -97,6 +106,7 @@ C           the type of the line can be stored
 C.........  Get the number of lines for each section
         N1 = 0
         N2 = 0
+        N3 = 0
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -114,17 +124,26 @@ C.........  Get the number of lines for each section
 
             K1 = INDEX( LINE, '/VEHICLE TYPES/' )
             K2 = INDEX( LINE, '/ROAD CLASSES/'  )
+            K3 = INDEX( LINE, '/SCC/'  )
 
             IF( .NOT. VFLAG .AND. K1 .GT. 0 ) THEN
                 VFLAG = .TRUE.
                 RFLAG = .FALSE.
+                SFLAG = .FALSE.
 
             ELSE IF( .NOT. RFLAG .AND. K2 .GT. 0 ) THEN
                 VFLAG = .FALSE.
                 RFLAG = .TRUE.
+                SFLAG = .FALSE.
+
+            ELSE IF( .NOT. SFLAG .AND. K3 .GT. 0 ) THEN
+                SFLAG = .TRUE.
+                VFLAG = .FALSE.
+                RFLAG = .FALSE.
 
             ELSE IF( VFLAG .AND. K1 .GT. 0 .OR.
-     &               RFLAG .AND. K2 .GT. 0     ) THEN
+     &               RFLAG .AND. K2 .GT. 0 .OR.
+     &               SFLAG .AND. K3 .GT. 0      ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Bad format of MOBILE ' //
      &                 'INFORMATION file at line', I
@@ -138,13 +157,18 @@ C.........  Get the number of lines for each section
                 N2 = N2 + 1
                 LTYPE( I ) = 2
 
+            ELSE IF( SFLAG ) THEN
+                N3 = N3 + 1
+                LTYPE( I ) = 3
+
             END IF
 
         END DO
 
         REWIND( FDEV )
-        NVTYPE = N1
-        NRCLAS = N2
+        NVTYPE  = N1
+        NRCLAS  = N2
+        NSCCTBL = N3
 
         IF( EFLAG ) THEN
 
@@ -153,7 +177,8 @@ C.........  Get the number of lines for each section
 
         END IF
 
-C.........  Allocate memory for storing unsorted vehicle types and road classes
+C.........  Allocate memory for storing unsorted vehicle types, road classes,
+C           and SCC tables
         ALLOCATE( IVTIDA( NVTYPE ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IVTIDA', PROGNAME )
         ALLOCATE( CVTYPA( NVTYPE ), STAT=IOS )
@@ -168,9 +193,17 @@ C.........  Allocate memory for storing unsorted vehicle types and road classes
         ALLOCATE( RIDXA( NRCLAS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RIDXA', PROGNAME )
 
+        ALLOCATE( SCCRVCA( NSCCTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCCRVCA', PROGNAME )
+        ALLOCATE( SCCTBLA( NSCCTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCCTBLA', PROGNAME )
+        ALLOCATE( SIDXA( NSCCTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SIDXA', PROGNAME )
+
 C.........  Store contents of this file in unsorted arrays
         N1 = 0
         N2 = 0
+        N3 = 0
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -185,20 +218,40 @@ C.........  Store contents of this file in unsorted arrays
             END IF
 
             IF( LTYPE( I ) .EQ. 1 ) THEN
-                N1 = N1 + 1
-                VIDXA ( N1 ) = N1
-                CALL PARSLINE( LINE, 2, FIELDS )
-                CVTYPA( N1 ) = FIELDS( 1 )
-                IVTIDA( N1 ) = STR2INT( FIELDS( 2 ) )
+                CALL PARSLINE( LINE, 3, FIELDS )
+                IF( FIELDS( 3 ) .EQ. 'Y' ) THEN
+                    N1 = N1 + 1
+                    VIDXA ( N1 ) = N1
+                    CVTYPA( N1 ) = ADJUSTL( FIELDS( 1 ) )
+                    IVTIDA( N1 ) = STR2INT( FIELDS( 2 ) )
+                END IF
 
             ELSE IF ( LTYPE( I ) .EQ. 2 ) THEN
-                N2 = N2 + 1
-                RIDXA ( N2 ) = N2
-                READ( LINE, * ) RDCLSA( N2 ), RDWAYA( N2 )
+                CALL PARSLINE( LINE, 3, FIELDS )
+                IF( FIELDS( 3 ) .EQ. 'Y' ) THEN
+                    N2 = N2 + 1
+                    RIDXA ( N2 ) = N2
+                    RDCLSA( N2 ) = STR2INT( FIELDS( 1 ) )
+                    RDWAYA( N2 ) = STR2INT( FIELDS( 2 ) )
+                END IF
+
+            ELSE IF ( LTYPE( I ) .EQ. 3 ) THEN
+                CALL PARSLINE( LINE, 3, FIELDS )
+                N3 = N3 + 1
+                SIDXA ( N3 ) = N3
+                CRWT  = ADJUSTL( FIELDS( 1 ) )
+                VTYPE = ADJUSTL( FIELDS( 2 ) )
+                SCCRVCA( N3 ) = CRWT // VTYPE
+                SCCTBLA( N3 ) = ADJUSTL( FIELDS( 3 ) )
 
             END IF
 
         END DO 
+
+C.........  Reset number of vehicle types and road classes 
+        NVTYPE  = N1
+        NRCLAS  = N2
+        NSCCTBL = N3
 
 C.........  Allocate memory for sorted arrays
         ALLOCATE( CVTYPLST( NVTYPE ), STAT=IOS )
@@ -211,11 +264,19 @@ C.........  Allocate memory for sorted arrays
         ALLOCATE( RDWAYTYP( NRCLAS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RDWAYTYP', PROGNAME )
 
+        ALLOCATE( SCCRVC( NSCCTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCCRVC', PROGNAME )
+        ALLOCATE( SCCTBL( NSCCTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCCTBL', PROGNAME )
+
 C.........  Sort vehicle types by name for IDA input checking
         CALL SORTIC( NVTYPE, VIDXA, CVTYPA )
 
 C.........  Sort road classes by number for EPS input checking
         CALL SORTI1( NRCLAS, RIDXA, RDCLSA )
+
+C.........  Sort SCC table
+        CALL SORTIC( NSCCTBL, SIDXA, SCCRVCA )
 
 C.........  Store sorted vehicle types and numbers
         DO I = 1, NVTYPE
@@ -231,8 +292,16 @@ C.........  Store sorted road classes and roadway types
             RDWAYTYP( I ) = RDWAYA( J )
         END DO
 
+C.........  Store sorted SCC table
+        DO I = 1, NSCCTBL
+            J = SIDXA( I )
+            SCCRVC( I ) = SCCRVCA( J )
+            SCCTBL( I ) = SCCTBLA( J )
+        END DO
+
 C.........  Deallocate temporary unsorted arrays
         DEALLOCATE( CVTYPA, VIDXA, RDCLSA, RDWAYA, RIDXA )
+        DEALLOCATE( SCCRVCA, SCCTBLA )
 
 C.........  Rewind file
         REWIND( FDEV )
