@@ -152,13 +152,13 @@ else
 
 endif
 
-if( $?RUN_BEIS3 ) then
-   if ( $RUN_BEIS3 == 'y' ) then
-      setenv RUN_BEIS3 Y
+if( $?RUN_TMPBEIS3 ) then
+   if ( $RUN_TMPBEIS3 == 'y' ) then
+      setenv RUN_TMPBEIS3 Y
    endif
 
 else
-   setenv RUN_BEIS3 N
+   setenv RUN_TMPBEIS3 N
 
 endif
 
