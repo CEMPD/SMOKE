@@ -104,7 +104,7 @@ C.........  Set up for opening I/O API output file header
 
             CALL HDRMISS3  ! Initialize for emissions 
 
-            NVARS3D = ( 4 * NUOVAR ) + 1
+            NVARS3D = ( 5 * UNVAR ) + 1
             NROWS3D = UCOUNT  !  number of rows = # of sources.
 
             FDESC3D( 1 ) = CATDESC // ' Uncertainty'
@@ -112,14 +112,14 @@ C.........  Set up for opening I/O API output file header
             FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
             WRITE( FDESC3D( 4 ),94010 ) '/NON POLLUTANT/ ', 1
 
-            IF( NIPOL .GT. 0 ) THEN
-               WRITE( FDESC3D( 5 ),94010 ) '/VARIABLES/', NUOVAR
-               WRITE( FDESC3D( 6 ),94010 ) '/PER VARIABLE/ ', 4
+            IF( UNIPOL .GT. 0 ) THEN
+               WRITE( FDESC3D( 5 ),94010 ) '/UNCERT POLL/', UNIPOL
+               WRITE( FDESC3D( 6 ),94010 ) '/PER UNCERT POLL/ ', 5
             END IF
 
-            IF( NIACT .GT. 0 ) THEN
-                WRITE( FDESC3D( 7 ),94010 ) '/ACTIVITIES/', NIACT
-                WRITE( FDESC3D( 8 ),94010 ) '/PER ACTIVITY/ ', 4
+            IF( UNIACT .GT. 0 ) THEN
+                WRITE( FDESC3D( 7 ),94010 ) '/UNCERT ACT/', UNIACT
+                WRITE( FDESC3D( 8 ),94010 ) '/PER UNCERT ACT/ ', 5
             END IF
 
 
@@ -132,9 +132,9 @@ C.........  Define source characteristic variables that are not strings
             VDESC3D( J ) = 'Source number'
             J = J + 1
 
-            DO I = 1, NUOVAR
+            DO I = 1, UNVAR
             
-                CBUF = UONAMES( I )
+                CBUF = UNAMES( I )
                 L = LEN_TRIM( CBUF )
 
                 VNAME3D( J ) = 'MTH_'//CBUF( 1:L )       
@@ -146,9 +146,15 @@ C.........  Define source characteristic variables that are not strings
                 VNAME3D( J ) = 'TYP_'//CBUF( 1:L )       
                 VTYPE3D( J ) = M3INT
                 UNITS3D( J ) = 'n/a'
-                VDESC3D( J ) = 'Normal=1,Logarithmic=2,Gamma=3'//
-     &          ',Weibul=4,Beta=5,Stepwise=6,Linear Interpretation=7'
+                VDESC3D( J ) = 'Normal=1,Log=2,Gamma=3,Weibul=4'//
+     &          ',Beta=5,Stepwise=6,Linear Interpolation=7'
                 J = J + 1 
+                
+                VNAME3D( J ) = 'APR_'//CBUF( 1:L )
+                VTYPE3D( J ) = M3INT
+                UNITS3D( J ) = 'n/a'
+                VDESC3D( J ) = 'Approach: S=1,I=2,ST=3,IT=4'
+                J = J + 1
 
                 VNAME3D( J ) = 'NEP_'//CBUF( 1:L )       
                 VTYPE3D( J ) = M3INT

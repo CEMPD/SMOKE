@@ -94,9 +94,12 @@ C...........   Other arrays
         CHARACTER(LEN=IOVLEN3)  PNAMES( NIPOL, NPPOL ) ! names for pol-spec
         CHARACTER(LEN=IOVLEN3)  ANAMES( NIACT, NPACT ) ! names for act-spec
 	CHARACTER*300	SEGMENT( 100 )  ! segments of parsed packet lines
+        
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: POLBUF( : )  ! tmp. poll-spec. names
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: ACTBUF( : )  ! tmp. act-spec. names
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, L2, L3, M, N  !  counters and indices
+        INTEGER         I, J, K, L, L2, L3, M, N, V  ! counters and indices
 
         INTEGER         IOS         !  i/o status
         INTEGER         IREC        !  record counter
@@ -108,6 +111,8 @@ C...........   Other local variables
         INTEGER         JSPC        !  tmp index to master pol/etype list
         INTEGER         NREF        !  no. of x-ref entries before filtering
         INTEGER         NXREF       !  no. of valid x-ref entries
+        INTEGER		NTPOL       !  no. of poll-spec. names
+        INTEGER		NTACT       !  no. of act-spec. names
         
         REAL            RIMISS3	    !  real value of integer missing
 
@@ -157,6 +162,8 @@ C.........  Compute real value of integer missing
         
 C.........  Compute total number of output variables
         NUOVAR = ( NIPOL * NPPOL ) + ( NIACT * NPACT )
+        NTPOL  = NIPOL * NPPOL
+        NTACT  = NIACT * NPACT
 
 C.........  Allocate memory for uncertainty arrays based on previous read 
 	ALLOCATE ( FAPCKT ( FPKTENT ), STAT=IOS )	! factor assignment pkt.
@@ -175,6 +182,10 @@ C.........  Allocate memory for uncertainty arrays based on previous read
         CALL CHECKMEM ( IOS, 'USEPOLL', PROGNAME )
         ALLOCATE ( UONAMES ( NUOVAR ), STAT=IOS )       !  output names
         CALL CHECKMEM ( IOS, 'UONAMES', PROGNAME )
+        ALLOCATE ( POLBUF ( NTPOL ), STAT=IOS )         !  tmp. poll names
+        CALL CHECKMEM ( IOS, 'POLBUF', PROGNAME )
+        ALLOCATE ( ACTBUF ( NTACT ), STAT=IOS )         !  tmp. act. names
+        CALL CHECKMEM ( IOS, 'ACTBUF', PROGNAME )
 
 C.........  Initailize arrays
 	FAPCKT%CFIP  = ' ' 	!array
@@ -206,6 +217,9 @@ C.........  Initailize arrays
         
         UONAMES = ' '           !array
         USEPOLL = .FALSE.       !array
+        
+        POLBUF  = ' '           !array
+        ACTBUF  = ' '           !array
 
 C.........  Get the list of variable names per pollutant
         CALL BLDENAMS( CATEGORY, NIPOL, NPPOL, EINAM, PNAMES,
@@ -221,15 +235,19 @@ C.........  Combine PNAMES and ANAMES into a one-dimensional array
             DO J = 1, NPPOL
             
                 UONAMES( K ) = PNAMES( I, J )
+                POLBUF( K ) = PNAMES( I, J )
                 K = K + 1
             END DO
         END DO
-        
+
+        L = 1
         DO I = 1, NIACT
             DO J = 1, NPACT
             
                 UONAMES( K ) = ANAMES( I, J )
+                ACTBUF( L ) = ANAMES( I, J )
                 K = K + 1
+                L = L + 1
             END DO
         END DO
 
@@ -336,7 +354,7 @@ C.........  Set status of pollutants for current packet
 	   	END IF
 
             END IF
-
+            
 C.........  If in empirical packet
 	    IF( INEMPPKT ) THEN
 
@@ -370,6 +388,38 @@ C.........  Store settings for parametric packet
 	    
 	    
 	END DO		! End read loop of uncertainties file
+        
+C.........  Get a count of the uncertain pollutants and activites and 
+C           create an array of their names
+	    DO J = 1, NUOVAR
+              IF( USEPOLL( J ) ) THEN
+                CBUF = UONAMES( J )
+                V = INDEX1( CBUF, NTPOL, POLBUF )
+                IF( V .GT. 0 ) THEN
+                  UNIPOL = UNIPOL + 1
+                ELSE
+                  V = INDEX1( CBUF, NTACT, ACTBUF )
+                  IF( V .GT. 0 ) THEN
+                    UNIACT = UNIACT + 1
+                  END IF
+                END IF
+              END IF
+            END DO
+            
+            UNVAR = UNIPOL + UNIACT
+            
+            ALLOCATE ( UNAMES( UNVAR ), STAT=IOS )          !  uncert. vars.
+            CALL CHECKMEM( IOS, 'UNAMES', PROGNAME )
+            
+            N = 1
+            DO J = 1, NUOVAR
+              IF( USEPOLL( J ) ) THEN
+                UNAMES( N ) = UONAMES( J )
+                N = N + 1
+              END IF
+            END DO
+            
+
         
         DO I = 1, FPKTENT
         

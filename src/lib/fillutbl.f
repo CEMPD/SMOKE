@@ -1,5 +1,5 @@
 
-        SUBROUTINE FILLUTBL( NUOVAR, NXREF, ICSIZE, XTYPE, XTCNT )
+        SUBROUTINE FILLUTBL( UNVAR, NXREF, ICSIZE, XTYPE, XTCNT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -44,7 +44,7 @@ C.........  This module is for cross reference tables
         IMPLICIT NONE
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: NUOVAR         ! no. pollutants + activities
+        INTEGER, INTENT (IN) :: UNVAR         ! no. pollutants + activities
         INTEGER, INTENT (IN) :: NXREF           ! no. ungrpd x-ref entries
         INTEGER, INTENT (IN) :: ICSIZE( * )     ! size of x-ref groups
         INTEGER, INTENT (IN) :: XTYPE ( NXREF ) ! group no. of x-ref entry
@@ -90,52 +90,52 @@ C               digits) so that the pol-specific can be identified later
             SELECT CASE ( T )
 
             CASE( 1 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL01 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL01 )
 
             CASE( 2 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL02 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL02 )
 
             CASE( 3 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL03 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL03 )
 
             CASE( 4 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL04 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL04 )
 
             CASE( 5 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL05 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL05 )
 
             CASE( 6 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL06 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL06 )
 
             CASE( 7 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL07 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL07 )
 
             CASE( 8 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL08 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL08 )
 
             CASE( 9 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL09 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL09 )
 
             CASE( 10 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL10 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL10 )
                  
             CASE( 11 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL11 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL11 )
    
             CASE( 12 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL12 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL12 )
 
             CASE( 13 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL13 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL13 )
 
             CASE( 14 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL14 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL14 )
 
             CASE( 15 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL15 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL15 )
                       
             CASE( 16 )
-                CALL SET_CNTRL_INDEX( TDIM, NUOVAR, ICTL16 )
+                CALL SET_CNTRL_INDEX( TDIM, UNVAR, ICTL16 )
                       
             CASE DEFAULT
 

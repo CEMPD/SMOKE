@@ -93,9 +93,9 @@ C.........  Write the first I/O API file, one variable at a time
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            DO I = 1, NUOVAR
+            DO I = 1, UNVAR
             
-                CBUF = UONAMES( I )
+                CBUF = UNAMES( I )
                 L = LEN_TRIM( CBUF )
         
                 IF( .NOT. WRITE3( UONAME, 'MTH_'//CBUF(1:L),
@@ -105,6 +105,11 @@ C.........  Write the first I/O API file, one variable at a time
                 
                 IF( .NOT. WRITE3( UONAME, 'TYP_'//CBUF(1:L),
      &                            0, 0, EPTYP(1,I) ) ) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
+                IF( .NOT. WRITE3( UONAME, 'APR_'//CBUF(1:L),
+     &                            0, 0, APRCH(1,I) ) ) THEN
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
                 

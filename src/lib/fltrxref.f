@@ -219,7 +219,7 @@ C           skip the pollutant/activity-specific entry
                 
             ELSE
             
-                IXPOA = INDEX1( CPOA, NUOVAR, UONAMES )
+                IXPOA = INDEX1( CPOA, UNVAR, UNAMES )
                 
             END IF
 

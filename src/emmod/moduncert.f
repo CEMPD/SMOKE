@@ -145,15 +145,17 @@
         
 !.........  Output file variables
 
-	CHARACTER(LEN=IOVLEN3), PUBLIC, ALLOCATABLE :: UONAMES( : )  ! output variable names
+	CHARACTER(LEN=IOVLEN3), PUBLIC, ALLOCATABLE :: UONAMES( : )  ! all possible variable names
+        CHARACTER(LEN=IOVLEN3), PUBLIC, ALLOCATABLE :: UNAMES( : )   ! uncert var names
 
         INTEGER, PUBLIC, ALLOCATABLE :: SRCNUM( : )    ! source number array
         INTEGER, PUBLIC, ALLOCATABLE :: METHOD( :, : ) ! empirical or parametric
         INTEGER, PUBLIC, ALLOCATABLE :: EPTYP( :, : )  ! parametric/emp. type
+        INTEGER, PUBLIC, ALLOCATABLE :: APRCH( :, : )  ! approach
         INTEGER, PUBLIC, ALLOCATABLE :: NUMEP( :, : )  ! no. of parameters/
         INTEGER, PUBLIC, ALLOCATABLE :: UNCIDX( :, : ) ! empirical/parametric reference no.
                                                        ! empirical entires
-        INTEGER                      :: NUOVAR         ! no. of output variables
+        INTEGER                      :: NUOVAR         ! no. of total possible variables
         INTEGER                      :: UCOUNT = 0     ! sources with uncertainty
          
         REAL,    PUBLIC, ALLOCATABLE :: PARMS( :, : )  ! parameters 

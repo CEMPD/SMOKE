@@ -587,8 +587,8 @@ c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
 C.........  Uncertainty x-ref tables
         ELSE IF( UFLAG ) THEN
-              CALL ALOCUTBL( NUOVAR, N( 1 ) )
-              CALL FILLUTBL( NUOVAR, NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
+              CALL ALOCUTBL( UNVAR, N( 1 ) )
+              CALL FILLUTBL( UNVAR, NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
 C.........  All control x-ref tables
         ELSE

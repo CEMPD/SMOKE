@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALOCUTBL( NUOVAR, ICSIZE )
+        SUBROUTINE ALOCUTBL( UNVAR, ICSIZE )
         
 C***********************************************************************
 C  subroutine body starts at line 
@@ -48,7 +48,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT(IN) :: NUOVAR        ! number of pollutants + activities
+        INTEGER, INTENT(IN) :: UNVAR        ! number of uncert variables
         INTEGER, INTENT(IN) :: ICSIZE( * )  ! size of x-ref groups
 
 
@@ -71,82 +71,82 @@ C.........  First deallocate if these have previously been allocated
 
         END IF
 
-        ALLOCATE( ICTL01( NUOVAR ), STAT=IOS )         ! SCC=0, FIP=0
+        ALLOCATE( ICTL01( UNVAR ), STAT=IOS )         ! SCC=0, FIP=0
         CALL CHECKMEM( IOS, 'ICTL01', PROGNAME )
         ICTL01 = IMISS3
 
         J = ICSIZE( 2 )                               ! SCC=left, FIP=0
-        ALLOCATE( ICTL02( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL02( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL02', PROGNAME )
         ICTL02 = IMISS3
 
         J = ICSIZE( 3 )                               ! SCC=all, FIP=0
-        ALLOCATE( ICTL03( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL03( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL03', PROGNAME )
         ICTL03 = IMISS3
   
         J = ICSIZE( 4 )                               ! SCC=0, FIP=state
-        ALLOCATE( ICTL04( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL04( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL04', PROGNAME )
         ICTL04 = IMISS3
 
         J = ICSIZE( 5 )                               ! SCC=left, FIP=state
-        ALLOCATE( ICTL05( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL05( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL05', PROGNAME )
         ICTL05 = IMISS3
             
         J = ICSIZE( 6 )                               ! SCC=all, FIP=state
-        ALLOCATE( ICTL06( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL06( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL06', PROGNAME )
         ICTL06 = IMISS3
                         
         J = ICSIZE( 7 )                               ! SCC=0, FIP=all
-        ALLOCATE( ICTL07( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL07( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL07', PROGNAME )
         ICTL07 = IMISS3
             
         J = ICSIZE( 8 )                               ! SCC=left, FIP=all
-        ALLOCATE( ICTL08( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL08( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL08', PROGNAME )
         ICTL08 = IMISS3
                         
         J = ICSIZE( 9 )                               ! SCC=all, FIP=all
-        ALLOCATE( ICTL09( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL09( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL09', PROGNAME )
         ICTL09 = IMISS3
             
         J = ICSIZE( 10 )                              ! PLANT=non-blank, SCC=0
-        ALLOCATE( ICTL10( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL10( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL10', PROGNAME )
         ICTL10 = IMISS3
             
         J = ICSIZE( 11 )                              ! PLANT=non-blank, SCC=all     
-        ALLOCATE( ICTL11( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL11( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL11', PROGNAME )
         ICTL11 = IMISS3
             
         J = ICSIZE( 12 )                              ! CHAR1=non-blank, SCC=all     
-        ALLOCATE( ICTL12( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL12( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL12', PROGNAME )
         ICTL12 = IMISS3
             
         J = ICSIZE( 13 )                              ! CHAR2=non-blank, SCC=all
-        ALLOCATE( ICTL13( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL13( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL13', PROGNAME )
         ICTL13 = IMISS3
             
         J = ICSIZE( 14 )                              ! CHAR3=non-blank, SCC=all
-        ALLOCATE( ICTL14( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL14( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL14', PROGNAME )
         ICTL14 = IMISS3
           
         J = ICSIZE( 15 )                              ! CHAR4=non-blank, SCC=all
-        ALLOCATE( ICTL15( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL15( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL15', PROGNAME )
         ICTL15 = IMISS3
             
         J = ICSIZE( 16 )                              ! CHAR5=non-blank, SCC=all
-        ALLOCATE( ICTL16( J,NUOVAR ), STAT=IOS )
+        ALLOCATE( ICTL16( J,UNVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL16', PROGNAME )
         ICTL16 = IMISS3
             
