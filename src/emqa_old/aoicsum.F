@@ -140,6 +140,7 @@ C...........   Other local variables
         CHARACTER*40    ASCTNAME !  Buffer for reading the ASCT name
 
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
+		CHARACTER*256   FMT
 
 
 C***********************************************************************
@@ -556,7 +557,10 @@ C.......   Get file name; open input area source
                     ENDIF
 
                     ! Finally, write the data to the report.
-                    WRITE ( STUNIT, 830 ) 
+C                   05/04/99 wts - Create format.
+                    WRITE ( FMT, 831 ) NIPOL
+C                   WRITE ( STUNIT, 830 )
+                    WRITE ( STUNIT, FMT ) 
      &                  ISTLIST ( POSN ), 
      &                  ( STSUM ( K, POSN, I ), I = 1, NIPOL ),
      &                  FIPNAME
@@ -597,7 +601,10 @@ C.......   Get file name; open input area source
                     ENDIF
 
                     ! Finally, write the data to the report.
-                    WRITE ( COUNIT, 835 ) 
+C                   05/04/99 wts - Create format.
+                    WRITE ( FMT, 836 ) NIPOL
+C                   WRITE ( COUNIT, 835 )
+                    WRITE ( COUNIT, FMT ) 
      &                  ICOLIST ( POSN ), 
      &                  ( COSUM ( K, POSN, I ), I = 1, NIPOL ),
      &                  FIPNAME, FIPNAME2
@@ -636,12 +643,14 @@ C******************  FORMAT  STATEMENTS   ******************************
 800     FORMAT ( //, A, / )
 810     FORMAT ( A )
 820     FORMAT ( A10, $ )
-830     FORMAT ( I2.2, 2X, <NIPOL>F10.2, 2X, A )
-835     FORMAT ( I5.5, <NIPOL>F10.2, 2X, A, 2X, A )
+C830    FORMAT ( I2.2, 2X, <NIPOL>F10.2, 2X, A )
+831     FORMAT ( '( I2.2, 2X, ', I8, 'F10.2, 2X, A )' )
+C835    FORMAT ( I5.5, <NIPOL>F10.2, 2X, A, 2X, A )
+836     FORMAT ( '( I5.5, ', I8, 'F10.2, 2X, A, 2X, A )' )
 840     FORMAT ( A, $ )
 850     FORMAT ( //, A, A )
 860     FORMAT ( /, 19X, A )
-870     FORMAT ( I5.5, <NIPOL>F10.2, 2X, A )
+C870    FORMAT ( I5.5, <NIPOL>F10.2, 2X, A )
 880     FORMAT ( /, A, I4.4, A, A, A, / )
 890     FORMAT ( A, I4, A )
         END
