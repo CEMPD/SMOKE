@@ -32,13 +32,13 @@ EMS=emsarea.F
 #
 EMSI=ARDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT
 #
-emsarea.debug:  $(CTLS) $(CTLI)
+emsarea.debug:  $(EMS) $(EMSI)
 	echo EMSAREA:
-	f77 $(DBGFLAGS) -o emsarea.debug $(CTLS) $(LIBS)
+	f77 $(DBGFLAGS) -o emsarea.debug $(EMS) $(LIBS)
 #
 #
 #
-GRMS=grdamat.F
+GRMS=grdamat.F rdascc.F
 #
 GRMI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
 #
@@ -58,7 +58,7 @@ rawarea.debug: $(RAWS) $(RAWI)
 #
 #
 #
-SPCS=spcamat.F
+SPCS=spcamat.F rdaconv.F rdsprof.F rdascc.F
 #
 SPCI=ARDIMS3.EXT CHDIMS3.EXT
 #
