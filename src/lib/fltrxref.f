@@ -85,6 +85,7 @@ C...........   Other local variables
         INTEGER          IXACT   ! index to master activity names array
         INTEGER          L       ! tmp string length
         INTEGER          SIC     ! tmp standard industrial code
+        INTEGER          SIC2    ! tmp standard industrial code
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: 1st time subroutine called 
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point sources
@@ -94,7 +95,7 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) SCCR         ! right part of SCC
         CHARACTER(LEN=SCCLEN3), SAVE :: SCRZERO  ! zero right digits of TSCC
         CHARACTER(LEN=SCCLEN3), SAVE :: SCCZERO  ! zero SCC
- 
+
         CHARACTER*16 :: PROGNAME = 'FLTRXREF' ! program name
 
 C***********************************************************************
@@ -192,9 +193,16 @@ C                   case.
 
 C.........  Check SIC with inventory SIC list.  The record might not match
 C           based on SCC, but maybe by SIC.
-        IF( SKIPREC .AND. PFLAG ) THEN
+        SIC2 = SIC/100
+        IF( SKIPREC .AND. PFLAG .AND. SIC .NE. 0 ) THEN
 
-            IXSIC = FIND1( SIC, NINVSIC, INVSIC )
+            IF( MOD( SIC,100 ) .EQ. 0 ) THEN
+                IXSIC = FINDC( SIC2, NINVSIC2, INVSIC2 )
+
+            ELSE
+                IXSIC = FINDC( SIC, NINVSIC, INVSIC )
+
+            END IF
 
             SKIPREC = ( IXSIC .LE. 0 )
 
