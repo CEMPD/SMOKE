@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -55,6 +55,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS:
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
+        CHARACTER*2     CRLF
         INTEGER         GETNLIST
         INTEGER         INDEX1
         INTEGER         JUNIT
@@ -62,7 +63,7 @@ C...........   EXTERNAL FUNCTIONS:
         INTEGER         STR2INT
         REAL            STR2REAL
 
-        EXTERNAL        CHKINT, CHKREAL, GETNLIST, INDEX1, JUNIT, 
+        EXTERNAL        CHKINT, CHKREAL, CRLF, GETNLIST, INDEX1, JUNIT, 
      &                  LBLANK, STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
@@ -101,9 +102,9 @@ C...........   Other local variables
         LOGICAL         CFLAG  ! for flagging alphabetic characters
 
         CHARACTER*5     CPOL 
-        CHARACTER*300   MESG 
-        CHARACTER*300   NAMTMP 
-        CHARACTER*600   LINE
+        CHARACTER*256   MESG 
+        CHARACTER*512   NAMTMP 
+        CHARACTER*512   LINE
 
         CHARACTER*2  :: EPSTYPES( 9 ) = 
      &                ( / 'AC', 'AA', 'AB', 'AE', 'AF', 'GB',
@@ -492,6 +493,24 @@ C.............  Unsuccessful opening of LINE as file name
 201     CONTINUE
 
 999     REWIND( FDEV )
+
+C.........  If format has not been set, the most likely reason is that it is
+C           a list file that does not have correct paths or a bad format.
+        IF ( GETFORMT .EQ. IMISS3 ) THEN
+
+            MESG = 'ERROR: Could not determine inventory file ' //
+     &             'format!' // CRLF() // BLANK10 // 
+     &             'The most likely causes of this problem are:' //
+     &             CRLF() // BLANK16 //
+     &             '(1) List file format with invalid paths' //
+     &             CRLF() // BLANK16 //
+     &             '(2) Improper formatting (use #IDA, #EMS-95, or ' //
+     &             '#EPS header ' // CRLF() // BLANK16 //
+     &             '    in first input file and rerun).'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+        END IF
 
         RETURN
 
