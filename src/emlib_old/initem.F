@@ -58,7 +58,7 @@ C***********************************************************************
 C   begin body of program INITEM
 
         LINE0 = 'SMOKE ---------------' 
-        WRITE( LINE1,94020 ) 'Copyright (C)', YEAR, 
+        WRITE( LINE1,94020 ) 'Copyright (c)', YEAR, 
      &                      'MCNC--North Carolina Supercomputing Center'
 
         LINE2 = 'All right reserved'
