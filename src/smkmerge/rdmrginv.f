@@ -45,9 +45,6 @@ C.........  This module contains the major data structure and control flags
      &                      AIFIP,  MIFIP,  PIFIP,      ! country/state/county codes
      &                      NASRC,  NMSRC,  NPSRC       ! no. of sources
 
-C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY:
-
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP
 
