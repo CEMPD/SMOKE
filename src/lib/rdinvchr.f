@@ -426,7 +426,7 @@ C.....................  Read in line of character data
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, CRWT, CLNK, CVID,
-     &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                                CS, CHRBLNK3, CHRBLNK3,
      &                                POLBLNK3, CSOURC( S ) )
 
                     CALL CHECK_CORRUPTED
