@@ -5,13 +5,13 @@
 all: opts
 
 opts: aoicpop aoicsum areasum asctsum csgarea csgmobil \
-      csgpoint getrecs grdarea grdmobil grdpoint mobilsum mvmtsum plantsum \
-      pntsum psccsum repbio repnorm repplht reptpro
+      csgpoint getrecs grdarea grdmobil grdpoint mobilsum mvehsum mvmtsum \
+      plantsum pntsum psccsum repbio repnorm repplht reptpro
 #
 #
-LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
+LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
-LMOB=$(LDIRS) -lemstuff -lm3io -lnetcdf -lmo5b
+LMOB=$(LDIRS) $(LIBS) -lmo5b
 #
 #
 #
@@ -51,26 +51,26 @@ asctsum: $(ACS) $(ACSI)
 #
 CSGS=csgarea.F
 #
-CSGI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
+CSGIS=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
 #
-csgarea: $(CSGS) $(CSGI)
+csgarea: $(CSGS) $(CSGIS)
 	echo CSGAREA:
 	f77 $(FFLAGS) -o $(SCENDIR)/csgarea $(CSGS) $(LIBS)
 #
 #
-CSGV=csgmobil.F msmatvec.F csvname.F
+CSGV=csgmobil.F csvname.F
 #
-CSGI=MBDIMS3.EXT CHDGEN3.EXT GRDIMS3.EXT
+CSGIV=MBDIMS3.EXT CHDGEN3.EXT GRDIMS3.EXT
 #
-csgmobil: $(CSGV) $(CSGI)
+csgmobil: $(CSGV) $(CSGIV)
 	echo CSGMOBIL:
 	f77 $(FFLAGS) -o $(SCENDIR)/csgmobil $(CSGV) $(LIBS)
 #
 CSG=csgpoint.F 
 #
-CSGI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
+CSGIP=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
 #
-csgpoint: $(CSG) $(CSGI)
+csgpoint: $(CSG) $(CSGIP)
 	echo CSGPOINT:
 	f77 $(FFLAGS)   -o $(SCENDIR)/csgpoint $(CSG) $(LIBS)
 #
@@ -92,19 +92,20 @@ grdarea: $(GRMS) $(GRMI)
 #
 GRDS=grdmobil.F
 #
-GRDI=MBDIMS3.EXT GRDIMS3.EXT
+GRDIS=MBDIMS3.EXT GRDIMS3.EXT
 #
-grdmobil: $(GRDS) $(GRDI)
+grdmobil: $(GRDS) $(GRDIS)
 	echo GRDMOBIL:
 	f77 $(FFLAGS) -o $(SCENDIR)/grdmobil $(GRDS) $(LIBS)
 #
 GRDPT=grdpoint.F 
 #
-GRDI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
+GRDIP=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
 #
-grdpoint: $(GRDPT) $(GRDI)
+grdpoint: $(GRDPT) $(GRDIP)
 	echo GRDPOINT:
 	f77 $(FFLAGS)   -o $(SCENDIR)/grdpoint $(GRDPT) $(LIBS)
+#
 #
 MOS=mobilsum.F
 #
@@ -113,6 +114,15 @@ MOSI=MBDIMS3.EXT CHDIMS3.EXT
 mobilsum: $(MOS) $(MOSI)
 	echo MOBILSUM:
 	f77 $(FFLAGS)   -o $(SCENDIR)/mobilsum $(MOS) $(LIBS)
+#
+#
+MOH=mvehsum.F
+#
+MOHI=MBDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT
+#
+mvehsum: $(MOH) $(MOHI)
+	echo MVEHSUM:
+	f77 $(FFLAGS)   -o $(SCENDIR)/mvehsum $(MOH) $(LIBS)
 #
 #
 MVS=mvmtsum.F
