@@ -250,13 +250,21 @@ C               to zero. Use logical expression to test for equality
                 VMIN = MNVMN + VINTV *
      &                 INT( ( VMAX - VINTV - 1. - MNVMN ) / VINTV )
 
+C.................  If adjustment has moved minimum out of range, set it to
+C                   minimum and reset maximum to have a range with no overlap
+C                   with minimum range.
                 IF( VMIN .LE. MINV_MIN ) THEN
 
                     VMIN = MINV_MIN
+
                     VMAX = REAL( MNVMN + VINTV *
-     &                     INT(( MINV_MIN +VINTV +1. - MNVMN)/ VINTV ) )
+     &                     INT(( MINV_MIN+ 2*VINTV +1. -MNVMN)/ VINTV ))
+                    MAXBYSRC( S ) = VMAX - VINTV + 1.0E-4
 
                 END IF
+
+C.................  Store new minimum value for source
+                MINBYSRC( S ) = VMIN
 
             END IF
 
