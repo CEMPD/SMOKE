@@ -145,7 +145,6 @@ C...........   Other local variables
         INTEGER         NCHAR    ! number of strings returned from PARSCSRC
         INTEGER         YEAR     ! tmp 4-digit year
 
-        REAL            CTOF     ! celius to farenheit
         REAL            M2FT     ! meters to feet
 
         LOGICAL IDACOLS( 7 )
