@@ -55,8 +55,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         GETFLINE
         INTEGER         INDEX1
+        REAL            STR2REAL
 
-        EXTERNAL        CRLF, GETFLINE, INDEX1
+        EXTERNAL        CRLF, GETFLINE, INDEX1, STR2REAL
 
 C...........   Subroutine arguments (note- outputs MXSPFUL, MXSPEC, and SPCNAMES
 C              passed via module MODSPRO)
@@ -71,9 +72,12 @@ C              passed via module MODSPRO)
         REAL, INTENT (OUT) :: MLFAC( MSPCS, NIPOL ) 
         REAL, INTENT (OUT) :: MSFAC( MSPCS, NIPOL ) 
 
+        INTEGER, PARAMETER :: MXSEG = 6        ! # of potential line segments
         LOGICAL      :: EFLAG = .FALSE.   ! error flag
-          
-C...........   Arrays for getting species-specific information from file
+
+C...........   Other arrays
+
+        CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
                 
 C...........   Local variables
 
@@ -90,6 +94,7 @@ C...........   Local variables
         CHARACTER*5    TMPPRF     ! tmp profile number
         CHARACTER*16   POLNAM     ! pollutant name
         CHARACTER*16   SPECNM     ! tmp species name
+        CHARACTER*200  LINE       ! buffer for profile data
         CHARACTER*300  MESG       ! message buffer
         
         CHARACTER*16 :: PROGNAME = 'RDBPRO' ! program name
@@ -122,10 +127,9 @@ C              species names, and to store the units for mass-based and
 C              mole-based conversions
         IREC   = 0
         DO I = 1, NLINES
-        
-            READ( FDEV,93100,END=999,IOSTAT=IOS ) 
-     &              TMPPRF, POLNAM, SPECNM, SPLTFAC, SDIV, SMFAC
-     
+
+            READ( FDEV,93100,END=999,IOSTAT=IOS ) LINE 
+      
             IREC = IREC + 1
              
             IF ( IOS .GT. 0 ) THEN
@@ -135,10 +139,24 @@ C              mole-based conversions
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
+C.............  Separate the line of data into each part
+            CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+C.............  Left-justify character strings and convert factors to reals
+            TMPPRF = ADJUSTL ( SEGMENT( 1 ) )
+
             IF ( TMPPRF .NE. SPPRO ) CYCLE
+
+
+            POLNAM = ADJUSTL ( SEGMENT( 2 ) )
+            SPECNM = ADJUSTL ( SEGMENT( 3 ) )
+            SPLTFAC = STR2REAL( SEGMENT( 4 ) )
+            SDIV    = STR2REAL( SEGMENT( 5 ) )
+            SMFAC   = STR2REAL( SEGMENT( 6 ) )
 
 C.............  Search for pollutant in list of valid names, and go to the end
 C               of the loop if not found (skip entry)
+
             J = INDEX1( POLNAM, NIPOL, EINAM )
     
             IF ( J .EQ. 0 ) CYCLE
@@ -161,7 +179,7 @@ C               of the loop if not found (skip entry)
         END DO
 
         IF( EFLAG ) THEN
-            MESG = 'At least one of the divisors was zero.'
+            MESG = 'At least one of the divisors was zero in GSPRO.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
  
@@ -179,7 +197,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93100   FORMAT( A5, 1X, A16, 1X, A16, 1X, G13.0, 1X, G13.0, 1X, G9.0 )
+93100   FORMAT( A )
 
 C...........   Internal buffering formats............ 94xxx
 
