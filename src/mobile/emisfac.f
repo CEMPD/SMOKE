@@ -50,7 +50,7 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
         
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TKHOUR
+        USE MODMET, ONLY: TKHOUR, RHHOUR, BPHOUR, BPDAY
 
 C...........   This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS,
@@ -143,7 +143,8 @@ C.........   Other local variables
         INTEGER :: MAXFAC = 0    ! max. number of facility types
 
         LOGICAL :: EFLAG    = .FALSE.    ! error flag
-        LOGICAL :: TEMPFLAG = .TRUE.     ! true: replace temperatures in M6 scenarios 
+        LOGICAL :: TEMPFLAG = .TRUE.     ! true: replace temperatures in M6 scenarios
+        LOGICAL :: RHFLAG   = .TRUE.     ! true: replace humidity values in M6 scenarios
         LOGICAL :: INITIAL  = .TRUE.     ! true: first time through loop
         LOGICAL :: FEXIST   = .FALSE.    ! true: file exists
         LOGICAL :: FILEOPEN = .FALSE.    ! true: emisfacs file is open
@@ -197,9 +198,11 @@ C.........  Get environment variables that control program behavior
         TEMPFLAG = ENVYN( 'REPLACE_TEMPERATURES', 
      &                 'Replace temperatures in MOBILE6 scenarios',
      &                 .TRUE., IOS )
+        RHFLAG = ENVYN( 'REPLACE_HUMIDITY', 'Replace humidity ' //
+     &                  'values in MOBILE6 scenarios', .TRUE., IOS )
      
-C.........  Get temperature aggregation length
-        MESG = 'Temperature aggregation group'
+C.........  Get meteorology aggregation length
+        MESG = 'Meteorology aggregation group'
         CALL ENVSTR( 'GROUP_TYPE', MESG, 'daily', GRP_NAME, IOS )
      
 C.........  Check if speed profiles are to be used
@@ -278,12 +281,12 @@ C           do not store the pollutants as separate
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END SELECT
      
-C.........  Get temperature file directory from the environment
-        MESG = 'Location of hourly temperature files'
+C.........  Get meteorology file directory from the environment
+        MESG = 'Location of hourly meteorology files'
         CALL ENVSTR( 'SMK_METPATH', MESG, '.', TEMPDIR, IOS )
      
         TNAME = PROMPTMFILE(
-     &          'Enter logical name for first hourly temperature file',
+     &          'Enter logical name for first hourly meteorology file',
      &          FSREAD3, 'HOURLYT', PROGNAME )
         
 C.........  Get MOBILE6 directory from the environment
@@ -473,11 +476,11 @@ C.........  Allocate memory for the source/scenario number array
         
         SCENLIST = 0
 
-C.........  Start loop over temperature files
+C.........  Start loop over meteorology files
         DO
 
 c            IF( TEMPFLAG ) THEN
-C.................  Read header of temperature file
+C.................  Read header of meteorology file
                 IF ( .NOT. DESC3( TNAME ) ) THEN
                 
                     MESG = 'Could not get description of file ' // TNAME
@@ -520,19 +523,24 @@ C.....................  Find end date in file description
                     END IF
                 END IF
 
-C.................  Allocate space for temperature info            
+C.................  Allocate space for meteorology info            
                 IF( INITIAL ) THEN
                     ALLOCATE( TEMPCTY( NROWS ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'TEMPCTY', PROGNAME )
                     ALLOCATE( TKHOUR( NROWS, 24 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
+                    ALLOCATE( RHHOUR( NROWS, 24 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'RHHOUR', PROGNAME )
+                    ALLOCATE( BPHOUR( NROWS, 24 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'BPHOUR', PROGNAME )
+                    ALLOCATE( BPDAY( NROWS ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'BPDAY', PROGNAME )
                 END IF
                 
                 TEMPCTY = 0
-                TKHOUR = 0.
 
-C.................  Read contents of hourly temperature file
-                MESG = 'Reading HOURLY temperature file...'
+C.................  Read contents of hourly meteorology file
+                MESG = 'Reading hourly meteorology file...'
                 CALL M3MSG2( MESG )
             	
 C.................  Read county list from file
@@ -545,8 +553,7 @@ C.................  Read county list from file
 C.................  Read temperature data from file            
                 TEMPDATE = SDATE
                 TEMPTIME = STIME
-                CALL RDHOURTEMP( TNAME, NROWS, TEMPDATE, TEMPTIME, 
-     &                           TKHOUR )
+                CALL RDHOURTEMP( TNAME, NROWS, TEMPDATE, TEMPTIME )
 
 C.............  If not using temperature files            
 c            ELSE
@@ -576,8 +583,8 @@ C.............  Open new input file
             NUMSCEN = 1
             NUMSRC  = 0
             CALL WRM6INPUT( GRPLIST, NGRPLINES, PDEV, MDEV, 
-     &                      TEMPCTY, TKHOUR, NROWS, VOLNAM, 
-     &                      NUMSCEN, NUMSRC, TEMPFLAG, SPDFLAG )
+     &                      TEMPCTY, NROWS, VOLNAM, NUMSCEN, 
+     &                      NUMSRC, TEMPFLAG, RHFLAG, SPDFLAG )
             
             CLOSE( MDEV )
             
