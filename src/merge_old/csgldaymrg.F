@@ -1,12 +1,10 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM CSGLDAYMRG
 
 C***********************************************************************
-C  program     CSGLDAYMRG body starts at line  262
+C  program     CSGLDAYMRG body starts at line  279
 C  subroutine  DAYFILE         starts at line 1442
-C  subroutine  CTLSPC          starts at line 1555
+C  subroutine  CTLSPC          starts at line 1556
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -38,24 +36,47 @@ C       each of the four processes (mb, pt, bo, ar) separately or in any
 C       combination of them.
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
         
+        INCLUDE 'ARDIMS3.EXT'   !  area -source dimensioning parameters
+        INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
+        INCLUDE 'MBDIMS3.EXT'   !  mobile source parms and tables
+        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'GRDIMS3.EXT'   !  grid parameters
+        INCLUDE 'TMDIMS3.EXT'   !  temporal parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  0-based I/O API file desc. data structures.
-        INCLUDE 'ARDIMS3.EXT'   !  area -source dimensioning parameters
-        INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'VGRD3.EXT'     !  (AQM) vertical dimensioning parameters
-        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
-        INCLUDE 'GRDIMS3.EXT'   !  grid parameters
-        INCLUDE 'MBDIMS3.EXT'   !  mobile source parms and tables
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        CHARACTER*2     CRLF
         LOGICAL         DSCGRID
         INTEGER         GETDATE
         INTEGER         GETNUM
@@ -69,25 +90,22 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*14    MMDDYY
         CHARACTER*10    HHMMSS
 
-
-        
-        EXTERNAL    DSCGRID, GETDATE, GETNUM, GETYN, INDEX1, 
+        EXTERNAL    CRLF, DSCGRID, GETDATE, GETNUM, GETYN, INDEX1,
      &              PROMPTMFILE, PROMPTFFILE, TRIMLEN, CSVNAME,
      &              WKDAY, MMDDYY, HHMMSS
 
 C...........   PARAMETER
 
+        CHARACTER*5     BLANK5
+        CHARACTER*10    BLANK10
         CHARACTER*16    NONE
-        PARAMETER     ( NONE = 'NONE' )
 
-cmh temp
-        INTEGER     NETYPE
-c sl        PARAMETER (NETYPE=6)
-        PARAMETER (NETYPE=8)
-cmh temp done
+        PARAMETER     ( BLANK5  = ' ',
+     &                  BLANK10 = ' ',
+     &                  NONE    = 'NONE' )
 
-        INTEGER     ANETYPE      ! No. of scenario-spec MV emis types
-        INTEGER     ANMPOL       ! Model species derived from CSVNAME
+        INTEGER     NETYPE     ! No. of scenario-spec MV emis types
+        INTEGER     ANMPOL     ! Model species derived from CSVNAME
         CHARACTER*16   AVNAME3D( MXVARS3 ) ! variable names (length MXDLEN3=80)
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -137,16 +155,12 @@ C...........   Control and projection matrices (re-used for both purposes)
         REAL            CA( NASRC, NIPOL )
         REAL            CP( NPSRC, NIPOL )
 
-cmh temp
-        INTEGER  NEMODE
-        PARAMETER( NEMODE = 4 )
-        CHARACTER*16 MEMODE( NEMODE )  ! Emissions modes for given scenario
-        DATA MEMODE  / 'EXH', 'EVP', 'RNL', 'RST' /
-cmh temp done
+        INTEGER         NEMODE           ! Number of scenario-spec MV processes
+        CHARACTER*3     MEMODE( MXEPRC ) ! Scenario-spec MV processes
 
-        REAL            CM( NMSRC, NVTYPE, NIPOL + NEMODE - 1 )
-        CHARACTER*16    MCNAMES( NIPOL + NEMODE - 1 )
-        CHARACTER*16    MPNAMES( NIPOL + NEMODE - 1 )
+        REAL            CM( NMSRC, NVTYPE, NIPOL + MXEPRC - 1 )
+        CHARACTER*16    MCNAMES( NIPOL + MXEPRC - 1 )
+        CHARACTER*16    MPNAMES( NIPOL + MXEPRC - 1 )
 
 C...........   Speciation Matrices, and description of how it maps input 
 C...........   variables to output variables:  SS( S, SPCREF( V,W ) )
@@ -234,19 +248,10 @@ C...........   Other local variables
         CHARACTER*16    ENAME   !  logical name for emission         output file
 
         CHARACTER*16    SCRBUF, TMPBUF, ABUF, BBUF  !  scratch vbles for names
-        CHARACTER*80    BMETHEAD( 2 )  ! met headers from BTMP
+        CHARACTER*80    BMETHEAD( 2 )  ! met headers from BGTS
         CHARACTER*80    MMETHEAD( 2 )  ! met headers from MTMP
         CHARACTER*80    PMETHEAD( 2 )  ! met headers from PLAY
-
-        CHARACTER*10    DAYS( 7 )
-        DATA            DAYS
-     &          /
-     &          'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-     &          'Friday', 'Saturday', 'Sunday'
-     &          /
-
         CHARACTER*256   MESG
- 
 
 C.......   EQUIVALENCES/OVERLAYS to reduce executable size:
 C...........   Need only one control matrix at a time; don't need
@@ -314,13 +319,13 @@ C.......   Set appropriate flags and parameters for this run:
         
         IF ( AFLAG ) THEN
 
-            JDATE  = GETDATE( JDATE,
+            JDATE  = GETDATE( 1995182,
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
 
-            JTIME   = GETNUM( 0,  235959,       0, 
+            JTIME   = GETNUM( 0,  235959, 0, 
      &                        'Enter starting time  (HHMMSS)' )
             TSTEP   = 10000
-            NSTEPS  = GETNUM( 1, 24, 999999,
+            NSTEPS  = GETNUM( 1, 999999, 24,
      &                        'Enter run duration    (hours)' )
 
         ELSE
@@ -393,7 +398,7 @@ C...........   Area source files:
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  AGMAT file:', NROWS3D,
      &          'program:', NGRID
-                CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             ELSE IF ( NCOLS3D .NE. NMATX ) THEN
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  NMATX in AGMAT file:', NCOLS3D,
@@ -414,7 +419,7 @@ C...........   Area source files:
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  ASMAT file:', NROWS3D,
      &          'program:', NASRC
-                CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             END IF      ! if asmat file's dimensionality matches, or not
 
         ELSE	!  area not used.  set area-related flags to false
@@ -480,7 +485,7 @@ C.......   Mobile source matrix files:
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  MGMAT file:', NROWS3D,
      &          'program:', NGRID
-                CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             ELSE IF ( NCOLS3D .NE. NMATX ) THEN
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  NMATX in MGMAT file:', NCOLS3D,
@@ -500,7 +505,7 @@ C.......   Mobile source matrix files:
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  MSMAT file:', NROWS3D,
      &          'program:', NMSRC
-                CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             END IF
 
             IF( MCFLAG ) THEN
@@ -511,10 +516,10 @@ C.......   Mobile source matrix files:
                     WRITE( MESG, 94010 )
      &              'Dimension mismatch.  MCMAT file:', NROWS3D,
      &              'program:', NMSRC
-                    CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                    CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
                 END IF
                 DO  5  I = 1, NIPOL + NEMODE - 1
-
+c  for later
 5               CONTINUE
             END IF
 
@@ -526,7 +531,7 @@ C.......   Mobile source matrix files:
                     WRITE( MESG, 94010 )
      &              'Dimension mismatch.  MPMAT file:', NROWS3D,
      &              'program:', NMSRC
-                    CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                    CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
                 END IF
                 DO  6  I = 1, NIPOL + NEMODE - 1
                     MCNAMES( I ) = VNAME3D( I )( 6:16 )
@@ -578,7 +583,7 @@ C.......   Point source matrix and layer fraction files:
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  LAYFRAC file:', NROWS3D,
      &          'program:', NPSRC
-                CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             ELSE IF ( NLAYS3D .NE. EMLAYS ) THEN
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  NLAYS in PLAY file:', NLAYS3D,
@@ -606,7 +611,7 @@ C.......   Point source matrix and layer fraction files:
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  NGRID in PGMAT file:', NROWS3D,
      &          'program:', NGRID
-                CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             ELSE IF ( NCOLS3D .NE. NPSRC ) THEN
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  NPSRC in PGMAT file:', NCOLS3D,
@@ -621,7 +626,7 @@ C.......   Point source matrix and layer fraction files:
                 WRITE( MESG, 94010 )
      &          'Dimension mismatch.  PSMAT file:', NROWS3D,
      &          'program:', NPSRC
-                CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             END IF !  if psmat file's dimensionality matches, or not
 
         ELSE            !  no point. set default layer parameters, pt-flags
@@ -634,14 +639,14 @@ C.......   Point source matrix and layer fraction files:
 
 C.......   Biogenic source file
 
-C........  Adding DESC3(BTMP) to avoid failure while opening output file  
+C........  Adding DESC3(BGTS) to avoid failure while opening output file  
 C........  when bio is running alone 
 
-        IF ( BFLAG .AND. (.NOT. (MFLAG.OR.PFLAG.OR.AFLAG) ) ) THEN
+        IF ( BFLAG ) THEN
 
             BTNAME = PROMPTMFILE(
      &         'Enter logical name for TIME-STEPPED BIOGENIC EMIS file',
-     &          FSREAD3, 'BTMP', 'CSGLDAYMRG' )
+     &          FSREAD3, 'BGTS', 'CSGLDAYMRG' )
 
             IF ( .NOT. DESC3( BTNAME ) ) THEN
                 MESG = 'Could not get description of file ' // BTNAME
@@ -715,9 +720,9 @@ C...........   Set up header for output file
         FDESC3D( 1 ) = 'area source speciated gridded emissions.'
                  
         IF ( ACFLAG .OR. MCFLAG .OR. PCFLAG ) THEN
-            ENAME = 'LGTSC'
+            ENAME = 'EMISC3D'
         ELSE
-            ENAME = 'LGTS'
+            ENAME = 'EMIS3D'
         END IF
 
         ENAME = PROMPTMFILE(  
@@ -777,8 +782,7 @@ C.......   Read relevant gridding and speciation matrices:
 
         IF ( AFLAG ) THEN
 
-            WRITE( *,92000 ) 
-     &      ' ', 'Reading area transform matrices.', ' '
+            CALL M3MSG2( 'Reading area transform matrices...' )
 
             IF ( .NOT. READ3( AGNAME, 'ALL', 1, 0, 0, NA ) ) THEN
 
@@ -801,8 +805,7 @@ C.......   Read relevant gridding and speciation matrices:
 
         IF ( MFLAG ) THEN
 
-            WRITE( *,92000 ) 
-     &      ' ', 'Reading mobile transform matrices.', ' '
+            CALL M3MSG2( 'Reading mobile transform matrices...' )
 
             IF ( .NOT. READ3( MGNAME, 'ALL', 1, 0, 0, NM ) ) THEN
 
@@ -825,16 +828,20 @@ C...........   Parse names of the variables in msmat:
 C.......   Start description of output file with ANAME and grid description
 
         IF ( .NOT. DESC3( MTNAME ) ) THEN
-            CALL M3EXIT( 'CSGMOBIL', 0, 0,
-     &              'Could not get description of file ' // MTNAME, 2 )
+            CALL M3EXIT( 'CSGLDAYMRG', 0, 0,
+     &              'Could not get description of file ' // 
+     &              MTNAME( 1:TRIMLEN( MTNAME ) ), 2 )
         END IF
 
 C.......   Get speciation naming information from list file TDEV
 C..........  Get number of scenario-specific MV emission types
 C..........     ( Use VNAME3D as dummy so don't have to declare new array)
 
-        ANETYPE  = CSVNAME( TDEV, .TRUE., .FALSE., .TRUE., EMTNAM )
+        NETYPE  = CSVNAME( TDEV, .TRUE., .FALSE., .TRUE., EMTNAM )
         NSNAME  = CSVNAME( TDEV, .TRUE., .TRUE. , .TRUE., SPCFNM )
+
+C.........  Get list of scenario's emissions modes (processes)
+        NEMODE = CSVNAME( TDEV, .FALSE., .FALSE., .TRUE. , MEMODE )
 
 C..........  Get number and names of scenario-specific model species
 
@@ -883,8 +890,7 @@ C.........  Store last counter value
 
         IF ( PFLAG ) THEN
 
-            WRITE( *,92000 ) 
-     &      ' ', 'Reading point transform matrices.', ' '
+            CALL M3MSG2( 'Reading point transform matrices...' )
 
             IF ( .NOT. READ3( PGNAME, 'ALL', 1, 0, 0, NP ) ) THEN
 
@@ -1010,13 +1016,14 @@ C...........   file-date&time to match with the current simulation
 C...........   date&time.
 
         IF ( OUTFLAG ) THEN
-            MESG = 'Calculating and writing speciated gridded emissions'
+            MESG = 'Calculating and writing speciated ' //
+     &             'gridded emissions...'
         ELSE 
-             MESG = 'Calculating speciated gridded emissions...'
+            MESG = 'Calculating speciated gridded emissions...'
         END IF
-        CALL M3MESG( MESG )
+        CALL M3MSG2( MESG )
 
-C.........  Compare the consistency of met headers from BTMP, MTMP, PLAY to
+C.........  Compare the consistency of met headers from BGTS, MTMP, PLAY to
 C           make sure they are using the same met file
 
         IF ( METFLAG ) THEN
@@ -1027,126 +1034,127 @@ C           make sure they are using the same met file
      &           (MMETHEAD(2).EQ.PMETHEAD(2))
      &         ) THEN
 
-               WRITE( MESG,92000 ) 'Met file consistency is verified '
-     &                          // 'among BTMP, MTMP, and PLAY'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 2 )
-               CALL M3MESG( MESG )
+               WRITE( MESG, 94000 )
+     &                'Met file consistency is verified among' //
+     &                CRLF() // BLANK5 // 'BGTS, MTMP, and PLAY:' //
+     &                CRLF() // BLANK10 //
+     &                BMETHEAD( 1 )( 1:TRIMLEN( BMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 //
+     &                BMETHEAD( 2 )( 1:TRIMLEN( BMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
 
             ELSE IF ( (BMETHEAD(1).EQ.MMETHEAD(1)) .AND.
      &                (BMETHEAD(2).EQ.MMETHEAD(2)) ) THEN ! bo & mb are consist.
                IF ( PMETHEAD(1).NE.BMETHEAD(1) ) THEN ! Pt's scen. inconsistent
-                  WRITE( MESG,92000 )
+                  WRITE( MESG,94000 )
      &               'Point source has different met scenario ' //
      &               'than Biogenics and Mobile'
                   CALL M3WARN( 'CSGLDAYMRG', 0, 0, MESG )
                END IF
                IF ( PMETHEAD(2).NE.BMETHEAD(2) ) THEN ! Pt's scheme incons.
-                  WRITE( MESG,92000 )
+                  WRITE( MESG,94000 )
      &               'Point source has different cloud scheme ' //
      &               'than Biogenics and Mobile'
                   CALL M3WARN( 'CSGLDAYMRG', 0, 0, MESG )
                END IF
 
-               WRITE( MESG,92000 ) 'For Point Sources:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) PMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) PMETHEAD( 2 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92000 ) 'For Biogenics and Mobile:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 2 )
-               CALL M3MESG( MESG )
+               WRITE( MESG,94000 ) 'For Point:' //
+     &                CRLF() // BLANK10 // 
+     &                PMETHEAD( 1 )( 1:TRIMLEN( PMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                PMETHEAD( 2 )( 1:TRIMLEN( PMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
+
+               WRITE( MESG,94000 ) 'For Biogenics and Mobile:' //
+     &                CRLF() // BLANK10 // 
+     &                BMETHEAD( 1 )( 1:TRIMLEN( BMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                BMETHEAD( 2 )( 1:TRIMLEN( BMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
 
             ELSE IF ( (MMETHEAD(1).EQ.PMETHEAD(1)) .AND.
      &                (MMETHEAD(2).EQ.PMETHEAD(2)) ) THEN ! Try mb & pt
                IF ( BMETHEAD(1).NE.MMETHEAD(1) ) THEN ! Bo's scen. inconsistent
-                  WRITE( MESG,92000 )
+                  WRITE( MESG,94000 )
      &               'Biogenics has different met scenario ' //
      &               'than Mobile and Point'
                   CALL M3WARN( 'CSGLDAYMRG', 0, 0, MESG )
                END IF
                IF ( BMETHEAD(2).NE.MMETHEAD(2) ) THEN ! Bo's scheme incons.
-                  WRITE( MESG,92000 )
+                  WRITE( MESG,94000 )
      &               'Biogenics has different cloud scheme ' //
      &               'than Mobile and Point'
                   CALL M3WARN( 'CSGLDAYMRG', 0, 0, MESG )
                END IF
 
-               WRITE( MESG,92000 ) 'For Biogenics:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 2 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92000 ) 'For Mobile and Point:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) MMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) MMETHEAD( 2 )
-               CALL M3MESG( MESG )
+               WRITE( MESG,94000 ) 'For Biogenics:' //
+     &                CRLF() // BLANK10 // 
+     &                BMETHEAD( 1 )( 1:TRIMLEN( BMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                BMETHEAD( 2 )( 1:TRIMLEN( BMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
+
+               WRITE( MESG,94000 ) 'For Mobile and Point:' //
+     &                CRLF() // BLANK10 // 
+     &                MMETHEAD( 1 )( 1:TRIMLEN( MMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                MMETHEAD( 2 )( 1:TRIMLEN( MMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
 
             ELSE IF ( (PMETHEAD(1).EQ.BMETHEAD(1)) .AND.
      &                (PMETHEAD(2).EQ.BMETHEAD(2)) ) THEN ! Try pt & bo
                IF ( MMETHEAD(1).NE.PMETHEAD(1) ) THEN ! Mb's scen. inconsistent
-                  WRITE( MESG,92000 )
+                  WRITE( MESG,94000 )
      &               'Mobile has different met scenario ' //
      &               'than Point and Biogenics'
                   CALL M3WARN( 'CSGLDAYMRG', 0, 0, MESG )
                END IF
                IF ( MMETHEAD(2).NE.PMETHEAD(2) ) THEN ! Mb's scheme incons.
-                  WRITE( MESG,92000 )
+                  WRITE( MESG,94000 )
      &               'Mobile has different cloud scheme ' //
      &               'than Point and Biogenics'
                   CALL M3WARN( 'CSGLDAYMRG', 0, 0, MESG )
                END IF
 
-               WRITE( MESG,92000 ) 'For Mobile:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) MMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) MMETHEAD( 2 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92000 ) 'For Point and Biogenics:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) PMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) PMETHEAD( 2 )
-               CALL M3MESG( MESG )
+               WRITE( MESG,94000 ) 'For Mobile:' //
+     &                CRLF() // BLANK10 // 
+     &                MMETHEAD( 1 )( 1:TRIMLEN( MMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                MMETHEAD( 2 )( 1:TRIMLEN( MMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
+
+               WRITE( MESG,94000 ) 'For Point and Biogenics:' //
+     &                CRLF() // BLANK10 // 
+     &                PMETHEAD( 1 )( 1:TRIMLEN( PMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                PMETHEAD( 2 )( 1:TRIMLEN( PMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
 
             ELSE     ! Neither two inputs use the same met data
-               WRITE( MESG,92000 ) 'Biogenic, Mobile and Point all '
+               WRITE( MESG,94000 ) 'Biogenic, Mobile and Point all '
      &                          // 'used different met inputs '
                CALL M3WARN( 'CSGLDAYMRG', 0, 0, MESG )
 
-               WRITE( MESG,92000 )
-     &            'For Biogenics:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) BMETHEAD( 2 )
-               CALL M3MESG( MESG )
+               WRITE( MESG,94000 ) 'For Biogenics:' //
+     &                CRLF() // BLANK10 // 
+     &                BMETHEAD( 1 )( 1:TRIMLEN( BMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                BMETHEAD( 2 )( 1:TRIMLEN( BMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
 
-               WRITE( MESG,92000 )
-     &            'For Mobile:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) MMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) MMETHEAD( 2 )
-               CALL M3MESG( MESG )
+               WRITE( MESG,94000 ) 'For Mobile:' //
+     &                CRLF() // BLANK10 // 
+     &                MMETHEAD( 1 )( 1:TRIMLEN( MMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                MMETHEAD( 2 )( 1:TRIMLEN( MMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
 
-               WRITE( MESG,92000 )
-     &            'For Point Source:'
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) PMETHEAD( 1 )
-               CALL M3MESG( MESG )
-               WRITE( MESG,92020 ) PMETHEAD( 2 )
-               CALL M3MESG( MESG )
+               WRITE( MESG,94000 ) 'For Point:' //
+     &                CRLF() // BLANK10 // 
+     &                PMETHEAD( 1 )( 1:TRIMLEN( PMETHEAD( 1 ) ) ) //
+     &                CRLF() // BLANK10 // 
+     &                PMETHEAD( 2 )( 1:TRIMLEN( PMETHEAD( 2 ) ) )
+               CALL M3MSG2( MESG )
 
             END IF   ! Met header comparison
 
@@ -1164,25 +1172,27 @@ C           make sure they are using the same met file
  
             END IF
  
-C.............  Write to screen because WRITE3 only writes to LDEV
-            WRITE( *, 93020 ) HHMMSS( JTIME )
-        
             IF ( LDATE .NE. JDATE ) THEN  !  get new day's input files, etc
 
                 LDATE = JDATE
 
                 IF ( AFLAG ) THEN
+                    ANAME = 'ATMP'
                     CALL DAYFILE( ANAME, ADATE, ATIME, JDATE, JTIME,
      &                            NASRC, 'Enter  AREA  SOURCE file' )
                 END IF
 
                 IF ( PFLAG ) THEN
+                    PNAME = 'PTMP'
                     CALL DAYFILE( PNAME, PDATE, PTIME, JDATE, JTIME,
      &                            NPSRC, 'Enter  POINT SOURCE file' )
                 END IF
 
             END IF  !  if ldate different from jdate (so get new input files)
 
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 93020 ) HHMMSS( JTIME )
+        
 C...........   Read mobile source emissions:
 
             IF ( MFLAG ) THEN
@@ -1327,7 +1337,7 @@ C........  First find the location of the second "_"
 
 C........  Then match the first 2 name sections to EMTNAM
                     NMATCH = SPCFNM( SIDX )( 1:M-1 )
-                    KK     = INDEX1( NMATCH, ANETYPE, EMTNAM )
+                    KK     = INDEX1( NMATCH, NETYPE, EMTNAM )
 
 C........  Apply SM to MOBILV and add result to current MOBILC
 
@@ -1403,6 +1413,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
+94000   FORMAT( A )
+
 94010   FORMAT( 10 ( A, :, I10, :, 2X ) )
 
 94020   FORMAT( A, I4, 2X, 10 ( A, :, 1PG14.6, :, 2X ) )
@@ -1416,8 +1428,8 @@ C...........   Miscellaneous formats................. 95xxx
 C****************   end program CSGLDAYMRG   *****************************
 C***********************************************************************
 
-        SUBROUTINE  DAYFILE( FNAME, FDATE, FTIME, JDATE, JTIME, 
-     &                       NSRCS, PROMPT )
+        SUBROUTINE DAYFILE( FNAME, FDATE, FTIME, JDATE, JTIME, 
+     &                      NSRCS, PROMPT )
 
 C***********************************************************************
 C  subroutine body starts at line 1056
@@ -1461,13 +1473,18 @@ C...........   ARGUMENTS and their descriptions:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         INTEGER         GETNUM
         LOGICAL         GETYN
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
 
-        EXTERNAL        GETNUM, GETYN, PROMPTMFILE, TRIMLEN
+        EXTERNAL        CRLF, GETNUM, GETYN, PROMPTMFILE, TRIMLEN
 
+
+C...........   LOCAL PARAMETERS
+        CHARACTER*5     BLANK5
+        PARAMETER     ( BLANK5 = ' ' )
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
@@ -1495,12 +1512,15 @@ C   begin body of subroutine  DAYFILE
         END IF          !  if dimension mismatch
         
         IF ( TSTEP3D .GT. 0 ) THEN
-            WRITE( *,92000 ) ' '
-            WRITE( *,92010 )
+            WRITE( MESG,94020 )
      &          'The current model   date&time is', JDATE,   JTIME,
+     &           CRLF() // BLANK5 //
      &          'This file starting  date&time is', SDATE3D, STIME3D,
+     &           CRLF() // BLANK5 //
      &          'Enter this-file date&time to be used with ' //
-     &          'current model date&time.'
+     &           CRLF() // BLANK5 //
+     &          'current model date & time.'
+            CALL M3MSG2( MESG )
             FDATE = GETNUM( SDATE3D, 9999999, SDATE3D, 
      &                      'Enter date (YYYYDDD)' )
             FTIME = GETNUM( 0, 235959, JTIME, 
@@ -1519,13 +1539,11 @@ C...........   Informational (LOG) message formats... 92xxx
 92000   FORMAT ( 5X , A )    !  generic string log format
 
 
-92010   FORMAT ( 5X , A, :, I9, ':', I6.6 )
-
-
-
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT ( 3A, I9, 2X, A, I9 )    !  dimension mismatch format
+
+94020   FORMAT ( 10( A, :, I9, ':', I6.6  ) )
 
 
         END
@@ -1580,7 +1598,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         CHARACTER*16    SCRBUF
-        CHARACTER*80    LINE
         CHARACTER*240   MESG
         
         INTEGER         S, I, V
@@ -1588,7 +1605,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         CHARACTER*16    INVNAME( NMPOL )
 
 C***********************************************************************
-C   begin body of subroutine  CTLSPC
+C   begin body of subroutine  CSGLDAYMRG
         
         IF ( .NOT. DESC3( FNAME ) ) THEN
 
@@ -1598,18 +1615,18 @@ C   begin body of subroutine  CTLSPC
 
         ELSE IF ( NROWS3D .NE. NSRCS ) THEN
 
-            LINE = 'Dimension mismatch.  "' // 
+            MESG = 'Dimension mismatch.  "' // 
      &             FNAME( 1:TRIMLEN( FNAME ) ) // '" file:' 
             WRITE( MESG, 94010 )
-     &              LINE( 1:TRIMLEN( LINE ) ), NROWS3D,
+     &              MESG( 1:TRIMLEN( MESG ) ), NROWS3D,
      &              'program:', NSRCS
-            CALL M3EXIT( 'CSGMERGE', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
 
         END IF      !  check dimensionality of FNAME
 
-        LINE = 'Reading and applying "' // 
+        MESG = 'Reading and applying "' // 
      &         FNAME( 1:TRIMLEN( FNAME ) ) // '"'
-        CALL M3MESG( LINE )
+        CALL M3MSG2( MESG )
         
         DO  33  S = 1, NIPOL
             
