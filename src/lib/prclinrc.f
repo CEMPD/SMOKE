@@ -78,6 +78,7 @@ C...........   Other local variables
         INTEGER, SAVE :: IREC_MIN = 99999999 ! minimum record number
         INTEGER, SAVE :: PREC     = -9       ! previous call record number
 
+	LOGICAL, SAVE :: ASCFLAG   = .FALSE.  ! true: using ascii file
         LOGICAL, SAVE :: FIRSTIME  = .TRUE.   ! true: first time routine called
         LOGICAL, SAVE :: FIRSTLOOP = .TRUE.   ! true: file already read once
         LOGICAL, SAVE :: LCATSET   = .FALSE.  ! true: source category set
@@ -364,63 +365,65 @@ C                           set the first output file name
                         END IF
 
 C.........................  Reset report settings to defaults
-                        INREPORT      = .TRUE.
-                        RPT_%BYCELL   = .FALSE.
-                        RPT_%BYCNRY   = .FALSE.
-                        RPT_%BYCNTY   = .FALSE.
-                        RPT_%BYCONAM  = .FALSE.
-                        RPT_%BYCYNAM  = .FALSE.
-                        RPT_%BYDATE   = .FALSE.
-                        RPT_%BYDIU    = .FALSE.
-                        RPT_%BYELEV   = .FALSE.
-                        RPT_%BYHOUR   = .FALSE.
-                        RPT_%BYLAYER  = .FALSE.
-                        RPT_%BYMON    = .FALSE.
-                        RPT_%BYPLANT  = .FALSE.
-                        RPT_%BYRCL    = .FALSE.
-                        RPT_%BYSCC    = .FALSE.
-                        RPT_%BYSPC    = .FALSE.
-                        RPT_%BYSRC    = .FALSE.
-                        RPT_%BYSRG    = .FALSE.
-                        RPT_%BYSTAT   = .FALSE.
-                        RPT_%BYSTNAM  = .FALSE.
-                        RPT_%BYWEK    = .FALSE.
-                        RPT_%CHKPROJ  = .FALSE.
-                        RPT_%CHKCNTL  = .FALSE.
-                        RPT_%LAYFRAC  = .FALSE.
-                        RPT_%NORMCELL = .FALSE.
-                        RPT_%NORMPOP  = .FALSE.
-                        RPT_%SCCNAM   = .FALSE.
-                        RPT_%SRCNAM   = .FALSE.
-                        RPT_%STKPARM  = .FALSE.
-                        RPT_%USECRMAT = .FALSE.
-                        RPT_%USECUMAT = .FALSE.
-                        RPT_%USEGMAT  = .FALSE.
-                        RPT_%USEHOUR  = .FALSE.
-                        RPT_%USEPRMAT = .FALSE.
-                        RPT_%USESLMAT = .FALSE.
-                        RPT_%USESSMAT = .FALSE.
-                        LREGION       = .FALSE.
-                        LSUBGRID      = .FALSE.
+                        INREPORT       = .TRUE.
+                        RPT_%BYCELL    = .FALSE.
+                        RPT_%BYCNRY    = .FALSE.
+                        RPT_%BYCNTY    = .FALSE.
+                        RPT_%BYCONAM   = .FALSE.
+                        RPT_%BYCYNAM   = .FALSE.
+                        RPT_%BYDATE    = .FALSE.
+                        RPT_%BYDIU     = .FALSE.
+                        RPT_%BYELEV    = .FALSE.
+                        RPT_%BYHOUR    = .FALSE.
+                        RPT_%BYLAYER   = .FALSE.
+                        RPT_%BYMON     = .FALSE.
+                        RPT_%BYPLANT   = .FALSE.
+                        RPT_%BYRCL     = .FALSE.
+                        RPT_%BYSCC     = .FALSE.
+                        RPT_%BYSPC     = .FALSE.
+                        RPT_%BYSRC     = .FALSE.
+                        RPT_%BYSRG     = .FALSE.
+			RPT_%BYSTACK   = .FALSE.
+                        RPT_%BYSTAT    = .FALSE.
+                        RPT_%BYSTNAM   = .FALSE.
+                        RPT_%BYWEK     = .FALSE.
+                        RPT_%CHKPROJ   = .FALSE.
+                        RPT_%CHKCNTL   = .FALSE.
+                        RPT_%LAYFRAC   = .FALSE.
+                        RPT_%NORMCELL  = .FALSE.
+                        RPT_%NORMPOP   = .FALSE.
+                        RPT_%SCCNAM    = .FALSE.
+                        RPT_%SRCNAM    = .FALSE.
+                        RPT_%STKPARM   = .FALSE.
+			RPT_%USEASCELEV= .FALSE.
+                        RPT_%USECRMAT  = .FALSE.
+                        RPT_%USECUMAT  = .FALSE.
+                        RPT_%USEGMAT   = .FALSE.
+                        RPT_%USEHOUR   = .FALSE.
+                        RPT_%USEPRMAT  = .FALSE.
+                        RPT_%USESLMAT  = .FALSE.
+                        RPT_%USESSMAT  = .FALSE.
+                        LREGION        = .FALSE.
+                        LSUBGRID       = .FALSE.
 
-                        RPT_%ELEVSTAT = 0
-                        RPT_%NUMDATA  = -9   ! zero is legitimate
-			RPT_%NUMFILES = 0
-			RPT_%NUMSECT  = 0
-                        RPT_%NUMTITLE = 0
-                        RPT_%RENDLIN  = 0    ! init for consistency
-	                RPT_%RPTMODE  = 0
-			RPT_%RPTNVAR  = 0
-                        RPT_%RSTARTLIN= 0    ! init for consistency
-                        RPT_%SCCRES   = 10
-                        RPT_%SRGRES   = 0
+                        RPT_%ELEVSTAT  = 0
+                        RPT_%NUMDATA   = -9   ! zero is legitimate
+			RPT_%NUMFILES  = 0
+			RPT_%NUMSECT   = 0
+                        RPT_%NUMTITLE  = 0
+                        RPT_%RENDLIN   = 0    ! init for consistency
+	                RPT_%RPTMODE   = 0
+			RPT_%RPTNVAR   = 0
+                        RPT_%RSTARTLIN = 0    ! init for consistency
+                        RPT_%SCCRES    = 10
+                        RPT_%SRGRES    = 0
 
-                        RPT_%DATAFMT  = 'E8.3'
-                        RPT_%OFILENAM = ' '    ! init for consistency
-                        RPT_%REGNNAM  = ' '
-                        RPT_%SUBGNAM  = ' '
-                        RPT_%SPCPOL   = ' '
-                        TITLE         = ' '
+                        RPT_%DATAFMT   = 'E8.3'
+                        RPT_%OFILENAM  = ' '    ! init for consistency
+                        RPT_%REGNNAM   = ' '
+                        RPT_%SUBGNAM   = ' '
+                        RPT_%SPCPOL    = ' '
+                        TITLE          = ' '
                         IF( .NOT. LDELIM )
      &                     RPT_%DELIM    = ';'      ! default to semi-colon
 
@@ -438,6 +441,18 @@ C........  End of packet...
 C.............  Resolve status of settings that cannot be determined
 C               definitively until the end of the packet...
 
+C.............  If one report contains the ASCIIELEV instruction,
+C               all reports must contain it.
+               IF( PKTCOUNT( RPT_IDX ) .GT. 1 .AND.
+     &                                 ASCFLAG ) THEN
+                   IF( .NOT. RPT_%USEASCELEV ) THEN
+                       MESG = 'ERROR: If one report contains ' //
+     &                        'the ASCIIELEV instruction, '//
+     &                        'all reports must contain it.'
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                   END IF
+               END IF
+
 C.............  If packet was a report packet and no data have
 C               been selected, then set input file global setting
             IF( INREPORT .AND. RPT_%NUMDATA .LE. 0 ) THEN
@@ -447,7 +462,8 @@ C               been selected, then set input file global setting
 C.............  If using elevated settings and no layer fractions, make sure
 C               PELV file will be read in 
             IF( .NOT. VFLAG  .AND. .NOT. RPT_%LAYFRAC .AND.
-     &        ( RPT_%ELEVSTAT .GT. 0 .OR. RPT_%BYELEV )      ) THEN
+     &        ( RPT_%ELEVSTAT .GT. 0 .OR. RPT_%BYELEV )
+     &          .AND. .NOT. AFLAG      ) THEN
                 VFLAG = .TRUE.
             END IF
 
@@ -550,7 +566,7 @@ C                 then reset to maximum value
 
 			IF( FIRSTLOOP ) THEN
 			  WRITE( MESG, 94010 )
-     &                       'WARNING: Number of variable per report ' //
+     &                       'WARNING: Number of variables per report ' //
      &                       'at line', IREC, ' is greater than the ' //
      &                       'maximum allowed. Resetting to maximum ' //
      &                       'value.'
@@ -569,7 +585,7 @@ C                 then reset to maximum value
 
 			IF( FIRSTLOOP ) THEN
                           WRITE( MESG, 94010 )
-     &                       'WARNING: Number of variable per report ' //
+     &                       'WARNING: Number of variables per report ' //
      &                       'at line', IREC, ' is greater than the ' //
      &                       'maximum allowed. Resetting to maximum ' //
      &                       'value.'
@@ -592,6 +608,21 @@ C                 then reset to maximum value
 	            END IF
 
 		END IF
+
+C.............  ASCII elevated sources file used for report
+	    CASE( 'ASCIIELEV' )
+
+		IF( PKTCOUNT( RPT_IDX ) .EQ. 1 ) THEN
+		    ASCFLAG = .TRUE.
+		ELSE IF( PKTCOUNT( RPT_IDX ) .GT. 1 .AND.
+     &                   .NOT. ASCFLAG ) THEN
+		    MESG = 'ERROR: If one report contains the ASCIIELEV '//
+     &                     'instruction, all reports must contain it.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+		RPT_%USEASCELEV = .TRUE.
+		AFLAG = .TRUE.
 
 C.............  Check control or projection matrix versus report
             CASE( 'CHECK' )
@@ -616,8 +647,10 @@ C.............  Multiplicative controls used for report
 
 C.............  Gridding used for report
             CASE( 'GRIDDING' )
-                GFLAG      = .TRUE.
-                RPT_%USEGMAT  = .TRUE.
+		IF( .NOT. AFLAG ) THEN
+                    GFLAG      = .TRUE.
+                    RPT_%USEGMAT  = .TRUE.
+		END IF
 
 C.............  Projection used for report
             CASE( 'PROJECTION' )
@@ -667,8 +700,11 @@ C.............  BY options affecting inputs needed
                 SELECT CASE( SEGMENT( 2 ) )
 
                 CASE( 'CELL' )
-                    GFLAG      = .TRUE.
-                    RPT_%USEGMAT  = .TRUE.
+	 	    IF( .NOT. AFLAG ) THEN
+                        GFLAG      = .TRUE.
+                        RPT_%USEGMAT  = .TRUE.
+		    END IF
+
                     RPT_%BYCELL = .TRUE.
 
                 CASE( 'COUNTRY' )
@@ -697,12 +733,16 @@ C.............  BY options affecting inputs needed
                     END IF
 
                 CASE( 'HOUR' )
-                    TFLAG      = .TRUE.           ! Implies temporal allocation
-                    RPT_%USEHOUR  = .TRUE.
+		    IF( .NOT. AFLAG ) THEN
+                        TFLAG      = .TRUE.           ! Implies temporal allocation
+                        RPT_%USEHOUR  = .TRUE.
+		    END IF
+
                     RPT_%BYHOUR = .TRUE.
 
                 CASE( 'LAYER' )
-                    IF( CATEGORY .EQ. 'POINT' ) THEN
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                      IF( CATEGORY .EQ. 'POINT' ) THEN
                         LFLAG        = .TRUE.     ! Implies layer fractions file
                         TFLAG        = .TRUE.     ! Implies temporal allocation
                         RPT_%BYLAYER = .TRUE.
@@ -710,11 +750,20 @@ C.............  BY options affecting inputs needed
                         RPT_%USEHOUR = .TRUE.     ! Implies temporal allocation
                         RPT_%BYHOUR  = .TRUE.
 
-                    ELSE IF( FIRSTLOOP ) THEN
+                      ELSE IF( FIRSTLOOP ) THEN
 
                         CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
-                    END IF
+                      END IF
+
+		    ELSE
+		      WRITE( MESG, 94010 )
+     &                   'WARNING: BY LAYER instruction at ' //
+     &                   'line', IREC, 'is not allowed with ' //
+     &                   'the ASCIIELEV instruction.'
+		      CALL M3MSG2( MESG )
+
+		    END IF
 
                 CASE( 'PLANT' )
                     RPT_%BYPLANT = .TRUE.
@@ -723,30 +772,51 @@ C.............  BY options affecting inputs needed
                     END IF
 
                 CASE( 'ROADCLASS' )
-                    IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                	RPT_%BYRCL = .TRUE.
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                	    RPT_%BYRCL = .TRUE.
 
-                    ELSE IF( FIRSTLOOP ) THEN
+                        ELSE IF( FIRSTLOOP ) THEN
 
-                        CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
+                            CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
-                    END IF
+                        END IF
+
+		    ELSE
+
+			WRITE( MESG, 94010 )
+     &                     'WARNING: ROADCLASS instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+
+		    END IF
 
                 CASE( 'SCC10' )
-                    RPT_%BYSCC  = .TRUE.
-                    RPT_%SCCRES = 10
-                    IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
-                        NFLAG = .TRUE.
-                        RPT_%SCCNAM = .TRUE.
-                        IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
-                    END IF
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYSCC  = .TRUE.
+                        RPT_%SCCRES = 10
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NFLAG = .TRUE.
+                            RPT_%SCCNAM = .TRUE.
+                            IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
+                        END IF
+		    ELSE
+			WRITE( MESG, 94010 )
+     &                     'WARNING: BY SCC10 instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+		    END IF
 
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
-                    RPT_%BYSCC   = .TRUE.
-                    RPT_%SCCRES  = 10
+		    IF( .NOT. AFLAG ) THEN
+                        RPT_%BYSCC   = .TRUE.
+                        RPT_%SCCRES  = 10
+		    END IF
                     IF( SEGMENT( 3 ) .EQ. 'NAME' .OR.
      &                  SEGMENT( 4 ) .EQ. 'NAME' ) THEN
                         IF( CATEGORY .EQ. 'POINT' ) THEN
@@ -764,34 +834,82 @@ C.............  BY options affecting inputs needed
      &                  RPT_%STKPARM = .TRUE.
 
                 CASE( 'SPCCODE' )
-                    PSFLAG = .TRUE.
-                    RPT_%BYSPC = .TRUE.
-                    RPT_%SPCPOL = SEGMENT( 3 )
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        PSFLAG = .TRUE.
+                        RPT_%BYSPC = .TRUE.
+                        RPT_%SPCPOL = SEGMENT( 3 )
+		    ELSE
+			WRITE( MESG, 94010 )
+     &                     'WARNING: BY SPCCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+		    END IF
 
                 CASE( 'SRGCODE' )
-                    IF( CATEGORY .NE. 'POINT' ) THEN
-                        GSFLAG = .TRUE.
-                        RPT_%BYSRG = .TRUE.
-                        RPT_%SRGRES = 1
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        IF( CATEGORY .NE. 'POINT' ) THEN
+                            GSFLAG = .TRUE.
+                            RPT_%BYSRG = .TRUE.
+                            RPT_%SRGRES = 1
 
-                        IF( SEGMENT(3) .EQ. 'FALLBACK' ) RPT_%SRGRES = 2
+                            IF( SEGMENT(3) .EQ. 'FALLBACK' )
+     &                                      RPT_%SRGRES = 2
 
-                    ELSE
-                        CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
+                        ELSE
+                            CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
+                        END IF
+		    ELSE
+		        WRITE( MESG, 94010 )
+     &                     'WARNING: BY SRGCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'then ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+		    END IF
+
+		CASE( 'STACK' )
+		    RPT_%BYSTACK = .TRUE.
+                    RPT_%BYPLANT = .TRUE.
+                    IF( SEGMENT( 3 ) .EQ. 'STACKPARM' ) THEN
+                        RPT_%STKPARM = .TRUE.
                     END IF
 
                 CASE( 'MONCODE' )
-                    TSFLAG = .TRUE.
-                    RPT_%BYMON = .TRUE.
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        TSFLAG = .TRUE.
+                        RPT_%BYMON = .TRUE.
+		    ELSE
+			WRITE( MESG, 94010 )
+     &                     'WARNING: BY MONCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+		    END IF
 
                 CASE( 'WEKCODE' )
-                    TSFLAG = .TRUE.
-                    RPT_%BYWEK = .TRUE.
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        TSFLAG = .TRUE.
+                        RPT_%BYWEK = .TRUE.
+		    ELSE
+			WRITE( MESG, 94010 )
+     &                     'WARNING: BY WEKCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+		    END IF
 
                 CASE( 'DIUCODE' )
-                    TSFLAG = .TRUE.
-                    RPT_%BYDIU = .TRUE.
+		    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        TSFLAG = .TRUE.
+                        RPT_%BYDIU = .TRUE.
+		    ELSE
+			WRITE( MESG, 94010 )
+     &                     'WARNING: BY DIUCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+		    END IF
 
                 CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE
@@ -801,15 +919,27 @@ C.............  BY options affecting inputs needed
 C.............  Setting for the use of layer fractions
             CASE( 'LAYFRAC' )
 
-                IF( CATEGORY .EQ. 'POINT' ) THEN
-                    LFLAG = .TRUE.
-                    RPT_%LAYFRAC = .TRUE.
+		IF( .NOT. RPT_%USEASCELEV ) THEN
 
-                ELSE IF( FIRSTLOOP ) THEN
+                    IF( CATEGORY .EQ. 'POINT' ) THEN
+                        LFLAG = .TRUE.
+                        RPT_%LAYFRAC = .TRUE.
 
-                    CALL WRONG_SOURCE_CATEGORY( SEGMENT( 1 ) )
+                    ELSE IF( FIRSTLOOP ) THEN
 
-                END IF
+                        CALL WRONG_SOURCE_CATEGORY( SEGMENT( 1 ) )
+
+                    END IF
+
+		ELSE
+
+		    WRITE( MESG, 94010 )
+     &                 'WARNING: LAYFRAC instruction at ' //
+     &                 'line', IREC, 'is not allowed with ' //
+     &                 'the ASCIIELEV instruction.'
+                    CALL M3MSG2( MESG )
+
+		END IF
 
 C.............  Setting for the normalize instruction
             CASE( 'NORMALIZE' )
