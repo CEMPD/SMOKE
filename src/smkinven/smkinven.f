@@ -2,7 +2,7 @@
          PROGRAM SMKINVEN
 
 C***********************************************************************
-C  program body starts at line 167
+C  program body starts at line 170
 C
 C  DESCRIPTION:
 C    The smkinven program reads the any source inventory in one of four
@@ -103,11 +103,13 @@ C           this program
 
 C.........  File units and logical/physical names
 
+        INTEGER    :: CDEV = 0  !  unit no. for SCCs description
         INTEGER    :: DDEV = 0  !  unit no. for day-specific input file 
         INTEGER    :: EDEV = 0  !  unit no. for speeds file
         INTEGER    :: HDEV = 0  !  unit no. for hour-specific input file 
         INTEGER    :: IDEV = 0  !  unit no. for inventory file (various formats)
         INTEGER    :: LDEV = 0  !  unit no. for log file
+        INTEGER    :: ODEV = 0  !  unit number for ORIS description
         INTEGER    :: PDEV = 0  !  unit number for pollutants codes/names file
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
@@ -181,8 +183,8 @@ C.........  Output time zone
 
 C.........  Get names of input files
         CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
-     &                  EDEV, PDEV, VDEV, ZDEV, ENAME, INAME, 
-     &                  DNAME, HNAME )
+     &                  EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
+     &                  ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
         DFLAG = ( DDEV .NE. 0 )
@@ -367,8 +369,13 @@ C               the results are stored in module MODINFO.
             ELSE
 
                 NSRC    = NROWS3D
-                NINVARR = 1
-                IVARNAMS( 1 ) = 'CSOURC'
+                NINVARR = 6
+                IVARNAMS( 1 ) = 'IFIP'    ! In case CEM input
+                IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
+                IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
+                IVARNAMS( 4 ) = 'CORIS'   ! In case CEM input
+                IVARNAMS( 5 ) = 'CBLRID'  ! In case CEM input
+                IVARNAMS( 6 ) = 'CPDESC'  ! In case CEM input
 
                 CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 
      &                         NINVARR, IVARNAMS )
@@ -393,9 +400,9 @@ C               Also determine maximum and minimum dates for output file.
      &                      MXSRCDY, DEAIDX, DSPIDX )
 
 C.............  Read and output day-specific data
-            CALL GENPDOUT( DDEV, TZONE, DSDATE, DSTIME, DNSTEP, 
-     &                     INSTEP, OUTSTEP, NVARDY, NVSPDY, MXSRCDY, 
-     &                     TYPNAM, DNAME, DEAIDX, DSPIDX )
+            CALL GENPDOUT( DDEV, CDEV, ODEV, TZONE, DSDATE, DSTIME, 
+     &                     DNSTEP, INSTEP, OUTSTEP, NVARDY, NVSPDY, 
+     &                     MXSRCDY, TYPNAM, DNAME, DEAIDX, DSPIDX )
 
         END IF
 
@@ -413,9 +420,9 @@ C               Also determine maximum and minimum dates for output file.
      &                      MXSRCHR, HEAIDX, HSPIDX )
 
 C.............  Read and output hour-specific data
-            CALL GENPDOUT( HDEV, TZONE, HSDATE, HSTIME, HNSTEP, 
-     &                     INSTEP, OUTSTEP, NVARHR, NVSPHR, MXSRCHR,  
-     &                     TYPNAM, HNAME, HEAIDX, HSPIDX )
+            CALL GENPDOUT( HDEV, CDEV, ODEV, TZONE, HSDATE, HSTIME, 
+     &                     HNSTEP, INSTEP, OUTSTEP, NVARHR, NVSPHR,  
+     &                     MXSRCHR, TYPNAM, HNAME, HEAIDX, HSPIDX )
 
         END IF
 

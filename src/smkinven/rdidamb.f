@@ -175,9 +175,6 @@ C.........  Firstime routine is called, get the number of warnings
             MESG = 'Fill in 0. annual data based on seasonal data.'
             FFLAG = ENVYN( 'FILL_ANN_WSEAS', MESG, .FALSE., IOS )
 
-            MESG = 'Fill in 0. annual data based on seasonal data.'
-            FFLAG = ENVYN( 'FILL_ANN_WSEAS', MESG, .FALSE., IOS )
-
             MXWARN = ENVINT( WARNSET, ' ', 100, IOS )  ! max warning
 
         END IF

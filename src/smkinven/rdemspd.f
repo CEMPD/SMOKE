@@ -104,6 +104,7 @@ C...........   Other local variables
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
         INTEGER          FIP              ! tmp co/st/cy code
+        INTEGER       :: ICC = 0          ! tmp country code from header
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
         INTEGER          JDATE            ! tmp Julian date
@@ -115,6 +116,7 @@ C...........   Other local variables
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NFIELD = 0       ! number of data fields
         INTEGER, SAVE :: NFM1   = 0       ! number of data fields minus 1
+        INTEGER       :: NPOA   = 0       ! unused header number of pol/act
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
         INTEGER          PTR              ! tmp time step pointer
         INTEGER       :: RDATE = 1980001  ! reference date: Jan 1, 1980
@@ -124,10 +126,12 @@ C...........   Other local variables
         INTEGER, SAVE :: TDIVIDE  = 1     ! time step divisor
         INTEGER          WD               ! tmp field width
         INTEGER          YEAR             ! 4-digit year
+        INTEGER       :: YR4 = 0          ! unused header year
         INTEGER          ZONE             ! source time zones
 
         REAL             TOTAL            ! tmp daily total of hourly file
 
+        LOGICAL, SAVE :: DFLAG = .FALSE.  ! true: dates set by data
         LOGICAL       :: EFLAG = .FALSE.  ! TRUE iff ERROR
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
@@ -200,9 +204,9 @@ C.............  Set the number of fields, depending on day- or hour-specific
             END IF
             NFM1   = NFIELD - 1
 
-C.............  If SDATE and STIME are now non-zero, save the number of time 
+C.............  If dates have been set by the data, set the number of steps
 C               steps
-            IF( SDATE .NE. 0 ) THEN
+            IF( DFLAG ) THEN
                 NSTEPS = 1+ SECSDIFF( SDATE,STIME,EDATE,ETIME )/ TDIVIDE
                 SDATESAV = SDATE
                 STIMESAV = STIME
@@ -235,8 +239,22 @@ C.............  Read first line of file
 
             L = LEN_TRIM( LINE )
 
-C.............  Skip blank lines and lines that start with a header
-            IF( L .EQ. 0 .OR. LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+C.............  Skip blank lines 
+            IF( L .EQ. 0 ) CYCLE
+
+C.............  Scan for header lines and check to ensure all are set
+C               properly
+            CALL GETHDR( 1, .FALSE., .FALSE., .FALSE.,
+     &                   LINE, ICC, YR4, NPOA, IOS )
+
+C.............  Interpret error status
+            IF( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+
+            END IF
+
+C.............  If a header line was encountered, go to next line
+            IF( IOS .GE. 0 ) CYCLE
 
 C.............  Determine if file is day- or hour-specific by the length of the
 C               lines. Make sure day- and hour-specific data are not in the
@@ -429,7 +447,8 @@ C.............  If available, set total value
             END IF
 
 C.............  Set key for searching sources
-            FIP  = 1000 * STR2INT( LINE( 1:2 ) ) +
+            FIP  = ICC * 100000 +
+     &             1000 * STR2INT( LINE( 1:2 ) ) +
      &                    STR2INT( LINE( 3:5 ) )
             WRITE( CFIP,94020 ) FIP
 
@@ -554,6 +573,7 @@ C.........  Abort if error found while reading file
         END IF
 
 C.........  Update output starting date/time and ending date/time
+        DFLAG = .TRUE.
         SDATE = RDATE
         STIME = RTIME
         DO I = 1, MINPTR - 1

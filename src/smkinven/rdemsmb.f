@@ -130,9 +130,9 @@ C...........   Other local variables
         INTEGER          SS          !  counter for rec (no data vars)
         INTEGER          STID        !  tmp state ID
         INTEGER          TPF         !  temporary temporal ID
+        INTEGER          YR4         !  tmp unused year
         INTEGER          ZONE        !  tmp time zone
 
-        REAL             DAY2YR    !  local, leap-year-able, DAY to YEAR factor
         REAL             X1, X2    !  x-dir link end point coordinates
         REAL             XLOC      !  tmp x-coordinate
         REAL             Y1, Y2    !  y-dir link end point coordinates 
@@ -278,10 +278,6 @@ C.........  Set the description of the file type and format
 C.........  Make sure the file is at the beginning
         REWIND( EDEV )
 
-C.........  Initialize units as converstion from day to year, in case units
-C           are not provided by file
-        INVDCNV = 1. / YR2DAY( INY )    ! Array
-
 C.........  Initialize before loop
         SS   = NSRCSAV
         ES   = NSRCDAT
@@ -314,7 +310,7 @@ C.............  Check read i/o status
 C.............  Scan for header lines and check to ensure all are set 
 C               properly
             CALL GETHDR( MXDATFIL, .FALSE., .FALSE., .TRUE., 
-     &                   LINE, ICC, INY, NPOA, IOS )
+     &                   LINE, ICC, YR4, NPOA, IOS )
 
 C.............  Interpret error status
             IF( IOS .EQ. 4 ) THEN
@@ -329,6 +325,22 @@ C.............  Interpret error status
 
             END IF
 
+C.............  Resolve any differences between year from calling program
+C               and year in file header
+            IF ( IOS .EQ. 0   .AND.
+     &           INY .GT. 0   .AND. 
+     &           YR4 .GT. 0   .AND. 
+     &           INY .NE. YR4       ) THEN
+                WRITE( MESG,94010 ) 'NOTE: Using year', INY,
+     &                 'from list file, and not year', YR4,
+     &                 'from inventory file.'
+                CALL M3MSG2( MESG )
+                YR4 = INY
+            ELSE IF ( INY .GT. 0 .AND. 
+     &                YR4 .LE. 1       ) THEN
+                YR4 = INY
+            END IF
+
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
@@ -341,9 +353,9 @@ C.............  Set the number of table columns and allocate memory
 
             END IF
 
-C.............  Define day to year conversion factor and real type for integer 
-C               missing value
-            DAY2YR  = 1. / YR2DAY( INY )
+C.............  Initialize units as converstion from day to year, in case units
+C               are not provided by file
+            INVDCNV = 1. / YR2DAY( YR4 )    ! Array
 
 C.............  Initialize link information in case record is nonlink         
             CLNK = ' '
@@ -513,7 +525,7 @@ C.................  Time to store data in unsorted list
                     CLINKA ( SS ) = CLNK
                     CVTYPEA( SS ) = VTYPE
                     TPFLGA ( SS ) = TPF
-                    INVYRA ( SS ) = INY
+                    INVYRA ( SS ) = YR4
                     CSCCA  ( SS ) = TSCC
                     XLOC1A ( SS ) = X1
                     YLOC1A ( SS ) = Y1

@@ -1,6 +1,7 @@
 
         SUBROUTINE OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, TSTEP, 
-     &                        TYPNAM, PFLAG, EAIDX, SPSTAT, FNAME )
+     &                        FILFMT, TYPNAM, PFLAG, EAIDX,  SPSTAT, 
+     &                        FNAME, RDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 96
@@ -51,11 +52,12 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
-C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
+C...........   EXTERNAL FUNCTIONS and their descriptions
+        INTEGER                PROMPTFFILE
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL        PROMPTMFILE, VERCHAR
+        EXTERNAL        PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NPDSRC    ! no. period-specific sources
@@ -64,11 +66,13 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: SDATE     ! Julian start date
         INTEGER     , INTENT (IN) :: STIME     ! start time HHMMSS
         INTEGER     , INTENT (IN) :: TSTEP     ! time step HHMMSS
+        INTEGER     , INTENT (IN) :: FILFMT    ! format of period-specific data
         CHARACTER(*), INTENT (IN) :: TYPNAM    ! 'day' or 'hour'
         LOGICAL     , INTENT (IN) :: PFLAG     ! true: creating profiles
         INTEGER     , INTENT (IN) :: EAIDX( NVAR ) ! pol/act index
         LOGICAL     , INTENT (IN) :: SPSTAT( MXSPDAT ) ! true: special val exists
         CHARACTER(*), INTENT(OUT) :: FNAME     ! logical file name
+        INTEGER     , INTENT(OUT) :: RDEV      ! report unit number
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -195,8 +199,17 @@ C.........  Set up default file name and prompting message
 
         END IF
 
+
 C.........  Prompt for output file
         FNAME = PROMPTMFILE( MESG, FSUNKN3, FNAME, PROGNAME )
+
+C.........  If format is CEM format, prompt for report output file name
+        IF ( FILFMT .EQ. CEMFMT ) THEN
+            MESG = 'Enter logical name for the CEM MATCHING REPORT'
+            RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
+     &                          'REPINVEN', PROGNAME )
+
+        END IF
 
         RETURN
 

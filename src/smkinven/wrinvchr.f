@@ -378,7 +378,7 @@ C.............  Write source characteristics and attributes
         END DO   ! End loop on sources for writing ASCII file
 
 C.........  Deallocate locally allocated memory
-        DEALLOCATE( HDRFLDS )
+        IF( ALLOCATED( HDRFLDS ) ) DEALLOCATE( HDRFLDS )
 
 C.........  Close ASCII output file
         CLOSE( SDEV )

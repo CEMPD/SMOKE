@@ -526,7 +526,7 @@ C.............  Allocate memory for unit numbers for IDA temporary files
 C.........  If no IDA output, deallocate memory for source characteristics
         ELSE
 
-            CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
+c           CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
 
         END IF
 

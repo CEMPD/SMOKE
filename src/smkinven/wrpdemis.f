@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRPDEMIS( JDATE, JTIME, TIDX, NPDSRC, NVAR, NVSP, 
+        SUBROUTINE WRPDEMIS( JDATE, JTIME, TIDX, NPDSRC, NVAR, NVASP, 
      &                       FNAME, PFLAG, EAIDX, SPIDX, PDIDX, PDDATA, 
      &                       EFLAG )
 
@@ -70,25 +70,27 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT  (IN) :: TIDX                 ! time index
         INTEGER     , INTENT  (IN) :: NPDSRC               ! no. part-day srcs
         INTEGER     , INTENT  (IN) :: NVAR                 ! no. pol/act vars
-        INTEGER     , INTENT  (IN) :: NVSP                 ! no. pol/act/special
+        INTEGER     , INTENT  (IN) :: NVASP                ! no. pol/act/special
         CHARACTER(*), INTENT  (IN) :: FNAME                ! output file name
         LOGICAL     , INTENT  (IN) :: PFLAG                ! true: gen profiles
         INTEGER     , INTENT  (IN) :: EAIDX( NVAR )        ! pol/act index
         INTEGER     , INTENT  (IN) :: SPIDX( MXSPDAT )     ! special var index
         INTEGER     , INTENT (OUT) :: PDIDX ( NPDSRC )     ! sparse src index
-        REAL        , INTENT (OUT) :: PDDATA( NPDSRC,NVSP )! sparse data storage
+        REAL        , INTENT (OUT) :: PDDATA( NPDSRC,NVASP)! sparse data storage
         LOGICAL     , INTENT (OUT) :: EFLAG                ! true: error found
 
 C...........   Local allocatable arrays
+        INTEGER, ALLOCATABLE, SAVE :: EAIDX2( : )    ! reverse index for EAIDX
         LOGICAL, ALLOCATABLE, SAVE :: NOMISS( :,: )
 
 C...........   Local arrays
-        INTEGER          SPIDX2( MXSPDAT )
+        INTEGER, SAVE :: SPIDX2( MXSPDAT )
 
 C...........   Other local variables
         INTEGER          I, J, K, L2, LS, S, V, V2
 
         INTEGER          IOS                  ! i/o status
+        INTEGER, SAVE :: MXEA                 ! maximum pol/var # in EAIDX
         INTEGER          NOUT                 ! tmp no. sources per time step
 
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: error on duplicates
@@ -117,9 +119,25 @@ C.............  Get settings from the environment.
      &                     .FALSE., IOS )
 
 C.............  Allocate memory for flag for writing missing-data messages
-            ALLOCATE( NOMISS( NSRC,NVSP ), STAT=IOS )
+            ALLOCATE( NOMISS( NSRC,NVASP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NOMISS', PROGNAME )
             NOMISS = .TRUE.  ! Array
+
+C.............  Create reverse index for pollutants and activities
+            MXEA = MAXVAL( EAIDX )
+            ALLOCATE( EAIDX2( MXEA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EAIDX2', PROGNAME )
+            EAIDX2 = 0
+
+            DO V = 1, NVAR
+                EAIDX2( EAIDX( V ) ) = V
+            END DO
+ 
+C.............  Create reverse index for special variables
+            DO V = 1, MXSPDAT
+                K = SPIDX( V )
+                IF( K .GT. 0 ) SPIDX2( K ) = V       
+            END DO
 
             FIRSTIME = .FALSE.
 
@@ -128,12 +146,6 @@ C.............  Allocate memory for flag for writing missing-data messages
         PDIDX  = 0        ! array (index)
         PDDATA = BADVAL3  ! array (emissions/activities)
         PDTOTL = BADVAL3  ! array (total daily emissions/activities)
-
-C.........  Create reverse index for special variables
-        DO V = 1, MXSPDAT
-            K = SPIDX( V )
-            IF( K .GT. 0 ) SPIDX2( K ) = V       
-        END DO
 
 C.........  Sort sources for current time step
         CALL SORTI1( NPDPT( TIDX ), IDXSRC( 1,TIDX ), SPDIDA( 1,TIDX ) )
@@ -162,6 +174,10 @@ C               with the output structure of the file
                 V2 = V - CODFLAG3      ! remove flag on index
                 V = NVAR + SPIDX( V2 ) ! reset to condensed order from master
                 LFLAG = .TRUE.         ! flag as a special data variable
+
+C.............  Otherwise, set index for period-specific pollutant or activity
+            ELSE
+                V = EAIDX2( V )
 
             END IF
 
@@ -218,7 +234,7 @@ C.........  Check if there are missing values and output errors, if the
 C           flag is set to treat these as errors
 C.........  Also use loop to create diurnal profiles from emission values,
 C           if needed.
-        DO V = 1, NVSP
+        DO V = 1, NVASP
             DO I = 1, NOUT
 
                 S = PDIDX( I )

@@ -293,7 +293,7 @@ C.........  Keep case statement outside the loops to speed processing
                     STKTK ( S )  = STKTKA ( K )
                     STKVE ( S )  = STKVEA ( K )
                     CSCC  ( S )  = CSCCA  ( K )
-                    CORIS ( S )  = CORISA ( K )
+                    CORIS ( S )  = ADJUSTR( CORISA ( K ) )
                     CBLRID( S )  = CBLRIDA( K )
                     CPDESC( S )  = CPDESCA( K )
 

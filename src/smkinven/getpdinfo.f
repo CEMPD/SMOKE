@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -90,6 +90,7 @@ C.........  Local arrats
 
 C.........  Other local variables
         INTEGER         N, V             ! counters and indices
+        INTEGER         FILFMT           ! format code of files in list
         INTEGER         INVFMT           ! inventory format code
         INTEGER         IOS              ! i/o status
         INTEGER         NLINE            ! number of lines
@@ -145,7 +146,8 @@ C.........  Get the dates (in the output time zone) from the files,
 C           flag the pollutants of interest, and flag the special variables
 C           contained in the file.
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT, SPSTAT )
+     &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
+     &                 EASTAT, SPSTAT )
 
 C.........  Allocate memory and initialize for the maximum number of 
 C           records per time step
@@ -160,7 +162,8 @@ C           records per time step
 C.........  Get the maximum number of records per time step - i.e., populate
 C           MXSRCPD
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT, SPSTAT )
+     &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
+     &                 EASTAT, SPSTAT )
 
 C.........  Create index to pollutant/activity names for current data files
         N = 0
@@ -192,6 +195,15 @@ C           differently intentionally.
 C.........  Compute the maximum number of sources per time step
 C.........  NOTE - MXPDPT is in the MODDAYHR module
         MXPDSRC = MAXVAL( MXPDPT )
+
+C.........  If no sources matched then error
+        IF ( MXPDSRC .EQ. 0 ) THEN
+
+            MESG = 'No ' // TYPNAM //'-specific sources matched ' //
+     &             'the inventory for the time period processed.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
 
 C.........  Deallocate local memory
         DEALLOCATE( EASTAT )

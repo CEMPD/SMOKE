@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
-     &                        XDEV, EDEV, PDEV, VDEV, ZDEV, ENAME,  
-     &                        INNAME, IDNAME, IHNAME )
+     &                        XDEV, EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
+     &                        ENAME, INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 119
@@ -70,6 +70,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: PDEV      ! unit no. for pol codes & names
         INTEGER     , INTENT(OUT) :: VDEV      ! unit no. for activity names
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
+        INTEGER     , INTENT(OUT) :: CDEV      ! unit no. for SCCs descrciption
+        INTEGER     , INTENT(OUT) :: ODEV      ! unit no. for ORIS descrciption
         CHARACTER(*), INTENT(OUT) :: ENAME     ! optional netCDF inven input
         CHARACTER(*), INTENT(OUT) :: INNAME    ! average inventory name
         CHARACTER(*), INTENT(OUT) :: IDNAME    ! day-specific inventory 
@@ -121,20 +123,26 @@ C.........  Get value of these controls from the environment
         MESG = 'Import average inventory data'
         IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', MESG, .TRUE., IOS )
 
-        MESG = 'Import day-specific data'
-        DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', MESG, .FALSE., IOS )
+        IF ( CATEGORY .EQ. 'POINT' ) THEN
+            MESG = 'Import day-specific data'
+            DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', MESG, .FALSE., IOS )
 
-        MESG = 'Import hour-specific data'
-        HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
+            MESG = 'Import hour-specific data'
+            HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
+        END IF
 
-        MESG = 'Import gridded I/O API inventory data'
-        GFLAG = ENVYN ( 'IMPORT_GRDIOAPI_YN', MESG, .FALSE., IOS )
+        IF ( CATEGORY .EQ. 'AREA' ) THEN
+            MESG = 'Import gridded I/O API inventory data'
+            GFLAG = ENVYN ( 'IMPORT_GRDIOAPI_YN', MESG, .FALSE., IOS )
+        END IF
 
-        MESG = 'Import VMT mix data'
-        XFLAG = ENVYN ( 'IMPORT_VMTMIX_YN', MESG, .FALSE., IOS )
+        IF ( CATEGORY .EQ. 'MOBILE' ) THEN
+            MESG = 'Import VMT mix data'
+            XFLAG = ENVYN ( 'IMPORT_VMTMIX_YN', MESG, .FALSE., IOS )
 
-        MESG = 'Import mobile speeds data'
-        SFLAG = ENVYN ( 'IMPORT_SPEEDS_YN', MESG, .FALSE., IOS )
+            MESG = 'Import mobile speeds data'
+            SFLAG = ENVYN ( 'IMPORT_SPEEDS_YN', MESG, .FALSE., IOS )
+        END IF
 
 C.........  Make sure VMT mix and speeds will only be imported for mobile 
 C           sources
@@ -291,6 +299,18 @@ C           zones
             ZDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+        END IF
+
+C.........  Get list of powerplant SCCs, in case needed for reporting CEM
+C           matches with the inventory
+        IF ( HFLAG ) THEN
+            CDEV = PROMPTFFILE(
+     &             'Enter logical name for SCC DESCRIPTION file ',
+     &             .TRUE., .TRUE., 'SCCDESC', PROGNAME )
+
+            ODEV = PROMPTFFILE(
+     &             'Enter logical name for ORIS DESCRIPTION file ',
+     &             .TRUE., .TRUE., 'ORISDESC', PROGNAME )
         END IF
 
 C.........  Get file name for inventory pollutants codes/names
