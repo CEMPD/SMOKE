@@ -8,7 +8,7 @@ C            during compilation.
 
 C.........  Maximum number of source characteristics for each source category
         INTEGER, PARAMETER :: MXARCHR3 =  2   ! area
-        INTEGER, PARAMETER :: MXMBCHR3 =  4   ! mobile
+        INTEGER, PARAMETER :: MXMBCHR3 =  5   ! mobile
         INTEGER, PARAMETER :: MXPTCHR3 =  7   ! point
 
 C.........  Width of source information strings 
@@ -76,15 +76,16 @@ C.........  Starts and ends of each field in area source definition
 C.........  Starts and ends of each field in mobile source definition
         INTEGER, PARAMETER :: RWTPOS3 = FIPLEN3 + 1       ! roadway type
         INTEGER, PARAMETER :: LNKPOS3 = RWTPOS3 + RWTLEN3 ! link
-        INTEGER, PARAMETER :: VTPPOS3 = LNKPOS3 + LNKLEN3 ! vehicle type
+        INTEGER, PARAMETER :: VIDPOS3 = LNKPOS3 + LNKLEN3 ! vehicle type ID
+        INTEGER, PARAMETER :: MSCPOS3 = VIDPOS3 + VIDLEN3 ! SCC
         INTEGER, DIMENSION( MXMBCHR3 + 1 ),
      &           PARAMETER :: MBBEGL3 =               ! array of starts
-     &           ( / 1, RWTPOS3, LNKPOS3, VTPPOS3, POLPOS3 / )
+     &           ( / 1, RWTPOS3, LNKPOS3, VIDPOS3, MSCPOS3, POLPOS3 / )
 
         INTEGER, DIMENSION( MXMBCHR3 + 1 ),
      &           PARAMETER :: MBENDL3 =               ! array of ends
-     &           ( / FIPLEN3, LNKPOS3-1, VTPPOS3-1, VTPPOS3+VIDLEN3-1,
-     &               ALLLEN3 / )
+     &           ( / FIPLEN3, LNKPOS3-1, VIDPOS3-1, MSCPOS3-1,
+     &               MSCPOS3 + SCCLEN3 - 1, ALLLEN3 / )
 
 C.........  Widths that depend on other widths
         INTEGER, PARAMETER :: FPLLEN3 = FIPLEN3 + PLTLEN3 ! FIPS // Plant
