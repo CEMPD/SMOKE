@@ -135,7 +135,7 @@ ccs                    CALL M3MESG( MESG )
 
 C.............  Store temperature value in appropriate time slot in output array
 
-C.................  Appropriate 24 hour time will be day starting time (in local 
+C.................  Appropriate 24 hour time will be day starting time (6 AM in local 
 C                   time zone ) subtracted from met data time (in GMT)
                 TIMESLOT = 1 + ( JTIME - DAYBEGT( S ) ) / 10000 
                 
