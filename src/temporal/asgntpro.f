@@ -95,7 +95,6 @@ C.........  Other local variables
 
         CHARACTER*8            FMTFIP   ! format for writing FIPS code
         CHARACTER*300          BUFFER   ! source fields buffer
-        CHARACTER*300          LINE     ! line buffer
         CHARACTER*300          MESG     ! message buffer
         CHARACTER(LEN=STALEN3) CSTA     ! tmp Country/state code
         CHARACTER(LEN=STSLEN3) CSTASCC  ! tmp Country/state code // SCC
@@ -492,10 +491,10 @@ C.................  Try for any country/state code match (not, pol-specific)
                     CYCLE                       !  to end of sources-loop
                 END IF
 
-                IF( MPRT01 .NE. IMISS3 .AND. REPDEFLT ) THEN
-                    MREF = MPRT01
-                    WREF = WPRT01
-                    DREF = DPRT01
+                IF( MPRT01( V ) .NE. IMISS3 .AND. REPDEFLT ) THEN
+                    MREF = MPRT01( V )
+                    WREF = WPRT01( V )
+                    DREF = DPRT01( V )
                     
                     CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
 
@@ -508,14 +507,16 @@ C.................  Try for any country/state code match (not, pol-specific)
 
                     CALL SETSOURCE_TPROFS
 
-                ELSEIF( MPRT01 .NE. IMISS3 ) THEN
-                    MREF = MPRT01
-                    WREF = WPRT01
-                    DREF = DPRT01
+                ELSEIF( MPRT01( V ) .NE. IMISS3 ) THEN
+                    MREF = MPRT01( V )
+                    WREF = WPRT01( V )
+                    DREF = DPRT01( V )
                     CALL SETSOURCE_TPROFS
 
                 ELSE
                     EFLAG = .TRUE.
+
+                    CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
 
                     WRITE( MESG,94010 )
      &                     'ERROR: No temporal cross-reference ' //
@@ -566,6 +567,8 @@ C----------------------------------------------------------------------
 
                 IF( MDEX( S,J ) .EQ. 0 ) THEN
 
+                    CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
+
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
      &                     'ERROR: Monthly profile', MREF, 
@@ -583,6 +586,8 @@ C----------------------------------------------------------------------
                 WDEX( S,J ) = MAX( FIND1( WREF, NWEK, WEKREF ), 0 )
 
                 IF( WDEX( S,J ) .EQ. 0 ) THEN
+
+                    CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
@@ -604,6 +609,8 @@ C----------------------------------------------------------------------
             END IF  ! If there are weekend diurnal profiles
 
             IF( DDEX( S,J ) .EQ. 0 .AND. EDEX( S,J ) .EQ. 0 ) THEN
+
+                CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
