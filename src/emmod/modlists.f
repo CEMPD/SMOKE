@@ -67,6 +67,7 @@
 !.........  SIC arrays dimensioned by NINVSIC
         INTEGER, ALLOCATABLE, PUBLIC :: INVSIC ( : ) ! SICs
         INTEGER, ALLOCATABLE, PUBLIC :: INVSIC2( : ) ! 2-digit SICs
+        CHARACTER(LEN=SDSLEN3), ALLOCATABLE, PUBLIC :: SICDESC( : ) ! descrptn
 
 !.........  SCC arrays dimensioned by NINVSCC
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCC( : ) ! SCCs

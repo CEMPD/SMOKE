@@ -123,6 +123,7 @@
             LOGICAL       :: BYMON         ! true: by monthly temporal code
             LOGICAL       :: BYPLANT       ! true: by plant 
             LOGICAL       :: BYSCC         ! true: by SCC 
+            LOGICAL       :: BYSIC         ! true: by SIC 
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
 	    LOGICAL       :: BYSTACK       ! true: by stack
@@ -138,6 +139,7 @@
             LOGICAL       :: NORMPOP       ! true: normalize by county pop
             LOGICAL       :: AVEDAY        ! true: use average day data
             LOGICAL       :: SCCNAM        ! true: output SCC name
+            LOGICAL       :: SICNAM        ! true: output SIC name
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
 	    LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
@@ -185,6 +187,7 @@
         LOGICAL, PUBLIC :: GSFLAG = .FALSE. ! true: read gridding supplementary file
         LOGICAL, PUBLIC :: LFLAG  = .FALSE. ! true: read in layer fracs file
         LOGICAL, PUBLIC :: NFLAG  = .FALSE. ! true: read in SCC names file
+        LOGICAL, PUBLIC :: NIFLAG = .FALSE. ! true: read in SIC names file
         LOGICAL, PUBLIC :: SLFLAG = .FALSE. ! true: read in mole speciation matrix
         LOGICAL, PUBLIC :: SSFLAG = .FALSE. ! true: read in mass speciation matrix
         LOGICAL, PUBLIC :: PRFLAG = .FALSE. ! true: read projection matrix
@@ -265,6 +268,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: REGNWIDTH=0 ! width of region column
         INTEGER      , PUBLIC :: SCCWIDTH =0 ! width of SCC
         INTEGER      , PUBLIC :: SDSCWIDTH=0 ! width of SCC description column
+        INTEGER      , PUBLIC :: SICWIDTH =0 ! width of SIC
+        INTEGER      , PUBLIC :: SIDSWIDTH=0 ! width of SIC description column
         INTEGER      , PUBLIC :: SPCWIDTH =0 ! width of speciation profile label
         INTEGER      , PUBLIC :: SRCWIDTH =0 ! width of source IDs column
         INTEGER      , PUBLIC :: SRG1WIDTH=0 ! width of primary surg column
@@ -282,6 +287,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER*50 , PUBLIC :: MONFMT      ! format string for monthly profile
         CHARACTER*50 , PUBLIC :: LAYRFMT     ! format string for layer column
         CHARACTER*50 , PUBLIC :: REGNFMT     ! format string for region column
+        CHARACTER*50 , PUBLIC :: SICFMT      ! format string for SIC
         CHARACTER*50 , PUBLIC :: SRCFMT      ! format string for source IDs
         CHARACTER*50 , PUBLIC :: SRG1FMT     ! format string for primary surg
         CHARACTER*50 , PUBLIC :: SRG2FMT     ! format string for fallback surg

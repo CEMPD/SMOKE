@@ -98,6 +98,8 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINRCL   ( : )   ! roadclass code
         INTEGER, ALLOCATABLE, PUBLIC :: BINSMKID ( : )   ! SMOKE source ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSNMIDX( : )   ! SCC name index
+        INTEGER, ALLOCATABLE, PUBLIC :: BINSIC   ( : )   ! SIC 
+        INTEGER, ALLOCATABLE, PUBLIC :: BINSICIDX( : )   ! SIC name index
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID1( : )   ! primary surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID2( : )   ! fallback surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSTIDX ( : )   ! index to state name
