@@ -16,6 +16,9 @@ C.........  Function arguments
 C.........  Local function variables            
         INTEGER INDEX
 
+C***********************************************************************
+C   begin body of function FIND1FIRST
+
 C.........  Use FIND1 to get location of key        
         INDEX = FIND1( KEY, N, LIST )
         
@@ -53,6 +56,9 @@ C.........  Function arguments
         
 C.........  Local function variables            
         INTEGER INDEX
+
+C***********************************************************************
+C   begin body of function FINDR1FIRST
 
 C.........  Use FINDR1 to get location of key        
         INDEX = FINDR1( KEY, N, LIST )

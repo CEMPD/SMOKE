@@ -16,9 +16,10 @@
         
         CHARACTER*300, ALLOCATABLE :: M6LIST( : )  ! contents of M6LIST file
         
-        INTEGER, ALLOCATABLE, PUBLIC :: COUNTYSRC ( : )   ! county FIP code for each source - read
-                                                          ! from SPDSUM file (handles spatial averaging)
-        
+        INTEGER, ALLOCATABLE, PUBLIC :: COUNTYSRC ( :,: ) ! county FIPS code for each source
+                                                          ! and temporal averaging value,
+                                                          ! read from SPDSUM and GROUP files
+                                                          
         REAL, ALLOCATABLE, PUBLIC :: EMISSIONS( : ) ! array to hold M6 results
         INTEGER, PUBLIC :: EMISPOS = 0     ! current position in EMISSIONS array
         
