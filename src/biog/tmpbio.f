@@ -773,45 +773,21 @@ C.............. Next time step
       ENDDO                !  end loop on hours HR
 
 
-C.......   End of program:
+C.........   End of program:
 
-      CALL M3EXIT( 'TMPBIO', 0, 0, 
-     &             'Successful completion of program TMPBIO', 0 )
+        CALL M3EXIT( 'TMPBIO', 0, 0, ' ', 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Error and warning message formats..... 91xxx
-
-91000   FORMAT ( //5X , '*** ERROR ABORT in program TMPBIO ***',
-     &            /5X , A ,
-     &           // )        !  generic error message format
-
 
 C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT ( 5X , A )
 
-
-C...........   Formatted file I/O formats............ 93xxx
-                                   
-93010   FORMAT( 1X, A4, 3 F9.0, F6.0, I2 )
-
-
 C...........   Internal buffering formats............ 94xxx
 
 94000   FORMAT( I2.2 )
 
-94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
-
-94020   FORMAT( 10 ( A, :, I4, :, 1X ) )
-
 94030   FORMAT( 8X, 'at time ', A8 )
-
-
-C...........   Miscellaneous formats................. 95xxx
-
-95000   FORMAT ( /5X , A , $ )          !  generic prompt format.
-
 
         END PROGRAM TMPBIO  
 

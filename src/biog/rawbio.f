@@ -1239,38 +1239,22 @@ C...............   Write output file:
         END IF
 
 
-C.......   End of program:
+C.........   End of program:
 
-      CALL M3EXIT( PROGNAME, 0, 0, 
-     &             'Successful completion of program RAWBIO', 0 )
+        CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-C...........   Error and warning message formats..... 91xxx
 C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT ( 5X , A )
-
-92010   FORMAT ( A20, I5, 3F11.3 )
 
 C...........   Formatted file I/O formats............ 93xxx
                                    
 93000   FORMAT( A )
 
-93010   FORMAT( 1X, A4, 3 F9.0, F6.0, I2 )
-
-93020   FORMAT( 4 F10.0, I10, 2F10.0 )
-
-93030   FORMAT( I5, 2F10.0, I10, 100F10.4 )    ! sl For surrogate data
-
 C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
-
-
-C...........   Miscellaneous formats................. 95xxx
-
-95000   FORMAT ( /5X , A , $ )          !  generic prompt format.
-
 
         END PROGRAM  RAWBIO 
 
