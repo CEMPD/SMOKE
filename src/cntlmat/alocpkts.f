@@ -304,6 +304,29 @@ C.........  PROJECTION packet
         ALLOCATE( PRJFC( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PRJFC', PROGNAME )
 
+C.........  EMS-95 CONTROL packet
+        J = PKTCNT( 7 ) 
+        ALLOCATE( IEMSSIC( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTLSIC', PROGNAME )
+        ALLOCATE( BASCEFF( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BASCEFF', PROGNAME )
+        ALLOCATE( BASREFF( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BASREFF', PROGNAME )
+        ALLOCATE( BASRLPN( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BASRLPN', PROGNAME )
+        ALLOCATE( EMSCEFF( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMSCEFF', PROGNAME )
+        ALLOCATE( EMSREFF( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMSREFF', PROGNAME )
+        ALLOCATE( EMSRLPN( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMSRLPN', PROGNAME )
+        ALLOCATE( EMSPTCF( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMSPTCF', PROGNAME )
+        ALLOCATE( EMSTOTL( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMSTOTL', PROGNAME )
+        EMSPTCF  = 1.   ! array - initialize because it will be used
+        EMSTOTL  = 0.   ! array - initialize because it will be checked
+
 C.........  Make sure that at least one packet is defined
         J = 0
         DO I = 1, NPACKET
@@ -383,7 +406,7 @@ C.............  Find packet in LINE in list of packets
             DO I = 1, NPACKET
 
                 L = LEN_TRIM( PKTLIST( I ) )
-                J = INDEX( LINE( S1:S2 ), PKTLIST( I )( 1:L ) )
+                J = INDEX( PKTLIST( I )( 1:L ), LINE( S1:S2 )  )
                 IF( J .GT. 0 ) THEN
                     PKTIDX = I
                     EXIT

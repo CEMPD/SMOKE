@@ -76,7 +76,6 @@ C   Begin body of subroutine FILLCNTl
             FACCEFF ( JT ) = PKTINFO%FAC2
             FACREFF ( JT ) = PKTINFO%FAC3
             FACRLPN ( JT ) = PKTINFO%FAC4
-C NOTE: What will be the standard for storing percentages read in a 0-100?
 
         CASE( 'ALLOWABLE' )
             IALWSIC ( JT ) = STR2INT( PKTINFO%CSIC )
@@ -97,6 +96,19 @@ C NOTE: What will be the standard for storing percentages read in a 0-100?
         CASE( 'PROJECTION' )
             IPRJSIC( JT ) = STR2INT( PKTINFO%CSIC )
             PRJFC  ( JT ) = PKTINFO%FAC1
+
+        CASE( 'EMS_CONTROL' )
+            IEMSSIC ( JT ) = STR2INT( PKTINFO%CSIC )
+            BASCEFF ( JT ) = PKTINFO%FAC1
+            BASREFF ( JT ) = PKTINFO%FAC2
+            BASRLPN ( JT ) = PKTINFO%FAC3
+            EMSCEFF ( JT ) = PKTINFO%FAC4
+            EMSREFF ( JT ) = PKTINFO%FAC5
+            EMSRLPN ( JT ) = PKTINFO%FAC6
+            IF( PKTINFO%FAC7 .GT. 0. ) 
+     &          EMSPTCF ( JT ) = PKTINFO%FAC7
+            IF( PKTINFO%FAC8 .GT. 0. ) 
+     &          EMSTOTL ( JT ) = PKTINFO%FAC8
 
         END SELECT
 

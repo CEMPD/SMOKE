@@ -1,6 +1,6 @@
 
         SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, NCPE, ENAME, 
-     &                       MNAME, CFLAG, GFLAG, LFLAG )
+     &                       MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -78,13 +78,13 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) ::  CFLAG  ! true = apply CTL controls
         LOGICAL     , INTENT (IN) ::  GFLAG  ! true = apply CTG controls
         LOGICAL     , INTENT (IN) ::  LFLAG  ! true = apply ALW controls
+        LOGICAL     , INTENT (IN) ::  SFLAG  ! true = apply EMS_CTL controls
 
 C...........   Local temporary arrays
         INTEGER      ALWINDX  ( NSRC,NVCMULT ) ! indices to ALW controls table
         INTEGER      CTGINDX  ( NSRC,NVCMULT ) ! indices to CTG controls table
         INTEGER      CTLINDX  ( NSRC,NVCMULT ) ! indices to CTL controls table
         INTEGER      OUTTYPES ( NVCMULT,6 )    ! var type:int/real
-
 
         REAL         BACKOUT( NSRC )  ! factor used to account for pollutant
                                       ! specific control information that is
@@ -160,13 +160,18 @@ C             successfully written the temporary files.
 C...........  Fractionalize control-packet information
 
         IF ( CFLAG ) THEN
+            FACCEFF = FACCEFF/100.0  ! array
+            FACREFF = FACREFF/100.0  ! array
+            FACRLPN = FACRLPN/100.0  ! array
+        END IF
 
-           DO S = 1, NCPE
-              FACCEFF( S ) = FACCEFF( S )/100.0
-              FACREFF( S ) = FACREFF( S )/100.0
-              FACRLPN( S ) = FACRLPN( S )/100.0
-           END DO ! end source loop
-
+        IF( SFLAG ) THEN
+            BASCEFF = BASCEFF/100.0  ! array
+            BASREFF = BASREFF/100.0  ! array
+            BASRLPN = BASRLPN/100.0  ! array
+            EMSCEFF = EMSCEFF/100.0  ! array
+            EMSREFF = EMSREFF/100.0  ! array
+            EMSRLPN = EMSRLPN/100.0  ! array
         END IF
 
 C...........  Loop through pollutants that receive controls
@@ -179,8 +184,8 @@ C...........  Initialize control factor array
 
 C...........  Read in emissions data from inventory file
 
-           IF ( .NOT. READ3( ENAME, OUTNAMES(I,1), 1, 0, 0, 
-     &     EMIS ) ) THEN
+           IF ( .NOT. 
+     &          READ3( ENAME, OUTNAMES(I,1), 1, 0, 0, EMIS )  ) THEN
               CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
            END IF
 
@@ -195,7 +200,6 @@ C...........  Read in emissions data from inventory file
 C...........  If CONTROL packet is present: For the current pollutant, read
 C             in control efficiency, rule effectiveness, and, in the case of 
 C             AREA sources, rule penetration.
-
            IF ( CFLAG ) THEN
 
               SELECT CASE( CATEGORY )
@@ -258,9 +262,9 @@ C             inventory
                     RULPEN( S ) = RULPEN( S )/100.0
                  END IF
 
-C...........  Perform division by zero check.
-
+C..................  Perform division by zero check. 
                  DENOM = ( 1.0 - CTLEFF(S)*RULEFF(S)*RULPEN(S) )
+
                  IF ( FLTERR( DENOM, 0.0 ) ) THEN
                     BACKOUT( S ) = 1.0/DENOM
                  ELSE
@@ -269,15 +273,26 @@ C...........  Perform division by zero check.
 
               END DO ! end source loop
 
-C...........  If CTG packet is present:
+C...........  If EMS-95 CONTROL packet is present:
+           ELSE IF ( SFLAG ) THEN
 
-           ELSE IF ( GFLAG ) THEN
+C..................  Perform division by zero check. 
+              DO J = 1, NCPE
+
+                 DENOM = ( 1.0 - BASCEFF(J)*BASREFF(J)*BASRLPN(J) )
+
+                 IF ( FLTERR( DENOM, 0.0 ) ) THEN
+                    BACKOUT( J ) = 1.0/DENOM
+                 ELSE
+                    BACKOUT( J ) = 0.0
+                 END IF
+
+              END DO ! end source loop
 
            END IF
 
-           IF ( CFLAG .AND. PCTLFLAG( I, 1 ) ) THEN
-
 C...........  Compute CTL factor
+           IF ( CFLAG .AND. PCTLFLAG( I, 1 ) ) THEN
 
               DO S = 1, NSRC
 
@@ -288,6 +303,33 @@ C...........  Compute CTL factor
                     RULPEN( S ) = FACRLPN( K )
                     FACTOR( S ) = BACKOUT( S )*
      &                          ( 1.0 - CTLEFF(S)*RULEFF(S)*RULPEN(S) )
+                 ELSE
+                    FACTOR( S ) = 1.0
+                 END IF
+
+                 EMIS( S ) = EMIS( S )*FACTOR( S ) ! apply controls
+
+              END DO ! end source loop
+
+           END IF
+
+C...........  Compute CTL factor using EMS-95 inputs
+C...........  NOTE - SFLAG and CFLAG cannot both be true
+           IF ( SFLAG .AND. PCTLFLAG( I, 1 ) ) THEN
+
+              DO S = 1, NSRC
+
+                 K = CTLINDX( S, I )
+                 IF ( K .GT. 0 ) THEN
+                    IF( EMSTOTL( K ) .NE. 0. ) THEN
+                       FACTOR( S ) =  EMSTOTL( K )
+                    ELSE
+                       CTLEFF( S ) = EMSCEFF( K )
+                       RULEFF( S ) = EMSREFF( K )
+                       RULPEN( S ) = EMSRLPN( K )
+                       FACTOR( S ) = BACKOUT( K ) * EMSPTCF( K ) * 
+     &                               (1.- CTLEFF(S)*RULEFF(S)*RULPEN(S))
+                    END IF
                  ELSE
                     FACTOR( S ) = 1.0
                  END IF
