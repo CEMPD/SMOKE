@@ -21,6 +21,7 @@ C
 C  REVISION  HISTORY:
 C       Prototype  2/95 by CJC.
 C       Revised   11/95 by CJC -- nonUTM coordinate systems
+C       Revised    5/96 by M Houyoux -- more compact temporary storage
 C***********************************************************************
 
       IMPLICIT NONE
@@ -69,7 +70,9 @@ C...........   point Sources Table
         
 C...........   Scratch Gridding Matrix
 
-        INTEGER     IS( NPCEL, NGRID )
+        INTEGER     INDX( NPSRC )
+        INTEGER     GN  ( NPSRC )
+        INTEGER     SN  ( NPSRC )
 
 C...........   Gridding Matrix
 
@@ -81,6 +84,8 @@ C...........   Gridding Matrix
 C...........   Other local variables
         
         INTEGER         C, R, I, J, K  !  loop counters.
+        INTEGER         NBLANK         !  number of sources not in grid.  Will
+                                       !  appear as blanks in SN( ) and GN( )
 
         CHARACTER*16    ENAME   !  logical name for emission source  input file
         CHARACTER*16    GNAME   !  logical name for grid matrix     output file
@@ -243,6 +248,9 @@ C...........   Compute gridding matrix
         
         WRITE( *,92000 ) ' ', 'Computing gridding matrix...', ' '
 
+        OFLAG = .FALSE.
+        NBLANK = 0
+
         XX0   = SNGL( XORIG3D )
         YY0   = SNGL( YORIG3D )
         XX1   = XX0 + FLOAT( NCOLS3D ) * SNGL( XCELL3D )
@@ -251,78 +259,63 @@ C...........   Compute gridding matrix
         DDY   = 1.0 / SNGL( YCELL3D )
 
         DO  111  I = 1, NPSRC
-            
+
+C.............  Initialize temporary storage table
+            GN  ( I ) = 0
+            SN  ( I ) = 0
+
             XX = XLOCA( I )
             YY = YLOCA( I ) 
             
             XDUM = DDX * ( XX - XX0 )
-            IF ( XDUM .LT. 0.0  )  GO TO  111
+            IF ( XDUM .LT. 0.0  )  THEN
+                NBLANK = NBLANK + 1
+                GO TO  111
+            ENDIF
+
             COL = 1 + INT( XDUM )
-            IF ( COL .GT. NCOLS )  GO TO  111
+            IF ( COL .GT. NCOLS )  THEN
+                NBLANK = NBLANK + 1
+                GO TO  111
+            ENDIF
 
             YDUM = DDY * ( YY - YY0 )
-            IF ( YDUM .LT. 0.0  )  GO TO  111
+            IF ( YDUM .LT. 0.0  )  THEN
+                NBLANK = NBLANK + 1
+                GO TO  111
+            ENDIF
+
             ROW = 1 + INT( YDUM )
-            IF ( ROW .GT. NROWS )  GO TO  111
+            IF ( ROW .GT. NROWS )  THEN
+                NBLANK = NBLANK + 1
+                GO TO  111
+            ENDIF
             
             C = COL  +  NCOLS * ( ROW - 1 )
 
-            J = NX( C ) + 1
-            IF ( J .GT. NPCEL ) THEN
-                OFLAG = .TRUE.      !  overflow occurred.
-                WRITE( MESG,94050 )  
-     &              'Table overflow at cell code ', C, ' '
-                CALL M3MESG( MESG )
-            ELSE
-                IS( J,C ) = I
-            END IF
+            NX( C ) = NX( C ) + 1
 
-            NX( C ) = J
-                     
+            INDX( I ) = I
+            GN  ( I ) = C
+            SN  ( I ) = I
+
 111     CONTINUE        !  end loop on sources I, computing gridding matrix.
         
         CMAX = NX( 1 )
         CMIN = CMAX
         CSUM = CMAX
         
-        IF ( OFLAG ) THEN       !  overflow occurred:  just compute statistics.
+        IF ( GFLAG ) THEN          ! write gridding matrix to file
+
+C.......   Sort temporary gridding matrix
+           CALL SORTI2( NPSRC, INDX, GN, SN )
             
-            K = 0
-                
-            DO  122  R = 2, NGRID
-            
-                J = NX( R )
-                K = K + J
-                   
-                IF      ( J .GT. CMAX ) THEN
-                    CMAX = J
-                ELSE IF ( J .LT. CMIN ) THEN
-                    CMIN = J
-                END IF
-
-122         CONTINUE    !  end of loop on cells K for this FIP
-
-            WRITE( LDEV,92000 )
-     &          ' ',
-     &          'WARNING:  ' // GNAME( 1:TRIMLEN( GNAME ) ) // 
-     &          ' not written.',
-     &          'Internal arrays would have overflowed.'
-            WRITE( LDEV,92010 ) 
-     &          'Sources per cell dimensioned', NPCEL
-
-        ELSE IF ( GFLAG ) THEN          ! write gridding matrix to file
-
 C.......   Compress matrix into I/O representation from scratch representation.
 C.......   Compute statistics.
             
             K = 0
                 
-            DO 133  C = 1, NX( 1 )
-                K       = K + 1
-                IX( K ) = IS( C,1 )
-133         CONTINUE
-                   
-            DO  144  R = 2, NGRID
+            DO  144  R = 1, NGRID
             
                 J = NX( R )
                    
@@ -331,13 +324,15 @@ C.......   Compute statistics.
                 ELSE IF ( J .LT. CMIN ) THEN
                     CMIN = J
                 END IF
+
+                IF( J .NE. 0 ) THEN
                    
-                DO 143  C = 1, J
-                    K       = K + 1
-                    IF ( K .LE. NPSRC ) THEN
-                        IX( K ) = IS( C,R )
-                    END IF
-143             CONTINUE
+                    DO 143  C = 1, J
+                        K       = K + 1
+                        IX( K ) = SN( INDX( NBLANK + K ) )
+143                 CONTINUE
+
+                ENDIF
                    
 144         CONTINUE    !  end of loop on cells K for this FIP
             
@@ -384,6 +379,9 @@ C.......   Report statistics:
      &      'Min  number of sources per cell', CMIN
         WRITE( LDEV,92020 ) 
      &      'Mean number of sources per cell', XDUM,
+     &      ' '
+        WRITE( LDEV,92010 ) 
+     &      'NOTE: Number of sources excluded from grid was', NBLANK,
      &      ' '
            
 
