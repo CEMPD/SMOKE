@@ -13,7 +13,7 @@ C
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
-C	PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL
+C	PROMPTFFILE, PROMPTMFILE, STR2INT, TRIMLEN
 C
 C  REVISION  HISTORY:
 C       Prototype  12/95 by MRH
@@ -60,13 +60,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         INDEX1
+        INTEGER         JUNIT
         INTEGER         LEN2
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
+        INTEGER         STR2INT
         INTEGER         TRIMLEN
         
         EXTERNAL  CRLF, ENVYN, FIND1, FIND2, FIND3, GETNUM, GETYN,
-     &            INDEX1, LEN2, PROMPTFFILE, PROMPTMFILE, TRIMLEN
+     &            INDEX1, JUNIT, LEN2, PROMPTFFILE, PROMPTMFILE,
+     &            STR2INT, TRIMLEN
 
 C...........   LOCAL PARAMETERS and their descriptions:
 
@@ -122,18 +125,20 @@ C.........  File units and logical names
 
         INTEGER       ADEV              ! Unit for non-link data
         INTEGER       KDEV              ! unit for link data
+        INTEGER       IDEV              ! Link source raw datafile list
         INTEGER       LDEV              ! IO/API initialization unit
+        INTEGER       MDEV              ! Non-link source raw datafile list
         INTEGER       ZDEV              ! Zones file unit
         CHARACTER*16  ENAME             ! Mobile source output file name
 
 C.........  Other Local variables
 
         INTEGER     IREC, J, L, LC, N, NC, S  ! Counters and pointers
+        INTEGER     L1, L2                    ! Counters and pointers
 
         INTEGER     FIP               ! Temporary read in FIP
-        INTEGER     IFIL              ! File name counter
         INTEGER     IOS               ! Error status on read
-        INTEGER     INYEAR            ! Inventory year for current file
+        INTEGER     INY               ! Temporary inventory year
         INTEGER     LFIP              ! Previous FIP in loop
         INTEGER     LRCL              ! Previous road class in loop
         INTEGER     LLNK              ! Previous link ID in loop
@@ -143,13 +148,12 @@ C.........  Other Local variables
         INTEGER     LNK_RCL           ! Road class for link source
         INTEGER     NLK_FIP           ! Fip for non-link source
         INTEGER     NLK_RCL           ! Road class for non-link source
-        INTEGER     TPF               ! Temporary temporal flag
-        INTEGER     IYR               ! Temporary inventory year
         INTEGER     MLNUM             ! Actual number link sources
         INTEGER     MNNUM             ! Actual number non-link sources
         INTEGER     NSRC              ! Actual number of total sources
         INTEGER     RCL               ! Temporary road class
         INTEGER     ROAD              ! Temporary read-in road code
+        INTEGER     TPF               ! Temporary temporal flag
         INTEGER     TZONE             ! Input TZONE for output data file
         INTEGER     UZONE             ! UTM zone to put into file header
         INTEGER     ZONE              ! Temporary UTM zone for link coords
@@ -167,8 +171,8 @@ C.........  Other Local variables
         CHARACTER*2   RR              ! Temporary area/facility type
         CHARACTER*8   LTYPE           ! The previous type of source in process
         CHARACTER*8   TYPE            ! The current type of source in process
-        CHARACTER*16  RNAME           ! Temporary logical raw VMT file name
-        CHARACTER*16  LNAME           ! Temporart logical link VMT file name
+        CHARACTER*256 FNAME           ! Temporary logical raw datafile name
+        CHARACTER*256 LINE            ! Line-read buffer
         CHARACTER*256 MESG
        
 C***********************************************************************
@@ -204,42 +208,60 @@ C.........  Get the UTM zone to put into file header:
 
         UZONE = GETNUM( 1, 36, 17, 'Enter UTM zone for this file' )
 
-C.........  Loop over link input files
-
-        WRITE( MESG,94010 )
-     &    'Now enter the list of logical file names for' 
-     &     // CRLF() // BLANK5 //
-     &    'RAW LINK-VMT (LNKRAW) MOBILE SOURCE files, and'
-     &     // CRLF() // BLANK5 //
-     &    'year for each set...'
-
-        CALL M3MSG2( MESG )
-
-        IFIL   = 0
-        INYEAR = 1989
-        LFLAG  = .FALSE.
-        S      = 0
-
-   22   CONTINUE
-
-            IFIL = IFIL + 1
-            WRITE( LNAME, 94040 ) 'LNKRAW', IFIL
-
-C.............  Get file name; open input link sources file
-            KDEV = PROMPTFFILE( 
-     &             'Enter the NEXT LNKRAW file or "NONE" to end list',
-     &             .TRUE., .TRUE., LNAME, 'RAWMOBIL' )
+C.......   Get file name for opening input raw mobile link-source files
+        IDEV = PROMPTFFILE( 
+     &        'Enter the name of the RAW LINK FILENAMES list or "NONE"',
+     &         .TRUE., .TRUE., 'MLKLST', 'RAWMOBIL' )
 
 C.............  End list if NONE entered
-            IF( KDEV .LE. 0 ) GO TO 51
+        IF( IDEV .LE. 0 ) GO TO 51
 
-C.............  If KDEV ever positive, then we have link data
+        CALL M3MSG2( 'Reading RAW MOBIL LINK files...' )
+
+C.........  Loop over link input files
+
+        INY    = IMISS3
+        LFLAG  = .FALSE.
+        S      = 0
+   22   CONTINUE    ! head of MLKLST read loop
+
+C.............  Read file names
+C.............  Exit to line 51 if read is EOF
+            READ( IDEV, 93000, END=51 ) LINE
+
+            L1 = INDEX( LINE, 'INVYEAR' )
+            L2 = TRIMLEN( LINE )
+
+            IF( L1 .GT. 0 ) THEN
+ 
+                INY = STR2INT( LINE( L1+7:L2 ) )
+                GO TO 22                        ! To head of MLKLST read loop
+ 
+            ELSEIF( INY .LE. 0 ) THEN
+ 
+                CALL M3EXIT( 'RAWMOBIL', 0, 0,
+     &               'Must set inventory year using INVYEAR packet ' //
+     &               'in MLKLST file', 2 )
+ 
+            ELSE
+
+                FNAME = LINE( 1:L2 )   ! Set inventory file name
+
+            ENDIF
+
+C.............  Get file name; open input link sources file
+            KDEV = JUNIT()
+            OPEN( KDEV, ERR=1006, FILE=FNAME, STATUS='OLD' )
+ 
+            WRITE( MESG,94010 )
+     &             'Successful OPEN using year', INY,
+     &             'for inventory file:' // CRLF() // BLANK5 //
+     &             FNAME( 1:TRIMLEN( FNAME ) )
+            CALL M3MSG2( MESG )
+
+C.............  If have gotten this far, then we have link data for sure
             LFLAG = .TRUE.
              
-C.............  Get year for LNKRAW
-            INYEAR = GETNUM( IMISS3, -IMISS3, INYEAR + 1,
-     &                        'Enter INVENTORY YEAR for file' )
-
 C.............  Read file for sources with link specific VMT (i.e. LINK sources)
 
             IREC = 0
@@ -253,7 +275,7 @@ C.............  Read file for sources with link specific VMT (i.e. LINK sources)
 
                 IF( IOS .NE. 0 ) THEN
                     WRITE( MESG, 94010 ) 'Error ', IOS, 
-     &                   'reading ' // LNAME // ' at line', IREC
+     &                   'reading ' // FNAME // ' at line', IREC
                     CALL M3EXIT( 'RAWMOBIL', 0, 0, MESG, 2 )
 
 C.................  Determine IRCLAS based on Urban/Rural and Facility type
@@ -321,7 +343,7 @@ C.................  Ensure no overflow
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
      &                     'Maximum number of LINK SOURCES', MXLSRC,
-     &                     'exceeded at line', IREC, ', file ' // LNAME
+     &                     'exceeded at line', IREC, ', file ' // FNAME
                     CALL M3MESG( MESG )
 
                 ELSE
@@ -332,7 +354,7 @@ C.................  Ensure no overflow
                     LRCLSA( S ) = RCL
                     LLINKA( S ) = LNK
                     LTPFGA( S ) = MTPRFAC*WTPRFAC
-                    LINVYA( S ) = INYEAR
+                    LINVYA( S ) = INY
                     LX1A  ( S ) = X1
                     LX2A  ( S ) = X2
                     LY1A  ( S ) = Y1
@@ -342,6 +364,8 @@ C.................  Ensure no overflow
                 ENDIF
 
             GO TO 44  ! To head of current KDEV read loop
+
+            CLOSE( KDEV )
 
    50   GO TO 22      ! To head of loop on LNKRAW files
 
@@ -363,40 +387,56 @@ C.................  Ensure no overflow
 
         ENDIF
 
+C.......   Get file name for opening input raw mobile non-link-source
+C.......   (i.e., county-based VMT) files
+
+        MDEV = PROMPTFFILE(
+     &        'Enter the name of the RAW NON-LINK FILENAMES list',
+     &         .TRUE., .TRUE., 'MNLST', 'RAWMOBIL' )
+
 C.........  Loop over non-link input files
 
-        WRITE( MESG,94010 )
-     &     'Now enter the list of logical file names for'
-     &     // CRLF() // BLANK5 //
-     &     'RAW COUNTY-VMT (MRAW) MOBILE SOURCE files,'
-     &     // CRLF() // BLANK5 //
-     &     'year for each set...'
-
-        CALL M3MSG2( MESG )
-
-        IFIL   = 0
-        INYEAR = 1989
-        S      = 0
-
+        INY   = IMISS3
+        NFLAG = .FALSE.
+        S     = 0
    55   CONTINUE
 
-            IFIL = IFIL + 1
-            WRITE( RNAME, 94040 ) 'MRAW', IFIL
+C.............  Read file names
+C.............  Exit to line 111 if read is EOF
+            READ( MDEV, 93000, END=111 ) LINE
+ 
+            L1 = INDEX( LINE, 'INVYEAR' )
+            L2 = TRIMLEN( LINE )
+ 
+            IF( L1 .GT. 0 ) THEN
+ 
+                INY = STR2INT( LINE( L1+7:L2 ) )
+                GO TO 55                        ! To head of MNLST read loop
+ 
+            ELSEIF( INY .LE. 0 ) THEN
+ 
+                CALL M3EXIT( 'RAWMOBIL', 0, 0,
+     &               'Must set inventory year using INVYEAR packet ' //
+     &               'in MNLST file', 2 )
+ 
+            ELSE
+ 
+                FNAME = LINE( 1:L2 )   ! Set inventory file name
+ 
+            ENDIF
 
 C.............  Get file name; open input non-link mobile source file
-   65       ADEV = PROMPTFFILE( 
-     &               'Enter the NEXT MRAW FILE, or "NONE" to end list',
-     &               .TRUE., .TRUE., RNAME, 'RAWMOBIL' )
+            ADEV = JUNIT()
+            OPEN( ADEV, ERR=1006, FILE=FNAME, STATUS='OLD' )
 
-C.............  End list if NONE entered
-            IF( ADEV .LE. 0 ) GO TO 111
+            WRITE( MESG,94010 )
+     &             'Successful OPEN using year', INY,
+     &             'for inventory file:' // CRLF() // BLANK5 //
+     &             FNAME( 1:TRIMLEN( FNAME ) )
+            CALL M3MSG2( MESG )
 
-C.............  If ADEV ever positive, then we have non-link data
+C.............  If have gotten this far, then we have non-link data for sure
             NFLAG = .TRUE.
-
-C.............  Get year for LNKRAW
-            INYEAR = GETNUM( IMISS3, -IMISS3, INYEAR + 1,
-     &                        'Enter INVENTORY YEAR for file' )
 
 C.............  Read county-VMT file(s) 
 
@@ -411,7 +451,7 @@ C.............  Read county-VMT file(s)
 C.................  Abort if error reading file
 		IF( IOS .NE. 0 ) THEN
 		    WRITE( MESG, 94010 ) 'Error ', IOS, 
-     &                   'reading ' // RNAME // ' at line', IREC
+     &                   'reading ' // FNAME // ' at line', IREC
 		    CALL M3EXIT( 'RAWMOBIL', 0, 0, MESG, 2 )
 
 C.................  Determine IRCLAS based on Urban/Rural and Facility type
@@ -460,7 +500,7 @@ C.................  Check for bad road class number
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
      &                     'Maximum number of NON-LINK SOURCES', MXNSRC,
-     &                     'exceeded at line', IREC, ', file ' // RNAME
+     &                     'exceeded at line', IREC, ', file ' // FNAME
                     CALL M3MESG( MESG )
 
                 ELSE
@@ -471,7 +511,7 @@ C.................  Check for bad road class number
                     IRCLSA( S ) = RCL
                     ILINKA( S ) = 0
                     TPFLGA( S ) = MTPRFAC*WTPRFAC
-                    INVYRA( S ) = INYEAR
+                    INVYRA( S ) = INY
                     XLOC1A( S ) = BADVAL3
                     XLOC2A( S ) = BADVAL3
                     YLOC1A( S ) = BADVAL3
@@ -482,7 +522,7 @@ C.................  Check for bad road class number
 
             GO TO 66  ! To head of current ADEV-read loop
 
-  110   GO TO 55      ! To head of loop on MRAW files
+  110   GO TO 55      ! To head of MNLST read loop
 
   111   CONTINUE
 
@@ -571,7 +611,7 @@ C.................  Link sources superceed non-link
                     RCL  = LNK_RCL
                     LNK  = LLINKA( J )
                     TPF  = LTPFGA( J )
-                    IYR  = LINVYA( J )
+                    INY  = LINVYA( J )
                     X1   = LX1A  ( J )
                     X2   = LX2A  ( J )
                     Y1   = LY1A  ( J )
@@ -592,7 +632,7 @@ C.................  When no link, go to next non-link source
                     RCL  = NLK_RCL
                     LNK  = ILINKA( J )
                     TPF  = TPFLGA( J )
-                    IYR  = INVYRA( J )
+                    INY  = INVYRA( J )
                     X1   = XLOC1A( J )
                     X2   = XLOC2A( J )
                     Y1   = YLOC1A( J )
@@ -612,7 +652,7 @@ C.............  Process for link only
                 RCL  = LRCLSA( J )
                 LNK  = LLINKA( J )
                 TPF  = LTPFGA( J )
-                IYR  = LINVYA( J )
+                INY  = LINVYA( J )
                 X1   = LX1A  ( J )
                 X2   = LX2A  ( J )
                 Y1   = LY1A  ( J )
@@ -630,7 +670,7 @@ C.............  Process for non-link only
                 RCL  = IRCLSA( J )
                 LNK  = ILINKA( J )
                 TPF  = TPFLGA( J )
-                IYR  = INVYRA( J )
+                INY  = INVYRA( J )
                 X1   = XLOC1A( J )
                 X2   = XLOC2A( J )
                 Y1   = YLOC1A( J )
@@ -654,12 +694,12 @@ C.............  Check for duplicates
                 CALL M3MESG( 'Duplicate source found:' )
                 WRITE( MESG,94010 )
      &                 '    Current  source FIP:', FIP, 'RCL:', RCL,
-     &                                     'LNK:', LNK, 'IYR:', IYR
+     &                                     'LNK:', LNK, 'INY:', INY
                 CALL M3MESG( MESG )
 
                 WRITE( MESG,94010 )
      &                 '    Previous source FIP:', FIP, 'RCL:', RCL,
-     &                                     'LNK:', LNK, 'IYR:', IYR
+     &                                     'LNK:', LNK, 'INY:', INY
                 CALL M3MESG( MESG )
 
             ELSEIF( S .GE. NMSRC ) THEN       ! Error
@@ -671,7 +711,7 @@ C.............  Check for duplicates
      &               'Maximum number of MOBILE SOURCES exceeded:' )
                 WRITE( MESG,94010 )
      &                 '    FIP:', FIP, 'RCL:', RCL,
-     &                     'LNK:', LNK, 'IYR:', IYR
+     &                     'LNK:', LNK, 'INY:', INY
                 CALL M3MESG( MESG )
 
 C.............  Update sources if no duplicate and no overflow
@@ -681,7 +721,7 @@ C.............  Update sources if no duplicate and no overflow
                 LFIP  = FIP
                 LRCL  = RCL
                 LLNK  = LNK
-                LYR   = IYR
+                LYR   = INY
 
                 S = S + 1
 
@@ -693,7 +733,7 @@ C.............  Update sources if no duplicate and no overflow
                 XLOC2 ( S ) = X2
                 YLOC1 ( S ) = Y1
                 YLOC2 ( S ) = Y2
-                INVYR ( S ) = IYR
+                INVYR ( S ) = INY
                 TPFLAG( S ) = TPF
                 VMT   ( S ) = TVMT
 
@@ -887,6 +927,10 @@ C.......   Write out the mobile source emissions values:
 
         CALL M3EXIT( 'RAWMOBIL', 0, 0,
      &               'Normal completion of Program RAWMOBIL', 0 )
+
+
+1006    MESG = 'Error opening file ' // FNAME( 1:TRIMLEN( FNAME ) )
+        CALL M3EXIT( 'RAWMOBIL', 0, 0, MESG, 2 )
 
 
 C******************  FORMAT  STATEMENTS   ******************************
