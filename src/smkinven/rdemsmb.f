@@ -4,7 +4,7 @@
      &                      ERFILDSC, EFLAG, NDROP, DDROP )
 
 C***********************************************************************
-C  subroutine body starts at line 174
+C  subroutine body starts at line 176
 C
 C  DESCRIPTION:
 C      This subroutine reads the EMS-95 format for the mobile source formatted
@@ -212,6 +212,14 @@ C.............  Set up formats
             WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
             WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
 
+C.............  Allocate memory for units of inventory file output from
+C               routine.  This routine converts mi/day to mi/year.
+            ALLOCATE( INVDUNT( 1,NMBPPOL3 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVDUNT', PROGNAME )
+
+            INVDUNT( 1,1 ) = 'mi/yr'
+            INVDUNT( 1,2 ) = 'mi/day'
+
             FIRSTIME = .FALSE.
 
        END IF
@@ -241,6 +249,13 @@ C.............  Read a line of file and check input status
                 ELSE IF( HDRBUF .EQ. 'NONLINK' ) THEN
                     LFLAG = .FALSE.
                     EXIT
+                END IF
+
+                IF( HDRBUF .EQ. 'UNITS' ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: #UNITS header is not ' //
+     &                     'supported in EMS-95 mobile format.'
+                    CALL M3MSG2( MESG )
                 END IF
 
             END IF
@@ -304,6 +319,9 @@ C.............  Check read i/o status
             END IF
 
             IF ( LINE .EQ. ' ' ) CYCLE      ! skip if line is blank
+
+C.............  Skip #UNITS line to avoide memory problem
+            IF( LINE( 1:6 ) .EQ. '#UNITS' ) CYCLE
 
 C.............  Scan for header lines and check to ensure all are set 
 C               properly
