@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -134,6 +134,14 @@ C............. Finalize i/o api header fields
 C............. NOTE - this is a time-independent file, but the Plume Dynamics
 C              Model that reads this file needs to have the start date and time
 C              of the Met file in here.
+            FDESC3D( 1 ) = CATDESC // ' source stack groups file'
+            FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
+            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+            WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS3D
+            WRITE( FDESC3D(6), 94010 ) '/NROWS3D/ ', NROWS3D
+            FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
+            FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
+
             NVARS3D = 13
             NROWS3D = NGROUP
             NCOLS3D = 1
@@ -141,12 +149,6 @@ C              of the Met file in here.
             SDATE3D = SDATE
             STIME3D = STIME
             TSTEP3D = 10000
-
-            FDESC3D( 1 ) = CATDESC // ' source stack groups file'
-            FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
-            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
-            FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
-            FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
 C.............  Set the file variables
             J = 1
@@ -226,10 +228,10 @@ C.............  Set the file variables
             VTYPE3D( J ) = M3REAL
             UNITS3D( J ) = COORUN3D
             VDESC3D( J ) = 'Projection y coordinate'
-
-            MESG = 'Enter logical name for PLUME-IN-GRID STACK ' //
-     &              'PARAMETERS file'
-            MNAME= PROMPTMFILE( MESG, FSUNKN3, 'STACK_PING', PROGNAME )
+ 
+            MESG = 'Enter logical name for ELEVATED STACK GROUPS ' //
+     &              'file'
+            MNAME= PROMPTMFILE( MESG, FSUNKN3, 'STACK_GROUPS', PROGNAME)
 
         END IF
 
