@@ -81,10 +81,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        GETNUM, GETYN, INDEX1, PROMPTMFILE, 
      &                  PROMPTFFILE, GETMENU, TRIMLEN
 
-C...........    Mods for reading in gridded solar radiation
- 
-        REAL*4          TSFC(NCOLS, NROWS), TSOLAR(NCOLS, NROWS)
-
 C...........   LOCAL VARIABLES and their descriptions:
 
         INTEGER         LDEV    !  unit number for log device
@@ -102,16 +98,19 @@ C...........   LOCAL VARIABLES and their descriptions:
         CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
         CHARACTER*16    M3NAME  !  logical name for MET_CRO_3D
         CHARACTER*16    M2NAME  !  logical name for MET_CRO_2D
-        CHARACTER*16    SNAME   !  logical name for solar radiation file
-
         CHARACTER*256   MESG    !  message buffer for M3EXIT()
 
 C.......   Input met and grid variables:
                 
-        REAL LAT  ( NCOLS, NROWS )      !  grid lat (deg) -90 <= LAT <= 90
-        REAL LON  ( NCOLS, NROWS )      !  grid lon (deg) -180 <= LON <= 180 
-        REAL TASFC( NCOLS, NROWS )      !  level-1 air  temperature (K)
-        REAL PRSFC( NCOLS, NROWS )      !  pressure (Pa)
+        REAL LAT    ( NCOLS, NROWS )    !  grid lat (deg) -90 <= LAT <= 90
+        REAL LON    ( NCOLS, NROWS )    !  grid lon (deg) -180 <= LON <= 180 
+        REAL TASFC  ( NCOLS, NROWS )    !  level-1 air  temperature (K)
+        REAL PRSFC  ( NCOLS, NROWS )    !  pressure (Pa)
+        REAL TSOLAR ( NCOLS, NROWS)     !  Photosynthetic Active Radiation (PAR)
+        REAL WM2LY, LY2UE, SOL2PAR      !  coefficients to convert RGRND to PAR
+        PARAMETER   ( WM2LY  = 0.001433,
+     &                LY2UE  = 2916.0
+     &              )
 
 C.......   Gridded normalized emissions description input from file BGRD
 
@@ -139,9 +138,9 @@ C.......   BEIS2 internal, output species
 
 C.......   Name tables for file NNAME
 
-        CHARACTER*16    NORMV( BTYPES * ( BSPCS - 1 ) )  !  names for VOC-emission vbles
-        CHARACTER*16    NORMN( LUSES )                  !  names for  NO-emission vbles
-        CHARACTER*72    PARMENU( 4 )               ! Methods to calc. PAR
+        CHARACTER*16    NORMV( BTYPES * ( BSPCS - 1 ) )   ! names for VOC vbles
+        CHARACTER*16    NORMN( LUSES )          !  names for  NO-emission vbles
+        CHARACTER*72    PARMENU( 4 )            ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use observational clouds',
      &             'Use MM5 generated RGND',
@@ -186,34 +185,26 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
      &          'Enter name for NORMALIZED EMISSIONS input file',
      &          FSREAD3, 'BGRD', 'TMPBIO' )
 
-        IF ( PARTYPE .EQ. 2 ) THEN
+        M2NAME = PROMPTMFILE( 
+     &          'Enter name for MET_CRO_2D input file',
+     &          FSREAD3, 'MET_CRO_2D', 'TMPBIO' )
 
-           SNAME = PROMPTMFILE(
-     &             'Enter name for PAR and SFC. TEMP input file',
-     &             FSREAD3, 'SOLAR', 'TMPBIO' )
-           IF ( .NOT. DESC3( SNAME ) ) THEN
-               MESG = 'Could not get description of file "' //
-     &                SNAME( 1:TRIMLEN( SNAME ) ) // '"'
-               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-           END IF
+        IF ( .NOT. DESC3( M2NAME ) ) THEN
+            MESG = 'Could not get description of file "' //
+     &             M2NAME( 1:TRIMLEN( M2NAME ) ) // '"'
+            CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+        END IF
 
-        ELSE
-           GNAME = PROMPTMFILE( 
-     &             'Enter name for GRID_CRO_2D input file',
-     &             FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
+        IF ( PARTYPE .NE. 2 ) THEN 
+
            M3NAME = PROMPTMFILE( 
      &             'Enter name for MET_CRO_3D input file',
      &             FSREAD3, 'MET_CRO_3D', 'TMPBIO' )
-           M2NAME = PROMPTMFILE( 
-     &             'Enter name for MET_CRO_2D input file',
-     &             FSREAD3, 'MET_CRO_2D', 'TMPBIO' )
-           IF ( .NOT. DESC3( M3NAME ) ) THEN
-               MESG = 'Could not get description of file "' //
-     &                M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
-               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-           END IF
+           GNAME = PROMPTMFILE( 
+     &             'Enter name for GRID_CRO_2D input file',
+     &             FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
 
-        END IF    ! PARTYPE
+        END IF    ! Use cloud to calculate PAR
 
 
         JDATE = SDATE3D
@@ -336,31 +327,35 @@ C.......   Loop on time steps:
         JTIME = STIME
 
         DO  899  HR = 1, NHRS
+
+           IF ( .NOT. READ3( M2NAME, 'TGD', 1, 
+     &          JDATE, JTIME, TASFC ) ) THEN
+              MESG = 'Could not read sfc. temp. from file "' //
+     &                M2NAME( 1:TRIMLEN( M2NAME ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
+           END IF
+
            IF ( PARTYPE .EQ. 2 ) THEN      ! Use RGRND
-              IF ( .NOT. READ3( SNAME, 'PAR', ALLAYS3, JDATE,
+ 
+              IF ( .NOT. READ3( M2NAME, 'RGRND', ALLAYS3, JDATE,
      &             JTIME, TSOLAR(1,1) ) ) THEN
-                 MESG = 'Could not read from file SOLAR'
-                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+                 MESG = 'Could not read from file MET_CRO_2D'
+                 CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
               END IF
- 
-              IF ( .NOT. READ3( SNAME, 'TA', ALLAYS3, JDATE,
-     &             JTIME, TSFC(1,1) ) ) THEN
-                 MESG = 'Could not read from file SOLAR'
-                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-              END IF
- 
+
+              SOL2PAR = 0.5 * WM2LY * LY2UE  ! RGRND to PAR conversion factor
+
+              DO 50 I = 1, NCOLS
+                 DO 40 J = 1, NROWS
+                    TSOLAR( I, J ) = TSOLAR( I, J ) * SOL2PAR ! Calc. PAR
+40               END DO
+50            END DO
  
               CALL HRBIOS( JDATE, JTIME,
      &                   PINE, DECD, CONF, AGRC, LEAF, OTHR, AVLAI,
-     &                   NORNO, TSFC, TSOLAR, EMIS )
-           ELSE        ! Use clouds to calculate PAR
+     &                   NORNO, TASFC, TSOLAR, EMIS )
 
-              IF ( .NOT. READ3( M2NAME, 'TGD', 1, 
-     &             JDATE, JTIME, TASFC ) ) THEN
-                 MESG = 'Could not read sfc. temp. from file "' //
-     &                   M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
-                 CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
-              END IF
+           ELSE        ! Use clouds to calculate PAR
 
               IF ( .NOT. READ3( M3NAME, 'PRES', 1, 
      &                        JDATE, JTIME, PRSFC ) ) THEN
