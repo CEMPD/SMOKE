@@ -1,5 +1,5 @@
 
-        SUBROUTINE CONVRTXY( NSRC, CTYPE, P_ALP, P_BET, 
+        SUBROUTINE CONVRTXY( NSRC, CTYPE, GDNAM, P_ALP, P_BET, 
      &                       P_GAM, XCENT, YCENT, XVALS, YVALS )
 
 C***********************************************************************
@@ -15,6 +15,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C     Added POLGRD3 as a supported coord sys type - E. Giroux CNRC 03/2004
 C
 C****************************************************************************/
 C
@@ -37,28 +38,31 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-      IMPLICIT NONE
+        IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER, INTENT    (IN) :: NSRC          !  actual source count
-        INTEGER, INTENT    (IN) :: CTYPE         !  coord sys type
-        REAL*8 , INTENT    (IN) :: P_ALP         !  first, second, third map
-        REAL*8 , INTENT    (IN) :: P_BET         !  projection descriptive
-        REAL*8 , INTENT    (IN) :: P_GAM         !  parameters
-        REAL*8 , INTENT    (IN) :: XCENT         !  lon for coord-system X=0
-        REAL*8 , INTENT    (IN) :: YCENT         !  lat for coord-system Y=0
-        REAL   , INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input lon)
-        REAL   , INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input lat)
+        INTEGER,          INTENT    (IN) :: NSRC          !  actual source count
+        INTEGER,          INTENT    (IN) :: CTYPE         !  coord sys type
+        CHARACTER(LEN=*), INTENT    (IN) :: GDNAM         !  grid name
+        REAL*8 ,          INTENT    (IN) :: P_ALP         !  first, second, third map
+        REAL*8 ,          INTENT    (IN) :: P_BET         !  projection descriptive
+        REAL*8 ,          INTENT    (IN) :: P_GAM         !  parameters
+        REAL*8 ,          INTENT    (IN) :: XCENT         !  lon for coord-system X=0
+        REAL*8 ,          INTENT    (IN) :: YCENT         !  lat for coord-system Y=0
+        REAL   ,          INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input lon)
+        REAL   ,          INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input lat)
 
 C...........   EXTERNAL FUNCTIONS
         LOGICAL       LAMBERT
-        LOGICAL       LL2LAM 
+        LOGICAL       LL2LAM
+        LOGICAL       LL2POL
+        LOGICAL       POLSTE
 
-        EXTERNAL      LAMBERT, LL2LAM
+        EXTERNAL      LAMBERT, LL2LAM, LL2POL, POLSTE
 
 C...........   Other local variables
         INTEGER       UZONE               ! UTM zone
@@ -98,8 +102,9 @@ C   begin body of subroutine CONVRTXY
 
         ELSE IF ( CTYPE .EQ. LAMGRD3 ) THEN
 
-            IF( .NOT. LAMBERT( P_ALP, P_BET, P_GAM, XCENT, YCENT )) THEN
-                MESG = 'ERROR: Could not initialize lambert grid.'
+            IF( .NOT. LAMBERT( GDNAM, P_ALP, P_BET, P_GAM, 
+     &                         XCENT, YCENT )) THEN
+                MESG = 'ERROR: Could not initialize Lambert grid.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
@@ -123,11 +128,46 @@ C   begin body of subroutine CONVRTXY
             ENDDO
 
             IF( EFLAG ) THEN
-                MESG = 'ERROR: Problem converting stack coordinates ' //
+                MESG = 'ERROR: Problem converting coordinates ' //
      &                 'from Lat-lon to Lambert'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             ENDIF
+
+        ELSE IF ( CTYPE .EQ. POLGRD3 ) THEN
+
+            IF( .NOT. POLSTE( GDNAM, P_ALP, P_BET, P_GAM, 
+     &                        XCENT, YCENT ) ) THEN
+                MESG = 'ERROR: Could not initialize Polar ' //
+     &                 'Stereographic grid.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            DO S = 1, NSRC
+
+                XLOC4 = XVALS( S )
+                YLOC4 = YVALS( S )
+
+                IF( XLOC4 .LT. AMISS3 .OR. YLOC4 .LT. AMISS3 ) CYCLE
+
+                IF ( .NOT. LL2POL( XLOC4, YLOC4, XX4, YY4 ) ) THEN
+                    EFLAG = .TRUE.
+
+                ELSE
+
+                    XVALS( S ) = XX4
+                    YVALS( S ) = YY4
+
+                END IF
+
+            END DO
+
+            IF( EFLAG ) THEN
+                MESG = 'ERROR: Problem converting coordinates ' //
+     &                 'from Lat-lon to Polar Stereographic'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2)
+            
+            END IF
 
         ELSE		!  error
             WRITE( MESG,94010 ) 'ERROR: Do not know how to convert ' //
@@ -135,7 +175,7 @@ C   begin body of subroutine CONVRTXY
 
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-        END IF		!  if coord type UTM or Lambert 
+        END IF		!  if coord type UTM, Lambert, or Polar Stereographic
 
         RETURN
 

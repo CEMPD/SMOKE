@@ -12,6 +12,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C     Added POLGRD3 as a supported coord sys type - E. Giroux CNRC 03/2004
 C
 C**************************************************************************
 C
@@ -64,7 +65,7 @@ C...........   Subroutine arguments
 C...........   Local parameters
 
         INTEGER, PARAMETER :: MXSEG = 16          ! # of potential line segments
-        INTEGER, PARAMETER :: MXGRDTYP = 11
+        INTEGER, PARAMETER :: MXGRDTYP = 13
 
 C...........   Grid types and names arrays
         INTEGER      :: GRDTYPES( MXGRDTYP ) = ( / LATGRD3
@@ -76,6 +77,8 @@ C...........   Grid types and names arrays
      &                                           , MERGRD3
      &                                           , STEGRD3
      &                                           , STEGRD3
+     &                                           , POLGRD3
+     &                                           , POLGRD3
      &                                           , UTMGRD3
      &                                           , UTMGRD3 / )
 
@@ -88,6 +91,8 @@ C...........   Grid types and names arrays
      &                                           , 'MERGRD3        '
      &                                           , 'STEREOGRAPHIC  '
      &                                           , 'STEGRD3        '
+     &                                           , 'POLAR          '
+     &                                           , 'POLGRD3        '
      &                                           , 'UTM            '
      &                                           , 'UTMGRD3        ' / )
 
