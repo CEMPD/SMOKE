@@ -4,9 +4,9 @@
      &                      DFAC, NDAY, DDEX, NDSP, INDD, TMAT       )
 
 C***********************************************************************
-C  subroutine body starts at line  119
+C  subroutine body starts at line  121
 C
-C  FUNCTION:
+C  DESCRIPTION:
 C       Construct temporal-coefficient-transform matrices for 
 C       program TMPPOINT
 C
@@ -29,7 +29,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
