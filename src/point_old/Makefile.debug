@@ -2,7 +2,7 @@
 #
 all: debug 
 #
-opts: cselev.debug   csgpoint.debug ctlpmat.debug  elevpoint.debug \
+debug: cselev.debug   csgpoint.debug ctlpmat.debug  elevpoint.debug \
       emspoint.debug grdpmat.debug  grdpoint.debug laypoint.debug  \
       pdpoint.debug  rawpoint.debug spcpmat.debug  tmppoint.debug
 #
@@ -75,13 +75,13 @@ GRPI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
 #
 grdpoint.debug: $(GRP) $(GRPI)
         echo GRDPOINT:
-        f77 $(DBGFLAGS)   -o grdpoint.debug $(GRP) $(LIBS)
+	f77 $(DBGFLAGS)   -o grdpoint.debug $(GRP) $(LIBS)
 #
 #
 #
 LAY=laypoint.F plmris.F
 #
-LAYE=PTDIMS3.EXT TMDIMS3.EXT VGRS3.EXT GRDIMS3.EXT
+LAYE=PTDIMS3.EXT TMDIMS3.EXT VGRD3.EXT GRDIMS3.EXT
 #
 laypoint.debug: $(LAY) $(LAYE)
 	echo LAYPOINT:
@@ -105,7 +105,7 @@ RAWI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT
 #
 rawpoint.debug: $(RAW) $(RAWI)
 	echo RAWPOINT:
-	f77 $(DBGFLAGS)   -o rawpoin.debug $(RAW) $(LIBS)
+	f77 $(DBGFLAGS)   -o rawpoint.debug $(RAW) $(LIBS)
 #
 #
 #
