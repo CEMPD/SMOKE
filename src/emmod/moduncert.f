@@ -148,41 +148,49 @@
 	CHARACTER(LEN=IOVLEN3), PUBLIC, ALLOCATABLE :: UONAMES( : )  ! all possible variable names
         CHARACTER(LEN=IOVLEN3), PUBLIC, ALLOCATABLE :: UNAMES( : )   ! uncert var names
 
-        INTEGER, PUBLIC, ALLOCATABLE :: SRCNUM( : )    ! source number array
-        INTEGER, PUBLIC, ALLOCATABLE :: METHOD( :, : ) ! empirical or parametric
-        INTEGER, PUBLIC, ALLOCATABLE :: EPTYP( :, : )  ! parametric/emp. type
-        INTEGER, PUBLIC, ALLOCATABLE :: APRCH( :, : )  ! approach
-        INTEGER, PUBLIC, ALLOCATABLE :: NUMEP( :, : )  ! no. of parameters/
-        INTEGER, PUBLIC, ALLOCATABLE :: UNCIDX( :, : ) ! empirical/parametric reference no.
-                                                       ! empirical entires
-        INTEGER                      :: NUOVAR         ! no. of total possible variables
+        INTEGER                         UPINVAR        ! no. of inventory vars from pointer file
+        INTEGER                         NUOVAR         ! no. of total possible variables
         INTEGER                      :: UCOUNT = 0     ! sources with uncertainty
-         
+
+        INTEGER, PUBLIC, ALLOCATABLE :: APRCH( :, : )  ! approach
+        INTEGER, PUBLIC, ALLOCATABLE :: EPTYP( :, : )  ! parametric/emp. type
+        INTEGER, PUBLIC, ALLOCATABLE :: INSRC( : )     ! uncertainty sources
+        INTEGER, PUBLIC, ALLOCATABLE :: METHOD( :, : ) ! empirical or parametric
+        INTEGER, PUBLIC, ALLOCATABLE :: NUMEP( :, : )  ! no. of parameters/
+        INTEGER, PUBLIC, ALLOCATABLE :: SRCNUM( : )    ! source number array
+        INTEGER, PUBLIC, ALLOCATABLE :: UNCIDX( :, : ) ! empirical/parametric reference no.
+                                                       ! empirical entires         
         REAL,    PUBLIC, ALLOCATABLE :: PARMS( :, : )  ! parameters 
         REAL,    PUBLIC, ALLOCATABLE :: EMFVAL( :, : ) ! emission factor values
         REAL,    PUBLIC, ALLOCATABLE :: PROBVAL( :, : )! probability values
 
-        
 !.........  Other variables
-
-	LOGICAL, PUBLIC  ::  UCFLAG = .FALSE.   ! true: use uncertainty
+	LOGICAL, PUBLIC              :: UCFLAG = .FALSE. ! true: use uncertainty
+	LOGICAL, PUBLIC              :: GUCFLAG = .FALSE.! true: use GRDMAT uncertainty
+	LOGICAL, PUBLIC              :: TUCFLAG = .FALSE.! true: use TEMPORAL uncertainty
         
-        LOGICAL, PUBLIC, ALLOCATABLE :: USTAT( : )  ! true: source is affected
+        LOGICAL, PUBLIC, ALLOCATABLE :: USTAT( : )     ! true: source is affected
 
-C.........  Gabe's additions
-C.............  Local variables
+        CHARACTER*4                  :: UCAT = ' '     ! category during uncertainty runs
+
         CHARACTER*9, PARAMETER :: PDF( 5 ) = ( / 'NORMAL   ',
      &                                           'LOGNORMAL',
      &                                           'GAMMA    ',
      &                                           'WEIBULL  ',
      &                                           'BETA     ' / )
+        CHARACTER*16, PUBLIC :: UTNAME( 7 )            ! area or point temporal input
 
         LOGICAL, ALLOCATABLE, PUBLIC :: UACTVTY( : )   ! T:uncertainty activities
+        LOGICAL, ALLOCATABLE, PUBLIC :: UEANAM( : )    ! T:uncertainty pollutants
         LOGICAL, ALLOCATABLE, PUBLIC :: UEAREAD( : )   ! T:uncertainty polls. & acts.
         LOGICAL, ALLOCATABLE, PUBLIC :: UEINAM( : )    ! T:uncertainty pollutants
         LOGICAL, ALLOCATABLE, PUBLIC :: UEFINAM( : )   ! T:uncertainty emission factors
 
-        INTEGER, PARAMETER, PUBLIC :: STATDIST = 5  ! Normal, Lognormal, Gamma, Weibull, Beta, resp.
+        INTEGER, PARAMETER,   PUBLIC :: STATDIST = 5   ! Normal, Lognormal, Gamma, Weibull, Beta, resp.
+        INTEGER, PARAMETER,   PUBLIC :: RMXLEN = 4     ! max number of realization is 9999
+
+        INTEGER, PUBLIC, ALLOCATABLE :: NU_EXIST( :,: ) ! cert data to read in uncert mode
+        INTEGER, PUBLIC, ALLOCATABLE :: UI_EXIST( :,: ) ! uncertainty data exists, read
 
         INTEGER                      :: DRAWRLZN = 0   ! realizations to draw (samples)
         INTEGER                         NEMP           ! number of empirical statistics options
