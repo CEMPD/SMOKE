@@ -94,6 +94,7 @@ C.........   Other local variables
         LOGICAL :: FEXIST   = .FALSE.    ! true: file exists
         
         CHARACTER*20           MODELNAM  ! emission factor model name
+        CHARACTER*20           GRP_NAME  ! temperature aggregation group
         CHARACTER(LEN=IOVLEN3) VOLNAM    ! volatile pollutant name
         CHARACTER(LEN=80)      M6INPUT   ! Mobile6 input file name
         CHARACTER(LEN=200)     TEMPDIR   ! location of hourly temperature files
@@ -135,6 +136,10 @@ C.........  Get environment variables that control program behavior
      &                 'Replace temperatures in MOBILE6 scenarios',
      &                 .TRUE., IOS )
      
+C.........  Get temperature aggregation length
+        MESG = 'Temperature aggregation group'
+        CALL ENVSTR( 'GROUP_TYPE', MESG, 'daily', GRP_NAME, IOS )
+     
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
@@ -150,10 +155,6 @@ C.......   Get file names and units; open input files
         PDEV = PROMPTFFILE(
      &           'Enter logical name for SPDSUM speed summary file',
      &           .TRUE., .TRUE., 'SPDSUM', PROGNAME )
-
-        GDEV = PROMPTFFILE(
-     &           'Enter logical name for time period GROUP file',
-     &           .TRUE., .TRUE., 'GROUP', PROGNAME )
         
         IDEV = PROMPTFFILE(
      &           'Enter logical name for M6LIST scenarios file',
@@ -163,6 +164,30 @@ C.......   Get file names and units; open input files
      &           'Enter logical name for MOBILE6 input file',
      &           .FALSE., .TRUE., 'M6INPUT', PROGNAME ) 
 
+        SELECT CASE( GRP_NAME )
+        CASE( 'daily' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for DAILYGROUP file',
+     &           .TRUE., .TRUE., 'DAILYGROUP', PROGNAME )
+        CASE( 'weekly' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for WEEKLYGROUP file',
+     &           .TRUE., .TRUE., 'WEEKLYGROUP', PROGNAME )
+        CASE( 'monthly' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for MONTHLYGROUP file',
+     &           .TRUE., .TRUE., 'MONTHLYGROUP', PROGNAME )
+        CASE( 'episode' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for EPISODEGROUP file',
+     &           .TRUE., .TRUE., 'EPISODEGROUP', PROGNAME )
+        CASE DEFAULT
+            MESG = 'ERROR: Unrecognized value for GROUP_TYPE.' //
+     &             CRLF() // BLANK10 // 'Valid values are daily, ' //
+     &             'weekly, monthly, or episode.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END SELECT
+     
 C.........  Get temperature file directory from the environment
         MESG = 'Location of hourly temperature files'
         CALL ENVSTR( 'SMK_TEMPATH', MESG, '.', TEMPDIR, IOS )
@@ -305,7 +330,7 @@ C               waste time running Mobile6)
                     END IF
                 END IF
                 
-                CALL OPENSEF( NUMSRC, 'daily', SDATE, STIME, 
+                CALL OPENSEF( NUMSRC, GRP_NAME, SDATE, STIME, 
      &                        EMISDIR, FNAME )
             END IF
             
@@ -363,7 +388,8 @@ C.............  Close current temperature file
 
 C.............  Construct next file name
             WRITE( TEMPNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) //
-     &                              '/' // 'daily' // '.', SDATE, '.ncf'
+     &             '/' // GRP_NAME ( 1:LEN_TRIM( GRP_NAME ) ) //
+     &             '.', SDATE, '.ncf'
 
 C.............  Check if file exists
             INQUIRE( FILE=TEMPNAME, EXIST=FEXIST )
