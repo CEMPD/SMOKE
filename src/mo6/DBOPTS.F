@@ -9,7 +9,8 @@ C
 C  Calls LJCOMP,NXTTOK,QUITER,UCCOMP. 
 C 
 C  Changes: (Last change first) 
-C 
+C
+C 18 Sep 03 DB  Changed DATABASE VEHICLE AGES to DATABASE AGES 
 C 10 Apr 11 AIR Task 11: Redirected error messages to IOUERR file. 
 C  24 Oct 00 @EPA-BG  New labels for database age, model year and hour selection 
 C 19 Oct 00 @EPA-djb Task W2, Added AGGREGATED OUTPUT command. 
@@ -141,8 +142,7 @@ C
      &            'DBASE MODEL YEARS') 
                DB_MDLYR=IYES 
                CALL DBSELA(M6REC,INERR,RC) 
-            CASE ('DATABASE VEHICLE AGE', 
-     &            'DBASE VEHICLE AGE') 
+            CASE ('DATABASE AGES') 
                CALL DBSELA(M6REC,INERR,RC) 
             CASE ('DATABASE HOURS', 
      &            'DBASE HOURS') 

@@ -9,6 +9,10 @@ C  Calls EF81_93
 C
 C  Changes: (Last change first)
 C
+C  08 Sep 03 EPA-DB Changes in the HC and NOx emission standards for
+C     NLEV and Tier 2 vehicles will affect CO emission rates.  This change
+C     will be reflected in MOBILE6 as an adjustment to the CO emission rate
+C     calculated by MOBILE6.
 C  02 May 02 AIR Task Bug Fix: #388 Modification of constants via QUITER.
 C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy
 C  26 Sep 00 Bug 64: Modified HC Start/Running Splits (JK)
@@ -172,6 +176,14 @@ C
 C         Find the certification ratio for CO emissions
 C
              CERTRATIO = CRT050K(ISTD,CO,IV)/CRT050K(TIER1,CO,IV)
+C
+C     Adjust ISTD 5 - 8  >>  ITLEV, TLEV, ILEV and LEV (gasoline) where
+C     the CO standard did not change.  Adjust only light duty Normal emitters.
+C
+             IF(ISTD.GE.5 .AND. ISTD.LE.8 .AND. IV.LE.5
+     &                    .AND. INH.EQ.NORMAL) THEN
+                CERTRATIO = 0.505 !Ratio of cert LEVs to cert Tier 1 CO test data (3.4 Std).
+             END IF
           END IF
 C
 C         Calculate Tier 1 and later FTP emission factors for CO pollutant

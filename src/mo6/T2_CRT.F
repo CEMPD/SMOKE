@@ -13,7 +13,8 @@ C     CALLS:  none
 C 
 C 
 C  Changes: (Last change first) 
-C 
+C
+C  08 Sep 03 @EPA-djb Added EFFSTD adjustment & LDGBER common. 
 C  02 Feb 00 @DynTel-ddj 1-032, New subroutine. 
 C 
 C 
@@ -23,6 +24,7 @@ C    argument list: ICY
 C 
 C 
 C  common blocks: 
+C    /LDGBER/ CRT050K
 C    /TIER2/  TIER2_50K (ISTD, IP, IV) 
 C             T2_BIN_FRAC(IMY, IBIN, IP, IVTEMP) 
 C 
@@ -36,7 +38,8 @@ C  Local variable / array dictionary:
 C 
 C   Name   Type              Description 
 C  ------  ----  ----------------------------------------------------- 
-C 
+C  CRT050K  R    Emission standards at 50,000 miles. 
+C
 C 
 C 
 C  Notes: 
@@ -44,6 +47,7 @@ C
 C 
       IMPLICIT NONE 
 C 
+      INCLUDE 'LDGBER.I'
       INCLUDE 'MAXIMA.I' 
       INCLUDE 'TIER2.I' 
 C 
@@ -57,6 +61,7 @@ C
       INTEGER MY 
 C 
       REAL CRT50K 
+      REAL EFFSTD      !Effective emission standard at 50,000 miles.
 C 
       DO IVTEMP = 1, 5 ! 1,LDV/LDDV, 2 LDT1, 3 LDT2/LDDT12, 4 LDT3, 5 LDT4/LDDT34 
          DO IP = 1, 3 
@@ -80,8 +85,20 @@ C      directed for task 1-032 to phase in standards using LDT2
 C      for LDDT12. 
 C 
                DO IBIN = 1, 12 
-                  CRT50K = CRT50K + TIER2_50K(IVTEMP,IBIN,IP)* 
-     &                              T2_BIN_FRAC(IMY,IBIN,IP,IVTEMP) 
+C
+C                 Tier 2 CO emission rates for bins with a 3.4/4.4 g/mi
+C                 standard are reduced by the ratio of the observed
+C                 certification levels of LEVs to Tier 1 CO test data
+C                 applied to the Tier 1 emission standard levels.
+C
+                  EFFSTD = TIER2_50K(IVTEMP,IBIN,IP)
+                  IF (IP.EQ.2 .AND. IBIN.GE.5 .AND. IBIN.LE.10) THEN !CO 3.4/4.4 Std.
+                    EFFSTD = 0.505  !Ratio of cert LEVs to cert Tier 1 CO test data.
+     &                     * CRT050K(3,IP,IVTEMP) !Tier 1 CO emission standard.
+                  END IF
+C
+                  CRT50K = CRT50K + T2_BIN_FRAC(IMY,IBIN,IP,IVTEMP)
+     &                            * EFFSTD
                END DO 
                T2CRT50K(IVTEMP,IP,JDX) = CRT50K 
             END DO 

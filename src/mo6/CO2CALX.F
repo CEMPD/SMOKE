@@ -3,8 +3,9 @@ C
 C  This subroutine returns the CO2 emission factors (in g/mi) 
 C  for calendar year ICY. 
 C 
-C Changes: 
+C Changes:
 C 
+C 24 Sep 03 BAG@EPA commented out CO and HC subtractions from CO2 
 C 04 Jan 01 AIR Task 27: Removed unused variables/code 
 C 06 Nov 01 AIR Task 27: New MOBILE6 routine. 
 C 
@@ -125,12 +126,12 @@ C  independent.
 C 
             IF(VVGASMC(IV).EQ.1) THEN 
               CO2EF = 8868.132/RFE      ! Gas 
-     *              - 3.1722 *CO2HEF(1) ! THC adjustment 
-     *              - 1.57143*CO2HEF(2) ! CO adjustment 
+CCCC     *              - 3.1722 *CO2HEF(1) ! THC adjustment 
+CCCC     *              - 1.57143*CO2HEF(2) ! CO adjustment 
             ELSE 
               CO2EF = 10175.824/RFE     ! Diesel 
-     *              - 3.1722 *CO2HEF(1) ! THC adjustment 
-     *              - 1.57143*CO2HEF(2) ! CO adjustment 
+CCCC     *              - 3.1722 *CO2HEF(1) ! THC adjustment 
+CCCC     *              - 1.57143*CO2HEF(2) ! CO adjustment 
             END IF 
 C 
 C  Initialize 
