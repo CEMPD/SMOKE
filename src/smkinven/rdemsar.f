@@ -1,6 +1,6 @@
 
-        SUBROUTINE RDEMSAR( EDEV, INY, NRAWIN, MXIPOL, WKSET, INVPCOD, 
-     &                      INVPNAM, NRAWOUT, IOS, IREC, ERFILDSC,
+        SUBROUTINE RDEMSAR( EDEV, INY, NRAWIN, WKSET, 
+     &                      NRAWOUT, IOS, IREC, ERFILDSC,
      &                      EFLAG, NDROP, EDROP )
 
 C***********************************************************************
@@ -48,6 +48,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -68,24 +71,23 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL                   STR2REAL
         REAL                   YR2DAY  
 
-        EXTERNAL CRLF, INDEX1, 
-     &           STR2INT, STR2REAL, YR2DAY
+        EXTERNAL CRLF, INDEX1, STR2INT, STR2REAL, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: EDEV      !  unit no. for input file
         INTEGER     , INTENT (IN) :: INY       !  inv year for this set of files
         INTEGER     , INTENT (IN) :: NRAWIN    !  total raw record-count
-        INTEGER     , INTENT (IN) :: MXIPOL    !  max no of inventory pol
         INTEGER     , INTENT (IN) :: WKSET     !  weekly profile interpretation
-        INTEGER     , INTENT (IN) :: INVPCOD( MXIPOL ) !  inv pol 5-digit codes
-        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) !  in pol names
         INTEGER     , INTENT(OUT) :: NRAWOUT   ! valid raw record-count
         INTEGER     , INTENT(OUT) :: IOS       ! I/O status
         INTEGER     , INTENT(OUT) :: IREC      ! line number
         CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
         LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
         INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIPOL ) ! emis dropped per pol
+        REAL        , INTENT(OUT) :: EDROP( MXIDAT ) ! emis dropped per pol
+
+C...........   Local parameters
+        INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
 
 C...........   Other local variables
 
@@ -97,32 +99,38 @@ C...........   Other local variables
 
         INTEGER          I, J, L                ! counters and indices
 
-        INTEGER          COD     !  temporary pollutant code number
-        INTEGER          ES      !  counter for emission file
-        INTEGER          FIP     !  temporary fip, scc, sic
+        INTEGER          COD         !  temporary pollutant code number
+        INTEGER          ES          !  counter for emission file
+        INTEGER          FIP         !  temporary fip, scc, sic
+        INTEGER       :: ICC     = 0 !  country code, def = 0
+        INTEGER       :: NPOA    = 0 !  number of input data variables
         INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
-        INTEGER          TPF     !  temporary temporal ID
+        INTEGER          TPF         !  temporary temporal ID
 
         CHARACTER*2            TMPAA !  tmp time period code
+        CHARACTER*10 , SAVE :: FIPFMT! formt to write co/st/cy to string
         CHARACTER*300          LINE  !  Input line from POINT file
         CHARACTER*300          MESG  !  Text for M3EXIT()
         CHARACTER(LEN=IOVLEN3) CPOL  !  Temporary pollutant code
         CHARACTER(LEN=FIPLEN3) CFIP  !  Character FIP code
-        CHARACTER(LEN=POLLEN3) CCOD  !  Character pollutant index to INVPNAM
+        CHARACTER(LEN=POLLEN3) CCOD  !  Character pollutant index to INVDNAM
         CHARACTER(LEN=SCCLEN3) TSCC  !  Temporary character SCC
 
         CHARACTER*16 :: PROGNAME = 'RDEMSAR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDEMSAR
-       
-C.........  Define day to year conversion factor and real type for integer 
-C           missing value
-        DAY2YR  = 1. / YR2DAY( INY )
+
+C.........  Set internal formats       
+        WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) FIPLEN3, FIPLEN3
 
 C........  Set rule effectiveness and rule penetration to inventory defaults
         REFF = 100.0
         RPEN = 100.0
+
+C.........  Initialize units as converstion from day to year, in case units
+C           are not provided by file
+        INVDCNV = 1. / YR2DAY( INY )    ! Array
 
 C........................................................................
 C.............  Head of the input file read loop  .......................
@@ -137,13 +145,41 @@ C.............  Read a line of emission.pt file and check input status
 
             READ( EDEV, 93000, END=199, IOSTAT=IOS ) LINE
             IREC = IREC + 1
-            IF ( IOS .GT. 0 ) RETURN
+
+C.............  Check read i/o status
+            IF ( IOS .NE. 0 ) THEN
+
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 )
+     &              'I/O error', IOS, 
+     &              'reading inventory file at line', IREC
+                CALL M3MESG( MESG )
+                CYCLE
+
+            END IF
+
+            IF ( LINE .EQ. ' ' ) CYCLE      ! skip if line is blank
+
+C.............  Scan for header lines and check to ensure all are set 
+C               properly (no header fields are required)
+            CALL GETHDR( MXDATFIL, .FALSE., .FALSE., .FALSE., 
+     &                   LINE, ICC, INY, NPOA, IOS )
+
+C.............  Set error flag for error from header reading routine
+            IF( IOS .GT. 0 ) EFLAG = .TRUE.
+
+C.............  If a header line was encountered, go to next line
+            IF( IOS .GE. 0 ) CYCLE
+
+C.............  Define day to year conversion factor and real type for integer 
+C               missing value
+            DAY2YR  = 1. / YR2DAY( INY )
 
 C.............  Find pollutant name in master list to set index COD
-C.............  NOTE- Pollutant names here and in INVPNAM are uppercase
+C.............  NOTE- Pollutant names here and in INVDNAM are uppercase
             CPOL = ADJUSTL( LINE( 21:25 ) )
             CALL UPCASE( CPOL )
-            COD  = INDEX1( CPOL, MXIPOL, INVPNAM )
+            COD  = INDEX1( CPOL, MXIDAT, INVDNAM )
 
             IF( COD .LE. 0 ) THEN
                 L = LEN_TRIM( CPOL )
@@ -168,9 +204,10 @@ C.............  Check and set emissions value
             END IF
 
 C.............  Set country/state/county code
-            FIP  = 1000 * STR2INT( LINE( 1:2 ) ) +
+            FIP  = ICC  * 100000 +
+     &             1000 * STR2INT( LINE( 1:2 ) ) +
      &                    STR2INT( LINE( 3:5 ) )
-            WRITE( CFIP,94120 ) FIP
+            WRITE( CFIP,FIPFMT ) FIP
 
 C.............  Set source category code
             TSCC = ADJUSTL( LINE( 6:20 ) )
@@ -217,7 +254,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 TPFLGA ( ES ) = TPF
                 INVYRA ( ES ) = INY
                 CSCCA  ( ES ) = TSCC
-                POLVLA ( ES,NEM ) = EMIS
+                POLVLA ( ES,NEM ) = INVDCNV( COD ) * EMIS
                 POLVLA ( ES,NCE ) = CEFF
                 POLVLA ( ES,NRE ) = REFF
                 POLVLA ( ES,NRP ) = RPEN
@@ -271,8 +308,6 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
-
-94120   FORMAT( I6.6 )
 
 94125   FORMAT( I5 )
 
