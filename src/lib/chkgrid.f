@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -80,6 +80,11 @@ C.............  Set tmp rows, columns, and total cells depending on file type
             NC = GETIFDSC( FDESC3D, '/NCOLS3D/', .TRUE. )
             NR = GETIFDSC( FDESC3D, '/NROWS3D/', .TRUE. )
             FILDESC = 'gridding matrix'
+
+        ELSEIF( FTYPE .EQ. 'GROUPS' ) THEN
+            NC = GETIFDSC( FDESC3D, '/NCOLS3D/', .TRUE. )
+            NR = GETIFDSC( FDESC3D, '/NROWS3D/', .TRUE. )
+            FILDESC = 'stack groups file'
 
         ELSEIF( FTYPE .EQ. 'GRID' ) THEN
             NC = NCOLS3D
