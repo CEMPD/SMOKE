@@ -1,12 +1,12 @@
 
-        LOGICAL FUNCTION CHKMETEM( GNAM2D, MNAM2D, GNAM3D, 
-     &                             MNAM3D, DNAM3D )
+        LOGICAL FUNCTION CHKMETEM( GNAM2D, MNAM2D, DNAM2D, 
+     &                             GNAM3D, MNAM3D, DNAM3D )
 
 C***********************************************************************
 C  function body starts at line
 C
 C  DESCRIPTION:
-C      This function compares the headers of the 5 or fewer meteorology 
+C      This function compares the headers of the 6 or fewer meteorology 
 C      files used in the emissions processing.  If the file names provided
 C      as subroutine arguments are "NONE", then that file is not available
 C      in the current call to the subroutine, and the associated part of the
@@ -59,6 +59,7 @@ C.........  EXTERNAL FUNCTIONS
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAM2D ! name of grid cross-point 2d file
         CHARACTER(*), INTENT (IN) :: MNAM2D ! name of met cross-point 2d file
+        CHARACTER(*), INTENT (IN) :: DNAM2D ! name of grid dot-point 2d file
         CHARACTER(*), INTENT (IN) :: GNAM3D ! name of grid cross-point 3d file
         CHARACTER(*), INTENT (IN) :: MNAM3D ! name of met cross-point 3d file
         CHARACTER(*), INTENT (IN) :: DNAM3D ! name of met dot-point 3d file
@@ -129,6 +130,10 @@ C           use as the base-line
 C.........  If only 2-d files, then find one to use as the base-line
         ELSE IF( MNAM2D .NE. 'NONE' ) THEN
             FILNAM = MNAM2D
+            
+        ELSE IF( DNAM2D .NE. 'NONE' ) THEN
+            DOT_BASIS = .TRUE.
+            FILNAM = DNAM2D
 
         ELSE IF( GNAM2D .NE. 'NONE' ) THEN
             FILNAM = GNAM2D
@@ -202,6 +207,9 @@ C.........  Checking for grid cross-point 2d file
 
 C.........  Checking for meteorology cross-point 2d file
         IF ( MNAM2D .NE. 'NONE' ) CALL CHECK_MET_INFO( MNAM2D, .FALSE. ) 
+
+C.........  Checking for grid dot-point 2d file
+        IF ( DNAM2D .NE. 'NONE' ) CALL CHECK_MET_INFO( DNAM2D, .TRUE. )
 
 C.........  Checking for grid cross-point 3d file
         IF ( GNAM3D .NE. 'NONE' ) CALL CHECK_MET_INFO( GNAM3D, .FALSE. )
