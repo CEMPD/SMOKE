@@ -744,7 +744,7 @@ c            CALL RMOBLCHR( ENAME, SDEV, NSRC, NVAR, IVARNAMS )
 C.............  Set names of input inventory variables:
             IVARNAMS( 1 ) = 'IFIP'
             IVARNAMS( 2 ) = 'ISIC'
-            IVARNAMS( 3 ) = 'IORIS'
+            IVARNAMS( 3 ) = 'CORIS'
             IVARNAMS( 4 ) = 'TZONES'
             IVARNAMS( 5 ) = 'TPFLAG'
             IVARNAMS( 6 ) = 'INVYR'
@@ -1467,7 +1467,7 @@ C.................  Build plant + characteristic list
                 L2 = LEN_TRIM( BUFFER )
                 WRITE( ODEV, 93000 )
      &             I, S, CPDESC( S )( 1:L1 ),
-     &             IFIP( S ), ISIC( S ), CSCC( S ), IORIS( S ),
+     &             IFIP( S ), ISIC( S ), CSCC( S ), CORIS( S ),
      &             INVYR( S ), TZONES( S ), TPFLAG( S ), BUFFER( 1:L2 ),
      &             STKHT( S ), STKDM( S ), STKTK( S ), STKVE ( S ),
      &             STKFL( S ), XNUM( I,1 ), YNUM( I,1 ), GSTATE( I ),
@@ -1700,7 +1700,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( I5, ' Src ID:', I7, 1X, A, / ,
      &          5X, ' FIP:', I6.6, ' SIC:', I4.4, ' SCC:', A10,
-     &              ' ORIS:', I5.4, ' YR:' , I4, ' ZON:', I2.2, 
+     &              ' ORIS:', A, ' YR:' , I4, ' ZON:', I2.2, 
      &              ' TPF:', I1, /,
      &          5X, A, /, 
      &          5X, ' Stack parms...   H[m]:', F7.2, '   D[m]:', F7.2,
