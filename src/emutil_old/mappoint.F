@@ -82,7 +82,8 @@ C...........   follow this scheme with parallel arrays
                                  
 C...........   Point Sources Table
         
-        INTEGER     INDEX ( NPSRC )
+        INTEGER     INDEXA( NPSRC )
+        INTEGER     IFIP  ( NPSRC )
         INTEGER     ISCC  ( NPSRC )
         INTEGER     IPLANT( NPSRC )
         REAL        XLOCA ( NPSRC )
@@ -226,6 +227,11 @@ C.......   Read in the area source emissions FIP and ASC tables:
         
         CALL M3MSG2( 'Reading in POINT SOURCES file...' )
 
+        IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3, 0, 0,  IFIP ) ) THEN
+            CALL M3EXIT( 'MAPPOINT', 0, 0, 
+     &      'Error reading variable IFIP from POINT SOURCES file', 2 )
+        END IF
+
         IF ( .NOT. READ3( ENAME, 'ISCC', ALLAYS3, 0, 0,  ISCC ) ) THEN
             CALL M3EXIT( 'MAPPOINT', 0, 0, 
      &      'Error reading variable ISCC from POINT SOURCES file', 2 )
@@ -248,11 +254,11 @@ C.......   Read in the area source emissions FIP and ASC tables:
 
 C...........   Initialize sorting index
         DO 39 I = 1, NPSRC
-            INDEX( I ) = I
+            INDEXA( I ) = I
 39      CONTINUE
        
-C...........   Sort by plant before SCC
-        CALL SORTI2( NPSRC, INDEX, IPLANT, ISCC ) 
+C...........   Sort by plant before SCC, still need FIPS code
+        CALL SORTI3( NPSRC, INDEXA, IFIP, IPLANT, ISCC ) 
 
 C...........   Read SCC list
 
@@ -276,7 +282,7 @@ C...........   Read SCC list
 
         DO  111  I = 1, NPSRC
 
-            J = INDEX( I )
+            J = INDEXA( I )
 
             IF ( FIND1( ISCC( J ), NSCC, SCCS ) .LE. 0 ) GO TO 111
 
