@@ -380,6 +380,7 @@ C.........  Set up for opening I/O API sparse pollutant output files
 
 C.........  Set number of variables and allocate file description arrays
         NVARSET = 1 + NPACT
+        WRITE( FDESC3D( 1 ), '(A,1X,I8)' ) '/NSRC/', NSRC
         
         IF( ALLOCATED( VARS_PER_FILE ) ) DEALLOCATE( VARS_PER_FILE )
 
