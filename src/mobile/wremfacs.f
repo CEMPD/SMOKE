@@ -126,7 +126,7 @@ C               exhaust running, evp running, brake, and tire wear
             IF( M6FAC2EF( IEF, M6NONE ) == 1 ) THEN
                 FTYPE = M6NONE
             ELSE
-                FYPE = 1
+                FTYPE = 1
             END IF 
 
 C.............  Loop over all pollutants including user-defined                
