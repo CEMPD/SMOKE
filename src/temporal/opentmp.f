@@ -161,7 +161,8 @@ C.........  Check file size and adjust number of files to avoid 2 GB limit
         NFILESET = 1
         DO
             NVARFILE = ( NVARSET + NFILESET - 1 ) / NFILESET
-            FILESIZE = IOAPI_GRD_SIZE( 1, NROWS3D, 1, NVARFILE, NSTEPS )
+            FILESIZE = IOAPI_GRD_SIZE( NCOLS3D, NROWS3D, NLAYS3D, 
+     &                                 NVARFILE, NSTEPS )
             
             IF( FILESIZE / 1000000 > 1500 ) THEN
                 NFILESET = NFILESET + 1
