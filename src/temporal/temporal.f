@@ -2,7 +2,7 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 212
+C  program body starts at line 213
 C
 C  DESCRIPTION:
 C    This program computes the hourly emissions data from inventory emissions 
@@ -92,7 +92,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '$Revision$' ! CVS Revision number
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C.........  Point sources work and output arrays
         REAL   , ALLOCATABLE :: EMAC ( :,: ) !  inven emissions or activities
@@ -177,6 +177,7 @@ C...........   Other local variables
         INTEGER         NMATX               ! size of ungridding matrix
         INTEGER         NPING               ! no. ping sources
         INTEGER         NSTEPS              ! number of output time steps
+        INTEGER      :: PYEAR = 0           ! projected year
         INTEGER         SDATE, STIME        ! starting Julian date and time
         INTEGER         TNLEN               ! length of TNAME string
         INTEGER         TSTEP               ! output time step
@@ -213,7 +214,7 @@ C   begin body of program TEMPORAL
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Obtain settings from the environment...
 
@@ -252,7 +253,8 @@ C.........  Also, compare min/max temperature settings from any files that have
 C           them and populate the valid temperature arrays
         CALL OPENTMPIN( MODELNAM, NFLAG, ENAME, ANAME, DNAME, HNAME, 
      &                  FNAME, NNAME, MNAME, GNAME, WNAME, TVARNAME, 
-     &                  SDEV, XDEV, RDEV, FDEV, CDEV, HDEV, TDEV, MDEV )
+     &                  SDEV, XDEV, RDEV, FDEV, CDEV, HDEV, TDEV, 
+     &                  MDEV, PYEAR )
 
 C.........  Determine status of some files for program control purposes
         DFLAG = ( DNAME .NE. 'NONE' )  ! Day-specific emissions
@@ -268,6 +270,25 @@ C.........  Get episode settings from the Models-3 environment variables
         NSTEPS = 1
         TSTEP  = 10000  
         CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
+
+C.........  Compare base year with episode and warn if not consistent
+        IF( SDATE / 1000 .NE. BYEAR ) THEN
+
+            WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR, 
+     &             'is inconsistent with year ' // CRLF() // BLANK10 //
+     &             'of episode start date', SDATE/1000
+            CALL M3MSG2( MESG )
+
+        ENDIF
+
+C.........  Give a note if running for a projected year
+        IF( PYEAR .GT. 0 ) THEN
+
+            WRITE( MESG,94010 ) 'NOTE: Emissions based on projected '//
+     &             'year', PYEAR
+            CALL M3MSG2( MESG )
+
+        END IF
 
 C.........  Calculate the ending date and time
         EDATE = SDATE
