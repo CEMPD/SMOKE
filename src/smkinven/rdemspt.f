@@ -479,10 +479,11 @@ C.............  Calculate velocity from flow and diameter
 
 C.............  Compare flow to velocity and diameter. Set to exact flow input
 C               value only if it is consistent with velocity and diameter
-            ELSEIF( STKF. GT. 0 .AND. 
-     &            ( STKF - FSAV ) / STKF .GT. 0.001 ) THEN
+            ELSEIF( STKF. GT. 0 ) THEN 
 
-                FSAV = STKF
+                IF( ( STKF - FSAV ) / STKF .GT. 0.001 ) THEN
+                    FSAV = STKF
+                END IF
 
             END IF
 
@@ -984,7 +985,6 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 ISICA  ( ES ) = DVSICA( DVIDX( K3 ) )
                 TPFLGA ( ES ) = TPF
                 INVYRA ( ES ) = INY
-                IORISA ( ES ) = IMISS3
                 IWEKA  ( ES ) = DVIWEKA( DVIDX( K3 ) )
                 IDIUA  ( ES ) = DVIDIUA( DVIDX( K3 ) )
                 STKHTA ( ES ) = SKHEITA( SKIDX( K2 ) )
@@ -998,6 +998,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 POLVLA ( ES,NRE ) = REFF
                 K1            = IFCKEYA( SKIDX( K2 ) )
                 CSCCA  ( ES ) = TSCC
+                CORISA ( ES ) = ORSBLNK3
                 CBLRIDA( ES ) = BLRBLNK3
                 CPDESCA( ES ) = FCDESCA( FCIDX( K1 ) )
 
