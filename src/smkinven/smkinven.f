@@ -34,7 +34,7 @@ C  REVISION  HISTORY:
 C    started 10/98 by M Houyoux as rawpoint.f from emspoint.F 4.3
 C    smkinven changes started 4/98
 C
-C****************************************************************************
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -60,6 +60,9 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
+
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -88,12 +91,6 @@ C...........  LOCAL PARAMETERS and their descriptions:
 
 C.........  LOCAL VARIABLES and their descriptions:
 
-C.........  Full list of inventory pollutants/activities (in output order)
-        INTEGER                  :: MXIDAT = 0   ! Max no of inv pols & acvtys
-        INTEGER     , ALLOCATABLE:: INVDCOD( : ) ! 5-digit pollutant/actvty code
-        INTEGER     , ALLOCATABLE:: INVSTAT( : ) ! Status (<0 activity; >0 pol)
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: INVDNAM( : ) ! Name of pollutant
-
 C.........  Day-specific and hour-specific variable indices
         INTEGER         DEAIDX( MXVARS3 )
         INTEGER         HEAIDX( MXVARS3 )
@@ -119,6 +116,7 @@ C.........  File units and logical/physical names
         CHARACTER(LEN=NAMLEN3) :: ANAME = ' '! inven ASCII output logical name
         CHARACTER(LEN=NAMLEN3) :: DNAME = ' '! day-specific input logical name
         CHARACTER(LEN=NAMLEN3) :: ENAME = ' '! inven I/O API output logical name
+        CHARACTER(LEN=NAMLEN3) :: GNAME = ' '! gridded I/O API input logical
         CHARACTER(LEN=NAMLEN3) :: HNAME = ' '! hour-specific input logical name
         CHARACTER(LEN=NAMLEN3) :: INAME = ' '! inven input logical name
 
@@ -135,6 +133,7 @@ C...........   Other local variables
         INTEGER      :: HNSTEP = 0 ! day-specific data time step number
         INTEGER      :: HSDATE = 0 ! day-specific data start date
         INTEGER      :: HSTIME = 0 ! day-specific data start time
+        INTEGER         INSTEP     ! expected input time step HHMMSS
         INTEGER         IOS        ! I/O status
         INTEGER         MAXK       ! test for maximum value of K in output loop
         INTEGER      :: MXSRCDY= 0 ! max no. day-specific sources
@@ -145,18 +144,18 @@ C...........   Other local variables
         INTEGER         NRAWBP     ! number of sources x pollutants
         INTEGER      :: NVARDY = 0 ! no. day-specific variables
         INTEGER      :: NVARHR = 0 ! no. day-specific variables
-        INTEGER         TSTEP      ! time step HHMMSS
+        INTEGER         OUTSTEP    ! output time step HHMMSS for day/hour data
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
-        REAL            PRATIO  !  position ratio
-
         LOGICAL         DFLAG            ! true: day-specific inputs used
+        LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
         LOGICAL         HFLAG            ! true: hour-specific inputs used
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
 
-        CHARACTER*5     TYPNAM  !  'day' or 'hour' for import
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER*5               TYPNAM      !  'day' or 'hour' for import
+        CHARACTER*300             MESG        !  message buffer
+        CHARACTER(LEN=IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
 
         CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
 
@@ -185,52 +184,20 @@ C.........  Set controller flags depending on unit numbers
         DFLAG = ( DDEV .NE. 0 )
         HFLAG = ( HDEV .NE. 0 )
         IFLAG = ( IDEV .NE. 0 )
+        GFLAG = ( .NOT. IFLAG .AND. .NOT. DFLAG .AND. .NOT. HFLAG )
+
+C.........  Set gridded input file name, if available
+        IF( GFLAG ) GNAME = ENAME
 
         MESG = 'Setting up to read inventory data...'
         CALL M3MSG2( MESG )
 
-C.........  Get no. lines in pollutant codes & activities files for allocating
-C           memory     
-        IF( PDEV .GT. 0 ) THEN
-            MXIDAT = GETFLINE( PDEV, 'Pollutant codes and names file' )
-        END IF
-        IF( VDEV .GT. 0 ) THEN
-            I = GETFLINE( VDEV, 'Activity names file' )
-            MXIDAT = MXIDAT + I
-        END IF
-        
-C.........  Allocate memory for storing contents of pollutants & activities
-C           files
-        ALLOCATE( INVDCOD( MXIDAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVDCOD', PROGNAME )
-        ALLOCATE( INVDNAM( MXIDAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVDNAM', PROGNAME )
-        ALLOCATE( INVSTAT( MXIDAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVSTAT', PROGNAME )
-
 C.........  Read country, state, and county file for time zones
         IF( ZDEV .GT. 0 ) CALL RDSTCY( ZDEV, 1, I )   !  "I" used as a dummy
 
-C.........  Initialize inventory data status.  PROCINVEN will expect this
-C           type of initialization.
-        INVSTAT = 1   ! array
-
-C.........  Read, sort, and store pollutant codes/names file
-        IF( PDEV .GT. 0 ) THEN
-            CALL RDCODNAM( PDEV, MXIDAT, NDAT, INVDCOD, 
-     &                     INVDNAM )
-        END IF
-
-C.........  Read, sort, and store activity codes/names file
-        IF( VDEV .GT. 0 ) THEN
-
-            INVSTAT( NDAT+1:MXIDAT ) = -1
-
-            CALL RDCODNAM( VDEV, MXIDAT, NDAT, INVDCOD, 
-     &                     INVDNAM )
-        END IF
-
-        MXIDAT = NDAT
+C.........  Read, sort, and store pollutant codes/names file and activities
+C           codes/names file that contain all valid pollutants and activities
+        CALL RDCODNAM( PDEV, VDEV )
 
 C.........  Read mobile-source files
         IF( CATEGORY .EQ. 'MOBILE' ) THEN          
@@ -241,7 +208,7 @@ C.............  The tables are passed through MODMOBIL
 
         END IF
 
-C.........  Process for average day or annual inventory
+C.........  Process for ASCII average day or annual inventory
         IF( IFLAG ) THEN
 
 C.............  Read the raw inventory data, and store in unsorted order
@@ -249,8 +216,8 @@ C.............  The arrays that are populated by this subroutine call
 C               are contained in the module MODSOURC
             CALL M3MSG2( 'Reading average raw inventory data...' )
 
-            CALL RDINVEN( IDEV, XDEV, EDEV, INAME, MXIDAT, INVDCOD, 
-     &                    INVDNAM, FILFMT, NRAWBP, PRATIO, TFLAG )
+            CALL RDINVEN( IDEV, XDEV, EDEV, INAME,  
+     &                    FILFMT, NRAWBP, TFLAG )
 
             CALL M3MSG2( 'Sorting raw inventory data...' )
 
@@ -265,7 +232,7 @@ C                the input format.
 
 C.............  Processing inventory records and store in sorted order
 
-            CALL PROCINVEN( NRAWBP, MXIDAT, FILFMT, PRATIO, INVSTAT )
+            CALL PROCINVEN( NRAWBP, FILFMT )
 
 C.............  Determine memory needed for actual pollutants list and actual
 C               activities list and allocate them. Invstat has been updated
@@ -324,9 +291,6 @@ C                module MODSOURC
 C.............  Set time zones based on country/state/county code. Note that a
 C               few counties in the Western U.S. are divided by a time zone, so 
 C               this is not perfectly accurate for all counties.
-            ALLOCATE( TZONES( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
-
             DO S = 1, NSRC
         	FIP   = IFIP( S )
         	TZONES( S ) = GETTZONE( FIP )
@@ -344,9 +308,23 @@ C               for point sources only)
 C.............  NOTE - Monthly not currently supported
             IF( TFLAG ) CALL WRPTREF( NSRC, IDIU, IWEK, IWEK ) 
 
+        END IF  ! For ASCII annual/ave-day inputs
+
+C.........  Input gridded I/O API inventory data
+        IF( GFLAG ) THEN
+
+            CALL RDGRDAPI( GNAME, GRDNM ) 
+
+c note: STOPPED HERE
+
+        END IF  ! For gridded NetI/O APIDF inventory
+
+C.........  Output SMOKE inventory files
+        IF( IFLAG .OR. GFLAG ) THEN
+
 C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
-            CALL OPENINVOUT( MXIDAT, INVDNAM, ENAME, ANAME, SDEV )
+            CALL OPENINVOUT( GRDNM, ENAME, ANAME, SDEV )
 
             MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
      &             ' SOURCE INVENTORY file...'
@@ -367,8 +345,9 @@ C.............  Compute inventory data values, if needed
 C.............  Deallocate sorted inventory info arrays
             CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .TRUE., 1, 1, 1 )
 
-C.........  If the inventory is not being imported, then read necessary
-C           information from existing inventory files.
+C.........  If the inventory is not being created, then read necessary
+C           information from existing inventory files, which will be used
+C           for day- and hour-specific data import.
         ELSE
 
 C.............  Get header description of inventory file 
@@ -399,38 +378,40 @@ C               the results are stored in module MODINFO.
 C.........  Read in daily emission values and output to a SMOKE file
         IF( DFLAG ) THEN
 
-            TSTEP  = 240000
-            TYPNAM = 'day'
+            INSTEP  = 240000
+            OUTSTEP = 10000
+            TYPNAM  = 'day'
 
 C.............  Preprocess day-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
-            CALL GETPDINFO( DDEV, MXIDAT, TZONE, TSTEP, TYPNAM, DNAME, 
+            CALL GETPDINFO( DDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, DNAME, 
      &                      DSDATE, DSTIME, DNSTEP, NVARDY, MXSRCDY, 
-     &                      DEAIDX, INVDCOD, INVDNAM )
+     &                      DEAIDX )
 
 C.............  Read and output day-specific data
-            CALL GENPDOUT( DDEV, MXIDAT, TZONE, DSDATE, DSTIME, DNSTEP, 
-     &                     TSTEP, NVARDY, MXSRCDY, TYPNAM, DNAME, 
-     &                     DEAIDX, INVDCOD, INVDNAM )
+            CALL GENPDOUT( DDEV, TZONE, DSDATE, DSTIME, DNSTEP, 
+     &                     INSTEP, OUTSTEP, NVARDY, MXSRCDY, TYPNAM, 
+     &                     DNAME, DEAIDX )
 
         END IF
 
 C.........  Read in hourly emission values and output to a SMOKE file
         IF( HFLAG ) THEN
 
-            TSTEP = 10000
-            TYPNAM = 'hour'
+            INSTEP  = 10000
+            OUTSTEP = 10000
+            TYPNAM  = 'hour'
 
 C.............  Preprocess hour-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
-            CALL GETPDINFO( HDEV, MXIDAT, TZONE, TSTEP, TYPNAM, HNAME, 
+            CALL GETPDINFO( HDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, HNAME, 
      &                      HSDATE, HSTIME, HNSTEP, NVARHR, MXSRCHR,  
-     &                      HEAIDX, INVDCOD, INVDNAM )
+     &                      HEAIDX )
 
 C.............  Read and output hour-specific data
-            CALL GENPDOUT( HDEV, MXIDAT, TZONE, HSDATE, HSTIME, HNSTEP, 
-     &                     TSTEP, NVARHR, MXSRCHR, TYPNAM, HNAME,  
-     &                     HEAIDX, INVDCOD, INVDNAM )
+            CALL GENPDOUT( HDEV, TZONE, HSDATE, HSTIME, HNSTEP, 
+     &                     INSTEP, OUTSTEP, NVARHR, MXSRCHR, TYPNAM,  
+     &                     HNAME, HEAIDX )
 
         END IF
 
