@@ -111,7 +111,11 @@ C.........  Default of 50 is population
         END IF  ! if firstime
 
 C.........  Create abridged name for warning messages
-        CSRC2= CSRC( 1:VIDPOS3-1 )
+        IF( CSRC /= ' ' ) THEN
+            CSRC2 = CSRC( 1:VIDPOS3-1 )
+        ELSE
+            CSRC2 = ' '
+        END IF
 
 C.........  Check if surrogate selected by cross-reference for this
 C                   source is non-zero in the country/state/county code of
