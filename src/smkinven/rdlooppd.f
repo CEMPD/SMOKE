@@ -206,6 +206,9 @@ C.........  Get the number of lines in the input file
 
             NAMTMP = NLSTSTR( IFIL )
 
+C.............  If line is LIST header, skip to next line
+            IF( INDEX( NAMTMP, 'LIST' ) > 0 ) CYCLE
+
 C.............  If line contains the range of dates, read this packet and
 C               skip to next line
             I = INDEX( NAMTMP, 'DATERANGE' )
