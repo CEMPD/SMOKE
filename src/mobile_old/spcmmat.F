@@ -214,6 +214,7 @@ C...........   Other local variables
         
         LOGICAL         EFLAG   !  input error flat
         LOGICAL         KFLAG   !  if volatile format conversion factor or not 
+        LOGICAL         RPDEFCV !  if report default volatile conv factor or not
 
 C***********************************************************************
 C   begin body of program SPCMMAT
@@ -259,14 +260,6 @@ C.......   Get file name; open input mobile sources file
      &           'Enter logical name for SPECIATION LIST file',
      &           .TRUE., .TRUE., 'MSLST', 'SPCMMAT' )
 
-C.......   Read in description of mobile-source file
-        
-        IF ( .NOT. DESC3( ANAME ) ) THEN
-            CALL M3EXIT( 'SPCMMAT', 0, 0, 
-     &                   'Could not get description of file ' // ANAME, 
-     &                   2 )
-        END IF
-     
 C.......   Read speciation list file to find out what species and emission
 C.......   processes are actually being used in this scenario
 
@@ -282,65 +275,6 @@ C.......   For first time CSVNAME is called, see if there were any errors
 
         NMPOL  = CSVNAME( TDEV, .FALSE., .TRUE. , .FALSE., EMNAM  )
         NEMODE = CSVNAME( TDEV, .FALSE., .FALSE., .TRUE. , MEMODE )
-
-C.......   Get speciation factor names and the number of names 
-C.......   from the SPECIATION LIST file
-
-        NSNAME = CSVNAME( TDEV, .TRUE., .TRUE., .TRUE., VNAME3D )
-
-C.......   Intialize species per MV process counter
-        DO 44 I = 1, NEMODE
-            NSP( I ) = 0
-44      CONTINUE
-
-C.......   Process the SMAT variable names
-        DO 55 I = 1, NSNAME
-
-            L   = TRIMLEN( VNAME3D( I ) )
-            J   = INDEX( VNAME3D( I )(   1:L ), '_' )
-            K   = INDEX( VNAME3D( I )( J+1:L ), '_' ) + J
-
-            PROC = VNAME3D( I )(  1 : J-1)
-            INV  = VNAME3D( I )(J+1 : K-1)
-            MODEL= VNAME3D( I )(K+1 : L  )
-
-C.............  Set other variable properties
-            UNITS3D( I ) = 'moles/gm'
-            VDESC3D( I ) = 'Conversion factor for ' // 
-     &         INV  ( 1:TRIMLEN( INV  ) ) // ' from process ' // 
-     &         PROC ( 1:TRIMLEN( PROC ) ) // ' to species '   //
-     &         MODEL( 1:TRIMLEN( MODEL) )
-            VTYPE3D( I ) = M3REAL
-
-C.............  Create MV process to model species indicies
-            P = INDEX1( PROC, NEMODE, MEMODE )
-            NSP( P ) = NSP( P ) + 1
-            MSPC_PRC( P, NSP( P ) ) = MODEL
-            ISPC_PRC( P, NSP( P ) ) = INV
-            IDXVAR  ( P, NSP( P ) ) = I
-            IDXSPC  ( P, NSP( P ) ) = INDEX1( MODEL, NMPOL, EMNAM )
-            
-55      CONTINUE
-
-        FDESC3D( 1 ) = 
-     &  'Matrix of speciation factors, by source, for converting '
-        FDESC3D( 2 ) = 
-     &  'mobile source emissions type species into model species for'
-        FDESC3D( 3 ) = 
-     &  'the CB-IV chemical mechanism.'
-        DO  66  V = 4, MXDESC3
-            FDESC3D( V ) = ' '
-66      CONTINUE
-
-C.......   Open speciation matrix file:  reuse much of MOBILE file description
-        
-        NLAYS3D = NVTYPE
-        NVARS3D = NSNAME
-        FTYPE3D = GRDDED3
-            
-        MNAME = PROMPTMFILE( 
-     &  'Enter logical name for SPECIATION MATRIX output file',
-     &          FSUNKN3, 'MSMAT', 'SPCMMAT' )
 
 C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK
         
@@ -416,7 +350,6 @@ C.......   volatile pollutant in inventory.
         ENDIF
 
 C.......   If needed, read the volatile pollutant conversion file
- 
         IF( KFLAG ) THEN
 
             CALL RDMCONV( KDEV, TDEV, 
@@ -424,12 +357,30 @@ C.......   If needed, read the volatile pollutant conversion file
      &                            FIPSV2, RDCLV2, CONVV2, NCNV2,
      &                                    RDCLV3, CONVV3, NCNV3  )
  
+
+C.............  Set reporting of default conversion factors to true
+            RPDEFCV = .TRUE.
+
+C.............  Check if _only_ default conversion factors available
+            IF( NCNV1 .EQ. 0 .AND. 
+     &          NCNV2 .EQ. 0 .AND. 
+     &          NCNV3 .EQ. 0       ) THEN
+
+                CALL M3MESG( 'NOTE: Only default ' //
+     &                         POLV ( 1:TRIMLEN( POLV ) ) // ' to ' //
+     &                       INVPRO ( 1:TRIMLEN( INVPRO ) ) //
+     &                        ' conversion factors exist.'             )
+
+C.................  Do not report individual default conversion factors
+                RPDEFCV = .FALSE.
+
+            ENDIF
         ENDIF
 
 C.......   Read and process the speciation cross-reference file
 
         WRITE( *,92000 ) 
-     &      ' ', 'Processing SPECIATION XREF file...', ' '
+     &      ' ', 'Reading SPECIATION XREF file...', ' '
 
         IREC = 0
         I     =  0
@@ -518,6 +469,74 @@ C.............  Skip profile if emission mode not used
 
         NREFA = I
 
+C.......   Read in description of mobile-source file
+        
+        IF ( .NOT. DESC3( ANAME ) ) THEN
+            CALL M3EXIT( 'SPCMMAT', 0, 0, 
+     &                   'Could not get description of file ' // ANAME, 
+     &                   2 )
+        END IF
+     
+C.......   Get speciation factor names and the number of names 
+C.......   from the SPECIATION LIST file
+
+        NSNAME = CSVNAME( TDEV, .TRUE., .TRUE., .TRUE., VNAME3D )
+
+C.......   Intialize species per MV process counter
+        DO 44 I = 1, NEMODE
+            NSP( I ) = 0
+44      CONTINUE
+
+C.......   Process the SMAT variable names
+C.......   NOTE: Depends on FDESC3 Call!
+        DO 55 I = 1, NSNAME
+
+            L   = TRIMLEN( VNAME3D( I ) )
+            J   = INDEX  ( VNAME3D( I )(   1:L ), '_' )
+            K   = INDEX  ( VNAME3D( I )( J+1:L ), '_' ) + J
+
+            PROC = VNAME3D( I )(  1 : J-1)
+            INV  = VNAME3D( I )(J+1 : K-1)
+            MODEL= VNAME3D( I )(K+1 : L  )
+
+C.............  Set other variable properties
+            UNITS3D( I ) = 'moles/gm'
+            VDESC3D( I ) = 'Conversion factor for ' // 
+     &         INV  ( 1:TRIMLEN( INV  ) ) // ' from process ' // 
+     &         PROC ( 1:TRIMLEN( PROC ) ) // ' to species '   //
+     &         MODEL( 1:TRIMLEN( MODEL) )
+            VTYPE3D( I ) = M3REAL
+
+C.............  Create MV process to model species indicies
+            P = INDEX1( PROC, NEMODE, MEMODE )
+            NSP( P ) = NSP( P ) + 1
+            MSPC_PRC( P, NSP( P ) ) = MODEL
+            ISPC_PRC( P, NSP( P ) ) = INV
+            IDXVAR  ( P, NSP( P ) ) = I
+            IDXSPC  ( P, NSP( P ) ) = INDEX1( MODEL, NMPOL, EMNAM )
+            
+55      CONTINUE
+
+        FDESC3D( 1 ) = 
+     &  'Matrix of speciation factors, by source, for converting '
+        FDESC3D( 2 ) = 
+     &  'mobile source emissions type species into model species for'
+        FDESC3D( 3 ) = 
+     &  'the CB-IV chemical mechanism.'
+        DO  66  V = 4, MXDESC3
+            FDESC3D( V ) = ' '
+66      CONTINUE
+
+C.......   Open speciation matrix file:  reuse much of MOBILE file description
+        
+        NLAYS3D = NVTYPE
+        NVARS3D = NSNAME
+        FTYPE3D = GRDDED3
+            
+        MNAME = PROMPTMFILE( 
+     &  'Enter logical name for SPECIATION MATRIX output file',
+     &          FSUNKN3, 'MSMAT', 'SPCMMAT' )
+
 C...........   Now sort the XREF inputs and place into appropriate tables:
 
         CALL SORTI4( NREFA, INDEXA, FIPSXA, RDTSXA, EMTSXA, VHTSXA )
@@ -554,6 +573,9 @@ C.......   Initialize category-specific xref profiles no. and factors tables
   117       CONTINUE
   119     CONTINUE
   120   CONTINUE
+
+        WRITE( *,92000 ) 
+     &      ' ', 'Processing SPECIATION XREF file...', ' '
 
 C.........  Group xref profiles by how specifically they are referenced.
 
@@ -815,16 +837,14 @@ C...........   Process volatile conversion factors if necessary
 
                             VOLADJ = CONVV0( VHT,EMT )
 
-                            WRITE( MESG,94010 )    ! sl
-     &                         'No volatile converions factor' //
-     &                         ' found for FIP ', 
-     &                          FIP, ' RDT ', RDT,' LNK ', LNK
-                            CALL M3MESG( MESG )
+                            IF( RPDEFCV ) THEN
+                                WRITE( MESG,94010 )    ! sl
+     &                           'Using default volatile ' //
+     &                           ' converions factor for FIP:', 
+     &                            FIP, ' RDT:', RDT,' LNK:', LNK
+                                CALL M3MESG( MESG )
 
-                            WRITE( MESG,94010 )
-     &                         '     Using default profile'
-                            CALL M3MESG( MESG )
-
+                            ENDIF  ! report defaults
                         ENDIF  ! road class match
                     ENDIF      ! state-road class match
                 ENDIF          ! FIP-road class match
