@@ -1,5 +1,5 @@
 
-        SUBROUTINE CHKSCNYR( FILENAME, SCENARIO, NLINES, EFYEAR )
+        SUBROUTINE CHKM6SCN( FILENAME, SCENARIO, NLINES, EFYEAR )
         
 C.........  MODULES for public variables        
         USE MODINFO
@@ -33,10 +33,10 @@ C...........   Other local variables
         CHARACTER(LEN=130) YEARSTR            ! calendar year from scenario
         CHARACTER(LEN=300) MESG               ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'CHKSCNYR'   ! program name
+        CHARACTER*16 :: PROGNAME = 'CHKM6SCN'   ! program name
         
 C***********************************************************************
-C   begin body of subroutine CHKSCNYR
+C   begin body of subroutine CHKM6SCN
 
 C.........  Loop through lines of scenario
         DO I = 1, NLINES
@@ -51,7 +51,9 @@ C.............  Get Mobile6 command
 
 C.............  Comment out unused commands (this can be added to as needed)
             IF( INDEX( COMMAND, 'SCENARIO RECORD' ) > 0 .OR.
-     &          INDEX( COMMAND, 'PARTICLE SIZE' ) > 0 ) THEN
+     &          INDEX( COMMAND, 'PARTICLE SIZE' ) > 0 .OR.
+     &          INDEX( COMMAND, 'AVERAGE SPEED' ) > 0 .OR.
+     &          INDEX( COMMAND, 'SPEED VMT' ) > 0 ) THEN
                 RPLCLINE( 1:1 ) = '*'
                 RPLCLINE( 2:150 ) = CURRLINE( 1:149 )
                 SCENARIO( I ) = RPLCLINE
@@ -91,5 +93,5 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 94020   FORMAT( A21, I4 )
         
-        END SUBROUTINE CHKSCNYR
+        END SUBROUTINE CHKM6SCN
         
