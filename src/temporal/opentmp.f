@@ -3,7 +3,7 @@
      &                      NPELV, TNAME )
 
 C***********************************************************************
-C  subroutine body starts at line 102
+C  subroutine body starts at line 103
 C
 C  DESCRIPTION:
 C      This subroutine opens the file or files for output from the tmppoint
@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -91,6 +91,7 @@ C...........   Other local variables
         CHARACTER*5     CTZONE      ! string of time zone
         CHARACTER*300   MESG        ! message buffer 
 
+        CHARACTER(LEN=NAMLEN3)  NAMBUF           ! file name buffer
         CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
 
         CHARACTER*16 :: PROGNAME = 'OPENTMP' ! program name
@@ -185,7 +186,8 @@ C.............  Double check that pollutant is in the inventory file
 C.........  Prompt for and open I/O API output file(s)...
 
         MESG = 'Enter name for output HOURLY EMISSIONS file'
-        TNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
+        NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
+        TNAME = NAMBUF
 
 C.........  For now, write message that elevated file is not supported
         IF( NPELV .GT. 0 ) THEN
