@@ -2,10 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	   = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
-LIBS_DEBUG = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
-LIBPATH    = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
+LIBS	   = $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBPATH    = $(SMK_BIN)/libsmoke.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
 
 all: grdmat

@@ -4,6 +4,8 @@
 
 # Makefile for Mobile5b library
 
+all: lib
+
 lib:
 	$(FC) $(FFLAGS) -c a*.F b*.F
 	$(FC) $(FFLAGS) -c c*.F
