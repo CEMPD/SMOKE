@@ -51,7 +51,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NCHARS
         
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TASRC, QVSRC, PRESSRC, TKHOUR, RHHOUR, BPHOUR
+        USE MODMET, ONLY: TASRC, QVSRC, PRESSRC, TKHOUR, QVHOUR, BPHOUR
         
         IMPLICIT NONE
 
@@ -61,11 +61,10 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS
-        REAL         CALCRELHUM 
         CHARACTER*2  CRLF
         INTEGER      ENVINT
 
-        EXTERNAL     CALCRELHUM, CRLF, ENVINT
+        EXTERNAL     CRLF, ENVINT
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT    (IN) :: NSRC                  ! no. sources
@@ -88,7 +87,6 @@ C...........   Other local variables
         REAL        TEMPVAL     ! temperature value
         REAL        MIXVAL      ! mixing ratio value
         REAL        PRESVAL     ! pressure value
-        REAL        RHVAL       ! relative humidity value
 
         LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time
 
@@ -103,7 +101,7 @@ C   begin body of subroutine HOURTEMP
 C.........  For the first time, initialize all entries to zero
         IF( INITIAL ) THEN
             TKHOUR = 0.  ! array
-            RHHOUR = 0.
+            QVHOUR = 0.
             BPHOUR = 0.
             
 C.............  Get maximum number of warnings
@@ -169,21 +167,18 @@ C.....................  Set value to maximum
                 
                 END IF
 
-C.................  Calculate relative humidity
-                RHVAL = CALCRELHUM( TEMPVAL, PRESVAL, MIXVAL )
-
 C.................  Store values in hourly arrays                
                 IF( SRCARRAY( S,2 ) == DAILY ) THEN
                     TKHOUR ( S,TIMESLOT ) = TEMPVAL
-                    RHHOUR ( S,TIMESLOT ) = RHVAL
+                    QVHOUR ( S,TIMESLOT ) = MIXVAL
                     BPHOUR ( S,TIMESLOT ) = PRESVAL
                     NDAYSRC( S,TIMESLOT ) = 1
                 ELSE
                     IF( .NOT. SKIPDATA ) THEN
                         TKHOUR( S,TIMESLOT ) =
      &                                    TKHOUR( S,TIMESLOT ) + TEMPVAL
-                        RHHOUR( S,TIMESLOT ) =
-     &                                    RHHOUR( S,TIMESLOT ) + RHVAL
+                        QVHOUR( S,TIMESLOT ) =
+     &                                    QVHOUR( S,TIMESLOT ) + MIXVAL
                         BPHOUR( S,TIMESLOT ) =
      &                                    BPHOUR( S,TIMESLOT ) + PRESVAL
                         NDAYSRC( S,TIMESLOT ) = 
