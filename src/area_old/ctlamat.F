@@ -54,6 +54,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        CHARACTER*2     CRLF
         INTEGER         FIND1, FIND2, FIND3
         LOGICAL         GETPKT
         LOGICAL         GETYN
@@ -65,15 +66,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, FIND3, GETPKT, GETYN, INDEX1, 
-     &                  LBLANK, PROMPTFFILE, PROMPTMFILE, 
+        EXTERNAL        CRLF, FIND1, FIND2, FIND3, GETPKT, GETYN, 
+     &                  INDEX1, LBLANK, PROMPTFFILE, PROMPTMFILE, 
      &                  STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   PARAMETERS and their descriptions:
  
         INTEGER         MAXPKT          !  max # of packets in control file
-        PARAMETER     ( MAXPKT = 20 )
+        CHARACTER*5     BLANK5
+        PARAMETER     ( MAXPKT = 20,
+     &                  BLANK5 = ' ' )
  
  
 C...........   LOCAL VARIABLES and their descriptions:
@@ -192,9 +195,10 @@ C.......   Get file name; open input area sources, control definitions files
      &          'Enter logical name for AREA SOURCE input file',
      &          FSREAD3, 'AREA', 'CTLAMAT' )
 
+        CNAME = 'ACTRL'
         CDEV = PROMPTFFILE( 
      &           'Enter logical name for CONTROL file',
-     &           .TRUE., .TRUE., 'ACTRL', 'CTLAMAT' )
+     &           .TRUE., .TRUE., CNAME, 'CTLAMAT' )
 
         RDEV = PROMPTFFILE( 
      &           '...for REPORT file, or "NONE"',
@@ -209,7 +213,6 @@ C.......   Get file name; open input area sources, control definitions files
      &           .TRUE., .TRUE., 'ACTRACK', 'CTLAMAT' )
 
         END IF
-
 
 C.......   Read in description of area-source file
         
@@ -490,12 +493,13 @@ C.......   First, get list of packet names in the control file
      &              IREC
                 CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
  
-            ELSE IF ( J .GT. 20 ) THEN
+            ELSE IF ( J .GT. 22 ) THEN
  
                 WRITE( MESG,94910 )
      &              'Packet name too long in ',
-     &              CNAME( 1:TRIMLEN( CNAME ) ),
-     &              IREC
+     &              CNAME( 1:TRIMLEN( CNAME ) ) // 'at line',
+     &              IREC, CRLF() // BLANK5 // 
+     &              'Please change name or remove extra spaces.'
                 CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
  
             END IF
