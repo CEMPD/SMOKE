@@ -213,7 +213,7 @@ C.........  Loop through pollutants (if no speciation) or pol-to-species names
 
 C.............  Extract pollutant name and species name (for speciation only)
             IF( SFLAG ) THEN 
-                L = INDEX( TSVDESC( V ), '_' )
+                L = INDEX( TSVDESC( V ), SPJOIN )
                 CPOL = TSVDESC( V )(   1:L-1 )
                 CSPC = TSVDESC( V )( L+1:LEN_TRIM( TSVDESC( V ) ) )
             ELSE

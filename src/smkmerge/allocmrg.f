@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -44,6 +44,9 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL
+
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
 
         IMPLICIT NONE
 
@@ -89,7 +92,9 @@ C...........   Other local variables
         INTEGER         IOS          ! i/o status
         INTEGER         MXSPPOL_SAV  ! saved MXSPPOL value
         INTEGER         MXPOLPGP_SAV ! saved MXPOLPGP value
-        INTEGER         NDIM         ! tmp dimension
+        INTEGER         NCNY         ! tmp no. counties
+        INTEGER         NDIM         ! tmp dimension        
+        INTEGER         NSTA         ! tmp no. states
 
         LOGICAL      :: RESET = .FALSE. ! true: mem alloc fail, try new config
 
@@ -99,6 +104,14 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine ALLOCMRG
+
+       IF( LREPANY ) THEN
+           NCNY = NCOUNTY  ! from modstcy
+       ELSE
+           NCNY = 0
+       END IF
+
+       NSTA = NSTATE   ! from modstcy
 
 C....................................................................
 C........  Allocate memory for fixed-sized arrays ...................
@@ -115,10 +128,8 @@ C........  Allocate memory for fixed-size area source arrays
             ALLOCATE( ARINFO( NASRC,2 ), STAT=IOS )        ! tmp ar react. data
             CALL CHECKMEM( IOS, 'ARINFO', PROGNAME )
 
-            IF( LGRDOUT ) THEN
-                ALLOCATE( AEMGRD( NGRID ), STAT=IOS )  ! gridded area emissions
-                CALL CHECKMEM( IOS, 'AEMGRD', PROGNAME )
-            ENDIF
+            ALLOCATE( AEMGRD( NGRID ), STAT=IOS )  ! gridded area emissions
+            CALL CHECKMEM( IOS, 'AEMGRD', PROGNAME )
 
             NDIM = 0
             IF( LREPINV ) NDIM = NDIM + ANIPOL
@@ -149,34 +160,42 @@ C........  Allocate memory for fixed-size area source arrays
                     CALL CHECKMEM( IOS, 'AECSTA', PROGNAME )
                 ENDIF
 
-            ENDIF
+            END IF
 
-            IF( LREPCNY ) THEN
-                ALLOCATE( AEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
-                CALL CHECKMEM( IOS, 'AEBCNY', PROGNAME )
+            ALLOCATE( AEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            CALL CHECKMEM( IOS, 'AEBCNY', PROGNAME )
 
-                IF( LREPCTL .AND. AUFLAG ) THEN
-                    ALLOCATE( AEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-                    CALL CHECKMEM( IOS, 'AEUCNY', PROGNAME )
-                ENDIF
+            IF( AUFLAG ) THEN
+                ALLOCATE( AEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+            ELSE
+                ALLOCATE( AEUCNY( 0,0 ), STAT=IOS )
+            END IF
+            CALL CHECKMEM( IOS, 'AEUCNY', PROGNAME )
 
-                IF( LREPCTL .AND. AAFLAG ) THEN
-                    ALLOCATE( AEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-                    CALL CHECKMEM( IOS, 'AEACNY', PROGNAME )
-                ENDIF
+            IF( AAFLAG ) THEN
+                ALLOCATE( AEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+            ELSE
+                ALLOCATE( AEACNY( 0,0 ), STAT=IOS )
+            END IF
+            CALL CHECKMEM( IOS, 'AEACNY', PROGNAME )
 
-                IF( LREPCTL .AND. ARFLAG ) THEN
-                    ALLOCATE( AERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-                    CALL CHECKMEM( IOS, 'AERCNY', PROGNAME )
-                ENDIF
+C.............  The reactivity controls sum is used when there is speciation,
+C               even if no reactivity controls are applied to prevent IF
+C               statements in the merge loops in MRGMULT.
+            IF( SFLAG ) THEN 
+                ALLOCATE( AERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+            ELSE
+                ALLOCATE( AERCNY( 0,0 ), STAT=IOS )
+            END IF
+            CALL CHECKMEM( IOS, 'AERCNY', PROGNAME )
 
-                IF( LREPCTL .AND. 
-     &            ( AUFLAG .OR. AAFLAG .OR. ARFLAG ) ) THEN
-                    ALLOCATE( AECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-                    CALL CHECKMEM( IOS, 'AECCNY', PROGNAME )
-                ENDIF
+            IF( AUFLAG .OR. AAFLAG .OR. SFLAG ) THEN
+                ALLOCATE( AECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+            ELSE
+                ALLOCATE( AECCNY( 0,0 ), STAT=IOS )
+            END IF
+            CALL CHECKMEM( IOS, 'AECCNY', PROGNAME )
 
-            ENDIF
 
             IF( ARFLAG ) THEN
                 ALLOCATE( ACRIDX( ANSREAC ), STAT=IOS )      ! reactivity index
@@ -203,10 +222,8 @@ C.........  Biogenic source fixed-size arrays
                 CALL CHECKMEM( IOS, 'BEBSTA', PROGNAME )
             ENDIF
 
-            IF( LREPCNY ) THEN
-                ALLOCATE( BEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
-                CALL CHECKMEM( IOS, 'BEBCNY', PROGNAME )
-            ENDIF
+            ALLOCATE( BEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            CALL CHECKMEM( IOS, 'BEBCNY', PROGNAME )
 
         END IF
 
@@ -221,10 +238,8 @@ C.........  Mobile source fixed-size arrays
             ALLOCATE( MRINFO( NMSRC,2 ), STAT=IOS )        ! tmp mb react. data
             CALL CHECKMEM( IOS, 'MRINFO', PROGNAME )
 
-            IF( LGRDOUT ) THEN
-                ALLOCATE( MEMGRD( NGRID ), STAT=IOS )! gridded mobile emissions
-                CALL CHECKMEM( IOS, 'MEMGRD', PROGNAME )
-            ENDIF
+            ALLOCATE( MEMGRD( NGRID ), STAT=IOS )! gridded mobile emissions
+            CALL CHECKMEM( IOS, 'MEMGRD', PROGNAME )
 
             NDIM = 0
             IF( LREPINV ) NDIM = NDIM + MNIPOL
@@ -257,32 +272,37 @@ C.........  Mobile source fixed-size arrays
 
             ENDIF
 
-            IF( LREPCNY ) THEN
-                ALLOCATE( MEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
-                CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
+            ALLOCATE( MEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
 
-                IF( LREPCTL .AND. MUFLAG ) THEN
-                    ALLOCATE( MEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-                    CALL CHECKMEM( IOS, 'MEUCNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. MAFLAG ) THEN
-                    ALLOCATE( MEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-                    CALL CHECKMEM( IOS, 'MEACNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. MRFLAG ) THEN
-                    ALLOCATE( MERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-                    CALL CHECKMEM( IOS, 'MERCNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. 
-     &            ( MUFLAG .OR. MAFLAG .OR. MRFLAG ) ) THEN
-                    ALLOCATE( MECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-                    CALL CHECKMEM( IOS, 'MECCNY', PROGNAME )
-                ENDIF
-
+            IF( MUFLAG ) THEN
+                ALLOCATE( MEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+            ELSE
+                ALLOCATE( MEUCNY( 0,0 ), STAT=IOS )
             ENDIF
+            CALL CHECKMEM( IOS, 'MEUCNY', PROGNAME )
+
+            IF( MAFLAG ) THEN
+                ALLOCATE( MEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+            ELSE
+                ALLOCATE( MEACNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'MEACNY', PROGNAME )
+
+            IF( SFLAG ) THEN   ! See note on AERCNY definition
+                ALLOCATE( MERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+            ELSE
+                ALLOCATE( MERCNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'MERCNY', PROGNAME )
+
+            IF( MUFLAG .OR. MAFLAG .OR. SFLAG ) THEN
+                ALLOCATE( MECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+            ELSE
+                ALLOCATE( MECCNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'MECCNY', PROGNAME )
+
 
             IF( MRFLAG ) THEN
                 ALLOCATE( MCRIDX( MNSREAC ), STAT=IOS )      ! reactivity index
@@ -310,10 +330,8 @@ C.........  Point source fixed-size arrays
             ALLOCATE( PRINFO( NPSRC,2 ), STAT=IOS )        ! tmp pt react. data
             CALL CHECKMEM( IOS, 'PRINFO', PROGNAME )
 
-            IF( LGRDOUT ) THEN
-                ALLOCATE( PEMGRD( NGRID ), STAT=IOS ) ! gridded point emissions
-                CALL CHECKMEM( IOS, 'PEMGRD', PROGNAME )
-            ENDIF
+            ALLOCATE( PEMGRD( NGRID ), STAT=IOS ) ! gridded point emissions
+            CALL CHECKMEM( IOS, 'PEMGRD', PROGNAME )
 
             NDIM = 0
             IF( LREPINV ) NDIM = NDIM + PNIPOL
@@ -346,32 +364,36 @@ C.........  Point source fixed-size arrays
 
             ENDIF
 
-            IF( LREPCNY ) THEN
-                ALLOCATE( PEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
-                CALL CHECKMEM( IOS, 'PEBCNY', PROGNAME )
+            ALLOCATE( PEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            CALL CHECKMEM( IOS, 'PEBCNY', PROGNAME )
 
-                IF( LREPCTL .AND. PUFLAG ) THEN
-                    ALLOCATE( PEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-                    CALL CHECKMEM( IOS, 'PEUCNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. PAFLAG ) THEN
-                    ALLOCATE( PEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-                    CALL CHECKMEM( IOS, 'PEACNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. PRFLAG ) THEN
-                    ALLOCATE( PERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-                    CALL CHECKMEM( IOS, 'PERCNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. 
-     &            ( PUFLAG .OR. PAFLAG .OR. PRFLAG ) ) THEN
-                    ALLOCATE( PECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-                    CALL CHECKMEM( IOS, 'PECCNY', PROGNAME )
-                ENDIF
-
+            IF( PUFLAG ) THEN
+                ALLOCATE( PEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+            ELSE
+                ALLOCATE( PEUCNY( 0,0 ), STAT=IOS )
             ENDIF
+            CALL CHECKMEM( IOS, 'PEUCNY', PROGNAME )
+
+            IF( PAFLAG ) THEN
+                ALLOCATE( PEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+            ELSE
+                ALLOCATE( PEACNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'PEACNY', PROGNAME )
+
+            IF( SFLAG ) THEN   ! See note on AERCNY definition
+                ALLOCATE( PERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+            ELSE
+                ALLOCATE( PERCNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'PERCNY', PROGNAME )
+
+            IF( PUFLAG .OR. PAFLAG .OR. SFLAG ) THEN
+                ALLOCATE( PECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+            ELSE
+                ALLOCATE( PECCNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'PECCNY', PROGNAME )
 
             IF( PRFLAG ) THEN
                 ALLOCATE( PCRIDX( PNSREAC ), STAT=IOS )      ! reactivity index
@@ -397,10 +419,8 @@ C.........  Total gridded emissions.  Always allocate this, even if there
 C           us only one source category because it will simplify the merging as
 C           we won't have to check if it is allocated or not.
 
-        IF( LGRDOUT ) THEN
-            ALLOCATE( TEMGRD( NGRID,EMLAYS ), STAT=IOS ) ! gridded out emis
-            CALL CHECKMEM( IOS, 'TEMGRD', PROGNAME )
-        ENDIF
+        ALLOCATE( TEMGRD( NGRID,EMLAYS ), STAT=IOS ) ! gridded out emis
+        CALL CHECKMEM( IOS, 'TEMGRD', PROGNAME )
 
 C.........  Total emissions, fixed-size arrays. 
         IF( XFLAG ) THEN
@@ -436,32 +456,36 @@ C.........  Total emissions, fixed-size arrays.
 
             ENDIF
 
-            IF( LREPCNY ) THEN
-                ALLOCATE( TEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
-                CALL CHECKMEM( IOS, 'TEBCNY', PROGNAME )
+            ALLOCATE( TEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            CALL CHECKMEM( IOS, 'TEBCNY', PROGNAME )
 
-                IF( LREPCTL .AND. TUFLAG ) THEN
-                    ALLOCATE( TEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
-                    CALL CHECKMEM( IOS, 'TEUCNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. TAFLAG ) THEN
-                    ALLOCATE( TEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
-                    CALL CHECKMEM( IOS, 'TEACNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. TRFLAG ) THEN
-                    ALLOCATE( TERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
-                    CALL CHECKMEM( IOS, 'TERCNY', PROGNAME )
-                ENDIF
-
-                IF( LREPCTL .AND. 
-     &            ( TUFLAG .OR. TAFLAG .OR. TRFLAG ) ) THEN
-                    ALLOCATE( TECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
-                    CALL CHECKMEM( IOS, 'TECCNY', PROGNAME )
-                ENDIF
-
+            IF( TUFLAG ) THEN
+                ALLOCATE( TEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+            ELSE
+                ALLOCATE( TEUCNY( 0,0 ), STAT=IOS )
             ENDIF
+            CALL CHECKMEM( IOS, 'TEUCNY', PROGNAME )
+
+            IF( TAFLAG ) THEN
+                ALLOCATE( TEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+            ELSE
+                ALLOCATE( TEACNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'TEACNY', PROGNAME )
+
+            IF( SFLAG ) THEN   ! See note on AERCNY definition
+                ALLOCATE( TERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+            ELSE
+                ALLOCATE( TERCNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'TERCNY', PROGNAME )
+
+            IF( TUFLAG .OR. TAFLAG .OR. SFLAG ) THEN
+                ALLOCATE( TECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+            ELSE
+                ALLOCATE( TECCNY( 0,0 ), STAT=IOS )
+            ENDIF
+            CALL CHECKMEM( IOS, 'TECCNY', PROGNAME )
 
         END IF
 

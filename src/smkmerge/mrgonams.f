@@ -64,6 +64,7 @@ C.........  Initialize - everything will be gridded
         BREPNAME = 'REPBG'
         MREPNAME = 'REPMG'
         PREPNAME = 'REPPG'
+        TREPNAME = 'REPEG'
 
         AONAME = 'AG'
         MONAME = 'MG'
@@ -76,6 +77,7 @@ C.........  Initialize - everything will be gridded
             CALL TRIM_AND_CONCAT( BREPNAME, 'T' )
             CALL TRIM_AND_CONCAT( MREPNAME, 'T' )
             CALL TRIM_AND_CONCAT( PREPNAME, 'T' )
+            CALL TRIM_AND_CONCAT( TREPNAME, 'T' )
 
             CALL TRIM_AND_CONCAT( AONAME, 'T' )
             CALL TRIM_AND_CONCAT( MONAME, 'T' )
@@ -91,6 +93,7 @@ C.........  Initialize - everything will be gridded
                 CALL TRIM_AND_CONCAT( BREPNAME, 'S' )
                 CALL TRIM_AND_CONCAT( MREPNAME, 'S' )
                 CALL TRIM_AND_CONCAT( PREPNAME, 'S' )
+                CALL TRIM_AND_CONCAT( TREPNAME, 'S' )
             ENDIF
 
             CALL TRIM_AND_CONCAT( AONAME, 'S' )
@@ -127,6 +130,15 @@ C.........  Initialize - everything will be gridded
             END IF
 
             CALL TRIM_AND_CONCAT( PONAME, 'C' )
+
+        END IF
+
+        IF( AUFLAG .OR. AAFLAG .OR. ARFLAG .OR.
+     &      MUFLAG .OR. MAFLAG .OR. MRFLAG .OR.
+     &      PUFLAG .OR. PAFLAG .OR. PRFLAG     ) THEN
+            IF( LREPCTL ) THEN
+                CALL TRIM_AND_CONCAT( TREPNAME, 'C' )
+            END IF
 
         END IF
 

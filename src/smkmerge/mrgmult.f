@@ -2,7 +2,8 @@
         SUBROUTINE MRGMULT( NSRC, NG, NL, NMAT1, NMAT2, 
      &                      KEY1, KEY2, KEY3, KEY4, EMSRC, 
      &                      RINFO, CUMATX, CAMATX, SMATX,
-     &                      NX, IX, GMATX, GOUT1, GOUT2 )
+     &                      NX, IX, GMATX, ICNY, GOUT1, GOUT2,
+     &                      COUT1, COUT2, COUT3, COUT4, COUT5 )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -26,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -46,6 +47,9 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
+
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
 
         IMPLICIT NONE
 
@@ -72,13 +76,23 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NX    ( NG )     ! no. of sources per cell
         INTEGER     , INTENT (IN) :: IX    ( NMAT1 )  ! list of sources per cell
         REAL        , INTENT (IN) :: GMATX ( NMAT2 )  ! gridding coefficients
+        INTEGER     , INTENT (IN) :: ICNY  ( NSRC )   ! county index by source
         REAL        , INTENT(OUT) :: GOUT1 ( NG, NL ) ! one-time gridded emis
         REAL     , INTENT(IN OUT) :: GOUT2 ( NG, NL ) ! cumulative gridded emis
+        REAL     , INTENT(IN OUT) :: COUT1 ( NCOUNTY, * )! no control county
+        REAL     , INTENT(IN OUT) :: COUT2 ( NCOUNTY, * )! multiplv cntl county
+        REAL     , INTENT(IN OUT) :: COUT3 ( NCOUNTY, * )! additive cntl county
+        REAL     , INTENT(IN OUT) :: COUT4 ( NCOUNTY, * )! reactivity cntl cnty
+        REAL     , INTENT(IN OUT) :: COUT5 ( NCOUNTY, * )! all control cntl cnty
 
 C.........  Other local variables
-        INTEGER         C, J, K, L, S   ! counters and indicies   
+        INTEGER         C, J, K, L, S   ! counters and indicies
+        INTEGER         IDX             ! index to list of counties in grid   
         REAL*8          SUM1            ! sum for GOUT1   
-        REAL*8          SUM2            ! sum for GOUT2  
+        REAL*8          SUM2            ! sum for GOUT2 
+        REAL*8          ADD             ! tmp value with additive controls
+        REAL*8          MULT            ! tmp value with multiplictv controls
+        REAL*8          REAC            ! tmp value with reactivity controls
         REAL*8          VAL             ! tmp value  
         REAL*8          VMP             ! tmp market penetration value  
 
@@ -103,12 +117,27 @@ C............. If multiplicative controls, additive controls, and speciation
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
-                        VAL = CAMATX( S,KEY3 ) * SMATX( S,KEY4 ) + 
-     &                        EMSRC ( S,KEY1 ) * SMATX( S,KEY4 ) *
-     &                        CUMATX( S,KEY2 )
+                        IDX = ICNY( S )
+
+                        VAL = EMSRC ( S,KEY1 ) * SMATX( S,KEY4 )
+                        COUT1( IDX,KEY4 ) = COUT1( IDX,KEY4 ) + VAL
+
+                        ADD = CAMATX( S,KEY3 ) * SMATX( S,KEY4 )
+                        COUT3( IDX,KEY4 )= COUT3( IDX,KEY4 ) + VAL + ADD
+
+                        MULT = VAL * CUMATX( S,KEY2 )
+                        COUT2( IDX,KEY4 ) = COUT2( IDX,KEY4 ) + MULT
+
                         VMP  = RINFO( S,2 )
-                        VAL  = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
+                        REAC = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
      &                         GMATX( K )
+                        COUT4( IDX,KEY4 ) = COUT4( IDX,KEY4 ) + REAC
+
+                        VAL  = ADD + MULT
+                        VAL = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
+     &                         GMATX( K )
+                        COUT5( IDX,KEY4 ) = COUT5( IDX,KEY4 ) + VAL
+
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
 
@@ -253,10 +282,16 @@ C.............  If speciation only
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
+                        IDX = ICNY( S )
+
                         VAL = EMSRC( S,KEY1 ) * SMATX( S,KEY4 )
+                        COUT1( IDX,KEY4 ) = COUT1( IDX,KEY4 ) + VAL
+
                         VMP  = RINFO( S,2 )
                         VAL  = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
      &                         GMATX( K )
+                        COUT4( IDX,KEY4 ) = COUT4( IDX,KEY4 ) + VAL
+
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
                     END DO
@@ -265,7 +300,6 @@ C.............  If speciation only
                     GOUT2( C,1 ) = SUM2
 
                 END DO
-
 
 C.............  If inventory pollutant only
             ELSE 
@@ -278,7 +312,11 @@ C.............  If inventory pollutant only
                     DO J = 1, NX( C )
                         K = K + 1
                         S = IX( K )
+                        IDX = ICNY( S )
+
                         VAL = EMSRC( S,KEY1 ) * GMATX( K )
+                        COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
+
                         SUM1 = SUM1 + VAL
                         SUM2 = SUM2 + VAL
                     END DO
@@ -324,7 +362,7 @@ C............. If multiplicative controls, additive controls, and speciation
                     END DO
                 END DO
 
-C............. If multiplicative controls & additive controls
+C............. If multiplicative controls & additive controls & layer fractions
             ELSE IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 ) THEN
 
                 DO L = 1, NL
@@ -351,7 +389,7 @@ C............. If multiplicative controls & additive controls
                     END DO
                 END DO
 
-C............. If multiplicative controls & speciation
+C............. If multiplicative controls & speciation & layer fractions
             ELSE IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
 
                 DO L = 1, NL
@@ -380,7 +418,7 @@ C............. If multiplicative controls & speciation
                     END DO
                 END DO
 
-C............. If additive controls & speciation
+C............. If additive controls & speciation & layer fractions
             ELSE IF( KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
 
                 DO L = 1, NL
@@ -409,7 +447,7 @@ C............. If additive controls & speciation
                     END DO
                 END DO
 
-C............. If multiplicative controls only
+C............. If multiplicative controls and layer fractoins
             ELSE IF( KEY2 .GT. 0 ) THEN
 
                 DO L = 1, NL
@@ -436,7 +474,7 @@ C............. If multiplicative controls only
                     END DO
                 END DO
 
-C............. If additive controls only
+C............. If additive controls and layer fractions
             ELSE IF( KEY3 .GT. 0 ) THEN
 
                 DO L = 1, NL
@@ -462,7 +500,7 @@ C............. If additive controls only
                     END DO
                 END DO
 
-C............. If speciation only
+C............. If speciation and layer fraction
             ELSE IF( KEY4 .GT. 0 ) THEN
 
                 DO L = 1, NL
@@ -476,10 +514,17 @@ C............. If speciation only
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
+                            IDX = ICNY( S )
+
                             VAL = EMSRC ( S,KEY1 ) * SMATX( S,KEY4 )
+                            COUT1( IDX,KEY4 ) = COUT1( IDX,KEY4 ) + VAL
+
                             VMP  = RINFO( S,2 )
                             VAL  = ( VAL*(1.-VMP) + RINFO( S,1 )*VMP ) *
      &                             LFRAC( S,L ) * GMATX( K )
+                            COUT4( IDX,KEY4 ) = COUT4( IDX,KEY4 ) + VAL
+                            COUT5( IDX,KEY4 ) = COUT5( IDX,KEY4 ) + VAL
+
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO
@@ -504,8 +549,12 @@ C.............  If inventory pollutant and layer fractions
                         DO J = 1, NX( C )
                             K = K + 1
                             S = IX( K )
+                            IDX = ICNY( S )
+
                             VAL = LFRAC( S,L ) *
      &                            EMSRC ( S,KEY1 ) * GMATX( K )
+                            COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
+
                             SUM1 = SUM1 + VAL
                             SUM2 = SUM2 + VAL
                         END DO

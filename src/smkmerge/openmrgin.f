@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -69,8 +69,6 @@ C.........  Other local variables
 
         INTEGER         J, N, V       ! counters and indices
 
-        INTEGER         EDATE         ! episode end date (YYYYDDD)
-        INTEGER         ETIME         ! episode end time (HHMMSS)
         INTEGER         IOS           ! tmp I/O status
         INTEGER         ISECS         ! tmp duration in seconds
 
@@ -435,6 +433,19 @@ C           pollutants.
         PDEV = PROMPTFFILE( 
      &         'Enter logical name for POLLUTANT CODES & NAMES file',
      &         .TRUE., .TRUE., 'SIPOLS', PROGNAME )
+
+C.........  If reporting state and/or county emissions, get gridding surrogates
+C           file.
+        IF( LREPANY ) THEN
+            GDEV = PROMPTFFILE( 
+     &             'Enter logical name for SURROGATE COEFFICIENTS file',
+     &             .TRUE., .TRUE., 'AGPRO', PROGNAME )
+
+            CDEV = PROMPTFFILE( 
+     &             'Enter logical name for COUNTRY, STATE, AND ' //
+     &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+
+        END IF
 
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort

@@ -69,6 +69,7 @@ C.........  Other local variables
 
         INTEGER         L, L1, L2, V
 
+        CHARACTER*50    RTYPNAM      ! name for type of state/county report file
         CHARACTER*50    UNIT         ! tmp units buffer
         CHARACTER*300   BUFFER       ! tmp buffer
         CHARACTER*300   MESG         ! message buffer
@@ -146,7 +147,7 @@ C.............  Set constants number and values for variables
 
             ENDIF
           
-C.............  Prompt for and open file
+C.............  Prompt for and gridded open file(s)
             IF( AFLAG ) THEN
                 AONAME = PROMPTMFILE(  
      &            'Enter name for AREA-SOURCE GRIDDED OUTPUT file',
@@ -173,11 +174,54 @@ C.............  Prompt for and open file
 
         END IF  ! End of gridded output
 
-C.........  Open report file(s) and output header(s)
+C.........  Open report file(s)
 
         IF( LREPSTA .OR. LREPCNY ) THEN
 
-! NOTE: Fill this in later...
+            IF( LREPSTA .AND. LREPCNY ) THEN
+                RTYPNAM = 'STATE AND COUNTY'
+            ELSE IF ( LREPSTA ) THEN
+                RTYPNAM = 'STATE'
+            ELSE IF ( LREPCNY ) THEN
+                RTYPNAM = 'COUNTY'
+            END IF
+
+            L = LEN_TRIM( RTYPNAM )
+
+            IF( AFLAG ) THEN
+                ARDEV  = PROMPTFFILE(
+     &                  'Enter name for AREA-SOURCE ' // 
+     &                  RTYPNAM( 1:L ) // ' REPORT', 
+     &                  .FALSE., .TRUE., AREPNAME, PROGNAME )
+            END IF 
+
+            IF( BFLAG ) THEN
+                BRDEV  = PROMPTFFILE(
+     &                  'Enter name for BIOGENIC ' // 
+     &                  RTYPNAM( 1:L ) // ' REPORT', 
+     &                  .FALSE., .TRUE., BREPNAME, PROGNAME )
+            END IF 
+
+            IF( MFLAG ) THEN
+                MRDEV  = PROMPTFFILE(
+     &                  'Enter name for MOBILE-SOURCE ' // 
+     &                  RTYPNAM( 1:L ) // ' REPORT', 
+     &                  .FALSE., .TRUE., MREPNAME, PROGNAME )
+            END IF 
+
+            IF( PFLAG ) THEN
+                PRDEV  = PROMPTFFILE(
+     &                  'Enter name for POINT-SOURCE ' // 
+     &                  RTYPNAM( 1:L ) // ' REPORT', 
+     &                  .FALSE., .TRUE., PREPNAME, PROGNAME )
+            END IF 
+
+            IF( XFLAG ) THEN
+                TRDEV  = PROMPTFFILE(
+     &                  'Enter name for TOTAL ' // 
+     &                  RTYPNAM( 1:L ) // ' REPORT', 
+     &                  .FALSE., .TRUE., TREPNAME, PROGNAME )
+            END IF 
 
         END IF  ! End of state and/or county output
 

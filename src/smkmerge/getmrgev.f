@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -57,6 +57,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Other local variables
 
         INTEGER         IOS      ! tmp I/O status
+        INTEGER         INVIOS   ! i/o status for MEG_REPINV_YN
+        INTEGER         SPCIOS   ! i/o status for MEG_REPSPC_YN
+        INTEGER         CTLIOS   ! i/o status for MEG_REPCTL_YN
         INTEGER         J        ! counter
 
         CHARACTER*4     MRGSRC   ! value of MRG_SOURCE E.V.
@@ -156,12 +159,17 @@ C.........  Retrieve the on/off environment variables
 
         LREPINV = ENVYN( 'MRG_REPINV_YN', 'Report inventory ' //
      &                   'emissions or not', .TRUE., IOS )
+        INVIOS = IOS
 
         LREPSPC = ENVYN( 'MRG_REPSPC_YN', 'Report speciated ' //
      &                   'emissions or not', .TRUE., IOS )
+        SPCIOS = IOS
 
         LREPCTL = ENVYN( 'MRG_REPCTL_YN', 'Report controlled ' //
      &                   'emissions separately or not', .TRUE., IOS )
+        CTLIOS = IOS
+
+        LREPANY = ( LREPSTA .OR. LREPCNY )
 
 C.........  Check output flags to ensure at least some output
         IF( .NOT. LGRDOUT .AND.
@@ -175,7 +183,8 @@ C.........  Check output flags to ensure at least some output
 
         END IF
 
-C.........  Make flags consistent, and write out warnings...
+C.........  Make biogenics flag consitent with speciation flag (must have
+C           speciation to be able to include biogenic emissions)
         IF( BFLAG .AND. .NOT. SFLAG ) THEN
 
             MESG = 'Speciation control environment variable ' //
@@ -189,6 +198,9 @@ C.........  Make flags consistent, and write out warnings...
                
         ENDIF
 
+C.........  Make VMT usage flag consistent with speciation and source merging
+C           such that if the merge VMT flag is set to true, speciation and other
+C           source categories will be overridden.
         IF( MFLAG .AND. VFLAG .AND. 
      &    ( AFLAG .OR. BFLAG .OR. PFLAG .OR. SFLAG ) ) THEN
 
@@ -205,6 +217,23 @@ C.........  Make flags consistent, and write out warnings...
             SFLAG = .FALSE.
 
         ENDIF
+
+C.........  Report that flags for reporting inventory emissions, speciated
+C           emissions or not, and controlled emissions or not do not work yet
+        IF( INVIOS .GE. 0 ) THEN   ! If it was set to something
+            MESG = 'NOTE: MRG_REPINV_YN control is not yet functional.'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( SPCIOS .GE. 0 ) THEN
+            MESG = 'NOTE: MRG_REPSPC_YN control is not yet functional.'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( CTLIOS .GE. 0 ) THEN
+            MESG = 'NOTE: MRG_REPCTL_YN control is not yet functional.'
+            CALL M3MSG2( MESG )
+        END IF
 
         RETURN
 

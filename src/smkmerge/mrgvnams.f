@@ -281,13 +281,19 @@ C----------------------------------------------------------------------
 
             DO I = 1, NVARS
 
-                L      = INDEX( VDESCS( I ), '_' )  ! find parsing '_'
-                POLNAM = VDESCS( I )(   1:L-1 )     ! extract pollutant name
+                L      = INDEX( VDESCS( I ), SPJOIN )  ! find separator
+                IF( L .LE. 0 ) THEN
+                    MESG = 'ERROR: Variable descriptions do not ' //
+     &                     'contain proper separator in spec matrix.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+                POLNAM = VDESCS( I )(   1:L-1 )        ! extract pollutant name
 
                 L2     = LEN_TRIM( VDESCS( I ) )
                 SPCNAM = VDESCS( I )( L+1:L2  )     ! extract species name
 
-                TDESC  = POLNAM( 1:IOVLEN3 ) // '_' // SPCNAM
+                TDESC  = POLNAM( 1:IOVLEN3 ) // SPJOIN // SPCNAM
 
                 K1 = INDEX1( POLNAM, NIPOL, EINAM )  ! find pol in sorted list
                 K2 = INDEX1( TDESC, NCNT, TVDESCA )  ! find combo
@@ -335,7 +341,7 @@ C               iteration's value
 
                 IF( J .LE. 0 ) THEN
                     NCNT = NCNT + 1
-                    L  = INDEX( TSVDESC( I ), '_' )
+                    L  = INDEX( TSVDESC( I ), SPJOIN )
                     L2 = LEN_TRIM( TSVDESC( I ) )
                     EMNAM( NCNT ) = TSVDESC( I )( L+1:L2 )
                 ENDIF
