@@ -56,6 +56,10 @@ C.........  Local variables
         INTEGER          COL         ! column for current point
         INTEGER          ROW         ! row for current point
         
+        REAL             LEFT        ! left edge of matching grid cell
+        REAL             RIGHT       ! right edge of matching grid cell
+        REAL             BOTTOM      ! bottom edge of matching grid cell
+        REAL             TOP         ! top edge of matching grid cell
         REAL             X, Y        ! normalized difference between point location
                                      !   and grid cell center
         REAL             P, Q        ! fractions used for calculating coefficients
@@ -72,114 +76,67 @@ C.............  Find column
 
 C.............  Check if point is to the left of the grid
             IF( XLOC( S ) < XREFS( 1,1 ) ) THEN
-                COL = 0
+                LEFT = 1
+                RIGHT = 1
+                
                 X = 0.
                 
 C.............  Check if point is to the right of the grid
             ELSE IF( XLOC( S ) > XREFS( NC, 1 ) ) THEN
-                COL = NC
-                X = 1.
+                LEFT = NC
+                RIGHT = NC
+                
+                X = 0.
 
 C.............  Loop through columns to find the correct one                
             ELSE
-                DO I = 1, NC-1
-                    IF( XLOC( S ) >= XREFS( I,1 ) .AND. 
-     &                  XLOC( S ) <= XREFS( I+1,1 ) ) THEN
-                        COL = I
-                        X = ( XLOC( S ) - XREFS( I,1 ) ) / 
-     &                      ( XREFS( I+1,1 ) - XREFS( I,1 ) )
+                DO I = 2, NC
+                    IF( XLOC( S ) < XREFS( I,1 ) ) THEN
+                        LEFT = I - 1
+                        RIGHT = I
+                        
+                        X = ( XLOC( S ) - XREFS( I-1,1 ) ) /
+     &                      ( XREFS( I,1 ) - XREFS( I-1,1 ) )
                         EXIT
-                    END IF            
+                    END IF
                 END DO
             END IF
             
 C.............  Find row
 
 C.............  Check if point is below the grid
-            IF( YLOC( S ) < YREFS( 1,I ) ) THEN
-                ROW = 0
+            IF( YLOC( S ) < YREFS( 1,1 ) ) THEN
+                BOTTOM = 1
+                TOP = 1
+                
                 Y = 0.
             
 C.............  Check if point is above the grid
-            ELSE IF( YLOC( S ) > YREFS( NR, 1 ) ) THEN
-                ROW = NR
-                Y = 1.
+            ELSE IF( YLOC( S ) > YREFS( 1,NR ) ) THEN
+                BOTTOM = NR
+                TOP = NR
+                
+                Y = 0.
 
 C.............  Loop through rows to find the correct one
             ELSE
-                DO I = 1, NR-1
-                    IF( YLOC( S ) >= YREFS( 1,I ) .AND. 
-     &                  YLOC( S ) <= YREFS( 1,I+1 ) ) THEN
-                        ROW = I
-                        Y = ( YLOC( S ) - YREFS( 1,I ) ) /
-     &                      ( YREFS( 1,I+1 ) - YREFS( 1,I ) )
+                DO I = 2, NR
+                    IF( YLOC( S ) < YREFS( 1,I ) ) THEN
+                        BOTTOM = I - 1
+                        TOP = I
+                        
+                        Y = ( YLOC( S ) - YREFS( 1,I-1 ) ) /
+     &                      ( YREFS( 1,I ) - YREFS( 1,I-1 ) )
                         EXIT
                     END IF
                 END DO
             END IF
 
 C.............  Set grid cells surrounding point location
-            IF( ROW == 0 ) THEN               ! row below grid
-                IF( COL == 0 ) THEN           ! column to the left of grid
-                    K = 1
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K
-                    NU( 3,S ) = K
-                    NU( 4,S ) = K
-                ELSE IF( COL == NC ) THEN     ! column to the right of grid
-                    K = NC
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K
-                    NU( 3,S ) = K
-                    NU( 4,S ) = K
-                ELSE                          ! column inside grid
-                    K = COL
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K + 1
-                    NU( 3,S ) = K
-                    NU( 4,S ) = K
-                END IF
-            ELSE IF( ROW == NR ) THEN         ! row above grid
-                IF( COL == 0 ) THEN           ! column to the left of grid
-                    K = ( NR - 1 ) * NC + 1
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K
-                    NU( 3,S ) = K
-                    NU( 4,S ) = K
-                ELSE IF( COL == NC ) THEN     ! column to the right of grid
-                    K = NR * NC
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K
-                    NU( 3,S ) = K
-                    NU( 4,S ) = K
-                ELSE                          ! column inside grid
-                    K = ( NR - 1 ) * NC + COL
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K + 1
-                    NU( 3,S ) = K
-                    NU( 4,S ) = K
-                END IF
-            ELSE                              ! row inside grid
-                IF( COL == 0 ) THEN           ! column to the left of grid
-                    K = ( ROW - 1 ) * NC + 1
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K
-                    NU( 3,S ) = K + NC
-                    NU( 4,S ) = K + NC
-                ELSE IF( COL == NC ) THEN     ! column to the right of grid
-                    K = ROW * NC
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K
-                    NU( 3,S ) = K + NC
-                    NU( 4,S ) = K + NC
-                ELSE                          ! column inside grid
-                    K = ( ROW - 1 ) * NC + COL
-                    NU( 1,S ) = K
-                    NU( 2,S ) = K + 1
-                    NU( 3,S ) = K + NC
-                    NU( 4,S ) = K + NC + 1
-                END IF
-            END IF
+            NU( 1,S ) = ( BOTTOM - 1 ) * NC + LEFT
+            NU( 2,S ) = ( BOTTOM - 1 ) * NC + RIGHT
+            NU( 3,S ) = ( TOP - 1 ) * NC + LEFT
+            NU( 4,S ) = ( TOP - 1 ) * NC + RIGHT
 
 C.............  Calculate fractions for each surrounding grid cell
             P = 1. - X
