@@ -42,6 +42,16 @@ else
 
 endif
 
+if( $?RUN_NORMBEIS3 ) then
+   if ( $RUN_NORMBEIS3 == 'y' ) then
+      setenv RUN_NORMBEIS3 Y
+   endif
+
+else
+   setenv RUN_NORMBEIS3 N
+
+endif
+
 if( $?RUN_GRDMAT ) then
    if ( $RUN_GRDMAT == 'y' ) then
       setenv RUN_GRDMAT Y
@@ -59,6 +69,16 @@ if( $?RUN_SPCMAT ) then
 
 else
    setenv RUN_SPCMAT N
+
+endif
+
+if( $?RUN_MBSETUP ) then
+   if ( $RUN_MBSETUP == 'y' ) then
+      setenv RUN_MBSETUP Y
+   endif
+
+else
+   setenv RUN_MBSETUP N
 
 endif
 
@@ -129,6 +149,16 @@ if( $?RUN_TMPBIO ) then
 
 else
    setenv RUN_TMPBIO N
+
+endif
+
+if( $?RUN_BEIS3 ) then
+   if ( $RUN_BEIS3 == 'y' ) then
+      setenv RUN_BEIS3 Y
+   endif
+
+else
+   setenv RUN_BEIS3 N
 
 endif
 
@@ -203,12 +233,20 @@ else
    setenv SMK_ASCIIELEV_YN ' ' 
 endif
 
-if ( $?SMK_PING_YN ) then
-   if ( $SMK_PING_YN == 'y' ) then
-      setenv SMK_PING_YN Y
+if ( $?SMK_PING_METHOD ) then
+   if ( $SMK_PING_METHOD == '1' ) then
+      setenv SMK_PING_METHOD 1
    endif
 else
-   setenv SMK_PING_YN ' ' 
+   setenv SMK_PING_METHOD ' '
+endif
+
+if ( $?SMK_ELEV_METHOD ) then
+   if ( $SMK_ELEV_METHOD == '1' ) then
+      setenv SMK_ELEV_METHOD 1
+   endif
+else
+   setenv SMK_ELEV_METHOD ' '
 endif
 
 if ( $?MRG_GRDOUT_YN ) then
