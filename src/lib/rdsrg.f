@@ -75,10 +75,11 @@ C...........   Other arrays
         CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
 
 C...........   Local variables
-        INTEGER         I, J, K               ! indices and counters
+        INTEGER         I, J, K, L            ! indices and counters
 
         INTEGER         C                     ! tmp cell number
         INTEGER         CELCNT                ! cell counter
+        INTEGER         CNTCHK                ! check for message overflow count
         INTEGER         COL                   ! Temp grid column number (x-axis)
         INTEGER         FIP                   ! tmp country/state/county code
         INTEGER         IOS                   ! i/o status
@@ -468,43 +469,46 @@ C           less than or equal to 1.
         DO I = 1, NSRGFIPS
 
             GFLAG = .FALSE.
+            CNTCHK = 0
             DO K = 1, NSRGS
 
 C.................  Check if county total surrogates greater than 1
                 IF( SRGCSUM( K,I ) .GT. 1.001 ) THEN
-                    GFLAG = .TRUE.
-                    EXIT
+		
+C.....................  If first problem on this line
+		    IF( .NOT. GFLAG ) THEN
+                    	WRITE( MESG,94030 ) 'WARNING: County ' //
+     &                    'surrogate total greater than 1. for '//
+     &                    'county' // CRLF() // BLANK10, SRGFIPS( I ), 
+     &                    ', SSC(', SRGLIST( K ), '):', SRGCSUM( K,I )
+		    	GFLAG = .TRUE.
+    	    	    	CNTCHK = CNTCHK + 1
+			
+C.....................  If multiple problems on this line, but fewer than
+C                       the MESG length will permit, add to message
+		    ELSE IF( CNTCHK .LE. 27 ) THEN
+		    	L = LEN_TRIM( MESG )
+		        WRITE( MESG,94031 ) MESG( 1:L )// ', SSC(', 
+     &                         SRGLIST( K ), '):', SRGCSUM( K,I )
+    	    	    	CNTCHK = CNTCHK + 1
+			
+    	    	    END IF
+		    
                 END IF
 
+C.................  Renormalize all surrogates with totals > 1
+    	    	IF( SRGCSUM( K,I ) .GT. 1. ) THEN
+                    RFLAG = .TRUE.  ! Set to give global warning
+                    DO C = 1, NCELLS( I )
+                        SRGFRAC( K,C,I ) = SRGFRAC( K,C,I ) /
+     &                                     SRGCSUM( K,I )
+                    END DO
+    	    	END IF
+		
             END DO
 
-C.............  If any surrogates were greater than 1...
-            IF( GFLAG ) THEN
-
-C.................  Give a warning message for significant counties
-                RFLAG = .TRUE.
-                WRITE( MESG,94030 ) 'WARNING: County surrogate total '//
-     &                 'greater than 1. for county' // CRLF() // 
-     &                 BLANK10, SRGFIPS( I ), ':',
-     &                 ( SRGLIST( K ), SRGCSUM( K,I ), K= 1, NSRGS )
-                CALL M3MESG( MESG )
-
-C.................  Renormalize all surrogates with totals > 1...
-C.................  Loop through surrogates
-                DO K = 1, NSRGS
-
-C.....................  When surrogate total is > 1
-                    IF( SRGCSUM( K,I ) .GT. 1. ) THEN
-
-C.........................  Loop through cells in this county
-                        DO C = 1, NCELLS( I )
-                            SRGFRAC( K,C,I ) = SRGFRAC( K,C,I ) /
-     &                                         SRGCSUM( K,I )
-                        END DO
-
-                    END IF
-                END DO
-            END IF
+C.............  Give a warning message for significant counties
+            IF( GFLAG ) CALL M3MESG( MESG )
 
         END DO
 
@@ -514,8 +518,8 @@ C           are outside the subgrid (if any)
         NSRGREC = NSRGALL
 
         IF( RFLAG ) THEN
-            MESG = 'WARNING: Surrogates renormalized when total ' //
-     &             'of surrogates by county were ' // CRLF() //
+            MESG = 'WARNING: Some surrogates renormalized when ' //
+     &             'total of surrogates by county were ' // CRLF() //
      &             BLANK10 // 'greater than 1.'
             CALL M3MSG2( MESG )
         END IF
@@ -535,6 +539,8 @@ C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT( A, 1X, I8, 1X, A, 1X, F10.6, 1X, A )
 
-94030   FORMAT( A, 1X, I6.6, A, 100( ' SSC(', I3.2, ' ):', F8.4, : ) )
+94030   FORMAT( A, 1X, I6.6, A, I3.2, A, F8.4 )
+
+94031   FORMAT( A, 1X, I3.2, A, F8.4 )
 
         END SUBROUTINE RDSRG
