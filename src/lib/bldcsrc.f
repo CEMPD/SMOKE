@@ -1,6 +1,6 @@
 
-        SUBROUTINE BLDCSRC( CFIP , PLANT, CHAR1, CHAR2, 
-     &                      CHAR3, CHAR4, CHAR5, CCOD , CSRC )
+        SUBROUTINE BLDCSRC( CFIP , STR2, STR3, STR4, 
+     &                      STR5, STR6, STR7, CCOD , CSRC )
 
 C***********************************************************************
 C  subroutine body starts at line 97
@@ -14,7 +14,11 @@ C      first use LEN_TRIM on the function result before doing the concatenation
 C
 C  PRECONDITIONS REQUIRED:
 C      Values for at least CFIP, PLANT, CHAR1, and CCOD, with other CHAR* values
-C      optional.
+C      optional.  The width of the input strings *must* be consistent with
+C      the right-justified width desired for output, which is defined by
+C      the start and end positions of ARBEGL3/ARENDL3 for area sources,
+C      MBBEGL3/MBENDL3 for mobile sources, and PTBEGL3/PTENDL3 for point 
+C      sources.  These arrays are defined in EMSTRG3.EXT
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C     Subroutines: Models-3 subroutines
@@ -53,28 +57,19 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*), INTENT (IN) :: CFIP  ! string FIPS code
-        CHARACTER(LEN=*), INTENT (IN) :: PLANT ! string plant code
-        CHARACTER(LEN=*), INTENT (IN) :: CHAR1 ! source char 1
-        CHARACTER(LEN=*), INTENT (IN) :: CHAR2 ! source char 2
-        CHARACTER(LEN=*), INTENT (IN) :: CHAR3 ! source char 3
-        CHARACTER(LEN=*), INTENT (IN) :: CHAR4 ! source char 4
-        CHARACTER(LEN=*), INTENT (IN) :: CHAR5 ! source char 5
-        CHARACTER(LEN=*), INTENT (IN) :: CCOD  ! string of int postn of pollutant
-        CHARACTER(LEN=*), INTENT(OUT) :: CSRC  ! concatenated result
+        CHARACTER(*), INTENT (IN) :: CFIP  ! string FIPS code
+        CHARACTER(*), INTENT (IN) :: STR2  ! ar:SCC, mb:SCC, pt: plant
+        CHARACTER(*), INTENT (IN) :: STR3  ! ar:blk, mb:VTYPE, pt: plt char 1
+        CHARACTER(*), INTENT (IN) :: STR4  ! ar:blk, mb:LINK, pt: plt char 2
+        CHARACTER(*), INTENT (IN) :: STR5  ! ar:blk, mb:blk, pt: plt char 3
+        CHARACTER(*), INTENT (IN) :: STR6  ! ar:blk, mb:blk, pt: plt char 4
+        CHARACTER(*), INTENT (IN) :: STR7  ! ar:blk, mb:blk, pt: plt char 5
+        CHARACTER(*), INTENT (IN) :: CCOD  ! string of int postn of pollutant
+        CHARACTER(*), INTENT(OUT) :: CSRC  ! concatenated result
 
 C...........   Other local variables
         INTEGER         L
         INTEGER         OUTLEN
-
-        CHARACTER(LEN=FIPLEN3) B1
-        CHARACTER(LEN=PLTLEN3) B2
-        CHARACTER(LEN=CHRLEN3) B3
-        CHARACTER(LEN=CHRLEN3) B4
-        CHARACTER(LEN=CHRLEN3) B5
-        CHARACTER(LEN=CHRLEN3) B6
-        CHARACTER(LEN=CHRLEN3) B7
-        CHARACTER(LEN=POLLEN3) B8
 
         CHARACTER*300   MESG 
         CHARACTER*300   STRING
@@ -89,30 +84,18 @@ C   begin body of subroutine BLDCSRC
 C.........  Determine allocated length of string used for output
         OUTLEN = LEN( CSRC )
 
-C.........  First copy the strings from the arrays of whatever length to
-C           arrays that are the correct length.  Presumably, the calling
-C           program has ensured that truncation won't be an issue.
-        B1 = CFIP
-        B2 = PLANT
-        B3 = CHAR1
-        B4 = CHAR2
-        B5 = CHAR3
-        B6 = CHAR4
-        B7 = CHAR5
-        B8 = CCOD
-
-C.........  Now, right-justify using the correct lengths
-        B1 = ADJUSTR( B1 )
-        B2 = ADJUSTR( B2 )
-        B3 = ADJUSTR( B3 )
-        B4 = ADJUSTR( B4 )
-        B5 = ADJUSTR( B5 )
-        B6 = ADJUSTR( B6 )
-        B7 = ADJUSTR( B7 )
-        B8 = ADJUSTR( B8 )
+C.........  Store right-justified entries in the output string
 
         STRING = ' '
-        STRING = B1 // B2 // B3 // B4 // B5 // B6 // B7 // B8
+        STRING = ADJUSTR( CFIP ) //
+     &           ADJUSTR( STR2 ) //
+     &           ADJUSTR( STR3 ) //
+     &           ADJUSTR( STR4 ) //
+     &           ADJUSTR( STR5 ) //
+     &           ADJUSTR( STR6 ) //
+     &           ADJUSTR( STR7 )
+        STRING( POLPOS3:ALLLEN3 ) = ADJUSTR( CCOD )
+
         L = LEN_TRIM( STRING )
 
         IF( L .GT. OUTLEN ) THEN 

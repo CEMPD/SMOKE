@@ -107,6 +107,7 @@ C...........   Other local variables
         LOGICAL    :: DFLAG = .FALSE.  ! true: operation type is additive cntls
         LOGICAL    :: EFLAG = .FALSE.  ! true: error has occurred
         LOGICAL    :: GFLAG = .FALSE.  ! true: operation type is ctg cntls
+        LOGICAL    :: IFLAG = .FALSE.  ! true: operation type is gridding
         LOGICAL    :: JFLAG = .FALSE.  ! true: operation type is projection
         LOGICAL    :: LFLAG = .FALSE.  ! true: operation type is allowable cntls
         LOGICAL    :: POLDFLT          ! true: okay to have pol-spec defaults
@@ -153,6 +154,9 @@ C.........  Check for valid operation type
         CASE( 'CTG' )
             POLDFLT = .TRUE.
             GFLAG   = .TRUE.
+        CASE( 'GRIDDING' )
+            POLDFLT = .FALSE.
+            IFLAG   = .TRUE.
         CASE( 'PROJECT PTS' )
             POLDFLT = .FALSE.
             JFLAG   = .TRUE.
@@ -187,6 +191,7 @@ C.........  Initialize default array
 C.........  Initialize arrays for counting number of x-ref records in each
 C           degree of matching
         N      = 0   ! arrays
+        ISP    = 0
         PIFIP  = 0
         PSCC   = ' '
         PCSRC  = ' '
@@ -202,8 +207,8 @@ C.........  For CSRC, don't include pollutant for grouping.
             J = INDXTA( I )
 
             CSRC    = CSRCTA( J )( 1:SC_ENDP( NCHARS ) )
-            ISP     = ISPTA ( J )
             TSCC    = CSCCTA( J )
+            IF( .NOT. IFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
 
             DO J = 1, NCHARS
                 CHARS( J ) = CSRC( SC_BEGP( J ):SC_ENDP( J ) )
@@ -325,7 +330,7 @@ C               these characteristics will appear earlier in the sorted list
 
                     ENDIF
 
-                ELSEIF( SCCR .EQ. SCRZERO ) THEN        ! left SCC
+                ELSEIF( SCCR .EQ. SCRZERO ) THEN         ! left SCC
 
                     NT = 5
                     IF( IFIP .NE. PIFIP( NT ) .OR. 
@@ -339,7 +344,7 @@ C               these characteristics will appear earlier in the sorted list
                         NT = 0
                     ENDIF
 
-                ELSE                                         ! Complete SCC
+                ELSE                                     ! Complete SCC
 
                     NT = 6
                     IF( IFIP .NE. PIFIP( NT ) .OR. 
@@ -528,6 +533,11 @@ C.........  Speciation x-ref tables
 
             CALL ALOCSTBL( NIPOL, N )
             CALL FILLSTBL( NIPOL, NXREF, N( 1 ), XTYPE, XTCNT ) 
+
+C.........  Gridding x-ref tables
+        ELSE IF( IFLAG ) THEN
+            CALL ALOCGTBL( N )
+            CALL FILLGTBL( NXREF, N( 1 ), XTYPE, XTCNT ) 
 
 C.........  All control x-ref tables
         ELSE

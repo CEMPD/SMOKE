@@ -75,31 +75,16 @@ C   begin body of subroutine PROGDESC
 
         ELSEIF( NAME .EQ. 'SPCAMAT' ) THEN
         ELSEIF( NAME .EQ. 'SPCMMAT' ) THEN
-        ELSEIF( NAME .EQ. 'GRDPMAT' ) THEN
+        ELSEIF( NAME .EQ. 'GRDMAT' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
-     &  'Program GRDPMAT to take a SMOKE point source inventory file',
-     &  'and produce a SMOKE point source gridding matrix for a grid',
-     &  'defined at run time.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'GRDAMAT' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program GRDAMAT to take a SMOKE area source inventory file,',
-     &  'area source surrogates, and an area source surrogate cross-',
-     &  'reference, and produce a SMOKE area source gridding matrix',
-     &  'for a grid defined at run time.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'GRDMMAT' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program GRDMMAT to take a SMOKE mobile source inventory file,',
-     &  'mobile source surrogates, a mobile source surrogate cross-',
+     &  'Program GRDMAT to take a SMOKE area, mobile, or point source',
+     &  'inventory file, gridding surrogates,  surrogate cross-',
      &  'reference, and an optional link definitions file, and produce',
-     &  'SMOKE mobile source gridding and ungridding matrices for a',
-     &  'grid defined at run time.',
+     &  'a SMOKE gridding matrix for a grid defined at run time. For',
+     &  'mobile sources, an "ungridding" matrix is also created to',
+     &  'allow the use of gridded temperature data in assigning',
+     &  'factors to mobile sources.',
      &      ' '
 
         ELSEIF( NAME .EQ. 'TMPPOINT' ) THEN
@@ -124,11 +109,31 @@ C   begin body of subroutine PROGDESC
 
         ELSEIF( NAME .EQ. 'TMPMOBIL' ) THEN
         ELSEIF( NAME .EQ. 'TMPBIO' ) THEN
-        ELSEIF( NAME .EQ. 'CTLPMAT' ) THEN
-        ELSEIF( NAME .EQ. 'CTLAMAT' ) THEN
-        ELSEIF( NAME .EQ. 'CTLMMAT' ) THEN
+        ELSEIF( NAME .EQ. 'CNTLMAT' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program CNTLMAT to take a SMOKE inventory file, a control',
+     &  'packets file, an optional list of sources to track for the',
+     &  'report, and produce one or more of the following: ',
+     &  '     1) multiplicative control matrix ',
+     &  '     2) additive control matrix ',
+     &  '     3) reactivity control matrix ',
+     &  '     4) projection matrix ',
+     &  '     5) controls report ',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'ELEVPOINT' ) THEN
         ELSEIF( NAME .EQ. 'LAYPOINT' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program LAYPOINT to take a SMOKE point source inventory file',
+     &  'and dot- and cross-point meteorology files and construct a',
+     &  'point source layer fractions matrix for all selected hours',
+     &  'and an optional report of plume exceeding a user-defined',
+     &  'layer number. The program uses a Briggs method that has been',
+     &  'adapted for multiple layers. ',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'EMISFAC' ) THEN
         ELSEIF( NAME .EQ. 'PREDIUR' ) THEN
         ELSEIF( NAME .EQ. 'SMKMERGE' ) THEN
@@ -144,6 +149,16 @@ C   begin body of subroutine PROGDESC
      &  'county reports can be written from this program. If a layer-',
      &  'fractions file is input, then the total emissions output file',
      &  'is three-dimensional.'
+
+        ELSEIF( NAME .EQ. 'GETRECS' ) THEN
+            WRITE( LDEV,92000 ) 
+     &  ' ',
+     &  'Program GETRECS searches for a specific source, for all',
+     &  'sources in a specific cell, or for combinations of source',
+     &  'keys.  It creates an ASCII file which lists all details about',
+     &  'the source including source number, grid cell, if found in',
+     &  'gridding matrix, temporalization factors, control factors,',
+     &  'inventory pollutant emissions, and model species emissions.'
 
         ELSE
             WRITE( LDEV,92000 ) 

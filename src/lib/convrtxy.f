@@ -67,8 +67,9 @@ C...........   Other local variables
         INTEGER       S
 
         REAL          XLOC, XX, YLOC, YY  ! tmp x and y coordinates
+        REAL*4        XLOC4, YLOC4, XX4, YY4
 
-        LOGICAL       EFLAG    ! error flag
+        LOGICAL    :: EFLAG =.FALSE.   ! true: error detected
 
         CHARACTER*256 MESG                !  message buffer
 
@@ -85,6 +86,9 @@ C   begin body of subroutine CONVRTXY
 
                 XLOC = XVALS( S )
                 YLOC = YVALS( S )
+
+                IF( XLOC .LT. AMISS3 .AND. YLOC .LT. AMISS3 ) CYCLE
+
                 CALL LL2UTM( XLOC, YLOC, UZONE, XX, YY )
                 XVALS( S ) = XX
                 YVALS( S ) = YY
@@ -100,16 +104,18 @@ C   begin body of subroutine CONVRTXY
 
             DO S = 1, NSRC
 
-                XLOC = XVALS( S )
-                YLOC = YVALS( S )
+                XLOC4 = XVALS( S )
+                YLOC4 = YVALS( S )
 
-                IF ( .NOT. LL2LAM( XLOC, YLOC, XX, YY ) ) THEN
+                IF( XLOC4 .LT. AMISS3 .AND. YLOC4 .LT. AMISS3 ) CYCLE
+
+                IF ( .NOT. LL2LAM( XLOC4, YLOC4, XX4, YY4 ) ) THEN
                     EFLAG = .TRUE.
 
                 ELSE
 
-                    XVALS( S ) = XX
-                    YVALS( S ) = YY
+                    XVALS( S ) = XX4
+                    YVALS( S ) = YY4
 
                 END IF
 
