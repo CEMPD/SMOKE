@@ -9,7 +9,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC
         
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: NEFS, EFSNAM, EFSDSC
+        USE MODEMFAC, ONLY: NEFS, MXETYPE, EMTNAM
         
         USE MODMBSET, ONLY: SCENLIST, EMISSIONS, M6NONE
         
@@ -61,6 +61,7 @@ C.........   Other local variables
         LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
         CHARACTER*300          MESG      !  message buffer 
+        CHARACTER(LEN=16)      CURRVAR   !  current variable being written
         
         CHARACTER*16  :: PROGNAME = 'WREMFACS' ! program name
         
@@ -103,8 +104,10 @@ C.................  Check local-as-arterial setting for this source
                 DO IEFTYPE = 1,MXM6EPR
  
 C.....................  Set facility type to NONE for all ef types
-C                       except exhaust running and evp running                
-                    IF( IEFTYPE == 1 .OR. IEFTYPE == 6 ) THEN
+C                       except exhaust running, evp running, brake,
+C                       and tire wear                
+                    IF( IEFTYPE == 1 .OR. IEFTYPE == 6 .OR.
+     &                  IEFTYPE == 9 .OR. IEFTYPE == 10 ) THEN
                         CURRFTYPE = FTYPE
                     ELSE
                     	CURRFTYPE = M6NONE
@@ -132,7 +135,7 @@ C.........................  Find position in master emissions array
                 EFPOS = EFPOS + 1
             END DO     ! end source loop
  
-C.............  Write emission factors to file
+C.............  Write sources to file
             JDATE = SDATE
             JTIME = ( IHR - 1 ) * 10000
 
@@ -143,31 +146,34 @@ C.............  Write emission factors to file
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
             END IF
 
-            DO I = 1, NEFS
-                L  = INDEX( EFSNAM( I ), ETJOIN )
-                L2 = LEN_TRIM( EFSNAM( I ) )
+            DO I = 1, MXETYPE
+                CURRVAR = TRIM( EMTNAM( I,1 ) )
+                L  = INDEX( CURRVAR, ETJOIN )
+                L2 = LEN_TRIM( CURRVAR )
 
 C.................  Match pollutant in variable name to number               
-                SELECT CASE( EFSNAM( I )( L+LJ:L2 ) )
+                SELECT CASE( CURRVAR( L+LJ:L2 ) )
+                CASE( 'VOC', 'THC', 'NMH', 'TOG', 'NMO', 'ROG' )
+                    VARPOL = 1
                 CASE( 'CO' )
                     VARPOL = 2
                 CASE( 'NOX' )
                     VARPOL = 3
                 CASE( 'SO4' )
                     VARPOL = 4
-                CASE( 'O25' )
+                CASE( 'OCARB25' )
                     VARPOL = 5
-                CASE( 'E25' )
+                CASE( 'ECARB25' )
                     VARPOL = 6
-                CASE( 'G25' )
+                CASE( 'GASPM25' )
                     VARPOL = 7
                 CASE( 'SO2' )
                     VARPOL = 8
                 CASE( 'NH3' )
                     VARPOL = 9
-                CASE( 'B25' )
+                CASE( 'BRAKE25' )
                     VARPOL = 10
-                CASE( 'T25' )
+                CASE( 'TIRE25' )
                     VARPOL = 11
                 CASE( 'BEN' )
                     VARPOL = 12
@@ -181,22 +187,24 @@ C.................  Match pollutant in variable name to number
                     VARPOL = 16
                 CASE( 'ACR' )
                     VARPOL = 17
-                CASE( 'O10' )
+                CASE( 'OCARBPMC' )
                     VARPOL = 18
-                CASE( 'E10' )
+                CASE( 'ECARBPMC' )
                     VARPOL = 19
-                CASE( 'G10' )
+                CASE( 'GASPMC' )
                     VARPOL = 20
-                CASE( 'B10' )
+                CASE( 'BRAKEPMC' )
                     VARPOL = 21
-                CASE( 'T10' )
+                CASE( 'TIREPMC' )
                     VARPOL = 22
-                CASE DEFAULT   ! any variety of hydrocarbon
-                    VARPOL = 1
+                CASE DEFAULT
+                    MESG = 'Unrecognized pollutant ' //
+     &                     CURRVAR( L+LJ:L2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END SELECT
 
 C.................  Match emission process to number                
-                SELECT CASE( EFSNAM( I )( 1:L-1 ) )
+                SELECT CASE( CURRVAR( 1:L-1 ) )
                 CASE( 'EXR' )
                     VAREMIS = 1
                 CASE( 'EXS' )
@@ -219,17 +227,16 @@ C.................  Match emission process to number
                     VAREMIS = 10
                 CASE DEFAULT
                     MESG = 'Unrecognized emission process ' //
-     &                     EFSNAM( I )( 1:L-1 )
+     &                     CURRVAR( 1:L-1 )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END SELECT
                 
 C.................  Determine position of EF/pollutant combo                    
                 POLEF = M6POL2EF( VAREMIS, VARPOL )     
                 
-                IF( .NOT. WRITE3( FNAME, EFSNAM( I )( 1:L2 ), JDATE, 
+                IF( .NOT. WRITE3( FNAME, CURRVAR( 1:L2 ), JDATE, 
      &                            JTIME, SRCEFS( :,POLEF ) ) ) THEN
-     	            MESG = 'Could not write ' // 
-     &	                   EFSDSC( I )( 1:LEN_TRIM( EFSDSC( I ) ) ) // 
+     	            MESG = 'Could not write ' // TRIM( CURRVAR ) // 
      &	                   'to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // 
      &                     '".'
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
