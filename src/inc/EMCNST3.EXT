@@ -44,12 +44,12 @@ C.......   profile coefficients should be used for a source S iff
 C.......   MOD( TPFLAG( S ), *TPRFAC ) = 0.
 C.......   (The *TPRFAC's should all be distinct primes)
 
-        INTEGER, PARAMETER :: WDTPFAC = 7 ! use day-of-week temp-profile w/ 
-                                          !    weekday normalizer
-        INTEGER, PARAMETER :: STPRFAC = 5 ! use seasonal temp-profile
-        INTEGER, PARAMETER :: MTPRFAC = 3 ! use month temp-profile
-        INTEGER, PARAMETER :: WTPRFAC = 2 ! use day-of-week tmp-prof w/ full 
-                                          !    week normalizer
+        INTEGER, PARAMETER :: WDTPFAC = 7  ! use day-of-week temp-profile w/ 
+                                           !    weekday normalizer
+        INTEGER, PARAMETER :: STPRFAC = 5  ! use seasonal temp-profile
+        INTEGER, PARAMETER :: MTPRFAC = 3  ! use month temp-profile
+        INTEGER, PARAMETER :: WTPRFAC = 2  ! use day-of-week tmp-prof w/ full 
+                                           !    week normalizer
  
         CHARACTER*9, PARAMETER :: DAYS( 7 ) = 
      &         ( / 'Monday   ', 'Tuesday  ', 'Wednesday', 'Thursday ',
@@ -93,15 +93,15 @@ C.........  Environment variables
         CHARACTER*16, PARAMETER :: ERRSET  = 'SMK_MAXERROR    '
 
 C.........  Time zones
-        INTEGER    , PARAMETER :: MXTZONE = 14
+        INTEGER    , PARAMETER :: MXTZONE = 15
         INTEGER    , PARAMETER :: TZONNUM( MXTZONE ) = 
      &                        ( / 0, 3, 4, 4, 5 , 5 , 6 , 
-     &                            6, 7, 7, 8, 10, 10, 11  / )
+     &                            6, 7, 7, 8, 9, 10, 10, 11  / )
 
         CHARACTER*3, PARAMETER :: TZONNAM( MXTZONE ) =
      &                        ( / 'GMT', 'ADT', 'AST', 'EDT', 'EST',
      &                            'CDT', 'CST', 'MDT', 'MST', 'PDT',
-     &                            'PST', 'HST', 'CAT', 'NT ' / )
+     &                            'PST', 'YST', 'HST', 'CAT', 'NT ' / )
 
 C.........  Packet information
         INTEGER     , PARAMETER :: NPACKET = 7
