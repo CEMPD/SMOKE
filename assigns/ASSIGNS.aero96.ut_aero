@@ -282,8 +282,8 @@ endif
 # Mobile source intermediate and output files
 #
 if ( $SMK_SOURCE == 'M' || $MRG_MOBILE == 'Y' ) then
-   setenv MOBL     $INVOPD/mobl.$INVOP.ncf       # Mobile NetCDF inv
-   setenv MSRC     $INVOPD/MSRC.$INVOP.txt       # Mobile ASCII inventory file
+   setenv MOBL     $INVOPD/mobl.$mbd.$INVOP.ncf  # Mobile NetCDF inv
+   setenv MSRC     $INVOPD/MSRC.$mbd.$INVOP.txt  # Mobile ASCII inventory file
    setenv MSCC     $INVOPD/MSCC.$INVOP.txt       # Mobile unique SCC list
 
    if ( $RUN_TEMPORAL == 'Y' || $MRG_TEMPORAL_YN == 'Y' ) then
