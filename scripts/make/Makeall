@@ -5,10 +5,9 @@
 #
 ## Set controllers for turning on/off library building
 #
-setenv FS_MAKE_LIB      Y   # [ Y | N ]
 setenv ETOOLS_MAKE_LIB  Y   # [ Y | N ]
 setenv SMK_MAKE_LIB     Y   # [ Y | N ]
-setenv SMK_MAKE_MOBLIB  6   # [ 6 | N ]
+setenv SMK_MAKE_MOBLIB  5B  # [ 5A | 5B | 6 | N ]
 
 #
 ## Set the directory for the EDSS installation
@@ -48,16 +47,6 @@ endif
 
 ## Activate script argument
 set what = $argv
-
-#
-## Make FileSetAPI library
-#
-if ( $FS_MAKE_LIB == Y ) then
-   echo "Building FileSetAPI library..."
-   cd $EDSS_SUBSYS/filesetapi
-   make clean
-   make lib
-endif
 
 #
 ## Make EDSS tools library
@@ -103,13 +92,14 @@ if ( $?SMK_MAKE_MOBLIB ) then
    endif 
 
    if ( $SMK_MAKE_MOBLIB == '5B' ) then
-      echo 'NOTE: Mobile5a library build not supported in this version'
+      echo "Building Mobile5b library..."
+      cd $M5_SRC
+      make $argv
    endif 
 
    if ( $SMK_MAKE_MOBLIB == '6' ) then
-      echo "Building Mobile6 library..."
-      cd $M6_SRC
-      make lib
+      echo 'NOTE: Mobile6 library build not supported in this version'
+      
    endif
 
 endif
@@ -147,8 +137,8 @@ cd $BG_SRC    # Rawbio and Tmpbio
 make clean
 Makeit $argv
 
-echo "Building Mbsetup, Premobl, and Emisfac..."
-cd $MB_SRC     # Mbsetup, Premobl, and Emisfac
+echo "Building Premobl and Emisfac..."
+cd $MB_SRC     # Premobl and Emisfac
 make clean
 Makeit $argv    
 

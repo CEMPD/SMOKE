@@ -45,8 +45,5 @@
    setenv TM_SRC   $SMKROOT/src/temporal       # source code for temporal  
    setenv UT_SRC   $SMKROOT/src/emutil         # source code for utility prgms
    setenv M5_SRC   $SMKROOT/src/mo5b           # source code for Mobile5b
-   setenv M6_SRC   $SMKROOT/src/mo6            # source code for Mobile6
    setenv CONFIG   $SCENARIO/config            # control files
    setenv LOGS     $STATIC/logs                # log files
-
-   setenv FSDIR    $EDSS_SUBSYS/filesetapi       # FileSetAPI location 

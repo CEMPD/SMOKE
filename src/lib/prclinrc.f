@@ -81,7 +81,6 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME  = .TRUE.   ! true: first time routine called
         LOGICAL, SAVE :: FIRSTLOOP = .TRUE.   ! true: file already read once
         LOGICAL, SAVE :: LCATSET   = .FALSE.  ! true: source category set
-        LOGICAL, SAVE :: LDELIM    = .FALSE.  ! true: manual delimeter set
 
         CHARACTER*1      O3SYN             !  Y or N for ozone season
         CHARACTER*6      FILNUM            !  tmp file number string
@@ -314,12 +313,11 @@ C.........................  Extract file name (logical or physical, if any)
 C.....................  A new delimiter packet
                     CASE( DEL_IDX )
 
-C.........................  Ensure delimeter setting made
+C.........................  Ensure ozone season setting made
                         IF( J+1 .GE. L2 ) THEN
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
                         ELSE                            
                             RPT_%DELIM = ADJUSTL( LINE( J+1:L2 ) )
-                            LDELIM = .TRUE.
                         END IF
 
                         PKTEND   = IREC
@@ -381,18 +379,13 @@ C.........................  Reset report settings to defaults
                         RPT_%BYCYNAM  = .FALSE.
                         RPT_%BYRCL    = .FALSE.
                         RPT_%BYWEK    = .FALSE.
-                        RPT_%CHKPROJ  = .FALSE.
-                        RPT_%CHKCNTL  = .FALSE.
                         RPT_%LAYFRAC  = .FALSE.
                         RPT_%NORMCELL = .FALSE.
                         RPT_%NORMPOP  = .FALSE.
                         RPT_%SCCNAM   = .FALSE.
                         RPT_%SRCNAM   = .FALSE.
                         RPT_%STKPARM  = .FALSE.
-                        RPT_%USECRMAT = .FALSE.
-                        RPT_%USECUMAT = .FALSE.
                         RPT_%USEGMAT  = .FALSE.
-                        RPT_%USEPRMAT = .FALSE.
                         RPT_%USESSMAT = .FALSE.
                         RPT_%USESLMAT = .FALSE.
                         RPT_%USEHOUR  = .FALSE.
@@ -526,41 +519,10 @@ C               MODREPRT
 
             SELECT CASE( SEGMENT( 1 ) )
 
-C.............  Check control or projection matrix versus report
-            CASE( 'CHECK' )
-
-                SELECT CASE( SEGMENT( 2 ) )
-
-                CASE( 'PROJECTION' )
-                    PRFLAG        = .TRUE.
-                    PRRPTFLG      = .TRUE.
-                    RPT_%CHKPROJ  = .TRUE.
-                    RPT_%USEPRMAT = .TRUE.
-                    
-C             CASE( 'CONTROL' )
-C             CASE( 'REACTIVITY' )
-
-                END SELECT
-
-C.............  Multiplicative controls used for report
-            CASE( 'CONTROL' )
-                CUFLAG        = .TRUE.
-                RPT_%USECUMAT = .TRUE.
-
 C.............  Gridding used for report
             CASE( 'GRIDDING' )
                 GFLAG      = .TRUE.
                 RPT_%USEGMAT  = .TRUE.
-
-C.............  Projection used for report
-            CASE( 'PROJECTION' )
-                PRFLAG        = .TRUE.
-                RPT_%USEPRMAT = .TRUE.
-
-C.............  Reactivity controls used for report
-            CASE( 'REACTIVITY' )
-                CRFLAG        = .TRUE.
-                RPT_%USECRMAT = .TRUE.
 
 C.............  Speciation used for report
             CASE( 'SPECIATION' )
@@ -584,7 +546,6 @@ C.............  Speciation used for report
                     END IF
 
                     SSFLAG = .TRUE.
-                    RPT_%USESSMAT  = .TRUE.
 
                 END IF
 
@@ -665,7 +626,6 @@ C.............  BY options affecting inputs needed
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                         NFLAG = .TRUE.
                         RPT_%SCCNAM = .TRUE.
-                        IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
                     END IF
 
                 CASE( 'SOURCE' )
@@ -674,15 +634,7 @@ C.............  BY options affecting inputs needed
                     RPT_%BYSCC  = .TRUE.
                     RPT_%SCCRES = 10
                     IF( SEGMENT( 3 ) .EQ. 'NAME' .OR.
-     &                  SEGMENT( 4 ) .EQ. 'NAME' ) THEN
-                        IF( CATEGORY .EQ. 'POINT' ) THEN
-                            RPT_%SRCNAM = .TRUE.
-                        ELSE
-                            NFLAG = .TRUE.
-                            RPT_%SCCNAM = .TRUE.
-                            IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
-                        END IF
-                    END IF
+     &                  SEGMENT( 4 ) .EQ. 'NAME' ) RPT_%SRCNAM = .TRUE.
 
                     IF( CATEGORY     .EQ. 'POINT'    .AND.
      &                ( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
