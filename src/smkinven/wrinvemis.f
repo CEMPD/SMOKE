@@ -218,7 +218,7 @@ C.........  Loop through activity data, store, and write to inventory file
             MESG = 'Missing data for some sources is not allowed ' //
      &             CRLF() // BLANK5 //
      &             'because the environment variable ' //
-     &             'RAW_SRC_CHECK was set to "N".'
+     &             'RAW_SRC_CHECK was set to "Y".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
