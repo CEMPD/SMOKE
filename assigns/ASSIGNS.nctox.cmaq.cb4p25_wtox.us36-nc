@@ -57,7 +57,7 @@
 
 ## User-defined I/O directory settings
    setenv EDSS_SUBSYS $EDSS_ROOT/subsys              # EDSS subsystem dir
-   setenv SMKROOT     $EDSS_SUBSYS/smokev1           # System root dir
+   setenv SMKROOT     $EDSS_SUBSYS/smoke             # System root dir
    setenv SMKDAT      $EDSS_ROOT/data                # Data root dir
    setenv ASSIGNS     $SMKROOT/assigns               # smoke assigns files
 #
