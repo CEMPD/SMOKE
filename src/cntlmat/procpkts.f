@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR,
+        SUBROUTINE PROCPKTS( ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR,
      &                       PKTTYP, ENAME, USEPOL, SFLAG )
 
 C***********************************************************************
@@ -79,6 +79,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: CDEV      ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV      ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV      ! file unit no. for tmp ALW file
+        INTEGER     , INTENT (IN) :: RDEV      ! file unit no. for report
         INTEGER     , INTENT (IN) :: CPYEAR    ! year to project to 
         CHARACTER(*), INTENT (IN) :: PKTTYP    ! packet type
         CHARACTER(*), INTENT (IN) :: ENAME     ! inventory file name
@@ -158,8 +159,7 @@ C.............  Generate reactivity matrices
 
 C.............  Generate projection matrix
             USEPOL = .TRUE.  ! array
-            CALL GENPROJ( NSRC, NIPPA, BYEAR, CPYEAR, ENAME, 
-     &                    USEPOL, EANAM )
+            CALL GENPROJ( CPYEAR, RDEV, ENAME, USEPOL )
 
             SFLAG = .TRUE.
 
