@@ -43,24 +43,39 @@
         REAL, PUBLIC :: MINTEMP = 0.   ! minimum temperature
         REAL, PUBLIC :: MAXTEMP = 0.   ! maximum temperature
 
-!...........   Daily min/max temperatures [K] (dim: NSRC)
-        REAL, ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! per-source tmprs
+!...........   Source-based meteorology data (dim: NSRC)
+        REAL, ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! temperature in Kelvin
+        REAL, ALLOCATABLE, PUBLIC :: QVSRC   ( : )   ! water vapor mixing ratio
+        REAL, ALLOCATABLE, PUBLIC :: PRESSRC ( : )   ! pressure in pascals
 
-!...........   Hourly temperatures [K] (dim: NSRC)
+!...........   Hourly meteorology data
 !...              for Mobile5 processing, index 0 = 12 AM local time
 !...              for Mobile6 processing, index 0 = 6 AM local time
-        REAL,    ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour 
+        REAL,    ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour
+        REAL,    ALLOCATABLE, PUBLIC :: RHHOUR  ( :,: ) ! relative humidity by source per hour
+        REAL,    ALLOCATABLE, PUBLIC :: BPHOUR  ( :,: ) ! barometric pressure by source per hour
 
         REAL,    ALLOCATABLE, PUBLIC :: TDYCNTY ( : )   ! daily temps by county
+        REAL,    ALLOCATABLE, PUBLIC :: RHDYCNTY( : )   ! daily relative humidity by county
+        REAL,    ALLOCATABLE, PUBLIC :: BPDYCNTY( : )   ! daily barometric pressure by county
         INTEGER, ALLOCATABLE, PUBLIC :: DYCODES ( : )   ! FIPS codes for daily counties
 
         REAL,    ALLOCATABLE, PUBLIC :: TWKCNTY ( : )   ! weekly temps by county
+        REAL,    ALLOCATABLE, PUBLIC :: RHWKCNTY( : )   ! weekly relative humidity by county
+        REAL,    ALLOCATABLE, PUBLIC :: BPWKCNTY( : )   ! weekly barometric pressure by county
         INTEGER, ALLOCATABLE, PUBLIC :: WKCODES ( : )   ! FIPS codes for weekly counties
 
         REAL,    ALLOCATABLE, PUBLIC :: TMNCNTY ( : )   ! monthly temps by county
+        REAL,    ALLOCATABLE, PUBLIC :: RHMNCNTY( : )   ! monthly relative humidity by county
+        REAL,    ALLOCATABLE, PUBLIC :: BPMNCNTY( : )   ! monthly barometric pressure by county
         INTEGER, ALLOCATABLE, PUBLIC :: MNCODES ( : )   ! FIPS codes for monthly counties
 
         REAL,    ALLOCATABLE, PUBLIC :: TEPCNTY ( : )   ! episode temps by county
+        REAL,    ALLOCATABLE, PUBLIC :: RHEPCNTY( : )   ! episode relative humidity by county
+        REAL,    ALLOCATABLE, PUBLIC :: BPEPCNTY( : )   ! episode barometric pressure by county
         INTEGER, ALLOCATABLE, PUBLIC :: EPCODES ( : )   ! FIPS codes for episode counties
+
+!...........   Daily meteorology data
+        REAL,    ALLOCATABLE, PUBLIC :: BPDAY( : )      ! average daily barometric pressure by county
 
         END MODULE MODMET
