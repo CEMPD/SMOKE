@@ -1,6 +1,6 @@
 
-        CHARACTER(LEN=80) FUNCTION WRSPDVMT( FREESPD, ARTSPD, SPDDIR, 
-     &                                       SPDFLAG )
+        CHARACTER(LEN=280) FUNCTION WRSPDVMT( FREESPD, ARTSPD, SPDDIR, 
+     &                                        SPDFLAG, ADJINV, ADJHOUR )
 
 C***********************************************************************
 C  function body starts at line 77
@@ -62,6 +62,8 @@ C...........   FUNCTION ARGUMENTS
         REAL,             INTENT (IN) :: ARTSPD  ! arterial speed
         CHARACTER(LEN=*), INTENT (IN) :: SPDDIR  ! directory for writing speed files
         LOGICAL,          INTENT (IN) :: SPDFLAG ! true: speed profiles are available
+        LOGICAL,          INTENT (IN) :: ADJINV  ! true: adjust inventory speeds for ramps
+        LOGICAL,          INTENT (IN) :: ADJHOUR ! true: adjust hourly speeds for ramps
 
 C...........   Local arrays
         REAL M6SPDPROF( 14 )                  ! M6 speed profile for a single hour
@@ -73,11 +75,13 @@ C...........   Other local variables
         INTEGER SDEV                          ! unit no. for speed file
         INTEGER PROFNUM                       ! speed profile number
 
+        REAL    ADJFREESPD                    ! adjusted freeway speed
+
         LOGICAL :: FILEEXIST = .FALSE.        ! true: file already exists
 
         CHARACTER(LEN=6)   FREESPDSTR         ! freeway speed as string
         CHARACTER(LEN=6)   ARTSPDSTR          ! arterial speed as string
-        CHARACTER(LEN=20)  FILENAME           ! filename of speed file
+        CHARACTER(LEN=80)  FILENAME           ! filename of speed file
         CHARACTER(LEN=300) MESG               ! message buffer
 
         CHARACTER(LEN=16) :: PROGNAME = 'WRSPDVMT'   ! program name
@@ -90,7 +94,7 @@ C.........  Make sure speed profiles are allowed
             IF( .NOT. SPDFLAG ) THEN
                 MESG = 'ERROR: Speed profiles were not read in, ' //
      &                 'but the SPDSUM file uses profiles'
-                CALL M3EXIT( MESG, 0, 0, PROGNAME, 2 )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
         END IF
 
@@ -114,7 +118,14 @@ C           otherwise, use 'pX' where X is the profile number
             
         ARTSPDSTR  = ADJUSTL( ARTSPDSTR )
 
-        FILENAME = 'spd' // TRIM( FREESPDSTR ) 
+        IF( ( ADJINV .AND. FREESPD >= 0. ) .OR.
+     &      ( ADJHOUR .AND. FREESPD < 0. ) ) THEN
+            FILENAME = 'spd_adj'
+        ELSE
+            FILENAME = 'spd'
+        END IF
+        
+        FILENAME = TRIM( FILENAME ) // TRIM( FREESPDSTR ) 
      &             // '_' // TRIM( ARTSPDSTR ) 
      &             // '.sv'
 
@@ -148,8 +159,16 @@ C.........  Write header line to file
         WRITE( SDEV, 93000 ) 'SPEED VMT'
 
 C.........  If freeway speed is actual value, create single speed profile
-        IF( FREESPD >= 0. ) THEN        
-            CALL CALC_SPEED_PROF( FREESPD, M6SPDPROF )
+        IF( FREESPD >= 0. ) THEN
+        
+C.............  If needed, adjust for ramps
+            IF( ADJINV ) THEN
+                ADJFREESPD = ADJUST_FREEWAY_SPD( FREESPD )
+            ELSE
+                ADJFREESPD = FREESPD
+            END IF
+                            
+            CALL CALC_SPEED_PROF( ADJFREESPD, M6SPDPROF )
 
 C.............  Write 24 copies of profile to file            
             DO I = 1, 24
@@ -172,7 +191,16 @@ C.........  Otherwise, match profile number and create separate M6 profiles for 
             DO I = 1,24
                 M6HOUR = I+6    ! adjust for 1 = 6 AM
                 IF( M6HOUR > 24 ) M6HOUR = M6HOUR - 24
-                CALL CALC_SPEED_PROF( SPDPROFS( K,M6HOUR ), M6SPDPROF )
+
+C.................  If needed, adjust for ramps                
+                IF( ADJHOUR ) THEN
+                    ADJFREESPD = 
+     &                  ADJUST_FREEWAY_SPD( SPDPROFS( K, M6HOUR ) )
+                ELSE
+                    ADJFREESPD = SPDPROFS( K, M6HOUR )
+                END IF
+                
+                CALL CALC_SPEED_PROF( ADJFREESPD, M6SPDPROF )
                 WRITE( SDEV, 93010 ) M6FREEWAY, I, M6SPDPROF
             END DO
         END IF
@@ -225,6 +253,9 @@ C...........   Internal buffering formats............ 94xxx
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
         CONTAINS
+
+C.............  This internal subroutine calculates a MOBILE6 speed profile
+C               (uses 14 bins) based on a single average speed.
 
             SUBROUTINE CALC_SPEED_PROF( SPEED, SPDPROF )
         
@@ -280,4 +311,23 @@ C.............  Store fractions in appropriate speed bin
 
             END SUBROUTINE CALC_SPEED_PROF       
         
+C...............................................................................
+
+C.............  This internal function adjusts a freeway speed for the effects
+C               of travel on freeway ramps.
+
+            REAL FUNCTION ADJUST_FREEWAY_SPD( SPEED )
+            
+C.................  Function arguments
+            REAL, INTENT (IN) :: SPEED  ! freeway speed
+            
+C.............  Local function variables
+            REAL DENOM           ! denominator of calculation
+            
+            DENOM = ( 1 / SPEED ) - ( RAMPVMT / RAMPSPEED )
+            
+            ADJUST_FREEWAY_SPD = ( 1 - RAMPVMT ) / DENOM
+            
+            END FUNCTION ADJUST_FREEWAY_SPD
+            
         END FUNCTION WRSPDVMT
