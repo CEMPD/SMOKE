@@ -55,7 +55,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        INTEGER         ENVYN
+        LOGICAL         ENVYN
         INTEGER         FIND1, FIND2, FIND3, FIND4
         LOGICAL         GETYN
         LOGICAL         GETPKT
@@ -133,9 +133,9 @@ C...........   Point Sources Table
 C.......   Auxilliary tables:
 
         INTEGER     SIDS  ( NPSID )  !  source FIPS (state-only) ID
-        INTEGER     JSID  ( NPSID )  !  Subscript at which state ID occurs
+        INTEGER     JSID  ( NPSID+1 )  !  Subscript at which state ID occurs
         INTEGER     FFIP  ( NPFIP )  !  source FIPS list
-        INTEGER     JFIP  ( NPFIP )  !  Subscript at which FIP occurs
+        INTEGER     JFIP  ( NPFIP+1 )  !  Subscript at which FIP occurs
 
 
 C...........   Other local variables
@@ -393,7 +393,7 @@ C...........   Compute 3-digit, 2-digit SIC hierarchy codes:
 55      CONTINUE        !  end loop on sources S
 
         JSID( NSID+1 ) = NPSRC + 1      !  sentinel
-        JFIP( NSID+1 ) = NPSRC + 1      !  sentinel
+        JFIP( NFIP+1 ) = NPSRC + 1      !  sentinel
 
 C............................................................................
 C.......   Process list of FIP-SCC pairs to be tracked in the 
@@ -464,10 +464,12 @@ C.......        CTG packet
 C.......   
 C.......   First, get list of packet names in the control file
         
-        IREC     = 1
+        IREC     = 0
         NPACKETS = 0
 
 90      CONTINUE
+
+            IREC = IREC + 1
 
             READ( CDEV,93000, IOSTAT=IOS, END=99 ) LINE
             IF( IOS .NE. 0 ) THEN
@@ -529,6 +531,8 @@ C.......   Process SOURCE CATEGORY packet of control file:
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
+
+        IREC = 1
 
 101     CONTINUE        !  head of loop reading lines in the SOURCE CATEGORY packet
 
@@ -651,7 +655,7 @@ C.......   Process FIPS CODE packet of control file:
             END IF
 
             CALL UPCASE( LINE )
-            IF( 0 .NE. INDEX( LINE, 'END' ) )  GO TO 119
+            IF( 0 .NE. INDEX( LINE, '/END/' ) )  GO TO 119
 
             FIP  = STR2INT ( LINE(  1: 5 ) )
             CNOX = 1.0 - STR2REAL( LINE( 16:25 ) )
@@ -1651,7 +1655,8 @@ C.......   Process PROJECT PTS packet of control file:
 
                     IF( SIC .NE. ISIC( S ) .AND.
      &                  SIC .NE. ISI3( S ) .AND.
-     &                  SIC .NE. ISI2( S ) ) GO TO 143  ! n/a control
+     &                  SIC .NE. ISI2( S ) .AND.
+     &                  SIC .NE.  0  ) GO TO 143  ! n/a control
 
                     IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
                         GO TO 143
@@ -1680,7 +1685,8 @@ C.......   Process PROJECT PTS packet of control file:
 
                     IF( SIC .NE. ISIC( S ) .AND.
      &                  SIC .NE. ISI3( S ) .AND.
-     &                  SIC .NE. ISI2( S ) ) GO TO 144  ! n/a control
+     &                  SIC .NE. ISI2( S ) .AND.
+     &                  SIC .NE.  0  ) GO TO 144  ! n/a control
 
                     IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
                         GO TO 144
