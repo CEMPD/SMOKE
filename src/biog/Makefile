@@ -14,11 +14,8 @@ LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 #  BEIS2 executables : rawbio and tmpbio
 
 all: beis3 normbeis3 rawbio tmpbio 
-
 debug: beis3.debug normbeis3.debug rawbio.debug tmpbio.debug 
-
-pvm: tmpbio.pvm
-
+pvm: beis3.pvm tmpbio.pvm
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -35,6 +32,10 @@ beis3: $(B3X) $(ALL3) $(LIBPATH)
 beis3.debug: $(B3X) $(ALL3) $(LIBPATH_DEBUG)
 	echo BEIS3 \(debug\):
 	$(FC) $(DBGFLAGS) -o $(@) $(B3X) $(LIBS_DEBUG)
+
+beis3.pvm: $(B3X) $(ALLI) $(LIBPATH)
+	echo BEIS3 \(pvm\):
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(B3X) $(LIBS_PVM)
 
 #
 NORM3= normbeis3.o rdb3fac.o
