@@ -648,19 +648,18 @@ C                 sparse storage.  Populate sparse arrays.
     	    	MINANN = 0.
     	    	MINAVD = 0.
                 DO S = 1, NSRC
-                    IF( COMPUTED( S,1 ) .GT. 0. .OR. 
-     &                  COMPUTED( S,2 ) .GT. 0.      ) THEN
+                    IF( COMPUTED( S,1 ) /= 0. .OR. 
+     &                  COMPUTED( S,2 ) /= 0.      ) THEN
                         NREC = NREC + 1
                         SRCID ( NREC ) = S
-                        SRCPOL( NREC,1:NPVAR ) = COMPUTED( S,1:NPVAR )
 
 C......................  Check for negative values for annual value
                         IF( COMPUTED( S,1 ) .LT. 0 ) THEN
-                            L = LEN_TRIM( VNAMFORM( 2 ) )  ! 2 is correct
+                            L = LEN_TRIM( VNAMFORM( 1 ) )
                             CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
                             WRITE( MESG,94020 ) 
      &                        'WARNING: Resetting negative value of "'//
-     &                        VNAMFORM(2)(1:L)//'" from', COMPUTED(S,1),
+     &                        VNAMFORM(1)(1:L)//'" from', COMPUTED(S,1),
      &                        'to 0. for source:'// CRLF() // BLANK10// 
      &                        BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
@@ -670,17 +669,19 @@ C......................  Check for negative values for annual value
 
 C......................  Check for negative values for average day value
                         IF( COMPUTED( S,2 ) .LT. 0 ) THEN
-                            L = LEN_TRIM( VNAMFORM( 3 ) )  ! 3 is correct
+                            L = LEN_TRIM( VNAMFORM( 2 ) )
                             CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
                             WRITE( MESG,94020 ) 
      &                        'WARNING: Resetting negative value of "'//
-     &                        VNAMFORM(3)(1:L)//'" from', COMPUTED(S,2),
+     &                        VNAMFORM(2)(1:L)//'" from', COMPUTED(S,2),
      &                        'to 0. for source:'// CRLF() // BLANK10// 
      &                        BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
     	    	    	    MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
                             COMPUTED( S,2 ) = 0.
                         END IF
+                        
+                        SRCPOL( NREC,1:NPVAR ) = COMPUTED( S,1:NPVAR )
 
                     END IF      ! If non-zero value for COMPUTED
                 END DO          ! End loop through sources for sparse storage
@@ -688,15 +689,17 @@ C......................  Check for negative values for average day value
 C...............  Give warning for that includes negative annual value
     	    	IF( MINANN .LT. 0. ) THEN
     	    	    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
-     &                     'value for "'// TRIM( VNAMFORM(2) ) //
+     &                     'value for "'// TRIM( VNAMFORM(1) ) //
      &                     '" was', MINANN, 'and was reset to 0.'
+                    CALL M3MSG2( MESG )
     	    	END IF
 
 C...............  Give warning for that includes negative seasonal value
     	    	IF( MINAVD .LT. 0. ) THEN
     	    	    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
-     &                     'value for "'// TRIM( VNAMFORM(3) ) //
+     &                     'value for "'// TRIM( VNAMFORM(2) ) //
      &                     '" was', MINAVD, 'and was reset to 0.'
+                    CALL M3MSG2( MESG )
     	    	END IF
 
 C...............  Set up output arrays in sparse format....
