@@ -384,6 +384,14 @@ C.........  Allocate memory for sorted CAS number arrays
         CALL CHECKMEM( IOS, 'UCASNKEP', PROGNAME )
         ALLOCATE( UNIQCAS( NUNIQCAS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'UNIQCAS', PROGNAME )
+        
+C.........  Allocate memory for reporting of emissions (used in reader routines)
+        ALLOCATE( EMISBYPOL( NINVTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMISBYPOL', PROGNAME )
+        ALLOCATE( EMISBYCAS( NUNIQCAS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMISBYCAS', PROGNAME )
+        ALLOCATE( RECSBYCAS( NUNIQCAS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RECSBYCAS', PROGNAME )        
 
 C.........  Initialize new arrays
         SCASIDX = 0    ! array
@@ -392,6 +400,9 @@ C.........  Initialize new arrays
         UCASNPOL= 0    ! array
         UCASNKEP= 0    ! array
         UNIQCAS = ' '  ! array
+        EMISBYPOL = 0. ! array
+        EMISBYCAS = 0. ! array
+        RECSBYCAS = 0  ! array
 
 C.........  Store sorted CAS numbers in both sorted order arrays
         PCAS =  ' ' 
