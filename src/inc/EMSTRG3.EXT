@@ -20,14 +20,23 @@ C.........  Width of source information strings
         INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
         INTEGER, PARAMETER :: PLTLEN3 = 15 ! plant ID field
         INTEGER, PARAMETER :: POLLEN3 =  5 ! pol position field 
+        INTEGER, PARAMETER :: PRCLEN3 =  3 ! mv emissions process
+        INTEGER, PARAMETER :: RWTLEN3 =  3 ! roadway type 
         INTEGER, PARAMETER :: SCCLEN3 = 10 ! SCC
         INTEGER, PARAMETER :: SICLEN3 =  4 ! SIC 
+        INTEGER, PARAMETER :: VIDLEN3 =  4 ! vehicle type ID
         INTEGER, PARAMETER :: VTPLEN3 =  5 ! vehicle type
 
 C.........  Width of other global character strings 
         INTEGER, PARAMETER :: IOVLEN3 = 16 ! length of I/O API variables
         INTEGER, PARAMETER :: SPNLEN3 =  5 ! Speciation profile code
         INTEGER, PARAMETER :: PLSLEN3 = IOVLEN3 * 2 + 1  ! Speciation vdesc3d
+
+C.........  Position within SCC of mobile roadway type and vehicle type ID
+        INTEGER, PARAMETER :: SRS = 8 
+        INTEGER, PARAMETER :: SRE = 10 
+        INTEGER, PARAMETER :: SVS = 3
+        INTEGER, PARAMETER :: SVE = 6 
 
 C.........  Variable dimensioning components and parameters, dependent...
 
@@ -50,17 +59,27 @@ C.........  Starts and ends of each field in point source definition
      &           ( / FIPLEN3  , CH1POS3-1, CH2POS3-1, CH3POS3-1,
      &               CH4POS3-1, CH5POS3-1, POLPOS3-1, ALLLEN3    / )
 
-C.........  Starts and ends of each field in mobile source definition
+C.........  Starts and ends of each field in area source definition
         INTEGER, PARAMETER :: SCCPOS3 = FIPLEN3 + 1       ! SCC
-        INTEGER, PARAMETER :: VTPPOS3 = PLTPOS3 + SCCLEN3 ! vehicle type
-        INTEGER, PARAMETER :: LNKPOS3 = VTPPOS3 + VTPLEN3 ! link
-        INTEGER, DIMENSION( MXMBCHR3 + 1 ),  
-     &           PARAMETER :: MBBEGL3 =               ! array of starts
-     &           ( / 1, SCCPOS3, VTPPOS3, LNKPOS3, POLPOS3 / )
+        INTEGER, DIMENSION( MXARCHR3 + 1 ),  
+     &           PARAMETER :: ARBEGL3 =               ! array of starts
+     &                              ( / 1, SCCPOS3, POLPOS3 / )
 
-        INTEGER, DIMENSION( MXMBCHR3 + 1 ),  
+        INTEGER, DIMENSION( MXARCHR3 + 1 ),  
+     &           PARAMETER :: ARENDL3 =               ! array of ends
+     &                     ( / FIPLEN3, SCCPOS3+SCCLEN3-1, ALLLEN3 / )
+
+C.........  Starts and ends of each field in mobile source definition
+        INTEGER, PARAMETER :: RWTPOS3 = FIPLEN3 + 1       ! roadway type
+        INTEGER, PARAMETER :: LNKPOS3 = RWTPOS3 + RWTLEN3 ! link
+        INTEGER, PARAMETER :: VTPPOS3 = LNKPOS3 + LNKLEN3 ! vehicle type
+        INTEGER, DIMENSION( MXMBCHR3 + 1 ),
+     &           PARAMETER :: MBBEGL3 =               ! array of starts
+     &           ( / 1, RWTPOS3, LNKPOS3, VTPPOS3, POLPOS3 / )
+
+        INTEGER, DIMENSION( MXMBCHR3 + 1 ),
      &           PARAMETER :: MBENDL3 =               ! array of ends
-     &           ( / FIPLEN3, VTPPOS3-1, LNKPOS3-1, POLPOS3-1,
+     &           ( / FIPLEN3, LNKPOS3-1, VTPPOS3-1, POLPOS3-1,
      &               ALLLEN3 / )
 
 C.........  Widths that depend on other widths

@@ -49,6 +49,7 @@ C.........  Input file format constants
      &                        ( / 'list  ', 'EMS-95', 'EPS   ', 
      &                            'NET   ', 'IDA   '            / )
 
+c note: these can be dynamic now b/c have a reader (rdstcy) and module (modstcy)
 C.........  Country codes and names
         INTEGER     , PARAMETER :: MXCNTRY3 = 3
         INTEGER     , PARAMETER :: CNTRYCD3( MXCNTRY3 ) =
@@ -56,8 +57,25 @@ C.........  Country codes and names
         CHARACTER*6 , PARAMETER :: CNTRYNM3( MXCNTRY3 ) = 
      &                         ( / 'US    ', 'CANADA', 'MEXICO' / )
 
+C.........  Separator for speciation "variables" (stored in description field)
+        CHARACTER*1, PARAMETER :: SPJOIN = '~'
+
 C.........  Packet names
         CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
+
+C.........  Environment variables
+        CHARACTER*16, PARAMETER :: WARNSET = 'SMK_MAXWARNING  '
+        CHARACTER*16, PARAMETER :: ERRSET  = 'SMK_MAXERROR    '
+
+C.........  Time zones
+        INTEGER    , PARAMETER :: MXTZONE = 11
+        INTEGER    , PARAMETER :: TZONNUM( MXTZONE ) = 
+     &                        ( / 0, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8 / )
+
+        CHARACTER*3, PARAMETER :: TZONNAM( MXTZONE ) =
+     &                        ( / 'GMT', 'ADT', 'AST', 'EDT', 'EST',
+     &                            'CDT', 'CST', 'MDT', 'MST', 'PDT',
+     &                            'PST' / )
 
 C.........  Variable dimensioning components, independent
 
@@ -77,8 +95,8 @@ C.........  Variable dimensioning components, independent
      &              , IOULEN3  = 16
      &              , MXINVARR = 12
      &              , NARPPOL3 = 6
-     &              , NARVAR3  = 5   ! note: this is not yet known
-     &              , NMBVAR3  = 9
+     &              , NARVAR3  = 4
+     &              , NMBVAR3  = 11
      &              , NMBPPOL3 = 1   
      &              , NPTPPOL3 = 7
      &              , NPTVAR3  = 12
@@ -92,6 +110,7 @@ C.........  Blanks definitions
         CHARACTER(LEN=IOVLEN3), PARAMETER:: IOVBLNK3 = ' '
         CHARACTER(LEN=PLTLEN3), PARAMETER:: PLTBLNK3 = ' '
         CHARACTER(LEN=POLLEN3), PARAMETER:: POLBLNK3 = ' '
+        CHARACTER(LEN=RWTLEN3), PARAMETER:: RWTBLNK3 = ' '
 
 C.........  Multi-purpose inventory variable name parameters
         CHARACTER(LEN=CPRTLEN3), PARAMETER:: CTLEFFRT = 'CE_'  

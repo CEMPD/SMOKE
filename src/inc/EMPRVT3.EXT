@@ -23,14 +23,23 @@ C.........  Width of source information strings
         PRIVATE :: LNKLEN3
         PRIVATE :: PLTLEN3
         PRIVATE :: POLLEN3
+        PRIVATE :: PRCLEN3
+        PRIVATE :: RWTLEN3
         PRIVATE :: SCCLEN3
         PRIVATE :: SICLEN3
+        PRIVATE :: VIDLEN3
         PRIVATE :: VTPLEN3
 
 C.........  Width of other global character strings 
         PRIVATE :: IOVLEN3
         PRIVATE :: SPNLEN3
         PRIVATE :: PLSLEN3
+
+C.........  Position within SCC of mobile roadway type and vehicle type ID
+        PRIVATE :: SRS
+        PRIVATE :: SRE
+        PRIVATE :: SVS
+        PRIVATE :: SVE 
 
 C.........  Variable dimensioning components and parameters, dependent...
 
@@ -43,13 +52,16 @@ C.........  Start of each field in source definitions
         PRIVATE :: CH5POS3
         PRIVATE :: POLPOS3
         PRIVATE :: ALLLEN3
-        PRIVATE :: PTBEGL3
-        PRIVATE :: PTENDL3
         PRIVATE :: SCCPOS3
+        PRIVATE :: RWTPOS3
         PRIVATE :: VTPPOS3
         PRIVATE :: LNKPOS3
+        PRIVATE :: ARBEGL3
+        PRIVATE :: ARENDL3
         PRIVATE :: MBBEGL3
         PRIVATE :: MBENDL3
+        PRIVATE :: PTBEGL3
+        PRIVATE :: PTENDL3
 
 C.........  Widths that depend on other widths
         PRIVATE :: FPLLEN3
