@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -79,17 +79,9 @@ C...........   SUBROUTINE ARGUMENTS:
 C...........   Derived type local variables
         TYPE ( CPACKET ) PKTINFO     ! packet information
 
-C...........   Logical names and unit numbers
-        INTEGER         ADEV         ! unit # for additive indices tmp file
-        INTEGER         CDEV         ! unit # for control indices tmp file
-        INTEGER         GDEV         ! unit # for CTG indices tmp file
-        INTEGER         LDEV         ! unit # for allowable indices tmp file
-
 C...........   Other local variables
         INTEGER         I, J, K      ! counters and indices
 
-c temp:
-        INTEGER   :: IDUM =0
         INTEGER         IOS       ! i/o error status
         INTEGER         IREC      ! line number
         INTEGER         IXSIC     ! index of SIC in master SIC list
