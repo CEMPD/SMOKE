@@ -122,6 +122,7 @@ OBJS2 = \
 OBJS3 = \
 	C1TO7.o \
 	C8TO12.o \
+	CABSHUM.o \
 	CALAER.o \
 	CALCUM.o \
 	CALEFR.o \
@@ -223,6 +224,7 @@ OBJS4 = \
 	GETATP.o \
 	GETATWAV.o \
 	GETAVG.o \
+	GETBARO.o \
 	GETBENZ.o \
 	GETCONV.o \
 	GETCPL.o \
@@ -244,6 +246,7 @@ OBJS4 = \
 	GETGLLRDC.o \
 	GETGRA.o \
 	GETHSACT.o \
+	GETHSGLL.o \
 	GETHVMT.o \
 	GETIMV.o \
 	GETIMY.o \
@@ -262,7 +265,6 @@ OBJS4 = \
 	GETOIC.o \
 	GETOLEF.o \
 	GETORE.o \
-	GETORR.o \
 	GETOXY.o \
 	GETPMDDR1.o \
 	GETPMDDR2.o \
@@ -275,6 +277,7 @@ OBJS4 = \
 	GETPRS.o \
 	GETPSC.o \
 	GETREG.o \
+	GETRELHUM.o \
 	GETRJN.o \
 	GETRVP.o \
 	GETSCF.o \
@@ -291,12 +294,14 @@ OBJS4 = \
 	GETTAM.o \
 	GETTEF.o \
 	GETTTC.o \
+	GETVORR.o \
 	GETVMT.o \
 	GETWAV.o \
 	GETWIN.o \
 	GETWRR.o \
 	GETXIM.o \
 	GETXMP.o \
+	GETXORR.o \
 	GET_8193.o \
 	GET_SULFUR.o \
 	GLL_WGT.o
@@ -450,7 +455,7 @@ mobile6: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) DRIVER
 mobile6.debug: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) DRIVER.o
 	$(FC) $(DBGFLAGS) -o $(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS_DEBUG)
 
-lib: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) SMKDRIVER.o
+lib: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBJS5) $(OBJS6) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS1) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS2)
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS3)
@@ -458,7 +463,7 @@ lib: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) SMKDRIVER.
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS5)
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS6) $(MODOBJS)
 
-debug: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) SMKDRIVER.o
+debug: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBJS5) $(OBJS6) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS1) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS2)
 	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS3)
