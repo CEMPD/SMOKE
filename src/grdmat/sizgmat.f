@@ -1,5 +1,6 @@
 
-        SUBROUTINE SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, NMATX )
+        SUBROUTINE SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, 
+     &                      MXCCL, NMATX, NMATXU )
 
 C***********************************************************************
 C  subroutine body starts at line 102
@@ -63,11 +64,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  INGRID
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: CATEGORY  !  source category
-        INTEGER     , INTENT (IN) :: NSRC      !  local number of sources
-        INTEGER     , INTENT(OUT) :: MXSCEL    !  max sources per cell   
-        INTEGER     , INTENT(OUT) :: MXCSRC    !  max cells per source   
-        INTEGER     , INTENT(OUT) :: NMATX     !  no. src-cell intersections   
+        CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
+        INTEGER     , INTENT (IN) :: NSRC      ! local number of sources
+        INTEGER     , INTENT(OUT) :: MXSCEL    ! max sources per cell   
+        INTEGER     , INTENT(OUT) :: MXCSRC    ! max cells per source   
+        INTEGER     , INTENT(OUT) :: MXCCL     ! max cells per county or link   
+        INTEGER     , INTENT(OUT) :: NMATX     ! no. src-cell intersections   
+        INTEGER     , INTENT(OUT) :: NMATXU    ! no. county-cell intrsctns for all sources
 
 C...........   Local arrays dimensioned by subroutine arguments
 C...........   Note that the NGRID dimension could conceivably be too small if 
@@ -83,8 +86,10 @@ C...........   Other local variables
         INTEGER         CCNT             ! counters for no. non-zero-surg cells
         INTEGER      :: CELLSRC = 0      ! cell number as source char
         INTEGER         COL              ! tmp column
+        INTEGER         FIP              ! tmp country/state/county code
         INTEGER         ID1, ID2         ! primary and 2ndary surg codes
         INTEGER         ISIDX            ! tmp surrogate ID code index
+        INTEGER         LFIP             ! previous country/state/county code
         INTEGER         NCEL             ! tmp number of cells
         INTEGER         ROW              ! tmp row
 
@@ -97,6 +102,7 @@ C...........   Other local variables
         CHARACTER*256   MESG        ! message buffer
 
         CHARACTER(LEN=LNKLEN3) :: CLNK = ' '   ! tmp link ID
+        CHARACTER(LEN=LNKLEN3) :: LLNK = ' '   ! previous link ID
 
         CHARACTER*16 :: PROGNAME = 'SIZGMAT' ! program name
 
@@ -115,9 +121,14 @@ C.........  Initialize the count of sources per cell
 
 C.........  Loop through sources
         MXCSRC  = 0
+        MXCCL   = 0
+        NMATXU  = 0
         CELLSRC = 0
+        LFIP = 0
+        LLNK = ' '
         DO S = 1, NSRC
 
+            FIP = IFIP( S )
             IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
             IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
 
@@ -197,10 +208,20 @@ C               of sources per cell.
                     CCNT = CCNT + 1
                 END IF
 
+C...............  Count all county/cell intersections for all sources.  This
+C                 is needed for ungridding matrix.
+                NMATXU = NMATXU + 1
+
             END DO    ! End loop on cells for this source
 
 C.............  Update the maximum number of cells per source
             IF( CCNT .GT. MXCSRC ) MXCSRC = CCNT
+
+C.............  Update the maximum number of cells per county or link
+            IF ( NCEL .GT. MXCCL ) MXCCL = NCEL
+
+            LFIP = FIP
+            LLNK = CLNK
  
         END DO        ! End loop on sources
 

@@ -1,6 +1,6 @@
 
-        SUBROUTINE OPENGMAT( NMATX, INVPROG, INVVERS, GNAME, UNAME,
-     &                       FDEV ) 
+        SUBROUTINE OPENGMAT( NMATX, NMATXU, UFLAG, INVPROG, INVVERS, 
+     &                       GNAME, UNAME, FDEV ) 
 
 C***********************************************************************
 C  subroutine body starts at line 95
@@ -66,6 +66,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NMATX   ! no. of source-cell intersections
+        INTEGER     , INTENT (IN) :: NMATXU  ! no. of county-cell intersections (for all sources)
+        LOGICAL     , INTENT (IN) :: UFLAG   ! true: open ungridding matrix
         CHARACTER(*), INTENT (IN) :: INVPROG ! inventory program
         CHARACTER(*), INTENT (IN) :: INVVERS ! inventory program version
         CHARACTER(*), INTENT(OUT) :: GNAME   ! gridding matrix logical name
@@ -87,7 +89,7 @@ C...........   Other local variables
         CHARACTER*16  COORD3D   ! coordinate system name
         CHARACTER*16  COORUN3D  ! coordinate system projection units
         CHARACTER*80  GDESC     ! grid description
-        CHARACTER*300 MESG      ! message buffer 
+        CHARACTER*256 MESG      ! message buffer 
 
         CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
 
@@ -146,8 +148,9 @@ C.........  Leave everything the same as for the gridding matrix, but a couple
 C           of header items
 
         UNAME  = 'NONE'
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+        IF( UFLAG ) THEN
 
+            NCOLS3D = NMATXU
             NROWS3D = NSRC
             NTHIK3D = NCOLS * NROWS
             FDESC3D( 1 ) = CATDESC // ' source ungridding matrix'

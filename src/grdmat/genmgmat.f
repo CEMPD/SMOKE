@@ -1,7 +1,8 @@
 
-        SUBROUTINE GENMGMAT( GNAME, UNAME, FDEV, MXSCEL, MXCSRC, NMSRC, 
-     &                       NMATX, NX, IX, CX, NU, IU, CU,
-     &                       NCOEF, CMAX, CMIN, NCOEFU, CMAXU, CMINU )
+        SUBROUTINE GENMGMAT( ENAME, GNAME, UNAME, FDEV, MXSCEL, MXCSRC, 
+     &                       MXCCL, NMSRC, NMATX, NMATXU, UFLAG, NX, 
+     &                       IX, CX, NU, IU, CU, NCOEF, CMAX, CMIN, 
+     &                       NCOEFU )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -77,41 +78,47 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        CRLF, ENVINT, FIND1, FINDC, INGRID, DSCM3GRD
 
 C...........   SUBROUTINE ARGUMENTS
+        CHARACTER(*), INTENT (IN) :: ENAME         ! inventory file name
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name
         CHARACTER(*), INTENT (IN) :: UNAME         ! ungridding mtx logical name
         INTEGER     , INTENT (IN) :: FDEV          ! surg codes report file
         INTEGER     , INTENT (IN) :: MXSCEL        ! max sources per cell
         INTEGER     , INTENT (IN) :: MXCSRC        ! max cells per source
+        INTEGER     , INTENT (IN) :: MXCCL         ! max cells per county or link
         INTEGER     , INTENT (IN) :: NMSRC         ! no. mobile sources
         INTEGER     , INTENT (IN) :: NMATX         ! no. source-cell intersects
+        INTEGER     , INTENT (IN) :: NMATXU        ! county-cell intrscts for all sources
+        LOGICAL     , INTENT (IN) :: UFLAG         ! true: create gridding matrix
         INTEGER     , INTENT(OUT) :: NX  ( NGRID ) ! no. srcs per cell
         INTEGER     , INTENT(OUT) :: IX  ( NMATX ) ! src IDs 
         REAL        , INTENT(OUT) :: CX  ( NMATX ) ! gridding coefficients
         INTEGER     , INTENT(OUT) :: NU  ( NMSRC ) ! no. cells per source
-        INTEGER     , INTENT(OUT) :: IU  ( NMATX ) ! cell numbers
-        REAL        , INTENT(OUT) :: CU  ( NMATX ) ! ungridding coefficients
+        INTEGER     , INTENT(OUT) :: IU  ( NMATXU ) ! cell numbers
+        REAL        , INTENT(OUT) :: CU  ( NMATXU ) ! ungridding coefficients
         INTEGER     , INTENT(OUT) :: NCOEF         ! no. of gridding coeffs
         INTEGER     , INTENT(OUT) :: CMAX          ! max no. of sources per cell
         INTEGER     , INTENT(OUT) :: CMIN          ! min no. of sources per cell
         INTEGER     , INTENT(OUT) :: NCOEFU        ! no. of ungridding coeffs
-        INTEGER     , INTENT(OUT) :: CMAXU         ! max no. of cells per source
-        INTEGER     , INTENT(OUT) :: CMINU         ! min no. of cells per source
 
 C...........   Local allocatable arrays...
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 
-        INTEGER, ALLOCATABLE :: IDXSRT( : )! sorting index
-        INTEGER, ALLOCATABLE :: IC    ( : )! cell IDs
-        INTEGER, ALLOCATABLE :: IS    ( : )! source IDs
-        REAL   , ALLOCATABLE :: CS    ( : )! facs (no adjustments), for ungrid
-        REAL   , ALLOCATABLE :: CSJ   ( : )! factors (with adjustments)
+        INTEGER, ALLOCATABLE :: IDXSRT ( : )! sorting index
+        INTEGER, ALLOCATABLE :: IDXSRT2( : )! 2nd sorting index
+        INTEGER, ALLOCATABLE :: IC     ( : )! cell IDs
+        INTEGER, ALLOCATABLE :: IS     ( : )! source IDs
+        INTEGER, ALLOCATABLE :: NCL    ( : )! position for county and/or link
+        REAL   , ALLOCATABLE :: CS     ( : )! facs (no adjustments), for ungrid
+        REAL   , ALLOCATABLE :: CSJ    ( : )! factors (with adjustments)
 
-C...........   Scratch Ungridding Matrix (subscripted by cell, source)
-  
-        INTEGER, ALLOCATABLE :: IT( :,: ) ! cell IDs for each source
-        REAL   , ALLOCATABLE :: CT( :,: ) ! ungridding coefficients
-        REAL   , ALLOCATABLE :: DN( : )   ! source normalization coefficient
+C...........   Scratch Ungridding Matrix information
+        INTEGER, ALLOCATABLE :: CLIDX     ( : ) ! county or link index by source
+        INTEGER, ALLOCATABLE :: CNT_CL    ( : ) ! cell count per county or link
+        INTEGER, ALLOCATABLE :: VMT_CELL( :,: ) ! cell numbers for county or link
+        REAL   , ALLOCATABLE :: VMT_FRAC( :,: ) ! VMT fraction for cell/county or cell/link
+        REAL   , ALLOCATABLE :: VMT_CL_INV( : ) ! inverse of VMT by county or link
+        INTEGER, ALLOCATABLE :: vmt_label ( : ) ! FIPS codes 
 
 C...........   Temporary array for flagging sources that are outside the
 C              domain
@@ -133,9 +140,11 @@ C...........   Temporary arrays for storing surrogate codes to use
 
 C...........   Other local variables
 
-        INTEGER         C, F, I, J, K, N, S !  indices and counters.
+        INTEGER         C, CNT, F, I, IDX, J, K, N, S !  indices and counters
+        INTEGER         LC, LN              !  "previous" values of these
 
-        INTEGER         COL      ! tmp column
+        INTEGER         CNTMAX   !  counter for storing correct max dimensions
+        INTEGER         COL      !  tmp column
         INTEGER         FIP      !  tmp country/state/county code
         INTEGER         ID1, ID2 !  tmp primary and secondary surg codes
         INTEGER         IOS      !  i/o status
@@ -144,10 +153,10 @@ C...........   Other local variables
         INTEGER         LFIP     !  cy/st/co code from previous iteration
         INTEGER         LNKEND   !  width of sourc info to end of link ID
         INTEGER         NCEL     !  tmp number of cells 
+        INTEGER         NCOULNK  !  number of counties and links
         INTEGER         NLKOGRD  !  no. of link sources outside the grid
-        INTEGER         NMAX     !  counter for storing correct max dimensions
         INTEGER         NNOSRG   !  no. of cy/st/co codes with no surrogates
-        INTEGER         ROW     ! tmp row
+        INTEGER         ROW      ! tmp row
         INTEGER         RWT      !  tmp roadway type
 
         REAL            ADJ, ADJC   ! tmp adjustment factors
@@ -155,6 +164,7 @@ C...........   Other local variables
         REAL            FRAC        ! tmp surrogate fraction
         REAL            XBEG, YBEG  ! tmp X and Y link start coordinates
         REAL            XEND, YEND  ! tmp X and Y link end   coordinates
+        real            sum
 
         LOGICAL      :: EFLAG = .FALSE.  ! true: error detected
         LOGICAL      :: LFLAG = .FALSE.  ! true: location data available
@@ -166,6 +176,7 @@ C...........   Other local variables
         CHARACTER*256   MESG      !  message buffer 
 
         CHARACTER(LEN=LNKLEN3)    CLNK   ! tmp link ID
+        CHARACTER(LEN=LNKLEN3)    LLNK   ! previous link ID
         CHARACTER(LEN=SRCLEN3)    CSRC   ! tmp source chars string
         CHARACTER(LEN=SRCLEN3)    CSRC2  ! tmp truncated source chars string
 
@@ -198,6 +209,14 @@ C.........  Store grid parameters for later processing
 
         END IF
 
+C.........  If ungridding matrix is needed, allocate memory for VMT, 
+C           and read the VMT data.
+        IF ( UFLAG ) THEN
+            ALLOCATE( VMT( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VMT', PROGNAME )
+            CALL RDMAPPOL( NSRC, 1, 1, 'VMT', VMT )
+        END IF
+
 C.........  Initialize number of sources per cell counter
         NX = 0   ! Array
 
@@ -208,16 +227,12 @@ C.........  Allocate memory for temporary gridding matrix and other
         CALL CHECKMEM( IOS, 'IC', PROGNAME )
         ALLOCATE( IS( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IS', PROGNAME )
+        ALLOCATE( NCL( NMATX ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NCL', PROGNAME )
         ALLOCATE( CS( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CS', PROGNAME )
         ALLOCATE( CSJ( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSJ', PROGNAME )
-        ALLOCATE( IT( MXCSRC, NMSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IT', PROGNAME )
-        ALLOCATE( CT( MXCSRC, NMSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CT', PROGNAME )
-        ALLOCATE( DN( NMSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'DN', PROGNAME )
         ALLOCATE( INDOMAIN( NMSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDOMAIN', PROGNAME )
         ALLOCATE( ACEL( NGRID ), STAT=IOS )
@@ -232,6 +247,12 @@ C.........  Allocate memory for temporary gridding matrix and other
         CALL CHECKMEM( IOS, 'SURGID1', PROGNAME )
         ALLOCATE( SURGID2( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SURGID2', PROGNAME )
+        IC  = 0
+        IS  = 0
+        NCL = 0
+        CS  = 0.
+        CSJ = 0.
+        FIPNOSRG = 0
         SURGID1 = 0   ! array
         SURGID2 = 0   ! array
 
@@ -251,11 +272,13 @@ C.......       sixth case:   fallback default
 
         J       = 0
         LFIP    = 0
+        LLNK    = ' '
         LNKEND  = VIDPOS3 - 1
         NNOSRG  = 0
         NLKOGRD = 0
         ADJ     = 1.    !  temporary
         ADJC    = 1.    !  temporary
+        N       = 0
 
         DO S = 1, NSRC
             
@@ -267,6 +290,9 @@ C.......       sixth case:   fallback default
 
 C.............  Initialize sources as being in the domain
             INDOMAIN( S ) = .TRUE.
+
+C.............  Count the number of county and links
+            IF ( FIP .NE. LFIP .OR. CLNK .NE. LLNK ) N = N + 1            
 
 C.............  Determine if x/y location is available
             XYSET = .FALSE.
@@ -287,6 +313,7 @@ C.....................  Check that the maximum number of sources per cell is ok
                     IF ( J .LE. NMATX ) THEN
                 	IS ( J ) = S
                         IC ( J ) = C
+                        NCL( J ) = N
                 	CS ( J ) = 1.0
                     END IF
 
@@ -394,6 +421,7 @@ C                       is okay
                         IDXSRT( J ) = J
                         IS    ( J ) = S
                         IC    ( J ) = C
+                        NCL   ( J ) = N
                         CS    ( J ) = AFAC( K )
                         CSJ   ( J ) = ADJ * ADJC * AFAC( K )
                     END IF
@@ -508,6 +536,7 @@ C                       is okay
                         IDXSRT( J ) = J
                         IS    ( J ) = S
                         IC    ( J ) = C
+                        NCL   ( J ) = N
                         CS    ( J ) = FRAC
                         CSJ   ( J ) = ADJ * ADJC * FRAC
                     END IF
@@ -515,6 +544,9 @@ C                       is okay
                 END IF  ! if surrogate fraction > 0.
 
             END DO    !  end of loop on cells K for this FIP
+
+            LFIP = FIP
+            LLNK = CLNK
 
         END DO        !  end loop on sources S, computing gridding matrix.
         
@@ -533,6 +565,7 @@ C.........  Abort if error
         END IF
 
         NCOEF = J
+        NCOULNK = N
 
 C.........  Abort if overflow occurred
         IF ( NCOEF .GT. NMATX ) THEN   
@@ -591,111 +624,177 @@ C.........  Write output surrogates codes
             WRITE( FDEV,93360 ) S, SURGID1( S ), SURGID2( S )
         END DO
 
+C.........  Deallocate memory that is no longer needed
+        DEALLOCATE( CSJ, IDXSRT )
+
 C............................................................................
 C..........   Generate ungridding matrix ....................................
 C............................................................................
 
-C.........  Initialize ungridding matrix related arrays
-        NU = 0   ! array
-        DN = 0.  ! array
+C........  If we need to create the ungridding matrix...
+        IF( UFLAG ) THEN
 
-C.........  Create renormalization factors for each source
-        DO K = 1, NCOEF  ! Loop through cell-src intersections
+C............  Create a new sorting index
+            ALLOCATE( IDXSRT2( NMATX ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IDXSRT2', PROGNAME )
 
-            J = IDXSRT( K ) 
-            S = IS( J )                          
-            DN( S ) = DN( S ) + CS( J )
+            DO J = 1, NMATX
+                IDXSRT2( J ) = J
+            END DO
 
-        END DO
+C.........  Sort the scratch gridding matrix arrays to organize by county/link
+C           and then cell
+            CALL SORTI2( NCOEF, IDXSRT2, NCL, IC )
 
-C.........  Pre-divide normalization factors - make sure not zero
-C.........  Have already given notes and warnings about zero-surrogates
-        DO S = 1, NMSRC
+C..........  Allocate memory for county/link VMT within grid
+            ALLOCATE( CLIDX( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CLIDX', PROGNAME )
+            ALLOCATE( CNT_CL( NCOULNK ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CNT_CL', PROGNAME )
+            ALLOCATE( VMT_CELL( NCOULNK,MXCCL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VMT_CELL', PROGNAME )
+            ALLOCATE( VMT_FRAC( NCOULNK,MXCCL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VMT_FRAC', PROGNAME )
+            ALLOCATE( VMT_CL_INV( NCOULNK ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VMT_CL_INV', PROGNAME )
+            ALLOCATE( vmt_label( NCOULNK ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'vmt_label', PROGNAME )
+            CLIDX       = 0    ! array
+            CNT_CL      = 0    ! array
+            VMT_CELL    = 0    ! array
+            VMT_FRAC    = 0.   ! array
+            VMT_CL_INV  = 0.   ! array
+            vmt_label = 0
 
-            IF( DN( S ) .GT. 0. ) DN( S ) = 1. / DN( S )
+C..........  Compute county/link VMT total within grid
+            DO K = 1, NCOEF
+                J = IDXSRT2( K )
+                S = IS ( J )
+                N = NCL( J )
+                IF ( N .EQ. 0 ) CYCLE   ! skip records outside the grid
 
-        END DO
+C...............  County and/or link total VMT
+                if ( s .gt. 0 ) then
+                    vmt_label( n ) = ifip( s )
+                else
+                    vmt_label( n ) = 0
+                endif
+                VMT_CL_INV( N ) = VMT_CL_INV( N ) + VMT(S) * CS(J)
 
-C.........  Renormalize and Transpose ((IS,CS) into scratch arrays (IT,CT):
-        NMAX = -1
-        DO K = 1, NCOEF  ! Loop through cell-src intersections
+            END DO       ! end loop to compute VMT totals
 
-            J = IDXSRT( K ) 
-            C = IC( J )
-            S = IS( J )
+C..........  Inverse of county and/or link total VMT
+            write(87,*) ' N   IFIP  County VMT in grid [miles/yr]'
+            DO N = 1, NCOULNK
+                write (87,*) n, vmt_label(n), vmt_cl_inv( n ) 
+                IF( VMT_CL_INV( N ) .GT. 0. ) VMT_CL_INV( N ) = 
+     &                                             1. / VMT_CL_INV( N )
+            END DO
 
-            N = NU( S ) + 1
+C..........  Loop through cell-source intersections and compute county total
+C            VMT by cell/source over County total VMT
+            LN = -1
+            LC = -1
+            CNTMAX = 0
+            DO K = 1, NCOEF
+   
+                J   = IDXSRT2( K ) 
+                C   = IC( J )
+                S   = IS( J )
+                N   = NCL( J )
+                IF ( N .EQ. 0 ) CYCLE   ! skip records outside the grid
 
-C.............  Ensure that the number of cells per source is okay
-            IF ( N .LE. MXCSRC ) THEN
-                IT( N,S ) = C
-                CT( N,S ) = DN( S ) * CS( J )
+                CLIDX( S ) = N
 
-C.............  Keep track of the maximum sources per cell for reporting
-            ELSE
-                IF( N .GT. NMAX ) NMAX = N
-            END IF
+                IF ( N .NE. LN ) CNT = 0
+                IF ( C .NE. LC ) CNT = CNT + 1
+                IF( CNT .LE. MXCCL ) THEN
+                    CNT_CL  ( N )     = CNT
+                    VMT_CELL( N,CNT ) = C
+                    VMT_FRAC( N,CNT ) =  VMT_FRAC( N,CNT ) + 
+     &                                   VMT(S) * CS(J) * VMT_CL_INV(N)
+                END IF
+                IF( CNT > CNTMAX ) THEN
+                    CNTMAX = CNT
+                END IF 
+                LN = N
+                LC = C
+            END DO
 
-            NU( S ) = N
+        END IF
 
-        END DO
-
-        IF( NMAX .GT. MXCSRC ) THEN
+        IF( CNTMAX .GT. MXCCL ) THEN
             WRITE( MESG,94010 )
      &       'INTERNAL ERROR: Ungridding matrix not written'
      &       // CRLF() // BLANK10 //
      &       'Arrays would have overflowed.' 
      &       // CRLF() // BLANK10 // 
-     &       'Current maximum cells per source (MXCSRC) =', MXCSRC, '.'
-     &       // CRLF() // BLANK10 // 
-     &       'Actual  maximum cells per source          =', NMAX  , '.'
+     &       'Current maximum cells per county/link (MXCCL) =', MXCCL,
+     &       '.' // CRLF() // BLANK10 // 
+     &       'Actual  maximum cells per county/link    =', CNTMAX  , '.'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
         END IF
 
-C.........  Compress matrix into I/O representation from scratch 
-C           representation and compute statistics.
+C.........  Create ungridding matrix. The factors have been created so that any 
+C           non-link sources within a county have the same factors used for
+C           computing temperatures.  This means that a source (e.g., urban 
+C           interstates) that appear in only some cells in the county will
+C           use temperatures that are based on all sources in the county).
+C           The link sources within a county have different factors than the
+C           non-link sources, and these use only the cells that the link intersects.
+
+        write(88,*) '  source     N Cnt  Col  Row UngridFactor'
         K  = 0
-        DO I = 1, NU( 1 )
-            K = K + 1
-            IU( K ) = IT( I,1 )
-            CU( K ) = CT( I,1 )
-        END DO
-                   
-        CMAXU = NU( 1 )
-        CMINU = CMAXU
-        DO S = 2, NMSRC
+        ln = -1
+        DO S = 1, NSRC
+            N = CLIDX( S )
 
-            J = NU( S )
-            IF ( J .GT. CMAXU ) THEN
-                CMAXU = J
-            ELSE IF ( J .LT. CMINU ) THEN
-                CMINU = J
+C............  Skip sources that are outside the grid
+            IF( N .EQ. 0 ) THEN
+                NU( S ) = 0
+                CYCLE
+
+C............  Store the number of cells per source as the number of cell 
+C              intersections with the county or link
+            ELSE
+                NU( S ) = CNT_CL( N )
             END IF
-                
-            DO I = 1, J
+
+            sum = 0
+C............  Store the cell numbers and VMT fractions into the ungridding matrix
+            DO I = 1, CNT_CL( N )
                 K = K + 1
-                IF( K .LE. NMATX ) THEN
-                    IU( K ) = IT( I,S )
-                    CU( K ) = CT( I,S )
-                END IF
+                IU( K ) = VMT_CELL( N,I )
+                CU( K ) = VMT_FRAC( N,I )
+                row = iu(k) / ncols + 1
+                col = iu(k) - (row-1) * ncols
+                if( cu(k) .ne. 0 ) 
+     &              write (88,'(I8,I6,I4,I5,I5,E12.5)' ) 
+     &                     s,n,i,col,row,cu(k)
+                sum = sum + cu(k)
             END DO
-
+            write( 88,'(40X, E12.5)' ) sum
+            if ( sum .NE. 0. .AND.
+     &           ( sum > 1.0001 .or. sum < 0.9999 ) ) then
+                print *,'warning: sum=', sum
+            endif
+            ln = 0
+            
         END DO
-
         NCOEFU = K
 
 C.........  Check for overflow
-        IF( NCOEFU .GT. NMATX ) THEN
+        IF( NCOEFU .GT. NMATXU ) THEN
 
             WRITE( MESG,94010 )
      &       'INTERNAL ERROR: Ungridding matrix not written'
      &       // CRLF() // BLANK10 //
      &       'Arrays would have overflowed.' 
      &       // CRLF() // BLANK10 // 
-     &       'Current cell-source intersections (NMATX) =', NMATX, '.'
+     &       'Current cell-source intersections (NMATXU) =', NMATXU, '.'
      &       // CRLF() // BLANK10 // 
-     &       'Actual  cell-source intersections         =', NCOEFU, '.'
+     &       'Actual  cell-source intersections          =', NCOEFU, '.'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
@@ -716,7 +815,7 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, NLKOGRD, FIPNOSRG, LKOGRD )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( IS, CS, CSJ, IT, CT, DN, INDOMAIN )
+        DEALLOCATE( IS, CS, NCL, IDXSRT2, INDOMAIN )
         DEALLOCATE( ACEL, AFAC, FIPNOSRG, LKOGRD )
 
         RETURN

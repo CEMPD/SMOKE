@@ -113,19 +113,19 @@ c        INTEGER         ADEV    !  for adjustments file
 
 C...........   Other local variables
         
-        INTEGER         L1, L2, K, S !  indices and counters.
+        INTEGER         I, L1, L2, K, S !  indices and counters.
 
         INTEGER         COL     ! tmp column
         INTEGER         CMAX    ! max number srcs per cell
         INTEGER         CMIN    ! min number srcs per cell
-        INTEGER         CMAXU   ! max number cells per source
-        INTEGER         CMINU   ! min number cells per source
         INTEGER         ENLEN   ! length of the emissions inven name
         INTEGER         IOS     ! i/o status
         INTEGER         NK      ! Number of gridding coefficients 
         INTEGER         NKU     ! Number of ungridding coefficients
         INTEGER         NINVARR ! no. of inventory characteristics
         INTEGER         NMATX   ! no cell-source intersections
+        INTEGER         NMATXU  ! no county-source intrsctns for all sources
+        INTEGER         MXCCL   ! max no cells per county or link
         INTEGER         MXCSRC  ! max no cells per source
         INTEGER         MXSCEL  ! max no sources per cell
         INTEGER         ROW     ! tmp row
@@ -436,6 +436,18 @@ C           convert point source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOCA, YLOCA )
         END IF
 
+C.........  Determine if ungridding matrix is needed
+        I = INDEX1( 'VMT', NIPPA, EANAM )
+        IF( I .GT. 0 ) THEN
+            UFLAG = .TRUE.
+            MESG = 'NOTE: VMT detected in inventory, ungridding matrix '
+     &             //'will be created'
+        ELSE
+            MESG = 'NOTE: VMT not detected in inventory, ungridding ' //
+     &             'matrix will NOT be created'
+        END IF
+        CALL M3MSG2( MESG )
+
 C.........  Depending on source category, convert coordinates, determine size
 C           of gridding matrix, and allocate gridding matrix.
 
@@ -444,7 +456,8 @@ C           of gridding matrix, and allocate gridding matrix.
         CASE( 'AREA' )
 
 C.............  Determine sizes for allocating area gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, NMATX )
+            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, 
+     &                    MXCCL, NMATX, NMATXU )
 
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
@@ -459,14 +472,16 @@ C.............  Convert mobile source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOC2, YLOC2 )
 
 C.............  Determine sizes for allocating mobile gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, NMATX )
+            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC,  
+     &                    MXCCL, NMATX, NMATXU )
  
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
 
 C.............  Allocate memory for mobile source ungridding matrix
-            ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
+            IF( .NOT. UFLAG ) NMATXU = 1
+            ALLOCATE( UMAT( NSRC + 2*NMATXU ), STAT=IOS )
             CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
 
         CASE( 'POINT' )
@@ -498,8 +513,8 @@ C.........  Abort of there are no source-cell intersections
 C.........  Get file names; open output gridding matrix (and ungridding matrix
 C           for mobile) using grid characteristics from DSCM3GRD() above        
 C.........  Also open report file 
-        CALL OPENGMAT( NMATX, IFDESC2, IFDESC3, GNAME, UNAME, RDEV )
-        UFLAG = ( UNAME .NE. 'NONE' )
+        CALL OPENGMAT( NMATX, NMATXU, UFLAG, IFDESC2, IFDESC3, GNAME, 
+     &                 UNAME, RDEV )
 
         CALL M3MSG2( 'Generating gridding matrix...' )
 
@@ -518,11 +533,11 @@ C           is done so the sparse i/o api format can be used.
 
         CASE( 'MOBILE' )
 
-            CALL GENMGMAT( GNAME, UNAME, RDEV, MXSCEL, MXCSRC, NSRC, 
-     &                     NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
-     &                     GMAT( NGRID+NMATX+1 ), UMAT( 1 ), 
-     &                     UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
-     &                     NK, CMAX, CMIN, NKU, CMAXU, CMINU )
+            CALL GENMGMAT( ENAME, GNAME, UNAME, RDEV, MXSCEL, MXCSRC, 
+     &                     MXCCL, NSRC, NMATX, NMATXU, UFLAG, GMAT( 1 ),
+     &                     GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ), 
+     &                     UMAT( 1 ), UMAT( NSRC+1 ), 
+     &                     UMAT( NSRC+NMATXU+1 ),NK, CMAX, CMIN, NKU )
 
         CASE( 'POINT' )
    
@@ -556,11 +571,7 @@ C.........  Report statistics for ungridding matrix
             CALL M3MSG2( 'UNGRIDDING-MATRIX statistics:' )
 
             WRITE( MESG,94010 ) 
-     &        'Total number of coefficients   :', NKU ,
-     &        CRLF() // BLANK5 //
-     &        'Max  number of cells per source:', CMAXU,
-     &        CRLF() // BLANK5 //
-     &        'Min  number of cells per source:', CMINU
+     &        'Total number of coefficients   :', NKU 
 
             WRITE( MESG, 94020 ) MESG( 1:LEN_TRIM( MESG ) ) //
      &        CRLF() // BLANK5 //
