@@ -36,6 +36,9 @@ C
 C***************************************************************************
 
 C...........   MODULES for public variables
+C...........   This module is the inventory arrays
+        USE MODSOURC
+
 C...........   This module contains the information about the source category
         USE MODINFO
 
@@ -51,63 +54,95 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2             CRLF
-        LOGICAL                 ENVYN
-        LOGICAL                 GETYN
+        INTEGER                 ENVINT
         INTEGER                 GETIFDSC
         INTEGER                 INDEX1
         INTEGER                 PROMPTFFILE
         CHARACTER(LEN=NAMLEN3)  PROMPTMFILE
         INTEGER                 STR2INT
 
-        EXTERNAL CRLF, ENVYN, GETYN, GETIFDSC,
+        EXTERNAL CRLF, ENVINT, GETIFDSC,
      &           INDEX1, PROMPTFFILE, PROMPTMFILE, STR2INT
 
-C...........   LOCAL VARIABLES and their descriptions:
+C...........  LOCAL PARAMETERS and their descriptions:
+
+        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+
+C...........  LOCAL VARIABLES and their descriptions:
 
 C.........  Array that contains the names of the inventory variables needed 
 C           for this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
 
-C...........  Inventory file variable names
-        CHARACTER(LEN=IOVLEN3) :: IVNAMES( MXVARS3D )
+C...........  ALLOCATABLE VARIABLES and their decriptions...
 
-C...........  Variable names in matrices per inventory pollutant
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: CPVNAM( :,: )
+C...........  Variables for each control/projection matrix
+        INTEGER, ALLOCATABLE :: CCNTRA ( : ) ! unsorted original position
+        INTEGER, ALLOCATABLE :: CINDXA ( : ) ! sorting index
+        INTEGER, ALLOCATABLE :: CTYPEA ( : ) ! unsorted control matrix type code
+        INTEGER, ALLOCATABLE :: CTYPE  ( : ) ! sorted control matrix type code
+        INTEGER, ALLOCATABLE :: IDXALL ( : ) ! index of matrixes with "All"
+        INTEGER, ALLOCATABLE :: NCPVARS( : ) ! sorted no. variables
+
+        CHARACTER(LEN=NAMLEN3), ALLOCATABLE :: CNAMEA ( : )  ! unsort mtx names
+        CHARACTER(LEN=NAMLEN3), ALLOCATABLE :: CNAME  ( : )  ! sorted mtx names
+        CHARACTER(LEN=NAMLEN3), ALLOCATABLE :: CPVNAMS( :,: )! mtx var names
+
+C...........  Control matrix factors
+        REAL, ALLOCATABLE :: CFAC   ( : )  ! by-variable factors
+        REAL, ALLOCATABLE :: CFACALL( :,: )  ! all-variable factors
+
+C...........  Temporary IDA pollutant files unit nos.
+        INTEGER, ALLOCATABLE :: TDEV( : )
+
+C...........  FIXED DIMENSION VARIABLES and their descriptions...
+
+C...........  Inventory file variable names
+        CHARACTER(LEN=IOVLEN3) :: IVNAMES( MXVARS3 )
 
 C...........  Matrix variables not matching any inventory pollutants
-        CHARACTER(LEN=IOVLEN3) CVODDLST( MXVARS3D ) 
+        CHARACTER(LEN=IOVLEN3) CVODDLST( MXVARS3 ) 
 
 C...........   File units and logical/physical names
 
-        INTEGER                 CDEV !  tmp IDA source chars file unit no
-        INTEGER                 DDEV !  Unit number for output IDA fmt'd file
-        INTEGER                 LDEV !  log-device
-        INTEGER                 SDEV !  for ASCII input inventory file
-        ALLOCATABLE, INTEGER :: TDEV( : ) ! tmp IDA pollutant files unit nos.
+        INTEGER  :: DDEV = 0 !  unit no. for output IDA emissions file
+        INTEGER  :: VDEV = 0 !  unit no. for output IDA activity file
+        INTEGER  :: LDEV = 0 !  log-device
+        INTEGER  :: SDEV = 0 !  for ASCII input inventory file
+        INTEGER  :: ZDEV = 0 !  for country/state/county file
 
-        CHARACTER(LEN=NAMLEN3)    CNAMEA( MXCMAT )! unsorted cntl/proj matrices
-        CHARACTER(LEN=NAMLEN3)    CNAME ( MXCMAT )! sorted   cntl/proj matrices
-        CHARACTER(LEN=NAMLEN3)    ENAME      !  emis input inven logical name
+        CHARACTER(LEN=NAMLEN3) :: ANAME = ' '! inven ASCII input logical name
+        CHARACTER(LEN=NAMLEN3) :: ENAME = ' '!  emis input inven logical name
         CHARACTER(LEN=NAMLEN3)    MNAME      !  tmp control/proj matrix name
         CHARACTER(LEN=NAMLEN3) :: ONAME = ' '!  emis output inven logical name
 
 C...........   Other local variables
                                 
-        INTEGER         S, I, J, K !  counters and indices
-        INTEGER         L1, L2           !  counters and indices
+        INTEGER         I, IS, J, K, K1, K2, L, L1, L2, 
+     &                  LM, M, N, S, V                  !  counters and indices
 
         INTEGER         IOS        ! i/o status
         INTEGER         IYEAR      ! inventory year
+        INTEGER      :: NCALL  = 0 ! number of variables applying to "all"
+        INTEGER         NCMAT      ! no. control matrices
         INTEGER         NINVARR    ! no. of inventory characteristics
         INTEGER         NNPVAR     ! no. non-pollutant inventory variables
         INTEGER      :: PYEAR  = 0 ! projected inventory year
+        INTEGER      :: PBYEAR = 0 ! projection matrix base year
         INTEGER      :: PPYEAR = 0 ! projection matrix destination year
 
-        LOGICAL         CFLAG   !  velocity recalc: TRUE iff VELOC_RECALC = Y
-        LOGICAL         DFLAG   !  input verification:  TRUE iff ERROR
-        LOGICAL      :: EFLAG = .FALSE.  !  TRUE iff ERROR
+        REAL            ALLFAC     ! tmp "all" control factor
+        REAL            PSFAC      ! tmp pollutant-source control factor
 
+        LOGICAL      :: EFLAG   = .FALSE.  ! true: error found
+        LOGICAL      :: IDAFLAG = .FALSE.  ! true: IDA output file(s) 
+        LOGICAL      :: PFLAG   = .FALSE.  ! true: project matrix encountered
+
+        CHARACTER*16    EVNAME  !  tmp environment variable name
+        CHARACTER*100   BUFFER  !  text buffer
         CHARACTER*300   MESG    !  message buffer
+
+        CHARACTER(LEN=IOVLEN3) :: VARBUF  ! tmp variable name
 
         CHARACTER*16 :: PROGNAME= 'GRWINVEN' !  program name
 
@@ -143,17 +178,21 @@ C.........  Prompt for and open I/O API inventory input file
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
-        ENLEN = LEN_TRIM( ENAME )
 
 C.........  Prompt for and open ASCII inventory input file
         SDEV = PROMPTFFILE( 
      &         'Enter logical name for the ASCII INVENTORY file',
      &         .TRUE., .TRUE., ANAME, PROGNAME )
 
+        ZDEV = PROMPTFFILE(
+     &         'Enter logical name for COUNTRY, STATE, AND ' //
+     &         'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+
 C.........  Get header description of inventory file, error if problem
         IF( .NOT. DESC3( ENAME ) ) THEN
+            L2 = LEN_TRIM( ENAME )
             MESG = 'Could not get description of file "' //
-     &             ENAME( 1:ENLEN ) // '"'
+     &             ENAME( 1:L2 ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.........  Otherwise, store source-category-specific header information, 
@@ -165,7 +204,7 @@ C           results are stored in module MODINFO.
             CALL GETSINFO
 
 C.............  Store varible names
-            IVNAMES = VNAME3D( 1:NVARS3D )
+            IVNAMES( 1:NVARS3D ) = VNAME3D( 1:NVARS3D )
 
 C.............  Check to see if the file has already been projected, and if
 C               so, update the inventory year and print a warning
@@ -186,16 +225,11 @@ C               a projection matrix is not being used.
             END IF 
          END IF
 
-C.........  Depending on source category, set number of non-pollutant 
-C           inventory variables
-        SELECT CASE( CATEGORY )
-        CASE( 'AREA' )
-            NNPVAR = NARVAR3
-        CASE( 'MOBILE' )
-            NNPVAR = NMBVAR3
-        CASE( 'POINT' )
-            NNPVAR = NPTVAR3
-        END SELECT
+C.........  Read country, state, and county file for country codes
+        CALL RDSTCY( ZDEV, 1, 0 )
+
+C.........  Set number of non-pollutant inventory variables
+        NNPVAR = NVARS3D - NIPOL * NPPOL - NIACT * NPACT
 
 C.........  Allocate memory based on number of control/projection matrices
         ALLOCATE( CNAMEA( NCMAT ), STAT=IOS )
@@ -212,6 +246,8 @@ C.........  Allocate memory based on number of control/projection matrices
         CALL CHECKMEM( IOS, 'CTYPE', PROGNAME )
         ALLOCATE( NCPVARS( NCMAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NCPVARS', PROGNAME )
+        ALLOCATE( IDXALL( NCMAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IDXALL', PROGNAME )  
         ALLOCATE( CPVNAMS( MXVARS3, NCMAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CPVNAMS', PROGNAME )
 
@@ -223,6 +259,7 @@ C.............  Initialize arrays
         CNAME   = ' '  ! array
         CTYPE   = 0    ! array
         NCPVARS = 0    ! array
+        IDXALL  = 0    ! array
         CPVNAMS = ' '  ! array
 
 C.........  Loop through potential control and projection matrices
@@ -233,8 +270,8 @@ C.............  Generate default name
             WRITE( MNAME, '(A5,I2.2)' ) CRL // 'CMAT', I
 
 C.............  Prompt for name 
-            WRITE( MESG, 94010 ) 'Enter logical name for ' //
-     &             ' CONTROL/PROJECTION MATRIX file', I
+            WRITE( MESG, 94100 ) 'Enter logical name for ' //
+     &             ' PROJECTION or CONTROL MATRIX file', I
 
             MNAME = PROMPTMFILE( MESG, FSREAD3, MNAME, PROGNAME )
 
@@ -257,7 +294,7 @@ C.............  Compare number of sources in matrix to NSRC
             CALL CHKSRCNO( CATDESC, MNAME, NROWS3D, NSRC, EFLAG )
 
 C.............  Store number of variables in current matrix
-            NCPVAR( I ) = NVARS3D
+            NCPVARS( I ) = NVARS3D
 
 C.............  Interpret variable names and compare to pollutant list.  Keep
 C               track of those that are not in the inventory file.
@@ -271,12 +308,19 @@ C               track of those that are not in the inventory file.
 
 C.................  Count variables that apply to all pollutants and activities
                 IF( VARBUF .EQ. 'all'  .OR. 
-     &              VARBUF .EQ. 'PFAC'      ) THEN
+     &              VARBUF .EQ. 'pfac'      ) THEN
                     M = M + 1
 
                 ELSE IF( K .EQ. -1 ) THEN   ! Store names don't match with EANAM
                     N = N + 1
                     CVODDLST( N ) = VARBUF
+
+                    L2 = LEN_TRIM( VARBUF )
+                    WRITE( MESG,94010 ) 'WARNING: factors in matrix', I, 
+     &                 'for variable "' // VARBUF( 1:L2 ) //
+     &                 '"' // CRLF() // BLANK10 // 'do not apply to ' //
+     &                 'inventory.' 
+                    CALL M3MSG2( MESG )
 
                 END IF
 
@@ -289,18 +333,6 @@ C               activities
      &                              I, 'apply to the inventory'
                 CALL M3MSG2( MESG )
 
-C.............  Report pollutant-specific factors that do not match pollutants
-C               in inventory. Do inside matrix loop so can report by matrix.
-            ELSE IF( N .GT. 0 ) THEN
-                WRITE( MESG,94010 ) 'WARNING: in matrix', I, 
-     &                 'some factors do not apply to the inventory:'
-                CALL M3MSG2( MESG )
-
-                DO L = 1, N
-                    MESG = BLANK5 // CVODDLST( L )
-                    CALL M3MSG2( MESG )
-                END DO
-
             END IF
 
 C.............  When a projection matrix is encountered...
@@ -311,8 +343,8 @@ C                   is not allowed)
                 IF( PFLAG ) THEN
 
                     EFLAG = .TRUE.
-                    MESG = 'ERROR: More than one projection matrix ' //
-     &                     'is detected with matrix "' // 
+                    MESG = 'ERROR: Multiple projection matrices ' //
+     &                     'encountered at matrix "' // 
      &                     MNAME( 1:LM ) // '"'
                     CALL M3MSG2( MESG )
                     CYCLE
@@ -378,23 +410,23 @@ C           and/or activities
         CALL CHECKMEM( IOS, 'CFACALL', PROGNAME )
         ALLOCATE( CFAC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFAC', PROGNAME )
-        ALLOCATE( IDXALL( NCMAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IDXALL', PROGNAME )  
 
 C.........  Read in control matrix variables that are "all".  First, store
 C           position of data in storage array, then read.
+C.........  NOTE - lowercase variable names are used to permit pollutants
+C           named "ALL" and "PFAC"
         J = 0
         DO I = 1, NCMAT
 
-            K1 = INDEX1( 'all' , NCPVAR( I ), CPVNAM( 1,I ) )
-            K2 = INDEX1( 'PFAC', NCPVAR( I ), CPVNAM( 1,I ) )
+            K1 = INDEX1( 'all' , NCPVARS( I ), CPVNAMS( 1,I ) )
+            K2 = INDEX1( 'pfac', NCPVARS( I ), CPVNAMS( 1,I ) )
             IF( K1 .GT. 0 .OR. K2 .GT. 0 ) THEN
 
                 J = J + 1
                 IDXALL( I ) = J
 
                 IF( K1 .GT. 0 ) VARBUF = 'all'
-                IF( K2 .GT. 0 ) VARBUF = 'PFAC'
+                IF( K2 .GT. 0 ) VARBUF = 'pfac'
                 IF( .NOT. READ3( CNAME( I ), VARBUF, ALLAYS3, 
      &                           0, 0, CFACALL( 1,J )         ) ) THEN
 
@@ -423,9 +455,10 @@ C.........  Set inventory variables to read depending on source category
         SELECT CASE ( CATEGORY )
 
         CASE ( 'AREA' )
-            NINVARR = 6
-            IVARNAMS( 5 ) = 'CSCC'
-            IVARNAMS( 6 ) = 'CSOURC'
+            NINVARR = 7
+            IVARNAMS( 5 ) = 'CELLID'
+            IVARNAMS( 6 ) = 'CSCC'
+            IVARNAMS( 7 ) = 'CSOURC'
 
         CASE ( 'MOBILE' )
             NINVARR = 15
@@ -462,7 +495,9 @@ C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Open output file(s)
-        CALL OPENGRWOUT( ENAME, PPYEAR, ONAME, DDEV )
+        CALL OPENGRWOUT( ENAME, PPYEAR, ONAME, DDEV, VDEV )
+
+        IDAFLAG = ( DDEV .GT. 0 .OR. VDEV .GT. 0 )
 
 C.........  Update the year of the data if the projection year is non-zero
         IF( PPYEAR .NE. 0 ) THEN
@@ -479,34 +514,36 @@ C           be identical to that of the original inventory.
         END IF
 
 C.........  Processing when IDA output is needed...
-        IF( DDEV .NE. 0 ) THEN
+        IF( IDAFLAG ) THEN
 
 C.............  Allocate memory for unit numbers for IDA temporary files
             ALLOCATE( TDEV( NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TDEV', PROGNAME )
             TDEV = 0   ! array
-
-C.............  Write IDA formatted source characteristics to a temporary file
-            CALL WRIDACHR( CDEV )
-c STOPPED HERE: note: need to update this routine to write to temporary file
  
-        END IF
+C.........  If no IDA output, deallocate memory for source characteristics
+        ELSE
 
-C.........  Deallocate memory for source characteristics
-        CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
+            CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
+
+        END IF
 
 C.........  Allocate memory for pollutant- and activity-specific data (one
 C           pollutant or activity at a time)
-        CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .TRUE., NSRC, NSRC, NPPOL )
+        CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .TRUE., NSRC, 
+     &               NSRC, NPPOL )
+
+        MESG = 'Processing inventory data...'
+        CALL M3MSG2( MESG )
 
 C.........  Loop through inventory pollutants and activities
-        DO J = 1, NIPPA
+        DO V = 1, NIPPA
 
-            VARBUF = EANAM( J )
+            VARBUF = EANAM( V )
 
 C.............  Read inventory pollutant or activity from I/O API file
-            IS = NNPVAR + ( J-1 ) * NPPOL + 1
-            CALL RDINVPOL( ENAME, NSRC, NPPOL, IVNAMES( IS ),
+            IS = NNPVAR + ( V-1 ) * NPPOL + 1
+            CALL RDINVPOL( ENAME, NSRC, NPPOL, 0, 0, IVNAMES( IS ),
      &                     POLVAL, IOS )
 
 C.............  If there was a read error, then go to next variable
@@ -521,7 +558,7 @@ C.............  Loop through matrices, if any
                 J = CINDXA( I )
 
 C.................  Search for pollutant name in list for this matrix
-                K = INDEX1( VARBUF, NCPVAR( J ), CPVNAM( 1,J ) )
+                K = INDEX1( VARBUF, NCPVARS( J ), CPVNAMS( 1,J ) )
 
 C.................  Read in pollutant-specific array 
                 IF( K .GT. 0 ) THEN
@@ -544,10 +581,13 @@ C.................  Set default factors
 
 C.................  Change operation based on type of matrix, then
 C                   loop through sources, applying factors as needed
-                IF( CTYPE(I) .EQ. CTYPPROJ .AND. K .GT. 0 ) THEN! Projection
+                IF( CTYPE(I) .EQ. CTYPPROJ ) THEN! Projection
 
+                    N = IDXALL( I )
                     DO S = 1, NSRC
-                        POLVAL( S,1 ) = POLVAL( S,1 ) * CFAC( S )
+                        IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
+                        IF( K .GT. 0 ) PSFAC  = CFAC( S )
+                        POLVAL( S,1 ) = POLVAL( S,1 ) * ALLFAC* PSFAC
                     END DO
 
                 ELSE IF( CTYPE(I) .EQ. CTYPREAC ) THEN ! Reactivity 
@@ -564,12 +604,11 @@ C                   loop through sources, applying factors as needed
 
                 ELSEIF( CTYPE(I) .EQ. CTYPMULT ) THEN ! Multiply (standard)
 
+                    N = IDXALL( I )
                     DO S = 1, NSRC
-                        J = INDXALL( I )
-                        IF( J .GT. 0 ) ALLFAC = CFACALL( S,J )
+                        IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
                         IF( K .GT. 0 ) PSFAC  = CFAC( S )
-
-                        POLVAL( S,1 ) = POLVAL( S,1 )* ALLFAC* CFAC
+                        POLVAL( S,1 ) = POLVAL( S,1 )* ALLFAC* PSFAC
                     END DO
 
                 END IF
@@ -578,25 +617,24 @@ C                   loop through sources, applying factors as needed
 
 C.............  Write out pollutant-based variables to SMOKE file
             IF( ONAME .NE. 'NONE' ) THEN
-                CALL WRINVPOL( ONAME, NSRC, NPPOL, IVNAMES( IS ),
-     &                         POLVAL, IOS )
+                CALL WRINVPOL( ONAME, CATEGORY, NSRC, 1, NPPOL, 
+     &                         IVNAMES( IS ), POLVAL )
 
             END IF
 
             IF( IOS .GT. 0 ) EFLAG = .TRUE.
 
 C.............  Write out pollutant-based variables to temporary files for IDA
-            IF( DDEV .GT. 0 ) THEN
+            IF( IDAFLAG ) THEN
                     
-                CALL WRIDAPOL( CATEGORY, NSRC, NPPOL, POLVAL, 
-     &                         TDEV( J ), IOS )
-c note: must edit/write this routine
+                CALL WRIDAPOL( CATEGORY, VARBUF, NSRC, NPPOL, POLVAL, 
+     &                         TDEV( V ), IOS )
 
             END IF
 
             IF( IOS .GT. 0 ) EFLAG = .TRUE.
 
-        END DO  ! End loop on inventory pollutants
+        END DO  ! End loop on inventory variables
             
         IF( EFLAG ) THEN
             MESG = 'ERROR: Could not read and write all pollutant-' //
@@ -605,14 +643,16 @@ c note: must edit/write this routine
         END IF
 
 C.........  Deallocate input pollutant arrays
-        CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .TRUE., NSRC, NSRC, NPPOL )
+        CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .TRUE., 
+     &               NSRC, NSRC, NPPOL )
 
 C.........  For IDA output
-        IF( DDEV .GT. 0 ) THEN
+        IF( IDAFLAG ) THEN
 
-            CALL WRIDAOUT( CATEGORY, NSRC, NIPPA, DDEV, CDEV, TDEV
-     &                     IOS )
-c note: must edit this routine
+            MESG = 'Writing IDA-formatted outputs...'
+            CALL M3MSG2( MESG )
+
+            CALL WRIDAOUT( DDEV, VDEV, TDEV, IOS )
 
             IF( IOS .GT. 0 ) EFLAG = .TRUE.
 
@@ -657,5 +697,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94080   FORMAT( '************  ', A, I7, ' ,  ' , A, I12 )
  
+94100   FORMAT( 10( A, :, I3, :, 1X ) )
+
         END
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENGRWOUT( ENAME, FYEAR, ONAME, FDEV )
+        SUBROUTINE OPENGRWOUT( ENAME, FYEAR, ONAME, DDEV, VDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -13,13 +13,13 @@ C
 C  REVISION  HISTORY:
 C      Created 2/2000 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -51,24 +51,29 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER*2             CRLF
-        INTEGER                 GETIFDSC
+        LOGICAL                 ENVYN
+        CHARACTER(LEN=IODLEN3)  GETCFDSC
+        INTEGER                 INDEX1
         INTEGER                 PROMPTFFILE
         CHARACTER(LEN=NAMLEN3)  PROMPTMFILE
         CHARACTER*16            VERCHAR
 
-        EXTERNAL CRLF, PROMPTFFILE, PROMPTMFILE, VERCHAR
+        EXTERNAL CRLF, ENVYN, GETCFDSC, INDEX1, PROMPTFFILE, 
+     &           PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: ENAME ! emis input inven logical name
+        CHARACTER*16, INTENT (IN) :: ENAME ! emis input inven logical name
         INTEGER     , INTENT (IN) :: FYEAR ! future year or 0 for no projection
-        CHARACTER(*), INTENT(OUT) :: ONAME ! emis output inven logical name
-        INTEGER     , INTENT(OUT) :: FDEV  ! IDA output unit number
+        CHARACTER*16, INTENT(OUT) :: ONAME ! emis output inven logical name
+        INTEGER     , INTENT(OUT) :: DDEV  ! IDA output emissions file number
+        INTEGER     , INTENT(OUT) :: VDEV  ! IDA output acitivty file number
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
 
 C...........   Other local variables
 
+        INTEGER         CATIDX    ! index for source category
         INTEGER         IOS       ! i/o status
         INTEGER         L         ! counters and indices
 
@@ -93,11 +98,12 @@ C           used
 
         EVNAME = 'SMK_GRWIDAOUT_YN'
         MESG   = 'Output IDA inventory file'
-        IFLAG = ENVYN( EVNAME, MESG, .TRUE., IOS )
+        IFLAG = ENVYN( EVNAME, MESG, .FALSE., IOS )
 
 C.........  Initialize outputs
         ONAME = 'NONE'
-        FDEV  = 0
+        DDEV  = 0
+        VDEV  = 0
 
 C.........  Re-read header for input inventory file
         IF( .NOT. DESC3( ENAME ) ) THEN
@@ -116,22 +122,41 @@ C.........  Store non-category-specific header information
 
 C.........  If projection year is non-zero, store in FDESC3D
         IF( FYEAR .NE. 0 ) THEN
-             WRITE( FDESC3D( 12 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
+             WRITE( FDESC3D( 13 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
         END IF
 
-        FDESC3D( 13 ) = '/INVEN FROM/ ' // IFDESC2
-        FDESC3D( 14 ) = '/INVEN VERSION/ ' // IFDESC3
+        FDESC3D( 14 ) = '/INVEN FROM/ ' // IFDESC2
+        FDESC3D( 15 ) = '/INVEN VERSION/ ' // IFDESC3
 
-C.........  Prompt file output SMOKE file (or NONE)
-        MESG= 'Enter logical name for the I/O API INVENTORY output file'
-        ONAME = ENAME // '_OUT'
-        ONAME = PROMPTMFILE( MESG, FSUNKN3, ONAME, PROGNAME )
+C.........  Prompt file output SMOKE file
+        IF( SFLAG ) THEN
+            MESG= 'Enter logical name for the I/O API INVENTORY ' //
+     &            'output file'
+            L = LEN_TRIM( ENAME )
+            ONAME = ENAME( 1:L ) // '_O'
+            ONAME = PROMPTMFILE( MESG, FSUNKN3, ONAME, PROGNAME )
+        END IF
 
-C.........  Prompt file output IDA file (or NONE)
-        MESG  = 'Enter logical name for the IDA INVENTORY output file'
-        INAME = CRL // 'IDA_OUT'
+C.........  Get index for source category to use for output file names
+        CATIDX = INDEX1( CATEGORY, NCAT, CATLIST )
 
-        DDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
+C.........  Prompt file emissions IDA file
+        IF( IFLAG .AND. NIPOL .GT. 0 ) THEN
+            MESG  = 'Enter logical name for the IDA EMISSIONS ' //
+     &              'output file'
+            INAME = ANAMLIST( CATIDX ) // '_O'
+
+            DDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
+        END IF
+
+C.........  Prompt file activity IDA file
+        IF( IFLAG .AND. NIACT .GT. 0 ) THEN
+            MESG  = 'Enter logical name for the IDA ACTIVITY ' //
+     &              'output file'
+            INAME = ANAMLIST( CATIDX ) // '_ACT_O'
+
+            VDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
+        END IF
 
         RETURN
 
