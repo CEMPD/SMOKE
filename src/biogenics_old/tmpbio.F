@@ -135,7 +135,7 @@ C.......   Get cross-point grid parameters file and its description
 
         NNAME = PROMPTMFILE( 
      &          'Enter name for NORMALIZED EMISSIONS input file',
-     &          FSREAD3, 'BGRD', 'TMPBIO' )
+     &          FSREAD3, 'BNORM', 'TMPBIO' )
 
         GNAME = PROMPTMFILE( 
      &          'Enter name for GRID_CRO_2D input file',
@@ -172,10 +172,10 @@ C.......   (all but variables-table in description is borrowed from M2NAME)
         NVARS3D = MSPCS
 
         DO  11  M = 1, MSPCS
-            VNAME3D( J ) = EMSPC( M )
-            UNITS3D( J ) = 'moles/hour'
-            VDESC3D( J ) = 'biogenic emissions of the indicated species'
-            VTYPE3D( J ) = M3REAL
+            VNAME3D( M ) = EMSPC( M )
+            UNITS3D( M ) = 'moles/hour'
+            VDESC3D( M ) = 'biogenic emissions of the indicated species'
+            VTYPE3D( M ) = M3REAL
 11      CONTINUE
 
         FDESC3D( 1 ) = 'Gridded biogenic emissions from SMOKE-BEIS2'
@@ -184,8 +184,8 @@ C.......   (all but variables-table in description is borrowed from M2NAME)
 12      CONTINUE
         
         ENAME = PROMPTMFILE( 
-     &          'Enter name for BIOGRT output file',
-     &          FSUNKN3, 'BIOGRT', 'TMPBIO' )
+     &          'Enter name for BGTS output file',
+     &          FSUNKN3, 'BGTS', 'TMPBIO' )
 
 
 C.......   Build name table for variables in normalized emissions file"
