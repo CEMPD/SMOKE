@@ -53,6 +53,7 @@ C***************************************************************************/
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         LOGICAL         DSCGRID
         LOGICAL         ENVYN
         INTEGER         FIND1
@@ -69,15 +70,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, INDEX1, JULIAN,
-     &           JUNIT, LBLANK, PROMPTFFILE, PROMPTMFILE, SECSDIFF, 
-     &           STR2INT, STR2REAL, TRIMLEN
+        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETNUM, GETYN, INDEX1,
+     &           JULIAN, JUNIT, LBLANK, PROMPTFFILE, PROMPTMFILE, 
+     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   PARAMETER:
 
+        CHARACTER*5     BLANK5
         INTEGER         NSMAX
-        PARAMETER     ( NSMAX = NASRC * NIPOL )
+        PARAMETER     ( BLANK5 = ' ',
+     &                  NSMAX = NASRC * NIPOL )
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -168,6 +171,7 @@ C...........   Other local variables
         INTEGER         C, S, I, J, K, V !  loop counters.
         INTEGER         IOS              !  I/O status
         INTEGER         IREC             !  input line (record) number
+        INTEGER         L1, L2           !  start/end position of input LINE
         LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
         LOGICAL         MFLAG   !  input verification:  report missing species
         LOGICAL         DFLAG   !  input verification:  report duplicate records
@@ -202,8 +206,7 @@ C   begin body of program EMSAREA
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program EMSAREA', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'EMSAREA', 0, 0, 'Ending program', 2 )
         END IF
 
         MFLAG = ENVYN( 'RAW_MISS_CHECK', 
@@ -251,11 +254,12 @@ C.......   Get file name; open input time zone file
             IREC = IREC + 1
 
             IF ( IOS .NE. 0 ) THEN
-                WRITE( *,92010 ) 
+                WRITE( MESG,94010 ) 
      &              'Unit number', ZDEV, 
      &              'I/O Status ', IOS, 
      &              'Line number', IREC
-                    CALL M3EXIT( 'EMSPOINT', 0, 0, 
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( 'EMSPOINT', 0, 0, 
      &              'Error reading TIME ZONE file.', 2 )
             END IF
 
@@ -293,11 +297,11 @@ C.......   Get file name; open input time zone file
             WRITE( MESG,94010 )
      &          'State-specific time zone table dim:', NASID,
      &          'actual:', NZS
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
             WRITE( MESG,94010 )
      &          'County-specific time zone table dim:', NAFIP,
      &          'actual:', NZF
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
             CALL M3EXIT( 'EMSPOINT', 0, 0, 
      &                   'OVERFLOW reading TIME ZONE file.', 2 )
         END IF
@@ -328,23 +332,44 @@ C.......   Get file name for opening input raw area source file
      &         'Enter the name of the RAW DATA FILENAME LISTING',
      &          .TRUE., .TRUE., 'ANLST', 'EMSAREA' )
 
-        S    =    0
+        CALL M3MSG2( 'Reading RAW AREA SOURCE files...' )
 
+        S   = 0
+        INY = IMISS3
 101     CONTINUE
 
 C.............  Read file names
 C.............  Exit to line 141 if read is EOF
-            READ( IDEV, 93000, END=141  ) RNAME   ! area.ar file 
+            READ( IDEV, 93000, END=141  ) LINE
 
-            WRITE( *,92000 ) 'Successful OPEN for:'
+            L1 = INDEX( LINE, 'INVYEAR' )
+            L2 = TRIMLEN( LINE )
+
+            IF( L1 .GT. 0 ) THEN
+
+                INY = STR2INT( LINE( L1+7:L2 ) )
+                GO TO 101                       ! To head of ANLST read loop
+
+            ELSEIF( INY .LE. 0 ) THEN
+
+                CALL M3EXIT( 'EMSAREA', 0, 0, 
+     &               'Must set inventory year using INVYEAR packet ' //
+     &               'in ANLST file', 2 )
+
+            ELSE
+
+                RNAME = LINE( 1:L2 )   ! Set inventory file name
+
+            ENDIF
 
             ADEV   = JUNIT()
             OPEN( ADEV, ERR=1006, FILE=RNAME, STATUS='OLD' )
-            WRITE( *,92000 ) RNAME
 
-            INY = 1994
-            INY = GETNUM( IMISS3, -IMISS3, INY+1,
-     &                    'Enter INVENTORY YEAR for this file' )
+            WRITE( MESG,94010 ) 
+     &             'Successful OPEN using year', INY, 
+     &             'for inventory file:' // CRLF() // BLANK5 //
+     &             RNAME( 1:TRIMLEN( RNAME ) )
+            CALL M3MSG2( MESG )
 
 C.......   Factors for annualizing the emissions from daily totals
 C.......   (corrected for leap-year)
@@ -365,13 +390,14 @@ C.......   Process this area source file
 
 111         CONTINUE        !  head of the ADEV-read loop
 
-                READ( ADEV, 93000, END=133, IOSTAT=IOS )LINE
+                READ( ADEV, 93000, END=133, IOSTAT=IOS ) LINE
 
                 IF ( IOS .NE. 0 ) THEN
-                    WRITE( *,92010 ) 
+                    WRITE( MESG,94010 ) 
      &                  'Unit number', ADEV, 
      &                  'I/O Status ', IOS, 
      &                  'Line number', IREC
+                    CALL M3MSG2( MESG )
                     CALL M3EXIT( 'EMSAREA', 0, 0, 
      &                  'Error reading "' //
      &                  RNAME( 1:TRIMLEN( RNAME ) ) // '"', 2 )
@@ -379,17 +405,13 @@ C.......   Process this area source file
 
                 IREC = IREC + 1
                 
-                C   = 21 + LBLANK( LINE( 21:25 ) )
+                C     = 21 + LBLANK( LINE( 21:25 ) )
                 PNAME = LINE( C : 25 )
-c               IF ( PNAME .EQ. 'ROG ' .OR. 	!  pollutant-name fixup
-c    &               PNAME .EQ. 'TOG ' ) THEN
-c                   PNAME = 'VOC '
-c               END IF
 
                 IPOL = INDEX1( PNAME, NIPOL, EINAM )
 
                 IF ( IPOL .LE. 0 ) THEN
-                    WRITE( MESG,94020 ) 
+                    WRITE( MESG,94010 ) 
      &                  'Bad line', IREC, 
      &                  'Pollutant code "' // 
      &                  PNAME( 1:TRIMLEN( PNAME ) ) // 
@@ -401,7 +423,7 @@ c               END IF
 
                 EMIS = STR2REAL( LINE( 52:65 ) )
                 IF ( EMIS .LT. 0.0 )  THEN
-                    WRITE( MESG,94020 ) 
+                    WRITE( MESG,94010 ) 
      &                  'Bad line', IREC, 
      &                  'Emis value "' // LINE( 162:171 ) // 
      &                  '" in "' //
@@ -476,9 +498,10 @@ C-otag          IF ( RPEN .LT. 0 ) RPEN = 100.0
 
         NSRC = S
         IF ( S .GT. NSMAX ) THEN
-            WRITE( *,92010 ) 
-     &              'Actual record count         ', NSRC,
-     &              'Max dimensioned record-count', NSMAX
+            WRITE( MESG,94010 ) 
+     &       'Actual record-count        :', NSRC, CRLF() // BLANK5 //
+     &       'Max    record-count (NSMAX):', NSMAX
+            CALL M3MSG2( MESG )
             CALL M3EXIT( 'EMSAREA', 0, 0, 
      &        'Max record-count exceeded in AREA SOURCE file.', 2 )
 
@@ -488,7 +511,7 @@ C-otag          IF ( RPEN .LT. 0 ) RPEN = 100.0
 C.......   Use SORTI3() to perform an indirect sort by FIPS,SCC7,SCC3;
 C.......   then permute the records according to the result:
 
-        WRITE( *,92000 ) ' ', 'Sorting RAW AREA SOURCE file...', ' '
+        CALL M3MSG2( 'Sorting RAW AREA SOURCE data...' )
 
         CALL SORTI3( NSRC, INDEXA, IFIPSA, ISCC7A, ISCC3A )
 
@@ -639,7 +662,7 @@ C........   Get file name; open and construct output actual-ASC file
 
         CALL SORTI2( NSRC, INDEXA, ISCC7A, ISCC3A )
 
-        CALL M3MESG( 'Writing ACTUAL-ASC output file' )
+        CALL M3MSG2( 'Writing ACTUAL-ASC output file...' )
 
         LID7 = -1
         LID3 = -1
@@ -660,7 +683,7 @@ C........   Get file name; open and construct output actual-ASC file
         WRITE( MESG,94010 )
      &      'Number of source ASC codes:  dim max', NASCC,
      &      'actual', K
-        CALL M3MESG( MESG )
+        CALL M3MSG2( MESG )
 
 
 C.......   Get file name; open output area sources file
@@ -770,7 +793,7 @@ C.......   FDESC3.EXT data structures by DSCGRID().
 
 C.......   Write out the area source emissions values:
 
-        CALL M3MESG( 'Writing out AREA SOURCES file...' )
+        CALL M3MSG2( 'Writing out AREA SOURCES file...' )
 
         IF ( .NOT. WRITE3( ENAME, 'ALL', 0, 0,  IFIPS ) ) THEN
             CALL M3EXIT( 'EMSAREA', 0, 0,  
