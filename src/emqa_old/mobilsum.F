@@ -1,7 +1,7 @@
         PROGRAM MOBILSUM
 
 C***********************************************************************
-C  program body starts at line 152
+C  program body starts at line 159
 C
 C  DESCRIPTION:
 C       Report mobile-source emissions summed by state and county.
@@ -15,7 +15,6 @@ C       GETREAL, ENVREAL, FIND1
 C
 C  REVISION  HISTORY:
 C       Prototype  1/97 by Chad Barker
-C
 C
 C***********************************************************************
 C
@@ -82,9 +81,6 @@ C...........   PARAMETERS and their descriptions
         INTEGER EMISSTA, EMISFIP
         PARAMETER ( EMISSTA = MXEMIS * MYMXSTA, 
      &              EMISFIP = MXEMIS * MYMXFIP )
-
-        REAL GM2TON
-        PARAMETER ( GM2TON = 1.102311E-06 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point Sources input and output arrays
@@ -477,8 +473,8 @@ C.............  Don't want spaces here, so no M3MSG2
                 WRITE ( OUNIT ( I ), 810 ) 
      &              '      NON-LINK            LINK           TOTAL'
                 WRITE ( OUNIT ( I ), 880 ) 
-     &              INVNLINK ( I ) * GM2TON, INVLINK ( I ) * GM2TON, 
-     &              ( INVNLINK ( I ) + INVLINK ( I ) ) * GM2TON
+     &              INVNLINK ( I ), INVLINK ( I ), 
+     &              ( INVNLINK ( I ) + INVLINK ( I ) )
 
                 WRITE ( OUNIT ( I ), 850 ) 
      &              '--------------------- ' // 
@@ -498,10 +494,8 @@ C.............  Don't want spaces here, so no M3MSG2
                     ENDIF
 
                     WRITE ( OUNIT ( I ), 830 ) 
-     &                  ISTLIST ( J ), STNLINK ( I, J ) * GM2TON, 
-     &                  STLINK ( I, J ) * GM2TON,
-     &                  ( STNLINK ( I, J ) + STLINK ( I, J ) ) * GM2TON, 
-     &                  FIPNAME
+     &                  ISTLIST ( J ), STNLINK ( I,J ), STLINK ( I,J ),
+     &                  ( STNLINK ( I,J ) + STLINK ( I,J ) ), FIPNAME
 230             CONTINUE ! End of state loop
         
 
@@ -539,10 +533,8 @@ C.............  Don't want spaces here, so no M3MSG2
                         ENDIF
     
                         WRITE ( OUNIT ( I ), 870 ) 
-     &                   ICOLIST ( J ), CONLINK ( I, J ) * GM2TON, 
-     &                   COLINK ( I, J ) * GM2TON, 
-     &                   ( CONLINK ( I, J ) + COLINK ( I, J ) )* GM2TON, 
-     &                   FIPNAME
+     &                   ICOLIST ( J ), CONLINK ( I,J ), COLINK ( I,J ), 
+     &                   ( CONLINK ( I,J ) + COLINK ( I,J ) ), FIPNAME
                     END IF
 240             CONTINUE ! End of county loop
 
