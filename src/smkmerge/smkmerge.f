@@ -810,7 +810,8 @@ C.........................  Write out gridded data and Models-3 PinG file
 
 C.........................  Write out ASCII elevated sources file
                         IF( ELEVFLAG ) THEN
-                            CALL WMRGELEV( SBUF, NMAJOR, JDATE, JTIME )
+                            CALL WMRGELEV( SBUF, NPSRC, NMAJOR, 
+     &                                     JDATE, JTIME        )
                         END IF
 
 C.........................  Initialize gridded arrays

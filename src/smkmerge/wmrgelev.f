@@ -1,5 +1,5 @@
 
-        SUBROUTINE WMRGELEV( VNAME, NMAJOR, JDATE, JTIME )
+        SUBROUTINE WMRGELEV( VNAME, NSRC, NMAJOR, JDATE, JTIME )
 
 C***********************************************************************
 C  subroutine WMRGELEV body starts at line
@@ -74,6 +74,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: VNAME   ! variable name to output
+        INTEGER     , INTENT (IN) :: NSRC    ! no. sources
         INTEGER     , INTENT (IN) :: NMAJOR  ! no. elevated sources
         INTEGER     , INTENT (IN) :: JDATE   ! Julian date to output (YYYYDDD)
         INTEGER     , INTENT (IN) :: JTIME   ! time to output (HHMMSS)
@@ -83,6 +84,7 @@ C.........  Local parameters
 
 C.........  Variables allocated by module settings...
         INTEGER, ALLOCATABLE, SAVE :: ESRTIDX( : ) ! major srcs sorting index
+        INTEGER, ALLOCATABLE, SAVE :: EIDXSRC( : ) ! Source ID per major source
         INTEGER, ALLOCATABLE, SAVE :: EIDX2  ( : ) ! another index
         INTEGER, ALLOCATABLE, SAVE :: ELAYER ( : ) ! addt'l srcs for explicit
 
@@ -198,6 +200,8 @@ C               each explicit source can be inserted.
 C.............  Allocate memory for local elevated sources arrays
             ALLOCATE( ESRTIDX( I ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ESRTIDX', PROGNAME )
+            ALLOCATE( EIDXSRC( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EIDXSRC', PROGNAME )
             ALLOCATE( ECSRCA( I ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ECSRCA', PROGNAME )
             ALLOCATE( EOUTCSRC( I ), STAT=IOS )
@@ -271,13 +275,15 @@ C               only country/state/county, plant, and stack.  For IDA
 C               inventories, the stack ID comes after the point ID, so need to
 C               use position of stack ID in source definition to properly
 C               build the elevated sources arrays
-            DO I = 1, NMAJOR 
+            DO S = 1, NSRC 
 
-                S    = ELEVSIDX( I )                
+                I    = ELEVSIDX( S )
+                IF ( I .EQ. 0 ) CYCLE                
                 CFIP = CSOURC( S )( PTBEGL3( 1 ):PTENDL3( 1 ) )
                 FCID = CSOURC( S )( PTBEGL3( 2 ):PTENDL3( 2 ) )
                 SKID = CSOURC( S )( PTBEGL3(JSTACK):PTENDL3(JSTACK) )
                 ESRTIDX( I ) = I
+                EIDXSRC( I ) = S
                 ECSRCA ( I ) = CFIP // FCID // SKID                
 
             END DO
@@ -297,10 +303,10 @@ C               model layers.
             KK = 0
             M  = 0
             PECS = ' '
-            DO I = 1, NMAJOR
+            DO I = 1, NMAJOR 
 
                 J   = ESRTIDX ( I )
-                S   = ELEVSIDX( J )                
+                S   = EIDXSRC ( J )
                 ECS = ECSRCA  ( J )
 
 C.................  Find group for this record in stack groups list
@@ -383,7 +389,7 @@ C                           it's an explicit plume rise source (REMSAD).
                     IF( ALLOCATED( LPING ) ) THEN
                         IF( LPING( S ) ) DM = -DM
                     END IF
-                    IF( M .GT. 0 ) DM = -DM
+                    IF( M .GT. 0 ) DM = -DM  ! Explicit source
 
 C..................  If FIPS/plant/stack is not the same as the
 C                    previous FIP/plant/stack, then store this unique
@@ -699,8 +705,8 @@ C               for the next species.
 
                 IF ( N .LE. 0 ) CYCLE   ! skip because not in grid
 
-                S   = ELEVSIDX( J )                
-                ECS = ECSRCA  ( J )
+                S   = EIDXSRC( J )                
+                ECS = ECSRCA ( J )
 
                 IF ( EXPLFLAG ) M = FIND1( S, NHRSRC, ELEVSRC )
 
