@@ -740,7 +740,7 @@ C                   to reset the header before opening.
      &                         NPVAR, VARBUF, SRCID, DATAVAR, EFLAG )
 
 C.................  Write the map inventory file entry
-                WRITE( ODEV, '(A)' ) MAPNAM( M )// TRIM( RFNAME )
+                WRITE( ODEV, '(A)' ) MAPNAM( M )// ' '//TRIM( RFNAME )
 
             END IF
 
