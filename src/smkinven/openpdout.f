@@ -70,7 +70,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: FNAME     ! logical file name
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW  = '$Revision$' ! CVS version
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -141,7 +141,7 @@ C............. If outputs are data values...
         FDESC3D( 1 ) = CATDESC // TYPNAM( 1:L2 ) //
      &                '-specific source inventory'
         FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 
         IF( NIPOL .GT. 0 ) THEN
             WRITE( FDESC3D( 4 ),94010 ) '/POLLUTANTS/', NIPOL  
