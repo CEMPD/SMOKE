@@ -252,6 +252,7 @@ C...........   obscured, the partial obscuration (=1) is given.  In this
 C...........   case there will be a value in the opaque sky cover column
 C...........   between 10 and 90.
 
+                NT = NT + 1
                 TTYPE = AA(1) + BB(1) / MAX( CZ, 0.2 )
                 COVER = RMET( 3,N )
                 ATEN( NT ) = 1.0 - D100 * COVER * ( 1.0 - TTYPE )
@@ -271,6 +272,7 @@ C...............   of the layer.
 C...............   If the sky descriptor indicated 'thin' sky cover (=2,3,4)
 C...............   adjust the total transmittance half way back to 1.0
 
+                NT = NT + 1
                 HGT( 1 ) = RMET( 6,N )
                 IF ( HGT( 1 ) .LT. 0.0 ) GO TO  33
                 
@@ -320,6 +322,7 @@ C...............   If the sky descriptor is 8, then a ground level obscuration
 C...............   is indicated.   Descriptors of 8 are always accompanied by
 C...............   an opaque sky cover value of 100.
 
+                NT = NT + 1
                 ATEN( NT ) = AA(1) + BB(1) / MAX( CZ, 0.2 )
                 SLAT( NT ) = ALAT
                 SLON( NT ) = ALON
