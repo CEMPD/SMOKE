@@ -17,7 +17,7 @@ debug: grwinven.debug smkinven.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
-GRW=grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o
+GRW=grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvpol.o
 #	 
 #
 grwinven: $(GRW) $(ALLI) $(LIBPATH)
