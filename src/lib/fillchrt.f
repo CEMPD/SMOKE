@@ -129,7 +129,12 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
             J      = INDXTA( I )
             CSRC   = CSRCTA( J )
             TSCC   = CSCCTA( J )
-            CMCT   = CMACTA( J )
+            
+            IF( ALLOCATED( CMACTA ) ) THEN
+                CMCT = CMACTA( J )
+            ELSE
+                CMCT = ' '
+            END IF
 
 C.............  Set up partial strings for country/state/county
             CFIP   = CSRC( 1:FIPLEN3 ) 
