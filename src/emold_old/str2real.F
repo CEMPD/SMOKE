@@ -69,9 +69,9 @@ C.......   If you get to here:  no number there
         N = L - I + 1
         P = INDEX( STRING( I:L ), '.' )
         IF ( P .GT. 0 ) THEN
-            WRITE( FMT, 94010 ) L, N - P
+            WRITE( FMT, 94010 ) N, N - P
         ELSE
-            WRITE( FMT, 94010 ) L, 0
+            WRITE( FMT, 94010 ) N, 0
         END IF
 
         READ( STRING( I:L ), FMT, IOSTAT = IOS ) VAL
