@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -37,11 +37,14 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
-C****************************************************************************
+C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
+
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
 
         IMPLICIT NONE
 
@@ -56,16 +59,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
 
         EXTERNAL   CRLF, GETFLINE, INDEX1
-
-C...........   Master list of valid inventory pollutants (needed for sorting
-C              output variables)
-        INTEGER                   :: MXIDAT = 0   ! max no pols/acts
-        INTEGER                   :: NDAT   = 0   ! actual no pols/act in master
-        INTEGER                   :: NDAT1  = 0   ! actual no pols in master
-        INTEGER                   :: NIACT  = 0   ! actial no activites
-        INTEGER      , ALLOCATABLE:: INVDCOD( : ) ! codes
-        INTEGER      , ALLOCATABLE:: INVSTAT( : ) ! Status (<0 activity; >0 pol)
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: INVDNAM( : ) ! pollutant/act name
 
 C...........   Temporary arrays for building sorted pol-to-species names list
         INTEGER                                MXPTOSPC     ! max for dimension
@@ -84,6 +77,7 @@ C...........   Other local variables
         INTEGER         IOS             ! i/o error status
         INTEGER         JA, JM, JP      ! position in rctvty var desc of pol-spc
         INTEGER         NCNT            ! counter
+        INTEGER      :: NIACT  = 0      ! actual no activites
 
         LOGICAL      :: EFLAG = .FALSE. ! error flag
 
@@ -95,40 +89,8 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine MRGVNAMS
 
-C.........  Get number of lines of pollutant codes/names file 
-        IF( PDEV .GT. 0 ) THEN
-            MXIDAT = GETFLINE( PDEV, 'Pollutant codes and names file' )
-        END IF
-        IF( VDEV .GT. 0 ) THEN
-            I = GETFLINE( VDEV, 'Activity names file' )
-            MXIDAT = MXIDAT + I
-        END IF
-
-C.........  Allocate memory for storing contents of pollutants file
-        ALLOCATE( INVDCOD( MXIDAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVDCOD', PROGNAME )
-        ALLOCATE( INVDNAM( MXIDAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVDNAM', PROGNAME )
-        ALLOCATE( INVSTAT( MXIDAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVSTAT', PROGNAME )
-
-C.........  Initialize inventory data status
-        INVSTAT = 0   ! array
-
 C.........  Read, sort, and store pollutant codes/names file
-        IF( PDEV .GT. 0 ) THEN
-            CALL RDCODNAM( PDEV, MXIDAT, NDAT, INVDCOD, 
-     &                     INVDNAM )
-            NDAT1 = NDAT
-        END IF
-
-C.........  Read, sort, and store activity codes/names file
-        IF( VDEV .GT. 0 ) THEN
-            CALL RDCODNAM( VDEV, MXIDAT, NDAT, INVDCOD, 
-     &                     INVDNAM )
-        END IF
-
-        MXIDAT = NDAT
+        CALL RDCODNAM( PDEV, VDEV )
 
 C.........  Loop through pollutants and/or activities in each source category
 C           and update status of pollutants and activities in master list.
@@ -149,6 +111,12 @@ C           list, exit
      &             'consistent with those used to process the ' //
      &             'inventory.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........  Otherwise, convert INVSTAT back from 2/-2 to 1/-1, and zero for
+C           not used
+        ELSE
+
+            INVSTAT = INVSTAT / 2  ! integer math for array
 
         END IF
 
@@ -420,7 +388,7 @@ C.............  Subprogram arguments
             LOGICAL     , INTENT(OUT) :: EFLAG       ! error flag
 
 C.............  Local subprogram variables
-            INTEGER      I, J, K, L      ! counters and indices        
+            INTEGER      I, J, L      ! counters and indices        
 
             CHARACTER(LEN=IOVLEN3) VBUF
 
@@ -429,20 +397,16 @@ C----------------------------------------------------------------------
             DO I = 1, N
 
                 VBUF = PNAMES( I )
-                J = INDEX1( VBUF, NDAT1, INVDNAM )
-                K = 0
-                IF( MXIDAT .NE. NDAT1)
-     &              K = INDEX1( VBUF, MXIDAT-NDAT1, INVDNAM( NDAT1+1 ) )
+                J = INDEX1( VBUF, MXIDAT, INVDNAM )
 
-C................. Evaluate for pollutant
+C................. Adjust data status if actual pollutant or activity is being
+C                  input to Smkmerge
                 IF( J .GT. 0 ) THEN
-                    INVSTAT( J ) = 1
 
-C................. Evaluate for activity
-                ELSE IF( K .GT. 0 ) THEN
-                    INVSTAT( K ) = -1 
+                    INVSTAT( J ) = INVSTAT( J ) * 2
 
                 ELSE
+
                     EFLAG = .TRUE.
                     L = LEN_TRIM( VBUF )
                     MESG = 'ERROR: Variable "' // VBUF( 1:L ) // 
