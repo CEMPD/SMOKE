@@ -2,7 +2,7 @@
         PROGRAM SMKMERGE
 
 C***********************************************************************
-C  program SMKMERGE body starts at line
+C  program SMKMERGE body starts at line 138
 C
 C  DESCRIPTION:
 C      The purpose of this program is to merge the inventory or hourly
@@ -119,7 +119,7 @@ C...........   Other local variables
 
         REAL          :: RDUM = 0      ! dummy real value
         REAL             RDUM1, RDUM2, RDUM3, RDUM4, RDUM5, RDUM6
-        REAL             F1, F2        ! tmp conversion factors
+        REAL             F1, F2, FB    ! tmp conversion factors
 
         CHARACTER*16     GRDNMBUF !  grid name
         CHARACTER*16     SRGFMT   ! gridding surrogates format
@@ -380,15 +380,6 @@ C.................  Set input variable names
 C.............  Write out message about data currently being processed
             CALL POLMESG( OCNT, OUTNAMES )
  
-! NOTE: Need to add the capability to output future year stuff based on
-C n: current-year days of the week.  I think this needs to be handled in the new
-C n: program that will merge the temporal emissions files in various ways and in
-C n: the temporal programs themselves.  If the emissions file is an hourly file,
-C n: then the output date will be from the dates in the file. If the emissions file
-C n: is an inventory file, then the output date will be future year date from the
-C n: FDESC3D (if it is there), otherwise, it will be the base-year date from the
-C n: FDESC3D packet.  I should print a warning if INVYR has multiple values
-
 C.............  Loop through output time steps
             JDATE = SDATE
             JTIME = STIME
@@ -504,7 +495,7 @@ C.............................  Apply valid matrices & store
                             
 C.....................  For biogenic sources, read gridded emissions,
 C                       add to totals and store
-                    IF( BFLAG .AND. KB .GT. 0 ) THEN
+                    IF( BFLAG ) THEN
 
                         K4 = BS_EXIST( V,N )
 
@@ -514,10 +505,17 @@ C                       add to totals and store
      &                                   TEMGRD( 1,1 ) )
                     
 
-C.................................  Update country, state, & county totals  
-                            IF( LREPANY ) 
-     &                          CALL GRD2CNTY( 0, KB, NGRID, NCOUNTY,
+C.............................  Update country, state, & county totals  
+C.............................  Also convert the units from the gridded output
+C                               units to the totals output units
+                            IF( LREPANY ) THEN
+                                CALL GRD2CNTY( 0, KB, NGRID, NCOUNTY,
      &                                         BEMGRD, BEBCNY )
+
+                                FB = BIOTFAC / BIOGFAC
+                                BEBCNY( :,KB ) = BEBCNY( :,KB ) * FB    ! array
+
+                            END IF
                         END IF
 
                     END IF
@@ -631,9 +629,6 @@ C                   will reinitialize the totals after output
                 IF( LREPANY ) THEN
                     CALL WRMRGREP( JDATE, JTIME, N )
                 END IF
-c note: in future, will want to write to a temporary file and then read this
-c    n: back in to be able to format all of the pollutant/species together
-c    n: in the report for all days.
 
                 LDATE = JDATE
 

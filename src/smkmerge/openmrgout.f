@@ -2,7 +2,7 @@
         SUBROUTINE OPENMRGOUT( NGRP )
 
 C***********************************************************************
-C  subroutine OPENMRGOUT body starts at line
+C  subroutine OPENMRGOUT body starts at line 83
 C
 C  DESCRIPTION:
 C      The purpose of this subroutine is to open all of the necessary
@@ -142,18 +142,8 @@ C.........  Do this regardless of whether we have outputs or not
 
         ENDIF
 
-c note: must add the ability to output as per second. This will require changes
-C    n: both in the variable units here and in the actual computation of 
-C    n: output emissions, since the temporalized emissions are always in
-C    n: units of mass per hour.
-
 C.........  Set up and open I/O API output file
         IF( LGRDOUT ) THEN
-
-
-! NOTE: Must insert FDDESC, including met header information, version of
-! programs for all input files
-
           
 C.............  Prompt for and gridded open file(s)
             IF( AFLAG ) THEN
@@ -193,7 +183,6 @@ C.............  Override gridded file settings
             VGTYP3D = BADVAL3
             VGTOP3D = BADVAL3
 
-c note: need to update file description
             FDESC3D = ' '   ! array
             
             PINGNAME = PROMPTMFILE( 
