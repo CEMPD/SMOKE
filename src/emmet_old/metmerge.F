@@ -128,16 +128,12 @@ C........  Process Input File (MCIP output)
        VGTOP3D = AMISS3
        FDESC3D( 1 ) = 'MET input file for TMPBIO'
 
-C........ FDESC3D( 21 ) and FDESC3D( 22 ) for scenario and scheme 
+C........ FDESC3D( 2 ) and FDESC3D( 3 ) for scenario and scheme 
 C........ will be imported from SFCNAME
 
-       DO 30 I = 2, 20
+       DO 30 I = 4, MXDESC3
           FDESC3D( I ) = ' '
 30     END DO
-
-       DO 40 I = 23, MXDESC3
-          FDESC3D( I ) = ' '
-40     END DO
  
        VNAME3D( 1 ) = 'PAR'
        VDESC3D( 1 ) = 'PAR'

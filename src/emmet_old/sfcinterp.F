@@ -261,8 +261,8 @@ c      TSTEP3D = 10000         !  time independent
           FDESC3D( K ) = ' '
        END DO 
 
-       FDESC3D( 21 ) = 'Scenario: SMRAQ95'
-       FDESC3D( 22 ) = 'Scheme:   KUO' 
+       FDESC3D( 2 ) = 'Scenario: SMRAQ95'
+       FDESC3D( 3 ) = 'Scheme:   KUO' 
        
        INDEX = 0
        INT_HGT = 0
