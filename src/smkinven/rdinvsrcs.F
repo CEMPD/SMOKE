@@ -161,6 +161,7 @@ C...........   Other local variables
 
         CHARACTER(LEN=10)      CREC    ! record number
         CHARACTER(LEN=4)       CFIL    ! file number
+        CHARACTER(LEN=300)     BUFFER  ! tmp line buffer
         CHARACTER(LEN=300)     OUTLINE ! line to write to scratch file
         CHARACTER(LEN=300)     INFILE  !  input file line buffer
         CHARACTER(LEN=300)     LINE    !  input file line buffer
@@ -966,8 +967,8 @@ C.............  Check for end of file
             IF( IOS < 0 ) EXIT
 
 C.............  Parse line after source info into segments
-            CALL PARSLINE( LINE( CSRC_LEN+1:LEN_TRIM( LINE ) ), 
-     &                     NSCSEG, SCSEGMENT )
+            BUFFER = LINE( CSRC_LEN+1:LEN_TRIM( LINE ) )
+            CALL PARSLINE( BUFFER, NSCSEG, SCSEGMENT )
             
 C.............  Check if this is a continuation of a previous line
             IF( LINE( 1:CSRC_LEN ) /= TCSOURC ) THEN
