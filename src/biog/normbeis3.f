@@ -48,7 +48,9 @@ C.........  Logical names and unit numbers
 
 C.........  Other local variables
         INTEGER         IOS     !  I/O status
-        
+       
+        LOGICAL         VFLAG   !  true: use variable grid
+ 
         CHARACTER(16)   BEISVER !  version of BEIS3 to use
         CHARACTER(300)  MESG    !  message buffer
         
@@ -62,6 +64,17 @@ C   begin body of program NORMBEIS3
 C.........  Write out copyright, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
+
+C.........  Explicitly disallow variable grid data - haven't updated grid cell
+C           size calculations to work correctly
+        VFLAG = ENVYN( 'USE_VARIABLE_GRID',
+     &                 'Use variable grid definition',
+     &                 .FALSE., IOS )
+
+        IF( VFLAG ) THEN
+            MESG = 'Cannot use variable grid data'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Get the BEIS3 model version to use
         MESG = 'Version of BEIS3 to use'
