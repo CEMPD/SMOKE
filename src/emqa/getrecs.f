@@ -85,7 +85,7 @@ C.........  Local parameters
         INTEGER, PARAMETER :: NMRANGE  = 3    ! no. of MRANGEs in MRANGE menu
         INTEGER, PARAMETER :: NSTKMTHD = 5    ! no. stack parm sort types
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  Non-module Source arrays
         REAL   , ALLOCATABLE :: STKFL  ( : ) ! stack flow
@@ -317,7 +317,7 @@ C   begin body of program GETRECS
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Retrieve environment variable for controlling which source category
 C           to process and which parts to process.  This will control which
