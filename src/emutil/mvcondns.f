@@ -196,9 +196,9 @@ C.........  Copy integer codes to real arrays for sorting
         RRCLAS = REAL( IRCLAS ) ! array
         RVTYPE = REAL( IVTYPE ) ! array
 
-C.........  Sort sources by cy/st/co code, roadclass, vehicle type, and speed
+C.........  Sort sources by cy/st/co code, roadclass, speed, and vehicle type
         IF ( SFLAG ) THEN
-            CALL SORTR4( NSRC, INDX, RFIP, RRCLAS, RVTYPE, SPEED )
+            CALL SORTR4( NSRC, INDX, RFIP, RRCLAS, SPEED, RVTYPE )
         ELSE
             CALL SORTI3( NSRC, INDX, IFIP, IRCLAS, IVTYPE )
         END IF
