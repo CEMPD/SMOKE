@@ -266,18 +266,6 @@ C.............  Find CAS number in list of unique CAS's from INVTABLE
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
-
-C.............  Check that some part of CAS will be kept
-            IF( UCASNKEP( UCASPOS ) == 0 ) THEN
-c                WRITE( MESG,94010 ) 'Source dropped: ' //
-c     &                 'No pollutants from CAS number "' // 
-c     &                 TRIM( TCAS ) // '" in emission file at line', 
-c     &                 IREC, CRLF() // BLANK5 // 'were kept in ' //
-c     &                 'inventory pollutants list'
-c                IF( NWARN .LT. MXWARN ) CALL M3MESG( MESG )
-c                NWARN = NWARN + 1
-                CYCLE
-            END IF
             
 C.............  Get total number of pollutants per CAS number and
 C               position of CAS number in sorted array
@@ -355,13 +343,12 @@ C.................  Remove monthly factors for this source
                 
             END IF
 
+C.............  Store emissions by CAS number for reporting
+            EMISBYCAS( UCASPOS ) = EMISBYCAS( UCASPOS ) + EANN
+            RECSBYCAS( UCASPOS ) = RECSBYCAS( UCASPOS ) + 1
+
 C.............  Loop through pollutants for this CAS number            
             DO I = SCASPOS, SCASPOS + NCASPOLS - 1
-
-C.................  Check if current pollutant is kept
-                IF( .NOT. ITKEEPA( SCASIDX( I ) ) ) THEN
-                    CYCLE
-                END IF
 
 C.................  Set pollutant name
                 CPOL = ITNAMA( SCASIDX( I ) )
@@ -384,6 +371,14 @@ C.................  Apply factor for this pollutant (only if valid)
                     POLOZN = EOZN * POLFAC
                 ELSE
                     POLOZN = EOZN
+                END IF
+                
+C.................  Store emissions by pollutant for reporting
+                EMISBYPOL( I ) = EMISBYPOL( I ) + EANN
+
+C.................  Check if current pollutant is kept
+                IF( .NOT. ITKEEPA( SCASIDX( I ) ) ) THEN
+                    CYCLE
                 END IF
                 
 C.................  Increment source number
