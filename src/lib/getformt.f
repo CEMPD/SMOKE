@@ -500,11 +500,12 @@ C           a list file that does not have correct paths or a bad format.
 
             MESG = 'ERROR: Could not determine inventory file ' //
      &             'format!' // CRLF() // BLANK10 // 
-     &             'The most likely causes of this problem are:' //
+     &             'The most likely causes of this problem are:'
+            CALL M3MSG2( MESG )
+
+            MESG = '(1) List file format with invalid paths' //
      &             CRLF() // BLANK16 //
-     &             '(1) List file format with invalid paths' //
-     &             CRLF() // BLANK16 //
-     &             '(2) Improper formatting (use #IDA, #EMS-95, or ' //
+     &             '(2) Improper formatting (try #IDA, #EMS-95, or ' //
      &             '#EPS header ' // CRLF() // BLANK16 //
      &             '    in first input file and rerun).'
             CALL M3MSG2( MESG )
