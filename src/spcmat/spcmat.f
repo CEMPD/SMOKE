@@ -1,5 +1,5 @@
 
-        PROGRAM SPCPMAT
+        PROGRAM SPCMAT
 
 C***********************************************************************
 C  program body starts at line
@@ -104,8 +104,8 @@ C.........   Other local variables
         INTEGER          I, J, L1, L2, L3, L4, V !  counters and indices
 
         INTEGER          IOS               ! i/o status
+        INTEGER          NINVARR           ! number inventory variables to input
         INTEGER          NMSPC             ! number of model species
-        INTEGER          NSRC              ! number of sources
 
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         LOGICAL       :: KFLAG   = .FALSE. !  if pol to pol convert file or not
@@ -120,10 +120,10 @@ C.........   Other local variables
         CHARACTER(LEN=IOVLEN3) IBUF      !  pollutant name temporary buffer 
         CHARACTER(LEN=IOVLEN3) SBUF      !  species name temporary buffer 
 
-        CHARACTER*16  :: PROGNAME = 'SPCPMAT' ! program name
+        CHARACTER*16  :: PROGNAME = 'SPCMAT' ! program name
 
 C***********************************************************************
-C   begin body of program SPCPMAT
+C   begin body of program SPCMAT
 
         LDEV = INIT3()
 
@@ -153,7 +153,7 @@ C.........  Set source category based on environment variable setting
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.......   Get file name; open input point sources file
+C.......   Get file names and units; open input files
 
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for I/O API INVENTORY file',
@@ -190,9 +190,6 @@ C           results are stored in module MODINFO.
 
             CALL GETSINFO
 
-C.............  Store non-category-specific header information
-            NSRC = NROWS3D
-
 C.............  Store additional pollutant arrays needed for speciation
             ALLOCATE( SINAM( NIPOL ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SINAM', PROGNAME )
@@ -206,39 +203,36 @@ C.............  Store additional pollutant arrays needed for speciation
  
         END IF
 
-        CALL M3MSG2( 'Reading source data from inventory file...' )
-
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'CSCC'
+        IVARNAMS( 2 ) = 'CSOURC'
 
-C.........  Allocate memory for and read required inventory characteristics
+C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
+            NINVARR = 2
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            NINVARR = 4
+            IVARNAMS( 3 ) = 'IRCLAS'  ! ??????
+            IVARNAMS( 4 ) = 'CLINK'   ! ??????
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-
-            IVARNAMS( 2 ) = 'CSOURC'
-
-            CALL RPNTSCHR( ENAME, SDEV, NSRC, 2, IVARNAMS, NCHARS )
-
+            NINVARR = 2
         END IF
+
+C.........  Allocate memory for and read required inventory characteristics
+        CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
 C.........   Read the speciation cross-reference file
 
-        CALL M3MSG2( 'Reading SPECIATION CROSS-REFERENCE file...' )
-
         CALL RDSREF( XDEV )
 
 C.........  Read the pollutant to pollutant conversion file, if any
 C.........  Resulting tables are passed via MODSPRO
         IF ( KFLAG ) THEN
-
-            MESG = 'Reading POLLUTANT TO POLLUTANT CONVERSION file...'
-            CALL M3MSG2( MESG )
 
             CALL RDSCONV( KDEV, NIPOL, EINAM, SINAM )
 
@@ -254,7 +248,7 @@ C           maximum number of profile entries per pollutant.
         CALL DSCSPROF( RDEV, NIPOL, SINAM )
 
 C.........  Give warning if some pollutants won't be speciated, and keep track
-C           of which ones don't get pollutants.
+C           of which ones don't get species.
         J = 0
         DO I = 1, NIPOL
 
@@ -439,16 +433,16 @@ C.............  Write out the speciation matrix for current pollutant
                 DO J = 1, NMSPC
 
                     CBUF = MASSONAM( J,V )
+                    SBUF = SPCNAMES( J,V )
+                    L1 = LEN_TRIM( CBUF )
+                    L2 = LEN_TRIM( IBUF )
+                    L3 = LEN_TRIM( SBUF )
+                    L4 = LEN_TRIM( SNAME )
                     IF( .NOT. 
      &                  WRITE3( SNAME, CBUF, 0, 0, MASSMATX(1,J) )) THEN
 
                         EFLAG = .TRUE.
 
-                        SBUF = SPCNAMES( J,V )
-                        L1 = LEN_TRIM( CBUF )
-                        L2 = LEN_TRIM( IBUF )
-                        L3 = LEN_TRIM( SBUF )
-                        L4 = LEN_TRIM( SNAME )
                         MESG = '     Could not write "' // 
      &                    IBUF( 1:L2 ) // '"-to-"' // SBUF( 1:L3 ) // 
      &                    '" speciation factor using name "' //
@@ -457,7 +451,14 @@ C.............  Write out the speciation matrix for current pollutant
 
                         CALL M3MSG2( MESG )
                         CYCLE
-  
+
+                    ELSE
+                        MESG = BLANK10 // IBUF( 1:L2 ) // '-to-' // 
+     &                         SBUF( 1:L3 ) // ' written to ' // 
+     &                         SNAME( 1:L4 ) // ' as variable ' //
+     &                         CBUF( 1:L1 ) 
+                        CALL M3MSG2( MESG )
+
                     END IF
 
                 END DO ! End write out of model species
@@ -494,7 +495,7 @@ C.............  Write out the speciation matrix for current pollutant
  
                     END IF
 
-                ENDDO ! End write out of model species
+                END DO ! End write out of model species
 
 C.............  Write out file of speciation profiles used per source
 
@@ -511,7 +512,7 @@ C               to a file
 
             END IF    ! End mole-based output
 
-        ENDDO     ! End loop through inventory pollutants
+        END DO     ! End loop through inventory pollutants
 
 C.........  Check error flag for problems and end
         IF( EFLAG ) THEN
@@ -547,5 +548,5 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT ( 10 ( A, :, I10, :, 2X ) )
 
-        END PROGRAM SPCPMAT
+        END PROGRAM SPCMAT
 

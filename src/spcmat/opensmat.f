@@ -1,16 +1,13 @@
-        SUBROUTINE OPENSMAT( CATEGORY, ENAME, SFLAG, LFLAG, 
-     &                       MXSPEC, NIPOL, EINAM, SPCNAMES, 
+        SUBROUTINE OPENSMAT( ENAME, SFLAG, LFLAG, MXSPEC, SPCNAMES, 
      &                       SNAME, LNAME, SVNAMES, LVNAMES )
 
 C***********************************************************************
 C  subroutine body starts at line
 C
 C  DESCRIPTION:
-C      Abridge full pollutants table to a data structure that can be used
-C      in ASGNSPRO
+C      Open the mass-based and mole-based speciation matrices
 C
 C  PRECONDITIONS REQUIRED:
-C      Expects cross-reference tables to be set to IMISS3 if not defined
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
@@ -40,6 +37,10 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -58,13 +59,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        CRLF, FINDC, GETCFDSC, PROMPTMFILE, VERCHAR
 
 C.........  SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: CATEGORY   ! source category
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
         LOGICAL     , INTENT (IN) :: SFLAG      ! true: open mass-based file
         LOGICAL     , INTENT (IN) :: LFLAG      ! true: open mole-based file
         INTEGER     , INTENT (IN) :: MXSPEC     ! max no. of spec per pol
-        INTEGER     , INTENT (IN) :: NIPOL      ! number of inventory pols
-        CHARACTER(*), INTENT (IN) :: EINAM( NIPOL ) ! names of actual pols
         CHARACTER(*), INTENT (IN) :: SPCNAMES( MXSPEC, NIPOL ) ! model spec nams
         CHARACTER(*), INTENT(OUT) :: SNAME           ! mass-based spec file name 
         CHARACTER(*), INTENT(OUT) :: LNAME           ! mole-based spec file name
@@ -155,20 +153,19 @@ C.........  Get header information from inventory file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IFDESC2 = GETCFDSC( FDESC3D, '/FROM/' )
-        IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/' )
+        IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+        IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
 
         NVARS3D = ICNT
 
         FDESC3D = ' '   ! array
 
-        FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) //
-     &                 ' speciation matrix'
+        FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' speciation matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
 
-        FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
-        FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
+        FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
+        FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
 
 C.........  Set up variable descriptions that will be used to indicate the 
@@ -182,7 +179,7 @@ C           inventory pollutant and model species names
             DO J = 1, NSPEC( V )
 
                 I = I + 1
-                VDESC3D( I ) = EINAM( V ) // '_' // SPCNAMES( J,V )               
+                VDESC3D( I ) = EINAM( V ) // SPJOIN // SPCNAMES( J,V )
                 VTYPE3D( I ) = M3REAL
 
             END DO
@@ -206,7 +203,7 @@ C.........  Set up variables specifically for mass-based file, and open it
 
             SNAME = PROMPTMFILE( 
      &        'Enter logical name for MASS-BASED SPECIATION MATRIX',
-     &        FSUNKN3, 'PSMAT_S', PROGNAME )
+     &        FSUNKN3, CRL // 'SMAT_S', PROGNAME )
 
         ENDIF
 
@@ -228,7 +225,7 @@ C.........  Set up variables specifically for mole-based file, and open it
 
             LNAME = PROMPTMFILE( 
      &        'Enter logical name for MOLE-BASED SPECIATION MATRIX',
-     &        FSUNKN3, 'PSMAT_L', PROGNAME )
+     &        FSUNKN3, CRL // 'SMAT_L', PROGNAME )
 
         ENDIF
 

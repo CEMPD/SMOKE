@@ -371,54 +371,32 @@ C.............  Try for any country/state code match (not, pol-specific)
                 CYCLE                       !  to end of sources-loop
             END IF
 
+C.............  For default speciation profile, make sure that it has been
+C               defined for the current pollutant, and that we want to report
+C               the use of defaults.
             IF( CSPT01( V ) .NE. EMCMISS3 .AND. 
      &          REPDEFLT .AND. REPORT           ) THEN
                 SPCODE = CSPT01( V )
                     
                 CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
 
-C.................  For default speciation profile, make sure that it has been
-C                   defined for the current pollutant
-                IF( SPCODE .EQ. ' ' ) THEN
+                MESG = 'NOTE: Using default speciation profile "' //
+     &                 SPCODE // '" for:'//
+     &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                 CRLF() // BLANK10 // 
+     &                 'SCC: ' // TSCC // ' POL: ' // EINAM( V )
+                CALL M3MESG( MESG )
 
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Default speciation profile not ' //
-     &                     'defined for POL: '// EINAM(V)(1:LV)// ','//
-     &                     CRLF() // BLANK10 // 'but needed for:'//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                     CRLF() // BLANK10 // 
-     &                     'SCC: ' // TSCC
-                    CALL M3MESG( MESG )
-
-C.................  It profile defined, try to apply it
-                ELSE
-
-                    MESG = 'NOTE: Using default speciation profile "' //
-     &                     SPCODE // '" for:'//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                     CRLF() // BLANK10 // 
-     &                     'SCC: ' // TSCC // ' POL: ' // EINAM( V )
-                    CALL M3MESG( MESG )
-
-                    CALL SETSOURCE_SMATS
-
-                 END IF
+                CALL SETSOURCE_SMATS
 
             ELSEIF( CSPT01( V ) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT01( V )
                 CALL SETSOURCE_SMATS
 
             ELSE
-                CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
 
                 EFLAG = .TRUE.
-                MESG = 'ERROR: No speciation cross-reference ' //
-     &                 'available (and no default) for:' //
-     &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCC // ' POL: ' // EINAM( V )
-
-                CALL M3MESG( MESG )
+                CALL REPORT_MISSING_DEFAULT
 
             END IF    !  if default profile code is available or not
 
@@ -443,6 +421,25 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 
         CONTAINS
 
+C.............  This internal subroutine writes the message when a default
+C               speciation profile is unavailable for a given pollutant
+            SUBROUTINE REPORT_MISSING_DEFAULT
+
+                CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
+
+                MESG = 'ERROR: No speciation cross-reference ' //
+     &                 'available (and no default) for:' //
+     &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                 CRLF() // BLANK10 // 
+     &                 'SCC: ' // TSCC // ' POL: ' // EINAM( V )
+
+                CALL M3MESG( MESG )
+
+            END SUBROUTINE REPORT_MISSING_DEFAULT
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
 C.............  This internal subprogram searches for the speciation profile
 C               code in the abriged list (from MODSPRO) and if found, applies
 C               the speciation factors for all species in that profile to 
@@ -460,20 +457,39 @@ C----------------------------------------------------------------------
 
             K = MAX( FINDC( SPCODE, NSPROF, SPROFN ), 0 )
 
-            IF( K .EQ. 0 ) THEN
+C.............  If profile is not found in set of profiles, try to apply
+C               the default for this pollutant
+            IF( K .LE. 0 ) THEN
 
                 CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
 
-                EFLAG = .TRUE.
-                MESG = 'ERROR: Speciation profile "' // SPCODE // 
+                MESG = 'WARNING: Speciation profile "' // SPCODE // 
      &                 '" is not in profiles, but it was assigned' //
      &                 CRLF() // BLANK10 // 'to source:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
      &                 'SCC: ' // TSCC // ' POL: ' // EINAM( V )
+
                 CALL M3MESG( MESG )
 
-            ELSE
+                K = MAX( FINDC( CSPT01( V ), NSPROF, SPROFN ), 0 )
+
+                IF( CSPT01( V ) .NE. EMCMISS3 .AND. K .GT. 0 ) THEN
+                    MESG = BLANK5 // 'Using default profile ' // 
+     &                     CSPT01( V )
+                    CALL M3MESG( MESG )
+
+                ELSE 
+                    EFLAG = .TRUE.
+                    CALL REPORT_MISSING_DEFAULT
+                    
+                END IF
+
+            END IF
+
+C.............  Now that the default profile has been tried, check one last time
+C               for K and then apply speciation factors
+            IF( K .GT. 0 ) THEN
 
 C.................  Get indices to full speciation table
                 ITBL = IDXSPRO ( K )
