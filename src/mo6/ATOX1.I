@@ -1,6 +1,7 @@
 C 
 C  Changes: (Last change first) 
 C 
+C 28 Sep 01: AIR TASK 25: Changed ATSSFLAG to SSFLAG to accomodate PM output. 
 C 06 Sep 01: AIR Task 15: Changed TOXCHK back to 6, removed RVP OXY WAIVER. 
 C 30 Aug 01: AIR Task 22: Added ATSSFLAG (air toxic spreadsheet) 
 C 26 Jun 01: AIR Task 15: Expanded TOXCHK to 7. Added AT Waiver. 
@@ -12,7 +13,7 @@ C The data is initialized in BD48.
 C 
       INTEGER MAXIAT 
       INTEGER TOXCHK 
-      LOGICAL ATSSFLAG 
+      LOGICAL SSFLAG 
       LOGICAL TOXFLG 
       REAL    AROM 
       REAL    ATOXY 
@@ -22,4 +23,4 @@ C
       REAL    OLEF 
 C 
       COMMON /ATOX1/ TOXCHK(6),E200,E300,AROM,OLEF,BENZ, 
-     &               ATOXY(3,5),MAXIAT,TOXFLG,ATSSFLAG 
+     &               ATOXY(3,5),MAXIAT,TOXFLG,SSFLAG 

@@ -26,6 +26,9 @@ C        SOAKCF
 C 
 C  Changes:  (Last change first) 
 C 
+C  31 Dec 01 @EPA-BAG bug368 Remove I&M sawtooth 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
+C  20 Sep 01 AIR Task 15: Comments 
 C  09 Jul 01 AIR Task 15: New subroutine (Based on HRLOOP) 
 C 
 C  Input on call: 
@@ -83,7 +86,6 @@ C  HIGHER   R    Stored High Emitter Fractions
 C  IDX      I    Model year index (chronological order) 
 C  IFDS     I    Fuel delivery system loop control variable 
 C  IH       I    Hourly loop control variable 
-C  IMPCT    R    Holds the I/M Percentage reduction. 
 C  INH      I    Emitter category loop control variable 
 C  INHWT    R    Normal/High emitter weighting factor 
 C  IP       I    Pollutant loop control variable. 
@@ -182,7 +184,6 @@ C
       REAL     EF 
       REAL, DIMENSION(3)           :: FDSWT 
       REAL, DIMENSION(2,3,2)       :: HIGHER 
-      REAL     IMPCT 
       REAL, DIMENSION(2)           :: INHWT 
       REAL     MPHR 
       REAL, DIMENSION(2,2)         :: NGV1 
@@ -376,17 +377,16 @@ C
                 IF(VVLDGAS(IV) .EQ. 1 .AND. MY.GE.1994) THEN 
 C 
 C     For cases of 1994+ MY's and NO I/M.  The ARRAY 
-C     HIGH3 returns the fraction of HIGH emitters in the 
+C     OBDHINIM returns the fraction of HIGH emitters in the 
 C     fleet After OBD is applied. Tier 0 (ISTD=1) have no OBD. 
 C 
                   IF(ISTD.EQ.1) THEN       !Tier 0 
                     HIGHER(HIGH,IFDS,1) = 
      *                EF_HI_FRCN(MY,IP,IV,VMTAGE,IFDS,ISTD,INERR) 
                   ELSE                     !Tier 1+ 
-                    HIGHER(HIGH,IFDS,2) =  HIGH3(JDX,IP,IV) 
+                    HIGHER(HIGH,IFDS,2) =  OBDHINIM(JDX,IP,IV) 
                   ENDIF 
                 END IF 
-
               END IF 
             END IF 
 C 
@@ -463,12 +463,6 @@ C
                 ATEMFAC(ISR,ISTD,IFDS,INH,2) = ATTOG(ISR) 
 C 
              END DO   !ISR LOOP 
-CDFK 
-CDFK             IF(IV.EQ.14) THEN 
-CDFK             WRITE(99,99) MY,ISTD,IFDS,INH, 
-CDFK     *           ((ATEMFAC(ISR,ISTD,IFDS,INH,IVT),ISR=1,2),IVT=1,2) 
-CDFK  99         FORMAT(I5,3I2,4F10.5) 
-CDFK             END IF 
 C 
 C     Compute the fuel correction factors for VOC and TOG, using AT version 
 C     of FUEL. Must call twice to fill FUELCF array because fuel correction 
@@ -565,32 +559,24 @@ C
 C 
 C     For gas vehicles for all model years obtain % of emission factor 
 C     left after I/M program effect is computed for the IH loop. 
-C     Default (non-I/M, diesel, HD & MC) value of IMPCT is 1.0 (no effect). 
+C     Default (non-I/M, diesel, HD & MC) I/M is no effect or no credit. 
 C 
-                    IMPCT = 1.0 
-                    IF(IMFLAG.GT.1) THEN 
-                       IF(VVLDGAS(IV).EQ.1 .AND. MY.GE.1981) THEN 
-                          IMPCT = 
+                    IF(IMFLAG>1) THEN 
+                      IF(VVLDGAS(IV)==1.AND.MY>=1981.AND.INH==HIGH) THEN 
+                         EF = EF - 
      *                     IMPROG(ICY,MY,ACTUAL_MY,JDX,IP,IV,VMTAGE,ISR, 
-     *                     IFDS,ISTD,INERR,IDX,IH,IROAD,CAT) 
-                       ELSEIF((VVLDGAS(IV).EQ.1 .AND. MY.LT.1981) .OR. 
-     *                     VVHDGV(IV).EQ.1 ) THEN 
-                           IMPCT = PCLEFT(MY,ICY,IP,IV) 
+     *                     IFDS,ISTD,INERR,IDX,IH,IROAD,CAT,EF) 
+                      ELSEIF((VVLDGAS(IV)==1 .AND. MY<1981) .OR. 
+     *                     VVHDGV(IV)==1 ) THEN 
+                           EF = EF*PCLEFT(MY,ICY,IP,IV) 
                        ENDIF 
                     ENDIF 
-C 
-                    EF = EF * IMPCT 
 C 
                     EF = EF * TPHR / MPHR                                ! Starts in g/mi units 
 C 
                     EF = EF * INHWT(INH) * FDSWT(IFDS) * STDWT(ISTD)     ! Starts in g/mi units 
 C 
                     ATHEF(IH,5,IVT) = ATHEF(IH,5,IVT) + EF               ! Hourly Start emissions (g/mi) 
-CDFK 
-CDFK      IF(IH.EQ.1)WRITE(99,99) IV,MY,ISR,INH,IVT,BASEF(ISR), 
-CDFK     *FUELCF(START,INH,ISTD,IFDS,IH,IVT),INHWT(INH),FDSWT(IFDS), 
-CDFK     *STDWT(ISTD),EF,IMPCT,TPHR,MPHR 
-CDFK  99  FORMAT(I3,I5,I2,I2,I2,9F10.5) 
 C 
 C ..  Array ATHEF(IH,IROAD,IVT) contains the start emissions, g/mi,  
 C     in cells where IROAD = 5. IH is from 1-24.  1-24 correspond  
@@ -659,30 +645,23 @@ C
 C 
 C     For gas vehicles for all model years obtain % of emission factor 
 C     left after I/M program effect is computed for the IH loop. 
-C     Default (non-I/M, diesel, HD & MC) value of IMPCT is 1.0 (no effect). 
+C     Default (non-I/M, diesel, HD & MC) I/M is no effect or no credit. 
 C 
-                    IMPCT = 1.0 
-                    IF(IMFLAG.GT.1) THEN 
-                       IF(VVLDGAS(IV).EQ.1 .AND. MY.GE.1981) THEN 
-                          IMPCT = 
+                    IF(IMFLAG>1) THEN 
+                      IF(VVLDGAS(IV)==1.AND.MY>=1981.AND.INH==HIGH) THEN 
+                          TEF = TEF - 
      *                     IMPROG(ICY,MY,ACTUAL_MY,JDX,IP,IV,VMTAGE,ISR, 
-     *                        IFDS,ISTD,INERR,IDX,IH,IROAD,CAT) 
-                       ELSEIF((VVLDGAS(IV).EQ.1 .AND. MY.LT.1981) .OR. 
-     *                     VVHDGV(IV).EQ.1 ) THEN 
-                           IMPCT = PCLEFT(MY,ICY,IP,IV) 
+     *                        IFDS,ISTD,INERR,IDX,IH,IROAD,CAT,TEF) 
+                      ELSEIF((VVLDGAS(IV)==1 .AND. MY<1981) .OR. 
+     *                     VVHDGV(IV)==1 ) THEN 
+                           TEF = TEF * PCLEFT(MY,ICY,IP,IV) 
                        ENDIF 
                     ENDIF 
-C 
-                    TEF = TEF * IMPCT 
 C 
                     TEF = TEF * INHWT(INH) * 
      &                        FDSWT(IFDS) * STDWT(ISTD) 
 C 
                     ATHEF(IH,IROAD,IVT) = ATHEF(IH,IROAD,IVT) + TEF     ! Running in g/mi 
-CDFK 
-CDFK      IF(IH.EQ.1)WRITE(99,99) IV,MY,ISR,INH,IVT,BASEF(ISR), 
-CDFK     *FUELCF(START,INH,ISTD,IFDS,IH,IVT),INHWT(INH),FDSWT(IFDS), 
-CDFK     *STDWT(ISTD),TEF,IMPCT 
 C 
                   ENDIF                  !END RUNNING/START ENDIF 
 C 

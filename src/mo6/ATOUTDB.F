@@ -1,4 +1,4 @@
-      SUBROUTINE ATOUTDB(ICY) 
+      SUBROUTINE ATOUTDB(ICY,INERR) 
 C 
 C  ATOUTDB writes the AT emissions data to 
 C  the EMISSIONS database table. The output 
@@ -6,53 +6,18 @@ C  units are g/mi.
 C 
 C  Called by:  ATCALX 
 C 
-C  CallS:  ATDB_DAILY, ATDB_AGGR 
+C  Calls:  ATDB_DAILY, ATDB_AGGR 
 C 
 C  Changes: (Last change first) 
 C 
-C 10 Jul 01: New MOBILE6 routine. 
+C 28 Nov 01: Air TASK 28: Added ATHEAP for AT dynamic array support. 
+C 15 Nov 01 AIR Task 27: Added INERR support due to PMFLECON update. 
+C 05 OCT 01: AIr TASK 15-22: Added filter to prevent output of evap from 
+C            start/exhaust only species. 
+C 20 Sep 01: AIR Task 15-22: Comments 
+C 10 Jul 01: AIR Task 15-22: New MOBILE6 routine. 
 C 
-C 
-C  Input on call: 
-C 
-C    Constants:  
-C 
-C    argument list: ICY 
-C 
-C    common blocks: 
-C 
-C    /SPEED9/   FVMT,HVMT 
-C    /CEVBMY/   BMYMPD 
-C    /FLAGS5/   FTP_INPUT_FLAG 
-C    /IVTYPE/   VVSTARTS 
-C    /MYRCAL/   MEVMYR 
-C    /STDIST/   STARTDIST, STARTSPERDAY 
-C    /TEMPS/    TEMHRLY 
-C    /VMXCOM/   DBVCOUNT 
-C    /WEEKLY/   IWEEK 
-C 
-C  Output on return: 
-C 
-C    common blocks: 
-C 
-C  Local array subscripts: 
-C 
-C  Local variable dictionary: 
-C 
-C  Name     Type              Description 
-C  ------   ----  ------------------------------------------------------- 
-C  DBHEADER  C    Non-changing part of database output record. 
-C  IFAC      I    Facility type index. 
-C  IH        I    Hourly interval. 
-C  IVC       I    Model year group index for vehicle counts. 
-C  IW        I    Weekday/weekend flag. 
-C  RFE       R    Fuel economy value. 
-C  ZGMDAY    R    USED TO SUM DAILY GRAMS/DAY 
-C  ZSTARTS   R    USED TO SUM DAILY STARTS 
-C  ZENDS     R    USED TO SUM DAILY ENDS 
-C  ZMILES    R    USED TO SUM DAILY MILES 
-C  ZGMMILE   R    USED TO CALCULATE DAILY GRAMS/MILE 
-C  FMILES    R    USED TO SUM MILES/DAY FOR AN FTYPE 
+C    Argument list: ICY 
 C 
 C  Notes: 
 C 
@@ -60,6 +25,7 @@ C
       USE DATABASE, ONLY : DBFLAG,DBSELTOX,DBSELVEH,DBSELEFT,DBSELFAC, 
      &                     DBNFILE,DBNRUN,DBNSCEN,DBDAILY,DBAGGR, 
      &                     DBUNIT,TABCHAR,DBSELAGE,DBSELHR 
+      USE ATHEAP 
 C 
       IMPLICIT NONE 
 C 
@@ -68,7 +34,7 @@ C
       INCLUDE  'CEVBMY.I'     ! BMYMPD 
       INCLUDE  'EVAHS1.I'     ! HSRED, HS_HRLY_TRP_FRCN 
       INCLUDE  'FLAGS5.I'     ! FTP_INPUT_FLAG 
-      INCLUDE  'IVTYPE.I'     ! VVSTARTS,VVDSL 
+      INCLUDE  'IVTYPE.I'     ! VVSTARTS,VVDSL,VTLDGV,VVHEAVY 
       INCLUDE  'MAXIMA.I'     ! MAXYRS 
       INCLUDE  'MYRCAL.I'     ! MEVMYR,TF 
       INCLUDE  'PART1.I'      ! MAXIPPM 
@@ -79,31 +45,32 @@ C
       INCLUDE  'WEEKLY.I'     ! IWEEK 
 C 
       INTEGER,INTENT(IN)               ::  ICY 
+      INTEGER,INTENT(INOUT)            ::  INERR 
 C 
       REAL, EXTERNAL :: PMFLECON 
 C 
-      CHARACTER(26)                ::  DBHEADER 
+      CHARACTER(26)                ::  DBHEADER    ! Non-changing part of database output record. 
 C 
-      INTEGER                      ::  ETYPE 
-      INTEGER                      ::  IAT 
-      INTEGER                      ::  IB 
-      INTEGER                      ::  IDX 
-      INTEGER                      ::  IE 
-      INTEGER                      ::  IFAC 
-      INTEGER                      ::  IH 
-      INTEGER                      ::  IP 
-      INTEGER                      ::  IV 
-      INTEGER                      ::  IW 
-      INTEGER                      ::  IXV 
-      INTEGER                      ::  JDX 
-      INTEGER                      ::  MY 
-      INTEGER, SAVE                ::  LOWER_LMT=1 
-      INTEGER, SAVE                ::  UPPER_LMT=2 
+      INTEGER                      ::  ETYPE       ! Emission type index 
+      INTEGER                      ::  IAT         ! Air Toxic pollutant index 
+      INTEGER                      ::  IB          ! Beginning road type index 
+      INTEGER                      ::  IDX         ! Yearly loop 
+      INTEGER                      ::  IE          ! Ending road type index 
+      INTEGER                      ::  IFAC        ! Facility type index. 
+      INTEGER                      ::  IH          ! Hourly interval. 
+      INTEGER                      ::  IP          ! Pollutant number 
+      INTEGER                      ::  IV          ! Vehicle class 
+      INTEGER                      ::  IW          ! Weekday/weekend flag. 
+      INTEGER                      ::  IXV         ! eXhaust/eVap index 
+      INTEGER                      ::  JDX         ! Age 
+      INTEGER                      ::  MY          ! Model year 
+      INTEGER, SAVE                ::  LOWER_LMT=1 ! Lower Index into DBSELAGE and DBSELHR 
+      INTEGER, SAVE                ::  UPPER_LMT=2 ! Upper index into DBSELAGE and DBSELHR 
 C 
-      REAL                         ::  HSRFAC 
-      REAL                         ::  RFE 
-      REAL,DIMENSION(24,5)         ::  HEF 
-      REAL                         ::  FACVMT 
+      REAL                         ::  HSRFAC      ! Hot soak fraction 
+      REAL                         ::  RFE         ! Fuel economy value. 
+      REAL,DIMENSION(24,5)         ::  HEF         ! Hourly emission factor 
+      REAL                         ::  FACVMT      ! Road type VMT fraction 
 C 
 C 
 C     Don't write the database output if not selected or 
@@ -151,7 +118,7 @@ C
 C 
       MY=ICY-JDX+1 
 C 
-      RFE = PMFLECON(MY,IV) 
+      RFE = PMFLECON(MY,IV,INERR) 
 C 
 C     Loop over the ETYPES 
 C 
@@ -166,6 +133,10 @@ C
 C     Prevent output of evap for all diesels 
 C 
             IF(VVDSL(IV).EQ.1 .AND. ETYPE.GE.3) EXIT 
+C 
+C     Prevent output of evap emissions from anything but Benzene and MTBE. 
+C 
+            IF(IAT.GE.3 .AND. ETYPE.GE.3) EXIT 
 C 
 C     Map AT emissions into ETYPE space 
 C 
@@ -262,7 +233,7 @@ C
       END DO !IV 
       END DO !IAT 
 C 
-      IF(DBAGGR) CALL ATDB_AGGR(ICY) 
+      IF(DBAGGR) CALL ATDB_AGGR(ICY,INERR) 
 C 
    99 RETURN 
 C 

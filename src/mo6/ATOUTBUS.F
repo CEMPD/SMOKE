@@ -9,33 +9,21 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  20 Sep 01 AIR task 15,18: Comments 
+C  11 Sep 01 AIR Task 18: Add HAPS output. 
 C  10 Jul 01 AIR Task 15: New routine 
 C 
-C  Input on call: 
-C 
-C    argument list: ICY 
-C    module: DATABASE 
-C    common blocks: 
-C    /IOUCOM/ IOUAT 
-C    /ATOX4/ EFAT,VAT 
-C    /VMXCOM/ VMTMIX 
-C    /VVTYPS/ VTGASBUS, VTSCHOOL  (IVTYPE.I) 
-C    /IDLCOM/ IDLEATFLG 
 C 
 C  Local array subscripts: 
 C 
-C  NAMPOL(3)  -  NAMPOL ( IAT ) 
-C  NAMVEH(4)  -  NAMVEH ( IVBUS) 
+C  NAMPOL(17)  -  NAMPOL ( IAT ) 
+C  NAMVEH(3)   -  NAMVEH ( IVBUS) 
 C 
 C  Local variable / array dictionary: 
 C 
 C   Name   Type              Description 
 C  ------  ----  ------------------------------------------------------- 
 C  DASH8    C*8  8 character string of hyphens 
-C  IAT       I   AT pollutant loop variable 
-C  IV        I   vehicle type index 
-C  IVFIRST   I   print formatting index variable; sequences gas bus/schoolbus 
-C  IVLAST    I   print formatting index variable; sequences gas bus/schoolbus 
 C  NAMPOL   C*4  AT pollutant names 
 C  NAMVEH   C*8  vehicle class names 
 C 
@@ -49,21 +37,27 @@ C
 C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'ATOX1.I'       
-      INCLUDE 'ATOX4.I'      
-      INCLUDE 'IOUCOM.I' 
-      INCLUDE 'IVTYPE.I' 
-      INCLUDE 'VMXCOM.I' 
+      INCLUDE 'ATOX1.I'  ! MAXIAT     
+      INCLUDE 'ATOX4.I'  ! EFAT,VAT 
+      INCLUDE 'ATOX5.I'  ! ATHSNAME 
+      INCLUDE 'IOUCOM.I' ! IOUAT 
+      INCLUDE 'IVTYPE.I' ! VTGASBUS,VTSCHOOL 
+      INCLUDE 'VMXCOM.I' ! VMTMIX 
 C 
-      INTEGER       I 
-      INTEGER       IAT 
-      INTEGER       IN 
-      INTEGER       IV 
-      INTEGER       IVFIRST 
-      INTEGER       IVLAST 
-      INTEGER       IXV 
-      REAL          TOTAL(3) 
-      REAL          XVTOT(3,2) 
+      CHARACTER*10  CEF(3)      ! Character representation of EF 
+      INTEGER       I           ! Loop index 
+      INTEGER       IAT         ! Air Toxic pollutant index 
+      INTEGER       IMAP        ! HAPS pollutant index 
+      INTEGER       IN          ! Pollutant name index 
+      INTEGER       IRB         ! Ratio/BER index 
+      INTEGER       IV          ! Vehicle class 
+      INTEGER       IVFIRST     ! First vehicle class 
+      INTEGER       IVLAST      ! Last vehicle class 
+      INTEGER       IXV         ! eXhaust/eVap index 
+      INTEGER       JXV         ! HAPS eXhaust/eVap index 
+      LOGICAL       PRNT        ! Printing togle 
+      REAL          TOTAL(3)    ! Totals 
+      REAL          XVTOT(3,2)  ! eXhaust/eVap totals 
 C 
       CHARACTER(LEN=8) :: DASH8 = '  ------' 
 C 
@@ -88,6 +82,14 @@ C
       CHARACTER(LEN=8), DIMENSION(3) ::  NAMVEH=(/ 
      *   '  GasBUS','   URBAN','  SCHOOL'/) 
 C 
+      CHARACTER(LEN=4),DIMENSION(6)::CETYPE=(/ 
+     *'Exht', 
+     *'HtSk', 
+     *'Drnl', 
+     *'Rung', 
+     *'Rest', 
+     *'Refu'/) 
+C 
 C 
 C  Determine output range 
 C 
@@ -105,6 +107,8 @@ C     Initialize Exh + Evap Total
 C 
       XVTOT = 0. 
 C 
+C********************************************************************** 
+C 
 C     Print the exhaust emission factor group. 
 C 
       WRITE(IOUAT,240) 
@@ -120,15 +124,17 @@ C
   250   FORMAT(T3,A17,':',3F10.2) 
 C 
       IF(IAT.LE.2) THEN 
-      DO IV=IVFIRST,IVLAST 
-      I=IV-IVFIRST+1 
-      XVTOT(I,IAT)=XVTOT(I,IAT)+EFAT(IXV,IAT,IV) 
-      END DO 
+       DO IV=IVFIRST,IVLAST 
+        I=IV-IVFIRST+1 
+        XVTOT(I,IAT)=XVTOT(I,IAT)+EFAT(IXV,IAT,IV) 
+       END DO 
       END IF 
 C 
       END IF 
 C 
       END DO 
+C 
+C********************************************************************** 
 C 
 C     Print the evap emission factor group. 
 C 
@@ -146,15 +152,15 @@ C
      *      (EFAT(IXV,IAT,IV),IV=IVFIRST,IVLAST) 
 C 
       DO IV=IVFIRST,IVLAST 
-      I=IV-IVFIRST+1 
-      TOTAL(I)=TOTAL(I)+EFAT(IXV,IAT,IV) 
+       I=IV-IVFIRST+1 
+       TOTAL(I)=TOTAL(I)+EFAT(IXV,IAT,IV) 
       END DO 
 C 
           END DO 
 C 
       DO IV=IVFIRST,IVLAST 
-      I=IV-IVFIRST+1 
-      XVTOT(I,IAT)=XVTOT(I,IAT)+TOTAL(I) 
+       I=IV-IVFIRST+1 
+       XVTOT(I,IAT)=XVTOT(I,IAT)+TOTAL(I) 
       END DO 
 C 
       IF(IAT.EQ.1) THEN 
@@ -168,6 +174,8 @@ C
         END IF 
 C 
       END DO 
+C 
+C********************************************************************** 
 C 
 C     Print the exhaust+evap emission factor group. 
 C 
@@ -184,6 +192,85 @@ C
 C 
       WRITE(IOUAT,259) 
   259 FORMAT(1X,119('-')) 
+C 
+C********************************************************************** 
+C 
+C     Print the HAPS exhaust emission factor group. 
+C 
+      IF(ATHAPS) THEN 
+C 
+      WRITE(IOUAT,241) 
+  241 FORMAT(T2, 
+     *   'HAPS Exhaust Emission Factors (mg/mi):') 
+C 
+      JXV = 1 ! Exhaust index for HAPS 
+      IXV = 1 ! Exhaust index 
+C 
+      DO IMAP=1,NMAP 
+C 
+      IAT=MAXIAT+IMAP 
+C 
+      PRNT = .FALSE. 
+C 
+      CEF='        NA' 
+C 
+      DO IRB=1,4 
+C 
+      DO IV=IVFIRST,IVLAST 
+       IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
+        PRNT = .TRUE. 
+        WRITE(CEF(IV-IVFIRST+1),20) EFAT(IXV,IAT,IV) 
+   20   FORMAT(F10.2) 
+       END IF 
+      END DO 
+C 
+      END DO !IRB 
+C 
+      IF(PRNT) WRITE(IOUAT,232) TRIM(ATHSNAME(IMAP)),CETYPE(IXV),CEF 
+  232 FORMAT(T3,A,' ',A,T20,':',3A10) 
+C 
+      END DO !IMAP 
+C 
+C********************************************************************** 
+C 
+C     Print the HAPS evap emission factor group. 
+C 
+      WRITE(IOUAT,242) 
+  242 FORMAT(1X,119('-'),/T2, 
+     *   'HAPS Evaporative Emission Factors (mg/mi):') 
+C 
+      JXV = 2 ! Evap index for HAPS 
+C 
+      DO IMAP=1,NMAP 
+C 
+       IAT=MAXIAT+IMAP 
+C 
+       DO IXV=2,6 
+C 
+        PRNT = .FALSE. 
+C 
+        CEF='        NA' 
+C 
+        DO IRB=1,4 
+C 
+         DO IV=IVFIRST,IVLAST 
+          IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
+           PRNT = .TRUE. 
+           WRITE(CEF(IV-IVFIRST+1),20) EFAT(IXV,IAT,IV) 
+          END IF 
+        END DO 
+C 
+       END DO !IRB 
+C 
+       IF(PRNT) WRITE(IOUAT,232) TRIM(ATHSNAME(IMAP)),CETYPE(IXV),CEF 
+C 
+      END DO !IXV 
+C 
+      END DO !IMAP 
+C 
+      WRITE(IOUAT,259) 
+C 
+      END IF !HAPS 
 C 
    85 RETURN 
       END 

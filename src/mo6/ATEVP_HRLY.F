@@ -1,4 +1,4 @@
-      SUBROUTINE ATEVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY) 
+      SUBROUTINE ATEVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY,INERR) 
 C 
 C  ATEVAP_HRLY calls the subroutines and functions to which determine hydrocarbon 
 C  evaporative emissions for hot soak, diurnal, crankcase, resting losses, and 
@@ -13,6 +13,7 @@ C          PCTLEV, QUITER, RNLOSSSUM, RSTLOS, CNVRT_U
 C 
 C  Changes:  (Last change first) 
 C 
+C  26 Dec 01 ARI Task 15-29: M6011221 Updates to CNVRT_U 
 C  26 Jul 01 AIR Task 20: New Subroutine. Based on EVP_HRLY.FOR. 
 C  Input on call: 
 C 
@@ -131,6 +132,7 @@ C
       INTEGER, INTENT(IN) :: JDX       ! Model year index (reverse chronological order) 
       INTEGER, INTENT(IN) :: MY        ! Model year corrected if NO CLEAN AIR ACT (NO CAA) is enabled 
       INTEGER, INTENT(IN) :: ACTUAL_MY ! Model year (uncorrected; ACTUAL_MY=ICY+IDX-MAXYRS) 
+      INTEGER, INTENT(INOUT) :: INERR 
 C 
 C     Declare external functions. 
 C 
@@ -161,12 +163,9 @@ C
 C                       evap. emission indices 
       INTEGER, PARAMETER :: IHOTSOAK=1 
       INTEGER, PARAMETER :: IDIURNAL=2 
-      INTEGER, PARAMETER :: IRUNLOSS=3 
       INTEGER, PARAMETER :: IRESTLOSS=5 
-      INTEGER, PARAMETER :: IREFUEL=6 
 C                       three of the five roadway type indices 
       INTEGER, PARAMETER :: IFREEWAY=1 
-      INTEGER, PARAMETER :: IRAMP=4 
       INTEGER, PARAMETER :: IALLROADS=5 
 C 
 C     Initialize the hourly evaporative emissions array. 
@@ -247,7 +246,8 @@ CDFK      IF(IV.EQ.1)WRITE(99,92) DRNL
 CDFK  92  FORMAT(' D2',F10.4) 
 C 
 C         Convert to g/mi 
-          DRNL = DRNL * CNVRT_U(GPH,GPM,JDX,ICY,IV,IVTAM,IH,IDIURNAL) 
+          DRNL = DRNL   
+     *         * CNVRT_U(GPH,GPM,JDX,IV,IH,IDIURNAL,INERR) 
 CDFK      IF(IV.EQ.1)WRITE(99,93) DRNL 
 CDFK  93  FORMAT(' D3',F10.4) 
 C 
@@ -269,7 +269,7 @@ C       HOT SOAK LOSSES:
         CALL FUEL2(IHOTSOAK,HSK) 
 C 
 C       Convert HOT SOAK to grams/mi 
-        HSK =  HSK * CNVRT_U(GPT,GPM,JDX,ICY,IV,IVTAM,IH,IHOTSOAK) 
+        HSK =  HSK * CNVRT_U(GPT,GPM,JDX,IV,IH,IHOTSOAK,INERR) 
 C 
 C       Hot Soaks are independent of road type, so use IROAD=5 
         ATHEV(IH,5,1)=HSK 
@@ -300,7 +300,7 @@ C       adjust for ZEV and NGV
 C 
 C       units conversions to grams/mi: 
         RSTLSS_EF = RSTLSS_EF* 
-     *             CNVRT_U(GPH,GPM,JDX,ICY,IV,IVTAM,IH,IRESTLOSS) 
+     *             CNVRT_U(GPH,GPM,JDX,IV,IH,IRESTLOSS,INERR) 
 C 
 C       Reseting losses are independent of road type, so use IROAD=5 
         ATHEV(IH,5,4) = RSTLSS_EF 

@@ -6,7 +6,7 @@ C  BLOCK DATA 16 initializes miscellaneous integer-valued parameters.
 C 
 C  Changes : 
 C 
-C  31 Aug 01 AIR Task 22-24: Added IOUATSS 
+C  31 Aug 01 AIR Task 22-24: Added IOUSS 
 C  11 Jul 01 AIR Task 15: added I/O for Air Toxic output. 
 C  10 Apr 11 AIR Task 11: Redirected IOUERR to separate file. 
 C  09 Mar 01 AIR Task 11: Added I/O for PM 
@@ -153,7 +153,7 @@ C     NOTE: Unit numbers 51-57 are reserved for the database output
 C           tables and are initialized in MODULE DATABASE. 
       DATA IOUGEN,IOUIMD,IOUIN,IOUALT,IOUBAT,IOUXIM/1, 4, 5, 7, 19, 3/ 
       DATA IOUREP,IOUERR,IOUOUT,IOUNULL/2, 13, 6, -1/ 
-      DATA IOUPM,IOUAT,IOUATSS/8,9,10/ 
+      DATA IOUPM,IOUAT,IOUSS/8,9,10/ 
 C 
       DATA IVPTRL/1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 0, 0, 0, 6, 7, 0, 0, 
      &            0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 9/ 

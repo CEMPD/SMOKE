@@ -9,6 +9,7 @@ C  Calls None
 C 
 C  Changes: (Last change first) 
 C 
+C  20 Sep 01: AIR Task 15: Comments 
 C  18 Jun 01: AIR Task 15: New function. 
 C 
 C  Input on call: 
@@ -45,42 +46,36 @@ C                 7: TBI , 3way+Ox, Air   , EGR
 C                 8: TBI , 3way   , No Air, No EGR 
 C                 9: CARB, 3way+Ox, Air   , EGR 
 C                10: All High Emitters 
-C 
-C  Local variable dictionary: 
-C 
-C   Name   Type              Description 
-C  ------  ----  ------------------------------------------------------- 
-C  IG1      I    Model year pointer into TGS array, via function ITAMPT 
-C  ITG      I    Tech Group Number 
-C  SUM      R    Summation variable 
-C  T        R    temporary TGS array 
-C 
+CC 
       IMPLICIT NONE 
 C       
-      INCLUDE 'ATOX3.I' 
-      INCLUDE 'EGSCAL.I' 
-      INCLUDE 'INJECT.I' 
-      INCLUDE 'IVPCOM.I' 
-      INCLUDE 'IVTYPE.I' 
-      INCLUDE 'LOOKUP.I' 
+      INCLUDE 'ATOX3.I'   ! GROUP 
+      INCLUDE 'EGSCAL.I'  ! TGS 
+      INCLUDE 'INJECT.I'  ! TBI,PFI 
+      INCLUDE 'IVPCOM.I'  ! IVPTRT 
+      INCLUDE 'IVTYPE.I'  ! VTGASBUS,VVLDGAS 
+      INCLUDE 'LOOKUP.I'  ! IVTAN,IQG 
 C 
 C  Declare external function. 
 C 
       INTEGER, EXTERNAL :: IEVPTR 
       INTEGER, EXTERNAL :: ITAMPT 
 C 
+C  Declare parameter list 
+C 
+      INTEGER INERR      ! Error 
+      INTEGER IV         ! Vehicle class 
+      INTEGER MY         ! Model year 
+C 
 C  Declare local variables. 
 C     
-      INTEGER IG1 
-      INTEGER IG5 
-      INTEGER INERR 
-      INTEGER ITG 
-      INTEGER IV 
-      INTEGER IVTEMP 
-      INTEGER MY 
-      REAL    FDSWT(3) 
-      REAL    SUM 
-      REAL    T(6) 
+      INTEGER IG1        ! Tampering index 
+      INTEGER IG5        ! TBI/PFI Fuel delivery group index 
+      INTEGER ITG        ! Technology group index (see above) 
+      INTEGER IVTEMP     ! Temporary vehicle class 
+      REAL    FDSWT(3)   ! Fuel delivery system: 1=Carb, 2=TBI, 3=PFI 
+      REAL    SUM        ! Summation 
+      REAL    T(6)       ! Temporary technology group (see above) 
 C 
 C  Initialize group array 
 C 
@@ -111,6 +106,7 @@ C
       T = 0. 
 C 
       SUM=0. 
+C 
       DO IQG=2,3 
         IG1=ITAMPT(MY,1) 
         T(IQG)=TGS(IG1,IQG,IVTAM) 
@@ -121,9 +117,6 @@ C
         IG1=ITAMPT(MY,1) 
         T(IQG)=TGS(IG1,IQG,IVTAM) 
       END DO 
-CDFK 
-CDFK      WRITE(99,1) IV,MY,IG1,FDSWT,T,SUM 
-CDFK    1 FORMAT(I2,I5,I3,3F10.6,6F10.6,F10.6) 
 C 
 C  Compute the GROUP fractions, if possible. Split GROUPS 4-7 
 C  into their components via the Complex Model fractions. 
@@ -138,7 +131,7 @@ C
         GROUP( 7)=T(2)*T(5)*FDSWT(2)*0.9083/SUM !TBI , 3way+Ox, Air   , EGR 
         GROUP( 8)=T(3)*T(6)*FDSWT(2)/SUM        !TBI , 3way   , No Air, No EGR 
         GROUP( 9)=T(2)*T(5)*FDSWT(1)/SUM        !CARB, 3way+Ox, Air   , EGR 
-        GROUP(10)=1.0                             !All High Emitters 
+        GROUP(10)=1.0                           !All High Emitters 
       ELSE 
         CALL QUITER(FLOAT(MY),IV,576,INERR) 
       ENDIF 

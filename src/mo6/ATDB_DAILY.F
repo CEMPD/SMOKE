@@ -4,20 +4,13 @@ C     This subroutine outputs the DAILY AT emissions to the Database.
 C 
 C     CHANGES  :  (LAST CHANGE FIRST) 
 C 
+C     20 Sep 01 AIR Task 11: Comments 
 C     06 Mar 01 AIR Task 11: New MOBILE6 subroutine, based on DB_DAILY. 
 C 
-C     Called by:  ATDBEXHRS 
+C     Called by:  ATOUTDB 
 C 
 C     Calls:  None 
-C 
-C    common blocks: 
-C 
-C    /SPEED9/   FVMT,HVMT 
-C    /CEVBMY/   BMYMPD 
-C    /MYRCAL/   MEVMYR 
-C    /STDIST/   STARTDIST, STARTSPERDAY 
-C    /WEEKLY/   IWEEK 
-C 
+CC 
       USE DATABASE 
 C 
       IMPLICIT NONE 
@@ -47,7 +40,7 @@ C Local variables
 C 
       INTEGER             :: IH       ! HOUR INDEX 
 C 
-      REAL                :: FACVMT 
+      REAL                :: FACVMT   ! Road type VMT fraction 
       REAL                :: FMILES   ! SUM of MILES/DAY FOR AN FTYPE 
       REAL                :: ZENDS    ! SUM of DAILY ENDS 
       REAL                :: ZGMDAY   ! SUM of DAILY GRAMS/DAY 

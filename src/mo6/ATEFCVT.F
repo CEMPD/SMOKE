@@ -1,6 +1,6 @@
       REAL FUNCTION ATEFCVT(ICV,IXV,IAT) 
 C 
-C  ATEFCVT returns emission factors for composite vehicle  
+C  ATEFCVT returns AIR TOXIC emission factors for composite vehicle  
 C  types.        
 C 
 C  Called by ATOUTDSC 
@@ -9,31 +9,19 @@ C  Calls QUITER.
 C 
 C  Changes: (Last change first) 
 C 
+C  20 Sep 01: AIR Tasks 15-21: Comments 
 C  17 Aug 01: AIR Tasks 15-21: AT version of EFCVT 
 C 
-C  Input on call or from calls: 
-C 
-C 
-C     parameter list: ICV,IXV,IAT 
-C     common blocks: 
-C     /ATOX4/  EFAT 
-C     /CVNAMS/ ILDGT12,ILDGT34,IHDGV,IHDDV,ILDGT (IVTYPE.I) 
-C     /VMXCOM/ REGMIX,VMTMIX,VMTGT12,VMTGT34,VMTHDD,VMTHDG,VMLDGT 
+C     Parameter list: ICV,IXV,IAT 
 C 
 C  Notes. 
 C 
-C  10 Mar 98 @DynTel-RJD 2-622 Created this function for Mobile6 
-C            to calculate emission factors for composite vehicle  
-C            types.      
-C  23 Jul 98 @DynTel-MLA 2-000  Changed LDGT names to conform to 
-C            certification naming conventions. 
-C   4 Aug 98 @DynTel-MLA 2-000  Added call to QUITER for invalid value  
-C            of ICV. 
 C 
       IMPLICIT NONE 
-      INCLUDE 'ATOX4.I' 
-      INCLUDE 'IVTYPE.I' 
-      INCLUDE 'VMXCOM.I' 
+C 
+      INCLUDE 'ATOX4.I'    ! EFAT 
+      INCLUDE 'IVTYPE.I'   ! ILDGT12,ILDGT34,IHDGV,IHDDV,ILDGT (IVTYPE.I) 
+      INCLUDE 'VMXCOM.I'   ! REGMIX,VMTMIX,VMTGT12,VMTGT34,VMTHDD,VMTHDG,VMLDGT 
 C 
 C     Declare parameter list 
 C 

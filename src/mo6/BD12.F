@@ -1,12 +1,13 @@
       BLOCK DATA BD12 
 C 
-C  BLOCK DATA Subprogram 12: /SAVE01/,/SAVE02/,/SAVE03/,/SAVE04/,/SAVE05/, 
+C  BLOCK DATA Subprogram 12: /SAVE01/,/SAVE04/,/SAVE05/, 
 C                            /SAVE06/,/SAVE07/,/SAVE08/,/SAVE09/ 
 C 
 C  BLOCK DATA 12 defines the save areas and initializes flag JCALL. 
 C 
 C  Changes : 
 C 
+C  14-DEC-01 @EPA-bag        REMOVED SAVE02.I, SAVE03.1 and associated variables 
 C  21-NOV-00 @EPA-bag bug301 added SAVE06.I, SAVE07.I, SAVE08.I, and SAVE09.I for 
 C            run and scenario level user input 
 C 
@@ -20,15 +21,6 @@ C  JCALL    I    MOBILE flag used to control direction of storing loops:
 C                1 = copy default values of input data areas into save areas 
 C                2 = copy save area values back into corresponding data areas 
 C 
-C  /SAVE02/: 
-C 
-C  VA003    R    /ICR4VA/ CRD4VA 
-C  VA004    R    /ICR4VB/ CRD4VA 
-C 
-C  /SAVE03/: 
-C 
-C  VA005    R    /IM12HC/ CR12HC 
-C  VA006    R    /IM12CO/ CR12CO 
 C 
 C  /SAVE04/: 
 C 
@@ -87,8 +79,6 @@ C
 C 
       IMPLICIT NONE 
       INCLUDE 'SAVE01.I' 
-      INCLUDE 'SAVE02.I' 
-      INCLUDE 'SAVE03.I' 
       INCLUDE 'SAVE04.I' 
       INCLUDE 'SAVE05.I' 
       INCLUDE 'SAVE06.I' 

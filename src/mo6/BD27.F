@@ -12,9 +12,10 @@ C  rule, etc.
 C 
 C  Changes: (Last change first) 
 C 
+C  03 Dec 01 AIR Task 27: Increased EFFTP and VFTP size from 3 to 4 to include CO2. 
+C  19 Feb 01 AIR Task 11: Added IEFPM, particulates. 
 C  09 May 01 @EPA-elg Deactivated POST96IM Flag by setting it to 1. 
 C  16 Apr 01 @EPA-elg Added initialization of POST96IM Flag to zero. 
-C  19 Feb 01 AIR Task 11: Added IEFPM, particulates. 
 C  20 Nov 00 @EPA-ELG Added the No Clean Air Act Flag Initialization to zero. 
 C 27 Nov 00 @EPA-bag bug#301 Removed FVMTFLG, HVMTFLG, SVMTFLG 
 C  06 Oct 00 @EPA-BG  Bug 155, Removed IDLFLG 
@@ -67,7 +68,7 @@ C  BMTPDF(25,28)        -  BMTPDF ( IG, IV )
 C  CUMMIL(25,28)        -  CUMMIL ( JDX, IV ) 
 C  EFEVAP(29)           -  EFEVAP ( IV9 ) 
 C  EFEXH(29)            -  EFEXH  ( IV9 ) 
-C  EFFTP(3,29)          -  EFFTP  ( IP, IV9 ) 
+C  EFFTP(4,29)          -  EFFTP  ( IP, IV9 ) 
 C  EFIDLE(3,29)         -  EFIDLE ( IP, IV9 ) 
 C  REFL_GM_MI(29)       -  REFL_GM_MI ( IV9 ) 
 C  EFRUNL(29)           -  EFRUNL ( IV9 ) 
@@ -388,10 +389,10 @@ C
       DATA OFFSET,OFFMTH/0.0,42000*0.0/ 
       DATA MOFFMTH/42000*0.0/ 
       DATA GSFVCT/28*0.0/,USRGSF/350*0.0/ 
-      DATA EFFTP,EFEXH,EFEVAP,REFL_GM_MI,EFRUNL,G_MI_EVP/377*0.0/ 
+      DATA EFFTP,EFEXH,EFEVAP,REFL_GM_MI,EFRUNL,G_MI_EVP/406*0.0/ 
       DATA IEFFTP,IEFEXH,IEFEVAP,IEFREFL,IEFRUNL /1,2,3,4,5/ 
       DATA IRLGGAL,IRSTGPH,IEFIDLE,IGMIEVP,IEFPM /6,7,8,9,10/ 
-      DATA VFTP,VEXH,VEVAP,VLOSS,VRUNLS,VRSTLS,VIDLE/11*0.0/ 
+      DATA VFTP,VEXH,VEVAP,VLOSS,VRUNLS,VRSTLS,VIDLE/13*0.0/ 
       DATA EVAP_GM_MI,EVAP_GM_HR,EVAP_GM_TRP,EVAP_GM_GA/14*0.0/ 
       DATA RUNEF, STARTEF, TOTEVAP / 203*0.0 / 
       DATA IRUNEF, ISTARTEF, ITEVAP /22,23,24 / 

@@ -1,14 +1,13 @@
       BLOCK DATA BD04P5 
 C 
-C   BLOCK DATA Subprogram 04:  /CARBON/,/DIEFE/,/DIESEL/,/SULFR/ 
+C   BLOCK DATA Subprogram 04:  /CARBON/,/DIESEL/,/SULFR/ 
 C 
 C   Block Data 04 initializes 
 C      1) the fraction of total carbon that is the soluable organic 
 C         fraction (SOF) 
-C      2) The diesel fueled vehicle fuel economies based on model year 
-C      3) The total exhaust PM10 emission factors for diesel vehicles 
+C      2) The total exhaust PM10 emission factors for diesel vehicles 
 C         in grams/BHP-hr 
-C      4) The weight percent of sulfur in gasoline and diesel fuel, the 
+C      3) The weight percent of sulfur in gasoline and diesel fuel, the 
 C         density of gasoline and diesel fuel (lbs/gallon), the fraction 
 C         of the sulfur in the fuel that gets converted directly into 
 C         sulfate matter (sulfuric acid), the exstimated weight ratio of 
@@ -17,11 +16,12 @@ C         exhausted that is estimated converts to sulfate material in the
 C         atmosphere (either ammonium sulfate or ammonium bisulfate), the 
 C         weight ratio of the combination of ammonium sulfate and ammonium 
 C         bisulfate to SO2. 
-C      5) The technology fractions for LDGV, LDGT1, LDGT2, HDGV, and MC for 
+C      4) The technology fractions for LDGV, LDGT1, LDGT2, HDGV, and MC for 
 C         use in the direct sulfate equations.  
 C 
 C Changes: 
 C 
+C 06 Nov 01 AIR Task 27: Moved all fuel economies to BD28. 
 C 12 Feb 01 AIR Task 11: New BLOCK DATA for MOBILE6. 
 C 12 Feb 01 AIR Task 11: Removed FRACA, changed year 2020 to NEYR. 
 C 14 Nov 00 AIR Task 06: Added NDIEYR to common DIESEL. Corrected docs. 
@@ -30,10 +30,8 @@ C 10 Nov 00 AIR Task 06: Updated code to MOBILE6 standards.
 C 
 C  Common Block Array Subscripts: 
 C 
-C         DIESFE(32,10)   --  DIESFE (IYEAR,IV) 
 C         EFDPM(9,10)     --  EFDPM (IYEAR,IV) 
 C         IDIEYR(9,10)    --  IDIEYR (IYEAR,IV) 
-C         IYRFE(32)       --  IYRFE (IYEAR) 
 C         FDNSTY(2)       --  FDNSTY (IGASDSL) 
 C         SOFPNT(12)      --  SOFPNT (IVPART) 
 C 
@@ -46,14 +44,7 @@ C  /CARBON/:
 C 
 C   SOFPNT  R    The fraction of the carbon particulate that is 
 C                considered the soluable organic fraction (SOF) 
-C 
-C  /DIEFE/: 
-C 
-C   DIESFE  R    Fuel economy (miles/gal) for diesel fueled vehicles: 
-C   IYRFE   I    The years corresponding to the fuel economy array DIESFE 
-C                for the diesel fueled vehicles 
-C   NIYRFE  I    Number of years in IYRFE 
-C 
+CC 
 C  /DIESEL/ : 
 C 
 C   IDIEYR  I    The model years corresponding to the exhaust PM10 emission 
@@ -89,21 +80,6 @@ C
       INCLUDE 'FRACT.I' 
       INCLUDE 'PARAME.I' 
 C 
-      REAL DLDV 
-      REAL DLDT 
-      REAL DBHD 
-      REAL DLHD 
-      REAL DMHD 
-      REAL DHHD 
-      REAL DBUS 
-      REAL DBUS1 
-      REAL DBUS2 
-      REAL DBUS3 
-C 
-      DIMENSION DLDV(32),DLDT(32),DBHD(32),DLHD(32),DMHD(32), 
-     *                   DHHD(32),DBUS(32), 
-     *                   DBUS1(32),DBUS2(32),DBUS3(32) 
-C 
 C 
 C  Notes: 
 C  Oct-19-1993 @ ARC-bsg Subtask 325  Making the other busses EF by 
@@ -127,17 +103,6 @@ C  increased array size of IDIEYR and EFDPM to include new LDDV/T standards.
 C  Jul-21-1994 @ CSC-bsg Changed block data LDDV/T emission values and IDIEYR 
 C  values to take pre-control standards into account 
 C 
-C 
-      EQUIVALENCE (DIESFE(1,1),DLDV(1)), 
-     *            (DIESFE(1,2),DLDT(1)), 
-     *            (DIESFE(1,3),DBHD(1)), 
-     *            (DIESFE(1,4),DLHD(1)), 
-     *            (DIESFE(1,5),DMHD(1)), 
-     *            (DIESFE(1,6),DHHD(1)), 
-     *            (DIESFE(1,7),DBUS(1)), 
-     *            (DIESFE(1,8),DBUS1(1)), 
-     *            (DIESFE(1,9),DBUS2(1)), 
-     *            (DIESFE(1,10),DBUS3(1)) 
 C 
       DATA EXPECV/1.0/ 
 C 
@@ -234,83 +199,5 @@ C    HBUST2
      * .6931,.6931,.4790,.2772,.1716,.1457,.0591,0.,0., 
 C    HBUST3 
      * .6931,.6931,.4790,.2772,.1716,.1457,.0591,0.,0./ 
-C 
-C    The years corresponding to the fuel economy array DIESFE for 
-C    the diesel fueled vehicles: 
-C 
-      DATA IYRFE/ 
-     *  1975, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 
-     *  1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 
-     *  2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 
-     *  2019, NEYR/ 
-C 
-      DATA NIYRFE /32/ 
-C 
-C 
-C   Fuel economy (miles/gal) for diesel fueled vehicles: 
-C 
-C   NOTE 1:  This data comes from Table 6-A-1 of "Regulatory Impact 
-C            Analysis, Control of Sulfur and Aromatics Contents of On- 
-C            Highway Diesel Fuel", EPA, June 1990 
-C 
-C   NOTE 2:  The fuel economy of the vehicle class 2BHDDV was assumed 
-C            to be the same as LHDDV since this data was not provided 
-C            in Table 6-A-1 of the reference used. 
-C 
-C   LDDV 
-      DATA DLDV/ 
-     * 21.85,28.26,28.76,29.32,29.87,30.40,30.92,31.41,31.86,32.29, 
-     * 32.71,33.11,33.44,33.72,33.95,34.15,34.31,34.44,34.57,34.66, 
-     * 34.74,34.80,34.84,34.88,34.91,34.92,34.94,34.95,34.95,34.96, 
-     * 34.96,34.96/ 
-C   LDDT 
-      DATA DLDT/ 
-     * 20.00,23.57,23.76,23.96,24.13,24.28,24.44,24.64,24.84,25.08, 
-     * 25.31,25.54,25.74,25.90,26.04,26.15,26.25,26.33,26.40,26.46, 
-     * 26.52,26.56,26.60,26.63,26.65,26.67,26.69,26.70,26.71,26.72, 
-     * 26.72,26.72/ 
-C   2BHDDV 
-      DATA DBHD/ 
-     *  8.23,14.04,14.19,14.35,14.51,14.67,14.85,15.01,15.19,15.38, 
-     * 15.56,15.75,15.92,16.08,16.20,16.37,16.47,16.56,16.63,16.69, 
-     * 16.75,16.79,16.82,16.84,16.87,16.89,16.90,16.90,16.91,16.92, 
-     * 16.92,16.92/ 
-C   LHDDV 
-      DATA DLHD/ 
-     *  8.23,14.04,14.19,14.35,14.51,14.67,14.85,15.01,15.19,15.38, 
-     * 15.56,15.75,15.92,16.08,16.20,16.37,16.47,16.56,16.63,16.69, 
-     * 16.75,16.79,16.82,16.84,16.87,16.89,16.90,16.90,16.91,16.92, 
-     * 16.92,16.92/ 
-C   MHDDV 
-      DATA DMHD/ 
-     *  6.07, 7.28, 7.37, 7.46, 7.54, 7.63, 7.71, 7.78, 7.86, 7.93, 
-     *  8.00, 8.07, 8.13, 8.17, 8.20, 8.22, 8.24, 8.25, 8.26, 8.27, 
-     *  8.28, 8.29, 8.29, 8.29, 8.30, 8.30, 8.30, 8.30, 8.31, 8.31, 
-     *  8.31, 8.31/ 
-C   HHDDV 
-      DATA DHHD/ 
-     *  4.35, 5.93, 6.02, 6.12, 6.21, 6.31, 6.41, 6.51, 6.61, 6.69, 
-     *  6.76, 6.82, 6.90, 6.96, 7.01, 7.05, 7.08, 7.10, 7.11, 7.12, 
-     *  7.13, 7.14, 7.15, 7.15, 7.15, 7.16, 7.16, 7.16, 7.16, 7.16, 
-     *  7.16, 7.16/ 
-C   BUSES 
-      DATA DBUS/ 
-     *  4.78, 6.06, 6.16, 6.26, 6.39, 6.51, 6.62, 6.73, 6.84, 6.97, 
-     *  7.08, 7.20, 7.25, 7.29, 7.34, 7.40, 7.44, 7.49, 7.54, 7.59, 
-     *  7.63, 7.67, 7.72, 7.76, 7.81, 7.85, 7.89, 7.94, 7.97, 8.02, 
-     *  8.06, 8.06/ 
-C 
-C  Oct-19-1993 @ ARC-bsg Subtask 325  Making the other busses EF by 
-C  creating FE for use in Direct SO4, Exhaust SO2 an Indirect SO4 
-C  the same FE number is used for all model years. 
-C 
-C   Transit buses 
-      DATA DBUS1/32*4.04/ 
-C 
-C   CBD buses 
-      DATA DBUS2/32*3.33/ 
-C 
-C   Heavy Urban Buses 
-      DATA DBUS3/32*1.65/ 
 C 
       END 

@@ -6,21 +6,36 @@ C  weighted normal and high values into the ATCONV array.
 C  Complex Model based conversion rates are based on VOC, 
 C  so IVT is always 1. 
 C 
+C  Changes (Last listed first) 
+C  20 Sep 01: AIR Task 15-22: Comments 
+C  09 Sep 01: AIR Task 15-22: Disabled Case 2 per EPA direction 
+C  10 Jul 01: AIR Task 15-22: New MOBILE6 Subroutine 
+C 
+C  Called by: ATCALX 
+C 
+C  Calls: None 
+C   
+C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'ATOX3.I' 
-      INCLUDE 'ATOX4.I'  !ATNHWT 
+      INCLUDE 'ATOX3.I'  ! GROUP,VOCCOMPLEX,BENZRATION,MTBERATION,BUTARATIO,FORMRATIO,ACETRATIO 
+      INCLUDE 'ATOX4.I'  ! ATNHWT,ATCONV 
       INCLUDE 'IVTYPE.I' ! VTLDGV 
 C 
-      INTEGER INH 
-      INTEGER ITG 
-      INTEGER ITGUSE 
-      INTEGER IV 
-      INTEGER MY 
-      REAL    CAT(3) 
-      REAL    MKTSHR 
-      REAL    VOC 
-      REAL    WT 
+C  Declare parameter list 
+C  
+      INTEGER IV      ! Vehicle class 
+      INTEGER MY      ! Model year 
+      REAL    CAT(3)  ! Catalyst fractions (1=No Cat, 2=Ox, 3=3-way) 
+      REAL    MKTSHR  ! Market share 
+C 
+C  Declare parameter list 
+C  
+      INTEGER INH     ! Normal/High toggle 
+      INTEGER ITG     ! Tech group index 
+      INTEGER ITGUSE  ! Temporary tech group index 
+      REAL    VOC     ! VOC from Complex Model, in g/mi) 
+      REAL    WT      ! Weighting factor 
 C 
 C  Loop for the 10 Tech Groups 
 C 
@@ -60,9 +75,6 @@ C        ATNHWT(1)=1.
 C        ATNHWT(2)=0. 
 C        END IF 
         END IF 
-CDFK 
-CDFK       WRITE(99,1) IV,MY,ITG,ITGUSE,GROUP(ITG),MKTSHR,WT 
-CDFK    1  FORMAT(I2,I5,2I3,3F10.6) 
 C 
 C  Compute the Exhaust AT Conversion Factors, weighted by Tech Group 
 C  and Market Share. 
@@ -77,4 +89,3 @@ C
 C 
       RETURN 
       END 
-       

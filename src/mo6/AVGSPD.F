@@ -1,4 +1,4 @@
-      SUBROUTINE AVGSPD() 
+      SUBROUTINE AVGSPD(INERR) 
 C 
 C  AVGSPD uses the average speed user input parameters to create the 
 C  appropriate average speed distributios for each hour of the day that 
@@ -12,6 +12,8 @@ C  Calls *NONE*
 C 
 C  Changes: (Last change first) 
 C 
+C  14 Jan 02 @EPA-bag  Bug375   Added call to QUITER to avoid VMT fractions 
+C                      which are inconsistent with freeway facility option 
 C  19 Jul 01 @EPA-djb Wish235, Add Average Speed command. 
 C 
 C  Input on call: 
@@ -40,6 +42,10 @@ C
 C 
       INCLUDE 'SPEED0.I'      ! USRSPD,USRVMT,USRFAC,DEFAVG,AVGFLG 
       INCLUDE 'SPEED9.I'      ! SVMT, FVMT 
+C 
+C     Declare parrameter list 
+C 
+      INTEGER, INTENT(INOUT)  :: INERR 
 C 
 C     Declare local variables. 
 C 
@@ -115,6 +121,17 @@ C
 C         Case 2 : All VMT occurs on freeways, including ramps. 
 C 
           CASE (2) 
+C           Check for inconsistent freeway and ramp vehicle fractions 
+            IF( (USRVMT(1)<=0.00001.AND.USRVMT(4)<=0.00001) .OR. 
+     *          (USRVMT(1)<=0.00001.AND.USRVMT(2)<=0.00001) .OR. 
+     *          (1/USRSPD)==(USRVMT(4)/DEFAVG(4))           ) THEN 
+              CALL QUITER(0.0,0,579,INERR) 
+              USRVMT(1) = 0.342 
+              USRVMT(2) = 0.498 
+              USRVMT(3) = 0.130 
+              USRVMT(4) = 0.030 
+            ENDIF 
+ 
 C           Determine the non-ramp freeway average speed. 
 C           User supplied VMT fractions used in calculations. 
             FWYSPD=(1-USRVMT(4)/(USRVMT(1)+USRVMT(4))) / 

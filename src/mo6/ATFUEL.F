@@ -8,23 +8,16 @@ C  FUEL.)
 C 
 C  Called by ATHRLOOP. 
 C 
-C  Calls NMOGFID 
+C  Calls: None 
 C 
 C  Changes: (Last change first) 
 C 
+C  20 Sep 01 AIR Task 15: Comments 
 C  09 Jul 01 AIR Task 15: New Subroutine (Based on FUEL) 
 C 
 C  Input on call: 
 C 
 C    argument list: MYR,IV,ICY,IFDS,INH,IDX,ISTD,EF,FUEL_CF 
-C    common blocks: 
-C     /FLAGS1/ DTGFLG, OXYFLG 
-C     /FLAGS2/ NEWFLG 
-C     /OXY1/   SHRMKT,OXYCNT 
-C     /RFORM1/ JPHASE,SEAFLG,RFGON 
-C     /RFORM2/ RFG_CF 
-C     /VVNAMS/ VVDSL, VVHDGV, VVLDGT12, VVLDGT34  (IVTYPE.I) 
-C     /VVTYPS/ VTLDGV, VTMC  (IVTYPE.I) 
 C 
 C  Output on return: 
 C 
@@ -49,14 +42,13 @@ C  OXYCT    R    local variable for the oxygen content
 C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'BASEQ9.I' 
-      INCLUDE 'FLAGS1.I' 
-      INCLUDE 'FLAGS2.I' 
-      INCLUDE 'IVTYPE.I' 
-      INCLUDE 'MAXIMA.I' 
-      INCLUDE 'OXY1.I' 
-      INCLUDE 'RFORM1.I' 
-      INCLUDE 'RFORM2.I' 
+      INCLUDE 'FLAGS1.I'  ! DTGFLG, OXYFLG 
+      INCLUDE 'FLAGS2.I'  ! NEWFLG 
+      INCLUDE 'IVTYPE.I'  ! VVDSL, VVHDGV, VVLDGT12, VVLDGT34, VTLDGV, VTMC 
+      INCLUDE 'MAXIMA.I'  ! MAXIH 
+      INCLUDE 'OXY1.I'    ! SHRMKT,OXYCNT 
+      INCLUDE 'RFORM1.I'  ! JPHASE,SEAFLG,RFGON 
+      INCLUDE 'RFORM2.I'  ! RFG_CF 
       INCLUDE 'RVPEX2.I' 
 C 
       INTEGER, INTENT(IN)      :: ICY 

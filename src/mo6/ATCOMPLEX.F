@@ -6,11 +6,21 @@ C  (The values match those produced by the EPA Tier0_CM.XLS spreadsheet,
 C   including the bug found for the Acetaldehyde centering values.) 
 C  The ratios of these toxics to the VOC Complex values are also computed. 
 C 
+C  Changes:  (Last change first) 
+C 
+C  18 Sep 01 AIR Task 15-22: Comments 
+C  26 Jun 01 AIR Task 15-22: New Subroutine 
+C 
+C  Called by:  ATCALX 
+C 
+C  Calls:  ATNH 
+C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'ATOX1.I' 
-      INCLUDE 'ATOX2.I' 
-      INCLUDE 'ATOX3.I'   ! VOCCOMPLEX 
+      INCLUDE 'ATOX1.I'   ! ATOXY 
+      INCLUDE 'ATOX2.I'   ! ATACET,ATACETBASE,ATBASE,ATBENZ,ATBENZBASE,ATBUTA,ATBUTABASE, 
+                          ! ATCENTER,ATCENTERA,ATFORM,ATFORMBASE,ATMTBE,ATTRGT,ATVOC,ATVOCBASE,CMHC 
+      INCLUDE 'ATOX3.I'   ! BENZRATIO,BUTARATIO,ACETRATIO,FORMRATIO,MTBERATIO,VOCCOMPLEX 
       INCLUDE 'EVAL.I'    ! MEVAL 
       INCLUDE 'IVTYPE.I'  ! VVLDGAS 
 C 
@@ -564,9 +574,6 @@ C
      &                   +ATMTBE(3,10)*CENTERMTBE**2 
      &                   +ATMTBE(4,10)*CENTERMTBE) 
      &               +OFFSET 
-CDFK 
-CDFK      WRITE(99,1) IV,MY,CENTERMTBE,MTBECOMPLEX,VOCCOMPLEX 
-CDFK   1  FORMAT('MTBE1',I3,I5,11F10.6,/23X,10F10.6) 
 C 
 C  Following the Complex Model method EXACTLY, convert values to VOC rates. 
 C  (Be sure that the base MTBECOMPLEX values are not negative.) 
@@ -593,12 +600,9 @@ C
       END DO 
 C 
       MTBECOMPLEX(5)=VOCCOMPLEX(5)*SUMM/SUMV 
-CDFK      MTBECOMPLEX(8)=0. ! Per Complex Model 
+C      MTBECOMPLEX(8)=0. ! Per Complex Model 
       MTBECOMPLEX(8)=MTBECOMPLEX(2) ! Per EPA assumption 
       MTBECOMPLEX(9)=VOCCOMPLEX(9)*SUMM/SUMV 
-CDFK 
-CDFK      WRITE(99,2) IV,MY,CENTERMTBE,MTBECOMPLEX,VOCCOMPLEX 
-CDFK   2  FORMAT('MTBE2',I3,I5,11F10.6,/23X,10F10.6) 
 C 
 C  Compute the MTBE Ratios. If model year is 1982+, apply the normal 
 C  and high emitter Off-cycle Emissions effects. 

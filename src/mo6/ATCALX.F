@@ -1,22 +1,36 @@
       SUBROUTINE ATCALX(ICY,INERR) 
 C 
-C  ATCALX computes the exhaust and evap Air Toxic emission factors. 
+C  ATCALX is the main Air Toxic/HAPS driver. It computes the exhaust and  
+C  evap Air Toxic and HAPS emission factors. 
+C 
+C  Changes (Last change first): 
+C  28 Nov 01: AIR Task 28: Added ATHEAP for dynamic array support. 
+C  18 Sep 01: AIR Task 15-22: Comments 
+C  09 Sep 01: AIR Task 15-22: Added HAPS calculations 
+C  17 Aug 01; AIr Task 15-22: New Subroutine 
+C   
+C  Called by:  PRCSCN 
+C 
+C  Calls: ATCALX2,ATCOMPLEX,ATEVP_HRLY,ATGROUP,ATHCHK,ATHRLOOP,ATOUTDB, 
+C         ATOUTDSC,ATOUTSS,DIRNL,EVAPCALC,P3WPOX,QUITER,,REFUEL,SCFTAB, 
+C         SOAKFCN 
 C 
       USE DATABASE, ONLY : DBSELTOX 
+      USE ATHEAP 
 C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'ATOX1.I' 
-      INCLUDE 'ATOX2.I' 
-      INCLUDE 'ATOX3.I' 
-      INCLUDE 'ATOX4.I' 
-      INCLUDE 'ATOX5.I'   ! 
+      INCLUDE 'ATOX1.I'   ! MAXIAT,TOXCHK,AROM,ATOXY,BENZ,E200,E300,OLEF 
+      INCLUDE 'ATOX2.I'   ! VOLTOWT 
+      INCLUDE 'ATOX4.I'   ! ATCONV,ATHEV,ATHEV,ATNHWT,DBAT,EFAT,VAT 
+      INCLUDE 'ATOX5.I'   ! NMAP,ATHBER 
       INCLUDE 'CITRV1.I'  ! RVPICY 
+      INCLUDE 'CUMCOM.I'  ! CUMMIL 
       INCLUDE 'EVAPACT.I' ! SAWFLAG 
       INCLUDE 'FLAGS2.I'  ! EVIMFLAG 
       INCLUDE 'FLAGS3.I'  ! CAAFLG, CAAMY 
       INCLUDE 'FLAGS5.I'  ! SPD_FLG,SOAK_FLAG 
-      INCLUDE 'IVTYPE.I'  ! MAXVEH,VTMC,VVLDGAS 
+      INCLUDE 'IVTYPE.I'  ! MAXVEH,VTMC,VVLDGAS,VVGASMC 
       INCLUDE 'MAXIMA.I'  ! MAXIH, MAXYRS 
       INCLUDE 'MYRCAL.I'  ! TF 
       INCLUDE 'SPEED9.I'  ! FVMT, HVMT 
@@ -29,38 +43,40 @@ C
 C 
 C  Declare local variables/arrays. 
 C 
-      INTEGER ACTUAL_MY 
-      INTEGER I 
-      INTEGER IAT 
-      INTEGER IB 
-      INTEGER ICHK 
-      INTEGER IDX 
-      INTEGER IE 
-      INTEGER IEVAP 
-      INTEGER IH 
-      INTEGER INH 
-      INTEGER IOXY 
-      INTEGER IROAD 
-      INTEGER IV 
-      INTEGER IVGAS 
-      INTEGER IVT 
-      INTEGER IXV 
-      INTEGER JDX 
-      INTEGER MY 
-      REAL    ATEVAP(5,2) 
-      REAL    CAT(3) 
-      REAL    MTBEVOL 
-      REAL    P3W 
-      REAL    POX 
-      REAL    RVP 
-      REAL    SUMD 
-      REAL    SUMIH 
-      REAL    SUMINH 
-      REAL    SUMJDX 
-      REAL    SUMN 
-      REAL    TCAT 
- 
-CDFK    OPEN(99,FILE='ATJUNK') 
+      INTEGER ACTUAL_MY   ! Actual Model Year 
+      INTEGER I           ! DO loop index 
+      INTEGER IAT         ! Air Toxic pollutant index 
+      INTEGER IB          ! Beginning year index 
+      INTEGER ICHK        ! Data entry checking index 
+      INTEGER IDX         ! Year Index, Counterpart of JDX 
+      INTEGER IE          ! Ending year index 
+      INTEGER IEVAP       ! Evaporative type index: 1=Hot Soak 2=Diurnal 3=Running 4=Resting 5=Refueling 
+      INTEGER IH          ! Hour 
+      INTEGER IMAP        ! HAPS index 
+      INTEGER INH         ! Normal/High index 
+      INTEGER IOXY        ! Oxygenate type index 
+      INTEGER IROAD       ! Road index 
+      INTEGER IV          ! Vehicle class 
+      INTEGER IVGAS       ! Gasoline vehicle index 
+      INTEGER IVT         ! VOC/TOG toggle 
+      INTEGER IXV         ! eXhaust/eVap index, 1=Exhaust, 2-6=the five evaps (see IEVAP) 
+      INTEGER JDX         ! age 
+      INTEGER JXV         ! secondardy eXhast/eVap toggle for HAPS, 1=Exhaust, 2=Evap 
+      INTEGER MY          ! model year 
+      REAL    ATEVAP(5,2) ! Evaporative fractions: ATEVAP(IEVAP,BENZ=1/MTBE=2) 
+      REAL    CAT(3)      ! Catalyst fractions, 1=No Cat, 2=Ox Cat, 3=3-way 
+      REAL    MTBEVOL     ! MTBE concentration in vol% 
+      REAL    P3W         ! Fraction of 3-way catalysts 
+      REAL    POX         ! Fraction of oxidation catalysts 
+      REAL    RVP         ! Fuel vapor pressure 
+      REAL    SUMD        ! Summation, denominator 
+      REAL    SUMIH       ! Summation, hour 
+      REAL    SUMINH      ! Summation, normal/high 
+      REAL    SUMJDX      ! Summation, JDX (age) 
+      REAL    SUMN        ! Summation, numerator 
+      REAL    TCAT        ! Total fraction of catalysts 
+      REAL    XEF         ! Temporary emission factor 
+C 
 C 
 C  Check that all required air toxic data has been entered. 
 C 
@@ -164,6 +180,8 @@ C  Compute the hourly refueling losses.
 C 
       CALL REFUEL(ICY,INERR) 
 C 
+      IF(INERR.GT.0) RETURN 
+C 
 C  Initialize the diurnal fractions 
 C 
       CALL DIRNLINI() 
@@ -182,9 +200,13 @@ C
         SAWFLAG = 1 
       END IF 
 C 
+      IF(INERR.GT.0) RETURN 
+C 
 C ********************** Check and Set Up HAPS ********************** 
 C 
       IF(ATHAPS) CALL ATHCHK(ICY,INERR) 
+C 
+      IF(INERR.GT.0) RETURN 
 C 
 C ********************** Begin Vehicle Loop ************************* 
 C 
@@ -227,9 +249,6 @@ C
       MY=ACTUAL_MY 
 C 
       IF(CAAFLG.EQ.1 .AND. ICY.GE.CAAMY) MY = MIN(CAAMY,ACTUAL_MY) 
-CDFK 
-CDFK      WRITE(99,91) IV,MY,TF(IDX,IV) 
-CDFK   91 FORMAT(/2I5,F10.5) 
 C 
 C  Calculate catalyst fractions; only gas vehicles have catalysts. 
 C 
@@ -256,14 +275,8 @@ C  Calculate the MOBILE6 VOC and TOG values by hour and road type.
 C  Also calculate the MOBILE6 normal/high emitter fractions. 
 C 
       CALL ATHRLOOP(IV,ICY,MY,ACTUAL_MY,IDX,TCAT,INERR) 
-CDFK 
-CDFK      ATHEF=1. 
-CDFK 
-CDFK      WRITE(99,92) ATHEF 
-CDFK   92 FORMAT(24F10.5) 
 C 
-CDFK      WRITE(99,94) ATNHWT 
-CDFK   94 FORMAT('*',F9.5,F10.5) 
+      IF(INERR.GT.0) RETURN 
 C 
 C  Calculate the Air Toxic Technology Group Weighting Factors 
 C  for 3-way catalyst LDGV/LDGT1-4 only. 
@@ -271,9 +284,8 @@ C
       IF(VVLDGAS(IV) .EQ. 1   .AND.                     !LDGV/LDGT1-4 
      *        CAT(3) .GT. 0.) THEN                      !3-way 
        CALL ATGROUP(MY,IV,INERR) 
-CDFK 
-CDFK      WRITE(99,7776) ICY,IV,MY,GROUP 
-CDFK 7776 FORMAT('GROUP',I5,I3,I5,10F10.6) 
+C 
+      IF(INERR.GT.0) RETURN 
 C 
       END IF 
 C 
@@ -289,11 +301,6 @@ C
      *        CAT(3) .GT. 0.  .AND.                     !3-way 
      * ATOXY(2,IOXY) .GT. 0.)                           !Non-zero market share 
      * CALL ATCOMPLEX(IV,MY,IOXY,CAT) 
-CDFK 
-CDFK      WRITE(99,7777) ICY,IV,MY,IOXY, 
-CDFK     &    BENZRATIO,BUTARATIO,ACETRATIO,FORMRATIO,MTBERATIO 
-CDFK 7777 FORMAT('RATIO',I5,I3,I5,I2, 
-CDFK     &       10F10.6/20X,10F10.6/20X,10F10.6/20X,10F10.6/20X,10F10.6) 
 C 
 C  Use the alternate equations for all other 
 C  vehicle/catalyst combinations. 
@@ -305,9 +312,6 @@ C
 C  Calculate the Acrolein EF fractions 
 C 
       CALL ATACRO(CAT,IV) 
-CDFK 
-CDFK      WRITE(99,93) ICY,IV,MY,ATCONV 
-CDFK   93 FORMAT(I5,I3,I5,24F10.5) 
 C 
 C  Compute the Exhaust Air Toxic emission factors by hour and road type. 
 C  Store the values in the data base arrays in g/mi. 
@@ -357,6 +361,64 @@ C
      *                      + SUMJDX * TF(IDX,IV) * 1000.  ! mg/mi   
           END DO !IAT 
 C 
+C  If HAPS, process the exhaust values. Note that HAPS values are NOT 
+C  stored for database output. 
+C 
+       IF(ATHAPS) THEN 
+C 
+       JXV = 1  ! Exhaust HAPS 
+C 
+       DO IMAP=1,NMAP 
+C 
+        IAT = MAXIAT + IMAP 
+C 
+C  VOC/TOG 
+       IF(ATHIV(JXV,1,IMAP,IV) .OR. 
+     *    ATHIV(JXV,2,IMAP,IV)) THEN 
+C 
+       IF(ATHIV(JXV,1,IMAP,IV)) IVT=1  !VOC 
+       IF(ATHIV(JXV,2,IMAP,IV)) IVT=2  !TOG 
+C 
+        SUMJDX=0. 
+C 
+        DO IH=1,MAXIH 
+          SUMIH=0. 
+C 
+          DO IROAD=1,5          ! 5 = Start Emissions, 1-4 are Road Types 
+C 
+            XEF = ATHEF(IH,IROAD,IVT) 
+     *          * ATHBER(1,JDX,JXV,IVT,IV,IMAP)  
+C 
+             IF(IROAD.LE.4) THEN  
+               SUMIH = SUMIH + XEF * FVMT(IROAD,IH,IV) ! Road 
+             ELSE 
+               SUMIH = SUMIH + XEF                     ! Start 
+             END IF   
+            END DO !IROAD 
+C 
+            SUMJDX = SUMJDX + SUMIH * HVMT(IH)   
+           END DO !IH 
+C 
+           EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV)  
+     *                      + SUMJDX * TF(IDX,IV) ! Ratios are already in mg/mi 
+      END IF ! VOC/TOG 
+C 
+C  BER 
+      IF(ATHIV(JXV,3,IMAP,IV)) THEN 
+C 
+      XEF = ATHBER(1,JDX,JXV,3,IV,IMAP)  !ZML, mg/mi 
+     *    + ATHBER(2,JDX,JXV,3,IV,IMAP)  !DET, mg/mi/10K mi 
+     *    * CUMMIL(JDX,IV)/10000.          !10K miles 
+C 
+      EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV) 
+     *                 + XEF * TF(IDX,IV) 
+C 
+      END IF  ! BER 
+C 
+      END DO  ! IMAP 
+C 
+      END IF  ! HAPS       
+C 
 C ********************* Compute Evap Fractions ************************* 
 C 
 C  Only perform Evap Air Toxic calculations for gasoline vehicles 
@@ -366,15 +428,7 @@ C
 C  Compute the MOBILE6 hourly resting, running, diurnal, and  
 C  hot soak emission factors. 
 C 
-      CALL ATEVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY) 
-CDFK 
-CDFK 
-CDFK      IF(IV.EQ.VTMC) THEN 
-CDFK      WRITE(99,771) IV,MY 
-CDFK  771 FORMAT(I2,I5) 
-CDFK      WRITE(99,772) ATHEV 
-CDFK  772 FORMAT(24F10.6) 
-CDFK      END IF 
+      CALL ATEVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY,INERR) 
 C 
 C  Compute the Evap Air Toxic emission factors by hour and road type. 
 C  (Currently, the only evap values are Benzene and MTBE.) 
@@ -422,7 +476,88 @@ C
         END DO !IEVAP 
        END DO !IAT 
 C 
+C  If HAPS, process the evap values. Note that HAPS values are NOT 
+C  stored for database output. 
+C 
+       IF(ATHAPS) THEN 
+C 
+       JXV = 2  ! Evaps HAPS ratios and BERs are currently independent of evap type 
+C 
+       DO IMAP=1,NMAP 
+C 
+        IAT = MAXIAT + IMAP 
+C 
+C  VOC/TOG 
+       IF(ATHIV(JXV,1,IMAP,IV) .OR. 
+     *    ATHIV(JXV,2,IMAP,IV)) THEN 
+C 
+       IF(ATHIV(JXV,1,IMAP,IV)) IVT=1  !VOC 
+       IF(ATHIV(JXV,2,IMAP,IV)) IVT=2  !TOG 
+C 
+      DO IEVAP=1,5 !1=Hot Soak, 2=Diurnal, 3=Running, 4=Resting, 5=Refueling 
+C 
+      IXV = IEVAP + 1 ! IXV=1 for Exhaust only, 2-6 for the five Evaps 
+C 
+      IF(IEVAP.EQ.3) THEN  ! Only Running Evap is road dependent 
+        IB = 1 
+        IE = 4   ! Do not include IROAD=5 to avoid double counting 
+      ELSE 
+        IB = 5 
+        IE = 5 
+      END IF 
+         
+        SUMJDX=0. 
+C 
+        DO IH=1,MAXIH 
+C 
+          SUMIH=0. 
+C 
+          DO IROAD=IB,IE  ! 5 = Road Independent, 1-4 are Road Types 
+C 
+             XEF = ATHEV(IH,IROAD,IEVAP)  
+     *           * ATHBER(1,JDX,JXV,IVT,IV,IMAP) ! mg/mi 
+C 
+             IF(IROAD.LE.4) THEN 
+               SUMIH = SUMIH  
+     *               + XEF * FVMT(IROAD,IH,IV) 
+             ELSE 
+               SUMIH = SUMIH + XEF 
+             END IF 
+C 
+          END DO !IROAD 
+C 
+          SUMJDX = SUMJDX + SUMIH * HVMT(IH)   
+         END DO !IH 
+C 
+        EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV) 
+     *                   + SUMJDX * TF(IDX,IV) ! Ratios are already in mg/mi 
+C 
+        END DO !IEVAP 
+C  
+      END IF ! VOC/TOG  
+C 
+C  BER 
+      IF(ATHIV(JXV,3,IMAP,IV)) THEN 
+C 
+      XEF = ATHBER(1,JDX,JXV,3,IV,IMAP)  !ZML, mg/mi 
+     *    + ATHBER(2,JDX,JXV,3,IV,IMAP)  !DET, mg/mi/10K mi 
+     *    * CUMMIL(JDX,IV)/10000.        !10K miles 
+C 
+      DO IEVAP=1,5  ! BERs are currently independent of evap type 
+       IXV = IEVAP + 1 ! IXV=1 for Exhaust only, 2-6 for the five Evaps 
+       EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV) 
+     *                  + XEF * TF(IDX,IV) 
+      END DO 
+C 
+      END IF ! BER 
+C 
+      END DO  ! IMAP 
+C 
+      END IF  ! HAPS       
+C 
+C 
       END IF !Gas Vehicles 
+C 
 C 
       END DO !IDX  
 C 
@@ -430,11 +565,12 @@ C ********************** End of Yearly Loop *************************
 C 
 C  Compute All Vehicle composites for Exhaust and Evap 
 C 
-      DO IAT=1,MAXIAT 
+      DO IAT=1,MAXIAT+NMAP 
         DO IXV=1,6  ! IXV=1 for Exhaust, 2-6 for the five Evaps 
           VAT(IXV,IAT) = VAT(IXV,IAT) + EFAT(IXV,IAT,IV) * VMTMIX(IV)  
         END DO  ! IXV 
       END DO  ! IAT 
+C 
 C 
       END DO !IV 
 C 
@@ -446,7 +582,7 @@ C
 C 
 C  Output the database results. 
 C 
-      CALL ATOUTDB(ICY) 
+      CALL ATOUTDB(ICY,INERR) 
 C 
 C  Output the spreadsheet results. 
 C 
