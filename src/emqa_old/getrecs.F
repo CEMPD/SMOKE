@@ -149,8 +149,10 @@ C.........  Local arrays
         INTEGER         XNUM ( MXEOUT )   ! X-cell for output sources
         INTEGER         YNUM ( MXEOUT )   ! Y-cell for output sources
 
+        REAL            EISUM( NIPOL )   ! Sum of day's inv pollutants
+        REAL            EMSUM( NMPOL )   ! Sum of day's model species
         REAL            EOUT ( MXEOUT, NMPOL, 24) ! output emissions
-        REAL            ETMP ( MXEOUT, NIPOL, 24) ! temporal factors
+        REAL            ETMP ( MXEOUT, NIPOL, 24) ! output temporal inv emission
         REAL            OFRAC( MXEOUT, EMLAYS, 24)! output layer fractions
 
         CHARACTER*7     GSTATE( MXEOUT ) ! state of gridding matrix for output
@@ -182,6 +184,7 @@ C.........  Other variables
         INTEGER         FIP, PLANT, SCC, SIC, STACK  ! Temporary vars
         INTEGER         INCSRC       ! Increment for processing sources
         INTEGER         JDATE, JTIME ! Current date and time
+        INTEGER         LDATE        ! Previous date
         INTEGER         MEANCNT      ! count of sources contibuting to mean val
         INTEGER         MEANSRC      ! source ID that has value closest to mean
         INTEGER         METHOD       ! method of source selection
@@ -839,7 +842,7 @@ C.............................  Multiply PTMP, SMAT, and CMAT for source
                             EV =  EMISV( EINX( I ), V )
 
                             IF( EV .GT. 0. ) THEN
-                                ETMP( I, V, T ) = EMIST( EINX( I ) )/ EV
+                                ETMP( I, V, T ) = EMIST( EINX( I ) )
                             ELSE
                                 ETMP( I, V, T ) = 0
                             ENDIF
@@ -927,6 +930,7 @@ C.............  Write out header for temporal emissions
 C.............  Write out time dependent emissions
             JDATE = SDATE
             JTIME = STIME
+            LDATE = -9
             DO 77 T = 1, NSTEPS
 
                 WRITE( ODEV, 93050 ) 
@@ -934,7 +938,37 @@ C.............  Write out time dependent emissions
      &                 ( ETMP( I, V, T ), V=1,NIPOL ),
      &                 ( EOUT( I, SPNT( J ), T ), J=1, NMPOL )
 
+                IF( JDATE .NE. LDATE ) THEN
+
+                    DO 71 V = 1, NIPOL
+                        EISUM( V ) = ETMP( I, V, T )
+71                  CONTINUE
+
+                    DO 72 J = 1, NMPOL
+                        EMSUM( J ) = EOUT( I, SPNT( J ), T )
+72                  CONTINUE
+
+                    LDATE = JDATE
+
+                ELSE
+
+                    DO 75 V = 1, NIPOL
+                        EISUM( V ) = EISUM( V ) + ETMP( I, V, T )
+75                  CONTINUE
+
+                    DO 76 J = 1, NMPOL
+                        EMSUM( J )= EMSUM( J ) + EOUT( I, SPNT( J ), T )
+76                  CONTINUE
+
+                ENDIF
+
                 CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+                IF( JDATE .NE. LDATE ) THEN
+                     WRITE( ODEV, 93055 ) 
+     &                    ( EISUM( V ), V=1, NIPOL ),
+     &                    ( EMSUM( J ), J=1, NMPOL )
+                ENDIF
 
 77          CONTINUE
 
@@ -1009,7 +1043,7 @@ C...........   Formatted file I/O formats............ 93xxx
      &              30( 1X, A, ': ', E11.5 )   )
 
 93020   FORMAT( 5X, ' Inv emissions...',
-     &              30( 1X, A, ': ', E11.5 )   )
+     &              <NIPOL>( 1X, A, ': ', E11.5 ), '[tons/yr]' )
 
 93030   FORMAT( 5X, ' Speciation coefficients [gm mol/tons]...', /,
      &          5( 9X, 7( 1X, A4, ': ', E11.5 ), / ) )
@@ -1019,6 +1053,8 @@ C...........   Formatted file I/O formats............ 93xxx
      &          11X, <NIPOL+NMPOL>( 1X, A8 ) )
 
 93050   FORMAT( 6X, I2.2, 1X, I2.2, 30( 1X, E8.3 ) )
+
+93055   FORMAT( 5X, ' Total', 30( 1X, E8.3 ) )
 
 93060   FORMAT( 5X, ' Layer fractions starting ', A14, '...' /,
      &          5X, ' Dy Hr', <EMLAYS>( 1X, ' Lyr(', I2.2, ')' ) )
