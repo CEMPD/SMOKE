@@ -189,7 +189,6 @@ C.....................  Sum number of lines in EMS-95 emission files
                         NRECDAT = NREC
                     END IF
 
-                    CLOSE( TDEV )
 
                 ELSE  ! File format not recognized	
 
@@ -199,6 +198,9 @@ C.....................  Sum number of lines in EMS-95 emission files
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 END IF
+
+C.................  Close file named in list file
+                CLOSE( TDEV )
 
             END DO   ! End of loop through list-formatted PTINV file
 
