@@ -3,7 +3,7 @@
      &                      PERCENT, LIST, JDATE )
 
 C***********************************************************************
-C  program body starts at line 99
+C  program body starts at line 108
 C
 C  DESCRIPTION:
 C      This subroutine creates emission factors using multiple previously 
@@ -49,6 +49,12 @@ C****************************************************************************
         INCLUDE 'IODECL3.EXT'    !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures.
 
+C.........  External function
+
+        INTEGER       SEC2TIME
+
+        EXTERNAL      SEC1TIME
+
 C.........  Subroutine call variables
 
         INTEGER       MPTYPE             ! number of factors in combination
@@ -90,7 +96,9 @@ C...........   Master Diurnal EFs list variables
 
         COMMON / EFS2 / WDL_VOC, DNL_VOC, HOT_VOC, CRC_VOC
 
-        INTEGER I, V, T      ! Counters and pointers
+        INTEGER       I, V, T      ! Counters and pointers
+        INTEGER       IPTIM        ! PSI converted to seconds
+
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -124,9 +132,12 @@ C.........  Initialize EF sum variables
 C.........  Loop over components of combo EFs
         DO 55 I = 1, MPTYPE
 
+C.............  Convert PSI code to seconds to read from file
+            IPTIM = SEC2TIME( LIST( I ) )
+
 C.............  Read in each required existing Non-diurnal EF set
             IF( .NOT. READ3
-     &          ( FNAME1, 'ALL', 1, JDATE, LIST( I ), NDEF ) ) THEN
+     &          ( FNAME1, 'ALL', 1, JDATE, IPTIM, NDEF ) ) THEN
 
                 MESG = 'Could not read non-diurnal EFs from ' // FNAME1
                 CALL M3EXIT( 'EFCOMBO', JDATE, LIST( I ), MESG, 2 )
@@ -135,7 +146,7 @@ C.............  Read in each required existing Non-diurnal EF set
 
 C.............  Read in each required existing Diurnal EF set
             IF( .NOT. READ3
-     &          ( FNAME2, 'ALL', 1, JDATE, LIST( I ), DEF ) ) THEN
+     &          ( FNAME2, 'ALL', 1, JDATE, IPTIM, DEF ) ) THEN
 
                 MESG = 'Could not read diurnal EFs from ' // FNAME2
                 CALL M3EXIT( 'EFCOMBO', JDATE, LIST( I ), MESG, 2 )
