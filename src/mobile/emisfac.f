@@ -421,10 +421,14 @@ C.................  For MOBILE* input, when the PSI is the first in a
 C                   multi-scenario run, skip the appropriate number of lines
 C                   in the emission factor data file (RDEV).  Then, create
 C                   emission factors and store extras.
+C.................  Or, if PSI is *not* first, but emission factors haven't
+C                   been computed for current group (can happen during reuse), 
+C                   also run.
 C.................  Note that combination types have already been screened out
 C.................  Set RFLAG to indicate run temperature has been run
 C.................  Set FFLAG to indciate first scenario has been run
-                IF( PSIPNTR .EQ. 1 ) THEN
+                IF( PSIPNTR .EQ. 1 .OR.
+     &            ( PSIPNTR .GT. 1 .AND. .NOT. FFLAG ) ) THEN
                             
                     REWIND( RDEV )                  
                     CALL SKIPL ( RDEV, LINECNT )
@@ -440,13 +444,12 @@ C.................  TFLAG_* variables screen for TI = 0 or TMMI = 0
                 ELSE IF( PSIPNTR .GT. 1 ) THEN
 
 C.....................  Make sure that first scenario in group was run, if not
-C                       there is an error
+C                       there is an error.  This shouldn't happen.
                     IF ( .NOT. FFLAG ) THEN
-                        WRITE( MESG,94010 ) 'ERROR: PSI ', PSI, 
+                        WRITE( MESG,94010 ) 'INTERNAL ERROR: PSI ', PSI, 
      &                     'needs to be stored but group starting ' //
-     &                     'with PSI', PSIROOT, CRLF() // BLANK10 // 
-     &                     'has not been computed! To correct,' //
-     &                     'remove and recreate MEFSD file.'
+     &                      CRLF() // BLANK10 //'with PSI', PSIROOT, 
+     &                     'has not been computed!'
                         CALL M3MSG2( MESG )
                         EFLAG = .TRUE.
                         CYCLE
