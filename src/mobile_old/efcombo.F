@@ -53,7 +53,7 @@ C.........  External function
 
         INTEGER       SEC2TIME
 
-        EXTERNAL      SEC1TIME
+        EXTERNAL      SEC2TIME
 
 C.........  Subroutine call variables
 
