@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM SPCMMAT
 
 C***********************************************************************
-C  program body starts at line 237
+C  program body starts at line 241
 C
 C  DESCRIPTION:
 C       Construct mobile source chemical speciation matrix from data 
@@ -25,12 +23,33 @@ C       Prototype  1/96 by CJC.
 C       Revisions 5/96 by MRH.
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
         
-        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'CHDGEN3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'MBDIMS3.EXT'   !  mobile-source dimensioning parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
@@ -39,6 +58,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF    
         INTEGER         CSVNAME
         INTEGER         FIND1, FIND2
         INTEGER         GETEFILE
@@ -51,13 +71,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, GETEFILE, 
+        EXTERNAL        CRLF, CSVNAME, FIND1, FIND2, GETEFILE, 
      &                  GETYN, INDEX1, PROMPTFFILE, PROMPTMFILE, 
      &                  RDSPROF, STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   PARAMETERS and their descriptions:
-
+        CHARACTER*5     BLANK5
+        PARAMETER(      BLANK5 = ' ' )
         
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   NOTE that ASC (mobile-source-category) ID's are 10-digit
@@ -296,8 +317,7 @@ C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK
 C.......   Read/sort the SPECIATION PROFILES FILE
 C...............   ASSUMPTIONS: CSVNAME has provided model species list (EMNAM)
 
-        WRITE( *,92000 ) 
-     &       ' ', 'Reading SPECIATION PROFILES file...', ' '
+        CALL M3MSG2( 'Reading SPECIATION PROFILES file...' ) )
 
         
         NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, MXSPRO, 
@@ -349,6 +369,8 @@ C.......   volatile pollutant in inventory.
  
         ENDIF
 
+        CALL M3MSG2( 'Reading VOLATILE CONVERSION file...' ) )
+
 C.......   If needed, read the volatile pollutant conversion file
         IF( KFLAG ) THEN
 
@@ -379,8 +401,7 @@ C.................  Do not report individual default conversion factors
 
 C.......   Read and process the speciation cross-reference file
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Reading SPECIATION XREF file...', ' '
+        CALL M3MSG2( 'Reading SPECIATION XREF file...' )
 
         IREC = 0
         I     =  0
@@ -574,8 +595,7 @@ C.......   Initialize category-specific xref profiles no. and factors tables
   119     CONTINUE
   120   CONTINUE
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Processing SPECIATION XREF file...', ' '
+        CALL M3MSG2( 'Processing SPECIATION XREF file...' )
 
 C.........  Group xref profiles by how specifically they are referenced.
 
@@ -787,8 +807,10 @@ C...........   Then if that fails, try by ASC only.
             END IF              !  if roadclass match
 
             EFLAG = .TRUE.      !  if you get to here:  no match found
-            CALL M3MESG( 'Default XREF required, but none found for' )
+
             WRITE( MESG,94010 ) 
+                'Default XREF required, but none found for' //
+     &          CRLF() // BLANK5 //
      &          '  FIP:', FIP, 'RDT:', RDT, 'LNK:', LNK, 
      &            'VHT:', VHT, 'EMT:', EMT
             CALL M3MESG( MESG )
@@ -917,7 +939,7 @@ C.................  Set factors with consideration to model species
         
 C.......   Write out the speciation matrix:
         
-        WRITE( *,92000 ) ' ', 'Writing out SPECIATION MATRIX...', ' '
+        CALL M3MSG2( 'Writing out SPECIATION MATRIX...' )
 
         IF ( .NOT. WRITE3( MNAME, 'ALL', 0, 0, SPCFACS ) ) THEN
             CALL M3EXIT( 'SPCMMAT', 0, 0, 
