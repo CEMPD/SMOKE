@@ -74,7 +74,7 @@ C..........    Subroutine arguments and their descriptions
         CHARACTER(*), INTENT (OUT):: MNAME   ! logical name of ping srcs groups
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
         INTEGER         J      ! indices and counters
@@ -137,7 +137,7 @@ C              Model that reads this file needs to have the start date and time
 C              of the Met file in here.
             FDESC3D( 1 ) = CATDESC // ' source stack groups file'
             FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
-            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
             WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS3D
             WRITE( FDESC3D(6), 94010 ) '/NROWS3D/ ', NROWS3D
             FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2

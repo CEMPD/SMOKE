@@ -84,7 +84,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  GETFLINE, PLUMRIS, PROMPTFFILE, PROMPTMFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Indicator for which public inventory arrays need to be read
         INTEGER               , PARAMETER :: NINVARR = 9
@@ -211,7 +211,7 @@ C   begin body of program ELEVPOINT
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Get environment variables that control this program
         MESG = 'Plume height elevated source cutoff [m]'

@@ -75,7 +75,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
 
         REAL        , PARAMETER :: USTARMIN  = 0.1  ! Min valid value for USTAR
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  Indicator for which public inventory arrays need to be read
         INTEGER               , PARAMETER :: NINVARR = 8
@@ -232,7 +232,7 @@ C   begin body of program LAYPOINT
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........   Get setting from environment variables
         EMLAYS = ENVINT( 'SMK_EMLAYS', 'Number of emission layers',
@@ -446,7 +446,7 @@ C           already retrieved
 
         FDESC3D( 1 ) = 'Source level hourly plume rise layer fractions'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         FDESC3D( 4 ) = '/MET SCENARIO/ ' // METSCEN
         FDESC3D( 5 ) = '/CLOUD SCHEME/ ' // CLOUDSHM
 
