@@ -1,5 +1,5 @@
-        SUBROUTINE OPENRMAT( CATEGORY, ENAME, RPOL, SFLAG, LFLAG, 
-     &                       BYEAR, PYEAR, NSREAC, NMSPC, SPECIES, 
+        SUBROUTINE OPENRMAT( ENAME, RPOL, SFLAG, LFLAG, 
+     &                       BYEARIN, PYEAR, NSREAC, NMSPC, SPECIES, 
      &                       SDEV, SNAME, LNAME, SVNAMES, LVNAMES )
 
 C***********************************************************************
@@ -38,6 +38,10 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -62,12 +66,11 @@ C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: SCCSW   = '@(#)$Id$' ! SCCS string w/ vers no.
 
 C.........  SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: CATEGORY   ! source category
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
         CHARACTER(*), INTENT (IN) :: RPOL       ! pollutant for matrices
         LOGICAL     , INTENT (IN) :: SFLAG      ! true: open mass-based file
         LOGICAL     , INTENT (IN) :: LFLAG      ! true: open mole-based file
-        INTEGER     , INTENT (IN) :: BYEAR      ! base year of proj factors
+        INTEGER     , INTENT (IN) :: BYEARIN    ! base year of proj factors
         INTEGER     , INTENT (IN) :: PYEAR      ! projected year of proj factors
         INTEGER     , INTENT (IN) :: NSREAC     ! number of reactvty sources
         INTEGER     , INTENT (IN) :: NMSPC      ! number of reactivity species
@@ -80,7 +83,6 @@ C.........  SUBROUTINE ARGUMENTS
       
 C.........  Other local variables
         INTEGER          I, J           !  counters and indices
-        INTEGER          NSRC           !  number of sources in inventory
 
         CHARACTER*300          MESG     ! message buffer
 
@@ -105,7 +107,6 @@ C.........  Get header information from inventory file
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
         J       = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
         UNITS   = UNITS3D( J + 1 )
-        NSRC    = NROWS3D
 
 C.........  Initialize variable names for I/O API files
         SVNAMES = ' '  ! Array
@@ -119,17 +120,16 @@ C.........  Set I/O API header parms that need values
         NVARS3D = MIN( NBASVAR + NMSPC, MXVARS3 )
         NTHIK3D = NSRC
 
-        FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) //
-     &                 ' reactivity matrix'
+        FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' reactivity matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
 
-        WRITE( FDESC3D( 5 ), '(A,I4)' ) '/BASE YEAR/ ', BYEAR
+        WRITE( FDESC3D( 5 ), '(A,I4)' ) '/BASE YEAR/ ', BYEARIN
         WRITE( FDESC3D( 6 ), '(A,I4)' ) '/PROJECTED YEAR/ ', PYEAR
         WRITE( FDESC3D( 7 ), '(A,I4)' ) '/SPECIES VARS/ ', NMSPC
 
-        FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
-        FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
+        FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
+        FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
 C.........  Set up non-speciation variables
         J = 1
@@ -218,7 +218,8 @@ C.........  Set up variables specifically for mass-based file, and open it
 
             MESG = 'I/O API MASS-BASED REACTIVITY MATRIX for ' // RPOL
 
-            SNAME = PROMPTMFILE( MESG, FSUNKN3, 'PRMAT_S', PROGNAME )
+            SNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_S', 
+     &                           PROGNAME )
 
         ENDIF
 
@@ -238,7 +239,8 @@ C.........  Set up variables specifically for mole-based file, and open it
 
             MESG = 'I/O API MOLE-BASED REACTIVITY MATRIX for ' // RPOL
 
-            LNAME = PROMPTMFILE( MESG, FSUNKN3, 'PRMAT_L', PROGNAME )
+            LNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_L', 
+     &                           PROGNAME )
 
         ENDIF
 
@@ -246,7 +248,8 @@ C.........  Open the supplementary file (for SCCs and SPROFs)
 
         MESG = 'ASCII REACTIVITY MATRIX SUPPLEMENT file for ' // RPOL
 
-        SDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'PRSUP', PROGNAME )
+        SDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., CRL // 'RSUP', 
+     &                      PROGNAME )
 
         RETURN
 

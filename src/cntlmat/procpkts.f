@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCPKTS( NSRC, CPYEAR, PKTTYP, ENAME )
+        SUBROUTINE PROCPKTS( CPYEAR, PKTTYP, ENAME, SFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -74,10 +74,10 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   SUBROUTINE ARGUMENTS:
 
-        INTEGER     , INTENT (IN) :: NSRC      ! number of sources
         INTEGER     , INTENT (IN) :: CPYEAR    ! year to project to
         CHARACTER(*), INTENT (IN) :: PKTTYP    ! packet type
         CHARACTER(*), INTENT (IN) :: ENAME     ! inventory file name
+        LOGICAL     , INTENT(OUT) :: SFLAG     ! true: at least one packet done
 
 C.........  Reshaped inventory pollutants and associated variables
         INTEGER         NGRP                ! number of pollutant groups 
@@ -110,6 +110,8 @@ C   Begin body of subroutine PROCPKTS
             MESG = 'Pollutant for creating reactivity matrix'
             CALL ENVSTR( 'REACTIVITY_POL', MESG, 'VOC', RPOL, IOS )
 
+            SFLAG = .FALSE.     ! Initialize status as no packets applied
+
             FIRSTIME = .FALSE.
    
         END IF
@@ -140,7 +142,11 @@ C.............  Generate reactivity matrices
             CALL GENREACT( NSRC, NIPOL, BYEAR, CPYEAR, ENAME, 
      &                     RPOL, EINAM )
 
+            SFLAG = .TRUE.
+
         CASE( 'PROJECT AMS' )
+
+            SFLAG = .TRUE.
 
         CASE( 'PROJECT PTS' )
 
@@ -150,6 +156,8 @@ C            ALLOCATE( PRJIDX( NSRC ), STAT=IOS )
 C            CALL CHECKMEM( IOS, 'PRJIDX', PROGNAME )
 C            CALL ASGNCNTL( NSRC, 1, PKTTYP, 'ALL', IDUM, PRJIDX )
 
+            SFLAG = .TRUE.
+
         CASE DEFAULT
 
 C.............  It is important that all major arrays must be allocated by this
@@ -157,7 +165,7 @@ C               point because the next memory allocation step is going to pick
 C               a data structure that will fit within the limits of the host.
 C.............  Note that this routine only determines the allocation the
 C               first time it is called.
-            CALL ALOCCMAT( NSRC, NGRP, NGSZ )
+            CALL ALOCCMAT( NGRP, NGSZ )
 
             IF( .NOT. ALLOCATED( EINAM2D ) ) THEN
 
@@ -208,7 +216,9 @@ C STOPPED HERE: Need to write these routines
 
 c                    CALL UPDATE_POLLIST( NVCMULT, VNAMMULT )
 c                    CALL OPENCTMP( PKTTYP, GDEV )
-c                    CALL WRCTMP  ( GDEV, NSRC, NGSZ )
+c                    CALL WRCTMP  ( GDEV, NSRC, NGSZ, ?? )
+
+                    SFLAG = .TRUE.
 
                 CASE( 'CONTROL' )
 
@@ -220,6 +230,8 @@ c                    CALL UPDATE_POLLIST( NVCMULT, VNAMMULT )
 c                    CALL OPENCTMP( PKTTYP, CDEV )
 c                    CALL WRCTMP  ( CDEV, NSRC, NGSZ, CTLIDX )
 
+                    SFLAG = .TRUE.
+
                 CASE( 'ALLOWABLE' )
 
                     ALWIDX = 0   ! array
@@ -230,6 +242,8 @@ c                    CALL UPDATE_POLLIST( NVCMULT, VNAMMULT )
 c                    CALL OPENCTMP( PKTTYP, LDEV )
 c                    CALL WRCTMP  ( LDEV, NSRC, NGSZ, ALWIDX )
 
+                    SFLAG = .TRUE.
+
                 CASE( 'ADD' )
 
                     ADDIDX = 0   ! array
@@ -239,6 +253,8 @@ c                    CALL WRCTMP  ( LDEV, NSRC, NGSZ, ALWIDX )
 c                    CALL UPDATE_POLLIST( NVCADD, VNAMADD )
 c                    CALL OPENCTMP( PKTTYP, ADEV )
 c                    CALL WRCTMP  ( ADEV, NSRC, NGSZ, ADDIDX )
+
+                    SFLAG = .TRUE.
 
                 END SELECT
 

@@ -46,6 +46,9 @@ C.........  This module is for cross reference tables
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -100,11 +103,29 @@ C           skip the pollutant-specific entry
 
 C.............  Store sorting criteria as right-justified in fields
             CSRCALL = ' '
-            CALL BLDCSRC( PKTINFO%CFIP, PKTINFO%PLT, PKTINFO%CHAR1,
-     &                    PKTINFO%CHAR2, PKTINFO%CHAR3, PKTINFO%CHAR4,
-     &                    PKTINFO%CHAR5, POLBLNK3, CSRCALL )
+            SELECT CASE( CATEGORY )
 
-            CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 )// TMPSCC// PKTINFO%CPOS
+            CASE( 'AREA' )
+                CALL BLDCSRC( PKTINFO%CFIP, TMPSCC, CHRBLNK3,
+     &                        CHRBLNK3, CHRBLNK3, CHRBLNK3, 
+     &                        CHRBLNK3, PKTINFO%CPOS, CSRCALL )
+
+                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 )
+
+            CASE( 'MOBILE' )
+c note: insert here when needed
+
+            CASE( 'POINT' )
+
+                CALL BLDCSRC( PKTINFO%CFIP, PKTINFO%PLT, PKTINFO%CHAR1,
+     &                        PKTINFO%CHAR2, PKTINFO%CHAR3, 
+     &                        PKTINFO%CHAR4, PKTINFO%CHAR5, POLBLNK3, 
+     &                        CSRCALL )
+
+                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
+     &                         PKTINFO%CPOS
+
+            END SELECT
 
         END DO  ! End loop through the expansion records
 

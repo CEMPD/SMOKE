@@ -1,5 +1,5 @@
 
-        SUBROUTINE PKTLOOP( FDEV, NSRC, CPYEAR, NPACKET, ACTION, ENAME, 
+        SUBROUTINE PKTLOOP( FDEV, CPYEAR, NPACKET, ACTION, ENAME, 
      &                      PKTCNT, PKTBEG, PKTLIST, XRFCNT )
 
 C***********************************************************************
@@ -57,10 +57,14 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CPKTDAT.EXT'   !  control packet contents
 
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+        
+        CHARACTER*2    CRLF
+        EXTERNAL       CRLF
+
 C...........   SUBROUTINE ARGUMENTS:
 
         INTEGER     , INTENT(IN) :: FDEV      ! control packets file unit no.
-        INTEGER     , INTENT(IN) :: NSRC      ! number of sources
         INTEGER     , INTENT(IN) :: CPYEAR    ! year to project to
         INTEGER     , INTENT(IN) :: NPACKET   ! number of valid packets
         CHARACTER(*), INTENT(IN) :: ACTION    ! action to take for packets 
@@ -92,6 +96,7 @@ c temp:
         LOGICAL      :: EFLAG  = .FALSE.   ! error flag
         LOGICAL      :: EXPAND = .FALSE.   ! true: expand SIC-based rec to SCCs
         LOGICAL      :: LTMP   = .FALSE.   ! tmp logical buffer
+        LOGICAL      :: OFLAG  = .FALSE.   ! true: at least 1 packet was applied
         LOGICAL      :: SKIPPOL= .FALSE.   ! true: pol-spec entries skipped
         LOGICAL      :: SKIPREC= .FALSE.   ! true: packet entries skipped
 
@@ -237,7 +242,7 @@ C.................  Group cross-reference information for current packet
 
 C.................  Match controls to sources and pollutants, as needed for 
 C                   each packet type
-                CALL PROCPKTS( NSRC, CPYEAR, PKTLIST( K ), ENAME )
+                CALL PROCPKTS( CPYEAR, PKTLIST( K ), ENAME, OFLAG )
 
             END IF  ! End process section
 
@@ -247,6 +252,18 @@ C.........  An error was found while reading one or more of the packets
         IF( EFLAG ) THEN
             MESG = 'Problem reading control packets file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF( ACTION .EQ. 'PROCESS' .AND. .NOT. OFLAG ) THEN
+
+            MESG = 'No packets were applied to inventory! ' //
+     &             CRLF() // BLANK10 // 
+     &             'Input packets did not match inventory ' //
+     &             CRLF() // BLANK10 //
+     &             'or improper environment variable settings.'
+
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         END IF
 
 C......... Rewind file

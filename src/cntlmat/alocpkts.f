@@ -315,7 +315,7 @@ C           find SIC NE 0 and SCC EQ 0, and expand the memory requirements
 C           accordingly.
 
         ACTION = 'COUNT'
-        CALL PKTLOOP( FDEV, 1, CPYEAR, NPACKET, ACTION, BLANK5, PKTCNT, 
+        CALL PKTLOOP( FDEV, CPYEAR, NPACKET, ACTION, BLANK5, PKTCNT, 
      &                PKTBEG, PKTLIST, XRFCNT )
 
 C.........  Rewind file

@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALOCCMAT( NSRC, NGRP, NGSZ )
+        SUBROUTINE ALOCCMAT( NGRP, NGSZ )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -60,7 +60,6 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   SUBROUTINE ARGUMENTS:
 
-        INTEGER     , INTENT (IN)  :: NSRC     ! number of sources
         INTEGER     , INTENT (OUT) :: NGRP     ! number of sources
         INTEGER     , INTENT (OUT) :: NGSZ     ! year to project to
 

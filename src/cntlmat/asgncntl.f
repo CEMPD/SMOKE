@@ -1,5 +1,5 @@
 
-        SUBROUTINE ASGNCNTL( NSRC, NPOL, PKTTYP, PNAM, IPSTAT, SINDX )
+        SUBROUTINE ASGNCNTL( NSRCIN, NPOL, PKTTYP, PNAM, IPSTAT, SINDX )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -69,12 +69,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL CRLF, ENVYN, FIND1, FINDC, INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NSRC           ! number of sources
+        INTEGER     , INTENT (IN) :: NSRCIN         ! number of sources
         INTEGER     , INTENT (IN) :: NPOL           ! number of pollutant
         CHARACTER(*), INTENT (IN) :: PKTTYP         ! packet type of interest
         CHARACTER(*), INTENT (IN) :: PNAM( NPOL )   ! pollutant names
         INTEGER     , INTENT(OUT) :: IPSTAT( NPOL ) ! if>0: pol affected 
-        INTEGER     , INTENT(OUT) :: SINDX( NSRC,NPOL )! index to control table
+        INTEGER     , INTENT(OUT) :: SINDX( NSRCIN,NPOL )! idx to control table
 
 C.........  Other local variables
         INTEGER          I, J, K, L2, S, V    !  counters and indices
@@ -134,7 +134,7 @@ C.............  Find index in complete list of pollutants
 
             V = INDEX1( PNAM( J ), NIPOL, EINAM )
 
-            DO S = 1, NSRC
+            DO S = 1, NSRCIN
 
 C: NOTE: Since I do this in several places, this should be a subroutine
 
@@ -142,8 +142,8 @@ C.................  Create selection
                 SELECT CASE ( CATEGORY )
 
                 CASE ( 'AREA' ) 
-                    WRITE( CFIP, FMTFIP ) IFIP( S )
-
+                    CSRC    = CSOURC( S )
+                    CFIP    = CSRC( 1:FIPLEN3 )
                     CSTA    = CFIP( 1:STALEN3 )
                     TSCC    = CSCC( S )
                     TSCCL   = TSCC( 1:LSCCEND )
@@ -190,6 +190,9 @@ C                           pollutant-specific CHAR2 non-blank// SCC match; then
 C                           pollutant-specific CHAR1 non-blank// SCC match; then
 C                           pollutant-specific PLANT non-blank// SCC match; then
 C                           pollutant-specific PLANT non-blank       match
+
+c note: On the Sun, the code dies on the next line with a "subscript out of
+c    n: range" message
 
                 F6 = FINDC( CSSC5  , TXCNT( 16 ), CHRT16 ) 
                 F5 = FINDC( CSSC4  , TXCNT( 15 ), CHRT15 ) 

@@ -323,7 +323,7 @@ C.........  Find position of pollutant in list
 
 C.........  Set up for and open output reactivity matrices for current pollutant
 
-        CALL OPENRMAT( 'POINT', ENAME, RPOL, MASSOUT, MOLEOUT, 
+        CALL OPENRMAT( ENAME, RPOL, MASSOUT, MOLEOUT, 
      &                 BYEAR, PYEAR, NSREAC, NMSPC, SPCNAMES( 1,V ), 
      &                 SDEV, SNAME, LNAME, MASSONAM, MOLEONAM )
 
@@ -345,11 +345,15 @@ C.........  Write reactivity matrices for current pollutant
 C.........  Deallocate memory used to generate reactivity matrices
         DEALLOCATE( INPRF, SPECID, MOLEFACT, MASSFACT )
 
-        DEALLOCATE( PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRCSCC, 
-     &              PCRSPROF )
+c note: these deallocations cause an unexplained error on SGI.  There is
+c    n: a memory problem somewhere that is probably causing this, but
+c    n: I was not able to find it.
 
-        IF( ALLOCATED( RMTXMASS ) ) DEALLOCATE( RMTXMASS )
-        IF( ALLOCATED( RMTXMOLE ) ) DEALLOCATE( RMTXMOLE )
+c        DEALLOCATE( PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRCSCC )
+c     &              PCRSPROF )
+
+c        IF( ALLOCATED( RMTXMASS ) ) DEALLOCATE( RMTXMASS )
+c        IF( ALLOCATED( RMTXMOLE ) ) DEALLOCATE( RMTXMOLE )
 
         RETURN
 

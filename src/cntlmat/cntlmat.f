@@ -68,7 +68,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        INTEGER     , PARAMETER :: MXCHRS  = 7
         INTEGER     , PARAMETER :: NPACKET = 7
 
         CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
@@ -114,7 +113,7 @@ C...........   Other local variables
         INTEGER         CPYEAR       !  control packet year to project to
         INTEGER         IOS          !  I/O status
         INTEGER         ENLEN        !  length of the emissions inven name
-        INTEGER         NSRC         !  number of sources
+        INTEGER         NINVARR      ! number inventory variables to input
         INTEGER         PYEAR        !  projected year of inventory
         INTEGER         SYEAR        !  year for projecting from
 
@@ -191,8 +190,8 @@ C           results are stored in module MODINFO.
 
             CALL GETSINFO
 
-C.............  Store non-category-specific header information
-            NSRC = NROWS3D
+c note: should BYEAR be set in GETSINFO since it is part of MODINFO?  This
+c    n: would affect a number of other programs as well.
 
 C.............  Determine if file is a base or future-year inventory file
             BYEAR = GETIFDSC( FDESC3D, '/BASE YEAR/'     , .TRUE.  )
@@ -205,32 +204,27 @@ C               in this program
 
         ENDIF
 
-C.........  Read inventory source characteristics
-        CALL M3MSG2( 'Reading in inventory file...' )
-
 C.........  Set inventory variables to read for all source categories
-        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 1 ) = 'INVYR'
         IVARNAMS( 2 ) = 'CSCC'
-        IVARNAMS( 3 ) = 'INVYR'
+        IVARNAMS( 3 ) = 'CSOURC'
 
-C.........  Allocate memory for and read required inventory characteristics
+C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-
-            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 3, IVARNAMS )
+            NINVARR = 3
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
-
+            NINVARR = 4
             IVARNAMS( 4 ) = 'CVTYPE'
-            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 4, IVARNAMS )
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-
+            NINVARR = 4
             IVARNAMS( 4 ) = 'ISIC'
-            IVARNAMS( 5 ) = 'CSOURC'
-
-            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 5, IVARNAMS )
 
         END IF
+
+C.........  Allocate memory for and read required inventory characteristics
+        CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
@@ -257,7 +251,7 @@ C           each packet type while determining the pollutants to use in opening
 C           the final output files.
 
         ACTION = 'PROCESS'
-        CALL PKTLOOP( CDEV, NSRC, CPYEAR, NPACKET, ACTION, ENAME, 
+        CALL PKTLOOP( CDEV, CPYEAR, NPACKET, ACTION, ENAME, 
      &                PKTCNT, PKTBEG, PKTLIST, XRFCNT )
 
 C..........  Process control matrices that depend on pollutants...
