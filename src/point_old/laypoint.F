@@ -523,8 +523,8 @@ C.......   for description of output file
             FDESC3D( I ) = ' '
 22      CONTINUE
 
-        FDESC3D( 21 ) = SCEN_STR
-        FDESC3D( 22 ) = SCHE_STR
+        FDESC3D( 2 ) = SCEN_STR
+        FDESC3D( 3 ) = SCHE_STR
 
         LNAME = PROMPTMFILE( 
      &          'Enter name for LAYER FRACTIONS output file',
