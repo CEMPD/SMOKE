@@ -4,7 +4,7 @@
      &                     TMAT )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 101
 C
 C  DESCRIPTION:
 C       Construct temporal-coefficient-transform matrices for 
@@ -30,17 +30,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -116,7 +116,10 @@ C.............  Skip record in case of NGRP > 1 and all fields not used
 
                 L = DDEX( S,V )
 
-C.................  Adjust for year-normal data and whole week normlizer 
+C.................  Adjust for annual data, which should always use an
+C                   average-day factor (if the emissions are an annual total,
+C                   then don't want to base day-of-week adjustment on weekday
+C                   assumption.  The reader routines should set 
                 IF ( MOD( TPF( S ), MTPRFAC ) .EQ. 0 .AND.
      &                    MOD( TPF( S ), WTPRFAC ) .EQ. 0       ) THEN
 
@@ -131,21 +134,9 @@ C.................  Adjust for year-normal data and whole week normlizer
 
                     END DO
 
-C.................  Adjust for year-normal data and weekdays normalizer
-                ELSE IF ( MOD( TPF( S ), MTPRFAC ) .EQ. 0 .AND.
-     &                    MOD( TPF( S ), WDTPFAC ) .EQ. 0       ) THEN
-
-                    DO H = 1, 24
-
-                        MON = MONTH( H, ZONES( S ) )
-                        DAY = DAYOW( H, ZONES( S ) )
-                        FAC = MONFAC( MON,MDEX( S,V ) ) * 
-     &                        XWKFAC( DAY,WDEX( S,V ) )
-                        K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
-                        TMAT( S,V,H ) = FAC * HRLFAC( K, L, DAY )
-
-                    END DO
-
+C.................  This is when annual-data field is used for storing average-
+C                   day emissions by multiplying it by 365.  Have to undo that
+C                   here.
 C.................  Adjust for week-normal data assuming whole week normalizer
                 ELSE IF ( MOD( TPF( S ), WTPRFAC ) .EQ. 0 ) THEN
 
@@ -158,6 +149,9 @@ C.................  Adjust for week-normal data assuming whole week normalizer
 
                     END DO
 
+C.................  This is when annual-data field is used for storing average-
+C                   weekday emissions by multiplying it by 365.  Have to undo 
+C                   that here.
 C.................  Adjust for week-normal data assuming weekdays normalizer
                 ELSE IF ( MOD( TPF( S ), WDTPFAC ) .EQ. 0 ) THEN
 
@@ -170,6 +164,7 @@ C.................  Adjust for week-normal data assuming weekdays normalizer
  
                     END DO
 
+C.................  This is for day-specific data.
 C.................  Adjust without day-of-week factors
                 ELSE
 
