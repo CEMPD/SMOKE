@@ -337,6 +337,9 @@ C.....................  Reset group specific to defaults
                             GRP_LABEL = ADJUSTL( LINE( J+1:L2 ) )
                         END IF
 
+C.......................  If a region packet, read state/county file
+                        IF( PKT_IDX .EQ. REG_IDX ) YFLAG = .TRUE.
+
 C.....................  Specification of elevated groups, PinG sources, or
 C                       elevated sources
                     CASE( ELG_IDX, PNG_IDX, ELV_IDX )
@@ -413,6 +416,8 @@ C.........................  Reset report settings to defaults
                         RPT_%SUBGNAM  = ' '
                         RPT_%SPCPOL   = ' '
                         TITLE         = ' '
+                        IF( .NOT. LDELIM )
+     &                     RPT_%DELIM    = ';'      ! default to semi-colon
 
                     END SELECT
 
