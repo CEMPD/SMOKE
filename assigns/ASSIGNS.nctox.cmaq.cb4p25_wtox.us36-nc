@@ -84,7 +84,7 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls 
    setenv NRINV     $INVDIR/nonroad/arinv.nonroad.lst           # Nonroad mobile emission inventory
    setenv NCNTL     $INVDIR/nonroad/gcntl.control.txt           # Nonroad scenario-specific controls
-   setenv ARTOPNT   $INVDIR/other/artopnt.txt                   # area-to-point assignments
+   setenv ARTOPNT   $INVDIR/other/artopnt.1999.txt              # area-to-point assignments
    setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls
    setenv APROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt         # Projection factors
    setenv AGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Area gridding surrogates
