@@ -231,7 +231,7 @@ endif
       setenv MET_CRO_2D  $METDAT/METCRO2D_$G_STDATE
       setenv MET_CRO_3D  $METDAT/METCRO3D_$G_STDATE
       setenv MET_DOT_3D  $METDAT/METDOT3D_$G_STDATE
-      setenv MET_FILE1   $MET_CRO_2D
+      setenv MET_FILE1   $MET_CRO_3D
       setenv MET_FILE2   $MET_CRO_2D
    endif
 
