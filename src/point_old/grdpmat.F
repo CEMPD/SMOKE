@@ -136,7 +136,6 @@ C.......   Get file name; open actual-scc file
         END IF
         CORDN = GDNAM3D
 
-
 C.......   Initializations:
         
         DO  11  C = 1, NGRID
@@ -192,7 +191,6 @@ C.......   Initializations:
 
 C.......   Get file name; open output gridding matrix file
 
-        GDNAM3D = GRIDN
         FTYPE3D = SMATRX3
         STIME3D = 0
         TSTEP3D = 0
@@ -203,12 +201,12 @@ C.......   Get file name; open output gridding matrix file
         NTHIK3D = NPSRC
         NLAYS3D = 1
         NTHIK3D = NPSRC
+        VGTYP3D = IMISS3
+        VGTOP3D = BADVAL3
+        VGTYP3D = IMISS3
+        VGTOP3D = BADVAL3
         GDNAM3D = GRIDN         !  grid characteristics from DSCGRID() above
-        VGTYP3D = IMISS3
-        VGTOP3D = BADVAL3
-        VGTYP3D = IMISS3
-        VGTOP3D = BADVAL3
-        GDNAM3D = 'NC_UAM'
+
         FDESC3D( 1 ) = 'NC Point Source gridding-coefficient matrix'
         DO  33  K = 2, MXDESC3
             FDESC3D( K ) = ' '
@@ -421,7 +419,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94050   FORMAT( A, :, I10, :, 2X )
+94050   FORMAT( 10( A, :, I10, :, 2X ) )
 
 
         END
