@@ -25,12 +25,14 @@ OBJS = \
 	AFTRPREF.o \
 	ARBEF.o \
 	ATACRO.o \
+	ATBIGCFX.o \
 	ATCALX.o \
 	ATCALX2.o \
 	ATCOMPLEX.o \
 	ATDB_AGGR.o \
 	ATDB_DAILY.o \
 	ATEFCVT.o \
+	ATEMIRAT.o \
 	ATEVP_HRLY.o \
 	ATFUEL.o \
 	ATGROUP.o \
@@ -46,7 +48,9 @@ OBJS = \
 	ATOUTSS.o \
 	ATPAER.o \
 	ATPEFF.o \
+	ATRVPEXH.o \
 	ATSPEED_CF.o \
+	ATTAMPER.o \
 	AVGSPD.o \
 	BAGEME.o \
 	BD01.o \
@@ -430,7 +434,7 @@ OBJS = \
 	YRTEST.o
 
 .F.o:
-	$(FC) $(FFLAGS) -c -o $@ $<
+	$(FC) $(FFLAGS) -DM6LIB -c -o $@ $<
 
 mobile6: $(MODOBJS) $(OBJS) DRIVER.o
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS)
