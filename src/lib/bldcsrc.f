@@ -57,15 +57,15 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: CFIP  ! string FIPS code
-        CHARACTER(*), INTENT (IN) :: STR2  ! ar:SCC, mb:SCC, pt: plant
-        CHARACTER(*), INTENT (IN) :: STR3  ! ar:blk, mb:VTYPE, pt: plt char 1
-        CHARACTER(*), INTENT (IN) :: STR4  ! ar:blk, mb:LINK, pt: plt char 2
-        CHARACTER(*), INTENT (IN) :: STR5  ! ar:blk, mb:blk, pt: plt char 3
-        CHARACTER(*), INTENT (IN) :: STR6  ! ar:blk, mb:blk, pt: plt char 4
-        CHARACTER(*), INTENT (IN) :: STR7  ! ar:blk, mb:blk, pt: plt char 5
-        CHARACTER(*), INTENT (IN) :: CCOD  ! string of int postn of pollutant
-        CHARACTER(*), INTENT(OUT) :: CSRC  ! concatenated result
+        CHARACTER(*), INTENT(IN OUT) :: CFIP  ! string FIPS code
+        CHARACTER(*), INTENT(IN OUT) :: STR2  ! ar:SCC, mb:SCC, pt: plant
+        CHARACTER(*), INTENT(IN OUT) :: STR3  ! ar:blk, mb:VTYPE, pt: plt char 1
+        CHARACTER(*), INTENT(IN OUT) :: STR4  ! ar:blk, mb:LINK, pt: plt char 2
+        CHARACTER(*), INTENT(IN OUT) :: STR5  ! ar:blk, mb:blk, pt: plt char 3
+        CHARACTER(*), INTENT(IN OUT) :: STR6  ! ar:blk, mb:blk, pt: plt char 4
+        CHARACTER(*), INTENT(IN OUT) :: STR7  ! ar:blk, mb:blk, pt: plt char 5
+        CHARACTER(*), INTENT(IN OUT ):: CCOD  ! string of int postn of pollutant
+        CHARACTER(*), INTENT(OUT)    :: CSRC  ! concatenated result
 
 C...........   Other local variables
         INTEGER         L
@@ -83,6 +83,16 @@ C   begin body of subroutine BLDCSRC
 
 C.........  Determine allocated length of string used for output
         OUTLEN = LEN( CSRC )
+
+C.........  Interpret -9 as blank
+        IF( CFIP .EQ. '-9' ) CFIP = ' '
+        IF( STR2 .EQ. '-9' ) STR2 = ' '
+        IF( STR3 .EQ. '-9' ) STR3 = ' '
+        IF( STR4 .EQ. '-9' ) STR4 = ' '
+        IF( STR5 .EQ. '-9' ) STR5 = ' '
+        IF( STR6 .EQ. '-9' ) STR6 = ' '
+        IF( STR7 .EQ. '-9' ) STR7 = ' '
+        IF( CCOD .EQ. '-9' ) CCOD = ' '
 
 C.........  Store right-justified entries in the output string
 
