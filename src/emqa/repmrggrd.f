@@ -214,9 +214,11 @@ C                   already been confirmed elsewhere).
                 IC = 1
                 DO C = 1, NGRID
 
+C.....................  If current cell is valid for the subgrid...
                     IF( C .EQ. VALIDCEL( IC,IG ) ) THEN
 
-                        DO J = 1, NX( C )
+C........................  Loop through sources for current cell
+                       DO J = 1, NX( C )
 
                             K = K + 1
                             S = IX( K )
@@ -238,6 +240,11 @@ C.............................  Store the factors for the current cell and src
                         END DO  ! End loop over sources for current cell
 
                         IC = IC + 1
+
+C.....................  Otherwise, step through gridding matrix
+                    ELSE
+
+                        K = K + NX( C )
 
                     END IF      ! Check if valid cell
 
