@@ -115,7 +115,7 @@ C.........  Set I/O API header parms that need values
 
 C.........  Set up non-speciation variables
         J = 1
-        VNAME3D( J )= 'PFAC'
+        VNAME3D( J )= 'pfac'  ! Lowercase used to permit inv data named "PFAC"
         VTYPE3D( J )= M3REAL
         UNITS3D( J )= 'n/a'
         VDESC3D( J )= 'Projection factor'
