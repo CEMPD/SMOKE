@@ -227,19 +227,20 @@ C.............  Write message for pollutant for each new pollutant
                 WRITE( FDEV, 93000 ) REPEAT( '-', 80 )
                 WRITE( FDEV,93000 ) MESG( 1:L )
                 WRITE( FDEV,93000 ) ' '
-                LNAM = PNAM
 
             END IF
 
 C.............  Only write out header line if source is different from previous
-C
-            IF( SMKID .NE. PSMKID ) THEN
+C               or if the message for a new pollutant was written
+            IF( SMKID .NE. PSMKID .OR. PNAM .NE. LNAM ) THEN
 
                 CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                 WRITE( FDEV,93000 ) BLANK5 // BUFFER( 1:L2 )
                 PSMKID = SMKID
 
             END IF
+            
+            LNAM = PNAM
 
 C.............  Write warning if source is controled and factor is 1.0
             IF( FACTOR .EQ. 1. ) THEN
