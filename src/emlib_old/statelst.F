@@ -88,21 +88,21 @@ C...........   LOCAL VARIABLES and their descriptions:
 
         DATA STATNAM /  'Alabama', 'Alaska', ' ', 'Arizona', 'Arkansas',
      &                  'California', ' ', 'Colorado', 'Connecticut',
-     &                  'Delaware', 'District of Columbia', 'Florida',
+     &                  'Delaware', 'DistrictofColumbia', 'Florida',
      &                  'Georgia', ' ', 'Hawaii', 'Idaho', 'Illinois',
      &                  'Indiana', 'Iowa', 'Kansas', 'Kentucky', 
      &                  'Louisiana', 'Maine', 'Maryland', 
      &                  'Massachusetts', 'Michigan', 'Minnesota',
      &                  'Mississippi', 'Missouri', 'Montana', 
-     &                  'Nebraska', 'Nevada', 'New Hampshire', 
-     &                  'New Jersey', 'New Mexico', 'New York',
-     &                  'North Carolina', 'North Dakota', 'Ohio',
+     &                  'Nebraska', 'Nevada', 'NewHampshire', 
+     &                  'NewJersey', 'NewMexico', 'NewYork',
+     &                  'NorthCarolina', 'NorthDakota', 'Ohio',
      &                  'Oklahoma', 'Oregon', 'Pennsylvania',
-     &                  'Puerto Rico', 'Rhode Island', 'South Carolina',
-     &                  'South Dakota', 'Tennessee', 'Texas', 'Utah',
+     &                  'PuertoRico', 'RhodeIsland', 'SouthCarolina',
+     &                  'SouthDakota', 'Tennessee', 'Texas', 'Utah',
      &                  'Vermont', 'Virginia', ' ', 'Washington',
-     &                  'West Virginia', 'Wisconsin',
-     &                  19*' ', 'Canada', 23*' ', 'Off Shore'  /
+     &                  'WestVirginia', 'Wisconsin',
+     &                  19*' ', 'Canada', 23*' ', 'Offshore'  /
  
 C***********************************************************************
 C   begin body of subroutine  STATELST
