@@ -16,7 +16,7 @@ C
 C  REVISION  HISTORY:
 C     
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -122,7 +122,6 @@ C...........   Other local variables
         REAL             CUTOFF   ! CTG cutoff for application of control
         REAL             DENOM    ! denominator of control back-out factor
         REAL             E1, E2   ! tmp emissions values
-        REAL             EOUT     ! tmp output emissions
         REAL             FAC      ! tmp control factor
         REAL             MACT     ! max. achievable cntrl tech. cntrl factor
         REAL             RACT     ! reasonably achiev. cntrl tech. cntrl factor
@@ -399,11 +398,23 @@ C                    control factor
 
 C.....................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
-                    WRITE( CDEV, * ) 1, PNAM, E1, E2, FACTOR( S )
+                    WRITE( CDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
 
 C..................  Overwrite temporary file line with new info
                  ELSE
-                    WRITE( CDEV, * ) 0
+                    E2 = E1
+                    WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
+
+                 END IF
+
+C..................  Store input and output emissions for plant
+                 IF( CATEGORY .EQ. 'POINT' ) THEN
+                     J = PLTINDX( S )
+                     PLTINEM ( J,I ) = PLTINEM ( J,I ) + E1
+                     PLTOUTEM( J,I ) = PLTOUTEM( J,I ) + E2
+
+C......................  Flag plant if emissions are different
+                     IF( E1 .NE. E2 ) PLTFLAG( J ) = .TRUE.
 
                  END IF
 
@@ -437,33 +448,25 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
 
 C.....................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
-                    WRITE( CDEV, * ) 1, PNAM, E1, E2, FACTOR( S )
+                    WRITE( CDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
 
-C..................  If no controls, then set factor so no effect
+C..................  Overwrite temporary file line with new info
                  ELSE
-                    FACTOR( S ) = 1.0
-
-C.....................  Overwrite temporary file line with new info
-                    WRITE( CDEV, * ) 0
+                    E2 = E1
+                    WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
-
-C..................  Compute new emissions
-                 EOUT = EMIS( S ) * FACTOR( S )
 
 C..................  Store input and output emissions for plant
                  IF( CATEGORY .EQ. 'POINT' ) THEN
                      J = PLTINDX( S )
-                     PLTINEM ( J,I ) = PLTINEM ( J,I ) + EMIS( S )
-                     PLTOUTEM( J,I ) = PLTOUTEM( J,I ) + EOUT
+                     PLTINEM ( J,I ) = PLTINEM ( J,I ) + E1
+                     PLTOUTEM( J,I ) = PLTOUTEM( J,I ) + E2
 
 C......................  Flag plant if emissions are different
-                     IF( EOUT .NE. EMIS( S ) ) PLTFLAG( J ) = .TRUE.
+                     IF( E1 .NE. E2 ) PLTFLAG( J ) = .TRUE.
 
                  END IF
-
-C..................  Store new emissions
-                 EMIS( S ) = EOUT
 
               END DO ! end source loop
 
@@ -526,11 +529,11 @@ C........................  Compute aggregate factor for current source
                        FACTOR( S ) = FACTOR( S ) * FAC 
 
 C........................  Overwrite temporary file line with new info
-                       WRITE( GDEV, * ) 1, PNAM, E1, E2, FAC
+                       WRITE( GDEV,93300 ) 1, PNAM, E1, E2, FAC
  
 C.....................  If no controls, then overwrite temporary line only
                     ELSE
-                        WRITE( CDEV, * ) 0
+                       WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
 
                     END IF
 
@@ -582,11 +585,11 @@ C                       Replace.
 
 C.....................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
-                    WRITE( LDEV, * ) 1, PNAM, E1, E2, FACTOR( S )
+                    WRITE( LDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
 
 C..................  If no controls, then overwrite temporary line only
                  ELSE
-                     WRITE( CDEV, * ) 0
+                     WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
 
@@ -648,7 +651,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93380   FORMAT( )
+93300   FORMAT( I2, 1X, '"', A, '"', 3( 1X, E12.5 ) )
 
 93400   FORMAT( 'Co/St/Cy', 4X, 'Facility ID', 13X, 100( A16, :, 8X ) )
 
