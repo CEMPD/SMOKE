@@ -46,10 +46,10 @@ C***********************************************************************
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
 
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPEC, SPCNAMES
 
 C...........   This module contains BEIS3 specific arrays
-        USE MODBEIS3
+        USE MODBEIS3, ONLY: AVGISOP, AVGMONO, AVGOVOC, AVGNO, AVGLAI
 
         IMPLICIT NONE
 
@@ -118,6 +118,7 @@ C.......   BEIS3 internal, output species
         CHARACTER*4      BTMP       ! temporary variable string 
         CHARACTER*16     RADNAM     ! string for shortwave radiation reaching ground
         CHARACTER*16     TMPRNAM    ! string for temperature 
+        CHARACTER*16     PRESNAM    ! string for surface pressure
         CHARACTER*16     VTMP       ! temporary variable string
         CHARACTER*50  :: METSCEN    !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM   !  temporary string for cloud scheme name
@@ -150,7 +151,6 @@ C...........   Other variables and their descriptions:
         INTEGER         B, M    !  counters for biogenic, model species
         INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
         INTEGER         HR      !  current simulation hour
-
         INTEGER         IOS     !  temporay IO status
         INTEGER         JDATE   !  current simulation date (YYYYDDD)
         INTEGER         JTIME   !  current simulation time (HHMMSS)
@@ -168,6 +168,7 @@ C...........   Other variables and their descriptions:
         INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         RDATE   !  met file 2 start date 
         INTEGER         RTIME   !  met file 2 start time
+        INTEGER         TSTEP   !  time step set by environment
         INTEGER         TZONE   !  output-file time zone ; not used in program
 
         LOGICAL         EFLAG   !  error flag
@@ -436,6 +437,11 @@ C......    Get name of radiation variable to use
 
         ENDIF
 
+C......    Get name of surface pressure variable to use
+
+        MESG = 'Variable name for surface pressure'
+        CALL ENVSTR( 'PRES_VAR', MESG, 'PRSFC', PRESNAM, IOS )
+        
 C.......   Get default time characteristic for output file:
 C.......   If we're going to prompt, then set the defaults based on met
 C.......      otherwise, use environment variables to set defaults
@@ -455,7 +461,7 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
         MXREC3D = BSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
-        TSTEP3D = 10000
+        TSTEP3D = 10000   ! only 1-hour timestep supported
 
         DO  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )
@@ -779,11 +785,11 @@ C.............  Read temperature data
 
 C..............  Read surface pressure data 
 
-           IF ( .NOT. READ3( M3NAME, 'PRES', 1, 
+           IF ( .NOT. READ3( M3NAME, PRESNAM, 1, 
      &                        MDATE, MTIME, PRES ) ) THEN
-                  MESG = 'Could not read PRES from file "' //
+               MESG = 'Could not read ' // PRESNAM // 'from file "' //
      &                   M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
-                  CALL M3EXIT( PROGNAME, MDATE, MTIME, MESG, 2 )
+               CALL M3EXIT( PROGNAME, MDATE, MTIME, MESG, 2 )
            END IF
 
 C...............  convert from Pa to millibars

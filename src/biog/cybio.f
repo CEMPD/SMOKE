@@ -43,10 +43,14 @@ C...........   MODULES for public variables
 
 C...........   This module contains the gridding surrogates tables
 
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGS, SRGLIST, NSRGFIPS, SRGFIPS, SRGFRAC,
+     &                     NCELLS, FIPCELL
+        
 C...........   This module contains the biogenic variables
 
-        USE MODBIOG
+        USE MODBIOG, ONLY: NVEG, VEGID, PINE, DECD, CONF, AGRC, LEAF,
+     &                     OTHR, GRASNO, FORENO, WETLNO, AGRINO, 
+     &                     AVLAI, LAI, EMFAC
 
         IMPLICIT NONE
 

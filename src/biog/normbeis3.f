@@ -36,7 +36,8 @@ C...........   MODULES for public variables
 
 C...........   This module contains biogenic variables
 
-        USE MODBEIS3
+        USE MODBEIS3, ONLY: NVEG, VEGID, LAI, LFBIO, WFAC, SLW, EMFAC,
+     &                      AVGISOP, AVGMONO, AVGOVOC, AVGNO, AVGLAI
  
         IMPLICIT NONE
 

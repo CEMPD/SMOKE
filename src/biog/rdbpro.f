@@ -42,7 +42,7 @@ C***********************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
-        USE MODSPRO
+        USE MODSPRO, ONLY:
 
         IMPLICIT NONE
 
@@ -95,7 +95,7 @@ C...........   Local variables
         CHARACTER*16   POLNAM     ! pollutant name
         CHARACTER*16   SPECNM     ! tmp species name
         CHARACTER*200  LINE       ! buffer for profile data
-        CHARACTER*300  MESG       ! message buffer
+        CHARACTER*256  MESG       ! message buffer
         
         CHARACTER*16 :: PROGNAME = 'RDBPRO' ! program name
 
@@ -138,6 +138,9 @@ C              mole-based conversions
      &              'file at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+
+C.............  Skip blank and comment lines
+            IF ( LINE .EQ. ' ' .OR. LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
 
 C.............  Separate the line of data into each part
             CALL PARSLINE( LINE, MXSEG, SEGMENT )

@@ -45,10 +45,10 @@ C***********************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPEC, SPCNAMES
 
 C...........   This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NCOLS, NROWS, XOFF_A, YOFF_A, XOFF, YOFF
 
         IMPLICIT NONE
 
@@ -154,6 +154,7 @@ C.......   BEIS2 internal, output species
         CHARACTER*5      CTZONE     ! string of time zone
         CHARACTER*16     RADNAM     !  string for shortwave radiation reaching ground
         CHARACTER*16     TMPRNAM    !  string for temperature 
+        CHARACTER*16     PRESNAM    !  string for surface pressure
         CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
         CHARACTER*50  :: LUSE      !  temporary string for land use description
@@ -221,6 +222,7 @@ C...........   Other variables and their descriptions:
         INTEGER      :: SWNROWS = 0   !  bioseason 
         INTEGER      :: SWXOFF  = 0   !  bioseason x offset from met grid
         INTEGER      :: SWYOFF  = 0   !  bioseason y offset from met grid
+        INTEGER         TSTEP   !  Time step from environment
         INTEGER         TZONE   !  output-file time zone
 
         LOGICAL ::      EFLAG    = .FALSE.  ! error flag
@@ -330,7 +332,7 @@ C.......   Get the method to calculate PAR
         WRITE( LDEV, 92000 ) MESG
 
 C.......   Get episode date and time from environment
-        CALL GETM3EPI( TZONE, JDATE, JTIME, NSTEPS )
+        CALL GETM3EPI( TZONE, JDATE, JTIME, TSTEP, NSTEPS )
 
 C........  Convert start date and time to output time zone.
         MDATE = JDATE
@@ -911,7 +913,7 @@ C.......   Build description for, and create/open output file
         MXREC3D = NSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
-        TSTEP3D = 10000
+        TSTEP3D = 10000    ! only 1-hour time step supported
 
         DO  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )
@@ -1452,11 +1454,16 @@ C...............     must pass met date and time here
 
            ELSE        ! Use clouds or clear skies to calculate PAR
 
+C..............  Get name of surface pressure variable to use
+
+              MESG = 'Variable name for surface pressure'
+              CALL ENVSTR( 'PRES_VAR', MESG, 'PRSFC', PRESNAM, IOS )
+
 C..............  Read surface pressure data from temperature file
 
-              IF ( .NOT. READ3( MNAME, 'PRES', 1, 
+              IF ( .NOT. READ3( MNAME, PRESNAM, 1, 
      &                        MDATE, MTIME, PRSFC ) ) THEN
-                  MESG = 'Could not read PRES from file "' //
+                  MESG = 'Could not read '// PRESNAM // 'from file "'//
      &                   METFILE( 1:LEN_TRIM( METFILE ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', MDATE, MTIME, MESG, 2 )
               END IF
