@@ -2,7 +2,7 @@
         SUBROUTINE OPENMRGOUT( NGRP )
 
 C***********************************************************************
-C  subroutine OPENMRGOUT body starts at line 83
+C  subroutine OPENMRGOUT body starts at line 86
 C
 C  DESCRIPTION:
 C      The purpose of this subroutine is to open all of the necessary
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -56,12 +56,13 @@ C.........  INCLUDES:
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         INTEGER         INDEX1
         CHARACTER*16    MULTUNIT
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
 
-        EXTERNAL  INDEX1, MULTUNIT, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL  CRLF, INDEX1, MULTUNIT, PROMPTFFILE, PROMPTMFILE
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
@@ -100,7 +101,6 @@ C.........  Set up header for I/O API output files
         TSTEP3D = TSTEP
         NCOLS3D = NCOLS
         NROWS3D = NROWS
-        NLAYS3D = EMLAYS
         NTHIK3D = 1
         GDTYP3D = GDTYP
         VGTYP3D = VGTYP
@@ -112,86 +112,38 @@ C.........  Set ozone-season description buffer
         IF( LO3SEAS ) DESCBUF = 'Ozone-season value, '
         LD = MAX( LEN_TRIM( DESCBUF ), 1 )
 
-C.........  Set constants number and values for variables
-C.........  Do this regardless of whether we have outputs or not
-C.........  For speciation...
-        IF( SFLAG ) THEN
-            NVARS3D = NMSPC
-
-            K = 0
-            LJ = -1
-            DO N = 1, NGRP
-                DO V = 1, VGRPCNT( N )
-
-                    I = SIINDEX( V,N )
-                    J = SPINDEX( V,N )
-                    IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
-
-                    DESCBUF= DESCBUF(1:LD)//' Model species '//EMNAM(J)
-
-                    K = K + 1
-                    VNAME3D( K ) = EMNAM  ( J )
-                    UNITS3D( K ) = GRDUNIT( I )
-                    VDESC3D( K ) = ADJUSTL( DESCBUF )
-                    VTYPE3D( K ) = M3REAL
-
-                    LJ = J
-
-                END DO
-            END DO
-
-C.........  For no speciation...
-        ELSE
-
-            NVARS3D = NIPPA
-
-            DO V = 1, NVARS3D
-
-C.................  Determine if variable is an emission type, pollutant,
-C                   or activity, and set variable description accordingly
-                J = INDEX1( EANAM( V ), NIPOL, EINAM )
-                K = INDEX ( EANAM( V ), ETJOIN )
-                IF( K .GT. 0 ) THEN
-                    DESCBUF= DESCBUF(1:LD)//' Emission type '//EANAM(V)
-                ELSE IF( J .GT. 0 ) THEN
-                    DESCBUF= DESCBUF(1:LD)//' Pollutant '//EANAM(V)
-                ELSE
-                    DESCBUF= DESCBUF(1:LD)//' Activity '//EANAM(V)
-                END IF
-
-C.................  Define variable information
-                VNAME3D( V ) = EANAM  ( V )
-                UNITS3D( V ) = GRDUNIT( V )
-                VDESC3D( V ) = ADJUSTL( DESCBUF )
-                VTYPE3D( V ) = M3REAL
-
-            END DO
-
-        END IF
 
 C.........  Set up and open I/O API output file
         IF( LGRDOUT ) THEN
           
 C.............  Prompt for and gridded open file(s)
             IF( AFLAG ) THEN
+                CALL SETUP_VARIABLES( ANIPOL, ANMSPC, AEINAM, AEMNAM )
+                NLAYS3D = 1
                 AONAME = PROMPTMFILE(  
      &            'Enter name for AREA-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, AONAME, PROGNAME )
             END IF 
 
             IF( MFLAG ) THEN
+                CALL SETUP_VARIABLES( MNIPPA, MNMSPC, MEANAM, MEMNAM )
+                NLAYS3D = 1
                 MONAME = PROMPTMFILE(  
      &            'Enter name for MOBILE-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, MONAME, PROGNAME )
             END IF 
 
             IF( PFLAG ) THEN
+                CALL SETUP_VARIABLES( PNIPOL, PNMSPC, PEINAM, PEMNAM )
+                NLAYS3D = EMLAYS
                 PONAME = PROMPTMFILE(  
      &            'Enter name for POINT-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, PONAME, PROGNAME )
             END IF 
 
             IF( XFLAG ) THEN
+                CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )
+                NLAYS3D = EMLAYS
                 TONAME = PROMPTMFILE(  
      &            'Enter name for MULTI-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, TONAME, PROGNAME )
@@ -213,8 +165,25 @@ C.............  Override gridded file settings
             FDESC3D = ' '   ! array
             
             PINGNAME = PROMPTMFILE( 
-     &                     'Enter name for PING EMISSIONS file',
+     &                     'Enter name for PING EMISSIONS OUTPUT file',
      &                     FSUNKN3, PINGNAME, PROGNAME )
+        END IF
+
+C.........  Open plume-in-grid output
+        IF( ELEVFLAG .AND. NGRP .GT. 1 ) THEN
+
+            WRITE( MESG, 94010 ) 'The number of processing groups is ',
+     &             NGRP, ', but it cannot be greater than' // CRLF() //
+     &             BLANK10 // '1 for ASCII elevated output.  Not ' //
+     &             'enough memory.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        ELSE IF( ELEVFLAG ) THEN
+            
+            EVDEV = PROMPTFFILE(
+     &              'Enter name for ASCII ELEVATED SOURCES file', 
+     &              .FALSE., .TRUE., PELVNAME, PROGNAME )
+
         END IF
 
 C.........  Open report file(s)
@@ -278,5 +247,111 @@ C...........   Internal buffering formats.............94xxx
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
+
+C*****************  INTERNAL SUBPROGRAMS  ******************************
+
+        CONTAINS
+
+C.............  This internal subprogram uses WRITE3 and exits gracefully
+C               if a write error occurred
+            SUBROUTINE SETUP_VARIABLES( NIPPA_L, NMSPC_L, 
+     &                                  EANAM_L, EMNAM_L  )
+
+C.............  MODULES for public variables
+C.............  This module contains the major data structure and control flags
+            USE MODMERGE
+
+C.............  Internal subprogram arguments
+            INTEGER     , INTENT (IN) :: NIPPA_L
+            INTEGER     , INTENT (IN) :: NMSPC_L
+            CHARACTER(*), INTENT (IN) :: EANAM_L( NIPPA_L )
+            CHARACTER(*), INTENT (IN) :: EMNAM_L( NMSPC_L )
+
+C.............  Local subprogram varibles
+            INTEGER     I, J, K, LJ, M, V
+
+            CHARACTER(LEN=IOVLEN3) CBUF
+
+C------------------------------------------------------------------------
+
+C.............  Set constants number and values for variables
+C.............  Do this regardless of whether we have outputs or not
+C.............  For speciation...
+            IF( SFLAG ) THEN
+        	NVARS3D = NMSPC_L
+
+        	K = 0
+        	LJ = -1
+C.................  Loop through global species index
+        	DO N = 1, NGRP
+                    DO V = 1, VGRPCNT( N )
+
+C.........................  Access global indices
+                	I = SIINDEX( V,N )
+                	J = SPINDEX( V,N )
+                	IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
+
+C.........................  Make sure current species is in local array
+                        CBUF = EMNAM( J )
+                        M = INDEX1( CBUF, NMSPC_L, EMNAM_L )
+                        IF( M .LE. 0 ) CYCLE
+
+                	DESCBUF= DESCBUF(1:LD)//' Model species '// CBUF
+
+                	K = K + 1
+                	VNAME3D( K ) = CBUF
+                	UNITS3D( K ) = GRDUNIT( I )
+                	VDESC3D( K ) = ADJUSTL( DESCBUF )
+                	VTYPE3D( K ) = M3REAL
+
+                	LJ = J
+
+                    END DO
+        	END DO
+
+C.............  For no speciation...
+            ELSE
+
+        	NVARS3D = NIPPA_L
+
+        	K = 0
+C.................  Loop through global list
+        	DO V = 1, NIPPA
+
+C.....................  Determine if variable is an emission type, pollutant,
+C                       or activity, and set variable description accordingly
+                    I = INDEX1( EANAM( V ), NIPOL, EINAM )
+                    J = INDEX ( EANAM( V ), ETJOIN )
+                    IF( J .GT. 0 ) THEN
+                	DESCBUF = DESCBUF(1:LD) // 
+     &                           ' Emission type ' // EANAM( V )
+                    ELSE IF( I .GT. 0 ) THEN
+                	DESCBUF = DESCBUF(1:LD) // 
+     &                            ' Pollutant ' // EANAM( V )
+                    ELSE
+                	DESCBUF = DESCBUF(1:LD) // 
+     &                            ' Activity ' // EANAM( V )
+                    END IF
+
+C.....................  Make sure current data variable is in local array
+                    CBUF = EANAM( V )
+                    M = INDEX1( CBUF, NIPPA_L, EANAM_L )
+                    IF( M .LE. 0 ) CYCLE
+
+                    K = K + 1
+
+C.....................  Define variable information
+                    VNAME3D( K ) = EANAM  ( V )
+                    UNITS3D( K ) = GRDUNIT( V )
+                    VDESC3D( K ) = ADJUSTL( DESCBUF )
+                    VTYPE3D( K ) = M3REAL
+
+        	END DO
+
+            END IF
+
+            RETURN
+
+            END SUBROUTINE SETUP_VARIABLES
 
         END SUBROUTINE OPENMRGOUT
