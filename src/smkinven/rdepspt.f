@@ -534,7 +534,7 @@ C.............  Check and set time period type (Year/day/hourly)
 C.............  If interval indicator is blank, emissions are annual total
             IF ( TMPAA .EQ. '  ' ) THEN
 
-                TPF = MTPRFAC * WKSET           !  use month, week profiles
+                TPF = MTPRFAC * WTPRFAC           !  use month, week profiles
 
 C.............  Emissions are peak day 
 C.............  NOTE- emissions will be stored as tons/day

@@ -163,7 +163,17 @@ C               properly (no header fields are required)
      &                   LINE, ICC, YR4, NPOA, IOS )
 
 C.............  Set error flag for error from header reading routine
-            IF( IOS .GT. 0 ) EFLAG = .TRUE.
+            IF( IOS .EQ. 4 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'Maximum allowed data variables ' //
+     &                 '(MXDATFIL=', MXDATFIL, CRLF() // BLANK10 //
+     &                 ') exceeded in input file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ELSE IF( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+
+            END IF
 
 C.............  Resolve any differences between year from calling program
 C               and year in file header
@@ -233,7 +243,7 @@ C.............  Check and set time period type (Year/day/hourly)
             CALL UPCASE( TMPAA )
             IF ( TMPAA .EQ. 'AA' ) THEN 
 
-                TPF = MTPRFAC * WKSET       !  use month, week profiles
+                TPF = MTPRFAC * WTPRFAC       !  use month, week profiles
 
             ELSE IF ( TMPAA .EQ. 'AD' ) THEN 
 

@@ -366,7 +366,7 @@ CC.............  Check and set time period type (Year/day/hourly)
 C.............  If interval indicator is blank, emissions are annual total
             IF ( TMPAA .EQ. '  ' ) THEN
 
-                TPF = MTPRFAC * WKSET           !  use month, week profiles
+                TPF = MTPRFAC * WTPRFAC           !  use month, week profiles
 
 C.............  Emissions are peak day.  Do not multiply emissions by day2yr
 C               conversion, because they will be stored as ozone-season day 

@@ -939,7 +939,7 @@ C.............  Check and set time period type (Year/day/hourly)
             CALL UPCASE( TMPAA )
             IF ( TMPAA .EQ. 'AA' ) THEN 
 
-                TPF = MTPRFAC * WKSET       !  use month, week profiles
+                TPF = MTPRFAC * WTPRFAC       !  use month, week profiles
 
             ELSE IF ( TMPAA .EQ. 'AD' ) THEN 
 
