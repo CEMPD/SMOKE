@@ -8,15 +8,27 @@ LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.de
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libiotools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
 
-all: smkinven
+all: grwinven smkinven
 
-debug: smkinven.debug
+debug: grwinven.debug smkinven.debug
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
+GRW=grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o
+#    
+#
+grwinven: $(GRW) $(ALLI) $(LIBPATH)
+	echo GRWINVEN:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GRW) $(LIBS)
+#
+#
+grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
+	echo GRWINVEN \(debug\):
+	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
+
 RAW=chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o openinvin.o \
     openinvout.o openpdout.o procinven.o rdemsar.o rdemsmb.o rdemspd.o \
     rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o rdidaar.o rdidamb.o \
@@ -43,7 +55,11 @@ genpdinfo.o: $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
 gethdr.o: $(MODINFO) $(MODLISTS) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ $<
+grwinven.o: $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
 initinfo.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+opengrwout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 openinvout.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
