@@ -919,7 +919,8 @@ C.............  Recognize only indice representing pure EF calculations
 
 C.................  Set update flag using search of MPLIST indice in update list
                 UFLAG = .FALSE.
-                IF ( FIND1( IPARM, NUPDAT, UPDATE ) .GT. 0 ) 
+                IF ( NUPDAT .GT. 0 .AND.
+     &               FIND1( IPARM, NUPDAT, UPDATE ) .GT. 0 ) 
      &               UFLAG = .TRUE.
 
 C.................  Check to see any diurnals for this profile indice exist
@@ -1213,7 +1214,8 @@ C.............  Recognize only indice representing combo EF calculations
 
 C.................  Set update flag using search of MPLIST indice in update list
                 UFLAG = .FALSE.
-                IF ( FIND1( IPARM, NUPDAT, UPDATE ) .GT. 0 ) 
+                IF ( NUPDAT .GT. 0 .AND.
+     &               FIND1( IPARM, NUPDAT, UPDATE ) .GT. 0 ) 
      &               UFLAG = .TRUE.
 
 C.................  Write message to screen
