@@ -74,6 +74,9 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine GETNTISZ
 
+C.........  Write message to screen
+        CALL M3MSG2( 'Determining size of toxics inventory...' )
+
 C.........  Initialize counters
         NLINES = 0
         IREC = 0
