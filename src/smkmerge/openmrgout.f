@@ -55,24 +55,26 @@ C.........  INCLUDES:
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        
+
+        INTEGER         INDEX1
         CHARACTER*16    MULTUNIT
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
 
-        EXTERNAL  MULTUNIT, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL  INDEX1, MULTUNIT, PROMPTFFILE, PROMPTMFILE
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
 
 C.........  Other local variables
 
-        INTEGER         I, J, K, L, L1, L2, LJ, N, V
+        INTEGER         I, J, K, L, L1, L2, LD, LJ, N, V
 
         CHARACTER*50    RTYPNAM      ! name for type of state/county report file
         CHARACTER*50    UNIT         ! tmp units buffer
         CHARACTER*300   BUFFER       ! tmp buffer
         CHARACTER*300   MESG         ! message buffer
+        CHARACTER(LEN=IODLEN3) DESCBUF ! variable description buffer
 
         CHARACTER*16 :: PROGNAME = 'OPENMRGOUT' ! program name
 
@@ -105,8 +107,14 @@ C.........  Set up header for I/O API output files
         VGTOP3D = VGTOP
         GDNAM3D = GRDNM
 
+C.........  Set ozone-season description buffer
+        DESCBUF = ' '
+        IF( LO3SEAS ) DESCBUF = 'Ozone-season value, '
+        LD = MAX( LEN_TRIM( DESCBUF ), 1 )
+
 C.........  Set constants number and values for variables
 C.........  Do this regardless of whether we have outputs or not
+C.........  For speciation...
         IF( SFLAG ) THEN
             NVARS3D = NMSPC
 
@@ -119,10 +127,12 @@ C.........  Do this regardless of whether we have outputs or not
                     J = SPINDEX( V,N )
                     IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
 
+                    DESCBUF= DESCBUF(1:LD)//' Model species '//EMNAM(J)
+
                     K = K + 1
                     VNAME3D( K ) = EMNAM  ( J )
                     UNITS3D( K ) = GRDUNIT( I )
-                    VDESC3D( K ) = 'Model species ' // EMNAM( J )
+                    VDESC3D( K ) = ADJUSTL( DESCBUF )
                     VTYPE3D( K ) = M3REAL
 
                     LJ = J
@@ -130,17 +140,34 @@ C.........  Do this regardless of whether we have outputs or not
                 END DO
             END DO
 
+C.........  For no speciation...
         ELSE
+
             NVARS3D = NIPPA
 
             DO V = 1, NVARS3D
+
+C.................  Determine if variable is an emission type, pollutant,
+C                   or activity, and set variable description accordingly
+                J = INDEX1( EANAM( V ), NIPOL, EINAM )
+                K = INDEX ( EANAM( V ), ETJOIN )
+                IF( K .GT. 0 ) THEN
+                    DESCBUF= DESCBUF(1:LD)//' Emission type '//EANAM(V)
+                ELSE IF( J .GT. 0 ) THEN
+                    DESCBUF= DESCBUF(1:LD)//' Pollutant '//EANAM(V)
+                ELSE
+                    DESCBUF= DESCBUF(1:LD)//' Activity '//EANAM(V)
+                END IF
+
+C.................  Define variable information
                 VNAME3D( V ) = EANAM  ( V )
                 UNITS3D( V ) = GRDUNIT( V )
-                VDESC3D( V ) = 'Pollutant or activity ' // EANAM( V )
+                VDESC3D( V ) = ADJUSTL( DESCBUF )
                 VTYPE3D( V ) = M3REAL
+
             END DO
 
-        ENDIF
+        END IF
 
 C.........  Set up and open I/O API output file
         IF( LGRDOUT ) THEN
