@@ -33,6 +33,7 @@ C
 C  REVISION  HISTORY:
 C    started 10/98 by M Houyoux as rawpoint.f from emspoint.F 4.3
 C    smkinven changes started 4/98
+C    toxics changes 11/2002  A. Holland
 C
 C***************************************************************************
 C
@@ -103,6 +104,7 @@ C           this program
 
 C.........  File units and logical/physical names
 
+	INTEGER    :: ADEV = 0  !  unit no. for REPINVEN file
         INTEGER    :: CDEV = 0  !  unit no. for SCCs description
         INTEGER    :: DDEV = 0  !  unit no. for day-specific input file 
         INTEGER    :: EDEV = 0  !  unit no. for speeds file
@@ -331,7 +333,8 @@ C.........  Output SMOKE inventory files
 
 C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
-            CALL OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG )
+
+            CALL OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG, ADEV )
 
             MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
      &             ' SOURCE INVENTORY file...'
@@ -426,6 +429,8 @@ C.............  Read and output hour-specific data
      &                     MXSRCHR, TYPNAM, HNAME, HEAIDX, HSPIDX )
 
         END IF
+
+	CALL WREPINVEN( ADEV )
 
 C.........  End program successfully
         MESG = ' '
