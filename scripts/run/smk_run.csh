@@ -497,7 +497,7 @@ if ( $?RUN_PREMOBL ) then
 
       if ( -e $METLIST ) /bin/rm -rf $METLIST
 
-      ls $METDAT/METCRO2D* > $METLIST
+      ls $METDAT/METCRO3D* > $METLIST
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
