@@ -61,8 +61,8 @@ C.........  This module contains the information about the source category
      &                     SC_BEGP, SC_ENDP, NCHARS, EINAM
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: GDTYP, P_ALP, P_BET, P_GAM, XCENT, YCENT,
-     &                     NCOLS, NROWS, NGRID
+        USE MODGRID, ONLY: GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, NCOLS, NROWS, NGRID
 
         IMPLICIT NONE
 
@@ -369,6 +369,7 @@ C           to grid cells for the STACK_GROUPS file.
 
         ELSE
             GDTYP = GDTYP3D
+            GRDNM = GDNAM3D
             P_ALP = P_ALP3D
             P_BET = P_BET3D
             P_GAM = P_GAM3D
@@ -856,8 +857,8 @@ C.............  Process the stack group coordinates for the current grid...
 C.............  Convert x,y location to coordinates of the projected grid
         GRPXL = GRPLON
         GRPYL = GRPLAT
-        CALL CONVRTXY( NGROUP, GDTYP, P_ALP, P_BET, 
-     &                 P_GAM, XCENT, YCENT, GRPXL, GRPYL )
+        CALL CONVRTXY( NGROUP, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
+     &                 XCENT, YCENT, GRPXL, GRPYL )
 
 C.............  Determine grid cells for these coordinate locations
         CALL GENPTCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX, 

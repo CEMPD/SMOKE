@@ -52,7 +52,7 @@ C.........  This module contains the information about the source category
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, NROWS, NCOLS, NLAYS, VGTYP, VGTOP,
      &                     XORIG, YORIG, COORD, GDTYP, P_ALP, P_BET,
-     &                     P_GAM, XCENT, YCENT, XCELL, YCELL
+     &                     P_GAM, XCENT, YCENT, XCELL, YCELL, GRDNM
 
         IMPLICIT NONE
 
@@ -641,7 +641,7 @@ C.........  Allocate memory for and read required inventory characteristics
 
 C.........  Call subroutine to convert grid coordinates from lat-lon to
 C           coordinate system of the destination grid
-        CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+        CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                 XCENT, YCENT, XLOCA, YLOCA )
 
 C.........  Call elevated sources indicator file, even thought it might not

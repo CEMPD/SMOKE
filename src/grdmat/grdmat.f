@@ -413,7 +413,7 @@ C.........  If output grid is different from surrogates, write message
 C.........  If area or mobile inventory has point source locations,
 C           convert point source coordinates from lat-lon to output grid
         IF( A2PFLAG ) THEN
-            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+            CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XLOCA, YLOCA )
         END IF
 
@@ -447,9 +447,9 @@ C.............  Allocate memory for mobile source gridding matrix
         CASE( 'MOBILE' )
 
 C.............  Convert mobile source coordinates from lat-lon to output grid
-            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
+            CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
      &                     XCENT, YCENT, XLOC1, YLOC1 )
-            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+            CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XLOC2, YLOC2 )
 
 C.............  Determine sizes for allocating mobile gridding matrix 
@@ -468,7 +468,7 @@ C.............  Allocate memory for mobile source ungridding matrix
         CASE( 'POINT' )
 
 C.............  Convert point source coordinates from lat-lon to output grid
-            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+            CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XLOCA, YLOCA )
 
 C.............  Set the number of source-cell intersections
