@@ -63,22 +63,22 @@ C...........   EXTERNAL FUNCTIONS
         EXTERNAL     CRLF, FINDR1, FINDR2
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT    (IN) :: NSRCIN           ! no. sources
-        INTEGER     , INTENT    (IN) :: NALL             ! no. valid values
-        INTEGER     , INTENT    (IN) :: NVALID           ! no. valid combos
-        REAL        , INTENT    (IN) :: MINV_MIN         ! min of minimum vals
-        REAL        , INTENT    (IN) :: MINV_MAX         ! max of minimum vals
-        REAL        , INTENT    (IN) :: MAXV_MIN         ! min of maximum vals
-        REAL        , INTENT    (IN) :: MAXV_MAX         ! max of maximum vals
-        REAL        , INTENT    (IN) :: VINTRVL          ! interval for vals
-        REAL        , INTENT    (IN) :: MXINTRVL         ! max allowed interval
-        CHARACTER(*), INTENT    (IN) :: DESC             ! data description
-        REAL        , INTENT    (IN) :: VALIDALL( NALL   )! values table
-        REAL        , INTENT    (IN) :: VALIDMIN( NVALID )! min/max table
-        REAL        , INTENT    (IN) :: VALIDMAX( NVALID )! min/max table
-        REAL        , INTENT(IN OUT) :: MINBYSRC( NSRCIN )! min values
-        REAL        , INTENT(IN OUT) :: MAXBYSRC( NSRCIN )! max values
-        INTEGER     , INTENT   (OUT) :: METIDX( NSRCIN,4 )! idx to valid min/max
+        INTEGER     , INTENT    (IN) :: NSRCIN              ! no. sources
+        INTEGER     , INTENT    (IN) :: NALL                ! no. valid values
+        INTEGER     , INTENT    (IN) :: NVALID              ! no. valid combos
+        REAL        , INTENT    (IN) :: MINV_MIN            ! min of minimum vals
+        REAL        , INTENT    (IN) :: MINV_MAX            ! max of minimum vals
+        REAL        , INTENT    (IN) :: MAXV_MIN            ! min of maximum vals
+        REAL        , INTENT    (IN) :: MAXV_MAX            ! max of maximum vals
+        REAL        , INTENT    (IN) :: VINTRVL             ! interval for vals
+        REAL        , INTENT    (IN) :: MXINTRVL            ! max allowed interval
+        CHARACTER(*), INTENT    (IN) :: DESC                ! data description
+        REAL        , INTENT    (IN) :: VALIDALL( NALL   )  ! values table
+        REAL        , INTENT    (IN) :: VALIDMIN( NVALID )  ! min/max table
+        REAL        , INTENT    (IN) :: VALIDMAX( NVALID )  ! min/max table
+        REAL        , INTENT(IN OUT) :: MINBYSRC( NSRCIN,4 )! min values
+        REAL        , INTENT(IN OUT) :: MAXBYSRC( NSRCIN,4 )! max values
+        INTEGER     , INTENT   (OUT) :: METIDX( NSRCIN,4 )  ! idx to valid min/max
 
 C...........   Other local variables
         INTEGER       J, L, S      ! counters and indices
@@ -140,7 +140,7 @@ C           values
 
             CSRC = CSOURC( S )
 
-            VAL = DBLE( MINBYSRC( S ) )
+            VAL = DBLE( MINBYSRC( S,1 ) )
 
 C.............  Screen for missing values
             IF( VAL .LT. AMISS3 ) CYCLE
@@ -155,7 +155,7 @@ C..............  Round min value DOWN to nearest on interval
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
                 CALL M3MESG( MESG )
 
-                MINBYSRC( S ) = MINV_MIN 
+                MINBYSRC( S,1 ) = MINV_MIN 
                 VMIN          = MNVMN
 
             ELSEIF( VAL .GT. MNVMX ) THEN
@@ -167,7 +167,7 @@ C..............  Round min value DOWN to nearest on interval
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
                 CALL M3MESG( MESG )
 
-                MINBYSRC( S ) = MINV_MAX
+                MINBYSRC( S,1 ) = MINV_MAX
                 VMIN          = MNVMX
 
             ELSE 
@@ -177,7 +177,7 @@ C..............  Round min value DOWN to nearest on interval
             END IF
 
 C.............  Round max value to nearest on interval
-            VAL = MAXBYSRC( S )
+            VAL = MAXBYSRC( S,1 )
 
             IF    ( VAL .LT. MXVMN ) THEN
 
@@ -188,7 +188,7 @@ C.............  Round max value to nearest on interval
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
                 CALL M3MESG( MESG )
 
-                MAXBYSRC( S ) = MAXV_MIN
+                MAXBYSRC( S,1 ) = MAXV_MIN
                 VMAX = MXVMN
 
 C.............  Set to one step *below* max, because we need the extra space
@@ -203,7 +203,7 @@ C               to allow for interpolation
 
                 CALL M3MESG( MESG )
 
-                MAXBYSRC( S ) = MAXV_MAX 
+                MAXBYSRC( S,1 ) = MAXV_MAX 
                 VMAX = MXVMX - VINTV
 
 C.............  Compute VMAX from basis of MXVMN to compute in same way as 
@@ -234,7 +234,7 @@ C                max interval relationship holds for all min/max tmpr combos
                 CALL M3MESG( MESG )
 
 C.................  Store new minimum value for source
-                MINBYSRC( S ) = VMIN
+                MINBYSRC( S,1 ) = VMIN
 
             END IF
 
@@ -264,12 +264,12 @@ C                   with minimum range.
 
                     VMAX = REAL( MNVMN + VINTV *
      &                     INT(( MINV_MIN+ 2*VINTV +1. -MNVMN)/ VINTV ))
-                    MAXBYSRC( S ) = VMAX - VINTV + 1.0E-4
+                    MAXBYSRC( S,1 ) = VMAX - VINTV + 1.0E-4
 
                 END IF
 
 C.................  Store new minimum value for source
-                MINBYSRC( S ) = VMIN
+                MINBYSRC( S,1 ) = VMIN
 
             END IF
 
