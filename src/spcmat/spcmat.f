@@ -19,17 +19,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
 C  
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C  
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -49,14 +49,16 @@ C.........  This module contains emission factor tables and related
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+        
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -106,6 +108,7 @@ C.........  Unit numbers and logical file names
         INTEGER         RDEV    !  unit number for speciation profiles file
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for ASCII emission process file
+        INTEGER         UDEV    !  unit number for ASCII supplemental file
         INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER*16    ANAME   !  logical name for additive control matrix
@@ -503,8 +506,8 @@ C.........  Allocate memory for names of output variables
 C.........  Open speciation matrix file(s).  Depending on MASSOUT and MOLEOUT,
 C           the mass-based and/or mole-based files will be set up and opened.
 
-        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, NOPOL, MXSPEC, 
-     &                 EANAM, EAIDX, SPCNAMES, MOLUNITS, SNAME, LNAME, 
+        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, NOPOL, MXSPEC, EANAM, 
+     &                 EAIDX, SPCNAMES, MOLUNITS, UDEV, SNAME, LNAME, 
      &                 MASSONAM, MOLEONAM )
 
 C.........  Loop through inventory pollutants to create speciation factors for
@@ -645,7 +648,7 @@ C.................  Abridge profiles so that there is an array of unique profile
 C.................  Assign speciation profile and populate speciation matrices
 C                   for all sources for this pollutant.
                 CALL ASGNSPRO( MASSOUT, MOLEOUT, DEFREPRT, NSRC, 
-     &                         ENAM, MASSMATX, MOLEMATX )
+     &                         UDEV, ENAM, MASSMATX, MOLEMATX )
 
 C.................  Deallocate memory for unique profiles arrays
                 DEALLOCATE( SPROFN, IDXSPRO, NSPECIES, IDXSSPEC )
@@ -668,7 +671,8 @@ C.............  Write out the speciation matrix for current pollutant
                     L3 = LEN_TRIM( SBUF )
                     L4 = LEN_TRIM( SNAME )
                     IF( .NOT. 
-     &                  WRITE3( SNAME, CBUF, 0, 0, MASSMATX(1,J) )) THEN
+     &                  WRITESET( SNAME, CBUF, ALLFILES, 
+     &                            0, 0, MASSMATX(1,J) )) THEN
 
                         EFLAG = .TRUE.
 
@@ -703,7 +707,8 @@ C.............  Write out the speciation matrix for current pollutant
 
                     CBUF = MOLEONAM( J,K )
                     IF( .NOT. 
-     &                  WRITE3( LNAME, CBUF, 0, 0, MOLEMATX(1,J) )) THEN
+     &                  WRITESET( LNAME, CBUF, ALLFILES, 
+     &                            0, 0, MOLEMATX(1,J) )) THEN
 
                         EFLAG = .TRUE.
 
