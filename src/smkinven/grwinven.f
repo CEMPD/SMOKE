@@ -608,7 +608,7 @@ C.........................  Adjust annual emissions or activity
                         POLVAL( S,1 ) = POLVAL( S,1 ) * ALLFAC* PSFAC
 
 C.........................  Adjust average-day emissions (OS_* variable)
-                        IF( NPPOL .GT. 1 ) THEN
+                        IF( NPVAR .GT. 1 ) THEN
                             IF( POLVAL( S,2 ) .GT. 0. ) 
      &                          POLVAL( S,2 )=POLVAL( S,2 )*ALLFAC*PSFAC
                         END IF
@@ -633,6 +633,13 @@ C.........................  Adjust average-day emissions (OS_* variable)
                         IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
                         IF( K .GT. 0 ) PSFAC  = CFAC( S )
                         POLVAL( S,1 ) = POLVAL( S,1 )* ALLFAC* PSFAC
+
+C.........................  Adjust average-day emissions (OS_* variable)
+                        IF( NPVAR .GT. 1 ) THEN
+                            IF( POLVAL( S,2 ) .GT. 0. ) 
+     &                          POLVAL( S,2 )=POLVAL( S,2 )*ALLFAC*PSFAC
+                        END IF
+
                     END DO
 
                 END IF
