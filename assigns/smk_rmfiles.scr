@@ -75,7 +75,7 @@ if ( $RUN_GRWINVEN == 'Y' && $RUN_PART1 == 'Y' ) then
    endif
 endif
 
-if ( ( $RUN_SMKINVEN == Y || $RUN_GRWINVEN == Y ) && $RUN_PART1 == Y && $import_aveinv != N ) then
+if ( ( ( $RUN_SMKINVEN == Y && $import_aveinv != N ) || $RUN_GRWINVEN == Y ) && $RUN_PART1 == Y ) then
    foreach f ( $inmap )
      set dataflag = n
      if ( -e $f ) then       
