@@ -1,16 +1,14 @@
 
-        SUBROUTINE  MKTMATSI( NSRC,  JDATE, MON, DAY, TZONE, ZONES, TPF,
-     &                      MFAC,  MDEX, 
-     &                      WFAC,  WDEX, 
-     &                      DFAC,  DDEX, 
-     &                      NDAY,  INDD, TMAT )
+        SUBROUTINE  MKTMATSI( NSRC, JDATE, MONTH, DAYOW, TZONE, ZONES,
+     &                        TPF, MFAC, MDEX, WFAC, WDEX, DFAC, DDEX,
+     &                        NDAY, INDD, TMAT )
 
 C***********************************************************************
-C  subroutine body starts at line  118
+C  subroutine body starts at line  120
 C
 C  FUNCTION:
-C       Construct temporal-coefficient-transform matrices for 
-C       program TMPPOINT
+C       Construct species independent temporal-coefficient-transform 
+C       matrices for program TMPAREA
 C
 C  PRECONDITIONS REQUIRED:
 C       Temporal profile arrays for monthly, weekly, diurnal profiles.
@@ -26,6 +24,7 @@ C       Revised  10/95 by CJC:  treatment of profile-independence,
 C               substitution of day-specific data NDAY,INDD
 C       Version   9/96 by CJC for OTAG:  profiles are species-independent
 C       Version  11/96 by CJC for OTAG:  new weekday-only normalization
+C       Revised   4/97 by MRH for SMRAQ: weekly/monthly account for time zone
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -61,8 +60,8 @@ C...........   ARGUMENTS and their descriptions:
 
         INTEGER         NSRC                    ! number of sources
         INTEGER         JDATE                   ! date YYYYDDD
-        INTEGER         MON                     ! 1 ... 12
-        INTEGER         DAY                     ! 1 ... 7
+        INTEGER         MONTH( 24, 0:23 )       ! source time zone's 1 ... 12
+        INTEGER         DAYOW( 24, 0:23 )       ! source time zone's 1 ... 7
         INTEGER         TZONE                   ! time zone (5 for Eastern)
         INTEGER         ZONES( NSRC )           ! source time zones
         INTEGER         TPF  ( NSRC )           ! source temporal treatment flag
@@ -73,25 +72,28 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER         WDEX( NSRC )     ! weekly  profile codes
         INTEGER         DDEX( NSRC )     ! diurnal profile codes
         INTEGER         NDAY                    ! # of day-specific obs
-        INTEGER         INDD( * )     ! subscripts: day-specific obs
+        INTEGER         INDD( * )        ! subscripts: day-specific obs
         REAL            TMAT( NSRC, 24 ) ! temporal-profile coeffs
 
 C...........   EXTERNAL FUNCTIONS:
 
         INTEGER         FIND1
-        LOGICAL         ISDSTIME        !  true iff daylight savings time( date)
+        LOGICAL         ISDSTIME         !true iff daylight savings time( date)
+        REAL            YR2DAY
 
-        EXTERNAL        FIND1, ISDSTIME
+        EXTERNAL        FIND1, ISDSTIME, YR2DAY
 
 C...........   Scratch Local variables:
 
+        INTEGER         DAY             !  day for source and hour pointer
         INTEGER         H               !  hour-loop counter
         INTEGER         K               !  diurnal-profile index
         INTEGER         L               !  diurnal-xref index
         INTEGER         S               !  source counter
         INTEGER         HCORR           !  daylight savings time correction
+        INTEGER         MON             !  month for source and hour pointer
+        REAL            YRFAC           !  year to day factor
         REAL            FAC             !  partial matrix factor
-        REAL            YR2DAY          !  year-to-day conversion factor
         LOGICAL         EFLAG
         CHARACTER*255   MESG
 
@@ -132,7 +134,7 @@ C.......   Firstime:  renormalize MFAC, WFAC
                     MFAC( K,S ) = FAC * MFAC( K,S )
 12              CONTINUE
 
-13          CONTINUE			!  end loop normalizing month-codes
+13          CONTINUE             !  end loop normalizing month-codes
 
             DO  23 S = 1, NWCOD
 
@@ -143,20 +145,20 @@ C.......   Firstime:  renormalize MFAC, WFAC
 
                     FAC = 5.0 / FAC
 
-                ELSE					!  weekend-only profile
+                ELSE                                 !  weekend-only profile
 
                     FAC = WFAC( 6,S ) + WFAC( 7,S )
                     IF ( FAC .GT. 0.0 ) THEN
                         FAC = 2.0 / FAC
                     ELSE
-                        FAC = 0.0			!  zero profile
+                        FAC = 0.0                    !  zero profile
                     END IF
 
                 END IF
 
                 DO  22 K = 1, 7
-                    XFAC( K,S ) = FAC * WFAC( K,S )	! for weekday-normalized
-                    WFAC( K,S ) = 7.0 * WFAC( K,S )	! for week-normalized
+                    XFAC( K,S ) = FAC * WFAC( K,S )  ! for weekday-normalized
+                    WFAC( K,S ) = 7.0 * WFAC( K,S )  ! for week-normalized
 22              CONTINUE
 
 23          CONTINUE		!  end loop normalizing day-of-week codes
@@ -197,19 +199,9 @@ C...............     Check cross-reference arrays:
         END IF  !  if firstime
 
 
-C.......   Compute correct year-to-day conversion factor:
-
-        K = JDATE / 1000        !  year-number
-        IF ( MOD( K,4 ) .NE. 0 ) THEN           !  nonleap years
-            YR2DAY = 1.0 / 365.0
-        ELSE IF ( MOD( K,100 ) .NE. 0 ) THEN    !  noncentury leap years
-            YR2DAY = 1.0 / 366.0
-        ELSE IF ( MOD( K,400 ) .NE. 0 ) THEN    !  century nonleap years
-            YR2DAY = 1.0 / 365.0
-        ELSE                                    !  leap centuries
-            YR2DAY = 1.0 / 366.0
-        END IF
-
+C.......   Compute correct 4 digit year
+ 
+        YRFAC = YR2DAY( JDATE / 1000 ) 
 
 C.......   Compute index correction (offset by 1 because of
 C.......   1 + MOD(...) needed below
@@ -220,44 +212,72 @@ C.......   Compute TMAT:
 
         DO  122  S = 1, NSRC
 
+            L      = DDEX ( S )
+
 C.............  Use day-specific data (no adjustments)
 
             IF ( FIND1( S, NDAY, INDD ) .GT. 0 ) THEN
 
-                FAC = 1.0
+                DO 44 H = 1, 24
+
+                    K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,H ) = DFAC( K,L )
+
+44              CONTINUE
 
 C.............  Adjust for year-normal data
 
             ELSE IF ( MOD( TPF( S ), MTPRFAC ) .EQ. 0 ) THEN
 
-                FAC = MFAC( MON,MDEX( S ) ) * WFAC( DAY,WDEX( S ) )
+                DO 55 H = 1, 24
+
+                    MON = MONTH( H, ZONES( S ) )
+                    DAY = DAYOW( H, ZONES( S ) )
+                    FAC = MFAC( MON,MDEX( S ) ) * WFAC( DAY,WDEX( S ) )
+
+                    K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,H ) = FAC * DFAC( K,L )
+
+55              CONTINUE
 
 C.............  Adjust for week-normal data assuming whole week normalizer
                 
             ELSE IF ( MOD( TPF( S ), WTPRFAC ) .EQ. 0 ) THEN
 
-               FAC = YR2DAY * WFAC( DAY,WDEX( S ) )
+                DO 66 H = 1, 24
+
+                    DAY = DAYOW( H, ZONES( S ) )
+                    FAC = YRFAC * WFAC( DAY,WDEX( S ) )
+
+                    K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,H ) = FAC * DFAC( K,L )
+
+66              CONTINUE
 
 C.............  Adjust for week-normal data assuming week-days normalizer
 
             ELSE IF ( MOD( TPF( S ), WDTPFAC ) .EQ. 0 ) THEN
 
-                FAC = YR2DAY * XFAC( DAY,WDEX( S ) )
+                DO 77 H = 1, 24
+
+                    DAY = DAYOW( H, ZONES( S ) )
+                    FAC = YRFAC * XFAC( DAY,WDEX( S ) )
+
+                    K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,H ) = FAC * DFAC( K,L )
+
+77              CONTINUE
 
             ELSE
 
-                FAC = YR2DAY
+                DO 88 H = 1, 24
+
+                    K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                    TMAT( S,H ) = YRFAC * DFAC( K,L )
+
+88              CONTINUE
 
             END IF
-
-            L = DDEX( S )
-
-            DO  111  H = 1, 24
-
-                K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
-                TMAT( S,H ) = FAC * DFAC( K,L )
-
-111         CONTINUE
 
 122     CONTINUE
 
