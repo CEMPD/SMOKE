@@ -71,8 +71,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: MXPDSRC        ! max. day- or hr-spec srcs
         LOGICAL,      INTENT (IN) :: DAYFLAG        ! true: day-specific
         CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
-        INTEGER,      INTENT(OUT) :: SDATE          ! Julian start date in TZONE
-        INTEGER,      INTENT(OUT) :: STIME          ! data start time in TZONE
+        INTEGER,     INTENT(INOUT):: SDATE          ! Julian start date in TZONE
+        INTEGER,     INTENT(INOUT):: STIME          ! data start time in TZONE
         INTEGER,      INTENT(OUT) :: NSTEPS         ! no. time steps
         LOGICAL,      INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act in data
 
