@@ -39,6 +39,7 @@ C
       INCLUDE 'IVTYPE.I'  ! MAXVEH,VTMC,VVLDGAS,VVGASMC 
       INCLUDE 'MAXIMA.I'  ! MAXIH, MAXYRS 
       INCLUDE 'MYRCAL.I'  ! TF 
+      INCLUDE 'PART1.I'   ! PSZCUT
       INCLUDE 'PART3.I'   ! DBPM 
       INCLUDE 'SPEED9.I'  ! FVMT, HVMT 
       INCLUDE 'VMXCOM.I'  ! VMTMIX 
@@ -249,6 +250,9 @@ C
       IF(ATHAPS) CALL ATHCHK(ICY,INERR) 
 C 
       IF(INERR.GT.0) RETURN 
+
+ccs  Call SMOKE subroutine to store info about HAPS  
+      CALL SMKHAPSETUP
 C 
 C ********************** Begin Vehicle Loop ************************* 
 C 
@@ -432,7 +436,7 @@ C
      *          * ATHBER(1,JDX,JXV,IVT,IV,IMAP)  ! Ratios are in mg/mi per g/mi 
 C 
 ccs  Call SMOKE routine to store individual values
-            CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,NMAP,.FALSE.)
+            CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,.FALSE.)
 
              IF(IROAD.LE.4) THEN  
                SUMIH = SUMIH + XEF * FVMT(IROAD,IH,IV) ! Road 
@@ -458,7 +462,7 @@ C
 ccs  Call SMOKE routine to store individual values
       DO IH = 1,MAXIH
           DO IROAD = 1,4  ! only include exhaust running (no start)
-              CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,NMAP,.FALSE.)
+              CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,.FALSE.)
           END DO
       END DO
             
@@ -480,7 +484,7 @@ C
      *       * ATHBER(1,JDX,JXV,4,IV,IMAP) ! Ratios are in mg/mi per g/mi 
 C 
 ccs  Call SMOKE routine to store individual values
-            CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,NMAP,.FALSE.)
+            CALL SMKHAPS(IV,JDX,IMAP,JXV,IH,IROAD,XEF,.FALSE.)
             
          SUMIH = SUMIH + XEF * FVMT(IROAD,IH,IV) ! Road 
         END DO !IROAD 
@@ -595,7 +599,7 @@ C
      *           * ATHBER(1,JDX,JXV,IVT,IV,IMAP) ! mg/mi 
 C 
 ccs  Call SMOKE routine to store individual values
-            CALL SMKHAPS(IV,JDX,IMAP,IXV,IH,IROAD,XEF,NMAP,.FALSE.)
+            CALL SMKHAPS(IV,JDX,IMAP,IXV,IH,IROAD,XEF,.FALSE.)
             
              IF(IROAD.LE.4) THEN 
                SUMIH = SUMIH  
@@ -637,7 +641,7 @@ ccs  Call SMOKE routine to store individual values
            END IF 
            
            DO IROAD=IB,IE
-               CALL SMKHAPS(IV,JDX,IMAP,IXV,IH,IROAD,XEF,NMAP,.FALSE.)
+               CALL SMKHAPS(IV,JDX,IMAP,IXV,IH,IROAD,XEF,.FALSE.)
            END DO
        END DO
             
@@ -679,8 +683,10 @@ C
 C  Output the database results. 
 C 
 ccs      CALL ATOUTDB(ICY,INERR) 
-      CALL SMKATOUT
-      CALL SMKHAPS(0,0,0,0,0,0,0,NMAP,.TRUE.)
+      IF( PSZCUT /= 10 ) THEN
+         CALL SMKATOUT
+      END IF
+      CALL SMKHAPS(0,0,0,0,0,0,0,.TRUE.)
 C 
 C  Output the spreadsheet results. 
 C 
