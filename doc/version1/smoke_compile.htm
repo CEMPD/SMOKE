@@ -39,8 +39,8 @@ SMOKE compile scripts are configured to use a UNIX c-shell environment, so they
 will not be useful for creating Windows-based SMOKE files. SMOKE will be
 supported by MCNC for Windows-NT/2000 in the future, but is not supported at
 this time. For users with operating systems supported by MCNC, users need only
-to download the SMOKE executables available from the MCNC-Environmenal Programs
-registration page, accessible at <a href="http://envpro.ncsc.org/products">http://www.emc.mcnc.org/products</a>
+to download the SMOKE executables available from the MCNC Environmental Modeling
+Center registration page, accessible at <a href="http://www.emc.mcnc.org/products">http://www.emc.mcnc.org/products</a>
 (then click on “Register).</p>
 <p class="MsoNormal">The second part of this chapter contains information about
 performance for the SMOKE test cases provided in the SMOKE stand-alone version
@@ -50,7 +50,7 @@ Models-3, and EDSS</a>.</p>
 <h2><a name="Compiling"></a>Compiling SMOKE for UNIX</h2>
 <p class="MsoNormal">In order to compile SMOKE, the first step is installing
 SMOKE on your system. Installation instructions are provided on-line when you
-download SMOKE, from the web site <a href="http://envpro.ncsc.org/EDSS/edss_register/install_smoke.html">http://www.emc.mcnc.org/EDSS/edss_register/install_smoke.html</a>.</p>
+download SMOKE, from the web site <a href="http://www.emc.mcnc.org/EDSS/edss_register/install_smoke.html">http://www.emc.mcnc.org/EDSS/edss_register/install_smoke.html</a>.</p>
 <p class="MsoNormal">Prior to SMOKE compilation, users must take the following
 steps:</p>
 <p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -65,7 +65,7 @@ with older compilers (FORTRAN 77) that are not compatible with the current
 FORTRAN 90 compilers needed to compile SMOKE executables. Therefore, users may
 have to compile the I/O API and NetCDF libraries on their systems from scratch.
 See the I/O API documentation <span style="layout-grid-mode:
-both"><a href="http://envpro.ncsc.org/products/ioapi/H.AVAIL.html">http://www.emc.mcnc.org/products/ioapi/H.AVAIL.html</a>
+both"><a href="http://www.emc.mcnc.org/products/ioapi/H.AVAIL.html">http://www.emc.mcnc.org/products/ioapi/H.AVAIL.html</a>
 </span>for more information on availability and compiling of the latest I/O API.</p>
 <p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span>If needed, update the file $EDSS_ROOT/scripts/platform to have the
@@ -136,8 +136,9 @@ in the SMOKE processing), whereas the m3demo case uses VMT for mobile emissions
 and computes emission factors with Mobile5b based on gridded, hourly
 temperatures.</p>
 <h3><a name="SGI_perf"></a>SGI Configuration</h3>
-<p class="MsoNormal">The SGI configuration that we used for testing was a 250
-MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br style="mso-special-character:line-break">
+<p class="MsoNormal">The SGI configuration that we used for testing was a 300
+MHZ MIPS R12000 Processor (Chip Revision 2.3), with 4 GB of system memory.
+Performance information for the net96 case is not yet available.<br style="mso-special-character:line-break">
 <br style="mso-special-character:line-break">
 </p>
 <table border="0" cellspacing="0" cellpadding="0" width="427" style="width:320.0pt;
@@ -157,7 +158,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td width="177" nowrap colspan="2" valign="bottom" style="width:133.0pt;padding:
   .75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">CPU
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt" align="center"><span style="font-size:10.0pt;font-family:Arial">CPU
       &quot;user&quot; times<o:p>
       </o:p>
       </span></p>
@@ -177,18 +178,11 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
+      SMOKE Program</o:p>
       </span></b></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">net96,
-      baseA<o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
-  text-align:center"><b><span style="font-size:10.0pt;font-family:Arial">m3demo<o:p>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="left">
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><b><span style="font-size:10.0pt;font-family:Arial">m3demo<o:p>
       </o:p>
       </span></b></p>
     </td>
@@ -212,12 +206,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
-  text-align:center">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
       </o:p>
       </span></p>
@@ -231,19 +219,11 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
-      7 emis<o:p>
-      </o:p>
+      7 pollutants </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">663.4<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">247.3<o:p>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><span style="font-size: 10.0pt; font-family: Arial">197.7</span><span style="font-size:10.0pt;font-family:Arial"><o:p>
       </o:p>
       </span></p>
     </td>
@@ -264,15 +244,8 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">54.2<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15.7<o:p>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><span style="font-size:10.0pt;font-family:Arial">12.9<o:p>
       </o:p>
       </span></p>
     </td>
@@ -293,15 +266,8 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">67.5<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">29.7<o:p>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><span style="font-size:10.0pt;font-family:Arial">31.9<o:p>
       </o:p>
       </span></p>
     </td>
@@ -323,15 +289,8 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">110.8<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">60.5<o:p>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><span style="font-size:10.0pt;font-family:Arial">62.7<o:p>
       </o:p>
       </span></p>
     </td>
@@ -349,19 +308,12 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
-      25 hrs<o:p>
+      25 hours<o:p>
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">176<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">48.4<o:p>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><span style="font-size:10.0pt;font-family:Arial">34.3<o:p>
       </o:p>
       </span></p>
     </td>
@@ -378,20 +330,14 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport,
       &quot;state&quot;<o:p>
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">562.7<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">208.3<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">187.8<o:p>
       </o:p>
       </span></p>
     </td>
@@ -413,15 +359,9 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">58<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">72.1<o:p>
       </o:p>
       </span></p>
     </td>
@@ -442,16 +382,9 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">156.2<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">152.7 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -472,16 +405,9 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></b></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" align="center">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">27.2<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">13.7<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.5 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -511,23 +437,13 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
   </tr>
   <tr style="height:12.75pt">
     <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
   height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Biogenics<o:p>
-      </o:p>
+      - BEIS2</o:p>
       </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
@@ -549,12 +465,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Rawbio,
       summer<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.3<o:p>
       </o:p>
       </span></p>
     </td>
@@ -584,12 +494,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.1<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
   text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
       </o:p>
       </span></p>
@@ -609,12 +513,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Tmpbio,
       1 day<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">2<o:p>
       </o:p>
       </span></p>
     </td>
@@ -644,12 +542,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">22<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
   text-align:right"><span style="font-size:10.0pt;font-family:Arial">4<o:p>
       </o:p>
       </span></p>
@@ -674,12 +566,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">0.8<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
   text-align:right"><span style="font-size:10.0pt;font-family:Arial">0.2<o:p>
       </o:p>
       </span></p>
@@ -692,14 +578,82 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
   </tr>
   <tr style="height:12.75pt">
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt" colspan="2">
+      <b><span style="font-size:10.0pt;font-family:Arial">Biogenics<o:p>
+      - BEIS3</span></b>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      Normbeis3, summer
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p align="right">0.2
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <span style="font-size: 10.0pt; font-family: Arial">(sec)</span>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      Tmpbeis3, 1 day
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p align="right">0.7
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      (sec)
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      Smkmerge, 1 day
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p align="right">3.9
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      (sec)
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p align="right"><b><span style="font-size:10.0pt;font-family:Arial">Total:
+      </span></b>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p align="right">0.08
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <span style="font-size: 10.0pt; font-family: Arial">(min)</span>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
       </o:p>
       </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
@@ -734,11 +688,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
   </tr>
   <tr style="height:12.75pt">
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -749,12 +698,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
       7 emis <o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">353.3<o:p>
       </o:p>
       </span></p>
     </td>
@@ -783,16 +726,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">41.5<o:p>
-      </o:p>
-      </span></p>
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><span style="font-size: 10.0pt; font-family: Arial">30.9</span>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
@@ -813,13 +747,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">61<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.3<o:p>
       </o:p>
       </span></p>
     </td>
@@ -842,13 +770,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">105.1<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">51.1<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">47.6<o:p>
       </o:p>
       </span></p>
     </td>
@@ -872,13 +794,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">26.6<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">25.4<o:p>
       </o:p>
       </span></p>
     </td>
@@ -901,13 +817,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">544.8<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">444.8<o:p>
       </o:p>
       </span></p>
     </td>
@@ -931,13 +841,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">176.9<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">115.7<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">115.4<o:p>
       </o:p>
       </span></p>
     </td>
@@ -960,16 +864,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">84.3<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">66.7<o:p>
-      </o:p>
-      </span></p>
+      <p class="MsoNormal" align="right" style="margin-left: 0in; margin-right: 0in; margin-top: 0in; margin-bottom: .0001pt"><span style="font-size: 10.0pt; font-family: Arial">49.0</span>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
@@ -991,13 +886,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">416.4<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">171.4<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">145.1<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1021,14 +910,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">25.4<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">26.3 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -1050,14 +932,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">18.5<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">14.6 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -1080,13 +955,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">20.0<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">17.9<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15.2<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1101,11 +970,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
       </o:p>
       </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
@@ -1140,38 +1004,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-  </tr>
-  <tr style="height:12.75pt">
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
   </tr>
   <tr style="height:12.75pt">
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -1187,13 +1019,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">947<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">300.3<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">119.2<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1216,13 +1042,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">3.6<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">1.3<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">1.1<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1245,13 +1065,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">690.7<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">284.3<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">40.2<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1274,13 +1088,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">14<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">26.1<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1303,13 +1111,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">148.7<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">81.4<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">59.6<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1332,13 +1134,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">209.3<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">68.6<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">54.7<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1362,13 +1158,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">327.9<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">79.1<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">83.9<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1387,12 +1177,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
       UAM<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1422,13 +1206,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">230.8<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">90.4<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">77.5<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1452,13 +1230,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">161<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">146.5<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1481,13 +1253,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">183.6<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">155.5<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1511,13 +1277,7 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">42.6<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">21.1<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.7<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1532,11 +1292,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
       </o:p>
       </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
@@ -1572,11 +1327,6 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </o:p>
       </span></p>
     </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
   </tr>
   <tr style="height:12.75pt">
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -1592,13 +1342,28 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">13.0<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkme<o:p>rge,
+      mass
       </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">3.6<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">3.7<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1615,24 +1380,19 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
-      mass<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size: 10.0pt; font-family: Arial">Mrggrid</span><span style="font-size:10.0pt;font-family:Arial">,
+      mole
       </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">3.2<o:p>
+  text-align:right"><span style="font-size: 10.0pt; font-family: Arial">0.5</span><span style="font-size:10.0pt;font-family:Arial">
       </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1643,11 +1403,8 @@ MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br st
 </p>
 <h3><a name="Sun_perf"></a>Sun Configuration</h3>
 <p class="MsoNormal">The Sun configuration that we used for testing was a Sun
-Ultra 5/10 UPA/PCI (UltraSPARC-IIi 440MHz) with 256 MB memory. The substantially
-higher CPU times than for the SGI case for some of the steps is likely due to
-needing more than 256 MB of memory (the SGI case had 2 GB of memory available).
-Performance information for the net96 case is not yet available.<br style="mso-special-character:line-break">
-<br style="mso-special-character:line-break">
+Ultra 80 UPA/PCI (UltraSPARC-II 450MHz) with 1024 MB memory. Performance
+information for the net96 case is not yet available.<br style="mso-special-character:line-break">
 </p>
 <table border="0" cellspacing="0" cellpadding="0" width="336" style="width:3.5in;
  border-collapse:collapse;mso-padding-alt:0in 0in 0in 0in">
@@ -1673,29 +1430,6 @@ Performance information for the net96 case is not yet available.<br style="mso-s
       </span></p>
     </td>
   </tr>
-  <tr style="height:12.75pt">
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
-  text-align:center"><b><span style="font-size:10.0pt;font-family:Arial">m3demo<o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-  </tr>
   <tr style="height:15.0pt">
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
       <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
@@ -1706,13 +1440,12 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
       <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
   text-align:center">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
+      SMOKE Program</o:p>
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
       <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
-  text-align:center"><b><span style="font-size:10.0pt;font-family:Arial">Falcon<o:p>
-      </o:p>
+  text-align:center"><b><span style="font-size:10.0pt;font-family:Arial">m3demo </o:p>
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
@@ -1754,7 +1487,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">204<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">143<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1777,7 +1510,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">14<o:p>
+  text-align:right"><span style="font-size: 10.0pt; font-family: Arial">9</span><span style="font-size:10.0pt;font-family:Arial">
       </o:p>
       </span></p>
     </td>
@@ -1800,7 +1533,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">21<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">16<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1824,7 +1557,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">105<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">55<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1848,8 +1581,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">166<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">55 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -1872,8 +1604,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">691<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">151 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -1896,7 +1627,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">46<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">72
       </o:p>
       </span></p>
     </td>
@@ -1919,7 +1650,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">179<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">152<o:p>
       </o:p>
       </span></p>
     </td>
@@ -1943,7 +1674,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">23.8<o:p>
+  text-align:right"><span style="font-size: 10.0pt; font-family: Arial">10</span><span style="font-size:10.0pt;font-family:Arial">.8<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2000,21 +1731,13 @@ Performance information for the net96 case is not yet available.<br style="mso-s
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Rawbio,
-      summer<o:p>
-      </o:p>
-      </span></p>
+      Normbeis3, summer
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">5<o:p>
-      </o:p>
-      </span></p>
+      <p align="right">0.1
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
-      </o:p>
-      </span></p>
+      <span style="font-size: 10.0pt; font-family: Arial">(sec)</span>
     </td>
   </tr>
   <tr style="height:12.75pt">
@@ -2024,21 +1747,13 @@ Performance information for the net96 case is not yet available.<br style="mso-s
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Rawbio,
-      winter<o:p>
-      </o:p>
-      </span></p>
+      Tmpbeis3, 1 day
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
+      <p align="right">0.1
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
-      </o:p>
-      </span></p>
+      (sec)
     </td>
   </tr>
   <tr style="height:12.75pt">
@@ -2048,21 +1763,13 @@ Performance information for the net96 case is not yet available.<br style="mso-s
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Tmpbio,
-      1 day<o:p>
-      </o:p>
-      </span></p>
+      Smkmerge, 1 day
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">2<o:p>
-      </o:p>
-      </span></p>
+      <p align="right">1.0
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
-      </o:p>
-      </span></p>
+      (sec)
     </td>
   </tr>
   <tr style="height:12.75pt">
@@ -2072,45 +1779,14 @@ Performance information for the net96 case is not yet available.<br style="mso-s
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
-      1 day<o:p>
-      </o:p>
-      </span></p>
+      <p align="right"><b><span style="font-size:10.0pt;font-family:Arial">Total:
+      </span></b>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">2<o:p>
-      </o:p>
-      </span></p>
+      <p align="right">0.02
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
-      </o:p>
-      </span></p>
-    </td>
-  </tr>
-  <tr style="height:12.75pt">
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">0.2<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
-      </o:p>
-      </span></p>
+      <span style="font-size: 10.0pt; font-family: Arial">(min)</span>
     </td>
   </tr>
   <tr style="height:12.75pt">
@@ -2167,31 +1843,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
-      </o:p>
-      </span></p>
-    </td>
-  </tr>
-  <tr style="height:12.75pt">
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
-      2 actv<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">32<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">19<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2214,7 +1866,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">10<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2237,9 +1889,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">42<o:p>
-      </o:p>
-      </span></p>
+  text-align:right"><span style="font-size: 10.0pt; font-family: Arial">31</span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
@@ -2261,7 +1911,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">26<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">20<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2284,8 +1934,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">581<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">499 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -2308,7 +1957,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">171<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">114<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2332,8 +1981,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">234<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">75 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -2356,7 +2004,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">932<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">128<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2427,7 +2075,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">34.4<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15.5<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2484,28 +2132,6 @@ Performance information for the net96 case is not yet available.<br style="mso-s
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></p>
-    </td>
-  </tr>
-  <tr style="height:12.75pt">
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
       7 emis<o:p>
       </o:p>
@@ -2513,8 +2139,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">242<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">79 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -2559,7 +2184,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">27<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">20<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2582,7 +2207,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">13<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">22<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2605,7 +2230,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">122<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">52<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2628,7 +2253,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">102<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">67<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2652,31 +2277,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">314<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
-      </o:p>
-      </span></p>
-    </td>
-  </tr>
-  <tr style="height:12.75pt">
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
-      </o:p>
-      </span></b></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
-      UAM<o:p>
-      </o:p>
-      </span></p>
-    </td>
-    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">136<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2700,7 +2301,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">178<o:p>
+  text-align:right"><span style="font-size: 10.0pt; font-family: Arial">5</span><span style="font-size:10.0pt;font-family:Arial">8<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2724,8 +2325,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">125<o:p>
-      </o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">146 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -2747,7 +2347,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">185<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">155<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2771,7 +2371,7 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">21.8<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.3<o:p>
       </o:p>
       </span></p>
     </td>
@@ -2840,8 +2440,28 @@ Performance information for the net96 case is not yet available.<br style="mso-s
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
       <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">11.6<o:p>
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
       </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      mass<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">5.6 </o:p>
       </span></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
@@ -2857,21 +2477,13 @@ Performance information for the net96 case is not yet available.<br style="mso-s
       </span></b></p>
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
-      mass<o:p>
-      </o:p>
-      </span></p>
+      Mrggrid, mole
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
-  text-align:right"><span style="font-size:10.0pt;font-family:Arial">11.7<o:p>
-      </o:p>
-      </span></p>
+      <p align="right">1.0
     </td>
     <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
-      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
-      </o:p>
-      </span></p>
+      (sec)
     </td>
   </tr>
 </table>
