@@ -139,7 +139,7 @@ C              of gm/mole into the mole-base speciation matrix)
         NSPECA   = 0.       ! array
         POLNAMA  = ' '      ! array
         TMPNAMES = ' '      ! array
-        LMOLAR   = .TRUE.   ! array
+        LMOLAR   = .FALSE.  ! array
 
 C...........   Read through input file to determine the total number
 C              of pollutants in the input file, to determine the
@@ -245,8 +245,8 @@ C.............  Search for pollutant unique list of all pollutants
                 POLNAMA( IPOL ) = POLNAM    ! add POLNAM to POLNAMA
                 NENTRA ( IPOL ) = 1         ! init for first entry per pol
 
-C.................  If mole-based factor is unity, then no molar transform
-                IF( FAC1/FAC2 .EQ. FAC3 ) LMOLAR( IPOS ) = .FALSE.
+C.................  If mole-based = mass based, then use molar transform
+                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS ) = .TRUE.
 
                 PPOS = IPOL   ! Set for storing species count, below
                
@@ -255,6 +255,9 @@ C.................  If mole-based factor is unity, then no molar transform
 C.................  If a new profile number, then add to count of table entries
 C                   for this pollutant
                 NENTRA( PPOS ) = NENTRA( PPOS ) + 1
+
+C.................  If mole-based = mass based, then use molar transform
+                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS ) = .TRUE.
         
             END IF
             
