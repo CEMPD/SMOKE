@@ -4,7 +4,7 @@ C Version "@(#)$Id$ $Source$ $Date$
         PROGRAM TMPPOINT
 
 C***********************************************************************
-C  program body starts at line 233
+C  program body starts at line 258
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -54,6 +54,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         LOGICAL         ISDSTIME
         INTEGER         INDEX1
+        INTEGER         LBLANK
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         RDTPROF
@@ -62,12 +63,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-      EXTERNAL      FIND1, FIND2, FIND3, FIND4, GETNUM, 
-     &              GETYN, INDEX1, ISDSTIME, PROMPTFFILE, PROMPTMFILE,
+      EXTERNAL      FIND1, FIND2, FIND3, FIND4, GETNUM, GETYN,
+     &              INDEX1, ISDSTIME, LBLANK, PROMPTFFILE, PROMPTMFILE,
      &              RDTPROF, STR2INT, TIME2SEC, TRIMLEN, WKDAY
      
                                             
 C...........   PARAMETERS and their descriptions
+
+        INTEGER     MXREC
+        PARAMETER ( MXREC = NPSRC * NIPOL )
+
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point Sources input and output arrays
@@ -119,8 +124,28 @@ C.......   temporal profile 7*(12*MONTH-code# + WKDAY-code#) + DIURNAL-code#
         REAL            TMAT( NPSRC, NIPOL, 24 )    ! coeff profiles
 
 
+C.......   Actual-SCC  table
+
+        INTEGER      NSCC
+        INTEGER      ASCC( NPSRC )  !  actutally-occurring SCC table
+
+
 C...........   Temporal Profile XREF tables:  give monthly, weekly, hourly 
 C.......   profile-indexes for lookup into temporal profile tables.
+C.......   Before sorting:
+
+        INTEGER         NPRNA
+        INTEGER         INDXA( MXREC )
+        INTEGER         IFIPA( MXREC )
+        INTEGER         ISCCA( MXREC )
+        INTEGER         IPLTA( MXREC )
+        INTEGER         ISTKA( MXREC )
+        INTEGER         ICODA( MXREC )
+        INTEGER         MPRNA( MXREC )
+        INTEGER         WPRNA( MXREC )
+        INTEGER         DPRNA( MXREC )
+
+C...........   After sorting:
 C.......   Default no-FIP, no-ACC profile
 
         INTEGER         MPR00( NIPOL )  !  month-in-year
@@ -204,6 +229,7 @@ C...........   Other local variables
         INTEGER         TSTEP   !  output time step
         INTEGER         JDATE, JTIME
         INTEGER         NSTEPS
+        INTEGER         CDEV    !  for actual-SCC file
         INTEGER         LDEV    !  unit number for log file
         INTEGER         XDEV    !  ...input cross-reference file
         INTEGER         PDEV    !  ...input profile file
@@ -212,10 +238,11 @@ C...........   Other local variables
         INTEGER         IOS
         INTEGER         IREC
         INTEGER         C0, C1
-        INTEGER         I, F, S, T, V
-        INTEGER         FIP, SCC, PLT, STK
+        INTEGER         I, J, K, F, S, T, V
+        INTEGER         FIP, SCC, PLT, STK, LID
         INTEGER         COD
         INTEGER         IMON, IWEK, IDIU
+        INTEGER         LS, EC
         INTEGER         MONTH, DAY, LDATE
 
         CHARACTER*16    ENAME   !  logical name for point-source input file
@@ -235,20 +262,19 @@ C   begin body of program TMPPOINT
         WRITE( *,92000 ) 
      &' ',
      &'Program TMPPOINT to take the point source emissions file from',
-     &'RAWPOINT, the ASCII temporal profile and cross-reference file,',
-     &'optional DAY-SPECIFIC and HOUR-SPECIFIC point source file from',
-     &'DAYPOINT, and produce temporally allocated (time-stepped lower',
-     &'level) and optionally upper-level emissions for the requested',
-     &'time period.',
+     &'RAWPOINT, the ACTUAL SCC file, the ASCII temporal profile and',
+     &'cross-reference file, optional DAY-SPECIFIC and HOUR-SPECIFIC',
+     &'point source file from PDPOINT, and produce temporally',
+     &'allocated (time-stepped lower level) and optionally upper-level',
+     &'emissions for the requested time period.',
      &' '
         WRITE( *,92000 ) 
      &'You will need to enter the logical names for the input and',
      &'output files (and to have set them prior to program launch,',
-     &'using "setenv <logicalname> <pathname>").  Input files must',
-     &'have been sorted as indicated, prior to program execution.',
-     &'You will be prompted for which species to allocate -- these',
-     &'should only be the chemical species, and not the FIP-related',
-     &'or ASC-related variables.)', 
+     &'using "setenv <logicalname> <pathname>").  You will be ',
+     &'prompted for which species to allocate -- these should only ',
+     &'be the chemical species, and not the FIP-related or ASC-related',
+     &'variables.)', 
      &  ' '
         WRITE( *,92000 ) 
      &'You will also be prompted for the TIME PERIOD to be covered',
@@ -330,6 +356,10 @@ C.......   and temporal profiles files
      &          FSREAD3, 'NONE', 'TMPPOINT' )
         HFLAG = ( HNAME( 1:5 ) .NE. 'NONE ' )
 
+        CDEV = PROMPTFFILE( 
+     &           'Enter logical name for ACTUAL SCC file >> ',
+     &           .TRUE., .TRUE., 'PSCC', 'TMPPOINT' )
+
         XDEV = PROMPTFFILE( 
      &           'Enter name for TEMPORAL XREF file',
      &           .TRUE., .TRUE., 'PTREF', 'TMPPOINT' )
@@ -380,7 +410,7 @@ C.......   Get time period for output file:
             TZONE = 5
         END IF
         TZONE  = GETNUM( -12, 12, TZONE, 
-     &                   'Enter time zone   (0 for GMT)' )
+     &           'Enter time zone (0 for GMT, 5 for EST, 4 for EDT)' )
         JDATE  = GETNUM( 0, 9999999, JDATE, 
      &                  'Enter starting date (YYYYDDD)' )
         JTIME  = GETNUM( 0, 999999, 0, 
@@ -407,13 +437,13 @@ C.......   annual total emissions:
         IF ( C0 .EQ. 0 ) THEN
             MESG = 'Bad field [' // FDESC3D( 6 )( 1:24 ) //
      &             '] in file description -- no leading quote'
-            CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
         END IF
         C1 =  INDEX( FDESC3D( 6 )( C0+1 : 24 ) , '"' )
         IF ( C1 .EQ. 0 ) THEN
             MESG = 'Bad field [' // FDESC3D( 6 )( 1:24 ) //
      &             '] in file description -- no trailing quote'
-            CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
         END IF
 
  
@@ -511,7 +541,8 @@ C.......   Deal with optional elevated point source files
             MESG  = 'Enter name for output ELEVATED EMIS file'
             UNAME = PROMPTMFILE( MESG, FSUNKN3, 'ETMP', 'TMPPOINT' )
 
-            WRITE( *,92000 ) ' ', 'Reading elevated sources file.', ' '
+            WRITE( *,92000 ) 
+     &             ' ', 'Reading elevated sources file...', ' '
 
             EFLAG = .FALSE.     !  for finding invalid sources
             IREC  = 0
@@ -520,13 +551,16 @@ C.......   Deal with optional elevated point source files
 22          CONTINUE
 
                 IREC = IREC + 1
-                READ( UDEV,*,END=33,IOSTAT=IOS ) FIP, SCC, PLT, STK
+                READ( UDEV,*,END=23,IOSTAT=IOS ) FIP, SCC, PLT, STK
 
                 IF ( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
                     WRITE( MESG,94010 )
-     &              'Error reading elevated sources file at line',
-     &              IREC, 'I/O status  ', IOS
-                    CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+     &              'I/O error', IOS,
+     &              'reading elevated sources file at line', IREC
+                    CALL M3MESG( MESG )
+
                 END IF
 
                 I = FIND4( FIP, SCC, PLT, STK ,
@@ -541,28 +575,32 @@ C.......   Deal with optional elevated point source files
      &                  'Plant', PLT,
      &                  'Stack', STK, 'in elevated sources file.'
                     CALL M3MESG( MESG )
+
+                ELSEIF( S .GE. NPELV ) THEN 
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                  'Max elevated sources size', NPELV,
+     &                  'exceeded at line', IREC
+                    CALL M3MESG( MESG )
+
                 ELSE
                     S = S + 1
-                    IF ( S .LE. NPELV ) THEN
-                        INDXE( S ) = I
-                    END IF
+                    INDXE( S ) = I
+
                 END IF          !  if s < npup
 
-                GO TO  22       !  to head of elevated sources loop
+            GO TO  22       !  to head of elevated sources loop
 
-33          CONTINUE    !  exit from loop reading elevated sources file
+23          CONTINUE    !  exit from loop reading elevated sources file
 
             IF ( EFLAG ) THEN
-                    MESG = 'Invalid sources in elevated sources file'
-                    CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
-            ELSE IF ( S .LE. NPELV ) THEN
-                NELPT = S
-            ELSE
-                WRITE( MESG,94010 )
-     &              'Source count', S, 
-     &              'in elevated sources file exceeds max', NPELV
+                MESG = 'Error reading elevated sources file'
                 CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
-            END IF
+
+            ENDIF
+
+            NELPT = S
 
         ELSE
 
@@ -574,80 +612,250 @@ C.......   Deal with optional elevated point source files
         END IF          !  if generating upper-level point sources file
 
 
+C.......   Read the ACTUAL-SCC FILE
+
+        WRITE( *,92000 ) ' ', 'Reading ACTUAL SCC file...', ' '
+
+        IREC  =  0
+        EFLAG = .FALSE.
+        I     =  1
+        LID   =  0
+        ASCC( 1 ) = 0
+
+33      CONTINUE        !  head of the CDEV-read loop
+
+            READ( CDEV, *, END=34, IOSTAT=IOS ) SCC
+
+            IREC = IREC + 1
+
+            IF ( IOS .NE. 0 ) THEN
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &              'I/O error', IOS, 
+     &              'reading ACTUAL SCC file at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE IF ( I .GE. NPSRC ) THEN 
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &              'Max SCC table size', NPSRC,
+     &              'exceeded at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE IF ( LID .GE. SCC ) THEN 
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &              'SCC table out of order at line', IREC
+                CALL M3MESG( MESG )
+
+            ELSE
+
+                I   = I + 1
+                LID = SCC
+                ASCC( I ) = SCC
+
+            END IF
+
+            GO TO  33   !  to head of loop
+
+34      CONTINUE        !  end of the SDEV-read loop
+
+        IF ( EFLAG ) THEN
+            MESG = 'Error reading ACTUAL SCC file'
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+
+        END IF
+
+        NSCC = I
+
+
 C.......   Read temporal-profile cross-reference file.
 
-        WRITE( *,92000 ) ' ', 'Reading temporal-profile XREF file.', ' '
+        WRITE( *,92000 ) 
+     &         ' ', 'Reading TEMPORAL XREF file...', ' '
 
-        EFLAG = .FALSE.		!  for detecting XREF errors
         IREC  = 0
+        K     = 0
+        EFLAG = .FALSE.
+
+44      CONTINUE
+
+            IREC = IREC + 1
+            READ( XDEV, 93000, END=45, IOSTAT=IOS ) LINE
+
+            IF ( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &              'I/O error', IOS, 
+     &              'reading TEMPORAL XREF file at line', IREC
+                CALL M3MESG( MESG )
+                GO TO 44
+            END IF
+
+C.............  Ensure valid pollutant code
+            COD = STR2INT( LINE( 32:36 ) )
+            IF( COD .LE. 0 ) THEN
+                I = 0
+            ELSE
+                I = FIND1( COD, NIPOL, PCODE )
+                IF ( I .LT. 0 ) THEN
+                    GO TO  44
+                END IF
+            END IF
+
+ 
+            LS = LBLANK( LINE( 21:30 ) )     ! Number of leading spaces
+            EC = TRIMLEN( LINE( 21:30 ) )  ! Size without ending blanks
+ 
+C............. Convert character SCC field to integer SCC number
+            IF( LS .EQ. 0 .AND. EC .EQ. 10 ) THEN  ! Area x-ref entry
+                GO TO 44
+
+            ELSEIF( LINE( 21:21) .GT. '9' ) THEN   ! Motor vehicle ASC code
+                GO TO 44
+
+            ELSE
+                SCC = STR2INT( LINE( 21:30 ) )
+
+            ENDIF
+
+C.............  Allow for default SCC entries
+            IF( SCC .GT. 0 ) THEN
+                J = FIND1( SCC, NSCC, ASCC )  ! Specific SCC
+
+            ELSE
+                J = 1                         ! Default SCC
+
+            ENDIF
+
+            IMON = STR2INT( LINE( 38:40 ) )
+            IWEK = STR2INT( LINE( 42:44 ) )
+            IDIU = STR2INT( LINE( 45:48 ) )
+
+C.............  Ensure SCC needed
+            IF ( J .LE. 0 ) THEN
+                GO TO 44
+
+C.............  Ensure temporal profile numbers are valid
+            ELSE IF ( IMON .LE. 0 ) THEN  ! Bad monthly profile code
+ 
+                WRITE( MESG,94010 )
+     &                 'Bad IMON=', IMON,
+     &                 'at line', IREC,
+     &                 'for FIP', FIP,
+     &                 'and SCC', SCC
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+                GO TO  44
+ 
+            ELSE IF ( IWEK .LE. 0 ) THEN  ! Bad weekly profile code
+ 
+                WRITE( MESG,94010 )
+     &                 'Bad IWEK=', IWEK,
+     &                 'at line', IREC,
+     &                 'for FIP', FIP,
+     &                 'and SCC', SCC
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+                GO TO  44
+ 
+            ELSE IF ( IDIU .LE. 0 ) THEN  ! Bad diurnal profile code
+ 
+                WRITE( MESG,94010 )
+     &                 'Bad IDIU=', IDIU,
+     &                 'at line', IREC,
+     &                 'for FIP', FIP,
+     &                 'and SCC', SCC
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                    GO TO  44
+
+            ELSEIF ( K .GE. MXREC ) THEN
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &                 'Max XREF table size', MXREC,
+     &                 'exceeded at line', IREC
+                CALL M3MESG( MESG )
+                GO TO 44
+
+            ELSE    !  else incremented K within bounds:
+
+                K = K + 1
+                INDXA( K ) = K
+                ICODA( K ) = I
+                IFIPA( K ) = STR2INT( LINE(  1: 5 ) )
+                IPLTA( K ) = STR2INT( LINE(  7:11 ) )
+                ISTKA( K ) = STR2INT( LINE( 13:15 ) )
+                ISCCA( K ) = SCC
+                MPRNA( K ) = IMON
+                WPRNA( K ) = IWEK
+                DPRNA( K ) = IDIU
+
+            END IF      !  No oveflow, SCC foudn in list, no errors
+
+        GO TO  44       !  to head of loop:  read lines from XREF file
+
+45      CONTINUE        !  exit from loop:  read lines from XREF file
+
+        IF ( EFLAG ) THEN
+            MESG = 'Error reading TEMPORAL XREF file'
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+        END IF
+        
+        NPRNA = K
+
+C.......   Sort and Process temporal cross-references, according to category
+
+        WRITE( *,92000 ) 
+     &      ' ', 'Processing TEMPORAL XREF file...', ' '
+        
+        CALL SORTI4( NPRNA, INDXA, IFIPA, ISCCA, IPLTA, ISTKA )
+
+        EFLAG = .FALSE.         !  for detecting XREF errors
         NPRN1 = 0
         NPRN2 = 0
         NPRN3 = 0
         NPRN4 = 0
         NPRN5 = 0
 
-44      CONTINUE
+        DO  66  J = 1, NPRNA
+            
+            K    = INDXA( J )
+            FIP  = IFIPA( K )
+            PLT  = IPLTA( K )
+            STK  = ISTKA( K )
+            SCC  = ISCCA( K )
+            I    = ICODA( K )
+            IMON = MPRNA( K )
+            IWEK = WPRNA( K )
+            IDIU = DPRNA( K )
 
-            IREC = IREC + 1
-            READ( XDEV, 93000, END=57, IOSTAT=IOS ) LINE
-
-            IF ( IOS .NE. 0 ) THEN
-                WRITE( MESG,94010 ) 
-     &              'Error reading XREF at line', IREC, 
-     &              'I/O status  ', IOS
-                CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
-            END IF
-
-            FIP  = STR2INT( LINE(  1: 5 ) )
-            PLT  = STR2INT( LINE(  7:11 ) )
-            STK  = STR2INT( LINE( 13:15 ) )
-            SCC  = STR2INT( LINE( 21:30 ) )
-            COD  = STR2INT( LINE( 32:36 ) )
-            IMON = STR2INT( LINE( 38:40 ) )
-            IWEK = STR2INT( LINE( 42:44 ) )
-            IDIU = STR2INT( LINE( 46:48 ) )
-
-            IF( COD .LE. 0 ) THEN
-                I = 0
-            ELSE
-                I = FIND1( COD, NIPOL, PCODE )
-            END IF
-
-            IF ( I .LT. 0 ) THEN
-C                WRITE( MESG,94010 )
-C     &              'Bad polcode', COD, 
-C     &              'in XREF at line', IREC,
-C     &              'FIPS', FIP,
-C     &              'SCC' , SCC,
-C     &              'IMON', IMON,
-C     &              'IWEK', IWEK,
-C     &              'IDIU', IDIU
-C                CALL M3MESG( MESG )
-C                EFLAG = .TRUE.
-                GO TO  44
-
-            ELSE IF ( FIP .LE. 0 ) THEN  !  FIP-independent fallback profiles)
+            IF ( FIP .LE. 0 ) THEN  !  FIP-independent fallback profiles)
 
                 IF ( SCC .LE. 0 ) THEN  !  ultimate fallback profiles )
 
                     IF ( I .EQ. 0 ) THEN
-                        DO  45  I = 1, NIPOL
+                        DO  46  I = 1, NIPOL
                             MPR00( I ) = IMON
                             WPR00( I ) = IWEK
                             DPR00( I ) = IDIU
-45                      CONTINUE
+46                      CONTINUE
                     ELSE
                         MPR00( I ) = IMON
                         WPR00( I ) = IWEK
                         DPR00( I ) = IDIU
-                        DO  46  V = 1, NIPOL
+                        DO  47  V = 1, NIPOL
                             IF ( MPR00( V ) .EQ. IMISS3 ) 
      &                           MPR00( V ) = IMON
                             IF ( WPR00( V ) .EQ. IMISS3 ) 
      &                           WPR00( V ) = IWEK
                             IF ( DPR00( V ) .EQ. IMISS3 ) 
      &                           DPR00( V ) = IDIU
-46                      CONTINUE
+47                      CONTINUE
                     END IF
 
                 ELSE                    !  ASC-dependent-only profiles
@@ -656,121 +864,100 @@ C                EFLAG = .TRUE.
      &                   SCC .NE. ISCC1( NPRN1 ) ) THEN
 
                         NPRN1 = NPRN1 + 1
-                        IF ( NPRN1 .GT. NPSRC ) THEN
-                            WRITE( MESG,94010 )
-     &                          'Subscript NPRN1 out of range '//
-     &                          'in XREF at line ', IREC,
-     &                          'FIP', FIP,
-     &                          'SCC', SCC
-                            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
-                        END IF
-
-                        ISCC1( NPRN1 ) = SCC
+                        IF ( NPRN1 .LE. NPSRC ) THEN
+                            ISCC1( NPRN1 ) = SCC
+                        ENDIF
 
                     END IF      !  if new scc encountered
 
                     IF ( I .EQ. 0 ) THEN
-                        DO  47  I = 1, NIPOL
+                        DO  48  I = 1, NIPOL
                             MPRN1( NPRN1,I ) = IMON
                             WPRN1( NPRN1,I ) = IWEK
                             DPRN1( NPRN1,I ) = IDIU
-47                      CONTINUE
+48                      CONTINUE
                     ELSE
                         MPRN1( NPRN1,I ) = IMON
                         WPRN1( NPRN1,I ) = IWEK
                         DPRN1( NPRN1,I ) = IDIU
-                        DO  48  V = 1, NIPOL
+                        DO  49  V = 1, NIPOL
                             IF ( MPRN1( NPRN1,V ) .EQ. IMISS3 ) 
      &                           MPRN1( NPRN1,V ) = IMON
                             IF ( WPRN1( NPRN1,V ) .EQ. IMISS3 ) 
      &                           WPRN1( NPRN1,V ) = IWEK
                             IF ( DPRN1( NPRN1,V ) .EQ. IMISS3 ) 
      &                           DPRN1( NPRN1,V ) = IDIU
-48                      CONTINUE
+49                      CONTINUE
                     END IF
 
                 END IF
 
-            ELSE IF ( MOD( FIP,1000 ) .EQ. 0 ) THEN     !  state-ASC dependent
+            ELSE IF ( MOD( FIP,1000 ) .LE. 0 ) THEN     !  state-ASC dependent
 
-                IF ( NPRN2 .EQ. 0             .OR.
-     &               FIP/1000 .NE. IFIP2( NPRN2 )  .OR.
-     &                 SCC .NE. ISCC2( NPRN2 ) ) THEN
+                IF ( NPRN2 .EQ. 0                 .OR.
+     &               FIP/1000 .NE. IFIP2( NPRN2 ) .OR.
+     &               SCC      .NE. ISCC2( NPRN2 )      ) THEN
 
                     NPRN2 = NPRN2 + 1
-                    IF ( NPRN2 .GT. NPSRC ) THEN
-                            WRITE( MESG,94010 )
-     &                          'Subscript NPRN2 out of range '//
-     &                          'in XREF at line ', IREC,
-     &                          'FIP', FIP,
-     &                          'SCC', SCC
-                            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+                    IF ( NPRN2 .LE. NPSRC ) THEN
+                        IFIP2( NPRN2 ) = FIP / 1000 !  state-code only
+                        ISCC2( NPRN2 ) = SCC
                     END IF
-
-                    IFIP2( NPRN2 ) = FIP / 1000 !  state-code only
-                    ISCC2( NPRN2 ) = SCC
 
                 END IF
 
                 IF ( I .EQ. 0 ) THEN
-                    DO  49  I = 1, NIPOL
+                    DO  50  I = 1, NIPOL
                         MPRN2( NPRN2,I ) = IMON
                         WPRN2( NPRN2,I ) = IWEK
                         DPRN2( NPRN2,I ) = IDIU
-49                  CONTINUE
+50                  CONTINUE
                 ELSE
                     MPRN2( NPRN2,I ) = IMON
                     WPRN2( NPRN2,I ) = IWEK
                     DPRN2( NPRN2,I ) = IDIU
-                    DO  50  V = 1, NIPOL
+                    DO  51  V = 1, NIPOL
                         IF ( MPRN2( NPRN2,V ) .EQ. IMISS3 ) 
      &                          MPRN2( NPRN2,V ) = IMON
                         IF ( WPRN2( NPRN2,V ) .EQ. IMISS3 ) 
      &                          WPRN2( NPRN2,V ) = IWEK
                         IF ( DPRN2( NPRN2,V ) .EQ. IMISS3 ) 
      &                          DPRN2( NPRN2,V ) = IDIU
-50                  CONTINUE
+51                  CONTINUE
                 END IF
 
             ELSE IF ( PLT .LE. 0 ) THEN !  by FIP,SCC only
 
-                IF ( NPRN3 .EQ. 0             .OR.
-     &               FIP .NE. IFIP3( NPRN3 )  .OR.
-     &               SCC .NE. ISCC3( NPRN3 ) ) THEN
+                IF ( NPRN3 .EQ. 0              .OR.
+     &               FIP   .NE. IFIP3( NPRN3 ) .OR.
+     &               SCC   .NE. ISCC3( NPRN3 )      ) THEN
 
                     NPRN3 = NPRN3 + 1
-                    IF ( NPRN3 .GT. NPSRC ) THEN
-                            WRITE( MESG,94010 )
-     &                          'Subscript NPRN3 out of range '//
-     &                          'in XREF at line ', IREC,
-     &                          'FIP', FIP,
-     &                          'SCC', SCC
-                            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+                    IF ( NPRN3 .LE. NPSRC ) THEN
+                        IFIP3( NPRN3 ) = FIP
+                        ISCC3( NPRN3 ) = SCC
                     END IF
-
-                    IFIP3( NPRN3 ) = FIP
-                    ISCC3( NPRN3 ) = SCC
 
                 END IF
 
                 IF ( I .EQ. 0 ) THEN
-                    DO  51  I = 1, NIPOL
+                    DO  52  I = 1, NIPOL
                         MPRN3( NPRN3,I ) = IMON
                         WPRN3( NPRN3,I ) = IWEK
                         DPRN3( NPRN3,I ) = IDIU
-51                  CONTINUE
+52                  CONTINUE
                 ELSE
                     MPRN3( NPRN3,I ) = IMON
                     WPRN3( NPRN3,I ) = IWEK
                     DPRN3( NPRN3,I ) = IDIU
-                    DO  52  V = 1, NIPOL
+                    DO  53  V = 1, NIPOL
                         IF ( MPRN3( NPRN3,V ) .EQ. IMISS3 ) 
      &                       MPRN3( NPRN3,V ) = IMON
                         IF ( WPRN3( NPRN3,V ) .EQ. IMISS3 ) 
      &                       WPRN3( NPRN3,V ) = IWEK
                         IF ( DPRN3( NPRN3,V ) .EQ. IMISS3 ) 
      &                       DPRN3( NPRN3,V ) = IDIU
-52                  CONTINUE
+53                  CONTINUE
                 END IF
 
             ELSE IF ( STK .LE. 0 ) THEN !  profiles by FIP,SCC,PLANT
@@ -781,39 +968,32 @@ C                EFLAG = .TRUE.
      &               SCC .NE. ISCC4( NPRN4 ) ) THEN
 
                     NPRN4 = NPRN4 + 1
-                    IF ( NPRN4 .GT. NPSRC ) THEN
-                            WRITE( MESG,94010 )
-     &                          'Subscript NPRN4 out of range '//
-     &                          'in XREF at line ', IREC,
-     &                          'FIP', FIP,
-     &                          'SCC', SCC
-                            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+                    IF ( NPRN4 .LE. NPSRC ) THEN
+                        IFIP4( NPRN4 ) = FIP
+                        IPLT4( NPRN4 ) = PLT
+                        ISCC4( NPRN4 ) = SCC
                     END IF
-
-                    IFIP4( NPRN4 ) = FIP
-                    IPLT4( NPRN4 ) = PLT
-                    ISCC4( NPRN4 ) = SCC
 
                 END IF
 
                 IF ( I .EQ. 0 ) THEN
-                    DO  53  I = 1, NIPOL
+                    DO  54  I = 1, NIPOL
                         MPRN4( NPRN4,I ) = IMON
                         WPRN4( NPRN4,I ) = IWEK
                         DPRN4( NPRN4,I ) = IDIU
-53                  CONTINUE
+54                  CONTINUE
                 ELSE
                     MPRN4( NPRN4,I ) = IMON
                     WPRN4( NPRN4,I ) = IWEK
                     DPRN4( NPRN4,I ) = IDIU
-                    DO  54  V = 1, NIPOL
+                    DO  55  V = 1, NIPOL
                         IF ( MPRN4( NPRN4,V ) .EQ. IMISS3 ) 
      &                       MPRN4( NPRN4,V ) = IMON
                         IF ( WPRN4( NPRN4,V ) .EQ. IMISS3 ) 
      &                       WPRN4( NPRN4,V ) = IWEK
                         IF ( DPRN4( NPRN4,V ) .EQ. IMISS3 ) 
      &                       DPRN4( NPRN4,V ) = IDIU
-54                  CONTINUE
+55                  CONTINUE
                 END IF
 
             ELSE        !  select by FIP,SCC,PLANT,STACK:
@@ -823,65 +1003,79 @@ C                EFLAG = .TRUE.
 
                 IF ( S .LT. 0 ) THEN    !  irrelevant XREF entry.
 
-                    GO TO  44
+                    GO TO  66
 
-                ELSE IF ( NPRN5 .EQ. 0         .OR.
-     &               FIP .NE. IFIP5( NPRN5 )  .OR.
-     &               PLT .NE. IPLT5( NPRN5 )  .OR.
-     &               STK .NE. ISTK5( NPRN5 )  .OR.
-     &               SCC .NE. ISCC5( NPRN5 ) ) THEN
+                ELSEIF ( NPRN5 .EQ. 0               .OR.
+     &                   FIP   .NE. IFIP5( NPRN5 )  .OR.
+     &                   PLT   .NE. IPLT5( NPRN5 )  .OR.
+     &                   STK   .NE. ISTK5( NPRN5 )  .OR.
+     &                   SCC   .NE. ISCC5( NPRN5 )       ) THEN
 
                     NPRN5 = NPRN5 + 1
-                    IF ( NPRN5 .GT. NPSRC ) THEN
-                            WRITE( MESG,94010 )
-     &                          'Subscript NPRN5 out of range '//
-     &                          'in XREF at line ', IREC,
-     &                          'FIP', FIP,
-     &                          'SCC', SCC
-                            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+                    IF ( NPRN5 .LE. NPSRC ) THEN
+                        IFIP5( NPRN5 ) = FIP
+                        IPLT5( NPRN5 ) = PLT
+                        ISTK5( NPRN5 ) = STK
+                        ISCC5( NPRN5 ) = SCC
                     END IF
-
-                    IFIP5( NPRN5 ) = FIP
-                    IPLT5( NPRN5 ) = PLT
-                    ISTK5( NPRN5 ) = STK
-                    ISCC5( NPRN5 ) = SCC
 
                 END IF
 
                 IF ( I .EQ. 0 ) THEN
-                    DO  55  I = 1, NIPOL
+                    DO  56  I = 1, NIPOL
                         MPRN5( NPRN5,I ) = IMON
                         WPRN5( NPRN5,I ) = IWEK
                         DPRN5( NPRN5,I ) = IDIU
-55                  CONTINUE
+56                  CONTINUE
                 ELSE
                     MPRN5( NPRN5,I ) = IMON
                     WPRN5( NPRN5,I ) = IWEK
                     DPRN5( NPRN5,I ) = IDIU
-                    DO  56  V = 1, NIPOL
+                    DO  57  V = 1, NIPOL
                         IF ( MPRN5( NPRN5,V ) .EQ. IMISS3 ) 
      &                       MPRN5( NPRN5,V ) = IMON
                         IF ( WPRN5( NPRN5,V ) .EQ. IMISS3 ) 
      &                       WPRN5( NPRN5,V ) = IWEK
                         IF ( DPRN5( NPRN5,V ) .EQ. IMISS3 ) 
      &                       DPRN5( NPRN5,V ) = IDIU
-56                  CONTINUE
+57                  CONTINUE
                 END IF
 
             END IF      !  if not found, or fip=0, or ...
 
-            GO TO  44   !  to head of loop:  read lines from XREF file
+66      CONTINUE        !  end loop processing temporal XREFs
 
-57      CONTINUE        !  exit from loop:  read lines from XREF file
+        IF( NPRN1 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'Max XREF count', NPSRC,
+     &          'exceeded in XREF file: count=', NPRN1
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
 
+        ELSE IF( NPRN2 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'Max XREF count', NPSRC,
+     &          'exceeded in XREF file: count=', NPRN2
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
 
-C...........   If bad input species, 
+        ELSE IF( NPRN3 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'Max XREF count', NPSRC,
+     &          'exceeded in XREF file: count=', NPRN3
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
 
-C        IF ( EFLAG ) THEN
-C            MESG = 'Bad input species in XREF file'
-C            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
-C        END IF  !  if eflag (bad input species present)
+        ELSE IF( NPRN4 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'Max XREF count', NPSRC,
+     &          'exceeded in XREF file: count=', NPRN4
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
 
+        ELSE IF( NPRN5 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'Max XREF count', NPSRC,
+     &          'exceeded in XREF file: count=', NPRN5
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+
+        END IF
 
 C...........   If requested, write out filled-in XREF file:
 
@@ -909,7 +1103,8 @@ C...........   If requested, write out filled-in XREF file:
 
             IF ( IOS .NE. 0 ) THEN
                 WRITE( MESG,94010 ) 
-     &              'Error', IOS, 'writing OUTPUT XREF file'
+     &              'I/O error', IOS, 
+     &              'writing OUTPUT XREF file'
                 CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 1 )
             END IF
 
@@ -919,6 +1114,8 @@ C...........   If requested, write out filled-in XREF file:
 
 
 C...........   Read temporal-profiles file:  3 parts (monthly, weekly, diurnal)
+
+        WRITE( *,92000 ) ' ', 'Reading TEMPORAL PROFILES file...', ' '
 
         NMON = RDTPROF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
         NWEK = RDTPROF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
@@ -1094,7 +1291,7 @@ C...............   Now look up these refs
 81      CONTINUE        !  end loop on sources S, constructing TNDX
 
         IF ( EFLAG ) THEN
-            MESG = 'Bad XREF::PROFILE matches encountered.'
+            MESG = 'Bad XREF: PROFILE matches encountered'
             CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
         END IF          ! if eflag:  error mapping sources to profiles
 
@@ -1319,7 +1516,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats.............94xxx
 
-94010   FORMAT( 12( A, :, I8, 1X ) )
+94010   FORMAT( 10( A, :, I10, :, 2X ) )
 
         END
 
