@@ -124,6 +124,7 @@ C.............  Initialize the output units for speciation
             IF( SFLAG ) THEN
 
                 CALL UNITMATCH( SPCUNIT( V ) )
+                CALL UNITMATCH( TOUNITS( V ) )
 
         	GRDUNIT_I = MULTUNIT( SPCUNIT( V ), TOUNITS( V ) )
         	IF( TFLAG ) THEN
@@ -137,6 +138,7 @@ C           have a variety of units depending on temporalized emissions or
 C           inventory emisisons and activities.  Make sure that if the temporal
 C           resolution is per hour, that the TOTUNIT is still set as per day.
             ELSE
+                CALL UNITMATCH( TOUNITS( V ) )
         	GRDUNIT_I = TOUNITS( V )
 
         	L = INDEX( TOUNITS( V ), 'hr' )
