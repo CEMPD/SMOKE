@@ -68,7 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(16), INTENT (IN) :: ENAME ! emis input inven logical name
         INTEGER      , INTENT (IN) :: FYEAR ! future year or 0 for no projection
         CHARACTER(16), INTENT (IN) :: NAME1 ! physical name part for i/o api
-	INTEGER      , INTENT(OUT) :: ODEV  ! output map inventory file
+        INTEGER      , INTENT(OUT) :: ODEV  ! output map inventory file
         INTEGER      , INTENT(OUT) :: DDEV  ! IDA output emissions file number
         INTEGER      , INTENT(OUT) :: VDEV  ! IDA output activity file number
         CHARACTER(16), INTENT(OUT) :: ONAME ! output logical main i/o api
@@ -150,13 +150,8 @@ C.............  Determine path of inventory map
             L = LEN_TRIM( APHYS )
             DO N = L, 1, -1
 
-#ifdef DBLBSLASH
-                IF( APHYS( N:N ) .EQ. '/' .OR.
-     &              APHYS( N:N ) .EQ. '\\'      ) THEN
-#else
                 IF( APHYS( N:N ) .EQ. '/' .OR.
      &              APHYS( N:N ) .EQ. '\'      ) THEN
-#endif
                     PATH = APHYS( 1:N )
                     EXIT
                 END IF

@@ -93,9 +93,9 @@ C   begin body of subroutine RDSPDLINE
 
 C.............  Make sure we don't try to read past the end of the file
             IF( CURRLINE > NLINES ) THEN
-            	ROADTYPE = M6LOCAL
-            	SPEED = 0.
-            	EXIT
+                ROADTYPE = M6LOCAL
+                SPEED = 0.
+                EXIT
             END IF
 
 C.............  Read line from SPDSUM file
@@ -121,8 +121,8 @@ C.............  Read line from SPDSUM file
 C.............  Check that county from SPDSUM is still current county                
             IF( STR2INT( CURRCOUNTY ) /= COUNTY ) THEN
                 BACKSPACE( SDEV )
-            	ROADTYPE = M6LOCAL
-            	SPEED = 0.
+                ROADTYPE = M6LOCAL
+                SPEED = 0.
                 EXIT
             END IF
 
@@ -157,12 +157,7 @@ C.................  Stick local sources in with previous scenario
             END DO
 
 C.............  Check if there are more lines to read for this speed and road type
-#ifdef DBLBSLASH
-            IF( CONTCHAR /= '\\' ) EXIT
-#else
             IF( CONTCHAR /= '\' ) EXIT
-#endif
-
 
         END DO
 

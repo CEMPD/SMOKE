@@ -74,12 +74,7 @@ C...........   Local allocatable arrays
         CHARACTER(IOULEN3), ALLOCATABlE :: SUBHCS ( :,: ) ! hydrocarbon names from packet
 
 C...........   Local parametes
-#ifdef DBLBSLASH
-        CHARACTER(2), PARAMETER :: CONTCHAR = '\\'  ! line continuation character
-#else
         CHARACTER, PARAMETER :: CONTCHAR = '\'  ! line continuation character
-#endif
-
 
 C...........   Other local variables
         INTEGER         I, J, K, L, M, V    !  counters and indices
@@ -194,7 +189,7 @@ C.................  Make sure we're not already in a packet
 
 C.............  Check if inside a packet
             IF( INPACKET ) THEN
-            	NTLINES = NTLINES - 1
+                NTLINES = NTLINES - 1
                 NSUBS = NSUBS + 1
                 IF( NSUBS > MXSUBPOL ) THEN
                     MXSUBPOL = NSUBS
@@ -327,13 +322,13 @@ C.............  Separate line into segments
                     POLNAM( 1:NPOL ) = SEGMENT( 3:NCOLS )
                 END IF
             ELSE
-            	IF( SEGMENT( NCOLS ) == CONTCHAR ) THEN
-            	    NPOL = NCOLS - 1
-            	    POLNAM( 1:NPOL ) = SEGMENT( 1:NCOLS-1 )
-            	ELSE
-            	    NPOL = NCOLS
-            	    POLNAM( 1:NPOL ) = SEGMENT( 1:NCOLS )
-            	END IF
+                IF( SEGMENT( NCOLS ) == CONTCHAR ) THEN
+                    NPOL = NCOLS - 1
+                    POLNAM( 1:NPOL ) = SEGMENT( 1:NCOLS-1 )
+                ELSE
+                    NPOL = NCOLS
+                    POLNAM( 1:NPOL ) = SEGMENT( 1:NCOLS )
+                END IF
             END IF
 
 C.............  Make sure activity is in the inventory
@@ -458,7 +453,7 @@ C.............  Loop through packets to find matching hydrocarbon type
             DO I = 1, NPCKTS
                 DO J = 1, NEPOL
                     IF( SUBHCS( I,1 ) == EMTPOL( J ) ) THEN
-                    	HCIDX = J
+                        HCIDX = J
                         USEPCKT = I
                         EXIT
                     END IF
@@ -526,23 +521,23 @@ C.................  Store names of pollutants
                 L = 0
                 DO I = 1, MXSUBPOL
                     IF( RAWSUBS( I,USEPCKT ) /= ' ' ) THEN
-                    	FNDPOL = .FALSE.
-                    	
-                    	DO J = 1, NEPOL
-                    	    IF( RAWSUBS(I,USEPCKT) == EMTPOL( J ) ) THEN
-                    	        FNDPOL = .TRUE.
-                    	        EXIT
-                    	    END IF
-                    	END DO
-                    		
-                    	IF( FNDPOL ) THEN
+                        FNDPOL = .FALSE.
+ 
+                        DO J = 1, NEPOL
+                            IF( RAWSUBS(I,USEPCKT) == EMTPOL( J ) ) THEN
+                                FNDPOL = .TRUE.
+                                EXIT
+                            END IF
+                        END DO
+ 
+                        IF( FNDPOL ) THEN
                             L = L + 1
                             SUBPOLS( L ) = RAWSUBS( I,USEPCKT )
                         END IF
                     END IF
                 END DO
             END IF
-            	
+ 
         END IF
 
 C.........  Rewind file

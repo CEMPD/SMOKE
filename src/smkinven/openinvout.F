@@ -74,9 +74,9 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN)  :: GRDNM    ! grid name if any gridded data
         CHARACTER(*), INTENT(OUT) :: ENAME    ! emis i/o api inven logical name
         CHARACTER(*), INTENT(OUT) :: ANAME    ! emis ASCII inven logical name
-    	INTEGER     , INTENT(OUT) :: IDEV     ! map inventory file
+        INTEGER     , INTENT(OUT) :: IDEV     ! map inventory file
         INTEGER     , INTENT(OUT) :: SDEV     ! ascii output inven file unit no.
-    	INTEGER     , INTENT(OUT) :: ADEV     ! REPINVEN output file unit no.
+        INTEGER     , INTENT(OUT) :: ADEV     ! REPINVEN output file unit no.
         CHARACTER(PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
         CHARACTER(*), INTENT(OUT) :: VAR_FORMULA  ! formula string
 
@@ -181,13 +181,8 @@ C.........  Determine path of inventory map
         L = LEN_TRIM( APHYS )
         DO N = L, 1, -1
 
-#ifdef DBLBSLASH
-            IF( APHYS( N:N ) .EQ. '/' .OR.
-     &          APHYS( N:N ) .EQ. '\\'      ) THEN
-#else
             IF( APHYS( N:N ) .EQ. '/' .OR.
      &          APHYS( N:N ) .EQ. '\'      ) THEN
-#endif
                 PATH = APHYS( 1:N )
                 EXIT
             END IF
@@ -460,7 +455,7 @@ C.........  Open ASCII output file
         END IF      !  if getefile() failed
 
 C.........  Prompt for and open REPINVEN file
-	ADEV = PROMPTFFILE(
+        ADEV = PROMPTFFILE(
      &      'Enter logical name for the REPINVEN file',
      &      .FALSE., .TRUE., 'REPINVEN', PROGNAME )
 

@@ -479,37 +479,37 @@ C.............................  Make sure there are still files to read
      &                            IOSTAT=IOS )
                     
 C.............................  Check for errors while opening file
-		         	        IF( IOS /= 0 ) THEN
-						
-					            WRITE( MESG,94010 ) 'Problem at line ', 
-     &  			               CURFIL, 'of ' // TRIM( FNAME ) // 
-     &  			               '.' // ' Could not open file:' //
-     &		                       CRLF() // BLANK5 // TRIM( INFILE ) 
-					            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-			
-				            ELSE
-					            WRITE( MESG,94010 ) 
-     &  			              'Successful OPEN for ' //
-     &		                      'inventory file(s):' // CRLF() // 
+                            IF( IOS /= 0 ) THEN
+                        
+                                WRITE( MESG,94010 ) 'Problem at line ', 
+     &                             CURFIL, 'of ' // TRIM( FNAME ) // 
+     &                             '.' // ' Could not open file:' //
+     &                             CRLF() // BLANK5 // TRIM( INFILE ) 
+                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            
+                            ELSE
+                                WRITE( MESG,94010 ) 
+     &                            'Successful OPEN for ' //
+     &                            'inventory file(s):' // CRLF() // 
      &                            BLANK5 // TRIM( INFILE )
-					            CALL M3MSG2( MESG ) 
-			
-					        END IF
+                                CALL M3MSG2( MESG ) 
+            
+                            END IF
 
 C.............................  Set default inventory characteristics that depend on file format
-				            CALL INITINFO( FILFMT( CURFIL ) )
-				            CURFMT = FILFMT( CURFIL )
-				            
-				            NWRLINE = 0
-				  
+                            CALL INITINFO( FILFMT( CURFIL ) )
+                            CURFMT = FILFMT( CURFIL )
+                            
+                            NWRLINE = 0
+                  
 C.............................  Skip back to the beginning of the loop
                             CYCLE
-				  
+                  
 C.........................  Otherwise, no more files to read, so exit
-				        ELSE
-				            LSTTIME = .TRUE.
-				            EXIT
-				        END IF
+                        ELSE
+                            LSTTIME = .TRUE.
+                            EXIT
+                        END IF
 
 C.....................  Otherwise, not a list file, so exit
                     ELSE
@@ -612,24 +612,24 @@ C.................  Make sure some emissions are kept for this source
                 END IF
 
 C.................  Check that source characteristics are correct
-            	IF( .NOT. CHKINT( CFIP ) ) THEN
-            	    EFLAG = .TRUE.
-            	    WRITE( MESG,94010 ) 'ERROR: State and/or county ' //
-     &      	           'code is non-integer at line', IREC
-            	    CALL M3MESG( MESG )
-            	END IF
+                IF( .NOT. CHKINT( CFIP ) ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: State and/or county ' //
+     &                     'code is non-integer at line', IREC
+                    CALL M3MESG( MESG )
+                END IF
 
-            	IF( CFIP( 2:3 ) == '00' .OR.
-     &      	    CFIP( 4:6 ) == '000'     ) THEN
-            	    WRITE( MESG,94010 ) 'WARNING: State and/or county ' //
-     &      	           'code is zero (missing) at line', IREC
-            	    CALL M3MESG( MESG )
-            	END IF
-	
+                IF( CFIP( 2:3 ) == '00' .OR.
+     &              CFIP( 4:6 ) == '000'     ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: State and/or ' //
+     &                     'county code is zero (missing) at line', IREC
+                    CALL M3MESG( MESG )
+                END IF
+    
 c                IF( .NOT. CHKINT( TSCC ) ) THEN
 c                    EFLAG = .TRUE.
 c                    WRITE( MESG,94010 ) 'ERROR: SCC code is ' //
-c     &      	       'non-integer at line', IREC
+c     &                'non-integer at line', IREC
 c                    CALL M3MESG( MESG )
 c                END IF
 
@@ -962,11 +962,7 @@ C.....................  Make sure not to go outside the array
 C.........................  If already read NSCSEG-1 records, write line with continuation
 C                           character and start new line
                         IF( NRECPERLN == NSCSEG-1 ) THEN
-#ifdef DBLBSLASH
-                            OUTLINE = TRIM( OUTLINE ) // ' \\'
-#else
                             OUTLINE = TRIM( OUTLINE ) // ' \'
-#endif
                             WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
                             OUTLINE = TRIM( TMPCSOURC( J ) )
                             NRECPERLN = 0

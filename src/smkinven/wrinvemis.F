@@ -334,13 +334,8 @@ C           able to build relative file names for the map file.
         L = LEN_TRIM( DATPATH )
         DO N = L, 1, -1
 
-#ifdef DBLBSLASH
-            IF( DATPATH( N:N ) .EQ. '/' .OR.
-     &          DATPATH( N:N ) .EQ. '\\'      ) THEN
-#else
             IF( DATPATH( N:N ) .EQ. '/' .OR.
      &          DATPATH( N:N ) .EQ. '\'      ) THEN
-#endif
                 BPATH = DATPATH( 1:N )
                 RPATH = DATPATH( N+1:L )
                 EXIT
@@ -474,8 +469,8 @@ C.............  Local variables
 
             INTEGER          NREC      ! number of output records for each pollutant
 
-    	    REAL    	   MINANN      ! min negative annual value
-    	    REAL    	   MINAVD      ! min negative seasonal/ave day value
+            REAL           MINANN      ! min negative annual value
+            REAL           MINAVD      ! min negative seasonal/ave day value
 
             LOGICAL     :: FFLAGA = .FALSE.  ! true: first part of formula processed
             LOGICAL     :: FFLAGB = .FALSE.  ! true: 2nd part of formula processed
@@ -544,7 +539,7 @@ C...........................  Store variable names for computed variable
                                     L= LEN_TRIM( NAMES( I ) )
                                     L= INDEX(EONAMES(I,J),NAMES(I)(1:L))
                                     IF ( L .GT. 1 ) THEN
-        	                        VNAMFORM(J)=EONAMES(I,J)(1:L-1)
+                                        VNAMFORM(J)=EONAMES(I,J)(1:L-1)
      &                                              // TRIM( VNAME )
                                     ELSE
                                         VNAMFORM( J ) = VNAME
@@ -643,8 +638,8 @@ C...............  Count up the number of non-zero records for the computed
 C                 emissions.  No need to reformat SRCPOL or SRCID, because it is 
 C                 sparse storage.  Populate sparse arrays.
                 NREC = 0
-    	    	MINANN = 0.
-    	    	MINAVD = 0.
+                MINANN = 0.
+                MINAVD = 0.
                 DO S = 1, NSRC
                     IF( COMPUTED( S,1 ) /= 0. .OR. 
      &                  COMPUTED( S,2 ) /= 0.      ) THEN
@@ -661,7 +656,7 @@ C......................  Check for negative values for annual value
      &                        'to 0. for source:'// CRLF() // BLANK10// 
      &                        BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
-    	    	    	    MINANN = MIN( MINANN, COMPUTED( S,1 ) )
+                            MINANN = MIN( MINANN, COMPUTED( S,1 ) )
                             COMPUTED( S,1 ) = 0.
                         END IF
 
@@ -675,7 +670,7 @@ C......................  Check for negative values for average day value
      &                        'to 0. for source:'// CRLF() // BLANK10// 
      &                        BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
-    	    	    	    MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
+                            MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
                             COMPUTED( S,2 ) = 0.
                         END IF
                         
@@ -685,20 +680,20 @@ C......................  Check for negative values for average day value
                 END DO          ! End loop through sources for sparse storage
 
 C...............  Give warning for that includes negative annual value
-    	    	IF( MINANN .LT. 0. ) THEN
-    	    	    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
+                IF( MINANN .LT. 0. ) THEN
+                    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
      &                     'value for "'// TRIM( VNAMFORM(1) ) //
      &                     '" was', MINANN, 'and was reset to 0.'
                     CALL M3MSG2( MESG )
-    	    	END IF
+                END IF
 
 C...............  Give warning for that includes negative seasonal value
-    	    	IF( MINAVD .LT. 0. ) THEN
-    	    	    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
+                IF( MINAVD .LT. 0. ) THEN
+                    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
      &                     'value for "'// TRIM( VNAMFORM(2) ) //
      &                     '" was', MINAVD, 'and was reset to 0.'
                     CALL M3MSG2( MESG )
-    	    	END IF
+                END IF
 
 C...............  Set up output arrays in sparse format....
 C...............  Reset I/O API header information
