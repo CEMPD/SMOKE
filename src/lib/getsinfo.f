@@ -99,7 +99,7 @@ C.........  Set source-category-specific information
             LSCCEND  = 7
             RSCCBEG  = 8
             NPPOL    = NARPPOL3
-            PLTIDX   = MXARCHR3
+            PLTIDX   = 2
             MXCHRS   = MXARCHR3
 
             DO I = 1, NCHARS
