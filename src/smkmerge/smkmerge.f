@@ -92,9 +92,10 @@ C.........  This module contains the major data structure and control flags
      &          LFRAC, EANAM, TONAMES                           ! layer frac, pol/act names
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL, ONLY: ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN, ACRFAC,
-     &                      MCRIDX, MCRREPEM, MCRPRJFC, MCRMKTPN, MCRFAC, 
-     &                      PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRFAC,
+        USE MODCNTRL, ONLY: ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN,
+     &                      MCRIDX, MCRREPEM, MCRPRJFC, MCRMKTPN, 
+     &                      PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN,
+     &                      ACRFAC, MCRFAC, PCRFAC,
      &                      ACUMATX, MCUMATX, PCUMATX
 
 C.........  This module contains arrays for plume-in-grid and major sources

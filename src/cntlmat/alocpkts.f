@@ -153,12 +153,13 @@ C.................  Check for /END/ of packet
 
 C.................  Encountered slash but not /END/
 C                   It may be part of a point source characteristic, so check if 
-C                   its at the beginning of the line
+C                   it's at the beginning of the line
                 ELSEIF( I .LE. 0 .AND. J .GT. 0 ) THEN
                     IF( J .EQ. 1 .OR. LINE( 1:J ) .EQ. ' ' ) THEN
                         WRITE( MESG,94010 ) 'Problem at line', IREC,
-     &                         'of control packets file.' // CRLF() //
-     &                         BLANK10 // 'Encountered a "/" before /END/.'
+     &                         'of control packets file.' // 
+     &                         CRLF() // BLANK10 // 
+     &                         'Encountered a "/" before /END/.'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                      END IF
 

@@ -264,8 +264,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000       FORMAT( A )
 
-93380       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ', 
-     &              E11.4, ' [tons/day]. WARNING: Control factor of 1.' )
+93380       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ',
+     &              E11.4, 
+     &              ' [tons/day]. WARNING: Control factor of 1.' )
 
 93400       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ',  
      &              E11.4, ' [tons/day]. Factor:', E9.3 )
