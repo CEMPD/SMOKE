@@ -71,6 +71,11 @@
         LOGICAL, PUBLIC :: MPRJFLAG = .FALSE.
         LOGICAL, PUBLIC :: PPRJFLAG = .FALSE.
 
+!.........  Flags to indicate if by-day hourly emissions files are being used
+        LOGICAL, PUBLIC :: AFLAG_BD = .FALSE.
+        LOGICAL, PUBLIC :: MFLAG_BD = .FALSE.
+        LOGICAL, PUBLIC :: PFLAG_BD = .FALSE.
+
 !.........  Flags for controlling on-off features
         LOGICAL, PUBLIC :: TFLAG   ! use temporalized (hourly) emissions
         LOGICAL, PUBLIC :: SFLAG   ! use speciation
@@ -111,7 +116,7 @@
 
 !.........  Logical file names
         CHARACTER*16, PUBLIC :: AENAME ! area inventory input
-        CHARACTER*16, PUBLIC :: ATNAME ! area temporal input
+        CHARACTER*16, PUBLIC :: ATNAME( 7 ) ! area temporal input
         CHARACTER*16, PUBLIC :: AGNAME ! area gridding matrix input
         CHARACTER*16, PUBLIC :: ASNAME ! area speciation matrix input 
         CHARACTER*16, PUBLIC :: AANAME ! area additive control matrix input
@@ -124,7 +129,7 @@
         CHARACTER*16, PUBLIC :: BREPNAME ! biogenic report file name
 
         CHARACTER*16, PUBLIC :: MENAME ! mobile inventory input
-        CHARACTER*16, PUBLIC :: MTNAME ! mobile temporal input
+        CHARACTER*16, PUBLIC :: MTNAME( 7 ) ! mobile temporal input
         CHARACTER*16, PUBLIC :: MGNAME ! mobile gridding matrix input
         CHARACTER*16, PUBLIC :: MSNAME ! mobile speciation matrix input
         CHARACTER*16, PUBLIC :: MANAME ! mobile additive control matrix input
@@ -134,7 +139,7 @@
         CHARACTER*16, PUBLIC :: MREPNAME ! mobile report file name
 
         CHARACTER*16, PUBLIC :: PENAME ! point inventory input
-        CHARACTER*16, PUBLIC :: PTNAME ! point temporal input
+        CHARACTER*16, PUBLIC :: PTNAME( 7 ) ! point temporal input
         CHARACTER*16, PUBLIC :: PGNAME ! point gridding matrix input
         CHARACTER*16, PUBLIC :: PSNAME ! point speciation matrix input 
         CHARACTER*16, PUBLIC :: PLNAME ! point layer fractions file 
@@ -348,6 +353,11 @@
         INTEGER, PUBLIC :: PYEAR  = 0     ! projected inventory year
         INTEGER, PUBLIC :: PVSDATE= 0     ! Julian start date in STACK_GROUPS
         INTEGER, PUBLIC :: PVSTIME= 0     ! start time in STACK_GROUPS
+
+!.........  Dates for by-day hourly emissions input
+        INTEGER, PUBLIC :: ASDATE( 7 )    ! Julian start dates of each atmp file
+        INTEGER, PUBLIC :: MSDATE( 7 )    ! Julian start dates of each mtmp file
+        INTEGER, PUBLIC :: PSDATE( 7 )    ! Julian start dates of each ptmp file
 
 !.........  Units conversions information
         INTEGER               , PUBLIC :: INVPIDX = 1    ! annual/O3 season idx
