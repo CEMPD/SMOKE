@@ -523,9 +523,24 @@ C.............   If zone is < 0, then assume already in lat-lon
                 CALL UTM2LL( XLOC, YLOC, ZONE, XX, YY )
 
             ELSE
-                XX = XLOC
-                YY = YLOC
-                IF( WFLAG .AND. XX .GT. 0 ) XX = -XX  ! To western hemisphere
+C.................  Make sure coordinates are within lat-lon range
+                IF( ABS( XLOC ) > 180. .OR. ABS( YLOC ) > 180. ) THEN
+                    WRITE( MESG,94010 ) 'Source dropped because ' //
+     &                      'UTM zone less than or equal to 0 ' //
+     &                      CRLF() // BLANK5 //
+     &                      'and source coordinates not Lat-Lon ' //
+     &                      'in facility file for:' //
+     &                      CRLF() // BLANK5 //
+     &                      'FIP=' // CFIP // '; Facility=' //
+     &                      FCID( 1:LFC ) // '; and Stack=' // SKID
+                    CALL M3MESG( MESG )
+                    
+                    CYCLE       ! to end of do-loop
+                ELSE
+                    XX = XLOC
+                    YY = YLOC
+                    IF( WFLAG .AND. XX .GT. 0 ) XX = -XX  ! To western hemisphere
+                END IF   ! if xloc, yloc not lat-lon
             ENDIF
 
 C.............  Store stack file information
