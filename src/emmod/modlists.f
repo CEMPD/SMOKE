@@ -23,7 +23,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -49,6 +49,12 @@
         INTEGER, PUBLIC :: NINVSCL  ! no. unique left SCCs in inventory
         INTEGER, PUBLIC :: NSCCPSIC ! no. all SCCs for all SICs
         INTEGER, PUBLIC :: NINVIFIP ! no. unique country/state/county codes
+        INTEGER, PUBLIC :: NORISBLR ! no. unique ORIS // boilers
+        INTEGER, PUBLIC :: NORISPNT ! no. unique ORIS // points
+        INTEGER, PUBLIC :: NINVORIS ! no. unique ORIS 
+
+!.........  Controllers
+        LOGICAL, PUBLIC :: ORISFLAG  ! true: create ORIS-based arrays
 
 !.........  Unique lists of source characteristics and associated arrays...
 
@@ -67,6 +73,18 @@
 
 !.........  Country/state/county codes dimensioned by NINVFIP
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
+
+!.........  ORIS arrays
+        INTEGER               , ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
+        INTEGER               , ALLOCATABLE, PUBLIC :: OBSRCBG( : ) ! 1st source per ORIS/boiler
+        INTEGER               , ALLOCATABLE, PUBLIC :: OBSRCNT( : ) ! source count per ORIS/boiler
+        INTEGER               , ALLOCATABLE, PUBLIC :: OPSRCBG( : ) ! 1st source per ORIS/point
+        INTEGER               , ALLOCATABLE, PUBLIC :: OPSRCNT( : ) ! source count per ORIS/point
+        LOGICAL               , ALLOCATABLE, PUBLIC :: IORSMTCH( : ) ! true: inventory ORIS matched to CEM
+        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC :: INVORIS( : ) ! unique ORIS
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC :: INVODSC( : ) ! plant description from inventory
+        CHARACTER(LEN=OBRLEN3), ALLOCATABLE, PUBLIC :: ORISBLR( : ) ! ORIS // boiler
+        CHARACTER(LEN=OPTLEN3), ALLOCATABLE, PUBLIC :: ORISPNT( : ) ! ORIS // point
 
 !.........  For valid pollutants and activities...
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE GRD2CNTY( IDXINV, IDXSPC, NGRID, NCNTY, CNVFAC,
+        SUBROUTINE GRD2CNTY( IDXINV, IDXSPC, NCNTY, CNVFAC,
      &                       GRDDAT, CNYDAT )
 
 C************************************************************************
@@ -46,6 +46,9 @@ C.........  This module contains the arrays for state and county summaries
 C...........   This module contains the gridding surrogates tables
         USE MODSURG
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -62,7 +65,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: IDXINV
         INTEGER, INTENT (IN) :: IDXSPC
-        INTEGER, INTENT (IN) :: NGRID
         INTEGER, INTENT (IN) :: NCNTY
         REAL   , INTENT (IN) :: CNVFAC
         REAL   , INTENT (IN) :: GRDDAT( NGRID )

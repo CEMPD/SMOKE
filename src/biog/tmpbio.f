@@ -2,7 +2,7 @@
         PROGRAM TMPBIO
 
 C***********************************************************************
-C  program body starts at line  187
+C  program body starts at line 219
 C
 C  DESCRIPTION:
 C       Computes time stepped gridded biogenic emissions in terms of 
@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -46,6 +46,9 @@ C***********************************************************************
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
         USE MODSPRO
+
+C...........   This module contains the global variables for the 3-d grid
+        USE MODGRID
 
         IMPLICIT NONE
 
@@ -180,7 +183,7 @@ C...........   Logical names and unit numbers
 C...........   Other variables and their descriptions:
 
         INTEGER         B, M    !  counters for biogenic, model species
-        INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
+        INTEGER         I, II, J, JJ, K, L, C, R  !  loop counters and subscripts
         INTEGER         HR      !  current simulation hour
 
         INTEGER         IOS     !  temporay IO status
@@ -188,13 +191,12 @@ C...........   Other variables and their descriptions:
         INTEGER         JTIME   !  current simulation time (HHMMSS)
         INTEGER         LDATE   !  previous simulation date
         INTEGER         MDATE   !  met file 1 start date
+        INTEGER         METNCOLS! no. met file columns
+        INTEGER         METNROWS! no. met file rows
         INTEGER         MSPCS   ! no. of emitting species
         INTEGER         MTIME   !  met file 1 start time
         INTEGER         MXSTEPS !  maximum number of time steps
-        INTEGER         NCOLS   ! no. of grid columns
-        INTEGER         NGRID   ! no. of grid cells
         INTEGER         NLINES  ! no. of lines in GSPRO speciation profiles file  
-        INTEGER         NROWS   ! no. of grid rows
         INTEGER         NSTEPS  !  duration of met file
         INTEGER         BSTEPS  ! no. of hourly time steps for output
         INTEGER         PARTYPE !  method number to calculate PAR
@@ -300,58 +302,8 @@ C.......   Check to see if frost date switch file to be used
         MESG = 'Using a frost date switch file?'
         SWITCH_FILE = ENVYN ( 'BIOSW_YN', MESG, .TRUE., IOS )
 
-C.......   Get normalized emissions file, BGRD
-
-        NNAME = PROMPTMFILE( 
-     &          'Enter name for NORMALIZED EMISSIONS input file',
-     &          FSREAD3, 'BGRD', 'TMPBIO' )
-
-C......    Read description of normalized emissions file
-
-        IF ( .NOT. DESC3( NNAME ) ) THEN
-
-            MESG = 'Could not get description of file "' //
-     &             NNAME( 1:TRIMLEN( NNAME ) ) // '"'
-            CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-
-        ENDIF
-
-C.......   Initialize grid definition 
-
-        CALL CHKGRID( NNAME, 'GRID' , 0, EFLAG )
-
-        NCOLS = NCOLS3D 
-        NROWS = NROWS3D
-        NGRID = NCOLS3D * NROWS3D
-        LUSE  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
-
-        IF ( SWITCH_FILE ) THEN
-
-C.......   Get winter normalized emissions file, BGRDW
-C.......   Note that second normalized file is assumed to be
-C.......   the winter file
-
-           NNAME2 = PROMPTMFILE( 
-     &          'Enter name for winter NORMALIZED EMISSIONS input file',
-     &          FSREAD3, 'BGRDW', 'TMPBIO' )
-
-C......    Read description of second normalized emissions file
-
-           IF ( .NOT. DESC3( NNAME2 ) ) THEN
-
-              MESG = 'Could not get description of file "' //
-     &             NNAME( 1:TRIMLEN( NNAME2 ) ) // '"'
-              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-
-           ENDIF
-
-C.......   Initialize grid definition 
-
-           CALL CHKGRID( NNAME2, 'GRID' ,0 , EFLAG )
-
-           LUSE2  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
-
 C.......    Get bioseason switch file, BIOSEASON
+        IF ( SWITCH_FILE ) THEN
 
            BNAME = PROMPTMFILE( 
      &          'Enter name for season switch input file',
@@ -371,7 +323,8 @@ C.......   Initialize grid definition
 
            CALL CHKGRID( BNAME, 'GRID' , 0 , EFLAG )
 
-        ENDIF
+        END IF
+
 C.......   Get temperature file
 
         M3NAME = PROMPTMFILE( 
@@ -406,14 +359,11 @@ C......    Read description of temperature file
 
         CALL CHKGRID( M3NAME, 'GRID' , 0 , EFLAG ) 
 
-C........  If grid definition does not match BGRD file then stop
+C.........  Store met grid settings
+        METNCOLS = NCOLS
+        METNROWS = NROWS
 
-        IF ( SAMEFILE .AND. EFLAG ) THEN
-           MESG = 'Problems opening input files. See ERROR(S) above.'
-           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-C........  Get met and cloud scheme descriptions from M3NAME if they exist
+C.........  Get met and cloud scheme descriptions from M3NAME if they exist
 
         METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. )
         CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. )
@@ -476,6 +426,80 @@ C......    Get name of radiation variable to use
             ENDIF
          ENDIF
 
+C........  if solar zenith angle calculation needed then get lat-lon
+C........  coordinates from GRID_CRO_2D file
+
+        IF ( PARTYPE .GT. 1  ) THEN
+
+            GNAME = PROMPTMFILE( 
+     &              'Enter name for 2D GRID PARAMETERS input file',
+     &              FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
+
+            IF ( .NOT. DESC3( GNAME ) ) THEN
+                CALL M3EXIT( 'TMPBIO', 0, 0,
+     &                      'Could not get description of file "'
+     &                      // GNAME( 1:TRIMLEN( GNAME ) ) // '"', 2 )
+
+            ENDIF 
+
+            CALL CHKGRID( GNAME, 'GRID' , 0 , EFLAG ) 
+
+        END IF
+
+C.......   Get normalized emissions file, BGRD
+
+        NNAME = PROMPTMFILE( 
+     &          'Enter name for NORMALIZED EMISSIONS input file',
+     &          FSREAD3, 'BGRD', 'TMPBIO' )
+
+C......    Read description of normalized emissions file
+
+        IF ( .NOT. DESC3( NNAME ) ) THEN
+
+            MESG = 'Could not get description of file "' //
+     &             NNAME( 1:TRIMLEN( NNAME ) ) // '"'
+            CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+
+        ENDIF
+
+C.........  Final grid definition 
+        CALL CHKGRID( NNAME, 'GRID' , 1, EFLAG )
+
+        LUSE  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
+
+        IF ( SWITCH_FILE ) THEN
+
+C.......   Get winter normalized emissions file, BGRDW
+C.......   Note that second normalized file is assumed to be
+C.......   the winter file
+
+           NNAME2 = PROMPTMFILE( 
+     &          'Enter name for winter NORMALIZED EMISSIONS input file',
+     &          FSREAD3, 'BGRDW', 'TMPBIO' )
+
+C......    Read description of second normalized emissions file
+
+           IF ( .NOT. DESC3( NNAME2 ) ) THEN
+
+              MESG = 'Could not get description of file "' //
+     &             NNAME( 1:TRIMLEN( NNAME2 ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+
+           ENDIF
+
+C............  Check final grid definition 
+           CALL CHKGRID( NNAME2, 'GRID' , 1 , EFLAG )
+
+           LUSE2  = GETCFDSC( FDESC3D, '/LANDUSE/', .FALSE. )
+
+        END IF
+
+C........  If grid definitions do not match properly
+        IF ( EFLAG ) THEN
+          MESG = 'Problems opening input files. See ERROR(S) above.'
+          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.......   Get default time characteristic for output file:
 C.......   If we're going to prompt, then set the defaults based on met
 C.......      otherwise, use environment variables to set defaults
@@ -534,32 +558,12 @@ C.......   (all but variables-table in description is borrowed from M3NAME)
 
 C........  if solar zenith angle calculation needed then get lat-lon
 C........  coordinates from GRID_CRO_2D file
-
         IF ( PARTYPE .GT. 1  ) THEN
 
-            GNAME = PROMPTMFILE( 
-     &              'Enter name for 2D GRID PARAMETERS input file',
-     &              FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
-
-            IF ( .NOT. DESC3( GNAME ) ) THEN
-                CALL M3EXIT( 'TMPBIO', 0, 0,
-     &                      'Could not get description of file "'
-     &                      // GNAME( 1:TRIMLEN( GNAME ) ) // '"', 2 )
-
-            ENDIF 
-            CALL CHKGRID( GNAME, 'GRID' , 0 , EFLAG ) 
-
-C........  If grid definition does not match BGRD file then stop
-
-            IF ( EFLAG ) THEN
-              MESG = 'Problems opening input files. See ERROR(S) above.'
-              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            ALLOCATE( LAT ( NCOLS, NROWS ), STAT=IOS )
+            ALLOCATE( LAT ( METNCOLS, METNROWS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LAT', PROGNAME )
 
-            ALLOCATE( LON ( NCOLS, NROWS ), STAT=IOS )
+            ALLOCATE( LON ( METNCOLS, METNROWS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LON', PROGNAME )
 
             IF ( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, LAT ) ) THEN
@@ -575,7 +579,6 @@ C........  If grid definition does not match BGRD file then stop
             ENDIF
 
         END IF    ! Use cloud to calculate PAR
-
 
 C.......   Build name table for variables in normalized emissions file"
 
@@ -604,7 +607,6 @@ C.......   Build name table for variables in normalized emissions file"
 
 
 C.......   Allocate memory for normalized emissions
-
         ALLOCATE( PINE( NCOLS, NROWS, BSPCS-1  ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PINE', PROGNAME )
 
@@ -660,7 +662,7 @@ C.......   Allocate memory for normalized emissions
            ALLOCATE( NORNOS( NCOLS, NROWS, LUSES ), STAT=IOS )
            CALL CHECKMEM( IOS, 'NORNOW', PROGNAME )
 
-           ALLOCATE( SEASON( NCOLS, NROWS), STAT=IOS )
+           ALLOCATE( SEASON( METNCOLS, METNROWS), STAT=IOS )
            CALL CHECKMEM( IOS, 'SEASON', PROGNAME )
            SEASON = 0   ! array
 
@@ -840,20 +842,17 @@ C.......   Loops reading the various categories of normalized emissions:
         ENDDO        !  end loop reading normalized NO's
 
 
-C.......   Allocate memory for met and emissions 
-
-        ALLOCATE( TASFC( NCOLS, NROWS ), STAT=IOS )
+C.......   Allocate memory for met
+        ALLOCATE( TASFC( METNCOLS, METNROWS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TASFC', PROGNAME )
-
-        ALLOCATE( TSOLAR( NCOLS, NROWS ), STAT=IOS )
+        ALLOCATE( TSOLAR( METNCOLS, METNROWS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TSOLAR', PROGNAME )
-
-        ALLOCATE( EMPOL( NCOLS, NROWS, BSPCS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMPOL', PROGNAME )
-
-        ALLOCATE( PRSFC( NCOLS, NROWS ), STAT=IOS )
+        ALLOCATE( PRSFC( METNCOLS, METNROWS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PRSFC', PROGNAME )
 
+C.......   Allocate memory for emissions 
+        ALLOCATE( EMPOL( NCOLS, NROWS, BSPCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMPOL', PROGNAME )
         ALLOCATE( EMISL( NCOLS, NROWS, MSPCS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMISL', PROGNAME )
         ALLOCATE( EMISS( NCOLS, NROWS, MSPCS ), STAT=IOS )
@@ -879,8 +878,8 @@ C.........  Loop thru the number of time steps (hourly)
  
         DO  HR = 1, BSTEPS
 
-           EMISL = 0
-           EMISS = 0
+           EMISL = 0        ! array
+           EMISS = 0        ! array
 
            IF( JDATE .NE. LDATE ) THEN
 
@@ -903,42 +902,48 @@ C..........  If new date, read season switch
                   CALL M3MESG( MESG )
 
 
-                  DO I = 1, NCOLS
-                    DO J = 1, NROWS
+                  DO I = 1, METNCOLS
+                    DO J = 1, METNROWS
+
+                        II = I - XOFF
+                        JJ = J - YOFF
+
+                        IF( II .LE. 0 .OR. II .GT. NCOLS .OR.
+     &                      JJ .LE. 0 .OR. JJ .GT. NROWS       ) CYCLE
 
 C..........   If switch equal to 0 use winter normalized emissions
 
                        IF ( SEASON ( I, J ) .EQ. 0 ) THEN
                           DO M = 1, BSPCS - 1
-                             PINES( I, J, M ) = PINEW( I, J, M ) 
-                             DECDS( I, J, M ) = DECDW( I, J, M )
-                             CONFS( I, J, M ) = CONFW( I, J, M )
-                             LEAFS( I, J, M ) = LEAFW( I, J, M )
-                             AGRCS( I, J, M ) = AGRCW( I, J, M )
-                             OTHRS( I, J, M ) = OTHRW( I, J, M )
+                             PINES( II, JJ, M ) = PINEW( II, JJ, M ) 
+                             DECDS( II, JJ, M ) = DECDW( II, JJ, M )
+                             CONFS( II, JJ, M ) = CONFW( II, JJ, M )
+                             LEAFS( II, JJ, M ) = LEAFW( II, JJ, M )
+                             AGRCS( II, JJ, M ) = AGRCW( II, JJ, M )
+                             OTHRS( II, JJ, M ) = OTHRW( II, JJ, M )
                           ENDDO
 
-                          AVLAIS( I, J ) = AVLAIW ( I, J )
+                          AVLAIS( II, JJ ) = AVLAIW ( II, JJ )
 
                           DO M = 1, BSPCS
-                             NORNOS( I , J , M ) = NORNOW( I, J, M )
+                             NORNOS( II, JJ, M ) = NORNOW( II, JJ, M )
                           ENDDO
 
                        ELSE
 
                           DO M = 1, BSPCS - 1
-                             PINES( I, J, M ) = PINE( I, J, M )
-                             DECDS( I, J, M ) = DECD( I, J, M )
-                             CONFS( I, J, M ) = CONF( I, J, M )
-                             LEAFS( I, J, M ) = LEAF( I, J, M )
-                             AGRCS( I, J, M ) = AGRC( I, J, M )
-                             OTHRS( I, J, M ) = OTHR( I, J, M )
+                             PINES( II, JJ, M ) = PINE( II, JJ, M )
+                             DECDS( II, JJ, M ) = DECD( II, JJ, M )
+                             CONFS( II, JJ, M ) = CONF( II, JJ, M )
+                             LEAFS( II, JJ, M ) = LEAF( II, JJ, M )
+                             AGRCS( II, JJ, M ) = AGRC( II, JJ, M )
+                             OTHRS( II, JJ, M ) = OTHR( II, JJ, M )
                           ENDDO
 
-                          AVLAIS( I, J ) = AVLAI ( I, J )
+                          AVLAIS( II, JJ ) = AVLAI ( II, JJ )
 
                           DO M = 1, BSPCS
-                             NORNOS( I , J , M ) = NORNO( I, J, M )
+                             NORNOS( II, JJ, M ) = NORNO( II, JJ, M )
                           ENDDO
 
                        ENDIF
@@ -963,7 +968,7 @@ C.............  Read temperature data
            END IF
 
 
-C............. If necessary read solar radiation
+C............  If necessary read solar radiation
 
            IF ( PARTYPE .EQ. 1 ) THEN      ! Use RADNAM
 
@@ -975,30 +980,30 @@ C............. If necessary read solar radiation
                  CALL M3EXIT( 'TMPBIO', RDATE, RTIME, MESG, 2 )
               END IF
 
-C............. Convert shortwave radiation to PAR  
+C...............  Convert shortwave radiation to PAR  
 
-              DO I = 1, NCOLS
-               DO J = 1, NROWS
+              DO I = 1, METNCOLS
+               DO J = 1, METNROWS
                     TSOLAR( I, J ) = TSOLAR( I, J ) * SOL2PAR ! Calc. PAR
                ENDDO
               END DO
 
-C............. Calculate non-speciated emissions
-C............. must pass met date and time here
+C...............  Calculate non-speciated emissions
+C...............     must pass met date and time here
 
               IF ( SWITCH _FILE ) THEN
   
-                 CALL HRBIOS( MDATE, MTIME, NCOLS, NROWS,
+                 CALL HRBIOS( MDATE, MTIME, METNCOLS, METNROWS, 
      &                   PINES, DECDS, CONFS, AGRCS, LEAFS, OTHRS,
      &                   AVLAIS, NORNOS, TASFC, TSOLAR, EMPOL )
           
               ELSE 
  
-                 CALL HRBIOS( MDATE, MTIME, NCOLS, NROWS,
+                 CALL HRBIOS( MDATE, MTIME, METNCOLS, METNROWS,
      &                   PINE, DECD, CONF, AGRC, LEAF, OTHR, AVLAI,
      &                   NORNO, TASFC, TSOLAR, EMPOL )
 
-              ENDIF
+              END IF
 
            ELSE        ! Use clouds or clear skies to calculate PAR
 
@@ -1013,8 +1018,8 @@ C..............  Read surface pressure data from M3NAME
 
 C...............  convert to millibars
 
-              DO  C = 1, NCOLS
-              DO  R = 1, NROWS
+              DO  C = 1, METNCOLS
+              DO  R = 1, METNROWS
                        PRSFC( C, R ) = PRSFC( C, R ) * 0.010  ! Pa to mb
               ENDDO
               ENDDO
@@ -1024,12 +1029,12 @@ C............. must pass met date and time here
 
               IF ( SWITCH_FILE ) THEN
 
-                 CALL HRBIO( MDATE, MTIME, NCOLS, NROWS, LAT, LON,  
+                 CALL HRBIO( MDATE, MTIME, METNCOLS, METNROWS, LAT, LON,  
      &                  PRSFC, TASFC, PINES, DECDS, CONFS, AGRCS, 
      &                  LEAFS, OTHRS, AVLAIS, NORNOS, PARTYPE, EMPOL )
               ELSE
  
-                 CALL HRBIO( MDATE, MTIME, NCOLS, NROWS, LAT, LON,
+                 CALL HRBIO( MDATE, MTIME, METNCOLS, METNROWS, LAT, LON,
      &                  PRSFC, TASFC, PINE, DECD, CONF, AGRC, LEAF,
      &                  OTHR, AVLAI, NORNO, PARTYPE, EMPOL )
 

@@ -82,6 +82,7 @@ C...........   Other local variables
         LOGICAL      :: EFLAG = .FALSE. ! error flag
 
         CHARACTER(LEN=IOVLEN3)   CPOL     ! tmp pol/act buffer
+        CHARACTER(LEN=IOULEN3)   BNUM     ! tmp biogenic units numerator
         CHARACTER*300            MESG     ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'MRGVNAMS' ! program name
@@ -319,6 +320,14 @@ C.........  If there are multiple pollutants per species, the last pollutant
 C           will be put in the index.
 C.........  Also create the speciation units per pollutant
         IF( SFLAG ) THEN
+
+C.............  Create temporary name for numerator of biogenic units
+C.............  Assumes that the units will be the same for the biogenic input
+            IF ( BFLAG ) THEN
+                L2 = INDEX( BOUNITS( 1 ), '/' )
+                BNUM = BOUNITS( 1 )( 1:L2-1 )
+            END IF 
+
             DO I = 1, NSMATV
 
 C.................  Get positions of pollutants and model species
@@ -337,6 +346,13 @@ C                   set units accordingly.  Set it based on the first one found.
                     IF( AFLAG ) THEN
                         M = INDEX1( TSVDESC( I ), ANSMATV, ASVDESC )
                         IF( M .GT. 0 ) SPCUNIT( J ) = ASVUNIT( M )
+                    END IF
+
+                    IF( BFLAG ) THEN
+                        M = INDEX1( TSVDESC( I ), BNSMATV, BSVDESC )
+                        L = LEN_TRIM( BNUM )
+                        IF( M .GT. 0 ) SPCUNIT( J ) = BNUM( 1:L ) // '/'
+     &                                             // BNUM( 1:L )
                     END IF
 
                     IF( MFLAG ) THEN

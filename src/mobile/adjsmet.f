@@ -59,31 +59,36 @@ C...........   EXTERNAL FUNCTIONS
         CHARACTER*2  CRLF
         INTEGER      FINDR1
         INTEGER      FINDR2
+        INTEGER      STR2INT
 
-        EXTERNAL     CRLF, FINDR1, FINDR2
+        EXTERNAL     CRLF, FINDR1, FINDR2, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT    (IN) :: NSRCIN           ! no. sources
-        INTEGER     , INTENT    (IN) :: NALL             ! no. valid values
-        INTEGER     , INTENT    (IN) :: NVALID           ! no. valid combos
-        REAL        , INTENT    (IN) :: MINV_MIN         ! min of minimum vals
-        REAL        , INTENT    (IN) :: MINV_MAX         ! max of minimum vals
-        REAL        , INTENT    (IN) :: MAXV_MIN         ! min of maximum vals
-        REAL        , INTENT    (IN) :: MAXV_MAX         ! max of maximum vals
-        REAL        , INTENT    (IN) :: VINTRVL          ! interval for vals
-        REAL        , INTENT    (IN) :: MXINTRVL         ! max allowed interval
-        CHARACTER(*), INTENT    (IN) :: DESC             ! data description
-        REAL        , INTENT    (IN) :: VALIDALL( NALL   )! values table
-        REAL        , INTENT    (IN) :: VALIDMIN( NVALID )! min/max table
-        REAL        , INTENT    (IN) :: VALIDMAX( NVALID )! min/max table
-        REAL        , INTENT(IN OUT) :: MINBYSRC( NSRCIN )! min values
-        REAL        , INTENT(IN OUT) :: MAXBYSRC( NSRCIN )! max values
-        INTEGER     , INTENT   (OUT) :: METIDX( NSRCIN,4 )! idx to valid min/max
+        INTEGER     , INTENT    (IN) :: NSRCIN              ! no. sources
+        INTEGER     , INTENT    (IN) :: NALL                ! no. valid values
+        INTEGER     , INTENT    (IN) :: NVALID              ! no. valid combos
+        REAL        , INTENT    (IN) :: MINV_MIN            ! min of minimum vals
+        REAL        , INTENT    (IN) :: MINV_MAX            ! max of minimum vals
+        REAL        , INTENT    (IN) :: MAXV_MIN            ! min of maximum vals
+        REAL        , INTENT    (IN) :: MAXV_MAX            ! max of maximum vals
+        REAL        , INTENT    (IN) :: VINTRVL             ! interval for vals
+        REAL        , INTENT    (IN) :: MXINTRVL            ! max allowed interval
+        CHARACTER(*), INTENT    (IN) :: DESC                ! data description
+        REAL        , INTENT    (IN) :: VALIDALL( NALL   )  ! values table
+        REAL        , INTENT    (IN) :: VALIDMIN( NVALID )  ! min/max table
+        REAL        , INTENT    (IN) :: VALIDMAX( NVALID )  ! min/max table
+        REAL        , INTENT(IN OUT) :: MINBYSRC( NSRCIN,4 )! min values
+        REAL        , INTENT(IN OUT) :: MAXBYSRC( NSRCIN,4 )! max values
+        INTEGER     , INTENT   (OUT) :: METIDX( NSRCIN,4 )  ! idx to valid min/max
 
 C...........   Other local variables
         INTEGER       J, L, S      ! counters and indices
 
+        INTEGER       FIP          ! tmp country/state/county code
         INTEGER       K( 4 )       ! values
+        INTEGER       LFIP         ! previous country/state/county code
+        INTEGER       LRWT         ! previous roadway type
+        INTEGER       RWT          ! tmp roadway type
         INTEGER       T1, T2       ! tmp indices
 
         DOUBLE PRECISION :: MNVMN       ! tmp min variable min
@@ -99,10 +104,12 @@ C...........   Other local variables
         REAL          VMAX2        ! tmp max value
         REAL          VMIN         ! tmp min value
         REAL          VMIN2        ! tmp min value
+        REAL          VTMP         ! even more tmp value
 
+        LOGICAL          CHKDIFF            ! true: tmpr diffs are equal
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL       :: EFLAG    = .FALSE. ! true: error found
-        LOGICAL          CHKDIFF            ! true: tmpr diffs are equal
+        LOGICAL       :: RFLAG    = .FALSE. ! true: reporting okay
 
         CHARACTER*300 BUFFER        ! formatted source info for messages
         CHARACTER*300 MESG          ! message buffer
@@ -132,43 +139,67 @@ C           matching
         MXVMN = DBLE( MAXV_MIN )
         MXVMX = DBLE( MAXV_MAX )
         VINTV = DBLE(  VINTRVL )
-        VMXIT = DBLE( MXINTRVL )
+
+C.........  Reduce VMXIT by one interval so that VMIN,VMAX2 combination will 
+C           work when VMAX - VMIN is very close to VMXIT before adjustment.
+        VMXIT = DBLE( MXINTRVL ) - VINTV
         
 C.........  Loop through sources and process for minimum and maximum daily
 C           values
+        LFIP = 0
+        LRWT = 0
         DO S = 1, NSRCIN
 
             CSRC = CSOURC( S )
+            FIP = STR2INT( CSRC( SC_BEGP(1):SC_ENDP(1) ) )
+            RWT = STR2INT( CSRC( SC_BEGP(2):SC_ENDP(2) ) )
 
-            VAL = DBLE( MINBYSRC( S ) )
+            VAL = DBLE( MINBYSRC( S,1 ) )
 
 C.............  Screen for missing values
             IF( VAL .LT. AMISS3 ) CYCLE
 
+C..............  Set report flag
+            RFLAG = ( FIP .NE. LFIP .OR. RWT .NE. LRWT )
+
 C..............  Round min value DOWN to nearest on interval
             IF    ( VAL .LT. MNVMN ) THEN
 
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                WRITE( MESG, 94020 )
+                IF ( RFLAG ) THEN
+                    CALL FMTCSRC( CSRC, 2, BUFFER, L )
+                    WRITE( MESG, 94020 )
      &                 'Increasing minimum '  // DESC // ' from',
      &                 VAL, 'to', MINV_MIN, 'for source' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
-                CALL M3MESG( MESG )
+                    CALL M3MESG( MESG )
+                END IF
 
-                MINBYSRC( S ) = MINV_MIN 
+                MINBYSRC( S,1 ) = MINV_MIN 
                 VMIN          = MNVMN
 
-            ELSEIF( VAL .GT. MNVMX ) THEN
+C.............  Set to two steps *below* max, because we need one extra space
+C               to allow for interpolation, and we need another extra space
+C               because the MNVMX is not valid in the min/max temperature
+C               combinations because of roundoff error.
+C.............  Don't reset MINBYSRC since interpolation will permit value
+C               to be at VMIN2.
+            ELSEIF( VAL .GT. MNVMX - VINTV ) THEN
 
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                WRITE( MESG, 94020 )
+C.................  Set VMIN to 2 less than MNVMX - this works.
+                VMIN = MNVMN + VINTV *
+     &                 INT( ( MNVMX - MNVMN - VINTV ) / VINTV )
+
+                VTMP = REAL( VMIN )
+                MINBYSRC( S,1 ) = REAL( VMIN )
+
+                IF ( RFLAG ) THEN
+                    CALL FMTCSRC( CSRC, 2, BUFFER, L )
+                    WRITE( MESG, 94020 )
      &                 'Decreasing minimum '  // DESC // ' from',
-     &                 VAL, ' to', MINV_MAX, 'for source' //
+     &                 VAL, ' to', VTMP, 'for source' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
-                CALL M3MESG( MESG )
-
-                MINBYSRC( S ) = MINV_MAX
-                VMIN          = MNVMX
+                    CALL M3MESG( MESG )
+                END IF
 
             ELSE 
                 VMIN = REAL( MNVMN + VINTV *
@@ -177,33 +208,38 @@ C..............  Round min value DOWN to nearest on interval
             END IF
 
 C.............  Round max value to nearest on interval
-            VAL = MAXBYSRC( S )
+            VAL = MAXBYSRC( S,1 )
 
             IF    ( VAL .LT. MXVMN ) THEN
 
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                WRITE( MESG, 94020 )
+                IF ( RFLAG ) THEN
+                    CALL FMTCSRC( CSRC, 2, BUFFER, L )
+                    WRITE( MESG, 94020 )
      &                 'Increasing maximum '  // DESC // ' from',
      &                 VAL, ' to', MAXV_MIN, 'for source' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
-                CALL M3MESG( MESG )
+                    CALL M3MESG( MESG )
+                END IF
 
-                MAXBYSRC( S ) = MAXV_MIN
+                MAXBYSRC( S,1 ) = MAXV_MIN
                 VMAX = MXVMN
 
 C.............  Set to one step *below* max, because we need the extra space
-C               to allow for interpolation
+C               to allow for interpolation.  No need to reset MAXBYSRC, because
+C               interpolation will permit maximum value at the maximum.
             ELSE IF( VAL .GT. MXVMX ) THEN
 
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                WRITE( MESG, 94020 )
+                IF ( RFLAG ) THEN
+                    CALL FMTCSRC( CSRC, 2, BUFFER, L )
+                    WRITE( MESG, 94020 )
      &                 'Decreasing maximum '  // DESC // ' from', 
      &                 VAL, 'to', MAXV_MAX, 'for source' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
 
-                CALL M3MESG( MESG )
+                    CALL M3MESG( MESG )
+                END IF
 
-                MAXBYSRC( S ) = MAXV_MAX 
+                MAXBYSRC( S,1 ) = MAXV_MAX 
                 VMAX = MXVMX - VINTV
 
 C.............  Compute VMAX from basis of MXVMN to compute in same way as 
@@ -217,24 +253,29 @@ C               the valid temperature lists are computed.
 C..............  Ensure relationship between TMIN and TMAX is valid
 C..............  When difference greater than the maximum interval
 C                set VMIN from VMAX, and adjust down on interval
-C..............  Set VMIN to one interval greater than needed to ensure
+C..............  Set VMIN to interval greater than needed to ensure
 C                max interval relationship holds for all min/max tmpr combos
+C..............  VMXIT has already be reduced by one interval so that VMIN,VMAX2
+C                combination will work when VMAX - VMIN is very close to 
+C                VMXIT before adjustment.
             IF( VMAX - VMIN .GE. VMXIT ) THEN
                 MSAV = VMIN
-                VMIN = VMAX - ( VMXIT - VINTV - 1. )
+                VMIN = VMAX - ( VMXIT - 1. )
                 VMIN = MNVMN + VINTV *
      &                 INT( ( VMIN - MNVMN ) / VINTV )
 
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                WRITE( MESG, 94020 ) 'Max - min ' // DESC // ' is > ' //
+                IF ( RFLAG ) THEN
+                    CALL FMTCSRC( CSRC, 2, BUFFER, L )
+                    WRITE( MESG, 94020 ) 'Max - min '//DESC// ' is > '//
      &                 'defined maximum interval', MXINTRVL, 'for' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.' //
      &                 CRLF() // BLANK10 // 
      &                 'Increasing min from', MSAV, 'to', VMIN
-                CALL M3MESG( MESG )
+                    CALL M3MESG( MESG )
+                END IF
 
 C.................  Store new minimum value for source
-                MINBYSRC( S ) = VMIN
+                MINBYSRC( S,1 ) = VMIN
 
             END IF
 
@@ -244,16 +285,20 @@ C               to zero. Use logical expression to test for equality
             CHKDIFF = ( ABS( VMAX - VMIN - VINTV ) .LE. 1.0E-4 )
             IF( VMAX - VMIN .LT. VINTV .OR. CHKDIFF ) THEN
 
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                WRITE( MESG, 94020 ) 'Max - min ' // DESC // ' is < ' //
-     &                 'the processing interval', VINTRVL, 'for' //
+                VMIN = MNVMN + VINTV *
+     &                 INT( ( VMAX - VINTV - 1. - MNVMN ) / VINTV )
+
+
+C.................  Write our message for new country/state/county code
+                IF ( RFLAG ) THEN
+                    CALL FMTCSRC( CSRC, 2, BUFFER, L )
+                    WRITE( MESG, 94020 ) 'Max - min ' // DESC // 
+     &                 ' is < the processing interval', VINTRVL, 'for'//
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.' //
      &                 CRLF() // BLANK10 // 'The minumum ' //
      &                 'interval will be used for current day.'
-                CALL M3MESG( MESG )
-
-                VMIN = MNVMN + VINTV *
-     &                 INT( ( VMAX - VINTV - 1. - MNVMN ) / VINTV )
+                    CALL M3MESG( MESG )
+                END IF
 
 C.................  If adjustment has moved minimum out of range, set it to
 C                   minimum and reset maximum to have a range with no overlap
@@ -264,12 +309,12 @@ C                   with minimum range.
 
                     VMAX = REAL( MNVMN + VINTV *
      &                     INT(( MINV_MIN+ 2*VINTV +1. -MNVMN)/ VINTV ))
-                    MAXBYSRC( S ) = VMAX - VINTV + 1.0E-4
+                    MAXBYSRC( S,1 ) = VMAX - VINTV + 1.0E-4
 
                 END IF
 
 C.................  Store new minimum value for source
-                MINBYSRC( S ) = VMIN
+                MINBYSRC( S,1 ) = VMIN
 
             END IF
 
@@ -320,6 +365,9 @@ C               combos list
             END IF
 
             METIDX( S,1:4 ) = K( 1:4 )   ! array
+
+            LFIP = FIP
+            LRWT = RWT
 
         END DO
 

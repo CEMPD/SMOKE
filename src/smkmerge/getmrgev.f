@@ -140,15 +140,6 @@ C.........  Retrieve the on/off environment variables
         SFLAG   = ENVYN( 'MRG_SPCMAT_YN', 
      &                   'Use speciation matrices or not', .FALSE., IOS)
 
-        LFLAG   = ENVYN( 'MRG_LAYERS_YN', 
-     &                   'Use layer fractions or not', .FALSE., IOS )
-
-        PINGFLAG = ENVYN( 'SMK_PING_YN', 'Create plume-in-grid ' //
-     &                    'outputs or not', .FALSE., IOS )
-
-        ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', 'Create ASCII elevated '//
-     &                    'sources file or not', .FALSE., IOS )
-
         LMETCHK = ENVYN( 'MRG_METCHK_YN', 'Check consistency ' //
      &                   'of met headers or not', .TRUE., IOS )
 
@@ -176,6 +167,33 @@ C.........  Retrieve the on/off environment variables
      &                   'emissions separately or not', .TRUE., IOS )
 
         LREPANY = ( LREPSTA .OR. LREPCNY )
+
+C.........  Point-source specific environment variables
+        IF ( PFLAG ) THEN
+
+            MESG = 'Use layer fractions or not'
+            LFLAG   = ENVYN( 'MRG_LAYERS_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Create plume-in-grid outputs or not'
+            PINGFLAG = ENVYN( 'SMK_PING_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Create ASCII elevated sources file or not'
+            ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Indicator for including explicit plume ' //
+     &             'rise sources'
+            EXPLFLAG = ENVYN( 'EXPLICIT_PLUMES_YN', MESG, .FALSE., IOS )
+
+C.............  Must be running for UAM-style processing to use explicit...
+            IF( EXPLFLAG .AND. .NOT. ELEVFLAG ) THEN
+                ELEVFLAG = .TRUE.
+                MESG = 'NOTE: ASCII elevated output switched on to be'//
+     &                 'consitent with ' // CRLF() // BLANK10//
+     &                 'EXPLICIT_PLUMES_YN = Y setting.'
+                CALL M3MSG2( MESG )
+            END IF
+
+        END IF
 
 C.........  If temporal processing, set which source categories get by-day 
 C           processing
@@ -243,16 +261,20 @@ C.........  Strange to have elevated ASCII and layer merge at the same time
 
         END IF
 
+C.........  Cannot have layer merge at the same time as explicit plume rise
+        IF( LFLAG .AND. EXPLFLAG ) THEN
+
+            LFLAG = .FALSE.
+            MESG = 'WARNING: Turning off layered merge (MRG_LAYERS_YN'//
+     &             ' = Y) because' // CRLF() // BLANK10 //
+     &             'explicit plume rise being used ' //
+     &             '(EXPLICIT_PLUMES_YN = Y).'
+            CALL M3MSG2( MESG )
+
+        END IF
+
 C.........  Cannot have BFLAG without TFLAG
         IF( BFLAG ) TFLAG = .TRUE.
-
-C.........  Cannot have LFLAG without PFLAG
-C.........  Cannot have elevated or PinG either
-        IF( .NOT. PFLAG ) THEN
-            LFLAG = .FALSE.
-            ELEVFLAG = .FALSE.
-            PINGFLAG = .FALSE.
-        END IF
 
 C.........  Report that flags for reporting inventory emissions, speciated
 C           emissions or not, and controlled emissions or not do not work yet

@@ -22,7 +22,7 @@ pvm: laypoint.pvm
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-LAY=laypoint.o preplm.o plmris.o postplm.o
+LAY=laypoint.o openlayout.o preplm.o plmris.o postplm.o
 #
 laypoint: $(LAY) $(ALLI) $(LIBPATH)
 	echo LAYPOINT:
@@ -41,7 +41,9 @@ laypoint.pvm.debug: $(LAY) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(LAY) $(LIBS_PVMDB)
 
 #
-ELV=elevpoint.o openeout.o plumesti.o wpingstk.o
+ELV=elevpoint.o asgngrps.o openeout.o plumesti.o wpingstk.o mxgrpemis.o \
+    rpelvcfg.o 
+
 #
 elevpoint: $(ELV) $(ALLI) $(LIBPATH)
 	echo ELEVPOINT:
@@ -54,12 +56,24 @@ elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
-laypoint.o: $(MODSOURC) $(MODELEV) $(MODINFO)
+asgngrps.o: $(MODSOURC) $(MODELEV) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ asgngrps.f
+laypoint.o: $(MODSOURC) $(MODELEV) $(MODGRID) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ laypoint.f
-elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO)
+mxgrpemis.o: $(MODSOURC) $(MODELEV) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ mxgrpemis.f
+elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ elevpoint.f
 openeout.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openeout.f
+openlayout.o: $(MODELEV) $(MODGRID) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ openlayout.f
+# TEMPORARY ###
+prclinrc.o: $(MODREPRT) $(MODINFO) 
+	$(FC) $(FFLAGS) -c -o $@ prclinrc.f
+###############
+rpelvcfg.o: $(MODREPRT) $(MODELEV) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rpelvcfg.f
 wpingstk.o: $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ wpingstk.f
 #

@@ -51,8 +51,8 @@ C...........   SUBROUTINE ARGUMENTS
         REAL        , INTENT    (IN) :: VALBYSRC( NSRC ) ! per-source values
         REAL        , INTENT(IN OUT) :: MINBYSRC( NSRC ) ! min (over day) 
         REAL        , INTENT(IN OUT) :: MAXBYSRC( NSRC ) ! max (over day)
-        REAL        , INTENT(IN OUT) :: MINOUT  ( NSRC ) ! min for output
-        REAL        , INTENT(IN OUT) :: MAXOUT  ( NSRC ) ! max for output
+        REAL        , INTENT(IN OUT) :: MINOUT  ( NSRC,4 ) ! min for output
+        REAL        , INTENT(IN OUT) :: MAXOUT  ( NSRC,4 ) ! max for output
 
 C...........   Other local variables
         INTEGER     S           ! counters and indices
@@ -67,10 +67,12 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine DYMINMAX
 
-C.........  For the first time, initialize all entries to missing
+C.........  For the first time, initialize all entries to missing or zero
         IF( INITIAL ) THEN
             MINBYSRC = BADVAL3  ! array
             MAXBYSRC = BADVAL3  ! array
+            MINOUT = 0.         ! array
+            MAXOUT = 0.         ! array
         END IF
 
 C.........  Loop through sources
@@ -104,8 +106,8 @@ C.............  Update the output min/max by source at the end of each
 C               source's day, or if an update is being forced by the 
 C               subroutine argument.
             IF( LUPDOUT .OR. JTIME .EQ. DAYENDT( S ) ) THEN
-                MINOUT( S ) = MINBYSRC( S )
-                MAXOUT( S ) = MAXBYSRC( S )
+                MINOUT( S,1 ) = MINBYSRC( S )
+                MAXOUT( S,1 ) = MAXBYSRC( S )
             END IF
 
         END DO

@@ -73,9 +73,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                INDEX1
         INTEGER                STR2INT
         REAL                   STR2REAL
+        REAL                   YR2DAY 
 
         EXTERNAL    CRLF, ENVYN, GETFLINE, GETNLIST, INDEX1, 
-     &              STR2INT, STR2REAL
+     &              STR2INT, STR2REAL, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
 C...........   NOTE that NDROP and EDROP are not used at present
@@ -135,13 +136,14 @@ C...........   Other local variables
         INTEGER         INY     !  inventory year
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  line counter
-        INTEGER         MXWARN  !  maximum number of warnings
+        INTEGER, SAVE:: MXWARN  !  maximum number of warnings
         INTEGER         NPOL    !  number of pollutants in file
         INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
         INTEGER         SS      !  counter for sources
         INTEGER         TPF     !  tmp temporal adjustments setting
 
         REAL            CEFF    !  tmp control effectiveness
+        REAL            DAY2YR  ! factor to convert from daily data to annual
         REAL            EANN    !  tmp annual-ave emission value
         REAL            EMFC    !  tmp emission factor
         REAL            EOZN    !  tmp ozone-season-ave emission value
@@ -151,8 +153,10 @@ C...........   Other local variables
         REAL            DM, HT, FL, TK, VL  ! Temporary stack parms
 
         LOGICAL, SAVE :: CFLAG              ! true: recalc vel w/ flow & diam
+        LOGICAL, SAVE :: FFLAG    = .FALSE. ! true: fill in 0. annual with seasonal
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: 1st time routine called
         LOGICAL, SAVE :: WFLAG    = .FALSE. ! true: all lat-lons to western hemi
+
 
         CHARACTER*20    CNTRY   !  country name
         CHARACTER*300   MESG    !  message buffer
@@ -160,6 +164,7 @@ C...........   Other local variables
         CHARACTER(LEN=BLIDLEN) BLID  ! tmp boiler ID
         CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVDNAM
         CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
+        CHARACTER(LEN=CHRLEN3) CHAR4 ! tmp characteristic 4
         CHARACTER(LEN=ORSLEN3) CORS  ! tmp DOE plant ID
         CHARACTER(LEN=IOVLEN3) CPOL  ! tmp pollutant code
         CHARACTER(LEN=DESCLEN) DESC  ! tmp plant description
@@ -171,12 +176,8 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDIDAPT
 
-        MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
-
 C.........  Set up settings the first time the subroutine is called
         IF( FIRSTIME ) THEN
-
-            FIRSTIME = .FALSE.
 
 C.............  Get settings from the environment
             CFLAG = ENVYN( 'VELOC_RECALC', 
@@ -184,6 +185,11 @@ C.............  Get settings from the environment
 
             WFLAG = ENVYN( 'WEST_HSPHERE',
      &                 'Western hemisphere flag', .TRUE., IOS )
+
+            MESG = 'Fill in 0. annual data based on seasonal data.'
+            FFLAG = ENVYN( 'FILL_ANN_WSEAS', MESG, .FALSE., IOS )
+
+            MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
 
         ENDIF
 
@@ -383,6 +389,8 @@ C.............  If there has been an error, do not try to store any of the
 C               records.  Instead  go to next line of file.
             IF( EFLAG ) CYCLE
        
+            IF( FIRSTIME ) DAY2YR  = 1. / YR2DAY( INY )
+       
 C.............  Now use the file format definition to parse the LINE into
 C               the various data fields...
 
@@ -467,20 +475,33 @@ C.................  Update start and end positions
                 CPRI = MAX( IMISS3, STR2INT ( LINE( IS(6):IE(6) ) ))
                 CSEC = MAX( IMISS3, STR2INT ( LINE( IS(7):IE(7) ) ))
 
-                IF( NWARN .LT. MXWARN .AND. 
-     &              EANN  .LT. AMISS3 ) THEN
-                    WRITE( MESG,94010 ) 'WARNING: Missing annual ' //
-     &                 'emissions for at line', IREC, 'for ' // CPOL
-                    NWARN = NWARN + 1
-                    CALL M3MESG( MESG )
-                END IF
+                IF( EANN .LT. AMISS3 ) THEN
 
-                IF( NWARN .LT. MXWARN .AND. 
-     &              EOZN  .LT. AMISS3 ) THEN
-                    WRITE( MESG,94010 ) 'WARNING: Missing ozone ' //
-     &                 'season emissions at line', IREC, 'for ' // CPOL
-                    NWARN = NWARN + 1
-                    CALL M3MESG( MESG )
+                    IF( NWARN .LT. MXWARN ) THEN
+                        WRITE( MESG,94010 ) 'WARNING: Missing annual '//
+     &                         'emissions at line', IREC, 'for ' // CPOL
+                        NWARN = NWARN + 1
+                        CALL M3MESG( MESG )
+                    END IF
+
+                    IF ( EOZN .LT. AMISS3 ) THEN
+                        WRITE( MESG,94010 ) 'WARNING: Missing annual '//
+     &                         'AND seasonal emissions at ' //
+     &                         'line', IREC, 'for ' // CPOL
+                        NWARN = NWARN + 1
+                        CALL M3MESG( MESG )
+                    END IF
+
+                ELSE IF ( EOZN .LT. AMISS3 ) THEN
+
+                    IF( NWARN .LT. MXWARN ) THEN
+                        WRITE( MESG,94010 ) 
+     &                         'WARNING: Missing seasonal '//
+     &                         'emissions at line', IREC, 'for ' // CPOL
+                        NWARN = NWARN + 1
+                        CALL M3MESG( MESG )
+                    END IF
+
                 END IF
 
                 IF( NWARN .LT. MXWARN .AND. 
@@ -497,6 +518,22 @@ C.................  Update start and end positions
      &                     'effectiveness at line', IREC, 'for '//CPOL
                     NWARN = NWARN + 1
                     CALL M3MESG( MESG )
+                END IF
+
+C.................  Replace annual data with ozone-season information if
+C                   user option is set
+                IF( FFLAG        .AND. 
+     &              EANN .LE. 0. .AND.
+     &              EOZN .GT. 0.       ) THEN
+
+                    WRITE( MESG,94010 ) 'NOTE: Using seasonal ' //
+     &                     'emissions to fill in annual emissions' //
+     &                     CRLF() // BLANK10 // 'at line', IREC,
+     &                     'for ' // CPOL
+                    CALL M3MESG( MESG )
+
+                    EANN = EOZN * DAY2YR
+
                 END IF
 
 C.................  Store data in final arrays if there is enough memory
@@ -516,9 +553,10 @@ C.................  Store data in final arrays if there is enough memory
                     POLVLA ( ES,NC2 ) = REAL( CSEC ) ! store as real for now
                     
                     WRITE( CCOD,94125 ) J
- 
+
+                    CHAR4 = TSCC 
                     CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
-     &                            TSCC, CHRBLNK3, CCOD, CSOURCA( ES ) )
+     &                            CHAR4, CHRBLNK3, CCOD, CSOURCA( ES ) )
 
                 END IF  !  if ES in range
 
@@ -569,8 +607,10 @@ C.........  Write message if overflow occurred
         END IF
 
 C.........  Deallocate local allocatable arrays 
-
         DEALLOCATE( TMPNAM, DATPOS )
+
+C.........  Make sure routine knows it's been called already
+        FIRSTIME = .FALSE.
 
 C.........  Return from subroutine 
         RETURN

@@ -418,6 +418,16 @@ C.........  Point source fixed-size arrays
             IF( LFLAG ) THEN
                 ALLOCATE( LFRAC( NPSRC,EMLAYS ), STAT=IOS )   ! layer fractions
                 CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
+
+            ELSE IF ( EXPLFLAG ) THEN                     ! Explicit plume rise
+                ALLOCATE( INDXH ( NHRSRC*EMLAYS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INDXH', PROGNAME )
+                ALLOCATE( ELEVSRC( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'ELEVSRC', PROGNAME )
+                ALLOCATE( LFRAC( NHRSRC,EMLAYS ), STAT=IOS )   ! layer fractions
+                CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
+                ELEVSRC = 0  ! array
+
             END IF
 
             IF( ELEVFLAG .OR. PINGFLAG ) THEN

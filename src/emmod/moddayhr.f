@@ -21,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -91,5 +91,11 @@
 
         INTEGER, ALLOCATABLE :: INDXH( : )   ! SMOKE source IDs
         REAL   , ALLOCATABLE :: EMACH( : )   ! hour-specific emis or activities
+
+!.........  Array for reporting about day- and hour-specific data...
+
+C...........   List of ORIS IDs in hour-specific data not in inventory
+        INTEGER, PUBLIC :: NUNFDORS
+        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC :: UNFDORS( : )
 
         END MODULE MODDAYHR

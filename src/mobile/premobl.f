@@ -350,9 +350,9 @@ C.........  Allocate memory for other arrays in the program
         CALL CHECKMEM( IOS, 'TKMIN', PROGNAME )
         ALLOCATE( TKMAX( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TKMAX', PROGNAME )
-        ALLOCATE( TKMINOUT( NSRC ), STAT=IOS )
+        ALLOCATE( TKMINOUT( NSRC,4 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TKMINOUT', PROGNAME )
-        ALLOCATE( TKMAXOUT( NSRC ), STAT=IOS )
+        ALLOCATE( TKMAXOUT( NSRC,4 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TKMAXOUT', PROGNAME )
         ALLOCATE( METIDX( NSRC,4 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'METIDX', PROGNAME )
@@ -460,8 +460,6 @@ C.................  Write message for day of week and date
                 CALL M3MSG2( MESG )
 
 C.................  Set start and end hours of day for all sources
-C.................  The first time this routine is called, ODATE and OTIME
-C                   are set as well
                 CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, 
      &                         DAYBEGT, DAYENDT )
 

@@ -37,6 +37,8 @@
 !
 !****************************************************************************
 
+        INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
+
 !.........  Indices from per-source inventory arrays to county array
         INTEGER, ALLOCATABLE, PUBLIC :: AICNY( : )  ! dim NASRC
         INTEGER, ALLOCATABLE, PUBLIC :: MICNY( : )  ! dim NMSRC
@@ -60,5 +62,13 @@
 
 !.........  Daylight time exemptions (false is exempt)
         LOGICAL, ALLOCATABLE, PUBLIC :: USEDAYLT( : )  ! true: use daylight time
+
+!.........  ORIS list with state and county codes
+        INTEGER, PUBLIC :: NORIS     ! Number of all ORIS codes
+
+        INTEGER, ALLOCATABLE, PUBLIC :: ORISFIP( : ) ! country/state/county code
+        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC :: ORISLST( : ) ! ORIS codes
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC :: ORISDSC( : ) ! ORIS desc
+        
 
         END MODULE MODSTCY

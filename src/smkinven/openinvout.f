@@ -91,9 +91,12 @@ C              as NPPOL > NPACT, which is expected to always be the case
         CHARACTER(LEN=IOULEN3), ALLOCATABLE :: AOUNITS( :,: ) ! Units  
         CHARACTER(LEN=IODLEN3), ALLOCATABLE :: AODESCS( :,: ) ! Dscriptions  
 
+C...........   Other local allocatable arrays
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SAVEANAM( : )  ! tmp variables
+
 C...........   Other local variables
 
-        INTEGER       I, J, K, L, L1, L2, V     ! counter and indices
+        INTEGER       I, J, K, L, L2, V, V1, V2     ! counter and indices
 
         INTEGER       IOS       ! i/o status
         INTEGER       LEQU      ! position of '=' in formula
@@ -106,12 +109,14 @@ C...........   Other local variables
 
         LOGICAL    :: CHKPLUS  = .FALSE. ! true: formula uses a + sign
         LOGICAL    :: CHKMINUS = .FALSE. ! true: formula uses a - sign
+        LOGICAL    :: EFLAG    = .FALSE. ! true: error found
 
         CHARACTER*60  VAR_FORMULA
         CHARACTER*300 MESG      ! message buffer 
 
         CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
         CHARACTER(LEN=IOVLEN3)  VIN_A
+        CHARACTER(LEN=IOVLEN3)  VIN_B
         CHARACTER(LEN=IOVLEN3)  VNAME
         CHARACTER(LEN=IOULEN3)  UNITS  ! tmp units name
 
@@ -375,6 +380,121 @@ C.................  Store variable names and information
 
         END DO        !  end loop on inventory pollutants V
 
+C.........  If there is a computed output variable, add it to the variable list.
+C           Base the other variable settings (besides the name) on the first 
+C           of the two variables in the formula.
+        IF( VAR_FORMULA .NE. ' ' ) THEN
+
+C.............  Make sure formula makes sense
+            L2   = LEN_TRIM( VAR_FORMULA ) 
+            LEQU = INDEX( VAR_FORMULA, '=' )
+            LPLS = INDEX( VAR_FORMULA, '+' )
+            LMNS = INDEX( VAR_FORMULA, '-' )
+
+            CHKPLUS  = ( LPLS .GT. 0 )
+            CHKMINUS = ( LMNS .GT. 0 )
+
+            LDIV = LPLS
+            IF( CHKMINUS ) LDIV = LMNS
+
+            IF( LEQU .LE. 0 .OR. 
+     &        ( .NOT. CHKPLUS .AND. .NOT. CHKMINUS ) ) THEN
+
+                L = LEN_TRIM( FORMEVNM )
+                MESG = 'Could not interpret formula for extra ' //
+     &                 'pollutant from environment variable ' //
+     &                 CRLF() // BLANK10 // '"' // FORMEVNM( 1:L ) //
+     &                 '": ' // VAR_FORMULA
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Extract formula variable names
+            VNAME = ADJUSTL ( VAR_FORMULA(      1:LEQU-1 ) )
+            VIN_A = ADJUSTL ( VAR_FORMULA( LEQU+1:LDIV-1 ) )
+            VIN_B = ADJUSTL ( VAR_FORMULA( LDIV+1:L2     ) )
+
+C.............  Find formula inputs in existing variable list
+            V1 = INDEX1( VIN_A, NIPOL, EINAM )
+            V2 = INDEX1( VIN_B, NIPOL, EINAM )
+
+            IF( V1 .LE. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( VIN_A )
+                MESG = 'ERROR: Variable "'// VIN_A( 1:L ) // '" from '//
+     &                 'formula was not found in emissions inputs.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF( V2 .LE. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( VIN_B )
+                MESG = 'ERROR: Variable "'// VIN_B( 1:L ) // '" from '//
+     &                 'formula was not found in emissions inputs.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            V1 = INDEX1( VIN_A, NIACT, ACTVTY )
+            V2 = INDEX1( VIN_B, NIACT, ACTVTY )
+
+            IF( V1 .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( VIN_A )
+                MESG = 'ERROR: Variable "'// VIN_A( 1:L )// '" is an'//
+     &                 'activity, which is not allowed in a formula.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF( V2 .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( VIN_B )
+                MESG = 'ERROR: Variable "'// VIN_B( 1:L )// '" is an'//
+     &                 'activity, which is not allowed in a formula.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( EFLAG ) THEN
+                MESG = 'ERROR: Problem processing formulas.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            V = INDEX1( VIN_A, NIPPA, EANAM )
+            DO I = 1, NPPOL ! Loop through number of variables per pollutant
+
+                L = LEN_TRIM( VIN_A )
+                L = INDEX( EONAMES( V, I ), VIN_A(1:L) )
+                IF ( L .GT. 1 ) THEN
+        	    VNAME3D( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
+                ELSE
+                    VNAME3D( J ) = VNAME
+                END IF
+        	VTYPE3D( J ) = EOTYPES( V, I )
+        	UNITS3D( J ) = EOUNITS( V, I )
+        	VDESC3D( J ) = EODESCS( V, I )
+        	J = J + 1
+
+            END DO    !  end loop on number of variables per pollutant
+
+C.............  Update header settings
+            NVARS3D = NVARS3D + NPPOL
+            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
+
+C.............  Update EANAM, in case needed for day- and hour-specific data
+            ALLOCATE( SAVEANAM( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SAVEANAM', PROGNAME )
+            SAVEANAM = EANAM       ! array
+
+            DEALLOCATE( EANAM )
+            ALLOCATE( EANAM( NIPPA+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
+
+            EANAM( 1:NIPOL ) = SAVEANAM( 1:NIPOL )
+            EANAM( NIPOL+1 ) = VNAME
+            EANAM( NIPOL+2:NIPPA+1 ) = SAVEANAM( NIPOL+1:NIPPA )
+            NIPPA = NIPPA + 1
+            DEALLOCATE( SAVEANAM )
+
+        END IF
+
 C.........  Allocate names for activities
         ALLOCATE( AONAMES( NIACT,NPACT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AONAMES', PROGNAME )
@@ -415,71 +535,6 @@ C.................  Store variable names and information
             END DO    !  end loop on number of variables per activity
 
         END DO        !  end loop on inventory activities V
-
-C.........  If there is a computed output variable, add it to the variable list.
-C           Base the other variable settings (besides the name) on the first 
-C           of the two variables in the formula.
-        IF( VAR_FORMULA .NE. ' ' ) THEN
-
-C.............  Make sure not using activities - not supported 
-            IF( NIACT .GT. 0 ) THEN
-                MESG = 'Formula not support when using activities'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Make sure formula makes sense
-            LEQU = INDEX( VAR_FORMULA, '=' )
-            LPLS = INDEX( VAR_FORMULA, '+' )
-            LMNS = INDEX( VAR_FORMULA, '-' )
-
-            CHKPLUS  = ( LPLS .GT. 0 )
-            CHKMINUS = ( LMNS .GT. 0 )
-
-            LDIV = LPLS
-            IF( CHKMINUS ) LDIV = LMNS
-
-            IF( LEQU .LE. 0 .OR. 
-     &        ( .NOT. CHKPLUS .AND. .NOT. CHKMINUS ) ) THEN
-
-                L = LEN_TRIM( FORMEVNM )
-                MESG = 'Could not interpret formula for extra ' //
-     &                 'pollutant from environment variable ' //
-     &                 CRLF() // BLANK10 // '"' // FORMEVNM( 1:L ) //
-     &                 '": ' // VAR_FORMULA
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Extract formula variable names
-            VNAME = ADJUSTL ( VAR_FORMULA(      1:LEQU-1 ) )
-            VIN_A = ADJUSTL ( VAR_FORMULA( LEQU+1:LDIV-1 ) )
-
-C.............  Find formula inputs in existing variable list
-            V = INDEX1( VIN_A, NIPPA, EANAM )
-
-            IF( V .LE. 0 ) THEN
-                L = LEN_TRIM( VIN_A )
-                MESG = 'Variable "'// VIN_A( 1:L ) // 
-     &                 '" from formula was not found in inventory.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            DO I = 1, NPPOL ! Loop through number of variables per pollutant
-
-                L = LEN_TRIM( VIN_A )
-                L = INDEX( EONAMES( V, I ), VIN_A(1:L) )
-        	VNAME3D( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
-        	VTYPE3D( J ) = EOTYPES( V, I )
-        	UNITS3D( J ) = EOUNITS( V, I )
-        	VDESC3D( J ) = EODESCS( V, I )
-        	J = J + 1
-
-            END DO    !  end loop on number of variables per pollutant
-
-C.............  Update header settings
-            NVARS3D = NVARS3D + NPPOL
-            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
-
-        END IF
 
 C.........  Prompt for and open I/O API output file
         NAMBUF= PROMPTMFILE( 

@@ -116,9 +116,9 @@
 
 !.........  FIPS code=state default, SCC=0  
 
-        INTEGER               , ALLOCATABLE, PUBLIC :: MPRT04( : )
-        INTEGER               , ALLOCATABLE, PUBLIC :: WPRT04( : )
-        INTEGER               , ALLOCATABLE, PUBLIC :: DPRT04( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: MPRT04( :,: )
+        INTEGER               , ALLOCATABLE, PUBLIC :: WPRT04( :,: )
+        INTEGER               , ALLOCATABLE, PUBLIC :: DPRT04( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL04( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS04( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG04( : )
@@ -153,9 +153,9 @@
         CHARACTER(LEN=STSLEN3), ALLOCATABLE, PUBLIC :: CHRT06( : )
 
 !.........  FIPS code=all, SCC=0
-        INTEGER               , ALLOCATABLE, PUBLIC :: MPRT07( : )
-        INTEGER               , ALLOCATABLE, PUBLIC :: WPRT07( : )
-        INTEGER               , ALLOCATABLE, PUBLIC :: DPRT07( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: MPRT07( :,: )
+        INTEGER               , ALLOCATABLE, PUBLIC :: WPRT07( :,: )
+        INTEGER               , ALLOCATABLE, PUBLIC :: DPRT07( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL07( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS07( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG07( : )

@@ -334,24 +334,22 @@ C               these characteristics will appear earlier in the sorted list
 
                 IF( TSCC .EQ. SCCZERO ) THEN         ! SCC code is default
 
-                    IF( ISP .EQ. 0 ) THEN         ! Pollutant not specified
-                        NT = 4
-                        IF( IFIP .NE. PIFIP( NT ) ) THEN
-                            N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                    NT = 4
+                    IF( IFIP .NE. PIFIP( NT ) ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PIFIP( NT ) = IFIP
 
-                        ELSE
-                            CALL REPORT_DUP_XREF
-                            NT = 0
-                        END IF
-
-                    ELSE                                  ! Report and skip
-                        MESG = 'Cannot use pollutant-specific ' //
-     &                         'Country/State-default'
-                        CALL REPORT_INVALID_XREF( MESG )
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
                         NT = 0
-
                     END IF
+
+c                    ELSE                                  ! Report and skip
+c                        MESG = 'Cannot use pollutant-specific ' //
+c     &                         'Country/State-default'
+c                        CALL REPORT_INVALID_XREF( MESG )
+c                        NT = 0
+c                    END IF
 
                 ELSEIF( SCCR .EQ. SCRZERO ) THEN         ! left SCC
 
@@ -388,24 +386,22 @@ C               these characteristics will appear earlier in the sorted list
 
                 IF( TSCC .EQ. SCCZERO ) THEN            ! SCC code is default
 
-                    IF( ISP .EQ. 0 ) THEN !   & non-FIP field blank
-                        NT = 7
-                        IF( IFIP .NE. PIFIP( NT ) ) THEN
-                            N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                    NT = 7
+                    IF( IFIP .NE. PIFIP( NT ) ) THEN
+                        N( NT ) = N( NT ) + 1
+                        PIFIP( NT ) = IFIP
 
-                        ELSE
-                            CALL REPORT_DUP_XREF
-                            NT = 0
-                        END IF
-
-                    ELSE                                  ! Report and skip
-                        MESG = 'Cannot use pollutant-specific ' //
-     &                         'Country/State/County-default'
-                        CALL REPORT_INVALID_XREF( MESG )
+                    ELSEIF( ISP .EQ. PISP ) THEN
+                        CALL REPORT_DUP_XREF
                         NT = 0
+                    END IF
 
-                   END IF
+c                    ELSE                                  ! Report and skip
+c                        MESG = 'Cannot use pollutant-specific ' //
+c     &                         'Country/State/County-default'
+c                        CALL REPORT_INVALID_XREF( MESG )
+c                        NT = 0
+c                    END IF
 
                 ELSEIF( SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 

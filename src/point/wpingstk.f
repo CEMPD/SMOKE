@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -33,7 +33,7 @@ C
 C env_progs@mcnc.org
 C  
 C Pathname: $Source$
-C Last updated: %G 
+C Last updated: $Date$ 
 C  
 C***********************************************************************
 
@@ -64,7 +64,6 @@ C...........   LOCAL PARAMETERS
 
 C...........   Local variables allocatable arrays
 C...........   These are for sorting groups and outputting in sorted order
-        INTEGER, ALLOCATABLE :: LOCIDX( : )
         INTEGER, ALLOCATABLE :: LOCGID( : )
         INTEGER, ALLOCATABLE :: LOCCNT( : )
         INTEGER, ALLOCATABLE :: LOCCOL( : )
@@ -94,8 +93,6 @@ C***********************************************************************
 C   begin body of subroutine WPINGSTK
 
 C.........  Allocate memory for local arrays
-        ALLOCATE( LOCIDX( NGROUP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LOCIDX', PROGNAME )
         ALLOCATE( LOCGID( NGROUP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LOCGID', PROGNAME )
         ALLOCATE( LOCCNT( NGROUP ), STAT=IOS )
@@ -198,7 +195,7 @@ C.........  Store sorted information
         END IF
 
 C.........  Deallocate local memory
-        DEALLOCATE( LOCIDX, LOCGID, LOCCNT, LOCCOL, LOCROW,
+        DEALLOCATE( LOCGID, LOCCNT, LOCCOL, LOCROW,
      &              LOCDM, LOCFL, LOCHT, LOCLAT, LOCLON, LOCTK,
      &              LOCVE, LOCXL, LOCYL )
 

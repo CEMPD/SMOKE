@@ -1,6 +1,6 @@
 
-        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, ENAM, 
-     &                       MASSMATX, MOLEMATX )
+        SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, SDEV, 
+     &                       ENAM, MASSMATX, MOLEMATX )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -22,13 +22,13 @@ C
 C  REVISION  HISTORY:
 C     Created 2/99 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -77,6 +77,7 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: MOLEOUT        ! true: create mole-based
         LOGICAL     , INTENT    (IN) :: REPORT         ! true: rep defaults
         INTEGER     , INTENT    (IN) :: NSRCIN         ! number of sources
+        INTEGER     , INTENT    (IN) :: SDEV           ! suplmt file unit no.
         CHARACTER(*), INTENT    (IN) :: ENAM    ! pol/emis type name of interest
         REAL        , INTENT(IN OUT) :: MASSMATX( NSRCIN,* )! mass spec matx
         REAL        , INTENT(IN OUT) :: MOLEMATX( NSRCIN,* )! mole spec matx
@@ -171,6 +172,9 @@ C.........  Initialize matrices to 0.
         IF( MOLEOUT ) THEN
             MOLEMATX( :,1:MXSPEC ) = 0.    ! array
         END IF
+
+C.........  Write pollutant of interest to the supplemental file
+        WRITE( SDEV, '(A)' ) '"' // ENAM // '"'
 
 C.........  Find index in complete list of pollutants and set length of name
         V  = INDEX1( ENAM, NIPPA, EANAM ) 
@@ -573,6 +577,14 @@ C.................  Get indices to full speciation table
 
                 END DO 
 
+            END IF
+
+C.............  Write speciation profile code by source to the speciation
+C               supplemental file (to be used by Smkreport)
+            IF ( K .GT. 0 ) THEN
+                WRITE( SDEV, '(A)' ) SPROFN( K )
+            ELSE
+                WRITE( SDEV, '(A)' ) 'Drop'
             END IF
 
 C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------

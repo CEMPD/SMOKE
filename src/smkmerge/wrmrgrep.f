@@ -604,11 +604,21 @@ C               strings will look right-justified in the file.
                 WIDTHS ( J ) = MAX( WIDTHS( J ), L2 )
 
                 I1 = WIDTHS( J ) - L1
-                WRITE( OUTNAMS( J ), '(A,A)' ) SPACE( 1:I1 ), 
-     &                                         INNAMS( J )( 1:L1 )
+                IF( I1 .GT. 0 ) THEN
+                    WRITE( OUTNAMS( J ), '(A,A)' ) SPACE( 1:I1 ), 
+     &                                             INNAMS( J )( 1:L1 )
+                ELSE
+                    WRITE( OUTNAMS( J ), '(A)' ) INNAMS( J )( 1:L1 )
+                END IF
+
                 I2 = WIDTHS( J ) - L2
-                WRITE( OUTUNIT( J ), '(A,A)' ) SPACE( 1:I2 ), 
-     &                                         INUNIT( J )( 1:L2 )
+                IF( I2 .GT. 0 ) THEN
+                    WRITE( OUTUNIT( J ), '(A,A)' ) SPACE( 1:I2 ), 
+     &                                             INUNIT( J )( 1:L2 )
+                ELSE
+                    WRITE( OUTUNIT( J ), '(A)' ) INUNIT( J )( 1:L2 )
+                END IF
+
             END DO
 
 C.............  Create format statement for output of header

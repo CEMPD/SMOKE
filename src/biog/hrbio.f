@@ -64,7 +64,11 @@ C Last updated: $Date$
 C
 C***********************************************************************
 
-      IMPLICIT NONE
+C...........   Modules for public variables
+C...........   This module contains the global variables for the 3-d grid
+        USE MODGRID
+
+        IMPLICIT NONE
 
 C...........   INCLUDES:
 
@@ -84,24 +88,24 @@ C...........   ARGUMENTS and their descriptions:
 
         INTEGER, INTENT (IN)  :: JDATE   !  current simulation date (YYYYDDD)
         INTEGER, INTENT (IN)  :: JTIME   !  current simulation time (HHMMSS)
-        INTEGER, INTENT (IN)  :: NX      !  no. columnse
-        INTEGER, INTENT (IN)  :: NY      !  no. rows 
+        INTEGER, INTENT (IN)  :: NX      !  no. met columns
+        INTEGER, INTENT (IN)  :: NY      !  no. met rows 
         INTEGER, INTENT (IN)  :: PARTYPE !  KUO, KF, no deep cumulus param (2,3,or 4)
 
-        REAL, INTENT (IN)  ::  LAT  ( NX, NY )  !  lat (deg) -90 <= LAT <= 90
-        REAL, INTENT (IN)  ::  LON  ( NX, NY )  !  lon (deg) -180 <= LON <= 180 
-        REAL, INTENT (IN)  ::  PRES ( NX, NY )  !  pressure (Pa)
-        REAL, INTENT (IN)  ::  TA   ( NX, NY )  !  air temperature (K)
-        REAL, INTENT (IN)  ::  PINE ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  DECD ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  CONF ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  AGRC ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  LAI  ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  OTHR ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  AVLAI( NX, NY )              !  average LAI
-        REAL, INTENT (IN)  ::  NORNO( NX, NY, LUSES )       !  nor NO  emissions
+        REAL, INTENT (IN) :: LAT  ( NX, NY )  !  lat (deg) -90 <= LAT <= 90
+        REAL, INTENT (IN) :: LON  ( NX, NY )  !  lon (deg) -180 <= LON <= 180 
+        REAL, INTENT (IN) :: PRES ( NX, NY )  !  pressure (Pa)
+        REAL, INTENT (IN) :: TA   ( NX, NY )  !  air temperature (K)
+        REAL, INTENT (IN) :: PINE ( NCOLS, NROWS, BSPCS-1 )! nor VOC emissions
+        REAL, INTENT (IN) :: DECD ( NCOLS, NROWS, BSPCS-1 )! nor VOC emissions
+        REAL, INTENT (IN) :: CONF ( NCOLS, NROWS, BSPCS-1 )! nor VOC emissions
+        REAL, INTENT (IN) :: AGRC ( NCOLS, NROWS, BSPCS-1 )! nor VOC emissions
+        REAL, INTENT (IN) :: LAI  ( NCOLS, NROWS, BSPCS-1 )! nor VOC emissions
+        REAL, INTENT (IN) :: OTHR ( NCOLS, NROWS, BSPCS-1 )! nor VOC emissions
+        REAL, INTENT (IN) :: AVLAI( NCOLS, NROWS )         ! average LAI
+        REAL, INTENT (IN) :: NORNO( NCOLS, NROWS, LUSES )  ! nor NO  emissions
 
-        REAL, INTENT (OUT)  ::  EMPOL ( NX, NY, BSPCS )       !  output  emissions
+        REAL, INTENT(OUT) :: EMPOL( NCOLS, NROWS, BSPCS )  ! output  emissions
 
 
 C...........   PARAMETERS and their descriptions:
@@ -139,7 +143,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            CFNOA     !  NO   corr fac for land use AGRI
         REAL            CFOVOC    !  non-isop corr fac
         REAL            DAYINC    !  Day inc. used in interpolating between days
-        INTEGER         JDAY, JMON, R, C, L, I, J
+        INTEGER         JDAY, JMON, R, C, L, I, J, X, Y
         INTEGER         IOS
         LOGICAL         GETATN
         REAL            AA, BB, CC
@@ -294,6 +298,13 @@ C...........   first, perform the table look up
             DO  R = 1, NY
             DO  C = 1, NX
      
+C.................  Adjust for subgrid
+                X = C - XOFF
+                Y = R - YOFF
+
+                IF( X .LE. 0 .OR. X .GT. NCOLS .OR.
+     &              Y .LE. 0 .OR. Y .GT. NROWS       ) CYCLE
+
                 TAIR = TA( C, R )
 
                 IF (TAIR .LT. 200.0) THEN
@@ -323,7 +334,7 @@ C...........   first, perform the table look up
 
 C...................   Biogenic ISOP emissions (due to photo. activity) zero
 
-                    EMPOL( C,R, NISO ) = 0.0
+                    EMPOL( X,Y, NISO ) = 0.0
 
                 ELSE
 
@@ -390,14 +401,14 @@ C.................  Cycle thru layers
                     CFOTHR = CT * 0.002878 * PAR 
      &                          / SQRT( 1.0 + ALPHA * PAR * PAR )
 
-                    BISOP = PINE( C,R,ISOP ) * CFPINE +
-     &                      DECD( C,R,ISOP ) * CFDECD +
-     &                      CONF( C,R,ISOP ) * CFCONF +
-     &                      LAI ( C,R,ISOP ) * CFCLAI +
-     &                      AGRC( C,R,ISOP ) * CFOTHR +
-     &                      OTHR( C,R,ISOP ) * CFOTHR
+                    BISOP = PINE( X,Y,ISOP ) * CFPINE +
+     &                      DECD( X,Y,ISOP ) * CFDECD +
+     &                      CONF( X,Y,ISOP ) * CFCONF +
+     &                      LAI ( X,Y,ISOP ) * CFCLAI +
+     &                      AGRC( X,Y,ISOP ) * CFOTHR +
+     &                      OTHR( X,Y,ISOP ) * CFOTHR
 
-                    EMPOL( C,R, NISO ) = BISOP
+                    EMPOL( X,Y, NISO ) = BISOP
 
                 END IF                  !  if coszen > 0.02 or not
 
@@ -405,22 +416,22 @@ C.............. calculate other VOCs and MONO emissions
                     
                 CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
 
-                BMONO = ( PINE( C,R,MONO ) +
-     &                    DECD( C,R,MONO ) +
-     &                    CONF( C,R,MONO ) +
-     &                    AGRC( C,R,MONO ) +  
-     &                    LAI ( C,R,MONO ) +
-     &                    OTHR( C,R,MONO )  ) * CFOVOC
+                BMONO = ( PINE( X,Y,MONO ) +
+     &                    DECD( X,Y,MONO ) +
+     &                    CONF( X,Y,MONO ) +
+     &                    AGRC( X,Y,MONO ) +  
+     &                    LAI ( X,Y,MONO ) +
+     &                    OTHR( X,Y,MONO )  ) * CFOVOC
 
-                BOVOC = ( PINE( C,R,OVOC ) +
-     &                    DECD( C,R,OVOC ) +
-     &                    CONF( C,R,OVOC ) +
-     &                    AGRC( C,R,OVOC ) + 
-     &                    LAI ( C,R,OVOC ) +
-     &                    OTHR( C,R,OVOC )  ) * CFOVOC
+                BOVOC = ( PINE( X,Y,OVOC ) +
+     &                    DECD( X,Y,OVOC ) +
+     &                    CONF( X,Y,OVOC ) +
+     &                    AGRC( X,Y,OVOC ) + 
+     &                    LAI ( X,Y,OVOC ) +
+     &                    OTHR( X,Y,OVOC )  ) * CFOVOC
 
-                EMPOL( C,R, NTERP ) = BMONO
-                EMPOL( C,R, NOVOC ) = BOVOC
+                EMPOL( X,Y, NTERP ) = BMONO
+                EMPOL( X,Y, NOVOC ) = BOVOC
 
 
 C...........   Compute correction factors for NO, NO emissions:
@@ -448,10 +459,10 @@ C80              CONTINUE
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,FORE ) * CFNOF +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( X,Y, NNO ) =  NORNO( X,Y,GRAS ) * CFNOG +
+     &                                   NORNO( X,Y,FORE ) * CFNOF +
+     &                                   NORNO( X,Y,WETL ) * CFNOW +
+     &                                   NORNO( X,Y,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 268.3804 ) THEN     !  no forest NO
 
@@ -459,27 +470,27 @@ C80              CONTINUE
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( X,Y, NNO ) =  NORNO( X,Y,GRAS ) * CFNOG +
+     &                                   NORNO( X,Y,WETL ) * CFNOW +
+     &                                   NORNO( X,Y,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 265.11111 ) THEN    !  no forest, wet NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( X,Y, NNO ) =  NORNO( X,Y,GRAS ) * CFNOG +
+     &                                   NORNO( X,Y,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 259.8333 ) THEN     ! NO from grass only
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
 
-                    EMPOL( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG
+                    EMPOL( X,Y, NNO ) = NORNO( X,Y,GRAS ) * CFNOG
 
                 ELSE       !  else tair <= 259.8333
 
-                    EMPOL( C,R, NNO ) = 0.0
+                    EMPOL( X,Y, NNO ) = 0.0
 
                 END IF          !  5-way conditional on TAIR
 
@@ -518,23 +529,23 @@ C............ Compute OVOC and MONO emissions
 
                 CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
 
-                BMONO  = ( PINE( C,R,MONO ) +
-     &                     DECD( C,R,MONO ) +
-     &                     CONF( C,R,MONO ) +
-     &                     AGRC( C,R,MONO ) +  
-     &                     LAI ( C,R,MONO ) +
-     &                     OTHR( C,R,MONO )  ) * CFOVOC
+                BMONO  = ( PINE( X,Y,MONO ) +
+     &                     DECD( X,Y,MONO ) +
+     &                     CONF( X,Y,MONO ) +
+     &                     AGRC( X,Y,MONO ) +  
+     &                     LAI ( X,Y,MONO ) +
+     &                     OTHR( X,Y,MONO )  ) * CFOVOC
 
-                BOVOC  = ( PINE( C,R,OVOC ) +
-     &                     DECD( C,R,OVOC ) +
-     &                     CONF( C,R,OVOC ) +
-     &                     AGRC( C,R,OVOC ) +  
-     &                     LAI ( C,R,OVOC ) +
-     &                     OTHR( C,R,OVOC )  ) * CFOVOC
+                BOVOC  = ( PINE( X,Y,OVOC ) +
+     &                     DECD( X,Y,OVOC ) +
+     &                     CONF( X,Y,OVOC ) +
+     &                     AGRC( X,Y,OVOC ) +  
+     &                     LAI ( X,Y,OVOC ) +
+     &                     OTHR( X,Y,OVOC )  ) * CFOVOC
 
-                EMPOL( C,R, NOVOC ) = BOVOC
-                EMPOL( C,R, NTERP ) = BMONO
-                EMPOL( C,R, NISO ) = 0.0
+                EMPOL( X,Y, NOVOC ) = BOVOC
+                EMPOL( X,Y, NTERP ) = BMONO
+                EMPOL( X,Y, NISO ) = 0.0
 
 C...........   Compute correction factors for NO (see note, above)
 
@@ -545,10 +556,10 @@ C...........   Compute correction factors for NO (see note, above)
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,FORE ) * CFNOF +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( X,Y, NNO ) =  NORNO( X,Y,GRAS ) * CFNOG +
+     &                                   NORNO( X,Y,FORE ) * CFNOF +
+     &                                   NORNO( X,Y,WETL ) * CFNOW +
+     &                                   NORNO( X,Y,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 268.3804 ) THEN     !  no forest NO
 
@@ -556,27 +567,27 @@ C...........   Compute correction factors for NO (see note, above)
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( X,Y, NNO ) =  NORNO( X,Y,GRAS ) * CFNOG +
+     &                                   NORNO( X,Y,WETL ) * CFNOW +
+     &                                   NORNO( X,Y,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 265.11111 ) THEN    !  no forest, wetl NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( X,Y, NNO ) =  NORNO( X,Y,GRAS ) * CFNOG +
+     &                                   NORNO( X,Y,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 259.8333 ) THEN     !  only grass NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
 
-                    EMPOL( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG
+                    EMPOL( X,Y, NNO ) = NORNO( X,Y,GRAS ) * CFNOG
 
                 ELSE            !  tair <= 259.8333; no NO
 
-                    EMPOL( C,R, NO ) = 0.0
+                    EMPOL( X,Y, NO ) = 0.0
 
                 END IF          !  5-way conditional on TAIR
 

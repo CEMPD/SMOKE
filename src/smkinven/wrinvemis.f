@@ -250,7 +250,9 @@ C.............  Output data
         END IF
 
 C.........  Deallocate local arrays
-        DEALLOCATE( IPPTR, IPMAX, SRCPOL )
+        IF( ALLOCATED( IPPTR ) )    DEALLOCATE( IPPTR )
+        IF( ALLOCATED( IPMAX ) )    DEALLOCATE( IPMAX )
+        IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
         IF( ALLOCATED( COMPUTED ) ) DEALLOCATE( COMPUTED )
 
         RETURN

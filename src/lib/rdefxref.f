@@ -330,7 +330,7 @@ C               will allow use of Link-specific without vehicle type.
      &          CLNK .NE. ' '           ) THEN
                 CVID = VIDHOLD
             END IF
-            TSCC = CRWT // CVID
+            TSCC = ADJUSTR( CRWT ) // CVID
             CALL PADZERO( TSCC )
 
 C.................  Post-process country/state/county code for blank and

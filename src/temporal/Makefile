@@ -20,7 +20,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
 TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
-     setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o 
+     setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o wrtsup.o
 #qatmpr.o
 
 #

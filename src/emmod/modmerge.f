@@ -83,6 +83,7 @@
         LOGICAL, PUBLIC :: HFLAG   ! create hourly outputs
         LOGICAL, PUBLIC :: PINGFLAG! create plume-in-grid hourly file
         LOGICAL, PUBLIC :: ELEVFLAG! create ASCII elevated sources file
+        LOGICAL, PUBLIC :: EXPLFLAG! use PHOUR file to get explicit plume rise
         LOGICAL, PUBLIC :: LMETCHK ! compare met information in headers
         LOGICAL, PUBLIC :: LMKTPON ! true: use market penetration
         LOGICAL, PUBLIC :: LGRDOUT ! output gridded I/O API NetCDF file(s)
@@ -149,6 +150,7 @@
         CHARACTER*16, PUBLIC :: PUNAME ! point multiplicative cntl matrix input
         CHARACTER*16, PUBLIC :: PONAME ! point output gridded file
         CHARACTER*16, PUBLIC :: PVNAME ! point elevated stack groups file
+        CHARACTER*16, PUBLIC :: PHNAME ! point hourly explicit plume info file
         CHARACTER*16, PUBLIC :: PINGNAME ! plume-in-grid emissions file name
         CHARACTER*16, PUBLIC :: PELVNAME ! elevated ASCII emissions file name
         CHARACTER*16, PUBLIC :: PREPNAME ! point report file name

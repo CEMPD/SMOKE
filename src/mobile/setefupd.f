@@ -174,6 +174,11 @@ C                   contributing PSIs will be updated as well
                     END DO  ! End loop on contributing PSIs
 
                 END IF      ! End if for condition of PSI
+
+C.................  Make sure the PSI itself is updated
+                UPDATNDI( I ) = .TRUE.
+                UPDATDIU( I ) = .TRUE.
+
             END IF          ! End if for type of PSI
 
 C.............  No matter what is going on otherwise, cannot process the PSI

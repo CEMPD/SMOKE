@@ -95,6 +95,15 @@ C          are not already in the list
 
 C.............  Find PSI in emission factor data file
             N = FIND1( PSILOC( I ), NPSIDAT, PSIDAT )
+
+            IF ( N .LE. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: PSI', PSILOC( I ), 
+     &                 'from MEFTEMP file is not found in MPREF file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
             J = PDATINDX( N )
             CNTCOMBO = PDATTYPE( J )
             PSIPNTR  = PDATPNTR( J )  ! Pointer (see above)

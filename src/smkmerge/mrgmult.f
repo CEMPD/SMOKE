@@ -125,7 +125,7 @@ C           transfer ELEVADJ to ELEVADJ
 
 C.........  Check if this is a valid inventory pollutant for this call, and
 C           if the number of layers is one.
-        IF( NL .EQ. 1 .AND. KEY1 .GT. 0 ) THEN
+        IF( .NOT. LFLAG .AND. KEY1 .GT. 0 ) THEN
 
 C............. If multiplicative controls, additive controls, and speciation
             IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
@@ -423,7 +423,7 @@ C.............  If inventory pollutant only
 
 C.........  If we need to use layer fractions...
 
-        ELSE IF( NL .GT. 1 .AND. KEY1 .GT. 0 ) THEN
+        ELSE IF( LFLAG .AND. KEY1 .GT. 0 ) THEN
 
 C............. If multiplicative controls, additive controls, and speciation
             IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN

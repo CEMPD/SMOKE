@@ -109,6 +109,9 @@ C.......   Compute TMAT for current group of pollutants
 
         DO V = 1, NPOL
 
+C.............  Skip record in case of NGRP > 1 and all fields not used
+            IF( DDEX( 1,V ) .LE. 0 ) CYCLE
+
             DO S = 1, NSRC
 
                 L = DDEX( S,V )

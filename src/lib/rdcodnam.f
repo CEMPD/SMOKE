@@ -159,11 +159,14 @@ C.........  Check dimensions
      &             'codes/names file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-        ELSE IF( NDAT .EQ. 0 ) THEN
+        ELSE IF( NDAT .EQ. 0 .AND. (PDEV .GT. 0 .OR. VDEV 
+     &            .GT. 0 ) ) THEN
             MESG ='No entries in any codes/names file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
+
+        IF ( PDEV .EQ. 0 .AND. VDEV .EQ. 0 ) RETURN
 
 C.........  Sort by number for checking for duplicates
         CALL SORTI1( NDAT, INDX1A, CODESA )
@@ -240,8 +243,8 @@ C.........  Recompute maximum pollutants and activities
         MXIDAT = J
 
 C.........  Rewind files
-        REWIND( PDEV )
-        REWIND( VDEV )
+        IF ( PDEV .NE. 0 ) REWIND( PDEV )
+        IF ( VDEV .NE. 0 ) REWIND( VDEV )
 
 C.........  Deallocate local memory
         DEALLOCATE( INDX1A, INDX2A, CODESA, ISTATA, NAMESA )

@@ -60,8 +60,8 @@
         REAL   , ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! per-source tmprs
         REAL   , ALLOCATABLE, PUBLIC :: TKMAX   ( : )   ! working max
         REAL   , ALLOCATABLE, PUBLIC :: TKMIN   ( : )   ! working min
-        REAL   , ALLOCATABLE, PUBLIC :: TKMAXOUT( : )   ! output  max
-        REAL   , ALLOCATABLE, PUBLIC :: TKMINOUT( : )   ! output  min
+        REAL   , ALLOCATABLE, PUBLIC :: TKMAXOUT( :,: )   ! output  max
+        REAL   , ALLOCATABLE, PUBLIC :: TKMINOUT( :,: )   ! output  min
         INTEGER, ALLOCATABLE, PUBLIC :: METIDX  ( :,: ) ! idx to master min/max
 
         END MODULE MODMET

@@ -123,6 +123,9 @@ C...........   Other local variables
         INTEGER          HOUR       ! hour of day (1 ... 24)
         INTEGER          IOS        ! i/o status
         INTEGER          J1, J2, J3, J4 ! min/max temperature indices
+        INTEGER       :: JMAXALL = 0   ! max value of JMAX
+        INTEGER          JMIN, JMAX ! min and max value of j1-j4 for one iter
+        INTEGER       :: JMINALL = 9999 ! min value of JMIN
         INTEGER, SAVE :: LDATE = -1 ! date used in previous subroutine call
         INTEGER          MON        ! tmp month number (1=Jan)
         INTEGER          NACT       ! activity index
@@ -259,7 +262,7 @@ C.............  Use same loop for case where this feature is turned off
 C.................  Adjust time zone I based on output time zone and correct
 C                   for negative value.
                 K = I - TZONE
-                IF( K .LT. 0 ) K = 24 + K  !     (e.g., K= -1 -> K= 23)
+c                IF( K .LT. 0 ) K = 24 + K  !     (e.g., K= -1 -> K= 23)
 
 C.................  Convert output time to local time of I time zone, adjusted
 C                   by output time zone.
@@ -332,12 +335,6 @@ C.................  Read source index for this day
 
             END IF      !  if read3() failed on dname
 
-C.................  Read emissions or activity for day-specific data and store
-C                   data in EMACV using index INDXD
-            DO V = 1, NPLE
-
-            END DO      ! end loop on day-specific pollutants
-
         END IF          ! if using day-specific emissions
 
 C.........  Set integer hour of day for output time 
@@ -392,7 +389,7 @@ C.............  Read source index for this hour
      &                HNAME //'".'
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
-            END IF      !  if read3() failed on dname
+            END IF      !  if read3() failed on HNAME
 
         END IF  !  End if hour-specific data
 
@@ -405,6 +402,9 @@ C           or an activity
         DO V = 1, NPLE
 
             NAMBUF = NAMIN( V )
+
+C.............  Skip blanks that can occur when NGRP > 1
+            IF ( NAMBUF .EQ. ' ' ) CYCLE
 
 C.............  Find pollutant/activity in list of all.  Use EAREAD b/c
 C               EANAM has been update to contain emission types.
@@ -588,6 +588,15 @@ C                           emission factors
                 	J3 = METIDX( S,3 )
                 	J4 = METIDX( S,4 )
 
+C.........................  Make sure indices are not out of bounds. A more 
+C                           elaborate approach is not being taken because
+C                           of performance concerns
+                        JMIN    = MIN( J1, J2, J3, J4 )
+                        JMAX    = MAX( J1, J2, J3, J4 )
+                        JMINALL = MIN( JMINALL, JMIN )
+                        JMAXALL = MAX( JMAXALL, JMAX )
+                        IF( JMAX .GT. NVLDTMM ) CYCLE
+    
 C.........................  Initialize interpolation factor to make emis zero
                 	R1 = 0.
                 	R2 = 0.
@@ -596,7 +605,7 @@ C.........................  Initialize interpolation factor to make emis zero
 
 C.........................  When the min/max index is non-zero, then diurnal
 C                           emission factors will be expected.
-                	IF( J1 .NE. 0 ) THEN
+                	IF( JMIN .GT. 0 ) THEN
 
                             FAC(1) = EFDIUALL( J1, C, M, NIDX )
                             FAC(2) = EFDIUALL( J2, C, M, NIDX )
@@ -655,6 +664,28 @@ C                           together.
             END IF              ! End namin != namout
 
         END DO                  ! End pollutant loop
+
+C.........  Error found if J indices were out of bounds
+        IF ( JMINALL .LT. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'INTERNAL ERROR: Minimum min/max temperature ' //
+     &             'index from MINMAXT was < 0'
+            CALL M3MSG2( MESG )
+
+        END IF
+
+        IF ( JMAXALL .GT. NVLDTMM ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 'INTERNAL ERROR: Maximum min/max ' //
+     &             'temperature index from MINMAXT was > ', NVLDTMM
+            CALL M3MSG2( MESG )
+
+        END IF
+
+        IF ( EFLAG ) THEN
+            MESG = 'Problem with meteorology indices.'
+            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+        END IF
 
 C.........  Reset previous date for future iterations
         LDATE = JDATE

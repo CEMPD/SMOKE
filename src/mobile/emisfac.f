@@ -60,12 +60,12 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-
+        CHARACTER*2  CRLF
         LOGICAL      CHKEMFAC
         INTEGER      FIND1
         INTEGER      SEC2TIME
 
-        EXTERNAL     CHKEMFAC, FIND1, SEC2TIME
+        EXTERNAL     CRLF, CHKEMFAC, FIND1, SEC2TIME
 
 C...........   EXTERNAL BLOCK DATA for MOBILE model:
 
@@ -152,6 +152,7 @@ c        INTEGER    MXEMIS         ! sum of no. diurnal + no. non-diur EF types
         INTEGER    NV             ! local no. vehicle types
         INTEGER    PSI            ! tmp parameter scheme index
         INTEGER    PSIPNTR        ! pure: no. in scenario; combo: pntr to table
+        INTEGER    PSIROOT        ! tmp first PSI in group of scenarios
         INTEGER    TI             ! index to VLDTMPR (in MODMET)
         INTEGER    TMMI           ! index to VLDTMIN (in MODMET)
 
@@ -160,6 +161,7 @@ c        INTEGER    MXEMIS         ! sum of no. diurnal + no. non-diur EF types
         LOGICAL    DIREUSE                ! true: reusing diurnal
         LOGICAL :: EFLAG = .FALSE.        ! true: error found
         LOGICAL    ENDLOOP                ! true: end tmpr loop for current PSI 
+        LOGICAL    FFLAG                  ! true: first scen in group ran
         LOGICAL    NDREUSE                ! true: reusing non-diurnal
         LOGICAL    NFLAG                  ! null flag (not used)
         LOGICAL    RFLAG                  ! true: more MOBILE5 changed then tmpr
@@ -275,6 +277,8 @@ c        MXEMIS = NNDI + NDIU
         CALL CHECKMEM( IOS, 'EFSAVND', PROGNAME )
         ALLOCATE( EFSAVDI( NV, MXPPGRP, NVLDTMM, NDIU ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EFSAVDI', PROGNAME )
+        EFSAVND = BADVAL3
+        EFSAVDI = BADVAL3
 
 C.........  Allocate memory for status arrays by PSI
         ALLOCATE( UPDATNDI( NPSIALL ), STAT=IOS )
@@ -331,6 +335,7 @@ C               combo-only PSI list, and no. PSIs per scenario
             PSIPNTR  = PDATPNTR( K )
             LINECNT  = PDATLINE( K )
             NPSISCN  = PDATMCNT( K )
+            PSIROOT  = PDATROOT( K )
 
 C.............  Skip over any PSIs that are for combination emission factors
             IF( CNTCOMBO .GT. 0 ) CYCLE
@@ -350,6 +355,8 @@ C.............  Write message to screen if this is the first PSI in a group
                 MESG = MESG( 1:L ) // ' ...'
 
                 CALL M3MSG2( MESG )
+
+                FFLAG = .FALSE.  ! first scen in multi-scenario not calc'd
 
             END IF
 
@@ -394,6 +401,16 @@ C                   computed for any temperatures
                 CFLAG_NDI = ( CFLAG_NDI .OR. TFLAG_NDI )
                 CFLAG_DIU = ( CFLAG_DIU .OR. TFLAG_DIU )
 
+C.................  During reuse, check if diurnal emission factors are 
+C                   invalid for the current temperature indices. If so, make 
+C                   sure they are computed.
+                IF( DIREUSE .AND. TMMI .GT. 0 ) THEN
+                    IF ( EFACDIU( TMMI, 1, 1 ) .LT. AMISS3 ) THEN
+                        CFLAG_DIU = .TRUE.
+                        TFLAG_DIU = .TRUE.
+                    END IF
+                END IF
+
 C.................  Skip iteration if no emission factors need updating
                 IF( .NOT. CFLAG_NDI .AND. .NOT. CFLAG_DIU ) CYCLE
 
@@ -404,8 +421,14 @@ C.................  For MOBILE* input, when the PSI is the first in a
 C                   multi-scenario run, skip the appropriate number of lines
 C                   in the emission factor data file (RDEV).  Then, create
 C                   emission factors and store extras.
+C.................  Or, if PSI is *not* first, but emission factors haven't
+C                   been computed for current group (can happen during reuse), 
+C                   also run.
 C.................  Note that combination types have already been screened out
-                IF( PSIPNTR .EQ. 1 ) THEN
+C.................  Set RFLAG to indicate run temperature has been run
+C.................  Set FFLAG to indciate first scenario has been run
+                IF( PSIPNTR .EQ. 1 .OR.
+     &            ( PSIPNTR .GT. 1 .AND. .NOT. FFLAG ) ) THEN
                             
                     REWIND( RDEV )                  
                     CALL SKIPL ( RDEV, LINECNT )
@@ -413,11 +436,24 @@ C.................  Note that combination types have already been screened out
                     CALL MOBILE( IERR , TI, TMMI, RDEV, NPSISCN, RFLAG,
      &                           EFACT, DFACT, EFSAVND, EFSAVDI  )
                     RFLAG = .FALSE.
+                    FFLAG = .TRUE.
 
 C.................  For MOBILE5* input when the PSI is NOT the first in a
 C                   multi-scenario run, retrieve EFs from storage
 C.................  TFLAG_* variables screen for TI = 0 or TMMI = 0
                 ELSE IF( PSIPNTR .GT. 1 ) THEN
+
+C.....................  Make sure that first scenario in group was run, if not
+C                       there is an error.  This shouldn't happen.
+                    IF ( .NOT. FFLAG ) THEN
+                        WRITE( MESG,94010 ) 'INTERNAL ERROR: PSI ', PSI, 
+     &                     'needs to be stored but group starting ' //
+     &                      CRLF() // BLANK10 //'with PSI', PSIROOT, 
+     &                     'has not been computed!'
+                        CALL M3MSG2( MESG )
+                        EFLAG = .TRUE.
+                        CYCLE
+                    END IF
 
                     IF( TFLAG_NDI ) THEN
                         EFACT( 1:NV,1:NNDI ) = 
@@ -443,8 +479,6 @@ C                   were calculated
 
 C.................  Put diurnal factors from emission factor routine into 
 C                   individual diurnal arrays for output
-C.................  Set RFLAG to indicate that diurnal emission factors
-C                   were calculated
                 IF( TFLAG_DIU ) THEN
  
                     EFACDIU( TMMI, 1:NV, 1:NDIU )= DFACT( 1:NV, 1:NDIU )
@@ -464,6 +498,11 @@ C               message saying that no update was needed.
      &                     NDISTAT( IPM ), DIUSTAT( IPM ) )
 
         END DO           ! End loop over PSIs
+
+        IF ( EFLAG ) THEN
+            MESG = 'Problem updating emission factors (see above)'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C...................................................................
 C.........  Create new mixed EFs where needed

@@ -1,5 +1,5 @@
  
-        SUBROUTINE RDSCONV( FDEV, NIPOL, CATEGORY, EINAM, OUTNAM )
+        SUBROUTINE RDSCONV( FDEV, NNAM, ENAM, OUTNAM )
 
 C***********************************************************************
 C  subroutine body starts at line 142
@@ -50,6 +50,9 @@ C.........  This module contains the lists of unique source characteristics
 C...........   This module contains the speciation profile tables
         USE MODSPRO
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -61,10 +64,9 @@ c        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 C.........  SUBROUTINE ARGUMENTS and their descriptions:
 
         INTEGER     , INTENT (IN) :: FDEV            ! unit no. for file
-        INTEGER     , INTENT (IN) :: NIPOL           ! no. of valid inv pols
-        CHARACTER(*), INTENT (IN) :: CATEGORY        ! source category
-        CHARACTER(*), INTENT (IN) :: EINAM ( NIPOL ) ! inventory pollutant names
-        CHARACTER(*), INTENT(OUT) :: OUTNAM( NIPOL ) ! destination pol names
+        INTEGER     , INTENT (IN) :: NNAM            ! no. of valid inv pols
+        CHARACTER(*), INTENT (IN) :: ENAM  ( NNAM )  ! inventory pollutant names
+        CHARACTER(*), INTENT(OUT) :: OUTNAM( NNAM )  ! destination pol names
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
@@ -84,7 +86,7 @@ C.........  LOCAL VARIABLES and their descriptions:
 C.........  Unsorted pollutant conversion table
         INTEGER                               NCONV     ! number of conv facs
         INTEGER              , ALLOCATABLE :: INDX( : ) ! index for sorting
-        INTEGER              , ALLOCATABLE :: ISPA( : ) ! pollutant idx in EINAM
+        INTEGER              , ALLOCATABLE :: ISPA( : ) ! pollutant idx in ENAM
         INTEGER              , ALLOCATABLE :: TYPA( : ) ! type of each line
 
         REAL                 , ALLOCATABLE :: FACA( : ) ! conversion factors
@@ -95,13 +97,13 @@ C.........  Counter for different types of records in the input file
         INTEGER :: N( 0:3 )
 
 C.........  Other local variables
-        INTEGER         I, J, K, L, T, V ! counters and indices
+        INTEGER         I, J, K, K1, K2, L, T, V ! counters and indices
 
         INTEGER         CE1, CE2, CE3    ! ending   column numbers
         INTEGER         CS1, CS2, CS3    ! starting column numbers
         INTEGER         IOS              ! i/o Status code
         INTEGER         IREC             ! line number of input file
-        INTEGER         ISP              ! tmp pol index in EINAM
+        INTEGER         ISP              ! tmp pol index in ENAM
         INTEGER         LTYPE            ! tmp type of each line 
         INTEGER         NLINE            ! number of lines in input file 
         INTEGER         STLP1            ! state width plus 1 
@@ -112,7 +114,7 @@ C.........  Other local variables
         LOGICAL      :: RFLAG = .FALSE.  ! true: Skip records in this section
         LOGICAL      :: SFLAG = .FALSE.  ! true: Records were skipped
 
-        CHARACTER*10           CPOL      ! tmp pollutant index in EINAM
+        CHARACTER*10           CPOL      ! tmp pollutant index in ENAM
         CHARACTER*16           LINE16    ! tmp 16-char line
         CHARACTER*300          LINE      ! line buffer
         CHARACTER*300          MESG      ! message buffer
@@ -125,6 +127,7 @@ C.........  Other local variables
         CHARACTER(LEN=FIPLEN3+SCCLEN3) CFIPSCC   ! Cy/St/Co code // SCC
         CHARACTER(LEN=FIPLEN3+SCCLEN3) PFIPSCC   ! Cy/St/Co code // SCC
         CHARACTER(LEN=SCCLEN3) TSCC      ! tmp SCC
+        CHARACTER(LEN=SCCLEN3) TSCL      ! tmp left SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO   ! zero SCC 
         CHARACTER(LEN=FIPLEN3-STALEN3) CYIDZERO ! zero county code
         CHARACTER(LEN=IOVLEN3) IBUF      ! tmp inventory pol name buffer
@@ -201,7 +204,7 @@ C               data
                 IBUF = LINE16
                 SBUF = ADJUSTL( LINE( 18:33 ) )
 
-                ISP = INDEX1( IBUF, NIPOL, EINAM )
+                ISP = INDEX1( IBUF, NNAM, ENAM )
                 IF( ISP .GT. 0 ) THEN
                     OUTNAM( ISP ) = SBUF
                     RFLAG = .TRUE.      ! Okay, read in entries in this section
@@ -210,16 +213,20 @@ C               data
                 ENDIF
 
 C.............  Store data for current record when file's current pollutant is 
-C               in EINAM
+C               in ENAM
             ELSEIF( RFLAG ) THEN
 
                 CFIP = ADJUSTR( LINE( CS1:CE1 ) )
-                TSCC = ADJUSTR( LINE( CS2:CE2 ) )
+                TSCC = LINE( CS2:CE2 )
+                CALL PADZERO( TSCC )
+
+                TSCL = TSCC( 1:LSCCEND )
 
 C.................  Determine if SCC is in inventory list
-                K = FINDC( TSCC, NINVSCC, INVSCC )
+                K1 = FINDC( TSCC, NINVSCC, INVSCC )
+                K2 = FINDC( TSCL, NINVSCC, INVSCL )
 
-                IF( K .LE. 0 ) CYCLE   ! Skip record if SCC not in inventory
+                IF( K1 .LE. 0 .AND. K2 .LE. 0 ) CYCLE   ! Skip record if SCC not in inventory
 
                 I = I + 1
 
@@ -279,7 +286,9 @@ C               skipped in file.
 
             MESG = 'No pollutant conversion entries found for ' //
      &             'inventory pollutants, ' // CRLF() // BLANK10 //
-     &             'or could not find header line(s).'
+     &             'or could not find header line(s).  THIS WILL ' //
+     &             'MOST LIKELY ' // CRLF() // BLANK10 // 'RESULT '//
+     &             'IN INCORRECT EMISSIONS!'
             CALL M3WARN( PROGNAME, 0, 0, MESG )
 
         END IF
@@ -295,12 +304,12 @@ C.........  Sort records from pollutant conversion file
         CALL SORTIC( NCONV, INDX, PCVA )
          
 C.........  Allocate memory for pollutant conversion and initialize to 1.0
-        ALLOCATE( CNVFC00( NIPOL ), STAT=IOS )
+        ALLOCATE( CNVFC00( NNAM ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVFC00', PROGNAME )
         CNVFC00 = 1.0
 
         NCNV1 = N( 1 )
-        ALLOCATE( CNVFC01( NCNV1, NIPOL ), STAT=IOS )
+        ALLOCATE( CNVFC01( NCNV1, NNAM ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVFC01', PROGNAME )
         ALLOCATE( CNVRT01( NCNV1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVRT01', PROGNAME )
@@ -310,7 +319,7 @@ C.........  Allocate memory for pollutant conversion and initialize to 1.0
         ENDIF
 
         NCNV2 = N( 2 )
-        ALLOCATE( CNVFC02( NCNV2, NIPOL ), STAT=IOS )
+        ALLOCATE( CNVFC02( NCNV2, NNAM ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVFC02', PROGNAME )
         ALLOCATE( CNVRT02( NCNV2 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVRT02', PROGNAME )
@@ -320,7 +329,7 @@ C.........  Allocate memory for pollutant conversion and initialize to 1.0
         ENDIF
 
         NCNV3 = N( 3 )
-        ALLOCATE( CNVFC03( NCNV3, NIPOL ), STAT=IOS )
+        ALLOCATE( CNVFC03( NCNV3, NNAM ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVFC03', PROGNAME )
         ALLOCATE( CNVRT03( NCNV3 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVRT03', PROGNAME )
@@ -355,12 +364,12 @@ C.........  Store pollutant conversion factors in sorted tables
 
             IF( PCV .EQ. PREVPCV ) THEN
 
-                L = LEN_TRIM( EINAM( V ) )
+                L = LEN_TRIM( ENAM( V ) )
 
                 MESG = 'WARNING: Duplicate entry in pollutant ' //
      &                 'conversion file:' // CRLF() // BLANK10 //
      &                 'FIP: '// CFIP// ' SCC: '// TSCC// ' IN POL: '//
-     &                 EINAM( V )( 1:L )// ' OUT POL: ' // OUTNAM( V )
+     &                 ENAM( V )( 1:L )// ' OUT POL: ' // OUTNAM( V )
                 CALL M3MSG2( MESG )
                 CYCLE
 

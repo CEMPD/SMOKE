@@ -88,6 +88,8 @@
 !.........  Grouped output information and data values
         INTEGER, ALLOCATABLE, PUBLIC :: BINCOIDX ( : )   ! index to country name
         INTEGER, ALLOCATABLE, PUBLIC :: BINCYIDX ( : )   ! index to county name
+        INTEGER, ALLOCATABLE, PUBLIC :: BINDIUID ( : )   ! index to diurnal prof
+        INTEGER, ALLOCATABLE, PUBLIC :: BINMONID ( : )   ! index to monthly prof
         INTEGER, ALLOCATABLE, PUBLIC :: BINREGN  ( : )   ! region code
         INTEGER, ALLOCATABLE, PUBLIC :: BINRCL   ( : )   ! roadclass code
         INTEGER, ALLOCATABLE, PUBLIC :: BINSMKID ( : )   ! SMOKE source ID
@@ -95,6 +97,7 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID1( : )   ! primary surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID2( : )   ! fallback surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSTIDX ( : )   ! index to state name
+        INTEGER, ALLOCATABLE, PUBLIC :: BINWEKID ( : )   ! index to weekly prof
         INTEGER, ALLOCATABLE, PUBLIC :: BINX     ( : )   ! x cell
         INTEGER, ALLOCATABLE, PUBLIC :: BINY     ( : )   ! y cell
 
@@ -102,6 +105,7 @@
 
         CHARACTER*1, ALLOCATABLE, PUBLIC :: BINELEV( : )! elevated flag
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC( : )   ! SCC
+        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: BINSPCID( : ) ! spec prof
 
 !.........  Arrays for determining output from emission types to report columns
 !.........  Dimensioned ( NIPPA, NREPORT )

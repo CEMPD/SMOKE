@@ -19,7 +19,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -105,6 +105,7 @@ C.........  Unit numbers and logical file names
         INTEGER         RDEV    !  unit number for speciation profiles file
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for ASCII emission process file
+        INTEGER         UDEV    !  unit number for ASCII supplemental file
         INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER*16    ANAME   !  logical name for additive control matrix
@@ -386,12 +387,13 @@ C.........  Read the pollutant to pollutant conversion file, if any
 C.........  resulting tables are passed via MODSPRO
         IF ( KFLAG ) THEN
 
-            CALL RDSCONV( KDEV, NIPPA, CATEGORY, EANAM, SANAM )
+            CALL RDSCONV( KDEV, NIPPA, EANAM, SANAM )
 
         END IF
 
 C.........  Create input and output pollutant names based on output 
 C           emission types/pollutants names for input and output.
+        J = 0
         K = 0
         PIDX = 0
         LT = LEN_TRIM( ETJOIN )
@@ -400,14 +402,23 @@ C           emission types/pollutants names for input and output.
             IDX = EAIDX( I )
 
             IF( IDX .NE. PIDX ) THEN
-                K = K + 1                    
 
                 L1 = INDEX( SANAM( I ), ETJOIN )
                 L1 = MAX( L1, 1 )
                 IF( L1 .GT. 1 ) L1 = L1 + LT
 
                 L2 = LEN_TRIM( SANAM( I ) )
-                SINAM( K ) = SANAM( I )( L1:L2 )
+                CBUF = SANAM( I )( L1:L2 )
+
+C.................  Ensure that pollutant isn't already in the list, which can
+C                   happen when the emission type from an activity and 
+C                   the pollutant are both in the inventory for different
+C                   sources.
+                IF( K .GT. 0 ) J = INDEX1( CBUF, K, SINAM )
+                IF ( J .LE. 0 ) THEN
+                    K = K + 1
+                    SINAM( K ) = CBUF
+                END IF
 
                 PIDX = IDX
             END IF
@@ -500,8 +511,8 @@ C.........  Allocate memory for names of output variables
 C.........  Open speciation matrix file(s).  Depending on MASSOUT and MOLEOUT,
 C           the mass-based and/or mole-based files will be set up and opened.
 
-        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, NOPOL, MXSPEC, 
-     &                 EANAM, EAIDX, SPCNAMES, MOLUNITS, SNAME, LNAME, 
+        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, NOPOL, MXSPEC, EANAM, 
+     &                 EAIDX, SPCNAMES, MOLUNITS, UDEV, SNAME, LNAME, 
      &                 MASSONAM, MOLEONAM )
 
 C.........  Loop through inventory pollutants to create speciation factors for
@@ -642,7 +653,7 @@ C.................  Abridge profiles so that there is an array of unique profile
 C.................  Assign speciation profile and populate speciation matrices
 C                   for all sources for this pollutant.
                 CALL ASGNSPRO( MASSOUT, MOLEOUT, DEFREPRT, NSRC, 
-     &                         ENAM, MASSMATX, MOLEMATX )
+     &                         UDEV, ENAM, MASSMATX, MOLEMATX )
 
 C.................  Deallocate memory for unique profiles arrays
                 DEALLOCATE( SPROFN, IDXSPRO, NSPECIES, IDXSSPEC )

@@ -1,7 +1,7 @@
 
         SUBROUTINE GETPDINFO( FDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, 
      &                        FNAME, SDATE, STIME, NSTEPS, NPDVAR, 
-     &                        MXPDSRC, EAIDX )
+     &                        NPDVSP, MXPDSRC, EAIDX, SPIDX )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -77,14 +77,20 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT):: STIME         ! start time of data in TZONE
         INTEGER     , INTENT(OUT):: NSTEPS        ! no. time steps
         INTEGER     , INTENT(OUT):: NPDVAR        ! no. pol/act variables
+        INTEGER     , INTENT(OUT):: NPDVSP        ! no. pol/act/special data
         INTEGER     , INTENT(OUT):: MXPDSRC       ! max. no. srcs over all times
         INTEGER     , INTENT(OUT):: EAIDX( NIPPA )! index to EANAM
+        INTEGER     , INTENT(OUT):: SPIDX( MXSPDAT )! index to SPDATNAM
 
 C.........  Local allocatable arrays...
-        LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
+        LOGICAL, ALLOCATABLE :: EASTAT( : )   ! true: act/pol present in data
+
+C.........  Local arrats
+        LOGICAL         SPSTAT( MXSPDAT )     ! true: special data variable used
 
 C.........  Other local variables
         INTEGER         N, V             ! counters and indices
+        INTEGER         FILFMT           ! format code of files in list
         INTEGER         INVFMT           ! inventory format code
         INTEGER         IOS              ! i/o status
         INTEGER         NLINE            ! number of lines
@@ -101,7 +107,9 @@ C   begin body of program GETPDINFO
 C.........  Allocate memory for logical status array for pol/act
         ALLOCATE( EASTAT( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EASTAT', PROGNAME )
+
         EASTAT = .FALSE.  ! array
+        SPSTAT = .FALSE.  ! array
 
         MESG = 'Determining number of time steps for ' // TYPNAM //
      &         '-specific files...'
@@ -134,10 +142,12 @@ C.........  Ensure that input file is a list-formatted file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
          
-C.........  Get the dates (in the output time zone) from the files and
-C           flag the pollutants of interest
+C.........  Get the dates (in the output time zone) from the files, 
+C           flag the pollutants of interest, and flag the special variables
+C           contained in the file.
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT )
+     &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
+     &                 EASTAT, SPSTAT )
 
 C.........  Allocate memory and initialize for the maximum number of 
 C           records per time step
@@ -152,7 +162,8 @@ C           records per time step
 C.........  Get the maximum number of records per time step - i.e., populate
 C           MXSRCPD
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
-     &                 FNAME, SDATE, STIME, NSTEPS, EASTAT )
+     &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
+     &                 EASTAT, SPSTAT )
 
 C.........  Create index to pollutant/activity names for current data files
         N = 0
@@ -166,9 +177,33 @@ C.........  Create index to pollutant/activity names for current data files
         END DO
         NPDVAR = N
 
+C.........  Create index to special data variable names for current data files
+C.........  The idex serves a different purpose from EAIDX and is constructed
+C           differently intentionally.
+        N = 0
+        DO V = 1, MXSPDAT
+
+            IF( SPSTAT( V ) ) THEN
+                N = N + 1
+                SPIDX( V ) = N
+            END IF
+
+        END DO
+        NSPDAT = N
+        NPDVSP = NPDVAR + NSPDAT
+
 C.........  Compute the maximum number of sources per time step
 C.........  NOTE - MXPDPT is in the MODDAYHR module
         MXPDSRC = MAXVAL( MXPDPT )
+
+C.........  If no sources matched then error
+        IF ( MXPDSRC .EQ. 0 ) THEN
+
+            MESG = 'No ' // TYPNAM //'-specific sources matched ' //
+     &             'the inventory for the time period processed.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
 
 C.........  Deallocate local memory
         DEALLOCATE( EASTAT )

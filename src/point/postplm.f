@@ -111,7 +111,7 @@ C...........   ZZF( LTOP-1 ) <= ZTOP < ZZF( LTOP )
                 LFRAC( L ) = 0.0
             END DO
  
-C.........  Note: this check not in original algorithm, but w/o it,
+C.........  Note- this check not in original algorithm, but w/o it,
 C                         can end up with fractions > 1.0
         ELSEIF( LBOT .EQ. EMLAYS ) THEN    ! plume above top layer
  

@@ -97,6 +97,7 @@ C.........  Other local variables
         LOGICAL      :: EFLAG     = .FALSE.  ! true: error in comparing files
         LOGICAL      :: DOT_BASIS = .FALSE.  ! true: the comparison file is dot
         LOGICAL      :: THREE_D   = .FALSE.  ! true: one of the inputs is 3d
+        LOGICAL      :: VFLAG     = .FALSE.  ! true: error in vertical
 
         CHARACTER(LEN=IOVLEN3) FILNAM 
         CHARACTER*300          MESG 
@@ -284,9 +285,9 @@ C.............  Check horizontal parameters from header
      &           FLTERR( P_GAM, SNGL( P_GAM3D ) )      ) THEN
 
                 EFLAG = .TRUE.
-                MESG = 'Horizontal grid parameters in file "' // 
-     &                 FILNAM( 1:L2 ) //
-     &                 '" are inconsitent with initialized values.'
+                MESG = 'ERROR: Horizontal grid parameters in file "' // 
+     &                 FILNAM( 1:L2 ) // '"'// CRLF() // BLANK10//
+     &                 'are inconsistent with initialized values.'
                 CALL M3MSG2( MESG )
 
             END IF
@@ -300,24 +301,27 @@ C.............  Check vertical parameters from header
      &               VGTOP .NE. VGTOP3D      ) THEN
 
                     EFLAG = .TRUE.
+                    VFLAG = .TRUE.
 
                 ELSE
 
                     J = LBOUND( VGLVS3D,1 )
                     DO K = 0, NLAYS
 
-                        IF( FLTERR( VGLVS( K ), VGLVS3D( J ) ) ) 
-     &                      EFLAG = .TRUE.
+                        IF( FLTERR( VGLVS( K ), VGLVS3D( J ) ) ) THEN
+                            EFLAG = .TRUE.
+                            VFLAG = .TRUE.
+                        END IF
                         J = J + 1
 
                     END DO
 
                 END IF
 
-                IF( EFLAG ) THEN
-                    MESG = 'Vertical grid parameters in file "' // 
-     &                     FILNAM( 1:L2 ) //
-     &                     '" are inconsitent with initialized values.'
+                IF( VFLAG ) THEN
+                    MESG = 'ERROR: Vertical grid parameters in file "'// 
+     &                     FILNAM( 1:L2 ) // '"'//CRLF() // BLANK10//
+     &                     'are inconsistent with initialized values.'
                     CALL M3MSG2( MESG )
                 END IF
 
@@ -329,7 +333,7 @@ C               there, compare to the original settings.
             CVAL = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. )
             IF( CVAL .NE. ' ' .AND. CVAL .NE. METSCEN ) THEN
                 EFLAG = .TRUE.
-                MESG = 'Meteorology scenario in file "' // 
+                MESG = 'ERROR: Meteorology scenario in file "' // 
      &                 FILNAM( 1:L2 ) // '" is inconsistent '//
      &                 'with initialized value.'
                 CALL M3MSG2( MESG )
@@ -338,9 +342,9 @@ C               there, compare to the original settings.
             CVAL = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. )
             IF( CVAL .NE. ' ' .AND. CVAL .NE. CLOUDSHM ) THEN
                 EFLAG = .TRUE.
-                MESG = 'Cloud scehem in file "' // 
+                MESG = 'ERROR: Cloud scheme in file "' // 
      &                 FILNAM( 1:L2 ) // '" is inconsistent '//
-     &                 'with initialized value.'
+     &                 CRLF() // BLANK10// 'with initialized value.'
                 CALL M3MSG2( MESG )
             END IF
 

@@ -31,14 +31,15 @@ grdmat.debug: $(GRD) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(GRD) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
 
 asgnsurg.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnsurg.f
-genagmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO)
+genagmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ genagmat.f
 genmgmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ genmgmat.f
-grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO)
+grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ grdmat.f
 opengmat.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opengmat.f

@@ -1,7 +1,7 @@
 
         SUBROUTINE RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 
      &                       DAYFLAG, FNAME, SDATE, STIME, NSTEPS, 
-     &                       EASTAT )
+     &                       FMTOUT, EASTAT, SPSTAT )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -51,10 +51,11 @@ C.........  This module contains the information about the source category
 C...........   EXTERNAL FUNCTIONS
         CHARACTER*2  CRLF
         INTEGER      GETFLINE
+        INTEGER      JULIAN
         INTEGER      JUNIT
         INTEGER      SECSDIFF
 
-        EXTERNAL     CRLF, GETFLINE, JUNIT, SECSDIFF
+        EXTERNAL     CRLF, GETFLINE, JULIAN, JUNIT, SECSDIFF
 
 C...........   INCLUDES
 
@@ -74,12 +75,17 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,     INTENT(INOUT):: SDATE          ! Julian start date in TZONE
         INTEGER,     INTENT(INOUT):: STIME          ! data start time in TZONE
         INTEGER,      INTENT(OUT) :: NSTEPS         ! no. time steps
+        INTEGER,      INTENT(OUT) :: FMTOUT         ! file format code
         LOGICAL,      INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act in data
+        LOGICAL,      INTENT(OUT) :: SPSTAT( MXSPDAT )! true: special in data
 
 C...........   Character strings of day- or hr-specific list file 
         CHARACTER*300, ALLOCATABLE, SAVE :: NLSTSTR( : )
 
 C...........   Other local variables
+        INTEGER   I, L                        ! counters and indices
+
+        INTEGER          DD                ! tmp day
         INTEGER, SAVE :: EDATE             ! ending date
         INTEGER, SAVE :: ETIME             ! ending time
         INTEGER, SAVE :: FILFMT            ! file format code
@@ -88,16 +94,21 @@ C...........   Other local variables
         INTEGER          IOS               ! i/o status
         INTEGER          IREC              ! record counter
         INTEGER          LP                ! length of period description
+        INTEGER          MM                ! tmp month
+        INTEGER          MMDD1             ! tmp start month and day 
+        INTEGER          MMDD2             ! tmp end month and day 
         INTEGER, SAVE :: NFILE             ! no. files in the list
+        INTEGER          MM                ! tmp month
 
         LOGICAL, SAVE :: EFLAG = .FALSE.   ! true: error found
         LOGICAL          DFLAG             ! true: retrieve date/time & pol/act 
         LOGICAL, SAVE :: DCALLONE = .TRUE. ! true: 1st time called for day-spec
+        LOGICAL, SAVE :: GETRANGE = .TRUE. ! true: get date range if it's available
         LOGICAL, SAVE :: HCALLONE = .TRUE. ! true: 1st time called for hr-spec
         LOGICAL          NFLAG             ! true: retrieve no. sources
         LOGICAL          NEWLOOP           ! true: start of a new read loop
 
-        CHARACTER*3      PERIOD            ! tmp period name
+        CHARACTER*4      PERIOD            ! tmp period name
         CHARACTER*200    NAMTMP            ! file name buffer
         CHARACTER*300    MESG              ! message buffer
 
@@ -190,6 +201,40 @@ C.........  Get the number of lines in the input file
 
             NAMTMP = NLSTSTR( IFIL )
 
+C.............  If line contains the range of dates, read this packet and
+C               skip to next line
+            I = INDEX( NAMTMP, 'DATERANGE' )
+            IF( I .GT. 0 ) THEN
+                I = I + 9
+                L = LEN_TRIM( NAMTMP )
+                READ( NAMTMP( I:L ), *, IOSTAT=IOS ) MMDD1, MMDD2
+
+C.................  If problem reading dates from string
+                IF ( IOS .NE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 ) 'ERROR: DATERANGE header ' //
+     &                     'misformatted at line', IFIL
+                    CALL M3MSG2( MESG )
+                    CYCLE
+                END IF
+
+C.................  Store Julian start and end dates
+                IF ( GETRANGE ) THEN
+                    MM = MMDD1/100
+                    DD = MMDD1 - MM*100
+                    SDATE = BYEAR*1000 + JULIAN( BYEAR, MM, DD )
+
+                    MM = MMDD2/100
+                    DD = MMDD2 - MM*100
+                    EDATE = BYEAR*1000 + JULIAN( BYEAR, MM, DD )
+                END IF
+
+                GETRANGE = .FALSE.
+
+                CYCLE
+
+            END IF
+
 C.............  Open files, and report status
             IDEV = JUNIT()
             OPEN( IDEV, ERR=1003, FILE=NAMTMP, STATUS='OLD' )
@@ -204,7 +249,7 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
 
         	CALL RDEMSPD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG, 
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME, 
-     &                        EDATE, ETIME, EASTAT )
+     &                        EDATE, ETIME, EASTAT, SPSTAT )
 
             ELSE IF( FILFMT .EQ. EPSFMT ) THEN
 
@@ -212,9 +257,15 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
      &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, 
      &                        SDATE, STIME, EDATE, ETIME, EASTAT )
 
+            ELSE IF ( FILFMT .EQ. CEMFMT ) THEN
+
+                CALL RDCEMPD( IDEV, TZONE, INSTEP, MXPDSRC, 
+     &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, 
+     &                        SDATE, STIME, EDATE, ETIME, EASTAT )
+
             ELSE
 
-                WRITE( MESG,94010 ) 'File format', FILFMT, 'of ',
+                WRITE( MESG,94010 ) 'File format', FILFMT, 'of ' //
      &                 PERIOD( 1:LP ) // '-specific data not recognized'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
@@ -240,6 +291,9 @@ C.........  Compute number of time steps based on SDATE and EDATE
 
 C.........  Rewind input file
         REWIND( FDEV )
+
+C.........  Set output format
+        FMTOUT = FILFMT
 
         RETURN
 

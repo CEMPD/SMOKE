@@ -101,11 +101,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
                 
         J = ICSIZE( 4 )                                 ! SCC=0, FIP=state
-        ALLOCATE( MPRT04( J ), STAT=IOS )
+        ALLOCATE( MPRT04( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT04', PROGNAME )
-        ALLOCATE( WPRT04( J ), STAT=IOS )
+        ALLOCATE( WPRT04( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT04', PROGNAME )
-        ALLOCATE( DPRT04( J ), STAT=IOS )
+        ALLOCATE( DPRT04( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT04', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT04 = IMISS3 ! arrays
@@ -140,11 +140,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
                         
         J = ICSIZE( 7 )                             ! SCC=0, FIP=all
-        ALLOCATE( MPRT07( J ), STAT=IOS )
+        ALLOCATE( MPRT07( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT07', PROGNAME )
-        ALLOCATE( WPRT07( J ), STAT=IOS )
+        ALLOCATE( WPRT07( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT07', PROGNAME )
-        ALLOCATE( DPRT07( J ), STAT=IOS )
+        ALLOCATE( DPRT07( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT07', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT07 = IMISS3 ! arrays

@@ -1,6 +1,5 @@
 
-        SUBROUTINE RDSRG( FDEV, SRGFMT, XCENT, YCENT, XORIG, YORIG,
-     &                    XCELL, YCELL, NCOLS, NROWS ) 
+        SUBROUTINE RDSRG( FDEV, SRGFMT, SRGNROWS, SRGNCOLS ) 
 
 C***********************************************************************
 C  subroutine body starts at line 117
@@ -43,6 +42,9 @@ C...........   Modules for public variables
 C...........   This module contains the gridding surrogates tables
         USE MODSURG
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -61,14 +63,8 @@ C...........   Subroutine arguments
 
         INTEGER      , INTENT  (IN) :: FDEV       ! File unit number
         CHARACTER(*) , INTENT  (IN) :: SRGFMT     ! Format of surrogates file
-        REAL         , INTENT  (IN) :: XCENT      ! Center of coordinate system
-        REAL         , INTENT  (IN) :: YCENT      ! Center of coordinate system
-        REAL         , INTENT  (IN) :: XORIG      ! X origin
-        REAL         , INTENT  (IN) :: YORIG      ! Y origin
-        REAL         , INTENT  (IN) :: XCELL      ! Cell size, X direction
-        REAL         , INTENT  (IN) :: YCELL      ! Cell size, Y direction
-        INTEGER      , INTENT  (IN) :: NCOLS      ! # cells in X direction
-        INTEGER      , INTENT  (IN) :: NROWS      ! # cells in Y direction
+        INTEGER      , INTENT  (IN) :: SRGNROWS   ! number of grid rows from hdr
+        INTEGER      , INTENT  (IN) :: SRGNCOLS   ! number of grid cols from hdr
 
 C...........   Local parameters
 
@@ -184,8 +180,8 @@ C......... Allocate memory for surrogate arrays
         CALL CHECKMEM( IOS, 'SFRACA', PROGNAME )
 
 C.........  Create message fields for errors
-        WRITE( COLRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, NCOLS
-        WRITE( ROWRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, NROWS
+        WRITE( COLRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, SRGNCOLS
+        WRITE( ROWRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, SRGNROWS
 
         LC = LEN_TRIM( COLRANGE )
         LR = LEN_TRIM( ROWRANGE )
@@ -224,7 +220,7 @@ C.........  Fill surrogate arrays
                         CYCLE
                     END IF
 
-                ELSEIF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
+                ELSE IF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
                     CYCLE
 
                 END IF
@@ -242,8 +238,9 @@ C                   quotes around the text strings
                 RATIO  = STR2REAL( SEGMENT( 5 ) )
 
                 WFLAG = .FALSE.
+
 C.................  Check the value of the column number
-                IF( COL .LT. 0 .OR.  COL .GT. NCOLS  .OR.
+                IF( COL .LT. 0 .OR.  COL .GT. SRGNCOLS  .OR.
      &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN
                     WFLAG = .TRUE.
                     OFLAG = .TRUE.
@@ -254,8 +251,8 @@ C.................  Check the value of the column number
                 END IF
 
 C.................  Check the value of the row number
-                IF( ROW .LT. 0 .OR.  ROW .GT. NROWS  .OR.
-     &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN
+                IF( ROW .LT. 0 .OR.  ROW .GT. SRGNROWS  .OR.
+     &            ( COL .EQ. 0 .AND. ROW .NE. 0     )    ) THEN
                     WFLAG = .TRUE.
                     OFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'WARNING: Row value ', ROW,
@@ -263,11 +260,19 @@ C.................  Check the value of the row number
      &                     ' at line', IREC
                     CALL M3MESG( MESG )                    
 
-C.................  Special treatment for cell (0,0)
+C.................  Special treatment for cell (0,0) (skip for now)
                 ELSE IF( ROW .EQ. 0 .AND. COL. EQ. 0 ) THEN
                     CYCLE
 
                 END IF
+
+C.................  Adjust column and row for subgrid
+                COL = COL - XOFF
+                ROW = ROW - YOFF
+
+C.................  Skip entry after subgrid adjustment
+                IF( COL .LE. 0 .OR. COL .GT. NCOLS .OR.
+     &              ROW .LE. 0 .OR. ROW .GT. NROWS       ) CYCLE
 
 C.................  Check the value of the ratio value
                 IF( RATIO .GT. 1. ) THEN

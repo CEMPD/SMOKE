@@ -45,6 +45,7 @@
 
 !...........   Allocatable arrays for specifying source type
         INTEGER, ALLOCATABLE, PUBLIC:: GROUPID ( : ) ! stack group ID
+        INTEGER, ALLOCATABLE, PUBLIC:: GINDEX  ( : ) ! stack group sorting index
         REAL   , ALLOCATABLE, PUBLIC:: ELEVFLTR( : ) ! =0. for lower, =1. elev
         LOGICAL, ALLOCATABLE, PUBLIC:: LMAJOR  ( : ) ! true: src is a major src
         LOGICAL, ALLOCATABLE, PUBLIC:: LPING   ( : ) ! true: src is a PinG src
@@ -67,6 +68,50 @@
         REAL   , ALLOCATABLE, PUBLIC:: GRPXL ( : ) ! x-location given projection
         REAL   , ALLOCATABLE, PUBLIC:: GRPYL ( : ) ! y-location given projection
 
+!...........   Variables for grouping criteria, major source criteria,
+!              and PinG source criteria
+        INTEGER, PUBLIC :: NGRPVAR  = 0 ! No. of variables used to set groups
+        INTEGER, PUBLIC :: NGRPCRIT = 0 ! No. of OR criteria to set groups
+        INTEGER, PUBLIC :: MXGRPCHK = 0 ! Max no. of AND criteria per OR for grps
+
+        INTEGER, PUBLIC :: NELVCRIT = 0 ! No. of OR criteria to set major srcs
+        INTEGER, PUBLIC :: MXELVCHK = 0 ! Max no. of AND criteria per OR for grps
+        INTEGER, PUBLIC :: NELVCSRC = 0 ! No. specific sources in input file
+
+        INTEGER, PUBLIC :: NPNGCRIT = 0 ! No. of OR criteria to set PinG sources
+        INTEGER, PUBLIC :: MXPNGCHK = 0 ! Max no. of AND criteria per OR for PinG
+        INTEGER, PUBLIC :: NPNGCSRC = 0 ! No. specific sources in input file
+
+        INTEGER, PUBLIC :: NEVPEMV  = 0 ! No. of emissions vars used for both
+        INTEGER, PUBLIC :: NEVPVAR  = 0 ! No. of all vars used for both
+
+        LOGICAL, PUBLIC :: LELVRNK  = .FALSE. ! true: use ranking for elevated criteria
+        LOGICAL, PUBLIC :: LPNGRNK  = .FALSE. ! true: use ranking for PinG criteria
+        LOGICAL, PUBLIC :: LCUTOFF  = .FALSE. ! true: plume rise cutoff is used
+
+!...........   Allocatable arrays for grouping criteria, major source criteria,
+!              and PinG source criteria
+        REAL       , ALLOCATABLE, PUBLIC :: GRPVALS ( :,:,: ) ! comprisn value
+        CHARACTER*6, ALLOCATABLE, PUBLIC :: GRPTYPES( :,:,: ) ! comprisn type
+
+        REAL       , ALLOCATABLE, PUBLIC :: ELVVALS ( :,:,: ) ! comprisn value
+        CHARACTER*6, ALLOCATABLE, PUBLIC :: ELVTYPES( :,:,: ) ! comprisn type
+        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC :: ELVCSRC( : )
+
+        REAL       , ALLOCATABLE, PUBLIC :: PNGVALS ( :,:,: ) ! comprisn value
+        CHARACTER*6, ALLOCATABLE, PUBLIC :: PNGTYPES( :,:,: ) ! comprisn type
+        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC :: PNGCSRC( : )
+
+        INTEGER    , ALLOCATABLE, PUBLIC :: EVPEMIDX( : )  ! indx to EINAM
+        LOGICAL    , ALLOCATABLE, PUBLIC :: EVPESTAT( : )  ! true: used for elv
+        LOGICAL    , ALLOCATABLE, PUBLIC :: EVPPSTAT( : )  ! true: used for PinG
+
+!...........   Allocatable arrays for computing data by source
+        INTEGER    , ALLOCATABLE, PUBLIC :: MXEIDX( :,: )  ! sorting index
+        INTEGER    , ALLOCATABLE, PUBLIC :: MXRANK( :,: )  ! sorted rank
+        REAL       , ALLOCATABLE, PUBLIC :: MXEMIS( :,: )  ! maximum daily emis
+        REAL       , ALLOCATABLE, PUBLIC :: RISE  ( : )    ! analytical plume rise
+
 !...........   Allocatable arrays for major and PinG sources indexing
         INTEGER, ALLOCATABLE, PUBLIC:: ELEVSIDX( : ) ! Elev source -> all srcs
         INTEGER, ALLOCATABLE, PUBLIC:: PINGGIDX( : ) ! PinG source -> PinG group
@@ -74,5 +119,16 @@
 !.........  Elevated source and plume-in-grid emissions arrays
         REAL   , ALLOCATABLE, PUBLIC :: PGRPEMIS( : ) ! PinG group emissions
         REAL   , ALLOCATABLE, PUBLIC :: ELEVEMIS( : ) ! Major elev srcs emis
+
+!.........  Hourly plume rise file values and arrays
+        INTEGER             , PUBLIC :: NHRSRC       ! number of explicit srcs
+        INTEGER, ALLOCATABLE, PUBLIC :: INDXH  ( : ) ! source list (by hour)
+        INTEGER, ALLOCATABLE, PUBLIC :: ELEVSRC( : ) ! static source list
+        REAL   , ALLOCATABLE, PUBLIC :: LAY1F  ( : ) ! layer-1 fraction
+        REAL   , ALLOCATABLE, PUBLIC :: PLMBOT ( : ) ! plume bottom [m]
+        REAL   , ALLOCATABLE, PUBLIC :: PLMTOP ( : ) ! plume top [m]
+        REAL   , ALLOCATABLE, PUBLIC :: HRSTKTK( : ) ! stack temperature [K]
+        REAL   , ALLOCATABLE, PUBLIC :: HRSTKVE( : ) ! stack exit velocity [m/s]
+        REAL   , ALLOCATABLE, PUBLIC :: HRSTKFL( : ) ! stack exit flow rate [m/s]
 
         END MODULE MODELEV
