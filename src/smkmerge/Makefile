@@ -2,7 +2,7 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	      = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
 LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBS2         = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
 LIBS_DEBUG2   = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)

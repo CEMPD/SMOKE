@@ -1,11 +1,11 @@
 # Version @(#)$Id$ 
-# Path	  $Source$
-# Date	  $Date$ 
+# Path    $Source$
+# Date    $Date$ 
 #
-LIBS		  = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
-LIBS_DEBUG	  = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 
-LIBPATH		  = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
+LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 
 all: grwinven smkinven
@@ -20,7 +20,7 @@ debug: grwinven.debug smkinven.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 GRW=grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvpol.o
-#	 
+#
 #
 grwinven: $(GRW) $(ALLI) $(LIBPATH)
 	echo GRWINVEN:
@@ -43,7 +43,7 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
         rddataemsar.o rdsrcemspt.o rddataemspt.o procemspt.o \
         rddevemspt.o rdfacemspt.o rdprocemspt.o rdstkemspt.o \
         rdsrcntipt.o rdsrcntinp.o rddatantipt.o rddatantinp.o
-#	 
+#
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
 	echo SMKINVEN:
