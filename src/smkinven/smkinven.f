@@ -442,7 +442,7 @@ C.............  Write out toxics report file
 	CALL M3MSG2( ' ' )
 	CALL M3MSG2( 'Writing toxics report file...' )
 
-	CALL WREPINVEN( ADEV )
+	CALL WREPINVEN( ADEV, CDEV )
 
 C.........  End program successfully
         MESG = ' '
