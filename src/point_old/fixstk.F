@@ -1,11 +1,31 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         SUBROUTINE  FIXSTK( FDEV, IFIP, ISCC, 
      &                      STKHT, STKDM, STKTK, STKVE )
 
 C***********************************************************************
-C  subroutine body starts at line 100
+C  subroutine body starts at line 120
 C
 C  FUNCTION:
 C	Use replacement stack parameters from file PSTK to fill inn
@@ -122,7 +142,7 @@ C.......   Now read the rest of the file:
             LSCC = SCC
             LINE = LINE + 1
 
-            READ( FDEV,*, ERR=22, IOSTAT=IOS )  FIP, SCC, HT, DM, TK, VE
+            READ( FDEV,*, END=22, IOSTAT=IOS )  FIP, SCC, HT, DM, TK, VE
 
             IF ( IOS .NE. 0 ) THEN	!  I/O error
 
