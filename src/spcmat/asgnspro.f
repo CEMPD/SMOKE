@@ -90,6 +90,7 @@ C.........  Other local variables
         INTEGER       :: F2B = 0      ! extra find index for mobile
         INTEGER       :: F4B = 0      ! extra find index for mobile
         INTEGER          IOS          ! i/o status
+        INTEGER          NCHKCHR      ! position of last non-SCC src char
         INTEGER          NCOUT        ! no. output source chars for mesgs
 
         REAL             CNVFAC       ! tmp pol-to-pol conversion factor
@@ -111,6 +112,11 @@ C.........  Other local variables
         CHARACTER(LEN=SPNLEN3)   SPCODE  ! tmp speciation profile code
         CHARACTER(LEN=SCCLEN3)   CHKRWT  ! tmp roadway type only SCC
         CHARACTER(LEN=SCCLEN3)   CHKVID  ! tmp vehicle-type only SCC
+        CHARACTER(LEN=SS5LEN3):: CSRC5=' '! tmp source chars through char5
+        CHARACTER(LEN=SS4LEN3):: CSRC4=' '! tmp source chars through char4
+        CHARACTER(LEN=SS3LEN3):: CSRC3=' '! tmp source chars through char3
+        CHARACTER(LEN=SS2LEN3):: CSRC2=' '! tmp source chars through char2
+        CHARACTER(LEN=SS1LEN3):: CSRC1=' '! tmp source chars through char1
         CHARACTER(LEN=SS5LEN3):: CHK16=' '! tmp source chars through char5// SCC
         CHARACTER(LEN=SS4LEN3):: CHK15=' '! tmp source chars through char4// SCC
         CHARACTER(LEN=SS3LEN3):: CHK14=' '! tmp source chars through char3// SCC
@@ -176,6 +182,10 @@ C.........  Initialize matrices to 0.
 C.........  Write pollutant of interest to the supplemental file
         WRITE( SDEV, '(A)' ) '"' // ENAM // '"'
 
+C.........  Initialize index check
+        NCHKCHR = NCHARS
+        IF( JSCC .GT. 0 ) NCHKCHR = NCHARS - 1
+
 C.........  Find index in complete list of pollutants and set length of name
         V  = INDEX1( ENAM, NIPPA, EANAM ) 
         LV = LEN_TRIM( EANAM( V ) )
@@ -223,13 +233,19 @@ C.............  Create selection
 
             CASE ( 'POINT' )
 
-                CHK16 = CSRC( 1:PTENDL3( 7 ) ) // TSCC
-                CHK15 = CSRC( 1:PTENDL3( 6 ) ) // TSCC
-                CHK14 = CSRC( 1:PTENDL3( 5 ) ) // TSCC
-                CHK13 = CSRC( 1:PTENDL3( 4 ) ) // TSCC
-                CHK12 = CSRC( 1:PTENDL3( 3 ) ) // TSCC
-                CHK11 = CSRC( 1:PTENDL3( 2 ) ) // TSCC
-                CHK10 = CSRC( 1:PTENDL3( 2 ) )
+                CHK16   = CSRC( 1:PTENDL3( 7 ) ) // TSCC
+                CHK15   = CSRC( 1:PTENDL3( 6 ) ) // TSCC
+                CHK14   = CSRC( 1:PTENDL3( 5 ) ) // TSCC
+                CHK13   = CSRC( 1:PTENDL3( 4 ) ) // TSCC
+                CHK12   = CSRC( 1:PTENDL3( 3 ) ) // TSCC
+                CHK11   = CSRC( 1:PTENDL3( 2 ) ) // TSCC
+                CHK10   = CSRC( 1:PTENDL3( 2 ) )
+
+                CSRC5   = CSRC( 1:PTENDL3( 7 ) ) 
+                CSRC4   = CSRC( 1:PTENDL3( 6 ) ) 
+                CSRC3   = CSRC( 1:PTENDL3( 5 ) ) 
+                CSRC2   = CSRC( 1:PTENDL3( 4 ) ) 
+                CSRC1   = CSRC( 1:PTENDL3( 3 ) ) 
                     
             CASE DEFAULT
 
@@ -294,18 +310,36 @@ C               reference entries are by definition, pollutant- specific.
 C               The cross-reference tables (e.g,, CHRT02 come from MODXREF)
 
 C.............  Try for pollutant-specific CHAR5 non-blank// SCC match; then
-C                       pollutant-specific CHAR4 non-blank// SCC match; then
-C                       pollutant-specific CHAR3 non-blank// SCC match; then
-C                       pollutant-specific CHAR2 non-blank// SCC match; then
-C                       pollutant-specific CHAR1 non-blank// SCC match; then
+C                       pollutant-specific CHAR4 non-blank// SCC or blank match; then
+C                       pollutant-specific CHAR3 non-blank// SCC or blank match; then
+C                       pollutant-specific CHAR2 non-blank// SCC or blank match; then
+C                       pollutant-specific CHAR1 non-blank// SCC or blank match; then
 C                       pollutant-specific PLANT non-blank// SCC match; then
 C                       pollutant-specific PLANT non-blank       match
 
-            F6 = FINDC( CHK16, TXCNT( 16 ), CHRT16 ) 
-            F5 = FINDC( CHK15, TXCNT( 15 ), CHRT15 ) 
-            F4 = FINDC( CHK14, TXCNT( 14 ), CHRT14 ) 
-            F3 = FINDC( CHK13, TXCNT( 13 ), CHRT13 ) 
-            F2 = FINDC( CHK12, TXCNT( 12 ), CHRT12 ) 
+            F6 = 0
+            F5 = 0
+            F4 = 0
+            F3 = 0
+            F2 = 0
+            SELECT CASE( NCHKCHR )
+            CASE( 7 )
+                F6 = FINDC( CHK16, TXCNT( 16 ), CHRT16 )
+            CASE( 6 )
+                F5 = FINDC( CHK15, TXCNT( 15 ), CHRT15 )
+            CASE( 5 )
+                F4 = FINDC( CHK14, TXCNT( 14 ), CHRT14 )
+            CASE( 4 )
+                F3 = FINDC( CHK13, TXCNT( 13 ), CHRT13 )
+            CASE( 3 )
+                F2 = FINDC( CHK12, TXCNT( 12 ), CHRT12 )
+            END SELECT
+
+            IF( F6 .LE. 0 ) F6 = FINDC( CSRC5, TXCNT( 16 ), CHRT16 )
+            IF( F5 .LE. 0 ) F5 = FINDC( CSRC4, TXCNT( 15 ), CHRT15 ) 
+            IF( F4 .LE. 0 ) F4 = FINDC( CSRC3, TXCNT( 14 ), CHRT14 ) 
+            IF( F3 .LE. 0 ) F3 = FINDC( CSRC2, TXCNT( 13 ), CHRT13 ) 
+            IF( F2 .LE. 0 ) F2 = FINDC( CSRC1, TXCNT( 12 ), CHRT12 ) 
             F1 = FINDC( CHK11, TXCNT( 11 ), CHRT11 ) 
             F0 = FINDC( CHK10, TXCNT( 10 ), CHRT10 )
 
