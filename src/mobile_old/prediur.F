@@ -84,12 +84,12 @@ C...........   Mobile Sources input and output arrays
 C...........   MPLIST scenario-specific emissions factor XREF tables:
  
         INTEGER   NMPLIST                 !  number of XREF entries
-        INTEGER   MPFIP( MXPSI )          !  FIP codes in XREF entries
-        INTEGER   MPRDT( MXPSI )          !  road class codes in XREF entries
-        INTEGER   MPLNK( MXPSI )          !  link IDs in XREF entries
-        INTEGER   MPREF( 0:23, MXPSI )    !  hour&source-specific xrefs
+        INTEGER   MPFIP( MXPLST )         !  FIP codes in XREF entries
+        INTEGER   MPRDT( MXPLST )         !  road class codes in XREF entries
+        INTEGER   MPLNK( MXPLST )         !  link IDs in XREF entries
+        INTEGER   MPREF( 0:23, MXPLST )   !  hour&source-specific xrefs
         INTEGER   REFCNT                  !  count of total unique PSIs
-        INTEGER   REFLIST( MXPSI )        !  list of unique PSIs
+        INTEGER   REFLIST( MXPLST )       !  list of unique PSIs
 
 C...........   Gridded Temperature
         REAL      TA( NGRID )             !  one-layer slice of temperature
@@ -128,6 +128,7 @@ C...........   Other local variables:
         INTEGER    MTIME  !  temperature time zone time counter (HHMMSS)
         INTEGER    NSTEPS !  number of time steps to process temperature data
         INTEGER    NTFIL  !  total number of input temperature files
+        INTEGER    OSRC   !  number of sources outside grid
         INTEGER    RDT    !  temporary FIP code
         INTEGER    TMMIT(4)!  temporary TMMI indices for all four min/max
         INTEGER    TSTEP  !  time step of input temperature data (HHMMSS)
@@ -140,6 +141,7 @@ C...........   Other local variables:
         REAL       TF     !  deg F temporary temperature storage
 
         LOGICAL         EFLAG   !  Error flag 
+        LOGICAL         OFLAG   !  sources outside grid
 
         CHARACTER*16    BUFFER  !  Temporary file name buffer 
         CHARACTER*16    TKDAT   !  logical file name buffer for temperature 
@@ -545,7 +547,14 @@ C.....................  Apply ungridding matrix
   101               CONTINUE
 
 C.....................  Update minimum and maximum per source
-                    IF    ( TASRC .LT. TKMIN( S ) ) THEN
+                    IF( NU( S ) .EQ. 0 ) THEN    !  source outside grid
+ 
+                        OFLAG = .TRUE.
+                        OSRC = OSRC + 1
+                        TKMIN( S ) = 0.0
+                        TKMAX( S ) = 0.0
+
+                    ELSEIF( TASRC .LT. TKMIN( S ) ) THEN
                         TKMIN( S ) = TASRC
 
                     ELSEIF( TASRC .GT. TKMAX( S ) ) THEN
@@ -772,8 +781,12 @@ C.....................  Apply ungridding matrix
   201               CONTINUE
 
 C.....................  Initialize minimum and maximum per source
-                    TKMIN( S ) = TASRC
-                    TKMAX( S ) = TASRC
+                    IF( NU( S ) .GT. 0 ) THEN
+
+                        TKMIN( S ) = TASRC
+                        TKMAX( S ) = TASRC
+
+                    ENDIF
 
   299           CONTINUE
 
@@ -816,7 +829,12 @@ C.....................  Apply ungridding matrix
   301               CONTINUE
 
 C.....................  Update minimum and maximum per source
-                    IF    ( TASRC .LT. TKMIN( S ) ) THEN
+                    IF( NU( S ) .EQ. 0 ) THEN    !  source outside grid
+ 
+                        TKMIN( S ) = 0.0
+                        TKMAX( S ) = 0.0
+
+                    ELSEIF( TASRC .LT. TKMIN( S ) ) THEN
                         TKMIN( S ) = TASRC
 
                     ELSEIF( TASRC .GT. TKMAX( S ) ) THEN
@@ -844,6 +862,16 @@ C......... Write temp combos indices for each PSI into ASCII file
      &                           ( TIDXPSI( J,K ), J = 1, NTIDX( K ) )
 
   521   CONTINUE
+
+        IF( OFLAG ) THEN
+
+            WRITE( MESG, 94010 )
+     &         'During ungridding, ', OSRC,' sources excluded from grid'
+
+            CALL M3WARN( 'PREDIUR', 0, 0, MESG )
+
+        ENDIF
+
 
 C......... End program sucessfully
 
