@@ -172,6 +172,7 @@ C...........   Other local variables
         CHARACTER*16    SGRID   !  cross-point sfc grid file name
         CHARACTER*16    XGRID   !  cross-point lay grid file name
         CHARACTER*16    LNAME   !  " timestepped layer fractions output file
+
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
         INTEGER         FDEV    !  unit number for stack parameters file
         INTEGER         LDEV    !  unit number for log file
@@ -195,7 +196,6 @@ C.......   Dot and cross point grid description parameters:
         REAL         VGLVSDG( MXLAYS3 + 1 )  !  vertical coord values.
         CHARACTER*16 GRDNMDG      ! dot grid grid name
         CHARACTER*16 COONMDG      ! dot grid coordinate system name
-
         INTEGER      NCOLSXG      ! cross grid number of grid columns
         INTEGER      NROWSXG      ! cross grid number of grid rows
         INTEGER      NLAYSXG      ! cross grid number of layers
@@ -214,6 +214,9 @@ C.......   Dot and cross point grid description parameters:
         REAL         VGTOPXG      ! model-top, for sigma coord types.
         REAL         VGLVSXG( MXLAYS3 + 1 )  !  vertical coord values.
         REAL         SIGH   ( MXLAYS3 )      !  half-level sigma values
+        CHARACTER*80    SCEN_STR  !  temporary string for scenario name
+        CHARACTER*80    SCHE_STR  !  temporary string for cloud scheme name
+
 
 
 C.......   STATEMENT FUNCTION for evaluating relative error: TRUE
@@ -307,6 +310,16 @@ C.......   and temporal profiles files
      &          'Enter name for CROSS-POINT LAYERED GRID file',
      &          FSREAD3, 'LAYGRID', 'LAYPOINT' )
 
+C.......   Get surface met files header for scenario and cloud scheme
+
+        IF ( .NOT. DESC3( SNAME ) ) THEN
+            CALL M3EXIT( 'LAYPOINT', 0, 0,
+     &                  'Could not get description of file "'
+     &                  // SNAME( 1:TRIMLEN( SNAME ) ) // '"', 2 )
+        END IF
+
+        SCEN_STR = FDESC3D( 21 )
+        SCHE_STR = FDESC3D( 22 )
 
 C.......   Get time period for output file, dot point grid desc parameters:
 
@@ -509,6 +522,9 @@ C.......   for description of output file
         DO  22  I = 2, MXDESC3
             FDESC3D( I ) = ' '
 22      CONTINUE
+
+        FDESC3D( 21 ) = SCEN_STR
+        FDESC3D( 22 ) = SCHE_STR
 
         LNAME = PROMPTMFILE( 
      &          'Enter name for LAYER FRACTIONS output file',
