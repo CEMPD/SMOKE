@@ -12,7 +12,8 @@ C       Creates variable names from combinations of inventory species,
 C       model species, and MV process names.  It reads the
 C       file SPCLIST, checks for consistency, checks input parameters
 C       to function, and outputs variable names based on the TYPE
-C       specified.
+C       specified.  
+C       ******* Returned names are in compiled order! *******
 C
 C  PRECONDITIONS REQUIRED:
 C
