@@ -646,7 +646,7 @@ C.................  Check zone conversion to integer
             WRITE( MESG,94010 ) 
      &       'FACILITY.PT FILE processed:' // CRLF() // BLANK5 //
      &       '   Actual FACILITY record count', FS, CRLF() // BLANK5 //
-     &       '   Max dimensioned record-count', NPFMAX
+     &       '   Max dimensioned record-count (NPFMAX)=', NPFMAX
 
             CALL M3MSG2( MESG )
 
@@ -850,7 +850,7 @@ C.................  Store stack file information
             WRITE( MESG,94010 ) 
      &       'STACK.PT FILE processed:' // CRLF() // BLANK5 //
      &       '   Actual  STACK   record-count', SS, CRLF() // BLANK5 //
-     &       '   Max dimensioned record-count', NPSMAX
+     &       '   Max dimensioned record-count (NPSMAX)=', NPSMAX
 
             CALL M3MSG2( MESG )
 
@@ -953,7 +953,7 @@ C.................  Convert and check SCC value
             WRITE( MESG,94010 ) 
      &       'PROCESS.PT FILE processed' // CRLF() // BLANK5 //
      &       '   Actual PROCESS  record-count', PS, CRLF() // BLANK5 //
-     &       '   Max dimensioned record-count', NPPMAX
+     &       '   Max dimensioned record-count (NPPMAX)=', NPPMAX
 
             CALL M3MSG2( MESG )
 
@@ -1078,7 +1078,7 @@ C temp              DVIMONA( DS ) = IMON
             WRITE( MESG,94010 ) 
      &       'DEVICE.PT FILE processed' // CRLF() // BLANK5 //
      &       '   Actual  DEVICE  record-count', DS, CRLF() // BLANK5 //
-     &       '   Max dimensioned record-count', NPDMAX
+     &       '   Max dimensioned record-count (NPDMAX)=', NPDMAX
 
             CALL M3MSG2( MESG )
 
@@ -1322,9 +1322,9 @@ C.............  (later:  Get rule pen, eff from prulefac records)
 
             WRITE( MESG,94010 ) 
      &       'EMISSION.PT FILE processed:'  // CRLF() // BLANK5 //
-     &       '   This-file   SOURCE  record-count', ES - NSRC,
+     &       '   Actual     EMS-95 SOURCE  record-count', ES - NSRC,
      &        CRLF() // BLANK5 //
-     &       '   Cumulative  SOURCE  record-count', ES
+     &       '   Cumulative EMS-95 SOURCE  record-count', ES
 
             CALL M3MSG2( MESG )
 
@@ -1338,8 +1338,9 @@ C........................................................................
 202     CONTINUE        !  exit from loop on input files
 
         WRITE( MESG,94010 ) 
-     &      'Actual  SOURCE  record-count', NSRC, CRLF() // BLANK5 //
-     &      'Max dimensioned record-count', NPEMAX
+     &      'Actual  EMS-95 SOURCE  record-count', NSRC, 
+     &      CRLF() // BLANK5 //
+     &      'Max dimensioned record-count (NPEMAX)=', NPEMAX
 
         CALL M3MSG2( MESG )
 
@@ -1568,8 +1569,8 @@ C.............  the correct number of sources
 
             WRITE( MESG,94010 ) 
      &       'Actual      number of sources', NPOINT, CRLF()// BLANK5//
-     &       'Dimensioned number of sources', NPSRC,  CRLF()// BLANK5//
-     &       'Do not match!'
+     &       'Dimensioned number of sources (NPSRC)=', NPSRC,  
+     &       CRLF()// BLANK5// 'Do not match!'
 
             CALL M3MSG2( MESG )
 
