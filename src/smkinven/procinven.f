@@ -1,11 +1,12 @@
 
-        SUBROUTINE PROCINVEN( NRAWBP, NRAWSRCS, UDEV, YDEV, CDEV, LDEV )
+        SUBROUTINE PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV )
 
 C**************************************************************************
 C  subroutine body starts at line 114
 C
 C  DESCRIPTION:
-C      This subroutine 
+C      This subroutine sorts and stores the inventory data including source
+C      specific characteristics and emissions data.
 C      Many places in the in-line documentation refers to pollutants, but
 C      means pollutants or activity data
 C
@@ -41,11 +42,8 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: INRECA, POLVLA, INDEXA,
-     &                      IPOSCODA, SRCIDA, ICASCODA, CSOURCA, 
-     &                      CSOURC, NPCNT, POLVAL, IPOSCOD, IFIP,
-     &                      CSCC, XLOCA, YLOCA, CELLID, IRCLAS,
-     &                      IVTYPE, CLINK, CVTYPE
+        USE MODSOURC, ONLY: INRECA, POLVLA, INDEXA, IPOSCODA, ICASCODA, 
+     &                      CSOURC, NPCNT, POLVAL, IPOSCOD         
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT
@@ -53,9 +51,6 @@ C.........  This module contains the lists of unique inventory information
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NOZ, NEF, NCE, NRE, NRP, 
      &                     NPPOL, NSRC, NC1, NC2, NCHARS 
-
-C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: IVTIDLST, CVTYPLST, NVTYPE
 
         IMPLICIT NONE
 
@@ -67,13 +62,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2     CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN
-        INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVINT, ENVYN, STR2INT
+        EXTERNAL        CRLF, ENVINT, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: NRAWBP   ! no. raw recs x pol/act
-        INTEGER , INTENT (IN) :: NRAWSRCS ! no. raw srcs
         INTEGER , INTENT (IN) :: UDEV     ! unit no. for non-HAP exclusions
         INTEGER , INTENT (IN) :: YDEV     ! unit no. for area-to-point
         INTEGER , INTENT (IN) :: CDEV     ! SCC descriptions unit no.
@@ -112,7 +105,6 @@ C...........   Other local variables
         LOGICAL      :: RE_ZERO_FLAG = .FALSE. ! true: rule effective of 0 found
         LOGICAL      :: RP_ZERO_FLAG = .FALSE. ! true: rule penetration of 0 found
 
-        CHARACTER(LEN=ALLLEN3) TSRC        !  tmp source information 
         CHARACTER(LEN=256)     BUFFER      !  input file line buffer
         CHARACTER(LEN=256)     MESG        !  message buffer 
 
@@ -129,108 +121,9 @@ C.........  Get settings from the environment
         MXERR  = ENVINT( ERRSET  , ' ', 100, I )
         MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
-C.........  Allocate memory for sorted inventory arrays
-        ALLOCATE( IFIP( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+C.........  Allocate memory for sorted inventory data
         ALLOCATE( NPCNT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
-        ALLOCATE( CSCC( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
-        ALLOCATE( CSOURC( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
-        
-        SELECT CASE( CATEGORY )
-        CASE( 'AREA' )
-            ALLOCATE( XLOCA( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
-            ALLOCATE( YLOCA( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
-            ALLOCATE( CELLID( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
-        CASE( 'MOBILE' )
-            ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
-            ALLOCATE( IVTYPE( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IVTYPE', PROGNAME )
-            ALLOCATE( CLINK( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
-            ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
-        CASE( 'POINT' )
-!            ALLOCATE( IDIU( NSRC ), STAT=IOS )
-!            CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
-!            ALLOCATE( IWEK( NSRC ), STAT=IOS )
-!            CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
-        END SELECT
-
-C.........  Loop through sources to store sorted arrays
-C           for output to I/O API file.
-C.........  Keep case statement outside the loops to speed processing
-        SELECT CASE ( CATEGORY )
-        CASE( 'AREA' ) 
-
-             DO I = 1, NRAWSRCS
-
-                 S = SRCIDA( I )
-                 TSRC = CSOURCA( I )
-                
-                 IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
-                 CSCC( S ) = TSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )
-                 CSOURC( S ) = TSRC
-
-            END DO
-            
-            XLOCA = BADVAL3   ! array
-            YLOCA = BADVAL3   ! array
-            CELLID = 0        ! array
-
-        CASE( 'MOBILE' )
-        
-            DO I = 1, NRAWSRCS
-            
-                S = SRCIDA( I )
-                TSRC = CSOURCA( I )
-                
-                IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
-                IRCLAS( S ) = 
-     &              STR2INT( TSRC( RWTPOS3:RWTPOS3+RWTLEN3-1 ) )
-                IVTYPE( S ) = 
-     &              STR2INT( TSRC( VIDPOS3:VIDPOS3+VIDLEN3-1 ) )
-                CSCC( S ) = TSRC( MSCPOS3:MSCPOS3+SCCLEN3-1 )
-                CLINK( S ) = TSRC( LNKPOS3:LNKPOS3+LNKLEN3-1 )
-                CSOURC( S ) = TSRC
-
-C.................  Set vehicle type based on vehicle ID                
-                DO J = 1, NVTYPE
-                    IF( IVTYPE( S ) == IVTIDLST( J ) ) EXIT
-                END DO
-                
-                CVTYPE( S ) = CVTYPLST( J )
-                
-            END DO
-
-        CASE( 'POINT' )
-        
-            DO I = 1, NRAWSRCS
-            
-                S = SRCIDA( I )
-                TSRC = CSOURCA( I )
-                
-                IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
-!                IDIU( S )
-!                IWEK( S )
-                CSCC( S ) = TSRC( CH4POS3:CH4POS3+SCCLEN3-1 )
-                
-                CSOURC( S ) = TSRC
-            
-            END DO
-
-        END SELECT
-
-C.........  Deallocate per-source unsorted arrays
-        DEALLOCATE( CSOURCA, SRCIDA )
-
-C.........  Allocate memory for sorted inventory data
         ALLOCATE( POLVAL( NRAWBP,NPPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
         ALLOCATE( IPOSCOD( NRAWBP ), STAT=IOS )
