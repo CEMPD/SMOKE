@@ -856,14 +856,6 @@ C.............  For plume-in-grid outputs or for UAM-style elevated point
 C               sources (PTSRCE input file)...
             IF( ELEVFLAG .OR. PINGFLAG ) THEN
 
-C.................  Check if using a variable grid            
-                IF( VARFLAG ) THEN
-                    MESG = 'Cannot process plume-in-grid or ' //
-     &                     'UAM-style sources when using a ' //
-     &                     'variable grid.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
 C.................  If elevated ASCII and units are grams, print warning
                 IF( ELEVFLAG .AND. SPCTYPE .EQ. MASSSTR ) THEN
                     MESG = 'WARNING: Processing with mass-based ' //
@@ -883,10 +875,23 @@ C.................  Open stack groups file output from Elevpoint
                 PVNAME = PROMPTMFILE( MESG, FSREAD3, 'STACK_GROUPS', 
      &                   PROGNAME )
                 CALL RETRIEVE_IOAPI_HEADER( PVNAME )
+                  
+                IF( VARFLAG ) THEN
+                    DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', 
+     &                                  .TRUE. )
+                END IF
+                
                 NGROUP = NROWS3D
                 PVSDATE = SDATE3D
                 PVSTIME = STIME3D
-                CALL CHKGRID( 'point', 'GROUPS', 1, EFLAG )
+                
+C.................  Check grid definition; do not allow subgrids when
+C                   using a variable grid
+                IF( VARFLAG ) THEN
+                    CALL CHKGRID( 'point', 'GROUPS', 0, EFLAG )
+                ELSE
+                    CALL CHKGRID( 'point', 'GROUPS', 1, EFLAG )
+                END IF
 
             END IF
 
