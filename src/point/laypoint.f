@@ -585,10 +585,10 @@ C               that is "meters above ground."
         END IF
 
 C.........  Get horizontal grid structure from the G_GRIDPATH file
-        IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD3D, GDTYP, COORUN3D,
-     &                      P_ALP, P_BET, P_GAM, XCENT, YCENT,
-     &                      XORIG, YORIG, XCELL, YCELL,
-     &                      NCOLS, NROWS, NTHIK3D ) ) THEN
+        IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUN3D,
+     &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D,
+     &                     YCENT3D, XORIG3D, YORIG3D, XCELL3D,
+     &                     YCELL3D, NCOLS3D, NROWS3D, NTHIK3D)) THEN
 
             MESG = 'Could not get Models-3 grid description.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -646,6 +646,10 @@ C.........  Call elevated sources indicator file, even thought it might not
 C           be opened - routine will initialize LMAJOR and LPING regardless
 C           of whether the file is available.
         CALL RDPELV( PDEV, NSRC, .FALSE., NMAJOR, NPING )
+
+C.........  If explicit plume rise, only explicit plume sources will be
+C           output, but LMAJOR needs to be true for error checking.  So, set it
+        IF( XFLAG ) LMAJOR = .TRUE.
 
 C.........  Allocate memory for all remaining variables using dimensions 
 C           obtained previously...
@@ -1019,9 +1023,9 @@ C                       these and set to skip plume rise computation
                         ZBOT = PLMBOT( K )
                         ZTOP = PLMTOP( K )
 
-C.....................  Otherwuse, set top and bottom of plume to be in layer 1.
+C.....................  Otherwise, set top and bottom of plume to be in layer 1.
                     ELSE
-                        ZBOT = VGLVS( 1 ) * 0.5
+                        ZBOT = VGLVSXG( 1 ) * 0.5
                         ZTOP = ZBOT
 
                     END IF
