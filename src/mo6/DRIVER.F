@@ -6,7 +6,12 @@ C  Calls MOBILE.
 C 
 C  Changes: (Last change first) 
 C 
-C  10 Apr 11 AIR Task 11: Redirected error messages to IOUERR file. 
+C  16 Jan 02 AIR Task 11: Added INERR to PROCHDR parameter list to 
+C            improve error handling. Improved TOTERR error handling. 
+C            Fixed unassigned output on unit 2. 
+C  10 Jan 01 @EPA-bag bug371 change error message filename 
+C  13 Dec 01 AIR Task 29: Added INQUIRE to error message logic. 
+C  10 Apr 01 AIR Task 11: Redirected error messages to IOUERR file. 
 C  29 Sep 00 AIR Task 07: Corrected syntax error in 150 FORMAT. 
 C  02 Oct 00 @EPA-djb Bug230, Removed unused I/O devices. 
 C   08 aUG 00 @EPA-bag,  Placed a runtime diagnostic using DATE_AND_TIME 
@@ -147,7 +152,7 @@ C     Output units:
 C 
 C     Open the IOUERR file and initialize total errors 
 C 
-      OPEN(IOUERR,FILE='M61ERROR.TXT') 
+      OPEN(IOUERR,FILE='M6ERROR.TXT') 
 C 
       TOTERR = 0 
 C 
@@ -207,10 +212,9 @@ C        period, look FIRST for a file with the given name and an extension
 C        of '.IN' and THEN, if that file is not found, look for a file with 
 C        the given name and no added extension. 
 C 
-
 ccs         CALL UCCOMP(INPFILE,ROOT) 
          CALL LJCOMP(INPFILE,ROOT)
-
+ 
          IDX = INDEX(ROOT,'.',BACK) 
          IF (IDX == 0) THEN 
             INPFILE = ROOT(1:LEN_TRIM(ROOT)) // '.IN' 
@@ -306,7 +310,6 @@ C           action for the output file. The last two items are optional.
 C 
             PTR2 = 0 
             CALL NXTTOK(BATREC,INPLINE,PTR1,PTR2) 
-
 ccs            CALL UCCOMP(INPLINE,INPFILE) 
             CALL LJCOMP(INPLINE,INPFILE)
 
@@ -351,7 +354,7 @@ C
 C        Read the header of the input file. Set the output flags and 
 C        open the output files, using default names if necessary. 
 C 
-         CALL PROCHDR(INPFILE,CMDOUTPUT,CMDACTION,RC) 
+         CALL PROCHDR(INPFILE,CMDOUTPUT,CMDACTION,INERR,RC) 
          IF (RC /= 0) THEN 
             WRITE(BUFFER1,130) RC,INPFILE 
   130       FORMAT(' *** ERROR ',I9,' processing the header of', 
@@ -359,7 +362,7 @@ C
             CALL LJCOMP(BUFFER1,BUFFER2) 
             WRITE(IOUOUT,"(' ',A)") BUFFER2(1:LEN_TRIM(BUFFER2)) 
             WRITE(IOUERR,"(' ',A)") BUFFER2(1:LEN_TRIM(BUFFER2)) 
-            INERR=INERR+1 
+            TOTERR = TOTERR + INERR 
             EXIT MAINLOOP 
          ENDIF 
          NUMDID = NUMDID + 1 
@@ -440,6 +443,7 @@ C
       WRITE(IOUOUT,'(A150)') BUFFER2 
       WRITE(IOUERR,'(A150)') BUFFER2 
       INERR=INERR+1 
+      TOTERR=TOTERR+INERR 
       GOTO 99 
 C 
    85 CONTINUE 
@@ -448,6 +452,7 @@ C
       CALL LJCOMP(BUFFER1, BUFFER2) 
       WRITE(IOUOUT,'(A150)') BUFFER2 
       WRITE(IOUERR,'(A150)') BUFFER2 
+      TOTERR=TOTERR+INERR 
       INERR=INERR+1 
       GOTO 99 
 C 
@@ -467,15 +472,15 @@ C
         CLOSE (IOUERR,STATUS='DELETE') 
       ELSE 
         WRITE(IOUOUT,595) TOTERR 
-        WRITE(IOUREP,595) TOTERR 
+        INQUIRE(IOUREP,OPENED=FOPEN) 
+        IF(FOPEN) WRITE(IOUREP,595) TOTERR 
   595 FORMAT(// 
      *       ' ATTENTION: At least ',I3,' error(s) occurred during'/ 
-     *       '            this MOBILE6.1 run. Please review the'/ 
-     *       '            messages in the file M61ERROR.TXT,'/ 
+     *       '            this MOBILE6 run. Please review the'/ 
+     *       '            messages in the file M6ERROR.TXT,'/ 
      *       '            correct the problems, and try again.') 
       ENDIF 
 C 
-ccs      PAUSE 
       STOP 
 C 
 C # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 

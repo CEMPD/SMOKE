@@ -12,6 +12,9 @@ C
 C 
 C  Changes: (Last change first) 
 C 
+C  14 Jan 02 @EPA-bag  Bug375   Added calls to QUITER to avoid user input of 
+C                            VMT fractions which are inconsistent with facility 
+C                            options, FREEWAY and AREAWIDE 
 C  19 Jul 01 @EPA-djb Wish235, Add Average Speed command. 
 C 
 C  Input on call: 
@@ -129,6 +132,26 @@ C
         USRVMT(4) = USRVMT(4)/VMTSUM 
       ENDIF 
 C 
+C     Check for inconsistent freeway and arterial vehicle fractions 
+      IF(USRFAC==4.AND.USRVMT(1)<=0.00001.AND.USRVMT(2)<=0.00001) THEN 
+        CALL QUITER(0.0,0,577,INERR) 
+        RC = 1 
+        GOTO 99 
+      ENDIF 
+C     Check for inconsistent freeway and ramp vehicle fractions 
+      IF(USRFAC==2) THEN 
+        IF(USRVMT(1)<=0.00001.AND.USRVMT(4)<=0.00001) THEN 
+          CALL QUITER(0.0,0,578,INERR) 
+          RC = 1 
+          GOTO 99 
+        ENDIF 
+        IF(USRVMT(1)<=0.00001.AND.USRVMT(2)<=0.00001) THEN 
+          CALL QUITER(0.0,0,580,INERR) 
+          RC = 1 
+          GOTO 99 
+        ENDIF 
+      ENDIF 
+C 
 C  If the area wide option is chosen, check the combination of 
 C  user supplied values to determine if this option can be used. 
 C 
@@ -205,5 +228,5 @@ C
          INERR = INERR + 1 
       END IF 
 C 
-      RETURN 
+  99  RETURN 
       END 

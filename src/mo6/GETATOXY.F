@@ -8,6 +8,7 @@ C  Calls UCCOMP,NXTTOK,NXTREC,QUITER
 C 
 C  Changes: (Last change first) 
 C 
+C 15 Jan 02 AIR Task 15: Changed maximum alcohol oxy limit from 3.5% to 3.7% 
 C 26 Jun 01 AIR Task 15: New subroutine. 
 C 
 C  Input on call: 
@@ -107,20 +108,14 @@ C
       CALL NXTTOK(M6REC,DATAFIELD,PTR1,PTR2) 
       READ(DATAFIELD,*,ERR=95,IOSTAT=IOS) OXY 
 C 
-      IF(OXY.LT.0. .OR. OXY.GT.5.) THEN 
-        CALL QUITER(OXY,0,572,INERR) 
-        GOTO 98 
-      ENDIF 
+      IF(OXY.LT.0. .OR. OXY.GT.20.) CALL QUITER(OXY,0,572,INERR) 
 C 
 C     Obtain and verify the market share. 
 C 
       CALL NXTTOK(M6REC,DATAFIELD,PTR1,PTR2) 
       READ(DATAFIELD,*,ERR=95,IOSTAT=IOS) MKTSH 
 C 
-      IF(MKTSH.LT.0. .OR. MKTSH.GT.1.) THEN 
-        CALL QUITER(MKTSH,0,573,INERR) 
-        GOTO 98 
-      ENDIF 
+      IF(MKTSH.LT.0. .OR. MKTSH.GT.1.) CALL QUITER(MKTSH,0,573,INERR) 
 C 
 C     Store the inputs 
 C 
@@ -157,10 +152,7 @@ C     Note that Ethers = MTBE + ETBE + TAME.
 C 
       SHRMKT(2) = ATOXY(2,1) + ATOXY(2,2) + ATOXY(2,4) !Ethers 
       SHRMKT(3) = ATOXY(2,3)                           !Alcohols 
-C 
-      MKTSH = SHRMKT(2) + SHRMKT(3) 
-      IF(MKTSH .GT. 1.0) CALL QUITER(MKTSH,0,4,INERR) 
-      SHRMKT(1)=1.0-SHRMKT(2)-SHRMKT(3) 
+      SHRMKT(1) = 1.0 - SHRMKT(2) - SHRMKT(3) 
 C 
       SUM = 0. 
       DO I=1,4 
@@ -184,9 +176,9 @@ C
         OXYCNT(1)=MAX(0.,MIN(.027,OXYCNT(1))) 
       ENDIF 
       
-      IF(OXYCNT(2).LT.0..OR.OXYCNT(2).GT..035001) THEN 
+      IF(OXYCNT(2).LT.0..OR.OXYCNT(2).GT..037001) THEN 
         CALL QUITER(OXYCNT(2),0,6,INERR) 
-        OXYCNT(2)=MAX(0.,MIN(.035,OXYCNT(2))) 
+        OXYCNT(2)=MAX(0.,MIN(.037,OXYCNT(2))) 
       ENDIF 
 C 
       IF(SHRMKT(2).GT.0..AND.OXYCNT(1).EQ.0. .OR. 
@@ -217,7 +209,7 @@ C Error or EOF on any attempted read.
 C 
    85 WRITE(IOUERR,185) M6REC 
   185 FORMAT(/'*** ERROR reading or parsing the following ', 
-     &        'OXYGENATE input record:', 
+     &        'Air Toxic OXYGENATE input record:', 
      &       /'*** ',A) 
       GOTO 98 
 C 

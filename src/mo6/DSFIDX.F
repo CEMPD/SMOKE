@@ -10,6 +10,7 @@ C  Calls IGSFPT.
 C 
 C  Changes: (Last change first) 
 C 
+C 29 Oct 01 @EPA-djb    Changed all code to upper case letters. 
 C  4 Nov 1998 @DynTel-ZK 2-000 Explicit Typing  
 C  Input on call: 
 C 
@@ -30,6 +31,7 @@ C
 C  DSFIDX was added in MOBILE4.1 to support user-entered gas/diesel 
 C  sales fractions. 
 C 
+C 29 Oct 01 @EPA-djb    Changed all code to upper case letters. 
 C  25 Jan 2000 @EPA-djb Changed from gas fraction to diesel fraction. 
 C  11 Jun 97 DynTel@MLA 2-622  Added IVTYPE.I for Mobile6 and modified the 
 C            code to use the symbolic vehicle type names and vehicle type 

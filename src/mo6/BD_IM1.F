@@ -6,6 +6,9 @@ C
 C  BLOCK DATA Subprogram IM :  /IMPAR1/,/IMPAR2/,/IM240P/ 
 C 
 C   Changes. 
+C  04 Jan 02 @EPA-BAG        smooth BIENRATIO versus vehicle age 
+C  17 Dec 01 @EPA-BAG        Remove sawtooth 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C   25 May 01 @EPA-ELG I&M parameters for loaded idle 
 C   06 Oct 00 @EPA-BAG BUG155 Remove OBDPC 
 C   15 Sep 00 AIR Task 08: Increased all I/M related arrays from 5 to 7 
@@ -50,8 +53,8 @@ C     IMPEFF (7,3)      - IMPEFF (IMPGM,IP)
 C 
 C     /LDGOBD/: 
 C     R_S_CONV(11,3,2)  - R_S_CONV(ISTD, IP, ISR) 
-C     HIGH3(25,3,5)     - HIGH3   (JDX,IP,IV) 
-C     HIGH4(25,3,5)     - HIGH4   (JDX,IP,IV) 
+C     OBDHINIM(25,3,5)     - OBDHINIM   (JDX,IP,IV) 
+C     OBDHI_IM(25,3,5)     - OBDHI_IM   (JDX,IP,IV) 
 C     OBDF(3) 
 C 
 C     /LDGSIM/: 
@@ -132,8 +135,8 @@ C
 C /LDGOBD/ 
 C  R_S_CONV  R    Conversion factors from FTP to running/start emissions 
 C                 rates. 
-C  HIGH3     R    fraction of high emitting vehicles with OBD and without I&M program 
-C  HIGH4     R    fraction of high emitting vehicles with OBD and I&M program 
+C  OBDHINIM  R    fraction of high emitting vehicles with OBD and without I&M program 
+C  OBDHI_IM  R    fraction of high emitting vehicles with OBD and I&M program 
 C  OBDF      R    OBD owner response fractions 
 C                 OBDF(1) holds owner response fraction for JDX = 1 
 C                         or when JDX > 1 and vehicle mileage =< 36,000 
@@ -180,6 +183,8 @@ C     /IMPAR1/:
       DATA EXEMPTAGE  /7*25/ 
       DATA IMGRACE    /7*1/ 
       DATA EVFBEN     /28*1.0/ 
+      DATA OLDFRAC    /0.75/ 
+      DATA NEWFRAC    /0.25/ 
 C     /LDGIMC/: 
       DATA IMPEFF     /21*1.0/ 
       DATA WAVRDC     /7*0.80/ 
@@ -374,5 +379,19 @@ C start
      N  0.0, 3*1.370, 7* 1.370/ 
 C 
       DATA ASMRAT / 1350*0.0 / 
+C 
+C AGE:  1       2      3      4      5      6      7      8      9 
+C      10      11     12     13     14     15     16     17     18 
+C      19      20     21     22     23     24     25 
+      DATA BIENRATIO / 
+     H 0.0000,0.4966,0.5877,0.6900,0.7400,0.7773,0.8000,0.8356,0.8740, 
+     H 0.8914,0.9200,0.9393,0.9468,0.9532,0.9595,0.9648,0.9689,0.9729, 
+     H 0.9755,0.9776,0.9794,0.9810,0.9828,0.9844,0.9852, 
+     C 0.0000,0.4976,0.5991,0.7100,0.7600,0.8000,0.8300,0.8640,0.8943, 
+     C 0.9083,0.9300,0.9469,0.9530,0.9589,0.9632,0.9673,0.9709,0.9744, 
+     C 0.9769,0.9788,0.9813,0.9829,0.9836,0.9849,0.9864, 
+     N 0.0000,0.5167,0.6136,0.7000,0.7500,0.7804,0.8100,0.8372,0.8730, 
+     N 0.8966,0.9134,0.9246,0.9353,0.9439,0.9515,0.9568,0.9615,0.9670, 
+     N 0.9720,0.9741,0.9757,0.9781,0.9793,0.9815,0.9826/ 
 C 
       END 

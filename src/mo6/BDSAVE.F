@@ -10,6 +10,7 @@ C
 C  Changes: (Last change first) 
 C 
 C  30 Apr 01 AIR Task 12: Added VA022 for T2PM_FRAC 
+C  14-DEC-01 @EPA-bag        REMOVED SAVE02.I, SAVE03.1 and associated variables 
 C  21 Nov 00 @EPA-bag bug300 rename soak dist. save array; now named va021; 
 C            removed save10.i 
 C  26 Jul 00 AIR Task 07: Fixed Bug 201: Failure to reinitialize the 
@@ -87,12 +88,9 @@ C
       INCLUDE 'STDIST.I' 
       INCLUDE 'TIER2.I' 
       INCLUDE 'SKDIST.I' 
-C 
       INCLUDE 'TIER2PM.I' 
 C 
       INCLUDE 'SAVE01.I' 
-      INCLUDE 'SAVE02.I' 
-      INCLUDE 'SAVE03.I' 
       INCLUDE 'SAVE04.I' 
       INCLUDE 'SAVE05.I' 
       INCLUDE 'SAVE06.I' 

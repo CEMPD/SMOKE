@@ -1,4 +1,4 @@
-      SUBROUTINE DB_AGGR(ICY) 
+      SUBROUTINE DB_AGGR(ICY,INERR) 
 C 
 C     This subroutine outputs a aggregated daily evaporative, 
 C     exhaust and refueling emissions to the database output file. 
@@ -9,6 +9,9 @@ C     Calls:  None
 C 
 C     CHANGES  :  (LAST CHANGE FIRST) 
 C 
+C  06 Nov 01 AIR Task 27: Updated fuel economy calculations via PMFLECON. 
+C  19 Oct 01 AIR Task: Put in code (again) so that all vehicles have MPG output 
+C  07 Sep 01 @EPA-djb Bug 333, fixed the summation for ZSTARTS and ZENDS. 
 C  27 Aug 01 @EPA-djb Added MEVMYR weighting to ZSTARTS and ZENDS. 
 C  07 Aug 01 @EPA-djb Bug330, Changed RFE weighting to TF instead of MEVMYR. 
 C  10 Jul 01 @EPA-djb Wish130, Expanded STARTSPERDAY array to include age. 
@@ -41,14 +44,16 @@ C
       INCLUDE  'MYRCAL.I'          ! MEVMYR, TF 
       INCLUDE  'RESUL2.I'          ! G_MI_EVP 
       INCLUDE  'RESUL4.I'          ! RUNEF,STARTEF 
-      INCLUDE  'RLCOM1.I'          ! ROADFE 
       INCLUDE  'STDIST.I'          ! STARTSPERDAY 
       INCLUDE  'VMXCOM.I'          ! VMTMIX 
       INCLUDE  'WEEKLY.I'          ! IWEEK 
 C 
+      REAL, EXTERNAL :: PMFLECON 
+C 
 C Input arguments 
 C 
       INTEGER, INTENT(IN) :: ICY 
+      INTEGER, INTENT(INOUT) :: INERR 
 C 
 C Local variables 
 C 
@@ -56,7 +61,6 @@ C
       INTEGER             :: EVAPT     ! Evaporative emission type index 
       INTEGER             :: IDX       ! Reverse vehicle age index 
       INTEGER             :: IP        ! Pollutant index 
-      INTEGER             :: IRF       ! Fuel economy model year index 
       INTEGER             :: IV        ! Vehicle class index 
       INTEGER             :: JDX       ! Vehicle age index 
       INTEGER             :: MY        ! Model year 
@@ -132,16 +136,7 @@ C             Daily miles traveled
 C 
 C             Fleet average fuel economy (miles per gallon) 
               MY=ICY-JDX+1 
-              IF (MY.LE.1968) IRF = 1 
-              IF (MY.GE.1969.AND.MY.LE.2000) IRF = MY - 1968 
-              IF (MY.GE.2001) IRF = 32 
-              IF (VVGAS(IV).EQ.0.OR.IV.EQ.VTMC) THEN 
-                RFE = 0.0 
-              ELSE IF (IV == VTGASBUS) THEN 
-                RFE = ROADFE(IRF,14) 
-              ELSE 
-                RFE = ROADFE(IRF,IV) 
-              ENDIF 
+              RFE = PMFLECON(MY,IV,INERR) ! Compute fuel economy for all vehicle classes 
 C             Convert mi/gal to gal/mi, weight and sum. (harmonic mean) 
               IF(RFE.GT.0.0) THEN 
                  IDX=(MAXYRS+1)-JDX 

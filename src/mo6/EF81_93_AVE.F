@@ -14,6 +14,7 @@ C  Calls EF81_93,IERPTR
 C 
 C  Changes: (Last change first) 
 C 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C  22 Jun 00 EPA-BAG  removed JDX from EF81_93_AVE parameter list 
 C  09 Jun 00 EPA-BAG  removed JDX from EF81_93 parameter list 
 C  08 Sep 99 @DynTel-bag 2-660 Removed this code from BEREF.FOR and renamed 
@@ -81,6 +82,7 @@ C
       TYPE (AVG_REC),POINTER :: USER_AVG 
       LOGICAL EXISTS 
 C 
+      EF81_93_AVE=0.0 
       LMY=MY 
       KMILES=10.0*VMTAGE 
 C 
@@ -93,9 +95,9 @@ C
 C  Block data input BD40. The ITLDGV array stores a technolgy group  
 C  pointer for each value of IGER and IFDS. 
 C 
-      IF(KEYER.EQ.0) THEN 
-        IVTAM=1 
-        IF (IV.NE.1) IVTAM=2 
+      IF(KEYER/=0) GOTO 99 
+      IVTAM=1 
+      IF(IV.NE.1) IVTAM=2 
 C 
 C Test if a user supplied record exists for ifds,ivtam,ip. User is a 
 c returned pointer if such record exists. 
@@ -130,7 +132,7 @@ C
           EF81_93_AVE=ZPOINT+SLOPE1*CRITP1+SLOPE2*(KMILES-CRITP1) 
         ELSE 
           EF81_93_AVE=ZPOINT+SLOPE1*CRITP1+SLOPE2*(CRITP2-CRITP1) 
-     *                           +SLOPE3*(KMILES-CRITP2) 
+     *                         +SLOPE3*(KMILES-CRITP2) 
         END IF 
 C 
 C  For very high accumulated mileages the average emissions may become 
@@ -138,7 +140,7 @@ C  higher than the high basic emission factor. In this case the average
 C  emissions will be set equal to the high emissions. 
 C 
         IF(EF81_93_AVE .GE. 
-     *     EF81_93(MY,IP,IV,VMTAGE,IFDS,RUN,HIGH)) THEN 
+     *   EF81_93(MY,IP,IV,VMTAGE,IFDS,RUN,HIGH)) THEN 
           EF81_93_AVE=EF81_93(MY,IP,IV,VMTAGE,IFDS,RUN,HIGH) 
         ENDIF 
 C 
@@ -147,11 +149,9 @@ C  factor. In this case the average emissions will be set equal to the
 C  normal emissions. 
 C 
         IF(EF81_93_AVE .LE. 
-     *     EF81_93(MY,IP,IV,VMTAGE,IFDS,RUN,NORMAL)) THEN 
+     *   EF81_93(MY,IP,IV,VMTAGE,IFDS,RUN,NORMAL)) THEN 
           EF81_93_AVE=EF81_93(MY,IP,IV,VMTAGE,IFDS,RUN,NORMAL) 
         ENDIF 
 C 
-      END IF 
-C 
-      RETURN 
+ 99   RETURN 
       END 

@@ -8,6 +8,7 @@ C  Calls QUITER.
 C 
 C  Changes: (Last change first) 
 C 
+C  15 Jan 2002 AIR Task 15: Changed maximum alcohol oxy limit from 3.5% to 3.7% 
 C  16 Nov 2000 @EPA-bag bug302 copy SHRMKT(1) to GLSHARE(1) global/run level 
 C              save variables 
 C  31 May 2000 @EPA-elg  Fixed READ Format Changed to Free READ format. 
@@ -84,7 +85,7 @@ C
 C 
       IF(OXYCNT(1).LT.0..OR.OXYCNT(1).GT..027001) 
      *    CALL QUITER(OXYCNT(1),0,5,INERR) 
-      IF(OXYCNT(2).LT.0..OR.OXYCNT(2).GT..035001) 
+      IF(OXYCNT(2).LT.0..OR.OXYCNT(2).GT..037001) 
      *    CALL QUITER(OXYCNT(2),0,6,INERR) 
 C 
       IF(IGASHW.LT.1.OR.IGASHW.GT.2) CALL QUITER(0.,IGASHW,7,INERR) 

@@ -1,4 +1,4 @@
-      SUBROUTINE DBEVAP(IEVAP,IV,JDX,GRAMS_MI,GRAMS_HR,IROAD,MY) 
+      SUBROUTINE DBEVAP(IEVAP,IV,JDX,GRAMS_MI,GRAMS_HR,IROAD,MY,INERR) 
 C 
 C     This subroutine outputs the evaporative emissions, daily or hourly, 
 C       to the Database. 
@@ -10,6 +10,8 @@ C     Calls:  DB_DAILY
 C 
 C     CHANGES  :  (LAST CHANGE FIRST) 
 C 
+C  06 Nov 01 AIR Task 27: Updated fuel economy calculations via PMFLECON. 
+C            Added INERR processing. 
 C  10 Jul 01 @EPA-djb Wish130, Expanded STARTSPERDAY array to include age. 
 C  13 Feb 01 @EPA-elg increased the size of FVMT arrays to include vehicle class 
 C  24 Oct 00 @EPA-BG  New labels for database age, model year and hour selection 
@@ -30,7 +32,6 @@ C    /SPEED9/   FVMT,HVMT
 C    /CEVBMY/   BMYMPD 
 C    /IVTYPE/   VVSTARTS 
 C    /MYRCAL/   MEVMYR 
-C    /RLCOM1/   ROADFE 
 C    /STDIST/   STARTDIST, STARTSPERDAY 
 C    /TEMPS/    TEMHRLY 
 C    /VMXCOM/   VCOUNT 
@@ -48,11 +49,14 @@ C
       INCLUDE  'EVAHS1.I'          ! HSRED, HS_HRLY_TRP_FRCN 
       INCLUDE  'IVTYPE.I'          ! VVSTARTS 
       INCLUDE  'MYRCAL.I'          ! MEVMYR 
-      INCLUDE  'RLCOM1.I'          ! ROADFE 
       INCLUDE  'STDIST.I'          ! STARTDIST, STARTSPERDAY 
       INCLUDE  'TEMPS.I'           ! TEMHRLY 
       INCLUDE  'VMXCOM.I'          ! DBVCOUNT 
       INCLUDE  'WEEKLY.I'          ! IWEEK 
+C 
+C Externals 
+C 
+      REAL, EXTERNAL :: PMFLECON 
 C 
 C Input arguments 
 C 
@@ -63,12 +67,11 @@ C
       INTEGER, INTENT(IN) :: IROAD 
       INTEGER, INTENT(IN) :: IEVAP 
       INTEGER, INTENT(IN) :: MY 
+      INTEGER, INTENT(INOUT) :: INERR 
 C 
 C Local variables 
 C 
       INTEGER             :: IH       ! HOUR INDEX 
-      INTEGER             :: IRF      ! INDEX OF MAPPED MODEL YEAR INTO 
-                                      ! ROAD FUEL ECONOMY ARRAY 
       INTEGER, PARAMETER  :: IMOTORCYCLE = 24 
       INTEGER, PARAMETER  :: IGASBUS = 25 
       INTEGER, SAVE       :: UPPER_LMT=2 
@@ -115,23 +118,12 @@ C
       IF (NO_DBOUT) THEN 
         RETURN 
       ELSE 
-        SELECT CASE (MY) 
-          CASE (:1968) 
-            IRF=1 
-          CASE (1969:2000) 
-            IRF=MY-1968 
-          CASE (2001:) 
-            IRF=32 
-        END SELECT 
 C 
-        SELECT CASE (IV) 
-            CASE(IMOTORCYCLE) 
-                RFE = 0.0 
-            CASE(IGASBUS) 
-                RFE = ROADFE(IRF,14) 
-            CASE DEFAULT 
-                RFE = ROADFE(IRF,IV) 
-        END SELECT 
+        IF(IV.EQ.VTMC) THEN 
+          RFE=0.0 
+        ELSE 
+          RFE=PMFLECON(MY,IV,INERR) 
+        END IF 
 C 
 C       PREPARE HEADER INFORMATION FOR EITHER FORM OF OUTPUT 
 C 

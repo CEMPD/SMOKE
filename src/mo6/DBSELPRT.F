@@ -9,6 +9,7 @@ C  Calls LJCOMP,NXTTOK,QUITER,UCCOMP.
 C 
 C  Changes: (Last change first) 
 C 
+C  16 Jan 02 AIR Task 11: Improved error message handling 
 C  10 Apr 11 AIR Task 11: Redirected error messages to IOUERR file. 
 C  30 Jan 01 AIR Task 11: New routine. 
 C 
@@ -109,9 +110,9 @@ C
         DBSELPART(7) = 2 
         NFOUND = NFOUND + 1 
       ELSE 
-        WRITE(IOUOUT,110) TESTFIELD 
-        WRITE(IOUERR,110) TESTFIELD 
-  110   FORMAT('*** ERROR: ',A10,' is not a valid particulate type.') 
+        WRITE(IOUOUT,110) TRIM(TESTFIELD) 
+        WRITE(IOUERR,110) TRIM(TESTFIELD) 
+  110   FORMAT(' *** ERROR: ',A,' is not a valid particulate type.') 
         INERR = INERR + 1 
         RC = 1 
       ENDIF 
@@ -129,7 +130,7 @@ C
       IF (NFOUND.EQ.0) THEN 
         WRITE(IOUOUT,140) 
         WRITE(IOUERR,140) 
-  140   FORMAT(/'*** ERROR: No particulate types were selected by the', 
+  140   FORMAT(/' *** ERROR: No particulate types were selected by the', 
      &         ' PARTICULATES record.') 
         INERR = INERR + 1 
         RC = 2 

@@ -3,12 +3,13 @@ C
 C  CKOBDIM checks for existence of an Exhaust I/M program operating on 
 C  1996 and later model year vehicles, and the existence of an OBD I/M 
 C  and/or an EVAP OBD operating on pre-1996 model year vehicles. The 
-C  routine also checks that no OBD tests are made on HD vehicles. 
+C  routine also checks that no OBD tests are made on pre-2007 HD vehicles. 
 C 
 C  Called by TESTIM 
 C 
 C  Changes: (Last change first) 
 C 
+C 09 Jan 02 @EPA-djb   : Bug 356, No OBD I/M for pre-2007 HDGV. 
 C 09 May 01 @EPA-elg   : POST96IM Flag has been effectively disabled. 
 C 16 Apr 00 @EPA-elg   : Allows POST 1996 I/M Input 
 C 28 Nov 00 @EPA-elg   : Allows NO CAA I/M Input 
@@ -51,7 +52,9 @@ C
 C 
       INTEGER, INTENT(INOUT) :: INERR 
 C 
-      INTEGER PGM1 
+      INTEGER IVIM   !Local gasoline vehicle classes (no MC). 
+      INTEGER PGM1   !Local program number. 
+      INTEGER JHDGV  !Are HDGV included in OBD Evap for pre-2007 MYRs? (0:No,1:Yes) 
 C 
 C 
 C 
@@ -71,6 +74,7 @@ C
         IF(CAAFLG.NE.1) THEN 
 C 
 C       The POST96IM flag has been effectively disabled by always setting it to 1. 
+C       This allows non-OBD tests for 1996 and newer vehicles. 
 C 
           IF(ITEST(PGM1).LE.11 .AND. MODYR(1,PGM1).GT.1995) THEN 
             IF(POST96IM.NE.1) CALL QUITER(0.0,0,546,INERR)   !Exhaust I/M not supported 
@@ -98,7 +102,23 @@ C
            CALL QUITER(0.0,0,556,INERR)    !Evap OBD not supported for pre-1996 MYs 
           ENDIF 
 C 
+C       OBD systems for Evap do not appear on HDGV until the 2007 model year. 
+C       Do not allow Evap OBD tests for HDGV before the 2007 model year. 
+C 
+          IF(ITEST(PGM1).EQ.20 .OR. ITEST(PGM1).EQ.21) THEN 
+            JHDGV=0 
+            IF(MODYR(1,PGM1).LT.2007) THEN 
+              DO IVIM=6,14 
+                IF(ILDT(IVIM,PGM1).NE.1) JHDGV=1          !Evap OBD I/M tests are NOT supported 
+              END DO                                      !for pre-2007 model year HDGV. 
+            ENDIF 
+            IF(JHDGV.EQ.1) CALL QUITER(0.0,PGM1,531,INERR) 
+          ENDIF 
+C 
         ELSEIF(CAAFLG.EQ.1) THEN 
+C 
+C       If the CAA is disabled, then non-OBD tests are allowed for 
+C       1996 and newer vehicles, however OBD tests are not allowed. 
 C 
           IF(ITEST(PGM1) .EQ. 12 .OR. ITEST(PGM1).EQ. 20  .OR. 
      &       ITEST(PGM1) .EQ. 21) THEN 

@@ -3,12 +3,13 @@ C
 C EF_HI_FRCN returns the proportion of high emitters amongst the light duty 
 C gasoline vehicles and trucks. The effect of tampering is not included. 
 C 
-C  Called by HRLOOP and IMTEST 
+C  Called by HRLOOP and IMBENEFIT 
 C 
 C  Calls EF81_93, EF81_93_AVE, QUITER 
 C 
 C  Changes: (Last change first) 
 C 
+C  17 Oct 01 @EPA-BAG bug331 COMMENTS - Biennial/ annual I&M program discrepancy 
 C  22 Jun 00 EPA-BAG  removed JDX from EF81_93_AVE parameter list 
 C  09 Jun 00 EPA-BAG  removed JDX from EF81_93 parameter list 
 C  08 Jun 00 @EPA-djb Added ISTD to the call to choose method used. 
@@ -87,9 +88,9 @@ C
         MY1=MY 
         IF(MY.GT.1993) MY1=1993 
         DEN = EF81_93(MY1,IP,IV,VMTAGE,IFDS,RUN,HIGH) 
-     &      - EF81_93(MY1,IP,IV,VMTAGE,IFDS,RUN,NORMAL) 
+     &        - EF81_93(MY1,IP,IV,VMTAGE,IFDS,RUN,NORMAL) 
         NUM = EF81_93_AVE(MY1,IP,IV,VMTAGE,IFDS) 
-     &      - EF81_93(MY1,IP,IV,VMTAGE,IFDS,RUN,NORMAL) 
+     &        - EF81_93(MY1,IP,IV,VMTAGE,IFDS,RUN,NORMAL) 
 C 
       ELSE 
         SELECT CASE (IP) 
@@ -99,14 +100,14 @@ C Assume the fraction of high emitters is the same as for
 C tier 0 PFI vehicles 
 C 
             DEN = EF81_93(1993,HC,1,VMTAGE,3,RUN,HIGH) 
-     &          - EF81_93(1993,HC,1,VMTAGE,3,RUN,NORMAL) 
+     &            - EF81_93(1993,HC,1,VMTAGE,3,RUN,NORMAL) 
             NUM = EF81_93_AVE(1993,HC,1,VMTAGE,3) 
-     &          - EF81_93(1993,HC,1,VMTAGE,3,RUN,NORMAL) 
+     &            - EF81_93(1993,HC,1,VMTAGE,3,RUN,NORMAL) 
           CASE (CO) 
             DEN = EF81_93(1993,CO,IV,VMTAGE,3,RUN,HIGH) 
-     &          - EF81_93(1993,CO,IV,VMTAGE,3,RUN,NORMAL) 
+     &            - EF81_93(1993,CO,IV,VMTAGE,3,RUN,NORMAL) 
             NUM = EF81_93_AVE(1993,CO,IV,VMTAGE,3) 
-     &          - EF81_93(1993,CO,IV,VMTAGE,3,RUN,NORMAL) 
+     &            - EF81_93(1993,CO,IV,VMTAGE,3,RUN,NORMAL) 
           CASE DEFAULT   ! NOx 
             DEN =  1.141 - 0.0294*VMTAGE  ! see eq. 5-10 p.8-12 
             NUM = -0.036 + 0.02142*VMTAGE ! M6.EXH.007, 12/99 
@@ -123,6 +124,6 @@ C
           ELSE 
              EF_HI_FRCN = NUM / DEN 
       END IF 
-C       
+C 
       RETURN 
       END 

@@ -10,6 +10,7 @@ C        CHK_USER(in USERDAT),IERPTR
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Dec 01 EPA-BAG  Added variable initializations for EF81_93, ZPOINT, and SLOPE 
 C  09 Jun 00 EPA-BAG  Declared parameter list variables with INTENT(IN) 
 C                     qualifier; removed JDX from parameter list 
 C  28 Apr 00 EPA-elg  Corrected Kmiles to be 10*VMTAGE.  Erroneous in previous code. 
@@ -91,6 +92,9 @@ C
       INTEGER, PARAMETER :: RUN=1 
       INTEGER, PARAMETER :: NORMAL=1 
 C 
+      EF81_93 = 0.0 
+      ZPOINT  = 0.0 
+      SLOPE1  = 0.0 
       KMILES = VMTAGE*10.0 
 C 
       IF (MY.LE.1993) THEN 

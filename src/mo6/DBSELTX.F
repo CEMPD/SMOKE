@@ -9,6 +9,7 @@ C  Calls LJCOMP,NXTTOK,QUITER,UCCOMP.
 C 
 C  Changes: (Last change first) 
 C 
+C  16 Jan 02 AIR TASK 21: Improved error message handling. 
 C  12 Jul 11 AIR Task 21: Added Acrolein 
 C  10 Apr 11 AIR Task 11: Redirected error messages to IOUERR file. 
 C  30 Jan 01 AIR Task 11: New routine. 
@@ -111,9 +112,9 @@ C
         DBSELTOX(6) = 2 
         NFOUND = NFOUND + 1 
       ELSE 
-        WRITE(IOUOUT,110) TESTFIELD 
-        WRITE(IOUERR,110) TESTFIELD 
-  110   FORMAT('*** ERROR: ',A10,' is not a valid Air Toxic type.') 
+        WRITE(IOUOUT,110) TRIM(TESTFIELD) 
+        WRITE(IOUERR,110) TRIM(TESTFIELD) 
+  110   FORMAT(' *** ERROR: ',A,' is not a valid Air Toxic type.') 
         INERR = INERR + 1 
         RC = 1 
       ENDIF 
@@ -132,7 +133,7 @@ C
       IF (NFOUND.EQ.0) THEN 
         WRITE(IOUOUT,140) 
         WRITE(IOUERR,140) 
-  140   FORMAT(/'*** ERROR: No air toxics were selected by the', 
+  140   FORMAT(/' *** ERROR: No air toxics were selected by the', 
      &         ' AIR TOXICS record.') 
         INERR = INERR + 1 
         RC = 2 

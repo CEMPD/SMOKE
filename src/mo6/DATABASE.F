@@ -5,6 +5,9 @@ C     code in Mobile that produces database output.
 C 
 C  Changes : (Last change first) 
 C 
+C  13 Dec 01 AIR Task 27: Changed CO2 to be not selected by default. 
+C  06 NOV 01 AIR Task 27: Added CO2 support to DBSELPOL and DBPOLNAMES. 
+C            DBVEHNAMES now includes ALL VEH. 
 C  01 Aug 01 AIR Task 15: Added DBSELTOX for Air Toxics. 
 C  10 May 01 AIR Task 11/5: Extended DBSELPART to handle idle PM. 
 C  06 Mar 01 AIR Task 11: Added particulate elements to DBSELEFT. 
@@ -30,7 +33,7 @@ C
       INTEGER, DIMENSION(2)   ::  DBSELHR  = (/1,24/) 
       INTEGER, DIMENSION(10)  ::  DBSELEFT = (/2,2,2,2,2,2,2,2,2,2/) 
       INTEGER, DIMENSION(5)   ::  DBSELFAC = (/2,2,2,2,2/) 
-      INTEGER, DIMENSION(3)   ::  DBSELPOL = (/2,2,2/) 
+      INTEGER, DIMENSION(4)   ::  DBSELPOL = (/2,2,2,1/)  ! CO2 is not selected by default 
       INTEGER, DIMENSION(28)  ::  DBSELVEH = (/2,2,2,2,2,2,2,2, 
      &               2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2/) 
       INTEGER, DIMENSION(11)  ::  DBSELPART= (/1,1,1,1,1,1,1,1,1,1,1/) 
@@ -69,15 +72,15 @@ C
      &     'Crankcase       ','Refueling Loss  ','Exhaust Idle    '/) 
       CHARACTER(LEN=4), DIMENSION(5), PARAMETER  ::  DBFACNAMES = 
      &   (/'Fwy.','Art.','Loc.','Ramp','None'/) 
-      CHARACTER(LEN=4), DIMENSION(3), PARAMETER  ::  DBPOLNAMES = 
-     &   (/'HC  ','CO  ','NOX '/) 
-      CHARACTER(LEN=8), DIMENSION(28), PARAMETER ::  DBVEHNAMES = 
+      CHARACTER(LEN=4), DIMENSION(4), PARAMETER  ::  DBPOLNAMES = 
+     &   (/'HC  ','CO  ','NOX ','CO2 '/) 
+      CHARACTER(LEN=8), DIMENSION(29), PARAMETER ::  DBVEHNAMES = 
      &   (/'LDGV    ','LDGT1   ','LDGT2   ','LDGT3   ','LDGT4   ', 
      &     'HDGV2B  ','HDGV3   ','HDGV4   ','HDGV5   ','HDGV6   ', 
      &     'HDGV7   ','HDGV8A  ','HDGV8B  ','LDDV    ','LDDT12  ', 
      &     'HDDV2B  ','HDDV3   ','HDDV4   ','HDDV5   ','HDDV6   ', 
      &     'HDDV7   ','HDDV8A  ','HDDV8B  ','MC      ','GAS BUS ', 
-     &     'URB BUS ','COM BUS ','LDDT34  '/) 
+     &     'URB BUS ','COM BUS ','LDDT34  ','ALL VEH '/) 
 C  OPTIONAL COLUMN HEADERS FOR HOURLY DATABASE OUTPUT 
       CHARACTER(LEN=8), DIMENSION(22)            ::  DBHOURCOLS = 
      &   (/'FILE    ','RUN     ','SCEN    ','POL     ','VTYPE   ', 

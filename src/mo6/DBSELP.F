@@ -9,7 +9,8 @@ C  Calls LJCOMP,NXTTOK,QUITER,UCCOMP.
 C 
 C  Changes: (Last change first) 
 C 
-C 10 Apr 11 AIR Task 11: Redirected error messages to IOUERR file. 
+C 06 Nov 01 AIR Task 27: Added CO2 support. 
+C 10 Apr 01 AIR Task 11: Redirected error messages to IOUERR file. 
 C 08 Mar 01 AIR Task 11: Change to allow blank input (no HC,CO,NOx output). 
 C 02 Oct 00 @EPA-djb Bug230 Changed write to * to IOUOUT. 
 C 13 Sep 00 @EPA-elg bug228 changed error handling conditions. 
@@ -64,7 +65,7 @@ C     Set all the pollutant types to 'not selected.' They are all
 C     initialized to 'selected' so they will be printed by default 
 C     unless this routine is called to restrict the output. 
 C 
-      DO I = 1,3 
+      DO I = 1,4 
         DBSELPOL(I) = 1 
       END DO 
 C 
@@ -83,6 +84,8 @@ C
         DBSELPOL(2) = 2 
       ELSEIF (TESTFIELD.EQ.'NOX') THEN 
         DBSELPOL(3) = 2 
+      ELSEIF (TESTFIELD.EQ.'CO2') THEN 
+        DBSELPOL(4) = 2 
       ELSE 
         WRITE(IOUOUT,110) TESTFIELD 
         WRITE(IOUERR,110) TESTFIELD 

@@ -15,6 +15,7 @@ C  31 Jan 01 AIR Task 11: New Block Data.
 C 
 C  Common block array subscripts: 
 C 
+C  BERSULF(25)  -  BERSULF(MY,IV) 
 C  EFPM(11,28)  -  EFPM (IPPM,IV) 
 C  FRACA(4)     -  FRACA (I) 
 C  IVEHWL(28)   -  IVEHWL(IV) 
@@ -27,6 +28,7 @@ C
 C   Name    Type                  Description 
 C  ------   ----  ----------------------------------------------------- 
 C  /PART1/ 
+C  BERSULF   R    Fuel sulfur level associated with the basic emission factor (BER). 
 C  D_PPM     R    diesel sulfur content, in ppm (required input) 
 C  IVEHWL    I    Average Number of Vehicle Wheels for 28 Vehicle Classes 
 C  MAXIPPM   I    Maximum number of particulate pollutants, as with IPPM as follows: 
@@ -36,7 +38,6 @@ C  PARTFLG   L    switch to run the particulate subroutine
 C  PRTCHK    I    checklist of required particulate run inputs (1=not input, 2=input) 
 C                 (1=particle size, 2=diesel sulfur level, 3=ZML/DR files) 
 C  PSZCUT    R    particle size cutoff, in micrometers (required input) 
-C  BERSULF   R    Fuel sulfur level associated with the basic emission factor (BER). 
 C 
 C  /PART2/ 
 C  BSWPTR   R    Base gasoline fuel sulfur content, in wt% 

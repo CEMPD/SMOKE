@@ -1,5 +1,5 @@
       REAL FUNCTION 
-     *CNVRT_U(IN_UNIT,OUT_UNIT,JDX,ICY,IV,IVTAM,IH,EMISSION_TYPE) 
+     *CNVRT_U(IN_UNIT,OUT_UNIT,JDX,IV,IH,EMISSION_TYPE,INERR) 
 C 
 C  CNVRT_U does unit conversions for the evaporative emissions. 
 C 
@@ -9,6 +9,8 @@ C  Calls
 C 
 C  Changes:  (Last change first) 
 C 
+C  21 Dec 01 @epa-bag     remove unused variables 
+C  06 Nov 01 AIR Task 27: Updated fuel economy calculations via PMFLECON. 
 C  10 Jul 01 @EPA-djb Wish130, Expanded STARTSPERDAY array to include age. 
 C  10 Mar 00 @DynTel-mla  1-011 moved HSRED fractions to block data 
 C  28 fEB 00 @DynTel-bg  1-006 Changed conversion factor to 1.0 for daily 
@@ -20,34 +22,33 @@ C    /CEVBMY/  BMYMPD,BMTPDF
 C    /EVAHS1/  HS_HRLY_TRP_FRCN, HSRED 
 C    /SPEED9/  HVMT 
 C    /STDIST/  STARTSPERDAY(28,2) 
-C    /RLCOM1/  ROADFE 
 C    /WEEKLY/  IWEEK 
 C 
       IMPLICIT NONE 
       INCLUDE 'CEVBMY.I' 
       INCLUDE 'EVAHS1.I' 
       INCLUDE 'IVTYPE.I' 
-      INCLUDE 'RLCOM1.I' 
       INCLUDE 'SPEED9.I' 
       INCLUDE 'STDIST.I' 
       INCLUDE 'WEEKLY.I' 
       INCLUDE 'MYRCAL.I' 
-CCC      INCLUDE 'UNIT_PARAM.I' 
+C 
+C  Externals 
+C 
+      REAL, EXTERNAL :: PMFLECON 
 C 
 C     declare parameter list 
 C 
       INTEGER, INTENT(IN) :: EMISSION_TYPE 
       INTEGER, INTENT(IN) :: JDX 
       INTEGER, INTENT(IN) :: IV 
-      INTEGER, INTENT(IN) :: IVTAM 
       INTEGER, INTENT(IN) :: IH 
-      INTEGER, INTENT(IN) :: ICY 
       INTEGER, INTENT(IN) :: OUT_UNIT 
       INTEGER, INTENT(IN) :: IN_UNIT 
+      INTEGER, INTENT(INOUT) :: INERR 
 C 
 C     declare local variables 
 C 
-      INTEGER  MDX 
       INTEGER  MY 
       REAL     TPD 
       INTEGER, PARAMETER :: IHOTSOAK=1 
@@ -89,13 +90,7 @@ C
 C 
           IF(OUT_UNIT .EQ. GPG) THEN 
 C 
-C           Set the road fuel economy MY pointer. 
-            MY=ICY-JDX+1 
-            IF(MY.LE.1969)MDX=1 
-            IF(MY.GT.1969.AND.MY.LT.2000)MDX=MY-1969+1 
-            IF(MY.GE.2000)MDX=32 
-C 
-            CNVRT_U = ROADFE(MDX,IVTAM) 
+            CNVRT_U = PMFLECON(MY,IV,INERR) 
 C 
           ENDIF 
 C 

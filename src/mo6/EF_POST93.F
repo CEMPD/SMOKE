@@ -3,12 +3,13 @@ C
 C  EF_POST93 returns the normal and high emission factors for 1994+ light 
 C  duty gasoline vehicles and trucks. 
 C 
-C  Called by ARBEF, EF_DSPTCH, EF_HI_FRCN, IMPROG, IMTEST 
+C  Called by ARBEF, EF_DSPTCH, EF_HI_FRCN, IMPROG, IMBENEFIT 
 C 
 C  Calls EF81_93 
 C 
 C  Changes: (Last change first) 
 C 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C  26 Sep 00 Bug 64: Modified HC Start/Running Splits (JK) 
 C  07 Jul 00 AIR Task 05: Removed unused JDX from parameter list. 
 C  15 Jun 00 @EPA-bag, Bug73 Removed tier0 requirement for application 

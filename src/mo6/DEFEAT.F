@@ -1,7 +1,10 @@
       SUBROUTINE DEFEAT(MY,ICY,IV,IROAD,DDNOX) 
 C 
+C  Called by : HRLOOP 
+C 
 C  Changes: (Last change first) 
 C 
+C 29 Oct 01 @EPA-djb    Changed OR to AND in MY conditional for rebuild effects. 
 C 25 May 01 @EPA-elg    QUITER message 191 changed to 567 
 C 13 Feb 01 @EPA-elg    Added bus category to IVV determination. 
 C 08 Feb 01 @EPA-elg    Changed logic for IMY mapping for the NO PULL AHEAD 
@@ -81,7 +84,7 @@ C     No rebuilds can occur before calendar year 2000 because
 C     the defeat device litigation had not yet been concluded. 
 C 
       IF(ICY.GT.2000) THEN 
-        IF(MY.GE.IRBSTRT.OR.MY.LE.IRBEND) THEN 
+        IF(MY.GE.IRBSTRT.AND.MY.LE.IRBEND) THEN 
           IF(ICY.GT.MY+IRBLD(IVV)) THEN 
             IF(IBUILD.EQ.2) THEN 
               DDNOXX = RBLEV * 

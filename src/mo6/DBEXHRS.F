@@ -1,4 +1,4 @@
-      SUBROUTINE DBEXHRS(HEF,IP,IV,MY,JDX) 
+      SUBROUTINE DBEXHRS(HEF,IP,IV,MY,JDX,INERR) 
 C 
 C  DBEXHRS writes Exhaust Start and Exhaust Running emissions data to 
 C  the EMISSIONS database table. 
@@ -9,6 +9,9 @@ C  CallS:  DB_DAILY
 C 
 C  Changes: (Last change first) 
 C 
+C  15 Nov 01 AIR Task 27: Added INERR support due to PMFLECON update. 
+C  06 Nov 01 AIR Task 27: Updated fuel economy calculations via PMFLECON. 
+C  19 Oct 01 AIR Task: Put in code (again) so that all vehicles have MPG output. 
 C  10 Jul 01 @EPA-djb Wish130, Expanded STARTSPERDAY array to include age. 
 C  13 Feb 01 @EPA-elg increased the size of FVMT arrays to include vehicle class 
 C  24 Oct 00 @EPA-BG  New labels for database age, model year and hour selection 
@@ -35,7 +38,6 @@ C    /CEVBMY/   BMYMPD
 C    /FLAGS5/   FTP_INPUT_FLAG 
 C    /IVTYPE/   VVSTARTS 
 C    /MYRCAL/   MEVMYR 
-C    /RLCOM1/   ROADFE 
 C    /STDIST/   STARTDIST, STARTSPERDAY 
 C    /TEMPS/    TEMHRLY 
 C    /VMXCOM/   DBVCOUNT 
@@ -54,7 +56,6 @@ C  ------   ----  -------------------------------------------------------
 C  DBHEADER  C    Non-changing part of database output record. 
 C  IFAC      I    Facility type index. 
 C  IH        I    Hourly interval. 
-C  IRF       I    Model year group for fuel economy. 
 C  IVC       I    Model year group index for vehicle counts. 
 C  IW        I    Weekday/weekend flag. 
 C  RFE       R    Fuel economy value. 
@@ -80,24 +81,25 @@ C
       INCLUDE  'IVTYPE.I'     ! VVSTARTS 
       INCLUDE  'MAXIMA.I'     ! MAXYRS 
       INCLUDE  'MYRCAL.I'     ! MEVMYR,TF 
-      INCLUDE  'RLCOM1.I'     ! ROADFE 
       INCLUDE  'STDIST.I'     ! STARTDIST, STARTSPERDAY 
       INCLUDE  'TEMPS.I'      ! TEMHRLY 
       INCLUDE  'VMXCOM.I'     ! DBVCOUNT 
       INCLUDE  'WEEKLY.I'     ! IWEEK 
+C 
+      REAL, EXTERNAL :: PMFLECON 
 C 
       REAL,DIMENSION(24,5),INTENT(IN)  ::  HEF 
       INTEGER,INTENT(IN)               ::  IP 
       INTEGER,INTENT(IN)               ::  IV 
       INTEGER,INTENT(IN)               ::  JDX 
       INTEGER,INTENT(IN)               ::  MY 
+      INTEGER,INTENT(INOUT)            ::  INERR 
 C 
       CHARACTER(25)                ::  DBHEADER 
 C 
       INTEGER                      ::  EFTYPE 
       INTEGER                      ::  IFAC 
       INTEGER                      ::  IH 
-      INTEGER                      ::  IRF 
       INTEGER                      ::  IW 
       INTEGER, SAVE                ::  UPPER_LMT=2 
       INTEGER, SAVE                ::  LOWER_LMT=1 
@@ -127,17 +129,7 @@ C
 C 
       IW = IWEEK 
 C 
-      IF (MY.LE.1968) IRF = 1 
-      IF (MY.GE.1969.AND.MY.LE.2000) IRF = MY - 1968 
-      IF (MY.GE.2001) IRF = 32 
-C 
-      IF (VVGAS(IV).EQ.0.OR.IV.EQ.VTMC) THEN 
-         RFE = 0.0 
-      ELSE IF (IV == VTGASBUS) THEN 
-         RFE = ROADFE(IRF,14) 
-      ELSE 
-         RFE = ROADFE(IRF,IV) 
-      ENDIF 
+      RFE = PMFLECON(MY,IV,INERR) ! Compute fuel economy for all vehicle classes 
 C 
       IF (IV == VTLDGV) THEN 
         HSRFAC = HSRED(1) 

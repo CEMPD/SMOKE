@@ -4,7 +4,7 @@ C  GETATHAPS obtains the user-supplied Air Toxic Exhaust emission factors.
 C 
 C  Called by DSPTCH. 
 C 
-C  Calls NXTTOK,UCCOMP,GETPMZML,GETPMDR1,GETPMDR2 
+C  Calls NXTTOK,UCCOMP 
 C 
 C  Changes: (Last change first) 
 C 
@@ -53,7 +53,6 @@ C
       INTEGER   IATH 
       INTEGER   IB 
       INTEGER   IE 
-      INTEGER   IOS 
       INTEGER   L 
       INTEGER   LABTYPE 
       INTEGER   LDGIMP 
@@ -77,15 +76,12 @@ C    following the delimiter). PTR1 does not need to be initialized.
 C 
       PTR2 = 21 
       CALL NXTTOK(INPREC,DATAFIELD,PTR1,PTR2) 
-
 ccs      CALL UCCOMP(DATAFIELD,FILENAME) 
       CALL LJCOMP(DATAFIELD,FILENAME)
-
 C 
 C     Open the external data file for ADDITIONAL HAPS. 
 C 
       IOUALT = JUNIT()
-
       OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=999) 
       WRITE(IOUREP,120) FILENAME 
@@ -95,7 +91,7 @@ C
 C     Find the token number of the record label that must appear 
 C     on a record somewhere in the header of the external data file. 
 C 
-      CALL CHKLAB('ATHAPS',STDLAB,LDGIMP,SECTION) 
+      CALL CHKLAB('ADDITIONAL HAPS',STDLAB,LDGIMP,SECTION) 
 C 
 C     The next two assignment statements are present solely to suppress 
 C     compiler generated warnings. They have no functional importance. 
@@ -168,7 +164,7 @@ C
       IB=TLOC(1) 
       IE=TLOC(2)-1 
       IF(IE-IB.GE.0) THEN 
-      READ(M6REC(IB:IE),*,ERR=999,END=999,IOSTAT=IOS) ATHPOL(IATH) 
+      READ(M6REC(IB:IE),*,ERR=998,END=998) ATHPOL(IATH) 
       ELSE 
       WRITE(IOUERR,101) 
   101 FORMAT(' Error: The Additional HAPS Pollutant Number Field is', 
@@ -221,7 +217,7 @@ C
       IB=TLOC(4)+1 
       IE=TLOC(5)-1 
       IF(IE-IB.GE.0) THEN 
-      READ(M6REC(IB:IE),*,ERR=999,END=999,IOSTAT=IOS) ATHVTYPE(IATH) 
+      READ(M6REC(IB:IE),*,ERR=998,END=998) ATHVTYPE(IATH) 
       ELSE 
       WRITE(IOUERR,104) 
   104 FORMAT(' Error: The Additional HAPS VType Field is null') 
@@ -241,7 +237,7 @@ C
       IB=TLOC(5)+1 
       IE=TLOC(6)-1 
       IF(IE-IB.GE.0) THEN 
-      READ(M6REC(IB:IE),*,ERR=999,END=999,IOSTAT=IOS) ATHBEGMY(IATH) 
+      READ(M6REC(IB:IE),*,ERR=998,END=998) ATHBEGMY(IATH) 
       ELSE 
       WRITE(IOUERR,105) 
   105 FORMAT(' Error: The Additional HAPS BegMY Field is null') 
@@ -257,7 +253,7 @@ C
       IB=TLOC(6)+1 
       IE=TLOC(7)-1 
       IF(IE-IB.GE.0) THEN 
-      READ(M6REC(IB:IE),*,ERR=999,END=999,IOSTAT=IOS) ATHENDMY(IATH) 
+      READ(M6REC(IB:IE),*,ERR=998,END=998) ATHENDMY(IATH) 
       ELSE 
       WRITE(IOUERR,106) 
   106 FORMAT(' Error: The Additional HAPS EndMY Field is null') 
@@ -332,25 +328,26 @@ C
       GOTO 999 
       END IF 
 C 
-C  Now obtain the Ratio or the ZML. The ZML value is in ug/mi. 
+C  Now obtain the Ratio or the ZML. The ZML value is in mg/mi. 
 C 
       IB=TLOC(8)+1 
       IE=TLOC(9)-1 
       IF(IE-IB.GE.0) THEN 
-      READ(M6REC(IB:IE),*,ERR=999,END=999,IOSTAT=IOS) ATHRATZML(IATH) 
+      READ(M6REC(IB:IE),*,ERR=998,END=998) ATHRATZML(IATH) 
       ELSE 
       WRITE(IOUERR,108) 
   108 FORMAT(' Error: The Additional HAPS Ratio/ZML Field is null') 
       GOTO 999 
       END IF 
 C 
-C  If the RATIOBEF is BER, then obtain the deterioration rate, in ug/10K Miles. 
+C  If the RATIOBEF is BER, then obtain the deterioration rate, in mg/10K Miles. 
+C  Otherwise set the rate to zero. 
 C 
-      IF(ATHRATIO(IATH).EQ.'BER') THEN 
+      IF(ATHRATIO(IATH).EQ.'BEF') THEN 
       IB=TLOC(9)+1 
       IE=TLOC(10)-1 
       IF(IE-IB.GE.0) THEN 
-      READ(M6REC(IB:IE),*,ERR=999,END=999,IOSTAT=IOS) ATHDET(IATH) 
+      READ(M6REC(IB:IE),*,ERR=998,END=998) ATHDET(IATH) 
       ELSE 
       WRITE(IOUERR,109) 
   109 FORMAT(' Error: The Additional HAPS DET Field is null') 
@@ -374,6 +371,10 @@ C
       RC = 0 
       GOTO 99 
       END IF 
+C 
+ 998  WRITE(IOUERR,130) NATH,TRIM(FILENAME) 
+  130 FORMAT(' Error: An EOF or READ problem occurred after processing'/ 
+     *       I3,' lines of the Additional HAPS file ',A) 
 C 
  999  INERR=INERR+1 
       RC=2 

@@ -8,19 +8,21 @@ C  Called by MOBILE.
 C 
 C  Changes: (Last change first) 
 C 
+C 06 Nov 01 AIR Task 27: Added MPG ESTIMATES for CO2. 
 C 31 Aug 01 AIR Task 18: Added ADDITIONAL HAPS. 
 C 24 Aug 01 AIR Task 23b: Commented out PM Speed Correction. 
 C 16 Aug 01 EPA Task 15-21: Changed RVP WAIVER to RVP OXY WAIVER. 
 C 19 Jul 01 @EPA-djb Wish235, Add "Average Speed" command. 
 C 02 Jul 01 AIR Task 15: Added Air Toxic OXYGENATE and RVP WAIVER commands. 
-C 25 May 01 @EPA-elg edited label for post 1996 exhaust I&M 
 C 25 May 01 AIR Task 17: Added PARTICULATE EF command. 
 C 23 May 01 AIR Task 17: Added PM speed correction. 
 C 30 Apr 01 AIR Task 12: Added Tier2 PM Phase-in. 
-C 16 Apr 01 @EPA-elg Added Diagostic label POST96IM flag. 
 C 30 Jan 01 AIR Task 11: Added all particulate and air toxic lebels. 
-C 19 Jan 01 @EPA-bag Added NO 2007 HDDV RULE 
-C 20 Nov 00 @EPA-elg Added NO CLEAN AIR ACT label 
+C  19 Jul 01 @EPA-djb Wish235, Add "Average Speed" command. 
+C  25 May 01 @EPA-elg edited label for post 1996 exhaust I&M 
+C  16 Apr 01 @EPA-elg Added Diagostic label POST96IM flag. 
+C  19 Jan 01 @EPA-bag Added NO 2007 HDDV RULE 
+C  20 Nov 00 @EPA-elg Added NO CLEAN AIR ACT label 
 C 22 Nov 00 @EPA-bag bug301 added NSCEN to GETHVMT, GETFVMT arguments to allow 
 c           scenario and run level user input 
 C  21 Nov 00 @EPA-bag Bug303, removed redundant and confusing QUITER calls for 
@@ -333,6 +335,9 @@ C
         CASE ('RVP OXY WAIVER') 
           CALL GETATWAV(INPREC,INERR,RC) 
 C 
+        CASE ('MPG ESTIMATES') 
+          CALL GETMPG(INPREC,INERR,RC) 
+C 
 C       Start of I/M section. (Any changes in the I/M section 
 C       must also be applied to subroutine GETXIM.) 
 C 
@@ -345,10 +350,8 @@ C
           CALL GETEFR(INPREC,INERR,RC) 
         CASE ('I/M CREDIT FILE') 
 C         Save file name in common IMPAR7. 
-
 ccs          CALL UCCOMP(INPREC(22:),TNAME) 
           CALL LJCOMP(INPREC(22:),TNAME)
-
           IFILET = 2 
         CASE ('I/M VEHICLES') 
           CALL GETIMV(INPREC,INERR,RC) 

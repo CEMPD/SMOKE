@@ -10,6 +10,7 @@ C  Calls QUITER, UCCOMP.
 C 
 C  Changes: (Last change first) 
 C 
+C  05 OCT 01 AIR Task 15: changed command to scenario only 
 C  03 Jul 01 AIR Task 15, new subroutine 
 C 
 C  Input on call: 
@@ -46,8 +47,6 @@ C
       RC = 0 
 C 
       READ(INPREC(21:),*,IOSTAT=IOS,ERR=97,END=98) IGASHW 
-C 
-      GLIGAS = IGASHW  !GETATWAV is a Run Level Command 
 C      
       IF (IGASHW.LT.1.OR.IGASHW.GT.2) THEN 
         CALL QUITER(1.,IGASHW,575,INERR) 
