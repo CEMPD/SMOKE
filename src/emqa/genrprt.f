@@ -53,6 +53,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the temporal profile tables
+        USE MODTMPRL
+
 C.........  This module contains arrays for plume-in-grid and major sources
 c       USE MODELEV
 
@@ -96,6 +99,7 @@ C...........   Other local variables
         INTEGER         JDATE             ! Julian date
         INTEGER         JTIME             ! time (HHMMSS)
         INTEGER         NDATA             ! number of data columns
+        INTEGER         NDIN              ! no. data variables to read in
         INTEGER         NV                ! number data or spc variables
 
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
@@ -105,43 +109,45 @@ C...........   Other local variables
 
         CHARACTER*300          MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDREPIN' ! program name
+        CHARACTER*16 :: PROGNAME = 'GENRPRT' ! program name
 
 C***********************************************************************
-C   begin body of subroutine RDREPIN
+C   begin body of subroutine GENRPRT
 
 C.........  First time routine is call
         IF( FIRSTIME ) THEN
 
-C.............  Allocate memory for global array for input pollutants
-            ALLOCATE( POLVAL( NSRC, NDATIN ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
-
 C.............  Allocate memory for flagging output non-speciated data
-            ALLOCATE( SIDX( NIPPA ), STAT=IOS )
+            ALLOCATE( SIDX( NIPPA + NTPDAT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SIDX', PROGNAME )
-                                  
+            
             FIRSTIME = .FALSE.
 
         END IF
 
 C.........  Report-specific local settings
         NDATA = ALLRPT( RCNT )%NUMDATA
-        RPT_%USEGMAT = ALLRPT( RCNT )%USEGMAT
-        RPT_%DELIM   = ALLRPT( RCNT )%DELIM
+        RPT_ = ALLRPT( RCNT )     
 
-        SFLAG = ( ALLRPT( RCNT )%USESLMAT .OR. 
-     &            ALLRPT( RCNT )%USESSMAT      )
+        SFLAG = ( RPT_%USESLMAT .OR. RPT_%USESSMAT )
 
         BNAME = ENAME
-        IF( ALLRPT( RCNT )%USEHOUR ) BNAME = TNAME
+        NDIN  = NIPPA
+        IF( RPT_%USEHOUR ) THEN
+            BNAME = TNAME
+            NDIN  = NTPDAT
+        END IF
+
+C.........  Allocate local memory for reading input data
+        ALLOCATE( POLVAL( NSRC, NDIN ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
 
 C.........  Allocate local memory for bin helper summing array
         ALLOCATE( BINARR( NOUTBINS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BINARR', PROGNAME )
 
 C.........  Set variable loop maxmimum based on speciation status
-        NV = NIPPA
+        NV = NIPPA + NTPDAT
         IF( SFLAG ) NV = NSVARS
 
 C.........  Initialize status of output non-speciated data for this report
@@ -155,17 +161,18 @@ C.........  Loop through time steps
 C.............  Set hour index
             H =  1 + MOD( JTIME / 10000 , 24 )
 
-C.............  Read emissions for whole inventory for pollutants of interest
-            CALL RDINVPOL( BNAME, NSRC, NDATIN, JDATE, JTIME, 
-     &                     INNAMES, POLVAL, IOS )
+C.............  Read emissions for whole inventory for possible pollutants
+C               and activities for current report
+            CALL RDINVPOL( BNAME, NSRC, NDIN, JDATE, JTIME, 
+     &                     RDNAMES( 1, RCNT ), POLVAL, IOS )
 
             IF( IOS .GT. 0 ) THEN
                 MESG = 'Problem reading inventory data.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Loop through input data (NV=NIPPA or NSVARS) and sum to bins
-C               within list of output records
+C.............  Loop through input data (NV=NIPPA+NTPDAT or NSVARS) and sum to 
+C               bins within list of output records
             DO V = 1, NV
 
 C.................  Set index to data arrays based on speciation status
@@ -173,7 +180,8 @@ C.................  Set index to data arrays based on speciation status
                 IF( SFLAG ) E = SPCTODAT( V )
 
 C.................  Set index from global to actually input pol/act/etype
-                J = DATIDX( E )
+                J = INVIDX( E )
+                IF( RPT_%USEHOUR ) J = TPRIDX( E )
 
 C.................  If speciation, apply speciation factors to appropriate
 C                   pollutant and emission types.
@@ -296,7 +304,7 @@ C.............  Increment time step
         END DO    ! End loop over time steps
 
 C.........  Deallocate routine-specific memory
-        DEALLOCATE( BINARR )
+        DEALLOCATE( POLVAL, BINARR )
 
         RETURN
 
