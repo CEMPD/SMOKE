@@ -1,0 +1,20 @@
+#!/bin/csh -fx 
+
+set days = ( 18)
+
+setenv PROMPTFLAG N
+setenv G_GRIDPATH /env/data/aqmg/smoke/ge_dat/G_GRIDPATH.wst12
+
+foreach d ( $days )
+
+setenv LOGFILE   /stella/data/zac/cmaq_2000/inventory/epa96/area/uam2ncf.epa96ba02.199607$d.wst12.log
+setenv UAMEMIS  /stella/data/zac/cmaq_2000/inventory/epa96/area/agts.epa96ba02.199607$d.wst12.bin   
+setenv E2DNCF  /stella/data/zac/cmaq_2000/inventory/epa96/area/agts.epa96ba02.199607$d.wst12.ncf 
+
+$SMK_BIN/uam2ncf
+
+end
+
+exit
+
+

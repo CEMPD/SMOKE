@@ -1,0 +1,49 @@
+#!/bin/csh -f
+
+# This script checks to see if the SMOKE installation worked successfully
+
+set errfile = $SCRIPTS/install/.err
+
+# Set environment variables for getting QA_SETUP environment variables
+setenv MRG_SOURCE ABMP
+setenv RUN_SMKMERGE Y
+setenv MRG_TEMPORAL_YN Y
+setenv MRG_SPCMAT_YN Y
+setenv MRG_REPSTA_YN Y
+
+# Get E.V.s from Assigns file
+source $SMKROOT/assigns/ASSIGNS.m3demo.cb-iv.ed36
+
+# Check area sources
+echo 'Area source differences' > $errfile
+diff $REPAGTS_S $SMKROOT/doc/checkdemo/reports/repagts_s.* >> $errfile
+set ar_stat = $status
+
+# Check biogenic sources
+echo 'Biogenic source differences' >> $errfile
+diff $REPBGTS_S $SMKROOT/doc/checkdemo/reports/repbgts_s.* >> $errfile
+set bg_stat = $status
+
+# Check mobile sources
+echo 'Mobile source differences' >> $errfile
+diff $REPMGTS_S $SMKROOT/doc/checkdemo/reports/repmgts_s.* >> $errfile
+set mb_stat = $status
+
+# Check point sources
+echo 'Point source differences' >> $errfile
+diff $REPPGTS_S $SMKROOT/doc/checkdemo/reports/reppgts_s.* >> $errfile
+set pt_stat = $status
+
+if ( $ar_stat != 0 || $bg_stat != 0 || $mb_stat != 0 || $pt_stat != 0 ) then
+   mv $errfile $SMKROOT/doc/install_diffs.txt
+   echo ' '
+   echo 'Differences between your installation and correct answers exist\!'
+   echo 'Please refer to file $SMKROOT/doc/install_diffs.txt for details.'
+   echo ' '
+else
+   echo ' '
+   echo 'No difference found between your log files and the comparison files.'
+   echo 'Your installation and example SMOKE run have completed successfully\!'
+   echo ' '
+   rm -rf $errfile
+endif

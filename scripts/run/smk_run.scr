@@ -1,0 +1,376 @@
+#!/bin/csh -f
+
+# Version %W%
+# Path    %P%
+# Date    %G% %U%
+
+# This script runs the SMOKE processors.  
+#
+# Time independent programs only need to be run once.
+# Time dependent programs need to be processed once
+# for each day needed for the air quality simulation.  
+#
+# Script created by : M. Houyoux and J. Vukovich, North Carolina 
+#                     Supercomputing Center
+# Last edited : December 2000
+#
+#*********************************************************************
+
+# Create directory for output program logs
+
+setenv OUTLOG $LOGS
+if ( ! -e $OUTLOG ) then
+   mkdir -p $OUTLOG
+   chmod ug+w $OUTLOG
+endif
+
+# Initialize exit status
+set exitstat = 0
+
+#
+### Raw Inventory processing
+#
+setenv TMPLOG   $OUTLOG/smkinven.$SRCABBR.$INVEN.log
+if ( $?RUN_SMKINVEN ) then
+   if ( $RUN_SMKINVEN == 'Y' && -e $SMK_BIN/smkinven ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/smkinven 
+      endif
+
+   else 
+      if ( $RUN_SMKINVEN == 'Y' ) then
+	 echo 'SCRIPT ERROR: SMKINVEN program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### County landuse import
+#
+setenv TMPLOG   $OUTLOG/rawbio.$SRCABBR.$INVEN.$GRID.log
+if ( $?RUN_RAWBIO ) then
+   if ( $RUN_RAWBIO == 'Y' && -e $SMK_BIN/rawbio ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/rawbio 
+      endif
+
+   else 
+      if ( $RUN_RAWBIO == 'Y' ) then
+	 echo 'SCRIPT ERROR: RAWBIO program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Gridding Matrix generation
+#
+setenv TMPLOG   $OUTLOG/grdmat.$SRCABBR.$INVEN.$GRID.log
+if ( $?RUN_GRDMAT ) then
+   if ( $RUN_GRDMAT == 'Y' && -e $SMK_BIN/grdmat ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/grdmat 
+      endif
+
+   else 
+      if ( $RUN_GRDMAT == 'Y' ) then
+	 echo 'SCRIPT ERROR: GRDMAT program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Speciation Matrix generation
+#
+setenv TMPLOG   $OUTLOG/spcmat.$SRCABBR.$INVEN.$SPC.log
+if ( $?RUN_SPCMAT ) then
+   if ( $RUN_SPCMAT == 'Y' && -e $SMK_BIN/spcmat ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/spcmat 
+      endif
+
+   else 
+      if ( $RUN_SPCMAT == 'Y' ) then
+	 echo 'SCRIPT ERROR: SPCMAT program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Pre-mobile-source processing
+#
+setenv TMPLOG   $OUTLOG/premobl.$SRCABBR.$INVEN.$GRID.log
+if ( $?RUN_PREMOBL ) then
+   if ( $RUN_PREMOBL == 'Y' && -e $SMK_BIN/premobl ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/premobl 
+      endif
+
+   else 
+      if ( $RUN_PREMOBL == 'Y' ) then
+	 echo 'SCRIPT ERROR: PREMOBL program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Emission factor creation
+#
+setenv TMPLOG   $OUTLOG/emisfac.$SRCABBR.$INVEN.$GRID.log
+if ( $?RUN_EMISFAC ) then
+   if ( $RUN_EMISFAC == 'Y' && -e $SMK_BIN/emisfac ) then
+
+      # 
+      ### Remove output files unless the update flags are set
+      #
+      if ( $REUSE_DIURNAL != 'Y' ) then
+         /bin/rm -i $MEFSD
+      endif
+
+      if ( $REUSE_NONDIURNAL != 'Y' ) then
+         /bin/rm -i $MEFSND
+      endif
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/emisfac 
+      endif
+
+   else 
+      if ( $RUN_EMISFAC == 'Y' ) then
+	 echo 'SCRIPT ERROR: EMISFAC program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Elevated source selection
+#
+setenv TMPLOG   $OUTLOG/elevpoint.$SRCABBR.$INVEN.log
+if ( $?RUN_ELEVPOINT ) then
+   if ( $RUN_ELEVPOINT == 'Y' && -e $SMK_BIN/elevpoint ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/elevpoint 
+      endif
+
+   else 
+      if ( $RUN_ELEVPOINT == 'Y' ) then
+	 echo 'SCRIPT ERROR: ELEVPOINT program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Layer fractions creation
+#
+setenv TMPLOG   $OUTLOG/laypoint.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_LAYPOINT ) then
+   if ( $RUN_LAYPOINT == 'Y' && -e $SMK_BIN/laypoint ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/laypoint 
+      endif
+
+   else 
+      if ( $RUN_LAYPOINT == 'Y' ) then
+	 echo 'SCRIPT ERROR: LAYPOINT program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Temporal Allocation - anthropogenic sources
+# 
+if ( $SMK_SOURCE == 'M' ) then
+   setenv TMPLOG   $OUTLOG/temporal.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+else
+   setenv TMPLOG   $OUTLOG/temporal.$SRCABBR.$INVEN.$ESDATE.log
+endif
+if ( $?RUN_TEMPORAL ) then
+   if ( $RUN_TEMPORAL == 'Y' && -e $SMK_BIN/temporal ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/temporal 
+      endif
+
+   else 
+      if ( $RUN_TEMPORAL == 'Y' ) then
+	 echo 'SCRIPT ERROR: TEMPORAL program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Temporal Allocation - biogenic sources
+# 
+setenv TMPLOG   $OUTLOG/tmpbio.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_TMPBIO ) then
+   if ( $RUN_TMPBIO == 'Y' && -e $SMK_BIN/tmpbio ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/tmpbio 
+      endif
+
+   else 
+      if ( $RUN_TMPBIO == 'Y' ) then
+	 echo 'SCRIPT ERROR: TMPBIO program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Merging
+#
+setenv TMPLOG   $OUTLOG/smkmerge.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_SMKMERGE ) then
+   if ( $RUN_SMKMERGE == 'Y' && -e $SMK_BIN/smkmerge ) then
+
+      # Set mole/mass-based speciation matrices.  Default, mole.
+      if ( $?ASMAT_L ) then
+         setenv ASMAT $ASMAT_L
+      endif
+      if ( $?BGTS_L ) then
+         setenv BGTS $BGTS_L
+      endif
+      if ( $?MSMAT_L ) then
+         setenv MSMAT $MSMAT_L
+      endif
+      if ( $?PSMAT_L ) then
+         setenv PSMAT $PSMAT_L
+      endif
+      if ( $?SPC_INPUT ) then
+         if ( $SPC_INPUT == 'mass' ) then
+            if ( $?ASMAT_S ) then
+               setenv ASMAT $ASMAT_S
+            endif
+            if ( $?BGTS_S ) then
+               setenv BGTS $BGTS_S
+            endif
+            if ( $?MSMAT_S ) then
+               setenv MSMAT $MSMAT_S
+            endif
+            if ( $?PSMAT_S ) then
+               setenv PSMAT $PSMAT_S
+            endif
+         endif
+      endif
+
+      if ( -e $TMPLOG ) then
+         source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/smkmerge
+      endif
+
+   else
+      if ( $RUN_SMKMERGE == 'Y' ) then
+         echo 'SCRIPT ERROR: SMKMERGE program does not exist in:'
+         echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+   endif
+endif
+
+setenv TMPLOG   $OUTLOG/mrggrid.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+if ( $?RUN_MRGGRID ) then
+   if ( $RUN_MRGGRID == 'Y' && -e $SMK_BIN/mrggrid ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/mrggrid
+      endif
+
+   else 
+      if ( $RUN_MRGGRID == 'Y' ) then
+	 echo 'SCRIPT ERROR: MRGGRID program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+## Ending of script with exit status
+#
+exit( $exitstat )
+
