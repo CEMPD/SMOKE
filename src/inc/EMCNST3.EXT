@@ -60,7 +60,7 @@ C.........  Separator for emission type names
 
 C.........  Units for speciation matrices
         CHARACTER*16, PARAMETER :: SMASUNIT = 'gm/ton'
-        CHARACTER*16, PARAMETER :: SMOLUNIT = 'mole/ton'
+        CHARACTER*16, PARAMETER :: SMOLUNIT = 'moles/ton'
 
 C.........  Packet names
         CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
