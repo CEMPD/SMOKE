@@ -125,7 +125,7 @@ C.............  Check file size and adjust number of files to avoid 2 GB limit
                 NVARFILE = ( NVARSET + NFILESET - 1 ) / NFILESET
                 FILESIZE = IOAPI_GRD_SIZE( 1, SRCCT, 1, NVARFILE, 24 )
                 
-                IF( FILESIZE / 1000000 > 1500 ) THEN
+                IF( FILESIZE > 1500 ) THEN
                     NFILESET = NFILESET + 1
                 ELSE
                     EXIT
