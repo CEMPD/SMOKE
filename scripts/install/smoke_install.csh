@@ -96,7 +96,7 @@ if ( $found1 == n ) then
    set exitstat = 1
 endif
 
-cd subsys/smokev1/assigns
+cd subsys/smoke/assigns
 source ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 if ( $status > 0 ) then
    set exitstat = 1
