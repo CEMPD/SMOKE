@@ -76,18 +76,25 @@ C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT(OUT) :: NPOA    ! no. data names
         INTEGER     , INTENT(OUT) :: EOS     ! error status
 
+C...........   Local allocatable arrays
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: UNITS( : )
+
 C...........   Other local variables
-        INTEGER         I, L, L2, V  ! counters and indices
+        INTEGER         I, J, K, L, L2, V  ! counters and indices
 
-        INTEGER         COD     !  tmp data variable position in valid list
-        INTEGER         IOS     !  i/o status
+        INTEGER         COD       !  tmp data variable position in valid list
+        INTEGER         IOS       !  i/o status
+        INTEGER      :: NUNIT = 0 !  i/o status
 
-        LOGICAL      :: FIRSTIME  = .TRUE. !  first time subroutine is called
+        LOGICAL, SAVE:: FIRSTIME  = .TRUE.  !  first time subroutine is called
+        LOGICAL, SAVE:: UNITFLAG  = .FALSE. !  true: units have already been set
 
+        CHARACTER*1     CBUF    !  single char buffer
         CHARACTER*20    CNTRY   !  country name
         CHARACTER*300   MESG    !  message buffer
 
         CHARACTER(LEN=IOVLEN3) CVAR      ! tmp variable name
+        CHARACTER(LEN=IOULEN3) UBUF      ! tmp units
 
         CHARACTER*16 :: PROGNAME = 'GETHDR' ! Program name
 
@@ -145,6 +152,99 @@ C.............  Check for inventory year
      &                     'is outside of expected range.'
                     CALL M3MSG2( MESG )                    
                 END IF
+
+            ELSE IF ( LINE(2:6) .EQ. 'UNITS' ) THEN ! read in units                
+
+                IF( UNITFLAG ) THEN
+                    MESG = 'ERROR: UNITS field encountered again in ' //
+     &                     'input. This is not allowed.'
+                    CALL M3MSG2( MESG )
+                    EOS = 5
+                    RETURN
+
+                ELSE IF( .NOT. ALLOCATED( POLPOS ) ) THEN
+                    MESG = 'ERROR: UNITS field must be after DATA ' //
+     &                     'or POLID field.'
+                    CALL M3MSG2( MESG )
+                    EOS = 5
+                    RETURN
+
+                END IF
+
+C.................  Allocate memory based on the number of allowed data vars
+                ALLOCATE( INVDUNT( MXIPPA,NPPOL ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVDUNT', PROGNAME )
+                ALLOCATE( INVDCNV( MXIPPA,NPPOL ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVDCNV', PROGNAME )
+                INVDUNT = ' '
+                INVDCNV = 1.
+                  
+C.................  Get the number of units fields and allocate memory
+                LINE = LINE( 7:L2 )
+                L = LEN_TRIM( LINE )
+                NUNIT = GETNLIST( L, LINE )
+
+C.................  Error if units list is inconsistent with data fields
+        	J = NUNIT/NPPOL
+        	IF( NPOA  .GT. 0    .AND.
+     &              NUNIT .GT. 0    .AND. 
+     &              J     .NE. NPOA       ) THEN
+                    WRITE( MESG,94010 ) 'ERROR:', J, 'group of units' //
+     &                     'fields found, but', NPOA, 'variable ' //
+     &                     'fields found in input file.'
+                    CALL M3MSG2( MESG )
+                    EOS = 6
+                END IF
+
+C.................  Allocate memory for local units field
+                ALLOCATE( UNITS( NUNIT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'UNITS', PROGNAME )
+  
+C.................  Parse the header line into the unit names
+                CALL PARSLINE( LINE, NUNIT, UNITS )
+
+C.................  Post-process units and store in final arrays
+                K = 0
+                DO V = 1, NPOA
+
+                    I = POLPOS( V )
+                    DO J = 1, NPPOL
+
+                        K    = K + 1
+                        UBUF = UNITS( K )
+
+C.........................  Remove plural               
+                	L  = INDEX( UBUF, '/' )
+                	CBUF = UBUF( L-1:L-1 )
+                	CALL UPCASE( CBUF )
+                	IF( CBUF .EQ. 'S' ) THEN
+                            L2 = LEN_TRIM( UBUF )
+                            UBUF = UBUF(1:L-2) // UBUF(L:L2)
+                	END IF
+
+C.........................  Special case for units in 10E6
+                	L = INDEX( UBUF, '10E6' )
+                	IF( L .GT. 0 ) THEN
+                            L2 = LEN_TRIM( UBUF )
+                            INVDCNV( I,J ) = 1000000
+                            UBUF = ADJUSTL( UBUF(L+4:L2) )
+                	END IF
+
+C.........................  Convert mile to mi
+                	L  = INDEX( UBUF, 'mile' )
+                	IF( L .GT. 0 ) THEN
+                            L2 = LEN_TRIM( UBUF )
+                            UBUF = UBUF(1:L+1) // UBUF(L+4:L2)
+                	END IF
+
+                        IF( I .GT. 0 ) INVDUNT( I,J ) = UBUF
+
+                    END DO   ! No. variables per data variable
+                END DO       ! No. variables
+
+                DEALLOCATE( UNITS )
+
+                UNITFLAG = .TRUE.
 
             ELSE IF ( LINE(2:6) .EQ. 'POLID' .OR.
      &                LINE(2:5) .EQ. 'DATA'       ) THEN ! read in data names
