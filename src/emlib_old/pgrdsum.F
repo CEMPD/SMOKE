@@ -1,10 +1,12 @@
+
         SUBROUTINE  PGRDSUM( NCOLS, NROWS, NCOFF, N, I, PTR, U, V )
 
 C***********************************************************************
-C  subroutine body starts at line  39
+C  subroutine body starts at line  66
 C
-C  FUNCTION:  multiply a sparse matrix <N,I> by a vector U, sum and 
-C             then return the result V
+C  DESCRIPTION:  
+C        multiply a sparse matrix <N,I> by a vector U, sum and then return 
+C        the result V
 C
 C  PRECONDITIONS REQUIRED:  none
 C
@@ -19,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C 
-C COPYRIGHT (C) 1997, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C 
 C See file COPYRIGHT for conditions of use.
@@ -55,7 +57,6 @@ C...........   ARGUMENTS and their descriptions:
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         
         INTEGER         R, C, K, L, P   
-        REAL            SUM
 
 
 C***********************************************************************

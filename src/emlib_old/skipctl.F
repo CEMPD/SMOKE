@@ -4,7 +4,7 @@
 C***********************************************************************
 C  subroutine body starts at line 68
 C
-C  FUNCTION:  
+C  DESCRIPTION:
 C       skip over the control packet with the indicated name, by
 C       reading lines from the indicated device until "END" encountered.
 C       Return immediately if name mismatch.
@@ -29,7 +29,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.

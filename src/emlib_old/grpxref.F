@@ -6,9 +6,9 @@
 C***********************************************************************
 C  subroutine body starts at line  74
 C
-C  FUNCTION:  Groups x-ref entries based on keys for use in processing
-C             various x-ref inputs.  MAX3 and CNT3 should be 1 if
-C             MPR, WPR, and DPR are 2-d.
+C  DESCRIPTION:  
+C       Groups x-ref entries based on keys for use in processing various x-ref
+C       inputs.  MAX3 and CNT3 should be 1 if MPR, WPR, and DPR are 2-d.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.

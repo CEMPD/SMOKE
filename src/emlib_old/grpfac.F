@@ -6,9 +6,9 @@
 C***********************************************************************
 C  subroutine body starts at line  69
 C
-C  FUNCTION:  Groups factor entries based on keys for use in processing
-C             various profile inputs.  MAX3 and CNT3 should be 1 if
-C             FAC is 2-d.
+C  DESCRIPTION:
+C       Groups factor entries based on keys for use in processing various 
+C       profile inputs.  MAX3 and CNT3 should be 1 if FAC is 2-d.
 C
 C  PRECONDITIONS REQUIRED: 
 C
@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.

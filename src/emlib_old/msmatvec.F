@@ -1,13 +1,12 @@
-C copied by: mhouyoux
-C origin: msmatvec.F 2.1
 
         SUBROUTINE  MSMATVEC( N, M, A, V, C )
 
 C***********************************************************************
-C  subroutine body starts at line  61
+C  subroutine body starts at line  64
 C
-C  FUNCTION:  apply a layered diagonal matrix to a layered vector
-C             and sum to existing output vector
+C  DESCRIPTION: 
+C       apply a layered diagonal matrix to a layered vector and sum to 
+C       existing output vector
 C
 C  PRECONDITIONS REQUIRED: Initialization of C input vector
 C
@@ -16,6 +15,8 @@ C
 C  REVISION  HISTORY:
 C       prototype 2/95 by CJC
 C       modified  6/95 by M Houyoux to add to exsiting C
+C       copied by: mhouyoux
+C       origin: msmatvec.F 2.1
 C
 C***********************************************************************
 C
@@ -23,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.

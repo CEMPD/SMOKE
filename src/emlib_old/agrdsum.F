@@ -3,11 +3,12 @@
      &                       PTR, U, V )
 
 C***********************************************************************
-C  subroutine body starts at line  66
+C  subroutine body starts at line  67
 C
-C  FUNCTION:  multiply a sparse matrix <N,I,C> by a vector U and 
-C             then process the resuly based on a sorted key to 
-C             return V with a value for each different entry in the key
+C  DESCRIPTION:  
+C       multiply a sparse matrix <N,I,C> by a vector U and then process the 
+C       result based on a sorted key to return V with a value for each 
+C       different entry in the key
 C
 C  PRECONDITIONS REQUIRED:  
 C       argument 'V' must be initialized 
@@ -23,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
