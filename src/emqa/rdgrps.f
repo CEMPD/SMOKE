@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDGRPS( )
+        SUBROUTINE RDGRPS( FDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -8,6 +8,11 @@ C  DESCRIPTION:
 C     The RDGRPS routine reads the groups from the REPCONFIG file, interprets
 C     the entries, and stores the fully detailed group information in a table
 C     for each type of group.
+C      - Subgrid will store cell numbers that are included
+C      - Region will store Regions that are excluded.
+C
+C     NOTE: This routine works somewhat for subgrids, but is incomplete for
+C        N: region groups
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -52,38 +57,58 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-c        INTEGER    STR2INT
+        LOGICAL        BLKORCMT
+        CHARACTER*2    CRLF
 
-c        EXTERNAL   STR2INT
+        EXTERNAL   BLKORCMT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV       ! output file unit number
-        INTEGER     , INTENT (IN) :: RCNT       ! report count
 
 C...........   Local allocatable arrays...
 
-C...........   Region group input arrays
-        INTEGER               , ALLOCATABLE :: REGRAW  ( : )
-        LOGICAL               , ALLOCATABLE :: REGSTAT ( : )
-        CHARACTER(LEN=LENLAB3), ALLOCATABLE :: REGNLABL( : )
+C...........   Region group input allocatable arrays
+        INTEGER               , ALLOCATABLE :: REGRAW  ( :,: )
+        LOGICAL               , ALLOCATABLE :: REGSTAT ( :,: )
 
-C...........   Subgrid input arrays
-        INTEGER               , ALLOCATABLE :: SBGRAW  ( : )
-        LOGICAL               , ALLOCATABLE :: SBGSTAT ( : )
-        CHARACTER(LEN=LENLAB3), ALLOCATABLE :: SUBGLABL( : )
+C...........   Subgrid input allocatable arrays
+        INTEGER               , ALLOCATABLE :: SBGNREC ( : )
+
+        CHARACTER*100, ALLOCATABLE :: SBGRAW  ( :,: )
+        LOGICAL      , ALLOCATABLE :: SBGSTAT ( :,: )
+
+C...........   Per grid-cell local allocatable arrays
+        LOGICAL, ALLOCATABLE :: LCELSTAT( : )
+        LOGICAL, ALLOCATABLE :: LCEL    ( : )
+c note: make this public in modules??
+
+C...........   Per input line local allocatable arrays
+        INTEGER, ALLOCATABLE :: LINECODE( : ) ! 1= in-line region; 2= in-line subgrid
+c note: make this public in modules??
 
 C...........   Other local arrays
         INTEGER   NCNT( NALLPCKT )   ! Count of groups defined by SELECT 
         
 C...........   Other local variables
+        INTEGER         C, I, J, N          ! counters and indices
+
+        INTEGER         IOS                 ! i/o status
+        INTEGER         IREC                ! line number
+        INTEGER      :: NINCL = 0           ! tmp number of included cells
 
         LOGICAL      :: EFLAG = .FALSE.     ! true: error found
+
+        CHARACTER*200   BUFFER   ! tmp label buffer
+        CHARACTER*300   MESG     ! tmp message buffer
 
         CHARACTER*16 :: PROGNAME = 'RDGRPS' ! program name
 
@@ -92,16 +117,25 @@ C   begin body of subroutine RDGRPS
 
 C.........  Allocate memory for reading and storing raw information from 
 C           the input file.
-        ALLOCATE( REGNLABL( NREGRAW ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'REGNLABL', PROGNAME )
-        ALLOCATE( SUBGLABL( NSBGRAW ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SUBGLABL', PROGNAME )
+        ALLOCATE( REGNNAM( NREGRAW ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REGNNAM', PROGNAME )
+        ALLOCATE( SUBGNAM( NSBGRAW ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SUBGNAM', PROGNAME )
+        ALLOCATE( LINECODE( NLINE_RC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LINECODE', PROGNAME )
+        ALLOCATE( LCELSTAT( NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LCELSTAT', PROGNAME )
+        ALLOCATE( LCEL( NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LCEL', PROGNAME )
         
-        REGNLABL = ' '  ! array
-        SUBGLABL = ' '  ! array
+        REGNNAM = ' '     ! array
+        SUBGNAM = ' '     ! array
+        LINECODE = 0       ! array
+        LCELSTAT = .FALSE. ! array
+        LCEL     = .FALSE. ! array
 
 C.........  Read in defined group labels
-c        CALL READ_GROUPS( FDEV, 'DEFINED LABELS' )
+        CALL READ_GROUPS( FDEV, NGRID, 'DEFINED LABELS', LCELSTAT )
 
 C.........  Initialize number of groups of each type defined with SELECT
         NCNT = 0   ! array
@@ -109,7 +143,7 @@ C.........  Initialize number of groups of each type defined with SELECT
 C.........  Read in inline group labels and compare to defined groups.  If not
 C           defined, try to match as country, state, or county and store
 C           additional names.
-        CALL READ_GROUPS( FDEV, 'SELECT LABELS' )
+        CALL READ_GROUPS( FDEV, NGRID, 'SELECT LABELS', LCELSTAT )
 
 C.........  If error was found so far, abort
         IF( EFLAG ) THEN
@@ -135,15 +169,15 @@ C           in-line groups.
 C.........  Reallocate memory for group labels so that labels can be reset with
 C           the inline labels as well.
         IF( NREGNGRP .GT. 0 ) THEN
-            DEALLOCATE( REGNLABL )
-            ALLOCATE( REGNLABL( NREGRAW ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'REGNLABL', PROGNAME )
+            DEALLOCATE( REGNNAM )
+            ALLOCATE( REGNNAM( NREGRAW ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'REGNNAM', PROGNAME )
             ALLOCATE( REGRAW( MXGRPREC,NREGNGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'REGRAW', PROGNAME )
             ALLOCATE( REGSTAT( MXGRPREC,NREGNGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'REGSTAT', PROGNAME )
 
-            REGNLABL = ' '     ! array
+            REGNNAM = ' '     ! array
             REGRAW   = 0       ! array
             REGSTAT  = .TRUE.  ! array (default is include)
 
@@ -151,102 +185,90 @@ C           the inline labels as well.
 
 C.........  Same notes as above, but do for subgrids.
         IF( NSUBGRID .GT. 0 ) THEN
-            DEALLOCATE( SUBGLABL )
-            ALLOCATE( SUBGLABL( NSUBGRID ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SUBGLABL', PROGNAME )
+            DEALLOCATE( SUBGNAM )
+            ALLOCATE( SUBGNAM( NSUBGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SUBGNAM', PROGNAME )
+            ALLOCATE( SBGNREC( NSUBGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SBGNREC', PROGNAME )
             ALLOCATE( SBGRAW( MXGRPREC,NSUBGRID ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SBGRAW', PROGNAME )
             ALLOCATE( SBGSTAT( MXGRPREC,NSUBGRID ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SBGSTAT', PROGNAME )
+            ALLOCATE( VALIDCEL( NGRID,NSUBGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VALIDCEL', PROGNAME )
 
-            SBGLABL  = ' '     ! array
-            SBGRAW   = ' '     ! array
-            SBGSTAT  = .TRUE.  ! array
+            SUBGNAM  = ' '     ! array
+            SBGNREC  = 0       ! array
+            SBGRAW   = ' '     ! 2-d array
+            SBGSTAT  = .TRUE.  ! 2-d array (initiallize to "include")
+            VALIDCEL = 0       ! 2-d array
 
         END IF
-
-c Note:        STOPPED HERE 
 
 C.........  Read raw group information.  "Raw" means the entries as they
 C           appear in the input file, but not converted to the data structures
 C           needed for further processing.
-        CALL READ_GROUPS( FDEV, 'STORE' )
+        CALL READ_GROUPS( FDEV, NGRID, 'STORE', LCELSTAT )
 
 C.........  Convert entries to data structures needed for further processing.
+        IF( NSUBGRID .GT. 0 ) THEN
 
-c            Need tmp array to store flags for unused group assignments
+C.............  Loop through different subgrids
+            DO N = 1, PKTCOUNT( SBG_IDX )
+
+C.................  Initialize cell list indicator depending on first subgrid
+C                   entry
+                IF( SBGSTAT( 1,N ) ) THEN   ! include
+                    LCEL = .FALSE. 
+                ELSE                        ! exclude
+                    LCEL = .TRUE. 
+                END IF
+
+C.................  Loop through records in each packet or in-line subgrid
+                DO I = 1, SBGNREC( N )
+
+C.....................  Determine which cells current entry applies
+                    BUFFER = SBGRAW( I,N )
+                    NINCL = 0
+                    LCELSTAT = .FALSE.
+                    CALL PARSE_SUBGRID( BUFFER, NGRID, LCELSTAT, NINCL )
+
+C.....................  If current entry is an include, then include cells
+                    IF( SBGSTAT( I,N ) ) THEN  ! include
+
+                        DO C = 1, NGRID
+                            IF( LCELSTAT( C ) ) LCEL( C ) = .TRUE.
+                        END DO
+
+C.....................  If current entry is an exclude, then exclude cells
+                    ELSE                       ! exclude
+
+                        DO C = 1, NGRID
+                            IF( LCELSTAT( C ) ) LCEL( C ) = .FALSE.
+                        END DO
+
+                    END IF
+
+                END DO
+
+C.................  Based on global cell status, create list of valid cells
+                J = 0
+                DO C = 1, NGRID
+                    IF( LCEL( C ) ) THEN
+                        J = J + 1
+                        VALIDCEL( J,N ) = C
+                    END IF
+                END DO
+
+            END DO
+
+        END IF 
             
 C.........  Deallocate raw group information
         IF( ALLOCATED( REGRAW ) ) DEALLOCATE( REGRAW, REGSTAT )
         IF( ALLOCATED( SBGRAW ) ) DEALLOCATE( SBGRAW, SBGSTAT )
-
-C.........  
-c Loop through file to 
-c determine the SELECT Region statements that do not use defined regions 
-c     for memory allocation of unsorted
-c Ignore group assignments that do not match defined groups or 
-c     characteristics of the inventory
-c Flag those records that do not match so they can be skipped later
-c Count how many SELECT regions are there
-
-
-
-c Assign memory for unsorted, full group list (with SELECT-specific 
-c entries as well as standard groups)
-
-C Loop through file to store raw group information, including:
-c   include/exclude status
-
-c      
-c	it will require a count of countys by state, and by country
-c	the group counts will be of records that will be EXCLUDED.  So, the
-c       initial value will include all counties in the inventory, and the
-c          number of records excluded will be subtracted
-
-c NOTE: all SELECT REGION <Region code> entries will be converted to a group
-c    n: by this routine, and given a special name that uses the Region code.
-
-c        NREGRAW is the number of raw input region groups from SCANRPT
-c        NSBGRAW is the number of raw input subgrids from SCANRPT
-
-c Allocate memory for the unsorted group arrays
-
-c Read the groups and populate the unsorted group arrays and group labels
-c	group names are case insensitive	
-c	call routine to scan out comments
-c	store the line numbers of the input file for each group
-c 	the group arrays are treated differently for different types of groups.
-c 	store include and exclude records as separate entries
-c
-c 	GROUP REGION:
-c	  Intialize list of FIPS codes with flags indicating included or
-c 	    excluded, and previous operation.
-c	  Based on group, go through whole list of inventory region codes and 
-C           set up group.
-c	  After all Region codes selected, create sorted list of only those that
-c	    have NOT been selected by the group and store this with the group
-c           label
-c	  also store the actual number in the group (the dimensioned value will
-c	    be a max based on the number of counties per state, etc.)
-c	  Warning if group record is not in the inventory
-c	  Warning if included and then excluded or vice-versa
-
-c	SUBGRID:
-c	  Create list of x-y grid cells to INCLUDE for each subgrid
-c	  Warning if cells do not exist in domain
-c 	  cells output to list must be sorted
-c	  
-
-c allocate memory for the sorted group arrays
-c	use one 2-d array for each type of group.  These will be indexed
-c	   by their group number.
-cVALIDGRD for grid cells
-cEXLCDRGN for region
-
-c store the sorted groups
-c Subgrid will store cell numbers that are included
-c Region will store Regions that are excluded.
-
+        IF( ALLOCATED( LINECODE ) ) DEALLOCATE( LINECODE )
+        IF( ALLOCATED( LCELSTAT ) ) DEALLOCATE( LCELSTAT, LCEL )
 
         RETURN
 
@@ -267,19 +289,22 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C.............  This subprogram provides reads the group definitions
 C               in various ways, as indicated by the main program
 C               argument.
-            SUBROUTINE READ_GROUPS( FDEV, READTYPE )
+            SUBROUTINE READ_GROUPS( FDEV, NGRID, READTYPE, LGRDSTAT )
 
 C.............  External functions
             LOGICAL     CHKINT
+            CHARACTER*2 CRLF
             INTEGER     GETNLIST
             INTEGER     INDEX1
             INTEGER     STR2INT
 
-            EXTERNAL    CHKINT, GETNLIST, INDEX1, STR2INT
+            EXTERNAL    CHKINT, CRLF, GETNLIST, INDEX1, STR2INT
 
 C.............  Subprogram arguments
-            INTEGER     , INTENT (IN) :: FDEV     ! input file unit
+            INTEGER     , INTENT (IN) :: FDEV       ! input file unit
+            INTEGER     , INTENT (IN) :: NGRID      ! no. grid cells
             CHARACTER(*), INTENT (IN) :: READTYPE   ! Reading type
+            LOGICAL     , INTENT (IN) :: LGRDSTAT( NGRID ) ! true: report cell
 
 C.............   Local parameters   
             INTEGER, PARAMETER :: MXSEG = 10
@@ -292,7 +317,6 @@ C.............  Local variables
 
             INTEGER       FIP      ! tmp region code
             INTEGER       IOS      ! i/o status
-            INTEGER       IREC     ! line number
             INTEGER       NS       ! no. segments in line
             INTEGER       RCNT     ! record count
 
@@ -309,6 +333,7 @@ C.............  Rewind input file
             REWIND( FDEV )
 
 C.............  Loop though file to store local array of labeled group names
+            IREC = 0
             DO I = 1, NLINE_RC
             
                 READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -352,17 +377,17 @@ C.................  Read the defined groups and store the labels
                 CASE( 'DEFINED LABELS' )
 
 C.....................  Get current count of current packet 
-                    RCNT = PKT_COUNT( PKT_IDX )
+                    RCNT = PKTCOUNT( PKT_IDX )
                 
                     SELECT CASE( PKT_IDX )
 
 C.....................  Store region group label
                     CASE( REG_IDX )
-                        IF( LIN_DEFGRP ) REGNLABL( RCNT ) = GRP_LABEL
+                        IF( LIN_DEFGRP ) REGNNAM( RCNT ) = GRP_LABEL
                 
 C.....................  Store subgrid label in local array
                     CASE( SBG_IDX )
-                        IF( LIN_DEFGRP ) SUBGLABL( RCNT ) = GRP_LABEL
+                        IF( LIN_DEFGRP ) SUBGNAM( RCNT ) = GRP_LABEL
                 
                     END SELECT
 
@@ -378,7 +403,7 @@ C.....................  A region is being selected
                     IF( LREGION .AND. RPT_%REGNNAM .NE. PREGNNAM ) THEN
 
 C.........................  Search for region name in defined regions
-                        J = INDEX1( RPT_%REGNNAM, NREGRAW, REGNLABL )
+                        J = INDEX1( RPT_%REGNNAM, NREGRAW, REGNNAM )
                     
 C.........................  If region name is not found, then try to convert
 C                           to a region code and compare with the inventory.
@@ -392,28 +417,28 @@ C.................................  Convert label to region code
 
 C.................................  Check if label is a valid region code
 C.................................  REGNTMP is a dummy argument at this stage
-                                CALL CHECK_REGIONS( FIP, REGNTMP, IOS )
-
+c                                CALL CHECK_REGIONS( FIP, REGNTMP, IOS )
+                            
 C.................................  If code is valid, store line number of
 C                                   record
-                                IF( IOS .EQ. 0 ) THEN
-                                    N = NCNT( REG_IDX ) + 1
-                                    RGNLINES( N ) = IREC
-                                    NCNT( REG_IDX ) = N
+c                                IF( IOS .EQ. 0 ) THEN
+c                                    N = NCNT( REG_IDX ) + 1
+c                                    NCNT( REG_IDX ) = N
+c                                    LINECODE( IREC ) = 1
 
 C.................................  Otherwise, give warning
-                                ELSE
-                                    L = LEN_TRIM( RPT_%REGNNAM )
-                                    WRITE( MESG,94010 ) 
-     &                                'WARNING: Region label "' //
-     &                                RPT_%REGNNAM( 1:L )// '" at line', 
-     &                                IREC, 'does not match any groups'
-     &                                // CRLF() // BLANK10 // 'or ' //
-     &                                'region codes in the inventory. '
-     &                                //'SELECT REGION will be ignored.'
-                                    CALL M3MSG2( MESG )
+c                                ELSE
+c                                    L = LEN_TRIM( RPT_%REGNNAM )
+c                                    WRITE( MESG,94010 ) 
+c     &                                'WARNING: Region label "' //
+c     &                                RPT_%REGNNAM( 1:L )// '" at line', 
+c     &                                IREC, 'does not match any groups'
+c     &                                // CRLF() // BLANK10 // 'or ' //
+c     &                                'region codes in the inventory. '
+c     &                                //'SELECT REGION will be ignored.'
+c                                    CALL M3MSG2( MESG )
 
-                                END IF
+c                                END IF
 
 C.............................  Label is not an integer, label is invalid
                             ELSE
@@ -439,22 +464,24 @@ C.....................  A subgrid is being selected
                     IF( LSUBGRID .AND. RPT_%SUBGNAM .NE. PSUBGNAM ) THEN
 
 C.........................  Search for subgrid names in defined subgrids
-                        J = INDEX1( RPT_%SUBGNAM, NSBGRAW, SUBGLABL )
+                        J = INDEX1( RPT_%SUBGNAM, NSBGRAW, SUBGNAM )
                     
 C.........................  If subgrid name is not found, then try to interpret
 C                           entry as a subgrid definition.
                         IF( J .LE. 0 ) THEN
 
 C............................. Check if subgrid is defined in-line
-                            LCELSTAT = .FALSE.   ! array
+                            NINCL    = 0
+                            LCELSTAT = .FALSE.   ! array 
                             CALL PARSE_SUBGRID( RPT_%SUBGNAM, NGRID, 
      &                                          LCELSTAT, NINCL )
 
-C.............................  If subgrid is valid, store line number of record
+C.............................  If subgrid is valid, increase count and
+C                               flag line as a in-line subgrid
                             IF( NINCL .GT. 0 ) THEN
                                 N = NCNT( SBG_IDX ) + 1
-                                SBGLINES( N ) = IREC
                                 NCNT( SBG_IDX ) = N
+                                LINECODE( IREC ) = 2
 
 C.............................  If subgrid is invalid
                             ELSE
@@ -463,7 +490,7 @@ C.............................  If subgrid is invalid
      &                             'WARNING: Subgrid definition "' //
      &                             RPT_%SUBGNAM( 1:L ) // '" at line', 
      &                             IREC, 'is not defined and cannot' //
-     &                             // CRLF() // BLANK10 //
+     &                             CRLF() // BLANK10 //
      &                             'be interpreted. SELECT SUBGRID ' //
      &                             'will be ignored.'
                                 CALL M3MSG2( MESG )
@@ -486,7 +513,7 @@ C.....................  If line is a group entry
                     IF( LIN_GROUP ) THEN
 
 C.........................  Get number of packet type 
-                        RCNT = PKT_COUNT( PKT_IDX )
+                        RCNT = PKTCOUNT( PKT_IDX )
 
 C.........................  Get records count for current packet
                         N = GRPNRECS
@@ -498,12 +525,12 @@ C.........................  Store region
                         CASE( REG_IDX )
 
 C.............................  Store group label
-                            IF( LIN_DEFGRP ) REGNLABL( RCNT )= GRP_LABEL
+                            IF( LIN_DEFGRP ) REGNNAM( RCNT )= GRP_LABEL
 
 C.............................  Make sure region code is an integer
                             IF( CHKINT( SEGMENT( 1 ) ) ) THEN
                                 REGRAW ( N,RCNT )= STR2INT( SEGMENT(1) )
-                                REGSTAT( N,TCNT )= GRP_INCLSTAT
+                                REGSTAT( N,RCNT )= GRP_INCLSTAT
 
 C.............................  Give an error if code not an integer
                             ELSE
@@ -520,10 +547,11 @@ C.........................  Store subgrid label in local array
                         CASE( SBG_IDX )
 
 C.............................  Store group label
-                            IF( LIN_DEFGRP ) SUBGLABL( RCNT )= GRP_LABEL
+                            IF( LIN_DEFGRP ) SUBGNAM( RCNT )= GRP_LABEL
 
 C.............................  Make sure subgrid entries are specified properly
                             NINCL = 0
+                            LCELSTAT = .FALSE.   ! array 
                             CALL PARSE_SUBGRID( BUFFER, NGRID, 
      &                                          LCELSTAT, NINCL )
 
@@ -531,6 +559,7 @@ C.............................  If the string could be parse as a subgrid, then
 C                               store unparsed string
                             IF( NINCL .GT. 0 ) THEN
 
+                                SBGNREC( RCNT )   = GRPNRECS
                                 SBGRAW ( N,RCNT ) = BUFFER
                                 SBGSTAT( N,RCNT ) = GRP_INCLSTAT
 
@@ -540,18 +569,31 @@ C                               store unparsed string
 
 C.....................  If not in group, is this line a valid Select-specified
 C                       region?
-                    ELSE IF( K1 .GT. 0 ) THEN
-c note: STOPPED HERE
-c note: Need to define K1 and K2 using stored line numbers.
+c                    ELSE IF( LINECODE( IREC ) .EQ. 1 ) THEN
+c                    note: insert here
 
 C.....................  If not in group, is this line a valid Select-specified
 C                       subgrid?
-                    ELSE IF( K2 .GT. 0 ) THEN
+                    ELSE IF( LINECODE( IREC ) .EQ. 2 ) THEN
+
+                        PKTCOUNT( SBG_IDX ) = PKTCOUNT( SBG_IDX ) + 1
+                        RCNT = PKTCOUNT( SBG_IDX ) 
+
+                        WRITE( SUBGNAM( RCNT ), '(A,I3.3)' ) 
+     &                         'IN-LINE ', RCNT
+                        SBGNREC( RCNT )   = 1 
+                        SBGRAW ( 1,RCNT ) = BUFFER
+                        SBGSTAT( 1,RCNT ) = .TRUE.
+
+C.........................  Store internal subgrid name for in-line subgrid
+C                           for current packet
+                        N = PKTCOUNT( RPT_IDX )
+                        ALLRPT( N )%SUBGNAM = SUBGNAM( RCNT )
 
                     END IF  ! If not group entry or SELECT-specified
 
 C.................  No default case for calling internal subprogram
-                DEFAULT
+                CASE DEFAULT
                     L = LEN_TRIM( READTYPE )
                     MESG = 'INTERNAL ERROR: Can not call READ_GROUPS '//
      &                     'subprogram with type "' // READTYPE( 1:L )//
@@ -591,14 +633,19 @@ C               state, and county codes and sets corresponding entries in a
 C               logical array aligning with the CNTYCOD array
             SUBROUTINE CHECK_REGIONS( REGN, LREGSTAT, STATUS )
 
+C.............  Exernal subroutines
+            INTEGER    FIND1
+            EXTERNAL   FIND1
+
 C.............  Subprogram arguments
             INTEGER, INTENT (IN) :: REGN                ! region code
-            INTEGER, INTENT (OUT):: LREGSTAT( NCOUNTY ) ! true: region selectd
+            LOGICAL, INTENT (OUT):: LREGSTAT( NCOUNTY ) ! true: region selectd
             INTEGER, INTENT (OUT):: STATUS              ! exit status
 
 C.............  Local variables
             INTEGER  K, L, N     ! counters and indices
 
+            INTEGER  FIP         ! tmp country/state/county code
             INTEGER  LEVEL       ! sub-region level code
             INTEGER  RCHK        ! region code for comparison
 
@@ -659,6 +706,12 @@ C.............  If cy/st/co code does not match inventory...
 
             RETURN
                                
+C......................  FORMAT  STATEMENTS   ..........................
+
+C...............   Internal buffering formats............ 94xxx
+
+94010       FORMAT( 10( A, :, I10, :, 1X ) )
+
             END SUBROUTINE CHECK_REGIONS
 
 C----------------------------------------------------------------------
@@ -680,7 +733,7 @@ C.............  External subroutines
 C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: SGRANGE           ! ASCII cell range
             INTEGER     , INTENT (IN) :: NGRID             ! no. cells
-            INTEGER     , INTENT (OUT):: LCELSTAT( NGRID ) ! true: cell selected
+            LOGICAL     , INTENT (OUT):: LCELSTAT( NGRID ) ! true: cell selected
             INTEGER     , INTENT (OUT):: NINCL             ! no. cells selected
 
 C.............  Local variables
@@ -924,8 +977,8 @@ C               the status of the grid cells accordingly
             DO J = Y1, Y2
                 DO I = X1, X2
 
-                    C = ( J - 1 ) * NCOLS + X1
-                    CELSTAT( C ) = .TRUE.
+                    C = ( J - 1 ) * NCOLS + I
+                    LCELSTAT( C ) = .TRUE.
                     NINCL = NINCL + 1
 
                 END DO
@@ -933,13 +986,13 @@ C               the status of the grid cells accordingly
 
             RETURN
                                
-            END SUBROUTINE PARSE_SUBGRID
-
-C**********************  FORMAT  STATEMENTS   **************************
+C......................  FORMAT  STATEMENTS   ..........................
 
 C...............   Internal buffering formats............ 94xxx
 
 94010       FORMAT( 10( A, :, I10, :, 1X ) )
+
+            END SUBROUTINE PARSE_SUBGRID
 
         END SUBROUTINE RDGRPS
 
