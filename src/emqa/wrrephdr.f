@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRREPHDR( FDEV, RCNT, LH, OUTFMT )
+        SUBROUTINE WRREPHDR( FDEV, RCNT, FILENUM, LH, OUTFMT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -17,6 +17,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
+C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
 C  
@@ -79,6 +80,7 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV       ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT       ! report count
+	INTEGER     , INTENT (IN) :: FILENUM    ! file number
         INTEGER     , INTENT(OUT) :: LH         ! header width
         CHARACTER(LEN=QAFMTL3),
      &                INTENT(OUT) :: OUTFMT     ! output record format
@@ -109,7 +111,10 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRELEV = 22
         INTEGER, PARAMETER :: IHDRPNAM = 23
         INTEGER, PARAMETER :: IHDRSNAM = 24
-        INTEGER, PARAMETER :: NHEADER  = 24
+	INTEGER, PARAMETER :: IHDRVAR  = 25
+	INTEGER, PARAMETER :: IHDRDATA = 26
+	INTEGER, PARAMETER :: IHDRUNIT = 27
+        INTEGER, PARAMETER :: NHEADER  = 27
 
         CHARACTER*12, PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -137,7 +142,10 @@ C...........   Local parameters
      &                              'Stk Vel        ',
      &                              'Elevstat       ',
      &                              'Plt Name       ',
-     &                              'SCC Description'  / )
+     &                              'SCC Description',
+     &                              'Variable       ',
+     &                              'Data value     ',
+     &                              'Units          ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LCTRYUSE( NCOUNTRY )
@@ -161,8 +169,11 @@ C...........   Other local variables
         INTEGER     NLEFT           ! value of left part of data format
         INTEGER     NWIDTH          ! tmp with
         INTEGER     W1, W2          ! tmp widths
+	INTEGER	    STIDX           ! starting index of loop
+	INTEGER     EDIDX           ! ending index of loop
 
         REAL        VAL             ! tmp data value
+	REAL        PREVAL          ! tmp previous data value
 
         LOGICAL  :: CNRYMISS              ! true: >=1 missing country name
         LOGICAL  :: CNTYMISS              ! true: >=1 missing county name
@@ -170,6 +181,8 @@ C...........   Other local variables
         LOGICAL  :: STATMISS              ! true: >=1 missing state name
         LOGICAL  :: SCCMISS               ! true: >=1 missing SCC name
         LOGICAL  :: DYSTAT                ! true: write average day header
+
+	LOGICAL  :: FIRSTIME = .TRUE.     ! true: first time routine called
 
         CHARACTER*50   :: BUFFER          ! write buffer
         CHARACTER*50   :: LINFMT          ! header line of '-'
@@ -183,7 +196,7 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine WRREPHDR
-
+	
 C.........  Initialize output subroutine arguments
         LH     = 0
         OUTFMT = ' '
@@ -305,6 +318,22 @@ C............................................................................
 
 C.........  The extra length for each variable is 1 space and 1 delimiter width
         LV = LEN_TRIM( RPT_%DELIM ) + 1
+
+C.........  Variable column
+	IF( RPT_%RPTMODE .EQ. 3 ) THEN
+	    NWIDTH = 0
+	    DO I = 1, RPT_%NUMDATA
+		NWIDTH = MAX( NWIDTH, LEN_TRIM( OUTDNAM( I, RCNT ) ) )
+	    END DO
+
+	    J = LEN_TRIM( HEADERS( IHDRVAR ) )
+	    J = MAX( NWIDTH, J )
+
+	    CALL ADD_TO_HEADER( J, HEADERS(IHDRVAR), LH, HDRBUF )
+
+	    VARWIDTH = J + LV
+
+	END IF
 
 C.........  Date column
         IF( RPT_%BYDATE ) THEN
@@ -712,7 +741,7 @@ C.............  Set SCC name column width
 C.........  Determine the format type requested (if any) - either float or
 C           scientific. Also determine the number of decimal places 
 C           requested.
-C.........  The data format will already have been QA'd so not need to worry
+C.........  The data format will already have been QAed so not need to worry
 C           about that here.
         J = INDEX( RPT_%DATAFMT, '.' )
         L = LEN_TRIM( RPT_%DATAFMT )
@@ -728,7 +757,75 @@ C           a width that is too small for the value requested.
         IF( RPT_%NUMDATA .GT. 0 ) THEN
 
             OUTFMT = '(A,1X,'            
-            DO J = 1, RPT_%NUMDATA
+
+	    IF( RPT_%NUMFILES .EQ. 1 ) THEN
+
+		IF( RPT_%RPTMODE .EQ. 2 ) THEN
+
+		    IF( FIRSTIME ) THEN
+                        STIDX = 1
+                        EDIDX = RPT_%RPTNVAR
+                        FIRSTIME = .FALSE.
+
+                    ELSE
+                        IF( RPT_%RPTNVAR + RPT_%RPTNVAR .GT.
+     &                                 RPT_%NUMDATA ) THEN
+
+                            STIDX = RPT_%RPTNVAR + 1
+                            EDIDX = RPT_%NUMDATA
+
+                        ELSE
+
+                            STIDX = RPT_%RPTNVAR + 1
+                            EDIDX = RPT_%RPTNVAR + RPT_%RPTNVAR
+
+                        END IF
+
+                    END IF
+
+		ELSE IF( RPT_%RPTMODE .EQ. 1 ) THEN
+
+                    STIDX = 1
+		    EDIDX = RPT_%NUMDATA
+
+		ELSE IF( RPT_%RPTMODE .EQ. 3 ) THEN
+
+		    STIDX = 1
+		    EDIDX = 1
+
+		ELSE
+
+		    STIDX = 1
+                    EDIDX = RPT_%NUMDATA
+	
+	        END IF
+
+	    ELSE
+
+	        IF( FIRSTIME ) THEN
+		    STIDX = 1
+		    EDIDX = RPT_%RPTNVAR
+	            FIRSTIME = .FALSE.
+
+		ELSE
+		    IF( RPT_%RPTNVAR + RPT_%RPTNVAR .GT. 
+     &                                 RPT_%NUMDATA ) THEN
+		
+		        STIDX = RPT_%RPTNVAR + 1
+		        EDIDX = RPT_%NUMDATA
+
+		    ELSE
+
+		        STIDX = RPT_%RPTNVAR + 1
+		        EDIDX = RPT_%RPTNVAR + RPT_%RPTNVAR
+ 
+		    END IF
+
+	        END IF
+
+            END IF
+
+	    DO J = STIDX, EDIDX
 
 C.................  Build temporary units fields and get final width
                 L = LEN_TRIM( OUTUNIT( J ) )
@@ -738,8 +835,27 @@ C.................  Build temporary units fields and get final width
 C.................  If float format
                 IF ( DATFLOAT ) THEN
 
+C.....................  For database output get max data value for all columns
+		    IF( RPT_%RPTMODE .EQ. 3 ) THEN
+
+			PREVAL = 0.0
+			DO I = 1, RPT_%NUMDATA
+
+			    VAL = MAXVAL( BINDATA( :,J ) )
+			    IF( VAL .LE. PREVAL ) CYCLE
+			    PREVAL = VAL
+
+			END DO
+
+			VAL = PREVAL
+
+		    ELSE
+
 C.....................  Get maximum data value for this column
-                    VAL = MAXVAL( BINDATA( :,J ) )
+			VAL = MAXVAL( BINDATA( :,J ) )
+
+		    END IF
+
                     BUFFER = ' '
                     WRITE( BUFFER, '(F30.0)' ) VAL
                     BUFFER = ADJUSTL( BUFFER )
@@ -753,8 +869,13 @@ C.....................  Increase the width to include the decimal places
 C.....................  Set the left part of the format.  Compare needed width 
 C                       with requested width and width of the column header
 C                       and units header
-                    L2 = LEN_TRIM( OUTDNAM( J,RCNT ) )
-                    W1  = MAX( NLEFT, W1, L2, LN ) 
+		    IF( RPT_%RPTMODE .EQ. 3 ) THEN
+			L2 = LEN_TRIM( HEADERS( IHDRDATA ) )
+			W1 = MAX( NLEFT, W1, L2 )
+		    ELSE
+                        L2 = LEN_TRIM( OUTDNAM( J,RCNT ) )
+			W1  = MAX( NLEFT, W1, L2, LN )
+		    END IF
 
 C.....................  Build the array of output formats for the data in 
 C                       current report
@@ -769,8 +890,13 @@ C.................  If exponential output format
 C.....................  Set the left part of the format.  Compare needed width 
 C                       with requested width and width of the column header
 C                       and units header
-                    L2 = LEN_TRIM( OUTDNAM( J,RCNT ) )
-                    W1 = MAX( NLEFT, W1, L2, LN )
+                    IF( RPT_%RPTMODE .EQ. 3 ) THEN
+                        L2 = LEN_TRIM( HEADERS( IHDRDATA ) )
+                        W1 = MAX( NLEFT, W1, L2 )
+                    ELSE
+                        L2 = LEN_TRIM( OUTDNAM( J,RCNT ) )
+                        W1  = MAX( NLEFT, W1, L2, LN )
+                    END IF
 
                     L1 = LEN_TRIM( RPT_%DATAFMT )
                     TMPFMT = OUTFMT
@@ -783,7 +909,7 @@ C                       and units header
 C.................  Add delimeter to output formats except for last value
                 TMPFMT = OUTFMT
                 L1 = LEN_TRIM( TMPFMT )
-                IF( J .NE. RPT_%NUMDATA ) THEN
+                IF( J .NE. EDIDX ) THEN
                     IF( L1 .LT. QAFMTL3-8 ) THEN
                         OUTFMT = TMPFMT( 1:L1 ) // ',"' // 
      &                           RPT_%DELIM // '",1X,'
@@ -796,7 +922,12 @@ C                   add the ending parenthese
                 ELSE
                     IF( L1 .LT. QAFMTL3-1 ) THEN      
                         IF( TMPFMT( L1:L1 ) .EQ. ',' ) L1 = L1 - 1
-                        OUTFMT = TMPFMT( 1:L1 ) // ')'
+			IF( RPT_%RPTMODE .EQ. 3 ) THEN
+                            OUTFMT = TMPFMT( 1:L1 ) // ',A,1X,A)'
+			ELSE
+			    OUTFMT = TMPFMT( 1:L1 ) // ')'
+			END IF
+
                     ELSE
                         GO TO 988
                     END IF
@@ -804,19 +935,50 @@ C                   add the ending parenthese
                 END IF
              
 C.................  Add next entry to header buffers
-                CALL ADD_TO_HEADER( W1, OUTDNAM( J,RCNT ), 
-     &                              LH, HDRBUF )
+		IF( RPT_%RPTMODE .EQ. 3 ) THEN
+		    CALL ADD_TO_HEADER( W1, HEADERS( IHDRDATA ),
+     &                                  LH, HDRBUF )
+
+		ELSE
+                    CALL ADD_TO_HEADER( W1, OUTDNAM( J,RCNT ), 
+     &                                  LH, HDRBUF )
+
+		END IF
 
 C.................  Add next entry to units line buffer
                 CALL ADD_TO_HEADER( W1, TMPUNIT, LU, UNTBUF )
 
             END DO
 
+C.............  Units
+	    IF( RPT_%RPTMODE .EQ. 3 ) THEN
+
+		NWIDTH = 0
+		DO I = 1, RPT_%NUMDATA
+		    NWIDTH = MAX( NWIDTH, LEN_TRIM( OUTUNIT( I ) ) )
+		END DO
+
+		J = LEN_TRIM( HEADERS( IHDRUNIT ) )
+		J = MAX( NWIDTH, J )
+
+		CALL ADD_TO_HEADER( J, HEADERS(IHDRUNIT), LH, HDRBUF )
+
+		UNITWIDTH = J + LV
+
+	    END IF
+
         END IF     ! End if any data to output or not
 
 C............................................................................
 C.........  Write out the header to the report
 C............................................................................
+
+C.........  If multifile report, write out number of current file
+	IF( RPT_%NUMFILES .GT. 1 ) THEN
+            WRITE( MESG,94020 ) 'File', FILENUM, 'of', RPT_%NUMFILES
+	    WRITE( FDEV,93000 ) TRIM( MESG )
+
+	END IF
 
 C.........  User Titles  ....................................................
 
@@ -964,13 +1126,16 @@ C.........  Remove leading spaces from column headers
 C.........  Write column headers
         WRITE( FDEV, 93000 ) HDRBUF( 1:L )
 
+	IF( RPT_%RPTMODE .NE. 3 ) THEN
 C.........  Remove leading spaces from column units
-        L = LEN_TRIM( UNTBUF )
-        UNTBUF = UNTBUF( 2:L )
-        L = L - 1
+            L = LEN_TRIM( UNTBUF )
+            UNTBUF = UNTBUF( 2:L )
+            L = L - 1
 
 C.........   Write data output units
-        WRITE( FDEV, 93000 ) UNTBUF( 1:L )
+            WRITE( FDEV, 93000 ) UNTBUF( 1:L )
+
+	END IF
 
 C.........  Write line of minus signs, needed for parsing by GUI tools.
         HDRBUF = ' '
@@ -1005,6 +1170,8 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
+
+94020   FORMAT( 10( A, :, I3, :, 1X ) )
 
 94620   FORMAT( '(1X,I2.2,"/",I2.2,"/",I4.4,"', A, '")' )
 
