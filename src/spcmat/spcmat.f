@@ -37,9 +37,6 @@ C
 C************************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY:
-
 C.........  This module contains the speciation profiles
         USE MODSPRO, ONLY: MXSPEC, MXSPFUL, SPCNAMES, INPRF, SPECID,
      &                     MASSFACT, MOLEFACT, MOLUNITS, NSPFUL, 
