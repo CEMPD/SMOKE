@@ -426,13 +426,14 @@ C...............   ASSUMPTION:  sorted by FIP and road class:
 
         NUMLNK = 0
 
-        IF ( KDEV .LT. 0 )  GO TO  44
-
         EFLAG = .FALSE.
         IREC  =  0
         S     =  0
         LFIP  = -1
         LRDT  = -1
+
+        IF ( KDEV .LT. 0 )  GO TO  60
+
         
 11      CONTINUE        !  head of loop reading LINK DEFS file
             
@@ -586,7 +587,7 @@ C.......   Rescale (normalize) the LNKFAC's:
 55      CONTINUE        !  end loop on S normalizing LNKFACs
 
 C.......   Get grid description for use in check
-        IF ( .NOT. DSCGRID( GRDNM, CNAME, GDTYP3D, 
+60      IF ( .NOT. DSCGRID( GRDNM, CNAME, GDTYP3D, 
      &             P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
      &             XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
      &             NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
