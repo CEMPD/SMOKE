@@ -473,17 +473,19 @@ C.............  Check and set emissions values
 C.............  If daily data, set all TDATs with daily value
             IF( DAYFLAG ) TDAT( 2:24 ) = TDAT( 1 )  ! array
 
-C.............  If available, set total value
+C.............  If available, set total value from hourly file
             TOTAL = 0.
-            L = LEN_TRIM( LINE )
-            IF( LINE( L2+1:L ) .NE. ' ' ) THEN
-                TOTAL = STR2REAL( LINE( L2+1:L ) )
-                IF( TOTAL .LT. 0.0 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Bad line', IREC, 
-     &                     ': total value "' // LINE( L2+1:L ) // '"'
-                    CALL M3MESG( MESG )
-                    CYCLE  ! to head of read loop
+            IF( SFLAG .OR. .NOT. DAYFLAG ) THEN
+                L = 248
+                IF( LINE( L2+1:L ) .NE. ' ' ) THEN
+                    TOTAL = STR2REAL( LINE( L2+1:L ) )
+                    IF( TOTAL .LT. 0.0 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Bad line', IREC, 
+         &                ': total value "' // LINE( L2+1:L ) // '"'
+                        CALL M3MESG( MESG )
+                        CYCLE  ! to head of read loop
+                    END IF
                 END IF
             END IF
 
