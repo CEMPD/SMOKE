@@ -56,25 +56,29 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         DSCGRID
+        LOGICAL         ENVYN
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
         CHARACTER*14    MMDDYY
+        INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
-     &                  PROMPTMFILE, TRIMLEN, WKDAY
+        EXTERNAL        DSCGRID, ENVYN, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY
 
 
 C...........   PARAMETER
 
         CHARACTER*16    NONE
-        PARAMETER     ( NONE = 'NONE' )
+        REAL            TON2GM
+        PARAMETER     ( NONE = 'NONE',
+     &                  TON2GM = 907184.74 )
 
 C...........   LOCAL VARIABLES and their descriptions:
-C...........   Area Sources input and output arrays (one variable at a time)
+C...........   Mobil Sources input and output arrays (one variable at a time)
         
         REAL            EMISV( NMSRC, NVTYPE )  !  input emissions.
         REAL            EMISG( NGRID, NVTYPE )  !  gridded output emissions
@@ -86,20 +90,47 @@ C...........   Gridding Matrix, Control Matrix, Speciation Matrix
         REAL            CX( NMATX )
         
         COMMON  / GRIDMAT / NX, IX, CX
+
+C...........   Inventory arrays
+        REAL            EMISR ( NMSRC )   ! Emissions summed over layers
+
+        INTEGER         IFIP  ( NMSRC )   ! FIPs  code for each source
+        INTEGER         INVYR ( NMSRC )   ! Inventory year code for each source
+        INTEGER         ISPTR ( NMSRC )   ! Pointer for each state
+        INTEGER         STATES( MXSTA )   ! Unique list of state IDs
+ 
+C...........   Report arrays
+        REAL            EMSUM( MXSTA, MXEMIS ) ! Summed emissions by state
            
 C...........   Other local variables
 
-        INTEGER         BEGBLK  !  beginning of array of blanks in output file desc
-        INTEGER         LDATE, JDATE, JTIME, TSTEP
-        INTEGER         NSTEPS
+        REAL            FAC
+
+        INTEGER         BEGBLK  !  beg of array of blanks in output file desc
+        INTEGER         BTIME
+        INTEGER         IOS
+        INTEGER         I, L, K, S, T, V
+        INTEGER         JDATE, JTIME, TSTEP
+        INTEGER         LDATE, LTIME
         INTEGER         LDEV
-        INTEGER         I, L, T, V
+        INTEGER         RDEV               ! output report unit number
+        INTEGER         LSTA               ! previous state code
+        INTEGER         NSTA               ! actual number of states
+        INTEGER         NSTEPS
+        INTEGER         NSUM
+        INTEGER         STA
+
+        LOGICAL         OUTPUTFLAG
+        LOGICAL         ST_REPORT  ! Output state-based emissions totals
 
         CHARACTER*4     OUTDESC !  contains descriptor of output file type
         CHARACTER*4     OUTNAM  !  contains default  logical output name
-        CHARACTER*16    ANAME   !  logical name for area-source       input file
-        CHARACTER*16    GNAME   !  logical name for grid       matrix input file
+        CHARACTER*5     OUTFMT  !  contains output report format
+        CHARACTER*8     REPNAM  !  contains default logical report output name
+        CHARACTER*16    ANAME   !  logical name for area-source input file
         CHARACTER*16    ENAME   !  logical name for emission output file
+        CHARACTER*16    GNAME   !  logical name for grid matrix input file
+        CHARACTER*16    INAME   !  logical name for inventory input file
 
         CHARACTER*16    SCRBUF  !  scratch name area
         CHARACTER*256   MESG    !  scratch message area
@@ -137,7 +168,10 @@ C   begin body of program GRDMOBIL
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'GRDMOBIL', 0, 0, 'Ending Program', 2 )
         END IF
-
+ 
+C.......   Get environment variable settings
+        ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
 
 C.......   Get file names; open input gridding matrix, mobile source, and
 C.......   output files.
@@ -166,6 +200,91 @@ C.......   Build description of output file, and optionally open it:
  
         END IF
 
+        JDATE   = SDATE3D
+        JTIME   = STIME3D
+        TSTEP   = TSTEP3D
+
+C.........  Annual inventory VMT file as input
+        IF ( TSTEP .EQ. 0 ) THEN
+            REPNAM = 'MGRDREP'
+            NSUM   = 1
+ 
+C.........  Hourly inventory file as input
+        ELSE
+            REPNAM = 'MGRTREP'
+            NSUM   = MXEMIS
+        END IF
+
+C.......   Read FIPS code for reporting purpose
+        IF( ST_REPORT ) THEN
+ 
+C............  If we've read in temporal file, must get inventory file name
+            IF ( TSTEP .NE. 0 ) THEN
+ 
+                INAME = PROMPTMFILE(
+     &                  'Enter logical name for MOBIL INVENTORY file',
+     &                  FSREAD3, 'MOBL', 'GRDMOBIL' )
+            ELSE
+                INAME = ANAME
+ 
+            ENDIF
+ 
+            IF( .NOT. READ3( INAME, 'IFIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+ 
+                CALL M3EXIT( 'GRDMOBIL', 0, 0,
+     &                       'Error reading FIP from file' // INAME, 2 )
+ 
+            END IF
+ 
+            IF( .NOT.
+     &          READ3( INAME, 'INVYR', ALLAYS3, 0, 0, INVYR ) ) THEN
+ 
+                CALL M3EXIT( 'GRDMOBIL', 0, 0,
+     &               'Error reading INVYR from file' // INAME, 2 )
+ 
+            END IF
+ 
+            RDEV  = PROMPTFFILE(
+     &             'Enter logical name for TOTALS REPORT or "NONE"',
+     &             .FALSE., .TRUE., REPNAM, 'GRDMOBIL' )
+ 
+C............  Create state codes arrays
+            LSTA = -9
+            K    = 0
+            DO 22 I = 1, NMSRC
+ 
+                STA = IFIP( I ) / 1000
+ 
+                IF( STA .GT. LSTA ) THEN
+ 
+                    K = K + 1
+                    STATES( K ) = STA
+                    LSTA        = STA
+ 
+                ENDIF
+ 
+                ISPTR ( I ) = K
+ 
+22          CONTINUE
+ 
+            NSTA = K
+ 
+            IF( NSTA .GT. MXSTA ) THEN
+                WRITE( MESG,94010 )
+     &                'Number of states is ', NSTA,
+     &                'but maximum (MXSTA) is', MXSTA
+                CALL M3EXIT( 'GRDMOBIL', JDATE, JTIME, MESG, 2 )
+            ENDIF
+ 
+C............  Initialize emission summary array
+            DO 28 I = 1, MXSTA
+                DO 27 S = 1, NSUM 
+                    EMSUM( I,S ) = 0.
+27              CONTINUE
+28          CONTINUE
+ 
+        ENDIF
+
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
      &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D, 
      &                     XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
@@ -181,9 +300,6 @@ C......... Store variable properties based on DESC3 call
         GDNAM3D = GRDNM
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
-        JDATE   = SDATE3D
-        JTIME   = STIME3D
-        TSTEP   = TSTEP3D
 
 C.........  Set single output variable if input is inventory VMT file
         IF ( TSTEP .EQ. 0 ) THEN
@@ -217,9 +333,9 @@ C.........  Otherwise, use same output variables as input variables
             FDESC3D( 1 ) = 'Mobile source gridded emission types'
 
 C.............  Copy vehicle type descriptions from MTMP file
-            DO 22 I = 1, NVTYPE
+            DO 31 I = 1, NVTYPE
                 FDESC3D( 1 + I ) = FDESC3D( 3 + I )
-22          CONTINUE
+31          CONTINUE
 
             BEGBLK = NVTYPE + 2
 
@@ -233,8 +349,10 @@ C.............  Copy vehicle type descriptions from MTMP file
 33      CONTINUE 
         
         ENAME = PROMPTMFILE( 
-     &          'Enter logical name for OUTPUT ' // OUTDESC // ' file',
-     &          FSUNKN3, OUTNAM, 'GRDMOBIL' )
+     &          'Enter logical name for OUTPUT ' // OUTDESC // 
+     &          ' file or "NONE"', FSUNKN3, OUTNAM, 'GRDMOBIL' )
+
+        OUTPUTFLAG = ( ENAME .NE. NONE )
 
 
 C.......   Read gridding, speciation, and (optional) control matrices:
@@ -253,6 +371,7 @@ C.......   Transform and write out area source emissions values:
 
         CALL M3MSG2( 'Calculating gridded categorized VMT...' )
 
+        BTIME = JTIME
         LDATE = 0
         DO  199  T = 1, NSTEPS
 
@@ -263,14 +382,12 @@ C...............   If this is a new month, or new day, write message
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
                 CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
  
-                LDATE = JDATE
-
             END IF
 
 C.............  Write to screen because WRITE3 only writes to LDEV
             IF( JDATE .GT. 0 ) WRITE( *, 93020 ) HHMMSS( JTIME )
 
-            DO  198  V = 1, NVARS3D
+            DO  188  V = 1, NVARS3D
 
 C...................   Read in entire emissions field
 
@@ -284,33 +401,108 @@ C...................   Read in entire emissions field
 
                 END IF          !  if read3() succeeds or not
 
-                DO  197  L = 1, NLAYS3D
+                DO  155  L = 1, NLAYS3D
 
                     CALL SMATVEC( NMSRC, NGRID, NMATX, NX, IX, CX,
      &                            EMISV( 1,L ), EMISG( 1,L ) )
 
-197             CONTINUE
+155             CONTINUE
 
-                IF ( .NOT. WRITE3( ENAME, VNAME3D( V ),
-     &                             JDATE, JTIME, EMISG  ) ) THEN
+                IF( OUTPUTFLAG ) THEN
 
-                    MESG = 'Could not write "' //
-     &                     VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) ) //
-     &                     '" to ' // ENAME
-                    CALL M3EXIT( 'GRDMOBIL', JDATE, JTIME, MESG, 2 )
+                    IF ( .NOT. WRITE3( ENAME, VNAME3D( V ),
+     &                                 JDATE, JTIME, EMISG  ) ) THEN
 
-                END IF          !  if write3() failed
+                        MESG = 'Could not write "' //
+     &                         VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) )
+     &                         // '" to ' // ENAME
+                        CALL M3EXIT( 'GRDMOBIL', JDATE, JTIME, MESG, 2 )
 
-198         CONTINUE            ! end loop on input variables
+                    END IF          !  if write3() failed
+
+                ENDIF
+
+C.........................  When reporting is switched on, calculate emissions
+C.........................  summaries by state and report to output QA file
+C.........................  EMSUM must be initialized
+                IF( ST_REPORT ) THEN
+
+C.....................  Sum emissions across vehicle types
+                    DO 177  L = 1, NLAYS3D
+                        DO 175 S = 1, NMSRC
+                            EMISR( S ) = EMISR( S ) + EMISV( S,L )
+175                     CONTINUE
+177                 CONTINUE
+ 
+                    CALL AGRDSUM( NMSRC, NGRID, NMATX, NX, IX,
+     &                            CX, ISPTR, EMISR, EMSUM( 1,V ) )
+ 
+                    DO 181 S = 1, NMSRC
+                        EMISR( S ) = 0.
+181                 CONTINUE
+
+                ENDIF
+
+188         CONTINUE            ! end loop on input variables
+
+            LDATE = JDATE
+            LTIME = JTIME
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+C.............  Write report if report flag is switched on and day is done
+            IF( ST_REPORT .AND.
+     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+ 
+C.................  Convert summary emissions from moles/day to tons/day
+ 
+                IF( TSTEP .EQ. 0 ) THEN
+                    MESG = 'Mobile source VMT (miles/ave ' //
+     &                     'inventory day) within grid ' // GRDNM
+                    OUTFMT = 'F12.0'
+
+                ELSE 
+
+                    WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
+     &                                   MMDDYY( LDATE ) // ' from',
+     &                                   BTIME, 'to', LTIME
+
+                    MESG = 'Mobile source emissions (tons/' //
+     &                     'specific day) within grid ' // GRDNM
+                    OUTFMT = 'F8.1'
+
+C.................  Convert from grams to tons
+
+                    FAC = 1.0 / TON2GM
+                    DO 191 I = 1, MXSTA
+                        DO 190 S = 1, NSUM
+                            EMSUM( I,S ) = EMSUM( I,S ) * FAC
+190                     CONTINUE
+191                 CONTINUE
+
+                ENDIF
+ 
+                CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NVARS3D,
+     &                         OUTFMT, VNAME3D, STATES, EMSUM        )
+ 
+C.................  Reinitialize emissions summary
+                DO 198 I = 1, MXSTA
+                    DO 197 S = 1, NSUM
+                        EMSUM( I,S ) = 0.
+197                 CONTINUE 
+198             CONTINUE
+
+C.................  Set begining time for next day
+                BTIME = JTIME
+ 
+            ENDIF
 
 199     CONTINUE          !  end loop on time steps
 
 999     CONTINUE          !  exit program
       
         CALL M3EXIT( 'GRDMOBIL', 0, 0, 
-     &               'Normal completion  of PROGRAM GRDMOBIL', 0 )
+     &               'Normal completion of PROGRAM GRDMOBIL', 0 )
 
 
 C******************  FORMAT  STATEMENTS   ******************************
