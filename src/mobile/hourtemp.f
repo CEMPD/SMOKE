@@ -1,11 +1,15 @@
 
         SUBROUTINE HOURTEMP( NSRC, JTIME, DAYBEGT, VALBYSRC, SRCARRAY, 
-     &                       MINTEMP, MAXTEMP, NDAYSRC, HOUROUT )
+     &                       MINTEMP, MAXTEMP, SKIPDATA, NDAYSRC, 
+     &                       HOUROUT )
 
 C***********************************************************************
-C  subroutine HOURTEMP body starts at line < >
+C  subroutine body starts at line 92
 C
 C  DESCRIPTION:
+C       Creates summed hourly temperatures by county. Checks that temperatures
+C       are within requested minimum and maximum. Keeps track of total number
+C       of sources for averaging later.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -19,17 +23,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C 
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C 
+C
 C See file COPYRIGHT for conditions of use.
-C 
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -37,7 +41,9 @@ C
 C****************************************************************************
 
 C...........   MODULES for public variables
-        USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY
+
+C...........   This module is used for mobile setup
+        USE MODMBSET, ONLY: DAILY
         
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: CSOURC
@@ -65,6 +71,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT    (IN) :: SRCARRAY( NSRC,2 )    ! per-source FIPS and averaging type
         REAL   , INTENT    (IN) :: MINTEMP               ! minimum temperature
         REAL   , INTENT    (IN) :: MAXTEMP               ! maximum temperature
+        LOGICAL, INTENT    (IN) :: SKIPDATA             ! skip data for non-day averaging
         INTEGER, INTENT(IN OUT) :: NDAYSRC ( NSRC,24 )   ! no. days to average per source
         REAL   , INTENT(IN OUT) :: HOUROUT ( NSRC,24 )   ! hourly temp per source 
 
@@ -108,7 +115,7 @@ C.....................  Round value up to minimum
      &                     'Increasing hourly temperature from',
      &                     VAL, 'to', MINTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
-                    CALL M3MESG( MESG )
+ccs                    CALL M3MESG( MESG )
 
                     VAL = MINTEMP 
 
@@ -120,7 +127,7 @@ C.....................  Round value down to maximum
      &                     'Decreasing hourly temperature from',
      &                     VAL, ' to', MAXTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
-                    CALL M3MESG( MESG )
+ccs                    CALL M3MESG( MESG )
 
                     VAL = MAXTEMP
                 
@@ -143,8 +150,12 @@ C                   one running one day)
                     HOUROUT( S,TIMESLOT ) = VAL
                     NDAYSRC( S,TIMESLOT ) = 1
                 ELSE
-                    HOUROUT( S,TIMESLOT ) = HOUROUT( S,TIMESLOT ) + VAL
-                    NDAYSRC( S,TIMESLOT ) = NDAYSRC( S,TIMESLOT ) + 1
+                    IF( .NOT. SKIPDATA ) THEN
+                        HOUROUT( S,TIMESLOT ) =
+     &                                    HOUROUT( S,TIMESLOT ) + VAL
+                        NDAYSRC( S,TIMESLOT ) = 
+     &                                    NDAYSRC( S,TIMESLOT ) + 1
+                    END IF
                 END IF
 
             END IF
