@@ -63,13 +63,13 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         JUNIT
         CHARACTER*16    MULTUNIT
-        LOGICAL         OPNFULL3
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
+        LOGICAL         SETENVVAR
         CHARACTER*16    VERCHAR
 
-        EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, OPNFULL3, PROMPTFFILE, 
-     &            PROMPTMFILE, VERHCAR
+        EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
+     &            PROMPTMFILE, SETENVVAR, VERHCAR
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
@@ -452,16 +452,19 @@ C.............  Local variables
             CHARACTER*128   DUMSTR       ! dummy string
             CHARACTER*256   MESG         ! output string buffer
             CHARACTER*512   PHYSNAME     ! output path & file buffer
+            
+            LOGICAL ::      ENVFLAG = .FALSE. ! true: could not set env variable
 
 C------------------------------------------------------------------------
 
             FDEV = 0
+            ENVFLAG = .FALSE.
 
 C.............  Check if logical output file name is defined
             CALL ENVSTR( LNAME, FILEDESC, ' ', DUMSTR, IOS )
 
 C.............  If not defined, give note, build physical output file name 
-C              and open file with physical name
+C              and set environment variable
             IF( IOS1 .EQ. 0 .AND. 
      &          IOS2 .EQ. 0 .AND. 
      &          IOS  .NE. 0       ) THEN
@@ -475,31 +478,18 @@ C              and open file with physical name
      &                 'file name.'
                 CALL M3MSG2( MESG )
 
-                SELECT CASE( FTYPE )
-                CASE( 'NETCDF' )
+                IF( .NOT. SETENVVAR( LNAME, PHYSNAME ) ) THEN
+                    ENVFLAG = .TRUE.
+                    MESG = 'ERROR: Could not set logical file name ' //
+     &                     CRLF() // BLANK10 // 'for file ' // 
+     &                     TRIM( PHYSNAME )
+                    CALL M3MSG2( MESG )
+                END IF
+            END IF
 
-                    IF( .NOT. OPNFULL3( LNAME, FSUNKN3, PHYSNAME,
-     &                                  PROGNAME ) ) THEN
-                        EFLAG = .TRUE.
-                        L  = LEN_TRIM( FILEDESC )
-                        L2 = LEN_TRIM( PHYSNAME )
-                        MESG = 'ERROR: Could not open '// 
-     &                         FILEDESC( 1:L ) // CRLF() // 
-     &                         BLANK10 // PHYSNAME( 1:L2 )
-                        CALL M3MSG2( MESG )
-
-                    END IF
-
-                CASE( 'ASCII' )
-                    FDEV = JUNIT()
-                    OPEN( FDEV, ERR=1006, FILE=PHYSNAME, 
-     &                    STATUS = 'UNKNOWN' )
-
-                END SELECT
-
-C.............  If logical name is defined, open it.
-            ELSE
-
+            IF( .NOT. ENVFLAG ) THEN
+            	
+C.............  Logical name is defined, open file.
                 SELECT CASE( FTYPE )
                 CASE( 'NETCDF' )
                     LNAME = PROMPTMFILE( 'Enter name for '// FILEDESC,
@@ -511,14 +501,11 @@ C.............  If logical name is defined, open it.
 
                 END SELECT
 
+            ELSE
+            	
+            	EFLAG = .TRUE.
+            	
             END IF
-
-            RETURN
-
-1006        EFLAG = .TRUE.
-            MESG = 'ERROR: Could not open '// FILEDESC( 1:L ) // 
-     &             CRLF() // BLANK10 // PHYSNAME( 1:L2 )
-            CALL M3MSG2( MESG )
 
             RETURN
 
