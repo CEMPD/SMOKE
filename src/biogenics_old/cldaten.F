@@ -1,10 +1,30 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File Version: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         SUBROUTINE  CLDATEN( JDATE, JTIME, LAT, LON, CLDATN )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 179
 C
 C  FUNCTION:
 C       Computes gridded cloud attenuation factor CLDATN for SMOKE BEIS2
@@ -25,6 +45,9 @@ C       CBARNES1, READSMET
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC:  dumb implementation using EDSS clouds
+C
+C       Revised 8/96 by SL and CJC: algorithm change to match UAM BEIS2
+C       algorithm
 C
 C***********************************************************************
 
@@ -182,7 +205,6 @@ C.......   Compute each station's cloud attenuation and locations,
 C.......   ordered for CBARNES1:
 
         DADM  = ROTDAY * FLOAT( MOD( JDATE, 1000 ) - 1 )
-        write (98,*) 'DADM = ', DADM
         SNDAY = SIN( PI180 * DADM )
         CSDAY = COS( PI180 * DADM )
         SNDA2 = 2.0 * SNDAY * CSDAY
@@ -190,20 +212,15 @@ C.......   ordered for CBARNES1:
         SIGMA  =   SIGA + DADM
      &             + 1.914827 * SNDAY  - 0.079525 * CSDAY
      &             + 0.019938 * SNDA2 - 0.001620 * CSDA2
-        write (98,*) 'SIGMA = ',SIGMA 
         DESIN  =  SDEC * SIN( PI180 * SIGMA )
         DECOS  =  SQRT( 1.0 - DESIN * DESIN )
  
         AMM   =  12.0 + 0.123570 * SNDAY - 0.004289 * CSDAY
      &                + 0.153809 * SNDA2 + 0.060783 * CSDA2
-        write (98,*) 'AMM = ', AMM
- 
         H0     =  15.0 * ( FLOAT( JTIME / 10000 ) +
      &                     D60 * ( FLOAT( MOD( JTIME / 100, 100 ) )
      &                           + D60 * FLOAT( MOD( JTIME , 100 ) ) )
      &                   - AMM )
-        write (98,*) 'H0 = ', H0
- 
  
         NT = 0 
         DO  33  N = 1, NMET
@@ -229,11 +246,7 @@ C.......   ordered for CBARNES1:
 C...........   Partial coverage cases:
 C...........   Compute CZ = cos( zenith angle ) (from SOLELV() )
  
-            write (98,*) 'H0 = ', H0
-            write (98,*) 'ALON = ', ALON
-            H1 = PI180 * ( H0 + ALON )
-            write (98,*) 'H1 = ', H1
-
+            H1  = PI180 * ( H0 + ALON )
             CZ  = DESIN * SIN (PI180 * ALAT)  
      &          + DECOS * COS (PI180 * ALAT) * COS(H1)
 
@@ -290,7 +303,6 @@ C...............   adjust the total transmittance half way back to 1.0
                 ELSE
                     M = 3
                 END IF
-                write (98,*) 'M = ', M, JTIME
                 T = 1.0
                 DO  11  I = 1, M
                     IF      ( HGT(I) .LT. 1000.0 ) THEN
@@ -304,7 +316,6 @@ C...............   adjust the total transmittance half way back to 1.0
                     END IF
                     T = T * ( 1.0 - D100 * ( 1.0 - TTYPE ) *  PCT( I ) )
 11              CONTINUE
-                write (98,*) 'T = ', T
 
                 IF ( DESCRI .LE. 4 ) THEN
                     ATEN( NT ) = 0.5 + 0.5 * T
@@ -351,21 +362,6 @@ C...........   Grid the sky coverage fraction:
         CALL CBARNES1( NCOLS * NROWS, LAT, LON, 
      &                 NT, SLAT, SLON, ATEN, WL50, CLDATN )
 
-
-c       write(98,*) '**************************************'
-c       write(98,*) 'CLDATN  ', JTIME
-c       write(98,*) '**************************************'
-c       do j = 1, NROWS
-c          write(98,*) (cldatn(i,j),i=1,NCOLS)
-c       end do
-        write(98,*) '**************************************'
-        write(98,*) 'ATEN  ', JTIME
-        write(98,*) '**************************************'
-        write(98,*) aten(1)
-        
-c       do i = 1, MAXMET
-c          write(98,*) aten(i)
-c       end do
 
 C...........   Trap the cloud attenuation factor between 0.05 and 1.0:
         
