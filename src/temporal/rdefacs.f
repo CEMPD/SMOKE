@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDEFACS( MODELNAM, NNAME, DNAME, ACTNAM )
+        SUBROUTINE RDEFACS( MODELNAM, NNAME, DNAME, ACTNAM, INGRID )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -39,8 +39,14 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
+
 C.........  This module contains emission factor tables and related
         USE MODEMFAC
+
+C...........   This module contains the cross-reference tables
+        USE MODXREF
 
 C...........   This module contains the information about the source category
         USE MODINFO
@@ -56,19 +62,25 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER     FIND1
         INTEGER     INDEX1
         INTEGER     SEC2TIME
 
-        EXTERNAL    INDEX1, SEC2TIME
+        EXTERNAL    FIND1, INDEX1, SEC2TIME
 
 C.........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: MODELNAM  ! name for EF model
         CHARACTER(*), INTENT (IN) :: NNAME     ! non-diurnal EFs file name
         CHARACTER(*), INTENT (IN) :: DNAME     ! diurnal EFs file name
         CHARACTER(*), INTENT (IN) :: ACTNAM    ! activity name
+        INTEGER     , INTENT (IN) :: INGRID( NSRC ) ! >0 indicates src in grid
+
+C.........  Local allocatable arrays
+        LOGICAL, ALLOCATABLE, SAVE :: FIRSTACT( : )   ! true: first time for act
+        LOGICAL, ALLOCATABLE, SAVE :: PSIUSED ( :,: ) ! true: inven uses PSI
 
 C.........  Local variables
-        INTEGER       I, T           ! counters and indices
+        INTEGER       H, I, K, S, T           ! counters and indices
 
         INTEGER       DDATE          ! diurnal file date
         INTEGER       IDX            ! index of ACTNAM in ACTVTY array
@@ -77,7 +89,8 @@ C.........  Local variables
         INTEGER       NDATE          ! non-diurnal file date
         INTEGER       PSI            ! tmp parameter scheme index
 
-        LOGICAL    :: EFLAG = .FALSE.  ! true: error found
+        LOGICAL    :: EFLAG = .FALSE.    ! true: error found
+        LOGICAL    :: FIRSTIME = .TRUE.  ! true: first time the routine called
 
         CHARACTER*300 MESG     !  message buffer
 
@@ -85,6 +98,24 @@ C.........  Local variables
 
 C***********************************************************************
 C   begin body of subroutine RDEFACS
+
+C.........  First time routine is called...
+        IF( FIRSTIME ) THEN
+
+C.............  Allocate check for first time for each activity
+            ALLOCATE( FIRSTACT( NIACT ), STAT=IOS )
+	    CALL CHECKMEM( IOS, 'FIRSTACT', PROGNAME )
+            FIRSTACT = .TRUE.   ! array
+
+C.............  Allocate flag for PSIs that are actually used
+            I =  MAXVAL( NPSI )
+            ALLOCATE( PSIUSED( I,NIACT ), STAT=IOS )
+	    CALL CHECKMEM( IOS, 'PSIUSED', PROGNAME )
+            PSIUSED = .FALSE.   ! array
+ 
+            FIRSTIME = .FALSE.
+
+        END IF
 
 C.........  Get header description of non-diurnal file to get date for reading
         IF( .NOT. DESC3( NNAME ) ) THEN
@@ -118,21 +149,56 @@ C           emission factors and the model of interest
 C.........  Find index of the activity of interest
         IDX = INDEX1( ACTNAM, NIACT, ACTVTY )
 
-C.........  Allocate memory for emission factors
+C.........  If this is the first time this routine has been called for this
+C           activity, populate the flag that says what PSIs are (1) actually 
+C           used by the inventory and (2) within the grid of interest.
+        IF( FIRSTACT( IDX ) ) THEN
+
+            DO S = 1, NSRC
+
+                K = EFSIDX( S,IDX )
+                DO H = 1, 24
+
+                    PSI = IPSIA( K, H )
+
+C.....................  Find index that says if the PSI is assigned to a source
+C                       in the inventory
+                    T = FIND1( PSI, NPSI( IDX ), PSILIST( 1, IDX ) )
+
+                    IF( T .GT. 0 .AND. INGRID( S ) .GT. 0 ) THEN
+                        PSIUSED( T, IDX ) = .TRUE.
+                    END IF
+
+                END DO ! end loop on hours
+
+            END DO     ! end loop on sources
+
+            FIRSTACT( IDX ) = .FALSE.
+
+        END IF
+
+C.........  Allocate memory for emission factors and initialize to zero
         ALLOCATE( EFDIUALL( NVLDTMM,NVTYPE,NPSI(IDX),NDIU ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EFACDIU', PROGNAME )
         ALLOCATE( EFNDIALL( NTMPR,NVTYPE,NPSI(IDX),NNDI ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EFACNDI', PROGNAME )
+        EFDIUALL = 0.   ! array
+        EFNDIALL = 0.   ! array
 
         MESG = 'Reading emission factors...'
         CALL M3MSG2( MESG )
 
 C.........  Read emissions factors for all parameter scheme indices (PSIs) 
-C           that were in the emission factor cross reference file.
+C           that were in the emission factor cross reference file AND that
+C           are used by at least one source.
+C.........  NOTE - if the PSI is not used by a source, the 
         DO  T = 1, NPSI( IDX )
 
             PSI = PSILIST( T, IDX )
             IPTIM = SEC2TIME( PSI )
+
+C.............  Skip over any PSIs that aren't used by the inventory
+            IF( .NOT. PSIUSED( T,IDX ) ) CYCLE
 
 C.............  Read diurnal emission factors
             DO I = 1, NDIU
@@ -189,8 +255,9 @@ C--------------------------------------------------------------------------
      &                        ARRAY ) ) THEN
 
                 WRITE( MESG,94010 ) 
-     &                 'Could not read ' // VNAME // ' for PSI', PSI, 
-     &                 'from file "' // FNAME // '".'
+     &                 'ERROR: Could not read ' // VNAME // 
+     &                 ' for PSI', PSI, 'from file "' // FNAME // '".'
+                CALL M3MSG2( MESG )
                 EFLAG = .TRUE.
 
             END IF
