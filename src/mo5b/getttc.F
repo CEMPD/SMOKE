@@ -29,6 +29,9 @@ C
 C 
       INCLUDE 'TTCINF.I'
       INCLUDE 'IOUCOM.I'
+c
+cmh Add definition of FILNAME, ENVL
+      CHARACTER*132 FILNAME, ENVL
 C
       TTCSML=' '
       IF ( ITTCFG .LT. 5) THEN
@@ -44,7 +47,13 @@ C
 C
 C  Read data file TTC.D and load values into real array TTCDAT
 C
-         OPEN (IOUTTC, FILE='TTC.D',ERR=98)
+cmh Add path to input file name
+c
+         CALL GETENV("EMS_LOC",ENVL)
+         FILNAME = ENVL(1:LNBLNK(ENVL))//'/TTC.D'
+         OPEN (IOUPFF, FILE=FILNAME, ERR=98)
+cmh      OPEN (IOUTTC, FILE='TTC.D',ERR=98)
+c
          READ (IOUTTC,101,ERR=98) TTCSML
  101     FORMAT (A80)
          DO 20 I = 1,18

@@ -65,6 +65,12 @@ C
       INTEGER SMART(7)
       CHARACTER*1 CSMART(3)
       CHARACTER*120 BUFFER
+c
+cmh  LMOS modification from Mobile5a
+cmh  Add definition of ENVL, ENVG, and NMIMC
+c
+      CHARACTER*132 ENVL,ENVG,NMIMC
+cmh end
 C
       INCLUDE 'FLAGS1.I'
       INCLUDE 'FLAGS2.I'
@@ -77,6 +83,14 @@ C
       INCLUDE 'IOUCOM.I'
       INCLUDE 'RSDINF.I'
       INCLUDE 'TTCINF.I' 
+
+cmh add declarations
+      LOGICAL WFLAG
+cmh
+cmh add commons
+      COMMON /WARNING/ WFLAG
+cmh
+
 C
       IMPNO1 = 1
       IMPNO2 = 1
@@ -89,10 +103,14 @@ C
       IMTIER=0
       IF(IMFLAG.GT.3) THEN
          IMTIER=1
-         IF(IMFLAG.EQ.4.OR.IMFLAG.EQ.5) WRITE(IOUERR,205)
-  205    FORMAT('0',
-     *   '(12/1/92) Guidance Memo Credits being used ',
-     *   'for Tier 1 vehicles')
+c
+cmh  LMOS modification from Mobil5a
+cmh  Comment out writing of message to IOUREP
+c
+c        IF(IMFLAG.EQ.4.OR.IMFLAG.EQ.5) WRITE(IOUERR,205)
+c 205    FORMAT('0',
+c    *   '(12/1/92) Guidance Memo Credits being used ',
+c    *   'for Tier 1 vehicles')
          IF(IMFLAG.EQ.4) IMFLAG=2
          IF(IMFLAG.EQ.5) IMFLAG=3
       ENDIF
@@ -112,11 +130,27 @@ C
       IF(IFILET(2).EQ.2) THEN
          READ(IOUGEN,100) NAMIMC
   100 FORMAT(A40)
-         OPEN(IOUIMD,FILE=NAMIMC,STATUS='OLD')
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Read the user-supplied, alternate TECH4+ credit file from EMS_LOC.
+cmh  Otherwise get the default file, IMDATA.D, from EMS_LOC.
+c
+         CALL GETENV("EMS_LOC",ENVL)
+         NMIMC=ENVL(1:LNBLNK(ENVL))//'/'//NAMIMC
+         OPEN(IOUIMD,FILE=NMIMC,STATUS='OLD')
+cmh      OPEN(IOUIMD,FILE=NAMIMC,STATUS='OLD')
          GOTO 10
       ENDIF
-      NAMIMC='IMDATA.D'
-      OPEN(IOUIMD,FILE=NAMIMC,STATUS='OLD')
+
+cmh  Continue LMOS modification
+cmh
+      CALL GETENV("EMS_LOC",ENVG)
+      NMIMC=ENVG(1:LNBLNK(ENVG))//'/IMDATA.D'
+      OPEN(IOUIMD,FILE=NMIMC,STATUS='OLD')
+
+cmh   NAMIMC='IMDATA.D'
+cmh   OPEN(IOUIMD,FILE=NAMIMC,STATUS='OLD')
+cmh end
 C
 C  Read the Smart control strip, cut point values and description line
 C  Check technology and if it is incorrect then skip 48 lines
@@ -187,8 +221,12 @@ C  Check if RSD program
             GOTO 70
       ENDIF
 C
-      WRITE(IOUASK,220) IMNAME
-  220 FORMAT(' Reading I/M credits information'/' ',A80)
+cmh add conditional
+      IF( WFLAG ) THEN
+          WRITE(IOUASK,220) IMNAME
+      ENDIF
+
+  220 FORMAT( 7X,' Reading I/M credits information'/ 8X,A80)
 C
 C     Now that the data are being read in set the flag to indicate.
 C
@@ -268,9 +306,14 @@ C  Set the read indicator flag
 C
       IMPNO2=2
       SMARTL(2)=IMNAME
-      WRITE(IOUASK,230) IMNAME
+
+cmh add conditional
+      IF( WFLAG ) THEN
+          WRITE(IOUASK,230) IMNAME
+      ENDIF
+
   230 FORMAT
-     *(' Reading second I/M program credits information'/' ',A80)
+     *( 7X,' Reading second I/M program credits information'/ 8X,A80)
 C
 C     Loop for the 18 ITECH to be stored in the record.
 C

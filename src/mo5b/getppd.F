@@ -32,6 +32,9 @@ C
       INCLUDE 'PPEFFD.I'
       INCLUDE 'PRGCH2.I'
       INCLUDE 'PRSCH2.I'
+c
+cmh Add definition of FILNAME, ENVL
+      CHARACTER*132 FILNAME, ENVL
 C
 C  Verify Purge and Pressure  program types. If one is Hybrid and 
 C  the other is not ERROR. 
@@ -45,7 +48,12 @@ C
 C
 C  Read data file PPEFF.D and load values into real array PPEFF
 C
-      OPEN (IOUPFF, FILE='PPEFF.D',ERR=98)
+cmh Add path to input file name
+c
+      CALL GETENV("EMS_LOC",ENVL)
+      FILNAME = ENVL(1:LNBLNK(ENVL))//'/PPEFF.D'    
+      OPEN (IOUPFF, FILE=FILNAME, ERR=98)
+cmh   OPEN (IOUPFF, FILE='PPEFF.D', ERR=98)
 C      
       READ (IOUPFF,'(A)',ERR=98) PPDES 
 C

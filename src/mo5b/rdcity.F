@@ -101,6 +101,10 @@ C
 C
       DATA NUMBER/'0','1','2','3','4','5','6','7','8','9'/
       DATA LOWUYR/1970/
+c
+cmh  Add declarations and common for temperature overide
+      REAL             TMPRTR, TMIN, TMAX
+      COMMON /TOVRIDE/ TMPRTR, TMIN, TMAX
 C
 C  Acquire inputs.
 C
@@ -114,6 +118,10 @@ CC   *    ' ','diesel flag, reform flag & base fuel flag: ')
      *    TEMMAX,RVPBAS,RVPIUS,IUSESY,OXYCHR,DSFCHR,
      *    RFGCHR,DTGCHR,IAFCHR,WINCHR
   100 FORMAT(4A4,1X,A1,2F5.0,2F5.1,1X,I2,6(1X,A1))
+c
+cmh Add temperature overide
+      TEMMIN = TMIN
+      TEMMAX = TMAX
 C
 C  Parse OXYFLG, DSFLAG, RFGFLG, DTGFLG, WINFLG and IAFCNT columns
 C  to prevent input errors.

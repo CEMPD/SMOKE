@@ -74,6 +74,11 @@ C
       INCLUDE 'TAMOUT.I'
       INCLUDE 'TPDCOM.I'
       INCLUDE 'VMXCOM.I'
+c
+cmh LMOS modification from Mobile5a
+c  Add LMOS common block
+c
+      COMMON /LMOS/ EFDNL(9),EFEVND(9),VDNL,DNLGPM
 C
       REAL MPD
 C
@@ -181,7 +186,14 @@ C  grams per day (gpd), adding in diurnal (which by definition only occurs once
 C  per day), converting the sum from gpd to grams per mile (gpm), and, finally,
 C  adding in crankcase (which is already in gpm).
 C
-      CCEVRT=(HS*BMYTPD(JDX,IV)+DU)/MPD+CC
+c
+cmh LMOS Modification from Mobile5a
+c   Separate out diurnals from CCEVRT.
+c
+c     CCEVRT=(HS*BMYTPD(JDX,IV)+DU)/MPD+CC
+      CCEVRT=(HS*BMYTPD(JDX,IV))/MPD+CC
+      DNLGPM=DU/MPD
+c
 C
 C  For HCFLAG=3,5 (grams output), generate a composite grams/trip
 C  fleet hot soak by applying the trips per day fractions.

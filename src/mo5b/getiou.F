@@ -73,29 +73,33 @@ C  Output unit numbers parsed here.
 C
 C  Change alphanumeric to numeric values.
 C
-   90 IOUSUM=0
-      DO 30 JOU=1,3
-C
-C  Test for allowed values (no input units).
-C
-        DO 10 JU=1,9
-          IF(JU.EQ.IOUIMD.OR.JU.EQ.IOUGEN) GOTO 10
-          IF(IOUCHG(JOU).EQ.IOUREF(JU)) GOTO 20
-   10   CONTINUE
-        GOTO 30
-C
-C  Save allowed new value.
-C
-   20   IOUNEW(JOU)=JU
-        IOUSUM=IOUSUM+JU
-   30 CONTINUE
-C
-C  Assign output units.
-C
-      IOUREP=IOUNEW(1)
-      IOUERR=IOUNEW(2)
-      IOUASK=IOUNEW(3)
-C
+cmh  LMOS modification from Mobile5a changes
+c  
+c   90 IOUSUM=0
+c      DO 30 JOU=1,3
+cC
+cC  Test for allowed values (no input units).
+cC
+c        DO 10 JU=1,9
+c          IF(JU.EQ.IOUIMD.OR.JU.EQ.IOUGEN) GOTO 10
+c          IF(IOUCHG(JOU).EQ.IOUREF(JU)) GOTO 20
+c   10   CONTINUE
+c        GOTO 30
+cC
+cC  Save allowed new value.
+cC
+c   20   IOUNEW(JOU)=JU
+c        IOUSUM=IOUSUM+JU
+c   30 CONTINUE
+cC
+cC  Assign output units.
+cC
+c      IOUREP=IOUNEW(1)
+c      IOUERR=IOUNEW(2)
+c      IOUASK=IOUNEW(3)
+cC
+cmh end of LMOS modifications
+c
       RETURN
 C
 C  EOF on any attempted read => take alternate return 1 => run aborts.

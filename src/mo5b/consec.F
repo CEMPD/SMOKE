@@ -60,6 +60,12 @@ C
       INTEGER FLGERR, IOLEV, VHMODE
       CHARACTER*40 BLANK
       LOGICAL FEXIST
+c
+cmh LMOS modification from Mobile5a
+c   Add definition of ENVL
+c
+      CHARACTER*132 ENVL
+cmh
 C
 C     Initialize the LEV phase-in exist file flag, the prompt error flag,
 C     the permanent prompt flag, and the blank constant; and set the I/O
@@ -90,10 +96,17 @@ C       Lev Testing Option Reading in the LEVIMP
 C
         IF (PROMPT.EQ. 5 .OR. PROMPT .EQ. 6) THEN
 C
-    5     WRITE (IOUASK,200)
-  200     FORMAT (/'&', 'Please enter the LEVIMP input filename:')
-          READ (IOUASK,100) LEVNAM
-  100     FORMAT (A40)
+cmh  LMOS changed from Mobile5a
+cmh  Comment out input of alternate LEV input file.  Assume file will be named
+cmh  LEVIMP and be located in EMS_LOC
+c
+c   5     WRITE (IOUASK,200)
+c 200     FORMAT (/'&', 'Please enter the LEVIMP input filename:')
+c         READ (IOUASK,100) LEVNAM
+c 100     FORMAT (A40)
+c
+          CALL GETENV("EMS_LOC",ENVL)
+          LEVNAM=ENVL(1:LNBLNK(ENVL))//'/LEVIMP'
 C
 C         Exit  if <return> is hit for filename prompts.
 C
@@ -101,11 +114,11 @@ C
 C
 C         Verify that the program exists...
 C
-          INQUIRE(FILE=LEVNAM,EXIST=FEXIST)
+cmh       INQUIRE(FILE=LEVNAM,EXIST=FEXIST)
 C
 C         If the file does not exist ask the filename again
 C
-          IF (.NOT. FEXIST) GOTO 5
+cmh       IF (.NOT. FEXIST) GOTO 5
 C
 C         Open the existing file...
 C
@@ -180,7 +193,10 @@ C
 C     Write run title to each i/o unit (up to 3, depending on 
 C     GETIOU's IOUCHG).
 C
-      CALL OUTHDR(IOUERR)
+cmh  LMOS modification from Mobile5a
+cmh  Comment out writing of header records
+cmh   CALL OUTHDR(IOUERR)
+c
 C
 CC     IF(IOUERR.NE.IOUREP) CALL OUTHDR(IOUERR)
 CC     IF(PROMPT.EQ.2.AND.IOUASK.NE.IOUREP.AND.IOUASK.NE.IOUERR)

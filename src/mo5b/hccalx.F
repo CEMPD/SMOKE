@@ -112,6 +112,12 @@ C
       INCLUDE 'SPEED6.I'
       INCLUDE 'TEMPS.I'
       INCLUDE 'VMXCOM.I'
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Add LMOS common block
+c
+      COMMON /LMOS/ EFDNL(9),EFEVND(9),VDNL,DNLGPM
+c
 C
       DIMENSION EVPSUM(4)
 C
@@ -124,6 +130,17 @@ C
       RSTGPH(9)=0.0
       EFRUNL(9)=0.0
       EFRSTL(9)=0.0
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Initialize composite LDGT diurnal and total
+cmh  non-diurnal evaporative emission factor to 0. Initialize fleet
+cmh  composite diurnal EF to 0. No fleet composite total non-diurnal
+cmh  EF will be calculated.  VDNL is intended for QA purposes.
+c
+      EFDNL(9)=0.0
+      EFEVND(9)=0.0
+      VDNL=0.0
+c
       VEXH=0.0
       VEVAP=0.0
       VLOSS=0.0
@@ -156,6 +173,14 @@ C
       RSTGPH(IV)=0.0
       EFRUNL(IV)=0.0
       EFRSTL(IV)=0.0
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Initialize diurnal and total non-diurnal
+cmh  evaporative emission factor (by vehicle type) to 0.0
+c
+      EFDNL(IV)=0.0
+      EFEVND(IV)=0.0
+c
       DO 15 IEVP=1,4
       GREVP(IEVP,IV)=0.0
    15 CONTINUE
@@ -196,6 +221,11 @@ C
       GASCAP=0.0
       RNGLOS=0.0
       RSLOSS=0.0
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Initialize diurnal grams per mile variable to 0.
+c
+      DNLGPM=0.0
 C
       DO 20 IEVP=1,4
       EVPSUM(IEVP)=0.0
@@ -307,6 +337,14 @@ C
       COMPCC=COMPCC*TF(IDX,IV)
       EFEVAP(IV)=EFEVAP(IV)+COMPCC
       COMPEF=COMPEF+COMPCC
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Compute diurnal EF composited by travel fraction.
+c
+      DNLGPM=DNLGPM*TF(IDX,IV)
+      EFDNL(IV)=EFDNL(IV)+DNLGPM
+      COMPEF=COMPEF+DNLGPM
+cmh end
 C
       IF(IV.EQ.8) GOTO 50
 C
@@ -403,6 +441,11 @@ C
       VRUNLS=VRUNLS+EFRUNL(IV)*VMTMIX(IV)
       VRSTLS=VRSTLS+EFRSTL(IV)*VMTMIX(IV)
 C
+cmh  LMOS Modification from Mobile5a
+cmh  Compute fleet composite diurnal emission factor.
+c
+      VDNL=VDNL+EFDNL(IV)*VMTMIX(IV)
+c
       DO 80 IEVP=1,3
       VGREVP(IEVP)=VGREVP(IEVP)+GREVP(IEVP,IV)*REGMIX(IV)
    80 CONTINUE
@@ -427,6 +470,16 @@ C
      *   EFRUNL(9)=(EFRUNL(2)*VMTMIX(2)+EFRUNL(3)*VMTMIX(3))/VMLDGT
       IF(EFRSTL(2).GT.0.0.AND.EFRSTL(3).GT.0.0)
      *   EFRSTL(9)=(EFRSTL(2)*VMTMIX(2)+EFRSTL(3)*VMTMIX(3))/VMLDGT
+c
+cmh   LMOS Modification from Mobile5a
+cmh   Compute composite LDGT diurnal emission factor.
+c
+      IF(EFDNL(2).GT.0.0.AND.EFDNL(3).GT.0.0)
+     * EFDNL(9)=(EFDNL(2)*VMTMIX(2)+EFDNL(3)*VMTMIX(3))/VMLDGT
+c
+      IF(EFEVND(2).GT.0.0.AND.EFEVND(3).GT.0.0)
+     * EFEVND(9)=(EFEVND(2)*VMTMIX(2)+EFEVND(3)*VMTMIX(3))/VMLDGT
+cmh end
 C
       DO 90 IEVP=1,3
       IF(GREVP(IEVP,2).GT.0.0.AND.GREVP(IEVP,3).GT.0.0)

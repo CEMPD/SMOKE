@@ -105,6 +105,26 @@ C
       INCLUDE 'TEMPS.I'
       INCLUDE 'TTCINF.I'
       INCLUDE 'YEARS4.I'
+
+cmh  LMOS Modification from Mobile5a
+cmh  Add definition of ndi_di, TDNAME, ENVL
+c
+      CHARACTER*1 ndi_di
+      CHARACTER*132 ENVL,TDNAME
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Add ndi_di in common block SCENE3
+c
+      COMMON /SCENE3/ ndi_di
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Added FLAGS3 common block so the the temperature flag could be modified
+c
+      COMMON /FLAGS3/ ATPFLG,TPDFLG,RLFLAG,LOCFLG,TEMFLG,OUTFMT
+c
+cmh  Add declarations and common block for temperature overide
+      REAL             TMPRTR, TMIN, TMAX
+      COMMON /TOVRIDE/ TMPRTR, TMIN, TMAX
 C
 C  initilized values for the LEVs
 C
@@ -134,9 +154,20 @@ C
       NSPDS=1
       IF(PROMPT.EQ.2) WRITE(IOUASK,200)
   200 FORMAT(' ','Enter region, CY,SPD(1),AMBT,PCCN,PCHC,PCCC,Month: ')
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Add the non-diurnal/diurnal flag to the end of the scenario record
+c
+c     READ(IOUGEN,100,ERR=99,END=99)IREJN,ICY,SPD(1),AMBT,PCCN,PCHC,PCCC
+c    *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
+c 100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0)
       READ(IOUGEN,100,ERR=99,END=99)IREJN,ICY,SPD(1),AMBT,PCCN,PCHC,PCCC
-     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
-  100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0)
+     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3),ndi_di
+  100 FORMAT(I1,1X,I2,5(1X,F4.1),I3,3F5.0,A1)
+c
+cmh add temperature override
+      AMBT = TMPRTR
+c
 C
 C     check for irejn = 3 or 4 and the Processing of the LEVs
       IF(IREJN.EQ.3.OR.IREJN.EQ.4) THEN
@@ -152,9 +183,17 @@ C
    10 NSPDS=MAXVEH
       IF(PROMPT.EQ.2) WRITE(IOUASK,210)
   210 FORMAT(' ','Enter region, CY,SPD(8),AMBT,PCCN,PCHC,PCCC,Month: ')
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Add the non-diurnal/diurnal flag to the end of the scenario record
+c
+c     READ(IOUGEN,120,ERR=97,END=99) IREJN,ICY,SPD,AMBT,PCCN,PCHC,PCCC
+c    *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
+c 120 FORMAT(I1,1X,I2,12(1X,F4.1),I3,3F5.0)
       READ(IOUGEN,120,ERR=97,END=99) IREJN,ICY,SPD,AMBT,PCCN,PCHC,PCCC
-     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3)
-  120 FORMAT(I1,1X,I2,12(1X,F4.1),I3,3F5.0)
+     *,MEVAL,(PFRATE(KEYEQ,2),KEYEQ=1,3),ndi_di
+  120 FORMAT(I1,1X,I2,12(1X,F4.1),I3,3F5.0,A1)
+c
 C
 C     check for irejn = 4 and the Processing of the LEVs
       IF(IREJN.EQ.4) THEN
@@ -173,7 +212,15 @@ C  concatenated files could occur in using MOBILE4 as a subroutine, for example.
 C  A normal end of run also occurs, of course, when the first scenario record
 C  read encounters an end of file marker.
 C
-   15 IF(IREJN.EQ.0) GOTO 99
+c
+cmh  LMOS Modification from Mobile5a
+cmh  Add assignment of temperature flag based on value of ndi_di
+c
+c  15 IF(IREJN.EQ.0) GOTO 99
+   15 IF(ndi_di .EQ. 'N') THEN TEMFLG=2
+        ELSE TEMFLG = 1
+      IF(IREJN.EQ.0) GOTO 99
+c
 C
 C  Otherwise, validate inputs.
 C
@@ -264,8 +311,26 @@ C     If the user supplied an alternate credit file name, it will be in
 C     the variable TNAME. Otherwise, we can use TNAME to hold the standard
 C     credit file name 'TECH12.D.'
 C
-      IF(IFILET(1).EQ.1) TNAME='TECH12.D'
-      OPEN(3,FILE=TNAME,STATUS='OLD')
+cmh  LMOS Modification from Mobile5a
+cmh
+cmh  Direct user-supplied filename to be supplied from the EMS_LOC directory.
+cmh  If the default file, TECH12.D, is supplied, get it from EMS_LOC
+c
+         IF(IFILET(1).EQ.2) THEN
+            CALL GETENV("EMS_LOC",ENVL)
+            TDNAME=ENVL(1:LNBLNK(ENVL))//'/'//TNAME
+            OPEN(3,FILE=TDNAME,STATUS='OLD')
+c            OPEN(3,FILE=TNAME,STATUS='OLD')
+            GOTO 20
+         ENDIF
+         CALL GETENV("EMS_LOC",ENVL)
+         TDNAME=ENVL(1:LNBLNK(ENVL))//'/TECH12.D'
+         OPEN(3,FILE=TDNAME,STATUS='OLD')
+c
+c     IF(IFILET(1).EQ.1) TNAME='TECH12.D'
+c     OPEN(3,FILE=TNAME,STATUS='OLD')
+c
+cmh end
 C
    20 READ(3,141,END=95,ERR=96) BUFFER
       READ(UNIT=BUFFER,FMT=140,END=95,ERR=96) ITALD,ICTECH,
@@ -309,7 +374,7 @@ C
 C        Loop for the two (2) ITECHs to be stored in the record.
 C
    30    WRITE(IOUASK,240) DTNAME
-  240    FORMAT(' Reading TECH1&2 I/M Credit Data File...'/A80)
+  240    FORMAT(7X,' Reading TECH1&2 I/M Credit Data File...'/ 7X,A80)
 	 SMRTL1=DTNAME
 	 DO 45 ITECH=1,2
 C
