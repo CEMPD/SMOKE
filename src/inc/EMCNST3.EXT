@@ -3,84 +3,58 @@ C @(#)$Id$ $Source$ $Date$
         INCLUDE 'EMSTRG3.EXT'   !  emissions private parameters
 
 C.........   Output formatting parameters
-        INTEGER         EMOUTLN3
+        INTEGER     , PARAMETER :: EMOUTLN3 = 80
 
-        CHARACTER*2     EMCMISS3
-        CHARACTER*5     BLANK5
-        CHARACTER*10    BLANK10
-        CHARACTER*16    BLANK16
+        CHARACTER*2 , PARAMETER :: EMCMISS3 = '??'
+        CHARACTER*5 , PARAMETER :: BLANK5   = ' '
+        CHARACTER*10, PARAMETER :: BLANK10  = ' '
+        CHARACTER*16, PARAMETER :: BLANK16  = ' '
+
+C.........   Physical constants and conversion factors
+        REAL, PARAMETER :: DAY2SEC = 24. * 3600.  ! Days to seconds 
+        REAL, PARAMETER :: FT2M    = 0.3048       ! Feet to meters 
+        REAL, PARAMETER :: FT2M3   = FT2M ** 3    ! Cubic feet to cubic meters 
+        REAL, PARAMETER :: FLWE2M  = FT2M3 / 60.0 ! ft^3/min to m^3/sec
+        REAL, PARAMETER :: FTOC    = 5./9.        ! Farhenheit to Celcius 
+        REAL, PARAMETER :: SEC2DAY = 1. / DAY2SEC ! Days to seconds 
+        REAL, PARAMETER :: TON2GM  = 907184.74    ! Tons to grams 
+        REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons 
  
-        PARAMETER   (   EMOUTLN3= 80 
-     &                , EMCMISS3= '??' 
-     &                , BLANK5  = ' ' 
-     &                , BLANK10 = ' '
-     &                , BLANK16 = ' '
-     &              )
-
-
-C.........   Physical constants
-        REAL            DAY2SEC ! Days to seconds conversion factor
-        REAL            FT2M    ! Feet to meters conversion factor
-        REAL            FLWE2M  ! ft^3/min to m^3/sec
-        REAL            FTOC    ! Farhenheit to Celcius conversion factor
-        REAL            SEC2DAY ! Days to seconds conversion factor
-        REAL            TON2GM  ! Tons to grams conversion factor
-        REAL            GM2TON  ! Grams to tons conversion factor
- 
-        PARAMETER   (   DAY2SEC = 24. * 3600.
-     &                , FT2M    = 0.3048
-     &                , FLWE2M  = FT2M * FT2M * FT2M / 60.0 
-     &                , FTOC    = 5./9.
-     &                , SEC2DAY = 1. / DAY2SEC
-     &                , TON2GM  = 907184.74
-     &                , GM2TON  = 1. / TON2GM
-     &              )
-
 C.......   Flag values for determining temporal-profile-category
 C.......   applicability:  the corresponding category of temporal
 C.......   profile coefficients should be used for a source S iff
 C.......   MOD( TPFLAG( S ), *TPRFAC ) = 0.
 C.......   (The *TPRFAC's should all be distinct primes)
- 
-        INTEGER     WDTPFAC ! day-of-week temp-profile w/ weekday normalizer
-        INTEGER     STPRFAC ! seasonal    temp-profile
-        INTEGER     MTPRFAC ! month       temp-profile
-        INTEGER     WTPRFAC ! day-of-week temp-profile w/ full week normalizer
- 
-        PARAMETER (   WDTPFAC = 7
-     &              , STPRFAC = 5
-     &              , MTPRFAC = 3
-     &              , WTPRFAC = 2 )
 
-        CHARACTER*10    DAYS( 7 )
-        DATA            DAYS
-     &          /
-     &          'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-     &          'Friday', 'Saturday', 'Sunday'
-     &          /
+        INTEGER, PARAMETER :: WDTPFAC = 7 ! use day-of-week temp-profile w/ 
+                                          !    weekday normalizer
+        INTEGER, PARAMETER :: STPRFAC = 5 ! use seasonal temp-profile
+        INTEGER, PARAMETER :: MTPRFAC = 3 ! use month temp-profile
+        INTEGER, PARAMETER :: WTPRFAC = 2 ! use day-of-week tmp-prof w/ full 
+                                          !    week normalizer
+ 
+        CHARACTER*9, PARAMETER :: DAYS( 7 ) = 
+     &         ( / 'Monday   ', 'Tuesday  ', 'Wednesday', 'Thursday ',
+     &             'Friday   ', 'Saturday ', 'Sunday   '             / )
 
 C.........  Input file format constants
 
-        INTEGER     LSTFMT
-        INTEGER     EMSFMT
-        INTEGER     EPSFMT
-        INTEGER     NETFMT
-        INTEGER     IDAFMT
+        INTEGER, PARAMETER  :: LSTFMT = 0
+        INTEGER, PARAMETER  :: EMSFMT = 1
+        INTEGER, PARAMETER  :: EPSFMT = 2
+        INTEGER, PARAMETER  :: NETFMT = 3
+        INTEGER, PARAMETER  :: IDAFMT = 4
 
-        PARAMETER ( LSTFMT = 0
-     &            , EMSFMT = 1
-     &            , EPSFMT = 2
-     &            , NETFMT = 3
-     &            , IDAFMT = 4
-     &            )
+        CHARACTER*6, PARAMETER :: FMTNAMES( 0:4 ) = 
+     &                        ( / 'list  ', 'EMS-95', 'EPS   ', 
+     &                            'NET   ', 'IDA   '            / )
 
 C.........  Country codes and names
-        INTEGER     , PARAMETER:: MXCNTRY3 = 3
-        INTEGER     , DIMENSION( MXCNTRY3 ):: CNTRYCD3
-        CHARACTER*20, DIMENSION( MXCNTRY3 ):: CNTRYNM3
-
-        DATA CNTRYCD3 / 0, 1, 2 /                   ! In ascending order
-        DATA CNTRYNM3 / 'US', 'CANADA', 'MEXICO' /  ! Matched with CNTRYCD3
+        INTEGER     , PARAMETER :: MXCNTRY3 = 3
+        INTEGER     , PARAMETER :: CNTRYCD3( MXCNTRY3 ) =
+     &                                     ( / 0, 1, 2 / )
+        CHARACTER*6 , PARAMETER :: CNTRYNM3( MXCNTRY3 ) = 
+     &                         ( / 'US    ', 'CANADA', 'MEXICO' / )
 
 C.........  Packet names
         CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
@@ -90,18 +64,22 @@ C.........  Variable dimensioning components, independent
         INTEGER       CPRTLEN3       ! length of ctl eff, rul eff, rul pen roots
         INTEGER       IODLEN3        ! length of I/O API variable descriptions
         INTEGER       IOULEN3        ! length of I/O API units
+        INTEGER       MXINVARR       ! maximum of NARVAR3, NMBVAR3, & NPTVAR3
         INTEGER       NARPPOL3       ! no. of pollutant-spec area inven vars
-        INTEGER       NARVAR3        ! no. of pollutant-indep area inven vars
-        INTEGER       NMBVAR3        ! no. of pollutant-indep mobile inven vars
+        INTEGER       NARVAR3        ! no. of pollutant-indep ar i/o api vars
+        INTEGER       NMBVAR3        ! no. of pollutant-indep mb i/o api vars
+        INTEGER       NMBPPOL3       ! no. of pol/VMT-spec mobile inven vars
         INTEGER       NPTPPOL3       ! no. of pollutant-spec point inven vars
-        INTEGER       NPTVAR3        ! no. of pollutant-indep point inven vars
+        INTEGER       NPTVAR3        ! no. of pollutant-indep pt i/o spi vars
 
         PARAMETER   ( CPRTLEN3 = 3
      &              , IODLEN3  = 80
      &              , IOULEN3  = 16
+     &              , MXINVARR = 12
      &              , NARPPOL3 = 6
      &              , NARVAR3  = 5   ! note: this is not yet known
-     &              , NMBVAR3  = 5   ! note: this is not yet known 
+     &              , NMBVAR3  = 9
+     &              , NMBPPOL3 = 1   
      &              , NPTPPOL3 = 7
      &              , NPTVAR3  = 12
      &              )

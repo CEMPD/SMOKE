@@ -9,6 +9,11 @@ C            during compilation.
 
         INCLUDE 'EMSTRG3.EXT'  ! emissions string widths parameters
 
+C.........  Maximum number of source characteristics for each source category
+        PRIVATE :: MXARCHR3
+        PRIVATE :: MXMBCHR3
+        PRIVATE :: MXPTCHR3
+
 C.........  Width of source information strings 
         PRIVATE :: BLRLEN3
         PRIVATE :: CHRLEN3
@@ -19,7 +24,7 @@ C.........  Width of source information strings
         PRIVATE :: PLTLEN3
         PRIVATE :: POLLEN3
         PRIVATE :: SCCLEN3
-        PRIVATE :: SCLLEN3
+        PRIVATE :: SICLEN3
         PRIVATE :: VTPLEN3
 
 C.........  Width of other global character strings 
@@ -29,7 +34,7 @@ C.........  Width of other global character strings
 
 C.........  Variable dimensioning components and parameters, dependent...
 
-C.........  Start of each field in source definition
+C.........  Start of each field in source definitions
         PRIVATE :: PLTPOS3
         PRIVATE :: CH1POS3
         PRIVATE :: CH2POS3
@@ -40,11 +45,15 @@ C.........  Start of each field in source definition
         PRIVATE :: ALLLEN3
         PRIVATE :: PTBEGL3
         PRIVATE :: PTENDL3
+        PRIVATE :: SCCPOS3
+        PRIVATE :: VTPPOS3
+        PRIVATE :: LNKPOS3
+        PRIVATE :: MBBEGL3
+        PRIVATE :: MBENDL3
 
 C.........  Widths that depend on other widths
         PRIVATE :: FPLLEN3
         PRIVATE :: FPSLEN3
-        PRIVATE :: SCRLEN3
         PRIVATE :: STALEN3
         PRIVATE :: STSLEN3
         PRIVATE :: SRCLEN3
