@@ -1,5 +1,46 @@
 
         PROGRAM EMISFAC
+
+C***********************************************************************
+C  subroutine body starts at line 153
+C
+C  DESCRIPTION:
+C       Reads information from SPDSUM and hourly temperature files to
+C       creates MOBILE6 input files. Calls modified version of MOBILE6 
+C       to generate emission factors. Matches factors to sources and 
+C       writes to output files. Loops over all days for a given temperature
+C       averaging group, stopping when no more temperature files are available.
+C
+C  PRECONDITIONS REQUIRED:
+C       MBSETUP and PREMOBL must have been run.
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************        
         
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
@@ -12,9 +53,7 @@ C...........   This module is the derived meteorology data for emission factors
         USE MODMET
 
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: NEFS
-                        
-        USE MODMBSET
+        USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS
 
         IMPLICIT NONE
 
@@ -87,8 +126,7 @@ C.........   Other local variables
         INTEGER    TEMPTIME      ! temporary time to pass to read routine
         INTEGER    NSTEPS        ! no. time steps in temperature data
         INTEGER    NROWS         ! no. grid rows   
-        INTEGER    NGRPLINES     ! no. lines in GROUP file     
-        INTEGER    NUMSCEN       ! total number of M6 scenarios
+        INTEGER    NGRPLINES     ! no. lines in GROUP file
         INTEGER    NUMSRC        ! total number of sources
 
         LOGICAL :: EFLAG    = .FALSE.    ! error flag
@@ -302,7 +340,7 @@ C.........  Allocate memory for the source/scenario number array
 C.........  Start loop over temperature files
         DO
 
-            IF( TEMPFLAG ) THEN
+c            IF( TEMPFLAG ) THEN
 C.................  Read header of temperature file
                 IF ( .NOT. DESC3( TNAME ) ) THEN
                 
@@ -348,8 +386,8 @@ C.....................  Find end date in file description
 
 C.................  Allocate space for temperature info            
                 IF( INITIAL ) THEN
-                	ALLOCATE( TEMPCTY( NROWS ), STAT=IOS )
-                	CALL CHECKMEM( IOS, 'TEMPCTY', PROGNAME )
+                    ALLOCATE( TEMPCTY( NROWS ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'TEMPCTY', PROGNAME )
                     ALLOCATE( TKHOUR( NROWS, 24 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
                 END IF
@@ -373,8 +411,13 @@ C.................  Read temperature data from file
                 TEMPTIME = STIME
                 CALL RDHOURTEMP( TNAME, NROWS, TEMPDATE, TEMPTIME, 
      &                           TKHOUR )
-            
-            END IF
+
+C.............  If not using temperature files            
+c            ELSE
+                
+C...................  Get start and end dates from enviroment
+C                     Have to adjust for 6 am local time start
+c            END IF
             
 C.............  Create the concatenated MOBILE6 input file
             MESG = 'Writing MOBILE6 input file...'
@@ -424,13 +467,27 @@ C               waste time running Mobile6)
             
 C.............  Allocate space for storing emission factors
             IF( INITIAL ) THEN
-                ALLOCATE( EMISSIONS( NUMSCEN*NM6PROFS*24 ), STAT=IOS )
+                ALLOCATE( EMISSIONS( MXM6EPR ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'EMISSIONS', PROGNAME )
+
+                DO I = 1,MXM6EPR
+                    ALLOCATE( 
+     &                  EMISSIONS( I )%PTR( NUMSCEN, 
+     &                                      MAXVAL( M6POL2EF( I,: ) ),
+     &                                      MAXVAL( M6VEH2EF( I,: ) ),
+     &                                      MAXVAL( M6FAC2EF( I,: ) ),
+     &                                      24 ), 
+     &                  STAT=IOS )
+                    CALL CHECKMEM( IOS, 'EMISSIONS%PTR', PROGNAME )
+                END DO
+
                 INITIAL = .FALSE.
             END IF
             
-            EMISSIONS = 0.
-            
+            DO I = 1,MXM6EPR
+                EMISSIONS( I )%PTR = 0.
+            END DO
+
 C.............  Call Mobile6 with M6 input file name
 C               Custom driver will use SMOKE log file for any screen output
             MESG = 'Running MOBILE6...' // CRLF()
@@ -447,7 +504,7 @@ C.............  Match up emission factors with sources and write to file
             MESG = 'Writing emission factors to file...' // CRLF()
             CALL M3MSG2( MESG )
             
-            CALL WREMFACS( FNAME, NUMSRC, SDATE )
+            CALL WREMFACS( FNAME, NUMSRC, SDATE, VOLNAM )
 
             IF( TEMPFLAG ) THEN
 
@@ -490,6 +547,8 @@ C.................  Open temperature file
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
+            ELSE
+                EXIT
             END IF
 
         END DO
