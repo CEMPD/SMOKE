@@ -58,4 +58,7 @@
 !.........  Time zone by county array
         INTEGER, ALLOCATABLE, PUBLIC :: CNTYTZON( : )  ! time zone by county
 
+!.........  Daylight time exemptions (false is exempt)
+        LOGICAL, ALLOCATABLE, PUBLIC :: USEDAYLT( : )  ! true: use daylight time
+
         END MODULE MODSTCY
