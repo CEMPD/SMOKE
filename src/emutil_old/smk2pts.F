@@ -123,7 +123,7 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Other local variables :
         INTEGER         BDATE, BTIME, EDDATE, EDTIME
         INTEGER         I, ICNT, IDX, IOS, ISPC
-        INTEGER         J, JDX, LDEV, M, NELVPREV, T
+        INTEGER         J, JP1, JDX, LDEV, M, NELVPREV, T
         LOGICAL         IGO
 
         REAL            ESUM, VH, XMAX, YMAX
@@ -570,6 +570,17 @@ C.............................  Sum up emissions in case of duplicate source
                             ESUM = 0.
                             DO 50 J = I, I + IEND( I ) - 1
                                 IDX  = ENDX( J )
+
+C.........................  Under certain special circumstances related to
+C.........................  the PNTS file, this dowhile loop will ensure
+C.........................  that duplicate records are handled correctly.
+
+                                JP1 = J
+                                DOWHILE( IDX .EQ. 0 )
+                                  JP1 = JP1 + 1
+                                  IDX = ENDX( JP1 )
+                                ENDDO
+
                                 ESUM = ESUM + EMIS( IDX, ISPTR( ISPC ) )
    50                       CONTINUE
 
