@@ -1,0 +1,152 @@
+
+C Version "@(#)$Id$ $Source$ $Date$ "
+
+C....................................................................
+C  INCLUDE FILE  M6CNST3.EXT
+C
+C  CONTAINS:  
+C       dimensioning parameters for MOBILE6
+C
+C  DEPENDENT UPON:  None
+C
+C  REVISION HISTORY:
+C       Prototype 1/96 by Marc Houyoux
+C       Updates 9/96 by Marc Houyoux
+C       Updated for MOBILE6 10/01 by C. Seppanen
+C....................................................................
+
+C.........  Dimensioning parameters
+        INTEGER    NM6VPOL          ! Maximum number of Mobile6 volatile pols
+        INTEGER    MXM6EPR          ! Maximum number of emission processes
+        INTEGER    MXM6EFS          ! Maximum number of emis types for one run
+        INTEGER    MXM6ALL          ! Maximum number of all emis types
+        INTEGER    MXM6VTYP         ! Max no of vehicle types in mobile 6
+
+        PARAMETER( NM6VPOL  = 6
+     &           , MXM6EPR  = 8
+     &           , MXM6EFS  = 12
+     &           , MXM6ALL  = 52
+     &           , MXM6VTYP = 8
+     &           )
+
+C.........  Hydrocarbon type (all possible types) - 1st 5 in MOBILE6 order
+        CHARACTER*3 M6VPOLS( NM6VPOL )
+        DATA M6VPOLS / 'THC', 'NMH', 'VOC', 'TOG', 'NMO', 'ROG' /
+
+C.........  Emissions processes (all possible types)
+        CHARACTER*3 MVPROCS( MXM6EPR )
+        DATA MVPROCS / 'EXR', 'EXS', 'HOT', 'DNL', 
+     &                 'RST', 'EVR', 'CRC', 'RFL' /
+
+C.........  Mobile6 vehicle types
+        CHARACTER(LEN=VTPLEN3) M6VTYPES( MXM6VTYP )
+        DATA M6VTYPES / 'LDGV', 'LDGT1', 'LDGT2', 'HDGV', 
+     &                  'LDDV', 'LDDT',  'HDDV' , 'MC' /
+
+C.........  Emissions factors names list of all possible types
+
+        CHARACTER*8  M6EFLST ( MXM6ALL )
+        DATA M6EFLST  / 'EXR__CO' , 'EXR__NOX', 
+     &                  'EXR__THC', 'EXR__NMH',
+     &                  'EXR__VOC', 'EXR__TOG', 
+     &                  'EXR__NMO', 'EXR__ROG',
+     &                  'EXS__CO' , 'EXS__NOX', 
+     &                  'EXS__THC', 'EXS__NMH',
+     &                  'EXS__VOC', 'EXS__TOG', 
+     &                  'EXS__NMO', 'EXS__ROG', 
+     &                  'HOT__THC', 'HOT__NMH',
+     &                  'HOT__VOC', 'HOT__TOG', 
+     &                  'HOT__NMO', 'HOT__ROG', 
+     &                  'DNL__THC', 'DNL__NMH',
+     &                  'DNL__VOC', 'DNL__TOG', 
+     &                  'DNL__NMO', 'DNL__ROG', 
+     &                  'RST__THC', 'RST__NMH',
+     &                  'RST__VOC', 'RST__TOG', 
+     &                  'RST__NMO', 'RST__ROG', 
+     &                  'EVR__THC', 'EVR__NMH',
+     &                  'EVR__VOC', 'EVR__TOG', 
+     &                  'EVR__NMO', 'EVR__ROG', 
+     &                  'CRC__THC', 'CRC__NMH',
+     &                  'CRC__VOC', 'CRC__TOG', 
+     &                  'CRC__NMO', 'CRC__ROG', 
+     &                  'RFL__THC', 'RFL__NMH',
+     &                  'RFL__VOC', 'RFL__TOG', 
+     &                  'RFL__NMO', 'RFL__ROG'
+     &                /
+
+C.........  Emissions factors units for all factors
+
+        CHARACTER*16 M6EFUNT( MXM6ALL )
+        DATA M6EFUNT / 'g/mi', 'g/mi', 'g/mi', 'g/mi',  
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi'
+     &               /
+
+C.........  Emissions factors descriptions for all factors
+
+        CHARACTER*80 M6EFDSC( MXM6ALL )
+        DATA M6EFDSC / 'EFs for Exhaust running CO',
+     &                 'EFs for Exhaust running NOX',
+     &                 'EFs for Exhaust running THC',
+     &                 'EFs for Exhaust running NMHC',
+     &                 'EFs for Exhaust running VOC',
+     &                 'EFs for Exhaust running TOG',
+     &                 'EFs for Exhaust running NMOG',
+     &                 'EFs for Exhaust running ROG',
+     &                 'EFs for Exhaust engine start CO',
+     &                 'EFs for Exhaust engine start NOX',
+     &                 'EFs for Exhaust engine start THC',
+     &                 'EFs for Exhaust engine start NMHC',
+     &                 'EFs for Exhaust engine start VOC',
+     &                 'EFs for Exhaust engine start TOG',
+     &                 'EFs for Exhaust engine start NMOG',
+     &                 'EFs for Exhaust engine start ROG',
+     &                 'EFs for Evaporative hot soak THC',
+     &                 'EFs for Evaporative hot soak NMHC',
+     &                 'EFs for Evaporative hot soak VOC',
+     &                 'EFs for Evaporative hot soak TOG',
+     &                 'EFs for Evaporative hot soak NMOG',
+     &                 'EFs for Evaporative hot soak ROG',
+     &                 'EFs for Evaporative diurnal THC',
+     &                 'EFs for Evaporative diurnal NMHC',
+     &                 'EFs for Evaporative diurnal VOC',
+     &                 'EFs for Evaporative diurnal TOG',
+     &                 'EFs for Evaporative diurnal NMOG',
+     &                 'EFs for Evaporative diurnal ROG',
+     &                 'EFs for Evaporative resting loss THC',
+     &                 'EFs for Evaporative resting loss NMHC',
+     &                 'EFs for Evaporative resting loss VOC',
+     &                 'EFs for Evaporative resting loss TOG',
+     &                 'EFs for Evaporative resting loss NMOG',
+     &                 'EFs for Evaporative resting loss ROG',
+     &                 'EFs for Evaporative running loss THC',
+     &                 'EFs for Evaporative running loss NMHC',
+     &                 'EFs for Evaporative running loss VOC',
+     &                 'EFs for Evaporative running loss TOG',
+     &                 'EFs for Evaporative running loss NMOG',
+     &                 'EFs for Evaporative running loss ROG',
+     &                 'EFs for Evaporative crankcase THC',
+     &                 'EFs for Evaporative crankcase NMHC',
+     &                 'EFs for Evaporative crankcase VOC',
+     &                 'EFs for Evaporative crankcase TOG',
+     &                 'EFs for Evaporative crankcase NMOG',
+     &                 'EFs for Evaporative crankcase ROG',
+     &                 'EFs for Evaporative refueling THC',
+     &                 'EFs for Evaporative refueling NMHC',
+     &                 'EFs for Evaporative refueling VOC',
+     &                 'EFs for Evaporative refueling TOG',
+     &                 'EFs for Evaporative refueling NMOG',
+     &                 'EFs for Evaporative refueling ROG'
+     &               /
+
+C................   end   M6CNST3.EXT   ....................................
