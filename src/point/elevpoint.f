@@ -969,7 +969,7 @@ C               add call to FIXSTK routine
             MINVE = MINVAL( GRPVE( 1:NGROUP ) )
             MINFL = MINVAL( GRPFL( 1:NGROUP ) )
 
-            IF( MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LE. 0. ) THEN
+            IF( MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LT. 0. ) THEN
                 MESG = 'Bad stack group or stack split file. ' //
      &                 'Unable to assign stack ' // CRLF()//BLANK10//
      &                 'parameters to all stack groups. Could be '//
