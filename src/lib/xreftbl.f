@@ -294,7 +294,12 @@ C.............  Set up partial strings for checking
             SCCL    = TSCC(       1:LSCCEND )
             SCCR    = TSCC( RSCCBEG:SCCLEN3 )
             CSRCSCC = CSRC // TSCC
-            CNFIP   = CSRC( SC_BEGP( PLTIDX ):SC_ENDP( NCHARS ) )
+            
+            IF( PLTIDX /= 0 ) THEN
+                CNFIP = CSRC( SC_BEGP( PLTIDX ):SC_ENDP( NCHARS ) )
+            ELSE
+                CNFIP = ' '
+            END IF
 
 C.............  More partial strings for special SCC levels matching
             SCCR_A = TSCC( L1R:SCCLEN3 )
