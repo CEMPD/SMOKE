@@ -174,21 +174,21 @@ C.........  Read in any needed source characteristics
         CALL RDMRGINV
 
 C.........  Do setup for state and county reporting
-        IF( LREPANY ) THEN
+C.........  Do this even if there LREPANY is false, in order to allocate
+C           memory for the state and county total arrays to ensure
+C           MRGMULT will work.
 
-C.............  Read the state and county names file and store for the 
-C               states and counties in the grid
-C.............  For biogenic included in merge, use list of codes from the 
-C               surrogates file needed for state and county totals
-            IF( BFLAG ) THEN
-                CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
+C.........  Read the state and county names file and store for the 
+C           states and counties in the grid
+C.........  For biogenic included in merge, use list of codes from the 
+C           surrogates file needed for state and county totals
+        IF( BFLAG ) THEN
+            CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
 
-C.............  Otherwise, for anthropogenic source categories, use FIPS list
-C               from the inventory for limiting state/county list
-            ELSE
-                CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
-
-            END IF
+C.........  Otherwise, for anthropogenic source categories, use FIPS list
+C           from the inventory for limiting state/county list
+        ELSE
+            CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
 
         END IF
 

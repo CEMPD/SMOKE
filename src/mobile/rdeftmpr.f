@@ -71,13 +71,15 @@ C...........   Local parameters
         INTEGER, PARAMETER :: MXCOL = 5   ! maximum number of input columns
 
 C...........   Local variables
-        INTEGER         I, K, N
+        INTEGER         I, J1, J2, K, K1, K2, N
 
         INTEGER         IOS    ! i/o status
         INTEGER         IREC   ! record counter
         INTEGER         LPSI   ! previous iteration PSI
         INTEGER, SAVE:: MXMMTEF! max no. min/max tmpr/EF combinations
         INTEGER         PSI    ! tmp parameter scheme index
+        INTEGER         PSI1   ! tmp parameter scheme index
+        INTEGER         PSI2   ! tmp parameter scheme index
         INTEGER         TMMI   ! min/max temperature index
 
         REAL            CHKTMN ! reference min tmpr from master list
@@ -187,6 +189,8 @@ C.........  Allocate memory for the EF-ref/temperature data arrays
         CALL CHECKMEM( IOS, 'MMTEFNUM', PROGNAME )
         ALLOCATE( MMTEFEND( NPSIALL ),STAT=IOS )
         CALL CHECKMEM( IOS, 'MMTEFEND', PROGNAME )
+        MMTEFNUM = 0    ! array
+        MMTEFEND = 0    ! array
 
 C.........  Loop through file until we are out of lines
         I     = 0
@@ -308,19 +312,50 @@ C.............  Duplicate the behavior of FIND1 for PSI not found
             IF( K .GT. NMMTEF ) K = -1
 
 C.............  Store position or -1 to indicate position or that PSI is not
-C               in the grid
+C               in the grid or that it was not in MPLIST file because it
+C               is a contributing PSI
             MMTEFPTR( I ) = K
 
         END DO
 
-C.........  Set the number of temperature indices per PSI
-        DO I = 1, NPSIALL-1
-            MMTEFNUM( I ) = MMTEFPTR( I+1 ) - MMTEFPTR( I )
-            MMTEFEND( I ) = MMTEFPTR( I+1 ) - 1
-        END DO
+C.........  Set the number of temperature indices per PSI.  Loop through
+C           the PSIs from the EF/temperature file though, because other
+C           PSIs will not have temperatures associated with them.
+        DO N = 1, NIACT
+            DO I = 1, NPSI( N ) - 1
 
-        MMTEFNUM( NPSIALL ) = NMMTEF - MMTEFPTR( NPSIALL ) + 1
-        MMTEFEND( NPSIALL ) = NMMTEF
+                PSI1 = PSILIST( I  ,N )
+                PSI2 = PSILIST( I+1,N )
+                J1 = FIND1( PSI1, NPSIALL, PSIALL )
+                J2 = FIND1( PSI2, NPSIALL, PSIALL )
+
+                IF( J1 .LE. 0 .OR. J2 .LE. 0 ) THEN
+                    MESG = 'INTERNAL ERROR 1'
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+                K1 = MMTEFPTR( J1 )
+                K2 = MMTEFPTR( J2 )
+                IF( K1 .LE. 0 .OR. K2 .LE. 0 ) THEN
+                    MESG = 'INTERNAL ERROR 2'
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+                MMTEFNUM( J1 ) = K2 - K1
+                MMTEFEND( J1 ) = K2 - 1
+
+            END DO
+
+            PSI1 = PSILIST( NPSI( N ),N )
+            J1 = FIND1( PSI1, NPSIALL, PSIALL )
+            K1 = MMTEFPTR( J1 )
+            K2 = NMMTEF
+            MMTEFNUM( J1 ) = K2 - K1 + 1
+            MMTEFEND( J1 ) = K2 
+
+        END DO
 
         RETURN
 
