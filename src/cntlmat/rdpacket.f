@@ -142,6 +142,13 @@ C.........  Process the line of data, depending on packet type
             PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
             PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
             PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
+            PKTINFO%CMCT =           ' '
+            PKTINFO%PLT  =           ' '
+            PKTINFO%CHAR1=           ' '
+            PKTINFO%CHAR2=           ' '
+            PKTINFO%CHAR3=           ' '
+            PKTINFO%CHAR4=           ' '
+            PKTINFO%CHAR5=           ' '
 
 C.........  Check to see if cutoff value is missing, and give error
 C           if it is.
@@ -196,6 +203,7 @@ C           set PKTINFO%FAC4 = -9 and issue warning.
             PKTINFO%CHAR3=           SEGMENT( 11 )
             PKTINFO%CHAR4=           SEGMENT( 12 )
             PKTINFO%CHAR5=           SEGMENT( 13 )
+            PKTINFO%CMCT =           ' '
 
 C.........  Check to see if both CAP and REPLACE are missing. If so, issue
 C           a warning.
@@ -222,6 +230,7 @@ C           a warning.
             PKTINFO%CHAR3  =           SEGMENT( 13 )
             PKTINFO%CHAR4  =           SEGMENT( 14 )
             PKTINFO%CHAR5  =           SEGMENT( 15 )
+            PKTINFO%CMCT   =           ' '
 
             CALL PADZERO( PKTINFO%NSCC )
 
@@ -255,6 +264,7 @@ C           a warning.
             PKTINFO%FAC7 = STR2REAL( LINE( 106:110 ) )
             PKTINFO%FAC8 = STR2REAL( LINE( 151:154 ) )
             PKTINFO%CSIC = ADJUSTL ( LINE(   6:9   ) )
+            PKTINFO%CMCT = ' '
             PKTINFO%PLT  = ADJUSTL ( LINE(  23:37  ) )
             PKTINFO%CHAR1= ADJUSTL ( LINE(  50:61  ) )
             PKTINFO%CHAR2= ADJUSTL ( LINE(  38:49  ) )
