@@ -96,7 +96,7 @@ C.........  Make sure speed profiles are allowed
 
 C.........  Create name of speed vmt file - if using values, put speed in name, 
 C           otherwise, use 'pX' where X is the profile number
-        IF( FREESPD > 0. ) THEN
+        IF( FREESPD >= 0. ) THEN
             WRITE( FREESPDSTR, '(F6.2)' ) FREESPD
         ELSE
             WRITE( FREESPDSTR, '(I6)' ) -INT( FREESPD )
@@ -105,7 +105,7 @@ C           otherwise, use 'pX' where X is the profile number
             
         FREESPDSTR = ADJUSTL( FREESPDSTR )
         
-        IF( ARTSPD > 0. ) THEN
+        IF( ARTSPD >= 0. ) THEN
             WRITE( ARTSPDSTR, '(F6.2)' ) ARTSPD
         ELSE
             WRITE( ARTSPDSTR, '(I6)' ) -INT( ARTSPD )
@@ -148,7 +148,7 @@ C.........  Write header line to file
         WRITE( SDEV, 93000 ) 'SPEED VMT'
 
 C.........  If freeway speed is actual value, create single speed profile
-        IF( FREESPD > 0. ) THEN        
+        IF( FREESPD >= 0. ) THEN        
             CALL CALC_SPEED_PROF( FREESPD, M6SPDPROF )
 
 C.............  Write 24 copies of profile to file            
@@ -178,7 +178,7 @@ C.........  Otherwise, match profile number and create separate M6 profiles for 
         END IF
             
 C.........  Repeat process for arterial speed
-        IF( ARTSPD > 0. ) THEN            
+        IF( ARTSPD >= 0. ) THEN            
             CALL CALC_SPEED_PROF( ARTSPD,  M6SPDPROF )
          
             DO I = 1, 24
