@@ -77,7 +77,7 @@ C   Begin body of subroutine OPENCTMP
             FIRSTIME = .FALSE.
 
             MESG = 'Path where temporary control files will be written'
-            CALL ENVSTR( 'SMK_TMPPATH', MESG, '.', PATHNM, IOS )
+            CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
             LP = LEN_TRIM( PATHNM )
 
             IF( IOS .NE. 0 ) THEN
