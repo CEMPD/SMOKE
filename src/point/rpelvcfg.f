@@ -238,8 +238,8 @@ C.............  Local variables
 
             LOGICAL, SAVE :: FIRSTSET = .TRUE. ! true: 1st time group crit found
 
-            CHARACTER(300) BUFFER   ! tmp line buffer as uppercase
-            CHARACTER(300) LINE     ! tmp line buffer
+            CHARACTER(600) BUFFER   ! tmp line buffer as uppercase
+            CHARACTER(600) LINE     ! tmp line buffer
             CHARACTER(300) MESG     ! mesg buffer
 
 C----------------------------------------------------------------------
