@@ -15,7 +15,7 @@ setenv SMK_MAKE          Y   # [ Y | N ]  # For SMOKE programs
 if ( $?EDSS_ROOT ) then
    if ( $?SMKROOT ) then
    else
-      setenv SMKROOT $EDSS_ROOT/subsys/smokev1
+      setenv SMKROOT $EDSS_ROOT/subsys/smoke
    endif
    if ( $?EDSS_SUBSYS ) then
    else
