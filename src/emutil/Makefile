@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
+LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
@@ -69,6 +69,9 @@ MODSOURC = $(MD_SRC)/modsourc.o
 include $(MD_SRC)/modmake.inc
 
 mvcondns.o  : $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+
+smk2emis.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 clean:
