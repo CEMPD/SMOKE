@@ -68,7 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: VOLNAM          ! volatile pollutant name
 
 C...........   Local variables
-        INTEGER         I, K, L, L2 ! counters and indices
+        INTEGER         I, K, L, L2, N ! counters and indices
 
         INTEGER         IOS     ! status from retrieving E.V.s
         INTEGER         LJ      ! length of emission type joiner
@@ -170,46 +170,46 @@ C           model being used.
 
             IF( IFLAG ) THEN
 
-C.................  Set variable names, units, description for CO and NOx from
+C.................  Set variable names, units, and descriptions from
 C                   arrays defined in the MOBILE6 include file
-                K = 0
-                
-                VNAMES( 1 ) = M6EFLST( 1 )   ! ex. running CO
-                VNAMES( 2 ) = M6EFLST( 2 )   ! ex. running NOx
-                VNAMES( 4 ) = M6EFLST( 9 )   ! ex. start CO
-                VNAMES( 5 ) = M6EFLST( 10 )  ! ex. start NOx
-
-                VUNITS( 1 ) = M6EFUNT( 1 )
-                VUNITS( 2 ) = M6EFUNT( 2 )
-                VUNITS( 4 ) = M6EFUNT( 9 )
-                VUNITS( 5 ) = M6EFUNT( 10 )
-
-                VDESCS( 1 ) = M6EFDSC( 1 )
-                VDESCS( 2 ) = M6EFDSC( 2 )
-                VDESCS( 4 ) = M6EFDSC( 9 )
-                VDESCS( 5 ) = M6EFDSC( 10 )
-
-                K = 2
-
-C.................  Find volatile pol name in list of Mobile6 emission factor 
-C                   names
                 LJ = LEN_TRIM( ETJOIN )
-                DO I = 3, MXM6ALL
+                N = 1
+                DO K = 1, MXM6EFS
+C.....................  Make sure we don't go out of bounds
+                    IF( N > MXM6ALL ) EXIT
 
-C.....................  Skip ex. start CO and NOx since we've already dealt with them
-                    IF( I == 9 .OR. I == 10 ) THEN
-                        K = K + 1
-                        CYCLE
-                    END IF             
+                    SELECT CASE( K )
+                    CASE( 1,19,28,31,34,37,40,41 )  
+C                       K ==  1 -> ex. running HC
+C                       K == 19 -> ex. start HC
+C                       K == 28 -> evp. hot soak HC
+C                       K == 31 -> evp. diurnal HC
+C                       K == 34 -> evp. resting HC
+C                       K == 37 -> evp. running HC
+C                       K == 40 -> evp. crankcase HC
+C                       K == 41 -> evp. refueling HC
 
-                    L  = INDEX( M6EFLST( I ), ETJOIN )
-                    L2 = LEN_TRIM( M6EFLST( I ) )
-                    IF( M6EFLST( I )( L+LJ:L2 ) .EQ. VOLNAM ) THEN
-                        K = K + 1
-                        VNAMES( K ) = M6EFLST( I )
-                        VUNITS( K ) = M6EFUNT( I )
-                        VDESCS( K ) = M6EFDSC( I )
-                    END IF
+C.........................  Find volatile pol name in list of Mobile6  
+C                           emission factor names
+                        DO I = 0, NM6VPOL-1
+                            L  = INDEX( M6EFLST( N+I ), ETJOIN )
+                            L2 = LEN_TRIM( M6EFLST( N+I ) )
+                            IF( M6EFLST(N+I)( L+LJ:L2 ) == VOLNAM ) THEN
+                                VNAMES( K ) = M6EFLST( N+I )
+                                VUNITS( K ) = M6EFUNT( N+I )
+                                VDESCS( K ) = M6EFDSC( N+I )
+                                N = N + ( NM6VPOL-1 )
+                                EXIT
+                            END IF
+                        END DO
+                        	
+                    CASE DEFAULT
+                        VNAMES( K ) = M6EFLST( N )
+                        VUNITS( K ) = M6EFUNT( N )
+                        VDESCS( K ) = M6EFDSC( N )
+                    END SELECT
+                    
+                    N = N + 1
 
                 END DO
 

@@ -1,60 +1,52 @@
 
         INTEGER FUNCTION EFPOSITION( SCEN, POL, VTYPE, ETYPE, 
-     &                               FTYPE, HOUR )
+     &                               FTYPE, HOUR, M6CNVT )
     
         IMPLICIT NONE 
 
+C...........   INCLUDES:
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
+
 C.........  Function arguments
-        INTEGER, INTENT (IN) :: SCEN        ! scenario
-        INTEGER, INTENT (IN) :: POL         ! pollutant
-        INTEGER, INTENT (IN) :: VTYPE       ! vehicle type
-        INTEGER, INTENT (IN) :: ETYPE       ! emission process
-        INTEGER, INTENT (IN) :: FTYPE       ! facility type
-        INTEGER, INTENT (IN) :: HOUR        ! hour of day
-        
-C.........  Local function arrays
-        INTEGER PER_FTYPE     ( 5 )      ! no. profiles per facility
-        INTEGER PER_ETYPE     ( 8 )      ! no. profiles per emission process
-        INTEGER PER_VTYPE     ( 8 )      ! no. profiles per vehicle type
-        INTEGER PER_VTYPE_POL1( 8 )      ! no. profiles per vehicle type for pollutant 1
-        INTEGER PER_POL       ( 3 )      ! no. profiles per pollutant
+        INTEGER, INTENT (IN) :: SCEN   ! scenario
+        INTEGER, INTENT (IN) :: POL    ! pollutant
+        INTEGER, INTENT (IN) :: VTYPE  ! vehicle type
+        INTEGER, INTENT (IN) :: ETYPE  ! emission process
+        INTEGER, INTENT (IN) :: FTYPE  ! facility type
+        INTEGER, INTENT (IN) :: HOUR   ! hour of day
+        LOGICAL, INTENT (IN) :: M6CNVT ! true: convert M6 pollutant to SMOKE
         
 C.........  Local function variables
         INTEGER I, J
-        INTEGER PER_SCEN                    ! no. profiles per scenario
+        INTEGER POLIDX                 ! pollutant index
+        INTEGER NUMVEH                 ! no. vehicle types for pollutant / process combo
 
-        LOGICAL :: EFLAG = .FALSE.          ! true: error found
+        LOGICAL :: EFLAG = .FALSE.     ! true: error found
          
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(LEN=300)     MESG    !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'EFPOSITION'   ! program name
 
 C***********************************************************************
 C   begin body of function EFPOSITION
 
-C.........  Set up arrays with profile information
-        PER_FTYPE      = (/1, 1, 1, 1, 1/)
-        PER_ETYPE      = (/4, 1, 1, 1, 1, 4, 1, 1/)
-        PER_VTYPE      = (/5, 5, 5, 5, 5, 5, 5, 5/)
-        PER_VTYPE_POL1 = (/14, 14, 14, 14, 5, 5, 5, 10/)
-        PER_POL        = (/81, 40, 40/)
-        PER_SCEN       = 161
+        POLIDX = POL
+         
+C.........  Convert M6 pollutant number to pollutant index if needed
+        IF( M6CNVT ) THEN
+            IF( POL >= 7  ) POLIDX = POL - 3    ! SO4 - G25
+            IF( POL >= 12 ) POLIDX = POL - 4    ! SO2 - ACRO
+            IF( POL >= 28 ) POLIDX = POL - 10   ! O10 - G10
+            IF( POL >= 34 ) POLIDX = POL - 13   ! B10 - T10
+        END IF
 
 C.........  Check that input values are correct range
-        IF( POL > 3 .OR. VTYPE > 8 .OR. ETYPE > 8 .OR. FTYPE > 5 .OR.
-     &      HOUR > 24 ) THEN
+        IF( POLIDX > MXM6POLS .OR. VTYPE > MXM6VTYP .OR. 
+     &      ETYPE > MXM6EPR .OR. FTYPE > MXM6FACS .OR. HOUR > 24 ) THEN
      	    EFLAG = .TRUE.
      	    MESG = 'INTERNAL ERROR: Arguments out of range.'
      	    CALL M3MESG( MESG )
-     	END IF
-
-C.........  Check that only exhaust emission processes are used for
-C           non-HC pollutants
-     	IF( POL /= 1 .AND. ETYPE > 2 ) THEN
-     	    EFLAG = .TRUE.
-     	    MESG = 'INTERNAL ERROR: Cannot use non-exhaust emission ' //
-     &             'processes with CO or NOx.'
-            CALL M3MESG( MESG )
      	END IF
 
 C.........  Check that no facility is used for non-road emission processes
@@ -75,31 +67,37 @@ C.........  If error, print message and quit
         END IF
 
 C.........  Get to correct scenario start
-        EFPOSITION = (SCEN - 1) * PER_SCEN
+        EFPOSITION = (SCEN - 1) * NM6PROFS
+
+C.........  Account for previous emission processes	
+        DO I = 1, ETYPE - 1
+            DO J = 1, MXM6POLS
+                EFPOSITION = EFPOSITION + M6PER_EPPOL( I,J )
+            END DO
+        END DO
 
 C.........  Account for previous pollutants        
-        DO I = 1, POL - 1
-            EFPOSITION = EFPOSITION + PER_POL( I )
+        DO I = 1, POLIDX - 1
+            EFPOSITION = EFPOSITION + M6PER_EPPOL( ETYPE,I )
         END DO
 
-C.........  Account for previous vehicle types        	
+C.........  Account for previous vehicle types
+        NUMVEH = M6PER_EPPOL( ETYPE, POLIDX ) / M6RDS_EP( ETYPE )
+
         DO I = 1, VTYPE - 1
-            IF( POL == 1 ) THEN
-                EFPOSITION = EFPOSITION + PER_VTYPE_POL1( I )
+            IF( I <= 4 ) THEN
+                EFPOSITION = EFPOSITION + M6RDS_EP( ETYPE )
             ELSE
-                EFPOSITION = EFPOSITION + PER_VTYPE( I )
+                IF( NUMVEH == 8 ) THEN
+                    EFPOSITION = EFPOSITION + M6RDS_EP( ETYPE )
+                END IF
             END IF
-        END DO
-
-C.........  Account for previous emission processes        	
-        DO I = 1, ETYPE - 1
-            EFPOSITION = EFPOSITION + PER_ETYPE( I )
         END DO
 
 C.........  Account for previous facilities only if facility is not 5        
         IF( FTYPE < 5 ) THEN	
             DO I = 1, FTYPE - 1
-                EFPOSITION = EFPOSITION + PER_FTYPE( I )
+                EFPOSITION = EFPOSITION + 1
             END DO
         END IF
 

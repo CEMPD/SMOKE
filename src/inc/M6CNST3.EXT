@@ -20,13 +20,19 @@ C.........  Dimensioning parameters
         INTEGER    MXM6EPR          ! Maximum number of emission processes
         INTEGER    MXM6EFS          ! Maximum number of emis types for one run
         INTEGER    MXM6ALL          ! Maximum number of all emis types
-        INTEGER    MXM6VTYP         ! Max no of vehicle types in mobile 6
+        INTEGER    MXM6VTYP         ! Max no of vehicle types in Mobile6
+        INTEGER    MXM6POLS         ! Max no of pollutants in Mobile6
+        INTEGER    MXM6FACS         ! Max no of facilities in Mobile6
+        INTEGER    NM6PROFS         ! Maximum number of Mobile6 24 hour profiles
 
         PARAMETER( NM6VPOL  = 6
-     &           , MXM6EPR  = 8
-     &           , MXM6EFS  = 12
-     &           , MXM6ALL  = 52
+     &           , MXM6EPR  = 10
+     &           , MXM6EFS  = 47
+     &           , MXM6ALL  = 87
      &           , MXM6VTYP = 8
+     &           , MXM6POLS = 22
+     &           , MXM6FACS = 5
+     &           , NM6PROFS = 849
      &           )
 
 C.........  Hydrocarbon type (all possible types) - 1st 5 in MOBILE6 order
@@ -35,8 +41,8 @@ C.........  Hydrocarbon type (all possible types) - 1st 5 in MOBILE6 order
 
 C.........  Emissions processes (all possible types)
         CHARACTER*3 MVPROCS( MXM6EPR )
-        DATA MVPROCS / 'EXR', 'EXS', 'HOT', 'DNL', 
-     &                 'RST', 'EVR', 'CRC', 'RFL' /
+        DATA MVPROCS / 'EXR', 'EXS', 'HOT', 'DNL', 'RST', 
+     &                 'EVR', 'CRC', 'RFL', 'BRK', 'TIR' /
 
 C.........  Mobile6 vehicle types
         CHARACTER(LEN=VTPLEN3) M6VTYPES( MXM6VTYP )
@@ -46,32 +52,50 @@ C.........  Mobile6 vehicle types
 C.........  Emissions factors names list of all possible types
 
         CHARACTER*8  M6EFLST ( MXM6ALL )
-        DATA M6EFLST  / 'EXR__CO' , 'EXR__NOX', 
-     &                  'EXR__THC', 'EXR__NMH',
+        DATA M6EFLST  / 'EXR__THC', 'EXR__NMH',
      &                  'EXR__VOC', 'EXR__TOG', 
      &                  'EXR__NMO', 'EXR__ROG',
-     &                  'EXS__CO' , 'EXS__NOX', 
+     &                  'EXR__CO' , 'EXR__NOX',
+     &                  'EXR__SO4', 
+     &                  'EXR__O25', 'EXR__O10', 
+     &                  'EXR__E25', 'EXR__E10', 
+     &                  'EXR__G25', 'EXR__G10', 
+     &                  'EXR__SO2', 'EXR__NH3',
+     &                  'EXR__BEN', 'EXR__MTB',
+     &                  'EXR__BUT', 'EXR__FOR',
+     &                  'EXR__ACE', 'EXR__ACR',
      &                  'EXS__THC', 'EXS__NMH',
      &                  'EXS__VOC', 'EXS__TOG', 
-     &                  'EXS__NMO', 'EXS__ROG', 
+     &                  'EXS__NMO', 'EXS__ROG',
+     &                  'EXS__CO' , 'EXS__NOX',  
+     &                  'EXS__BEN', 'EXS__MTB',
+     &                  'EXS__BUT', 'EXS__FOR',
+     &                  'EXS__ACE', 'EXS__ACR',
      &                  'HOT__THC', 'HOT__NMH',
      &                  'HOT__VOC', 'HOT__TOG', 
-     &                  'HOT__NMO', 'HOT__ROG', 
+     &                  'HOT__NMO', 'HOT__ROG',
+     &                  'HOT__BEN', 'HOT__MTB', 
      &                  'DNL__THC', 'DNL__NMH',
      &                  'DNL__VOC', 'DNL__TOG', 
-     &                  'DNL__NMO', 'DNL__ROG', 
+     &                  'DNL__NMO', 'DNL__ROG',
+     &                  'DNL__BEN', 'DNL__MTB', 
      &                  'RST__THC', 'RST__NMH',
      &                  'RST__VOC', 'RST__TOG', 
      &                  'RST__NMO', 'RST__ROG', 
+     &                  'RST__BEN', 'RST__MTB',
      &                  'EVR__THC', 'EVR__NMH',
      &                  'EVR__VOC', 'EVR__TOG', 
-     &                  'EVR__NMO', 'EVR__ROG', 
+     &                  'EVR__NMO', 'EVR__ROG',
+     &                  'EVR__BEN', 'EVR__MTB', 
      &                  'CRC__THC', 'CRC__NMH',
      &                  'CRC__VOC', 'CRC__TOG', 
      &                  'CRC__NMO', 'CRC__ROG', 
      &                  'RFL__THC', 'RFL__NMH',
      &                  'RFL__VOC', 'RFL__TOG', 
-     &                  'RFL__NMO', 'RFL__ROG'
+     &                  'RFL__NMO', 'RFL__ROG',
+     &                  'RFL__BEN', 'RFL__MTB',
+     &                  'BRK__B25', 'BRK__B10',
+     &                  'TIR__T25', 'TIR__T10'
      &                /
 
 C.........  Emissions factors units for all factors
@@ -89,52 +113,90 @@ C.........  Emissions factors units for all factors
      &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 
      &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
      &                 'g/mi', 'g/mi', 'g/mi', 'g/mi', 
-     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi'
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi', 'g/mi',
+     &                 'g/mi', 'g/mi', 'g/mi'
      &               /
 
 C.........  Emissions factors descriptions for all factors
 
         CHARACTER*80 M6EFDSC( MXM6ALL )
-        DATA M6EFDSC / 'EFs for Exhaust running CO',
-     &                 'EFs for Exhaust running NOX',
-     &                 'EFs for Exhaust running THC',
+        DATA M6EFDSC / 'EFs for Exhaust running THC',
      &                 'EFs for Exhaust running NMHC',
      &                 'EFs for Exhaust running VOC',
      &                 'EFs for Exhaust running TOG',
      &                 'EFs for Exhaust running NMOG',
      &                 'EFs for Exhaust running ROG',
-     &                 'EFs for Exhaust engine start CO',
-     &                 'EFs for Exhaust engine start NOX',
+     &                 'EFs for Exhaust running CO',
+     &                 'EFs for Exhaust running NOX',
+     &                 'EFs for Exhaust running SO4',
+     &                 'EFs for Exhaust running OCARBON at 2.5',
+     &                 'EFs for Exhaust running OCARBON at 10',
+     &                 'EFs for Exhaust running ECARBON at 2.5',
+     &                 'EFs for Exhaust running ECARBON at 10',
+     &                 'EFs for Exhaust running GASPM at 2.5',
+     &                 'EFs for Exhaust running GASPM at 10',
+     &                 'EFs for Exhaust running SO2',
+     &                 'EFs for Exhaust running NH3',
+     &                 'EFs for Exhaust running Benzene',
+     &                 'EFs for Exhaust running MTBE',
+     &                 'EFs for Exhaust running Butadiene',
+     &                 'EFs for Exhaust running Formaldehyde',
+     &                 'EFs for Exhaust running Acetaldehyde',
+     &                 'EFs for Exhaust running Acrolein',
      &                 'EFs for Exhaust engine start THC',
      &                 'EFs for Exhaust engine start NMHC',
      &                 'EFs for Exhaust engine start VOC',
      &                 'EFs for Exhaust engine start TOG',
      &                 'EFs for Exhaust engine start NMOG',
      &                 'EFs for Exhaust engine start ROG',
+     &                 'EFs for Exhaust engine start CO',
+     &                 'EFs for Exhaust engine start NOX',
+     &                 'EFs for Exhaust engine start Benzene',
+     &                 'EFs for Exhaust engine start MTBE',
+     &                 'EFs for Exhaust engine start Butadiene',
+     &                 'EFs for Exhaust engine start Formaldehyde',
+     &                 'EFs for Exhaust engine start Acetaldehyde',
+     &                 'EFs for Exhaust engine start Acrolein',
      &                 'EFs for Evaporative hot soak THC',
      &                 'EFs for Evaporative hot soak NMHC',
      &                 'EFs for Evaporative hot soak VOC',
      &                 'EFs for Evaporative hot soak TOG',
      &                 'EFs for Evaporative hot soak NMOG',
-     &                 'EFs for Evaporative hot soak ROG',
+     &                 'EFs for Evaporative hot soak ROG', 
+     &                 'EFs for Evaporative hot soak Benzene',   
+     &                 'EFs for Evaporative hot soak MTBE',
      &                 'EFs for Evaporative diurnal THC',
      &                 'EFs for Evaporative diurnal NMHC',
      &                 'EFs for Evaporative diurnal VOC',
      &                 'EFs for Evaporative diurnal TOG',
      &                 'EFs for Evaporative diurnal NMOG',
      &                 'EFs for Evaporative diurnal ROG',
+     &                 'EFs for Evaporative diurnal Benzene',   
+     &                 'EFs for Evaporative diurnal MTBE',
      &                 'EFs for Evaporative resting loss THC',
      &                 'EFs for Evaporative resting loss NMHC',
      &                 'EFs for Evaporative resting loss VOC',
      &                 'EFs for Evaporative resting loss TOG',
      &                 'EFs for Evaporative resting loss NMOG',
      &                 'EFs for Evaporative resting loss ROG',
+     &                 'EFs for Evaporative resting Benzene',   
+     &                 'EFs for Evaporative resting MTBE',
      &                 'EFs for Evaporative running loss THC',
      &                 'EFs for Evaporative running loss NMHC',
      &                 'EFs for Evaporative running loss VOC',
      &                 'EFs for Evaporative running loss TOG',
      &                 'EFs for Evaporative running loss NMOG',
      &                 'EFs for Evaporative running loss ROG',
+     &                 'EFs for Evaporative running Benzene',   
+     &                 'EFs for Evaporative running MTBE',
      &                 'EFs for Evaporative crankcase THC',
      &                 'EFs for Evaporative crankcase NMHC',
      &                 'EFs for Evaporative crankcase VOC',
@@ -146,7 +208,73 @@ C.........  Emissions factors descriptions for all factors
      &                 'EFs for Evaporative refueling VOC',
      &                 'EFs for Evaporative refueling TOG',
      &                 'EFs for Evaporative refueling NMOG',
-     &                 'EFs for Evaporative refueling ROG'
+     &                 'EFs for Evaporative refueling ROG',
+     &                 'EFs for Evaporative refueling Benzene',   
+     &                 'EFs for Evaporative refueling MTBE',
+     &                 'EFs for Brake wear at 2.5',
+     &                 'EFs for Brake wear at 10',
+     &                 'EFs for Tire wear at 2.5',
+     &                 'EFs for Tire wear at 10'
      &               /
 
+C.........  Pollutant / emission process mapping
+        INTEGER M6POL2EF( MXM6EPR, MXM6POLS )
+C                       EXR EXS HOT DNL RST EVR CRC RFL BRK TIR
+        DATA M6POL2EF /  1, 19, 28, 31, 34, 37, 40, 41, -1, -1, ! HC
+     &                   2, 20, -1, -1, -1, -1, -1, -1, -1, -1, ! CO
+     &                   3, 21, -1, -1, -1, -1, -1, -1, -1, -1, ! NOX
+     &                   4, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! SO4
+     &                   5, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! O25
+     &                   7, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! E25
+     &                   9, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! G25
+     &                  11, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! SO2
+     &                  12, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! NH3
+     &                  -1, -1, -1, -1, -1, -1, -1, -1, 44, -1, ! B25
+     &                  -1, -1, -1, -1, -1, -1, -1, -1, -1, 46, ! T25
+     &                  13, 22, 29, 32, 35, 38, -1, 42, -1, -1, ! BEN
+     &                  14, 23, 30, 33, 36, 39, -1, 43, -1, -1, ! MTB
+     &                  15, 24, -1, -1, -1, -1, -1, -1, -1, -1, ! BUT
+     &                  16, 25, -1, -1, -1, -1, -1, -1, -1, -1, ! FOR
+     &                  17, 26, -1, -1, -1, -1, -1, -1, -1, -1, ! ACE
+     &                  18, 27, -1, -1, -1, -1, -1, -1, -1, -1, ! ACR
+     &                   6, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! O10
+     &                   8, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! E10
+     &                  10, -1, -1, -1, -1, -1, -1, -1, -1, -1, ! G10
+     &                  -1, -1, -1, -1, -1, -1, -1, -1, 45, -1, ! B10
+     &                  -1, -1, -1, -1, -1, -1, -1, -1, -1, 47  ! T10
+     &                /
+
+C.........  Number of 24 hour profiles per pollutant / emission process combo
+        INTEGER M6PER_EPPOL( MXM6EPR, MXM6POLS ) 
+C                       EXR EXS HOT DNL RST EVR CRC RFL BRK TIR 
+        DATA M6PER_EPPOL /
+     &                  32,  8,  5,  5,  5, 16,  5,  5,  0,  0, ! HC
+     &                  32,  8,  0,  0,  0,  0,  0,  0,  0,  0, ! CO
+     &                  32,  8,  0,  0,  0,  0,  0,  0,  0,  0, ! NOx
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! SO4
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! O25
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! E25
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! G25
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! SO2
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! NH3
+     &                   0,  0,  0,  0,  0,  0,  0,  0,  8,  0, ! B25
+     &                   0,  0,  0,  0,  0,  0,  0,  0,  0,  8, ! T25
+     &                  32,  8,  8,  8,  8, 32,  0,  8,  0,  0, ! BENZ
+     &                  32,  8,  8,  8,  8, 32,  0,  8,  0,  0, ! MTBE
+     &                  32,  8,  0,  0,  0,  0,  0,  0,  0,  0, ! BUTA
+     &                  32,  8,  0,  0,  0,  0,  0,  0,  0,  0, ! FORM
+     &                  32,  8,  0,  0,  0,  0,  0,  0,  0,  0, ! ACET
+     &                  32,  8,  0,  0,  0,  0,  0,  0,  0,  0, ! ACRO
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! O10
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! E10
+     &                  32,  0,  0,  0,  0,  0,  0,  0,  0,  0, ! G10
+     &                   0,  0,  0,  0,  0,  0,  0,  0,  8,  0, ! B10
+     &                   0,  0,  0,  0,  0,  0,  0,  0,  0,  8  ! T10    
+     &                /
+
+C.........  Number of road types per emission process
+        INTEGER M6RDS_EP( MXM6EPR )
+C                       EXR EXS HOT DNL RST EVR CRC RFL BRK TIR   
+        DATA M6RDS_EP /  4,  1,  1,  1,  1,  4,  1,  1,  1,  1  /
+             
 C................   end   M6CNST3.EXT   ....................................
