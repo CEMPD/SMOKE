@@ -64,6 +64,9 @@ setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     SMK_AVEDAY_YN               # see multiple-program controls
 
+# For Smk2emis
+setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
+
 # Multiple-program controls
 setenv OUTZONE              0     # output time zone of emissions
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
@@ -82,10 +85,10 @@ setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          ldb     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings (comment out if not used)
-setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-# setenv YEAR_OVERRIDE          # Overrides YEAR (base) in Assigns file
-# setenv INVTABLE_OVERRIDE      # Inventory table override
-# setenv CNTLCASE               # Control case
+# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
+# setenv YEAR_OVERRIDE              # Overrides YEAR (base) in Assigns file
+# setenv INVTABLE_OVERRIDE          # Inventory table override
+# setenv CNTLCASE                   # Control case
 
 ##############################################################################
 
