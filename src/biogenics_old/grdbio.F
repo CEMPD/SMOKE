@@ -173,7 +173,7 @@ C.......   Set up file description and open emissions file:
 
         GDNAM3D = GRDNM
         FTYPE3D = GRDDED3
-        SDATE3D = 1993202             !  n/a
+        SDATE3D = 1988167             !  n/a
         STIME3D = 050000             !  n/a
         TSTEP3D = 0             !  time independent
         NVARS3D = BTYPES * ( BSPCS - 1 ) + LUSES + 1
@@ -417,8 +417,8 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-                    ALAI   = ALAI   + AREA
-                    SUMLAI = SUMLAI + AREA * LAI( K )
+c sl                   ALAI   = ALAI   + AREA
+c sl                   SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  64  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 64                  CONTINUE
@@ -534,8 +534,8 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-                    ALAI   = ALAI   + AREA
-                    SUMLAI = SUMLAI + AREA * LAI( K )
+c sl                   ALAI   = ALAI   + AREA
+c sl                   SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  74  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 74                  CONTINUE
@@ -692,9 +692,10 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     AWTF = AWTF + AREA
                     ALAI = ALAI + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
+
                     DO  94  M = 1, BSPCS - 1
                         EMIS = AREA * EMFAC( K , M )
-                        EOTH( M ) = EOTH( M ) + EMIS
+c sl                      EOTH( M ) = EOTH( M ) + EMIS
                         ELAI( M ) = ELAI( M ) + EMIS
 94                  CONTINUE
                     ENOWTF = ENOWTF + AREA * EMFAC( K, NO )
@@ -775,6 +776,13 @@ C...........   Land use type:  remaining/other.  Process subtypes:
 
 C...........   Accumulate gridded results
 
+            IF ( ALAI .GT. 0.0 ) THEN
+                AVGLAI = SUMLAI / ALAI
+            ELSE
+                AVGLAI = 0.0
+            END IF
+
+
             DO  111  M = 1, BSPCS - 1
                 PINE( C,R,M ) = PINE( C,R,M ) + EPINE( M )
                 DECD( C,R,M ) = DECD( C,R,M ) + EDECD( M )
@@ -787,7 +795,7 @@ C...........   Accumulate gridded results
             FORENO( C,R ) = FORENO( C,R ) + ENOFOR
             WETLNO( C,R ) = WETLNO( C,R ) + ENOWTF
             AGRINO( C,R ) = AGRINO( C,R ) + ENOAG
-            AVLAI ( C,R ) = AVLAI ( C,R ) + SUMLAI / ALAI
+            AVLAI ( C,R ) = AVLAI ( C,R ) + AVGLAI
 
            GO TO  55            !  to head of loop:  read LANDUSE data records
 
