@@ -235,10 +235,10 @@ C.........  Allocate and initialize to zero...
         ENDIF
 
         IF( BFLAG ) THEN   ! biogenics
-            ALLOCATE( BS_EXIST( MXVARPGP,MXGRP ), STAT=IOS )
+            ALLOCATE( BS_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BS_EXIST', PROGNAME )
             BS_EXIST = 0  ! array
-        ENDIF
+        END IF
 
         IF( MFLAG ) THEN   ! mobile
             ALLOCATE( M_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
@@ -445,17 +445,17 @@ C.............  Loop through all groups, then number of variables per group
                         END IF
                     END IF
 
-                    IF ( ARFLAG ) THEN    ! Area reactivity
-                        K = INDEX1( SVBUF, ARNMSPC, ARVDESC( JA ) )
-                        AR_EXIST( V,N ) = K
-                    END IF
-
-                    IF ( BFLAG ) THEN    ! Biogenics sources
+                    IF ( BFLAG ) THEN    ! Area sources
                         K = INDEX1( SVBUF, BNSMATV, BSVDESC )
                         IF( K .GT. 0 ) THEN
                             BCNT = BCNT + 1
                             BS_EXIST( V,N ) = BCNT
                         END IF
+                    END IF
+
+                    IF ( ARFLAG ) THEN    ! Area reactivity
+                        K = INDEX1( SVBUF, ARNMSPC, ARVDESC( JA ) )
+                        AR_EXIST( V,N ) = K
                     END IF
 
                     IF ( MFLAG ) THEN    ! Mobile sources
@@ -496,7 +496,6 @@ C.........  Loop through all groups, then number of variables per group
         DO N = 1, NGRP
 
             ACNT = 0 
-            BCNT = 0 
             MCNT = 0 
             PCNT = 0
             KA   = 0  ! array
@@ -560,7 +559,6 @@ C.........  Loop through all groups, then number of pollutants per group
         DO N = 1, NGRP
 
             ACNT = 0 
-            BCNT = 0 
             MCNT = 0 
             PCNT = 0 
             KA   = 0   ! array
@@ -621,7 +619,6 @@ C.........  Loop through all groups, then number of pollutants per group
         DO N = 1, NGRP
 
             ACNT = 0 
-            BCNT = 0 
             MCNT = 0 
             PCNT = 0 
             KA   = 0  ! array

@@ -503,16 +503,22 @@ C.............................  Apply valid matrices & store
                     END IF
                             
 C.....................  For biogenic sources, read gridded emissions,
-C                               add to totals and store
-                    IF( BFLAG ) THEN
-! NOTE: Fill in later
-!                            K4 = BS_EXIST( J,V,N )
-!                            CALL MRGBIO( NGRID, K4, BEMGRD, TEMGRD )
+C                       add to totals and store
+                    IF( BFLAG .AND. KB .GT. 0 ) THEN
 
-C.............................  Update country, state, & county totals  
-                        IF( LREPANY ) 
-     &                      CALL GRD2CNTY( 0, K4, NGRID, NCOUNTY,
-     &                                     BEMGRD, BEBCNY )
+                        K4 = BS_EXIST( V,N )
+
+                        IF( K4 .GT. 0 ) THEN
+                            CALL MRGBIO( SBUF, BTNAME, JDATE, JTIME, 
+     &                                   NGRID, BIOGFAC, BEMGRD, 
+     &                                   TEMGRD( 1,1 ) )
+                    
+
+C.................................  Update country, state, & county totals  
+                            IF( LREPANY ) 
+     &                          CALL GRD2CNTY( 0, KB, NGRID, NCOUNTY,
+     &                                         BEMGRD, BEBCNY )
+                        END IF
 
                     END IF
                             

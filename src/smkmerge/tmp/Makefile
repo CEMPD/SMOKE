@@ -20,7 +20,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 MRG= smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o mrgmult.o mrgonams.o \
      mrgvnams.o openmrgin.o openmrgout.o wmrgemis.o wrmrgrep.o initstcy.o \
-     rdmrginv.o mrgping.o mrgunits.o
+     rdmrginv.o mrgping.o mrgunits.o mrgbio.o
 #
 smkmerge: $(MRG) $(ALLI) $(LIBPATH)
 	echo SMKMERGE:

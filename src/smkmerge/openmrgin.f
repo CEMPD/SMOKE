@@ -284,13 +284,27 @@ C.........  If we have biogenic sources
 
             CALL RETRIEVE_IOAPI_HEADER( BTNAME )
             CALL UPDATE_TIME_INFO( BTNAME )
+            CALL CHKGRID( 'biogenics', 'GRID', EFLAG )
 
             IF( LMETCHK ) CALL CHECK_MET_INFO( 'biogenics' ) 
 
-            BNMSPC = NVARS3D
-            BEMNAM( 1:BNMSPC ) = VNAME3D( 1:BNMSPC )
+C.............  Store biogenic species names as if they are stored as
+C               speciation matrix variable descriptions
             BIOUNIT = UNITS3D( 1 )
-c note: add more
+            BNSMATV = NVARS3D
+            ALLOCATE( BSVDESC( BNSMATV ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BSVDESC', PROGNAME )
+
+            DO I = 1, BNSMATV
+                IF( VNAME3D( I ) .NE. 'NO' ) THEN
+                    DUMNAME = 'VOC'
+                    BSVDESC( I ) = DUMNAME // SPJOIN // VNAME3D( I )
+                ELSE
+                    DUMNAME = 'NOX'
+                    BSVDESC( I ) = DUMNAME // SPJOIN // VNAME3D( I )
+                END IF
+
+            END DO
 
         END IF  ! End of section for biogenic sources
 
@@ -966,12 +980,12 @@ C.............  Subprogram arguments
 
 C.............  Local variables
             INTEGER       L, L1, L2  ! length of strings
-            CHARACTER*20  FILDESC    ! description of input file
+            CHARACTER*30  FILDESC    ! description of input file
 
 C----------------------------------------------------------------------
 
 C.............  Set tmp rows, columns, and total cells depending on file type
-            IF( CATDESC .EQ. 'biogenic' ) THEN
+            IF( CATDESC .EQ. 'biogenics' ) THEN
                 FILDESC = 'gridded emissions file'
 
             ELSEIF( CATDESC .EQ. 'mobile' ) THEN
