@@ -117,6 +117,7 @@ C...........   Mobile Sources input and output arrays
         INTEGER     IRCLAS( NMSRC )        ! EPA road classification code
         INTEGER     TFLAG ( NMSRC )        ! governs profile type usage
         INTEGER     TZONES( NMSRC )        ! time zones 
+        INTEGER     INVYR ( NMSRC )        ! inventory years 
 
         INTEGER*2   DDEX  ( NMSRC, NVTYPE, MXEMIS )! wkday diurnal prof subscrpt
         INTEGER*2   EDEX  ( NMSRC, NVTYPE, MXEMIS )! wkend-diurnal prof subscrpt
@@ -295,7 +296,8 @@ C...........   Other local variables
         INTEGER         ETIME	!  Simulation ending time 
         INTEGER         EZDATE  !  Simulation ending time in GMT
         INTEGER         FIP     !  Temporary state/county code
-        INTEGER         FDATE
+        INTEGER         FDATE   !  read date for emission factors files
+        INTEGER         FYEAR   !  Year from emission factors files
         INTEGER         JDATE	!  for output file
         INTEGER         JTIME	!  for output file
         INTEGER         JMDATE	!  Met date using output zone
@@ -317,6 +319,7 @@ C...........   Other local variables
         INTEGER         NRDT    !  Index to road class in list
         INTEGER         NSTEPS
         INTEGER         OSRC    !  Number of sources outside grid
+        INTEGER         PYR     !  year from previous iteration
         INTEGER         RDT     !  Temporary EPA road class number
         INTEGER         STA     !  temporary state code
         INTEGER         TDATE   !  Temporary date
@@ -735,6 +738,23 @@ C.........  Get list of scenario-specific emission types in compiled order
      &                   'Error reading SPECIATION LIST file.', 2 )
         ENDIF
 
+C...........   Get header of non-diurnal emission factors
+        IF ( .NOT. DESC3( FNAME ) ) THEN
+            MESG = 'Could not get description for ' // FNAME
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+        END IF
+
+C.......   Get starting point, increment, number of items for
+C.......   non-diurnal emissions factor temperature tables:
+
+        NTEMP  = STR2INT( FDESC3D( 5 ) )
+        TEMP0  = CTOK  +  SNGL( FTOC * ( -XORIG3D - 32.0D0 ) )
+        DTEMP  = SNGL( FTOC * XCELL3D )
+        TEMP1  = TEMP0 +  DTEMP * FLOAT( NTEMP - 1 )
+        DDTEMP = 1.0 / DTEMP
+        FDATE  = SDATE3D
+        FYEAR  = FDATE / 1000
+
 C.........  Get description of MRAW file for initialization of MTMP
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3EXIT( 'TMPMOBIL', 0, 0, 
@@ -781,19 +801,21 @@ C.............  Set other variable properties
 
 16      CONTINUE
 
+        DO  19 V = 1, MXDESC3
+            FDESC3D( V ) = ' '
+19      CONTINUE
+
         FDESC3D( 1 ) = 
-     &  'Temporally allocated source level mobile source VMT values.'
+     &    'Temporally allocated source level mobile source emissions.'
+        FDESC3D( 2 ) = SCEN_STR
+        FDESC3D( 3 ) = SCHE_STR
         DO  20 V = 1, NVTYPE
 C.............   V+3 moves NVTYPE after the primary and the two met headers
             WRITE( FDESC3D( V+3 ), 94010 ) 
      &      'Layer', V, 'represents vehicle type ' // VTYPE3( V )
 20      CONTINUE
-        DO  21 V = NVTYPE+2, MXDESC3
-            FDESC3D( V ) = ' '
-21      CONTINUE
-
-        FDESC3D( 2 ) = SCEN_STR
-        FDESC3D( 3 ) = SCHE_STR
+        WRITE( MESG,94010 ) 'Emissions are for year', FYEAR
+        FDESC3D( NVTYPE+3 ) = MESG
 
         TNAME = PROMPTMFILE( 
      &  'Enter logical name for output TIME-STEPPED MOBILE EMIS file',
@@ -825,14 +847,36 @@ C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK.
 
         IF ( .NOT. READ3( ANAME, 'TPFLAG', ALLAYS3,0,0, TFLAG ) ) THEN
             CALL M3EXIT( 'TMPMOBIL', 0, 0, 
-     &                   'Error reading TFLAG from file' // ANAME, 2 )
+     &                   'Error reading TPFLAG from file' // ANAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ANAME, 'VMT', ALLAYS3, 0, 0, VMT ) ) THEN
             CALL M3EXIT( 'TMPMOBIL', 0, 0, 
-     &                   'Error reading "VMT" from file "' // 
+     &                   'Error reading VMT from file "' // 
      &                   ANAME( 1:TRIMLEN( ANAME ) ) // '".', 2 )
         END IF
+
+        IF ( .NOT. READ3( ANAME, 'INVYR', ALLAYS3, 0, 0, VMT ) ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+     &                   'Error reading INVYR from file "' // 
+     &                   ANAME( 1:TRIMLEN( ANAME ) ) // '".', 2 )
+        END IF
+
+C.......   Check the emission factor year with the year of the VMT
+        PYR = -9
+        DO 22 S = 1, NMSRC
+            IF( INVYR( S ) .NE. PYR   .AND. 
+     &          INVYR( S ) .NE. FYEAR       ) THEN
+
+                WRITE( MESG,94010 ) 'WARNING: Year of VMT is', 
+     &                 INVYR( S ), ', but emission factors are for',
+     &                 FYEAR, '.'
+                CALL M3MSG2( MESG )
+
+            END IF
+            PYR = INVYR( S ) 
+
+22     CONTINUE
 
 C.........  Read vehicle mix fractions tables, and multiply with
 C.........  source VMT totals
@@ -857,7 +901,7 @@ C.........  Get list of scenario's inventory pollutants
 C.........   Decide which inventory pollutnat is volatile
         VID  = 0
         I    = 0
-   33   CONTINUE  ! Loop to find volatile inventory pollutant
+33      CONTINUE  ! Loop to find volatile inventory pollutant
 
             I = I + 1
             VID = INDEX1( EINAM( I ), NUMVOL, VOLTYP )
@@ -868,7 +912,7 @@ C.........   Decide which inventory pollutnat is volatile
             ELSEIF( I .EQ. NIPOL ) THEN
 
                 I = I + 1
-                CALL M3WARN( 'SPCMMAT', 0, 0,
+                CALL M3WARN( 'TMPMOBIL', 0, 0,
      &                       'No valid volatile inventory pollutant' )
                 GO TO 35
 
@@ -876,7 +920,7 @@ C.........   Decide which inventory pollutnat is volatile
 
         GO TO 33  ! To head of finding volatile pollutant type
 
-   35   CONTINUE
+35      CONTINUE
 
 
 C.........  Read and process temporal XREF 
@@ -1025,13 +1069,13 @@ C.....................  Check table size for overflow
 
                     ENDIF   ! x-ref overflow or not
 
-   47          CONTINUE
+47             CONTINUE
 
             ENDIF
 
         GO TO 44  ! to head of XDEV read loop
 
-   50   CONTINUE
+50      CONTINUE
 
         NPRFA = K
 
@@ -1498,21 +1542,6 @@ C.................  Store the position of the PSI in REFLIST
      &                   'Bad emission factor matchup', 2 )
         END IF                                               
 
-C...........   Read non-diurnal emissions factors params from MEFSND
-
-        IF ( .NOT. DESC3( FNAME ) ) THEN
-            MESG = 'Could not get description for ' // FNAME
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
-        END IF
-
-C.......   Get starting point, increment, number of items for
-C.......   non-diurnal emissions factor temperature tables:
-
-        NTEMP  = STR2INT( FDESC3D( 5 ) )
-        TEMP0  = CTOK  +  SNGL( FTOC * ( -XORIG3D - 32.0D0 ) )
-        DTEMP  = SNGL( FTOC * XCELL3D )
-        TEMP1  = TEMP0 +  DTEMP * FLOAT( NTEMP - 1 )
-        DDTEMP = 1.0 / DTEMP
 
 C.......   Get constants and increment for
 C.......   non-diurnal emissions factor temperature tables:
@@ -1520,9 +1549,7 @@ C.......   non-diurnal emissions factor temperature tables:
         MAXTL  = INT( ( MAXT_MAX - MAXT_MIN ) / TINTV ) + 1 
         DNLTI  = 1.0 / ( FTOC * TINTV )
 
-C.......   Set date for reading emission factors
-        FDATE = YEAR * 1000 + 1
-
+C...........   Read non-diurnal emissions factors params from MEFSND
 C.......   Read emissions factor tables:
         EFLAG = .FALSE.
         DO  366  T = 1, REFCNT
