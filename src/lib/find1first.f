@@ -60,7 +60,8 @@ C.........  Use FIND1 to get location of key
 C.........  If the key is found, search backward until the first entry is reached            
         IF( INDEX > 0 ) THEN
             DO
-                IF( INDEX < 1 .OR. LIST( INDEX ) /= KEY ) EXIT
+                IF( INDEX < 1 ) EXIT
+                IF( LIST( INDEX ) /= KEY ) EXIT
                 INDEX = INDEX - 1
             END DO
             	
@@ -137,7 +138,8 @@ C.........  Use FINDR1 to get location of key
 C.........  If the key is found, search backward until the first entry is reached            
         IF( INDEX > 0 ) THEN
             DO
-                IF( INDEX < 1 .OR. LIST( INDEX ) /= KEY ) EXIT
+                IF( INDEX < 1 ) EXIT
+                IF( LIST( INDEX ) /= KEY ) EXIT
                 INDEX = INDEX - 1
             END DO
             	
@@ -214,7 +216,8 @@ C.........  Use FINDC to get location of key
 C.........  If the key is found, search backward until the first entry is reached            
         IF( INDEX > 0 ) THEN
             DO
-                IF( INDEX < 1 .OR. LIST( INDEX ) /= KEY ) EXIT
+                IF( INDEX < 1 ) EXIT
+                IF( LIST( INDEX ) /= KEY ) EXIT
                 INDEX = INDEX - 1
             END DO
             	
