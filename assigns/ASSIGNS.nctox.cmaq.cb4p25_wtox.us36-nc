@@ -112,9 +112,9 @@ if ( $SMK_SOURCE == 'B' ) then
    setenv BCUSE   $GE_DAT/landuse.dat         # County landuse
    setenv B3FAC   $GE_DAT/b3fac.march2002.beisv3.09.txt
    setenv B3XRF   $GE_DAT/b3tob2B.xrf         # Beld3 to Beld2 cross-reference
-   setenv BELD3_TOT $SMKDAT/inventory/beld3/LANDA_c_cmaq_nat.dat
-   setenv BELD3_A   $SMKDAT/inventory/beld3/LANDB_c_cmaq_nat.dat
-   setenv BELD3_B   $SMKDAT/inventory/beld3/LAND_TOTALS_c_cmaq_nat.dat
+   setenv BELD3_TOT $SMKDAT/inventory/beld3/LAND_TOTALS_c_cmaq_nat.dat
+   setenv BELD3_A   $SMKDAT/inventory/beld3/LANDA_c_cmaq_nat.dat
+   setenv BELD3_B   $SMKDAT/inventory/beld3/LANDB_c_cmaq_nat.dat
 endif
 
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
