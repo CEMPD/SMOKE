@@ -70,6 +70,7 @@ C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
+        INTEGER     DAY2YR      !  Conversion factor for day to year
         INTEGER     TZONE       !  time zone
         INTEGER     FIP
         INTEGER     ID7
@@ -220,10 +221,21 @@ C.......   Get file name; open input raw area source file
             INY = GETNUM( IMISS3, -IMISS3, INY+1,
      &                    'Enter INVENTORY YEAR for this file' )
 
+C.............   Calculate DAY2YR factor
+            I = INY / 1000        !  year-number
+            IF ( MOD( I,4 ) .NE. 0 ) THEN           !  nonleap years
+                DAY2YR = 365.0
+            ELSE IF ( MOD( I,100 ) .NE. 0 ) THEN    !  noncentury leap years
+                DAY2YR = 366.0
+            ELSE IF ( MOD( I,400 ) .NE. 0 ) THEN    !  century nonleap years
+                DAY2YR = 365.0
+            ELSE                                    !  leap centuries
+                DAY2YR = 366.0
+            END IF
+
 C.......   Process this area source file
 
             IREC = 0
-
 111         CONTINUE        !  head of the ADEV-read loop
 
                 READ( ADEV, 93000, END=133, IOSTAT=IOS )LINE
