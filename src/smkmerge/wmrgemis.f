@@ -173,8 +173,8 @@ C               if a write error occurred
             CHARACTER(*), INTENT (IN) :: FILNAM
             REAL        , INTENT (IN) :: EMDATA( * )
 
-            IF( .NOT. WRITE3( FILNAM, VNAME,
-     &                        JDATE, JTIME, EMDATA ) ) THEN
+            IF( .NOT. WRITESET( FILNAM, VNAME, ALLFILES,
+     &                          JDATE, JTIME, EMDATA ) ) THEN
 
                 MESG = 'Could not write "' // VNAME //
      &                 '" to file "'// FILNAM // '"'

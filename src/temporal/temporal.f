@@ -1206,8 +1206,8 @@ C.....................  Skip blanks that can occur when NGRP > 1
                     IF ( CBUF .EQ. ' ' ) CYCLE
 
 C.....................  Write hourly emissions to I/O API NetCDF file
-                    IF( .NOT. WRITE3( TNAME, CBUF, JDATE, JTIME, 
-     &                                EMIST( 1,I )              ) ) THEN
+                    IF( .NOT. WRITESET( TNAME, CBUF, ALLFILES, JDATE,
+     &                                  JTIME, EMIST( 1,I ) )     ) THEN
 
                         L = LEN_TRIM( CBUF )
                         MESG = 'Could not write "' // CBUF( 1:L ) // 
