@@ -67,6 +67,7 @@ C.........  Initialize - everything will be gridded
         TREPNAME = 'REPEG'
 
         AONAME = 'AG'
+        BONAME = 'BGTS'
         MONAME = 'MG'
         PONAME = 'PG'
         TONAME = 'EG'
@@ -181,6 +182,7 @@ C.............  Get output file names depending on if there are moles in units
                 CALL TRIM_AND_CONCAT( TREPNAME, '_L' )
 
                 CALL TRIM_AND_CONCAT( AONAME, '_L' )
+                CALL TRIM_AND_CONCAT( BONAME, '_L' )
                 CALL TRIM_AND_CONCAT( MONAME, '_L' )
                 CALL TRIM_AND_CONCAT( PONAME, '_L' )
                 CALL TRIM_AND_CONCAT( TONAME, '_L' )
@@ -196,6 +198,7 @@ C.............  Get output file names depending on if there are moles in units
                 CALL TRIM_AND_CONCAT( TREPNAME, '_S' )
 
                 CALL TRIM_AND_CONCAT( AONAME, '_S' )
+                CALL TRIM_AND_CONCAT( BONAME, '_S' )
                 CALL TRIM_AND_CONCAT( MONAME, '_S' )
                 CALL TRIM_AND_CONCAT( PONAME, '_S' )
                 CALL TRIM_AND_CONCAT( TONAME, '_S' )
