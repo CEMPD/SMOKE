@@ -209,7 +209,7 @@ C...........   Other local variables
         REAL*8           YORIGDG   ! dot grid Y-coordinate origin of grid
 
         LOGICAL       :: EFLAG = .FALSE.  ! error flag
-        LOGICAL       :: VFLAG = .FALSE.  ! true: use elevated/PinG file (PELV)
+        LOGICAL       :: VFLAG = .FALSE.  ! true: use elevated file (PELV)
         LOGICAL          LF( 9 )          ! true: source characteristic is valid
 
         CHARACTER*50     CHARS( 9 )!  tmp source characeristics 
@@ -237,12 +237,8 @@ C.........   Get setting from environment variables
         EMLAYS = ENVINT( 'SMK_EMLAYS', 'Number of emission layers',
      &                   -1, IOS )
 
-        MESG = 'Indicator for create plume-in-grid outputs'
-        VFLAG = ENVYN( 'SMK_PING_YN', MESG, .FALSE., IOS )
-
         MESG = 'Indicator for defining major/minor sources'
-        VFLAG = ( VFLAG .OR. 
-     &            ENVYN( 'SMK_SPECELEV_YN', MESG, .FALSE., IOS ) )
+        VFLAG = ENVYN( 'SMK_SPECELEV_YN', MESG, .FALSE., IOS )
 
 
 C.........  Cannot use default and cannot set to less than 4 because of
@@ -679,13 +675,6 @@ C.................  Skip source if it is outside grid
 	        YL = YLOCA( S )
                 IF( XL .LT. XBEG .OR. XL .GT. XEND .OR.
      &              YL .LT. YBEG .OR. YL .GT. YEND     ) CYCLE
-
-C.................  Skip source if it is a PinG source and assign 0 to the
-C                   layer fractions
-                IF( LPING( S ) ) THEN
-                    LFRAC( S, 1:EMLAYS ) = 0.
-                    CYCLE
-                END IF
 
 C.................  Skip source if it is minor source and assign layer fractions
 C                   that put all emissions in layer 1
