@@ -437,8 +437,8 @@ C.........  Get starting date and time from met data file
      &                  2 )
         END IF
 
-        SCEN_STR = FDESC3D( 21 )
-        SCHE_STR = FDESC3D( 22 )
+        SCEN_STR = FDESC3D( 2 )
+        SCHE_STR = FDESC3D( 3 )
 
 C.........  Set   date/time for temperature based on simulation
 C........   start date/time

@@ -318,8 +318,8 @@ C.......   Get surface met files header for scenario and cloud scheme
      &                  // SNAME( 1:TRIMLEN( SNAME ) ) // '"', 2 )
         END IF
 
-        SCEN_STR = FDESC3D( 21 )
-        SCHE_STR = FDESC3D( 22 )
+        SCEN_STR = FDESC3D( 2 )
+        SCHE_STR = FDESC3D( 3 )
 
 C.......   Get time period for output file, dot point grid desc parameters:
 
