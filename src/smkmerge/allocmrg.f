@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -41,6 +41,9 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
+
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL
@@ -89,6 +92,7 @@ C...........   Other local variables
 
         INTEGER         I, J         ! counters and indices
         INTEGER         IOS          ! i/o status
+        INTEGER      :: MXSRC = 0    ! max no. sources
         INTEGER         MXVARPGP_SAV ! saved MXVARPGP value
         INTEGER         NCNY         ! tmp no. counties
         INTEGER         NDIM         ! tmp dimension        
@@ -115,6 +119,7 @@ C....................................................................
 
 C........  Allocate memory for fixed-size area source arrays        
        IF( AFLAG ) THEN
+            MXSRC = MAX( MXSRC, NASRC )
             J = NGRID + 2 * ANGMAT
             ALLOCATE( AGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'AGMATX', PROGNAME )
@@ -224,6 +229,7 @@ C.........  Biogenic source fixed-size arrays
 
 C.........  Mobile source fixed-size arrays
         IF( MFLAG ) THEN
+            MXSRC = MAX( MXSRC, NMSRC )
             J = NGRID + 2 * MNGMAT
             ALLOCATE( MGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
@@ -315,12 +321,17 @@ C.........  Mobile source fixed-size arrays
 
 C.........  Point source fixed-size arrays
         IF( PFLAG ) THEN
+            MXSRC = MAX( MXSRC, NPSRC )
             J = NGRID + 2 * NPSRC
             ALLOCATE( PGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'PGMATX', PROGNAME )
 
             ALLOCATE( PRINFO( NPSRC,2 ), STAT=IOS )        ! tmp pt react. data
             CALL CHECKMEM( IOS, 'PRINFO', PROGNAME )
+
+            ALLOCATE( ELEVFLTR( NPSRC ), STAT=IOS )        ! elevated src filter
+            CALL CHECKMEM( IOS, 'ELEVFLTR', PROGNAME )
+            ELEVFLTR = 0.  ! array
 
             ALLOCATE( PEMGRD( NGRID,EMLAYS ), STAT=IOS ) ! gridded point emissions
             CALL CHECKMEM( IOS, 'PEMGRD', PROGNAME )
@@ -406,7 +417,37 @@ C.........  Point source fixed-size arrays
                 CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
             END IF
 
-        END IF
+            IF( ELEVFLAG .OR. PINGFLAG ) THEN
+                ALLOCATE( GRPGID( NGROUP ), STAT=IOS )   ! stack group ID
+                CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
+            END IF
+
+            IF( ELEVFLAG ) THEN
+                ALLOCATE( GRPXL( NGROUP ), STAT=IOS )    ! x-position
+                CALL CHECKMEM( IOS, 'GRPXL', PROGNAME )
+                ALLOCATE( GRPYL( NGROUP ), STAT=IOS )    ! y-position
+                CALL CHECKMEM( IOS, 'GRPYL', PROGNAME )
+                ALLOCATE( GRPCOL( NGROUP ), STAT=IOS )   ! column
+                CALL CHECKMEM( IOS, 'GRPCOL', PROGNAME )
+                ALLOCATE( GRPROW( NGROUP ), STAT=IOS )   ! row
+                CALL CHECKMEM( IOS, 'GRPROW', PROGNAME )
+                ALLOCATE( GRPHT( NGROUP ), STAT=IOS )    ! stack height
+                CALL CHECKMEM( IOS, 'GRPHT', PROGNAME )
+                ALLOCATE( GRPDM( NGROUP ), STAT=IOS )    ! stack diameter
+                CALL CHECKMEM( IOS, 'GRPDM', PROGNAME )
+                ALLOCATE( GRPTK( NGROUP ), STAT=IOS )    ! stack temperature
+                CALL CHECKMEM( IOS, 'GRPTK', PROGNAME )
+                ALLOCATE( GRPVE( NGROUP ), STAT=IOS )    ! stack velocity
+                CALL CHECKMEM( IOS, 'GRPVE', PROGNAME )
+            END IF
+
+        END IF  ! end point sources
+
+C.........  Allocate buffer array for MRGMULT to use for elevated sources
+C           or not
+        ALLOCATE( ELEVADJ( MXSRC ), STAT=IOS ) ! gridded out emis
+        CALL CHECKMEM( IOS, 'ELEVADJ', PROGNAME )
+        ELEVADJ = 0.  ! array
 
 C.........  Total gridded emissions.  Always allocate this, even if there
 C           us only one source category because it will simplify the merging as
