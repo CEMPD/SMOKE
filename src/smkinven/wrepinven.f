@@ -452,7 +452,7 @@ C...........   Formatted file I/O formats............ 93xxx
      
 93050	FORMAT( 15X, A11, 36X, A11 )
 
-93060	FORMAT( 1X, A8, 4X, E16.10, 4X, F3.1, 4X, A16, 4X, E16.10,
+93060	FORMAT( 1X, A8, 4X, E16.10, 3X, F6.4, 2X, A16, 4X, E16.10,
      &          4X, A40, 4X, A40 )
      
 93070	FORMAT( 1X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
