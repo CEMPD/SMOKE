@@ -30,7 +30,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 #
 SMR=smkreport.o asgnbins.o bldrepidx.o genrprt.o openrepin.o   \
-    openrepout.o rdgrps.o rdrepin.o rdrprts.o repmrggrd.o repunits.o\
+    openrepout.o qarepin.o rdgrps.o rdrepin.o rdrprts.o repmrggrd.o repunits.o\
     scanrepc.o selectsrc.o wrrephdr.o wrrepout.o
 
 smkreport: $(SMR) $(ALLI) $(LIBPATH)
@@ -55,6 +55,8 @@ getrecs.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getrecs.f
 openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ openrepin.f
+qarepin.o: $(MODREPRT) $(MODSTCY) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ qarepin.f
 rdgrps.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODLISTS) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ rdgrps.f
 rdrepin.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODELEV) $(MODLISTS) \
