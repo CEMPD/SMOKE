@@ -10,8 +10,11 @@ C...........   This module contains the information about the source category
 
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
         
-        USE MODMBSET
+        USE MODMBSET, ONLY: COUNTYSRC, DAILY, WEEKLY, MONTHLY, EPISLEN
 
         IMPLICIT NONE
         
@@ -113,19 +116,15 @@ C...........   Other local variables:
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
         INTEGER    LDATE       ! date from previous loop iteration
         INTEGER    MDATE       ! output date for monthly counties
+        INTEGER    METNGRID    ! no. grid cells in met data
         INTEGER    MISSTEP     ! no. contiguous missing hours of met data
-        INTEGER    NCOLS       ! no. grid columns
-        INTEGER    NCOLSU      ! no. grid columns in ungridding matrix
         INTEGER :: NDYCNTY = 0 ! no. counties using day averaging
         INTEGER :: NWKCNTY = 0 ! no. counties using week averaging
         INTEGER :: NMNCNTY = 0 ! no. counties using month averaging
         INTEGER :: NEPCNTY = 0 ! no. counties using episode averaging
-        INTEGER    NGRID       ! no. grid cells
         INTEGER    NINVARR     ! no. inventory variables to read
         INTEGER    NLINES      ! no. lines in met list file
         INTEGER    NMATX       ! size of ungridding matrix
-        INTEGER    NROWS       ! no. grid rows
-        INTEGER    NROWSU      ! no. grid rows in ungridding matrix
         INTEGER    NSTEPS      ! number of time steps to process temperature data
         INTEGER    NSTEP_MET   ! no. time steps in met file
         INTEGER :: OSRC = 0    ! number of sources outside grid
@@ -277,16 +276,15 @@ C.........  Store number of ungridding factors
 C.........  Check dimensions of ungridding matrix...
         CALL CHKSRCNO( CATDESC, UNAME, NROWS3D, NSRC, EFLAG )
         
-C......... If the dimensions were in error, abort
+C.........  If the dimensions were in error, abort
         IF( EFLAG ) THEN
             MESG = 'Ungridding matrix is inconsistent with ' //
      &             'inventory.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF 
 
-CC........  Save ungridded file settings to compare against met data
-        NCOLSU = GETIFDSC( FDESC3D, '/NCOLS3D/', .TRUE. )
-        NROWSU = GETIFDSC( FDESC3D, '/NROWS3D/', .TRUE. )
+C.........  Initialize reference grid with ungridding matrix
+        CALL CHKGRID( UNAME, 'GMAT', 0, EFLAG )
  
 C.........  Set inventory variables to read
         NINVARR = 6
@@ -429,27 +427,18 @@ C.............  Save description parameters
             SDATE_MET = SDATE3D
             STIME_MET = STIME3D
             NSTEP_MET = MXREC3D
-            NROWS = NROWS3D
-            NCOLS = NCOLS3D
-            NGRID = NROWS * NCOLS
 
-C.............  First time through, compare met grid to ungridding matrix
-C               On subsequent runs, compare to previous met grid
-            IF( FIRSTMET ) THEN
-                CALL CHECK_GRID_DIMS( 'NCOLS', 'columns', NCOLSU,  ! sets EFLAG in subroutine
-     &                                 NCOLS, 'UNGRID' )
-                CALL CHECK_GRID_DIMS( 'NROWS', 'rows'   , NROWSU, 
-     &                                 NROWS, 'UNGRID' )
-                FIRSTMET = .FALSE.
-            ELSE
-            	CALL CHECK_GRID_DIMS( 'NCOLS', 'columns', NCOLSU,
-     &                                 NCOLS, 'MET' )
-                CALL CHECK_GRID_DIMS( 'NROWS', 'rows'   , NROWSU,
-     &                                 NROWS, 'MET' )
+C.............  Compare the met grid with previous settings
+C.............  The subgrid parameters will be set here, if there is a subgrid
+            CALL CHKGRID( CURLNM, 'GRID', 1, EFLAG )
+            METNGRID = NGRID
+
+C............. If the dimensions were in error, abort
+            IF( EFLAG ) THEN
+                MESG = 'Grids in ungridding matrix and meteorology ' //
+     &                 'data are inconsistent.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-
-            NCOLSU = NCOLS
-            NROWSU = NROWS
 
 C.............  Use start date, start time, and no. time steps to fill in METCHECK array
             HRPOS = SECSDIFF( SDATE, STIME, SDATE_MET, STIME_MET )
@@ -663,7 +652,7 @@ C.........  Kelvin for now - future can be dependant on met input units
 C.........  Allocate memory for other arrays in the program
         ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
-        ALLOCATE( TA( NGRID ), STAT=IOS )
+        ALLOCATE( TA( METNGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TA', PROGNAME )
         ALLOCATE( DAYBEGT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYBEGT', PROGNAME )
@@ -1042,58 +1031,5 @@ C...........   Internal buffering formats............ 94xxx
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
-
-C******************  INTERNAL SUBPROGRAMS  *****************************
-
-        CONTAINS
-
-C.............  This internal subprogram checks the dimension of the grid
-
-            SUBROUTINE CHECK_GRID_DIMS( VNAME, VDESC, UVAL, TVAL, 
-     &                                  COMPTYPE )
-
-C.............  Subprogram arguments
-            CHARACTER(*), INTENT (IN) :: VNAME    ! name of value
-            CHARACTER(*), INTENT (IN) :: VDESC    ! description of value
-            INTEGER     , INTENT (IN) :: UVAL     ! first value
-            INTEGER     , INTENT (IN) :: TVAL     ! second value
-            CHARACTER(*), INTENT (IN) :: COMPTYPE ! determines error message
-                                                  ! options: UNGRID, MET
-
-C.............  Local variables
-            INTEGER       L1, L2
-
-C----------------------------------------------------------------------
-
-            IF( UVAL /= TVAL ) THEN
-                EFLAG = .TRUE.
-                L1 = LEN_TRIM( VNAME )
-                L2 = LEN_TRIM( VDESC )
-                
-                IF( COMPTYPE == 'UNGRID' ) THEN
-                    WRITE( MESG,94010 ) 'ERROR: Inconsistent number ' //
-     &                 'of ' // VDESC( 1:L2 ) // '. In ungridding ' // 
-     &                 'matrix, ' // VNAME( 1:L1 ) // '= ', UVAL,
-     &                 CRLF() // BLANK5 // 
-     &                 'but in meteorology file, ' // VNAME( 1:L1 ) // 
-     &                 '= ', TVAL
-                ELSE
-                    WRITE( MESG,94010 ) 'ERROR: Inconsistent number ' //
-     &                     VDESC( 1:L2 ) // 'between meteorology files.'
-                END IF
-                       
-                CALL M3MSG2( MESG )
-
-            END IF
-
-            RETURN
-
-C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
-
-C...........   Internal buffering formats............ 94xxx
-
-94010       FORMAT( 10( A, :, I8, :, 1X ) )
-
-            END SUBROUTINE CHECK_GRID_DIMS
                 
         END PROGRAM PREMOBL
