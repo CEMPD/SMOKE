@@ -238,7 +238,7 @@ C.................  Write message stating the pollutants are being processed
 
                     SFLAG = .TRUE.
 
-                CASE( 'CONTROL' )
+                CASE( 'CONTROL', 'EMS_CONTROL' )
 
                     CTLIDX = 0   ! array
                     VIDXMULT = 0 ! array
@@ -297,10 +297,10 @@ c                    CALL WRCTMP( ADEV, N, NGSZ, ADDIDX, VIDXMULT )
 
 C...........   Rewind tmp files
 
-        REWIND( ADEV )
-        REWIND( CDEV )
-        REWIND( GDEV )
-        REWIND( LDEV )
+        IF( ADEV .GT. 0 ) REWIND( ADEV )
+        IF( CDEV .GT. 0 ) REWIND( CDEV )
+        IF( GDEV .GT. 0 ) REWIND( GDEV )
+        IF( LDEV .GT. 0 ) REWIND( LDEV )
 
         RETURN
        
