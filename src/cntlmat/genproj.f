@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -89,6 +89,7 @@ C...........   Other local variables
         INTEGER          NC            ! local number src chars
 
         LOGICAL       :: EFLAG    = .FALSE.   ! true: error has occurred
+        LOGICAL, SAVE :: APPLFLAG = .FALSE.  ! true: something has been applied
 
         CHARACTER*16     VARNAM 
         CHARACTER*300    MESG                 ! message buffer
@@ -116,13 +117,18 @@ C           to ASGNCNTL in order to avoid looping through all pollutants.
      &                  IDUM, ISPRJ )
 
 C..........  Write header for report.
-         WRITE( RDEV, 93000 ) 'Projection factors report:'
-         WRITE( RDEV, 93000 ) '    Factors applied to all pollutants' //
-     &                        ' uniformly.'
+         WRITE( RDEV, 93000 ) 'Processed as '// CATDESC// ' sources'
+         WRITE( RDEV, 93000 ) 
+     &          'Projection factors applied with /PROJECTION/ packet'
+
+         WRITE( RDEV, 93390 ) '      from base year    ', BYEAR
+         WRITE( RDEV, 93390 ) '      to projected year ', PYEAR
+
+         WRITE( RDEV, 93000 ) '      to all pollutants uniformly'
          WRITE( RDEV, 93000 ) ' '
 
 C.........  Loop through all sources and store projection information for
-C           those that have it. Otherwise, set projection factor=1.
+C           those that have it.  Otherwise, set projection factor=1.
 
 c        ISPRJ = 1  ! array
 
@@ -146,6 +152,7 @@ C                   that are getting projected
      &               ( CHARS( J )( 1:SC_ENDP(J)-SC_BEGP(J)+1 ), J=1,NC )
                 L = LEN_TRIM( MESG )
                 WRITE( RDEV, 94020 ) MESG( 1:L ), PRJFAC( S )
+                APPLFLAG = .TRUE.
 
             ELSE
 C.................  If source does not have projection info., set to 1.
@@ -155,6 +162,23 @@ C.................  If source does not have projection info., set to 1.
             END IF
 
         END DO
+
+        IF( .NOT. APPLFLAG ) THEN
+
+            MESG = 'WARNING: No PROJECTION packet entries match ' //
+     &             'inventory.'
+            CALL M3MSG2( MESG )
+
+            MESG = 'WARNING: Projection matrix will not be created!'
+            CALL M3MSG2( MESG )
+
+C.............  Write not into report file
+            WRITE( RDEV, 93000 ) 
+     &             'No projection packet entries matched the inventory.'
+
+            RETURN
+
+        END IF
 
 C.........  Set up and open output projection matrices
 
@@ -185,6 +209,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+
+93390   FORMAT( A, I4.4 )
 
 C...........   Internal buffering formats............ 94xxx
 
