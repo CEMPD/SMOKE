@@ -155,15 +155,12 @@ C           average day emissions instead of annual emissions.
         CALL CHECKMEM( IOS, 'TONAMES', PROGNAME )
         ALLOCATE( TOUNITS( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TOUNITS', PROGNAME )
-        ALLOCATE( SPCUNIT( NIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SPCUNIT', PROGNAME )
 
 C.........  Initialize all
         EANAM   = ' '   ! array
         EINAM   = ' '   ! array
         TONAMES = ' '   ! array
         TOUNITS = ' '   ! array
-        SPCUNIT = ' '   ! array
 
 C.........  Create array of sorted unique pollutants and activities
 C.........  Also determine number of pollutants and store pollutants-only array
@@ -285,10 +282,14 @@ C           and the master pollutant names
         CALL CHECKMEM( IOS, 'EMNAM', PROGNAME )
         ALLOCATE( EMIDX( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMIDX', PROGNAME )
-        AEMNAM = ' '  ! array
-        BEMNAM = ' '  ! array
-        MEMNAM = ' '  ! array
-        PEMNAM = ' '  ! array
+        ALLOCATE( SPCUNIT( NSMATV ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCUNIT', PROGNAME )
+        AEMNAM  = ' '  ! array
+        BEMNAM  = ' '  ! array
+        MEMNAM  = ' '  ! array
+        PEMNAM  = ' '  ! array
+        EMNAM   = ' '  ! array
+        SPCUNIT = ' '  ! array
 
 C.........  Call subprogram to store species names in appropriate order
 C           for all source categories and the total.
@@ -356,28 +357,28 @@ C.................  Store position of pollutant for each species
 
 C.................  Find speciation name in one of the speciation matrices and
 C                   set units accordingly.  Set it based on the first one found.
-                IF( SPCUNIT( J ) .EQ. ' ' ) THEN
+                IF( SPCUNIT( K ) .EQ. ' ' ) THEN
 
                     IF( AFLAG ) THEN
                         M = INDEX1( TSVDESC( I ), ANSMATV, ASVDESC )
-                        IF( M .GT. 0 ) SPCUNIT( J ) = ASVUNIT( M )
+                        IF( M .GT. 0 ) SPCUNIT( K ) = ASVUNIT( M )
                     END IF
 
                     IF( BFLAG ) THEN
                         M = INDEX1( TSVDESC( I ), BNSMATV, BSVDESC )
                         L = LEN_TRIM( BNUM )
-                        IF( M .GT. 0 ) SPCUNIT( J ) = BNUM( 1:L ) // '/'
+                        IF( M .GT. 0 ) SPCUNIT( K ) = BNUM( 1:L ) // '/'
      &                                             // BNUM( 1:L )
                     END IF
 
                     IF( MFLAG ) THEN
                         M = INDEX1( TSVDESC( I ), MNSMATV, MSVDESC )
-                        IF( M .GT. 0 ) SPCUNIT( J ) = MSVUNIT( M )
+                        IF( M .GT. 0 ) SPCUNIT( K ) = MSVUNIT( M )
                     END IF
 
                     IF( PFLAG ) THEN
                         M = INDEX1( TSVDESC( I ), PNSMATV, PSVDESC )
-                        IF( M .GT. 0 ) SPCUNIT( J ) = PSVUNIT( M )
+                        IF( M .GT. 0 ) SPCUNIT( K ) = PSVUNIT( M )
                     END IF
 
                 END IF
