@@ -51,7 +51,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: IGRP             ! pollutant group
         INTEGER     , INTENT (IN) :: NGSZ             ! # pollutants/group
         INTEGER     , INTENT (IN) :: IDX(NSRC,NGSZ)   ! index to data tables
-        INTEGER     , INTENT(OUT) :: VIDX(NIPOL)      ! pollutant flags
+        INTEGER     , INTENT(OUT) :: VIDX(NIPPA)      ! pollutant/act flags
 
 
 C...........   Other local variables
