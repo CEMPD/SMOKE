@@ -37,8 +37,8 @@ FILES_C = \
   fillmtbl.o   rdsprof.o    prclinrc.o   rmcommnt.o   rdorsdsc.o \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
   fillttbl.o   rdsref.o     genptcel.o   chkemepi.o   getntisz.o \
-  setsrcdy.o   getdysav.o   find1first.o cvtrdtype.o  cvtvehtype.o \ 
-  rdspdref.o   rdspdprof.o  alocptbl.o   fillptbl.o  
+  setsrcdy.o   getdysav.o   find1first.o cvtrdtype.o  cvtvehtype.o \
+  rdspdref.o   rdspdprof.o  alocptbl.o   fillptbl.o
 
 FILES_TMP = 
 
