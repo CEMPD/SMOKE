@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENPROJ( PYEAR, RDEV, ENAME, USEPOL )
+        SUBROUTINE GENPROJ( PYEAR, ENAME, USEPOL )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -64,7 +64,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year
-        INTEGER     , INTENT (IN) :: RDEV   ! unit numnber of report file
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
         LOGICAL     , INTENT (IN) :: USEPOL( NIPPA )  ! true: pol used in pkt
 
@@ -87,6 +86,7 @@ C...........   Other local variables
         INTEGER          IDUM          ! dummy integer
         INTEGER          IOS           ! i/o error status
         INTEGER          NC            ! local number src chars
+        INTEGER          RDEV          ! Report unit number
 
         LOGICAL       :: EFLAG    = .FALSE.   ! true: error has occurred
         LOGICAL, SAVE :: APPLFLAG = .FALSE.  ! true: something has been applied
@@ -98,6 +98,12 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine GENPROJ
+
+C.........  Open reports file
+        RPTDEV( 4 ) = PROMPTFFILE( 
+     &                'Enter logical name for PROJECTION REPORT', 
+     &                .FALSE., .TRUE., CRL // 'PROJREP', PROGNAME )
+        RDEV = RPTDEV( 4 )
 
 C.........  Allocate memory for the projection matrix.  Use data
 C           structures for point sources, but this routine can be used for area
@@ -131,6 +137,11 @@ C.........  Loop through all sources and store projection information for
 C           those that have it.  Otherwise, set projection factor=1.
 
 c        ISPRJ = 1  ! array
+C.........  Initialize valid columns
+        LF = .FALSE.  ! array
+        DO J = 1, NCHARS
+            LF( J ) = .TRUE.
+        END DO
 
         DO S = 1, NSRC
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALOCPKTS( FDEV, RDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
+        SUBROUTINE ALOCPKTS( FDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
      &                       XRFCNT )
 
 C***********************************************************************
@@ -64,7 +64,6 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   SUBROUTINE ARGUMENTS:
 
         INTEGER     , INTENT (IN) :: FDEV      ! in file unit number
-        INTEGER     , INTENT (IN) :: RDEV      ! report file unit number
         INTEGER     , INTENT (IN) :: INYEAR    ! year to project from 
         INTEGER     , INTENT(OUT) :: CPYEAR    ! year to project to
         INTEGER     , INTENT(OUT) :: PKTCNT( NPACKET ) ! count of packet recs
@@ -369,7 +368,7 @@ C           find SIC NE 0 and SCC EQ 0, and expand the memory requirements
 C           accordingly.
 
         ACTION = 'COUNT'
-        CALL PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR,
+        CALL PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
      &                ACTION, BLANK5, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Rewind file
