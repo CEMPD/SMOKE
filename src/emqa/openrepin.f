@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENREPIN( ENAME, ANAME, GNAME, LNAME, SLNAME, 
-     &                        SSNAME, TNAME, GDEV, SDEV, EDEV, 
-     &                        YDEV, NDEV )
+     &                        SSNAME, TNAME, SDEV, GDEV, PDEV, TDEV, 
+     &                        EDEV, YDEV, NDEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -83,8 +83,10 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: SLNAME ! speciation matrix name
         CHARACTER(*), INTENT(OUT) :: SSNAME ! speciation matrix name
         CHARACTER(*), INTENT(OUT) :: TNAME  ! hourly emissions file
-        INTEGER     , INTENT(OUT) :: GDEV   ! gridding supplemental file
         INTEGER     , INTENT(OUT) :: SDEV   ! unit no.: ASCII inven file
+        INTEGER     , INTENT(OUT) :: GDEV   ! gridding supplemental file
+        INTEGER     , INTENT(OUT) :: PDEV   ! speciation supplemental file
+        INTEGER     , INTENT(OUT) :: TDEV   ! temporal supplemental file
         INTEGER     , INTENT(OUT) :: EDEV   ! unit no.: elevated ID file (PELV)
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
@@ -93,7 +95,7 @@ C.........  Temporary array for speciation variable names
         CHARACTER(LEN=IODLEN3) SLVNAMS( MXVARS3 )
 
 C.........  Local units and logical file names
-        INTEGER      :: TDEV = 0     ! unit no. emission processes file
+        INTEGER      :: MDEV = 0     ! unit no. emission processes file
 
 C.........  Other local variables
 
@@ -198,6 +200,15 @@ c           CALL CHECK_INVYEAR( TNAME, PRJFLAG, FDESC3D )
 
         END IF
 
+        IF( TSFLAG ) THEN
+    
+            MESG = 'Enter logical name for the TEMPORAL '//
+     &             'SUPPLEMENTAL file'
+            TDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
+     &                          CRL//'TSUP', PROGNAME )
+
+        END IF
+
 C.........  Open gridding matrix and compare number of sources
         IF( GFLAG ) THEN
 
@@ -238,6 +249,15 @@ C           speciation variable descriptions, and store mass or moles.
             SLVNAMS = VDESC3D  ! array
 
         END IF  ! end of mole speciation open
+
+        IF( PSFLAG ) THEN
+    
+            MESG = 'Enter logical name for the SPECIATION '//
+     &             'SUPPLEMENTAL file'
+            PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
+     &                          CRL//'SSUP', PROGNAME )
+
+        END IF
 
 C.........  Open mass speciation matrix, compare number of sources, store
 C           speciation variable descriptions, and store mass or moles.
@@ -350,6 +370,7 @@ C           met information, and store the vertical coordinates info
             CALL RETRIEVE_IOAPI_HEADER( LNAME )
             CALL CHKSRCNO( CATDESC, LNAME, NROWS3D, NSRC, EFLAG )
             CALL UPDATE_TIME_INFO( LNAME )
+            EMLAYS = NLAYS3D
 
         END IF  ! End of layer fractions open
 
