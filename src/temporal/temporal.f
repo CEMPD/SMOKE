@@ -68,6 +68,7 @@ C.........  This module contains the information about the source category
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
 
+C.........  This module is used for MOBILE6 setup information 
         USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN
 
         IMPLICIT NONE
@@ -222,6 +223,7 @@ C...........   Other local variables
 
         CHARACTER*8              TREFFMT   ! tmprl x-ref format (SOURCE|STANDARD)
         CHARACTER*14             DTBUF     ! buffer for MMDDYY
+        CHARACTER*3              INTBUF    ! buffer for integer
         CHARACTER*20             MODELNAM  ! emission factor model name
         CHARACTER(LEN=256)       CURFNM    ! current emission factor file name
         CHARACTER(LEN=16)        CURLNM    ! current ef logical file name
@@ -482,11 +484,11 @@ C.............  Latest day is end time in minimum time zone
 
 C.............  If time is before 6 am, don't need last day
             IF( LATETIME < 60000 ) THEN
-                LATEDATE = LATEDATE + 1
+                LATEDATE = LATEDATE - 1
             END IF
 
-            NDAYS = 1 + SECSDIFF( EARLYDATE, EARLYTIME, 
-     &                            LATEDATE, LATETIME ) / ( 24*3600 )
+            NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
+            NDAYS = NDAYS + 1
             ALLOCATE( EFDAYS( NDAYS,4 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EFDAYS', PROGNAME )
             EFDAYS = 0
@@ -577,7 +579,8 @@ C.................  Determine file type
                 END IF
                 
 C.................  Assign and store logical file name
-                WRITE( CURLNM,94030 ) 'EMISFAC_', N
+                WRITE( INTBUF,94030 ) N
+                CURLNM = 'EMISFAC_' // ADJUSTL( INTBUF )
                 EFLOGS( N ) = CURLNM
 
 C.................  Set logical file name
@@ -1091,6 +1094,13 @@ C.............................  Use date and time to find appropriate ef file
                             DO L = DAILY, EPISLEN
                                 IF( USETIME( L ) .EQV. .FALSE. ) CYCLE
                                 
+                                IF( STPOS <= 0 .OR. STPOS > NDAYS ) THEN
+                                    WRITE( *,* ) NDAYS
+                                    MESG = 'ERROR: Invalid position'
+                                    CALL M3EXIT( PROGNAME, FDATE, FTIME,
+     &                                           MESG, 2 )
+                                END IF
+                                
                                 CURFNM = EFLIST( EFDAYS( STPOS,L ) )
                                 CURLNM = EFLOGS( EFDAYS( STPOS,L ) )
 
@@ -1233,7 +1243,7 @@ C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-94030   FORMAT( A, I5 )
+94030   FORMAT( I3 )
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
