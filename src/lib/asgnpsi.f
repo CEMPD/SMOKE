@@ -1,5 +1,5 @@
 
-        SUBROUTINE ASGNPSI( NACT, ANAM )
+        SUBROUTINE ASGNPSI( NACT, ANAM, ISTAT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -64,8 +64,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL CRLF, ENVYN, FIND1, FINDC, INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NACT         ! number of activities 
-        CHARACTER(*), INTENT (IN) :: ANAM( NACT ) ! activity names
+        INTEGER     , INTENT (IN) :: NACT          ! number of activities 
+        CHARACTER(*), INTENT (IN) :: ANAM ( NACT ) ! activity names
+        INTEGER     , INTENT (IN) :: ISTAT( NACT ) ! 0=don't use; >0=use
 
 C.........  Other local variables
         INTEGER          I, J, L2, S, V    !  counters and indices
@@ -144,6 +145,9 @@ C.........  Initialize search fields to blank
 
 C.........  Loop through activities
         DO J = 1, NACT
+
+C.............  Skip activity if status is to not use
+            IF( ISTAT( J ) .EQ. 0 ) CYCLE
 
 C.............  Find index in complete list of activities
             V = INDEX1( ANAM( J ), NIACT, ACTVTY )
