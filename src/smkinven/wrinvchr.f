@@ -74,7 +74,7 @@ C.........  Source-specific header arrays
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'SCC                 ' / )
 
-        CHARACTER*20 :: MBHEADRS( MXMBCHR3+3 ) = 
+        CHARACTER*20 :: MBHEADRS( MXMBCHR3+2 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Roadway type code   ',
@@ -210,7 +210,7 @@ C.........  Set the number of potential ASCII columns in SDEV output file
         CASE( 'AREA' )
             NASCII = MXARCHR3
         CASE( 'MOBILE' )
-            NASCII = MXMBCHR3+2
+            NASCII = MXMBCHR3+1
         CASE( 'POINT' )
             NASCII = MXPTCHR3+4
         END SELECT
@@ -251,13 +251,9 @@ C.........  Get the maximum column width for each of the columns in ASCII file
             SELECT CASE ( CATEGORY )          
             CASE( 'MOBILE' ) 
 
-                J = LEN_TRIM( CSCC( S ) )                   ! could be blank
-                IF( CSCC( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
-
                 J = LEN_TRIM( CVTYPE( S ) )                   ! could be blank
                 IF( CVTYPE( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M2 ) ) COLWID( M2 ) = J
+     &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
 
             CASE( 'POINT' )
 
@@ -343,11 +339,6 @@ C.........  Write the ASCII file data
             SELECT CASE ( CATEGORY )          
             CASE( 'MOBILE' )
                 IF( LF( M1 ) ) THEN
-                    NC = NC + 1
-                    CHARS( NC ) = CSCC( S )
-                END IF
-
-                IF( LF( M2 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CVTYPE( S )
                 END IF
