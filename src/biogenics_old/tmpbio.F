@@ -203,9 +203,15 @@ C.......   (all but variables-table in description is borrowed from M2NAME)
 11      CONTINUE
 
         FDESC3D( 1 ) = 'Gridded biogenic emissions from SMOKE-BEIS2'
-        DO  12  M = 2, MXDESC3
+
+        DO  12  M = 2, 20
             FDESC3D( M ) = ' '
 12      CONTINUE
+
+        DO  14  M = 23, MXDESC3
+            FDESC3D( M ) = ' '
+14      CONTINUE
+        
         
         ENAME = PROMPTMFILE( 
      &          'Enter name for BGTS output file',
