@@ -56,12 +56,13 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL        CRLF
 
 C...........   Argument dimensioned source arrrays
-        INTEGER   INDX ( NSRC )   ! sorting index for processing years
-        INTEGER   YRGRP( NSRC )   ! group number of year
+        INTEGER, ALLOCATABLE :: INDX ( : )  ! sorting index for processing years
+        INTEGER, ALLOCATABLE :: YRGRP( : )  ! group number of year
 
 C...........   LOCAL VARIABLES their descriptions:
         INTEGER         J, S       ! indices
         INTEGER         ICNT       ! counter
+        INTEGER         IOS        ! i/o status
         INTEGER         GRPMAX     ! count of most prevalent year
         INTEGER         NYEARS     ! number of different years in inventory
         INTEGER         PGRP       ! year group from previous loop iteration
@@ -73,6 +74,12 @@ C...........   LOCAL VARIABLES their descriptions:
 
 C***********************************************************************
 C   begin body of subroutine GETBASYR
+
+C.........  Allocate memory for local arrays
+        ALLOCATE( INDX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDX', PROGNAME )
+        ALLOCATE( YRGRP( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'YRGRP', PROGNAME )
 
 C.........  Create sorting index for years
         DO S = 1, NSRC
@@ -143,6 +150,9 @@ C.........  Post-process list of year groups to find most prevalent year
         END IF
 
         CALL M3MSG2( MESG )
+
+C.........  Deallocate local memory
+        DEALLOCATE( INDX, YRGRP )
 
         RETURN
 
