@@ -120,6 +120,7 @@ C...........   Other local variables
         REAL             LAT     !  tmp latitude  (y-dir)
         REAL             LON     !  tmp longitude (x-dir)
         REAL             OZEMIS  !  tmp ozone season emission value
+        REAL             RBUF    !  tmp real value (any)
         REAL             REFF    !  tmp rule effectiveness
         REAL             RPEN    !  tmp rule penetration   
         REAL             XLOC    !  Scratch X-coordinate (UTM X or lon)
@@ -152,6 +153,7 @@ C...........   Other local variables
         INTEGER          ZONE    !  Temporary UTM zone
 
         LOGICAL, SAVE :: CFLAG    !  true: recalculate the velocity from flow
+        LOGICAL, SAVE :: FFLAG    = .FALSE. !  true: flip Xloc/yloc for EPS2.5
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
         LOGICAL, SAVE :: FIRSTP   = .TRUE.
         LOGICAL, SAVE :: WFLAG    !  true: convert lat-lons to Western hemisphr
@@ -182,6 +184,9 @@ C.............  Get settings from the environment
             WFLAG = ENVYN( 'WEST_HSPHERE', MESG, .TRUE., IOS )
 
             MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
+
+            MESG = 'Flip XLOC and YLOC in EPS format'  
+            FFLAG = ENVYN( 'SMK_SWITCH_EPSXY', MESG, .FALSE., IOS )
 
 C.............  Create sorted data codes
             ALLOCATE( SRTDIDX( MXIDAT ), STAT=IOS )
@@ -370,8 +375,8 @@ C.............  Check stack coordinates, missing is an error
      &          .NOT. CHKREAL( LINE( 89:98 ) )      ) THEN
 
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: latitude and/or ' //
-     &                 'longitude are not numbers or have ' // CRLF() //
+                WRITE( MESG,94010 ) 'ERROR: XLOC and/or ' //
+     &                 'YLOC are not numbers or have ' // CRLF() //
      &                 BLANK10 // 'bad formatting at line', IREC
                 CALL M3MESG( MESG )
 
@@ -440,8 +445,27 @@ C               the various data fields...
             TK   = STR2REAL( LINE( 115:119 ) )
             VL   = STR2REAL( LINE( 121:125 ) )
             ZONE = STR2INT ( LINE( 100:101 ) )
-            YLOC = STR2REAL( LINE(  78: 87 ) )
-            XLOC = STR2REAL( LINE(  89: 98 ) )
+
+C.............  Latitude is provided in x-loc field in EPS2.0 format, and
+C               longitude is provided in y-loc field
+            IF( ZONE .LE. 0 ) THEN
+                YLOC = STR2REAL( LINE( 78:87 ) )
+                XLOC = STR2REAL( LINE( 89:98 ) )
+
+C.............  If zone is provided, then assume UTM coordinates (and Easting
+C               given first, followed by Northing)
+            ELSE
+                XLOC = STR2REAL( LINE( 78:87 ) )
+                YLOC = STR2REAL( LINE( 89:98 ) )
+
+            END IF
+
+C.............  If user is manually switching the fields, then switch them
+            IF ( FFLAG ) THEN
+                RBUF = XLOC
+                XLOC = YLOC
+                YLOC = RBUF
+            END IF
 
             CEFF  = STR2REAL( LINE( 177:182 ) )
             IF ( CEFF .LT. 0.0 )  CEFF = 0.0
