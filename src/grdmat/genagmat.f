@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENAGMAT( GNAME, FDEV, MXSCEL, NASRC, NGRID, NMATX, 
+        SUBROUTINE GENAGMAT( GNAME, FDEV, MXSCEL, NASRC, NG, NMATX, 
      &                       NX, IX, CX, NCOEF, CMAX, CMIN )
 
 C***********************************************************************
@@ -14,7 +14,7 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 5/99
 C
-C***************************************************************************
+C************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -35,7 +35,7 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
-C***************************************************************************
+C************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
@@ -46,6 +46,9 @@ C...........   This module contains the cross-reference tables
 
 C...........   This module contains the gridding surrogates tables
         USE MODSURG
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
@@ -75,9 +78,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV          ! surg codes report file
         INTEGER     , INTENT (IN) :: MXSCEL        ! max sources per cell
         INTEGER     , INTENT (IN) :: NASRC         ! no. mobile sources
-        INTEGER     , INTENT (IN) :: NGRID         ! actual grid cell count
+        INTEGER     , INTENT (IN) :: NG            ! actual grid cell count
         INTEGER     , INTENT (IN) :: NMATX         ! no. source-cell intersects
-        INTEGER     , INTENT(OUT) :: NX  ( NGRID ) ! no. srcs per cell
+        INTEGER     , INTENT(OUT) :: NX  ( NG    ) ! no. srcs per cell
         INTEGER     , INTENT(OUT) :: IX  ( NMATX ) ! src IDs 
         REAL        , INTENT(OUT) :: CX  ( NMATX ) ! gridding coefficients
         INTEGER     , INTENT(OUT) :: NCOEF         ! no. of gridding coeffs
@@ -114,9 +117,7 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.  !  true: error detected
 
-        CHARACTER*16    COORD     !  coordinate system name
         CHARACTER*16    COORUNIT  !  coordinate system projection units
-        CHARACTER*16    GRDNM     !  grid name
         CHARACTER*80    GDESC     !  grid description
         CHARACTER*300   MESG      !  message buffer 
 
@@ -126,30 +127,6 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine GENAGMAT
-
-C.........  Get grid name from the environment and read grid parameters
-        IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD, GDTYP3D, COORUNIT, 
-     &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
-     &                      XORIG3D, YORIG3D, XCELL3D, YCELL3D,
-     &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
-
-            MESG = 'Could not get Models-3 grid description'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Store grid parameters for later processing
-        ELSE
-
-            IF( NCOLS3D * NROWS3D .NE. NGRID ) THEN
- 
-                MESG = 'INTERNAL ERROR: Number of cells in "' //
-     &                 PROGNAME( 1:16 ) // '" are inconsistent '//
-     &                 'with calling program.'
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-            ENDIF
-
-        ENDIF
 
 C.........  Initialize number of sources per cell counter
         NX = 0   ! Array
@@ -182,10 +159,21 @@ C.......       sixth case:   fallback default
         DO S = 1, NSRC
             
             FIP  = IFIP  ( S )
+            C    = CELLID( S )
             CSRC = CSOURC( S )
 
 C.............  Initialize sources as being in the domain
             INDOMAIN( S ) = .TRUE.
+
+C.............  Special case for source already assigned a grid cell
+            IF( C .GT. 0 ) THEN
+                NX( C ) = 1
+                IS( 1,C ) = S
+                CS( 1,C ) = 1.0
+                CYCLE           ! To head of loop over sources
+            END IF
+
+C.............  For non-cell sources...
 
 C.............  Retrieve the indices to the surrogates tables
             ISIDX = SRGIDPOS( S )
@@ -213,7 +201,7 @@ C.............  Loop through all of the cells intersecting this FIPS code.
 
 C.................  Set the surrogate fraction
                 CALL SETFRAC( FDEV, S, ISIDX, K, F, NCHARS, 
-     &                        INDOMAIN( S ), CSRC, FRAC     )
+     &                        INDOMAIN( S ), CSRC, FRAC )
 
                 IF( FRAC .GT. 0 ) THEN
 
