@@ -8,11 +8,11 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 extractida invsplit metscan pktreduc smk2emis \
+all: beld3to2 extractida invsplit metcombine metscan pktreduc smk2emis \
      surgtool uam2ncf 
 
-debug: beld3to2.debug extractida.debug invsplit.debug metscan.debug \
-       pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug  
+debug: beld3to2.debug extractida.debug invsplit.debug metcombine.debug \
+       metscan.debug pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug  
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -59,6 +59,15 @@ invsplit: $(INVS) $(ALLI) $(LIBPATH)
 invsplit.debug: $(INVS) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'INVSPLIT (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(INVS) $(LIBS_DEBUG)
+
+MCMB=metcombine.o
+
+metcombine: $(MCMB) $(ALLI) $(LIBPATH)
+	echo METCOMBINE:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MCMB) $(LIBS)
+
+metcombine.debug: $(MCMB) $(ALLI) $(LIBPATH_DEBUG)
+	$(FC) $(DBGFLAGS) -o $(@) $(MCMB) $(LIBS_DEBUG)
 
 MSCN=metscan.o
 #
