@@ -45,25 +45,28 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: POLVAL
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: QAFMTL3, RPT_, SDATE, STIME, RPTNSTEP,
+     &                      AFLAG, ASCREC, NSTEPS, EMLAYS, TSTEP,
+     &                      ALLRPT, ALLOUTHR, UCNVFAC
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NSVARS, NOUTBINS, NOUTREC, BINDATA,
+     &                      TODOUT, TOSOUT, SPCTOTPR, SPCTOINV,
+     &                      INVIDX, TPRIDX, INVTOPRJ, INVTOCMU,
+     &                      SPCIDX, OUTSRC, OUTBIN, OUTGFAC,
+     &                      BINPOPDIV
 
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: NTPDAT, TPNAME
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
-
-C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODCNTRL, ONLY: ACUMATX, PRMAT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NIPPA, EAREAD, EANAM
 
         IMPLICIT NONE
 

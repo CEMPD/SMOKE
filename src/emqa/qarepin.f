@@ -41,16 +41,14 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
-
-C.........  This module contains report arrays for each output bin
-c        USE MODREPBN
+        USE MODREPRT, ONLY: RPT_, SDATE, STIME, EDATE, ETIME, NSTEPS,
+     &                      TSTEP, RPTNSTEP, ALLRPT, AFLAG
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: LSTCYPOP, STCYPOPYR
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: BYEAR
 
         IMPLICIT NONE
 

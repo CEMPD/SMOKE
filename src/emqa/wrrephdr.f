@@ -44,25 +44,43 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: STKHT, STKDM, STKTK, STKVE, CPDESC
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVSCC, SCCDESC
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: QAFMTL3, AFLAG, OUTDNAM, RPT_, LREGION,
+     &                      PDSCWIDTH, VARWIDTH, DATEFMT, DATEWIDTH,
+     &                      HOURFMT, HOURWIDTH, LAYRFMT, LAYRWIDTH,
+     &                      CELLFMT, CELLWIDTH, SRCFMT, SRCWIDTH,
+     &                      REGNFMT, REGNWIDTH, COWIDTH, STWIDTH,
+     &                      CYWIDTH, SCCWIDTH, SRG1FMT, SRG1WIDTH,
+     &                      SRG2FMT, SRG2WIDTH, MONFMT, MONWIDTH,
+     &                      WEKFMT, WEKWIDTH, DIUFMT, DIUWIDTH,
+     &                      CHARFMT, CHARWIDTH, STKPFMT, STKPWIDTH,
+     &                      SPCWIDTH, ELEVWIDTH, SDSCWIDTH, UNITWIDTH,
+     &                      MINC, LENELV3, SDATE, STIME, EDATE, ETIME,
+     &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
+     &                      ALLRPT, LOC_BEGP, LOC_ENDP
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
+     &                      BINSRGID1, BINSRGID2, BINMONID, BINWEKID,
+     &                      BINDIUID, BINRCL, BINDATA, BINSNMIDX,
+     &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
+     &                      BINPLANT
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
+     &                     CTRYNAM, STATNAM, CNTYNAM
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GRDNM
 
 CC...........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NCHARS, CATEGORY, CATDESC, BYEAR, INVPIDX,
+     &                     EANAM, ATTRUNIT
 
         IMPLICIT NONE
 

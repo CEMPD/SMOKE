@@ -42,10 +42,15 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: ALLRPT, ALLOUTHR, ALLUSET, INDNAM,
+     &                      TITLES, NLINE_RC, INREPORT, RPT_IDX,
+     &                      LIN_TITLE, LIN_SUBDATA, LIN_UNIT, PSFLAG,
+     &                      SPCPOL, LSPCPOL, NREPORT, NSPCPOL, RC_ERROR,
+     &                      MXINDAT, MXTITLE, RPT_, PKTEND, PKTSTART,
+     &                      FIL_ONAME, UNITSET, TITLE, PKTCOUNT, INDNAM
 
 C...........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPOL, EINAM
 
         IMPLICIT NONE
 

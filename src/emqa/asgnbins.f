@@ -41,29 +41,34 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
+     &                      IWEK, IDIU, SPPROF 
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVSCC, INVSCC
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: RPT_, LREGION, AFLAG, ALLRPT, NSPCPOL,
+     &                      SPCPOL, STKX, STKY, LOC_BEGP, LOC_ENDP
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NOUTREC, NOUTBINS, BINBAD, BINCOIDX, 
+     &                      BINSTIDX, BINCYIDX, BINREGN, BINSMKID,
+     &                      BINSCC, BINSRGID1, BINSRGID2, BINSNMIDX,
+     &                      BINRCL, BINMONID, BINWEKID, BINDIUID,
+     &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
+     &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL, OUTSRC
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NCOLS
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: LPING, LMAJOR
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
-
-C.........  This module contains the information about the source category
-        USE MODINFO
-
+        USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, NSTATE, STATCOD, NCOUNTY,
+     &                     CNTYCOD, CTRYPOPL, STATPOPL, CNTYPOPL
+        
         IMPLICIT NONE
 
 C...........   INCLUDES

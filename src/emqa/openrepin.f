@@ -44,22 +44,27 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: AFLAG, TSTEP, NSTEPS, DATAMISS, MXINDAT,
+     &                      TSFLAG, TFLAG, GFLAG, GSFLAG, SLFLAG,
+     &                      PSFLAG, SSFLAG, PRFLAG, PRRPTFLG, NMATX,
+     &                      PRBYR, PRPYR, PYEAR, CHKPFX, CUFLAG,
+     &                      LFLAG, EMLAYS, VFLAG, YFLAG, NFLAG,
+     &                      ASCREC, ASCDATA, STIME, SDATE, ETIME,
+     &                      EDATE, TZONE
 
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: NTPDAT, TPNAME, TPUNIT, TPDESC
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NSVARS
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
-
-C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODCNTRL, ONLY: NVPROJ, PNAMPROJ, NVCMULT, PNAMMULT
 
 C...........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, CATDESC, NIPPA, NCHARS, JSCC,
+     &                     JSTACK, PLTIDX, MXCHRS, NSRC, INVPIDX, BYEAR,
+     &                     EANAM, EAUNIT, SC_BEGP, SC_ENDP
 
 C.........  This module is required for the FileSetAPI
         USE MODFILESET

@@ -46,19 +46,18 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: INDEXA
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: NMATX, LSUBGRID, ALLRPT, NSUBGRID, SUBGNAM,
+     &                      VALIDCEL
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: OUTSRC, OUTBIN, OUTCELL, OUTGFAC,
+     &                      NOUTREC, NSRCDROP
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
-
-C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODGRID, ONLY: NGRID, GDTYP, XCELL, YCELL, NCOLS, YORIG
 
         IMPLICIT NONE
 

@@ -42,7 +42,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: RPT_
 
         IMPLICIT NONE
 

@@ -44,28 +44,38 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: SRGID, CSOURC, IDIU, IWEK, IMON,
+     &                      SPPROF, IFIP, STKHT, STKDM, STKTK,
+     &                      STKVE, CSOURC
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: NMATX, AFLAG, NREPORT, GFLAG, GSFLAG, 
+     &                      CUFLAG, SLFLAG, SSFLAG, TSFLAG, PSFLAG,
+     &                      YFLAG, VFLAG, LFLAG, NFLAG, SDATE, STIME,
+     &                      NSTEPS, TSTEP, LOC_BEGP, LOC_ENDP,
+     &                      ASCREC, PRRPTFLG, PRFLAG, MINC,
+     &                      NSPCPOL, SPCPOL, NMAJOR, NPING, ALLRPT,
+     &                      STKX, STKY, LSPCPOL
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NSVARS, SPCOUT
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: NVPROJ, NVCMULT, PRMAT, ACUMATX, 
+     &                      PNAMPROJ, PNAMMULT
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: LMAJOR, LPING
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NCHARS, CATEGORY, CRL, JSCC, ATTRUNIT,
+     &                     SC_BEGP, SC_ENDP, NIPPA
 
 C.........  This module is required for the FileSetAPI
         USE MODFILESET

@@ -44,18 +44,18 @@ C
 C***********************************************************************
 
 C...........   MODULES for public variables
-
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: QAFMTL3, NMATX, SSFLAG, SLFLAG, NREPORT,
+     &                      RPT_, AFLAG, ALLRPT
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NSPCIN
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID 
 
 C...........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, INVPIDX, NCHARS, JSCC
 
         IMPLICIT NONE
 

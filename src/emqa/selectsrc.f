@@ -45,19 +45,21 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: INDEXA, IFIP 
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: RPT_, LREGION, NREGNGRP, REGNNAM,
+     &                      PINGOUT3, ELEVOUT3, NOELOUT3,
+     &                      ALLRPT, NREGREC, EXCLDRGN
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NOUTREC, NSRCDROP, OUTSRC, OUTBIN
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: LMAJOR, LPING
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC
 
         IMPLICIT NONE
 

@@ -42,23 +42,21 @@ C
 C***********************************************************************
 
 C.........  MODULES for public variables
-C...........   This module is the inventory arrays
-        USE MODSOURC
-
-C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
-
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
-
-C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPRT, ONLY: NALLPCKT, NLINE_RC, REGNNAM, SUBGNAM,
+     &                      NREGNGRP, NREGRAW, REG_IDX, NSUBGRID,
+     &                      NSBGRAW, SBG_IDX, MXGRPREC, EXCLDRGN,
+     &                      VALIDCEL, LENLAB3, PKT_IDX, LIN_DEFGRP,
+     &                      GRP_LABEL, INREPORT, LIN_SUBREGN,
+     &                      LIN_GROUP, GRPNRECS, GRP_INCLSTAT, RPT_IDX,
+     &                      ALLRPT, RPT_, NREGREC, PKTCOUNT, LIN_SUBGRID
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY,
+     &                     CTRYCOD, STATCOD, CNTYCOD
 
         IMPLICIT NONE
 

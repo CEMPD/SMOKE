@@ -42,12 +42,14 @@ C
 C***********************************************************************
 
 C...........   MODULES for public variables
-
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: NLINE_RC, MXGRPREC, GRPNRECS, MXTITLE,
+     &                      MXINDAT, NFILE, FIL_IDX, NREPORT, RPT_IDX,
+     &                      NREGRAW, REG_IDX, NSBGRAW, SBG_IDX,
+     &                      RC_ERROR, RPT_, PKTCOUNT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY
 
         IMPLICIT NONE
 

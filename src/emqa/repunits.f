@@ -45,16 +45,18 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: RPT_, AFLAG, OUTUNIT, UCNVFAC, MXINDAT,
+     &                      ALLRPT, ASCDATA, ALLUSET
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NSVARS, TODOUT, TOSOUT, SPCTOINV,
+     &                      SPCTOTPR, SLUNIT, SSUNIT
 
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: NTPDAT, TPUNIT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPPA, EAUNIT
 
         IMPLICIT NONE
 

@@ -49,22 +49,38 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: SCCDESC
 
 C.........  This module contains Smkreport-specific settings
-        USE MODREPRT
+        USE MODREPRT, ONLY: RPT_, LREGION, VARWIDTH,
+     &                      DATEFMT, DATEWIDTH, HOURFMT, HOURWIDTH,
+     &                      LAYRFMT, LAYRWIDTH, CELLFMT, CELLWIDTH,
+     &                      SRCFMT, SRCWIDTH, REGNFMT, REGNWIDTH,
+     &                      CYWIDTH, STWIDTH, COWIDTH, SCCWIDTH,
+     &                      SRG1FMT, SRG1WIDTH, SRG2FMT, SRG2WIDTH,
+     &                      MONFMT, MONWIDTH, WEKFMT, WEKWIDTH,
+     &                      DIUFMT, DIUWIDTH, CHARFMT, CHARWIDTH,
+     &                      STKPFMT, STKPWIDTH, CHARWIDTH, ELEVWIDTH,
+     &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
+     &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
+     &                      ALLRPT
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN
+        USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
+     &                      BINX, BINY, BINSMKID, BINREGN, 
+     &                      BINCOIDX, BINSTIDX, BINCYIDX,
+     &                      BINMONID, BINWEKID, BINDIUID,
+     &                      BINSRGID1, BINSRGID2, BINSPCID, BINRCL,
+     &                      BINELEV, BINSNMIDX, BINBAD
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: MXCHRS, NCHARS
 
         IMPLICIT NONE
 

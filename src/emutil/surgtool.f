@@ -51,10 +51,13 @@ C*************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGREC, IDXSRGA, SCELLA, SFIPSA, SSRGIDA,
+     &                     SFRACA
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GDTYP, P_ALP, P_BET, P_GAM, YCENT,
+     &                     NCOLS, NROWS, XORIG, YORIG, XCELL, YCELL,
+     &                     GRDNM
 
        IMPLICIT NONE
 
