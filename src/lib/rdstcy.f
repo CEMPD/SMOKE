@@ -238,7 +238,22 @@ C.........  Set up size for county read depending on the input dimension
 C.........  Create state table for filtering
         NDIMST = NSTAT
         IF( FILTER ) THEN
-            ALLOCATE( INSTATE( NSTAT ), STAT=IOS )
+
+C.............  First count the number of states
+            PSTA = -9
+            N    = 0
+            DO I = 1, NDIM
+
+                STA = INCNTYS( I ) / 1000
+                IF( STA .NE. PSTA ) THEN
+                    N = N + 1
+                    PSTA = STA
+                END IF
+
+            END DO
+            NDIMST = N
+
+            ALLOCATE( INSTATE( NDIMST ), STAT=IOS )
             CALL CHECKMEM( IOS, 'INSTATE', PROGNAME )
  
             PSTA = -9
@@ -253,7 +268,6 @@ C.........  Create state table for filtering
                 END IF
 
             END DO
-            NDIMST = N
 
         END IF
 
