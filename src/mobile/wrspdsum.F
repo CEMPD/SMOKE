@@ -100,7 +100,8 @@ C...........   Other local variables
         INTEGER NSRCCOUNTY                ! no. sources in a county
         
         LOGICAL :: SPATFLAG = .FALSE.     ! true: group speeds by ref. county
-        LOGICAL :: LASAFLAG = .FALSE.     ! true: treat local roads as arterial
+        LOGICAL :: RLASAFLAG = .FALSE.    ! true: treat rural local roads as arterial
+        LOGICAL :: ULASAFLAG = .FALSE.    ! true: treat urban local roads as arterial
         
         CHARACTER*300          MESG      !  message buffer 
 
@@ -111,12 +112,32 @@ C   begin body of subroutine WRSPDSUM
                 
         REFCOUNTY = MCREFIDX( REFIDX,1 )
 
-        LASAFLAG = .FALSE.
+        RLASAFLAG = .FALSE.
+        ULASAFLAG = .FALSE.
         SPATFLAG = .FALSE.
 
-C.........  Check if local roads should be treated as arterial
+C.........  Check if any local roads should be treated as arterial
         IF( MVREFSORT( REFIDX,4 ) /= 1 ) THEN
-            LASAFLAG = .TRUE.
+        
+C.............  Settings from MVREF file are as follows:
+C                   1 - Model both rural and urban local roads as local roads
+C                   2 - Model both rural and urban local roads as arterial roads
+C                   3 - Model rural local roads as arterial, urban local roads as local
+C                   4 - Model rural local roads as local, urban local roads as arterial
+
+            SELECT CASE( MVREFSORT( REFIDX,4 ) )
+            
+            CASE( 2 )
+                RLASAFLAG = .TRUE.
+                ULASAFLAG = .TRUE.
+            
+            CASE( 3 )
+                RLASAFLAG = .TRUE.
+                
+            CASE( 4 )
+                ULASAFLAG = .TRUE.
+                
+            END SELECT
         END IF
 
 C.........  Check if spatial averaging is requested
@@ -207,7 +228,8 @@ C.................  Set starting and ending indices for each county
                     
 C.................  Store source information in speed array
                 CALL STORE_SOURCE_INFO( COUNTYSPDS, STSRCIDX, ENDSRCIDX,
-     &                                  STARTPOS, NSRCCOUNTY, LASAFLAG )                                 
+     &                                  STARTPOS, NSRCCOUNTY, RLASAFLAG,
+     &                                  ULASAFLAG )                                 
 
 C.................  Update starting position so source info is stored at correct 
 C                   place in speed array
@@ -267,7 +289,8 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
         CONTAINS
 
             SUBROUTINE STORE_SOURCE_INFO( SPDARRAY, STIDX, ENDIDX, 
-     &                                    STPOS, NUMSRC, LASAFLAG )
+     &                                    STPOS, NUMSRC, RLASAFLAG,
+     &                                    ULASAFLAG )
 
 C.............  Subprogram arguments
             REAL,    INTENT (OUT) :: SPDARRAY( NUMSRC,3 ) ! unsorted array of spds, roads, sources
@@ -275,7 +298,8 @@ C.............  Subprogram arguments
             INTEGER, INTENT (IN)  :: ENDIDX               ! ending index into FIPS array
             INTEGER, INTENT (IN)  :: STPOS                ! starting position in SPDARRAY
             INTEGER, INTENT (IN)  :: NUMSRC               ! no. sources in speed array
-            LOGICAL, INTENT (IN)  :: LASAFLAG             ! true: treat local roads as arterial
+            LOGICAL, INTENT (IN)  :: RLASAFLAG            ! true: treat rural local roads as arterial
+            LOGICAL, INTENT (IN)  :: ULASAFLAG            ! true: treat urban local roads as arterial
             
 C.............  Local subprogram variables
             INTEGER :: K, L2, N                ! counters and indices
@@ -298,7 +322,8 @@ C.................  Store source number
                 SPDARRAY( N,1 ) = K
                                 
 C.................  Convert facility type to road class and store
-                SPDARRAY( N,3 ) = CVTRDTYPE( IRCLAS( K ), LASAFLAG )
+                SPDARRAY( N,3 ) = CVTRDTYPE( IRCLAS( K ), RLASAFLAG,
+      &                                      ULASAFLAG )
 
 C.................  Make sure we need to calculate emission factors for this source
                 IF( VMT( K ) == 0 ) THEN

@@ -95,7 +95,8 @@ C.........   Other local variables
         REAL       EFVAL            ! temporary emission factor value
         REAL       RAMPEF           ! ramp emission factor, used when creating freeway composite
         
-        LOGICAL       :: LASAFLAG = .FALSE. ! true: treat local roads as arterial
+        LOGICAL       :: RLASAFLAG = .FALSE.! true: treat rural local roads as arterial
+        LOGICAL       :: ULASAFLAG = .FALSE.! true: treat urban local roads as arterial
         LOGICAL       :: USEHAP  = .FALSE.  ! true: use user-defined toxic value
         LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
@@ -157,16 +158,30 @@ C.................  Store array position for current source
                 EFPOS = EFPOS + 1
                 EFIDX( EFPOS ) = ISRC
                 
-C.................  Check local-as-arterial setting for this source                
-                IF( SCENLIST( ISRC,2 ) == 2 ) THEN
-                    LASAFLAG = .TRUE.
-                ELSE
-                    LASAFLAG = .FALSE.
-                END IF
+C.................  Check local-as-arterial setting for this source
+C                       1 - Model both rural and urban local roads as local roads
+C                       2 - Model both rural and urban local roads as arterial roads
+C                       3 - Model rural local roads as arterial, urban local roads as local
+C                       4 - Model rural local roads as local, urban local roads as arterial
+                SELECT CASE( SCENLIST( ISRC,2 ) )
+                CASE( 1 )
+                    RLASAFLAG = .FALSE.
+                    ULASAFLAG = .FALSE.
+                CASE( 2 )
+                    RLASAFLAG = .TRUE.
+                    ULASAFLAG = .TRUE.
+                CASE( 3 )
+                    RLASAFLAG = .TRUE.
+                    ULASAFLAG = .FALSE.
+                CASE( 4 )
+                    RLASAFLAG = .FALSE.
+                    ULASAFLAG = .TRUE.
+                END SELECT
 
 C.................  Set road and vehicle type
                 IF( FTYPE /= M6NONE ) THEN
-                    FTYPE = CVTRDTYPE( IRCLAS( ISRC ), LASAFLAG )
+                    FTYPE = CVTRDTYPE( IRCLAS( ISRC ), RLASAFLAG,
+     &                                 ULASAFLAG )
                 END IF
                 
                 VTYPE = CVTVEHTYPE( IVTYPE( ISRC ) )
