@@ -111,7 +111,6 @@ C.........  Local variables
         INTEGER   NPKT         ! number of packets in file
         INTEGER   NSEG         ! number of segments in auto-detect format
         INTEGER   SCCCOL       ! column for the SCC data
-        INTEGER   STA          ! tmp state ID
 
         REAL      RBUF         ! real values tmp buffer
 
