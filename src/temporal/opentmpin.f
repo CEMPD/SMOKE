@@ -53,7 +53,6 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
-        INCLUDE 'FLTERR.EXT'    ! error filter statement function
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)       CRLF
