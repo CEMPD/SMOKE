@@ -20,7 +20,7 @@ emisfac: $(EMIS) $(EMISI)
 #
 #
 #
-GRMS=grdmmat.F lnk2grd.F
+GRMS=grdmmat.F lnk2grd.F rdmvadj.F adjmv.F
 #
 GRMI=MBDIMS3.EXT GRDIMS3.EXT
 #
