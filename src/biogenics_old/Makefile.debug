@@ -5,7 +5,7 @@ all: debug
 debug: grdbio.debug rawbio.debug tmpbio.debug 
 #
 #
-LDBG=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+LDBG=$(LDIRS) -lemlib.debug -lioapi.debug -lnetcdf.debug
 #
 #
 INCS=BIODIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT

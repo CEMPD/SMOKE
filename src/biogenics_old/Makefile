@@ -4,7 +4,7 @@ all: opts
 #
 opts: grdbio rawbio tmpbio
 #
-LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
+LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
 #
 INCS=BIODIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT
