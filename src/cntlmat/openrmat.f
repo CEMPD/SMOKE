@@ -1,3 +1,4 @@
+
         SUBROUTINE OPENRMAT( ENAME, RPOL, SFLAG, LFLAG, 
      &                       BYEARIN, PYEAR, NSREAC, NMSPC, SPECIES, 
      &                       SDEV, SNAME, LNAME, SVNAMES, LVNAMES )
@@ -21,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -84,6 +85,7 @@ C.........  SUBROUTINE ARGUMENTS
 C.........  Other local variables
         INTEGER          I, J           !  counters and indices
 
+        CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
         CHARACTER*300          MESG     ! message buffer
 
         CHARACTER(LEN=IOVLEN3) CPOL     ! pollutant name buffer
@@ -219,8 +221,9 @@ C.........  Set up variables specifically for mass-based file, and open it
 
             MESG = 'I/O API MASS-BASED REACTIVITY MATRIX for ' // RPOL
 
-            SNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_S', 
-     &                           PROGNAME )
+            NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_S', 
+     &                            PROGNAME )
+            SNAME = NAMBUF
 
         ENDIF
 
@@ -240,8 +243,9 @@ C.........  Set up variables specifically for mole-based file, and open it
 
             MESG = 'I/O API MOLE-BASED REACTIVITY MATRIX for ' // RPOL
 
-            LNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_L', 
-     &                           PROGNAME )
+            NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_L', 
+     &                            PROGNAME )
+            LNAME = NAMBUF
 
         ENDIF
 

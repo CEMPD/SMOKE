@@ -1,7 +1,8 @@
+
         SUBROUTINE OPENCMAT( ENAME, MATTYP, MNAME )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 88
 C
 C  DESCRIPTION:
 C      This subroutine opens the file in which the control matrix
@@ -13,14 +14,13 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     
-C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -56,7 +56,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                GETIFDSC   
-        CHARACTER*16           PROMPTMFILE
+        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
         EXTERNAL     CRLF, GETCFDSC, GETIFDSC, PROMPTMFILE, VERCHAR
@@ -72,6 +72,7 @@ C.........  SUBROUTINE ARGUMENTS
 C.........  Other local variables
         INTEGER          J              !  counters and indices
 
+        CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
         CHARACTER*300          MESG     ! message buffer
 
         CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
@@ -138,11 +139,12 @@ C           attempt is made for these extra variables.
         CALL M3MSG2( MESG )
 
 C.........  Open control matrix.
-
+C.........  Using NAMBUF is needed for HP to ensure string length consistencies
         MESG = 'I/O API ' // MATTYP // ' CONTROL MATRIX'
 
-        MNAME = PROMPTMFILE( MESG, FSUNKN3, CRL // 'CMAT', 
-     &                       PROGNAME )
+        NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'CMAT', 
+     &                        PROGNAME )
+        MNAME = NAMBUF
 
         RETURN
 
