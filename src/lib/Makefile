@@ -19,8 +19,8 @@ FILES_A = \
 
 FILES_B = \
   alocstbl.o   chksrcno.o   getcfdsc.o   rdstcy.o     rdgmat.o     rdinvchr.o \
-  alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o   setvptr.o  \
-  applreac.o   dscm3grd.o   getfline.o   mktmat.o     rdeproc.o    rdinvpol.o \
+  alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
+  applreac.o   dscm3grd.o   getfline.o   rdeproc.o    rdinvpol.o \
   asgnpsi.o    dscsprof.o   getformt.o   multunit.o   rdlines.o    verchar.o  \
                efsetup.o    getidasz.o   normtpro.o   rdpelv.o     tmprinfo.o \
                             getifdsc.o   padzero.o    rdrmat.o     unitfac.o
@@ -109,8 +109,6 @@ grd2cnty.o: $(MODSTCY) $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ $<
 mbsccadj.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<     
-mktmat.o  : $(MODTPRO)
-	$(FC) $(FFLAGS) -c -o $@ $<     
 normtpro.o: $(MODTPRO)
 	$(FC) $(FFLAGS) -c -o $@ $<     
 procspro.o: $(MODSPRO)
@@ -141,7 +139,7 @@ rdtref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<     
 tmprinfo.o  : $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ $<
-wrchrscc.o: $(MODLISTS)
+wrchrscc.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 xreftbl.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
