@@ -19,8 +19,8 @@ debug: temporal.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-TMP= asgntpro.o genhemis.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
-     temporal.o tmnamunt.o tmpintrp.o
+TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
+     temporal.o tmnamunt.o tmpintrp.o updtmat.o 
 
 #
 temporal: $(TMP) $(ALLI) $(LIBPATH)
@@ -36,19 +36,25 @@ include $(MD_SRC)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-genhemis.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO)
+genhemis.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO) \
+            $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
+mktmat.o: $(MODTPRO) $(MODDAYHR)
+	$(FC) $(FFLAGS) -c -o $@ $<     
 opentmp.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 opentmpin.o: $(MODMET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdefacs.o: $(MODEMFAC) $(MODINFO) $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ $<
-temporal.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO)
+temporal.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODEMFAC) $(MODMET) $(MODINFO) \
+            $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 tmpintrp.o: $(MODSOURC) $(MODMET) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+updtmat.o: $(MODSOURC) $(MODXREF) $(MODTPRO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
