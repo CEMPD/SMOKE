@@ -1,6 +1,6 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 #
-all: faketemp getrecs mappoint mkmplist smk2emis smk2pts srggrid
+all: faketemp mappoint mkmplist srggrid smk2emis smk2pts 
 #
 # compile-link options for subroutines
 #
@@ -17,17 +17,6 @@ FTMPI=PARMS3.EXT FDESC3.EXT IODECL3.EXT GRDIMS3.EXT
 faketemp: $(FTMP) $(FTMPI)
 	echo FAKETEMP:
 	f77 $(FFLAGS)   -o $(SCENDIR)/faketemp $(FTMP) $(LIBS)
-#
-#
-#
-OBJS = getrecs.F
-
-INCS = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT
- 
-getrecs: $(OBJS) $(INCS)
-	echo GETRECS:
-	f77 $(FFLAGS) -o $(SCENDIR)/getrecs $(OBJS) $(LIBS)
-#
 #
 #
 MAP= mappoint.F
@@ -52,12 +41,15 @@ mkmplist: $(MKMP) $(MKMI)
 #
 EMIS = smk2emis.F trans.F chkgrd.F chktmp.F  chkvar.F
 
-EINC = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT \
-       uamcntl.inc uamregn.inc param.inc mrguam.inc
+SHAREDINC = $(SMKROOT)/inc/Shared
 
+EINC = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT \
+       $(SHAREDINC)/uamcntl.inc $(SHAREDINC)/uamregn.inc \
+	   $(SHAREDINC)/param.inc $(SHAREDINC)/mrguam.inc
+	   
 smk2emis: $(EMIS) $(EINC)
 	echo SMK2EMIS:
-	f77 $(FFLAGS) -o $(SCENDIR)/smk2emis $(EMIS) $(LIBS2)
+	f77 $(FFLAGS) -I$(SHAREDINC) -o $(SCENDIR)/smk2emis $(EMIS) $(LIBS2)
 #
 #
 #
@@ -65,7 +57,7 @@ PTS = smk2pts.F chktmp.F chkvar.F rdepsd.F
 #
 smk2pts: $(OBJS) $(EINC)
 	echo SMK2PTS:
-	f77 $(FFLAGS) -o $(SCENDIR)/smk2pts $(PTS) $(LIBS2)
+	f77 $(FFLAGS) -I$(SHAREDINC) -o $(SCENDIR)/smk2pts $(PTS) $(LIBS2)
 #
 #
 #
