@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -47,30 +47,28 @@ C****************************************************************************
         IMPLICIT NONE
 
 C.........  Subroutine arguments
-        INTEGER       LDEV      ! Log file unit number
-        CHARACTER*50  NAMEVERS  ! ASCII field e/ version number appended to end
-        CHARACTER*16  INPROGNM  ! Calling program name
+        INTEGER     , INTENT (OUT) :: LDEV      ! Log file unit number
+        CHARACTER*50, INTENT (IN) :: NAMEVERS  ! ASCII field e/ version number appended to end
+        CHARACTER*16, INTENT (IN) :: INPROGNM  ! Calling program name
 
 C.........  Parameters
         INTEGER       STDOUT
         INTEGER       YEAR
         PARAMETER   ( STDOUT = 6,
-     &                  YEAR = 1999 )
+     &                  YEAR = 2001 )
 
 C.........  External functions
         LOGICAL       GETYN
-        INTEGER       TRIMLEN
-
-        EXTERNAL      GETYN, TRIMLEN
+        EXTERNAL      GETYN
 
 C.........  Local variables
         REAL          VERSION
 
         INTEGER       IOUT( 2 )  ! output unit numbers for stdout and logfile
-        INTEGER       I, J
+        INTEGER       I, J, L
         INTEGER       NLOOP      ! Number of times to loop through output
          
-        CHARACTER*16  VERCHAR
+        CHARACTER*50  VERCHAR
         CHARACTER*300 LINE0, LINE1, LINE2, LINE3, LINE4, LINE5
 
         CHARACTER*16 :: PROGNAME = 'INITEM'  ! program name
@@ -89,13 +87,13 @@ C   begin body of program INITEM
         LINE5 = '    http://www.envpro.mcnc.org/products/smoke'
 
 C.........  Set up program version information
-        VERCHAR = ADJUSTL( NAMEVERS( 1:TRIMLEN( NAMEVERS ) ) )
+        VERCHAR = ADJUSTL( NAMEVERS )
 
         IF( VERCHAR( 1:1 ) .EQ. '%' ) THEN
             VERCHAR = 'Dev'
         ELSE
             J = INDEX( VERCHAR, ' ' )
-            VERCHAR = ADJUSTL( VERCHAR( J+1:TRIMLEN( VERCHAR ) ) )
+            VERCHAR = ADJUSTL( VERCHAR( J+1:LEN_TRIM( VERCHAR ) ) )
             J = INDEX( VERCHAR, '$' )
             IF( J .GT. 1 ) VERCHAR = VERCHAR( 1:J-1 )
         ENDIF
@@ -115,21 +113,22 @@ C.........  Set up writing loop
 
 C.............  Write copyright information
 
-            WRITE( LDEV,92000 ) LINE0( 1:TRIMLEN( LINE0 ) )
-            WRITE( LDEV,92000 ) LINE1( 1:TRIMLEN( LINE1 ) )
-            WRITE( LDEV,92000 ) LINE2( 1:TRIMLEN( LINE2 ) )
+            WRITE( LDEV,92000 ) LINE0( 1:LEN_TRIM( LINE0 ) )
+            WRITE( LDEV,92000 ) LINE1( 1:LEN_TRIM( LINE1 ) )
+            WRITE( LDEV,92000 ) LINE2( 1:LEN_TRIM( LINE2 ) )
             WRITE( LDEV,92000 ) 
-            WRITE( LDEV,92000 ) LINE3( 1:TRIMLEN( LINE3 ) )
+            WRITE( LDEV,92000 ) LINE3( 1:LEN_TRIM( LINE3 ) )
             WRITE( LDEV,92000 ) 
 
 C.............  Write program version information
 
-            WRITE( LDEV,92010 ) INPROGNM( 1:TRIMLEN( INPROGNM ) ), 
-     &                          VERCHAR
+            L = LEN_TRIM( VERCHAR )
+            WRITE( LDEV,92010 ) INPROGNM( 1:LEN_TRIM( INPROGNM ) ), 
+     &                          VERCHAR( 1:L )
            
 C.............  Write web site information
-            WRITE( LDEV,92000 ) LINE4( 1:TRIMLEN( LINE0 ) )
-            WRITE( LDEV,92000 ) LINE5( 1:TRIMLEN( LINE1 ) )
+            WRITE( LDEV,92000 ) LINE4( 1:LEN_TRIM( LINE0 ) )
+            WRITE( LDEV,92000 ) LINE5( 1:LEN_TRIM( LINE1 ) )
            
 C.............  Write program-specific information
             CALL PROGDESC( LDEV, INPROGNM )
