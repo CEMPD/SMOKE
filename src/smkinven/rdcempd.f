@@ -237,8 +237,7 @@ C.............  Read emissions from inventory file
 
                 CBUF = EANAM ( CEMPIDX( V ) )
 
-                CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                         1, 1, CBUF, CBUF, 1, EMIS( 1,V )   )
+                CALL RDMAPPOL( NSRC, 1, 1, CBUF, EMIS( 1,V ) )
 
             END DO
 

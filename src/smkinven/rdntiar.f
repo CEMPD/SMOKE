@@ -496,8 +496,8 @@ C.................  If field is blank and optional, then set to missing
 C.................  If field is blank and not optional, then error
                 ELSE
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
-     &                     ' is blank at line', IREC
+                    WRITE( MESG,94010 ) 'ERROR: required ' // 
+     &                     TRIM( DESC )//' is blank at line', IREC
                     CALL M3MESG( MESG )
                     REALVAL = BADVAL3
                     RETURN
@@ -511,7 +511,7 @@ C.............  If error, then write message and continue
             IF ( IOS .GT. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: ' // DESC //
-     &                 ' has non-readable value "' // STRING //
+     &                 ' has non-readable value "' // TRIM( STRING ) //
      &                 '"' // CRLF() // BLANK 10 // 'at line', IREC
                 CALL M3MESG( MESG )
                 REALVAL = BADVAL3
@@ -526,8 +526,9 @@ C.................  If field is missing and optional, then set to zero
 C.................  If field is missing and not optional, then error
                 ELSE
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
-     &                     ' has -9 missing value at line', IREC
+                    WRITE( MESG,94010 ) 'ERROR: required ' // 
+     &                     TRIM( DESC ) // ' has -9 missing value at '//
+     &                     'line', IREC
                     CALL M3MESG( MESG )
                     REALVAL = BADVAL3
 

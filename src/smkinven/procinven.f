@@ -403,29 +403,43 @@ C.............  Reset emissions values to zero, if it's negative
                 END IF
             END IF
 
+C.............  Convert 0-100 based values to 0-1 based values.
 C.............  Check control efficiency, rule effectiveness, and rule 
-C               penetration and if missing, set to default value
-            IF ( NCE .GT. 0 ) THEN
-                IF( POLVLA( J, NCE ) .LT. 0. ) POLVLA( J, NCE ) = 0.
-                IF( POLVLA( J, NCE ) .EQ. 100. ) THEN
-                    POLVLA( J, NCE ) = 0
+C               penetration and if missing, set to default value.
+C.............  CE default = 0., RP default = 1., RE default = 1.
+C.............  Control efficiency
+            IF ( NCE .GT. 0 ) THEN                
+                IF( POLVLA( J, NCE ) .LT. 0. ) THEN
+                    POLVLA( J, NCE ) = 0.
+                ELSE IF( POLVLA( J, NCE ) .EQ. 100. ) THEN
+                    POLVLA( J, NCE ) = 0.
                     CE_100_FLAG = .TRUE.
+                ELSE
+                    POLVLA( J, NCE ) = POLVLA( J, NCE ) / 100.
                 END IF
             END IF
 
+C.............  Rule effectiveness
             IF ( NRE .GT. 0 ) THEN
-                IF( POLVLA( J, NRE ) .LT. 0. ) POLVLA( J, NRE ) = 100
-                IF( POLVLA( J, NRE ) .EQ. 0. ) THEN
-                    POLVLA( J, NRE ) = 100
+                IF( POLVLA( J, NRE ) .LT. 0. ) THEN
+                    POLVLA( J, NRE ) = 1.
+                ELSE IF( POLVLA( J, NRE ) .EQ. 0. ) THEN
+                    POLVLA( J, NRE ) = 1.
                     RE_ZERO_FLAG = .TRUE.
+                ELSE
+                    POLVLA( J, NRE ) = POLVLA( J, NRE ) / 100.
                 END IF
             END IF
 
+C.............  Rule penetration
             IF ( NRP .GT. 0 ) THEN
-                IF( POLVLA( J, NRP ) .LT. 0. ) POLVLA( J, NRP ) = 100
-                IF( POLVLA( J, NRP ) .EQ. 0. ) THEN
-                    POLVLA( J, NRP ) = 100
+                IF( POLVLA( J, NRP ) .LT. 0. ) THEN
+                    POLVLA( J, NRP ) = 1.
+                ELSE IF( POLVLA( J, NRP ) .EQ. 0. ) THEN
+                    POLVLA( J, NRP ) = 1.
                     RP_ZERO_FLAG = .TRUE.
+                ELSE
+                    POLVLA( J, NRP ) = POLVLA( J, NRP ) / 100.
                 END IF
             END IF
 

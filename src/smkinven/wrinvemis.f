@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRINVEMIS( IDEV, PATH, VAR_FORMULA )
+        SUBROUTINE WRINVEMIS( IDEV, DATPATH, VAR_FORMULA )
 
 C***********************************************************************
 C  subroutine body starts at line 111
@@ -73,7 +73,7 @@ C.........  EXTERNAL FUNCTIONS
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: IDEV           ! unit number for map file
-        CHARACTER(LEN=PHYLEN3), INTENT (IN) :: PATH ! path for pol/act files
+        CHARACTER(LEN=PHYLEN3), INTENT (IN) :: DATPATH ! path for pol/act files
         CHARACTER(*), INTENT (IN) :: VAR_FORMULA    ! formula string
 
 C...........   LOCAL PARAMETERS
@@ -99,7 +99,7 @@ C...........   Other local allocatable arrays
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SAVEANAM( : )  ! tmp variables
 
 C...........   Other local variables
-        INTEGER         I, S, L, L2, V1, V2, VA, VB     ! counters and indices
+        INTEGER         I, S, L, L2, N, V1, V2, VA, VB     ! counters and indices
 
         INTEGER         IOS       ! i/o status
         INTEGER         LEQU      ! position of '=' in formula
@@ -123,6 +123,8 @@ C...........   Other local variables
         CHARACTER(LEN=IOVLEN3 ) VIN_A    ! first variable in equation
         CHARACTER(LEN=IOVLEN3 ) VIN_B    ! second variable in equation
         CHARACTER(LEN=IOVLEN3 ) VNAME    ! computed variable name
+        CHARACTER(LEN=PHYLEN3) :: BPATH  ! base path
+        CHARACTER(LEN=PHYLEN3) :: RPATH  ! relative path
 
         CHARACTER*16 :: PROGNAME = 'WRINVEMIS' !  program name
 
@@ -300,6 +302,19 @@ C           all pollutant files
         VUNITSET( 1 ) = 'n/a'
         VDESCSET( 1 ) = 'Source ID number'
 
+C.........  Separate the pol/act file path into two parts to be
+C           able to build relative file names for the map file.
+        L = LEN_TRIM( DATPATH )
+        DO N = L, 1, -1
+
+            IF( DATPATH( N:N ) .EQ. '/' .OR.
+     &          DATPATH( N:N ) .EQ. '\'      ) THEN
+                BPATH = DATPATH( 1:N )
+                RPATH = DATPATH( N+1:L )
+                EXIT
+            END IF
+
+        END DO
 C.........  Loop through pollutants, store, and write to inventory file
         IF( NIPOL .GT. 0 ) 
      &      CALL LOOP_FOR_OUTPUT( NIPOL, NPPOL, IDEV, EIIDX, 
@@ -414,6 +429,9 @@ C.............  Local allocatable arrays...
 C.............  Array for storing temporary variable names for computed var
             CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: VNAMFORM( : )
 
+C.............  Array for output of pol/act and assoc data
+            REAL , ALLOCATABLE :: OUTVAL( :,: )
+
 C.............  Local variables
             INTEGER    I, J, K, L, M, N, S
 
@@ -422,7 +440,7 @@ C.............  Local variables
             LOGICAL     :: FFLAGA = .FALSE.  ! true: first part of formula processed
             LOGICAL     :: FFLAGB = .FALSE.  ! true: 2nd part of formula processed
 
-            CHARACTER(LEN=PHYLEN3) :: RPHYS = './unset'  ! physical file name
+            CHARACTER(LEN=PHYLEN3) :: RFNAME ! relative physical file name
 
 C----------------------------------------------------------------------
 
@@ -549,14 +567,25 @@ C.................  Reset units for the primary (annual) data value
                 K = INDEX1( EONAMES( I,1 ), MXIDAT, INVDNAM )
                 VUNITSET( 2 ) = INVDUNT( K )
 
+C.................  Allocate memory for output arrays
+                ALLOCATE( OUTVAL( NREC, NPVAR ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'OUTVAL', PROGNAME )
+
+                DO J = 1, NPVAR
+                    OUTVAL( 1:NREC,J ) = SRCPOL( 1:NREC, J )
+                END DO
+
 C.................  Build name and output pollutant or activity file
-                CALL SET_OPEN_WRITE_CLOSE( NREC, NPVAR, NAMES( I ), 
-     &                                 VNAMESET(2), VTYPESET(2), RPHYS )
+                RFNAME = TRIM( RPATH )// '/'// TRIM( NAMES(I) )// '.ncf'
+                CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NREC, NPVAR, 
+     &                         NAMES(I), SRCID(1:NREC), OUTVAL, EFLAG )
+
+                DEALLOCATE( OUTVAL )
 
 C...............  Update map file counter and map file names
                 MCNT = MCNT + 1
                 MAPNAM( MCNT ) = NAMES( I )
-                MAPFIL( MCNT ) = RPHYS
+                MAPFIL( MCNT ) = TRIM( RFNAME )
 
             END DO  ! end loop I through output variables
 
@@ -617,15 +646,23 @@ C                 have the SRCID in position 1 and the same types and units.
                 VNAMESET( 2:NPVAR+1 ) = VNAMFORM( 1:NPVAR )
 
 C...............  Build name and output pollutant file
-                CALL SET_OPEN_WRITE_CLOSE( NREC,NPVAR,VNAME,VNAMESET(2),
-     &                                     VTYPESET(2),RPHYS      )
+                RFNAME = TRIM( RPATH )// '/'// TRIM( VNAME )// '.ncf'
+                CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NSRC, NPVAR, 
+     &                         VNAME, SRCID, SRCPOL, EFLAG )
 
 C...............  Update map file counter and map relative file names
                 MCNT = MCNT + 1
-                MAPNAM( MCNT ) = VNAMESET( 2 )
-                MAPFIL( MCNT ) = RPHYS
+                MAPNAM( MCNT ) = VNAME
+                MAPFIL( MCNT ) = TRIM( RFNAME )
 
             END IF  ! if formula is ready to be written
+
+            IF( EFLAG ) THEN
+                MESG = 'Problem writing data.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            RETURN
 
 C----------------------  FORMAT  STATEMENTS   --------------------------
 
@@ -635,129 +672,4 @@ C...........   Internal buffering formats............ 94xxx
 
             END SUBROUTINE LOOP_FOR_OUTPUT
   
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
-C.............  This internal subprogram is for opening and outputting
-C               a single variable file
-            SUBROUTINE SET_OPEN_WRITE_CLOSE( NREC, NPVAR, VBUF, VNAMES, 
-     &                                       VTYPES, RPHYS )
-
-C.............  Subroutine arguments 
-            INTEGER     , INTENT (IN) :: NREC            ! size of output arrays
-            INTEGER     , INTENT (IN) :: NPVAR           ! number variables per pol/act
-            CHARACTER(*), INTENT (IN) :: VBUF            ! names of pols/act
-            CHARACTER(*), INTENT (IN) :: VNAMES( NPVAR ) ! names of output vars
-            INTEGER     , INTENT (IN) :: VTYPES( NPVAR ) ! types of output vars
-            CHARACTER(LEN=PHYLEN3), INTENT(OUT) :: RPHYS ! relative physical file name
-
-C.............  Arrays for sparse output
-            INTEGER, ALLOCATABLE :: SINDEX ( : )
-            INTEGER, ALLOCATABLE :: INTBUF ( : )
-            REAL   , ALLOCATABLE :: REALBUF( : )
-
-C.............  Local variables
-            INTEGER      J, L, N
-
-            LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
-            LOGICAL       :: MSGFLAG  = .FALSE.  ! true: need to output error message
-
-            CHARACTER(LEN=PHYLEN3) :: RPATH = '.' ! relative path for pol/act files
-            CHARACTER(LEN=PHYLEN3) :: FPHYS = ' ' ! full physical file name
-
-            CHARACTER*16 :: FNAME = 'IOAPI_DAT'
-
-C----------------------------------------------------------------------
-
-C...........  If first time the routine has been called...
-            IF( FIRSTIME ) THEN
-
-                FIRSTIME = .FALSE.
-
-C...............  Set relative path
-                L = LEN_TRIM( PATH )
-                DO N = L, 1, -1
-                    IF( PATH( N:N ) .EQ. '/' .OR.
-     &                  PATH( N:N ) .EQ. '\'      ) THEN
-                        RPATH = PATH( N+1:L )
-                        EXIT
-                    END IF
-                END DO
-              
-            END IF
-
-C.................  Allocate memory for output arrays
-            ALLOCATE( SINDEX( NREC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SINDEX', PROGNAME )
-            ALLOCATE( REALBUF( NREC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'REALBUF', PROGNAME )
-            ALLOCATE( INTBUF( NREC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INTBUF', PROGNAME )
-
-            FPHYS = TRIM( PATH )// '/'// TRIM( VBUF ) // '.ncf'
-            RPHYS = TRIM( RPATH ) // '/' // TRIM( VBUF ) // '.ncf'
-
-C.................  Set output logical file name
-                IF( .NOT. SETENVVAR( FNAME, FPHYS ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not set logical file name ' //
-     &                     'for file:'// CRLF()// BLANK10// TRIM(FPHYS)
-                    CALL M3MSG2( MESG )
-
-C................  Open I/O API file
-                ELSE IF( .NOT. OPENSET( FNAME, FSUNKN3, PROGNAME )) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not open I/O API inventory ' //
-     &                     'file for file name:' // CRLF() // BLANK10 // 
-     &                     TRIM( FPHYS )
-                    CALL M3MSG2( MESG )
-
-                END IF
-
-C.................  Store the output index
-                SINDEX( 1:NREC ) = SRCID( 1:NREC )  ! array
-
-C.................  Write source ID index
-                IF( .NOT. WRITESET( FNAME, 'SRCID', ALLFILES, 
-     &                              0, 0, SINDEX             )) THEN
-                    MESG = 'Could not write "SRCID" to file:'//
-     &                     CRLF()//BLANK10// TRIM( FPHYS )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C.................  Write all variables for each pollutant or activity
-                DO J = 1, NPVAR
-
-                    MSGFLAG = .FALSE.
-                    IF( VTYPES( J ) .EQ. M3REAL ) THEN
-                        REALBUF( 1:NREC ) = SRCPOL( 1:NREC, J )
-                        IF( .NOT. WRITESET( FNAME, VNAMES( J ), 
-     &                      ALLFILES, 0, 0, REALBUF ) ) MSGFLAG = .TRUE.
-
-                    ELSE
-                        INTBUF( 1:NREC ) = SRCPOL( 1:NREC, J )
-                        IF( .NOT. WRITESET( FNAME, VNAMES( J ), 
-     &                      ALLFILES, 0, 0, INTBUF ) ) MSGFLAG = .TRUE.
-                    END IF
-
-                    IF( MSGFLAG ) THEN
-                        MESG = 'Could not write "'// TRIM( VNAMES(J) )
-     &                         // '" to file:'// CRLF()// BLANK10// 
-     &                         TRIM( FPHYS )
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-
-                END DO
-
-C...............  Close output file for this variable
-                IF( .NOT. CLOSESET( FNAME ) ) THEN
-                    MESG = 'Could not close file:'//CRLF()//BLANK10//
-     &                     TRIM( FPHYS )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C...............  Deallocate memory for temporary write arrays
-                DEALLOCATE( SINDEX, REALBUF, INTBUF )
-
-            END SUBROUTINE SET_OPEN_WRITE_CLOSE
-
         END SUBROUTINE WRINVEMIS

@@ -33,9 +33,9 @@ RAW=adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o  \
     gethdr.o getpdinfo.o initinfo.o \
     openinvin.o openinvout.o openpdout.o procinven.o rdcempd.o rdemsar.o \
     rdemsmb.o rdemspd.o rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o \
-    rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o rdntimb.o smkinven.o \
-    srcmem.o wrinvchr.o wrinvemis.o wrptref.o wrpdemis.o wrepinven.o \
-    setnonhap.o
+    rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o rdntimb.o \
+    smkinven.o srcmem.o wrinvchr.o wrinvemis.o wrptref.o wrpdemis.o \
+    wrepinven.o wrinvpol.o setnonhap.o 
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -63,7 +63,7 @@ gethdr.o: $(MODINFO) $(MODLISTS) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ gethdr.f
 getpdinfo.o: $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ getpdinfo.f
-grwinven.o: $(MODSOURC) $(MODINFO)
+grwinven.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ grwinven.f
 initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ initinfo.f
@@ -116,7 +116,7 @@ wrinvchr.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
 wrinvemis.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrinvemis.f
 wrinvpol.o: $(MODFILESET)
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ wrinvpol.f
+	$(FC) $(FFLAGS) -c -o $@ wrinvpol.f
 wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
 	$(FC) $(FFLAGS) -c -o $@ wrpdemis.f
 wrptref.o: $(MODINFO)

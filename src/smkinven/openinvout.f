@@ -135,7 +135,7 @@ C.........  Get output inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Set strings needed for building file names (note-
-C           duplicated in WRINVEMIS)
+C           duplicated in WRINVEMIS and OPENGRWOUT)
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
             NAME1 = 'area'
@@ -148,7 +148,7 @@ C           duplicated in WRINVEMIS)
             NAME2 = 'psrc'
         END SELECT
 
-C.........  Prompt for map-formatted inventory file
+C.........  Open map-formatted inventory file without prompting
         IDEV = GETEFILE( ENAME, .FALSE., .TRUE., PROGNAME )
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
 
@@ -165,8 +165,6 @@ C.........  Evaluate physical file name of inventory map
         MESG = 'Inventory map file name'
         CALL ENVSTR( ENAME, MESG, BLANK16, APHYS, IOS )
 
-C.........  Determine path of inventory map
-        MESG = 'Inventory map file'
         IF( IOS .NE. 0 ) THEN
             MESG = 'Unable to evaluate environment variable "' //
      &             TRIM( ENAME ) // '"'
@@ -411,7 +409,7 @@ C.........  Set output logical file name
             CALL M3MSG2( MESG )
 
 C........  Open I/O API file
-        ELSE IF( .NOT. OPENSET( ENAME, FSUNKN3, PROGNAME ) ) THEN
+        ELSE IF( .NOT. OPENSET( ENAME, FSNEW3, PROGNAME ) ) THEN
             EFLAG = .TRUE.
             MESG = 'ERROR: Could not open I/O API inventory file ' //
      &             'for file name:' // CRLF() // BLANK10 // 
