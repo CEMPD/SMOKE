@@ -18,13 +18,13 @@ C
 C  REVISION  HISTORY:
 C      Created 4/99 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -80,6 +80,9 @@ C...........   LOCAL PARAMETERS
         CHARACTER*6, PARAMETER :: CATLIST( NCAT ) = ! src categories
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
+        CHARACTER*2, PARAMETER :: GNAMLIST( NCAT ) = ! gridded inven input names
+     &                         ( / 'AG', 'MG', 'PG' / )
+
         CHARACTER*5, PARAMETER :: ANAMLIST( NCAT ) = ! ave data input names
      &                         ( / 'ARINV' , 'MBINV' , 'PTINV'  / )
 
@@ -97,6 +100,7 @@ C...........   Other local variables
 
         LOGICAL       CFLAG  ! true: use SIPOLS file
         LOGICAL       DFLAG  ! true: import day-specific file
+        LOGICAL       GFLAG  ! true: import gridded I/O API inventory
         LOGICAL       HFLAG  ! true: import hour-specific file
         LOGICAL       IFLAG  ! true: import annual/average inventory
         LOGICAL       SFLAG  ! true: import speeds file
@@ -140,6 +144,9 @@ C.........  Get value of these controls from the environment
         MESG = 'Import hour-specific data'
         HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
 
+        MESG = 'Import gridded I/O API inventory data'
+        GFLAG = ENVYN ( 'IMPORT_GRDIOAPI_YN', MESG, .FALSE., IOS )
+
         MESG = 'Import VMT mix data'
         XFLAG = ENVYN ( 'IMPORT_VMTMIX_YN', MESG, .FALSE., IOS )
 
@@ -151,12 +158,32 @@ C           sources
         IF( CATEGORY .NE. 'MOBILE' ) THEN
             XFLAG = .FALSE.
             SFLAG = .FALSE.
-        END IF 
+
+C.........  Make sure gridded point source file is not attempted
+        ELSE IF ( ( CATEGORY .EQ. 'POINT' .OR. 
+     &              CATEGORY .EQ. 'MOBILE'    ) .AND. 
+     &            GFLAG                               ) THEN
+            MESG = 'Cannot import gridded mobile or point source data.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
+C.........  When gridded data are imported, override other settings
+        IF( GFLAG ) THEN
+            CFLAG = .FALSE.
+            VFLAG = .FALSE.
+            IFLAG = .FALSE.
+            DFLAG = .FALSE.
+            HFLAG = .FALSE.
+            XFLAG = .FALSE.
+            SFLAG = .FALSE.
+        END IF
 
 C.........  Abort if no settings set to read data
         IF( .NOT. IFLAG .AND. 
      &      .NOT. DFLAG .AND.
-     &      .NOT. HFLAG       ) THEN
+     &      .NOT. HFLAG .AND.
+     &      .NOT. GFLAG      ) THEN
 
             MESG = 'ERROR: Environment settings indicate no files ' //
      &             'are to be read'
@@ -174,23 +201,33 @@ C.........  Find name name of raw inventory file
      &             CATEGORY( 1:LCAT ) // ' in program ' // PROGNAME
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         ELSE
  
             INNAME = ANAMLIST( J )
+            ENAME  = GNAMLIST( J )
             IDNAME = DNAMLIST( J )
             IHNAME = HNAMLIST( J )
 
         END IF
 
-C.........  Get file name and open average input inventory file when inventory
-C           is to be imported
-        IF( IFLAG ) THEN
+C.........
+        IF( GFLAG ) THEN
+
+            MESG = 'Enter logical name of the GRIDDED ' // 
+     &             CATEGORY( 1:LCAT ) // ' INVENTORY ' // 'file'
+
+            ENAME = PROMPTMFILE( MESG, FSREAD3, ENAME, PROGNAME )
+
+C.........  Get ASCII file name and open average input inventory file when 
+C           inventory is to be imported
+        ELSE IF( IFLAG ) THEN
             MESG = 'Enter logical name of the RAW ' // 
      &             CATEGORY( 1:LCAT ) // ' AVERAGE INVENTORY ' // 'file'
 
             IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INNAME, PROGNAME )
 
-C.........  If inventory already exists, open files for reading later
+C.........  If SMOKE inventory already exists, open files for reading later
         ELSE
 
 C.............  Get input inventory file names given source category
@@ -267,9 +304,11 @@ C.................  Get file name for input replacement stack parameters file
 
 C.........  Get file name for country, state, and county file, with time 
 C           zones
-        ZDEV = PROMPTFFILE(
+        IF( .NOT. GFLAG ) THEN
+            ZDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+        END IF
 
 C.........  Get file name for inventory pollutants codes/names
         IF( CFLAG ) THEN 
