@@ -45,7 +45,7 @@
    setenv MSDATE   19960709      # Start date of met  time-based files
    setenv NDAYS           1      # Duration in days of each emissions file
    setenv MDAYS           1      # Duration in days of met  time-based files
-   setenv YEAR         1996      # Year for year-specific files
+   setenv YEAR         1996      # Base year for year-specific files
 
 ## Reset days if overrides are available
    if ( $?G_STDATE_ADVANCE ) then
@@ -95,7 +95,7 @@ endif
 #
 ## Biogenic input files
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
-   setenv BGUSE   $INVDIR/biog/beld.5.us36.txt      # Gridded landuse
+   setenv BGUSE   $SMKDAT/inventory/beld2/beld.5.us36.txt  # Gridded landuse
    setenv METLIST $INVDIR/biog/metlist.tmpbio.txt   # Meteorology file list for temperatures
    setenv RADLIST $INVDIR/biog/radlist.tmpbio.txt   # Meteorology file list for solar radiation
    setenv BFAC    $GE_DAT/bfac.summer.txt     # Default biogenic emission factors
