@@ -344,9 +344,13 @@ C.........  Sum SCC count
             NINVSCC = NINVSCC + NUMSCC( N )
         END DO
 
+	NA2PSCC = NINVSCC
+        
 C.........  Allocate temporary "inventory" SCC list from MODLISTS
         ALLOCATE( INVSCC( NINVSCC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVSCC', PROGNAME )
+        ALLOCATE( A2PSCC( NA2PSCC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'A2PSCC', PROGNAME )
 
 C.........  Allocate unsorted arrays
         ALLOCATE( SCCIDX( NINVSCC ), STAT=IOS )
@@ -372,6 +376,8 @@ C.........  Sort SCC list, needed for reading SCC descriptions
         DO J = 1, NINVSCC
             INVSCC( J ) = INVSCCA( SCCIDX( J ) )
         END DO
+        
+        A2PSCC = INVSCC
 
 C.........  Retrieve SCC descriptions
         CALL RDSCCDSC( CDEV )

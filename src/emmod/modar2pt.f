@@ -68,6 +68,10 @@
         INTEGER                   , PUBLIC :: MXROWA2P        ! max. number of rows
         INTEGER      , ALLOCATABLE, PUBLIC :: NAR2PT  ( : )   ! no. entries in each table
         TYPE( AR2PT ), ALLOCATABLE, PUBLIC :: AR2PTABL( :,: ) ! area-to-point table
+        
+!.........  Area-to-point table SCCs.
+	INTEGER			  , PUBLIC :: NA2PSCC         ! no. of area-to-point SCCs
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: A2PSCC( : )  ! area-to-point SCCs
 
 !.........  Reporting array (dimension is NCONDSRC)
         INTEGER                        , PUBLIC :: NCONDSRC        ! no. of condensed srcs
