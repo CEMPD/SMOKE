@@ -148,6 +148,8 @@ C...........   Other local variables
         CHARACTER*40    ASCTNAME !  Buffer for reading the ASCT name
 
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
+C       04/30/99 wts - Added 
+        CHARACTER*256 FMT ! FORMAT buffer.
 
 
 C***********************************************************************
@@ -681,7 +683,10 @@ C.......   Get file name; open input area source
                     ENDIF
 
                     ! Finally, write the data to the report.
-                    WRITE ( STUNIT, 830 ) 
+C                   04/30/99 wts
+                    WRITE ( FMT, 831 ) NIPOL
+C                   WRITE ( STUNIT, 830 )
+                    WRITE ( STUNIT, FMT ) 
      &                  ISTLIST ( POSN ), 
      &                  ( STSUM ( K, POSN, I ), I = 1, NIPOL ),
      &                  ISTPOP ( INDEX ), TMPEMIS ( POSN ),
@@ -732,7 +737,10 @@ C.......   Get file name; open input area source
                     ENDIF
 
                     ! Write the data to the report.
-                    WRITE ( COUNIT, 835 ) 
+C                   04/30/99 wts - Create a format.
+                    WRITE ( FMT, 836 ) NIPOL
+C                   WRITE ( COUNIT, 835 ) 
+                    WRITE ( COUNIT, FMT ) 
      &                  ICOLIST ( POSN ), 
      &                  ( COSUM ( K, POSN, I ), I = 1, NIPOL ),
      &                  ICOPOP ( INDEX ), TMPEMIS ( POSN ),
@@ -773,12 +781,17 @@ C******************  FORMAT  STATEMENTS   ******************************
 810     FORMAT ( A )
 820     FORMAT ( A9, $ )
 825     FORMAT ( A7, $ )
-830     FORMAT ( I2.2, 2X, <NIPOL>F9.2, 2X, I8, 2X, F9.7, 2X, A )
-835     FORMAT ( I5.5, <NIPOL>F7.2, 2X, I8, 2X, F9.7, 2X, A13, 2X, A15)
+C830    FORMAT ( I2.2, 2X, <NIPOL>F9.2, 2X, I8, 2X, F9.7, 2X, A )
+C       04/30/99 wts - Added 831.
+831     FORMAT ( '( I2.2, 2X, ', I8, 'F9.2, 2X, I8, 2X, F9.7, 2X, A )' )
+C835    FORMAT ( I5.5, <NIPOL>F7.2, 2X, I8, 2X, F9.7, 2X, A13, 2X, A15)
+C       04/30/99 wts - Added 836.
+836     FORMAT ( '( I5.5, ', I8, 'F7.2, 2X, I8, 2X, F9.7, 2X, A13, ',
+     &           '2X, A15 )' )
 840     FORMAT ( A, $ )
 850     FORMAT ( //, A, A )
 860     FORMAT ( /, 19X, A )
-870     FORMAT ( I5.5, <NIPOL>F10.2, 2X, A )
+C870    FORMAT ( I5.5, <NIPOL>F10.2, 2X, A )
 880     FORMAT ( /, A, I4.4, A, A, A, / )
 890     FORMAT ( A, I4, A )
 900     FORMAT ( A, 31X, A, 7X, A )
