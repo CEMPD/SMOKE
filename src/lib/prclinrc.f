@@ -246,7 +246,7 @@ C.....................  Packet-specific processing
 C.....................  A reporting time packet
                     CASE( TIM_IDX )
 
-                        IF( J+1 .LE. L2 ) THEN
+                        IF( J+1 .GE. L2 ) THEN
 C.........................  Ensure reporting time is set
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
                         ELSE                            
@@ -260,7 +260,7 @@ C.....................  A ozone season data usage packet
                     CASE( O3S_IDX )
 
 C.........................  Ensure ozone season setting made
-                        IF( L2. LE. J+1 ) THEN
+                        IF( J+1 .GE. L2 ) THEN
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
 
                         ELSE                            
@@ -309,7 +309,7 @@ C.....................  A new delimiter packet
                     CASE( DEL_IDX )
 
 C.........................  Ensure ozone season setting made
-                        IF( J+1 .LE. L2 ) THEN
+                        IF( J+1 .GE. L2 ) THEN
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
                         ELSE                            
                             RPT_%DELIM = ADJUSTL( LINE( J+1:L2 ) )
@@ -325,7 +325,7 @@ C.....................  Reset group specific to defaults
                         GRP_INCLSTAT = .TRUE.
                         LIN_DEFGRP   = .TRUE.                        
 
-                        IF( J+1 .LE. L2 ) THEN
+                        IF( J+1 .GE. L2 ) THEN
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
                         ELSE
                             GRP_LABEL = ADJUSTL( LINE( J+1:L2 ) )
@@ -412,6 +412,14 @@ C               PELV file will be read in
                 VFLAG = .TRUE.
             END IF
 
+C.............  In in a group and no records read, give warning
+            IF( INGROUP .AND. GRPNRECS .EQ. 0 .AND. FIRSTLOOP ) THEN
+                L = LEN_TRIM( GRP_LABEL )
+                MESG = 'WARNING: No valid records found for group "'//
+     &                 GRP_LABEL( 1:L ) // '"'
+                CALL M3MSG2( MESG )
+            END IF
+
 C.............  Reset all packet-specific settings
             GRPNRECS   = 0
             PKTEND     = IREC
@@ -439,9 +447,19 @@ C.........  General group processing
 
 C.............  Check the status of INCLUDE versus EXCLUDE
             IF( SEGMENT( 1 ) .EQ. 'INCLUDE' ) THEN
+                IF( SEGMENT( 2 ) .NE. ' ' .AND. FIRSTLOOP ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: Other data ' //
+     &                'appended to INCLUDE instruction at line', IREC
+                    CALL M3MSG2( MESG )
+                END IF
                 GRP_INCLSTAT = .TRUE.                
 
             ELSE IF( SEGMENT( 1 ) .EQ. 'EXCLUDE' ) THEN
+                IF( SEGMENT( 2 ) .NE. ' ' .AND. FIRSTLOOP ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: Other data ' //
+     &                'appended to EXCLUDE instruction at line', IREC
+                    CALL M3MSG2( MESG )
+                END IF
                 GRP_INCLSTAT = .FALSE.
 
 C.............  If neither, count entries in the current group definition
