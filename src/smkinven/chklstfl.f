@@ -82,6 +82,7 @@ C   begin body of subroutine CHKLSTFL
 
         FLEN = LEN_TRIM( FNAME )
 
+        IDAFLAG = .FALSE.   ! Need to reset for each each subroutine call
 C.........  Loop through lines of list-formatted file to check the formats
         DO J = 1, NLINE
 
@@ -131,7 +132,8 @@ C.............  Set flag if format is IDA
 C.........  Make sure that IDA format is only used with NTI format
         IF( IDAFLAG ) THEN
             DO J = 1, NLINE
-                IF( FILFMT( J ) /= IDAFMT .AND.
+                IF( FILFMT( J ) > 0       .AND.
+     &              FILFMT( J ) /= IDAFMT .AND.
      &              FILFMT( J ) /= NTIFMT      ) THEN
                     WRITE( MESG,94010 ) 
      &                'ERROR: In SMOKE list-formatted inventory file, '

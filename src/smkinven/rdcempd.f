@@ -162,9 +162,10 @@ C...........   Other local variables
         LOGICAL       :: BLRFLAG          ! true: matched rec to inv oris/blr
         LOGICAL, SAVE :: DFLAG = .FALSE.  ! true: dates have been set by the data
         LOGICAL       :: EFLAG = .FALSE.  ! TRUE iff ERROR
-        LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
+        LOGICAL       :: MATCHFLG = .FALSE.! true: a CEM/inventory match found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
+        LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: YFLAG  = .FALSE. ! true: year mismatch found
 
         CHARACTER*5      BBUF             ! tmp boiler ID from CEM data
@@ -289,9 +290,8 @@ C           of the reference date/time so that the indexing will work properly.
 c        TDAT = 0   !  array
         DO         !  Head of period-specific file read loop
 
-C.............  Read first line of file
 C.............  There is no error checking to help speed things up
-            READ( FDEV, *, END=299 ) 
+            READ( FDEV, *, ERR=1001, END=299 ) 
      &            CORS, BBUF, YYMMDD, HH, CEMEMIS( CO2IDX ),
      &            CEMEMIS( SO2IDX ), CEMEMIS( NOXIDX ), OPTIME,
      &            GLOAD, SLOAD, HTINPUT
@@ -384,6 +384,7 @@ C.................  Skip it
 
 C.............  Otherwise, get FIPs code and time zone
             ELSE
+                MATCHFLG = .TRUE.
                 FIP   = INVORFP( I )
                 ZONE  = GETTZONE( FIP )
             END IF
@@ -509,6 +510,13 @@ C                   inventory emissions.
 
         NRECS = IREC
 
+        IF ( .NOT. MATCHFLG ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: No matches found between CEM data and ' //
+     &             'inventory'
+            CALL M3MSG2( MESG )
+        END IF
+
         IF ( YFLAG ) THEN
             WRITE( MESG,94010 ) 'WARNING: Some excluded CEM records '//
      &             'contained years other than the base year', BYEAR
@@ -536,6 +544,10 @@ C.........  Update output starting date/time and ending date/time
         END DO
 
         RETURN
+
+1001    WRITE( MESG,94010 ) 'Problem reading CEM data at line', IREC
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+  
 
 C******************  FORMAT  STATEMENTS   ******************************
 

@@ -424,7 +424,13 @@ C.........  Write the map inventory file
         WRITE( IDEV, '(A)' ) '/DATMAP/'
 
         DO I = 1, NMAP
+C.............  Write the relative file name
             WRITE( IDEV, '(A)' ) MAPNAM( I ) // ' ' // TRIM( MAPFIL(I) )
+
+C.............  Reset with the full path, in case needed for hour-specific 
+C               or day-specific processing emissions reading
+            MAPFIL( I ) = TRIM( BPATH ) // TRIM( MAPFIL(I) ) 
+
         END DO
 
         WRITE( IDEV, '(A)' ) '/END/'

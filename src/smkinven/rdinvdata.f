@@ -1212,8 +1212,8 @@ C.................  Skip rest of loop
                 STKVE ( CURSRC ) = STR2REAL( VL )
                 XLOCA ( CURSRC ) = STR2REAL( LON )
                 YLOCA ( CURSRC ) = STR2REAL( LAT )
-                CORIS ( CURSRC ) = CORS
-                CBLRID( CURSRC ) = BLID
+                CORIS ( CURSRC ) = ADJUSTR( CORS )
+                CBLRID( CURSRC ) = ADJUSTR( BLID )
                 CPDESC( CURSRC ) = DESC
 
 C.................  Convert units on values                
