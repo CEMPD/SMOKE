@@ -90,7 +90,7 @@ C   begin body of subroutine  CZANGLE
 
               T = PI180 * LAT( C, R )
               SINLAT( C, R ) = SIN( T )
-              COSLAT( C, R ) = SIN( T )
+              COSLAT( C, R ) = COS( T )
 
 11        CONTINUE
 12        CONTINUE
