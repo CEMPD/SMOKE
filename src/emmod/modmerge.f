@@ -103,9 +103,8 @@
         INTEGER     , PUBLIC :: EDEV   ! elevated/PinG ASCII input file
         INTEGER     , PUBLIC :: GDEV   ! gridding surrogates file
         INTEGER     , PUBLIC :: MSDEV  ! mobile ASCII inventory input
-        INTEGER     , PUBLIC :: PDEV  = 0  ! inventory pollutants list
+        INTEGER     , PUBLIC :: PDEV  = 0  ! inventory table
         INTEGER     , PUBLIC :: PSDEV  ! point ASCII inventory input
-        INTEGER     , PUBLIC :: VDEV  = 0  ! activities list
 
 !.........  Output file unit numbers
         INTEGER     , PUBLIC :: ARDEV  ! area ASCII report output
@@ -286,6 +285,17 @@
 
 !.........  Index between all model species names and all inventory pollutants
         INTEGER, ALLOCATABLE, PUBLIC :: EMIDX( : )
+
+!.........  Map file pollutants list and physical file names
+        INTEGER                            , PUBLIC :: ANMAP = 0
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AMAPNAM( : )
+        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: AMAPFIL( : )
+        INTEGER                            , PUBLIC :: MNMAP = 0
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MMAPNAM( : )
+        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: MMAPFIL( : )
+        INTEGER                            , PUBLIC :: PNMAP = 0
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PMAPNAM( : )
+        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: PMAPFIL( : )
 
 !.........  NAMES AND INDICES FOR GROUP STRUCTURE
 

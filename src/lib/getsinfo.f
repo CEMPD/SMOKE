@@ -1,5 +1,5 @@
 
-        SUBROUTINE GETSINFO
+        SUBROUTINE GETSINFO( ENAME )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -52,31 +52,42 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-c        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-c        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         GETIFDSC
+        LOGICAL         SETENVVAR
 
-        EXTERNAL        CRLF, ENVYN, GETIFDSC
+        EXTERNAL        CRLF, ENVYN, GETIFDSC, SETENVVAR
+
+C...........   SUBROUTINE ARGUMENTS
+        CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file logical file name
 
 C...........   LOCAL VARIABLES their descriptions:
-
         INTEGER       I, J, K     ! counters and indices 
         INTEGER       IOS         ! memory allocation status
         INTEGER       NVAR        ! number of non-pollutant variables 
 
+        LOGICAL    :: EFLAG = .FALSE.  ! true: error found
         LOGICAL       LO3SEAS     ! true: use ozone season emissions
 
-        CHARACTER*300 MESG         ! Message buffer
+        CHARACTER*16  TMPNAME      ! tmp logical file name for map data files
+        CHARACTER*256 MESG         ! Message buffer
 
         CHARACTER*16 :: PROGNAME = 'GETSINFO'    ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETSINFO
+
+C.........  Get header description of inventory file, error if problem
+        IF( .NOT. DESCSET( ENAME, ALLFILES ) ) THEN
+            MESG = 'Could not get description of file "' //
+     &             TRIM( ENAME ) // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Set the number of sources 
         NSRC = NROWS3D
@@ -206,18 +217,86 @@ C.............  Allocate memory for and store pollutant names
 
         END IF
 
+C.........  Ensure that the number of mapped variables is
+C           consistent with the inventory file head
+        IF ( NMAP .GT. 0 .AND. NMAP .NE. NIPPA ) THEN
+            WRITE( MESG,94010 ) 'Number of map-formatted ' //
+     &             'variables is inconsistent with header of  '//
+     &             'inventory file.' // CRLF()// BLANK10 // 
+     &             'I/O API header has', NIPPA, 'variables indicated'//
+     &              ', but map-formated inventory file has', NMAP
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
         K = 0
         J = NVAR + 1
+        
         DO I = 1, NIPOL
 
             K = K + 1
-            EINAM ( I ) = VNAMESET( J )
-	    EANAM ( K ) = VNAMESET( J )
-            EAREAD( K ) = VNAMESET( J + INVPIDX )
-            EAUNIT( K ) = VUNITSET( J + INVPIDX )
-            EADESC( K ) = VDESCSET( J + INVPIDX )
 
-            J = J + NPPOL   ! skip over other pollutant-spec variables
+C............  For map-formatted inventory
+            IF( NMAP .GT. 0 ) THEN
+                TMPNAME = 'TMP_POL_FILE'
+                IF( .NOT. SETENVVAR( TMPNAME, MAPFIL( K ) ) ) THEN
+                    MESG = 'ERROR: Could not set logical file name '
+     &                          // CRLF() // BLANK10 // 'for file ' //
+     &                          TRIM( MAPFIL( K ) )
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+                ELSE IF( .NOT. OPENSET( TMPNAME,FSREAD3,PROGNAME )) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Could not open "'// TRIM(MAPNAM(I))//
+     &                      '" file listed in ' // CRLF() // BLANK10 // 
+     &                      'map-formatted inventory for file name: ' //
+     &                      CRLF() // BLANK10 // TRIM( MAPFIL( K ) )
+                    CALL M3MSG2( MESG )
+                    CYCLE
+
+                ELSE IF( .NOT. DESCSET( TMPNAME,ALLFILES ) ) THEN
+                    MESG = 'Could not get description of file "' //
+     &                     TRIM( TMPNAME ) // '".'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END IF
+
+C................  Ensure that map variable name and file variable 
+C                  name are the same
+                IF( MAPNAM( I ) .NE. VNAMESET( 2 ) ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Variable name "'// TRIM(MAPNAM(I))//
+     &                    '" in map-formatted inventory is mapped to '//
+     &                     CRLF()// BLANK10// 'a file with variable "'//
+     &                     TRIM( VNAMESET( 2 ) )//'". Map-formatted '//
+     &                     'inventory has been corrupted.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+                EINAM ( I ) = VNAMESET( 2 )
+	        EANAM ( K ) = VNAMESET( 2 )
+                EAREAD( K ) = VNAMESET( 2 + INVPIDX )
+                EAUNIT( K ) = VUNITSET( 2 + INVPIDX )
+                EADESC( K ) = VDESCSET( 2 + INVPIDX )
+
+                IF( .NOT. CLOSESET( TMPNAME ) ) THEN
+                    MESG = 'Could not close file:'//CRLF()//BLANK10//
+     &                     TRIM( MAPFIL( K ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C............  For old style inventory
+            ELSE
+
+                EINAM ( I ) = VNAMESET( J )
+	        EANAM ( K ) = VNAMESET( J )
+                EAREAD( K ) = VNAMESET( J + INVPIDX )
+                EAUNIT( K ) = VUNITSET( J + INVPIDX )
+                EADESC( K ) = VDESCSET( J + INVPIDX )
+
+                J = J + NPPOL   ! skip over other pollutant-spec variables
+
+            END IF
 
         END DO
 
@@ -230,15 +309,77 @@ C.........  Allocate memory for and store activity names
         DO I = 1, NIACT
 
             K = K + 1
-            ACTVTY( I ) = VNAMESET( J )
-            EANAM ( K ) = VNAMESET( J )
-            EAREAD( K ) = VNAMESET( J )
-            EAUNIT( K ) = VUNITSET( J )
-            EADESC( K ) = VDESCSET( J )
-            J = J + NPACT   ! skip over other activity-spec variables
+
+C............  For map-formatted inventory
+            IF( NMAP .GT. 0 ) THEN
+                TMPNAME = 'TMP_POL_FILE'
+                IF( .NOT. SETENVVAR( TMPNAME, MAPFIL( K ) ) ) THEN
+                    MESG = 'ERROR: Could not set logical file name '
+     &                          // CRLF() // BLANK10 // 'for file ' //
+     &                          TRIM( MAPFIL( K ) )
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+                ELSE IF( .NOT. OPENSET( TMPNAME,FSREAD3,PROGNAME )) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Could not open "'// TRIM(MAPNAM(I))//
+     &                      '" file listed in ' // CRLF() // BLANK10 // 
+     &                      'map-formatted inventory for file name: ' //
+     &                      CRLF() // BLANK10 // TRIM( MAPFIL( K ) )
+                    CALL M3MSG2( MESG )
+                    CYCLE
+
+                ELSE IF( .NOT. DESCSET( TMPNAME,ALLFILES ) ) THEN
+                    MESG = 'Could not get description of file "' //
+     &                     TRIM( TMPNAME ) // '".'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END IF
+
+C................  Ensure that map variable name and file variable 
+C                  name are the same
+                IF( MAPNAM( I ) .NE. VNAMESET( 2 ) ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Variable name "'// TRIM(MAPNAM(I))//
+     &                    '" in map-formatted inventory is mapped to '//
+     &                     CRLF()// BLANK10// 'a file with variable "'//
+     &                     TRIM( VNAMESET( 2 ) )//'". Map-formatted '//
+     &                     'inventory has been corrupted.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+                ACTVTY( I ) = VNAMESET( 2 )
+	        EANAM ( K ) = VNAMESET( 2 )
+                EAREAD( K ) = VNAMESET( 2 + INVPIDX )
+                EAUNIT( K ) = VUNITSET( 2 + INVPIDX )
+                EADESC( K ) = VDESCSET( 2 + INVPIDX )
+
+C............  For old style inventory
+            ELSE
+                ACTVTY( I ) = VNAMESET( J )
+                EANAM ( K ) = VNAMESET( J )
+                EAREAD( K ) = VNAMESET( J )
+                EAUNIT( K ) = VUNITSET( J )
+                EADESC( K ) = VDESCSET( J )
+                J = J + NPACT   ! skip over other activity-spec variables
+
+            END IF
 
         END DO
 
+        IF( EFLAG ) THEN
+            MESG = 'Problem with pollutant files'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Get header description of inventory file, so that
+C           the I/O API header settings passed by the include files
+C           will be set with this header.  Give error if problem.
+        IF( .NOT. DESCSET( ENAME, ALLFILES ) ) THEN
+            MESG = 'Could not get description of file "' //
+     &             TRIM( ENAME ) // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
         RETURN
 

@@ -1,9 +1,9 @@
 
         SUBROUTINE MRGMULT( NSRC, NG, NL, NMAT1, NMAT2, 
-     &                      KEY1, KEY2, KEY3, KEY4, ISPC, FG, FT, 
-     &                      EMSRC, RINFO, CUMATX, CAMATX, SMATX,
+     &                      KEY1, KEY2, KEY4, ISPC, FG, FT, 
+     &                      EMSRC, RINFO, CUMATX, SMATX,
      &                      NX, IX, GMATX, ICNY, GOUT1, GOUT2,
-     &                      COUT1, COUT2, COUT3, COUT4, COUT5 )
+     &                      COUT1, COUT2, COUT4, COUT5 )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -11,9 +11,8 @@ C
 C  DESCRIPTION:
 C      This subroutine multiplies a source-emissions vector with a gridding
 C      matrix and optionally a speciation array and multiplicative control
-C      array. An additive control array can be added to the emissions.  Which
-C      matrices are applied depend on the setting of the keys in the 
-C      subroutine call.
+C      array.  Which matrices are applied depend on the setting of the 
+C      keys in the subroutine call.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -69,7 +68,6 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NMAT2       ! dim 2 for gridding matrix
         INTEGER     , INTENT (IN) :: KEY1        ! inven emissions index
         INTEGER     , INTENT (IN) :: KEY2        ! mult controls index
-        INTEGER     , INTENT (IN) :: KEY3        ! additive controls index
         INTEGER     , INTENT (IN) :: KEY4        ! speciation matrix index
         INTEGER     , INTENT (IN) :: ISPC        ! output species index
         REAL        , INTENT (IN) :: FG          ! gridded output units conv
@@ -77,7 +75,6 @@ C.........  SUBROUTINE ARGUMENTS
         REAL        , INTENT (IN) :: EMSRC ( NSRC,* ) ! source-based emissions
         REAL        , INTENT (IN) :: RINFO ( NSRC,2 ) ! reactivity information
         REAL        , INTENT (IN) :: CUMATX( NSRC,* ) ! mult control factors
-        REAL        , INTENT (IN) :: CAMATX( NSRC,* ) ! additive control factors
         REAL        , INTENT (IN) :: SMATX ( NSRC,* ) ! speciation factors
         INTEGER     , INTENT (IN) :: NX    ( NG )     ! no. of sources per cell
         INTEGER     , INTENT (IN) :: IX    ( NMAT1 )  ! list of sources per cell
@@ -87,7 +84,6 @@ C.........  SUBROUTINE ARGUMENTS
         REAL     , INTENT(IN OUT) :: GOUT2 ( NG, NL ) ! cumulative gridded emis
         REAL     , INTENT(IN OUT) :: COUT1 ( NCOUNTY, * )! no control county
         REAL     , INTENT(IN OUT) :: COUT2 ( NCOUNTY, * )! multiplv cntl county
-        REAL     , INTENT(IN OUT) :: COUT3 ( NCOUNTY, * )! additive cntl county
         REAL     , INTENT(IN OUT) :: COUT4 ( NCOUNTY, * )! reactivity cntl cnty
         REAL     , INTENT(IN OUT) :: COUT5 ( NCOUNTY, * )! all control cntl cnty
 
@@ -97,8 +93,7 @@ C.........  Other local variables
         REAL            GFAC            ! tmp gridding factor
         REAL            FG0             ! gridding conv fac div. totals conv fac
         REAL*8          SUM1            ! sum for GOUT1   
-        REAL*8          SUM2            ! sum for GOUT2 
-        REAL*8          ADD             ! tmp value with additive controls
+        REAL*8          SUM2            ! sum for GOUT2
         REAL*8          MULT            ! tmp value with multiplictv controls
         REAL*8          REAC            ! tmp value with reactivity controls
         REAL*8          VAL             ! tmp value  
@@ -125,93 +120,10 @@ C           transfer ELEVADJ to ELEVADJ
 
 C.........  Check if this is a valid inventory pollutant for this call, and
 C           if the number of layers is one.
-        IF( .NOT. LFLAG .AND. KEY1 .GT. 0 ) THEN
-
-C............. If multiplicative controls, additive controls, and speciation
-            IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
-
-                K = 0
-                DO C = 1, NG
-
-                    SUM1 = GOUT1( C,1 )
-                    SUM2 = GOUT2( C,1 )
-
-                    DO J = 1, NX( C )
-                        K = K + 1
-                        S = IX( K )
-                        IDX  = ICNY( S )
-                        GFAC = GMATX( K ) * FT
-
-                        VAL = EMSRC( S,KEY1 )* SMATX( S,KEY4 )* GFAC
-                        COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
-
-                        ADD = CAMATX( S,KEY3 ) * SMATX( S,KEY4 ) * GFAC
-                        COUT3( IDX,ISPC )= COUT3( IDX,ISPC ) + VAL + ADD
-
-                        MULT = VAL * CUMATX( S,KEY2 )
-                        COUT2( IDX,ISPC ) = COUT2( IDX,ISPC ) + MULT
-
-                        VMP  = RINFO( S,2 )
-                        REAC = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
-     &                         GFAC
-                        COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + REAC
-
-                        VAL  = ADD + MULT
-                        VAL = VAL * (1.-VMP) + RINFO( S,1 ) * VMP * GFAC                       
-                        COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
-
-                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                        SUM1 = SUM1 + VAL * FG0
-                        SUM2 = SUM2 + VAL * FG0
-
-                    END DO
-
-                    GOUT1( C,1 ) = SUM1
-                    GOUT2( C,1 ) = SUM2
-
-                END DO
-
-C............. If multiplicative controls & additive controls
-            ELSE IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 ) THEN
-
-                K = 0
-                DO C = 1, NG
-
-                    SUM1 = GOUT1( C,1 )
-                    SUM2 = GOUT2( C,1 )
-
-                    DO J = 1, NX( C )
-                        K = K + 1
-                        S = IX( K )
-                        IDX  = ICNY( S )
-                        GFAC = GMATX( K ) * FT
-
-                        VAL = EMSRC( S,KEY1 )*GFAC
-                        COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
-
-                        ADD = CAMATX( S,KEY3 )*GFAC
-                        COUT3( IDX,KEY1 )= COUT3( IDX,KEY1 ) + VAL + ADD
-
-                        MULT = VAL * CUMATX( S,KEY2 )
-                        COUT2( IDX,KEY1 ) = COUT2( IDX,KEY1 ) + MULT
-
-                        VAL  = ADD + MULT
-
-                        COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + VAL
-
-                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                        SUM1 = SUM1 + VAL * FG0
-                        SUM2 = SUM2 + VAL * FG0
-
-                    END DO
-
-                    GOUT1( C,1 ) = SUM1
-                    GOUT2( C,1 ) = SUM2
-
-                END DO
+        IF( NL .LE. 1 .AND. KEY1 .GT. 0 ) THEN
 
 C............. If multiplicative controls & speciation
-            ELSE IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
+            IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
 
                 K = 0
                 DO C = 1, NG
@@ -251,47 +163,6 @@ C............. If multiplicative controls & speciation
 
                 END DO
 
-C............. If additive controls & speciation
-            ELSE IF( KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
-
-                K = 0
-                DO C = 1, NG
-
-                    SUM1 = GOUT1( C,1 )
-                    SUM2 = GOUT2( C,1 )
-
-                    DO J = 1, NX( C )
-                        K = K + 1
-                        S = IX( K )
-
-                        IDX  = ICNY( S )
-                        GFAC = GMATX( K ) * FT
-
-                        VAL = EMSRC( S,KEY1 )* SMATX( S,KEY4 )* GFAC
-                        COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
-
-                        ADD = CAMATX( S,KEY3 ) * SMATX( S,KEY4 ) * GFAC
-                        COUT3( IDX,ISPC )= COUT3( IDX,ISPC ) + VAL + ADD
-
-                        VMP  = RINFO( S,2 )
-                        REAC = ( VAL * (1.-VMP) + RINFO( S,1 ) * VMP ) *
-     &                         GFAC
-                        COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + REAC
-
-                        VAL = ADD * (1.-VMP) + RINFO( S,1 ) * VMP * GFAC
-                        COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
-
-                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                        SUM1 = SUM1 + VAL * FG0
-                        SUM2 = SUM2 + VAL * FG0
-
-                    END DO
-
-                    GOUT1( C,1 ) = SUM1
-                    GOUT2( C,1 ) = SUM2
-
-                END DO
-
 C............. If multiplicative controls only
             ELSE IF( KEY2 .GT. 0 ) THEN
 
@@ -312,46 +183,13 @@ C............. If multiplicative controls only
 
                         MULT = VAL * CUMATX( S,KEY2 )
                         COUT2( IDX,KEY1 ) = COUT2( IDX,KEY1 ) + MULT
-                        COUT5( IDX,KEY1 ) = COUT2( IDX,KEY1 )
+                        COUT4( IDX,KEY1 ) = COUT4( IDX,KEY1 ) + VAL
+                        COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + MULT
 
                         VAL  = MULT
                         VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
-
-                    END DO
-
-                    GOUT1( C,1 ) = SUM1
-                    GOUT2( C,1 ) = SUM2
-
-                END DO
-
-C............. If additive controls only
-            ELSE IF( KEY3 .GT. 0 ) THEN
-
-                K = 0
-                DO C = 1, NG
-
-                    SUM1 = GOUT1( C,1 )
-                    SUM2 = GOUT2( C,1 )
-
-                    DO J = 1, NX( C )
-                        K = K + 1
-                        S = IX( K )
-                        IDX  = ICNY( S )
-                        GFAC = GMATX( K ) * FT
-
-                        VAL = EMSRC( S,KEY1 ) * GFAC
-                        COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
-
-                        ADD = CAMATX( S,KEY3 ) * GFAC
-                        COUT3( IDX,KEY1 )= COUT3( IDX,KEY1 ) + VAL + ADD
-                        COUT5( IDX,KEY1 )= COUT3( IDX,KEY1 )
-
-                        VAL  = ADD
-                        VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                        SUM1 = SUM1 + VAL
-                        SUM2 = SUM2 + VAL
 
                     END DO
 
@@ -376,12 +214,14 @@ C.............  If speciation only
                         GFAC = GMATX( K ) * FT
 
                         VAL = EMSRC( S,KEY1 ) * SMATX( S,KEY4 ) * GFAC
-                        COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
+                        COUT1( IDX,ISPC )= COUT1( IDX,ISPC ) + VAL
+                        COUT2( IDX,ISPC )= COUT2( IDX,ISPC ) + VAL
 
                         VMP = RINFO( S,2 )
                         VAL = VAL * (1.-VMP) + RINFO( S,1 ) * VMP * GFAC
 
-                        COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + VAL
+                        COUT4( IDX,ISPC )= COUT4( IDX,ISPC ) + VAL
+                        COUT5( IDX,ISPC )= COUT5( IDX,ISPC ) + VAL
 
                         VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
@@ -407,7 +247,10 @@ C.............  If inventory pollutant only
                         IDX = ICNY( S )
 
                         VAL = EMSRC( S,KEY1 ) * GMATX( K ) * FT
-                        COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
+                        COUT1( IDX,KEY1 )= COUT1( IDX,KEY1 ) + VAL
+                        COUT2( IDX,KEY1 )= COUT2( IDX,KEY1 ) + VAL
+                        COUT4( IDX,KEY1 )= COUT4( IDX,KEY1 ) + VAL
+                        COUT5( IDX,KEY1 )= COUT5( IDX,KEY1 ) + VAL
 
                         VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
@@ -423,99 +266,10 @@ C.............  If inventory pollutant only
 
 C.........  If we need to use layer fractions...
 
-        ELSE IF( LFLAG .AND. KEY1 .GT. 0 ) THEN
-
-C............. If multiplicative controls, additive controls, and speciation
-            IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
-
-                DO L = 1, NL
-
-                    K = 0
-                    DO C = 1, NG
-
-                	SUM1 = GOUT1( C,L )
-                	SUM2 = GOUT2( C,L )
-
-                	DO J = 1, NX( C )
-                            K = K + 1
-                            S = IX( K )
-                            IDX  = ICNY( S )
-                            GFAC = GMATX( K ) * LFRAC( S,L ) * FT
-
-                            VAL = EMSRC( S,KEY1 )* SMATX( S,KEY4 )* GFAC
-                            COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
-
-                            ADD = CAMATX( S,KEY3 )*SMATX( S,KEY4 )*GFAC
-                            COUT3(IDX,ISPC)= COUT3(IDX,ISPC) + VAL + ADD
-
-                            MULT = VAL * CUMATX( S,KEY2 )
-                            COUT2( IDX,ISPC ) = COUT2( IDX,ISPC ) + MULT
-
-                            VMP  = RINFO( S,2 )
-                            REAC = ( VAL* (1.-VMP) + RINFO(S,1) * VMP )*
-     &                             GFAC
-                            COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + REAC
-
-                            VAL  = ADD + MULT
-                            VAL = VAL * (1.-VMP) + RINFO(S,1)* VMP* GFAC
-                            COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
-
-                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                            SUM1 = SUM1 + VAL * FG0
-                            SUM2 = SUM2 + VAL * FG0
-
-                	END DO
-
-                	GOUT1( C,L ) = SUM1
-                	GOUT2( C,L ) = SUM2
-
-                    END DO
-                END DO
-
-C............. If multiplicative controls & additive controls & layer fractions
-            ELSE IF( KEY2 .GT. 0 .AND. KEY3 .GT. 0 ) THEN
-
-                DO L = 1, NL
-
-                    K = 0
-                    DO C = 1, NG
-
-                        SUM1 = GOUT1( C,L )
-                        SUM2 = GOUT2( C,L )
-
-                	DO J = 1, NX( C )
-                            K = K + 1
-                            S = IX( K )
-                            IDX  = ICNY( S )
-                            GFAC = GMATX( K ) * LFRAC( S,L ) * FT
-
-                            VAL = EMSRC( S,KEY1 )*GFAC
-                            COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
-
-                            ADD = CAMATX( S,KEY3 )*GFAC
-                            COUT3(IDX,KEY1)= COUT3(IDX,KEY1) + VAL + ADD
-
-                            MULT = VAL * CUMATX( S,KEY2 )
-                            COUT2( IDX,KEY1 ) = COUT2( IDX,KEY1 ) + MULT
-
-                            VAL  = ADD + MULT
-
-                            COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + VAL
-
-                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                            SUM1 = SUM1 + VAL * FG0
-                            SUM2 = SUM2 + VAL * FG0
-
-                	END DO
-
-                        GOUT1( C,L ) = SUM1
-                        GOUT2( C,L ) = SUM2
-
-                    END DO
-                END DO
+        ELSE IF( KEY1 .GT. 0 ) THEN
 
 C............. If multiplicative controls & speciation & layer fractions
-            ELSE IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
+            IF( KEY2 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
 
                 DO L = 1, NL
 
@@ -558,51 +312,7 @@ C............. If multiplicative controls & speciation & layer fractions
                     END DO
                 END DO
 
-C............. If additive controls & speciation & layer fractions
-            ELSE IF( KEY3 .GT. 0 .AND. KEY4 .GT. 0 ) THEN
-
-                DO L = 1, NL
-
-                    K = 0
-                    DO C = 1, NG
-
-                        SUM1 = GOUT1( C,L )
-                        SUM2 = GOUT2( C,L )
-
-                	DO J = 1, NX( C )
-                	    K = K + 1
-                	    S = IX( K )
-
-                	    IDX  = ICNY( S )
-                	    GFAC = GMATX( K ) * LFRAC( S,L ) * FT
-
-                	    VAL = EMSRC( S,KEY1 )* SMATX( S,KEY4 )* GFAC
-                	    COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
-
-                	    ADD = CAMATX(S,KEY3)* SMATX(S,KEY4)* GFAC
-                	    COUT3(IDX,ISPC)= COUT3(IDX,ISPC) + VAL + ADD
-
-                	    VMP  = RINFO( S,2 )
-                	    REAC = ( VAL * (1.-VMP) + RINFO(S,1)* VMP )*
-     &                             GFAC
-                	    COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + REAC
-
-                	    VAL = ADD * (1.-VMP) + RINFO(S,1)* VMP* GFAC
-                	    COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
-
-                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                	    SUM1 = SUM1 + VAL * FG0
-                	    SUM2 = SUM2 + VAL * FG0
-
-                	END DO
-
-                        GOUT1( C,L ) = SUM1
-                        GOUT2( C,L ) = SUM2
-
-                    END DO
-                END DO
-
-C............. If multiplicative controls and layer fractoins
+C............. If multiplicative controls and layer fractions
             ELSE IF( KEY2 .GT. 0 ) THEN
 
                 DO L = 1, NL
@@ -624,49 +334,13 @@ C............. If multiplicative controls and layer fractoins
 
                             MULT = VAL * CUMATX( S,KEY2 )
                             COUT2( IDX,KEY1 ) = COUT2( IDX,KEY1 ) + MULT
-                            COUT5( IDX,KEY1 ) = COUT2( IDX,KEY1 )
+                            COUT4( IDX,KEY1 ) = COUT4( IDX,KEY1 ) + VAL
+                            COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + MULT
 
                             VAL  = MULT
                             VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
                             SUM2 = SUM2 + VAL * FG0
-
-                	END DO
-
-                        GOUT1( C,L ) = SUM1
-                        GOUT2( C,L ) = SUM2
-
-                    END DO
-                END DO
-
-C............. If additive controls and layer fractions
-            ELSE IF( KEY3 .GT. 0 ) THEN
-
-                DO L = 1, NL
-
-                    K = 0
-                    DO C = 1, NG
-
-                        SUM1 = GOUT1( C,L )
-                        SUM2 = GOUT2( C,L )
-
-                	DO J = 1, NX( C )
-                            K = K + 1
-                            S = IX( K )
-                            IDX  = ICNY( S )
-                            GFAC = GMATX( K ) * LFRAC( S,L ) * FT
-
-                            VAL = EMSRC( S,KEY1 ) * GFAC
-                            COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
-
-                            ADD = CAMATX( S,KEY3 ) * GFAC
-                            COUT3(IDX,KEY1)= COUT3(IDX,KEY1) + VAL + ADD
-                            COUT5(IDX,KEY1)= COUT3(IDX,KEY1)
-
-                            VAL  = ADD
-                            VAL  = VAL * ( 1.-ELEVADJ( S ) )
-                            SUM1 = SUM1 + VAL
-                            SUM2 = SUM2 + VAL
 
                 	END DO
 
@@ -695,12 +369,14 @@ C............. If speciation and layer fraction
 
                             VAL = EMSRC( S,KEY1 )* SMATX( S,KEY4 )* GFAC
                             COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
+                            COUT2( IDX,ISPC ) = COUT2( IDX,ISPC ) + VAL
 
                             VMP  = RINFO( S,2 )
                             VAL  = ( VAL*(1.-VMP) + 
      &                               RINFO( S,1 ) * VMP * GFAC )
 
                             COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + VAL
+                            COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
 
                             VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0
@@ -732,6 +408,9 @@ C.............  If inventory pollutant and layer fractions
                             VAL = LFRAC( S,L ) *
      &                            EMSRC ( S,KEY1 ) * GMATX( K ) * FT
                             COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
+                            COUT2( IDX,KEY1 ) = COUT2( IDX,KEY1 ) + VAL
+                            COUT4( IDX,KEY1 ) = COUT4( IDX,KEY1 ) + VAL
+                            COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + VAL
 
                             VAL  = VAL * ( 1.-ELEVADJ( S ) )
                             SUM1 = SUM1 + VAL * FG0

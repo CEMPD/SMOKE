@@ -96,6 +96,7 @@ C           for this program
 
 C...........   File units and logical/physical names
 c        INTEGER         ADEV    !  for adjustments file
+        INTEGER         IDEV    ! tmp unit number if ENAME is map file
         INTEGER         LDEV    !  log-device
         INTEGER         KDEV    !  for link defs file
         INTEGER         GDEV    !  for surrogate coeff file
@@ -106,6 +107,7 @@ c        INTEGER         ADEV    !  for adjustments file
 
         CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
         CHARACTER*16    ENAME   !  logical name for i/o api inventory input file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
         CHARACTER*16    GNAME   !  logical name for grid matrix output file
         CHARACTER*16    UNAME   !  logical name for ungrid matrix output file
 
@@ -187,18 +189,31 @@ C.........  Set source category based on environment variable setting
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.........   Get file names and open files
-        ENAME = PROMPTSET( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENLEN = LEN_TRIM( ENAME )
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-C.........  Get ASCII inventory file, if needed
-        IF( CATEGORY .NE. 'POINT' ) THEN
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
 
-            SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            ENLEN = LEN_TRIM( ENAME )
+
+            IF( CATEGORY .NE. 'POINT' ) THEN
+                SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+            END IF
 
         END IF
 
@@ -207,26 +222,12 @@ c     &  ADEV = PROMPTFFILE(
 c     &           'Enter logical name for ADJUSTMENT FACTORS file',
 c     &           .TRUE., .TRUE., CRLF // 'ADJUST', PROGNAME )
 
-C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESCSET( ENAME, ALLFILES ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:ENLEN ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.............  Store source specific information based on header
+        CALL GETSINFO( ENAME )
 
-C.........  Otherwise, store source-category-specific header information, 
-C           including the inventory pollutants in the file (if any).  Note that 
-C           the I/O API head info is passed by include file and the
-C           results are stored in module MODINFO.
-        ELSE
-
-            CALL GETSINFO
-
-C.............  Store non-category-specific header information
-            IFDESC2  = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
-            IFDESC3  = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-            INVGRDNM = GETCFDSC( FDESC3D, '/GRIDNAME/', .FALSE. )
-
-        END IF
+        IFDESC2  = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+        IFDESC3  = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
+        INVGRDNM = GETCFDSC( FDESC3D, '/GRIDNAME/', .FALSE. )
 
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'IFIP'

@@ -43,6 +43,9 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
 
+C...........  This module contains the information about the source category
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
+
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV
 
@@ -70,9 +73,10 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
         INTEGER         SECSDIFF  
+        LOGICAL         SETENVVAR
 
         EXTERNAL  CRLF, ENVYN, GETCFDSC, GETIFDSC, PROMPTFFILE, 
-     &            PROMPTMFILE, SECSDIFF
+     &            PROMPTMFILE, SECSDIFF, SETENVVAR
 
 C...........   Subroutine arguments
 
@@ -83,8 +87,9 @@ C...........   Subroutine arguments
 
 C.........  Other local variables
 
-        INTEGER         I, J, N, V       ! counters and indices
+        INTEGER         I, J, K, N, V       ! counters and indices
 
+        INTEGER         IDEV          ! tmp unit number if ENAME is map file
         INTEGER         IOS           ! tmp I/O status
         INTEGER         ISECS         ! tmp duration in seconds
         INTEGER         NPACT         ! no. variables per activity
@@ -93,21 +98,20 @@ C.........  Other local variables
         INTEGER         NVAR          ! tmp no. variables 
 
         LOGICAL      :: CFLAG = .FALSE.  ! true: speciation type has been init
-        LOGICAL      :: DFLAG = .FALSE.  ! true: use pollutants list
         LOGICAL      :: EFLAG = .FALSE.  ! true: error in routine
         LOGICAL      :: IFLAG = .FALSE.  ! true: episode settings have been init
-        LOGICAL      :: KFLAG = .FALSE.  ! true: use activies list
         LOGICAL      :: OFLAG = .FALSE.  ! true: met info has been init
         LOGICAL      :: YFLAG = .FALSE.  ! true: year/projection info been init
         LOGICAL      :: ZFLAG = .FALSE.  ! true: time zone has been init
 
         CHARACTER*4     SPCTYPE      ! type of speciation matrix (mass|mole)
         CHARACTER*16    DUMNAME      ! tmp file name
+        CHARACTER*16    INAME        ! tmp name for inven file of unknown fmt
         CHARACTER*50    METSCENR     ! met scenario name
         CHARACTER*50    METCLOUD     ! met cloud scheme name
         CHARACTER*50    METTMP       ! temporary buffer for met info
         CHARACTER*80    GDESC        ! grid description
-        CHARACTER*300   MESG         ! message buffer
+        CHARACTER*256   MESG         ! message buffer
         CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name 
         CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
         CHARACTER(LEN=IOVLEN3) PROJTYPE   ! projection type
@@ -116,29 +120,6 @@ C.........  Other local variables
 
 C***********************************************************************
 C   begin body of subroutine OPENMRGIN
-
-C.........  Set controls for reading the pollutants and activities files
-C.........  Default is for mobile to read in activities and not pollutants
-C           and for other source categories to read in pollutants and not
-C           activities
-        IF( MFLAG ) THEN
-            KFLAG = .TRUE.
-        ELSE
-            KFLAG = .FALSE.
-        END IF
-
-        IF( AFLAG .OR. PFLAG .OR. BFLAG .OR. ( MFLAG .AND. TFLAG )) THEN
-            DFLAG = .TRUE.
-        ELSE
-            DFLAG = .FALSE.
-        END IF
-
-C.........  Get value of these controls from the environment
-        MESG = 'Indicator for using pollutants list'
-        DFLAG = ENVYN( 'SMK_USE_SIPOLS', MESG, DFLAG, IOS )
-
-        MESG = 'Indicator for using activities list'
-        KFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, KFLAG, IOS )
 
 C.........  If reporting state and/or county emissions, and processing for
 C           biogenic sources, get gridding surrogates
@@ -174,17 +155,39 @@ C.........  For area sources...
 C.............  Get inventory file names given source category
             CALL GETINAME( 'AREA', AENAME, DUMNAME )
 
-C.............  Prompt for inventory files
-            AENAME = PROMPTSET( 
-     &       'Enter logical name for the I/O API AREA INVENTORY file',
-     &       FSREAD3, AENAME, PROGNAME )
+C.........  Prompt for and open input I/O API and ASCII 
+C           inventory files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'AREA INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., AENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            ASDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII AREA INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
+C.........  For map-formatted inventory file
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, AENAME, DUMNAME, ASDEV )
+
+C................  Transfer from MODINFO arrays to MODMERGE arrays
+                ALLOCATE( AMAPNAM( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'AMAPNAM', PROGNAME )
+                ALLOCATE( AMAPFIL( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'AMAPFIL', PROGNAME )
+                
+                ANMAP = NMAP
+                AMAPNAM = MAPNAM   ! array
+                AMAPFIL = MAPFIL   ! array
+
+C.........  For traditional inventory file
+            ELSE
+                AENAME = INAME
+                ASDEV = PROMPTFFILE( 
+     &           'Enter logical name for the ASCII AREA INVENTORY file',
+     &           .TRUE., .TRUE., DUMNAME, PROGNAME )
+
+            END IF
 
 C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( AENAME )
+            CALL RETRIEVE_SET_HEADER( AENAME )
             NASRC = NROWS3D
 
 C.............  Determine the year and projection status of the inventory
@@ -228,10 +231,18 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( AOUNITS( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( NVAR+1, NPPOL, ANIPOL, .TRUE., 
-     &                             AEINAM )
-                CALL STORE_INVINFO( NVAR+1, NPPOL, ANIPOL, 1, INVPIDX,
-     &                              .TRUE., AONAMES, AOUNITS )
+C...............  For map-formatted inventories
+                IF( ANMAP .GT. 0 ) THEN
+                    CALL STORE_INVEN_VARS( ANMAP, ANIPOL, NPPOL,INVPIDX,
+     &                     AMAPNAM, AMAPFIL, AEINAM, AONAMES, AOUNITS ) 
+
+C...............  For old format of inventories
+                ELSE
+                    CALL STORE_VNAMES( NVAR+1, NPPOL, ANIPOL, .TRUE., 
+     &                                 AEINAM )
+                    CALL STORE_INVINFO( NVAR+1, NPPOL, ANIPOL, 1, 
+     &                              INVPIDX, .TRUE. , AONAMES, AOUNITS ) 
+                END IF
 
             END IF
 
@@ -283,15 +294,6 @@ C               and store control variable names.
                 CALL STORE_VNAMES( 1, 1, ANUMATV, .FALSE., AUVNAMS )
 
             END IF  ! end of multiplicative control open
-
-C.............  Open additive control matrix, compare number of sources, 
-C               and store control variable names.
-            IF( AAFLAG ) THEN
-                MESG= 'INTERNAL ERROR: Area additive controls not ' //
-     &                'yet implemented in ' // PROGNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            END IF  ! end of additive control open
 
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
@@ -372,17 +374,39 @@ C.........  If we have mobile sources
 C.............  Get inventory file names given source category
             CALL GETINAME( 'MOBILE', MENAME, DUMNAME )
 
-C.............  Prompt for inventory files
-            MENAME = PROMPTSET( 
-     &       'Enter logical name for the I/O API MOBILE INVENTORY file',
-     &       FSREAD3, MENAME, PROGNAME )
+C.........  Prompt for and open input I/O API and ASCII 
+C           inventory files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'MOBILE INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., MENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            MSDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII MOBILE INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
+C.........  For map-formatted inventory file
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, MENAME, DUMNAME, MSDEV )
+
+C................  Transfer from MODINFO arrays to MODMERGE arrays
+                ALLOCATE( MMAPNAM( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MMAPNAM', PROGNAME )
+                ALLOCATE( MMAPFIL( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MMAPFIL', PROGNAME )
+                
+                MNMAP = NMAP
+                MMAPNAM = MAPNAM   ! array
+                MMAPFIL = MAPFIL   ! array
+
+C.........  For traditional inventory file
+            ELSE
+                MENAME = INAME
+                MSDEV = PROMPTFFILE( 'Enter logical name for ' //
+     &                  'the ASCII MOBILE INVENTORY file',
+     &                  .TRUE., .TRUE., DUMNAME, PROGNAME )
+
+            END IF
 
 C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( MENAME )
+            CALL RETRIEVE_SET_HEADER( MENAME )
             NMSRC = NROWS3D
 
 C.............  Determine the year and projection status of the inventory
@@ -434,20 +458,35 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( MOUNITS( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MOUNITS', PROGNAME )
 
+C...............  For map-formatted inventories
+                IF( MNMAP .GT. 0 ) THEN
+                    CALL STORE_INVEN_VARS( MNMAP-MNIACT, MNIPOL, NPPOL,
+     &                               INVPIDX, MMAPNAM, MMAPFIL, MEANAM,  
+     &                                               MONAMES, MOUNITS ) 
+
+                    K = MNIPOL + 1
+                    CALL STORE_INVEN_VARS( MNMAP-MNIPOL, MNIACT,NPACT,1,
+     &                     MMAPNAM( K ), MMAPFIL( K ), MEANAM( K ), 
+     &                     MONAMES( K ), MOUNITS( K ) ) 
+
+C...............  For old format of inventories
+                ELSE
+
 C.................  Store pollutant names and other information
-                CALL STORE_VNAMES( NVAR+1, NPPOL, MNIPOL, .TRUE., 
-     &                             MEANAM )
-                CALL STORE_INVINFO( NVAR+1, NPPOL, MNIPOL, 1, INVPIDX,
-     &                              .TRUE., MONAMES, MOUNITS )
+                    CALL STORE_VNAMES( NVAR+1, NPPOL, MNIPOL, .TRUE., 
+     &                                 MEANAM )
+                    CALL STORE_INVINFO( NVAR+1, NPPOL, MNIPOL, 1, 
+     &                               INVPIDX, .TRUE., MONAMES, MOUNITS )
 
 C.................  Store activity names and other information
-                I    = MNIPOL * NPPOL
-                NVAR = NVAR + I
-                CALL STORE_VNAMES( NVAR+1, NPACT, MNIACT, .TRUE., 
-     &                             MEANAM( MNIPOL+1 )     )
-                CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, 1, 1, .TRUE., 
-     &                              MONAMES( MNIPOL+1 ), 
-     &                              MOUNITS( MNIPOL+1 )                )
+                    I    = MNIPOL * NPPOL
+                    NVAR = NVAR + I
+                    CALL STORE_VNAMES( NVAR+1, NPACT, MNIACT, .TRUE., 
+     &                                 MEANAM( MNIPOL+1 )     )
+                    CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, 1, 1, 
+     &                                  .TRUE.,  MONAMES( MNIPOL+1 ), 
+     &                                  MOUNITS( MNIPOL+1 )           ) 
+                END IF
 
             END IF
 
@@ -539,17 +578,39 @@ C.........  If we have point sources
 C.............  Get inventory file names given source category
             CALL GETINAME( 'POINT', PENAME, DUMNAME )
 
-C.............  Prompt for inventory files
-            PENAME = PROMPTSET( 
-     &       'Enter logical name for the I/O API POINT INVENTORY file',
-     &       FSREAD3, PENAME, PROGNAME )
+C.........  Prompt for and open input I/O API and ASCII 
+C           inventory files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'POINT INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., PENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            PSDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII POINT INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
+C.........  For map-formatted inventory file
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, PENAME, DUMNAME, PSDEV )
+
+C................  Transfer from MODINFO arrays to MODMERGE arrays
+                ALLOCATE( PMAPNAM( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PMAPNAM', PROGNAME )
+                ALLOCATE( PMAPFIL( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PMAPFIL', PROGNAME )
+                
+                PNMAP = NMAP
+                PMAPNAM = MAPNAM   ! array
+                PMAPFIL = MAPFIL   ! array
+
+C.........  For traditional inventory file
+            ELSE
+                PENAME = INAME
+                PSDEV = PROMPTFFILE( 
+     &          'Enter logical name for the ASCII POINT INVENTORY file',
+     &          .TRUE., .TRUE., DUMNAME, PROGNAME )
+
+            END IF
 
 C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( PENAME )
+            CALL RETRIEVE_SET_HEADER( PENAME )
             NPSRC = NROWS3D
 
 C.............  If outputing ASCII elevated sources, retrieve the position
@@ -597,10 +658,19 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( POUNITS( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( NPTVAR3+1, NPTPPOL3, PNIPOL, .TRUE., 
-     &                             PEINAM )
-                CALL STORE_INVINFO( NVAR+1, NPPOL, PNIPOL, 1, INVPIDX,
-     &                              .TRUE., PONAMES, POUNITS )
+C...............  For map-formatted inventories
+                IF( PNMAP .GT. 0 ) THEN
+                    CALL STORE_INVEN_VARS( PNMAP, PNIPOL, NPPOL,INVPIDX,
+     &                     PMAPNAM, PMAPFIL, PEINAM, PONAMES, POUNITS ) 
+
+C...............  For old format of inventories
+                ELSE
+
+                    CALL STORE_VNAMES( NPTVAR3+1, NPTPPOL3, PNIPOL,  
+     &                                 .TRUE., PEINAM )
+                    CALL STORE_INVINFO( NVAR+1, NPPOL, PNIPOL, 1,
+     &                               INVPIDX, .TRUE., PONAMES, POUNITS )
+                END IF
 
             END IF
 
@@ -651,15 +721,6 @@ C               and store control variable names.
                 CALL STORE_VNAMES( 1, 1, PNUMATV, .FALSE., PUVNAMS )
 
             END IF  ! end of multiplicative control open
-
-C.............  Open additive control matrix, compare number of sources, 
-C               and store control variable names.
-            IF( PAFLAG ) THEN
-                MESG= 'INTERNAL ERROR: Point additive controls not ' //
-     &                'yet implemented in ' // PROGNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            END IF  ! end of additive control open
 
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
@@ -773,24 +834,10 @@ C.................  Open stack groups file output from Elevpoint
 
         END IF      ! End of section for point sources
 
-C.........  Get master pollutants list so we will be able to output in the
-C           proper order in case different source categories have different
-C           pollutants.
-        IF( DFLAG ) THEN
-
-            PDEV = PROMPTFFILE( 
-     &         'Enter logical name for POLLUTANT CODES & NAMES file',
-     &         .TRUE., .TRUE., 'SIPOLS', PROGNAME )
-        END IF
-
-C.........  Get master activities list 
-        IF( KFLAG ) THEN
-
-            VDEV = PROMPTFFILE( 
-     &         'Enter logical name for ACTIVITY CODES & NAMES file',
-     &         .TRUE., .TRUE., 'ACTVNAMS', PROGNAME )
-
-        END IF
+C.........  Get file name for inventory pollutants codes/names
+        MESG = 'Enter logical name for INVENTORY DATA TABLE file'
+        PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'INVTABLE',
+     &                      PROGNAME )
 
 C.........  Get country, state, and county names no matter what, because it is
 C           needed to allocate memory for the state and county totals, even
@@ -864,7 +911,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESCSET( FILNAM,-1 ) ) THEN
+            IF ( .NOT. DESC3( FILNAM ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
@@ -1082,7 +1129,7 @@ C.............  Loop through each file and ensure they are consistent
                 TMPNAM = FNAME( IDX( D ) )
 
 C.................  Get header and compare source number and time range
-                CALL RETRIEVE_IOAPI_HEADER( TMPNAM )
+                CALL RETRIEVE_SET_HEADER( TMPNAM )
 
 C.................  Store the starting date
                 SDATE( IDX( D ) ) = SDATE3D
@@ -1330,7 +1377,7 @@ C------------------  FORMAT  STATEMENTS   -----------------------------
 
 C...........   Internal buffering formats.............94xxx
 
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE CHECK_INVYEAR
 
@@ -1610,5 +1657,93 @@ C----------------------------------------------------------------------
             END DO
  
             END SUBROUTINE STORE_VUNITS
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram stores pollutant and activity names and
+C               units using the map-formatted inventory information 
+            SUBROUTINE STORE_INVEN_VARS( NMAPVAR, NHDRVAR, NPPOL, IDX2, 
+     &                                   MAPVARS, MAPFILES, NAMES1, 
+     &                                   NAMES2, UNITS )
+
+C.............  Subprogram arguments
+            INTEGER,      INTENT (IN) :: NMAPVAR    ! no. data in map file
+            INTEGER,      INTENT (IN) :: NHDRVAR    ! no. data in inven header
+            INTEGER,      INTENT (IN) :: NPPOL      ! no. variables per data var
+            INTEGER,      INTENT (IN) :: IDX2       ! index to which pol-assoc var
+            CHARACTER(*), INTENT (IN) :: MAPVARS ( NMAPVAR )   ! map file var names
+            CHARACTER(*), INTENT (IN) :: MAPFILES( NMAPVAR )   ! map file file names
+            CHARACTER(*), INTENT(OUT) :: NAMES1  ( NHDRVAR )   ! var names list
+            CHARACTER(*), INTENT(OUT) :: NAMES2  ( NHDRVAR )   ! var names read list
+            CHARACTER(*), INTENT(OUT) :: UNITS   ( NHDRVAR )   ! var units
+
+C.............  Local variables
+            INTEGER  I, J
+
+            CHARACTER*16    :: TMPNAME = ' '   ! tmp logical file name
+
+C----------------------------------------------------------------------
+
+C............  Ensure that the number of map variables and the number of 
+C              variables listed in the input file are consistent
+            IF( NMAPVAR .NE. NHDRVAR ) THEN
+                WRITE( MESG,94010 ) 'Number of map-formatted ' //
+     &             'variables is inconsistent with header of  '//
+     &             'inventory file.' // CRLF()// BLANK10 // 
+     &             'I/O API header has', NHDRVAR,'variables indicated'//
+     &              ', but map-formated inventory file has', NMAPVAR
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C............  Loop through variables requested
+            DO I = 1, NMAPVAR
+
+                TMPNAME = 'TMP_POL_FILE'
+                IF( .NOT. SETENVVAR( TMPNAME, MAPFILES( I ) ) ) THEN
+                    MESG = 'ERROR: Could not set logical file name '
+     &                          // CRLF() // BLANK10 // 'for file ' //
+     &                          TRIM( MAPFILES( I ) )
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+                ELSE IF( .NOT. OPENSET( TMPNAME,FSREAD3,PROGNAME )) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Could not open "'//TRIM(MAPVARS(I))//
+     &                      '" file listed in ' // CRLF() // BLANK10 // 
+     &                      'map-formatted inventory for file name: ' //
+     &                      CRLF() // BLANK10 // TRIM( MAPFILES( I ) )
+                    CALL M3MSG2( MESG )
+                    CYCLE
+
+                ELSE IF( .NOT. DESCSET( TMPNAME,ALLFILES ) ) THEN
+                    MESG = 'Could not get description of file "' //
+     &                     TRIM( TMPNAME ) // '".'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END IF
+
+C................  Ensure that map variable name and file variable 
+C                  name are the same
+                IF( MAPVARS( I ) .NE. VNAMESET( 1 ) ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Variable name "'// TRIM(MAPVARS(I))//
+     &                    '" in map-formatted inventory is mapped to '//
+     &                     CRLF()// BLANK10// 'a file with variable "'//
+     &                     TRIM( VNAMESET( 1 ) )//'". Map-formatted '//
+     &                     'inventory has been corrupted.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+                NAMES1( I ) = VNAMESET( 1 )
+	        NAMES2( I ) = VNAMESET( IDX2 )
+                UNITS ( I ) = VUNITSET( IDX2 )
+
+            END DO
+
+C...........   Internal buffering formats.............94xxx
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE STORE_INVEN_VARS
 
         END SUBROUTINE OPENMRGIN

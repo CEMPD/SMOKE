@@ -210,7 +210,6 @@ C           need that many (esp. the arrays that contain pollutant info when
 C           program is run with speciation)
 C.........  Inventory emissions: e.g., A_EXIST
 C.........  Multiplicative control matrices: e.g., AU_EXIST
-C.........  Additive control matrices: e.g., AA_EXIST
 C.........  Reactivity control matrices: e.g., AR_EXIST
 C.........  Speciation matrices: e.g., AS_EXIST
 
@@ -221,15 +220,12 @@ C.........  Allocate and initialize to zero...
             CALL CHECKMEM( IOS, 'A_EXIST', PROGNAME )
             ALLOCATE( AU_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AU_EXIST', PROGNAME )
-            ALLOCATE( AA_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'AA_EXIST', PROGNAME )
             ALLOCATE( AR_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AR_EXIST', PROGNAME )
             ALLOCATE( AS_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AS_EXIST', PROGNAME )
             A_EXIST  = 0  ! array
             AU_EXIST = 0  ! array
-            AA_EXIST = 0  ! array
             AR_EXIST = 0  ! array
             AS_EXIST = 0  ! array
         ENDIF
@@ -245,15 +241,12 @@ C.........  Allocate and initialize to zero...
             CALL CHECKMEM( IOS, 'M_EXIST', PROGNAME )
             ALLOCATE( MU_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MU_EXIST', PROGNAME )
-            ALLOCATE( MA_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'MA_EXIST', PROGNAME )
             ALLOCATE( MR_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MR_EXIST', PROGNAME )
             ALLOCATE( MS_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MS_EXIST', PROGNAME )
             M_EXIST  = 0  ! array
             MU_EXIST = 0  ! array
-            MA_EXIST = 0  ! array
             MR_EXIST = 0  ! array
             MS_EXIST = 0  ! array
         ENDIF
@@ -263,15 +256,12 @@ C.........  Allocate and initialize to zero...
             CALL CHECKMEM( IOS, 'P_EXIST', PROGNAME )
             ALLOCATE( PU_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PU_EXIST', PROGNAME )
-            ALLOCATE( PA_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'PA_EXIST', PROGNAME )
             ALLOCATE( PR_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PR_EXIST', PROGNAME )
             ALLOCATE( PS_EXIST( MXVARPGP, MXGRP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PS_EXIST', PROGNAME )
             P_EXIST  = 0  ! array
             PU_EXIST = 0  ! array
-            PA_EXIST = 0  ! array
             PR_EXIST = 0  ! array
             PS_EXIST = 0  ! array
         ENDIF
@@ -490,14 +480,14 @@ C.............  Loop through all groups, then number of variables per group
         END IF              ! For speciation
 
 C.........  Now build indices for inventory emissions...
-C.........  For each source category, store per-group position for 
+C.........  For each source category, store per-group position for
 C           inventory pollutants...
 
 C.........  Loop through all groups, then number of variables per group
         DO N = 1, NGRP
 
-            ACNT = 0 
-            MCNT = 0 
+            ACNT = 0
+            MCNT = 0
             PCNT = 0
             KA   = 0  ! array
             KM   = 0  ! array
@@ -511,7 +501,7 @@ C.........  Loop through all groups, then number of variables per group
                     K = INDEX1( VBUF, ANIPOL, AEINAM )
                     IF( K .GT. 0 ) THEN
 
-C.........................  If index has already been set for the pollutant, 
+C.........................  If index has already been set for the pollutant,
 C                           then reuse it, otherwise update the counter and
 C                           store
                         IF( KA( K ) .NE. 0 ) THEN
@@ -608,66 +598,6 @@ C.........  Loop through all groups, then number of pollutants per group
                         END IF
                     END IF
                 END IF
-
-            END DO      ! end loop on pollutants per group
-        END DO          ! end loop on groups
-
-C.........  Now build indices for additive controls...
-C.........  For each source category, store per-group position for 
-C           inventory pollutants...
-
-C.........  Loop through all groups, then number of pollutants per group
-        DO N = 1, NGRP
-
-            ACNT = 0 
-            MCNT = 0 
-            PCNT = 0 
-            KA   = 0  ! array
-            KM   = 0  ! array
-            KP   = 0  ! array
-
-            DO V = 1, VGRPCNT( N )
-
-                VBUF = EANAM( SIINDEX( V,N ) )
-
-                IF ( AAFLAG ) THEN    ! Area sources
-                    K = INDEX1( VBUF, ANAMATV, AAVNAMS )
-                    IF( K .GT. 0 ) THEN
-                        IF( KA( K ) .NE. 0 ) THEN
-                            AA_EXIST( V,N ) = ACNT
-                        ELSE
-                            ACNT = ACNT + 1
-                            AA_EXIST( V,N ) = ACNT
-                            KA( K ) = ACNT
-                        END IF
-                    END IF
-                END IF
-
-                IF ( MAFLAG ) THEN    ! Mobile sources
-                    K = INDEX1( VBUF, MNAMATV, MAVNAMS )
-                    IF( K .GT. 0 ) THEN
-                        IF( KM( K ) .NE. 0 ) THEN
-                            MA_EXIST( V,N ) = KM( K )
-                        ELSE
-                            MCNT = MCNT + 1
-                            MA_EXIST( V,N ) = MCNT
-                            KM( K ) = MCNT
-                        END IF
-                    END IF
-                END IF
-
-                IF ( PAFLAG ) THEN    ! Point sources
-                    K = INDEX1( VBUF, PNAMATV, PAVNAMS )
-                    IF( K .GT. 0 ) THEN
-                        IF( KP( K ) .NE. 0 ) THEN
-                            PA_EXIST( V,N ) = PCNT
-                        ELSE
-                            PCNT = PCNT + 1
-                            PA_EXIST( V,N ) = PCNT
-                            KP( K ) = PCNT
-                        END IF
-                    END IF
-               END IF
 
             END DO      ! end loop on pollutants per group
         END DO          ! end loop on groups

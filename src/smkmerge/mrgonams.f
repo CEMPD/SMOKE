@@ -111,7 +111,7 @@ C.........  Initialize - everything will be gridded
 
         END IF
 
-        IF( AUFLAG .OR. AAFLAG .OR. ARFLAG ) THEN
+        IF( AUFLAG .OR. ARFLAG ) THEN
 
             IF( LREPCTL ) THEN
                 CALL TRIM_AND_CONCAT( AREPNAME, 'C' )
@@ -121,7 +121,7 @@ C.........  Initialize - everything will be gridded
 
         END IF
 
-        IF( MUFLAG .OR. MAFLAG .OR. MRFLAG ) THEN
+        IF( MUFLAG .OR. MRFLAG ) THEN
 
             IF( LREPCTL ) THEN
                 CALL TRIM_AND_CONCAT( MREPNAME, 'C' )
@@ -131,22 +131,26 @@ C.........  Initialize - everything will be gridded
 
         END IF
 
-        IF( PUFLAG .OR. PAFLAG .OR. PRFLAG ) THEN
+        IF( PUFLAG .OR. PRFLAG ) THEN
 
             IF( LREPCTL ) THEN
                 CALL TRIM_AND_CONCAT( PREPNAME, 'C' )
             END IF
 
             CALL TRIM_AND_CONCAT( PONAME, 'C' )
+            CALL TRIM_AND_CONCAT( PINGNAME, 'C' )
+            CALL TRIM_AND_CONCAT( PELVNAME, 'C' )
 
         END IF
 
-        IF( AUFLAG .OR. AAFLAG .OR. ARFLAG .OR.
-     &      MUFLAG .OR. MAFLAG .OR. MRFLAG .OR.
-     &      PUFLAG .OR. PAFLAG .OR. PRFLAG     ) THEN
+        IF( AUFLAG .OR. ARFLAG .OR.
+     &      MUFLAG .OR. MRFLAG .OR.
+     &      PUFLAG .OR. PRFLAG     ) THEN
             IF( LREPCTL ) THEN
                 CALL TRIM_AND_CONCAT( TREPNAME, 'C' )
             END IF
+
+            CALL TRIM_AND_CONCAT( TONAME, 'C' )
 
         END IF
 

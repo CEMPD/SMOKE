@@ -94,7 +94,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: PYEAR ! projected year
 
 C...........   Other local variables
-
+        INTEGER         IDEV        ! tmp unit number if ENAME is map file
         INTEGER         IOS         ! status from environment variables
         INTEGER         J           ! index
         INTEGER         L           ! string length
@@ -105,7 +105,8 @@ C...........   Other local variables
         LOGICAL         OFLAG       ! true: ozone-season emissios needed
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
 
-        CHARACTER*300   MESG        ! message buffer 
+        CHARACTER*16    INAME       ! tmp name for inven file of unknown fmt
+        CHARACTER*256   MESG        ! message buffer 
 
         CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
 
@@ -126,16 +127,27 @@ C.........  Get environment variables that control program behavior
         OFLAG = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
 
 C.........  Prompt for and open input I/O API and ASCII files
-C.........  Use NAMBUF for using on the HP
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        NAMBUF = PROMPTSET( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENAME = NAMBUF
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
         IF( DFLAG ) THEN
             NAMBUF = PROMPTMFILE( 
@@ -161,18 +173,13 @@ C.........  Use NAMBUF for using on the HP
      &           .TRUE., .TRUE., CRL // 'TPRO', PROGNAME )
         END IF
 
-C.........  Get source category information from the inventory files
-C.........  Get header description of inventory file
-C.........  Exit if getting the description fails
-        CALL RETRIEVE_IOAPI_HEADER ( ENAME )
-
 C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
 C.........  Set ozone-season emissions flag (INVPIDX)
         IF( OFLAG ) INVPIDX = 1
-        CALL GETSINFO
+        CALL GETSINFO( ENAME )
 
         PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
@@ -262,7 +269,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESC3( FILNAM ) ) THEN
+            IF ( .NOT. DESCSET( FILNAM,ALLFILES ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'

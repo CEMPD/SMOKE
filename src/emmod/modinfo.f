@@ -103,6 +103,11 @@
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EAUNIT( : )
         CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EADESC( : )
 
+!.........  Map file pollutants list and physical file names
+        INTEGER                            , PUBLIC :: NMAP = 0
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MAPNAM( : )
+        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: MAPFIL( : )
+
 !.........  Units conversions information
         INTEGER               , PUBLIC :: INVPIDX = 0    ! annual/O3 season idx
         REAL, ALLOCATABLE, PUBLIC :: EACNV( : )          ! units conv factors

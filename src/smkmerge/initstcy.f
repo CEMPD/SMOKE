@@ -112,9 +112,6 @@ C.........  State totals...
         	IF ( ALLOCATED( AEUSTA ) ) THEN
                     AEUSTA = 0.   ! state total multipltv-controlled emissions 
                 END IF
-        	IF ( ALLOCATED( AEASTA ) ) THEN
-                    AEASTA = 0.   ! state total additive- controlled emissions
-                END IF
         	IF ( ALLOCATED( AERSTA ) ) THEN
                     AERSTA = 0.   ! state total reactivity-controlled emissions
                 END IF
@@ -132,9 +129,6 @@ C.........  State totals...
         	IF ( ALLOCATED( MEUSTA ) ) THEN
                     MEUSTA = 0.
                 END IF
-        	IF ( ALLOCATED( MEASTA ) ) THEN
-                    MEASTA = 0.
-                END IF
         	IF ( ALLOCATED( MERSTA ) ) THEN
                     MERSTA = 0.
                 END IF
@@ -148,9 +142,6 @@ C.........  State totals...
         	IF ( ALLOCATED( PEUSTA ) ) THEN
                     PEUSTA = 0.
                 END IF
-        	IF ( ALLOCATED( PEASTA ) ) THEN
-                    PEASTA = 0.
-                END IF
         	IF ( ALLOCATED( PERSTA ) ) THEN
                     PERSTA = 0.
                 END IF
@@ -163,9 +154,6 @@ C.........  State totals...
         	TEBSTA = 0.
         	IF ( ALLOCATED( TEUSTA ) ) THEN
                     TEUSTA = 0.
-                END IF
-        	IF ( ALLOCATED( TEASTA ) ) THEN
-                    TEASTA = 0.
                 END IF
         	IF ( ALLOCATED( TERSTA ) ) THEN
                     TERSTA = 0.
@@ -182,9 +170,6 @@ C.........  County totals...
             AEBCNY = 0.   ! county total inven or speciated emissions
             IF ( ALLOCATED( AEUCNY ) ) THEN
                 AEUCNY = 0.   ! county total multiplicative-controlled emissions
-            END IF
-            IF ( ALLOCATED( AEACNY ) ) THEN
-                AEACNY = 0.   ! county total additive- controlled emissions
             END IF
             IF ( ALLOCATED( AERCNY ) ) THEN
                 AERCNY = 0.   ! county total reactivity-controlled emissions
@@ -203,9 +188,6 @@ C.........  County totals...
             IF ( ALLOCATED( MEUCNY ) ) THEN
                 MEUCNY = 0.
             END IF
-            IF ( ALLOCATED( MEACNY ) ) THEN
-                MEACNY = 0.
-            END IF
             IF ( ALLOCATED( MERCNY ) ) THEN
                 MERCNY = 0.
             END IF
@@ -219,9 +201,6 @@ C.........  County totals...
             IF ( ALLOCATED( PEUCNY ) ) THEN
                 PEUCNY = 0.
             END IF
-            IF ( ALLOCATED( PEACNY ) ) THEN
-                PEACNY = 0.
-            END IF
             IF ( ALLOCATED( PERCNY ) ) THEN
                 PERCNY = 0.
             END IF
@@ -234,9 +213,6 @@ C.........  County totals...
             TEBCNY = 0.
             IF ( ALLOCATED( TEUCNY ) ) THEN
                 TEUCNY = 0.
-            END IF
-            IF ( ALLOCATED( TEACNY ) ) THEN
-                TEACNY = 0.
             END IF
             IF ( ALLOCATED( TERCNY ) ) THEN
                 TERCNY = 0.

@@ -317,7 +317,7 @@ C.....................  Update state totals
             END IF
 
 C.............  Controlled area sources
-            IF( ( AUFLAG .OR. AAFLAG .OR. ARFLAG ) .AND. LREPCTL ) THEN
+            IF( ( AUFLAG .OR. ARFLAG ) .AND. LREPCTL ) THEN
                 CALL CREATE_HEADER( 'Controlled area' )
                 CALL CREATE_STATE( NC, NS, ACNT, AECCNY, AECSTA )
                 CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AECSTA)
@@ -352,7 +352,7 @@ C.................  Update state totals
             END IF
 
 C.............  Controlled mobile sources
-            IF( ( MUFLAG .OR. MAFLAG .OR. MRFLAG ) .AND. LREPCTL ) THEN
+            IF( ( MUFLAG .OR. MRFLAG ) .AND. LREPCTL ) THEN
                 CALL CREATE_HEADER( 'Controlled mobile' )
                 CALL CREATE_STATE( NC, NS, MCNT, MECCNY, MECSTA )
                 CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MECSTA)
@@ -375,7 +375,7 @@ C.................  Update state totals
             END IF
 
 C.............  Controlled point sources
-            IF( ( PUFLAG .OR. PAFLAG .OR. PRFLAG ) .AND. LREPCTL ) THEN
+            IF( ( PUFLAG .OR. PRFLAG ) .AND. LREPCTL ) THEN
                 CALL CREATE_HEADER( 'Controlled point' )
                 CALL CREATE_STATE( NC, NS, PCNT, PECCNY, PECSTA )
                 CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PECSTA)
@@ -394,7 +394,7 @@ C.............  Combined sources
             END IF
 
 C.............  Controlled total sources
-            IF( ( TUFLAG .OR. TAFLAG .OR. TRFLAG ) .AND. LREPCTL ) THEN
+            IF( ( TUFLAG .OR. TRFLAG ) .AND. LREPCTL ) THEN
                 CALL CREATE_HEADER( 'Controlled total' )
                 CALL CREATE_STATE( NC, NS, TCNT, TECCNY, TECSTA )
                 CALL WRITE_STA( TRDEV, NS, TCNT, NAMES, UNITS, TECSTA)

@@ -172,6 +172,7 @@ C...........   Logical names and unit numbers
         CHARACTER*16 :: FNAME = ' '    !  emission factors file
         CHARACTER*16 :: HNAME = 'NONE' !  hour-specific input file, or "NONE"
         CHARACTER*16 :: TNAME = ' '    !  timestepped (low-level) output file
+        CHARACTER*16 :: TMPNAME = ' '  !  temporary inventory logical name
 
 C...........   Other local variables
 
@@ -230,6 +231,7 @@ C...........   Other local variables
         CHARACTER(LEN=IOVLEN3)   VOLNAM    ! volatile pollutant name
         CHARACTER*300            MESG      ! buffer for M3EXIT() messages
         CHARACTER(LEN=IOVLEN3)   CBUF      ! pollutant name temporary buffer 
+        CHARACTER(LEN=IOVLEN3)   EBUF      ! pollutant name temporary buffer 
         CHARACTER(LEN=20)        SEARCHSTR ! string used in search
         CHARACTER(LEN=MXDLEN3)   TEMPLINE  ! line from file description
 
@@ -996,23 +998,20 @@ C.............  Read in pollutant emissions or activities from inventory for
 C               current group
             DO I = 1, NGSZ
 
+                EBUF = EANAM2D( I,N )
                 CBUF = ALLIN2D( I,N )
                 L1   = LEN_TRIM( CBUF )
 
 C.................  Skip blanks that can occur when NGRP > 1
                 IF ( CBUF .EQ. ' ' ) CYCLE
 
-                IF( .NOT. READSET( ENAME, CBUF, ALLAYS3, ALLFILES, 
-     &                             0, 0, EMAC( 1,I )      ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'Error reading "' // CBUF( 1:L1 ) //
-     &                     '" from file "' // ENAME( 1:ENLEN ) // '."'
-                    CALL M3MSG2( MESG )
+C.................  Read the emissions data in either map format
+C                   or the old format.
+                CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
+     &                         1, 1, EBUF, CBUF, 1, EMAC( 1,I )   )
 
-                END IF
-
-C.................  If there are any missing values in the data, give an
-C                   error to avoid problems in genhemis routine
+C...............  If there are any missing values in the data, give an
+C                 error to avoid problems in genhemis routine
                 RTMP = MINVAL( EMAC( 1:NSRC,I ) )
                 IF( RTMP .LT. 0 ) THEN
                     EFLAG = .TRUE.

@@ -100,6 +100,7 @@ C.........  Names for output variables in mass-based and mole-based files
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MOLEONAM( :,: )
 
 C.........  Unit numbers and logical file names
+        INTEGER         IDEV    ! tmp unit number if ENAME is map file
         INTEGER         KDEV    !  unit no. for optional pol to pol conversion
         INTEGER         LDEV    !  unit number for log file
         INTEGER      :: MDEV = 0!  unit number for mobile codes file
@@ -111,6 +112,7 @@ C.........  Unit numbers and logical file names
 
         CHARACTER*16    ANAME   !  logical name for additive control matrix
         CHARACTER*16    ENAME   !  logical name for point-source input file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
         CHARACTER*16    SNAME   !  logical name for mass spec matrix output file
         CHARACTER*16    LNAME   !  logical name for mole spec matrix output file
 
@@ -175,14 +177,29 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.......   Get file names and units; open input files
+        
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        ENAME = PROMPTSET( 
-     &          'Enter logical name for I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
         XDEV = PROMPTFFILE( 
      &           'Enter logical name for SPECIATION XREF file',
@@ -197,21 +214,11 @@ C.......   Get file names and units; open input files
      &           'Enter logical name for POLLUTANT CONVERSION file',
      &           .TRUE., .TRUE., 'GSCNV', PROGNAME )
 
-C.........  Get header description of inventory file 
-        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
 C.........  Otherwise, store source-category-specific header information, 
-C           including the inventory pollutants in the file (if any).  Note that 
-C           the I/O API head info is passed by include file and the
-C           results are stored in module MODINFO.
-        ELSE
-
-            CALL GETSINFO
- 
-        END IF
+C           including the inventory pollutants in the file (if any).   
+C           Note that the I/O API head info is passed by include file 
+C           and the results are stored in module MODINFO.
+        CALL GETSINFO( ENAME )
 
 C.........   Open files that depend on inventory characteristics
         IF( NIACT .GT. 0 ) THEN

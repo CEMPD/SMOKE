@@ -91,7 +91,7 @@ C***********************************************************************
 C   begin body of subroutine MRGVNAMS
 
 C.........  Read, sort, and store pollutant codes/names file
-        CALL RDCODNAM( PDEV, VDEV )
+        CALL RDCODNAM( PDEV )
 
 C.........  Loop through pollutants and/or activities in each source category
 C           and update status of pollutants and activities in master list.
@@ -432,8 +432,7 @@ C                  input to Smkmerge
                     MESG = 'ERROR: Variable "' // VBUF( 1:L ) // 
      &                     '" from ' // CATDESC // 
      &                     ' inventory file is not in ' // CRLF() //
-     &                     BLANK10 // 'master pollutants or ' //
-     &                     'activites files.'
+     &                     BLANK10 // 'inventory table.'
                     CALL M3MSG2( MESG )
 
                 END IF
@@ -610,14 +609,14 @@ C.........  Build list of species
 C.........  To do this, must only condense the pol-to-species list, in case
 C           multiple pollutants are creating the same species.  Condense by
 C           removing later-appearing duplicates
-            SUBROUTINE BUILD_SPECIES_ARRAY( NSMATV,TSVDESC,NMSPC,EMNAM )
+            SUBROUTINE BUILD_SPECIES_ARRAY( LSMATV,LOCDESC,LMSPC,LOCNAM)
 
 C.............  Subprogram arguments
 
-            INTEGER     , INTENT (IN) :: NSMATV             ! input count
-            CHARACTER(*), INTENT (IN) :: TSVDESC( NSMATV )  ! spec var descs
-            INTEGER     , INTENT(OUT) :: NMSPC              ! output count
-            CHARACTER(*), INTENT(OUT) :: EMNAM  ( NSMATV )  ! species list
+            INTEGER     , INTENT (IN) :: LSMATV             ! input count
+            CHARACTER(*), INTENT (IN) :: LOCDESC( LSMATV )  ! spec var descs
+            INTEGER     , INTENT(OUT) :: LMSPC              ! output count
+            CHARACTER(*), INTENT(OUT) :: LOCNAM ( LSMATV )  ! species list
 
 C.............  Local subprogram variables
             INTEGER      I, J, K, N, NCNT, L1, L2      ! counters and indices
@@ -625,10 +624,16 @@ C.............  Local subprogram variables
 
 C----------------------------------------------------------------------
 
-C.............  Populate array by searching remaining list of pollutants-to-
-C               species for current iteration's value.  
+C.............  Populate array by looping through master list of pol-to-species in
+C               output order, and if that entry is there for local subroutine
+C               arguments, and if the species hasn't been added yet, then add it.  
             NCNT = 0
             DO I = 1, NSMATV 
+
+C.................  Check if master pol-to-species is in local list. If not cycle
+                J = INDEX1( TSVDESC( I ), LSMATV, LOCDESC )
+                IF( J .LE. 0 ) CYCLE
+
                 N = NSMATV - I
 
 C.................  Search remaining list of pollutants-to-species for current
@@ -639,16 +644,16 @@ C                   iteration's value.
 C.................  See if species is not already in the list of species
                 L1 = INDEX( TSVDESC( I ), SPJOIN )
                 L2 = LEN_TRIM( TSVDESC( I ) )
-                K  = INDEX1( TSVDESC( I )( L1+1:L2 ), NCNT, EMNAM )
+                K  = INDEX1( TSVDESC( I )( L1+1:L2 ), NCNT, LOCNAM )
 
 C.................  If pollutant-to- species is not found, make sure that 
 C                   species only is not 
                 IF( J .LE. 0 .AND. K .LE. 0 ) THEN
                     NCNT = NCNT + 1
-                    EMNAM( NCNT ) = TSVDESC( I )( L1+1:L2 )
+                    LOCNAM( NCNT ) = TSVDESC( I )( L1+1:L2 )
                 ENDIF
             END DO
-            NMSPC = NCNT
+            LMSPC = NCNT
 
             END SUBROUTINE BUILD_SPECIES_ARRAY
 
