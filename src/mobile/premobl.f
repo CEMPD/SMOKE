@@ -123,6 +123,7 @@ C...........   File units and logical names:
         CHARACTER*16 ENAME ! logical name for mobile I/O API inventory file
         CHARACTER*16 FNAME ! logical name for output METIDX per PSI
         CHARACTER*16 MNAME ! logical name for output ungridded min/max temp
+        CHARACTER*16 HNAME ! logical name for output ungridded hourly temps
         CHARACTER*16 TNAME ! logical name for surface temp input file
         CHARACTER*16 UNAME ! logical name for ungridding-matrix input file
 
@@ -167,6 +168,7 @@ C...........   Other local variables:
         LOGICAL :: LASTTIME = .FALSE.  !  true: final time step
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
 
+        CHARACTER*20              EMISMOD     ! emission factor model name from E.V.
         CHARACTER(LEN=IOVLEN3) :: TVARNAME    !  temperature variable name
         CHARACTER*300             MESG        !  message buffer
 
@@ -185,7 +187,7 @@ C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
 C.........  End program if source category is not mobile sources
-        IF( CATEGORY .NE. 'MOBILE' ) THEN
+        IF( CATEGORY /= 'MOBILE' ) THEN
             L = LEN_TRIM( PROGNAME )
             MESG = 'Program ' // PROGNAME( 1:L ) // ' does not ' //
      &             'support ' // CATEGORY( 1:CATLEN ) // ' sources.'
@@ -194,6 +196,10 @@ C.........  End program if source category is not mobile sources
         END IF
 
 C.........  Obtain settings from the environment...
+C.........  Get the name of the emission factor model to use for one run
+        MESG = 'Emission factor model'
+        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE5', EMISMOD, IOS )
+        
 C.........  Get the name of the activity to use for one run
         MESG = 'Temperature variable name'
         CALL ENVSTR( 'TVARNAME', MESG, 'TEMP1P5', TVARNAME, IOS )
@@ -201,7 +207,7 @@ C.........  Get the name of the activity to use for one run
 C.........  Set default name of meterology file, depending on the name of the
 C           temperature variable
         TNAME = 'MET_CRO_2D'
-        IF( TVARNAME .EQ. 'TA' ) TNAME = 'MET_CRO_3D'
+        IF( TVARNAME == 'TA' ) TNAME = 'MET_CRO_3D'
 
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
@@ -245,7 +251,7 @@ C           results are stored in module MODINFO.
 
 C.............  Ensure that there is at least one activity in the inventory 
 C               file, or else this program does not need to be run
-            IF( NIACT .EQ. 0 ) THEN
+            IF( NIACT == 0 ) THEN
                 MESG = 'ERROR: No activities are found in the ' //
      &                 'inventory file!  Program cannot be used.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -358,6 +364,8 @@ C.........  Allocate memory for other arrays in the program
         CALL CHECKMEM( IOS, 'METIDX', PROGNAME )
         ALLOCATE( EFSIDX( NSRC,NIACT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EFSIDX', PROGNAME )
+        ALLOCATE( TKHOUR( NSRC,24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
 
 C.........  Create array of which sources are affected by daylight savings
         CALL GETDYSAV( NSRC, IFIP, LDAYSAV )
@@ -379,11 +387,11 @@ C.........  Set end date and time for run
         CALL NEXTIME( EDATE, ETIME, NSTEPS*10000 )
 
 C.........  Preprocess dates, times, and time zones.  Write report for
-C           time zones here for zones that do no have a complete day of
+C           time zones here for zones that do not have a complete day of
 C           data in beginning or end.  This is only an issue because of
 C           computing min/max data per day.
         CALL CHKFULLDY( NSRC, SDATE, STIME, EDATE, ETIME, 
-     &                  TZONES, LDAYSAV )
+     &                  TZONES, LDAYSAV, EMISMOD )
 
 C.........  Fill tables for translating mobile road classes and vehicle types
 C.........  The tables are passed through MODINFO
@@ -413,9 +421,13 @@ C           waited until now because need MXNPSI from RDEFXREF
 
 C.........  Open output files...
 
-C.........  Open file(s) for per-source meteorology
+C.........  Open file(s) for per-source min/max temperatures
         MNAME = 'MINMAXT'
         CALL OPENSMET( ENAME, SDATE, STIME, TVARNAME, MNAME )
+        
+C.........  Open file for per-source hourly temperature profiles       
+        HNAME = 'HOURLYT'
+        CALL OPENSHOUR( ENAME, SDATE, STIME, TVARNAME, HNAME )
 
 C.........  Open file(s) for parameter scheme index outputs
         FNAME = 'MEFTEMP'
@@ -451,7 +463,7 @@ C.............  Apply ungridding matrix
      &                     UMAT( NSRC+NMATX+1 ), TASRC )
 
 C.............  When new day...
-            IF ( JDATE .NE. LDATE ) THEN
+            IF ( JDATE /= LDATE ) THEN
 
 C.................  Write message for day of week and date
                 DAY = WKDAY( JDATE )
@@ -463,25 +475,28 @@ C.................  Set start and end hours of day for all sources
 C.................  The first time this routine is called, ODATE and OTIME
 C                   are set as well
                 CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, 
-     &                         DAYBEGT, DAYENDT )
+     &                         DAYBEGT, DAYENDT, EMISMOD )
 
             END IF
 
 C.............  First iteration in loop, set the output date/time
-            IF( T .EQ. 1 ) THEN
+            IF( T == 1 ) THEN
                 CALL SETOUTDT( NSRC, JDATE, TZONES, DAYBEGT, DAYENDT, 
      &                         ODATE, OTIME )
             END IF
 
 C.............  Update the min/max temperatures based on this hour's data
-            LASTTIME = ( T .EQ. NSTEPS )
+            LASTTIME = ( T == NSTEPS )
             CALL DYMINMAX( NSRC, JTIME, LASTTIME, DAYBEGT, DAYENDT, 
      &                     TASRC, TKMIN, TKMAX, TKMINOUT, TKMAXOUT )
+
+C.............  Create hourly temperature array by source
+            CALL HOURTEMP( NSRC, JTIME, DAYBEGT, TASRC, TKHOUR )
             
 C.............  Adjust and output min/max data
             IF( LASTTIME .OR.
-     &        ( JDATE .GE. ODATE .AND.
-     &          JTIME .EQ. OTIME       ) ) THEN
+     &        ( JDATE >= ODATE .AND.
+     &          JTIME == OTIME       ) ) THEN
 
 C.................  Adjust the by-source meteorology data before output
                 CALL ADJSMET( NSRC, NTMPR, NVLDTMM, MINT_MIN, MINT_MAX, 
@@ -489,11 +504,15 @@ C.................  Adjust the by-source meteorology data before output
      &                        'temperature', VLDTMPR, VLDTMIN, VLDTMAX, 
      &                        TKMINOUT, TKMAXOUT, METIDX )
 
+C.................  Adjust hourly temperature data based on min and max
+                CALL ADJSHOUR( NSRC, MINT_MIN, MAXT_MAX, 'temperature',
+     &                     TKHOUR )
+
 C.................  Count these sources (the first time)
                 IF( .NOT. OFLAG ) THEN
                     DO S = 1, NSRC
 
-                	IF( UMAT( S ) .EQ. 0 ) THEN
+                	IF( UMAT( S ) == 0 ) THEN
                             OFLAG = .TRUE.
                             OSRC = OSRC + 1
                 	END IF
@@ -504,6 +523,9 @@ C.................  Count these sources (the first time)
 C.................  Write the by-source meteorology data
                 CALL WRSMET( NSRC, IDATE, ITIME, 'MINMAXT', 
      &                       TKMINOUT, TKMAXOUT, METIDX    )
+
+C.................  Write hourly temperature data to file
+                CALL WRSHOUR( NSRC, IDATE, JTIME, 'HOURLYT', TKHOUR )
 
 C.................  Update meteorology information for each emission factor
                 CALL GENEFMET( NSRC, MXXNPSI, NVLDTMM, NIACT, 
@@ -527,7 +549,7 @@ C......... Write temperature combinations for each PSI into an ASCII file
         DO V = 1, NIACT
 
 C.............  Skip activity if not to be used
-            IF( NETYPE( V ) .EQ. 0 ) CYCLE
+            IF( NETYPE( V ) == 0 ) CYCLE
 
             DO I = 1, NPSI( V )
 
@@ -535,7 +557,7 @@ C.............  Skip activity if not to be used
 
                     K = TIPSI( I, J, V )
 
-                    IF( K .NE. 0 ) THEN
+                    IF( K /= 0 ) THEN
 
                         PSI  = PSILIST( I,V )
                         TMIN = VLDTMIN( J )
@@ -595,7 +617,7 @@ C.............  Local variables
 
 C----------------------------------------------------------------------
 
-            IF( UVAL .NE. TVAL ) THEN
+            IF( UVAL /= TVAL ) THEN
                 EFLAG = .TRUE.
                 L1 = LEN_TRIM( VNAME )
                 L2 = LEN_TRIM( VDESC )
