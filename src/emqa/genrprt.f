@@ -99,13 +99,10 @@ C...........   Other local variables
         INTEGER         JDATE             ! Julian date
         INTEGER         JTIME             ! time (HHMMSS)
         INTEGER         NDATA             ! number of data columns
-        INTEGER         NDIN              ! no. data variables to read in
         INTEGER         NV                ! number data or spc variables
 
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL      :: SFLAG    = .FALSE. ! true: speciation applies to rpt
-
-        CHARACTER(LEN=IOVLEN3), SAVE :: BNAME    ! file name buffer
 
         CHARACTER*300          MESG        !  message buffer
 
@@ -131,15 +128,11 @@ C.........  Report-specific local settings
 
         SFLAG = ( RPT_%USESLMAT .OR. RPT_%USESSMAT )
 
-        BNAME = ENAME
-        NDIN  = NIPPA
-        IF( RPT_%USEHOUR ) THEN
-            BNAME = TNAME
-            NDIN  = NTPDAT
-        END IF
-
 C.........  Allocate local memory for reading input data
-        ALLOCATE( POLVAL( NSRC, NDIN ), STAT=IOS )
+        N  = NIPPA
+        IF( RPT_%USEHOUR ) N = NTPDAT
+
+        ALLOCATE( POLVAL( NSRC, N ), STAT=IOS )
         CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
 
 C.........  Allocate local memory for bin helper summing array
@@ -161,10 +154,17 @@ C.........  Loop through time steps
 C.............  Set hour index
             H =  1 + MOD( JTIME / 10000 , 24 )
 
-C.............  Read emissions for whole inventory for possible pollutants
-C               and activities for current report
-            CALL RDINVPOL( BNAME, NSRC, NDIN, JDATE, JTIME, 
-     &                     RDNAMES( 1, RCNT ), POLVAL, IOS )
+C.............  Read hourly emissions, if needed
+            IF( RPT_%USEHOUR ) THEN
+                CALL RDINVPOL( TNAME, NSRC, NTPDAT, JDATE, JTIME, 
+     &                         TPNAME, POLVAL, IOS )
+
+C.............  Otherwise, read inventory emissions (for all data) 
+            ELSE
+                CALL RDINVPOL( ENAME, NSRC, NIPPA, JDATE, JTIME, 
+     &                         EAREAD, POLVAL, IOS )
+
+            END IF
 
             IF( IOS .GT. 0 ) THEN
                 MESG = 'Problem reading inventory data.'
@@ -177,7 +177,13 @@ C               bins within list of output records
 
 C.................  Set index to data arrays based on speciation status
                 E = V
-                IF( SFLAG ) E = SPCTODAT( V )
+                IF( RPT_%USEHOUR .AND. SFLAG ) THEN
+                    E = SPCTOTPR( V )
+
+                ELSE IF( SFLAG ) THEN
+                    E = SPCTOINV( V )
+
+                END IF
 
 C.................  Set index from global to actually input pol/act/etype
                 J = INVIDX( E )
