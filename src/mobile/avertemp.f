@@ -1,12 +1,12 @@
 
         SUBROUTINE AVERTEMP( NSRC, NCNTY, CNTYCODE, SRCARRAY,  
-     &                       TSTEP, HOURTEMP, CNTYTEMP, NDAYSRC ) 
+     &                       TSTEP, CNTYTEMP, CNTYRH, CNTYBP, NDAYSRC ) 
 
 C***********************************************************************
 C  subroutine body starts at line 78
 C
 C  DESCRIPTION:
-C       Averages hourly temperatures based on number of sources
+C       Averages hourly meteorology data based on number of sources
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -38,6 +38,11 @@ C Last updated: $Date$
 C
 C***********************************************************************
 
+C...........   MODULES for public variables
+
+C...........   This module is the derived meteorology data for emission factors
+        USE MODMET, ONLY: TKHOUR, RHHOUR, BPHOUR
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -57,8 +62,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT   (IN) :: CNTYCODE( NCNTY )      ! FIPS codes for counties
         INTEGER, INTENT   (IN) :: SRCARRAY( NSRC )       ! county codes for each source
         INTEGER, INTENT   (IN) :: TSTEP                  ! current time step
-        REAL,    INTENT(INOUT) :: HOURTEMP( NSRC, 24 )   ! hourly temps by source
         REAL,    INTENT  (OUT) :: CNTYTEMP( NCNTY )      ! averaged temps by county
+        REAL,    INTENT  (OUT) :: CNTYRH  ( NCNTY )      ! averaged rel. hum. by county
+        REAL,    INTENT  (OUT) :: CNTYBP  ( NCNTY )      ! averaged baro. pressure by county
         INTEGER, INTENT(INOUT) :: NDAYSRC( NSRC,24 )     ! no. days to average over
 
 C...........   Other local variables
@@ -69,6 +75,8 @@ C...........   Other local variables
         INTEGER NUMSRC                    ! no. sources to be averaged
 
         REAL    TEMPSUM                   ! sum of temperatures
+        REAL    RHSUM                     ! sum of relative humidities
+        REAL    BPSUM                     ! sum of barometric pressures
 
         LOGICAL :: INITIAL = .TRUE.       ! true: first time through routine
 
@@ -82,7 +90,10 @@ C   begin body of subroutine AVERTEMP
 C.........  Loop through all counties
         DO I = 1, NCNTY
             NUMSRC = 0
+            
             TEMPSUM = 0
+            RHSUM   = 0
+            BPSUM   = 0
         
             CURRCNTY = CNTYCODE( I )
             
@@ -94,21 +105,31 @@ C                   gridding surrogates do not contain data for all counties
                 IF( NDAYSRC( J,TSTEP ) == 0 ) CYCLE
                 
                 NUMSRC = NUMSRC + 1
+                
                 TEMPSUM = TEMPSUM + 
-     &                    ( HOURTEMP( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
-                HOURTEMP( J,TSTEP ) = 0
+     &                    ( TKHOUR( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
+                RHSUM = RHSUM +
+     &                    ( RHHOUR( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
+                BPSUM = BPSUM +
+     &                    ( BPHOUR( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
+     
+                TKHOUR( J,TSTEP ) = 0
+                RHHOUR( J,TSTEP ) = 0
+                BPHOUR( J,TSTEP ) = 0
                 NDAYSRC( J,TSTEP ) = 0
 
             END DO
             
             IF( NUMSRC == 0 ) THEN
                 WRITE( MESG,94010 ) 
-     &                 'No valid temperatures for reference county',
+     &                 'No valid meteorology data for reference county',
      &                 CURRCNTY, '. This is probably due to ',
      &                 'insufficient surrogate data.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ELSE
                 CNTYTEMP( I ) = TEMPSUM / NUMSRC
+                CNTYRH  ( I ) = RHSUM   / NUMSRC
+                CNTYBP  ( I ) = BPSUM   / NUMSRC
             END IF
         END DO
 
