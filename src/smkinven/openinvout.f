@@ -93,7 +93,7 @@ C              as NPPOL > NPACT, which is expected to always be the case
 
 C...........   Other local variables
 
-        INTEGER       I, J, K, L, L1, L2, V     ! counter and indices
+        INTEGER       I, J, K, L, L2, V, V1, V2     ! counter and indices
 
         INTEGER       IOS       ! i/o status
         INTEGER       LEQU      ! position of '=' in formula
@@ -106,12 +106,14 @@ C...........   Other local variables
 
         LOGICAL    :: CHKPLUS  = .FALSE. ! true: formula uses a + sign
         LOGICAL    :: CHKMINUS = .FALSE. ! true: formula uses a - sign
+        LOGICAL    :: EFLAG    = .FALSE. ! true: error found
 
         CHARACTER*60  VAR_FORMULA
         CHARACTER*300 MESG      ! message buffer 
 
         CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
         CHARACTER(LEN=IOVLEN3)  VIN_A
+        CHARACTER(LEN=IOVLEN3)  VIN_B
         CHARACTER(LEN=IOVLEN3)  VNAME
         CHARACTER(LEN=IOULEN3)  UNITS  ! tmp units name
 
@@ -421,13 +423,8 @@ C           Base the other variable settings (besides the name) on the first
 C           of the two variables in the formula.
         IF( VAR_FORMULA .NE. ' ' ) THEN
 
-C.............  Make sure not using activities - not supported 
-            IF( NIACT .GT. 0 ) THEN
-                MESG = 'Formula not support when using activities'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
 C.............  Make sure formula makes sense
+            L2   = LEN_TRIM( VAR_FORMULA ) 
             LEQU = INDEX( VAR_FORMULA, '=' )
             LPLS = INDEX( VAR_FORMULA, '+' )
             LMNS = INDEX( VAR_FORMULA, '-' )
@@ -452,17 +449,53 @@ C.............  Make sure formula makes sense
 C.............  Extract formula variable names
             VNAME = ADJUSTL ( VAR_FORMULA(      1:LEQU-1 ) )
             VIN_A = ADJUSTL ( VAR_FORMULA( LEQU+1:LDIV-1 ) )
+            VIN_B = ADJUSTL ( VAR_FORMULA( LDIV+1:L2     ) )
 
 C.............  Find formula inputs in existing variable list
-            V = INDEX1( VIN_A, NIPPA, EANAM )
+            V1 = INDEX1( VIN_A, NIPOL, EINAM )
+            V2 = INDEX1( VIN_B, NIPOL, EINAM )
 
-            IF( V .LE. 0 ) THEN
+            IF( V1 .LE. 0 ) THEN
+                EFLAG = .TRUE.
                 L = LEN_TRIM( VIN_A )
-                MESG = 'Variable "'// VIN_A( 1:L ) // 
-     &                 '" from formula was not found in inventory.'
+                MESG = 'ERROR: Variable "'// VIN_A( 1:L ) // '" from '//
+     &                 'formula was not found in emissions inputs.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF( V2 .LE. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( VIN_B )
+                MESG = 'ERROR: Variable "'// VIN_B( 1:L ) // '" from '//
+     &                 'formula was not found in emissions inputs.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            V1 = INDEX1( VIN_A, NIACT, ACTVTY )
+            V2 = INDEX1( VIN_B, NIACT, ACTVTY )
+
+            IF( V1 .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( VIN_A )
+                MESG = 'ERROR: Variable "'// VIN_A( 1:L )// '" is an'//
+     &                 'activity, which is not allowed in a formula.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF( V2 .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( VIN_B )
+                MESG = 'ERROR: Variable "'// VIN_B( 1:L )// '" is an'//
+     &                 'activity, which is not allowed in a formula.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( EFLAG ) THEN
+                MESG = 'ERROR: Problem processing formulas.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
+            V = INDEX1( VIN_A, NIPPA, EANAM )
             DO I = 1, NPPOL ! Loop through number of variables per pollutant
 
                 L = LEN_TRIM( VIN_A )
