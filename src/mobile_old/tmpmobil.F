@@ -2,7 +2,7 @@
         PROGRAM TMPMOBIL
 
 C***********************************************************************
-C  program body starts at line 372
+C  program body starts at line 373
 C
 C  DESCRIPTION:
 C       Produces source-level temporally allocated VMT using the 
@@ -16,7 +16,7 @@ C       produced by RAWMOBIL.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O; 
-C       FIND1, FIND2, FIND3 GETEFILE, GETNUM, GETYN, DAYMON, 
+C       FIND1, FIND2, FIND3, FIND4, GETEFILE, GETNUM, GETYN, DAYMON, 
 C       TIME2SEC, TRIMLEN, WKDAY
 C
 C  REVISION  HISTORY:
@@ -67,7 +67,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CSVNAME
         INTEGER         ENVINT 
         LOGICAL         ENVYN
-        INTEGER         FIND1, FIND2, FIND3
+        INTEGER         FIND1, FIND2, FIND3, FIND4
         INTEGER         GETDATE 
         INTEGER         GETEFILE
         INTEGER         GETNUM
@@ -88,10 +88,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY           !  day of week (1...7)
 
         EXTERNAL    CHKXLIN, CRLF, CSVNAME, ENVINT, ENVYN, FIND1, FIND2,
-     &              FIND3, GETDATE, GETEFILE, GETNUM, GETYN, HHMMSS, 
-     &              INDEX1, ISDSTIME, JULIAN, MMDDYY, PROMPTFFILE, 
-     &              PROMPTMFILE, RDMPLIST, RDTPROF, STR2INT, SEC2TIME, 
-     &              TIME2SEC, TRIMLEN, WKDAY
+     &              FIND3, FIND4, GETDATE, GETEFILE, GETNUM, GETYN,  
+     &              HHMMSS, INDEX1, ISDSTIME, JULIAN, MMDDYY, 
+     &              PROMPTFFILE, PROMPTMFILE, RDMPLIST, RDTPROF, 
+     &              STR2INT, SEC2TIME, TIME2SEC, TRIMLEN, WKDAY
 
 
 C...........   PARAMETERS and their descriptions
@@ -109,7 +109,7 @@ C...........   PARAMETERS and their descriptions
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Mobile Sources input and output arrays
 
-        REAL        TOUT  ( NMSRC, NVTYPE, MXEMIS ) ! timestepped output emssions
+        REAL        TOUT  ( NMSRC, NVTYPE, MXEMIS ) ! timestepped output emssion
         REAL        VMT   ( NMSRC )        ! vehicle miles traveled
 
         INTEGER     IFIP  ( NMSRC )        ! FIP codes for sources
@@ -118,10 +118,10 @@ C...........   Mobile Sources input and output arrays
         INTEGER     TFLAG ( NMSRC )        ! governs profile type usage
         INTEGER     TZONES( NMSRC )        ! time zones 
 
-        INTEGER*2   DDEX  ( NMSRC, NVTYPE, MXEMIS ) ! wkday diurnal prof subscrpt
-        INTEGER*2   EDEX  ( NMSRC, NVTYPE, MXEMIS ) ! wkend-diurnal prof subscrpt
-        INTEGER*2   MDEX  ( NMSRC, NVTYPE, MXEMIS ) ! monthly       prof subscrpt
-        INTEGER*2   WDEX  ( NMSRC, NVTYPE, MXEMIS ) ! weeky         prof subscrpt
+        INTEGER*2   DDEX  ( NMSRC, NVTYPE, MXEMIS )! wkday diurnal prof subscrpt
+        INTEGER*2   EDEX  ( NMSRC, NVTYPE, MXEMIS )! wkend-diurnal prof subscrpt
+        INTEGER*2   MDEX  ( NMSRC, NVTYPE, MXEMIS )! monthly       prof subscrpt
+        INTEGER*2   WDEX  ( NMSRC, NVTYPE, MXEMIS )! weeky         prof subscrpt
 
         INTEGER     DREF  ( NVTYPE, MXEMIS )        ! diurnal temporary prof sub
         INTEGER     MREF  ( NVTYPE, MXEMIS )        ! monthly temporary prof sub
@@ -134,14 +134,15 @@ C...........   Vehicle Mix transform matrix
 C...........   MPLIST emissions factor cross reference tables:
 
         INTEGER   NMPLIST
-        INTEGER   MPFIP( MXPLST )
-        INTEGER   MPRDT( MXPLST )
-        INTEGER   MPLNK( MXPLST )
+        INTEGER   MPFIP( MXPLST )         !  state/co FIPS codes
+        INTEGER   MPRDT( MXPLST )         !  road classes
+        INTEGER   MPLNK( MXPLST )         !  link IDs
+        INTEGER   MPVTP( MXPLST )         !  vehicle types
         INTEGER   MPREF( 0:23, MXPLST )   !  hour&source-specific xrefs
         INTEGER   REFCNT                  !  count of unique list of PSIs
         INTEGER   REFLIST( MXPLST )       !  unique list of PSIs
 
-        INTEGER   EFDEX( 0:23, NMSRC )    ! subscript into emis fac tables
+        INTEGER   EFDEX( 0:23, NVTYPE, NMSRC ) ! subscript into emis fac tables
 
 C...........   Emissions factor tables:
 
@@ -317,6 +318,7 @@ C...........   Other local variables
         INTEGER         NSTEPS
         INTEGER         OSRC    !  Number of sources outside grid
         INTEGER         RDT     !  Temporary EPA road class number
+        INTEGER         STA     !  temporary state code
         INTEGER         TDATE   !  Temporary date
         INTEGER         TSTEP
         INTEGER         TTIME   !  Temporary time
@@ -1384,7 +1386,7 @@ C...........   Read and process emissions factors cross reference file MPLIST
 
         CALL M3MSG2( 'Reading EMISSION FACTORS XREF file...' )
 
-        NMPLIST = RDMPLIST( FDEV, MPFIP, MPRDT, MPLNK,
+        NMPLIST = RDMPLIST( FDEV, MPFIP, MPRDT, MPLNK, MPVTP,
      &                      MPREF, REFCNT, REFLIST )
         IF ( NMPLIST .LE. 0 ) THEN
             CALL M3EXIT( 'TMPMOBIL', 0,0, 'Error reading MPLIST', 2 )
@@ -1396,96 +1398,105 @@ C...........   Map emissions factor indexes onto sources:
         DO  355  S = 1, NMSRC
 
             FIP = IFIP  ( S )
+            STA = 1000 * ( FIP / 1000 )
             RDT = IRCLAS( S )
             LNK = ILINK ( S )
 
-C............   Link-specific matches:
+C............   First try matches WITH vehicle type...
 
-            F = FIND3( FIP, RDT, LNK, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) THEN
-                DO  301  T = 0, 23
-                    EFDEX( T,S ) = FIND1( MPREF( T,F ), 
-     &                                    REFCNT, REFLIST )
-301             CONTINUE
-                GO TO  355
-            END IF
+            DO 331 V = 1, NVTYPE
 
-C............   FIP-RDT matches:
+C.................  Initialize emission factor index
+                DO 301 T = 0, 23
+                   EFDEX( T,V,S ) = IMISS3
+301             END DO
 
-            F = FIND3( FIP, RDT, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) THEN
-                DO  311  T = 0, 23
-                    EFDEX( T,S ) = FIND1( MPREF( T,F ), 
-     &                                    REFCNT, REFLIST )
-311             CONTINUE
-                GO TO  355
-            END IF
+C.................  FIP/RDT/Link/vehicle-type matches:
+                F = FIND4( FIP, RDT, LNK, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311   ! Store values for current source
 
-C............   state--RDT matches:
+C.................  Link-specific matches:
+                F = FIND4( FIP, RDT, LNK, 0, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311  ! Store values for current source
 
-            FIP = 1000 * ( FIP / 1000 )
-            F = FIND3( FIP, RDT, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) THEN
-                DO  322  T = 0, 23
-                    EFDEX( T,S ) = FIND1( MPREF( T,F ), 
-     &                                    REFCNT, REFLIST )
-322             CONTINUE
-                GO TO  355
-            END IF
+C.................  FIP/RDT/vehicle-type matches:
+                F = FIND4( FIP, RDT, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311   ! Store values for current source
 
-C............   State-only matches:
-            F = FIND3( FIP, 0, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) THEN
-                DO  327  T = 0, 23
-                    EFDEX( T,S ) = FIND1( MPREF( T,F ), 
-     &                                    REFCNT, REFLIST )
-327             CONTINUE
-                GO TO  355
-            END IF
+C.................  FIP-RDT matches:
+                F = FIND4( FIP, RDT, 0, 0, NMPLIST,
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311  ! Store values for current source
 
-C............   RDT-only matches:
+C.................  state/RDT/vehicle-type matches:
+                F = FIND4( STA, RDT, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311   ! Store values for current source
 
-            F = FIND3( 0, RDT, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) THEN
-                DO  333  T = 0, 23
-                    EFDEX( T,S ) = FIND1( MPREF( T,F ), 
-     &                                    REFCNT, REFLIST )
-333             CONTINUE
-                GO TO  355
-            END IF
+C.................  state--RDT matches:
+                F = FIND4( STA, RDT, 0, 0, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311  ! Store values for current source
 
-C............   fallback
+C.................  State/vehicle-type matches:
+                F = FIND4( STA, 0, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311   ! Store values for current source
 
-            F = FIND3( 0, 0, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) THEN
-                DO  344  T = 0, 23
-                    EFDEX( T,S ) = FIND1( MPREF( T,F ), 
-     &                                    REFCNT, REFLIST )
-344             CONTINUE
+C.................  State-only matches:
+                F = FIND4( STA, 0, 0, 0, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311  ! Store values for current source
 
-                WRITE( MESG,94010 )    ! sl
-     &              'Default emission factor was applied to FIP '
-     &              , FIP, ' RDT ', RDT,' LNK ', LNK
-                CALL M3MESG( MESG )
+C.................  RDT/vehicle-type matches:
+                F = FIND4( 0, RDT, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311   ! Store values for current source
 
-                GO TO  355
-            END IF
+C.................  RDT-only matches:
+                F = FIND4( 0, RDT, 0, 0, NMPLIST,
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 311  ! Store values for current source
 
-C...........   If you get to here:  error
+C.................  fallback: write message and then store
+        	F = FIND4( 0, 0, 0, 0, NMPLIST,
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
 
-            EFLAG = .TRUE.
-            WRITE( MESG,94010 ) 
-     &            'No emission factor xref for FIP', FIP,
+        	IF ( F .GT. 0 ) THEN
+                    WRITE( MESG,94010 ) 
+     &                 'Default emission factor was applied to FIP ',
+     &                 FIP, ' RDT ', RDT,' LNK ', LNK
+                    CALL M3MESG( MESG )
+                    GO TO 311
+        	END IF
+
+C.................  If you get to here:  error because no matches found!
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &            'No emission factor x-refs for FIP', FIP,
      &            'RCLASS', RDT, 'Link', LNK
-            CALL M3MESG( MESG )
+                CALL M3MESG( MESG )
+                GO TO 355
 
-355     CONTINUE
+C.................  Store the position of the PSI in REFLIST
+311             CONTINUE
+
+                DO  322  T = 0, 23
+                    EFDEX( T,V,S ) = FIND1( MPREF( T,F ), 
+     &                                      REFCNT, REFLIST )
+322             CONTINUE
+
+331         CONTINUE    ! End loop on vehicle types, V
+
+355     CONTINUE        ! End loop on sources, S
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'TMPMOBIL', 0, 0, 
      &                   'Bad emission factor matchup', 2 )
         END IF                                               
-
 
 C...........   Read non-diurnal emissions factors params from MEFSND
 
@@ -1963,14 +1974,14 @@ C                   available in emission factors file
 C...............   Adjust which hourly EF to use based on time zone
                 HCORR = 1 + MOD( JTIME / 10000 , 24 )
                 HCORR = MOD( HCORR + TZONE + 25 - TZONES( S ), 24 )
-                M     = EFDEX( HCORR, S )
 
-C...............   Get factors for interpolating diurnal emission factors
-C...................   Note that min/max has already been trapped by PREDIUR
-
-                J1     = TMMI( S )
+C.................  Retrieve temperature index for current source
+                J1 = TMMI( S )
 
 C.................  Set up if diurnal emissions are non-zero
+C.................  Get factors for interpolating diurnal emission factors
+C.................  Note that min/max has already been trapped by PREDIUR
+
                 IF( J1 .NE. 0 ) THEN
 
                     J2     = J1 + MAXTL
@@ -1989,23 +2000,6 @@ C.................  Set up if diurnal emissions are non-zero
                     S1     = AMOD ( DNLTI * ( TKMAX(S) - TMAX0 ), 1.0 )
                     S2     = 1.0 - S1
 
-C.....................  Check if diurnal emissions factors have been
-C                       calculated for this temperature.  If one set has
-C                       been, they all have been.
-                    IF( WDL_VOC( J1,1,M ) .LT. 0 .OR.
-     &                  WDL_VOC( J2,1,M ) .LT. 0 .OR.
-     &                  WDL_VOC( J3,1,M ) .LT. 0 .OR.
-     &                  WDL_VOC( J4,1,M ) .LT. 0      ) THEN
-
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 
-     &                    'Diurnal EFs not available for PSI',
-     &                     REFLIST( M )
-                        CALL M3MESG( MESG )
-                        GOTO 888
-
-                    ENDIF
-
 C.................  Set up if diurnal emissions are zero
                 ELSE
                     J1 = 1
@@ -2017,151 +2011,133 @@ C.................  Set up if diurnal emissions are zero
                     S1 = 0.
                     S2 = 0.
 
-                ENDIF
-                  
-                I = 1 
+                END IF
 
-                IF( EMTNAM( I ) .EQ. 'EXH_CO' ) THEN
+C.................  Loop through vehicle types
+                DO 877 V = 1, NVTYPE
 
-                    DO  818  V = 1, NVTYPE
+C.....................  Retrieve position of PSI in REFLIST
+                    M  = EFDEX( HCORR, V, S )
+
+C.....................  Check if diurnal emissions factors have been
+C                       calculated for this temperature.  If one set has
+C                       been, they all have been.
+                    IF( TMMI( S ) .NE. 0         .AND.
+     &                ( WDL_VOC( J1,1,M ) .LT. 0 .OR.
+     &                  WDL_VOC( J2,1,M ) .LT. 0 .OR.
+     &                  WDL_VOC( J3,1,M ) .LT. 0 .OR.
+     &                  WDL_VOC( J4,1,M ) .LT. 0      ) ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 
+     &                    'Diurnal EFs not available for PSI',
+     &                     REFLIST( M )
+                        CALL M3MESG( MESG )
+                        GOTO 888           ! To next source
+
+                    END IF
+
+                    I = 1 
+
+                    IF( EMTNAM( I ) .EQ. 'EXH_CO' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EXH_CO( II  ,V,M ) +
      &                                QQ * EXH_CO( II+1,V,M ) )
-  818               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'EXH_NOX' ) THEN
-
-                    DO 819 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'EXH_NOX' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EXH_NOX( II  ,V,M ) +
      &                                QQ * EXH_NOX( II+1,V,M ) )
-  819               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'EXH_VOC' ) THEN
-
-                    DO 820 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'EXH_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EXH_VOC( II  ,V,M ) +
      &                                QQ * EXH_VOC( II+1,V,M ) )
-  820               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'EVP_VOC' ) THEN
-
-                    DO 821 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'EVP_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * EVP_VOC( II  ,V,M ) +
      &                                QQ * EVP_VOC( II+1,V,M ) )
-  821               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'RNL_VOC' ) THEN
-
-                    DO 822 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'RNL_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * RNL_VOC( II  ,V,M ) +
      &                                QQ * RNL_VOC( II+1,V,M ) )
-  822               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'RST_VOC' ) THEN
-
-                    DO 823 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'RST_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * RST_VOC( II  ,V,M ) +
      &                                QQ * RST_VOC( II+1,V,M ) )
-  823               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'RFL_VOC' ) THEN
-
-                    DO 824 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'RFL_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                              ( PP * RFL_VOC( II  ,V,M ) +
      &                                QQ * RFL_VOC( II+1,V,M ) )
-  824               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'WDL_VOC' ) THEN
-
-                    DO 825 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'WDL_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * WDL_VOC( J1,V,M ) +
      &                                      R1 * WDL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * WDL_VOC( J3,V,M ) +
      &                                      R1 * WDL_VOC( J4,V,M )   ) )
-  825               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'DNL_VOC' ) THEN
-
-                    DO 826 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'DNL_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * DNL_VOC( J1,V,M ) +
      &                                      R1 * DNL_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * DNL_VOC( J3,V,M ) +
      &                                      R1 * DNL_VOC( J4,V,M )   ) )
-  826               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'HOT_VOC' ) THEN
-
-                    DO 827 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'HOT_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * HOT_VOC( J1,V,M ) +
      &                                      R1 * HOT_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * HOT_VOC( J3,V,M ) +
      &                                      R1 * HOT_VOC( J4,V,M )   ) )
-  827               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
-
-                IF( EMTNAM( I ) .EQ. 'CRC_VOC' ) THEN
-
-                    DO 828 V = 1, NVTYPE
+                    IF( EMTNAM( I ) .EQ. 'CRC_VOC' ) THEN
 
                         TOUT( S,V,I ) = GM2TON * TMAT( S,V,I,H ) *
      &                             ( S2 * ( R2 * CRC_VOC( J1,V,M ) +
      &                                      R1 * CRC_VOC( J2,V,M )   ) +
      &                               S1 * ( R2 * CRC_VOC( J3,V,M ) +
      &                                      R1 * CRC_VOC( J4,V,M )   ) )
-  828               CONTINUE
+                        I = I + 1
+                    END IF
 
-                    I = I + 1
-                ENDIF
+  877           CONTINUE   !  end loop on vehicle types, V
 
-  888       CONTINUE		!  end loop on sources S
+  888       CONTINUE	   !  end loop on sources, S
 
             IF ( .NOT.WRITE3( TNAME, 'ALL', JDATE, JTIME, TOUT ) ) THEN
 

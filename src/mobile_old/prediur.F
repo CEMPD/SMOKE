@@ -58,7 +58,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      ENVINT
         LOGICAL      ENVYN 
         INTEGER      FIND1
-        INTEGER      FIND3
+        INTEGER      FIND3, FIND4
         INTEGER      GETDATE
         INTEGER      GETNUM
         REAL         GETREAL
@@ -69,7 +69,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      RDMPLIST
         INTEGER      TRIMLEN
 
-        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FIND3, GETDATE, 
+        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FIND3, FIND4, GETDATE,
      &               GETNUM, GETREAL, GETYN, LOCAT1, PROMPTFFILE, 
      &               PROMPTMFILE, RDMPLIST, TRIMLEN
 
@@ -112,6 +112,7 @@ C...........   MPLIST scenario-specific emissions factor XREF tables:
         INTEGER   MPFIP( MXPLST )         !  FIP codes in XREF entries
         INTEGER   MPRDT( MXPLST )         !  road class codes in XREF entries
         INTEGER   MPLNK( MXPLST )         !  link IDs in XREF entries
+        INTEGER   MPVTP( MXPLST )         !  vehicle types in XREF entries
         INTEGER   MPREF( 0:23, MXPLST )   !  hour&source-specific xrefs
         INTEGER   REFCNT                  !  count of total unique PSIs
         INTEGER   REFLIST( MXPSI )        !  list of unique PSIs
@@ -140,9 +141,9 @@ C...........   File units and logical names:
 
 C...........   Other local variables:
 
-        INTEGER    F, H, I, J, JJ, K, L, S, T  ! Counters and pointers
+        INTEGER    F, H, I, J, JJ, K, L, S, T, V  ! Counters and pointers
         INTEGER    IOS     !  temporary I/O status
-        INTEGER    FIP     !  temporary FIP code
+        INTEGER    FIP     !  temporary state/county code
         INTEGER    JDATE   !  output date counter (YYYYDDD) in GMT
         INTEGER    JTIME   !  output time counter (HHMMSS)  in GMT
         INTEGER    KU      !  counter of grid cells per source
@@ -152,7 +153,8 @@ C...........   Other local variables:
         INTEGER    NEXTHOUR!  Time for next hour in loop
         INTEGER    NSTEPS  !  number of time steps to process temperature data
         INTEGER    OSRC    !  number of sources outside grid
-        INTEGER    RDT     !  temporary FIP code
+        INTEGER    RDT     !  temporary road class code
+        INTEGER    STA     !  temporary state code
         INTEGER    TMMIT(4)!  temporary TMMI indices for all four min/max
         INTEGER    TSTEP   !  time step of input temperature data (HHMMSS)
         INTEGER    TZONE   !  zone to determine output days
@@ -380,14 +382,14 @@ C.........  Set time zone for output file
         IDATE = JDATE
         ITIME = JTIME
 
-75      NSTEPS = GETNUM( 1, 999999, NSTEPS,
+22      NSTEPS = GETNUM( 1, 999999, NSTEPS,
      &                   'Enter output duration (hours)' )
 
         I = MOD( NSTEPS, 24 ) 
         IF ( I .NE. 0 .OR. NSTEPS .EQ. 0 ) THEN
            CALL M3MSG2( 'Output duration has to be a multiple of 24' )
            NSTEPS = NSTEPS - I
-           GO TO 75
+           GO TO 22
         END IF 
  
 C.........  Abort if start time is < than first time for temperatures
@@ -474,7 +476,7 @@ C...........   Read and process emissions factors cross reference file MPLIST
  
         CALL M3MSG2( 'Reading EMISSION FACTORS XREF file ...' )
  
-        NMPLIST = RDMPLIST( NLDEV, MPFIP, MPRDT, MPLNK,
+        NMPLIST = RDMPLIST( NLDEV, MPFIP, MPRDT, MPLNK, MPVTP,
      &                      MPREF, REFCNT, REFLIST )
 
         IF ( NMPLIST .LE. 0 ) THEN
@@ -490,91 +492,126 @@ C...........   unique, pure emission factor index:
         DO  93 S = 1, NMSRC
  
             FIP = IFIP  ( S )
+            STA = 1000 * ( FIP / 1000 )
             RDT = IRCLAS( S )
             LNK = ILINK ( S )
- 
-C............   Link-specific matches:
- 
-            F = FIND3( FIP, RDT, LNK, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) GO TO 77 
- 
-C............   FIP-RDT matches:
- 
-            F = FIND3( FIP, RDT, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) GO TO 77
- 
-C............   state--RDT matches:
- 
-            F = FIND3( 1000 * ( FIP / 1000 ), RDT, 0, 
-     &                 NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) GO TO 77
- 
-C............   State-only matches:
-            F = FIND3( FIP, 0, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) GO TO 77
- 
-C............   RDT-only matches:
- 
-            F = FIND3( 0, RDT, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) GO TO 77
- 
-C............   fallback
 
-            F = FIND3( 0, 0, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
-            IF ( F .GT. 0 ) GO TO 77
+            NPSI( S ) = 0   ! Initialize counter of PSIs per source
+
+            DO 91 V = 1, NVTYPE
+
+C.................  FIP/RDT/Link/vehicle-type matches:
+                F = FIND4( FIP, RDT, LNK, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77 
+
+C.................  Link-specific matches:
+                F = FIND4( FIP, RDT, LNK, 0, NMPLIST,
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77 
  
-C...........   If you get to here:  error
+C.................  FIP/RDT/vehicle-type matches:
+                F = FIND4( FIP, RDT, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77 
+
+C.................  FIP-RDT matches:
+                F = FIND4( FIP, RDT, 0, 0, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77
  
-            EFLAG = .TRUE.
-            WRITE( MESG,94010 )
+C.................  State/RDT/vehicle-type matches:
+                F = FIND4( STA, RDT, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77  
+
+C.................  State--RDT matches:
+                F = FIND4( STA, RDT, 0, 0, NMPLIST,
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77
+ 
+C.................  State/vehicle-type matches:
+                F = FIND4( STA, 0, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77  
+
+C.................  State-only matches:
+        	F = FIND4( STA, 0, 0, 0, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+        	IF ( F .GT. 0 ) GO TO 77
+ 
+C.................  RDT/vehicle-type matches:
+                F = FIND4( 0, RDT, 0, V, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+                IF ( F .GT. 0 ) GO TO 77  
+ 
+C.................  RDT-only matches:
+        	F = FIND4( 0, RDT, 0, 0, NMPLIST,
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+        	IF ( F .GT. 0 ) GO TO 77
+ 
+C.................  fallback
+        	F = FIND4( 0, 0, 0, 0, NMPLIST, 
+     &                     MPFIP, MPRDT, MPLNK, MPVTP )
+        	IF ( F .GT. 0 ) GO TO 77
+ 
+C.................   If you get to here:  error
+ 
+        	EFLAG = .TRUE.
+        	WRITE( MESG,94010 )
      &            'No emission factor xref for FIP', FIP,
      &            'RCLASS', RDT, 'Link', LNK
-            CALL M3MESG( MESG )
- 
-  77        CONTINUE
+        	CALL M3MESG( MESG )
+                GO TO 91   ! to next vehicle type
 
-            J = 0
+C.................  Now store PSIs for current source
+77              CONTINUE
 
-C.............  Loop through all time steps for this source's PSIs
-            DO 91 T = 0, 23
+                J = NPSI( S )
 
-                K = LOCAT1( MPREF( T,F ), J, PSI( 1,S ) )
+C.................  Loop through all time steps for this source/v-type's PSIs
+        	DO 88 T = 0, 23
 
-                IF( J .EQ. 0 ) THEN
+                    K = LOCAT1( MPREF( T,F ), J, PSI( 1,S ) )
 
-                    J = 1
-                    PSI( 1,S ) = MPREF( T,F ) 
+                    IF( J .EQ. 0 ) THEN
 
-                ELSEIF( K .GT. 0 ) THEN
+                	J = 1
+                	PSI( 1,S ) = MPREF( T,F ) 
 
-C.....................  Check for overflow...
-                    IF( J .EQ. MXPPS ) THEN
-                        WRITE( MESG, 94010 )
+                    ELSE IF( K .GT. 0 ) THEN
+
+C.........................  Check for overflow...
+                	IF( J .EQ. MXPPS ) THEN
+                            WRITE( MESG, 94010 )
      &                         'Maximum dimension MXPPS=', MXPPS,
      &                         'was exceeded'
-                        CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
+                            CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
  
-C.....................  If no overflow...
-                    ELSE
+C.........................  If no overflow...
+                        ELSE
 
-C.........................  Add one to count of PSIs for source
-                        J = J + 1
+C.............................  Add one to count of PSIs for source
+                            J = J + 1
  
-C.........................  Shift stored PSIs down one for MPREF(T,F)
-                        DO 88  JJ = J, K+1, -1
-                            PSI( JJ,S ) = PSI( JJ-1,S )
-   88                   CONTINUE
+C.............................  Shift stored PSIs down one for MPREF(T,F)
+                            DO 81  JJ = J, K+1, -1
+                        	PSI( JJ,S ) = PSI( JJ-1,S )
+81                          CONTINUE
  
-C.........................  Insert new MPREF for source (S)
-                        PSI ( K,S ) = MPREF(T,F)
+C.............................  Insert new MPREF for source (S)
+                            PSI ( K,S ) = MPREF(T,F)
 
-                    ENDIF
-                ENDIF
-   91       CONTINUE
+                	END IF
+                    END IF
+88              CONTINUE
 
-            NPSI( S ) = J
+                NPSI( S ) = J
 
-   93   CONTINUE
+91          END DO    ! End loop on vehicle types, V
+
+
+93      CONTINUE      ! End loop on sources, S
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'PREDIUR', 0, 0,

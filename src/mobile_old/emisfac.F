@@ -98,7 +98,7 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Simulation-specific MOBILE5 parmeter list variables
         INTEGER IPSIR ( MXPSI )      ! Sorted   scenario-specific PSI list
         INTEGER MPNUM                ! Actual count of scenario-specific PSIs
-        INTEGER P1, P2, P3, P4( 24 ) ! Dummies
+        INTEGER P1, P2, P3, P4( 24 ), P6 ! Dummies
 
 C...........   MOBILE5 parameter x-ref variables
         INTEGER MRNUM                     ! Actual no. of normal x-ref entries
@@ -1043,8 +1043,42 @@ C.............  Sort list that we have so far
 
         ENDIF         ! End update input file
 
+C.........  Include PSIs in update list that are used by combination PSIs
+C           that are in update list
+        J = NUPDAT
+        DO 155 I = 1, MRNUM
+
+            MPTYPE = ISTYPE( INDEXA( I ), 1 )
+            PSI    = IPSIA ( INDEXA( I )    )
+            ROOT   = ISROOT( INDEXA( I )    )
+
+C.............  Update for combination emission factors
+            IF ( MPTYPE .GT. 0 .AND. NUPDAT .GT. 0 .AND.
+     &           FIND1( PSI , NUPDAT, UPDATE ) .GT. 0    ) THEN
+
+                DEPOINT= ISTYPE( INDEXA( I ),2 )
+                DO 144 K = 1, MPTYPE
+
+                    J = J + 1
+                    IF( J .LE. MXPSI ) THEN
+                        UPIDXA( J ) = J
+                        UPDATA( J ) = IPLIST( K, DEPOINT )
+                    END IF
+
+144             CONTINUE
+            END IF
+155     CONTINUE
+        NUPDAT = J
+
+        CALL SORTI1( NUPDAT, UPIDXA, UPDATA )
+
+        DO 166 I = 1, NUPDAT
+            UPDATE( I ) = UPDATA( UPIDXA( I ) )
+166     CONTINUE
+
 C.........  Include PSIs that are first in multi-scenario input
-C.........  if PSIs that are NOT first are in update list
+C.........     if PSIs that are NOT first are in update list
+        J = NUPDAT
         DO 169 I = 1, MRNUM
 
             MPTYPE = ISTYPE( INDEXA( I ), 1 )
@@ -1069,7 +1103,6 @@ C.................  Check if UPDATE list exists and PSI is not in list
             ENDIF
 
 169     CONTINUE
-
         NUPDAT = J
 
         IF( NUPDAT .GT. MXPSI ) THEN
@@ -1108,7 +1141,7 @@ C.........  Do this sorting and uniqueness no to avoid a _huge_ array
         EFLAG = .FALSE.
 177     CONTINUE   ! Start loop for reading MPLIST
 
-            READ( NLDEV, *, END=188 ) P1, P2, P3, ( P4( JJ ), JJ=1,24 )
+            READ( NLDEV,*,END=188 ) P1, P2, P3, P6, ( P4(JJ), JJ=1,24 )
 
             IREC = IREC + 1
 

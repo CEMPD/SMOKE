@@ -1,9 +1,9 @@
 
-        INTEGER FUNCTION RDMPLIST( FDEV, MPFIP, MPRDT, MPLNK, 
+        INTEGER FUNCTION RDMPLIST( FDEV, MPFIP, MPRDT, MPLNK, MPVTP,
      &                             MPREF, REFCNT, REFLIST ) 
 
 C***********************************************************************
-C  function body starts at line  108
+C  function body starts at line  110
 C
 C  DESCRIPTION:  
 C       read and sort file MPLIST for TMPMOBIL
@@ -57,6 +57,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER   MPFIP( MXPLST )
         INTEGER   MPRDT( MXPLST )
         INTEGER   MPLNK( MXPLST )
+        INTEGER   MPVTP( MXPLST )
         INTEGER   MPREF( 0:23, MXPLST )    !  hour&source-specific xrefs
         INTEGER   REFCNT                   !  count of total unique PSIs
         INTEGER   REFLIST( MXPSI )         !  list of unique PSIs
@@ -74,13 +75,13 @@ C...........   PARAMETERS and their descriptions
 
         INTEGER    MXFLDS         ! Maximum number of columns in MPLIST
 
-        PARAMETER( MXFLDS = 27 )
+        PARAMETER( MXFLDS = 28 )
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         INTEGER   I, J, K, L, P, L1, S
         INTEGER   IOS
-        INTEGER	  FIP, RDT, LNK, REF( 0:23 )
+        INTEGER	  FIP, RDT, LNK, VTP, REF( 0:23 )
         INTEGER   IREC
         INTEGER   LENGTH    ! Length of LINE, not including trailing blanks
         INTEGER   MPCNT
@@ -88,6 +89,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER   MPFIPA( MXPLST )
         INTEGER   MPRDTA( MXPLST )
         INTEGER   MPLNKA( MXPLST )
+        INTEGER   MPVTPA( MXPLST )
         INTEGER   MPREFA( 0:23, MXPLST )   !  hour&source-specific xrefs
         INTEGER   NREF      ! Number of PSIs in a segment of LINE
         INTEGER   NCOL      ! Number of column in LINE
@@ -195,7 +197,7 @@ C.............  Check for valid number of columns
                 CALL M3MESG( MESG )
                 GO TO 11          ! To head of read loop
 
-            ELSEIF( S .LT. 3 ) THEN
+            ELSEIF( S .LT. 5 ) THEN
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
@@ -212,12 +214,13 @@ C.............  Check for valid number of columns
 
 C.............  Process segments of LINE into known parts
 
-            FIP = STR2INT( LINE( SB( 1 ): SE( 1 ) ) )
-            RDT = STR2INT( LINE( SB( 2 ): SE( 2 ) ) )
-            LNK = STR2INT( LINE( SB( 3 ): SE( 3 ) ) )
+            FIP = MAX( STR2INT( LINE( SB( 1 ): SE( 1 ) ) ), 0 ) 
+            RDT = MAX( STR2INT( LINE( SB( 2 ): SE( 2 ) ) ), 0 )
+            LNK = MAX( STR2INT( LINE( SB( 3 ): SE( 3 ) ) ), 0 )
+            VTP = MAX( STR2INT( LINE( SB( 4 ): SE( 4 ) ) ), 0 )
 
             J = -1             !  J starts at 0
-            DO 33 S = 4, NCOL  !  head of segment processing loop
+            DO 33 S = 5, NCOL  !  head of segment processing loop
 
                 P = INDEX( LINE( SB( S ): SE( S ) ), '*' )
 
@@ -262,6 +265,7 @@ C.............  Check for too many or too few records in line
                 MPFIPA( I ) = FIP
                 MPRDTA( I ) = RDT
                 MPLNKA( I ) = LNK
+                MPVTPA( I ) = VTP
 
                 DO  43  J = 0, 23
 
@@ -315,13 +319,14 @@ C.....................  sorted list
 
 C.......   Now sort the entries:
 
-        CALL SORTI3( I, MPDEXA, MPFIPA, MPRDTA, MPLNKA )
+        CALL SORTI4( I, MPDEXA, MPFIPA, MPRDTA, MPLNKA, MPVTPA )
 
         DO  122  J = 1, I
             K = MPDEXA( J )
             MPFIP( J ) = MPFIPA( K )
             MPRDT( J ) = MPRDTA( K )
             MPLNK( J ) = MPLNKA( K )
+            MPVTP( J ) = MPVTPA( K )
             DO  111  L = 0, 23
                 MPREF( L,J ) = MPREFA( L,K )
 111         CONTINUE
