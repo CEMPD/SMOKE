@@ -111,6 +111,8 @@
         TYPE( EMPTYPE ), PUBLIC, ALLOCATABLE :: EMPPCKT( : ) ! empirical pkt.
         TYPE( PARTYPE ), PUBLIC, ALLOCATABLE :: PARPCKT( : ) ! parametric pkt.
 
+	INTEGER, PUBLIC, ALLOCATABLE :: FAINDX( : )       ! fac. assig. ent. no.
+
 	REAL, PUBLIC, ALLOCATABLE :: EFVAL ( :, : )       ! emission fac. value
 	REAL, PUBLIC, ALLOCATABLE :: PROB ( :, : )        ! probability
 	REAL, PUBLIC, ALLOCATABLE :: PARAMET ( :, : )     ! parameters
