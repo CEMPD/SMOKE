@@ -2,7 +2,7 @@
         PROGRAM TMPBIO
 
 C***********************************************************************
-C  program body starts at line  153
+C  program body starts at line  165
 C
 C  DESCRIPTION:
 C       Computes time stepped gridded biogenic emissions in terms of 
@@ -71,6 +71,8 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        INTEGER         ENVINT 
+        LOGICAL         ENVYN
         INTEGER         GETDATE
         INTEGER         GETMENU
         INTEGER         GETNUM
@@ -82,23 +84,26 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL        GETDATE, GETMENU, GETNUM, GETYN, HHMMSS,
-     &                  MMDDYY, PROMPTMFILE, PROMPTFFILE, TRIMLEN,
-     &                  WKDAY
+        EXTERNAL        ENVINT, ENVYN, GETDATE, GETMENU, GETNUM, 
+     &                  GETYN, HHMMSS, MMDDYY, PROMPTMFILE, PROMPTFFILE,
+     &                  TRIMLEN, WKDAY
 
 C...........   LOCAL VARIABLES and their descriptions:
 
         INTEGER         LDEV    !  unit number for log device
-        INTEGER         SDATE   !  run starting date (YYYYDDD)
-        INTEGER         STIME   !  run starting time (HHMMSS)
-        INTEGER         NHRS    !  run duration (hours)
+        INTEGER         NSTEPS  !  run duration (hours)
         INTEGER         JDATE   !  current simulation date (YYYYDDD)
         INTEGER         JTIME   !  current simulation time (HHMMSS)
         INTEGER         LDATE   !  previous simulation date
         INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         HR      !  current simulation hour
         INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
+        INTEGER         IOS     !  temporay IO status
         INTEGER         B, M    !  counters for biogenic, model species
+
+        LOGICAL         EFLAG   !  error flag
+        LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
+
         CHARACTER*16    ENAME   !  logical name for emissions output
         CHARACTER*16    NNAME   !  logical name for normalized-emissions input
         CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
@@ -178,14 +183,29 @@ C   begin body of program TMPBIO
             CALL M3EXIT( 'TMPBIO', 0, 0, 'Ending program TMPBIO', 0 )
         END IF
 
+C.......   Get environment variable logical variables
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
+
+        PARTYPE = ENVINT( 'BG_CLOUD_TYPE', 
+     &                    'How PAR will be calculated', 2, IOS )
+
+
+        IF( IOS  .NE. 0 .AND. .NOT. PROMPTF ) THEN
+
+            MESG = 'Env var PROMPTFLAG is N, but BG_CLOUD_TYPE is bad'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'TMPBIO', 0, 0,
+     &                   'Bad environment variable setting(s)', 2 )
+
+        ENDIF
+
 C.......   Get the method to calculate PAR
 
-         PARTYPE = GETMENU( 4, 2, 'How will PAR be calculated?',
-     &                      PARMENU )
+        PARTYPE = GETMENU( 4, PARTYPE, 'How will PAR be calculated?',
+     &                     PARMENU )
 
 C.......   Get input files
-
-C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
 
         NNAME = PROMPTMFILE( 
      &          'Enter name for NORMALIZED EMISSIONS input file',
@@ -212,24 +232,65 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
 
         END IF    ! Use cloud to calculate PAR
 
+C.......   Get default time characteristic for output file:
+C.......   If we're going to prompt, then set the defaults based on met 
+C.......      otherwise, use environment variables to set defaults
+ 
+        EFLAG = .FALSE.
+        IF( PROMPTF ) THEN
+ 
+            JDATE  = SDATE3D
+            JTIME  = STIME3D
+            NSTEPS = MXREC3D
+
+        ELSE
+ 
+            JDATE  = ENVINT( 'ESDATE', 'Start date', 1995182, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but ESDATE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            JTIME  = ENVINT( 'STIME' , 'Start time', 0 , IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but STIME is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            NSTEPS = ENVINT( 'DURATION', 'Duration', 24, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but DURATION is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            IF( EFLAG ) THEN
+                CALL M3EXIT( 'TMPBIO', 0, 0,
+     &                       'Bad environment variable setting(s)', 2 )
+            ENDIF
+
+        ENDIF
 
 C...........   Get starting date, time, run duration
 
+        JDATE = GETDATE( JDATE, 
+     &          'Enter simulation starting date (YYYYDDD|YYYYMMDD)' )
 
-        SDATE = GETDATE( SDATE3D, 
-     &                  'Enter starting date (YYYYDDD|YYYYMMDD)' )
-        STIME = GETNUM( 0, 235959, STIME3D, 
-     &                  'Enter starting time  (HHMMSS)' )
-        NHRS  = GETNUM( 1, MXREC3D, MXREC3D, 
-     &                  'Enter run duration    (hours)' )
+        JTIME = GETNUM( 0, 235959, JTIME, 
+     &                 'Enter simulation starting time  (HHMMSS)' )
+
+        NSTEPS = GETNUM( 1, MXREC3D, MXREC3D, 
+     &                  'Enter output duration (hours)' )
 
 
 C.......   Build description for, and create/open output file
 C.......   (all but variables-table in description is borrowed from M2NAME)
 
-        SDATE3D = SDATE
-        STIME3D = STIME
-        MXREC3D = NHRS
+        SDATE3D = JDATE
+        STIME3D = JTIME
+        MXREC3D = NSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
 
@@ -329,11 +390,9 @@ C.......   Loops reading the various categories of normalized emissions:
 
 C.......   Loop on time steps:
 
-        JDATE = SDATE
-        JTIME = STIME
         LDATE = 0     
  
-        DO  899  HR = 1, NHRS
+        DO  899  HR = 1, NSTEPS
 
            IF( JDATE .NE. LDATE ) THEN
 
