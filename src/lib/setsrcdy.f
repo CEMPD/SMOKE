@@ -37,12 +37,12 @@ C Last updated: $Date$
 C
 C****************************************************************************
 
-        IMPLICIT NONE
-
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
         
+        IMPLICIT NONE
+
 C...........   EXTERNAL FUNCTIONS 
         INTEGER    ENVINT
         LOGICAL    ISDSTIME
