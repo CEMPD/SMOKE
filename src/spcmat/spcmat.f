@@ -114,7 +114,6 @@ C.........   Other local variables
         LOGICAL       :: DEFREPRT= .TRUE.  !  true: report default spc profiles
         LOGICAL       :: MULTIPRO= .TRUE.  !  true: multiple profs for pollutant
 
-        CHARACTER*1            CRL
         CHARACTER*4            OUTTYPE   !  output type from the environment
         CHARACTER*300          MESG      !  message buffer 
         CHARACTER(LEN=IOVLEN3) CBUF      !  smat output name temporary buffer 
@@ -149,7 +148,7 @@ C.........  Set flags that depend on the value of OUTTYPE
         MOLEOUT = ( INDEX( OUTTYPE, 'MOLE' ) .GT. 0 .OR. MOLEOUT )
 
 C.........  Set source category based on environment variable setting
-        CALL GETCTGRY( CRL, CATEGORY, CATDESC )
+        CALL GETCTGRY
 
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
@@ -226,13 +225,13 @@ C.........  Allocate memory for and read required inventory characteristics
         END IF
 
 C.........  Build unique lists of SCCs per SIC from the inventory arrays
-        CALL GENUSLST( NSRC )
+        CALL GENUSLST
 
 C.........   Read the speciation cross-reference file
 
         CALL M3MSG2( 'Reading SPECIATION CROSS-REFERENCE file...' )
 
-        CALL RDSREF( XDEV, NSRC )
+        CALL RDSREF( XDEV )
 
 C.........  Read the pollutant to pollutant conversion file, if any
 C.........  Resulting tables are passed via MODSPRO
