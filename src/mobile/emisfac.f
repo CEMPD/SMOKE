@@ -2,19 +2,23 @@
         PROGRAM EMISFAC
 
 C***********************************************************************
-C  program body starts at line 
+C  subroutine body starts at line 153
 C
 C  DESCRIPTION:
+C       Reads information from SPDSUM and hourly temperature files to
+C       creates MOBILE6 input files. Calls modified version of MOBILE6 
+C       to generate emission factors. Matches factors to sources and 
+C       writes to output files. Loops over all days for a given temperature
+C       averaging group, stopping when no more temperature files are available.
 C
 C  PRECONDITIONS REQUIRED:
+C       MBSETUP and PREMOBL must have been run.
 C
-C  SUBROUTINES AND FUNCTIONS CALLED:
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
 C  REVISION  HISTORY:
-C      Copied from emisfac.F in mobile module 7/99 by M. Houyoux and modified
+C     10/01: Created by C. Seppanen
 C
-C  FUTURE NEEDS:
-C 
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -36,145 +40,131 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
-C****************************************************************************
+C***********************************************************************        
+        
+C.........  MODULES for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: CATEGORY, NSRC, NIACT
 
-C...........   MODULES for public variables
-C.........  This module is for mobile-specific data
-        USE MODMOBIL
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
+        
+C...........   This module is the derived meteorology data for emission factors
+        USE MODMET, ONLY: TKHOUR
 
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS,
+     &                      INPUTHC, OUTPUTHC, NSUBPOL, SUBPOLS,
+     &                      NEPOL, EMTPOL, EMTNAM
 
-C...........   This module contains the information about the source category
-        USE MODINFO
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
 
-C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
-
-         IMPLICIT NONE
+        IMPLICIT NONE
 
 C...........   INCLUDES:
+
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2  CRLF
-        LOGICAL      CHKEMFAC
-        INTEGER      FIND1
-        INTEGER      SEC2TIME
 
-        EXTERNAL     CRLF, CHKEMFAC, FIND1, SEC2TIME
+        INTEGER         PROMPTFFILE
+        CHARACTER*16    PROMPTMFILE
+        LOGICAL         ENVYN
+        INTEGER         GETFLINE
+        INTEGER         CVTRDTYPE
+        INTEGER         CVTVEHTYPE
+        CHARACTER*2     CRLF
+        LOGICAL         SETENVVAR
+        INTEGER         SECSDIFF
+        INTEGER         STR2INT
+        LOGICAL         CHKINT
+        INTEGER         JUNIT
 
-C...........   EXTERNAL BLOCK DATA for MOBILE model:
+        EXTERNAL        PROMPTFFILE, PROMPTMFILE, ENVYN, GETFLINE, 
+     &                  CVTRDTYPE, CVTVEHTYPE, CRLF, SETENVVAR
+     &                  SECSDIFF, STR2INT, CHKINT, JUNIT
 
-        EXTERNAL      BD01, BD02, BD03, BD04, BD05, BD06, BD10,
-     &                BD11, BD12, BD13, BD14, BD15, BD16, BD17,
-     &                BD18, BD19, BD20, BD21, BD22, BD23, BD24,
-     &                BD25, BD26, BD27, BD28, BD29, BD30, BD31,
-     &                BD32, BD33, BD34, BD35, BD36, BD37, BD38
+C.........  LOCAL PARAMETERS and their descriptions:
 
-C...........   Variables for common blocks used to carry over from one MOBILE5
-C              call to the next
-        INTEGER      IREAD
-        INTEGER      NOTUSED
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
-        REAL         CR12HC
-        REAL         CR12CO
+C...........   LOCAL VARIABLES and their descriptions:
 
-        CHARACTER*40 TNAME
+C...........   Local allocatable arrays
+        INTEGER, ALLOCATABLE :: GRPLIST( :,: ) ! contents of GROUP file
+        INTEGER, ALLOCATABLE :: TEMPCTY( : )   ! list of counties from temperature file
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: RAWSUBS( : )  ! list of pollutants to be
+                                                             ! subtracted from HC
 
-        COMMON /IMPAR7/ TNAME,IREAD,NOTUSED
-        COMMON /IM12HC/ CR12HC(19,20,5,2)
-        COMMON /IM12CO/ CR12CO(19,20,5,2)
+C.........  Array that contains the names of the inventory variables needed for
+C           this program
+        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        
+C.........  Unit numbers and logical file names
+        INTEGER         CDEV     ! unit number for county MOBILE6 scenarios file (M6LIST)
+        INTEGER         GDEV     ! unit number for time period group file (GROUP)
+        INTEGER         IDEV     ! tmp unit number if ENAME is map file
+        INTEGER         LDEV     ! unit number for log file
+        INTEGER         MDEV     ! unit number for concatenated MOBILE6 input file (M6INPUT)
+        INTEGER         PDEV     ! unit number for speeds summary file (SPDSUM)
+        INTEGER         SDEV     ! unit number for ASCII inventory file
+        INTEGER         TDEV     ! unit number for emission processes file
+        INTEGER         VDEV     ! unit number for inventory data table
+        INTEGER         ZDEV     ! unit number for speed profiles file
+        
+        CHARACTER*16    ANAME   !  logical name for ASCII inventory file
+        CHARACTER*16    ENAME   !  logical name for I/O API inventory file   
+        CHARACTER*16    FNAME   !  logical name for I/O API emission factors file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER*16    TNAME   !  logical name for I/O API temperature file
 
-C...........   Commons linked with MOBILE subroutine
-        REAL       TF                     ! temporary temperature
-        REAL       TF_MAX                 ! temporary maximum temperature
-        REAL       TF_MIN                 ! temporary minimum temperature
+C.........   Other local variables
+        INTEGER    I, J, K, L, L2! counters and indices
+        INTEGER    IOS           ! i/o status
+        INTEGER    NINVARR       ! number inventory variables to input
+        INTEGER    SDATE         ! current start date
+        INTEGER    STIME         ! current start time
+        INTEGER    EDATE         ! current end date
+        INTEGER    TZONE         ! time zone (not used)
+        INTEGER    TSTEP         ! time step of input temperature data (HHMMSS)
+        INTEGER    TIMEDIFF      ! difference between file date and current sdate
+        INTEGER    TEMPDATE      ! temporary date to pass to read routine
+        INTEGER    TEMPTIME      ! temporary time to pass to read routine
+        INTEGER    NSTEPS        ! no. time steps in temperature data
+        INTEGER    NROWS         ! no. grid rows   
+        INTEGER    NGRPLINES     ! no. lines in GROUP file
+        INTEGER    NUMSRC        ! total number of sources
+        INTEGER :: MAXPOL = 0    ! max. number of pollutants
+        INTEGER :: MAXVEH = 0    ! max. number of vehicle types
+        INTEGER :: MAXFAC = 0    ! max. number of facility types
 
-        COMMON / TOVRIDE / TF, TF_MIN, TF_MAX
+        LOGICAL :: EFLAG    = .FALSE.    ! error flag
+        LOGICAL :: TEMPFLAG = .TRUE.     ! true: replace temperatures in M6 scenarios 
+        LOGICAL :: INITIAL  = .TRUE.     ! true: first time through loop
+        LOGICAL :: FEXIST   = .FALSE.    ! true: file exists
+        LOGICAL :: FILEOPEN = .FALSE.    ! true: emisfacs file is open
+        LOGICAL :: FNDINPUT = .FALSE.    ! true: found input hydrocarbon
+        LOGICAL :: FNDOUTPUT = .FALSE.   ! true: found output hydrocarbon
+        LOGICAL :: SPDFLAG  = .TRUE.     ! true: use speed profiles
+        
+        CHARACTER*20           MODELNAM  ! emission factor model name
+        CHARACTER*20           GRP_NAME  ! temperature aggregation group
+        CHARACTER(LEN=IOVLEN3) VOLNAM    ! volatile pollutant name
+        CHARACTER(LEN=280)     M6INPUT   ! Mobile6 input file name
+        CHARACTER(LEN=200)     TEMPDIR   ! location of hourly temperature files
+        CHARACTER(LEN=256)     TEMPNAME  ! full temperature file name
+        CHARACTER(LEN=200)     M6DIR     ! location of MOBILE6 files
+        CHARACTER(LEN=200)     EMISDIR   ! directory for output EF files
+        CHARACTER(LEN=20)      SEARCHSTR ! string used in search
+        CHARACTER(LEN=MXDLEN3) TEMPLINE  ! line from file description
+        CHARACTER*300          MESG      ! message buffer 
 
-C...........   Local parameters
-
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
-        INTEGER     , PARAMETER :: PURETYPE = -1
-        INTEGER     , PARAMETER :: CMBOTYPE =  1
-
-C...........   Local allocatable arrays....
-
-C...........   Simulation-specific PSIs and related arrays
-        LOGICAL, ALLOCATABLE :: NDISTAT ( : )  ! true: non-diu was updated
-        LOGICAL, ALLOCATABLE :: DIUSTAT ( : )  ! true: diurnal was updated
-        LOGICAL, ALLOCATABLE :: UPDATNDI( : )  ! true: should update non-diu
-        LOGICAL, ALLOCATABLE :: UPDATDIU( : )  ! true: should update diurnal
-
-C...........   Variables for targeted update of EFs
-        INTEGER              :: NUPDAT  = 0 ! No. of PSIs targeted for update
-        INTEGER, ALLOCATABLE :: UPDATE( : ) ! Sorted targeted PSI list
-
-C...........   Update st
-
-C...........   Temporary emission factor arrays
-        REAL, ALLOCATABLE :: EFACT ( :,: )      ! Temporary non-diurnal EFs 
-        REAL, ALLOCATABLE :: DFACT ( :,: )      ! Temporary diurnal EFs
-        REAL, ALLOCATABLE :: EFSAVND( :,:,:,: ) ! Multi-scenario saved nondi EFs
-        REAL, ALLOCATABLE :: EFSAVDI( :,:,:,: ) ! Multi-scenario saved diurn EFs
-
-C...........   Unit numbers and logical names
-        INTEGER       EDEV        ! ef-ref/temperature file unit
-        INTEGER       LDEV        ! i/o api log unit
-        INTEGER       IDEV        ! emission factor cross-reference file unit
-        INTEGER       RDEV        ! emission factor data file (MOBILE inputs)
-        INTEGER   ::  SDEV  = 0   ! Optional targeted update on EF file unit
-
-        CHARACTER*16  DNAME       ! Output diurnal EF file logical name
-        CHARACTER*16  NNAME       ! Output non-diurnal EF file logical name
-
-C...........   Other local variables
-        INTEGER    I, J, K, L     ! counters and indices
-
-        INTEGER    CNTCOMBO       ! tmp count of no. PSI in combo PSI
-        INTEGER    CPSI           ! tmp contributing PSI
-        INTEGER    FDATE          ! date of read/write for EF file(s)
-        INTEGER    IERR           ! MOBILE5 error value
-        INTEGER    IOS            ! i/o status
-        INTEGER    IPM            ! index to PSIALL
-        INTEGER    IPTIM          ! PSI converted to time for file operations
-        INTEGER    ITEMP          ! indicator of tmpr status for MOBILE5 
-        INTEGER    JYEAR          ! year for computing emission factors
-        INTEGER    LINECNT        ! position of MOBILE packet in RDEV
-c        INTEGER    MXEMIS         ! sum of no. diurnal + no. non-diur EF types
-        INTEGER    MXPSI          ! max no. PSIs after expansion
-        INTEGER    NNDIP1         ! no. non-diurnal EFs, plus 1
-        INTEGER    NPSISCN        ! no. PSIs in scenario for current PSI
-        INTEGER    NV             ! local no. vehicle types
-        INTEGER    PSI            ! tmp parameter scheme index
-        INTEGER    PSIPNTR        ! pure: no. in scenario; combo: pntr to table
-        INTEGER    PSIROOT        ! tmp first PSI in group of scenarios
-        INTEGER    TI             ! index to VLDTMPR (in MODMET)
-        INTEGER    TMMI           ! index to VLDTMIN (in MODMET)
-
-        LOGICAL    CFLAG_DIU              ! true: diurnal EFs were calc'd any T
-        LOGICAL    CFLAG_NDI              ! true: non-diu EFs were calc'd any T
-        LOGICAL    DIREUSE                ! true: reusing diurnal
-        LOGICAL :: EFLAG = .FALSE.        ! true: error found
-        LOGICAL    ENDLOOP                ! true: end tmpr loop for current PSI 
-        LOGICAL    FFLAG                  ! true: first scen in group ran
-        LOGICAL    NDREUSE                ! true: reusing non-diurnal
-        LOGICAL    NFLAG                  ! null flag (not used)
-        LOGICAL    RFLAG                  ! true: more MOBILE5 changed then tmpr
-        LOGICAL    TFLAG_DIU              ! true: diurnal EFs were calc'd this T
-        LOGICAL    TFLAG_NDI              ! true: non-diu EFs were calc'd this T
-
-        CHARACTER*20           MODELNAM   ! emission factor model name from E.V.
-        CHARACTER*300          MESG       ! message buffer
-        CHARACTER(LEN=IOVLEN3) ACTNAM     ! tmp activity name from E.V.
-
-
-        CHARACTER*16 :: PROGNAME = 'EMISFAC'   ! program name
-
+        CHARACTER*16  :: PROGNAME = 'EMISFAC' ! program name
+        
 C***********************************************************************
 C   begin body of program EMISFAC
 
@@ -187,425 +177,544 @@ C           to continue running the program.
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
-C.........  Obtain settings from the environment...
-C.........  Get the name of the activity to use for one run
-        MESG = 'Emission factor activity'
-        CALL ENVSTR( 'SMK_EF_ACTIVITY', MESG, 'VMT', ACTNAM, IOS )
-
-C.........  Get the name of the emission factor model to use for one run
-        MESG = 'Emission factor model'
-        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE5', MODELNAM, IOS )
-
 C.........  End program if source category is not mobile sources
-        IF( CATEGORY .NE. 'MOBILE' ) THEN
+        IF( CATEGORY /= 'MOBILE' ) THEN
             L = LEN_TRIM( PROGNAME )
             MESG = 'Program ' // PROGNAME( 1:L ) // ' does not ' //
-     &             'support ' // CATEGORY( 1:CATLEN ) // ' sources.'
+     &             'support ' // TRIM( CATEGORY ) // ' sources.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-C.........  Set number and name of activity
+        END IF
+
+C.........  Obtain settings from the environment...
+
+C.........  Get the name of the emission factor model to use
+ccs        MESG = 'Emission factor model'
+ccs        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE6', MODELNAM, IOS )
+        MODELNAM = 'MOBILE6'
+
+C.........  Get environment variables that control program behavior
+        TEMPFLAG = ENVYN( 'REPLACE_TEMPERATURES', 
+     &                 'Replace temperatures in MOBILE6 scenarios',
+     &                 .TRUE., IOS )
+     
+C.........  Get temperature aggregation length
+        MESG = 'Temperature aggregation group'
+        CALL ENVSTR( 'GROUP_TYPE', MESG, 'daily', GRP_NAME, IOS )
+     
+C.........  Check if speed profiles are to be used
+        SPDFLAG = ENVYN( 'USE_SPEED_PROFILES', 
+     &            'Use speed profiles instead of inventory speeds', 
+     &            .FALSE., IOS )
+     
+C.........  Get inventory file names given source category
+        CALL GETINAME( CATEGORY, ENAME, ANAME )
+
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
+
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
+
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
         ELSE
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
+     
+        PDEV = PROMPTFFILE(
+     &           'Enter logical name for SPDSUM speed summary file',
+     &           .TRUE., .TRUE., 'SPDSUM', PROGNAME )
+        
+        CDEV = PROMPTFFILE(
+     &           'Enter logical name for M6LIST scenarios file',
+     &           .TRUE., .TRUE., 'M6LIST', PROGNAME )
+        
+        TDEV = PROMPTFFILE( 
+     &           'Enter logical name for EMISSION PROCESSES file',
+     &           .TRUE., .TRUE., 'MEPROC', PROGNAME )
 
-            NIACT = 1
-            ALLOCATE( ACTVTY( NIACT ),STAT=IOS )
-            CALL CHECKMEM( IOS, 'ACTVTY', PROGNAME )
-            ACTVTY( 1 ) = ACTNAM
+        VDEV = PROMPTFFILE( 
+     &           'Enter logical name for INVENTORY DATA TABLE file',
+     &           .TRUE., .TRUE., 'INVTABLE', PROGNAME )
 
+        IF( SPDFLAG ) THEN
+            ZDEV = PROMPTFFILE(
+     &           'Enter logical name for SPDPRO speed profiles file',
+     &           .TRUE., .TRUE., 'SPDPRO', PROGNAME )
+        END IF
+        
+        SELECT CASE( GRP_NAME )
+        CASE( 'daily' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for DAILYGROUP file',
+     &           .TRUE., .TRUE., 'DAILYGROUP', PROGNAME )
+        CASE( 'weekly' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for WEEKLYGROUP file',
+     &           .TRUE., .TRUE., 'WEEKLYGROUP', PROGNAME )
+        CASE( 'monthly' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for MONTHLYGROUP file',
+     &           .TRUE., .TRUE., 'MONTHLYGROUP', PROGNAME )
+        CASE( 'episode' )
+           GDEV = PROMPTFFILE(
+     &           'Enter logical name for EPISODEGROUP file',
+     &           .TRUE., .TRUE., 'EPISODEGROUP', PROGNAME )
+        CASE DEFAULT
+            MESG = 'ERROR: Unrecognized value for GROUP_TYPE.' //
+     &             CRLF() // BLANK10 // 'Valid values are daily, ' //
+     &             'weekly, monthly, or episode.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END SELECT
+     
+C.........  Get temperature file directory from the environment
+        MESG = 'Location of hourly temperature files'
+        CALL ENVSTR( 'SMK_METPATH', MESG, '.', TEMPDIR, IOS )
+     
+        TNAME = PROMPTMFILE(
+     &          'Enter logical name for first hourly temperature file',
+     &          FSREAD3, 'HOURLYT', PROGNAME )
+        
+C.........  Get MOBILE6 directory from the environment
+        MESG = 'Location of MOBILE6 input and output files ' //
+     &         '(50 characters or less)'
+        CALL ENVSTR( 'SMK_M6PATH', MESG, '.', M6DIR, IOS )
+
+        IF( IOS /= 0 ) THEN
+            MESG = 'WARNING: MOBILE6 files being placed in ' //
+     &             'executable directory because ' // CRLF() //
+     &             BLANK10 // 'environment variable SMK_M6PATH '//
+     &             'is not set properly'
+            CALL M3MSG2( MESG )
+        END IF        
+
+C.........  Store source-category-specific header information, 
+C           including the inventory pollutants in the file (if any).  Note that 
+C           the I/O API header info is passed by include file and the
+C           results are stored in module MODINFO.
+        CALL GETSINFO( ENAME )
+
+C.........  Ensure that there is at least one activity in the inventory 
+C           file, or else this program does not need to be run
+        IF( NIACT == 0 ) THEN
+            MESG = 'No activities are found in the ' //
+     &             'inventory file!  Program cannot be used.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Get file names and units; open input and output files
-        CALL EMFACIO( MODELNAM, NNAME, DNAME, JYEAR, EDEV, IDEV, RDEV,
-     &                SDEV, NDREUSE, DIREUSE )
-        NV = NVTYPE
+C.........  Set inventory variables to read
+        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 2 ) = 'IRCLAS'
+        IVARNAMS( 3 ) = 'IVTYPE'
+        NINVARR = 3
 
-C.........  Pre-process emission factors inputs file.  This involves identifying
-C           the model(s) being used, flaging the types, flagging combination
-C           emission factors, and allocating and storing various arrays.
-        CALL RDEFDAT( RDEV )
+C.........  Allocate memory for and read required inventory characteristics
+        CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
-C.........  Read the emission-factor index for the purpose of getting a 
-C           list of the PSIs that are used in the EF X-ref
-C.........  Creates NPSI and PSILIST
-        CALL RDEFTMPR( EDEV, .FALSE. )
+C.........  Set up emission process variable names
+        CALL EFSETUP( 'NONE', MODELNAM, NEFS, VOLNAM )
 
-C.........  Allocate memory for all-PSI list. Make sure that it will be
-C           large enough by allocating for all in EF x-ref and in EF data files
-        MXPSI = NPSI( 1 ) + NPSIDAT
-        ALLOCATE( PSIALL( MXPSI ),STAT=IOS )
-        CALL CHECKMEM( IOS, 'PSIALL', PROGNAME )
+C.........  Read emission processes file.  Populate array in MODEMFAC.
+        CALL RDEPROC( TDEV )
+        
+C.........  Read inventory table
+        CALL RDCODNAM( VDEV )
 
-C.........  Expand unique PSI list to include pure EFs that are not in the 
-C           emission factor cross-reference, but that are used in combination
-C           factors that are in the cross-reference.
-C.........  Also expand list to include the first PSI in a group, if it is not
-C           already in the list.
-        CALL EXPNDPSI( MXPSI, NPSI( 1 ), PSILIST( 1,1 ) )
+C.........  Set up arrays for processing NONHAP values
 
-C.........  Read the emission-factor index and min/max temperature combinations
-C           from the emission factor preprocessing program
-        CALL RDEFTMPR( EDEV, .TRUE. )
+C.........  Set input and output hydrocarbon names
+        INPUTHC = TRIM( VOLNAM )
+        OUTPUTHC = 'NONHAP' // TRIM( INPUTHC )
 
-C.........  Expand the records of the emission-factor index and min/max 
-C           temperature combinations so that pure PSIs contain the temperature
-C           indices from the combination factors that use them.
-        CALL EXPNDEFT
+        ALLOCATE( RAWSUBS( MXIDAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RAWSUBS', PROGNAME )
+        
+        FNDINPUT = .FALSE.
+        FNDOUTPUT = .FALSE.
+        K = 0
 
-C.........  Process targeted EF update file if it exists... 
-        IF( SDEV .GT. 0 ) THEN
-
-C.............  Allocate memory for targeted update array
-            ALLOCATE( UPDATE( NPSIALL ),STAT=IOS )
-            CALL CHECKMEM( IOS, 'UPDATE', PROGNAME )
+C.........  Loop through all pollutants        
+        DO I = 1, MXIDAT
+            IF( INVDNAM( I ) == INPUTHC ) THEN
+                FNDINPUT = .TRUE.
+                CYCLE
+            END IF
             
-            CALL RDEFUPD( SDEV, NPSIALL, PSIALL, NPSIALL, 
-     &                    NUPDAT, UPDATE )
-
-        END IF
-
-C.........  Allocate memory for emission factors (from MODEMFAC) and emission
-C           factor temporary arrays
-c        MXEMIS = NNDI + NDIU
-        ALLOCATE( EFACNDI( NTMPR, NV, NNDI ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EFACNDI', PROGNAME )
-        ALLOCATE( EFACDIU( NVLDTMM, NV, NDIU ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EFACDIU', PROGNAME )
-        ALLOCATE( EFACT( NV, NNDI ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EFACT', PROGNAME )
-        ALLOCATE( DFACT( NV, NDIU ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'DFACT', PROGNAME )
-        ALLOCATE( EFSAVND( NV, MXPPGRP, NTMPR, NNDI ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EFSAVND', PROGNAME )
-        ALLOCATE( EFSAVDI( NV, MXPPGRP, NVLDTMM, NDIU ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EFSAVDI', PROGNAME )
-        EFSAVND = BADVAL3
-        EFSAVDI = BADVAL3
-
-C.........  Allocate memory for status arrays by PSI
-        ALLOCATE( UPDATNDI( NPSIALL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'UPDATNDI', PROGNAME )
-        ALLOCATE( UPDATDIU( NPSIALL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'UPDATDIU', PROGNAME )        
-        ALLOCATE( NDISTAT( NPSIALL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'NDISTAT', PROGNAME )
-        ALLOCATE( DIUSTAT( NPSIALL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'DIUSTAT', PROGNAME )        
-
-C.........  Create update status arrays for diurnal and non-diurnal emission
-C           factors.  These depend on the type of PSI, the contents of the
-C           UPDATE array, and the PSIs for which there are min/max temperatures
-C           (i.e., PSIs that are in the domain).
-        CALL SETEFUPD( NUPDAT, NDREUSE, DIREUSE, NNAME, DNAME,
-     &                 UPDATE, UPDATNDI, UPDATDIU )
-
-C.........  Initialize constants for loops
-        FDATE = JYEAR * 1000 + 1
- 
-C.........  Initialize array for determining whether combo EFs need to be
-C           updated based on changes to pure EFs
-        NDISTAT = .FALSE.  ! array 
-        DIUSTAT = .FALSE.  ! array
-
-C...................................................................
-C.........  Create new pure EFs where needed
-C...................................................................
-
-C.........  Loop through parameter scheme indices (PSIs) unique list created 
-C           from emission factor cross-reference file
-        NNDIP1 = NNDI + 1
-        DO IPM = 1, NPSIALL
-
-C.............  Initializations for the current PSI
-            CFLAG_NDI = .FALSE.  ! Non-diurnal not calculated
-            CFLAG_DIU = .FALSE.  ! Diurnal not calculated
-
-C.............  Get PSI and seconds-count equivalent
-            PSI   = PSIALL  ( IPM )
-            IPTIM = SEC2TIME( PSI )
-
-C.............  Search for PSI in list from the emission factor inputs file
-            J = FIND1( PSI, NPSIDAT, PSIDAT )
-
-            IF( J .LE. 0 ) 
-     &          CALL REPORT_MISS_PSI( PSI, 'EF x-ref', 'EF settings' )
-
-C.............  Retrieve count of PSIs that current PSI depends on, index to 
-C               combo-only PSI list, and no. PSIs per scenario
-            K        = PDATINDX( J )
-            CNTCOMBO = PDATTYPE( K )
-            PSIPNTR  = PDATPNTR( K )
-            LINECNT  = PDATLINE( K )
-            NPSISCN  = PDATMCNT( K )
-            PSIROOT  = PDATROOT( K )
-
-C.............  Skip over any PSIs that are for combination emission factors
-            IF( CNTCOMBO .GT. 0 ) CYCLE
-
-C.............  Write message to screen if this is the first PSI in a group
-            IF( PSIPNTR .EQ. 1 ) THEN
-
-                WRITE( MESG, 94010 ) 'Processing PSI', PSI
-
-                IF( NPSISCN .GT. 1 ) THEN
-                    L = LEN_TRIM( MESG ) 
-                    WRITE( MESG, 94010 ) MESG( 1:L ) // ' through', 
-     &                                   PSI + NPSISCN - 1
-                END IF
-
-                L = LEN_TRIM( MESG ) 
-                MESG = MESG( 1:L ) // ' ...'
-
-                CALL M3MSG2( MESG )
-
-                FFLAG = .FALSE.  ! first scen in multi-scenario not calc'd
-
+            IF( INVDNAM( I ) == OUTPUTHC ) THEN
+                FNDOUTPUT = .TRUE.
+                CYCLE
             END IF
 
-C.............  Check to see any diurnals for this profile indice exist
-C.............  If not, initialize diurnal values to missing because they 
-C               are not defined for all vehicle types
-C.............  Note that NFLAG is a null flag simply used to call routine
-            NFLAG = CHKEMFAC( 'DIURNAL', DNAME, FDATE, IPTIM, 
-     &                        DIREUSE, .TRUE. )
-
-C.............  Specify that more has changed than just temperature
-C.............  This should not be set inside non-diurnal and diurnal
-C               sections individually, because ITEMP = 1 will reset TCNT
-C               in MOBILE subroutine.
-            RFLAG = .TRUE.
-
-C.............  Loop over temperatures for non-diurnal and diurnal emission
-C               factors.
-C.............  The temperature-handling routine will first provide temperatures
-C               for the non-diurnal EFs, with diurnal min/maxs in special
-C               cases.  Then the remaining min/max temperatures will be set
-C               for computing the remaining diurnal emission factors
-            DO
-
-                CALL SETEFTMPR( IPM, ENDLOOP, TI, TMMI, TF, 
-     &                          TF_MIN, TF_MAX )
-
-C.................  End the loop if temperatures have been exhausted
-                IF( ENDLOOP ) EXIT
-
-C.................  Determine the status for the current temperature. This will
-C                   determine whether or not to save the emisison factors
-C                   in the output array. When TI = 0, do not store non-diurnal
-C                   emission factors.  When TMMI = 0, do not store diurnal ones
-                TFLAG_NDI = .FALSE.
-                TFLAG_DIU = .FALSE.
-                IF( UPDATNDI( IPM ) .AND. TI   .GT. 0 ) TFLAG_NDI=.TRUE.
-                IF( UPDATDIU( IPM ) .AND. TMMI .GT. 0 ) TFLAG_DIU=.TRUE.
-
-C.................  Force PSIs to be updated in output file if they have been
-C                   computed for any temperatures
-                CFLAG_NDI = ( CFLAG_NDI .OR. TFLAG_NDI )
-                CFLAG_DIU = ( CFLAG_DIU .OR. TFLAG_DIU )
-
-C.................  During reuse, check if diurnal emission factors are 
-C                   invalid for the current temperature indices. If so, make 
-C                   sure they are computed.
-                IF( DIREUSE .AND. TMMI .GT. 0 ) THEN
-                    IF ( EFACDIU( TMMI, 1, 1 ) .LT. AMISS3 ) THEN
-                        CFLAG_DIU = .TRUE.
-                        TFLAG_DIU = .TRUE.
+C.............  If requested hydrocarbon is not TOG or VOC, skip rest of loop
+            IF( INPUTHC /= 'TOG' .AND. INPUTHC /= 'VOC' ) CYCLE
+         
+            IF( INVDVTS( I ) /= 'N' ) THEN
+            
+C.................  Check that pollutant is generated by MOBILE6   
+                DO J = 1, NEPOL
+                    IF( INVDNAM( I ) == EMTPOL( J ) ) THEN
+                        IF( INVDVTS( I ) == 'V' ) THEN
+                            K = K + 1
+                            RAWSUBS( K ) = INVDNAM( I )
+                        ELSE IF( INPUTHC == 'TOG' ) THEN
+                            K = K + 1
+                            RAWSUBS( K ) = INVDNAM( I )
+                        END IF
+                        EXIT
                     END IF
-                END IF
+                END DO
+            END IF
+        END DO
 
-C.................  Skip iteration if no emission factors need updating
-                IF( .NOT. CFLAG_NDI .AND. .NOT. CFLAG_DIU ) CYCLE
-
-C.................  Initialize MOBILE5 error count 
-                IERR = 0 
-
-C.................  For MOBILE* input, when the PSI is the first in a
-C                   multi-scenario run, skip the appropriate number of lines
-C                   in the emission factor data file (RDEV).  Then, create
-C                   emission factors and store extras.
-C.................  Or, if PSI is *not* first, but emission factors haven't
-C                   been computed for current group (can happen during reuse), 
-C                   also run.
-C.................  Note that combination types have already been screened out
-C.................  Set RFLAG to indicate run temperature has been run
-C.................  Set FFLAG to indciate first scenario has been run
-                IF( PSIPNTR .EQ. 1 .OR.
-     &            ( PSIPNTR .GT. 1 .AND. .NOT. FFLAG ) ) THEN
-                            
-                    REWIND( RDEV )                  
-                    CALL SKIPL ( RDEV, LINECNT )
-
-                    CALL MOBILE( IERR , TI, TMMI, RDEV, NPSISCN, RFLAG,
-     &                           EFACT, DFACT, EFSAVND, EFSAVDI  )
-                    RFLAG = .FALSE.
-                    FFLAG = .TRUE.
-
-C.................  For MOBILE5* input when the PSI is NOT the first in a
-C                   multi-scenario run, retrieve EFs from storage
-C.................  TFLAG_* variables screen for TI = 0 or TMMI = 0
-                ELSE IF( PSIPNTR .GT. 1 ) THEN
-
-C.....................  Make sure that first scenario in group was run, if not
-C                       there is an error.  This shouldn't happen.
-                    IF ( .NOT. FFLAG ) THEN
-                        WRITE( MESG,94010 ) 'INTERNAL ERROR: PSI ', PSI, 
-     &                     'needs to be stored but group starting ' //
-     &                      CRLF() // BLANK10 //'with PSI', PSIROOT, 
-     &                     'has not been computed!'
-                        CALL M3MSG2( MESG )
-                        EFLAG = .TRUE.
-                        CYCLE
-                    END IF
-
-                    IF( TFLAG_NDI ) THEN
-                        EFACT( 1:NV,1:NNDI ) = 
-     &                         EFSAVND( 1:NV,PSIPNTR,TI,1:NNDI )
-                    END IF
-
-                    IF( TFLAG_DIU ) THEN
-                        DFACT( 1:NV,1:NDIU ) = 
-     &                         EFSAVDI( 1:NV,PSIPNTR,TMMI,1:NDIU )
-                    END IF
-
-                END IF
-
-C.................  Put non-diurnal factors from emission factor routine into
-C                   non-diurnal arrays for output
-C.................  Set EFACNDI to indicate that non-diurnal emission factors
-C                   were calculated
-                IF( TFLAG_NDI ) THEN
-
-                    EFACNDI( TI, 1:NV, 1:NNDI ) = EFACT( 1:NV, 1:NNDI )
-
-                END IF
-
-C.................  Put diurnal factors from emission factor routine into 
-C                   individual diurnal arrays for output
-                IF( TFLAG_DIU ) THEN
- 
-                    EFACDIU( TMMI, 1:NV, 1:NDIU )= DFACT( 1:NV, 1:NDIU )
-
-                END IF
-
-C.................  Update status of whether current PSI has been recalculated
-C                   for any temperatures
-                NDISTAT( IPM ) = ( NDISTAT( IPM ) .OR. CFLAG_NDI )
-                DIUSTAT( IPM ) = ( DIUSTAT( IPM ) .OR. CFLAG_DIU )
-
-            END DO  ! end loop on temperatures for computing emission factors
-
-C.............  Write out emission factors if they were updated, or write 
-C               message saying that no update was needed.
-            CALL WREMFACS( NNAME, DNAME, FDATE, FDATE, IPTIM, 
-     &                     NDISTAT( IPM ), DIUSTAT( IPM ) )
-
-        END DO           ! End loop over PSIs
-
-        IF ( EFLAG ) THEN
-            MESG = 'Problem updating emission factors (see above)'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.........  Check that the input hydrocarbon was found
+        IF( .NOT. FNDINPUT ) THEN
+            MESG = 'Requested MOBILE6 hydrocarbon ' //
+     &             TRIM( VOLNAM ) // 'is not in the inventory ' //
+     &             'data table.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
         END IF
 
-C...................................................................
-C.........  Create new mixed EFs where needed
-C...................................................................
+C.........  If output was not found, set name to blank and set no. polls to zero        
+        IF( .NOT. FNDOUTPUT .OR. K == 0 ) THEN
+            OUTPUTHC = ' '
+            NSUBPOL = 0
+        ELSE
+            NSUBPOL = K
+        END IF
 
-        DO IPM = 1, NPSIALL
-
-C.............  Get indice from MPLIST
-            PSI   = PSIALL  ( IPM )
-            IPTIM = SEC2TIME( PSI )
-
-C.............  Search for PSI in emission factors data PSIs list
-            J = FIND1( PSI, NPSIDAT, PSIDAT )
-
-C.............  Get information from emission factors data table
-            K        = PDATINDX( J )
-            CNTCOMBO = PDATTYPE( K )
-            PSIPNTR  = PDATPNTR( K )
-
-C.............  If this PSI is not a combination PSI, go to next iteration
-            IF( CNTCOMBO .EQ. 0 ) CYCLE
-
-C.............  Write message to screen
-            WRITE( MESG, 94010 ) 'Processing PSI', PSI, '...'
-            CALL M3MSG2( MESG )
-
-C.............  Determine if creation/update of combination factor is needed...
-C.............  Loop through contributing PSIs for current PSI
-            CFLAG_NDI = .FALSE.
-            CFLAG_DIU = .FALSE.
-            DO I = 1, CNTCOMBO
-
-                CPSI = CMBOPSI( I,PSIPNTR )
-
-C.................  Find contributing PSI in total list of PSIs
-                K = FIND1( CPSI, NPSIALL, PSIALL )
-
-C.................  Consider if current PSI is forced update or if contributing
-C                   PSI was updating during this run
-                IF( UPDATNDI(IPM) .OR. NDISTAT(K) ) CFLAG_NDI = .TRUE.
-                IF( UPDATDIU(IPM) .OR. DIUSTAT(K) ) CFLAG_DIU = .TRUE.
-
-C.................  Leave loop if this PSI should be updated
-                IF( CFLAG_NDI .OR. CFLAG_DIU ) EXIT
-
+        IF( NSUBPOL > 0 ) THEN
+            ALLOCATE( SUBPOLS( NSUBPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SUBPOLS', PROGNAME )
+            
+            SUBPOLS = RAWSUBS( 1:NSUBPOL )
+            
+C.............  Write message to log file with pollutants to be subtracted
+            MESG = 'NOTE: Emissions from the following pollutants ' //
+     &             'will be subtracted from ' // TRIM( INPUTHC ) // 
+     &             ' to create ' // TRIM( OUTPUTHC ) // ':'
+            CALL M3MESG( MESG )
+            
+            DO I = 1, NSUBPOL
+                MESG = BLANK10 // TRIM( SUBPOLS( I ) ) 
+                CALL M3MESG( MESG )
             END DO
 
-C.............  If either non-diurnal or diurnal are required, update both using 
-C               EFCOMBO, because running it is fast
-            IF( CFLAG_NDI .OR. CFLAG_DIU ) THEN
+        END IF
+        
+        DEALLOCATE( RAWSUBS )
 
-C.................  Create combo profile through common blocks EFS1 and EFS2
-                CALL EFCOMBO( NNAME, DNAME, CNTCOMBO, FDATE, FDATE,
-     &                        CMBOPSI(1,PSIPNTR), CMBOFAC(1,PSIPNTR) )
+C.........  Rename emission factors if necessary
+        IF( OUTPUTHC /= ' ' ) THEN
+            DO I = 1, SIZE( EMTNAM,1 )
+                L = INDEX( EMTNAM( I,1 ), ETJOIN )
+                L2 = LEN_TRIM( ETJOIN )
+                
+                IF( EMTNAM( I,1 )( L+L2:IOVLEN3 ) == INPUTHC ) THEN
+                    EMTNAM( I,1 )( L+L2:IOVLEN3 ) = OUTPUTHC
+                    CYCLE
+                END IF
+            END DO
+        END IF
 
+C.........  Get output directory information from the environment
+        MESG = 'Path where emission factors files will be written'
+        CALL ENVSTR( 'SMK_EMISPATH', MESG, '.', EMISDIR, IOS )
+
+        IF( IOS /= 0 ) THEN
+            MESG = 'WARNING: Emission factors files being placed in ' //
+     &             'executable directory because ' // CRLF() //
+     &             BLANK10 // 'environment variable SMK_EMISPATH '//
+     &             'is not set properly'
+            CALL M3MSG2( MESG )
+        END IF
+        
+C.........  Read the GROUP list file into an array
+        MESG = 'Reading GROUP list file...'
+        CALL M3MSG2( MESG )
+
+C.........  Get the number of lines in the GROUP file     
+        NGRPLINES = GETFLINE( GDEV, 'GROUP county list file' )
+
+C.........  If no counties in group file, exit program        
+        IF( NGRPLINES == 0 ) THEN
+            MESG = 'ERROR: No counties listed in GROUP file.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF 
+        
+        ALLOCATE( GRPLIST( NGRPLINES,3 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPLIST', PROGNAME )
+
+C.........  Read GROUP file
+        CALL RDGRPLIST( GDEV, NGRPLINES, GRPLIST )
+        
+C.........  Read the M6LIST file into an array
+        MESG = 'Reading M6LIST file...'
+        CALL M3MSG2( MESG )
+
+        CALL RDM6LIST( CDEV )
+
+C.........  Read speed profiles file
+        IF( SPDFLAG ) CALL RDSPDPROF( ZDEV )
+        
+C.........  Allocate memory for the source/scenario number array
+        ALLOCATE( SCENLIST( NSRC,2 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCENLIST', PROGNAME )
+        
+        SCENLIST = 0
+
+C.........  Start loop over temperature files
+        DO
+
+c            IF( TEMPFLAG ) THEN
+C.................  Read header of temperature file
+                IF ( .NOT. DESC3( TNAME ) ) THEN
+                
+                    MESG = 'Could not get description of file ' // TNAME
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                
+C.................  Save header information that will be needed later
+                ELSE
+                    SDATE  = SDATE3D
+                    STIME  = STIME3D
+                    TSTEP  = TSTEP3D
+                    NSTEPS = MXREC3D
+                    NROWS  = NROWS3D
+                    
+C.....................  Find end date in file description
+                    SEARCHSTR = '/END DATE/ '
+                    L = LEN_TRIM( SEARCHSTR ) + 1
+                    
+                    DO I = 1, MXDESC3
+                       IF( INDEX( FDESC3D( I ), 
+     &                            SEARCHSTR( 1:L ) ) > 0 ) THEN
+     	                       TEMPLINE = FDESC3D( I )
+                       	   IF( CHKINT( TEMPLINE( L+1:L+8 ) ) ) THEN
+                               EDATE = STR2INT( TEMPLINE( L+1:L+8 ) )
+                               EXIT
+                           ELSE
+                               EFLAG = .TRUE.
+                               EXIT
+                           END IF
+                       END IF
+                       
+                       IF( I == MXDESC3 ) THEN
+                           EFLAG = .TRUE.
+                       END IF
+                    END DO
+                    	
+                    IF( EFLAG ) THEN
+                        MESG = 'Could not get ending date of file ' //
+     &                         TNAME
+                    	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                END IF
+
+C.................  Allocate space for temperature info            
+                IF( INITIAL ) THEN
+                    ALLOCATE( TEMPCTY( NROWS ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'TEMPCTY', PROGNAME )
+                    ALLOCATE( TKHOUR( NROWS, 24 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
+                END IF
+                
+                TEMPCTY = 0
+                TKHOUR = 0.
+
+C.................  Read contents of hourly temperature file
+                MESG = 'Reading HOURLY temperature file...'
+                CALL M3MSG2( MESG )
+            	
+C.................  Read county list from file
+                IF( .NOT. READ3( TNAME, 'COUNTIES', 1, SDATE, STIME, 
+     &                           TEMPCTY ) ) THEN
+     	            MESG = 'Could not read COUNTIES from ' // TNAME
+     	            CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
+     	        END IF
+              
+C.................  Read temperature data from file            
+                TEMPDATE = SDATE
+                TEMPTIME = STIME
+                CALL RDHOURTEMP( TNAME, NROWS, TEMPDATE, TEMPTIME, 
+     &                           TKHOUR )
+
+C.............  If not using temperature files            
+c            ELSE
+                
+C...................  Get start and end dates from enviroment
+C                     Have to adjust for 6 am local time start
+c            END IF
+            
+C.............  Create the concatenated MOBILE6 input file
+            MESG = 'Writing MOBILE6 input file...'
+            CALL M3MSG2( MESG )
+
+C.............  Open new input file
+            MDEV = JUNIT()
+            WRITE( M6INPUT,94010 ) M6DIR( 1:LEN_TRIM( M6DIR ) ) // 
+     &                             '/m6input.' // 
+     &                             GRP_NAME( 1:LEN_TRIM( GRP_NAME ) ) //
+     &                             '.', SDATE, '.txt'
+            OPEN( UNIT=MDEV, FILE=M6INPUT, STATUS='REPLACE', 
+     &            ACTION='WRITE', IOSTAT=IOS )
+            
+            IF( IOS /= 0 ) THEN
+                MESG = 'Could not create file ' // M6INPUT
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF     
+            
+            NUMSCEN = 1
+            NUMSRC  = 0
+            CALL WRM6INPUT( GRPLIST, NGRPLINES, PDEV, MDEV, 
+     &                      TEMPCTY, TKHOUR, NROWS, VOLNAM, 
+     &                      NUMSCEN, NUMSRC, TEMPFLAG, SPDFLAG )
+            
+            CLOSE( MDEV )
+            
+            NUMSCEN = NUMSCEN - 1
+            
+C.............  Open file for storing emission factors (check this now rather than
+C               waste time running Mobile6)
+            FNAME = 'EMISFACS'
+            
+            IF( FILEOPEN ) THEN
+                IF( .NOT. CLOSESET( FNAME ) ) THEN
+                    MESG = 'Could not close file set ' // 
+     &                      FNAME( 1:LEN_TRIM( FNAME ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    FILEOPEN = .FALSE.
+                END IF
+            END IF
+            
+            CALL OPENSEF( NUMSRC, GRP_NAME, SDATE, EDATE, 
+     &                    EMISDIR, FNAME )
+            FILEOPEN = .TRUE.
+            
+C.............  Allocate space for storing emission factors
+            IF( INITIAL ) THEN
+                ALLOCATE( EMISSIONS( MXM6EPR ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EMISSIONS', PROGNAME )
+
+                DO I = 1,MXM6EPR
+                
+C.....................  Calculate maximum values for this emission process
+C                       Can't use MAXVAL on Linux
+                    DO J = 1, MXM6POLS
+                        IF( M6POL2EF( I,J ) > MAXPOL ) THEN
+                            MAXPOL = M6POL2EF( I,J )
+                        END IF
+                    END DO
+                    
+                    DO J = 1, MXM6VTYP
+                        IF( M6VEH2EF( I,J ) > MAXVEH ) THEN
+                            MAXVEH = M6VEH2EF( I,J )
+                        END IF
+                    END DO
+                    
+                    DO J = 1, MXM6FACS
+                        IF( M6FAC2EF( I,J ) > MAXFAC ) THEN
+                            MAXFAC = M6VEH2EF( I,J )
+                        END IF
+                    END DO
+                    
+                    ALLOCATE( 
+     &                  EMISSIONS( I )%PTR( NUMSCEN, MAXPOL, MAXVEH,
+     &                                      MAXFAC, 24 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'EMISSIONS%PTR', PROGNAME )
+                END DO
+
+                INITIAL = .FALSE.
+            END IF
+            
+            DO I = 1,MXM6EPR
+                EMISSIONS( I )%PTR = 0.
+            END DO
+
+C.............  Call Mobile6 with M6 input file name
+C               Custom driver will use SMOKE log file for any screen output
+            MESG = 'Running MOBILE6...' // CRLF()
+            CALL M3MSG2( MESG )
+            
+            CALL SMKDRIVER( M6INPUT, LDEV, EFLAG )
+            
+            IF( EFLAG ) THEN
+                MESG = 'Problem running MOBILE6'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            
+C.............  Match up emission factors with sources and write to file
+            MESG = 'Writing emission factors to file...' // CRLF()
+            CALL M3MSG2( MESG )
+            
+            CALL WREMFACS( FNAME, NUMSRC, SDATE, VOLNAM )
+
+            IF( TEMPFLAG ) THEN
+
+C.................  Close current temperature file
+                IF( .NOT. CLOSE3( TNAME ) ) THEN
+                    MESG = 'Could not close file ' // 
+     &                     TNAME( 1:LEN_TRIM( TNAME ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
+C.................  Open next temperature file if available
+             
+C.................  Set start date of next file based on end date of current file
+                SDATE = EDATE
+                CALL NEXTIME( SDATE, STIME, 24*TSTEP )
+             
+C.................  Construct next file name
+                WRITE( TEMPNAME,94010 ) 
+     &                 TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) //
+     &                 '/' // GRP_NAME ( 1:LEN_TRIM( GRP_NAME ) ) //
+     &                 '.', SDATE, '.ncf'
+             
+C.................  Check if file exists
+                INQUIRE( FILE=TEMPNAME, EXIST=FEXIST )
+             
+C.................  If file does not exist, we're done            
+                IF( .NOT. FEXIST ) EXIT
+                
+C.................  Set logical file name
+                IF( .NOT. SETENVVAR( TNAME, TEMPNAME ) ) THEN
+                    MESG = 'Could not set logical file name for ' //
+     &                     'file ' // TRIM( TEMPNAME )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                                    
+C.................  Open temperature file
+                IF( .NOT. OPEN3( TNAME, FSREAD3, PROGNAME ) ) THEN
+                    MESG = 'Could not open temperature file ' // 
+     &                     TEMPNAME( 1:LEN_TRIM( TEMPNAME ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+            ELSE
+                EXIT
             END IF
 
-C.............  Update status of whether current PSI has been recalculated
-            NDISTAT( IPM ) = ( NDISTAT( IPM ) .OR. CFLAG_NDI )
-            DIUSTAT( IPM ) = ( DIUSTAT( IPM ) .OR. CFLAG_DIU )
+        END DO
 
-C.............  Store emission factors in master lists
-            CALL WREMFACS( NNAME, DNAME, FDATE, FDATE, IPTIM, 
-     &                     NDISTAT( IPM ), DIUSTAT( IPM ) )
-
-        END DO           ! End loop on parameter schemes
-
-C.........  Normal program completion
+C.........  Exit program with normal completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
- 
+
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
- 
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-C******************  INTERNAL SUBPROGRAMS  *****************************
+94010   FORMAT( A, I7, A )
 
-        CONTAINS
-
-C..............  This internal subprogram reports missing PSIs
-
-            SUBROUTINE REPORT_MISS_PSI( PSI, FILDSC1, FILDSC2 )
-
-            INTEGER     , INTENT (IN):: PSI
-            CHARACTER(*), INTENT (IN):: FILDSC1
-            CHARACTER(*), INTENT (IN):: FILDSC2
-
-C......................................................................
-
-            EFLAG = .TRUE.
-            WRITE( MESG, 94010 ) 
-     &             'Parameter scheme index', PSI, 'from ' // FILDSC1 // 
-     &             ' file not found in ' // FILDSC2 // ' file.'
-            CALL M3MSG2( MESG )
-
-            RETURN
-
-C--------------------  FORMAT  STATEMENTS   ----------------------------
-
-94010       FORMAT( 10( A, :, I8, :, 1X ) )
-
-            END SUBROUTINE REPORT_MISS_PSI
+94020   FORMAT( A, I7, A1, I7, A )
 
         END PROGRAM EMISFAC
-

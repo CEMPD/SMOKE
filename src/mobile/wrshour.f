@@ -1,12 +1,12 @@
 
-        SUBROUTINE WRSMET( NSRC, JDATE, JTIME, FNAME, VMIN, VMAX,
-     &                     MIDX )
+        SUBROUTINE WRSHOUR( FNAME, JDATE, JTIME, NCNTY,
+     &                      CNTYCODES, HOURTEMP )
    
 C***********************************************************************
-C  subroutine WRSMET body starts at line < >
+C  subroutine WRSHOUR body starts at line 62
 C
 C  DESCRIPTION:
-C      Write per-source meteorology data
+C      Write by county hourly temperature data
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -22,9 +22,9 @@ C File: @(#)$Id$
 C 
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C 
+C
 C See file COPYRIGHT for conditions of use.
-C 
+C
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
@@ -44,49 +44,37 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NSRC           ! no. sources
+        CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
         INTEGER     , INTENT (IN) :: JDATE          ! julian date
         INTEGER     , INTENT (IN) :: JTIME          ! time HHMMSS
-        CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
-        REAL        , INTENT (IN) :: VMIN( NSRC,4 )   ! daily min value
-        REAL        , INTENT (IN) :: VMAX( NSRC,4 )   ! daily max value
-        INTEGER     , INTENT (IN) :: MIDX( NSRC,4 ) ! min/max indices
+        INTEGER     , INTENT (IN) :: NCNTY          ! no. counties
+        INTEGER     , INTENT (IN) :: CNTYCODES( NCNTY )   ! county FIPS codes
+        REAL        , INTENT (IN) :: HOURTEMP( NCNTY )    ! hourly values
 
 C...........   Local variables
+        INTEGER         I       ! index variable
+
         CHARACTER*300   MESG    ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRSMET' ! program name
+        CHARACTER*16 :: PROGNAME = 'WRSHOUR' ! program name
 
 C***********************************************************************
-C   begin body of subroutine WRSMET
+C   begin body of subroutine WRSHOUR
 
-C.................  Write out min/max information for the current day
-
-        IF( .NOT. WRITE3( FNAME, 'TKMIN', JDATE, JTIME, VMIN ) ) THEN 
-
-            MESG = 'Could not write minimum data to "' //
-     &              FNAME( 1:LEN_TRIM( FNAME ) ) //  '".'
-
+C.........  Write county codes to file
+        IF( .NOT. WRITE3( FNAME, 'COUNTIES', JDATE, JTIME,
+     &                    CNTYCODES ) ) THEN       
+     	    MESG = 'Could not write county codes to "' //
+     &              FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
         END IF
 
-        IF( .NOT. WRITE3( FNAME, 'TKMAX', JDATE, JTIME, VMAX ) ) THEN 
-
-            MESG = 'Could not write maximum data to "' //
+C.........  Write one hour of temperatures to file        
+        IF( .NOT. WRITE3( FNAME, 'TKCOUNTY', JDATE, JTIME,  
+     &                    HOURTEMP( : ) ) ) THEN 
+            MESG = 'Could not write hourly data to "' //
      &              FNAME( 1:LEN_TRIM( FNAME ) ) //  '".'
-
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-        END IF
-
-        IF( .NOT. WRITE3( FNAME, 'TMMI', JDATE, JTIME, MIDX ) ) THEN 
-
-            MESG = 'Could not write min/max index to "' //
-     &              FNAME( 1:LEN_TRIM( FNAME ) ) //  '".'
-
-            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
         END IF
 
         RETURN
@@ -97,4 +85,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
 
-        END SUBROUTINE WRSMET
+        END SUBROUTINE WRSHOUR

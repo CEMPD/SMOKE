@@ -1,31 +1,31 @@
 
-        SUBROUTINE WREMFACS( NNAME, DNAME, NDATE, DDATE, JTIME, 
-     &                       WFLAG_NDI, WFLAG_DIU )
-   
+        SUBROUTINE WREMFACS( FNAME, NUMSRC, SDATE, VOLNAM )
+
 C***********************************************************************
-C  subroutine WREMFACS body starts at line < >
+C  subroutine body starts at line 109
 C
 C  DESCRIPTION:
-C      Ths subroutine write the emission factors to the non-diurnal and 
-C      diurnal emission factor files.
+C       Finds correct emission factor for each source and writes 
+C       emission factors to output files
 C
 C  PRECONDITIONS REQUIRED:
 C
-C  SUBROUTINES AND FUNCTIONS CALLED:
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
-C  REVISION HISTORY:
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
 C
-C***************************************************************************
-C 
+C***********************************************************************
+C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
-C 
+C
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C 
+C
 C See file COPYRIGHT for conditions of use.
-C 
+C
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
@@ -36,95 +36,340 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
-C****************************************************************************
-
+C***********************************************************************
 C.........  MODULES for public variables
-C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+C.........  This module contains the inventory arrays
+        USE MODSOURC, ONLY: IRCLAS, IVTYPE
 
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: NSRC
+        
+C...........   This module contains emission factor tables and related
+        USE MODEMFAC, ONLY: NEFS, MXETYPE, EMTNAM, NSUBPOL, SUBPOLS, 
+     &                      OUTPUTHC, SCENLIST, EMISSIONS, NTOTHAPS, 
+     &                      HAPNAMES, HAPEFS
+        
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-
-C...........   EXTERNAL FUNCTIONS
-        INTEGER     TIME2SEC
-        EXTERNAL    TIME2SEC
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+        
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER         CVTRDTYPE
+        INTEGER         CVTVEHTYPE
+        INTEGER         INDEX1
+        
+        EXTERNAL   CVTRDTYPE, CVTVEHTYPE, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN):: NNAME     ! name of non-diur file
-        CHARACTER(*), INTENT (IN):: DNAME     ! name of diur file
-        INTEGER,      INTENT (IN):: NDATE     ! output date for non-di
-        INTEGER,      INTENT (IN):: DDATE     ! output date for diurnl
-        INTEGER,      INTENT (IN):: JTIME     ! output time (PSI)
-        LOGICAL,      INTENT (IN):: WFLAG_NDI ! true: reusing nondiur
-        LOGICAL,      INTENT (IN):: WFLAG_DIU ! true: reusing diur
+        CHARACTER(*), INTENT (IN) :: FNAME    ! logical name of emission factors file
+        INTEGER,      INTENT (IN) :: NUMSRC   ! total number of sources
+        INTEGER,      INTENT (IN) :: SDATE    ! episode start date
+        CHARACTER(*), INTENT (IN) :: VOLNAM   ! volatile pollutant name
 
-C...........   Local variables
-        INTEGER         L            ! counters and indices
+C...........   LOCAL VARIABLES and their descriptions:
 
-        INTEGER         PSI          ! tmp parameter scheme index
+C...........   Local allocatable arrays
+        REAL,    ALLOCATABLE, SAVE :: SRCEFS( : )   ! per-source emission factors
+        INTEGER, ALLOCATABLE, SAVE :: EFIDX( : )    ! index of source numbers
 
-        CHARACTER*300   MESG         ! message buffer
+C.........   Other local variables
+        INTEGER    I, J, K          ! counters and indices        
+        INTEGER    IHR              ! hour loop index
+        INTEGER    ISRC             ! source loop index
+        INTEGER    IEF              ! emission process loop index
+        INTEGER    IPOL             ! pollutant loop index
+        INTEGER    IOS              ! I/O status
+        INTEGER    SCENNUM          ! scenario number of source
+        INTEGER    VTYPE            ! vehicle type of source
+        INTEGER    FTYPE            ! facility type of source
+        INTEGER    JDATE            ! output date
+        INTEGER    JTIME            ! output time
+        INTEGER    EFPOS            ! current position in emission factor arrays
+        INTEGER    EMISPOS          ! position in master emission factor array
+        INTEGER    POLEF            ! ef/pollutant combo position in SRCEFS
+        INTEGER    VARPOL           ! pollutant specified by current variable
+        
+        REAL       EFVAL            ! temporary emission factor value
+        REAL       RAMPEF           ! ramp emission factor, used when creating freeway composite
+        
+        LOGICAL       :: LASAFLAG = .FALSE. ! true: treat local roads as arterial
+        LOGICAL       :: USEHAP  = .FALSE.  ! true: use user-defined toxic value
+        LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
-        CHARACTER*16 :: PROGNAME = 'WREMFACS' ! program name
-
+        CHARACTER(LEN=3)       EFNAME    !  emission process name
+        CHARACTER(LEN=11)      POLLNAME  !  pollutant name
+        CHARACTER(LEN=16)      CURRVAR   !  current variable being written
+        CHARACTER*300          MESG      !  message buffer 
+        
+        CHARACTER*16  :: PROGNAME = 'WREMFACS' ! program name
+        
 C***********************************************************************
 C   begin body of subroutine WREMFACS
 
-C.........  Convert second for file to parameter scheme index value
-        PSI = TIME2SEC( JTIME )
-
-C.........  Write all non-diurnal EFs to non-diurnal file
-        L = LEN_TRIM( NNAME )
-        IF( WFLAG_NDI ) THEN
-
-            IF( .NOT. WRITE3( NNAME,ALLVAR3,NDATE,JTIME,EFACNDI ) ) THEN
-
-                WRITE( MESG, 94010 ) 
-     &                 'Could not write non-diurnal EFs for PSI', 
-     &                 PSI, 'to file "' // NNAME( 1:L ) // '"'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            END IF
-
-        ELSE
-
-            WRITE( MESG, 94010 ) 'NOTE: Non-diurnal EFs for PSI', PSI,
-     &             'already exist in "' // NNAME( 1:L ) // '"'
-            CALL M3MESG( MESG )
-
+C.........  Allocate arrays for per-source efs
+        IF( INITIAL ) THEN     
+            ALLOCATE( SRCEFS( NUMSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMISFACS', PROGNAME )
+            ALLOCATE( EFIDX( NUMSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EFIDX', PROGNAME )
+            
+            INITIAL = .FALSE.
         END IF
 
-C.........  Write all diurnal EFs to diurnal file
-        L = LEN_TRIM( DNAME )
-        IF( WFLAG_DIU ) THEN
+        DO IHR = 1, 24  ! loop over hours
+          DO IEF = 1, MXM6EPR  ! loop over emission processes
+          
+C.............  Set facility type to NONE for all ef types except
+C               exhaust running, evp running, brake, and tire wear
+            IF( M6FAC2EF( IEF, M6NONE ) == 1 ) THEN
+                FTYPE = M6NONE
+            ELSE
+            	FTYPE = 1
+            END IF 
 
-            IF( .NOT. WRITE3( DNAME,ALLVAR3,DDATE,JTIME,EFACDIU ) ) THEN
+C.............  Loop over all pollutants including user-defined                
+            DO IPOL = 1,MXM6POLS + NTOTHAPS
+            
+C.................  Make sure this is a valid ef/pollutant combination
+              IF( IPOL <= MXM6POLS ) THEN
+                  IF( M6POL2EF( IEF, IPOL ) == -1 ) CYCLE
+              ELSE
 
-                WRITE( MESG, 94010 ) 
-     &                 'Could not write diurnal EFs for PSI',
-     &                 PSI, 'to file "' // DNAME( 1:L ) // '"'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C...................  For user-defined toxics, skip CRC, BRK, and TIR
+                  IF( IEF == 7 .OR. IEF == 9 .OR. IEF == 10 ) CYCLE
+              END IF
 
-            END IF
+C...............  Reset array position and ef arrays                
+              EFPOS  = 0
+              SRCEFS = 0.  ! array
+              EFIDX  = 0   ! array
+              
+              DO ISRC = 1, NSRC  ! loop over sources
 
-        ELSE
+C.................  Get scenario number for current source        
+                SCENNUM = SCENLIST( ISRC,1 )            
+                IF( SCENNUM == 0 ) CYCLE 
 
-            WRITE( MESG, 94010 ) 'NOTE: Diurnal     EFs for PSI', PSI,
-     &             'already exist in "' // DNAME( 1:L ) // '"'
-            CALL M3MESG( MESG )
+C.................  Store array position for current source                
+                EFPOS = EFPOS + 1
+                EFIDX( EFPOS ) = ISRC
+                
+C.................  Check local-as-arterial setting for this source                
+                IF( SCENLIST( ISRC,2 ) == 2 ) THEN
+                    LASAFLAG = .TRUE.
+                ELSE
+                    LASAFLAG = .FALSE.
+                END IF
 
-        END IF
+C.................  Set road and vehicle type
+                IF( FTYPE /= M6NONE ) THEN
+                    FTYPE = CVTRDTYPE( IRCLAS( ISRC ), LASAFLAG )
+                END IF
+                
+                VTYPE = CVTVEHTYPE( IVTYPE( ISRC ) )
 
-        RETURN
+C.................  Check if vehicle type is valid for this process
+                IF( IPOL <= MXM6POLS ) THEN
+                    IF( M6VEH2EF( IEF, VTYPE ) == -1 ) CYCLE
+                END IF
 
-C******************  FORMAT  STATEMENTS   ******************************
+C.................  Store appropriate emission factor in source-based array
+                IF( IPOL <= MXM6POLS ) THEN
 
-C...........   Internal buffering formats............ 94xxx
+                    SRCEFS( EFPOS ) = 
+     &                 EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                       M6POL2EF( IEF,IPOL ), 
+     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       M6FAC2EF( IEF,FTYPE ),IHR )
 
-94010   FORMAT( 10( A, :, I9, :, 1X ) )
+C.....................  Adjust for ramp emissions if freeway
+                    IF( FTYPE == M6FREEWAY ) THEN
+                        RAMPEF = 
+     &                     EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                           M6POL2EF( IEF,IPOL ), 
+     &                                           M6VEH2EF( IEF,VTYPE ),
+     &                                           M6FAC2EF( IEF,M6RAMP ),
+     &                                           IHR )
+                        SRCEFS( EFPOS ) = 
+     &                      ADJUST_FREEWAY_EF( SRCEFS( EFPOS ), RAMPEF )
+                    END IF
+                ELSE
+                    SRCEFS( EFPOS ) = 
+     &                 HAPEFS( SCENNUM, VTYPE, IPOL - MXM6POLS, 
+     &                         IEF, IHR, FTYPE )
+     
+C.....................  Adjust for ramp emissions if freeway
+                    IF( FTYPE == M6FREEWAY ) THEN
+                        RAMPEF = 
+     &                      HAPEFS( SCENNUM, VTYPE, IPOL - MXM6POLS, 
+     &                              IEF, IHR, M6RAMP )
+                        SRCEFS( EFPOS ) =
+     &                      ADJUST_FREEWAY_EF( SRCEFS( EFPOS ), RAMPEF )
+                    END IF
+                END IF
+                
+C.................  Create NONHAP hydrocarbon value if needed
+                IF( IPOL == 1 ) THEN
+                
+C.....................  Loop through subtraction pollutants                
+                    DO I = 1, NSUBPOL
+                        USEHAP = .FALSE.
+                        VARPOL = 0
+                        
+                        DO J = 1,MXM6POLS
+                            IF( SUBPOLS( I ) == M6POLS( J ) ) THEN
+                                VARPOL = J
+                                EXIT
+                            END IF
+                        END DO
+                        
+                        IF( VARPOL == 0 ) THEN
+C.............................  Loop through user-defined toxics
+                            DO J = 1, NTOTHAPS
+                                IF( SUBPOLS( I ) == HAPNAMES( J ) ) THEN
+                                    VARPOL = J
+                                    USEHAP = .TRUE.
+                                    EXIT
+                                END IF
+                            END DO
+                        END IF
 
+C.........................  Still couldn't match pollutant name, quit with error                            
+                        IF( VARPOL == 0 ) THEN
+                            MESG = 'Unrecognized pollutant ' //
+     &                                 SUBPOLS( I )
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+
+C.........................  Get toxic emission factor                                
+                        IF( USEHAP ) THEN
+                            EFVAL = HAPEFS( SCENNUM, VTYPE, VARPOL, 
+     &                                      IEF, IHR, FTYPE )
+
+C.............................  Adjust for ramp emissions
+                            IF( FTYPE == M6FREEWAY ) THEN
+                                RAMPEF = HAPEFS( SCENNUM, VTYPE, VARPOL,
+     &                                           IEF, IHR, M6RAMP )
+                                EFVAL = 
+     &                              ADJUST_FREEWAY_EF( EFVAL, RAMPEF )
+                            END IF
+                        
+                        ELSE
+                        
+C.............................  Check that this is a valid pol/ef combo
+                            IF( M6POL2EF( IEF, VARPOL ) == -1 ) CYCLE
+
+                            EFVAL = EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                       M6POL2EF( IEF,VARPOL ), 
+     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       M6FAC2EF( IEF,FTYPE ),IHR )
+     
+C.............................  Adjust for ramp emissions
+                            IF( FTYPE == M6FREEWAY ) THEN
+                                RAMPEF = EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                       M6POL2EF( IEF,VARPOL ), 
+     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       M6FAC2EF( IEF,M6RAMP ),
+     &                                       IHR )
+                                EFVAL = 
+     &                              ADJUST_FREEWAY_EF( EFVAL, RAMPEF )
+                            END IF
+                            
+                        END IF
+
+C.........................  Subtract toxic ef from hydrocarbon ef                        
+                        SRCEFS( EFPOS ) = SRCEFS( EFPOS ) - EFVAL
+
+C.........................  Make sure the value is not negative
+                        IF( SRCEFS( EFPOS ) < 0. ) THEN
+                            SRCEFS( EFPOS ) = 0.
+                        END IF
+                        
+                    END DO  ! end subtract pollutant loop
+                END IF
+              END DO  ! end source loop
+                     
+C...............  Set current pollutant name based on index
+              IF( IPOL <= MXM6POLS ) THEN
+                  POLLNAME = M6POLS( IPOL )
+                  IF( POLLNAME == 'HC' ) THEN
+                      IF( OUTPUTHC /= ' ' ) THEN
+                          POLLNAME = OUTPUTHC
+                      ELSE
+                          POLLNAME = TRIM( VOLNAM )
+                      END IF
+                  END IF
+              ELSE
+C...................  Check for user-defined pollutants
+                  IF( IPOL <= MXM6POLS + NTOTHAPS ) THEN
+                      POLLNAME = HAPNAMES( IPOL - MXM6POLS )
+                  ELSE
+                      MESG = 'INTERNAL ERROR: Unexpected pollutant'
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  END IF
+              END IF
+
+C...............  Set emission process name based on index
+              EFNAME = M6PROCS( IEF )
+
+C...............  Build emission process/pollutant combination name
+              CURRVAR = EFNAME // ETJOIN // TRIM( POLLNAME )
+              
+C...............  Make sure combo is in the MEPROC file
+              K = INDEX1( TRIM( CURRVAR ), MXETYPE, EMTNAM( :,1 ) )
+              IF( K <= 0 ) CYCLE
+              
+C...............  Determine write time
+              JDATE = SDATE
+              JTIME = ( IHR - 1 ) * 10000
+              
+C...............  Write variable to file    
+              IF( .NOT. WRITESET( FNAME, TRIM( CURRVAR ), ALLFILES, 
+     &                            JDATE, JTIME, 
+     &                            SRCEFS( 1:EFPOS ) ) ) THEN
+     	          MESG = 'Could not write ' // TRIM( CURRVAR ) // 
+     &	                 'to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
+                  CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+              END IF
+                              
+            END DO  ! end pollutant loop
+          END DO  ! end emission process loop
+ 
+C.............  Write source numbers to file
+          IF( .NOT. WRITESET( FNAME, 'SOURCES', ALLFILES, JDATE, 
+     &                        JTIME, EFIDX( 1:EFPOS ) ) ) THEN
+     	      MESG = 'Could not write source numbers ' //
+     &               ' to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
+              CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+          END IF
+
+        END DO     ! end hour loop
+
+C.........  Reset array for storing user-defined HAPs
+        IF( ALLOCATED( HAPEFS ) ) HAPEFS = 0.  ! array
+        
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+        CONTAINS
+        
+C.............  This internal subprogram calculates a composite emission
+C               factor, based on the freeway and ramp emission factors.
+            REAL FUNCTION ADJUST_FREEWAY_EF( FREEWAY_FAC, RAMP_FAC )
+            
+C.............  PRE: FREEWAY_FAC and RAMP_FAC are assigned
+C.............  POST: FNCVAL == (1-Ramp VMT)*FREEWAY_FAC + (Ramp VMT)*RAMP_FAC
+
+C.............  Function arguments
+            REAL, INTENT (IN) :: FREEWAY_FAC    ! freeway emission factor
+            REAL, INTENT (IN) :: RAMP_FAC       ! ramp emission factor
+            
+            ADJUST_FREEWAY_EF = ( 1-RAMPVMT ) * FREEWAY_FAC + 
+     &                          ( RAMPVMT )   * RAMP_FAC
+            
+            END FUNCTION ADJUST_FREEWAY_EF
+        
         END SUBROUTINE WREMFACS
+        
