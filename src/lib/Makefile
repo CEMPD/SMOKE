@@ -42,12 +42,14 @@ all: lib
 lib: $(MODALL) $(FILES_A) $(FILES_B) $(FILES_C) Makefile
 	ar rv $(SMK_BIN)/libsmoke.a $(FILES_A) 
 	ar rv $(SMK_BIN)/libsmoke.a $(FILES_B) 
-	ar rv $(SMK_BIN)/libsmoke.a $(FILES_C) $(MODALL)
+	ar rv $(SMK_BIN)/libsmoke.a $(FILES_C)
+	ar rv $(SMK_BIN)/libsmoke.a $(MODALL)
 
 debug: $(MODALL) $(FILES_A) $(FILES_B) $(FILES_C) Makefile
 	ar rv $(SMK_BIN)/libsmoke.debug.a $(FILES_A) 
 	ar rv $(SMK_BIN)/libsmoke.debug.a $(FILES_B) 
-	ar rv $(SMK_BIN)/libsmoke.debug.a $(FILES_C) $(MODALL)
+	ar rv $(SMK_BIN)/libsmoke.debug.a $(FILES_C) 
+	ar rv $(SMK_BIN)/libsmoke.debug.a $(MODALL)
 
 #
 # Module dependencies
