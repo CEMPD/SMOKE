@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRINVCHR( ENAME, SDEV )
+        SUBROUTINE WRINVCHR( ENAME, SDEV, A2PFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -60,8 +60,9 @@ C.........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL    LBLANK
 
 C.........  SUBROUTINE ARGUMENTS and their descriptions:
-        CHARACTER(*), INTENT (IN) :: ENAME  !  I/O API file name
-        INTEGER     , INTENT (IN) :: SDEV   !  ASCII file unit
+        CHARACTER(*), INTENT (IN) :: ENAME   ! I/O API file name
+        INTEGER     , INTENT (IN) :: SDEV    ! ASCII file unit
+        LOGICAL     , INTENT (IN) :: A2PFLAG ! true: using area-to-point processing
 
 C.........  Arrays for column formatting
         INTEGER       COLWID( MXCHRS+4 ) !  width of source info columns
@@ -149,6 +150,19 @@ C.........  Write the I/O API file, one variable at a time
 
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
+        
+            IF( A2PFLAG ) THEN
+                IF ( .NOT. WRITESET( ENAME, 'XLOCA', ALLFILES, 
+     &                               0, 0, XLOCA ) ) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
+                IF ( .NOT. WRITESET( ENAME, 'YLOCA', ALLFILES, 
+     &                               0, 0, YLOCA ) ) THEN
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+            END IF
+            
             IF ( .NOT. WRITESET( ENAME, 'CELLID', ALLFILES, 
      &                           0, 0, CELLID ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
