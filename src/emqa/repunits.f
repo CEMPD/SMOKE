@@ -99,6 +99,7 @@ C.........  Set starting units for current report
         ALLOCATE( LOCUNIT( NV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LOCUNIT', PROGNAME )
         LOCUNIT = ' '   ! array
+
         LOCUNIT( 1:NIPPA ) = EAUNIT( 1:NIPPA )   ! array
 
         IF( RPT_%USEHOUR ) THEN
@@ -122,19 +123,22 @@ C           units arrays
         DO V = 1, NSVARS
 
 C.............  Set index to data arrays based on speciation status
-            E = SPCTODAT( V )
+            E = SPCTOINV( V )
+            IF ( RPT_%USEHOUR ) E = SPCTOTPR( V )
+
+            IF ( E .LE. 0 ) CYCLE
 
 C.............  If current variable is a speciated variable and is output for
 C               this report
             IF( TOSOUT( V,RCNT )%AGG .GT. 0 ) THEN
 
 C.................  If using mole-speciation matrix
-                IF( ALLRPT( RCNT )%USESLMAT ) THEN
+                IF( RPT_%USESLMAT ) THEN
                     CALL UNITMATCH( SLUNIT( V ) )
                     TMPUNIT = MULTUNIT( SLUNIT( V ), LOCUNIT( E ) )
 
 C.................  If using mass-speciation matrix
-                ELSE IF( ALLRPT( RCNT )%USESSMAT ) THEN
+                ELSE IF( RPT_%USESSMAT ) THEN
                     CALL UNITMATCH( SSUNIT( V ) )
                     TMPUNIT = MULTUNIT( SSUNIT( V ), LOCUNIT( E ) )
 
