@@ -58,7 +58,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(LEN=*),       INTENT  (IN) :: LINE                  ! input line
         CHARACTER(LEN=*),       INTENT (OUT) :: 
-     &                                READDATA( NPOLPERLN,NARPPOL3 )  ! array of data values
+     &                                READDATA( NPOLPERLN,NPTPPOL3 )  ! array of data values
         CHARACTER(LEN=IOVLEN3), INTENT (OUT) :: READPOL( NPOLPERLN )  ! array of pollutant names
         INTEGER,                INTENT(INOUT):: NPOLPERLN             ! no. pollutants per line
         INTEGER,                INTENT (OUT) :: IYEAR                 ! inventory year
