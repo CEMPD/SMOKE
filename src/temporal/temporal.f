@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -463,7 +463,8 @@ C               emission process names, because it is only set up for MOBILE5
 
 C.................  Read emission factor tables for each activity and get the 
 C                   emission factor variable names.
-        	CALL RDEFACS( MODELNAM, FNAME, NNAME, ACTVTY( I ) )
+        	CALL RDEFACS( MODELNAM, FNAME, NNAME, ACTVTY( I ), 
+     &                        UMAT(1) )
 
             END DO
 
