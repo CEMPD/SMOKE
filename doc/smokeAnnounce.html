@@ -1,0 +1,378 @@
+<html>
+<pre>
+From: Marc Houyoux [mhouyoux@emc.mcnc.org]
+Sent: Monday, May 13, 2002 10:26 AM
+To: emregional@emc.mcnc.org
+Subject: SMOKE version 1.4 beta is released
+
+Emissions modelers,
+
+SMOKE v 1.4 beta is now available online.  Please visit the MCNC
+Environmental Modeling Center web site for registration and download
+instructions at http://www.emc.mcnc.org/products/smoke/.
+
+Click "Download EDSS and SMOKE", which will take you to a registration form.
+
+*** PLEASE THEN CLICK ON the "install_smoke_v1.4b.html" link from the main
+*** SMOKE download page.  Be careful not to download the 1.3 version, which
+*** is still on the web site.
+
+The online and PDF versions of the manual has been updated to be consistent
+with this release.
+
+The following changes to SMOKE programs have been included in this release.
+Thanks to EPA OAQPS, EPA ORD, and the Western Regional Air Partnership for
+funding that contributed to these updates.
+
+*** Please use our new bug reporting system at
+*** http://www.emc.mcnc.org/product_qa/
+*** to report and problems found with this version.  We have done a fair
+*** amount of testing with this release, but there surely will be things
+*** that others find.
+
+The programs are listed in alphabetical order with their changes.  Also,
+there is a list of new programs at the bottom of this e-mail, and a short
+list of known open issues with this release.
+
+Cntlmat
+---------------------------------------------------------------------------
+- Updates to support new cross-references by partial SCC values.  See new
+Cntlmat documentation for cross-referencing improvements.
+
+- Fixed bug that didn't apply CONTROL and EMS CONTROL factors properly when
+  fewer than all of the pollutants did not receive controls.
+
+- Updated defaults reported in the user documentation for CEFF.
+
+- Improved reports from Cntlmat to use same format as outputs from Smkreport
+
+- Updates to permit proper creating of mulitple matrices in one run
+
+Elevpoint
+---------------------------------------------------------------------------
+- Change Elevpoint to be able to select elevated and PinG sources instead of
+reading them in from PSPLIT and PGROUP.  Also allows grouping stacks.
+
+- Selection criteria include stack parameters, emissions, emissions rank,
+plant ID, source ID, analytical plume rise, and any combination.
+
+- Modified to be able to read list of PTMP Files to determine maximum
+emissions per day per source group for selection by emissions rank.
+
+- Elevpoint updated to allow 1000 sources in a group instead of 500.  This
+was a problem with the interim 1.4 release.
+
+- Elevpoint updated to correctly close the PTMPLIST number - bug caused core
+dump on Sun platform only, and was only a problem with the interim 1.4
+release.
+
+Emisfac
+---------------------------------------------------------------------------
+- Corrected Emisfac bug that prevented MEFUPD from working correctly.  The
+PSI would only be updated if it was a root-PSI for a group of PSIs and one
+PSI in the group (but not the root) needed updating, or if it was a
+component of a combo PSI, but the actual PSI did not get updated.
+
+- Fixed Emisfac for running with emission factor updates
+
+- Note, version 1.4 will be the last version of SMOKE with MOBILE5b.
+
+Grdmat
+---------------------------------------------------------------------------
+- Updates to Grdmat to extract gridding surrogates from a larger grid.
+
+Grwinven
+---------------------------------------------------------------------------
+- Fixed IDA output formatting issues.  Previous format was very wrong and
+values were wrong in previous versions of SMOKE.
+
+- Updated to be able to merge with any number of matrices and in any order
+(the interim release of version 1.4 required that the project matrix be
+first, but this limitation has been removed)
+
+Laypoint
+--------------------------------------------------------------------------
+- Updates to Laypoint for met file checking.  Errors now include ERROR in
+message.  Updated to abort earlier if meteorology files are not inconsistent
+and prevent a run time Fortran error on Sun platform.
+
+- Updates to permit usage of hour-specific precomputed layer fraction
+information, which was done to support precomputing wildfire plume rise,
+when wildfires are treated as a point source.  When processing hour-specific
+plume rise for REMSAD, UAM, or CAMx, Laypoint is now needed to create the
+PLAY_EX file, which contains only the plume rise for the precomputed
+sources.
+
+- Updated to support extracting meteorology data from larger data set during
+run time. Output grid must align exactly with the meteorology grid, but need
+not start at the same lower left corner, nor extend to the same upper right
+corner.
+
+Mrggrid
+---------------------------------------------------------------------------
+- Updates to allowing inputting of unlimited 2-d and 3-d files (previous
+version just allowed one 3-d file.  Only one input file list is needed.
+
+- Changed the names of the input and output files.
+
+- Checks units for common variables across all files
+
+- Checks grids more comprehensively across all files (the grids still
+must match exactly - subsetting is not implemented).
+
+- Checks layer structures across multiple 3-d files. You can have a
+different number of layers, as long as the layers common to 2 or more
+files have the same thicknesses.  It also checks the type and top of
+the vertical structures, which must be the same.
+
+Premobl
+---------------------------------------------------------------------------
+- Corrected Premobl to better adjust min/max temperature when it's > maximum
+min/max difference allowed by MOBILE5.
+
+- Updates to Premobl to not output as many warnings for diurnal temperature
+differences that are less than the minimum interval.
+
+- Corrected Premobl so that there won't be a problem if sources have minimum
+daily temperatures that are close to the maximum allowed minimum daily
+temperature.
+
+- Updated several routines in premobl so that could compile on NT.  These
+changes affect the memory allocation of the min/max temperature arrays.
+
+Rawbio
+---------------------------------------------------------------------------
+- Updates to Rawbio and Tmpbio to support surrogates, landuse, and Met data
+extraction from a larger grid of data (with the same cell sizes and
+projection).
+
+Smkinven
+-----------------------------------------------------------------------
+- Can now output VMT and SPEED after PMC when PMC is calculated with a
+formula.
+
+- Updated to read Continuous Emissions Monitoring data from new
+ASCII-formatted files released by EPA and assign the emissions to an
+IDA-formatted annual inventory.
+
+- Corrected Smkinven to fix bug introduced in last release that doesn't
+allow EMS-95 any hour-specific input files to be matched properly to the
+inventory.  Changed TSCC assignment from file to be specific to the format
+of the inventory and day- or hour-specific files.
+
+- Updates to Smkinven to support hour-specific stack and plume rise
+information (specifically done to allow external plume rise calculations for
+wildfires).
+
+- Updates to Smkinven to correct bug that caused IDA and mobile EMS-95
+formats to not have duplicates summed, even though the code reported that
+the emissions were summed.
+
+- Updates to permit ozone-season emissions to be used to fill in annual
+emissions when user-selected option FILL_ANN_WSEAS is set to Y when running
+Smkinven. When using this feature, all pollutants for any "filled" source
+will not get monthly factors applies, even if only one pollutant used fill
+feature. The seasonal values will be backed our from the annual values by
+dividing by the number of days in the year (returning the seasonal average
+daily emissions value).
+
+- Added SCC field to file formats for day-specific and hour-specific data
+for correct matching with IDA-formatted annual inventory records.
+
+- Fixed INTERNAL ERROR message going to users when list-file has bad paths
+and added more meaningful error message.
+
+- Update to support PMC ozone-season value calculation.
+
+- Corrected source-summing when have missing EF, CE, RP, RE, etc.  If
+missing, the "missing" value flag (-10E36) is not summed. This caused Inf
+values in resulting output file, which caused Grwinven to bomb.
+
+- Changed temporal resolution setting (SMOKE inventory variable TPFLAG) to
+use only monthly and average-week factors for annual inventories, instead of
+possibly using weekday factors.  The WKDAY_NORMALIZE setting ONLY applies
+for non-annual data fields in the 3 input file formats.
+
+- Prevent ARDAY, ARHOUR, MBDAY, MBHOUR from ever being requested (since
+these are not currently supported input files).
+
+- Corrected bug in getformt.f (subroutine that determines input file format)
+that incorrectly checked date value as part of day- and hour-specific files.
+
+- Added daylight time switch usage for EPS period-specific format.
+
+- Update of IDA input readers to not use STR2REAL I/O API function, to work
+around bug in SGI FORTRAN memory handling when using version 6.5 of the IRIX
+operating system.  There is a patch for this SGI bug now, but the workaround
+is still programmed into SMOKE.
+
+Smkmerge
+--------------------------------------------------------------------------
+- Updates to use PLAY_EX file when processing for REMSAD, UMA, and CAMx.
+Smkmerge uses articificial "stacks" to place the precomputed plume rise in
+the centers of the layers.
+
+- Updates to Smkmerge to correct bug in units conversion in which the
+numerator in the output units did not get changed correctly for *mass* based
+merges that included biogenics.  E.G., prep of MAQSIP inputs in g/sec.
+Since this is only a problem for mass-based merges, this error did not
+affect units of any model-ready files.
+
+- Updates to Smkmerge routine that opens output files to prevent a usually
+innocuous problem in which the syntax of the code that set the vertical
+layers could cause a run-time warning in debug mode about the extent of the
+arrays being dissimilar. Changed the syntax to have better code (although
+the compilers seemed to handle the poor syntax fine).
+
+- Fixed Smkmerge to output whatever units are asked for (with the same
+notation), provided that it recognizes the untis. It does this while still
+allowing automatic g/hr for PM species (for example)
+
+- Changed openmrgin routine (in Smkmerge) to not abort when base inventory
+years do not match and no projection is being done.   Prevents error abort
+when, for example, 1999 area emissions are merged with 2001 mobile
+emissions.
+
+- Fixed bug in Smkmerge that caused error when trying to merge pollutants
+and activities from the MOBL file with MGMAT (and no MTMP file involved).
+
+Smkreport
+--------------------------------------------------------------------------
+- Updates made to include reporting by speciation profiles and temporal
+profile. TEMPORAL PROFILE REPORTING ONLY WORKS WHEN THERE ARE NO
+POLLUTANT-SPECIFIC PROFILES.  Speciation profiles works only with one
+pollutant per REPCONFIG file.
+
+- Added inventory record selection by noncontinuous subgrid, region codes,
+normalization of reported emissions by population, normalization by cell
+size, and error checking, record selection by ELEVATED and NOELEVATED
+
+- Smkreport can be adversely affected by a bug in SGI FORTRAN memory
+handling when using version 6.5 of IRIX.  There is a patch for this SGI bug
+now. The symptom is that the program will crash after slowly using up all of
+the memory on the computer.
+
+Spcmat
+---------------------------------------------------------------------------
+- Changed rdsconv warning (when cannot match ROG-to-TOG file to the
+inventory pollutants) to be more severe.
+
+- Also changed rdsconv subroutine (that reads ROG-to-TOG file) to use
+Padzero on TSCC to correct error in m3demo where TSCC in GSCNV file was not
+matching that in inventory!
+
+- Updated speciation to output a supplemental file that can be used in
+Smkreport for reporting emissions based on the speciation profile selected.
+
+Temporal
+--------------------------------------------------------------------------
+- Updates to allow temporal to reuse Min/Max temperatures from the previous
+day, if needed.
+
+- Fixed Temporal processing by groups, which is sometimes necessary for
+memory-handling purposes.
+
+- Fixed Temporal for simultaneous processing of activities (VMT) and other
+pollutants. This fix was necessary to support processing VMT with PM
+pollutants.
+
+- Corrected Temporal to compare the number of sources between MOBL, MINMAXT,
+and MUMAT as a internal QA check.
+
+- Updated Temporal to permit state or county specific cross-reference to
+have pollutant-specific assignments of monthly, weekly, and diurnal temporal
+profiles.
+
+- Updated genhemis.f routine in Temporal to correct the MONTH and DAYOW
+arrays.  Previously, an error would occur when the output time zone >
+inventory time zone, such that the month and day were getting set to
+previous day's values instead of moved ahead by one hour.  This has now been
+corrected.
+
+- Changed treatment of annual emissions to always use average-day
+normalization (not average weekday)
+    - Note: this change results in noticeable differences in the new reports
+      versus the old reports. In general, the emissions tend to be lower
+      for the state totals, although in some cases, they can be higher.
+
+- Fixed use of ozone-season emissions to not get assigned monthly adjustment
+factors (only weekly and diurnal factors).
+
+Tmpbio
+---------------------------------------------------------------------------
+- Updates to Rawbio and Tmpbio to support surrogates, landuse, and Met data
+extraction from a larger grid of data (with the same cell sizes and
+projection).
+
+Other
+---------------------------------------------------------------------------
+- Corrected  chkmetem.f so that it wouldn't always say vertical def'n was
+wrong when horizontal def'n was wrong.
+
+- Corrected Mvcondns to not assume SPEED is in mobile inventory file.
+
+- Updates to Laypoint to support hour-specific stack and plume rise
+information
+(specifically done to allow external plume rise calculations for wildfires).
+
+- Moved setsrcdy.f and getdysav.f from the mobile module to the SMOKE
+library, so that Elevpoint could use these subroutines when computing the
+daily maximum emissions.
+
+- Updated rdstcy.f to guarantee sorted order.  and need to update
+documentation about this file.
+
+- Released exectuables use new version of I/O API, and this corrects the
+incorrect date message on February 29th of leap years in the Temporal
+program log.
+
+The following new programs are included in this release
+-------------------------------------------------------
+SMOKE now supports a Biogenic EMission Inventory System BEIS3 prototype, in
+addition to BEIS2.
+	Beis3: See Chapter 7
+	Normbeis: See Chapter 7
+
+Additional utilities:
+	Pktreduc: See Chapter 8
+	Mbsetup: See Chapter 8
+	Create_mpref (script & not yet documented)
+	Surgtool: See Chapter 8
+	Uam2ncf: See Chapter 8
+	Metscan: See Chapter 8
+
+Known remaining issues in version 1.4 Beta
+------------------------------------------
+- Smkreport cannot always handle a long list of species in the SELECT DATA
+statement.  A SMOKE user reported that only 8 or fewer works, though we have
+not had this problem at MCNC. It may be a platform-specific problem.
+
+- A different warning has been requested for Smkinven when the value of a
+calculated variable (like PMC) is large.
+
+- Chapter 5 needs to be modified to be consistent with Chapter 7. In
+particular, the SMK_SPECELEV_YN setting is only used for Laypoint now, and
+is not a global setting.  Also, the programs that go with each of these
+settings need to be listed.  The fact that "global" does not mean "affects
+all programs" also needs documentation.
+
+- Smkreport can't create a speciation code report for VMT emissions
+processes, i.e. EXH__VOC.
+
+- Missing CEM data are not properly handled in Smkinven and will be treated
+as zero emissions instead of missing.  Will be fixed in version 1.4 final.
+
+- CEM data have not been provided with this release.
+
+
+Marc
+
+*******************************************
+Marc Houyoux
+MCNC Environmental Modeling Center
+(919) 248-4126 phone
+(919) 248-9245 fax
+mhouyoux@emc.mcnc.org
+</pre>
+</html>
+
