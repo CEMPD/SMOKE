@@ -163,6 +163,9 @@ C.............  Set up partial strings for saving
 
         ENDDO                            ! End Loop on sorted x-ref entries
 
+C.........  Deallocate local memory
+        DEALLOCATE( ENDLEN )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
