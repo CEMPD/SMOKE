@@ -45,13 +45,15 @@ C.........  This module contains the inventory arrays
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     LBLANK
@@ -125,81 +127,99 @@ C.........  Write the I/O API file, one variable at a time
         L1 = LEN_TRIM( ENAME )
         MESG = 'Error writing output file "' // ENAME(1:L1) // '"'
 
-        IF ( .NOT. WRITE3( ENAME, 'IFIP', 0, 0, IFIP ) ) THEN
+        IF ( .NOT. WRITESET( ENAME, 'IFIP', ALLFILES, 
+     &                       0, 0, IFIP ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'TZONES', 0, 0, TZONES ) ) THEN
+        IF ( .NOT. WRITESET( ENAME, 'TZONES', ALLFILES, 
+     &                       0, 0, TZONES ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'TPFLAG', 0, 0, TPFLAG ) ) THEN
+        IF ( .NOT. WRITESET( ENAME, 'TPFLAG', ALLFILES, 
+     &                       0, 0, TPFLAG ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'INVYR', 0, 0, INVYR ) ) THEN
+        IF ( .NOT. WRITESET( ENAME, 'INVYR', ALLFILES, 
+     &                       0, 0, INVYR ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
-            IF ( .NOT. WRITE3( ENAME, 'CELLID', 0, 0, CELLID ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'CELLID', ALLFILES, 
+     &                           0, 0, CELLID ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
         CASE( 'MOBILE' )
 
-            IF ( .NOT. WRITE3( ENAME, 'IRCLAS', 0, 0, IRCLAS ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'IRCLAS', ALLFILES, 
+     &                           0, 0, IRCLAS ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'IVTYPE', 0, 0, IVTYPE ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'IVTYPE', ALLFILES, 
+     &                           0, 0, IVTYPE ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'XLOC1', 0, 0, XLOC1 ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'XLOC1', ALLFILES, 
+     &                           0, 0, XLOC1 ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'YLOC1', 0, 0, YLOC1 ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'YLOC1', ALLFILES, 
+     &                           0, 0, YLOC1 ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'XLOC2', 0, 0, XLOC2 ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'XLOC2', ALLFILES, 
+     &                           0, 0, XLOC2 ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'YLOC2', 0, 0, YLOC2 ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'YLOC2', ALLFILES, 
+     &                           0, 0, YLOC2 ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
         CASE( 'POINT' )
 
-            IF ( .NOT. WRITE3( ENAME, 'ISIC', 0, 0, ISIC ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'ISIC', ALLFILES, 
+     &                           0, 0, ISIC ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'XLOCA', 0, 0, XLOCA ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'XLOCA', ALLFILES, 
+     &                           0, 0, XLOCA ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'YLOCA', 0, 0, YLOCA ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'YLOCA', ALLFILES, 
+     &                           0, 0, YLOCA ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'STKHT', 0, 0, STKHT ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'STKHT', ALLFILES, 
+     &                           0, 0, STKHT ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'STKDM', 0, 0, STKDM ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'STKDM', ALLFILES, 
+     &                           0, 0, STKDM ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'STKTK', 0, 0, STKTK ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'STKTK', ALLFILES, 
+     &                           0, 0, STKTK ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITE3( ENAME, 'STKVE', 0, 0, STKVE ) ) THEN
+            IF ( .NOT. WRITESET( ENAME, 'STKVE', ALLFILES, 
+     &                           0, 0, STKVE ) ) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 

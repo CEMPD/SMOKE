@@ -45,14 +45,17 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-      IMPLICIT NONE
+C.........  MODULES for public variables
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+  
+        IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  Subroutine arguments and their descriptions:
         CHARACTER(*), INTENT (IN) :: ENAME            !  I/O API file name
@@ -110,15 +113,16 @@ C.................  Convert real variable to an integer, if needed
 
                     INTBUF = INT( POLBUF( 1,J ) )  ! arrays
 
-                    IF( .NOT. WRITE3( ENAME,VAR(1:L),0,0,INTBUF )) THEN
+                    IF( .NOT. WRITESET( ENAME, VAR(1:L), ALLFILES, 
+     &                                  0, 0, INTBUF ) ) THEN
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
 
 C.................  Simply write out real values directly
                 ELSE
                 
-                    IF( .NOT. WRITE3( ENAME,VAR(1:L),0,0,
-     &                                POLBUF(1,J)         ) ) THEN
+                    IF( .NOT. WRITESET( ENAME, VAR(1:L), ALLFILES, 
+     &                                  0, 0, POLBUF(1,J) ) ) THEN
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
 
