@@ -107,11 +107,7 @@ if ( $?SMK_MAKE_LIB ) then
    if ( $SMK_MAKE_LIB == 'Y' ) then
       echo "Building SMOKE library..."
       cd $EL_SRC
-      if ( $EDSS_EXE == Linux2_x86ifc ) then
-         make ifcclean
-      else
-         make clean
-      endif
+      make clean
       Makeit $argv
    endif
 
@@ -125,11 +121,7 @@ if ( $?SMK_MAKE_MOBLIB ) then
    if ( $SMK_MAKE_MOBLIB == 'Y' ) then
       echo "Building MOBILE6 library..."
       cd $M6_SRC 
-      if ( $EDSS_EXE == Linux2_x86ifc ) then
-         make ifcclean
-      else
-         make clean
-      endif
+      make clean
       Makeit $argv
    endif
 
@@ -218,101 +210,57 @@ endif
 #
 echo "Building Smkinven..."
 cd $IV_SRC     # Smkinven
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean
-endif
+make clean
 Makeit $argv    
 
 echo "Building Spcmat..."
 cd $SP_SRC     # Spcmat
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv    
 
 echo "Building Grdmat..."
 cd $GD_SRC     # Grdmat
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv    
 
 echo "Building Cntlmat..."
 cd $CL_SRC     # Cntlmat
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv
 
 echo "Building Temporal..."
 cd $TM_SRC     # Temporal
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean
 Makeit $argv    
 
 echo "Building Rawbio, Tmpbio, Tmpbeis3, and Normbeis3..."
 cd $BG_SRC    # Rawbio and Tmpbio
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv
 
 echo "Building Premobl and Emisfac..."
 cd $MB_SRC     # Premobl and Emisfac
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv    
 
 echo "Building Elevpoint and Laypoint..."
 cd $PT_SRC     # Elevpoint and Laypoint
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv
 
 echo "Building Smkmerge and Mrggrid..."
 cd $MG_SRC     # Smkmerge and Mrggrid
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv
 
 echo "Building Utilities..."
 cd $UT_SRC     # Smk2emis and Uam2ncf
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv
 
 echo "Building Quality Assurance..."
 cd $QA_SRC     # Smkreport
-if ( $EDSS_EXE == Linux2_x86ifc ) then
-   make ifcclean
-else
-   make clean 
-endif
+make clean 
 Makeit $argv
 
 endif
