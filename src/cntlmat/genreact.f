@@ -1,6 +1,5 @@
 
-        SUBROUTINE GENREACT( NSRC, NIPOL, BYEAR, PYEAR, ENAME,
-     &                       RPOL, USEPOL, EINAM )
+        SUBROUTINE GENREACT( PYEAR, ENAME, RPOL, USEPOL )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -48,6 +47,9 @@ C.........  This module contains the control packet data and control matrices
 C.........  This module contains the speciation profiles
         USE MODSPRO
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -59,32 +61,55 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
+        LOGICAL         ENVYN
         INTEGER         FINDC
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
+        REAL            YR2DAY
 
-        EXTERNAL   CRLF, FINDC, INDEX1, PROMPTFFILE
+        EXTERNAL   CRLF, ENVYN, FINDC, INDEX1, PROMPTFFILE, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NSRC   ! no. sources
-        INTEGER     , INTENT (IN) :: NIPOL  ! no. inventory pollutants
-        INTEGER     , INTENT (IN) :: BYEAR  ! base year of react. projections
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year for reactivity
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
         CHARACTER(LEN=IOVLEN3), INTENT (IN) :: RPOL! pol for procssing reactvity
         LOGICAL     , INTENT (IN) :: USEPOL( NIPOL ) ! true: pol valid for pkt
-        CHARACTER(*), INTENT (IN) :: EINAM( NIPOL )  ! all pollutant names
+
+C...........   Local parameters
+        INTEGER, PARAMETER :: NHEADER  = 15
+        CHARACTER*15, PARAMETER :: HEADERS( NHEADER ) = 
+     &                          ( / 'Source         ',
+     &                              'Region         ',
+     &                              'Plant          ',
+     &                              'Char1          ',
+     &                              'Char2          ',
+     &                              'Char3          ',
+     &                              'Char4          ',
+     &                              'Link           ',
+     &                              'Base SCC       ',
+     &                              'Base Emis      ',
+     &                              'New Base Emis  ',
+     &                              'Proj Factor    ',
+     &                              'New SCC        ',
+     &                              'New Spc Profile',
+     &                              'Mkt Pen Rate   '  / )
 
 C...........   Local arrays allocated by subroutine arguments
-        INTEGER          ISREA( NSRC )   ! reactivity control data table index
-        REAL             EMIS ( NSRC )   ! base inventory emissions
+        INTEGER          MCWID( MXCHRS )      !  max characteristic width
+        INTEGER          HINDX( NHEADER )     !  header label index
+        INTEGER          HCWID( NHEADER )     !  header label widths
+        LOGICAL          LF   ( MXCHRS )      !  true: column should be output
+        CHARACTER*20     CHARS( MXCHRS )      !  source fields for output
 
-C.........  Names for output variables in mass-based and mole-based files
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MASSONAM( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MOLEONAM( : )
+C.........  Allocatable arrays
+        INTEGER, ALLOCATABLE :: ISREA( : )   ! reactivity control data table index
+        REAL   , ALLOCATABLE :: EMIS ( : )   ! base inventory emissions
+
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MASSONAM( : ) ! mass output species names
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MOLEONAM( : ) ! mole output species names
 
 C...........   Logical names and unit numbers
-        INTEGER, SAVE :: RDEV         !  speciation profiles unit no.
+        INTEGER, SAVE :: PDEV         !  speciation profiles unit no.
         INTEGER       :: SDEV         !  supplement file unit no.
 
         CHARACTER*16     SNAME   ! logical name for mass-based react. cntrl mat
@@ -92,29 +117,39 @@ C...........   Logical names and unit numbers
 
 C...........   Other local variables
 
-        INTEGER          I, J, K, N, P, S, V     ! counters and indices
+        INTEGER          I, J, K, L, N, P, S, V     ! counters and indices
 
         INTEGER          IDUM        ! dummy integer
         INTEGER          IOS         ! i/o error status
         INTEGER          SIC         ! tmp SIC code for report
         INTEGER          ITBL        ! position in full table of current profile
-        INTEGER          LP          ! length of RPOL string
+        INTEGER          NC          ! tmp number of src chars
+        INTEGER          NCOLS       ! no. of output columns in report
+        INTEGER          NCOUT       ! no. of src chars to put in report
         INTEGER          NMSPC       ! number of model species
         INTEGER          NSREAC      ! number of srcs w/ reactivity controls
         INTEGER          NTBL        ! number of species in current profile
+        INTEGER          RDEV          ! Report unit number
 
         REAL             EMREP       ! tmp replacement emissions
+        REAL             YFAC        ! tmp yr conversion factor
 
         CHARACTER(LEN=SPNLEN3) SPCODE ! tmp speciation profile code
 
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
+        LOGICAL       :: LFLAG    = .FALSE.  ! true: link will be included in report
+        LOGICAL, SAVE :: LO3SEAS  = .FALSE.  ! true: use ozone-season emissions
         LOGICAL, SAVE :: MASSOUT  = .FALSE.  ! true: output mass-based spc facs
         LOGICAL, SAVE :: MOLEOUT  = .FALSE.  ! true: output mole-based spc facs
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point source processing
 
         CHARACTER*4      OUTTYPE             ! speciation output type
-        CHARACTER*300    MESG                ! message buffer
+        CHARACTER(LEN=IOVLEN3) VNAM          ! tmp ozone-season var name
+        CHARACTER*256    BUFFER              ! string buffer for building output fmt
+        CHARACTER*256    HDRSTR              ! string for part of header line
+        CHARACTER*256    MESG                ! message buffer
+        CHARACTER*256    OUTFMT              ! output format for report
 
         CHARACTER*16  :: PROGNAME = 'GENREACT' ! program name
 
@@ -128,6 +163,16 @@ C.............  Retrieve the type of speciation outputs (mass,mole,or all)
             MESG = 'Type of speciation outputs to create'  
             CALL ENVSTR( 'SPEC_OUTPUT', MESG, 'ALL', OUTTYPE, IOS )
 
+C.............  Get environment variables that control program behavior
+            MESG = 'Use annual or ozone season emissions'
+            LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+
+C.........  Open reports file
+            RPTDEV( 3 ) = PROMPTFFILE( 
+     &                     'Enter logical name for PROJECTION REPORT', 
+     &                    .FALSE., .TRUE., CRL // 'REACREP', PROGNAME )
+            RDEV = RPTDEV( 3 )
+
 C.............  Set flags that depend on the value of OUTTYPE
             CALL UPCASE( OUTTYPE )
             MASSOUT = ( INDEX( OUTTYPE, 'ALL' ) .GT. 0 )
@@ -139,11 +184,11 @@ C.............  Set flags that depend on the value of OUTTYPE
      &             'reactivity packet...'
             CALL M3MSG2( MESG )
 
-            RDEV = PROMPTFFILE( 
+            PDEV = PROMPTFFILE( 
      &             'Enter logical name for SPECIATION PROFILES file',
      &             .TRUE., .TRUE., 'GSPRO', PROGNAME )
 
-            CALL DSCSPROF( RDEV, NIPOL, EINAM )
+            CALL DSCSPROF( PDEV, NIPOL, EINAM )
 
 C.............  Allocate memory for arrays of speciation tables and unique lists
 C               using the maximum number of profile table entires per pollutant, 
@@ -157,8 +202,37 @@ C               MXSPFUL, which is from module MODSPRO
             ALLOCATE( MASSFACT( MXSPFUL ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
 
-C.............  Determine if source category is point sources, or other
+C...........  Determine if source category is point sources, or other
             PFLAG = ALLOCATED( ISIC )
+
+C...........  Allocate memory for source-based arrays and initialize
+            ALLOCATE( ISREA( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ISREA', PROGNAME )
+            ALLOCATE( EMIS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMIS', PROGNAME )
+            ISREA = 0 
+            EMIS  = 0.
+
+C...........  Write output report header
+            IF( RDEV .GT. 0 ) THEN
+                WRITE(RDEV,93000) 'Processed as '// CATDESC// ' sources'
+                WRITE(RDEV,93390) 'Base inventory year ', BYEAR
+                IF ( PYEAR .GT. 0 ) THEN
+                    WRITE(RDEV,93390) 'Reactivity packet projected ' //
+     &                                'year ', PYEAR
+                END IF
+
+                WRITE( RDEV, 93000 ) 
+     &                  'Controls applied with /REACTIVITY/ packet '//
+     &                  'for pollutant "' // TRIM( RPOL ) // '".'
+
+                IF( LO3SEAS ) THEN
+                    WRITE(RDEV,93000)'Ozone-season data basis in report'
+                ELSE
+                    WRITE(RDEV,93000)'Annual total data basis in report'
+                END IF
+
+            END IF
 
             FIRSTIME = .FALSE.
 
@@ -170,27 +244,179 @@ C.........  Determine which reactivity packet goes to each source
         CALL ASGNCNTL( NSRC, 1, 'REACTIVITY', USEPOL, RPOL, 
      &                 IDUM, ISREA )
 
+C NOTE:
+C.........  Please note that the indexing for MCWID, HCWID, and HINDX
+C           is confusing. The main confusing aspect is that the
+C           +1's are added to index past the "Source" column, which
+C           is not a part of the MCWID (which is just for the
+C           source characteristics).  The +2's are added to index
+C           past the "Source" column and to the column after the
+C           last NCOUT column (last column of source chars).
+
+C.........  Initialize valid columns
+        LF = .FALSE.  ! array
+        DO I = 1, NCHARS
+            LF( I ) = .TRUE.
+        END DO
+
 C.........  Count up the number of sources that have reactivity data
         NSREAC = 0
+        N      = 0
+        MCWID   = 0  ! array        
         DO S = 1, NSRC
 
-            IF( ISREA( S ) .GT. 0 ) NSREAC = NSREAC + 1
+            IF( ISREA( S ) .GT. 0 ) THEN
+                NSREAC = NSREAC + 1
+
+C............... Determine maximum width of report columns for source info
+                CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, 
+     &                         LF, NC, CHARS )
+
+                DO J = 1, NC
+                    MCWID( J ) = MAX( LEN_TRIM( CHARS(J) ), MCWID(J) )
+                    IF( MCWID( J ) .GT. 0 ) N = MAX( N, J )
+                END DO
+
+            END IF
 
         END DO
 
+C........  If SCC is not included in source chars, then add it to report
+        IF( JSCC .EQ. 0 ) THEN
+            N = N + 1
+            MCWID( N ) = SCCLEN3
+        END IF
+
+        NCOUT = N
+
+C.........  Determine source characteristic header indices
+        HINDX = 0    ! array
+        SELECT CASE( CATEGORY )
+
+C........  Area source
+        CASE( 'AREA' )
+            NCOLS = 3
+            HINDX( 1 ) = 1
+            HINDX( 2 ) = 2
+            HINDX( 3 ) = 9
+
+C........  Mobile source
+       CASE( 'MOBILE' )
+            NCOLS = 3
+            HINDX( 1 ) = 1
+            HINDX( 2 ) = 2
+            HINDX( 3 ) = 9
+
+C...........  Determine if link will be included in reports
+            IF( ALLOCATED( CLINK ) ) THEN
+                DO S = 1, NSRC
+                    IF( CLINK( S ) .NE. ' ' ) THEN
+                        LFLAG = .TRUE.
+                        EXIT
+                    END IF
+                END DO
+            END IF
+            IF( LFLAG ) THEN
+                HINDX( 4 ) = 8
+                NCOLS = NCOLS + 1
+            END IF
+
+C........  Point source
+        CASE( 'POINT' )
+            NCOLS = 1
+            HINDX( 1 ) = 1
+            DO J = 1, NCOUT
+                HINDX( J+1 ) = J+1
+                IF( JSCC .EQ. J ) HINDX( J+1 ) = 9  ! Ensure SCC is labeled as such
+                NCOLS = NCOLS + 1
+            END DO
+
+C............  If SCC is not included in source chars, then add it to report
+            IF( JSCC .EQ. 0 ) HINDX( NCOUT ) = 9
+
+        END SELECT
+    
+C.........  Reset max characteristics widths based on headers
+        HCWID( 1 ) = 6
+        DO J = 1, NCOUT
+            HCWID( 1+J ) = LEN_TRIM( HEADERS( HINDX(1+J) ))
+            MCWID( J ) = MAX( MCWID(J), HCWID( 1+J ) )
+            HCWID( 1+J ) = MCWID( J )
+        END DO
+
+C.........  Create remaining header widths - must be consistent with format
+C           statments. Maximum is 15 because of HEADERS string size.
+        NCOLS = NCOLS + 6
+        HCWID( NCOUT + 2 ) = MAX( LEN_TRIM( HEADERS( 10 ) ), 10 )
+        HCWID( NCOUT + 3 ) = MAX( LEN_TRIM( HEADERS( 11 ) ), 10 )
+        HCWID( NCOUT + 4 ) = MAX( LEN_TRIM( HEADERS( 12 ) ), 7 )
+        HCWID( NCOUT + 5 ) = MAX( LEN_TRIM( HEADERS( 13 ) ), SCCLEN3 )
+        HCWID( NCOUT + 6 ) = MAX( LEN_TRIM( HEADERS( 14 ) ), SPNLEN3 )
+        HCWID( NCOUT + 7 ) = MAX( LEN_TRIM( HEADERS( 15 ) ), 10 )
+
+C.........  Set remaining header indices
+        I = 9
+        DO J = NCOUT+2, NCOLS
+            I = I + 1
+            HINDX( J ) = I
+        END DO
+
+C.........  Write column headers
+        HDRSTR = ' ' // HEADERS( HINDX( 1 ) )( 1:HCWID( 1 ) ) // ';'
+        DO J = 2, NCOLS-1
+            BUFFER = HDRSTR
+            HDRSTR = TRIM( BUFFER ) // ' ' // 
+     &               HEADERS( HINDX( J ) )( 1:HCWID( J ) ) // ';'
+        END DO
+        BUFFER = HDRSTR
+        HDRSTR = TRIM( BUFFER ) // ' ' // 
+     &           HEADERS( HINDX( NCOLS ) )( 1:HCWID( NCOLS ) )
+
+        WRITE( RDEV, 93000 ) TRIM( HDRSTR )
+
+C.........  Write units headers
+        HDRSTR = '       ;'
+        DO I = 1, NCOUT
+            BUFFER = HDRSTR
+            HDRSTR = TRIM( BUFFER ) // REPEAT( ' ',MCWID( I )+1 ) // ';'
+        END DO 
+        BUFFER = HDRSTR
+        HDRSTR = TRIM( BUFFER ) // ' [tons/day];'//
+     &           '    [tons/day];            ;           ;' //
+     &           '                ; [frac/year]'
+
+        WRITE( RDEV, 93000 ) TRIM( HDRSTR )
+        WRITE( RDEV, 93000 ) REPEAT( '-', LEN_TRIM( HDRSTR ) )
+
+C.........  Develop format for output report. Use buffer to prevent run-time
+C           error with Portland Group compilers.
+        OUTFMT = '(I7,"; "'
+        DO J = 1, NCOUT
+            BUFFER = OUTFMT
+            WRITE( OUTFMT, '(A,I2.2,A)' ) TRIM( BUFFER ) // ',A', 
+     &             MCWID( J ), ',"; "'
+        END DO
+        BUFFER = OUTFMT
+        WRITE( OUTFMT,'(7(A,:,I2.2))' ) TRIM( BUFFER ) // ' E',
+     &         HCWID( NCOUT+2 ), '.4,"; ",E', 
+     &         HCWID( NCOUT+3 ), '.4,"; ",F',
+     &         HCWID( NCOUT+4 ), '.4,"; ",A',
+     &         HCWID( NCOUT+5 ), '  ,"; ",A',
+     &         HCWID( NCOUT+6 ), '  ,"; ",F',
+     &         HCWID( NCOUT+7 ), '.4)'
+
 C.........  Read speciation profiles file
 
-        LP = LEN_TRIM( RPOL )
-        MESG = 'Reading SPECIATION PROFILES file for ' // RPOL( 1:LP )
+        MESG = 'Reading SPECIATION PROFILES file for ' // TRIM( RPOL )
         CALL M3MSG2( MESG )
 
-        CALL RDSPROF( RDEV, RPOL, MXSPFUL, NSPFUL, NMSPC,
+        CALL RDSPROF( PDEV, RPOL, MXSPFUL, NSPFUL, NMSPC,
      &                INPRF, SPECID, MOLEFACT, MASSFACT )
 
 C.........  Ensure that profile(s) exist for this pollutant
         IF( NSPFUL .LE. 0 ) THEN
             MESG = 'No speciation profiles found for pollutant "' // 
-     &             RPOL( 1:LP ) // '"! '
+     &             TRIM( RPOL ) // '"! '
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
@@ -232,10 +458,28 @@ C.........  Allocate memory for names of output variables
         CALL CHECKMEM( IOS, 'MOLEONAM', PROGNAME )
 
 C.........  Read emissions for current pollutant from the inventory file
-        IF( .NOT. READ3( ENAME, RPOL, ALLAYS3, 0, 0, EMIS ) ) THEN
-            MESG = 'Could not read "' // RPOL( 1:LEN_TRIM( RPOL ) ) //
-     &             '" from inventory file ' // ENAME
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.........  Note that ozone-season read will not work if RPOL is
+C           more than 13 characters - must use BLDENAMS routine to
+C           do this correctly.
+        IF( LO3SEAS ) THEN
+            VNAM = OZNSEART // RPOL( 1:MIN( LEN_TRIM( RPOL ), 13 ) )
+            IF( .NOT. READ3( ENAME, VNAM, ALLAYS3, 0, 0, EMIS ) ) THEN
+                MESG = 'Could not read "' // TRIM( RPOL ) //
+     &                '" from inventory file ' // ENAME
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        ELSE
+            IF( .NOT. READ3( ENAME, RPOL, ALLAYS3, 0, 0, EMIS ) ) THEN
+                MESG = 'Could not read "' // TRIM( RPOL ) //
+     &                '" from inventory file ' // ENAME
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C...........  Convert to tons/day
+            YFAC = YR2DAY( BYEAR )
+            EMIS = YFAC * EMIS      ! array
+
         END IF
 
 C.........  Loop through all sources and store reactivity information for
@@ -258,7 +502,7 @@ C                   store the original base-year emissions from the inventory.
 
 C.................  Make sure speciation profile is valid for the current source
 C                   and pollutant
-                SPCODE = CSPFREA( K )
+                SPCODE = ADJUSTR( CSPFREA( K ) )
                 V = MAX( FINDC( SPCODE, NSPROF, SPROFN ), 0 )
 
                 IF( V .EQ. 0 ) THEN
@@ -310,12 +554,30 @@ C                       and indices retrieved for SPCODE
 
                 SIC = IREASIC( K ) ! (use for report)
 
+C.................  Format source characteristic information for report
+                CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, 
+     &                         LF, NC, CHARS )
+                
+C..............  Write report entry: source number, source characteristics,
+C                current base-year emissions, replacement base-year emissions,
+C                projection factor, future-year SCC, future-year profile number,
+C                market penetration of new SCC/speciation.
+                WRITE( RDEV, OUTFMT ) S,
+     &               ( CHARS( J )( 1:MCWID(J) ), J=1,NCOUT ), EMIS( S ), 
+     &                 EMREP, PRJFCREA( K ), CSCCREA ( K ), SPCODE, 
+     &                 MKTPNREA( K )
+ 
             END IF      ! End check if reactivity applies to this source
 
         END DO
 
 C.........  Reset number of reactivity sources in case any were dropped
         NSREAC = N
+
+        IF( NSREAC .LE. 0 ) THEN
+            MESG = 'No sources assigned reactivity controls.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Find position of pollutant in list
         V = INDEX1( RPOL, NIPOL, EINAM )
@@ -354,6 +616,13 @@ c        IF( ALLOCATED( RMTXMOLE ) ) DEALLOCATE( RMTXMOLE )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
+C...........   Formatted file I/O formats............ 93xxx
+
+93000   FORMAT( A )
+
+93390   FORMAT( A, I4.4 )
+
+
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
@@ -385,7 +654,7 @@ C.............  Generate point source part of message
             IF( PFLAG ) THEN
 
                 CSRC = CSOURC( S )   ! source characteristics
-                CALL FMTCSRC( CSRC, 7, BUFFER, L2 )
+                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                 BUFFER = BUFFER( 1:L2 ) // CRLF() // BLANK10 // 
      &                   'SCC: ' // TSCC // ' POL: ' // RPOL
