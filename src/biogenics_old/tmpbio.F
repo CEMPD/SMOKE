@@ -107,6 +107,7 @@ C.......   Name tables for file NNAME
 
 C***********************************************************************
 C   begin body of program TMPBIO
+        open(unit = 98, file = 'sgrid.txt')
 
         LDEV = INIT3()
         
@@ -281,7 +282,7 @@ C.......   Loop on time steps:
      &                 MNAME( 1:TRIMLEN( MNAME ) ) // '"'
                 CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
             END IF
-            
+
             CALL HRBIO( JDATE, JTIME, LAT, LON, PRSFC, TASFC,
      &                  PINE, DECD, CONF, LEAF, OTHR, AVLAI, NORNO,
      &                  EMIS )
