@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -73,10 +73,15 @@ C   begin body of subroutine SRCMEM
 C......... Unsorted...
         CASE( 'UNSORTED' )
 
-C.............  Allocate variables irrspeective of PFLAG
+C.............  Allocate variables irrespective of PFLAG
             IF( UFLAG .AND. .NOT. ALLOCATED( INDEXA ) ) THEN
                 ALLOCATE( INDEXA( NDIM2 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
+            END IF
+
+            IF( UFLAG .AND. .NOT. ALLOCATED( INRECA ) ) THEN
+                ALLOCATE( INRECA( NDIM2 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INRECA', PROGNAME )
             END IF
 
 C.............  Allocate for any source category
@@ -130,6 +135,7 @@ C.............  Deallocate for any source category
 
             ELSE IF( .NOT. AFLAG ) THEN
                  IF( ALLOCATED( INDEXA  ) ) DEALLOCATE( INDEXA )
+                 IF( ALLOCATED( INRECA  ) ) DEALLOCATE( INRECA )
                  IF( ALLOCATED( SRCIDA  ) ) DEALLOCATE( SRCIDA )
                  IF( ALLOCATED( POLVLA  ) ) DEALLOCATE( POLVLA )
 
@@ -160,11 +166,6 @@ C.............  Allocate specifically based on source category
                     CALL CHECKMEM( IOS, 'CLINKA', PROGNAME )
                 END IF
  
-                IF( UFLAG .AND. .NOT. ALLOCATED( SPEEDA ) ) THEN
-                    ALLOCATE( SPEEDA( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'SPEEDA', PROGNAME )
-                END IF
- 
                 IF( UFLAG .AND. .NOT. ALLOCATED( XLOC1A ) ) THEN
                     ALLOCATE( XLOC1A( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'XLOC1A', PROGNAME )
@@ -188,7 +189,7 @@ C.............  Allocate specifically based on source category
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( CVTYPEA ) ) 
      &              DEALLOCATE( IRCLASA, IVTYPEA, CVTYPEA, CLINKA, 
-     &                          SPEEDA, XLOC1A, YLOC1A, XLOC2A, YLOC2A )
+     &                          XLOC1A, YLOC1A, XLOC2A, YLOC2A )
 
             CASE( 'POINT' )
  
@@ -285,6 +286,11 @@ C.........  Sorted ...
                 CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
             END IF
 
+            IF( UFLAG .AND. .NOT. ALLOCATED( TZONES ) ) THEN
+                ALLOCATE( TZONES( NDIM1 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
+            END IF
+
             IF( UFLAG .AND. .NOT. ALLOCATED( NPCNT ) ) THEN
                 ALLOCATE( NPCNT( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
@@ -298,6 +304,11 @@ C.........  Sorted ...
             IF( UFLAG .AND. .NOT. ALLOCATED( CSOURC ) ) THEN
                 ALLOCATE( CSOURC( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+            END IF
+
+            IF( UFLAG .AND. .NOT. ALLOCATED( IPOSCOD ) ) THEN  ! make sure
+                ALLOCATE( IPOSCOD( NDIM2 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
             END IF
 
             IF( PFLAG .AND. AFLAG .AND. .NOT. ALLOCATED( POLVAL ) ) THEN
@@ -323,6 +334,11 @@ C               for reading day- and hour-specific data
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
+                IF( UFLAG .AND. .NOT. ALLOCATED( CELLID ) ) THEN
+                    ALLOCATE( CELLID( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
+                END IF
+
             CASE( 'MOBILE' )
  
                 IF( UFLAG .AND. .NOT. ALLOCATED( IRCLAS ) ) THEN
@@ -344,12 +360,7 @@ C               for reading day- and hour-specific data
                     ALLOCATE( CLINK( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
                 END IF
- 
-                IF( UFLAG .AND. .NOT. ALLOCATED( SPEED ) ) THEN
-                    ALLOCATE( SPEED( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
-                END IF
- 
+  
                 IF( UFLAG .AND. .NOT. ALLOCATED( XLOC1 ) ) THEN
                     ALLOCATE( XLOC1( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
@@ -372,7 +383,7 @@ C               for reading day- and hour-specific data
  
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( CVTYPE ) ) 
-     &              DEALLOCATE( IRCLAS, IVTYPE, CVTYPE, CLINK, SPEED, 
+     &              DEALLOCATE( IRCLAS, IVTYPE, CVTYPE, CLINK, 
      &                          XLOC1, YLOC1, XLOC2, YLOC2 )
 
             CASE( 'POINT' )
