@@ -1,6 +1,6 @@
-        SUBROUTINE GENHEMIS( RLZN,  NPLE,  JDATE,  JTIME, TZONE, DNAME,
-     &                       HNAME, NAMIN, NAMOUT, EMAC,  EMACV, TMAT, 
-     &                       EMIST, UEMIS )  
+        SUBROUTINE GENHEMIS( ITIME, RLZN,  NPLE,  JDATE,  JTIME, TZONE, 
+     &                       DNAME, HNAME, NAMIN, NAMOUT, 
+     &                       EMAC,  EMACV, TMAT,  EMIST,  UEMIS )  
 
 C***********************************************************************
 C  subroutine body starts at line 173
@@ -92,9 +92,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  ISDSTIME, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
+        INTEGER     , INTENT (IN)    :: ITIME     ! current time step
         INTEGER     , INTENT (IN)    :: RLZN      ! uncertainty realization
         INTEGER     , INTENT (IN)    :: NPLE      ! Number of pols+emis types
-        INTEGER     , INTENT (IN)    :: JDATE  ! Julian date (YYYYDDD) in TZONE
+        INTEGER     , INTENT (IN)    :: JDATE     ! Julian date (YYYYDDD) in TZONE
         INTEGER     , INTENT (IN)    :: JTIME     ! Time (HHMMSS) in TZONE
         INTEGER     , INTENT (IN)    :: TZONE     ! Output time zone (typcly 0)
         CHARACTER(*), INTENT (IN)    :: DNAME     ! day-spec file name or NONE
@@ -417,17 +418,12 @@ C           or an activity
 C.............  Skip blanks that can occur when NGRP > 1
             IF ( NAMBUF .EQ. ' ' ) CYCLE
 
-            UCCOND = .FALSE.
             UP = INDEX1( NAMBUF , NIPOL , EINAM )
-            UPCOND = ( RLZN .GT. 0 )
 C.............  Unceratinty cycle condition: pollutant is not an uncertainty
-            IF ( UPCOND .AND. UP .GT. 0 ) UCCOND = ( UEFINAM( UP ) .OR.
-     &                                               UEINAM( UP ) )
-            IF ( UPCOND .AND. .NOT. ( UCCOND ) ) THEN
+            IF( RLZN .GT. 0 .AND. UP .GT. 0 ) THEN
 
-                 CYCLE  ! current pollutant is not an uncertainty
+                IF( .NOT.( UEINAM( UP ) ) ) CYCLE
 
-            ELSE IF ( UPCOND .AND. UCCOND ) THEN
                 U = U + 1
                 IF ( U .GT. UNIPOL ) THEN
                     WRITE( MESG,94010 ) 
@@ -435,6 +431,7 @@ C.............  Unceratinty cycle condition: pollutant is not an uncertainty
      &                     'exceeded the expected number', UNIPOL
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
+
             END IF
 
 C.............  Find pollutant/activity in list of all.  Use EAREAD b/c
@@ -477,14 +474,17 @@ C               activity. Also apply units conversion.
             DO S = 1, NSRC
 
 C.................  Main uncertainty process branches for approaches
-                IF ( .NOT. ( UPCOND ) ) THEN
+                IF ( RLZN .EQ. 0 ) THEN
 
                     EMIST( S,V )= UFAC * EMACV( S,V ) * TMAT( S,V,HOUR )
 
                 ELSE IF ( USTAT( S ) ) THEN
-C.....................  Main uncertainty process branch conditions follow
 
+C.....................  Main uncertainty process branch conditions follow
                     CALL WRTUNCERT
+
+                    if ( s .eq. nsrc .and. itime .eq. 25 ) 
+     &                   call lastcall
   
                 END IF
 
@@ -757,70 +757,50 @@ C***********************************************************************
 
             SUBROUTINE WRTUNCERT
 
-C.................  Get uncertainty status of activity for this source
+C...........Get uncertainty status of activity for this source            
+C.............  Setup and prepare to test for uncertainty status of
+C               emission factors and activities
 
-C.....................  Setup and prepare to test for uncertainty status of
-C                       emission factors and activities
-                    UA = 0
-                    DO T = 1, NIACT
-                        UA = INDEX1( ACTVTY( T ), NIPPA, EAREAD )
-                        IF ( UA .GT. 0 ) THEN
-                            IF ( UACTVTY( UA ) ) EXIT
-                            UA = 0
-                        END IF
-                    END DO
-
-                    UEF = 0
-                    DO T = 1, NIPOL
-                        UEF = INDEX1( EINAM( T ), NIPPA, EAREAD )
-                        IF ( UEF .GT. 0 ) THEN
-                            IF ( UEAREAD( UEF ) ) EXIT
-                            UEF = 0
-                        END IF
-                    END DO
-
-C.....................  uncertainty emission factor and certainty activity condition
-                    IF ( UEF .GT. 0 .AND. UA .LE. 0 ) THEN
-
-                        CA = 0
-                        DO T = 1, NIACT
-                            CA = INDEX1(ACTVTY( T ), NIPPA, EAREAD)
-                            IF ( CA .GT. 0 ) THEN
-                                IF ( EMACV( S,CA ) .GE. 0.0 ) EXIT
-                                CA = 0
-                            ENDIF
-                        END DO
-
-                        IF ( CA .EQ. 0 ) THEN
-                            WRITE( MESG,94010 ) 
-     &                         'A certainty activity could '//
-     &                         'not be found for source ', S
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                        END IF
-
-                        UEMIS( SRCNUM( S ), U ) = UFAC * 
-     &                       EMACV( S,CA ) * SAMPGEN( SRCNUM( S ), U ) *
-     &                       TMAT( S,V,HOUR )
-
-C.....................  certainty emission factor and uncertainty activity condition
-c                    ELSE IF ( UEF .LE. 0 .AND. UA .GT. 0) THEN
-
-C.....................  uncertainty emission factor and uncertainty activity condition
-c                    ELSE IF ( UEF .GT. 0 .AND. UA .GT. 0) THEN
-
-                    ELSE
-C.....................  Default condition left blank
+C.............  uncertainty emission factor and certainty activity condition
 
 
+c            WRITE( MESG,94010 ) 'debug: time:', ITIME, 'uncert', U, 
+c     &          'source:', S, 'uncertainty source:', SRCNUM(S)
+c            CALL M3MSG2( MESG )
 
-                    END IF
+            CALL GETRNUMS( ITIME, SRCNUM( S ), U )
+C.............  currently only one case for uncertain emissions
 
+            UEMIS( SRCNUM( S ), U ) = UFAC * EMACV( S,V ) * 
+     &                                SAMPGEN( SRCNUM( S ), U ) 
+     &                                * TMAT( S,V,HOUR )
+c            WRITE( MESG,98000 ) 
+c     &            'debug: sampled value:', UEMIS( SRCNUM( S ), U ),
+c     &            'emacv:', EMACV( S,V ),
+c     &            'sampgen:', SAMPGEN( SRCNUM( S ), U ),
+c     &            'tmat:', TMAT( S,V,HOUR ),
+c     &            'ufac:', UFAC
+c            CALL M3MSG2( MESG )
+            
+C           ELSE IF 
+
+C           ELSE IF 
+
+C           END IF
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
 
+C...........   test buffering formats............ 94xxx
+
+98000   FORMAT( 10(A, :, F8.3, :, 1X) )
+
             END SUBROUTINE WRTUNCERT
+
+            SUBROUTINE lastcall
+
+            end SUBROUTINE lastcall
 
         END SUBROUTINE GENHEMIS
 
