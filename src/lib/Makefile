@@ -9,7 +9,7 @@
 
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 FILES_A = \
   applumat.o   evalcrit.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \

@@ -58,7 +58,7 @@ mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 #
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ allocmrg.f

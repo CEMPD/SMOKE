@@ -22,12 +22,12 @@ GRW=grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o
 #
 grwinven: $(GRW) $(ALLI) $(LIBPATH)
 	echo GRWINVEN:
-	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(GRW) $(LIBS)
+	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(SMK_BIN)/$(@) $(GRW) $(LIBS)
 #
 #
 grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	echo GRWINVEN \(debug\):
-	$(FC) $(FFLAGS) -L$(FSDIR) -o $(@) $(GRW) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(@) $(GRW) $(LIBS_DEBUG)
 
 RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o	\
 	gethdr.o getpdinfo.o initinfo.o \
@@ -42,12 +42,12 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o	\
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
 	echo SMKINVEN:
-	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(RAW) $(LIBS)
+	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(SMK_BIN)/$(@) $(RAW) $(LIBS)
 #
 #
 smkinven.debug: $(RAW) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKINVEN \(debug\):
-	$(FC) $(FFLAGS) -L$(FSDIR) -o $(@) $(RAW) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(@) $(RAW) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
@@ -72,7 +72,7 @@ initinfo.o: $(MODINFO)
 opengrwout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opengrwout.f
 openinvout.o: $(MODLISTS) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ openinvout.f
+	$(FC) $(FFLAGS) -I$(FS_ROOT) -c -o $@ openinvout.f
 openpdout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openpdout.f
 procar2pt.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODAR2PT)
@@ -120,7 +120,7 @@ smkinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 srcmem.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ srcmem.f
 wrinvchr.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ wrinvchr.f
+	$(FC) $(FFLAGS) -I$(FS_ROOT) -c -o $@ wrinvchr.f
 wrinvemis.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrinvemis.f
 wrinvpol.o: $(MODFILESET)

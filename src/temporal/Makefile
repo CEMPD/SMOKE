@@ -31,7 +31,7 @@ temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgntpro.f

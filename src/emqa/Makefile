@@ -43,7 +43,7 @@ smkreport.debug: $(SMR) $(ALLI) $(LIBPATH_DEBUG)
 #
 #
 include $(MD_SRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgnbins.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODELEV) \
             $(MODSTCY) $(MODINFO) $(MODGRID)

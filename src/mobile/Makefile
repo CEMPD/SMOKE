@@ -63,7 +63,7 @@ emisfac.debug: $(EMS) $(ALLI) $(LIBPATH_DEBUG)
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
 chkm6scn.o    : $(MODINFO)

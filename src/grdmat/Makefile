@@ -32,7 +32,7 @@ grdmat.debug: $(GRD) $(ALLI) $(LIBPATH_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgnsurg.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnsurg.f

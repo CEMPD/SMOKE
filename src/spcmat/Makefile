@@ -31,7 +31,7 @@ spcmat.debug: $(SPC) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(SPC) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnspro.f

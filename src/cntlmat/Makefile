@@ -34,7 +34,7 @@ cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH_DEBUG)
 # Module dependencies
 #
 include $(MD_SRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 aloccmat.o: $(MODXREF) $(MODCNTRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ aloccmat.f

@@ -55,7 +55,7 @@ elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
 #
 
 include $(MD_SRC)/modmake.inc
-include $(FSDIR)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgngrps.o: $(MODSOURC) $(MODELEV) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgngrps.f
