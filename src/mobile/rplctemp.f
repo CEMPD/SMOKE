@@ -69,10 +69,14 @@ C...........   Other local variables
         CHARACTER(19)  COMMAND            ! Mobile 6 command        
         CHARACTER(300) MESG               !  message buffer
 
+        LOGICAL            FOUNDCMD           ! true: found temperature command in input
+
         CHARACTER(16) :: PROGNAME = 'RPLCTEMP'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine RPLCTEMP
+
+        FOUNDCMD = .FALSE.
         
         DO I = 1, NSCEN
         
@@ -105,6 +109,8 @@ C.................  Update scenario level start if needed
 C.............  Replace either temperature command with hourly temperatures
             IF( INDEX( COMMAND, 'TEMPERATURE' ) > 0 ) THEN
 
+                FOUNDCMD = .TRUE.
+
                 WRITE( RPLCLINE,94020 ) 
      &               'HOURLY TEMPERATURES: ', TKHOUR( CTYPOS,1:12 )
                 SCENARIO( I ) = RPLCLINE
@@ -117,6 +123,13 @@ C.............  Replace either temperature command with hourly temperatures
             END IF
 
         END DO
+
+C.........  Check that a temperature command was found
+        IF( .NOT. FOUNDCMD ) THEN
+            MESG = 'Could not find MIN/MAX TEMPERATURE ' //
+                   'or HOURLY TEMPERATURES command in MOBILE6 input'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C******************  FORMAT  STATEMENTS   ******************************
 
