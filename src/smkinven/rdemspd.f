@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -229,12 +229,16 @@ C.............  Read first line of file
             READ( FDEV, 93000, END=299 ) LINE
             IREC = IREC + 1
 
+            L = LEN_TRIM( LINE )
+
+C.............  Skip blank lines and lines that start with a header
+            IF( L .EQ. 0 .OR. LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+
 C.............  Determine if file is day- or hour-specific by the length of the
 C               lines. Make sure day- and hour-specific data are not in the
 C               same file.
 C.............  If the file is hourly but the only the daily is to be read, then
 C               behave as if it is a daily file.
-            L = LEN_TRIM( LINE )
             IF( DAYFLAG .AND. 
      &             ( L .GT. 80 .AND. .NOT. SFLAG ) .OR.
      &             ( L .LE. 80 .AND.       SFLAG )      ) THEN
@@ -471,11 +475,15 @@ C.........  Abort if error found while reading file
 C.........  Update output starting date/time and ending date/time
         SDATE = RDATE
         STIME = RTIME
-        CALL NEXTIME( SDATE, STIME, TSTEP * ( MINPTR-1 ) )
+        DO I = 1, MINPTR - 1
+            CALL NEXTIME( SDATE, STIME, TSTEP )
+        END DO
 
         EDATE = RDATE
         ETIME = RTIME
-        CALL NEXTIME( EDATE, ETIME, TSTEP * ( MAXPTR-1 ) )
+        DO I = 1, MAXPTR - 1
+            CALL NEXTIME( EDATE, ETIME, TSTEP )
+        END DO
 
         RETURN
 
