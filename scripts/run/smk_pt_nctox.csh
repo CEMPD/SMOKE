@@ -67,6 +67,7 @@ setenv REACTIVITY_POL       ' '   # Set to VOC or ROG (only for reactivity contr
 
 # For Elevpoint
 setenv SMK_ELEV_METHOD      1     # 0=Laypoint sets elev srcs; 1=use PELVCONFIG
+setenv UNIFORM_STIME        -1    # -1 or HHMMSS for uniform start hour for daily emissions days
 #     SMK_PING_METHOD         # see multiple-program controls, below
 
 # For Temporal
@@ -78,8 +79,10 @@ setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 #     OUTZONE                 # see multiple-program controls, below
 #     REPORT_DEFAULTS         # see multiple-program controls, below
 #     SMK_O3SEASON_YN         # see multiple-program controls, below
+#     Date/time settings      # in Assigns file
 
 # For Laypoint
+setenv HOUR_PLUMEDATA_YN    N     # PHOUR file contains hourly plume data
 setenv REP_LAYER_MAX        ' '   # Layer no. for reporting high plume rise
 setenv SMK_SPECELEV_YN      N     # Y: Laypoint uses Elevpoint outputs to pick elevated
 #     SMK_EMLAYS              # see multiple-program controls, below
@@ -164,7 +167,7 @@ source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 3
 setenv RUN_PART3 N
 
-## Loop through dats to run Laypoint and Smkmerge
+## Loop through dats to run Laypoint, Smkmerge, and Smk2emis
 setenv RUN_PART4 Y
 set cnt = 0
 while ( $cnt < $EPI_NDAY )
