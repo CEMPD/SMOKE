@@ -692,11 +692,15 @@ C.............  Get current CAS number position and check that it is valid
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
-                    WRITE( MESG,94010 ) 'Source dropped: ' //
-     &                  'CAS number ' // TRIM( POLNAM ) //
-     &                  ' at line', IREC, CRLF() // BLANK5 //
-     &                  'is not in the inventory pollutants list'
-                    CALL M3MESG( MESG )
+                    IF( NWARN < MXWARN ) THEN
+                        WRITE( MESG,94010 ) 'WARNING: ' // 
+     &                      'CAS number ' // TRIM( POLNAM ) // 
+     &                      ' at line', IREC, ' is not in the ' //
+     &                      'inventory pollutants list;' // CRLF() // 
+     &                      BLANK5 // 'the source will be dropped'
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
                     CYCLE
 
 C.................  Check if any part of the CAS number is kept;
