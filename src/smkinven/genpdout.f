@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENPDOUT( FDEV, CDEV, ODEV, TZONE, SDATE, STIME, 
+        SUBROUTINE GENPDOUT( FDEV, CDEV, ODEV, RDEV,TZONE, SDATE, STIME, 
      &                       NSTEPS, INSTEP, OUTSTEP, NVAR, NVSP, 
      &                       MXPDSRC, TYPNAM, FNAME, EAIDX, SPIDX )
 
@@ -79,6 +79,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV      ! hour-specific file unit no.
         INTEGER     , INTENT (IN) :: CDEV      ! SCC desc file unit no.
         INTEGER     , INTENT (IN) :: ODEV      ! ORIS desc file unit no.
+        INTEGER     , INTENT (IN OUT) :: RDEV  ! Report file unit no.
         INTEGER     , INTENT (IN) :: TZONE     ! output time zone
         INTEGER     , INTENT (IN) :: SDATE     ! Julian starting date in TZONE
         INTEGER     , INTENT (IN) :: STIME     ! start time of data in TZONE
@@ -104,9 +105,6 @@ C.........  Local arrays
         CHARACTER*15    CHRHDRS( NCHARS )     ! Source characteristics headers
         CHARACTER*50    CHARS( 9 )
         CHARACTER*40    LABEL( 2 )
-
-C...........   Unit numbers
-        INTEGER       :: RDEV = 0             ! report file 
 
 C...........   Other local variables
         INTEGER          I, J, K, L, N, S, T

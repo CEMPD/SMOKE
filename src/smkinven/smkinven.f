@@ -405,7 +405,7 @@ C               Also determine maximum and minimum dates for output file.
      &                      MXSRCDY, DEAIDX, DSPIDX )
 
 C.............  Read and output day-specific data
-            CALL GENPDOUT( DDEV, CDEV, ODEV, TZONE, DSDATE, DSTIME, 
+            CALL GENPDOUT( DDEV, CDEV, ODEV, ADEV, TZONE, DSDATE,DSTIME, 
      &                     DNSTEP, INSTEP, OUTSTEP, NVARDY, NVSPDY, 
      &                     MXSRCDY, TYPNAM, DNAME, DEAIDX, DSPIDX )
 
@@ -425,7 +425,7 @@ C               Also determine maximum and minimum dates for output file.
      &                      MXSRCHR, HEAIDX, HSPIDX )
 
 C.............  Read and output hour-specific data
-            CALL GENPDOUT( HDEV, CDEV, ODEV, TZONE, HSDATE, HSTIME, 
+            CALL GENPDOUT( HDEV, CDEV, ODEV, ADEV,TZONE, HSDATE,HSTIME,
      &                     HNSTEP, INSTEP, OUTSTEP, NVARHR, NVSPHR,  
      &                     MXSRCHR, TYPNAM, HNAME, HEAIDX, HSPIDX )
 

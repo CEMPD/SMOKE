@@ -72,7 +72,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: EAIDX( NVAR ) ! pol/act index
         LOGICAL     , INTENT (IN) :: SPSTAT( MXSPDAT ) ! true: special val exists
         CHARACTER(*), INTENT(OUT) :: FNAME     ! logical file name
-        INTEGER     , INTENT(OUT) :: RDEV      ! report unit number
+        INTEGER     , INTENT(IN OUT) :: RDEV      ! report unit number
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -204,7 +204,7 @@ C.........  Prompt for output file
         FNAME = PROMPTMFILE( MESG, FSUNKN3, FNAME, PROGNAME )
 
 C.........  If format is CEM format, prompt for report output file name
-        IF ( FILFMT .EQ. CEMFMT ) THEN
+        IF ( FILFMT .EQ. CEMFMT .AND. RDEV .LE. 0 ) THEN
             MESG = 'Enter logical name for the CEM MATCHING REPORT'
             RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
      &                          'REPINVEN', PROGNAME )
