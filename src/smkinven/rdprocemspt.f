@@ -149,7 +149,10 @@ C.............  Find source key in CSOURC array
     
 C.............  If key not found, go to next line
             IF( K1 <= 0 ) CYCLE
-    
+
+C.............  Shift index to account for only searching part of CSOURC array
+            K1 = K1 + STIDX - 1
+                
 C.............  Read and check SCC
             TSCC = LINE( 57:64 )
             

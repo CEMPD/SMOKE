@@ -126,7 +126,7 @@ C.............  Find county in FIPTOCSRC array
 
 C.............  Make sure county is in the inventory
             IF( K1 <= 0 ) CYCLE
-            
+                        
 C.............  Set starting and ending indices            
             STIDX = FIPTOCSRC( K1,2 )
             ENDIDX = FIPTOCSRC( K1+1,2 ) - 1
@@ -148,6 +148,9 @@ C.............  Find source key in CSOURC array
         
 C.............  If key not found, go to next line
             IF( K1 <= 0 ) CYCLE
+
+C.............  Shift index to account for only searching part of CSOURC array
+            K1 = K1 + STIDX - 1
         
 C.............  Read and check SIC
             IF( .NOT. CHKINT( LINE( 45:48 ) ) ) THEN
