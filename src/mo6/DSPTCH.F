@@ -8,6 +8,7 @@ C  Called by MOBILE.
 C 
 C  Changes: (Last change first) 
 C 
+C 13 Mar 02 AIR Task 27: MPG ESTIMATES is now scenario only. 
 C 06 Nov 01 AIR Task 27: Added MPG ESTIMATES for CO2. 
 C 31 Aug 01 AIR Task 18: Added ADDITIONAL HAPS. 
 C 24 Aug 01 AIR Task 23b: Commented out PM Speed Correction. 
@@ -335,9 +336,6 @@ C
         CASE ('RVP OXY WAIVER') 
           CALL GETATWAV(INPREC,INERR,RC) 
 C 
-        CASE ('MPG ESTIMATES') 
-          CALL GETMPG(INPREC,INERR,RC) 
-C 
 C       Start of I/M section. (Any changes in the I/M section 
 C       must also be applied to subroutine GETXIM.) 
 C 
@@ -608,6 +606,9 @@ C         *** Input gasoline sulfur content (ppm) and
 C         *** User Supplied sulfur Correction Factors (USSCF) 
 C         *** if applicable 
           CALL GET_SULFUR(INPREC,INERR,RC) 
+C 
+        CASE ('MPG ESTIMATES') 
+          CALL GETMPG(INPREC,INERR,RC) 
 C 
         CASE('NO NOX PULL AHEAD') 
             CALL NOXPUL(RC) 
