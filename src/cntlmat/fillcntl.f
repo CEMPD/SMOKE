@@ -60,8 +60,7 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL      STR2INT
 
 C...........   SUBROUTINE ARGUMENTS:
-
-        CHARACTER(*), INTENT (IN) :: PKTTYP ! packet type 
+        INTEGER     , INTENT (IN) :: PKTTYP ! packet type number
         INTEGER     , INTENT (IN) :: JTMAX  ! max allowed JT
         INTEGER     , INTENT (IN) :: JXMAX  ! max allowed JX
         TYPE( CPACKET ),INTENT(IN):: PKTINFO! packet information
@@ -108,7 +107,7 @@ C.........  Store sorting criteria as right-justified in fields
 
         CASE( 'AREA' )
             CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
-     &                    CHRBLNK3, PLTBLNK3, CHRBLNK3, 
+     &                    CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                    CHRBLNK3, POLBLNK3, CSRCALL )
 
             CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
@@ -140,7 +139,7 @@ C.........  Double check for memory allocation
         IF( JT .GT. JTMAX ) RETURN
 
 C.........  Store control data table, depending on type of packet
-        CALL FILLCDAT( PKTTYP, JT, PKTINFO )
+        CALL FILLCDAT( PKTLIST( PKTTYP ), JT, PKTINFO )
 
         RETURN
 
