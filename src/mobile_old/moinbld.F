@@ -108,7 +108,7 @@ C...........   Main data tables ! number of rows second to help with indexing
         REAL    TRDIST( 200, MXFACS )  ! Registration dist'n: 25 yrs, 8 vtype
         REAL    TTPLEN( 7  , MXFACS )  ! Speed, Trip lengths for 6 trip types
 
-        SAVE    TACCUM, TAVSPD, TDIESL, TOMODE, TRDIST, TTPLEN
+        SAVE    TACCUM, TAVSPD, TDIESL, TOMODE, TOXYGF, TRDIST, TTPLEN
 
 C. . . . . . . . LAP/Month parameters:
         INTEGER     TLAPMO( 3  , MXFACS )  ! month, RFG code, OXY code
