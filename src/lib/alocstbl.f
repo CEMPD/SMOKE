@@ -42,7 +42,12 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY:
+     &          CSPT01, CSPT02, CSPT03, CSPT04, CSPT05, CSPT06,
+     &          CSPT07, CSPT08, CSPT09, CSPT10, CSPT11,
+     &          CSPT12, CSPT13, CSPT14, CSPT15, CSPT16,
+     &          CSPT26, CSPT27, CSPT28, CSPT29, CSPT30, CSPT31,
+     &          CSPT32, CSPT33, CSPT34, CSPT35, CSPT36, CSPT37
 
         IMPLICIT NONE
 
@@ -69,6 +74,8 @@ C.........  First deallocate if these have previously been allocated
             DEALLOCATE( CSPT02, CSPT03, CSPT04, CSPT05, CSPT06 )
             DEALLOCATE( CSPT07, CSPT08, CSPT09, CSPT10, CSPT11 )
             DEALLOCATE( CSPT12, CSPT13, CSPT14, CSPT15, CSPT16 )
+            DEALLOCATE( CSPT26, CSPT27, CSPT28, CSPT29, CSPT30, CSPT31 )
+            DEALLOCATE( CSPT32, CSPT33, CSPT34, CSPT35, CSPT36, CSPT37 )
 
         END IF
 
@@ -150,6 +157,70 @@ C.........  First deallocate if these have previously been allocated
         ALLOCATE( CSPT16( J,NIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSPT16', PROGNAME )
         CSPT16 = EMCMISS3
+
+C.........  SIC code matches
+
+        J = ICSIZE( 26 )                              ! FIP=0, SIC=left
+        ALLOCATE( CSPT26( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT26', PROGNAME )
+        CSPT26 = EMCMISS3
+        
+        J = ICSIZE( 27 )                              ! FIP=0, SIC=all
+        ALLOCATE( CSPT27( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT27', PROGNAME )
+        CSPT27 = EMCMISS3
+        
+        J = ICSIZE( 28 )                              ! FIP=state, SIC=left
+        ALLOCATE( CSPT28( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT28', PROGNAME )
+        CSPT28 = EMCMISS3
+        
+        J = ICSIZE( 29 )                              ! FIP=state, SIC=all
+        ALLOCATE( CSPT29( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT29', PROGNAME )
+        CSPT29 = EMCMISS3
+        
+        J = ICSIZE( 30 )                              ! FIP=all, SIC=left
+        ALLOCATE( CSPT30( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT30', PROGNAME )
+        CSPT30 = EMCMISS3
+        
+        J = ICSIZE( 31 )                              ! FIP=all, SIC=all
+        ALLOCATE( CSPT31( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT31', PROGNAME )
+        CSPT31 = EMCMISS3
+
+C.........  MACT code matches
+        
+        J = ICSIZE( 32 )                              ! FIP=0, SCC=0, MACT=all
+        ALLOCATE( CSPT32( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT32', PROGNAME )
+        CSPT32 = EMCMISS3
+        
+        J = ICSIZE( 33 )                              ! FIP=0, SCC=all, MACT=all
+        ALLOCATE( CSPT33( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT33', PROGNAME )
+        CSPT33 = EMCMISS3
+        
+        J = ICSIZE( 34 )                              ! FIP=state, SCC=0, MACT=all
+        ALLOCATE( CSPT34( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT34', PROGNAME )
+        CSPT34 = EMCMISS3
+        
+        J = ICSIZE( 35 )                              ! FIP=state, SCC=all, MACT=all
+        ALLOCATE( CSPT35( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT35', PROGNAME )
+        CSPT35 = EMCMISS3
+        
+        J = ICSIZE( 36 )                              ! FIP=all, SCC=0, MACT=all
+        ALLOCATE( CSPT36( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT36', PROGNAME )
+        CSPT36 = EMCMISS3
+        
+        J = ICSIZE( 37 )                              ! FIP=all, SCC=all, MACT=all
+        ALLOCATE( CSPT37( J,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSPT37', PROGNAME )
+        CSPT37 = EMCMISS3
             
         RETURN
 
