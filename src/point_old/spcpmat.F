@@ -402,8 +402,8 @@ C.......   If needed, read the volatile pollutant conversion file
 
             KFLAG = .TRUE.
 
-            CALL RDCONV( KDEV, FIPSV1, SCCSV1, CONVV1, NCNV1,
-     &                   SCCSV2, CONVV2, NCNV2 )
+            CALL RDPCONV( KDEV, FIPSV1, SCCSV1, CONVV1, NCNV1,
+     &                    SCCSV2, CONVV2, NCNV2 )
 
         END IF		!  if invpro not polv
 

@@ -21,7 +21,7 @@ C * Last updated: $Date$
 C *
 C ****************************************************************************/
  
-        SUBROUTINE RDCONV( KDEV, FIP1, SCC1, FAC1, N1,
+        SUBROUTINE RDPCONV( KDEV, FIP1, SCC1, FAC1, N1,
      &                      SCC2, FAC2, N2 )
 
 C***********************************************************************
@@ -94,7 +94,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         CHARACTER*256   MESG
 
 C***********************************************************************
-C   begin body of function  RDCONV
+C   begin body of function  RDPCONV
 
 C.........  Read volatile pollutants conversion factors file
 
@@ -158,7 +158,7 @@ C.........  Read volatile pollutants conversion factors file
 99      CONTINUE        !  end of the KDEV-read loop
 
         IF ( EFLAG ) THEN
-            CALL M3EXIT( 'RDCONV', 0, 0, 
+            CALL M3EXIT( 'RDPCONV', 0, 0, 
      &           'Error reading VOLATILE CONVERSION file', 2 )
 
         ENDIF
