@@ -2,7 +2,7 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 209
+C  program body starts at line 210
 C
 C  DESCRIPTION:
 C    This program computes the hourly emissions data from inventory emissions 
@@ -447,6 +447,9 @@ C               are not truly supporting 16-character pollutant and
 C               emission process names, because it is only set up for MOBILE5
             DO I = 1, NIACT
 
+C.................  Skip activities that do not have emissions types
+                IF( NETYPE( I ) .LE. 0 ) CYCLE            
+
 C.................  Read emission factor tables for each activity and get the 
 C                   emission factor variable names.
         	CALL RDEFACS( MODELNAM, FNAME, NNAME, ACTVTY( I ), 
@@ -458,7 +461,7 @@ C                   emission factor variable names.
 
 C.........  Determine all of the variables to be output based on the 
 C           activities and input pollutants.  
-C.........  NOTE - Sets NETYPE, EMTACTV, and EMTNAM, units, and units
+C.........  NOTE - Uses NETYPE, EMTACTV, and EMTNAM, and sets units, and units
 C           conversion factors for all pollutants and activities
         CALL TMNAMUNT
 
@@ -479,21 +482,42 @@ C           of the activities
         ALLOCATE( ALLIN( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ALLIN', PROGNAME )
 
-C.........  Create 1-d arrays of I/O pol names, activities, & emission types
-        IF( NIPOL .GT. 0 ) THEN
-            ALLIN( 1:NIPOL ) = EAREAD( 1:NIPOL )
-            EANAM( 1:NIPOL ) = EINAM ( 1:NIPOL )
-        END IF
+C.........  Create 1-d arrays of I/O pol names
+C.........  If pollutant is created by one or more activities, then skip it.
+        N = 0
+        DO I = 1, NIPOL
 
+C.............  Look for pollutant in list of pollutants created by
+C               activities
+            J = INDEX1( EINAM( I ), NEPOL, EMTPOL )
+
+C.............  If pollutant created by activity, skip from this list
+            IF( J .LE. 0 ) THEN
+                N = N + 1
+                ALLIN( N ) = EAREAD( I )
+                EANAM( N ) = EINAM ( I )
+            END IF
+
+        END DO
+
+C.........  Add activities, & emission types to read and output lists
         J = NIPOL + 1
         DO I = 1, NIACT
 
-            K = NETYPE( I )
-            IF( K .GT. 0 ) ALLIN( J:J+K-1 ) = ACTVTY( I )
-            IF( K .GT. 0 ) EANAM( J:J+K-1 ) = EMTNAM( 1:K, I )
+            K = NETYPE( I )  ! Number of emission types
+
+C.............  If any emissions types associated with this activity, store them
+            IF ( K .GT. 0 ) THEN
+                N = N + K
+                ALLIN( J:J+K-1 ) = ACTVTY( I )
+                EANAM( J:J+K-1 ) = EMTNAM( 1:K, I )
+            END IF
             J = J + K
 
         END DO
+
+C.........  Reset number of pollutants and emission types based on those used
+        NIPPA = N
 
 C.........  Read temporal-profile cross-reference file and put into tables
 C.........  Only read entries for pollutants that are in the inventory.
