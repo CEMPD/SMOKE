@@ -104,14 +104,13 @@ C...........   Other local variables
         INTEGER         STID    !  tmp state ID
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error occurred
-        LOGICAL         FFLAG             !  true: fixed format
+        LOGICAL      :: FFLAG = .FALSE.   !  true: fixed format
         LOGICAL      :: VFLAG = .FALSE.   !  true: header found
 
         CHARACTER*1            ARTP     !  tmp area code
         CHARACTER*4            FCTP     !  tmp facility code
         CHARACTER*10           FIPFMT   !  format to write co/st/cy to string
         CHARACTER*10           RWTFMT   !  format to write rdway type to string
-        CHARACTER*20           EVNAME   !  environment variable name
         CHARACTER*20           FFORMAT  !  format description
         CHARACTER*300          LINE     !  line buffer
         CHARACTER*300          MESG     !  message buffer
@@ -129,9 +128,9 @@ C***********************************************************************
 C   begin body of subroutine RDVMIX
 
 C.............  Get environment variable values for this routine
-        EVNAME = 'SMK_VMTMIX_FIXFMT'
+
         MESG = 'Indicator for VMT mix with fixed-column EMS-95 format'
-        FFLAG = ENVYN( EVNAME, MESG, FFLAG, IOS )
+        FFLAG = ENVYN( 'SMK_VMTMIX_FIXFMT', MESG, FFLAG, IOS )
 
         FFORMAT = 'list-directed'
         IF( FFLAG ) FFORMAT = 'fixed'
@@ -280,9 +279,6 @@ C.........  Allocate memory for unsorted data used in all source categories
 C.........  In initialize before loop
         IREC = 0
         N    = 0
-        P1   = FIXPREWD + 1
-        P2   = FIXPREWD + FIXVMTWD
-
 C.........  Second pass through file: read lines and store unsorted data for
 C           the source category of interest
         DO I = 1, NLINES
@@ -318,6 +314,9 @@ C               and only the first hour of data will be read
                 WRITE( CFIP,FIPFMT ) FIP
                 WRITE( CRWT,RWTFMT ) ROAD
                 CLNK = ADJUSTL( LINE( 11:20 ) )
+
+                P1   = FIXPREWD + 1
+                P2   = FIXPREWD + FIXVMTWD
 
                 DO J = 1, NV
                     V = VIDX( J )

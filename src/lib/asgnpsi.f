@@ -365,7 +365,7 @@ C.................  Try for activity-specific country/state code match
                 END IF
 
                 IF( IEFS01( V ) .NE. IMISS3 .AND. REPDEFLT ) THEN
-                    EREF = IEFS01( V )
+                    EREF = IEFS01( V ) - ADDPS
                     
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
@@ -379,7 +379,7 @@ C.................  Try for activity-specific country/state code match
                     CALL SETSOURCE_EFS
 
                 ELSEIF( IEFS01( V ) .NE. IMISS3 ) THEN
-                    EREF = IEFS01( V )
+                    EREF = IEFS01( V ) - ADDPS
                     CALL SETSOURCE_EFS
 
                 ELSE

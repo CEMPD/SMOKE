@@ -1,6 +1,7 @@
 
         LOGICAL FUNCTION EVALCRIT( NV, NORS, MXAND, VALS, REFS, RANK, 
-     &                             COMPARE, TYPES, STATUS )
+     &                             CHRS, COMPARE, COMPCHR, TYPES, 
+     &                             STATUS )
 
 C***********************************************************************
 C  function body starts at line
@@ -47,10 +48,12 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER     , INTENT (IN) :: NV      ! Number of values
         INTEGER     , INTENT (IN) :: NORS    ! Number of OR conditions
         INTEGER     , INTENT (IN) :: MXAND   ! Max no.  ANDs for single data val
-        REAL        , INTENT (IN) :: VALS   ( NV )       ! Data values
+        REAL        , INTENT (IN) :: VALS   ( NV )       ! Data values (real)
         REAL        , INTENT (IN) :: REFS   ( NV )       ! Reference values
         REAL        , INTENT (IN) :: RANK   ( NV )       ! Ranking order
+        CHARACTER(*), INTENT (IN) :: CHRS   ( NV )       ! String values
         REAL        , INTENT (IN) :: COMPARE( NORS, MXAND, NV ) ! Formula values
+        CHARACTER(*), INTENT (IN) :: COMPCHR( NORS, MXAND, NV ) ! Formula strings
         CHARACTER(*), INTENT (IN) :: TYPES  ( NORS, MXAND, NV ) ! Condition
         LOGICAL     , INTENT(OUT) :: STATUS ( NORS, MXAND, NV ) ! true: condition met
 
@@ -86,6 +89,10 @@ C               if they are present
                     SELECT CASE( TYPES( L,M,N ) )
                     CASE( '=', '==' )
                         IF ( VALS(N) .NE. COMPARE(L,M,N) ) THEN
+                            ANDSTAT = .FALSE.
+                        END IF
+                    CASE( 'IS' )
+                        IF ( CHRS(N) .NE. COMPCHR(L,M,N) ) THEN
                             ANDSTAT = .FALSE.
                         END IF
                     CASE( '=>', '>=' )

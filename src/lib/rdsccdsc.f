@@ -67,7 +67,7 @@ C...........   Local variables
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
 
 
-        CHARACTER*80    LINE                  ! Read buffer for a line
+        CHARACTER*256   LINE                  ! Read buffer for a line
         CHARACTER*300   MESG                  ! Message buffer
 
         CHARACTER(LEN=SCCLEN3 ) TSCC          ! tmp SCC

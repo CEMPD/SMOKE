@@ -279,6 +279,9 @@ C.............  Other local variables
             INTEGER         IREC    !  record counter   
             INTEGER         L, L2   !  length indices
 
+            LOGICAL      :: EFLAG = .FALSE.  ! true: error found
+
+            CHARACTER*8     FNAME   !  "ACTVNAMS or SIPOLS"
             CHARACTER*300   PNAM    !  tmp for pollutant name (NOT correct length)
             CHARACTER*300   UNIT    !  tmp for units (NOT correct length)
             CHARACTER*300   LINE    !  line buffer
@@ -287,6 +290,13 @@ C----------------------------------------------------------------------
 
 C.............  Do not read if file is not opened
             IF( FDEV .LE. 0 ) RETURN
+
+C.............  Set file name buffer
+            IF( STATVAL .EQ. 1 ) THEN
+                FNAME = 'SIPOLS'
+            ELSE
+                FNAME = 'ACTVNAMS'
+            END IF
 
 C.............  Loop through input file...
             IREC = 0
@@ -351,7 +361,19 @@ C.................  Truncate units to IOULEN3 characters
      &                 UNIT( 1:IOULEN3 ) // '"'
                     CALL M3MESG( MESG )
 
+C.................  Error for blank units
+                ELSE IF( L2 .EQ. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                 'ERROR: Inventory units not set in the ' //
+     &                 FNAME // ' file at line', IREC
+                    CALL M3MSG2( MESG )
+
                 END IF
+
+
+
 
 C.................  Store unsorted variables
                 CNT = CNT + 1
@@ -367,6 +389,11 @@ C.................  Store unsorted variables
             END DO          !  end read loop
 
 22          CONTINUE        !  exit from loop reading FDEV
+
+            IF ( EFLAG ) THEN
+                MESG = 'Problem with input file contents.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
             RETURN
 

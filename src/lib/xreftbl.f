@@ -463,9 +463,11 @@ C                   as the old Right-left method is still needed.
 
                         N( NT ) = N( NT ) - 1
                         NT = 20
-                        IF( TSCC .NE. PTSCC( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PTSCC( NT ) = TSCC
+                            PIFIP ( NT ) = IFIP
+                            PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -476,9 +478,11 @@ C                   as the old Right-left method is still needed.
 
                         N( NT ) = N( NT ) - 1
                         NT = 21
-                        IF( TSCC .NE. PTSCC( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PTSCC( NT ) = TSCC
+                            PIFIP ( NT ) = IFIP
+                            PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -489,9 +493,11 @@ C                   as the old Right-left method is still needed.
 
                         N( NT ) = N( NT ) - 1
                         NT = 22
-                        IF( TSCC .NE. PTSCC( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PTSCC( NT ) = TSCC
+                            PIFIP ( NT ) = IFIP
+                            PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -563,9 +569,11 @@ C                   as the old Right-left method is still needed.
 
                         N( NT ) = N( NT ) - 1
                         NT = 23
-                        IF( TSCC .NE. PTSCC( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PTSCC( NT ) = TSCC
+                            PIFIP ( NT ) = IFIP
+                            PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -576,9 +584,11 @@ C                   as the old Right-left method is still needed.
 
                         N( NT ) = N( NT ) - 1
                         NT = 24
-                        IF( TSCC .NE. PTSCC( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PTSCC( NT ) = TSCC
+                            PIFIP ( NT ) = IFIP
+                            PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -589,9 +599,11 @@ C                   as the old Right-left method is still needed.
 
                         N( NT ) = N( NT ) - 1
                         NT = 25
-                        IF( TSCC .NE. PTSCC( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PTSCC( NT ) = TSCC
+                            PIFIP ( NT ) = IFIP
+                            PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF

@@ -1,4 +1,5 @@
 
+
         SUBROUTINE PRCLINRC( IREC, NSEGS, LINE, SEGMENT )
 
 C***********************************************************************
@@ -187,6 +188,8 @@ C.........  Initializations needed for every line
         LIN_DEFGRP  = .FALSE.
         LIN_GROUP   = .FALSE.
         LIN_SUBDATA = .FALSE.
+        LIN_SUBGRID = .FALSE.
+        LIN_SUBREGN = .FALSE.
         LIN_TITLE   = .FALSE.
         LIN_UNIT    = .FALSE.
         LIN_SPCIFY  = .FALSE.
@@ -365,6 +368,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYCNTY   = .FALSE.
                         RPT_%BYELEV   = .FALSE.
                         RPT_%BYHOUR   = .FALSE.
+                        RPT_%BYLAYER  = .FALSE.
                         RPT_%BYMON    = .FALSE.
                         RPT_%BYSCC    = .FALSE.
                         RPT_%BYSPC    = .FALSE.
@@ -377,6 +381,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYWEK    = .FALSE.
                         RPT_%LAYFRAC  = .FALSE.
                         RPT_%NORMCELL = .FALSE.
+                        RPT_%NORMPOP  = .FALSE.
                         RPT_%SCCNAM   = .FALSE.
                         RPT_%SRCNAM   = .FALSE.
                         RPT_%STKPARM  = .FALSE.
@@ -393,6 +398,7 @@ C.........................  Reset report settings to defaults
                         RPT_%RENDLIN  = 0    ! init for consistency
                         RPT_%RSTARTLIN= 0    ! init for consistency
                         RPT_%SCCRES   = 10
+                        RPT_%SRGRES   = 0
 
                         RPT_%DATAFMT  = 'E8.3'
                         RPT_%OFILENAM = ' '    ! init for consistency
@@ -686,14 +692,20 @@ C.............  Setting for the use of layer fractions
 C.............  Setting for the normalize instruction
             CASE( 'NORMALIZE' )
 
-                IF( SEGMENT( 2 ) .EQ. 'CELLAREA' ) THEN
-                    GFLAG = .TRUE.                      ! Implies gridding
+                SELECT CASE( SEGMENT( 2 ) )
+                CASE( 'CELLAREA' ) 
+                    GFLAG = .TRUE.                     ! Implies gridding
                     RPT_%NORMCELL = .TRUE.
+                    RPT_%USEGMAT  = .TRUE.
 
-                ELSE
+                CASE( 'POPULATION' )
+                    YFLAG = .TRUE.                     ! read cy/st/cy 
+                    RPT_%NORMPOP = .TRUE.
+
+                CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE
 
-                END IF
+                END SELECT
 
 C.............  Settings the output data format
             CASE( 'NUMBER' )
@@ -750,6 +762,7 @@ C.....................  Warning if used more than once
                     END IF
 
                     LREGION = .TRUE.
+                    LIN_SUBREGN = .TRUE.
                     CALL EXTRACT_LABEL( IREC, 'REGION', LINE, 
      &                                  RPT_%REGNNAM )
 
@@ -769,6 +782,7 @@ C.....................  Warning if used more than once
                     GFLAG        = .TRUE.
                     RPT_%USEGMAT = .TRUE.
                     LSUBGRID = .TRUE.
+                    LIN_SUBGRID = .TRUE.
                     CALL EXTRACT_LABEL( IREC, 'SUBGRID', LINE, 
      &                                  RPT_%SUBGNAM )
 
