@@ -40,31 +40,11 @@
         INCLUDE 'EMPRVT3.EXT'
 
 !...........   Setting for range of valid min/max temperatures
-!        REAL   , PUBLIC :: MINT_MIN = 0.  ! min of range of minima
-!        REAL   , PUBLIC :: MINT_MAX = 0.  ! max of range of minima
-!        REAL   , PUBLIC :: MAXT_MIN = 0.  ! min of range of maxima
-!        REAL   , PUBLIC :: MAXT_MAX = 0.  ! max of range of maxima
-!        REAL   , PUBLIC :: TMMINVL  = 0.  ! temperature interval
-!        REAL   , PUBLIC :: TMXINVL  = 0.  ! maximum temperature interval
-!        INTEGER, PUBLIC :: NTMPR    = 0   ! number of valid single temperatures
-!        INTEGER, PUBLIC :: NVLDTMM  = 0   ! number of valid combos
         REAL, PUBLIC :: MINTEMP = 0.   ! minimum temperature
         REAL, PUBLIC :: MAXTEMP = 0.   ! maximum temperature
 
-!...........   Valid list of temperatures (dim: NTMPR)
-!        REAL   , ALLOCATABLE, PUBLIC :: VLDTMPR( : )   ! valid temperatures
-
-!...........   Valid list of min/max temperature combinations (dim: NVLDTMM)
-!        REAL   , ALLOCATABLE, PUBLIC :: VLDTMIN( : )   ! valid mins
-!        REAL   , ALLOCATABLE, PUBLIC :: VLDTMAX( : )   ! valid maxs
-
 !...........   Daily min/max temperatures [K] (dim: NSRC)
         REAL, ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! per-source tmprs
-!        REAL   , ALLOCATABLE, PUBLIC :: TKMAX   ( : )   ! working max
-!        REAL   , ALLOCATABLE, PUBLIC :: TKMIN   ( : )   ! working min
-!        REAL   , ALLOCATABLE, PUBLIC :: TKMAXOUT( :,: ) ! output  max
-!        REAL   , ALLOCATABLE, PUBLIC :: TKMINOUT( :,: ) ! output  min
-!        INTEGER, ALLOCATABLE, PUBLIC :: METIDX  ( :,: ) ! idx to master min/max
 
 !...........   Hourly temperatures [K] (dim: NSRC)
 !...              for Mobile5 processing, index 0 = 12 AM local time
