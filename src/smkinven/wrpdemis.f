@@ -237,10 +237,6 @@ C.................  If totals are zero, then profile values should be zero
 
                     PDDATA( I,V ) = PDDATA( I,V ) / PDTOTL( I,V )
 
-                    IF(  PDDATA( I,V ) .GT. 1. ) THEN
-                          print *,s,PDDATA( I,V ),PDTOTL( I,V )
-                    END IF
-
                 END IF
 
             END DO
