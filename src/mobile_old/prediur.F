@@ -13,7 +13,8 @@ C     determines the min/max temperature combinations for each mobile source
 C     and for each emission factor set.
 C
 C  PRECONDITIONS REQUIRED:
-C
+C     PREDIUR handles modeling period in multiple of a whole day. Input for
+C     "Output duration" has to be a multiple of 24.
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
@@ -116,23 +117,24 @@ C...........   File units and logical names:
 C...........   Other local variables:
 
         INTEGER    F, H, I, J, JJ, K, L, S, T  ! Counters and pointers
-        INTEGER    FIP    !  temporary FIP code
-        INTEGER    IFIL   !  counter for temperature files
-        INTEGER    IZONE  !  zone of time stamps in input temperature files
-        INTEGER    JDATE  !  output time zone date counter (YYYYDDD)
-        INTEGER    JTIME  !  output time zone time counter (HHMMSS)
-        INTEGER    KU     !  counter of grid cells per source
-        INTEGER    LNK    !  temporary FIP code
-        INTEGER    MAXTL  !  intermediate temperature index value
-        INTEGER    MDATE  !  temperature time zone date counter (YYYYDDD)
-        INTEGER    MTIME  !  temperature time zone time counter (HHMMSS)
-        INTEGER    NSTEPS !  number of time steps to process temperature data
-        INTEGER    NTFIL  !  total number of input temperature files
-        INTEGER    OSRC   !  number of sources outside grid
-        INTEGER    RDT    !  temporary FIP code
+        INTEGER    FIP     !  temporary FIP code
+        INTEGER    IFIL    !  counter for temperature files
+        INTEGER    IZONE   !  zone of time stamps in input temperature files
+        INTEGER    JDATE   !  output date counter (YYYYDDD) in GMT
+        INTEGER    JTIME   !  output time counter (HHMMSS)  in GMT
+        INTEGER    KU      !  counter of grid cells per source
+        INTEGER    LNK     !  temporary FIP code
+        INTEGER    MAXTL   !  intermediate temperature index value
+        INTEGER    MDATE   !  temperature time zone date counter (YYYYDDD)
+        INTEGER    MTIME   !  temperature time zone time counter (HHMMSS)
+        INTEGER    NSTEPS  !  number of time steps to process temperature data
+        INTEGER    NTFIL   !  total number of input temperature files
+        INTEGER    OSRC    !  number of sources outside grid
+        INTEGER    RDT     !  temporary FIP code
         INTEGER    TMMIT(4)!  temporary TMMI indices for all four min/max
-        INTEGER    TSTEP  !  time step of input temperature data (HHMMSS)
-        INTEGER    TZONE  !  zone to determine output days
+        INTEGER    TSTEP   !  time step of input temperature data (HHMMSS)
+        INTEGER    TZONE   !  zone to determine output days
+        INTEGER    FIRSTIME!  the starting time for modeling
 
         REAL       TMAX   !  deg F temporary source max temperature on interval
         REAL       TMIN   !  deg F temporary source min temperature on interval
@@ -221,7 +223,8 @@ C.........  Read Ungridding Matrix
 C.........  Prompt for time zone of temperature data.
         IZONE  = 0
         IZONE  = GETNUM( -12, 12, IZONE,
-     &             'Enter time zone of temperature files (0 for GMT)' )
+     &             'Enter time zone of temperature files '//
+     &             '(0 for GMT, 5 for EST, etc.)' )
 
 C.........  Loop for prompting for temperature data files:
         WRITE( *,92000 )
@@ -274,16 +277,22 @@ C.........  Save time step for processing temperatures
 
 C.........  Prompt for time zone for output file (to get local time to use
 C.........     for beginning of the day)
-        TZONE  = 5
-        TZONE  = GETNUM( -12, 12, TZONE,
-     &             'Enter time zone for determining a day (0 for GMT)' )
+        TZONE  = 0  ! Keep data in MINMAXT in GMT for increased portability
+C        TZONE  = GETNUM( -12, 12, TZONE,
+C     &             'Enter time zone for output min/max '//
+C     &             'per day (0 for GMT)' )
         JDATE  = GETNUM( 0, 9999999, SDATE3D,
-     &                   'Enter starting date (YYYYDDD)' )
+     &                   'Enter starting date in GMT (YYYYDDD)' )
         JTIME  = GETNUM( 0, 999999, STIME3D,
-     &                   'Enter starting time  (HHMMSS)' )
-        NSTEPS = GETNUM( 1, 999999, 24,
+     &                   'Enter starting time in GMT (HHMMSS)' )
+        FIRSTIME = JTIME
+75      NSTEPS = GETNUM( 1, 999999, 24,
      &                   'Enter output duration (hours)' )
-
+        IF ( MOD( NSTEPS, 24 ) .NE. 0 ) THEN
+           WRITE( *,92000 ) 'Output duration has to be a multiple of 24'
+           GO TO 75
+        END IF 
+ 
 C.........  Prompt for temperature increment to use in output file
 cmh     TINTV = GETREAL( 0.0001, 50., 2.,
 cmh  &                   'Enter temperature increment [deg F]' )
@@ -291,7 +300,7 @@ cmh  &                   'Enter temperature increment [deg F]' )
 C.........  Set date/time for temperature based on start date/time
         MDATE = JDATE
         MTIME = JTIME
-        CALL NEXTIME( MDATE, MTIME, TZONE - IZONE )
+        CALL NEXTIME( MDATE, MTIME, (TZONE - IZONE)*10000 )
 
 C.........  Abort if start time is < than first time for temperatures
         IF( ( MDATE .EQ. SDATE3D .AND. MTIME .LT. STIME3D ) .OR.
@@ -510,8 +519,9 @@ C.................................................................
 C.............  Process last hour of a day or last hour
 C.................................................................
 
-            IF( ( JTIME/10000 .EQ. 23 .OR. H .EQ. NSTEPS ) 
-     &          .AND. H .NE. 1 ) THEN
+C           IF( ( JTIME/10000 .EQ. 23 .OR. H .EQ. NSTEPS ) 
+C    &          .AND. H .NE. 1 ) THEN
+            IF( MOD( H, 24 ) .EQ. 23 ) THEN
 
 C.................  Try to read current temperature file
                 IF ( .NOT. READ3( TNAME( IFIL ),
@@ -734,7 +744,8 @@ C.................  Give warning if end of day is not hour 23
 
 C.................  Write out min/max information for the current day
                 IF( .NOT. WRITE3( 
-     &              ONAME, 'ALL', JDATE, 0, TMMI ) ) THEN
+C    &              ONAME, 'ALL', JDATE, 0, TMMI ) ) THEN
+     &              ONAME, 'ALL', JDATE, FIRSTIME, TMMI ) ) THEN 
 
                     CALL M3EXIT( 'PREDIUR', JDATE, 0,
      &                           'Could not write timestep to "' //
@@ -745,7 +756,8 @@ C.................  Write out min/max information for the current day
 C.................................................................
 C.............  Process first hour of a new day
 C.................................................................
-            ELSEIF( JTIME .EQ. 0 .OR. H .EQ. 1 ) THEN
+C           ELSEIF( JTIME .EQ. 0 .OR. H .EQ. 1 ) THEN
+            ELSEIF( MOD( H, 24 ) .EQ. 1 ) THEN
 
 C.................  Try to read current temperature file
                 IF ( .NOT. READ3( TNAME( IFIL ),
