@@ -359,13 +359,21 @@ C.............  Also remove SCC from the source characteristics
 
             END DO
 
-C.............  Reset start and end fields based on new widths
+C.............  Allocate and initialize arrays for storing new field lengths
+            ALLOCATE( LOC_BEGP( NCHARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LOC_BEGP', PROGNAME )
+            ALLOCATE( LOC_ENDP( NCHARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LOC_ENDP', PROGNAME )
+            LOC_BEGP = SC_BEGP   ! array
+            LOC_ENDP = SC_ENDP   ! array
+
+C.............  Set local start and end fields based on new widths
             K = 0
             DO J = MINC, NCHARS
                 K = K + 1
                 IF( J .EQ. JSCC ) CYCLE
-                SC_BEGP( J ) = SC_ENDP( J-1 ) + 1
-                SC_ENDP( J ) = SC_BEGP( J ) + SWIDTH( K ) - 1
+                LOC_BEGP( J ) = SC_ENDP( J-1 ) + 1
+                LOC_ENDP( J ) = SC_BEGP( J ) + SWIDTH( K ) - 1
             END DO
 
             IF( JSCC .GT. 0 ) NCHARS = NCHARS - 1
