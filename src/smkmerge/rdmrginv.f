@@ -87,6 +87,14 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDMRGINV
 
+        IF( ALLOCATED( INVIFIP ) ) DEALLOCATE( INVIFIP )
+        IF( ALLOCATED( AIFIP   ) ) DEALLOCATE( AIFIP )
+        IF( ALLOCATED( AFIPS   ) ) DEALLOCATE( AFIPS  )
+        IF( ALLOCATED( MFIPS   ) ) DEALLOCATE( MFIPS  )
+        IF( ALLOCATED( PFIPS   ) ) DEALLOCATE( PFIPS  )
+        IF( ALLOCATED( TMPFIP  ) ) DEALLOCATE( TMPFIP )
+        IF( ALLOCATED( SIDX    ) ) DEALLOCATE( SIDX   )
+
 C.........  Read in area source country, state, county code
         IF( AFLAG ) THEN
 
