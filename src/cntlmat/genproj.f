@@ -1,6 +1,5 @@
 
-        SUBROUTINE GENPROJ( NSRC, NIPPA, BYEAR, PYEAR, ENAME, 
-     &                      USEPOL, EANAM )
+        SUBROUTINE GENPROJ( PYEAR, RDEV, ENAME, USEPOL )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -46,6 +45,9 @@ C.........  This module contains the inventory arrays
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -61,27 +63,30 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL   PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NSRC   ! no. sources
-        INTEGER     , INTENT (IN) :: NIPPA  ! no. inventory pollutants
-        INTEGER     , INTENT (IN) :: BYEAR  ! base year
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year
+        INTEGER     , INTENT (IN) :: RDEV   ! unit numnber of report file
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
         LOGICAL     , INTENT (IN) :: USEPOL( NIPPA )  ! true: pol used in pkt
-        CHARACTER(*), INTENT (IN) :: EANAM ( NIPPA )  ! all pollutant names        
 
-C...........   Local arrays allocated by subroutine arguments
+C...........   Locally allocated arrays 
         INTEGER, ALLOCATABLE :: ISPRJ ( : ) ! projection control data table index
         REAL   , ALLOCATABLE :: PRJFAC( : ) ! projection factor
+
+C...........  Local static arrays
+        LOGICAL          LF   ( MXCHRS )      !  true: column should be output
+        CHARACTER*20     CHARS( MXCHRS )      !  source fields for output
 
 C...........   Logical names
 
         CHARACTER*16     PNAME      ! logical name for projection matrix
 
+
 C...........   Other local variables
 
-        INTEGER          K, L, S    ! counters and indices
-        INTEGER          IDUM       ! dummy integer
-        INTEGER          IOS        ! i/o error status
+        INTEGER          J, K, L, S    ! counters and indices
+        INTEGER          IDUM          ! dummy integer
+        INTEGER          IOS           ! i/o error status
+        INTEGER          NC            ! local number src chars
 
         LOGICAL       :: EFLAG    = .FALSE.   ! true: error has occurred
 
@@ -110,6 +115,12 @@ C           to ASGNCNTL in order to avoid looping through all pollutants.
          CALL ASGNCNTL( NSRC, 1, 'PROJECTION', USEPOL, EANAM(1), 
      &                  IDUM, ISPRJ )
 
+C..........  Write header for report.
+         WRITE( RDEV, 93000 ) 'Projection factors report:'
+         WRITE( RDEV, 93000 ) '    Factors applied to all pollutants' //
+     &                        ' uniformly.'
+         WRITE( RDEV, 93000 ) ' '
+
 C.........  Loop through all sources and store projection information for
 C           those that have it. Otherwise, set projection factor=1.
 
@@ -122,8 +133,18 @@ c        ISPRJ = 1  ! array
             IF( K .GT. 0 ) THEN
 
 C.................  Store projection factor
-
                 PRJFAC( S ) = PRJFC( K )
+
+C.................  Format source characteristic information
+                CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, 
+     &                         LF, NC, CHARS )
+
+C.................  Write out projection information for all sources
+C                   that are getting projected
+                WRITE( MESG, 94015 ) 
+     &               ( CHARS( J )( 1:SC_ENDP(J)-SC_BEGP(J)+1 ), J=1,NC )
+                L = LEN_TRIM( MESG )
+                WRITE( RDEV, 94020 ) MESG( 1:L ), PRJFAC( S )
 
             ELSE
 C.................  If source does not have projection info., set to 1.
@@ -160,9 +181,19 @@ C.........  Write the I/O API variables for the non-speciation data
 
 C******************  FORMAT  STATEMENTS   ******************************
 
+C...........   Formatted file I/O formats............ 93xxx
+
+93000   FORMAT( A )
+
 C...........   Internal buffering formats............ 94xxx
 
+94000   FORMAT( A )
+
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94015   FORMAT( 10( A, :, 1X ) )
+
+94020   FORMAT( A, 1X, E11.3 )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
