@@ -46,10 +46,13 @@ C  database file.
 
 C  Begin body of subroutine SMKPMOUT
 
-      DO IPPM = 1,MAXIPPM-2
+      DO IPPM = 1,MAXIPPM
 
 C  Check that we need this pollutant
          IF (DBSELPART(IPPM) == 1) CYCLE
+
+C  Don't output PM Idle
+         IF (IPPM == 10 .OR. IPPM == 11) CYCLE
          
          IP = IPPM+6  ! PM pollutants start after classic pollutants
 
@@ -94,7 +97,7 @@ C  Select appropriate vehicle class (8 types) for vehicle type (28)
                   SELECT CASE (IV)
                   CASE (1)
                      IVEH = 1
-                     SUMVMT = VMTMIX(1)
+                     SUMVMT = VMTMIX(IV)
                   CASE (2,3)
                      IVEH = 2
                      SUMVMT = VMTGT12
@@ -106,7 +109,7 @@ C  Select appropriate vehicle class (8 types) for vehicle type (28)
                      SUMVMT = VMTHDG
                   CASE (14)
                      IVEH = 5
-                     SUMVMT = VMTMIX(14)
+                     SUMVMT = VMTMIX(IV)
                   CASE (15,28)
                      IVEH = 6
                      SUMVMT = VMTLDDT
@@ -115,7 +118,7 @@ C  Select appropriate vehicle class (8 types) for vehicle type (28)
                      SUMVMT = VMTHDD
                   CASE (24)
                      IVEH = 8
-                     SUMVMT = VMTMIX(24)
+                     SUMVMT = VMTMIX(IV)
                   CASE DEFAULT
 ccs  Print some error message
                   END SELECT
@@ -178,4 +181,3 @@ C  Subtract 2.5 values from 10 values if needed
       END DO  ! loop over pollutants
 
       END SUBROUTINE SMKPMOUT 
-      
