@@ -73,8 +73,11 @@ C...........   Other local variables
         INTEGER         I, J                ! counters and indices
         INTEGER         IOS                 ! i/o status
         INTEGER         IREC                ! record counter
+
+        LOGICAL      :: EFLAG = .FALSE.     ! error flag
+
         CHARACTER*300   LINE    !  Input line from POINT file
-        CHARACTER*300   MESG    !  Text for M3EXIT()
+        CHARACTER*300   MESG    !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'RDTZONE' ! program name
 
@@ -91,10 +94,12 @@ C   begin body of subroutine RDTZONE
             IREC = IREC + 1
 
             IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 
-     &                 'Error', IOS,  'reading time zones file ' //
+     &                 'I/O error', IOS,  'reading time zones file ' //
      &                 'at line', IREC
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                CALL M3MESG( MESG )
+                CYCLE
             END IF
 
             IF ( FIP .EQ. 0 ) THEN              !  fallback -- all sources
@@ -132,9 +137,10 @@ C   begin body of subroutine RDTZONE
      &        'Memory allocated:', NDIM
             CALL M3MSG2( MESG )
 
-            MESG = 'ERROR: Insufficient memory allocated for time ' //
-     &             'zones tables'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            MESG = 'INTERNAL ERROR: Insufficient memory allocated ' //
+     &             'for time zones tables'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
         END IF
 
         CALL SORTI1( NZS, INDXSA, TFIPSA )
