@@ -49,15 +49,18 @@ C.........  Input file format constants
      &                        ( / 'list  ', 'EMS-95', 'EPS   ', 
      &                            'NET   ', 'IDA   '            / )
 
+C.........  Indicator for inventory header fields
+        CHARACTER*1, PARAMETER :: CINVHDR = '#'
+
 C.........  Separator for speciation "variables" (stored in description field)
         CHARACTER*1, PARAMETER :: SPJOIN = '~'
+
+C.........  Separator for emission type names
+        CHARACTER*2, PARAMETER :: ETJOIN = '__'
 
 C.........  Units for speciation matrices
         CHARACTER*16, PARAMETER :: SMASUNIT = 'gm/ton'
         CHARACTER*16, PARAMETER :: SMOLUNIT = 'mole/ton'
-
-C.........  Separator for emission type names
-        CHARACTER*2, PARAMETER :: ETJOIN = '__'
 
 C.........  Packet names
         CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
@@ -65,6 +68,9 @@ C.........  Packet names
 C.........  Environment variables
         CHARACTER*16, PARAMETER :: WARNSET = 'SMK_MAXWARNING  '
         CHARACTER*16, PARAMETER :: ERRSET  = 'SMK_MAXERROR    '
+
+C.........  Maximum reasonable inventory year
+        INTEGER    , PARAMETER :: MXIYEAR = 2050
 
 C.........  Time zones
         INTEGER    , PARAMETER :: MXTZONE = 11
@@ -92,6 +98,12 @@ C.........  Packet information
      &                          .FALSE., .FALSE., .FALSE.,
      &                          .TRUE. / )
 
+C.........  Control and projection matrix codes (in order of precedence)
+        INTEGER, PARAMETER :: CTYPPROJ = 1   ! for projection matrix
+        INTEGER, PARAMETER :: CTYPREAC = 2   ! for reactivity control matrix
+        INTEGER, PARAMETER :: CTYPADD  = 3   ! for additive control matrix
+        INTEGER, PARAMETER :: CTYPMULT = 4   ! for multiplicative control matrix
+
 C.........  Variable dimensioning components, independent
 
         INTEGER       CPRTLEN3       ! length of ctl eff, rul eff, rul pen roots
@@ -110,7 +122,7 @@ C.........  Variable dimensioning components, independent
      &              , NMBVAR3  = 11
      &              , NMBPPOL3 = 1   
      &              , NPTPPOL3 = 7
-     &              , NPTVAR3  = 12
+     &              , NPTVAR3  = 11
      &              )
 
 C.........  Blanks definitions
@@ -119,6 +131,7 @@ C.........  Blanks definitions
         CHARACTER(LEN=DSCLEN3), PARAMETER:: DSCBLNK3 = ' '
         CHARACTER(LEN=FIPLEN3), PARAMETER:: FIPBLNK3 = ' '
         CHARACTER(LEN=IOVLEN3), PARAMETER:: IOVBLNK3 = ' '
+        CHARACTER(LEN=ORSLEN3), PARAMETER:: ORSBLNK3 = ' '
         CHARACTER(LEN=PLTLEN3), PARAMETER:: PLTBLNK3 = ' '
         CHARACTER(LEN=POLLEN3), PARAMETER:: POLBLNK3 = ' '
         CHARACTER(LEN=RWTLEN3), PARAMETER:: RWTBLNK3 = ' '
