@@ -70,9 +70,9 @@ C...........   INCLUDES
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-	INTEGER		INDEX1
+        INTEGER         INDEX1
         
-        EXTERNAL	INDEX1
+        EXTERNAL        INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -81,36 +81,37 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local variables
 
-	CHARACTER*1	KEEP               ! determines if CAS number is kept
-	CHARACTER*26    TSCCPOLL           ! temp. SCC/pollutant combination
-        CHARACTER(LEN=DDSLEN3)	DESC       ! temp. SCC description
+        CHARACTER*1     KEEP               ! determines if CAS number is kept
+        CHARACTER*26    TSCCPOLL           ! temp. SCC/pollutant combination
+        CHARACTER(LEN=DDSLEN3)  DESC       ! temp. SCC description
         CHARACTER(LEN=SCCLEN3)  SCC        ! temp. SCC code
         CHARACTER(LEN=IOVLEN3)  DNAME      ! temp. data name
-        CHARACTER(LEN=SDSLEN3)	SCCDC      ! temp. SCC description
+        CHARACTER(LEN=SDSLEN3)  SCCDC      ! temp. SCC description
         CHARACTER(LEN=SCCLEN3)  PSCC       ! previous SCC code
-	CHARACTER(LEN=SCCLEN3)  TSCC       ! temp. SCC code
-	CHARACTER(LEN=IOVLEN3)  TDNAME     ! temp. data name
+        CHARACTER(LEN=SCCLEN3)  TSCC       ! temp. SCC code
+        CHARACTER(LEN=IOVLEN3)  TDNAME     ! temp. data name
 
-	CHARACTER*26, ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
+        CHARACTER*26, ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
         
-        INTEGER		I, J, K, L, S, IOS ! counters and indicies
-        INTEGER		STATE              ! temp. state code
-        INTEGER		NFIPS              ! temp. number of FIPS codes
-        INTEGER		POLL               ! temp. pollutant
-        INTEGER		PFIP               ! previous FIPS code
+        INTEGER         I, J, K, L, S, IOS ! counters and indicies
+        INTEGER         STATE              ! temp. state code
+        INTEGER         NFIPS              ! temp. number of FIPS codes
+        INTEGER         NSCCPOLL           ! total number of SCC // pollutant combinations
+        INTEGER         POLL               ! temp. pollutant
+        INTEGER         PFIP               ! previous FIPS code
         
         INTEGER, ALLOCATABLE :: ASSIGNED( : ) ! number of FIPS codes assigned
         INTEGER, ALLOCATABLE :: UNASSIGN( : ) ! number of FIPS codes unassigned
         
-        REAL		VALCHECK           ! temp. value check
-        REAL		DIFF               ! temp. difference
-        REAL		OEMIS              ! temp. original emissions
-        REAL		SEMIS              ! temp. summed emissions
+        REAL            VALCHECK           ! temp. value check
+        REAL            DIFF               ! temp. difference
+        REAL            OEMIS              ! temp. original emissions
+        REAL            SEMIS              ! temp. summed emissions
 
 C...........   Other local variables
 
-	CHARACTER*300	MESG               ! temp. message buffer
-        CHARACTER(LEN=SDSLEN3)	CBUF       ! temp. buffer
+        CHARACTER*300   MESG               ! temp. message buffer
+        CHARACTER(LEN=SDSLEN3)  CBUF       ! temp. buffer
 
         CHARACTER*16  :: PROGNAME = 'WREPINVEN' ! program name
 
@@ -155,7 +156,7 @@ C............  Write out report data fields
           WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP, RECSBYCAS( I ),
      &             EMISBYCAS( I ), DESC
 
-	END DO
+        END DO
         
         WRITE( ADEV, 93000 ) REPEAT( '-', 85 )
         WRITE( ADEV, 93000 ) ' '
@@ -166,11 +167,11 @@ C           The report contains emissions before and after disaggregation.
 C           Only pollutants that have KEEP=Y will be reported.
 
 C............  Write out header
-	WRITE( ADEV, 93040 ) 'CAS Code', 'CAS Emissions', 'Factor',
+        WRITE( ADEV, 93040 ) 'CAS Code', 'CAS Emissions', 'Factor',
      &         'Data Name', 'Data Emissions', 'Data Description', 
      &         'CAS Description'
      
-     	WRITE( ADEV, 93050 ) '[tons/year]', '[tons/year]'
+        WRITE( ADEV, 93050 ) '[tons/year]', '[tons/year]'
         
         WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
         
@@ -185,7 +186,7 @@ C............  Find sorted CAS code in unique list
             WRITE( MESG, 94010 )
      &             'Sorted CAS code, ', SORTCAS( I ), ' ,was not '//
      &             'found in list of unique CAS codes.'
-	    CALL M3WARN( PROGNAME, 0, 0, MESG )
+            CALL M3WARN( PROGNAME, 0, 0, MESG )
           END IF
           
           J = SCASIDX( I )
@@ -230,7 +231,7 @@ C           This report lists the SCCs that have area-to-point source
 C           factor file assignments but are not in the inventory.
 
 C............  Write out header
-	  WRITE( ADEV, 93000 ) ' SCCs in area-to-point factors '//
+          WRITE( ADEV, 93000 ) ' SCCs in area-to-point factors '//
      &           'file not found in the inventory:'
           WRITE( ADEV, 93000 ) ' '
           
@@ -256,17 +257,18 @@ C           affected by SCC and the SCC description for area emissions
 C           assigned to point sources.
 
 C............  Write out header
-	  WRITE( ADEV, 93070 ) 'SCC Code', 'Data Name',
+          WRITE( ADEV, 93070 ) 'SCC Code', 'Data Name',
      &         'FIPS count', 'Emissions before', 'Emissions after',
      &         'SCC Description'
      
-     	  WRITE( ADEV, 93080 ) '[tons/year]', '[tons/year]'
+          WRITE( ADEV, 93080 ) '[tons/year]', '[tons/year]'
         
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
 
-	  ALLOCATE( SCCPOLL( NA2PSCC * NIPOL ), STAT=IOS )
-	  CALL CHECKMEM( IOS, 'SCCPOLL', PROGNAME )
-	  SCCPOLL = ''
+          ALLOCATE( SCCPOLL( NCONDSRC ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'SCCPOLL', PROGNAME )
+          SCCPOLL = ''
+          NSCCPOLL = 0
 
           DO I = 1, NCONDSRC
 
@@ -278,12 +280,13 @@ C............  Write out header
             OEMIS = REPAR2PT( I )%ORIGEMIS
             SEMIS = REPAR2PT( I )%SUMEMIS
 
-	    TSCCPOLL = SCC//DNAME
-	    K = INDEX1( TSCCPOLL, NA2PSCC * NIPOL, SCCPOLL )
-	    IF( K .LE. 0 ) THEN
-	      SCCPOLL( I ) = TSCCPOLL
-	    ELSE
-	      CYCLE
+            TSCCPOLL = SCC//DNAME
+            K = INDEX1( TSCCPOLL, NSCCPOLL, SCCPOLL )
+            IF( K .LE. 0 ) THEN
+              SCCPOLL( I ) = TSCCPOLL
+              NSCCPOLL = I
+            ELSE
+              CYCLE
             END IF
            
 C............  Find SCC in master list of SCC codes
@@ -292,10 +295,12 @@ C............  Find SCC in master list of SCC codes
               WRITE( MESG, 94010 )
      &             'SCC code, ', SCC, ' ,was not '//
      &             'found in master list of SCC codes.'
-	      CALL M3WARN( PROGNAME, 0, 0, MESG )
+              CALL M3WARN( PROGNAME, 0, 0, MESG )
+              CBUF = 'Unknown SCC'
+            ELSE
+              CBUF = SCCDESC( K )
             END IF
             
-            CBUF = SCCDESC( K )
             L = LEN_TRIM( CBUF )
             SCCDC = CBUF( 1:L )
             
@@ -304,11 +309,11 @@ C............  Find SCC in master list of SCC codes
               IF( REPAR2PT( J )%STATE .EQ. STATE ) CYCLE
         
 C............  Sum emissions and count up FIPS codes by SCC      
-	      TSCC = REPAR2PT( J )%SCC
-	      TDNAME = INVDNAM( REPAR2PT( J )%POLL )
-	      TSCCPOLL = TSCC//TDNAME
-	      K = INDEX1( TSCCPOLL, NA2PSCC * NIPOL, SCCPOLL )
-	      IF( K .NE. 0 ) THEN
+              TSCC = REPAR2PT( J )%SCC
+              TDNAME = INVDNAM( REPAR2PT( J )%POLL )
+              TSCCPOLL = TSCC//TDNAME
+              K = INDEX1( TSCCPOLL, NA2PSCC * NIPOL, SCCPOLL )
+              IF( K .NE. 0 ) THEN
                 NFIPS = NFIPS + REPAR2PT( J )%NFIPS
                 OEMIS = OEMIS + REPAR2PT( J )%ORIGEMIS
                 SEMIS = SEMIS + REPAR2PT( J )%SUMEMIS
@@ -330,7 +335,7 @@ C.........  Write out fifth report to REPINVEN file
 C           This report is similar to the above one separated by state.
 
 C............  Write out header
-	  WRITE( ADEV, 93100 ) 'State', 'SCC Code', 'Data Name',
+          WRITE( ADEV, 93100 ) 'State', 'SCC Code', 'Data Name',
      &         'FIPS count', 'Emissions before', 'Emissions after',
      &         'SCC Description'
      
@@ -353,7 +358,7 @@ C............  Find SCC in master list of SCC codes
               WRITE( MESG, 94010 )
      &             'SCC code, ', SCC, ' ,was not '//
      &             'found in master list of SCC codes.'
-	      CALL M3WARN( PROGNAME, 0, 0, MESG )
+              CALL M3WARN( PROGNAME, 0, 0, MESG )
             END IF
             
             CBUF = SCCDESC( K )
@@ -376,8 +381,8 @@ C           Reports for each SCC, the number of FIPS codes getting assigned
 C           or unassigned to point locations.
 
 C............  Write out header
-	  WRITE( ADEV, 93140 ) 'FIPS count'
-	  WRITE( ADEV, 93150 ) 'SCC Code', 'Assigned',
+          WRITE( ADEV, 93140 ) 'FIPS count'
+          WRITE( ADEV, 93150 ) 'SCC Code', 'Assigned',
      &         'Unassigned', 'SCC Description'
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
           
@@ -447,41 +452,41 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93030   FORMAT( 1X, A8, 4X, A1, 2X, I10, 4X, E16.10, 4X, A40 )
 
-93040	FORMAT( 1X, A8, 6X, A13, 4X, A6, 2X, A9, 13X, A14, 4X,
+93040   FORMAT( 1X, A8, 6X, A13, 4X, A6, 2X, A9, 13X, A14, 4X,
      &          A16, 28X, A15 )
      
-93050	FORMAT( 15X, A11, 36X, A11 )
+93050   FORMAT( 15X, A11, 36X, A11 )
 
-93060	FORMAT( 1X, A8, 4X, E16.10, 3X, F6.4, 2X, A16, 4X, E16.10,
+93060   FORMAT( 1X, A8, 4X, E16.10, 3X, F6.4, 2X, A16, 4X, E16.10,
      &          4X, A40, 4X, A40 )
      
-93070	FORMAT( 1X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
+93070   FORMAT( 1X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
      &          4X, A16 )
      
-93080	FORMAT( 43X, A11, 9X, A11 )
+93080   FORMAT( 43X, A11, 9X, A11 )
 
-93090	FORMAT( 1X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
+93090   FORMAT( 1X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
      &          E16.10, 4X, A )
      
-93100	FORMAT( 1X, A5, 2X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
+93100   FORMAT( 1X, A5, 2X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
      &          4X, A16 )
      
-93110	FORMAT( 50X, A11, 9X, A11 )
+93110   FORMAT( 50X, A11, 9X, A11 )
 
-93120	FORMAT( 1X, I2.2, 4X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
+93120   FORMAT( 1X, I2.2, 4X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
      &          E16.10, 4X, A )
      
-93130	FORMAT( 1X, A10 )
+93130   FORMAT( 1X, A10 )
 
-93140	FORMAT( 20X, A10 )
+93140   FORMAT( 20X, A10 )
 
-93150	FORMAT( 1X, A8, 4X, A8, 2X, A10, 4X, A15 )
+93150   FORMAT( 1X, A8, 4X, A8, 2X, A10, 4X, A15 )
 
-93160	FORMAT( 1X, A10, I10, 2X, I10, 4X, A )
+93160   FORMAT( 1X, A10, I10, 2X, I10, 4X, A )
      
-94010	FORMAT( 10( A, :, A8, :, 1X ) )
+94010   FORMAT( 10( A, :, A8, :, 1X ) )
 
-94020	FORMAT( A, :, E10.3, :, A, :, A16, :, A, :, E10.3 )
+94020   FORMAT( A, :, E10.3, :, A, :, A16, :, A, :, E10.3 )
 
 
 
