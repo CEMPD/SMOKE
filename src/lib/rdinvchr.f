@@ -1,5 +1,5 @@
 
-        SUBROUTINE RPNTSCHR( INFILE, FDEV, NPSRC, NVARS, VNAMES )
+        SUBROUTINE RPNTSCHR( INFILE, FDEV, NPSRC, NVARS, VNAMES, NCHARS)
 
 C***********************************************************************
 C  program body starts at line 
@@ -57,11 +57,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL               CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)  INFILE          ! inv logical I/O API file name (in)
-        INTEGER        FDEV            ! inv ASCII file unit number (in)
-        INTEGER        NPSRC           ! number of point sources (in)
-        INTEGER        NVARS           ! number of inventory chars to read (in)
-        CHARACTER*(*)  VNAMES( NVARS ) ! inv logical I/O API file name (in)
+        CHARACTER(*), INTENT (IN) :: INFILE          ! inven logical file name
+        INTEGER     , INTENT (IN) :: FDEV            ! inven ASCII file unit no.
+        INTEGER     , INTENT (IN) :: NPSRC           ! no. of point sources
+        INTEGER     , INTENT (IN) :: NVARS           ! no. of inven vars to read
+        CHARACTER(*), INTENT (IN) :: VNAMES( NVARS ) ! variable names 
+        INTEGER     , INTENT(OUT) :: NCHARS          ! no. src characterstics
 
 C...........   Index for unread variables
         INTEGER        UNREAD
@@ -76,7 +77,6 @@ C...........   Other local variables
 
         INTEGER          ID         ! tmp smoke ID
         INTEGER          IOS        ! i/o status
-        INTEGER          NCHARS     ! number of source characterstics in ASCII
         INTEGER          NCOL       ! number of columns in FDEV
 
         LOGICAL       :: BLRIN   = .FALSE.  ! True: Boiler is in input file
@@ -375,6 +375,10 @@ C.................  Read in line of character data
         ENDIF
 
         IF( EFLAG ) CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+C.........  For output, the number of characteristics must include the FIPS
+C           code and the facility code
+        NCHARS = NCHARS + 2 
 
         RETURN
 
