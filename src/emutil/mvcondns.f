@@ -5,7 +5,7 @@ C***********************************************************************
 C  program body starts at line
 C
 C  DESCRIPTION:
-C    Program MVSETUP uses the SMOKE mobile source file to create an condensed
+C    Program MVCONDNS uses the SMOKE mobile source file to create an condensed
 C    list of all sources in the inventory by FIPS code, roadtype, vehicle type,
 C    and including the speed from the inventory (if any).  A default speed
 C    is determined for each county and road type, which is not associated 
