@@ -47,34 +47,31 @@ C   begin body of subroutine PROGDESC
         NAME = INPROGNM
         CALL UPCASE( NAME )
 
-        IF( NAME .EQ. 'RAWPOINT' ) THEN
+        IF( NAME .EQ. 'SMKINVEN' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
-     &  'Program RAWPOINT to take ASCII point source',
-     &  'files in IDA, EPS2, EMS-95, or SMOKE list format',
-     &  'and produce the SMOKE point source inventory file.',
+     &  'Program SMKINVEN to take ASCII area or point source files',
+     &  'in IDA, EPS2, EMS-95, or SMOKE list format, or mobile files',
+     &  'in IDA format, and produce the I/O API and ASCII SMOKE',  
+     &  'inventory files and list of unique SCCs in the inventory.',
      &      ' '
 
-        ELSEIF( NAME .EQ. 'RAWAREA' ) THEN
-        ELSEIF( NAME .EQ. 'RAWMOBIL' ) THEN
         ELSEIF( NAME .EQ. 'RAWBIO' ) THEN
         ELSEIF( NAME .EQ. 'GRDBIO' ) THEN
-        ELSEIF( NAME .EQ. 'SPCPMAT' ) THEN
+        ELSEIF( NAME .EQ. 'SPCMAT' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
-     &  'Program SPCPMAT to take a SMOKE point source inventory file,',
-     &  'an actual SCCs file, a speciation profiles file, a',
-     &  'speciation cross-reference file, an optional pollutant-to-,',
-     &  'pollutant conversion file, and produce a mass-based and/or',
-     &  'mole-based SMOKE speciation matrices for all inventory',
-     &  'pollutants using run-time defined combinations of pollutants',
-     &  'and model species. The output species are defined at run time',
-     &  'by the speciation profiles file, permitting support of any',
-     &  'chemical mechanism.',
+     &  'Program SPCMAT to take a SMOKE area, mobile, or point source',
+     &  'inventory file, a speciation profiles file, a speciation',
+     &  'cross-reference file, an optional pollutant-to-pollutant,',
+     &  'conversion file, and produce mass-based and/or mole-based',
+     &  'SMOKE speciation matrices for all inventory pollutants',
+     &  'using run-time defined combinations of pollutants and model',
+     &  'species. The output species are defined at run time by the',
+     &  'speciation profiles file, permitting support of any chemical',
+     &  'mechanism.',
      &      ' '
 
-        ELSEIF( NAME .EQ. 'SPCAMAT' ) THEN
-        ELSEIF( NAME .EQ. 'SPCMMAT' ) THEN
         ELSEIF( NAME .EQ. 'GRDMAT' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
@@ -87,27 +84,27 @@ C   begin body of subroutine PROGDESC
      &  'factors to mobile sources.',
      &      ' '
 
-        ELSEIF( NAME .EQ. 'TMPPOINT' ) THEN
+        ELSEIF( NAME .EQ. 'MRGGRID' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
-     &  'Program TMPPOINT to take a SMOKE point source inventory file,',
-     &  'an actual SCCs file, a temporal profiles file, a temporal ',
+     &  'Program MRGGRID reads 2-D area, biogenic, mobile, and 3-D',
+     &  'point source emissions and merges into a single 3-D file.',
+     &  'The time period merged is adjusted based on the latest',
+     &  'starting file and earliest ending file.  All variables are',
+     &  'merged, even if different variables are in each file.',
+     &      ' '
+
+        ELSEIF( NAME .EQ. 'TEMPORAL' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program TEMPORAL to take a SMOKE area, mobile, or point',
+     &  'source inventory file, a temporal profiles file, a temporal',
      &  'cross-reference file, an optional SMOKE day-specific file, ',
      &  'and an optional SMOKE hour-specific point source file, and',
      &  'produce hourly low-level and optionally hourly elevated point',
      &  'source emissions for the requested episode.',
      &      ' '
 
-        ELSEIF( NAME .EQ. 'TMPAREA' ) THEN
-            WRITE( LDEV,92000 ) 
-     &      ' ',
-     &  'Program TMPAREA to take a SMOKE area source inventory file,',
-     &  'an actual SCCs file, a temporal profiles file, and a temporal',
-     &  'cross-reference file, and produce hourly area source',
-     &  'emissions for the requested episode.',
-     &      ' '
-
-        ELSEIF( NAME .EQ. 'TMPMOBIL' ) THEN
         ELSEIF( NAME .EQ. 'TMPBIO' ) THEN
         ELSEIF( NAME .EQ. 'CNTLMAT' ) THEN
             WRITE( LDEV,92000 ) 
@@ -135,7 +132,26 @@ C   begin body of subroutine PROGDESC
      &      ' '
 
         ELSEIF( NAME .EQ. 'EMISFAC' ) THEN
-        ELSEIF( NAME .EQ. 'PREDIUR' ) THEN
+            WRITE( *,92000 )
+     &      ' ',
+     &  'Program EMISFAC drives the MOBILE5a/b program by supplying',
+     &  'a range of ambient temperatures and a scenario-specific',
+     &  'MOBILE5 parameter file MPREF. Using multiple calls to',
+     &  'MOBILE5, EMISFAC creates a diurnal and non-diurnal emission',
+     &  'factors table for the specified temperatures and input',
+     &  'parameter combinations.',
+     &      ' '
+ 
+        ELSEIF( NAME .EQ. 'PREMOBL' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program PREMOBL to input gridded, time-dependent temperature',
+     &  'data, an emission factors cross-reference, and an ungridding',
+     &  'matrix. Program determines the minimum and maximum ',
+     &  'temperatures per day for each source and for each emission',
+     &  'factor.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'SMKMERGE' ) THEN
             WRITE( LDEV,92000 ) 
      &      ' ',
@@ -148,7 +164,8 @@ C   begin body of subroutine PROGDESC
      &  'combination of these.  Gridded and/or state reports and/or',
      &  'county reports can be written from this program. If a layer-',
      &  'fractions file is input, then the total emissions output file',
-     &  'is three-dimensional.'
+     &  'is three-dimensional.',
+     &      ' '
 
         ELSEIF( NAME .EQ. 'GETRECS' ) THEN
             WRITE( LDEV,92000 ) 
@@ -159,6 +176,21 @@ C   begin body of subroutine PROGDESC
      &  'the source including source number, grid cell, if found in',
      &  'gridding matrix, temporalization factors, control factors,',
      &  'inventory pollutant emissions, and model species emissions.'
+
+        ELSEIF( NAME .EQ. 'ASCI2NCF' ) THEN
+            WRITE( LDEV,92000 ) 
+     &  ' ',
+     &  'Program ASCI2NCF creates a NetCDF gridded, hourly file ',
+     &  'from an ASCII file with the following format:',
+     &  'HOUR, ICELL, JCELL, VARIABLE NAME, VALUE1, VALUE2, where',
+     &  'each VALUE* gets written to a different output file',
+     &  'temporal profiles to create a NetCDF emissions file.'
+
+        ELSEIF( NAME .EQ. 'MVCONDNS' ) THEN
+            WRITE( LDEV,92000 ) 
+     &  ' ',
+     &  'Program MVCONDNS condenses a mobile source inventory file to',
+     &  'preprocess for preparing the MPLIST and MPREF files.'
 
         ELSE
             WRITE( LDEV,92000 ) 
