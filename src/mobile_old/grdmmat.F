@@ -2,7 +2,7 @@
         PROGRAM GRDMMAT
 
 C***********************************************************************
-C  program body starts at line 230
+C  program body starts at line 241
 C
 C  DESCRIPTION:
 C       Construct mobile source gridding and ungridding matrices from 
@@ -71,12 +71,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   PARAMETER:
 
         CHARACTER*5     BLANK5
+        CHARACTER*14    BLANK14
         INTEGER         NMMAX   !  max number of gridding-xref entries
         INTEGER         MXLNKD  !  max number of entries in link defs file
  
-        PARAMETER     ( BLANK5 = ' ',
-     &                  NMMAX  = NRCLAS*( 1 + MXSTA + MXFIP + MXLNK ),
-     &                  MXLNKD = NRCLAS * MXFIP )
+        PARAMETER     ( BLANK5  = ' ',
+     &                  BLANK14 = ' ',
+     &                  NMMAX   = NRCLAS*( 1 + MXSTA + MXFIP + MXLNK ),
+     &                  MXLNKD  = NRCLAS * MXFIP )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -161,13 +163,20 @@ C...........   Scratch Ungridding Matrix (subscripted by cell, source)
         REAL        CT( MXCFIP , NMSRC )
         REAL        DN( NMSRC )           ! Source Normalization coefficient
 
-C...........   Ungridding Matrix
+C...........   Ungridding Matrix 
 
         INTEGER     NU( NMSRC )
         INTEGER     IU( NMATX )
         REAL        CU( NMATX )
 
         COMMON  / UGRIDMAT / NU, IU, CU
+
+C...........   Arrays for error checking
+
+        INTEGER         NOSURG( NMSRC )  ! FIPs codes w/o surrogates
+        INTEGER         FOGRD ( MXLSRC ) ! FIPs for link srcs outside grid
+        INTEGER         ROGRD ( MXLSRC ) ! RCLASs for link srcs outside grid
+        INTEGER         LOGRD ( MXLSRC ) ! Link IDs for link srcs outside grid
 
 C...........   Logical names and unit numbers
         
@@ -190,7 +199,6 @@ C...........   Other local variables
         REAL            XDUM, YDUM
         REAL            XOFF, YOFF            ! QA header variables
 
-        INTEGER         NOSURG( NMSRC ) ! FIPs codes w/o surrogates
         INTEGER         C, R, S, F, I, J, K   !  loop counters.
         INTEGER         CMAX, CMIN
         INTEGER         FIP, SID, RDT, LNK    ! temporary codes
@@ -201,8 +209,10 @@ C...........   Other local variables
         INTEGER         I0         !  for counting FIP-independent srcs
         INTEGER         I1         !  for counting state-dependent   srcs
         INTEGER         I2         !  for counting FIP-dependent   srcs
+        INTEGER         JMAX       !  maximum sources per cell
+        INTEGER         KMAX       !  maximum cells per FIP
         INTEGER         LFIP, LRDT !  previous FIPs code and road class
-        INTEGER         LNKOGRD    !  number of links sources outside grid
+        INTEGER         NLKOGRD    !  number of links sources outside grid
         INTEGER         ROW, COL   !  temporary row, column
         INTEGER         NOS        !  number of FIPs w/o surrogates
         INTEGER         NSRG       !  number of surrogates in SDEV
@@ -672,11 +682,16 @@ C.........  QA file based on header and compile-time parameters
      &           'Number of surrogates in header was ', NSRG
                 CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
  
-            ELSEIF ( NSRG .GT. NMSRC ) THEN
+            ELSEIF ( NSRG .GT. NMSRG ) THEN
                 WRITE( MESG, 94010 )
      &           'Number of surrogates in file =', NSRG,
      &           'but maximum (NMSRG) =', NMSRG
-                CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
+                CALL M3WARN( 'GRDMMAT', 0, 0, MESG )
+
+                CALL M3MSG2( 
+     &            'Resetting actual number of surrogates to maximum.' )
+
+                NSRG = NMSRG
 
             END IF
         ELSE  ! Grid type is LAT-LON
@@ -697,6 +712,7 @@ C.............  Loop through and read surrogate coefficients file
         IREC  = 1       !  already have read header line
         LFIP  = IMISS3
         LRDT  = IMISS3
+        KMAX  = -1
         S     = 0
         
 70      CONTINUE        !  head of the SDEV-read loop
@@ -790,13 +806,16 @@ C...........   Update number of cells for this source
 C...........   Check number of cells for this source versus maximum
             IF ( K .GT. MXCFIP ) THEN
 
+                IF( K .GT. KMAX ) KMAX = K
+
+                NCELLS ( S ) = K
+
                 WRITE( MESG,94010 )
      &             'Max number cells per FIP (MXCFIP)=', MXCFIP,
      &             'exceeded in SURG COEF file for FIP', FIP,
      &             'Cell', C,
      &             ' at line', IREC
                 CALL M3MESG( MESG )
-                EFLAG = .TRUE.
                 GO TO  70   ! to head of read loop
             
             ELSE
@@ -812,6 +831,22 @@ C...........   Check number of cells for this source versus maximum
             GO TO  70   !  to head of read loop
       
 79      CONTINUE        !  end of the SDEV-read loop
+
+        IF ( KMAX .GT. MXCFIP ) THEN
+            EFLAG = .TRUE.
+
+            WRITE( MESG,94010 )
+     &       'WARNING: Gridding and ungridding matrices not written.' 
+     &       // CRLF() // BLANK14 //
+     &       'Internal arrays would have overflowed.' 
+     &       // CRLF() // BLANK14 // 
+     &       'Current maximum cells per FIP (MXCFIP) =', MXCFIP, '.'
+     &       // CRLF() // BLANK14 // 
+     &       'Actual  maximum cells per FIP          =', KMAX  , '.'
+
+            CALL M3MSG2( MESG )
+
+        END IF
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'GRDMMAT', 0, 0, 
@@ -1003,7 +1038,8 @@ C.......       sixth case:   fallback default
         EFLAG = .FALSE.         !  flag to detect other errors
         LFIP  = 0
         NOS   = 0
-        LNKOGRD = 0
+        NLKOGRD = 0
+        JMAX  = -1
 
         DO  155  I = 1, NMSRC
             
@@ -1069,7 +1105,12 @@ C.................  Convert coordinate system from UTM to required system
 
                 ELSEIF( NCEL .EQ. 0 ) THEN
 
-                    LNKOGRD = LNKOGRD + 1
+                    NLKOGRD = NLKOGRD + 1
+
+                    FOGRD( NLKOGRD ) = FIP
+                    ROGRD( NLKOGRD ) = RDT
+                    LOGRD( NLKOGRD ) = LNK
+
                     GO TO  155
                     
                 ELSEIF( NCEL .EQ. -1 ) THEN
@@ -1086,7 +1127,20 @@ C.................  Convert coordinate system from UTM to required system
 
                 DO  111  K = 1, NCEL
                     C = ACEL( K )
-                    J = NX( C ) + 1
+
+                    IF( C .GT. NGRID .OR. C .LT. 0 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'Tried to assign link to'//
+     &                    ' illegal cell =', C, CRLF() // BLANK5 //
+     &                    ' for FIP:', FIP, 'RDT:', RDT, 'LNK:', LNK
+                        CALL M3MSG2( MESG )
+                        GOTO 111
+ 
+                    ELSE
+                        J = NX( C ) + 1
+
+                    ENDIF
+
                     IF ( J .GT. MXSCEL ) THEN
                         OFLAG = .TRUE.      !  overflow occurred.
                         WRITE( MESG,94010 )
@@ -1215,6 +1269,8 @@ C.....................  Store list of unfound FIPs
      &              'RDT code', RDT,
      &              'cell code', C, ' '
                     CALL M3MESG( MESG )
+
+                    IF( J .GT. JMAX ) JMAX = J
                 ELSE
                     IS( J,C ) = I
                     CS( J,C ) = SRGFRAC( SID,K,F )
@@ -1228,9 +1284,9 @@ C.....................  Store list of unfound FIPs
         CMAX = NX( 1 )
         CMIN = CMAX
 
-        IF( LNKOGRD .NE. 0 ) THEN
+        IF( NLKOGRD .NE. 0 ) THEN
 
-            WRITE( MESG,94010 ) 'NOTE: ', LNKOGRD, 
+            WRITE( MESG,94010 ) 'NOTE: ', NLKOGRD, 
      &                          'link sources were outside grid.'
             CALL M3MSG2( MESG )
 
@@ -1250,13 +1306,17 @@ C.....................  Store list of unfound FIPs
 211         CONTINUE    !  end of loop on cells K for this FIP
 
             WRITE( MESG,94010 )
-     &          'WARNING:  ' // GNAME( 1:TRIMLEN( GNAME ) ) // 
-     &          ' not written.' // CRLF() // BLANK5 //
-     &          '        Internal arrays would have overflowed.'
-     &          // CRLF() // BLANK5 //
-     &          '        Sources per cell (MXSCEL) =', MXSCEL
+     &       'WARNING: Gridding and ungridding matrices not written.' 
+     &       // CRLF() // BLANK14 //
+     &       'Internal arrays would have overflowed.' 
+     &       // CRLF() // BLANK14 // 
+     &       'Current maximum sources per cell (MXSCEL) =', MXSCEL, '.'
+     &       // CRLF() // BLANK14 // 
+     &       'Actual  maximum sources per cell          =', JMAX  , '.'
 
             CALL M3MSG2( MESG )
+
+            CALL M3EXIT( 'GRDMMAT', 0, 0, 'Internal overflow.', 3 ) 
 
         ELSE IF ( EFLAG ) THEN          ! error in the XREF lookup
 
@@ -1375,15 +1435,23 @@ C.......   Create renormalization factors for each source
 C.......   Pre-divide normalization factors
         DO  312 S = 1, NMSRC
 
+            FIP = IFIP  ( S )
+            RDT = IRCLAS( S )
+            LNK = ILINK ( S )
+
 C.............  Look for FIP in list of FIPs w/ no surrogates
-            F = FIND1( IFIP( S ), NOS, NOSURG )
+            F = FIND1( FIP, NOS, NOSURG )
+
+C.............  Look for link sources in list of links outside grid
+            J = FIND3( FIP, RDT, LNK, NLKOGRD, FOGRD, ROGRD, LOGRD )
 
 C.............  Check for no gridding factors and make sure source
 C               hasn't already been flagged as having no surrogates
-            IF( DN( S ) .EQ. 0. .AND. F .LE. 0 ) THEN
+C               or flagged as a link outside the grid
+            IF( DN( S ) .EQ. 0. .AND. F .LE. 0 .AND. J .LE. 0 ) THEN
 
                 WRITE( MESG,94010 ) 
-     &                'No gridding factors. FIP:', IFIP( S ),
+     &                'Gridding factors are zero for FIP:', IFIP( S ),
      &                'RDT:', IRCLAS( S ), 'LNK:', ILINK( S )
                 CALL M3WARN( 'GRDMMAT', 0, 0, MESG )
 
