@@ -87,6 +87,7 @@ C.........  Local variables
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
+        CHARACTER*256 DEFAULT2
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -105,9 +106,9 @@ C.........  Open input file
             CALL M3EXIT( 'GETFACR', 0, 0, MESG, 2 )
 
         ELSE
-
+            DEFAULT2 = DEFAULT
             CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
-     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   ' file "'// DEFAULT2( 1:TRIMLEN( DEFAULT ) ) //
      &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
@@ -253,6 +254,7 @@ C.........  Local variables
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
+        CHARACTER*256 DEFAULT2
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -271,9 +273,9 @@ C.........  Open input file
             CALL M3EXIT( 'GETFACRR', 0, 0, MESG, 2 )
  
         ELSE
- 
-            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
-     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+            DEFAULT2 = DEFAULT
+            CALL M3MSG2( 'NOTE: '// BUFFER  ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "'// DEFAULT2( 1:TRIMLEN( DEFAULT ) ) //
      &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
@@ -422,6 +424,7 @@ C.........  Local variables
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
+        CHARACTER*256 DEFAULT2
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -440,9 +443,9 @@ C.........  Open input file
             CALL M3EXIT( 'GETFACI', 0, 0, MESG, 2 )
  
         ELSE
- 
+            DEFAULT2 = DEFAULT 
             CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
-     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   ' file "'// DEFAULT2( 1:TRIMLEN( DEFAULT ) ) //
      &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
@@ -593,6 +596,7 @@ C.........  Local variables
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
+        CHARACTER*256 DEFAULT2
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -611,9 +615,9 @@ C.........  Open input file
             CALL M3EXIT( 'GETFACICR', 0, 0, MESG, 2 )
  
         ELSE
- 
+            DEFAULT2 = DEFAULT
             CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
-     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+     &                   ' file "'// DEFAULT2( 1:TRIMLEN( DEFAULT ) ) //
      &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
@@ -768,6 +772,7 @@ C.........  Local variables
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
+        CHARACTER*256 DEFAULT2
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -786,9 +791,9 @@ C.........  Open input file
             CALL M3EXIT( 'GETFACIR', 0, 0, MESG, 2 )
  
         ELSE
- 
-            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
-     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+            DEFAULT2 = DEFAULT
+            CALL M3MSG2( 'NOTE: ' // BUFFER  ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "'// DEFAULT2( 1:TRIMLEN( DEFAULT ) ) //
      &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
@@ -940,6 +945,7 @@ C.........  Local variables
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
+        CHARACTER*256 DEFAULT2
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -951,16 +957,17 @@ C......... Set buffer for writing messages
 C.........  Open input file
         IDEV = GETEFILE( DEFAULT, .TRUE., .TRUE., 'GETIIR3D' )
  
+        DEFAULT2 = DEFAULT
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
  
             MESG = 'Could not open input file "' //
-     &             DEFAULT( 1 : TRIMLEN( DEFAULT ) ) // '".'
+     &             DEFAULT2( 1 : TRIMLEN( DEFAULT ) ) // '".'
             CALL M3EXIT( 'GETIIR3D', 0, 0, MESG, 2 )
  
         ELSE
  
-            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
-     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+            CALL M3MSG2( 'NOTE: ' // BUFFER  ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "'// DEFAULT2( 1:TRIMLEN( DEFAULT ) ) //
      &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed
@@ -1140,6 +1147,7 @@ C.........  Local variables
         DATA    EFLAG  / .FALSE. /
 
         CHARACTER*256 BUFFER
+        CHARACTER*256 DEFAULT2
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -1158,9 +1166,9 @@ C.........  Open input file
             CALL M3EXIT( 'GETFACD', 0, 0, MESG, 2 )
  
         ELSE
- 
-            CALL M3MSG2( 'NOTE: ' // BUFFER ( 1:TRIMLEN( BUFFER  ) ) // 
-     &                   ' file "' // DEFAULT( 1:TRIMLEN( DEFAULT ) ) //
+            DEFAULT2 = DEFAULT 
+            CALL M3MSG2( 'NOTE: ' // BUFFER  ( 1:TRIMLEN( BUFFER  ) ) // 
+     &                   ' file "'// DEFAULT2( 1:TRIMLEN( DEFAULT ) ) //
      &                   '" opened successfully.' )
  
         END IF      !  if getefile() failed

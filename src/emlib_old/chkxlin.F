@@ -2,7 +2,7 @@
         INTEGER FUNCTION CHKXLIN( LINE, IOS, LINENO, PTYPE )
 
 C***********************************************************************
-C  function body starts at line 75
+C  function body starts at line 76
 C
 C  DESCRIPTION: 
 C       Checks a line of the temporal Xref file to see if needed 
@@ -54,7 +54,8 @@ C...........   ARGUMENTS and their descriptions:
 C...........    EXTERNAL functions and subroutines:
 
         INTEGER       STR2INT
-        EXTERNAL      STR2INT
+        INTEGER       TRIMLEN
+        EXTERNAL      STR2INT, TRIMLEN
 
 C...........   LOCAL VARIABLES their descriptions:
 
@@ -63,6 +64,7 @@ C...........   LOCAL VARIABLES their descriptions:
         PARAMETER   ( OKVAL  = 0 )
         PARAMETER   ( BADVAL = 1 )
 
+        INTEGER       L
         INTEGER       IMON         ! Monthly profile code
         INTEGER       IWEK         ! Weekly  profile code
         INTEGER       IDIU         ! Diurnal profile code
@@ -112,8 +114,11 @@ C.........  Mobile xref records have char SCC
             ENDIF
 
         ELSE
+            MESG = PTYPE
+            L = TRIMLEN( MESG )
             CALL M3EXIT( CHKXLIN, 0, 0, 
-     &           'XREF processing not available for type ' // PTYPE, 2 )
+     &           'XREF processing not available for type ' // 
+     &           MESG( 1:L ), 2 )
 
         ENDIF
 
