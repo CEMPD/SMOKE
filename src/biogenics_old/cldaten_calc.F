@@ -9,6 +9,11 @@ C       Computes gridded cloud attenuation factor CLDATN for SMOKE BEIS2
 C       Based on the cloud type string in CLDTYPE, reads cloud cover data
 C       from Met-Chem Interface Processor for either the KUO (ANTHES-KUO)
 C       cloud recalculation, or the McHenry-Kain (KAIN-) cloud recalculation.
+C       If CLDTYPE= 'NO CUM PARAM', it is assumed that MM5 ran a simulation
+C       without a deep convection parameterization. This is typically done
+C       only for urban-scale problems where the grid-resolution is 4km or
+C       less. 
+C
 C       The file containing the information from the Met-Chem Interface Processor
 C       is MET_CRO_2D.
 C
@@ -37,6 +42,8 @@ C
 C        Revised and Validated 2/97 by SL
 C
 C        Revised by M Houyoux - see SCCS update documentation
+C
+C        Revised for urban-scale applications by John McHenry, 8/22/97.
 C
 C        FUTURE UPGRADES: Would enable access to the multiple layers
 C                         and level-resolved fractional coverages
@@ -165,6 +172,13 @@ C   begin body of program CLDATEN_CALC
             CLDTVAR = 'CLDT_KF'
             CLDBVAR = 'CLDB_KF'
             CFRACVAR= 'CFRAC_KF'
+
+          ELSE IF(CLOUDTYPE(1:5).EQ.'NO CU') THEN
+            CALL M3MESG( 'Using explicit w/out deep cu cld data 
+     &                    for CLDATEN' )
+            CLDTVAR = 'CLDT_URB'
+            CLDBVAR = 'CLDB_URB'
+            CFRACVAR = 'CFRAC_URB'
 
           ELSE
             CALL M3EXIT( PNAME, JDATE, JTIME,
