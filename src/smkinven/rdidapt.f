@@ -1,6 +1,6 @@
 
-        SUBROUTINE RDIDAPT( FDEV, NRAWIN, NRAWBP, MXIPOL, WKSET,
-     &                      INVPNAM, NRAWOUT, EFLAG, NDROP, EDROP )
+        SUBROUTINE RDIDAPT( FDEV, NRAWIN, NRAWBP, WKSET,
+     &                      NRAWOUT, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -45,6 +45,9 @@ C...........   MODULES for public variables
 C...........   This module is the point source inventory arrays
         USE MODSOURC
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
+
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
 
@@ -79,13 +82,11 @@ C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: FDEV   ! unit number of input file
         INTEGER     , INTENT (IN) :: NRAWIN ! total raw record-count 
         INTEGER     , INTENT (IN) :: NRAWBP ! total raw record times pols
-        INTEGER     , INTENT (IN) :: MXIPOL ! max no of inventory pols
         INTEGER     , INTENT (IN) :: WKSET  ! weekly profile interpretation
-        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) ! inv pol names
         INTEGER     , INTENT(OUT) :: NRAWOUT! outgoing source * pollutants
         LOGICAL     , INTENT(OUT) :: EFLAG  ! outgoing error flag
         INTEGER     , INTENT(OUT) :: NDROP  !  number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIPOL )  ! emis dropped per pol
+        REAL        , INTENT(OUT) :: EDROP( MXIDAT )  ! emis dropped per pol
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: BLIDLEN  = 6   ! width of boiler field
@@ -125,7 +126,7 @@ C           characteristics definition for use in BLDCSRC.
 C...........   Other local variables
         INTEGER         I, J, K, L, V  ! counters and indices
 
-        INTEGER         COD     !  tmp pollutant position in INVPNAM
+        INTEGER         COD     !  tmp pollutant position in INVDNAM
         INTEGER         CPRI    !  tmp primary control device code
         INTEGER         CSEC    !  tmp secondary control device code
         INTEGER         ES      !  counter for source x pollutants
@@ -157,7 +158,7 @@ C...........   Other local variables
         CHARACTER*300   MESG    !  message buffer
 
         CHARACTER(LEN=BLIDLEN) BLID  ! tmp boiler ID
-        CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVPNAM
+        CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVDNAM
         CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
         CHARACTER(LEN=ORSLEN3) CORS  ! tmp DOE plant ID
         CHARACTER(LEN=IOVLEN3) CPOL  ! tmp pollutant code
@@ -224,8 +225,8 @@ C.............  Skip blank lines
 
 C.............  Scan for header lines and check to ensure all are set 
 C               properly
-            CALL GETHDR( MXPOLFIL, MXIPOL, .TRUE., .TRUE., .TRUE., 
-     &                   INVPNAM, LINE, ICC, INY, NPOL, IOS )
+            CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .TRUE., 
+     &                   LINE, ICC, INY, NPOL, IOS )
 
 C.............  Interpret error status
             IF( IOS .EQ. 4 ) THEN
@@ -502,9 +503,10 @@ C.................  Store data in final arrays if there is enough memory
 
                 IF ( ES .LE. NRAWBP ) THEN
 
+                    J = DATPOS( V )
                     INDEXA ( ES     ) = ES
                     INRECA ( ES     ) = SS                    
-                    POLVLA ( ES,NEM ) = EANN
+                    POLVLA ( ES,NEM ) = INVDCNV( J ) * EANN
                     POLVLA ( ES,NOZ ) = EOZN
                     POLVLA ( ES,NCE ) = CEFF
                     POLVLA ( ES,NRE ) = REFF
@@ -512,7 +514,7 @@ C.................  Store data in final arrays if there is enough memory
                     POLVLA ( ES,NC1 ) = REAL( CPRI ) ! store as real for now
                     POLVLA ( ES,NC2 ) = REAL( CSEC ) ! store as real for now
                     
-                    WRITE( CCOD,94125 ) POLPOS( V )
+                    WRITE( CCOD,94125 ) J
  
                     CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
      &                            TSCC, CHRBLNK3, CCOD, CSOURCA( ES ) )
@@ -567,7 +569,7 @@ C.........  Write message if overflow occurred
 
 C.........  Deallocate local allocatable arrays 
 
-        DEALLOCATE( TMPNAM, POLPOS )
+        DEALLOCATE( TMPNAM, DATPOS )
 
 C.........  Return from subroutine 
         RETURN
