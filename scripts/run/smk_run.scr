@@ -754,14 +754,14 @@ if ( $?RUN_MVCONDNS ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          if ( $debugmode == Y ) then
-            if ( -e $MG_SRC/mrggrid.debug ) then
-               $debug_exe $MG_SRC/mrggrid.debug
+            if ( -e $MG_SRC/mvcondns.debug ) then
+               $debug_exe $MG_SRC/mvcondns.debug
             else
                 set debugexestat = 1
             endif
          else
-            if ( -e $SMK_BIN/mrggrid ) then
-               time $SMK_BIN/mrggrid
+            if ( -e $SMK_BIN/mvcondns ) then
+               time $SMK_BIN/mvcondns
             else
                set exestat = 1 
             endif
@@ -781,14 +781,14 @@ if ( $?RUN_MVCONDNS ) then
       endif
 
       if ( $exestat == 1 ) then
-	 echo 'SCRIPT ERROR: mrggrid program does not exist in:'
+	 echo 'SCRIPT ERROR: mvcondns program does not exist in:'
 	 echo '              '$SMK_BIN
          set exitstat = 1
       endif
 
       if ( $debugexestat == 1 ) then
-	 echo 'SCRIPT ERROR: mrggrid.debug program does not exist in:'
-	 echo '              '$MG_SRC
+	 echo 'SCRIPT ERROR: mvcondns.debug program does not exist in:'
+	 echo '              '$UT_SRC
          set exitstat = 1
       endif
 
