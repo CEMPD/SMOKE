@@ -269,6 +269,16 @@ c                IF( K .LT. 0 ) K = 24 + K  !     (e.g., K= -1 -> K= 23)
 C.................  Convert output time to local time of I time zone, adjusted
 C                   by output time zone.
                 CALL NEXTIME( TDATE, TTIME, -K * 10000 )
+c NOTE: NEXTIME Routine has bug that will cause this to not work on January 1st.
+c    N: NEXTTIME will not go backwards to the previous year, but will instead change
+c    N: the hour on the current year and not go back to the previous year.  The
+c    N: following hack works around this problem.
+
+C...............  For the first day of the year, work around I/O API bug
+                IF( (TDATE - (TDATE/1000)*1000 ) .EQ. 001 ) THEN  ! integer math
+                    J = 0
+                    CALL NEXTIME( TDATE, J, -250000 )
+                END IF
 
                 DO H = 1, 24
 
