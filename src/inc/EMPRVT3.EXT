@@ -60,6 +60,7 @@ C.........  Start of each field in source definitions
         PRIVATE :: CH5POS3
         PRIVATE :: POLPOS3
         PRIVATE :: ALLLEN3
+        PRIVATE :: ALLCAS3
         PRIVATE :: SCCPOS3
         PRIVATE :: CELPOS3
         PRIVATE :: RWTPOS3

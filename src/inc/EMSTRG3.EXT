@@ -62,6 +62,8 @@ C.........  Starts and ends of each field in point source definition
      &               CH3POS3, CH4POS3, CH5POS3, POLPOS3  / )
 
         INTEGER, PARAMETER :: ALLLEN3 = POLPOS3 + POLLEN3 - 1 ! total 
+        INTEGER, PARAMETER :: ALLCAS3 = ALLLEN3 + CASLEN3  ! length with CAS number
+        
         INTEGER, DIMENSION( MXPTCHR3 + 1 ),  
      &           PARAMETER :: PTENDL3 =               ! array of ends
      &           ( / FIPLEN3  , CH1POS3-1, CH2POS3-1, CH3POS3-1,
