@@ -1111,12 +1111,8 @@ C............. Set using fallback profiles
   111           CONTINUE
 
                 WRITE( MESG,94010 )    ! sl
-     &              'No value for FIP ', FIP,
-     &              ' RDT ', RDT,' LNK ', LNK
-                CALL M3MESG( MESG )
-
-                WRITE( MESG,94010 )
-     &              '     Using default profile'
+     &              'Default temporal profile was applied to FIP '
+     &              , FIP, ' RDT ', RDT,' LNK ', LNK
                 CALL M3MESG( MESG )
 
             END IF
@@ -1250,17 +1246,13 @@ C............   fallback
                 DO  344  T = 0, 23
                     EFDEX( T,S ) = FIND1( MPREF( T,F ), 
      &                                    REFCNT, REFLIST )
+344             CONTINUE
 
                 WRITE( MESG,94010 )    ! sl
-     &              'No value for FIP ', FIP,
-     &              ' RDT ', RDT,' LNK ', LNK
+     &              'Default emission factor was applied to FIP '
+     &              , FIP, ' RDT ', RDT,' LNK ', LNK
                 CALL M3MESG( MESG )
 
-                WRITE( MESG,94010 )
-     &              '     Using default profile'
-                CALL M3MESG( MESG )
-
-344             CONTINUE
                 GO TO  355
             END IF
 
