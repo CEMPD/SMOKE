@@ -37,7 +37,7 @@ emsarea: $(EMS) $(EMSI)
 #
 #
 #
-GRMS=grdamat.F
+GRMS=grdamat.F rdascc.F
 #
 GRMI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
 #
