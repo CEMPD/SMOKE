@@ -2,11 +2,11 @@
 
 #
 lib:
-	f77 $(FFLAGS) -c *.F
-	ar rv $(DISTDIR)/libmo5b.a *.o
+	f77 $(FFLAGSM5) -c *.F
+	ar rv $(EDSS_LIB)/libmo5b.a *.o
 	rm *.o
  
 debug:
-	f77 $(DBGFLAGS) -c *.F
-	ar rv $(DISTDIR)/libmo5b.debug.a *.o
+	f77 $(DBGFLAGSM5) -c *.F
+	ar rv $(EDSS_LIB)/libmo5b.debug.a *.o
 	rm *.o
