@@ -93,8 +93,8 @@ C.........  Variables allocated by module settings...
         REAL   , ALLOCATABLE :: EOUTXL ( : ) ! output x-loc [units of grid]
         REAL   , ALLOCATABLE :: EOUTYL ( : ) ! output y-loc [units of grid]
 
-        CHARACTER(LEN=STKLEN3), ALLOCATABLE :: ECSRCA   ( : ) ! FIPS//plt//stk
-        CHARACTER(LEN=STKLEN3), ALLOCATABLE :: EOUTCSRC ( : ) ! FIPS//plt//stk
+        CHARACTER(LEN=STKLEN3), ALLOCATABLE, SAVE :: ECSRCA  (:)! FIPS//plt//stk
+        CHARACTER(LEN=STKLEN3), ALLOCATABLE       :: EOUTCSRC(:)! FIPS//plt//stk
 
 C.........  Allocatable array for fake stack heights for explicit plums
         REAL, ALLOCATABLE :: LAYRMID( : )
