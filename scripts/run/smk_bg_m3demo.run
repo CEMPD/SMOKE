@@ -1,15 +1,14 @@
 #!/bin/csh -f
 
-# Version @(#)smk_bg_m3demo.run	1.5
-# Path    /env/proj/smoke/scripts/run/SCCS/s.smk_bg_m3demo.run
-# Date    12/27/00 15:14:38
+# Version @(#)$Id$
+# Path    $Source$
+# Date    $Date$
 
 # This script sets up needed environment variables for running biogenic source
 # emissions in SMOKE, and calls the script that runs the SMOKE programs. 
 #
 # Script created by : M. Houyoux, North Carolina 
 #                     Supercomputing Center
-# Last edited : June 2000
 #
 #*********************************************************************
 
@@ -26,7 +25,6 @@ setenv RUN_RAWBIO    Y         # Y runs landuse import
 
 # time-dependent programs
 setenv RUN_TMPBIO    Y         # Y runs biogenic temporal adjustments
-setenv BIOSW_YN      N         # Y for using freeze date file in Tmpbio
 setenv RUN_SMKMERGE  Y         # Y runs merge program
 
 # For Rawbio ( 60 = area surrogate in Models-3 )
@@ -42,6 +40,7 @@ setenv OTHER_SURG       60     # Surrogate code - other land uses
 setenv LAI_SURG         60     # Surrogate code - leaf area index 
 
 # For Tmpbio
+setenv BIOSW_YN         N      # Y for using freeze date file in Tmpbio
 setenv TMPR_VAR         TA     # name of temperature variable
 setenv RAD_VAR          RGRND  # name of radiation/cloud variable
 setenv BIOMET_SAME      N      # Y: temperature and rad/cld data in same file   
@@ -49,11 +48,11 @@ setenv BIOG_SPRO        0000   # speciation profile code to use for biogenics
 setenv BG_CLOUD_TYPE    1      # method used to calculate PAR
 setenv OUTZONE          0      # Output time zone
 
-# For Smkmerge - getting county reports
+# For Smkmerge - getting state/county reports
 setenv MRG_TEMPORAL_YN    Y        # Y merges with hourly emissions
 setenv MRG_SPCMAT_YN      Y        # Y merges with speciation matrix
 setenv MRG_REPSTA_YN      Y        # Y outputs state totals
-setenv MRG_REPCNY_YN      N        # Y outputs county totals
+setenv MRG_REPCNY_YN      Y        # Y outputs county totals
 setenv MRG_TOTOUT_UNIT    tons/day # units for state and/or county totals
 setenv SPC_INPUT          mass     # [mass|mole] controls speciation merge
 setenv AREA_SURROGATE_NUM 60       # number for area surrogate
@@ -62,6 +61,7 @@ setenv AREA_SURROGATE_NUM 60       # number for area surrogate
 setenv PROMPTFLAG       N          # Y (never set to Y for batch processing)
 setenv SMK_MAXWARNING   100        # maximum number of warnings in log file
 setenv SMK_MAXERROR     100        # maximum number of errors in log file
+setenv AUTO_DELETE_LOG  Y          # Y automatically deletes logs without asking
 
 # Invoke Assigns file
 source $ASSIGNS_FILE

@@ -119,17 +119,17 @@ foreach i ( 1 2 3 4 5 )
    set jday = $jdays[$i]
    set  mbd = $mbday[$i]
 
-   ## Invoke Assigns file
-   source $ASSIGNS_FILE
-
-   setenv SRCABBR  $abbi.$mbd
-   setenv QA_LABEL $mbd
-
    ## Override settings for one-time programs
    if ( $i != 1 ) then
        setenv RUN_GRDMAT N
        setenv RUN_SPCMAT N
    endif
+
+   ## Invoke Assigns file
+   source $ASSIGNS_FILE
+
+   setenv SRCABBR  $abbi.$mbd
+   setenv QA_LABEL $mbd
 
    ## Run programs
    source smk_run.scr

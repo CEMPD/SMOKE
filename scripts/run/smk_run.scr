@@ -53,49 +53,81 @@ if ( $?RUN_SMKINVEN ) then
 endif
 
 #
-### County landuse import
+### County or gridded landuse import
 #
 setenv TMPLOG   $OUTLOG/rawbio.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_RAWBIO ) then
+
    if ( $RUN_RAWBIO == 'Y' && -e $SMK_BIN/rawbio ) then
+
+      # Use summer emission factors, if they are set for first rawbio run
+      if ( $?S_BFAC ) then
+          setenv BFAC $S_BFAC
+
+      else
+
+         if ( $?BFAC ) then
+            echo 'SCRIPT WARNING: default biogenic emission factors, BFAC file:'
+            echo '               '$BFAC
+            echo '                are used directly based on user setting.'
+
+         else
+            echo 'SCRIPT ERROR: neither BFAC nor S_BFAC environment variables are set'
+            set exitstat = 1
+
+         endif
+
+      endif
+
+      set season = n
+      # Use summer-specific processing if season-switch option in use
+      if ( $?BIOSW_YN ) then
+         if ( $BIOSW_YN == Y ) then
+            set season = y
+            setenv TMPLOG $OUTLOG/rawbio.$SRCABBR.sumr.$INVEN.$GRID.log
+         endif  
+      endif  
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
       endif
 
-      if ( $exitstat == 0 ) then         # Run program
+      if ( $exitstat == 0 ) then         # Run program for standard or summer
          setenv LOGFILE $TMPLOG
          time $SMK_BIN/rawbio 
+      endif
+
+      # Now do winter-specific processing, if season-switch option in use
+      if ( $season == y ) then
+
+         if ( $?W_BFAC && $?BGRDW ) then
+            # Set input file 
+            setenv BFAC $W_BFAC
+            setenv BGRD $BGRDW
+            setenv TMPLOG $OUTLOG/rawbio.$SRCABBR.wntr.$INVEN.$GRID.log
+
+            if ( -e $TMPLOG ) then
+	       source $SCRIPTS/run/movelog.scr
+            endif
+
+            if ( $exitstat == 0 ) then         # Run program for winter
+               setenv LOGFILE $TMPLOG
+               time $SMK_BIN/rawbio 
+            endif
+
+         else
+      	    echo 'SCRIPT ERROR: BIOSW_YN (biogenics seasonality switch) set to'
+            echo '              Y, but W_BFAC (winter biogenic factors input) and/or'
+            echo '              BGRDW (winter normalized emissions) environment'
+            echo '              variables are not defined.'
+	    set exitstat = 1
+         endif
+    
       endif
 
    else 
       if ( $RUN_RAWBIO == 'Y' ) then
 	 echo 'SCRIPT ERROR: RAWBIO program does not exist in:'
-	 echo '              '$SMK_BIN
-	 set exitstat = 1
-      endif
-   endif
-endif
-
-#
-### Gridding Matrix generation
-#
-setenv TMPLOG   $OUTLOG/grdmat.$SRCABBR.$INVEN.$GRID.log
-if ( $?RUN_GRDMAT ) then
-   if ( $RUN_GRDMAT == 'Y' && -e $SMK_BIN/grdmat ) then
-
-      if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
-      endif
-
-      if ( $exitstat == 0 ) then         # Run program
-         setenv LOGFILE $TMPLOG
-         time $SMK_BIN/grdmat 
-      endif
-
-   else 
-      if ( $RUN_GRDMAT == 'Y' ) then
-	 echo 'SCRIPT ERROR: GRDMAT program does not exist in:'
 	 echo '              '$SMK_BIN
 	 set exitstat = 1
       endif
@@ -121,6 +153,31 @@ if ( $?RUN_SPCMAT ) then
    else 
       if ( $RUN_SPCMAT == 'Y' ) then
 	 echo 'SCRIPT ERROR: SPCMAT program does not exist in:'
+	 echo '              '$SMK_BIN
+	 set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Gridding Matrix generation
+#
+setenv TMPLOG   $OUTLOG/grdmat.$SRCABBR.$INVEN.$GRID.log
+if ( $?RUN_GRDMAT ) then
+   if ( $RUN_GRDMAT == 'Y' && -e $SMK_BIN/grdmat ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         time $SMK_BIN/grdmat 
+      endif
+
+   else 
+      if ( $RUN_GRDMAT == 'Y' ) then
+	 echo 'SCRIPT ERROR: GRDMAT program does not exist in:'
 	 echo '              '$SMK_BIN
 	 set exitstat = 1
       endif

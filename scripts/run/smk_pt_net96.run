@@ -24,16 +24,16 @@ setenv MRG_CTLMAT_ADD  ' '    # [A|P|AP] for merging with additive controls
 setenv MRG_CTLMAT_REAC ' '    # [A|M|P|AMP] for merging with reactivity controls
 
 # time independent programs
-setenv RUN_SMKINVEN  N        #  run inventory import program
-setenv RUN_SPCMAT    N        #  run speciation matrix program
-setenv RUN_GRDMAT    N        #  run gridding matrix program
+setenv RUN_SMKINVEN  Y        #  run inventory import program
+setenv RUN_SPCMAT    Y        #  run speciation matrix program
+setenv RUN_GRDMAT    Y        #  run gridding matrix program
 setenv RUN_CNTLMAT   N        #  run control matrix program
 setenv RUN_ELEVPOINT N        #  run elevated/PinG sources selection program
 
 # time-dependent programs
 
-setenv RUN_LAYPOINT  N        #  run layer fractions program
-setenv RUN_TEMPORAL  N        #  run temporal allocation program
+setenv RUN_LAYPOINT  Y        #  run layer fractions program
+setenv RUN_TEMPORAL  Y        #  run temporal allocation program
 setenv RUN_SMKMERGE  Y        #  run merge program
 
 # quality assurance

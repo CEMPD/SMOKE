@@ -1,20 +1,19 @@
 #!/bin/csh -f
 
-# Version %W%
-# Path    %P%
-# Date    %G% %U%
+# Version @(#)$Id$
+# Path    $Source$
+# Date    $Path$
 
 # This script sets up needed environment variables for creating future-year
 # area-source emissions and calls the script that runs the SMOKE programs. 
 #
 # Script created by : M. Houyoux, North Carolina 
 #                     Supercomputing Center
-# Last edited : June 2000
 #
 #*********************************************************************
 
 # set Assigns file names
-setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.m3demo.cb-iv.ed36_test
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.m3demo.cb-iv.ed36
 
 # set future year
 setenv FYEAR 2007              # year of future case
@@ -34,7 +33,8 @@ setenv RUN_SMKMERGE  Y            # Y runs merge program
 
 # Program-specific controls...
 
-# For Cntlmat - All shared variables
+# For Cntlmat
+setenv CONTROL_REPORT       Y     # Y outputs a report of factors by source
 
 # For Grwinven
 setenv SMK_NUM_CTLMAT       1     # number of control/projection matrices
@@ -47,16 +47,16 @@ setenv UNIFORM_TPROF_YN     N     # Y makes all temporal profiles uniform
 setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 
 # For Smkmerge
-setenv MRG_TEMPORAL_YN      N          # Y merges with hourly emissions
-setenv MRG_SPCMAT_YN        N          # Y merges with speciation matrix
+setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
+setenv MRG_SPCMAT_YN        Y          # Y merges with speciation matrix
 setenv MRG_GRDOUT_YN        Y          # Y outputs gridded file
-setenv MRG_REPSTA_YN        Y          # Y outputs state totals
+setenv MRG_REPSTA_YN        N          # Y outputs state totals
 setenv MRG_REPCNY_YN        N          # Y outputs county totals
-setenv MRG_GRDOUT_UNIT      tons/hr    # units for gridded output file
-setenv MRG_TOTOUT_UNIT      tons/day   # units for state and/or county totals
+setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
+setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
-setenv SPC_INPUT            mass       # [mass|mole] controls speciation merge
+setenv SPC_INPUT            mole       # [mass|mole] controls speciation merge
 
 # Multiple-program controls
 setenv PROMPTFLAG           N     # Y (never set to Y for batch processing)
@@ -69,6 +69,7 @@ setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv OUTZONE              0     # output time zone of emissions
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
 setenv SMK_TMPPATH          $SMKDAT/tmp # directory for temporary files
+setenv AUTO_DELETE_LOG      Y     # Y automatically deletes logs without asking
 
 # Invoke Assigns file
 source $ASSIGNS_FILE
@@ -78,7 +79,9 @@ source $ASSIGNS_FILE
 ## File name override
 #
 setenv GCNTL   $APROJ
-setenv ACMAT01 $APMAT
+if ( $?APMAT ) then
+   setenv ACMAT01 $APMAT
+endif
 
 ## Run control and growth
 #

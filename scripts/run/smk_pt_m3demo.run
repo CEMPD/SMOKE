@@ -1,15 +1,14 @@
 #!/bin/csh -f
 
-# Version @(#)smk_pt_m3demo.run	1.5
-# Path    /env/proj/smoke/scripts/run/SCCS/s.smk_pt_m3demo.run
-# Date    12/27/00 15:14:41
+# Version @(#)$Id$
+# Path    $Source$
+# Date    $Date$
 
 # This script sets up needed environment variables for running point source
 # emissions in SMOKE, and calls the script that runs the SMOKE programs. 
 #
 # Script created by : M. Houyoux, North Carolina 
 #                     Supercomputing Center
-# Last edited : June 2000
 #
 #*********************************************************************
 
@@ -35,10 +34,10 @@ setenv RUN_ELEVPOINT Y        #  run elevated/PinG sources selection program
 
 setenv RUN_LAYPOINT  Y        #  run layer fractions program
 setenv RUN_TEMPORAL  Y        #  run temporal allocation program
-setenv RUN_SMKMERGE  N        #  run merge program
+setenv RUN_SMKMERGE  Y        #  run merge program
 
 # quality assurance
-setenv RUN_SMKREPORT N         # Y runs reporting for state reports
+setenv RUN_SMKREPORT Y         # Y runs reporting for state reports
 
 # Program-specific controls...
 
@@ -50,14 +49,16 @@ setenv RAW_DUP_CHECK        N # Y errors on duplicate records
 setenv RAW_SRC_CHECK        N # Y errors if missing pollutants or activities
 setenv VELOC_RECALC         N # Y recalculates velocity from diam and flow
 setenv WKDAY_NORMALIZE      Y # Y normalizes weekly profiles by weekdays
+setenv SMKINVEN_FORMULA     "PMC=PM10-PM2_5" # Internal PMC calculation
 
 # For Spcmat
-setenv POLLUTANT_CONVERSION N     # Y uses ROG to TOG file, for example
+setenv POLLUTANT_CONVERSION Y     # Y uses ROG to TOG file, for example
 setenv SMK_GSREF_FIXED      N     # Y uses fixed-format speciation x-ref
 setenv SPEC_OUTPUT          ALL   # [ALL|MASS|MOLE] controls program outputs
 
 # For Cntlmat
 setenv TMP_CTL_PATH $EDSS_ROOT/data/tmp # directory for temporary program files
+setenv CONTROL_REPORT       Y     # Y outputs a report of factors by source
 
 # For Elevpoint
 setenv SMK_CUTOFF_HT        0.    # Elev source cutoff ht [m] or 0. if not used
@@ -74,16 +75,16 @@ setenv REP_LAYER_MAX        ' '   # Layer no. for reporting high plume rise
 # For Smkmerge
 setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
 setenv MRG_SPCMAT_YN        Y          # Y merges with speciation matrix
-setenv MRG_LAYERS_YN        N          # Y merges with layer fractions
+setenv MRG_LAYERS_YN        Y          # Y merges with layer fractions
 setenv MRG_GRDOUT_YN        Y          # Y outputs gridded file
-setenv MRG_REPSTA_YN        Y          # Y outputs state totals
+setenv MRG_REPSTA_YN        N          # Y outputs state totals
 setenv MRG_REPCNY_YN        N          # Y outputs county totals
 setenv SMK_ASCIIELEV_YN     N          # Y outputs ASCII elevated file
-setenv MRG_GRDOUT_UNIT      tons/hr    # units for gridded output file
-setenv MRG_TOTOUT_UNIT      tons/day   # units for state and/or county totals
+setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
+setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
-setenv SPC_INPUT            mass       # [mass|mole] controls speciation merge
+setenv SPC_INPUT            mole       # [mass|mole] controls speciation merge
 setenv SMK_ASCIIELEV_FMT    UAM        # [UAM] format of ASCII elevated file
 
 # For Smkreport
@@ -105,21 +106,13 @@ setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv OUTZONE              0     # output time zone of emissions
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
+setenv AUTO_DELETE_LOG      Y     # Y automatically deletes logs without asking
 
 # Invoke Assigns file
 source $ASSIGNS_FILE
 
 ##############################################################################
 
-#
-## Set point-source-specific input file names when they are different
-## from the defaults prompted by the programs
-#
-if ( $?PCNTL ) then
-   setenv GCNTL $PCNTL
-endif
-
-#
 ## Run programs
 #
 source smk_run.scr

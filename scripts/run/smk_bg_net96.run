@@ -21,10 +21,10 @@ setenv MRG_SOURCE B            # source category to merge
 setenv SRCABBR    bg           # abbreviation for naming log files
 
 # time independent programs
-setenv RUN_RAWBIO    N         # Y runs landuse import
+setenv RUN_RAWBIO    Y         # Y runs landuse import
 
 # time-dependent programs
-setenv RUN_TMPBIO    N         # Y runs biogenic temporal adjustments
+setenv RUN_TMPBIO    Y         # Y runs biogenic temporal adjustments
 setenv RUN_SMKMERGE  Y         # Y runs merge program
 
 # For Rawbio ( 60 = area surrogate in Models-3 )
