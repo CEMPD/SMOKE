@@ -482,10 +482,12 @@ C.............  Set previous CAS for next iteration
 C.........  Sort inventory table to create unique data list and associated arrays
         CALL SORTIC( NINVTBL, ITIDXA2, ITNAMA )
 
-C.........  Count the number of unique data names
+C.........  Count the number of unique data names that are kept
         LNAM = ' '
         DO N = 1, NINVTBL
             J = ITIDXA2( N ) 
+            IF( .NOT. ITKEEPA( J ) ) CYCLE
+            
             IF( ITNAMA( J ) .NE. LNAM ) MXIDAT = MXIDAT + 1
             LNAM = ITNAMA( J )
         END DO
@@ -547,11 +549,15 @@ C.........  Allocate memory for sorted SAROAD codes and index
         IDXCOD  = 0  ! array
         SORTCOD = 0  ! array
       
-C.........  Store all pollutants and activities in original (unsorted) order
+C.........  Store kept pollutants and activities in original (unsorted) order
         LNAM = ' '
         MXIDAT = 0
         DO N = 1, NINVTBL
             J = ITIDXA2( N ) 
+
+C.............  If current data name is not kept, skip to next
+            IF( .NOT. ITKEEPA( J ) ) CYCLE
+            
             IREC = ITLINNO( J )
 
 C.............  For the next data name...
