@@ -2,7 +2,7 @@
         PROGRAM CSGAREA
 
 C***********************************************************************
-C  program body starts at line 130
+C  program body starts at line 154
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -122,18 +122,20 @@ C...........   Other local variables
 
         REAL            FAC     !  temporary conversion factor
         
+        INTEGER         BTIME   !  beginning time of day in run
         INTEGER         I, J, K, F, S, T, V
         INTEGER         IOS
-        INTEGER         LDATE, JDATE, JTIME, TSTEP
-        INTEGER         LDEV
-        INTEGER         RDEV    !  output report unit number
-        INTEGER         LSTA    !  previous state code
-        INTEGER         NSTA    !  actual number of states
+        INTEGER         INO, INO2          ! position in list of pollutants
+        INTEGER         JDATE, JTIME, TSTEP
+        INTEGER         LDATE, LTIME       ! previous date and time in loop
+        INTEGER         LDEV               ! logfile unit number
+        INTEGER         RDEV               ! output report unit number
+        INTEGER         LSTA               ! previous state code
+        INTEGER         NSTA               ! actual number of states
         INTEGER         NSTEPS
-        INTEGER         STA     !  temporay state code
-        INTEGER         YEAR    !  year for determining day to year
+        INTEGER         STA                ! temporay state code
         
-        LOGICAL         CONTROLFLAG, OUTPUTFLAG, REPORTFLAG
+        LOGICAL         CONTROLFLAG, OUTPUTFLAG, ST_REPORT
 
         CHARACTER*16    ANAME   !  logical name for area-source       input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
@@ -183,7 +185,7 @@ C   begin body of program CSGAREA
         END IF
 
 C.......   Get environment variable settings
-        REPORTFLAG = ENVYN( 'REPORTFLAG', 'Report writing flag',
+        ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
 
 C.......   Get file names; open input gridding, speciation, 
@@ -264,7 +266,7 @@ C.........  Hourly inventory file as input with NO controls
         END IF
 
 C.......   Read FIPS code for reporting purpose
-        IF( REPORTFLAG ) THEN
+        IF( ST_REPORT ) THEN
 
 C............  If we've read in temporal file, must get inventory file name
             IF ( TSTEP .NE. 0 ) THEN
@@ -330,6 +332,10 @@ C............  Initialize emission summary array
                     EMSUM( I,S ) = 0.
 27              CONTINUE
 28          CONTINUE
+
+C............  Set position of "special" species in name list
+            INO  = INDEX1( 'NO' , NMPOL, EMNAM )
+            INO2 = INDEX1( 'NO2', NMPOL, EMNAM )
 
         ENDIF
 
@@ -515,19 +521,17 @@ C...............   If this is a new month, or new day, write message
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
                 CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-                LDATE = JDATE
- 
             END IF
 
 C.............  Write to screen because WRITE3 only writes to LDEV
             WRITE( *, 93020 ) HHMMSS( JTIME )
 
-            DO  198  V = 1, NIPOL
+            DO  133  V = 1, NIPOL
 
                 IF( READ3( ANAME, EINAM( V ), ALLAYS3, 
      &                     JDATE, JTIME, EMISV ) ) THEN
 
-                    DO  197  J = 1,  NSPCOUT( V )
+                    DO  122  J = 1,  NSPCOUT( V )
 
                         K = SPCREF( V,J )
 
@@ -554,14 +558,24 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 C.........................  When reporting is switched on, calculate emissions
 C.........................  summaries by state and report to output QA file
 C.........................  EMSUM must be initialized
-                        IF( REPORTFLAG ) THEN
+                        IF( ST_REPORT ) THEN
+
+C.............................  For annual values, convert to day-specific
+                            IF( TSTEP .EQ. 0 ) THEN
+
+                                DO 111 S = 1, NASRC
+                                    EMISC( S ) = YR2DAY( INVYR( S ) ) *
+     &                                           EMISC( S )
+111                             CONTINUE
+
+                            ENDIF
 
                             CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
      &                                    CS, ISPTR, EMISC, 
      &                                    EMSUM( 1,K ) )
                         ENDIF
 
-197                 CONTINUE    !  end loop on output vbles for this input vble
+122                 CONTINUE    !  end loop on output vbles for this input vble
 
                 ELSE
 
@@ -571,55 +585,71 @@ C.........................  EMSUM must be initialized
 
                 END IF          !  if read3() succeeds or not
 
-198         CONTINUE            ! end loop on input variables
+133         CONTINUE            ! end loop on input variables
+
+            LDATE = JDATE
+            LTIME = JTIME
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-199     CONTINUE          !  end loop on time steps
+C.............  Write report if report flag is switched on
 
+            IF( ST_REPORT .AND.
+     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
 
-C.........  Write report if report flag is switched on
+C.................  Convert summary emissions from moles/day to tons/day
 
-        IF( REPORTFLAG ) THEN
+                DO 220 S = 1, NMPOL
 
-            YEAR = INVYR( 1 )   ! Temporay solution
+C.....................  Conversion factor for AREA as input file
+                    IF( S .NE. INO ) THEN
+                        FAC = EMWT( S ) / TON2GM
+                    ELSE
+                        FAC = EMWT( INO2 ) / TON2GM
+                    ENDIF
 
-C.............  Convert summary emissions from moles per year to tons per day
+                    DO 222 I = 1, NSTA
 
-            DO 220 S = 1, NMPOL
+                       EMSUM( I,S ) = EMSUM( I,S ) * FAC
 
-C.................  Conversion factor for AREA as input file
+222                 CONTINUE
+
+220             CONTINUE
+
+                IF( TSTEP .NE. 0 )
+     &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
+     &                               MMDDYY( LDATE ) // ' from',
+     &                               BTIME, 'to', LTIME
+
                 IF( TSTEP .EQ. 0 ) THEN
-                    FAC = YR2DAY( YEAR ) * EMWT( S ) / TON2GM
-
-C.................  Conversion factor for ATMP as input file
+                    MESG = 'Area source emissions ' //
+     &                     '(tons/ave inventory day) within grid ' // 
+     &                     GRDNM
                 ELSE
-                    FAC = EMWT( S ) / TON2GM
+                    MESG = 'Area source emissions ' //
+     &                     '(tons/specific day) within grid ' // GRDNM
                 ENDIF
 
-                DO 222 I = 1, NSTA
+                CALL STATELST( RDEV  , MESG , NASID , NSTA , NMPOL, 
+     &                         'F7.1', EMNAM, STATES, EMSUM         )
 
-                   EMSUM( I,S ) = EMSUM( I,S ) * FAC
+C.................  Reinitialize emissions summary
+                DO 198 I = 1, NASID
+                    DO 197 S = 1, NMPOL
+                        EMSUM( I,S ) = 0.
+197                 CONTINUE
+198             CONTINUE
+ 
+C.................  Set begining time for next day
+                BTIME = JTIME
 
-222             CONTINUE
-
-220         CONTINUE
-
-            IF( TSTEP .EQ. 0 ) THEN
-                MESG = 'Area source emissions ' //
-     &                 '(tons/ave inventory day) within grid ' // GRDNM
-            ELSE
-                MESG = 'Area source emissions ' //
-     &                 '(tons/specific day) within grid ' // GRDNM
             ENDIF
 
-            CALL STATELST( RDEV  , MESG , NASID , NSTA , NMPOL, 
-     &                     'F7.1', EMNAM, STATES, EMSUM         )
-
-        ENDIF
+199     CONTINUE          !  end loop on time steps
 
 999     CONTINUE          !  exit program
       
+
         CALL M3EXIT( 'CSGAREA', 0, 0, 
      &               'Normal completion  of PROGRAM CSGAREA', 0 )
 
