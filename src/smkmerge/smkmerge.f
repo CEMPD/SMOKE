@@ -219,7 +219,7 @@ C.........  Read in elevated sources and plume-in-grid information, if needed
 C.........  Reset flag for PinG if none in the input file
         IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG ) ) THEN
 
-            CALL RDPELV( EDEV, NPSRC, NMAJOR, NPING )
+            CALL RDPELV( EDEV, NPSRC, ELEVFLAG, NMAJOR, NPING )
 
             IF( ELEVFLAG .AND. NMAJOR .EQ. 0 ) THEN
                 MESG = 'WARNING: No sources are major elevated ' //
