@@ -485,8 +485,3 @@ SMKPMOUT.o     : $(MODEMFAC)
 clean:
 	/bin/rm -f *.o
 	/bin/rm -f *.mod
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f *.mod $(MODEMFAC)
