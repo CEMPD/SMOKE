@@ -81,7 +81,7 @@ setenv JANJUL $seasflag
 #****************************************************************************
 
 if ( $exitstat == 0 ) then
-    $SCRIPTS/run/source smk_run.scr
+    source $SCRIPTS/run/smk_run.scr
 
     if ( $RUN_CREATE_MPREF == Y ) then
 
