@@ -80,8 +80,9 @@ C.........  Set header values that cannot be default
 
 C.........  Create full file name
         WRITE( FULLNAME,94010 ) EMISDIR( 1:LEN_TRIM( EMISDIR ) ) //
-     &                          '/emisfacs.' // DESC // '.', SDATE,
-     &                          '.ncf' 
+     &                          '/emisfacs.' // 
+     &                          DESC( 1:LEN_TRIM( DESC ) ) // '.', 
+     &                          SDATE, '.ncf' 
 
 C.........  Open new file
         IF( .NOT. OPNFULL3( FNAME, FSNEW3, FULLNAME, PROGNAME ) ) THEN
