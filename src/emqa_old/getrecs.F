@@ -2,7 +2,7 @@
         PROGRAM GETRECS
 
 C***********************************************************************
-C  program body starts at line 232
+C  program body starts at line 244
 C
 C  DESCRIPTION:
 C       Searches for a specific source, for all sources in a 
@@ -65,13 +65,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER       GETNUM
         LOGICAL       GETYN
         INTEGER       INDEX1
+        INTEGER       LBLANK
         CHARACTER*14  MMDDYY
         INTEGER       PROMPTFFILE
         CHARACTER*16  PROMPTMFILE
         INTEGER       TRIMLEN
 
-        EXTERNAL      FIND1, GETMENU, GETNUM, GETYN, INDEX1, MMDDYY,
-     &                PROMPTFFILE, PROMPTMFILE, TRIMLEN
+        EXTERNAL      FIND1, GETMENU, GETNUM, GETYN, INDEX1, LBLANK,
+     &                MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN
 
 C.........  Define PNTS variables
         INTEGER     INDEXA( NPSRC )  !  index for sorting, if needed
@@ -97,6 +98,10 @@ C.........  Define PNTS variables
         COMMON / EMISREC / IFIP, ISIC, ISCC, IPLANT, ISTACK, TZONES,
      &                    TPFLAG, INVYR, XLOCA, YLOCA, STKHT, STKDM, 
      &                    STKTK, STKVE, CTLEFF, RULEFF, RULPEN, EMISV
+
+        CHARACTER*15  CPLANT( NPSRC )
+        CHARACTER*15  CSTACK( NPSRC )
+        CHARACTER*40  CPDESC( NPSRC )
 
 C.........  Define temporary source variable
 
@@ -162,6 +167,7 @@ C.........  Local arrays
 C.........  Logical names and unit numbers
         INTEGER         LDEV             ! IO/API initialization unit #
         INTEGER         ODEV             ! number for output file
+        INTEGER         SDEV             ! PSRC file
 
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
         CHARACTER*16    CNAME   !  logical name for control    matrix input file
@@ -185,25 +191,31 @@ C.........  Other variables
         INTEGER         ENDSRC       ! Ending source count for output
         INTEGER         FIP, PLANT, SCC, SIC, STACK  ! Temporary vars
         INTEGER         INCSRC       ! Increment for processing sources
+        INTEGER         IOS          ! I/O status
         INTEGER         JDATE, JTIME ! Current date and time
+        INTEGER         L1, L2
         INTEGER         LDATE        ! Previous date
         INTEGER         MEANCNT      ! count of sources contibuting to mean val
         INTEGER         MEANSRC      ! source ID that has value closest to mean
         INTEGER         METHOD       ! method of source selection
         INTEGER         MINSRC       ! source ID that has min non-zero value
-        INTEGER         NINCELL, NSTEPS, NUMBER
+        INTEGER         NINCELL, NSTEPS
         INTEGER         NRPRT        ! number of sources to report
         INTEGER         RANGE        ! method of selecting range of sorted srcs
         INTEGER         SDATE, STIME ! Starting date and time
         INTEGER         SRTSRC       ! Starting source count for output
         INTEGER         STKMTHD      ! method of sorting based on stack parms
 
-        LOGICAL         CTRLFLAG
-        LOGICAL         LAYRFLAG
+        LOGICAL         CTRLFLAG     ! control file input or not
+        LOGICAL         EMSFLAG      ! PNTS is EMS-95 origin or not
+        LOGICAL         LAYRFLAG     ! layer fractions file input or not
+        LOGICAL         SPCFLAG      ! speciation matrix input or not
 
         CHARACTER*8     TONSUNIT
         CHARACTER*8     MOLEUNIT
+        CHARACTER*15    CPLT, CSTK
         CHARACTER*16    SCRBUF  !  scratch point
+        CHARACTER*40    CDESC
         CHARACTER*80    MENULST( NMETHOD )
         CHARACTER*80    RNGMENU( NRANGE )
         CHARACTER*80    STKMENU( NSTKMTHD )
@@ -277,6 +289,16 @@ C.........  Prompt for PNTS
 
         ENDIF
 
+C.........  If file is an EMS-95 file, then prompt for PSRC 
+        IF( UPNAM3D .EQ. 'EMSPOINT' ) THEN
+            SDEV = PROMPTFFILE(
+     &               'Enter name for PSRC file',
+     &               .TRUE., .TRUE., 'PSRC', 'GETRECS' )
+            EMSFLAG = .TRUE.
+        ELSE
+            EMSFLAG = .FALSE. 
+        ENDIF
+
 C.........  Prompt for PTMP
 
         TNAME = PROMPTMFILE(
@@ -311,14 +333,13 @@ C.........  Prompt for starting date
 C.........  Prompt for starting time
 
         JTIME  = GETNUM( 0, 235959, JTIME,
-     &                  'Enter starting time  (HHMMSS)' )
+     &                  'Enter starting time (HHMMSS)' )
         STIME  = JTIME
 
 C.........  Prompt for time number of time steps
 
         NSTEPS = MXREC3D
-        WRITE( MESG, 94010 ) 'Enter number of time steps of',
-     &                       TSTEP, 'in HHMMSS.'
+        MESG   = 'Enter number of time steps'
         NSTEPS = GETNUM( 1, MXTSTEP, NSTEPS, MESG )
         
 C.........  Prompt for PLAY
@@ -332,8 +353,10 @@ C.........  Prompt for PLAY
 C.........  Prompt for SMAT
 
         SNAME = PROMPTMFILE(
-     &          'Enter logical name for SPECIATION MATRIX file',
-     &          FSREAD3, 'PSMAT', 'GETRECS' )
+     &          'Enter logical name for SPECIATION MATRIX file ' //
+     &          'or "NONE"', FSREAD3, 'PSMAT', 'GETRECS' )
+
+        SPCFLAG = ( SNAME .NE. 'NONE' )
 
 C.........  Prompt for GMAT
 
@@ -666,67 +689,71 @@ C.........  Create pointer based on cell or on source parameters
 
 C.........  Read SMAT
 
-        IF ( .NOT. READ3( SNAME, 'ALL', 1, 0, 0, SS ) ) THEN
+        IF( SPCFLAG ) THEN
+
+            IF( .NOT. READ3( SNAME, 'ALL', 1, 0, 0, SS ) ) THEN
  
             CALL M3ERR( 'GETRECS', 0, 0,
      &           'Could not read SPECIATION matrix from file "'//
      &           SNAME( 1 : TRIMLEN( SNAME ) ) // '".',
      &           .TRUE. )
  
-        END IF      !  if read3() failed for speciation matrix
+            END IF      !  if read3() failed for speciation matrix
 
-C.......   Build description of how to use speciation matrix:
+C...........   Build description of how to use speciation matrix:
  
-        IF ( .NOT. DESC3( SNAME ) ) THEN
-            CALL M3EXIT( 'GETRECS', 0, 0,
-     &                   'Could not get description of file ' // SNAME,
-     &                  .TRUE. )
-        ELSEIF( NROWS3D .NE. NPSRC ) THEN
-            WRITE( MESG, 94010 )
-     &      'Dimension mismatch.  PSMAT file:', NROWS3D,
-     &      'program NPSRC=', NPSRC
-            CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
-
-        END IF
- 
-        DO  14  V = 1, NIPOL
-            NSPCOUT( V ) = 0
-14      CONTINUE
- 
-        DO  15  V = 1, NMPOL
- 
-            K = INDEX( VNAME3D( V ), '_to_' )
-            IF( K .LT. 1 ) THEN
+            IF ( .NOT. DESC3( SNAME ) ) THEN
                 CALL M3EXIT( 'GETRECS', 0, 0,
-     &              'Bad conversion factor name "' //
-     &              VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) ) //
-     &              '" in ' // SNAME, 2 )
+     &                       'Could not get description of file ' //
+     &                        SNAME, .TRUE. )
+            ELSEIF( NROWS3D .NE. NPSRC ) THEN
+                WRITE( MESG, 94010 )
+     &          'Dimension mismatch.  PSMAT file:', NROWS3D,
+     &          'program NPSRC=', NPSRC
+                CALL M3EXIT( 'GETRECS', 0, 0, MESG, 2 )
+
             END IF
-            INVNAME( V ) = VNAME3D( V )( 1:K-1 )
  
-            I = INDEX1( INVNAME( V ), NIPOL, EINAM )
-            IF ( I .LT. 0 ) THEN
-                CALL M3ERR( 'GETRECS', 0, 0,
+            DO  14  V = 1, NIPOL
+                NSPCOUT( V ) = 0
+14          CONTINUE
+ 
+            DO  15  V = 1, NMPOL
+ 
+                K = INDEX( VNAME3D( V ), '_to_' )
+                IF( K .LT. 1 ) THEN
+                    CALL M3EXIT( 'GETRECS', 0, 0,
+     &                  'Bad conversion factor name "' //
+     &                  VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) ) //
+     &                  '" in ' // SNAME, 2 )
+                END IF
+                INVNAME( V ) = VNAME3D( V )( 1:K-1 )
+ 
+                I = INDEX1( INVNAME( V ), NIPOL, EINAM )
+                IF ( I .LT. 0 ) THEN
+                    CALL M3ERR( 'GETRECS', 0, 0,
      &                  'Bad input species "' //
      &                  INVNAME( V )( 1:TRIMLEN( INVNAME( V ) ) ) //
      &                  '" in ' // SNAME,
      &                  .TRUE. )
-            END IF
+                END IF
  
-            SCRBUF = VNAME3D( V )( K+4:16 )
-            J = INDEX1( SCRBUF, NMPOL, EMNAM )
-            IF ( J .LT. 0 ) THEN
-                CALL M3ERR( 'GETRECS', 0, 0,
-     &                      'Bad output species "' //
-     &                      SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
-     &                      '" in ' // SNAME, 2 )
-            END IF
+                SCRBUF = VNAME3D( V )( K+4:16 )
+                J = INDEX1( SCRBUF, NMPOL, EMNAM )
+                IF ( J .LT. 0 ) THEN
+                    CALL M3ERR( 'GETRECS', 0, 0,
+     &                          'Bad output species "' //
+     &                          SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+     &                          '" in ' // SNAME, 2 )
+                END IF
  
-            F = NSPCOUT( I ) + 1
-            SPCREF ( I,F ) = J
-            NSPCOUT( I )   = F
+                F = NSPCOUT( I ) + 1
+                SPCREF ( I,F ) = J
+                NSPCOUT( I )   = F
  
-15      CONTINUE
+15          CONTINUE
+
+        ENDIF   ! whether speciation matrix read in or not
 
 C.........  Read GMAT
 
@@ -791,8 +818,42 @@ C.........  Read CMAT
                 END IF      !  if read3() failed for control matrix
 
 22          CONTINUE
- 
+
         END IF          !  if controlflag
+
+C.........  Populate plant and stack character arrays (different if have PSRC)
+        DO 24 S = 1, NPSRC
+
+            IF( EMSFLAG ) THEN
+                READ ( SDEV, 93005, IOSTAT=IOS ) CPLT, CSTK, CDESC
+
+                IF( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94010 )
+     &                  'Unit number', SDEV,
+     &                  'I/O Status ', IOS,
+     &                  'Line number', S
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( 'GETRECS', 0, 0,
+     &                  'Error reading PSRC file.', 2 )
+
+                ELSE
+                    CPLANT( S ) = CPLT
+                    CSTACK( S ) = CSTK
+                    CPDESC( S ) = CDESC
+                ENDIF
+                
+            ELSE
+
+                WRITE( CPLT, '(I15)' ) IPLANT( S )
+                WRITE( CSTK, '(I15)' ) ISTACK( S )
+
+                CPLANT( S ) = CPLT
+                CSTACK( S ) = CSTK
+                CPDESC( S ) = ' '
+
+            ENDIF
+
+24      CONTINUE
 
 C.........  Loop over time
 
@@ -884,31 +945,31 @@ C.............................  Create sorted source list for cell
 
 C.........................  Loop over model species per inventory species
 
-                        DO 33 J = 1,  NSPCOUT( V )
+                        IF( SPCFLAG ) THEN
+                            DO 33 J = 1,  NSPCOUT( V )
 
-                            K = SPCREF( V,J )
+                                K = SPCREF( V,J )
 
 C.............................  Multiply PTMP, SMAT, and CMAT for source
 
-                            SFAC = SS( EINX( I ), K ) 
-                            IF( CTRLFLAG ) THEN
-                                CFAC = CC( EINX( I ), V )
-                            ELSE
-                                CFAC = 1.0
-                            ENDIF
+                                SFAC = SS( EINX( I ), K ) 
+                                IF( CTRLFLAG ) THEN
+                                    CFAC = CC( EINX( I ), V )
+                                ELSE
+                                    CFAC = 1.0
+                                ENDIF
                              
-                            EOUT( I, K, T ) = 
-     &                            EMIST( EINX( I ) ) * SFAC * CFAC
+                                EOUT( I, K, T ) = 
+     &                                EMIST( EINX( I ) ) * SFAC * CFAC
 
-                            EV =  EMISV( EINX( I ), V )
+                                EV =  EMISV( EINX( I ), V )
 
-                            IF( EV .GT. 0. ) THEN
-                                ETMP( I, V, T ) = EMIST( EINX( I ) )
-                            ELSE
-                                ETMP( I, V, T ) = 0
-                            ENDIF
+   33                       CONTINUE
 
-   33                   CONTINUE
+                        ENDIF
+
+                        ETMP( I, V, T ) = EMIST( EINX( I ) )
+
    44               CONTINUE
 
                 ELSE ! Read failed
@@ -944,13 +1005,20 @@ C.........  Loop over list of sources and output details
         DO 88 I = 1, NOUT
             S = EINX( I )
 
+            L1 = LBLANK( CPLANT( S ) )
+            L2 = LBLANK( CSTACK( S ) )
+            CPLT = CPLANT( S )( L1:TRIMLEN( CPLANT( S ) ) )
+            CSTK = CSTACK( S )( L2:TRIMLEN( CSTACK( S ) ) )
+            L1 = TRIMLEN( CPLT )
+            L2 = TRIMLEN( CSTK )
+
 C.............  Write out all time INdependant data
             WRITE( ODEV, 93000 ) 
-     &      I, S, 
-     &      IFIP( S ), ISIC( S ), ISCC( S ), IPLANT( S ), ISTACK( S ),
+     &      I, S, CPDESC( S ),
+     &      IFIP( S ), ISIC( S ), ISCC( S ), CPLT, CSTK,
      &      INVYR( S ), TZONES( S ), TPFLAG( S ), 
      &      STKHT( S ), STKDM( S ), STKTK( S ), STKVE( S ), STKFL( S ),
-     &      XNUM( I ), YNUM( I ), GSTATE( I ), XLOCA( S ), YLOCA( S ) 
+     &      XNUM( I ), YNUM( I ), GSTATE( I ), XLOCA( S ), YLOCA( S )
 
 C.............  Write out control coefficients
 
@@ -965,28 +1033,37 @@ C.............  Write out time independant inventory emissions
      &             EMISV( EINX( I ), V ), V = 1, NIPOL )
 
 C.............  Create pointer for model species
-            ICNT = 0
-            DO 70 V = 1, NIPOL
-                 DO 69 J = 1,  NSPCOUT( V )
+            IF( SPCFLAG ) THEN
+                ICNT = 0
+                DO 70 V = 1, NIPOL
+                     DO 69 J = 1,  NSPCOUT( V )
 
-                     K = SPCREF( V,J )
-                     ICNT = ICNT + 1
-                     SPNT( ICNT ) = K
+                         K = SPCREF( V,J )
+                         ICNT = ICNT + 1
+                         SPNT( ICNT ) = K
 
-   69            CONTINUE
-   70       CONTINUE
+   69                CONTINUE
+   70           CONTINUE
+            ENDIF
 
 C.............  Write out speciation coefficients
-
-            WRITE( ODEV, 93030 ) (  EMNAM( SPNT( J ) ),
-     &                              SS( S, SPNT( J ) ), J=1, NMPOL )
+            IF( SPCFLAG ) THEN
+                WRITE( ODEV, 93030 ) (  EMNAM( SPNT( J ) ),
+     &                                  SS( S, SPNT( J ) ), J=1, NMPOL )
+            ENDIF
 
 C.............  Write out header for temporal emissions
-            WRITE( ODEV, 93040 ) MMDDYY( SDATE ),
+            IF( SPCFLAG ) THEN
+                WRITE( ODEV, 93040 ) MMDDYY( SDATE ),
      &                           ( EINAM( V )        , V = 1, NIPOL ), 
      &                           ( EMNAM( SPNT( J ) ), J = 1, NMPOL ),
      &                           ( TONSUNIT          , K = 1, NIPOL ),
      &                           ( MOLEUNIT          , L = 1, NMPOL )
+            ELSE
+                WRITE( ODEV, 93042 ) MMDDYY( SDATE ),
+     &                           ( EINAM( V )        , V = 1, NIPOL ), 
+     &                           ( TONSUNIT          , K = 1, NIPOL )
+            ENDIF
 
 C.............  Write out time dependent emissions
             JDATE = SDATE
@@ -994,10 +1071,16 @@ C.............  Write out time dependent emissions
             LDATE = -9
             DO 77 T = 1, NSTEPS
 
-                WRITE( ODEV, 93050 ) 
-     &                 JDATE-SDATE+1, JTIME/10000, 
-     &                 ( ETMP( I, V, T ), V=1,NIPOL ),
-     &                 ( EOUT( I, SPNT( J ), T ), J=1, NMPOL )
+                IF( SPCFLAG ) THEN
+                    WRITE( ODEV, 93050 ) 
+     &                     JDATE-SDATE+1, JTIME/10000, 
+     &                     ( ETMP( I, V, T ), V=1,NIPOL ),
+     &                     ( EOUT( I, SPNT( J ), T ), J=1, NMPOL )
+                ELSE
+                    WRITE( ODEV, 93050 )
+     &                     JDATE-SDATE+1, JTIME/10000, 
+     &                     ( ETMP( I, V, T ), V=1,NIPOL )
+                ENDIF
 
                 IF( JDATE .NE. LDATE ) THEN
 
@@ -1005,9 +1088,11 @@ C.............  Write out time dependent emissions
                         EISUM( V ) = ETMP( I, V, T )
 71                  CONTINUE
 
-                    DO 72 J = 1, NMPOL
-                        EMSUM( J ) = EOUT( I, SPNT( J ), T )
-72                  CONTINUE
+                    IF ( SPCFLAG ) THEN
+                        DO 72 J = 1, NMPOL
+                            EMSUM( J ) = EOUT( I, SPNT( J ), T )
+72                      CONTINUE
+                    ENDIF
 
                     LDATE = JDATE
 
@@ -1017,18 +1102,23 @@ C.............  Write out time dependent emissions
                         EISUM( V ) = EISUM( V ) + ETMP( I, V, T )
 75                  CONTINUE
 
-                    DO 76 J = 1, NMPOL
-                        EMSUM( J )= EMSUM( J ) + EOUT( I, SPNT( J ), T )
-76                  CONTINUE
+                    IF ( SPCFLAG ) THEN
+                        DO 76 J = 1, NMPOL
+                          EMSUM( J )= EMSUM( J )+EOUT( I, SPNT( J ), T )
+76                      CONTINUE
+                    ENDIF
 
                 ENDIF
 
                 CALL NEXTIME( JDATE, JTIME, TSTEP )
 
                 IF( JDATE .NE. LDATE .OR. T .EQ. NSTEPS ) THEN
-                     WRITE( ODEV, 93055 ) 
-     &                    ( EISUM( V ), V=1, NIPOL ),
-     &                    ( EMSUM( J ), J=1, NMPOL )
+                    IF( SPCFLAG ) THEN
+                        WRITE( ODEV,93055 ) ( EISUM( V ), V=1, NIPOL ),
+     &                                      ( EMSUM( J ), J=1, NMPOL )
+                    ELSE
+                        WRITE( ODEV,93055 ) ( EISUM( V ), V=1, NIPOL )
+                    ENDIF
                 ENDIF
 
 77          CONTINUE
@@ -1072,7 +1162,7 @@ C.................  Format will put blanks where there are zeroes
 
             ENDIF
 
-            WRITE( ODEV, '(A)' ) ' '
+            WRITE( ODEV, '(1X/)' ) 
 
    88   CONTINUE 
 
@@ -1089,9 +1179,9 @@ C...........   Informational (LOG) message formats... 92xxx
  
 C...........   Formatted file I/O formats............ 93xxx
 
-93000   FORMAT( I5, ' Src ID:', I7, 
-     &              ' FIP:', I5.5, ' SIC:', I4.4, ' SCC:', I8.8,
-     &              ' PLT:', I8  , ' STK:', I8  , ' YR:' , I4,
+93000   FORMAT( I5, ' Src ID:', I7, 1X, A, / ,
+     &          5X, ' FIP:', I5.5, ' SIC:', I4.4, ' SCC:', I8.8,
+     &              ' PLT:', A<L1>, ' STK:', A<L2>, ' YR:' , I4,
      &              ' ZON:', I2.2, ' TPF:', I1, /,
      &          5X, ' Stack parms...   H[m]:', F7.2, '   D[m]:', F7.2,
      &              '   T[K]:', F7.1, '   V[m/s]:', F7.1, 
@@ -1099,6 +1189,8 @@ C...........   Formatted file I/O formats............ 93xxx
      &          5X, ' Gridding...      Cell:(', I3,',', I3, 
      &              ')   Status:', A7, 
      &              '   XLOC:', E14.7, '   YLOC:', E14.7 )
+
+93005   FORMAT( 29X, A15, 1X, A12, 14X, A40 )
 
 93010   FORMAT( 5X, ' Control facs...  ',
      &              30( 1X, A, ': ', E11.5 )   )
@@ -1113,9 +1205,13 @@ C...........   Formatted file I/O formats............ 93xxx
      &          5X, ' Dy Hr', <NIPOL+NMPOL>( 1X, A8 ) , /,
      &          11X, <NIPOL+NMPOL>( 1X, A8 ) )
 
-93050   FORMAT( 6X, I2.2, 1X, I2.2, 30( 1X, E8.3 ) )
+93042   FORMAT( 5X, ' Hourly emissions starting ', A14, '...' /,
+     &          5X, ' Dy Hr', <NIPOL>( 1X, A8 ) , /,
+     &          11X, <NIPOL>( 1X, A8 ) )
 
-93055   FORMAT( 5X, ' Total', 30( 1X, E8.3 ) )
+93050   FORMAT( 6X, I2.2, 1X, I2.2, <NIPOL+NMPOL>( 1X, E8.3 ) )
+
+93055   FORMAT( 5X, ' Total', <NIPOL+NMPOL>( 1X, E8.3 ) )
 
 93060   FORMAT( 5X, ' Layer fractions starting ', A14, '...' /,
      &          5X, ' Dy Hr', <EMLAYS>( 1X, ' Lyr(', I2.2, ')' ) )
