@@ -1,6 +1,6 @@
 
         SUBROUTINE GENMGMAT( GNAME, UNAME, FDEV, MXSCEL, MXCSRC, NMSRC, 
-     &                       NGRID, NMATX, NX, IX, CX, NU, IU, CU,
+     &                       NMATX, NX, IX, CX, NU, IU, CU,
      &                       NCOEF, CMAX, CMIN, NCOEFU, CMAXU, CMINU )
 
 C***********************************************************************
@@ -45,6 +45,9 @@ C...........   This module is the source inventory arrays
 C...........   This module contains the cross-reference tables
         USE MODXREF
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C...........   This module contains the gridding surrogates tables
         USE MODSURG
 
@@ -68,9 +71,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT
         INTEGER         FIND1
         INTEGER         FINDC
+        LOGICAL         INGRID
         LOGICAL         DSCM3GRD
 
-        EXTERNAL        CRLF, ENVINT, FIND1, FINDC, DSCM3GRD
+        EXTERNAL        CRLF, ENVINT, FIND1, FINDC, INGRID, DSCM3GRD
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name
@@ -79,7 +83,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: MXSCEL        ! max sources per cell
         INTEGER     , INTENT (IN) :: MXCSRC        ! max cells per source
         INTEGER     , INTENT (IN) :: NMSRC         ! no. mobile sources
-        INTEGER     , INTENT (IN) :: NGRID         ! actual grid cell count
         INTEGER     , INTENT (IN) :: NMATX         ! no. source-cell intersects
         INTEGER     , INTENT(OUT) :: NX  ( NGRID ) ! no. srcs per cell
         INTEGER     , INTENT(OUT) :: IX  ( NMATX ) ! src IDs 
@@ -124,11 +127,17 @@ C              is not worth going to extra trouble for.
         INTEGER, ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
         CHARACTER(LEN=SRCLEN3), ALLOCATABLE :: LKOGRD( : ) ! link srcs outside
                                                            !    the grid
+C...........   Temporary arrays for storing surrogate codes to use
+        INTEGER, ALLOCATABLE :: SURGID1( : ) ! primary surrogate code
+        INTEGER, ALLOCATABLE :: SURGID2( : ) ! secondary surrogate code
+
 C...........   Other local variables
 
         INTEGER         C, F, I, J, K, N, S !  indices and counters.
 
+        INTEGER         COL      ! tmp column
         INTEGER         FIP      !  tmp country/state/county code
+        INTEGER         ID1, ID2 !  tmp primary and secondary surg codes
         INTEGER         IOS      !  i/o status
         INTEGER         ISIDX    !  surrogate ID code index
         INTEGER         L2       !  string length
@@ -138,6 +147,7 @@ C...........   Other local variables
         INTEGER         NLKOGRD  !  no. of link sources outside the grid
         INTEGER         NMAX     !  counter for storing correct max dimensions
         INTEGER         NNOSRG   !  no. of cy/st/co codes with no surrogates
+        INTEGER         ROW     ! tmp row
         INTEGER         RWT      !  tmp roadway type
 
         REAL            ADJ, ADJC   ! tmp adjustment factors
@@ -146,14 +156,14 @@ C...........   Other local variables
         REAL            XBEG, YBEG  ! tmp X and Y link start coordinates
         REAL            XEND, YEND  ! tmp X and Y link end   coordinates
 
-        LOGICAL      :: EFLAG = .FALSE.  !  true: error detected
+        LOGICAL      :: EFLAG = .FALSE.  ! true: error detected
+        LOGICAL      :: LFLAG = .FALSE.  ! true: location data available
+        LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
-        CHARACTER*16    COORD     !  coordinate system name
         CHARACTER*16    COORUNIT  !  coordinate system projection units
-        CHARACTER*16    GRDNM     !  grid name
         CHARACTER*80    GDESC     !  grid description
-        CHARACTER*300   BUFFER    !  source fields buffer
-        CHARACTER*300   MESG      !  message buffer 
+        CHARACTER*256   BUFFER    !  source fields buffer
+        CHARACTER*256   MESG      !  message buffer 
 
         CHARACTER(LEN=LNKLEN3)    CLNK   ! tmp link ID
         CHARACTER(LEN=SRCLEN3)    CSRC   ! tmp source chars string
@@ -218,6 +228,15 @@ C.........  Allocate memory for temporary gridding matrix and other
         CALL CHECKMEM( IOS, 'FIPNOSRG', PROGNAME )
         ALLOCATE( LKOGRD( NMSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LKOGRD', PROGNAME )
+        ALLOCATE( SURGID1( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SURGID1', PROGNAME )
+        ALLOCATE( SURGID2( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SURGID2', PROGNAME )
+        SURGID1 = 0   ! array
+        SURGID2 = 0   ! array
+
+C.........  Set flag to indicate that XLOCA/YLOCA are available
+        LFLAG = ALLOCATED( XLOCA )
 
 C.......   Compute gridding matrix:
 C.......       First case:   explicit link (ILINK > 0
@@ -248,6 +267,37 @@ C.......       sixth case:   fallback default
 
 C.............  Initialize sources as being in the domain
             INDOMAIN( S ) = .TRUE.
+
+C.............  Determine if x/y location is available
+            XYSET = .FALSE.
+            IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
+
+C.............  Special case for source has an x/y location
+            IF( XYSET ) THEN
+
+C................  If source is in the domain, get cell number and store
+                IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
+
+                    C = ( ROW-1 ) * NCOLS + COL
+                    NX( C ) = NX( C ) + 1
+                    J = J + 1
+
+C.....................  Check that the maximum number of sources per cell is ok
+                    IF ( J .LE. NMATX ) THEN
+                	IS ( J ) = S
+                        IC ( J ) = C
+                	CS ( J ) = 1.0
+                    END IF
+
+C................  Otherwise, mark source as being outside domain
+                ELSE
+                    INDOMAIN( S ) = .FALSE.
+                END IF
+
+                CYCLE           ! To head of loop over sources
+
+            END IF   ! End if assigned point location or not
 
 C.............  Find FIP/RoadWayType adjustment for FIP and RWT
 c            ADJ = ADJMV( NADJ1, FIP, RWT, ADJFIP, ADJRWT, ADJFAC1 )
@@ -424,8 +474,12 @@ C.............  Loop through all of the cells intersecting this co/st/cy code.
                 C = FIPCELL( K,F )   ! Retrieve cell number
 
 C.................  Set the surrogate fraction
-                CALL SETFRAC( FDEV, S, ISIDX, K, F, 2, INDOMAIN( S ), 
-     &                        CSRC2, FRAC )
+                CALL SETFRAC( S, ISIDX, K, F, 2, INDOMAIN( S ), 
+     &                        CSRC2, ID1, ID2, FRAC )
+
+C.................  Store surg IDs for reporting
+                SURGID1( S ) = ID1
+                SURGID2( S ) = ID2
 
                 IF( FRAC .GT. 0 ) THEN
 
@@ -503,8 +557,18 @@ C           source.
 
 C.........  Compress scratch gridding matrix into output representation
 C.........  and compute statistics.  Already NX part of gridding matrix
-        CMAX = MAXVAL( NX )
-        CMIN = MINVAL( NX )
+
+        CMAX = 0
+        CMIN = 99999999
+        DO C = 1, NGRID
+            J = NX( C )
+            IF (      J .GT. CMAX ) THEN
+                CMAX = J
+            ELSE IF ( J .GT. 0 .AND. J .LT. CMIN ) THEN
+                CMIN = J
+            END IF
+        END DO
+ 
         DO K = 1, NCOEF  ! Loop through cell-src intersections
 
             J = IDXSRT( K )                           
@@ -521,6 +585,11 @@ C.........  Write gridding matrix
             MESG = 'Error writing GRIDDING MATRIX file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+
+C.........  Write output surrogates codes
+        DO S = 1, NSRC
+            WRITE( FDEV,93360 ) S, SURGID1( S ), SURGID2( S )
+        END DO
 
 C............................................................................
 C..........   Generate ungridding matrix ....................................
@@ -653,6 +722,10 @@ C.........  Dellallocate locally allocated memory
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93360   FORMAT( I8, 1X, I4, 1X, I4 )
 
 C...........   Internal buffering formats............ 94xxx
 

@@ -1,6 +1,5 @@
 
-        SUBROUTINE SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, 
-     &                      MXCSRC, NMATX )
+        SUBROUTINE SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, NMATX )
 
 C***********************************************************************
 C  subroutine body starts at line 102
@@ -46,6 +45,9 @@ C...........   This module is the source inventory arrays
 C...........   This module contains the cross-reference tables
         USE MODXREF
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C...........   This module contains the gridding surrogates tables
         USE MODSURG
 
@@ -54,18 +56,15 @@ C...........   This module contains the gridding surrogates tables
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-c        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
-c        INTEGER         
-
-c        EXTERNAL        
+        LOGICAL   INGRID
+        EXTERNAL  INGRID
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  !  source category
         INTEGER     , INTENT (IN) :: NSRC      !  local number of sources
-        INTEGER     , INTENT (IN) :: NGRID     !  number of grid cells   
         INTEGER     , INTENT(OUT) :: MXSCEL    !  max sources per cell   
         INTEGER     , INTENT(OUT) :: MXCSRC    !  max cells per source   
         INTEGER     , INTENT(OUT) :: NMATX     !  no. src-cell intersections   
@@ -82,15 +81,20 @@ C...........   Other local variables
         INTEGER         C, F, J, K, I, N, S          ! counters and indices
 
         INTEGER         CCNT             ! counters for no. non-zero-surg cells
-        INTEGER         CELLSRC          ! cell number as source char
+        INTEGER      :: CELLSRC = 0      ! cell number as source char
+        INTEGER         COL              ! tmp column
+        INTEGER         ID1, ID2         ! primary and 2ndary surg codes
         INTEGER         ISIDX            ! tmp surrogate ID code index
         INTEGER         NCEL             ! tmp number of cells
+        INTEGER         ROW              ! tmp row
 
         REAL            ALEN        ! link length
 
         LOGICAL      :: EFLAG = .FALSE. ! true: error flag
+        LOGICAL      :: LFLAG = .FALSE. ! true: location data available
+        LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
-        CHARACTER*300   MESG        ! message buffer
+        CHARACTER*256   MESG        ! message buffer
 
         CHARACTER(LEN=LNKLEN3) :: CLNK = ' '   ! tmp link ID
 
@@ -103,6 +107,9 @@ C.........  Print status message
         MESG = 'Computing gridding matrix size...'
         CALL M3MSG2( MESG )
 
+C.........  Set flag to indicate that XLOCA/YLOCA are available
+        LFLAG = ALLOCATED( XLOCA )
+
 C.........  Initialize the count of sources per cell
         NX = 0   ! array
 
@@ -114,13 +121,31 @@ C.........  Loop through sources
             IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
             IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
 
+C.............  Determine if x/y location is available
+            XYSET = .FALSE.
+            IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
+
 C.............  If cell-specific source...
             IF ( CELLSRC .GT. 0 ) THEN
                 NCEL = 1
                 ACEL( 1 ) = CELLID( S )
                 AFAC( 1 ) = 1.
 
-C............  If non-link source...
+C.............  Check if source has been converted to point src
+            ELSE IF( XYSET ) THEN
+
+C................  If source is in the domain....
+                IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
+
+C....................  Set as 1 cell and get the cell number
+                    NCEL = 1
+                    ACEL( 1 ) = ( ROW-1 ) * NCOLS + COL
+                    AFAC( 1 ) = 1.
+
+                END IF
+
+C............  If area/non-link source...
             ELSE IF( CLNK .EQ. ' ' ) THEN
 
 C.................  Retrieve the index to the surrogates cy/st/co list
@@ -135,8 +160,8 @@ C                   surrogates tables from MODSURG
                     ACEL( 1:NCEL ) = FIPCELL( 1:NCEL, F )      ! arrays
 
                     DO K = 1, NCEL
-                        CALL SETFRAC( 0, S, ISIDX, K, F, 1, .FALSE., 
-     &                                ' ', AFAC( K ) )
+                        CALL SETFRAC( S, ISIDX, K, F, 1, .FALSE., 
+     &                                ' ', ID1, ID2, AFAC( K ) )
                     END DO
 
 C.................  Otherwise, skip this source because it's outside the grid

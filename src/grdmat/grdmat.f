@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C COPYRIGHT (C) 2002, MCNC EnvironmentXal Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -38,6 +38,9 @@ C
 C***************************************************************************
 
 C...........   MODULES for public variables
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+
 C...........   This module is the source inventory arrays
         USE MODSOURC
 
@@ -55,9 +58,10 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
+c      INCLUDE 'PARMS3.EXT'    !  I/O API parameters (in modfileset)
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations 
+c      INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures (in modfileset)
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -65,13 +69,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL                DSCM3GRD
         LOGICAL                ENVYN
         CHARACTER(LEN=IODLEN3) GETCFDSC
+        INTEGER                INDEX1
         LOGICAL                INGRID
         INTEGER                PROMPTFFILE
-        CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
    
-        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INGRID, PROMPTFFILE, 
-     &            PROMPTMFILE, VERCHAR
+        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, INGRID, 
+     &            PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -128,6 +132,7 @@ C...........   Other local variables
 
         REAL            CAVG   ! average number sources per cell
 
+        LOGICAL      :: A2PFLAG = .FALSE.  ! true: inv has ar-to-pt locations
         LOGICAL      :: AFLAG   = .FALSE.  ! true: use grid adjustments file
         LOGICAL      :: DFLAG   = .FALSE.  ! true: use link defs file
         LOGICAL      :: EFLAG   = .FALSE.  ! true: error found
@@ -183,7 +188,7 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........   Get file names and open files
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
         ENLEN = LEN_TRIM( ENAME )
@@ -203,7 +208,7 @@ c     &           'Enter logical name for ADJUSTMENT FACTORS file',
 c     &           .TRUE., .TRUE., CRLF // 'ADJUST', PROGNAME )
 
 C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME, ALLFILES ) ) THEN
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:ENLEN ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -234,6 +239,17 @@ C.........  Set inventory variables to read for all source categories
             IVARNAMS( 3 ) = 'CELLID'
             IVARNAMS( 4 ) = 'CSOURC'
 
+C............  Check to see if the point locations are in the AREA
+C              file.  This makes the code backwards compatible with
+C              AREA files created by an older version of SMOKE.
+            K = INDEX1( 'XLOCA', NVARSET, VNAMESET )
+            IF ( K .GT. 0 ) THEN
+                A2PFLAG = .TRUE.
+                NINVARR = 6
+                IVARNAMS( 5 ) = 'XLOCA'
+                IVARNAMS( 6 ) = 'YLOCA'
+            END IF
+
         CASE ( 'MOBILE' )
             NINVARR = 10
             IVARNAMS( 2 ) = 'IRCLAS'
@@ -245,6 +261,17 @@ C.........  Set inventory variables to read for all source categories
             IVARNAMS( 8 ) = 'YLOC1'
             IVARNAMS( 9 ) = 'XLOC2'
             IVARNAMS( 10 ) = 'YLOC2'
+
+C............  Check to see if the point locations are in the AREA
+C              file.  This makes the code backwards compatible with
+C              AREA files created by an older version of SMOKE.
+            K = INDEX1( 'XLOCA', NVARSET, VNAMESET )
+            IF ( K .GT. 0 ) THEN
+                A2PFLAG = .TRUE.
+                NINVARR = 13
+                IVARNAMS( 12 ) = 'XLOCA'
+                IVARNAMS( 13 ) = 'YLOCA'
+            END IF
 
         CASE ( 'POINT' )
             NINVARR = 3
@@ -401,6 +428,13 @@ C.........  If output grid is different from surrogates, write message
             CALL M3MSG2( MESG )
         END IF
 
+C.........  If area or mobile inventory has point source locations,
+C           convert point source coordinates from lat-lon to output grid
+        IF( A2PFLAG ) THEN
+            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, XLOCA, YLOCA )
+        END IF
+
 C.........  Depending on source category, convert coordinates, determine size
 C           of gridding matrix, and allocate gridding matrix.
 
@@ -409,7 +443,7 @@ C           of gridding matrix, and allocate gridding matrix.
         CASE( 'AREA' )
 
 C.............  Determine sizes for allocating area gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
+            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, NMATX )
 
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
@@ -424,7 +458,7 @@ C.............  Convert mobile source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOC2, YLOC2 )
 
 C.............  Determine sizes for allocating mobile gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
+            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, NMATX )
  
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
@@ -477,14 +511,14 @@ C           is done so the sparse i/o api format can be used.
 
         CASE( 'AREA' )
 
-            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NGRID, NMATX, 
+            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX, 
      &                     GMAT( 1 ), GMAT( NGRID+1 ), 
      &                     GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
 
         CASE( 'MOBILE' )
 
             CALL GENMGMAT( GNAME, UNAME, RDEV, MXSCEL, MXCSRC, NSRC, 
-     &                     NGRID, NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
+     &                     NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
      &                     GMAT( NGRID+NMATX+1 ), UMAT( 1 ), 
      &                     UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
      &                     NK, CMAX, CMIN, NKU, CMAXU, CMINU )
@@ -502,15 +536,15 @@ C.........  Report statistics for gridding matrix
         CALL M3MSG2( 'GRIDDING-MATRIX statistics:' )
 
         WRITE( MESG,94010 ) 
-     &         'Total number of coefficients   :', NK   ,
+     &         'Total number of coefficients    :', NK   ,
      &         CRLF() // BLANK5 //
-     &         'Max  number of sources per cell:', CMAX,
+     &         'Max  number of sources per cell :', CMAX,
      &         CRLF() // BLANK5 //
-     &         'Min  number of sources per cell:', CMIN
+     &         'Min  number sources per cell > 0:', CMIN
 
         L1 = LEN_TRIM( MESG )
         WRITE( MESG,94020 ) MESG( 1:L1 ) // CRLF() // BLANK5 //
-     &         'Mean number of sources per cell:', CAVG
+     &         'Mean number of sources per cell :', CAVG
 
         CALL M3MSG2( MESG )
 
@@ -561,7 +595,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
 
-94020   FORMAT( A, :, F8.2 )
+94020   FORMAT( A, :, F10.2 )
 
         END PROGRAM GRDMAT
 
