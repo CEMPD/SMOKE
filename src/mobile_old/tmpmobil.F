@@ -278,6 +278,7 @@ C...........   Other local variables
         INTEGER         XDEV    ! ...for cross-reference input file
         INTEGER         PDEV    ! ...temporal profile input file
         INTEGER         TDEV    ! ...speciation list file
+C       INTEGER         RDEV    ! ...output report file
 
         INTEGER         H, HCORR, I, II, IREC  
         INTEGER         J, K, KU, L, M, N1, N2, F, S, T, V
@@ -403,6 +404,9 @@ C.........  Prompt for time zone of temperature data.
      &           'Enter logical name for SPECIATION LIST file',
      &           .TRUE., .TRUE., 'MSLST', 'TMPMOBIL' )
 
+C       RDEV = PROMPTFFILE( 
+C    &           'Enter logical name for output report file',
+C    &           .FALSE., .FALSE., 'MRPRT', 'TMPMOBIL' )
 
 C.......   Get time period for output file:
 
@@ -1103,6 +1107,15 @@ C............. Set using fallback profiles
   110               CONTINUE
   111           CONTINUE
 
+                WRITE( MESG,94010 )    ! sl
+     &              'No value for FIP ', FIP,
+     &              ' RDT ', RDT,' LNK ', LNK
+                CALL M3MESG( MESG )
+
+                WRITE( MESG,94010 )
+     &              '     Using default profile'
+                CALL M3MESG( MESG )
+
             END IF
 
 266         CONTINUE  ! End of XREF selection
@@ -1234,6 +1247,16 @@ C............   fallback
                 DO  344  T = 0, 23
                     EFDEX( T,S ) = FIND1( MPREF( T,F ), 
      &                                    REFCNT, REFLIST )
+
+                WRITE( MESG,94010 )    ! sl
+     &              'No value for FIP ', FIP,
+     &              ' RDT ', RDT,' LNK ', LNK
+                CALL M3MESG( MESG )
+
+                WRITE( MESG,94010 )
+     &              '     Using default profile'
+                CALL M3MESG( MESG )
+
 344             CONTINUE
                 GO TO  355
             END IF

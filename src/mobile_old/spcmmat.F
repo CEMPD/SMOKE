@@ -815,6 +815,16 @@ C...........   Process volatile conversion factors if necessary
 
                             VOLADJ = CONVV0( VHT,EMT )
 
+                            WRITE( MESG,94010 )    ! sl
+     &                         'No volatile converions factor' //
+     &                         ' found for FIP ', 
+     &                          FIP, ' RDT ', RDT,' LNK ', LNK
+                            CALL M3MESG( MESG )
+
+                            WRITE( MESG,94010 )
+     &                         '     Using default profile'
+                            CALL M3MESG( MESG )
+
                         ENDIF  ! road class match
                     ENDIF      ! state-road class match
                 ENDIF          ! FIP-road class match
