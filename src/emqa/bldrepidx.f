@@ -387,16 +387,18 @@ C.................  For species based on inventory pollutant, set index
                     SPCTOINV( V ) = MAX( I1,0 )
 
 C.................  For species based on activity, set index and write note
-                ELSE IF( I2 .GT. 0 .AND. TPACTIDX( I3 ) .GT. 0 ) THEN
+                ELSE IF( I2 .GT. 0 .AND. I3 .GT. 0 ) THEN
+                    IF ( TPACTIDX( I3 ) .GT. 0 ) THEN
 
-                    SPCTOTPR( V ) = I3 + NIPPA
+                        SPCTOTPR( V ) = I3 + NIPPA
 
-                    I2 = INDEX1( SBUF, V, SPCNAM )
-                    IF( I2 .LE. 0 ) THEN
-                        L2 = LEN_TRIM( SBUF )
-                        MESG = 'NOTE: Species "' // SBUF(1:L2) // 
-     &                         '" created based on activity data.'
-                        CALL M3MESG( MESG )
+                        I2 = INDEX1( SBUF, V, SPCNAM )
+                        IF( I2 .LE. 0 ) THEN
+                            L2 = LEN_TRIM( SBUF )
+                            MESG = 'NOTE: Species "' // SBUF(1:L2) // 
+     &                             '" created based on activity data.'
+                            CALL M3MESG( MESG )
+                        END IF
                     END IF
 
 C.................  For emission type not based on activity
