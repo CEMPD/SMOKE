@@ -181,6 +181,8 @@ C.................  Set WFLAG to trur for using weekly temporal adjustments
                 MREF = MPRNA( S )
                 WREF = WPRNA( S )
                 DREF = DPRNA( S )
+                
+                CSRC = CSOURC( S )
                 CALL SETSOURCE_TPROFS  ! Sets MDEX, WDEX, DDEX
 
             ENDDO
