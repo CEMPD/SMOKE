@@ -470,7 +470,7 @@ C.................  Try for any country/state code match
                 F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 ) 
 
                 IF( F0 .GT. 0 .AND. ICTL04(F0,V) .GE. ADDPS ) THEN
-                    IDX = ICTL04( F0,V )
+                    IDX = ICTL04( F0,V ) - ADDPS
                     CALL SETSOURCE_CONTROL_INDEX
                     CYCLE                       !  to end of sources-loop
 
