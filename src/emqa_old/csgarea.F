@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM CSGAREA
 
 C***********************************************************************
-C  program body starts at line 104
+C  program body starts at line 123
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -20,8 +18,28 @@ C       Models-3 I/O; GETYN, TRIMLEN
 C
 C  REVISION  HISTORY:
 C       Prototype  3/95 by CJC.
-C
+C       Extra dimension checks 12/96 by CJC
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
+C                Modeling System
+C File Version @(#)$Id$
+C Pathname:    $Source$
+C Last updated: $Date$ 
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C***************************************************************************/
 
       IMPLICIT NONE
 
@@ -34,7 +52,6 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
-
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         DSCGRID
@@ -44,7 +61,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         
         EXTERNAL        DSCGRID, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
-
 
 C...........   PARAMETER
 
@@ -99,7 +115,7 @@ C...........   Other local variables
         CHARACTER*16    ENAME   !  logical name for emission output file
             
         CHARACTER*16    SCRBUF  !  scratch area
-
+        CHARACTER*256   MESG    !  message buffer
 
 C***********************************************************************
 C   begin body of program CSGAREA
@@ -136,7 +152,6 @@ C   begin body of program CSGAREA
             CALL EXIT( 0 )
         END IF
 
-
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, area source file, 
 C.......   optional output file
@@ -165,6 +180,11 @@ C.......   Build description of output file, and optionally open it:
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3EXIT( 'CSGAREA', 0, 0, 
      &              'Could not get description of file ' // ANAME, 2 )
+        ELSE IF ( NROWS3D .NE. NASRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  EMISSIONS file:', NROWS3D,
+     &      'program:', NASRC
+            CALL M3EXIT( 'CSGAREA', 0, 0, MESG, 2 )
         END IF
 
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
@@ -199,7 +219,6 @@ C.......   Build description of output file, and optionally open it:
             VTYPE3D( V ) = m3REAL
 33      CONTINUE
         FDESC3D( 1 ) = 'area source speciated gridded emissions.'
-                 
         
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for OUTPUT EMIS file ' //
@@ -233,9 +252,14 @@ C.......   Read gridding, speciation, and (optional) control matrices:
 C.......   Build description of how to use speciation matrix:
 
         IF ( .NOT. DESC3( SNAME ) ) THEN
-            CALL M3EXIT( 'CSGAREA', 0, 0, 
-     &                   'Could not get description of file ' // SNAME,
-     &                   2 )
+            WRITE( MESG, '(2A)' ) 
+     &      'Could not get description of file ', SNAME
+            CALL M3EXIT( 'CSGAREA', 0, 0, MESG, 2 )
+        ELSE IF ( NROWS3D .NE. NASRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  S-MATRIX file:', NROWS3D,
+     &      'program:', NASRC
+            CALL M3EXIT( 'CSGAREA', 0, 0, MESG, 2 )
         END IF
 
         DO  54  V = 1, NIPOL
@@ -276,13 +300,23 @@ C.......   Build description of how to use speciation matrix:
             
 55      CONTINUE
 
-
 C.......   If CONTROLFLAG, read and apply control matrix:
 
         IF( CONTROLFLAG ) THEN
 
             WRITE( *,92000 ) 
      &      ' ', 'Reading CONTROL matrix.', ' '
+
+            IF ( .NOT. DESC3( CNAME ) ) THEN
+                WRITE( MESG, '(2A)' ) 
+     &          'Could not get description of file ', CNAME
+                CALL M3EXIT( 'CSGAREA', 0, 0, MESG, 2 )
+            ELSE IF ( NROWS3D .NE. NASRC ) THEN
+                WRITE( MESG, 94010 )
+     &          'Dimension mismatch.  C-MATRIX file:', NROWS3D,
+     &          'program:', NASRC
+                CALL M3EXIT( 'CSGAREA', 0, 0, MESG, 2 )
+            END IF
 
             DO  66 S = 1, NIPOL
 
@@ -317,7 +351,6 @@ C...............   e.g., the "42101" in "42101toCO"
 
         END IF          !  if controlflag
         
-
 C.......   Transform and write out area source emissions values:
 
         IF ( CONTROLFLAG .AND. OUTPUTFLAG ) THEN
@@ -391,7 +424,6 @@ C.......   Transform and write out area source emissions values:
         CALL M3EXIT( 'CSGAREA', 0, 0, 
      &               'Normal completion  of PROGRAM CSGAREA', 0 )
 
-
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Error and warning message formats..... 91xxx
@@ -408,6 +440,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 
 C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I10, :, 2X ) )
 
 
 C...........   Miscellaneous formats................. 95xxx
