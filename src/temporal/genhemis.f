@@ -336,27 +336,6 @@ C.................  Read emissions or activity for day-specific data and store
 C                   data in EMACV using index INDXD
             DO V = 1, NPLE
 
-                IF( LDSPOA( V ) ) THEN
-
-                    NAMBUF = NAMIN( V )
-                    IF( .NOT. READ3( DNAME, NAMBUF, ALLAYS3,
-     &                               JDATE, JTIME, EMACD    )) THEN
-
-                        MESG = 'Could not read "' // 
-     &                         NAMBUF( 1:LEN_TRIM( NAMBUF ) ) // 
-     &                         '" from file "' // DNAME // '".'
-                        CALL M3EXIT( PROGNAME,JDATE,JTIME,MESG,2 )
-
-                    END IF      !  if read3() failed on day-specific data
-
-                    DO I = 1, NDYSRC
-                        S = INDXD( I )
-                        IF( S .EQ. 0 ) CYCLE
-                        IF( EMACD( I ) .GT. AMISS3 )
-     &                      EMACV( S,V ) = EMACD( I )
-                    END DO
-
-                END IF  ! if this pollutant is day-specific
             END DO      ! end loop on day-specific pollutants
 
         END IF          ! if using day-specific emissions
@@ -468,6 +447,40 @@ C               activity. Also apply units conversion.
             DO S = 1, NSRC
                 EMIST( S,V ) = UFAC * EMACV( S,V ) * TMAT( S,V,HOUR )
             END DO
+
+C.............  If day-specific data are available for current pollutant
+            IF( LDSPOA( V ) ) THEN
+
+C.................  Read day-specific data
+                NAMBUF = NAMIN( V )
+                IF( .NOT. READ3( DNAME, NAMBUF, ALLAYS3,
+     &                           JDATE, JTIME, EMACD    )) THEN
+
+                    MESG = 'Could not read "' // 
+     &                     NAMBUF( 1:LEN_TRIM( NAMBUF ) ) // 
+     &                     '" from file "' // DNAME // '".'
+                    CALL M3EXIT( PROGNAME,JDATE,JTIME,MESG,2 )
+
+                END IF      !  if read3() failed on day-specific data
+
+C.................  Loop through day-specific sources
+                DO I = 1, NDYSRC
+
+                    S = INDXD( I )                      ! Get source index
+                    IF( S .EQ. 0 ) CYCLE                ! If no source, skip
+                    IF( EMACD( I ) .LE. AMISS3 ) CYCLE  ! No day-specific emis
+
+C.....................  Override annual adjusted emissions with day-specific 
+C                       emissions and hourly profile adjustments
+                    L   = DDEX( S,V )
+                    DAY = DAYOW( HOUR, TZONES( S ) )                        
+                    K   = 1 + MOD( HOUR + HCORR - TZONES( S ), 24 )
+
+                    EMIST( S,V ) = UFAC * EMACD( I ) * HRLFAC( K,L,DAY )
+
+                END DO
+
+            END IF  ! if this pollutant is day-specific
 
 C.............  If hourly data are available for current pollutant/activity and 
 C               the values are emissions (not profiles), then overwrite with
