@@ -1,6 +1,6 @@
 
         SUBROUTINE CHKFULLDY( NSRC, SDATE, STIME, EDATE, ETIME, 
-     &                        TZONES, LDAYSAV, MODELNAM )
+     &                        TZONES, LDAYSAV )
    
 C***********************************************************************
 C  subroutine CHKFULLDY body starts at line < >
@@ -61,7 +61,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: ETIME           ! end time HHMMSS
         INTEGER, INTENT (IN) :: TZONES ( NSRC ) ! time zones per source
         LOGICAL, INTENT (IN) :: LDAYSAV( NSRC ) ! true: use daylight time
-        CHARACTER(*), INTENT (IN) :: MODELNAM   ! emission factor model name
 
 C...........  Variables dimensioned by subroutine arguments
         INTEGER       SRTDAYHR( NSRC )
@@ -107,7 +106,7 @@ C.........  Create arrays that contain the start hour and end hour of a day
 C           (in GMT) for each source (it changes by day because of daylight
 C           savings) for the first day.
         CALL SETSRCDY( NSRC, SDATE, TZONES, LDAYSAV, 
-     &                 SRTDAYHR, ENDDAYHR, MODELNAM )
+     &                 SRTDAYHR, ENDDAYHR )
      
 C.........  Count how many sources are missing part of the first day of
 C           meteorology data for each time zone that has sources.  This is done
@@ -126,7 +125,7 @@ C           assuming that the start time given is in GMT.
 
 C.........  Get the day start and end hour for the last day of processing
         CALL SETSRCDY( NSRC, EDATE, TZONES, LDAYSAV, 
-     &                 SRTDAYHR, ENDDAYHR, MODELNAM )
+     &                 SRTDAYHR, ENDDAYHR )
 
 C.........  Count how many sources are missing part of the last day of
 C           meteorology data for each time zone that has sources.  The end time
