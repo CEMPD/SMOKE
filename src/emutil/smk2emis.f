@@ -2,7 +2,7 @@
       PROGRAM SMK2EMIS
 
 C***********************************************************************
-C  program body starts at line 127
+C  program body starts at line 134
 C
 C  DESCRIPTION:
 C       Use SMOKE NetCDF gridded input to produce UAM EMISSIONS input 
@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,6 +45,11 @@ C Last updated: $Date$
 C
 C*************************************************************************
 
+C.........  MODULES for public variables
+
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -56,68 +61,89 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         INTEGER         ENVINT
         REAL            ENVREAL
+        LOGICAL         ENVYN
+        INTEGER         GETFLINE
         INTEGER         GETNUM
+        INTEGER         INDEX1
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         SECSDIFF
         INTEGER         TRIMLEN
  
-        EXTERNAL    ENVINT, ENVREAL, GETNUM, PROMPTFFILE, 
-     &              PROMPTMFILE, SECSDIFF, TRIMLEN
+        EXTERNAL    CRLF, ENVINT, ENVREAL, ENVYN, GETFLINE, GETNUM, 
+     &              INDEX1, PROMPTFFILE, PROMPTMFILE, SECSDIFF, TRIMLEN
 
-C.........  Local variables
+C.........  Allocatable arrays
+        INTEGER, ALLOCATABLE ::  INTNAM ( :,: )  ! output species names
+        REAL,    ALLOCATABLE ::  EMIS   ( :,: )  ! input and output variable
 
-        INTEGER   BTIME         ! Beginning time of output file (YYYYDDD)
-        INTEGER   ETIME         ! Ending time of output file (HHMMSS)
-        INTEGER   IBD           ! Start date for each output time period (YYDDD)
-        INTEGER   IED           ! End date for output time period (YYDDD)
-        INTEGER   IFTYPE( 10 )  ! UAM filename in integer format
-        INTEGER   IFNOTE( 60 )  ! UAM note in integer format
-        INTEGER   SDATE         ! UAM file starting date
-        INTEGER   STIME         ! UAM file starting hour
-        INTEGER   JDATE         ! Date variable (YYYYDDD)
-        INTEGER   SDATEP1       ! Date variable plus one time step (YYYYDDD)
-        INTEGER   JTIME         ! Time variable (HHMMSS)
-        INTEGER   STIMEP1       ! Time variable plus one time step (HHMMSS)
-        INTEGER   :: NSEG = 1   ! Number of segments always 1
-        INTEGER   ODEV          ! UAM file desigator for output file
-        INTEGER   TSTEP         ! Time step (HHMMSS)
-        INTEGER   IUTMZONE      ! UTM zone
-        INTEGER   TZONE         ! time zone of output
-        INTEGER   NSTEPS        ! number of time steps
-        INTEGER   NSPECS        ! number of species
-        INTEGER   NZLOWR, NZUPPR ! UAM-IV diffbreak layer variables
-        INTEGER   NLAYS         ! number of vertical layers in UAM file
-        INTEGER   :: IXY = 0    ! segment origin always 0
-        INTEGER   LDEV          !  unit number for log file
-        INTEGER   IOS
-        INTEGER   I, J, K, HR
-        INTEGER   NDAYS, NHRS   
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: OUTNAMS( : ) ! output spec names
 
-        INTEGER, ALLOCATABLE ::  INTNAM ( : , : )  ! species names
+C.........  Static arrays
+        INTEGER    IFTYPE( 10 )  ! UAM filename in integer format
+        INTEGER    IFNOTE( 60 )  ! UAM note in integer format
 
-        REAL    BT            ! Beginning time for a time step period
-        REAL    ET            ! Ending time for a time step period
-        REAL    UTMX, UTMY    ! 
-        REAL    HTSUR, HTLOWR, HTUPPR  ! UAM-IV layer ht variables 
-        REAL    XORIG, YORIG  ! Grid origin
-        REAL    XCELL, YCELL  ! Grid resolution
+        CHARACTER(LEN=IOVLEN3) SEGMENT( 2 )
 
-        REAL,ALLOCATABLE ::  EMIS( :, : ) ! Input and output variable
-  
-        CHARACTER*16   ENAME   !  NetCDF logical input file name
-        CHARACTER*10   HDRKEY  !  UAM file name label for output file
+C.........  Unit numbers and logical file names
+        INTEGER :: LDEV          ! unit number for log file
+        INTEGER :: MDEV          ! unit number for mapping file
+        INTEGER :: ODEV          ! UAM file desigator for output file
+
+        CHARACTER*16   ENAME     !  NetCDF logical input file name
+
+C.........  Other local variables
+
+        INTEGER    I, J, K, L1, L2, HR   ! indices and counters
+
+        INTEGER    BTIME         ! beginning time of output file (YYYYDDD)
+        INTEGER    ETIME         ! ending time of output file (HHMMSS)
+        INTEGER    IBD           ! start date for each output time period (YYDDD)
+        INTEGER    IED           ! end date for output time period (YYDDD)
+        INTEGER    IOS           ! i/o status
+        INTEGER    IREC          ! line count
+        INTEGER    IUTMZONE      ! UTM zone
+        INTEGER :: IXY = 0       ! segment origin always 0
+        INTEGER    JDATE         ! date variable (YYYYDDD)
+        INTEGER    JTIME         ! time variable (HHMMSS)
+        INTEGER    NLAYS         ! number of vertical layers in UAM file
+        INTEGER    NLINE         ! no. lines input ascii file
+        INTEGER :: NSEG = 1      ! number of segments always 1
+        INTEGER    NSTEPS        ! number of time steps
+        INTEGER    NSPECS        ! number of species
+        INTEGER    NZLOWR, NZUPPR ! UAM-IV diffbreak layer variables
+        INTEGER    NDAYS, NHRS   
+        INTEGER    SDATE         ! UAM file starting date
+        INTEGER    SDATEP1       ! date variable plus one time step (YYYYDDD)
+        INTEGER    STIME         ! UAM file starting hour
+        INTEGER    STIMEP1       ! time variable plus one time step (HHMMSS)
+        INTEGER    TSTEP         ! time step (HHMMSS)
+        INTEGER    TZONE         ! time zone of output
+
+        LOGICAL :: EFLAG   = .FALSE. ! true: error found
+        LOGICAL :: MAPFLAG = .FALSE. ! true: use variable mapping input file
+
+        REAL       BT            ! Beginning time for a time step period
+        REAL       ET            ! Ending time for a time step period
+        REAL       HTSUR, HTLOWR, HTUPPR  ! UAM-IV layer ht variables 
+        REAL       UTMX, UTMY    ! 
+        REAL       XORIG, YORIG  ! Grid origin
+        REAL       XCELL, YCELL  ! Grid resolution
+
         CHARACTER*1    TEMPCH  !  For integer conversion
-        CHARACTER*256  MESG    !  Temporary message array
+        CHARACTER*10   HDRKEY  !  UAM file name label for output file
+        CHARACTER*44   NOTEDEF !  UAM file note default
+        CHARACTER*44   UNOTE   !  UAM file note from env variable
         CHARACTER*60   FNOTE   !  UAM file description
-        CHARACTER*44   NOTEDEF ! UAM file note default
-        CHARACTER*44   UNOTE   ! UAM file note from env variable
+        CHARACTER*80   LINE    !  line buffer
+        CHARACTER*256  MESG    !  Temporary message array
 
         CHARACTER*16 :: PROGNAME = 'SMK2EMIS'   !  program name
 
@@ -129,13 +155,29 @@ C   begin body of program SMK2EMIS
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
 
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
+
+C.........  Get environment variables that control this program
+        MAPFLAG = ENVYN( 'SMK2EMIS_VMAP_YN', 'Use names mapping file', 
+     &                   .FALSE., IOS )
+
+C.........  Set source category based on environment variable setting
+        CALL GETCTGRY
 
 C.........  Prompt for name of NetCDF input file
 
         ENAME = PROMPTMFILE(
      &       'Enter logical name for SMOKE gridded input (NetCDF) file',
-     &        FSREAD3, 'AGTS', PROGNAME )
+     &        FSREAD3, CRL // 'GTS_L', PROGNAME )
+
+C.........  Prompt for variable mapping file, if needed
+        IF( MAPFLAG ) THEN
+
+            MDEV = PROMPTFFILE( 
+     &             'Enter logical name for VARIABLE NAME MAP file',
+     &             .TRUE., .TRUE., 'VNAMMAP', PROGNAME )
+
+        END IF
 
 C.........  Prompt for keyword name of output file     
 C.........  Only EMISSIONS supported at this point
@@ -147,28 +189,15 @@ C..... Convert UAM keyword name to integer format (as in UAM)
 
         DO J= 1, 10
             TEMPCH = HDRKEY( J:J )
-            READ(TEMPCH, 91000) IFTYPE( J )
-        ENDDO
+            READ(TEMPCH, 93100) IFTYPE( J )
+        END DO
 
 C.........  Prompt for name of output file
 
         ODEV = PROMPTFFILE(
      &         'Enter logical name for ' // HDRKEY // 
      &         ' UAM output file ',
-     &         .FALSE., .FALSE., 'UAMGTS', PROGNAME )
-
-C.........  Read NetCDF header information:
-C.........  coordinate info, date, time, timestep , and variables
-
-        IF ( .NOT. DESC3( ENAME ) ) THEN
-
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:TRIMLEN( ENAME ) ) // '"'
-            CALL M3EXIT( PROGNAME , 0, 0, MESG, 2 )
-
-        ENDIF
-
-        NSPECS = NVARS3D
+     &         .FALSE., .FALSE., 'UAM_' // CRL // 'GTS', PROGNAME )
 
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
@@ -208,23 +237,21 @@ C..... Convert FNOTE to integer format (as in UAM)
 
         DO J = 1,60
             TEMPCH = FNOTE( J: J )
-            READ(TEMPCH, 91000) IFNOTE( J )
-        ENDDO
+            READ(TEMPCH, 93100) IFNOTE( J )
+        END DO
 
-C..... Allocate for species name in interger format
+C.........  Read NetCDF header information:
+C.........  coordinate info, date, time, timestep , and variables
 
-        ALLOCATE( INTNAM( NSPECS, 10  ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INTNAM', PROGNAME )
+        IF ( .NOT. DESC3( ENAME ) ) THEN
 
-C..... Convert output species names to integer format
+            MESG = 'Could not get description of file "' //
+     &             ENAME( 1:TRIMLEN( ENAME ) ) // '"'
+            CALL M3EXIT( PROGNAME , 0, 0, MESG, 2 )
 
-        DO I = 1, NSPECS
-          DO J = 1, 10
-              TEMPCH = VNAME3D( I )( J:J )
-              READ( TEMPCH , 91000) INTNAM ( I, J ) 
-          ENDDO
-        ENDDO
+        END IF
 
+        NSPECS = NVARS3D
         NSTEPS = MXREC3D
         TSTEP  = TSTEP3D
         JDATE  = SDATE3D
@@ -243,7 +270,7 @@ C...  Assumes UAM/CAMx wants hourly emissions for now
      &             'time-step not hourly :  TSTEP =  ', TSTEP   
            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-        ENDIF
+        END IF
 
 C.............  Prompt for starting date of UAM output file
 
@@ -265,7 +292,7 @@ C.............  Number of hours to output to UAM file
         MESG   = 'Enter number of time steps'
         NSTEPS = GETNUM( 1, NSTEPS, NSTEPS, MESG )
 
-C...   Calculate ending date and time
+C.........  Calculate ending date and time
 
         NDAYS = NSTEPS / 24 
         NHRS  = MOD( NSTEPS , 24 ) 
@@ -274,10 +301,101 @@ C...   Calculate ending date and time
           IBD = SDATE  - 1900000
         ELSE
           IBD = SDATE  - 2000000
-        ENDIF
+        END IF
        
         IED = IBD + NDAYS
         ETIME = STIME + ( NHRS * TSTEP ) 
+
+C.........  Allocate memory for and read remapping information
+        ALLOCATE( OUTNAMS( NSPECS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'OUTNAMS', PROGNAME )
+
+C.........  Initialize names map as input names
+        OUTNAMS( 1:NSPECS ) = VNAME3D( 1:NSPECS )
+
+        IF ( MAPFLAG ) THEN
+
+            NLINE = GETFLINE( MDEV, 'Variable mapping file' )
+
+            CALL M3MSG2( 'Reading variable mapping file...' )
+
+            IREC = 0
+            DO I = 1, NLINE
+
+                READ( MDEV, 93000, END=999, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF( LINE .EQ. ' ' ) CYCLE
+
+                IF ( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                  'I/O error', IOS, 
+     &                  'reading variable mapping file at line', IREC
+                    CALL M3MESG( MESG )
+                    CYCLE
+
+                END IF
+
+                CALL PARSLINE( LINE, 2, SEGMENT )
+
+C.................  Find variable name in list of species
+                K = INDEX1( SEGMENT( 1 ), NSPECS, VNAME3D )
+
+C.................  If not found, write message
+                IF( K .LE. 0 ) THEN
+
+                    L1 = LEN_TRIM( SEGMENT( 1 ) )
+                    MESG = 'WARNING: Ignoring "' // 
+     &                     SEGMENT( 1 )( 1:L1 ) //
+     &                     '" in variable mapping file'
+                    CALL M3MSG2( MESG )
+
+C.................  If found, write message and reassign
+                ELSE
+
+                    L1 = LEN_TRIM( SEGMENT( 2 ) )
+                    L2 = LEN_TRIM( OUTNAMS( K ) )
+                    MESG = 'NOTE: Renaming variable "' // 
+     &                     OUTNAMS( K )( 1:L2 ) // '" as "' //
+     &                     SEGMENT( 2 )( 1:L1 ) // '"'
+                    CALL M3MSG2( MESG )
+
+                    OUTNAMS( K ) = SEGMENT( 2 )
+
+                END IF
+
+            END DO
+
+        END IF
+
+        IF ( EFLAG ) THEN
+
+            MESG = 'Problem reading mapping names file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
+C..... Allocate for species name in integer format
+
+        ALLOCATE( INTNAM( NSPECS, 10  ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INTNAM', PROGNAME )
+
+C..... Convert output species names to integer format
+
+        DO I = 1, NSPECS
+          DO J = 1, 10
+              TEMPCH = OUTNAMS( I )( J:J )
+              READ( TEMPCH , 93100) INTNAM ( I, J ) 
+          END DO
+        END DO
+
+C.........  Allocate memory for emissions 
+        ALLOCATE( EMIS( NCOLS3D, NROWS3D ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMIS', PROGNAME )
+
+C.........  Write UAM Binary file  .........................................
 
 C....   Write UAM EMISSIONS header
 
@@ -295,11 +413,6 @@ C....   Write UAM EMISSIONS header
 C.........  Write out integer form of output variable names
 
         WRITE(ODEV,ERR=7010) ((INTNAM(J,I),I=1,10),J=1,NSPECS)
-
-C.........  Allocate memory for emissions 
-
-        ALLOCATE( EMIS( NCOLS3D, NROWS3D ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMIS', PROGNAME )
 
 C.........  Initialize time and date for time step after STIME and SDATE
 
@@ -322,9 +435,9 @@ C.........  Note 20th and 21st centuries only are supported
             ELSE
               IBD = SDATE   - 2000000
               IED = SDATEP1 - 2000000
-            ENDIF
+            END IF
 
-            WRITE (*,93000) SDATE, STIME
+            WRITE (*,93200) SDATE, STIME
 
 C.............  Set UAM formatted times and dates
 
@@ -343,14 +456,14 @@ C.....................  Read input file for time and species of interest
                   CALL M3ERR( PROGNAME , 0, 0,
      &                       'Error reading ' // VNAME3D( K ) // 
      &                       ' from file ' // ENAME , .TRUE. )
-                ENDIF 
+                END IF 
 
 C.............  Write UAM formatted output data for all variables
 
                 WRITE(ODEV,ERR=7011) NSEG, (INTNAM( K,J ),J=1,10),
      &                     (( EMIS( I,J ),I = 1,NCOLS3D ), J=1,NROWS3D )
 
-            ENDDO       ! Output variables loop
+            END DO       ! Output variables loop
 
 C.............  Update times and dates for next pass through loop
 
@@ -358,13 +471,18 @@ C.............  Update times and dates for next pass through loop
             STIME = STIMEP1
             CALL NEXTIME( SDATEP1, STIMEP1, TSTEP) 
 
-        ENDDO ! Time step loop 
+        END DO ! Time step loop 
 
 
 C.........  End of program
 
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
+C.........  Error message for reaching the end of file too soon
+999     MESG = 'End of file reached unexpectedly. ' //
+     &         'Check format of variable ' // CRLF() // BLANK5 //
+     &         'mapping file.'
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************    ERROR MESSAGES     ******************************
 
@@ -375,10 +493,16 @@ C******************    ERROR MESSAGES     ******************************
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-91000 FORMAT (A1)
-93000 FORMAT (/, 5X, 'Writing out for date ',i7,' and time ',i6,'.')
+C...........   Formatted file I/O formats............ 93xxx
+
+93000 FORMAT ( A )
+
+93100 FORMAT ( A1 )
+
+93200 FORMAT (/, 5X, 'Writing out for date ',i7,' and time ',i6,'.')
 
 C...........   Internal buffering formats............ 94xxx
+
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
 
 
