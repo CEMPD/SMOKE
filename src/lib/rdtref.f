@@ -130,6 +130,7 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) FIPZERO  !  buffer for zero FIPS code
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO  !  buffer for zero SCC
+        CHARACTER(LEN=SCCLEN3) SCCTEST  !  buffer for tester SCC for FLTRXREF
         CHARACTER(LEN=PLTLEN3) PLT      !  tmp plant ID
         CHARACTER(LEN=SCCLEN3) PSCCL    !  left digits of TSCC of prev iteration
         CHARACTER(LEN=SCCLEN3) SCCL     !  left digits of TSCC
@@ -257,11 +258,17 @@ C.................  Get SCC from source definition if it is defined already
                 CPOA = SEGMENT( 5 )   ! pollutant/emission type name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
 
+                IF( CATEGORY .NE. 'MOBILE' ) THEN
+                    SCCTEST = TSCC
+                ELSE
+                    SCCTEST = SCCZERO
+                END IF
+
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pol/act name 
 C                   with master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, 
+                CALL FLTRXREF( CFIP, CDUM, SCCTEST, CPOA, IDUM, 
      &                         IDUM, JSPC, PFLAG, SKIPREC  )
 
 C.................  Skip lines that are not valid for this inven and src cat
@@ -396,11 +403,17 @@ C.................  Get SCC from source definition if it is defined already
                 CPOA = SEGMENT( 5 )   ! pollutant/emission type name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
 
+                IF( CATEGORY .NE. 'MOBILE' ) THEN
+                    SCCTEST = TSCC
+                ELSE
+                    SCCTEST = SCCZERO
+                END IF
+
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pol/act name 
 C                   with master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, 
+                CALL FLTRXREF( CFIP, CDUM, SCCTEST, CPOA, IDUM, 
      &                         IDUM, JSPC, PFLAG, SKIPREC    )
 
 C.................  Skip lines that are not valid for this inven and src cat
@@ -465,7 +478,11 @@ C.....................  Convert TSCC to internal value
                     CLNK = SEGMENT( 7 )
                     CALL FLTRNEG( CLNK )
 
-                    CALL BLDCSRC( CFIP, RWTBLNK3, CLNK, CHRBLNK3,
+C.....................  Reset road class to blank if no link.  Road class is
+C                       now stored as part of SCC
+                    IF( CLNK .EQ. ' ' ) CRWT = ' '
+
+                    CALL BLDCSRC( CFIP, CRWT, CLNK, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                            POLBLNK3, CSRCALL )
 
@@ -498,6 +515,14 @@ C.................  Store case-indpendent fields
 
 C.........  Set actual number of cross-reference entries
         NXREF = N
+
+C.........  Check if no cross-reference entries were found
+        IF( NXREF .EQ. 0 ) THEN
+            MESG = 'ERROR: No valid temporal cross-reference entries '//
+     &             'were found'
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+        END IF
 
 C.........  Check for errors reading cross-reference file, and abort
         IF( EFLAG ) THEN
