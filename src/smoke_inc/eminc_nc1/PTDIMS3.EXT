@@ -1,0 +1,55 @@
+
+C ******   PTDIMS3.EXT   *****************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
+C
+C  CONTAINS:  
+C       dimensioning parameters for EDSS Point Emissions Prototype
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C       Prototype 6/95 by CJC
+C
+C....................................................................
+
+        INTEGER     NPFIP   !  number of point-source FIPS  codes appearing
+        INTEGER     NPSID   !  number of point-source state codes appearing
+        INTEGER     NPSCC   !  number of point-src SCC codes in inventory
+        INTEGER     NPCEL   !  max number of sources  per cell
+        INTEGER     NSREF   !  max number of entries in     speciation XREF
+        INTEGER     NTRFP   !  max number of FIP-SCC pairs in temporal XREF
+        INTEGER     NPSRC   !  actual number of point-sources
+        INTEGER     NPDAY   !  max number of day-specific  point-sources
+        INTEGER     NPHR    !  max number of hour-specific point-sources
+        INTEGER     NPELV   !  max number of elevated      point-sources
+
+        PARAMETER ( NPFIP =  300 ,  NPSID =   10 ,
+     &              NPSCC =  630 ,  NPCEL =  350 ,
+     &              NSREF =  620 ,  NTRFP = 8000 ,
+     &              NPSRC =  6573,
+     &              NPDAY =   50 ,
+     &              NPHR  =   50 ,
+     &              NPELV = 3000 )
+
+C................   end   PTDIMS3.EXT   ....................................
+

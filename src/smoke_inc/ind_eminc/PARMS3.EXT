@@ -1,0 +1,127 @@
+
+C ******   PARMS3.EXT   ******************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
+C
+C  CONTAINS:  dimensioning parameters, standard file-type, grid-type,
+C             (etc.) token values for FORTRAN Models-3 I/O System API
+C
+C  DEPENDENT UPON:  M3INT, M3REAL, M3DBLE consistent with NETCDF.EXT
+C
+C  REVISION HISTORY:
+C       prototype 3/92 by CJC
+C       Modified 12/92 by CJC:  new map projection type STEGRD3.
+C       Modified  6/94 by CJC:  I/O API Revisions.
+C
+C....................................................................
+
+C...........   Dimensioning parameters:
+            
+        INTEGER         MXDLEN3   !  description line length
+        INTEGER         NAMLEN3   !  name length (logical names, etc.)
+        INTEGER         MXFILE3   !  max number of open files
+        INTEGER         MXVARS3   !  max number of variables per file
+        INTEGER         MXDESC3   !  max number of description lines
+        INTEGER         MXLAYS3   !  max # of layers per file
+            
+C...........   Token-values ("magic numbers"):
+            
+        INTEGER         CUSTOM3   !  file type value "user-structured custom"
+        INTEGER         GRDDED3   !  file type value "gridded"
+        INTEGER         BNDARY3   !  file type value "boundary-condition"
+        INTEGER         IDDATA3   !  file type value "ID-referenced data"
+        INTEGER         PROFIL3   !  file type value "rawind vertical profiles"
+        INTEGER         GRNEST3   !  file type value "nested-grid"
+        INTEGER         SMATRX3   !  file type value "sparse matrix"
+        INTEGER         DCTNRY3   !  file type value "dictionary"
+        INTEGER         DGRAPH3   !  file type value "directed graph"
+        INTEGER         KFEVNT3   !  file type value "KF cloud event"
+
+        INTEGER         M3INT     !  variable type value "INTEGER"
+        INTEGER         M3REAL    !  variable type value "REAL"
+        INTEGER         M3DBLE    !  variable type value "DOUBLE PRECISION"
+
+        INTEGER         BUFFIL3   !  "buffered-file" value for CDFID
+        INTEGER         VIRFIL3   !  "virtual-file"  value for CDFID
+
+        INTEGER         FSREAD3   !  OPEN3() flag:  "old read-only" file
+        INTEGER         FSRDWR3   !  "old read-write" file
+        INTEGER         FSNEW3    !  "new (read-write)" file
+        INTEGER         FSUNKN3   !  "unknown (read_write)" file
+        INTEGER         FSCREA3   !  "unknown (write):  truncate if exists" file
+
+        INTEGER         LATGRD3   !  grid type value:  lat-lon coords
+        INTEGER         LAMGRD3   !  grid type value:  Lambert (RADM)
+        INTEGER         MERGRD3   !  grid type value:  Mercator coords
+        INTEGER         STEGRD3   !  grid type value:  stereographic
+        INTEGER         UTMGRD3   !  grid type value:  UTM (special case Merc.)
+
+        INTEGER         VGSGPH3   !  vert coord type 1:  hydrostatic sigma-P
+        INTEGER         VGSGPN3   !  vert coord type 2:  non-h sigma-P
+        INTEGER         VGSIGZ3   !  vert coord type 3:  sigma-Z
+        INTEGER         VGPRES3   !  vert coord type 4:  pressure (mb)
+        INTEGER         VGZVAL3   !  vert coord type 5:  Z (m) (above sea lvl)
+        INTEGER         VGHVAL3   !  vert coord type 6:  H (m) (above ground)
+
+        INTEGER         ALLAYS3   !  Flag value: read all layers
+        CHARACTER*16    ALLVAR3   !  Flag value: read all variables
+        
+        REAL            BADVAL3   !  real flag value: "bad" or "missing"
+        REAL            AMISS3    !  BADVAL3 < AMISS3 on all machines
+        INTEGER         OKFLAG3   !  int flag value: "good" values
+        INTEGER         IMISS3    !  int flag value: "bad" or "missing" 
+        CHARACTER*16    CMISS3    !  char flag value:  "missing"
+
+C.......   Dimensioning parameters:
+
+        PARAMETER    ( MXFILE3 =  64 , MXVARS3 = 120 , 
+     &                 MXDESC3 =  60 , MXDLEN3 =  80 , 
+     &                 NAMLEN3 =  16 , MXLAYS3 = 100 )
+
+C.......   Token-value parameters:
+
+        PARAMETER    ( KFEVNT3 =  -3 , DGRAPH3 =  -2 , 
+     &                 CUSTOM3 =  -1 , DCTNRY3 =   0 , 
+     &                 GRDDED3 =   1 , BNDARY3 =   2 , IDDATA3 = 3 , 
+     &                 PROFIL3 =   4 , GRNEST3 =   5 , SMATRX3 = 6 ,
+     &                 M3INT   =   4 , M3REAL  =   5 , M3DBLE  = 6 ,
+     &                 BUFFIL3 =  -1 , VIRFIL3 =  -2 ,
+     &                 FSREAD3 =   1 , FSRDWR3 =   2 ,
+     &                 FSNEW3  =   3 , FSUNKN3 =   4 ,
+     &                 FSCREA3 =   5 )
+        
+        PARAMETER    ( LATGRD3 =   1 , LAMGRD3 =   2 , 
+     &                 MERGRD3 =   3 , STEGRD3 =   4 , 
+     &                 UTMGRD3 =   5 , 
+     &                 VGSGPH3 =   1 , VGSGPN3 =   2 , 
+     &                 VGSIGZ3 =   3 , VGPRES3 =   4 , 
+     &                 VGZVAL3 =   5 , VGHVAL3 =   6 )
+        
+        PARAMETER    ( ALLAYS3 =   -1 , ALLVAR3 = 'ALL', 
+     &                 OKFLAG3 = 5461 , 
+     &                 IMISS3  = -9999 ,
+     &                 AMISS3  =  -9.000E36 , 
+     &                 BADVAL3 =  -9.999E36 ,
+     &                 CMISS3  =  '????????????????' )
+
+C................   end   PARMS3.EXT   ....................................
+

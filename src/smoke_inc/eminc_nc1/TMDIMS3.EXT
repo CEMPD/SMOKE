@@ -1,0 +1,75 @@
+
+C ******   TMDIMS3.EXT   *****************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
+C
+C  CONTAINS:  
+C       dimensioning parameters for EDSS temporal-allocation
+C       Emissions Prototypes
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C       Prototype 7/95 by CJC
+C
+C....................................................................
+
+C.......   Dimensioning parameters:
+
+        INTEGER     NMCOD   !  number of actual monthly temp. profile codes
+        INTEGER     NWCOD   !    "              weekly           "
+        INTEGER     NDCOD   !    "              diurnal-weekday  "
+        INTEGER     NTCOD   !  NMCOD*NWCOD*(NDCOD + NECOD) = final table size
+        INTEGER     MXSRC   !  max number of sources (any type)
+
+        PARAMETER ( NMCOD =  350 , 
+     &              NWCOD =  250 ,  
+     &              NDCOD =  150 ,
+     &              NTCOD = NMCOD * NWCOD * NDCOD ,
+     &              MXSRC = 10000 )
+
+C.......   Temporal conversion parameters:
+
+        INTEGER     SEC2DAY     !  number of seconds in one day
+        INTEGER     SEC2HR      !  number of seconds in one hour
+
+        PARAMETER ( SEC2DAY = 86400 ,
+     &              SEC2HR  =  3600 )
+
+C.......   Flag values for determining temporal-profile-category 
+C.......   applicability:  the corresponding category of temporal 
+C.......   profile coefficients should be used for a source S iff 
+C.......   MOD( TPFLAG( S ), *TPRFAC ) = 0.  
+C.......   (The *TPRFAC's should all be distinct primes)
+
+        INTEGER     WDTPFAC ! day-of-week temp-profile w/ weekday normalizer
+        INTEGER     STPRFAC ! seasonal    temp-profile
+        INTEGER     MTPRFAC ! month       temp-profile
+        INTEGER     WTPRFAC ! day-of-week temp-profile w/ full week normalizer
+
+        PARAMETER (   WDTPFAC = 7
+     &              , STPRFAC = 5
+     &              , MTPRFAC = 3
+     &              , WTPRFAC = 2 )
+
+C................   end   TMDIMS3.EXT   ....................................
+

@@ -1,0 +1,180 @@
+
+C ******   NETCDF.EXT   ******************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
+C
+C  CONTAINS:  definitions of constants, tokens, and routines
+C             for the netCDF interface
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C             Adapted 3/92 by CJC from the netCDF distribution
+C             file [...NETCDF.FORTRAN.VMS]NETCDF.INC
+C
+C....................................................................
+
+
+C.......   Functions in the FORTRAN interface:  These declarations
+C.......   may cause "unused variable" warnings
+
+      INTEGER*4 NCCRE, NCOPN, NCDDEF, NCDID, NCVDEF, NCVID, NCTLEN
+      EXTERNAL  NCCRE, NCOPN, NCDDEF, NCDID, NCVDEF, NCVID, NCTLEN
+
+
+C.......   machine specific XDR infinity constants
+
+      REAL*8      XDRDINF, XDRFINF
+      PARAMETER ( XDRDINF = 1.7014118346046923D+38 ,
+     &            XDRFINF = 2.93873588D-39 )
+
+CC.......   Fill values:
+CC.......   These values are stuffed into newly allocated space as appropriate.
+CC.......   The hope is that one might use these to notice that a particular
+CC.......   datum has not been set.
+C
+C      INTEGER*4 FILBYTE, FILCHAR,  FILSHORT, FILLONG
+C      REAL*4    FILFLOAT
+C      REAL*8    FILDOUB
+C
+CC.......   Largest Negative values:
+C
+C      PARAMETER ( FILBYTE  =         128 ,
+C     &            FILCHAR  =           0 ,
+C     &            FILSHORT =       32768 ,
+C     &            FILLONG  = -2147483647 - 1 )
+C
+CC.......   IEEE Infinity
+C
+C      PARAMETER ( FILFLOAT = XDRFINF )
+C      PARAMETER ( FILDOUB  = XDRDINF )
+C
+C.......   Tokens for NETCDF data types:
+
+      INTEGER*4 NCBYTE, NCCHAR, NCSHORT, NCLONG, NCFLOAT, NCDOUBLE
+
+      PARAMETER ( NCBYTE = 1 , NCCHAR  = 2 , NCSHORT  = 3 ,
+     &            NCLONG = 4 , NCFLOAT = 5 , NCDOUBLE = 6 )
+
+C.......   Masks for the struct NC flag field; passed in as 'mode'
+C.......   arg to nccreate and ncopen.
+
+      INTEGER*4 NCRDWR    !  read/write, 0 => readonly
+      INTEGER*4 NCCREAT   !  in create phase, cleared by ncendef
+      INTEGER*4 NCEXCL    !  on create destroy existing file
+      INTEGER*4 NCINDEF   !  in define mode, cleared by ncendef
+      INTEGER*4 NCNSYNC   !  synchronise numrecs on change  ( X'10' )
+      INTEGER*4 NCHSYNC   !  synchronise whole header on change  ( X'20' )
+      INTEGER*4 NCNDIRTY  !  numrecs has changed  ( X'40' )
+      INTEGER*4 NCHDIRTY  !  header info has changed  ( X'80' )
+      INTEGER*4 NCLINK    !  isa link  ( X'8000' )
+      INTEGER*4 NCNOWRIT  !  read only
+      INTEGER*4 NCWRITE   !  same as NCRDWR
+      INTEGER*4 NCGLOBAL  !  attribute id to put/get a global attribute
+      INTEGER*4 NCCLOB    !  clobber any existing file
+      INTEGER*4 NCNOCLOB  !  do not overwrite existing file
+      INTEGER*4 NCUNLIM   !  'size' argument to ncdimdef for unlimited dimension
+      INTEGER*4 NCFILL    !  prefill vars the default behavior
+      INTEGER*4 NCNOFILL  !  don't fill vars on endef, increase of record
+
+      PARAMETER ( NCRDWR   =     1 ,
+     &            NCNOWRIT =     0 ,
+     &            NCWRITE  = NCRDWR ,
+     &            NCCREAT  =     2 ,
+     &            NCEXCL   =     4 ,
+     &            NCINDEF  =     8 ,
+     &            NCNSYNC  =    16 ,
+     &            NCHSYNC  =    32 ,
+     &            NCNDIRTY =    64 ,
+     &            NCHDIRTY =   128 ,
+     &            NCLINK   = 32768 ,
+     &            NCGLOBAL =     0 ,
+     &            NCUNLIM  =     0 ,
+     &            NCFILL   =     0 ,
+     &            NCNOFILL =   256 ,
+     &            NCCLOB   =    11 ,
+     &            NCNOCLOB =    15 )
+
+C.......   netCDF system bound parameters:
+
+      INTEGER*4 MAXNCOP         !  max number of open netCDF files
+      INTEGER*4 MAXNCDIM        !  max number of dimension attributes
+      INTEGER*4 MAXNCATT        !  max number of attributes
+      INTEGER*4 MAXNCVAR        !  max number of variables
+      INTEGER*4 MAXNCNAM        !
+      INTEGER*4 MAXVDIMS        !
+
+      PARAMETER ( MAXNCOP  =  32 ,
+     &            MAXNCDIM =  32 ,
+     &            MAXNCATT = 512 ,
+     &            MAXNCVAR = 512 ,
+     &            MAXNCNAM = 128 ,
+     &            MAXVDIMS = MAXNCDIM )
+
+
+C.......   Global options variable used to determine behavior of
+C.......   error handler.  Initialized in lerror.c.
+C.......   Error codes
+
+      INTEGER*4 NCFATAL
+      INTEGER*4 NCVERBOS
+      INTEGER*4 NCNOERR         !  No Error
+      INTEGER*4 NCEBADID        !  Not a netcdf id
+      INTEGER*4 NCENFILE        !  Too many netcdfs open
+      INTEGER*4 NCEEXIST        !  netcdf file exists && NCNOCLOB
+      INTEGER*4 NCEINVAL        !  Invalid Argument
+      INTEGER*4 NCEPERM         !  Write to read only
+      INTEGER*4 NCENOTIN        !  Operation not allowed in data mode
+      INTEGER*4 NCEINDEF        !  Operation not allowed in define mode
+      INTEGER*4 NCECOORD        !  Coordinates out of Domain
+      INTEGER*4 NCEMAXDS        !  MAXNCDIMS exceeded
+      INTEGER*4 NCENAME         !  String match to name in use
+      INTEGER*4 NCENOATT        !  Attribute not found
+      INTEGER*4 NCEMAXAT        !  MAXNCATTRS exceeded
+      INTEGER*4 NCEBADTY        !  Not a netcdf data type
+      INTEGER*4 NCEBADD         !  Invalid dimension id
+      INTEGER*4 NCEUNLIM        !  NCUNLIMITED in the wrong index
+      INTEGER*4 NCEMAXVS        !  MAXNCVARS exceeded
+      INTEGER*4 NCENOTVR        !  Variable not found
+      INTEGER*4 NCEGLOB         !  Action prohibited on NCGLOBAL varid
+      INTEGER*4 NCENOTNC        !  Not a netcdf file
+      INTEGER*4 NCESTS          !  ?
+      INTEGER*4 NCENTOOL        !  ?
+      INTEGER*4 NCFOOBAR        !  ?
+      INTEGER*4 NCSYSERR        !  ?
+
+      PARAMETER ( NCFATAL  =  1 ,  NCVERBOS =  2 ,
+     &            NCNOERR  =  0 ,  NCEBADID =  1 ,
+     &            NCENFILE =  2 ,  NCEEXIST =  3 ,
+     &            NCEINVAL =  4 ,  NCEPERM  =  5 ,
+     &            NCENOTIN =  6 ,  NCEINDEF =  7 ,
+     &            NCECOORD =  8 ,  NCEMAXDS =  9 ,
+     &            NCENAME  = 10 ,  NCENOATT = 11 ,
+     &            NCEMAXAT = 12 ,  NCEBADTY = 13 ,
+     &            NCEBADD  = 14 ,  NCEUNLIM = 15 ,
+     &            NCEMAXVS = 16 ,  NCENOTVR = 17 ,
+     &            NCEGLOB  = 18 ,  NCENOTNC = 19 ,
+     &            NCESTS   = 20 ,  NCENTOOL = 21 ,
+     &            NCFOOBAR = 32 ,  NCSYSERR = -1 )
+
+C................   end   NETCDF.EXT   ....................................
+
