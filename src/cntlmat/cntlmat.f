@@ -280,15 +280,6 @@ C.............  Write-out control matrix
 C STOPPED HERE: Need to write opencmat, genaddc, report post-processor
         END IF
 
-C.........  Additive matrix
-        IF( DFLAG ) THEN
-
-C            CALL OPENCMAT( ENAME, NPOLADD, 'ADDITIVE', PNAMADD )
-
-C            CALL GENADDC( )
-
-        END IF
-
 C.........  Open final report file
 
 C.........  Post-process temporary files to create final report file
