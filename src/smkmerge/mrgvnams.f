@@ -73,6 +73,11 @@ C...........   Temporary arrays for building sorted pol-to-species names list
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE :: TVSORTA( : ) ! basis for sorting
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE :: TVDESCA( : ) ! pol-to-spec concat
 
+C...........   Temporary arrays for sorting biogenic species names
+        INTEGER               , ALLOCATABLE :: TMPBIDXA( : ) ! position in EMNAM
+        INTEGER               , ALLOCATABLE :: TMPBIDXB( : ) ! sorting index
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPBNAM ( : ) ! extra spc names
+
 C...........   Other local variables
         INTEGER         I, J, J1, J2, L, K, L1, L2, M, N  ! counters and indices
         INTEGER         LJ              ! string length of emis types joiner
@@ -302,6 +307,30 @@ C           for all source categories and the total.
      &    CALL BUILD_SPECIES_ARRAY( PNSMATV, PSVDESC, PNMSPC, PEMNAM )
         CALL BUILD_SPECIES_ARRAY(  NSMATV, TSVDESC, NMSPC, EMNAM )
 
+C.........  Resort biogenic species names to be consistent with global species
+C           list
+        ALLOCATE( TMPBNAM( BNMSPC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPBNAM', PROGNAME )
+        ALLOCATE( TMPBIDXA( BNMSPC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPBIDXA', PROGNAME )
+        ALLOCATE( TMPBIDXB( BNMSPC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPBIDXB', PROGNAME )
+
+        DO I = 1, BNMSPC
+            J = INDEX1( BEMNAM( I ), NMSPC, EMNAM )
+            TMPBIDXA( I ) = J
+            TMPBIDXB( I ) = I
+        END DO
+
+        CALL SORTI1( BNMSPC, TMPBIDXB, TMPBIDXA )        
+
+        TMPBNAM = BEMNAM  ! array
+
+        DO I = 1, BNMSPC
+            J = TMPBIDXB( I )
+            BEMNAM( I ) = TMPBNAM( J )
+        END DO
+   
 C.........  Create index between master species names and master inventory names
 C.........  If there are multiple pollutants per species, the last pollutant
 C           will be put in the index.
@@ -342,6 +371,7 @@ C               set units accordingly.  Set it based on the first one found.
 
 C.........  Deallocate temporary arrays
         DEALLOCATE( INDXA, TVSORTA, TVDESCA, INVDCOD, INVDNAM, INVSTAT )
+        DEALLOCATE( TMPBNAM, TMPBIDXA, TMPBIDXB )
 
 C.........  Abort if error(s) found
         IF( EFLAG ) THEN
