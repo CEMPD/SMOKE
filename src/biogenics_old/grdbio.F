@@ -238,7 +238,7 @@ C.......   Set up file description and open emissions file:
 
         ENAME = PROMPTMFILE(  
      &          'Enter logical name for NORMALIZED BIO output file',
-     &          FSUNKN3, 'BNORM', 'GRDBIO' )
+     &          FSUNKN3, 'BGRD', 'GRDBIO' )
 
 
 C.......   Loop:  read emission factor file
@@ -373,7 +373,7 @@ C              skip them.
 
 C...........   Initialize accumulator variables for this cell:
 
-            DO  56  M = 1, BSPCS - 1
+            DO  59  M = 1, BSPCS - 1
 
                 EPINE( M ) = 0.0
                 EDECD( M ) = 0.0
@@ -382,7 +382,7 @@ C...........   Initialize accumulator variables for this cell:
                 ELAI ( M ) = 0.0 
                 EAG  ( M ) = 0.0
 
-56          CONTINUE
+59          CONTINUE
 
             AFOR   = 0.0
             AAG    = 0.0
@@ -897,6 +897,7 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT ( 5X , A )
 
+92020   FORMAT ( 5X , A, I4, A, I4, A )
 
 C...........   Formatted file I/O formats............ 93xxx
                                    
