@@ -134,7 +134,15 @@ C           results are stored in module MODINFO.
         ELSE
 
             CALL GETSINFO
- 
+
+C.............  Ensure that there is at least one activity in the inventory 
+C               file, or else this program does not need to be run
+            IF( NIACT == 0 ) THEN
+                MESG = 'ERROR: No activities are found in the ' //
+     &                 'inventory file!  Program cannot be used.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
         END IF
 
 C.........  Read header of ungridding matrix...
