@@ -875,6 +875,11 @@ C.........  Set up gridded met file(s) dates and times for specific time zone
      &                  JTIME, NSTEPS, MDATE, MTIME, RDATE, RTIME )
         END IF
 
+C.........  Reset no. output steps if needed
+        IF( BSTEPS > NSTEPS ) THEN
+           BSTEPS = NSTEPS
+        END IF
+
         IF ( M2NAME .EQ. M3NAME ) THEN
 
            RDATE = MDATE  
