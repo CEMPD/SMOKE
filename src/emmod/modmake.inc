@@ -19,10 +19,13 @@ MODSTCY  = $(MD_OUT)/modstcy.o
 MODMERGE = $(MD_OUT)/modmerge.o
 MODELEV  = $(MD_OUT)/modelev.o
 MODMET   = $(MD_OUT)/modmet.o
+MODBIOG  = $(MD_OUT)/modbiog.o
+
 #
 MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODTPRO)  $(MODSPRO) \
            $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODMERGE)  \
-           $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV) $(MODMET)
+           $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV) $(MODMET)   \
+           $(MODBIOG) 
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
@@ -119,4 +122,10 @@ $(MODMET): $(MD_SRC)/modmet.f
 	if ( test -f modmet.mod ) ; then mv modmet.mod $(MD_OUT) ; fi
 	if ( test -f modmet.M   ) ; then mv modmet.M   $(MD_OUT) ; fi
 	if ( test -f MODMET.mod ) ; then mv MODMET.mod $(MD_OUT) ; fi
+
+$(MODBIOG): $(MD_SRC)/modbiog.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
+	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modbiog.f
+	if ( test -f modbiog.mod ) ; then mv modbiog.mod $(MD_OUT) ; fi
+	if ( test -f modbiog.M   ) ; then mv modbiog.M   $(MD_OUT) ; fi
+	if ( test -f MODBIOG.mod ) ; then mv MODBIOG.mod $(MD_OUT) ; fi
 
