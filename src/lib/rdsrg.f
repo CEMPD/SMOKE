@@ -3,7 +3,7 @@
      &                    XCELL, YCELL, NCOLS, NROWS ) 
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 117
 C
 C  DESCRIPTION:
 C      This subroutine allocates memory for the spatial surrogate
@@ -16,13 +16,13 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -466,7 +466,7 @@ C           less than or equal to 1.
             DO K = 1, NSRGS
 
 C.................  Check if county total surrogates greater than 1
-                IF( SRGCSUM( K,I ) .GT. 1. ) THEN
+                IF( SRGCSUM( K,I ) .GT. 1.001 ) THEN
                     GFLAG = .TRUE.
                     EXIT
                 END IF
@@ -525,6 +525,6 @@ C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT( A, 1X, I8, 1X, A, 1X, F10.6, 1X, A )
 
-94030   FORMAT( A, 1X, I6.6, A, 100( ' SSC(', I2.2, '):', F10.6, : ) )
+94030   FORMAT( A, 1X, I6.6, A, 100( ' SSC(', I3.2, ' ):', F8.4, : ) )
 
         END SUBROUTINE RDSRG
