@@ -84,7 +84,7 @@ C...........   Local allocatable arrays
         LOGICAL, ALLOCATABLE, SAVE :: NOMISS( :,: )
 
 C...........   Local arrays
-        INTEGER, SAVE :: SPIDX2( MXSPDAT )
+        INTEGER, ALLOCATABLE, SAVE :: SPIDX2( : )
 
 C...........   Other local variables
         INTEGER          I, J, K, L2, LS, S, V, V2
@@ -129,6 +129,8 @@ C.............  Create reverse index for pollutants and activities
             END DO
  
 C.............  Create reverse index for special variables
+            ALLOCATE( SPIDX2( MXSPDAT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPIDX2', PROGNAME )
             DO V = 1, MXSPDAT
                 K = SPIDX( V )
                 IF( K .GT. 0 ) SPIDX2( K ) = V       
