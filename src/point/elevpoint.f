@@ -206,6 +206,7 @@ C...........   Other local variables
 
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
+        LOGICAL    VFLAG              ! true: use variable grid
 
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER
@@ -277,6 +278,10 @@ C           run
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
         END IF
+
+C.........  Check if using a variable grid
+        VFLAG = ENVYN( 'USE_VARIABLE_GRID', 
+     &                 'Use variable grid definition', .FALSE., IOS )
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
@@ -861,8 +866,13 @@ C.............  Convert x,y location to coordinates of the projected grid
      &                 XCENT, YCENT, GRPXL, GRPYL )
 
 C.............  Determine grid cells for these coordinate locations
-        CALL GENPTCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX, 
-     &                 INDX, GN, SN )
+        IF( VFLAG ) THEN
+            CALL GENPTVCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX,
+     &                      INDX, GN, SN )
+        ELSE
+            CALL GENPTCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX, 
+     &                     INDX, GN, SN )
+        END IF
 
 C.............  Convert grid cells to row and columns numbers
         DO I = 1, NGROUP
@@ -926,7 +936,7 @@ C.........  If all values are zero, give error
         END IF
 
 C.........  Open output files
-        CALL OPENEOUT( NGROUP, SDATE, STIME, ENAME, PDEV, MNAME )
+        CALL OPENEOUT( NGROUP, SDATE, STIME, ENAME, VFLAG, PDEV, MNAME )
 
 C.........  Write ASCII file
         MESG = 'Writing ELEVATED POINT SOURCE output file...'
