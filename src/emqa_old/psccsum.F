@@ -152,7 +152,7 @@ C.......   Get file name; open input area source
 
         FUNIT = PROMPTFFILE( 
      &          'Enter name for STATE/COUNTY FIPS CODE file',
-     &          .TRUE., .TRUE., 'STCYNAM', 'AREASUM' )
+     &          .TRUE., .TRUE., 'STCYNAM', 'PSCCSUM' )
 
         OUNIT = PROMPTFFILE( 
      &          'Enter name for EMISSIONS SUM REPORT file',
@@ -199,7 +199,7 @@ C     &            IALLSCC ( TOT_SCC ), ')'
                     IF ( TOT_ST .GT. MAXST ) THEN
                         WRITE ( BUF1, 600 ) TOT_ST
                         WRITE ( BUF2, 600 ) MAXST
-                        CALL M3EXIT( 'AREASUM', 0, 0, 
+                        CALL M3EXIT( 'PSCCSUM', 0, 0, 
      &                      'Number of states in STCYNAM (' // 
      &                      BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
      &                      ') exceeds program limits (MAXST=' //
@@ -284,7 +284,7 @@ C        PRINT *, 'Summing emissions...'
                     WRITE ( BUF1, 600 ) ACT_SCC
                     WRITE ( BUF2, 600 ) NPSCC
                     CALL M3EXIT( 'PSCCSUM', 0, 0, 
-     &                      'Number of SCC codes in AREA (' // 
+     &                      'Number of SCC codes in PNTS (' // 
      &                      BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
      &                      ') exceeds program limits (NPSCC=' //
      &                      BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
@@ -386,7 +386,7 @@ C        PRINT *, 'Summing emissions...'
                 END IF
 
                 LOC = INDEX ( SCCNAME, ',' ) - 1
-                DESC = SCCNAME ( 1 : AMIN1 ( LOC, 45 ) )
+                DESC = SCCNAME ( 1 : MIN( LOC, 45 ) )
             END IF 
             
             ! Sum the emissions 
