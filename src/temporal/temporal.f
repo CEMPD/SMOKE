@@ -1186,6 +1186,16 @@ C.................................  Open current file
      &                                           MESG, 2 )
                                 END IF
 
+C.................................  Read file description
+                                IF( .NOT. DESCSET( CURLNM ) ) THEN
+                                    MESG = 'ERROR: Could not get ' //
+     &                                     'description for file ' //
+     &                                     CRLF() // BLANK10 // '"' // 
+     &                                     TRIM( CURFNM ) // '".'
+                                    CALL M3EXIT( PROGNAME, FDATE, FTIME, 
+     &                                           MESG, 2 )
+                                END IF
+
 C.................................  Read emission factors from current file
                                 IF( .NOT. READSET( CURLNM, CBUF,ALLAYS3, 
      &                                           ALLFILES, SDATE3D, 
