@@ -42,7 +42,6 @@
 !.........  Sorted list of point sources for SMOKE inventory file
         INTEGER, ALLOCATABLE, PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
         INTEGER, ALLOCATABLE, PUBLIC:: ISIC  ( : )  !  source SIC
-        INTEGER, ALLOCATABLE, PUBLIC:: IORIS ( : )  !  source ORIS ID code
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: IPOSCOD( : ) !  positn of pol in INVPCOD
@@ -68,19 +67,19 @@
 
         REAL   , ALLOCATABLE, PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
 
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCC  ( : ) !  SCC
-        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID( : ) !  boiler ID
-        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK ( : ) !  link
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC( : ) !  plant desc
-        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURC( : ) !  concat src
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE( : ) !  vehicle type
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCC  ( : ) ! SCC
+        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC:: CORIS ( : ) ! DOE plant ID
+        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID( : ) ! boiler ID
+        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK ( : ) ! link
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC( : ) ! plant desc
+        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURC( : ) ! concat src
+        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE( : ) ! vehicle type
 
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, ALLOCATABLE, PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
         INTEGER, ALLOCATABLE, PUBLIC:: IFIPA ( : ) !  raw state/county FIPS code
         INTEGER, ALLOCATABLE, PUBLIC:: ISICA ( : ) !  raw SIC
-        INTEGER, ALLOCATABLE, PUBLIC:: IORISA( : ) !  raw ORIS ID code
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLASA( : )!  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPEA( : )!  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: TPFLGA( : ) !  temporal resolution code
@@ -104,11 +103,12 @@
         REAL   , ALLOCATABLE, PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
         REAL   , ALLOCATABLE, PUBLIC:: VMTA  ( : ) !  vehicle miles traveled
 
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCA  ( : ) !  SCC
-        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) !  boiler ID
-        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINKA ( : ) !  link
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) !  plant desc
-        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURCA( : ) !  concat src
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) !  vehicle type
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCA  ( : ) ! SCC
+        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC:: CORISA ( : ) ! DOE plant ID
+        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) ! boiler ID
+        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINKA ( : ) ! link
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) ! plant desc
+        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURCA( : ) ! concat src
+        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) ! vehicle type
 
         END MODULE MODSOURC
