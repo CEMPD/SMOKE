@@ -290,7 +290,12 @@ C.........  Get maximum number of warnings
 
 C.........  Set default inventory characteristics (declared in MODINFO) used
 C           by the IDA and EPS formats, including NPPOL
-        CALL INITINFO( FILFMT( 1 ) )
+        DO I = 1, SIZE( FILFMT )
+            IF( FILFMT( I ) > 0 ) THEN
+                CALL INITINFO( FILFMT( 1 ) )
+                EXIT
+            END IF
+        END DO
         
 C.........  Allocate memory for storing inventory data
         ALLOCATE( INDEXA( NRAWBP ), STAT=IOS )
@@ -351,10 +356,15 @@ C.........  Allocate memory for storing inventory data
             ALLOCATE( CPDESC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )
 
+            CORIS  = ORSBLNK3  ! array
+            CBLRID = BLRBLNK3  ! array
         END IF
 
 C.........  Initialize pollutant-specific values as missing
         POLVLA  = BADVAL3  ! array
+
+C.........  Read and process EMS-95 point source characteristics
+        CALL PROCEMSPT( FDEV, CFLAG, WFLAG )
 
 C.........  If inventory is list format, open first file for reading
         CURFIL = 1
@@ -366,6 +376,11 @@ C.............  Check if line is year packet
             LSTYR = GETINVYR( LINE )
             
             IF( LSTYR > 0 ) THEN
+                CURFIL = CURFIL + 1
+            END IF
+
+C.............  For EMS point inventory, skip ahead to emission file
+            IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
                 CURFIL = CURFIL + 1
             END IF
 
@@ -451,13 +466,37 @@ C.................  If list format, try to open next file
 C.....................  Close current file and reset counter
                     CLOSE( FDEV )
                     IREC = 0
-                
-                    CURFIL = CURFIL + 1
+
+C.....................  Advance to next file
+                    IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
+                        CURFIL = CURFIL + 3
+                    ELSE                    
+                        CURFIL = CURFIL + 1
+                    END IF
 
 C.....................  Check if there are more files to read
                     IF( CURFIL <= SIZE( FILFMT ) ) THEN 
+                        LINE = LSTSTR( CURFIL )
+
+C.........................  Check for INVYEAR packet                
+                        IF( GETINVYR( LINE ) > 0 ) THEN
+                            LSTYR = GETINVYR( LINE )
+                            CURFIL = CURFIL + 1  ! more to next file in list
+                        END IF
+
+C.........................  Advance to emission file for EMS point
+                        IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
+                            CURFIL = CURFIL + 1
+                        END IF
+
+C.........................  Make sure there are still files to read                            
+                        IF( CURFIL > SIZE( FILFMT ) ) THEN
+                            LSTTIME = .TRUE.
+                            EXIT
+                        END IF
+                         
                         INFILE = LSTSTR( CURFIL )
-                
+            
                         OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
      &                        IOSTAT=IOS )
                 
@@ -522,7 +561,7 @@ C.............  Process line depending on file format and source category
                     CALL RDDATAIDAMB( LINE, READDATA, READPOL,
      &                                NPOLPERLN, INVYEAR, HDRFLAG,
      &                                EFLAG )
-                    LNKFLAG = .FALSE.
+                    LNKFLAG = .FALSE.   ! no links in IDA format
                 CASE( 'POINT' )
                     CALL RDDATAIDAPT( LINE, READDATA, READPOL, 
      &                                NPOLPERLN, INVYEAR, CORS, BLID, 
@@ -541,14 +580,18 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                NPOLPERLN, INVYEAR, X1, Y1,
      &                                X2, Y2, ZONE, LNKFLAG, CFIP,
      &                                CROAD, CLNK, HDRFLAG, EFLAG )
-                    TIMEPERIOD = 'AD'
+                    TIMEPERIOD = 'AD'   ! all mobile data is average annual weekday
+                CASE( 'POINT' )
+                    CALL RDDATAEMSPT( LINE, READDATA, READPOL,
+     &                                NPOLPERLN, TIMEPERIOD, 
+     &                                HDRFLAG, EFLAG )
                 END SELECT
             CASE( NTIFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
                     CALL RDDATANTIAR( LINE, READDATA, READPOL, 
      &                                INVYEAR, HDRFLAG, EFLAG )
-                    NPOLPERLN = 1
+                    NPOLPERLN = 1   ! have to set fake value to force reporting
                 CASE( 'MOBILE' )
                     CALL RDDATANTIMB( LINE, READDATA, READPOL,
      &                                INVYEAR, HDRFLAG, EFLAG )
@@ -591,7 +634,8 @@ C.................  Calculate day to year conversion factor
             END IF
 
 C.............  Set inventory year in case there are no header lines
-            IF( INVYEAR == 0 ) THEN
+            IF( INVYEAR == 0 .OR.
+     &        ( LSTYR /= 0 .AND. INVYEAR /= LSTYR ) ) THEN
                 INVYEAR = LSTYR
                 
                 YEAR2DAY = YR2DAY( INVYEAR )
@@ -646,7 +690,7 @@ C.............  Check that mobile link info is correct
             END IF
 
 C.............  Check that point source information is correct
-            IF( CATEGORY == 'POINT' ) THEN
+            IF( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) THEN
                 IF( .NOT. CHKREAL( HT ) .OR.
      &              .NOT. CHKREAL( DM ) .OR.
      &              .NOT. CHKREAL( TK ) .OR.
@@ -1148,7 +1192,7 @@ C.................  Skip rest of loop
             INVYR ( CURSRC ) = INVYEAR
             TPFLAG( CURSRC ) = TPF
             
-            IF( CATEGORY == 'POINT' ) THEN
+            IF( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) THEN
                 ISIC  ( CURSRC ) = STR2INT( SIC )
                 STKHT ( CURSRC ) = STR2REAL( HT )
                 STKDM ( CURSRC ) = STR2REAL( DM )
