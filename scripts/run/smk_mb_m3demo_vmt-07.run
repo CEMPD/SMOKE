@@ -24,8 +24,8 @@ setenv MRG_SOURCE  M           # source category to merge
 setenv SRCABBR     mb.$FYEAR   # abbreviation for naming log files
 
 # time independent programs
-setenv RUN_CNTLMAT   N            # Y runs control matrix program
-setenv RUN_GRWINVEN  N            # Y runs control matrix program
+setenv RUN_CNTLMAT   Y            # Y runs control matrix program
+setenv RUN_GRWINVEN  Y            # Y runs control matrix program
 
 # time-dependent programs
 setenv RUN_EMISFAC   N            # Y runs emission factors program
