@@ -1,5 +1,8 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 #
+# Note: Programs smk2emis and smk2pts require library eps2 which is not
+#       provided with the standard SMOKE distribution.
+#
 all: faketemp mappoint mkmplist srggrid smk2emis smk2pts 
 #
 # compile-link options for subroutines
