@@ -611,7 +611,7 @@ C...........   and still call what they are doing "UTM":
 
         ADEV = PROMPTFFILE(
      &          'Enter the name of the ACTUAL SCC output file',
-     &          .FALSE., .TRUE., 'PSCC', 'EMSPOINT' )
+     &          .FALSE., .TRUE., 'PSCC', 'RAWPOINT' )
         
 C.......   Use SORTI4() to perform an indirect sort by FIPS,SCC,PLANT,STACK
 C.......   then permute the records according to the result:
@@ -989,7 +989,7 @@ C.......   Write out the point source emissions values:
      &                   ENAME( 1:TRIMLEN( ENAME ) ) // '"',  2 )
         END IF
 
-C.......   Sort and Write out the point source emissions values:
+C.......   Sort and Write out the point source SCCs:
 
         CALL SORTI1( NSRC, IDXSCC, ISCCA )
 
