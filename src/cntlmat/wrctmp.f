@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -66,13 +66,15 @@ C   Begin body of subroutine WRCTMP
             K = NGSZ*IGRP - NGSZ + I  ! compute index to master pollutant
                                       ! list for current pollutant
 
-C............. Regardless If pollutant has controls applied, write indices to 
-C              control data tables to a temporary file
-           DO S = 1,NSRC
+C.............. Write indices to control factor packets to a temporary file
+C               for only those pollutants that have controls
+            IF ( VIDX( K ) .EQ. 1 ) THEN
+                DO S = 1,NSRC
 
-              WRITE( IDEV, * ) IDX( S, I )
+                    WRITE( IDEV, * ) IDX( S, I )
 
-           END DO   ! end source loop
+                END DO   ! end source loop
+            END IF
 
         END DO   ! end pollutant group loop
 

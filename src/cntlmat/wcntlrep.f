@@ -14,13 +14,13 @@ C
 C  REVISION  HISTORY:
 C     
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: %W%
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -76,9 +76,6 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: CTLINDX ( :,: ) ! indices to CTL controls table
         INTEGER, ALLOCATABLE :: PLTINDX ( : )   ! index from sources to plants
 
-        REAL   , ALLOCATABLE :: BACKOUT ( : )   ! factor used to account for pol
-                                                ! specific control info that is
-                                                ! already in the inventory
         REAL   , ALLOCATABLE :: CTLEFF  ( : )   ! control efficiency
         REAL   , ALLOCATABLE :: EMIS    ( : )   ! base inventory emissions
         REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
@@ -134,7 +131,6 @@ C             performed because it is assumed that the program has already
 C             successfully written the temporary files.
 
 C.........  Loop through pollutants
-C note: must change NVCMULT to other variable for global program pollutants.
         DO V = 1, NVCMULT
 
 C.............  Loop through sources and output 
@@ -264,10 +260,10 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000       FORMAT( A )
 
-93380       FORMAT( 10X, A, ' Packet. Before: ', F10.3, ' After: ', 
+93380       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ', 
      &              F10.3, ' [tons/yr]. WARNING: Control factor of 1.' )
 
-93400       FORMAT( 10X, A, ' Packet. Before: ', F10.3, ' After: ',  
+93400       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ',  
      &              F10.3, ' [tons/yr]. Factor:', F5.2 )
 
             END SUBROUTINE CONTROL_MESG

@@ -1,6 +1,6 @@
 
-        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, RDEV, NCPE, ENAME, 
-     &                       MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
+        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, RDEV, NCPE, PYEAR,
+     &                       ENAME, MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -18,11 +18,11 @@ C
 C
 C***************************************************************************
 C
-C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C Project Title: Sparse Matrix Operator Kernel gsions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -62,8 +62,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL   ENVYN
         INTEGER   GETEFILE
+        REAL      YR2DAY
 
-        EXTERNAL  ENVYN, GETEFILE
+        EXTERNAL  ENVYN, GETEFILE, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -73,6 +74,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: LDEV   ! file unit no. for tmp ALW file
         INTEGER     , INTENT (IN) :: RDEV   ! file unit no. for output report
         INTEGER     , INTENT (IN) :: NCPE   ! no. of control packet entries
+        INTEGER     , INTENT (IN) :: PYEAR  ! projected year, or missing
         CHARACTER*16, INTENT (IN) :: ENAME  ! logical name for i/o api 
                                             ! inventory input file
         CHARACTER*16, INTENT (IN) :: MNAME  ! logical name for mult. cntl. mat.
@@ -274,7 +276,7 @@ C............  Initialize control factor array
            FACTOR = 1.0  ! array
 
 C...........  Read in emissions data from inventory file
-
+C...........  Ozone-season emissions
            IF( LO3SEAS ) THEN
 
                IF ( .NOT. 
@@ -282,12 +284,17 @@ C...........  Read in emissions data from inventory file
                    CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
                END IF
 
+C...........  Annual emissions
            ELSE 
 
                IF ( .NOT. 
      &              READ3( ENAME, OUTNAMES(I,1), 1, 0, 0, EMIS )  ) THEN
                    CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
                END IF
+
+C.................  Divide annual emissions to get average day
+                FAC = YR2DAY( BYEAR )
+                EMIS = EMIS * FAC      ! array
 
            END IF
 
@@ -631,14 +638,36 @@ C...........  Write multiplicative controls for current pollutant
 
 C.........  Write out controlled facilities report for point sources
         IF( CATEGORY .EQ. 'POINT' ) THEN
-            WRITE( RDEV, 93000 ) 'Controlled facilities report'
-            WRITE( RDEV, 93000 ) 'Adjustments from /CONTROL/ or ' //
-     &                           '/EMS CONTROL/ packets only'
-            WRITE( RDEV, 93400 ) ( PNAMMULT( I ), I=1,NVCMULT )
-            WRITE( OUTFMT, '( A, I3.3, A )' ) 
-     &             '(30X, ', NVCMULT, '( "Before", 7X, "After", 6X ) )'
-            WRITE( RDEV, OUTFMT )
-
+            WRITE( RDEV, 93000 ) 'Processed as point sources'
+            IF ( PYEAR .GT. 0 ) THEN
+                WRITE( RDEV, 93390 ) 'Projected inventory year ', PYEAR
+            ELSE
+                WRITE( RDEV, 93390 ) 'Base inventory year ', BYEAR
+            END IF
+            IF( CFLAG ) WRITE( RDEV, 93000 ) 
+     &                  'Controls applied with /CONTROL/ packet'
+            IF( SFLAG ) WRITE( RDEV, 93000 ) 
+     &                  'Controls applied with /EMS_CONTROL/ packet'
+            IF( GFLAG ) WRITE( RDEV, 93000 ) 
+     &                  'Controls applied with /CTG/ packet'
+            IF( LFLAG ) WRITE( RDEV, 93000 ) 
+     &                  'Controls applied with /ALLOWABLE/ packet'
+            IF( LO3SEAS ) THEN
+                WRITE( RDEV,93000 ) 'Ozone-season data basis in report'
+            ELSE
+                WRITE( RDEV,93000 ) 'Annual total data basis in report'
+            END IF
+            WRITE( RDEV, 93000 ) 
+     &             'Emissions by facility before and after controls'
+            WRITE( RDEV, 93400 ) 
+     &           ( PNAMMULT( I ), PNAMMULT( I ), I=1,NVCMULT )
+            
+            PNAM = '[tons/day]'
+            WRITE( RDEV, 93405 ) ( PNAM, PNAM, I=1,NVCMULT )
+            
+            I = 26 + NVCMULT * 43
+            WRITE( RDEV,93000 ) REPEAT( '-', I )
+ 
             PIDX = 0
             DO S = 1, NSRC
         	 IDX = PLTINDX( S )
@@ -675,9 +704,16 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93300   FORMAT( I2, 1X, '"', A, '"', 3( 1X, E12.5 ) )
 
-93400   FORMAT( 'Co/St/Cy', 4X, 'Facility ID', 13X, 100( A16, :, 8X ) )
+93390   FORMAT( A, I4.4 )
 
-93410   FORMAT( 1X, A6, 2X, A15, 1X, 100( F11.2, :, 1X ) )
+93400   FORMAT( ' Region;', 5X, 'Facility ID;', 1X, 
+     &          100( '  In ', A16, ';', 1X, 'Out ', A16, :, ';' ) )
+
+93405   FORMAT( 7X, ';', 16X, ';', 1X
+     &          100( 2X, A16, 3X, ';', 1X, A16, :, 4X, ';' ))
+
+93410   FORMAT( 1X, A6, ';', 1X, A15, ';', 1X, 
+     &          100( 10X, E11.4, :, ';' ))
 
 C...........   Internal buffering formats............ 94xxx
 

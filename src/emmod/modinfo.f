@@ -55,11 +55,17 @@
         INTEGER    , PUBLIC :: NIACT =0 ! no. unique activities in inventory
         INTEGER    , PUBLIC :: NIPOL =0 ! no. unique pollutants in inventory
         INTEGER    , PUBLIC :: NIPPA =0 ! NIACT + NIPPA
+        INTEGER    , PUBLIC :: NIPAS =0 ! NIACT + NIPPA + NSPDAT
         INTEGER    , PUBLIC :: NPACT =0 ! number of variables per activity
         INTEGER    , PUBLIC :: NPPOL =0 ! number of variables per pollutant
+        INTEGER    , PUBLIC :: NSPDAT=0 ! number of special data variables
         INTEGER    , PUBLIC :: NSRC  =0 ! number of SMOKE sources
         INTEGER    , PUBLIC :: PLTIDX   ! index of plant (if any) in SC_BEGP
         INTEGER    , PUBLIC :: RSCCBEG  ! beginning of right-SCC
+        INTEGER    , PUBLIC :: SCCLEV1  ! right-most position of level-1 of SCC
+        INTEGER    , PUBLIC :: SCCLEV2  ! right-most position of level-2 of SCC
+        INTEGER    , PUBLIC :: SCCLEV3  ! right-most position of level-3 of SCC
+        INTEGER    , PUBLIC :: SCCLEV4  ! right-most position of level-4 of SCC
 
 !.........  Positions of pollutant-specific inventory data in storage array
         INTEGER :: NC1 = 0 !  pos in 2nd dim of POLVLA of primary control code

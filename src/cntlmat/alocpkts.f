@@ -247,6 +247,10 @@ C.........  CTG packet
         CALL CHECKMEM( IOS, 'FACMACT', PROGNAME )
         ALLOCATE( FACRACT( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FACRACT', PROGNAME )
+        CUTCTG  = 0.  ! array
+        FACCTG  = 0.  ! array
+        FACMACT = 0.  ! array
+        FACRACT = 0.  ! array
 
 C.........  CONTROL packet
         J = PKTCNT( 2 ) 
@@ -260,6 +264,11 @@ C.........  CONTROL packet
         CALL CHECKMEM( IOS, 'FACREFF', PROGNAME )
         ALLOCATE( FACRLPN( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FACRLPN', PROGNAME )
+        ICTLEQUP = 0   ! array
+        ICTLSIC  = 0   ! array
+        FACCEFF  = 0.  ! array
+        FACREFF  = 0.  ! array
+        FACRLPN  = 0.  ! array
 
 C.........  ALLOWABLE packet
         J = PKTCNT( 3 ) 
@@ -271,11 +280,16 @@ C.........  ALLOWABLE packet
         CALL CHECKMEM( IOS, 'EMCAPALW', PROGNAME )
         ALLOCATE( EMREPALW( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMREPALW', PROGNAME )
+        IALWSIC  = 0  ! array
+        FACALW   = 0. ! array
+        EMCAPALW = 0. ! array
+        EMREPALW = 0. ! array
 
 C.........  ADD packet
         J = PKTCNT( 4 ) 
         ALLOCATE( EMADD( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMADD', PROGNAME )
+        EMADD = 0.  ! array
 
 C.........  REACTIVITY packet
         J = PKTCNT( 5 ) 
@@ -291,6 +305,12 @@ C.........  REACTIVITY packet
         CALL CHECKMEM( IOS, 'CSCCREA', PROGNAME )
         ALLOCATE( CSPFREA( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSPFREA', PROGNAME )
+        IREASIC  = 0   ! array
+        EMREPREA = 0.  ! array
+        PRJFCREA = 0.  ! array
+        MKTPNREA = 0.  ! array
+        CSCCREA  = ' ' ! array
+        CSPFREA  = ' ' ! array
 
 C.........  PROJECTION packet
         J = PKTCNT( 6 )
@@ -298,6 +318,8 @@ C.........  PROJECTION packet
         CALL CHECKMEM( IOS, 'IPRJSIC', PROGNAME )
         ALLOCATE( PRJFC( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PRJFC', PROGNAME )
+        IPRJSIC = 0   ! array
+        PRJFC   = 0.  ! array
 
 C.........  EMS-95 CONTROL packet
         J = PKTCNT( 7 ) 
@@ -319,6 +341,11 @@ C.........  EMS-95 CONTROL packet
         CALL CHECKMEM( IOS, 'EMSPTCF', PROGNAME )
         ALLOCATE( EMSTOTL( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMSTOTL', PROGNAME )
+        IEMSSIC  = 0    ! array
+        BASCEFF  = 0.   ! array
+        BASRLPN  = 100. ! array
+        EMSCEFF  = 0.   ! array
+        EMSRLPN  = 100. ! array
         EMSPTCF  = 1.   ! array - initialize because it will be used
         EMSTOTL  = 0.   ! array - initialize because it will be checked
 

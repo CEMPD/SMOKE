@@ -19,7 +19,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -109,7 +109,7 @@ C...........   Other local variables
         INTEGER         ENLEN        !  length of the emissions inven name
         INTEGER         NCPE         !  no control packet entries
         INTEGER         NINVARR      !  number inventory variables to input
-        INTEGER         PYEAR        !  projected year of inventory
+        INTEGER      :: PYEAR   = 0  !  projected year of inventory
         INTEGER         SYEAR        !  year for projecting from
 
         LOGICAL      :: CFLAG   = .FALSE.  ! true: control cntls in use
@@ -289,7 +289,7 @@ C.............  Open control matrix
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
             CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, RDEV,
-     &                     NCPE, ENAME, MNAME, CFLAG, GFLAG,
+     &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG )
 
 C STOPPED HERE: Need to write opencmat, genaddc, report post-processor
