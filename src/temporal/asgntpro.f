@@ -92,6 +92,7 @@ C.........  Other local variables
         INTEGER          MREF    !  tmp monthly profile code
         INTEGER          WREF    !  tmp weekly  profile code
         INTEGER          DREF    !  tmp diurnal profile code
+        INTEGER          NCHKCHR ! position of last non-SCC src char
         INTEGER          MXERR   !  max error messages to output
         INTEGER          MXWARN  !  max warning messages to output
         INTEGER          WRNCNT  !  count of warnings
@@ -114,6 +115,11 @@ C.........  Other local variables
         CHARACTER(LEN=SCCLEN3)   TSCCSAV  ! TSCC saved for msg (mb: resets TSCC)
         CHARACTER(LEN=SCCLEN3)   CHKRWT   ! tmp roadway type only SCC
         CHARACTER(LEN=SCCLEN3)   CHKVID   ! tmp vehicle-type only SCC
+        CHARACTER(LEN=SS5LEN3):: CSRC5=' '! tmp source chars through char5
+        CHARACTER(LEN=SS4LEN3):: CSRC4=' '! tmp source chars through char4
+        CHARACTER(LEN=SS3LEN3):: CSRC3=' '! tmp source chars through char3
+        CHARACTER(LEN=SS2LEN3):: CSRC2=' '! tmp source chars through char2
+        CHARACTER(LEN=SS1LEN3):: CSRC1=' '! tmp source chars through char1
         CHARACTER(LEN=SS5LEN3):: CHK16=' '! tmp source chars through char5// SCC
         CHARACTER(LEN=SS4LEN3):: CHK15=' '! tmp source chars through char4// SCC
         CHARACTER(LEN=SS3LEN3):: CHK14=' '! tmp source chars through char3// SCC
@@ -200,6 +206,10 @@ C           do not have a heirarchial application of temporal profiles
 C           to worry about.
         IF( TREFFMT .EQ. 'SOURCE' ) RETURN
 
+C.........  Initialize index check
+        NCHKCHR = NCHARS
+        IF( JSCC .GT. 0 ) NCHKCHR = NCHARS - 1
+
         ERRCNT = 0
         WRNCNT = 0
         DO J = 1, NGSZ
@@ -262,8 +272,14 @@ c                    WRITE( CVID, VIDFMT ) IVTYPE( S )
                     CHK14   = CSRC( 1:PTENDL3( 5 ) ) // TSCC
                     CHK13   = CSRC( 1:PTENDL3( 4 ) ) // TSCC
                     CHK12   = CSRC( 1:PTENDL3( 3 ) ) // TSCC
-                    CHK11   = CSRC( 1:PTENDL3( 2 ) ) // TSCC 
-                    CHK10   = CSRC( 1:PTENDL3( 2 ) )           ! County // plant
+                    CHK11   = CSRC( 1:PTENDL3( 2 ) ) // TSCC
+                    CHK10   = CSRC( 1:PTENDL3( 2 ) )
+
+                    CSRC5   = CSRC( 1:PTENDL3( 7 ) ) 
+                    CSRC4   = CSRC( 1:PTENDL3( 6 ) ) 
+                    CSRC3   = CSRC( 1:PTENDL3( 5 ) ) 
+                    CSRC2   = CSRC( 1:PTENDL3( 4 ) ) 
+                    CSRC1   = CSRC( 1:PTENDL3( 3 ) ) 
                     
                 CASE DEFAULT
 
@@ -289,11 +305,29 @@ C.................  Try to find source characteristic combinations for the
 C                   first seven types of matches.  These depend on source
 C                   category.
 
-                F6 = FINDC( CHK16, TXCNT( 16 ), CHRT16 ) 
-                F5 = FINDC( CHK15, TXCNT( 15 ), CHRT15 ) 
-                F4 = FINDC( CHK14, TXCNT( 14 ), CHRT14 ) 
-                F3 = FINDC( CHK13, TXCNT( 13 ), CHRT13 ) 
-                F2 = FINDC( CHK12, TXCNT( 12 ), CHRT12 ) 
+                F6 = 0
+                F5 = 0
+                F4 = 0
+                F3 = 0
+                F2 = 0
+                SELECT CASE( NCHKCHR )
+                CASE( 7 )
+                    F6 = FINDC( CHK16, TXCNT( 16 ), CHRT16 )
+                CASE( 6 )
+                    F5 = FINDC( CHK15, TXCNT( 15 ), CHRT15 )
+                CASE( 5 )
+                    F4 = FINDC( CHK14, TXCNT( 14 ), CHRT14 )
+                CASE( 4 )
+                    F3 = FINDC( CHK13, TXCNT( 13 ), CHRT13 )
+                CASE( 3 )
+                    F2 = FINDC( CHK12, TXCNT( 12 ), CHRT12 )
+                END SELECT
+
+                IF( F6 .LE. 0 ) F6 = FINDC( CSRC5, TXCNT( 16 ), CHRT16 )
+                IF( F5 .LE. 0 ) F5 = FINDC( CSRC4, TXCNT( 15 ), CHRT15 ) 
+                IF( F4 .LE. 0 ) F4 = FINDC( CSRC3, TXCNT( 14 ), CHRT14 ) 
+                IF( F3 .LE. 0 ) F3 = FINDC( CSRC2, TXCNT( 13 ), CHRT13 ) 
+                IF( F2 .LE. 0 ) F2 = FINDC( CSRC1, TXCNT( 12 ), CHRT12 ) 
                 F1 = FINDC( CHK11, TXCNT( 11 ), CHRT11 ) 
                 F0 = FINDC( CHK10, TXCNT( 10 ), CHRT10 )
 
