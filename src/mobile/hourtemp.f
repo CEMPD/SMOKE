@@ -1,7 +1,6 @@
 
-        SUBROUTINE HOURTEMP( NSRC, JTIME, DAYBEGT, VALBYSRC, SRCARRAY, 
-     &                       MINTEMP, MAXTEMP, SKIPDATA, NDAYSRC, 
-     &                       HOUROUT )
+        SUBROUTINE HOURTEMP( NSRC, JTIME, DAYBEGT, SRCARRAY, 
+     &                       MINTEMP, MAXTEMP, SKIPDATA, NDAYSRC )
 
 C***********************************************************************
 C  subroutine body starts at line 92
@@ -51,6 +50,9 @@ C...........   This module is the source inventory arrays
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NCHARS
         
+C...........   This module is the derived meteorology data for emission factors
+        USE MODMET, ONLY: TASRC, QVSRC, PRESSRC, TKHOUR, RHHOUR, BPHOUR
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -58,23 +60,22 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
-C...........   EXTERNAL FUNCTIONS 
+C...........   EXTERNAL FUNCTIONS
+        REAL         CALCRELHUM 
         CHARACTER*2  CRLF
         INTEGER      ENVINT
 
-        EXTERNAL     CRLF, ENVINT
+        EXTERNAL     CALCRELHUM, CRLF, ENVINT
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT    (IN) :: NSRC                  ! no. sources
         INTEGER, INTENT    (IN) :: JTIME                 ! HHMMSS
         INTEGER, INTENT    (IN) :: DAYBEGT ( NSRC )      ! begin. time for day
-        REAL   , INTENT    (IN) :: VALBYSRC( NSRC )      ! per-source values
         INTEGER, INTENT    (IN) :: SRCARRAY( NSRC,2 )    ! per-source FIPS and averaging type
         REAL   , INTENT    (IN) :: MINTEMP               ! minimum temperature
         REAL   , INTENT    (IN) :: MAXTEMP               ! maximum temperature
         LOGICAL, INTENT    (IN) :: SKIPDATA             ! skip data for non-day averaging
         INTEGER, INTENT(IN OUT) :: NDAYSRC ( NSRC,24 )   ! no. days to average per source
-        REAL   , INTENT(IN OUT) :: HOUROUT ( NSRC,24 )   ! hourly temp per source 
 
 C...........   Other local variables
         INTEGER     L, S        ! counters and indices
@@ -84,7 +85,10 @@ C...........   Other local variables
         INTEGER, SAVE :: MXWARN ! maximum number of warnings
         INTEGER, SAVE :: NWARN  ! total number of warnings printed
 
-        REAL        VAL         ! tmp value
+        REAL        TEMPVAL     ! temperature value
+        REAL        MIXVAL      ! mixing ratio value
+        REAL        PRESVAL     ! pressure value
+        REAL        RHVAL       ! relative humidity value
 
         LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time
 
@@ -98,7 +102,9 @@ C   begin body of subroutine HOURTEMP
 
 C.........  For the first time, initialize all entries to zero
         IF( INITIAL ) THEN
-            HOUROUT = 0.  ! array
+            TKHOUR = 0.  ! array
+            RHHOUR = 0.
+            BPHOUR = 0.
             
 C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
@@ -110,65 +116,76 @@ C.............  Get maximum number of warnings
 C.........  Loop through sources
         DO S = 1, NSRC
 
+C.............  Calculate time slot in output array for this time step
+C               Appropriate 24 hour time will be day starting time (6 AM in local 
+C               time zone ) subtracted from met data time (in GMT)
+            TIMESLOT = 1 + ( JTIME - DAYBEGT( S ) ) / 10000 
+                
+C.............  If timeslot is less than zero, add 24; if better data comes
+C               along, the old data will get overwritten (helps in case of
+C               one running one day)
+            IF( TIMESLOT <= 0 ) THEN
+                TIMESLOT = TIMESLOT + 24
+            END IF
+                
             CSRC = CSOURC( S )
-            VAL = VALBYSRC( S )
+            
+            TEMPVAL = TASRC( S )
+            MIXVAL  = QVSRC( S )
+            PRESVAL = PRESSRC( S )
 
-            IF( VAL > AMISS3 )THEN
+            IF( TEMPVAL > AMISS3 )THEN
 
 C.................  Check that temperature is within min and max bounds
-
-                IF( VAL < MINTEMP ) THEN
+                IF( TEMPVAL < MINTEMP ) THEN
 
                     IF( NWARN <= MXWARN ) THEN
                         CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                         WRITE( MESG, 94020 )
      &                     'Increasing hourly temperature from',
-     &                     VAL, 'to', MINTEMP, 'for source' //
+     &                     TEMPVAL, 'to', MINTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
                         CALL M3MESG( MESG )
                         NWARN = NWARN + 1
                     END IF
 
 C.....................  Set value to minimum
-                    VAL = MINTEMP 
+                    TEMPVAL = MINTEMP 
 
-                ELSEIF( VAL > MAXTEMP ) THEN
+                ELSEIF( TEMPVAL > MAXTEMP ) THEN
 
                     IF( NWARN <= MXWARN ) THEN
                         CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                         WRITE( MESG, 94020 )
      &                     'Decreasing hourly temperature from',
-     &                     VAL, ' to', MAXTEMP, 'for source' //
+     &                     TEMPVAL, ' to', MAXTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
                         CALL M3MESG( MESG )
                         NWARN = NWARN + 1
                     END IF
 
 C.....................  Set value to maximum
-                    VAL = MAXTEMP
+                    TEMPVAL = MAXTEMP
                 
                 END IF
 
-C.............  Store temperature value in appropriate time slot in output array
+C.................  Calculate relative humidity
+                RHVAL = CALCRELHUM( TEMPVAL, PRESVAL, MIXVAL )
 
-C.................  Appropriate 24 hour time will be day starting time (6 AM in local 
-C                   time zone ) subtracted from met data time (in GMT)
-                TIMESLOT = 1 + ( JTIME - DAYBEGT( S ) ) / 10000 
-                
-C.................  If timeslot is less than zero, add 24; if better data comes
-C                   along, the old data will get overwritten (helps in case of
-C                   one running one day)
-                IF( TIMESLOT <= 0 ) THEN
-                    TIMESLOT = TIMESLOT + 24
-                END IF
-                
+C.................  Store values in hourly arrays                
                 IF( SRCARRAY( S,2 ) == DAILY ) THEN
-                    HOUROUT( S,TIMESLOT ) = VAL
+                    TKHOUR ( S,TIMESLOT ) = TEMPVAL
+                    RHHOUR ( S,TIMESLOT ) = RHVAL
+                    BPHOUR ( S,TIMESLOT ) = PRESVAL
                     NDAYSRC( S,TIMESLOT ) = 1
                 ELSE
                     IF( .NOT. SKIPDATA ) THEN
-                        HOUROUT( S,TIMESLOT ) =
-     &                                    HOUROUT( S,TIMESLOT ) + VAL
+                        TKHOUR( S,TIMESLOT ) =
+     &                                    TKHOUR( S,TIMESLOT ) + TEMPVAL
+                        RHHOUR( S,TIMESLOT ) =
+     &                                    RHHOUR( S,TIMESLOT ) + RHVAL
+                        BPHOUR( S,TIMESLOT ) =
+     &                                    BPHOUR( S,TIMESLOT ) + PRESVAL
                         NDAYSRC( S,TIMESLOT ) = 
      &                                    NDAYSRC( S,TIMESLOT ) + 1
                     END IF
