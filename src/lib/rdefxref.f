@@ -19,7 +19,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -37,6 +37,9 @@ C
 C****************************************************************************
 
 C.........  MODULES for public variables
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
+
 C...........   This module is for cross reference tables
         USE MODXREF
 
@@ -388,13 +391,14 @@ C.................  Store sorting criteria as right-justified in fields
 C.................  For mobile, we are using "CSCCTA" to store the roadway
 C                   type so that we can use the XREFTBL subroutine.  
                 CSRCALL = ' '
-                CALL BLDCSRC( CFIP, CRWT, CLNK, CVID, CHRBLNK3, 
-     &                        CHRBLNK3, CHRBLNK3, CPOS, CSRCALL )
+                CALL BLDCSRC( CFIP, RWTBLNK3, CLNK, CVID, CHRBLNK3, 
+     &                        CHRBLNK3, CHRBLNK3, POLBLNK3, CSRCALL )
   
                 INDXTA( C ) = C
                 ISPTA ( C ) = JACT
                 CSCCTA( C ) = TSCC
-                CSRCTA( C ) = CSRCALL( 1:SC_ENDP( NCHARS ) )
+                CSRCTA( C ) = CSRCALL( 1:SC_ENDP( NCHARS ) ) // 
+     &                        TSCC // CPOS
                                 
                 DO J = 1, 24
 
