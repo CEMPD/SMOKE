@@ -58,7 +58,7 @@ C.........  This module is required by the FileSetAPI
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER*2     CRLF
