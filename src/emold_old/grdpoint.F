@@ -91,7 +91,7 @@ C...........   any point source "lives in" just one cell)
 C...........   Other local variables
 
         INTEGER         I, J, L, K, F, S, T, V
-        INTEGER         JDATE, JTIME, TSTEP
+        INTEGER         LDATE, JDATE, JTIME, TSTEP
         INTEGER         LDEV
         INTEGER         NSTEPS
         INTEGER         VTYPE( NIPOL )
@@ -135,8 +135,7 @@ C   begin body of program GRDPOINT
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program GRDPOINT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'GRDPOINT', 0, 0, 'Ending Program.', 2 )
         END IF
 
 
@@ -236,6 +235,10 @@ C.......... Set up output variable characteristics
             VDESC3D( V ) = VDESC( V )
 33      CONTINUE
 
+        DO 44 I = 2, MXDESC3D
+            FDESC3D( I ) = ' '
+44      CONTINUE
+
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for OUTPUT EMIS file',
      &          FSUNKN3, OUTNAM, 'GRDPOINT' )
@@ -249,8 +252,7 @@ C.......   Read gridding matrix:
 
             CALL M3EXIT( 'GRDPOINT', 0, 0,
      &           'Could not read gridding matrix from file "' //
-     &           GNAME( 1 : TRIMLEN( GNAME ) ) // '".',
-     &           2 )
+     &           GNAME( 1 : TRIMLEN( GNAME ) ) // '".', 2 )
 
         END IF      !  if read3() failed for gridding matrix
 
@@ -259,10 +261,11 @@ C.......   Transform and write out point source emissions values:
 
         CALL M3MSG2( 'Calculating gridded point source emissions...' )
 
+        LDATE = 0
         DO  199  T = 1, NSTEPS
 
 C...............   If this is a new month, or new day, write message
-            IF ( JDATE .GT. 0 .AND. MOD( T,24 ) .EQ. 1 ) THEN
+            IF ( JDATE .GT. 0 .AND. LDATE. NE. JDATE ) THEN
  
                 MESG = 'Processing ' //
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
@@ -303,6 +306,7 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
 198         CONTINUE            ! end loop on input variables V
 
+            LDATE = JDATE
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
 199     CONTINUE          !  end loop on time steps
