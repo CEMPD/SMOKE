@@ -95,7 +95,7 @@ while ( $cnt < $EPI_NDAY )
    @ cnt = $cnt + $NDAYS
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
    source smk_run.csh     # Run programs
-   setenv G_STDATE_ADVANCE $NDAYS
+   setenv G_STDATE_ADVANCE $cnt
 
 end
 setenv RUN_PART2 N
