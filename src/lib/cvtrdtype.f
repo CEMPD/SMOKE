@@ -1,16 +1,63 @@
 
        INTEGER FUNCTION CVTRDTYPE( SMKROAD, LASAFLAG )
 
-C.........  MODULES for public variables       
-       USE MODMBSET
+C***********************************************************************
+C  function body starts at line 68
+C
+C  DESCRIPTION:
+C       Converts inventory road types into MOBILE6 type
+C
+C  PRECONDITIONS REQUIRED: none
+C
+C  SUBROUTINES AND FUNCTIONS CALLED: none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
        
        IMPLICIT NONE
 
-C.........  Function arguments
+C........  Function arguments
        INTEGER, INTENT (IN) :: SMKROAD   ! road type in SMOKE code ( 1 - 19 )
        LOGICAL, INTENT (IN) :: LASAFLAG  ! true: treat local roads as arterial
 
-C...........   LOCAL VARIABLES and their descriptions:
+C........  Road type parameters
+       INTEGER, PARAMETER :: RURALINTERSTATE = 1   ! rural interstate
+       INTEGER, PARAMETER :: RURALPRINCART   = 2   ! rural principle arterial
+       INTEGER, PARAMETER :: RURALMINORART   = 6   ! rural minor arterial
+       INTEGER, PARAMETER :: RURALMAJORCOLL  = 7   ! rural major collector
+       INTEGER, PARAMETER :: RURALMINORCOLL  = 8   ! rural minor collector
+       INTEGER, PARAMETER :: RURALLOCAL      = 9   ! rural local
+       INTEGER, PARAMETER :: URBANINTERSTATE = 11  ! urban interstate
+       INTEGER, PARAMETER :: URBANFREEWAY    = 12  ! urban freeway
+       INTEGER, PARAMETER :: URBANPRINCART   = 14  ! urban principle arterial
+       INTEGER, PARAMETER :: URBANMINORART   = 16  ! urban minor arterial
+       INTEGER, PARAMETER :: URBANCOLL       = 17  ! urban collector
+       INTEGER, PARAMETER :: URBANLOCAL      = 19  ! urban local
+
+C........  LOCAL VARIABLES and their descriptions:
        LOGICAL :: EFLAG      = .FALSE.   ! true: error found
 
        CHARACTER*300          MESG      !  message buffer 

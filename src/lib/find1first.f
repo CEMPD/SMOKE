@@ -1,6 +1,41 @@
 
         INTEGER FUNCTION FIND1FIRST( KEY, N, LIST )
-    
+
+C***********************************************************************
+C  function body starts at line 55
+C
+C  DESCRIPTION:
+C       Returns first instance of integer KEY in LIST
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED: FIND1
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
         IMPLICIT NONE
         
 C...........   EXTERNAL FUNCTIONS 
@@ -41,6 +76,42 @@ C.........  If the key is found, search backward until the first entry is reache
 C..........................................................
         
         INTEGER FUNCTION FINDR1FIRST( KEY, N, LIST )
+
+C***********************************************************************
+C  function body starts at line 132
+C
+C  DESCRIPTION:
+C       Returns first instance of real KEY in LIST
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED: FIND1R
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
     
         IMPLICIT NONE
         

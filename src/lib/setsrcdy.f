@@ -39,6 +39,10 @@ C****************************************************************************
 
         IMPLICIT NONE
 
+C.........  MODULES for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: CATEGORY
+        
 C...........   EXTERNAL FUNCTIONS 
         INTEGER    ENVINT
         LOGICAL    ISDSTIME
@@ -130,8 +134,10 @@ C               source is affected by daylight savings
                 
             END IF
 
-C.............  Set start time to  6 A.M. local time for Mobile6 processing
-            CALL NEXTIME( JDATE, STIME, 60000 )
+C.............  Set start time to  6 A.M. local time for MOBILE6 processing
+            IF( CATEGORY == 'MOBILE' ) THEN
+                CALL NEXTIME( JDATE, STIME, 60000 )
+            END IF
 
 C.............  Store start time
             DAYBEGT( S ) = STIME
