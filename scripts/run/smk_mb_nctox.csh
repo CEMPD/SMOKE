@@ -96,8 +96,8 @@ setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles
 setenv UNIFORM_TPROF_YN     N     # Y makes all temporal profiles uniform
 setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 #     OUTZONE                 # see multiple-program controls, below
+#     REPORT_DEFAULTS         # see multiple-program controls, below
 #     SMK_AVEDAY_YN           # see multiple-program controls, below
-#     SMK_O3SEASON_YN         # see multiple-program controls, below
 #     Date/time settings      # in Assigns file
 
 # For Smkmerge
@@ -109,14 +109,17 @@ setenv MRG_REPCNY_YN        N          # Y outputs county totals
 setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
 setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
+setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     SMK_AVEDAY_YN               # see multiple-program controls
-#     SMK_O3SEASON_YN             # see multiple-program controls
+
+# For Smk2emis
+setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
 
 # Multiple-program controls
 setenv OUTZONE              0     # output time zone of emissions
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
+setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
 setenv SMK_AVEDAY_YN        N     # Y uses average day emissions instead of annual
-setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
 setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv USE_SPEED_PROFILES   N     # Y uses speed profiles instead of inventory speeds
@@ -131,7 +134,8 @@ setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
-setenv SPC_OVERRIDE  cmaq.cb4p25_wtox.m  # Chemical mechanism override
+# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
+setenv SPC_SRC_SPECIFIC  Y        # Y uses source specific speciation files
 setenv YEAR_OVERRIDE     1999     # Overrides YEAR (base) in Assigns file
 setenv INVTABLE_OVERRIDE invtable_onroad.cb4.120202.txt   # Inventory table override
 # setenv CNTLCASE                 # Control case name
