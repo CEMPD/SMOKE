@@ -60,7 +60,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2     CRLF
         LOGICAL         DSCGRID
-        LOGICAL         ENVYN
         INTEGER         ENVINT
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
@@ -68,10 +67,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        CRLF, DSCGRID,
-     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
-     &                  TRIMLEN, ENVINT
-
+        EXTERNAL        CRLF, ENVINT, DSCGRID, PROMPTFFILE, PROMPTMFILE,
+     &                  STR2INT, STR2REAL, TRIMLEN
 C
 C...........   PARAMETERS:
 
