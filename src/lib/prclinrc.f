@@ -1,4 +1,5 @@
 
+
         SUBROUTINE PRCLINRC( IREC, NSEGS, LINE, SEGMENT )
 
 C***********************************************************************
@@ -28,7 +29,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -377,6 +378,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYWEK    = .FALSE.
                         RPT_%LAYFRAC  = .FALSE.
                         RPT_%NORMCELL = .FALSE.
+                        RPT_%NORMPOP  = .FALSE.
                         RPT_%SCCNAM   = .FALSE.
                         RPT_%SRCNAM   = .FALSE.
                         RPT_%STKPARM  = .FALSE.
@@ -393,6 +395,7 @@ C.........................  Reset report settings to defaults
                         RPT_%RENDLIN  = 0    ! init for consistency
                         RPT_%RSTARTLIN= 0    ! init for consistency
                         RPT_%SCCRES   = 10
+                        RPT_%SRGRES   = 0
 
                         RPT_%DATAFMT  = 'E8.3'
                         RPT_%OFILENAM = ' '    ! init for consistency
@@ -686,14 +689,20 @@ C.............  Setting for the use of layer fractions
 C.............  Setting for the normalize instruction
             CASE( 'NORMALIZE' )
 
-                IF( SEGMENT( 2 ) .EQ. 'CELLAREA' ) THEN
-                    GFLAG = .TRUE.                      ! Implies gridding
+                SELECT CASE( SEGMENT( 2 ) )
+                CASE( 'CELLAREA' ) 
+                    GFLAG = .TRUE.                     ! Implies gridding
                     RPT_%NORMCELL = .TRUE.
+                    RPT_%USEGMAT  = .TRUE.
 
-                ELSE
+                CASE( 'POPULATION' )
+                    YFLAG = .TRUE.                     ! read cy/st/cy 
+                    RPT_%NORMPOP = .TRUE.
+
+                CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE
 
-                END IF
+                END SELECT
 
 C.............  Settings the output data format
             CASE( 'NUMBER' )
