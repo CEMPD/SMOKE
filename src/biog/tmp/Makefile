@@ -40,16 +40,13 @@ tmpbio.debug: $(TBIO) $(ALLI) $(LIBPATH_DEBUG)
 
 
 include $(MD_SRC)/modmake.inc
-MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
-MODSURG = $(MD_OUT)/modsurg.o
 
 rawbio.o: $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ $<
-
 tmpbio.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdbpro.o:$(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
-	rm *.o 
+	/bin/rm *.o 
