@@ -11,7 +11,7 @@ LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 all: beld3to2 extractida invsplit metscan pktreduc smk2emis \
      surgtool uam2ncf 
 
-debug: beld3to2.debug extractida.debug invsplit.debug metscan.debug 
+debug: beld3to2.debug extractida.debug invsplit.debug metscan.debug \
        pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug  
 
 .f.o:
