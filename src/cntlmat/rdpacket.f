@@ -215,9 +215,9 @@ C           a warning.
 
         CASE( 'PROJECTION' )
             PKTINFO%TSCC  =           SEGMENT( 2 )
-            PKTINFO%CPOL  =           ' '
-            PKTINFO%FAC1  = STR2REAL( SEGMENT( 3 ) ) 
-            PKTINFO%CSIC  =           SEGMENT( 4 ) 
+            PKTINFO%FAC1  = STR2REAL( SEGMENT( 3 ) )
+            PKTINFO%CPOL  =           SEGMENT( 4 )
+            PKTINFO%CSIC  =           SEGMENT( 5 )
             PKTINFO%PLT   = ' '
             PKTINFO%CHAR1 = ' '
             PKTINFO%CHAR2 = ' '
@@ -248,6 +248,49 @@ C           a warning.
             PKTINFO%CHAR4= ' '
             PKTINFO%CHAR5= ' '
             PKTINFO%NSCC = ADJUSTL ( LINE(  74:81  ) ) 
+
+C.........  Check to see if any of the factors are negative
+            IF ( PKTINFO%FAC1 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Base year control '//
+     &                 'efficiency misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC2 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Base year rule '//
+     &                 'effectiveness misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC3 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Base year rule '//
+     &                 'penetration misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC4 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Future year control '//
+     &                 'efficiency misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC5 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Future year rule '//
+     &                 'effectiveness misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC6 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Future year rule '//
+     &                 'penetration misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
 
         CASE DEFAULT
             MESG = 'INTERNAL ERROR: Packet type ' // PKTTYP // 

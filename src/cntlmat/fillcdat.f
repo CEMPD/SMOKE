@@ -84,9 +84,6 @@ C   Begin body of subroutine FILLCDAT
             EMCAPALW( JT ) = PKTINFO%FAC2
             EMREPALW( JT ) = PKTINFO%FAC3
 
-        CASE( 'ADD' )
-            EMADD( JT ) = PKTINFO%FAC1
-
         CASE( 'REACTIVITY' )
             EMREPREA( JT ) = PKTINFO%FAC1
             PRJFCREA( JT ) = PKTINFO%FAC2

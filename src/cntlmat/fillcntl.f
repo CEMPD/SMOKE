@@ -1,5 +1,5 @@
 
-        SUBROUTINE FILLCNTL( PKTTYP, JTMAX, JXMAX, NSTART, NEND, 
+        SUBROUTINE FILLCNTL( PKTTYP, JTMAX, JXMAX, 
      &                       PKTINFO, JPOL, JT, JX )
 
 C***********************************************************************
@@ -64,8 +64,6 @@ C...........   SUBROUTINE ARGUMENTS:
         CHARACTER(*), INTENT (IN) :: PKTTYP ! packet type 
         INTEGER     , INTENT (IN) :: JTMAX  ! max allowed JT
         INTEGER     , INTENT (IN) :: JXMAX  ! max allowed JX
-        INTEGER     , INTENT (IN) :: NSTART ! start of SIC expansion loop
-        INTEGER     , INTENT (IN) :: NEND   ! end of SIC expansion loop
         TYPE( CPACKET ),INTENT(IN):: PKTINFO! packet information
         INTEGER     , INTENT (IN) :: JPOL   ! pollutant position
         INTEGER  , INTENT(IN OUT) :: JT     ! idx to control data tables
@@ -88,62 +86,52 @@ C.........  Increment data table counter
 
 C.........  Store packet information in temporary variables
         TMPSCC = PKTINFO%TSCC
-        SIC    = STR2INT( PKTINFO%CSIC )
 
-C NOTE: This loop previously had code to try to handle the SIC-based matching,
-C    n: but this was not working and way removed.  In this version, NSTART and
-C    n: NEND should always = 1.
-C.........  Loop through records and store all SCCs for SIC, or
-C           the same SCC if no expansion. 
-        DO N = NSTART, NEND
+        JX = JX + 1
 
-            JX = JX + 1
+        IF( JX .GT. JXMAX ) RETURN  ! to next iteration
 
-            IF( JX .GT. JXMAX ) CYCLE  ! to next iteration
+C.........  Store unsorted x-ref table entries
+        INDXTA( JX ) = JX
+        ISPTA ( JX ) = JPOL
 
-C.............  Store unsorted x-ref table entries
-            INDXTA( JX ) = JX
-            ISPTA ( JX ) = JPOL
-
-C.............  Parse the line of data into segments based on the rules
-C.............  Ensure that pollutant is in master list of pollutants or
+C.........  Parse the line of data into segments based on the rules
+C.........  Ensure that pollutant is in master list of pollutants or
 C               skip the pollutant-specific entry
-            CSCCTA( JX ) = TMPSCC
-            MPRNA ( JX ) = JT   ! Position in data table
+        CSCCTA( JX ) = TMPSCC
+        MPRNA ( JX ) = JT   ! Position in data table
 
-C.............  Store sorting criteria as right-justified in fields
-            CSRCALL = ' '
-            SELECT CASE( CATEGORY )
+C.........  Store sorting criteria as right-justified in fields
+        CSRCALL = ' '
+        SELECT CASE( CATEGORY )
 
-            CASE( 'AREA' )
-                CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
-     &                        CHRBLNK3, PLTBLNK3, CHRBLNK3, 
-     &                        CHRBLNK3, POLBLNK3, CSRCALL )
+        CASE( 'AREA' )
+            CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
+     &                    CHRBLNK3, PLTBLNK3, CHRBLNK3, 
+     &                    CHRBLNK3, POLBLNK3, CSRCALL )
 
-                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
-     &                         PKTINFO%CPOS
+            CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
+     &                     PKTINFO%CPOS
 
-            CASE( 'MOBILE' )
-                CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
-     &                        CHRBLNK3, CHRBLNK3, CHRBLNK3, 
-     &                        CHRBLNK3, POLBLNK3, CSRCALL )
+        CASE( 'MOBILE' )
+            CALL BLDCSRC( PKTINFO%CFIP, PLTBLNK3, CHRBLNK3,
+     &                    CHRBLNK3, CHRBLNK3, CHRBLNK3, 
+     &                    CHRBLNK3, POLBLNK3, CSRCALL )
 
-                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
-     &                         PKTINFO%CPOS
+            CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
+     &                     PKTINFO%CPOS
 
-            CASE( 'POINT' )
+        CASE( 'POINT' )
 
-                CALL BLDCSRC( PKTINFO%CFIP, PKTINFO%PLT, PKTINFO%CHAR1,
-     &                        PKTINFO%CHAR2, PKTINFO%CHAR3, 
-     &                        PKTINFO%CHAR4, PKTINFO%CHAR5, POLBLNK3, 
-     &                        CSRCALL )
+            CALL BLDCSRC( PKTINFO%CFIP, PKTINFO%PLT, PKTINFO%CHAR1,
+     &                    PKTINFO%CHAR2, PKTINFO%CHAR3, 
+     &                    PKTINFO%CHAR4, PKTINFO%CHAR5, POLBLNK3, 
+     &                    CSRCALL )
 
-                CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
-     &                         PKTINFO%CPOS
+            CSRCTA( JX ) = CSRCALL( 1:SRCLEN3 ) // TMPSCC // 
+     &                     PKTINFO%CPOS
 
-            END SELECT
-
-        END DO  ! End loop through the expansion records
+        END SELECT
 
 C.........  Now store the packet information in the packet tables...
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, NCPE, PYEAR,
+        SUBROUTINE GENMULTC( CDEV, GDEV, LDEV, NCPE, PYEAR,
      &                       ENAME, MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
 
 C***********************************************************************
@@ -61,20 +61,20 @@ C...........   INCLUDES
         INCLUDE 'FLTERR.EXT'    !  functions for comparing two numbers
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL   ENVYN
-        INTEGER   GETEFILE
-        INTEGER   INDEX1
-        INTEGER   PROMPTFFILE
-        REAL      YR2DAY
+        CHARACTER*2 CRLF
+        LOGICAL     ENVYN
+        INTEGER     GETEFILE
+        INTEGER     INDEX1
+        INTEGER     PROMPTFFILE
+        REAL        YR2DAY
 
-        EXTERNAL  ENVYN, GETEFILE, INDEX1, PROMPTFFILE, YR2DAY
+        EXTERNAL  CRLF, ENVYN, GETEFILE, INDEX1, PROMPTFFILE, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
 
-        INTEGER     , INTENT (IN) :: ADEV   ! file unit no. for tmp ADD file
-        INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
-        INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
-        INTEGER     , INTENT (IN) :: LDEV   ! file unit no. for tmp ALW file
+        INTEGER     , INTENT (IN OUT) :: CDEV   ! file unit no. for tmp CTL file 
+        INTEGER     , INTENT (IN OUT) :: GDEV   ! file unit no. for tmp CTG file
+        INTEGER     , INTENT (IN OUT) :: LDEV   ! file unit no. for tmp ALW file
         INTEGER     , INTENT (IN) :: NCPE   ! no. of control packet entries
         INTEGER     , INTENT (IN) :: PYEAR  ! projected year, or missing
         CHARACTER*16, INTENT (IN) :: ENAME  ! logical name for i/o api 
@@ -86,37 +86,39 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) :: SFLAG  ! true = apply EMS_CTL controls
 
 C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: ALWINDX ( :,: ) ! indices to ALW controls table
-        INTEGER, ALLOCATABLE :: CTGINDX ( :,: ) ! indices to CTG controls table
-        INTEGER, ALLOCATABLE :: CTLINDX ( :,: ) ! indices to CTL controls table
-        INTEGER, ALLOCATABLE :: GRPINDX ( : )   ! index from sources to groups
-        INTEGER, ALLOCATABLE :: GRPSTIDX( : )   ! sorting index
+c        INTEGER, ALLOCATABLE :: ALWINDX ( :,: ) ! indices to ALW controls table
+c        INTEGER, ALLOCATABLE :: CTGINDX ( :,: ) ! indices to CTG controls table
+c        INTEGER, ALLOCATABLE :: CTLINDX ( :,: ) ! indices to CTL controls table
+c        INTEGER, ALLOCATABLE :: GRPINDX ( : )   ! index from sources to groups
+c        INTEGER, ALLOCATABLE :: GRPSTIDX( : )   ! sorting index
 
-        REAL   , ALLOCATABLE :: BACKOUT ( : )   ! factor used to account for pol
+c        REAL   , ALLOCATABLE :: GRPINEM ( :,: ) ! initial emissions
+c        REAL   , ALLOCATABLE :: GRPOUTEM( :,: ) ! controlled emissions
+
+c        LOGICAL, ALLOCATABLE :: GRPFLAG ( : )   ! true: group controlled
+
+c        CHARACTER(LEN=STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
+c        REAL   , ALLOCATABLE :: BACKOUT ( : )   ! factor used to account for pol
                                                 ! specific control info that is
                                                 ! already in the inventory
-        REAL   , ALLOCATABLE :: DATVAL  ( :,: ) ! emissions and control settings
-        REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
-        REAL   , ALLOCATABLE :: GRPINEM ( :,: ) ! initial emissions
-        REAL   , ALLOCATABLE :: GRPOUTEM( :,: ) ! controlled emissions
-
-        LOGICAL, ALLOCATABLE :: GRPFLAG ( : )   ! true: group controlled
-
-        CHARACTER(LEN=STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
+c        REAL   , ALLOCATABLE :: DATVAL  ( :,: ) ! emissions and control settings
+c        REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
 
 C.........   Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
-
+        INTEGER                 ODEV( 3 )             ! tmp output files
         CHARACTER(LEN=IOVLEN3)  OUTNAMES( NVCMULT,6 ) ! var names
         CHARACTER(LEN=IOULEN3)  OUTUNITS( NVCMULT,6 ) ! var units
         CHARACTER(LEN=IODLEN3)  OUTDESCS( NVCMULT,6 ) ! var descriptions
 
 C...........   Other local variables
-        INTEGER          E, I, J, K, S  ! counters and indices
+        INTEGER          E, I, J, K, L2, S  ! counters and indices
 
+        INTEGER       :: ALWINDX = 0 ! indices to ALW controls table
+        INTEGER       :: CTGINDX = 0 ! indices to CTG controls table
+        INTEGER       :: CTLINDX = 0 ! indices to CTL controls table
         INTEGER          IDX      ! group index
         INTEGER          IOS      ! input/output status
-        INTEGER          NGRP     ! number of reporting groups
         INTEGER          PIDX     ! previous IDX
         INTEGER          RDEV     ! Report unit number
         INTEGER          SCCBEG   ! begining of SCC in CSOURC string
@@ -142,13 +144,10 @@ C...........   Other local variables
         LOGICAL, SAVE :: OPENFLAG = .FALSE. ! true: output file has been opened
 
         CHARACTER*100          OUTFMT     ! header format buffer
+        CHARACTER*200          PATHNM     ! path name for tmp file
+        CHARACTER*220          FILENM     ! file name
+        CHARACTER*256          BUFFER     ! source fields buffer
         CHARACTER*256          MESG       ! message buffer
-        CHARACTER(LEN=FPLLEN3) CPLT       ! tmp point src info through plant
-        CHARACTER(LEN=FPLLEN3) PPLT       ! previous CPLT
-        CHARACTER(LEN=STALEN3) CSTA       ! tmp char state
-        CHARACTER(LEN=STALEN3) PSTA       ! previous char state
-        CHARACTER(LEN=SCCLEN3) TSCC       ! tmp SCC
-        CHARACTER(LEN=SCCLEN3) PSCC       ! previous SCC
         CHARACTER(LEN=SRCLEN3) CSRC       ! tmp source chars
         CHARACTER(LEN=IOVLEN3) PNAM       ! tmp pollutant name
         CHARACTER(LEN=IOVLEN3) CBUF       ! pollutant name temporary buffer 
@@ -163,6 +162,10 @@ C.........  Get environment variables that control program behavior
         MESG = 'Use annual or ozone season emissions'
         LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
 
+C.........  Get path for temporary files
+        MESG = 'Path where temporary control files will be written'
+        CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
+
 C.........  Open reports file
         RPTDEV( 1 ) = PROMPTFFILE( 
      &                'Enter logical name for MULTIPLICATIVE ' //
@@ -170,32 +173,47 @@ C.........  Open reports file
      &                .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
         RDEV = RPTDEV( 1 )
 
+C.........  Open *output* temporary files depending on whether an input 
+C           temporary file exists - indicating that the packet is being used
+        IF( CDEV .GT. 0 ) THEN
+            FILENM = TRIM( PATHNM ) // '/cntlmat_tmp_ctl_rep'
+            ODEV( 1 ) = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
+        END IF
+        IF( GDEV .GT. 0 ) THEN
+            FILENM = TRIM( PATHNM ) // '/cntlmat_tmp_ctg_rep'
+            ODEV( 2 ) = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
+        END IF
+        IF( LDEV .GT. 0 ) THEN
+            FILENM = TRIM( PATHNM ) // '/cntlmat_tmp_alw_rep'
+            ODEV( 3 ) = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
+        ENDIF
+
 C.........  Allocate index to reporting groups
-        ALLOCATE( GRPINDX( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPINDX', PROGNAME )
-        ALLOCATE( GRPSTIDX( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPSTIDX', PROGNAME )
-        ALLOCATE( GRPCHAR( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPCHAR', PROGNAME )
-        GRPINDX  = 0  ! array
+c        ALLOCATE( GRPINDX( NSRC ), STAT=IOS )
+c        CALL CHECKMEM( IOS, 'GRPINDX', PROGNAME )
+c        ALLOCATE( GRPSTIDX( NSRC ), STAT=IOS )
+c        CALL CHECKMEM( IOS, 'GRPSTIDX', PROGNAME )
+c        ALLOCATE( GRPCHAR( NSRC ), STAT=IOS )
+c        CALL CHECKMEM( IOS, 'GRPCHAR', PROGNAME )
+c        GRPINDX  = 0  ! array
 
 C.........  Get set up for group reporting...
-        IF( CATEGORY .EQ. 'POINT' ) THEN
+c        IF( CATEGORY .EQ. 'POINT' ) THEN
 
 C.............  Count the number of groups in the inventory
-            PPLT = ' '
-            NGRP = 0
-            DO S = 1, NSRC
-                CPLT = CSOURC( S )( 1:FPLLEN3 )
-                IF( CPLT .NE. PPLT ) THEN
-                    NGRP = NGRP + 1
-                    PPLT = CPLT
-                END IF
-                GRPINDX ( S ) = NGRP
-                GRPSTIDX( S ) = S     ! Needed for loops, but not used to sort
-            END DO
+c           PPLT = ' '
+c            NGRP = 0
+c            DO S = 1, NSRC
+c                CPLT = CSOURC( S )( 1:FPLLEN3 )
+c                IF( CPLT .NE. PPLT ) THEN
+c                    NGRP = NGRP + 1
+c                    PPLT = CPLT
+c                END IF
+c                GRPINDX ( S ) = NGRP
+c                GRPSTIDX( S ) = S     ! Needed for loops, but not used to sort
+c            END DO
 
-        ELSE 
+c        ELSE 
 
             IF( CATEGORY .EQ. 'AREA' ) THEN
                 SCCBEG = ARBEGL3( 2 )
@@ -206,61 +224,55 @@ C.............  Count the number of groups in the inventory
             END IF
 
 C.............  Build and sort source array for SCC-state grouping
-            DO S = 1, NSRC
-                CSTA = CSOURC( S )( 1     :STALEN3 )
-                TSCC = CSOURC( S )( SCCBEG:SCCEND  )
+c            DO S = 1, NSRC
+c                CSTA = CSOURC( S )( 1     :STALEN3 )
+c                TSCC = CSOURC( S )( SCCBEG:SCCEND  )
 
-                GRPSTIDX( S ) = S  
-                GRPCHAR ( S ) = CSTA // TSCC
-            END DO
+c                GRPSTIDX( S ) = S  
+c                GRPCHAR ( S ) = CSTA // TSCC
+c            END DO
 
-            CALL SORTIC( NSRC, GRPSTIDX, GRPCHAR )
+c            CALL SORTIC( NSRC, GRPSTIDX, GRPCHAR )
 
 C.............  Count the number of state/SCCs in the domain
-            PSTA = ' '
-            PSCC = ' '
-            SCCBEG = STALEN3 + 1
-            SCCEND = STALEN3 + SCCLEN3
-            DO S = 1, NSRC
-                J = GRPSTIDX( S )
-                CSTA = GRPCHAR( J )( 1     :STALEN3 )
-                TSCC = GRPCHAR( J )( SCCBEG:SCCEND  )
-                IF( CSTA .NE. PSTA .OR. TSCC .NE. PSCC ) THEN
-                    NGRP = NGRP + 1
-                    PSTA = CSTA
-                    PSCC = TSCC
-                END IF
-                GRPINDX( J ) = NGRP
-            END DO
+c            PSTA = ' '
+c            PSCC = ' '
+c            SCCBEG = STALEN3 + 1
+c            SCCEND = STALEN3 + SCCLEN3
+c            DO S = 1, NSRC
+c                J = GRPSTIDX( S )
+c                CSTA = GRPCHAR( J )( 1     :STALEN3 )
+c                TSCC = GRPCHAR( J )( SCCBEG:SCCEND  )
+c                IF( CSTA .NE. PSTA .OR. TSCC .NE. PSCC ) THEN
+c                    NGRP = NGRP + 1
+c                    PSTA = CSTA
+c                    PSCC = TSCC
+c                END IF
+c                GRPINDX( J ) = NGRP
+c            END DO
 
-        END IF
+c        END IF
 
 C...........  Allocate memory for the number of groups for storing emissions
-          ALLOCATE( GRPFLAG( NGRP ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'GRPFLAG', PROGNAME )
-          ALLOCATE( GRPINEM( NGRP, NVCMULT ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'GRPINEM', PROGNAME )
-          ALLOCATE( GRPOUTEM( NGRP, NVCMULT ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'GRPOUTEM', PROGNAME )
+c          ALLOCATE( GRPFLAG( NGRP ), STAT=IOS )
+c          CALL CHECKMEM( IOS, 'GRPFLAG', PROGNAME )
+c          ALLOCATE( GRPINEM( NGRP, NVCMULT ), STAT=IOS )
+c          CALL CHECKMEM( IOS, 'GRPINEM', PROGNAME )
+c          ALLOCATE( GRPOUTEM( NGRP, NVCMULT ), STAT=IOS )
+c          CALL CHECKMEM( IOS, 'GRPOUTEM', PROGNAME )
 
 C...........  Initialize
-          GRPINEM  = 0. ! array
-          GRPOUTEM = 0. ! array
-          GRPFLAG  = .FALSE.  ! array
+c          GRPINEM  = 0. ! array
+c          GRPOUTEM = 0. ! array
+c          GRPFLAG  = .FALSE.  ! array
 
 C...........  Allocate local memory
-          ALLOCATE( ALWINDX( NSRC, NVCMULT ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'ALWINDX', PROGNAME )
-          ALLOCATE( CTGINDX( NSRC, NVCMULT ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'CTGINDX', PROGNAME )
-          ALLOCATE( CTLINDX( NSRC, NVCMULT ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'CTLINDX', PROGNAME )
-          ALLOCATE( BACKOUT( NSRC ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'BACKOUT', PROGNAME )
-          ALLOCATE( DATVAL( NSRC,NPPOL ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'DATVAL', PROGNAME )
-          ALLOCATE( FACTOR( NSRC ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'FACTOR', PROGNAME )
+c          ALLOCATE( BACKOUT( NSRC ), STAT=IOS )
+c          CALL CHECKMEM( IOS, 'BACKOUT', PROGNAME )
+c          ALLOCATE( DATVAL( NSRC,NPPOL ), STAT=IOS )
+c          CALL CHECKMEM( IOS, 'DATVAL', PROGNAME )
+c          ALLOCATE( FACTOR( NSRC ), STAT=IOS )
+c          CALL CHECKMEM( IOS, 'FACTOR', PROGNAME )
 
 C...........  For each pollutant that receives controls, obtain variable
 C             names for control efficiency, rule effectiveness, and, in the
@@ -278,32 +290,7 @@ C             will be used in reading the inventory file.
             IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. RULPENRT ) NRP = I
         END DO
 
-C...........  Read in indices from temporary files. No error checking is
-C             performed because it is assumed that the program has already
-C             successfully written the temporary files.
-
-        DO I = 1, NVCMULT
-
-           IF( PCTLFLAG( I, 1 ) ) THEN
-              DO S = 1, NSRC
-                 READ(CDEV,*) CTLINDX( S, I )
-              END DO
-           END IF
-
-           IF( PCTLFLAG( I, 2 ) ) THEN
-              DO S = 1, NSRC
-                READ(GDEV,*) CTGINDX( S, I )
-              END DO
-           END IF
-
-           IF( PCTLFLAG( I, 3 ) ) THEN
-              DO S = 1, NSRC
-                 READ(LDEV,*) ALWINDX( S, I )
-              END DO
-           END IF
-
-        END DO ! end pollutant loop
-
+C...........  Ensure the temporary files, if opened, are rewound
         IF( CDEV .GT. 0 ) REWIND( CDEV )
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
@@ -416,25 +403,38 @@ C...............  Loop through sources
 
                  E1 = DATVAL( S, E )
 
-C..................  Get index to /CONTROL/ packet from tmp file and compute
-C                    control factor
-                 K = CTLINDX( S, I )
-                 IF ( K .GT. 0 ) THEN
-                    CTLEFF = FACCEFF( K )
-                    RULEFF = FACREFF( K )
-                    RULPEN = FACRLPN( K )
+C................  Read temporary input file indices
+                 READ( CDEV,* ) CTLINDX
+
+C................  If control packet applies to this source, compute factor
+                 IF ( CTLINDX .GT. 0 ) THEN
+                    CTLEFF = FACCEFF( CTLINDX )
+                    RULEFF = FACREFF( CTLINDX )
+                    RULPEN = FACRLPN( CTLINDX )
                     FACTOR( S ) = BACKOUT( S )*
      &                          ( 1.0 - CTLEFF*RULEFF*RULPEN )
 
-C.....................  Overwrite temporary file line with new info
+C...................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
-                    WRITE( CDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
+                    WRITE( ODEV(1),93300 ) 1, PNAM, E1, E2, FACTOR( S )
                     APPLFLAG = .TRUE.
+
+                    IF( FACTOR(S) .GT. 1. ) THEN
+                        CSRC = CSOURC( S )
+                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                        WRITE( MESG,94110 ) 'WARNING: CONTROL '//
+     &                         'packet record number', CTLINDX, 
+     &                         'is increasing ' // CRLF()// BLANK10//
+     &                         'emissions by factor', FACTOR(S), 'for:'
+     &                         //CRLF()// BLANK10//
+     &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
+                        CALL M3MESG( MESG )
+                    END IF
 
 C..................  Overwrite temporary file line with new info
                  ELSE
                     E2 = E1
-                    WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
+                    WRITE( ODEV(1),93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
 
@@ -453,29 +453,44 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
 
                  E1 = DATVAL( S, E )
 
-                 K = CTLINDX( S, I )
-                 IF ( K .GT. 0 ) THEN
-                    IF( EMSTOTL( K ) .NE. 0. ) THEN
-                       FACTOR( S ) = EMSTOTL( K )
+C................  Read temporary input file indices
+                 READ( CDEV,* ) CTLINDX
+
+C................  EMS CONTROL packet applies to this source, compute factor
+                 IF ( CTLINDX .GT. 0 ) THEN
+                    IF( EMSTOTL( CTLINDX ) .NE. 0. ) THEN
+                       FACTOR( S ) = EMSTOTL( CTLINDX )
 
                     ELSE
-                       CTLEFF = EMSCEFF( K )
-                       RULEFF = EMSREFF( K )
-                       RULPEN = EMSRLPN( K )
-                       FACTOR( S ) = BACKOUT( K ) * EMSPTCF( K ) * 
+                       CTLEFF = EMSCEFF( CTLINDX )
+                       RULEFF = EMSREFF( CTLINDX )
+                       RULPEN = EMSRLPN( CTLINDX )
+                       FACTOR( S ) = BACKOUT(CTLINDX)*EMSPTCF(CTLINDX)* 
      &                               (1.- CTLEFF*RULEFF*RULPEN)
 
                     END IF
 
-C.....................  Overwrite temporary file line with new info
+C..................  Write output temporary file line with new info
                     E2 = E1 * FACTOR( S )
-                    WRITE( CDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
+                    WRITE( ODEV(1),93300 ) 1, PNAM, E1, E2, FACTOR( S )
                     APPLFLAG = .TRUE.
 
-C..................  Overwrite temporary file line with new info
+                    IF( FACTOR(S) .GT. 1. ) THEN
+                        CSRC = CSOURC( S )
+                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                        WRITE( MESG,94110 ) 'WARNING: EMS_CONTROL '//
+     &                         'packet record number', CTLINDX, 
+     &                         'is increasing ' // CRLF()// BLANK10//
+     &                         'emissions by factor', FACTOR(S), 'for:'
+     &                         //CRLF()// BLANK10//
+     &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
+                        CALL M3MESG( MESG )
+                    END IF
+
+C..................  Write output temporary file line with placeholder info
                  ELSE
                     E2 = E1
-                    WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
+                    WRITE( ODEV(1),93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
 
@@ -494,12 +509,15 @@ C...............  Compute CTG factor
                  E1  = DATVAL( S,E ) * FACTOR( S )
                  FAC = 1.
 
-                 K = CTGINDX( S, I ) 
-                 IF ( K .GT. 0 ) THEN
-                    CUTOFF = CUTCTG ( K )
-                    CTGFAC = FACCTG ( K )
-                    MACT   = FACMACT( K )
-                    RACT   = FACRACT( K )
+C................  Read CTG packet index from input temporary file
+                 READ( GDEV,* ) CTGINDX
+
+C................  If CTG packet applies to this source, compute factor
+                 IF ( CTGINDX .GT. 0 ) THEN
+                    CUTOFF = CUTCTG ( CTGINDX )
+                    CTGFAC = FACCTG ( CTGINDX )
+                    MACT   = FACMACT( CTGINDX )
+                    RACT   = FACRACT( CTGINDX )
 
 C.....................  Check to see if emissions exceed cutoff and if 
 C                       necessary, apply controls
@@ -539,19 +557,32 @@ C...........................  Otherwise, set to cutoff value
 C........................  Compute aggregate factor for current source
                        FACTOR( S ) = FACTOR( S ) * FAC 
 
-C........................  Overwrite temporary file line with new info
-                       WRITE( GDEV,93300 ) 1, PNAM, E1, E2, FAC
+C........................  Write output temporary file line with new info
+                       WRITE( ODEV(2),93300 ) 1, PNAM, E1, E2, FAC
                        APPLFLAG = .TRUE.
 
-C.....................  If no controls, then overwrite temporary line only
+C.........................  Write warning if emissions have increased
+                        IF( FAC .GT. 1. ) THEN
+                            CSRC = CSOURC( S )
+                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                            WRITE( MESG,94110 ) 'WARNING: CTG '//
+     &                         'packet record number', CTGINDX, 
+     &                         'is increasing ' // CRLF()// BLANK10//
+     &                         'emissions by factor', FAC, 'for:' //
+     &                         CRLF()// BLANK10//
+     &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
+                            CALL M3MESG( MESG )
+                        END IF
+
+C.....................  If no controls, then write output temporary line only
                     ELSE
-                       WRITE( GDEV,93300 ) 0, 'D', 0., 0., 0.
+                       WRITE( ODEV(2),93300 ) 0, 'D', 0., 0., 0.
 
                     END IF
 
-                 ELSE ! If K = 0 (for sources not having applied "Controls"
+                 ELSE ! If K = 0 (for sources not having applied "CTG"
 
-                     WRITE( GDEV,93300 ) 0, 'D', 0., 0., 0.
+                     WRITE( ODEV(2),93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
 
@@ -569,17 +600,21 @@ C...........  Process ALW packet
 
                  E1 = DATVAL( S,E )
 
-                 K = ALWINDX( S, I ) 
-                 IF ( K .GT. 0 ) THEN
-                    CAP     = EMCAPALW( K )
-                    REPLACE = EMREPALW( K )
+C.................  Read allowable packet index from input tmp file
+                 READ( LDEV,* ) ALWINDX
+
+                 FAC = 1.
+C..................  If ALLOWABLE packet applies to this source, compute factor
+                 IF ( ALWINDX .GT. 0 ) THEN
+                    CAP     = EMCAPALW( ALWINDX )
+                    REPLACE = EMREPALW( ALWINDX )
 
 C.....................  Both Cap value and Replace value are defined, then
 C                       compare emissions to Cap and set factor with Replace.
                     IF ( CAP .GE. 0. .AND. REPLACE .GE. 0. ) THEN
 
                        IF ( DATVAL( S,E ) .GT. CAP ) THEN
-                          FACTOR( S ) = REPLACE/DATVAL( S,E )
+                          FAC = REPLACE/DATVAL( S,E )
                        END IF
 
 C.....................  Only Cap value is defined, then compare emissions to Cap
@@ -587,7 +622,7 @@ C                       set factor with Cap
                     ELSE IF ( CAP .GE. 0. .AND. REPLACE .LT. 0. ) THEN
 
                        IF ( DATVAL( S,E ) .GT. CAP ) THEN
-                          FACTOR( S ) = CAP/DATVAL( S,E )
+                          FAC = CAP/DATVAL( S,E )
                        END IF
 
 C.....................  Only Replace value is defined, then set factor with
@@ -595,19 +630,39 @@ C                       Replace.
                     ELSE IF ( CAP .LT. 0. .AND. REPLACE .GE. 0. ) THEN
 
                        IF ( DATVAL( S,E ) .GT. REPLACE ) THEN
-                          FACTOR( S ) = REPLACE/DATVAL( S,E )
+                          FAC = REPLACE/DATVAL( S,E )
                        END IF
                        
                     END IF
 
-C.....................  Overwrite temporary file line with new info
-                    E2 = E1 * FACTOR( S )
-                    WRITE( LDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
-                    APPLFLAG = .TRUE.
+C.....................  Write output temporary file line with new info
+                    E2 = E1 * FAC
+                    FACTOR( S ) = FACTOR( S ) * FAC
 
-C..................  If no controls, then overwrite temporary line only
+                    IF( FAC .NE. 1. ) THEN
+                        WRITE( ODEV(3),93300 ) 1, PNAM, E1, E2, FAC
+                        APPLFLAG = .TRUE.
+
+C.........................  Write warning if emissions have increased
+                        IF( FAC .GT. 1. ) THEN
+                            CSRC = CSOURC( S )
+                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                            WRITE( MESG,94110 ) 'WARNING: ALLOWABLE '//
+     &                         'packet record number', ALWINDX, 
+     &                         'is increasing ' // CRLF()// BLANK10//
+     &                         'emissions by factor', FAC, 'for:' //
+     &                         CRLF()// BLANK10//
+     &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
+                            CALL M3MESG( MESG )
+                        END IF
+
+                    ELSE
+                        WRITE( ODEV(3),93300 ) 0, 'D', 0., 0., 0.
+                    END IF
+
+C..................  If no controls, then write output temporary line only
                  ELSE
-                     WRITE( LDEV,93300 ) 0, 'D', 0., 0., 0.
+                     WRITE( ODEV(3),93300 ) 0, 'D', 0., 0., 0.
 
                  END IF
 
@@ -738,9 +793,14 @@ C.........  Write out controlled facilities report for point sources
 
         END IF
 
+C........  Change input temporary file unit numbers to be output files for
+C          report processing.
+        IF( CDEV .GT. 0 ) CDEV = ODEV( 1 )
+        IF( GDEV .GT. 0 ) GDEV = ODEV( 2 )
+        IF( LDEV .GT. 0 ) LDEV = ODEV( 3 )
+
 C.........  Deallocate local memory
-        DEALLOCATE( ALWINDX, CTGINDX, CTLINDX, BACKOUT, DATVAL,
-     &              FACTOR )
+        DEALLOCATE( BACKOUT, DATVAL, FACTOR )
 
         DEALLOCATE( GRPINDX, GRPFLAG, GRPINEM, GRPOUTEM )
 
@@ -774,6 +834,8 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94110   FORMAT( A, 1X, I8, 1X, 5( A, :, E11.3, :, 1X ) )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENPROJ( PYEAR, ENAME, USEPOL )
+        SUBROUTINE GENPROJ( PDEV, PYEAR, ENAME )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -59,31 +59,27 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER         GETEFILE
         INTEGER         PROMPTFFILE
 
-        EXTERNAL   PROMPTFFILE
+        EXTERNAL   GETEFILE, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
+        INTEGER     , INTENT (IN OUT) :: PDEV   ! temporary file
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
-        LOGICAL     , INTENT (IN) :: USEPOL( NIPPA )  ! true: pol used in pkt
-
-C...........   Locally allocated arrays 
-        INTEGER, ALLOCATABLE :: ISPRJ ( : ) ! projection control data table index
-        REAL   , ALLOCATABLE :: PRJFAC( : ) ! projection factor
 
 C...........  Local static arrays
         LOGICAL          LF   ( MXCHRS )      !  true: column should be output
         CHARACTER*20     CHARS( MXCHRS )      !  source fields for output
 
-C...........   Logical names
-
+C...........   Logical names and unit numbers
+c        INTEGER          ODEV       ! unit number of output tmp file
         CHARACTER*16     PNAME      ! logical name for projection matrix
-
 
 C...........   Other local variables
 
-        INTEGER          J, K, L, S    ! counters and indices
+        INTEGER          J, K, L, S, V    ! counters and indices
         INTEGER          IDUM          ! dummy integer
         INTEGER          IOS           ! i/o error status
         INTEGER          NC            ! local number src chars
@@ -92,13 +88,19 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.   ! true: error has occurred
         LOGICAL, SAVE :: APPLFLAG = .FALSE.  ! true: something has been applied
 
-        CHARACTER*16     VARNAM 
-        CHARACTER*300    MESG                 ! message buffer
+        CHARACTER*200          :: PATHNM  ! path name for tmp file
+        CHARACTER*220             FILENM  ! file name
+        CHARACTER*256             MESG    ! message buffer
+        CHARACTER(LEN=IOVLEN3) :: PNAM    ! tmp pol/act name
 
         CHARACTER*16  :: PROGNAME = 'GENPROJ' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENPROJ
+
+C.........  Get path for temporary files
+        MESG = 'Path where temporary control files will be written'
+        CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
 
 C.........  Open reports file
         RPTDEV( 4 ) = PROMPTFFILE( 
@@ -106,74 +108,107 @@ C.........  Open reports file
      &                .FALSE., .TRUE., CRL // 'PROJREP', PROGNAME )
         RDEV = RPTDEV( 4 )
 
-C.........  Allocate memory for the projection matrix.  Use data
-C           structures for point sources, but this routine can be used for area
-C           sources or mobile sources as well. 
+C.........  Open *output* temporary file
+c NOTE: This is commented out because output tmp file is not used in wcntlrep.f
+c        FILENM = TRIM( PATHNM ) // '/cntlmat_tmp_proj_rep'
+c        ODEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
-        ALLOCATE( ISPRJ( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISPRJ', PROGNAME )
-        ALLOCATE( PRJFAC( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PRJFAC', PROGNAME )
-
-C.........  Determine which projection packet goes to each source.
-C           Since the projection packet is not pollutant specific,
-C           simply send the first pollutant in the pollutant list
-C           to ASGNCNTL in order to avoid looping through all pollutants.
-
-         CALL ASGNCNTL( NSRC, 1, 'PROJECTION', USEPOL, EANAM(1), 
-     &                  IDUM, ISPRJ )
+C.........  Set up and open output projection matrices
+        CALL OPENPMAT( ENAME, BYEAR, PYEAR, PNAME )
 
 C..........  Write header for report.
-         WRITE( RDEV, 93000 ) 'Processed as '// CATDESC// ' sources'
-         WRITE( RDEV, 93000 ) 
-     &          'Projection factors applied with /PROJECTION/ packet'
+        WRITE( RDEV, 93000 ) 'Processed as '// CATDESC// ' sources'
+        WRITE( RDEV, 93000 ) 
+     &         'Projection factors applied with /PROJECTION/ packet'
 
-         WRITE( RDEV, 93390 ) '      from base year    ', BYEAR
-         WRITE( RDEV, 93390 ) '      to projected year ', PYEAR
+        WRITE( RDEV, 93390 ) '      from base year    ', BYEAR
+        WRITE( RDEV, 93390 ) '      to projected year ', PYEAR
 
-         WRITE( RDEV, 93000 ) '      to all pollutants uniformly'
-         WRITE( RDEV, 93000 ) ' '
+        IF( PSFLAG ) THEN
+            WRITE( RDEV, 93000 ) '      using pollutant-specific ' //
+     &                           'assignments'
+        ELSE
+            WRITE( RDEV, 93000 ) '      to all pollutants uniformly'
+        END IF
+        WRITE( RDEV,93000 ) REPEAT( '-', 80 )
 
 C.........  Loop through all sources and store projection information for
 C           those that have it.  Otherwise, set projection factor=1.
 
-c        ISPRJ = 1  ! array
 C.........  Initialize valid columns
         LF = .FALSE.  ! array
         DO J = 1, NCHARS
             LF( J ) = .TRUE.
         END DO
 
-        DO S = 1, NSRC
+C.........  If no pollutant-specific assignments, write out single pfac var
+        IF ( .NOT. PSFLAG ) NVPROJ = 1
 
-            K = ISPRJ( S )       ! index to projection data tables
+C.........  Loop through pollutants that are getting projections
+        DO V = 1, NVPROJ
 
-            IF( K .GT. 0 ) THEN
+            IF( PSFLAG ) THEN
+                PNAM = PNAMPROJ( V )
+            ELSE
+                PNAM = 'pfac'
+            END IF
 
-C.................  Store projection factor
-                PRJFAC( S ) = PRJFC( K )
+C...........  Loop through sources, retrieve projection packet index,
+C             set projection factor, and write out new tmp file info.
+            DO S = 1, NSRC
 
-C.................  Format source characteristic information
-                CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, 
-     &                         LF, NC, CHARS )
-                NC = MIN( NC, NCHARS )
+                READ( PDEV, * ) K
+
+C................  If source has projection info...
+                IF ( K .GT. 0 ) THEN
+
+C...................  Store projection factor for current pollutant/act
+                    FACTOR( S ) = PRJFC( K )
+
+c                    WRITE( ODEV,93300 ) 1, PNAM, FACTOR( S )
+                    APPLFLAG = .TRUE.
+
+C....................  Write report
+C....................  Format source characteristic information
+                    CALL PARSCSRC( CSOURC(S), MXCHRS, SC_BEGP, SC_ENDP, 
+     &                             LF, NC, CHARS )
+                    NC = MIN( NC, NCHARS )
 
 C.................  Write out projection information for all sources
 C                   that are getting projected
-                WRITE( MESG, 94015 ) 
-     &               ( CHARS( J )( 1:SC_ENDP(J)-SC_BEGP(J)+1 ), J=1,NC )
-                L = LEN_TRIM( MESG )
-                WRITE( RDEV, 94020 ) MESG( 1:L ), PRJFAC( S )
-                APPLFLAG = .TRUE.
+                    IF( PSFLAG ) THEN
+                        WRITE( MESG, 94015 ) PNAM, 
+     &                    ( CHARS(J)(1:SC_ENDP(J)-SC_BEGP(J)+1),J=1,NC )
+                    ELSE
+                        WRITE( MESG, 94016 ) 
+     &                    ( CHARS(J)(1:SC_ENDP(J)-SC_BEGP(J)+1),J=1,NC )
+                    END IF
+                    
+                    WRITE( RDEV, 94020 ) TRIM( MESG ), FACTOR( S )
 
-            ELSE
-C.................  If source does not have projection info., set to 1.
+C...............  If source does not have projection info., set to 1.
+                ELSE
 
-                PRJFAC( S ) = 1.0
+                    FACTOR( S ) = 1.0
+
+C..................  Add to tmp file line
+c                    WRITE( ODEV, 93300 ) 0, 'D', 1.0
+
+                END IF
+
+
+            END DO      ! End loop through sources
+
+C.............  Write projection factors
+            IF( .NOT. WRITESET( PNAME,PNAM,ALLFILES,0,0,FACTOR )) THEN
+
+                MESG = 'Problem writing "'// TRIM( PNAM )// '" to '//
+     &                 'output file "' // TRIM( PNAME )// '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             END IF
 
-        END DO
+        END DO          ! End loop through pol/act
 
         IF( .NOT. APPLFLAG ) THEN
 
@@ -192,47 +227,28 @@ C.............  Write not into report file
 
         END IF
 
-C.........  Set up and open output projection matrices
-
-        CALL OPENPMAT( ENAME, BYEAR, PYEAR, PNAME )
-
-C.........  Write the projection matrix
-
-C.........  Initialize message to use in case there is an error
-
-        MESG = 'Problem writing to output file "' //
-     &         PNAME( 1:LEN_TRIM( PNAME ) ) // '"'
-
-        L = LEN_TRIM( MESG )
-
-C.........  Write the I/O API variables for the non-speciation data
-
-        IF( .NOT. WRITESET( PNAME,'pfac',ALLFILES,0,0,PRJFAC )) THEN
-            MESG = MESG( 1:L ) // ' for variable "PRJFAC"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        DEALLOCATE( PRJFAC )
+C.........  Reset tmp file to be file just output
+c        PDEV = ODEV
 
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 
+C...........   Internal buffering formats............ 94xxx
+
+94015   FORMAT( A16, 1X, 10( A, :, 1X ) )
+
+94016   FORMAT( 10( A, :, 1X ) )
+
+94020   FORMAT( A, 1X, E13.5 )
+
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
+c93300   FORMAT( I2, 1X, '"', A, '"', 3( 1X, E12.5 ) )
+
 93390   FORMAT( A, I4.4 )
-
-C...........   Internal buffering formats............ 94xxx
-
-94000   FORMAT( A )
-
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
-
-94015   FORMAT( 10( A, :, 1X ) )
-
-94020   FORMAT( A, 1X, E13.5 )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 

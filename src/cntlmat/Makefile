@@ -18,7 +18,7 @@ debug: cntlmat.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
 #
-CTL=cntlmat.o aloccmat.o alocpkts.o asgncntl.o errpkts.o \
+CTL=cntlmat.o alocpkts.o asgncntl.o errpkts.o \
     fillcdat.o fillcntl.o  genmultc.o genproj.o genreact.o \
     openpmat.o opencmat.o openctmp.o openrmat.o pktloop.o \
     procpkts.o rdpacket.o wrctmp.o wrrmat.o wcntlrep.o
@@ -37,8 +37,6 @@ include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
-aloccmat.o: $(MODXREF) $(MODCNTRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ aloccmat.f
 alocpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ alocpkts.f
 asgncntl.o: $(MODSOURC) $(MODXREF) $(MODINFO)
@@ -57,13 +55,13 @@ genreact.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ genreact.f
 opencmat.o: $(MODCNTRL) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ opencmat.f
-openpmat.o: $(MODINFO) $(MODFILESET)
+openpmat.o: $(MODINFO) $(MODCNTRL) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ openpmat.f
 openrmat.o: $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ openrmat.f
 pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ pktloop.f
-procpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
+procpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ procpkts.f
 rdpacket.o: $(MODCNTRL) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ rdpacket.f

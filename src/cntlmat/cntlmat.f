@@ -87,15 +87,15 @@ C...........   Allocatable local arrays
         LOGICAL, ALLOCATABLE :: TFLAG( : )  !  flags:  track these sources
 
 C...........   Logical names and unit numbers
-        INTEGER         ATMPDEV      !  file unit no. for tmp ADD file
         INTEGER         CDEV         !  control file unit no.
         INTEGER         CTMPDEV      !  file unit no. for tmp CTL file
         INTEGER         GTMPDEV      !  file unit no. for tmp CTG file
         INTEGER         IDEV         !  tmp unit number if inven is map-formatted
         INTEGER         LDEV         !  log file unit no.
         INTEGER         LTMPDEV      !  file unit no. for tmp ALW file
+        INTEGER         PTMPDEV      !  file unit no. for tmp PROJ file
         INTEGER         SDEV         !  ASCII part of inventory unit no.
-        INTEGER         TDEV         !  tracking file unit no.
+        INTEGER      :: WDEV = 0     !  warnings/error unit no.
 
         CHARACTER*16    ANAME   ! logical name for ASCII inventory input file
         CHARACTER*16    ENAME   ! logical name for i/o api inventory input file
@@ -114,7 +114,6 @@ C...........   Other local variables
         INTEGER         SYEAR        !  year for projecting from
 
         LOGICAL      :: CFLAG   = .FALSE.  ! true: control cntls in use
-        LOGICAL      :: DFLAG   = .FALSE.  ! true: additive cntls in use
         LOGICAL      :: EFLAG   = .FALSE.  ! true: error has occurred
         LOGICAL      :: GFLAG   = .FALSE.  ! true: ctg cntls in use
         LOGICAL      :: JFLAG   = .FALSE.  ! true: projections in use
@@ -190,6 +189,10 @@ C           do not store the pollutants as separate
      &           'Enter logical name for ASCII CONTROL PACKETS file',
      &           .TRUE., .TRUE., 'GCNTL', PROGNAME )
 
+        WDEV = PROMPTFFILE( 
+     &           'Enter logical name for output WARNINGS/ERRORS file',
+     &           .FALSE., .TRUE., CRL//'CTLWARN', PROGNAME )
+
 C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
@@ -235,14 +238,13 @@ C.........  Initialize arrays
         XRFCNT = 0  ! array
 
 C.........  Allocate memory for control packet information in input file.
-        CALL ALOCPKTS( CDEV, SYEAR, CPYEAR, PKTCNT, 
+        CALL ALOCPKTS( CDEV, WDEV, SYEAR, CPYEAR, PKTCNT, 
      &                 PKTBEG, XRFCNT )
 
 C.........  Set the flags that indicate which packets are valid
         GFLAG = ( PKTCNT( 1 ) .GT. 0 )
         CFLAG = ( PKTCNT( 2 ) .GT. 0 )
         LFLAG = ( PKTCNT( 3 ) .GT. 0 )
-        DFLAG = ( PKTCNT( 4 ) .GT. 0 )
         RFLAG = ( PKTCNT( 5 ) .GT. 0 )
         JFLAG = ( PKTCNT( 6 ) .GT. 0 )
         SFLAG = ( PKTCNT( 7 ) .GT. 0 )
@@ -264,8 +266,15 @@ C           each packet type while determining the pollutants to use in opening
 C           the final output files.
 
         ACTION = 'PROCESS'
-        CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV,  
+        CALL PKTLOOP( CDEV, PTMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, WDEV,
      &                CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
+
+C.........  Process projection matrix that depends on pol/acts...
+        IF( JFLAG ) THEN
+
+            CALL GENPROJ( PTMPDEV, CPYEAR, ENAME )
+
+        END IF
 
 C.........  Process control matrices that depend on pollutants...
 
@@ -274,13 +283,13 @@ C.........  Multiplicative matrix
 
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
-            CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV,
+            CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV,
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG )
         END IF
 
 C.........  Post-process temporary files to create final report file
-        CALL WCNTLREP( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV )
+        CALL WCNTLREP( CTMPDEV, GTMPDEV, LTMPDEV )
 
 C.........  Successful completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )

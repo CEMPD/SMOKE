@@ -1,5 +1,5 @@
 
-        SUBROUTINE WCNTLREP( ADEV, CDEV, GDEV, LDEV )
+        SUBROUTINE WCNTLREP( CDEV, GDEV, LDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -65,26 +65,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
 
-        INTEGER     , INTENT (IN) :: ADEV   ! file unit no. for tmp ADD file
         INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV   ! file unit no. for tmp ALW file
-
-C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: ALWINDX ( :,: ) ! indices to ALW controls table
-        INTEGER, ALLOCATABLE :: CTGINDX ( :,: ) ! indices to CTG controls table
-        INTEGER, ALLOCATABLE :: CTLINDX ( :,: ) ! indices to CTL controls table
-        INTEGER, ALLOCATABLE :: PLTINDX ( : )   ! index from sources to plants
-
-        REAL   , ALLOCATABLE :: CTLEFF  ( : )   ! control efficiency
-        REAL   , ALLOCATABLE :: EMIS    ( : )   ! base inventory emissions
-        REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
-        REAL   , ALLOCATABLE :: RULEFF  ( : )   ! rule effectiveness
-        REAL   , ALLOCATABLE :: RULPEN  ( : )   ! rule penetration
-        REAL   , ALLOCATABLE :: PLTINEM ( :,: ) ! initial emissions
-        REAL   , ALLOCATABLE :: PLTOUTEM( :,: ) ! controlled emissions
-
-        LOGICAL, ALLOCATABLE :: PLTFLAG ( : )   ! true: plant controlled
 
 C.........  Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
@@ -103,7 +86,7 @@ C...........   Other local variables
         REAL             E_OUT  ! emissions after controls
         REAL             FAC    ! control factor
 
-        CHARACTER*300          MESG       ! message buffer
+        CHARACTER*256          MESG       ! message buffer
         CHARACTER(LEN=IOVLEN3) PNAM       ! tmp pollutant name
 
         CHARACTER*16  :: PROGNAME = 'WCNTLREP' ! program name
@@ -112,16 +95,15 @@ C***********************************************************************
 C   begin body of subroutine WCNTLREP
 
 C.........  Rewind temporary files
-        IF( ADEV .GT. 0 ) REWIND( ADEV )
         IF( CDEV .GT. 0 ) REWIND( CDEV )
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
 
 C.........  Open reports file
-        IF( MAX( ADEV, CDEV, GDEV, LDEV ) .GT. 0 ) THEN
+        IF( MAX( CDEV, GDEV, LDEV ) .GT. 0 ) THEN
             RPTDEV( 2 ) = PROMPTFFILE( 
      &                'Enter logical name for SUMMARY ' //
-     &                'PROJECTION/CONTROLS REPORT',
+     &                'CONTROLS REPORT',
      &                .FALSE., .TRUE., CRL // 'CSUMREP', PROGNAME )
             ODEV = RPTDEV( 2 )
         END IF
@@ -130,8 +112,6 @@ C.........  For each pollutant that receives controls, obtain variable
 C             names for control efficiency, rule effectiveness, and, in the
 C             case of AREA sources, rule penetration. These variable names
 C             will be used in reading the inventory file.
-
-c note: updated for all pollutants that get controls
         
 C.........  Check that NVCMULT does not equal 0, otherwise some systems will get confused
         IF( NVCMULT == 0 ) RETURN
@@ -148,9 +128,6 @@ C.........  Loop through pollutants
 
 C.............  Loop through sources and output 
             DO S = 1, NSRC
-
-C.................  If ADDITIVE packet applies for this pollutant
-c note: must be added
 
 C.................  If CONTROL or EMS CONTROL packet applies for this pollutant
                 IF( PCTLFLAG( V, 1 ) ) THEN

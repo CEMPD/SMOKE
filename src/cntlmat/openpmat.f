@@ -14,7 +14,7 @@ C
 C  REVISION  HISTORY:
 C     
 C
-C****************************************************************************/
+C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -40,6 +40,9 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO
+
+C.........  This module contains the control packet data and control matrices
+        USE MODCNTRL
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET
@@ -98,7 +101,6 @@ C.........  Initialize I/O API output file headers
         CALL HDRMISS3
 
 C.........  Set I/O API header parms that need values
-        NVARSET = 1
         NROWS3D = NSRC
 
         FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' projection matrix'
@@ -127,12 +129,27 @@ C.........  Also deallocate the number of variables per file so
 C           that this will be set automatically by openset
         DEALLOCATE( VARS_PER_FILE )
 
-C.........  Set up non-speciation variables
-        J = 1
-        VNAMESET( J )= 'pfac'  ! Lowercase used to permit inv data named "PFAC"
-        VTYPESET( J )= M3REAL
-        VUNITSET( J )= 'n/a'
-        VDESCSET( J )= 'Projection factor'
+C.........  If pollutant-specific assignments, then set up projection matrix
+C           with one variable for each pollutant being projected
+        IF( PSFLAG ) THEN
+            NVARSET = NVPROJ
+            DO J = 1, NVPROJ
+                VNAMESET( J )= PNAMPROJ( J )  ! Lowercase used to permit inv data named "PFAC"
+                VTYPESET( J )= M3REAL
+                VUNITSET( J )= 'n/a'
+                VDESCSET( J )= 'Projection factor for ' // PNAMPROJ( J )
+            END DO
+
+C.........  If no pollutant-specific assignments, then set up projection
+C           matrix to reflect that all pollutants affected the 
+        ELSE
+            NVARSET = 1
+            J = 1
+            VNAMESET( J )= 'pfac'  ! Lowercase used to permit inv data named "PFAC"
+            VTYPESET( J )= M3REAL
+            VUNITSET( J )= 'n/a'
+            VDESCSET( J )= 'Projection factor'
+        END IF
 
         MESG = 'Enter logical name for projection matrix...'
         CALL M3MSG2( MESG )

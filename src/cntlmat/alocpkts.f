@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALOCPKTS( FDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
+        SUBROUTINE ALOCPKTS( FDEV, WDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
      &                       XRFCNT )
 
 C***********************************************************************
@@ -64,6 +64,7 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   SUBROUTINE ARGUMENTS:
 
         INTEGER     , INTENT (IN) :: FDEV      ! in file unit number
+        INTEGER     , INTENT (IN) :: WDEV      ! errors/warning file
         INTEGER     , INTENT (IN) :: INYEAR    ! year to project from 
         INTEGER     , INTENT(OUT) :: CPYEAR    ! year to project to
         INTEGER     , INTENT(OUT) :: PKTCNT( NPACKET ) ! count of packet recs
@@ -72,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS:
 
 C...........   Logical names and unit numbers
 
-        INTEGER         ADEV      ! file unit no. for tmp ADD file
+        INTEGER         PDEV      ! file unit no. for tmp ADD file
         INTEGER         CDEV      ! file unit no. for tmp CTL file
         INTEGER         GDEV      ! file unit no. for tmp CTG file
         INTEGER         LDEV      ! file unit no. for tmp ALW file
@@ -135,9 +136,11 @@ C           are not permitted.
 
 C.............  If inside packet...
             IF( INSIDE ) THEN
-                
-                I = INDEX( LINE, '/END/' )
-                J = INDEX( LINE, '/'     )
+
+                J = INDEX( LINE, '!' )
+                IF ( J .LE. 0 ) J = LEN_TRIM( LINE )
+                I = INDEX( LINE( 1:J ), '/END/' )
+                J = INDEX( LINE( 1:J ), '/'     )
 
 C.................  Check for /END/ of packet
                 IF( I .GT. 0 ) THEN
@@ -284,12 +287,6 @@ C.........  ALLOWABLE packet
         EMCAPALW = 0. ! array
         EMREPALW = 0. ! array
 
-C.........  ADD packet
-        J = PKTCNT( 4 ) 
-        ALLOCATE( EMADD( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMADD', PROGNAME )
-        EMADD = 0.  ! array
-
 C.........  REACTIVITY packet
         J = PKTCNT( 5 ) 
         ALLOCATE( IREASIC( J ), STAT=IOS )
@@ -368,7 +365,7 @@ C           find SIC NE 0 and SCC EQ 0, and expand the memory requirements
 C           accordingly.
 
         ACTION = 'COUNT'
-        CALL PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
+        CALL PKTLOOP( FDEV, PDEV, CDEV, GDEV, LDEV, WDEV, CPYEAR,
      &                ACTION, BLANK5, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Rewind file

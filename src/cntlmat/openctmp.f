@@ -66,7 +66,7 @@ C...........   Other local variables
 	
         CHARACTER*200, SAVE :: PATHNM         ! path name for tmp file
         CHARACTER*220          FILENM                ! file name
-        CHARACTER*300          MESG                  ! message buffer
+        CHARACTER*256          MESG                  ! message buffer
         CHARACTER*16        :: PROGNAME = 'OPENCTMP' ! program name
 
 C***********************************************************************
@@ -108,9 +108,9 @@ C   Begin body of subroutine OPENCTMP
               FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_alw'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
-           CASE ( 'ADD' )
+           CASE ( 'PROJECTION' )
 
-              FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_add'
+              FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_proj'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
         END SELECT
