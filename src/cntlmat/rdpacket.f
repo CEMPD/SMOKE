@@ -185,18 +185,6 @@ C           a warning.
                CALL M3WARN( PROGNAME, 0, 0, MESG )
             END IF
 
-        CASE( 'ADD' )
-            PKTINFO%TSCC =           SEGMENT( 2 )
-            PKTINFO%CPOL =           SEGMENT( 3 )
-            PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
-            PKTINFO%CSIC =           SEGMENT( 5 )
-            PKTINFO%PLT  =           SEGMENT( 6 )
-            PKTINFO%CHAR1=           SEGMENT( 7 )
-            PKTINFO%CHAR2=           SEGMENT( 8 )
-            PKTINFO%CHAR3=           SEGMENT( 9 )
-            PKTINFO%CHAR4=           SEGMENT( 10 )
-            PKTINFO%CHAR5=           SEGMENT( 11 )
-
         CASE( 'REACTIVITY' )
             PKTINFO%TSCC   =           SEGMENT( 2 )
             PKTINFO%CPOL   =           SEGMENT( 3 )
@@ -217,9 +205,9 @@ C           a warning.
 
         CASE( 'PROJECTION' )
             PKTINFO%TSCC  =           SEGMENT( 2 )
-            PKTINFO%CPOL  =           ' '
             PKTINFO%FAC1  = STR2REAL( SEGMENT( 3 ) ) 
-            PKTINFO%CSIC  =           SEGMENT( 4 ) 
+            PKTINFO%CPOL  =            ' '          !     SEGMENT( 4 )
+            PKTINFO%CSIC  =           SEGMENT( 4 )  !     SEGMENT( 5 )
             PKTINFO%PLT   = ' '
             PKTINFO%CHAR1 = ' '
             PKTINFO%CHAR2 = ' '
