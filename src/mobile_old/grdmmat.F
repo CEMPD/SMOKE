@@ -2,11 +2,11 @@
         PROGRAM GRDMMAT
 
 C***********************************************************************
-C  program body starts at line 224
+C  program body starts at line 230
 C
 C  DESCRIPTION:
 C       Construct mobile source gridding and ungridding matrices from 
-C       data contained in EPS-style surrogates file and/or links file.
+C       data contained in EPS-style input files.
 C
 C  PRECONDITIONS REQUIRED:
 C       Sorted, cut-down input data for surrogate coeffs.
@@ -79,21 +79,6 @@ C...........   PARAMETER:
      &                  MXLNKD = NRCLAS * MXFIP )
 
 C...........   LOCAL VARIABLES and their descriptions:
-
-        INTEGER     FIP
-        INTEGER     SID
-        INTEGER     RDT
-        INTEGER     LNK
-        INTEGER     LFIP, LRDT
-        INTEGER     COL
-        INTEGER     ROW
-        INTEGER     ZONE, GZONE, UZONE
-        INTEGER     CMAX, CMIN
-        REAL        XDUM, YDUM
-        REAL        XBEG, YBEG, XEND, YEND
-        REAL        X00, Y00, XCELL, YCELL, XX, YY, DDX, DDY, DD
-        REAL        FRAC( NMSRG )         !  (scratch) surrogate fractions
-        REAL        DIV
 
 C...........   LNKDEF tables:
         
@@ -184,34 +169,52 @@ C...........   Ungridding Matrix
 
         COMMON  / UGRIDMAT / NU, IU, CU
 
-C...........   Other local variables
+C...........   Logical names and unit numbers
         
-        INTEGER         C, R, S, F, I, J, K  !  loop counters.
+        INTEGER         LDEV    !  for log-device
+        INTEGER         KDEV    !  for link defs file
+        INTEGER         SDEV    !  for surrogate coeff file
+        INTEGER         XDEV    !  for surrogate xref  file
 
         CHARACTER*16    CNAME   !  coord sys name
         CHARACTER*16    ENAME   !  logical name for emission source  input file
         CHARACTER*16    GNAME   !  logical name for grid   matrix   output file
         CHARACTER*16    UNAME   !  logical name for UNgrid matrix   output file
-        INTEGER         SDEV    !  for surrogate coeff file
-        INTEGER         XDEV    !  for surrogate xref  file
-        INTEGER         LDEV    !  for link defs file
-        INTEGER         ILOG    !  for log-device
+
+C...........   Other local variables
+        
+        REAL            DDX, DDY, DD          ! division parms
+        REAL            SRGT( NMSRG )         !  (scratch) surrogate fractions
+        REAL            X1, Y1, X2, Y2, XC, YC, XX, YY  ! SDEV header
+        REAL            XBEG, YBEG, XEND, YEND
+        REAL            XDUM, YDUM
+        REAL            XOFF, YOFF            ! QA header variables
 
         INTEGER         NOSURG( NMSRC ) ! FIPs codes w/o surrogates
-        
-        INTEGER         IOS     !  I/O status
-        INTEGER         IREC    !  input line (record) number
-        INTEGER         I0      !  for counting FIP-independent srcs
-        INTEGER         I1      !  for counting state-dependent   srcs
-        INTEGER         I2      !  for counting FIP-dependent   srcs
-        INTEGER         NOS     !  number of FIPs w/o surrogates
+        INTEGER         C, R, S, F, I, J, K   !  loop counters.
+        INTEGER         CMAX, CMIN
+        INTEGER         FIP, SID, RDT, LNK    ! temporary codes
+        INTEGER         GZONE      !  zone based on gridding defn
+        INTEGER         HCOL, HROW !  num cols and rows from srg header
+        INTEGER         IOS        !  I/O status
+        INTEGER         IREC       !  input line (record) number
+        INTEGER         I0         !  for counting FIP-independent srcs
+        INTEGER         I1         !  for counting state-dependent   srcs
+        INTEGER         I2         !  for counting FIP-dependent   srcs
+        INTEGER         LFIP, LRDT !  previous FIPs code and road class
+        INTEGER         ROW, COL   !  temporary row, column
+        INTEGER         NOS        !  number of FIPs w/o surrogates
+        INTEGER         NSRG       !  number of surrogates in SDEV
+        INTEGER         UZONE      !  zone for all sources in inventory
+        INTEGER         ZONE       !  temporary zone for each linkdef
 
-        LOGICAL         EFLAG   !  input error flat
-        LOGICAL         EPSFLG  !  if true, the surrogates are in EPS format
-        LOGICAL         GFLAG   !  generate output   gridding matrix if true
-        LOGICAL         UFLAG   !  generate output UNgridding matrix if true
-        LOGICAL         OFLAG   !  Did overflow occur
-        CHARACTER*160   MESG
+        LOGICAL         EFLAG      !  input error flat
+        LOGICAL         GFLAG      !  generate output   gridding matrix if true
+        LOGICAL         UFLAG      !  generate output UNgridding matrix if true
+        LOGICAL         OFLAG      !  Did overflow occur
+
+        CHARACTER*5     FFORMAT    !  temporary file format
+        CHARACTER*256   MESG
 
 C...........   STATEMENT FUNCTION
 
@@ -224,14 +227,24 @@ C...........   STATEMENT FUNCTION
 C***********************************************************************
 C   begin body of program GRDMMAT
         
-        ILOG = INIT3()
+        LDEV = INIT3()
         
         WRITE( *,92000 ) 
      &  ' ',
-     &  'Program GRDMMAT to take the sorted surrogate coefficient',
-     &  'file, the EPS surrogate cross reference file, the MOBILE',
-     &  'SOURCE file produced by RAWMOBIL, and produce the MOBILE',
-     &  'SOURCE GRIDDING MATRIX file.', 
+     &  'Program GRDMMAT to take a sorted, delimited EPS2.0 surrogate',
+     &  'coefficient file, the EPS2.0 surrogate cross-reference file',
+     &  'the MOBILE SOURCE file produced by RAWMOBIL, and produce the',
+     &  'MOBILE SOURCE GRIDDING MATRIX file.  The surrogate coef-', 
+     &  'ficient file must be sorted by FIPs code.', 
+     &  ' ',
+     &  'NOTE: SMOKE expects a modified EPS2.0 surrogate coefficient',
+     &  '      file format in which the ZONE field of the header line',
+     &  '      (line 1, columns 41-50) indicates the number of',
+     &  '      surrogates in the file, and each surrogates column must',
+     &  '      be compatible with an f10.8 format.  In addition, SMOKE',
+     &  '      permits the x-cell and y-cell numbers to be used in',
+     &  '      place of the (x,y) coordinates of the lower left corner',
+     &  '      corner of the grid cell.',
      &  ' '
         WRITE( *,92000 ) 
      &  'You will need to enter the logical names for the input and',
@@ -252,27 +265,21 @@ C   begin body of program GRDMMAT
 
 C.......   Get file name; open actual-scc file
         
-        XDEV = PROMPTFFILE( 
-     &  'Enter logical name for GRIDDING SURROGATE XREF file',
-     &           .TRUE., .TRUE., 'MGREF', 'GRDMMAT' )
-
-        EPSFLG = GETYN( 'EPS formatted surrogates?', .TRUE. )
-
-        SDEV = PROMPTFFILE( 
-     &  'Enter logical name for SURROGATE COEFF file',
-     &           .TRUE., .TRUE., 'MGPRO', 'GRDMMAT' )
-
-        LDEV = PROMPTFFILE( 
-     &  'Enter logical name for LINK DEFS file (or "NONE")',
-     &           .TRUE., .TRUE., 'LNKDEF', 'GRDMMAT' )
-
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for MOBILE SOURCE input file',
      &          FSREAD3, 'MOBL', 'GRDMMAT' )
 
         IF( .NOT. DESC3( ENAME ) ) THEN
             CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &              'Could not get description of file ' // ENAME, 2 )
+     &              'Could not get description of file "' // 
+     &              ENAME( 1:TRIMLEN( ENAME ) ) // '".', 2 )
+        END IF
+
+        IF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MOBL file:', NROWS3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
         END IF
 
         UZONE = NINT( P_ALP3D )
@@ -288,6 +295,18 @@ C.......   Get file name; open actual-scc file
      &        'Max record-count exceeded in MOBILE SOURCE file.', 2 )
 
         ENDIF
+
+        XDEV = PROMPTFFILE( 
+     &  'Enter logical name for GRIDDING SURROGATE XREF file',
+     &           .TRUE., .TRUE., 'MGREF', 'GRDMMAT' )
+
+        SDEV = PROMPTFFILE( 
+     &  'Enter logical name for SURROGATE COEFF file',
+     &           .TRUE., .TRUE., 'MGPRO', 'GRDMMAT' )
+
+        KDEV = PROMPTFFILE( 
+     &  'Enter logical name for LINK DEFS file (or "NONE")',
+     &           .TRUE., .TRUE., 'LNKDEF', 'GRDMMAT' )
 
 C...........   Get grid description from GRIDDESC file (Sets values
 C...........   in FDESC3 commons for opening MGMAT, MUMAT files):
@@ -305,6 +324,7 @@ C...........   in FDESC3 commons for opening MGMAT, MUMAT files):
 
         END IF          !  if dscgrid() failed
 
+C...........   Set parameters based on desired grid projection
         IF ( GDTYP3D .EQ. LAMGRD3 ) THEN
 
             IF ( .NOT. SETLAM( SNGL( P_ALP3D) , SNGL( P_BET3D ), 
@@ -393,7 +413,7 @@ C...............   ASSUMPTION:  sorted by FIP and road class:
 
         NUMLNK = 0
 
-        IF ( LDEV .LT. 0 )  GO TO  44
+        IF ( KDEV .LT. 0 )  GO TO  44
 
         EFLAG = .FALSE.
         IREC  =  0
@@ -403,7 +423,7 @@ C...............   ASSUMPTION:  sorted by FIP and road class:
         
 11      CONTINUE        !  head of loop reading LINK DEFS file
             
-            READ( LDEV, *, END = 44, IOSTAT = IOS )
+            READ( KDEV, *, END = 44, IOSTAT = IOS )
      &          FIP,
      &          RDT,
      &          XBEG, YBEG, XEND, YEND,
@@ -545,9 +565,9 @@ C.......   Rescale (normalize) the LNKFAC's:
         
         DO  55  S = 1, NUMLNK
             IF ( LNKCNT( S ) .GT. 0 ) THEN
-                DIV = 1.0 / LNKTOT( S )       !  OK by construction of LNK2GRD
+                DD = 1.0 / LNKTOT( S )       !  OK by construction of LNK2GRD
                 DO  54  C = 1, LNKCNT( S )
-                    LNKFAC( C,S ) = DIV * LNKFAC( C,S )
+                    LNKFAC( C,S ) = DD * LNKFAC( C,S )
 54              CONTINUE
             END IF
 55      CONTINUE        !  end loop on S normalizing LNKFACs
@@ -583,144 +603,166 @@ C.......   ASSUMPTION:  sorted by FIP
 
         CALL M3MSG2( 'Reading GRIDDING SURROGATE COEFFICIENT file...' )
 
-C.........  Read EPS format file header
-        IF( EPSFLG ) THEN  
-            READ( SDEV, 93010, IOSTAT=IOS ) !  read file header
-     &              X00, Y00,
-     &              XDUM, YDUM, ZONE,
-     &              XCELL, YCELL
+C........  Treat 1st line as header line, and QA file
+C........  For Lat-lon grids, header will be irrelevant, but can't check either
+
+C.........  Read file header (for EPS format)
+        READ( SDEV, 93010, IOSTAT=IOS )
+     &          X1, Y1, X2, Y2, NSRG, XC, YC
         
-            IF ( IOS .NE. 0 ) THEN
+        IF ( IOS .NE. 0 ) THEN
                 WRITE( MESG,94010 ) 
-     &              'I/O error ', IOS, 
-     &              'reading SURG COEFF file header at line', IREC
-                CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 1 )
-            END IF
+     &          'I/O error ', IOS, 
+     &          'reading SURG COEFF file header at line 1'
+            CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
+
+        ELSEIF( XC .EQ. 0 ) THEN
+            CALL M3EXIT( 'GRDMMAT', 0, 0,
+     &           'XCELL is zero in SURROGATE file header', 2 )
+ 
+        ELSEIF( YC .EQ. 0 ) THEN
+            CALL M3EXIT( 'GRDMMAT', 0, 0,
+     &           'YCELL is zero in SURROGATE file header', 2 )
+ 
+        ELSE
+            DDX = 1.0 / XC
+            DDY = 1.0 / YC
+        ENDIF
                            
-            XX = ( XORIG3D - X00 ) / XCELL
-            YY = ( YORIG3D - Y00 ) / YCELL
-            IF ( IOS .NE. 0 ) THEN
-                WRITE( MESG,94010 ) 
-     &          'Error', IOS, 'reading header of SURROGATE file'
-                CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
-            ELSE IF ( GDTYP3D .EQ. UTMGRD3  .AND.
-     &                ZONE .NE. GZONE ) THEN
-                CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &                       'Bad UTM ZONE in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( XCELL, SNGL( XCELL3D ) ) ) THEN
+        XOFF = DDX * ( X1 - XORIG3D )
+        YOFF = DDY * ( Y1 - YORIG3D )
+        HCOL = NINT( DDX * ( X2 - X1 ) )
+        HROW = NINT( DDY * ( Y2 - Y1 ) )
+
+C.........  QA file based on header and compile-time parameters
+        IF( GDTYP3D .NE. LATGRD3 ) THEN
+            IF ( FLTERR( XC, SNGL( XCELL3D ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                       'Bad XCELL in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( YCELL, SNGL( YCELL3D ) ) ) THEN
+
+            ELSEIF( FLTERR( YC, SNGL( YCELL3D ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                       'Bad YCELL in SURROGATE file', 2 )
-            ELSE IF ( GDTYP3D .EQ. UTMGRD3  .AND.
-     &                FLTERR( XX, FLOAT( NINT( XX ) ) ) ) THEN
+
+            ELSEIF( FLTERR( XOFF, FLOAT( NINT( XOFF ) ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &                   'Bad X-origin alignment in SURROGATE file', 2 )
-            ELSE IF ( GDTYP3D .EQ. UTMGRD3  .AND.
-     &                FLTERR( YY, FLOAT( NINT( YY ) ) ) ) THEN
-            CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &                   'Bad Y-origin alignment in SURROGATE file', 2 )
-            ELSE IF ( XX .LT. -1.0E-4 * XCELL ) THEN
+     &                 'Bad X-origin alignment in SURROGATE file', 2 )
+
+            ELSEIF( FLTERR( YOFF, FLOAT( NINT( YOFF ) ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &                   'Bad X-origin placement in SURROGATE file', 2 )
-            ELSE IF ( YY .LT. -1.0E-4 * YCELL ) THEN
+     &                 'Bad Y-origin alignment in SURROGATE file', 2 )
+
+            ELSEIF( FLTERR( REAL( HCOL ), REAL( NCOLS ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &                   'Bad Y-origin placement in SURROGATE file', 2 )
-            ELSE IF ( XDUM .GT. 
-     &                XORIG3D + ( NCOLS3D + 1.0E-4 ) * XCELL ) THEN
+     &                 'Bad ending X-coord in SURROGATE file', 2 )
+
+            ELSEIF( FLTERR( REAL( HROW ), REAL( NROWS ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &                   'Bad grid X-placement in SURROGATE file', 2 )
-            ELSE IF ( YDUM .GT.
-     &                YORIG3D + ( NROWS3D + 1.0E-4 ) * YCELL ) THEN
-                CALL M3EXIT( 'GRDMMAT', 0, 0,
-     &                   'Bad grid Y-placement in SURROGATE file', 2 )
+     &                 'Bad ending Y-coord in SURROGATE file', 2 )
+
+            ELSEIF ( NSRG .LE. 0 ) THEN
+                WRITE( MESG, 94010 )
+     &           'NOTE: Use ZONE portion of EPS2.0 surrogates header'//
+     &            CRLF() // BLANK5 //
+     &           '      to specify number of surrogates in the file.'
+                CALL M3MSG2( MESG )
+
+                WRITE( MESG, 94010 )
+     &           'Number of surrogates in header was ', NSRG
+                CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
+ 
+            ELSEIF ( NSRG .GT. NMSRC ) THEN
+                WRITE( MESG, 94010 )
+     &           'Number of surrogates in file =', NSRG,
+     &           'but maximum (NMSRG) =', NMSRG
+                CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
+
             END IF
+        ELSE  ! Grid type is LAT-LON
+ 
+            DDX = 1.0 / XCELL3D
+            DDY = 1.0 / YCELL3D
 
-        ENDIF ! EPS Surrogates file
+            MESG = 'Using LAT-LON grid, with EPS2.0 surrogates file.'
+            CALL M3WARN( 'GRDMMAT', 0, 0, MESG )
 
-        IREC     =  1
-        NFIPLIST =  0
-        S        =  0
-        LFIP     = -1
-        LRDT     = -1
-        EFLAG    = .FALSE.
-        DDX      = SNGL( 1.0D0 / XCELL3D )
-        DDY      = SNGL( 1.0D0 / YCELL3D )
-        NUMSCR   =  0      !  for Surrogates::ASC table
-        NUMSCS   =  0      !  for Surrogates::ASC table
-        NUMSCF   =  0      !  for Surrogates::ASC table
+        END IF
+
+C.............  Determine surrogate file format (for now, only EPS2)
+        FFORMAT = 'EPS2'
+
+C.............  Loop through and read surrogate coefficients file
+        EFLAG = .FALSE.
+        IREC  = 1       !  already have read header line
+        LFIP  = IMISS3
+        LRDT  = IMISS3
+        S     = 0
         
 70      CONTINUE        !  head of the SDEV-read loop
       
-C.............  Read EPS format 
-            IF( EPSFLG ) THEN  
+C.............  Read EPS format.  This is only format now, but code
+C.............  structure in place for handling other formats (such as IOS
+C.............  coming later, and others.)
+            IF( FFORMAT .EQ. 'EPS2' ) THEN  
 
                 READ( SDEV, 93020 , END=79, IOSTAT=IOS ) 
-     &                FIP, XX, YY, ZONE, ( FRAC( C ), C = 1, NMSRG )
+     &                FIP, XX, YY, ( SRGT( J ), J = 1, NSRG )
 
                 IREC = IREC + 1
 
-                IF ( IOS .NE. 0 ) THEN
+C.................  First try col/row format
+                COL = INT( XX )
+                ROW = INT( YY )
 
-                    WRITE( MESG,94010 ) 
-     &                  'I/O error ', IOS, 
-     &                  'reading SURG COEFF file at line', IREC
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                    GO TO  70
-
-                END IF
+C.................  If no good, then try coordinates format
+                IF( COL .LT. 1  .OR. COL .GT. NCOLS .OR. 
+     &              ROW .LT. 1  .OR. ROW .GT. NROWS      ) THEN
             
-                COL = 1 + NINT( DDX * ( XX - XORIG3D ) )
-                ROW = 1 + NINT( DDY * ( YY - YORIG3D ) )
-                IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
+                    COL = 1 + NINT( DDX * ( XX - XORIG3D ) )
+                    ROW = 1 + NINT( DDY * ( YY - YORIG3D ) )
 
-                    WRITE( MESG,94010 )
-     &                  'Column ', COL,
-     &                  'out of range in SURG COEFF file at line', IREC
-                    CALL M3MESG( MESG )
-                    GO TO  70
-
-                ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
-
-                    WRITE( MESG,94010 )
-     &                  'Row ', ROW,
-     &                  'out of range in SURG COEFF file at line', IREC
-                    CALL M3MESG( MESG )
-                    GO TO  70
-
-                END IF
-
-C.............  Read default SMOKE format
-            ELSE
-
-                READ( SDEV, * , END=79, IOSTAT=IOS )
-     &                FIP, COL, ROW, ( FRAC( C ), C = 1, NMSRG )
- 
-                IREC = IREC + 1
- 
-                IF( IOS .LT. 0 ) THEN
- 
-                    WRITE( MESG,94010 )
-     &              'I/O error, ', IOS,
-     &              'reading EMS-95 SURROGATE DATA at line', IREC
-                    CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
- 
                 ENDIF
 
-            ENDIF
+            ENDIF  ! end input format type
 
-            C = COL  +  NCOLS * ( ROW - 1 )
-            
-C...........   Find this FIP and record this cell for it
-            IF ( LFIP .GT. FIP ) THEN
+C.............  Begin QA on this line of the file, and try to store info
+            IF ( IOS .NE. 0 ) THEN
+
+                WRITE( MESG,94010 ) 
+     &              'I/O error ', IOS, 
+     &              'reading SURG COEFF file at line', IREC
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+                GO TO  70  ! to head of read loop
+
+C.................  If columns and rows are still a problem, give message,
+C.................  but don't error because may want to use bigger
+C.................  surrogates file to do smaller domain
+            ELSEIF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
+
+                WRITE( MESG,94010 )
+     &              'Column ', COL,
+     &              'out of range in SURG COEFF file at line', IREC
+                CALL M3MESG( MESG )
+                GO TO  70  ! to head of read loop
+
+            ELSEIF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
+
+                WRITE( MESG,94010 )
+     &              'Row ', ROW,
+     &              'out of range in SURG COEFF file at line', IREC
+                CALL M3MESG( MESG )
+                GO TO  70  ! to head of read loop
+
+C...........   Check for file not in FIP-sorted order
+            ELSEIF ( LFIP .GT. FIP ) THEN
  
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
      &              'SURG COEFF file out of order at line', IREC
                 CALL M3MESG( MESG )
  
+C...........   Find this FIP and record in sorted surrogates FIPs list
             ELSEIF ( FIP .NE. LFIP ) THEN
                 
                 IF ( S .GE. MXFIP ) THEN
@@ -729,7 +771,7 @@ C...........   Find this FIP and record this cell for it
      &                  'exceeded in SURG COEF file at line', IREC
                     CALL M3MESG( MESG )
                     EFLAG = .TRUE.
-                    GO TO  70
+                    GO TO  70  ! to head of read loop
                 END IF
             
                 LFIP = FIP
@@ -737,10 +779,16 @@ C...........   Find this FIP and record this cell for it
                 FIPLIST( S ) = FIP
 
             END IF      !  if fip not lfip
+
+C...........   Calculate cell number
+            C = COL  +  NCOLS * ( ROW - 1 )
             
+C...........   Update number of cells for this source
             K = NCELLS( S ) + 1
        
+C...........   Check number of cells for this source versus maximum
             IF ( K .GT. MXFIP ) THEN
+
                 WRITE( MESG,94010 )
      &             'Max number FIPs', MXFIP, 
      &             'exceeded in SURG COEF file for FIP', FIP,
@@ -748,19 +796,19 @@ C...........   Find this FIP and record this cell for it
      &             ' at line', IREC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
-                GO TO  70
+                GO TO  70   ! to head of read loop
             
             ELSE
 
                 NCELLS (   S ) = K
                 FIPCELL( K,S ) = C
                 DO  78  F = 1, NMSRG
-                    SRGFRAC( F,K,S ) = FRAC( F )
+                    SRGFRAC( F,K,S ) = SRGT( F )
 78              CONTINUE
 
             END IF
 
-            GO TO  70  !  to head of loop
+            GO TO  70   !  to head of read loop
       
 79      CONTINUE        !  end of the SDEV-read loop
 
@@ -811,7 +859,6 @@ C...........   Read the surrogate cross-reference file
             END IF
 
             GO TO  88
-
 
 89      CONTINUE        !  end of the SDEV-read loop
 
@@ -897,10 +944,9 @@ C.......   Sort and process the surrogate cross-reference file
      &                   'Error processing SURG XREF file.', 2 )
         END IF
 
-        NUMSCR = I0
-        NUMSCS = I1
-        NUMSCF = I2
-
+        NUMSCR = I0   !  for Surrogates::ASC table
+        NUMSCS = I1   !  for Surrogates::ASC table
+        NUMSCF = I2   !  for Surrogates::ASC table
 
 C.......   Read in the mobile source emissions tables:
 
@@ -1428,7 +1474,9 @@ C.......   Report statistics for ungridding matrix:
 
         WRITE( MESG,94010 ) 
      &      'Total number of coefficients   :', K   ,
+     &      CRLF() // BLANK5 //
      &      'Max  number of cells per source:', CMAX,
+     &      CRLF() // BLANK5 //
      &      'Min  number of cells per source:', CMIN
 
         WRITE( MESG, 94020 ) MESG( 1:TRIMLEN( MESG ) ) //
@@ -1456,9 +1504,11 @@ C...........   Informational (LOG) message formats... 92xxx
 
 C...........   Formatted file I/O formats............ 93xxx
 
+93000   FORMAT( A )
+
 93010   FORMAT( 4 F10.0, I10, 2F10.0 )
 
-93020   FORMAT( I5, 2F10.0, I10, 30F10.8 )
+93020   FORMAT( I5, 2F10.0, 10X, 100( F10.8 ) )
 
 93030   FORMAT( I5, I4, I8, I3 )        !  for surrogate XREF file
 
@@ -1467,7 +1517,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I8, :, 2X ) )
 
-94020   FORMAT( 5X, A, :, F8.2 )
+94020   FORMAT( A, :, F8.2 )
 
 
         END
