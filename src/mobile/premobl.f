@@ -309,28 +309,6 @@ C.........  Create note about time zone expected in meteorology file
      &     'NOTE: Time stamps of input meteorology file are assumed ' //
      &     CRLF() // BLANK5 // '      to be in GMT'
         CALL M3MSG2( MESG )
-
-C.........  Read header of ungridding matrix...
-        IF( .NOT. DESC3( UNAME ) ) THEN
-            MESG = 'Could not get description for file ' // UNAME
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
- 
-C.........  Store number of ungridding factors
-        NMATX = NCOLS3D
- 
-C.........  Check dimensions of ungridding matrix...
-        CALL CHKSRCNO( CATDESC, UNAME, NROWS3D, NSRC, EFLAG )
-        
-C.........  If the dimensions were in error, abort
-        IF( EFLAG ) THEN
-            MESG = 'Ungridding matrix is inconsistent with ' //
-     &             'inventory.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF 
-
-C.........  Initialize reference grid with ungridding matrix
-        CALL CHKGRID( UNAME, 'GMAT', 0, EFLAG )
  
 C.........  Set inventory variables to read
         NINVARR = 6
@@ -489,16 +467,16 @@ C.............  Check that requested temperature variable is in file
                 CYCLE
             END IF
 
-C.............  Compare the met grid with previous settings
-C.............  The subgrid parameters will be set here, if there is a subgrid
-            CALL CHKGRID( METNAME, 'GRID', 1, GRID_ERR )
+C.............  Initialize (or check) reference grid with meteorology data
+            CALL CHKGRID( METNAME, 'GRID', 0, GRID_ERR )
             METNGRID = NGRID
 
 C............. If the dimensions were in error, print message and cycle
             IF( GRID_ERR ) THEN
             	EFLAG = .TRUE.
-                MESG = 'ERROR: Grids in ungridding matrix and ' //
-     &                 'meteorology data are inconsistent.'
+                MESG = 'ERROR: Grid in meteorology file ' //
+     &                 TRIM( METFILE ) // ' is inconsistent ' //
+     &                 'with previous files.' 
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -509,10 +487,10 @@ C............. Find starting position in METDAYS array
             POS = 1 + SECSDIFF( SDATE, STIME, SDATE3D, STIME3D ) / 3600
             
 C.............  Make sure the met data is within the episode            
-            IF( POS + MXREC3D <= 0 .OR. POS > NSTEPS ) CYCLE
+            IF( POS + MXREC3D - 1 <= 0 .OR. POS > NSTEPS ) CYCLE
 
 C.............  Fill in array for number of steps in current met file            
-            DO L = POS, POS + MXREC3D
+            DO L = POS, POS + MXREC3D - 1
                 IF( L <= 0 ) CYCLE
                 IF( L > NSTEPS ) EXIT
                 METDAYS( L ) = N
@@ -887,6 +865,35 @@ C.........  Kelvin for now - future can be dependant on met input units
 
         MINTEMP = FTOC * ( MINTEMP - 32. ) + CTOK
         MAXTEMP = FTOC * ( MAXTEMP - 32. ) + CTOK
+
+C.........  Read header of ungridding matrix...
+        IF( .NOT. DESC3( UNAME ) ) THEN
+            MESG = 'Could not get description for file ' // UNAME
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+ 
+C.........  Store number of ungridding factors
+        NMATX = NCOLS3D
+ 
+C.........  Check dimensions of ungridding matrix...
+        CALL CHKSRCNO( CATDESC, UNAME, NROWS3D, NSRC, EFLAG )
+        
+C.........  If the dimensions were in error, abort
+        IF( EFLAG ) THEN
+            MESG = 'Ungridding matrix is inconsistent with ' //
+     &             'inventory.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF 
+
+C.........  Compare the ungridding matrix with previous settings
+C.........  The subgrid parameters will be set here, if there is a subgrid
+        CALL CHKGRID( UNAME, 'GMAT', 1, EFLAG )
+        
+        IF( EFLAG ) THEN
+            MESG = 'Ungridding matrix is inconsistent with ' //
+     &             'meteorology data.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF       
 
 C.........  Allocate memory for other arrays in the program
         ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
