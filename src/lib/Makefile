@@ -149,6 +149,8 @@ rdsccdsc.o : $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdsccdsc.f
 rdsconv.o : $(MODLISTS) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsconv.f
+rdsmat.o : $(MODFILESET)
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ rdsmat.f
 rdsref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsref.f
 rdsrg.o   : $(MODSURG) $(MODGRID)
