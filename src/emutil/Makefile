@@ -8,10 +8,11 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 metscan pktreduc smk2emis surgtool uam2ncf 
+all: beld3to2 extractida invsplit metscan pktreduc smk2emis \
+     surgtool uam2ncf 
 
-debug: beld3to2.debug metscan.debug pktreduc.debug smk2emis.debug \
-       surgtool.debug uam2ncf.debug 
+debug: beld3to2.debug extractida.debug invsplit.debug metscan.debug 
+       pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug  
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -29,6 +30,25 @@ beld3to2.debug: $(B3TO2) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'BELD3TO2 (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(B3TO2) $(LIBS_DEBUG)
 
+EXTI=extractida.o
+
+extractida: $(EXTI) $(ALLI) $(LIBPATH)
+	echo EXTRACTIDA:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(EXTI) $(LIBS)
+
+extractida.debug: $(EXTI) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'EXTRACTIDA (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
+
+INVS=invsplit.o
+
+invsplit: $(INVS) $(ALLI) $(LIBPATH)
+	echo INVSPLIT:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(INVS) $(LIBS)
+
+invsplit.debug: $(INVS) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'INVSPLIT (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(INVS) $(LIBS_DEBUG)
 
 MSCN=metscan.o
 #
@@ -80,14 +100,12 @@ uam2ncf.debug: $(UAMC) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(UAMC) $(LIBS_DEBUG)
 
 #
-#
-# Modules
-#
-MODSOURC = $(MD_SRC)/modsourc.o
-#
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+
+invsplit.o : $(MODINFO) 
+	$(FC) $(FFLAGS) -c -o $@ invsplit.f
 
 surgtool.o : $(MODGRID) $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ surgtool.f

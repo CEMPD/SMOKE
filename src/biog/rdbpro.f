@@ -197,8 +197,8 @@ C               of the loop if not found (skip entry)
        
 C......... Error message for reaching the end of file too soon
 999    MESG = 'End of file reached unexpectedly. ' //
-     &        'Check format of temporal' // CRLF() // BLANK5 //
-     &        'cross reference file.'
+     &        'Check format of speciation' // CRLF() // BLANK5 //
+     &        'profile file.'
        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
        

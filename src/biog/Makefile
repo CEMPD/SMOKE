@@ -79,8 +79,8 @@ tmpbio.pvm.debug: $(TBIO) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 
-tmpbeis3.o:  $(MODBEIS3) $(MODSPRO)
-	$(FC) $(FFLAGS) -c -o $@ tmpbeis3.f
+beis3.o:  $(MODBEIS3)
+	$(FC) $(FFLAGS) -c -o $@ beis3.f
 normbeis3.o:  $(MODBEIS3)
 	$(FC) $(FFLAGS) -c -o $@ normbeis3.f    
 rawbio.o: $(MODSURG) $(MODBIOG) $(MODGRID)
