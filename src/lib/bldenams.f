@@ -94,9 +94,9 @@ C.........  Area source variable name parameters
         DATA ARDESCS / 'Annual Emissions'
      &               , 'Average Day Emissions'
      &               , 'Emission Factors'
-     &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule penetration (in [0,100], or "MISSING": < -9.0E36)'
+     &      , 'Control efficiency (in [0,1], or "MISSING": < -9.0E36)'
+     &      , 'Rule effectiveness (in [0,1], or "MISSING": < -9.0E36)'
+     &      , 'Rule penetration (in [0,1], or "MISSING": < -9.0E36)'
      &               /
 
 C.........  Mobile source variable name parameters
@@ -128,8 +128,8 @@ C.........  Point source variable name parameters
         CHARACTER(LEN=IODLEN3) PTDESCS( NPTPPOL3 )
         DATA PTDESCS / 'Annual Emissions'
      &               , 'Average Day Emissions'
-     &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
+     &      , 'Control efficiency (in [0,1], or "MISSING": < -9.0E36)'
+     &      , 'Rule effectiveness (in [0,1], or "MISSING": < -9.0E36)'
      &               , 'Emission Factors'
      &               , 'Primary Control Equipment Code'
      &               , 'Secondary Control Equipment Code'
