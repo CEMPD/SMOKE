@@ -9,7 +9,8 @@ C       The REPMRGGRD routine assigns grid cells and gridding factors to each
 C       of the sources still selected by the program. If there is a subgrid,
 C       it will be used to subselect the grid cells.  The final OUTREC array
 C       is created by this routine before grouping, summing, and writing
-C       emissions data.
+C       emissions data.  If the report contains normalization by grid cell
+C       these factors will be included in the gridding factors.
 C 
 C  PRECONDITIONS REQUIRED:
 C       Routine is only called if gridding is being used
@@ -53,6 +54,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -60,6 +64,8 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     INDEX1
@@ -73,9 +79,19 @@ C...........   SUBROUTINE ARGUMENTS
         REAL   , INTENT (IN) :: CX( NMATX ) ! gridding coefficients
         LOGICAL, INTENT(OUT) :: EFLAG       ! true: error found
 
-C...........  Local variables
+C...........  Local allocatable arrays
+        REAL, ALLOCATABLE, SAVE :: NORMFAC( : )
 
+C...........  Local variables
+        INTEGER         C          ! indices and counters
         INTEGER         IOS        ! i/o status
+        INTEGER         ROW        ! tmp row number
+
+        REAL            FAC        ! temporary factor
+        REAL            Y          ! tmp Y cell center
+        REAL            Y0         ! y origin less 0.5*dy
+
+        LOGICAL      :: FIRSTFLAG = .TRUE.  ! True: no normalize by cell area yet found
 
         CHARACTER*300   MESG       ! message buffer
 
@@ -83,6 +99,41 @@ C...........  Local variables
 
 C***********************************************************************
 C   begin body of subroutine REPMRGGRD
+
+C.........  For first time a normalized grid is encountered by this routine,
+C           compute the cell-area normalization factors for full grid.
+        IF ( ALLRPT( RCNT )%NORMCELL .AND. FIRSTFLAG ) THEN
+
+            ALLOCATE( NORMFAC( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NORMFAC', PROGNAME )
+
+            SELECT CASE( GDTYP )
+            CASE( LAMGRD3, UTMGRD3 )
+                FAC   = 1. / ( XCELL * YCELL )
+                NORMFAC = FAC   ! array
+
+            CASE( LATGRD3 )
+
+                Y0 = YORIG - 0.5 * YCELL
+                FAC = ( PI * REARTH / 180. )**2 * XCELL * YCELL
+                DO C = 1, NGRID
+                    ROW = 1 + INT( (C-1) / NCOLS )
+                    Y = Y0 + REAL( ROW ) * YCELL
+                    NORMFAC( C ) = 1. / ( COS( Y ) * FAC )
+                END DO
+
+            CASE DEFAULT
+
+                WRITE( MESG,94010 ) 'INTERNAL ERROR: Grid type', GDTYP,
+     &                 'not recognized in ' // PROGNAME
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+            END SELECT
+
+            FIRSTFLAG = .FALSE.
+
+        END IF
 
 C.........  Set report-specific local settings
         LSUBGRID = ( ALLRPT( RCNT )%SUBGNAM .NE. ' ' )
@@ -253,6 +304,17 @@ C.....................  Otherwise, step through gridding matrix
                 NOUTREC = N     ! Store output count of source-cell interstns
 
             END IF              ! If ( all sources and full grid ) or not
+
+C.............  If needed, update all gridding factors with division by cell
+C               area.
+            IF ( ALLRPT( RCNT )%NORMCELL ) THEN
+
+                DO N = 1, NOUTREC
+                    C = OUTCELL( N )
+                    OUTGFAC( N ) = OUTGFAC( N ) * NORMFAC( C )
+                ENDDO
+
+            END IF
 
             RETURN
  

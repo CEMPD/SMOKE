@@ -57,6 +57,9 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -124,6 +127,7 @@ C...........   Other local variables
 
         LOGICAL       :: LRDREGN = .FALSE.  !  true: read region code
         LOGICAL       :: EFLAG   = .FALSE.  !  true: error found
+        LOGICAL       :: LTMP    = .FALSE.  !  true: temporary logical
 
         CHARACTER*1            TTYP         !  temporal profile entry type
         CHARACTER*16  ::       BNAME = ' '  !  name buffer
@@ -199,8 +203,9 @@ C.........  Initialize all to 1 for point sources
 
             CALL RDGMAT( GNAME, NGRID, NMATX, NMATX, NX, IX, CX )
 
+C.............  Initialize part of gridding matrix array for point sources
             IF( CATEGORY .EQ. 'POINT' ) THEN
-                CX = 1   ! array
+                CX = 1   ! array            
             END IF
 
         END IF
@@ -394,21 +399,21 @@ C.................  NV > 1 is not supported
                     IF ( NV .EQ. 1 ) THEN
                         IMON( S ) = IBUF( 1 )
                     ELSE
-c note: this is not ready yet
+c                   note: this is not supported yet in Temporal
                     ENDIF
 
                 CASE ( 'W' )
                     IF ( NV .EQ. 1 ) THEN
                         IWEK( S ) = IBUF( 1 )
                     ELSE
-c note: this is not ready yet
+c                   note: this is not supported yet in Temporal
                     ENDIF
 
                 CASE ( 'H' )
                     IF ( NV .EQ. 1 ) THEN
                         IDIU( S ) = IBUF( 1 )
                     ELSE
-c note: this is not ready yet
+c                   note: this is not supported yet in Temporal
                     ENDIF
 
                 END SELECT
@@ -424,7 +429,8 @@ C.........  If needed, read in country, state, county file
 
 C.........  If needed, read in elevated source indentification file
         IF( VFLAG ) THEN
-            CALL RDPELV( EDEV, NSRC, .TRUE., NMAJOR, NPING )
+            LTMP = ( .NOT. LFLAG )
+            CALL RDPELV( EDEV, NSRC, LTMP, NMAJOR, NPING )
         END IF
 
 C.........  If needed, read in SCC descriptions file
@@ -434,12 +440,20 @@ C.........  If needed, read in layer fractions file to identify elevated
 C           sources
         IF( LFLAG ) THEN
 
-            ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
+            IF( .NOT. ALLOCATED( LMAJOR ) ) THEN
+                ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
+                LMAJOR = .FALSE.   ! array
+            END IF
+
+            IF( .NOT. ALLOCATED( LPING ) ) THEN
+                ALLOCATE( LPING( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'LPING', PROGNAME )
+                LPING  = .FALSE.   ! array
+            END IF
+
             ALLOCATE( LFRAC1L( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LFRAC1L', PROGNAME )
-
-            LMAJOR = .FALSE.   ! array
 
             JDATE = SDATE
             JTIME = STIME

@@ -51,6 +51,9 @@ C.........  This module contains the temporal profile tables
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C...........  This module contains the information about the source category
         USE MODINFO
 
@@ -218,9 +221,11 @@ C.........  Open gridding matrix and compare number of sources
 
             CALL RETRIEVE_IOAPI_HEADER( GNAME )
             CALL CHKSRCNO( CATDESC, GNAME, NTHIK3D, NSRC, EFLAG )
-            NCOLS = GETIFDSC( FDESC3D, '/NCOLS3D/', .TRUE. )
-            NROWS = GETIFDSC( FDESC3D, '/NROWS3D/', .TRUE. )
-            NGRID = NCOLS * NROWS
+
+C.............  Initialize grid description
+            CALL CHKGRID( CATDESC, 'GMAT', 0, EFLAG )
+
+C.............  Store gridding matrix size
             NMATX = NCOLS3D
 
         END IF

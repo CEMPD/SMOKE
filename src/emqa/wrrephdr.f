@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRREPHDR( FDEV, RCNT, OUTFMT )
+        SUBROUTINE WRREPHDR( FDEV, RCNT, LH, OUTFMT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -57,7 +57,10 @@ C.........  This module contains report arrays for each output bin
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
 
-C...........  This module contains the information about the source category
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
+CC...........  This module contains the information about the source category
         USE MODINFO
 
         IMPLICIT NONE
@@ -76,6 +79,7 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV       ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT       ! report count
+        INTEGER     , INTENT(OUT) :: LH         ! header width
         CHARACTER(LEN=QAFMTL3),
      &                INTENT(OUT) :: OUTFMT     ! output record format
 
@@ -171,7 +175,7 @@ C...........   Other local variables
         CHARACTER*50   :: BUFFER          ! write buffer
         CHARACTER*50   :: LINFMT          ! header line of '-'
         CHARACTER*300  :: MESG            ! message buffer
-        CHARACTER(LEN=IOULEN3)  :: TMPUNIT    ! tmp units buffer
+        CHARACTER(LEN=IODLEN3)  :: TMPUNIT    ! tmp units buffer
         CHARACTER(LEN=OLINELEN) :: HDRBUF     ! labels line buffer
         CHARACTER(LEN=OLINELEN) :: UNTBUF     ! units line buffer
         CHARACTER(LEN=QAFMTL3)  :: TMPFMT ! temporary format for Linux PG compiler
@@ -180,6 +184,10 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine WRREPHDR
+
+C.........  Initialize output subroutine arguments
+        LH     = 0
+        OUTFMT = ' '
 
 C.........  Initialize local variables for current report
         CNRYMISS = .FALSE.
@@ -191,7 +199,6 @@ C.........  Initialize local variables for current report
         LCNTYUSE = .FALSE.  ! array
         LSCCUSE  = .FALSE.  ! array
         PWIDTH   = 0        ! array
-        LH       = 0
         LU       = 0
 
 C.........  Initialize report-specific settings
@@ -226,6 +233,7 @@ C           parameter and variable-length string columns.
 C.........  For country, state, county, and SCC names, only flag which ones 
 C           are being used by the selected sources.
 C............................................................................
+        PDSCWIDTH = 1
         DO I = 1, NOUTBINS
 
 C.............  Include country name in string
@@ -684,30 +692,21 @@ C.............  Set SCC name column width
         END IF
 
 C.........  Determine the format type requested (if any) - either float or
-C           scientific. If float, determine the number of decimal places 
+C           scientific. Also determine the number of decimal places 
 C           requested.
 C.........  The data format will already have been QA'd so not need to worry
 C           about that here.
+        J = INDEX( RPT_%DATAFMT, '.' )
+        L = LEN_TRIM( RPT_%DATAFMT )
+        NLEFT = STR2INT( RPT_%DATAFMT(   2:J-1 ) )
+        NDECI = STR2INT( RPT_%DATAFMT( J+1:L   ) )
+
         J = INDEX( RPT_%DATAFMT, 'F' )
-        IF( J .GT. 0 ) THEN
-
-            DATFLOAT = .TRUE.
-            J = INDEX( RPT_%DATAFMT, '.' )
-            L = LEN_TRIM( RPT_%DATAFMT )
-            NLEFT = STR2INT( RPT_%DATAFMT(   2:J-1 ) )
-            NDECI = STR2INT( RPT_%DATAFMT( J+1:L   ) )
-
-        ELSE
-            DATFLOAT = .FALSE.
-            J = INDEX( RPT_%DATAFMT, '.' )
-            NLEFT = STR2INT( RPT_%DATAFMT( 2:J-1 ) )
-
-        END IF
+        DATFLOAT = ( J .GT. 0 )
 
 C.........  Data values. Get width for columns that use the "F" format instead
 C           of the "E" format.  The code will not permit the user to specify
 C           a width that is too small for the value requested.
-        OUTFMT = ' '
         IF( RPT_%NUMDATA .GT. 0 ) THEN
 
             OUTFMT = '(A,1X,'            
@@ -758,8 +757,8 @@ C                       and units header
                     L1 = LEN_TRIM( RPT_%DATAFMT )
                     TMPFMT = OUTFMT
                     L2 = LEN_TRIM( TMPFMT )
-                    WRITE( OUTFMT, '(A)' ) TMPFMT( 1:L2 ) // 
-     &                     RPT_%DATAFMT( 1:L1 ) 
+                    WRITE( OUTFMT, '(A,I2.2,A,I2.2)' ) 
+     &                     TMPFMT( 1:L2 ) // 'E', W1, '.', NDECI
 
                 END IF
 
@@ -830,7 +829,9 @@ C.........  The year of the inventory
 
 C.........  Whether a gridding matrix was applied and the grid name
         IF( RPT_%USEGMAT ) THEN
-            WRITE( FDEV,93000 ) 'Gridding matrix applied'
+            L = LEN_TRIM( GRDNM )
+            WRITE( FDEV,93000 ) 'Gridding matrix applied for grid' // 
+     &                          GRDNM( 1:L )
         ELSE
             WRITE( FDEV,93000 ) 'No gridding matrix applied'
         END IF
@@ -892,6 +893,18 @@ C.........  Write ozone-season status
             WRITE( FDEV,93000 ) 'Ozone-season data basis in report'
         ELSE
             WRITE( FDEV,93000 ) 'Annual total data basis in report'
+        END IF
+
+C.........  Write normalization status
+        IF( RPT_%NORMCELL ) THEN
+            L = LEN_TRIM( GRDNM )
+            WRITE( FDEV, 93000 ) 'Data divided by grid cell areas '//
+     &                           'based on grid ' // GRDNM( 1:L )
+        END IF
+
+        IF( RPT_%NORMPOP ) THEN
+            WRITE( FDEV, 93020 ) 'Data divided by year ', STCYPOPYR,
+     &                           ' population'
         END IF
 
 C.........  The name of the group used to select the data
@@ -957,6 +970,8 @@ C...........   Formatted file I/O formats............ 93xxx
 93000   FORMAT( A )
 
 93010   FORMAT( 10( A, :, 1X, I6.6, :, 1X ) )
+
+93020   FORMAT( A, I4.4, A )
 
 C...........   Internal buffering formats............ 94xxx
 

@@ -1,6 +1,6 @@
 
-        SUBROUTINE GENRPRT( FDEV, RCNT, ENAME, TNAME, LNAME, OUTFMT, 
-     &                      SMAT, EFLAG )
+        SUBROUTINE GENRPRT( FDEV, RCNT, HWID, ENAME, TNAME, LNAME, 
+     &                      OUTFMT, SMAT, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -56,11 +56,8 @@ C.........  This module contains report arrays for each output bin
 C.........  This module contains the temporal profile tables
         USE MODTMPRL
 
-C.........  This module contains arrays for plume-in-grid and major sources
-c       USE MODELEV
-
-C.........  This module contains the lists of unique source characteristics
-c       USE MODLISTS
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -83,6 +80,7 @@ C...........   EXTERNAL FUNCTIONS
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT    ! report number
+        INTEGER     , INTENT (IN) :: HWID    ! header width
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT (IN) :: TNAME   ! hourly data file name
         CHARACTER(*), INTENT (IN) :: LNAME   ! layer fractions file name
@@ -104,6 +102,7 @@ C...........   Other local variables
         INTEGER         IOS               ! i/o status
         INTEGER         JDATE             ! Julian date
         INTEGER         JTIME             ! time (HHMMSS)
+        INTEGER         LOUT              ! number of output layers
         INTEGER         NDATA             ! number of data columns
         INTEGER         NV                ! number data or spc variables
 
@@ -180,7 +179,9 @@ C.............  Otherwise, read inventory emissions (for all data)
             END IF
 
 C.............  Loop over layers (EMLAYS will be 1 by default)
-            DO L = 1, EMLAYS
+            LOUT = 1
+            IF( RPT_%BYLAYER ) LOUT = EMLAYS
+            DO L = 1, LOUT
 
 C.................  If needed for this report, read layer fractions for current
 C                   layer, otherwise set to 1.
@@ -232,6 +233,7 @@ C.............................  Set index from global to actually input spc vars
                             K = SPCIDX( V )
 
 C.............................  Sum gridded output records into temporary bins
+C.............................  Gridding factor has normalization by cell area
                             IF( RPT_%USEGMAT ) THEN
                                 DO I = 1, NOUTREC
                                     S = OUTSRC( I )
@@ -240,7 +242,8 @@ C.............................  Sum gridded output records into temporary bins
      &                                            OUTGFAC( I )   *
      &                                            POLVAL ( S,J ) * 
      &                                            SMAT   ( S,K ) *
-     &                                            LFRAC1L( S )
+     &                                            LFRAC1L( S )   *
+     &                                          BINPOPDIV( N )
                                 END DO
 
 C.............................  Sum non-gridded output records into tmp bins
@@ -251,7 +254,8 @@ C.............................  Sum non-gridded output records into tmp bins
                                     BINARR( N ) = BINARR ( N ) + 
      &                                            POLVAL ( S,J ) * 
      &                                            SMAT   ( S,K ) *
-     &                                            LFRAC1L( S )
+     &                                            LFRAC1L( S )   *
+     &                                          BINPOPDIV( N )
                                 END DO
 
                             END IF
@@ -283,6 +287,7 @@ C.........................  Initialize temporary bin sum array
                         BINARR = 0   ! array
 
 C.........................  Sum gridded output records into temporary bins
+C..........................  Gridding factor has normalization by cell area
                         IF( RPT_%USEGMAT ) THEN
                             DO I = 1, NOUTREC
                                 S = OUTSRC( I )
@@ -290,7 +295,8 @@ C.........................  Sum gridded output records into temporary bins
                                 BINARR( N ) = BINARR ( N ) + 
      &                                        OUTGFAC( I )   *
      &                                        POLVAL ( S,J ) *
-     &                                        LFRAC1L( S )
+     &                                        LFRAC1L( S )   *
+     &                                      BINPOPDIV( N )
                             END DO
 
 C.........................  Sum non-gridded output records into temporary bins
@@ -300,7 +306,8 @@ C.........................  Sum non-gridded output records into temporary bins
                                 N = OUTBIN( I )
                                 BINARR( N ) = BINARR ( N ) + 
      &                                        POLVAL ( S,J ) *
-     &                                        LFRAC1L( S )
+     &                                        LFRAC1L( S )   *
+     &                                      BINPOPDIV( N )
                             END DO
 
                         END IF
@@ -322,8 +329,8 @@ C.....................  Convert units of output data
                     END DO
 
 C.....................  Write emission totals
-                    CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, L, 
-     &                             RPT_%DELIM, OUTFMT, EFLAG )
+                    CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, 
+     &                             L,  RPT_%DELIM, OUTFMT, EFLAG )
 
 C.....................  Reinitialize sum array
                     BINDATA = 0  ! array
@@ -344,6 +351,9 @@ C.............  Increment time step
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
         END DO    ! End loop over time steps
+
+C.........  Write line to separate reports from each other and from metadata
+        WRITE( FDEV, '(/,A,/)' ) REPEAT( '#', HWID )
 
 C.........  Deallocate routine-specific memory
         DEALLOCATE( POLVAL, LFRAC1L, BINARR )

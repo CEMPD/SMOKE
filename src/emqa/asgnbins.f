@@ -53,6 +53,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV
 
@@ -155,9 +158,8 @@ C.........  Create a sorting array for all output records
 C.............  If BY CELL, insert X-cell and then Y-cell 
             IF( RPT_%BYCELL ) THEN
                 C = OUTCELL( I )
-                ROW = C / NCOLS          ! note: integer math
-                IF( MOD( C, NCOLS ) .GT. 0. ) ROW = ROW + 1
-                COL = C - ( ROW-1 ) * NCOLS
+                ROW = 1 + INT( (C-1) / NCOLS )
+                COL = C - NCOLS * ( ROW-1 )
             END IF
 
 C.............  If BY SOURCE, then nothing else needed
@@ -285,6 +287,7 @@ C.........  Assign bins to output records based on sorting array
         NOUTBINS = B
 
 C.........  If memory is allocated for bin arrays, then deallocate
+        IF( ALLOCATED( BINBAD    ) ) DEALLOCATE( BINBAD )
         IF( ALLOCATED( BINCOIDX  ) ) DEALLOCATE( BINCOIDX )
         IF( ALLOCATED( BINSTIDX  ) ) DEALLOCATE( BINSTIDX )
         IF( ALLOCATED( BINCYIDX  ) ) DEALLOCATE( BINCYIDX )
@@ -295,31 +298,93 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSRGID2 ) ) DEALLOCATE( BINSRGID2 )
         IF( ALLOCATED( BINSNMIDX ) ) DEALLOCATE( BINSNMIDX )
         IF( ALLOCATED( BINRCL    ) ) DEALLOCATE( BINRCL )
+        IF( ALLOCATED( BINMONID  ) ) DEALLOCATE( BINMONID )
+        IF( ALLOCATED( BINWEKID  ) ) DEALLOCATE( BINWEKID )
+        IF( ALLOCATED( BINDIUID  ) ) DEALLOCATE( BINDIUID )
+        IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
+        IF( ALLOCATED( BINPOPDIV ) ) DEALLOCATE( BINPOPDIV )
         IF( ALLOCATED( BINDATA   ) ) DEALLOCATE( BINDATA )
 
 C.........  Allocate memory for bins
-        IF( RPT_%BYCONAM ) ALLOCATE( BINCOIDX ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYSTNAM ) ALLOCATE( BINSTIDX ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYCYNAM ) ALLOCATE( BINCYIDX ( NOUTBINS ), STAT=IOS )
-        IF( LREGION      ) ALLOCATE( BINREGN  ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYSRC   ) ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYSCC   ) ALLOCATE( BINSCC   ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%SCCNAM  ) ALLOCATE( BINSNMIDX( NOUTBINS ), STAT=IOS )
-        IF( RPT_%SRGRES .EQ. 1 ) 
-     &                     ALLOCATE( BINSRGID1( NOUTBINS ), STAT=IOS )
-        IF( RPT_%SRGRES .GE. 1 ) 
-     &                     ALLOCATE( BINSRGID2( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYMON   ) ALLOCATE( BINMONID ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYWEK   ) ALLOCATE( BINWEKID ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYDIU   ) ALLOCATE( BINDIUID ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYSPC   ) ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYRCL   ) ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYCELL  ) ALLOCATE( BINX     ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYCELL  ) ALLOCATE( BINY     ( NOUTBINS ), STAT=IOS )
-        IF( RPT_%BYELEV  ) ALLOCATE( BINELEV  ( NOUTBINS ), STAT=IOS )
+        ALLOCATE( BINBAD( NOUTBINS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BINBAD', PROGNAME )
+        BINBAD = 0    ! array
+
+        IF( RPT_%BYCONAM ) THEN
+            ALLOCATE( BINCOIDX ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINCOIDX', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSTNAM ) THEN
+            ALLOCATE( BINSTIDX ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSTIDX', PROGNAME )
+        ENDIF
+        IF( RPT_%BYCYNAM ) THEN
+            ALLOCATE( BINCYIDX ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINCYIDX', PROGNAME )
+        ENDIF
+        IF( LREGION      ) THEN
+            ALLOCATE( BINREGN  ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINREGN', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSRC   ) THEN
+            ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSMKID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSCC   ) THEN
+            ALLOCATE( BINSCC   ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSCC', PROGNAME )
+        ENDIF
+        IF( RPT_%SCCNAM  ) THEN
+            ALLOCATE( BINSNMIDX( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSNMIDX', PROGNAME )
+        ENDIF
+        IF( RPT_%SRGRES .EQ. 1 ) THEN
+            ALLOCATE( BINSRGID1( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSRGID1', PROGNAME )
+        ENDIF
+        IF( RPT_%SRGRES .GE. 1 ) THEN
+            ALLOCATE( BINSRGID2( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSRGID2', PROGNAME )
+        ENDIF
+        IF( RPT_%BYMON   ) THEN
+            ALLOCATE( BINMONID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINMONID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYWEK   ) THEN
+            ALLOCATE( BINWEKID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINWEKID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYDIU   ) THEN
+            ALLOCATE( BINDIUID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINDIUID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSPC   ) THEN
+            ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSPCID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYRCL   ) THEN
+            ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINRCL', PROGNAME )
+        ENDIF
+        IF( RPT_%BYCELL  ) THEN
+            ALLOCATE( BINX     ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINX', PROGNAME )
+        ENDIF
+        IF( RPT_%BYCELL  ) THEN
+            ALLOCATE( BINY     ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINY', PROGNAME )
+        ENDIF
+        IF( RPT_%BYELEV  ) THEN
+            ALLOCATE( BINELEV  ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINELEV', PROGNAME )
+        ENDIF
+
+        ALLOCATE( BINPOPDIV( NOUTBINS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BINPOPDIV', PROGNAME )
+        BINPOPDIV = 1.    ! array
 
         ALLOCATE( BINDATA( NOUTBINS, NDATA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BINDATA', PROGNAME )
@@ -343,24 +408,70 @@ C.........  Populate the bin characteristic arrays (not the data array)
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
 
-C.................  Store country name index
+C.................  Store country name index. Note for population that some
+C                   form of "by region is required"
                 IF( RPT_%BYCONAM ) THEN
-                    F = FIP / 100000
+                    F = ( FIP / 100000 ) * 100000
                     K = FIND1( F, NCOUNTRY, CTRYCOD )
                     BINCOIDX( B ) = K
+
+C.....................  If using population normalization, initialize with 
+C                       country population
+                    IF ( RPT_%NORMPOP ) THEN
+                        IF( CTRYPOPL( K ) . GT. 0. ) THEN
+                            BINPOPDIV( B ) = 1. / CTRYPOPL(K)
+
+C.........................  If population data unavailable, then flags bins
+C                           that will not be able to have normalization by pop.
+                        ELSE
+                            BINBAD   ( B ) = 100  ! cpde for bad pop
+                            BINPOPDIV( B ) = 1.
+                        END IF
+                    END IF
+                
                 END IF
 
-C.................  Store state name index
+C.................  Store state name index. Note for population that some
+C                   form of "by region is required"
                 IF( RPT_%BYSTNAM ) THEN
                     F = ( FIP / 1000 ) * 1000        ! In case by-county also
                     K = FIND1( F, NSTATE, STATCOD )
                     BINSTIDX( B ) = K
+
+C.....................  If using population normalization, reset with 
+C                       state population
+                    IF ( RPT_%NORMPOP ) THEN
+                        IF( STATPOPL( K ) . GT. 0. ) THEN
+                            BINPOPDIV( B )= 1. / STATPOPL(K)
+C.........................  If population data unavailable, then flags bins
+C                           that will not be able to have normalization by pop.
+                        ELSE
+                            BINBAD   ( B ) = 100  ! code for bad pop
+                            BINPOPDIV( B ) = 1.
+                        END IF
+                    END IF
+
                 END IF
 
-C.................  Store county name index
+C.................  Store county name index. Note for population that some
+C                   form of "by region is required"
                 IF( RPT_%BYCYNAM ) THEN
                     K = FIND1( FIP, NCOUNTY, CNTYCOD )
                     BINCYIDX( B ) = K
+
+C.....................  If using population normalization, reset with 
+C                       county population
+                    IF ( RPT_%NORMPOP ) THEN
+                        IF( CNTYPOPL( K ) . GT. 0. ) THEN
+                            BINPOPDIV( B )= 1. / CNTYPOPL(K)
+C.........................  If population data unavailable, then flags bins
+C                           that will not be able to have normalization by pop.
+                        ELSE
+                            BINBAD   ( B ) = 100  ! code for bad pop
+                            BINPOPDIV( B ) = 1.
+                        END IF
+                    END IF
+
                 END IF
 
 C.................  Store road class
