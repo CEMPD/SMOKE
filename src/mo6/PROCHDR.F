@@ -126,15 +126,15 @@ C
       CHARACTER (LEN=40)             ::  STDLAB 
       CHARACTER (LEN=80)             ::  FIELD1 
       CHARACTER (LEN=80)             ::  FIELD2 
-      CHARACTER (LEN=80)             ::  ROOT 
+      CHARACTER (LEN=280)            ::  ROOT 
       CHARACTER (LEN=140)            ::  LINE1 
       CHARACTER (LEN=140)            ::  LINE2 
-      CHARACTER (LEN=150)            ::  ATRPTFILE 
-      CHARACTER (LEN=150)            ::  SSFILE 
+      CHARACTER (LEN=280)            ::  ATRPTFILE 
+      CHARACTER (LEN=280)            ::  SSFILE 
       CHARACTER (LEN=150)            ::  DATAFIELD 
       CHARACTER (LEN=150)            ::  INPLINE 
-      CHARACTER (LEN=150)            ::  PMRPTFILE 
-      CHARACTER (LEN=150)            ::  RPTFILE 
+      CHARACTER (LEN=280)            ::  PMRPTFILE 
+      CHARACTER (LEN=280)            ::  RPTFILE 
       INTEGER                        ::  DBTAB 
       INTEGER                        ::  DBTABMAX 
       INTEGER                        ::  I 

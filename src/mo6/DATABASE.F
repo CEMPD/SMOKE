@@ -55,7 +55,7 @@ C
      &  (/'EMISSIONS ','INPUTS    ','DATAFILES ','MESSAGES  ', 
      &    'RUNDATA   ','SCENARIOS ','ETYPES    '/) 
 C 
-      CHARACTER(LEN=80), DIMENSION(7)            ::  DBFNAMES  
+      CHARACTER(LEN=280), DIMENSION(7)           ::  DBFNAMES  
 C     INTEGER, DIMENSION(7)                      ::  DBOPENCOUNT = 
 C    &   (/0,0,0,0,0,0,0/) 
       CHARACTER(LEN=7), DIMENSION(7)             ::  DBACTION = 
