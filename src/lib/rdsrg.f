@@ -148,8 +148,12 @@ C......... Determine the number surrogate file entries
                         CYCLE
                     END IF
 
-                ELSEIF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
+                ELSE IF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
                     CYCLE
+
+                ELSE IF ( LINE( 1:1 ) .EQ. CINVHDR ) THEN ! skip comment lines
+                    CYCLE
+
                 ELSE
                     NSRGREC = NSRGREC + 1
                 END IF
@@ -222,6 +226,9 @@ C.........  Fill surrogate arrays
                     END IF
 
                 ELSE IF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
+                    CYCLE
+
+                ELSE IF ( LINE( 1:1 ) .EQ. CINVHDR ) THEN ! skip comment lines
                     CYCLE
 
                 END IF
