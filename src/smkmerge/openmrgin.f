@@ -120,6 +120,10 @@ C.........  Other local variables
         CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
         CHARACTER(LEN=IOVLEN3) PROJTYPE   ! projection type
 
+        CHARACTER*80,ALLOCATABLE    :: UVDESC( : )  ! spc var descs for uncert
+        CHARACTER*80,ALLOCATABLE    :: UVUNIT( : )  ! spc var units for uncert
+
+
         CHARACTER*16 :: PROGNAME = 'OPENMRGIN' ! program name
 
 C***********************************************************************
@@ -280,13 +284,38 @@ C               speciation variable descriptions, and store mass or moles.
 
                 CALL RETRIEVE_IOAPI_HEADER( ASNAME )
                 CALL CHKSRCNO( 'area', 'ASMAT', NROWS3D, NASRC, EFLAG )
+
                 ANSMATV = NVARS3D
-                ALLOCATE( ASVDESC( ANSMATV ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'ASVDESC', PROGNAME )
-                ALLOCATE( ASVUNIT( ANSMATV ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'ASVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, ANSMATV, ASVDESC )
-                CALL STORE_VUNITS( 1, 1, ANSMATV, ASVUNIT )
+
+                IF( RLZN .EQ. 0 ) THEN
+
+                    ALLOCATE( ASVDESC( ANSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'ASVDESC', PROGNAME )
+                    ALLOCATE( ASVUNIT( ANSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'ASVUNIT', PROGNAME )
+                    CALL STORE_VDESCS( 1, 1, ANSMATV, ASVDESC )
+                    CALL STORE_VUNITS( 1, 1, ANSMATV, ASVUNIT )
+
+                ELSE
+c uncertainty stuff here
+                    IF( ALLOCATED( UVDESC ) ) DEALLOCATE( UVDESC )
+                    IF( ALLOCATED( UVUNIT ) ) DEALLOCATE( UVUNIT )
+
+                    ALLOCATE( UVDESC( ANSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'UVDESC', PROGNAME )
+                    ALLOCATE( UVUNIT( ANSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'UVUNIT', PROGNAME )
+
+                    CALL PROBEFORU( ANSMATV )
+
+                    ALLOCATE( ASVDESC( ANSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'ASVDESC', PROGNAME )
+                    ALLOCATE( ASVUNIT( ANSMATV ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'ASVUNIT', PROGNAME )
+                    CALL STORE_UVDESCS( 1, 1, ANSMATV, ASVDESC )
+                    CALL STORE_UVUNITS( 1, 1, ANSMATV, ASVUNIT )
+
+                END IF
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'area' )
@@ -863,6 +892,41 @@ C...........   Internal buffering formats.............94xxx
 C******************  INTERNAL SUBPROGRAMS  *****************************
  
         CONTAINS
+
+            SUBROUTINE PROBEFORU( ASNUM )
+
+            INTEGER, INTENT(IN OUT)    :: ASNUM  ! tmp no. of uncert vars
+
+            INTEGER         I, J, L, L2, U, V    
+
+C----------------------------------------------------------------------
+
+            U = 0
+            DO I = 1, ASNUM
+                DO J = 1, ANIPOL
+
+                    L = LEN_TRIM( AEINAM( J ) )
+                    IF(AEINAM( J )( 1:L ) .EQ. VDESC3D( I )( 1:L )) THEN
+
+                        U = U + 1
+                        L2 = LEN_TRIM( VDESC3D( I ) )
+                        UVDESC( U ) = VDESC3D( I )( 1:L2 )
+
+                        L2 = LEN_TRIM( UNITS3D( I ) )
+                        UVUNIT( U ) = UNITS3D( I )( 1:L2 ) 
+
+                    END IF
+
+                END DO
+            END DO
+
+            ASNUM = U
+
+            END SUBROUTINE PROBEFORU
+
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
 
             SUBROUTINE DEALLOCALL
 
@@ -1652,5 +1716,68 @@ C----------------------------------------------------------------------
             END DO
  
             END SUBROUTINE STORE_VUNITS
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This subprogram stores I/O API NetCDF variable descriptions into
+C               a local array based on indices in subprogram call
+C               for uncertainty processing.
+            SUBROUTINE STORE_UVDESCS( ISTART, INCRMT, NDESC, DESCS )
+
+C.............  Subprogram arguments
+            INTEGER      ISTART        ! starting position in VDESCS of names
+            INTEGER      INCRMT        ! increment of VDESCS for names
+            INTEGER      NDESC         ! number of descriptions
+            CHARACTER(*) DESCS( NDESC )! stored variable descriptions
+
+C.............  Local variables
+            INTEGER  I, J, L
+
+C----------------------------------------------------------------------
+
+            DESCS = ' '
+
+            J = ISTART
+            DO I = 1, NDESC
+
+                L = LEN_TRIM( UVDESC( J ) )
+                DESCS( I ) = UVDESC( J )( 1:L )
+                J = J + INCRMT
+
+            END DO
+ 
+            END SUBROUTINE STORE_UVDESCS
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram stores I/O API NetCDF variable units into
+C               a local array based on indices in subprogram call
+C               for uncertainty processing.
+            SUBROUTINE STORE_UVUNITS( ISTART, INCRMT, NUNIT, UNITS )
+
+C.............  Subprogram arguments
+            INTEGER      ISTART         ! starting position in VDESCS of names
+            INTEGER      INCRMT         ! increment of VDESCS for names
+            INTEGER      NUNIT          ! number of units
+            CHARACTER(*) UNITS( NUNIT ) ! stored variable units
+
+C.............  Local variables
+            INTEGER  I, J, L
+
+C----------------------------------------------------------------------
+
+            UNITS = ' '
+
+            J = ISTART
+            DO I = 1, NUNIT
+
+                L = LEN_TRIM( UVUNIT( J ) )
+                UNITS( I ) = UVUNIT( J )( 1:L )
+                J = J + INCRMT
+ 
+            END DO
+ 
+            END SUBROUTINE STORE_UVUNITS
 
         END SUBROUTINE OPENMRGIN
