@@ -2,7 +2,7 @@
         PROGRAM SPCAMAT
 
 C***********************************************************************
-C  program body starts at line 227
+C  program body starts at line 230
 C
 C  DESCRIPTION:
 C       Construct area source chemical speciation matrix from data 
@@ -657,7 +657,7 @@ C...........   Then if that fails, try by ASC only.
                         XCNT   = XCNT + 1
                         SPCPRF = PRF0
                         ALLADJ = 1.0
-                        FRMADJ = 1.0
+                        FRMADJ = 0.0
                         ETHADJ = 1.0
                         VREACT = 1.0
 
