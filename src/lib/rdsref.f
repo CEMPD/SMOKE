@@ -246,8 +246,9 @@ C           interest
                 CYCLE
             END IF
 
-C.............  Skip blank lines
+C.............  Skip blank lines or comments
             IF( LINE .EQ. ' ' ) CYCLE
+            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
 
             J = INDEX( LINE, PDEFPCKT ) ! can be in middle of file
             L = LEN_TRIM( LINE )
