@@ -48,8 +48,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: JDATE          ! julian date
         INTEGER     , INTENT (IN) :: JTIME          ! time HHMMSS
         CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
-        REAL        , INTENT (IN) :: VMIN( NSRC )   ! daily min value
-        REAL        , INTENT (IN) :: VMAX( NSRC )   ! daily max value
+        REAL        , INTENT (IN) :: VMIN( NSRC,4 )   ! daily min value
+        REAL        , INTENT (IN) :: VMAX( NSRC,4 )   ! daily max value
         INTEGER     , INTENT (IN) :: MIDX( NSRC,4 ) ! min/max indices
 
 C...........   Local variables
