@@ -341,12 +341,14 @@ C           per cy/st/co code.
               
             END IF
 
-            IF( C   .NE. LCEL ) THEN
+            IF( C   .NE. LCEL .OR. CELCNT .EQ. 0 ) THEN
                 CELCNT = CELCNT + 1      ! increment cell counter per county
                 LCEL = C
             END IF
 
         END DO
+
+        IF( CELCNT .GT. MXCFIP ) MXCFIP = CELCNT
 
 C.........  Count surrogate codes in surrogates file
         LSSC  = -1
