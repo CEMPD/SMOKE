@@ -267,6 +267,10 @@
 !.........  Index between all model species names and all inventory pollutants
         INTEGER, ALLOCATABLE, PUBLIC :: EMIDX( : )
 
+!.........  Number of unique units needed
+!           If using speciation, NUNITS = NMPSC; otherwise, NUNITS = NIPPA
+        INTEGER, PUBLIC :: NUNITS = 0
+
 !.........  Map file pollutants list and physical file names
         INTEGER                            , PUBLIC :: ANMAP = 0
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AMAPNAM( : )
