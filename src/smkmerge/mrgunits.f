@@ -1,7 +1,8 @@
+
         SUBROUTINE MRGUNITS
 
 C***********************************************************************
-C  subroutine MRGUNITS body starts at line
+C  subroutine MRGUNITS body starts at line 93
 C
 C  DESCRIPTION:
 C      The purpose of this subroutine
@@ -19,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -34,7 +35,7 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
-C****************************************************************************
+C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
@@ -121,6 +122,9 @@ C           a given pollutants speciation factors
 
 C.............  Initialize the output units for speciation 
             IF( SFLAG ) THEN
+
+                CALL UNITMATCH( SPCUNIT( V ) )
+
         	GRDUNIT_I = MULTUNIT( SPCUNIT( V ), TOUNITS( V ) )
         	IF( TFLAG ) THEN
                     TOTUNIT_I = MULTUNIT( GRDUNIT_I, 'hr/day' )
@@ -219,6 +223,7 @@ C.............  Set the trial units. NOTE - this could be too simplistic.
             IF( TOTENV .NE. ' ' ) TOTBUF = TOTENV
 
 C.............  Get factor for the numerators for the gridded outputs...
+            CALL UNITMATCH( BIOUNIT )
             FAC1 = UNITFAC( BIOUNIT, GRDBUF, .TRUE. )
 
 C.............  Get factor for the denominators for the gridded outputs...
@@ -252,8 +257,7 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
  
         CONTAINS
  
-C.............  This internal subprogram tries to retrieve the I/O API header
-C               and aborts if it was not successful
+C.............  This internal subprogram corrects badly formatted units
             SUBROUTINE CORRECT_UNITS( NUM_I, DEN_I, NUM, DEN, OUTUNIT )
 
 C.............  Subprogram arguments
