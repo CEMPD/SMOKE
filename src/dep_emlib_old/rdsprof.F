@@ -3,45 +3,45 @@
      &                            SXREF, SCOEF, IPOL )
 
 C***********************************************************************
-C  function body starts at line  99 
+C function body starts at line  99 
 C
-C  FUNCTION:
-C       Reads the indicated speciation profile file from DEV, 
-C       sorts it, and returns the number of profile entries found.
-C       In case of overflow, returns negative of number of profile
-C       entries found.
+C FUNCTION:
+C      Reads the indicated speciation profile file from DEV, 
+C      sorts it, and returns the number of profile entries found.
+C      In case of overflow, returns negative of number of profile
+C      entries found.
 C
-C  PRECONDITIONS REQUIRED:
-C       speciation profile file already opened on unit SDEV
+C PRECONDITIONS REQUIRED:
+C      speciation profile file already opened on unit SDEV
 C
-C  SUBROUTINES AND FUNCTIONS CALLED:
-C       M3WARN, SORTI1
+C SUBROUTINES AND FUNCTIONS CALLED:
+C      M3WARN, SORTI1
 C
-C  REVISION  HISTORY:
-C       prototype 1/96 by CJC
-C       updated for variable species 5/95 by MRH
-C       Fixed bug in sorting-process; style changes and better commenting
+C REVISION  HISTORY:
+C      prototype 1/96 by CJC
+C      updated for variable species 5/95 by MRH
+C      Fixed bug in sorting-process; style changes and better commenting
 C
 C***********************************************************************
 C 
-C  Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C                 System
-C  File: @(#)$Id$
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
 C 
-C  COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C  All Rights Reserved
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
 C 
-C  See file COPYRIGHT for conditions of use.
+C See file COPYRIGHT for conditions of use.
 C 
-C  Environmental Programs Group
-C  MCNC--North Carolina Supercomputing Center
-C  P.O. Box 12889
-C  Research Triangle Park, NC  27709-2889
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
 C 
-C  env_progs@mcnc.org
+C env_progs@mcnc.org
 C 
-C  Pathname: $Source$
-C  Last updated: $Date$ 
+C Pathname: $Source$
+C Last updated: $Date$ 
 C
 C****************************************************************************/
 
