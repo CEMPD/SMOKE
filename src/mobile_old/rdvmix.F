@@ -1,6 +1,7 @@
 
 C Version "@(#)$Id$ $Source$ $Date$ 
 
+
         SUBROUTINE RDVMIX( VDEV, JYEAR, IFIP, IRCLAS, ILINK, VMT,
      &                     MXMAT )
 
@@ -75,25 +76,28 @@ C.......   After sorting and filtering into different classes:
         REAL            MFACR( NVTYPE, NRCLAS )
 
         INTEGER         NVMXS                   !  state&roadclass veh mixes
-        INTEGER         VFIPS( MXSREF )
-        INTEGER         VRDTS( MXSREF )
-        REAL            MFACS( NVTYPE, MXSREF )
+        INTEGER         VFIPS( MXSTRC )
+        INTEGER         VRDTS( MXSTRC )
+        REAL            MFACS( NVTYPE, MXSTRC )
 
         INTEGER         NVMXF                   !  FIP&roadclass veh mixes
-        INTEGER         VFIPF( MXFREF )
-        INTEGER         VRDTF( MXFREF )
-        REAL            MFACF( NVTYPE, MXFREF )
+        INTEGER         VFIPF( MXFRC )
+        INTEGER         VRDTF( MXFRC )
+        REAL            MFACF( NVTYPE, MXFRC )
 
         INTEGER         NVMXL                   !  FIP&roadclass&link veh mixes
-        INTEGER         VFIPL( MXLREF )
-        INTEGER         VRDTL( MXLREF )
-        INTEGER         VLNKL( MXLREF )
-        REAL            MFACL( NVTYPE, MXLREF )
+        INTEGER         VFIPL( MXFLK )
+        INTEGER         VRDTL( MXFLK )
+        INTEGER         VLNKL( MXFLK )
+        REAL            MFACL( NVTYPE, MXFLK )
 
 
 C...........   Other local variables
 
         LOGICAL         EFLAG   !  error-flag
+        LOGICAL         DFLAG   !  true if defaults exist
+        DATA            DFLAG / .FALSE. /
+
         INTEGER         IOS
         INTEGER         IREC
         INTEGER         K, F, S, V
@@ -182,7 +186,6 @@ C..........   Read VMT mix profiles file:
 
 C...........   Sort and process the vehicle mix factor arrays:
 
-        CALL SORTI3( NVMIX, INDMA, VFIPA, VRDTA, VLNKA )
 
         NVMXR = 0
         NVMXS = 0
@@ -199,6 +202,8 @@ C...........   Sort and process the vehicle mix factor arrays:
             IF ( FIP .EQ. 0 ) THEN
                 
                 IF ( RDT .EQ. 0 ) THEN
+
+                    DFLAG = .TRUE.
                     
                     DO  31  V = 1, NVTYPE
                         MFAC0( V ) = VFACA( V,K )
@@ -231,7 +236,7 @@ C...........   Sort and process the vehicle mix factor arrays:
 
                 NVMXS = NVMXS + 1
 
-                IF ( NVMXS .LE. MXSREF ) THEN
+                IF ( NVMXS .LE. MXSTRC ) THEN
 
                     VFIPS( NVMXS ) = FIP / 1000
                     VRDTS( NVMXS ) = RDT
@@ -252,7 +257,7 @@ C...........   Sort and process the vehicle mix factor arrays:
 
                 NVMXF = NVMXF + 1
 
-                IF ( NVMXF .LE. MXFREF ) THEN
+                IF ( NVMXF .LE. MXFRC ) THEN
 
                     VFIPF( NVMXF ) = FIP
                     VRDTF( NVMXF ) = RDT
@@ -273,7 +278,7 @@ C...........   Sort and process the vehicle mix factor arrays:
 
                 NVMXL = NVMXL + 1
 
-                IF ( NVMXL .LE. MXLREF ) THEN
+                IF ( NVMXL .LE. MXFLK ) THEN
 
                     VFIPL( NVMXL ) = FIP
                     VRDTL( NVMXL ) = RDT
@@ -342,22 +347,35 @@ C...........   Construct mapping of source number to vehicle mixes.
             F = FIND1( RDT, NVMXR, VRDTR )
 
             IF ( F .GT. 0 ) THEN        !  rdt match
+
                 DO  284  V = 1, NVTYPE
                     MXMAT( S,V ) = MFACR( V,F ) * VMT( S )
 284             CONTINUE
-            ELSE                        !  no match:  use fallback fractions
+
+            ELSEIF( DFLAG ) THEN        !  no match:  use fallback fractions
+
                 DO  285  V = 1, NVTYPE
                     MXMAT( S,V ) = MFAC0( V ) * VMT( S )
 285             CONTINUE
+
+            ELSE                        !  Error
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 )
+     &                 'No VMT MIX match found for FIP:', FIP, 
+     &                 ' Road class:', RDT
+                CALL M3MESG( MESG )
+
             END IF
 
                         
 299     CONTINUE        !  end loop on sources S, constructing TNDX
         
         IF ( EFLAG ) THEN
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Bad XREF::PROF match.', 2 )
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+     &                   'Error applying VMT mix from MVMTM', 2 )
         END IF
-        
+       
         RETURN
 
 
