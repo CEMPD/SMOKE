@@ -15,7 +15,7 @@ C       M3IO source-level area source emissions in canonical order
 C       produced by EMSAREA
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C       RDTPROF(), RDASCC(), MKTMATSI()
+C       RDTPROF(),  RDEPSTPRF(), RDASCC(), MKTMATSI()
 C       Models-3 I/O.
 C
 C  REVISION  HISTORY:
@@ -46,7 +46,7 @@ C	Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling System
 C
 C File Version @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -93,6 +93,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
+        INTEGER         RDEPSTPRF
         INTEGER         RDTPROF
         INTEGER         STR2INT
         INTEGER         TIME2SEC
@@ -102,7 +103,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CHKXLIN, CRLF, ENVINT, ENVYN, FIND1, FIND2, FIND3, 
      &            GETDATE, GETEFILE, GETNUM, GETYN, HHMMSS, INDEX1, 
      &            ISDSTIME, JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
-     &            RDTPROF, STR2INT, TIME2SEC, TRIMLEN, WKDAY
+     &            RDEPSTPRF, RDTPROF, STR2INT, TIME2SEC, TRIMLEN, WKDAY
 
 
 C...........   PARAMETERS and their descriptions
@@ -261,6 +262,7 @@ C...........   Other local variables
         LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
         LOGICAL         TMATCALC!  iff need to calculate new TMAT
         LOGICAL         ZONE4WM !  iff use zone for applying week/mon temp prof
+        LOGICAL         LEPSNOSUM !  Temporal profiles do not sum to total
 
         LOGICAL         FIRSTCOD  !  iff haven't yet encounter CODE > 0
         DATA            FIRSTCOD / .TRUE. /
@@ -309,6 +311,9 @@ C   begin body of program TMPAREA
 C.......   Get environment variable logical variables
         ZONE4WM = ENVYN ( 'ZONE4WM', 'Assign weekly/monthly ' //
      &                    'using time zones', .TRUE., IOS         )
+
+        LEPSNOSUM = ENVYN ( 'LEPSNOSUM', 'Temporal profiles ' //
+     &          'do not necessarily sum to total ', .FALSE., IOS  )
 
         PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
      &                    .TRUE., IOS )
@@ -509,11 +514,27 @@ C...........   Read temporal-profiles file:  3 parts (monthly, weekly, diurnal)
 
         CALL M3MSG2( 'Reading TEMPORAL-PROFILE file...' )
 
-        NMON = RDTPROF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
-        NWEK = RDTPROF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
-        NDIU = RDTPROF( PDEV, 'WEEKDAY', 24, NDCOD, DIUREF, DIUFAC )
-        NEND = RDTPROF( PDEV, 'WEEKEND', 24, NDCOD, ENDREF, ENDFAC )
+C...........   For EPS2 temporal profiles that do not equal
+C...........   the sum on the far right of each record.
 
+        IF ( LEPSNOSUM ) THEN
+
+          NMON = RDEPSTPRF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
+          NWEK = RDEPSTPRF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
+          NDIU = RDEPSTPRF( PDEV, 'WEEKDAY', 24, NDCOD, DIUREF, DIUFAC )
+          NEND = RDEPSTPRF( PDEV, 'WEEKEND', 24, NDCOD, ENDREF, ENDFAC )
+
+        ELSE 
+
+C...........   For temporal profiles that do equal
+C...........   the sum on the far right of each record.
+
+          NMON = RDTPROF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
+          NWEK = RDTPROF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
+          NDIU = RDTPROF( PDEV, 'WEEKDAY', 24, NDCOD, DIUREF, DIUFAC )
+          NEND = RDTPROF( PDEV, 'WEEKEND', 24, NDCOD, ENDREF, ENDFAC )
+  
+        ENDIF
 
 C.......   Read temporal-profile cross-reference file.
 
