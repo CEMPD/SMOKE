@@ -170,7 +170,7 @@ C           the various data fields
             CFIP( 2:3 ) = LINE( 1:2 )  ! state
             CFIP( 4:6 ) = LINE( 3:5 )  ! county
             CRWT( 1:1 ) = LINE( 6:6 )  ! area type
-            CRWT( 2:3 ) = LINE( 7:10 ) ! facility type  <-- PROBLEM!!!!
+            CRWT( 2:3 ) = ADJUSTL( LINE( 7:10 ) ) ! facility type  <-- PROBLEM!!!!
             CLNK        = ' '          ! link
         ELSE
             CALL PARSLINE( LINE, NSEG, SEGMENT )
