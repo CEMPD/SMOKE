@@ -13,6 +13,7 @@
 !
 !  REVISION HISTORY:
 !     Created 1/99 by M. Houyoux
+!     Modified 11/01 by Gabe Cano - deterministic/stochastic mode
 !
 !***************************************************************************
 !
@@ -52,7 +53,8 @@
         INTEGER, ALLOCATABLE :: ADDIDX( :,: ) ! index for ADD data tables
 
 !.........  Per-source arrays for position in gridding surrogates table
-        INTEGER, ALLOCATABLE :: SRGIDPOS( : ) ! surrogate position
+        INTEGER, ALLOCATABLE :: SRGCDPOS( : ) ! surrogate codes array position
+        INTEGER, ALLOCATABLE :: SRGIDPOS( : ) ! surrogate list position
         INTEGER, ALLOCATABLE :: SGFIPPOS( : ) ! cy/st/co code position
 
 !.........  Per-source arrays with index for assigning emission factors (by 
@@ -259,11 +261,14 @@
         INTEGER, ALLOCATABLE, PUBLIC:: INDXTA ( : ) !  sorting index
         INTEGER, ALLOCATABLE, PUBLIC:: IFIPTA ( : ) !  co/st/cy FIPS codes
         INTEGER, ALLOCATABLE, PUBLIC:: ISPTA  ( : ) !  pollutant index to EINAM
-        INTEGER, ALLOCATABLE, PUBLIC:: ISRGCDA( : ) !  spatial surrogate codes
         INTEGER, ALLOCATABLE, PUBLIC:: MPRNA  ( : ) !  monthly profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: WPRNA  ( : ) !  weekly profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: DPRNA  ( : ) !  diurnal profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: IPSIA( :,: ) !  24 hours code for EFs
+        INTEGER, ALLOCATABLE, PUBLIC:: INPAIRA( : ) !  SRC/probability pair count
+        INTEGER, ALLOCATABLE, PUBLIC:: ISRGCDA( :,: ) !  spatial surrogate codes
+
+        REAL,    ALLOCATABLE, PUBLIC:: RSPROBA( :,: ) !  surrogate probability
 
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: CSPRNA( : ) ! spec prof #
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCTA( : ) ! SCC
