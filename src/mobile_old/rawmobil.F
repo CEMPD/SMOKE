@@ -2,7 +2,7 @@
          PROGRAM RAWMOBIL
 
 C***********************************************************************
-C  program body starts at line 177
+C  program body starts at line 181
 C
 C  DESCRIPTION:
 C       
@@ -235,14 +235,23 @@ C.............  Exit to line 51 if read is EOF
             IF( L1 .GT. 0 ) THEN
  
                 INY = STR2INT( LINE( L1+7:L2 ) )
-                GO TO 22                        ! To head of MLKLST read loop
  
-            ELSEIF( INY .LE. 0 ) THEN
+                IF( INY .LE. 0 ) THEN
  
-                CALL M3EXIT( 'RAWMOBIL', 0, 0,
+                    CALL M3EXIT( 'RAWMOBIL', 0, 0,
      &               'Must set inventory year using INVYEAR packet ' //
      &               'in MLKLST file', 2 )
  
+                ELSEIF( INY .LT. 1970 ) THEN
+
+                    CALL M3EXIT( 'RAWMOBIL', 0, 0,
+     &               'INVYEAR packet has set bad 4-digit year' //
+     &               'in MLKLST file', 2 )
+
+                ENDIF
+
+                GO TO 22                        ! To head of MLKLST read loop
+
             ELSE
 
                 FNAME = LINE( 1:L2 )   ! Set inventory file name
@@ -275,7 +284,8 @@ C.............  Read file for sources with link specific VMT (i.e. LINK sources)
 
                 IF( IOS .NE. 0 ) THEN
                     WRITE( MESG, 94010 ) 'Error ', IOS, 
-     &                   'reading ' // FNAME // ' at line', IREC
+     &                   'reading ' // FNAME( 1:TRIMLEN( FNAME ) ) //
+     &                   ' at line', IREC
                     CALL M3EXIT( 'RAWMOBIL', 0, 0, MESG, 2 )
 
 C.................  Determine IRCLAS based on Urban/Rural and Facility type
@@ -343,7 +353,8 @@ C.................  Ensure no overflow
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
      &                     'Maximum number of LINK SOURCES', MXLSRC,
-     &                     'exceeded at line', IREC, ', file ' // FNAME
+     &                     'exceeded at line', IREC, ', file ' // 
+     &                     FNAME( 1:TRIMLEN( FNAME ) )
                     CALL M3MESG( MESG )
 
                 ELSE
@@ -365,9 +376,9 @@ C.................  Ensure no overflow
 
             GO TO 44  ! To head of current KDEV read loop
 
-            CLOSE( KDEV )
+   50       CLOSE( KDEV )
 
-   50   GO TO 22      ! To head of loop on LNKRAW files
+        GO TO 22      ! To head of loop on LNKRAW files
 
    51   CONTINUE
 
@@ -391,7 +402,8 @@ C.......   Get file name for opening input raw mobile non-link-source
 C.......   (i.e., county-based VMT) files
 
         MDEV = PROMPTFFILE(
-     &        'Enter the name of the RAW NON-LINK FILENAMES list',
+     &        'Enter the name of the RAW NON-LINK FILENAMES list ' //
+     &        'or "NONE"',
      &         .TRUE., .TRUE., 'MNLST', 'RAWMOBIL' )
 
 C.........  Loop over non-link input files
@@ -411,13 +423,22 @@ C.............  Exit to line 111 if read is EOF
             IF( L1 .GT. 0 ) THEN
  
                 INY = STR2INT( LINE( L1+7:L2 ) )
-                GO TO 55                        ! To head of MNLST read loop
+
+                IF( INY .LE. 0 ) THEN
  
-            ELSEIF( INY .LE. 0 ) THEN
- 
-                CALL M3EXIT( 'RAWMOBIL', 0, 0,
+                    CALL M3EXIT( 'RAWMOBIL', 0, 0,
      &               'Must set inventory year using INVYEAR packet ' //
      &               'in MNLST file', 2 )
+ 
+                ELSEIF( INY .LT. 1970 ) THEN
+ 
+                    CALL M3EXIT( 'RAWMOBIL', 0, 0,
+     &               'INVYEAR packet has set bad 4-digit year' //
+     &               'in MNLST file', 2 )
+ 
+                ENDIF
+
+                GO TO 55                        ! To head of MNLST read loop
  
             ELSE
  
@@ -451,7 +472,8 @@ C.............  Read county-VMT file(s)
 C.................  Abort if error reading file
 		IF( IOS .NE. 0 ) THEN
 		    WRITE( MESG, 94010 ) 'Error ', IOS, 
-     &                   'reading ' // FNAME // ' at line', IREC
+     &                   'reading ' // FNAME( 1:TRIMLEN( FNAME ) ) //
+     &                   ' at line', IREC
 		    CALL M3EXIT( 'RAWMOBIL', 0, 0, MESG, 2 )
 
 C.................  Determine IRCLAS based on Urban/Rural and Facility type
@@ -500,7 +522,8 @@ C.................  Check for bad road class number
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
      &                     'Maximum number of NON-LINK SOURCES', MXNSRC,
-     &                     'exceeded at line', IREC, ', file ' // FNAME
+     &                     'exceeded at line', IREC, ', file ' // 
+     &                      FNAME( 1:TRIMLEN( FNAME ) )
                     CALL M3MESG( MESG )
 
                 ELSE
@@ -522,7 +545,9 @@ C.................  Check for bad road class number
 
             GO TO 66  ! To head of current ADEV-read loop
 
-  110   GO TO 55      ! To head of MNLST read loop
+  110       CLOSE( MDEV )
+
+        GO TO 55      ! To head of MNLST read loop
 
   111   CONTINUE
 
@@ -836,7 +861,11 @@ C.........  Get file name; open output mobile sources file
         VGTOP3D = BADVAL3
         WRITE( GDNAM3D, 94040 ) 'UTM_', UZONE
 
-        FDESC3D( 1 ) = 'NC Mobile Sources VMT values.'
+        FDESC3D( 1 ) = 'Mobile Sources VMT inventory file'
+
+        DO 199 J = 2, MXDESC3
+            FDESC3D( J ) = ' '
+  199   CONTINUE
            
         J = 1
         VNAME3D( J ) = 'IFIP'
