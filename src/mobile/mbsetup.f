@@ -42,13 +42,13 @@ C***********************************************************************
         
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, SPEED, VMT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CATDESC, CRL, NSRC, NIACT
 
 C.........  This module is used for MOBILE6 setup information        
-        USE MODMBSET
+        USE MODMBSET, ONLY: NREFC
 
         IMPLICIT NONE
 
@@ -130,7 +130,7 @@ C.........  End program if source category is not mobile sources
         IF( CATEGORY /= 'MOBILE' ) THEN
             L = LEN_TRIM( PROGNAME )
             MESG = 'Program ' // PROGNAME( 1:L ) // ' does not ' //
-     &             'support ' // CATEGORY( 1:CATLEN ) // ' sources.'
+     &             'support ' // TRIM( CATEGORY ) // ' sources.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
@@ -214,11 +214,19 @@ C......... If the dimensions were in error, abort
 C.........  Set inventory variables to read
         IVARNAMS( 1 ) = 'IFIP'
         IVARNAMS( 2 ) = 'IRCLAS'
-        IVARNAMS( 3 ) = 'SPEED'
-        NINVARR = 3
+        NINVARR = 2
 
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
+
+C.........  Read speed and VMT information from inventory
+        ALLOCATE( SPEED( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
+        ALLOCATE( VMT( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VMT', PROGNAME )
+        
+        CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
+        CALL RDMAPPOL( NSRC, 1, 1, 'VMT', VMT )
 
 C.........  Build unique lists of SCCs and country/state/county codes
 C           from the inventory arrays
