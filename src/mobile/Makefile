@@ -2,10 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBS2         = $(LDIRS) -lsmoke -lmo5b -lioapi -lnetcdf
-LIBS2_DEBUG   = $(LDIRS) -lsmoke.debug -lmo5b.debug -lioapi.debug -lnetcdf.debug
+LIBS          = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
+LIBS2         = $(LDIRS) -lsmoke -lmo5b -liotools  -lioapi -lnetcdf
+LIBS2_DEBUG   = $(LDIRS) -lsmoke.debug -lmo5b.debug -liotools.debug -lioapi.debug -lnetcdf.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 FFLAGS_NOOPT  = $(DBGFLAGS)
