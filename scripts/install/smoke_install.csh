@@ -29,7 +29,7 @@ endif
 if ( $found1 == n ) then
    echo "ERROR: No smoke installation file for a specific platform"
    echo "       is available. Please download that file and retry."
-   echo "       
+   echo " "     
    set exitstat = 1
 endif
 
@@ -58,6 +58,7 @@ if ( $nline > 0 ) then
        echo "       these files using the pkzip or zip utilities, if these"
        echo "       are available instead.  Then rerun this script."
        echo " "
+       exit( 1 )
    endif
 
    gunzip smoke*tar.gz
@@ -90,8 +91,8 @@ endif
 
 if ( $found1 == n ) then
    echo "ERROR: Cannot find any executable tar files in directory"
-   echo "       "$blah_foo_arg"
-   echo "       "
+   echo "       $blah_foo_arg"
+   echo " "
    set exitstat = 1
 endif
 
@@ -121,7 +122,8 @@ ls $INVDIR/nonroad/arinv.nonroad.n* >> arinv.nonroad.lst
 cd $PTDAT
 echo "#LIST" > ptinv.lst
 ls $PTDAT/ptinv.n* >> ptinv.lst
-echo "DATERANGE 0709 0710" > pthour.lst
+echo "#LIST" > pthour.lst
+echo "DATERANGE 0709 0710" >> pthour.lst
 ls $SMKDAT/cem/1996/q3/* >> pthour.lst
 
 cd $blah_foo_arg
