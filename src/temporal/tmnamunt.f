@@ -50,6 +50,7 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER   INDEX1
@@ -65,8 +66,11 @@ C...........   Other local variables
 
         REAL            FAC1, FAC2        ! tmp conversion factors
 
+        LOGICAL      :: FIXDESC = .FALSE. ! true: append info to description
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
 
+        CHARACTER*16           CURRUNIT   !  current unit
+        CHARACTER*16           CURRVNAME  !  current variable name
         CHARACTER*300          MESG       !  message buffer
         CHARACTER(LEN=IOVLEN3) CBUF       !  tmp variable name
 
@@ -105,8 +109,20 @@ C           conversion to annual data here.
 
             DO K = 1, NETYPE( I )
 
+                CURRVNAME = EMTNAM( K,I )
+
+                FIXDESC = .FALSE.
+C.................  Check if pollutant is output hydrocarbon
+                IF( OUTPUTHC /= ' ' ) THEN
+                    J = INDEX( CURRVNAME, TRIM( OUTPUTHC ) )
+                    IF( J > 0 ) THEN
+                    	FIXDESC = .TRUE.
+                        CURRVNAME = CURRVNAME( 1:J-1 ) // INPUTHC
+                    END IF
+                END IF
+
 C.................  Search for emission type in emission factors
-                J = INDEX1( EMTNAM( K,I ), NEFS, EFSNAM )
+                J = INDEX1( CURRVNAME, NEFS, EFSNAM )
 
 C.................  Store info if this emissions type is found
 C.................  For the units, multiply the emission factor units with the
@@ -121,9 +137,25 @@ C.....................  Ensure that emission factor units are consistent
 
 C.....................  Store for emission types
                     EMTUNT( K,I ) = MULTUNIT( EFSUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = EFSDSC( J )( L+3:L2 ) // 
+                    EMTDSC( K,I ) = EFSDSC( J )( L+3:L2 )
+                    IF( FIXDESC ) THEN
+                        EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) // 
+     &                                  ' (minus HAPS)'
+                    END IF
+                    EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) // 
      &                              ' from ' // ACTVTY( I )
 
+                ELSE
+
+C.....................  Otherwise, build info for user-defined HAPS
+                    CURRUNIT = M6UNIT
+                    CALL UNITMATCH( CURRUNIT )
+                    
+                    EMTUNT( K,I ) = MULTUNIT( CURRUNIT, EAUNIT( M ) )
+                    
+                    EMTDSC( K,I ) = CURRVNAME
+                    EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) //
+     &                              ' from ' // ACTVTY( I )
                 END IF
 
 C.................  If emission type has not been associated with an emission
