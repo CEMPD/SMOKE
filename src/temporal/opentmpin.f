@@ -105,7 +105,7 @@ C...........   Other local variables
         REAL            MIN1, MIN2  ! tmp minimum temperature values
 
         LOGICAL         DFLAG       ! true: day-specific  file available
-        LOGICAL         EFLAG       ! true: error found
+        LOGICAL      :: EFLAG = .FALSE.  ! true: error found
         LOGICAL         HFLAG       ! true: hour-specific file available
         LOGICAL         OFLAG       ! true: ozone-season emissios needed
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
@@ -227,6 +227,17 @@ C.........  Use NAMBUF for the HP
      &              FSREAD3, CRL // 'UMAT', PROGNAME )
             GNAME = NAMBUF
  
+C.............  Get the header description from the min/max temperatures file
+            IF( .NOT. DESC3( GNAME ) ) THEN
+                L = LEN_TRIM( GNAME )
+        	MESG = 'Could not get description of file "' //
+     &                 GNAME( 1:L ) // '"'
+        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Check the number of sources in the ungridding matrix
+            CALL CHKSRCNO( 'mobile', 'MUMAT', NROWS3D, NSRC, EFLAG )
+
             NAMBUF= PROMPTMFILE( 
      &              'Enter logical name for UNGRIDDED MIN/MAX ' //
      &              'TEMPERATURE file', FSREAD3, 'MINMAXT', PROGNAME )
@@ -239,6 +250,9 @@ C.............  Get the header description from the min/max temperatures file
      &                 WNAME( 1:L ) // '"'
         	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+
+C.............  Check the number of sources in the min/max temperature file
+            CALL CHKSRCNO( 'mobile', 'MINMAXT', NROWS3D, NSRC, EFLAG )
 
 C.............  Determine the temperature variable that was used to create the
 C               min/max temperature file.
@@ -369,6 +383,14 @@ C.........  Report the name of the temperature variable
             MESG = 'NOTE: Using temperature variable name "' //
      &             TVARNAME( 1:L ) // '".'
             CALL M3MSG2( MESG )
+
+        END IF
+
+C.........  Abort if error was found
+        IF ( EFLAG ) THEN
+
+            MESG = 'Problem with input files'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
 

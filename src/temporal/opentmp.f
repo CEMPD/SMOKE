@@ -143,16 +143,14 @@ C.........  Set variable names and characteristics from the emission types
 C.............  Double check that pollutant is in the inventory file
 C.............  Use EAREAD, because for mobile sources, EANAM has been
 C               expanded to contain the emission types
-C.............  NOTE - this is sloppy b/c NIPPA has been reset with the
-C               number of emission types
-            I = INDEX1( ACTVTY( J ), NIPPA, EAREAD )
+            I = INDEX1( ACTVTY( J ), NIACT + NIPOL, EAREAD )
             IF( I .LE. 0 ) THEN
                 MESG='INTERNAL ERROR: inventory file variables changed!'
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
             END IF
 
-            DO V = 1, NETYPE( I )
+            DO V = 1, NETYPE( I-NIPOL )
 
         	K = K + 1
         	VNAME3D( K ) = EMTNAM( V,J )
