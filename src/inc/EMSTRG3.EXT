@@ -30,6 +30,8 @@ C.........  Width of source information strings
 
 C.........  Width of other global character strings 
         INTEGER, PARAMETER :: IOVLEN3 = 16 ! length of I/O API variables
+        INTEGER, PARAMETER :: IODLEN3 = 80 ! length of I/O API var descrption
+        INTEGER, PARAMETER :: IOULEN3 = 16 ! length of I/O API units
         INTEGER, PARAMETER :: SPNLEN3 =  5 ! Speciation profile code
         INTEGER, PARAMETER :: PLSLEN3 = IOVLEN3 * 2 + 1  ! Speciation vdesc3d
 
@@ -80,7 +82,7 @@ C.........  Starts and ends of each field in mobile source definition
 
         INTEGER, DIMENSION( MXMBCHR3 + 1 ),
      &           PARAMETER :: MBENDL3 =               ! array of ends
-     &           ( / FIPLEN3, LNKPOS3-1, VTPPOS3-1, POLPOS3-1,
+     &           ( / FIPLEN3, LNKPOS3-1, VTPPOS3-1, VTPPOS3+VIDLEN3-1,
      &               ALLLEN3 / )
 
 C.........  Widths that depend on other widths

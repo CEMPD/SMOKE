@@ -33,6 +33,8 @@ C.........  Width of source information strings
 
 C.........  Width of other global character strings 
         PRIVATE :: IOVLEN3
+        PRIVATE :: IODLEN3
+        PRIVATE :: IOULEN3
         PRIVATE :: SPNLEN3
         PRIVATE :: PLSLEN3
 

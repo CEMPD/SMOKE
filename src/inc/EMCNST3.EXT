@@ -49,16 +49,15 @@ C.........  Input file format constants
      &                        ( / 'list  ', 'EMS-95', 'EPS   ', 
      &                            'NET   ', 'IDA   '            / )
 
-c note: these can be dynamic now b/c have a reader (rdstcy) and module (modstcy)
-C.........  Country codes and names
-        INTEGER     , PARAMETER :: MXCNTRY3 = 3
-        INTEGER     , PARAMETER :: CNTRYCD3( MXCNTRY3 ) =
-     &                                     ( / 0, 1, 2 / )
-        CHARACTER*6 , PARAMETER :: CNTRYNM3( MXCNTRY3 ) = 
-     &                         ( / 'US    ', 'CANADA', 'MEXICO' / )
-
 C.........  Separator for speciation "variables" (stored in description field)
         CHARACTER*1, PARAMETER :: SPJOIN = '~'
+
+C.........  Units for speciation matrices
+        CHARACTER*16, PARAMETER :: SMASUNIT = 'gm/ton'
+        CHARACTER*16, PARAMETER :: SMOLUNIT = 'mole/ton'
+
+C.........  Separator for emission type names
+        CHARACTER*2, PARAMETER :: ETJOIN = '__'
 
 C.........  Packet names
         CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
@@ -90,8 +89,6 @@ C.........  Packet information
 C.........  Variable dimensioning components, independent
 
         INTEGER       CPRTLEN3       ! length of ctl eff, rul eff, rul pen roots
-        INTEGER       IODLEN3        ! length of I/O API variable descriptions
-        INTEGER       IOULEN3        ! length of I/O API units
         INTEGER       MXINVARR       ! maximum of NARVAR3, NMBVAR3, & NPTVAR3
         INTEGER       NARPPOL3       ! no. of pollutant-spec area inven vars
         INTEGER       NARVAR3        ! no. of pollutant-indep ar i/o api vars
@@ -101,8 +98,6 @@ C.........  Variable dimensioning components, independent
         INTEGER       NPTVAR3        ! no. of pollutant-indep pt i/o spi vars
 
         PARAMETER   ( CPRTLEN3 = 3
-     &              , IODLEN3  = 80
-     &              , IOULEN3  = 16
      &              , MXINVARR = 12
      &              , NARPPOL3 = 6
      &              , NARVAR3  = 4
