@@ -90,6 +90,9 @@ C.........  Store packet information in temporary variables
         TMPSCC = PKTINFO%TSCC
         SIC    = STR2INT( PKTINFO%CSIC )
 
+C NOTE: This loop previously had code to try to handle the SIC-based matching,
+C    n: but this was not working and way removed.  In this version, NSTART and
+C    n: NEND should always = 1.
 C.........  Loop through records and store all SCCs for SIC, or
 C           the same SCC if no expansion. 
         DO N = NSTART, NEND
@@ -97,12 +100,6 @@ C           the same SCC if no expansion.
             JX = JX + 1
 
             IF( JX .GT. JXMAX ) CYCLE  ! to next iteration
-
-C.............  Treat SIC=0 case specially.
-            IF ( SIC .GT. 0 ) THEN
-                TMPSCC = SCCPSIC( N )
-
-            END IF
 
 C.............  Store unsorted x-ref table entries
             INDXTA( JX ) = JX
