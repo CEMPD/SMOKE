@@ -75,26 +75,27 @@ C...........   Arrays for getting pollutant-specific information from file
 
 C...........   Arrays for getting species-specific information from file
         INTEGER     , ALLOCATABLE :: INDX1A ( : ) ! sorting index for SPECNMA
-        INTEGER     , ALLOCATABLE :: ISPOL  ( : ) ! assoc pol position in EINAM
-        CHARACTER*16, ALLOCATABLE :: SPECNMA( : ) ! unsorted species names
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SPECNMA ( : )   ! unsort spcs names
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPNAMES( :,: ) ! unsort names per pollutant
                 
 C...........   Other arrays
         CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
 
 C...........   Local variables
 
-        INTEGER        I, J, K, L ! counters and indices
+        INTEGER        I, J, K, L, N ! counters and indices
         INTEGER        ICOUNT     ! tmp counter while populating SPCNAMES
         INTEGER        INPRFTP    ! tmp. profile number
         INTEGER        IOS        ! i/o status
         INTEGER        IPOL       ! pollutant counter
+        INTEGER        IPOS       ! position in input pollutant list
         INTEGER        IREC       ! record counter
         INTEGER        ISP        ! species names counter
         INTEGER        NLINES     ! number of lines in data file
         INTEGER        PPOS       ! tmp position (from INDEX1) of pol in POLNAMA
         INTEGER        SPOS       ! tmp position (from INDEX1) of pol in SPECNMA
 
-        REAL           FAC1, FAC2 ! tmp speciation profile factors
+        REAL           FAC1, FAC2, FAC3 ! tmp speciation profile factors
 
         LOGICAL     :: EFLAG = .FALSE.   ! true: error found
 
@@ -124,21 +125,20 @@ C              index array
         NLINES = GETFLINE( FDEV, 'Speciation profile file' )
         ALLOCATE( SPECNMA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPECNMA', PROGNAME )
-        ALLOCATE( ISPOL( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISPOL', PROGNAME )
         ALLOCATE( INDX1A( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDX1A', PROGNAME )
-        ALLOCATE( SPCNAMES( MXVARS3,NIPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SPCNAMES', PROGNAME )
+        ALLOCATE( TMPNAMES( MXVARS3,NIPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPNAMES', PROGNAME )
 
 C...........   Initialize species count per pollutant and flag for indicating
 C              true molar conversions (NOTE - for some pollutants like PM10,
 C              there is no mole-based factor and outputu should be in units
 C              of gm/mole into the mole-base speciation matrix)
-        NENTRA  = 0        ! array
-        NSPECA  = 0.       ! array
-        POLNAMA = ' '      ! array
-        LMOLAR  = .TRUE.   ! array
+        NENTRA   = 0        ! array
+        NSPECA   = 0.       ! array
+        POLNAMA  = ' '      ! array
+        TMPNAMES = ' '      ! array
+        LMOLAR   = .TRUE.   ! array
 
 C...........   Read through input file to determine the total number
 C              of pollutants in the input file, to determine the
@@ -173,6 +173,7 @@ C.............  Left-justify character strings and convert factors to reals
             SPECNM = ADJUSTL ( SEGMENT( 3 ) )
             FAC1   = STR2REAL( SEGMENT( 4 ) )
             FAC2   = STR2REAL( SEGMENT( 5 ) )
+            FAC3   = STR2REAL( SEGMENT( 6 ) )
 
 C.............  Make sure divsor factor is not zero
             IF( FAC2 .EQ. 0. ) THEN
@@ -209,9 +210,9 @@ C.............  Check width of character fields of fixed width
 
 C.............  Search for pollutant in list of valid names, and go to the end
 C               of the loop if not found (skip entry)
-            J = INDEX1( POLNAM, NIPOL, EINAM )
+            IPOS = INDEX1( POLNAM, NIPOL, EINAM )
     
-            IF ( J .EQ. 0 ) CYCLE
+            IF ( IPOS .EQ. 0 ) CYCLE
             
 C.............  Search for pollutant unique list of all pollutants
             PPOS = INDEX1( POLNAM, IPOL, POLNAMA )
@@ -223,7 +224,7 @@ C.............  Search for pollutant unique list of all pollutants
                 NENTRA ( IPOL ) = 1         ! init for first entry per pol
 
 C.................  If mole-based factor is unity, then no molar transform
-                IF( FAC1/FAC2 .EQ. 1. ) LMOLAR( J ) = .FALSE.
+                IF( FAC1/FAC2 .EQ. FAC3 ) LMOLAR( IPOS ) = .FALSE.
 
                 PPOS = IPOL   ! Set for storing species count, below
                
@@ -242,29 +243,29 @@ C                   for this pollutant
                 ISP = ISP + 1
                 INDX1A ( ISP )  = ISP
                 SPECNMA( ISP )  = SPECNM
-                ISPOL  ( ISP )  = J
      
             END IF
 
 C.............  Check if species is already stored for current pollutant, and
 C               if not, increment species-per-pollutant counter and 
 C               add species to list.
-            K = NSPECA( PPOS ) 
-            J = INDEX1( SPECNM, K, SPCNAMES( 1,PPOS ) )
+            K = NSPECA( IPOS ) 
+            J = INDEX1( SPECNM, K, TMPNAMES( 1,IPOS ) )
+
 
             IF( J .LE. 0 ) THEN
             
                 K = K + 1
 
                 IF( K .LE. MXVARS3 ) THEN
-                    SPCNAMES( K, PPOS ) = SPECNM
+                    TMPNAMES( K, IPOS ) = SPECNM
                 END IF
 
-                NSPECA( PPOS ) = K
+                NSPECA( IPOS ) = K
 
             END IF
 
-        END DO
+        END DO              ! End loop over speciation profile input lines
 
         IF( IPOL .EQ. 0 ) THEN
             EFLAG = .TRUE.
@@ -291,7 +292,6 @@ C              per pollutant
        
 C...........   Allocate memory for species names array and units to use for
 C              mole-based transformations. Also initialize.
-        DEALLOCATE( SPCNAMES )
         ALLOCATE( SPCNAMES( MXSPEC,NIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCNAMES', PROGNAME )
         ALLOCATE( MOLUNITS( MXSPEC,NIPOL ), STAT=IOS )
@@ -307,16 +307,22 @@ C...........   Initialize species names table and counter per pollutant
         SPCNAMES = ' ' ! array
 
 C...........   Cycle through count of all valid pollutants (NIPOL) and all 
-C              species associated with these pollutants (ISP).  When the 
-C              position of the pollutants in EINAM equals the pollutant 
-C              position stored for the species, then write to SPCNAMES table.
+C              species associated with these pollutants (ISP).  Check if species
+C              is valid for the current pollutant, and if so, store in the
+C              output species name list.
         DO I = 1, NIPOL
 
             ICOUNT = 0
             DO J = 1, ISP
-    
+
+C.................  Process species in sorted order    
                 K = INDX1A( J )
-                IF ( ISPOL( K ) .EQ. I ) THEN 
+
+C.................  Find species in list of valid species per pollutant
+                N = INDEX1( SPECNMA( K ), NSPECA( I ),
+     &                      TMPNAMES( 1,I )            ) 
+
+                IF ( N .GT. 0 ) THEN 
 
                      ICOUNT = ICOUNT + 1
                      SPCNAMES( ICOUNT, I ) = SPECNMA( K )
