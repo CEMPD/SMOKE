@@ -19,7 +19,24 @@ C.........   Physical constants and conversion factors
         REAL, PARAMETER :: SEC2DAY = 1. / DAY2SEC ! Days to seconds 
         REAL, PARAMETER :: TON2GM  = 907184.74    ! Tons to grams 
         REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons 
- 
+
+C.........  Source-category flags 
+        INTEGER    , PARAMETER :: NCAT = 3          ! number src categories
+        CHARACTER*6, PARAMETER :: CATLIST( NCAT ) = ! src categories
+     &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
+
+        CHARACTER*2, PARAMETER :: GNAMLIST( NCAT ) = ! gridded inven input names
+     &                         ( / 'AG', 'MG', 'PG' / )
+
+        CHARACTER*5, PARAMETER :: ANAMLIST( NCAT ) = ! ave data input names
+     &                         ( / 'ARINV' , 'MBINV' , 'PTINV'  / )
+
+        CHARACTER*5, PARAMETER :: DNAMLIST( NCAT ) = ! daily data input names
+     &                         ( / 'ARDAY' , 'MBDAY' , 'PTDAY'  / )
+
+        CHARACTER*6, PARAMETER :: HNAMLIST( NCAT ) = ! hourly data input names
+     &                         ( / 'ARHOUR' , 'MBHOUR' , 'PTHOUR'  / )
+
 C.......   Flag values for determining temporal-profile-category
 C.......   applicability:  the corresponding category of temporal
 C.......   profile coefficients should be used for a source S iff
@@ -72,9 +89,6 @@ C.........  Environment variables
         CHARACTER*16, PARAMETER :: WARNSET = 'SMK_MAXWARNING  '
         CHARACTER*16, PARAMETER :: ERRSET  = 'SMK_MAXERROR    '
 
-C.........  Maximum reasonable inventory year
-        INTEGER    , PARAMETER :: MXIYEAR = 2050
-
 C.........  Time zones
         INTEGER    , PARAMETER :: MXTZONE = 14
         INTEGER    , PARAMETER :: TZONNUM( MXTZONE ) = 
@@ -111,7 +125,6 @@ C.........  Control and projection matrix codes (in order of precedence)
 C.........  Variable dimensioning components, independent
 
         INTEGER       CPRTLEN3       ! length of ctl eff, rul eff, rul pen roots
-        INTEGER       MXINVARR       ! maximum of NARVAR3, NMBVAR3, & NPTVAR3
         INTEGER       NARPPOL3       ! no. of pollutant-spec area inven vars
         INTEGER       NARVAR3        ! no. of pollutant-indep ar i/o api vars
         INTEGER       NMBVAR3        ! no. of pollutant-indep mb i/o api vars
@@ -120,7 +133,6 @@ C.........  Variable dimensioning components, independent
         INTEGER       NPTVAR3        ! no. of pollutant-indep pt i/o spi vars
 
         PARAMETER   ( CPRTLEN3 = 3
-     &              , MXINVARR = 12
      &              , NARPPOL3 = 6
      &              , NARVAR3  = 5
      &              , NMBVAR3  = 10
@@ -128,6 +140,10 @@ C.........  Variable dimensioning components, independent
      &              , NPTPPOL3 = 7
      &              , NPTVAR3  = 11
      &              )
+
+C.........  Maximum settings...
+        INTEGER, PARAMETER :: MXIYEAR = 2050  ! reasonable inventory year
+        INTEGER, PARAMETER :: MXINVARR = 16   ! maximum inven vars ever needed
 
 C.........  Blanks definitions
         CHARACTER(LEN=BLRLEN3), PARAMETER:: BLRBLNK3 = ' '
