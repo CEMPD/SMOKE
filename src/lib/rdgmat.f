@@ -53,8 +53,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NMAT1       ! dim 1 for matrix
         INTEGER     , INTENT (IN) :: NMAT2       ! dim 2 for matrix
         INTEGER     , INTENT(OUT) :: NX( NGRID ) ! number of sources per cell
-        INTEGER     , INTENT(OUT) :: IX( NMAT1 ) ! list of sources per cell
-        REAL        , INTENT(OUT) :: CX( NMAT2 ) ! coefficients for sources
+        INTEGER                   :: IX( NMAT1 ) ! list of sources per cell
+        REAL                      :: CX( NMAT2 ) ! coefficients for sources
 
 C.........  Other local variables
         INTEGER         C       !  tmp cell number

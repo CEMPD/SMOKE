@@ -49,8 +49,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NMAT1       ! dim 1 for matrix
         INTEGER     , INTENT (IN) :: NMAT2       ! dim 2 for matrix
         INTEGER     , INTENT(OUT) :: NU( NSRC  ) ! number of cells per source
-        INTEGER     , INTENT(OUT) :: IU( NMAT1 ) ! list of cells per source
-        REAL        , INTENT(OUT) :: CU( NMAT2 ) ! coefficients for cells
+        INTEGER                   :: IU( NMAT1 ) ! list of cells per source
+        REAL                      :: CU( NMAT2 ) ! coefficients for cells
 
 C.........  Other local variables
         CHARACTER*300   MESG    !  message buffer
