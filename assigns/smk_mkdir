@@ -18,6 +18,7 @@
        if( ! -e $B_OUT )  mkdir -p $B_OUT
        if( ! -e $M_OUT )  mkdir -p $M_OUT
        if( ! -e $P_OUT )  mkdir -p $P_OUT
+       if( ! -e $SCENARIO ) mkdir -p $SCENARIO
        if( ! -e $OUTPUT ) mkdir -p $OUTPUT
        if( ! -e $STATIC ) mkdir -p $STATIC
        if( ! -e $SMK_TMPDIR ) mkdir -p $SMK_TMPDIR  
