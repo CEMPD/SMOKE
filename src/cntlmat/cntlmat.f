@@ -58,13 +58,13 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+        CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         GETIFDSC
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         
-        EXTERNAL        ENVYN, GETIFDSC, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, GETIFDSC, PROMPTFFILE, PROMPTMFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -119,6 +119,7 @@ C...........   Other local variables
         LOGICAL      :: JFLAG   = .FALSE.  ! true: projections in use
         LOGICAL      :: KFLAG   = .FALSE.  ! true: tracking file in use
         LOGICAL      :: LFLAG   = .FALSE.  ! true: allowable cntls in use
+        LOGICAL      :: NFLAG   = .TRUE.   ! true: output a report
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
         LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
         LOGICAL      :: OFLAG   = .FALSE.  ! true: create report
@@ -144,12 +145,20 @@ C.........  Get type of projection entries: with year or without it (EPS)
      &                 'Projection entries in year-specific format',
      &                 .TRUE., IOS )
 
-        TFLAG = ENVYN( 'CONTROL_REPORT', 
-     &                 'Output a controls report file', .FALSE., IOS )
+        NFLAG = ENVYN( 'CONTROL_REPORT', 
+     &                 'Output a controls report file', .TRUE., IOS )
 
         KFLAG = ENVYN( 'CONTROL_TRACKING', 
      &                 'Use a special file to track specific sources',
      &                 .FALSE., IOS )
+
+C.........  Warning if tracking file use is attempted
+        IF( KFLAG ) THEN
+            MESG = 'WARNING: Specific source tracking has not been ' //
+     &             'implemented. ' // CRLF() // BLANK10 //
+     &             'CONTROL_TRACKING variable will have no effect.'
+            CALL M3MSG2( MESG )
+        END IF
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
@@ -263,9 +272,11 @@ C           the final output files.
      &                ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Open reports file
-        RDEV = PROMPTFFILE( 
+        IF( NFLAG ) THEN
+            RDEV = PROMPTFFILE( 
      &           'Enter logical name for ASCII CONTROL REPORTS file',
      &           .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
+        END IF
 
 C.........  Process control matrices that depend on pollutants...
 
@@ -295,7 +306,8 @@ C            CALL GENADDC( )
 
 C.........  Open final report file
 
-C.........  Post-process temporary report file to create final report file
+C.........  Post-process temporary files to create final report file
+        CALL WCNTLREP( RDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV )
 
 C.........  Successful completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
