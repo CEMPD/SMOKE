@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM CSGLMERGE
 
 C***********************************************************************
-C  program body starts at line 179
+C  program body starts at line 215
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices
@@ -28,6 +26,27 @@ C
 C       Version    1/97 by SL for met header implementation and header
 C       consistency checking scheme.
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
@@ -35,13 +54,13 @@ C...........   INCLUDES:
         
         INCLUDE 'ARDIMS3.EXT'   !  area -source dimensioning parameters
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
-        INCLUDE 'LADIMS3.EXT'   !  vertical dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
         INCLUDE 'MBDIMS3.EXT'   !  mobile source parms and tables
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'VGRD3.EXT'     !  vertical dimensioning parameters
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
