@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -256,8 +256,14 @@ C.............  Use same loop for case where this feature is turned off
                 TDATE = JDATE
                 TTIME = 0     ! Set for loop below from 1 to 24
 
-C.................  Convert output time to local time of I time zone
-                CALL NEXTIME( TDATE, TTIME, -I * 10000 )
+C.................  Adjust time zone I based on output time zone and correct
+C                   for negative value.
+                K = I - TZONE
+                IF( K .LT. 0 ) K = 24 + K  !     (e.g., K= -1 -> K= 23)
+
+C.................  Convert output time to local time of I time zone, adjusted
+C                   by output time zone.
+                CALL NEXTIME( TDATE, TTIME, -K * 10000 )
 
                 DO H = 1, 24
 
@@ -284,55 +290,57 @@ C.............  Set day of week based on output day
 C.............  Write message for day of week and date
             CALL WRDAYMSG( JDATE, MESG )
 
+        END IF   ! End new date check
+
 C.............  Initialize day-specific emissions array with average emissions
 C               Only need to do this for a new day because the sources with 
 C               day-specific data might change for each day.
             EMACV = EMAC  ! array
 
-C.............  If day-specific emissions, prepare day-corrections:
-C.............  NOTE - read the emissions at hour 0 on purpose
-            IF( DFLAG ) THEN
+C.............  If day-specific emissions, prepare day-corrections.
+C.............  Read day-specific data for each hour, because different time
+C               zones may be used for different sources and this approach
+C               is much more workable.
+        IF( DFLAG ) THEN
 
 C.................  Read source index for this day
-                IF ( .NOT. READ3( DNAME, 'INDXD', ALLAYS3,
-     &                            JDATE, 000000, INDXD      ) ) THEN
+            IF ( .NOT. READ3( DNAME, 'INDXD', ALLAYS3,
+     &                        JDATE, JTIME, INDXD      ) ) THEN
 
-                    MESG= 'Could not read "INDXD" from file "' // 
-     &                    DNAME //'".'
-                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                MESG= 'Could not read "INDXD" from file "' // 
+     &                DNAME //'".'
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
-                END IF      !  if read3() failed on dname
+            END IF      !  if read3() failed on dname
 
 C.................  Read emissions or activity for day-specific data and store
 C                   data in EMACV using index INDXD
-                DO V = 1, NPLE
+            DO V = 1, NPLE
 
-                    IF( LDSPOA( V ) ) THEN
+                IF( LDSPOA( V ) ) THEN
 
-                        NAMBUF = NAMIN( V )
-                        IF( .NOT. READ3( DNAME, NAMBUF, ALLAYS3,
-     &                                   JDATE, 000000, EMACD    )) THEN
+                    NAMBUF = NAMIN( V )
+                    IF( .NOT. READ3( DNAME, NAMBUF, ALLAYS3,
+     &                               JDATE, JTIME, EMACD    )) THEN
 
-                            MESG = 'Could not read "' // 
-     &                             NAMBUF( 1:LEN_TRIM( NAMBUF ) ) // 
-     &                             '" from file "' // DNAME // '".'
-                            CALL M3EXIT( PROGNAME,JDATE,JTIME,MESG,2 )
+                        MESG = 'Could not read "' // 
+     &                         NAMBUF( 1:LEN_TRIM( NAMBUF ) ) // 
+     &                         '" from file "' // DNAME // '".'
+                        CALL M3EXIT( PROGNAME,JDATE,JTIME,MESG,2 )
 
-                        END IF      !  if read3() failed on day-specific data
+                    END IF      !  if read3() failed on day-specific data
 
-                        DO I = 1, NDYSRC
-                            S = INDXD( I )
-                            IF( S .EQ. 0 ) CYCLE
-                            IF( EMACD( I ) .GT. AMISS3 )
-     &                          EMACV( S,V ) = EMACD( I )
-                        END DO
+                    DO I = 1, NDYSRC
+                        S = INDXD( I )
+                        IF( S .EQ. 0 ) CYCLE
+                        IF( EMACD( I ) .GT. AMISS3 )
+     &                      EMACV( S,V ) = EMACD( I )
+                    END DO
 
-                    END IF  ! if this pollutant is day-specific
-                END DO      ! end loop on day-specific pollutants
+                END IF  ! if this pollutant is day-specific
+            END DO      ! end loop on day-specific pollutants
 
-            END IF          ! if using day-specific emissions
-
-        END IF   ! End new date check
+        END IF          ! if using day-specific emissions
 
 C.........  Set integer hour of day for output time 
 
@@ -449,8 +457,8 @@ C               emission type has them
 
             END IF  ! if this pollutant is hour-specific
 
-C.........  If source-specific profiles are being used, update temporal 
-C           matrix for the current hour
+C.............  If source-specific profiles are being used, update temporal 
+C               matrix for the current hour
             IF( LHPROF( V ) ) THEN
 
                 CALL UPDTMAT( NSRC, NPLE, JDATE, TZONE, V, HOUR, MONTH, 
