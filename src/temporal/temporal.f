@@ -93,14 +93,13 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         CHARACTER*14    MMDDYY
         INTEGER         RDTPROF
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         INTEGER         SECSDIFF
         INTEGER         STR2INT
         LOGICAL         SETENVVAR
 
         EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, 
      &              GETDATE, GETFLINE, GETNUM, INDEX1, MMDDYY, RDTPROF, 
-     &              PROMPTMFILE, SECSDIFF, STR2INT, SETENVVAR
+     &              SECSDIFF, STR2INT, SETENVVAR
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
