@@ -2,7 +2,7 @@
         PROGRAM GRDAMAT
 
 C***********************************************************************
-C  program body starts at line 208
+C  program body starts at line 209
 C
 C  DESCRIPTION:
 C       Construct area source gridding matrix from data contained in
@@ -27,13 +27,11 @@ C
 C       Version   9/96 by CJC reads EMS-95 formatted files
 C***********************************************************************
 C
-C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
-C                Modeling System
-C File Version: @(#)$Id$
-C Pathname:     $Source$
-C Last updated: $Date$ 
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -41,9 +39,12 @@ C
 C Environmental Programs Group
 C MCNC--North Carolina Supercomputing Center
 C P.O. Box 12889
-C Research Triangle Park, NC  29909-2889
+C Research Triangle Park, NC  27709-2889
 C
 C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
 C
 C***************************************************************************/
 
@@ -206,6 +207,8 @@ C***********************************************************************
 C   begin body of program GRDAMAT
 
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
 
         WRITE( *,92000 ) 
      &  ' ',

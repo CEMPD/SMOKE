@@ -3,9 +3,9 @@
      &                      ASC7N, ASC3N, FACNN, NNN )
 
 C***********************************************************************
-C  function body starts at line  103
+C  subroutine body starts at line  105
 C
-C  FUNCTION:
+C  DESCRIPTION:
 C       Reads the indicated volatile organic conversion file,
 C	filters out point-source and mobile-source records,
 C       sorts it, and returns the number of profile entries found.
@@ -28,7 +28,7 @@ C File Version @(#)$Id$
 C Pathname:    $Source$
 C Last updated: $Date$ 
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
