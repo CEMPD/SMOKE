@@ -79,11 +79,6 @@ C.............  Allocate variables irrespective of PFLAG
                 CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ASSOCIATED( INRECA ) ) THEN
-                ALLOCATE( INRECA( NDIM2 ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'INRECA', PROGNAME )
-            END IF
-
 C.............  Allocate for any source category
             IF( UFLAG .AND. .NOT. ASSOCIATED( IFIPA ) ) THEN
                 ALLOCATE( IFIPA( NDIM1 ), STAT=IOS )
@@ -136,7 +131,6 @@ C.............  Deallocate for any source category
 
             ELSE IF( .NOT. AFLAG ) THEN
                  IF( ASSOCIATED( INDEXA  ) ) DEALLOCATE( INDEXA )
-                 IF( ASSOCIATED( INRECA  ) ) DEALLOCATE( INRECA )
                  IF( ASSOCIATED( SRCIDA  ) ) DEALLOCATE( SRCIDA )
                  IF( ASSOCIATED( POLVLA  ) ) DEALLOCATE( POLVLA )
 
