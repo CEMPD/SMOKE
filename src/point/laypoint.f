@@ -68,8 +68,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*16    VERCHAR
         INTEGER         WKDAY
 
-        EXTERNAL        CHKMETEM, CRLF, ENVINT, GETCFDSC, HHMMSS, INDEX1,
-     &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY
+        EXTERNAL   CHKMETEM, CRLF, ENVINT, GETCFDSC, HHMMSS, INDEX1,
+     &             MMDDYY, PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -156,7 +156,7 @@ C...........   Logical names and unit numbers
 
 C...........   Other local variables
 
-        INTEGER          I, L, L1, L2, S, T  ! counters and indices
+        INTEGER          I, J, L, L1, L2, S, T  ! counters and indices
 
         INTEGER          EMLAYS    ! number of emissions layers
         INTEGER          GDTYP     ! i/o api grid type code
@@ -368,10 +368,12 @@ C           header information.  Use time parameters for time defaults.
         NGRID = NCOLS * NROWS
         NDOTS = ( NCOLS + 1 ) * ( NROWS + 1 )
 
-        VGLVSXG( 0 ) = VGLVS3D( 0 )
+        J = LBOUND( VGLVS3D, 1 )
+        VGLVSXG( 0 ) = VGLVS3D( J )
         DO I = 1, NLAYS3D
-            VGLVSXG( I ) = VGLVS3D( I )
-            SIGH   ( I-1 ) = 0.5 * ( VGLVS3D( I ) + VGLVS3D( I-1 ) )
+            J = J + 1
+            VGLVSXG( I ) = VGLVS3D( J )
+            SIGH   ( I-1 ) = 0.5 * ( VGLVS3D( J ) + VGLVS3D( J-1 ) )
         END DO
 
         METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. ) 
@@ -433,7 +435,8 @@ C           already retrieved
         NROWS3D = NSRC
         NLAYS3D = EMLAYS
         NVARS3D = 1
-        VGLVS3D( 0:EMLAYS ) = VGLVSXG( 0:EMLAYS )  ! array
+        J = LBOUND( VGLVS3D, 1 )
+        VGLVS3D( J:J+EMLAYS ) = VGLVSXG( 0:EMLAYS )  ! array
         VGTYP3D = VGTYP
         VGTOP3D = VGTOP
 
