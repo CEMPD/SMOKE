@@ -24,7 +24,7 @@ C ****************************************************************************/
         PROGRAM TMPBIO_SOLRAD
 
 C***********************************************************************
-C  program body starts at line  133
+C  program body starts at line  134
 C
 C  DESCRIPTION:
 C       Computes time stepped gridded biogenic emissions in terms of 
@@ -35,7 +35,8 @@ C       Standard EDSS meteorology GRID_CRO_2D, MET_CRO_2D, MET_CRO_3D
 C       Normalized gridded emissions BGRD from RAWBIO
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C
+C       m3io
+C       HRBIOS
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC adapted from UAM BEIS2 subroutine HRLYEM
