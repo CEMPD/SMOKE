@@ -184,13 +184,18 @@ C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pollutant name 
 C                   with master list.
-                CALL FLTRXREF( PKTINFO%CFIP, PKTINFO%CSIC, 
-     &                         PKTINFO%TSCC, PKTINFO%CPOL, IXSIC, 
+                CALL FLTRXREF( PKTINFO%CFIP, '0000', 
+     &                         SCCZERO, PKTINFO%CPOL, IXSIC, 
      &                         IXSCC, JPOL, LTMP, SKIPREC  )
      
                 IF( SKIPREC ) CYCLE  ! Skip this record
 
                 SKIPPOL = ( SKIPPOL .OR. LTMP )
+
+C.................  Format SCC since this wasn't done in FLTRXREF so that
+C                   partial-SCCs would not get filtered out.
+                CALL FLTRNEG( PKTINFO%TSCC )     ! Filter 0 and -9 to blank
+                CALL PADZERO( PKTINFO%TSCC )     ! Pad with zeros
 
 C.................  Initialize settings for no SIC expansion
                 EXPAND = .FALSE.
