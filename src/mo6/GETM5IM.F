@@ -76,7 +76,7 @@ C     Open the external data file.
 C 
 ccs   All M6 input files live in SMK_M6PATH
       CALL GETENV( "SMK_M6PATH", M6DIR )
-      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/ASMDATA.D'
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // 'ASMDATA.D'
       
       IOUIMD = JUNIT()      
       OPEN(IOUIMD, FILE=M6FILE, STATUS='OLD',ACTION='READ', 
