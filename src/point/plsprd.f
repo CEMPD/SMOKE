@@ -43,18 +43,18 @@ C***********************************************************************
        
 C...........   ARGUMENTS and their descriptions:
 
-       REAL,    INTENT  (IN) :: DTHDZ( KZ )    ! potential temperature lapsed rate
-       REAL,    INTENT  (IN) :: ZF( 0:KZ )     ! elevation by layer
+       REAL,    INTENT  (IN) :: DTHDZ( KZ )    ! potential temperature lapse rate (K/m)
+       REAL,    INTENT  (IN) :: ZF( 0:KZ )     ! full-layer heights (m)
        INTEGER, INTENT  (IN) :: KZ             ! number of emissions layers
-       REAL,    INTENT  (IN) :: CEFSTK         ! effective stack height
-       REAL,    INTENT  (IN) :: HTMIX          ! mixing height
-       REAL,    INTENT (OUT) :: PLTOP          ! plume top
-       REAL,    INTENT (OUT) :: PLBOT          ! plume bottom
+       REAL,    INTENT  (IN) :: CEFSTK         ! effective stack height (m)
+       REAL,    INTENT  (IN) :: HTMIX          ! mixing height (m)
+       REAL,    INTENT (OUT) :: PLTOP          ! plume top (m)
+       REAL,    INTENT (OUT) :: PLBOT          ! plume bottom (m)
        
 C...........   PARAMETERS and their descriptions:
        REAL, PARAMETER :: SZ0FAC = 3.545    ! factor used to derive plume depth
        REAL, PARAMETER :: SPRFAC = 15.      ! empirical coefficient for vertical spread
-       REAL, PARAMETER :: GAMA   = -0.0098
+       REAL, PARAMETER :: GAMA   = -0.0098  ! adiabatic lapse rate (K/m)
        
 C...........   Local variables
        INTEGER    K
@@ -85,8 +85,11 @@ C          within or outside mixing layer
        
 C........  Make sure plume bottom is at least zero
        PLBOT = MAX( 0.0, PLBOT )
-       
+
+C........  Make sure that plume top and bottom heights are less than 
+C          the top layer's top and bottom heights
        PLTOP = MIN( ZF( KZ ), PLTOP )
+       PLBOT = MIN( ZF( KZ ) - 1., PLBOT )
        
        RETURN
        

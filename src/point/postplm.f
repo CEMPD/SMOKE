@@ -1,5 +1,5 @@
 
-        SUBROUTINE POSTPLM( EMLAYS, S, PSFC, ZBOT, ZTOP, PRES, ZZF, ZH, 
+        SUBROUTINE POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, ZZF, TA, ZH, 
      &                      LTOP, LFRAC )
 
 C***********************************************************************
@@ -12,7 +12,7 @@ C    (mass concentration -- minor hydrostatic assumption) from bottom to top.
 C
 C  PRECONDITIONS REQUIRED:
 C    Top and bottom of plume as input, vertical grid structure defined, 
-C    vertical pressure distribution provided.
+C    vertical pressure distribution and temperature provided.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       I/O API
@@ -20,6 +20,8 @@ C
 C  REVISION  HISTORY:
 C    Copied from postplm.f v 1.3 in DAQM-V2 Emissions Preprocessor by
 C           M. Houyoux 3/99
+C    Replaced POLY calls with direct hydrostatic calculations by
+C           G. Pouliot 2/05
 C
 C***********************************************************************
 C
@@ -49,35 +51,36 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'
         INCLUDE 'IODECL3.EXT'
         INCLUDE 'FDESC3.EXT'
+        INCLUDE 'CONST3.EXT'
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)  CRLF
-        REAL          POLY
 
-        EXTERNAL      CRLF, POLY
+        EXTERNAL      CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: EMLAYS           ! no. emissions layers
         INTEGER, INTENT (IN) :: S                ! source ID
-        REAL   , INTENT (IN) :: PSFC             ! surface pressure
         REAL   , INTENT (IN) :: ZBOT             ! plume bottom elevation (m)
         REAL   , INTENT (IN) :: ZTOP             ! plume top elevation (m)
-        REAL   , INTENT (IN) :: PRES ( EMLAYS )  ! pressure (Pa)
-        REAL   , INTENT (IN) :: ZZF( 0:EMLAYS )  ! elevation at full-levels
-        REAL   , INTENT (IN) :: ZH   ( EMLAYS )  ! layer center  height (m)
+        REAL   , INTENT (IN) :: PRESF( 0:EMLAYS )! pressure at full-levels (mb)
+        REAL   , INTENT (IN) :: ZZF  ( 0:EMLAYS )! elevation at full-levels (m)
+        REAL   , INTENT (IN) :: TA   ( 1:EMLAYS )! temperature at half-levels (K)
+        REAL   , INTENT (IN) :: ZH   ( 1:EMLAYS )! layer center  height (m)
         INTEGER, INTENT(OUT) :: LTOP             ! plume top layer
         REAL   , INTENT(OUT) :: LFRAC( EMLAYS )  ! layer fractions for source
 
 C...........   Local variables
 
-        INTEGER       L, M
+        INTEGER       L
 
         INTEGER       LBOT 
 
-        REAL          DDP
+        DOUBLE PRECISION    DDP
+        DOUBLE PRECISION    PDIFF
+        
         REAL          PBOT, PTOP
-        REAL          PDIFF
-        REAL          PRESF( 0:EMLAYS )
+        REAL          TEMP
 
         CHARACTER(300) MESG
 
@@ -89,7 +92,7 @@ C...........   ZZF( LBOT-1 ) <= ZBOT < ZZF( LBOT ) and
 C...........   ZZF( LTOP-1 ) <= ZTOP < ZZF( LTOP )
  
         DO L = 1, EMLAYS - 1
-            IF ( ZBOT .LE. ZZF( L ) ) THEN
+            IF ( ZBOT <= ZZF( L ) ) THEN
                 LBOT = L
                 GO TO  122   ! end loop and skip reset of LBOT
             ELSE
@@ -100,7 +103,7 @@ C...........   ZZF( LTOP-1 ) <= ZTOP < ZZF( LTOP )
 
 122     CONTINUE                !  loop exit:  bottom found at LBOT
  
-        IF ( ZTOP .LE. ZZF( LBOT ) ) THEN  !  plume in this layer
+        IF ( ZTOP <= ZZF( LBOT ) ) THEN  !  plume in this layer
  
             LFRAC( LBOT ) = 1.0
             LTOP = LBOT
@@ -111,7 +114,7 @@ C...........   ZZF( LTOP-1 ) <= ZTOP < ZZF( LTOP )
  
 C.........  Note- this check not in original algorithm, but w/o it,
 C                         can end up with fractions > 1.0
-        ELSEIF( LBOT .EQ. EMLAYS ) THEN    ! plume above top layer
+        ELSE IF( LBOT == EMLAYS ) THEN    ! plume above top layer
  
             LFRAC( LBOT ) = 1.0
  
@@ -122,7 +125,7 @@ C                         can end up with fractions > 1.0
         ELSE                               ! plume crosses layers
  
             DO L = LBOT + 1, EMLAYS
-                IF ( ZTOP .LE. ZZF( L ) ) THEN
+                IF ( ZTOP <= ZZF( L ) ) THEN
                     LTOP = L
                     GO TO 126  ! end loop and skip reset of LTOP
                 END IF
@@ -134,36 +137,54 @@ C                         can end up with fractions > 1.0
 C...........   Compute corresponding PBOT,PTOP so that
 C...........   PRESF( LBOT-1 ) <= PBOT < PRESF( LBOT ) and
 C...........   PRESF( LTOP-1 ) <= PTOP < PRESF( LTOP )
-C...........   (Use 3rd order polynomial via POLY() )
- 
-            PRESF( 0 ) = PSFC
-            PRESF( 1 ) = POLY( ZZF( 1 ), ZH( 1 ), PRES( 1 ), 3 )
-            PRESF( 2 ) = POLY( ZZF( 2 ), ZH( 1 ), PRES( 1 ), 3 )
- 
-            DO L = 3, EMLAYS-2
-                M = L - 2
-                PRESF( L ) = POLY( ZZF( L ), ZH( M ), PRES( M ), 3 )
-            END DO
- 
-            PRESF( EMLAYS-1 ) = POLY( ZZF ( EMLAYS-1 ),
-     &                                ZH  ( EMLAYS-3 ),
-     &                                PRES( EMLAYS-3 ), 3 )
-            PRESF( EMLAYS   ) = POLY( ZZF ( EMLAYS ),
-     &                                ZH  ( EMLAYS-1 ),
-     &                                PRES( EMLAYS-1 ), 1 )
- 
-            M    = MIN( MAX( 0, LBOT-2 ), EMLAYS-3 )
-            PBOT = POLY( ZBOT, ZZF( M ), PRESF( M ), 3 )
- 
-            M    = MIN( MAX( 0, LTOP-2 ), EMLAYS-3 )
-            PTOP = POLY( ZTOP, ZZF( M ), PRESF( M ), 3 )
- 
-            PDIFF = PBOT - PTOP
-            IF( PDIFF .GT. 0 ) THEN
 
-               DDP  = 1.0 / ( PDIFF )  !  = d(plumefrac)/d
-               LFRAC( LBOT ) = DDP * ( PBOT - PRESF( LBOT ) )
-               LFRAC( LTOP ) = DDP * ( PRESF( LTOP-1 ) - PTOP )
+C............. If above full layer and below half layer... 
+            IF( ZBOT < ZH( LBOT ) .AND. ZBOT > ZZF( LBOT-1 ) ) THEN
+
+C.................  Special case near ground
+                IF( ZBOT < ZH( 1 ) ) THEN
+                    TEMP = TA( 1 )
+                ELSE
+                    TEMP = ( TA( LBOT ) + TA( LBOT-1 ) ) / 2.
+                END IF
+
+C.............  Otherwise, above full layer and above half layer
+            ELSE
+                TEMP = ( TA( LBOT ) + TA( LBOT+1 ) ) / 2.
+            END IF
+
+C.............  Calculate bottom using hydrostatic assumption            
+            PBOT = PRESF( LBOT ) * 
+     &             EXP( GRAV / (RDGAS*TEMP) * (ZZF( LBOT ) - ZBOT ))
+            
+C.............  If above full layer and below half layer... 
+            IF( ZTOP < ZH( LTOP ) .AND. ZTOP > ZZF( LTOP-1 ) ) THEN
+
+C.................  Special case near ground
+                IF( ZTOP < ZH( 1 ) ) THEN
+                    TEMP = TA( 1 )
+                ELSE
+                    TEMP = ( TA( LTOP ) + TA( LTOP-1 ) ) / 2.
+                END IF
+
+C.............  Otherwise, above full layer and above half layer
+            ELSE
+                TEMP = ( TA( LTOP ) + TA( LTOP+1 ) ) / 2.
+            END IF
+
+C.............  Calculate top using hydrostatic assumption            
+            PTOP = PRESF( LTOP-1 ) * 
+     &             EXP( -GRAV / (RDGAS*TEMP) * (ZTOP - ZZF( LTOP-1 )) )
+            
+            PDIFF = DBLE( PBOT ) - DBLE( PTOP )
+            
+            IF( PDIFF > 0. ) THEN
+            
+                DDP = 1.0D0 / ( PDIFF )
+                LFRAC( LBOT ) = DDP * 
+     &                          (DBLE( PBOT ) - DBLE( PRESF( LBOT ) ))
+                LFRAC( LTOP ) = DDP * 
+     &                          (DBLE( PRESF( LTOP-1 ) ) - DBLE( PTOP ))
  
             ELSE
                 WRITE( MESG,94010 )
@@ -181,7 +202,8 @@ C...........   (Use 3rd order polynomial via POLY() )
             ENDIF
  
             DO L = LBOT+1, LTOP-1 !  layers in plume
-                LFRAC( L ) = DDP*( PRESF( L-1 ) - PRESF( L ) )
+                LFRAC( L ) = DDP * 
+     &                       (DBLE( PRESF( L-1 ) ) - DBLE( PRESF( L ) ))
             END DO
  
             DO L = LTOP+1, EMLAYS !  fractions above plume

@@ -1,5 +1,5 @@
 
-        SUBROUTINE PREPLM( EMLAYS, HMIX, HTS, PSFC, TS, DDZH, QV, TA, 
+        SUBROUTINE PREPLM( EMLAYS, HMIX, HTS, PSFC, TS, DDZF, QV, TA, 
      &                     UW, VW, ZH, ZF, ZSTK, PRES, LSTK, LPBL, TSTK, 
      &                     WSTK, DTHDZ, WSPD, ZZF )
 
@@ -61,7 +61,7 @@ C...........   SUBROUTINE ARGUMENTS (NOTE: All met parms are per-source)
         REAL   , INTENT (IN) :: HTS             ! stack height
         REAL   , INTENT (IN) :: PSFC            ! surface pressure
         REAL   , INTENT (IN) :: TS              ! surface temperature
-        REAL   , INTENT (IN) :: DDZH ( EMLAYS ) ! 1/( zh(l) - zh(l-1) )
+        REAL   , INTENT (IN) :: DDZF ( EMLAYS ) ! 1/( zf(l) - zf(l-1) )
         REAL   , INTENT (IN) :: QV   ( EMLAYS ) ! mixing ratio
         REAL   , INTENT (IN) :: TA   ( EMLAYS ) ! absolute temperature
         REAL   , INTENT (IN) :: UW   ( EMLAYS ) ! x-direction winds
@@ -69,12 +69,12 @@ C...........   SUBROUTINE ARGUMENTS (NOTE: All met parms are per-source)
         REAL   , INTENT (IN) :: ZF   ( EMLAYS ) ! layer surface height (m)
         REAL   , INTENT (IN) :: ZH   ( EMLAYS ) ! layer center  height (m)
         REAL   , INTENT (IN) :: ZSTK ( EMLAYS ) ! zf( l,s ) - stkht(s) (m)
-        REAL, INTENT(IN OUT) :: PRES ( EMLAYS ) ! pessure
+        REAL   , INTENT (IN) :: PRES ( 0:EMLAYS )! pressure at full-layer heights
         INTEGER, INTENT(OUT) :: LSTK            ! first L: ZF(L) > STKHT
         INTEGER, INTENT(OUT) :: LPBL            ! first L: ZF(L) > mixing layer
         REAL   , INTENT(OUT) :: TSTK            ! tmptr at top of stack (K)
         REAL   , INTENT(OUT) :: WSTK            ! wind speed @ top of stack(m/s)
-        REAL   , INTENT(OUT) :: DTHDZ( EMLAYS ) ! gradient of THETV
+        REAL   , INTENT(OUT) :: DTHDZ( EMLAYS ) ! potential temp. gradient
         REAL   , INTENT(OUT) :: WSPD ( EMLAYS ) ! wind speed (m/s)
         REAL   , INTENT(OUT) :: ZZF  ( 0:EMLAYS )! elevation at full-levels
 
@@ -89,17 +89,16 @@ C...........   Local variables
         REAL          THV1
         REAL          THVK
         REAL          TV( EMLAYS )     ! virtual temperature
+        REAL          TF( EMLAYS )     ! full-layer height temperatures
         REAL          P, Q
+        REAL          DZZ
+        REAL          DELZ
 
 C***********************************************************************
 C   begin body of subroutine PREPLM
 
-C...........   Convert pressure to millibars from pascals, compute wind speed,
-C              and compute virtual temperature
- 
+C.........  Compute wind speed and virtual temperature
         DO L = 1, EMLAYS
- 
-            PRES( L ) = 1.0E-2 * PRES( L )
  
             P = UW( L )
             Q = VW( L )
@@ -113,8 +112,6 @@ C              and compute virtual temperature
         QSFC  = 0.622  * ES / ( PSFC - ES )
         TVSFC = TS   * ( 1.0 + 0.6077 * QSFC )
         THETG = TVSFC  * ( 1000.0 / PSFC )**0.286
-        THV1  = TV( 1 )*( 1000.0 / PRES( 1 ) )**0.286
-        DTHDZ( 1 ) = ( THV1 - THETG ) / ZH( 1 )
 
         IF ( HMIX .LE. ZF( 1 ) ) THEN
             LPBL = 1
@@ -125,13 +122,28 @@ C              and compute virtual temperature
 
         ZZF( 0 ) = 0.0
         ZZF( 1 ) = ZF( 1 )
+        
+C.........  Compute temperatures at full-layer face heights
+        DO L = 1, EMLAYS - 1
+            DELZ = ZH( L+1 ) - ZH( L )
+            TF( L ) = TV( L ) + ( TV( L+1 ) - TV( L ) ) * 
+     &                ( ZF( L ) - ZH( L ) ) / DELZ
+        END DO
+        
+        DELZ = ZH( EMLAYS ) - ZH( EMLAYS-1 )
+        TF( EMLAYS ) = TV( EMLAYS ) - (TV( EMLAYS-1 ) - TV( EMLAYS )) *
+     &                 ( ZF( EMLAYS ) - ZH( EMLAYS ) ) / DELZ
+                       
+        THV1 = TF( 1 ) * ( 1000. / PRES( 1 ) )**0.286
+        DTHDZ( 1 ) = ( THV1 - THETG ) / ZF( 1 )
+
         DO L = 2, EMLAYS
  
-            IF ( HMIX  .GT. ZF( L-1 ) )  LPBL = L
-            IF ( HTS .GT. ZF( L-1 ) )  LSTK = L
+            IF ( HMIX > ZF( L-1 ) )  LPBL = L
+            IF ( HTS > ZF( L-1 ) )  LSTK = L
  
-            THVK = TV( L ) * ( 1000.0 / PRES( L ) )**0.286
-            DTHDZ( L ) = DDZH( L-1 ) * ( THVK - THV1 )
+            THVK = TF( L ) * ( 1000. / PRES( L ) )**0.286
+            DTHDZ( L ) = DDZF( L ) * ( THVK - THV1 )
             THV1 = THVK
  
             ZZF( L ) = ZF( L )
