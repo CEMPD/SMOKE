@@ -24,6 +24,7 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
         INTEGER, PARAMETER :: ORSLEN3 =  6 ! DOE plant ID field
         INTEGER, PARAMETER :: PLTLEN3 = 15 ! plant ID field
+        INTEGER, PARAMETER :: PHYLEN3 = 512! physical file name length
         INTEGER, PARAMETER :: POLLEN3 =  5 ! pol position field 
         INTEGER, PARAMETER :: PRCLEN3 =  3 ! mv emissions process
         INTEGER, PARAMETER :: RWTLEN3 =  3 ! roadway type 
