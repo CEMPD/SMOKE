@@ -43,7 +43,8 @@ C***************************************************************************
         IMPLICIT NONE
 
 C.........  INCLUDES:
-        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IOCNST3.EXT'   !  I/O API constants
+        INCLUDE 'IOSTRG3.EXT'   !  I/O string lengths
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
