@@ -99,12 +99,12 @@ C...........   Vehicle Mix transform matrix
 C...........   MPLIST emissions factor cross reference tables:
 
         INTEGER   NMPLIST
-        INTEGER   MPFIP( NLIST )
-        INTEGER   MPRDT( NLIST )
-        INTEGER   MPLNK( NLIST )
-        INTEGER   MPREF( 0:23, NLIST )    !  hour&source-specific xrefs
+        INTEGER   MPFIP( MXPSI )
+        INTEGER   MPRDT( MXPSI )
+        INTEGER   MPLNK( MXPSI )
+        INTEGER   MPREF( 0:23, MXPSI )    !  hour&source-specific xrefs
         INTEGER   REFCNT                  !  count of unique list of PSIs
-        INTEGER   REFLIST( NLIST )        !  unique list of PSIs
+        INTEGER   REFLIST( MXPSI )        !  unique list of PSIs
 
         INTEGER   EFDEX( 0:23, NMSRC )    ! subscript into emis fac tables
 
@@ -118,16 +118,16 @@ C...........   Emissions factor tables:
 
         INTEGER NTEMP		!  number of active elements in temp grid
 
-        REAL	EXH_CO ( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
-        REAL	EXH_NOX( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
-        REAL	EXH_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
-        REAL	EVP_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
-        REAL	RNL_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
-        REAL	RST_VOC( MAXTMP , NVTYPE, NLIST )  !  non-drl emissions factor
-        REAL	WDL_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
-        REAL	DNL_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
-        REAL	HOT_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
-        REAL	CRC_VOC( NMINMAX, NVTYPE, NLIST )  !  diurnal emissions factor
+        REAL	EXH_CO ( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
+        REAL	EXH_NOX( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
+        REAL	EXH_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
+        REAL	EVP_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
+        REAL	RNL_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
+        REAL	RST_VOC( MAXTMP , NVTYPE, MXPSI )  !  non-drl emissions factor
+        REAL	WDL_VOC( NMINMAX, NVTYPE, MXPSI )  !  diurnal emissions factor
+        REAL	DNL_VOC( NMINMAX, NVTYPE, MXPSI )  !  diurnal emissions factor
+        REAL	HOT_VOC( NMINMAX, NVTYPE, MXPSI )  !  diurnal emissions factor
+        REAL	CRC_VOC( NMINMAX, NVTYPE, MXPSI )  !  diurnal emissions factor
 
 C.......   Temporal profiles:
 
@@ -204,8 +204,8 @@ C.......                    source S, pollutant V, emis type E, hour H
 C...........   Ungridding matrix:
 
         INTEGER     NU( NMSRC )
-        INTEGER     IU( MXGCOF )
-        REAL        CU( MXGCOF )
+        INTEGER     IU( NMATX )
+        REAL        CU( NMATX )
 
         COMMON  / UGRIDMAT / NU, IU, CU
 
@@ -473,7 +473,7 @@ C.............  Set other variable properties
 21      CONTINUE
 
         TNAME = PROMPTMFILE( 
-     &  'Enter logical name for output TIME-STEPPED EMIS file',
+     &  'Enter logical name for output TIME-STEPPED MOBILE EMIS file',
      &          FSUNKN3, 'MTMP', 'TMPMOBIL' )
 
 C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK.
