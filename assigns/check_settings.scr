@@ -152,6 +152,16 @@ else
 
 endif
 
+if( $?RUN_SMK2EMIS ) then
+   if ( $RUN_SMK2EMIS == 'y' ) then
+      setenv RUN_SMK2EMIS Y
+   endif
+
+else
+   setenv RUN_SMK2EMIS N
+
+endif
+
 if( $?SMK_FUTURE_YN ) then
    if ( $SMK_FUTURE_YN == 'y' ) then
       setenv SMK_FUTURE_YN Y
