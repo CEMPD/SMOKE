@@ -92,7 +92,7 @@ C.........  Set flag for no input file available
 C.........  Get length of model name
         ML = LEN_TRIM( MODELNAM )
 
-C.........  Process for MOBILE5 model
+C.........  Process for MOBILE6 model
         IF ( MODELNAM .EQ. 'MOBILE6' ) THEN
 
 C.............  For new file, get environment variable for the volatile pol 
@@ -100,7 +100,7 @@ C               for mobile sources. For now, this routine only knows MOBILE6
             IF( IFLAG ) THEN
                 IF( FIRSTIME ) THEN
                     MESG = 'Volatile pollutant type'
-                    CALL ENVSTR( 'MB_HC_TYPE', MESG, 'VOC', VOLNAM, IOS)
+                    CALL ENVSTR( 'MB_HC_TYPE', MESG, 'TOG', VOLNAM, IOS)
                 END IF
 
 C.................  Create message about the volatile pollutant that is being 
