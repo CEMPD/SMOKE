@@ -115,7 +115,7 @@ C.........   Other local variables
         LOGICAL::PROCTOG=.FALSE. ! true: process TOG pollutants
         
         CHARACTER(LEN=IOVLEN3) POLNAM   ! temporary pollutant name
-        CHARACTER(LEN=100    ) BUFFER   ! message buffer
+        CHARACTER(LEN=300    ) BUFFER   ! message buffer
         CHARACTER(LEN=256    ) MESG     ! message buffer 
         
         CHARACTER*16 :: PROGNAME = 'SETNONHAP' ! program name
@@ -302,7 +302,7 @@ C                   emissions from criteria values
 
 C.................  Format information for this source
                 CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
-                
+
 C.................  Give warning if source has toxics but no criteria
                 IF( PROCVOC .AND. VOCPOS == 0 .AND. FNDVOC ) THEN
                     IF( NWARN <= MXWARN ) THEN
