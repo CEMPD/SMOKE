@@ -19,6 +19,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 4/99 by M. Houyoux
+C     Modified 12/01 by Gabe Cano - deterministic mode
 C
 C************************************************************************
 C
@@ -76,6 +77,7 @@ C.........  Other local variables
         INTEGER          F0, F1, F2, F3, F4, F5  ! tmp find indices
         INTEGER          FIP     !  tmp country/state/county code
         INTEGER          ISRG    !  tmp surrogate code
+        INTEGER          ISCI    !  tmp surrogate code index in array
 
         LOGICAL       :: EFLAG    = .FALSE.
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
@@ -183,32 +185,38 @@ C                           left SCC match
             F0 = FINDC( TSCCL  , TXCNT( 2 ), CHRT02 )
 
             IF( F5 .GT. 0 ) THEN
-                ISRG = ISRG09( F5 ) 
+c                ISRG = ISRG09( F5 ) 
+                ISRG = ISRGCDA( ISRG09( F5 ) , 1)
+                ISCI = ISRG09( F5 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F4 .GT. 0 ) THEN
-                ISRG = ISRG08( F4 ) 
+                ISRG = ISRGCDA( ISRG08( F4 ) , 1)
+                ISCI = ISRG08( F4 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F3 .GT. 0 ) THEN
-                ISRG = ISRG06( F3 ) 
+                ISRG = ISRGCDA( ISRG06( F3 ) , 1)
+                ISCI = ISRG06( F3 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F2 .GT. 0 ) THEN
-                ISRG = ISRG05( F2 ) 
+                ISRG = ISRGCDA( ISRG05( F2 ) , 1)
+                ISCI = ISRG05( F2 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F1 .GT. 0 ) THEN
-                ISRG = ISRG03( F1 ) 
+                ISRG = ISRGCDA( ISRG03( F1 ) , 1)
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
 
             ELSEIF( F0 .GT. 0 ) THEN
-                ISRG = ISRG02( F0 ) 
+                ISRG = ISRGCDA( ISRG02( F0 ) , 1)
+                ISCI = ISRG02( F0 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
 
@@ -218,7 +226,8 @@ C.............  Try for any FIPS code match
             F0 = FINDC( CFIP, TXCNT( 7 ), CHRT07 ) 
 
             IF( F0 .GT. 0 ) THEN
-                ISRG = ISRG07( F0 ) 
+                ISRG = ISRGCDA( ISRG07( F0 ) , 1)
+                ISCI = ISRG07( F0 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
             END IF
@@ -227,7 +236,8 @@ C.............  Try for any country/state code match (not, pol-specific)
             F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 ) 
 
             IF( F0 .GT. 0 ) THEN
-                ISRG = ISRG04( F0 ) 
+                ISRG = ISRGCDA( ISRG04( F0 ) , 1)
+                ISCI = ISRG04( F0 )
                 CALL SETSOURCE_GSURG
                 CYCLE                       !  to end of sources-loop
             END IF
@@ -295,6 +305,8 @@ C               codes from the surrogates file for each source.
 C.............  Local variables
             INTEGER          IFIPPOS  ! position of cy/st/co code in list
             INTEGER          ISRGPOS  ! position of surrogate code in list
+            INTEGER          ISCIPOS  ! position of surrogate code index 
+                                      ! in array
             INTEGER, SAVE :: LFIP     ! FIPS code from previous iteration
             INTEGER, SAVE :: SAVFPOS  ! IFIPPOS from previous iteration 
 
@@ -317,7 +329,8 @@ C----------------------------------------------------------------------
             END IF
 
             SRGIDPOS( S ) = ISRGPOS
-           
+            SRGCDPOS( S ) = ISCI
+
 C.............  For non-link sources, find cy/st/co code in surrogates table
 C.............  Only do find if this FIPS code is different from previous, for
 C               efficiency pruposes.  The sources that are outside the grid
