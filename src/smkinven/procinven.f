@@ -217,8 +217,7 @@ C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
      &               NRAWBP, NPPOL )
 
 C.........  Loop through sources x pollutants/activities to store sorted arrays
-C           for output to I/O API file. Use PRATIO to determine the appropriate 
-C           position in source-based (non-pollutant, non-activity) arrays.
+C           for output to I/O API file.
 C.........  Keep case statement outside the loops to speed processing
         LS = IMISS3
         SELECT CASE ( CATEGORY )
@@ -228,7 +227,7 @@ C.........  Keep case statement outside the loops to speed processing
 
                 J = INDEXA( I )
                 S = SRCIDA( I )
-                K = INT( ( REAL( J ) - 0.5 ) * PRATIO ) + 1
+                K = INRECA( J )
 
                 IF( S .NE. LS ) THEN
                     LS  = S
@@ -248,7 +247,7 @@ C.........  Keep case statement outside the loops to speed processing
 
                 J = INDEXA( I )
                 S = SRCIDA( I )
-                K = INT( ( REAL( J ) - 0.5 ) * PRATIO ) + 1
+                K = INRECA( J )
 
                 IF( S .NE. LS ) THEN
                     LS  = S
@@ -277,7 +276,7 @@ C.........  Keep case statement outside the loops to speed processing
 
                 J = INDEXA( I )
                 S = SRCIDA( I )
-                K = INT( ( REAL( J ) - 0.5 ) * PRATIO ) + 1
+                K = INRECA( J )
 
                 IF( S .NE. LS ) THEN
                     LS  = S
