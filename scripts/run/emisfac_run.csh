@@ -51,12 +51,18 @@ if ( $?RUN_EMISFAC ) then
 
       # Create M6LIST file...
       # First figure out if there are files in scenario directory
-      set ef_cnt = `ls -1 $MBDAT/scenarios/*.in | wc -l`
+      setenv M6LIST $MBDAT/m6list.$MSCEN.$EF_YEAR.txt
+      set m6_input_dir = $MBDAT/m6_$EF_YEAR
+      if ( $?CNTLCASE ) then
+         setenv M6LIST $MBDAT/m6list.$MSCEN.${EF_YEAR}_$CNTLCASE.txt
+         set $m6_input_dir $MBDAT/mb_${EF_YEAR}_$CNTLCASE
+      endif
+      set ef_cnt = `ls -1 $m6_input_dir/*.in | wc -l`
       if ( $ef_cnt > 0 ) then
-         ls $MBDAT/scenarios/*.in > $M6LIST
+         ls $m6_input_dir/*.in > $M6LIST
       else
-         echo "SCRIPT ERROR: No MOBILE6 scenario files found in the directory:"
-         echo "              $MBDAT/scenarios"
+         echo "SCRIPT ERROR: No MOBILE6 *.in scenario files found in the directory:"
+         echo "              $m6_input_dir"
          echo "              Please put these files in the correct place and"
          echo "              try again."
          exit ( 1 )
