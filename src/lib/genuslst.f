@@ -133,7 +133,7 @@ C.............  Allocate memory for sorting index
 
 C.............  Check if IFIP is allocated.  
 C.............  If it is, generate unique list of country/state/county codes
-            IF( ALLOCATED( IFIP ) ) THEN
+            IF( ASSOCIATED( IFIP ) ) THEN
 
 C.................  Count number of unique codes
                 PFIP = IMISS3
@@ -169,7 +169,7 @@ C.................  Create unique country/state/county codes list
 
 C.............  Check if CSCC is allocated.  
 C.............  If it is, generate unique list of SCCs and left SCCs
-            IF( ALLOCATED( CSCC ) ) THEN
+            IF( ASSOCIATED( CSCC ) ) THEN
 
 C.................  Initialize SCC sorting index     
                 DO S = 1, NSRC
