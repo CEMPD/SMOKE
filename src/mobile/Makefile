@@ -65,7 +65,7 @@ emisfac.debug: $(EMS) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
-asgnspds.o    : $(MODXREF) $(MODINFO)
+asgnspds.o    : $(MODSOURC) $(MODXREF) $(MODINFO)
 chkm6scn.o    : $(MODINFO)
 emisfac.o     : $(MODSOURC) $(MODINFO) $(MODMET) $(MODEMFAC)
 hourtemp.o    : $(MODMBSET) $(MODSOURC) $(MODINFO)
@@ -82,8 +82,8 @@ rdspdline.o   : $(MODMBSET)
 wremfacs.o    : $(MODSOURC) $(MODINFO) $(MODEMFAC)
 wrm6header.o  : $(MODEMFAC)
 wrm6input.o   : $(MODSOURC) $(MODINFO) $(MODEMFAC)
-wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
-wrspdvmt.o    : $(MODMBSET)
+wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET) $(MODXREF)
+wrspdvmt.o    : $(MODMOBIL) $(MODMBSET)
 wrtimegr.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
 
 clean:
