@@ -1,15 +1,14 @@
 
-        SUBROUTINE WRPTREF( FDEV, NPSRC, IDIU, IWEK, IMON )
+        SUBROUTINE WRPTREF( NPSRC, IDIU, IWEK, IMON )
 
 C***********************************************************************
-C  subroutine body starts at line 70
+C  subroutine body starts at line 78
 C
 C  DESCRIPTION:
 C      This subroutine writes a temporal x-ref file in SMOKE format. It is
 C      only used for the EMS-95 input files.
 C
 C  PRECONDITIONS REQUIRED:
-C      File opened with unit number FDEV
 C      Input arrays populated
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -41,7 +40,11 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-      IMPLICIT NONE
+C.........  MODULES for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO
+
+        IMPLICIT NONE
 
 C...........   INCLUDES
 
@@ -50,15 +53,20 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
+C.........  EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER     PROMPTFFILE
+        EXTERNAL    PROMPTFFILE
+
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER      FDEV           !  ASCII file unit
-        INTEGER      NPSRC          !  actual source count
-        INTEGER      IDIU( NPSRC )  !  source FIPS (county) ID
-        INTEGER      IWEK( NPSRC )  !  source SCC
-        INTEGER      IMON( NPSRC )  !  source SIC
+        INTEGER, INTENT (IN) :: NPSRC          !  actual source count
+        INTEGER, INTENT (IN) :: IDIU( NPSRC )  !  source FIPS (county) ID
+        INTEGER, INTENT (IN) :: IWEK( NPSRC )  !  source SCC
+        INTEGER, INTENT (IN) :: IMON( NPSRC )  !  source SIC
 
 C...........   Other local variables
         INTEGER         S
+
+        INTEGER         FDEV             !  output file unit number
 
         CHARACTER*300   MESG             !  message buffer
 
@@ -66,6 +74,13 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program WRPTREF
+
+        MESG = 'Enter the name of the TEMPORAL X-REF output file'
+        FDEV = PROMPTFFILE( MESG, .FALSE., .TRUE.,
+     &                      CRL // 'TREF_ALT', PROGNAME )
+
+        MESG = 'Writing out TEMPORAL CROSS-REFERENCE file...'
+        CALL M3MSG2( MESG )
 
         DO S = 1, NPSRC
 
@@ -88,4 +103,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END
+        END SUBROUTINE WRPTREF
