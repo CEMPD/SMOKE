@@ -64,13 +64,13 @@ C...........   Area Sources input and output arrays (one variable at a time)
 C...........   Gridding Matrix, Control Matrix, Speciation Matrix
       
         INTEGER         NX( NGRID )
-        INTEGER         IX( MXGCOF )
-        REAL            CX( MXGCOF )
+        INTEGER         IX( NMATX )
+        REAL            CX( NMATX )
         
         COMMON  / GRIDMAT / NX, IX, CX
            
 c       REAL            CC( NMSRC, NVTYPE, MXEMIS )
-        REAL            SS( NMSRC, NVTYPE, NSMATX )
+        REAL            SS( NMSRC, NVTYPE, MXMPOL*MXEPRC )
 
 C..........    Naming and matrix/vector matching arrays
         INTEGER         NPPM  ( MXMPOL )  ! Number of spcs facs per model spcs
@@ -78,7 +78,7 @@ C..........    Naming and matrix/vector matching arrays
         CHARACTER*16    EMTNAM( MXEMIS )  ! Names of emission types
         CHARACTER*16    LNAME             ! Var name from previous loop iteration
         CHARACTER*16    NMATCH            ! Name for matching
-        CHARACTER*16    SPCFNM( NSMATX )  ! Names of speciation factors
+        CHARACTER*16    SPCFNM( MXMPOL*MXEPRC )  ! Names of speciation factors
 
 C...........   Other local variables
         
@@ -358,7 +358,7 @@ C.....................  Apply SS to EMISV and add result to current EMISC
   179           CONTINUE
 
 C.................  Apply gridding matrix
-                CALL SMATVEC( NMSRC, NGRID, MXGCOF, NX, IX, CX,
+                CALL SMATVEC( NMSRC, NGRID, NMATX, NX, IX, CX,
      &                        EMISC, EMISG )
 
 C.................  Write out model species emissions
