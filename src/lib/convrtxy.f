@@ -78,7 +78,10 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine CONVRTXY
 
-        IF ( CTYPE .EQ. UTMGRD3 ) THEN
+        IF ( CTYPE .EQ. LATGRD3 ) THEN
+            RETURN
+
+        ELSE IF ( CTYPE .EQ. UTMGRD3 ) THEN
 
             UZONE = NINT( P_ALP )
 
