@@ -1,31 +1,9 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
-        SUBROUTINE  FIXSTK( FDEV, NSRC, IFIP, ISCC, 
+        SUBROUTINE  FIXSTK( FDEV, NSRC, IFIP, ISCC, IPLT, ISTK,
      &                      STKHT, STKDM, STKTK, STKVE )
 
 C***********************************************************************
-C  subroutine body starts at line 120
+C  subroutine body starts at line 157
 C
 C  FUNCTION:
 C	Use replacement stack parameters from file PSTK to fill inn
@@ -41,12 +19,36 @@ C  REVISION  HISTORY:
 C	prototype 12/95 by CJC
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***************************************************************************
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
 
         INCLUDE 'PTDIMS3.EXT'      ! point source dimensioning constants
+        INCLUDE 'PARMS3.EXT'       ! 
+        INCLUDE 'FDESC3.EXT'       ! 
+        INCLUDE 'IODECL3.EXT'      ! 
 
 
 C...........   ARGUMENTS and their descriptions:
@@ -55,32 +57,51 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER NSRC            !  actual number of sources
         INTEGER IFIP ( NSRC )	!  FIP codes
         INTEGER ISCC ( NSRC )	!  SCC codes
+        INTEGER IPLT ( NSRC )	!  Plant ID codes (for writing message only)
+        INTEGER ISTK ( NSRC )	!  Stack ID codes (for writing message only)
         REAL	STKHT( NSRC )	!  stack height (m)
         REAL	STKDM( NSRC )	!  stack diameter (m)
         REAL	STKTK( NSRC )	!  stack exhaust temperature (K)
         REAL	STKVE( NSRC )	!  stack exhaust velocity (m/s)
 
 
+C...........   PARAMETERS and their descriptions:
+
+        REAL       MINHT        ! Mininum stack height (m)
+        REAL       MINDM        ! Mininum stack diameter (m)
+        REAL       MINTK        ! Mininum stack exit temperature (K)
+        REAL       MINVE        ! Mininum stack exit velocity (m/s)
+        REAL       MAXHT        ! Maximum stack height (m)
+        REAL       MAXDM        ! Maximum stack diameter (m)
+        REAL       MAXTK        ! Maximum stack exit temperature (K)
+        REAL       MAXVE        ! Maximum stack exit velocity (m/s)
+
+        PARAMETER( MINHT = 0.5,
+     &             MINDM = 0.01,
+     &             MINTK = 260.,
+     &             MINVE = 0.0001,
+     &             MAXHT = 2100.,
+     &             MAXDM = 100.,
+     &             MAXTK = 2000.,
+     &             MAXVE = 500.    )
+
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         INTEGER		FIND1, FIND2
-        EXTERNAL	FIND1, FIND2
+        EXTERNAL	CRLF, FIND1, FIND2
 
+
+C...........   LOCAL PARAMETERS and their descriptions:
+        CHARACTER*5     BLANK5
+        INTEGER         MXFPSC
+        INTEGER         MXSTSC
+
+        PARAMETER(      BLANK5 = ' ',
+     &                  MXFPSC = NPFIP * NPSCC,
+     &                  MXSTSC = NPSID * NPSCC  ) 
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
-
-        INTEGER		S, K	!  source subscript
-        INTEGER		IOS	!  I/O error status
-        INTEGER		LINE	!  current line number
-        
-        INTEGER		FIP	!  contents of input record
-        INTEGER		SCC	!  contents of input record
-        INTEGER		LFIP	!  contents of input record
-        INTEGER		LSCC	!  contents of input record
-        REAL		HT	!  contents of input record
-        REAL		DM	!  contents of input record
-        REAL		TK	!  contents of input record
-        REAL		VE	!  contents of input record
 
         REAL		HT0	!  ultimate fallback height
         REAL		DM0	!  ultimate fallback diameter
@@ -95,26 +116,45 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL		VE1( NPSCC )	!  SCC-only velocity
 
         INTEGER		NR2	        !  size of SCC-state table
-        INTEGER		FP2( NPSRC )	!  FIP state code
-        INTEGER		SC2( NPSRC )	!  SCC code
-        REAL		HT2( NPSRC )	!  SCC-state height
-        REAL		DM2( NPSRC )	!  SCC-state diameter
-        REAL		TK2( NPSRC )	!  SCC-state temperature
-        REAL		VE2( NPSRC )	!  SCC-state velocity
+        INTEGER		FP2( MXSTSC )   !  FIP state code
+        INTEGER		SC2( MXSTSC )   !  SCC code
+        REAL		HT2( MXSTSC )   !  SCC-state height
+        REAL		DM2( MXSTSC )   !  SCC-state diameter
+        REAL		TK2( MXSTSC )   !  SCC-state temperature
+        REAL		VE2( MXSTSC )   !  SCC-state velocity
 
         INTEGER		NR3		!  size of FIP-SCC table
-        INTEGER		FP3( NPSRC )	!  FIP code
-        INTEGER		SC3( NPSRC )	!  SCC code
-        REAL		HT3( NPSRC )	!  FIP-SCC height
-        REAL		DM3( NPSRC )	!  FIP-SCC diameter
-        REAL		TK3( NPSRC )	!  FIP-SCC temperature
-        REAL		VE3( NPSRC )	!  FIP-SCC velocity
+        INTEGER		FP3( MXFPSC )	!  FIP code
+        INTEGER		SC3( MXFPSC )	!  SCC code
+        REAL		HT3( MXFPSC )	!  FIP-SCC height
+        REAL		DM3( MXFPSC )	!  FIP-SCC diameter
+        REAL		TK3( MXFPSC )	!  FIP-SCC temperature
+        REAL		VE3( MXFPSC )	!  FIP-SCC velocity
         
+        INTEGER		S, K	!  source subscript
+        INTEGER		IOS	!  I/O error status
+        INTEGER		LINE	!  current line number
+        
+        REAL		HT	!  temporary height
+        REAL		DM	!  temporary diameter
+        REAL		TK	!  temporary exit temperature
+        REAL		VE	!  temporary velocity
+
+        INTEGER		LDEV	!  log file unit number
+        INTEGER		LFIP	!  previous FIPs code
+        INTEGER		LSCC	!  previous SCC code
+        INTEGER		FIP	!  temporary FIPs code
+        INTEGER		SCC	!  temporary SCC code
+        INTEGER		SID	!  temporary state ID
+
         LOGICAL		EFLAG   !  error flag
-        CHARACTER*160	MESG	!  error-message buffer
+        LOGICAL		DFLAG( NPSRC ) ! true if source getting default parms 
+        CHARACTER*256	MESG	!  error-message buffer
 
 C***********************************************************************
 C   begin body of subroutine  FIXSTK
+
+        CALL M3MSG2( 'Reading default stack parameters...' )
 
 C.......   First, read the (first and therefore) ultimate fallback record:
 
@@ -127,7 +167,6 @@ C.......   First, read the (first and therefore) ultimate fallback record:
              CALL M3EXIT( 'FIXSTK', 0, 0,
      &              'No fallback record in PSTK', 2 )
         END IF
-
 
 C.......   Now read the rest of the file:
 
@@ -167,42 +206,30 @@ C.......   Now read the rest of the file:
                     DM1( NR1 ) = DM
                     TK1( NR1 ) = TK
                     VE1( NR1 ) = VE
-                ELSE
-                    WRITE( MESG,94010 ) 
-     &              'SCC-only table overflow at line', LINE
-                    CALL M3MESG( MESG )
                 END IF
 
             ELSE IF ( MOD( FIP, 1000 ) .EQ. 0 ) THEN	!  state and SCC
 
                 NR2 = NR2 + 1
-                IF ( NR2 .LE. NPSRC ) THEN
+                IF ( NR2 .LE. MXSTSC ) THEN
                     FP2( NR2 ) = FIP / 1000
                     SC2( NR2 ) = SCC
                     HT2( NR2 ) = HT
                     DM2( NR2 ) = DM
                     TK2( NR2 ) = TK
                     VE2( NR2 ) = VE
-                ELSE
-                    WRITE( MESG,94010 ) 
-     &              'SCC-state table overflow at line', LINE
-                    CALL M3MESG( MESG )
                 END IF
 
             ELSE					!  FIP and SCC
 
                 NR3 = NR3 + 1
-                IF ( NR3 .LE. NPSRC ) THEN
+                IF ( NR3 .LE. MXFPSC ) THEN
                     FP3( NR3 ) = FIP
                     SC3( NR3 ) = SCC
                     HT3( NR3 ) = HT
                     DM3( NR3 ) = DM
                     TK3( NR3 ) = TK
                     VE3( NR3 ) = VE
-                ELSE
-                    WRITE( MESG,94010 ) 
-     &              'FIP-SCC table overflow at line', LINE
-                    CALL M3MESG( MESG )
                 END IF
 
             END IF	!  if I/O error, or out of order or ...
@@ -211,16 +238,56 @@ C.......   Now read the rest of the file:
 
 22      CONTINUE        !  end of input loop
 
+C...........   Report dimensions of segmented stack parms
 
-C...........   Now do replacements of missing stack parameters:
+        WRITE( MESG,94010 )
+     &      'Number of STACK FIX PARMS by SCC entries--' //
+     &      CRLF() // BLANK5 // '   dimensioned (NPSCC):', NPSCC,
+     &      'actual:', NR1
+        CALL M3MSG2( MESG )
+ 
+        WRITE( MESG,94010 )
+     &      'Number of STACK FIX PARMS by STATE/SCC entries--' //
+     &      CRLF() // BLANK5 // '   dimensioned (MXSTSC):', MXSTSC,
+     &      'actual:', NR2
+        CALL M3MSG2( MESG )
+ 
+        WRITE( MESG,94010 )
+     &      'Number of STACK FIX PARMS by FIP/SCC entries--' //
+     &      CRLF() // BLANK5 // '   dimensioned (MXFPSC):', MXFPSC,
+     &      'actual:', NR3
+        CALL M3MSG2( MESG )
+ 
+C...........   If there is an overflow, abort
+        IF( NR1 .GT. NPSCC  .OR.
+     &      NR2 .GT. MXSTSC .OR.
+     &      NR3 .GT. MXFPSC      ) THEN
+ 
+            CALL M3EXIT( 'FIXSTK', 0, 0,
+     &                   'STACK FIX PARAMETERS table overflow', 2 )
+ 
+        END IF
+
+        CALL M3MSG2( 'Fixing MISSING stack parameters...' )
+
+C...........   Get LOG file unit, so can write to directly (using M3MESG would
+C..........    add too many spaces
+        LDEV = INIT3()
+
+C...........   Now do replacements of MISSING stack parameters:
 C...........   4 passes -- ht, dm, tk, ve
 
         DO  33  S = 1, NSRC
+
+            K = 0                ! Initialize K to test if replacements made
+            DFLAG( S ) = .FALSE. ! Initialize DFLAG to test if defaults used
 
             IF ( STKHT( S ) .LT. 0.0 ) THEN
                 FIP = IFIP( S )
                 SCC = ISCC( S )
                 K = FIND2( FIP, SCC, NR3, FP3, SC3 )
+
+                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
 
                 IF ( K .GT. 0 ) THEN
                     HT = HT3( K )
@@ -228,13 +295,18 @@ C...........   4 passes -- ht, dm, tk, ve
                     TK = TK3( K )
                     VE = VE3( K )
                 ELSE
-                    K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
+                    SID = FIP/1000
+                    K   = FIND2( SID, SCC, NR2, FP2, SC2 )
+
+                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+
                     IF ( K .GT. 0 ) THEN
                         HT = HT2( K )
                         DM = DM2( K )
                         TK = TK2( K )
                         VE = VE2( K )
                     ELSE
+
                         K = FIND1( SCC, NR1, SC1 )
                         IF ( K .GT. 0 ) THEN
                             HT = HT1( K )
@@ -242,18 +314,38 @@ C...........   4 passes -- ht, dm, tk, ve
                             TK = TK1( K )
                             VE = VE1( K )
                         ELSE
-                            HT = HT0
-                            DM = DM0
-                            TK = TK0
-                            VE = VE0
+                            DFLAG( S ) = .TRUE.
+
                         END IF 
                     END IF 
                 END IF 
 
-                STKHT( S ) = HT
-                IF ( STKDM( S ) .LT. 0 ) STKDM( S ) = DM
-                IF ( STKTK( S ) .LT. 0 ) STKTK( S ) = TK
-                IF ( STKVE( S ) .LT. 0 ) STKVE( S ) = VE
+                IF( .NOT. DFLAG( S ) ) THEN
+
+                    WRITE( MESG,94010 ) 
+     &                'FIPS code:', FIP, 'SCC:', SCC,
+     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
+     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL M3MESG( MESG )
+
+                    WRITE( LDEV,94020 )     'Height', STKHT( S ), HT
+                    STKHT( S ) = HT
+
+                    IF ( STKDM( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
+                        STKDM( S ) = DM
+                    ENDIF
+
+                    IF ( STKTK( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
+                        STKTK( S ) = TK
+                    ENDIF 
+
+                    IF ( STKVE( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                        STKVE( S ) = VE
+                    ENDIF
+                ENDIF
 
             END IF	!  if stack height bad
 
@@ -262,12 +354,18 @@ C...........   4 passes -- ht, dm, tk, ve
                 SCC = ISCC( S )
                 K = FIND2( FIP, SCC, NR3, FP3, SC3 )
 
+                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
+
                 IF ( K .GT. 0 ) THEN
                     DM = DM3( K )
                     TK = TK3( K )
                     VE = VE3( K )
                 ELSE
-                    K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
+                    SID = FIP/1000
+                    K   = FIND2( SID, SCC, NR2, FP2, SC2 )
+
+                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+
                     IF ( K .GT. 0 ) THEN
                         DM = DM2( K )
                         TK = TK2( K )
@@ -279,16 +377,33 @@ C...........   4 passes -- ht, dm, tk, ve
                             TK = TK1( K )
                             VE = VE1( K )
                         ELSE
-                            DM = DM0
-                            TK = TK0
-                            VE = VE0
+                            DFLAG( S ) = .TRUE.
+
                         END IF 
                     END IF 
                 END IF 
 
-                STKDM( S ) = DM
-                IF ( STKTK( S ) .LT. 0 ) STKTK( S ) = TK
-                IF ( STKVE( S ) .LT. 0 ) STKVE( S ) = VE
+                IF( .NOT. DFLAG( S ) ) THEN
+
+                    WRITE( MESG,94010 ) 
+     &                'FIPS code:', FIP, 'SCC:', SCC,
+     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
+     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL M3MESG( MESG )
+
+                    WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
+                    STKDM( S ) = DM
+
+                    IF ( STKTK( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
+                        STKTK( S ) = TK
+                    ENDIF 
+
+                    IF ( STKVE( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                        STKVE( S ) = VE
+                    ENDIF
+                ENDIF
 
             END IF  	!  if stack diameter bad
 
@@ -297,11 +412,17 @@ C...........   4 passes -- ht, dm, tk, ve
                 SCC = ISCC( S )
                 K = FIND2( FIP, SCC, NR3, FP3, SC3 )
 
+                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
+
                 IF ( K .GT. 0 ) THEN
                     TK = TK3( K )
                     VE = VE3( K )
                 ELSE
-                    K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
+                    SID = FIP/1000
+                    K   = FIND2( SID, SCC, NR2, FP2, SC2 )
+
+                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+
                     IF ( K .GT. 0 ) THEN
                         TK = TK2( K )
                         VE = VE2( K )
@@ -311,14 +432,28 @@ C...........   4 passes -- ht, dm, tk, ve
                             TK = TK1( K )
                             VE = VE1( K )
                         ELSE
-                            TK = TK0
-                            VE = VE0
+                            DFLAG( S ) = .TRUE.
+
                         END IF 
                     END IF 
                 END IF 
 
-                STKTK( S ) = TK
-                IF ( STKVE( S ) .LT. 0 ) STKVE( S ) = VE
+                IF( .NOT. DFLAG( S ) ) THEN
+
+                    WRITE( MESG,94010 ) 
+     &                'FIPS code:', FIP, 'SCC:', SCC,
+     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
+     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL M3MESG( MESG )
+
+                    WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
+                    STKTK( S ) = TK
+
+                    IF ( STKVE( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                        STKVE( S ) = VE
+                    ENDIF
+                ENDIF
 
             END IF	!  if stack exhaust temperature bad
 
@@ -327,10 +462,16 @@ C...........   4 passes -- ht, dm, tk, ve
                 SCC = ISCC( S )
                 K = FIND2( FIP, SCC, NR3, FP3, SC3 )
 
+                IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
+
                 IF ( K .GT. 0 ) THEN
                     VE = VE3( K )
                 ELSE
-                    K = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
+                    SID = FIP/1000
+                    K   = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
+
+                    IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
+
                     IF ( K .GT. 0 ) THEN
                         VE = VE2( K )
                     ELSE
@@ -338,17 +479,130 @@ C...........   4 passes -- ht, dm, tk, ve
                         IF ( K .GT. 0 ) THEN
                             VE = VE1( K )
                         ELSE
-                            VE = VE0
+                            DFLAG( S ) = .TRUE.
+
                         END IF 
                     END IF 
                 END IF 
 
-                STKVE( S ) = VE
+                IF( .NOT. DFLAG( S ) ) THEN
+
+                    WRITE( MESG,94010 ) 
+     &                'FIPS code:', FIP, 'SCC:', SCC,
+     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
+     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL M3MESG( MESG )
+
+                    WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                    STKVE( S ) = VE
+                ENDIF
 
             END IF	!  if stack exhaust velocity bad
 
-33      CONTINUE        !  end loop fixing stack parameters
+33      CONTINUE        !  end loop fixing missing stack parameters
 
+C.........  Apply ultimate default parameters, and write report
+C.........  This is in a separate loop to permit better reporting
+     
+        CALL M3MESG( 'Ultimate fallback stack parameters report:' )
+        DO 44 S = 1, NSRC
+
+            IF( DFLAG( S ) ) THEN
+
+                WRITE( MESG,94010 ) 
+     &                'FIPS code:', FIP, 'SCC:', SCC,
+     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
+     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL M3MESG( MESG )
+
+                    IF ( STKDM( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT0
+                        STKHT( S ) = HT0
+                    ENDIF
+
+                    IF ( STKDM( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM0
+                        STKDM( S ) = DM0
+                    ENDIF
+
+                    IF ( STKTK( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK0
+                        STKTK( S ) = TK0
+                    ENDIF 
+
+                    IF ( STKVE( S ) .LT. 0 ) THEN
+                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE0
+                        STKVE( S ) = VE0
+                    ENDIF
+
+            ENDIF
+
+44      CONTINUE
+
+C.........  Bound stack parameters to minima and maxima values
+C.........  This is in a separate loop to permit better reporting
+
+        CALL M3MSG2( 'Bounding MIN and MAX stack parameters...' )
+
+        DO 55 S = 1, NSRC
+
+            IF ( STKHT( S ) .GT. MAXHT .OR.
+     &           STKHT( S ) .LT. MINHT .OR.
+     &           STKDM( S ) .GT. MAXDM .OR.
+     &           STKDM( S ) .LT. MINDM .OR.
+     &           STKTK( S ) .GT. MAXTK .OR.
+     &           STKTK( S ) .LT. MINTK .OR.
+     &           STKVE( S ) .GT. MAXVE .OR.
+     &           STKVE( S ) .LT. MINVE      ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'FIPS code:', IFIP( S ), 'SCC:', ISCC( S ),
+     &                 'PLT:', IPLT( S ), 'STK:', ISTK( S )
+
+                CALL M3MESG( MESG )
+
+            ENDIF
+
+            IF ( STKHT( S ) .GT. MAXHT ) THEN
+                WRITE( LDEV,94030 ) 'Height', STKHT( S ), MAXHT
+                STKHT( S ) = MAXHT
+
+            ELSEIF( STKHT( S ) .LT. MINHT ) THEN
+                WRITE( LDEV,94040 ) 'Height', STKHT( S ), MINHT
+                STKHT( S ) = MINHT
+
+            END IF
+
+            IF ( STKDM( S ) .GT. MAXDM ) THEN
+                WRITE( LDEV,94030 ) '  Diam', STKDM( S ), MAXDM
+                STKDM( S ) = MAXDM
+
+            ELSEIF( STKDM( S ) .LT. MINDM ) THEN
+                WRITE( LDEV,94040 ) '  Diam', STKDM( S ), MINDM
+                STKDM( S ) = MINDM
+
+            END IF
+
+            IF ( STKTK( S ) .GT. MAXTK )THEN
+                WRITE( LDEV,94030 ) '  Temp', STKTK( S ), MAXTK
+                STKTK( S ) = MAXTK
+
+            ELSEIF( STKTK( S ) .LT. MINTK ) THEN 
+                WRITE( LDEV,94040 ) '  Temp', STKTK( S ), MINTK
+                STKTK( S ) = MINTK
+
+            END IF
+
+            IF ( STKVE( S ) .GT. MAXVE )THEN
+                WRITE( LDEV,94030 ) ' Veloc', STKVE( S ), MAXVE
+                STKVE( S ) = MAXVE
+
+            ELSEIF( STKVE( S ) .LT. MINVE ) THEN
+                WRITE( LDEV,94040 ) ' Veloc', STKVE( S ), MINVE
+                STKVE( S ) = MINVE
+ 
+            END IF
+
+55      CONTINUE
 
         RETURN
 
@@ -356,7 +610,15 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010	FORMAT( 10 ( A, :, I5, :, 1X ) )
+94010	FORMAT( 10 ( A, :, I8, :, 1X ) )
+
+94020   FORMAT( 7X, A, 2X, E10.3, 1X, E10.3 )
+
+94030   FORMAT( 7X, A6, 1X, '> max.  Change from ', 
+     &          E10.3, ' to ', E10.3 )
+
+94040   FORMAT( 7X, A6, 1X, '< min.  Change from ', 
+     &          E10.3, ' to ', E10.3 )
 
 
         END
