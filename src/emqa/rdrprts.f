@@ -121,6 +121,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYPLANT    = .FALSE.
         ALLRPT%BYRCL      = .FALSE.
         ALLRPT%BYSCC      = .FALSE.
+        ALLRPT%BYSIC      = .FALSE.
         ALLRPT%BYSPC      = .FALSE.
         ALLRPT%BYSRC      = .FALSE.
         ALLRPT%BYSRG      = .FALSE.

@@ -47,7 +47,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: STKHT, STKDM, STKTK, STKVE, CPDESC
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVSCC, SCCDESC
+        USE MODLISTS, ONLY: NINVSCC, SCCDESC, NINVSIC, SICDESC
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: QAFMTL3, AFLAG, OUTDNAM, RPT_, LREGION,
@@ -62,14 +62,15 @@ C.........  This module contains Smkreport-specific settings
      &                      SPCWIDTH, ELEVWIDTH, SDSCWIDTH, UNITWIDTH,
      &                      MINC, LENELV3, SDATE, STIME, EDATE, ETIME,
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
-     &                      ALLRPT, LOC_BEGP, LOC_ENDP
+     &                      ALLRPT, LOC_BEGP, LOC_ENDP, SICFMT,
+     &                      SICWIDTH, SIDSWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
      &                      BINSRGID1, BINSRGID2, BINMONID, BINWEKID,
      &                      BINDIUID, BINRCL, BINDATA, BINSNMIDX,
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
-     &                      BINPLANT
+     &                      BINPLANT, BINSIC, BINSICIDX
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -116,23 +117,25 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRSTAT = 9
         INTEGER, PARAMETER :: IHDRCNTY = 10
         INTEGER, PARAMETER :: IHDRSCC  = 11
-        INTEGER, PARAMETER :: IHDRSRG1 = 12
-        INTEGER, PARAMETER :: IHDRSRG2 = 13
-        INTEGER, PARAMETER :: IHDRMON  = 14
-        INTEGER, PARAMETER :: IHDRWEK  = 15
-        INTEGER, PARAMETER :: IHDRDIU  = 16
-        INTEGER, PARAMETER :: IHDRSPC  = 17
-        INTEGER, PARAMETER :: IHDRHT   = 18
-        INTEGER, PARAMETER :: IHDRDM   = 19
-        INTEGER, PARAMETER :: IHDRTK   = 20
-        INTEGER, PARAMETER :: IHDRVE   = 21
-        INTEGER, PARAMETER :: IHDRELEV = 22
-        INTEGER, PARAMETER :: IHDRPNAM = 23
-        INTEGER, PARAMETER :: IHDRSNAM = 24
-	INTEGER, PARAMETER :: IHDRVAR  = 25
-	INTEGER, PARAMETER :: IHDRDATA = 26
-	INTEGER, PARAMETER :: IHDRUNIT = 27
-        INTEGER, PARAMETER :: NHEADER  = 27
+        INTEGER, PARAMETER :: IHDRSIC  = 12
+        INTEGER, PARAMETER :: IHDRSRG1 = 13
+        INTEGER, PARAMETER :: IHDRSRG2 = 14
+        INTEGER, PARAMETER :: IHDRMON  = 15
+        INTEGER, PARAMETER :: IHDRWEK  = 16
+        INTEGER, PARAMETER :: IHDRDIU  = 17
+        INTEGER, PARAMETER :: IHDRSPC  = 18
+        INTEGER, PARAMETER :: IHDRHT   = 19
+        INTEGER, PARAMETER :: IHDRDM   = 20
+        INTEGER, PARAMETER :: IHDRTK   = 21
+        INTEGER, PARAMETER :: IHDRVE   = 22
+        INTEGER, PARAMETER :: IHDRELEV = 23
+        INTEGER, PARAMETER :: IHDRPNAM = 24
+        INTEGER, PARAMETER :: IHDRSNAM = 25
+        INTEGER, PARAMETER :: IHDRINAM = 26    ! SIC name
+	INTEGER, PARAMETER :: IHDRVAR  = 27
+	INTEGER, PARAMETER :: IHDRDATA = 28
+	INTEGER, PARAMETER :: IHDRUNIT = 29
+        INTEGER, PARAMETER :: NHEADER  = 29
 
         CHARACTER*12, PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -148,6 +151,7 @@ C...........   Local parameters
      &                              'State          ',
      &                              'County         ',
      &                              'SCC            ',
+     &                              'SIC            ',
      &                              'Primary Srg    ',
      &                              'Fallbk Srg     ',
      &                              'Monthly Prf    ',
@@ -161,6 +165,7 @@ C...........   Local parameters
      &                              'Elevstat       ',
      &                              'Plt Name       ',
      &                              'SCC Description',
+     &                              'SIC Description',
      &                              'Variable       ',
      &                              'Data value     ',
      &                              'Units          ' / )
@@ -170,6 +175,7 @@ C...........   Local variables that depend on module variables
         LOGICAL    LSTATUSE( NSTATE )
         LOGICAL    LCNTYUSE( NCOUNTY )
         LOGICAL    LSCCUSE ( NINVSCC )
+        LOGICAL    LSICUSE ( NINVSIC )
 
         CHARACTER*10  CHRHDRS( NCHARS )  ! Source characteristics headers
 
@@ -198,6 +204,7 @@ C...........   Other local variables
         LOGICAL  :: DATFLOAT              ! true: use float output format
         LOGICAL  :: STATMISS              ! true: >=1 missing state name
         LOGICAL  :: SCCMISS               ! true: >=1 missing SCC name
+        LOGICAL  :: SICMISS               ! true: >=1 missing SIC name
         LOGICAL  :: DYSTAT                ! true: write average day header
 
 	LOGICAL  :: FIRSTIME = .TRUE.     ! true: first time routine called
@@ -224,10 +231,12 @@ C.........  Initialize local variables for current report
         STATMISS = .FALSE.
         CNTYMISS = .FALSE.
         SCCMISS  = .FALSE.
+        SICMISS  = .FALSE.
         LCTRYUSE = .FALSE.  ! array
         LSTATUSE = .FALSE.  ! array
         LCNTYUSE = .FALSE.  ! array
         LSCCUSE  = .FALSE.  ! array
+        LSICUSE  = .FALSE.  ! array
         PWIDTH   = 0        ! array
         LU       = 0
 
@@ -277,8 +286,8 @@ C.........  NOTE that (1) will not be used and none will be for area sources
 C............................................................................
 C.........  Pre-process output bins to determine the width of the stack 
 C           parameter and variable-length string columns.
-C.........  For country, state, county, and SCC names, only flag which ones 
-C           are being used by the selected sources.
+C.........  For country, state, county, SCC names, and SIC names only flag 
+C           which ones are being used by the selected sources.
 C............................................................................
         PDSCWIDTH = 1
 	DO I = 1, NOUTBINS
@@ -340,6 +349,12 @@ C.............  Include SCC description
             IF( RPT_%SCCNAM ) THEN
                 J = BINSNMIDX( I ) 
                 IF( J .GT. 0 ) LSCCUSE( J ) = .TRUE.
+            END IF
+
+C.............  Include SIC description
+            IF( RPT_%SICNAM ) THEN
+                J = BINSICIDX( I ) 
+                IF( J .GT. 0 ) LSICUSE( J ) = .TRUE.
             END IF
 
         END DO  ! End loop through bins
@@ -545,6 +560,18 @@ C.........  SCC column
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             SCCWIDTH = J + LV
+        END IF
+
+C.........  SIC column
+        IF( RPT_%BYSIC ) THEN
+            J = LEN_TRIM( HEADERS( IHDRSIC ) )
+            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSIC )
+            W1 = MAX( W1, J )  
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRSIC), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
+            SICWIDTH = W1 + LV
         END IF
 
 C.........  Primary surrogates column
@@ -770,6 +797,33 @@ C.............  Set SCC name column width
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             SDSCWIDTH = J + LV - 2       ! quotes in count for header print
+
+        END IF
+
+C.........  SIC names
+        IF( RPT_%SICNAM ) THEN
+
+C.............  For SIC descriptions in the inventory, get max name 
+C               width
+            NWIDTH = 0
+            DO I = 1, NINVSIC
+                IF( LSICUSE( I ) ) THEN
+                    NWIDTH = MAX( NWIDTH, LEN_TRIM( SICDESC( I ) ) )
+                    IF ( NWIDTH .EQ. 0 ) SICMISS = .TRUE.
+                END IF
+            END DO
+
+C.............  If any missing SIC names, check widths
+            IF( SICMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
+
+C.............  Set SIC name column width 
+            J = LEN_TRIM( HEADERS( IHDRINAM ) )
+            J = MAX( NWIDTH, J ) + 2     ! two for quotes
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRINAM), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            SIDSWIDTH = J + LV - 2       ! quotes in count for header print
 
         END IF
 
