@@ -518,10 +518,10 @@ C.........  If not explicit plume rise only, open and process other met files
 C.............  Check multiple met files for consistency
             IF( GFLAG ) THEN
                 EFLAG = ( .NOT. CHKMETEM( CNAME, SNAME, TNAME,
-     &                                    XNAME, DNAME, GNAME ) )
+     &                                    GNAME, XNAME, DNAME ) )
             ELSE
                 EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, 'NONE',
-     &                                     XNAME, DNAME, GNAME ) )
+     &                                     GNAME, XNAME, DNAME ) )
             END IF
 
             IF ( EFLAG ) THEN
