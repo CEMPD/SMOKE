@@ -155,6 +155,8 @@ C...........   Other local variables
         CHARACTER*256   BUFFER 
         CHARACTER*256   LINE    !  input buffer 
         CHARACTER*256   MESG
+C       05/04/99 wts - added 
+		CHARACTER*256   FMT
 
         CHARACTER*72    MENU( 4 )
      &  /
@@ -373,8 +375,10 @@ C...............  EPS2 documentation, AND the surrogates entries are 10
 C...............  columns wide.  These constraints allow us to read in the
 C...............  file more assuredly.  MRH.
             ELSEIF( FFORMAT .EQ. 'EPS2' ) THEN
- 
-                READ( SDEV, 93010, END=27, IOSTAT=IOS )
+C               05/04/99 wts - Create format.
+                WRITE ( FMT, 93011 ) NSRG
+C               READ( SDEV, 93010, END=27, IOSTAT=IOS )
+				READ( SDEV, FMT, END=27, IOSTAT=IOS )
      &                FIP, XX, YY, ( SRGT( J ), J = 1, NSRG )
  
                 IREC = IREC + 1
@@ -837,7 +841,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93010   FORMAT( I5, 2F10.0, 10X, <NSRG>( F10.8 ) )
+C93010  FORMAT( I5, 2F10.0, 10X, <NSRG>( F10.8 ) )
+93011   FORMAT( '( I5, 2F10.0, 10X, ', I8, '( F10.8 ) )' )
 
 C...........   Internal buffering formats............ 94xxx
 
