@@ -13,7 +13,7 @@
 #*********************************************************************
 
 # set Assigns file name
-setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25.us36-nc
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 
 # set source category
 setenv SMK_SOURCE B            # source category to process
@@ -65,6 +65,10 @@ setenv AUTO_DELETE_LOG  Y       # Y automatically deletes logs without asking
 setenv DEBUGMODE        N       # Y changes script to use debugger
 setenv DEBUG_EXE        dbx     # Sets the debugger to use when DEBUGMODE = Y
 
+# Override settings
+setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override 
+# setenv INVTABLE_OVERRIDE          # Inventory table override
+
 ##############################################################################
 
 ## Run Rawbio
@@ -74,7 +78,7 @@ source $ASSIGNS_FILE   # Invoke Assigns file
 source smk_run.csh     # Run programs
 setenv RUN_PART1 N
 
-## Loop through days to run Tmpbio
+## Loop through days to run Tmpbio and Smkmerge mass reports
 setenv RUN_PART2 Y
 setenv RUN_PART4 Y
 set cnt = 0
@@ -91,6 +95,31 @@ setenv RUN_PART2 N
 setenv RUN_PART4 N
 unsetenv G_STDATE_ADVANCE
 
+## Additional Smkmerge run for CMAQ
+## Loop through days to run Smkmerge units coversion
+setenv RUN_PART4 Y
+
+setenv MRG_GRDOUT_YN      Y         # Y outputs gridded data
+setenv MRG_REPSTA_YN      N         # Y outputs state totals
+setenv MRG_REPCNY_YN      N         # Y outputs county totals
+setenv MRG_GRDOUT_UNIT    moles/s   # units for gridded output file
+setenv MRG_TOTOUT_UNIT    moles/hr  # units for state and/or county totals
+
+set cnt = 0
+set g_stdate_sav = $G_STDATE
+while ( $cnt < $EPI_NDAY )
+
+   @ cnt = $cnt + $NDAYS
+   source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
+   source smk_run.csh     # Run programs
+   setenv G_STDATE_ADVANCE $NDAYS
+
+end
+setenv RUN_PART2 N
+setenv RUN_PART4 N
+unsetenv G_STDATE_ADVANCE
+
+#
 #
 ## Ending of script
 #

@@ -13,7 +13,7 @@
 #*********************************************************************
 
 # set Assigns file name
-setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25.us36-nc
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 
 # set source category
 setenv SMK_SOURCE A           # source category to process
@@ -96,6 +96,10 @@ setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recomm
 setenv AUTO_DELETE_LOG    Y       # Y automatically deletes logs without asking
 setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
+
+# Override settings
+setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
+# setenv INVTABLE_OVERRIDE          # Inventory table override
 
 ##############################################################################
 
