@@ -61,11 +61,14 @@ C...........   Local variables
         LOGICAL           WROTE_GASPM   ! true: wrote GASPM to pol array
         LOGICAL           WROTE_BRAKE   ! true: wrote BRAKE to pol array
         LOGICAL           WROTE_TIRE    ! true: wrote TIRE to pol array
+        LOGICAL           ISUSERHAP     ! true: at least one user-defined HAP 
 
         CHARACTER(LEN=50)  BASICPOL     ! basic pollutants to calculate
         CHARACTER(LEN=50)  PMPOL        ! particulates to calculate
         CHARACTER(LEN=50)  AIRPOL       ! air toxics to calculate
         CHARACTER(LEN=300) MESG         ! message buffer 
+        
+        CHARACTER*16 :: PROGNAME = 'WRM6HEADER'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRM6HEADER
@@ -80,6 +83,7 @@ C.........  Initialize arrays and logical variables
         WROTE_GASPM = .FALSE.
         WROTE_BRAKE = .FALSE.
         WROTE_TIRE  = .FALSE.
+        ISUSERHAP   = .FALSE.
 
 C.........  Write basic MOBILE6 header info
         WRITE( MDEV,93000 ) 'MOBILE6 INPUT FILE :'
@@ -147,12 +151,20 @@ C.................  Check if current pollutant is output hydrocarbon
      &                     TRIM( EMTPOL( I ) ) // ' in MEPROC ' //
      &                     'file is not a MOBILE6 intrisic ' //
      &                     'pollutant.' // CRLF() // BLANK10 // 
-     &                     'If this pollutant is not a user-defined ' //
-     &                     'HAP, it will be ignored.'
-                    CALL M3MESG( MESG )
+     &                     'Assuming that ' // TRIM( EMTPOL( I ) ) // 
+     &                     ' is a user-defined HAP.'
+                    CALL M3MSG2( MESG )
+                    ISUSERHAP = .TRUE.
                 END IF
             END SELECT
         END DO
+
+C.........  Exit if trying to generate user-defined HAPs without intrinsic toxics
+        IF( ISUSERHAP .AND. AIRPOL == ' ' ) THEN
+            MESG = 'ERROR: Cannot run MOBILE6 with user-defined ' //
+     &             'HAPs and no intrinsic toxic pollutants.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
         IF( BASICPOL /= ' ' ) THEN
             WRITE( MDEV,93000 ) 'POLLUTANTS         : ' // 
