@@ -55,7 +55,7 @@ if ( $?RUN_EMISFAC ) then
       set m6_input_dir = $MBDAT/m6_$EF_YEAR
       if ( $?CNTLCASE ) then
          setenv M6LIST $MBDAT/m6list.$MSCEN.${EF_YEAR}_$CNTLCASE.txt
-         set m6_input_dir $MBDAT/mb_${EF_YEAR}_$CNTLCASE
+         set m6_input_dir = $MBDAT/mb_${EF_YEAR}_$CNTLCASE
       endif
       set ef_cnt = `ls -1 $m6_input_dir/*.in | wc -l`
       if ( $ef_cnt > 0 ) then
