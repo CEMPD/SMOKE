@@ -241,7 +241,7 @@ C.........  Get the time zone for output of the emissions
                 
 C.........  Get the name of the activity to use for one run
         MESG = 'Temperature variable name'
-        CALL ENVSTR( 'TVARNAME', MESG, 'TEMP1P5', TVARNAME, IOS )
+        CALL ENVSTR( 'TVARNAME', MESG, 'TEMPG', TVARNAME, IOS )
 
 C.........  Set default name of meterology file, depending on the name of the
 C           temperature variable
