@@ -76,6 +76,7 @@ setenv REACTIVITY_POL       ' '   # Set to VOC or ROG (only for reactivity contr
 # For Prediur
 setenv SMK_MINTEMP           0.   # MOBILE6 minimum allowed daily temperature [deg F]
 setenv SMK_MAXTEMP         120.   # MOBILE6 Maximum allowed daily temperature [deg F]
+setenv TVARNAME          TEMPG    # temperature variable name in meteorology files
 setenv UNIFORM_STIME        -1    # -1 or HHMMSS for uniform start hour for "days"
 #     OUTZONE                 # see multiple-program controls, below
 #     Episode settings        # in Assigns file
