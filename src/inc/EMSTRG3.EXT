@@ -18,6 +18,7 @@ C.........  Width of source information strings
         INTEGER, PARAMETER :: FIPLEN3 =  6 ! FIPS code
         INTEGER, PARAMETER :: CNYLEN3 =  3 ! County code
         INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
+        INTEGER, PARAMETER :: ORSLEN3 =  6 ! DOE plant ID field
         INTEGER, PARAMETER :: PLTLEN3 = 15 ! plant ID field
         INTEGER, PARAMETER :: POLLEN3 =  5 ! pol position field 
         INTEGER, PARAMETER :: PRCLEN3 =  3 ! mv emissions process

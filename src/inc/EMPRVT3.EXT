@@ -21,6 +21,7 @@ C.........  Width of source information strings
         PRIVATE :: FIPLEN3
         PRIVATE :: CNYLEN3
         PRIVATE :: LNKLEN3
+        PRIVATE :: ORSLEN3
         PRIVATE :: PLTLEN3
         PRIVATE :: POLLEN3
         PRIVATE :: PRCLEN3
