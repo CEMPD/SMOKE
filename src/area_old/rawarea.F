@@ -91,7 +91,8 @@ C...........   Area Sources Table input unsorted copy (*A);
 C...........   sorted final version (image EMISREC of data record)
 
         INTEGER     NSRC             !  record-count
-        INTEGER     INDEXA( NSMAX )  !  subscript table
+        INTEGER     INDEXA( NSMAX )  !  subscript table for SORTI4()
+        INTEGER     IDXSCC( NSMAX )  !  subscript table for SORTI2() for ASCTs
         INTEGER     IFIPSA( NSMAX )  !  source FIPS (county) ID
         INTEGER     ISCC7A( NSMAX )  !  leading-7  digits of source ASC
         INTEGER     ISCC3A( NSMAX )  !  trailing-3 digits of source ASC
@@ -126,11 +127,13 @@ C...........   Other local variables
 
         INTEGER         S, I, J, V      !  loop counters.
         INTEGER         ADEV            !  for area-source file
+        INTEGER         SDEV            !  unit number for output actual ASCTs
         INTEGER         ZDEV            !  for time-zone file
         INTEGER         LDEV            !  log-device
         INTEGER         IOS             !  I/O status
         INTEGER         IREC            !  input line (record) number
         INTEGER         IFIL            !  input file counter
+        LOGICAL         MFLAG   !  sum duplicate emissions flag
         LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
         LOGICAL         SFLAG   !  input verification:  report missing species
         CHARACTER*16    SCRBUF  !  scratch name buffer
@@ -140,6 +143,8 @@ C...........   Other local variables
         CHARACTER*240   LINE    !  input line from AREA file
         CHARACTER*256   MESG    !  for M3EXIT() output
 
+        LOGICAL FIRSTSUM  !  TRUE if no duplicate emissions
+        DATA    FIRSTSUM / .TRUE. /
 
 C***********************************************************************
 C   begin body of program RAWAREA
@@ -378,7 +383,9 @@ C                   END IF
                 S = S + 1
                 IF ( S .LE. NSMAX ) THEN
 
-                    INDEXA( S ) = S !  index table for later SORTI3()
+                    INDEXA( S ) = S     !  index-table for later SORTI3()
+                    IDXSCC( S ) = S     !  index-table for use in SORTI1()
+
                     IFIPSA( S ) = FIP  
                     ISCC7A( S ) = ID7 
                     ISCC3A( S ) = ID3
@@ -414,13 +421,16 @@ C                   END IF
         NSRC = S
         IF ( S .GT. NSMAX ) THEN
             WRITE( *,92010 ) 
-     &              'Actual record count         ', NSRC,
-     &              'Max dimensioned record-count', NSMAX
+     &              'Actual record count         ', NSRC/3,
+     &              'Max dimensioned record-count', NSMAX/3
             CALL M3EXIT( 'RAWAREA', 0, 0, 
      &        'Max record-count exceeded in AREA SOURCE file.', 2 )
 
         END IF
 
+        SDEV = PROMPTFFILE(
+     &          'Enter the name of the ACTUAL ASCT output file',
+     &          .FALSE., .TRUE., 'ASCC', 'RAWAREA' )
 
 C.......   Use SORTI3() to perform an indirect sort by FIPS,SCC7,SCC3;
 C.......   then permute the records according to the result:
@@ -463,16 +473,18 @@ C.......   then permute the records according to the result:
                     ISCC3 ( J ) = ID3
                     TPFLAG( J ) = TPFLGA( I )
                     INVYR ( J ) = INVYRA( I )
+
+                    DO  143  V = 1, NIPOL
+                        EMISV ( J,V ) = VMISS
+                        CTLEFF( J,V ) = BADVAL3
+                        RULPEN( J,V ) = BADVAL3
+                        RULEFF( J,V ) = BADVAL3
+143                 CONTINUE
+
                 END IF      !  if J in bounds
+            ENDIF           !  if new source or not
 
-                DO  143  I = 1, NIPOL
-                    EMISV ( J,I ) = VMISS
-                    CTLEFF( J,I ) = BADVAL3
-                    RULPEN( J,I ) = BADVAL3
-                    RULEFF( J,I ) = BADVAL3
-143             CONTINUE
-
-            ELSE IF ( J .LE. NASRC ) THEN
+            IF ( J .LE. NASRC ) THEN
 
                 V = ICODEA( I )
 
@@ -485,12 +497,24 @@ C.......   then permute the records according to the result:
 
                 ELSE IF ( EMISVA( I ) .GT. 0.0 ) THEN
 
-                    VFLAG = .TRUE.
                     WRITE( MESG,94020 )
      &                  'Duplicate emissions record:  FIP:', FIP,
      &                  'ASC:', ID7, ID3, 
      &                   'Species:', PCODE( V )
                     CALL M3MESG( MESG )
+
+                    IF( FIRSTSUM ) THEN
+                        MFLAG = GETYN( 
+     &                          'Sum emissions for all duplicates?', 
+     &                          .TRUE. )
+                        FIRSTSUM = .FALSE.
+                    ENDIF
+
+                    IF( MFLAG ) THEN
+                        EMISV ( J,V ) = EMISV ( J,V ) + EMISVA( I )
+                    ELSE
+                        VFLAG = .TRUE.
+                    ENDIF
 
                 END IF  !  if new pollutant for this source, or not
 
@@ -700,6 +724,25 @@ C.......   Write out the area source emissions values:
      &                   'Error writing AREA OUTPUT file' , 2 )
         END IF
 
+C.......   Sort and Write out the area source ASCTs:
+
+        CALL SORTI2( NSRC, IDXSCC, ISCC7A, ISCC3A )
+
+        LID7 = IMISS3
+        LID3 = IMISS3
+        DO 299 I = 1, NSRC
+
+            ID7 = ISCC7A( IDXSCC( I ) )
+            ID3 = ISCC3A( IDXSCC( I ) )
+
+            IF( ID7 .NE. LID7 .OR. ID3 .NE. LID3 ) THEN
+                WRITE( SDEV, 93030 ) ID7, ID3
+            ENDIF
+
+            LID7 = ID7
+            LID3 = ID3
+
+299     CONTINUE
 
 999   CONTINUE          !  exit program
 
@@ -719,6 +762,8 @@ C...........   Informational (LOG) message formats... 92xxx
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+
+93030   FORMAT( I7.7, I3.3 )
 
 
 C...........   Internal buffering formats............ 94xxx
