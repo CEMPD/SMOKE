@@ -2,7 +2,7 @@
         PROGRAM GRDAREA
 
 C***********************************************************************
-C  program body starts at line  113
+C  program body starts at line  143
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDAMAT to grid
@@ -59,16 +59,26 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
+        LOGICAL         ENVYN
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
         CHARACTER*14    MMDDYY
+        INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         INTEGER         WKDAY
+        REAL            YR2DAY
 
-        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
-     &                  PROMPTMFILE, TRIMLEN, WKDAY
+        EXTERNAL        DSCGRID, ENVYN, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY, YR2DAY
+
+C...........   PARAMETER
+
+        CHARACTER*16    NONE 
+        REAL            TON2GM
+        PARAMETER     ( NONE = 'NONE',
+     &                  TON2GM = 907184.74 )
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -85,20 +95,40 @@ C...........   Gridding Matrix
 
         COMMON  / GRIDMAT / NS, IS, CS
 
-C...........   Other local variables
+C...........   Inventory arrays
+        INTEGER         IFIP  ( NASRC )   ! FIPs  code for each source
+        INTEGER         INVYR ( NASRC )   ! Inventory year code for each source
+        INTEGER         ISPTR ( NASRC )   ! Pointer for each state
+        INTEGER         STATES( NASID )   ! Unique list of state IDs
 
-        INTEGER         L, T, V
-        INTEGER         LDATE, JDATE, JTIME, TSTEP
+C...........   Report arrays
+        REAL            EMSUM( NASID, NIPOL ) ! Summed emissions by state
+
+C...........   Other local variables
+ 
+        INTEGER         BTIME   !  beginning time of day in run
+        INTEGER         IOS
+        INTEGER         I, K, L, S, T, V
+        INTEGER         JDATE, JTIME, TSTEP
+        INTEGER         LDATE, LTIME       ! previous date and time in loop
         INTEGER         LDEV
+        INTEGER         RDEV               ! output report unit number
+        INTEGER         LSTA               ! previous state code
+        INTEGER         NSTA               ! actual number of states
         INTEGER         NSTEPS
+        INTEGER         STA                ! temporay state code
         INTEGER         VTYPE( NIPOL )
 
         LOGICAL         EFLAG   !  Error flag
+        LOGICAL         OUTPUTFLAG
+        LOGICAL         ST_REPORT  ! Output state-based emissions totals
  
         CHARACTER*4     OUTNAM  !  contains default  logical output name
+        CHARACTER*7     REPNAM  !  contains default logical report output name
         CHARACTER*16    ANAME   !  logical name for area-source      input file
-        CHARACTER*16    GNAME   !  logical name for grid matrix      input file
         CHARACTER*16    ENAME   !  logical name for emission source output file
+        CHARACTER*16    GNAME   !  logical name for grid matrix      input file
+        CHARACTER*16    INAME   !  logical name for inventory input file
 
         CHARACTER*16    SCRBUF  !  scratch name buffer
         CHARACTER*16    VNAME( NIPOL )
@@ -140,6 +170,10 @@ C   begin body of program GRDAREA
             CALL M3EXIT( 'GRDAREA', 0, 0 , 'Ending program.', 2 )
         END IF
 
+C.......   Get environment variable settings
+        ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
+
         GNAME = PROMPTMFILE( 
      &          'Enter logical name for input GRID MATRIX file',
      &          FSREAD3, 'AGMAT', 'GRDAREA' )
@@ -166,6 +200,98 @@ C.......   data structure to just those variables desired):
 
         END IF
 
+        JDATE = SDATE3D
+        JTIME = STIME3D
+        TSTEP = TSTEP3D
+
+C.........  Based on input files and control status so far, set default
+C........   output file names
+
+C.........  Annual inventory file as input
+        IF ( TSTEP .EQ. 0 ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Area gridded inventory pollutants'
+            OUTNAM = 'AGRD'
+            REPNAM = 'AGRDREP'
+ 
+C.........  Hourly inventory file as input
+        ELSE
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 'Area gridded hourly inventory pollutants'
+            OUTNAM = 'AGRT'
+            REPNAM = 'AGRTREP'
+ 
+        END IF
+
+C.......   Read FIPS code for reporting purpose
+        IF( ST_REPORT ) THEN
+ 
+C............  If we've read in temporal file, must get inventory file name
+            IF ( TSTEP .NE. 0 ) THEN
+ 
+                INAME = PROMPTMFILE(
+     &                  'Enter logical name for AREA INVENTORY file',
+     &                  FSREAD3, 'AREA', 'CSGAREA' )
+            ELSE
+                INAME = ANAME
+ 
+            ENDIF
+ 
+            IF( .NOT. READ3( INAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+ 
+                CALL M3EXIT( 'SPCAMAT', 0, 0,
+     &                       'Error reading FIP from file' // ANAME, 2 )
+ 
+            END IF
+ 
+            IF( .NOT.
+     &          READ3( INAME, 'INVYR', ALLAYS3, 0, 0, INVYR ) ) THEN
+ 
+                CALL M3EXIT( 'SPCAMAT', 0, 0,
+     &               'Error reading INVYR from file' // ANAME, 2 )
+ 
+            END IF
+ 
+            RDEV  = PROMPTFFILE(
+     &             'Enter logical name for TOTALS REPORT or "NONE"',
+     &             .FALSE., .TRUE., REPNAM, 'CSGAREA' )
+ 
+C............  Create state codes arrays
+            LSTA = -9
+            K    = 0
+            DO 22 I = 1, NASRC
+ 
+                STA = IFIP( I ) / 1000
+ 
+                IF( STA .GT. LSTA ) THEN
+ 
+                    K = K + 1
+                    STATES( K ) = STA
+                    LSTA        = STA
+ 
+                ENDIF
+ 
+                ISPTR ( I ) = K
+ 
+22          CONTINUE
+ 
+            NSTA = K
+ 
+            IF( NSTA .GT. NASID ) THEN
+                WRITE( MESG,94010 )
+     &                'Number of states is ', NSTA,
+     &                'but maximum (NASID) is', NASID
+                CALL M3EXIT( 'CSGAREA', JDATE, JTIME, MESG, 2 )
+            ENDIF
+ 
+C............  Initialize emission summary array
+            DO 28 I = 1, NASID
+                DO 27 S = 1, NIPOL
+                    EMSUM( I,S ) = 0.
+27              CONTINUE
+28          CONTINUE
+ 
+        ENDIF
 
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
      &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D, 
@@ -179,7 +305,7 @@ C.......   data structure to just those variables desired):
 
 C......... Store variable properties based on DESC3 call
         EFLAG = .FALSE.
-        DO  22 V = 1, NIPOL
+        DO  31 V = 1, NIPOL
             L = INDEX1( EINAM( V ), NVARS3D, VNAME3D )
  
             IF( L .LE. 0 ) THEN
@@ -196,7 +322,7 @@ C......... Store variable properties based on DESC3 call
                 VDESC( V ) = VDESC3D( L )
             ENDIF
  
-22      CONTINUE
+31      CONTINUE
 
         IF( EFLAG ) THEN
             CALL M3EXIT( 'GRDAREA', 0, 0, 'Bad input file', 2 )
@@ -209,23 +335,6 @@ C......... Store variable properties based on DESC3 call
         GDNAM3D = GRDNM
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
-        JDATE   = SDATE3D
-        JTIME   = STIME3D
-        TSTEP   = TSTEP3D
-
-C.........  Annual inventory file as input
-        IF ( TSTEP .EQ. 0 ) THEN
-            NSTEPS  = 1
-            FDESC3D( 1 ) = 'Area gridded inventory pollutants'
-            OUTNAM = 'AGRD'
- 
-C.........  Hourly inventory file as input
-        ELSE
-            NSTEPS  = MXREC3D
-            FDESC3D( 1 ) = 'Area gridded hourly inventory pollutants'
-            OUTNAM = 'AGRT'
- 
-        END IF
 
 C.......... Set up output variable characteristics
         DO  33 V = 1, NIPOL
@@ -238,8 +347,10 @@ C.......... Set up output variable characteristics
 C.......   Get file name; open output gridded area sources file
 
         ENAME = PROMPTMFILE( 
-     &          'Enter logical name for OUTPUT EMIS file',
+     &          'Enter logical name for OUTPUT EMIS file or "NONE"',
      &          FSUNKN3, OUTNAM, 'GRDAREA' )
+
+        OUTPUTFLAG = ( ENAME .NE. NONE )
 
 
 C.......   Read gridding-transform matrix:
@@ -259,6 +370,7 @@ C.......   Write out the area source emissions values:
 
         CALL M3MSG2( 'Calculating gridded area source emissions...' )
 
+        BTIME = JTIME
         LDATE = 0
         DO  199  T = 1, NSTEPS
 
@@ -269,14 +381,12 @@ C...............   If this is a new month, or new day, write message
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
                 CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
  
-                LDATE = JDATE
-
             END IF
 
 C.............  Write to screen because WRITE3 only writes to LDEV
             IF( JDATE .GT. 0 ) WRITE( *, 93020 ) HHMMSS( JTIME )
 
-            DO  198  V = 1, NIPOL
+            DO  133  V = 1, NIPOL
 
                 IF( READ3( ANAME, EINAM( V ), ALLAYS3, 
      &                     JDATE, JTIME, EMISV ) ) THEN
@@ -284,14 +394,16 @@ C.............  Write to screen because WRITE3 only writes to LDEV
                     CALL SMATVEC( NASRC, NGRID, NMATX, NS, IS, CS,
      &                            EMISV, EMISG )
 
-                    IF ( .NOT. WRITE3( ENAME, EINAM( V ), 
-     &                                 JDATE, JTIME, EMISG ) ) THEN
+                    IF( OUTPUTFLAG ) THEN
+                        IF ( .NOT. WRITE3( ENAME, EINAM( V ), 
+     &                                     JDATE, JTIME, EMISG ) ) THEN
 
-                        CALL M3EXIT( 'GRDAREA', JDATE, JTIME,
-     &                       'Could not write "' // 
-     &                       EINAM( V )( 1: TRIMLEN( EINAM( V ))) //
-     &                      '" to ' // ENAME, 2 )
+                            CALL M3EXIT( 'GRDAREA', JDATE, JTIME,
+     &                           'Could not write "' // 
+     &                           EINAM( V )( 1: TRIMLEN( EINAM( V ))) //
+     &                          '" to ' // ENAME, 2 )
 
+                        END IF
                     END IF
 
                 ELSE
@@ -303,10 +415,66 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
                 END IF  !  if read3() succeeds or not
 
-198         CONTINUE
+C.................  When reporting is switched on, calculate emissions
+C.................  summaries by state and report to output QA file
+C.................  EMSUM must be initialized
+                IF( ST_REPORT ) THEN
+ 
+C.....................  For annual values, convert to day-specific
+                    IF( TSTEP .EQ. 0 ) THEN
+ 
+                        DO 111 S = 1, NASRC
+                            EMISV( S ) = YR2DAY( INVYR( S ) ) *
+     &                                   EMISV( S )
+111                     CONTINUE
+ 
+                    ENDIF
+
+                    CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
+     &                            CS, ISPTR, EMISV, EMSUM( 1,V ) )
+                ENDIF
+
+133          CONTINUE   ! End loop on output variables
+
+            LDATE = JDATE
+            LTIME = JTIME
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
+C.............  Write report if report flag is switched on
+ 
+            IF( ST_REPORT .AND.
+     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+ 
+                IF( TSTEP .NE. 0 )
+     &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
+     &                               MMDDYY( LDATE ) // ' from',
+     &                               BTIME, 'to', LTIME
+ 
+                IF( TSTEP .EQ. 0 ) THEN
+                    MESG = 'Area source emissions ' //
+     &                     '(tons/ave inventory day) within grid ' //
+     &                     GRDNM
+                ELSE
+                    MESG = 'Area source emissions ' //
+     &                     '(tons/specific day) within grid ' // GRDNM
+                ENDIF
+ 
+                CALL STATELST( RDEV  , MESG , NASID , NSTA , NIPOL,
+     &                         'F7.1', EINAM, STATES, EMSUM         )
+
+C.................  Reinitialize emissions summary
+                DO 198 I = 1, NASID
+                    DO 197 S = 1, NIPOL
+                        EMSUM( I,S ) = 0.
+197                 CONTINUE
+198             CONTINUE
+ 
+C.................  Set begining time for next day
+                BTIME = JTIME
+ 
+            ENDIF
+ 
 199     CONTINUE
 
 999   CONTINUE          !  exit program
