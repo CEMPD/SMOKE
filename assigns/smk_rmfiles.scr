@@ -54,15 +54,25 @@ if ( $RUN_SMKINVEN == Y || $RUN_GRWINVEN == Y ) then
    foreach f ( $inmap )
      set dataflag = n
      if ( -e $f ) then       
-       foreach line ( `cat $f` )
+       set cnt = 0
+       set ncnt = `cat $f | wc -l`
+       while ( $cnt < $ncnt )
+          @ cnt = $cnt + 1
+          set line = ( `head -$cnt $f | tail -1` )
           if ( $line[1] == '/IOAPI/' ) then
              /bin/rm -f $INVOPD/$line[2]
           endif
           if ( $line[1] == '/DATMAP/' ) then
              set dataflag = y
+             end
 	  endif
-          if ( $dataflag == y && -e $INVOPD/$line[2] ) then
-             /bin/rm -f $INVOPD/$line[2]
+          if ( $line[1] == '/END/' ) then
+             set dataflag = n
+          endif
+          if ( $dataflag == y ) then
+             if ( -e $INVOPD/$line[2] ) then
+                /bin/rm -f $INVOPD/$line[2]
+             endif
           endif
        end   
        if ( $status == 0 ) then
