@@ -23,12 +23,12 @@ SPC= spcmat.o opensmat.o asgnspro.o
 #
 spcmat: $(SPC) $(ALLI) $(LIBPATH)
 	echo SPCMAT:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(SPC) $(LIBS)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(SPC) $(LIBS)
 #
 #
 spcmat.debug: $(SPC) $(ALLI) $(LIBPATH_DEBUG)
 	echo SPCMAT \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(SPC) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(@) $(SPC) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 

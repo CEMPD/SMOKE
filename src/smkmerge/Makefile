@@ -2,8 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	  = $(LDIRS) $(LIBS_SYS) -lfileset
+LIBS	      = $(LDIRS) $(LIBS_SYS) -lfileset
 LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) -lfileset.debug 
+LIBS2         = $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG2   = $(LDIRS) $(LIBS_DEBUG_SYS)
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
@@ -30,11 +32,11 @@ MRG= smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o mrgmult.o mrgonams.o \
 #
 smkmerge: $(MRG) $(ALLI) $(LIBPATH)
 	echo SMKMERGE:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS)
 #
 smkmerge.debug: $(MRG) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKMERGE \(debug\):
-	$(FC) $(DBGFLAGS) -o $(@) $(MRG) $(LIBS_DEBUG)
+	$(FC) $(DBGFLAGS) -L$(FSDIR) -o $(@) $(MRG) $(LIBS_DEBUG)
 #
 #
 smkmerge.pvm: $(MRG) $(ALLI) $(LIBPATH)
@@ -45,11 +47,11 @@ MGD= mrggrid.o
 #
 mrggrid: $(MGD) $(ALLI) $(LIBPATH)
 	echo MRGGRID:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MGD) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MGD) $(LIBS2)
 #
 mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 	echo MRGGRID \(debug\):
-	$(FC) $(DBGFLAGS) -o $(@) $(MGD) $(LIBS_DEBUG)
+	$(FC) $(DBGFLAGS) -o $(@) $(MGD) $(LIBS_DEBUG2)
 #
 #
 ## Module dependencies
