@@ -101,8 +101,8 @@ C...........   LOCAL VARIABLES and their descriptions:
      &                  'PuertoRico', 'RhodeIsland', 'SouthCarolina',
      &                  'SouthDakota', 'Tennessee', 'Texas', 'Utah',
      &                  'Vermont', 'Virginia', ' ', 'Washington',
-     &                  'WestVirginia', 'Wisconsin',
-     &                  19*' ', 'Canada', 23*' ', 'Offshore'  /
+     &                  'WestVirginia', 'Wisconsin', 'Wyoming',
+     &                  18*' ', 'Canada', 23*' ', 'Offshore'  /
  
 C***********************************************************************
 C   begin body of subroutine  STATELST
