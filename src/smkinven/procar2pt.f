@@ -82,7 +82,9 @@ C...........   Local pointers
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: REPIDX( : )      ! index for sorting
-        INTEGER, ALLOCATABLE :: REPSRC( : )      ! source number
+        INTEGER, ALLOCATABLE :: REPLSCC( : )     ! left half of scc
+        INTEGER, ALLOCATABLE :: REPRSCC( : )     ! right half of scc
+        INTEGER, ALLOCATABLE :: REPSTA( : )      ! state fips code
         INTEGER, ALLOCATABLE :: REPPOL( : )      ! pollutant number
         REAL   , ALLOCATABLE :: REPORIGEMIS( : ) ! original emissions
         REAL   , ALLOCATABLE :: REPSUMEMIS ( : ) ! split and summed emissions
@@ -139,8 +141,12 @@ C.........  Check if any sources need to be processed
 C.........  Allocate memory for reporting
         ALLOCATE( REPIDX ( NREPSRCS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'REPIDX', PROGNAME )
-        ALLOCATE( REPSRC( NREPSRCS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'REPSRC', PROGNAME )
+        ALLOCATE( REPLSCC( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPLSCC', PROGNAME )
+        ALLOCATE( REPRSCC( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPRSCC', PROGNAME )
+        ALLOCATE( REPSTA( NREPSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REPSTA', PROGNAME )
         ALLOCATE( REPPOL( NREPSRCS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'REPPOL', PROGNAME )
         ALLOCATE( REPORIGEMIS( NREPSRCS ), STAT=IOS )
@@ -242,7 +248,10 @@ C.....................  Loop through pollutants for this source
 C.........................  Store information for reporting
                         REPPOS = REPPOS + 1
                         REPIDX( REPPOS ) = REPPOS
-                        REPSRC( REPPOS ) = S
+                        REPLSCC( REPPOS ) = STR2INT( CSCC( S )( 1:5 ) )
+                        REPRSCC( REPPOS ) = 
+     &                           STR2INT( CSCC( S )( 6:SCCLEN3 ) )
+                        REPSTA( REPPOS ) = STR2INT( CSOURC( S )( 1:3 ) )
                         REPPOL( REPPOS ) = IPOSCOD( K )
                         REPORIGEMIS( REPPOS ) = POLVAL( K,NEM )
                         
@@ -303,7 +312,12 @@ C.............................  Store information for reporting
                             IF( J == 0 ) THEN
                                 REPPOS = REPPOS + 1
                                 REPIDX( REPPOS ) = REPPOS
-                                REPSRC( REPPOS ) = S
+                                REPLSCC( REPPOS ) = 
+     &                             STR2INT( OLDCSCC( S )( 1:5 ) )
+                                REPRSCC( REPPOS ) = 
+     &                             STR2INT( OLDCSCC( S )( 6:SCCLEN3 ) )
+                                REPSTA( REPPOS ) = 
+     &                             STR2INT( OLDCSOURC( S )( 1:3 ) )
                                 REPPOL( REPPOS ) = OLDIPOSCOD( K )
                                 REPORIGEMIS( REPPOS ) = 
      &                              OLDPOLVAL( K,NEM )
@@ -363,7 +377,8 @@ C.........  Deallocate old source and emissions arrays
         END IF
 
 C.........  Sort source information for reporting
-        CALL SORTI2( NREPSRCS, REPIDX, REPPOL, REPSRC )
+        CALL SORTI4( NREPSRCS, REPIDX, REPSTA, REPLSCC, REPRSCC, 
+     &               REPPOL )
         
 C.........  Determine total number of sources accounting for multiple
 C           pollutants and counties
@@ -374,10 +389,9 @@ C           pollutants and counties
         
         DO I = 1,NREPSRCS
             J = REPIDX( I )
-            CSRC = CSOURC( REPSRC( J ) )
             
-            TSTA = STR2INT( CSRC( 2:3 ) )
-            TSCC = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )
+            TSTA = REPSTA( J )
+            WRITE( TSCC, '(2I5.5)' ) REPLSCC( J ), REPRSCC( J )
             TPOL = REPPOL( J )
             
             IF( TSTA /= LSTA .OR.
@@ -406,10 +420,9 @@ C.........  Loop through and store final reporting information
         
         DO I = 1,NREPSRCS
             J = REPIDX( I )
-            CSRC = CSOURC( REPSRC( J ) )
             
-            TSTA = STR2INT( CSRC( 2:3 ) )
-            TSCC = CSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )
+            TSTA = REPSTA( J )
+            WRITE( TSCC, '(2I5.5)' ) REPLSCC( J ), REPRSCC( J )
             TPOL = REPPOL( J )
             
             IF( TSTA /= LSTA .OR.
@@ -440,7 +453,8 @@ C.........  Loop through and store final reporting information
         END DO
 
 C.........  Deallocate temporary reporting arrays
-        DEALLOCATE( REPIDX, REPSRC, REPPOL, REPORIGEMIS, REPSUMEMIS )
+        DEALLOCATE( REPIDX, REPSTA, REPLSCC, REPRSCC, REPPOL, 
+     &              REPORIGEMIS, REPSUMEMIS )
             
         RETURN
 
