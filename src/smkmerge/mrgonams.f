@@ -44,7 +44,7 @@ C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: 
      &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
      &          AONAME, BONAME, MONAME, PONAME, TONAME,
-     &          PINGNAME, PELVNAME, LREPSPC, LREPCTL, NIPPA,
+     &          PINGNAME, PELVNAME, LREPSPC, LREPCTL, NUNITS, 
      &          TFLAG, SFLAG, LFLAG, GRDUNIT,
      &          ARFLAG, MRFLAG, PRFLAG, AUFLAG, MUFLAG, PUFLAG
 
@@ -171,7 +171,7 @@ C           inputs were used
         IF( SFLAG ) THEN
 
 C.............  Set flag if any of the output species are mole-based
-            DO I = 1, NIPPA
+            DO I = 1, NUNITS
             
                 J = INDEX( GRDUNIT( I ), 'mole' )
                 IF( J .GT. 0 ) THEN
