@@ -684,33 +684,33 @@ C.........................  Make sure we have a plant ID
                     IF( CURFMT == EMSFMT ) THEN
 
 C.........................  Check for facility, stack, device, and process IDs
-                        IF( FCID == ' ' ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-     &                          'facility ID code at line', IREC
-                            CALL M3MESG( MESG )
-                        END IF
-                        
-                        IF( SKID == ' ' ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-     &                          'stack ID code at line', IREC
-                            CALL M3MESG( MESG )
-                        END IF
-                        
-                        IF( DVID == ' ' ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-     &                          'device ID code at line', IREC
-                            CALL M3MESG( MESG )
-                        END IF
-                        
-                        IF( PRID == ' ' ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-     &                          'process ID code at line', IREC
-                            CALL M3MESG( MESG )
-                        END IF
+!                        IF( FCID == ' ' ) THEN
+!                            EFLAG = .TRUE.
+!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+!     &                          'facility ID code at line', IREC
+!                            CALL M3MESG( MESG )
+!                        END IF
+!                        
+!                        IF( SKID == ' ' ) THEN
+!                            EFLAG = .TRUE.
+!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+!     &                          'stack ID code at line', IREC
+!                            CALL M3MESG( MESG )
+!                        END IF
+!                        
+!                        IF( DVID == ' ' ) THEN
+!                            EFLAG = .TRUE.
+!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+!     &                          'device ID code at line', IREC
+!                            CALL M3MESG( MESG )
+!                        END IF
+!                        
+!                        IF( PRID == ' ' ) THEN
+!                            EFLAG = .TRUE.
+!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
+!     &                          'process ID code at line', IREC
+!                            CALL M3MESG( MESG )
+!                        END IF
                     
                     END IF
                 
@@ -864,7 +864,7 @@ C.............  Write source info and record numbers to file
 
 C.................  On first time through, set up first line and counter
                 IF( I == 1 ) THEN
-                    OUTLINE = TRIM( TMPCSOURC( J ) )
+                    OUTLINE = TMPCSOURC( J )( 1:CSRC_LEN )
                     TCSOURC = TMPCSOURC( J )
                     NRECPERLN = 0
                     TOTSRCS = TOTSRCS + 1
@@ -874,7 +874,7 @@ C.................  If current source does not match previous, write old output 
 C                   and start new line
                 IF( TMPCSOURC( J ) /= TCSOURC ) THEN
                     WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
-                    OUTLINE = TRIM( TMPCSOURC( J ) )
+                    OUTLINE = TMPCSOURC( J )( 1:CSRC_LEN )
                     TCSOURC = TMPCSOURC( J )   ! store source info for next comparison
                     NRECPERLN = 0              ! reset number of read records
                     TOTSRCS = TOTSRCS + 1      ! increment total number of sources
@@ -913,9 +913,19 @@ C                           character and start new line
                             
                         WRITE( CFIL, '(I4)' ) FRSNUMS( K,1 )
                         WRITE( CREC, '(I10)' ) FRSNUMS( K,2 )
-                        OUTLINE = TRIM( OUTLINE ) // ' ' //
-     &                            TRIM( ADJUSTL( CFIL ) ) // '/' // 
-     &                            TRIM( ADJUSTL( CREC ) )
+
+C.........................  If writing the first record, can't use trim otherwise
+C                           will lose any blank source characteristics
+                        IF( NRECPERLN == 0 ) THEN
+                            OUTLINE = OUTLINE( 1:CSRC_LEN ) // ' ' //
+     &                                TRIM( ADJUSTL( CFIL ) ) // '/' //
+     &                                TRIM( ADJUSTL( CREC ) )
+                        ELSE
+                            OUTLINE = TRIM( OUTLINE ) // ' ' //
+     &                                TRIM( ADJUSTL( CFIL ) ) // '/' // 
+     &                                TRIM( ADJUSTL( CREC ) )
+                        END IF
+                        
                         NRECPERLN = NRECPERLN + 1
                         K = K + 1
                     ELSE
