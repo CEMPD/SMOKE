@@ -46,16 +46,31 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG, IRCLAS, IVTYPE
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: CHRT02, CHRT03, CHRT04, CHRT05, CHRT06,
+     &                     CHRT07, CHRT08, CHRT09, CHRT10, CHRT11,
+     &                     CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
+     &                     DPRT01, DPRT02, DPRT03, DPRT04, DPRT05,
+     &                     DPRT06, DPRT07, DPRT08, DPRT09, DPRT10,
+     &                     DPRT11, DPRT12, DPRT13, DPRT14, DPRT15, 
+     &                     DPRT16, DPRNA, DDEX,
+     &                     WPRT01, WPRT02, WPRT03, WPRT04, WPRT05,
+     &                     WPRT06, WPRT07, WPRT08, WPRT09, WPRT10,
+     &                     WPRT11, WPRT12, WPRT13, WPRT14, WPRT15, 
+     &                     WPRT16, WPRNA, WDEX,
+     &                     MPRT01, MPRT02, MPRT03, MPRT04, MPRT05,
+     &                     MPRT06, MPRT07, MPRT08, MPRT09, MPRT10,
+     &                     MPRT11, MPRT12, MPRT13, MPRT14, MPRT15, 
+     &                     MPRT16, MPRNA, MDEX, ADDPS, TXCNT
 
 C...........   This module contains the temporal profile tables
-        USE MODTMPRL
-
+        USE MODTMPRL, ONLY: NMON, MONREF, NWEK, WEKREF, NHRL, HRLREF
+        
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NCHARS, JSCC, NIPPA, EANAM, LSCCEND,
+     &                     CATEGORY
 
         IMPLICIT NONE
 
@@ -70,8 +85,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         INDEX1
+        LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1
+        EXTERNAL CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, SETSCCTYPE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN):: NGSZ          ! no. pols/emis-types in group
@@ -102,6 +118,7 @@ C.........  Other local variables
         LOGICAL          MFLAG              ! true: use monthly profiles
         LOGICAL          WFLAG              ! true: use weekly  profiles
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report default x-ref applied
+        LOGICAL          SCCFLAG           ! true: SCC type is different from previous
 
         CHARACTER*10             RWTFMT   ! fmt to write roadway type to string
         CHARACTER*10             VIDFMT   ! format to write veh ID to string
@@ -225,7 +242,11 @@ C.............  Find index in complete list of pollutants
 C.................  Retrieve local variables for source characteristics
                 CSRC    = CSOURC( S )
                 TSCC    = CSCC( S )
+                
+C.................  Set type of SCC                
+                SCCFLAG = SETSCCTYPE ( TSCC )
                 TSCCL   = TSCC( 1:LSCCEND )
+                
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CSTA    = CFIP( 1:STALEN3 )
                 TSCCSAV = TSCC

@@ -60,8 +60,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         FINDC
+        LOGICAL         SETSCCTYPE
 
-        EXTERNAL        CRLF, FINDC
+        EXTERNAL        CRLF, FINDC, SETSCCTYPE
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -72,6 +73,7 @@ C.........  Other local variables
         INTEGER          F4, F5      ! tmp find indices
 
         LOGICAL       :: EFLAG    = .FALSE.
+        LOGICAL          SCCFLAG           ! true: SCC type is different from previous
 
         CHARACTER*256             MESG     ! message buffer
         CHARACTER(LEN=SRCLEN3)    CSRC     ! tmp source chars string
@@ -111,7 +113,11 @@ C.............  Create selection
             CASE ( 'AREA', 'MOBILE' )
                 CSRC    = CSOURC( S )
                 TSCC    = CSCC( S )
+                
+C.................  Set type of SCC                
+                SCCFLAG = SETSCCTYPE( TSCC )
                 TSCCL   = TSCC( 1:LSCCEND )
+                
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CFIPSCC = CFIP // TSCC
                 CFIPSL  = CFIP // TSCCL
