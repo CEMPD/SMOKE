@@ -98,6 +98,10 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine SIZGMAT
 
+C.........  Print status message
+        MESG = 'Computing gridding matrix size...'
+        CALL M3MSG2( MESG )
+
 C.........  Initialize the count of sources per cell
         NX = 0   ! array
 
@@ -136,7 +140,7 @@ C.............  If link source, determine the number of cells for this source
             ELSE
 
                 CALL LNK2GRD( NGRID, XLOC1( S ), YLOC1( S ), XLOC2( S ), 
-     &                        XLOC2( S ), NCEL, ACEL, AFAC, ALEN, EFLAG)
+     &                        YLOC2( S ), NCEL, ACEL, AFAC, ALEN, EFLAG)
 
 C.................  Make sure that there was enough storage 
                 IF ( EFLAG ) THEN
