@@ -116,16 +116,16 @@ C...........   Speciation cross-reference table:
 C.......   Before sorting:
 
         INTEGER     NREFA
-        INTEGER     INDEXA( NPSRC )
-        INTEGER     FIPSFA( NPSRC )
-        INTEGER     SCCSFA( NPSRC )
-        INTEGER     PLANTA( NPSRC )
-        INTEGER     STACKA( NPSRC )
-        INTEGER     SPXRFA( NPSRC )
-        REAL        VREACA( NPSRC )
-        REAL        ETHADA( NPSRC )
-        REAL        FRMADA( NPSRC )
-        REAL        ALLADA( NPSRC )
+        INTEGER     INDEXA( NSREF )
+        INTEGER     FIPSFA( NSREF )
+        INTEGER     SCCSFA( NSREF )
+        INTEGER     PLANTA( NSREF )
+        INTEGER     STACKA( NSREF )
+        INTEGER     SPXRFA( NSREF )
+        REAL        VREACA( NSREF )
+        REAL        ETHADA( NSREF )
+        REAL        FRMADA( NSREF )
+        REAL        ALLADA( NSREF )
 
 C.......   After sorting -- Five parts:   first depends on scc,fip,plant,stack
 
@@ -505,7 +505,7 @@ C............. Convert character SCC field to integer SCC number
             END IF
 
             I = I + 1
-            IF ( I .LE. NPSRC ) THEN
+            IF ( I .LE. NSREF ) THEN
 
                 INDEXA( I ) = I
                 FIPSFA( I ) = STR2INT ( LINE( 1:5 ) )
@@ -524,10 +524,10 @@ C............. Convert character SCC field to integer SCC number
 
   111   CONTINUE        !  end of the SDEV-read loop
 
-        IF ( I .GT. NPSRC ) THEN
+        IF ( I .GT. NSREF ) THEN
             WRITE( MESG,94010 )
      &          'XREF table overflow; actual', I,
-     &          'dimensioned NPSRC=', NPSRC
+     &          'dimensioned NSREF=', NSREF
             CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
 
         ELSE IF ( EFLAG ) THEN
