@@ -23,11 +23,14 @@ C  database file.
       INCLUDE 'SPEED9.I' ! HVMT
       INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
 
+      INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
+        
       INTEGER STR2INT
       INTEGER EFPOSITION
       
       EXTERNAL STR2INT, EFPOSITION
 
+      INTEGER  ::  I        ! loop variable
       INTEGER  ::  ETYPE    ! emission factor type 
       INTEGER  ::  IXV      ! eXhaust/eVap index 
       INTEGER  ::  IFAC     ! facility type
@@ -40,7 +43,7 @@ C  database file.
       INTEGER  ::  IDX      ! year
       INTEGER  ::  IV       ! vehicle type (1 - 28)
       INTEGER  ::  IVEH     ! vehicle class (1 - 8)
-      INTEGER  ::  EMISPOS  ! position in master emission factor array
+      INTEGER  ::  SMKPOL   ! SMOKE pollutant number based on M6 index
       
       REAL              ::  SUMVMT   ! vmt fraction for one of 8 vehicle types 
       REAL              ::  MILES    ! hourly miles                            
@@ -49,22 +52,44 @@ C  database file.
       REAL              ::  ZGMMILE  ! used to calculate hourly gm/mile        
       REAL,DIMENSION(8) ::  ATAGGR   ! fully aggregated AT output              
 
+      CHARACTER(LEN=300) :: MESG                   ! message buffer
+      CHARACTER(LEN=16)  :: PROGNAME = 'SMKATOUT'  ! program name
+
 C  Begin body of subroutine SMKATOUT
 
+C  Loop over air toxic pollutants
       DO IAT = 1,MAXIAT
 
 C  Check that we need this pollutant
          IF (DBSELTOX(IAT) == 1) CYCLE
          IP = IAT + MAXIPPM + 4  ! AT pollutants start after classic and PM pollutants 
 
+C  Find SMOKE pollutant number based on M6 number
+         SMKPOL = 0
+         DO I = 1,MXM6POLS
+             IF( IP == SMK2M6POL( I ) ) THEN
+                 SMKPOL = I
+                 EXIT
+             END IF
+         END DO
+
+         IF( SMKPOL == 0 ) THEN
+             MESG = 'INTERNAL ERROR: Unexpected pollutant'
+             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+         END IF
+
+C  Loop over emission process types
          DO ETYPE = 1,8
 
-C  Check that we need this pollutant
+C  Check that we need this process type
             IF (DBSELEFT(ETYPE) == 1) CYCLE
 
 C  Only output evap emissions for Benzene and MTBE
             IF (IAT >= 3 .AND. ETYPE >= 3) EXIT 
 
+C  Check if this is a valid pollutant/process combo
+            IF (M6POL2EF( ETYPE, SMKPOL ) == -1) CYCLE
+            
 C  Map emission factor type to air toxic EF type
             IF (ETYPE <= 2) IXV=1  ! Exhaust Running and Starts 
             IF (ETYPE == 3) IXV=2  ! Evap Hot Soak 
@@ -74,18 +99,11 @@ C  Map emission factor type to air toxic EF type
             IF (ETYPE == 7) CYCLE  ! Evap Crankcase (Not Available) 
             IF (ETYPE == 8) IXV=6  ! Evap Refueling 
 
-C  Set starting and ending facility types based on EF type -
-C  Exhaust Running and Evap Running Loss are road dependent (Roads 1-4),
-C  Starts and the remaining Evaps are road independent (Road 5)
-            IF (ETYPE == 1 .OR. ETYPE == 6) THEN
-               STFAC = 1
-               ENDFAC = 4
-            ELSE
-               STFAC = 5
-               ENDFAC = 5
-            END IF
+C  Loop over facility types
+            DO IFAC = 1,MXM6FACS
 
-            DO IFAC = STFAC,ENDFAC
+C  Check that this is a valid facility/process combo
+               IF (M6FAC2EF( ETYPE, IFAC ) == -1) CYCLE
 
 C  Check that we need this facility type
                IF (DBSELFAC(IFAC) /= 2) CYCLE
@@ -162,16 +180,21 @@ ccs  Print some error message
 
 #ifdef M6LIB
                   DO IVEH = 1,8
-                     EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
-     &                                    IP, IVEH, ETYPE, IFAC, 
-     &                                    IH, .TRUE. )
-                     EMISSIONS(EMISPOS) = ATAGGR(IVEH)
+                  
+C  Check if this is a valid process/vehicle combo
+                      IF( M6VEH2EF( ETYPE, IVEH ) == -1 ) CYCLE
+                                        
+                      EMISSIONS( ETYPE )%PTR( STR2INT( DBSCTITLE), 
+     &                                        M6POL2EF( ETYPE, SMKPOL ), 
+     &                                        M6VEH2EF( ETYPE, IVEH ), 
+     &                                        M6FAC2EF( ETYPE, IFAC ), 
+     &                                        IH ) = ATAGGR( IVEH )
                   END DO  ! loop over 8 vehicle types
 #else
                   WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
      &               TABCHAR,IVEH,TABCHAR,ETYPE,TABCHAR,IFAC,
      &               TABCHAR,IH,TABCHAR,ATAGGR(IVEH),IVEH=1,8)
-  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
+  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,E12.5)
 #endif
 
                END DO  ! loop over hours

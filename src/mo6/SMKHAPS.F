@@ -1,18 +1,22 @@
-      SUBROUTINE SMKHAPS(IV,JDX,IP,EFIDX,IH,IFAC,XEF,NPOL,OUTPUT)
+      SUBROUTINE SMKHAPS(IV,JDX,IP,EFIDX,IH,IFAC,XEF,OUTPUT)
 
 C  SMKHAPS aggregates user-defined toxic emission factors by vehicle
 C  age and type.
 
-      USE DATABASE, ONLY : DBUNIT,TABCHAR,DBSCTITLE 
-      USE ATHEAP, ONLY : ATHPOL, ATHSNAME
+      USE DATABASE, ONLY : DBUNIT, TABCHAR, DBSCTITLE
+      USE MODMBSET, ONLY : NUMSCEN, NTOTHAPS, PMHAPS, HAPEFS
       
       IMPLICIT NONE
       
+      INCLUDE 'ATOX5.I'  ! NMAP
       INCLUDE 'CEVBMY.I' ! BMYMPD      
       INCLUDE 'MAXIMA.I' ! MAXIH
       INCLUDE 'MYRCAL.I' ! MEVMYR
+      INCLUDE 'PART1.I'  ! PSZCUT
       INCLUDE 'SPEED9.I' ! HVMT
       INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
+      
+      INTEGER, EXTERNAL :: STR2INT
        
       INTEGER, INTENT(IN) :: IV      ! vehicle type (1 - 28)
       INTEGER, INTENT(IN) :: JDX     ! age
@@ -21,7 +25,6 @@ C  age and type.
       INTEGER, INTENT(IN) :: IH      ! hour
       INTEGER, INTENT(IN) :: IFAC    ! facility type (1 - 5)
       REAL,    INTENT(IN) :: XEF     ! mg/mile emission factor
-      INTEGER, INTENT(IN) :: NPOL    ! total number of pollutants
       LOGICAL, INTENT(IN) :: OUTPUT  ! true: output data to file or memory
       
       REAL, ALLOCATABLE, SAVE :: HAPAGGR (:,:,:,:,:)  ! aggregated toxics emission factors
@@ -33,6 +36,7 @@ C  age and type.
       
       INTEGER :: IVEH        ! vehicle type (1 - 8)
       INTEGER :: EFTYPE      ! emission factor type (1 - 8)
+      INTEGER :: IPNEW       ! pollutant number adjusted for PM species
       INTEGER :: IPOL        ! pollutant number from ADD HAPS file (50 - 99)
       INTEGER :: IOS         ! I/O status
       INTEGER :: IPTMP       ! pollutant loop variable
@@ -41,6 +45,7 @@ C  age and type.
       INTEGER :: IEF         ! emission factor type for output
       INTEGER :: SFAC, EFAC  ! start and end facility types
       INTEGER, SAVE :: PREVVEH     ! previous vehicle type
+      INTEGER :: NPMHAPS     ! number of PM HAPS
 
       REAL :: MILES          ! hourly miles
       REAL :: SUMVMT         ! vmt fraction for one of 8 vehicle types
@@ -48,20 +53,41 @@ C  age and type.
       
       LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
 
+      CHARACTER(LEN=16) :: PROGNAME = 'SMKHAPS'   ! program name
+
 C  Begin body of subroutine SMKHAPS
 
 C  Allocate and initialize arrays first time
       IF (INITIAL) THEN
-      	  ALLOCATE( HAPAGGR( 8,NPOL,6,MAXIH,5 ), STAT=IOS )
-      	  ALLOCATE(  ZMILES(   NPOL,6,MAXIH,5 ), STAT=IOS )
-      	  ALLOCATE( ZGMHOUR(   NPOL,6,MAXIH,5 ), STAT=IOS )
+      	  ALLOCATE( HAPAGGR( 8,NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
+      	  CALL CHECKMEM( IOS, 'HAPAGGR', PROGNAME )
+
+          ALLOCATE( HAPEFS ( NUMSCEN,8,NTOTHAPS,8,MAXIH,5 ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'HAPEFS', PROGNAME )
+
+      	  ALLOCATE(  ZMILES( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
+      	  CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
+
+      	  ALLOCATE( ZGMHOUR( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
+      	  CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
       	
       	  HAPAGGR = 0.0
+      	  HAPEFS  = 0.0
       	  ZMILES  = 0.0
       	  ZGMHOUR = 0.0
       	  
       	  PREVVEH = IV
           INITIAL = .FALSE.
+      END IF
+
+      IPNEW = IP
+
+C  If this is the second time through, only bother with PM ratio pollutants
+      IF( PSZCUT == 10 ) THEN
+      	  IF( .NOT. OUTPUT ) THEN
+              IF( PMHAPS( IP ) == 0 ) RETURN
+              IPNEW = PMHAPS( IP )
+          END IF
       END IF
 
 C  If the vehicle type has changed, need to aggregate previous values
@@ -95,7 +121,7 @@ C  Select appropriate vehicle class (8 types) for vehicle type (28)
              SUMVMT = VMTMIX(24)
           END SELECT
           	
-          DO IPTMP = 1,NPOL
+          DO IPTMP = 1,NTOTHAPS
               DO IEF = 1,6
                   
 C  Set start and end facility based on emission factor type
@@ -140,13 +166,16 @@ C  Set start and end facility based on emission factor type
                           
 C  Calculate and store miles and gm/hour
           MILES = BMYMPD(JDX,IV)*HVMT(IH)*MEVMYR(JDX,IV)
-          ZMILES (IP,EFIDX,IH,IFAC) = ZMILES (IP,EFIDX,IH,IFAC) + MILES
-          ZGMHOUR(IP,EFIDX,IH,IFAC) = 
-     &                            ZGMHOUR(IP,EFIDX,IH,IFAC) + XEF*MILES
+          ZMILES (IPNEW,EFIDX,IH,IFAC) = 
+     &                          ZMILES (IPNEW,EFIDX,IH,IFAC) + MILES
+          ZGMHOUR(IPNEW,EFIDX,IH,IFAC) = 
+     &                          ZGMHOUR(IPNEW,EFIDX,IH,IFAC) + XEF*MILES
 
       ELSE
    
-          DO IPTMP = 1,NPOL
+          DO IPTMP = 1,NMAP
+              IPNEW = IPTMP
+              
               DO IVEH = 1,8
                   DO EFTYPE = 1,8
                   
@@ -179,6 +208,13 @@ C    EFTYPE = 8 -> EFIDX = 6  ! evp. refueling
                       CASE( 8 )
                            IEF = 6
                       END SELECT
+
+C  If this is the second time through, only bother with PM ratio pollutants
+                      IF( PSZCUT == 10 ) THEN
+              	          IF( IEF /= 1 ) CYCLE
+                          IF( PMHAPS( IPTMP ) == 0 ) CYCLE
+                          IPNEW = PMHAPS( IPTMP )
+                      END IF
           
 C  Set facility types based on EF type
                       IF( EFTYPE == 1 .OR. EFTYPE == 6 ) THEN
@@ -190,15 +226,49 @@ C  Set facility types based on EF type
                       END IF
                       
                       DO IFTMP = SFAC,EFAC
-                       WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IPTMP+50,
+
+#ifdef M6LIB
+                         DO IHTMP = 1,24
+                           IF( HAPEFS(STR2INT(DBSCTITLE),IVEH,IPNEW,
+     &                                EFTYPE,IHTMP,IFTMP) == 0. ) THEN
+
+C  Divide value by 1000 to account for milligram to gram conversion
+                               HAPEFS(STR2INT(DBSCTITLE),IVEH,IPNEW,
+     &                                EFTYPE,IHTMP,IFTMP) =
+     &                             HAPAGGR(IVEH,IPNEW,IEF,IHTMP,IFTMP)
+     &                             / 1000.
+                           END IF
+
+C  Subtract PM2.5 values from PM10 emission factors                        
+                           IF( IPNEW > NMAP ) THEN
+                               HAPEFS(STR2INT(DBSCTITLE),IVEH,IPNEW,
+     &                                EFTYPE,IHTMP,IFTMP) =
+     &                         HAPEFS(STR2INT(DBSCTITLE),IVEH,IPNEW,
+     &                                EFTYPE,IHTMP,IFTMP) -
+     &                         HAPEFS(STR2INT(DBSCTITLE),IVEH,IPTMP,
+     &                                EFTYPE,IHTMP,IFTMP)
+                           END IF
+                        
+                         END DO
+#else                    
+	                 IPOL = IPNEW + 50  
+                         WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IPOL,
      &                   TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFTMP,
      &                   TABCHAR,IHTMP,TABCHAR,
-     &                   HAPAGGR(IVEH,IPTMP,IEF,IHTMP,IFTMP),IHTMP=1,24)
-  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
+     &                   HAPAGGR(IVEH,IPNEW,IEF,IHTMP,IFTMP)/1000,
+     &                   IHTMP=1,24)
+  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,E12.5)
+#endif
                       END DO  ! facility loop
                   END DO  ! ef type loop
               END DO  ! vehicle loop 
           END DO  ! pollutant loop
+          
+          PREVVEH = 1
+          
+          HAPAGGR = 0.0
+      	  ZMILES  = 0.0
+      	  ZGMHOUR = 0.0
       END IF  ! check for output
 
       END SUBROUTINE SMKHAPS

@@ -4,8 +4,6 @@ C  SMKEVPOTHER aggregates evaporative emissions (except running loss) by
 C  vehicle age and vehicle category (8 types).  It then writes the emmisions 
 C  to the database file.
 
-      USE SMKSAVE,  ONLY : EVPOTHER, ZMILES_EVP, ZGMHOUR_EVP, 
-     &                     ZGMMILE_EVP
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, DBSCTITLE,
      &                     TABCHAR, DBUNIT, DBSELFAC                
 #ifdef M6LIB
@@ -14,10 +12,13 @@ C  to the database file.
       
       IMPLICIT NONE
 
-      INCLUDE 'CEVBMY.I' ! BMYMPD      
+      INCLUDE 'CEVBMY.I' ! BMYMPD    
+      INCLUDE 'MAXIMA.I' ! MAXIH    
       INCLUDE 'MYRCAL.I' ! MEVMYR
       INCLUDE 'SPEED9.I' ! HVMT
       INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
+      
+      INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
       
       INTEGER STR2INT
       INTEGER EFPOSITION
@@ -30,26 +31,43 @@ C  to the database file.
       INTEGER,INTENT(IN) ::  IROAD         ! road type
       REAL, INTENT(IN)   ::  GRAMS_MI(24)  ! gm/mile emission factors
             
+      REAL, ALLOCATABLE, SAVE :: EVPOTHER (:,:,:) ! aggregated evap efs
+                                                  ! dimensions: (IH,IV,IEVAP)
+      REAL, ALLOCATABLE, SAVE :: ZMILES   (:,:)   ! summed miles
+                                                  ! dimensions: (IH,IEVAP)
+      REAL, ALLOCATABLE, SAVE :: ZGMHOUR  (:,:)   ! summed gm/hour
+                                                  ! dimensions: (IH,IEVAP)
+                                                  
       INTEGER :: IP = 1        ! pollutant will always be HC
       INTEGER :: IFAC = 5      ! road type will always be none
       
       INTEGER :: IH            ! hour
+      INTEGER :: IOS           ! I/O status
       INTEGER :: VTYPE, IVX    ! vehicle type and index
       INTEGER :: EFTYPE, EFX   ! emission factor type and index
       INTEGER :: EMISPOS       ! position in master emission factor array
       
       REAL :: MILES            ! hourly miles
       REAL :: SUMVMT           ! vmt fraction for one of 8 vehicle types
+      REAL :: ZGMMILE          ! summed gm/mile
       
       LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
       
+      CHARACTER(LEN=300) :: MESG                      ! message buffer
+      CHARACTER(LEN=16)  :: PROGNAME = 'SMKEVPOTHER'  ! program name
+      
 C  First time, initialize emission factor array
       IF (INITIAL) THEN
-         EVPOTHER    = 0.
-
-         ZMILES_EVP  = 0.
-         ZGMHOUR_EVP = 0.
-         ZGMMILE_EVP = 0.
+      	 ALLOCATE( EVPOTHER( MAXIH,5,5 ), STAT=IOS )
+      	 CALL CHECKMEM( IOS, 'EVPOTHER', PROGNAME )
+      	 ALLOCATE( ZMILES  ( MAXIH,5   ), STAT=IOS )
+      	 CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
+      	 ALLOCATE( ZGMHOUR ( MAXIH,5   ), STAT=IOS )
+      	 CALL CHECKMEM( IOS, 'ZGMHOUR', PROGNAME )
+      	
+         EVPOTHER = 0.
+         ZMILES   = 0.
+         ZGMHOUR  = 0.
          
          INITIAL = .FALSE.
       END IF
@@ -67,7 +85,8 @@ C  Convert database emission type number to indexing numbers
       CASE (8)        ! refueling
          EFX = 5
       CASE DEFAULT
-ccs  Print some error message
+         MESG = 'INTERNAL ERROR: Unexpected emission process'
+         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
       END SELECT
 
 C  Select appropriate vehicle class (8 types) for vehicle type (28)
@@ -99,33 +118,32 @@ C  Motorcycles are a special case, but will need to be stored in the arrays
          IVX = 5              ! set to 5 for arrays, but use 8 for output 
          SUMVMT = VMTMIX(24)
       CASE DEFAULT
-ccs  Print some error message
+         MESG = 'INTERNAL ERROR: Unexpected vehicle type'
+         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
       END SELECT
 
       DO IH = 1,24
          MILES = BMYMPD(JDX,IV)*HVMT(IH)*MEVMYR(JDX,IV)
-         ZMILES_EVP(IH,EFX) = ZMILES_EVP(IH,EFX) + MILES
+         ZMILES(IH,EFX) = ZMILES(IH,EFX) + MILES
 
-         ZGMHOUR_EVP(IH,EFX) = ZGMHOUR_EVP(IH,EFX) + GRAMS_MI(IH)*MILES
+         ZGMHOUR(IH,EFX) = ZGMHOUR(IH,EFX) + GRAMS_MI(IH)*MILES
            
 C.....   If age = 0, we've finished summing and can get the aggregated
 C        gm/mile over ages, then aggregate by vehicle type
          IF (JDX-1 == 0) THEN
-            IF (ZMILES_EVP(IH,EFX) < 0.000001) THEN
-               ZGMMILE_EVP(IH,EFX) = 0.0
+            IF (ZMILES(IH,EFX) < 0.000001) THEN
+               ZGMMILE = 0.0
             ELSE
-               ZGMMILE_EVP(IH,EFX) = 
-     &                ZGMHOUR_EVP(IH,EFX)/ZMILES_EVP(IH,EFX)
+               ZGMMILE = ZGMHOUR(IH,EFX)/ZMILES(IH,EFX)
             END IF
 
             EVPOTHER(IH,IVX,EFX) = EVPOTHER(IH,IVX,EFX) + 
-     &            (ZGMMILE_EVP(IH,EFX)*VMTMIX(IV))/SUMVMT
+     &            (ZGMMILE*VMTMIX(IV))/SUMVMT
 
 C.....      Reinitialize arrays after last hour and emission type
             IF (IH == 24 .AND. EFX == 5) THEN
-               ZMILES_EVP  = 0.
-               ZGMHOUR_EVP = 0.
-               ZGMMILE_EVP = 0.
+               ZMILES  = 0.
+               ZGMHOUR = 0.
             END IF
          END IF
       END DO
@@ -147,6 +165,12 @@ C.....      Convert emission index back to factor type
                CASE (5)
                   EFTYPE = 8
             END SELECT
+
+C....       Check if this is a valid pollutant/process combo
+            IF (M6POL2EF( EFTYPE, IP ) == -1) CYCLE
+
+C....       Check if this is a valid facility/process combo
+            IF (M6FAC2EF( EFTYPE, IFAC ) == -1) CYCLE
             
             DO IVX = 1,5
             
@@ -156,27 +180,27 @@ C....          Convert vehicle index back to vehicle class
                ELSE
                	  VTYPE = IVX
                END IF
-                           
-               IF (DBSELPOL(IP) == 2) THEN
-                  IF (DBSELEFT(EFTYPE) == 2) THEN
-                     IF (DBSELFAC(IFAC) == 2) THEN
+
+C....          Check if this is a valid vehicle/process combo
+               IF (M6VEH2EF( EFTYPE, VTYPE ) == -1) CYCLE
+
 #ifdef M6LIB  
-                        DO IH = 1,24
-                           EMISPOS = EFPOSITION(STR2INT(DBSCTITLE), 
-     &                                          IP, VTYPE, EFTYPE, IFAC, 
-     &                                          IH, .TRUE. )
-                           EMISSIONS(EMISPOS) = EVPOTHER(IH,IVX,EFX)                                                       
-                        END DO
+                  DO IH = 1,24
+                     EMISSIONS( EFTYPE )%PTR( 
+     &                   STR2INT( DBSCTITLE ),
+     &                   M6POL2EF( EFTYPE, IP ),
+     &                   M6VEH2EF( EFTYPE, VTYPE ),
+     &                   M6FAC2EF( EFTYPE, IFAC ), IH ) = 
+     &               EVPOTHER( IH, IVX, EFX )
+                  END DO
 #else
-                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
-     &                     TABCHAR,VTYPE,TABCHAR,EFTYPE,TABCHAR,IFAC,
-     &                     TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVX,EFX),
-     &                     IH=1,24)
-  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+                  WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
+     &               TABCHAR,VTYPE,TABCHAR,EFTYPE,TABCHAR,IFAC,
+     &               TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVX,EFX),
+     &               IH=1,24)
+  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,E12.5)
 #endif  
-                     END IF
-                  END IF
-               END IF
+
             END DO
          END DO
          
