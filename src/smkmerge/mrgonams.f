@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -72,6 +72,7 @@ C.........  Initialize - everything will be gridded
         TONAME = 'EG'
 
         PINGNAME = 'PING'
+        PELVNAME = 'ELEV'
 
         IF( TFLAG ) THEN
 
@@ -86,6 +87,7 @@ C.........  Initialize - everything will be gridded
             CALL TRIM_AND_CONCAT( PONAME, 'T' )
             CALL TRIM_AND_CONCAT( TONAME, 'T' )
             CALL TRIM_AND_CONCAT( PINGNAME, 'T' )
+            CALL TRIM_AND_CONCAT( PELVNAME, 'T' )
 
         END IF
 
@@ -104,6 +106,7 @@ C.........  Initialize - everything will be gridded
             CALL TRIM_AND_CONCAT( PONAME, 'S' )
             CALL TRIM_AND_CONCAT( TONAME, 'S' )
             CALL TRIM_AND_CONCAT( PINGNAME, 'S' )
+            CALL TRIM_AND_CONCAT( PELVNAME, 'S' )
 
         END IF
 
@@ -146,11 +149,6 @@ C.........  Initialize - everything will be gridded
 
         END IF
 
-        IF( VFLAG ) THEN
-            MREPNAME = 'REPMVMT'
-            MONAME   = 'MGVMT'
-        END IF
-
         IF( LFLAG ) THEN
 
             CALL TRIM_AND_CONCAT( PONAME, '3D' )
@@ -187,6 +185,7 @@ C.............  Get output file names depending on if there are moles in units
                 CALL TRIM_AND_CONCAT( PONAME, '_L' )
                 CALL TRIM_AND_CONCAT( TONAME, '_L' )
                 CALL TRIM_AND_CONCAT( PINGNAME, '_L' )
+                CALL TRIM_AND_CONCAT( PELVNAME, '_L' )
 
             ELSE 
 
@@ -201,6 +200,7 @@ C.............  Get output file names depending on if there are moles in units
                 CALL TRIM_AND_CONCAT( PONAME, '_S' )
                 CALL TRIM_AND_CONCAT( TONAME, '_S' )
                 CALL TRIM_AND_CONCAT( PINGNAME, '_S' )
+                CALL TRIM_AND_CONCAT( PELVNAME, '_S' )
 
             END IF
 
