@@ -32,7 +32,8 @@ FILES_C = \
   fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
   fillmtbl.o   rdsprof.o    prclinrc.o   rmcommnt.o   rdorsdsc.o \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
-  fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
+  fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o   blkorcmt.o \
+  rmcommnt.o   alocutbl.o   fillutbl.o
 
 FILES_TMP = 
 
@@ -74,10 +75,14 @@ alocstbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocstbl.f
 alocttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocttbl.f
+alocutbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ alocutbl.f
 asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnpsi.f
 bldenams.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ bldenams.f
+blkorcmt.o:
+	$(FC) $(FFLAGS) -c -o $@ blkorcmt.f  
 chkptdef.o: $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ chkptdef.f
 dscsprof.o: $(MODSPRO) 
@@ -98,6 +103,8 @@ fillstbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillstbl.f
 fillttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ fillttbl.f
+fillutbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ fillutbl.f
 fltrxref.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ fltrxref.f
 fmtcsrc.o: $(MODINFO)
@@ -160,6 +167,8 @@ rdtref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdtref.f
 rdvmix.o  : $(MODMOBIL) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdvmix.f
+rmcommnt.o:
+	$(FC) $(FFLAGS) -c -o $@ rmcommnt.f
 tmprinfo.o  : $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ tmprinfo.f
 wrchrscc.o: $(MODLISTS) $(MODINFO)
