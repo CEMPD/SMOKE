@@ -38,7 +38,7 @@
        if( ! -e $REPORTS/$PSCEN/$ESDATE ) mkdir -p $REPORTS/$PSCEN/$ESDATE
        if( ! -e $REPORTS/$PSCEN/static )  mkdir -p $REPORTS/$PSCEN/static
    else
-       echo "ERROR: The SMOKE data directory does not exist!"
+       echo "ERROR: The SMOKE data directory does not exist\!"
        echo "       Please check to make sure that the following"
        echo "       path is valid:"
        echo "       $SMKDAT"
