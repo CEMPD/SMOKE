@@ -96,7 +96,6 @@ C...........   Scratch Local variables:
         INTEGER         V               !  chemistry variable counter
 
         REAL            FAC             !  partial matrix factor
-        REAL            XFAC( 7, NWCOD) !  Week-day profiles
         REAL            YRFAC           !  year to day factor
 
 
@@ -106,11 +105,12 @@ C.......   SAVED Local Variables
         DATA            MWFAC / 31.0, 28.0, 31.0, 30.0,
      &                          31.0, 30.0, 31.0, 31.0,
      &                          30.0, 31.0, 30.0, 31.0 /
+        REAL            XFAC( 7, NWCOD) !  Week-day profiles
 
         LOGICAL         FIRSTIME
         DATA            FIRSTIME / .TRUE. /
 
-        SAVE            MWFAC, FIRSTIME
+        SAVE            MWFAC, XFAC, FIRSTIME
 
 
 C***********************************************************************
