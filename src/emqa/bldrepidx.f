@@ -260,7 +260,7 @@ C.............  Initialize sorting index for species names
 C.............  Get header of mole speciation matrix
             IF( SLFLAG ) THEN
 
-                IF ( .NOT. DESCSET( SLNAME ) ) THEN
+                IF ( .NOT. DESCSET( SLNAME, ALLFILES ) ) THEN
 
         	    MESG = 'Could not get description of file "' //
      &                     SLNAME( 1:LEN_TRIM( SLNAME ) ) // '"'
@@ -276,7 +276,7 @@ C.................  Store units
 C.............  Get header of mass speciation matrix
             IF( SSFLAG ) THEN
 
-                IF ( .NOT. DESCSET( SSNAME ) ) THEN
+                IF ( .NOT. DESCSET( SSNAME, ALLFILES ) ) THEN
 
         	    MESG = 'Could not get description of file "' //
      &                     SSNAME( 1:LEN_TRIM( SSNAME ) ) // '"'
@@ -395,6 +395,10 @@ C.............  Create sorted list of unique species names
             K = 0
             DO V = 1, NSVARS
         	J = SRTIDX( V )
+        	
+C.................  Skip any zeroes in the sorted index due to unused species
+                IF( J == 0 ) CYCLE
+        	
         	SBUF = SPCNAM( J )
 
         	IF( SBUF .NE. PBUF ) THEN

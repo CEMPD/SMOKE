@@ -252,7 +252,7 @@ C.........  NOTE that only the variables that are needed are read in
             IF( SSNAME .NE. ' ' ) BNAME = SSNAME
 
 C.............  Get file header for variable names
-            IF ( .NOT. DESCSET( BNAME ) ) THEN
+            IF ( .NOT. DESCSET( BNAME, ALLFILES ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 BNAME( 1:LEN_TRIM( BNAME ) ) // '"'
