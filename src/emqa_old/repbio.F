@@ -69,7 +69,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
         CHARACTER*14    MMDDYY
-        CHARACTER*10    HHMMSS
 
         EXTERNAL        CRLF, DSCGRID, INDEX1,  
      &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
@@ -138,20 +137,19 @@ C...........   Other local variables
         REAL            RWT( MSPCS )            !  molcular wt of BEIS2 species 
         REAL            FAC     !  temporary conversion factor
 
-        INTEGER         C, S, F, I, J, K, L, M, N, T, V ! counters, subscripts
+        INTEGER         S, I, J, K, M, N, T, V ! counters, subscripts
         INTEGER         COL,  ROW                 
-        INTEGER         FIP, SSC, SID, CID
+        INTEGER         FIP, SID, CID
         INTEGER         HCOL, HROW              !  surrogate hdr cols and rows
         INTEGER         IOS                     !  I/O status
         INTEGER         IREC                    !  input line (record) number
         INTEGER         MFIP, LSTA, STA 
-        INTEGER         LO, HI
         INTEGER         NSRG                 ! Count of srgts in EPS2 srgts
         INTEGER         B, IJ
         INTEGER         NSTA
         INTEGER         KS
 
-        LOGICAL         EFLAG   !  input error flat
+        LOGICAL         EFLAG      ! Input error flat
         LOGICAL         ST_REPORT  ! Output state-based emissions totals
         LOGICAL         BSPCFLAG( NMPOL )  ! Flag for BEIS2 species
 
@@ -201,7 +199,7 @@ C
      &           '(tons/hr) within grid ' //
      &             GRDNM
 
-        WRITE(RDEV,93000)MESG
+        IF( RDEV .GT. 0 ) WRITE( RDEV,93000 ) MESG
 
 C.......   Get environment variable settings
 
@@ -678,20 +676,23 @@ C.............  Write report if report flag is switched on
                MESG = 'For date / hour ' //
      &                CTIME
 
-               CALL STATELST( RDEV  , MESG , NASID , NSTA ,
+               IF( RDEV .GT. 0 )
+     &         CALL STATELST( RDEV  , MESG , NASID , NSTA ,
      &              MSPCS, 'F8.2', EMSPC , STATES, STEM )
 
 
                IF ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) THEN
 
-                  WRITE( TDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
+                  IF( TDEV .GT. 0 )
+     &            WRITE( TDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
      &                               MMDDYY( LDATE ) // ' from',
      &                               BTIME, 'to', LTIME
 
                   MESG = 'Biogenic emissions (tons/specific day) ' //
      &                 'within grid ' // GRDNM
 
-                  CALL STATELST( TDEV  , MESG , NASID , NSTA ,
+                  IF( TDEV .GT. 0 )
+     &            CALL STATELST( TDEV  , MESG , NASID , NSTA ,
      &              MSPCS, 'F9.2', EMSPC , STATES, STDAY )
 
                   DO 298 I = 1, NASID
