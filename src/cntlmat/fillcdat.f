@@ -1,3 +1,4 @@
+
         SUBROUTINE FILLCDAT( PKTTYP, JT, PKTINFO )
 
 C***********************************************************************
@@ -14,13 +15,13 @@ C
 C  REVISION  HISTORY:
 C      Started 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -60,7 +61,7 @@ C...........   SUBROUTINE ARGUMENTS:
         CHARACTER*16 :: PROGNAME = 'FILLCDAT' ! program name
 
 C***********************************************************************
-C   Begin body of subroutine FILLCNTl
+C   Begin body of subroutine FILLCDAT
 
         SELECT CASE( PKTTYP )
 

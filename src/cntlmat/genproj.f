@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -138,6 +138,7 @@ C.................  Store projection factor
 C.................  Format source characteristic information
                 CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, 
      &                         LF, NC, CHARS )
+                NC = MIN( NC, NCHARS )
 
 C.................  Write out projection information for all sources
 C                   that are getting projected
@@ -193,7 +194,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94015   FORMAT( 10( A, :, 1X ) )
 
-94020   FORMAT( A, 1X, E11.3 )
+94020   FORMAT( A, 1X, E13.5 )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
