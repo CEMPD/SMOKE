@@ -323,7 +323,7 @@ C.................  Store source number
                                 
 C.................  Convert facility type to road class and store
                 SPDARRAY( N,3 ) = CVTRDTYPE( IRCLAS( K ), RLASAFLAG,
-      &                                      ULASAFLAG )
+     &                                       ULASAFLAG )
 
 C.................  Make sure we need to calculate emission factors for this source
                 IF( VMT( K ) == 0 ) THEN
