@@ -59,12 +59,14 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER           GETFLINE
         INTEGER           ENVINT
+        LOGICAL           ENVYN
         INTEGER           FIND1
         INTEGER           STR2INT
-        CHARACTER(LEN=80) WRSPDVMT
+        CHARACTER(LEN=280) WRSPDVMT
         CHARACTER(LEN=2)  CRLF    
         
-        EXTERNAL  GETFLINE, ENVINT, FIND1, STR2INT, WRSPDVMT, CRLF
+        EXTERNAL  GETFLINE, ENVINT, ENVYN, FIND1, STR2INT, 
+     &            WRSPDVMT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN)   :: GRPLIST( NLINES,3 )   ! GROUP file contents
@@ -104,16 +106,18 @@ C...........   Other local variables
         REAL    CURRSPD                   ! speed value from SPDSUM file
         REAL    PREVSPD                   ! previous speed
 
+        LOGICAL      :: ADJHOUR           ! true: adjust hourly speeds for ramps
+        LOGICAL      :: ADJINV            ! true: adjust inventory speeds for ramps
         LOGICAL      :: EFLAG   = .FALSE. ! true: error found
-        LOGICAL      :: NEWSCEN = .FALSE. ! true: print current and create a new scenario
         LOGICAL,SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
+        LOGICAL      :: NEWSCEN = .FALSE. ! true: print current and create a new scenario
         
         CHARACTER(LEN=FIPLEN3) CURRCOUNTY            ! current county FIPS code
         CHARACTER(LEN=FIPLEN3) REFCOUNTY             ! ref. county FIPS code for curr. county
         CHARACTER(LEN=6)       SCENARIO              ! scenario number
         
         CHARACTER(LEN=200),SAVE:: SPDDIR   ! directory for creating speed vmt files
-        CHARACTER(LEN=80)         SPDFILE  ! name of SPEED VMT file for M6 input file
+        CHARACTER(LEN=280)        SPDFILE  ! name of SPEED VMT file for M6 input file
         CHARACTER(LEN=300)        SCENFILE !  M6 scenario file name
         CHARACTER(LEN=300)        MESG     !  message buffer
 
@@ -135,6 +139,15 @@ C.............  Get speed vmt directory information from the environment
      &                 BLANK10 // 'environment variable SMK_SPDPATH '//
      &                 'is not set properly'
                 CALL M3MSG2( MESG )
+            END IF
+
+C.............  Get settings for adjusting speeds
+            MESG = 'Adjust inventory speeds for freeway ramps'
+            ADJINV = ENVYN( 'ADJUST_INV_SPEED', MESG, .TRUE., IOS )
+            
+            IF( SPDFLAG ) THEN
+                MESG = 'Adjust hourly speeds for freeway ramps'
+                ADJHOUR = ENVYN( 'ADJUST_HR_SPEED', MESG, .TRUE., IOS )
             END IF
             
 C.............  Get the year for computing the emission factors
@@ -300,7 +313,7 @@ C.............  Read speeds and sources
                 	
 C.....................  Create speed vmt file
                     SPDFILE = WRSPDVMT( PREVSPD, CURRSPD, SPDDIR, 
-     &                                  SPDFLAG )
+     &                                  SPDFLAG, ADJINV, ADJHOUR )
                     
                     IF( SPDFILE == '' ) THEN
                     	EFLAG = .TRUE.
