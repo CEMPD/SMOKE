@@ -45,9 +45,6 @@ C.........  This module contains the inventory arrays
 C.........  This module contains the information about the source category
         USE MODINFO
 
-C.........  This module is required by the FileSetAPI
-        USE MODFILESET
-        
         IMPLICIT NONE
 
 C...........   INCLUDES
