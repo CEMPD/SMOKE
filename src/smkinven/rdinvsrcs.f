@@ -56,11 +56,16 @@ C.........  This module contains the information about the source category
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: FILFMT, LSTSTR
 
+C.........  This module is for mobile-specific data
+        USE MODMOBIL, ONLY: NVTYPE, NRCLAS, IVTIDLST, CVTYPLST, 
+     &                      AMSRDCLS, RDWAYTYP
+
         IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -69,12 +74,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFORMT
         INTEGER         GETINVYR
         INTEGER         JUNIT
+        INTEGER         FIND1
         INTEGER         FIND1FIRST
         LOGICAL         CHKINT
         INTEGER         STR2INT
 
         EXTERNAL        CRLF, GETFLINE, GETFORMT,  
-     &                  GETINVYR, JUNIT, FIND1FIRST, CHKINT, STR2INT
+     &                  GETINVYR, JUNIT, FIND1, FIND1FIRST, CHKINT, 
+     &                  STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,          INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -87,8 +94,8 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL,          INTENT(OUT) :: TOXFLG       ! true: read toxics inventory
 
 C...........   Local parameters
-        INTEGER      , PARAMETER :: MXRECS = 50  ! maximum records per iteration
-        INTEGER      , PARAMETER :: NSCSEG = 9        ! num. segments in scratch file
+        INTEGER      , PARAMETER :: MXRECS = 1000000  ! maximum records per iteration
+        INTEGER      , PARAMETER :: NSCSEG = 8        ! num. segments in scratch file
         
 C...........   Local arrays
         CHARACTER(LEN=SRCLEN3) TMPCSOURC( MXRECS )   ! source information from inventory file(s)
@@ -104,15 +111,20 @@ C...........   File units and logical/physical names
 C...........   Other local variables
         INTEGER         I, J, K, L, S !  counters and indices
 
+        INTEGER         CSRC_LEN    !  length of source characteristics
         INTEGER         CURFMT      !  format of current inventory file
         INTEGER         CURFIL      !  current file from list formatted inventory
         INTEGER         IOS         !  i/o status
         INTEGER         INVFMT      !  inventory format code
         INTEGER         IREC        !  no. of records read
         INTEGER         ISTREC      !  no. of records stored
+        INTEGER         IVT         !  vehicle type code
+        INTEGER         LDEV        !  device no. for log file
         INTEGER         NLINE       !  number of lines in list format file
         INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
         INTEGER         NRECPERLN   !  no. of records per line
+        INTEGER      :: NWRLINE = 0 !  no. of lines in file writting to log
+        INTEGER         RWT         !  roadway type
         INTEGER      :: TOTSRCS = 0 !  total number of sources
         INTEGER      :: TOTRECS = 0 !  total number of records
         
@@ -121,23 +133,46 @@ C...........   Other local variables
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
 
         CHARACTER(LEN=FIPLEN3) CFIP    ! fips code
+        CHARACTER(LEN=LNKLEN3) CLNK    ! link ID
+        CHARACTER(LEN=VIDLEN3) CIVT    ! vehicle type ID
+        CHARACTER(LEN=RWTLEN3) CRWT    ! roadway type
+        
+        CHARACTER(LEN=PLTLEN3) FCID    ! facility ID
+        CHARACTER(LEN=CHRLEN3) PTID    ! point ID
+        CHARACTER(LEN=CHRLEN3) SKID    ! stack ID
+        CHARACTER(LEN=CHRLEN3) SGID    ! segment ID
+        
         CHARACTER(LEN=SCCLEN3) TSCC    ! scc code
         CHARACTER(LEN=ALLLEN3) TCSOURC ! concatenated src (minus pollutant)
+
         CHARACTER(LEN=10)      CREC    ! record number
         CHARACTER(LEN=4)       CFIL    ! file number
         CHARACTER(LEN=300)     OUTLINE ! line to write to scratch file
         CHARACTER(LEN=300)     INFILE  !  input file line buffer
         CHARACTER(LEN=300)     LINE    !  input file line buffer
         CHARACTER(LEN=300)     MESG    !  message buffer
+        CHARACTER(LEN=20)      VIDFMT  ! vehicle type ID format
+        CHARACTER(LEN=20)      RWTFMT  ! roadway type number format
+
+        CHARACTER(LEN=300)     TENLINES( 10 )   ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME =  'RDINVSRCS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDINVSRCS
 
+C.........  Get log file number for reports
+        LDEV = INIT3()
+
 C.........  Initialize toxics flag to false
         TOXFLG = .FALSE.
 
+C.........  Create formats for mobile data
+        IF( CATEGORY == 'MOBILE' ) THEN
+            WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
+            WRITE( RWTFMT, '("(I",I2.2,")")' ) RWTLEN3
+        END IF
+        
 C.........  Determine file format of inventory file
         INVFMT = GETFORMT( FDEV )
 
@@ -314,6 +349,8 @@ C.............................  Check for errors while opening file
 C.............................  Set default inventory characteristics that depend on file format
 				            CALL INITINFO( FILFMT( CURFIL ) )
 				            CURFMT = FILFMT( CURFIL )
+				            
+				            NWRLINE = 0
 				  
 C.............................  Skip back to the beginning of the loop
                             CYCLE
@@ -343,10 +380,12 @@ C.................  Process line depending on file format and source category
                         CALL RDSRCIDAAR( LINE, CFIP, TSCC, NPOLPERLN,
      &                                   HDRFLAG, EFLAG )
                     CASE( 'MOBILE' )
-!                        CALL RDSRCIDAMB( LINE, CFIP, CLNK, TSCC, 
-!     &                                   HDRFLAG, EFLAG )
+                        CALL RDSRCIDAMB( LINE, CFIP, CLNK, TSCC, 
+     &                                   NPOLPERLN, HDRFLAG, EFLAG )
                     CASE( 'POINT' )
-!                        CALL RDSRCIDAPT
+                        CALL RDSRCIDAPT( LINE, CFIP, FCID, PTID, SKID,
+     &                                   SGID, TSCC, NPOLPERLN, 
+     &                                   HDRFLAG, EFLAG )
                     END SELECT
                 CASE( EPSFMT )
 !                    CALL RDEPSAR
@@ -359,12 +398,29 @@ C.................  Process line depending on file format and source category
                         CALL RDSRCNTIAR( LINE, CFIP, TSCC, NPOLPERLN,
      &                                   HDRFLAG, EFLAG )
                     CASE( 'MOBILE' )
-!                        CALL RDNTIMB
+                        CALL RDSRCNTIMB( LINE, CFIP, CLNK, TSCC,
+     &                                   NPOLPERLN, HDRFLAG, EFLAG )
                     END SELECT
                 END SELECT
 
 C.................  Check for header lines
                 IF( HDRFLAG ) CYCLE
+
+C.................  Write first ten lines of inventory to log file
+                IF( NWRLINE < 10 ) THEN
+                    NWRLINE = NWRLINE + 1
+                    TENLINES( NWRLINE ) = BLANK10 // TRIM( LINE )
+                    
+                    IF( NWRLINE == 10 ) THEN
+                        MESG = BLANK10 // 
+     &                      'First 10 lines of current inventory:'
+                        WRITE( LDEV, '(A)' ) TRIM( MESG )
+                        
+                        DO I = 1,NWRLINE
+                            WRITE( LDEV, '(A)' ) TRIM( TENLINES( I ) )
+                        END DO
+                    END IF
+                END IF
 
 C.................  Check that source characteristics are correct
             	IF( .NOT. CHKINT( CFIP ) ) THEN
@@ -391,7 +447,43 @@ C.................  Check that source characteristics are correct
 
 C.................  Check source specific characteristics
                 IF( CATEGORY == 'MOBILE' ) THEN
-                
+
+C.....................  Check if SCC has proper length
+                    IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: SCC code not ',
+     &                         SCCLEN3, ' characters wide at line', IREC
+                        CALL M3MESG( MESG )
+                    END IF
+                    
+C.....................  Ensure that vehicle type is valid
+                    IVT = STR2INT( TSCC( 3:6 ) )
+                    DO J = 1, NVTYPE
+                        IF( IVT == IVTIDLST( J ) ) EXIT
+                    END DO
+                    
+                    IF( J > NVTYPE ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Vehicle type "' //
+     &                         TSCC( 3:6 ) // '" at line ', IREC,
+     &                         ' was not found in list of valid types'
+                        CALL M3MESG( MESG )
+                    END IF
+                    
+C.....................  Ensure tha road class is valid and convert from road class
+                    RWT = STR2INT( TSCC( 8:10 ) )
+                    J = FIND1( RWT, NRCLAS, AMSRDCLS )
+                    
+                    IF( J <= 0 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Road class "' //
+     &                         TSCC( 8:10 ) // '" at line', IREC,
+     &                         ' was not found in list of valid classes'
+                        CALL M3MESG( MESG )
+                    ELSE
+                        RWT = RDWAYTYP( J )
+                    END IF
+
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
                 END IF
@@ -415,8 +507,21 @@ C.................  Build concatenated source information
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                            CHRBLNK3, TCSOURC )
                 CASE( 'MOBILE' )
+                    CALL FLTRNEG( CLNK )
+                    WRITE( CRWT,RWTFMT ) RWT
+                    WRITE( CIVT,VIDFMT ) IVT
+                    
+                    CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, 
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                            TCSOURC )
                 CASE( 'POINT' )
+                    CALL PADZERO( TSCC )
+                
+                    CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, TSCC,
+     &                            CHRBLNK3, CHRBLNK3, TCSOURC )
                 END SELECT
+                
+                CSRC_LEN = LEN_TRIM( TCSOURC )
 
 C.................  Store source info on first time through
                 IF( S == 0 ) THEN
@@ -497,9 +602,9 @@ C.....................  Make sure not to go outside the array
                     
                     IF( FRSNUMS( K,3 ) == J ) THEN
 
-C.........................  If already read NSCSEG-2 records, write line with continuation
+C.........................  If already read NSCSEG-1 records, write line with continuation
 C                           character and start new line
-                        IF( NRECPERLN == NSCSEG-2 ) THEN
+                        IF( NRECPERLN == NSCSEG-1 ) THEN
                             OUTLINE = TRIM( OUTLINE ) // ' \'
                             WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
                             OUTLINE = TRIM( TMPCSOURC( J ) )
@@ -559,22 +664,23 @@ C.............  Check for I/O errors
 
 C.............  Check for end of file            
             IF( IOS < 0 ) EXIT
-            
-C.............  Parse line into segments
-            CALL PARSLINE( LINE, NSCSEG, SCSEGMENT )
 
+C.............  Parse line after source info into segments
+            CALL PARSLINE( LINE( CSRC_LEN+1:LEN_TRIM( LINE ) ), 
+     &                     NSCSEG, SCSEGMENT )
+            
 C.............  Check if this is a continuation of a previous line
-            IF( SCSEGMENT( 1 ) /= TCSOURC ) THEN
+            IF( LINE( 1:CSRC_LEN ) /= TCSOURC ) THEN
                 S = S + 1
             
 C.................  Store information from line
                 CSRCIDX( S ) = S
-                CSOURCA( S ) = SCSEGMENT( 1 )
-                TCSOURC = SCSEGMENT( 1 )
+                CSOURCA( S ) = LINE( 1:CSRC_LEN )
+                TCSOURC = CSOURCA( S )
             END IF
             
-C.............  Loop through remaining segments (file and record numbers)
-            DO I = 2,NSCSEG-1
+C.............  Loop through segments (file and record numbers)
+            DO I = 1,NSCSEG-1
 
 C.................  Exit if segment is blank (reached end of line)
                 IF( SCSEGMENT( I ) == ' ' ) EXIT
