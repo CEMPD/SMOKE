@@ -321,6 +321,7 @@ C           done for each report (it is slow)
 
 C.............  Determine width of source chararactistic columns over the
 C               whole inventory
+            SWIDTH = 0   ! initialize array
             DO S = 1, NSRC
 
                 K = 0
