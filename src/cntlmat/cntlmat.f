@@ -38,33 +38,34 @@ C**********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY:
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY:
 
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, BYEAR
+
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters        
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         GETIFDSC
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
         
-        EXTERNAL        CRLF, ENVYN, GETIFDSC, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, GETIFDSC, PROMPTFFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -86,24 +87,26 @@ C...........   Allocatable local arrays
         LOGICAL, ALLOCATABLE :: TFLAG( : )  !  flags:  track these sources
 
 C...........   Logical names and unit numbers
-        INTEGER         ATMPDEV      !  file unit no. for tmp ADD file
         INTEGER         CDEV         !  control file unit no.
         INTEGER         CTMPDEV      !  file unit no. for tmp CTL file
         INTEGER         GTMPDEV      !  file unit no. for tmp CTG file
+        INTEGER         IDEV         !  tmp unit number if inven is map-formatted
         INTEGER         LDEV         !  log file unit no.
         INTEGER         LTMPDEV      !  file unit no. for tmp ALW file
+        INTEGER         MTMPDEV      !  file unit no. for tmp MACT file
+        INTEGER         PTMPDEV      !  file unit no. for tmp PROJ file
         INTEGER         SDEV         !  ASCII part of inventory unit no.
-        INTEGER         TDEV         !  tracking file unit no.
+        INTEGER      :: WDEV = 0     !  warnings/error unit no.
 
-        CHARACTER*16    ANAME   ! logical name for additive control matrix
+        CHARACTER*16    ANAME   ! logical name for ASCII inventory input file
         CHARACTER*16    ENAME   ! logical name for i/o api inventory input file
-        CHARACTER*16    INAME   ! logical name for ASCII inventory input file
+        CHARACTER*16    INAME   ! tmp logical name for inven file of unknown fmt
         CHARACTER*16    MNAME   ! logical name for multiplicative control matrix
         CHARACTER*16    PNAME   ! logical name for projection matrix
         CHARACTER*16    SNAME   ! logical name for ascii inventory input file
 
 C...........   Other local variables
-        INTEGER         CPYEAR       !  control packet year to project to
+        INTEGER      :: CPYEAR = -1  !  control packet year to project to
         INTEGER         IOS          !  I/O status
         INTEGER         ENLEN        !  length of the emissions inven name
         INTEGER         NCPE         !  no control packet entries
@@ -112,12 +115,12 @@ C...........   Other local variables
         INTEGER         SYEAR        !  year for projecting from
 
         LOGICAL      :: CFLAG   = .FALSE.  ! true: control cntls in use
-        LOGICAL      :: DFLAG   = .FALSE.  ! true: additive cntls in use
         LOGICAL      :: EFLAG   = .FALSE.  ! true: error has occurred
         LOGICAL      :: GFLAG   = .FALSE.  ! true: ctg cntls in use
         LOGICAL      :: JFLAG   = .FALSE.  ! true: projections in use
         LOGICAL      :: KFLAG   = .FALSE.  ! true: tracking file in use
         LOGICAL      :: LFLAG   = .FALSE.  ! true: allowable cntls in use
+        LOGICAL      :: MFLAG   = .FALSE.  ! true: mact cntls is use
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
         LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
         LOGICAL      :: OFLAG   = .FALSE.  ! true: create report
@@ -161,47 +164,50 @@ C.........  Set source category based on environment variable setting
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.........   Get file names and open files
-        ENAME = PROMPTMFILE( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENLEN = LEN_TRIM( ENAME )
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
+
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
         CDEV = PROMPTFFILE( 
      &           'Enter logical name for ASCII CONTROL PACKETS file',
      &           .TRUE., .TRUE., 'GCNTL', PROGNAME )
 
-C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESC3( ENAME ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:ENLEN ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        WDEV = PROMPTFFILE( 
+     &           'Enter logical name for output WARNINGS/ERRORS file',
+     &           .FALSE., .TRUE., CRL//'CTLWARN', PROGNAME )
 
-C.........  Otherwise, store source-category-specific header information, 
+C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
-        ELSE
+        CALL GETSINFO( ENAME )
 
-            CALL GETSINFO
+C.........  Check for future-year inventory file
+        PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
-c note: should BYEAR be set in GETSINFO since it is part of MODINFO?  This
-c    n: would affect a number of other programs as well.
-
-C.............  Determine if file is a base or future-year inventory file
-            BYEAR = GETIFDSC( FDESC3D, '/BASE YEAR/'     , .TRUE.  )
-            PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
-
-C.............  Set starting year on which to base possible projections created
-C               in this program
-            SYEAR = BYEAR
-            IF( PYEAR .GT. 0 ) SYEAR = PYEAR
-
-        ENDIF
+C.........  Set starting year on which to base possible projections created
+C           in this program
+        SYEAR = BYEAR
+        IF( PYEAR .GT. 0 ) SYEAR = PYEAR
 
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'INVYR'
@@ -210,15 +216,20 @@ C.........  Set inventory variables to read for all source categories
 
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 3
+            NINVARR = 6
+            IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 5 ) = 'CMACT'
+            IVARNAMS( 6 ) = 'CSRCTYP'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
             NINVARR = 4
             IVARNAMS( 4 ) = 'CVTYPE'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-            NINVARR = 4
+            NINVARR = 6
             IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 5 ) = 'CMACT'
+            IVARNAMS( 6 ) = 'CSRCTYP'
 
         END IF
 
@@ -234,23 +245,30 @@ C.........  Initialize arrays
         XRFCNT = 0  ! array
 
 C.........  Allocate memory for control packet information in input file.
-        CALL ALOCPKTS( CDEV, SYEAR, CPYEAR, PKTCNT, 
+        CALL ALOCPKTS( CDEV, WDEV, SYEAR, CPYEAR, PKTCNT, 
      &                 PKTBEG, XRFCNT )
 
 C.........  Set the flags that indicate which packets are valid
         GFLAG = ( PKTCNT( 1 ) .GT. 0 )
         CFLAG = ( PKTCNT( 2 ) .GT. 0 )
         LFLAG = ( PKTCNT( 3 ) .GT. 0 )
-        DFLAG = ( PKTCNT( 4 ) .GT. 0 )
         RFLAG = ( PKTCNT( 5 ) .GT. 0 )
         JFLAG = ( PKTCNT( 6 ) .GT. 0 )
         SFLAG = ( PKTCNT( 7 ) .GT. 0 )
+        MFLAG = ( PKTCNT( 8 ) .GT. 0 )
 
 C.........  Cannot have CONTROL and EMS_CONTROL packet in same inputs
         IF( CFLAG .AND. SFLAG ) THEN
            MESG = 'CONTROL and EMS_CONTROL packets cannot be ' //
      &            'in the same input file'
            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Cannot have projection packet and invalid projection year
+        IF( JFLAG .AND. CPYEAR .LT. 1900 ) THEN
+            MESG = 'Misformatted projection packet header is returning '
+     &             // 'year < 1900'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Process packets: this means read packet, sort it, group it into 
@@ -263,27 +281,31 @@ C           each packet type while determining the pollutants to use in opening
 C           the final output files.
 
         ACTION = 'PROCESS'
-        CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV,  
-     &                CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
+        CALL PKTLOOP( CDEV, PTMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV, 
+     &                WDEV, CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, 
+     &                XRFCNT )
+
+C.........  Process projection matrix that depends on pol/acts...
+        IF( JFLAG ) THEN
+
+            CALL GENPROJ( PTMPDEV, CPYEAR, ENAME )
+
+        END IF
 
 C.........  Process control matrices that depend on pollutants...
 
 C.........  Multiplicative matrix
-        IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG ) THEN
+        IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG .OR. MFLAG ) THEN
 
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
-            CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV,
+            CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV,
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
-     &                     LFLAG, SFLAG )
-
-C STOPPED HERE: Need to write opencmat, genaddc, report post-processor
+     &                     LFLAG, SFLAG, MFLAG )
         END IF
 
-C.........  Open final report file
-
 C.........  Post-process temporary files to create final report file
-        CALL WCNTLREP( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV )
+        CALL WCNTLREP( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV )
 
 C.........  Successful completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )

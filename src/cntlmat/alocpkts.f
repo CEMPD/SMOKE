@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALOCPKTS( FDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
+        SUBROUTINE ALOCPKTS( FDEV, WDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
      &                       XRFCNT )
 
 C***********************************************************************
@@ -41,13 +41,21 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: CUTCTG, FACCTG, FACMACT, FACRACT, 
+     &                      ICTLEQUP, ICTLSIC, FACCEFF, FACREFF, 
+     &                      FACRLPN, IALWSIC, FACALW, EMCAPALW,
+     &                      EMREPALW, IREASIC, EMREPREA, PRJFCREA,
+     &                      MKTPNREA, CSCCREA, CSPFREA, IPRJSIC,
+     &                      PRJFC, IEMSSIC, BASCEFF, BASREFF, BASRLPN, 
+     &                      EMSCEFF, EMSREFF, EMSRLPN, EMSPTCF, EMSTOTL,
+     &                      CTLRPLC, MACEXEFF, MACNWEFF, MACNWFRC,
+     &                      CMACSRCTYP
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY:
 
         IMPLICIT NONE
         
@@ -64,6 +72,7 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   SUBROUTINE ARGUMENTS:
 
         INTEGER     , INTENT (IN) :: FDEV      ! in file unit number
+        INTEGER     , INTENT (IN) :: WDEV      ! errors/warning file
         INTEGER     , INTENT (IN) :: INYEAR    ! year to project from 
         INTEGER     , INTENT(OUT) :: CPYEAR    ! year to project to
         INTEGER     , INTENT(OUT) :: PKTCNT( NPACKET ) ! count of packet recs
@@ -72,10 +81,11 @@ C...........   SUBROUTINE ARGUMENTS:
 
 C...........   Logical names and unit numbers
 
-        INTEGER         ADEV      ! file unit no. for tmp ADD file
+        INTEGER         PDEV      ! file unit no. for tmp PROJ file
         INTEGER         CDEV      ! file unit no. for tmp CTL file
         INTEGER         GDEV      ! file unit no. for tmp CTG file
         INTEGER         LDEV      ! file unit no. for tmp ALW file
+        INTEGER         MDEV      ! file unit no. for tmp MACT file
 
 C...........   Other local variables
 
@@ -131,13 +141,17 @@ C           are not permitted.
 
             END IF
 
-            IF( LINE .EQ. ' ' ) CYCLE  ! Skip blank lines
+C.............  Skip blank lines and comment lines
+            IF( LINE .EQ. ' ' ) CYCLE
+            IF( LINE( 1:1 ) == CINVHDR ) CYCLE
 
 C.............  If inside packet...
             IF( INSIDE ) THEN
-                
-                I = INDEX( LINE, '/END/' )
-                J = INDEX( LINE, '/'     )
+
+                J = INDEX( LINE, '!' )
+                IF ( J .LE. 0 ) J = LEN_TRIM( LINE )
+                I = INDEX( LINE( 1:J ), '/END/' )
+                J = INDEX( LINE( 1:J ), '/'     )
 
 C.................  Check for /END/ of packet
                 IF( I .GT. 0 ) THEN
@@ -263,11 +277,14 @@ C.........  CONTROL packet
         CALL CHECKMEM( IOS, 'FACREFF', PROGNAME )
         ALLOCATE( FACRLPN( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FACRLPN', PROGNAME )
+        ALLOCATE( CTLRPLC( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTLRPLC', PROGNAME )
         ICTLEQUP = 0   ! array
         ICTLSIC  = 0   ! array
         FACCEFF  = 0.  ! array
         FACREFF  = 0.  ! array
         FACRLPN  = 0.  ! array
+        CTLRPLC = .FALSE.  ! array
 
 C.........  ALLOWABLE packet
         J = PKTCNT( 3 ) 
@@ -283,12 +300,6 @@ C.........  ALLOWABLE packet
         FACALW   = 0. ! array
         EMCAPALW = 0. ! array
         EMREPALW = 0. ! array
-
-C.........  ADD packet
-        J = PKTCNT( 4 ) 
-        ALLOCATE( EMADD( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMADD', PROGNAME )
-        EMADD = 0.  ! array
 
 C.........  REACTIVITY packet
         J = PKTCNT( 5 ) 
@@ -348,6 +359,21 @@ C.........  EMS-95 CONTROL packet
         EMSPTCF  = 1.   ! array - initialize because it will be used
         EMSTOTL  = 0.   ! array - initialize because it will be checked
 
+C.........  MACT packet
+        J = PKTCNT( 8 )
+        ALLOCATE( CMACSRCTYP( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CMACSRCTYP', PROGNAME )
+        ALLOCATE( MACEXEFF( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MACEXEFF', PROGNAME )
+        ALLOCATE( MACNWEFF( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MACNWEFF', PROGNAME )
+        ALLOCATE( MACNWFRC( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MACNWFRC', PROGNAME )
+        CMACSRCTYP = '00'  ! array
+        MACEXEFF = 0.  ! array
+        MACNWEFF = 0.  ! array
+        MACNWFRC = 0.  ! array
+
 C.........  Make sure that at least one packet is defined
         J = 0
         DO I = 1, NPACKET
@@ -368,8 +394,9 @@ C           find SIC NE 0 and SCC EQ 0, and expand the memory requirements
 C           accordingly.
 
         ACTION = 'COUNT'
-        CALL PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
-     &                ACTION, BLANK5, PKTCNT, PKTBEG, XRFCNT )
+        CALL PKTLOOP( FDEV, PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, 
+     &                CPYEAR, ACTION, BLANK5, PKTCNT, PKTBEG, 
+     &                XRFCNT )
 
 C.........  Rewind file
         REWIND( FDEV )

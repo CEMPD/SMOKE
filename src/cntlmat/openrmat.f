@@ -41,25 +41,26 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CATLEN, CRL, NSRC
+
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                GETIFDSC   
         INTEGER                PROMPTFFILE
-        CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL     CRLF, GETCFDSC, GETIFDSC, PROMPTFFILE, PROMPTMFILE, 
+        EXTERNAL     CRLF, GETCFDSC, GETIFDSC, PROMPTFFILE
      &               VERCHAR
 
 C...........   LOCAL PARAMETERS
@@ -84,13 +85,13 @@ C.........  SUBROUTINE ARGUMENTS
       
 C.........  Other local variables
         INTEGER          I, J           !  counters and indices
+        INTEGER          IOS            !  i/o status
 
         CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
         CHARACTER*300          MESG     ! message buffer
 
         CHARACTER(LEN=IOVLEN3) CPOL     ! pollutant name buffer
         CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
-        CHARACTER(LEN=IOVLEN3) UNITS    ! emissions units
 
         CHARACTER*16 :: PROGNAME = 'OPENRMAT' ! program name
 
@@ -99,7 +100,7 @@ C   begin body of subroutine OPENRMAT
 
 C.........  Get header information from inventory file
 
-        IF ( .NOT. DESC3( ENAME ) ) THEN
+        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -107,8 +108,6 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-        J       = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        UNITS   = UNITS3D( J + 1 )
 
 C.........  Initialize variable names for I/O API files
         SVNAMES = ' '  ! Array
@@ -118,46 +117,61 @@ C.........  Initialize I/O API output file headers
         CALL HDRMISS3
 
 C.........  Set I/O API header parms that need values
+        NVARSET = MIN( NBASVAR + NMSPC, MXVARS3 )
         NROWS3D = NSREAC
-        NVARS3D = MIN( NBASVAR + NMSPC, MXVARS3 )
         NTHIK3D = NSRC
 
         FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' reactivity matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 
-        WRITE( FDESC3D( 4 ), '(A,I4)' ) '/CTYPE/ ', CTYPREAC
         WRITE( FDESC3D( 5 ), '(A,I4)' ) '/BASE YEAR/ ', BYEARIN
         WRITE( FDESC3D( 6 ), '(A,I4)' ) '/PROJECTED YEAR/ ', PYEAR
         WRITE( FDESC3D( 7 ), '(A,I4)' ) '/SPECIES VARS/ ', NMSPC
+        WRITE( FDESC3D( 8 ), '(A,I4)' ) '/CTYPE/ ', CTYPREAC
 
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
+        IF( ALLOCATED( VTYPESET ) ) 
+     &      DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+C.........  Also deallocate the number of variables per file so
+C           that this will be set automatically by openset
+        DEALLOCATE( VARS_PER_FILE )
+
 C.........  Set up non-speciation variables
         J = 1
-        VNAME3D( J ) = 'SRCID'
-        VTYPE3D( J ) = M3INT
-        UNITS3D( J ) = 'n/a'
-        VDESC3D( J ) = 'Inventory source ID (position)'
+        VNAMESET( J ) = 'SRCID'
+        VTYPESET( J ) = M3INT
+        VUNITSET( J ) = 'n/a'
+        VDESCSET( J ) = 'Inventory source ID (position)'
         J = J + 1
 
-        VNAME3D( J )= 'REPEMIS'
-        VTYPE3D( J )= M3REAL
-        UNITS3D( J )= UNITS
-        VDESC3D( J )= 'Reactivity base-year emissions' 
+        VNAMESET( J )= 'REPEMIS'
+        VTYPESET( J )= M3REAL
+        VUNITSET( J )= 'tons/day'
+        VDESCSET( J )= 'Reactivity base-year emissions' 
         J = J + 1
 
-        VNAME3D( J )= 'PRJFAC'
-        VTYPE3D( J )= M3REAL
-        UNITS3D( J )= 'n/a'
-        VDESC3D( J )= 'Reactivity projection factor'
+        VNAMESET( J )= 'PRJFAC'
+        VTYPESET( J )= M3REAL
+        VUNITSET( J )= 'n/a'
+        VDESCSET( J )= 'Reactivity projection factor'
 
         J = J + 1
-        VNAME3D( J ) = 'MKTPEN'
-        VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'fraction'
-        VDESC3D( J ) = 'Reactivity control market penetration'
+        VNAMESET( J ) = 'MKTPEN'
+        VTYPESET( J ) = M3REAL
+        VUNITSET( J ) = 'fraction'
+        VDESCSET( J ) = 'Reactivity control market penetration'
 
 C.........  Make sure program has not been modified improperly to cause a 
 C           hard-to-detect error
@@ -180,8 +194,8 @@ C               will be easier to change these to have different name roots
 C               if needed in the future
 C.............  Check total number of output variables with I/O API max.  
             IF( J .LE. MXVARS3 ) THEN
-                VTYPE3D( J ) = M3REAL
-                VDESC3D( J ) = CPOL // SPJOIN // SPECIES( I )               
+                VTYPESET( J ) = M3REAL
+                VDESCSET( J ) = CPOL // SPJOIN // SPECIES( I )               
             ENDIF
 
             WRITE( SVNAMES( I ), '(A4,I3.3)' ) 'SVAR', I
@@ -211,18 +225,18 @@ C.........  Set up variables specifically for mass-based file, and open it
             FDESC3D( 4 ) = '/SMATTYPE/ ' // ' Mass'
 
             I = 0
-            DO J = NBASVAR+1, NVARS3D
+            DO J = NBASVAR+1, NVARSET
 
                 I = I + 1
-                VNAME3D( J ) =  SVNAMES( I ) 
-                UNITS3D( J ) = 'gm/ton'
+                VNAMESET( J ) =  SVNAMES( I ) 
+                VUNITSET( J ) = 'gm/ton'
 
             END DO
 
             MESG = 'I/O API MASS-BASED REACTIVITY MATRIX for ' // RPOL
 
-            NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_S', 
-     &                            PROGNAME )
+            NAMBUF = PROMPTSET( MESG, FSUNKN3, CRL // 'RMAT_S', 
+     &                          PROGNAME )
             SNAME = NAMBUF
 
         ENDIF
@@ -233,18 +247,18 @@ C.........  Set up variables specifically for mole-based file, and open it
             FDESC3D( 4 ) = '/SMATTYPE/ ' // ' Mole'
 
             I = 0
-            DO J = NBASVAR+1, NVARS3D
+            DO J = NBASVAR+1, NVARSET
 
                 I = I + 1
-                VNAME3D( J ) =  LVNAMES( I ) 
-                UNITS3D( J ) = 'mole/ton'
+                VNAMESET( J ) =  LVNAMES( I ) 
+                VUNITSET( J ) = 'mole/ton'
 
             END DO
 
             MESG = 'I/O API MOLE-BASED REACTIVITY MATRIX for ' // RPOL
 
-            NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'RMAT_L', 
-     &                            PROGNAME )
+            NAMBUF = PROMPTSET( MESG, FSUNKN3, CRL // 'RMAT_L', 
+     &                          PROGNAME )
             LNAME = NAMBUF
 
         ENDIF

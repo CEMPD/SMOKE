@@ -1,6 +1,6 @@
 
         SUBROUTINE RDPACKET( FDEV, PKTTYP, FIXEDFMT, USEPOL, IREC, 
-     &                       PKTINFO, EFLAG )
+     &                       PKTINFO, CFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -42,10 +42,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPPA, EANAM
 
         IMPLICIT NONE
 
@@ -69,10 +69,11 @@ C...........   SUBROUTINE ARGUMENTS:
         LOGICAL     , INTENT(IN OUT) :: USEPOL( NIPPA ) ! true: use pollutant
         INTEGER     , INTENT(IN OUT) :: IREC      ! file line number
         TYPE( CPACKET ), INTENT(OUT) :: PKTINFO   ! packet information
+        LOGICAL        , INTENT(OUT) :: CFLAG     ! true: line is a comment
         LOGICAL        , INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: MXSEG = 16   ! number of potential line segments
+        INTEGER, PARAMETER :: MXSEG = 17   ! number of potential line segments
 
 C...........   Other arrays
         CHARACTER*20 SEGMENT( MXSEG )      ! Segments of parsed packet lines
@@ -113,6 +114,13 @@ C   Begin body of subroutine RDPACKET
 
         END IF
 
+C.........  Check for comment lines
+        CFLAG = .FALSE.
+        IF( LINE( 1:1 ) == CINVHDR ) THEN
+            CFLAG = .TRUE.
+            RETURN
+        END IF
+
 C.........  When packet has a free format...
         IF( .NOT. FIXEDFMT ) THEN
 
@@ -121,9 +129,6 @@ C               for "list-formatted" in fortran, but not requiring
 C               quotes around the text strings
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
-C.............  Store country/state/county code for any packet format
-            PKTINFO%CFIP = SEGMENT( 1 )
-
         END IF
 
 C.........  Process the line of data, depending on packet type
@@ -131,39 +136,54 @@ C.........  Process the line of data, depending on packet type
 
         CASE( 'CTG' )
             PKTINFO%CSIC =           ' '
+            PKTINFO%CFIP =           SEGMENT( 1 )
             PKTINFO%TSCC =           SEGMENT( 2 )
             PKTINFO%CPOL =           SEGMENT( 3 )
             PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
             PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
             PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
 
+C.........  Check to see if cutoff value is missing, and give error
+C           if it is.
+            IF ( PKTINFO%FAC1 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: CUTOFF value missing '//
+     &                'from CTG packet record at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
 C.........  Check to see if last column is blank. If blank, then
 C           set PKTINFO%FAC4 = -9 and issue warning.
             IF ( SEGMENT( 7 ) .EQ. ' ' ) THEN
                PKTINFO%FAC4 = -9
-               WRITE( MESG, 94020 ) 'RACT value missing from CTG' 
-     &         // ' packet record at line', IREC
-               CALL M3WARN( PROGNAME, 0, 0, MESG )
+               WRITE( MESG, 94020 ) 'WARNING: RACT value missing from'//
+     &                ' CTG packet record at line', IREC
+               CALL M3MESG( MESG )
             ELSE
                PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
             END IF
 
         CASE( 'CONTROL' )
-            PKTINFO%TSCC =           SEGMENT( 2 )
-            PKTINFO%CPOL =           SEGMENT( 3 )
-            PKTINFO%FAC1 = STR2INT ( SEGMENT( 4 ) )
-            PKTINFO%FAC2 = STR2REAL( SEGMENT( 5 ) )
-            PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
-            PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
-            PKTINFO%CSIC =           SEGMENT( 8 )
-            PKTINFO%PLT  =           SEGMENT( 9 )
-            PKTINFO%CHAR1=           SEGMENT( 10 )
-            PKTINFO%CHAR2=           SEGMENT( 11 )
-            PKTINFO%CHAR3=           SEGMENT( 12 )
-            PKTINFO%CHAR4=           SEGMENT( 13 )
-            PKTINFO%CHAR5=           SEGMENT( 14 )
+            PKTINFO%CFIP    =           SEGMENT( 1 )
+            PKTINFO%TSCC    =           SEGMENT( 2 )
+            PKTINFO%CPOL    =           SEGMENT( 3 )
+            PKTINFO%FAC1    = STR2INT ( SEGMENT( 4 ) )
+            PKTINFO%FAC2    = STR2REAL( SEGMENT( 5 ) )
+            PKTINFO%FAC3    = STR2REAL( SEGMENT( 6 ) )
+            PKTINFO%FAC4    = STR2REAL( SEGMENT( 7 ) )
+            PKTINFO%CSIC    =           SEGMENT( 8 )
+            PKTINFO%CMCT    =           SEGMENT( 9 )
+            PKTINFO%APPFLAG = ADJUSTL ( SEGMENT( 10 ) )
+            PKTINFO%REPFLAG = ADJUSTL ( SEGMENT( 11 ) )
+            PKTINFO%PLT     =           SEGMENT( 12 )
+            PKTINFO%CHAR1   =           SEGMENT( 13 )
+            PKTINFO%CHAR2   =           SEGMENT( 14 )
+            PKTINFO%CHAR3   =           SEGMENT( 15 )
+            PKTINFO%CHAR4   =           SEGMENT( 16 )
+            PKTINFO%CHAR5   =           SEGMENT( 17 )
 
         CASE( 'ALLOWABLE' )
+            PKTINFO%CFIP =           SEGMENT( 1 )
             PKTINFO%TSCC =           SEGMENT( 2 )
             PKTINFO%CPOL =           SEGMENT( 3 )
             PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
@@ -179,13 +199,15 @@ C           set PKTINFO%FAC4 = -9 and issue warning.
 
 C.........  Check to see if both CAP and REPLACE are missing. If so, issue
 C           a warning.
-            IF ( PKTINFO%FAC2 .LT. 0 .AND. PKTINFO%FAC3 .LT. 0) THEN
-               WRITE( MESG, 94020 ) 'Neither CAP or REPLACE defined'
-     &         // ' in allowable packet record at line', IREC
-               CALL M3WARN( PROGNAME, 0, 0, MESG )
+            IF ( PKTINFO%FAC2 .LT. 0 .AND. PKTINFO%FAC3 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Neither CAP or REPLACE '//
+     &                'defined in allowable packet record at line', IREC
+                CALL M3MSG2( MESG )
             END IF
 
         CASE( 'REACTIVITY' )
+            PKTINFO%CFIP   =           SEGMENT( 1 )
             PKTINFO%TSCC   =           SEGMENT( 2 )
             PKTINFO%CPOL   =           SEGMENT( 3 )
             PKTINFO%FAC1   = STR2REAL( SEGMENT( 4 ) )
@@ -204,10 +226,12 @@ C           a warning.
             CALL PADZERO( PKTINFO%NSCC )
 
         CASE( 'PROJECTION' )
+            PKTINFO%CFIP  =           SEGMENT( 1 )
             PKTINFO%TSCC  =           SEGMENT( 2 )
-            PKTINFO%FAC1  = STR2REAL( SEGMENT( 3 ) ) 
-            PKTINFO%CPOL  =            ' '          !     SEGMENT( 4 )
-            PKTINFO%CSIC  =           SEGMENT( 4 )  !     SEGMENT( 5 )
+            PKTINFO%FAC1  = STR2REAL( SEGMENT( 3 ) )
+            PKTINFO%CPOL  =           SEGMENT( 4 )
+            PKTINFO%CSIC  =           SEGMENT( 5 )
+            PKTINFO%CMCT  =           SEGMENT( 6 )
             PKTINFO%PLT   = ' '
             PKTINFO%CHAR1 = ' '
             PKTINFO%CHAR2 = ' '
@@ -238,6 +262,61 @@ C           a warning.
             PKTINFO%CHAR4= ' '
             PKTINFO%CHAR5= ' '
             PKTINFO%NSCC = ADJUSTL ( LINE(  74:81  ) ) 
+
+C.........  Check to see if any of the factors are negative
+            IF ( PKTINFO%FAC1 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Base year control '//
+     &                 'efficiency misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC2 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Base year rule '//
+     &                 'effectiveness misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC3 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Base year rule '//
+     &                 'penetration misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC4 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Future year control '//
+     &                 'efficiency misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC5 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Future year rule '//
+     &                 'effectiveness misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF ( PKTINFO%FAC6 .LT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94020 ) 'ERROR: Future year rule '//
+     &                 'penetration misformatted at line', IREC
+                CALL M3MSG2( MESG )
+            END IF
+            
+        CASE( 'MACT' )
+            PKTINFO%CFIP    = ' '
+            PKTINFO%CSIC    = ' '
+            PKTINFO%CMCT    =           SEGMENT( 1 )
+            PKTINFO%TSCC    =           SEGMENT( 2 )
+            PKTINFO%CSTYP   =           SEGMENT( 3 )
+            PKTINFO%APPFLAG = ADJUSTL ( SEGMENT( 4 ) )
+            PKTINFO%CPOL    =           SEGMENT( 5 )
+            PKTINFO%FAC1    = STR2REAL( SEGMENT( 6 ) )
+            PKTINFO%FAC2    = STR2REAL( SEGMENT( 7 ) )
+            PKTINFO%FAC3    = STR2REAL( SEGMENT( 8 ) )
 
         CASE DEFAULT
             MESG = 'INTERNAL ERROR: Packet type ' // PKTTYP // 

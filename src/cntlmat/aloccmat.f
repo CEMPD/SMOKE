@@ -77,7 +77,7 @@ C...........   Other local variables
         LOGICAL       :: GFLAG    = .FALSE. ! true: CTG cntl packet exists
         LOGICAL       :: CFLAG    = .FALSE. ! true: CONTROL cntl packet exists
         LOGICAL       :: LFLAG    = .FALSE. ! true: ALLOWABLE cntl packet exists
-        LOGICAL       :: AFLAG    = .FALSE. ! true: ADD cntl packet exists
+        LOGICAL       :: PFLAG    = .FALSE. ! true: PROJECTION packet exists
 
         CHARACTER*300   MESG        ! message buffer
 
@@ -95,7 +95,7 @@ C               tables
             GFLAG = ALLOCATED( CUTCTG )
             CFLAG = ALLOCATED( FACCEFF )
             LFLAG = ALLOCATED( FACALW )
-            AFLAG = ALLOCATED( EMADD )
+            PFLAG = ALLOCATED( PRJFC )
 
             NGSZ = NIPPA   ! Number of pollutant/activity in each group
             NGRP = 1       ! Number of groups
@@ -104,17 +104,10 @@ C               tables
                 IF( GFLAG ) ALLOCATE( CTGIDX( NSRC, NGSZ ), STAT=IOS1 )
                 IF( CFLAG ) ALLOCATE( CTLIDX( NSRC, NGSZ ), STAT=IOS2 )
                 IF( LFLAG ) ALLOCATE( ALWIDX( NSRC, NGSZ ), STAT=IOS3 )
-
-                IF( CFLAG .OR. GFLAG .OR. LFLAG )
-     &              ALLOCATE( PCUMATX( NSRC, NGSZ ), STAT=IOS4 )
-
-                IF( AFLAG ) THEN
-                    ALLOCATE( ADDIDX ( NSRC, NGSZ ), STAT=IOS5 )
-                    ALLOCATE( PCAMATX( NSRC, NGSZ ), STAT=IOS6 )
-                END IF
+                IF( PFLAG ) ALLOCATE( PRJIDX( NSRC, NGSZ ), STAT=IOS4 )
 
                 IF( IOS1 .GT. 0 .OR. IOS2 .GT. 0 .OR. IOS3 .GT. 0 .OR.
-     &              IOS4 .GT. 0 .OR. IOS5 .GT. 0 .OR. IOS6 .GT. 0 ) THEN
+     &              IOS4 .GT. 0  ) THEN
 
                     IF( NGSZ .EQ. 1 ) THEN
                         MEM = 8 * NSRC * 31    ! Assume 8-byte reals
@@ -128,8 +121,7 @@ C               tables
                     NGRP = NGRP + 1
                     NGSZ = NGSZ / NGRP + ( NIPPA - NGSZ * NGRP )
 
-                    DEALLOCATE( CTGIDX, CTLIDX, ALWIDX, PCUMATX, ADDIDX,
-     &                          PCAMATX )
+                    DEALLOCATE( CTGIDX, CTLIDX, ALWIDX, PRJIDX )
 
                 ELSE
                     EXIT

@@ -39,18 +39,20 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: NVCMULT, PNAMMULT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CATLEN, CRL, NSRC
+
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
@@ -71,12 +73,12 @@ C.........  SUBROUTINE ARGUMENTS
 
 C.........  Other local variables
         INTEGER          J              !  counters and indices
+        INTEGER          IOS            !  i/o status
 
         CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
         CHARACTER*300          MESG     ! message buffer
 
         CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
-        CHARACTER(LEN=IOVLEN3) UNITS    ! emissions units
 
         CHARACTER*16 :: PROGNAME = 'OPENCMAT' ! program name
 
@@ -85,7 +87,7 @@ C   begin body of subroutine OPENCMAT
 
 C.........  Get header information from inventory file
 
-        IF ( .NOT. DESC3( ENAME ) ) THEN
+        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -93,15 +95,13 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-        J       = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        UNITS   = UNITS3D( J + 1 )
 
 C.........  Initialize I/O API output file headers
         CALL HDRMISS3
 
 C.........  Set I/O API header parms that need values
         NROWS3D = NSRC
-        NVARS3D = NVCMULT
+        NVARSET = NVCMULT
 
         FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' control matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
@@ -111,29 +111,32 @@ C.........  Set I/O API header parms that need values
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
-C.........  Set up non-speciation variables
-        DO J = 1,NVCMULT
+C.........  Deallocate, then allocate, output arrays
+        IF( ALLOCATED( VTYPESET ) )
+     &      DEALLOCATE( VNAMESET, VTYPESET, VUNITSET, VDESCSET )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
 
-           VNAME3D( J )= PNAMMULT( J )
-           VTYPE3D( J )= M3REAL
-           UNITS3D( J )= 'fraction'
-           VDESC3D( J )= 'Multiplicative control factor for pollutant '
-     &                   // PNAMMULT( J )
+C.........  Also deallocate the number of variables per file so
+C           that this will be set automatically by openset
+        DEALLOCATE( VARS_PER_FILE )
+
+C.........  Set up non-speciation variables
+        DO J = 1,NVARSET
+
+           VNAMESET( J )= PNAMMULT( J )
+           VTYPESET( J )= M3REAL
+           VUNITSET( J )= 'fraction'
+           VDESCSET( J )= 'Multiplicative control factor for pollutant '
+     &                   // TRIM( PNAMMULT( J ) )
 
         END DO
-
-C.........  Error if number of variables is passed maximum because we can't
-C           store the names of the variables.
-C.........  DO NOT end program here because it will be ended when the write
-C           attempt is made for these extra variables.
-        IF( J .GT. MXVARS3 ) THEN
-
-            WRITE( MESG, 94010 ) 
-     &             'Maximum I/O API variables exceeded:' //
-     &             CRLF() // BLANK10 // 'Max: ', MXVARS3, 'Actual:', J
-            CALL M3MSG2( MESG )
-
-        ENDIF
 
         MESG = 'Enter logical name for control matrix...'
         CALL M3MSG2( MESG )
@@ -142,8 +145,7 @@ C.........  Open control matrix.
 C.........  Using NAMBUF is needed for HP to ensure string length consistencies
         MESG = 'I/O API ' // MATTYP // ' CONTROL MATRIX'
 
-        NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'CMAT', 
-     &                        PROGNAME )
+        NAMBUF = PROMPTSET( MESG, FSUNKN3, CRL // 'CMAT', PROGNAME )
         MNAME = NAMBUF
 
         RETURN

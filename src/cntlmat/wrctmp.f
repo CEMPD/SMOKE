@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRCTMP( IDEV, IGRP, NGSZ, IDX, VIDX )
+        SUBROUTINE WRCTMP( IDEV, POLID, IDX, VIDX )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -16,7 +16,7 @@ C
 C  REVISION  HISTORY:
 C
 C
-C****************************************************************************/
+C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -41,42 +41,33 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NIPPA
 
         IMPLICIT NONE
 
 C...........   SUBROUTINE ARGUMENTS:
 
-        INTEGER     , INTENT (IN) :: IDEV             ! logical file name
-        INTEGER     , INTENT (IN) :: IGRP             ! pollutant group
-        INTEGER     , INTENT (IN) :: NGSZ             ! # pollutants/group
-        INTEGER     , INTENT (IN) :: IDX(NSRC,NGSZ)   ! index to data tables
-        INTEGER     , INTENT(OUT) :: VIDX(NIPPA)      ! pollutant/act flags
-
+        INTEGER     , INTENT (IN) :: IDEV           ! logical file name
+        INTEGER     , INTENT (IN) :: POLID          ! pollutant number
+        INTEGER     , INTENT (IN) :: IDX ( NSRC )   ! index to data tables
+        INTEGER     , INTENT(OUT) :: VIDX( NIPPA )  ! pollutant/act flags
 
 C...........   Other local variables
 
-        INTEGER   I,J,K,S   ! indices
+        INTEGER   S   ! indices
 
 C***********************************************************************
 C   Begin body of subroutine WRCTMP
 
-        DO I = 1,NGSZ
-
-            K = NGSZ*IGRP - NGSZ + I  ! compute index to master pollutant
-                                      ! list for current pollutant
-
 C.............. Write indices to control factor packets to a temporary file
 C               for only those pollutants that have controls
-            IF ( VIDX( K ) .EQ. 1 ) THEN
-                DO S = 1,NSRC
+        IF ( VIDX( POLID ) .EQ. 1 ) THEN
+            DO S = 1, NSRC
 
-                    WRITE( IDEV, * ) IDX( S, I )
+                WRITE( IDEV, '(I8)' ) IDX( S )
 
-                END DO   ! end source loop
-            END IF
-
-        END DO   ! end pollutant group loop
+            END DO   ! end source loop
+        END IF
 
         RETURN
 

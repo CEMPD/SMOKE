@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a  $(TOOLS_BIN)/libedsstools.debug.a
 #
@@ -18,7 +18,7 @@ debug: cntlmat.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
 #
-CTL=cntlmat.o aloccmat.o alocpkts.o asgncntl.o errpkts.o \
+CTL=cntlmat.o alocpkts.o asgncntl.o errpkts.o \
     fillcdat.o fillcntl.o  genmultc.o genproj.o genreact.o \
     openpmat.o opencmat.o openctmp.o openrmat.o pktloop.o \
     procpkts.o rdpacket.o wrctmp.o wrrmat.o wcntlrep.o
@@ -34,14 +34,14 @@ cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH_DEBUG)
 # Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
-aloccmat.o: $(MODXREF) $(MODCNTRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ aloccmat.f
 alocpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ alocpkts.f
 asgncntl.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgncntl.f
-cntlmat.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
+cntlmat.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ cntlmat.f
 fillcdat.o: $(MODCNTRL) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ fillcdat.f
@@ -53,15 +53,15 @@ genproj.o:  $(MODSOURC) $(MODCNTRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ genproj.f
 genreact.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ genreact.f
-opencmat.o: $(MODCNTRL) $(MODINFO)
+opencmat.o: $(MODCNTRL) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ opencmat.f
-openpmat.o: $(MODINFO)
+openpmat.o: $(MODINFO) $(MODCNTRL) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ openpmat.f
-openrmat.o: $(MODINFO)
+openrmat.o: $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ openrmat.f
 pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ pktloop.f
-procpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
+procpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ procpkts.f
 rdpacket.o: $(MODCNTRL) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
 	$(FC) $(FFLAGS) -c -o $@ rdpacket.f
@@ -73,4 +73,11 @@ wcntlrep.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
 
 #
 clean:
-	rm *.o
+	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

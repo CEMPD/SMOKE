@@ -39,16 +39,22 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, IFIP, ISIC, CLINK
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: RMTXMASS, RMTXMOLE, PCRIDX, PCRREPEM,
+     &                      PCRPRJFC, PCRMKTPN, PCRCSCC, PCRSPROF,
+     &                      RPTDEV, EMREPREA, CSPFREA, PRJFCREA,
+     &                      MKTPNREA, CSCCREA, IREASIC
 
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY: NSPFUL, NSPROF, SPROFN, SPECID, MOLEFACT,
+     &                     MASSFACT, INPRF, MXSPFUL, SPCNAMES, 
+     &                     IDXSPRO, IDXSSPEC, NSPECIES
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPOL, MXCHRS, EINAM, NSRC, CATDESC, BYEAR,
+     &                     NCHARS, SC_BEGP, SC_ENDP, JSCC, CATEGORY, CRL
 
         IMPLICIT NONE
 
@@ -58,6 +64,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
@@ -112,6 +119,7 @@ C...........   Logical names and unit numbers
         INTEGER, SAVE :: PDEV         !  speciation profiles unit no.
         INTEGER       :: SDEV         !  supplement file unit no.
 
+        CHARACTER*16  :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
         CHARACTER*16     SNAME   ! logical name for mass-based react. cntrl mat
         CHARACTER*16     LNAME   ! logical name for mole-based react. cntrl mat
 
@@ -139,13 +147,13 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
         LOGICAL       :: LFLAG    = .FALSE.  ! true: link will be included in report
-        LOGICAL, SAVE :: LO3SEAS  = .FALSE.  ! true: use ozone-season emissions
+        LOGICAL, SAVE :: LAVEDAY  = .FALSE.  ! true: use average day emissions
         LOGICAL, SAVE :: MASSOUT  = .FALSE.  ! true: output mass-based spc facs
         LOGICAL, SAVE :: MOLEOUT  = .FALSE.  ! true: output mole-based spc facs
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point source processing
 
         CHARACTER*4      OUTTYPE             ! speciation output type
-        CHARACTER(LEN=IOVLEN3) VNAM          ! tmp ozone-season var name
+        CHARACTER(LEN=IOVLEN3) VNAM          ! tmp average day var name
         CHARACTER*256    BUFFER              ! string buffer for building output fmt
         CHARACTER*256    HDRSTR              ! string for part of header line
         CHARACTER*256    MESG                ! message buffer
@@ -164,12 +172,12 @@ C.............  Retrieve the type of speciation outputs (mass,mole,or all)
             CALL ENVSTR( 'SPEC_OUTPUT', MESG, 'ALL', OUTTYPE, IOS )
 
 C.............  Get environment variables that control program behavior
-            MESG = 'Use annual or ozone season emissions'
-            LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+            MESG = 'Use annual or average day emissions'
+            LAVEDAY = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
 
 C.........  Open reports file
             RPTDEV( 3 ) = PROMPTFFILE( 
-     &                     'Enter logical name for PROJECTION REPORT', 
+     &                     'Enter logical name for REACTIVITY REPORT', 
      &                    .FALSE., .TRUE., CRL // 'REACREP', PROGNAME )
             RDEV = RPTDEV( 3 )
 
@@ -203,7 +211,7 @@ C               MXSPFUL, which is from module MODSPRO
             CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
 
 C...........  Determine if source category is point sources, or other
-            PFLAG = ALLOCATED( ISIC )
+            PFLAG = ASSOCIATED( ISIC )
 
 C...........  Allocate memory for source-based arrays and initialize
             ALLOCATE( ISREA( NSRC ), STAT=IOS )
@@ -226,8 +234,8 @@ C...........  Write output report header
      &                  'Controls applied with /REACTIVITY/ packet '//
      &                  'for pollutant "' // TRIM( RPOL ) // '".'
 
-                IF( LO3SEAS ) THEN
-                    WRITE(RDEV,93000)'Ozone-season data basis in report'
+                IF( LAVEDAY ) THEN
+                    WRITE(RDEV,93000)'Average day data basis in report'
                 ELSE
                     WRITE(RDEV,93000)'Annual total data basis in report'
                 END IF
@@ -410,8 +418,7 @@ C.........  Read speciation profiles file
         MESG = 'Reading SPECIATION PROFILES file for ' // TRIM( RPOL )
         CALL M3MSG2( MESG )
 
-        CALL RDSPROF( PDEV, RPOL, MXSPFUL, NSPFUL, NMSPC,
-     &                INPRF, SPECID, MOLEFACT, MASSFACT )
+        CALL RDSPROF( PDEV, RPOL, NMSPC )
 
 C.........  Ensure that profile(s) exist for this pollutant
         IF( NSPFUL .LE. 0 ) THEN
@@ -444,11 +451,13 @@ C           sources or mobile sources as well.
         IF( MASSOUT ) THEN
             ALLOCATE( RMTXMASS( NSREAC, NMSPC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'RMTXMASS', PROGNAME )
+            RMTXMASS = 0.
         END IF
 
         IF( MOLEOUT ) THEN
             ALLOCATE( RMTXMOLE( NSREAC, NMSPC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'RMTXMOLE', PROGNAME )
+            RMTXMOLE = 0.
         END IF
 
 C.........  Allocate memory for names of output variables
@@ -458,38 +467,29 @@ C.........  Allocate memory for names of output variables
         CALL CHECKMEM( IOS, 'MOLEONAM', PROGNAME )
 
 C.........  Read emissions for current pollutant from the inventory file
-C.........  Note that ozone-season read will not work if RPOL is
+C.........  Note that average day read will not work if RPOL is
 C           more than 13 characters - must use BLDENAMS routine to
 C           do this correctly.
-        IF( LO3SEAS ) THEN
-            VNAM = OZNSEART // RPOL( 1:MIN( LEN_TRIM( RPOL ), 13 ) )
-            IF( .NOT. READ3( ENAME, VNAM, ALLAYS3, 0, 0, EMIS ) ) THEN
-                MESG = 'Could not read "' // TRIM( RPOL ) //
-     &                '" from inventory file ' // ENAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
+        IF( LAVEDAY ) THEN
+            VNAM = AVEDAYRT // RPOL( 1:MIN( LEN_TRIM( RPOL ), 13 ) )
         ELSE
-            IF( .NOT. READ3( ENAME, RPOL, ALLAYS3, 0, 0, EMIS ) ) THEN
-                MESG = 'Could not read "' // TRIM( RPOL ) //
-     &                '" from inventory file ' // ENAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C...........  Convert to tons/day
-            YFAC = YR2DAY( BYEAR )
-            EMIS = YFAC * EMIS      ! array
-
+            VNAM = RPOL
         END IF
+
+        CALL RDMAPPOL( NSRC, 1, 1, VNAM, EMIS )
 
 C.........  Loop through all sources and store reactivity information for
 C           those that have it
+        YFAC = YR2DAY( BYEAR )  ! for loop below
         N = 0
         DO S = 1, NSRC
 
             K = ISREA( S )       ! index to reactivity data tables
 
             IF( K .GT. 0 ) THEN 
+
+C................. Adjust annual emissions values
+                IF( .NOT. LAVEDAY ) EMIS( S ) = EMIS( S ) * YFAC
 
 C.................  For storing inventory emissions, use the value from the
 C                   reactivity table only if it is greater than zero. Otherwise,

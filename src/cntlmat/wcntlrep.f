@@ -1,5 +1,5 @@
 
-        SUBROUTINE WCNTLREP( ADEV, CDEV, GDEV, LDEV )
+        SUBROUTINE WCNTLREP( CDEV, GDEV, LDEV, MDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -39,13 +39,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: NVCMULT, PNAMMULT, RPTDEV, PCTLFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NCHARS
 
         IMPLICIT NONE
 
@@ -65,26 +65,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
 
-        INTEGER     , INTENT (IN) :: ADEV   ! file unit no. for tmp ADD file
         INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV   ! file unit no. for tmp ALW file
-
-C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: ALWINDX ( :,: ) ! indices to ALW controls table
-        INTEGER, ALLOCATABLE :: CTGINDX ( :,: ) ! indices to CTG controls table
-        INTEGER, ALLOCATABLE :: CTLINDX ( :,: ) ! indices to CTL controls table
-        INTEGER, ALLOCATABLE :: PLTINDX ( : )   ! index from sources to plants
-
-        REAL   , ALLOCATABLE :: CTLEFF  ( : )   ! control efficiency
-        REAL   , ALLOCATABLE :: EMIS    ( : )   ! base inventory emissions
-        REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
-        REAL   , ALLOCATABLE :: RULEFF  ( : )   ! rule effectiveness
-        REAL   , ALLOCATABLE :: RULPEN  ( : )   ! rule penetration
-        REAL   , ALLOCATABLE :: PLTINEM ( :,: ) ! initial emissions
-        REAL   , ALLOCATABLE :: PLTOUTEM( :,: ) ! controlled emissions
-
-        LOGICAL, ALLOCATABLE :: PLTFLAG ( : )   ! true: plant controlled
+        INTEGER     , INTENT (IN) :: MDEV   ! file unit no. for tmp MACT file
 
 C.........  Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
@@ -103,7 +87,7 @@ C...........   Other local variables
         REAL             E_OUT  ! emissions after controls
         REAL             FAC    ! control factor
 
-        CHARACTER*300          MESG       ! message buffer
+        CHARACTER*256          MESG       ! message buffer
         CHARACTER(LEN=IOVLEN3) PNAM       ! tmp pollutant name
 
         CHARACTER*16  :: PROGNAME = 'WCNTLREP' ! program name
@@ -112,16 +96,16 @@ C***********************************************************************
 C   begin body of subroutine WCNTLREP
 
 C.........  Rewind temporary files
-        IF( ADEV .GT. 0 ) REWIND( ADEV )
         IF( CDEV .GT. 0 ) REWIND( CDEV )
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
+        IF( MDEV .GT. 0 ) REWIND( MDEV )
 
 C.........  Open reports file
-        IF( MAX( ADEV, CDEV, GDEV, LDEV ) .GT. 0 ) THEN
+        IF( MAX( CDEV, GDEV, LDEV, MDEV ) .GT. 0 ) THEN
             RPTDEV( 2 ) = PROMPTFFILE( 
      &                'Enter logical name for SUMMARY ' //
-     &                'PROJECTION/CONTROLS REPORT',
+     &                'CONTROLS REPORT',
      &                .FALSE., .TRUE., CRL // 'CSUMREP', PROGNAME )
             ODEV = RPTDEV( 2 )
         END IF
@@ -130,8 +114,6 @@ C.........  For each pollutant that receives controls, obtain variable
 C             names for control efficiency, rule effectiveness, and, in the
 C             case of AREA sources, rule penetration. These variable names
 C             will be used in reading the inventory file.
-
-c note: updated for all pollutants that get controls
         
 C.........  Check that NVCMULT does not equal 0, otherwise some systems will get confused
         IF( NVCMULT == 0 ) RETURN
@@ -149,8 +131,15 @@ C.........  Loop through pollutants
 C.............  Loop through sources and output 
             DO S = 1, NSRC
 
-C.................  If ADDITIVE packet applies for this pollutant
-c note: must be added
+C.................  If MACT packet applies for this pollutant
+                IF( PCTLFLAG( V, 4 ) ) THEN
+                
+                    READ( MDEV,* ) CIDX, PNAM, E_IN, E_OUT, FAC
+                    
+                    CALL CONTROL_MESG( ODEV, 'MACT', S, CIDX, PNAM,
+     &                                 E_IN, E_OUT, FAC )
+     
+                END IF
 
 C.................  If CONTROL or EMS CONTROL packet applies for this pollutant
                 IF( PCTLFLAG( V, 1 ) ) THEN
@@ -238,19 +227,20 @@ C.............  Write message for pollutant for each new pollutant
                 WRITE( FDEV, 93000 ) REPEAT( '-', 80 )
                 WRITE( FDEV,93000 ) MESG( 1:L )
                 WRITE( FDEV,93000 ) ' '
-                LNAM = PNAM
 
             END IF
 
 C.............  Only write out header line if source is different from previous
-C
-            IF( SMKID .NE. PSMKID ) THEN
+C               or if the message for a new pollutant was written
+            IF( SMKID .NE. PSMKID .OR. PNAM .NE. LNAM ) THEN
 
                 CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                 WRITE( FDEV,93000 ) BLANK5 // BUFFER( 1:L2 )
                 PSMKID = SMKID
 
             END IF
+            
+            LNAM = PNAM
 
 C.............  Write warning if source is controled and factor is 1.0
             IF( FACTOR .EQ. 1. ) THEN
@@ -275,10 +265,10 @@ C...........   Formatted file I/O formats............ 93xxx
 93000       FORMAT( A )
 
 93380       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ', 
-     &              E11.4, ' [tons/day]. WARNING: Control factor of 1.')
+     &              E11.4, ' [tons/yr]. WARNING: Control factor of 1.' )
 
 93400       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ',  
-     &              E11.4, ' [tons/day]. Factor:', E9.3 )
+     &              E11.4, ' [tons/yr]. Factor:', E9.3 )
 
             END SUBROUTINE CONTROL_MESG
 
