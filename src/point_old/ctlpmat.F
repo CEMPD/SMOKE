@@ -145,6 +145,7 @@ C...........   Other local variables
         INTEGER         LDEV         !  log-device
         INTEGER         RDEV         !  report-file device
         INTEGER         TDEV         !  device for report-these-sources file
+        LOGICAL         KFLAG        !  true: prompt for tracking file
         LOGICAL         PFLAG        !  true if projection entries have years
         LOGICAL         RFLAG        !  flag:  make report-file
         LOGICAL         TFLAG( NPSRC )  !  flags:  track these sources
@@ -198,6 +199,16 @@ C   begin body of program CTLPMAT
         END IF
 
 
+C.........  Get environment variable values...
+C.........  Get type of projection entries: with year or without it (EPS)
+        PFLAG = ENVYN( 'YEAR_SPEC_PROJECT', 
+     &                 'Projection entries in year-specific format',
+     &                 .TRUE., IOS )
+
+        KFLAG = ENVYN( 'PCTRACKING', 
+     &                 'Use a special file to track specific sources',
+     &                 .FALSE., IOS )
+
 C.......   Get file name; open input point sources, control definitions files
 
         ENAME = PROMPTMFILE( 
@@ -214,11 +225,10 @@ C.......   Get file name; open input point sources, control definitions files
 
         RFLAG = ( RDEV .GT. 0 )
 
-        IF ( RFLAG ) THEN
+        IF ( RFLAG .AND. KFLAG ) THEN
 
-            TDEV = PROMPTFFILE( 
-     &           'Enter logical name for TRACKING LIST, "ALL" ' //
-     &           'or "NONE"', .TRUE., .TRUE., 'PCTRACK', 'CTLPMAT' )
+            TDEV = PROMPTFFILE( 'Enter logical name for TRACKING LIST',
+     &                          .TRUE., .TRUE., 'PCTRACK', 'CTLPMAT' )
 
         END IF
 
@@ -292,6 +302,10 @@ C...........   existing-control data CTLEFF, RULEFF, RULPEN:
         END IF
 
         IF ( .NOT. READ3( ENAME, 'VOC', ALLAYS3, 0, 0, VOC ) ) THEN
+
+
+            MESG = 'NOTE: Reading "ROG" instead of VOC...'
+            CALL M3MSG2( MESG )
 
             IF ( .NOT. READ3( ENAME, 'ROG', ALLAYS3, 0, 0, VOC ) ) THEN
 
@@ -373,15 +387,13 @@ C.......   percent to purely-numeric fraction
             
 C...........   Compute 3-digit, 2-digit SIC hierarchy codes:
             
-            ISI3( S ) = ISIC( S ) /10
-            ISI2( S ) = ISIC( S ) /100
+            ISI3( S ) = ISIC( S ) / 10
+            ISI2( S ) = ISIC( S ) / 100
 
 55      CONTINUE        !  end loop on sources S
 
-
         JSID( NSID+1 ) = NPSRC + 1      !  sentinel
         JFIP( NSID+1 ) = NPSRC + 1      !  sentinel
-
 
 C............................................................................
 C.......   Process list of FIP-SCC pairs to be tracked in the 
@@ -391,49 +403,40 @@ C.......   REPORT file (if any).
             TFLAG( S ) = .FALSE.
 66      CONTINUE        !  end loop on sources S
 
-        IF ( RFLAG ) THEN
+        IF ( RFLAG .AND. KFLAG ) THEN
 
-            IF ( TDEV .GT. 0 ) THEN
+            IREC = 0
 
-                IREC = 0
+75          CONTINUE
 
-75              CONTINUE
+                READ( TDEV,*, END = 77, IOSTAT=IOS ) FIP, SCC
+                IREC = IREC + 1
 
-                    IREC = IREC + 1
-                    READ( TDEV,*, END = 77, IOSTAT=IOS ) FIP, SCC
-
-                    IF ( IOS .NE. 0 ) THEN
-                        WRITE( MESG,94910 )
-     &                      'Error reading TRACKING LIST', IREC, IOS
-                        CALL M3EXIT( 'CTLPMAT', 0, 0, MESG, 1 )
-                    END IF
+                IF ( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94910 )
+     &                  'Error reading TRACKING LIST', IREC, IOS
+                    CALL M3EXIT( 'CTLPMAT', 0, 0, MESG, 1 )
+                END IF
                     
-                    I = FIND1( FIP, NFIP, FFIP )
+                I = FIND1( FIP, NFIP, FFIP )
 
-                    IF ( I .EQ. 0 )  GO TO 75
+                IF ( I .EQ. 0 )  GO TO 75
 
-                    DO  76  S = JFIP( I ), JFIP( I+1 ) - 1
-                        IF( SCC .EQ. ISCC ( S ) )  TFLAG( S ) = .TRUE.
-76                  CONTINUE        !  end loop on sources S
+                DO  76  S = JFIP( I ), JFIP( I+1 ) - 1
+                    IF( SCC .EQ. ISCC ( S ) )  TFLAG( S ) = .TRUE.
+76              CONTINUE        !  end loop on sources S
 
-                    GO TO 75
+                GO TO 75
 
-77              CONTINUE        !  end loop reading file:  target of "END=..."
+77          CONTINUE        !  end loop reading file:  target of "END=..."
 
-            ELSE IF ( TDEV .EQ. -3 ) THEN       ! "ALL"
+        ELSE IF ( RFLAG ) THEN   ! Report for all sources
 
-                DO  88  S = 1, NPSRC
-                    TFLAG( S ) = .TRUE.
-88              CONTINUE        !  end loop on sources S
+            DO  88  S = 1, NPSRC
+                TFLAG( S ) = .TRUE.
+88          CONTINUE        !  end loop on sources S
 
-            ELSE
-
-                CALL M3EXIT( 'CTLPMAT', 0, 0, 
-     &                       'Error opening TRACKING LIST file', 3 )
-
-            END IF              ! if tdev > 0, or tdev = -3, or not.
-
-        END IF                  !  if rflag
+        END IF              !  if ( rflag and kflag ) or just rflag
 
 
 C............................................................................
@@ -1581,12 +1584,6 @@ C.......   Process PROJECT PTS packet of control file:
      &                   'Could not find ' // PNAME // ' in ' // CNAME, 
      &                   2 )
         END IF
-
-C.........  Prompt for type of projection entries: default (EPS) or 
-C           modified EPS (with year)
-        PFLAG = ENVYN( 'YEAR_SPEC_PROJECT', 
-     &                 'Projection entries in year-specific format',
-     &                 .TRUE., IOS )
 
 141     CONTINUE   !  head of loop reading lines in the PROJECT PTS packet
 
