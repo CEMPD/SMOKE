@@ -2,8 +2,8 @@
         PROGRAM GRWPMAT
 
 C***********************************************************************
-C  program body      starts at line  189
-C  subroutine NORMID starts at line 1179
+C  program body      starts at line  224
+C  subroutine NORMID starts at line  944
 C
 C  DESCRIPTION:
 C       Construct monthly point source PNTS file(s) from monthly
@@ -29,7 +29,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1997, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -59,7 +59,6 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         FINDC
-        INTEGER         FIND1
         INTEGER         GETMENU
         INTEGER         GETNUM
         LOGICAL         GETYN
@@ -68,20 +67,25 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         STR2INT
         REAL            STR2REAL
+        REAL            YR2DAY
 
-        EXTERNAL        FINDC, FIND1, GETMENU, GETNUM, GETYN,
+        EXTERNAL        FINDC, GETMENU, GETNUM, GETYN,
      &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, STR2INT,
-     &                  STR2REAL
+     &                  STR2REAL, YR2DAY
 
 C...........   PARAMETERS and their descriptions:
 
+        INTEGER         MXLST               ! max plant|scc replace-list size
         INTEGER         MXMON               ! no. of. months of fuel use input
         INTEGER         MXPLT               ! max XREF fip/scc/plant count
-        INTEGER         MXLST               ! max plant|scc replace-list size
+        INTEGER         MXSPPL              ! max no. sources per fip/plant
 
-        PARAMETER     ( MXMON =   12 , 
-     &                  MXPLT =  700 ,
-     &                  MXLST = 5000 )
+        PARAMETER     ( MXLST  = 5000 ,
+     &                  MXMON  =   12 , 
+     &                  MXPLT  =  700 ,
+     &                  MXSPPL =   60 )
+
+C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Growth factors from point Sources Table from GNAME
 
@@ -89,67 +93,7 @@ C...........   Growth factors from point Sources Table from GNAME
         REAL          COGR  ( NPSRC )  !  CO growth factors 
         REAL          ROGGR ( NPSRC )  !  ROG growth factors 
                         
-
-C...........   LOCAL VARIABLES and their descriptions:
-
-        INTEGER        AMON, ZMON      !  first, last month to be averaged
-        INTEGER        NEWYR           !  New inventory year
-        INTEGER        NSRC            !  # recs, pt src files 
-        REAL           AMAT  ( MXMON, NPSRC ) !  adjustment coefficients
-        INTEGER        JFIP, JSCC      !  scratch input vars from pt src list 
-        INTEGER        SMKPL, SMKST    !    "       "     "       "      "  
-        INTEGER        NPLTSRC
-        INTEGER        PLTSRC( MXLST ) !  fip/scc/plant record subscript
-        INTEGER        SRCPLT( MXLST ) !  matching src  record subscript
-        INTEGER        SRCSCC( MXLST ) !  matching src  record subscript
-        REAL           RMFAC ( MXMON, MXPLT ) !  factors by month for plt/scc
-        INTEGER        NPLT            !  size of fip-plant table
-        CHARACTER*28   XRFPL ( MXPLT ) !  identifier for fip-scc-plant matchup
-        CHARACTER*28   XRFPLS( MXPLT ) !  sorted "
-        INTEGER        INDXP ( MXPLT ) !  index array for XRFPL(S
-        INTEGER        XRFSCC( MXPLT ) !  identifier for scc matchup
-        INTEGER        KFIP( NPSRC ), KSCC( NPSRC )
-        CHARACTER*15   FPLID( NPSRC )
-        INTEGER        NXRFOB          !  size of fip-oris-boiler table
-        CHARACTER*90   LINE            !  xref file line buffer
-        CHARACTER*5    FIPS            !  FIPS code for state and county
-        CHARACTER*8    SCC             !  SCC code
-        CHARACTER*12   FSTKID(NPSRC) , STKID        !  EMS95 stack ID 
-        CHARACTER*15   PLID,PLID2      !  scratch OTAG plant id on xrf file
-        CHARACTER*12   DEVID           !   "       "   device "     "   "
-        CHARACTER*5    ORISID          !  scratch doe ORIS id string  
-        CHARACTER*6    BLRID           !  scratch doe boiler id string
-        CHARACTER*28   KEY28, SCR28    !  scratch fips//scc//plant
-        CHARACTER*40   DUMNAM, PDESC( NPSRC)   
-        CHARACTER*4    MON( MXMON )    ! month for output file logical names
-        DATA           MON /
-     &          'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',  
-     &          'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC' /
-
-        INTEGER         C, F, I, J, K, L  !  scratch indices
-        INTEGER         M, S, V, Y  !  scratch loop variables
-        INTEGER         LDEV           !  log-device
-        INTEGER         SRDEV          !  sources list file device
-        INTEGER         XRDEV          !  x-reference file device
-        INTEGER         FUDEV          !  fuel use file device
-        INTEGER         RDEV           !  report-file device
-        INTEGER         IOS            !  I/O status
-        INTEGER         IREC           !  record # from file
-        INTEGER         XCNT, FCNT, ECNT
-        INTEGER         MCNT, NCNT
-        LOGICAL         EFLAG          !  flag:  input error
-        LOGICAL         FFLAG          !  flag:  bad input fields
-        LOGICAL         RFLAG          !  flag:  make report-file
-
-        CHARACTER*16    ENAME          !  point-source input file logical name 
-        CHARACTER*16    MNAME( MXMON ) !  ctl matrix  output file logical names
-        CHARACTER*16    GNAME          !  growth factors file (netCDF)
-        CHARACTER*16    NAME           !  scratch filename 
-        CHARACTER*16    VNAME
-        CHARACTER*256   MESG           !  error message buffer
-
-        REAL            DDD, DIV, LGF1, LGF2, X, X2, LRAT, SUM, SIG
-        REAL            ROLDEM, PERC
+C...........   Inventory variables
 
         INTEGER        IFIP  ( NPSRC )  !  source FIPS (county) ID
         INTEGER        ISCC  ( NPSRC )  !  source SCC
@@ -165,16 +109,113 @@ C...........   LOCAL VARIABLES and their descriptions:
         REAL           STKDM ( NPSRC )  !  stack diameter (m)
         REAL           STKTK ( NPSRC )  !  exhaust temperature (deg K)
         REAL           STKVE ( NPSRC )  !  exhaust velocity    (m/s)
+        REAL           CTLEFF( NPSRC, NIPOL )  !  control efficiency fraction
         REAL           RULPEN( NPSRC, NIPOL )  !  rule penetration   fraction
         REAL           RULEFF( NPSRC, NIPOL )  !  rule effectiveness fraction
-        REAL           CTLEFF( NPSRC, NIPOL )  !  control efficiency fraction
         REAL           EMISV ( NPSRC, NIPOL )  !  emissions values (tons/yr)
-        REAL           EMIS ( NPSRC, NIPOL )  !  tmp emis values (tons/yr)
 
         COMMON /EMISREC / IFIP, ISIC, ISCC, IPLANT, ISTACK, TZONES,
      &                    TPFLAG, INVYR, XLOCA, YLOCA,
      &                    STKHT, STKDM, STKTK, STKVE,
      &                    CTLEFF, RULEFF, RULPEN, EMISV
+
+        REAL           EMIS( NPSRC, NIPOL )  !  tmp emis values (tons/yr)
+
+        CHARACTER*15   PLIDS( NPSRC )        !  EMS-95 plant ID for all srcs
+        CHARACTER*40   PDESC( NPSRC )        !  plant description
+
+C...........   Input monthly adjustments and associated variables
+
+        INTEGER        NPLTSRC          !  number of source matches to XREF
+        INTEGER        NSCCPLT          !  size of fip-scc-plant table
+        INTEGER        INDXF ( MXPLT )  !  sorting index for XRFFPA
+        INTEGER        INDXP ( MXPLT )  !  sorting index for XRFFSPA
+        INTEGER        XRFSCC( MXPLT )  !  identifier for scc matchup
+
+        REAL           RMFAC ( MXMON, MXPLT ) ! monthly factors for fip/scc/plt
+
+        CHARACTER*15   FPLID  ( MXPLT ) !  EMS-95 plant code
+        CHARACTER*28   XRFFSPA( MXPLT ) !  identifier for fip-scc-plant matchup
+        CHARACTER*28   XRFFSP ( MXPLT ) !  sorted XRFFSPA
+
+C...........   For report by facility
+
+        INTEGER        NPLT             !  size of fip-plant table 
+        INTEGER        CNTSP  ( MXPLT ) !  count of sources for each FIP/plant
+        INTEGER        SNUMPPL( MXPLT, MXSPPL ) ! sources for each FIP/plant
+
+        REAL           SUMNOX ( MXPLT, MXMON )  ! plant sum of monthly NOx
+        REAL           SUMINV1( MXPLT ) !  plant sum of inventory year one NOx
+        REAL           SUMINV2( MXPLT ) !  plant sum of inventory year two NOx
+
+        LOGICAL        LPPL   ( MXPLT ) !  true if any srcs matched XRFFSP
+
+        CHARACTER*15   PLTPPL ( MXPLT ) !  full plant ID names
+        CHARACTER*20   XRFFPA ( MXPLT ) !  identifier for fip-plant matchup
+        CHARACTER*20   XRFFP  ( MXPLT ) !  sorted XRFFPA
+
+C...........   Sources from PSRC in monthly adjustments
+
+        INTEGER        PLTSRC( MXLST ) !  fip/scc/plant record subscript
+        INTEGER        SRCPLT( MXLST ) !  matching src  record subscript
+
+C...........   LOGICAL NAMES and UNIT NUMBERS:
+
+        INTEGER         LDEV           !  log-device
+        INTEGER         SRDEV          !  sources list file device
+        INTEGER         XRDEV          !  x-reference file device
+        INTEGER         FDEV           !  facility report-file device
+        INTEGER         RDEV           !  sources report-file device
+
+        CHARACTER*16    ENAME          !  point-source input file logical name 
+        CHARACTER*16    GNAME          !  growth factors file (netCDF)
+        CHARACTER*16    MNAME( MXMON ) !  ctl matrix  output file logical names
+        CHARACTER*16    NAME           !  scratch filename 
+        CHARACTER*16    VNAME
+
+C...........   OTHER LOCAL VARIABLES :
+
+        INTEGER        I, J, K, L   !  scratch indices
+        INTEGER        M, S, V         !  scratch loop variables
+        INTEGER        XCNT, ECNT      !  scratch counters
+
+        INTEGER        AMON, ZMON      !  first, last month to be averaged
+        INTEGER        IOS             !  I/O status
+        INTEGER        IREC            !  record # from file
+        INTEGER        JFIP, JSCC      !  scratch input vars from pt src list 
+        INTEGER        KMAX            !  
+        INTEGER        MONCNT          !  count of months processed
+        INTEGER        NEWYR           !  New inventory year
+        INTEGER        NSRC            !  # recs, pt src files 
+        INTEGER        NXRFOB          !  size of fip-oris-boiler table
+        INTEGER        SMKPL, SMKST    !  temporary SMOKE plant and stack IDs
+
+        REAL           ROLDEM          !  temporary old emissions value
+        REAL           PERC            !  percent difference
+        REAL           AMAT( MXMON, NPSRC ) !  adjustment coefficients
+        REAL           YRINVNEW        !  yr 2 day conversion for new year
+        REAL           YRINVOLD        !  yr 2 day conversion for old year
+
+        LOGICAL        EFLAG          !  flag:  input error
+        LOGICAL        FFLAG          !  flag:  make facility report-file
+        LOGICAL        RFLAG          !  flag:  make sources report-file
+
+        CHARACTER*5    CFIP            !  temporary character FIPS code 
+        CHARACTER*8    SCC             !  temporary SCC code
+        CHARACTER*12   DEVID           !  temporary EMS95  device ID
+        CHARACTER*12   STKID           !  temporary EMS95 stack ID 
+        CHARACTER*15   PLID,PLID2      !  temporary OTAG plant id on xrf file
+        CHARACTER*20   KEY20, SCR20    !  temporary fips//plant
+        CHARACTER*28   KEY28, SCR28    !  temporary fips//scc//plant
+        CHARACTER*40   DUMNAM          !  temporary plant name
+        CHARACTER*90   LINE            !  file line buffer
+        CHARACTER*256  MESG            !  error message buffer
+
+C.........  DATA STATEMENTS
+
+        CHARACTER*3    MON( MXMON )    ! month for output file logical names
+        DATA           MON / 'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+     &                       'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC' /
 
 
 C***********************************************************************
@@ -182,13 +223,14 @@ C   begin body of program GRWPMAT
 
         LDEV = INIT3()
 
+        CALL INITEM( LDEV )
+
         WRITE( *,92000 ) 
      &' ',
-     &'Program GRWPMAT takes a SMOKE PNTS inventory file, an ASCII ',
-     &'POINT SOURCES LIST file, an ASCII factors file, ',
-     &'and netCDF factors file, to produce one GROWTH MATRIX file',
-     &'of adjustment factors for each month requested, and an ',
-     &'optional ASCII REPORT file.',
+     &  'Program GRWPMAT takes a SMOKE POINT INVENTORY file, an ASCII',
+     &  'POINT SOURCES LIST file, a monthly adjustment factors file,',
+     &  'and a growth factors file, to produce MONTHLY INVENTORY files',
+     &  'for each month requested and optional ASCII REPORTS.',
      &  ' '
         WRITE( *,92000 ) 
      &  'You will need to have set the logical names for the input and',
@@ -203,15 +245,13 @@ C   begin body of program GRWPMAT
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program GRWPMAT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'GRWPMAT', 0, 0, 'Ending program GRWPMAT', 2 )
         END IF
-
 
 C....... Get file name; open input pt src, src list, Xref and fuel use files 
 
         ENAME = PROMPTMFILE(
-     &           'Enter logical name for point source LIST file',
+     &           'Enter logical name for POINT SOURCES input file',
      &           FSREAD3, 'PNTS', 'GRWPMAT' )
 
 C.......   Read in description of point-source emissions file
@@ -220,51 +260,59 @@ C.......   Read in description of point-source emissions file
             CALL M3EXIT( 'GRWPMAT', 0, 0,
      &          'Could not get description of file ' // ENAME, 3 )
         END IF
-C.......
+
+C.......  Get other input files
 
         SRDEV = PROMPTFFILE( 
-     &           'Enter logical name for SRCLIST file',
+     &           'Enter logical name of the FACILITY/STACK input file',
      &           .TRUE., .TRUE., 'PSRC', 'GRWPMAT' )
 
         XRDEV = PROMPTFFILE( 
-     &           'Enter logical name for ASCII factors file',
-     &           .TRUE., .TRUE., 'PASCFAC', 'GRWPMAT' )
+     &          'Enter logical name of MONTHLY ADJUSTMENTS input file',
+     &          .TRUE., .TRUE., 'PASCFAC', 'GRWPMAT' )
 
-C.......   Open control matrix file:  reuse much of POINT SOURCE description
-
-C        FTYPE3D = GRDDED3
-
-
-        RDEV  = PROMPTFFILE( '...for REPORT file, or "NONE"',
-     &                       .FALSE., .TRUE., 'PAREPT', 'GRWPMAT' )
-        RFLAG = ( RDEV .GT. 0 )
+C.........  Get date for projection and months for processing
 
         NEWYR = GETNUM( 1980, 2020, 1995 ,
-     &         'New inventory year (projection year) ' )
+     &         'New inventory year (projection year)' )
 
-        AMON = GETMENU( 12, 5, 'Enter first months factors in PASCFAC',
-     &         MON )
+        AMON = GETMENU( 12, 5, 
+     &         'Enter first month for factors in PASCFAC', MON )
 
         ZMON = GETNUM( AMON, 12, 12 ,
-     &         'Enter last months factors in PASCFAC ' )
+     &         'Enter last month for factors in PASCFAC' )
 C
-C...... growth matrices for months specified above
+C.........  Open output inventory files for each month.
+C.........  Reuse much of input PNTS description
 C
         DO  44  I = AMON, ZMON
 
-         NAME = 'PNTS_'//MON( I )
-         MESG = 'Enter logical name for PNTS monthly file for ' 
-     &           // MON(I)
-         MNAME( I ) = PROMPTMFILE( MESG, FSUNKN3, NAME, 'GRWPMAT' )
+            FDESC3D( 1 ) = FDESC3D( 1 )( 1:TRIMLEN( FDESC3D( 1 ) ) ) // 
+     &                    ' For ' // MON( I ) // '.'
+            NAME = 'PNTS_' // MON( I )
+            MESG = 'Enter logical name of ' // MON( I ) // 
+     &             'POINT SOURCES output file' 
+            MNAME( I ) = PROMPTMFILE( MESG, FSUNKN3, NAME, 'GRWPMAT' )
 
 44      CONTINUE
 C
+        RDEV  = PROMPTFFILE( 
+     &          'Enter logical name of SOURCE REPORT file, or "NONE"',
+     &          .FALSE., .TRUE., 'PAREPT', 'GRWPMAT' )
 
-        DO  143  S = 1, MXPLT
-        DO  141  M = 1, MXMON
-            RMFAC( M,S ) = 0.0
-141     CONTINUE
-143     CONTINUE
+        RFLAG = ( RDEV .GT. 0 )
+
+        FDEV = PROMPTFFILE( 
+     &         'Enter logical name of FACILITY REPORT file, or "NONE"',
+     &         .FALSE., .TRUE., 'PAFCRPT', 'GRWPMAT' )
+
+        FFLAG = ( FDEV .GT. 0 )
+
+        DO  51   J = 1, MXPLT
+        DO  50   M = 1, MXMON
+            RMFAC( M,J ) = 0.0
+50      CONTINUE
+51      CONTINUE
 
 C...........   Read the ASCII factors file
 C.......   Format is as follows
@@ -275,27 +323,22 @@ C.......       SCC                      I8      cols  21:28
 C.......       monthly factors   NMON*F8.4      cols  29:36 and so on
 C............. 
 
-        CALL M3MESG( 'Processing (Monthly) ASCII factors file' )
+        CALL M3MESG( 'Processing monthly adjustments...' )
 
-        ECNT  = 0
-        J     = 0
+        ECNT = 0
+        IREC = 0
+        J    = 0
 
-101     CONTINUE
+77      CONTINUE
 
-            READ ( XRDEV, 93000, END=111, IOSTAT=IOS ) LINE
-            J = J + 1 
-            IF( J .GT. MXPLT )THEN
-                WRITE( MESG, 94000 )
-     &             'Exceeding MXPLT, currently MXPLT =' , MXPLT
-                CALL M3MESG( MESG )
-                STOP
-            ENDIF
+            READ ( XRDEV, 93000, END=88, IOSTAT=IOS ) LINE
 
+            IREC = IREC + 1
 
             IF ( IOS .NE. 0 ) THEN
-                WRITE( MESG,94000 )
+                WRITE( MESG,94010 )
      &              'Error', IOS, 
-     &              'reading Ascii factors file at line', IREC
+     &              'reading monthly adjustments file at line', IREC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 ECNT  = ECNT + 1
@@ -303,104 +346,134 @@ C.............
                     CALL M3EXIT( 'GRWPMAT', 0, 0, 
      &                           'Too many errors', 2 )
                 END IF
-                GO TO  101
-            END IF 
+                GO TO  77  
 
-            IF ( LINE(  1: 2 ) .EQ. ' ' .OR.
+            ELSEIF ( LINE(  1: 2 ) .EQ. ' ' .OR.
      &           LINE(  3: 5 ) .EQ. ' ' .OR.
      &           LINE(  6:20 ) .EQ. ' ' .OR.
      &           LINE( 21:28 ) .EQ. ' ' ) THEN
-
-               WRITE( MESG, 94000 ) 
-     &           'Missing ID field in ascii factors file at line' , IREC
+               EFLAG = .TRUE.
+               WRITE( MESG, 94010 ) 'Missing ID field in monthly ' //
+     &                              'adjustments file at line', IREC
                CALL M3MESG( MESG )
-               GO TO 101
+               GO TO 77  
 
             END IF                      !  if field missing
             
-            JFIP = 1000 * STR2INT( LINE(  1: 2 ) ) + 
-     &                    STR2INT( LINE(  3: 5 ) )
-            WRITE( FIPS,94020 ) JFIP
+            JFIP = 1000 * STR2INT( LINE( 1:2 ) ) +   ! Convert to contain 0s
+     &                    STR2INT( LINE( 3:5 ) )
+            WRITE( CFIP,94020 ) JFIP
             CALL NORMID( PLID, LINE( 6:20 ) )
             SCC         = LINE( 21:28 )
-            XRFSCC( J ) = STR2INT( SCC )
 
-            WRITE(XRFPL( J ),94100)FIPS,SCC,PLID
+            J = J + 1 
 
-94100       FORMAT(A5,A8,A15)
+            IF( J .LE. MXPLT )THEN
 
-            INDXP( J )  = J
-            K = 29
-            L = 36
-C
-C   assign factor to specific month
-C
-            DO M = AMON , ZMON
-              X = AMAX1( 0.0, STR2REAL( LINE( K:L ) ) )
-              RMFAC(M,J) = X
-              K = K + 8
-              L = L + 8
-            ENDDO
+                XRFSCC ( J ) = STR2INT( SCC )
+                INDXP  ( J ) = J
+                XRFFSPA( J ) = CFIP // SCC // PLID
+
+C.................  Assign factors to specific month
+                K = 29
+                L = 36
+                DO 81 M = AMON, ZMON
+                    RMFAC( M,J ) = AMAX1( 0.0, STR2REAL( LINE( K:L ) ) )
+                    K = K + 8
+                    L = L + 8
+81              CONTINUE
+
+            ENDIF
               
-            GO TO 101                   !  to head of loop reading xref file
+            GO TO 77                    !  to head of loop reading xref file
                    
-111     CONTINUE                        !  exit from loop reading xref file
+88      CONTINUE                        !  exit from loop reading xref file
 
         NXRFOB = J
 
-        WRITE( MESG,94000 ) 
-     &  'Number of valid ASCII factor records:         ', NXRFOB
-        CALL M3MESG( MESG )
+        IF ( NXRFOB .GT. MXPLT ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 
+     &        'Monthly adjustments table overflow; actual:', NXRFOB,
+     &        'dimensioned MXPLT=', MXPLT
+            CALL M3MSG2( MESG )
+
+        ELSE
+            WRITE( MESG,94010 ) 
+     &          'Number of valid monthly adjustment records:         ',
+     &          NXRFOB
+            CALL M3MESG( MESG )
+
+        END IF
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &                   'Error reading ASCII factors file', 2 )
-        ELSE IF ( J .GT. MXPLT ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &                   'Overflow reading ASCII factors file', 2 )
+     &                   'Error reading monthly adjustments file', 2 )
         END IF
 
+C...........   Create sorted, unique fip-scc-plant table:
 
-C...........   Create fip-scc-plant table:
+        CALL SORTIC( NXRFOB, INDXP, XRFFSPA )             !  sort on plants
+        KEY28 =  CMISS3		!  initialize previous fip/scc/plant
+        J     =  0		!  fip/scc/plant count
 
-        CALL SORTIC( NXRFOB, INDXP, XRFPL )             !  sort on plants
-        KEY28 =  CMISS3		!  initialize "last fip/scc/plant"
-        S     =  0		!  fip/scc/plant count
+        DO  101  I = 1, NXRFOB                   ! loop through xref records
 
-        DO  122  I = 1, NXRFOB                   ! loop through xref records
+            K     = INDXP  ( I )
+            SCR28 = XRFFSPA( K )
 
-            K     = INDXP( I )
-            SCR28 = XRFPL( K )
             IF ( SCR28 .NE. KEY28 ) THEN
 
-                S     = S + 1
-                KEY28 = SCR28
-                IF ( S .LE. MXPLT ) THEN
+                J = J + 1
+                XRFFSP( J ) = SCR28 ! J must be < MXPLT b/c NXRFOB is
+                KEY28       = SCR28
 
-                    XRFPLS( S ) = SCR28
+                INDXF ( J ) = J     ! Store list of FIP // PLID
+                XRFFPA( J ) = SCR28( 1:5 ) // SCR28( 14:28 )
 
-                END IF                  !  if S in bounds
-            END IF                      !  if new key encountered
+            END IF                  !  if new key encountered
             
-122     CONTINUE                !  end loop initializing fip-plants table
+101     CONTINUE                !  end loop initializing fip-plants table
 
-        NPLT = S
-        WRITE( MESG,94000 ) 
-     &  'Number of factors fips/scc/plt:                ', S
+        NSCCPLT = J
+
+        WRITE( MESG,94010 ) 
+     &  'Number of factors fips/scc/plt:                ', NSCCPLT
         CALL M3MESG( MESG )
 
-        IF ( NPLT .GT. MXPLT ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &                   'Overflow building fips/scc/plt table', 2 )
-        END IF
-C
-C...... read in netCDF file with growth factors (not MONTHLY)
-C
+C...........   Create sorted, unique fip-plant table:
+
+        CALL SORTIC( NSCCPLT, INDXF, XRFFPA )             !  sort on plants
+        KEY20 =  CMISS3		!  initialize previous fip/scc/plant
+        J     =  0		!  fip/scc/plant count
+
+        DO  103  I = 1, NSCCPLT                  ! loop through xref records
+
+            K     = INDXF ( I )
+            SCR20 = XRFFPA( K )
+
+            IF ( SCR20 .NE. KEY20 ) THEN
+
+                J = J + 1
+                XRFFP( J ) = SCR20  ! J must be < MXPLT b/c NXRFOB is
+                KEY20      = SCR20
+
+            END IF                  !  if new key encountered
+            
+103     CONTINUE                !  end loop initializing fip-plants table
+
+        NPLT = J
+
+        WRITE( MESG,94010 ) 
+     &  'Number of factors fips/plt:                ', NPLT
+        CALL M3MESG( MESG )
+
+C.........  Read in netCDF file with growth factors (not MONTHLY)
+
         GNAME = PROMPTMFILE(
-     &           'Enter logical name for netCDF factors file',
+     &           'Enter logical name for GROWTH FACTORS file',
      &           FSREAD3, 'PNTGRW', 'GRWPMAT' )
 
-C
             IF ( .NOT. READ3( GNAME, 'NOX', ALLAYS3, 0, 0,
      &                        NOXGR ) ) THEN
                 CALL M3EXIT( 'GRWPMAT', 0, 0,
@@ -424,124 +497,135 @@ C...........   Read SMOKE::EMS95 point source list file.
 C.......   Strategy:  use NOx growth factors if available and
 C.......   and override with monthly growth factors from PASCFAC.
 
-        CALL M3MESG( 'Processing SOURCE LIST file' )
+        CALL M3MESG( 'Processing SOURCE LIST file...' )
 
 
-        DO M = AMON, ZMON
-           DO  505  K = 1, NPSRC
-            AMAT( M, K ) = NOXGR( K )         ! no-match control matrix
-505        CONTINUE
-        ENDDO
+        DO 106 M = AMON, ZMON
+            DO 105 K = 1, NPSRC
+                AMAT( M, K ) = NOXGR( K )         ! no-match control matrix
+105         CONTINUE
+106     CONTINUE
+
+C.........  Initialize count of sources per EMS-95 facility code
+        DO 109 J = 1, NPLT
+            CNTSP( J ) = 0
+            LPPL ( J ) = .FALSE.
+109     CONTINUE
 
         EFLAG = .FALSE.
         IREC  = 0
-        FCNT  = 0
+        KMAX  = 0
+        S     = 0 ! source counter
         XCNT  = 0
+        
+111     CONTINUE       !  head of loop reading PSRC file
 
-511      CONTINUE		!  head of loop reading pt-source list file
-
-            READ ( SRDEV, 93070, END=522, IOSTAT=IOS ) 
-     &          JFIP, JSCC, SMKPL, SMKST, PLID2, STKID, DEVID,DUMNAM
+            READ ( SRDEV, 93070, END=115, IOSTAT=IOS ) 
+     &             JFIP, JSCC, SMKPL, SMKST, PLID2, STKID, DEVID, DUMNAM
 
             IREC = IREC + 1          
-            PDESC( IREC ) = DUMNAM
-
 
             IF ( IOS .NE. 0 ) THEN
-                WRITE( MESG,94000 )
+                WRITE( MESG,94010 )
      &              'Error', IOS,
      &              'reading SOURCE LIST file at line', IREC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 ECNT  = ECNT + 1
                 IF ( ECNT .GT. 10 ) THEN
-                    CALL M3EXIT( 'GRWPMAT', 0, 0, 
-     &                           'Too many errors', 2 )
+                    CALL M3EXIT( 'GRWPMAT', 0, 0, 'Too many errors', 2 )
                 END IF
-                GO TO  511
+                GO TO  111
             END IF 
 
-            IF ( IREC .LE. NPSRC ) THEN
+            S = S + 1
 
-                WRITE( FIPS, 94020 ) JFIP
-                WRITE( SCC , 94010 ) JSCC
+            IF ( S .LE. NPSRC ) THEN
+
+                PDESC( S ) = DUMNAM
+                PLIDS( S ) = PLID2
+
+                WRITE( CFIP, 94020 ) JFIP    
+                WRITE( SCC , 94015 ) JSCC
                 CALL NORMID( PLID, PLID2 )  
 
-                KEY28 = FIPS // SCC // PLID
-                S     = FINDC( KEY28, NPLT, XRFPLS ) !  find fip/scc/plant match
+C.................  Find source's FIP/PLID in list from monthly adjustments
+C.................  and initialize flag 
+                KEY20 = CFIP // PLID
+                I = FINDC( KEY20, NPLT, XRFFP )    !find fip/plant match
 
-                IF ( S .GT. 0 ) THEN
+C.................  Determine if SMOKE source is in list of monthly adjustments
+                KEY28 = CFIP // SCC // PLID
+                J     = FINDC( KEY28, NSCCPLT, XRFFSP )!find fip/scc/plant match
+
+                IF( J .GT. 0 ) THEN
 
                     XCNT = XCNT + 1
                     IF ( XCNT .LE. MXLST ) THEN
-                        PLTSRC( XCNT ) = S
-                        SRCPLT( XCNT ) = IREC
+                        PLTSRC( XCNT ) = J
+                        SRCPLT( XCNT ) = S
                     END IF
-                    KFIP(S)=JFIP
-                    KSCC(S)=JSCC
-                    FPLID(S)=PLID2
-                    FSTKID(S)=STKID
 
-                ELSE
- 
-9302               format('SRDEV NOT matched! ',A28,I8)
+                    FPLID( J ) = PLID2
+
+C.....................  Set flag that says at least one source for this plant
+C.....................  matches the monthly adjustments table
+                    IF( I .GT. 0 ) LPPL ( I ) = .TRUE.
 
                 END IF                      !  if fip/scc/plant match or not
 
-            END IF                                      !  if irec in bounds
+            END IF      !  if source count S in bounds
 
-            GO TO 511
+            GO TO 111   !  to head of PSRC read loop
 
-522      CONTINUE		!  exit from loop reading pt-source list file
+115      CONTINUE	!  exit from loop reading pt-source list file
         
-        NSRC    = IREC
+        NSRC    = S
         NPLTSRC = XCNT
 
-        WRITE( MESG,94000 ) 
+        WRITE( MESG,94010 ) 
      &  'Number of PSRC POINT SOURCES          ', NSRC
         CALL M3MESG( MESG )
 
-        WRITE( MESG,94000 ) 
+        WRITE( MESG,94010 ) 
      &  'Number of PSRC::XREF PLANT matches    ', XCNT
         CALL M3MESG( MESG )
 
+        IF ( NSRC .GT. NPSRC ) THEN
+            EFLAG = .TRUE.
+            CALL M3MSG2( 'Overflow reading PSRC file' )
+        ELSE IF ( NSRC .LT. NPSRC ) THEN
+            EFLAG = .TRUE.
+            CALL M3MSG2( 'Underflow reading PSRC file' )
+        END IF
 
+        IF ( XCNT .GT. MXLST ) THEN
+            EFLAG = .TRUE.
+            CALL M3MSG2( 'Overflow building PLANT::SOURCE table' )
+        END IF
+          
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'GRWPMAT', 0, 0, 
-     &                   'Error reading LIST file', 2 )
-        ELSE IF ( IREC .GT. NPSRC ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &                   'Overflow reading LIST file', 2 )
-        ELSE IF ( IREC .LT. NPSRC ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &                   'Underflow reading LIST file', 2 )
-        ELSE IF ( XCNT .GT. MXLST ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &                   'Overflow building PLANT::SOURCE table', 2 )
-        END IF                                  !  if errors or over/under-flow
-          
+     &                   'Error reading PSRC file', 2 )
+        ENDIF
 
-C............................................................................
-C.......   Construct and write over the control matrix where matches
-C.......   were found:
+C.......   Write over the emissions where matches were found:
 
-        CALL M3MESG( 'Overwriting GROWTH factors with matches found..' )
+        CALL M3MESG( 'Storing EMISSIONS with matches found...')
 
-        DO  633  M = AMON, ZMON
+        DO 122 M = AMON, ZMON
+            DO 121 K = 1, NPLTSRC
 
-          DO  611  S = 1, NPLTSRC
+                J = PLTSRC( K )
+                AMAT( M, SRCPLT( K ) ) = RMFAC( M,J )
 
-              K = PLTSRC( S )
-              AMAT( M, SRCPLT( S ) ) = RMFAC( M, K)
-
-611       CONTINUE
-
-633     CONTINUE                !  end loop on months M in the desired season
+121         CONTINUE
+122     CONTINUE                !  end loop on months M in the desired season
 
 C
 C...........   Read in emissions values.
 
-        DO  88  V = 1, NIPOL
+        DO  133 V = 1, NIPOL
 
             IF ( .NOT. READ3( ENAME, EINAM( V ), ALLAYS3, 0, 0,
      &                        EMIS( 1,V ) ) ) THEN
@@ -550,177 +634,281 @@ C...........   Read in emissions values.
      &                       EINAM( V )( 1:TRIMLEN( EINAM( V ) ) )//
      &                       '" from file "' //
      &                       ENAME( 1:TRIMLEN( ENAME ) ) // '".', 2 )
-
             END IF
 
             VNAME = 'CTLEFF_' // EINAM( V )
             IF ( .NOT. READ3( ENAME, VNAME, ALLAYS3,
      &                        0, 0, CTLEFF( 1,V ) ) ) THEN
-                CALL M3EXIT( 'CTLPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPMAT', 0, 0,
      &               'Error reading CTLEFF from file' // ENAME, 2 )
             END IF
 
             VNAME = 'RULEFF_' // EINAM( V )
             IF ( .NOT. READ3( ENAME, VNAME, ALLAYS3,
      &                        0, 0, RULEFF( 1,V ) ) ) THEN
-                CALL M3EXIT( 'CTLPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPMAT', 0, 0,
      &               'Error reading RULEFF from file' // ENAME, 2 )
             END IF
 
             VNAME = 'RULPEN_' // EINAM( V )
             IF ( .NOT. READ3( ENAME, VNAME, ALLAYS3,
      &                        0, 0, RULPEN( 1,V ) ) ) THEN
-                CALL M3EXIT( 'CTLPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPMAT', 0, 0,
      &               'Error reading RULPEN from file' // ENAME, 2 )
             END IF
 
-88      CONTINUE
+133     CONTINUE
+
+C.........  Read inventory file characteristics
+
         IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3,0,0, IFIP ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading FIP from file' // ENAME, 2)
         END IF
 
         IF ( .NOT. READ3( ENAME, 'ISCC', ALLAYS3,0,0, ISCC ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading ISCC from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'IPLANT', ALLAYS3,0,0, IPLANT ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading IPLANT from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'ISTACK', ALLAYS3,0,0, ISTACK ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading ISTACK from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'TZONES', ALLAYS3,0,0, TZONES ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading TZONES from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'TPFLAG', ALLAYS3,0,0, TPFLAG ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading TPFLAG from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'INVYR', ALLAYS3,0,0, INVYR ) ) THEN
-            CALL M3EXIT( 'CTLPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                  'Error reading INVYR from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'XLOCA', ALLAYS3,0,0, XLOCA ) ) THEN
-            CALL M3EXIT( 'LAYPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading XLOCA from file' // ENAME, 2)
         END IF
 
         IF ( .NOT. READ3( ENAME, 'YLOCA', ALLAYS3,0,0, YLOCA ) ) THEN
-            CALL M3EXIT( 'LAYPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading YLOCA from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKHT', ALLAYS3,0,0, STKHT ) ) THEN
-            CALL M3EXIT( 'LAYPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading STKHT from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKDM', ALLAYS3,0,0, STKDM ) ) THEN
-            CALL M3EXIT( 'LAYPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading STKDM from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKTK', ALLAYS3,0,0, STKTK ) ) THEN
-            CALL M3EXIT( 'LAYPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading STKTK from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKVE', ALLAYS3,0,0, STKVE ) ) THEN
-            CALL M3EXIT( 'LAYPOINT', 0, 0,
+            CALL M3EXIT( 'GRWPMAT', 0, 0,
      &                   'Error reading STKVE from file' // ENAME, 2 )
         END IF
 
-        DO K = 1, NPSRC
-          INVYR( K ) = NEWYR
-        ENDDO
-C
-C      use default factors for CO and ROG and default/specific factors
-C      for NOx
 
-        DO 95 M = AMON, ZMON
+C.........  Store the source IDs associated with this FIP // PLID
+C.........  if it is found and if there was at least one match to
+C.........  the monthly adjustments table for this plant.
+C.........  Must do this after IFIP has been read.
+        DO 137 S = 1, NPSRC
 
-          DO 98 K = 1, NPSRC
-            DO 97 V = 1, NIPOL
-             IF ( V .EQ. 1) EMISV( K, V ) = EMIS( K, V ) * COGR( K )
-             IF ( V .EQ. 2) EMISV( K, V ) = EMIS( K, V ) * AMAT( M, K )
-             IF ( V .EQ. 3) EMISV( K, V ) = EMIS( K, V ) * ROGGR( K ) 
-97          CONTINUE
-98        CONTINUE
+            WRITE( CFIP, 94020 ) IFIP( S ) 
+            CALL NORMID( PLID, PLIDS( S ) )  
+
+            KEY20 = CFIP // PLID
+            J     = FINDC( KEY20, NPLT, XRFFP )
+
+            IF( J .GT. 0 ) THEN
+
+                IF( LPPL( J ) ) THEN
+
+                    K = CNTSP( J ) + 1
+
+                    IF( K .LE. MXSPPL ) THEN
+                        SNUMPPL( J,K ) = S
+                    ELSE
+                        KMAX = MAX( KMAX,K )
+                    ENDIF
+
+                    CNTSP ( J ) = K
+                    PLTPPL( J ) = PLIDS( S )
+
+                END IF 
+            END IF      !  if fip/plant match or not
+
+137     CONTINUE
+          
+        IF ( KMAX .GT. 0 ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 
+     &        'Sources per FIP/plant table overflow; actual:', KMAX,
+     &        'dimensioned MXSPPL=', MXSPPL
+            CALL M3MSG2( MESG )
+
+            CALL M3EXIT( 'GRWPMAT', 0, 0, 
+     &                   'Error reading PSRC file', 2 )
+        ENDIF
 
 C............................................................................
-C.......   If rflag, write out report:
+C.........  Calculate inverse of old projection years
+        YRINVOLD = YR2DAY( INVYR( 1 ) )  ! Assume sources same year
+        YRINVNEW = YR2DAY( NEWYR )
 
-C   This may need some more work later....
+        DO 140 S = 1, NPSRC
+            INVYR( S ) = NEWYR
+140     CONTINUE
+
+C.........  Use default factors for CO and ROG and default/specific factors
+C.........  for NOx
+
+        DO 166 M = AMON, ZMON
+
+C.............  MRH NOTE: This may not be general for inventory (eg., CO must=1)
+            DO 144 S = 1, NPSRC
+                DO 143 V = 1, NIPOL
+
+                    IF(V .EQ. 1) EMISV( S,V )= EMIS( S,V )* COGR ( S )
+                    IF(V .EQ. 2) EMISV( S,V )= EMIS( S,V )* AMAT ( M,S )
+                    IF(V .EQ. 3) EMISV( S,V )= EMIS( S,V )* ROGGR( S ) 
+
+143             CONTINUE
+144         CONTINUE
+
+C.......   If rflag, write out report by source:
+C.......   JV NOTE: This may need some more work later....
 C
+            IF ( RFLAG ) THEN
 
-        IF ( RFLAG ) THEN
+                WRITE( RDEV,93000 ) ' '
+                WRITE( RDEV,93000 ) 'EMISSIONS BY SOURCE and MONTH'
+                WRITE( RDEV,93000 ) 'units are tons/year'
+                WRITE( RDEV,93000 ) ' '
 
+                WRITE( RDEV,95100 ) MON( M )
 
-            WRITE( RDEV, * )
-            WRITE( RDEV, * ) 'EMISSIONS BY SOURCE and MONTH'
-            WRITE( RDEV, * ) 'units are tons/year'
-            WRITE( RDEV, * )
+                DO 155 L = 1, NPLTSRC
+                    S = SRCPLT( L )
+                    J = PLTSRC( L )
 
-             WRITE( RDEV, 95100) MON( M )
-95100        FORMAT('for month :', A3)
-             WRITE(RDEV, * ) 
+                    IF( MOD( L,30 ) .EQ. 1 ) WRITE( RDEV,95105 )
 
-             DO  S = 1, NPLTSRC
-               K = SRCPLT(S)
-               J = PLTSRC( S )
-              IF(MOD(S,30).EQ.1)THEN
-              WRITE( RDEV, 95105)
-95105        FORMAT('  FIP',4x,'SCC',6x,'PLTID',4x,'90EMIS',4x,
-     &        '95t2',5x,'95new',4x,'%DIFF',3x,'NAME')
-              ENDIF
+                    ROLDEM = EMIS( S,2 ) * NOXGR( S )
+                    IF ( ROLDEM .GT. 0.0 )THEN
+                        PERC= 100* ( ( EMISV( S,2 ) - ROLDEM )/ ROLDEM )
+                    ELSE
+                        PERC= 0.0
+                    ENDIF
 
-               ROLDEM = EMIS(K,2) * NOXGR( K )
-               IF (ROLDEM .GT. 0.0)THEN
-                PERC = 100*((EMISV(K,2) - ROLDEM)/ROLDEM)
-               ELSE
-                PERC = 0.0
-               ENDIF
+                    WRITE( RDEV,95106 ) 
+     &               IFIP( S ), ISCC( S ), FPLID( J ), ISTACK( S ),
+     &               EMIS( S,2 ), ROLDEM, EMISV( S,2 ), PERC, PDESC( S )
 
-               WRITE(RDEV, 95106)IFIP(K),ISCC(K),FPLID(J),ISTACK(K),
-     &           EMIS(K,2) ,ROLDEM, EMISV(K,2),PERC, PDESC(K)
+155             CONTINUE
 
-95106          FORMAT(I5,I9,1x,A15,I8,3F10.2,F7.1,1x,A40)
-             ENDDO
+                WRITE( RDEV,93000 ) ' '
 
-            WRITE( RDEV, * )
+            END IF   ! if rflag:  write report-file
 
+C.............  If fflag, Sum emissions for all plants for this month and store
+            IF ( FFLAG ) THEN
 
+                DO 159 J = 1, NPLT
 
-        END IF                          ! if rflag:  write report-file
+                    DO 157 K = 1, CNTSP( J )
 
-          IF ( .NOT. WRITE3( MNAME( M ), ALLVAR3, 0, 0,  IFIP ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &                'Error writing output file "' //
-     &                 MNAME( M )( 1:TRIMLEN( MNAME( M )) ) // '"',  2 )
-          END IF
+                        IF( K .EQ. 1 ) SUMNOX( J,M ) = 0.  ! Initialize
 
-95      CONTINUE  
+                        S = SNUMPPL( J,K )
 
-        CALL M3EXIT( 'GRWPMAT', 0, 0,
-     &             '====  END PROGRAM GRWPMAT  ====', 0 )
+                        SUMNOX( J,M ) = SUMNOX( J,M ) + 
+     &                                  EMISV( S,2 ) * YRINVNEW
 
+157                 CONTINUE
+159             CONTINUE
+
+            ENDIF
+
+            IF ( .NOT. WRITE3( MNAME( M ), ALLVAR3, 0, 0,  IFIP ) ) THEN
+                CALL M3EXIT( 'GRWPMAT', 0, 0,
+     &               'Error writing output file "' //
+     &               MNAME( M )( 1:TRIMLEN( MNAME( M )) ) // '"',  2 )
+            END IF
+
+166     CONTINUE  
+
+C.........  If FFLAG, write report by facility for all months
+
+        IF( FFLAG ) THEN
+
+C.............  Calculate the number of months for format statement 93100 
+            MONCNT = ZMON - AMON + 1
+
+C.............  Sum up emissions by plant for non-adjusted inventories
+            DO 188 J = 1, NPLT
+                DO 187 K = 1, CNTSP( J )
+
+                    IF( K .EQ. 1 ) THEN  ! Initialize
+                        SUMINV1( J ) = 0.
+                        SUMINV2( J ) = 0.
+                    ENDIF
+
+                    S = SNUMPPL( J,K )
+
+                    SUMINV1( J ) = SUMINV1( J ) + EMIS( S,2 ) * YRINVOLD
+                    SUMINV2( J ) = SUMINV2( J ) + 
+     &                             EMIS( S,2 ) * NOXGR( S ) * YRINVNEW
+
+187             CONTINUE
+188         CONTINUE
+
+C.............  Write the report (no header)
+            DO 201 J = 1, NPLT
+
+                IF( CNTSP( J ) .GT. 0 ) THEN  ! Report on this FIP/plant
+
+                    S    = SNUMPPL( J,1 )   ! Use first src per plant for name
+                    CFIP = XRFFP  ( J )( 1:5 )
+                    PLID = PLTPPL ( J )
+                    L    = TRIMLEN( PDESC( S ) )
+
+                    WRITE( FDEV, 93100 ) CFIP, PLID, 
+     &                     ( SUMNOX( J,M ), M = AMON, ZMON ),
+     &                     SUMINV2( J ), SUMINV1( J ), PDESC( S )( 1:L )
+                ENDIF
+
+201         CONTINUE
+
+        ENDIF
+
+        MESG = 'Successful completion of Program GRWPMAT'
+        CALL M3EXIT( 'GRWPMAT', 0, 0, MESG, 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
-
 
 C...........   Formatted file I/O formats............ 93xxx
 
@@ -729,42 +917,33 @@ C...........   Formatted file I/O formats............ 93xxx
 93070   FORMAT( I5.5, 1X, I8.8, 1X, 2(I6, 1X), A15, 1X, A12 , 1X, A12,
      &   1x,A40 )
 
-93100   FORMAT( /1X, A )
-
-93101   FORMAT( X, A )
-
-93110   FORMAT( 16X,                   12 ( 4X, A4, :, 4X ) )
-
-93120   FORMAT( 1X, I4, ':', 11X,      12 F12.6 )
-
-93121   FORMAT( 1X, I8, 2( ':',  I4 ), 12 F12.0 )
-
-93122   FORMAT( 18X,                   12 F12.6 )
-
-93130   FORMAT( 1X, A16,               12 F12.6 )
-
-93131   FORMAT( 1X, A16,               12 F12.0 )
-
-93140   FORMAT( 1X, 'FIPS ', A5, 5X, 'SCC ', A8, 5X, 'EMS PLT ', A15 )
-
+93100   FORMAT( A5, 1X, A15, 1X, <MONCNT>( F8.2, 1X ), 
+     &          2( F8.2, 1X ), A ) 
 
 C...........   Internal bufferring  formats............ 94xxx
 
-94000   FORMAT( 10 ( A, :, I10, :, 2X ) ) 
+94010   FORMAT( 10 ( A, :, I10, :, 2X ) ) 
 
-94010   FORMAT( I8.8 ) 
+94015   FORMAT( I8.8 ) 
 
 94020   FORMAT( I5.5 )
 
-94030   FORMAT( I5.5, I8.8, A )
+94100   FORMAT( A5, A8, A15 )
 
-94040   FORMAT( A, :, I10, :, 2X, 5 ( A, :, X, A, :, 2X ) ) 
+C...........   Other formats........................... 95xxx
+
+95100   FORMAT( 'for month :', A3, / )
+
+95105   FORMAT('  FIP',4x,'SCC',6x,'PLTID',4x,'90EMIS',4x,
+     &         '95t2',5x,'95new',4x,'%DIFF',3x,'NAME')
+
+95106   FORMAT( I5, I9, 1X, A15, I8, 3F10.2, F7.1, 1X, A40 )
 
         END
 
 C-------------------------------------------------------------------------
 
-	SUBROUTINE NORMID( IDSTR, SRCSTR )
+        SUBROUTINE NORMID( IDSTR, SRCSTR )
 
 C***********************************************************************
 C  FUNCTION:
