@@ -285,8 +285,18 @@ C           the second section, determine the number of records per time
 C           step. In the third section, read and store the data.  When storing
 C           data, time step index is computed from the start date/time instead
 C           of the reference date/time so that the indexing will work properly.
+
         IREC = 0
         PCORS = ' '
+        
+C.........  Skip #CEM header line if it is present
+        READ( FDEV, * ) MESG
+        IF( INDEX( MESG, '#CEM' ) < 0 ) THEN
+            BACKSPACE( FDEV )
+        ELSE
+            IREC = IREC + 1
+        END IF
+        
 c        TDAT = 0   !  array
         DO         !  Head of period-specific file read loop
 
@@ -295,10 +305,11 @@ C.............  There is no error checking to help speed things up
      &            CORS, BBUF, YYMMDD, HH, CEMEMIS( CO2IDX ),
      &            CEMEMIS( SO2IDX ), CEMEMIS( NOXIDX ), OPTIME,
      &            GLOAD, SLOAD, HTINPUT
+     
             IREC = IREC + 1
 
 C.............  Write message about which record number we're on
-            IF ( IREC .EQ. 1 .OR. MOD( IREC,500000 ) .EQ. 0 ) THEN
+            IF ( IREC <= 2 .OR. MOD( IREC,500000 ) .EQ. 0 ) THEN
 
                 IF( NRECS .GT. 0 .AND. GETCOUNT ) THEN
                     WRITE( MESG, 94010 ) 
