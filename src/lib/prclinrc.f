@@ -62,7 +62,8 @@ C.........  This module contains Smkreport-specific settings
      &                      PRFLAG, PRRPTFLG, CUFLAG, GFLAG, CRFLAG,
      &                      SSFLAG, SLFLAG, TFLAG, LFLAG, NFLAG, PSFLAG,
      &                      GSFLAG, TSFLAG, UNITSET, MXRPTNVAR,
-     &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME
+     &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME,
+     &                      NIFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC
@@ -393,6 +394,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYMON     = .FALSE.
                         RPT_%BYPLANT   = .FALSE.
                         RPT_%BYRCL     = .FALSE.
+                        RPT_%BYSIC     = .FALSE.
                         RPT_%BYSCC     = .FALSE.
                         RPT_%BYSPC     = .FALSE.
                         RPT_%BYSRC     = .FALSE.
@@ -406,6 +408,7 @@ C.........................  Reset report settings to defaults
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
                         RPT_%NORMPOP   = .FALSE.
+                        RPT_%SICNAM    = .FALSE.
                         RPT_%SCCNAM    = .FALSE.
                         RPT_%SRCNAM    = .FALSE.
                         RPT_%STKPARM   = .FALSE.
@@ -806,6 +809,22 @@ C.............  BY options affecting inputs needed
 
 		    END IF
 
+                CASE( 'SIC' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYSIC  = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NIFLAG = .TRUE.
+                            RPT_%SICNAM = .TRUE.
+                            IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY SIC instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+
                 CASE( 'SCC10' )
 		    IF( .NOT. RPT_%USEASCELEV ) THEN
                         RPT_%BYSCC  = .TRUE.
@@ -822,7 +841,7 @@ C.............  BY options affecting inputs needed
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
 		    END IF
-                
+               
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
@@ -830,6 +849,7 @@ C.............  BY options affecting inputs needed
 		    IF( .NOT. AFLAG ) THEN
                         RPT_%BYSCC   = .TRUE.
                         RPT_%SCCRES  = 10
+                        IF ( CATEGORY .EQ. 'POINT' ) RPT_%BYSIC = .TRUE.
 		    END IF
                     IF( SEGMENT( 3 ) .EQ. 'NAME' .OR.
      &                  SEGMENT( 4 ) .EQ. 'NAME' ) THEN
