@@ -78,7 +78,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   PARAMETERS and their descriptions:
         CHARACTER*5     BLANK5
-        PARAMETER(      BLANK5 = ' ' )
+        INTEGER         TON2GM
+        PARAMETER(      BLANK5 = ' ',
+     &                  TON2GM = 907184.74 )
         
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   NOTE that ASC (mobile-source-category) ID's are 10-digit
@@ -530,7 +532,7 @@ C.......   NOTE: Depends on FDESC3 Call!
             MODEL= VNAME3D( I )(K+1 : L  )
 
 C.............  Set other variable properties
-            UNITS3D( I ) = 'moles/gm'
+            UNITS3D( I ) = 'moles/ton'
             VDESC3D( I ) = 'Conversion factor for ' // 
      &         INV  ( 1:TRIMLEN( INV  ) ) // ' from process ' // 
      &         PROC ( 1:TRIMLEN( PROC ) ) // ' to species '   //
@@ -908,15 +910,15 @@ C...........   Loop through species that exist for this MV process
 C.................  Set inventory-species specific variables
 C.................  Use VREACT only if the volatile inventory pollutant is THC
                 IF( ISPC_PRC( EMT,P ) .EQ. 'THC' ) THEN
-                    FAC = VREACT * ALLADJ * VOLADJ
+                    FAC = TON2GM * VREACT * ALLADJ * VOLADJ
 
 C.................  Use the volatile correct factor only if the current
 C.................  inventory species is volatile
                 ELSEIF( ISPC_PRC( EMT,P ) .EQ. POLV ) THEN
-                    FAC = ALLADJ * VOLADJ
+                    FAC = TON2GM * ALLADJ * VOLADJ
 
                 ELSE
-                    FAC = ALLADJ
+                    FAC = TON2GM * ALLADJ
 
                 ENDIF
 
