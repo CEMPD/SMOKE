@@ -50,10 +50,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
+        INTEGER         FINDFIP    ! sl For finding unsorted FIP CODE file
 
         EXTERNAL        DSCGRID, FIND1, GETNUM, GETYN, INDEX1, LBLANK, 
      &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
-     &                  TRIMLEN
+     &                  TRIMLEN,FINDFIP
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -247,6 +248,9 @@ C.......   Set up file description and open emissions file:
         FDESC3D( 1 ) = 'Biogenic Source normalized emissions values.'
         FDESC3D( 2 ) = 'Inventory  type COUNTY_BASED'
 
+        NFIP = NBFIP    ! sl
+        print *, NFIP
+
         DO  11  I = 3, MXDESC3
             FDESC3D( I ) = ' '
 11      CONTINUE
@@ -398,15 +402,16 @@ C.......   Loop:  read county land use file:
 
             READ( UDEV, 93000, END = 122, IOSTAT=ISTAT ) INBUF
             LINE =  LINE + 1
-            IF ( ISTAT .EQ. 0 ) THEN
+            IF ( ISTAT .NE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
      &          'Error reading FIP from COUNTY LAND USE at line', LINE
-                CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
             END IF
 
             FIP = STR2INT( INBUF )
-            CTY = FIND1( FIP, NFIP, FIPS )
+c sl            CTY = FIND1( FIP, NFIP, FIPS )
+            CTY = FINDFIP( FIP, NFIP, FIPS )
 
 C...........   Initialize accumulator variables for this county:
 
@@ -446,7 +451,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                 WRITE( MESG,94010 ) 
      &          'Error reading FOREST AREA from ' //
      &          'COUNTY LAND USE at line', LINE
-                CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
             END IF
 
             I     = INDEX( INBUF, ',' )
@@ -462,7 +467,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     WRITE( MESG,94010 ) 
      &              'Error reading AREA TYPE from ' //
      &              'COUNTY LAND USE at line', LINE
-                    CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                    CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
                 END IF
 
                 J     = LBLANK( INBUF )
@@ -570,7 +575,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
                 WRITE( MESG,94010 ) 
      &          'Error reading URBAN FOREST from ' //
      &          'COUNTY LAND USE at line', LINE
-                CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
             END IF
 
             I     = INDEX( INBUF, ',' )
@@ -586,7 +591,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     WRITE( MESG,94010 ) 
      &              'Error reading AREA TYPE from ' //
      &              'COUNTY LAND USE at line', LINE
-                    CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                    CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
                 END IF
 
                 J     = LBLANK( INBUF )
@@ -696,7 +701,7 @@ C...........   Land use type:  agriculture.  Process subtypes:
                 WRITE( MESG,94010 ) 
      &          'Error reading AGRICULTURE from ' //
      &          'COUNTY LAND USE at line', LINE
-                CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
             END IF
 
             I     = INDEX( INBUF, ',' )
@@ -712,7 +717,7 @@ C...........   Land use type:  agriculture.  Process subtypes:
                     WRITE( MESG,94010 ) 
      &              'Error reading AREA TYPE from ' //
      &              'COUNTY LAND USE at line', LINE
-                    CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                    CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
                 END IF
 
                 J     = LBLANK( INBUF )
@@ -748,7 +753,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                 WRITE( MESG,94010 ) 
      &          'Error reading OTHER AREA from ' //
      &          'COUNTY LAND USE at line', LINE
-                CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
             END IF
 
             I     = INDEX( INBUF, ',' )
@@ -764,7 +769,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     WRITE( MESG,94010 ) 
      &              'Error reading AREA TYPE from ' //
      &              'COUNTY LAND USE at line', LINE
-                    CALL M3EXIT( 'RWABIO', 0, 0, MESG, 2 )
+                    CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
                 END IF
 
                 J     = LBLANK( INBUF )
@@ -1027,7 +1032,8 @@ c sl     &          FIPS,
                 CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
             END IF
             
-            K = FIND1( FIP, NFIP, FIPS )
+c sl            K = FIND1( FIP, NFIP, FIPS )
+            K = FINDFIP( FIP, NFIP, FIPS )
             IF ( K .LE. 0 ) THEN
                 EFLAG = .FALSE.
                 WRITE( MESG, 94010 ) 
@@ -1154,7 +1160,6 @@ C...........   Formatted file I/O formats............ 93xxx
 
 
 C...........   Internal buffering formats............ 94xxx
-
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
 
 
@@ -1163,5 +1168,29 @@ C...........   Miscellaneous formats................. 95xxx
 95000   FORMAT ( /5X , A , $ )          !  generic prompt format.
 
 
+        END
+
+
+        INTEGER FUNCTION FINDFIP( K, N, LIST)
+
+C***********************************************************************
+C  RETURNS:
+C       subscript at which the targeted key appears, or
+C       -1 in case of failure.
+C***********************************************************************
+
+        INTEGER        K
+        INTEGER        N
+        INTEGER        LIST( N )
+
+        DO I = 1, N
+           IF ( K .EQ. LIST( I ) ) THEN
+              FINDFIP = I
+              RETURN
+           END IF
+        END DO 
+       
+        FINDFIP = -1
+        RETURN
         END
 
