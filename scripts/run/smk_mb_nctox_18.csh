@@ -23,16 +23,16 @@ setenv MRG_SOURCE  M           # source category to merge
 
 ## time independent programs
 setenv RUN_CNTLMAT   Y         # Y runs control matrix program
-setenv RUN_GRWINVEN  N         # Y runs control matrix program
-setenv RUN_MBSETUP   N        #  run speed/temperature setup program        
+setenv RUN_GRWINVEN  Y         # Y runs control matrix program
+setenv RUN_MBSETUP   Y        #  run speed/temperature setup program        
 
 ## episode dependent programs
-setenv RUN_PREMOBL   N        #  Y runs temperature preprocessing program
-setenv RUN_EMISFAC   N        #  Y runs emission factors program
+setenv RUN_PREMOBL   Y        #  Y runs temperature preprocessing program
+setenv RUN_EMISFAC   Y        #  Y runs emission factors program
 
 ## time-dependent programs
-setenv RUN_TEMPORAL  N         # Y runs temporal allocation program
-setenv RUN_SMKMERGE  N         # Y runs merge program
+setenv RUN_TEMPORAL  Y         # Y runs temporal allocation program
+setenv RUN_SMKMERGE  Y         # Y runs merge program
 setenv RUN_SMK2EMIS  N         # run conversion of 2-d to UAM binary
 
 ## quality assurance
@@ -109,9 +109,9 @@ setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings (comment out if not used)
-setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-setenv YEAR_OVERRIDE 1999         # Overrides YEAR (base) in Assigns file
-# setenv INVTABLE_OVERRIDE      # Inventory table override
+setenv SPC_OVERRIDE       cmaq.cb4p25_wtox.m  # Chemical mechanism override
+setenv YEAR_OVERRIDE      1999                # Overrides YEAR (base) in Assigns file
+setenv INVTABLE_OVERRIDE  invtable_onroad.cb4.120202.txt   # Inventory table override
 # setenv CNTLCASE               # Control case
 
 ##############################################################################
@@ -162,10 +162,17 @@ source $ASSIGNS_FILE
 setenv RUN_PART1 Y     # Restart part 1
 source qa_run.csh      # Run QA for part 1
 
-## Run Mbsetup, Premobl, and Emisfac
+## Run Mbsetup and Premobl
 #
 source smk_run.csh     # Run remaining programs for part 1
 setenv RUN_PART1 N     # End part 1
+
+## Run emisfac for cases needed by temperature choices in MVREF file
+#
+foreach group ( episode )  # can include ( daily weekly monthly episode )
+  setenv GROUP_TYPE $group
+  source emisfac_run.csh     # Run programs
+endif
 
 ## Loop through days to run Temporal, Smkmerge, and Smk2emis 
 #
