@@ -191,7 +191,7 @@ C...........   Area Sources Table
 
 C...........   Other local variables
         
-        INTEGER         S, F, I, J, V, K!  loop counters.
+        INTEGER         M, S, F, I, J, V, K!  loop counters.
         INTEGER         ADEV            !  for actual-ASC file
         INTEGER         KDEV            !  volatile form conversion file
         INTEGER         SDEV            !  for surrogate coeff file
@@ -224,6 +224,7 @@ C...........   Other local variables
         LOGICAL         EFLAG   !  input error flag
         LOGICAL         KFLAG   !  if volatile format conversion factor or not
         LOGICAL         VFLAG   !  verbose conversion messages
+        LOGICAL         LVREACT !  if TVC in inventory then must be TRUE
 
 C***********************************************************************
 C   begin body of program SPCAMAT
@@ -302,6 +303,21 @@ C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
      &                   'Error reading ASC3 from file' // ANAME, 2 )
         END IF
 
+C......  if Total VOCs in inventory then flag to use VREACT later
+C......  NOTE: SMOKE not set up to be able to handle TVCs and VOCs
+C......  combined inventories
+        LVREACT = .FALSE.
+
+        DO  21  M = 1, NIPOL
+          IF ( EINAM( M ) .EQ. 'TVC' ) LVREACT = .TRUE.
+21      CONTINUE
+
+        IF ( LVREACT ) THEN
+               WRITE( MESG,93000 )
+     &         'Assuming TVC in inventory and no VOC in inventory'
+               CALL M3MESG( MESG )
+        ENDIF
+
 C.......   Read the ACTUAL ASC FILE
         
         CALL M3MSG2( 'Reading ACTUAL ASC file...' )
@@ -346,6 +362,10 @@ C.......   volatile pollutant in inventory.
         GO TO 77  ! To head of finding volatile pollutant type
  
 88      CONTINUE
+
+C.....  for EPS2 inventories that contain TVC emissions
+
+        IF ( LVREACT ) INVPRO = 'TVC'
 
         KFLAG = ( INVPRO .NE. POLV .AND. I .LE. NIPOL )
 
@@ -720,6 +740,10 @@ C...........       or else by SCC only
 
             END IF                      ! KFLAG is true, or not
 
+C............  if total VOCs in inventory, multiply by VREACT
+
+            IF ( LVREACT ) FAC = FAC * VREACT
+
             DO  144  V = IORG, NMPOL		!  loop on organics
                 SPCFACS( S,V ) = FAC * SCOEF( SPCPRF,V )
 144         CONTINUE
@@ -801,6 +825,7 @@ C...........   Informational (LOG) message formats... 92xxx
 
 
 C...........   Formatted file I/O formats............ 93xxx
+93000   FORMAT( A )
 
 93020   FORMAT( I7, I3 )
 
