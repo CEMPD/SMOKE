@@ -56,21 +56,26 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         DSCGRID
+        LOGICAL         ENVYN
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
         CHARACTER*14    MMDDYY
+        INTEGER         PROMPTFFILE 
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         INTEGER         WKDAY
+        REAL            YR2DAY
         
-        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
-     &                  PROMPTMFILE, TRIMLEN, WKDAY
+        EXTERNAL        DSCGRID, ENVYN, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY, YR2DAY
 
 C...........   PARAMETER
 
         CHARACTER*16    NONE
-        PARAMETER     ( NONE = 'NONE' )
+        REAL            TON2GM
+        PARAMETER     ( NONE = 'NONE',
+     &                  TON2GM = 907184.74 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Area Sources input and output arrays (one variable at a time)
@@ -104,22 +109,41 @@ C...........   form "<INV-SPC-NAME>to<MODEL-SPC-NAME>")
         
         CHARACTER*16    INVNAME( NMPOL )	!  inv-spc part of name
 
+C...........   Inventory arrays
+        INTEGER         IFIP  ( NASRC )   ! FIPs  code for each source
+        INTEGER         INVYR ( NASRC )   ! Inventory year code for each source
+        INTEGER         ISPTR ( NASRC )   ! Pointer for each state
+        INTEGER         STATES( NASID )   ! Unique list of state IDs
+
+C...........   Report arrays
+        REAL            EMSUM( NASID, NMPOL ) ! Summed emissions by state
+
 C...........   Other local variables
+
+        REAL            FAC     !  temporary conversion factor
         
         INTEGER         I, J, K, F, S, T, V
+        INTEGER         IOS
         INTEGER         LDATE, JDATE, JTIME, TSTEP
         INTEGER         LDEV
+        INTEGER         RDEV    !  output report unit number
+        INTEGER         LSTA    !  previous state code
+        INTEGER         NSTA    !  actual number of states
         INTEGER         NSTEPS
+        INTEGER         STA     !  temporay state code
+        INTEGER         YEAR    !  year for determining day to year
         
-        LOGICAL         CONTROLFLAG, OUTPUTFLAG
+        LOGICAL         CONTROLFLAG, OUTPUTFLAG, REPORTFLAG
 
         CHARACTER*16    ANAME   !  logical name for area-source       input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
         CHARACTER*16    CNAME   !  logical name for control    matrix input file
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
+        CHARACTER*16    INAME   !  logical name for inventory input file
         CHARACTER*16    ENAME   !  logical name for emission output file
             
-        CHARACTER*5     OUTNAM  !  contains default logical output name
+        CHARACTER*5     OUTNAM  !  contains default logical main   output name
+        CHARACTER*8     REPNAM  !  contains default logical report output name
         CHARACTER*16    SCRBUF  !  scratch area
         CHARACTER*16    UNITS   !  temporary units buffer
         CHARACTER*256   MESG    !  message buffer
@@ -158,6 +182,10 @@ C   begin body of program CSGAREA
             CALL M3EXIT( 'CSGAREA', 0, 0, 'Ending program.', 2 )
         END IF
 
+C.......   Get environment variable settings
+        REPORTFLAG = ENVYN( 'REPORTFLAG', 'Report writing flag',
+     &                      .TRUE., IOS )
+
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, area source file, 
 C.......   optional output file
@@ -181,7 +209,7 @@ C.......   optional output file
      &          'Enter logical name for AREA SOURCE file',
      &          FSREAD3, 'ATMP', 'CSGAREA' )
 
-C.......   Build description of output file, and optionally open it:
+C.......   Get description of input file, to use as description for output file
 
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3EXIT( 'CSGAREA', 0, 0, 
@@ -192,6 +220,118 @@ C.......   Build description of output file, and optionally open it:
      &      'program:', NASRC
             CALL M3EXIT( 'CSGAREA', 0, 0, MESG, 2 )
         END IF
+
+        JDATE = SDATE3D
+        JTIME = STIME3D
+        TSTEP = TSTEP3D
+
+C.........  Based on input files and control status so far, set default
+C........   output file names
+
+C.........  Annual inventory file as input with controls
+        IF ( TSTEP .EQ. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Area gridded, controlled model species'
+            OUTNAM = 'AGSC'
+            REPNAM = 'AGSCREP'
+            UNITS  = 'mole/year'
+
+C.........  Annual inventory file as input with NO controls
+        ELSEIF( TSTEP .EQ. 0 ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Area gridded model species'
+            OUTNAM = 'AGS'
+            REPNAM = 'AGSREP'
+            UNITS  = 'mole/year'
+ 
+C.........  Hourly inventory file as input with controls
+        ELSEIF ( TSTEP .GT. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) =
+     &        'Area gridded, hourly, controlled model species'
+            OUTNAM = 'AGTSC'
+            REPNAM = 'AGTSCREP'
+            UNITS  = 'mole/hour'
+ 
+C.........  Hourly inventory file as input with NO controls
+        ELSE
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 'Area gridded, hourly model species'
+            OUTNAM = 'AGTS'
+            REPNAM = 'AGTSREP'
+            UNITS  = 'mole/hour'
+ 
+        END IF
+
+C.......   Read FIPS code for reporting purpose
+        IF( REPORTFLAG ) THEN
+
+C............  If we've read in temporal file, must get inventory file name
+            IF ( TSTEP .NE. 0 ) THEN
+
+                INAME = PROMPTMFILE( 
+     &                  'Enter logical name for AREA INVENTORY file',
+     &                  FSREAD3, 'AREA', 'CSGAREA' )
+            ELSE
+                INAME = ANAME 
+
+            ENDIF
+
+            IF( .NOT. READ3( INAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+
+                CALL M3EXIT( 'SPCAMAT', 0, 0,
+     &                       'Error reading FIP from file' // ANAME, 2 )
+
+            END IF
+ 
+            IF( .NOT. 
+     &          READ3( INAME, 'INVYR', ALLAYS3, 0, 0, INVYR ) ) THEN
+
+                CALL M3EXIT( 'SPCAMAT', 0, 0,
+     &               'Error reading INVYR from file' // ANAME, 2 )
+
+            END IF
+ 
+            RDEV  = PROMPTFFILE(
+     &             'Enter logical name for TOTALS REPORT or "NONE"', 
+     &             .FALSE., .TRUE., REPNAM, 'CSGAREA' )
+
+C............  Create state codes arrays
+            LSTA = -9
+            K    = 0
+            DO 22 I = 1, NASRC
+
+                STA = IFIP( I ) / 1000
+
+                IF( STA .GT. LSTA ) THEN
+
+                    K = K + 1
+                    STATES( K ) = STA
+                    LSTA        = STA
+
+                ENDIF
+
+                ISPTR ( I ) = K   
+
+22          CONTINUE
+
+            NSTA = K
+
+            IF( NSTA .GT. NASID ) THEN
+                WRITE( MESG,94010 ) 
+     &                'Number of states is ', NSTA,
+     &                'but maximum (NASID) is', NASID
+                CALL M3EXIT( 'CSGAREA', JDATE, JTIME, MESG, 2 )
+            ENDIF
+
+C............  Initialize emission summary array
+            DO 28 I = 1, NASID
+                DO 27 S = 1, NMPOL
+                    EMSUM( I,S ) = 0.
+27              CONTINUE
+28          CONTINUE
+
+        ENDIF
 
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
      &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D, 
@@ -209,41 +349,6 @@ C.......   Build description of output file, and optionally open it:
         GDNAM3D = GRDNM
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
-        JDATE   = SDATE3D
-        JTIME   = STIME3D
-        TSTEP   = TSTEP3D
-
-C.........  Annual inventory file as input with controls
-        IF ( TSTEP .EQ. 0 .AND. CONTROLFLAG ) THEN
-            NSTEPS  = 1
-            FDESC3D( 1 ) = 'Area gridded, controlled model species'
-            OUTNAM = 'AGSC'
-            UNITS  = 'mole/year'
-
-C.........  Annual inventory file as input with NO controls
-        ELSEIF( TSTEP .EQ. 0 ) THEN
-            NSTEPS  = 1
-            FDESC3D( 1 ) = 'Area gridded model species'
-            OUTNAM = 'AGS'
-            UNITS  = 'mole/year'
- 
-C.........  Hourly inventory file as input with controls
-        ELSEIF ( TSTEP .GT. 0 .AND. CONTROLFLAG ) THEN
-            NSTEPS  = MXREC3D
-            FDESC3D( 1 ) =
-     &        'Area gridded, hourly, controlled model species'
-            OUTNAM = 'AGTSC'
-            UNITS  = 'mole/hour'
- 
-C.........  Hourly inventory file as input with NO controls
-        ELSE
-            NSTEPS  = MXREC3D
-            FDESC3D( 1 ) = 'Area gridded, hourly model species'
-            OUTNAM = 'AGTS'
-            UNITS  = 'mole/hour'
- 
-        END IF
-
 
         DO  33 V = 1, NMPOL
             VNAME3D( V ) = EMNAM( V )
@@ -252,13 +357,14 @@ C.........  Hourly inventory file as input with NO controls
             VTYPE3D( V ) = M3REAL
 33      CONTINUE
         FDESC3D( 1 ) = 'area source speciated gridded emissions.'
-        
+    
+C.........  Optionally open output file
+    
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for OUTPUT EMIS file ' //
      &          'or "NONE"', FSUNKN3, OUTNAM, 'CSGAREA'      )
 
         OUTPUTFLAG = ( ENAME .NE. NONE )
-
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
@@ -445,6 +551,16 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
                         END IF          !  if outputflag
 
+C.........................  When reporting is switched on, calculate emissions
+C.........................  summaries by state and report to output QA file
+C.........................  EMSUM must be initialized
+                        IF( REPORTFLAG ) THEN
+
+                            CALL AGRDSUM( NASRC, NGRID, NMATX, NS, IS,
+     &                                    CS, ISPTR, EMISC, 
+     &                                    EMSUM( 1,K ) )
+                        ENDIF
+
 197                 CONTINUE    !  end loop on output vbles for this input vble
 
                 ELSE
@@ -460,6 +576,47 @@ C.............  Write to screen because WRITE3 only writes to LDEV
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
 199     CONTINUE          !  end loop on time steps
+
+
+C.........  Write report if report flag is switched on
+
+        IF( REPORTFLAG ) THEN
+
+            YEAR = INVYR( 1 )   ! Temporay solution
+
+C.............  Convert summary emissions from moles per year to tons per day
+
+            DO 220 S = 1, NMPOL
+
+C.................  Conversion factor for AREA as input file
+                IF( TSTEP .EQ. 0 ) THEN
+                    FAC = YR2DAY( YEAR ) * EMWT( S ) / TON2GM
+
+C.................  Conversion factor for ATMP as input file
+                ELSE
+                    FAC = EMWT( S ) / TON2GM
+                ENDIF
+
+                DO 222 I = 1, NSTA
+
+                   EMSUM( I,S ) = EMSUM( I,S ) * FAC
+
+222             CONTINUE
+
+220         CONTINUE
+
+            IF( TSTEP .EQ. 0 ) THEN
+                MESG = 'Area source emissions ' //
+     &                 '(tons/ave inventory day) within grid ' // GRDNM
+            ELSE
+                MESG = 'Area source emissions ' //
+     &                 '(tons/specific day) within grid ' // GRDNM
+            ENDIF
+
+            CALL STATELST( RDEV  , MESG , NASID , NSTA , NMPOL, 
+     &                     'F7.1', EMNAM, STATES, EMSUM         )
+
+        ENDIF
 
 999     CONTINUE          !  exit program
       
@@ -478,11 +635,12 @@ C...........   Informational (LOG) message formats... 92xxx
 
 C...........   Formatted file I/O formats............ 93xxx
 
+93000   FORMAT( A )
+
 93010   FORMAT( A16 )
 
 93020   FORMAT( 8X, 'at time ', A8 )
  
-
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 2X ) )
