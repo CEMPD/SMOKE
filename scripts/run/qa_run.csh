@@ -67,12 +67,12 @@ endif
 if ( $?QA_LABEL ) then
 
    set ilabl = $FYIOP.$QA_LABEL
-   set slabl = $ESCEN.$QA_LABEL
+   set slabl = $ESCEN.$QA_LABEL.$G_STDATE
 
 else
 
    set ilabl = $FYIOP
-   set slabl = $ESCEN
+   set slabl = $ESCEN.$G_STDATE
 
 endif
 
@@ -292,7 +292,7 @@ case temporal:
       
    endsw
    
-   set logabbr = temporal.$ESDATE.$slabl
+   set logabbr = temporal.$slabl
    
    breaksw
 
@@ -300,7 +300,7 @@ case elevpoint:
    setenv REPCONFIG $INVDIR/other/repconfig.pt.elev.txt
    setenv REPORT1  $REPSTAT/p.src_elev.$ilabl.rpt
 
-   set logabbr = elevpoint.$ESDATE.$slabl
+   set logabbr = elevpoint.$slabl
    
    breaksw
 
@@ -308,7 +308,7 @@ case laypoint:
    setenv REPCONFIG $INVDIR/other/repconfig.pt.lfrac.txt
    setenv REPORT1   $REPSCEN/pt.state_layers.$ilabl.rpt
 
-   set logabbr = laypoint.$ESDATE.$slabl
+   set logabbr = laypoint.$slabl
    
    breaksw
 
