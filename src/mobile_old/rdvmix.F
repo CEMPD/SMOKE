@@ -255,7 +255,7 @@ C...........   Sort and process the vehicle mix factor arrays:
 
                 IF ( NVMXF .LE. MXFREF ) THEN
 
-                    VFIPF( NVMXF ) = FIP / 1000
+                    VFIPF( NVMXF ) = FIP
                     VRDTF( NVMXF ) = RDT
                     DO  34  V = 1, NVTYPE
                         MFACF( V, NVMXF ) = VFACA( V,K )
@@ -276,7 +276,7 @@ C...........   Sort and process the vehicle mix factor arrays:
 
                 IF ( NVMXL .LE. MXLREF ) THEN
 
-                    VFIPL( NVMXL ) = FIP / 1000
+                    VFIPL( NVMXL ) = FIP
                     VRDTL( NVMXL ) = RDT
                     VLNKL( NVMXL ) = LNK
                     DO  35  V = 1, NVTYPE
