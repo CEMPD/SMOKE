@@ -26,7 +26,6 @@ C  database file.
 
       INTEGER  ::  EFTYPE   ! emission factor type 
       INTEGER  ::  IFAC     ! facility type
-      INTEGER  ::  IROAD    ! road type (only used for output)
       INTEGER  ::  IH       ! hour of day
       INTEGER  ::  IPPM     ! particulate pollutant number (1 - MAXIPPM)
       INTEGER  ::  IP       ! actual pollutant number (7 - 15)
@@ -73,9 +72,6 @@ C  (always exhaust running except for brake and tire pollutants)
          END IF
 
          DO IFAC = 1,4
-
-C  Only need to do brake and tire pollutants once
-            IF (IFAC > 1 .AND. IPPM > 7) CYCLE
                      
             DO IH = 1,24
 C  Reinitialize output array
@@ -145,31 +141,24 @@ ccs  Print some error message
 
 C.....  Check that this EF type, and road type should be output
                IF (DBSELEFT(EFTYPE) == 2 ) THEN
-                     	
-C.....  Set road type for output
-                  IF (IPPM <= 7) THEN
-                     IROAD = IFAC
-                  ELSE
-                     IROAD = 5
-                  END IF
                      
-                  IF (DBSELFAC(IROAD) == 2 ) THEN
+                  IF (DBSELFAC(IFAC) == 2 ) THEN
 
 C                     WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
-C     &               TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IROAD,
+C     &               TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
 C     &               TABCHAR,IH,TABCHAR,PMAGGR(IVEH),IVEH=1,8)
 C  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
 
                      DO IVEH = 1,8
                         EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
-     &                                       IP, IVEH, EFTYPE, IROAD, 
+     &                                       IP, IVEH, EFTYPE, IFAC, 
      &                                       IH, .TRUE. )
      
 C  Subtract 2.5 values from 10 values if needed
                         IF (PSZCUT == 10) THEN
                            POS25 = EFPOSITION(STR2INT(DBSCTITLE),
      &                                        IP-20, IVEH, EFTYPE, 
-     &                                        IROAD, IH, .TRUE. )           
+     &                                        IFAC, IH, .TRUE. )           
                            EMISSIONS(EMISPOS) = PMAGGR(IVEH) - 
      &                                          EMISSIONS(POS25)
                         ELSE
