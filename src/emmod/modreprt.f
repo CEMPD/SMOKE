@@ -116,6 +116,7 @@
             LOGICAL       :: BYHOUR        ! true: by hour
             LOGICAL       :: BYLAYER       ! true: by layer
             LOGICAL       :: BYMON         ! true: by monthly temporal code
+            LOGICAL       :: BYPLANT       ! true: by plant 
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
