@@ -19,8 +19,8 @@
        if( ! -e $M_OUT )  mkdir -p $M_OUT
        if( ! -e $P_OUT )  mkdir -p $P_OUT
        if( ! -e $SCENARIO ) mkdir -p $SCENARIO
-       if( ! -e $OUTPUT ) mkdir -p $OUTPUT
        if( ! -e $STATIC ) mkdir -p $STATIC
+       if( ! -e $OUTPUT ) mkdir -p $OUTPUT
        if( ! -e $SMK_TMPDIR ) mkdir -p $SMK_TMPDIR  
        if( ! -e $SMK_METPATH ) mkdir -p $SMK_METPATH
        if( ! -e $SMK_SPDPATH ) mkdir -p $SMK_SPDPATH
@@ -31,15 +31,15 @@
        if( ! -e $REPSCEN ) mkdir -p $REPSCEN
        if( ! -e $REPSTAT ) mkdir -p $REPSTAT
        if( ! -e $REPSTAT ) mkdir -p $REPSTAT
-       if( ! -e $REPORTS/$ASCEN/$ESDATE ) mkdir -p $REPORTS/$ASCEN/$ESDATE
+       if( ! -e $REPORTS/$ASCEN/scenario ) mkdir -p $REPORTS/$ASCEN/scenario
        if( ! -e $REPORTS/$ASCEN/static )  mkdir -p $REPORTS/$ASCEN/static
-       if( ! -e $REPORTS/$BSCEN/$ESDATE ) mkdir -p $REPORTS/$BSCEN/$ESDATE
-       if( ! -e $REPORTS/$MSCEN/$ESDATE ) mkdir -p $REPORTS/$MSCEN/$ESDATE
+       if( ! -e $REPORTS/$BSCEN/scenario ) mkdir -p $REPORTS/$BSCEN/scenario
+       if( ! -e $REPORTS/$MSCEN/scenario ) mkdir -p $REPORTS/$MSCEN/scenario
        if( ! -e $REPORTS/$MSCEN/static )  mkdir -p $REPORTS/$MSCEN/static
-       if( ! -e $REPORTS/$PSCEN/$ESDATE ) mkdir -p $REPORTS/$PSCEN/$ESDATE
+       if( ! -e $REPORTS/$PSCEN/scenario ) mkdir -p $REPORTS/$PSCEN/scenario
        if( ! -e $REPORTS/$PSCEN/static )  mkdir -p $REPORTS/$PSCEN/static
    else
-       echo "ERROR: The SMOKE data directory does not exist\!"
+       echo "ERROR: The SMOKE data directory does not exist!"
        echo "       Please check to make sure that the following"
        echo "       path is valid:"
        echo "       $SMKDAT"
@@ -82,7 +82,7 @@
       set cnt = `echo $SMK_M6PATH | wc -c`
       @ cnt = $cnt - 1
       if ( $cnt > 50 ) then
-         echo "NOTE: your SMK_M6PATH is constrained to 50 characters"
+         echo "NOTE: your SMK_M6PATH is contrained to 50 characters"
          echo "      but yours is $cnt characters."
          echo "      If you are going to run MOBILE6, then you"
          echo "      must reselect an EDSS_ROOT and ESCEN values"
