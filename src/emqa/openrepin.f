@@ -116,6 +116,7 @@ C.........  Other local variables
         INTEGER         I, J, L, L1, L2, N, V       ! counters and indices
 
         INTEGER         IOS           ! tmp I/O status
+        INTEGER         TSTEP_T       ! unused time step from environment
 
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
 
@@ -524,7 +525,7 @@ C.............  Write explanation
             CALL M3MSG2( MESG )
 
 C.............  Subselect dates and times
-            CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
+            CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP_T, NSTEPS )
             EDATE = SDATE
             ETIME = STIME
             CALL NEXTIME( EDATE, ETIME, ( NSTEPS-1 ) * TSTEP )
