@@ -73,10 +73,12 @@ csgpoint.debug: $(CSG) $(CSGIP)
 	echo CSGPOINT:
 	f77 $(DBGFLAGS)   -o csgpoint.debug $(CSG) $(LIBS)
 #
-OBJS = getrecs.F rdvmix.F
+#OBJS = getrecs.F rdvmix.F
+OBJS = getrecs.F
  
 INCS = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT \
-       TMDIMS3.EXT EMCNST3.EXT EMDIMS3.EXT
+       TMDIMS3.EXT
+#       TMDIMS3.EXT EMCNST3.EXT EMDIMS3.EXT
  
 getrecs.debug: $(OBJS) $(INCS)
 	echo GETRECS:
