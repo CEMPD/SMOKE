@@ -74,70 +74,71 @@ C......... Unsorted...
         CASE( 'UNSORTED' )
 
 C.............  Allocate variables irrespective of PFLAG
-            IF( UFLAG .AND. .NOT. ALLOCATED( INDEXA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( INDEXA ) ) THEN
                 ALLOCATE( INDEXA( NDIM2 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( INRECA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( INRECA ) ) THEN
                 ALLOCATE( INRECA( NDIM2 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INRECA', PROGNAME )
             END IF
 
 C.............  Allocate for any source category
-            IF( UFLAG .AND. .NOT. ALLOCATED( IFIPA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( IFIPA ) ) THEN
                 ALLOCATE( IFIPA( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IFIPA', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( TPFLGA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( TPFLGA ) ) THEN
                 ALLOCATE( TPFLGA( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'TPFLGA', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( INVYRA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( INVYRA ) ) THEN
                 ALLOCATE( INVYRA( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVYRA', PROGNAME )
             END IF
  
-            IF( UFLAG .AND. .NOT. ALLOCATED( CSCCA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( CSCCA ) ) THEN
                 ALLOCATE( CSCCA( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSCCA', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( SRCIDA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( SRCIDA ) ) THEN
                 ALLOCATE( SRCIDA( NDIM2 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'SRCIDA', PROGNAME )
             END IF
  
-            IF( UFLAG .AND. .NOT. ALLOCATED( IPOSCOD ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( IPOSCOD ) ) THEN
                 ALLOCATE( IPOSCOD( NDIM2 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( CSOURCA ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( CSOURCA ) ) THEN
                 ALLOCATE( CSOURCA( NDIM2 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSOURCA', PROGNAME )
             END IF
 
-            IF( PFLAG .AND. AFLAG .AND. .NOT. ALLOCATED( POLVLA ) ) THEN
+            IF( PFLAG .AND. AFLAG 
+     &                .AND. .NOT. ASSOCIATED( POLVLA ) ) THEN
                 ALLOCATE( POLVLA( NDIM2, NDIM3 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POLVLA', PROGNAME )
             END IF
 
 C.............  Deallocate for any source category
             IF( .NOT. AFLAG .AND. .NOT. PFLAG ) THEN
-                IF( ALLOCATED( IFIPA )   ) DEALLOCATE( IFIPA )
-                IF( ALLOCATED( TPFLGA )  ) DEALLOCATE( TPFLGA )
-                IF( ALLOCATED( INVYRA )  ) DEALLOCATE( INVYRA )
-                IF( ALLOCATED( CSCCA )   ) DEALLOCATE( CSCCA )
-                IF( ALLOCATED( CSOURCA ) ) DEALLOCATE( CSOURCA )
+                IF( ASSOCIATED( IFIPA )   ) DEALLOCATE( IFIPA )
+                IF( ASSOCIATED( TPFLGA )  ) DEALLOCATE( TPFLGA )
+                IF( ASSOCIATED( INVYRA )  ) DEALLOCATE( INVYRA )
+                IF( ASSOCIATED( CSCCA )   ) DEALLOCATE( CSCCA )
+                IF( ASSOCIATED( CSOURCA ) ) DEALLOCATE( CSOURCA )
 
             ELSE IF( .NOT. AFLAG ) THEN
-                 IF( ALLOCATED( INDEXA  ) ) DEALLOCATE( INDEXA )
-                 IF( ALLOCATED( INRECA  ) ) DEALLOCATE( INRECA )
-                 IF( ALLOCATED( SRCIDA  ) ) DEALLOCATE( SRCIDA )
-                 IF( ALLOCATED( POLVLA  ) ) DEALLOCATE( POLVLA )
+                 IF( ASSOCIATED( INDEXA  ) ) DEALLOCATE( INDEXA )
+                 IF( ASSOCIATED( INRECA  ) ) DEALLOCATE( INRECA )
+                 IF( ASSOCIATED( SRCIDA  ) ) DEALLOCATE( SRCIDA )
+                 IF( ASSOCIATED( POLVLA  ) ) DEALLOCATE( POLVLA )
 
             END IF               
 
@@ -208,12 +209,12 @@ C.............  Allocate specifically based on source category
                     CALL CHECKMEM( IOS, 'IWEKA', PROGNAME )
                 END IF
  
-                IF( UFLAG .AND. .NOT. ALLOCATED( XLOCAA ) ) THEN
+                IF( UFLAG .AND. .NOT. ASSOCIATED( XLOCAA ) ) THEN
                     ALLOCATE( XLOCAA( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'XLOCAA', PROGNAME )
                 END IF
  
-                IF( UFLAG .AND. .NOT. ALLOCATED( YLOCAA ) ) THEN
+                IF( UFLAG .AND. .NOT. ASSOCIATED( YLOCAA ) ) THEN
                     ALLOCATE( YLOCAA( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'YLOCAA', PROGNAME )
                 END IF
@@ -306,7 +307,7 @@ C.........  Sorted ...
                 CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( IPOSCOD ) ) THEN  ! make sure
+            IF( UFLAG .AND. .NOT. ASSOCIATED( IPOSCOD ) ) THEN  ! make sure
                 ALLOCATE( IPOSCOD( NDIM2 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
             END IF
@@ -324,7 +325,7 @@ C               may be needed for reading day- and hour-specific data
                 IF( ALLOCATED( INVYR )  ) DEALLOCATE( INVYR )
 
             ELSE IF( .NOT. AFLAG ) THEN
-                IF( ALLOCATED( IPOSCOD ) ) DEALLOCATE( IPOSCOD )
+                IF( ASSOCIATED( IPOSCOD ) ) DEALLOCATE( IPOSCOD )
                 IF( ALLOCATED( POLVAL  ) ) DEALLOCATE( POLVAL )
                 IF( ALLOCATED( NPCNT   ) ) DEALLOCATE( NPCNT )
 
@@ -332,6 +333,17 @@ C               may be needed for reading day- and hour-specific data
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
+            
+                IF( UFLAG .AND. .NOT. ALLOCATED( XLOCA ) ) THEN
+                    ALLOCATE( XLOCA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
+                END IF
+
+                IF( UFLAG .AND. .NOT. ALLOCATED( YLOCA ) ) THEN
+                    ALLOCATE( YLOCA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
+                END IF
+                
                 IF( UFLAG .AND. .NOT. ALLOCATED( CELLID ) ) THEN
                     ALLOCATE( CELLID( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CELLID', PROGNAME )
