@@ -62,6 +62,10 @@
         INTEGER    , PUBLIC :: NSRC  =0 ! number of SMOKE sources
         INTEGER    , PUBLIC :: PLTIDX   ! index of plant (if any) in SC_BEGP
         INTEGER    , PUBLIC :: RSCCBEG  ! beginning of right-SCC
+        INTEGER    , PUBLIC :: SCCLEV1  ! right-most position of level-1 of SCC
+        INTEGER    , PUBLIC :: SCCLEV2  ! right-most position of level-2 of SCC
+        INTEGER    , PUBLIC :: SCCLEV3  ! right-most position of level-3 of SCC
+        INTEGER    , PUBLIC :: SCCLEV4  ! right-most position of level-4 of SCC
 
 !.........  Positions of pollutant-specific inventory data in storage array
         INTEGER :: NC1 = 0 !  pos in 2nd dim of POLVLA of primary control code
