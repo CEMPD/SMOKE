@@ -1,9 +1,9 @@
 
-        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, NCPE, ENAME, 
+        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, RDEV, NCPE, ENAME, 
      &                       MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 145
 C
 C  DESCRIPTION:
 C      This subroutine computes the multiplicative control factors
@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -61,9 +61,8 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETEFILE
-        INTEGER         PROMPTFFILE
 
-        EXTERNAL   GETEFILE, PROMPTFFILE
+        EXTERNAL   GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -71,6 +70,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) ::  CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) ::  GDEV   ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) ::  LDEV   ! file unit no. for tmp ALW file
+        INTEGER     , INTENT (IN) ::  RDEV   ! file unit no. for output report
         INTEGER     , INTENT (IN) ::  NCPE   ! no. of control packet entries
         CHARACTER*16, INTENT (IN) ::  ENAME  ! logical name for i/o api 
                                              ! inventory input file
@@ -79,6 +79,12 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) ::  GFLAG  ! true = apply CTG controls
         LOGICAL     , INTENT (IN) ::  LFLAG  ! true = apply ALW controls
         LOGICAL     , INTENT (IN) ::  SFLAG  ! true = apply EMS_CTL controls
+
+C...........   Local allocatable arrays
+        INTEGER, ALLOCATABLE:: PLTINDX ( : )   ! index from sources to plants
+        REAL   , ALLOCATABLE:: PLTINEM ( :,: ) ! initial emissions
+        REAL   , ALLOCATABLE:: PLTOUTEM( :,: ) ! controlled emissions
+        LOGICAL, ALLOCATABLE:: PLTFLAG ( : )   ! true: plant controlled
 
 C...........   Local temporary arrays
         INTEGER      ALWINDX  ( NSRC,NVCMULT ) ! indices to ALW controls table
@@ -101,7 +107,10 @@ C...........   Local temporary arrays
 
 C...........   Other local variables
         INTEGER          I,J,K,S  ! counters and indices
+        INTEGER          IDX      ! index
         INTEGER          IOS      ! input/output status
+        INTEGER          NPLT     ! number of plants
+        INTEGER          PIDX     ! previous iteration index
 
         REAL             ALWFAC   ! allowable control factor
         REAL             ALWEMIS  ! allowable emissions
@@ -110,6 +119,7 @@ C...........   Other local variables
         REAL             CTGFAC2  ! MAXACF or RSNACF
         REAL             CUTOFF   ! CTG cutoff for application of control
         REAL             DENOM    ! denominator of control back-out factor
+        REAL             EOUT     ! tmp output emissions
         REAL             MACT     ! max. achievable cntrl tech. cntrl factor
         REAL             RACT     ! reasonably achievable cntrl tech. cntrl
                                   ! factor
@@ -117,11 +127,59 @@ C...........   Other local variables
 
         CHARACTER        FILENM                ! file name
         CHARACTER, SAVE  ::  PATHNM            ! path name for tmp file
+        CHARACTER*100    OUTFMT                ! header format buffer
         CHARACTER*300    MESG                  ! message buffer
+        CHARACTER(LEN=FPLLEN3) CPLT
+        CHARACTER(LEN=FPLLEN3) PPLT
+        CHARACTER(LEN=SRCLEN3) CSRC
+
+
         CHARACTER*16  :: PROGNAME = 'GENMULTC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENMULTC
+
+C...........  Get set up for reporting...
+          IF( CATEGORY .EQ. 'POINT' ) THEN
+
+C...............  Count the number of plants in the domain
+              PPLT = ' '
+              NPLT = 0
+              DO S = 1, NSRC
+                  CPLT = CSOURC( S )( 1:FPLLEN3 )
+                  IF( CPLT .NE. PPLT ) NPLT = NPLT + 1
+                  PPLT = CPLT
+              END DO
+
+C...............  Allocate memory for the number of plants for storing emissions
+              ALLOCATE( PLTINDX( NSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'PLTINDX', PROGNAME )
+              ALLOCATE( PLTFLAG( NPLT ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'PLTFLAG', PROGNAME )
+              ALLOCATE( PLTINEM( NPLT, NVCMULT ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'PLTINEM', PROGNAME )
+              ALLOCATE( PLTOUTEM( NPLT, NVCMULT ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'PLTOUTEM', PROGNAME )
+ 
+C...............  Initialize
+              PLTINDX   = 0  ! array
+              PLTINEM  = 0. ! array
+              PLTOUTEM = 0. ! array
+              PLTFLAG  = .FALSE.  ! array
+
+C...............  Create index from sources to plants
+              PPLT = ' '
+              NPLT = 0
+              DO S = 1, NSRC
+                  CPLT = CSOURC( S )( 1:FPLLEN3 )
+                  IF( CPLT .NE. PPLT ) THEN
+                      NPLT = NPLT + 1
+                      PPLT = CPLT
+                  END IF
+                  PLTINDX( S ) = NPLT
+              END DO
+
+          END IF
 
 C...........  For each pollutant that receives controls, obtain variable
 C             names for control efficiency, rule effectiveness, and, in the
@@ -160,25 +218,25 @@ C             successfully written the temporary files.
 C...........  Fractionalize control-packet information
 
         IF ( CFLAG ) THEN
-            FACCEFF = FACCEFF/100.0  ! array
-            FACREFF = FACREFF/100.0  ! array
-            FACRLPN = FACRLPN/100.0  ! array
+            FACCEFF = FACCEFF*0.01  ! array
+            FACREFF = FACREFF*0.01  ! array
+            FACRLPN = FACRLPN*0.01  ! array
         END IF
 
         IF( SFLAG ) THEN
-            BASCEFF = BASCEFF/100.0  ! array
-            BASREFF = BASREFF/100.0  ! array
-            BASRLPN = BASRLPN/100.0  ! array
-            EMSCEFF = EMSCEFF/100.0  ! array
-            EMSREFF = EMSREFF/100.0  ! array
-            EMSRLPN = EMSRLPN/100.0  ! array
+            BASCEFF = BASCEFF*0.01  ! array
+            BASREFF = BASREFF*0.01  ! array
+            BASRLPN = BASRLPN*0.01  ! array
+            EMSCEFF = EMSCEFF*0.01  ! array
+            EMSREFF = EMSREFF*0.01  ! array
+            EMSRLPN = EMSRLPN*0.01  ! array
         END IF
 
 C...........  Loop through pollutants that receive controls
 
         DO I = 1, NVCMULT
 
-C...........  Initialize control factor array
+C............  Initialize control factor array
 
            FACTOR = 1.0  ! array
 
@@ -233,9 +291,9 @@ C             AREA sources, rule penetration.
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,4), PROGNAME )
               END IF
 
-              RULPEN = 100.0
+              RULPEN = 100.0  ! array
 
-              END SELECT ! end select on category
+              END SELECT      ! end select on category
 
 C...........  Fractionalize all inventory control information and set
 C             missing values to one, then calculate the factor which will
@@ -247,19 +305,19 @@ C             inventory
                  IF ( CTLEFF( S ) .LT. AMISS3 ) THEN
                     CTLEFF( S ) = 0.0
                  ELSE
-                    CTLEFF( S ) = CTLEFF( S )/100.0
+                    CTLEFF( S ) = CTLEFF( S )*0.01
                  END IF
 
                  IF ( RULEFF( S ) .LT. AMISS3 ) THEN
                     RULEFF( S ) = 1.0
                  ELSE
-                    RULEFF( S ) = RULEFF( S )/100.0
+                    RULEFF( S ) = RULEFF( S )*0.01
                  END IF
 
                  IF ( RULPEN( S ) .LT. AMISS3 ) THEN
                     RULPEN( S ) = 1.0
                  ELSE
-                    RULPEN( S ) = RULPEN( S )/100.0
+                    RULPEN( S ) = RULPEN( S )*0.01
                  END IF
 
 C..................  Perform division by zero check. 
@@ -303,11 +361,11 @@ C...........  Compute CTL factor
                     RULPEN( S ) = FACRLPN( K )
                     FACTOR( S ) = BACKOUT( S )*
      &                          ( 1.0 - CTLEFF(S)*RULEFF(S)*RULPEN(S) )
+
                  ELSE
                     FACTOR( S ) = 1.0
-                 END IF
 
-                 EMIS( S ) = EMIS( S )*FACTOR( S ) ! apply controls
+                 END IF
 
               END DO ! end source loop
 
@@ -334,7 +392,22 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
                     FACTOR( S ) = 1.0
                  END IF
 
-                 EMIS( S ) = EMIS( S )*FACTOR( S ) ! apply controls
+C..................  Compute new emissions
+                 EOUT = EMIS( S ) * FACTOR( S )
+
+C..................  Store input and output emissions for plant
+                 IF( CATEGORY .EQ. 'POINT' ) THEN
+                     J = PLTINDX( S )
+                     PLTINEM ( J,I ) = PLTINEM ( J,I ) + EMIS( S )
+                     PLTOUTEM( J,I ) = PLTOUTEM( J,I ) + EOUT
+
+C......................  Flag plant if emissions are different
+                     IF( EOUT .NE. EMIS( S ) ) PLTFLAG( J ) = .TRUE.
+
+                 END IF
+
+C..................  Store new emissions
+                 EMIS( S ) = EOUT
 
               END DO ! end source loop
 
@@ -342,8 +415,7 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
 
            IF ( GFLAG .AND. PCTLFLAG( I, 2 ) ) THEN
 
-C...........  Compute CTG factor
-
+C...............  Compute CTG factor
               DO S = 1, NSRC
 
                  K = CTGINDX( S, I ) 
@@ -353,9 +425,8 @@ C...........  Compute CTG factor
                     MACT   = FACMACT( K )
                     RACT   = FACRACT( K )
 
-C...........  Determine if MACT or RACT is to be used as the second
-C             CTG factor
-
+C.....................  Determine if MACT or RACT is to be used as the second
+C                       CTG factor
                     IF ( MACT .GE. 0 .AND. RACT .GE. 0 ) THEN
                        CTGFAC2 = MACT
                     ELSE IF ( MACT .GE. 0 .AND. RACT .LT. 0 ) THEN
@@ -366,16 +437,16 @@ C             CTG factor
                        CTGFAC2 = 1.0
                     END IF
 
-C...........  Check to see if emissions exceed cutoff and if necessary,
-C             apply controls
+C.....................  Check to see if emissions exceed cutoff and if 
+C                       necessary, apply controls
 
                     IF ( EMIS( S ) .GT. CUTOFF ) THEN
 
                        FACTOR( S ) = FACTOR( S )*CTGFAC
                        EMIS( S )   = EMIS( S )*CTGFAC
 
-C...........  If emissions still exceed cutoff, apply second CTG factor
-
+C........................  If emissions still exceed cutoff, apply second
+C                          CTG factor
                        IF ( EMIS( S ) .GT. CUTOFF ) THEN
                           FACTOR( S ) = FACTOR( S )*CTGFAC2
                        END IF
@@ -421,8 +492,6 @@ C             value.  Compute ALW control factor, if necessary.
                        IF ( EMIS( S ) .GT. REPLACE ) THEN
                           FACTOR( S ) = REPLACE/EMIS( S )
                        END IF
-
-                    ELSE
                        
                     END IF
 
@@ -434,22 +503,54 @@ C             value.  Compute ALW control factor, if necessary.
 
 C...........  Write multiplicative controls for current pollutant
 
-        IF( .NOT. WRITE3( MNAME, PNAMMULT( I ), 0, 0, FACTOR ) ) THEN
-            MESG = 'Failed to write multiplicative control factors 
-     &              for pollutant ' // PNAMMULT( I )
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
+            IF( .NOT. WRITE3( MNAME, PNAMMULT(I), 0, 0, FACTOR ) ) THEN
+                MESG = 'Failed to write multiplicative control ' // 
+     &                 'factors for pollutant ' // PNAMMULT( I )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
         END DO ! end pollutant loop
 
-        RETURN
+C.........  Write out report
+        IF( CATEGORY .EQ. 'POINT' ) THEN
+            WRITE( RDEV, 93000 ) 'Controlled facilities report'
+            WRITE( RDEV, 93400 ) ( OUTNAMES( I,1 ), I=1,NVCMULT )
+            WRITE( OUTFMT, '( A, I3.3, A )' ) 
+     &             '(30X, ', NVCMULT, '( "Before", 7X, "After", 6X ) )'
+            WRITE( RDEV, OUTFMT )
 
+            PIDX = 0
+            DO S = 1, NSRC
+        	IDX = PLTINDX( S )
+
+        	IF( IDX .NE. PIDX .AND.
+     &              PLTFLAG( IDX )      ) THEN
+
+                    J = FIPLEN3 + 1
+                    CSRC = CSOURC( S )                    
+                    WRITE( RDEV, 93410 ) 
+     &                     CSRC( 1:FIPLEN3 ), CSRC( J:FPLLEN3 ),
+     &                     ( PLTINEM ( IDX,I ), PLTOUTEM( IDX,I ),
+     &                       I = 1, NVCMULT )
+
+                    PIDX = IDX
+        	END IF
+            END DO
+        END IF
+
+        RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-C...........   Internal buffering formats............ 94xxx
+C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+
+93400   FORMAT( 'Co/St/Cy', 4X, 'Facility ID', 13X, 100( A16, :, 8X ) )
+
+93410   FORMAT( 1X, A6, 2X, A15, 1X, 100( F11.2, :, 1X ) )
+
+C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
@@ -474,11 +575,11 @@ C.............  Local variables
 
 C----------------------------------------------------------------------
 
-        MESG = 'Error reading ' // OUTNAME // ' from inventory file'
+            MESG = 'Error reading ' // OUTNAME // ' from inventory file'
 
-        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-        END SUBROUTINE WRITE_MESG_EXIT
+            END SUBROUTINE WRITE_MESG_EXIT
 
 C----------------------------------------------------------------------
 
