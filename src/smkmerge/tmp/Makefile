@@ -2,10 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	  = $(LDIRS) -lsmoke -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -lioapi.debug -lnetcdf.debug
-LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+LIBS	  = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libiotools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
 #
 
 all: smkmerge mrggrid
@@ -44,8 +44,9 @@ mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+include $(IOMOD_SRC)/modmake.inc
 
-allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV)
+allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ $<
 bldmrgidx.o : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -63,19 +64,19 @@ mrgunits.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
 mrgvnams.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
-openmrgin.o : $(MODMERGE) $(MODELEV)
+openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ $<
-openmrgout.o: $(MODMERGE) $(MODELEV)
+openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdmrginv.o: $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
-smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV)
+smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ $<
-wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV)
+wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ $<
 wmrgemis.o  : $(MODMERGE) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
-wrmrgrep.o  : $(MODMERGE) $(MODSTCY)
+wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 
