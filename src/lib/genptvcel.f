@@ -39,7 +39,7 @@ C***************************************************************************
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, GDTYP, NCOLS, NROWS, 
-     &                     P_ALP, P_BET, P_GAM, XCENT, YCENT
+     &                     P_ALP, P_BET, P_GAM, XCENT, YCENT,
      &                     XORIG, YORIG, XCELL, YCELL
      
         IMPLICIT NONE
