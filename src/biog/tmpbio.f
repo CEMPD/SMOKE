@@ -26,17 +26,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -77,13 +77,23 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
+        INTEGER         SECSDIFF
         CHARACTER*16    VERCHAR
-
+        LOGICAL         SETENVVAR
+        
         EXTERNAL        CRLF, ENVINT, ENVYN, GETDATE, GETFLINE, GETNUM, 
-     &                  GETYN, HHMMSS, INDEX1, PROMPTMFILE, 
-     &                  PROMPTFFILE, VERCHAR
+     &                  GETYN, HHMMSS, INDEX1, MMDDYY, PROMPTMFILE, 
+     &                  PROMPTFFILE, SECSDIFF, VERCHAR, SETENVVAR
+
+C.........  Meteorology data settings
+        INTEGER, ALLOCATABLE :: METCHECK ( : )  ! dimension: no. time steps
+                                                ! value indicates valid temperature file 
+        CHARACTER(LEN=256), ALLOCATABLE :: METLIST( : ) ! list of temperature file names        
+        INTEGER, ALLOCATABLE :: RADCHECK ( : )  ! valid radiation file for each time step
+        CHARACTER(LEN=256), ALLOCATABLE :: RADLIST( : ) ! list of radiation file names
 
 C.........  Gridded meteorology data
                 
@@ -169,6 +179,8 @@ C...........   Logical names and unit numbers
 
         INTEGER         LDEV    !  unit number for log device
         INTEGER         RDEV    !  unit number for speciation profiles file
+        INTEGER         MDEV    !  unit number for temperature list file
+        INTEGER         DDEV    !  unit number for radiation list file
             
         CHARACTER*16    ENAME   !  logical name for emissions output (moles)
         CHARACTER*16    SNAME   !  logical name for emissions output (mass)
@@ -176,44 +188,57 @@ C...........   Logical names and unit numbers
         CHARACTER*16    NNAME2  !  logical name for 2nd norm emissions input
         CHARACTER*16    BNAME   !  logical name for frost switch input
         CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
-        CHARACTER*16    M3NAME  !  logical name for MET_FILE1
-        CHARACTER*16    M2NAME  !  logical name for MET_FILE2
+        CHARACTER*16    MNAME   !  logical name for gridded temperature file
+        CHARACTER*16    RNAME   !  logical name for gridded radiation file
 
 C...........   Other variables and their descriptions:
 
         INTEGER         B, M    !  counters for biogenic, model species
-        INTEGER         I, II, III, J, JJ, JJJ, K, L, C, R  !  loop counters and subscripts
+        INTEGER         I, II, III, J, JJ, JJJ, K, L, C, N, R  !  loop counters and subscripts
         INTEGER         HR      !  current simulation hour
+        INTEGER         HRPOS   !  current position in file checking arrays
 
         INTEGER         IOS     !  temporay IO status
-        INTEGER         JDATE   !  current simulation date (YYYYDDD)
-        INTEGER         JTIME   !  current simulation time (HHMMSS)
+        INTEGER         JDATE   !  current simulation date (YYYYDDD) in output time zone
+        INTEGER         JTIME   !  current simulation time (HHMMSS) in output time zone
         INTEGER         LDATE   !  previous simulation date
-        INTEGER         MDATE   !  met file 1 start date
-        INTEGER         METNCOLS! no. met file columns
-        INTEGER         METNROWS! no. met file rows
-        INTEGER         MSPCS   ! no. of emitting species
-        INTEGER         MTIME   !  met file 1 start time
-        INTEGER         MXSTEPS !  maximum number of time steps
-        INTEGER         NLINES  ! no. of lines in GSPRO speciation profiles file  
-        INTEGER         NSTEPS  !  duration of met file
-        INTEGER         BSTEPS  ! no. of hourly time steps for output
+        INTEGER         MDATE   !  meteorology start date in GMT
+        INTEGER         MTIME   !  meteorology start time in GMT
+        INTEGER         METNCOLS!  no. met file columns
+        INTEGER         METNROWS!  no. met file rows
+        INTEGER         METSTART  ! starting position in METCHECK array
+        INTEGER         MSPCS   !  no. of emitting species
+        INTEGER         NLINES  !  no. of lines in GSPRO speciation profiles file 
+        INTEGER         NMETLINES ! no. of lines in temperature file list
+        INTEGER         NRADLINES ! no. of lines in radiation file list 
+        INTEGER      :: NSTEPS = 1!  duration of episode
+        INTEGER         NMETSTEPS ! no. of time steps in temperature files
+        INTEGER         NRADSTEPS ! no. of time steps in radiation files
+        INTEGER         NEWSTEPS  ! temporary no. of time steps in simulation
         INTEGER         PARTYPE !  method number to calculate PAR
-        INTEGER         RDATE   !  met file 2 start date 
-        INTEGER         RTIME   !  met file 2 start time
+        INTEGER         RADSTART  ! starting position in RADCHECK array
         INTEGER      :: SWNCOLS = 0   !  bioseason 
         INTEGER      :: SWNROWS = 0   !  bioseason 
         INTEGER      :: SWXOFF  = 0   !  bioseason x offset from met grid
         INTEGER      :: SWYOFF  = 0   !  bioseason y offset from met grid
-        INTEGER         TZONE   !  output-file time zone ; not used in program
+        INTEGER         TZONE   !  output-file time zone
 
         LOGICAL ::      EFLAG    = .FALSE.  ! error flag
         LOGICAL ::      SAMEFILE = .TRUE.   ! radiation/cld and tmpr data in same file 
         LOGICAL ::      SWITCH_FILE = .TRUE.  ! use frost switch file
+        LOGICAL ::      DUPWARN  = .TRUE.   ! warn if duplicate data found
+        LOGICAL ::      METOPEN = .FALSE.  ! true: a met I/O API file is open
+        LOGICAL ::      RADOPEN = .FALSE.  ! true: a rad I/O API file is open
 
+        CHARACTER*256   METFILE  !  full gridded temperature file name
+        CHARACTER*256   RADFILE  !  full gridded radiation/cloud file name
+        CHARACTER*256   DUPFILE  !  duplicate file name
+        CHARACTER*256   NEXTFILE !  next file name to be opened
+        
         CHARACTER*300   MESG    !  message buffer for M3EXIT()
 
-C.......   Input met and grid variables:
+        CHARACTER*14    DTBUF        ! date buffer
+        
         CHARACTER*16 :: PROGNAME = 'TMPBIO'   !  program name
 
 C***********************************************************************
@@ -304,108 +329,477 @@ C.......   Get the method to calculate PAR
         MESG =  'PAR calculation will ' // PARMENU( PARTYPE )  
         WRITE( LDEV, 92000 ) MESG
 
-C.......   Get temperature file
+C.......   Get episode date and time from environment
+        CALL GETM3EPI( TZONE, JDATE, JTIME, NSTEPS )
 
-        M3NAME = PROMPTMFILE( 
-     &          'Enter name for gridded temperature input file',
-     &          FSREAD3, 'MET_FILE1', 'TMPBIO' )
+C........  Convert start date and time to output time zone.
+        MDATE = JDATE
+        MTIME = JTIME
+        CALL NEXTIME( MDATE, MTIME, TZONE*10000 )
 
 C......    Get name of temperature variable to use
-
         MESG = 'Variable name for temperature'
         CALL ENVSTR( 'TMPR_VAR', MESG, 'TA', TMPRNAM, IOS )
 
-C......    Read description of temperature file 
+C.......   Get list of temperature files
+        MDEV = PROMPTFFILE(
+     &         'Enter name for list of gridded temperature input ' //
+     &         'files (or "NONE")',
+     &         .TRUE., .TRUE., 'METLIST', PROGNAME )
+
+        MNAME = 'MET_FILE1'
+
+C.......   If we don't have a list, get location of MET_FILE1 to use
+        IF( MDEV < 0 ) THEN
+            CALL ENVSTR( MNAME, 'Gridded temperature input file',
+     &                   ' ', METFILE, IOS )
+            IF( IOS /= 0 ) THEN
+                MESG = 'No setting for gridded temperature file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            
+            NMETLINES = 1  ! set one line in file
+            
+C.......   Otherwise, get number of lines in met list file
+        ELSE
+            NMETLINES = GETFLINE( MDEV, 'METLIST file' )
+            
+        END IF
+
+C.......   Allocate and initialize arrays for storing met list and met check        
+        ALLOCATE( METLIST( NMETLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'METLIST', PROGNAME )
+        ALLOCATE( METCHECK( NSTEPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'METCHECK', PROGNAME )
         
-        IF ( .NOT. DESC3( M3NAME ) ) THEN
+        METLIST = ' '   ! array
+        METCHECK = 0    ! array
 
-            MESG = 'Could not get description of file "' //
-     &             M3NAME( 1:LEN_TRIM( M3NAME ) ) // '"'
-            CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+C.......   Read lines from met list file   
+        IF( MDEV > 0 ) THEN     
+            CALL RDLINES( MDEV, 'METLIST file', NMETLINES, METLIST )
+        ELSE
+            METLIST( 1 ) = METFILE
+        END IF
+        
+        CLOSE( MDEV )
 
+        MESG = 'Checking temperature files...'
+        CALL M3MSG2( MESG )
+
+C.......   Loop through met files and check time period
+        DO N = 1, NMETLINES
+        
+C.............  Close previous file if needed
+            IF( METOPEN ) THEN
+                IF( .NOT. CLOSE3( MNAME ) ) THEN
+                    MESG = 'Could not close temperature file ' // 
+     &                     METFILE( 1:LEN_TRIM( METFILE ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    METOPEN = .FALSE.
+                END IF
+            END IF
+
+C.............  Get current file name
+            METFILE = METLIST( N )
+
+C.............  Reset duplicate warning - prints error once per met file
+            DUPWARN = .TRUE.    
+            
+C.............  Skip any blank lines
+            IF( METFILE == ' ' ) CYCLE
+
+C.............  Set logical file name
+            IF( .NOT. SETENVVAR( MNAME, METFILE ) ) THEN
+            	EFLAG = .TRUE.
+            	MESG = 'INTERNAL ERROR: Could not set logical file ' //
+     &                 'name for file ' // TRIM( METFILE )
+                CALL M3MSG2( MESG )
+                CYCLE
+            END IF       	
+
+C.............  Try to open file            
+            IF( .NOT. OPEN3( MNAME, FSREAD3, PROGNAME ) ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Could not open temperature file ' //
+     &                 METFILE( 1:LEN_TRIM( METFILE ) )
+                CALL M3MSG2( MESG )
+                CYCLE
+            ELSE
+            	METOPEN = .TRUE.
+            END IF
+
+C.............  Read description of file            
+            IF( .NOT. DESC3( MNAME ) ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Could not get description of file ' //
+     &                 METFILE( 1:LEN_TRIM( METFILE ) )
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
+C.............  Check that requested variable is in file
+            J = INDEX1( TMPRNAM, NVARS3D, VNAME3D )
+            IF( J <= 0 ) THEN
+            	EFLAG = .TRUE.
+                MESG = 'ERROR: Could not find ' // TMPRNAM // 
+     &                 'in file ' //
+     &                 METFILE( 1:LEN_TRIM( METFILE ) )
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
+C.............  Check that all met files have the same grid.
+            CALL CHKGRID( MNAME, 'GRID' , 0 , EFLAG )
+
+C.............  If first file, store met grid settings and descriptions
+            IF( N == 1 ) THEN
+                METNCOLS = NCOLS
+                METNROWS = NROWS
+
+                METSCEN  = GETCFDSC( FDESC3D,'/MET SCENARIO/', .FALSE. )
+                CLOUDSHM = GETCFDSC( FDESC3D,'/CLOUD SCHEME/', .FALSE. )
+            END IF
+
+C.............  Use start date, start time, and no. time steps to fill in METCHECK array
+            HRPOS = SECSDIFF( MDATE, MTIME, SDATE3D, STIME3D )
+            HRPOS = HRPOS / 3600
+
+C.............  If met data starts before episode, skip ahead to start of episode
+            IF( HRPOS <= 0 ) THEN
+                NMETSTEPS = MXREC3D + HRPOS
+                HRPOS = 1
+            ELSE
+            	NMETSTEPS = MXREC3D
+                HRPOS = HRPOS + 1
+            END IF
+
+C.............  Loop through time steps in met data and fill in METCHECK array            
+            DO J = HRPOS, NMETSTEPS
+                IF( J > NSTEPS ) EXIT
+
+C.................  Check if met data overlaps previous file and print warning                
+                IF( METCHECK( J ) /= 0 .AND. DUPWARN ) THEN
+                    DUPFILE = METLIST( METCHECK( J ) )
+                    MESG = 'WARNING: Time period of temperature file '//
+     &                     METFILE( 1:LEN_TRIM( METFILE ) ) //
+     &                     ' overlaps that of file ' //
+     &                     DUPFILE( 1:LEN_TRIM( DUPFILE ) ) // '.' //
+     &                     CRLF() // BLANK10 // 'Data from ' // 
+     &                     METFILE( 1:LEN_TRIM( METFILE ) ) //
+     &                     ' will be used.' 
+                    CALL M3MESG( MESG )
+                    DUPWARN = .FALSE.
+                END IF
+                
+                METCHECK( J ) = N
+            END DO
+        
+        END DO
+
+C.........  Exit if there was a problem with the temperature files
+        IF( EFLAG ) THEN
+            MESG = 'Problems checking temperature files'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        J = INDEX1( TMPRNAM , NVARS3D, VNAME3D )
+C.........  Check for missing temperature data
+        MESG = 'Checking for missing temperature data...'
+        CALL M3MSG2( MESG )
 
-        IF ( J .LE. 0 ) THEN
+        NEWSTEPS = 0
+        METSTART = 0
 
-             MESG = 'Could not find ' // TMPRNAM // 'in file ' //
-     &                   M3NAME( 1:LEN_TRIM( M2NAME ) ) 
+        DO N = 1, NSTEPS
 
-             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
- 
+            IF( METCHECK( N ) /= 0 ) THEN
+                IF( METSTART == 0 ) THEN
+                    NEWSTEPS = 1
+                    CALL NEXTIME( JDATE, JTIME, (N-1)*10000 )
+                    CALL NEXTIME( MDATE, MTIME, (N-1)*10000 )
+                    METSTART = N
+                ELSE
+                    NEWSTEPS = NEWSTEPS + 1
+                END IF
+            ELSE
+                IF( METSTART /= 0 ) EXIT
+            END IF
+        
+        END DO
+
+        IF( NEWSTEPS == 0 ) THEN
+            MESG = 'Temperature data does not cover ' //
+     &             'requested time period'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Initialize reference grid with met file
-        CALL CHKGRID( M3NAME, 'GRID' , 0 , EFLAG ) 
+C.........  Reset number of steps and print messages
+        IF( NEWSTEPS /= NSTEPS ) THEN
+            NSTEPS = NEWSTEPS
+            MESG = 'WARNING: Resetting output start date, start ' //
+     &             'time, or duration to match available temperature' //
+     &             ' data.'
+            CALL M3MSG2( MESG )
 
-C.........  Store met grid settings
-        METNCOLS = NCOLS
-        METNROWS = NROWS
-
-C.........  Get met and cloud scheme descriptions from M3NAME if they exist
-
-        METSCEN  = GETCFDSC( FDESC3D, '/MET SCENARIO/', .FALSE. )
-        CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. )
+C.............  Get date buffer field
+            DTBUF = MMDDYY( JDATE )
+            L = LEN_TRIM( DTBUF )
+            WRITE( MESG,94052 )
+     &        '      Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
+     &        '      Start Time:', JTIME,'HHMMSS'// CRLF() // BLANK5 //
+     &        '        Duration:', NSTEPS, 'hours'
+            CALL M3MSG2( MESG )
+        END IF
 
         IF ( PARTYPE .NE. 5 ) THEN
 
-C.........  Open second met file if needed
+            IF ( PARTYPE .EQ. 1 ) THEN
 
-           IF ( .NOT. SAMEFILE ) THEN
-
-             M2NAME = PROMPTMFILE(
-     &           'Enter name for gridded radiation/cloud input file',
-     &           FSREAD3, 'MET_FILE2', 'TMPBIO' )
-
-C......    Read description of radiation/cloud file
-
-             IF ( .NOT. DESC3( M2NAME ) ) THEN
-
-                MESG = 'Could not get description of file "' //
-     &             M2NAME( 1:LEN_TRIM( M2NAME ) ) // '"'
-                CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-
-             END IF
-
-C..............  Check that all met files have the same grid.
-             CALL CHKGRID( M2NAME, 'GRID' , 0 , EFLAG )
-
-C........  If grid definition does not match BGRD file then stop
-
-             IF ( EFLAG ) THEN
-              MESG = 'Problems opening input files. See ERROR(S) above.'
-              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-             END IF
-
-             CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. )
-        
-           ELSE
-             
-             M2NAME = M3NAME
- 
-           END IF
-        
-        END IF
-
-        IF ( PARTYPE .EQ. 1 ) THEN
-
-C............. Get name of radiation variable to use
-
-            MESG = 'Variable name for radiation'
-            CALL ENVSTR( 'RAD_VAR', MESG, 'RGRND', RADNAM, IOS )
-
-
-            J = INDEX1( RADNAM, NVARS3D, VNAME3D )
-            IF ( J .LE. 0 ) THEN
-
-                MESG = 'Could not find ' // RADNAM // 'in file ' //
-     &                 M2NAME( 1:LEN_TRIM( M2NAME ) )
-
-                CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+C.................  Get name of radiation variable to use
+                MESG = 'Variable name for radiation'
+                CALL ENVSTR( 'RAD_VAR', MESG, 'RGRND', RADNAM, IOS )
 
             END IF
-         END IF
+
+C............  Open second met file if needed
+
+            IF ( .NOT. SAMEFILE ) THEN
+
+                DDEV = PROMPTFFILE( 'Enter name for list of gridded ' //
+     &              'radiation/cloud input files (or "NONE")', 
+     &              .TRUE., .TRUE., 'RADLIST', PROGNAME )
+
+                RNAME = 'MET_FILE2'
+
+C.................  If we don't have a list, get location of MET_FILE2 to use
+                IF( DDEV < 0 ) THEN
+                    CALL ENVSTR( RNAME, 'Gridded radiation/' //
+     &                           'cloud input file', ' ', RADFILE, IOS )
+                    IF( IOS /= 0 ) THEN
+                        MESG = 'No setting for gridded ' //
+     &                         'radiation/cloud file'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                    
+                    NRADLINES = 1
+
+C.................  Otherwise, get number of lines in met list file                    
+                ELSE
+                    NRADLINES = GETFLINE( DDEV, 'RADLIST file' )
+                    
+                END IF
+
+C.................  Allocate and initialize arrays for storing rad list and rad check        
+                ALLOCATE( RADLIST( NRADLINES ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'RADLIST', PROGNAME )
+                ALLOCATE( RADCHECK( NSTEPS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'RADCHECK', PROGNAME )
+        
+                RADLIST = ' '   ! array
+                RADCHECK = 0    ! array
+
+C.................  Read lines from rad list file   
+                IF( DDEV > 0 ) THEN     
+                    CALL RDLINES( DDEV, 'RADLIST file', NRADLINES, 
+     &                            RADLIST )
+                ELSE
+                    RADLIST( 1 ) = RADFILE
+                END IF
+
+                CLOSE( DDEV )
+
+                MESG = 'Checking radiation/cloud files...'
+                CALL M3MSG2( MESG )
+
+C.................  Loop through radiation files and check time period
+                DO N = 1, NRADLINES
+
+C.....................  Close previous file if needed
+                    IF( RADOPEN ) THEN
+                        IF( .NOT. CLOSE3( RNAME ) ) THEN
+                            MESG = 'Could not close radiation file ' // 
+     &                             RADFILE( 1:LEN_TRIM( RADFILE ) )
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        ELSE
+                            RADOPEN = .FALSE.
+                        END IF
+                    END IF
+
+C.....................  Get current file name
+                    RADFILE = RADLIST( N )
+
+C.....................  Reset duplicate warning - prints error once per met file
+                    DUPWARN = .TRUE.    
+            
+C.....................  Skip any blank lines
+                    IF( RADFILE == ' ' ) CYCLE
+                    
+C.....................  Set env variable
+                    IF( .NOT. SETENVVAR( RNAME, RADFILE ) ) THEN
+                    	EFLAG = .TRUE.
+                    	MESG = 'INTERNAL ERROR: Could not set ' //
+     &               	       'logical file name for file ' //
+     &                         TRIM( RADFILE )
+                        CALL M3MSG2( MESG )
+                        CYCLE
+                    END IF
+                    
+C.....................  Try to open file   
+                    IF( .NOT. OPEN3( RNAME, FSREAD3, 
+     &                                  PROGNAME ) ) THEN
+                        EFLAG = .TRUE.
+                        MESG = 'ERROR: Could not open radiation ' // 
+     &                         'file ' // 
+     &                         RADFILE( 1:LEN_TRIM( RADFILE ) )
+                        CALL M3MESG( MESG )
+                        CYCLE
+                    ELSE
+                    	RADOPEN = .TRUE.
+                    END IF
+
+C.....................  Read description of file            
+                    IF( .NOT. DESC3( RNAME ) ) THEN
+                        EFLAG = .TRUE.
+                        MESG = 'ERROR: Could not get description ' //
+     &                         'of file ' //
+     &                         RADFILE( 1:LEN_TRIM( RADFILE ) )
+                        CALL M3MESG( MESG )
+                        CYCLE
+                    END IF
+
+                    IF( PARTYPE .EQ. 1 ) THEN
+
+C.........................  Check that requested variable is in file
+                        J = INDEX1( RADNAM, NVARS3D, VNAME3D )
+                        IF( J <= 0 ) THEN
+                        	EFLAG = .TRUE.
+                            MESG = 'ERROR: Could not find ' // RADNAM // 
+     &                             'in file ' //
+     &                             RADFILE( 1:LEN_TRIM( RADFILE ) )
+                            CALL M3MESG( MESG )
+                            CYCLE
+                        END IF
+                    END IF
+
+C.....................  Check that all met files have the same grid.
+                    CALL CHKGRID( RNAME, 'GRID' , 0 , EFLAG )
+
+C.....................  If first file, store description
+                    IF( N == 1 ) THEN
+                        CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', 
+     &                                      .FALSE. )
+                    END IF
+
+C.....................  Use start date, start time, and no. time steps 
+C                       to fill in RADCHECK array
+                    HRPOS = SECSDIFF( MDATE, MTIME, SDATE3D, STIME3D )
+                    HRPOS = HRPOS / 3600
+
+C.....................  If met data starts before episode, 
+C                       skip ahead to start of episode
+                    IF( HRPOS <= 0 ) THEN
+                        NRADSTEPS = MXREC3D + HRPOS
+                        HRPOS = 1
+                    ELSE
+                    	NRADSTEPS = MXREC3D
+                        HRPOS = HRPOS + 1
+                    END IF
+
+C.....................  Loop through time steps in met data and fill in RADCHECK array            
+                    DO J = HRPOS, NRADSTEPS
+                        IF( J > NSTEPS ) EXIT
+
+C.........................  Check if met data overlaps previous file and print warning                
+                        IF( RADCHECK( J ) /= 0 .AND. DUPWARN ) THEN
+                            DUPFILE = RADLIST( RADCHECK( J ) )
+                            MESG = 'WARNING: Time period of ' //
+     &                             'radiation file '//
+     &                             RADFILE( 1:LEN_TRIM( RADFILE ) ) //
+     &                             ' overlaps that of file ' //
+     &                             DUPFILE( 1:LEN_TRIM( DUPFILE ) ) // 
+     &                             '.' //
+     &                             CRLF() // BLANK10 // 'Data from ' // 
+     &                             RADFILE( 1:LEN_TRIM( RADFILE ) ) //
+     &                             ' will be used.' 
+                            CALL M3MESG( MESG )
+                            DUPWARN = .FALSE.
+                        END IF
+                        
+                        RADCHECK( J ) = N
+                    END DO
+        
+                END DO
+
+C................  Exit if there was a problem with the radiation files
+                IF( EFLAG ) THEN
+                    MESG = 'Problems checking radiation/cloud files'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C.................  Check for missing radiation data
+                MESG = 'Checking for missing radiation data...'
+                CALL M3MSG2( MESG )
+                
+                NEWSTEPS = 0
+                RADSTART = 0
+
+                DO N = 1, NSTEPS
+
+                    IF( RADCHECK( N ) /= 0 ) THEN
+                        IF( RADSTART == 0 ) THEN
+                            NEWSTEPS = 1
+                            CALL NEXTIME( JDATE, JTIME, (N-1)*10000 )
+                            CALL NEXTIME( MDATE, MTIME, (N-1)*10000 )
+                            RADSTART = N
+                        ELSE
+                            NEWSTEPS = NEWSTEPS + 1
+                        END IF
+                    ELSE
+                        IF( RADSTART /= 0 ) EXIT
+                    END IF
+        
+                END DO
+
+                IF( NEWSTEPS == 0 ) THEN
+                    MESG = 'Radiation data does not cover ' //
+     &                     'requested time period'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C................  Reset METSTART
+                METSTART = METSTART + ( RADSTART - 1 )
+
+C................  Reset number of steps and print messages
+                IF( NEWSTEPS /= NSTEPS ) THEN
+                    NSTEPS = NEWSTEPS
+                    MESG = 'WARNING: Resetting output start date, ' //
+     &                     'start time, or duration to match ' //
+     &                     'available radiation data.'
+                    CALL M3MSG2( MESG )
+
+C....................  Get date buffer field
+                    DTBUF = MMDDYY( JDATE )
+                    L = LEN_TRIM( DTBUF )
+                    WRITE( MESG,94052 )
+     &        '      Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
+     &        '      Start Time:', JTIME,'HHMMSS'// CRLF() // BLANK5 //
+     &        '        Duration:', NSTEPS, 'hours'
+                    CALL M3MSG2( MESG )
+                END IF
+        
+            ELSE       
+                ALLOCATE( RADLIST( NMETLINES ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'RADLIST', PROGNAME )
+                ALLOCATE( RADCHECK( NSTEPS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'RADCHECK', PROGNAME )
+
+                RADLIST  = METLIST
+                RADCHECK = METCHECK
+ 
+            END IF
+        
+        END IF
 
 C........  if solar zenith angle calculation needed then get lat-lon
 C........  coordinates from GRID_CRO_2D file
@@ -510,23 +904,11 @@ C........  If grid definitions do not match properly
           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.......   Get default time characteristic for output file:
-C.......   If we're going to prompt, then set the defaults based on met
-C.......      otherwise, use environment variables to set defaults
-
-        JDATE  = SDATE3D
-        JTIME  = STIME3D
-        NSTEPS = MXREC3D
-
-        CALL GETM3EPI( TZONE, JDATE, JTIME, NSTEPS )
-
 C.......   Build description for, and create/open output file
-C.......   (all but variables-table in description is borrowed from M3NAME)
 
         SDATE3D = JDATE
         STIME3D = JTIME
-        BSTEPS  = NSTEPS
-        MXREC3D = BSTEPS
+        MXREC3D = NSTEPS
         NVARS3D = MSPCS
         NLAYS3D = 1
         TSTEP3D = 10000
@@ -868,30 +1250,14 @@ C.......   Allocate memory for emissions
         ALLOCATE( EMISS( NCOLS, NROWS, MSPCS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMISS', PROGNAME )
 
-C.........  Set up gridded met file(s) dates and times for specific time zone
-
-        IF( M3NAME .NE. ' ' ) THEN
-          CALL PREBMET( M3NAME, M2NAME, SAMEFILE, TZONE, TSTEP3D, JDATE, 
-     &                  JTIME, NSTEPS, MDATE, MTIME, RDATE, RTIME )
-        END IF
-
-C.........  Reset no. output steps if needed
-        IF( BSTEPS > NSTEPS ) THEN
-           BSTEPS = NSTEPS
-        END IF
-
-        IF ( M2NAME .EQ. M3NAME ) THEN
-
-           RDATE = MDATE  
-           RTIME = MTIME
-  
-        END IF 
-
-        LDATE = 0     
-
+        LDATE = 0 
+            
+        METFILE = ' '
+        RADFILE = ' '
+        
 C.........  Loop thru the number of time steps (hourly)
  
-        DO  HR = 1, BSTEPS
+        DO  HR = 1, NSTEPS
 
            EMISL = 0        ! array
            EMISS = 0        ! array
@@ -978,26 +1344,85 @@ C                          behave as the nearest available cell on the boundary.
 C.............  Write to screen because WRITE3 only writes to LDEV
            WRITE( *, 94030 ) HHMMSS( JTIME )
 
-C.............  Read temperature data
+C.............  Open temperature file
+           NEXTFILE = METLIST( METCHECK( METSTART + ( HR-1 ) ) )
+           IF( NEXTFILE /= METFILE ) THEN           	
+               IF( METOPEN ) THEN
+                   IF( .NOT. CLOSE3( MNAME ) ) THEN
+                       MESG = 'Could not close temperature file ' // 
+     &                        METFILE( 1:LEN_TRIM( METFILE ) )
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                   ELSE
+                       METOPEN = .FALSE.
+                   END IF
+               END IF
+               
+               METFILE = NEXTFILE
 
-           IF ( .NOT. READ3( M3NAME, TMPRNAM, 1, 
+C................  Set env variable
+               IF( .NOT. SETENVVAR( MNAME, METFILE ) ) THEN
+               	   MESG = 'Could not set logical file name ' //
+     &          	  'for file ' // TRIM( METFILE )
+                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+               END IF
+               
+C................  Try to open file               
+               IF( .NOT. OPEN3( MNAME, FSREAD3, PROGNAME ) ) THEN
+     	           MESG = 'Could not open temperature file ' // 
+     &                    METFILE( 1:LEN_TRIM( METFILE ) )
+     	           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+     	       ELSE
+     	       	   METOPEN = .TRUE.
+     	       END IF
+     	   END IF
+
+C.............  Read temperature data
+           IF ( .NOT. READ3( MNAME, TMPRNAM, 1, 
      &          MDATE, MTIME, TASFC ) ) THEN
               MESG = 'Could not read ' // TMPRNAM // 'from file ' //
-     &                M3NAME( 1:LEN_TRIM( M3NAME ) )
+     &                METFILE( 1:LEN_TRIM( METFILE ) )
               CALL M3EXIT( 'TMPBIO', MDATE, MTIME, MESG, 2 )
            END IF
-
 
 C............  If necessary read solar radiation
 
            IF ( PARTYPE .EQ. 1 ) THEN      ! Use RADNAM
 
-              IF ( .NOT. READ3( M2NAME, RADNAM, ALLAYS3, RDATE,
-     &             RTIME, TSOLAR(1,1) ) ) THEN
-                 MESG = 'Could not read ' // RADNAM // 'from file ' //
-     &                M2NAME( 1:LEN_TRIM( M2NAME ) ) 
+C...............  Open radiation file
+              NEXTFILE = RADLIST( RADCHECK( RADSTART + ( HR-1 ) ) )
+              IF( NEXTFILE /= RADFILE ) THEN
+                  IF( RADOPEN ) THEN
+                      IF( .NOT. CLOSE3( RNAME ) ) THEN
+                          MESG = 'Could not close radiation file ' //
+     &                           RADFILE( 1:LEN_TRIM( RADFILE ) )
+                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                      ELSE
+                      	  RADOPEN = .FALSE.
+                      END IF
+                  END IF 
+                  
+                  RADFILE = NEXTFILE
+                  
+                  IF( .NOT. SETENVVAR( RNAME, RADFILE ) ) THEN
+               	      MESG = 'Could not set logical file name ' //
+     &          	     'for file ' // TRIM( RADFILE )
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  END IF
+                  
+                  IF( .NOT. OPEN3( RNAME, FSREAD3, PROGNAME ) ) THEN
+     	              MESG = 'Could not open radiation file ' // 
+     &         	              RADFILE( 1:LEN_TRIM( RADFILE ) )
+     	              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+     	          ELSE
+     	              RADOPEN = .TRUE.
+     	          END IF
+     	      END IF
 
-                 CALL M3EXIT( 'TMPBIO', RDATE, RTIME, MESG, 2 )
+              IF ( .NOT. READ3( RNAME, RADNAM, ALLAYS3, MDATE,
+     &             MTIME, TSOLAR(1,1) ) ) THEN
+                 MESG = 'Could not read ' // RADNAM // 'from file ' //
+     &                RADFILE( 1:LEN_TRIM( RADFILE ) ) 
+                 CALL M3EXIT( 'TMPBIO', MDATE, MTIME, MESG, 2 )
               END IF
 
 C...............  Convert shortwave radiation to PAR  
@@ -1011,7 +1436,7 @@ C...............  Convert shortwave radiation to PAR
 C...............  Calculate non-speciated emissions
 C...............     must pass met date and time here
 
-              IF ( SWITCH _FILE ) THEN
+              IF ( SWITCH_FILE ) THEN
   
                  CALL HRBIOS( MDATE, MTIME, METNCOLS, METNROWS, 
      &                   PINES, DECDS, CONFS, AGRCS, LEAFS, OTHRS,
@@ -1027,12 +1452,12 @@ C...............     must pass met date and time here
 
            ELSE        ! Use clouds or clear skies to calculate PAR
 
-C..............  Read surface pressure data from M3NAME
+C..............  Read surface pressure data from temperature file
 
-              IF ( .NOT. READ3( M3NAME, 'PRES', 1, 
+              IF ( .NOT. READ3( MNAME, 'PRES', 1, 
      &                        MDATE, MTIME, PRSFC ) ) THEN
                   MESG = 'Could not read PRES from file "' //
-     &                   M3NAME( 1:LEN_TRIM( M3NAME ) ) // '"'
+     &                   METFILE( 1:LEN_TRIM( METFILE ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', MDATE, MTIME, MESG, 2 )
               END IF
 
@@ -1100,16 +1525,6 @@ C.............. Next time step
 
            CALL NEXTIME( MDATE, MTIME, 10000 ) 
 
-           IF ( M2NAME .EQ. M3NAME ) THEN
-
-              RDATE = MDATE
-              RTIME = MTIME
-
-           ELSE
-
-             CALL NEXTIME( RDATE, RTIME, 10000 ) 
-
-           END IF
       END DO                !  end loop on hours HR
 
 
@@ -1129,5 +1544,8 @@ C...........   Internal buffering formats............ 94xxx
 
 94030   FORMAT( 8X, 'at time ', A8 )
 
-        END PROGRAM TMPBIO  
+94052   FORMAT( A, 1X, A, 1X, I6.6, 1X,
+     &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
+
+        END PROGRAM TMPBIO
 
