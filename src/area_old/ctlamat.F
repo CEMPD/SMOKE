@@ -1810,7 +1810,7 @@ C.......   Write out the control matrix:
 999   CONTINUE          !  exit program
 
       CALL M3EXIT( 'CTLAMAT', 0, 0, 
-     &             'Normal completion of program CTLAMAT', 2 )
+     &             'Normal completion of program CTLAMAT', 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
