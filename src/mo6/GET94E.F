@@ -70,6 +70,8 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'YEARS4.I' 
   
+      INTEGER, EXTERNAL :: JUNIT
+  
       CHARACTER(LEN=20)    ::  DATAFIELD 
       CHARACTER(LEN=*)     ::  INPREC 
       INTEGER              ::  INERR 
@@ -115,6 +117,8 @@ C
   
 ccs      CALL UCCOMP(INPREC(21:), FILENAME) 
       CALL LJCOMP(INPREC(21:), FILENAME)
+
+      IOUALT = JUNIT()
 
       OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
      &      IOSTAT=RC,ERR=80) 

@@ -54,7 +54,9 @@ C
       IMPLICIT NONE 
       INCLUDE 'LDGIMC.I' 
       INCLUDE 'IOUCOM.I' 
-C 
+C
+      INTEGER, EXTERNAL :: JUNIT 
+C
       INTEGER    RC 
 C 
       INTEGER IMY, IP,IAGE,IBLK,ITEST,IT,INERR 
@@ -68,6 +70,8 @@ C
 C 
 C     Open the external data file. 
 C 
+      IOUIMD = JUNIT()
+      
       OPEN(IOUIMD, FILE='ASMDATA.D', STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC, ERR=97) 
 C 

@@ -58,7 +58,9 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'IVTYPE.I' 
       INCLUDE 'PART4.I' 
-C 
+C  
+      INTEGER, EXTERNAL :: JUNIT
+C
       CHARACTER*(*) FILENAME 
       INTEGER       INERR 
       INTEGER       RC 
@@ -82,6 +84,8 @@ C
 C 
 C     Open the external data file for PM DR. 
 C 
+      IOUALT = JUNIT()
+
       OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,120) FILENAME 

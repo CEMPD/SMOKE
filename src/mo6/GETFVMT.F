@@ -53,7 +53,9 @@ C
       INCLUDE 'FLAGS1.I' 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'SPEED9.I' 
-C 
+C  
+      INTEGER, EXTERNAL :: JUNIT
+C
 C     Declare parameter list. 
 C 
       CHARACTER,  INTENT(IN) :: INPREC*(*) 
@@ -92,6 +94,8 @@ C
 
 ccs      CALL UCCOMP(INPREC(21:), FILENAME) 
       CALL LJCOMP(INPREC(21:), FILENAME)
+ 
+      IOUALT = JUNIT()
 
       OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 

@@ -38,6 +38,8 @@ C
       INCLUDE 'PART1.I' 
       INCLUDE 'STRING.I' 
 C 
+      INTEGER, EXTERNAL :: JUNIT
+C
       CHARACTER*(*)  INPREC 
       INTEGER        INERR 
       INTEGER        RC 
@@ -82,6 +84,8 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Open the external data file for ADDITIONAL HAPS. 
 C 
+      IOUALT = JUNIT()
+
       OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=999) 
       WRITE(IOUREP,120) FILENAME 

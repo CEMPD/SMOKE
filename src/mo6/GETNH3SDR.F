@@ -59,7 +59,9 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'IVTYPE.I' 
       INCLUDE 'PART6.I' 
-C 
+C  
+      INTEGER, EXTERNAL :: JUNIT
+C
       INTEGER       INERR 
       INTEGER       RC 
 C 
@@ -98,6 +100,8 @@ C
 C 
 C     Open the external data file PMNH3SDR.D. 
 C 
+      IOUALT = JUNIT()
+
       OPEN(IOUALT,FILE='PMNH3SDR.D',STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,120)  

@@ -59,7 +59,9 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'IVTYPE.I' 
       INCLUDE 'PART6.I' 
-C 
+C  
+      INTEGER, EXTERNAL :: JUNIT
+C
       INTEGER       INERR 
       INTEGER       RC 
 C 
@@ -97,7 +99,9 @@ C
       LABTYPE = SECTION 
 C 
 C     Open the external data file PMNH3BER.D. 
-C 
+C
+      IOUALT = JUNIT()
+ 
       OPEN(IOUALT,FILE='PMNH3BER.D',STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,120)  

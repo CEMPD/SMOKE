@@ -108,6 +108,8 @@ C
       INCLUDE 'PRINTC.I' 
 C 
 C     Declare external function. 
+      INTEGER, EXTERNAL :: JUNIT
+
       CHARACTER (LEN=1)              ::  YORN 
       CHARACTER (LEN=19)             ::  LABEL 
       CHARACTER (LEN=20)             ::  EXTENSION 
@@ -498,6 +500,8 @@ C
          RPTFILE = RPTFILE(1:LEN_TRIM(RPTFILE)) // '.TXT' 
       ENDIF 
 C 
+      IOUREP = JUNIT()
+
       IF (PREFIX(RPTACTION,'APPEND ')) THEN 
          OPEN(IOUREP,FILE=RPTFILE,POSITION='APPEND',ERR=80,IOSTAT=IOS) 
       ELSE 

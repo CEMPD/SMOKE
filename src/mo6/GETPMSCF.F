@@ -65,7 +65,9 @@ C
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'IVTYPE.I' 
       INCLUDE 'PART5.I' 
-C 
+C  
+      INTEGER, EXTERNAL :: JUNIT
+C
       INTEGER       INERR 
       INTEGER       RC 
 C 
@@ -107,6 +109,8 @@ C
 C 
 C     Open the external data file PMSCFC.D. 
 C 
+      IOUALT = JUNIT()
+
       OPEN(IOUALT,FILE='PMSCFC.D',STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,120)  

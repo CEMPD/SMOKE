@@ -76,6 +76,8 @@ C
       INCLUDE 'REGION.I' 
       INCLUDE 'RSDINF.I' 
 C 
+      INTEGER, EXTERNAL :: JUNIT
+C
       INTEGER  RC, ITALD, ICTECH, INERR, IAGE1, ISTR, ITECH, IMSKIP, 
      *ISMART, IBY, IOS 
 C 
@@ -101,6 +103,9 @@ C     the variable TNAME. Otherwise, we can use TNAME to hold the standard
 C     credit file name 'TECH12.D.' 
 C 
       IF(IFILET.EQ.1) TNAME='TECH12.D' 
+      
+      IOUIMD = JUNIT()
+            
       OPEN(IOUIMD,FILE=TNAME,STATUS='OLD',ACTION='READ', 
      * IOSTAT=IOS,ERR=96) 
 C 
