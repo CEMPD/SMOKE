@@ -49,7 +49,7 @@ C...........   Normal MOBILE5a parameter x-ref variables
         INTEGER IPSI  ( MXPREF )         ! Normal x-ref scheme index
         INTEGER ISTYPE( MXPREF, 2     )  ! Type-specifier (1), and pointer (2)
         INTEGER NIDX  ( MXPREF, NNFAC )  ! Normal x-ref entries
-        INTEGER CIDX  ( MXPREF, NCFAC )  ! Control Normal x-ref entries
+        INTEGER CIDX  ( MXPREF, NCFAC )  ! Control x-ref entries
 
         COMMON / MPARMS / MRNUM, IPSI, ISTYPE, NIDX, CIDX 
 
@@ -119,12 +119,21 @@ C. . . . . . . . I/M program tables:
         DATA    READIMC1 / T12P1 * .TRUE. /
         DATA    READIMC2 / T4PP1 * .TRUE. /
 
+        INTEGER       IC
+        INTEGER       IMEC1      ! Length of non-blank IMENV1
+        INTEGER       IMEC2      ! Length of non-blank IMENV2
+        CHARACTER*40  IMENV1, IMENV2            ! For tech-file names
+        CHARACTER*1   UIME1( 40 ), UIME2( 40 )  ! For tech-file names writing
+
+        SAVE    IMEC1, IMEC2, UIME1, UIME2
+
         CHARACTER*256 FNAME
-        CHARACTER*100 IMENV1, IMENV2
         CHARACTER*16  TNAME1, TNAME2
         CHARACTER*4   CCUT( 3 )
+        DATA CCUT / '220.', '1.20', '999.' /    ! MOBILE5 Default cutpoints
 
-        SAVE    TEFIM, ONEFILE, TCTOFF, READIMC1, READIMC2
+        SAVE    CCUT, TEFIM, ONEFILE, TCTOFF, 
+     &          READIMC1, READIMC2
 
 C. . . . . . . . Anti-Tampering program tables:
         INTEGER TATP  ( 18, MXFACS )   ! ATP years, vtypes, insp types, etc.
@@ -144,10 +153,10 @@ C...........   Numbers of actual entries in tables
 
         INTEGER IOXY, JOPM, JTPLEN, JLAPMO, JOXY, IRFG
  
-        LOGICAL READFAC( 19 ), FIRSTIME( 19 ), LSPD
+        LOGICAL READFAC( 20 ), FIRSTIME( 20 ), LSPD
         
-        DATA READFAC  /  19*.FALSE. /
-        DATA FIRSTIME /  19*.TRUE.  /
+        DATA READFAC  /  20*.FALSE. /
+        DATA FIRSTIME /  20*.TRUE.  /
 
         SAVE READFAC, FIRSTIME
 
@@ -175,8 +184,8 @@ c       DATA    INPSI_LAST, ICPSI_LAST / -1, -1 /
 
 C...........   Other local variables
 
-        INTEGER G6, G7, G8
-        INTEGER I, ICUT, IP, IPPREV, J, JDSL, JJ, JK, K
+        INTEGER G7, G8, G9
+        INTEGER I, ICUT, IMP, IP, IPPREV, J, JDSL, JJ, JJ2, JK, K
         CHARACTER*256 MESG, BUFFER
 
 C***********************************************************************
@@ -315,11 +324,13 @@ c    &                         #, , #, )
 c               FIRSTIME( 11 ) = .FALSE.
 c           ENDIF
 
-        IF ( READFAC( 13 ) .AND. FIRSTIME( 13 ) ) THEN
+        IF ( ( READFAC ( 13 ) .OR. READFAC( 14 ) ) .AND.
+     &         FIRSTIME( 13 )                            ) THEN
             CALL GETFACI ( 'I/M PROGRAMS', 'MEFIM', MXFACS, 
      &                     NEFIM, IEFIM, 16, TEFIM )
             FIRSTIME( 13 ) = .FALSE.
 
+C.............  Prompt for default I/M credits or not
             MESG = 'Use default I/M Credit files throughout?'
             ONEFILE = GETYN ( MESG, .TRUE. )
 
@@ -335,13 +346,13 @@ C.............  Set default I/M credits file settings
 C.............  Set I/M credit file settings individually
             IF( .NOT. ONEFILE ) THEN  
 
-                IMCX1 = CIDX( IP,4 )
-                IMCX2 = CIDX( IP,5 )
-                IF( CIDX( IP,4 ) .GT. 0 ) THEN 
+                IMCX1 = CIDX( IP,5 )
+                IMCX2 = CIDX( IP,6 )
+                IF( CIDX( IP,5 ) .GT. 0 ) THEN 
                     TNAME1 = 'NON-DEFAULT'
                 ENDIF
 
-                IF( CIDX( IP,5 ) .GT. 0 ) THEN
+                IF( CIDX( IP,6 ) .GT. 0 ) THEN
                     TNAME2 = 'NON-DEFAULT'
                 ENDIF
 
@@ -366,6 +377,11 @@ C.............  Read Tech I-II file
                 CALL ENVSTR( FNAME, 'Non-default Tech I-II file name',
      &                       'TECH12.D', IMENV1, ISTAT )
 
+                IMEC1 = TRIMLEN( IMENV1 )
+                DO 50 IC = 1, IMEC1
+                    UIME1( IC ) = IMENV1( IC:IC )
+   50           CONTINUE
+
                 IF( ISTAT .LT. 0 ) THEN
 
                     WRITE( *,'(/5X,A,///10X,A)' )
@@ -388,7 +404,7 @@ C.............  Read Tech I-II file
             ENDIF
 
 C.............  Read Tech IV+ file
-            IF( READIMC2( IMCX2) ) THEN
+            IF( READIMC2( IMCX2 ) ) THEN
    55           WRITE( MESG, 94100 ) 
      &                'Enter logical name of '// 
      &                TNAME2( 1:TRIMLEN( TNAME2 ) ) // ' TECH IV+ '//
@@ -404,6 +420,11 @@ C.............  Read Tech IV+ file
                 CALL GETSTR( MESG, FNAME, FNAME )
                 CALL ENVSTR( FNAME, 'Non-default Tech IV+ file name',
      &                       'IMDATA.D', IMENV2, ISTAT )
+
+                IMEC2 = TRIMLEN( IMENV2 )
+                DO 60 IC = 1, IMEC2
+                    UIME2( IC ) = IMENV2( IC:IC )
+   60           CONTINUE
 
                 IF( ISTAT .LT. 0 ) THEN
 
@@ -428,26 +449,26 @@ C.............  Read Tech IV+ file
         ENDIF
 
 C.........  Read anti-tampering programs
-        IF ( READFAC( 16 ) .AND. FIRSTIME( 16 ) ) THEN
+        IF ( READFAC( 17 ) .AND. FIRSTIME( 17 ) ) THEN
             CALL GETFACI( 'ANTI-TAMPERING PROGRAMS','MEFATP',
      &                     MXFACS, NATP, IATP, 18, TATP )
-            FIRSTIME( 16 ) = .FALSE.
-
-        ENDIF
-
-C.........  Read functional pressure test programs
-        IF ( READFAC( 17 ) .AND. FIRSTIME( 17 ) ) THEN
-            CALL GETFACI( 'FUNCTIONAL PRESSURE TEST','MPREST', MXFACS,
-     &                     NPREST, IPREST, 10, TPREST )
             FIRSTIME( 17 ) = .FALSE.
 
         ENDIF
 
-C.........  Read functional purge test programs
+C.........  Read functional pressure test programs
         IF ( READFAC( 18 ) .AND. FIRSTIME( 18 ) ) THEN
+            CALL GETFACI( 'FUNCTIONAL PRESSURE TEST','MPREST', MXFACS,
+     &                     NPREST, IPREST, 10, TPREST )
+            FIRSTIME( 18 ) = .FALSE.
+
+        ENDIF
+
+C.........  Read functional purge test programs
+        IF ( READFAC( 19 ) .AND. FIRSTIME( 19 ) ) THEN
             CALL GETFACI( 'FUNCTIONAL PURGE TEST','MPURGT', MXFACS,
      &                     NPURGT, IPURGT, 10, TPURGT )
-            FIRSTIME( 18 ) = .FALSE.
+            FIRSTIME( 19 ) = .FALSE.
 
         ENDIF
 
@@ -473,30 +494,40 @@ C.............  Set control flags
             NEWFLG = 2
         ENDIF
 
-        IF( CIDX( IP,3 ) .GT. 0 ) THEN
+        IF( CIDX( IP,3 ) .GT. 0 .AND. CIDX( IP,4 ) .GT. 0 ) THEN
+            IMFLAG = 3
+        ELSEIF( CIDX( IP,3 ) .GT. 0 .AND. CIDX( IP,4 ) .EQ. 0 ) THEN
             IMFLAG = 2
+        ELSEIF( CIDX( IP,3 ) .EQ. 0 .AND. CIDX( IP,4 ) .GT. 0 ) THEN
+
+            WRITE( MESG,94100 ) 
+     &             'Error: 2nd I/M program is', CIDX( IP,4 ),
+     &             'but 1st I/M program is 0 in ' //
+     &             'parameter scheme', IP
+            CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
         ENDIF
 
         IF( NIDX( IP,10 ) .GT. 0 ) THEN
             ALHFLG = 3
         ENDIF
 
-        G6 = CIDX( IP,6 )
         G7 = CIDX( IP,7 )
         G8 = CIDX( IP,8 )
-        IF( G6 .GT. 0 .AND. G7 .GT. 0 .AND. G8 .GT. 0 ) THEN
+        G9 = CIDX( IP,9 )
+        IF( G7 .GT. 0 .AND. G8 .GT. 0 .AND. G9 .GT. 0 ) THEN
             ATPFLG = 8
-        ELSEIF( G6 .GT. 0 .AND. G7 .GT. 0 ) THEN
-            ATPFLG = 5
-        ELSEIF( G6 .GT. 0 .AND. G8 .GT. 0 ) THEN
-            ATPFLG = 6
         ELSEIF( G7 .GT. 0 .AND. G8 .GT. 0 ) THEN
+            ATPFLG = 5
+        ELSEIF( G7 .GT. 0 .AND. G9 .GT. 0 ) THEN
+            ATPFLG = 6
+        ELSEIF( G8 .GT. 0 .AND. G9 .GT. 0 ) THEN
             ATPFLG = 7
-        ELSEIF( G6 .GT. 0 ) THEN
-            ATPFLG = 2
         ELSEIF( G7 .GT. 0 ) THEN
-            ATPFLG = 3
+            ATPFLG = 2
         ELSEIF( G8 .GT. 0 ) THEN
+            ATPFLG = 3
+        ELSEIF( G9 .GT. 0 ) THEN
             ATPFLG = 4
         ENDIF
 
@@ -582,12 +613,51 @@ C.........  Tampering rates for {Non-I/M case} OR {Non-I/M and I/M cases}
 
             WRITE( MODEV, 93020 ) ( TTRZML( I,J ), I=1,96 ) ! Non-I/M ZML
 
-            IF( CIDX( IP,3 ) .GT. 0 ) THEN                  ! I/M ZML 
+C.............  Check if Tampering profiles the same if two I/M programs
+            IF( CIDX( IP,3 ) .GT. 0 .AND.
+     &          CIDX( IP,4 ) .GT. 0       ) THEN
 
-                JJ = FIND1( CIDX( IP,3 ), NEFIM, IEFIM  )
+                JJ  = FIND1( CIDX( IP,3 ), NEFIM, IEFIM  )
+                JJ2 = FIND1( CIDX( IP,4 ), NEFIM, IEFIM  )
+
+                IF( TEFIM( 16,JJ  ) .GT. 0 .AND.
+     &              TEFIM( 16,JJ2 ) .GT. 0 .AND.
+     &              TEFIM( 16,JJ  ) .NE. TEFIM( 16,JJ2 ) ) THEN
+
+                    IMP = CIDX( IP,3 )
+                    WRITE( MESG,94100 ) 
+     &                     'I/M PROGRAM profiles', CIDX( IP,3 ),
+     &                     'and', CIDX( IP,4 ), 
+     &                     'from parameter scheme', IP,
+     &                     'use different tampering rates'
+                    CALL M3MESG( MESG )
+
+                    WRITE( MESG,94100 ) 
+     &                 '   ( Rate profile', TEFIM( 16,JJ ), 
+     &                 'from I/M program', CIDX( IP,3 ) ,'selected )'
+                    CALL M3MESG( MESG )
+
+                ELSEIF( TEFIM( 16,JJ  ) .LE. 0 .AND.
+     &                  TEFIM( 16,JJ2 ) .GT. 0       ) THEN
+                    IMP = CIDX( IP,4 )
+
+                ELSE
+                    IMP = CIDX( IP,3 )
+
+                ENDIF
+
+            ELSE
+                IMP = CIDX( IP,3 )
+
+            ENDIF
+
+C............. Check if I/M program number IMP has valid tampering rates prof
+            IF( IMP .GT. 0 ) THEN                  ! I/M ZML 
+
+                JJ = FIND1( IMP, NEFIM, IEFIM  )
                 IF( JJ .LT. 0 ) THEN
                     WRITE( MESG,94100 ) 
-     &                     'I/M PROGRAM profile', CIDX( IP,3 ),
+     &                     'I/M PROGRAM profile', IMP,  
      &                     'from parameter scheme', IP,
      &                     'not found in I/M PROGRAMS table.'
                     CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -596,7 +666,7 @@ C.........  Tampering rates for {Non-I/M case} OR {Non-I/M and I/M cases}
                 IF( TEFIM( 16,JJ ) .LE. 0 ) THEN
 
                      WRITE( MESG,94100 )
-     &                'I/M profile',CIDX( IP,3 ),
+     &                'I/M profile',IMP,
      &                'from parameter scheme', IP,
      &                'gives illegal tampering profile',TEFIM( 16,JJ ),
      &                'to use for non-default I/M tampering rates.'
@@ -607,7 +677,7 @@ C.........  Tampering rates for {Non-I/M case} OR {Non-I/M and I/M cases}
                     IF( JK .LT. 0 ) THEN
                         WRITE( MESG,94100 )
      &                        'TAMPERING RATES profile', TEFIM( 16,JJ ), 
-     &                        '(requested by I/M profile', CIDX( IP,3 ),
+     &                        '(requested by I/M profile', IMP,
      &                        'from parameter scheme', IP,
      &                        ') not in tampering rates table.'
                         CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -621,7 +691,7 @@ C.........  Tampering rates for {Non-I/M case} OR {Non-I/M and I/M cases}
 
             WRITE( MODEV, 93020 ) ( TTRDR ( I,J ), I=1,96 ) ! Non-I/M DR
 
-            IF( CIDX( IP,3 ) .GT. 0 ) THEN                  ! I/M DR
+            IF( IMP .GT. 0 ) THEN                  ! I/M DR
                 WRITE( MODEV, 93020 ) ( TTRDR ( I,JK ), I=1,96 )
             ENDIF
 
@@ -669,153 +739,165 @@ c           IF( CIDX( IP,2 ) .GT. 0 ) THEN
 C! Hard - integer and real
 c           ENDIF
 
-C.........  Inspection and Maintenence Program
-        IF( CIDX( IP,3 ) .GT. 0 ) THEN
+C.........  Inspection and Maintenence Program(s)
+        DO 137 K = 3,4 
 
-C.............  Get index of I/M program
-            J = FIND1( CIDX ( IP,3 ), NEFIM , IEFIM )
-            IF( J .LT. 0 ) THEN
-                WRITE( MESG,94100 ) 
-     &                 'I/M PROGRAM profile', CIDX( IP,3 ),
-     &                 'from parameter scheme', IP,
-     &                 'not found in I/M PROGRAMS table.'
-                CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
-            ENDIF
+            IF( CIDX( IP,K ) .GT. 0 ) THEN
 
-
-C.............  Set defaults
-            ICUT = 1    ! No non-default cutoffs
-
-            TTYPE = TEFIM( 14,J )
-C.............  Set emissions test parms and ensure internal consistency
-            IF( TTYPE .EQ. 1 .OR. TTYPE .EQ. 2 .OR.
-     &          TTYPE .EQ. 3                        ) THEN
-
-C.................  Check for non-default cut-offs for types 1,2,3
-                IF( TEFIM( 15,J ) .GT. 0 ) THEN
-                    IF ( IMCX1 .EQ. 0 .OR. 
-     &                   IMCX2 .EQ. 0      ) THEN 
-
-                         WRITE( MESG,94100 )
-     &                     'MOBILE5 parameters profile',IP,
-     &                     'has I/M profile with test type',TTYPE,
-     &                     'and non-default cutoffs, '//
-     &                     'but no non-default credits files.'
-                         CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
-
-                    ELSEIF( TTYPE .EQ. 1 ) THEN
-                        MESG = 'IDLE TEST NON-DEFAULT CUTOFFS'
-
-                    ELSEIF( TTYPE .EQ. 2 ) THEN
-                        MESG = '2500/IDLE TEST NON-DEFAULT CUTOFFS'
-
-                    ELSEIF( TTYPE .EQ. 3 ) THEN
-                        MESG = 'LOADED TEST NON-DEFAULT CUTOFFS'
-
-                    ENDIF
-
-                ENDIF
-
-            ELSEIF( TTYPE .EQ. 4 ) THEN
-
-C..................  Ensure cut-offs will be read for type 4
-                 IF( TEFIM( 15,J ) .LE. 0 ) THEN
-
-                     WRITE( MESG,94100 )
-     &                     'I/M Profile number',CIDX( IP,3 ),
+C.................  Get index of I/M program
+                J = FIND1( CIDX ( IP,K ), NEFIM , IEFIM )
+                IF( J .LT. 0 ) THEN
+                    WRITE( MESG,94100 ) 
+     &                     'I/M PROGRAM profile', CIDX( IP,K ),
      &                     'from parameter scheme', IP,
-     &                     'has non-postive cutpoint index for'//
-     &                     'transient test type.'
-                     CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
-
-                 ELSE
-                     MESG = 'TRANSIENT TEST CUTOFFS'
-                 ENDIF
-
-            ELSE
-
-                 WRITE( MESG,94100 ) 
-     &                 'I/M Profile number',CIDX( IP,3 ),
-     &                 'from parameter scheme', IP,
-     &                 'has illegal test type specifier of', TTYPE
-                 CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
-
-            ENDIF
-
-C.............  Read cutoff file for given case, if specified
-            IF( TEFIM( 15,J ) .GT. 0 ) THEN
-
-                IF( IP .NE. IPPREV ) 
-     &          CALL GETFACR( MESG, 'MCTOFF', MXFACS, 
-     &                        NCTOFF, ICTOFF, 3, TCTOFF )
-
-                ICUT = 2
-                JJ = FIND1( TEFIM( 15,J ), NCTOFF, ICTOFF )
-                IF( JJ .LT. 0 ) THEN
-                    BUFFER = MESG
-                    WRITE( MESG,94100 ) MESG( 1:TRIMLEN(MESG) )
-     &                                  //' profile', TEFIM( 15,J ),
-     &                                  'not found in cutoffs table.'
+     &                     'not found in I/M PROGRAMS table.'
                     CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
                 ENDIF
 
 
-            ENDIF
+C.................  Set defaults
+                ICUT = 1    ! No non-default cutoffs
 
-C.............  Write I/M record
-            IF( ICUT .EQ. 1 ) THEN
-                WRITE( MODEV, 93100 ) ( TEFIM( I,J ), I=1,14 ), ICUT,
-     &                                  2, 2
-            ELSE
+                TTYPE = TEFIM( 14,J )
+C.................  Set emissions test parms and ensure internal consistency
+                IF( TTYPE .EQ. 1 .OR. TTYPE .EQ. 2 .OR.
+     &              TTYPE .EQ. 3                        ) THEN
 
-                DO 133 I = 1,3
+C.....................  Check for non-default cut-offs for types 1,2,3
+                    IF( TEFIM( 15,J ) .GT. 0 ) THEN
+                        IF ( IMCX1 .EQ. 0 .OR. 
+     &                       IMCX2 .EQ. 0      ) THEN 
 
-                    CUTOFF = TCTOFF( I,JJ )
-                    IF( CUTOFF .GE. 0. .AND. CUTOFF .LT. 10. ) THEN
+                             WRITE( MESG,94100 )
+     &                         'MOBILE5 parameters profile',IP,
+     &                         'has I/M profile with test type',TTYPE,
+     &                         'and non-default cutoffs, '//
+     &                         'but no non-default credits files.'
+                             CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
 
-                        WRITE( CCUT( I ),93101 ) CUTOFF
+                        ELSEIF( TTYPE .EQ. 1 ) THEN
+                            MESG = 'IDLE TEST NON-DEFAULT CUTOFFS'
 
-                    ELSEIF( CUTOFF .GE. 10. .AND. 
-     &                      CUTOFF .LT. 100.       ) THEN
+                        ELSEIF( TTYPE .EQ. 2 ) THEN
+                            MESG = '2500/IDLE TEST NON-DEFAULT CUTOFFS'
 
-                        WRITE( CCUT( I ),93102 ) CUTOFF
+                        ELSEIF( TTYPE .EQ. 3 ) THEN
+                            MESG = 'LOADED TEST NON-DEFAULT CUTOFFS'
 
-                    ELSEIF( CUTOFF .GT. 100. .AND. 
-     &                      CUTOFF .LT. 1000.      ) THEN
-
-                        WRITE( CCUT( I ),93103 ) CUTOFF
-
-                    ELSE
-
-                        WRITE( MESG,94100 ) 'Cutoff value',I,
-     &                        'from cutoff profile', JJ,
-     &                        'is an illegal value.'
-                        CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+                        ENDIF
 
                     ENDIF
 
-  133           CONTINUE
+                ELSEIF( TTYPE .EQ. 4 ) THEN
 
-                WRITE( MODEV, 93100 ) ( TEFIM( I,J ), I=1,14 ), ICUT,
-     &                                  2, 2, ( CCUT( I ), I=1,3 )
+C......................  Ensure cut-offs will be read for type 4
+                     IF( TEFIM( 15,J ) .LE. 0 ) THEN
 
-            ENDIF
+                         WRITE( MESG,94100 )
+     &                         'I/M Profile number',CIDX( IP,K ),
+     &                         'from parameter scheme', IP,
+     &                         'has non-postive cutpoint index for'//
+     &                         'transient test type.'
+                         CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
+                     ELSE
+                         MESG = 'TRANSIENT TEST CUTOFFS'
+                     ENDIF
+
+                ELSE
+
+                     WRITE( MESG,94100 ) 
+     &                 'I/M Profile number',CIDX( IP,K ),
+     &                 'from parameter scheme', IP,
+     &                 'has illegal test type specifier of', TTYPE
+                     CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
+                ENDIF
+
+C.................  Read cutoff file for given case, if specified
+                IF( TEFIM( 15,J ) .GT. 0 ) THEN
+
+                    IF( IP .NE. IPPREV ) 
+     &              CALL GETFACR( MESG, 'MCTOFF', MXFACS, 
+     &                            NCTOFF, ICTOFF, 3, TCTOFF )
+
+                    ICUT = 2
+                    JJ = FIND1( TEFIM( 15,J ), NCTOFF, ICTOFF )
+                    IF( JJ .LT. 0 ) THEN
+                        BUFFER = MESG
+                        WRITE( MESG,94100 ) MESG( 1:TRIMLEN(MESG) )
+     &                                  //' profile', TEFIM( 15,J ),
+     &                                  'not found in cutoffs table.'
+                        CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+                    ENDIF
+
+                ENDIF
+
+C.................  Write I/M record
+                IF( ICUT .EQ. 1 ) THEN
+
+                    WRITE( MODEV, 93090 ) 
+     &                     ( TEFIM( I,J ), I=1,14 ), ICUT, 2, 2
+
+C.................  Adjust test cutpoints for non-default if needed
+                ELSE
+
+                    DO 133 I = 1,3
+
+                        CUTOFF = TCTOFF( I,JJ )
+                        IF( CUTOFF .GE. 0. .AND. CUTOFF .LT. 10. ) THEN
+
+                            WRITE( CCUT( I ),93101 ) CUTOFF
+
+                        ELSEIF( CUTOFF .GE. 10. .AND. 
+     &                          CUTOFF .LT. 100.       ) THEN
+
+                            WRITE( CCUT( I ),93102 ) CUTOFF
+
+                        ELSEIF( CUTOFF .GT. 100. .AND. 
+     &                          CUTOFF .LT. 1000.      ) THEN
+
+                            WRITE( CCUT( I ),93103 ) CUTOFF
+
+                        ELSE
+
+                            WRITE( MESG,94100 ) 'Cutoff value',I,
+     &                        'from cutoff profile', JJ,
+     &                        'is an illegal value.'
+                            CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
+
+                        ENDIF
+
+  133               CONTINUE
+
+C.....................  Write I/M record
+                    WRITE( MODEV, 93100 ) 
+     &                     ( TEFIM( I,J ), I=1,14 ), ICUT,
+     &                       2, 2, ( CCUT( I ), I=1,3      )
+
+                ENDIF   !  If cutpoints default or not
+
+            ENDIF       !  If I/M program default or not
+
+ 137    CONTINUE
 
 C.............  Write file names for tech12 and tech4+ files
 C... Note: Normal mobile5 will only accept 40 character names!
-            WRITE( MODEV,93000 ) IMENV1( 1:TRIMLEN( IMENV1 ) )  
-            WRITE( MODEV,93000 ) IMENV2( 1:TRIMLEN( IMENV2 ) )
+        IF( CIDX( IP,3 ) .GT. 0 .OR. CIDX( IP,4 ) .GT. 0 ) THEN
+            
+            WRITE( MODEV,93002 ) ( UIME1( IC ), IC=1, IMEC1 )
+            WRITE( MODEV,93002 ) ( UIME2( IC ), IC=1, IMEC2 )
 
         ENDIF
 
 C.........  Anti-tampering programs
-        IF( CIDX( IP,6 ) .GT. 0 ) THEN
+        IF( CIDX( IP,7 ) .GT. 0 ) THEN
 
-            J = FIND1( CIDX( IP,6 ), NATP, IATP )
+            J = FIND1( CIDX( IP,7 ), NATP, IATP )
 
             IF( J .LT. 0 ) THEN
                 WRITE( MESG,94100 ) 
-     &                 'Anti-tampering profile ', CIDX( IP,6 ),
+     &                 'Anti-tampering profile ', CIDX( IP,7 ),
      &                 'from parameter scheme', IP,
      &                 'not found in ANTI-TAMPERING table.'
                 CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -826,13 +908,13 @@ C.........  Anti-tampering programs
         ENDIF
 
 C.........  Functional pressure check
-        IF( CIDX( IP,7 ) .GT. 0 ) THEN
+        IF( CIDX( IP,8 ) .GT. 0 ) THEN
 
-            J = FIND1( CIDX( IP,7 ), NPREST, IPREST )
+            J = FIND1( CIDX( IP,8 ), NPREST, IPREST )
 
             IF( J .LT. 0 ) THEN
                 WRITE( MESG,94100 ) 
-     &                 'Pressure test profile ', CIDX( IP,7 ),
+     &                 'Pressure test profile ', CIDX( IP,8 ),
      &                 'from parameter scheme', IP,
      &                 'not found in PRESSURE TEST table.'
                 CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -843,13 +925,13 @@ C.........  Functional pressure check
         ENDIF
 
 C.........  Functional purge check
-        IF( CIDX( IP,8 ) .GT. 0 ) THEN
+        IF( CIDX( IP,9 ) .GT. 0 ) THEN
 
-            J = FIND1( CIDX( IP,8 ), NPURGT, IPURGT )
+            J = FIND1( CIDX( IP,9 ), NPURGT, IPURGT )
 
             IF( J .LT. 0 ) THEN
                 WRITE( MESG,94100 ) 
-     &                 'Purge test profile ', CIDX( IP,8 ),
+     &                 'Purge test profile ', CIDX( IP,9 ),
      &                 'from parameter scheme', IP,
      &                 'not found in PURGE TEST table.'
                 CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -860,7 +942,7 @@ C.........  Functional purge check
         ENDIF
 
 C.............  Refueling controls 
-c           IF( CIDX( IP,10 ) .GT. 0 ) THEN
+c           IF( CIDX( IP,11 ) .GT. 0 ) THEN
 C! Hard - integer and real
 c           ENDIF
 
@@ -918,11 +1000,9 @@ C........... Check LAP/Month code for consistencies, get index
 
                  ENDIF
 
-            ELSEIF( IRFG .EQ. 0 ) THEN
+            ELSEIF( IRFG .LE. 0 ) THEN
 
                 RFGFLG = 1
-
-c           ELSE ! Error 
 
             ENDIF
         ENDIF
@@ -931,11 +1011,9 @@ c           ELSE ! Error
 
             OXYFLG = 2 
 
-        ELSEIF( IOXY .EQ. 0 ) THEN
+        ELSEIF( IOXY .LE. 0 ) THEN
 
             OXYFLG = 1
-
-        ELSE  ! Error
 
         ENDIF
 
@@ -945,17 +1023,17 @@ C.........  Scenario descriptive record
 
 C........... REGION
         IF( NIDX( IP,9 ) .EQ. 1 .AND. 
-     &      CIDX( IP,9 ) .EQ. 0       ) THEN
+     &      CIDX( IP,10 ) .EQ. 0       ) THEN
 
             REGION = 1
 
         ELSEIF( NIDX( IP,9 ) .EQ. 2 .AND.
-     &          CIDX( IP,9 ) .EQ. 0       ) THEN
+     &          CIDX( IP,10 ) .EQ. 0       ) THEN
 
             REGION = 2
 
         ELSEIF( NIDX( IP,9 ) .EQ. 1  .AND.
-     &          CIDX( IP,9 ) .EQ. -1      ) THEN
+     &          CIDX( IP,10 ) .EQ. -1      ) THEN
 
             IF( CIDX( IP,6 ) .GT. 0 .AND.
      &          CIDX( IP,3 ) .GT. 0       ) THEN
@@ -973,7 +1051,7 @@ C........... REGION
             ENDIF
 
         ELSEIF( NIDX( IP,9 ) .EQ. 1 .AND.
-     &          CIDX( IP,9 ) .GT. 0       ) THEN
+     &          CIDX( IP,10 ) .GT. 0       ) THEN
 
             IF( CIDX( IP,3 ) .GT. 0 ) THEN
 
@@ -992,7 +1070,7 @@ C........... REGION
         ELSE ! Error
 
             WRITE( *,93000 ) 'Altitude setting',NIDX( IP,9 )
-            WRITE( *,93000 ) 'LEV program selection',CIDX( IP,9 )
+            WRITE( *,93000 ) 'LEV program selection',CIDX( IP,10 )
             WRITE( MESG,94000 ) 
      &             'Illegal combination of parameters'
             CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
@@ -1054,7 +1132,7 @@ C
 
 C.........  Low Emissions vehicles (LEV) record
 
-c           IF( CIDX( IP,9 ) .GT. 0 ) THEN
+c           IF( CIDX( IP,10 ) .GT. 0 ) THEN
 
 c           ENDIF 
 
@@ -1093,10 +1171,10 @@ C...........  Blank out fuel volatility if missing
 C.........  Oxygenated Fuels Descriptive Record: index w/ NIDX(IP,4)
         IF( IOXY .GT. 0 ) THEN
 
-            IF ( FIRSTIME( 19 ) ) THEN
+            IF ( FIRSTIME( 20 ) ) THEN
                 CALL GETFACR( 'OXYGENATED FUELS PROGRAM', 'MOXYF',
      &                        MXFACS, NOXYGF, IOXYGF, 5, TOXYGF )
-                FIRSTIME( 19 ) = .FALSE.
+                FIRSTIME( 20 ) = .FALSE.
 
             ENDIF
 
@@ -1160,12 +1238,14 @@ c           ENDIF
 C******************  FORMAT  STATEMENTS   ******************************
 
 93000   FORMAT( A )
+93002   FORMAT( 40A )
 93005   FORMAT( 2 (I1, 2X) )
 93010   FORMAT( 25(I1, 1X) )
 93020   FORMAT( 8F8.4 )
 93030   FORMAT( 7( 10F7.5 / 10F7.5 / 5F7.5 / ) 10F7.5 / 10F7.5 / 5F7.5 )
 93040   FORMAT( 7( 10(1X,F4.3) / 10(1X,F4.3) / 5(1X,F4.3) / ),
      &             10(1X,F4.3) / 10(1X,F4.3) / 5(1X,F4.3)      )
+93090   FORMAT( 4(I2,1X),2(I2,1X),I3,1X,2(I1,1X),4I1,1X,4I1 )
 93100   FORMAT( 4(I2,1X),2(I2,1X),I3,1X,2(I1,1X),4I1,1X,4I1,3(1X,A4) )
 93101   FORMAT( F4.2 )
 93102   FORMAT( F4.1 )
