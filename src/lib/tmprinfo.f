@@ -179,10 +179,6 @@ C.........  Allocate memory for valid temperatures and set them
             ALLOCATE( VLDTMAX( NMINALL * NMAXALL ), STAT=IOS )
             CALL CHECKMEM( IOS, 'VLDTMAX', PROGNAME ) 
 
-c STOPPED HERE: For some reason, the NVLDTMM is not getting set correctly, so
-c RDEFACS can't work. Other wierd thing happens when I set break points in this
-C routine.  6 breaks are set at the same line!
-
 C.............  Initialize
             VLDTMIN = 0.
             VLDTMAX = 0.
