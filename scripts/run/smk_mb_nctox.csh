@@ -131,7 +131,7 @@ setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
 setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
 setenv AUTO_DELETE_LOG    Y       # Y automatically deletes logs without asking
 setenv DEBUGMODE          N       # Y changes script to use debugger
-setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
+setenv DEBUG_EXE          idb     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
 # setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
