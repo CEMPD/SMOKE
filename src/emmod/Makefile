@@ -41,4 +41,4 @@ modinfo.o : $(INCLUDES)
 	if ( test -f MODINFO.mod ) mv MODINFO.mod $(MD_OUT)
 
 clean:
-	rm $MD_OUT/*.o $MD_OUT/*.mod
+	rm $(MD_OUT)/*.o $MD_OUT/*.mod
