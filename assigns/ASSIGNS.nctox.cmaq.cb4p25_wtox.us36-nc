@@ -28,7 +28,7 @@
    setenv METSCEN      a1a              # Met scenario name
    setenv GRID         us36-nc          # Gridding root for naming
    setenv IOAPI_GRIDNAME_1 US36NC_23X12 # Grid selected from GRIDDESC file
-   setenv IOAPI_ISPH   20               # Specifies spheroid type associated with grid
+   setenv IOAPI_ISPH   19               # Specifies spheroid type associated with grid
    setenv SPC          cmaq.cb4p25_wtox # Speciation type
 
 ## Mobile episode variables
