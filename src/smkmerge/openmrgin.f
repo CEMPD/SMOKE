@@ -39,11 +39,12 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: LREPANY, GDEV, AFLAG, AENAME, ASDEV, ANMAP, 
-     &          AMAPNAM, AMAPFIL, NASRC, APRJFLAG, TFLAG, AFLAG_BD, 
+        USE MODMERGE, ONLY:
+     &          LREPANY, BFLAG, GDEV, AFLAG, AENAME, ASDEV, ANMAP, 
+     &          AMAPNAM, AMAPFIL, NASRC, APRJFLAG, TFLAG, AFLAG_BD,
      &          ATNAME, ASDATE, ANIPOL, AEINAM, INVPIDX, AONAMES, 
      &          AOUNITS, AGNAME, ANGMAT, SFLAG, ASNAME, ANSMATV, 
-     &          ASVDESC, ASVUNIT, AUFLAG, AUNAME, ANUMATV, AUVNAMS, 
+     &          ASVDESC, ASVUNIT, AUFLAG, AUNAME, ANUMATV, AUVNAMS,
      &          ARFLAG, ARNAME, ANRMATV, ANSREAC, ARVDESC, ARNMSPC,
      &          BTNAME, LMETCHK, BIOUNIT, BNSMATV, BNIPOL, BONAMES,
      &          BEINAM, BOUNITS, MFLAG, MENAME, MSDEV, MNMAP, MMAPNAM,
@@ -60,7 +61,7 @@ C.........  This module contains the major data structure and control flags
      &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG, EDEV,
      &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
-     &          BSVDESC, BFLAG
+     &          BSVDESC
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
@@ -149,7 +150,7 @@ C           biogenic sources, get gridding surrogates
      &             .TRUE., .TRUE., 'BGPRO', PROGNAME )
 
 C.............  Read surrogate file header    
-            CALL RDSRGHDR( .FALSE., GDEV, SRGFMT )   ! CHKGRID may be initialized here
+            CALL RDSRGHDR( GDEV, SRGFMT )   ! CHKGRID may be initialized here
             SRGGRDNM = GRDNM
             SRGNCOLS = NCOLS
             SRGNROWS = NROWS

@@ -23,11 +23,10 @@ FILES_ABCDE = \
 FILES_FGIMNP = \
   fillatbl.o   fillchrt.o   fillctbl.o   filletbl.o   fillgtbl.o   fillmtbl.o \
   fillptbl.o   fillstbl.o   fillttbl.o   find1first.o fltrxref.o   fmtcsrc.o  \
-  genptcel.o   genptvcel.o  genuslst.o   getbasyr.o   getctgry.o   getdysav.o \
-  getformt.o   getidasz.o   getiname.o   getinvyr.o   getntisz.o   getrfdsc.o \
-  getsinfo.o   gettzone.o   getvmix.o    grd2cnty.o   ingrid.o     initem.o   \
-  mbsccadj.o   normtpro.o   parscsrc.o   pdsetup.o    prclinrc.o   procspro.o \
-  progdesc.o
+  genptcel.o   genuslst.o   getbasyr.o   getctgry.o   getdysav.o   getformt.o \
+  getidasz.o   getiname.o   getinvyr.o   getntisz.o   getrfdsc.o   getsinfo.o \
+  gettzone.o   getvmix.o    grd2cnty.o   ingrid.o     initem.o     mbsccadj.o \
+  normtpro.o   parscsrc.o   pdsetup.o    prclinrc.o   procspro.o   progdesc.o
 
 FILES_R = \
   rdar2pt.o    rdascc.o     rdchrscc.o   rdcodnam.o   rdeproc.o    rdgmat.o   \
@@ -39,8 +38,8 @@ FILES_R = \
   rmcommnt.o
 
 FILES_SVWX = \
-  setscctype.o setsrcdy.o   ungridbv.o   verchar.o    wrchrscc.o   wrdaymsg.o \
-  wridaout.o   wridapol.o   xreftbl.o
+  setscctype.o setsrcdy.o   verchar.o    wrchrscc.o   wrdaymsg.o   wridaout.o \
+  wridapol.o   xreftbl.o
 
 FILES_TMP = 
 

@@ -1,6 +1,6 @@
 
         SUBROUTINE OPENGMAT( NMATX, NMATXU, UFLAG, INVPROG, INVVERS, 
-     &                       VFLAG, GNAME, UNAME, FDEV ) 
+     &                       GNAME, UNAME, FDEV ) 
 
 C***********************************************************************
 C  subroutine body starts at line 95
@@ -68,7 +68,6 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) :: UFLAG   ! true: open ungridding matrix
         CHARACTER(*), INTENT (IN) :: INVPROG ! inventory program
         CHARACTER(*), INTENT (IN) :: INVVERS ! inventory program version
-        LOGICAL     , INTENT (IN) :: VFLAG   ! true: using variable grid
         CHARACTER(*), INTENT(OUT) :: GNAME   ! gridding matrix logical name
         CHARACTER(*), INTENT(OUT) :: UNAME   ! ungridding matrix logical name
         INTEGER     , INTENT(OUT) :: FDEV    ! report file
@@ -88,7 +87,6 @@ C...........   Other local variables
         CHARACTER(16)  COORD3D   ! coordinate system name
         CHARACTER(16)  COORUN3D  ! coordinate system projection units
         CHARACTER(80)  GDESC     ! grid description
-        CHARACTER(16)  GDNAME    ! grid name
         CHARACTER(256) MESG      ! message buffer 
 
         CHARACTER(NAMLEN3) NAMBUF   ! file name buffer
@@ -99,7 +97,7 @@ C***********************************************************************
 C   begin body of subroutine OPENGMAT
 
 C.........  Initialize header by getting the Models-3 grid information file
-        IF( .NOT. DSCM3GRD( GDNAME, GDESC, COORD3D, GDTYP3D, COORUN3D,
+        IF( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD3D, GDTYP3D, COORUN3D,
      &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
      &                      XORIG3D, YORIG3D, XCELL3D, YCELL3D,
      &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
@@ -135,10 +133,6 @@ C.........  Set up I/O API output file header for gridding matrix
 
         FDESC3D( 11 ) = '/INVEN FROM/ ' // INVPROG
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // INVVERS
-
-        IF( VFLAG ) THEN
-            FDESC3D( 13 ) = '/VARIABLE GRID/ ' // GDNAME
-        END IF
 
 C.........  Get name of gridding matrix
 

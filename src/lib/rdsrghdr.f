@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDSRGHDR( VFLAG, FDEV, SRGFMT )
+        SUBROUTINE RDSRGHDR( FDEV, SRGFMT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -57,7 +57,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                 CHKINT, CHKREAL
 
 C...........   Subroutine arguments
-        LOGICAL      , INTENT  (IN) :: VFLAG      ! true: using variable grid
+
         INTEGER      , INTENT  (IN) :: FDEV       ! File unit number
         CHARACTER(*) , INTENT  (OUT):: SRGFMT     ! Format of surrogates file
 

@@ -155,7 +155,7 @@ C.......   Get file name; open surrogates fractions file
 
 C.............  Read the surrogates header, obtain the format of the file, 
 C               and save the name of the input grid
-           CALL RDSRGHDR( .FALSE., SDEV, SRGFMT )
+           CALL RDSRGHDR( SDEV, SRGFMT )
            DATGRDNM = GRDNM
            DATNCOLS = NCOLS
            DATNROWS = NROWS
@@ -171,7 +171,7 @@ C.......   Get file name; open county landuse file
 
 C.............  Read the header of landuse file, obtain the format of the file, 
 C               and save the name of the input grid
-           CALL RDSRGHDR( .FALSE., GDEV, SRGFMT )
+           CALL RDSRGHDR(  GDEV, SRGFMT )
            DATGRDNM = GRDNM
            DATNCOLS = NCOLS
            DATNROWS = NROWS
