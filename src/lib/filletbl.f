@@ -15,13 +15,13 @@ C
 C  REVISION  HISTORY:
 C     Created 6/99 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -87,6 +87,9 @@ C           position in that group (XTCNT)
             T      = XTYPE ( I )
             K      = XTCNT ( I )
 
+C.............  Skip x-ref because it is invalid or duplicate
+            IF( T .EQ. 0 ) CYCLE
+
             TDIM   = ICSIZE( T )
 
             JPS  = J + ADDPS
@@ -98,8 +101,6 @@ C.............  The pol-specific entries are stored by adding 90000
 C               to the index number (which has an expected upper limit of 4 
 C               digits) so that the pol-specific can be identified later
             SELECT CASE ( T )
-
-            CASE( 0 )  ! Skip this x-ref because it is invalid or duplicate
 
             CASE( 1 )
                 CALL SET_EFSPSI_INDEX( TDIM, NACTV, IEFS01 )

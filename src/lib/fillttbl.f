@@ -15,13 +15,13 @@ C
 C  REVISION  HISTORY:
 C     Created 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -77,7 +77,10 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
             T      = XTYPE ( I )
             K      = XTCNT ( I )
 
-            TDIM   = ICSIZE( T )
+C.............  Skip x-ref because it is invalid or duplicate
+            IF( T .EQ. 0 ) CYCLE
+
+            TDIM = ICSIZE( T )
 C
 C.............  Populate tables depending on type. Note that the pollutant-
 C               specific entries are assumed to always come after the
@@ -86,8 +89,6 @@ C.............  The temporal pol-specific entries are stored by adding 90000
 C               to the monthly profile number (which has a maximum of 3 
 C               digits) so that the pol-specific can be identified later
             SELECT CASE ( T )
-
-            CASE( 0 )  ! Skip this x-ref because it is invalid or duplicate
 
             CASE( 1 )
                 MPRT01 = IMON  ! Arrays
