@@ -273,17 +273,17 @@ C.......   Interpolate [ A | B | C ]DAY to this JDATE:
 
               IF ( PARTYPE .EQ. 2 ) THEN ! KUO cloud
                  CLDTYPE = 'ANTHES-KUO'
-                 CALL CLDATEN_CALC( JDATE, JTIME, LAT, LON, 
+                 CALL CLDATEN_CALC( JDATE, JTIME, NX, NY, LAT, LON, 
      &                              CLDTYPE, CLDATN )
 
               ELSE IF ( PARTYPE .EQ. 3 ) THEN ! KF cloud
                  CLDTYPE = 'KAIN-FRITSCH'
-                 CALL CLDATEN_CALC( JDATE, JTIME, LAT, LON, 
+                 CALL CLDATEN_CALC( JDATE, JTIME, NX, NY, LAT, LON, 
      &                              CLDTYPE, CLDATN )
 
               ELSE IF ( PARTYPE .EQ. 4 ) THEN ! no CU cloud
                  CLDTYPE = 'NO CUM PARAM  '
-                 CALL CLDATEN_CALC( JDATE, JTIME, LAT, LON,
+                 CALL CLDATEN_CALC( JDATE, JTIME, NX, NY, LAT, LON,
      &                              CLDTYPE, CLDATN )
 
               END IF
