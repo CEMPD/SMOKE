@@ -69,7 +69,7 @@ C.......   LOCAL VARIABLES:
 C......................................................................
 C       begin GETDATE
 
-        JDATE = GETNUM( 0, 99999999, DEFAULT, PROMPT )
+        JDATE = GETNUM( 1970001, 25000101, DEFAULT, PROMPT )
 
         IF( JDATE .GT. 9999999 ) THEN
             YEAR = JDATE/10000
