@@ -257,7 +257,7 @@ C                     do not have the base-year control effectiveness
                         J = INDEX1( EANAM2D( I,N ), NIACT, ACTVTY )
                         IF ( J .GT. 0 ) THEN
                             MESG = 'Skipping activity "' //
-     &                             TRIM( EANAM2D( I,N ) ) // '" since '//
+     &                             TRIM( EANAM2D( I,N ) )// '" since '//
      &                             'CONTROL packet cannot apply.'
                             CALL M3MSG2( MESG )
                             USEPOL( NIPOL + J ) = .FALSE.
