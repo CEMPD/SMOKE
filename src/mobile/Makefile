@@ -20,8 +20,7 @@ debug: premobl.debug emisfac.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
-PRE=premobl.o adjsmet.o chkfulldy.o dyminmax.o \
-    getdysav.o openpsiout.o opensmet.o setsrcdy.o \
+PRE=premobl.o adjsmet.o chkfulldy.o dyminmax.o openpsiout.o opensmet.o \
     wrsmet.o genefmet.o setoutdt.o
 
 # NOTE: the optimized version of premobl does not work
