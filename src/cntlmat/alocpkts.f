@@ -145,10 +145,22 @@ C.............  If inside packet...
                 J = INDEX( LINE, '!' )
                 IF ( J .LE. 0 ) J = LEN_TRIM( LINE )
                 I = INDEX( LINE( 1:J ), '/END/' )
+                J = INDEX( LINE( 1:J ), '/'     )
 
 C.................  Check for /END/ of packet
                 IF( I .GT. 0 ) THEN
                     INSIDE = .FALSE.
+
+C.................  Encountered slash but not /END/
+C                   It may be part of a point source characteristic, so check if 
+C                   its at the beginning of the line
+                ELSEIF( I .LE. 0 .AND. J .GT. 0 ) THEN
+                    IF( J .EQ. 1 .OR. LINE( 1:J ) .EQ. ' ' ) THEN
+                        WRITE( MESG,94010 ) 'Problem at line', IREC,
+     &                         'of control packets file.' // CRLF() //
+     &                         BLANK10 // 'Encountered a "/" before /END/.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                     END IF
 
 C.................  For valid packets, count records
                 ELSEIF( VALID ) THEN
