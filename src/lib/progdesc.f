@@ -60,6 +60,19 @@ C   begin body of subroutine PROGDESC
         ELSEIF( NAME .EQ. 'RAWBIO' ) THEN
         ELSEIF( NAME .EQ. 'GRDBIO' ) THEN
         ELSEIF( NAME .EQ. 'SPCPMAT' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program SPCPMAT to take a SMOKE point source inventory file,',
+     &  'an actual SCCs file, a speciation profiles file, a',
+     &  'speciation cross-reference file, an optional pollutant-to-,',
+     &  'pollutant conversion file, and produce a mass-based and/or',
+     &  'mole-based SMOKE speciation matrices for all inventory',
+     &  'pollutants using run-time defined combinations of pollutants',
+     &  'and model species. The output species are defined at run time',
+     &  'by the speciation profiles file, permitting support of any',
+     &  'chemical mechanism.',
+     &      ' '
+
         ELSEIF( NAME .EQ. 'SPCAMAT' ) THEN
         ELSEIF( NAME .EQ. 'SPCMMAT' ) THEN
         ELSEIF( NAME .EQ. 'GRDPMAT' ) THEN
@@ -93,8 +106,8 @@ C   begin body of subroutine PROGDESC
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program TMPPOINT to take a SMOKE point source inventory file,',
-     &  'the actual SCCs file, the temporal profiles, the temporal',
-     &  'cross-reference file, an optional SMOKE day-specific file,',
+     &  'an actual SCCs file, a temporal profiles file, a temporal ',
+     &  'cross-reference file, an optional SMOKE day-specific file, ',
      &  'and an optional SMOKE hour-specific point source file, and',
      &  'produce hourly low-level and optionally hourly elevated point',
      &  'source emissions for the requested episode.',
@@ -104,7 +117,7 @@ C   begin body of subroutine PROGDESC
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program TMPAREA to take a SMOKE area source inventory file,',
-     &  'the actual SCCs file, the temporal profiles, and the temporal',
+     &  'an actual SCCs file, a temporal profiles file, and a temporal',
      &  'cross-reference file, and produce hourly area source',
      &  'emissions for the requested episode.',
      &      ' '
@@ -118,12 +131,20 @@ C   begin body of subroutine PROGDESC
         ELSEIF( NAME .EQ. 'LAYPOINT' ) THEN
         ELSEIF( NAME .EQ. 'EMISFAC' ) THEN
         ELSEIF( NAME .EQ. 'PREDIUR' ) THEN
-        ELSEIF( NAME .EQ. 'GRDPOINT' ) THEN
-        ELSEIF( NAME .EQ. 'GRDAREA' ) THEN
-        ELSEIF( NAME .EQ. 'GRDMOBIL' ) THEN
-        ELSEIF( NAME .EQ. 'CSGPOINT' ) THEN
-        ELSEIF( NAME .EQ. 'CSGAREA' ) THEN
-        ELSEIF( NAME .EQ. 'CSGMOBIL' ) THEN
+        ELSEIF( NAME .EQ. 'SMKMERGE' ) THEN
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program SMKMERGE to merge the inventory or hourly emission',
+     &  'files with gridding matrices and with optionally any',
+     &  'combination of speciation matrices, multiplicative control',
+     &  'matrices, additive control matrices, or reactivity control',
+     &  'matrices. The program can operate on one to four source ',
+     &  'categories (area, biogenic, mobile, or point sources), or any',
+     &  'combination of these.  Gridded and/or state reports and/or',
+     &  'county reports can be written from this program. If a layer-',
+     &  'fractions file is input, then the total emissions output file',
+     &  'is three-dimensional.'
+
         ELSE
             WRITE( LDEV,92000 ) 
      &      ' ',
