@@ -225,6 +225,8 @@ C.............  If valid, convert coordinates from UTM to lat-lon
             ELSE
                 ZONE = UTMZONE( K1 )
                 IF( ZONE > 0 ) CALL UTM2LL( XVAL, YVAL, ZONE, XX, YY )
+                XVAL = XX
+                YVAL = YY
 
             END IF
     
