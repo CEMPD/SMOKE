@@ -19,7 +19,7 @@ debug: mbsetup.debug premobl.debug emisfac.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
-MBSET=mbsetup.o rdmcref.o rdmvref.o wrspdsum.o wrtimegr.o
+MBSET=mbsetup.o rdmcref.o rdmvref.o wrspdsum.o wrtimegr.o asgnspds.o
 
 mbsetup: $(MBSET) $(ALLI) $(LIBPATH)
 	echo MBSETUP:
@@ -65,6 +65,7 @@ emisfac.debug: $(EMS) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 
 asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
+asgnspds.o    : $(MODXREF) $(MODINFO)
 chkm6scn.o    : $(MODINFO)
 emisfac.o     : $(MODSOURC) $(MODINFO) $(MODMET) $(MODEMFAC)
 hourtemp.o    : $(MODMBSET) $(MODSOURC) $(MODINFO)
