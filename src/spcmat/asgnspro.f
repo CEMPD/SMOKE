@@ -106,6 +106,7 @@ C.........  Other local variables
         CHARACTER(LEN=SRCLEN3)   CSRC    ! tmp source chars string
         CHARACTER(LEN=SCCLEN3)   TSCC    ! tmp 10-digit SCC
         CHARACTER(LEN=SCCLEN3)   TSCCL   ! tmp left digits of TSCC
+        CHARACTER(LEN=SCCLEN3)   TSCCINIT! tmp initial 10-digit SCC
         CHARACTER(LEN=SPNLEN3)   SPCODE  ! tmp speciation profile code
         CHARACTER(LEN=SCCLEN3)   CHKRWT  ! tmp roadway type only SCC
         CHARACTER(LEN=SCCLEN3)   CHKVID  ! tmp vehicle-type only SCC
@@ -148,6 +149,10 @@ C.............  Set up format for writing roadway type and vehicle ID to strings
 
         ENDIF
 
+C.........  Initialize roadway type zero and vehicle type zero
+        RWTZERO = REPEAT( '0', RWTLEN3 )
+        VIDZERO = REPEAT( '0', VIDLEN3 )
+
 C.........  Set number of output fields for FMTCSRC to use
         SELECT CASE ( CATEGORY )
         CASE ( 'AREA' ) 
@@ -175,13 +180,14 @@ C.........  Find index in complete list of pollutants and set length of name
 
             CSRC  = CSOURC( S )
             CFIP  = CSRC( 1:FIPLEN3 )
-            CSTA  = CFIP( 1:STALEN3 )
+            CSTA  = CFIP( 1:STALEN3 )            
             TSCC  = CSCC( S )
             TSCCL = TSCC( 1:LSCCEND )
             CHK09 = CFIP // TSCC
             CHK08 = CFIP // TSCCL 
             CHK06 = CSTA // TSCC
             CHK05 = CSTA // TSCCL 
+            TSCCINIT = TSCC
 
 C.............  Create selection 
             SELECT CASE ( CATEGORY )
@@ -237,16 +243,26 @@ C               if they have been allocated
 C.................  Try for pollutant-specific FIPS code & SCC match; then
 C                           pollutant-specific Cy/st code & SCC match; then
 C                           pollutant-specific SCC match
+C                           pollutant-specific roadway type match
+C                           pollutant-specific vehicle type match
 
-                F3 = FINDC( CHK09, NCNV3, CNVRT03 ) 
-                F2 = FINDC( CHK06, NCNV2, CNVRT02 ) 
-                F1 = FINDC( TSCC , NCNV1, CNVRT01 ) 
+                F5 = FINDC( CHK09 , NCNV3, CNVRT03 ) 
+                F4 = FINDC( CHK06 , NCNV2, CNVRT02 ) 
+                F3 = FINDC( TSCC  , NCNV1, CNVRT01 ) 
+                F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
+                F1 = FINDC( CHKVID, NCNV1, CNVRT01 ) 
 
-        	IF( F3 .GT. 0 .AND. CNVFC03(F3,V) .NE. AMISS3 ) THEN
-                    CNVFAC = CNVFC03( F3,V )
+        	IF( F5 .GT. 0 .AND. CNVFC03(F5,V) .NE. AMISS3 ) THEN
+                    CNVFAC = CNVFC03( F5,V )
 
-        	ELSE IF( F2 .GT. 0 .AND. CNVFC02(F2,V) .NE. AMISS3 ) THEN
-                    CNVFAC = CNVFC02( F2,V )
+        	ELSE IF( F4 .GT. 0 .AND. CNVFC02(F4,V) .NE. AMISS3 ) THEN
+                    CNVFAC = CNVFC02( F4,V )
+
+        	ELSE IF( F3 .GT. 0 .AND. CNVFC01(F3,V) .NE. AMISS3 ) THEN
+                    CNVFAC = CNVFC01( F3,V )
+
+        	ELSE IF( F2 .GT. 0 .AND. CNVFC01(F2,V) .NE. AMISS3 ) THEN
+                    CNVFAC = CNVFC01( F2,V )
 
         	ELSE IF( F1 .GT. 0 .AND. CNVFC01(F1,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC01( F1,V )
@@ -430,7 +446,7 @@ C               the use of defaults.
      &                 SPCODE // '" for:'//
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCC // ' POL: ' // EANAM( V )
+     &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
                 CALL M3MESG( MESG )
 
                 CALL SETSOURCE_SMATS
@@ -477,7 +493,7 @@ C               speciation profile is unavailable for a given pollutant
      &                 'available (and no default) for:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCC // ' POL: ' // EANAM( V )
+     &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
 
                 CALL M3MESG( MESG )
 
@@ -514,7 +530,7 @@ C               the default for this pollutant
      &                 CRLF() // BLANK10 // 'to source:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCC // ' POL: ' // EANAM( V )
+     &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
 
                 CALL M3MESG( MESG )
 

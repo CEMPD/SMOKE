@@ -86,10 +86,11 @@ C.........   Speciation matrices:
 C.........  Inventory pollutants actually in the inventory
         LOGICAL               , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: IINAM ( : ) ! initial pols
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! spro search pols
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! output pollutants
 
-C.........  Index from EANAM to IINAM
-        INTEGER, ALLOCATABLE :: EAIDX( : )
+C.........  Activities and pollutants
+        INTEGER, ALLOCATABLE :: EAIDX( : )           ! Index from EANAM to IINAM
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SANAM ( : ) ! output pollutants
 
 C.........  Names for output variables in mass-based and mole-based files
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MASSONAM( :,: )
@@ -110,12 +111,14 @@ C.........  Unit numbers and logical file names
         CHARACTER*16    LNAME   !  logical name for mole spec matrix output file
 
 C.........   Other local variables
-        INTEGER          I, J, K, L1, L2, L3, L4, V !  counters and indices
+        INTEGER          I, J, K, L1, L2, L3, L4, LT, V !  counters and indices
 
+        INTEGER          IDX               ! tmp index value
         INTEGER          IOS               ! i/o status
         INTEGER          NINVARR           ! number inventory variables to input
         INTEGER          NMSPC             ! number of model species
         INTEGER          NOPOL             ! no. pollutants for output
+        INTEGER          PIDX              ! previous index value
 
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         LOGICAL       :: KFLAG   = .FALSE. !  if pol to pol convert file or not
@@ -276,6 +279,8 @@ C           pollutants
         CALL CHECKMEM( IOS, 'EANAM', PROGNAME )  
         ALLOCATE( EAIDX( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EAIDX', PROGNAME )  
+        ALLOCATE( SANAM( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SANAM', PROGNAME )
         ALLOCATE( IINAM( NOPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IINAM', PROGNAME )
         ALLOCATE( SINAM( NOPOL ), STAT=IOS )
@@ -283,18 +288,19 @@ C           pollutants
         ALLOCATE( SPCOUT( NOPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCOUT', PROGNAME )
      
+C.........  Initialize arrays
+        EANAM  = ' '      ! array
+        EAIDX  = 1        ! array
+        SANAM  = ' '      ! array
+        IINAM  = ' '      ! array
+        SINAM  = ' '      ! array
+        SPCOUT = .TRUE.   ! array
+
 C.........  Create array of pollutant names from emission types and pollutants
 C.........  Put the pollutants from the emission types first so that the
 C           index from the emisson type names (EMTIDX) will be valid with 
-C           SINAM and EMTPOL
-        IF( NEPOL .GT. 0 ) IINAM(       1:NEPOL ) = EMTPOL( 1:NEPOL )
-        IF( NIPOL .GT. 0 ) IINAM( NEPOL+1:NOPOL ) = EINAM ( 1:NIPOL )
-
-        SPCOUT = .TRUE.   ! array
-        SINAM  = IINAM    ! array
-
-C.........  Create list of emission types and pollutants and set an index
-C           that points back to IINAM.  First, for emission types...
+C           SINAM and EMTPOL.
+C.........  Also, restructure the index.  First, for emission types...
         J = 1
         DO I = 1, NIACT
 
@@ -308,26 +314,61 @@ C           that points back to IINAM.  First, for emission types...
         END DO
 
 C.........  Now for pollutants...
-        IF( NIPOL .GT. 0 ) THEN
+        DO I = 1, NIPOL
+            EANAM( J ) = EINAM( I )
+            EAIDX( J ) = NEPOL + I
+            J = J + 1
+        END DO
 
-            DO I = 1, NIPOL
-                EANAM( J ) = EINAM( I )
-                EAIDX( J ) = NEPOL + I
-                J = J + 1
-            END DO
-
+C.........  Confirm that counter is equal to total number of emission types
+C           and pollutants
+        IF( J-1 .NE. NIPPA ) THEN
+            WRITE( MESG,94010 ) 'INTERNAL ERROR: number of emission ' //
+     &             'types and pollutants ', J, CRLF() // BLANK10 //
+     &             'is inconsistent with dimensioned value', NIPPA
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
         END IF
 
 C.........  Read the speciation cross-reference file
         CALL RDSREF( XDEV )
 
+C.........  Initialize output emission types/pollutants array
+        SANAM = EANAM
+
 C.........  Read the pollutant to pollutant conversion file, if any
 C.........  resulting tables are passed via MODSPRO
         IF ( KFLAG ) THEN
 
-            CALL RDSCONV( KDEV, NIPOL, CATEGORY, IINAM, SINAM )
+c            CALL RDSCONV( KDEV, NIPOL, CATEGORY, IINAM, SINAM )
+            CALL RDSCONV( KDEV, NIPPA, CATEGORY, EANAM, SANAM )
 
         END IF
+
+C.........  Create input and output pollutant names based on output 
+C           emission types/pollutants names for input and output.
+        K = 0
+        PIDX = 0
+        LT = LEN_TRIM( ETJOIN )
+        DO I = 1, NIPPA
+
+            IDX = EAIDX( I )
+
+            IF( IDX .NE. PIDX ) THEN
+                K = K + 1                    
+
+                L1 = INDEX( EANAM( I ), ETJOIN )
+                L2 = LEN_TRIM( EANAM( I ) )
+                IINAM( K ) = EANAM( I )( L1+LT:L2 )
+
+                L1 = INDEX( SANAM( I ), ETJOIN )
+                L2 = LEN_TRIM( SANAM( I ) )
+                SINAM( K ) = SANAM( I )( L1+LT:L2 )
+
+                PIDX = IDX
+            END IF
+
+        END DO
 
 C.........  Scan speciation profiles file to get all of the pollutant-species
 C           combinations that are valid for the pollutants in the inventory.
@@ -438,7 +479,7 @@ C.................  For pollutant data...
                     L1 = LEN_TRIM( PNAM )
                     MESG = 'Processing pollutant "'// PNAM( 1:L1 )// '"'
 
-                    IF( IINAM( V ) .NE. SNAM ) THEN
+                    IF( PNAM .NE. SNAM ) THEN
                 	L1 = LEN_TRIM( MESG )
                 	L2 = LEN_TRIM( SNAM )
                 	MESG = MESG( 1:L1 ) // ' using pollutant "' //
