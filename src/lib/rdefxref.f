@@ -63,10 +63,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         FIND1
         INTEGER         FINDC
+        INTEGER         INDEX1
         INTEGER         STR2INT
         INTEGER         GETFLINE
 
-        EXTERNAL  CHKINT, CRLF, FIND1, STR2INT, GETFLINE
+        EXTERNAL  CHKINT, CRLF, FIND1, INDEX1, STR2INT, GETFLINE
 
 
 C...........   SUBROUTINE ARGUMENTS
@@ -77,10 +78,6 @@ C...........   LOCAL PARAMETERS and their descriptions
 
         INTEGER, PARAMETER :: MXFLDS = 29  ! Max. no. columns in MPLIST
         INTEGER, PARAMETER :: MXPSIVAL = 24 * 3600
-
-C...........   Sorted activities
-        INTEGER                   INDXA  ( NIACT ) !  sorting index for actvtys
-        CHARACTER(LEN=IOVLEN3) :: SRTACT ( NIACT ) !  sorted activity names
 
 C...........   Array for reading temporal x-ref fields
         CHARACTER*20            SEGMENT( MXFLDS )
@@ -151,18 +148,6 @@ C.........  Set up zero strings for FIPS code of zero and SCC code of zero
 C.........  Set up roadway type format
         WRITE( RWTFMT, '("(I",I2.2,")")' ) RWTLEN3
 
-C.........  Sort the actual list of activity names and store it
-        DO I = 1, NIACT
-            INDXA( I ) = I
-        ENDDO
-
-        CALL SORTIC( NIACT, INDXA, ACTVTY )
-
-        DO I = 1, NIACT
-            J = INDXA( I )
-            SRTACT( I ) = ACTVTY( J )
-        END DO
-
         MESG = 'Reading emission factors cross-reference file...'
         CALL M3MSG2( MESG )
 
@@ -202,7 +187,7 @@ C.............  Search for activity name in list and skip entry if it does not
 C               match.
             ACT = SEGMENT( 5 )
 
-            K = FINDC( ACT, NIACT, SRTACT )
+            K = INDEX1( ACT, NIACT, ACTVTY )
 
             IF( K .LE. 0 ) CYCLE
 
@@ -354,7 +339,7 @@ C                   missing values
             CALL PADZERO( CFIP )
 
 C.................  Compare activity name with master list.
-            JACT = FINDC( ACT, NIACT, SRTACT )
+            JACT = INDEX1( ACT, NIACT, ACTVTY )
 
             IF( JACT .LE. 0 ) CYCLE
 
