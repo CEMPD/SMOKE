@@ -66,19 +66,19 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local paramaters
         INTEGER, PARAMETER :: MXPTLBL = 8
         INTEGER, PARAMETER :: MXARLBL = 3
-        INTEGER, PARAMETER :: MXMBLBL = 5
+        INTEGER, PARAMETER :: MXMBLBL = 6
 
 C.........  Output labels (note: these could be dynamic if in MODINFO)
         CHARACTER*6  :: PTLABEL( MXPTLBL ) =  !  message buffer
      &                ( / 'Region', 'Plant ', 'Char1 ', 'Char2 ',
-     &                    'Char3 ', 'Char4 ', 'Char5 ', 'Pol   ' / )
+     &                    'Char3 ', 'Char4 ', 'Char5 ', 'Data  ' / )
  
         CHARACTER*6  :: ARLABEL( MXARLBL ) =  !  message buffer
-     &                ( / 'Region', 'SCC   ', 'Pol   ' / )
+     &                ( / 'Region', 'SCC   ', 'Data  ' / )
  
         CHARACTER*9  :: MBLABEL( MXMBLBL ) =  !  message buffer
-     &                ( / 'Region   ', 'Road Type', 
-     &                    'Link     ', 'Vtype    ', 'Pol      ' / )
+     &                ( / 'Region   ', 'Road Type', 'Link     ', 
+     &                    'Vtype    ', 'SCC      ', 'Data     ' / )
 
         CHARACTER*9, SAVE :: LABEL( MXPTLBL )
  
@@ -115,6 +115,7 @@ C   begin body of subroutine FMTCSRC
                 LABEL( 1:MXPTLBL ) = PTLABEL  ! array
 
             CASE DEFAULT
+                TMPNUM = NCIN
 
             END SELECT
 
