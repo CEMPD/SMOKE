@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
-     &                        PDEV, VDEV, ZDEV, ENAME, INNAME, 
-     &                        IDNAME, IHNAME )
+     &                        XDEV, EDEV, PDEV, VDEV, ZDEV, ENAME,  
+     &                        INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 114
@@ -65,6 +65,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: HDEV      ! unit no. for hr-specific file
         INTEGER     , INTENT(OUT) :: RDEV      ! unit no. for stack replacements
         INTEGER     , INTENT(OUT) :: SDEV      ! unit no. for optional inven in
+        INTEGER     , INTENT(OUT) :: XDEV      ! unit no. for vmt mix file
+        INTEGER     , INTENT(OUT) :: EDEV      ! unit no. for speeds file
         INTEGER     , INTENT(OUT) :: PDEV      ! unit no. for pol codes & names
         INTEGER     , INTENT(OUT) :: VDEV      ! unit no. for activity names
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
@@ -97,7 +99,9 @@ C...........   Other local variables
         LOGICAL       DFLAG  ! true: import day-specific file
         LOGICAL       HFLAG  ! true: import hour-specific file
         LOGICAL       IFLAG  ! true: import annual/average inventory
+        LOGICAL       SFLAG  ! true: import speeds file
         LOGICAL       VFLAG  ! true: use ACTVNAMS file
+        LOGICAL       XFLAG  ! true: import VMT mix file
 
         CHARACTER(LEN=NAMLEN3) ANAME
         CHARACTER*300          MESG        ! message buffer 
@@ -135,6 +139,19 @@ C.........  Get value of these controls from the environment
         MESG = 'Import hour-specific data'
         HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
 
+        MESG = 'Import VMT mix data'
+        XFLAG = ENVYN ( 'IMPORT_VMTMIX_YN', MESG, .FALSE., IOS )
+
+        MESG = 'Import mobile speeds data'
+        SFLAG = ENVYN ( 'IMPORT_SPEEDS_YN', MESG, .FALSE., IOS )
+
+C.........  Make sure VMT mix and speeds will only be imported for mobile 
+C           sources
+        IF( CATEGORY .NE. 'MOBILE' ) THEN
+            XFLAG = .FALSE.
+            SFLAG = .FALSE.
+        END IF 
+
 C.........  Abort if no settings set to read data
         IF( .NOT. IFLAG .AND. 
      &      .NOT. DFLAG .AND.
@@ -163,17 +180,6 @@ C.........  Find name name of raw inventory file
             IHNAME = HNAMLIST( J )
 
         END IF
-
-C.........  Initialize unit numbers and logical file names
-        ENAME = ' '
-        IDEV = 0
-        DDEV = 0
-        HDEV = 0
-        RDEV = 0
-        SDEV = 0
-        PDEV = 0
-        VDEV = 0
-        ZDEV = 0
 
 C.........  Get file name and open average input inventory file when inventory
 C           is to be imported
@@ -212,6 +218,24 @@ C.........  Get file name and open daily input inventory file
      &             CATEGORY( 1:LCAT ) // ' HOURLY INVENTORY ' // 'file'
 
             HDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., IHNAME, PROGNAME )
+        END IF
+
+C.........  Get VMT Mix file
+        IF( XFLAG ) THEN
+
+            MESG = 'Enter logical name for VMT MIX file'
+            XDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'VMTMIX', 
+     &                          PROGNAME )
+
+       END IF
+
+C.........  Get speeds file
+        IF( SFLAG ) THEN
+
+            MESG = 'Enter logical name for MOBILE SPEEDS file'
+            EDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MSPEEDS', 
+     &                          PROGNAME )
+
         END IF
 
         IF( IFLAG ) THEN
