@@ -5,7 +5,7 @@
      &                      MAXBYSRC, METIDX )
 
 C***********************************************************************
-C  subroutine ADJSMET body starts at line
+C  subroutine ADJSMET body starts at line 121
 C
 C  DESCRIPTION:
 C      Round values to interval and compute index for min/max
@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C 
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C 
 C See file COPYRIGHT for conditions of use.
@@ -84,7 +84,6 @@ C...........   Other local variables
         INTEGER       J, L, S      ! counters and indices
 
         INTEGER       K( 4 )       ! values
-        INTEGER       MSAV         ! saved minimum value
         INTEGER       T1, T2       ! tmp indices
 
         DOUBLE PRECISION :: MNVMN       ! tmp min variable min
@@ -94,6 +93,7 @@ C...........   Other local variables
         DOUBLE PRECISION :: VMXIT       ! tmp max interval
         DOUBLE PRECISION :: VINTV       ! tmp tmpr interval
 
+        REAL          MSAV         ! saved minimum value
         REAL          VAL          ! tmp value
         REAL          VMAX         ! tmp max value
         REAL          VMAX2        ! tmp max value
@@ -217,19 +217,24 @@ C               the valid temperature lists are computed.
 C..............  Ensure relationship between TMIN and TMAX is valid
 C..............  When difference greater than the maximum interval
 C                set VMIN from VMAX, and adjust down on interval
+C..............  Set VMIN to one interval greater than needed to ensure
+C                max interval relationship holds for all min/max tmpr combos
             IF( VMAX - VMIN .GE. VMXIT ) THEN
                 MSAV = VMIN
-                VMIN = VMAX - ( VMXIT - 1. )
+                VMIN = VMAX - ( VMXIT - VINTV - 1. )
                 VMIN = MNVMN + VINTV *
      &                 INT( ( VMIN - MNVMN ) / VINTV )
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                WRITE( MESG, 94020 ) 'Max - min ' // DESC // ' is >' //
+                WRITE( MESG, 94020 ) 'Max - min ' // DESC // ' is > ' //
      &                 'defined maximum interval', MXINTRVL, 'for' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.' //
      &                 CRLF() // BLANK10 // 
      &                 'Increasing min from', MSAV, 'to', VMIN
                 CALL M3MESG( MESG )
+
+C.................  Store new minimum value for source
+                MINBYSRC( S ) = VMIN
 
             END IF
 
@@ -333,6 +338,6 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
 
-94020   FORMAT( A, 2( 1X, F8.2, 1X, A ) )
+94020   FORMAT( A, 4( 1X, F8.2, 1X, A ) )
  
         END SUBROUTINE ADJSMET
