@@ -1478,9 +1478,9 @@ C...............   Get day-of-week, month:
                     WRITE( *,92011 ) 'Processing day', DAY
                     CALL MKTMAT( NPSRC, JDATE, MONTH, DAY,
      &                           TZONE, TZONES, TPFLAG,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, 
+     &                           MONFAC, NMON, MDEX, 
+     &                           WEKFAC, NWEK, WDEX, 
+     &                           DIUFAC, NDIU, DDEX, 
      &                           NDAYPT, INDXD, TMAT )
 
                 ELSE IF ( DAY .GE. 6 ) THEN     !  day is Saturday or Sunday
@@ -1489,9 +1489,9 @@ C...............   Get day-of-week, month:
                     WRITE( *,92011 ) 'Processing weekend day', DAY
                     CALL MKTMAT( NPSRC, JDATE, MONTH, DAY,
      &                           TZONE, TZONES, TPFLAG,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           ENDFAC, EDEX, 
+     &                           MONFAC, NMON, MDEX,
+     &                           WEKFAC, NWEK, WDEX,
+     &                           ENDFAC, NEND, EDEX, 
      &                           NDAYPT, INDXD, TMAT )
 
                 ELSE
@@ -1499,9 +1499,9 @@ C...............   Get day-of-week, month:
                     WRITE( *,92011 ) 'Processing midweek day', DAY
                     CALL MKTMAT( NPSRC, JDATE,  MONTH, DAY, 
      &                           TZONE, TZONES, TPFLAG,
-     &                           MONFAC, MDEX,
-     &                           WEKFAC, WDEX,
-     &                           DIUFAC, DDEX, 
+     &                           MONFAC, NMON, MDEX,
+     &                           WEKFAC, NWEK, WDEX,
+     &                           DIUFAC, NDIU, DDEX, 
      &                           NDAYPT, INDXD, TMAT )
 
                 END IF
