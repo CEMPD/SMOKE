@@ -3,7 +3,7 @@
 all: opts
 #
 opts: adjpmat cselev ctlpmat elevpoint emspoint grdpmat \
-      laypoint pdemspt pdpoint rawpoint spcpmat tmppoint
+      laypoint pcpoint pdemspt pdpoint rawpoint spcpmat tmppoint 
 #
 LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
@@ -75,6 +75,16 @@ LAYE=PTDIMS3.EXT TMDIMS3.EXT VGRD3.EXT GRDIMS3.EXT
 laypoint: $(LAY) $(LAYE)
 	echo LAYPOINT:
 	f77 $(FFLAGS)   -o $(SCENDIR)/laypoint $(LAY) $(LIBS)
+#
+#
+#
+PCPT=pcpoint.F
+#
+PCPI=PTDIMS3.EXT CHDIMS3.EXT
+#
+pcpoint: $(PCPT) $(PCPI)
+	echo PCPOINT:
+	f77 $(FFLAGS) -o $(SCENDIR)/pcpoint $(PCPT) $(LIBS)
 #
 #
 #

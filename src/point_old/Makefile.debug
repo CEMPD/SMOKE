@@ -100,6 +100,16 @@ laypoint.debug: $(LAY) $(LAYE)
 #
 #
 #
+PCPT=pcpoint.F
+#
+PCPI=PTDIMS3.EXT CHDIMS3.EXT
+#
+pcpoint.debug: $(PCPT) $(PCPI)
+	echo PCPOINT:
+	f77 $(DBGFLAGS) -o pcpoint.debug $(PCPT) $(LIBS)
+#
+#
+#
 DYPE=pdemspt.F
 #
 DPEI=PTDIMS3.EXT CHDIMS3.EXT
