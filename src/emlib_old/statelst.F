@@ -253,7 +253,7 @@ C...........   Formatted file I/O formats............ 93xxx
  
 93040   FORMAT( A, $ )
 
-93050   FORMAT( 1X, <WIDTH>('-') )
+93050   FORMAT( 1X, 80('-') )
 
 C...........   Internal buffering formats............ 94xxx
  

@@ -505,7 +505,9 @@ C...........   Formatted file I/O formats............ 93xxx
  
 93040   FORMAT( A, $ )
 
-93050   FORMAT( 1X, <WIDTH>('-') )
+C		04/21/99 wts
+C93050   FORMAT( 1X, <WIDTH>('-') )
+93050   FORMAT( 1X, 80('-') )
 
 93070   FORMAT ( 2X, I5, 1X, A )
 
