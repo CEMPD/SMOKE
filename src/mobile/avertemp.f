@@ -21,7 +21,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT   (IN) :: CNTYCODE( NCNTY )      ! FIPS codes for counties
         INTEGER, INTENT   (IN) :: SRCARRAY( NSRC )       ! county codes for each source
         INTEGER, INTENT   (IN) :: TSTEP                  ! current time step
-        REAL,    INTENT   (IN) :: HOURTEMP( NSRC, 24 )   ! hourly temps by source
+        REAL,    INTENT(INOUT) :: HOURTEMP( NSRC, 24 )   ! hourly temps by source
         REAL,    INTENT  (OUT) :: CNTYTEMP( NCNTY,24 )   ! hourly temps by county
         INTEGER, INTENT(INOUT) :: NDAYSRC( NSRC,24 )     ! no. days to average over
 
@@ -54,6 +54,7 @@ C.........  Loop through all counties
                 NUMSRC = NUMSRC + 1
                 TEMPSUM = TEMPSUM + 
      &                    ( HOURTEMP( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
+                HOURTEMP( J,TSTEP ) = 0
                 NDAYSRC( J,TSTEP ) = 0
 
             END DO
