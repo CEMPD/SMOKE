@@ -270,6 +270,15 @@ C.................  Set category-specific source characteristic combinations
 
                 END SELECT
 
+C.................   Initialize indices
+                F6 = 0
+                F5 = 0
+                F4 = 0
+                F3 = 0
+                F2 = 0
+                F1 = 0
+                F0 = 0
+
 C.................  In the tables used in the following heirarchy, a pollutant-
 C                   specific cross-reference entry has not been use as the
 C                   default for all pollutants.  So the diurnal profile number
@@ -293,13 +302,13 @@ C.................  Initialize status for all comparisons in first group
                 STAT = .FALSE.    ! array
 
 C.................  Evaluate x-ref cases for pollutant/emistype-specific
-                STAT(1)= (F6 .GT. 0 .AND. DPRT16(F6,V) .GE. ADDPS)
-                STAT(2)= (F5 .GT. 0 .AND. DPRT15(F5,V) .GE. ADDPS)
-                STAT(3)= (F4 .GT. 0 .AND. DPRT14(F4,V) .GE. ADDPS)
-                STAT(4)= (F3 .GT. 0 .AND. DPRT13(F3,V) .GE. ADDPS)
-                STAT(5)= (F2 .GT. 0 .AND. DPRT12(F2,V) .GE. ADDPS)
-                STAT(6)= (F1 .GT. 0 .AND. DPRT11(F1,V) .GE. ADDPS)
-                STAT(7)= (F0 .GT. 0 .AND. DPRT10(F0,V) .GE. ADDPS)
+                IF( F6 .GT. 0 ) STAT(1)= (DPRT16(F6,V) .GE. ADDPS)
+                IF( F5 .GT. 0 ) STAT(2)= (DPRT15(F5,V) .GE. ADDPS)
+                IF( F4 .GT. 0 ) STAT(3)= (DPRT14(F4,V) .GE. ADDPS)
+                IF( F3 .GT. 0 ) STAT(4)= (DPRT13(F3,V) .GE. ADDPS)
+                IF( F2 .GT. 0 ) STAT(5)= (DPRT12(F2,V) .GE. ADDPS)
+                IF( F1 .GT. 0 ) STAT(6)= (DPRT11(F1,V) .GE. ADDPS)
+                IF( F0 .GT. 0 ) STAT(7)= (DPRT10(F0,V) .GE. ADDPS)
 
 C.................  Based on evaluation of cases, store reference information
 C                   for pollutant-specific
@@ -355,13 +364,13 @@ C                   for pollutant-specific
                 END IF
 
 C.................  Look at the same x-ref cases for no pollutant/emistype
-                STAT(1)= (F6 .GT. 0 .AND. DPRT16(F6,V) .NE. IMISS3)
-                STAT(2)= (F5 .GT. 0 .AND. DPRT15(F5,V) .NE. IMISS3)
-                STAT(3)= (F4 .GT. 0 .AND. DPRT14(F4,V) .NE. IMISS3)
-                STAT(4)= (F3 .GT. 0 .AND. DPRT13(F3,V) .NE. IMISS3)
-                STAT(5)= (F2 .GT. 0 .AND. DPRT12(F2,V) .NE. IMISS3)
-                STAT(6)= (F1 .GT. 0 .AND. DPRT11(F1,V) .NE. IMISS3)
-                STAT(7)= (F0 .GT. 0 .AND. DPRT10(F0,V) .NE. IMISS3)
+                IF( F6 .GT. 0 ) STAT(1)= (DPRT16(F6,V) .NE. IMISS3)
+                IF( F5 .GT. 0 ) STAT(2)= (DPRT15(F5,V) .NE. IMISS3)
+                IF( F4 .GT. 0 ) STAT(3)= (DPRT14(F4,V) .NE. IMISS3)
+                IF( F3 .GT. 0 ) STAT(4)= (DPRT13(F3,V) .NE. IMISS3)
+                IF( F2 .GT. 0 ) STAT(5)= (DPRT12(F2,V) .NE. IMISS3)
+                IF( F1 .GT. 0 ) STAT(6)= (DPRT11(F1,V) .NE. IMISS3)
+                IF( F0 .GT. 0 ) STAT(7)= (DPRT10(F0,V) .NE. IMISS3)
 
 C.................  Continue to evaluate cases and store reference information
                 IF( STAT( 1 ) ) THEN
@@ -415,6 +424,17 @@ C.................  Continue to evaluate cases and store reference information
 
                 END IF
 
+C.................   Reset indices
+                F5 = 0
+                F4 = 0
+                F4B= 0
+                F3 = 0
+                F2 = 0
+                F2B= 0
+                F1 = 0
+                F0 = 0
+                F0B= 0
+
 C.................  Try to find source characteristic combinations for the
 C                   next six types of matches.
                 F5 = FINDC( CHK09, TXCNT( 9 ), CHRT09 ) 
@@ -441,18 +461,18 @@ C.................  Initialize status for all comparisons in second group
 
 C.................  Make second round of comparisons for pollutant/emistype
 C                   specific cases
-                STAT(1)= (F5 .GT. 0 .AND. DPRT09(F5,V) .GE. ADDPS)
-                STAT(2)= (F4 .GT. 0 .AND. DPRT08(F4,V) .GE. ADDPS)
-                STAT(4)= (F3 .GT. 0 .AND. DPRT06(F3,V) .GE. ADDPS)
-                STAT(5)= (F2 .GT. 0 .AND. DPRT05(F2,V) .GE. ADDPS)
-                STAT(7)= (F1 .GT. 0 .AND. DPRT03(F1,V) .GE. ADDPS)
-                STAT(8)= (F0 .GT. 0 .AND. DPRT02(F0,V) .GE. ADDPS)
+                IF( F5 .GT. 0 ) STAT(1)= (DPRT09(F5,V) .GE. ADDPS)
+                IF( F4 .GT. 0 ) STAT(2)= (DPRT08(F4,V) .GE. ADDPS)
+                IF( F3 .GT. 0 ) STAT(4)= (DPRT06(F3,V) .GE. ADDPS)
+                IF( F2 .GT. 0 ) STAT(5)= (DPRT05(F2,V) .GE. ADDPS)
+                IF( F1 .GT. 0 ) STAT(7)= (DPRT03(F1,V) .GE. ADDPS)
+                IF( F0 .GT. 0 ) STAT(8)= (DPRT02(F0,V) .GE. ADDPS)
 
 C.................  Evaluate mobile-specific cases
                 IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                    STAT(3)= (F4B .GT. 0 .AND. DPRT09(F4B,V) .GE. ADDPS)
-                    STAT(6)= (F2B .GT. 0 .AND. DPRT06(F2B,V) .GE. ADDPS)
-                    STAT(9)= (F0B .GT. 0 .AND. DPRT03(F0B,V) .GE. ADDPS)
+                    IF( F4B .GT. 0 ) STAT(3)= (DPRT09(F4B,V) .GE. ADDPS)
+                    IF( F2B .GT. 0 ) STAT(6)= (DPRT06(F2B,V) .GE. ADDPS)
+                    IF( F0B .GT. 0 ) STAT(9)= (DPRT03(F0B,V) .GE. ADDPS)
                 END IF
 
 C.................  Continue to evaluate cases and store reference information
@@ -522,18 +542,18 @@ C.................  Continue to evaluate cases and store reference information
                 END IF
 
 C.................  Evaluate remainder of x-ref cases
-                STAT(1)= (F5 .GT. 0 .AND. DPRT09(F5,V) .NE. IMISS3)
-                STAT(2)= (F4 .GT. 0 .AND. DPRT08(F4,V) .NE. IMISS3)
-                STAT(4)= (F3 .GT. 0 .AND. DPRT06(F3,V) .NE. IMISS3)
-                STAT(5)= (F2 .GT. 0 .AND. DPRT05(F2,V) .NE. IMISS3)
-                STAT(7)= (F1 .GT. 0 .AND. DPRT03(F1,V) .NE. IMISS3)
-                STAT(8)= (F0 .GT. 0 .AND. DPRT02(F0,V) .NE. IMISS3)
+                IF( F5 .GT. 0 ) STAT(1)= (DPRT09(F5,V) .NE. IMISS3)
+                IF( F4 .GT. 0 ) STAT(2)= (DPRT08(F4,V) .NE. IMISS3)
+                IF( F3 .GT. 0 ) STAT(4)= (DPRT06(F3,V) .NE. IMISS3)
+                IF( F2 .GT. 0 ) STAT(5)= (DPRT05(F2,V) .NE. IMISS3)
+                IF( F1 .GT. 0 ) STAT(7)= (DPRT03(F1,V) .NE. IMISS3)
+                IF( F0 .GT. 0 ) STAT(8)= (DPRT02(F0,V) .NE. IMISS3)
 
 C.................  Remainder of mobile-specific evaluations
                 IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                    STAT(3)=(F4B .GT. 0 .AND. DPRT09(F4B,V) .NE. IMISS3)
-                    STAT(6)=(F2B .GT. 0 .AND. DPRT06(F2B,V) .NE. IMISS3)
-                    STAT(9)=(F0B .GT. 0 .AND. DPRT03(F0B,V) .NE. IMISS3)
+                    IF( F4B .GT. 0 ) STAT(3)=(DPRT09(F4B,V) .NE. IMISS3)
+                    IF( F2B .GT. 0 ) STAT(6)=(DPRT06(F2B,V) .NE. IMISS3)
+                    IF( F0B .GT. 0 ) STAT(9)=(DPRT03(F0B,V) .NE. IMISS3)
                 END IF
 
 C.................  Continue to evaluate cases and store reference information
