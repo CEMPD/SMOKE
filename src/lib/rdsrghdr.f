@@ -14,7 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -78,20 +78,32 @@ C...........   Subroutine arguments
 C...........   Local parameters
 
         INTEGER, PARAMETER :: MXSEG = 16          ! # of potential line segments
-        INTEGER, PARAMETER :: MXGRDTYP = 5
+        INTEGER, PARAMETER :: MXGRDTYP = 11
 
 C...........   Grid types and names arrays
         INTEGER      :: GRDTYPES( MXGRDTYP ) = ( / LATGRD3
+     &                                           , LATGRD3
+     &                                           , LATGRD3
+     &                                           , LAMGRD3
      &                                           , LAMGRD3
      &                                           , MERGRD3
+     &                                           , MERGRD3
      &                                           , STEGRD3
+     &                                           , STEGRD3
+     &                                           , UTMGRD3
      &                                           , UTMGRD3 / )
 
         CHARACTER*15 :: GRDNAMES( MXGRDTYP ) = ( / 'LAT-LON        '
+     &                                           , 'GEOGRAPHIC     '
+     &                                           , 'LATGRD3        '
      &                                           , 'LAMBERT        '
+     &                                           , 'LAMGRD3        '
      &                                           , 'MERCATOR       '
+     &                                           , 'MERGRD3        '
      &                                           , 'STEREOGRAPHIC  '
-     &                                           , 'UTM            ' / )
+     &                                           , 'STEGRD3        '
+     &                                           , 'UTM            '
+     &                                           , 'UTMGRD3        ' / )
 
 C...........   Other arrays
 
