@@ -39,7 +39,7 @@ C***************************************************************************
 
 C...........   Modules for public variables
 
-        USE MODSOURC            ! correct?
+        USE MODSOURC
 
         IMPLICIT NONE
 
@@ -75,10 +75,13 @@ C...........   Local variables
         INTEGER       IRAWOUT        ! valid raw record counter
         INTEGER       IREC           ! record counter
         INTEGER       IYEAR          ! data year
+        INTEGER       SCCLEN         ! length of SCC string 
         INTEGER       SPEED          ! tmp speed, integer
         INTEGER       STID           ! tmp state code
         REAL          VMTR           ! tmp vehicle miles traveled
         LOGICAL       INVALID        ! tmp error flag for current record
+        LOGICAL       INVCNTRY       ! tmp error flag for country name
+        LOGICAL       INVYEAR        ! tmp error flag for year
         CHARACTER*10  CNTRY          ! tmp country name
         CHARACTER*35  LINE           ! read buffer for a line
         CHARACTER*300 MESG           ! text for M3EXIT()
@@ -91,11 +94,14 @@ C...........   Local variables
 C***********************************************************************
 C   Begin body of subroutine RDIDAMB
 
-        IREC    = 0
-	IDROP   = 0
-        IRAWOUT = 0
-        VDROP   = 0
-	EFLAG   = .FALSE.
+        IREC     = 0
+	IDROP    = 0
+        IRAWOUT  = 0
+        VDROP    = 0
+	EFLAG    = .FALSE.
+        INVCNTRY = .FALSE.
+
+        REWIND( FDEV )
 
         DO
 
@@ -103,11 +109,18 @@ C   Begin body of subroutine RDIDAMB
 	
         INVALID = .FALSE.
         IREC = IREC + 1
+
+        IF ( IOS .GT. 0 ) THEN
+             WRITE( MESG, 94010)
+     &              'I/O error', IOS, 'reading VMT inventory '//
+     &              'file at line', IREC
+             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 	
         IF ( LINE .EQ. ' ' ) CYCLE      ! skip if line is blank
 	
-        IF ( LINE(1:1) .EQ. '#' ) THEN           ! determine if line is a header
-	
+        IF ( LINE(1:1) .EQ. '#' ) THEN  ! determine if line is a header
+
 	   IF ( LINE(2:8) .EQ. 'COUNTRY' ) THEN  ! read in 'country-name'
                 CNTRY   = LINE(9:35)
                 CNTRY   = ADJUSTL( CNTRY )
@@ -117,7 +130,10 @@ C   Begin body of subroutine RDIDAMB
                      WRITE( MESG, 94010 )
      &	             'Invalid country name encountered on line ', IREC
                      CALL M3MESG( MESG )
-                     INVALID = .TRUE.
+                     INVCNTRY = .TRUE.
+                ELSE
+                     ICC      = CNTRYCD3( ICC )
+                     INVCNTRY = .FALSE.
                 END IF 
 	   
            ELSEIF ( LINE(2:5) .EQ. 'YEAR' ) THEN ! read in 'datayear'
@@ -126,21 +142,38 @@ C   Begin body of subroutine RDIDAMB
                      WRITE( MESG, 94010 )
      &	             'Invalid year encountered on line ', IREC
                      CALL M3MESG( MESG )
-                     INVALID = .TRUE.
+                     INVYEAR = .TRUE.
+                ELSE
+                     INVYEAR = .FALSE.
                 END IF
 
            ELSE
                 CYCLE   ! cycle if header line does not contain 'country-name'
                         ! or 'datayear' information
            END IF
+
+c           IF ( ICC .EQ. 0 .OR. IYEAR .LT. 1971 ) THEN ! set error flag to
+c                INVCORY = .TRUE.   ! true if either ICC or IYEAR is invalid
+c           ELSE
+c                INVCORY = .FALSE.
+c           END IF
 	   
         ELSE
+
+        IF ( INVCNTRY .OR. INVYEAR ) THEN   ! if an invalid country code or
+           EFLAG = .TRUE.       ! invalid year has been encountered, 
+           INVALID = .TRUE.     ! set EFLAG=.TRUE and INVALID = .TRUE.
+           WRITE( MESG, 94010 ) ! for all associated records
+     &     'ERROR: Record being dropped due to invalid country code ' //
+     &     CRLF() // BLANK5 // 'and/or invalid inventory year'
+           CALL M3MESG( MESG )       
+        END IF
 
 C...........    Fill temporary fields using current record line
 
         STID  = STR2INT ( LINE(1:2) )
 	CYID  = STR2INT ( LINE(3:5) )
-        SCC   = ADJUSTR ( LINE(6:15) )
+        SCC   = ADJUSTL ( LINE(6:15) )
         VMTR  = STR2REAL ( LINE(16:28) )
         VTYPE = ADJUSTL ( LINE(29:33) )
         SPEEDCHR = ADJUSTL ( LINE(34:35) )
@@ -151,7 +184,7 @@ C...........    Determine if vehicle type is valid
              EFLAG = .TRUE.
 	     INVALID = .TRUE.
              WRITE( MESG, 94010 )
-     &	     'Invalid vehicle type encountered on line ', IREC
+     &	     'Invalid (blank) vehicle type encountered on line ', IREC
              CALL M3MESG( MESG )
         END IF
 
@@ -177,8 +210,9 @@ C...........    Determine if speed is valid
 
 C...........    Determine if SCC is valid
 
+        SCCLEN = TRIMLEN( SCC )
 
-        IF ( SCC .EQ. ' ' ) THEN   ! determine if SCC is 10 char. wide
+        IF ( SCCLEN .NE. 10 ) THEN   ! determine if SCC is 10 char. wide
              EFLAG = .TRUE.
 	     INVALID = .TRUE.
              WRITE( MESG, 94010 )
@@ -231,6 +265,8 @@ C...........    Determine if SCC is valid
 
         ENDIF
 	
+        RETURN
+
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
