@@ -107,9 +107,6 @@ C             at each time step for only the used min-max-combos
 C...........  This is used only by the genefmet routine
         INTEGER, ALLOCATABLE :: TIPSI( :, :, : )
 
-C...........  Array for the variable names of the SRC-PSI file
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: PSVNAME( : )
-
 C...........  Array that contains the names of the inventory variables needed 
 C             for this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
@@ -126,7 +123,6 @@ C...........   File units and logical names:
         CHARACTER*16 ENAME ! logical name for mobile I/O API inventory file
         CHARACTER*16 FNAME ! logical name for output METIDX per PSI
         CHARACTER*16 MNAME ! logical name for output ungridded min/max temp
-        CHARACTER*16 PNAME ! logical nm for output PSIs by src, actvty, & 24 hrs
         CHARACTER*16 TNAME ! logical name for surface temp input file
         CHARACTER*16 UNAME ! logical name for ungridding-matrix input file
 
@@ -154,7 +150,7 @@ C...........   Other local variables:
         INTEGER    NSTEPS  !  number of time steps to process temperature data
         INTEGER    ODATE   !  output date
         INTEGER    OTIME   !  time in GMT for determining when to output
-        INTEGER    OSRC    !  number of sources outside grid
+        INTEGER :: OSRC = 0!  number of sources outside grid
         INTEGER    PSI     !  tmp parameter scheme index
         INTEGER    SDATE   !  output start date
         INTEGER    SDATE_MET ! met file start date
@@ -350,8 +346,6 @@ C.........  Allocate memory for other arrays in the program
         CALL CHECKMEM( IOS, 'METIDX', PROGNAME )
         ALLOCATE( EFSIDX( NSRC,NIACT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EFSIDX', PROGNAME )
-        ALLOCATE( PSVNAME( NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PSVNAME', PROGNAME )
 
 C.........  Create array of which sources are affected by daylight savings
         CALL GETDYSAV( NSRC, IFIP, LDAYSAV )
@@ -407,8 +401,7 @@ C.........  Open file(s) for per-source meteorology
 
 C.........  Open file(s) for parameter scheme index outputs
         FNAME = 'MEFTEMP'
-        PNAME = CRL // 'SRCPSI'
-        CALL OPENPSIOUT( ENAME, FNAME, PNAME, EDEV, PSVNAME )
+        CALL OPENPSIOUT( ENAME, FNAME, EDEV )
  
 C.........  Process temperature information...
 
@@ -532,37 +525,6 @@ C......... Write temperature combinations for each PSI into an ASCII file
                 END DO
             END DO
         END DO
-
-C.........  Allocate memory for storing PSIs for 24 hours.
-        ALLOCATE( SRCPSI( NSRC,24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCPSI', PROGNAME )
-
-        CALL M3MSG2( 'Writing out SOURCE PSIs file...' )
-
-C.........  Transfer PSIs to source-based PSIs list for each activity
-        DO V = 1, NIACT
-
-            DO S = 1, NSRC
-
-                K = EFSIDX( S,V )
-
-                DO H = 1, 24
-                    SRCPSI( S,H ) = IPSIA( K,H )
-                END DO
-
-            END DO             ! End loop on sources
-
-C.............  Write source-PSI file for each of 24 hours for current activity
-            IF( .NOT. WRITE3( PNAME, PSVNAME( V ), 0, 0, SRCPSI ) ) THEN
-
-        	MESG = 'Could not write PSIs per source for activity '//
-     &                  ACTVTY( V ) // ' to "' //
-     &                  PNAME( 1:LEN_TRIM( PNAME ) ) //  '".'
-        	CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-            END IF
-
-        END DO                 ! End loop on activities
 
 C.........  Write message when sources were excluded during ungridding
         IF( OFLAG ) THEN
