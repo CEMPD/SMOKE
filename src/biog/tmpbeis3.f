@@ -444,7 +444,7 @@ C.......      otherwise, use environment variables to set defaults
         JTIME  = STIME3D
         NSTEPS = MXREC3D
 
-        CALL GETM3EPI( TZONE, JDATE, JTIME, NSTEPS )
+        CALL GETM3EPI( TZONE, JDATE, JTIME, 10000, NSTEPS )
 
 C.......   Build description for, and create/open output file
 C.......   (all but variables-table in description is borrowed from M3NAME)
@@ -779,7 +779,7 @@ C.............  Read temperature data
 
 C..............  Read surface pressure data 
 
-           IF ( .NOT. READ3( M3NAME, 'PRSFC', 1, 
+           IF ( .NOT. READ3( M3NAME, 'PRES', 1, 
      &                        MDATE, MTIME, PRES ) ) THEN
                   MESG = 'Could not read PRES from file "' //
      &                   M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
