@@ -90,6 +90,7 @@ C...........   Input file descriptors
         INTEGER     , ALLOCATABLE :: STIMEA( : ) ! start time
         INTEGER     , ALLOCATABLE :: NLAYSA( : ) ! number of layers in the file
         CHARACTER*16, ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
+        LOGICAL     , ALLOCATABLE :: USEFIRST(:) ! true: use first time step of file
 
         LOGICAL     , ALLOCATABLE :: LVOUTA( :,: ) ! iff out var in input file
         CHARACTER*16, ALLOCATABLE :: VNAMEA( :,: ) ! variable names
@@ -143,6 +144,7 @@ C...........   Other local variables
         INTEGER       SECSMAX                    ! seconds maximum
         INTEGER       SECSMIN                    ! seconds minimum
         INTEGER       STIME                      ! starting time HHMMSS
+        INTEGER       STEPS                      ! tmp number of steps
         INTEGER       TIMET                      ! tmp time from seconds
         INTEGER       TSTEP                      ! time step
         INTEGER       VLB                        ! VGLVS3D lower bound 
@@ -216,6 +218,12 @@ C           of files
         CALL CHECKMEM( IOS, 'VUNITA', PROGNAME )
         ALLOCATE( VDESCA( MXVARS3,MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VDESCA', PROGNAME )
+        
+        IF( MRGDIFF ) THEN
+            ALLOCATE( USEFIRST( MXNFIL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'USEFIRST', PROGNAME )
+            USEFIRST = .TRUE.
+        END IF
 
 C.........  Allocate output layer structure
         ALLOCATE( VGLVS( 0:MXLAYS3 ), STAT=IOS )
@@ -447,28 +455,61 @@ C.............  Check that all files have same start time
 C.............  Check that environment settings are consistent with files
             IF( TSTEP /= G_TSTEP ) THEN
                 WRITE( MESG,94010 ) 'ERROR: Value for G_TSTEP',
-     &              G_TSTEP, 'is inconsistent with the time step ' //
-     &              'of the files', TSTEP
+     &              G_TSTEP, 'is inconsistent' // CRLF() // BLANK10 //
+     &              'with the time step of the files', TSTEP
                 CALL M3EXIT( PROGNAME, 0 ,0, MESG, 2 )
             END IF
 
             IF( STIME /= G_STIME ) THEN
                 WRITE( MESG,94010 ) 'ERROR: Value for G_STTIME',
-     &              G_STIME, 'is inconsistent with the start time ' //
-     &              'of the files', STIME
+     &              G_STIME, 'is inconsistent' // CRLF() // BLANK10 //
+     &              'with the start time of the files', STIME
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
             DO F = 1, NFILE
                 NAM = FNAME( F )
                 
+C.................  Check that all files are at least long enough to
+C                   to cover requested output duration
                 IF( DURATA( F ) < G_NSTEPS ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Number of time steps',
      &                  DURATA( F ), 'in file "' // TRIM( NAM ) // 
-     &                  '" is insufficient to cover the requsted ' //
-     &                  'number of output time steps', G_NSTEPS
+     &                  '" is insufficient' // CRLF() // BLANK10 //
+     &                  'to cover the requsted number of output ' //
+     &                  'time steps', G_NSTEPS
                     CALL M3MSG2( MESG )
+                END IF
+
+C.................  Check if file contains output start date and 
+C                   enough data to cover output duration
+                IF( .NOT. EFLAG ) THEN
+                    SECS = SECSDIFF( SDATEA( F ), STIMEA( F ),
+     &                               G_SDATE, G_STIME )
+                    STEPS = SECS/3600
+
+                    IF( STEPS > 0 .AND. STEPS < DURATA( F ) ) THEN
+                        IF( DURATA(F) - STEPS >= G_NSTEPS ) THEN
+                            USEFIRST( F ) = .FALSE.
+                        ELSE
+                            WRITE( MESG,94010 ) 'WARNING: File "' //
+     &                          TRIM( NAM ) // '" contains the ' //
+     &                          'requested output start date ', G_SDATE,
+     &                          CRLF() // BLANK10 // 'and start time',
+     &                          G_STIME, 'but does not contain ' //
+     &                          'enough data ' 
+     &                          // CRLF() // BLANK10 //
+     &                          'to cover the requested number of ' //
+     &                          'output time steps', G_NSTEPS, '.'
+                            CALL M3MSG2( MESG )
+                            WRITE( MESG,94010 ) BLANK5 //
+     &                          'Data from the ' //
+     &                          'start date of the file ', SDATEA( F ),
+     &                          'will be used instead.'
+                            CALL M3MSG2( MESG )
+                        END IF
+                    END IF
                 END IF
             END DO
             
@@ -666,7 +707,7 @@ C.................  Output array
                 DO F = 1, NFILE
 
 C.....................  Set read date
-                    IF( MRGDIFF ) THEN
+                    IF( MRGDIFF .AND. USEFIRST( F ) ) THEN
                         IF( JDATE == SDATE ) THEN
                             RDATE = SDATEA( F )
                         ELSE
