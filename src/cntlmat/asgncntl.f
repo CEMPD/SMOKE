@@ -46,13 +46,26 @@ C*************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, CMACT, ISIC, CSRCTYP
 
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: ADDPS, TXCNT,
+     &          CHRT02A, CHRT02B, CHRT02C, CHRT03, CHRT04,
+     &          CHRT05A, CHRT05B, CHRT05C, CHRT06, CHRT07,
+     &          CHRT08A, CHRT08B, CHRT08C, CHRT09, CHRT10,
+     &          CHRT11, CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
+     &          CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
+     &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37,
+     &          ICTL01, ICTL02A, ICTL02B, ICTL02C, ICTL03, ICTL04,
+     &          ICTL05A, ICTL05B, ICTL05C, ICTL06, ICTL07,
+     &          ICTL08A, ICTL08B, ICTL08C, ICTL09, ICTL10,
+     &          ICTL11, ICTL12, ICTL13, ICTL14, ICTL15, ICTL16,
+     &          ICTL26, ICTL27, ICTL28, ICTL29, ICTL30, ICTL31,
+     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, NIPPA, EANAM,
+     &                     SCCLEV1, SCCLEV2, SCCLEV3
 
         IMPLICIT NONE
 
@@ -66,8 +79,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         INDEX1
+        LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVYN, FIND1, FINDC, INDEX1
+        EXTERNAL CRLF, ENVYN, FIND1, FINDC, INDEX1, SETSCCTYPE
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRCIN         ! number of sources
@@ -87,9 +101,11 @@ C.........  Other local variables
 
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
+        LOGICAL, SAVE :: MACTFLAG = .TRUE.  ! true: MACT and src type available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
         LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
         LOGICAL       :: SICXREF  = .FALSE. ! true: SIC assignments in x-ref
+        LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
         CHARACTER*8            FMTFIP   ! format for writing FIPS code
         CHARACTER*8            FMTSIC   ! format for writing SIC code
@@ -129,6 +145,13 @@ C.........  Other local variables
         CHARACTER(LEN=STILEN3) :: CSTASICL = ' ' ! tmp Country/state // char left SIC
         CHARACTER(LEN=FPILEN3) :: CFIPSIC = ' '  ! tmp FIPS code // char SIC
         CHARACTER(LEN=FPILEN3) :: CFIPSICL = ' ' ! tmp FIPS code // char left SIC
+        CHARACTER(LEN=MACLEN3) :: CMCT = ' '     ! tmp MACT code
+        CHARACTER(LEN=MSCLEN3) :: CMSCC = ' '    ! tmp SCC // MACT
+        CHARACTER(LEN=MSTLEN3) :: CMST = ' '     ! tmp Country/state code // MACT
+        CHARACTER(LEN=MSSLEN3) :: CMSTSC = ' '   ! tmp Country/state code // SCC // MACT
+        CHARACTER(LEN=MFPLEN3) :: CMFP = ' '     ! tmp FIPS code // MACT
+        CHARACTER(LEN=MFSLEN3) :: CMFPSC = ' '   ! tmp FIPS code // SCC // MACT
+        CHARACTER(LEN=STPLEN3) :: CSTYP = ' '    ! tmp source type code
 
         CHARACTER*16 :: PROGNAME = 'ASGNCNTL' ! program name
 
@@ -150,8 +173,9 @@ C.............  Set up format for creating character FIPS code for non-point
 C.............  Set up format for creating character SIC code 
             WRITE( FMTSIC, 94300 ) '(I', SICLEN3, '.', SICLEN3, ')'
 
-C.............  Figure out if SIC codes are available
-            IF ( ALLOCATED ( ISIC ) ) SICFLAG = .TRUE.
+C.............  Figure out if SIC and/or MACT and src type codes are available
+            IF ( ALLOCATED ( ISIC  ) ) SICFLAG  = .TRUE.
+            IF ( ALLOCATED ( CMACT ) ) MACTFLAG = .TRUE.
 
             FIRSTIME = .FALSE.
 
@@ -194,6 +218,9 @@ C               they are not yet data-specific
                 CSRC    = CSOURC( S )
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CSTA    = CFIP( 1:STALEN3 )
+                                
+C.................  Set type of SCC                
+                SCCFLAG = SETSCCTYPE ( CSCC( S ) )
                 TSCC_D  = CSCC( S )             ! Level 4 (all)
                 TSCC_A  = TSCC_D( 1:SCCLEV1 )   ! Level 1
                 TSCC_B  = TSCC_D( 1:SCCLEV2 )   ! Level 2
@@ -216,6 +243,17 @@ C               they are not yet data-specific
                     CSTASIC  = CSTA // CSIC
                     CFIPSICL = CFIP // CSICL
                     CFIPSIC  = CFIP // CSIC
+                END IF
+
+                IF( MACTFLAG ) THEN
+                    CMCT   = CMACT( S )
+                    CMFPSC = CFIP // TSCC_D // CMCT
+                    CMFP   = CFIP // CMCT
+                    CMSTSC = CSTA // TSCC_D // CMCT
+                    CMST   = CSTA // CMCT
+                    CMSCC  = TSCC_D // CMCT
+                    
+                    CSTYP  = CSRCTYP( S )
                 END IF
 
 C.................  Create selection 
@@ -372,6 +410,111 @@ C                           any PLANT non-blank        match
                     CYCLE                       !  to end of sources-loop
 
                 END IF
+
+C.................  If MACT available in inventory...
+                IF ( MACTFLAG ) THEN
+                
+C.................  Try for pollutant-specific FIPS code, SCC, & MACT match; then
+C                           pollutant-specific FIPS code & MACT match; then
+C                           pollutant-specific Cy/st code, SCC, & MACT match; then
+C                           pollutant-specific Cy/st code & MACT match; then
+C                           pollutant-specific SCC & MACT match; then
+C                           pollutant-specific MACT match
+                    F5 = FINDC( CMFPSC, TXCNT( 37 ), CHRT37 )
+                    F4 = FINDC( CMFP  , TXCNT( 36 ), CHRT36 )
+                    F3 = FINDC( CMSTSC, TXCNT( 35 ), CHRT35 )
+                    F2 = FINDC( CMST  , TXCNT( 34 ), CHRT34 )
+                    F1 = FINDC( CMSCC , TXCNT( 33 ), CHRT33 )
+                    F0 = FINDC( CMCT  , TXCNT( 32 ), CHRT32 )
+                    
+                    IF( F5 .GT. 0 .AND. ICTL37( F5,V ) .GE. ADDPS ) THEN
+                        IDX = ICTL37( F5,V ) - ADDPS
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        IF( IDX /= 0 ) DATSPFLAG = .TRUE.
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F4 .GT. 0 .AND. ICTL36(F4,V) .GE. ADDPS) THEN
+                        IDX = ICTL36( F4,V ) - ADDPS
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        IF( IDX /= 0 ) DATSPFLAG = .TRUE.
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F3 .GT. 0 .AND. ICTL35(F3,V) .GE. ADDPS) THEN
+                        IDX = ICTL35( F3,V ) - ADDPS
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        IF( IDX /= 0 ) DATSPFLAG = .TRUE.
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F2 .GT. 0 .AND. ICTL34(F2,V) .GE. ADDPS) THEN
+                        IDX = ICTL34( F2,V ) - ADDPS
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        IF( IDX /= 0 ) DATSPFLAG = .TRUE.
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F1 .GT. 0 .AND. ICTL33(F1,V) .GE. ADDPS) THEN
+                        IDX = ICTL33( F1,V ) - ADDPS
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        IF( IDX /= 0 ) DATSPFLAG = .TRUE.
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F0 .GT. 0 .AND. ICTL32(F0,V) .GE. ADDPS) THEN
+                        IDX = ICTL32( F0,V ) - ADDPS
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        IF( IDX /= 0 ) DATSPFLAG = .TRUE.
+                        CYCLE                       !  to end of sources-loop
+                        
+                    END IF
+
+C.................  Try for any FIPS code, SCC, & MACT match; then
+C                           any FIPS code & MACT match; then
+C                           any Cy/st code, SCC, & MACT match; then
+C                           any Cy/st code & MACT match; then
+C                           any SCC & MACT match; then
+C                           any MACT match 
+                    IF( F5 .GT. 0 .AND. ICTL37(F5,V) .NE. IMISS3 ) THEN
+                        IDX = ICTL37( F5,V )
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F4.GT. 0 .AND. ICTL36(F4,V) .NE. IMISS3) THEN
+                        IDX = ICTL36( F4,V )
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F3.GT. 0 .AND. ICTL35(F3,V) .NE. IMISS3) THEN
+                        IDX = ICTL35( F3,V )
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F2.GT. 0 .AND. ICTL34(F2,V) .NE. IMISS3) THEN
+                        IDX = ICTL34( F2,V )
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F1.GT. 0 .AND. ICTL33(F1,V) .NE. IMISS3) THEN
+                        IDX = ICTL33( F1,V )
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        CYCLE                       !  to end of sources-loop
+                        
+                    ELSEIF(F0.GT. 0 .AND. ICTL32(F0,V) .NE. IMISS3) THEN
+                        IDX = ICTL32( F0,V )
+                        IF( PKTTYP == 'MACT' ) CALL CHECK_SRC_TYPE
+                        CALL SETSOURCE_CONTROL_INDEX
+                        CYCLE                       !  to end of sources-loop
+                        
+                    END IF
+                END IF  ! MACT available in inventory                           
 
 C.................  If SIC available in inventory...
                 IF ( SICFLAG ) THEN
@@ -836,5 +979,23 @@ C...........   Subprogram Internal buffering formats........ 94xxx
 94010       FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE REPORT_SCC_USE
+            
+C......................................................................
+C......................................................................
+
+C.............  This internal subprogram checks the source type associated
+C               with a MACT packet entry.
+            SUBROUTINE CHECK_SRC_TYPE
+
+C.............  This module contains the control packet data and control matrices
+            USE MODCNTRL, ONLY: CMACSRCTYP
+
+C----------------------------------------------------------------------
+
+            IF( CMACSRCTYP( IDX ) /= '00' ) THEN
+                IF( CMACSRCTYP( IDX ) /= CSTYP ) IDX = 0
+            END IF
+
+            END SUBROUTINE CHECK_SRC_TYPE
 
         END SUBROUTINE ASGNCNTL
