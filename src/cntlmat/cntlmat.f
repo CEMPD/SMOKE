@@ -77,8 +77,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
      &                               'ALLOWABLE           ',
      &                               'ADD                 ',
      &                               'REACTIVITY          ',
-     &                               'PROJECT AMS         ',
-     &                               'PROJECT PTS         '  / )
+     &                               'PROJECT PROJECTION  '  / )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
