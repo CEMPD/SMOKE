@@ -206,8 +206,8 @@ C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
 
-        RTIME = ENVINT( 'ST_REPTIME', 
-     &                  'Per-State summation reporting time', 0, IOS )
+        RTIME = ENVINT( 'ST_REPTIME', 'Per-State summation reporting '
+     *                  // 'time', 230000, IOS )
 
         JSRG = ENVINT( 'JSRG', 
      &             'Record number for area surrogate',
