@@ -45,7 +45,7 @@ C***************************************************************************
 
 C...........   INCLUDES
 
-        INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -260,28 +260,28 @@ C.................  Get file name for input replacement stack parameters file
 
             END SELECT
 
-C.............  Get file name for country, state, and county file, with time 
-C               zones
-            ZDEV = PROMPTFFILE(
+        END IF
+
+C.........  Get file name for country, state, and county file, with time 
+C           zones
+        ZDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
 
-C.............  Get file name for inventory pollutants codes/names
-            IF( CFLAG ) THEN 
-        	MESG = 'Enter logical name for POLLUTANT CODES & ' //
-     &                 'NAMES file'
-        	PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SIPOLS',
-     &                              PROGNAME )
-            END IF
+C.........  Get file name for inventory pollutants codes/names
+        IF( CFLAG ) THEN 
+            MESG = 'Enter logical name for POLLUTANT CODES & ' //
+     &             'NAMES file'
+            PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SIPOLS',
+     &                          PROGNAME )
+        END IF
 
-C.............  Get file name for inventory pollutants codes/names
-            IF( VFLAG ) THEN
-                MESG = 'Enter logical name for ACTIVITY CODES & ' //
-     &                 'NAMES file'
-                VDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ACTVNAMS',
-     &                              PROGNAME )
-            END IF
-
+C.........  Get file name for inventory pollutants codes/names
+        IF( VFLAG ) THEN
+            MESG = 'Enter logical name for ACTIVITY CODES & ' //
+     &             'NAMES file'
+            VDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ACTVNAMS',
+     &                          PROGNAME )
         END IF
 
         RETURN
