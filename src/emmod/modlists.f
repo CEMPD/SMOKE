@@ -72,7 +72,7 @@
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCL( : ) ! left SCCs
         CHARACTER(LEN=SDSLEN3), ALLOCATABLE, PUBLIC :: SCCDESC( : ) ! descrptn
 
-!.........  Country/state/county codes dimensioned by NINVFIP
+!.........  Country/state/county codes dimensioned by NINVIFIP
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
 
 !.........  ORIS arrays
