@@ -2,7 +2,7 @@
         SUBROUTINE SRCMEM( CATEGORY, SORTTYPE, AFLAG, PFLAG, NDIM1, 
      &                     NDIM2, NDIM3 )
 
-C***********************************************************************
+C***************************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
@@ -16,7 +16,7 @@ C
 C  REVISION  HISTORY:
 C      Created 10/98 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -197,11 +197,6 @@ C.............  Allocate specifically based on source category
                     CALL CHECKMEM( IOS, 'ISICA', PROGNAME )
                 END IF
  
-                IF( UFLAG .AND. .NOT. ALLOCATED( IORISA ) ) THEN
-                    ALLOCATE( IORISA( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'IORISA', PROGNAME )
-                END IF
- 
                 IF( UFLAG .AND. .NOT. ALLOCATED( IDIUA ) ) THEN
                     ALLOCATE( IDIUA( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'IDIUA', PROGNAME )
@@ -242,6 +237,11 @@ C.............  Allocate specifically based on source category
                     CALL CHECKMEM( IOS, 'STKVEA', PROGNAME )
                 END IF
  
+                IF( UFLAG .AND. .NOT. ALLOCATED( CORISA ) ) THEN
+                    ALLOCATE( CORISA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CORISA', PROGNAME )
+                END IF
+ 
                 IF( UFLAG .AND. .NOT. ALLOCATED( CBLRIDA ) ) THEN
                     ALLOCATE( CBLRIDA( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CBLRIDA', PROGNAME )
@@ -254,9 +254,9 @@ C.............  Allocate specifically based on source category
 
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( ISICA ) ) 
-     &              DEALLOCATE( ISICA, IORISA, IDIUA, IWEKA,  
-     &                          XLOCAA, YLOCAA, STKHTA, STKDMA, STKTKA,  
-     &                          STKVEA, CBLRIDA, CPDESCA )
+     &              DEALLOCATE( ISICA, IDIUA, IWEKA, XLOCAA, YLOCAA,  
+     &                          STKHTA, STKDMA, STKTKA, STKVEA,  
+     &                          CORISA, CBLRIDA, CPDESCA )
 
             CASE DEFAULT
                 MESG = 'INTERNAL ERROR: Do not know about source ' //
@@ -382,11 +382,6 @@ C               for reading day- and hour-specific data
                     CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
                 END IF
 
-                IF( UFLAG .AND. .NOT. ALLOCATED( IORIS ) ) THEN
-                    ALLOCATE( IORIS( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'IORIS', PROGNAME )
-                END IF
-
                 IF( UFLAG .AND. .NOT. ALLOCATED( IDIU ) ) THEN
                     ALLOCATE( IDIU( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
@@ -427,6 +422,11 @@ C               for reading day- and hour-specific data
                     CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
                 END IF
 
+                IF( UFLAG .AND. .NOT. ALLOCATED( CORIS ) ) THEN
+                    ALLOCATE( CORIS( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CORIS', PROGNAME )
+                END IF
+
                 IF( UFLAG .AND. .NOT. ALLOCATED( CBLRID ) ) THEN
                     ALLOCATE( CBLRID( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CBLRID', PROGNAME )  
@@ -439,9 +439,9 @@ C               for reading day- and hour-specific data
 
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( ISIC ) ) 
-     &              DEALLOCATE( ISIC, IORIS, IDIU, IWEK, 
-     &                          YLOCA, STKHT, STKDM, STKTK,  
-     &                          STKVE, CBLRID, CPDESC )
+     &              DEALLOCATE( ISIC, IDIU, IWEK, XLOCA, YLOCA, 
+     &                          STKHT, STKDM, STKTK, STKVE,  
+     &                          CORIS, CBLRID, CPDESC )
 
             END SELECT
 

@@ -62,11 +62,11 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
         INTEGER     , INTENT (IN) :: SDEV   !  ASCII file unit
 
 C.........  Arrays for column formatting
-        INTEGER       COLWID( MXCHRS+3 ) !  width of source info columns
+        INTEGER       COLWID( MXCHRS+4 ) !  width of source info columns
 
-        LOGICAL       LF    ( MXCHRS+3 ) !  true if column should be output
+        LOGICAL       LF    ( MXCHRS+4 ) !  true if column should be output
 
-        CHARACTER*300 CHARS ( MXCHRS+3 ) !  source fields for output
+        CHARACTER*300 CHARS ( MXCHRS+4 ) !  source fields for output
 
 C.........  Source-specific header arrays
         CHARACTER*20 :: ARHEADRS( MXARCHR3+1 ) = 
@@ -83,7 +83,7 @@ C.........  Source-specific header arrays
      &                                        'SCC                 ', 
      &                                        'Vehicle Type Name   ' / ) 
 
-        CHARACTER*20 :: PTHEADRS( MXPTCHR3+4 ) = 
+        CHARACTER*20 :: PTHEADRS( MXPTCHR3+5 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Plant code          ', 
@@ -93,6 +93,7 @@ C.........  Source-specific header arrays
      &                                        'Source char 4       ', 
      &                                        'Source char 5       ',
      &                                        'SCC                 ',  
+     &                                        'DOE plant ID        ',  
      &                                        'Boiler code         ',  
      &                                        'Facility description' / )
 
@@ -105,7 +106,7 @@ C.........  Other local variables
         INTEGER       I, J, K, S       !  counters and indices
         INTEGER       IOS              !  memory allocation status
         INTEGER       L1, L2, NL       !  counters and indices
-        INTEGER       M1, M2, M3       !  positions after src characteristics
+        INTEGER       M1, M2, M3, M4   !  positions after src characteristics
         INTEGER       NASCII           !  number of posible output fields
         INTEGER       NC               !  number of output fields
 
@@ -118,6 +119,92 @@ C.........  Other local variables
 C***********************************************************************
 C   begin body of subroutine WRINVCHR
 
+C.........  Write the I/O API file, one variable at a time
+
+        L1 = LEN_TRIM( ENAME )
+        MESG = 'Error writing output file "' // ENAME(1:L1) // '"'
+
+        IF ( .NOT. WRITE3( ENAME, 'IFIP', 0, 0, IFIP ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF ( .NOT. WRITE3( ENAME, 'TZONES', 0, 0, TZONES ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF ( .NOT. WRITE3( ENAME, 'TPFLAG', 0, 0, TPFLAG ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF ( .NOT. WRITE3( ENAME, 'INVYR', 0, 0, INVYR ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+
+            IF ( .NOT. WRITE3( ENAME, 'IRCLAS', 0, 0, IRCLAS ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'IVTYPE', 0, 0, IVTYPE ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'XLOC1', 0, 0, XLOC1 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'YLOC1', 0, 0, YLOC1 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'XLOC2', 0, 0, XLOC2 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'YLOC2', 0, 0, YLOC2 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'SPEED', 0, 0, SPEED ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
+
+            IF ( .NOT. WRITE3( ENAME, 'ISIC', 0, 0, ISIC ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'XLOCA', 0, 0, XLOCA ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'YLOCA', 0, 0, YLOCA ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKHT', 0, 0, STKHT ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKDM', 0, 0, STKDM ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKTK', 0, 0, STKTK ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKVE', 0, 0, STKVE ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        END IF
+
+C.........  End subroutine if ASCII file is not to be written
+        IF( SDEV .LE. 0 ) RETURN
+
 C.........  Set the number of potential ASCII columns in SDEV output file
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
@@ -125,7 +212,7 @@ C.........  Set the number of potential ASCII columns in SDEV output file
         CASE( 'MOBILE' )
             NASCII = MXMBCHR3+2
         CASE( 'POINT' )
-            NASCII = MXPTCHR3+3
+            NASCII = MXPTCHR3+4
         END SELECT
 
 C.........  Allocate memory for and populate the output header fields from
@@ -146,6 +233,7 @@ C           characteristics fields
         M1 = MXCHRS + 1
         M2 = MXCHRS + 2
         M3 = MXCHRS + 3
+        M4 = MXCHRS + 4
 
 C.........  Get the maximum column width for each of the columns in ASCII file
         COLWID = 0    ! array
@@ -177,13 +265,17 @@ C.........  Get the maximum column width for each of the columns in ASCII file
                 IF( CSCC( S ) .NE. ' ' .AND.
      &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
 
+                J = LEN_TRIM( CORIS( S ) )                  ! could be blank
+                IF( CORIS( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M2 ) ) COLWID( M2 ) = J
+
                 J = LEN_TRIM( CBLRID( S ) )                 ! could be blank
                 IF( CBLRID( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M2 ) ) COLWID( M2 ) = J
+     &              J .GT. COLWID( M3 ) ) COLWID( M3 ) = J
 
                 J = LEN_TRIM( CPDESC( S ) )                 ! could be blank
                 IF( CPDESC( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M3 ) ) COLWID( M3 ) = J
+     &              J .GT. COLWID( M4 ) ) COLWID( M4 ) = J
 
             END SELECT
 
@@ -268,10 +360,15 @@ C.........  Write the ASCII file data
 
                 IF( LF( M2 ) ) THEN
                     NC = NC + 1
-                    CHARS( NC ) = CBLRID( S )
+                    CHARS( NC ) = CORIS( S )
                 END IF
 
                 IF( LF( M3 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CBLRID( S )
+                END IF
+
+                IF( LF( M4 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CPDESC( S )
                 END IF
@@ -280,94 +377,7 @@ C.........  Write the ASCII file data
                       
             WRITE( SDEV, OUTFMT ) S, ( CHARS( I ), I = 1, NC )
  
-        ENDDO   ! End loop on sources for writing ASCII file
-
-C.........  Write the I/O API file, one variable at a time
-
-        L1 = LEN_TRIM( ENAME )
-        MESG = 'Error writing output file "' // ENAME(1:L1) // '"'
-
-        IF ( .NOT. WRITE3( ENAME, 'IFIP', 0, 0, IFIP ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'TZONES', 0, 0, TZONES ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'TPFLAG', 0, 0, TPFLAG ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'INVYR', 0, 0, INVYR ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-
-            IF ( .NOT. WRITE3( ENAME, 'IRCLAS', 0, 0, IRCLAS ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'IVTYPE', 0, 0, IVTYPE ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'XLOC1', 0, 0, XLOC1 ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'YLOC1', 0, 0, YLOC1 ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'XLOC2', 0, 0, XLOC2 ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'YLOC2', 0, 0, YLOC2 ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'SPEED', 0, 0, SPEED ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-        ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-
-            IF ( .NOT. WRITE3( ENAME, 'ISIC', 0, 0, ISIC ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'IORIS', 0, 0, IORIS ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'XLOCA', 0, 0, XLOCA ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'YLOCA', 0, 0, YLOCA ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'STKHT', 0, 0, STKHT ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'STKDM', 0, 0, STKDM ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'STKTK', 0, 0, STKTK ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF ( .NOT. WRITE3( ENAME, 'STKVE', 0, 0, STKVE ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-        END IF
+        END DO   ! End loop on sources for writing ASCII file
 
 C.........  Deallocate locally allocated memory
         DEALLOCATE( HDRFLDS )
