@@ -387,7 +387,8 @@ C.....................  Try day-specific emissions file
 
             ELSE IF ( CATEGORY .EQ. 'AREA' ) THEN
 
-                L = LEN_TRIM( ADJUSTL( LINE( 6:20 ) ) ) ! Width of SCC field
+                CPOL = ADJUSTL( LINE( 21:25 ) )
+                L = LEN_TRIM( CPOL ) ! Width of SCC field
 
                 CFLAG = .FALSE.    ! Does the field for pollutant name have chars?
                 DO I = 1, L
