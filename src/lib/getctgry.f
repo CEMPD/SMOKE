@@ -71,10 +71,12 @@ C...........   LOCAL PARAMETER:
 
 C...........   LOCAL VARIABLES their descriptions:
 
-        INTEGER         IOS        ! i/o status 
+        INTEGER      :: IOS = 0    ! i/o status 
         INTEGER         J          ! index
 
-        CHARACTER*300   MESG       ! Message buffer
+        CHARACTER*16 :: STRBLK = ' '
+        CHARACTER*16    STRVAL         
+        CHARACTER*200   MESG       ! Message buffer
   
         CHARACTER*16 :: PROGNAME = 'GETCTGRY'    ! Program name
 
@@ -83,8 +85,9 @@ C   begin body of subroutine GETCTGRY
 
 C.........  Retrieve environment variable that indicates the source of interest
         MESG = 'Control for which source category for controls'
-        CALL ENVSTR( 'SMK_SOURCE', MESG, ' ', CRL, IOS )
+        CALL ENVSTR( 'SMK_SOURCE', MESG, STRBLK, STRVAL, IOS )
 
+        CRL = ADJUSTL( STRVAL )
         J = INDEX1( CRL, NLIST, LETLIST )
 
         IF( J .LE. 0 .OR. IOS .NE. 0 ) THEN
