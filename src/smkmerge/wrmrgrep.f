@@ -484,16 +484,22 @@ C.............  Local variables
             INTEGER   K1, K2, L, LD1, LD2
 
             CHARACTER*10 TYPENAM
+            CHARACTER*15 DATANAM
 
 C..............................................................................
 
             HEADER = CATNAME // ' source'
             L  = LEN_TRIM( HEADER )
+
+            DATANAM = ' average'
+            IF( LO3SEAS ) DATANAM = ' ozone-season'
+            LD1 = LEN_TRIM( DATANAM )
      
             TYPENAM = ' inventory'
             IF( SFLAG ) TYPENAM = ' speciated'
 
-            HEADER = HEADER( 1:L ) // TYPENAM // ' emissions'
+            HEADER = HEADER( 1:L ) // DATANAM( 1:LD1 ) //
+     &               TYPENAM // ' emissions'
             L = LEN_TRIM( HEADER )
 
             IF( JDATE .NE. 0 ) THEN
