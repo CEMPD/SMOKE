@@ -35,11 +35,11 @@ SMR=smkreport.o asgnbins.o bldrepidx.o genrprt.o openrepin.o   \
 
 smkreport: $(SMR) $(ALLI) $(LIBPATH)
 	echo SMKREPORT:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(SMR) $(LIBS)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(SMK_BIN)/$(@) $(SMR) $(LIBS)
 
 smkreport.debug: $(SMR) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKREPORT \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(SMR) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -L$(FSDIR) -o $(@) $(SMR) $(LIBS_DEBUG)
 #
 #
 include $(MD_SRC)/modmake.inc
