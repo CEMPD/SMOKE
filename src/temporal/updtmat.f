@@ -51,7 +51,7 @@ C...........   This module contains the cross-reference tables
         USE MODXREF
 
 C.........  This module contains the temporal profile tables
-        USE MODTPRO
+        USE MODTMPRL
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR
