@@ -1,10 +1,30 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File Version: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         PROGRAM TMPBIO
 
 C***********************************************************************
-C  program body starts at line  111
+C  program body starts at line  134
 C
 C  DESCRIPTION:
 C       Computes time stepped gridded biogenic emissions in terms of 
@@ -19,6 +39,9 @@ C
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC adapted from UAM BEIS2 subroutine HRLYEM
+C
+C       Revised 8/96 by SL and CJC: algorithm change to match OTAG BEIS2
+C       algorithm
 C
 C***********************************************************************
 
@@ -49,19 +72,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
 
         EXTERNAL        GETNUM, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
-
-C...........    Hardwired mod for read in gridded solar radiation .. sl
-
-        CHARACTER*64    INFL3
-        INTEGER*4       JFILE2
-        EXTERNAL        JFILE2
-        LOGICAL*4       RDLY, RCFM
-        DATA            RCFM / .TRUE. /
-        DATA            RDLY / .TRUE. /
-        INTEGER*4       METHR, METREC, MCOL, MROW, INDEV3, JMETHR
-        REAL*4          TSFC(NCOLS, NROWS), TSOLAR(NCOLS, NROWS)
-
-
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -120,9 +130,6 @@ C.......   Name tables for file NNAME
 
 C***********************************************************************
 C   begin body of program TMPBIO
-        open(unit = 98, file = 'sgrid.txt')
-        INFL3='ib2met_93202.dat'
-        INDEV3 = JFILE2 (INFL3,  RCFM,  RDLY) ! sl
 
         LDEV = INIT3()
         
@@ -298,26 +305,9 @@ C.......   Loop on time steps:
                 CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
             END IF
 
-            DO 200 K = 1, NGRID
-               READ (INDEV3, *) METHR, MCOL, MROW, 
-     &                TSFC(MCOL, MROW), TSOLAR(MCOL, MROW)
-
-               JMETHR = MOD ( (METHR-43), 24 ) 
-
-               IF ( JMETHR .NE. (JTIME/10000) ) THEN 
-                  WRITE (6, 150) METHR, JTIME/10000
-150               FORMAT (1X, 'METHR =', I4, 'JTIME =', I4)
-                  CALL M3EXIT( 'TMPBIO', 0, 0,
-     &                         'METHR and JTIME are not the same', 0 )
-               END IF
- 
-               METREC = METREC + 1
- 
-200         END DO
-
             CALL HRBIO( JDATE, JTIME, LAT, LON, PRSFC, TASFC,
      &                  PINE, DECD, CONF, LEAF, OTHR, AVLAI, NORNO,
-     &                  EMIS, TSFC, TSOLAR, AGRC )
+     &                  EMIS )
 
             IF ( .NOT. WRITE3( ENAME, 'ALL', 
      &                         JDATE, JTIME, EMIS ) ) THEN
