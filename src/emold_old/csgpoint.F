@@ -310,7 +310,7 @@ C.......   If CONTROLFLAG, read and apply control matrix:
 
             DO  66 S = 1, NIPOL
 
-                SCRBUF = 'CONTROL_' // EINAM( S )( 1:9 )
+                SCRBUF = 'CONTROL_' // EINAM( S )
                 IF ( .NOT. READ3( CNAME, SCRBUF, 1, 0, 0, CC( 1,S ) ) 
      &             ) THEN
 
