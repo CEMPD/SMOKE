@@ -67,11 +67,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  PROMPTMFILE, LBLANK, TRIMLEN, YR2DAY
                                             
 C...........   LOCAL PARAMETERS 
-        INTEGER     MAXASCT, NASCPOL
+        INTEGER     MAXASCT, NASCPOL, NASPOL
         CHARACTER*5 BLANK5
 
         PARAMETER ( MAXASCT = 3000
      &            , NASCPOL = NASID * NASCC * NIPOL
+     &            , NASPOL  = NASID * NIPOL 
      &            , BLANK5  = ' '
      &            )
 
@@ -101,7 +102,8 @@ C...........   ASCT names table
 
 C...........   Output emissions
         REAL         SPECSUM  ( NASID, NASCC, NIPOL ) / NASCPOL * 0.0 /
-
+        REAL         TOTSUM ( NASID, NIPOL ) /NASPOL * 0.0/
+ 
 C...........   File names and unit numbers
         INTEGER         LDEV    !  unit number for log file
         INTEGER         OUNIT, FUNIT
@@ -365,8 +367,20 @@ C................. Find this code in the master ASCT list to get the name
                 WRITE ( OUNIT, FMT ) IASC7LST ( F,J ), IASC3LST ( F,J ),
      &                ( SPECSUM ( F,J,I ), I = 1, NIPOL ), ASCTNAME
 
+C.........sum emissions to output total later
+                DO 85 I = 1, NIPOL
+
+                 TOTSUM( F, I ) = TOTSUM( F, I ) + SPECSUM( F, J, I )
+ 
+85              CONTINUE
+
 90          CONTINUE
-        
+
+C..........write out total emissions
+            WRITE ( FMT, 835 ) NIPOL
+            WRITE ( OUNIT, FMT ) ( TOTSUM( F,I ), I = 1, NIPOL )
+
+   
 101     CONTINUE
         
 999     CONTINUE          !  exit program
@@ -384,6 +398,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 820     FORMAT ( A9, $ )
 C830    FORMAT ( I7.7, I3.3, 1X, <NIPOL>F9.2, 2X, A )
 831     FORMAT ( '( I7.7, I3.3, 1X, ', I8, 'F9.2, 2X, A )' )
+835     FORMAT ( "('Total',6x,",I8,"F9.2, 2X,' Total ')")
 840     FORMAT ( A, $ )
 850     FORMAT ( A, A, / )
 
