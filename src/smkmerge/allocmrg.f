@@ -110,6 +110,8 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine ALLOCMRG
 
+       CALL DEALLOCALL
+
 C........  NOTE - set these temporary variables for memory allocate no matter
 C          what, because the county totals will be computed, even if they 
 C          are not output.
@@ -667,7 +669,7 @@ C.............  Area
                 J = J + 1
                 APOLSIZ = MIN( APOLSIZ, MXVARPGP )
                 ALLOCATE( AEISRC( NASRC,APOLSIZ ), STAT=IOSA( J ) )
-                CALL CHECKMEM( IOSA( J ), 'AEMSRC', PROGNAME )
+                CALL CHECKMEM( IOSA( J ), 'AEISRC', PROGNAME )
             END IF
 
 C.............  Mobile
@@ -675,7 +677,7 @@ C.............  Mobile
                 J = J + 1
                 MPOLSIZ = MIN( MPOLSIZ, MXVARPGP )
                 ALLOCATE( MEISRC( NMSRC,MPOLSIZ ), STAT=IOSA( J ) )
-                CALL CHECKMEM( IOSA( J ), 'MEMSRC', PROGNAME )
+                CALL CHECKMEM( IOSA( J ), 'MEISRC', PROGNAME )
             END IF
 
 C.............  Point
@@ -683,7 +685,7 @@ C.............  Point
                 J = J + 1
                 PPOLSIZ = MIN( PPOLSIZ, MXVARPGP )
                 ALLOCATE( PEISRC( NPSRC,PPOLSIZ ), STAT=IOSA( J ) )
-                CALL CHECKMEM( IOSA( J ), 'PEMSRC', PROGNAME )
+                CALL CHECKMEM( IOSA( J ), 'PEISRC', PROGNAME )
             END IF
 
 C.............  Check IOSA values to see if any allocations failed
@@ -748,4 +750,114 @@ C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END SUBROUTINE ALLOCMRG
+        CONTAINS
+
+            SUBROUTINE DEALLOCALL
+
+            IF( ALLOCATED( AEBCNY  ) ) DEALLOCATE( AEBCNY )
+            IF( ALLOCATED( AEUCNY  ) ) DEALLOCATE( AEUCNY )
+            IF( ALLOCATED( AEACNY  ) ) DEALLOCATE( AEACNY )
+            IF( ALLOCATED( AERCNY  ) ) DEALLOCATE( AERCNY )
+            IF( ALLOCATED( AECCNY  ) ) DEALLOCATE( AECCNY ) 
+            IF( ALLOCATED( TEMGRD  ) ) DEALLOCATE( TEMGRD  )
+            IF( ALLOCATED( AEMGRD  ) ) DEALLOCATE( AEMGRD  )
+            IF( ALLOCATED( AICNY   ) ) DEALLOCATE( AICNY   )
+            IF( ALLOCATED( ARINFO  ) ) DEALLOCATE( ARINFO  )
+            IF( ALLOCATED( AGMATX  ) ) DEALLOCATE( AGMATX  )
+            IF( ALLOCATED( ASMATX  ) ) DEALLOCATE( ASMATX  )
+            IF( ALLOCATED( ACUMATX ) ) DEALLOCATE( ACUMATX )
+            IF( ALLOCATED( ACAMATX ) ) DEALLOCATE( ACAMATX )
+            IF( ALLOCATED( AEMSRC  ) ) DEALLOCATE( AEMSRC  )
+            IF( ALLOCATED( ELEVADJ ) ) DEALLOCATE( ELEVADJ )
+
+
+            IF( ALLOCATED( ACRFAC    ) ) DEALLOCATE( ACRFAC    ) 
+            IF( ALLOCATED( ACRIDX    ) ) DEALLOCATE( ACRIDX    ) 
+            IF( ALLOCATED( ACRMKTPN  ) ) DEALLOCATE( ACRMKTPN  ) 
+            IF( ALLOCATED( ACRPRJFC  ) ) DEALLOCATE( ACRPRJFC  ) 
+            IF( ALLOCATED( ACRREPEM  ) ) DEALLOCATE( ACRREPEM  ) 
+            IF( ALLOCATED( AEASTA    ) ) DEALLOCATE( AEASTA    ) 
+            IF( ALLOCATED( AEBSTA    ) ) DEALLOCATE( AEBSTA    ) 
+            IF( ALLOCATED( AECSTA    ) ) DEALLOCATE( AECSTA    ) 
+            IF( ALLOCATED( AEISRC    ) ) DEALLOCATE( AEISRC    ) 
+            IF( ALLOCATED( AERSTA    ) ) DEALLOCATE( AERSTA    ) 
+            IF( ALLOCATED( AEUSTA    ) ) DEALLOCATE( AEUSTA    ) 
+            IF( ALLOCATED( BEBCNY    ) ) DEALLOCATE( BEBCNY    ) 
+            IF( ALLOCATED( BEBSTA    ) ) DEALLOCATE( BEBSTA    ) 
+            IF( ALLOCATED( BEMGRD    ) ) DEALLOCATE( BEMGRD    ) 
+            IF( ALLOCATED( ELEVADJ   ) ) DEALLOCATE( ELEVADJ   ) 
+            IF( ALLOCATED( ELEVFLTR  ) ) DEALLOCATE( ELEVFLTR  ) 
+            IF( ALLOCATED( ELEVSRC   ) ) DEALLOCATE( ELEVSRC   ) 
+            IF( ALLOCATED( GRPCOL    ) ) DEALLOCATE( GRPCOL    ) 
+            IF( ALLOCATED( GRPDM     ) ) DEALLOCATE( GRPDM     ) 
+            IF( ALLOCATED( GRPGID    ) ) DEALLOCATE( GRPGID    ) 
+            IF( ALLOCATED( GRPHT     ) ) DEALLOCATE( GRPHT     ) 
+            IF( ALLOCATED( GRPROW    ) ) DEALLOCATE( GRPROW    ) 
+            IF( ALLOCATED( GRPTK     ) ) DEALLOCATE( GRPTK     ) 
+            IF( ALLOCATED( GRPVE     ) ) DEALLOCATE( GRPVE     ) 
+            IF( ALLOCATED( GRPXL     ) ) DEALLOCATE( GRPXL     ) 
+            IF( ALLOCATED( GRPYL     ) ) DEALLOCATE( GRPYL     ) 
+            IF( ALLOCATED( INDXH     ) ) DEALLOCATE( INDXH     ) 
+            IF( ALLOCATED( LFRAC     ) ) DEALLOCATE( LFRAC     ) 
+            IF( ALLOCATED( MCAMATX   ) ) DEALLOCATE( MCAMATX   ) 
+            IF( ALLOCATED( MCRFAC    ) ) DEALLOCATE( MCRFAC    ) 
+            IF( ALLOCATED( MCRIDX    ) ) DEALLOCATE( MCRIDX    ) 
+            IF( ALLOCATED( MCRMKTPN  ) ) DEALLOCATE( MCRMKTPN  ) 
+            IF( ALLOCATED( MCRPRJFC  ) ) DEALLOCATE( MCRPRJFC  ) 
+            IF( ALLOCATED( MCRREPEM  ) ) DEALLOCATE( MCRREPEM  ) 
+            IF( ALLOCATED( MCUMATX   ) ) DEALLOCATE( MCUMATX   ) 
+            IF( ALLOCATED( MEACNY    ) ) DEALLOCATE( MEACNY    ) 
+            IF( ALLOCATED( MEASTA    ) ) DEALLOCATE( MEASTA    ) 
+            IF( ALLOCATED( MEBCNY    ) ) DEALLOCATE( MEBCNY    ) 
+            IF( ALLOCATED( MEBSTA    ) ) DEALLOCATE( MEBSTA    ) 
+            IF( ALLOCATED( MECCNY    ) ) DEALLOCATE( MECCNY    ) 
+            IF( ALLOCATED( MECSTA    ) ) DEALLOCATE( MECSTA    ) 
+            IF( ALLOCATED( MEISRC    ) ) DEALLOCATE( MEISRC    ) 
+            IF( ALLOCATED( MEMGRD    ) ) DEALLOCATE( MEMGRD    ) 
+            IF( ALLOCATED( MEMSRC    ) ) DEALLOCATE( MEMSRC    ) 
+            IF( ALLOCATED( MERCNY    ) ) DEALLOCATE( MERCNY    ) 
+            IF( ALLOCATED( MERSTA    ) ) DEALLOCATE( MERSTA    ) 
+            IF( ALLOCATED( MEUCNY    ) ) DEALLOCATE( MEUCNY    ) 
+            IF( ALLOCATED( MEUSTA    ) ) DEALLOCATE( MEUSTA    ) 
+            IF( ALLOCATED( MGMATX    ) ) DEALLOCATE( MGMATX    ) 
+            IF( ALLOCATED( MRINFO    ) ) DEALLOCATE( MRINFO    ) 
+            IF( ALLOCATED( MSMATX    ) ) DEALLOCATE( MSMATX    ) 
+            IF( ALLOCATED( PCAMATX   ) ) DEALLOCATE( PCAMATX   ) 
+            IF( ALLOCATED( PCRFAC    ) ) DEALLOCATE( PCRFAC    ) 
+            IF( ALLOCATED( PCRIDX    ) ) DEALLOCATE( PCRIDX    ) 
+            IF( ALLOCATED( PCRMKTPN  ) ) DEALLOCATE( PCRMKTPN  ) 
+            IF( ALLOCATED( PCRPRJFC  ) ) DEALLOCATE( PCRPRJFC  ) 
+            IF( ALLOCATED( PCRREPEM  ) ) DEALLOCATE( PCRREPEM  ) 
+            IF( ALLOCATED( PCUMATX   ) ) DEALLOCATE( PCUMATX   ) 
+            IF( ALLOCATED( PEACNY    ) ) DEALLOCATE( PEACNY    ) 
+            IF( ALLOCATED( PEASTA    ) ) DEALLOCATE( PEASTA    ) 
+            IF( ALLOCATED( PEBCNY    ) ) DEALLOCATE( PEBCNY    ) 
+            IF( ALLOCATED( PEBSTA    ) ) DEALLOCATE( PEBSTA    ) 
+            IF( ALLOCATED( PECCNY    ) ) DEALLOCATE( PECCNY    ) 
+            IF( ALLOCATED( PECSTA    ) ) DEALLOCATE( PECSTA    ) 
+            IF( ALLOCATED( PEISRC    ) ) DEALLOCATE( PEISRC    ) 
+            IF( ALLOCATED( PEMGRD    ) ) DEALLOCATE( PEMGRD    ) 
+            IF( ALLOCATED( PEMSRC    ) ) DEALLOCATE( PEMSRC    ) 
+            IF( ALLOCATED( PERCNY    ) ) DEALLOCATE( PERCNY    ) 
+            IF( ALLOCATED( PERSTA    ) ) DEALLOCATE( PERSTA    ) 
+            IF( ALLOCATED( PEUCNY    ) ) DEALLOCATE( PEUCNY    ) 
+            IF( ALLOCATED( PEUSTA    ) ) DEALLOCATE( PEUSTA    ) 
+            IF( ALLOCATED( PGMATX    ) ) DEALLOCATE( PGMATX    ) 
+            IF( ALLOCATED( PRINFO    ) ) DEALLOCATE( PRINFO    ) 
+            IF( ALLOCATED( PSMATX    ) ) DEALLOCATE( PSMATX    ) 
+            IF( ALLOCATED( TEACNY    ) ) DEALLOCATE( TEACNY    ) 
+            IF( ALLOCATED( TEASTA    ) ) DEALLOCATE( TEASTA    ) 
+            IF( ALLOCATED( TEBCNY    ) ) DEALLOCATE( TEBCNY    ) 
+            IF( ALLOCATED( TEBSTA    ) ) DEALLOCATE( TEBSTA    ) 
+            IF( ALLOCATED( TECCNY    ) ) DEALLOCATE( TECCNY    ) 
+            IF( ALLOCATED( TECSTA    ) ) DEALLOCATE( TECSTA    ) 
+            IF( ALLOCATED( TEMGRD    ) ) DEALLOCATE( TEMGRD    ) 
+            IF( ALLOCATED( TERCNY    ) ) DEALLOCATE( TERCNY    ) 
+            IF( ALLOCATED( TERSTA    ) ) DEALLOCATE( TERSTA    ) 
+            IF( ALLOCATED( TEUCNY    ) ) DEALLOCATE( TEUCNY    ) 
+            IF( ALLOCATED( TEUSTA    ) ) DEALLOCATE( TEUSTA    ) 
+                                         
+            END SUBROUTINE DEALLOCALL    
+                                         
+        END SUBROUTINE ALLOCMRG          
+                                         

@@ -110,6 +110,8 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine BLDMRGIDX
 
+         CALL DEALLOCALL
+
 C.........  Ensure that the max no. of variables per group is large 
 C           enough so that all pol-to-species combos for the same species
 C           are in one group...
@@ -679,5 +681,35 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+        CONTAINS
+
+            SUBROUTINE DEALLOCALL
+
+            IF( ALLOCATED( PPSCNT   ) ) DEALLOCATE( PPSCNT   )
+            IF( ALLOCATED( VGRPCNT  ) ) DEALLOCATE( VGRPCNT  )
+            IF( ALLOCATED( IDVGP    ) ) DEALLOCATE( IDVGP    )
+            IF( ALLOCATED( GVNAMES  ) ) DEALLOCATE( GVNAMES  )
+            IF( ALLOCATED( GVLOUT   ) ) DEALLOCATE( GVLOUT   )
+            IF( ALLOCATED( A_EXIST  ) ) DEALLOCATE( A_EXIST  )
+            IF( ALLOCATED( AU_EXIST ) ) DEALLOCATE( AU_EXIST )
+            IF( ALLOCATED( AA_EXIST ) ) DEALLOCATE( AA_EXIST )
+            IF( ALLOCATED( AR_EXIST ) ) DEALLOCATE( AR_EXIST )
+            IF( ALLOCATED( AS_EXIST ) ) DEALLOCATE( AS_EXIST )
+            IF( ALLOCATED( BS_EXIST ) ) DEALLOCATE( BS_EXIST )
+            IF( ALLOCATED( M_EXIST  ) ) DEALLOCATE( M_EXIST  )
+            IF( ALLOCATED( MU_EXIST ) ) DEALLOCATE( MU_EXIST )
+            IF( ALLOCATED( MA_EXIST ) ) DEALLOCATE( MA_EXIST )
+            IF( ALLOCATED( MR_EXIST ) ) DEALLOCATE( MR_EXIST )
+            IF( ALLOCATED( MS_EXIST ) ) DEALLOCATE( MS_EXIST )
+            IF( ALLOCATED( P_EXIST  ) ) DEALLOCATE( P_EXIST  )
+            IF( ALLOCATED( PU_EXIST ) ) DEALLOCATE( PU_EXIST )
+            IF( ALLOCATED( PA_EXIST ) ) DEALLOCATE( PA_EXIST )
+            IF( ALLOCATED( PR_EXIST ) ) DEALLOCATE( PR_EXIST )
+            IF( ALLOCATED( PS_EXIST ) ) DEALLOCATE( PS_EXIST )
+            IF( ALLOCATED( SIINDEX  ) ) DEALLOCATE( SIINDEX  )
+            IF( ALLOCATED( SPINDEX  ) ) DEALLOCATE( SPINDEX  )
+                                        
+            END SUBROUTINE DEALLOCALL
 
         END SUBROUTINE BLDMRGIDX
