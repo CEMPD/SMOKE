@@ -12,6 +12,9 @@ C.........  This module contains the information about the source category
         
         IMPLICIT NONE
 
+C.........  INCLUDES:
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        FIND1FIRST
         INTEGER        FINDR1FIRST
@@ -244,12 +247,21 @@ C.............  Loop through sources and store information
                 
 C.................  Store source number                    
                 SPDARRAY( N,1 ) = K
-                
+                                
 C.................  Convert facility type to road class and store
                 SPDARRAY( N,3 ) = CVTRDTYPE( IRCLAS( K ), LASAFLAG )
-                
+
+C.................  Make sure we need to calculate emission factors for this source; 
+C                   ideally we would check for VMT data, but for now check that 
+C                   speed is not zero
+                IF( SPEED( K ) == 0 ) THEN
+                    SPDARRAY( N,2 ) = IMISS3
+                    N = N + 1
+                    CYCLE
+                END IF
+
 C.................  Store speed for freeways and arterials
-C                   Rounding of speeds could be added here                    
+C                   Rounding of speeds could be added here
                 IF( SPDARRAY( N,3 ) /= M6LOCAL ) THEN
                     SPDARRAY( N,2 ) = SPEED( K )
                 END IF
@@ -351,11 +363,22 @@ C                       freeway sources to output.  Otherwise, go to local sourc
                 END IF
 
 C.................  Make sure we don't go out of bounds in the speed array
-                IF( K > NUMSRC ) EXIT
+                IF( K > NUMSRC ) RETURN
                 
-C.................  Get speed and road type of current source                    
+C.................  Get speed of current source and make sure it's valid               
                 CURRSPEED = SPDARRAY( K,2 )
-                CURRROAD  = SPDARRAY( K,3 )
+
+                IF( CURRSPEED == IMISS3 ) THEN
+                    DO
+                        K = K + 1
+                        IF( K > NUMSRC ) RETURN
+                        CURRSPEED = SPDARRAY( K,2 )
+                        IF( CURRSPEED /= IMISS3 ) EXIT
+                    END DO
+                END IF
+
+C.................  Get road type of current source
+                CURRROAD = SPDARRAY( K,3 )
                 
                 L = K + 1
 
@@ -429,15 +452,14 @@ C.................  Set starting and ending indices for first line
             END IF
 
 C.............  If no. sources is more than NSRCLINE, use multiple lines
-	    NLINES = ( NUMSRC - 1 ) / NSRCLINE
+	        NLINES = ( NUMSRC - 1 ) / NSRCLINE
 
 C.............  Loop through all lines except last one (to write continuation character)
             DO M = 1, NLINES
-                	
+                
                 WRITE( MDEV,93010 ) COUNTY, 
-     &            INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
-     &            INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ),
-     &            '\'
+     &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
+     &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
                     
                 STSRCWR  = STSRCWR  + NSRCLINE
                 ENDSRCWR = ENDSRCWR + NSRCLINE
@@ -451,9 +473,11 @@ C.............  Check that ending index is not greater than actual no. sources
 			    
 C.............  Write last line (may be only line) for this speed
             IF( STSRCWR <= ENDSRCWR ) THEN
+            	
                 WRITE( MDEV,93010 ) COUNTY,
-     &            INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
-     &            INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
+     &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
+     &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
+     
             END IF
 
 C--------------  SUBPROGRAM FORMAT  STATEMENTS   --------------------------
