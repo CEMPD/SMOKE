@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENSHOUR( ENAME, DESC, SDATE, STIME, TVARNAME, 
+        SUBROUTINE OPENSHOUR( ENAME, DESC, SDATE, EDATE, TVARNAME, 
      &                        NCOUNTY, TEMPDIR, FNAME )
 
 C***********************************************************************
@@ -58,14 +58,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
         CHARACTER*16           VERCHAR
         LOGICAL                OPNFULL3
+        INTEGER                WKDAY
 
-        EXTERNAL        GETCFDSC, VERCHAR, OPNFULL3
+        EXTERNAL        GETCFDSC, VERCHAR, OPNFULL3, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: ENAME    ! name of inventory file
         CHARACTER(*), INTENT    (IN) :: DESC     ! description of file type
         INTEGER     , INTENT    (IN) :: SDATE    ! julian start date
-        INTEGER     , INTENT    (IN) :: STIME    ! HHMMSS start time
+        INTEGER     , INTENT    (IN) :: EDATE    ! julian end date
         CHARACTER(*), INTENT    (IN) :: TVARNAME ! name of variable for tmpr
         INTEGER     , INTENT    (IN) :: NCOUNTY  ! no. of counties in file
         CHARACTER(*), INTENT    (IN) :: TEMPDIR  ! directory of output files
@@ -76,6 +77,11 @@ C...........   LOCAL PARAMETERS
 
 C...........   Other local variables
         INTEGER     J
+        INTEGER     DUMMYTIME    ! dummy time variable
+        INTEGER     DUMMYDAY     ! dummy day variable
+        INTEGER     FILE_EDATE   ! ending date of file
+        INTEGER     CURRMNTH     ! current month
+        INTEGER     PREVMNTH     ! previous month
 
         LOGICAL         FEXIST   ! true: file exists
 
@@ -88,6 +94,44 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine OPENSHOUR
+
+C.........  Determine end date based on file type and episode end
+        FILE_EDATE = SDATE
+        DUMMYTIME = 0
+
+        IF( DESC == 'monthly' ) THEN
+            CALL DAYMON( FILE_EDATE, PREVMNTH, DUMMYDAY )
+        END IF
+
+        DO
+        	
+C.............  For daily files, the end date is the start date
+            IF( DESC == 'daily' ) EXIT
+
+C.............  If the proposed end date is later than the episode end date
+C               or we're using episode length files, the end date is the 
+C               episode end date
+            IF( FILE_EDATE >= EDATE .OR. DESC == 'episode' ) THEN
+                FILE_EDATE = EDATE
+                EXIT
+            END IF
+
+C.............  For weekly files, the end date is the next Saturday        
+            IF( DESC == 'weekly' ) THEN
+                IF( WKDAY( FILE_EDATE ) == 6 ) EXIT
+            END IF
+
+C.............  For monthly files, the end date is the last day of the month            
+            IF( DESC == 'monthly' ) THEN
+            	CALL DAYMON( FILE_EDATE, CURRMNTH, DUMMYDAY )
+            	IF( CURRMNTH /= PREVMNTH ) THEN
+            	    CALL NEXTIME( FILE_EDATE, DUMMYTIME, 24*10000 )
+            	    EXIT
+            	END IF
+            END IF
+
+            CALL NEXTIME( FILE_EDATE, DUMMYTIME, 24*10000 )
+        END DO
 
 C.........  Get header from inventory file
         IF ( .NOT. DESC3( ENAME ) ) THEN
@@ -109,9 +153,10 @@ C.........  Initialize I/O API output file headers
         WRITE( FDESC3D( 4 ), 94030 ) '/MINTEMP/', MINTEMP
         WRITE( FDESC3D( 5 ), 94030 ) '/MAXTEMP/', MAXTEMP
         WRITE( FDESC3D( 6 ), 94030 ) '/T_UNITS/ "deg K"'
-        WRITE( FDESC3D( 7 ), 94030 ) '/T_VNAME/ ' // TVARNAME
+        FDESC3D( 7 ) = '/T_VNAME/ ' // TVARNAME
         FDESC3D( 8 ) = '/NOTE/ Time 000000 in file represents ' //
      &                 '6 AM in local time zone'
+        WRITE( FDESC3D( 9 ), 94010 ) '/END DATE/ ', FILE_EDATE
 
         FDESC3D( 21 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 22 ) = '/INVEN VERSION/ ' // IFDESC3
@@ -138,23 +183,11 @@ C.........  Set header values that cannot be default
         VTYPE3D( J ) = M3REAL
 
 C.........  Create full file name
-C       J = 0       
-C       DO
-C           J = J + 1
-C
-C           WRITE( FULLNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) // 
-C    &                              '/' // DESC // '.', SDATE, '.',
-C    &                              J, '.ncf'
-C           INQUIRE( FILE=FULLNAME, EXIST=FEXIST )
-C       
-C           IF( .NOT. FEXIST ) EXIT                
-C       END DO    
-
         WRITE( FULLNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) //
      &                          '/' // DESC // '.', SDATE, '.ncf'
 
 C.........  Open new file
-        IF( .NOT. OPNFULL3( FNAME, FSNEW3, FULLNAME, PROGNAME ) ) THEN
+        IF( .NOT. OPNFULL3( FNAME, FSUNKN3, FULLNAME, PROGNAME ) ) THEN
             MESG = 'Could not create new output file ' // FULLNAME
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
