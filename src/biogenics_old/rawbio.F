@@ -521,8 +521,8 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-                    ALAI   = ALAI   + AREA
-                    SUMLAI = SUMLAI + AREA * LAI( K )
+c sl                  ALAI   = ALAI   + AREA
+c sl                  SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  64  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 64                  CONTINUE
@@ -649,8 +649,8 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-                    ALAI   = ALAI   + AREA
-                    SUMLAI = SUMLAI + AREA * LAI( K )
+c sl                  ALAI   = ALAI   + AREA
+c sl                  SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  74  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 74                  CONTINUE
@@ -829,7 +829,7 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  94  M = 1, BSPCS - 1
                         EMIS = AREA * EMFAC( K , M )
-                        EOTH( M ) = EOTH( M ) + EMIS
+c sl                      EOTH( M ) = EOTH( M ) + EMIS
                         ELAI( M ) = ELAI( M ) + EMIS
 94                  CONTINUE
                     ENOWTF = ENOWTF + AREA * EMFAC( K, NO )
