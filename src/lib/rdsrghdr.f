@@ -144,7 +144,12 @@ C.........  Loop through lines of file until the header line is encountered
 
             IF ( LINE .EQ. ' ' ) CYCLE  ! skip all blank lines
   
-            I = INDEX( LINE, '#GRID' ) ! determine if current line is the header
+C.............  Determine if current line is the header
+            IF( VFLAG ) THEN
+                I = INDEX( LINE, '#VARIABLE_GRID' )
+            ELSE
+                I = INDEX( LINE, '#GRID' )
+            END IF
  
             IF ( I .GT. 0 ) THEN
                 SRGFMT = 'MODELS3'  ! set format to 'MODELS3'
