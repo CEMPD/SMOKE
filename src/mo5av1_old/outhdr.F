@@ -1,4 +1,5 @@
-C Version @(#)$Id$ $Source$ $Date$ 
+
+C Version "@(#)$Id$ $Source$ $Date$ 
 
       SUBROUTINE OUTHDR(IOUOUT)
 C
@@ -19,7 +20,7 @@ C
       CHARACTER*4 PROJID
       COMMON /PROJEC/ PROJID(20)
 C
-      WRITE(IOUOUT,200) PROJID
+cmh   WRITE(IOUOUT,200) PROJID
   200 FORMAT('1',20A4/' ','MOBILE5a (26-Mar-93)')
 C
       RETURN
