@@ -139,7 +139,11 @@ C              and compute virtual temperature
             ZZF( L ) = ZF( L )
  
         END DO
- 
+        
+C.........  Set the 1st level vertical THETV gradient to the 2nd layer value
+C           This overrides the layer 1 gradient determined above
+        DTHDZ( 1 ) = DTHDZ( 2 )
+
         M    = MAX( 1, LSTK - 2 )
         TSTK =      POLY( HTS, ZH( M ), TA( M ), 3 )
         WSTK = MAX( POLY( HTS, ZH( M ), WSPD( M ), 3 ), 0.1 )
