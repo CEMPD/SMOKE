@@ -503,7 +503,7 @@ C.............................................................................
 C...............  Loop through sources
               DO S = 1, NSRC
 
-                 E1  = DATVAL( S,E )
+                 E1  = DATVAL( S,E ) * FACTOR( S )
                  FAC = 1.
 
 C................  Read temporary input file indices
@@ -520,6 +520,7 @@ C.....................  Check if this is a "replace" entry
                         FAC = BACKOUT( S )*
      &                        ( 1.0 - CTLEFF*RULEFF*RULPEN )
                         FACTOR( S ) = FAC
+                        E1 = DATVAL( S,E )
                     ELSE
                         FAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
                         FACTOR( S ) = FACTOR( S ) * FAC
@@ -562,7 +563,7 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
 
               DO S = 1, NSRC
 
-                 E1  = DATVAL( S,E )
+                 E1  = DATVAL( S,E ) * FACTOR( S )
                  FAC = 1.
 
 C................  Read temporary input file indices
@@ -711,7 +712,7 @@ C.............................................................................
 C...........  Process ALW packet
               DO S = 1, NSRC
 
-                 E1 = DATVAL( S,E )
+                 E1 = DATVAL( S,E ) * FACTOR( S )
 
 C.................  Read allowable packet index from input tmp file
                  READ( LDEV,* ) ALWINDX
