@@ -17,7 +17,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 4/99 by M. Houyoux
-C     Modified 12/01 by Gabe Cano - deterministic mode
+C     Modified by Gabe Cano 2/02 - deterministic/stochastic mode
 C
 C****************************************************************************/
 C
@@ -212,7 +212,7 @@ C................. get number of column fields
 C................. save actual number of column fields
                 NCOLTOT = C
 
-C................. count only surrogate and associated probability pairs
+C................. count only surrogate code and associated probability pairs
                 NPAIR = INT( NCOLTOT / 2 ) - 1
                 N = N + 1
 
@@ -374,8 +374,6 @@ C.............  Rewind file
 
 C.................  Allocate memory for unsorted data used in all 
 C                   source categories 
-                ALLOCATE( INPAIRA( NLINES ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'INPAIRA', PROGNAME ) 
                 ALLOCATE( CSCCTA( NLINES ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
                 ALLOCATE( CSRCTA( NLINES ), STAT=IOS )
@@ -384,9 +382,12 @@ C                   source categories
                 CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
                 ALLOCATE( ISRGCDA( NLINES, NSPMAX), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ISRGCDA', PROGNAME ) 
+                ALLOCATE( INPAIRA( NLINES ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INPAIRA', PROGNAME ) 
                 ALLOCATE( RSPROBA( NLINES, NSPMAX), STAT=IOS )
                 CALL CHECKMEM( IOS, 'RSPROBA', PROGNAME ) 
 
+                INPAIRA = IMISS3  !  array
                 ISRGCDA = IMISS3  !  array
                 RSPROBA = AMISS3  !  array
 
