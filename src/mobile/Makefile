@@ -2,14 +2,13 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
-LIBS2         = $(LDIRS) -lsmoke -lmo6 -ledsstools  -lioapi -lnetcdf
-LIBS2_DEBUG   = $(LDIRS) -lsmoke.debug -lmo6.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
-LIBPATH       = $(SMK_BIN)/libsmoke.a
+LIBS          = $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS2         = $(LDIRS) $(LIBS_SYS) -lmo6
+LIBS2_DEBUG   = $(LDIRS) $(LIBS_DEBUG_SYS) -lmo6.debug
+LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
-FFLAGS_NOOPT  = $(DBGFLAGS)
-##
+#
 
 all: mbsetup premobl emisfac
 
@@ -47,7 +46,7 @@ premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 #
 #
 EMS=emisfac.o rdm6list.o wrm6input.o rdgrplist.o \
-     openscen.o rdspdline.o chkscnyr.o getspdln.o \
+     openscen.o rdspdline.o chkm6scn.o getspdln.o \
      wrspdvmt.o rdhourtemp.o rplctemp.o wrm6header.o \
      opensef.o wremfacs.o
 
@@ -65,37 +64,23 @@ emisfac.debug: $(EMS) $(ALLI) $(LIBPATH_DEBUG)
 #
 include $(MD_SRC)/modmake.inc
 
-adjsmet.o     : $(MODSOURC) $(MODINFO)          # This should not get optimization
-adjshour.o    : $(MODSOURC)
-chkefhdr.o    : $(INC)/M5CNST3.EXT
-chkemfac.o    : $(MODEMFAC)
-chkscnyr.o    : $(MODINFO)
-efcombo.o     : $(MODEMFAC) $(MODINFO) $(MODMET)
-emfacio.o     : $(MODEMFAC) $(MODINFO) $(MODMET)
-emisfac.o     : $(MODSOURC) $(MODINFO) $(MODMBSET) $(MODMET) $(MODEMFAC)
-expndeft.o    : $(MODEMFAC)
-expndpsi.o    : $(MODEMFAC)
-genefmet.o    : $(MODXREF) $(MODEMFAC)
+asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
+chkm6scn.o    : $(MODINFO)
+emisfac.o     : $(MODSOURC) $(MODINFO) $(MODMET) $(MODEMFAC)
+hourtemp.o    : $(MODMBSET) $(MODSOURC) $(MODINFO)
 mbsetup.o     : $(MODSOURC) $(MODINFO) $(MODMBSET)
-mobil5b.o     : $(MODEMFACS) $(MODINFO) $(MODMET) $(INC)/M5CNST3.EXT
-	$(FC) $(FFLAGS) -I$(M5_SRC) -c -o $@ mobil5b.f
-openscen.o    : $(MODMBSET)
-opensef.o     : $(MODINFO)
-opensmet.o    : $(MODINFO) $(MODMET)
+openscen.o    : $(MODEMFAC)
+opensef.o     : $(MODINFO) $(MODEMFAC)
 openshour.o   : $(MODINFO) $(MODMET)
-premobl.o     : $(MODSOURC) $(MODXREF) $(MODEMFAC) $(MODINFO) $(MODMET)
-premobl_new.o : $(MODSOURC) $(MODINFO) $(MODMET) $(MODMBSET)
-rdefdat.o     : $(MODEMFAC) $(INC)/M5CNST3.EXT
-rdeftmpr.o    : $(MODEMFAC) $(MODINFO) $(MODMET)
-rdm6list.o    : $(MODMBSET)
+premobl.o     : $(MODSOURC) $(MODINFO) $(MODMET) $(MODGRID) $(MODMBSET)
+rdgroups.o    : $(MODINFO)
+rdm6list.o    : $(MODEMFAC)
 rdmcref.o     : $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMBSET)
 rdmvref.o     : $(MODSOURC) $(MODMBSET)
 rdspdline.o   : $(MODMBSET)
-seteftmpr.o   : $(MODEMFAC) $(MODMET)
-setefupd.o    : $(MODEMFAC)
-#wremfacs.o    : $(MODEMFAC)
-wremfacs.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
-wrm6input.o   : $(MODSOURC) $(MODINFO) $(MODMBSET)
+wremfacs.o    : $(MODSOURC) $(MODINFO) $(MODEMFAC)
+wrm6header.o  : $(MODEMFAC)
+wrm6input.o   : $(MODSOURC) $(MODINFO) $(MODEMFAC)
 wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
 wrspdvmt.o    : $(MODMBSET)
 wrtimegr.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
