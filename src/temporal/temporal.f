@@ -2,7 +2,7 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 203
+C  program body starts at line 209
 C
 C  DESCRIPTION:
 C    This program computes the hourly emissions data from inventory emissions 
@@ -48,7 +48,7 @@ C.........  This module contains the temporal cross-reference tables
         USE MODXREF
 
 C.........  This module contains the temporal profile tables
-        USE MODTPRO
+        USE MODTMPRL
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC
@@ -58,6 +58,9 @@ C.........  This module contains data for day- and hour-specific data
 
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET
+
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -132,6 +135,8 @@ C.........  Reshaped input variables and output variables
 
 C...........   Logical names and unit numbers
 
+        INTEGER      :: CDEV = 0!  unit number for region codes file
+        INTEGER      :: HDEV = 0!  unit number for holidays file
         INTEGER         LDEV    !  unit number for log file
         INTEGER      :: MDEV = 0!  unit number for mobile codes file
         INTEGER         RDEV    !  unit number for temporal profile file
@@ -187,6 +192,7 @@ C...........   Other local variables
         LOGICAL         HFLAG   !  true: hour-specific file available
         LOGICAL         MFLAG   !  true: mobile codes file available
         LOGICAL         NFLAG   !  true: use all uniform temporal profiles
+        LOGICAL         WFLAG   !  true: write QA on current time step
 
         CHARACTER*8              TREFFMT ! tmprl x-ref format (SOURCE|STANDARD)
         CHARACTER*14             DTBUF   ! buffer for MMDDYY
@@ -238,7 +244,7 @@ C.........  Also, compare min/max temperature settings from any files that have
 C           them and populate the valid temperature arrays
         CALL OPENTMPIN( MODELNAM, NFLAG, ENAME, ANAME, DNAME, HNAME, 
      &                  FNAME, NNAME, MNAME, GNAME, WNAME, TVARNAME, 
-     &                  SDEV, XDEV, RDEV, FDEV, TDEV, MDEV )
+     &                  SDEV, XDEV, RDEV, FDEV, CDEV, HDEV, TDEV, MDEV )
 
 C.........  Determine status of some files for program control purposes
         DFLAG = ( DNAME .NE. 'NONE' )  ! Day-specific emissions
@@ -337,24 +343,25 @@ C.........  NHRSRC is initialized to 0 in case HFLAG is false
         ENDIF
 
 C.........  Set inventory variables to read for all source categories
-        IVARNAMS( 1 ) = 'TZONES'
-        IVARNAMS( 2 ) = 'TPFLAG'
-        IVARNAMS( 3 ) = 'CSCC'
-        IVARNAMS( 4 ) = 'CSOURC'
+        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 2 ) = 'TZONES'
+        IVARNAMS( 3 ) = 'TPFLAG'
+        IVARNAMS( 4 ) = 'CSCC'
+        IVARNAMS( 5 ) = 'CSOURC'
 
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 4
+            NINVARR = 5
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            NINVARR = 8
-            IVARNAMS( 5 ) = 'IRCLAS'
-            IVARNAMS( 6 ) = 'IVTYPE'
-            IVARNAMS( 7 ) = 'CLINK'
-            IVARNAMS( 8 ) = 'CVTYPE'
+            NINVARR = 9
+            IVARNAMS( 6 ) = 'IRCLAS'
+            IVARNAMS( 7 ) = 'IVTYPE'
+            IVARNAMS( 8 ) = 'CLINK'
+            IVARNAMS( 9 ) = 'CVTYPE'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-            NINVARR = 4
+            NINVARR = 5
 
         END IF
 
@@ -365,6 +372,15 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
 C.........  Read special files...
+
+C.........  Read region codes file
+        CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
+
+C.........  Populate filter for sources that use daylight time
+        CALL SETDAYLT
+
+C.........  Read holidays file
+        CALL RDHDAYS( HDEV, SDATE, EDATE )
 
 C.........  When mobile codes file is being used read mobile codes file
         IF( MFLAG ) CALL RDMVINFO( MDEV )
@@ -484,8 +500,7 @@ C           weekday diurnal, and weekend diurnal)
 
         NMON = RDTPROF( RDEV, 'MONTHLY', NFLAG )
         NWEK = RDTPROF( RDEV, 'WEEKLY' , NFLAG )
-        NWKD = RDTPROF( RDEV, 'WEEKDAY', NFLAG )
-        NEND = RDTPROF( RDEV, 'WEEKEND', NFLAG )
+        NHRL = RDTPROF( RDEV, 'DIURNAL', NFLAG )
 
 C.........  Adjust temporal profiles for use in generating temporal emissions
 C.........  NOTE - All variables are passed by modules.
@@ -511,7 +526,6 @@ C           divide pollutants into even groups and try again.
             ALLOCATE( MDEX ( NSRC, NGSZ )    , STAT=IOS2 )
             ALLOCATE( WDEX ( NSRC, NGSZ )    , STAT=IOS3 )
             ALLOCATE( DDEX ( NSRC, NGSZ )    , STAT=IOS4 )
-            ALLOCATE( EDEX ( NSRC, NGSZ )    , STAT=IOS5 )
             ALLOCATE( EMAC ( NSRC, NGSZ )    , STAT=IOS6 )
             ALLOCATE( EMACV( NSRC, NGSZ )    , STAT=IOS7 )
             ALLOCATE( EMIST( NSRC, NGSZ )    , STAT=IOS8 )
@@ -532,7 +546,7 @@ C           divide pollutants into even groups and try again.
                 NGRP = NGRP + 1
                 NGSZ = NGSZ / NGRP + ( NIPPA - NGSZ * NGRP )
 
-                DEALLOCATE( TMAT, MDEX, WDEX, DDEX, EDEX, EMAC, 
+                DEALLOCATE( TMAT, MDEX, WDEX, DDEX, EMAC, 
      &                      EMACV, EMIST )
 
             ELSE
@@ -601,7 +615,6 @@ C               pollutant/emission-type group
             MDEX  = IMISS3
             WDEX  = IMISS3
             DDEX  = IMISS3
-            EDEX  = IMISS3
             EMAC  = 0.
             EMACV = 0.
             EMIST = 0.
@@ -615,7 +628,6 @@ C               to 1; otherwise, assign profiles with cross-reference info
                 MDEX = 1
         	WDEX = 1
         	DDEX = 1
-        	EDEX = 1
 
             ELSE
                 CALL ASGNTPRO( NGSZ, EANAM2D( 1,N ), TREFFMT )
@@ -743,6 +755,11 @@ C                   of the meterology has changed
                 IF( MDATE .NE. MLDATE ) THEN 
                     CALL NEXTIME( WDATE, WTIME, 240000 )
                 END IF
+
+C.................  Call QA report routine
+c               WFLAG = ( T .EQ. NSTEPS )
+c               CALL QATMPR( LDEV, NGSZ, T, JDATE, JTIME, WFLAG, 
+c    &                       EANAM2D( 1,N ), EMAC )
 
             END DO      ! End loop on time steps T
 
