@@ -1,12 +1,13 @@
 
         SUBROUTINE WRSHOUR( FNAME, JDATE, JTIME, NCNTY,
-     &                      CNTYCODES, HOURTEMP )
+     &                      CNTYCODES, HOURTEMP, HOURRH, HOURBP )
    
 C***********************************************************************
 C  subroutine WRSHOUR body starts at line 62
 C
 C  DESCRIPTION:
-C      Write by county hourly temperature data
+C      Write by county hourly temperature, relative humidity, and
+C      barometric pressure data
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -49,7 +50,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: JTIME          ! time HHMMSS
         INTEGER     , INTENT (IN) :: NCNTY          ! no. counties
         INTEGER     , INTENT (IN) :: CNTYCODES( NCNTY )   ! county FIPS codes
-        REAL        , INTENT (IN) :: HOURTEMP( NCNTY )    ! hourly values
+        REAL        , INTENT (IN) :: HOURTEMP( NCNTY )    ! hourly temperatures
+        REAL        , INTENT (IN) :: HOURRH( NCNTY )      ! hourly relative humidities
+        REAL        , INTENT (IN) :: HOURBP( NCNTY )      ! hourly barometric pressures
 
 C...........   Local variables
         INTEGER         I       ! index variable
@@ -65,15 +68,31 @@ C.........  Write county codes to file
         IF( .NOT. WRITE3( FNAME, 'COUNTIES', JDATE, JTIME,
      &                    CNTYCODES ) ) THEN       
      	    MESG = 'Could not write county codes to "' //
-     &              FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
+     &              TRIM( FNAME ) // '".'
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
         END IF
 
 C.........  Write one hour of temperatures to file        
         IF( .NOT. WRITE3( FNAME, 'TKCOUNTY', JDATE, JTIME,  
      &                    HOURTEMP( : ) ) ) THEN 
-            MESG = 'Could not write hourly data to "' //
-     &              FNAME( 1:LEN_TRIM( FNAME ) ) //  '".'
+            MESG = 'Could not write hourly temperatures to "' //
+     &              TRIM( FNAME ) //  '".'
+            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+        END IF
+
+C.........  Write one hour of relative humidity to file
+        IF( .NOT. WRITE3( FNAME, 'RHCOUNTY', JDATE, JTIME,
+     &                    HOURRH( : ) ) ) THEN
+            MESG = 'Could not write hourly relative humidity data ' //
+     &             'to "' // TRIM( FNAME ) // '".'
+            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+        END IF
+        
+C.........  Write one hour of barometric pressure data to file
+        IF( .NOT. WRITE3( FNAME, 'BPCOUNTY', JDATE, JTIME,
+     &                    HOURBP( : ) ) ) THEN
+            MESG = 'Could not write hourly barometric pressure data ' //
+     &             'to "' // TRIM( FNAME ) // '".'
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
         END IF
 
