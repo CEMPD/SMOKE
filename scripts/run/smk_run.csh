@@ -613,13 +613,16 @@ if ( $?RUN_TEMPORAL ) then
          set ef_cnt = `ls $SMK_EMISPATH/emisfacs*ncf | wc -l`
          if ( $ef_cnt > 0 ) then
 
-            if ( -e $SMK_EMISPATH/meflist.txt ) /bin/rm -rf $SMK_EMISPATH/meflist.txt
+            if ( -e $MEFLIST ) /bin/rm -rf $MEFLIST
 
-            set extension = `ls $SMK_EMISPATH/emisfacs*ncf | cut -d. -f4`
+            set extension = `cd $SMK_EMISPATH; ls emisfacs*ncf | cut -d. -f4`
             if ( $extension[1] == 'ncf' ) then
-               ls $SMK_EMISPATH/emisfacs*ncf > $SMK_EMISPATH/meflist.txt
+               ls $SMK_EMISPATH/emisfacs*ncf > $MEFLIST
             else 
-               ls $SMK_EMISPATH/emisfacs*1.ncf | cut -d. -f1,2,3,5 > $SMK_EMISPATH/meflist.txt
+               set files = `cd $SMK_EMISPATH; ls emisfacs*1.ncf | cut -d. -f1,2,3,5`
+               foreach file ( $files )
+                  echo $SMK_EMISPATH/$file >> $MEFLIST
+               end 
             endif
          endif
       endif
