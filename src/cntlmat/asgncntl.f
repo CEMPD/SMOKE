@@ -1,5 +1,6 @@
 
-        SUBROUTINE ASGNCNTL( NSRCIN, NPOL, PKTTYP, PNAM, IPSTAT, SINDX )
+        SUBROUTINE ASGNCNTL( NSRCIN, NPOL, PKTTYP, USEPOL, PNAM, 
+     &                       IPSTAT, SINDX )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -72,12 +73,13 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRCIN         ! number of sources
         INTEGER     , INTENT (IN) :: NPOL           ! number of pollutant
         CHARACTER(*), INTENT (IN) :: PKTTYP         ! packet type of interest
+        LOGICAL     , INTENT (IN) :: USEPOL( NIPPA )! true: pol used in packet
         CHARACTER(*), INTENT (IN) :: PNAM( NPOL )   ! pollutant names
         INTEGER     , INTENT(OUT) :: IPSTAT( NPOL ) ! if>0: pol affected 
         INTEGER     , INTENT(OUT) :: SINDX( NSRCIN,NPOL )! idx to control table
 
 C.........  Other local variables
-        INTEGER          I, J, K, L2, S, V    !  counters and indices
+        INTEGER          I, J, K, L, L2, S, V    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER          IDX    !  tmp index to control data table
@@ -128,7 +130,6 @@ C.............  Set up format for creating character FIPS code for non-point
         ENDIF
 
 C.........  Initialize SINDX
-
         SINDX = 0      ! Array
 
 C.........  For each pollutant of interest
@@ -137,6 +138,15 @@ C.........  For each pollutant of interest
 C.............  Find index in complete list of pollutants
 
             V = INDEX1( PNAM( J ), NIPPA, EANAM )
+
+C.............  Skip pollutant if not used in current packet
+            IF( .NOT. USEPOL( V ) ) CYCLE
+
+C.............  Write message
+            L = LEN_TRIM( PNAM( J ) )
+            MESG = BLANK5 // 'Assigning controls for pollutant "' //
+     &             PNAM( J )( 1:L ) // '"...'
+            CALL M3MSG2( MESG )
 
             DO S = 1, NSRCIN
 	    
