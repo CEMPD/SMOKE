@@ -146,7 +146,7 @@ endif
 #
 ## Shared input files
    setenv INVTABLE    $INVDIR/other/invtable_nonroad.cb4.120202.txt # Inventory table
-   setenv NHAPEXCLUDE $INVDIR/other/nhapexclude.txt # NONHAPVOC exclusions x-ref
+   setenv NHAPEXCLUDE $INVDIR/other/nhapexclude.1999.txt # NONHAPVOC exclusions x-ref
    setenv GRIDDESC    $GE_DAT/GRIDDESC             # Grid descriptions.
    setenv COSTCY      $GE_DAT/costcy.txt           # country/state/county info
    setenv HOLIDAYS    $GE_DAT/holidays.txt         # holidays for day change
