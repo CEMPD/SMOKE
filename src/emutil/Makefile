@@ -8,9 +8,10 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 geofac mvcondns mvsetup pktreduc smk2emis uam2ncf 
+all: beld3to2 geofac mvcondns mvsetup pktreduc smk2emis surgtool uam2ncf 
 
-debug: beld3to2.debug geofac.debug mvcondns.debug mvsetup.debug pktreduc.debug smk2emis.debug uam2ncf.debug 
+debug: beld3to2.debug geofac.debug mvcondns.debug mvsetup.debug \
+       pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug 
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -69,6 +70,16 @@ smk2emis.debug: $(SMKE) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'SMK2EMIS (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(SMKE) $(LIBS_DEBUG)
 
+SURG=surgtool.o
+
+surgtool: $(SURG) $(ALLI) $(LIBPATH)
+	echo SURGTOOL:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(SURG) $(LIBS)
+
+surgtool.debug: $(SURG) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'SURGTOOL (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(SURG) $(LIBS_DEBUG)
+
 UAMC=uam2ncf.o
 
 uam2ncf: $(UAMC) $(ALLI) $(LIBPATH)
@@ -90,14 +101,12 @@ mvsetup.debug: $(MVS) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(MVS) $(LIBS_DEBUG)
 
 #
-#
-# Modules
-#
-MODSOURC = $(MD_SRC)/modsourc.o
-#
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+
+surgtool.o : $(MODGRID) $(MODSURG)
+	$(FC) $(FFLAGS) -c -o $@ surgtool.f
 
 mvcondns.o  : $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ mvcondns.f
