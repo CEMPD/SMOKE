@@ -7,7 +7,7 @@ C  database file.
       USE DATABASE, ONLY : DBSELPART,DBSELEFT,DBSELFAC, 
      &                     DBUNIT,TABCHAR,DBSCTITLE 
 #ifdef M6LIB
-      USE MODMBSET, ONLY : EMISSIONS
+      USE MODEMFAC, ONLY : EMISSIONS
 #endif
 
       IMPLICIT NONE

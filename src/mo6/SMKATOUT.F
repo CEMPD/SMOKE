@@ -9,7 +9,7 @@ C  database file.
       USE ATHEAP, ONLY : DBAT
       
 #ifdef M6LIB      
-      USE MODMBSET, ONLY : EMISSIONS
+      USE MODEMFAC, ONLY : EMISSIONS
 #endif
      
       IMPLICIT NONE

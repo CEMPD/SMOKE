@@ -4,7 +4,7 @@ C  SMKHAPS aggregates user-defined toxic emission factors by vehicle
 C  age and type.
 
       USE DATABASE, ONLY : DBUNIT, TABCHAR, DBSCTITLE
-      USE MODMBSET, ONLY : NUMSCEN, NTOTHAPS, PMHAPS, HAPEFS
+      USE MODEMFAC, ONLY : NUMSCEN, NTOTHAPS, PMHAPS, HAPEFS
       
       IMPLICIT NONE
       
