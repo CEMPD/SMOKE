@@ -37,6 +37,10 @@
          setenv INVNAME1 ${INVNAME1}_$fyr2
       endif
 
+      if ( $?CNTLCASE ) then
+         setenv INVNAME1 ${INVNAME1}_$CNTLCASE
+      endif
+
       if ( -e $INVOPD ) then
          mkdir -p $INVOPD/${INVNAME1}_dat
       endif
