@@ -176,10 +176,32 @@ if( $?RUN_SMK2EMIS ) then
    if ( $RUN_SMK2EMIS == 'y' ) then
       setenv RUN_SMK2EMIS Y
    endif
-
 else
    setenv RUN_SMK2EMIS N
+endif
 
+if( $?RUN_GEOFAC ) then
+   if ( $RUN_GEOFAC == 'y' ) then
+      setenv RUN_GEOFAC Y
+   endif
+else
+   setenv RUN_GEOFAC N
+endif
+
+if( $?RUN_PKTREDUC ) then
+   if ( $RUN_PKTREDUC == 'y' ) then
+      setenv RUN_PKTREDUC Y
+   endif
+else
+   setenv RUN_PKTREDUC N
+endif
+
+if( $?RUN_UAMEMIS ) then
+   if ( $RUN_UAMEMIS == 'y' ) then
+      setenv RUN_UAMEMIS Y
+   endif
+else
+   setenv RUN_UAMEMIS N
 endif
 
 if( $?SMK_FUTURE_YN ) then
@@ -221,6 +243,14 @@ if ( $?SMK_ASCIIELEV_YN ) then
    endif
 else
    setenv SMK_ASCIIELEV_YN ' ' 
+endif
+
+if ( $?NONROAD ) then
+   if ( $NONROAD == y ) then
+      setenv NONROAD Y
+   endif
+else
+   setenv NONROAD N
 endif
 
 if ( $?SMK_PING_METHOD ) then

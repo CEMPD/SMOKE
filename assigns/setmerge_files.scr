@@ -12,29 +12,45 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 
       if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 
-         if ( $MRG_AREA == 'Y' ) then
+         if ( $MRG_AREA == 'Y' || $SMK_SOURCE == 'A' ) then
 	    setenv AGTS_L   $A_OUT/agts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
 	    setenv AGTS_S   $A_OUT/agts_s.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf
          endif 
 
-         if ( $MRG_MOBILE == 'Y' ) then
+         if ( $SMK_SOURCE == 'A' ) then
+            setenv UAM_AGTS $A_OUT/agts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.uam
+         endif
+
+         if ( $MRG_MOBILE == 'Y' || $SMK_SOURCE == 'M' ) then
 	    setenv MGTS_L   $M_OUT/mgts_l.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
 	    setenv MGTS_S   $M_OUT/mgts_s.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
          endif 
 
-         if ( $MRG_POINT == 'Y' ) then
+         if ( $SMK_SOURCE == 'M' ) then
+            setenv UAM_MGTS $M_OUT/mgts_l.$ESDATE.$NDAYS.$GRID.$MSCEN.uam
+         endif
+
+         if ( $MRG_POINT == 'Y' || $SMK_SOURCE == 'P' ) then
 	    setenv PGTS_L   $P_OUT/pgts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
 	    setenv PGTS_S   $P_OUT/pgts_s.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
 	    setenv PGTS3D_L $P_OUT/pgts3d_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
 	    setenv PGTS3D_S $P_OUT/pgts3d_s.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
          endif 
 
-         if ( $MRG_MULTI == 'Y' ) then
+         if ( $SMK_SOURCE == 'P' ) then
+            setenv UAM_PGTS $P_OUT/pgts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.uam
+         endif
+
+         if ( $MRG_MULTI == 'Y' || $SMK_SOURCE == 'E' ) then
 	    setenv EGTS_L   $OUTPUT/egts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
 	    setenv EGTS_S   $OUTPUT/egts_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
 	    setenv EGTS3D_L $OUTPUT/egts3d_l.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
 	    setenv EGTS3D_S $OUTPUT/egts3d_s.$ESDATE.$NDAYS.$GRID.$ESCEN.ncf
          endif 
+
+         if ( $SMK_SOURCE == 'E' ) then
+            setenv UAM_EGTS $OUTPUT/egts_l.$ESDATE.$NDAYS.$GRID.$ESCEN.uam
+         endif
 
          if ( $MRG_AREA_CNTL == 'Y' ) then
 	    setenv AGTSC_L   $A_OUT/agtsc_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf

@@ -23,6 +23,12 @@
    setenv BASSCN   $SMKDAT/run_$INVEN/$ESDATE  # Episode-specific daily data
    setenv BASDIR   $SMKDAT/run_$INVEN/static   # Episode-specific static data
 #
+   setenv SMK_TMPDIR   $STATIC/tmp
+   setenv SMK_METPATH  $STATIC/m6met
+   setenv SMK_SPDPATH  $STATIC/m6spd
+   setenv SMK_M6PATH   $STATIC/m6
+   setenv SMK_EMISPATH $STATIC/m6emfac
+#
    setenv A_OUT    $SMKDAT/run_$ASCEN/$ESDATE/output/$SPC   # Area output
    setenv B_OUT    $SMKDAT/run_$BSCEN/$ESDATE/output/$SPC   # Biogenics output
    setenv M_OUT    $SMKDAT/run_$MSCEN/$ESDATE/output/$SPC   # Mobile output
@@ -45,5 +51,6 @@
    setenv TM_SRC   $SMKROOT/src/temporal       # source code for temporal  
    setenv UT_SRC   $SMKROOT/src/emutil         # source code for utility prgms
    setenv M5_SRC   $SMKROOT/src/mo5b           # source code for Mobile5b
+   setenv M6_SRC   $SMKROOT/src/mo6            # source code for Mobile6.2
    setenv CONFIG   $SCENARIO/config            # control files
    setenv LOGS     $STATIC/logs                # log files
