@@ -1,47 +1,61 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 #
-all: opts
+all: debug 
 #
-opts: rawpoint.debug emspoint.debug pdpoint.debug elevpoint.debug grdpmat.debug \
-      spcpmat.debug  ctlpmat.debug tmppoint.debug csgpoint.debug cselev.debug   \
-      laypoint.debug
+opts: cselev.debug   csgpoint.debug ctlpmat.debug  elevpoint.debug \
+      emspoint.debug grdpmat.debug  grdpoint.debug laypoint.debug  \
+      pdpoint.debug  rawpoint.debug spcpmat.debug  tmppoint.debug
 #
 LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
 #
 #
-RAW=rawpoint.F
+CSE=cselev.F
 #
-RAWI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
+CSGJ=PTDIMS3.EXT CHDIMS3.EXT
 #
-rawpoint.debug: $(RAW) $(RAWI)
-	echo RAWPOINT:
-	f77 $(DBGFLAGS)   -o rawpoin.debugt $(RAW) $(LIBS)
+cselev.debug: $(CSE) $(CSGJ)
+	echo CSELEV:
+	f77 $(DBGFLAGS)   -o cselev.debug $(CSE) $(LIBS)
 #
 #
 #
-EMS=emspoint.F
+CSG=csgpoint.F
+#
+CSGI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
+#
+csgpoint.debug: $(CSG) $(CSGI)
+	echo CSGPOINT:
+	f77 $(DBGFLAGS)   -o csgpoint.debug $(CSG) $(LIBS)
+#
+#
+#
+CTLS=ctlpmat.F
+#
+CTLI=PTDIMS3.EXT CHDIMS3.EXT
+#
+ctlpmat.debug:  $(CTLS) $(CTLI)
+	echo CTLPMAT:
+	f77 $(DBGFLAGS) -o ctlpmat.debug $(CTLS) $(LIBS)
+#
+#
+#
+ELEV=elevpoint.F plumris.F
+#
+ELVI=PTDIMS3.EXT
+#
+elevpoint.debug: $(ELEV) $(ELVI)
+        echo ELEVPOINT:
+	f77 $(DBGFLAGS) -o elevpoint.debug $(ELEV) $(LIBS)
+#
+#
+#
+EMS=emspoint.F fixstk.F
 #
 EMSI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT 
 #
 emspoint.debug: $(EMS) $(EMSI)
 	echo EMSPOINT:
 	f77 $(DBGFLAGS)   -o emspoint.debug $(EMS) $(LIBS)
-#
-#
-#
-DAYP=pdpoint.F dayrec.F
-#
-pdpoint.debug: $(DAYP) $(RAWI)
-	echo PDPOINT:
-	f77 $(DBGFLAGS) -o pdpoint.debug $(DAYP) $(LIBS)
-#
-#
-#
-ELEV=elevpoint.F plumris.F fixstk.F
-#
-elevpoint.debug: $(ELEV) $(RAWI)
-        echo ELEVPOINT:
-	f77 $(DBGFLAGS) -o elevpoint.debug $(ELEV) $(LIBS)
 #
 #
 #
@@ -52,6 +66,46 @@ GRDI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
 grdpmat.debug: $(GRD) $(GRDI)
 	echo GRDPMAT:
 	f77 $(DBGFLAGS)   -o grdpmat.debug $(GRD) $(LIBS)
+#
+#
+#
+GRP=grdpoint.F
+#
+GRPI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
+#
+grdpoint.debug: $(GRP) $(GRPI)
+        echo GRDPOINT:
+        f77 $(DBGFLAGS)   -o grdpoint.debug $(GRP) $(LIBS)
+#
+#
+#
+LAY=laypoint.F plmris.F
+#
+LAYE=PTDIMS3.EXT TMDIMS3.EXT VGRS3.EXT GRDIMS3.EXT
+#
+laypoint.debug: $(LAY) $(LAYE)
+	echo LAYPOINT:
+	f77 $(DBGFLAGS)   -o laypoint.debug $(LAY) $(LIBS)
+#
+#
+#
+DAYP=pdpoint.F dayrec.F
+#
+DAYI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT
+#
+pdpoint.debug: $(DAYP) $(DAYI)
+	echo PDPOINT:
+	f77 $(DBGFLAGS) -o pdpoint.debug $(DAYP) $(LIBS)
+#
+#
+#
+RAW=rawpoint.F fixstk.F
+#
+RAWI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT
+#
+rawpoint.debug: $(RAW) $(RAWI)
+	echo RAWPOINT:
+	f77 $(DBGFLAGS)   -o rawpoin.debug $(RAW) $(LIBS)
 #
 #
 #
@@ -73,45 +127,6 @@ tmppoint.debug: $(TMP) $(TMPI)
 	echo TMPPOINT:
 	f77 $(DBGFLAGS)   -o tmppoint.debug $(TMP) $(LIBS)
 #
-#
-#
-CTLS=ctlpmat.F
-#
-CTLI=PTDIMS3.EXT CHDIMS3.EXT
-#
-ctlpmat.debug:  $(CTLS) $(CTLI)
-	echo CTLPMAT:
-	f77 $(DBGFLAGS) -o ctlpmat.debug $(CTLS) $(LIBS)
-#
-#
-#
-CSG=csgpoint.F
-#
-CSGI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
-#
-csgpoint.debug: $(CSG) $(CSGI)
-	echo CSGPOINT:
-	f77 $(DBGFLAGS)   -o csgpoint.debug $(CSG) $(LIBS)
-#
-#
-#
-CSE=cselev.F
-#
-CSGJ=PTDIMS3.EXT CHDIMS3.EXT
-#
-cselev.debug: $(CSE) $(CSGJ)
-	echo CSELEV:
-	f77 $(DBGFLAGS)   -o cselev.debug $(CSE) $(LIBS)
-#
-#
-#
-LAY=laypoint.F plmris.F fixstk.F
-#
-LAYE=PTDIMS3.EXT TMDIMS3.EXT LADIMS3.EXT GRDIMS3.EXT
-#
-laypoint.debug: $(LAY) $(LAYE)
-	echo LAYPOINT:
-	f77 $(DBGFLAGS)   -o laypoint.debug $(LAY) $(LIBS)
 #
 #
 clean:
