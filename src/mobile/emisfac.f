@@ -43,14 +43,11 @@ C
 C***********************************************************************        
         
 C.........  MODULES for public variables
-C.........  This module contains the inventory arrays
-        USE MODSOURC
-
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NSRC, NIACT
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
+        USE MODMET, ONLY: TKHOUR
 
 C...........   This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS
@@ -65,7 +62,6 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -169,7 +165,7 @@ C.........  End program if source category is not mobile sources
         IF( CATEGORY /= 'MOBILE' ) THEN
             L = LEN_TRIM( PROGNAME )
             MESG = 'Program ' // PROGNAME( 1:L ) // ' does not ' //
-     &             'support ' // CATEGORY( 1:CATLEN ) // ' sources.'
+     &             'support ' // TRIM( CATEGORY ) // ' sources.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
@@ -296,8 +292,7 @@ C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Set up emission process variable names
-        CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS, VNAMESET, 
-     &                 VUNITSET, VDESCSET, VOLNAM )
+        CALL EFSETUP( 'NONE', MODELNAM, NEFS, VOLNAM )
 
 C.........  Read emission processes file.  Populate array in MODEMFAC.
         CALL RDEPROC( TDEV )
