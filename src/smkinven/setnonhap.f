@@ -100,7 +100,9 @@ C.........   Other local variables
         INTEGER  ENDIDX       ! ending index into pollutant array
         
         REAL     VOCEANN      ! summed annual VOC emissions
+        REAL     VOCEOZN      ! summed ozone season VOC emissions
         REAL     TOGEANN      ! summed annual TOG emissions
+        REAL     TOGEOZN      ! summed ozone season TOG emissions
         
         LOGICAL  FNDPOL       ! true: found toxic pollutant to be processed
         LOGICAL  FNDVOC       ! true: found VOC entry in inventory
@@ -145,22 +147,78 @@ C.........  Check if any toxics pollutants are to be subtracted
 
         IF( .NOT. FNDPOL ) RETURN
 
-C.........  Initialize values for loop
-        VOCPOS = 0
-        TOGPOS = 0
-        FNDVOC = .FALSE.
-        FNDTOG = .FALSE.
-                    
-        VOCEANN = 0.
-        TOGEANN = 0.
-                    
-        EFLAG = .FALSE.
-        LASTFLAG = .FALSE.
-
         CURRPOS = 0
 
 C.........  Loop through sources
         DO I = 1, NSRC
+
+C.............  Initialize values for this source
+            VOCPOS = 0
+            TOGPOS = 0
+            FNDVOC = .FALSE.
+            FNDTOG = .FALSE.
+            
+            VOCEANN = 0.
+            VOCEOZN = 0.
+            TOGEANN = 0.
+            TOGEOZN = 0.
+            
+            EFLAG = .FALSE.
+            LASTFLAG = .FALSE.
+
+C.............  Process source if it is not integrated
+            IF( ALLOCATED( LNONHAP ) .AND. .NOT. LNONHAP( I ) ) THEN
+
+C.................  Loop through pollutants for this source
+                DO J = 1, NPCNT( I )
+
+C.....................  Increment current position in arrays            
+                    CURRPOS = CURRPOS + 1
+                    
+C.....................  Store pollutant for this position
+                    CPOL = IPOSCOD( CURRPOS )
+                    
+C.....................  If pollutant is not part of VOC or TOG, cycle
+                    IF( INVDVTS( CPOL ) == 'N' ) CYCLE
+
+C.....................  If pollutant is not a model species, set it to zero
+                    IF( .NOT. ITMSPC( CPOL ) ) THEN
+                        POLVAL( CURRPOS,NEM ) = 0.0
+                        POLVAL( CURRPOS,NOZ ) = 0.0
+
+C..................... Otherwise, if pollutant is not an explicit species, rename to NOI
+                    ELSE IF( .NOT. ITEXPL( CPOL ) ) THEN
+                
+C.........................  Create NOI name
+                        POLNAM = INVDNAM( CPOL )
+                        IF( LEN_TRIM( POLNAM ) > 11 ) THEN
+                            POLNAM = POLNAM(1:11)
+                        END IF
+                        POLNAM = TRIM( POLNAM ) // NOIEND
+
+C.........................  Find NOI name in pollutant names array                        
+                        TOXPOS = INDEX1( POLNAM, MXIDAT, INVDNAM )
+
+C.........................  If found, set pollutant for current source to NOI pollutant
+                        IF( TOXPOS > 0 ) THEN
+                            IPOSCOD( CURRPOS ) = TOXPOS
+                            INVSTAT( TOXPOS ) = 2
+                        ELSE
+                            MESG = 'ERROR: Non-integrated toxic ' //
+     &                             'pollutant ' // TRIM( POLNAM ) //
+     &                             ' was not found in the ' //
+     &                             'INVTABLE file.'
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+                     
+                    END IF  ! check if pollutant is model or explicit species
+                    
+                END DO  ! loop through pollutants
+                
+C.................  Skip rest of loop since we're done with this source
+                CYCLE
+
+            END IF
 
 C.............  Loop through pollutants for this source            
             DO J = 1, NPCNT( I )
@@ -174,222 +232,201 @@ C.................  Store pollutant for this position
 C.................  Check if this is last pollutant for this source
                 IF( J == NPCNT( I ) ) THEN
                     LASTFLAG = .TRUE.
+
+C.................  Otherwise, if not part of VOC or TOG, skip rest of loop
+                ELSE IF( INVDVTS( CPOL ) == 'N' ) THEN
+                    CYCLE
+                    
                 END IF
 
-C.................  Process source if it is not integrated
-                IF( ALLOCATED( LNONHAP ) .AND. .NOT. LNONHAP( I ) ) THEN
-            
-C.....................  Skip rest of loop if pollutant is not part VOC or TOG
-                    IF( INVDVTS( CPOL ) == 'N' ) CYCLE
+C.................  If current pollutant is VOC or TOG entry, save position
+                IF( CPOL == VNMPOS ) THEN
+                    VOCPOS = CURRPOS
+                END IF
+                
+                IF( CPOL == TNMPOS ) THEN
+                    TOGPOS = CURRPOS
+                END IF
 
-C.....................  If pollutant is not a model species, set it to zero
-                    IF( .NOT. ITMSPC( CPOL ) ) THEN
-                        POLVAL( CURRPOS,NEM ) = 0.0
-                        POLVAL( CURRPOS,NOZ ) = 0.0
+C.................  Sum toxic emissions for this source
+                IF( INVDVTS( CPOL ) == 'V' ) THEN
+                    VOCEANN = VOCEANN + POLVAL( CURRPOS,NEM )
+                    VOCEOZN = VOCEOZN + POLVAL( CURRPOS,NOZ )
+                    FNDVOC = .TRUE.
+                END IF
+                
+                IF( INVDVTS( CPOL ) == 'T' .OR. 
+     &              INVDVTS( CPOL ) == 'V' ) THEN
+                    TOGEANN = TOGEANN + POLVAL( CURRPOS,NEM )
+                    TOGEOZN = TOGEOZN + POLVAL( CURRPOS,NOZ )
+                    FNDTOG = .TRUE.
+                END IF
 
-                    ELSE
+C.................  If this is not the last entry for source, cycle
+C                   Otherwise, check conditions and subtract toxic
+C                   emissions from criteria values
+                IF( .NOT. LASTFLAG ) CYCLE
 
-C......................... If pollutant is not an explicit species, rename to NOI
-                        IF( .NOT. ITEXPL( CPOL ) ) THEN
+                LASTFLAG = .FALSE.
+
+C.................  Format information for this source
+                CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
+                
+C.................  Give warning if source has toxics but no criteria
+                IF( VOCPOS == 0 .AND. FNDVOC ) THEN
+                    IF( NWARN <= MXWARN ) THEN
+                        MESG = 'WARNING: Found toxic emissions ' //
+     &                         'but no VOC emissions for source:' // 
+     &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
+                
+                    NTOXNOCR = NTOXNOCR + 1
+                    EFLAG = .TRUE.
+                END IF
+                
+                IF( TOGPOS == 0 .AND. FNDTOG ) THEN
+                    IF( NWARN <= MXWARN ) THEN
+                        MESG = 'WARNING: Found toxic emissions ' //
+     &                         'but no TOG emissions for source:' // 
+     &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
                     
-C.............................  Create NOI name
-                            POLNAM = INVDNAM( CPOL )
-                            IF( LEN_TRIM( POLNAM ) > 11 ) THEN
-                                POLNAM = POLNAM(1:11)
-                            END IF
-                            POLNAM = TRIM( POLNAM ) // NOIEND
-
-C.............................  Find NOI name in pollutant names array                        
-                            TOXPOS = INDEX1( POLNAM, MXIDAT, INVDNAM )
-
-C.............................  If found, set pollutant for current source to NOI pollutant
-                            IF( TOXPOS > 0 ) THEN
-                                IPOSCOD( CURRPOS ) = TOXPOS
-                                INVSTAT( TOXPOS ) = 2
-                            ELSE
-                                MESG = 'ERROR: Non-integrated toxic ' //
-     &                                 'pollutant ' // TRIM( POLNAM ) //
-     &                                 ' was not found in the ' //
-     &                                 'INVTABLE file.'
-                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                            END IF
-                         
-                        END IF  ! check if pollutant is an explicit species
+                    NTOXNOCR = NTOXNOCR + 1
+                    EFLAG = .TRUE.
+                END IF
+                
+C.................  Give warning if source has criteria but no toxics
+                IF( VOCPOS /= 0 .AND. .NOT. FNDVOC ) THEN
+                    IF( NWARN <= MXWARN ) THEN
+                        MESG = 'WARNING: Found VOC emissions ' //
+     &                         'but no toxic emissions for source:' // 
+     &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
                     
-                    END IF  ! check if pollutant is a model species
-                            
-C.................  Otherwise current source is to be integrated           
-                ELSE
-
-C.....................  If current pollutant is VOC or TOG entry, save position
-                    IF( CPOL == VNMPOS ) THEN
-                        VOCPOS = CURRPOS
-                        IF( .NOT. LASTFLAG ) CYCLE
-                    END IF
+                    NCRNOTOX = NCRNOTOX + 1
+                    EFLAG = .TRUE.
+                END IF
                 
-                    IF( CPOL == TNMPOS ) THEN
-                        TOGPOS = CURRPOS
-                        IF( .NOT. LASTFLAG ) CYCLE
+                IF( TOGPOS /= 0 .AND. .NOT. FNDTOG ) THEN
+                    IF( NWARN <= MXWARN ) THEN
+                        MESG = 'WARNING: Found TOG emissions ' //
+     &                         'but no toxic emissions for source:' //
+     &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
                     END IF
-
-C.....................  Sum toxic emissions for this source
-                    IF( INVDVTS( CPOL ) == 'V' ) THEN
-                        VOCEANN = VOCEANN + POLVAL( CURRPOS,NEM )
-                        FNDVOC = .TRUE.
-                    END IF
+                    
+                    NCRNOTOX = NCRNOTOX + 1
+                    EFLAG = .TRUE.
+                END IF
                 
-                    IF( INVDVTS( CPOL ) == 'T' ) THEN
-                        TOGEANN = TOGEANN + POLVAL( CURRPOS,NEM )
-                        FNDTOG = .TRUE.
-                    END IF
-
-C.....................  If this is last entry for source, check conditions and
-C                       subtract toxic emissions from criteria values
-                    IF( LASTFLAG ) THEN
-
-C.........................  Format information for this source
-                        CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
+C.................  Skip rest of loop if an error has occured
+                IF( EFLAG ) CYCLE
                 
-C.........................  Give warning if source has toxics but no criteria
-                        IF( VOCPOS == 0 .AND. FNDVOC ) THEN
-                            IF( NWARN <= MXWARN ) THEN
-                                MESG = 
-     &                           'WARNING: Found toxic emissions ' //
-     &                           'but no VOC for source:' // CRLF() //
-     &                           BLANK5 // BUFFER( 1:L2 )
-                                CALL M3MESG( MESG )
-                                NWARN = NWARN + 1
-                            END IF
+C.................  Subtract toxic emissions from criteria emissions  
+                IF( VOCPOS /= 0 ) THEN                  
+                    POLVAL( VOCPOS,NEM ) = 
+     &                  POLVAL( VOCPOS,NEM ) - VOCEANN
+                    POLVAL( VOCPOS,NOZ ) =
+     &                  POLVAL( VOCPOS,NOZ ) - VOCEOZN
+
+C.....................  Check that annual NONHAP value is not negative
+                    IF( POLVAL( VOCPOS,NEM ) < 0. ) THEN
+                        IF( NWARN <= MXWARN ) THEN
+                            MESG = 'WARNING: Total annual toxic ' //
+     &                             'emissions greater than annual ' //
+     &                             'VOC emissions for source:' // 
+     &                             CRLF() // BLANK5 // BUFFER( 1:L2 )
+                            CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
+                        END IF
                         
-                            NTOXNOCR = NTOXNOCR + 1
-                            EFLAG = .TRUE.
-                        END IF
-                    
-                        IF( TOGPOS == 0 .AND. FNDTOG ) THEN
-                            IF( NWARN <= MXWARN ) THEN
-                                MESG = 
-     &                           'WARNING: Found toxic emissions ' //
-     &                           'but no TOG for source:' // CRLF() //
-     &                           BLANK5 // BUFFER( 1:L2 )
-                                CALL M3MESG( MESG )
-                                NWARN = NWARN + 1
-                            END IF
-                            
-                            NTOXNOCR = NTOXNOCR + 1
-                            EFLAG = .TRUE.
-                        END IF
-                    
-C.........................  Give warning if source has criteria but no toxics
-                        IF( VOCPOS /= 0 .AND. .NOT. FNDVOC ) THEN
-                            IF( NWARN <= MXWARN ) THEN
-                                MESG = 
-     &                           'WARNING: Found VOC emissions ' //
-     &                           'but no toxics for source:'// CRLF() //
-     &                           BLANK5 // BUFFER( 1:L2 )
-                                CALL M3MESG( MESG )
-                                NWARN = NWARN + 1
-                            END IF
-                            
-                            NCRNOTOX = NCRNOTOX + 1
-                            EFLAG = .TRUE.
-                        END IF
-                    
-                        IF( TOGPOS == 0 .AND. FNDTOG ) THEN
-                            IF( NWARN <= MXWARN ) THEN
-                                MESG = 
-     &                           'WARNING: Found TOG emissions ' //
-     &                           'but no toxics for source:'// CRLF() //
-     &                           BLANK5 // BUFFER( 1:L2 )
-                                CALL M3MESG( MESG )
-                                NWARN = NWARN + 1
-                            END IF
-                            
-                            NCRNOTOX = NCRNOTOX + 1
-                            EFLAG = .TRUE.
-                        END IF
-
-C.........................  Make sure an error has not occured
-                        IF( .NOT. EFLAG ) THEN
-                    
-C.............................  Subtract toxic emissions from criteria emissions  
-                            IF( VOCPOS /= 0 ) THEN                  
-                                POLVAL( VOCPOS,NEM ) = 
-     &                              POLVAL( VOCPOS,NEM ) - VOCEANN
-
-C.................................  Check that NONHAP value is not negative
-                                IF( POLVAL( VOCPOS,NEM ) < 0. ) THEN
-                                  IF( NWARN <= MXWARN ) THEN
-                                    MESG = 
-     &                              'WARNING: Total toxic emissions ' //
-     &                              'greater than VOC emissions for ' //
-     &                              'source:'// CRLF() // BLANK5 // 
-     &                              BUFFER( 1:L2 )
-                                    CALL M3MESG( MESG )
-                                    NWARN = NWARN + 1
-                                  END IF
-                                    
-                                  POLVAL( VOCPOS,NEM ) = .0
-                                END IF
+                        POLVAL( VOCPOS,NEM ) = .0
+                    END IF
      
-C.................................  Rename VOC to NONHAPVOC
-                                IPOSCOD( VOCPOS ) = NONVPOS
-                                INVSTAT( NONVPOS ) = 2
-     
-                            END IF
-                    
-                            IF( TOGPOS /= 0 ) THEN
-                                POLVAL( TOGPOS,NEM ) = 
-     &                              POLVAL( TOGPOS,NEM ) - TOGEANN
-     
-C.................................  Check that NONHAP value is not negative
-                                IF( POLVAL( TOGPOS,NEM ) < 0. ) THEN
-                                  IF( NWARN <= MXWARN ) THEN
-                                    MESG = 
-     &                              'WARNING: Total toxic emissions ' //
-     &                              'greater than TOG emissions for ' //
-     &                              'source:'// CRLF() // BLANK5 // 
-     &                              BUFFER( 1:L2 )
-                                    NWARN = NWARN + 1
-                                  END IF
-                                    
-                                  POLVAL( TOGPOS,NEM ) = .0
-                                END IF
-                            
-C................................  Rename TOG to NONHAPTOG
-                               IPOSCOD( TOGPOS ) = NONTPOS
-                               INVSTAT( NONTPOS ) = 2
-     
-                            END IF
+C.....................  Check that ozone season NONHAP value is not negative
+                    IF( POLVAL( VOCPOS,NOZ ) < 0. ) THEN
+                        IF( NWARN <= MXWARN ) THEN
+                            MESG = 'WARNING: Total ozone season ' //
+     &                             'toxic emissions greater than ' //
+     &                             'ozone season VOC emissions for ' //
+     &                             'source:' // CRLF() // BLANK5 // 
+     &                             BUFFER( 1:L2 )
+                            CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
+                        END IF
                         
-                        END IF  ! check for error
+                        POLVAL( VOCPOS,NOZ ) = .0
+                    END IF
+                    
+C.....................  Rename VOC to NONHAPVOC
+                    IPOSCOD( VOCPOS ) = NONVPOS
+                    INVSTAT( NONVPOS ) = 2
      
-C.........................  Reset flags and values
-                        VOCPOS = 0
-                        TOGPOS = 0
-                        FNDVOC = .FALSE.
-                        FNDTOG = .FALSE.
+                END IF
+                
+                IF( TOGPOS /= 0 ) THEN
+                    POLVAL( TOGPOS,NEM ) = 
+     &                  POLVAL( TOGPOS,NEM ) - TOGEANN
+                    POLVAL( TOGPOS,NOZ ) =
+     &                  POLVAL( TOGPOS,NOZ ) - TOGEOZN
+     
+C.....................  Check that annual NONHAP value is not negative
+                    IF( POLVAL( TOGPOS,NEM ) < 0. ) THEN
+                        IF( NWARN <= MXWARN ) THEN
+                            MESG = 'WARNING: Total annual toxic ' //
+     &                             'emissions greater than annual ' //
+     &                             'TOG emissions for source:' // 
+     &                             CRLF() // BLANK5 // BUFFER( 1:L2 )
+                            CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
+                        END IF
+                        
+                        POLVAL( TOGPOS,NEM ) = .0
+                    END IF
+                
+C.....................  Check that ozone season NONHAP value is not negative
+                    IF( POLVAL( TOGPOS,NOZ ) < 0. ) THEN
+                        IF( NWARN <= MXWARN ) THEN
+                            MESG = 'WARNING: Total ozone season ' //
+     &                             'toxic emissions greater than ' //
+     &                             'ozone season TOG emissions for ' //
+     &                             'source:' // CRLF() // BLANK5 // 
+     &                             BUFFER( 1:L2 )
+                            CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
+                        END IF
+                        
+                        POLVAL( TOGPOS,NOZ ) = .0
+                    END IF
                     
-                        VOCEANN = 0.
-                        TOGEANN = 0.
-                    
-                        EFLAG = .FALSE.
-                        LASTFLAG = .FALSE.
-                    END IF  ! check if entry is last for source
+C....................  Rename TOG to NONHAPTOG
+                   IPOSCOD( TOGPOS ) = NONTPOS
+                   INVSTAT( NONTPOS ) = 2
+     
+                END IF
 
-                END IF  ! check if source is integrated or not
-        
             END DO  ! loop through pollutants
             
         END DO  ! loop through sources
 
-        WRITE( MESG,94010 )
-     &     'During processing, the following number of sources ' //
-     &     'were encountered: ' // CRLF() // BLANK10 //
-     &     'Sources with VOC or TOG emissions but no toxic emissions: ', 
-     &     NCRNOTOX, CRLF() // BLANK10 //
-     &     'Sources with toxic emissions but no VOC or TOG emissions: ', 
-     &     NTOXNOCR
-        CALL M3MESG( MESG )
+        IF( NCRNOTOX > 0 .OR. NTOXNOCR > 0 ) THEN
+            WRITE( MESG,94010 ) 'During processing, the following ' //
+     &         'number of sources were encountered: ' // 
+     &         CRLF() // BLANK10 // 
+     &         'Sources with VOC or TOG emissions but no toxic ' //
+     &         'emissions: ', NCRNOTOX, 
+     &         CRLF() // BLANK10 //
+     &         'Sources with toxic emissions but no VOC or TOG ' //
+     &         'emissions: ', NTOXNOCR
+            CALL M3MESG( MESG )
+        END IF
 
 C.........  Sort POLVAL and IPOSCOD to put new pollutants (NONHAP and NOI) in correct order
 
