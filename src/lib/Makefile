@@ -28,9 +28,9 @@ FILES_B = \
 
 FILES_C = \
   bldcsrc.o    fillchrt.o   getiname.o   parscsrc.o   rdsconv.o    wrchrscc.o \
-  bldenams.o   fillctbl.o   getinvyr.o   rdcodnam.o   wrdaymsg.o \
-  fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o   \
-  fillmtbl.o   rdsprof.o    wrinvpol.o \
+  bldenams.o   fillctbl.o   getinvyr.o   rdcodnam.o   wrdaymsg.o   wridaout.o \
+  fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
+  fillmtbl.o   rdsprof.o    \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
   fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
 
@@ -157,6 +157,8 @@ rdvmix.o  : $(MODMOBIL) $(MODXREF) $(MODINFO)
 tmprinfo.o  : $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ $<
 wrchrscc.o: $(MODLISTS) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+wridaout.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 xreftbl.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
