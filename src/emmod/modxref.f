@@ -20,7 +20,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -82,6 +82,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL01( : ) ! for cntrls
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS01( : ) ! for EFs
         INTEGER               ,              PUBLIC :: ISRG01      ! for surgts
+        INTEGER               ,              PUBLIC :: IMVS01      ! for VMT mix
+        INTEGER               ,              PUBLIC :: ISPD01      ! for speeds
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT01( : ) ! spec prof
 
 !.........  FIPS code=0, SCC=left  (dim: n<entries> * npol)
@@ -92,6 +94,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL02( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS02( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG02( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS02( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD02( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT02( :,: )
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: CHRT02( : )
 
@@ -103,6 +107,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL03( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS03( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG03( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS03( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD03( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT03( :,: )
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: CHRT03( : )
 
@@ -114,6 +120,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL04( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS04( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG04( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS04( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD04( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT04( :,: )
         CHARACTER(LEN=STALEN3), ALLOCATABLE, PUBLIC :: CHRT04( : )
 
@@ -125,6 +133,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL05( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS05( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG05( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS05( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD05( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT05( :,: )
         CHARACTER(LEN=STSLEN3), ALLOCATABLE, PUBLIC :: CHRT05( : )
 
@@ -135,6 +145,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL06( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS06( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG06( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS06( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD06( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT06( :,: )
         CHARACTER(LEN=STSLEN3), ALLOCATABLE, PUBLIC :: CHRT06( : )
 
@@ -145,6 +157,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL07( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS07( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG07( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS07( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD07( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT07( :,: )
         CHARACTER(LEN=FIPLEN3), ALLOCATABLE, PUBLIC :: CHRT07( : )
         
@@ -155,6 +169,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL08( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS08( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG08( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS08( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD08( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT08( :,: )
         CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT08( : )
 
@@ -165,6 +181,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL09( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS09( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ISRG09( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS09( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD09( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT09( :,: )
         CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT09( : )
 
@@ -174,6 +192,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT10( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL10( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS10( :,: )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS10( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD10( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT10( :,: )
         CHARACTER(LEN=FPLLEN3), ALLOCATABLE, PUBLIC :: CHRT10( : )
 
@@ -183,6 +203,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT11( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL11( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS11( :,: )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS11( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD11( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT11( :,: )
         CHARACTER(LEN=SS0LEN3), ALLOCATABLE, PUBLIC :: CHRT11( : )
 
@@ -192,6 +214,8 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT12( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: ICTL12( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS12( :,: )
+        INTEGER               , ALLOCATABLE, PUBLIC :: IMVS12( : )
+        INTEGER               , ALLOCATABLE, PUBLIC :: ISPD12( : )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT12( :,: )
         CHARACTER(LEN=SS1LEN3), ALLOCATABLE, PUBLIC :: CHRT12( : )
 
