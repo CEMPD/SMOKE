@@ -180,11 +180,11 @@ C.............  Local variables
 
         INTEGER, PARAMETER, PUBLIC :: STATDIST = 5  ! Normal, Lognormal, Gamma, Weibull, Beta, resp.
 
-        INTEGER                         UNVAR = 0      ! number of uncertainty variables
-        INTEGER                         UNIPOL = 0     ! number of uncertainty pollutants
-        INTEGER                         UNPPOL = 0     ! number of uncertainty pollutants & activities
-        INTEGER                         UNIACT = 0     ! number of uncertainty activities
-        INTEGER                         UNPACT = 0     ! 
+        INTEGER                      :: UNVAR = 0      ! number of uncertainty variables
+        INTEGER                      :: UNIPOL = 0     ! number of uncertainty pollutants
+        INTEGER                      :: UNPPOL = 0     ! number of uncertainty pollutants & activities
+        INTEGER                      :: UNIACT = 0     ! number of uncertainty activities
+        INTEGER                      :: UNPACT = 0     ! 
         INTEGER                         NEMP           ! number of empirical statistics options
         INTEGER                         NPAR           ! number of parametric statistics options
         INTEGER                         NPRB           ! number of probability value entries
