@@ -105,6 +105,8 @@ C.........  Set I/O API header parms that need values
         FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' control matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        WRITE( FDESC3D( 4 ), '(A,I4)' ) '/CTYPE/ ', CTYPMULT
+
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
