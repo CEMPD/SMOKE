@@ -59,11 +59,12 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
+        INTEGER                IOAPI_GRD_SIZE
         INTEGER                INDEX1
         CHARACTER*16           VERCHAR
         LOGICAL                SETENVVAR
 
-        EXTERNAL     GETCFDSC, INDEX1, VERCHAR, SETENVVAR
+        EXTERNAL  GETCFDSC, IOAPI_GRD_SIZE, INDEX1, VERCHAR, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: SRCCT    ! total number of sources
@@ -79,6 +80,8 @@ C...........   LOCAL PARAMETERS
 C...........   Other local variables
         INTEGER         I, J, K, L, LJ     ! counters and indices
         INTEGER         IOS                ! I/O status
+        INTEGER         FILESIZE           ! approximate size of emission factors file
+        INTEGER         NVARFILE           ! number of variables per file
 
         LOGICAL, SAVE:: INITIAL = .TRUE.   ! true: first time through subroutine
 
@@ -115,7 +118,32 @@ C.........  On first time through subroutine, allocate file set arrays
             CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
             ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
             CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
-        
+
+C.............  Check file size and adjust number of files to avoid 2 GB limit
+            NFILESET = 1
+            DO
+                NVARFILE = ( NVARSET + NFILESET - 1 ) / NFILESET
+                FILESIZE = IOAPI_GRD_SIZE( 1, SRCCT, 1, NVARFILE, 24 )
+                
+                IF( FILESIZE / 1000000 > 1500 ) THEN
+                    NFILESET = NFILESET + 1
+                ELSE
+                    EXIT
+                END IF
+            END DO
+
+            IF( NFILESET > 1 ) THEN
+                ALLOCATE( VARS_PER_FILE( NFILESET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VARS_PER_FILE', PROGNAME )
+                
+                DO I = 1, NFILESET - 1
+                    VARS_PER_FILE( I ) = NVARFILE
+                END DO
+
+                VARS_PER_FILE( NFILESET ) = 
+     &                NVARSET - ( NVARFILE*( NFILESET - 1 ) )
+            END IF
+
             INITIAL = .FALSE.
         END IF
 
