@@ -1,4 +1,4 @@
-      SUBROUTINE EVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY)
+      SUBROUTINE EVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY,INERR)
 C
 C  EVAP_HRLY calls the subroutines and functions to which determine hydrocarbon
 C  evaporative emissions for hot soak, diurnal, crankcase, resting losses, and
@@ -14,6 +14,8 @@ C          PCTLEV, QUITER, RNLOSSSUM, RSTLOS, CNVRT_U
 C
 C  Changes:  (Last change first)
 C
+C  21 Dec 01 M6011221: Changes to CNVRT_U parameters.
+C  15 Nov 01 AIR Task 27: Added INERR processing due to PMFLECON update.
 C  13 Dec 00 @EPA-bag t-x6 MY and ACTUAL_MY added to parameter list for CAA switch
 C  01 Nov 00 @EPA-bag BUG296 add IVGAS to DIRNL_HR parameter list
 C  06 Oct 00 @EPA-bag BUG137 Remove RN_FLAG
@@ -193,6 +195,7 @@ C
       INTEGER, INTENT(IN) :: JDX       ! Model year index (reverse chronological order)
       INTEGER, INTENT(IN) :: MY        ! Model year corrected if NO CLEAN AIR ACT (NO CAA) is enabled
       INTEGER, INTENT(IN) :: ACTUAL_MY ! Model year (uncorrected; ACTUAL_MY=ICY+IDX-MAXYRS)
+      INTEGER, INTENT(INOUT) :: INERR  ! Errors
 C
 C     Declare external functions.
 C
@@ -365,12 +368,11 @@ C         DIRNL_HR produces hourly emissions with units of grams/hour for a
 C         given IH and MY/IDX.
 C
           DRNL=ZEV*DIRNL_HR(IH,MY,IVGAS)
-
           CALL FUEL2(IDIURNAL,DRNL)
 C
           DRNL_GM_HR(IH) = DRNL
           DRNL_GM_MI(IH) = DRNL*
-     *              CNVRT_U(GPH,GPM,JDX,ICY,IV,IVTAM,IH,IDIURNAL)
+     *              CNVRT_U(GPH,GPM,JDX,IV,IH,IDIURNAL,INERR)
 C
 C         average daily diurnal losses in units of grams/day:
           EVAP_GM_MI(IDIURNAL)=EVAP_GM_MI(IDIURNAL)+
@@ -396,9 +398,9 @@ C
 C       HOT SOAK hourly numbers
         HS_GM_TRP(IH) =  HSK  !hot soak units are in gram/trip
         HS_GM_MI(IH)  =  HSK*
-     *           CNVRT_U(GPT,GPM,JDX,ICY,IV,IVTAM,IH,IHOTSOAK)
+     *           CNVRT_U(GPT,GPM,JDX,IV,IH,IHOTSOAK,INERR)
         HS_GM_HR(IH)  =  HSK*
-     *           CNVRT_U(GPT,GPH,JDX,ICY,IV,IVTAM,IH,IHOTSOAK)
+     *           CNVRT_U(GPT,GPH,JDX,IV,IH,IHOTSOAK,INERR)
 C
 C       HOT SOAK average daily numbers
         EVAP_GM_MI(IHOTSOAK) =EVAP_GM_MI(IHOTSOAK)+HS_GM_MI(IH)*HVMT(IH)
@@ -423,7 +425,7 @@ C
 C           RUNNING LOSS hourly numbers
             RN_GM_MI(IH,IROAD) = RUNLOSS(IROAD) !running loss units are in grams/mile
             RN_GM_HR(IH,IROAD) = RUNLOSS(IROAD)*
-     *              CNVRT_U(GPM,GPH,JDX,ICY,IV,IVTAM,IH,IRUNLOSS)
+     *              CNVRT_U(GPM,GPH,JDX,IV,IH,IRUNLOSS,INERR)
 C
           END DO
 C
@@ -437,9 +439,9 @@ C         REFUELING LOSSES:
 C         the hourly array is built in REFUEL called by EFCALX
           RFL_GM_MI(IH)=ZEV*RLRATE(IDX,IVTAM,IH)
           RFL_GM_HR(IH)=ZEV*RLRATE(IDX,IVTAM,IH)*
-     *               CNVRT_U(GPM,GPH,JDX,ICY,IV,IVTAM,IH,IREFUEL)
+     *               CNVRT_U(GPM,GPH,JDX,IV,IH,IREFUEL,INERR)
           RFL_GM_GA(IH)=ZEV*RLRATE(IDX,IVTAM,IH)*
-     *               CNVRT_U(GPM,GPG,JDX,ICY,IV,IVTAM,IH,IREFUEL)
+     *               CNVRT_U(GPM,GPG,JDX,IV,IH,IREFUEL,INERR)
 C
 C         average daily numbers
           EVAP_GM_MI(IREFUEL)=EVAP_GM_MI(IREFUEL) + RFL_GM_MI(IH)
@@ -475,9 +477,9 @@ C
 C       CRANK CASE LOSSES:
 C       hourly numbers need to be converted
         CC_GM_MI(IH) = EVAP_GM_MI(ICRNCASE)*
-     *       CNVRT_U(GPM_D,GPM,JDX,ICY,IV,IVTAM,IH,ICRNCASE) ! CNVRT_U=1 for this case
+     *       CNVRT_U(GPM_D,GPM,JDX,IV,IH,ICRNCASE,INERR) ! CNVRT_U=1 for this case
         CC_GM_HR(IH) = CC_GM_MI(IH)*
-     *       CNVRT_U(GPM,GPH,JDX,ICY,IV,IVTAM,IH,ICRNCASE)
+     *       CNVRT_U(GPM,GPH,JDX,IV,IH,ICRNCASE,INERR)
 C
 C       average daily numbers
         EVAP_GM_HR(ICRNCASE)=EVAP_GM_HR(ICRNCASE)+CC_GM_HR(IH)/24.0
@@ -490,7 +492,7 @@ C
 C       units conversions :
         RSTLS_GM_HR(IH) = RSTLSS_EF   !resting losses are in grams/hour
         RSTLS_GM_MI(IH) = RSTLSS_EF*
-     *             CNVRT_U(GPH,GPM,JDX,ICY,IV,IVTAM,IH,IRESTLOSS)
+     *             CNVRT_U(GPH,GPM,JDX,IV,IH,IRESTLOSS,INERR)
 C
 C       daily averages :
         EVAP_GM_MI(IRESTLOSS)=EVAP_GM_MI(IRESTLOSS)+
@@ -508,17 +510,20 @@ C
 C    Build DATABASE evaporative emissions.
 C
 ccs      CALL DBEVAP(FRESTLOSS,IV,JDX,RSTLS_GM_MI,RSTLS_GM_HR,IROAD,
-ccs     *            ACTUAL_MY)
-ccs      CALL DBEVAP(FREFUEL,IV,JDX,RFL_GM_MI,RFL_GM_HR,IROAD,ACTUAL_MY)
-ccs      CALL DBEVAP(FHOTSOAK,IV,JDX,HS_GM_MI,HS_GM_HR,IROAD,ACTUAL_MY)
-ccs      CALL DBEVAP(FDIURNAL,IV,JDX,DRNL_GM_MI,DRNL_GM_HR,IROAD,ACTUAL_MY)
-ccs      CALL DBEVAP(FCRNCASE,IV,JDX,CC_GM_MI,CC_GM_HR,IROAD,ACTUAL_MY)
-
+ccs     *            ACTUAL_MY,INERR)
+ccs      CALL DBEVAP(FREFUEL,IV,JDX,RFL_GM_MI,RFL_GM_HR,IROAD,ACTUAL_MY,
+ccs     *            INERR)
+ccs      CALL DBEVAP(FHOTSOAK,IV,JDX,HS_GM_MI,HS_GM_HR,IROAD,ACTUAL_MY,
+ccs     *            INERR)
+ccs      CALL DBEVAP(FDIURNAL,IV,JDX,DRNL_GM_MI,DRNL_GM_HR,IROAD,ACTUAL_MY,
+ccs     *            INERR)
+ccs      CALL DBEVAP(FCRNCASE,IV,JDX,CC_GM_MI,CC_GM_HR,IROAD,ACTUAL_MY,
+ccs     *            INERR)
 ccs      DO IROAD=IFREEWAY,IRAMP
 ccs        CALL DBEVAP(FRUNLOSS,IV,JDX,RN_GM_MI(1,IROAD),RN_GM_HR(1,IROAD),
-ccs     &                              IROAD,ACTUAL_MY)
+ccs     &                              IROAD,ACTUAL_MY,INERR)
 ccs      END DO
-      	
+
 ccs   Call custom SMOKE functions to create aggregated database output
       CALL SMKEVPOTHER(FHOTSOAK,IV,JDX,HS_GM_MI,IROAD)
       CALL SMKEVPOTHER(FDIURNAL,IV,JDX,DRNL_GM_MI,IROAD)

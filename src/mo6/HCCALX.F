@@ -9,6 +9,7 @@ C        HRLOOP, IEVPTR, PCTLEV, and QUITER.
 C
 C  Changes:
 C
+C  15 Nov 01 AIR Task 27: added INERR to DBEVAP due to PMFLECON update.
 C  21 Dec 00 @EPA-bag beta24, added code for database aggregate output
 C  04 Dec 00 @EPA-bag Task X6, removed MY, JDX, and IDX from MYCODE.I; removed
 C            MYCODE.I
@@ -419,7 +420,7 @@ C
           IF((TF(IDX,IV).LE.0.0.AND.MEVMYR(JDX,IV).EQ.0.0) .OR.
      &       (VMTMIX(IV).EQ.0.0)) THEN
             IF(DBFLAG.EQ.2) THEN
-ccs            CALL DBEXHRS(HEF,IP,IV,ACTUAL_MY,JDX)
+ccs            CALL DBEXHRS(HEF,IP,IV,ACTUAL_MY,JDX,INERR)
 
 ccs   Call custom SMOKE routine to aggregate exhaust emmisions
             CALL SMKEXOUT(HEF,IP,IV,JDX)
@@ -427,20 +428,20 @@ ccs   Call custom SMOKE routine to aggregate exhaust emmisions
             IROAD=5   ! Restingloss,Refuel,Hotsoak,Diurnal and Crankcase are
                       ! road independent.
 ccs            CALL DBEVAP(FRESTLOSS,IV,JDX,NO_MILES_NO_EMISSIONS,
-ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY)
+ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY,INERR)
 ccs            CALL DBEVAP(FREFUEL,IV,JDX,NO_MILES_NO_EMISSIONS,
-ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY)
+ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY,INERR)
 ccs            CALL DBEVAP(FHOTSOAK,IV,JDX,NO_MILES_NO_EMISSIONS,
-ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY)
+ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY,INERR)
 ccs            CALL DBEVAP(FDIURNAL,IV,JDX,NO_MILES_NO_EMISSIONS,
-ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY)
+ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY,INERR)
 ccs            CALL DBEVAP(FCRNCASE,IV,JDX,NO_MILES_NO_EMISSIONS,
-ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY)
+ccs     *                  NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY,INERR)
 ccs            DO IROAD=IFREEWAY,IRAMP
 ccs              CALL DBEVAP(FRUNLOSS,IV,JDX,NO_MILES_NO_EMISSIONS,
-ccs     *                    NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY)
+ccs     *                    NO_MILES_NO_EMISSIONS,IROAD,ACTUAL_MY,INERR)
 ccs            END DO
-            	
+
 ccs   Call custom SMOKE routines to aggregate evaporative emissions
         CALL SMKEVPOTHER(FHOTSOAK,IV,JDX,NO_MILES_NO_EMISSIONS,IROAD)
         CALL SMKEVPOTHER(FDIURNAL,IV,JDX,NO_MILES_NO_EMISSIONS,IROAD)
@@ -489,7 +490,7 @@ C
 C         Daily resting, running, crankcase, diurnal, hot soak, are determined by
 C         adding respective hourly emissions in evp_hrly.for for gas fueled vehicles.
 C
-          CALL EVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY)
+          CALL EVP_HRLY(ICY,IVGAS,IDX,IV,JDX,MY,ACTUAL_MY,INERR)
 C
 C         EXPANDED EVAPORATIVE OUTPUT(HCFLAG=2, 3, or 4)
 C         For gas vehicles use the results from EVP_HRLY to determine composite

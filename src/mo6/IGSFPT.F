@@ -8,6 +8,7 @@ C  Calls QUITER.
 C 
 C  Changes: (Last change first) 
 C 
+C 29 Oct 01 @EPA-djb    Changed all code to upper case letters. 
 C  25 Jan 2000 @EPA-djb reflect changes in array. 
 C  18 Nov 98 @DynTel-ZK 2-000 Explicit Typing 
 C 

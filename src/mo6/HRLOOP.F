@@ -34,6 +34,10 @@ C        SOAKCF
 C 
 C  Changes:  (Last change first) 
 C 
+C  31 Dec 01 @EPA-BAG     Changed .GE. to >= in IMPROG conditionals 
+C  15 Nov 01 AIR Task 27: DBEXHRS now includes INERR. 
+C  17 Dec 01 @EPA-BAG        Remove I&M sawtooth 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C  10 Jul 01 @EPA-djb Wish130, Expanded STARTSPERDAY array to include age. 
 C  13 Feb 01 @EPA-elg increased the size of FVMT arrays to include vehicle class 
 C  04 Dec 00 @EPA-bag Task X6, removed MY, JDX, and IDX from MYCODE.I; added 
@@ -229,7 +233,6 @@ C  HIGHER   R    Stored High Emitter Fractions
 C  IDX      I    Model year index (chronological order) 
 C  IFDS     I    Fuel delivery system loop control variable 
 C  IH       I    Hourly loop control variable 
-C  IMPCT    R    Holds the I/M Percentage reduction. 
 C  INH      I    Emitter category loop control variable 
 C  INHWT    R    Normal/High emitter weighting factor 
 C  IP       I    Pollutant loop control variable. 
@@ -342,7 +345,6 @@ C
       REAL, DIMENSION(24,5)        :: HEF 
       REAL, DIMENSION(2,3,2)       :: HIGHER 
       REAL     HUMIDITY 
-      REAL     IMPCT 
       REAL, DIMENSION(2)           :: INHWT 
       REAL     MPHR 
       REAL, DIMENSION(2,2)         :: NGV1 
@@ -576,14 +578,14 @@ C
                 IF(VVLDGAS(IV) .EQ. 1 .AND. MY.GE.1994) THEN 
 C 
 C     For cases of 1994+ MY's and NO I/M.  The ARRAY 
-C     HIGH3 returns the fraction of HIGH emitters in the 
+C     OBDHINIM returns the fraction of HIGH emitters in the 
 C     fleet After OBD is applied. Tier 0 (ISTD=1) have no OBD. 
 C 
                   IF(ISTD.EQ.1) THEN       !Tier 0 
                     HIGHER(HIGH,IFDS,1) = 
      *                EF_HI_FRCN(MY,IP,IV,VMTAGE,IFDS,ISTD,INERR) 
                   ELSE                     !Tier 1+ 
-                    HIGHER(HIGH,IFDS,2) =  HIGH3(JDX,IP,IV) 
+                    HIGHER(HIGH,IFDS,2) =  OBDHINIM(JDX,IP,IV) 
                   ENDIF 
                 END IF 
               END IF 
@@ -666,12 +668,6 @@ C
                 EMFAC(ISR,ISTD,IFDS,INH) = BASEF(ISR) 
 C 
              END DO   !ISR LOOP 
-CDFK 
-CDFK             IF(IV.EQ.14) THEN 
-CDFK             WRITE (99,99) MY,ISTD,IFDS,INH, 
-CDFK     *             (EMFAC(ISR,ISTD,IFDS,INH),ISR=1,2) 
-CDFK  99         FORMAT(I5,3I2,2F10.5) 
-CDFK             END IF 
 C 
              CALL FUEL(MY,IP,IV,ICY,IFDS,INH,IDX,ISTD,BASEF,FUELCF) 
 C 
@@ -751,23 +747,21 @@ C
 C 
                     EF = NGV_EF*NGVFRAC + EF*(1.0-NGVFRAC) 
 C 
-C     For gas vehicles for all model years obtain % of emission factor 
-C     left after I/M program effect is computed for the IH loop. 
-C     Default (non-I/M, diesel, HD & MC) value of IMPCT is 1.0 (no effect). 
+C     For PRE-1981 gas vehicles for all model years obtain % of emission factor 
+C     left after I/M program effect is computed for the IH loop. Post-1980 vehicles 
+C     are given a I&M credit in grams/mile to high emission vehicles only. Default 
+C     (non-I/M, diesel, HD & MC) is no effect. 
 C 
-                    IMPCT = 1.0 
-                    IF(IMFLAG.GT.1) THEN 
-                       IF(VVLDGAS(IV).EQ.1 .AND. MY.GE.1981) THEN 
-                          IMPCT = 
-     *                     IMPROG(ICY,MY,ACTUAL_MY,JDX,IP,IV,VMTAGE,ISR, 
-     *                     IFDS,ISTD,INERR,IDX,IH,IROAD,CAT) 
+                    IF(IMFLAG>1) THEN 
+                      IF(VVLDGAS(IV)==1.AND.MY>=1981.AND.INH==HIGH) THEN 
+                        EF = EF-IMPROG(ICY,MY,ACTUAL_MY,JDX,IP,IV, 
+     *                   VMTAGE,ISR,IFDS,ISTD,INERR,IDX,IH,IROAD,CAT,EF) 
                        ELSEIF((VVLDGAS(IV).EQ.1 .AND. MY.LT.1981) .OR. 
-     *                     VVHDGV(IV).EQ.1 ) THEN 
-                           IMPCT = PCLEFT(MY,ICY,IP,IV) 
+     *                     VVHDGV(IV)==1 ) THEN 
+                         EF = EF * PCLEFT(MY,ICY,IP,IV) 
                        ENDIF 
                     ENDIF 
 C 
-                    EF = EF * IMPCT 
 C 
                     EF = EF * TPHR / MPHR                                ! Starts in g/mi units 
 C 
@@ -844,23 +838,21 @@ C
 C 
                     TEF = NGV2*NGVFRAC + TEF*(1.0-NGVFRAC) 
 C 
-C     For gas vehicles for all model years obtain % of emission factor 
-C     left after I/M program effect is computed for the IH loop. 
-C     Default (non-I/M, diesel, HD & MC) value of IMPCT is 1.0 (no effect). 
+C     For PRE-1981 gas vehicles for all model years obtain % of emission factor 
+C     left after I/M program effect is computed for the IH loop. Post-1980 vehicles 
+C     are given a I&M credit in grams/mile to high emission vehicles only. Default 
+C     (non-I/M, diesel, HD & MC) is no effect. 
 C 
-                    IMPCT = 1.0 
-                    IF(IMFLAG.GT.1) THEN 
-                       IF(VVLDGAS(IV).EQ.1 .AND. MY.GE.1981) THEN 
-                          IMPCT = 
+                    IF(IMFLAG>1) THEN 
+                      IF(VVLDGAS(IV)==1.AND.MY>=1981.AND.INH==HIGH) THEN 
+                        TEF = TEF - 
      *                     IMPROG(ICY,MY,ACTUAL_MY,JDX,IP,IV,VMTAGE,ISR, 
-     *                        IFDS,ISTD,INERR,IDX,IH,IROAD,CAT) 
-                       ELSEIF((VVLDGAS(IV).EQ.1 .AND. MY.LT.1981) .OR. 
-     *                     VVHDGV(IV).EQ.1 ) THEN 
-                           IMPCT = PCLEFT(MY,ICY,IP,IV) 
-                       ENDIF 
+     *                        IFDS,ISTD,INERR,IDX,IH,IROAD,CAT,TEF) 
+                      ELSEIF((VVLDGAS(IV)==1 .AND. MY<1981) .OR. 
+     *                     VVHDGV(IV)==1 ) THEN 
+                        TEF = TEF * PCLEFT(MY,ICY,IP,IV) 
+                      ENDIF 
                     ENDIF 
-C 
-                    TEF = TEF * IMPCT 
 C 
                     TEF = TEF * INHWT(INH) * 
      &                        FDSWT(IFDS) * STDWT(ISTD) 
@@ -879,10 +871,10 @@ C
         END DO               !END ISR LOOP 
       END DO              !END IH LOOP 
 C 
-ccs      IF(DBFLAG.EQ.2) CALL DBEXHRS(HEF,IP,IV,ACTUAL_MY,JDX)
+ccs      IF(DBFLAG.EQ.2) CALL DBEXHRS(HEF,IP,IV,ACTUAL_MY,JDX,INERR) 
 C
 ccs   add call to new output function for special aggregation
       IF( DBFLAG == 2 ) CALL SMKEXOUT(HEF,IP,IV,JDX)
-      
+
       RETURN 
       END SUBROUTINE HRLOOP 
