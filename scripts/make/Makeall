@@ -261,7 +261,7 @@ else
 endif
 Makeit $argv    
 
-echo "Building Rawbio, Tmpbio, Beis3, and Normbeis3..."
+echo "Building Rawbio, Tmpbio, Tmpbeis3, and Normbeis3..."
 cd $BG_SRC    # Rawbio and Tmpbio
 if ( $EDSS_EXE == Linux2_x86ifc ) then
    make ifcclean
