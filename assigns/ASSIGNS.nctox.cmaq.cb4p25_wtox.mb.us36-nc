@@ -34,7 +34,7 @@
 ## Mobile episode variables
    setenv EPI_STDATE 1996191     # Julian start date
    setenv EPI_STTIME  000000     # start time (HHMMSS)
-   setenv EPI_RUNLEN 0750000     # run length (HHHMMSS)
+   setenv EPI_RUNLEN  480000     # run length (HHHMMSS)
    setenv EPI_NDAY   2           # number of full run days
 
 ## Per-period environment variables
@@ -96,19 +96,23 @@ endif
 #
 ## Biogenic input files
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
-   setenv BGUSE   $INVDIR/biog/beld.5.us36.txt      # Gridded landuse
-   setenv METLIST $INVDIR/biog/metlist.tmpbio.txt   # Meteorology file list for temperatures
-   setenv RADLIST $INVDIR/biog/radlist.tmpbio.txt   # Meteorology file list for solar radiation
-   setenv BFAC    $GE_DAT/bfac.summer.txt     # Default biogenic emission factors
+   setenv BGUSE   $SMKDAT/inventory/beld2/beld.5.us36.txt  # Gridded landuse
+   setenv METLIST $INVDIR/biog/metlist.tmpbio.txt   # Meteorology file list for
+temperatures
+   setenv RADLIST $INVDIR/biog/radlist.tmpbio.txt   # Meteorology file list for
+solar radiation
+   setenv BFAC    $GE_DAT/bfac.summer.txt     # Default biogenic emission factor
+s
    setenv S_BFAC  $GE_DAT/bfac.summer.txt     # Summer biogenic emission factors
    setenv W_BFAC  $GE_DAT/bfac.winter.txt     # Winter biogenic emission factors
    setenv BCUSE   $GE_DAT/landuse.dat         # County landuse
-   setenv BGPRO   $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Biogenic gridding surrogates
+   setenv BGPRO   $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Biogenic griddin
+g surrogates
    setenv B3FAC   $GE_DAT/b3fac.march2002.beisv3.09.txt
    setenv B3XRF   $GE_DAT/b3tob2B.xrf         # Beld3 to Beld2 cross-reference
-   setenv BELD3_TOT $BGDAT/no_file_available
-   setenv BELD3_A   $BGDAT/no_file_available
-   setenv BELD3_B   $BGDAT/no_file_available
+   setenv BELD3_TOT $SMKDAT/inventory/beld3/LANDA_c_cmaq_nat.dat
+   setenv BELD3_A   $SMKDAT/inventory/beld3/LANDB_c_cmaq_nat.dat
+   setenv BELD3_B   $SMKDAT/inventory/beld3/LAND_TOTALS_c_cmaq_nat.dat
 endif
 #
 ## Mobile source input files
