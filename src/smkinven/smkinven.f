@@ -246,6 +246,14 @@ C               sorted order
             
             CALL RDINVDATA( IDEV, INAME, NRAWBP, TFLAG )
 
+C.............  Check if toxics are being processed and reset NHAPEXCLUDE if needed
+            IF( .NOT. TOXFLG .AND. UDEV > 0 ) THEN
+                MESG = 'NOTE: Ignoring SMK_NHAPEXCLUDE_YN setting ' //
+     &                 'since toxics are not being processed'
+                CALL M3MSG2( MESG )
+                UDEV = 0
+            END IF
+
 C.............  Process inventory records and store in sorted order
             CALL M3MSG2( 'Processing inventory data...' )
 
