@@ -721,10 +721,15 @@ C...........       or else by SCC only
                 SPCFACS( S,V ) = FAC * SCOEF( SPCPRF,V )
 144         CONTINUE
 
-            IF ( IFRM .GT. 0 ) 
-     &          SPCFACS( S, IFRM ) = FRMADJ * SPCFACS( S, IFRM )
-            IF ( IETH .GT. 0 ) 
-     &          SPCFACS( S, IETH ) = ETHADJ * SPCFACS( S, IETH )
+            IF( FRMADJ .NE. 0. ) THEN
+                CALL M3MESG(
+     &               'WARNING: Formaldehyde adjustment is non-zero' )
+            ENDIF
+
+            IF( IFRM .GT. 0 ) 
+     &        SPCFACS( S, IFRM ) = ( 1. + FRMADJ ) * SPCFACS( S, IFRM )
+            IF( IETH .GT. 0 ) 
+     &        SPCFACS( S, IETH ) = ETHADJ * SPCFACS( S, IETH )
 
 155     CONTINUE        ! end loop on area sources, computing speciation matrix
 
