@@ -3,7 +3,7 @@
      &                       PKTTYP, ENAME, SFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 116
 C
 C  DESCRIPTION:
 C      This subroutine is responsible for processing control packet data
@@ -24,13 +24,13 @@ C
 C  REVISION  HISTORY:
 C      Started 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -99,7 +99,7 @@ C...........   Other local variables
 
         LOGICAL       :: EFLAG    = .FALSE.   ! error flag
         LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
-        LOGICAL       :: OFLAG(NPACKET) = .FALSE.   ! true: tmp file has not
+        LOGICAL, SAVE :: OFLAG(NPACKET) = .FALSE.   ! true: tmp file has not
                                                     ! been opened
 
         CHARACTER*5     CPOS        ! tmp sorted position of pol
