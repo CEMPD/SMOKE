@@ -1,0 +1,127 @@
+C @(#)$Id$ $Source$ $Date$ 
+
+        INCLUDE 'EMSTRG3.EXT'   !  emissions private parameters
+
+C.........   Output formatting parameters
+        INTEGER         EMOUTLN3
+
+        CHARACTER*2     EMCMISS3
+        CHARACTER*5     BLANK5
+        CHARACTER*10    BLANK10
+        CHARACTER*16    BLANK16
+ 
+        PARAMETER   (   EMOUTLN3= 80 
+     &                , EMCMISS3= '??' 
+     &                , BLANK5  = ' ' 
+     &                , BLANK10 = ' '
+     &                , BLANK16 = ' '
+     &              )
+
+
+C.........   Physical constants
+        REAL            DAY2SEC ! Days to seconds conversion factor
+        REAL            FT2M    ! Feet to meters conversion factor
+        REAL            FLWE2M  ! ft^3/min to m^3/sec
+        REAL            FTOC    ! Farhenheit to Celcius conversion factor
+        REAL            SEC2DAY ! Days to seconds conversion factor
+        REAL            TON2GM  ! Tons to grams conversion factor
+        REAL            GM2TON  ! Grams to tons conversion factor
+ 
+        PARAMETER   (   DAY2SEC = 24. * 3600.
+     &                , FT2M    = 0.3048
+     &                , FLWE2M  = FT2M * FT2M * FT2M / 60.0 
+     &                , FTOC    = 5./9.
+     &                , SEC2DAY = 1. / DAY2SEC
+     &                , TON2GM  = 907184.74
+     &                , GM2TON  = 1. / TON2GM
+     &              )
+
+C.......   Flag values for determining temporal-profile-category
+C.......   applicability:  the corresponding category of temporal
+C.......   profile coefficients should be used for a source S iff
+C.......   MOD( TPFLAG( S ), *TPRFAC ) = 0.
+C.......   (The *TPRFAC's should all be distinct primes)
+ 
+        INTEGER     WDTPFAC ! day-of-week temp-profile w/ weekday normalizer
+        INTEGER     STPRFAC ! seasonal    temp-profile
+        INTEGER     MTPRFAC ! month       temp-profile
+        INTEGER     WTPRFAC ! day-of-week temp-profile w/ full week normalizer
+ 
+        PARAMETER (   WDTPFAC = 7
+     &              , STPRFAC = 5
+     &              , MTPRFAC = 3
+     &              , WTPRFAC = 2 )
+
+        CHARACTER*10    DAYS( 7 )
+        DATA            DAYS
+     &          /
+     &          'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+     &          'Friday', 'Saturday', 'Sunday'
+     &          /
+
+C.........  Input file format constants
+
+        INTEGER     LSTFMT
+        INTEGER     EMSFMT
+        INTEGER     EPSFMT
+        INTEGER     NETFMT
+        INTEGER     IDAFMT
+
+        PARAMETER ( LSTFMT = 0
+     &            , EMSFMT = 1
+     &            , EPSFMT = 2
+     &            , NETFMT = 3
+     &            , IDAFMT = 4
+     &            )
+
+C.........  Country codes and names
+        INTEGER     , PARAMETER:: MXCNTRY3 = 3
+        INTEGER     , DIMENSION( MXCNTRY3 ):: CNTRYCD3
+        CHARACTER*20, DIMENSION( MXCNTRY3 ):: CNTRYNM3
+
+        DATA CNTRYCD3 / 0, 1, 2 /                   ! In ascending order
+        DATA CNTRYNM3 / 'US', 'CANADA', 'MEXICO' /  ! Matched with CNTRYCD3
+
+C.........  Packet names
+        CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
+
+C.........  Variable dimensioning components, independent
+
+        INTEGER       CPRTLEN3       ! length of ctl eff, rul eff, rul pen roots
+        INTEGER       IODLEN3        ! length of I/O API variable descriptions
+        INTEGER       IOULEN3        ! length of I/O API units
+        INTEGER       NARPPOL3       ! no. of pollutant-spec area inven vars
+        INTEGER       NARVAR3        ! no. of pollutant-indep area inven vars
+        INTEGER       NMBVAR3        ! no. of pollutant-indep mobile inven vars
+        INTEGER       NPTPPOL3       ! no. of pollutant-spec point inven vars
+        INTEGER       NPTVAR3        ! no. of pollutant-indep point inven vars
+
+        PARAMETER   ( CPRTLEN3 = 3
+     &              , IODLEN3  = 80
+     &              , IOULEN3  = 16
+     &              , NARPPOL3 = 6
+     &              , NARVAR3  = 5   ! note: this is not yet known
+     &              , NMBVAR3  = 5   ! note: this is not yet known 
+     &              , NPTPPOL3 = 7
+     &              , NPTVAR3  = 12
+     &              )
+
+C.........  Blanks definitions
+        CHARACTER(LEN=BLRLEN3), PARAMETER:: BLRBLNK3 = ' '
+        CHARACTER(LEN=CHRLEN3), PARAMETER:: CHRBLNK3 = ' '
+        CHARACTER(LEN=DSCLEN3), PARAMETER:: DSCBLNK3 = ' '
+        CHARACTER(LEN=FIPLEN3), PARAMETER:: FIPBLNK3 = ' '
+        CHARACTER(LEN=IOVLEN3), PARAMETER:: IOVBLNK3 = ' '
+        CHARACTER(LEN=PLTLEN3), PARAMETER:: PLTBLNK3 = ' '
+        CHARACTER(LEN=POLLEN3), PARAMETER:: POLBLNK3 = ' '
+
+C.........  Multi-purpose inventory variable name parameters
+        CHARACTER(LEN=CPRTLEN3), PARAMETER:: CTLEFFRT = 'CE_'  
+        CHARACTER(LEN=CPRTLEN3), PARAMETER:: RULEFFRT = 'RE_' 
+        CHARACTER(LEN=CPRTLEN3), PARAMETER:: RULPENRT = 'RP_'
+        CHARACTER(LEN=CPRTLEN3), PARAMETER:: OZNSEART = 'OS_'
+        CHARACTER(LEN=CPRTLEN3), PARAMETER:: EMISFCRT = 'EF_'
+        CHARACTER(LEN=CPRTLEN3), PARAMETER:: CECOD1RT = 'C1_'
+        CHARACTER(LEN=CPRTLEN3), PARAMETER:: CECOD2RT = 'C2_'
+
+

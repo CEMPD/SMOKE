@@ -1,0 +1,62 @@
+C @(#)$Id$ $Source$ $Date$ 
+C.........   The variables in this include file are for defining the widths
+C            of character strings in SMOKE that are used for variables that
+C            are source characteristics. They are all declared as private
+C            so that, for instance, several modules used in the same program
+C            can all include this file without duplicate declaration errors
+C            during compilation.
+
+C.........  Width of source information strings 
+        INTEGER, PARAMETER :: BLRLEN3 =  3 ! boiler field
+        INTEGER, PARAMETER :: CHRLEN3 = 15 ! 5 plant characteristics
+        INTEGER, PARAMETER :: DSCLEN3 = 40 ! plant description
+        INTEGER, PARAMETER :: FIPLEN3 =  6 ! FIPS code
+        INTEGER, PARAMETER :: CNYLEN3 =  3 ! County code
+        INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
+        INTEGER, PARAMETER :: PLTLEN3 = 15 ! plant ID field
+        INTEGER, PARAMETER :: POLLEN3 =  5 ! pol position field 
+        INTEGER, PARAMETER :: SCCLEN3 = 10 ! SCC
+        INTEGER, PARAMETER :: SCLLEN3 =  5 ! Left part of SCC
+
+C.........  Width of other global character strings 
+        INTEGER, PARAMETER :: IOVLEN3 = 16 ! length of I/O API variables
+        INTEGER, PARAMETER :: SPNLEN3 =  5 ! Speciation profile code
+        INTEGER, PARAMETER :: PLSLEN3 = IOVLEN3 * 2 + 1  ! Speciation vdesc3d
+
+C.........  Variable dimensioning components and parameters, dependent...
+
+C.........  Start of each field in source definition
+        INTEGER, PARAMETER :: PLTPOS3 = FIPLEN3 + 1       ! plant
+        INTEGER, PARAMETER :: CH1POS3 = PLTPOS3 + PLTLEN3 ! char1
+        INTEGER, PARAMETER :: CH2POS3 = CH1POS3 + CHRLEN3 ! char2
+        INTEGER, PARAMETER :: CH3POS3 = CH2POS3 + CHRLEN3 ! char3
+        INTEGER, PARAMETER :: CH4POS3 = CH3POS3 + CHRLEN3 ! char4
+        INTEGER, PARAMETER :: CH5POS3 = CH4POS3 + CHRLEN3 ! char5
+        INTEGER, PARAMETER :: POLPOS3 = CH5POS3 + CHRLEN3 ! pol idx
+        INTEGER, DIMENSION( 8 ),  
+     &           PARAMETER :: PTBEGL3 =               ! array of starts
+     &           ( / 1      , PLTPOS3, CH1POS3, CH2POS3, 
+     &               CH3POS3, CH4POS3, CH5POS3, POLPOS3  / )
+
+! NOTE: Do I need the 9th element of PTBEGL3, or can I use PTENDL3 instead
+
+        INTEGER, PARAMETER :: ALLLEN3 = POLPOS3 + POLLEN3 - 1 ! total 
+        INTEGER, DIMENSION( 8 ),  
+     &           PARAMETER :: PTENDL3 =               ! array of ends
+     &           ( / FIPLEN3  , CH1POS3-1, CH2POS3-1, CH3POS3-1,
+     &               CH4POS3-1, CH5POS3-1, POLPOS3-1, ALLLEN3    / )
+
+C.........  Widths that depend on other widths
+        INTEGER, PARAMETER :: FPLLEN3 = FIPLEN3 + PLTLEN3 ! FIPS // Plant
+        INTEGER, PARAMETER :: FPSLEN3 = FIPLEN3 + SCCLEN3 ! FIPS // SCC
+        INTEGER, PARAMETER :: SCRLEN3 = SCCLEN3 - SCLLEN3 ! right SCC
+        INTEGER, PARAMETER :: STALEN3 = FIPLEN3 - CNYLEN3 ! Country/St
+        INTEGER, PARAMETER :: STSLEN3 = STALEN3 + SCCLEN3 ! Cy/St //SCC
+        INTEGER, PARAMETER :: SRCLEN3 = POLPOS3 - 1       ! Source less pol'nt
+
+        INTEGER, PARAMETER :: SS0LEN3 = CH1POS3-1 + SCCLEN3 ! -> Plant // SCC
+        INTEGER, PARAMETER :: SS1LEN3 = CH2POS3-1 + SCCLEN3 ! -> Char1 // SCC
+        INTEGER, PARAMETER :: SS2LEN3 = CH3POS3-1 + SCCLEN3 ! -> Char2 // SCC
+        INTEGER, PARAMETER :: SS3LEN3 = CH4POS3-1 + SCCLEN3 ! -> Char3 // SCC
+        INTEGER, PARAMETER :: SS4LEN3 = CH5POS3-1 + SCCLEN3 ! -> Char4 // SCC
+        INTEGER, PARAMETER :: SS5LEN3 = POLPOS3-1 + SCCLEN3 ! -> Char5 // SCC

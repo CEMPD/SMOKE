@@ -1,0 +1,55 @@
+C @(#)$Id$ $Source$ $Date$ 
+
+C.........   The variables in this include file are for defining the widths
+C            of character strings in SMOKE that are used for variables that
+C            are source characteristics. They are all declared as private
+C            so that, for instance, several modules used in the same program
+C            can all include this file without duplicate declaration errors
+C            during compilation.
+
+        INCLUDE 'EMSTRG3.EXT'  ! emissions string widths parameters
+
+C.........  Width of source information strings 
+        PRIVATE :: BLRLEN3
+        PRIVATE :: CHRLEN3
+        PRIVATE :: DSCLEN3
+        PRIVATE :: FIPLEN3
+        PRIVATE :: CNYLEN3
+        PRIVATE :: LNKLEN3
+        PRIVATE :: PLTLEN3
+        PRIVATE :: POLLEN3
+        PRIVATE :: SCCLEN3
+        PRIVATE :: SCLLEN3
+
+C.........  Width of other global character strings 
+        PRIVATE :: IOVLEN3
+        PRIVATE :: SPNLEN3
+        PRIVATE :: PLSLEN3
+
+C.........  Variable dimensioning components and parameters, dependent...
+
+C.........  Start of each field in source definition
+        PRIVATE :: PLTPOS3
+        PRIVATE :: CH1POS3
+        PRIVATE :: CH2POS3
+        PRIVATE :: CH3POS3
+        PRIVATE :: CH4POS3
+        PRIVATE :: CH5POS3
+        PRIVATE :: POLPOS3
+        PRIVATE :: ALLLEN3
+        PRIVATE :: PTBEGL3
+        PRIVATE :: PTENDL3
+
+C.........  Widths that depend on other widths
+        PRIVATE :: FPLLEN3
+        PRIVATE :: FPSLEN3
+        PRIVATE :: SCRLEN3
+        PRIVATE :: STALEN3
+        PRIVATE :: STSLEN3
+        PRIVATE :: SRCLEN3
+        PRIVATE :: SS0LEN3
+        PRIVATE :: SS1LEN3
+        PRIVATE :: SS2LEN3
+        PRIVATE :: SS3LEN3
+        PRIVATE :: SS4LEN3
+        PRIVATE :: SS5LEN3
