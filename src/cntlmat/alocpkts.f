@@ -3,7 +3,7 @@
      &                       XRFCNT )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 107
 C
 C  DESCRIPTION:
 C      This subroutine allocates memory for the valid control packets that are
@@ -16,13 +16,13 @@ C
 C  REVISION  HISTORY:
 C      Started 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -59,11 +59,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2   CRLF
-        INTEGER       INDEX1
-        INTEGER       STR2INT
-        REAL          STR2REAL
-
-        EXTERNAL      CRLF, INDEX1, STR2INT, STR2REAL
+        EXTERNAL      CRLF
 
 C...........   SUBROUTINE ARGUMENTS:
 
@@ -99,8 +95,6 @@ C...........   Other local variables
         CHARACTER*300             MESG        ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'ALOCPKTS' ! program name
-
-C STOPPED HERE: Need to prune variable defn's
 
 C***********************************************************************
 C   Begin body of subroutine ALOCPKTS
@@ -406,8 +400,7 @@ C.............  Find packet in LINE in list of packets
             DO I = 1, NPACKET
 
                 L = LEN_TRIM( PKTLIST( I ) )
-                J = INDEX( LINE( S1:S2 ), PKTLIST( I )( 1:L ) )
-                IF( J .GT. 0 ) THEN
+                IF( LINE( S1:S2 ) .EQ. PKTLIST( I )( 1:L ) ) THEN
                     PKTIDX = I
                     EXIT
                 END IF
