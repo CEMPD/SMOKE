@@ -2,7 +2,7 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 210
+C  program body starts at line 212
 C
 C  DESCRIPTION:
 C    This program computes the hourly emissions data from inventory emissions 
@@ -92,7 +92,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: SCCSW = '$Revision$' ! CVS Revision number
 
 C.........  Point sources work and output arrays
         REAL   , ALLOCATABLE :: EMAC ( :,: ) !  inven emissions or activities
@@ -185,6 +185,8 @@ C...........   Other local variables
         INTEGER      :: WSDATE = 0          ! source min/max tmpr start date
         INTEGER      :: WSTIME = 0          ! source min/max tmpr start time
         INTEGER      :: WTIME               ! source min/max tmpr current time
+
+        REAL            RTMP                ! tmp float
 
         LOGICAL         DFLAG   !  true: day-specific  file available
         LOGICAL      :: EFLAG = .FALSE.  !  error-flag
@@ -680,6 +682,16 @@ C               current group
 
                 END IF
 
+C.................  If there are any missing values in the data, give an
+C                   error to avoid problems in genhemis routine
+                RTMP = MINVAL( EMAC( 1:NSRC,I ) )
+                IF( RTMP .LT. 0 ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Missing or zero emission value(s) '//
+     &                     'in inventory for "' // CBUF( 1:L1 ) // '".'
+                    CALL M3MSG2( MESG )
+                END IF
+
 C.................  If pollutant name is ozone-season-based, remove the
 C                   prefix from the input pollutant name
                 K = INDEX1( CBUF, NIPPA, EAREAD )
@@ -691,6 +703,12 @@ C                   prefix from the input pollutant name
                 END IF
 
             END DO
+
+C.............  Abort if error found
+            IF( EFLAG ) THEN
+                MESG = 'Problem with input data.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
 C.............  For each time step and pollutant or emission type in current 
 C               group, generate hourly emissions, write elevated emissions 
