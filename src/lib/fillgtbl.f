@@ -117,7 +117,7 @@ C                   are not pollutant-specific
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'INTERNAL ERROR: Group', T,
-     &                 'not valid in subroutine', PROGNAME
+     &                 'not valid in subroutine ' // TRIM(PROGNAME)
                 CALL M3MESG( MESG ) 
 
             END SELECT
