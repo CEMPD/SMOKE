@@ -27,12 +27,27 @@ endif
 # Initialize exit status
 set exitstat = 0
 
+# Make sure that debug mode and debug executable are set
+if ( $?DEBUGMODE ) then
+   set debugmode = $DEBUGMODE
+else
+   set debugmode = N
+endif
+
+if ( $?DEBUG_EXE ) then
+   set debug_exe = $DEBUG_EXE
+else
+   set debug_exe = dbx
+endif
+
 #
 ### Raw Inventory processing
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/smkinven.$SRCABBR.$INVEN.log
 if ( $?RUN_SMKINVEN ) then
-   if ( $RUN_SMKINVEN == 'Y' && -e $SMK_BIN/smkinven ) then
+   if ( $RUN_SMKINVEN == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -40,25 +55,46 @@ if ( $?RUN_SMKINVEN ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/smkinven 
+
+         if ( $debugmode == Y ) then
+            if ( -e $IV_SRC/smkinven.debug ) then
+               $debug_exe $IV_SRC/smkinven.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/smkinven ) then
+               time $SMK_BIN/smkinven
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_SMKINVEN == 'Y' ) then
-	 echo 'SCRIPT ERROR: SMKINVEN program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: smkinven program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
       endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: smkinven.debug program does not exist in:'
+	 echo '              '$IV_SRC
+         set exitstat = 1
+      endif
+
    endif
 endif
 
 #
 ### County or gridded landuse import
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/rawbio.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_RAWBIO ) then
 
-   if ( $RUN_RAWBIO == 'Y' && -e $SMK_BIN/rawbio ) then
+   if ( $RUN_RAWBIO == 'Y' ) then
 
       # Use summer emission factors, if they are set for first rawbio run
       if ( $?S_BFAC ) then
@@ -94,7 +130,20 @@ if ( $?RUN_RAWBIO ) then
 
       if ( $exitstat == 0 ) then         # Run program for standard or summer
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/rawbio 
+
+         if ( $debugmode == Y ) then
+            if ( -e $BG_SRC/rawbio.debug ) then
+               $debug_exe $BG_SRC/rawbio.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/rawbio ) then
+               time $SMK_BIN/rawbio
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
       # Now do winter-specific processing, if season-switch option in use
@@ -112,7 +161,20 @@ if ( $?RUN_RAWBIO ) then
 
             if ( $exitstat == 0 ) then         # Run program for winter
                setenv LOGFILE $TMPLOG
-               time $SMK_BIN/rawbio 
+
+               if ( $debugmode == Y ) then
+                  if ( -e $BG_SRC/rawbio.debug ) then
+                     $debug_exe $BG_SRC/rawbio.debug
+                  else
+                      set debugexestat = 1
+                  endif
+               else
+                  if ( -e $SMK_BIN/rawbio ) then
+                     time $SMK_BIN/rawbio
+                  else
+                     set exestat = 1 
+                  endif
+               endif
             endif
 
          else
@@ -124,22 +186,30 @@ if ( $?RUN_RAWBIO ) then
          endif
     
       endif
-
-   else 
-      if ( $RUN_RAWBIO == 'Y' ) then
-	 echo 'SCRIPT ERROR: RAWBIO program does not exist in:'
-	 echo '              '$SMK_BIN
-	 set exitstat = 1
-      endif
    endif
+
+   if ( $exestat == 1 ) then
+      echo 'SCRIPT ERROR: rawbio program does not exist in:'
+      echo '              '$SMK_BIN
+      set exitstat = 1
+   endif
+
+   if ( $debugexestat == 1 ) then
+      echo 'SCRIPT ERROR: rawbio.debug program does not exist in:'
+      echo '              '$BG_SRC
+      set exitstat = 1
+   endif
+
 endif
 
 #
 ### Speciation Matrix generation
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/spcmat.$SRCABBR.$INVEN.$SPC.log
 if ( $?RUN_SPCMAT ) then
-   if ( $RUN_SPCMAT == 'Y' && -e $SMK_BIN/spcmat ) then
+   if ( $RUN_SPCMAT == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -147,24 +217,45 @@ if ( $?RUN_SPCMAT ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/spcmat 
+
+         if ( $debugmode == Y ) then
+            if ( -e $SP_SRC/spcmat.debug ) then
+               $debug_exe $SP_SRC/spcmat.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/spcmat ) then
+               time $SMK_BIN/spcmat
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_SPCMAT == 'Y' ) then
-	 echo 'SCRIPT ERROR: SPCMAT program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: spcmat program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
       endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: spcmat.debug program does not exist in:'
+	 echo '              '$SP_SRC
+         set exitstat = 1
+      endif
+
    endif
 endif
 
 #
 ### Gridding Matrix generation
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/grdmat.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_GRDMAT ) then
-   if ( $RUN_GRDMAT == 'Y' && -e $SMK_BIN/grdmat ) then
+   if ( $RUN_GRDMAT == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -172,14 +263,32 @@ if ( $?RUN_GRDMAT ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/grdmat 
+
+         if ( $debugmode == Y ) then
+            if ( -e $GD_SRC/grdmat.debug ) then
+               $debug_exe $GD_SRC/grdmat.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/grdmat ) then
+               time $SMK_BIN/grdmat
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_GRDMAT == 'Y' ) then
-	 echo 'SCRIPT ERROR: GRDMAT program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: grdmat program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: grdmat.debug program does not exist in:'
+	 echo '              '$GD_SRC
+         set exitstat = 1
       endif
    endif
 endif
@@ -187,9 +296,11 @@ endif
 #
 ### Pre-mobile-source processing
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/premobl.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_PREMOBL ) then
-   if ( $RUN_PREMOBL == 'Y' && -e $SMK_BIN/premobl ) then
+   if ( $RUN_PREMOBL == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -197,14 +308,32 @@ if ( $?RUN_PREMOBL ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/premobl 
+
+         if ( $debugmode == Y ) then
+            if ( -e $MB_SRC/premobl.debug ) then
+               $debug_exe $MB_SRC/premobl.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/premobl ) then
+               time $SMK_BIN/premobl
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_PREMOBL == 'Y' ) then
-	 echo 'SCRIPT ERROR: PREMOBL program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: premobl program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: premobl.debug program does not exist in:'
+	 echo '              '$MB_SRC
+         set exitstat = 1
       endif
    endif
 endif
@@ -212,9 +341,11 @@ endif
 #
 ### Emission factor creation
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/emisfac.$SRCABBR.$INVEN.$GRID.log
 if ( $?RUN_EMISFAC ) then
-   if ( $RUN_EMISFAC == 'Y' && -e $SMK_BIN/emisfac ) then
+   if ( $RUN_EMISFAC == 'Y' ) then
 
       # 
       ### Remove output files unless the update flags are set
@@ -233,14 +364,80 @@ if ( $?RUN_EMISFAC ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/emisfac 
+        if ( $debugmode == Y ) then
+            if ( -e $MB_SRC/emisfac.debug ) then
+               $debug_exe $MB_SRC/emisfac.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/emisfac ) then
+               time $SMK_BIN/emisfac
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_EMISFAC == 'Y' ) then
-	 echo 'SCRIPT ERROR: EMISFAC program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: emisfac program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: emisfac.debug program does not exist in:'
+	 echo '              '$MB_SRC
+         set exitstat = 1
+      endif
+
+   endif
+endif
+
+#
+### Temporal Allocation - anthropogenic sources
+# 
+set debugexestat = 0
+set exestat = 0
+if ( $SMK_SOURCE == 'M' ) then
+   setenv TMPLOG   $OUTLOG/temporal.$SRCABBR.$INVEN.$ESDATE.$GRID.log
+else
+   setenv TMPLOG   $OUTLOG/temporal.$SRCABBR.$INVEN.$ESDATE.log
+endif
+if ( $?RUN_TEMPORAL ) then
+   if ( $RUN_TEMPORAL == 'Y' ) then
+
+      if ( -e $TMPLOG ) then
+	 source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+        if ( $debugmode == Y ) then
+            if ( -e $TM_SRC/temporal.debug ) then
+               $debug_exe $TM_SRC/temporal.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/temporal ) then
+               time $SMK_BIN/temporal
+            else
+               set exestat = 1 
+            endif
+         endif
+      endif
+
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: temporal program does not exist in:'
+	 echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: temporal.debug program does not exist in:'
+	 echo '              '$TM_SRC
+         set exitstat = 1
       endif
    endif
 endif
@@ -248,9 +445,11 @@ endif
 #
 ### Elevated source selection
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/elevpoint.$SRCABBR.$INVEN.log
 if ( $?RUN_ELEVPOINT ) then
-   if ( $RUN_ELEVPOINT == 'Y' && -e $SMK_BIN/elevpoint ) then
+   if ( $RUN_ELEVPOINT == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -258,14 +457,31 @@ if ( $?RUN_ELEVPOINT ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/elevpoint 
+        if ( $debugmode == Y ) then
+            if ( -e $PT_SRC/elevpoint.debug ) then
+               $debug_exe $PT_SRC/elevpoint.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/elevpoint ) then
+               time $SMK_BIN/elevpoint
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_ELEVPOINT == 'Y' ) then
-	 echo 'SCRIPT ERROR: ELEVPOINT program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: elevpoint program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: elevpoint.debug program does not exist in:'
+	 echo '              '$PT_SRC
+         set exitstat = 1
       endif
    endif
 endif
@@ -273,9 +489,17 @@ endif
 #
 ### Layer fractions creation
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/laypoint.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_LAYPOINT ) then
-   if ( $RUN_LAYPOINT == 'Y' && -e $SMK_BIN/laypoint ) then
+   if ( $RUN_LAYPOINT == 'Y' ) then
+
+      if ( $?SMK_PING_METHOD ) then
+         if ( $SMK_PING_METHOD == 2 ) then
+            setenv SMK_PING_YN Y
+         endif
+      endif
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -283,43 +507,31 @@ if ( $?RUN_LAYPOINT ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/laypoint 
+        if ( $debugmode == Y ) then
+            if ( -e $PT_SRC/laypoint.debug ) then
+               $debug_exe $PT_SRC/laypoint.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/laypoint ) then
+               time $SMK_BIN/laypoint
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_LAYPOINT == 'Y' ) then
-	 echo 'SCRIPT ERROR: LAYPOINT program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: laypoint program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
-      endif
-   endif
-endif
-
-#
-### Temporal Allocation - anthropogenic sources
-# 
-if ( $SMK_SOURCE == 'M' ) then
-   setenv TMPLOG   $OUTLOG/temporal.$SRCABBR.$INVEN.$ESDATE.$GRID.log
-else
-   setenv TMPLOG   $OUTLOG/temporal.$SRCABBR.$INVEN.$ESDATE.log
-endif
-if ( $?RUN_TEMPORAL ) then
-   if ( $RUN_TEMPORAL == 'Y' && -e $SMK_BIN/temporal ) then
-
-      if ( -e $TMPLOG ) then
-	 source $SCRIPTS/run/movelog.scr
+         set exitstat = 1
       endif
 
-      if ( $exitstat == 0 ) then         # Run program
-         setenv LOGFILE $TMPLOG
-         time $SMK_BIN/temporal 
-      endif
-
-   else 
-      if ( $RUN_TEMPORAL == 'Y' ) then
-	 echo 'SCRIPT ERROR: TEMPORAL program does not exist in:'
-	 echo '              '$SMK_BIN
-	 set exitstat = 1
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: laypoint.debug program does not exist in:'
+	 echo '              '$PT_SRC
+         set exitstat = 1
       endif
    endif
 endif
@@ -327,24 +539,42 @@ endif
 #
 ### Temporal Allocation - biogenic sources
 # 
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/tmpbio.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_TMPBIO ) then
-   if ( $RUN_TMPBIO == 'Y' && -e $SMK_BIN/tmpbio ) then
+   if ( $RUN_TMPBIO == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
       endif
 
       if ( $exitstat == 0 ) then         # Run program
-         setenv LOGFILE $TMPLOG
-         time $SMK_BIN/tmpbio 
+        if ( $debugmode == Y ) then
+            if ( -e $BG_SRC/tmpbio.debug ) then
+               $debug_exe $BG_SRC/tmpbio.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/tmpbio ) then
+               time $SMK_BIN/tmpbio
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_TMPBIO == 'Y' ) then
-	 echo 'SCRIPT ERROR: TMPBIO program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: tmpbio program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: tmpbio.debug program does not exist in:'
+	 echo '              '$BG_SRC
+         set exitstat = 1
       endif
    endif
 endif
@@ -352,9 +582,11 @@ endif
 #
 ### Merging
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/smkmerge.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_SMKMERGE ) then
-   if ( $RUN_SMKMERGE == 'Y' && -e $SMK_BIN/smkmerge ) then
+   if ( $RUN_SMKMERGE == 'Y' ) then
 
       # Set mole/mass-based speciation matrices.  Default, mole.
       if ( $?ASMAT_L ) then
@@ -392,21 +624,40 @@ if ( $?RUN_SMKMERGE ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/smkmerge
+         if ( $debugmode == Y ) then
+            if ( -e $MG_SRC/smkmerge.debug ) then
+               $debug_exe $MG_SRC/smkmerge.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/smkmerge ) then
+               time $SMK_BIN/smkmerge
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else
-      if ( $RUN_SMKMERGE == 'Y' ) then
-         echo 'SCRIPT ERROR: SMKMERGE program does not exist in:'
-         echo '              '$SMK_BIN
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: smkmerge program does not exist in:'
+	 echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: smkmerge.debug program does not exist in:'
+	 echo '              '$MG_SRC
          set exitstat = 1
       endif
    endif
 endif
 
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/mrggrid.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_MRGGRID ) then
-   if ( $RUN_MRGGRID == 'Y' && -e $SMK_BIN/mrggrid ) then
+   if ( $RUN_MRGGRID == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -414,14 +665,31 @@ if ( $?RUN_MRGGRID ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/mrggrid
+         if ( $debugmode == Y ) then
+            if ( -e $MG_SRC/mrggrid.debug ) then
+               $debug_exe $MG_SRC/mrggrid.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/mrggrid ) then
+               time $SMK_BIN/mrggrid
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_MRGGRID == 'Y' ) then
-	 echo 'SCRIPT ERROR: MRGGRID program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: mrggrid program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: mrggrid.debug program does not exist in:'
+	 echo '              '$MG_SRC
+         set exitstat = 1
       endif
    endif
 endif
@@ -429,9 +697,11 @@ endif
 #
 ### Formats conversion
 #
+set debugexestat = 0
+set exestat = 0
 setenv TMPLOG   $OUTLOG/smk2emis.$SRCABBR.$INVEN.$ESDATE.$GRID.log
 if ( $?RUN_SMK2EMIS ) then
-   if ( $RUN_SMK2EMIS == 'Y' && -e $SMK_BIN/smk2emis ) then
+   if ( $RUN_SMK2EMIS == 'Y' ) then
 
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.scr
@@ -439,14 +709,132 @@ if ( $?RUN_SMK2EMIS ) then
 
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
-         time $SMK_BIN/smk2emis
+         if ( $debugmode == Y ) then
+            if ( -e $UT_SRC/smk2emis.debug ) then
+               $debug_exe $UT_SRC/smk2emis.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/smk2emis ) then
+               time $SMK_BIN/smk2emis
+            else
+               set exestat = 1 
+            endif
+         endif
       endif
 
-   else 
-      if ( $RUN_SMK2EMIS == 'Y' ) then
-	 echo 'SCRIPT ERROR: SMK2EMIS program does not exist in:'
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: smk2emis program does not exist in:'
 	 echo '              '$SMK_BIN
-	 set exitstat = 1
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: smk2emis.debug program does not exist in:'
+	 echo '              '$UT_SRC
+         set exitstat = 1
+      endif
+   endif
+endif
+
+#
+### Mobile inventory condensing
+#
+set debugexestat = 0
+set exestat = 0
+setenv TMPLOG   $OUTLOG/mvcondns.$SRCABBR.$INVEN.log
+if ( $?RUN_MVCONDNS ) then
+   if ( $RUN_MVCONDNS == 'Y' ) then
+
+      if ( -e $TMPLOG ) then
+         source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         if ( $debugmode == Y ) then
+            if ( -e $MG_SRC/mrggrid.debug ) then
+               $debug_exe $MG_SRC/mrggrid.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/mrggrid ) then
+               time $SMK_BIN/mrggrid
+            else
+               set exestat = 1 
+            endif
+         endif
+
+         if ( $debugexestat == 0 && $exestat == 0 ) then
+             ### Sort output file to a file of the same name
+            if ( -e ${OUTFILE}_tmp ) then
+               /bin/rm -rf  ${OUTFILE}_tmp
+            endif
+            if ( -e $OUTFILE ) then
+               mv $OUTFILE ${OUTFILE}_tmp
+               sort ${OUTFILE}_tmp > $OUTFILE
+            endif
+         endif
+
+      endif
+
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: mrggrid program does not exist in:'
+	 echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: mrggrid.debug program does not exist in:'
+	 echo '              '$MG_SRC
+         set exitstat = 1
+      endif
+
+   endif
+endif
+
+#
+### Mobile setup for MOBILE5 runs
+#
+set debugexestat = 0
+set exestat = 0
+setenv TMPLOG   $OUTLOG/mvsetup.$SRCABBR.$INVEN.log
+if ( $?RUN_MVSETUP ) then
+   if ( $RUN_MVSETUP == 'Y' ) then
+
+      if ( -e $TMPLOG ) then
+         source $SCRIPTS/run/movelog.scr
+      endif
+
+      if ( $exitstat == 0 ) then         # Run program
+         setenv LOGFILE $TMPLOG
+         if ( $debugmode == Y ) then
+            if ( -e $UT_SRC/mvsetup.debug ) then
+               $debug_exe $UT_SRC/mvsetup.debug
+            else
+                set debugexestat = 1
+            endif
+         else
+            if ( -e $SMK_BIN/mvsetup ) then
+               time $SMK_BIN/mvsetup
+            else
+               set exestat = 1 
+            endif
+         endif
+      endif
+
+      if ( $exestat == 1 ) then
+	 echo 'SCRIPT ERROR: mvsetup program does not exist in:'
+	 echo '              '$SMK_BIN
+         set exitstat = 1
+      endif
+
+      if ( $debugexestat == 1 ) then
+	 echo 'SCRIPT ERROR: mvsetup.debug program does not exist in:'
+	 echo '              '$UT_SRC
+         set exitstat = 1
       endif
    endif
 endif
