@@ -1,11 +1,45 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 
 lib:
-	f77 $(FFLAGS) -Nl300 -c *.F
-	ar rv $(DISTDIR)/libmo5av1.a *.o
+	f77 $(FFLAGSM5) -c a*.F b*.F
+	f77 $(FFLAGSM5) -c c*.F
+	f77 $(FFLAGSM5) -c d*.F e*.F f*.F
+	f77 $(FFLAGSM5) -c g*.F h*.F
+	f77 $(FFLAGSM5) -c i*.F l*.F m*.F n*.F
+	f77 $(FFLAGSM5) -c ob*.F on*.F ot*.F outa*.F outb*.F outd*.F \
+                           oute*.F outg*.F
+	f77             -c outhd1.F
+	f77 $(FFLAGSM5) -c outhd2.F outhd3.F outhd4.F outhdr.F outl*.F outm*.F \
+                           outn*.F outp*.F outs*.F outt*.F outz*.F
+	f77 $(FFLAGSM5) -c p*.F q*.F r*.F s*.F t*.F u*.F v*.F w*.F y*.F z*.F
+
+	ar rv $(EDSS_LIB)/libmo5av1.a a*.o b*.o
+	ar rv $(EDSS_LIB)/libmo5av1.a c*.o
+	ar rv $(EDSS_LIB)/libmo5av1.a d*.o e*.o f*.o
+	ar rv $(EDSS_LIB)/libmo5av1.a g*.o h*.o
+	ar rv $(EDSS_LIB)/libmo5av1.a i*.o l*.o m*.o n*.o
+	ar rv $(EDSS_LIB)/libmo5av1.a o*.o
+	ar rv $(EDSS_LIB)/libmo5av1.a p*.o q*.o r*.o s*.o t*.o u*.o \
+                                          v*.o w*.o y*.o z*.o
 	rm *.o
 
 debug:
-	f77 $(DBGFLAGS) -Nl300 -c *.F
-	ar rv $(DISTDIR)/libmo5av1.debug.a *.o
+	f77 $(DBGFLAGSM5) -c a*.F b*.F
+	f77 $(DBGFLAGSM5) -c c*.F
+	f77 $(DBGFLAGSM5) -c d*.F e*.F f*.F
+	f77 $(DBGFLAGSM5) -c g*.F h*.F
+	f77 $(DBGFLAGSM5) -c i*.F l*.F m*.F n*.F
+	f77 $(DBGFLAGSM5) -c o*.F
+	f77 $(DBGFLAGSM5) -c p*.F q*.F r*.F s*.F t*.F u*.F v*.F w*.F y*.F z*.F
+	ar rv $(EDSS_LIB)/libmo5av1.debug.a a*.o b*.o
+	ar rv $(EDSS_LIB)/libmo5av1.debug.a c*.o
+	ar rv $(EDSS_LIB)/libmo5av1.debug.a d*.o e*.o f*.o
+	ar rv $(EDSS_LIB)/libmo5av1.debug.a g*.o h*.o
+	ar rv $(EDSS_LIB)/libmo5av1.debug.a i*.o l*.o m*.o n*.o
+	ar rv $(EDSS_LIB)/libmo5av1.debug.a o*.o
+	ar rv $(EDSS_LIB)/libmo5av1.debug.a p*.o q*.o r*.o s*.o t*.o u*.o \
+                                          v*.o w*.o y*.o z*.o
+
 	rm *.o
+
+
