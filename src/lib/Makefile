@@ -8,30 +8,31 @@
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 include $(MD_SRC)/modmake.inc
+include $(IOMOD_SRC)/modmake.inc
 
 FILES_A = \
-  applumat.o   chkint.o     fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
+  applumat.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
-  alocctbl.o   chkmetem.o   fltrneg.o    gettzone.o   rd3mask.o    rdtref.o   \
-  alocetbl.o   chkptdef.o   grd2cnty.o   hdrmiss3.o   rdascc.o     rdtzone.o  \
-  alocgtbl.o   chkreal.o    genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
-  alocmtbl.o   filletbl.o   getbasyr.o   lambert.o    rdsrg.o      rdsrghdr.o
+  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o   \
+  alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o  \
+  alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
+  alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
 
 FILES_B = \
-  alocstbl.o   chksrcno.o   getcfdsc.o   rdstcy.o     rdgmat.o     rdinvchr.o \
+  alocstbl.o   chksrcno.o   rdstcy.o     rdgmat.o     rdinvchr.o \
   alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
-  applreac.o   dscm3grd.o   getfline.o   rdeproc.o    rdinvpol.o \
-  asgnpsi.o    dscsprof.o   getformt.o   multunit.o   rdlines.o    verchar.o  \
-  check3.o     efsetup.o    getidasz.o   normtpro.o   rdpelv.o     tmprinfo.o \
-                            getifdsc.o   padzero.o    rdrmat.o     unitfac.o
+  applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o \
+  asgnpsi.o    dscsprof.o   getformt.o   rdlines.o    verchar.o  \
+  efsetup.o    getidasz.o   normtpro.o   rdpelv.o     tmprinfo.o \
+               ingrid.o     rdrmat.o    
 
 FILES_C = \
   bldcsrc.o    fillchrt.o   getiname.o   parscsrc.o   rdsconv.o    wrchrscc.o \
-  bldenams.o   fillctbl.o   getinvyr.o   parsline.o   rdcodnam.o   wrdaymsg.o \
-  chkgrid.o    fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o   \
-  checkmem.o   fillmtbl.o   getm3epi.o   polmesg.o    rdsprof.o    wrinvpol.o \
+  bldenams.o   fillctbl.o   getinvyr.o   rdcodnam.o   wrdaymsg.o \
+  fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o   \
+  fillmtbl.o   rdsprof.o    wrinvpol.o \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
-  fillttbl.o   getnlist.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
+  fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
 
 FILES_TMP = 
 
@@ -41,14 +42,14 @@ INCLUDES = $(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 all: lib
 
-lib: $(MODALL) $(FILES_A) $(FILES_B) $(FILES_C) $(FILES_TMP) Makefile
+lib: $(MODALL) $(MODGRID) $(FILES_A) $(FILES_B) $(FILES_C) $(FILES_TMP) Makefile
 	ar rv $(SMK_BIN)/libsmoke.a $(FILES_A) 
 	ar rv $(SMK_BIN)/libsmoke.a $(FILES_B) 
 	ar rv $(SMK_BIN)/libsmoke.a $(FILES_C)
 	ar rv $(SMK_BIN)/libsmoke.a $(FILES_TMP)
 	ar rv $(SMK_BIN)/libsmoke.a $(MODALL)
 
-debug: $(MODALL) $(FILES_A) $(FILES_B) $(FILES_C) $(FILES_TMP) Makefile
+debug: $(MODALL) $(MODGRID) $(FILES_A) $(FILES_B) $(FILES_C) $(FILES_TMP) Makefile
 	ar rv $(SMK_BIN)/libsmoke.debug.a $(FILES_A) 
 	ar rv $(SMK_BIN)/libsmoke.debug.a $(FILES_B) 
 	ar rv $(SMK_BIN)/libsmoke.debug.a $(FILES_C) 
@@ -78,8 +79,6 @@ asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
 bldenams.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 chkptdef.o: $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ $<
-chkgrid.o: $(MODMERGE) $(INC)/FLTERR.EXT
 	$(FC) $(FFLAGS) -c -o $@ $<
 dscsprof.o: $(MODSPRO) 
 	$(FC) $(FFLAGS) -c -o $@ $<     
@@ -123,7 +122,7 @@ lambert.o:
 	$(FC) -static $(FFLAGS) -c -o $@ $<
 mbsccadj.o  : $(MODMOBIL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<     
-normtpro.o: $(MODTPRO)
+normtpro.o: $(MODTMPRL)
 	$(FC) $(FFLAGS) -c -o $@ $<     
 procspro.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
@@ -147,7 +146,7 @@ rdsrg.o   : $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ $<  
 rdstcy.o  : $(MODSTCY) 
 	$(FC) $(FFLAGS) -c -o $@ $<  
-rdtprof.o : $(MODTPRO)
+rdtprof.o : $(MODTMPRL)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 rdtref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<     
