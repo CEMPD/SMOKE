@@ -86,7 +86,6 @@ C...........   Other local variables
         INTEGER          JDATE                ! tmp Julian date
         INTEGER          JTIME                ! tmp time HHMMSS
         INTEGER          NPDSRC               ! number of day/hour-spec sources
-        INTEGER          NVAR                 ! number of variables
         INTEGER          PDEMDIM              ! dim for PDEMOUT
 
         LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific

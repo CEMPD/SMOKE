@@ -76,8 +76,6 @@ C...........   Other local variables
 
         INTEGER       L, L2, V      ! counter and indices
 
-        INTEGER       TSTEP      ! tmp time step
-
         CHARACTER*5            CTZONE      ! string of time zone
         CHARACTER(LEN=NAMLEN3) VARNAM      ! name for integer index
         CHARACTER(LEN=IOVLEN3) VBUF        ! tmp buffer for variable names
