@@ -567,29 +567,43 @@ C.........  Sort and process the speciation cross-reference file
 
 
         IF ( I1 .GT. NSREF ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I1
-            CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
-        ELSE IF ( I2 .GT. NSREF ) THEN
+            CALL M3MESG( MESG )
+        ENDIF
+        IF ( I2 .GT. NSREF ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I2
-            CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
-        ELSE IF ( I3 .GT. NSREF ) THEN
+            CALL M3MESG( MESG )
+        END IF
+        IF ( I3 .GT. NSREF ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I3
-            CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
-        ELSE IF ( I4 .GT. NSREF ) THEN
+            CALL M3MESG( MESG )
+        END IF
+        IF ( I4 .GT. NSREF ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I4
-            CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
-        ELSE IF ( I5 .GT. NSREF ) THEN
+            CALL M3MESG( MESG )
+        END IF
+        IF ( I5 .GT. NSREF ) THEN
+            EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I5
+            CALL M3MESG( MESG )
+        END IF
+
+        IF ( EFLAG ) THEN
+            MESG = 'Error reading SPECIATION XREF file'
             CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
         END IF
 
