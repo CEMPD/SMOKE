@@ -77,18 +77,17 @@ C...........   Local parameters
         INTEGER, PARAMETER :: MXTABL3 = NRCLAS * MXFIP * MXEMIS * NVTYPE
 
 C...........   LOCAL VARIABLES and their descriptions:
-C...........   Mobil Sources input and output arrays (one variable at a time)
-        
-        REAL            EMISV( NMSRC, NVTYPE )  !  input emissions.
-        
 C...........   Inventory arrays
-        INTEGER         IFIP  ( NMSRC )   ! state and county FIPS code
-        INTEGER         IRCLAS( NMSRC )   ! road class
-        INTEGER         IFIDX ( NMSRC )   ! index to county report
-        INTEGER         IRIDX ( NMSRC )   ! index to road class report
-        INTEGER         ISIDX ( NMSRC )   ! index to state report
-        INTEGER         SRCIDX( NMSRC, NVTYPE, MXEMIS )  ! table position
+        INTEGER, ALLOCATABLE :: IFIP  ( : )   ! state and county FIPS code
+        INTEGER, ALLOCATABLE :: IRCLAS( : )   ! road class
+        INTEGER, ALLOCATABLE :: IFIDX ( : )   ! index to county report
+        INTEGER, ALLOCATABLE :: IRIDX ( : )   ! index to road class report
+        INTEGER, ALLOCATABLE :: ISIDX ( : )   ! index to state report
+        INTEGER, ALLOCATABLE :: SRCIDX( :, :, : )  ! table position
 
+C...........   Mobil Sources input and output arrays (one variable at a time)
+        REAL, ALLOCATABLE :: EMISV( :, : )  !  input emissions.
+ 
 C...........   Unsorted allocatable adjustment factor table
         INTEGER, ALLOCATABLE :: ADJIDXA( : )
         INTEGER, ALLOCATABLE :: ADJFIPA( : )
@@ -163,6 +162,7 @@ C...........   Other local variables
         INTEGER         NETYPE             ! no. emission types
         INTEGER         NFIPREP            ! no. counties for reporting
         INTEGER         NLINES             ! no. lines in input file
+        INTEGER         NSRC               ! no. sources
         INTEGER         NSTAREP            ! no. states for reporting
         INTEGER         NSTEPS
         INTEGER         RDT                ! temporary road class code
@@ -236,23 +236,18 @@ C.......   Build description of output file, and optionally open it:
         IF ( .NOT. DESC3( INAME ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, 
      &              'Could not get description of file ' // INAME, 2 )
-
-        ELSEIF( NROWS3D .NE. NMSRC ) THEN
-            WRITE( MESG, 94010 )
-     &      'Dimension mismatch.  MOBILE INVEN file:', NROWS3D,
-     &      'program:', NMSRC
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
- 
         END IF
+
+        NSRC = NROWS3D
 
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, 
      &              'Could not get description of file ' // ANAME, 2 )
 
-        ELSEIF( NROWS3D .NE. NMSRC ) THEN
+        ELSEIF( NROWS3D .NE. NSRC ) THEN
             WRITE( MESG, 94010 )
-     &      'Dimension mismatch.  MOBILE SOURCES file:', NROWS3D,
-     &      'program:', NMSRC
+     &      'Dimension mismatch.  Hourly mobile emissions file:', 
+     &      NROWS3D, '. Mobile inventory file:', NSRC
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
  
         END IF
@@ -270,6 +265,22 @@ C.........  Annual inventory VMT file as input
             MESG = 'Cannot run using MOBL file!'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+
+C.........  Allocate memory for inventory records
+        ALLOCATE( IFIP( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+        ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IRCLAS', PROGNAME )
+        ALLOCATE( IFIDX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IFIDX', PROGNAME )
+        ALLOCATE( IRIDX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IRIDX', PROGNAME )
+        ALLOCATE( ISIDX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ISIDX', PROGNAME )
+        ALLOCATE( SRCIDX( NSRC, NVTYPE, MXEMIS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCIDX', PROGNAME )
+        ALLOCATE( EMISV( NSRC, NVTYPE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMISV', PROGNAME )
 
 C.........  Get the number of lines in the input file
         NLINES = GETFLINE( MDEV, 'Mobile adjustments' )
@@ -525,31 +536,31 @@ C.................  Update list of counties for reporting
         END DO   ! End of x-ref parsing loop
 
 C.........  Check table dimensions and print errors
-        IF( N1 .GT. NRCLAS ) THEN
+        IF( N1 .GT. MXTABL1 ) THEN
 
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &             'Max roadclass adjustments NRCLAS=', NRCLAS,
+     &             'Max roadclass adjustments NRCLAS=', MXTABL1,
      &             'exceeded in input file: count=', N1
             CALL M3MSG2( MESG )
 
         END IF
 
-        IF( N2 .GT. NRCLAS ) THEN
+        IF( N2 .GT. MXTABL2 ) THEN
 
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &             'Max state-specific adjustments MXSTRC=', MXSTRC,
+     &             'Max state-specific adjustments MXSTRC=', MXTABL2,
      &             'exceeded in input file: count=', N2
             CALL M3MSG2( MESG )
 
         END IF
 
-        IF( N3 .GT. NRCLAS ) THEN
+        IF( N3 .GT. MXTABL3 ) THEN
 
             EFLAG = .TRUE.
             WRITE( MESG,94010 )
-     &             'Max county-specific adjustments MXFRC=', MXFRC,
+     &             'Max county-specific adjustments MXFRC=', MXTABL3,
      &             'exceeded in input file: count=', N3
             CALL M3MSG2( MESG )
 
@@ -583,7 +594,7 @@ C.........  Initialize the indices to the reporting tables
         IFIDX = NFIPREP + 1   !  array
 
 C.........  Populate the indices to the reporting tables
-        DO S = 1, NMSRC
+        DO S = 1, NSRC
 
 C.............  Road class index
             J = FIND1( IRCLAS( S ), NRCLAS, MROADS3 )
@@ -627,7 +638,7 @@ C.........  Assign table position to each source, vehicle type, and
 C           emission type (or IMISS3 for no adjustments)
         DO V = 1, NVAR
             DO K = 1, NVTYPE 
-        	DO S = 1, NMSRC
+        	DO S = 1, NSRC
 
         	    FIP = IFIP  ( S )
         	    RDT = IRCLAS( S )
@@ -781,7 +792,7 @@ C.................  Adjust emissions, if needed
                 IF( LADJUST( V ) ) THEN
 
                     DO  K = 1, NVTYPE
-                        DO  S = 1, NMSRC
+                        DO  S = 1, NSRC
 
 C.............................  Retreive report indices
                             N = IRIDX( S )
