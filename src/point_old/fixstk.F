@@ -152,7 +152,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         LOGICAL		EFLAG   !  error flag
         LOGICAL		DFLAG( NPSRC ) ! true if source getting default parms 
         CHARACTER*256	MESG	!  error-message buffer
-
+		CHARACTER*256	FMT	!  format buffer
 C***********************************************************************
 C   begin body of subroutine  FIXSTK
 
@@ -294,11 +294,13 @@ C.........  the missing stack parameters, which should get defaults.
      &         ( TK .LT. MINTK .AND. TK .GT. 0 ) .OR.
      &           VE .GT. MAXVE .OR.
      &         ( VE .LT. MINVE .AND. VE .GT. 0 ) ) THEN
-                WRITE( MESG,94050 ) 
+C               04/19/99 wts
+                WRITE (FMT, 94049 ) NPOL
+C               WRITE( MESG,94050) 
+                WRITE (MESG, FMT )
      &                 'FIPS code:', IFIP( S ), 'SCC:', ISCC( S ),
      &                 'PLT:', IPLT( S ), 'STK:', ISTK( S ),
      &                 'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) )
-
                 CALL M3MESG( MESG )
 
             ENDIF
@@ -405,8 +407,10 @@ C...........   Treat parameters equal to 0 as missing
                 END IF 
 
                 IF( .NOT. DFLAG( S ) ) THEN
-
-                    WRITE( MESG,94050 ) 
+C                   04/19/99 wts
+                    WRITE (FMT, 94049 ) NPOL
+C                   WRITE( MESG,94050 ) 
+                    WRITE (MESG, FMT )
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
      &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
@@ -470,7 +474,10 @@ C...........   Treat parameters equal to 0 as missing
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
-                    WRITE( MESG,94050 ) 
+C                   04/19/99 wts
+                    WRITE (FMT, 94049 ) NPOL
+C                   WRITE( MESG,94050) 
+                    WRITE( MESG,FMT ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
      &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
@@ -526,7 +533,10 @@ C...........   Treat parameters equal to 0 as missing
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
-                    WRITE( MESG,94050 ) 
+C                   04/19/99 wts
+                    WRITE (FMT, 94049 ) NPOL
+C                   WRITE( MESG,94050) 
+                    WRITE( MESG,FMT ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
      &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
@@ -574,7 +584,10 @@ C...........   Treat parameters equal to 0 as missing
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
-                    WRITE( MESG,94050 ) 
+C                   04/19/99 wts
+                    WRITE (FMT, 94049 ) NPOL
+C                   WRITE( MESG,94050) 
+                    WRITE( MESG,FMT ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
      &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
@@ -599,13 +612,15 @@ C.........  This is in a separate loop to permit better reporting
             SCC = ISCC( S )
 
             IF( DFLAG( S ) ) THEN
-
-                WRITE( MESG,94050 ) 
+C               04/19/99 wts
+                WRITE (FMT, 94049 ) NPOL
+C               WRITE( MESG,94050) 
+                WRITE (MESG, FMT )
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
      &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
      &                CRLF() // BLANK5 //  '             Old        New'
-                    CALL M3MESG( MESG )
+                CALL M3MESG( MESG )
 
                     IF ( STKHT( S ) .LE. 0 ) THEN
                         WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT0
@@ -648,8 +663,10 @@ C...........   Internal buffering formats............ 94xxx
 94040   FORMAT( 7X, A6, 1X, '< min.  Change from ', 
      &          E10.3, ' to ', E10.3 )
 
-94050   FORMAT( A, I5.5, 1X, A, I8.8, 1X, A, I5, 1X, A, I5, : , 1X,
-     &          A, <NPOL>( F9.2, 1X ), :, A )
+94049   FORMAT('( A, I5.5, 1X, A, I8.8, 1X, A, I5, 1X, A, I5, : , 1X,',
+     &         ' A,', I8, '( F9.2, 1X ), :, A )')
+C94050   FORMAT( A, I5.5, 1X, A, I8.8, 1X, A, I5, 1X, A, I5, : , 1X,
+C     &          A, <NPOL>( F9.2, 1X ), :, A )
 
         END
 
