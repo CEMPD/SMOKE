@@ -11,13 +11,16 @@ C.........  Maximum number of source characteristics for each source category
         INTEGER, PARAMETER :: MXMBCHR3 =  5   ! mobile
         INTEGER, PARAMETER :: MXPTCHR3 =  7   ! point
 
-C.........  Width of source information strings 
+C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: BLRLEN3 =  3 ! boiler field
+        INTEGER, PARAMETER :: BVGLEN3 =  4 ! biogenic veg ID
+        INTEGER, PARAMETER :: CASLEN3 = 10 ! CAS code length
         INTEGER, PARAMETER :: CELLEN3 =  8 ! cell number
         INTEGER, PARAMETER :: CHRLEN3 = 15 ! 5 plant characteristics
+        INTEGER, PARAMETER :: CNYLEN3 =  3 ! county code
+        INTEGER, PARAMETER :: DDSLEN3 = 40 ! inventory data description
         INTEGER, PARAMETER :: DSCLEN3 = 40 ! plant description
         INTEGER, PARAMETER :: FIPLEN3 =  6 ! FIPS code
-        INTEGER, PARAMETER :: CNYLEN3 =  3 ! County code
         INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
         INTEGER, PARAMETER :: ORSLEN3 =  6 ! DOE plant ID field
         INTEGER, PARAMETER :: PLTLEN3 = 15 ! plant ID field
@@ -28,7 +31,6 @@ C.........  Width of source information strings
         INTEGER, PARAMETER :: SICLEN3 =  4 ! SIC 
         INTEGER, PARAMETER :: VIDLEN3 =  4 ! vehicle type ID
         INTEGER, PARAMETER :: VTPLEN3 =  5 ! vehicle type
-        INTEGER, PARAMETER :: BVGLEN3 =  4 ! biogenic veg ID
 
 C.........  Width of other global character strings 
         INTEGER, PARAMETER :: IOVLEN3 = 16  ! length of I/O API variables
@@ -92,6 +94,7 @@ C.........  Starts and ends of each field in mobile source definition
      &               MSCPOS3 + SCCLEN3 - 1, ALLLEN3 / )
 
 C.........  Widths that depend on other widths
+        INTEGER, PARAMETER :: CDTLEN3 = CASLEN3 + IOVLEN3 ! CAS // Data name
         INTEGER, PARAMETER :: FPLLEN3 = FIPLEN3 + PLTLEN3 ! FIPS // Plant
         INTEGER, PARAMETER :: FPSLEN3 = FIPLEN3 + SCCLEN3 ! FIPS // SCC
         INTEGER, PARAMETER :: STALEN3 = FIPLEN3 - CNYLEN3 ! Country/St
