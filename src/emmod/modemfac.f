@@ -41,38 +41,14 @@
         INCLUDE 'EMPRVT3.EXT'
 
 !.........  Sizes of the arrays...
-
-        INTEGER, PUBLIC :: MXXACTV   ! max. no. activities in EFs xref
-C        INTEGER, PUBLIC :: MXXNPSI   ! max. no. PSIs in EFs xref
-C        INTEGER, PUBLIC :: MXPPGRP   ! max no. PSIs in a group of scenarios
-C        INTEGER, PUBLIC :: NDIU      ! no. diurnal EFs
-        INTEGER, PUBLIC :: NEPROC    ! no. emission processes (e.g., exhaust)
-C        INTEGER, PUBLIC :: NNDI      ! no. non-diurnal EFs
         INTEGER, PUBLIC :: NEFS      ! no. EFs
-        INTEGER, PUBLIC :: NMMTEF    ! no. ef-ref/temperature combinations
 
 !.........  Unique lists of source characteristics and associated arrays...
-
-!.........  List of unique PSIs for each activity of interest from EF x-ref
-        INTEGER, ALLOCATABLE, PUBLIC :: NPSI   ( : )   ! no. PSIs per activity
-        INTEGER, ALLOCATABLE, PUBLIC :: PSILIST( :,: ) ! param scheme indices
-
-!.........  List of all PSIs, even if they don't appear in EF x-ref but are
-!           instead used in combination EFs
-        INTEGER                 NPSIALL
-        INTEGER, ALLOCATABLE :: PSIALL  ( : )  ! master list of PSIs to process
-
-!.........  Emission factor names, units, and descriptions
-C        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: DIUDSC( : )
-C        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: DIUNAM( : )
-C        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: DIUUNT( : )
-C        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: NDIDSC( : )
-C        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: NDINAM( : )
-C        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: NDIUNT( : )
         CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EFSDSC( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EFSNAM( : )
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EFSUNT( : )
         
+!.........  Variables for EF subtraction
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SUBPOLS( : )   ! final subtraction list
         CHARACTER(LEN=IOULEN3), PUBLIC :: INPUTHC   ! input hydrocarbon name
         CHARACTER(LEN=IOULEN3), PUBLIC :: OUTPUTHC  ! output hydrocarbon name
@@ -90,47 +66,28 @@ C        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: NDIUNT( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC:: EMTNAM( :,: )! em type
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC:: EMTUNT( :,: )! et units
         CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC:: EMTDSC( :,: )! et descript
-        CHARACTER*1           , ALLOCATABLE, PUBLIC:: EMTEFT( :,: )!'N'= nondiur
-                                                                   !'D'= diurnal
 
-!.........  Emission factor index & temperature index combination arrays
-        INTEGER, ALLOCATABLE, PUBLIC :: MMTEFPSI( : )  ! PSIs of combinations
-        INTEGER, ALLOCATABLE, PUBLIC :: MMTEFIDX( : )  ! index to min/max tmprs
-        INTEGER, ALLOCATABLE, PUBLIC :: MMTEFPTR( : )  ! pointer from PSIALL to
-                                                       !  current indx MMTEFIDX
-        INTEGER, ALLOCATABLE, PUBLIC :: MMTEFNUM( : )  ! no. tmp indices per PSI
+!.........  Variables for running MOBILE6
+        INTEGER, ALLOCATABLE, PUBLIC :: SCENLIST ( :,: )  ! scenario number and local-as-arterial
+                                                          ! flag for each source
+                                                          
+        CHARACTER*300, ALLOCATABLE :: M6LIST( : )  ! contents of M6LIST file
+        
+        INTEGER, PUBLIC :: NUMSCEN                  ! total no. of M6 scenarios
 
-        INTEGER, ALLOCATABLE, PUBLIC :: MMTEFEND( : )  ! pntr to final tmpr indx
-                                                       !  for PSI in MMTEFIDX
+!.........  Derived data type for emissions pointer array
+        TYPE :: EF_PTR
+            REAL, DIMENSION( :,:,:,:,: ), POINTER :: PTR  ! dim: scen, poll, veh, road, hour
+        END TYPE
+        
+        TYPE( EF_PTR ), ALLOCATABLE, PUBLIC :: EMISSIONS( : ) ! master emission factors array
+                                                              ! size: no. emission processes
 
-!.........  Emission factors. dim: temperatures, vehicle types, emis processes
-        REAL, ALLOCATABLE, PUBLIC :: EFACDIU( :,:,: ) ! diurnal emission factors
-        REAL, ALLOCATABLE, PUBLIC :: EFACNDI( :,:,: ) ! non-diurnal emis factors
-
-!.........  Emission factors. dim: tmprs, veh types, all PSIs, emis processes
-        REAL, ALLOCATABLE, PUBLIC :: EFDIUALL( :,:,:,: ) ! diurnal emis factors
-        REAL, ALLOCATABLE, PUBLIC :: EFNDIALL( :,:,:,: ) ! non-diurnal emis ftrs
-
-!.........  Emission factors inputs data table
-        INTEGER, PUBLIC :: NPSIDAT   ! no. PSIs in EF data file (MOBILE inputs)
-
-        INTEGER, ALLOCATABLE, PUBLIC:: PSIDAT  ( : ) ! sorted PSIs
-        INTEGER, ALLOCATABLE, PUBLIC:: PSIDATA ( : ) ! unsorted PSIs
-        INTEGER, ALLOCATABLE, PUBLIC:: PDATINDX( : ) ! sorting index
-        INTEGER, ALLOCATABLE, PUBLIC:: PDATLINE( : ) ! unsrt no. lines in file
-        INTEGER, ALLOCATABLE, PUBLIC:: PDATMCNT( : ) ! unsrt no. scns in group
-        INTEGER, ALLOCATABLE, PUBLIC:: PDATPNTR( : ) ! unsrt pointer
-        INTEGER, ALLOCATABLE, PUBLIC:: PDATROOT( : ) ! unsrt root PSI of scenrio
-        INTEGER, ALLOCATABLE, PUBLIC:: PDATTYPE( : ) ! unsrt 0=pure, >0=no. in combo
-
-C.........  Parameter scheme indices for emission factors (dim: NSRC,24)
-        INTEGER, ALLOCATABLE :: SRCPSI( :,: )
-
-!.........  Combination emission factors table
-        INTEGER, PUBLIC :: NCMBOPSI  ! no. combination PSIs
-        INTEGER, PUBLIC :: MXNCOMBO  ! max no. contributing PSI per combo PSI
-
-        INTEGER, ALLOCATABLE, PUBLIC :: CMBOPSI( :,: ) ! contributing PSIs
-        REAL   , ALLOCATABLE, PUBLIC :: CMBOFAC( :,: ) ! factors
+!.........  Variables for dealing with user-defined toxic pollutants
+        INTEGER, PUBLIC :: NTOTHAPS                             ! total number of HAPS
+        INTEGER,           ALLOCATABLE, PUBLIC :: PMHAPS( : )   ! indicates if HAP is PM based (size: NMAP)
+        CHARACTER(LEN=16), ALLOCATABLE, PUBLIC :: HAPNAMES( : ) ! pollutant names (size: NTOTHAPS)
+        REAL,              ALLOCATABLE, PUBLIC :: HAPEFS( :,:,:,:,:,: ) ! HAP emission factors
+                                                                      ! size (SCEN,IV,IP,EF,IH,IFAC)     
 
         END MODULE MODEMFAC
