@@ -47,7 +47,6 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
-        INCLUDE 'FLTERR.EXT'    !  error filter statement function
 
 C...........   EXTERNAL FUNCTIONS
         REAL      ENVREAL
