@@ -21,6 +21,15 @@ if( ! -e $MD_SRC/$EDSS_EXE ) mkdir -p $MD_SRC/$EDSS_EXE
 if( ! -e $IOAPIDIR ) mkdir -p $IOAPIDIR
 if( ! -e $NETCDFDIR ) mkdir -p $NETCDFDIR
 
+if ( $?M6_FFLAGS ) then
+else
+   echo "ERROR: The platform file in EDSS_ROOT/scripts has not been"
+   echo "       updated to include the M6_FFLAGS compiler variable"
+   exit( 1 )
+endif
+
+setenv LIBS_COMPILE " "
+
 switch ( $EDSS_EXE )
   case IRIXn32f90:
   case IRIX6f90:
@@ -53,8 +62,8 @@ case HP_UX11f90:
 case AIX4n64f90:
 case AIX4f90:
     setenv FC  xlf
-    setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
-    setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
+    setenv FFLAGS   "$FFLAGS -DDBLBSLASH -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
+    setenv DBGFLAGS "$DBGFLAGS -DDBLBSLASH -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
 
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -L${FS_BIN} -L${IOAPIDIR} -L${NETCDFDIR} -lxlsmp"
     setenv LIBS_SYS     "-lsmoke -lfileset -ledsstools -lioapi -lnetcdf"
@@ -70,16 +79,17 @@ case Linux2_alpha:
     breaksw
 case Linux2_x86ifc:
     setenv FC  ifc
-    setenv FFLAGS   "$FFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
-    setenv DBGFLAGS "$DBGFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
-    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -L${FS_BIN} -L${IOAPIDIR} -L${NETCDFDIR}"
+    setenv FFLAGS   "$FFLAGS -DDBLBSLASH -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT}"
+    setenv DBGFLAGS "$DBGFLAGS -DDBLBSLASH -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT}"
+    setenv LDIRS    "-static -L${SMK_BIN} -L${TOOLS_BIN} -L${FS_BIN} -L${IOAPIDIR} -L${NETCDFDIR}"
     setenv LIBS_SYS     "-lsmoke -lfileset -ledsstools -lioapi -lnetcdf"
     setenv LIBS_DEBUG_SYS "-lsmoke.debug -lfileset.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
+    setenv LIBS_COMPILE "-lPEPCF90"
     breaksw
 case  Linux2_x86pg:
     setenv FC  pgf90
-    setenv FFLAGS   "$FFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
-    setenv DBGFLAGS "$DBGFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
+    setenv FFLAGS   "$FFLAGS  -module ${MD_SRC}/${EDSS_EXE} -module ${ETDSRC}/${EDSS_EXE} -module ${FS_BIN} -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
+    setenv DBGFLAGS "$DBGFLAGS  -module ${MD_SRC}/${EDSS_EXE} -module ${ETDSRC}/${EDSS_EXE} -module ${FS_BIN} -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE} -I${FS_ROOT} -I${FS_BIN}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -L${FS_BIN} -L${IOAPIDIR} -L${NETCDFDIR}"
     setenv LIBS_SYS     "-lsmoke -lfileset -ledsstools -lioapi -lnetcdf"
     setenv LIBS_DEBUG_SYS "-lsmoke.debug -lfileset.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
@@ -90,6 +100,14 @@ default:
     echo "Pleae edit the sysflags file and add this exectuable format and the"
     echo "    appropriate compiler settings."
     exit( 2 )
+endsw
+
+switch ( $EDSS_EXE )
+case Linux2_x86ifc:
+    setenv M6_FFLAGS "$M6_FFLAGS -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT}"
+    breaksw
+default:
+    setenv M6_FFLAGS "$FFLAGS"
 endsw
 
 echo " "
