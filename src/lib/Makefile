@@ -11,9 +11,9 @@ include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
 
 FILES_A = \
-  applumat.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
+  applumat.o   evalcrit.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
-  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     \
+  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o \
   alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o  \
   alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
   alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
@@ -21,10 +21,10 @@ FILES_A = \
 FILES_B = \
   alocstbl.o   chksrcno.o   rdstcy.o     rdgmat.o     rdinvchr.o \
   alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
-  applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o \
+  applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o    rdsccdsc.o \
   asgnpsi.o    dscsprof.o   getformt.o   rdlines.o    verchar.o  \
   efsetup.o    getidasz.o   normtpro.o   rdpelv.o     tmprinfo.o \
-               ingrid.o     rdrmat.o    
+  getdysav.o   ingrid.o     rdrmat.o    
 
 FILES_C = \
   bldcsrc.o    fillchrt.o   getiname.o   parscsrc.o   rdsconv.o    wrchrscc.o \
@@ -116,7 +116,7 @@ gettzone.o: $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ gettzone.f
 getvmix.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getvmix.f
-grd2cnty.o: $(MODSTCY) $(MODSURG)
+grd2cnty.o: $(MODSTCY) $(MODSURG) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ grd2cnty.f
 lambert.o: 
 	$(FC) -static $(FFLAGS) -c -o $@ lambert.f
@@ -140,7 +140,9 @@ rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
 rdpelv.o : $(MODINFO) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ rdpelv.f
-rdsconv.o : $(MODSPRO)
+rdsccdsc.o : $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ rdsccdsc.f
+rdsconv.o : $(MODLISTS) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsconv.f
 rdsref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsref.f

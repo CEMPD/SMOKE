@@ -2,12 +2,11 @@
       PROGRAM SMK2EMIS
 
 C***********************************************************************
-C  program body starts at line 134
+C  program body starts at line 152
 C
 C  DESCRIPTION:
 C       Use SMOKE NetCDF gridded input to produce UAM EMISSIONS input 
-C       files.  Originally developed for EMISSIONS input, but potential 
-C       use for other UAM input files.
+C       files.  Outputs 2-d files only.
 C
 C  PRECONDITIONS REQUIRED:
 C       M3IO single layer gridded data
@@ -113,7 +112,7 @@ C.........  Other local variables
         INTEGER :: IXY = 0       ! segment origin always 0
         INTEGER    JDATE         ! date variable (YYYYDDD)
         INTEGER    JTIME         ! time variable (HHMMSS)
-        INTEGER    NLAYS         ! number of vertical layers in UAM file
+        INTEGER :: NLAYS = 1     ! number of vertical layers in UAM file
         INTEGER    NLINE         ! no. lines input ascii file
         INTEGER :: NSEG = 1      ! number of segments always 1
         INTEGER    NSTEPS        ! number of time steps
@@ -208,9 +207,6 @@ C.........   for UTM and UAM4 variables
         IUTMZONE = ENVINT( 'UTM_ZONE', 'UTM zone ',
      &                   -9 , IOS )
       
-        NLAYS = ENVINT( 'UAM_LAYERS', 'Number of vertical layers',
-     &                   NLAYS3D , IOS )
-
         NZLOWR = ENVINT( 'UAM4_LAYBELOW', 'Layers below diffbreak',
      &                   0 , IOS )
         NZUPPR = ENVINT( 'UAM4_LAYABOVE', 'Layers above diffbreak',
@@ -400,7 +396,7 @@ C.........  Write UAM Binary file  .........................................
 C....   Write UAM EMISSIONS header
 
         WRITE(ODEV,ERR=7010) IFTYPE, IFNOTE, NSEG, NSPECS, IBD,
-     &                       BTIME, IED, ETIME
+     &                       REAL( BTIME ), IED , REAL( ETIME )
 
         WRITE(ODEV,ERR=7010) UTMX, UTMY, IUTMZONE,
      &                       XORIG, YORIG, XCELL,
