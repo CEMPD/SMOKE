@@ -65,8 +65,8 @@ C   Begin body of subroutine FILLCNTl
         SELECT CASE( PKTTYP )
 
         CASE( 'CTG' )
-            CUTCTG ( JT ) = PKTINFO%FAC1
-            FACCTG ( JT ) = PKTINFO%FAC2
+            FACCTG ( JT ) = PKTINFO%FAC1
+            CUTCTG ( JT ) = PKTINFO%FAC2
             FACMACT( JT ) = PKTINFO%FAC3
             FACRACT( JT ) = PKTINFO%FAC4
 
