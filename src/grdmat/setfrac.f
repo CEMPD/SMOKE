@@ -95,6 +95,8 @@ C...........   Local variables...
         INTEGER          TMPIDX   !  temporary surrogate ID code index
         INTEGER, SAVE :: USEIDX   !  surrogate ID code index used
 
+        REAL,    SAVE :: URAND01  !  uniform quasi-random number
+
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL          SRCMISS  !  true: a surrogate ID has not been utilized
         LOGICAL, SAVE :: UNCERT   !  true: uncertainty mode
@@ -102,11 +104,11 @@ C...........   Local variables...
         CHARACTER*300   BUFFER    !  source fields buffer
         CHARACTER*300   MESG      !  message buffer 
 
-        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC = ' ' ! prev call src chars string
+        CHARACTER(LEN=SRCLEN3), SAVE :: CSRC2  = ' ' ! abridged source chars
+        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC  = ' ' ! prev call src chars string
+        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC2 = ' ' ! prev call src chars string
 
         CHARACTER*16 :: PROGNAME = 'SETFRAC' ! program name
-
-            REAL,    SAVE :: URAND01  !  uniform quasi-random number
 
 C***********************************************************************
 C   begin body of subroutine SETFRAC
@@ -159,7 +161,10 @@ C.............  Assign NULL values for fallback retrieval
 
             END IF
 
-        END IF
+        END IF   ! if firstime
+
+C........  Create abridged source char list for warnings
+        CSRC2= CSRC( 1:VIDPOS3-1 )
 
 C.............  Retieve the information for the surrogate ID found 
         IF ( SRGTOUSE( SRCID ) .GT. 0 ) THEN 
@@ -175,9 +180,9 @@ C.............  Otherwise use fallback surrogate and report zero fractions.
 
 C.............  Write note about changing surrogate used for current
 C               source if it has not yet been written
-            IF( REPORT .AND. CSRC .NE. LCSRC ) THEN
+            IF( REPORT .AND. CSRC2 .NE. LCSRC2 ) THEN
 
-                CALL FMTCSRC( CSRC, NC, BUFFER, L2 )
+                CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
 
                 WRITE( MESG,94010 ) 
      &                 'WARNING: Using fallback surrogate', DEFSRGID,
@@ -190,7 +195,7 @@ C               source if it has not yet been written
 C.................  Write warning for default fraction of zero
                 IF( SRGCSUM( DEFIDX,FIPIDX ) .EQ. 0. ) THEN
 
-                    CALL FMTCSRC( CSRC, NC, BUFFER, L2 )
+                    CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
                     MESG = 'WARNING: Fallback surrogate data '//
      &                     'will cause zero emissions' // CRLF() //
      &                     BLANK10 // 'inside the grid for:'//
@@ -206,8 +211,10 @@ C.................  Write warning for default fraction of zero
 C.........  Write surrogate code used for each source
         IF( FDEV .GT. 0 .AND. CSRC .NE. LCSRC ) THEN
             WRITE( FDEV,93360 ) SRCID, SRGLIST( USEIDX ), IDUSED
-            LCSRC = CSRC  ! Store source info for next iteration
         END IF
+
+        LCSRC  = CSRC   ! Store source info for next iteration
+        LCSRC2 = CSRC2  ! Store abridged source info
 
         RETURN
 

@@ -170,6 +170,7 @@ C               of sources per cell.
                     C = ACEL( N )
                     NX( C ) = NX( C ) + 1
                     CCNT = CCNT + 1
+
                 END IF
 
             END DO    ! End loop on cells for this source
