@@ -39,16 +39,22 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, IFIP, ISIC, CLINK
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: RMTXMASS, RMTXMOLE, PCRIDX, PCRREPEM,
+     &                      PCRPRJFC, PCRMKTPN, PCRCSCC, PCRSPROF,
+     &                      RPTDEV, EMREPREA, CSPFREA, PRJFCREA,
+     &                      MKTPNREA, CSCCREA, IREASIC
 
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY: NSPFUL, NSPROF, SPROFN, SPECID, MOLEFACT,
+     &                     MASSFACT, INPRF, MXSPFUL, SPCNAMES, 
+     &                     IDXSPRO, IDXSSPEC, NSPECIES
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPOL, MXCHRS, EINAM, NSRC, CATDESC, BYEAR,
+     &                     NCHARS, SC_BEGP, SC_ENDP, JSCC, CATEGORY, CRL
 
         IMPLICIT NONE
 

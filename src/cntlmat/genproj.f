@@ -40,13 +40,15 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: POLSFLAG, NVPROJ, FACTOR, RPTDEV,
+     &                      PNAMPROJ, PRJFC
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: MXCHRS, BYEAR, CATDESC, NCHARS, NSRC,
+     &                     SC_BEGP, SC_ENDP, CRL
 
         IMPLICIT NONE
 

@@ -42,10 +42,11 @@ C**************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: MXIDAT, ITNAMA, INVDVTS, INVDNAM,
+     &                      ITKEEPA, ITVTSA
 
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY: NSPDEF, NSPLST, SPCDEFPOL, SPCDEFLST
 
         IMPLICIT NONE
         

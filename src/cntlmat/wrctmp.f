@@ -41,7 +41,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NIPPA
 
         IMPLICIT NONE
 

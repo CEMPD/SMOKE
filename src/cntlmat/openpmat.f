@@ -39,10 +39,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CATLEN, CRL, NSRC
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: POLSFLAG, NVPROJ, PNAMPROJ
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET
