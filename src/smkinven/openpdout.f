@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -130,7 +130,7 @@ C............. If outputs are profiles instead of data values
 
 C............. If outputs are data values...
             ELSE
-        	UNITS3D( V + 1 ) = 'tons/hour'
+        	UNITS3D( V + 1 ) = 'ton/' // TYPNAM
         	VDESC3D( V + 1 ) = TYPNAM // '-specific ' //
      &                             VBUF( 1:L ) // ' data'
             END IF
