@@ -297,14 +297,14 @@ C.........  General packet processing
      &              '"S", "I", "ST" or "IT".'
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
-		     
+		 
 		FA_%PLT    = SEGMENT( 7 )
 		FA_%CHAR1  = SEGMENT( 8 )
 		FA_%CHAR2  = SEGMENT( 9 )
 		FA_%CHAR3  = SEGMENT( 10 )
 		FA_%CHAR4  = SEGMENT( 11 )
 		FA_%CHAR5  = SEGMENT( 12 )
-		
+
 		FAENTN = FAENTN + 1
 
             

@@ -481,7 +481,7 @@ C.........  Get source numbers for effected sources
                 SRCNUM( N ) = S
             END IF
         END DO
-
+        
 C.........  Fill output arrays for effected sources and pollutants
         N = 0
         

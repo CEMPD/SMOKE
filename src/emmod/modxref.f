@@ -70,7 +70,8 @@
 
         INTEGER, PARAMETER, PUBLIC :: NXTYPES = 16
         INTEGER, PUBLIC            :: TXCNT( NXTYPES )
-
+        
+        
 !.........  Sorted groups of cross-references
 !.........  For temporal entries, integer values are the temporal profile codes
 !.........  For speciation, CSPT* values are the speciation profile codes
