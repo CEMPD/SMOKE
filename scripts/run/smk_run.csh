@@ -109,6 +109,13 @@ if ( $?RUN_SMKINVEN ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: smkinven program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -184,6 +191,13 @@ if ( $?RUN_RAWBIO ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       # Now do winter-specific processing, if season-switch option in use
       if ( $season == y ) then
 
@@ -214,6 +228,13 @@ if ( $?RUN_RAWBIO ) then
                   endif
                endif
             endif
+
+         if ( -e $SCRIPTS/fort.99 ) then
+            mv $LOGFILE $LOGFILE.tmp
+            cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+            /bin/rm -rf $LOGFILE.tmp
+            /bin/rm -rf $SCRIPTS/fort.99
+         endif
 
          else
       	    echo 'SCRIPT ERROR: BIOSW_YN (biogenics seasonality switch) set to'
@@ -282,6 +303,13 @@ if ( $?RUN_NORMBEIS3 ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
    endif
 
    if ( $exestat == 1 ) then
@@ -327,6 +355,13 @@ if ( $?RUN_SPCMAT ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -375,6 +410,13 @@ if ( $?RUN_GRDMAT ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: grdmat program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -417,6 +459,13 @@ if ( $?RUN_MBSETUP ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -466,6 +515,13 @@ if ( $?RUN_PREMOBL ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: premobl program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -510,6 +566,13 @@ if ( $?RUN_METSCAN ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: metscan program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -541,10 +604,14 @@ if ( $?RUN_TEMPORAL ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
 
-      ## For mobile sources, create MEFLIST file
+      ## For mobile sources, create MEFLIST file if there are any files
+      #    to put into the list
       if ( $SMK_SOURCE == M ) then
-          setenv MEFLIST $SMK_EMISPATH/meflist.txt
-          ls $SMK_EMISPATH/*ncf > $SMK_EMISPATH/meflist.txt
+         setenv MEFLIST $SMK_EMISPATH/meflist.txt
+         set ef_cnt = `ls $SMK_EMISPATH/emisfacs.*ncf | wc -l`
+         if ( $ef_cnt > 0 ) then
+             ls $SMK_EMISPATH/emisfacs*ncf > $SMK_EMISPATH/meflist.txt
+         endif
       endif
 
       if ( $exitstat == 0 ) then         # Run program
@@ -562,6 +629,13 @@ if ( $?RUN_TEMPORAL ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -614,6 +688,13 @@ if ( $?RUN_ELEVPOINT ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: elevpoint program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -664,6 +745,13 @@ if ( $?RUN_LAYPOINT ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: laypoint program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -711,6 +799,13 @@ if ( $?RUN_TMPBIO ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: tmpbio program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -754,6 +849,13 @@ if ( $?RUN_BEIS3 ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -837,6 +939,13 @@ if ( $?RUN_SMKMERGE ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: smkmerge program does not exist in:'
 	 echo '              '$SMK_BIN
@@ -876,6 +985,13 @@ if ( $?RUN_MRGGRID ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
@@ -920,6 +1036,13 @@ if ( $?RUN_SMK2EMIS ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then

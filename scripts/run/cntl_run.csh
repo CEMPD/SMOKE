@@ -82,6 +82,13 @@ if ( $?RUN_CNTLMAT ) then
          time $SMK_BIN/cntlmat
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       ## Remove any existing tmp files
       ls -1 $SMK_TMPPATH > $SMK_TMPPATH/filelist.txt
       set list = ( `cat $SMK_TMPPATH/filelist.txt | grep cntlmat` )
@@ -119,6 +126,13 @@ if ( $?RUN_GRWINVEN ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          time $SMK_BIN/grwinven 
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       ## Remove any existing tmp files

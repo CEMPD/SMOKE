@@ -369,6 +369,13 @@ if ( $?RUN_SMKREPORT ) then
          endif
       endif
 
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
+      endif
+
       if ( $exestat == 1 ) then
 	 echo 'SCRIPT ERROR: smkreport program does not exist in:'
 	 echo '              '$SMK_BIN

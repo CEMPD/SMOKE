@@ -1,4 +1,5 @@
 #!/bin/csh -f
+#BSUB -c 0:20
 
 # Version @(#)$Id$
 # Path    $Source$
@@ -77,7 +78,6 @@ setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
 setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
-#     SMK_EMLAYS                  # see multiple-program controls
 #     SMK_O3SEASON_YN             # see multiple-program controls
 
 # Multiple-program controls

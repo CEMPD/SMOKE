@@ -49,6 +49,19 @@ if ( $?RUN_EMISFAC ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
 
+      # Create M6LIST file...
+      # First figure out if there are files in scenario directory
+      set ef_cnt = `ls -1 $MBDAT/scenarios/*.in | wc -l`
+      if ( $ef_cnt > 0 ) then
+         ls $MBDAT/scenarios/*.in > $M6LIST
+      else
+         echo "SCRIPT ERROR: No MOBILE6 scenario files found in the directory:"
+         echo "              $MBDAT/scenarios"
+         echo "              Please put these files in the correct place and"
+         echo "              try again."
+         exit ( 1 )
+      endif
+
       ## Set HOURLYT input file
       setenv HOURLYT `ls -1 $SMK_METPATH/*${GROUP_TYPE}* | head -1`
       if ( $HOURLYT == ' ' ) then
@@ -74,6 +87,13 @@ if ( $?RUN_EMISFAC ) then
                set exestat = 1 
             endif
          endif
+      endif
+
+      if ( -e $SCRIPTS/fort.99 ) then
+         mv $LOGFILE $LOGFILE.tmp
+         cat $LOGFILE.tmp $SCRIPTS/fort.99 > $LOGFILE
+         /bin/rm -rf $LOGFILE.tmp
+         /bin/rm -rf $SCRIPTS/fort.99
       endif
 
       if ( $exestat == 1 ) then
