@@ -191,30 +191,31 @@ C.................  If BY ROADCLASS, insert roadclass code
 
                 END IF  ! End by source or by roadclass
 
-C.................  If by surrogates IDs, insert them depending on resolution
-                IF( RPT_%BYSRG ) THEN
-
-                    SRGID2 = SRGID( OUTSRC( I ), 2 )
-                    IF( RPT_%SRGRES .EQ. 1 ) THEN
-                        SRGID1 = SRGID( OUTSRC( I ), 1 )
-                    END IF
-
-                END IF  ! End by surrogate IDs
-
-C.................  If BY ELEVSTAT, insert elevated status code
-                IF( RPT_%BYELEV ) THEN
-
-                    IF( LPING( OUTSRC( I ) ) ) THEN       ! PinG
-                        ESTAT = 'P'
-                    ELSE IF( LMAJOR( OUTSRC( I ) ) ) THEN ! Elevated
-                        ESTAT = 'E'
-                    ELSE                                      ! Low-level
-                        ESTAT = 'L'
-                    END IF
-
-                END IF  ! End by elevated status
 
             END IF      ! End by source or not
+
+C.................  If by surrogates IDs, insert them depending on resolution
+            IF( RPT_%BYSRG ) THEN
+
+                SRGID2 = SRGID( OUTSRC( I ), 2 )
+                IF( RPT_%SRGRES .EQ. 1 ) THEN
+                    SRGID1 = SRGID( OUTSRC( I ), 1 )
+                END IF
+
+            END IF  ! End by surrogate IDs
+
+C.................  If BY ELEVSTAT, insert elevated status code
+            IF( RPT_%BYELEV ) THEN
+
+                IF( LPING( OUTSRC( I ) ) ) THEN       ! PinG
+                    ESTAT = 'P'
+                ELSE IF( LMAJOR( OUTSRC( I ) ) ) THEN ! Elevated
+                    ESTAT = 'E'
+                ELSE                                      ! Low-level
+                    ESTAT = 'L'
+                END IF
+
+            END IF  ! End by elevated status
 
 C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, 
