@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf -lmp
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug -mp
+LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
 LIBS2         = $(LDIRS) -lsmoke -lmo5b -ledsstools  -lioapi -lnetcdf
 LIBS2_DEBUG   = $(LDIRS) -lsmoke.debug -lmo5b.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a
