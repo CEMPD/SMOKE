@@ -162,8 +162,8 @@ C...........   Other local variables
         INTEGER         PS            ! tmp src ID for plume in grid sources
         INTEGER         ROW           ! tmp row number
         INTEGER         STID          ! tmp state ID
-        INTEGER         SDATE         ! Julian start date
-        INTEGER         STIME         ! start time
+        INTEGER      :: SDATE = 0     ! Julian start date
+        INTEGER      :: STIME = 0     ! start time
         INTEGER         TZONE         ! output time zone
 
         REAL            CUTOFF        ! plume rise cutoff for elev pts
@@ -998,7 +998,7 @@ C.............  Subroutine arguments
             INTEGER     , INTENT (IN) :: GID     ! group ID
             REAL        , INTENT (IN) :: SPLVAL  ! stack split data value
             REAL        , INTENT (IN) :: SRCVAL  ! source data value
-            REAL        , INTENT(OUT) :: GRPVAL  ! stack group data value
+            REAL        ,INTENT(INOUT):: GRPVAL  ! stack group data value
 
 C.............  Local variables
             INTEGER        L, L2
