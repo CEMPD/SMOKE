@@ -1,7 +1,6 @@
 
         SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, ENAME, ANAME, DNAME, 
-     &                        HNAME, FNAME, NNAME, MNAME, GNAME, WNAME,
-     &                        TVARNAME, SDEV, XDEV, RDEV, FDEV,
+     &                        HNAME, FNAME, SDEV, XDEV, RDEV,
      &                        CDEV, HDEV, TDEV, MDEV, PYEAR )
 
 C***********************************************************************
@@ -79,16 +78,10 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN OUT) :: ANAME ! name for ASCII inven input 
         CHARACTER(*), INTENT   (OUT) :: DNAME ! day-spec file
         CHARACTER(*), INTENT   (OUT) :: HNAME ! hour-spec file
-        CHARACTER(*), INTENT   (OUT) :: FNAME ! non-diurnal EF file
-        CHARACTER(*), INTENT   (OUT) :: NNAME ! diurnal EF file
-        CHARACTER(*), INTENT   (OUT) :: MNAME ! surface temperature file
-        CHARACTER(*), INTENT   (OUT) :: GNAME ! ungridding matrix
-        CHARACTER(*), INTENT   (OUT) :: WNAME ! ungridded min/max temperatures
-        CHARACTER(*), INTENT   (OUT) :: TVARNAME ! tmpr variable name
+        CHARACTER(*), INTENT   (OUT) :: FNAME ! emission factors file
         INTEGER     , INTENT   (OUT) :: SDEV  ! unit no.: ASCII inven file
         INTEGER     , INTENT   (OUT) :: XDEV  ! unit no.: x-ref file
         INTEGER     , INTENT   (OUT) :: RDEV  ! unit no.: tmprl profile file
-        INTEGER     , INTENT   (OUT) :: FDEV  ! unit no.: EF x-ref file
         INTEGER     , INTENT   (OUT) :: CDEV  ! unit no.: region codes file
         INTEGER     , INTENT   (OUT) :: HDEV  ! unit no.: holidays file
         INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: emissions process file
@@ -213,140 +206,140 @@ C.........  Use NAMBUF for the HP
             L = LEN_TRIM( MODELNAM )
 
             MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
-     &             ' NON-DIURNAL EMISSION FACTORS file'
-            NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSND', PROGNAME )
+     &             ' EMISSION FACTORS file'
+            NAMBUF= PROMPTMFILE( MESG, FSREAD3, 'EMISFACS', PROGNAME )
             FNAME = NAMBUF
     
-            MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
-     &             ' DIURNAL EMISSION FACTORS file'
-            NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSD', PROGNAME )
-            NNAME = NAMBUF
-
-            NAMBUF= PROMPTMFILE( 
-     &              'Enter logical name for UNGRIDDING MATRIX file',
-     &              FSREAD3, CRL // 'UMAT', PROGNAME )
-            GNAME = NAMBUF
- 
-            NAMBUF= PROMPTMFILE( 
-     &              'Enter logical name for UNGRIDDED MIN/MAX ' //
-     &              'TEMPERATURE file', FSREAD3, 'MINMAXT', PROGNAME )
-            WNAME = NAMBUF
+C           MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
+C     &            ' DIURNAL EMISSION FACTORS file'
+C           NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSD', PROGNAME )
+C           NNAME = NAMBUF
+C
+C           NAMBUF= PROMPTMFILE( 
+C     &             'Enter logical name for UNGRIDDING MATRIX file',
+C     &             FSREAD3, CRL // 'UMAT', PROGNAME )
+C           GNAME = NAMBUF
+C 
+C           NAMBUF= PROMPTMFILE( 
+C     &             'Enter logical name for UNGRIDDED MIN/MAX ' //
+C     &             'TEMPERATURE file', FSREAD3, 'MINMAXT', PROGNAME )
+C           WNAME = NAMBUF
 
 C.............  Get the header description from the min/max temperatures file
-            IF( .NOT. DESC3( WNAME ) ) THEN
-                L = LEN_TRIM( WNAME )
-        	MESG = 'Could not get description of file "' //
-     &                 WNAME( 1:L ) // '"'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
+C           IF( .NOT. DESC3( WNAME ) ) THEN
+C               L = LEN_TRIM( WNAME )
+C       	MESG = 'Could not get description of file "' //
+C    &                 WNAME( 1:L ) // '"'
+C       	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C           END IF
+C
 C.............  Determine the temperature variable that was used to create the
 C               min/max temperature file.
-            TVARNAME = GETCFDSC( FDESC3D, '/T_VNAME/', .TRUE. )
-
+C           TVARNAME = GETCFDSC( FDESC3D, '/T_VNAME/', .TRUE. )
+C
 C.............  Based on the temperature variable name, set the default name 
 C               for the gridded temperature file
-            MNAME0 = 'MET_CRO_2D'
-            IF ( TVARNAME .EQ. 'TA' ) MNAME0 = 'MET_CRO_3D'
-
-            NAMBUF= PROMPTMFILE( 
-     &              'Enter logical name for SURFACE TEMPERATURE file',
-     &              FSREAD3, MNAME0, PROGNAME )
-            MNAME = NAMBUF
-
+C           MNAME0 = 'MET_CRO_2D'
+C           IF ( TVARNAME .EQ. 'TA' ) MNAME0 = 'MET_CRO_3D'
+C
+C           NAMBUF= PROMPTMFILE( 
+C    &              'Enter logical name for SURFACE TEMPERATURE file',
+C    &              FSREAD3, MNAME0, PROGNAME )
+C           MNAME = NAMBUF
+C
 C.............  Get the header of the gridded temperature file
-            IF( .NOT. DESC3( MNAME ) ) THEN
-                L = LEN_TRIM( MNAME )
-        	MESG = 'Could not get description of file "' //
-     &                 MNAME( 1:L ) // '"'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
+C           IF( .NOT. DESC3( MNAME ) ) THEN
+C               L = LEN_TRIM( MNAME )
+C       	MESG = 'Could not get description of file "' //
+C    &                 MNAME( 1:L ) // '"'
+C       	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C           END IF
+C
 C.............  Check to make sure the temperature variable of interest is in
 C               the file.
-            J = INDEX1( TVARNAME, NVARS3D, VNAME3D )             
-
+C           J = INDEX1( TVARNAME, NVARS3D, VNAME3D )             
+C
 C.............  If not, write a warning and get the temperature variable 
 C               name from the environment
-            IF( J .LE. 0 ) THEN
-
-                CALL TEMPERATURE_WARNING
-
-                MESG = 'NOTE: Getting temperature variable name from '//
-     &                 'the environment...'
-                CALL M3MSG2( MESG )
-
-        	MESG = 'Temperature variable name'
-        	CALL ENVSTR( 'TVARNAME', MESG, 'TEMP1P5', TVARNAME, IOS )
-
+C           IF( J .LE. 0 ) THEN
+C
+C               CALL TEMPERATURE_WARNING
+C
+C               MESG = 'NOTE: Getting temperature variable name from '//
+C    &                 'the environment...'
+C               CALL M3MSG2( MESG )
+C
+C       	MESG = 'Temperature variable name'
+C       	CALL ENVSTR( 'TVARNAME', MESG, 'TEMP1P5', TVARNAME, IOS )
+C
 C.................  Write message if TVARNAME environment variable is undefined
-                IF( IOS .LT. 0 ) THEN
-                    MESG = 'NOTE: Using default temperature '//
-     &                     'variable name from the environment.'
-                    CALL M3MSG2( MESG )
-                END IF
-
+C               IF( IOS .LT. 0 ) THEN
+C                   MESG = 'NOTE: Using default temperature '//
+C    &                     'variable name from the environment.'
+C                   CALL M3MSG2( MESG )
+C               END IF
+C
 C.................  Ensure that the new temperature variable name of interest 
 C                   is in the gridded temperature file
-                J = INDEX1( TVARNAME, NVARS3D, VNAME3D )             
-
-                IF( J .LE. 0 ) THEN
-
-                    CALL TEMPERATURE_WARNING
-
-                    MESG = 'ERROR: Could not get a variable name '//
-     &                     'to use for gridded temperature file.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-            END IF
-
+C               J = INDEX1( TVARNAME, NVARS3D, VNAME3D )             
+C
+C               IF( J .LE. 0 ) THEN
+C
+C                   CALL TEMPERATURE_WARNING
+C
+C                   MESG = 'ERROR: Could not get a variable name '//
+C    &                     'to use for gridded temperature file.'
+C                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C               END IF
+C
+C           END IF
+C
 C.............  Compare the min/max temperature information in the min/max 
 C               temperature file and in the emission factors files...
 C.............  Retrieve header of min/max temperature file
-            IF( .NOT. DESC3( WNAME ) ) THEN
-                MESG = 'Could not get description for file ' // WNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
+C           IF( .NOT. DESC3( WNAME ) ) THEN
+C               MESG = 'Could not get description for file ' // WNAME
+C               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C           END IF
+C
 C.............  Retrieve temperature ranges from min/max file header
 C.............  Populate table of valid min/max temperatures in MODMET
-            CALL TMPRINFO( .FALSE., 'BOTH' )
-
+C           CALL TMPRINFO( .FALSE., 'BOTH' )
+C
 C.............  Store min/max temperatures for comparison
-            MIN1 = MINT_MIN
-            MIN2 = MINT_MAX
-            MAX1 = MAXT_MIN
-            MAX2 = MAXT_MAX
+C           MIN1 = MINT_MIN
+C           MIN2 = MINT_MAX
+C           MAX1 = MAXT_MIN
+C           MAX2 = MAXT_MAX
 
 C.............  Retrieve header of non-diurnal emission factors file
-            IF( .NOT. DESC3( FNAME ) ) THEN
-                MESG = 'Could not get description for file ' // FNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+C           IF( .NOT. DESC3( FNAME ) ) THEN
+C               MESG = 'Could not get description for file ' // FNAME
+C               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C           END IF
 
 C.............  Retrieve temperature ranges from non-diurnal EFs file header
-            CALL TMPRINFO( .FALSE., 'NOMINMAX' )
-
+C           CALL TMPRINFO( .FALSE., 'NOMINMAX' )
+C
 C.............  Compare mint_min and maxt_max
-            CALL COMPARE_TMPRS( 'NOMINMAX' )
-
+C           CALL COMPARE_TMPRS( 'NOMINMAX' )
+C
 C.............  Retrieve header of diurnal emission factors file
-            IF( .NOT. DESC3( NNAME ) ) THEN
-                MESG = 'Could not get description for file ' // NNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
+C           IF( .NOT. DESC3( NNAME ) ) THEN
+C               MESG = 'Could not get description for file ' // NNAME
+C               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C           END IF
+C
 C.............  Retrieve temperature ranges from diurnal EFs file header
-            CALL TMPRINFO( .FALSE., 'BOTH' )
-
+C           CALL TMPRINFO( .FALSE., 'BOTH' )
+C
 C.............  Compare all min/max temperatures
-            CALL COMPARE_TMPRS( 'BOTH' )
-
-            FDEV = PROMPTFFILE( 
-     &             'Enter logical name for EMISSION FACTORS X-REF file',
-     &             .TRUE., .TRUE., CRL // 'PLIST', PROGNAME )
-
+C           CALL COMPARE_TMPRS( 'BOTH' )
+C
+C           FDEV = PROMPTFFILE( 
+C    &             'Enter logical name for EMISSION FACTORS X-REF file',
+C    &             .TRUE., .TRUE., CRL // 'PLIST', PROGNAME )
+C
             TDEV = PROMPTFFILE( 
      &             'Enter logical name for EMISSION PROCESSES file',
      &             .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
@@ -363,14 +356,14 @@ C.........  Open files that are specific to mobile sources
         END IF
 
 C.........  Report the name of the temperature variable
-        IF( TVARNAME .NE. ' ' ) THEN
-
-            L = LEN_TRIM( TVARNAME )
-            MESG = 'NOTE: Using temperature variable name "' //
-     &             TVARNAME( 1:L ) // '".'
-            CALL M3MSG2( MESG )
-
-        END IF
+C       IF( TVARNAME .NE. ' ' ) THEN
+C
+C           L = LEN_TRIM( TVARNAME )
+C           MESG = 'NOTE: Using temperature variable name "' //
+C    &             TVARNAME( 1:L ) // '".'
+C           CALL M3MSG2( MESG )
+C
+C       END IF
 
         RETURN
 
@@ -384,60 +377,60 @@ C...........   Internal buffering formats............ 94xxx
 
 C******************  INTERNAL SUBPROGRAMS   ******************************
 
-        CONTAINS
-
+C       CONTAINS
+C
 C.............  This subroutine writes a warning message that the temperature
 C               variable name is not consistent with the file
-            SUBROUTINE TEMPERATURE_WARNING
-
+C           SUBROUTINE TEMPERATURE_WARNING
+C
 C.............  Local variables
-            INTEGER L, L2
-
+C           INTEGER L, L2
+C
 C..........................................................................
-            L  = LEN_TRIM( TVARNAME )
-            L2 = LEN_TRIM( MNAME )
-            MESG = 'WARNING: temperature variable "' // 
-     &             TVARNAME( 1:L ) // '" is not in gridded' // 
-     &             CRLF()// BLANK10// 'temperature file "' //
-     &             MNAME( 1:L2 )// '".'
-            CALL M3MSG2( MESG )
-
-            END SUBROUTINE TEMPERATURE_WARNING
-
+C           L  = LEN_TRIM( TVARNAME )
+C           L2 = LEN_TRIM( MNAME )
+C           MESG = 'WARNING: temperature variable "' // 
+C    &             TVARNAME( 1:L ) // '" is not in gridded' // 
+C    &             CRLF()// BLANK10// 'temperature file "' //
+C    &             MNAME( 1:L2 )// '".'
+C           CALL M3MSG2( MESG )
+C
+C           END SUBROUTINE TEMPERATURE_WARNING
+C
 C----------------------------------------------------------------------------
 C----------------------------------------------------------------------------
-
+C
 C.............  This subroutine compares the minimum/maximum temperatures
 C               and sets an error flag
-            SUBROUTINE COMPARE_TMPRS( CHECKTYP )
-
-            INCLUDE 'FLTERR.EXT'    ! error filter statement function
-
-            CHARACTER(*), INTENT( IN ) :: CHECKTYP
-
+C           SUBROUTINE COMPARE_TMPRS( CHECKTYP )
+C
+C           INCLUDE 'FLTERR.EXT'    ! error filter statement function
+C
+C           CHARACTER(*), INTENT( IN ) :: CHECKTYP
+C
 C..........................................................................            
-
-            IF( FLTERR( MIN1, MINT_MIN ) ) THEN
-                EFLAG = .TRUE.
-            END IF
-
-            IF( FLTERR( MAX2, MAXT_MAX ) ) THEN
-                EFLAG = .TRUE.
-            END IF
-
-            IF( CHECKTYP .NE. 'NOMINMAX' ) THEN
-                
-        	IF( FLTERR( MIN2, MINT_MAX ) ) THEN
-                    EFLAG = .TRUE.
-        	END IF
-
-        	IF( FLTERR( MAX1, MAXT_MIN ) ) THEN
-                    EFLAG = .TRUE.
-        	END IF
-
-            END IF
-
-            END SUBROUTINE COMPARE_TMPRS
+C
+C           IF( FLTERR( MIN1, MINT_MIN ) ) THEN
+C               EFLAG = .TRUE.
+C           END IF
+C
+C           IF( FLTERR( MAX2, MAXT_MAX ) ) THEN
+C               EFLAG = .TRUE.
+C           END IF
+C
+C           IF( CHECKTYP .NE. 'NOMINMAX' ) THEN
+C               
+C       	IF( FLTERR( MIN2, MINT_MAX ) ) THEN
+C                   EFLAG = .TRUE.
+C       	END IF
+C
+C       	IF( FLTERR( MAX1, MAXT_MIN ) ) THEN
+C                   EFLAG = .TRUE.
+C       	END IF
+C
+C           END IF
+C
+C           END SUBROUTINE COMPARE_TMPRS
 
         END SUBROUTINE OPENTMPIN
 
