@@ -171,7 +171,7 @@ C...........   Other local variables
         REAL            SRGT( NASRG )
         REAL            X1, X2, Y1, Y2, XC, YC  !  surrogate file header
         REAL            XOFF, YOFF              !  surrogate offsets from grid
-        REAL            XLL, YLL                !  temp lower-left cell positn
+        REAL            XX, YY                  !  cell number or l-l position
 
         INTEGER         C, S, F, I, J, K, L, M, N, T  !  counters, subscripts
         INTEGER         CMAX, CMIN
@@ -219,7 +219,16 @@ C   begin body of program GRDAMAT
      &  '      must use the ZONE field of the header line (line 1,',
      &  '      columns 41-50) to indicate the number of surrogates',
      &  '      in the file, and each surrogates column must be',
-     &  '      compatible with an f10.8 format.',
+     &  '      compatible with an f10.8 format.  In addition, SMOKE',
+     &  '      permits the x-cell and y-cell numbers to be used in',
+     &  '      place of the (x,y) coordinates.',
+     &  ' ',
+     &  'NOTE: The EMS95-formatted surrogates file refers to a',
+     &  '      format created by writing the SAS srgratio.ssd EMS95',
+     &  '      file to an ASCII file.  The file format is delimited',
+     &  '      columns of surrogate ID code, state code, county code,',
+     &  '      grid column number, grid row number, and surrogate',
+     &  '      fraction, in 59 columns or less.',
      &  ' '
         WRITE( *,92000 ) 
      &  'You will need to enter the logical names for the input and',
@@ -405,7 +414,7 @@ C.............  if there is not an overflow, then store record
 
 22      CONTINUE                !  end of the XDEV-read loop
 
-        CALL M3MSG2( 'NOTE: File was in ' // FFORMAT // ' format.' )
+        CALL M3MSG2( 'NOTE: File read in as ' // FFORMAT // ' format.' )
 
         NAREF = I
         WRITE( MESG,94010 ) 
@@ -603,6 +612,7 @@ C...........   Initialize parameters for reading surrogates data
 
 C........  Determine input format of gridding surrogates file
 C........  For EPS2 format, treat 1st line as header line, and QA file
+C........  For Lat-lon grids, header will be irrelevant, but can't check either
 
         READ( SDEV, 93000, END=77, IOSTAT=IOS ) LINE
 
@@ -616,49 +626,76 @@ C........  For EPS2 format, treat 1st line as header line, and QA file
 
             IREC = IREC + 1
 
-            X1  = STR2REAL( LINE(  1:10 ) )
-            Y1  = STR2REAL( LINE( 11:20 ) )
-            X2  = STR2REAL( LINE( 21:30 ) )
-            Y2  = STR2REAL( LINE( 31:40 ) )
-            NSRG= STR2INT ( LINE( 41:50 ) )
-            XC  = STR2REAL( LINE( 51:60 ) )
-            YC  = STR2REAL( LINE( 61:70 ) )
-            DDX = 1.0 / XC
-            DDY = 1.0 / YC
-            XOFF= DDX * ( X1 - XORIG3D )
-            YOFF= DDY * ( Y1 - YORIG3D )
-            HCOL= NINT( DDX * ( X2 - X1 ) )
-            HROW= NINT( DDY * ( Y2 - Y1 ) )
+            IF( GDTYP3D .NE. LATGRD3 ) THEN
 
-            IF ( FLTERR( XC, SNGL( XCELL3D ) ) ) THEN
-                CALL M3EXIT( 'GRDAMAT', 0, 0,
-     &                       'Bad XCELL in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( YC, SNGL( YCELL3D ) ) ) THEN
-                CALL M3EXIT( 'GRDAMAT', 0, 0,
-     &                       'Bad YCELL in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( XOFF, FLOAT( NINT( XOFF ) ) ) ) THEN
-                CALL M3EXIT( 'GRDAMAT', 0, 0,
-     &                       'Bad X alignment in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( YOFF, FLOAT( NINT( YOFF ) ) ) ) THEN
-                CALL M3EXIT( 'GRDAMAT', 0, 0,
-     &                       'Bad Y alignment in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( REAL( HCOL ), REAL( NCOLS ) ) ) THEN
-                CALL M3EXIT( 'GRDAMAT', 0, 0,
-     &                       'Bad ending X-coord in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( REAL( HROW ), REAL( NROWS ) ) ) THEN
-                CALL M3EXIT( 'GRDAMAT', 0, 0,
-     &                       'Bad ending Y-coord in SURROGATE file', 2 )
-            ELSE IF ( NSRG .LE. 0 ) THEN
-                WRITE( MESG, 94010 ) 
-     &           'NOTE: Use ZONE portion of EPS2.0 surrogates header'//
-     &           CRLF() // BLANK5 // 
-     &           '      to specify number of surrogates ' //
-     &           'in the file.'
-                CALL M3MSG2( MESG )
+                X1  = STR2REAL( LINE(  1:10 ) )
+                Y1  = STR2REAL( LINE( 11:20 ) )
+                X2  = STR2REAL( LINE( 21:30 ) )
+                Y2  = STR2REAL( LINE( 31:40 ) )
+                NSRG= STR2INT ( LINE( 41:50 ) )
+                XC  = STR2REAL( LINE( 51:60 ) )
+                YC  = STR2REAL( LINE( 61:70 ) )
 
-                WRITE( MESG, 94010 ) 
-     &           'Number of surrogates in header was ', NSRG
-                CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+                IF( XC .EQ. 0 ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                   'XCELL is zero in SURROGATE file header', 2 )
+
+                ELSEIF( YC .EQ. 0 ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                   'YCELL is zero in SURROGATE file header', 2 )
+
+                ELSE
+                    DDX = 1.0 / XC
+                    DDY = 1.0 / YC
+                ENDIF
+
+                XOFF= DDX * ( X1 - XORIG3D )
+                YOFF= DDY * ( Y1 - YORIG3D )
+                HCOL= NINT( DDX * ( X2 - X1 ) )
+                HROW= NINT( DDY * ( Y2 - Y1 ) )
+
+                IF ( FLTERR( XC, SNGL( XCELL3D ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                           'Bad XCELL in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( YC, SNGL( YCELL3D ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                           'Bad YCELL in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( XOFF, FLOAT( NINT( XOFF ) ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad X alignment in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( YOFF, FLOAT( NINT( YOFF ) ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad Y alignment in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( REAL( HCOL ), REAL( NCOLS ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad ending X-coord in SURROGATE file', 2 )
+                ELSEIF ( FLTERR( REAL( HROW ), REAL( NROWS ) ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                     'Bad ending Y-coord in SURROGATE file', 2 )
+                ELSEIF ( NSRG .LE. 0 ) THEN
+                    WRITE( MESG, 94010 ) 
+     &               'NOTE: Use ZONE portion of EPS2.0 surrogates '//
+     &               'header' // CRLF() // BLANK5 // 
+     &               '      to specify number of surrogates ' //
+     &               'in the file.'
+                    CALL M3MSG2( MESG )
+
+                    WRITE( MESG, 94010 ) 
+     &               'Number of surrogates in header was ', NSRG
+                    CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+
+                ELSEIF ( NSRG .GT. NASRC ) THEN
+                    WRITE( MESG, 94010 ) 
+     &               'Number of surrogates in file =', NSRG, 
+     &               'but maximum (NASRG) =', NASRG
+                    CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+
+                END IF
+
+            ELSE  ! Grid type is LAT-LON
+
+                MESG= 'Using LAT-LON grid, with EPS2.0 surrogates file.'
+                CALL M3WARN( 'GRDAMAT', 0, 0, MESG )
 
             END IF
 
@@ -668,8 +705,6 @@ C...........   Start loop for actually reading surrogates data
 
 66      CONTINUE                !  head of the SDEV-read loop
 
-            IREC = IREC + 1
-
 C...............  Read EMS-95 formatted file
             IF( FFORMAT .EQ. 'EMS95' ) THEN
 
@@ -678,6 +713,8 @@ C...............  Read EMS-95 formatted file
      &              SID, CID,       !  state, county FIP codes
      &              COL, ROW,       !  grid col and row
      &              SRGT( NSRG )    !  surrogate fraction
+
+                IREC = IREC + 1
 
                 FIP  = 1000 * SID + CID
 
@@ -696,10 +733,22 @@ C...............  file more assuredly.  MRH.
             ELSEIF( FFORMAT .EQ. 'EPS2' ) THEN
 
                 READ( SDEV, 93010, END=77, IOSTAT=IOS ) 
-     &                FIP, XLL, YLL, ( SRGT( J ), J = 1, NSRG )
+     &                FIP, XX, YY, ( SRGT( J ), J = 1, NSRG )
 
-                COL = NINT( DDX * ( XLL - XORIG3D ) )  +  1
-                ROW = NINT( DDY * ( YLL - YORIG3D ) )  +  1
+                IREC = IREC + 1
+
+C.................  First try col/row format
+                COL = INT( XX )
+                ROW = INT( YY )
+
+C.................  If no good, then try coordinates format
+                IF( COL .LT. 1  .OR. COL .GT. NCOLS .OR.
+     &              ROW .LT. 1  .OR. ROW .GT. NROWS      ) THEN
+
+                    COL = 1 + NINT( DDX * ( XX - XORIG3D ) )
+                    ROW = 1 + NINT( DDY * ( YY - YORIG3D ) )
+ 
+                ENDIF
 
                 DO 73 J = 1, NSRG
                     SSCT( J ) = J
@@ -716,13 +765,15 @@ C...............  file more assuredly.  MRH.
                 EFLAG = .TRUE.
                 GO TO  66   ! to head of SDEV read loop
 
+C.................  If columns and rows are still a problem, give message,
+C.................  but don't error because may want to use bigger
+C.................  surrogates file to do smaller domain
             ELSE IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
 
                 WRITE( MESG,94010 )
      &              'Column ', COL,
      &              'out of range in SURG COEFF file at line', IREC
                 CALL M3MESG( MESG )
-                EFLAG = .TRUE.
                 GO TO  66   ! to head of SDEV read loop
 
             ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
@@ -731,7 +782,6 @@ C...............  file more assuredly.  MRH.
      &              'Row ', ROW,
      &              'out of range in SURG COEFF file at line', IREC
                 CALL M3MESG( MESG )
-                EFLAG = .TRUE.
                 GO TO  66   ! to head of SDEV read loop
 
             END IF              !  if IOS bad, or col, or row out of range
@@ -769,7 +819,7 @@ C...........   Loop through the number of surrogates in current record
 
 77      CONTINUE       !  end of the SDEV-read loop
 
-        CALL M3MSG2( 'NOTE: File was in ' // FFORMAT // ' format.' )
+        CALL M3MSG2( 'NOTE: File read in as ' // FFORMAT // ' format.' )
 
         NSREC = N
         WRITE( MESG,94010 ) 
@@ -972,7 +1022,9 @@ C.......   This is called above, but repeat here for safety from future mods.
      &        FSUNKN3, 'AGMAT', 'GRDAMAT' )
      
             IF ( GNAME( 1:5 ) .NE. 'NONE ' ) THEN
-                CALL M3MESG( 'Writing out GRIDDING MATRIX file...' )
+
+                CALL M3MSG2( 'Writing out GRIDDING MATRIX file...' )
+
                 IF ( .NOT. WRITE3( GNAME, 'ALL', 0, 0, NX ) ) THEN
                     CALL M3EXIT( 'GRDAMAT', 0, 0, 
      &                  'Error writing GRIDDING MATRIX file.', 2 )
@@ -999,7 +1051,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93010   FORMAT( I5, F10.0, F10.0, 10X, 100( F10.8 ) )
+93010   FORMAT( I5, 2F10.0, 10X, 100( F10.8 ) )
 
 
 C...........   Internal buffering formats............ 94xxx
