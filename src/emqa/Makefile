@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS) -lfileset 
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) -lfileset.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 
@@ -48,20 +48,20 @@ asgnbins.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODELEV) \
             $(MODSTCY) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ asgnbins.f
 bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ bldrepidx.f
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ bldrepidx.f
 genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ genrprt.f
 getrecs.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getrecs.f
 openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ openrepin.f
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ openrepin.f
 qarepin.o: $(MODREPRT) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ qarepin.f
 rdgrps.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODLISTS) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ rdgrps.f
 rdrepin.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODELEV) $(MODLISTS) \
            $(MODINFO) $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ rdrepin.f
+	$(FC) $(FFLAGS) -I$(FSDIR) -c -o $@ rdrepin.f
 rdrprts.o: $(MODREPRT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdrprts.f
 repmrggrd.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) 
