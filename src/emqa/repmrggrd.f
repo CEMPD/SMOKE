@@ -225,7 +225,8 @@ C               by uncessary counting and conditionals.
 C.............  Special case of no subgrid and partial sources
             ELSE IF ( .NOT. LSUBGRID ) THEN
 
-                K = 0 
+                K = 0
+                N = 0 
                 DO C = 1, NGRID
 
                     DO J = 1, NX( C )
