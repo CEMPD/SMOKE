@@ -6,8 +6,7 @@ C  subroutine body starts at line 81
 C
 C  DESCRIPTION:
 C       This program creates the temporal emissions output file variable names
-C       and associated activities and a flag for diurnal or non-diurnal emission
-C       factors, where needed.   It also sets the units and conversion
+C       and associated activities.  It also sets the units and conversion
 C       factors for creating the output emission values.
 C
 C  PRECONDITIONS REQUIRED:
@@ -149,6 +148,9 @@ C               from one activity are the same.
             FAC1 = UNITFAC( CBUF, 'tons', .TRUE. )
             FAC2 = UNITFAC( EAUNIT( M ), '1/yr', .FALSE. )
 
+            IF ( FAC1 .LT. 0. ) FAC1 = 1.
+            IF ( FAC2 .LT. 0. ) FAC2 = 1.
+
             EAUNIT( M ) = 'tons/hr'
             EACNV ( M ) = FAC1 / FAC2
 
@@ -162,6 +164,9 @@ C.........  Now loop through pollutants and create units and conversion factors
             CBUF = EAUNIT ( M )
             FAC1 = UNITFAC( CBUF, 'tons', .TRUE. )
             FAC2 = UNITFAC( EAUNIT( M ), '1/yr', .FALSE. )
+
+            IF ( FAC1 .LT. 0. ) FAC1 = 1.
+            IF ( FAC2 .LT. 0. ) FAC2 = 1.
 
             EAUNIT( M ) = 'tons/hr'
             EACNV ( M ) = FAC1 / FAC2
