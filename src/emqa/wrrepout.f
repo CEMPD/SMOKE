@@ -492,15 +492,15 @@ C.............  Write out this record
                             FIRSTIME = .FALSE.
 
                         ELSE
-                            IF( RPT_%RPTNVAR + RPT_%RPTNVAR .GT.
+                            IF( EDIDX + RPT_%RPTNVAR .GT.
      &                                     NDATA ) THEN
 
-                                STIDX = RPT_%RPTNVAR + 1
+                                STIDX = EDIDX + 1
                                 EDIDX = NDATA
 
                             ELSE
-                                STIDX = RPT_%RPTNVAR + 1
-                                EDIDX = RPT_%RPTNVAR + RPT_%RPTNVAR
+                                STIDX = EDIDX + 1
+                                EDIDX = EDIDX + RPT_%RPTNVAR
 
                             END IF
 
@@ -530,15 +530,15 @@ C.............  Write out this record
 		        FIRSTIME = .FALSE.
 
 		    ELSE
-		        IF( RPT_%RPTNVAR + RPT_%RPTNVAR .GT.
+		        IF( EDIDX + RPT_%RPTNVAR .GT.
      &                                     NDATA ) THEN
 
-		 	    STIDX = RPT_%RPTNVAR + 1
+		 	    STIDX = EDIDX + 1
 			    EDIDX = NDATA
 
 		        ELSE
-			    STIDX = RPT_%RPTNVAR + 1
-			    EDIDX = RPT_%RPTNVAR + RPT_%RPTNVAR
+			    STIDX = EDIDX + 1
+			    EDIDX = EDIDX + RPT_%RPTNVAR
 
 		        END IF
 

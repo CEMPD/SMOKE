@@ -213,14 +213,16 @@ C.........  Initialize local variables for current report
         PWIDTH   = 0        ! array
         LU       = 0
 
-	DEALLOCATE( OUTDNAM )
-	ALLOCATE( OUTDNAM( RPT_%NUMDATA, RCNT ), STAT=IOS )
-	CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
-	OUTDNAM  = ''       ! array
+	IF( AFLAG ) THEN
+	    DEALLOCATE( OUTDNAM )
+	    ALLOCATE( OUTDNAM( RPT_%NUMDATA, RCNT ), STAT=IOS )
+	    CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
+	    OUTDNAM  = ''       ! array
 
-	DO I = 1, RPT_%NUMDATA
-	    IF( AFLAG ) OUTDNAM( I, RCNT ) = EANAM( I )
-	END DO
+	    DO I = 1, RPT_%NUMDATA
+	        IF( AFLAG ) OUTDNAM( I, RCNT ) = EANAM( I )
+	    END DO
+	END IF
 
 C.........  Initialize report-specific settings
         RPT_ = ALLRPT( RCNT )  ! many-values
@@ -783,16 +785,16 @@ C           a width that is too small for the value requested.
                         FIRSTIME = .FALSE.
 
                     ELSE
-                        IF( RPT_%RPTNVAR + RPT_%RPTNVAR .GT.
+                        IF( EDIDX + RPT_%RPTNVAR .GT.
      &                                 RPT_%NUMDATA ) THEN
 
-                            STIDX = RPT_%RPTNVAR + 1
+                            STIDX = EDIDX + 1
                             EDIDX = RPT_%NUMDATA
 
                         ELSE
 
-                            STIDX = RPT_%RPTNVAR + 1
-                            EDIDX = RPT_%RPTNVAR + RPT_%RPTNVAR
+                            STIDX = EDIDX + 1
+                            EDIDX = EDIDX + RPT_%RPTNVAR
 
                         END IF
 
@@ -823,16 +825,16 @@ C           a width that is too small for the value requested.
 	            FIRSTIME = .FALSE.
 
 		ELSE
-		    IF( RPT_%RPTNVAR + RPT_%RPTNVAR .GT. 
+		    IF( EDIDX + RPT_%RPTNVAR .GT. 
      &                                 RPT_%NUMDATA ) THEN
 		
-		        STIDX = RPT_%RPTNVAR + 1
+		        STIDX = EDIDX + 1
 		        EDIDX = RPT_%NUMDATA
 
 		    ELSE
 
-		        STIDX = RPT_%RPTNVAR + 1
-		        EDIDX = RPT_%RPTNVAR + RPT_%RPTNVAR
+		        STIDX = EDIDX + 1
+		        EDIDX = EDIDX + RPT_%RPTNVAR
  
 		    END IF
 
