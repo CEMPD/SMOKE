@@ -2,7 +2,7 @@
          PROGRAM RAWPOINT
 
 C***********************************************************************
-C  program body starts at line 214
+C  program body starts at line 216
 C
 C  DESCRIPTION:
 C       Sort data contained in EPS/AFS-style point source file and 
@@ -201,6 +201,7 @@ C...........   Other local variables
 
         LOGICAL         SFLAG   !  input verification:  report missing species
         LOGICAL         EFLAG   !  input verification:  TRUE iff ERROR
+        LOGICAL         FIRSTP  !  iff INY mismatches YY
         LOGICAL         WFLAG   !  input verification:  convert LON to west hemis
 
         CHARACTER*16    SCRBUF  !  scratch buffer
@@ -356,8 +357,10 @@ C.............  making changes
      &             RNAME( 1:TRIMLEN( RNAME ) )
             CALL M3MSG2( MESG )
 
-            IREC  =  0
-            EFLAG = .FALSE.
+            IREC   =  0
+            EFLAG  = .FALSE.
+            FIRSTP = .TRUE. !  For reporting year-mismatches
+
 111         CONTINUE        !  head of the PDEV-read loop
 
                 READ( PDEV, 93000, END=122, IOSTAT=IOS ) LINE
@@ -453,6 +456,15 @@ C.............  making changes
 
                     EMIS = DAY2YR * EMIS
 
+                    IF( FIRSTP .AND. INY .NE. YY ) THEN
+                        FIRSTP = .FALSE.
+                        WRITE( MESG,94010 ) 'WARNING: Year', INY,
+     &                         'given in PNLST, but year', YY,
+     &                         'appears in file:' // CRLF() // BLANK5 //
+     &                         RNAME( 1:TRIMLEN( RNAME ) )
+                        CALL M3MSG2( MESG )
+                    ENDIF
+
                 ELSE IF ( LINE( 57:57 ) .EQ. 'S' ) THEN     !  special interval
 
                     HH  = MOD( SDT        , 100 )
@@ -483,6 +495,15 @@ C.............  making changes
 
                     WRITE( MESG, 94030 ) FIP, SCC, PLANT, STACK, IREC
                     CALL M3MESG( MESG )
+
+                    IF( FIRSTP .AND. INY .NE. YY ) THEN
+                        FIRSTP = .FALSE.
+                        WRITE( MESG,94010 ) 'WARNING: Year', INY,
+     &                         'given in PNLST, but year', YY,
+     &                         'appears in file:' // CRLF() // BLANK5 //
+     &                         RNAME( 1:TRIMLEN( RNAME ) )
+                        CALL M3MSG2( MESG )
+                    ENDIF
 
                 ELSE                                        !  unrecognized type
 
