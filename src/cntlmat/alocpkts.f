@@ -145,18 +145,10 @@ C.............  If inside packet...
                 J = INDEX( LINE, '!' )
                 IF ( J .LE. 0 ) J = LEN_TRIM( LINE )
                 I = INDEX( LINE( 1:J ), '/END/' )
-                J = INDEX( LINE( 1:J ), '/'     )
 
 C.................  Check for /END/ of packet
                 IF( I .GT. 0 ) THEN
                     INSIDE = .FALSE.
-
-C.................  Encountered a new packet or a bad /END/
-                ELSE IF( I .LE. 0 .AND. J .GT. 0 ) THEN 
-                    WRITE( MESG,94010 ) 'Problem at line', IREC, 
-     &                     'of control packets file.' // CRLF() // 
-     &                     BLANK10 // 'Encountered a "/" before /END/.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.................  For valid packets, count records
                 ELSEIF( VALID ) THEN
@@ -173,7 +165,7 @@ C.............  If outside packet, look for next packet header
                 L2 = INDEX( LINE( L1+1:L ), '/' ) + 1
 
 C.................  Well-formed packet
-                IF( L1. GT. 0 .AND. L2 .GT. L1 + 1 ) THEN
+                IF( L1 .GT. 0 .AND. L2 .GT. L1 + 1 ) THEN
 
 C.....................  Check if this packet is in list, with special treatment
 C                       for reactivity and projection packets.  Return position
