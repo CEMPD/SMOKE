@@ -84,8 +84,9 @@ C.........  Sort county-by-src array by averaging type and county
             
         CALL SORTI1( NSRC, IDX, SRCARRAY( :,1 ) )
 
-C.........
+C.........  Initialize variables
         ARRAYPOS = 0   ! array
+        PREVCNTY = 0
 
         DO I = 1, NSRC
      
