@@ -642,9 +642,9 @@ C............  Create a new sorting index
                 IDXSRT2( J ) = J
             END DO
 
-C.........  Sort the scratch gridding matrix arrays to organize by county/link
-C           and then cell
-            CALL SORTI2( NCOEF, IDXSRT2, NCL, IC )
+C.........  Sort the scratch gridding matrix arrays to organize by county/link,
+C           cell, and source
+            CALL SORTI3( NCOEF, IDXSRT2, NCL, IC, IS )
 
 C..........  Allocate memory for county/link VMT within grid
             ALLOCATE( CLIDX( NSRC ), STAT=IOS )
