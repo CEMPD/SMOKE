@@ -18,7 +18,7 @@ if ( $?AUTO_DELETE ) then
    endif
 else
    echo "NOTE: AUTO_DELETE script setting is not set."
-   echo "      Default is N to not delete SMOKE NCF intermediate and output files"
+   echo "      Default is N to not delete I/O API intermediate and output files"
    exit( 0 )
 endif
 
@@ -83,7 +83,7 @@ if ( ( ( $RUN_SMKINVEN == Y && $import_aveinv != N ) || $RUN_GRWINVEN == Y ) && 
        set ncnt = `cat $f | wc -l`
        while ( $cnt < $ncnt )
           @ cnt = $cnt + 1
-          set line = ( `head -$cnt $f | tail -1` )
+          set line = ( `head -n $cnt $f | tail -n 1` )
           if ( $line[1] == '/IOAPI/' ) then
              /bin/rm -f $INVOPD/$line[2]
           endif
@@ -243,7 +243,7 @@ if ( $RUN_LAYPOINT == Y && $RUN_PART4 == 'Y' ) then
     /bin/rm -f $PLAY_EX
 endif
 
-## For Smkmerge output NCF files
+## For Smkmerge output I/O API files
 #
 if ( $RUN_SMKMERGE == 'Y' && $RUN_PART4 == 'Y' ) then
 
