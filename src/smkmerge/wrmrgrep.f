@@ -38,17 +38,22 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY:
-     &          SDATE, STIME, VGRPCNT, NIPPA, NMSPC, SFLAG, AFLAG,
-     &          ANMSPC, AEMNAM, BFLAG, BNMSPC, BEMNAM, MFLAG, MNMSPC,
-     &          MEMNAM, PFLAG, PNMSPC, PEMNAM, ANIPOL, AEINAM, MNIPPA,
-     &          MEANAM, PNIPOL, PEINAM, EDATE, ETIME, LREPSTA, AEBCNY,
-     &          AEBSTA, ARDEV, TEBSTA, AUFLAG, ARFLAG, LREPCTL, AECCNY,
-     &          AECSTA, TECSTA, BEBCNY, BEBSTA, BRDEV, MEBCNY, MEBSTA,
-     &          MRDEV, MUFLAG, MRFLAG, MECCNY, MECSTA, PEBCNY, PEBSTA,
-     &          PRDEV, PUFLAG, PRFLAG, PECCNY, PECSTA, XFLAG, TRDEV, 
-     &          TUFLAG, TRFLAG, TECCNY, LREPCNY, TEBCNY, TSTEP,
-     &          LAVEDAY, EMNAM, EANAM, TOTUNIT, SIINDEX, SPINDEX
+        USE MODMERGE, ONLY: SDATE, STIME, EDATE, ETIME, TSTEP,
+     &                      AFLAG, BFLAG, MFLAG, PFLAG, XFLAG, SFLAG, 
+     &                      ANMSPC, BNMSPC, MNMSPC, PNMSPC, NMSPC, 
+     &                      AEMNAM, BEMNAM, MEMNAM, PEMNAM, 
+     &                      ANIPOL, MNIPPA, PNIPOL, NIPPA, 
+     &                      AEINAM, MEANAM, PEINAM, 
+     &                      AEBCNY, BEBCNY, MEBCNY, PEBCNY, TEBCNY, 
+     &                      AEBSTA, BEBSTA, MEBSTA, PEBSTA, TEBSTA, 
+     &                      ARDEV,  BRDEV,  MRDEV,  PRDEV,  TRDEV, 
+     &                      AUFLAG,         MUFLAG, PUFLAG, TUFLAG, 
+     &                      ARFLAG,         MRFLAG, PRFLAG, TRFLAG, 
+     &                      AECCNY,         MECCNY, PECCNY, TECCNY, 
+     &                      AECSTA,         MECSTA, PECSTA, TECSTA, 
+     &                      VGRPCNT, LREPSTA, LREPCTL, LREPCNY, 
+     &                      LAVEDAY, EMNAM, EANAM, TOTUNIT, 
+     &                      SIINDEX, SPINDEX
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD

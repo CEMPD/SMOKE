@@ -40,23 +40,33 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: 
-     &          AFLAG, NASRC, ANGMAT, AEMGRD, LREPINV, ANIPOL, LREPSPC,
-     &          ANMSPC, LREPSTA, LREPCTL, AUFLAG, ARFLAG, ANSREAC,
-     &          ANSMATV, BFLAG, MFLAG, NMSRC, MNGMAT, MEMGRD, MNIPPA,
-     &          MNMSPC, MUFLAG, MRFLAG, MNSREAC, MNSMATV, PFLAG, NPSRC,
-     &          PEMGRD, PNIPOL, PNMSPC, PUFLAG, PRFLAG, PNSREAC, 
-     &          PNSMATV, LFLAG, EXPLFLAG, EMLAYS, ELEVFLAG, PINGFLAG, 
-     &          ELEVADJ, TEMGRD, XFLAG, NIPPA, NMSPC, TUFLAG, TRFLAG,
-     &          ANUMATV, MNUMATV, PNUMATV, SFLAG, NSMATV, ASMATX, 
-     &          MSMATX, PSMATX, AEMSRC, MEMSRC, PEMSRC, AGMATX, ARINFO,
-     &          AEBSTA, AEUSTA, AERSTA, AECSTA, AEBCNY, AEUCNY, AECCNY,
-     &          BEMGRD, BEBSTA, BEBCNY, MGMATX, MRINFO, MEBSTA, MEUSTA,
-     &          MERSTA, MECSTA, MEBCNY, MEUCNY, MERCNY, MECCNY, PGMATX,
-     &          PRINFO, PEBSTA, PEUSTA, PERSTA, PECSTA, PEBCNY, PEUCNY,
-     &          PERCNY, PECCNY, LFRAC, TEBSTA, TEUSTA, TERSTA, TECSTA,
-     &          TEBCNY, TEUCNY, TERCNY, TECCNY, AEISRC, MEISRC, PEISRC,
-     &          AERCNY, BNMSPC
+        USE MODMERGE, ONLY: AFLAG, BFLAG, MFLAG, PFLAG, XFLAG,
+     &                      AUFLAG, MUFLAG, PUFLAG, TUFLAG,
+     &                      ARFLAG, MRFLAG, PRFLAG, TRFLAG,
+     &                      SFLAG, LFLAG, PINGFLAG, ELEVFLAG, EXPLFLAG,
+     &                      LREPSTA, LREPINV, LREPSPC, LREPCTL,
+     &                      NASRC, NMSRC, NPSRC, EMLAYS,
+     &                      ANIPOL, PNIPOL, MNIPPA, NIPPA,
+     &                      ANSMATV, MNSMATV, PNSMATV, NSMATV,
+     &                      ANUMATV, MNUMATV, PNUMATV,
+     &                      ANMSPC, BNMSPC, MNMSPC, PNMSPC, NMSPC,
+     &                      ANGMAT,         MNGMAT,
+     &                      ANSREAC,        MNSREAC, PNSREAC,
+     &                      AEMSRC,         MEMSRC, PEMSRC,
+     &                      AEISRC,         MEISRC, PEISRC,
+     &                      AEMGRD, BEMGRD, MEMGRD, PEMGRD, TEMGRD,
+     &                      AGMATX,         MGMATX, PGMATX,
+     &                      ASMATX,         MSMATX, PSMATX,
+     &                      ARINFO,         MRINFO, PRINFO,
+     &                      AEBSTA, BEBSTA, MEBSTA, PEBSTA, TEBSTA,
+     &                      AEUSTA,         MEUSTA, PEUSTA, TEUSTA,
+     &                      AERSTA,         MERSTA, PERSTA, TERSTA,
+     &                      AECSTA,         MECSTA, PECSTA, TECSTA,
+     &                      AEBCNY, BEBCNY, MEBCNY, PEBCNY, TEBCNY,
+     &                      AEUCNY,         MEUCNY, PEUCNY, TEUCNY,
+     &                      AECCNY,         MECCNY, PECCNY, TECCNY,
+     &                      AERCNY,         MERCNY, PERCNY, TERCNY,
+     &                      LFRAC, ELEVADJ, EMLAYS
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVFLTR, ELEVSRC, NHRSRC, INDXH, NGROUP, 
@@ -64,11 +74,12 @@ C.........  This module contains arrays for plume-in-grid and major sources
      &                     GRPHT, GRPDM, GRPTK, GRPVE
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL, ONLY:
-     &                  ACUMATX, MCUMATX, PCUMATX,
-     &                  ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN, ACRFAC,
-     &                  MCRIDX, MCRREPEM, MCRPRJFC, MCRMKTPN, MCRFAC,
-     &                  PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRFAC
+        USE MODCNTRL, ONLY: ACUMATX,  MCUMATX,  PCUMATX,
+     &                      ACRIDX,   MCRIDX,   PCRIDX, 
+     &                      ACRREPEM, MCRREPEM, PCRREPEM, 
+     &                      ACRPRJFC, MCRPRJFC, PCRPRJFC, 
+     &                      ACRMKTPN, MCRMKTPN, PCRMKTPN, 
+     &                      ACRFAC,   MCRFAC,   PCRFAC
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTY, NSTATE

@@ -38,8 +38,8 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY:
-     &          SDATE, STIME, TSTEP, BYEAR, PYEAR, LAVEDAY, LGRDOUT,
+        USE MODMERGE, ONLY: SDATE, STIME, TSTEP, BYEAR, PYEAR, 
+     &          LAVEDAY, LGRDOUT,
      &          AFLAG, ANIPOL, ANMSPC, AEINAM, AEMNAM, AONAME,
      &          BFLAG, BNIPOL, BNMSPC, BEINAM, BEMNAM, BONAME,
      &          MFLAG, MNMSPC, NMSPC, MNIPPA, MEANAM, EMNAM, MEMNAM,

@@ -39,18 +39,22 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY:
-     &          PDEV, AFLAG, ANIPOL, AEINAM, BFLAG, BNIPOL, BEINAM,
-     &          MFLAG, MNIPPA, MEANAM, PFLAG, PNIPOL, PEINAM, NIPOL,
-     &          NIPPA, EANAM, EINAM, TONAMES, TOUNITS, SPCUNIT, AONAMES,
-     &          AOUNITS, BONAMES, BOUNITS, MONAMES, MOUNITS, PONAMES,
-     &          POUNITS, ANSMATV, ARNMSPC, BNSMATV, MNSMATV, MRNMSPC,
-     &          PRNMSPC, PNSMATV, ANRMATV, MNRMATV, PNRMATV, ARFLAG,
-     &          MRFLAG, PRFLAG, SFLAG, ASVDESC, BSVDESC, MSVDESC, 
-     &          PSVDESC, NSMATV, AEMNAM, BEMNAM, MEMNAM, PEMNAM,
-     &          ANMSPC, BNMSPC, MNMSPC, PNMSPC, TSVDESC, NMSPC, EMNAM,
-     &          EMIDX, ARVDESC, MRVDESC, PRVDESC, ASVUNIT, MSVUNIT,
-     &          PSVUNIT
+        USE MODMERGE, ONLY: AFLAG, BFLAG, MFLAG, PFLAG,
+     &                      ARFLAG, MRFLAG, PRFLAG, SFLAG, PDEV,
+     &                      ANIPOL, BNIPOL, PNIPOL, NIPOL, 
+     &                      MNIPPA, NIPPA,
+     &                      AEINAM, BEINAM, MEANAM, PEINAM, EINAM,
+     &                      AEMNAM, BEMNAM, MEMNAM, PEMNAM, EMNAM,
+     &                      EANAM, EMIDX, SPCUNIT, 
+     &                      AONAMES, BONAMES, MONAMES, PONAMES, TONAMES, 
+     &                      AOUNITS, BOUNITS, MOUNITS, POUNITS, TOUNITS, 
+     &                      ANSMATV, BNSMATV, MNSMATV, PNSMATV, NSMATV, 
+     &                      ARNMSPC,          MRNMSPC, PRNMSPC, 
+     &                      ANRMATV,          MNRMATV, PNRMATV,
+     &                      ASVDESC, BSVDESC, MSVDESC, PSVDESC, TSVDESC, 
+     &                      ANMSPC,  BNMSPC,  MNMSPC,  PNMSPC,  NMSPC, 
+     &                      ARVDESC,          MRVDESC, PRVDESC, 
+     &                      ASVUNIT,          MSVUNIT, PSVUNIT
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT, INVDCOD

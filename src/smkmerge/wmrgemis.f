@@ -39,12 +39,14 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY:
-     &          SFLAG, LGRDOUT, AFLAG, ANMSPC, AEMNAM, BFLAG, BNMSPC,
-     &          BEMNAM, MFLAG, MNMSPC, MEMNAM, PINGFLAG, PFLAG, PNMSPC,
-     &          PEMNAM, ANIPOL, AEINAM, MNIPPA, MEANAM, PNIPOL, PEINAM,
-     &          AONAME, AEMGRD, BONAME, BEMGRD, MONAME, MEMGRD, PONAME,
-     &          PEMGRD, PINGNAME, XFLAG, TONAME, TEMGRD
+        USE MODMERGE, ONLY: AFLAG, BFLAG, MFLAG, PFLAG, XFLAG, SFLAG,
+     &                      ANMSPC, BNMSPC, MNMSPC, PNMSPC,
+     &                      AEMNAM, BEMNAM, MEMNAM, PEMNAM,  
+     &                      ANIPOL,         MNIPPA, PNIPOL, 
+     &                      AEINAM,         MEANAM, PEINAM,
+     &                      AONAME, BONAME, MONAME, PONAME, TONAME, 
+     &                      AEMGRD, BEMGRD, MEMGRD, PEMGRD, TEMGRD,
+     &                      LGRDOUT, PINGFLAG, PINGNAME
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: PGRPEMIS
