@@ -62,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS
         EXTERNAL      CRLF, FINDR3, PROMPTFFILE, PROMPTMFILE
 
 C...........   PARAMETERS and their descriptions:
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  Array that contains the names of the inventory variables needed 
 C           for this program
@@ -115,7 +115,7 @@ C   begin body of program MVCONDNS
  
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
  
 C.........  Limit source category to mobile sources
         CATEGORY = 'MOBILE'

@@ -63,7 +63,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   PARAMETER
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.......  Input and output emissions
 
@@ -120,7 +120,7 @@ C   begin body of program
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
 
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.......   Get UAM emissions file name 
 
