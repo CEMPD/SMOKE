@@ -110,6 +110,7 @@ C...........   Point Sources input and output arrays
         INTEGER     ISTACK( NPSRC )  !  Stack ID
         INTEGER     ZONES ( NPSRC )  !  time zones
         INTEGER     TPFLAG( NPSRC )  !  governs month, week profile use
+        INTEGER     INVYR ( NPSRC )  !  inventoruy year
         REAL        EMIS  ( NPSRC, NIPOL )  !  input inventory emissions.
         REAL        EMISV ( NPSRC, NIPOL )  !  day-corrected emissions.
         REAL        EMIST ( NPSRC, NIPOL )  !  timestepped output emssions
@@ -570,6 +571,47 @@ C.......      otherwise, use environment variables to set defaults
  
         CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
+        CALL M3MSG2( 'Reading source list from PNTS file...' )
+
+C...........   Read in emissions indexing data:  IFIP, ASC7, ASC3, 
+C...........   IPLANT, ISTACK, ZONES
+
+        IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3,0,0, IFIP ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Error reading FIP from file' // ENAME, 2)
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'ISCC', ALLAYS3,0,0, ISCC ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Error reading ISCC from file' // ENAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'IPLANT', ALLAYS3,0,0, IPLANT ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Error reading IPLANT from file' // ENAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'ISTACK', ALLAYS3,0,0, ISTACK ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Error reading ISTACK from file' // ENAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'TZONES', ALLAYS3,0,0, ZONES ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Error reading TZONES from file' // ENAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'TPFLAG', ALLAYS3,0,0, TPFLAG ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Error reading TPFLAG from file' // ENAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'INVYR', ALLAYS3,0,0, INVYR ) ) THEN
+            CALL M3EXIT( 'TMPPOINT', 0, 0, 
+     &                   'Error reading INVYR from file' // ENAME, 2 )
+        END IF
+
+
 C.......   Get list of output variables (shrink list in file description
 C.......   data structure to just those variables desired):
 
@@ -610,42 +652,7 @@ C...........   Compute offset of pollutant codes within input VNAME3D:
         STIME3D = JTIME
         TSTEP3D = 10000
         WRITE( FDESC3D( 9 ),94010 ) 'Time zone ', TZONE
-
-        CALL M3MSG2( 'Reading source list from PNTS file...' )
-
-C...........   Read in emissions indexing data:  IFIP, ASC7, ASC3, 
-C...........   IPLANT, ISTACK, ZONES
-
-        IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3,0,0, IFIP ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                   'Error reading FIP from file' // ENAME, 2)
-        END IF
-
-        IF ( .NOT. READ3( ENAME, 'ISCC', ALLAYS3,0,0, ISCC ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                   'Error reading ISCC from file' // ENAME, 2 )
-        END IF
-
-        IF ( .NOT. READ3( ENAME, 'IPLANT', ALLAYS3,0,0, IPLANT ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                   'Error reading IPLANT from file' // ENAME, 2 )
-        END IF
-
-        IF ( .NOT. READ3( ENAME, 'ISTACK', ALLAYS3,0,0, ISTACK ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                   'Error reading ISTACK from file' // ENAME, 2 )
-        END IF
-
-        IF ( .NOT. READ3( ENAME, 'TZONES', ALLAYS3,0,0, ZONES ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                   'Error reading TZONES from file' // ENAME, 2 )
-        END IF
-
-        IF ( .NOT. READ3( ENAME, 'TPFLAG', ALLAYS3,0,0, TPFLAG ) ) THEN
-            CALL M3EXIT( 'TMPPOINT', 0, 0, 
-     &                   'Error reading TPFLAG from file' // ENAME, 2 )
-        END IF
-
+        WRITE( FDESC3D(10 ),94010 ) 'Emissions are for year', INVYR( 1 )
 
 C.......   Get file names; open output files
 C.......   Deal with optional elevated point source files

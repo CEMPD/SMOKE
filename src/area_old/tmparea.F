@@ -121,6 +121,7 @@ C...........   Area Sources input and output arrays
         INTEGER         ASC3 ( NASRC )         ! 3 trailing digits of ASC
         INTEGER         ZONES( NASRC )         ! time zones
         INTEGER         TFLAG( NASRC )         ! governs profile type usage
+        INTEGER         INVYR( NASRC )         ! inventory year
         INTEGER         MDEX ( NASRC )  ! monthly       profile subscript
         INTEGER         WDEX ( NASRC )  ! weeky         profile subscript
         INTEGER         DDEX ( NASRC )  ! wkday diurnal profile subscript
@@ -465,6 +466,40 @@ C.......      otherwise, use environment variables to set defaults
 
         CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
+C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
+
+        CALL M3MSG2( 'Reading source list from AREA file...' )
+
+        IF ( .NOT. READ3( ANAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 
+     &                   'Error reading FIP from file' // ANAME, 2)
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'ASC7', ALLAYS3, 0, 0, ASC7 ) ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 
+     &                   'Error reading ASC7 from file' // ANAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'ASC3', ALLAYS3, 0, 0, ASC3 ) ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 
+     &                   'Error reading ASC3 from file' // ANAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'ZONES', ALLAYS3, 0, 0, ZONES ) ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 
+     &                   'Error reading ZONES from file' // ANAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'TPFLAG', ALLAYS3,0,0, TFLAG ) ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 
+     &                   'Error reading TFLAG from file' // ANAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'INVYR', ALLAYS3,0,0, INVYR ) ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 
+     &                   'Error reading INVYR from file' // ANAME, 2 )
+        END IF
+
 C...........   Compute offset of pollutant codes within input VNAME3D:
 
         DO  11  V = 1, NIPOL
@@ -491,6 +526,7 @@ C...........   Compute offset of pollutant codes within input VNAME3D:
         STIME3D = JTIME
         TSTEP3D = 10000
         WRITE( FDESC3D( 9 ),94010 ) 'Time zone ', TZONE
+        WRITE( FDESC3D(10 ),94010 ) 'Emissions are for year', INVYR( 1 )
 
 
 C.......   Get file name; open output time-stepped area sources file
@@ -886,36 +922,6 @@ C...........   Look up profiles for these XREFs:
             WRITE( MESG,94010 ) 
      &      'Fallback (default)  DIURNAL  profile', DIUREF( DPR00 )
             CALL M3MSG2( MESG )
-        END IF
-
-
-C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
-
-        CALL M3MSG2( 'Reading source list from AREA file...' )
-
-        IF ( .NOT. READ3( ANAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                   'Error reading FIP from file' // ANAME, 2)
-        END IF
-
-        IF ( .NOT. READ3( ANAME, 'ASC7', ALLAYS3, 0, 0, ASC7 ) ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                   'Error reading ASC7 from file' // ANAME, 2 )
-        END IF
-
-        IF ( .NOT. READ3( ANAME, 'ASC3', ALLAYS3, 0, 0, ASC3 ) ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                   'Error reading ASC3 from file' // ANAME, 2 )
-        END IF
-
-        IF ( .NOT. READ3( ANAME, 'ZONES', ALLAYS3, 0, 0, ZONES ) ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                   'Error reading ZONES from file' // ANAME, 2 )
-        END IF
-
-        IF ( .NOT. READ3( ANAME, 'TPFLAG', ALLAYS3,0,0, TFLAG ) ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                   'Error reading TFLAG from file' // ANAME, 2 )
         END IF
 
 
