@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -42,7 +42,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  For temporal profiles
-        USE MODTPRO
+        USE MODTMPRL
 
         IMPLICIT NONE
 
@@ -57,7 +57,7 @@ C...........   Local parameters:
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
-        INTEGER         I, K          !  counters and indices
+        INTEGER         D, I, K          !  counters and indices
 
         INTEGER         IOS           !  i/o status
 
@@ -125,45 +125,30 @@ C.........  Renormalize temporal profiles, if needed
 
             END DO
 
-            DO I = 1, NWKD   ! Diurnal
+            DO D = 1, 7
 
-                TOT = 0.0
-                DO K = 1, 24
-                    TOT = TOT + WKDFAC( K,I )
-                END DO
+                DO I = 1, NHRL   ! Diurnal
 
-                IF( TOT .GT. 0. ) THEN
-                    DIV = 1.0 / TOT
-                ELSE
-                    DIV = 0.
-                END IF
+                    TOT = 0.0
+                    DO K = 1, 24
+                        TOT = TOT + HRLFAC( K,I,D )
+                    END DO
 
-                DO K = 1, 24
-                    WKDFAC( K,I ) = DIV * WKDFAC( K,I )
-                END DO
+                    IF( TOT .GT. 0. ) THEN
+                        DIV = 1.0 / TOT
+                    ELSE
+                        DIV = 0.
+                    END IF
 
-            END DO
+                    DO K = 1, 24
+                        HRLFAC( K,I,D ) = DIV * HRLFAC( K,I,D )
+                    END DO
 
-            DO I = 1, NEND   ! Weekend diurnal
-
-                TOT = 0.0
-                DO K = 1, 24
-                    TOT = TOT + ENDFAC( K,I )
-                END DO
-
-                IF( TOT .GT. 0. ) THEN
-                    DIV = 1.0 / TOT
-                ELSE
-                    DIV = 0.
-                END IF
-
-                DO K = 1, 24
-                    ENDFAC( K,I ) = DIV * ENDFAC( K,I )
                 END DO
 
             END DO
 
-        ENDIF
+        END IF
 
 C.........  Weight monthly profiles by the number of days in a month
         DO I = 1, NMON
