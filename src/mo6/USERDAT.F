@@ -188,13 +188,25 @@ C used during population.
  
       IMPLICIT NONE 
       INCLUDE 'IOUCOM.I' 
+       
+      INTEGER, EXTERNAL :: JUNIT 
+       
       CHARACTER*89 ALINE 
       CHARACTER*1 ISRCH 
       INTEGER K,K2,IP,IV,IFDS,MYF,MYL,ISR,INH,SOURCE 
       REAL ZML,DR,ADJ,DR1,DR2,CPT1,CPT2 
+       
+ccs   Add declarations of M6DIR and M6FILE 
+      CHARACTER(LEN=50) M6DIR 
+      CHARACTER(LEN=80) M6FILE 
  
-      SOURCE=IOUALT 
-      OPEN(FILE=FILENAME,UNIT=SOURCE,ACTION='READ',STATUS='OLD') 
+      SOURCE=JUNIT() 
+ 
+ccs   All M6 input files live in SMK_M6PATH 
+      CALL GETENV( "SMK_M6PATH", M6DIR ) 
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME 
+         
+      OPEN(FILE=M6FILE,UNIT=SOURCE,ACTION='READ',STATUS='OLD') 
       K=0 
       K2=0 
       NULLIFY(PNULL) 
@@ -417,7 +429,6 @@ C calculate the emissions.
 C 
 C CALLED BY EF81_93 
 C 
-
 C Calls hnbefusr 
 C Changes 
 C 
@@ -730,6 +741,8 @@ C
       IMPLICIT NONE 
  
       INCLUDE 'IOUCOM.I' 
+C  
+      INTEGER, EXTERNAL :: JUNIT    
  
       CHARACTER   INPREC*(*) 
       INTEGER     INERR 
@@ -741,6 +754,10 @@ C
       CHARACTER   M6REC*150 
       CHARACTER   STDLAB*40 
       INTEGER     SOURCE 
+       
+ccs   Add declarations of M6DIR and M6FILE 
+      CHARACTER(LEN=50) M6DIR 
+      CHARACTER(LEN=80) M6FILE 
 C 
 C     FIND OUT WHETHER WE ARE READING FROM AN EXTERNAL DATA FILE. 
 C                  
@@ -751,7 +768,7 @@ C
 C 
 C       READ THE DATA FROM AN EXTERNAL DATA FILE. 
 C 
-        SOURCE = IOUALT 
+        SOURCE = JUNIT() 
 C 
 C       FIND THE TOKEN NUMBER OF THE RECORD LABEL THAT MUST APPEAR 
 C       ON A RECORD SOMEWHERE IN THE HEADER OF THE EXTERNAL DATA FILE. 
@@ -760,11 +777,14 @@ C
 C 
 C       OPEN THE EXTERNAL DATA FILE. 
 C 
-
 ccs        CALL UCCOMP(INPREC(21:), FILENAME) 
-        CALL LJCOMP(INPREC(21:), FILENAME)
-
-        OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+        CALL LJCOMP(INPREC(21:), FILENAME) 
+ 
+ccs     All M6 input files live in SMK_M6PATH 
+        CALL GETENV( "SMK_M6PATH", M6DIR ) 
+        M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME 
+         
+        OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *       IOSTAT=RC,ERR=80) 
         WRITE(IOUREP,120) FILENAME 
   120   FORMAT(/'* Reading non-default BASIC EMISSION RATES from ', 
@@ -830,6 +850,3 @@ C
        END SUBROUTINE 
  
       END MODULE 
- 
- 
- 

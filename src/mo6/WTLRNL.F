@@ -57,6 +57,8 @@ C
       IMPLICIT NONE 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'RUNLS1.I' 
+C  
+      INTEGER, EXTERNAL :: JUNIT    
 C 
 C     declare parameter list 
 C 
@@ -83,6 +85,10 @@ C
       INTEGER   WKND_DIST 
       LOGICAL   EXTDATA 
       REAL      TLSUM 
+       
+ccs   Add declarations of M6DIR and M6FILE 
+      CHARACTER(LEN=50) M6DIR 
+      CHARACTER(LEN=80) M6FILE 
 C 
       RC = 0 
 C 
@@ -96,7 +102,7 @@ C
 C 
 C       Read the data from an external data file. 
 C 
-        SOURCE = IOUALT 
+        SOURCE = JUNIT() 
 C 
 C       Find the token number of the record label that must appear 
 C       on a record somewhere in the header of the external data file. 
@@ -114,11 +120,14 @@ C       compiler generated warnings. They have no functional importance.
 C 
 C       Open the external data file. 
 C 
-
 ccs        CALL UCCOMP(INPREC(21:), FILENAME) 
         CALL LJCOMP(INPREC(21:), FILENAME)
-
-        OPEN(SOURCE,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+         
+ccs     All M6 input files live in SMK_M6PATH 
+        CALL GETENV( "SMK_M6PATH", M6DIR ) 
+        M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME 
+       
+        OPEN(SOURCE,FILE=M6FILE,STATUS='OLD',ACTION='READ',
      *       IOSTAT=RC,ERR=80) 
         EXTDATA = .TRUE. 
         IF( IWK .EQ. 1) THEN 
@@ -207,7 +216,7 @@ C
         END DO 
       END DO 
 C 
-      IF (EXTDATA) CLOSE(IOUALT) 
+      IF (EXTDATA) CLOSE(SOURCE) 
 C 
    40 GOTO 99 
 C 
