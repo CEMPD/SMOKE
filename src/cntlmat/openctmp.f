@@ -77,13 +77,13 @@ C   Begin body of subroutine OPENCTMP
             FIRSTIME = .FALSE.
 
             MESG = 'Path where temporary control files will be written'
-            CALL ENVSTR( 'TMP_CTL_PATH', MESG, '.', PATHNM, IOS )
+            CALL ENVSTR( 'SMK_TMPPATH', MESG, '.', PATHNM, IOS )
             LP = LEN_TRIM( PATHNM )
 
             IF( IOS .NE. 0 ) THEN
                 MESG = 'WARNING: Large temporary files being placed '//
      &                 'executable directory because ' // CRLF() //
-     &                 BLANK10 // 'environment variable TMP_CTL_PATH '//
+     &                 BLANK10 // 'environment variable SMK_TMPPATH '//
      &                 'is not set properly'
                 CALL M3MSG2( MESG )
             END IF
@@ -94,23 +94,23 @@ C   Begin body of subroutine OPENCTMP
 
            CASE ( 'CTG' )
 
-              FILENM = PATHNM( 1:LP ) // '/.ctgtmp'
+              FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_ctg'
               IDEV = JUNIT()
               OPEN( IDEV, ERR=1006, FILE=FILENM )
 
            CASE ( 'CONTROL', 'EMS_CONTROL' )
 
-              FILENM = PATHNM( 1:LP ) // '/.ctltmp'
+              FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_ctl'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
            CASE ( 'ALLOWABLE' )
 
-              FILENM = PATHNM( 1:LP ) // '/.alwtmp'
+              FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_alw'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
            CASE ( 'ADD' )
 
-              FILENM = PATHNM( 1:LP ) // '/.addtmp'
+              FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_add'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
         END SELECT
