@@ -228,6 +228,8 @@ C.........  Reset flag for PinG if none in the input file
      &                 'file will not be written.'
                 CALL M3MSG2( MESG )
                 ELEVFLAG = .FALSE.
+            ELSE
+                NMAJOR = NPSRC
             END IF 
 
             IF( PINGFLAG .AND. NPING .EQ. 0 ) THEN
