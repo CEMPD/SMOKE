@@ -19,6 +19,8 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 setenv SMK_SOURCE B            # source category to process
 setenv MRG_SOURCE B            # source category to merge
 
+setenv BEIS_VERSION     3.09   # version of BEIS3 to use (currently 3.09 or 3.12)
+
 # time independent programs
 setenv RUN_NORMBEIS3    Y        # Y runs normalized emissions program
 
@@ -35,6 +37,16 @@ setenv OUTZONE          0        # Output time zone
 setenv RAD_VAR          RGRND    # name of radiation/cloud variable
 setenv TMPR_VAR         TA       # name of temperature variable
 setenv PRES_VAR         PRES     # name of surface pressure variable
+
+# For Tmpbeis3 with BEIS_VERSION = 3.12
+setenv OUT_UNITS        1        # molar output units (1 = moles/hr, 2 = moles/s)
+setenv PX_VERSION       N        # Y: MCIP is from PX version of MM5
+setenv SOILT_VAR        SOIT1    # name of soil temperature variable if using PX version
+setenv ISLTYP_VAR       SLTYP    # name of soil type variable if using PX version
+setenv SOILM_VAR        SOIM1    # name of soil moisture variable if using PX version
+setenv RN_VAR           RN       # name of non-convective rainfall variable
+setenv RC_VAR           RC       # name of convective rainfall variable
+setenv INITIAL_RUN      Y        # Y: running first day of scenario, N for subsequent days
 
 # For Smkmerge - getting county reports
 setenv MRG_TEMPORAL_YN    Y         # Y merges with hourly emissions
