@@ -151,6 +151,7 @@ C...........   Other local variables
         LOGICAL      :: LAR2PT  = .FALSE.  ! true: area inven has xloc/yloc
         LOGICAL      :: PFLAG   = .FALSE.  ! true: project matrix encountered
         LOGICAL      :: SFLAG   = .FALSE.  ! true: inventory read error
+        LOGICAL      :: ADJVAL  = .FALSE.  ! true: adjust data value to 0-100 scale
 
         CHARACTER*16    EVNAME  !  tmp environment variable name
         CHARACTER*16    NAME1   ! tmp file name component
@@ -753,7 +754,26 @@ C...............  ALlocate memory for arc-based output arrays, if needed
                 SRCDAT = 0.    ! array
                 DO C = 1, NREC
                     S = SRCID( C )
-                    SRCDAT( S, 1:NPVAR ) = DATAVAR( C, 1:NPVAR )
+                    
+C.....................  Convert control efficiency, rule effectiveness, and rule
+C                       penetration values back to 0-100 scale
+C                       Can use VNAMESET since FileSet headers haven't been changed
+                    DO J = 1, NPVAR
+                        ADJVAL = .FALSE.
+                        
+                        IF( VNAMESET( J+1 )(1:CPRTLEN3) == CTLEFFRT )
+     &                      ADJVAL = .TRUE.
+                        IF( VNAMESET( J+1 )(1:CPRTLEN3) == RULEFFRT )
+     &                      ADJVAL = .TRUE.
+                        IF( VNAMESET( J+1 )(1:CPRTLEN3) == RULPENRT )
+     &                      ADJVAL = .TRUE.
+                        
+                        IF( ADJVAL ) THEN
+                            SRCDAT( S,J ) = DATAVAR( C,J )*100
+                        ELSE
+                            SRCDAT( S,J ) = DATAVAR( C,J )
+                        END IF
+                    END DO
                 END DO
                     
                 CALL WRIDAPOL( CATEGORY, VARBUF, NSRC, NPVAR, SRCDAT, 
