@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -109,10 +109,18 @@ C.........  State totals...
 
             IF( AFLAG ) THEN
                 AEBSTA = 0.   ! state total inven or speciated emissions
-        	AEUSTA = 0.   ! state total multiplicative-controlled emissions
-        	AEASTA = 0.   ! state total additive- controlled emissions
-        	AERSTA = 0.   ! state total reactivity-controlled emissions
-        	AECSTA = 0.   ! state total all-controlled emissions
+        	IF ( ALLOCATED( AEUSTA ) ) THEN
+                    AEUSTA = 0.   ! state total multipltv-controlled emissions 
+                END IF
+        	IF ( ALLOCATED( AEASTA ) ) THEN
+                    AEASTA = 0.   ! state total additive- controlled emissions
+                END IF
+        	IF ( ALLOCATED( AERSTA ) ) THEN
+                    AERSTA = 0.   ! state total reactivity-controlled emissions
+                END IF
+        	IF ( ALLOCATED( AECSTA ) ) THEN
+                    AECSTA = 0.   ! state total all-controlled emissions
+                END IF
             END IF
 
             IF( BFLAG ) THEN
@@ -121,26 +129,50 @@ C.........  State totals...
 
             IF( MFLAG ) THEN
         	MEBSTA = 0.
-        	MEUSTA = 0.
-        	MEASTA = 0.
-        	MERSTA = 0.
-        	MECSTA = 0.
+        	IF ( ALLOCATED( MEUSTA ) ) THEN
+                    MEUSTA = 0.
+                END IF
+        	IF ( ALLOCATED( MEASTA ) ) THEN
+                    MEASTA = 0.
+                END IF
+        	IF ( ALLOCATED( MERSTA ) ) THEN
+                    MERSTA = 0.
+                END IF
+        	IF ( ALLOCATED( MECSTA ) ) THEN
+                    MECSTA = 0.
+                END IF
             END IF
 
             IF( PFLAG ) THEN
         	PEBSTA = 0.
-        	PEUSTA = 0.
-        	PEASTA = 0.
-        	PERSTA = 0.
-        	PECSTA = 0.
+        	IF ( ALLOCATED( PEUSTA ) ) THEN
+                    PEUSTA = 0.
+                END IF
+        	IF ( ALLOCATED( PEASTA ) ) THEN
+                    PEASTA = 0.
+                END IF
+        	IF ( ALLOCATED( PERSTA ) ) THEN
+                    PERSTA = 0.
+                END IF
+        	IF ( ALLOCATED( PECSTA ) ) THEN
+                    PECSTA = 0.
+                END IF
             END IF
 
             IF( XFLAG ) THEN
         	TEBSTA = 0.
-        	TEUSTA = 0.
-        	TEASTA = 0.
-        	TERSTA = 0.
-        	TECSTA = 0.
+        	IF ( ALLOCATED( TEUSTA ) ) THEN
+                    TEUSTA = 0.
+                END IF
+        	IF ( ALLOCATED( TEASTA ) ) THEN
+                    TEASTA = 0.
+                END IF
+        	IF ( ALLOCATED( TERSTA ) ) THEN
+                    TERSTA = 0.
+                END IF
+        	IF ( ALLOCATED( TECSTA ) ) THEN
+       	            TECSTA = 0.
+                END IF
             END IF
 
         END IF
@@ -148,10 +180,18 @@ C.........  State totals...
 C.........  County totals...
         IF( AFLAG ) THEN
             AEBCNY = 0.   ! county total inven or speciated emissions
-            AEUCNY = 0.   ! county total multiplicative-controlled emissions
-            AEACNY = 0.   ! county total additive- controlled emissions
-            AERCNY = 0.   ! county total reactivity-controlled emissions
-            AECCNY = 0.   ! county total all-controlled emissions
+            IF ( ALLOCATED( AEUCNY ) ) THEN
+                AEUCNY = 0.   ! county total multiplicative-controlled emissions
+            END IF
+            IF ( ALLOCATED( AEACNY ) ) THEN
+                AEACNY = 0.   ! county total additive- controlled emissions
+            END IF
+            IF ( ALLOCATED( AERCNY ) ) THEN
+                AERCNY = 0.   ! county total reactivity-controlled emissions
+            END IF
+            IF ( ALLOCATED( AECCNY ) ) THEN
+                AECCNY = 0.   ! county total all-controlled emissions
+            END IF
         END IF
 
         IF( BFLAG ) THEN
@@ -160,26 +200,50 @@ C.........  County totals...
 
         IF( MFLAG ) THEN
             MEBCNY = 0.
-            MEUCNY = 0.
-            MEACNY = 0.
-            MERCNY = 0.
-            MECCNY = 0.
+            IF ( ALLOCATED( MEUCNY ) ) THEN
+                MEUCNY = 0.
+            END IF
+            IF ( ALLOCATED( MEACNY ) ) THEN
+                MEACNY = 0.
+            END IF
+            IF ( ALLOCATED( MERCNY ) ) THEN
+                MERCNY = 0.
+            END IF
+            IF ( ALLOCATED( MECCNY ) ) THEN
+                MECCNY = 0.
+            END IF
         END IF
 
         IF( PFLAG ) THEN
             PEBCNY = 0.
-            PEUCNY = 0.
-            PEACNY = 0.
-            PERCNY = 0.
-            PECCNY = 0.
+            IF ( ALLOCATED( PEUCNY ) ) THEN
+                PEUCNY = 0.
+            END IF
+            IF ( ALLOCATED( PEACNY ) ) THEN
+                PEACNY = 0.
+            END IF
+            IF ( ALLOCATED( PERCNY ) ) THEN
+                PERCNY = 0.
+            END IF
+            IF ( ALLOCATED( PECCNY ) ) THEN
+                PECCNY = 0.
+            END IF
         END IF
 
         IF( XFLAG ) THEN
             TEBCNY = 0.
-            TEUCNY = 0.
-            TEACNY = 0.
-            TERCNY = 0.
-            TECCNY = 0.
+            IF ( ALLOCATED( TEUCNY ) ) THEN
+                TEUCNY = 0.
+            END IF
+            IF ( ALLOCATED( TEACNY ) ) THEN
+                TEACNY = 0.
+            END IF
+            IF ( ALLOCATED( TERCNY ) ) THEN
+                TERCNY = 0.
+            END IF
+            IF ( ALLOCATED( TECCNY ) ) THEN
+                TECCNY = 0.
+            END IF
         END IF
 
         RETURN
