@@ -1,7 +1,7 @@
 
-        SUBROUTINE RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, 
-     &                       DAYFLAG, FNAME, INVDCOD, INVDNAM, SDATE, 
-     &                       STIME, NSTEPS, EASTAT )
+        SUBROUTINE RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 
+     &                       DAYFLAG, FNAME, SDATE, STIME, NSTEPS, 
+     &                       EASTAT )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -65,14 +65,12 @@ C...........   INCLUDES
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV           ! file unit no.
-        INTEGER,      INTENT (IN) :: MXIDAT         ! max no of inventory data
         INTEGER,      INTENT (IN) :: TZONE          ! output time zone
-        INTEGER,      INTENT (IN) :: TSTEP          ! time step HHMMSS
+        INTEGER,      INTENT (IN) :: INSTEP         ! expected data time step HHMMSS
+        INTEGER,      INTENT (IN) :: OUTSTEP        ! output time step HHMMSS
         INTEGER,      INTENT (IN) :: MXPDSRC        ! max. day- or hr-spec srcs
         LOGICAL,      INTENT (IN) :: DAYFLAG        ! true: day-specific
         CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
-        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) !  inv data 5-digit codes
-        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) !  in data names
         INTEGER,      INTENT(OUT) :: SDATE          ! Julian start date in TZONE
         INTEGER,      INTENT(OUT) :: STIME          ! data start time in TZONE
         INTEGER,      INTENT(OUT) :: NSTEPS         ! no. time steps
@@ -204,16 +202,15 @@ C.............  Open files, and report status
 C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
             IF( FILFMT .EQ. EMSFMT ) THEN
 
-        	CALL RDEMSPD( IDEV, TZONE, TSTEP, MXPDSRC, DFLAG, NFLAG, 
-     &                        NEWLOOP, DAYFLAG, SDATE, STIME, EDATE, 
-     &                        ETIME, EASTAT )
+        	CALL RDEMSPD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG, 
+     &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME, 
+     &                        EDATE, ETIME, EASTAT )
 
             ELSE IF( FILFMT .EQ. EPSFMT ) THEN
 
-                CALL RDEPSPD( IDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, 
-     &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, INVDCOD, 
-     &                        INVDNAM, SDATE, STIME, EDATE, ETIME, 
-     &                        EASTAT )
+                CALL RDEPSPD( IDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 
+     &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, 
+     &                        SDATE, STIME, EDATE, ETIME, EASTAT )
 
             ELSE
 
@@ -239,7 +236,7 @@ C.........  Abort if error found
 
 C.........  Compute number of time steps based on SDATE and EDATE
         NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 
-     &               ( TSTEP / 10000 * 3600 )
+     &               ( OUTSTEP / 10000 * 3600 )
 
 C.........  Rewind input file
         REWIND( FDEV )
