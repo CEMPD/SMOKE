@@ -102,7 +102,7 @@ C.......   Get file name; open input control definition file
 
                 MESG = 'Ending program ' //
      &                 CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
-                CALL M3EXIT( CALLER, 0, 0, MESG, 0 )
+                CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
 
             END IF      !  if could not read response
 

@@ -106,7 +106,7 @@ C.......   Construct actual prompt; Loop:  get file name until file opens
 
                 MESG = 'Ending program ' //
      &                 CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
-                CALL M3EXIT( CALLER, 0, 0, MESG, 0 )
+                CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
 
             END IF      !  if could not read response
 
