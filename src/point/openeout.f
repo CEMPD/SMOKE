@@ -1,5 +1,6 @@
 
-        SUBROUTINE OPENEOUT( NGROUP, SDATE, STIME, ENAME, PDEV, MNAME )
+        SUBROUTINE OPENEOUT( NGROUP, SDATE, STIME, ENAME, 
+     &                       VFLAG, PDEV, MNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -66,6 +67,7 @@ C..........    Subroutine arguments and their descriptions
         INTEGER     , INTENT (IN) :: SDATE   ! start date of episode
         INTEGER     , INTENT (IN) :: STIME   ! start time of episode
         CHARACTER(*), INTENT (IN) :: ENAME   ! i/o api inventory file
+        INTEGER     , INTENT (IN) :: VFLAG   ! true: using variable grid
         INTEGER     , INTENT (OUT):: PDEV    ! ASCII file for major/ping src IDs
         CHARACTER(*), INTENT (OUT):: MNAME   ! logical name of ping srcs groups
 
@@ -135,6 +137,10 @@ C              of the Met file in here.
             WRITE( FDESC3D(6), 94010 ) '/NROWS3D/ ', NROWS3D
             FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
             FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
+
+            IF( VFLAG ) THEN
+                FDESC3D( 13 ) = '/VARIABLE GRID/ ' // GDNAM3D
+            END IF
 
             NVARS3D = 13
             NROWS3D = NGROUP
