@@ -1,10 +1,30 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         PROGRAM GRDPMAT
 
 C***********************************************************************
-C  program body starts at line 100
+C  program body starts at line 125
 C
 C  DESCRIPTION:
 C       Construct point source gridding matrix from data contained in
@@ -192,7 +212,16 @@ C.......   Initializations:
                 CALL M3EXIT( 'GRDPMAT', 0, 0, MESG, 2 )
 
             END IF      !  if dscgrid() failed
+
+C.......   Store grid parameters for later processing
         
+        XX0   = SNGL( XORIG3D )
+        YY0   = SNGL( YORIG3D )
+        XX1   = XX0 + FLOAT( NCOLS3D ) * SNGL( XCELL3D )
+        YY1   = YY0 + FLOAT( NROWS3D ) * SNGL( YCELL3D )
+        DDX   = 1.0 / SNGL( XCELL3D )
+        DDY   = 1.0 / SNGL( YCELL3D )
+
 
 C.......   Get file name; open output gridding matrix file
 
@@ -251,18 +280,12 @@ C...........   Compute gridding matrix
         OFLAG = .FALSE.
         NBLANK = 0
 
-        XX0   = SNGL( XORIG3D )
-        YY0   = SNGL( YORIG3D )
-        XX1   = XX0 + FLOAT( NCOLS3D ) * SNGL( XCELL3D )
-        YY1   = YY0 + FLOAT( NROWS3D ) * SNGL( YCELL3D )
-        DDX   = 1.0 / SNGL( XCELL3D )
-        DDY   = 1.0 / SNGL( YCELL3D )
-
         DO  111  I = 1, NPSRC
 
 C.............  Initialize temporary storage table
             GN  ( I ) = 0
             SN  ( I ) = 0
+            INDX( I ) = I
 
             XX = XLOCA( I )
             YY = YLOCA( I ) 
@@ -295,7 +318,6 @@ C.............  Initialize temporary storage table
 
             NX( C ) = NX( C ) + 1
 
-            INDX( I ) = I
             GN  ( I ) = C
             SN  ( I ) = I
 
