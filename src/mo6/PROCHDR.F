@@ -431,9 +431,7 @@ ccs            ROOT = CMDOUTPUT(1:IDX-1)
 ccs         ENDIF 
 C 
 ccs         CALL UCCOMP(ROOT,RPTFILE) 
-ccs         CALL LJCOMP(ROOT,RPTFILE) 
 ccs         CALL UCCOMP(CMDACTION,RPTACTION) 
-ccs         CALL LJCOMP(CMDACTION,RPTACTION) 
 C 
 ccs         WMOUT = ROOT 
 C 
@@ -497,6 +495,7 @@ C
       ENDIF 
 C 
       IOUREP = JUNIT() 
+       
       IF (PREFIX(RPTACTION,'APPEND ')) THEN 
          OPEN(IOUREP,FILE=RPTFILE,POSITION='APPEND',ERR=80,IOSTAT=IOS) 
       ELSE 
@@ -516,6 +515,7 @@ C
            PMRPTFILE = RPTFILE(1:LEN_TRIM(RPTFILE(1:IDX-1))) // '.PM' 
         ENDIF 
 C 
+        IOUPM = JUNIT() 
         IF (PREFIX(RPTACTION,'APPEND ')) THEN 
           OPEN(IOUPM,FILE=PMRPTFILE,POSITION='APPEND',ERR=80,IOSTAT=IOS) 
         ELSE 
@@ -536,6 +536,7 @@ C
            ATRPTFILE = RPTFILE(1:LEN_TRIM(RPTFILE(1:IDX-1))) // '.TOX' 
         ENDIF 
 C 
+        IOUAT = JUNIT() 
         IF (PREFIX(RPTACTION,'APPEND ')) THEN 
           OPEN(IOUAT,FILE=ATRPTFILE,POSITION='APPEND',ERR=80,IOSTAT=IOS) 
         ELSE 
@@ -556,6 +557,7 @@ C
            SSFILE = RPTFILE(1:LEN_TRIM(RPTFILE(1:IDX-1))) // '.TAB' 
         ENDIF 
 C 
+        IOUSS = JUNIT() 
         IF (PREFIX(RPTACTION,'APPEND ')) THEN 
           OPEN(IOUSS,FILE=SSFILE,POSITION='APPEND',ERR=80, 
      *         IOSTAT=IOS) 
@@ -580,6 +582,7 @@ C
       IF (DBFLAG == 2) THEN 
          DO DBTAB = 1,DBTABMAX 
             TNUM = DBTAB 
+            DBUNIT(DBTAB) = JUNIT() 
             IF (PREFIX(DBACTION(DBTAB),'APPEND ')) THEN 
                OPEN(DBUNIT(DBTAB),FILE=DBFNAMES(DBTAB), 
      &           POSITION='APPEND',ERR=85,IOSTAT=IOS) 
