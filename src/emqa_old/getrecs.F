@@ -208,6 +208,7 @@ C.........  Other variables
         CHARACTER*80    RNGMENU( NRANGE )
         CHARACTER*80    STKMENU( NSTKMTHD )
         CHARACTER*256   MESG    !  scratch message buffer 
+        CHARACTER*256   FMT
 
         DATA MENULST / 
      &       'Select all sources in specific grid cell',
@@ -678,9 +679,13 @@ C.........  Read SMAT
 C.......   Build description of how to use speciation matrix:
  
         IF ( .NOT. DESC3( SNAME ) ) THEN
+C            CALL M3EXIT( 'GETRECS', 0, 0,
+C     &                   'Could not get description of file ' // SNAME,
+C     &                  .TRUE. )
+C           05/10/1999 wts
             CALL M3EXIT( 'GETRECS', 0, 0,
      &                   'Could not get description of file ' // SNAME,
-     &                  .TRUE. )
+     &                  2)
         ELSEIF( NROWS3D .NE. NPSRC ) THEN
             WRITE( MESG, 94010 )
      &      'Dimension mismatch.  PSMAT file:', NROWS3D,
@@ -716,7 +721,12 @@ C.......   Build description of how to use speciation matrix:
             SCRBUF = VNAME3D( V )( K+4:16 )
             J = INDEX1( SCRBUF, NMPOL, EMNAM )
             IF ( J .LT. 0 ) THEN
-                CALL M3ERR( 'GETRECS', 0, 0,
+C                CALL M3ERR( 'GETRECS', 0, 0,
+C     &                      'Bad output species "' //
+C     &                      SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+C     &                      '" in ' // SNAME, 2 )
+C               04/10/1999 wts
+                CALL M3EXIT( 'GETRECS', 0, 0,
      &                      'Bad output species "' //
      &                      SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
      &                      '" in ' // SNAME, 2 )
@@ -960,7 +970,10 @@ C.............  Write out control coefficients
      &             CC( S, V ), V = 1, NIPOL )
 
 C.............  Write out time independant inventory emissions
-            WRITE( ODEV, 93020 ) 
+C           04/10/1999 wts Create format.
+C           WRITE( ODEV, 93020 )
+            WRITE( FMT, 93021 ) NIPOL
+            WRITE( ODEV, FMT )
      &           ( EINAM( V )( 1:TRIMLEN( EINAM( V ) ) ),
      &             EMISV( EINX( I ), V ), V = 1, NIPOL )
 
@@ -982,7 +995,10 @@ C.............  Write out speciation coefficients
      &                              SS( S, SPNT( J ) ), J=1, NMPOL )
 
 C.............  Write out header for temporal emissions
-            WRITE( ODEV, 93040 ) MMDDYY( SDATE ),
+C           04/10/1999 wts Create format.
+C           WRITE( ODEV, 93040 ) MMDDYY( SDATE ),
+            WRITE (FMT, 93041 ) (NIPOL+NMPOL)
+            WRITE( ODEV, FMT ) MMDDYY( SDATE ),
      &                           ( EINAM( V )        , V = 1, NIPOL ), 
      &                           ( EMNAM( SPNT( J ) ), J = 1, NMPOL ),
      &                           ( TONSUNIT          , K = 1, NIPOL ),
@@ -1036,8 +1052,11 @@ C.............  Write out time dependent emissions
             IF( LAYRFLAG ) THEN
 
 C.................  Write out header for layer fractions
-                WRITE( ODEV, 93060 ) MMDDYY( SDATE ), 
-     &                               ( L, L = 1, EMLAYS )
+C               04/10/1999 wts Create format.
+                WRITE (FMT, 93061) EMLAYS
+C               WRITE( ODEV, 93060 ) MMDDYY( SDATE ),
+				WRITE( ODEV, FMT) MMDDYY( SDATE ),
+     &                            ( L, L = 1, EMLAYS )
 
 C.................  Write out time dependent layer fractions
 C.................  Format will put blanks where there are zeroes
@@ -1103,22 +1122,30 @@ C...........   Formatted file I/O formats............ 93xxx
 93010   FORMAT( 5X, ' Control facs...  ',
      &              30( 1X, A, ': ', E11.5 )   )
 
-93020   FORMAT( 5X, ' Inv emissions...',
-     &              <NIPOL>( 1X, A, ': ', E11.5 ), '[tons/yr]' )
+C93020   FORMAT( 5X, ' Inv emissions...',
+C     &              <NIPOL>( 1X, A, ': ', E11.5 ), '[tons/yr]' )
+93021   FORMAT( "( 5X, ' Inv emissions...', ",
+     &              I8, "( 1X, A, ': ', E11.5 ), '[tons/yr]' )" )
 
 93030   FORMAT( 5X, ' Speciation coefficients [gm mol/tons]...', /,
      &          5( 9X, 7( 1X, A4, ': ', E11.5 ), / ) )
 
-93040   FORMAT( 5X, ' Hourly emissions starting ', A14, '...' /,
-     &          5X, ' Dy Hr', <NIPOL+NMPOL>( 1X, A8 ) , /,
-     &          11X, <NIPOL+NMPOL>( 1X, A8 ) )
+C93040   FORMAT( 5X, ' Hourly emissions starting ', A14, '...' /,
+C     &          5X, ' Dy Hr', <NIPOL+NMPOL>( 1X, A8 ) , /,
+C     &          11X, <NIPOL+NMPOL>( 1X, A8 ) )
+93041   FORMAT( "( 5X, ' Hourly emissions starting ', A14, '...' /, ",
+     &          "5X, ' Dy Hr', ", I8, "( 1X, A8 ) , /, ",
+     &          "11X, ", I8, "( 1X, A8 ) )" )
 
 93050   FORMAT( 6X, I2.2, 1X, I2.2, 30( 1X, E8.3 ) )
 
 93055   FORMAT( 5X, ' Total', 30( 1X, E8.3 ) )
 
-93060   FORMAT( 5X, ' Layer fractions starting ', A14, '...' /,
-     &          5X, ' Dy Hr', <EMLAYS>( 1X, ' Lyr(', I2.2, ')' ) )
+C93060   FORMAT( 5X, ' Layer fractions starting ', A14, '...' /,
+C     &          5X, ' Dy Hr', <EMLAYS>( 1X, ' Lyr(', I2.2, ')' ) )
+93061   FORMAT( "( 5X, ' Layer fractions starting ', A14, '...' /, ",
+     &          "5X, ' Dy Hr', ", I8, "( 1X, ' Lyr(', I2.2, ')' ) )" )	 
+	 
 
 93070   FORMAT( 6X, I2.2, 1X, I2.2, $ )
 
