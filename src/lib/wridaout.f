@@ -534,7 +534,7 @@ C-------------------------------------------------------------------------
 
                 WRITE( CYEAR, '(I4)' ) YEAR
 
-                K = FIND1( COID, NCOUNTRY, CTRYCOD )
+                K = FIND1( COID*100000, NCOUNTRY, CTRYCOD )
 
                 IF( K .GT. 0 ) THEN
 
