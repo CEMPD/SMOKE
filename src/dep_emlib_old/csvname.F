@@ -1,31 +1,9 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
  
         INTEGER FUNCTION CSVNAME( IDEV  , LINVEN, LMODEL, LPROCESS,
      &                            VNAMES )
 
 C***********************************************************************
-C  function body starts at line 117
+C  function body starts at line 116
 C
 C  DESCRIPTION:
 C       Creates variable names from combinations of inventory species,
@@ -44,12 +22,33 @@ C       Prototype  5/96 by MRH.
 C       5/31/96 MRH changed to allow names only in order allowed by EXT file
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***************************************************************************
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
  
-        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'CHDGEN3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'MBDIMS3.EXT'   !  motor vehicles parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
@@ -370,6 +369,7 @@ C.........................  Check to make sure valid
                             NAME = VNAMES( COUNT )( 1:LEN )
                             WRITE( MESG, 94010 ) 
      &                          'Invalid emission type name: ' // NAME
+                            CALL M3MESG( MESG )
                         ENDIF
 
   116               CONTINUE
