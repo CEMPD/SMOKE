@@ -48,8 +48,8 @@ C
       INTEGER        PTR2 
 
 ccs   Add declarations of M6DIR and M6FILE
-      CHARACTER(LEN=50) M6DIR
-      CHARACTER(LEN=80) M6FILE
+      CHARACTER(LEN=200) M6DIR
+      CHARACTER(LEN=280) M6FILE
 C 
 C ..................................................................... 
 C 
@@ -73,9 +73,8 @@ C
 C     Process this filename via GETPMGZML. 
 C 
       M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
-      FILENAME = M6FILE
       
-      CALL GETPMGZML(TRIM(FILENAME),INERR,RC) 
+      CALL GETPMGZML(TRIM(M6FILE),INERR,RC) 
 C 
 C     If any error occurs, abort 
 C 
@@ -90,9 +89,8 @@ C
 C     Process this filename via GETPMGDR1. 
 C 
       M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
-      FILENAME = M6FILE
       
-      CALL GETPMGDR1(TRIM(FILENAME),INERR,RC) 
+      CALL GETPMGDR1(TRIM(M6FILE),INERR,RC) 
 C 
 C     If any error occurs, abort 
 C 
@@ -107,9 +105,8 @@ C
 C     Process this filename via GETPMGDR2. 
 C 
       M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
-      FILENAME = M6FILE
       
-      CALL GETPMGDR2(TRIM(FILENAME),INERR,RC) 
+      CALL GETPMGDR2(TRIM(M6FILE),INERR,RC) 
 C 
 C     If any error occurs, abort 
 C 
@@ -124,9 +121,8 @@ C
 C     Process this filename via GETPMDZML. 
 C 
       M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
-      FILENAME = M6FILE
       
-      CALL GETPMDZML(TRIM(FILENAME),INERR,RC) 
+      CALL GETPMDZML(TRIM(M6FILE),INERR,RC) 
 C 
 C     If any error occurs, abort 
 C 
@@ -141,9 +137,8 @@ C
 C     Process this filename via GETDPMDDR1. 
 C 
       M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
-      FILENAME = M6FILE
       
-      CALL GETPMDDR1(TRIM(FILENAME),INERR,RC) 
+      CALL GETPMDDR1(TRIM(M6FILE),INERR,RC) 
 C 
 C     If any error occurs, abort 
 C 
@@ -158,9 +153,8 @@ C
 C     Process this filename via GETPMDDR2. 
 C 
       M6FILE = TRIM( M6DIR ) // '/' // TRIM( FILENAME )
-      FILENAME = M6FILE
       
-      CALL GETPMDDR2(TRIM(FILENAME),INERR,RC) 
+      CALL GETPMDDR2(TRIM(M6FILE),INERR,RC) 
 C 
 C     If any error occurs, abort 
 C 

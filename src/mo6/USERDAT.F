@@ -197,8 +197,8 @@ C used during population.
       REAL ZML,DR,ADJ,DR1,DR2,CPT1,CPT2 
        
 ccs   Add declarations of M6DIR and M6FILE 
-      CHARACTER(LEN=50) M6DIR 
-      CHARACTER(LEN=80) M6FILE 
+      CHARACTER(LEN=200) M6DIR 
+      CHARACTER(LEN=280) M6FILE 
  
       SOURCE=JUNIT() 
  
@@ -756,8 +756,8 @@ C
       INTEGER     SOURCE 
        
 ccs   Add declarations of M6DIR and M6FILE 
-      CHARACTER(LEN=50) M6DIR 
-      CHARACTER(LEN=80) M6FILE 
+      CHARACTER(LEN=200) M6DIR 
+      CHARACTER(LEN=280) M6FILE 
 C 
 C     FIND OUT WHETHER WE ARE READING FROM AN EXTERNAL DATA FILE. 
 C                  

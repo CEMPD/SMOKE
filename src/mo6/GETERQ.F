@@ -120,8 +120,8 @@ C
       REAL A50NEW  
       
 ccs   Add declarations of M6DIR and M6FILE
-      CHARACTER(LEN=50) M6DIR
-      CHARACTER(LEN=80) M6FILE
+      CHARACTER(LEN=200) M6DIR
+      CHARACTER(LEN=280) M6FILE
 C 
 C     Note: The rules for the federal evaporative test procedure have 
 C     been finalized and the parameters of the final rulemakeing have  

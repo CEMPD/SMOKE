@@ -69,8 +69,8 @@ C
       INTEGER, SAVE        ::  IYES=1 
 
 ccs   Add declarations of M6DIR and M6FILE
-      CHARACTER(LEN=50) M6DIR
-      CHARACTER(LEN=80) M6FILE
+      CHARACTER(LEN=200) M6DIR
+      CHARACTER(LEN=280) M6FILE
 C 
 C ..................................................................... 
 C 

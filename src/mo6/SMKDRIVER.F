@@ -89,9 +89,9 @@ C
      &         BDUNIT,   BD_AC,    BD_IM1,   BD_IM2,   BD_NGV,    
      &         BD_SFTP,  BD_TIER2, BD_T2PM   
 C 
-      CHARACTER(LEN=80), INTENT (IN) :: INPFILE    ! Mobile6 input file name
-      INTEGER          , INTENT (IN) :: LDEV       ! SMOKE log file unit number
-      LOGICAL          , INTENT(OUT) :: EFLAG      ! true: an error has occured
+      CHARACTER(LEN=280), INTENT (IN) :: INPFILE    ! Mobile6 input file name
+      INTEGER           , INTENT (IN) :: LDEV       ! SMOKE log file unit number
+      LOGICAL           , INTENT(OUT) :: EFLAG      ! true: an error has occured
 C 
       LOGICAL,PARAMETER         ::  BACK=.TRUE. 
       LOGICAL                   ::  BATMODE 
@@ -124,8 +124,8 @@ ccs      CHARACTER*80              ::  INPFILE
       LOGICAL                   ::  RUNMODE 
 
 ccs   Add declarations of M6DIR and M6FILE
-      CHARACTER(LEN=50) M6DIR
-      CHARACTER(LEN=80) M6FILE
+      CHARACTER(LEN=200) M6DIR
+      CHARACTER(LEN=280) M6FILE
 C 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
