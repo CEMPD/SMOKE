@@ -920,6 +920,17 @@ C           divide pollutants into even groups and try again.
 
         NGSZ = NIPPA            ! No. of pollutant & emis types in each group
         NGRP = 1               ! Number of groups
+
+C.........  Make sure total array size is not larger than maximum
+        DO
+            IF( NSRC*NGSZ*24 >= 1024*1024*1024 ) THEN
+                NGRP = NGRP + 1
+                NGSZ = ( NIPPA + NGRP - 1 ) / NGRP
+            ELSE
+                EXIT
+            END IF
+        END DO
+
         DO
 
             ALLOCATE( TMAT ( NSRC, NGSZ, 24 ), STAT=IOS1 )
@@ -951,8 +962,7 @@ C.............  Only need to allocate if we have activities
                 END IF
 
                 NGRP = NGRP + 1
-                NGSZ = NGSZ / NGRP 
-                NGSZ = NGSZ + ( NIPPA - NGSZ * NGRP )
+                NGSZ = ( NIPPA + NGRP - 1 ) / NGRP
 
                 IF( ALLOCATED( TMAT  ) ) DEALLOCATE( TMAT )
                 IF( ALLOCATED( MDEX  ) ) DEALLOCATE( MDEX )
@@ -1001,6 +1011,12 @@ C.........  Create 2-d arrays of I/O pol names, activities, & emission types
 C.........  Loop through pollutant/emission-type groups
         DO N = 1, NGRP
 
+C.............  If this is the last group, NGSZ may be larger than actual
+C               number of variables, so reset based on total number
+            IF( N == NGRP ) THEN
+                NGSZ = NIPPA - ( NGRP - 1 )*NGSZ
+            END IF
+            
 C.............  Skip group if the first pollutant in group is blank (this
 C               shouldn't happen, but it is happening, and it's easier to
 C               make this fix).
