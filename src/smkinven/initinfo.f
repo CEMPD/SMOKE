@@ -91,7 +91,7 @@ C           This section will be executed every time the routine is called
         CASE( 'POINT' )
 
             SELECT CASE( FILFMT )
-            CASE( IDAFMT )
+            CASE( IDAFMT, TOXFMT )
                 NCHARS = 6
                 JSCC   = 6
                 JSTACK = 4
@@ -113,7 +113,6 @@ C.........  Skip the rest of the routine if it has been called before
         IF( .NOT. FIRST ) RETURN
            
 C.........  Set category-independent variables
-        JSCC  = 0   ! default position of SCC in source description
         NPACT = 1   ! no. variables per activity
 
 C.........  Choose the source category for which to set the source information
@@ -141,6 +140,7 @@ C.........  For mobile sources ...
             NPPOL  = NMBPPOL3
             MXCHRS = MXMBCHR3
             NCHARS = MXCHRS  ! FIPS / SCC (veh type &/or road class) / veh type / lnk
+            JSCC   = 0
             LSCCEND  = 7
             RSCCBEG  = 8
 
