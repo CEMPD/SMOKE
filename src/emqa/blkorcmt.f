@@ -2,14 +2,13 @@
         LOGICAL FUNCTION BLKORCMT( LINE )
 
 C***********************************************************************
-C  function body starts at line 49
+C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C    The BLKORCMT routine will return TRUE if line is blank or a comment
-C    line.
+C    The BLKORCMT routine will return true of the buffer given it is a blank
+C    or a comment.
 C
 C  PRECONDITIONS REQUIRED:
-C    LINE is defined
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
@@ -40,16 +39,26 @@ C***********************************************************************
 
         IMPLICIT NONE
 
+C...........   INCLUDES
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: LINE   ! line of data
+        CHARACTER(*), INTENT (IN) :: LINE        ! line of data
+
+C...........   Local variables
+        INTEGER      J
 
 C***********************************************************************
-C   begin body of function BLKORCMT
+C   begin body of subroutine BLKORCMT
 
-        BLKORCMT = .FALSE.
 
-        IF( LINE        .EQ. ' ' .OR.
-     &      LINE( 1:1 ) .EQ. '#'      ) BLKORCMT = .TRUE.
+        IF( LINE .EQ. ' ' .OR. LINE( 1:1 ) .EQ. CINVHDR ) THEN
+            BLKORCMT = .TRUE.
+
+        ELSE
+            BLKORCMT = .FALSE.
+
+        END IF
 
         RETURN
 
