@@ -8,8 +8,10 @@ C  DESCRIPTION:
 C    Program MRGGRID reads 2-D and 3-D I/O API files and merges them
 C    into a single 2-D or 3-D file (depending on the inputs)
 C    The time period merged is adjusted based on the latest
-C    starting file and earliest ending file.  All variables are
-C    merged, even if different variables are in each file.
+C    starting file and earliest ending file, unless MRG_DIFF_DAY is
+C    set in which case the time period is based on the standard 
+C    environment variables. All variables are merged, even if different 
+C    variables are in each file.
 C
 C  PRECONDITIONS REQUIRED:  
 C
@@ -110,7 +112,8 @@ C...........   Intermediate output variable arrays
 C...........   Logical names and unit numbers
 
         INTEGER       IDEV            ! unit for logical names list for 2d files
-        INTEGER       LDEV     
+        INTEGER       LDEV            ! unit for log file
+        INTEGER       RDEV            ! unit for merge report file
         CHARACTER*16  ONAME           ! Merged output file name
         CHARACTER*16  PNAME           ! Point source input file name 
 
@@ -119,6 +122,10 @@ C...........   Other local variables
 
         INTEGER       EDATE                      ! ending julian date
         INTEGER       ETIME                      ! ending time HHMMSS
+        INTEGER    :: G_SDATE = 0                ! start date from environment
+        INTEGER    :: G_STIME = 0                ! start time from environment
+        INTEGER    :: G_NSTEPS = 1               ! number of time steps from environment
+        INTEGER    :: G_TSTEP = 0                ! time step from environment
         INTEGER       IOS                        ! i/o status
         INTEGER       IREC                       ! line number count
         INTEGER       JDATE                      ! iterative julian date
@@ -145,11 +152,14 @@ C...........   Other local variables
         CHARACTER*16  VNM                        ! tmp variable name
         CHARACTER*256 LINE                       ! input buffer
         CHARACTER*256 MESG                       ! message field
+        CHARACTER*15  RPTCOL                     ! single column in report line
+        CHARACTER*300 RPTLINE                    ! line of report file
 
         LOGICAL    :: EFLAG   = .FALSE.   ! error flag
         LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
         LOGICAL    :: LFLAG   = .FALSE.   ! true iff 3-d file input
         LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
+        LOGICAL       MRGDIFF             ! true: merge files from different days
 
         CHARACTER*16  :: PROGNAME = 'MRGGRID' ! program name
 
@@ -167,6 +177,15 @@ C.........  Read names of input files and open files
 
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
      &                      'FILELIST', PROGNAME   )
+
+C.........  Get environment variables
+        MESG = 'Merge files from different days into single file'
+        MRGDIFF = ENVYN( 'MRG_DIFF_DAYS', MESG, .FALSE., IOS )
+
+        IF( MRGDIFF ) THEN        
+C.............  Get date and time settings from environment
+            CALL GETM3EPI( -1, G_SDATE, G_STIME, G_TSTEP, G_NSTEPS )        
+        END IF
 
 C.........  Determine maximum number of input files in file
         MXNFIL = GETFLINE( IDEV, 'List of files to merge' )
@@ -280,11 +299,25 @@ C.........  Loop through 2D input files
                 SDATEA( F ) = SDATE3D
                 STIMEA( F ) = STIME3D
                 DURATA( F ) = MXREC3D
+                
+                IF( F == 1 ) TSTEP = TSTEP3D
+                
                 DO V = 1, NVARS3D
                     VNAMEA( V,F ) = VNAME3D( V )
                     VUNITA( V,F ) = UNITS3D( V )
                     VDESCA( V,F ) = VDESC3D( V )
                 END DO
+            END IF
+
+C.............  Compare all other time steps back to first file.
+C.............  They must match exactly.
+            IF( TSTEP3D /= TSTEP ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Time step', TSTEP3D,
+     &                 'in file "' // TRIM( NAM ) //
+     &                 '" is inconsistent with first file value of',
+     &                 TSTEP
+                CALL M3MSG2( MESG )
             END IF
 
 C.............  Compare all other grids back to first grid.
@@ -311,7 +344,7 @@ C               not need to match, but the layer structures do need to match.
 
 C.................  For the first file that is 3-d, initialize output layer
 C                   structure       
-		IF ( FIRST3D ) THEN
+                IF ( FIRST3D ) THEN
 
                     NLAYS = NLAYSA( F )
                     VGTYP = VGTYP3D
@@ -381,53 +414,114 @@ C                       the current file and all previous files
 
         END DO                ! End loop through files
 
-        TSTEP  = TSTEP3D     ! Set for all program
-
 C.........  Give error message and end program unsuccessfully
         IF( EFLAG ) THEN
-            MESG = 'Inconsistent grid or layers among the files!'
+            MESG = 'Inconsistent time step, grid, or layers ' //
+     &              'among the files!'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Set start date/time as latest start date/time
+        IF( MRGDIFF ) THEN
 
-        RDATE = ( SDATEA( 1 )/1000 ) * 1000 + 1  ! Set reference date
+C.............  Check that all files have same start time
+            STIME = STIMEA( 1 )
+            
+            DO F = 2, NFILE
+                NAM = FNAME( F )
+            
+                IF( STIMEA( F ) /= STIME ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Start time', 
+     &                 STIMEA( F ), 'in file "' // TRIM( NAM ) //
+     &                 '" is inconsistent with first file value of',
+     &                 STIME
+                    CALL M3MSG2( MESG )
+                END IF
+            END DO
+            
+            IF( EFLAG ) THEN
+                MESG = 'Inconsistent start time among the files!'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
-C.........  Find maximum seconds count b/w file and reference
-        SECSMAX = 0
-        DO F = 1, NFILE
-            SECS = SECSDIFF( RDATE, STIMEA( 1 ), 
-     &                       SDATEA( F ), STIMEA( F ) )
-            SECSMAX = MAX( SECSMAX, SECS )
+C.............  Check that environment settings are consistent with files
+            IF( TSTEP /= G_TSTEP ) THEN
+                WRITE( MESG,94010 ) 'ERROR: Value for G_TSTEP',
+     &              G_TSTEP, 'is inconsistent with the time step ' //
+     &              'of the files', TSTEP
+                CALL M3EXIT( PROGNAME, 0 ,0, MESG, 2 )
+            END IF
 
-        END DO
+            IF( STIME /= G_STIME ) THEN
+                WRITE( MESG,94010 ) 'ERROR: Value for G_STTIME',
+     &              G_STIME, 'is inconsistent with the start time ' //
+     &              'of the files', STIME
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            
+            DO F = 1, NFILE
+                NAM = FNAME( F )
+                
+                IF( DURATA( F ) < G_NSTEPS ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Number of time steps',
+     &                  DURATA( F ), 'in file "' // TRIM( NAM ) // 
+     &                  '" is insufficient to cover the requsted ' //
+     &                  'number of output time steps', G_NSTEPS
+                    CALL M3MSG2( MESG )
+                END IF
+            END DO
+            
+            IF( EFLAG ) THEN
+                MESG = 'Problem with duration of files'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            SDATE = G_SDATE
+            NSTEPS = G_NSTEPS
+        
+        ELSE
+        
+C.............  Set start date/time as latest start date/time
+            RDATE = ( SDATEA( 1 )/1000 ) * 1000 + 1  ! Set reference date
 
-C.........  Set latest start date/time of all files
-        TIMET = SEC2TIME( SECSMAX )
+C.............  Find maximum seconds count b/w file and reference
+            SECSMAX = 0
+            DO F = 1, NFILE
+                SECS = SECSDIFF( RDATE, STIMEA( 1 ), 
+     &                           SDATEA( F ), STIMEA( F ) )
+                SECSMAX = MAX( SECSMAX, SECS )
 
-        SDATE = RDATE
-        STIME = STIMEA( 1 )
-        CALL NEXTIME( SDATE, STIME, TIMET )
+            END DO
 
-C.........  Set duration given shortest file, but initialize duration with
-C           longest possible period across all durations.
-        EDATE = SDATE
-        ETIME = STIME
-        CALL NEXTIME( EDATE, ETIME, MAXVAL( DURATA ) * 10000 )
-        SECSMIN = SECSDIFF( SDATE, STIME, EDATE, ETIME ) ! for point
+C.............  Set latest start date/time of all files
+            TIMET = SEC2TIME( SECSMAX )
 
-        DO F = 1, NFILE
-            EDATE = SDATEA( F )
-            ETIME = STIMEA( F )
-            CALL NEXTIME( EDATE, ETIME, DURATA( F ) * 10000 )
-            SECS = SECSDIFF( SDATE, STIME, EDATE, ETIME )
-            SECSMIN = MIN( SECSMIN, SECS )
+            SDATE = RDATE
+            STIME = STIMEA( 1 )
+            CALL NEXTIME( SDATE, STIME, TIMET )
 
-        END DO
+C.............  Set duration given shortest file, but initialize duration with
+C             longest possible period across all durations.
+            EDATE = SDATE
+            ETIME = STIME
+            CALL NEXTIME( EDATE, ETIME, MAXVAL( DURATA ) * 10000 )
+            SECSMIN = SECSDIFF( SDATE, STIME, EDATE, ETIME ) ! for point
+
+            DO F = 1, NFILE
+                EDATE = SDATEA( F )
+                ETIME = STIMEA( F )
+                CALL NEXTIME( EDATE, ETIME, DURATA( F ) * 10000 )
+                SECS = SECSDIFF( SDATE, STIME, EDATE, ETIME )
+                SECSMIN = MIN( SECSMIN, SECS )
+
+            END DO
            
-        TIMET = SEC2TIME( SECSMIN )
+            TIMET = SEC2TIME( SECSMIN )
 
-        NSTEPS= TIMET / 10000 ! number of time steps 
+            NSTEPS= TIMET / 10000 ! number of time steps 
+
+        END IF
 
 C.........  Build master output variables list
         NVOUT = 0
@@ -532,13 +626,31 @@ C.........  Allocate memory for the number of grid cells and layers
         CALL CHECKMEM( IOS, 'EOUT', PROGNAME )
 
 C.........  Prompt for and open output file
-
         ONAME = PROMPTMFILE( 
      &          'Enter logical name for MERGED GRIDDED OUTPUT file',
      &          FSUNKN3, 'OUTFILE', PROGNAME )
 
-C.........  Loop through hours
+C.........  Propmt for and open report file
+        IF( MRGDIFF ) THEN
+            RDEV = PROMPTFFILE(
+     &             'Enter logical name for the MRGGRID REPORT file',
+     &             .FALSE., .TRUE., 'REPMRGGRID', PROGNAME ) 
 
+C.............  Write header line to report     
+            WRITE( RPTLINE,93010 ) 'Output date'
+            WRITE( RPTCOL,93010 ) 'Output time'
+            RPTLINE = TRIM( RPTLINE ) // RPTCOL
+            
+            DO F = 1, NFILE
+                NAM = FNAME( F )
+                WRITE( RPTCOL,93010 ) TRIM( NAM ) // ' date'
+                RPTLINE = TRIM( RPTLINE ) // RPTCOL
+            END DO
+            
+            WRITE( RDEV,93000 ) TRIM( RPTLINE )
+        END IF
+
+C.........  Loop through hours
         JDATE = SDATE
         JTIME = STIME
         DO T = 1, NSTEPS
@@ -553,6 +665,17 @@ C.................  Output array
 
                 DO F = 1, NFILE
 
+C.....................  Set read date
+                    IF( MRGDIFF ) THEN
+                        IF( JDATE == SDATE ) THEN
+                            RDATE = SDATEA( F )
+                        ELSE
+                            RDATE = SDATEA( F ) + ( JDATE - SDATE )
+                        END IF
+                    ELSE
+                        RDATE = JDATE
+                    END IF
+
 C.....................  Set tmp variables
                     NAM = FNAME ( F )       ! input file name
                     NL  = NLAYSA( F )       ! number of layers
@@ -562,13 +685,14 @@ C.....................  If file has species, read (do this for all files)...
 
 C.........................  If 2-d input file, read, and add
                         IF( NL .EQ. 1 ) THEN
-                            IF( .NOT. READ3( NAM, VNM, 1, JDATE,  
+                            IF( .NOT. READ3( NAM, VNM, 1, RDATE,  
      &                                       JTIME, E2D          )) THEN
 
                                 MESG = 'Could not read "' // VNM //
      &                                 '" from file "' //
      &                                 NAM( 1:LEN_TRIM( NAM ) )// '".'
-                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                                CALL M3EXIT( PROGNAME, RDATE, JTIME, 
+     &                                       MESG, 2 )
                             ENDIF
 
                             EOUT( 1:NGRID,1 ) = EOUT( 1:NGRID,1 ) + E2D
@@ -577,13 +701,14 @@ C.........................  If 3-d input file, allocate memory, read, and add
                         ELSE
 
                             DO K = 1, NL
-                                IF( .NOT. READ3( NAM, VNM, K, JDATE,  
+                                IF( .NOT. READ3( NAM, VNM, K, RDATE,  
      &                                           JTIME, E2D      )) THEN
 
                                     MESG = 'Could not read "' // VNM //
      &                                     '" from file "' //
      &                                   NAM( 1:LEN_TRIM( NAM ) )// '".'
-                                    CALL M3EXIT( PROGNAME,0,0,MESG,2 )
+                                    CALL M3EXIT( PROGNAME, RDATE, JTIME,
+     &                                           MESG, 2 )
                                 END IF
 
                                 EOUT( 1:NGRID,K )= EOUT( 1:NGRID,K ) + 
@@ -592,6 +717,18 @@ C.........................  If 3-d input file, allocate memory, read, and add
 
                         END IF  ! if 2-d or 3-d
                     END IF      ! if pollutant is in this file
+
+C.....................  Build report line if needed
+                    IF( MRGDIFF .AND. V == 1 ) THEN
+                        IF( F == 1 ) THEN
+                            WRITE( RPTLINE,93020 ) JDATE
+                            WRITE( RPTCOL,93020 ) JTIME
+                            RPTLINE = TRIM( RPTLINE ) // RPTCOL
+                        END IF
+                        
+                        WRITE( RPTCOL,93020 ) RDATE
+                        RPTLINE = TRIM( RPTLINE ) // RPTCOL
+                    END IF
 
                 END DO          ! loop over input files
 
@@ -607,13 +744,18 @@ C.................  Write species/hour to output file
 
             END DO   ! loop through variables
 
+C.............  Write this time step to report
+            IF( MRGDIFF ) THEN
+                WRITE( RDEV,93000 ) TRIM( RPTLINE )
+            END IF
+
             CALL NEXTIME( JDATE, JTIME, TSTEP )
       
         END DO       ! loop through timesteps
 
 C......... Normal Completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0)
-	
+    
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Informational (LOG) message formats... 92xxx
@@ -624,10 +766,14 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT(  A )
 
+93010   FORMAT( A15 )
+
+93020   FORMAT( I15 )
+
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I7, :, 1X ) )
 
 94020   FORMAT( A, :, I3, :, 1X, 10 ( A, :, F8.5, :, 1X ) )
 
-	END PROGRAM MRGGRID
+        END PROGRAM MRGGRID
