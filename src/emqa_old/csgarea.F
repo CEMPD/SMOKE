@@ -2,7 +2,7 @@
         PROGRAM CSGAREA
 
 C***********************************************************************
-C  program body starts at line 123
+C  program body starts at line 128
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -48,6 +48,7 @@ C...........   INCLUDES:
         INCLUDE 'ARDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
+        INCLUDE 'TMDIMS3.EXT'   !  temporal parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -56,11 +57,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         DSCGRID
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
+        INTEGER         WKDAY
         
-        EXTERNAL        DSCGRID, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
+        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTMFILE, TRIMLEN, WKDAY
 
 C...........   PARAMETER
 
@@ -368,6 +373,18 @@ C.......   Transform and write out area source emissions values:
 
         DO  199  T = 1, NSTEPS
 
+C...............   If this is a new month, or new day, write message
+            IF ( MOD( T,24 ) .EQ. 1 ) THEN
+ 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
+            END IF
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 93020 ) HHMMSS( JTIME )
+
             DO  198  V = 1, NIPOL
 
                 IF( READ3( ANAME, EINAM( V ), ALLAYS3, 
@@ -432,6 +449,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A16 )
 
+93020   FORMAT( 8X, 'at time ', A8 )
+ 
 
 C...........   Internal buffering formats............ 94xxx
 
