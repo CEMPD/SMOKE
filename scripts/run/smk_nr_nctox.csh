@@ -83,6 +83,9 @@ setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     SMK_AVEDAY_YN               # see multiple-program controls
 
+# For Smk2emis
+setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
+
 # Multiple-program controls
 setenv OUTZONE              0     # output time zone of emissions
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
