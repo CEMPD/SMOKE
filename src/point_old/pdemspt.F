@@ -58,6 +58,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
         LOGICAL         DSCGRID
+        INTEGER         ENVINT
         LOGICAL         ENVYN
         INTEGER         FINDC   !  returns -1 for failure
         INTEGER         GETDATE
@@ -75,7 +76,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         YEAR4
 
-        EXTERNAL CRLF, DSCGRID, ENVYN, FINDC, GETNUM, GETDATE,
+        EXTERNAL CRLF, DSCGRID, ENVINT, ENVYN, FINDC, GETNUM, GETDATE,
      &           GETYN, INDEX1, JULIAN, JUNIT, LAMBERT, LBLANK, 
      &           LL2LAM, UTM2LAM, PROMPTFFILE, PROMPTMFILE, SECSDIFF, 
      &           STR2INT, STR2REAL, TRIMLEN, YEAR4
@@ -172,11 +173,12 @@ C...........   Other local variables
         INTEGER         SDATE   !  Starting output date 
         INTEGER         STIME   !  Starting output time
         INTEGER         TSTEP   !  time step (set to 10000)
-        INTEGER         UZONE   !  UTM zone for the file as a whole
+        INTEGER         TZONE   !  Output time zone
         INTEGER         YEAR    !  temporary year code
         INTEGER         ZONE    !  temporary time zone code
 
         LOGICAL         EFLAG   !  TRUE iff processing error
+        LOGICAL         PROMPTF !  TRUE iff PROMPTFLAG E.V. is Y
         LOGICAL         SFLAG   !  input verification:  report missing species
         LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
 
@@ -233,6 +235,20 @@ C   begin body of program PDEMSPT
      &                 'PDEMSPT check for missing species-records',
      &                 .FALSE., IOS )
 
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
+
+        TZONE  = ENVINT( 'OUTZONE', 'Output time zone', 5, IOS )
+        IF( IOS .NE. 0 .AND. .NOT. PROMPTF ) THEN
+            EFLAG = .TRUE.
+            MESG = 'Env var PROMPTFLAG is N, but OUTZONE is bad'
+            CALL M3MSG2( MESG )
+        ENDIF
+
+        IF( EFLAG ) THEN
+            CALL M3EXIT( 'PDEMSPT', 0, 0,
+     &                    'Bad environment variable setting(s)', 2 )
+        ENDIF
 
         IDEV = PROMPTFFILE( 
      &         'Enter the name of the RAW DATA FILENAME LISTING',
@@ -250,7 +266,7 @@ C.........  Get inventory file needed for setting up output file
 
 
 C.........  Get output time zone
-        UZONE = GETNUM( -12, 12, 5,
+        TZONE = GETNUM( -12, 12, TZONE,
      &                  'Enter output time zone (0 for GMT, 5 for ' //
      &                  'EST, 4 for EDT)' )
 
@@ -263,7 +279,7 @@ C.............  right order, and to count how many files of each type.
         IFIL  =  0
         NHFIL =  0
         NPFIL =  0
-        RDATE =  1980001
+        RDATE =  1980001  ! Jan 1, 1980 is the reference date
         RTIME =  0
         EFLAG = .FALSE.
 44      CONTINUE    ! Head of file names loop
@@ -333,7 +349,7 @@ C.....................  Get time zone and convert date and time to output zone
 
                     ELSE
                         CALL NEXTIME( JDATE, JTIME, 
-     &                                ( ZONE - UZONE ) * 10000 )
+     &                                ( ZONE - TZONE ) * 10000 )
 
                     ENDIF
 
@@ -369,6 +385,8 @@ C.....................  Get time zone and convert date and time to output zone
         REWIND( IDEV )
 
 C.........  Set default starting date and time, and default duration
+C.........  Use reference time and the 1st hour in all files to
+C.........  determine the starting time.
         SDATE = RDATE
         STIME = RTIME
         CALL NEXTIME( SDATE, STIME, ( MINPTR - 1 ) * 10000 )
@@ -662,7 +680,7 @@ C.................  Get time zone and convert date and time to output zone
 
                 ELSE
                     CALL NEXTIME( JDATE, JTIME, 
-     &                            ( ZONE - UZONE ) * 10000 )
+     &                            ( ZONE - TZONE ) * 10000 )
 
                 ENDIF
 
