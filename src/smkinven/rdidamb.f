@@ -89,9 +89,9 @@ C              VMT is initialied in calling program.
         LOGICAL     , INTENT(OUT) :: EFLAG       ! error flag
 
 C...........   Local parameters, indpendent
-         INTEGER, PARAMETER :: MXVARFIL = 113 ! maximum data variables in file
+         INTEGER, PARAMETER :: MXVARFIL = 112 ! maximum data variables in file
          INTEGER, PARAMETER :: MBOTWIDE = 20  ! total width of all data fields
-         INTEGER, PARAMETER :: MBNONDWD = 15  ! width of non-data fields
+         INTEGER, PARAMETER :: MBNONDWD = 25  ! width of non-data fields
 
 C...........   Local parameters, dependent
          INTEGER, PARAMETER :: LINSIZ  = MBNONDWD + MXVARFIL * MBOTWIDE
@@ -99,9 +99,9 @@ C...........   Local parameters, dependent
 C...........   Local parameter arrays
 C...........   Start and end positions in the file format of the first set
 C              of pollutant fields.
-        INTEGER  :: ISINIT( NMBPPOL3 ) = ( / 16,26 / )
+        INTEGER  :: ISINIT( NMBPPOL3 ) = ( / 26,36 / )
 
-        INTEGER  :: IEINIT( NMBPPOL3 ) = ( / 25,35 / )
+        INTEGER  :: IEINIT( NMBPPOL3 ) = ( / 35,45 / )
 
 C...........   Local arrays
         INTEGER          IS( NMBPPOL3 )  ! start position for each pol char
@@ -232,6 +232,9 @@ C.............  Interpret error status
 
             END IF
 
+C.............  If there has been an error, do not try to store any of the
+C               records.  Instead  go to next line of file.
+            IF( EFLAG ) CYCLE
 
 C.............  If a header line was encountered...
             IF ( IOS .GE. 0 ) THEN
@@ -259,7 +262,7 @@ C.............  Allocate memory for line segments if not already done
 
 C.................  Compute the number of segments - different depending on
 C                   whether pollutant or activity
-	        NSEG = NMBVAR3
+	        NSEG = 4
                 DO V = 1, NVAR
                     J = DATPOS( V )
                     IF( INVSTAT( J ) .EQ.  1 ) NSEG = NSEG + NPPOL
@@ -279,11 +282,12 @@ C.................  Initialize fixed-format field positions
                 IS = ISINIT - MBOTWIDE  ! array
                 IE = IEINIT - MBOTWIDE  ! array
 
-                SEGMENT( 1 ) = ADJUSTL( LINE( 1:2  ) )
-                SEGMENT( 2 ) = ADJUSTL( LINE( 3:5  ) )
-                SEGMENT( 3 ) = ADJUSTL( LINE( 6:15 ) )
+                SEGMENT( 1 ) = ADJUSTL( LINE(  1:2  ) )
+                SEGMENT( 2 ) = ADJUSTL( LINE(  3:5  ) )
+                SEGMENT( 3 ) = ADJUSTL( LINE(  6:15 ) )
+                SEGMENT( 4 ) = ADJUSTL( LINE( 16:25 ) )
 
-                K = 3
+                K = 4
                 DO V = 1, NVAR
 
                     DO I = 1, NPPOL
@@ -316,7 +320,7 @@ C.............  Check state/county codes, error for missing
             END IF
 
 C.............  Determine if SCC has proper length
-            SCCLEN = LEN_TRIM( SEGMENT( 3 ) )
+            SCCLEN = LEN_TRIM( SEGMENT( 4 ) )
 
             IF ( SCCLEN .NE. 10 ) THEN   ! check if SCC is 10 char. wide
                 EFLAG = .TRUE.
@@ -328,7 +332,7 @@ C.............  Determine if SCC has proper length
 C.............  Make sure that all of the needed real values are real...
 
 C.............  Emissions or activity and associated data
-            K = 3
+            K = 4
             DO V = 1, NVAR
 
                 J = DATPOS( V )
@@ -380,7 +384,8 @@ C               the various data fields...
             FIP  = ICC * 100000 + 1000 * STR2INT( SEGMENT( 1 ) ) +
      &             STR2INT( SEGMENT( 2 ) )
 
-            TSCC = SEGMENT( 3 )
+            CLNK = SEGMENT( 3 )
+            TSCC = SEGMENT( 4 )
 
 C.............  Ensure vehicle type code from SCC is an integer
             IF( .NOT. CHKINT( TSCC( 3:6 ) ) ) THEN
@@ -452,7 +457,7 @@ C.............  Sum emissions for invalid records
 
                 IDROP = IDROP + 1
                 DO V = 1, NVAR
-	              K = NMBVAR3 + ( V-1 ) * NPVAR + 1
+	            K = 4 + ( V-1 ) * NPVAR + 1
                     VDROP( V ) = VDROP( V ) + STR2REAL( SEGMENT( K ) )
                 END DO
                 CYCLE    ! To next input line
@@ -465,6 +470,7 @@ C.............  Make adjustments to pad with zeros, if needed
             WRITE( CFIP,94120 ) FIP
             CALL PADZERO( CFIP )
             CALL PADZERO( TSCC )
+            CALL FLTRNEG( CLNK )
             WRITE( CRWT,RWTFMT ) RWT
             WRITE( CIVT,VIDFMT ) IVT
 
@@ -486,7 +492,7 @@ C.............  Store source characteristics if dimension is okay
                 YLOC2A ( SS ) = BADVAL3
             END IF 
 
-            K = 3              
+            K = 4              
             DO V = 1, NVAR
 
                 ES = ES + 1
@@ -560,7 +566,9 @@ C.........  Write message if overflow occurred
         END IF
 	
 C.........  Deallocate local allocatable arrays 
-        DEALLOCATE( TMPNAM, DATPOS, SEGMENT )
+        IF( ALLOCATED( TMPNAM  ) ) DEALLOCATE( TMPNAM )
+        IF( ALLOCATED( DATPOS  ) ) DEALLOCATE( DATPOS )
+        IF( ALLOCATED( SEGMENT ) ) DEALLOCATE( SEGMENT )
 
 C.........  Return from subroutine 
         RETURN
