@@ -71,7 +71,9 @@ C...........   Local variables
 	CHARACTER*1	KEEP
         CHARACTER(LEN=DDSLEN3)	DESC
         
-        INTEGER		I, K
+        INTEGER		I, J, K
+        
+        CHARACTER*1, ALLOCATABLE :: KEEP( : )
 
 C...........   Other local variables
 
@@ -82,11 +84,13 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine WREPINVEN
 
-
+	ALLOCATE( KEEP( NUNIQCAS ) )
+        KEEP = ' '
+        
 C.........  Write out first report to REPINVEN file
 
         WRITE( ADEV, 93010 ) 'CAS Code', 'Keep', 'Nrecs', 
-     &         'Emissions', 'CAS description'
+     &         'Emissions', 'CAS Description'
      
         WRITE( ADEV, 93020 ) '[tons/year]'
         
@@ -94,12 +98,12 @@ C.........  Write out first report to REPINVEN file
           
         DO I = 1, NUNIQCAS
           IF( UCASNPOL( I ) .EQ. UCASNKEP( I ) ) THEN
-            KEEP = 'Y'
+            KEEP( I ) = 'Y'
           ELSE IF( UCASNPOL( I ) .NE. UCASNKEP( I ) .AND.
      &             UCASNKEP( I ) .NE. 0 ) THEN
-            KEEP = 'P'
+            KEEP( I ) = 'P'
           ELSE IF( UCASNKEP( I ) .EQ. 0 ) THEN
-            KEEP = 'N'
+            KEEP( I ) = 'N'
           END IF
             
           K = INDEX1( UNIQCAS( I ), NINVTBL, ITCASA )
@@ -110,10 +114,38 @@ C.........  Write out first report to REPINVEN file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 1 )
           END IF
           
-          WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP, RECSBYCAS( I ),
+          WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP( I ), RECSBYCAS( I ),
      &             EMISBYCAS( I ), DESC
 
 	END DO
+        
+        WRITE( ADEV, 93000 ) REPEAT( '-', 85 )
+        WRITE( ADEV, 93000 ) ' '
+        WRITE( ADEV, 93000 ) ' '
+        
+C.........  Write out second report to REPINVEN file
+
+	WRITE( ADEV, 93040 ) 'CAS Code', 'CAS Emissions', 'Factor',
+     &         'Data Name', 'Data Emissions', 'Data Description', 
+     &         'CAS Description'
+     
+     	WRITE( ADEV, 93050 ) '[tons/year]', '[tons/year]'
+        
+        WRITE( ADEV, 93000 ) REPEAT( '-', 100 )
+        
+        DO I = 1, NINVTBL
+          K = INDEX1( SORTCAS( I ), NUNIQCAS, UNIQCAS )
+          IF( KEEP( K ) .NE. 'Y' .AND. KEEP( K ) .NE. 'P' ) CYCLE
+          
+          J = SCASIDX( I )
+
+          WRITE( ADEV, 93060 ) SORTCAS( I ), EMISBYCAS( K ),
+     &           ITFACA( J ), ITNAMA( J ), ITFACA( J ) *
+     &           EMISBYCAS( K ), ITDSCA( J ), ITCASDSCA( J )
+     
+        END DO
+          
+          
           
         RETURN
 
@@ -128,6 +160,14 @@ C...........   Formatted file I/O formats............ 93xxx
 93020   FORMAT( 32X, A11 )
 
 93030   FORMAT( 1X, A8, 4X, A1, 7X, I5, 4X, F16.10, 4X, A40 )
+
+93040	FORMAT( 1X, A8, 4X, A13, 4X, A6, 4X, A9, 4X, A14, 4X,
+     &          A16, 4X, A15 )
+     
+93050	FORMAT( 13X, A11, 29X, A11 )
+
+93060	FORMAT( 1X, A8, 4X, F16.10, 4X, F3.1, 4X, A16, 4X, F16.10,
+     &          4X, A40, 4X, A40 )
 
 
 
