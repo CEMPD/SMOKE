@@ -446,7 +446,7 @@ C.............  Write report if report flag is switched on
             IF( ST_REPORT .AND.
      &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
  
-                IF( TSTEP .NE. 0 )
+                IF( TSTEP .NE. 0 .AND. RDEV .GT. 0)
      &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
      &                               MMDDYY( LDATE ) // ' from',
      &                               BTIME, 'to', LTIME
@@ -459,8 +459,9 @@ C.............  Write report if report flag is switched on
                     MESG = 'Area source emissions ' //
      &                     '(tons/specific day) within grid ' // GRDNM
                 ENDIF
- 
-                CALL STATELST( RDEV  , MESG , NASID , NSTA , NIPOL,
+
+                IF( RDEV .GT. 0) 
+     &          CALL STATELST( RDEV  , MESG , NASID , NSTA , NIPOL,
      &                         'F7.1', EINAM, STATES, EMSUM         )
 
 C.................  Reinitialize emissions summary

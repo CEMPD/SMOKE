@@ -568,15 +568,15 @@ C.....................  Conversion factor for AREA as input file
 191                 CONTINUE
  
 193             CONTINUE
-
-                WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) // 
+                IF(RDEV .GT. 0) 
+     &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) // 
      &                               MMDDYY( LDATE ) // ' from', 
      &                               BTIME, 'to', LTIME
  
                 MESG = 'Mobile source emissions (tons/specific day) ' //
      &                 'within grid ' // GRDNM
-
-                CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NMPOL,
+                IF(RDEV .GT. 0) 
+     &          CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NMPOL,
      &                         'F7.1', VNAME3D, STATES, EMSUM         )
 
 C.................  Reinitialize emissions summary

@@ -462,8 +462,8 @@ C.................  Convert summary emissions from moles/day to tons/day
                     OUTFMT = 'F12.0'
 
                 ELSE 
-
-                    WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
+                    IF( RDEV .GT. 0)
+     &              WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
      &                                   MMDDYY( LDATE ) // ' from',
      &                                   BTIME, 'to', LTIME
 
@@ -481,8 +481,8 @@ C.................  Convert from grams to tons
 191                 CONTINUE
 
                 ENDIF
- 
-                CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NVARS3D,
+                IF( RDEV .GT. 0)  
+     &          CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NVARS3D,
      &                         OUTFMT, VNAME3D, STATES, EMSUM        )
  
 C.................  Reinitialize emissions summary

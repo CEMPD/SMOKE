@@ -617,7 +617,7 @@ C.....................  Conversion factor for AREA as input file
 
 155             CONTINUE
 
-                IF( TSTEP .NE. 0 )
+                IF( TSTEP .NE. 0 .AND. RDEV .GT. 0 )
      &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //
      &                               MMDDYY( LDATE ) // ' from',
      &                               BTIME, 'to', LTIME
@@ -631,7 +631,8 @@ C.....................  Conversion factor for AREA as input file
      &                     '(tons/specific day) within grid ' // GRDNM
                 ENDIF
 
-                CALL STATELST( RDEV  , MESG , NASID , NSTA , NMPOL, 
+                IF( RDEV .GT. 0 )
+     &          CALL STATELST( RDEV  , MESG , NASID , NSTA , NMPOL, 
      &                         'F7.1', EMNAM, STATES, EMSUM         )
 
 C.................  Reinitialize emissions summary
