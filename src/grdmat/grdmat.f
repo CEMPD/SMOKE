@@ -2,7 +2,7 @@
         PROGRAM GRDMAT
 
 C***********************************************************************
-C  program body starts at line 155
+C  program body starts at line 148
 C
 C  DESCRIPTION:
 C     Creates the gridding matrix for any source category and creates the
@@ -74,9 +74,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &            PROMPTMFILE, VERCHAR
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
-
-        PARAMETER   ( SCCSW   = '$Revision$' ) ! CVS revision number
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -151,7 +149,7 @@ C   begin body of program GRDMAT
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Get environment variables that control this program
         AFLAG = ENVYN( 'GRDMAT_ADJUST',
@@ -438,6 +436,12 @@ C.............  Allocate memory for point source gridding matrix
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
 
         END SELECT
+
+C.........  Abort of there are no source-cell intersections
+        IF( NMATX .EQ. 0 ) THEN
+            MESG = 'No source-cell intersections found.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Get file names; open output gridding matrix (and ungridding matrix
 C           for mobile) using grid characteristics from DSCM3GRD() above        
