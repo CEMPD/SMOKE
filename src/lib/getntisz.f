@@ -93,7 +93,7 @@ C.........  Allocate memory for line segments
             
         END SELECT
         
-        IF( NOT ALLOCATED( SEGMENT ) ) THEN
+        IF( .NOT. ALLOCATED( SEGMENT ) ) THEN
             ALLOCATE( SEGMENT( NSEG ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
         END IF
