@@ -23,7 +23,7 @@ switch ( $EDSS_EXE )
     setenv FC    f90
     setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}" 
-    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -lmp"
     breaksw
   case SunOS5f90:
 #   NOTE: -Bstatic caused problems with ENVYN (perhaps because not
