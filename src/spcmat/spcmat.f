@@ -485,7 +485,6 @@ C           emission types/pollutants names for input and output.
             IDX = EAIDX( I )
 
             IF( .NOT. IDXCHK( IDX ) ) THEN
-                K = K + 1                    
 
                 L1 = INDEX( SANAM( I ), ETJOIN )
                 L1 = MAX( L1, 1 )
