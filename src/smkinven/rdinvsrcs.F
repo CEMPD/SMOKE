@@ -721,9 +721,9 @@ C.....................  Ensure that road class is valid and convert from road cl
 C.........................  Make sure SCC is at least 8 characters long
                         IF( LEN_TRIM( TSCC ) < 8 ) THEN
                             IF( NWARN < MXWARN ) THEN
-                                WRITE( MESG,94010 ) 'WARNING: SCC code ' //
-     &                             'is less than 8 characters long ' //
-     &                             'at line', IREC, '. Adding ' //
+                                WRITE( MESG,94010 ) 'WARNING: SCC ' //
+     &                             'code is less than 8 characters ' //
+     &                             'long at line', IREC, '. Adding ' //
      &                             'trailing zeros.'
                                 CALL M3MESG( MESG )
                                 NWARN = NWARN + 1

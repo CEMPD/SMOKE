@@ -414,7 +414,7 @@ C.................  Disaggregate source characteristics
 
 C.................  Write characteristics
                     BUFFER = ' '
-                    WRITE( BUFFER, CHARFMT ) ( CHARS( K ), K = MINC, NC )
+                    WRITE( BUFFER, CHARFMT )( CHARS( K ), K = MINC, NC )
                     STRING = STRING( 1:LE ) // BUFFER
                     MXLE = MXLE + CHARWIDTH + LX
                     LE = MIN( MXLE, STRLEN )
@@ -473,8 +473,8 @@ C.............  Remove leading spaces and get new length
 C.............  Output error message of string is getting shortened
                 IF( MXLE .GT. STRLEN ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Output string ' //
-     &                     'getting truncated in report', RCNT
+                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Output ' //
+     &                     'string getting truncated in report', RCNT
                     CALL M3MSG2( MESG )
                 END IF
 

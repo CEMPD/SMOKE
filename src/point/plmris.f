@@ -121,8 +121,8 @@ C...........   STATEMENT FUNCTIONS:
 
         NEUTRL( H, B, U ) =
      &     MIN( 10.0 * H, 
-     &          1.2 * ( (            144.*B/( U*WSPD(1)*WSPD(1) )   )**0.6 *    ! pwr 3 * 0.2
-     &                  ( H + 1.3 * (144.*B/( U*WSPD(1)*WSPD(1) ) ) )**0.4   )) ! pwr 2 * 0.2
+     &          1.2 * ( (    144.*B/( U*WSPD(1)*WSPD(1) )   )**0.6 *    ! pwr 3 * 0.2
+     &          ( H + 1.3 * (144.*B/( U*WSPD(1)*WSPD(1) ) ) )**0.4   )) ! pwr 2 * 0.2
 
         STABLE( B, U, S ) =  2.6 * ( B / ( U * S ) )**D3
 

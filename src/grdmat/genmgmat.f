@@ -730,9 +730,10 @@ C            VMT by cell/source over County total VMT
      &           // CRLF() // BLANK10 //
      &           'Arrays would have overflowed.' 
      &           // CRLF() // BLANK10 // 
-     &           'Current maximum cells per county/link (MXCCL) =', MXCCL,
-     &           '.' // CRLF() // BLANK10 // 
-     &           'Actual  maximum cells per county/link    =', CNTMAX  , '.'
+     &           'Current maximum cells per county/link (MXCCL) =',
+     &           MXCCL, '.' // CRLF() // BLANK10 // 
+     &           'Actual  maximum cells per county/link    =',
+     &           CNTMAX, '.'
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
             END IF
@@ -779,9 +780,10 @@ C.............  Check for overflow
      &           // CRLF() // BLANK10 //
      &           'Arrays would have overflowed.' 
      &           // CRLF() // BLANK10 // 
-     &           'Current cell-source intersections (NMATXU) =', NMATXU, '.'
-     &           // CRLF() // BLANK10 // 
-     &           'Actual  cell-source intersections          =', NCOEFU, '.'
+     &           'Current cell-source intersections (NMATXU) =', NMATXU,
+     &           '.' // CRLF() // BLANK10 // 
+     &           'Actual  cell-source intersections          =', NCOEFU,
+     &           '.'
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 

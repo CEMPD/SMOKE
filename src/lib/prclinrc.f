@@ -566,10 +566,10 @@ C                 then reset to maximum value
 
 			IF( FIRSTLOOP ) THEN
 			  WRITE( MESG, 94010 )
-     &                       'WARNING: Number of variables per report ' //
-     &                       'at line', IREC, ' is greater than the ' //
-     &                       'maximum allowed. Resetting to maximum ' //
-     &                       'value.'
+     &                     'WARNING: Number of variables per report ' //
+     &                     'at line', IREC, ' is greater than the ' //
+     &                     'maximum allowed. Resetting to maximum ' //
+     &                     'value.'
 			  CALL M3MSG2( MESG )
 			END IF
 		    END IF
@@ -585,10 +585,10 @@ C                 then reset to maximum value
 
 			IF( FIRSTLOOP ) THEN
                           WRITE( MESG, 94010 )
-     &                       'WARNING: Number of variables per report ' //
-     &                       'at line', IREC, ' is greater than the ' //
-     &                       'maximum allowed. Resetting to maximum ' //
-     &                       'value.'
+     &                     'WARNING: Number of variables per report ' //
+     &                     'at line', IREC, ' is greater than the ' //
+     &                     'maximum allowed. Resetting to maximum ' //
+     &                     'value.'
                           CALL M3MSG2( MESG )
 			END IF
                     END IF

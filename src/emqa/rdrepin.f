@@ -233,7 +233,8 @@ C.........  Plant name
             END IF
 
 C.........  Allocate memory for and read in required inventory characteristics
-            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
+            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, 
+     &                     IVARNAMS )
 
 	ELSE
 

@@ -163,8 +163,8 @@ C.........  If format has not been set, print error about missing header
         IF ( GETFORMT .EQ. IMISS3 ) THEN
 
             MESG = 'ERROR: Could not determine inventory file ' //
-     &             'format due to missing or bad header information. ' //
-     &             CRLF() // BLANK16 //
+     &             'format due to missing or bad header ' //
+     &             'information. ' // CRLF() // BLANK16 //
      &             'Valid headers are: ' // CRLF() // BLANK16 //
      &             '#LIST, #IDA, #EMS-95, #TOXICS, ' //
      &             '#TOXICS NONPOINT, or #CEM'

@@ -187,8 +187,9 @@ C           so that arrays can be passed through subroutines).
 C.........  Read one-time input file data
         CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV, EDEV, 
      &                YDEV, NDEV, ADEV, ENAME, CUNAME, GNAME, LNAME,
-     &                PRNAME, SLNAME, SSNAME, GMAT( 1 ), GMAT( NGRID+1 ),
-     &                GMAT( NGRID+NMATX+1 ), SSMAT, SLMAT )
+     &                PRNAME, SLNAME, SSNAME, GMAT( 1 ),
+     &                GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ),
+     &                SSMAT, SLMAT )
 
 C.........  Preprocess the country/state/county data
 c note: Could add routine to reduce list of co/st/cy data to just records 

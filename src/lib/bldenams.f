@@ -235,7 +235,7 @@ C               to the annual data description
                 OUTTYPES( I,1 ) = MBTYPES ( 1 )           
                 
                 IF( POLLNUM > 0 ) THEN
-                    OUTDESCS( I,1 ) = TRIM( MBDESCS ( 1 ) ) // ' for ' // 
+                    OUTDESCS( I,1 ) = TRIM( MBDESCS( 1 ) ) // ' for ' // 
      &                                INVDDSC( POLLNUM )
                 ELSE
                     OUTDESCS( I,1 ) = MBDESCS ( 1 )

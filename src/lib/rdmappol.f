@@ -108,8 +108,8 @@ C............  Check if average day prefix is in the name
 
 C...............  Give error if reading more than a single variable
                 IF( NPVAR .GT. 1 ) THEN
-                    MESG = 'INTERNAL ERROR: Cannot specify average day ' //
-     &                     'value and have NPVAR > 1'
+                    MESG = 'INTERNAL ERROR: Cannot specify average ' //
+     &                     'day value and have NPVAR > 1'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
