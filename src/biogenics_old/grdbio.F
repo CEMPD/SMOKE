@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                  System
 C File Version: @(#)$Id$
 C  
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -142,6 +142,8 @@ C   begin body of program GRDBIO
 
         LDEV = INIT3()
 
+        CALL INITEM( LDEV )
+
         WRITE( *,92000 ) 
      &  ' ',
      &  'Program GRDBIO to take the county level biomass, the gridded',
@@ -155,9 +157,6 @@ C   begin body of program GRDBIO
      &  'You may use END_OF-FILE (control-D) to quit the program',
      &  'during logical-name entry. Default responses are indicated',
      &  'in brackets [LIKE THIS].',
-     &  ' ',
-     &  'COPYRIGHT(C)1996, MCNC--North Carolina Supercomputing Center',
-     &  'See file COPYRIGHT for conditions of use.',
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN

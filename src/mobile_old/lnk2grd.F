@@ -3,7 +3,7 @@
      &                       NCEL, ACEL, AFRAC, ALEN )
 
 C***********************************************************************
-C  subroutine body starts at line  94
+C  subroutine body starts at line  103
 C
 C  FUNCTION:  Given a link with end points XBEG, YBEG, XEND, YEND:
 C       Compute the number NCEL of cells intersected by the link,
@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -92,8 +92,8 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER  XINC, YINC              !  merge counters increments
         INTEGER  XCOL( MXCFIP + 1 )      !  subscript for this grid intersection
         INTEGER  YROW( MXCFIP + 1 )      !  subscript for this grid intersection
-        INTEGER  XB, XE                  !  pntr to calc fracs @ beg and end of link
-        INTEGER  YB, YE                  !  pntr to calc fracs @ beg and end of link
+        INTEGER  XB, XE                  !  pntr to calc fracs @ link beg & end
+        INTEGER  YB, YE                  !  pntr to calc fracs @ link beg & end
 
 C***********************************************************************
 C   begin body of subroutine  LNK2GRD

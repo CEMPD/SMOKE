@@ -2,9 +2,9 @@
       SUBROUTINE CLDATEN_CALC(JDATE,JTIME,LAT,LON,CLOUDTYPE,CLDATN)
 
 C***********************************************************************
-C  program body starts at line 154
+C  program body starts at line 161
 C
-C  FUNCTION:
+C  DESCRIPTION:
 C       Computes gridded cloud attenuation factor CLDATN for SMOKE BEIS2
 C       Based on the cloud type string in CLDTYPE, reads cloud cover data
 C       from Met-Chem Interface Processor for either the KUO (ANTHES-KUO)
@@ -57,7 +57,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File Version: @(#)$Id$
 C  
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
