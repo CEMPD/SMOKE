@@ -89,7 +89,7 @@ C.............  Apply default
             ELSE
                 GETTZONE = TZONE0
 
-                WRITE( MESG,94010 ) 
+                WRITE( MESG,94040 ) 
      &                'WARNING: Applying default time zone of', TZONE0,
      &                'to state/county FIPS code', FIP
                 CALL M3MESG( MESG )
@@ -104,6 +104,6 @@ C******************  FORMAT  STATEMENTS   ******************************C.......
  
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I6, :, 2X ) )
+94040   FORMAT( A, 1X, I2.2, 1X, A, 1X, I6.6 )
 
         END
