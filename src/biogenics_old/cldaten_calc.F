@@ -1,29 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File Version: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
       SUBROUTINE CLDATEN_CALC(JDATE,JTIME,LAT,LON,CLOUDTYPE,CLDATN)
 
 C***********************************************************************
+C  program body starts at line 154
 C
 C  FUNCTION:
 C       Computes gridded cloud attenuation factor CLDATN for SMOKE BEIS2
@@ -57,6 +36,8 @@ C        Prototype 1/97 by JM
 C
 C        Revised and Validated 2/97 by SL
 C
+C        Revised by M Houyoux - see SCCS update documentation
+C
 C        FUTURE UPGRADES: Would enable access to the multiple layers
 C                         and level-resolved fractional coverages
 C                         of the clouds calculated within the McHenry-
@@ -64,6 +45,27 @@ C                         Kain (KAIN-) recalculation in MCIP for a
 C                         more detailed treatment.... 
 C
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File Version: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C**********************************************************************
 
       IMPLICIT NONE
 
@@ -102,23 +104,7 @@ C
      &             D60 = 1.0 / 60.0,
      &          ROTDAY = 360.0 / 365.242 )   ! rotation per day
 
-C
-C...........   LOCAL VARIABLES and their descriptions:
-C
-      REAL            CLDT ( NCOLS, NROWS )  ! ave. cloud top in meters
-      REAL            CLDB ( NCOLS, NROWS )  ! ave. cloud bottom in meters
-      REAL            CFRAC( NCOLS, NROWS )  ! fractional cloud coverage
-      REAL            FRAC, CTHK
-      REAL            CBOT, CTOP
-      REAL            TTYPE 
-C
-      LOGICAL         FIRSTIME, LTHIN
-      DATA            FIRSTIME / .TRUE. /
-      CHARACTER*16    PNAME
-      DATA            PNAME / 'CLDATEN_CALC' /
-      INTEGER         R,C,ROW,COL, I, NCLAY
-      REAL            T
-C
+
 C.......   Variables for zenith angle calculation:
 
       REAL            DADM, SNDAY, CSDAY, SNDA2, CSDA2
@@ -139,20 +125,51 @@ C
       DATA            BB / 0.005, 0.02, -0.015, -0.01, -0.04 /
 
 C
-      SAVE FIRSTIME
+C...........   LOCAL VARIABLES and their descriptions:
+C
+      REAL            CLDT ( NCOLS, NROWS )  ! ave. cloud top in meters
+      REAL            CLDB ( NCOLS, NROWS )  ! ave. cloud bottom in meters
+      REAL            CFRAC( NCOLS, NROWS )  ! fractional cloud coverage
+      REAL            CBOT, CTOP
+      REAL            FRAC, CTHK
+      REAL            TTYPE 
+      REAL            T
+
+      INTEGER         R,C,ROW,COL, I, NCLAY
+
+      LOGICAL         LTHIN
+      LOGICAL         FIRSTIME
+      DATA            FIRSTIME / .TRUE. /
+      SAVE            FIRSTIME
+
+      CHARACTER*16    CLDTVAR   ! Name of input variable
+      CHARACTER*16    CLDBVAR   ! Name of input variable
+      CHARACTER*16    CFRACVAR  ! Name of input variable
+      CHARACTER*16    PNAME
+      DATA            PNAME / 'CLDATEN_CALC' /
 C
 C***********************************************************************
-C
+C   begin body of program CLDATEN_CALC
+
       IF ( FIRSTIME ) THEN
 
           FIRSTIME = .FALSE.
           IF(CLOUDTYPE(1:5).EQ.'ANTHE') THEN
             CALL M3MESG( 'Using Kuo-package cld data for CLDATEN' )
+            CLDTVAR = 'CLDT_KUO'
+            CLDBVAR = 'CLDB_KUO'
+            CFRACVAR= 'CFRAC_KUO'
+
           ELSE IF(CLOUDTYPE(1:5).EQ.'KAIN-') THEN
             CALL M3MESG( 'Using KF-package cld data for CLDATEN' )
+            CLDTVAR = 'CLDT_KF'
+            CLDBVAR = 'CLDB_KF'
+            CFRACVAR= 'CFRAC_KF'
+
           ELSE
-            CALL M3ERR( PNAME, JDATE, JTIME,' Unsupported or unknown' //
-     &                    'cld type, error', .TRUE.)
+            CALL M3EXIT( PNAME, JDATE, JTIME,
+     &                   'Unsupported or unknown cloud type', 2 )
+
           END IF
           CLTYPE(1:5) = CLOUDTYPE(1:5)
 
@@ -160,8 +177,8 @@ C
 C
       IF(CLTYPE(1:5).NE.CLOUDTYPE(1:5)) THEN
         PRINT*,'CLOUD TYPE MISMATCH FOUND...'
-            CALL M3ERR( PNAME, JDATE, JTIME,' Unsupported or unknown' //
-     &                    'cld type, error', .TRUE.)
+            CALL M3EXIT( PNAME, JDATE, JTIME,
+     &                   'Unsupported or unknown cloud type', 2 )
       END IF
 C
 C --- first compute (from spherical geometry) factors needed to 
@@ -186,47 +203,41 @@ C
      &                           + D60 * FLOAT( MOD( JTIME , 100 ) ) )
      &                   - AMM )
 C
-C...........   Interpolate CFRAC,CLDT,CLDB. They will be interpolated
-C              to the half-hour mark by INTERP3 
+C...........   Read CFRAC,CLDT,CLDB.
+C
 
-C Read & Interpolate CLDT
+C Read CLDT
       MDATE = JDATE
       MTIME = JTIME
-      CALL NEXTIME ( MDATE, MTIME, 3000 )
+C     CALL NEXTIME ( MDATE, MTIME, 3000 )
 
-      IF ( .NOT. INTERP3( 'MET_CRO_2D', 'CLDT' , PNAME,
-     &                      MDATE, MTIME, NCOLS * NROWS,
-     &                      CLDT ) ) THEN
+      IF ( .NOT. READ3( 'SFCCRO', CLDTVAR , ALLAYS3,
+     &                    MDATE, MTIME, CLDT         ) ) THEN
 
-            CALL M3ERR( PNAME, JDATE, JTIME,
-     &                  'Could not read CLDT from ' // 'MET_CRO_2D',
-     &                  .TRUE. )
+            CALL M3EXIT( PNAME, MDATE, MTIME,
+     &                  'Could not read CLDT from SFCCRO', 2 )
 
-      END IF  !  if INTERP3 failed
+      END IF  !  if READ3 failed
 
-C Read & Interpolate CLDB
+C Read CLDB
 
-      IF ( .NOT. INTERP3( 'MET_CRO_2D', 'CLDB' , PNAME,
-     &                      MDATE, MTIME, NCOLS * NROWS,
-     &                      CLDB ) ) THEN
+      IF ( .NOT. READ3( 'SFCCRO', CLDBVAR , ALLAYS3,
+     &                  MDATE, MTIME, CLDB           ) ) THEN
 
-            CALL M3ERR( PNAME, JDATE, JTIME,
-     &                  'Could not read CLDB from ' // 'MET_CRO_2D',
-     &                  .TRUE. )
+            CALL M3EXIT( PNAME, MDATE, MTIME,
+     &                  'Could not read CLDB from SFCCRO', 2 )
 
-      END IF  !  if INTERP3 failed
+      END IF  !  if READ3 failed
 
-C Read & Interpolate CFRAC
+C Read CFRAC
 
-      IF ( .NOT. INTERP3( 'MET_CRO_2D', 'CFRAC' , PNAME,
-     &                      MDATE, MTIME, NCOLS * NROWS,
-     &                      CFRAC ) ) THEN
+      IF ( .NOT. READ3( 'SFCCRO', CFRACVAR , ALLAYS3,
+     &                  MDATE, MTIME, CFRAC           ) ) THEN
 
-            CALL M3ERR( PNAME, JDATE, JTIME,
-     &                  'Could not read CFRAC from ' // 'MET_CRO_2D',
-     &                  .TRUE. )
+            CALL M3EXIT( PNAME, MDATE, MTIME,
+     &                  'Could not read CFRAC from SFCCRO', 2 )
 
-      END IF  !  if INTERP3 failed
+      END IF  !  if READ3 failed
 
 C --- compute cld attenuation factors for all cols,rows in domain
 
