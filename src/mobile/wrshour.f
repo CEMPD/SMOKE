@@ -1,6 +1,6 @@
 
         SUBROUTINE WRSHOUR( FNAME, JDATE, JTIME, NCNTY,
-     &                      CNTYCODES, HOURTEMP, HOURRH, HOURBP )
+     &                      CNTYCODES, HOURTEMP, HOURQV, HOURBP )
    
 C***********************************************************************
 C  subroutine WRSHOUR body starts at line 62
@@ -51,7 +51,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NCNTY          ! no. counties
         INTEGER     , INTENT (IN) :: CNTYCODES( NCNTY )   ! county FIPS codes
         REAL        , INTENT (IN) :: HOURTEMP( NCNTY )    ! hourly temperatures
-        REAL        , INTENT (IN) :: HOURRH( NCNTY )      ! hourly relative humidities
+        REAL        , INTENT (IN) :: HOURQV( NCNTY )      ! hourly mixing ratios
         REAL        , INTENT (IN) :: HOURBP( NCNTY )      ! hourly barometric pressures
 
 C...........   Local variables
@@ -80,10 +80,10 @@ C.........  Write one hour of temperatures to file
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
         END IF
 
-C.........  Write one hour of relative humidity to file
-        IF( .NOT. WRITE3( FNAME, 'RHCOUNTY', JDATE, JTIME,
-     &                    HOURRH( : ) ) ) THEN
-            MESG = 'Could not write hourly relative humidity data ' //
+C.........  Write one hour of mixing ratios to file
+        IF( .NOT. WRITE3( FNAME, 'QVCOUNTY', JDATE, JTIME,
+     &                    HOURQV( : ) ) ) THEN
+            MESG = 'Could not write hourly mixing ratio data ' //
      &             'to "' // TRIM( FNAME ) // '".'
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
         END IF
