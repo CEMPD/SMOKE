@@ -131,9 +131,7 @@ C.........  File header:  read list of model species
         IF( J .EQ. 0 ) THEN
 
             EFLAG = .TRUE.
-            WRITE( MESG,94010 )
-     &          'ERROR: Pollutant ' // IPOL // 
-     &          ' in SPRO; no match in valid list'
+            WRITE( MESG,94020 ) IPOL
             CALL M3MESG( MESG )
 
         END IF			!  if bad HC pollutant name
@@ -333,6 +331,8 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
 
 
+94020   FORMAT( 'ERROR: Pollutant ', A,
+     &          ' in SPRO; no match in valid list' )
 
         END
 
