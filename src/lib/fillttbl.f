@@ -91,9 +91,8 @@ C               digits) so that the pol-specific can be identified later
             SELECT CASE ( T )
 
             CASE( 1 )
-                MPRT01 = IMON  ! Arrays
-                WPRT01 = IWEK
-                DPRT01 = IDIU
+                K = 1
+                CALL SET_TCODES( 1, NIPOL, MPRT01, WPRT01, DPRT01 )
 
             CASE( 2 )
                 CALL SET_TCODES( TDIM, NIPOL, MPRT02, WPRT02, DPRT02 )
