@@ -226,6 +226,7 @@ C...........   Other local variables
         INTEGER         IREC                !  input line (record) number
         INTEGER         I1, I2, I3, I4, I5  !  for counting XREFs
         INTEGER         LS,EC
+        INTEGER         IETH, IFRM, ICO, INO, INO2
 
         REAL            FAC
 
@@ -712,6 +713,14 @@ C.......   Open speciation matrix file:  reuse much of point file description
      &          FSUNKN3, 'PSMAT', 'SPCPMAT' )
 
 
+C.........  Find specific species in model species list
+
+        IETH  = INDEX1( 'ETH ', NMPOL, EMNAM )
+        IFRM  = INDEX1( 'FORM', NMPOL, EMNAM )
+        ICO   = INDEX1( 'CO  ', NMPOL, EMNAM )
+        INO   = INDEX1( 'NO  ', NMPOL, EMNAM )
+        INO2  = INDEX1( 'NO2 ', NMPOL, EMNAM )
+
 C.......   Compute the speciation coefficient matrix
 C...........   ASSUMPTION:  everything sorted by FIP,SCC,PLANT,STACK 
 C...........   or by XREF ID.
@@ -850,9 +859,9 @@ C...........   Processing for INORGANICS:
 
             FAC = TON2GM * ALLADJ
 
-            SPCFACS( S, 1 ) = FAC * COFAC     ! 1/molwt for CO
-            SPCFACS( S, 2 ) = FAC * NOFAC     ! 90% of 1/molwt for NO2
-            SPCFACS( S, 3 ) = FAC * NO2FAC    ! 10% of 1/molwt for NO2
+            IF( ICO .GT. 0 ) SPCFACS( S, ICO )= FAC* COFAC ! 1/molwt for CO
+            IF( INO .GT. 0 ) SPCFACS( S, INO )= FAC* NOFAC ! 90% of 1/molwt for NO2
+            IF( INO2.GT. 0 ) SPCFACS( S, INO2)= FAC* NO2FAC! 10% of 1/molwt for NO2
 
 C...........   Processing for ORGANICS:
 C...........   If KFLAG, find the the correct volatile conversion factor --
@@ -898,8 +907,15 @@ C...........   by this volatile conversion factor
                 SPCFACS( S,V ) = FAC * SCOEF( I,V )
 143         CONTINUE
 
-            SPCFACS( S, 8 ) = FRMADJ * SPCFACS( S, 8 )
-            SPCFACS( S,10 ) = ETHADJ * SPCFACS( S,10 )
+            IF( FRMADJ .NE. 0. ) THEN
+                CALL M3MESG( 
+     &               'WARNING: Formaldehyde adjustment is non-zero' )
+            ENDIF
+
+            IF( IFRM .GT. 0 ) 
+     &        SPCFACS( S, IFRM ) = ( 1. + FRMADJ ) * SPCFACS( S, IFRM )
+            IF( IETH .GT. 0 )
+     &        SPCFACS( S,IETH ) = ETHADJ * SPCFACS( S,IETH )
 
 144     CONTINUE        ! end loop on point sources, computing speciation matrix
 
