@@ -139,12 +139,12 @@ C.........  Allocatable cross- OR dot-point meteorology input buffers
         REAL   , ALLOCATABLE :: DBUF( :,: )   ! dot-point
 
 C.........  Allocatable cross-point surface grid coordinates
-        REAL   , ALLOCATABLE :: XLAT( :,: )   ! latitudes
-        REAL   , ALLOCATABLE :: XLON( :,: )   ! longitudes
+        REAL   , ALLOCATABLE :: XXVALS( :,: )   ! x values
+        REAL   , ALLOCATABLE :: XYVALS( :,: )   ! y values
 
 C.........  Allocatable dot-point surface grid coordinates
-        REAL   , ALLOCATABLE :: DLAT( :,: )   ! latitudes
-        REAL   , ALLOCATABLE :: DLON( :,: )   ! longitudes
+        REAL   , ALLOCATABLE :: DXVALS( :,: )   ! x values
+        REAL   , ALLOCATABLE :: DYVALS( :,: )   ! y values
 
 C.........  Allocatable un-gridding matrices (uses bilinear interpolation)
 C           Dimensioned 4 by NSRC
@@ -679,7 +679,7 @@ C           settings from the cross-point met file (XNAME), which are
 C           already retrieved
         CALL OPENLAYOUT( SDATE, STIME, TSTEP, EMLAYS, REP_LAYR, XFLAG, 
      &                   IFDESC2, IFDESC3, METSCEN, CLOUDSHM, VGLVSXG, 
-     &                   LNAME, RDEV )
+     &                   GFLAG, GRDNM, LNAME, RDEV )
 
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( 'POINT', ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
@@ -733,18 +733,6 @@ C.........  Allocate per-source and per-layer arrays
         ALLOCATE( ZSTK( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ZSTK', PROGNAME )
 
-C.........  If variable grid, allocate latitude and longitude arrays
-        IF( GFLAG ) THEN
-            ALLOCATE( XLAT( METNCOLS,METNROWS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'XLAT', PROGNAME )
-            ALLOCATE( XLON( METNCOLS,METNROWS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'XLON', PROGNAME )            
-            ALLOCATE( DLAT( METNCOLS+1,METNROWS+1 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'DLAT', PROGNAME )
-            ALLOCATE( DLON( METNCOLS+1,METNROWS+1 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'DLON', PROGNAME )
-        END IF
-
 C.........  If hourly data input, allocate index array
         IF( HFLAG ) THEN
             ALLOCATE( LOCINDXH( NHRSRC,EMLAYS ), STAT=IOS )
@@ -797,22 +785,35 @@ C.............  Allocate array for tmp gridded, layered cross-point met data
             ALLOCATE( DBUF( NDOTS,NLAYS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DBUF', PROGNAME )
 
+
+C.............  If variable grid, allocate latitude and longitude arrays
+            IF( GFLAG ) THEN
+                ALLOCATE( XXVALS( METNCOLS,METNROWS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'XXVALS', PROGNAME )
+                ALLOCATE( XYVALS( METNCOLS,METNROWS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'XYVALS', PROGNAME )            
+                ALLOCATE( DXVALS( METNCOLS+1,METNROWS+1 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'DXVALS', PROGNAME )
+                ALLOCATE( DYVALS( METNCOLS+1,METNROWS+1 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'DYVALS', PROGNAME )
+            END IF
+
 C.............  Compute un-gridding matrices for dot and cross point met data
             IF( GFLAG ) THEN
-                CALL SAFE_READ3( TNAME, 'LAT', 1, 0, 0, DLAT )
-                CALL SAFE_READ3( TNAME, 'LON', 1, 0, 0, DLON )
+                CALL SAFE_READ3( TNAME, 'LON', 1, 0, 0, DXVALS )
+                CALL SAFE_READ3( TNAME, 'LAT', 1, 0, 0, DYVALS )
                 CALL CONVRTXY( (METNCOLS+1)*(METNROWS+1), GDTYP, GRDNM,
      &                         P_ALP, P_BET, P_GAM, XCENT, YCENT,
-     &                         DLAT, DLON )
-                CALL UNGRIDBV( METNCOLS+1, METNROWS+1, DLAT, DLON,
+     &                         DXVALS, DYVALS )
+                CALL UNGRIDBV( METNCOLS+1, METNROWS+1, DXVALS, DYVALS,
      &                         NSRC, XLOCA, YLOCA, ND, CD )
      
-                CALL SAFE_READ3( CNAME, 'LAT', 1, 0, 0, XLAT )
-                CALL SAFE_READ3( CNAME, 'LON', 1, 0, 0, XLON )
+                CALL SAFE_READ3( CNAME, 'LON', 1, 0, 0, XXVALS )
+                CALL SAFE_READ3( CNAME, 'LAT', 1, 0, 0, XYVALS )
                 CALL CONVRTXY( METNCOLS*METNROWS, GDTYP, GRDNM,
      &                         P_ALP, P_BET, P_GAM, XCENT, YCENT,
-     &                         XLAT, XLON )
-                CALL UNGRIDBV( METNCOLS, METNROWS, XLAT, XLON, 
+     &                         XXVALS, XYVALS )
+                CALL UNGRIDBV( METNCOLS, METNROWS, XXVALS, XYVALS, 
      &                         NSRC, XLOCA, YLOCA, NX, CX )            
             ELSE
                 CALL UNGRIDB( METNCOLS+1, METNROWS+1, 
