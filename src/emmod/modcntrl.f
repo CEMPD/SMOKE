@@ -60,9 +60,6 @@
         REAL   , ALLOCATABLE, PUBLIC:: EMCAPALW( : )  ! emissions cap
         REAL   , ALLOCATABLE, PUBLIC:: EMREPALW( : )  ! replacement emissions
 
-!.........  ADD-packet-specific data tables
-        REAL   , ALLOCATABLE, PUBLIC:: EMADD   ( : )  ! emissions to add
-
 !.........  REACTIVITY-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: IREASIC ( : )  ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: EMREPREA( : )  ! replacement emissions
@@ -87,18 +84,40 @@
         REAL   , ALLOCATABLE, PUBLIC:: EMSTOTL ( : )  ! aggregated factor
 
 !..............................................................................
+!.........  Cntlmat work arrays for computing matrices
+        REAL   , ALLOCATABLE :: BACKOUT ( : )   ! factor used to account for pol
+                                                ! specific control info that is
+                                                ! already in the inventory
+        REAL   , ALLOCATABLE :: DATVAL  ( :,: ) ! emissions and control settings
+        REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
 
+!..............................................................................
+!.........  Cntlmat variables for reporting ...
+        INTEGER, PARAMETER :: NCNTLRPT = 4    ! no. of Cntlmat reports
+        INTEGER            :: RPTDEV( NCNTLRPT ) = ( / 0, 0, 0, 0 / )
+
+        INTEGER, ALLOCATABLE :: GRPINDX ( : )   ! index from sources to groups
+        INTEGER, ALLOCATABLE :: GRPSTIDX( : )   ! sorting index
+
+        REAL   , ALLOCATABLE :: GRPINEM ( :,: ) ! initial emissions
+        REAL   , ALLOCATABLE :: GRPOUTEM( :,: ) ! controlled emissions
+
+        LOGICAL, ALLOCATABLE :: GRPFLAG ( : )   ! true: group controlled
+
+        CHARACTER(LEN=STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
+
+
+!..............................................................................
 !.........  CONTROL MATRICES...
 
 !.........  Output pollutants (variable names) for control matrices
         INTEGER, PUBLIC :: NVCMULT = 0  ! number of multultiplicative variables
-        INTEGER, PUBLIC :: NVCADD  = 0  ! number of additive variables
 	INTEGER, PUBLIC :: NVPROJ  = 0  ! number of projection variables
-                                        !    (not yet used in Cntlmat)
+
+        LOGICAL, PUBLIC :: PSFLAG = .FALSE. ! true: proj data-spec assignment
         LOGICAL, ALLOCATABLE, PUBLIC :: PCTLFLAG( :,: ) ! control flags
 
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMMULT( : ) ! mult
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMADD ( : ) ! add
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMPROJ( : ) ! projectn
 
 !.........  Generic projection matrix (used in Smkreport, structure
@@ -110,19 +129,11 @@
         REAL   , ALLOCATABLE, PUBLIC :: MCUMATX( :,: ) ! mobile
         REAL   , ALLOCATABLE, PUBLIC :: PCUMATX( :,: ) ! point
 
-!.........  Additive control matrices, dim n*src, mxpolpgp
-        REAL   , ALLOCATABLE, PUBLIC :: ACAMATX( :,: ) ! area
-        REAL   , ALLOCATABLE, PUBLIC :: MCAMATX( :,: ) ! mobile
-        REAL   , ALLOCATABLE, PUBLIC :: PCAMATX( :,: ) ! point
-
 !.........  Reactivity control matrices...
 !.........  Indices for source IDs with reactivity controls
         INTEGER, ALLOCATABLE, PUBLIC :: ACRIDX( : ) ! area, dim: nasreac
         INTEGER, ALLOCATABLE, PUBLIC :: MCRIDX( : ) ! mobile, dim: nmsreac
         INTEGER, ALLOCATABLE, PUBLIC :: PCRIDX( : ) ! point, dim: npsreac
-
-! NOTE: It is possible that I won't need all source-categories to be allocated
-!       at the same time for some of these variables.
 
 !.........  Reactivity-based base-year inventory emissions 
         REAL   , ALLOCATABLE, PUBLIC :: ACRREPEM( : ) ! area
@@ -160,9 +171,5 @@
         REAL   , ALLOCATABLE, PUBLIC :: PCRFAC( :,: ) ! point: pnsreac, pnsmatv
         REAL   , ALLOCATABLE, PUBLIC :: RMTXMASS( :,: ) ! general mass-based
         REAL   , ALLOCATABLE, PUBLIC :: RMTXMOLE( :,: ) ! general mole-based
-
-!.........  OTHER SHARED CONTROL PROGRAM VARIABLES ...
-        INTEGER, PARAMETER :: NCNTLRPT = 4    ! no. of Cntlmat reports
-        INTEGER            :: RPTDEV( NCNTLRPT ) = ( / 0, 0, 0, 0 / )
 
         END MODULE MODCNTRL
