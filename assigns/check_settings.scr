@@ -214,6 +214,16 @@ else
    setenv RUN_UAMEMIS N
 endif
 
+if( $?SMK_CONTROL_YN ) then
+   if ( $SMK_CONTROL_YN == 'y' ) then
+      setenv SMK_CONTROL_YN Y
+   endif
+
+else
+   setenv SMK_CONTROL_YN N
+
+endif
+
 if( $?SMK_FUTURE_YN ) then
    if ( $SMK_FUTURE_YN == 'y' ) then
       setenv SMK_FUTURE_YN Y
