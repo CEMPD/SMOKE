@@ -877,7 +877,8 @@ C.........  Write out controlled facilities report for point sources
                     CASE ( 'AREA' , 'MOBILE' )
                         CSRC = GRPCHAR( S )
                         WRITE( RDEV, 93410 ) 
-     &                      CSRC( 1:STALEN3 ), CSRC( SCCBEG:SCCEND ),
+     &                      CSRC( 1:STALEN3 ), 
+     &                      CSRC( STALEN3+1:STALEN3+SCCLEN3 ),
      &                      ( GRPINEM ( IDX,I ), GRPOUTEM( IDX,I ),
      &                        I = 1, NVCMULT )
                     CASE ( 'POINT' )                 
