@@ -343,6 +343,13 @@ C           results are stored in module MODINFO.
 C.........  Check multiple met files for consistency
         EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, GNAME, XNAME, DNAME ) )
 
+        IF ( EFLAG ) THEN
+
+            MESG = 'Input met files have inconsistent grids or layers.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
 C.........  Get grid parameters from 3-d cross-point met file and store needed
 C           header information.  Use time parameters for time defaults.
         CALL RETRIEVE_IOAPI_HEADER( XNAME )
@@ -764,13 +771,8 @@ C.................    if REP_LAYR env var has been set b/c default is -1
 
             END DO    !  end loop on sources S
 
-            IF( EFLAG ) THEN
-
-                MESG = 'Problem during plume rise calculations.'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-            ELSEIF ( .NOT. WRITE3( LNAME, 'LFRAC', 
-     &                             JDATE, JTIME, LFRAC ) ) THEN
+            IF ( .NOT. WRITE3( LNAME, 'LFRAC', 
+     &                         JDATE, JTIME, LFRAC ) ) THEN
 
                 MESG = 'Problem writing "LFRAC" to file "' // 
      &                 LNAME( 1:LEN_TRIM( LNAME ) ) // '."'
