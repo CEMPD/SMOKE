@@ -72,9 +72,9 @@
         INTEGER :: NRP = 0 !  pos in 2nd dim of POLVLA of rule penetration
         PUBLIC NC1, NC2, NCE, NEF, NEM, NOZ, NRE, NRP
 
-        CHARACTER*1, PUBLIC :: CRL      ! 'A', 'M', or 'P'
-        CHARACTER*6, PUBLIC :: CATEGORY ! 'AREA', 'MOBILE', or 'POINT'
-        CHARACTER*6, PUBLIC :: CATDESC  ! 'Area', 'Mobile', or 'Point'
+        CHARACTER*1, PUBLIC :: CRL      = ' ' ! 'A', 'M', or 'P'
+        CHARACTER*6, PUBLIC :: CATEGORY = ' ' ! 'AREA', 'MOBILE', or 'POINT'
+        CHARACTER*6, PUBLIC :: CATDESC  = ' ' ! 'Area', 'Mobile', or 'Point'
 
 !.........  Arrays of positions for source characteristics in full string of
 !           source characteristics (dimension NCHARS)
