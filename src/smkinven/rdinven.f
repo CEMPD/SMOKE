@@ -1,6 +1,6 @@
 
         SUBROUTINE RDINVEN( FDEV, VDEV, SDEV, FNAME,
-     &                      FILFMT, NRAWBP, TFLAG )
+     &                      NRAWBP, TFLAG, TOXFLG )
 
 C***********************************************************************
 C  subroutine body starts at line 133
@@ -87,11 +87,12 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: VDEV              ! unit no. of vmtmix file
         INTEGER     , INTENT (IN) :: SDEV              ! unit no. of speeds file
         CHARACTER(*), INTENT (IN) :: FNAME             ! logical name of file
-        INTEGER     , INTENT(OUT) :: FILFMT            ! file format code
         INTEGER     , INTENT(OUT) :: NRAWBP            ! no. raw records x pol
         LOGICAL     , INTENT(OUT) :: TFLAG             ! true: PTREF output
+        LOGICAL     , INTENT(OUT) :: TOXFLG            ! true: read toxics inventory
 
-C...........   Contents of PTFILE 
+C...........   Contents of list file 
+        INTEGER      ,ALLOCATABLE:: FILFMT ( : )! format of files in list-fmt
         CHARACTER*300,ALLOCATABLE:: NLSTSTR( : )! Char strings in list-fmt file
 
 C...........   Dropped emissions
@@ -111,7 +112,6 @@ C...........   Other local variables
         INTEGER         IOS         !  i/o status
         INTEGER         INVFMT      !  inventory format code
         INTEGER         FLEN        !  length of FNAME string
-        INTEGER         NEDIM1      !  1st dimension for sparse emis arrays
         INTEGER         NLINE       !  number of lines
         INTEGER         NRAWIN      !  total raw record-count (estimate)
         INTEGER         NRAWOUT     !  no. of valid entries in emis file(s)
@@ -130,6 +130,9 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine RDINVEN
+
+C.........  Initialize toxics flag to false
+        TOXFLG = .FALSE.
 
         FLEN   = LEN_TRIM( FNAME )
 
@@ -151,7 +154,9 @@ C.............  Generate message for GETFLINE and RDLINES calls
 C.............  Get number of lines of inventory files in list format
             NLINE = GETFLINE( FDEV, MESG )
 
-C.............  Allocate memory for storing contents of list-format'd PTINV file
+C.............  Allocate memory for storing contents of list-format'd file
+            ALLOCATE( FILFMT( NLINE ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FILFMT', PROGNAME )
             ALLOCATE( NLSTSTR( NLINE ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NLSTSTR', PROGNAME )
 
@@ -165,6 +170,9 @@ C               return the code for the type of files it contains
 C.........  If not list format, then set FILFMT to the type of file (IDA,EPS)
         ELSE
 
+            NLINE = 1
+            ALLOCATE( FILFMT( NLINE ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FILFMT', PROGNAME )
             FILFMT = INVFMT
  
         END IF
@@ -173,7 +181,11 @@ C.........  Get setting for interpreting weekly temporal profiles from the
 C           environment. Default is false for non-EMS-95 and true for EMS-95
 C           inventory inputs.
         DFLAG = .FALSE.
-        IF ( FILFMT .EQ. EMSFMT ) DFLAG = .TRUE.
+        
+        DO I = 1, NLINE
+            IF ( FILFMT( I ) .EQ. EMSFMT ) DFLAG = .TRUE.
+        END DO
+        
         MESG = 'Use weekdays only to normalize weekly profiles'
         DFLAG = ENVYN( 'WKDAY_NORMALIZE', MESG, DFLAG, IOS )
 
@@ -197,30 +209,34 @@ C.........  Write message
 
 C.........  If EMS-95 format, check the setting for the interpretation of
 C           the weekly profiles
-        IF( FILFMT .EQ. EMSFMT .AND. WKSET .NE. WDTPFAC ) THEN
+        DO I = 1, NLINE
+            IF( FILFMT( I ) .EQ. EMSFMT .AND. 
+     &          WKSET .NE. WDTPFAC ) THEN
 
-            MESG = 'WARNING: EMS-95 format files will be using ' //
+                MESG = 'WARNING: EMS-95 format files will be using ' //
      &             'non-standard approach of ' // CRLF() // BLANK10 //
      &             'full-week normalized weekly profiles.  Can ' //
      &             'correct by setting ' // CRLF() // BLANK10 //
      &             'WKDAY_NORMALIZE to Y and rerunning.'
-            CALL M3MSG2( MESG )
+                CALL M3MSG2( MESG )
 
-        ELSE IF( FILFMT .EQ. EPSFMT .AND. WKSET .NE. WTPRFAC ) THEN
+            ELSE IF( FILFMT( I ) .EQ. EPSFMT .AND. 
+     &               WKSET .NE. WTPRFAC ) THEN
 
-            MESG = 'WARNING: EPS2.0 format files will be using ' //
+                MESG = 'WARNING: EPS2.0 format files will be using ' //
      &             'non-standard approach of ' // CRLF() // BLANK10 //
      &             'weekday normalized weekly profiles.  Can ' //
      &             'correct by setting ' // CRLF() // BLANK10 //
      &             'WKDAY_NORMALIZE to N and rerunning.'
-            CALL M3MSG2( MESG )
+                CALL M3MSG2( MESG )
 
-        END IF
+            END IF
+        END DO
 
 C.........  Set default inventory characteristics (declared in MODINFO) used
 C           by the IDA and EPS formats, including NPPOL
-        CALL INITINFO( FILFMT )
-
+        CALL INITINFO( FILFMT( 1 ) )
+        
 C.........  Read vehicle mix, if it is available
 C.........  The tables are passed through MODMOBIL and MODXREF
         IF( VDEV .GT. 0 ) THEN
@@ -233,41 +249,36 @@ C.........  The tables are passed through MODMOBIL and MODXREF
 c            CALL RDSPEED( SDEV )
 c note: write this routine
         END IF
-
+        
 C.........  Get the total number of records (Srcs x Non-missing pollutants)
-C.........  Depending on the format, NRAWIN can equal NEDIM1, or 
-C           NEDIM1 can equal NRAWIN * NIPPA. This second case does not hold
-C           true if there are multiple input files from list format, with 
-C           different number of data variables in each file.
-        CALL GETISIZE( FDEV, CATEGORY, INVFMT, NRAWIN, NEDIM1 ) ! Est records
+        CALL GETISIZE( FDEV, CATEGORY, INVFMT, NRAWIN ) ! Est records
 
 C.........  For EMS-95 mobile sources, need to multiply the sizes by the
-C           number of vehicle types
-        IF( CATEGORY .EQ. 'MOBILE' .AND. FILFMT .EQ. EMSFMT ) THEN
+C           number of vehicle types (already handled for list format in GETISIZE)
+        IF( CATEGORY  == 'MOBILE' .AND. 
+     &      NLINE     == 1        .AND.
+     &      FILFMT(1) == EMSFMT         ) THEN
             NRAWIN = NRAWIN * NVTYPE
-            NEDIM1 = NEDIM1 * NVTYPE
         END IF
 
 C.........  Allocate memory for (unsorted) input arrays using dimensions set
 C           based on the source category and type of inventory being input
         CALL SRCMEM( CATEGORY, 'UNSORTED', .TRUE., .FALSE., NRAWIN, 
-     &               NEDIM1, NPPOL )
+     &               NRAWIN, NPPOL )
 
         CALL SRCMEM( CATEGORY, 'UNSORTED', .TRUE., .TRUE., NRAWIN, 
-     &               NEDIM1, NPPOL )
+     &               NRAWIN, NPPOL )
 
-C.........   Initialize sorting index and input record index
-C.........   For EMS-95 and EPS formats, these arrays are simply arrays of
-C            ones.  They are used to restructure the IDA formatted data that
-C            contain multiple data records on each line, in any order.
-        DO I = 1, NEDIM1
+C.........   Initialize sorting index
+        DO I = 1, NRAWIN
             INDEXA( I ) = I
-            INRECA( I ) = I
         END DO
 
 C.........  Initialize pollutant-specific values as missing
         POLVLA  = BADVAL3  ! array
         CSOURCA = ' '      ! array
+        
+        NRAWOUT = 0  ! current number of records
 
 C.........  Read emissions from raw file(s) depending on input format...
 
@@ -276,16 +287,16 @@ C.........  IDA format (single file)
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, WKSET, 
+                CALL RDIDAAR( FDEV, NRAWIN, WKSET, 
      &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'MOBILE' )
                 
-                CALL RDIDAMB( FDEV, NRAWIN, NEDIM1, WKSET, 
+                CALL RDIDAMB( FDEV, NRAWIN, WKSET, 
      &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'POINT' )
-                CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, WKSET, 
+                CALL RDIDAPT( FDEV, NRAWIN, WKSET, 
      &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             END SELECT
@@ -320,14 +331,16 @@ c                CALL RDEPSMV(  )
 C.........  Toxics format (single file)
         ELSEIF( INVFMT .EQ. NTIFMT ) THEN
 
+            TOXFLG = .TRUE.
+
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-                CALL RDNTIAR( FDEV, NRAWIN, WKSET, NRAWOUT, EFLAG,
-     &                        NDROP, EDROP )
+                CALL RDNTIAR( FDEV, NRAWIN, WKSET, NRAWOUT, 
+     &                        EFLAG, NDROP, EDROP )
             
             CASE( 'MOBILE' )
-                CALL RDNTIMB( FDEV, NRAWIN, WKSET, NRAWOUT, EFLAG,
-     &                        NDROP, EDROP )
+                CALL RDNTIMB( FDEV, NRAWIN, WKSET, NRAWOUT, 
+     &                        EFLAG, NDROP, EDROP )
                 
             END SELECT
 
@@ -356,7 +369,7 @@ C.........  Includes EMS-95 format
                 END IF
 
 C.................  Final check to ensure the inventory year is set when needed
-                IF( INY .LT. 0 .AND. FILFMT .EQ. EMSFMT ) THEN  
+                IF( INY .LT. 0 .AND. FILFMT( J ) .EQ. EMSFMT ) THEN
                     MESG = 'Must set inventory year using ' //
      &                     'INVYEAR packet for EMS-95 input.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -374,21 +387,24 @@ C.................  Open INFILE
      &                 INFILE( 1:LEN_TRIM( INFILE ) )
                 CALL M3MSG2( MESG ) 
 
+C.................  Set default inventory characteristics that depend on file format
+                CALL INITINFO( FILFMT( J ) )
+
 C.................  Read file based on format set above
-                IF( FILFMT .EQ. IDAFMT ) THEN
+                IF( FILFMT( J ) .EQ. IDAFMT ) THEN
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-                        CALL RDIDAAR( TDEV, NRAWIN, NEDIM1, WKSET, 
+                        CALL RDIDAAR( TDEV, NRAWIN, WKSET, 
      &                                NRAWOUT, EFLAG, NDROP, EDROP )
 
                     CASE( 'MOBILE' )
-                        CALL RDIDAMB( TDEV, NRAWIN, NEDIM1, WKSET, 
+                        CALL RDIDAMB( TDEV, NRAWIN, WKSET, 
      &                                NRAWOUT, EFLAG, NDROP, EDROP  )
      &                                
 
                     CASE( 'POINT' )
-                        CALL RDIDAPT( TDEV, NRAWIN, NEDIM1, WKSET, 
+                        CALL RDIDAPT( TDEV, NRAWIN, WKSET, 
      &                                NRAWOUT, EFLAG, NDROP, EDROP )
 
                     END SELECT
@@ -396,7 +412,7 @@ C.................  Read file based on format set above
                     KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
                     CLOSE( TDEV )
 
-                ELSEIF( FILFMT .EQ. EPSFMT ) THEN
+                ELSEIF( FILFMT( J ) .EQ. EPSFMT ) THEN
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
@@ -417,7 +433,7 @@ c                        CALL RDEPSMV(  )
                     KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
                     CLOSE( TDEV )
 
-                ELSEIF( FILFMT .EQ. EMSFMT ) THEN
+                ELSEIF( FILFMT( J ) .EQ. EMSFMT ) THEN
 
                     EDEV( 1 ) = TDEV  ! Store first file unit number
  
@@ -432,8 +448,7 @@ C                       write message, and store unit number.
                         IF( INDEX( INFILE,'INVYEAR' ) .GT. 0 ) GOTO 1007 !Error
                         TDEV = JUNIT()
                         OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD')
-                        FILFMT = GETFORMT( TDEV )
-                        IF( FILFMT .NE. EMSFMT ) GO TO 1008  ! Error
+                        IF( GETFORMT( TDEV ) .NE. EMSFMT ) GO TO 1008  ! Error
                         CALL M3MSG2( INFILE( 1:LEN_TRIM( INFILE ) ) )
                         EDEV( I ) = TDEV
 
@@ -452,7 +467,7 @@ C.....................  The mobile call can be for EMS-95 format or for
 C                       a list-formatted format that is similar and that was
 C                       used in the SMOKE prototype
                     CASE( 'MOBILE' )
-                        CALL RDEMSMB( EDEV, INY, NRAWIN, NEDIM1, WKSET, 
+                        CALL RDEMSMB( EDEV, INY, NRAWIN, WKSET, 
      &                                NRAWOUT, ERRIOS, ERRREC, ERFILDSC, 
      &                                EFLAG, NDROP, EDROP )
 
@@ -489,6 +504,24 @@ C.....................  Close EMS-95 files
                     DO I = 1, NEMSFILE
                         CLOSE( EDEV( I ) )
                     END DO
+
+                ELSEIF( FILFMT( J ) .EQ. NTIFMT ) THEN
+
+                    TOXFLG = .TRUE.
+
+                    SELECT CASE( CATEGORY )
+                    CASE( 'AREA' )
+                        CALL RDNTIAR( TDEV, NRAWIN, WKSET, NRAWOUT, 
+     &                                EFLAG, NDROP, EDROP )
+            
+                    CASE( 'MOBILE' )
+                        CALL RDNTIMB( TDEV, NRAWIN, WKSET, NRAWOUT, 
+     &                                EFLAG, NDROP, EDROP )
+                
+                    END SELECT
+
+                    KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
+                    CLOSE( TDEV )
 
                 ELSE  ! File format not recognized	
 
