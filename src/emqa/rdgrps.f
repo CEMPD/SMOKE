@@ -91,14 +91,12 @@ C...........   Subgrid input allocatable arrays
 C...........   Per grid-cell local allocatable arrays
         LOGICAL, ALLOCATABLE :: LCELSTAT( : )
         LOGICAL, ALLOCATABLE :: LCEL    ( : )
-c note: make this public in modules??
 
 C...........   Per county allocatable arrays
         LOGICAL, ALLOCATABLE :: LRGN( : )     ! true: county included
 
 C...........   Per input line local allocatable arrays
         INTEGER, ALLOCATABLE :: LINECODE( : ) ! 1= in-line region; 2= in-line subgrid
-c note: make this public in modules??
 
 C...........   Other local arrays
         INTEGER   NCNT( NALLPCKT )   ! Count of groups defined by SELECT 
@@ -823,14 +821,9 @@ C.............  Initialize output variables
             STATUS = 1
             LEVEL  = 0
 
-c note: The country codes read in my rdstcy are not in 6-digit format, but the
-c    n: state and county codes are.  This should be corrected to be consistent, 
-c    n: and the places where the country codes are used should be updated
-c    n: accordingly.  
-  
 C.............  Find in country list                      
             IF( MOD( REGN,100000 ) .EQ. 0 ) THEN
-                K = FIND1( REGN/100000, NCOUNTRY, CTRYCOD )
+                K = FIND1( REGN, NCOUNTRY, CTRYCOD )
                 STATUS = 0
                 LEVEL = 1
 
@@ -918,8 +911,7 @@ C.................  Ensure x-coordinate buffer is an integer
                 IF( CHKINT( XBUF ) ) THEN
                     X1 = STR2INT( XBUF )
 
-c NOTE: routine would need to give a WARNING when cell ranges are inconsistent 
-c    n:   with grid definition, but only the first time!
+c note:  This could be updated to only give the warning the first time
 C.....................  Ensure x-coordinate range is valid
 C.....................  Check minimum value and reset of out of range
                     IF( X1 .LT. 1 ) THEN
