@@ -182,10 +182,8 @@ C
 C 
 C     Perform PM emission factor calculations, if necessary. 
 C 
-      IF(INERR.EQ.0 .AND. PARTFLG) CALL PMCALX(ICY,INERR,RC) 
-ccs   Change particulate size and recalculate emission factors
-      PSZCUT = 10
-      IF(INERR.EQ.0 .AND. PARTFLG) CALL PMCALX(ICY,INERR,RC)
+      DO
+          IF(INERR.EQ.0 .AND. PARTFLG) CALL PMCALX(ICY,INERR,RC) 
 C 
 C     Print the output report. 
 C 
@@ -206,6 +204,14 @@ C     when necessary. Must perform these calculations AFTER the output
 C     of criteria pollutants because of computational and array overlap. 
 C      
       IF(TOXFLG) CALL ATCALX(ICY,INERR) 
+      
+ccs   Change particulate size and recalculate emission factors
+      IF (PARTFLG .AND. PSZCUT /= 10) THEN
+          PSZCUT = 10
+      ELSE
+          EXIT
+      END IF
+      END DO
 C 
 C     Return the RC describing input errors in preference to any 
 C     other error return code. 
