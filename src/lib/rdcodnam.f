@@ -312,6 +312,7 @@ C.............  Store unsorted variables
                 ITCASDNMA( NDAT ) = ITCASA( NDAT ) // ITNAMA( NDAT )
 
                 IF( SEGMENT( 8 ) .EQ. 'Y' ) ITSTATA( NDAT ) = -1
+                IF( ITKEEPA( NDAT ) ) NINVKEEP = NINVKEEP + 1
 
             END IF
 
@@ -340,8 +341,10 @@ C.........  Abort if error found during read
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Exclude comment lines from count of inventory table entries
+C.........  Exclude comment lines from count of inventory table entries and
+C           calculate dropped entries
         NINVTBL = NDAT
+        NINVDROP = NINVTBL - NINVKEEP
 
 C.........  Sort by CAS number then pollutant name
         CALL SORTIC( NINVTBL, ITIDXA, ITCASDNMA )
@@ -496,6 +499,15 @@ C.........  Allocate memory for output inventory pollutants/activities
         INVDNAM = ' '  ! array
         INVDUNT = ' '  ! array
         INVDDSC = ' '  ! array
+
+C.........  Allocate memory for sorted SAROAD codes and index
+        ALLOCATE( IDXCOD( MXIDAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IDXCOD', PROGNAME )
+        ALLOCATE( SORTCOD( MXIDAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SORTCOD', PROGNAME )
+
+        IDXCOD  = 0  ! array
+        SORTCOD = 0  ! array
       
 C.........  Store all pollutants and activities in original (unsorted) order
         LNAM = ' '
@@ -508,7 +520,7 @@ C.............  For the next data name...
             IF( ITNAMA( J ) .NE. LNAM ) THEN
                 MXIDAT = MXIDAT + 1
 
-C.................  Reset keep status
+C.................  Reset keep status for current inventory data value
                 KEEPVAL = ITKEEPA( J )
 
             END IF
@@ -619,6 +631,21 @@ C.........  Resort inventory data names based on original position in inventory 
             INVDVTS( N ) = INVDVTSA( J )
             INVDUNT( N ) = INVDUNTA( J )
             INVDDSC( N ) = INVDDSCA( J )
+
+C.............  Reset LOCIDX for use in next sorting step
+            LOCIDX( N ) = N
+
+        END DO
+
+
+C.........  Sort data list by SAROAD codes
+        CALL SORTI1( MXIDAT, LOCIDX, INVDCOD )
+
+C.........  Store SAROAD in sorted order
+        DO N = 1, MXIDAT
+            J = LOCIDX( N )
+            IDXCOD( N )  = J
+            SORTCOD( N ) = INVDCOD( J )
         END DO
 
 C.........  Rewind inventory table file
