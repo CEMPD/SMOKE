@@ -398,21 +398,21 @@ C.................  NV > 1 is not supported
                     IF ( NV .EQ. 1 ) THEN
                         IMON( S ) = IBUF( 1 )
                     ELSE
-c note: this is not ready yet
+c                   note: this is not supported yet in Temporal
                     ENDIF
 
                 CASE ( 'W' )
                     IF ( NV .EQ. 1 ) THEN
                         IWEK( S ) = IBUF( 1 )
                     ELSE
-c note: this is not ready yet
+c                   note: this is not supported yet in Temporal
                     ENDIF
 
                 CASE ( 'H' )
                     IF ( NV .EQ. 1 ) THEN
                         IDIU( S ) = IBUF( 1 )
                     ELSE
-c note: this is not ready yet
+c                   note: this is not supported yet in Temporal
                     ENDIF
 
                 END SELECT
