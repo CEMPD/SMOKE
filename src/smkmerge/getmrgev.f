@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -59,7 +59,6 @@ C...........   Other local variables
         INTEGER         IOS      ! tmp I/O status
         INTEGER         INVIOS   ! i/o status for MEG_REPINV_YN
         INTEGER         SPCIOS   ! i/o status for MEG_REPSPC_YN
-        INTEGER         CTLIOS   ! i/o status for MEG_REPCTL_YN
         INTEGER         J        ! counter
 
         CHARACTER*5     MRGSRC   ! value of MRG_SOURCE E.V.
@@ -139,11 +138,11 @@ C.........  Retrieve the on/off environment variables
         LFLAG   = ENVYN( 'MRG_LAYERS_YN', 
      &                   'Use layer fractions or not', .FALSE., IOS )
 
-        PINGFLAG = ENVYN( 'SMK_PING_YN',  'Create plume-in-grid ' //
+        PINGFLAG = ENVYN( 'SMK_PING_YN', 'Create plume-in-grid ' //
      &                    'outputs or not', .FALSE., IOS )
 
-        VFLAG   = ENVYN( 'MRG_VMT_YN', 
-     &                   'Use VMT or not', .FALSE., IOS )
+        ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', 'Create ASCII elevated '//
+     &                    'sources file or not', .FALSE., IOS )
 
         LMETCHK = ENVYN( 'MRG_METCHK_YN', 'Check consistency ' //
      &                   'of met headers or not', .TRUE., IOS )
@@ -170,7 +169,6 @@ C.........  Retrieve the on/off environment variables
 
         LREPCTL = ENVYN( 'MRG_REPCTL_YN', 'Report controlled ' //
      &                   'emissions separately or not', .TRUE., IOS )
-        CTLIOS = IOS
 
         LREPANY = ( LREPSTA .OR. LREPCNY )
 
@@ -215,6 +213,23 @@ C           speciation to be able to include biogenic emissions)
                
         ENDIF
 
+C.........  Do not output ASCII elevated unless speciation is being done
+        IF( ELEVFLAG .AND. .NOT. SFLAG ) THEN
+            MESG = 'NOTE: Turning off ASCII elevated point source ' //
+     &             'outputs because speciation is turned off.'
+            CALL M3MSG2( MESG )
+            ELEVFLAG = .FALSE.
+
+        END IF
+
+C.........  Strange to have elevated ASCII and layer merge at the same time 
+        IF( ELEVFLAG .AND. LFLAG ) THEN
+            MESG = 'WARNING: Elevated ASCII output and 3-d ' //
+     &             'output at the same time!'
+            CALL M3MSG2( MESG ) 
+
+        END IF
+
 C.........  Don't output gridded if gridded biogenics is only input
         IF( BFLAG .AND. .NOT. XFLAG .AND. LGRDOUT ) THEN
 
@@ -228,26 +243,6 @@ C.........  Don't output gridded if gridded biogenics is only input
 C.........  Cannot have BFLAG without TFLAG
         IF( BFLAG ) TFLAG = .TRUE.
 
-C.........  Make VMT usage flag consistent with speciation and source merging
-C           such that if the merge VMT flag is set to true, speciation and other
-C           source categories will be overridden.
-        IF( MFLAG .AND. VFLAG .AND. 
-     &    ( AFLAG .OR. BFLAG .OR. PFLAG .OR. SFLAG ) ) THEN
-
-            MESG = 'VMT control environment variable "MRG_VMT_YN"' //
-     &             'indicates VMT should be used.  This will'//
-     &             CRLF()// BLANK10// 'override settings of ' //
-     &             'environment variables "MRG_SOURCE" and ' //
-     &             '"MRG_SPCMAT_YN"'
-            CALL M3WARN( PROGNAME, 0, 0, MESG )
-
-            AFLAG = .FALSE.
-            BFLAG = .FALSE.
-            PFLAG = .FALSE.
-            SFLAG = .FALSE.
-
-        ENDIF
-
 C.........  Report that flags for reporting inventory emissions, speciated
 C           emissions or not, and controlled emissions or not do not work yet
         IF( INVIOS .GE. 0 ) THEN   ! If it was set to something
@@ -257,11 +252,6 @@ C           emissions or not, and controlled emissions or not do not work yet
 
         IF( SPCIOS .GE. 0 ) THEN
             MESG = 'NOTE: MRG_REPSPC_YN control is not yet functional.'
-            CALL M3MSG2( MESG )
-        END IF
-
-        IF( CTLIOS .GE. 0 ) THEN
-            MESG = 'NOTE: MRG_REPCTL_YN control is not yet functional.'
             CALL M3MSG2( MESG )
         END IF
 
