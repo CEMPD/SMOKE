@@ -191,7 +191,7 @@ C.............  Case: Link crosses domain at some point
 C.................  Initialize for all cells (inside domain) intersecting link
                 J  = 0
                 FF = DYLNK * YCELL3D
-                DO  11  IR = ROW, RRR
+                DO  11  IR = MAX( 1,ROW ) , MIN( RRR,NROWS3D )
 
                     IF( IR .GE. 1 .AND. IR. LE. NROWS3D ) THEN
                         J  = J + 1
@@ -260,7 +260,7 @@ C.................  Initialize for all cells (inside domain) intersecting link
                 J  = 0
                 FF = DXLNK * XCELL3D
                 JZ = NCOLS3D * ( ROW - 1 )
-                DO  22  IC = COL, CCC
+                DO  22  IC = MAX( 1,COL ) , MIN( CCC,NCOLS3D )
                     J  = J + 1
                     ACEL ( J ) = IC + JZ
                     AFRAC( J ) = FF
@@ -477,7 +477,7 @@ C.............  Intersect new column next
 
 C.............  Intersect new column and new row at same time
 C.............  or both arrays have reached end of lists
-            ELSEIF( XFAC( IX ) .EQ. YFAC( IY ) ) THEN
+            ELSEIF( ABS( XFAC( IX ) - YFAC( IY ) ) .LT. 1.0E-05 ) THEN
                 FAC = XFAC( IX ) - FF
                 FF  = XFAC( IX )
                 IC  = XCOL( IX )
