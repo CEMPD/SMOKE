@@ -12,7 +12,7 @@ setenv B3XRF $GE_DAT/b3tob2B.xrf
 
 # Output file which can be input into Rawbio
 
-setenv BGUSE $INVDIR/t2_36_c.beld3to2.txt
+setenv BGUSE $BGDAT/t2_36_c.beld3to2.txt
 
 
 $SMK_BIN/beld3to2
