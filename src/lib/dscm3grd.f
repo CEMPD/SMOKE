@@ -25,7 +25,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -44,7 +44,8 @@ C***************************************************************************
 
         IMPLICIT NONE
         
-        INCLUDE 'IOCNST3.EXT'               
+        INCLUDE 'IOCNST3.EXT'
+        INCLUDE 'IOSTRG3.EXT'
         INCLUDE 'PARMS3.EXT'               
         
 C...........   ARGUMENTS and their descriptions.  All are output variables:
@@ -72,11 +73,12 @@ C...........   EXTERNAL FUNCTIONS:
         LOGICAL      CHKREAL
         CHARACTER*2  CRLF
         INTEGER      GETEFILE
+        INTEGER      GETNLIST
         INTEGER      INDEX1
         INTEGER      STR2INT
         REAL         STR2REAL
 
-        EXTERNAL     CHKINT, CHKREAL, CRLF, GETEFILE, INDEX1, 
+        EXTERNAL     CHKINT, CHKREAL, CRLF, GETEFILE, GETNLIST, INDEX1, 
      &               STR2INT, STR2REAL
         
 C...........   Local parameters
@@ -96,13 +98,18 @@ C...........   Grid types and names arrays
      &                                           , 'STEREOGRAPHIC  '
      &                                           , 'UTM            ' / )
 
+C...........   Local arrays (note- tried to make these allocatable, but
+C              this caused unexplainable crashing on SGI).
+        CHARACTER*32 :: SEGMENT( 32 )
+        CHARACTER*32 :: UPCSGMT( 32 )
+
 C...........   File units and logical/physical names:
         INTEGER, SAVE :: IDEV    !  unit number of grid information file
         CHARACTER*16     LNAME   !  logical name for grid information file
 
 C...........   Scratch local variables and their descriptions:
             
-        INTEGER         I, J, L, L2  !  indices and string lengths
+        INTEGER         I, J, L, L2, N  !  indices and string lengths
         INTEGER         IOS      !  I/O status return
         INTEGER      :: IDUM = 0 !  integer dummy variable
         INTEGER         IREC     !  record counter
@@ -115,13 +122,13 @@ C...........   Scratch local variables and their descriptions:
         LOGICAL      :: EFLAG = .FALSE.   ! true: error detected
         LOGICAL      :: FIRSTIME = .TRUE. ! true: first time routine called
 
-
         CHARACTER*16    CDUM     !  character dummy buffer
         CHARACTER*300   BUFFER   !  multi-purpose buffer
         CHARACTER*300   GNBUF    !  grid name buffer
         CHARACTER*300   GDBUF    !  grid description buffer
         CHARACTER*300   LINE     !  line of file
         CHARACTER*300   MESG     !  message buffer
+        CHARACTER*300   UPCLINE  !  upper case line of file
 
         CHARACTER*16 :: PROGNAME = 'DSCM3GRD' ! program name
 
@@ -188,35 +195,47 @@ C.............  Read whole line from the file
                 CYCLE
             ENDIF
 
+C.............  Adjust line to left and create upper case line
+            LINE = ADJUSTL( LINE )
+            UPCLINE = LINE
+            CALL UPCASE( UPCLINE )
             L2 = LEN_TRIM( LINE )
+
+C.............  Skip line if it starts with a number
+            IF( UPCLINE( 1:1 ) .GE. '0' .AND.
+     &          UPCLINE( 1:1 ) .LE. '9'       ) CYCLE
+
+C.............  Parse the lower and upper case lines
+            N = GETNLIST( L2, UPCLINE )
+            IF( N .GT. 32 ) THEN
+                WRITE( MESG,94010 ) 'WARNING: Line', IREC, 
+     &                 'in G_GRIDPATH file skipped because more ' //
+     &                 'than 32 fields were found.'
+                CALL M3MSG2( MESG )
+                CYCLE 
+            END IF
+
+            SEGMENT = ' '            
+            UPCSGMT = ' '            
+            CALL PARSLINE( LINE   , L2, SEGMENT )
+            CALL PARSLINE( UPCLINE, L2, UPCSGMT )
 
 C.............  Search for keywords.  If the keyword exists, extract the
 C               value(s) and cycle to the next line...
 
 C.............  Grid name
-            I = INDEX( LINE, 'GDNAME_GD' )
-            IF( I .GT. 0 ) THEN
-                I = INDEX( LINE, '0' )
-                GNBUF = ADJUSTL( LINE( I+1:L2 ) )
-                CALL UPCASE( GNBUF )
-                CYCLE
-            END IF
+            SELECT CASE ( UPCSGMT( 1 ) )
+            CASE( 'GDNAME_GD' )
+                GNBUF = UPCSGMT( 3 )
 
 C.............  Grid description
-            I = INDEX( LINE, 'GDDESC_GD' )
-            IF( I .GT. 0 ) THEN
+            CASE( 'GDDESC_GD' )
                 I = INDEX( LINE, '0' )
                 GDBUF = ADJUSTL( LINE( I+1:L2 ) )
-                CALL UPCASE( GDBUF )
-                CYCLE
-            END IF
 
 C.............  Coordinate system type
-            I = INDEX( LINE, 'GDTYP_GD' )
-            IF( I .GT. 0 ) THEN
-                I = INDEX( LINE, '0' )
-                CNAME = ADJUSTL( LINE( I+1:L2 ) )
-                CALL UPCASE( CNAME )
+            CASE( 'GDTYP_GD' )
+                CNAME = UPCSGMT( 3 )
 
 C.................  Look for coordinate system type in known types
                 J = INDEX1( CNAME, MXGRDTYP, GRDNAMES )
@@ -229,77 +248,60 @@ C.................  Look for coordinate system type in known types
                 ELSE
                     CTYPE = GRDTYPES( J )
                 END IF
-                CYCLE
-            END IF
 
 C.............  Grid units
-            I = INDEX( LINE, 'GDUNT_GD' )
-            IF( I .GT. 0 ) THEN
-                I = INDEX( LINE, '0' )
-                PUNIT = ADJUSTL( LINE( I+1:L2 ) )
-                CALL UPCASE( PUNIT )
-                CYCLE
-            END IF
+            CASE( 'GDUNT_GD' )
+                PUNIT = SEGMENT( 3 )
 
 C.............  Alpha value
-            CALL GRDINFO_CHECKER( 'P_ALP_GD', M3DBLE, P_ALP, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'P_ALP_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, P_ALP, IDUM )
 
 C.............  Beta value
-            CALL GRDINFO_CHECKER( 'P_BET_GD', M3DBLE, P_BET, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'P_BET_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, P_BET, IDUM )
 
 C.............  Gamma value
-            CALL GRDINFO_CHECKER( 'P_GAM_GD', M3DBLE, P_GAM, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'P_GAM_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, P_GAM, IDUM )
 
 C.............  X-center value
-            CALL GRDINFO_CHECKER( 'XCENT_GD', M3DBLE, XCENT, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'XCENT_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, XCENT, IDUM )
 
 C.............  Y-center value
-            CALL GRDINFO_CHECKER( 'YCENT_GD', M3DBLE, YCENT, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'YCENT_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, YCENT, IDUM )
 
 C.............  X-origin value
-            CALL GRDINFO_CHECKER( 'XORIG_GD', M3DBLE, XORIG, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'XORIG_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, XORIG, IDUM )
 
 C.............  Y-origin value
-            CALL GRDINFO_CHECKER( 'YORIG_GD', M3DBLE, YORIG, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'YORIG_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, YORIG, IDUM )
 
 C.............  Delta X value
-            CALL GRDINFO_CHECKER( 'XCELL_GD', M3DBLE, XCELL, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'XCELL_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, XCELL, IDUM )
 
 C.............  Delta Y value
-            CALL GRDINFO_CHECKER( 'YCELL_GD', M3DBLE, YCELL, 
-     &                            IDUM, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'YCELL_GD' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3DBLE, YCELL, IDUM )
 
 C.............  Number of columns
-            CALL GRDINFO_CHECKER( 'NCOLS', M3INT, RDUM, 
-     &                            NCOLS, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'NCOLS' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3INT, RDUM, NCOLS )
 
 C.............  Number of rows
-            CALL GRDINFO_CHECKER( 'NROWS', M3INT, RDUM, 
-     &                            NROWS, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'NROWS' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3INT, RDUM, NROWS )
 
 C.............  Number of boundary cells
-            CALL GRDINFO_CHECKER( 'NTHIK', M3INT, RDUM, 
-     &                            NTHIK, CFLAG )
-            IF( CFLAG ) CYCLE
+            CASE( 'NTHIK' )
+                CALL GRDINFO_CHECKER( UPCSGMT, M3INT, RDUM, NTHIK )
+
+            END SELECT
 
         END DO
 
@@ -307,19 +309,17 @@ C.........  Exit from read loop
 111     CONTINUE
 
 C.........  Check length of character variables that matter
-        BUFFER = ADJUSTL( GNBUF )
-        L = LEN_TRIM( BUFFER )
-        LEGAL = LEN( GNAME )
-        IF ( L .GT. LEGAL ) THEN
+        L = LEN_TRIM( GNBUF )
+        IF ( L .GT. IOVLEN3 ) THEN
  
-            WRITE( MESG,94010 ) 'Grid name "' // BUFFER( 1:L ) //
-     &             '" has maximum allowable length of', LEGAL, '.' //
+            WRITE( MESG,94010 ) 'Grid name "' // GNBUF( 1:L ) //
+     &             '" has maximum allowable length of', IOVLEN3, '.' //
      &             CRLF() // BLANK10 // 'Truncating to "' // 
-     &             BUFFER( 1:LEGAL ) // '".'
+     &             GNBUF( 1:IOVLEN3 ) // '".'
             CALL M3WARN( PROGNAME, 0, 0, MESG )
 
         END IF
-        GNAME = BUFFER( 1:LEGAL )
+        GNAME = GNBUF( 1:IOVLEN3 )
 
 C.........  Set grid description, and truncate
         GDESC = GDBUF( 1:LEN( GDESC ) )
@@ -359,15 +359,14 @@ C********************** INTERNAL SUBPROGRAMS ****************************
 
         CONTAINS
 
-            SUBROUTINE GRDINFO_CHECKER( KEYWORD, OUTTYPE,
-     &                                  ROUT, IOUT, CFLAG )
+            SUBROUTINE GRDINFO_CHECKER( STRINGS, OUTTYPE,
+     &                                  ROUT, IOUT )
 
 C.............  Subroutine arguments
-            CHARACTER(*), INTENT (IN) :: KEYWORD
+            CHARACTER(*), INTENT (IN) :: STRINGS( 3 )
             INTEGER     , INTENT (IN) :: OUTTYPE
             REAL*8      , INTENT(OUT) :: ROUT     ! real output value
             INTEGER     , INTENT(OUT) :: IOUT     ! integer output value
-            LOGICAL     , INTENT(OUT) :: CFLAG    ! true: keyword was found
 
 C.............  Local variables
             INTEGER   I, L
@@ -376,37 +375,30 @@ C.............  Local variables
 
 C..........................................................................
 
-            CFLAG = .FALSE.
-            I = INDEX( LINE, KEYWORD )
+            IF( OUTTYPE .EQ. M3INT ) THEN
 
-            IF( I .GT. 0 ) THEN
-
-                I = INDEX( LINE, '0' )
-                IF( OUTTYPE .EQ. M3INT ) THEN
-
-                    IF( .NOT. CHKINT( LINE( I+1:L2 ) ) ) THEN
-                        EFLAG = .TRUE.
-                        MESG = 'ERROR: ' // KEYWORD // ' value is ' // 
-     &                         'invalid in grid information file.'
-                        CALL M3MSG2( MESG )
-                    ELSE
-                        IOUT = STR2INT( LINE( I+1:L2 ) )
-                    END IF
-
-                ELSE IF( OUTTYPE .EQ. M3DBLE ) THEN
-
-                    IF( .NOT. CHKREAL( LINE( I+1:L2 ) ) ) THEN
-                        EFLAG = .TRUE.
-                        MESG = 'ERROR: ' // KEYWORD // ' value is ' // 
-     &                         'invalid in grid information file.'
-                        CALL M3MSG2( MESG )
-                    ELSE
-                        ROUT = DBLE( STR2REAL( LINE( I+1:L2 ) ) )
-                    END IF
-
+                IF( .NOT. CHKINT( STRINGS( 3 ) ) ) THEN
+                    EFLAG = .TRUE.
+                    L = LEN_TRIM( STRINGS( 1 ) )
+                    MESG = 'ERROR: ' // STRINGS( 1 )( 1:L ) // 
+     &                     ' value is invalid in grid information' // 
+     &                     ' file.'
+                    CALL M3MSG2( MESG )
+                ELSE
+                    IOUT = STR2INT( STRINGS( 3 ) )
                 END IF
 
-                CFLAG = .TRUE.
+            ELSE IF( OUTTYPE .EQ. M3DBLE ) THEN
+
+                IF( .NOT. CHKREAL( STRINGS( 3 ) ) ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: ' // STRINGS( 1 )( 1:L ) // 
+     &                     ' value is invalid in grid information' // 
+     &                     ' file.'
+                    CALL M3MSG2( MESG )
+                ELSE
+                    ROUT = DBLE( STR2REAL( STRINGS( 3 ) ) )
+                END IF
 
             END IF
 
