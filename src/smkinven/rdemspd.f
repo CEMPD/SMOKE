@@ -240,8 +240,8 @@ C               same file.
 C.............  If the file is hourly but the only the daily is to be read, then
 C               behave as if it is a daily file.
             IF( DAYFLAG .AND. 
-     &             ( L .GT. 80 .AND. .NOT. SFLAG ) .OR.
-     &             ( L .LE. 80 .AND.       SFLAG )      ) THEN
+     &             ( L .GT. 90 .AND. .NOT. SFLAG ) .OR.
+     &             ( L .LE. 90 .AND.       SFLAG )      ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: bad format or hourly ' //
      &                 'data found in day-specific file at line', IREC
@@ -352,9 +352,9 @@ C.............  Day-specific from an hourly file - read totals
                 WD = 8
 C.............  Day-specific from a day-specific file
             ELSE IF( DAYFLAG ) THEN
-        	L1 = 65 
+        	L1 = 55 
         	L2 = 72 
-                WD = 8
+                WD = 18
 C.............  Hourly file
             ELSE
         	L1 = 66 
