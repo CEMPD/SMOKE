@@ -927,12 +927,12 @@ C.........  Allocate memory for storing temperature profiles
 
 C.........  Get output directory information from the environment
         MESG = 'Path where hourly temperature files will be written'
-        CALL ENVSTR( 'SMK_TEMPATH', MESG, '.', TEMPDIR, IOS )
+        CALL ENVSTR( 'SMK_METPATH', MESG, '.', TEMPDIR, IOS )
 
         IF( IOS /= 0 ) THEN
             MESG = 'WARNING: Temperature files being placed in ' //
      &             'executable directory because ' // CRLF() //
-     &             BLANK10 // 'environment variable SMK_TEMPATH '//
+     &             BLANK10 // 'environment variable SMK_METPATH '//
      &             'is not set properly'
             CALL M3MSG2( MESG )
         END IF

@@ -6,7 +6,7 @@ C***********************************************************************
 C  subroutine body starts at line 97
 C
 C  DESCRIPTION:
-C      Opens temperature output files. Creates file name based on SMK_TEMPATH
+C      Opens temperature output files. Creates file name based on SMK_METPATH
 C      directory, current averaging type, and current start date. Stores
 C      end date in file header.
 C 

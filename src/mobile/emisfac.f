@@ -253,7 +253,7 @@ C           do not store the pollutants as separate
      
 C.........  Get temperature file directory from the environment
         MESG = 'Location of hourly temperature files'
-        CALL ENVSTR( 'SMK_TEMPATH', MESG, '.', TEMPDIR, IOS )
+        CALL ENVSTR( 'SMK_METPATH', MESG, '.', TEMPDIR, IOS )
      
         TNAME = PROMPTMFILE(
      &          'Enter logical name for first hourly temperature file',
