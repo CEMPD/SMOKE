@@ -252,7 +252,7 @@ multiplication; therefore, the sorting order may be chosen to optimize some
 other task. For SMOKE, the sorting order was optimized for efficient use of the
 cross-reference and profiles approach to emissions processing. This approach is
 described below.</p>
-<p class="MsoNormal">The SMOKE program <a href="../word/smoke_programs.htm#SMKINVEN">Smkinven</a>
+<p class="MsoNormal">The SMOKE program <a href="smoke_programs.htm#SMKINVEN">Smkinven</a>
 is responsible for the data structuring operation, but it is not used for
 biogenic sources. The Smkinven program is used to import all emissions and
 activity data for all source categories but biogenic sources. The program is
@@ -273,10 +273,10 @@ emissions data values. The main point is that the user should think about what
 data are being changed, and what processing steps must subsequently be rerun. Of
 course, one can always rerun all steps just to be safe, but this strategy will
 ultimately cause more time to be spent on emission processing than is necessary.</p>
-<p class="MsoNormal">The SMOKE programs <a href="../word/smoke_programs.htm#Rawbio">Rawbio</a>
-(BEIS2) and <a href="../word/smoke_programs.doc#NORMBEIS3">Normbeis3</a> (BEIS3)
+<p class="MsoNormal">The SMOKE programs <a href="smoke_programs.htm#Rawbio">Rawbio</a>
+(BEIS2) and <a href="smoke_programs.doc#NORMBEIS3">Normbeis3</a> (BEIS3)
 are responsible for the data-structuring operation for biogenic sources. More
-information on the data import for biogenic emissions is available in <a href="../word/smoke_src_cat_concepts.htm#Biogenic">Chapter
+information on the data import for biogenic emissions is available in <a href="smoke_src_cat_concepts.htm#Biogenic">Chapter
 3</a>.</p>
 <p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_2_SMOKE_concepts">Return
 to top</a>]<o:p>
@@ -298,11 +298,11 @@ data sets for years other than a year for which an emissions inventory is
 available. For example, if an inventory is available for 1996, but the modeling
 effort involves predicting ozone levels in 2007, then the emissions inventory
 must be grown to the year 2007. The first step to do this is to create a
-projection matrix. In SMOKE, this can be done with the <a href="../word/smoke_programs.htm#CNTLMAT">Cntlmat</a>
+projection matrix. In SMOKE, this can be done with the <a href="smoke_programs.htm#CNTLMAT">Cntlmat</a>
 program.</p>
 <p class="MsoNormal">If no new sources are being added from the inventory year
 to the future year, then the emissions values in the SMOKE inventory files can
-be multiplied by the projection matrices. In SMOKE, the <a href="../word/smoke_programs.htm#GRWINVEN">Grwinven</a>
+be multiplied by the projection matrices. In SMOKE, the <a href="smoke_programs.htm#GRWINVEN">Grwinven</a>
 program performs these operations. If new sources must be added, then the Data
 Structuring (Smkinven) step must be rerun for the new number of sources, then
 the future/past Projection (Cntlmat) can be run to create the projection matrix,
@@ -332,8 +332,8 @@ from day- and hour-specific emissions data sets. For biogenic and mobile
 sources, hourly emissions values also depend on meteorology (e.g., temperature
 dependence of evaporative emissions). For the more advanced emissions modeling
 needed for biogenic emissions, the temporal model is a true simulation model
-driven by ambient meteorology and other data. The SMOKE <a href="../word/smoke_programs.htm#TEMPORAL">Temporal</a>
-program performs temporal processing for anthropogenic sources and <a href="../word/smoke_programs.htm##TMPBIO">Tmpbio</a>
+driven by ambient meteorology and other data. The SMOKE <a href="smoke_programs.htm#TEMPORAL">Temporal</a>
+program performs temporal processing for anthropogenic sources and <a href="smoke_programs.htm##TMPBIO">Tmpbio</a>
 processes biogenic sources.</p>
 <p class="MsoNormal">SMOKE treats the temporal profiles used in the Temporal as <i>local</i>
 profiles. In other words, the profile applied to the source is adjusted based on
@@ -383,7 +383,7 @@ sparse matrices that transform column vectors of inventory-pollutant emissions
 into column vectors of model-species emissions. Note that the speciation
 matrices depend only upon the chemical mechanism and the inventory, and they are
 therefore independent of other factor-based operations for emissions processing.
-The SMOKE <a href="../word/smoke_programs.htm#SPCMAT">Spcmat</a> program
+The SMOKE <a href="smoke_programs.htm#SPCMAT">Spcmat</a> program
 performs chemical speciation processing.</p>
 <p class="MsoNormal">To support the flexibility inherent in Models-3 and future
 needs for reactivity assessments, SMOKE additionally supports run-time,
@@ -415,7 +415,7 @@ resulting gridding matrix is a sparse matrix that describes where the emissions
 occur within the modeling domain. The gridding matrix can be applied to the
 inventory emissions to transform source-based inventory emissions to gridded
 emissions.</p>
-<p class="MsoNormal">The SMOKE <a href="../word/smoke_programs.htm#GRDMAT">Grdmat</a>
+<p class="MsoNormal">The SMOKE <a href="smoke_programs.htm#GRDMAT">Grdmat</a>
 program performs spatial processing. The gridding step is different depending on
 the type of source being processed. For area sources, county-total emissions are
 spread among the cells intersecting the county through the use of gridding
@@ -457,7 +457,7 @@ behaviors. The resulting control matrix is a diagonal (hence, sparse) matrix of
 source-level control factors for each inventory pollutant. Note that the control
 matrix depends only upon the source characteristics in the SMOKE inventory and
 the set of controls chosen. The control step can therefore be decoupled from the
-rest of the processing steps. The SMOKE <a href="../word/smoke_programs.htm#CNTLMAT">Cntlmat</a>
+rest of the processing steps. The SMOKE <a href="smoke_programs.htm#CNTLMAT">Cntlmat</a>
 program performs control processing for area, mobile, and point sources.
 However, mobile sources controls are typically implemented by using different
 input files in generating mobile source emission factors.</p>
@@ -487,12 +487,12 @@ one or more of the matrices are applied to emissions data. This is typically
 done to prepare emissions for an air-quality model (AQM), when one multiplies
 the control matrix, the gridding matrix, and the speciation matrix to produce a
 composite transform matrix, and then applies this combined matrix to the hourly
-emission vectors. This vector-matrix multiplication is implemented by the SMOKE <a href="../word/smoke_programs.htm#SMKMERGE">Smkmerge</a>
-program. In addition, the <a href="../word/smoke_programs.htm#SMKMERGE">Smkmerge</a>
+emission vectors. This vector-matrix multiplication is implemented by the SMOKE <a href="smoke_programs.htm#SMKMERGE">Smkmerge</a>
+program. In addition, the <a href="smoke_programs.htm#SMKMERGE">Smkmerge</a>
 program can multiply only the gridding matrix, or only the gridding and
 speciation matrices to the emissions, and it can multiply these with the annual
 emissions or the hourly emissions, permitting the user to evaluate the emissions
-with various stages of processing. The <a name="_Hlt482338186"></a><a href="../word/smoke_programs.htm#SMKMERGE"><span style="mso-bookmark:_Hlt482338186">Smkmerge</span></a>
+with various stages of processing. The <a name="_Hlt482338186"></a><a href="smoke_programs.htm#SMKMERGE"><span style="mso-bookmark:_Hlt482338186">Smkmerge</span></a>
 program also combines the emissions data from two or more source categories.</p>
 <p class="MsoNormal">Because the processing steps in SMOKE are typically
 independent, a change in one of those steps does not usually require redoing the
@@ -545,7 +545,7 @@ ungridding matrix.</p>
 allocation. SMOKE currently can use MOBILE5b to generate emission factors. For
 some types of evaporative emissions, MOBILE5b depends on the minimum and maximum
 daily temperatures. Consequently, SMOKE has an additional mobile processing
-step: the <a href="../word/smoke_programs.htm#PREMOBL">Premobl</a> program. The
+step: the <a href="smoke_programs.htm#PREMOBL">Premobl</a> program. The
 program computes the minimum and maximum daily temperatures by source and by
 day. These temperature combinations are supplied to MOBILE5b to generate the
 appropriate daily emission factors.</p>
@@ -707,7 +707,7 @@ relative;z-index:14;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_
 <br style="mso-ignore:vglayout" clear="ALL">
 <h2><a name="environment_variables"></a>Environment Variables</h2>
 <p class="MsoNormal">Environment variables are how SMOKE communicates with its
-operating environment. As is described in more detail in <a href="../word/smoke_environment.htm">Chapter
+operating environment. As is described in more detail in <a href="smoke_environment.htm">Chapter
 5</a>, SMOKE can be used from scripts, the Models-3 Study Planner, or with the <a href="http://envpro.ncsc.org/EDSS">Environmental
 Decision Support System (EDSS) Study Pla<span style="mso-bookmark:_Hlt482341997">n</span>ner</a><a name="_Hlt482341997"></a>.
 The are several different uses for environment variables including assigning
@@ -768,7 +768,7 @@ relative;z-index:16;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_
 </o:p>
 </p>
 <br style="mso-ignore:vglayout" clear="ALL">
-<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="../word/smoke_user_doc.htm#TOP">Return
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="smoke_user_doc.htm#TOP">Return
 to Ta<span style="mso-bookmark:_Hlt482331833">b</span>le of Contents</a><a name="_Hlt482331833"></a>]</span></p>
 
 </body>

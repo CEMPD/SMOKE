@@ -81,16 +81,16 @@ country/state/county code and source classification code.</p>
 <p class="MsoNormal">SMOKE can combine raw data from different inventory years
 into a single inventory. The inventory year is stored as one of the records in
 the SMOKE area source inventory file AREA. The data from these different years
-can then be projected to the same year using the <a href="../word/smoke_programs.htm#CNTLMAT">Cntlmat</a>
-projection and controls program. The projection inputs for the <a href="../word/smoke_programs.htm#CNTLMAT">Cntlmat</a>
+can then be projected to the same year using the <a href="smoke_programs.htm#CNTLMAT">Cntlmat</a>
+projection and controls program. The projection inputs for the <a href="smoke_programs.htm#CNTLMAT">Cntlmat</a>
 have been set up so that the projection factors are listed with the &quot;from
 year&quot; and the &quot;to year&quot;.</p>
 <p class="MsoNormal">There are many other features for area source processing,
 which are documented in the SMOKE Core Programs Chapter. The relevant SMOKE
-programs are <a href="../word/smoke_programs.htm#SMKINVEN">Smkinven</a>, <a href="../word/smoke_programs.htm#SPCMAT">Spcmat</a>,
-<a href="../word/smoke_programs.htm#GRDMAT">Grdmat</a>, <a href="../word/smoke_programs.htm#TEMPORAL">Temporal</a>,
-<a href="../word/smoke_programs.htm#SMKMERGE">Smkmerge</a>, <a href="../word/smoke_programs.htm#GRWINVEN">Grwinven</a>,
-and <a href="../word/smoke_programs.htm#MRGGRID">Mrggrid</a>. The various
+programs are <a href="smoke_programs.htm#SMKINVEN">Smkinven</a>, <a href="smoke_programs.htm#SPCMAT">Spcmat</a>,
+<a href="smoke_programs.htm#GRDMAT">Grdmat</a>, <a href="smoke_programs.htm#TEMPORAL">Temporal</a>,
+<a href="smoke_programs.htm#SMKMERGE">Smkmerge</a>, <a href="smoke_programs.htm#GRWINVEN">Grwinven</a>,
+and <a href="smoke_programs.htm#MRGGRID">Mrggrid</a>. The various
 options for the SMOKE programs are usually applicable to area source emissions.</p>
 <p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_6_source_category_concepts">Return
 to top</a>]<o:p>
@@ -118,36 +118,36 @@ SMOKE-BEIS2, depending upon whether one begins with gridded or county-aggregated
 BEIS2 land use data. Both produce the same sort of gridded normalized biogenic
 emissions output file BGRD, which contains gridded land use type specific
 normalized (time-independent) emissions and biomass data.</p>
-<p class="MsoNormal">First is the the county-aggregated landuse case. Program <a href="../word/smoke_programs.htm#RAWBIO">R<span style="mso-bookmark:_Hlt476400611">a</span>wbio</a><a name="_Hlt476400611"></a>
+<p class="MsoNormal">First is the the county-aggregated landuse case. Program <a href="smoke_programs.htm#RAWBIO">R<span style="mso-bookmark:_Hlt476400611">a</span>wbio</a><a name="_Hlt476400611"></a>
 reads a county list from the BFIP file, BEIS2 county-aggregated land use data
-from the <a href="../word/smoke_files.htm#BCUSE">BCUSE</a> file, BEIS2 emissions
+from the <a href="smoke_files.htm#BCUSE">BCUSE</a> file, BEIS2 emissions
 factors from the BFAC file, and gridding-surrogate coefficients from BGPRO to
-produce this file.<span style="mso-spacerun: yes">&nbsp; </span>Alternatively, <a name="_Hlt476400975"></a><a href="../word/smoke_programs.htm#RAWBIO"><span style="mso-bookmark:_Hlt476400975">Rawbio</span></a>
-can import a gridded land use data file, <a href="../word/smoke_files.htm#BGUSE">BGUSE</a>.
+produce this file.<span style="mso-spacerun: yes">&nbsp; </span>Alternatively, <a name="_Hlt476400975"></a><a href="smoke_programs.htm#RAWBIO"><span style="mso-bookmark:_Hlt476400975">Rawbio</span></a>
+can import a gridded land use data file, <a href="smoke_files.htm#BGUSE">BGUSE</a>.
 The processing is the same as for county land use, except the gridding
 surrogates are not needed for grid cell allocation of the emissions. In both
-cases, BGRD then goes into <a href="../word/smoke_programs.htm#TMPBIO">Tmpbio</a>
+cases, BGRD then goes into <a href="smoke_programs.htm#TMPBIO">Tmpbio</a>
 to prepare model-ready biogenic emissions.</p>
 <p class="MsoNormal">It is possible for the user to define the chemical species
 that are output from Tmpbio. This is possible because Tmpbio has been updated to
-read the speciation profiles file, <a href="../word/smoke_files.htm#GSPRO">GSPRO</a>.
+read the speciation profiles file, <a href="smoke_files.htm#GSPRO">GSPRO</a>.
 The user then sets an environment variable indicating which speciation profile
 should be used for biogenic emissions. Tmpbio looks for the “inventory
 pollutants” OVOC, NO, and TERP, and splits and/or aggregates these data as
 specified by the profile.</p>
 <p class="MsoNormal">SMOKEv1.4 introduced a BEIS3 prototype, BEIS v3.09.<span style="mso-spacerun: yes">&nbsp;
-</span>The concepts in BEIS3 are similar to those in BEIS2, except the Program <a href="../word/smoke_programs.doc#NORMBEIS3">Normbeis3</a>
+</span>The concepts in BEIS3 are similar to those in BEIS2, except the Program <a href="smoke_programs.doc#NORMBEIS3">Normbeis3</a>
 reads only gridded landuse data that is in netCDF.<span style="mso-spacerun:
 yes">&nbsp; </span>The Biogenic Emissions Landcover Database version 3 (BELD3)
 is the typical database used for generating the gridded landuse files that go
-into <a href="../word/smoke_programs.doc#NORMBEIS3">Normbeis3</a>.<span style="mso-spacerun:
+into <a href="smoke_programs.doc#NORMBEIS3">Normbeis3</a>.<span style="mso-spacerun:
 yes">&nbsp; </span>BELD3 consists of high-resolution (1-km horizontal
 resolution) land use data for 230 different land use types.<span style="mso-spacerun:
 yes">&nbsp; </span>BELD2 was the primary database used for BEIS2 applications.<span style="mso-spacerun: yes">&nbsp;
-</span>The <a href="../word/smoke_qa_util.doc#BELD3TO2">Beld3to2</a> program can
+</span>The <a href="smoke_qa_util.doc#BELD3TO2">Beld3to2</a> program can
 take the BELD3 data used in BEIS3 modeling and convert for use in BEIS2
 modeling.<span style="mso-spacerun: yes">&nbsp; </span>It is also important to
-note that the GSPRO file used in <a href="../word/smoke_programs.doc#BEIS3">Beis3</a>
+note that the GSPRO file used in <a href="smoke_programs.doc#BEIS3">Beis3</a>
 is not the same GSPRO file used in<span style="mso-spacerun: yes">&nbsp;&nbsp;&nbsp;
 </span>Tmpbio.</p>
 <p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_6_source_category_concepts">Return
@@ -254,7 +254,7 @@ emissions from a meteorological model. However, in order to retain the
 performance benefits of source-based SMOKE processing, SMOKE has been designed
 to &quot;ungrid&quot; the temperatures to get a source-based temperature. For
 processing of all kinds, SMOKE expects one of the gridded, temporal temperature
-files <a href="../word/smoke_files.htm#Meteorology">MET_CRO_2D or MET_CRO_3D</a>.
+files <a href="smoke_files.htm#Meteorology">MET_CRO_2D or MET_CRO_3D</a>.
 The MET_CRO_2D file is used for surface or 1.5-meter temperature data. The
 MET_CRO_3D data file is used for ambient temperature data.</p>
 <p class="MsoNormal">All of the emission factors depend on temperature in some
@@ -274,7 +274,7 @@ temperatures are created by averaging the temperatures in the grid cells
 intersecting each mobile source, weighted by the fraction of the source's
 surrogate fractions (for non-link sources) or length (for link sources)
 intersecting those grid cells. The ungridding is implemented by building an
-&quot;ungridding matrix,&quot; MUMAT, which must be created by the <a href="../word/smoke_programs.htm#GRDMAT">Grdmat</a>
+&quot;ungridding matrix,&quot; MUMAT, which must be created by the <a href="smoke_programs.htm#GRDMAT">Grdmat</a>
 program.</p>
 <p class="H3"><a name="PSI"></a><span style="color:black">Parameter Scheme Index
 (PSI)<o:p>
@@ -282,7 +282,7 @@ program.</p>
 </span></p>
 <p class="MsoNormal">Each emission factor created, managed, and applied by SMOKE
 has an associated parameter scheme index (PSI). The PSI represents a unique
-combination of MOBILE inputs. The PSIs are defined in the <a href="../word/smoke_files.htm#MPREF">MPREF</a>
+combination of MOBILE inputs. The PSIs are defined in the <a href="smoke_files.htm#MPREF">MPREF</a>
 file by associating a number with a MOBILE5b input file. These are call
 &quot;pure&quot; PSIs.</p>
 <p class="MsoNormal">For example, one PSI could be used for all counties in a
@@ -393,7 +393,7 @@ CRC emissions, it is not correct to use EVP and any of these three at the same
 time. Furthermore, since SMOKE does not yet permit input of trip information,
 using the HOT emission factor is incorrect as well. The recommended
 configuration encompasses the following emission types: EXH__CO, EXH__NOX,
-EXH__VOC, EVP__VOC, RNL__VOC, RST__VOC, DNL_VOC. The <a href="../word/smoke_files.htm#MEPROC">MEPROC</a>
+EXH__VOC, EVP__VOC, RNL__VOC, RST__VOC, DNL_VOC. The <a href="smoke_files.htm#MEPROC">MEPROC</a>
 file installed with SMOKE configures the system to be run in this way.</p>
 <h3><span style="color:black"><br>
 Road Classes<o:p>
@@ -879,12 +879,12 @@ file that use the mobile internal SCCs.</p>
 Other Features</h3>
 <p class="MsoNormal">There are many other features for mobile source processing,
 which are documented in the SMOKE Core Programs Chapter. The relevant SMOKE
-programs are <a href="../word/smoke_programs.htm#SMKINVEN">Sm<span style="mso-bookmark:
-_Hlt476401907">k</span>inven</a><a name="_Hlt476401907"></a>, <a href="../word/smoke_programs.htm#SPCMAT">Spcmat</a>,
-<a href="../word/smoke_programs.htm#GRDMAT">Grdmat</a>, <a href="../word/smoke_programs.htm#PREMOBL">Premobl</a>,
-<a href="../word/smoke_programs.htm#EMISFAC">Emisfac</a>, <a href="../word/smoke_programs.htm#TEMPORAL">Temporal</a>,
-<a href="../word/smoke_programs.htm#SMKMERGE">Smkmerge</a>, <a href="../word/smoke_programs.htm#GRWINVEN">Grwinv<span style="mso-bookmark:_Hlt476401303">e</span>n</a><a name="_Hlt476401303"></a>,
-and <a href="../word/smoke_programs.htm#MRGGRID">Mrggrid</a>. The various
+programs are <a href="smoke_programs.htm#SMKINVEN">Sm<span style="mso-bookmark:
+_Hlt476401907">k</span>inven</a><a name="_Hlt476401907"></a>, <a href="smoke_programs.htm#SPCMAT">Spcmat</a>,
+<a href="smoke_programs.htm#GRDMAT">Grdmat</a>, <a href="smoke_programs.htm#PREMOBL">Premobl</a>,
+<a href="smoke_programs.htm#EMISFAC">Emisfac</a>, <a href="smoke_programs.htm#TEMPORAL">Temporal</a>,
+<a href="smoke_programs.htm#SMKMERGE">Smkmerge</a>, <a href="smoke_programs.htm#GRWINVEN">Grwinv<span style="mso-bookmark:_Hlt476401303">e</span>n</a><a name="_Hlt476401303"></a>,
+and <a href="smoke_programs.htm#MRGGRID">Mrggrid</a>. The various
 options for the SMOKE programs are usually applicable to mobile source
 emissions.</p>
 <p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_6_source_category_concepts">Return
@@ -915,9 +915,9 @@ formats: IDA and EMS-95.</p>
 </span></h3>
 <p class="MsoNormal">Emissions are often available as an annual total or daily
 average value. Emissions data are also sometimes available as day- or
-hour-specific totals. <a href="../word/smoke_programs.htm#SMKINVEN">Smkinven</a>
+hour-specific totals. <a href="smoke_programs.htm#SMKINVEN">Smkinven</a>
 can import the day- and hour-specific data, and it can also convert the
-hour-specific data to hour-specific temporal profiles. The SMOKE <a href="../word/smoke_programs.htm#TEMPORAL">Temporal</a>
+hour-specific data to hour-specific temporal profiles. The SMOKE <a href="smoke_programs.htm#TEMPORAL">Temporal</a>
 program is designed to accept these inputs and override the annual or daily
 emissions with the most specific data available.</p>
 <h3><span style="color:black">Point sources are three-dimensional<o:p>
@@ -979,7 +979,7 @@ fractions are stored (not the emissions in each layer), until the SMOKE merge
 step. Consequently, the plume rise calculations do not need to be repeated for
 each control strategy or grid (unlike the situation in which the plume rise
 calculations are done inside the air quality model, such as in the UAM-IV and
-UAM-V). The plume rise is calculated using the <a href="../word/smoke_programs.htm#LAYPOINT">Laypoint</a>
+UAM-V). The plume rise is calculated using the <a href="smoke_programs.htm#LAYPOINT">Laypoint</a>
 program for all days of each meteorological scenario.</p>
 <h3><span style="color:black">Cutoff method<o:p>
 </o:p>
@@ -989,31 +989,31 @@ estimate the plume rise using a Briggs-algorithm plume rise calculation similar
 to that found in EPS2.0, and then to compare this plume rise to a user-defined
 cutoff value. Sources below this cutoff value are treated as single-layer point
 sources, and sources above this cutoff are considered elevated point sources. In
-SMOKE, the <a href="../word/smoke_programs.htm#ELEVPOINT">Elevpoint</a> program
-makes this distinction. The <a href="../word/smoke_programs.htm#TEMPORAL">Temporal</a>
+SMOKE, the <a href="smoke_programs.htm#ELEVPOINT">Elevpoint</a> program
+makes this distinction. The <a href="smoke_programs.htm#TEMPORAL">Temporal</a>
 program then outputs separate hourly-emissions files for single-layer and
 elevated point sources. UAM-IV, UAM-V, and CAMx use these files. The Briggs
-algorithm is provided with the documentation to the <a href="../word/smoke_programs.htm#ELEVPOINT">Elevpoint</a>
+algorithm is provided with the documentation to the <a href="smoke_programs.htm#ELEVPOINT">Elevpoint</a>
 program.</p>
 <h3><span style="color:black">Multiple year-to-year projections<o:p>
 </o:p>
 </span></h3>
 <p class="MsoNormal">SMOKE can combine raw data from different inventory years
 into a single inventory. The inventory year is stored as one of the records in
-the SMOKE point source inventory file <a href="../word/smoke_files.htm#PNTS">PNTS</a>.
+the SMOKE point source inventory file <a href="smoke_files.htm#PNTS">PNTS</a>.
 The data from these different years can then be projected to the same year using
-the <a href="../word/smoke_programs.htm#CNTLMAT">Cntlmat</a> projection and
+the <a href="smoke_programs.htm#CNTLMAT">Cntlmat</a> projection and
 controls program. The format of the projection data in this file has been
 designed so that the projection factors are listed with the &quot;from
 year&quot; and the &quot;to year&quot;.</p>
 <h3>Other Features</h3>
 <p class="MsoNormal">There are many other features for mobile source processing,
 which are documented in the SMOKE Core Programs Chapter. The relevant SMOKE
-programs are <a href="../word/smoke_programs.htm#SMKINVEN">Smkinven</a>, <a href="../word/smoke_programs.htm#SPCMAT">Spcmat</a>,
-<a href="../word/smoke_programs.htm#GRDMAT">Grdmat</a>, <a href="../word/smoke_programs.htm#ELEVPOINT">Elevpoint</a>,
-<a href="../word/smoke_programs.htm#TEMPORAL">Temporal</a>, <a href="../word/smoke_programs.htm#LAYPOINT">Laypoint</a>,
-<a href="../word/smoke_programs.htm#SMKMERGE">Smkmerge</a>, <a href="../word/smoke_programs.htm#GRWINVEN">Grwinven</a>,
-and <a href="../word/smoke_programs.htm#MRGGRID">Mrggrid</a>.</p>
+programs are <a href="smoke_programs.htm#SMKINVEN">Smkinven</a>, <a href="smoke_programs.htm#SPCMAT">Spcmat</a>,
+<a href="smoke_programs.htm#GRDMAT">Grdmat</a>, <a href="smoke_programs.htm#ELEVPOINT">Elevpoint</a>,
+<a href="smoke_programs.htm#TEMPORAL">Temporal</a>, <a href="smoke_programs.htm#LAYPOINT">Laypoint</a>,
+<a href="smoke_programs.htm#SMKMERGE">Smkmerge</a>, <a href="smoke_programs.htm#GRWINVEN">Grwinven</a>,
+and <a href="smoke_programs.htm#MRGGRID">Mrggrid</a>.</p>
 <p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_6_source_category_concepts">Return
 to top</a>]<o:p>
 </o:p>
@@ -1028,7 +1028,7 @@ relative;z-index:5;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_3
 </o:p>
 </p>
 <br style="mso-ignore:vglayout" clear="ALL">
-<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="../word/smoke_user_doc.htm#TOP">Return
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="smoke_user_doc.htm#TOP">Return
 to Table of Contents</a>]<o:p>
 </o:p>
 </span></p>

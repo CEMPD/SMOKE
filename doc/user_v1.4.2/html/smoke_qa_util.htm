@@ -69,7 +69,7 @@ relative;z-index:0;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_2
   </o:p>
   </span></p>
   <p class="MsoNormal"><b style="mso-bidi-font-weight:normal">Mvsetup</b><span style="mso-bidi-font-weight:bold">
-  will create the <a href="../word/smoke_files.htm#MPLIST">MPLIST</a> file using
+  will create the <a href="smoke_files.htm#MPLIST">MPLIST</a> file using
   the output from Mvcondns and other supplementary information.<o:p>
   </o:p>
   </span></p>
@@ -681,7 +681,7 @@ Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;
   <p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo2"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   </span></span>N: Do not use the VNAMMAP file</p>
   <p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo2"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  </span></span><b style="mso-bidi-font-weight:normal">SMK_SOURCE:</b> see <a href="../word/smoke_environment.htm#SharedEVs">Chapter
+  </span></span><b style="mso-bidi-font-weight:normal">SMK_SOURCE:</b> see <a href="smoke_environment.htm#SharedEVs">Chapter
   5, section on Shared Environment Variables</a>. This variable controls the
   name of the input NetCDF logical file name and the name of the output binary
   logical file name. Unlike most other SMOKE programs, SMK_SOURCE can also be
@@ -870,7 +870,7 @@ EN-US;mso-bidi-language:AR-SA;layout-grid-mode:line"><br clear="all" style="page
   is also limited to one speciation scenario, one grid, and one hourly emissions
   file. Smkreport cannot yet read in projection or control matrices. All of
   these component datasets are optional, however, and their use is controlled by
-  the settings in the Report Configuration File (<a href="../word/word/smoke_files.html#REPCONFIG">REPCONFIG</a>).
+  the settings in the Report Configuration File (<a href="word/smoke_files.html#REPCONFIG">REPCONFIG</a>).
   Analysis of multiple source categories together will remain, for now, as a
   post-processing step in which the user can import multiple reports from
   different source categories and analyze across multiple source categories.</p>
@@ -891,7 +891,7 @@ EN-US;mso-bidi-language:AR-SA;layout-grid-mode:line"><br clear="all" style="page
   </span></h3>
   <p class="MsoNormal">Smkreport can only be used after at <i style="mso-bidi-font-style:
 normal">least</i> Smkinven (for inventory import) has been run. Depending on the
-  reporting options selected in the <a href="../word/word/smoke_files.html#REPCONFIG">REPCONFIG</a>
+  reporting options selected in the <a href="word/smoke_files.html#REPCONFIG">REPCONFIG</a>
   input file, other processing steps may need to have been run. For example, to
   create a report of county total emissions after gridding, the Grdmat (for
   spatial allocation) program must have been run already to create the gridding
@@ -904,7 +904,7 @@ normal">least</i> Smkinven (for inventory import) has been run. Depending on the
   </o:p>
   </span></h3>
   <p class="MsoNormal">The input files depend upon the SMK_SOURCE input
-  instruction in the <a href="../word/word/smoke_files.html#REPCONFIG">REPCONFIG</a>
+  instruction in the <a href="word/smoke_files.html#REPCONFIG">REPCONFIG</a>
   input file setting when the program is started. For example, if only area
   sources are being merged (SMK_SOURCE=A), then only area source-related inputs
   are required. Similarly, if Smkreport is being executed to produce speciated,
@@ -1259,7 +1259,7 @@ normal">least</i> Smkinven (for inventory import) has been run. Depending on the
       <td width="133" valign="top" style="width:100.0pt;border:ridge windowtext 2.25pt;
   border-top:none;mso-border-top-alt:three-d-emboss windowtext 2.25pt;
   mso-border-alt:three-d-emboss windowtext 2.25pt;padding:0in 5.25pt 0in 5.25pt">
-        <p class="MsoNormal"><a href="../word/word/smoke_files.html#REPCONFIG">REPCONFIG</a></p>
+        <p class="MsoNormal"><a href="word/smoke_files.html#REPCONFIG">REPCONFIG</a></p>
       </td>
       <td width="89" valign="top" style="width:66.65pt;border-top:none;border-left:
   none;border-bottom:ridge windowtext 2.25pt;border-right:ridge windowtext 2.25pt;
@@ -1278,7 +1278,7 @@ normal">least</i> Smkinven (for inventory import) has been run. Depending on the
       <td width="133" valign="top" style="width:100.0pt;border:ridge windowtext 2.25pt;
   border-top:none;mso-border-top-alt:three-d-emboss windowtext 2.25pt;
   mso-border-alt:three-d-emboss windowtext 2.25pt;padding:0in 5.25pt 0in 5.25pt">
-        <p class="MsoNormal"><a href="../word/smoke_files.htm#SCCDESC">SCCDESC</a></p>
+        <p class="MsoNormal"><a href="smoke_files.htm#SCCDESC">SCCDESC</a></p>
       </td>
       <td width="89" valign="top" style="width:66.65pt;border-top:none;border-left:
   none;border-bottom:ridge windowtext 2.25pt;border-right:ridge windowtext 2.25pt;
@@ -1313,7 +1313,7 @@ normal">least</i> Smkinven (for inventory import) has been run. Depending on the
   </span></span><b style="mso-bidi-font-weight:normal">REPORT[#]:</b> (ASCII)
   Multiple ASCII reports. Smkreport will output file names of REPORT1, REPORT2,
   REPORT3, etc., if no other file names are given with the /NEWFILE/ instruction
-  (see the <a href="../word/word/smoke_files.html#REPCONFIG">REPCONFIG</a> file
+  (see the <a href="word/smoke_files.html#REPCONFIG">REPCONFIG</a> file
   documentation). If the /NEWFILE/ instructions include physical file names,
   Smkreport will open those files. If the /NEWFILE/ instructions include logical
   file names, Smkreport will attempt to find the value of the logical file name
@@ -1500,7 +1500,7 @@ relative;z-index:5;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_2
 </o:p>
 </p>
 <br style="mso-ignore:vglayout" clear="ALL">
-<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="../word/word/smoke_user_doc.htm#TOP">Return
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="word/smoke_user_doc.htm#TOP">Return
 to Table of Contents</a>]<o:p>
 </o:p>
 </span></p>
