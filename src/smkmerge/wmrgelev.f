@@ -355,45 +355,43 @@ c                    CALL FMTCSRC( ECS, 3, BUFFER, L )
 
                 END IF
 
-C.................  If this elevated source is different from the previous one
-                IF( ECS .NE. PECS ) THEN
+C...............  Check to see if source has explicit plume rise and 
+C                 needs fake stacks
+                IF ( EXPLFLAG ) M = FIND1( S, NHRSRC, ELEVSRC )
+                IF ( M .GT. 0 ) THEN
+                    NEXPLOOP = EMLAYS
+                ELSE
+                    NEXPLOOP = 1
+                END IF
 
-                    K = K + 1
-
-C.....................  Check to see if source has explicit plume rise and 
-C                       needs fake stacks
-                    IF ( EXPLFLAG ) M = FIND1( S, NHRSRC, ELEVSRC )
-                    IF ( M .GT. 0 ) THEN
-                        NEXPLOOP = EMLAYS
-                    ELSE
-                        NEXPLOOP = 1
-                    END IF
-
-                    DO L = 1, NEXPLOOP
+C...............  Loop through layers for explicit plume srcs (1 for
+C                 standard sources)
+                DO L = 1, NEXPLOOP
                     
-                        KK = KK + 1
-                        EOUTCSRC( KK ) = ECS
-
 C.........................  Set stack height depending on whether the source
 C                           has explicit plume rise or not
-                        IF( M .GT. 0 ) THEN
-                            HT = LAYRMID( L )
-                        ELSE
-                            HT = GRPHT ( N )
-                        END IF
+                    IF( M .GT. 0 ) THEN
+                        HT = LAYRMID( L )
+                    ELSE
+                        HT = GRPHT ( N )
+                    END IF
 
 C.........................  Set stack diameter depending on whether the source
 C                           is a PinG source (for UAM-V & CAMx), or whether
 C                           it's an explicit plume rise source (REMSAD).
-                        DM = GRPDM ( N )
-                        IF( ALLOCATED( LPING ) ) THEN
-                            IF( LPING( S ) ) DM = -DM
-                        END IF
-                        IF( M .GT. 0 ) DM = -DM
+                    DM = GRPDM ( N )
+                    IF( ALLOCATED( LPING ) ) THEN
+                        IF( LPING( S ) ) DM = -DM
+                    END IF
+                    IF( M .GT. 0 ) DM = -DM
 
-C.........................  Store arrays for writing emissions
-                        EIDX2  ( KK ) = I
-                        ELAYER ( KK ) = L
+C..................  If FIPS/plant/stack is not the same as the
+C                    previous FIP/plant/stack, then store this unique
+C                    list as needed for output to UAM format header
+                    IF( ECS .NE. PECS ) THEN
+
+                        KK = KK + 1
+                        EOUTCSRC( KK ) = ECS
 
 C.........................  Set output stack parameters and coordinates
                         EOUTHT ( KK ) = HT
@@ -403,13 +401,17 @@ C.........................  Set output stack parameters and coordinates
                         EOUTXL ( KK ) = XLOC
                         EOUTYL ( KK ) = YLOC
 
-                    END DO
+                    END IF  ! end new FIP/plant/stack
 
-                    PECS = ECS
+C..................  Store arrays for writing emissions
+                    ELAYER ( I ) = L
+                    EIDX2  ( I ) = KK
 
-                END IF
+                END DO      ! end loop over layers or 1
 
-            END DO   ! end of major sources
+                PECS = ECS
+
+            END DO          ! end of major sources
 
             NOUT = KK
 
@@ -686,16 +688,17 @@ C               for the next species.
             LN = 0
             LM = 0
             LL = 0
+            M  = 0
             ESUM = 0.  ! array
             PECS = ' '
-            DO N = 1, NOUT
+            DO I = 1, NMAJOR
 
-                I   = EIDX2 ( N )
-                L   = ELAYER( N )
+                J   = ESRTIDX ( I )  ! sort for UAM output index
+                L   = ELAYER  ( I )  ! layer, 1 or 0 if outside grid
+                N   = EIDX2   ( I )  ! UAM elev src no. or 0 if outside grd
 
-                IF ( I .LE. 0 ) CYCLE   ! record is skipped
+                IF ( N .LE. 0 ) CYCLE   ! skip because not in grid
 
-                J   = ESRTIDX ( I )
                 S   = ELEVSIDX( J )                
                 ECS = ECSRCA  ( J )
 
@@ -704,24 +707,25 @@ C               for the next species.
 C NOTE: This algorithm will not work if there are explicit elevated sources
 C    N: that have duplicates.
 
-C.................  If K is different from last time, write emissions for
-C                   previous elevated source and initialize
-C.................  If K is zero, then source is being skipped
+C.................  If FIP/plant/stack is different from last time, 
+C                   write emissions for previous elevated output src 
+C                   and initialize
                 IF ( PECS .NE. ECS .OR. L .NE. LL ) THEN
 
-C.....................  Write emissions for standard sources
+C.....................  Write emissions for standard output srcs
                     IF( LM .LE. 0 ) THEN
 
+C......................  Only write emissions if not zero
                         IF( ESUM( 1 ) .NE. 0. ) THEN 
                             CALL GET_ESUM_FORMAT( VNAME, ESUM(1), EFMT )
                             WRITE( EVDEV, EFMT ) LN, VNAME, ESUM(1)
                         END IF
                         ESUM( 1 ) = 0.
 
-C.....................  Write emissions for explicit sources
+C.....................  Write emissions for explicit source records
                     ELSE
 
-                        IF( ESUM( LL ) .NE. 0. ) THEN
+                        IF( ESUM( LL ) .NE. 0. ) THEN 
                             CALL GET_ESUM_FORMAT( VNAME,ESUM(LL),EFMT )
                             WRITE( EVDEV,EFMT ) LN, VNAME, ESUM( LL )
                         END IF
@@ -729,35 +733,35 @@ C.....................  Write emissions for explicit sources
 
                     END IF
 
-C.....................  Initialize for standard sources
+C.....................  Initialize for standard FIP/plant/stack
                     IF( M .LE. 0 ) THEN
-                        ESUM( 1 ) = ELEVEMIS( I )
+                        ESUM( 1 ) = ELEVEMIS( J )
 
 C.....................  Initialize for explicit sources
                     ELSE
-                        ESUM( L ) = ELEVEMIS( I ) * LFRAC( M,L )
+                        ESUM( L ) = ELEVEMIS( J ) * LFRAC( M,L )
 
                     END IF
 
-C.................  If source is the same as the previous iteration, sum 
-C                   emissions
+C.................  If FIP/plant/stack is the same as the previous 
+C                   iteration, sum emissions
                 ELSE
 
 C.....................  For standard sources
                     IF( M .LE. 0 ) THEN
 
-                        ESUM( 1 ) = ESUM( 1 ) + ELEVEMIS( I )
+                        ESUM( 1 ) = ESUM( 1 ) + ELEVEMIS( J )
 
 C.....................  For explicit sources
                     ELSE
-                        ESUM(L) = ESUM(L) + ELEVEMIS(I) * LFRAC(M,L)
+                        ESUM(L) = ESUM(L) + ELEVEMIS(J) * LFRAC(M,L)
 
                     END IF
 
                 END IF
 
-                LN = N
-                LL = L
+                LN = N       ! index to grouped UAM source number
+                LL = L       ! layer number or 1
                 LM = M
                 PECS = ECS
 
