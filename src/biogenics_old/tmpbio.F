@@ -281,7 +281,7 @@ C...........   Get starting date, time, run duration
         JTIME = GETNUM( 0, 235959, JTIME, 
      &                 'Enter simulation starting time  (HHMMSS)' )
 
-        NSTEPS = GETNUM( 1, MXREC3D, MXREC3D, 
+        NSTEPS = GETNUM( 1, MXREC3D, NSTEPS, 
      &                  'Enter output duration (hours)' )
 
 
