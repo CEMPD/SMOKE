@@ -31,7 +31,7 @@ C       Version   12/96 by CJC:  day-specific input files for each
 C       category of emissions, each with its own clock.
 C
 C       Version    1/97 by  SL:  Modified mobile speciation and gridding 
-C       modules to be consistent with csgmobil.F. 
+C       modules to make csgldaymrg.F consistent with csgmobil.F. 
 C       
 C       Version    2/97 by  SL:  A fully validated version that can run
 C       each of the four processes (mb, pt, bo, ar) separately or in any 
@@ -45,7 +45,7 @@ C...........   INCLUDES:
         
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'   !  0-based I/O API file desc. data structures.
+        INCLUDE 'FDESC3.EXT'    !  0-based I/O API file desc. data structures.
         INCLUDE 'ARDIMS3.EXT'   !  area -source dimensioning parameters
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'VGRD3.EXT'     !  (AQM) vertical dimensioning parameters
@@ -57,6 +57,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         DSCGRID
+        INTEGER         GETDATE
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         INDEX1
@@ -64,10 +65,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE
         INTEGER         TRIMLEN
         INTEGER         CSVNAME
-        
-        EXTERNAL    DSCGRID, GETNUM, GETYN, INDEX1, PROMPTMFILE, 
-     &              PROMPTFFILE, TRIMLEN, CSVNAME
+        INTEGER         WKDAY
+        CHARACTER*14    MMDDYY
+        CHARACTER*10    HHMMSS
 
+
+        
+        EXTERNAL    DSCGRID, GETDATE, GETNUM, GETYN, INDEX1, 
+     &              PROMPTMFILE, PROMPTFFILE, TRIMLEN, CSVNAME,
+     &              WKDAY, MMDDYY, HHMMSS
 
 C...........   PARAMETER
 
@@ -88,14 +94,14 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Emissions Sources input and output arrays (one variable at a time)
 
         REAL            AREAV ( NASRC + 
-     &                          NPSRC + NMSRC*NVTYPE*MXEMIS )  !  input area emissions.
-        REAL            AREAC ( NASRC )  !  controlled speciated area emissions
+     &                          NPSRC + NMSRC*NVTYPE*MXEMIS )  ! input area emis
+        REAL            AREAC ( NASRC )  ! controlled speciated area emissions
 
-        REAL            POINTV( NPSRC )  !  input point emissions.
-        REAL            POINTC( NPSRC )  !  controlled speciated point emissions
+        REAL            POINTV( NPSRC )  ! input point emissions.
+        REAL            POINTC( NPSRC )  ! controlled speciated point emissions
 
         REAL            MOBILV( NMSRC, NVTYPE, MXEMIS ) !input mobile emissions.
-        REAL            MOBILC( NMSRC )  !  controlled speciated mobile emissions
+        REAL            MOBILC( NMSRC )  ! controlled speciated mobile emissions
 
         REAL            EMISG ( NGRID, EMLAYS )  !  gridded output emissions
 
@@ -206,24 +212,24 @@ C...........   Other local variables
         LOGICAL         OUTFLAG !  generating file output
 
         CHARACTER*16    ANAME   !  logical name for area-source       input file
-        CHARACTER*16    BNAME   !  logical name for biogenic-source   input file
-        CHARACTER*16    MNAME   !  logical name for mobile-source     input file
-        CHARACTER*16    PNAME   !  logical name for point-source      input file
         CHARACTER*16    ACNAME  !  logical name for control    matrix input file
         CHARACTER*16    AGNAME  !  logical name for grid       matrix input file
         CHARACTER*16    APNAME  !  logical name for projection matrix input file
         CHARACTER*16    ASNAME  !  logical name for speciation matrix input file
+
         CHARACTER*16    MCNAME  !  logical name for projection matrix input file
         CHARACTER*16    MGNAME  !  logical name for grid       matrix input file
         CHARACTER*16    MPNAME  !  logical name for projection matrix input file
         CHARACTER*16    MSNAME  !  logical name for speciation matrix input file
         CHARACTER*16    MTNAME  !  logical name for time-stepped mb   input file
+
+        CHARACTER*16    PNAME   !  logical name for point-source      input file
         CHARACTER*16    PCNAME  !  logical name for control    matrix input file
         CHARACTER*16    PGNAME  !  logical name for grid       matrix input file
         CHARACTER*16    PLNAME  !  logical name for layer coefficient input file
         CHARACTER*16    PPNAME  !  logical name for projection matrix input file
         CHARACTER*16    PSNAME  !  logical name for speciation matrix input file
-        CHARACTER*16    PTNAME  !  logical name for point temporal    input file
+
         CHARACTER*16    BTNAME  !  logical name for biogenic temporal input file
         CHARACTER*16    ENAME   !  logical name for emission         output file
 
@@ -231,6 +237,13 @@ C...........   Other local variables
         CHARACTER*80    BMETHEAD( 2 )  ! met headers from BTMP
         CHARACTER*80    MMETHEAD( 2 )  ! met headers from MTMP
         CHARACTER*80    PMETHEAD( 2 )  ! met headers from PLAY
+
+        CHARACTER*10    DAYS( 7 )
+        DATA            DAYS
+     &          /
+     &          'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+     &          'Friday', 'Saturday', 'Sunday'
+     &          /
 
         CHARACTER*256   MESG
  
@@ -242,7 +255,6 @@ C...........   or layer fractions.
 
         EQUIVALENCE( CA, CP )
         EQUIVALENCE( CA, CM )
-C sl        EQUIVALENCE( CA, LFRAC )
         EQUIVALENCE( CA, AREAV )
         EQUIVALENCE( AREAV( NASRC+1       ), POINTV )
         EQUIVALENCE( AREAV( NASRC+NPSRC+1 ), MOBILV )
@@ -302,8 +314,9 @@ C.......   Set appropriate flags and parameters for this run:
         
         IF ( AFLAG ) THEN
 
-            JDATE   = GETNUM( 0, 9999999, 1995201, 
-     &                        'Enter starting date (YYYYDDD)' )
+            JDATE  = GETDATE( JDATE,
+     &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
+
             JTIME   = GETNUM( 0,  235959,       0, 
      &                        'Enter starting time  (HHMMSS)' )
             TSTEP   = 10000
@@ -431,6 +444,20 @@ C.......   Mobile source matrix files:
             MTNAME = PROMPTMFILE(
      &          'Enter logical name for TIME-STEPPED MOBILE EMIS file',
      &          FSREAD3, 'MTMP', 'CSGLDAYMRG' )
+            IF ( .NOT. DESC3( MTNAME ) ) THEN
+                MESG =  'Could not get description for file "' //
+     &                  MTNAME( 1:TRIMLEN( MTNAME ) ) // '"'
+                CALL M3EXIT( 'CSGLDAYMRG', JDATE, JTIME, MESG, 2 )
+            END IF          !  if DESC3() failed
+            IF ( NROWS3D .NE. NMSRC ) THEN
+                WRITE( MESG, 94010 )
+     &              'Dimension mismatch in file "',
+     &              MTNAME( 1:TRIMLEN( MTNAME ) ), '" -- file:', 
+     &              NROWS3D, 'caller:', NMSRC
+                CALL M3EXIT( 'CSGLDAYMRG', JDATE, JTIME, MESG, 2 )
+            END IF          !  if dimension mismatch
+            MMETHEAD( 1 ) = FDESC3D( 2 )
+            MMETHEAD( 2 ) = FDESC3D( 3 )
 
             MCNAME = PROMPTMFILE( 
      &          'Enter name for MOBILE CONTROL MATRIX file ' //
@@ -620,6 +647,21 @@ C........  when bio is running alone
                 MESG = 'Could not get description of file ' // BTNAME
                 CALL M3EXIT( 'CSGLDAYMRG', 0, 0, MESG, 2 )
             END IF
+
+            IF ( NROWS3D .NE. NROWS ) THEN
+                WRITE( MESG, 94010 )
+     &              'Dimension mismatch in file "',
+     &              BTNAME( 1:TRIMLEN( BTNAME ) ), '" -- file:', 
+     &              NROWS3D, 'caller:', NROWS
+                CALL M3EXIT( 'CSGLDAYMRG', JDATE, JTIME, MESG, 2 )
+            END IF          !  if dimension mismatch
+
+            BMETHEAD( 1 ) = FDESC3D( 2 ) 
+            BMETHEAD( 2 ) = FDESC3D( 3 ) 
+            DO  101  V = 1, NMPOL	! Just set vname3d(*)
+                BSPCFLAG( V ) = 
+     &          ( INDEX1( EMNAM(V), NVARS3D, VNAME3D ) .GT. 0 )
+101         CONTINUE
 
         END IF          !  if biogenic sources used, or not
 
@@ -974,26 +1016,9 @@ C...........   date&time.
         END IF
         CALL M3MESG( MESG )
 
-        IF ( BFLAG ) THEN
-            CALL DAYFILE( BNAME, BDATE, BTIME, JDATE, JTIME,
-     &                    NROWS, 'Enter   BIO  SOURCE file' )
-            BMETHEAD( 1 ) = FDESC3D( 2 ) 
-            BMETHEAD( 2 ) = FDESC3D( 3 ) 
-            DO  101  V = 1, NMPOL	! dayfile() just set vname3d(*)
-                BSPCFLAG( V ) = 
-     &          ( INDEX1( EMNAM(V), NVARS3D, VNAME3D ) .GT. 0 )
-101         CONTINUE
-        END IF
-
-        IF ( MFLAG ) THEN
-            CALL DAYFILE( MNAME, MDATE, MTIME, JDATE, JTIME,
-     &                    NMSRC, 'Enter MOBILE SOURCE file' )
-            MMETHEAD( 1 ) = FDESC3D( 2 )
-            MMETHEAD( 2 ) = FDESC3D( 3 ) 
-        END IF
-
 C.........  Compare the consistency of met headers from BTMP, MTMP, PLAY to
 C           make sure they are using the same met file
+
         IF ( METFLAG ) THEN
 
             IF ( (BMETHEAD(1).EQ.MMETHEAD(1)) .AND.   ! All three (bo, mb, pt)
@@ -1130,6 +1155,17 @@ C           make sure they are using the same met file
         LDATE = -1
 
         DO  229  T = 1, NSTEPS
+
+            IF ( MOD( T,24 ) .EQ. 1 ) THEN
+ 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
+            END IF
+ 
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 93020 ) HHMMSS( JTIME )
         
             IF ( LDATE .NE. JDATE ) THEN  !  get new day's input files, etc
 
@@ -1153,10 +1189,10 @@ C...........   Read mobile source emissions:
 
 C.............   Read in entire emissions field
  
-               IF( .NOT. READ3( MNAME, ALLVAR3, ALLAYS3,
+               IF( .NOT. READ3( MTNAME, ALLVAR3, ALLAYS3,
      &                    JDATE, JTIME, MOBILV ) ) THEN
 
-                   MESG = 'Could not read timestep from ' // MNAME
+                   MESG = 'Could not read timestep from ' // MTNAME
                    CALL M3EXIT( 'CSGLDAYMRG', JDATE, JTIME, MESG, 2 )
                    GO TO 229
 
@@ -1238,11 +1274,11 @@ C...................   set to zero:
 
                     IF ( BSPCFLAG( K ) ) THEN
 
-                        IF( .NOT. READ3( BNAME, EMNAM( K ), ALLAYS3,
+                        IF( .NOT. READ3( BTNAME, EMNAM( K ), ALLAYS3,
      &                                   JDATE, JTIME, EMISG ) ) THEN
                             MESG = 'Could not read "' //
      &                      EMNAM( K )( 1:TRIMLEN( EMNAM( K ))) //
-     &                      '" from ' // BNAME
+     &                      '" from ' // BTNAME
                             CALL M3EXIT( 'CSGLDAYMRG', JDATE,JTIME, 
      &                                   MESG, 2 )
                         END IF          !  if read3() failed
@@ -1362,6 +1398,8 @@ C...........   Informational (LOG) message formats... 92xxx
 92020   FORMAT ( 10X, A )
 
 C...........   Formatted file I/O formats............ 93xxx
+
+93020   FORMAT( 8X, 'at time ', A8 )
 
 C...........   Internal buffering formats............ 94xxx
 
