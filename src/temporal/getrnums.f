@@ -1,10 +1,10 @@
 
-        SUBROUTINE GETRNUMS
+        SUBROUTINE GETRNUMS( ITIME, ISRC, IPA )
 
 C***********************************************************************
 C
 C  DESCRIPTION:
-C     Subroutine GETPROBS generates the random numbers associated with
+C     Subroutine GETRNUMS generates the random numbers associated with
 C     the specified uncertainty sources
 C
 C  PRECONDITIONS REQUIRED:
@@ -43,17 +43,24 @@ C...........   This module contains the uncertainty arrays
 
         IMPLICIT NONE
 
+C...........   INCLUDES
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+
 C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT
+
         EXTERNAL    ENVINT
 
+C...........   SUBROUTINE ARGUMENTS
+        INTEGER     , INTENT (IN)    :: IPA       ! index of pollutant of activity
+        INTEGER     , INTENT (IN)    :: ISRC      ! source index in uncertainty array
+        INTEGER     , INTENT (IN)    :: ITIME     ! current processing time
 
 C.........  Local variables
-        INTEGER       H, I, J, K, S, T   ! counters and indices
-        INTEGER       IOS                ! i/o status
-        INTEGER       ISEED              ! seed for random number generator
+        INTEGER       IOS                         ! i/o status
+        INTEGER       ISEED                       ! seed for RN generator
 
-        LOGICAL    :: EFLAG = .FALSE.    ! true: error found
         LOGICAL    :: FIRSTIME = .TRUE.  ! true: first time the routine called
 
         CHARACTER*300 MESG                    ! message buffer
@@ -68,72 +75,92 @@ C   begin body of subroutine GETRNUMS
      &                  'Seed for random number genration', 27195, IOS )
             CALL RANDOM_SEED( ISEED )
 
+            FIRSTIME = .FALSE.
+
         END IF
 
-        DO I = 1, UNSRC
-            DO J = 1, UNIPPA
-
-               SELECT CASE( METHOD( I, J ) )
-
-               CASE( 0 ) ! Empirical
-
-                   SELECT CASE( EPTYP( I, J ) ) ! Empirical statistics
+C.........  Determine Parametric or epirical distributoin
+        SELECT CASE( METHOD( ISRC, IPA ) )
         
-                   CASE( 1 ) ! Stepwise 
+C.........  Empirical sampling
+        CASE( 0 )
         
-                   CASE( 2 ) ! Linear Interpolation 
+C.............  Stepwise sampling method
+            IF ( EPTYP( ISRC, IPA ) .EQ. 6 ) THEN 
 
-                   CASE DEFAULT
-C....................  Error case.  invalid method entry
-                       MESG = 'Invalid empirical Method entry'
-                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                   END SELECT ! end type select
+                SAMPGEN( ISRC,IPA ) = REMPSTEP( APRCH( ISRC,IPA ),
+     &                                          ISRC, IPA         )
 
-C .............  Error case.  invalid entry                    
+C.............  Linear interpolation sampling method
+            ELSE IF ( EPTYP( ISRC, IPA ) .EQ. 7 ) THEN 
 
-               CASE( 1 ) ! Parametric
+c                SAMPGEN( ISRC,IPA ) = RLINTRPL( APRCH( ISRC,IPA ),
+                SAMPGEN( ISRC,IPA ) = REMPSTEP( APRCH( ISRC,IPA ),
+     &                                          ISRC, IPA         )
 
-                   SELECT CASE( EPTYP( I, J ) ) ! Parametric distribution
+C.............  Error case.  invalid empirical method
+            ELSE
+
+                WRITE( MESG, 94010)
+     &             'Invalid Empirical type for source ',
+     &             ISRC, 'and pollutant/activity ', IPA
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
         
-                   CASE( 1 ) ! Normal
+C.........  Parametric sampling method        
+        CASE( 1 )
+
+C.............  Distributions to sample from
+            SELECT CASE( EPTYP( ISRC,IPA ) )
+
+C.............  Normal random deviate needed
+            CASE( 1 ) 
         
-                       SAMPGEN( I,J ) = RNORM( PARMS( UNCIDX( I,J ), 1),
-     &                                         PARMS( UNCIDX( I,J ), 2))
+                SAMPGEN( ISRC,IPA ) = 
+     &                   RNORM( PARMS( UNCIDX( ISRC,IPA ), 1 ),
+     &                          PARMS( UNCIDX( ISRC,IPA ), 2 ) )
+   
 
-                   CASE( 2 ) ! Lognormal
-
-                       SAMPGEN( I,J ) = EXP(RNORM(PARMS(UNCIDX(I,J),1),
-     &                                            PARMS(UNCIDX(I,J),2))) 
-
-                   CASE( 3 ) ! Gamma
-C BUG................  code exists but not linked in
-                       SAMPGEN( I,J ) = RGAMMA(PARMS(UNCIDX(I,J), 1),
-     &                                         PARMS(UNCIDX(I,J), 2) )
-
-                   CASE( 4 ) ! Weibull
-C BUG................  code exists but not linked in
-                       SAMPGEN( I,J ) = RGAMMA(PARMS(UNCIDX(I,J), 1),
-     &                                         PARMS(UNCIDX(I,J), 2) )
-
-                   CASE( 5 ) ! Beta
-C BUG................  code exists but not linked in
-                       SAMPGEN( I,J ) = RGAMMA(PARMS(UNCIDX(I,J), 1),
-     &                                         PARMS(UNCIDX(I,J), 2) )
-
-                   CASE DEFAULT
-C....................  Error case.  invalid method entry
-                       MESG = 'Invalid parametric Method entry'
-                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                   END SELECT ! end type select
-
-               CASE DEFAULT
-C................  Error case.  invalid type entry
-                   MESG = 'Invalid Type entry'
-                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-               END SELECT ! end method select
-
-            END DO ! J loop
-        END DO ! I loop
+            CASE( 2 ) ! Lognormal
+        
+                SAMPGEN( ISRC,IPA ) = 
+     &                   EXP( RNORM( PARMS( UNCIDX( ISRC,IPA ), 1 ),
+     &                               PARMS( UNCIDX( ISRC,IPA ), 2) ) )
+  
+            CASE( 3 ) ! Gamma
+C.........  known BUG: code not tested
+                SAMPGEN( ISRC,IPA ) = 
+     &                   RGAMMA( PARMS( UNCIDX( ISRC,IPA ), 1 ),
+     &                           PARMS( UNCIDX( ISRC,IPA ), 2 ) )
+        
+            CASE( 4 ) ! Weibull
+C.........  known BUG: code not tested
+                SAMPGEN( ISRC,IPA ) = 
+     &                   RWEIBULL( PARMS( UNCIDX( ISRC,IPA ), 1 ),
+     &                             PARMS( UNCIDX( ISRC,IPA ), 2 ) )
+ 
+            CASE( 5 ) ! Beta
+C.........  known BUG: code not tested
+                SAMPGEN( ISRC,IPA ) = 
+     &                   RBETA( PARMS( UNCIDX( ISRC,IPA ), 1 ),
+     &                          PARMS( UNCIDX( ISRC,IPA ), 2 ) )
+   
+            CASE DEFAULT
+C.............  Error case.  invalid method entry
+                WRITE( MESG, 94010)
+     &             'Invalid Parametric type for source ',
+     &             ISRC, 'and pollutant/activity ', IPA
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END SELECT ! end type select
+        
+C.........  Error case.  invalid type entry
+        CASE DEFAULT
+            WRITE( MESG, 94010)
+     &             'Invalid Methods type for source ', 
+     &             ISRC, 'and pollutant/activity ', IPA
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END SELECT ! end method select
 
         RETURN
 
@@ -150,6 +177,177 @@ C.........  test buffering formats............ 94xxx
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
         CONTAINS
+
+C**********************************************************************
+
+            REAL FUNCTION REMPSTEP( APR , S, PA )
+
+C.............  function parameters
+            INTEGER,          INTENT(IN) :: APR
+            INTEGER,          INTENT(IN) :: S
+            INTEGER,          INTENT(IN) :: PA
+
+C.............  Local variables
+            INTEGER                         I     ! counters
+            INTEGER                         IOS   ! i/o status
+            INTEGER                         IDX   ! index for empirical dist.
+
+            INTEGER, SAVE                :: LTIME ! used to track changing time
+
+            LOGICAL, SAVE                :: FIRSTIME = .TRUE. ! first call
+
+            REAL                            U      ! uniform (0,1) RNs
+	    REAL, SAVE, ALLOCATABLE      :: SSAMP ( : )  ! holds S method RNs
+	    REAL, SAVE, ALLOCATABLE      :: STSAMP ( : ) ! holds ST method RNs 
+
+C**********************************************************************
+
+            IF( FIRSTIME ) THEN
+
+                LTIME = ITIME 
+
+                ALLOCATE( SSAMP( NUCPCKT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'SSAMP', PROGNAME )
+                SSAMP = AMISS3  ! array
+
+                ALLOCATE( STSAMP( NUCPCKT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'STSAMP', PROGNAME )
+                STSAMP = AMISS3  ! array
+
+                FIRSTIME = .FALSE.
+
+            END IF
+
+C.............  Unconditionally sample if no value exists
+C               otherwise determine approach for sampling.
+C.............  Approach for sampling means what the conditions 
+C               are for drawing a random number given a packet
+C               for a source and hour.  The condition will be either
+C               the same or diffferent for each
+
+C.............  (S) Sources-same, hourly-same
+            IF( APR .EQ. 1 ) THEN
+
+                IF( SSAMP( UNCIDX( S,PA ) ) .EQ. AMISS3 ) THEN
+
+                    CALL RANDOM_NUMBER( U )
+                    IDX = INT( U*NUMEP( S,PA ) + 1 )
+                    SSAMP( UNCIDX( S,PA ) ) 
+     &                  = EMFVAL( IDX, UNCIDX( S,PA ) )
+
+                END IF
+
+                REMPSTEP = SSAMP( UNCIDX( S,PA ) )
+
+C.............  (I) Sources-different, hourly-same
+            ELSE IF( APR .EQ. 2 ) THEN
+
+                IF( PA .EQ. 1 ) THEN
+
+                    CALL RANDOM_NUMBER( U )
+                    IDX = INT( U*NUMEP( S,PA ) + 1 )
+                    REMPSTEP = EMFVAL( IDX, UNCIDX( S,PA ) )
+
+                ELSE
+
+                    REMPSTEP = SAMPGEN( S,1 )
+
+                END IF
+
+C.............  (ST) Sources-same, hourly-different
+            ELSE IF( APR .EQ. 3 ) THEN
+
+                IF( LTIME .NE. ITIME ) STSAMP = AMISS3  ! array
+
+                IF( STSAMP( UNCIDX( S,PA ) ) .EQ. AMISS3 ) THEN
+
+                    CALL RANDOM_NUMBER( U )
+                    IDX = INT( U*NUMEP( S,PA ) + 1 )
+                    STSAMP( UNCIDX( S,PA ) ) 
+     &                  = EMFVAL( IDX, UNCIDX( S,PA ) )
+
+                    WRITE( MESG, 94010 ) 
+     &                     'IDX= ', IDX,
+     &                     'UNCIDX( S,PA ) = ', UNCIDX( S,PA ),
+     &                     'LTIME =', LTIME,
+     &                     'ITIME =',ITIME
+                    CALL M3MSG2( MESG )
+
+                END IF
+
+                REMPSTEP = STSAMP( UNCIDX( S,PA ) )
+
+C.............  (IT) Sources-same, hourly-different
+            ELSE IF( APR .EQ. 4 ) THEN
+
+                CALL RANDOM_NUMBER( U )
+                IDX = INT( U*NUMEP( S,PA ) + 1 )
+                REMPSTEP = EMFVAL( IDX, UNCIDX( S,PA ) )
+
+            ELSE
+
+                WRITE( MESG, 94010 ) 
+     &                 'Invalid empirical stepwise approach for ' //
+     &                 'source ', S, 'and pollutant/activity ', PA
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+            LTIME = ITIME
+
+
+C.........  Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END FUNCTION REMPSTEP
+
+C**********************************************************************
+
+            REAL FUNCTION RWEIBULL( ALPHA, BETA )
+
+C.............  function parameters
+            REAL,             INTENT(IN) :: ALPHA  
+            REAL,             INTENT(IN) :: BETA   
+
+C.............  Local variables
+            REAL                            U      ! uniform (0,1) RNs
+
+C**********************************************************************
+
+C BUG: needs to be tested
+
+            CALL RANDOM_NUMBER( U )
+
+            RWEIBULL = ALPHA*( -LOG( U ) ) ** ( 1.0 / BETA )
+
+            RETURN
+
+            END FUNCTION RWEIBULL
+C**********************************************************************
+
+            REAL FUNCTION RBETA( ALPHA, BETA )
+
+C.............  function parameters
+            REAL,             INTENT(IN) :: ALPHA  
+            REAL,             INTENT(IN) :: BETA   
+
+C.............  Local variables
+            REAL                            Y1, Y2 ! uniform (0,1) RNs
+
+C**********************************************************************
+
+C BUG: needs to be tested
+
+            Y1 = RGAMMA( ALPHA, 1.0 )
+            Y2 = RGAMMA( BETA, 1.0 )
+            RBETA = Y1 / ( Y1 + Y2 )
+
+            RETURN
+
+            END FUNCTION RBETA
+
+C**********************************************************************
 
             REAL FUNCTION RNORM( MU, SIGMA )
 
@@ -198,30 +396,78 @@ C.............  function parameters
             REAL,             INTENT(IN) :: BETA   ! distribution Mean 
 
 C.............  Local variables
-            REAL                         :: NEARZERO = 0.001 ! near 0 constant
-            REAL                            U      ! uniform (0,1) RNs
+            LOGICAL           NOT_FOUND            ! flag to signal RN found
+
+            REAL              AA, BB, D, P, Q, V, W, Y, Z ! temporay reals
+
+            REAL           :: NEARZERO = 0.001     ! near 0 constant
+            REAL           :: LAMBDA = 0.0         ! model shift value
+            REAL              U1, U2               ! uniform (0,1) RNs
 
 C**********************************************************************
 
-C BUG: needs to be tested
+            IF( ALPHA .GT. 1.0 - NEARZERO .AND.
+     &          ALPHA .LT. 1.0 + NEARZERO      ) THEN 
 
-            IF ( ALPHA .LT. NEARZERO .AND. ALPHA .GT. - NEARZERO .OR.
-     &           BETA .LT. NEARZERO .AND. BETA .GT. - NEARZERO ) THEN
+                RGAMMA = REXPONENTIAL( BETA )
 
-                CALL M3EXIT( PROGNAME, 0, 0, 'Negative Alpha or Beta '//
-     &                       'parameters.  Both should be > 0', 2 )
+            ELSE IF ( ALPHA .GT. 1.0 ) THEN
+
+                NOT_FOUND = .TRUE.
+                AA = 1/SQRT( 2*ALPHA - 1.0 )
+                BB = ALPHA - LOG( 4.0 )
+                Q  = ALPHA + 1.0/AA
+                D  = 1.0 + LOG( 4.5 )
+                DO WHILE( NOT_FOUND )
+
+                    CALL RANDOM_NUMBER( U1 )
+                    CALL RANDOM_NUMBER( U2 )
+                    V = AA*LOG( U1/( 1.0 - U1 ) ) 
+                    Y = ALPHA*EXP( V )
+                    Z = U1*U1*U2
+                    W = BB + Q*V - Y
+                    P = LOG( Z )
+                    IF( ( W + D - 4.5*Z) .GE. 0.0 ) THEN
+
+                        RGAMMA = Y*BETA + LAMBDA
+                        NOT_FOUND = .FALSE.
+
+                    ELSE IF( W .GE. P ) THEN
+
+                        RGAMMA = Y*BETA + LAMBDA
+                        NOT_FOUND = .FALSE.
+
+                    END IF
+                END DO
+
+            ELSE IF ( ALPHA .LT. 1.0 ) THEN
+
+                NOT_FOUND = .TRUE.
+                BB = ( EXP( 1.0 ) + ALPHA ) / EXP( 1.0 )
+                DO WHILE( NOT_FOUND )
+                    
+                    CALL RANDOM_NUMBER( U1 )
+                    CALL RANDOM_NUMBER( U2 )
+                    IF( (BB*U1) .GT. 1.0 ) THEN
+
+                        Y = -LOG(( BB - BB*U1) / ALPHA )
+                        IF( U2 .LE. Y**(ALPHA - 1.0) ) THEN
+                            RGAMMA = Y*BETA + LAMBDA
+                            NOT_FOUND = .FALSE.
+                        END IF
+
+                    ELSE
+
+                        Y = ( BB*U1 ) ** ( 1.0 / ALPHA )
+                        IF( U2 .LE. EXP( Y ) ) THEN
+                            RGAMMA = Y*BETA + LAMBDA
+                            NOT_FOUND = .FALSE.
+                        END IF
+
+                    END IF
+                END DO
 
             END IF
-
-
-c            IF ( ALPHA .LT. 1.0 + NEARZERO .AND. 
-c     &           ALPHA .GT. 1.0 - NEARZERO ) THEN ! 
-C BUG: insert Gamma code here
-                 RGAMMA = REXPONENTIAL( BETA )
-
-c            ELSE
-c compute a Gamma deviate
-c            END IF
 
             RETURN
 
@@ -256,64 +502,5 @@ C BUG: needs to be tested
             RETURN
 
             END FUNCTION REXPONENTIAL
-
-C**********************************************************************
-
-            SUBROUTINE RSAMPLE
-
-C.............  Local variables
-            CHARACTER*9, PARAMETER :: PDF( 5 ) = ( / 'NORMAL   ',
-     &                                               'LOGNORMAL',
-     &                                               'GAMMA    ',
-     &                                               'WEIBULL  ',
-     &                                               'BETA     ' / )
-
-            INTEGER              I, J      !  counters
-            INTEGER       :: ISEED = 27195 !  seed for random number (RN)
-
-            REAL, ALLOCATABLE :: RNUMS( : )!  array for uncertainty RNs
-
-            REAL                 S, X      !  temporary variables
-            REAL                 RBETA     !  temporary Beta RN
-            REAL                 REXP      !  temporary Exponential RN
-            REAL                 RGAMMA    !  temporary Gamma RN
-            REAL                 RWEIBULL  !  temporary Weibull RN
-            REAL              :: MU = 0.5  !  dummy mean
-            REAL              :: SIGMA=1.2 !  dummy variance
-            REAL,        SAVE :: URAND01   !  quasi Uniform RN
-
-C**********************************************************************
-
-
-C.............  Get Weibull random number
-            CALL RANDOM_NUMBER( URAND01 )    !  get quasi uniform (0,1) RN
-            REXP = -LOG( URAND01 ) * MU      !  transform to an exponential RN
-            RWEIBULL = REXP ** ( 1 / SIGMA ) !  tranform exp to a weibull RN
-
-C.............  Get Gamma random number 
-            X = 1.0
-            DO I = 1, 5
-                CALL RANDOM_NUMBER( URAND01 )    !  get quasi uniform (0,1) RN
-                X = X * URAND01
-            END DO
-            RGAMMA = REXP ** ( 1 / SIGMA)    !  transform to a Gamma RN
-
-C.............  Get Beta random number 
-            RBETA = RGAMMA
-            DO I = 1, 6                      !  Get a Gamma RN
-                CALL RANDOM_NUMBER( URAND01 )    !  get quasi uniform (0,1) RN
-                RGAMMA = REXP ** ( 1 / SIGMA)    !  transform to a Gamma RN
-            END DO
-            RBETA = RBETA / ( RBETA + RGAMMA )
-
-C.............  Get Beta random number 
-            RBETA = RGAMMA
-            DO I = 1, 6                      !  Get a Gamma RN
-                CALL RANDOM_NUMBER( URAND01 )    !  get quasi uniform (0,1) RN
-                RGAMMA = REXP ** ( 1 / SIGMA)    !  transform to a Gamma RN
-            END DO
-            RBETA = RBETA / ( RBETA + RGAMMA )
-
-            END SUBROUTINE RSAMPLE
 
         END SUBROUTINE GETRNUMS
