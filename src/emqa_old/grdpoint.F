@@ -215,14 +215,14 @@ C.........  Annual inventory file as input
             NSTEPS  = 1
             FDESC3D( 1 ) = 'Point gridded inventory pollutants'
             OUTNAM = 'PGRD'
-            REPNAM = 'PGRIREP'
+            REPNAM = 'PGRDREP'
 
 C.........  Hourly inventory file as input
         ELSE
             NSTEPS  = MXREC3D
             FDESC3D( 1 ) = 'Point gridded hourly inventory pollutants'
             OUTNAM = 'PGRT'
-            REPNAM = 'PGRTIREP'
+            REPNAM = 'PGRTREP'
 
         END IF
 
