@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         SUBROUTINE  PLMVEC( FL, P, NP, IP, V )
 
 C***********************************************************************
-C  subroutine body starts at line  49
+C  subroutine body starts at line  69
 C
 C  FUNCTION:  multiply vector P by sparse incidence matrix <NP,IP> 
 C       and layer fractions FL, and add to the result V for CSGLMERGE 
@@ -18,13 +16,35 @@ C  REVISION  HISTORY:
 C       prototype 2/96 by CJC
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         IMPLICIT NONE
         
         INCLUDE 'GRDIMS3.EXT'
-        INCLUDE 'LADIMS3.EXT'
         INCLUDE 'PTDIMS3.EXT'
         INCLUDE 'ARDIMS3.EXT'
+        INCLUDE 'PARMS3.EXT'
+        INCLUDE 'VGRD3.EXT'
 
 C...........   ARGUMENTS and their descriptions:
         
@@ -42,7 +62,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
 
 C***********************************************************************
-C   begin body of subroutine  SMRGVEC
+C   begin body of subroutine  PLMVEC
 
 C.......   Layer 1 calculations use both area and point sources
 
@@ -59,7 +79,7 @@ C.......   Layer 1 calculations use both area and point sources
                 I   = IP( KP )
 
                 DO  33 L = 1, EMLAYS
-                    ACC( L ) = ACC( L )  +  FL( L,R ) * P( I )
+                    ACC( L ) = ACC( L )  +  FL( L,I ) * P( I )
 33              CONTINUE            
 
 44          CONTINUE                            !  end loop on point sources C
