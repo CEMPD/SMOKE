@@ -8,6 +8,10 @@ C  Calls NXTTOK,UCCOMP
 C 
 C  Changes: (Last change first) 
 C 
+C  08 Mar 02: AIR Task 18: Due to increase to 1400 possible inputs, made the 
+C             ADDITIONAL HAPS arrays allocatoable, so USE ATHEAP is now required. 
+C             Improved error messages and checking. 
+C  02 Sep 01: AIR Task 18: Updated error messages. 
 C  31 Aug 01: AIR Task 18: New Subroutine. 
 C 
 C  Input on call: 
@@ -30,11 +34,16 @@ C
 C  Notes: 
 C 
 C 
+      USE ATHEAP, ONLY : ATHPOL, ATHPNAME, ATHVTYPE, ATHEKIND, 
+     *                   ATHRATZML, ATHDET, ATHRATIO, ATHBEGMY, 
+     *                   ATHENDMY 
+C 
       IMPLICIT NONE 
 C 
       INCLUDE 'ATOX1.I' 
       INCLUDE 'ATOX5.I' 
       INCLUDE 'IOUCOM.I' 
+      INCLUDE 'IVTYPE.I' 
       INCLUDE 'PART1.I' 
       INCLUDE 'STRING.I' 
 C 
@@ -60,7 +69,11 @@ C
       INTEGER   PTR1 
       INTEGER   PTR2 
       INTEGER   SECTION 
-      INTEGER   TLOC(10) 
+      INTEGER   TLOC(11) 
+ 
+ccs   Add declarations of M6DIR and M6FILE 
+      CHARACTER(LEN=50) M6DIR 
+      CHARACTER(LEN=80) M6FILE 
 C 
 C ..................................................................... 
 C 
@@ -81,8 +94,12 @@ ccs      CALL UCCOMP(DATAFIELD,FILENAME)
 C 
 C     Open the external data file for ADDITIONAL HAPS. 
 C 
+ccs   All M6 input files live in SMK_M6PATH 
+      CALL GETENV( "SMK_M6PATH", M6DIR ) 
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME 
+ 
       IOUALT = JUNIT()
-      OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+      OPEN(IOUALT,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=999) 
       WRITE(IOUREP,120) FILENAME 
   120 FORMAT(/'* Reading the Additional HAPS Rates '/ 
@@ -118,14 +135,23 @@ C    Initialize the number of HAPS read in
 C 
       NATH=0 
 C 
-C    Loop until end of file. 
+C    Loop until end of file. (1400 = 28 vehicle classes x 50 pollutants) 
 C 
-      DO IATH = 1,50 
+      DO IATH = 1,1401  ! Allow for 1 extra line for EOF trap 
 C 
 C    Look for next valid record 
 C 
       CALL NXTREC(IOUALT,IOUREP,M6REC,INERR,RC) 
       IF (RC.EQ.-1) EXIT  ! EOF 
+C 
+C    if here and NATH=>1400, then user has exceeded the maximum input limit. 
+C 
+      IF(NATH.GE.1400.OR.IATH.GT.1400) THEN 
+      WRITE(IOUERR,76) TRIM(FILENAME) 
+  76  FORMAT(/' Error: The Additional HAPS input file ',A/ 
+     *       ' contains more input lines than the 1400 allowed.'/) 
+      GOTO 999 
+      END IF 
 C 
 C    Find the locations of the comma characters in the input line. 
 C 
@@ -228,7 +254,7 @@ C
      *   ATHVTYPE(IATH).GT.28) THEN 
       WRITE(IOUERR,13) ATHVTYPE(IATH) 
    13 FORMAT(' Error, the Additional HAPS vehicle number must be'/ 
-     *       ' between 1 and 28, inclusive. ATHVTYE=',A) 
+     *       ' between 1 and 28, inclusive. ATHVTYPE=',I3) 
       GOTO 999 
       END IF 
 C 
@@ -244,11 +270,16 @@ C
       GOTO 999 
       END IF 
 C 
+      IF(ATHBEGMY(IATH).LT.1951 .OR. 
+     *   ATHBEGMY(IATH).GT.2050) THEN 
+      WRITE(IOUERR,141) ATHBEGMY(IATH) 
+  141 FORMAT(' Warning: The Additional HAPS BegMY Field value of',I5/ 
+     *       ' is out of bounds (1951-2050). Reset to 1951 or 2050.') 
       IF(ATHBEGMY(IATH).LT.1951) ATHBEGMY(IATH)=1951 
       IF(ATHBEGMY(IATH).GT.2050) ATHBEGMY(IATH)=2050 
+      END IF 
 C 
 C Read and check the ending model year. If below 1950- or 2051+, reset to the limits. 
-C 
 C 
       IB=TLOC(6)+1 
       IE=TLOC(7)-1 
@@ -260,14 +291,20 @@ C
       GOTO 999 
       END IF 
 C 
+      IF(ATHENDMY(IATH).LT.1951 .OR. 
+     *   ATHENDMY(IATH).GT.2050) THEN 
+      WRITE(IOUERR,142) ATHENDMY(IATH) 
+  142 FORMAT(' Warning: The Additional HAPS EndMY Field value of',I5/ 
+     *       ' is out of bounds (1951-2050). Reset to 1951 or 2050.') 
       IF(ATHENDMY(IATH).LT.1951) ATHENDMY(IATH)=1951 
       IF(ATHENDMY(IATH).GT.2050) ATHENDMY(IATH)=2050 
+      END IF 
 C 
 C  Check the model year order 
 C 
       IF(ATHENDMY(IATH).LT.ATHBEGMY(IATH)) THEN 
       WRITE(IOUERR,110) ATHBEGMY(IATH),ATHENDMY(IATH) 
-  110 FORMAT(' Error: The model years are out of order'/ 
+  110 FORMAT(' Error: The Additional HAPS model years are out of order'/ 
      *       ' BegMy=',I4,' EndMy=',I4) 
       GOTO 999 
       END IF 
@@ -318,17 +355,27 @@ C
       END IF 
       END IF 
 C 
+C  Catch where EVAP is specified for a diesel vehicle 
+C 
+      IF(ATHEKIND(IATH).EQ.'EVAP' .AND. 
+     *   VVDSL(ATHVTYPE(IATH)).EQ.1) THEN 
+      WRITE(IOUERR,121) 
+  121 FORMAT(' Error: the Additional HAPS EKIND entry EVAP cannot be'/ 
+     *       ' used with Diesel Vehicles.') 
+      GOTO 999 
+      END IF 
+C 
 C  Catch where EVAP is specified for a PM run 
 C 
       IF(ATHRATIO(IATH).EQ.'RATIOPM' .AND. 
      *   ATHEKIND(IATH).EQ.'EVAP') THEN 
       WRITE(IOUERR,111) 
   111 FORMAT(' Error: the Additional HAPS entry RATIOPM cannot be'/ 
-     *       'used with the EVAP parameter') 
+     *       ' used with the EVAP parameter') 
       GOTO 999 
       END IF 
 C 
-C  Now obtain the Ratio or the ZML. The ZML value is in mg/mi. 
+C  Now obtain the Ratio or the ZML. The Ratio is in mg/mi per g/mi. The ZML value is in mg/mi. 
 C 
       IB=TLOC(8)+1 
       IE=TLOC(9)-1 
@@ -350,7 +397,7 @@ C
       READ(M6REC(IB:IE),*,ERR=998,END=998) ATHDET(IATH) 
       ELSE 
       WRITE(IOUERR,109) 
-  109 FORMAT(' Error: The Additional HAPS DET Field is null') 
+  109 FORMAT(' Error: The Additional HAPS DETerioration Field is null') 
       GOTO 999 
       END IF 
       ELSE 
@@ -365,8 +412,8 @@ C
 C 
       IF(NATH.GT.0) THEN 
       ATHAPS = .TRUE. 
-      WRITE(IOUREP,125) NATH,FILENAME 
-  125 FORMAT(/'* Successfully read in',I3,' Additional HAPS lines'/ 
+      WRITE(IOUREP,125) NATH,TRIM(FILENAME) 
+  125 FORMAT(/'* Successfully read in',I5,' Additional HAPS lines'/ 
      &        '* from the external data file ',A) 
       RC = 0 
       GOTO 99 
@@ -374,7 +421,7 @@ C
 C 
  998  WRITE(IOUERR,130) NATH,TRIM(FILENAME) 
   130 FORMAT(' Error: An EOF or READ problem occurred after processing'/ 
-     *       I3,' lines of the Additional HAPS file ',A) 
+     *       I5,' lines of the Additional HAPS file ',A) 
 C 
  999  INERR=INERR+1 
       RC=2 

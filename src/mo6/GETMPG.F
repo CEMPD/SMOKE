@@ -5,6 +5,7 @@ C  miles per gallon, from the user-supplied file.
 C 
 C  Changes: (Last change first) 
 C 
+C  13 Mar 02 AIR Task 27: Replaced MPG.I with RLCOM.I. 
 C  06 Nov 01 AIR Task 27: New Subroutone 
 C 
 C  Called by: DSPTCH. 
@@ -47,7 +48,7 @@ C
 C 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'IVTYPE.I' 
-      INCLUDE 'MPG.I' 
+      INCLUDE 'RLCOM1.I' 
 C 
       INTEGER, EXTERNAL :: JUNIT 
 C 
@@ -70,6 +71,10 @@ C
       INTEGER       PTR2 
       INTEGER       SECTION 
       REAL          DUMMY(99) 
+       
+ccs   Add declarations of M6DIR and M6FILE 
+      CHARACTER(LEN=50) M6DIR 
+      CHARACTER(LEN=80) M6FILE 
 C 
 C . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 C 
@@ -86,12 +91,16 @@ C
       PTR2 = 21 
       CALL NXTTOK(INPREC,DATAFIELD,PTR1,PTR2) 
 ccs      CALL UCCOMP(DATAFIELD,FILENAME) 
-      CALL LJCOMP(DATAFIELD,FILENAME)
+      CALL LJCOMP(DATAFIELD,FILENAME) 
 C 
 C     Open the external data file for fuel economy. 
-C       
+C 
+ccs   All M6 input files live in SMK_M6PATH 
+      CALL GETENV( "SMK_M6PATH", M6DIR ) 
+      M6FILE = M6DIR( 1:LEN_TRIM( M6DIR ) ) // '/' // FILENAME 
+       
       IOUALT = JUNIT() 
-      OPEN(IOUALT,FILE=FILENAME,STATUS='OLD',ACTION='READ', 
+      OPEN(IOUALT,FILE=M6FILE,STATUS='OLD',ACTION='READ', 
      *     IOSTAT=RC,ERR=80) 
       WRITE(IOUREP,120) FILENAME 
   120 FORMAT(/'* Reading Gas and Diesel Fuel Economies'/ 
@@ -160,7 +169,7 @@ C
 C     Make sure all fuel economy lines are read in since EXCEL does not terminate 
 C     the file properly. Set MPGFLAG to true to use user-supplied values. 
 C 
-      IF(L.EQ.28) THEN 
+      IF(L.EQ.MAXVEH) THEN 
         RC = 0 
         MPGFLAG=.TRUE. 
         GOTO 99 
