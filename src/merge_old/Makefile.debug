@@ -19,7 +19,7 @@ CSGI=ARDIMS3.EXT PTDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT MBDIMS3.EXT BIODIMS3.EXT
 #
 csgmerge.debug: $(CSGS) $(CSGI)
 	echo CSGLMERGE:
-	f77 $(FFLAGS) -o csgmerge.debug $(CSGS) $(LIBS)
+	f77 $(DBGFLAGS) -o csgmerge.debug $(CSGS) $(LIBS)
 #
 #
 #
@@ -29,5 +29,5 @@ CSGLI=ARDIMS3.EXT PTDIMS3.EXT LADIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT \
       MBDIMS3.EXT BIODIMS3.EXT
 #
 csglmerge.debug: $(CSGLS) $(CSGLI)
-	f77 $(FFLAGS) -o csglmerge.debug $(CSGLS) $(LIBS)
+	f77 $(DBGFLAGS) -o csglmerge.debug $(CSGLS) $(LIBS)
 #
