@@ -20,7 +20,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -64,8 +64,8 @@
         INTEGER, PARAMETER :: ADDPS = 900000 ! multiple of 9
 
 !.........  Count of number of entries in each (non-default) table
-
-        INTEGER, PARAMETER, PUBLIC :: NXTYPES = 16
+!           NOTE- Added 9 (from 16) for special SCC-level matching
+        INTEGER, PARAMETER, PUBLIC :: NXTYPES = 25
         INTEGER, PUBLIC            :: TXCNT( NXTYPES )
 
 !.........  Sorted groups of cross-references
@@ -75,7 +75,6 @@
 !.........  For emission factors, 
 
 !.........  Default FIPS code=0, SCC=0
-
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT01( : ) ! mon-of-yr
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT01( : ) ! day-of-week
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT01( : ) ! diurnal
@@ -99,7 +98,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT02( :,: )
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: CHRT02( : )
 
-!.........  FIPS code=0, SCC=all  
+!.........  FIPS code=0, SCC=all (level 4)
 
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT03( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT03( :,: )
@@ -138,7 +137,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT05( :,: )
         CHARACTER(LEN=STSLEN3), ALLOCATABLE, PUBLIC :: CHRT05( : )
 
-!.........  FIPS code=state, SCC=all
+!.........  FIPS code=state, SCC=all (level 4)
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT06( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT06( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT06( :,: )
@@ -174,7 +173,7 @@
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT08( :,: )
         CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT08( : )
 
-!.........  FIPS code=all, SCC=all
+!.........  FIPS code=all, SCC=all (level 4)
         INTEGER               , ALLOCATABLE, PUBLIC :: MPRT09( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: WPRT09( :,: )
         INTEGER               , ALLOCATABLE, PUBLIC :: DPRT09( :,: )
@@ -254,6 +253,48 @@
         INTEGER               , ALLOCATABLE, PUBLIC :: IEFS16( :,: )
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT16( :,: )
         CHARACTER(LEN=SS5LEN3), ALLOCATABLE, PUBLIC :: CHRT16( : )
+
+!.........  Additional groups for special SCC handling. Note that these are
+!              put at the end since they were added later and added for
+!              Cntlmat only at first.  Did not want to mess up the numbering
+!              scheme for TXCNT
+!.........  FIPS code = 0, SCC = level 1 (Type 17)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL02A( :,: )
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: CHRT02A( : )
+
+!.........  FIPS code = 0, SCC = level 2 (Type 18)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL02B( :,: )
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: CHRT02B( : )
+
+!.........  FIPS code = 0, SCC = level 3 (Type 19)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL02C( :,: )
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: CHRT02C( : )
+
+!.........  FIPS code=state default, SCC=level 1 (Type 20)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL05A( :,: )
+        CHARACTER(LEN=STSLEN3), ALLOCATABLE, PUBLIC :: CHRT05A( : )
+
+!.........  FIPS code=state default, SCC=level 2 (Type 21)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL05B( :,: )
+        CHARACTER(LEN=STSLEN3), ALLOCATABLE, PUBLIC :: CHRT05B( : )
+
+!.........  FIPS code=state default, SCC=level 3 (Type 22)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL05C( :,: )
+        CHARACTER(LEN=STSLEN3), ALLOCATABLE, PUBLIC :: CHRT05C( : )
+
+!.........  FIPS code=all, SCC=level 1 (Type 23)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL08A( :,: )
+        CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT08A( : )
+
+!.........  FIPS code=all, SCC=level 2 (Type 24)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL08B( :,: )
+        CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT08B( : )
+
+!.........  FIPS code=all, SCC=level 3 (Type 25)
+        INTEGER               , ALLOCATABLE, PUBLIC :: ICTL08C( :,: )
+        CHARACTER(LEN=FPSLEN3), ALLOCATABLE, PUBLIC :: CHRT08C( : )
+
+!.........  FIPS code=all, SIC = all
 
 !.........  Unsorted, unprocessed cross-reference arrays
         INTEGER, ALLOCATABLE, PUBLIC:: INDXTA ( : ) !  sorting index
