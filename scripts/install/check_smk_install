@@ -47,6 +47,16 @@ set pt_stat = $status
 diff $REPSCEN/pts.scc* $SMKROOT/doc/checkdemo/reports/pts.scc* >> $errfile
 set pt_stat = $status
 
+# Make sure all programs completed successfully
+set num_log_file = `ls $LOGS | wc -l`
+set num_success = `grep 'Normal Completion' $LOGS/* | wc -l`
+if( $num_log_file != $num_success ) then
+   echo ' '
+   echo 'All programs in your installation did not complete successfully\!'
+   echo 'Please look at the log files in $LOGS for more information.'
+   echo ' '
+endif
+
 if ( $ar_stat != 0 || $bg_stat != 0 || $mb_stat != 0 || $nr_stat != 0 || $pt_stat != 0 ) then
    mv $errfile $SMKROOT/doc/install_diffs.txt
    echo ' '
