@@ -59,7 +59,6 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   ! emissions constant parameters
         INCLUDE 'PARMS3.EXT'    ! I/O API constants
         INCLUDE 'CONST3.EXT'    ! physical and mathematical constants
-        INCLUDE 'FLTERR.EXT'    ! error filter statement function
 
 C...........   ARGUMENTS and their descriptions:
         INTEGER     , INTENT (IN) :: NSP     ! no. of variables in formulas
@@ -72,8 +71,9 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         LOGICAL      EVALCRIT
+        LOGICAL      FLTERR
 
-        EXTERNAL    CRLF, EVALCRIT
+        EXTERNAL    CRLF, EVALCRIT, FLTERR
 
 C...........   LOCAL PARAMETERS and their descriptions:
         INTEGER, PARAMETER :: MXLOCGRP = 2000  ! Max number groups per facility
