@@ -179,6 +179,7 @@ C...........   Other local variables
         INTEGER      :: SDATE = 0     ! Julian start date
         INTEGER      :: STIME = 0     ! start time
         INTEGER      :: TSTEP = 10000 ! time step HHMMSS
+        INTEGER      :: TSTEP_T       ! unsued timestep from environment
         INTEGER         TZONE         ! output time zone
 
         REAL            DM            ! tmp inside stack diameter [m]
@@ -447,7 +448,7 @@ C               STACK_PING file
      &             'time period for emissions input file'
             CALL M3MSG2( MESG )
 
-            CALL GETM3EPI( -9, SDATE, STIME, NSTEPS )
+            CALL GETM3EPI( -9, SDATE, STIME, TSTEP_T, NSTEPS )
 
 C.............  Create maximum daily emissions by stack group.  The stack
 C               groups have already been set, and now the emissions for those
@@ -460,7 +461,7 @@ C               groups must be computed to assign MEPSEs and MPSs.
      &             'use in STACK_PING file'
             CALL M3MSG2( MESG )
 
-            CALL GETM3EPI( -9, SDATE, STIME, -9 )
+            CALL GETM3EPI( -9, SDATE, STIME, TSTEP_T, -9 )
 
         END IF  ! End of whether emissions are needed as a criteria
 

@@ -638,8 +638,8 @@ C.........  Abort if error found analyzing inputs
         END IF
 
 C.........  Update start date/time and duration from the environment
-        CALL GETM3EPI( -1, SDATE, STIME, NSTEPS )
-        TSTEP = 10000
+        CALL GETM3EPI( -1, SDATE, STIME, TSTEP, NSTEPS )
+        TSTEP = 10000   ! Only 1-hour time step supported
 
 C.........  Set up and open output file, which will primarily using I/O API 
 C           settings from the cross-point met file (XNAME), which are 
