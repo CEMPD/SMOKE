@@ -90,9 +90,15 @@ C.........  Widths that depend on other widths
         PRIVATE :: SRCLEN3
         PRIVATE :: OBRLEN3
         PRIVATE :: OPTLEN3
+        PRIVATE :: MSCLEN3
+        PRIVATE :: MSTLEN3
+        PRIVATE :: MSSLEN3
+        PRIVATE :: MFPLEN3
+        PRIVATE :: MFSLEN3
         PRIVATE :: SS0LEN3
         PRIVATE :: SS1LEN3
         PRIVATE :: SS2LEN3
         PRIVATE :: SS3LEN3
         PRIVATE :: SS4LEN3
         PRIVATE :: SS5LEN3
+        PRIVATE :: SSMLEN3
