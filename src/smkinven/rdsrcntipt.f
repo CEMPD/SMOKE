@@ -133,15 +133,15 @@ C.........  Replace blanks with zeros
         PTID = ADJUSTL( SEGMENT( 4 ) ) ! point ID
         SKID = ADJUSTL( SEGMENT( 5 ) ) ! stack ID
         SGID = ADJUSTL( SEGMENT( 6 ) ) ! segment ID
-        TSCC = SEGMENT( SEGMENT( 8 ) ) ! scc code
+        TSCC = ADJUSTL( SEGMENT( 8 ) ) ! scc code
 
 C.........  Determine number of pollutants for this line based on CAS number
         TCAS = ADJUSTL( SEGMENT( 19 ) )
         I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
         IF( I < 1 ) THEN
-            NVARPERLN = 0
+            NPOLPERLN = 0
         ELSE
-            NVARPERLN = UCASNKEP( I )
+            NPOLPERLN = UCASNKEP( I )
         END IF
         
 C.........  Make sure routine knows it's been called already
