@@ -117,7 +117,9 @@ C...........   Other local variables:
         INTEGER    LDATE       ! date from previous loop iteration
         INTEGER    MDATE       ! output date for monthly counties
         INTEGER    METNGRID    ! no. grid cells in met data
-        INTEGER    MISSTEP     ! no. contiguous missing hours of met data
+        INTEGER    METSTART    ! starting point for good met data
+        INTEGER    MISSTEPS    ! no. contiguous missing hours of met data
+        INTEGER    MAX_MISS    ! maximum number of missed steps
         INTEGER :: NDYCNTY = 0 ! no. counties using day averaging
         INTEGER :: NWKCNTY = 0 ! no. counties using week averaging
         INTEGER :: NMNCNTY = 0 ! no. counties using month averaging
@@ -126,12 +128,16 @@ C...........   Other local variables:
         INTEGER    NLINES      ! no. lines in met list file
         INTEGER    NMATX       ! size of ungridding matrix
         INTEGER    NSTEPS      ! number of time steps to process temperature data
+        INTEGER    NEWSTEPS    ! no. time steps in episode based on met data
         INTEGER    NSTEP_MET   ! no. time steps in met file
         INTEGER :: OSRC = 0    ! number of sources outside grid
+        INTEGER    POS         ! position in time step loop
         INTEGER    RDATE       ! date to read met file
         INTEGER    SDATE       ! output start date
+        INTEGER    SDATE_NEW   ! output start date based on met data
         INTEGER    SDATE_MET   ! met file start date
         INTEGER    STIME       ! output start time
+        INTEGER    STIME_NEW   ! output start time based on met data
         INTEGER    STIME_MET   ! met file start time
         INTEGER    TMPDAY      ! temporary day
         INTEGER    TMPMNTH     ! temporary month
@@ -453,7 +459,7 @@ C.............  If met data starts before episode, skip ahead to start of episod
             END IF
 
 C.............  Loop through time steps in met data and fill in METCHECK array            
-            DO J = HRPOS, NSTEP_MET
+            DO J = HRPOS, HRPOS + NSTEP_MET
                 IF( J > NSTEPS ) EXIT
 
 C.................  Check if met data overlaps previous file and print warning                
@@ -484,124 +490,132 @@ C.........  Exit if there was a problem with the meteorology files
 C.........  Open group files
         CALL OPENGROUP( DDEV, WDEV, MDEV, EDEV )
 
-C.........  Check returned unit number to find out which temporal 
-C           averaging is required        
-        IF( DDEV > 0 ) DAYAVER  = .TRUE.
-        IF( WDEV > 0 ) WEEKAVER = .TRUE.
-        IF( MDEV > 0 ) MONAVER  = .TRUE.
-        IF( EDEV > 0 ) EPIAVER  = .TRUE.
-
 C.........  Check for missing met data
         MESG = 'Checking for missing meteorology data...'
         CALL M3MSG2( MESG )
+        
+C.........  Check returned unit number to find out which temporal 
+C           averaging is required; set maximum number of missing
+C           time steps and error/warning message
+        IF( DDEV > 0 ) THEN
+            DAYAVER  = .TRUE.
+            MAX_MISS = 24
+            MESG = 'WARNING: Missing more than a full day of ' //
+     &             'meteorology data.' // CRLF() // BLANK5 // 
+     &             'Episode ending date and time will be adjusted.'
+        END IF
+        
+        IF( WDEV > 0 ) THEN
+            WEEKAVER = .TRUE.
+            MAX_MISS = 24*7
+            MESG = 'WARNING: Missing more than 7 days of ' //
+     &             'meteorology data.' // CRLF() // BLANK5 //
+     &             'Episode ending date and time will be adjusted.'
+        END IF
+        
+        IF( MDEV > 0 ) THEN
+            MONAVER  = .TRUE.
+            MAX_MISS = 24*30
+            MESG = 'WARNING: Missing more than 30 days of ' //
+     &             'meteorology data.' // CRLF() // BLANK5 //
+     &             'Episode ending date and time will be adjusted.'
+        END IF
+        
+        IF( EDEV > 0 ) THEN
+            MAX_MISS = NSTEPS
+            EPIAVER  = .TRUE.
+        END IF
 
-C       WRITE( *,* ) SDATE, STIME
-C       WRITE( *,* ) METCHECK
-C       CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
-
-        MISSTEP = 0
-        EDATE_NEW = SDATE
-        ETIME_NEW = STIME
-
+        NEWSTEPS = 0
+        METSTART = 0
+        MISSTEPS = 0
+        
         DO T = 1, NSTEPS
         
-C.............  If no data for this time step, add to missing steps total and cycle
-            IF( METCHECK( T ) == 0 ) THEN
-            	
-C.................  If this is the first missing step after good data, 
-C                   store position as possible ending date and time
-            	IF( MISSTEP == 0 ) THEN
-            	    CALL NEXTIME( EDATE_NEW, ETIME_NEW, (T-1)*10000 )
-            	END IF
-            	
-                MISSTEP = MISSTEP + 1
-
-                IF( T /= NSTEPS ) CYCLE
-            END IF
-
-C.............  Check if this step is after a block of missed data
-
-C.............  If we haven't previously had missed data, cycle
-            IF( MISSTEP == 0 ) CYCLE
-            	
-C.............  Check how much data is missing
-            IF( MISSTEP == NSTEPS ) THEN
-            	EFLAG = .TRUE.
-            	MESG = 'ERROR: Meteorology data does not cover ' //
-     &                 'requested episode.'
-            ELSEIF( MISSTEP > 24*30 .AND. MONAVER ) THEN
-                MESG = 'WARNING: Missing more than 30 days of ' //
-     &                 'meteorology data.' // CRLF() // BLANK5 //
-     &                 'Episode ending date and time will be adjusted.'
-            ELSEIF( MISSTEP > 24*7 .AND. WEEKAVER ) THEN
-            	MESG = 'WARNING: Missing more than 7 days of ' //
-     &                 'meteorology data.' // CRLF() // BLANK5 //
-     &                 'Episode ending date and time will be adjusted.'
-            ELSEIF( MISSTEP > 24 .AND. DAYAVER ) THEN
-            	MESG = 'WARNING: Missing more than a full day of ' //
-     &      	       'meteorology data.' // CRLF() // BLANK5 // 
-     &                 'Episode ending date and time will be adjusted.'
-            ELSE   ! we didn't have enough data missing to worry about
-                MISSTEP = 0
-                EDATE_NEW = SDATE
-                ETIME_NEW = STIME
-            
-            	CYCLE
-            END IF
-            
-C.............  Write warning message
-            CALL M3MSG2( MESG )
-            
-C.............  Adjust episode end date and time                    
-            EDATE = EDATE_NEW
-            ETIME = 5 + TZMAX - TZONE            ! ending time in output time zone
-            
-            IF( ETIME < 0 ) THEN
-                ETIME = ETIME + 24
+            IF( METCHECK( T ) /= 0 ) THEN
+                NEWSTEPS = NEWSTEPS + MISSTEPS
+                MISSTEPS = 0
+                IF( METSTART == 0 ) THEN
+                    NEWSTEPS = 1
+                    CALL NEXTIME( SDATE, STIME, (T-1)*10000 )
+                    METSTART = T
+                ELSE
+                    NEWSTEPS = NEWSTEPS + 1
+                END IF
             ELSE
-                ETIME = MOD( ETIME, 24 )
-            END IF
-            ETIME = ETIME*10000
-
-C.............  Add extra day if necessary
-            IF( ETIME_NEW > ETIME ) THEN
-                CALL NEXTIME( EDATE, ETIME, 24*10000 )
-            END IF
-
-C.............  Convert back to GMT
-            CALL NEXTIME( EDATE, ETIME, TZONE*10000 )
-
-C.............  Find the total number of time steps
-            NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
-
-C.............  If there's no difference between the starting and ending values,
-C               something has gone wrong
-            IF( NSTEPS == 1 ) EFLAG = .TRUE.
-
-            IF( EFLAG ) THEN
-                MESG = 'Problem with meteorology data'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                IF( METSTART /= 0 ) THEN
+                    MISSTEPS = MISSTEPS + 1
+                    IF( MISSTEPS == MAX_MISS ) THEN
+                        CALL M3MSG2( MESG )
+                        EXIT
+                    END IF
+                END IF
             END IF
             
-C.............  Skip the rest of the loop iterations since they're no longer needed
-            EXIT
         END DO
-        
-C.........  Print out episode information
-        	
-C.........  Get date buffer field
-        DTBUF = MMDDYY( SDATE )
-        L = LEN_TRIM( DTBUF )
+
+        IF( NEWSTEPS == 0 ) THEN
+            MESG = 'Meteorology data does not cover ' //
+     &             'requested time period'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Reset number of steps and print messages
+        IF( NEWSTEPS /= NSTEPS ) THEN
+            MESG = 'WARNING: Resetting output start date, start ' //
+     &             'time, or duration to match available meteorology' //
+     &             ' data.'
+            CALL M3MSG2( MESG )
+
+C.............  Calculate new end date and time
+            EDATE = SDATE
+            ETIME = STIME
+            CALL NEXTIME( EDATE, ETIME, NEWSTEPS*10000 )
+
+C.............  Reset start and end times to deal with 6 am - 5 am restrictions
+            SDATE_NEW = SDATE
+            STIME_NEW = 6 + TZMIN          ! starting time in GMT
+            STIME_NEW = STIME_NEW*10000
+
+            IF( STIME > STIME_NEW ) THEN
+                CALL NEXTIME( SDATE_NEW, STIME_NEW, 24*10000 )
+            END IF
+            
+C.............  Adjust metstart for difference between old and new start
+            METSTART = METSTART + 
+     &            SECSDIFF( SDATE, STIME, SDATE_NEW, STIME_NEW ) / 3600
+            
+            SDATE = SDATE_NEW
+            STIME = STIME_NEW
+            
+            EDATE_NEW = EDATE
+            ETIME_NEW = 5 + TZMAX          ! ending time in GMT
+            ETIME_NEW = ETIME_NEW*10000
+            
+            IF( ETIME < ETIME_NEW ) THEN
+                CALL NEXTIME( EDATE_NEW, ETIME_NEW, -24*10000 )
+            END IF
+            
+            EDATE = EDATE_NEW
+            ETIME = ETIME_NEW
+            
+C.............  Calculate number of time steps
+            NSTEPS = SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
+                        
+C.............  Get date buffer field
+            DTBUF = MMDDYY( SDATE )
+            L = LEN_TRIM( DTBUF )
                 
-        WRITE( MESG,94050 )
-     &    'Output Time Zone:', TZONE,           CRLF() // BLANK5 //
-     &    '  Met Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
-     &    '  Met Start Time:', STIME + TZONE*10000,'HHMMSS'// 
-     &                                            CRLF() // BLANK5 //
-     &    '       Time Step:', 1    ,'hour'  // CRLF() // BLANK5 //
-     &    '    Met Duration:', NSTEPS, 'hours'   
+            WRITE( MESG,94050 )
+     &        'Output Time Zone:', TZONE,           CRLF() // BLANK5 //
+     &        '  Met Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
+     &        '  Met Start Time:', STIME + TZONE*10000,'HHMMSS'// 
+     &                                              CRLF() // BLANK5 //
+     &        '       Time Step:', 1,    'hour'  // CRLF() // BLANK5 //
+     &        '    Met Duration:', NSTEPS, 'hours'   
      
-        CALL M3MSG2( MESG )
+            CALL M3MSG2( MESG )
+        END IF
            
 C.........  Get sources and counties from SPDSUM file
         ALLOCATE( COUNTYSRC( NSRC, 2 ), STAT=IOS )
@@ -743,8 +757,9 @@ C.........  Loop through days/hours of temperature files
         JTIME = STIME
         LDATE = -9
         
-        DO T = 1, NSTEPS
+        DO T = METSTART, METSTART + NSTEPS
 
+            POS = T - METSTART + 1
             RDATE = JDATE
 
 C.............  Set correct met file for this time step
@@ -815,10 +830,10 @@ C.............  Create hourly temperature array by source
      &                     MINTEMP, MAXTEMP, NDAYSRC, TKHOUR )
 
 C.............  Make sure we've waited long enough to catch all time zones
-            IF( T > TSPREAD ) THEN
+            IF( POS > TSPREAD ) THEN
             	
 C.................  Adjust time step for 24-hour arrays
-                ARRAYPOS = MOD( T - TSPREAD, 24 )
+                ARRAYPOS = MOD( POS - TSPREAD, 24 )
                 IF( ARRAYPOS == 0 ) ARRAYPOS = 24
 
 C.................  Process daily averages
@@ -829,8 +844,9 @@ C.....................  Average temperatures across county group
      &                             COUNTYSRC( :,1 ), ARRAYPOS, TKHOUR, 
      &                             TDYCNTY, NDAYSRC )
 
-C.....................  Open new file if necessary (2 days per output file)
-                    IF( T > 48 .AND. MOD( T - TSPREAD,48 ) == 1 ) THEN
+C.....................  Open new file if necessary (1 day per output file)
+                    IF( POS > 24 .AND. 
+     &                  MOD( POS - TSPREAD, 24 ) == 1 ) THEN
                         IF( .NOT. CLOSE3( DNAME ) ) THEN
                             MESG = 'Could not close file ' // 
      &                              DNAME( 1:LEN_TRIM( DNAME ) )
@@ -870,8 +886,8 @@ C.....................  Write time step to file
                     IF( DTIME == 230000 ) THEN
                     	
 C.........................  Store current date to use for next week
-                        WDATE = DDATE
-                        CALL NEXTIME( WDATE, 0, 10000 )
+                        WDATE = DDATE + 1
+C                        CALL NEXTIME( WDATE, 0, 10000 )
 
 C.........................  Close current output file                        
                         IF( .NOT. CLOSE3( WNAME ) ) THEN
@@ -907,8 +923,8 @@ C.....................  Write time step to file
                     IF( DTIME == 230000 ) THEN
                     	
 C.........................  Store current date to use for next month
-                        MDATE = DDATE
-                        CALL NEXTIME( MDATE, 0, 10000 )
+                        MDATE = DDATE + 1
+C                        CALL NEXTIME( MDATE, 0, 10000 )
 
 C.........................  Close current output file   
                         IF( .NOT. CLOSE3( MNAME ) ) THEN
@@ -921,7 +937,7 @@ C.........................  Close current output file
 
             END IF    ! time zone check
 
-            LASTTIME = ( T == NSTEPS )
+            LASTTIME = ( POS == NSTEPS )
 
 C.............  Final steps on last time through
             IF( LASTTIME ) THEN
@@ -935,7 +951,7 @@ C                   not Saturday; otherwise, this has already been handled above
      &                                  WNAME )
                     END IF
      
-                    DO K = 1,24                    
+                    DO K = 1, 24                    
                         CALL AVERTEMP( NSRC, NWKCNTY, WKCODES, 
      &                                 COUNTYSRC( :,1 ), K, TKHOUR,
      &                                 TWKCNTY, NDAYSRC )
@@ -954,7 +970,7 @@ C                   not the last day of the month
      &                                  MNAME )                    	
                     END IF
                 	
-                    DO K = 1,24
+                    DO K = 1, 24
                         CALL AVERTEMP( NSRC, NMNCNTY, MNCODES, 
      &                                 COUNTYSRC( :,1 ), K, TKHOUR,
      &                                 TMNCNTY, NDAYSRC )
@@ -966,7 +982,7 @@ C                   not the last day of the month
 
 C.................  Output episode averaged temperatures
                 IF( EPIAVER ) THEN
-                    DO K = 1,24
+                    DO K = 1, 24
                         CALL AVERTEMP( NSRC, NEPCNTY, EPCODES, 
      &                                 COUNTYSRC( :,1 ), K, TKHOUR,
      &                                 TEPCNTY, NDAYSRC )
@@ -981,8 +997,8 @@ C.................  Count sources outside the grid
                     DO S = 1, NSRC
 
                 	IF( UMAT( S ) == 0 ) THEN
-                            OFLAG = .TRUE.
-                            OSRC = OSRC + 1
+                        OFLAG = .TRUE.
+                        OSRC = OSRC + 1
                 	END IF
 
                     END DO
@@ -991,7 +1007,7 @@ C.................  Count sources outside the grid
             END IF   ! last time through loop
 
 C.............  Increment output time
-            IF( T > TSPREAD ) THEN
+            IF( POS > TSPREAD ) THEN
                 CALL NEXTIME( DDATE, DTIME, 10000 )
             END IF
 
