@@ -62,9 +62,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         ISTAT   !  I/O status result
         INTEGER         LINE    !  input line number
         LOGICAL         EFLAG   !  error flag
-        INTEGER         CDEV    !  unit number for FIP CODES file
         INTEGER         FDEV    !  unit number for emissions factor file:
-        INTEGER         SDEV    !  unit number for surrogate factors
         INTEGER         UDEV    !  unit number for county land use file
         INTEGER         LDEV    !  unit number for log file:
         CHARACTER*16    ENAME   !  logical name for emissions output
@@ -119,7 +117,7 @@ C...........   emission factor, vegetation types tables:
 
         INTEGER      NVEG
         INTEGER      LAI  ( MXID )
-        REAL         EMFAC( BSPCS, MXID )
+        REAL         EMFAC( MXID, BSPCS )
         CHARACTER*4  VEGID( MXID )
 
 
@@ -149,17 +147,9 @@ C   begin body of program GRDBIO
 
 C.......   Get file name; open input raw area source file
 
-        CDEV = PROMPTFFILE( 
-     &           'Enter logical name for FIP CODES file',
-     &           .TRUE., .TRUE., 'BFIP', 'GRDBIO' )
-
         FDEV = PROMPTFFILE( 
      &           'Enter logical name for EMISSION FACTORS file',
      &           .TRUE., .TRUE., 'BFAC', 'GRDBIO' )
-
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for SURROGATE FACTORS file',
-     &           .TRUE., .TRUE., 'BGPRO', 'GRDBIO' )
 
         UDEV = PROMPTFFILE( 
      &           'Enter logical name for GRIDDED LANDUSE file',
@@ -422,7 +412,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
 63                  CONTINUE
                     ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
 
-                ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
+                ELSE IF ( TYPE .EQ. 'Urba' ) THEN
 
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
@@ -537,11 +527,11 @@ C...........   Land use type:  urban forest.  Process subtypes:
 73                  CONTINUE
                     ENOGRS = ENOGRS + AREA * EMFAC( NO, K )
 
-                ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
+                ELSE IF ( TYPE .EQ. 'Urba' ) THEN
 
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
-                    AOTH   = AAG    + 0.7*AREA
+                    AOTH   = AAG    + 0.6*AREA
                     ALAI   = ALAI   + AREA
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  74  M = 1, BSPCS - 1
@@ -807,7 +797,7 @@ C...............   Write output file:
         DO  311  M = 1, BSPCS - 1
 
             I = I + 1
-            IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), ALLAYS3, 0, 0,
+            IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         NORM( 1,1,M,B ) ) ) THEN
                 MESG = 'Could not write "' //
      &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
@@ -818,31 +808,31 @@ C...............   Write output file:
 311     CONTINUE        !  end loop on VOC species M
 312     CONTINUE        !  end loop on VOC-emitting types B
 
-        IF ( .NOT. WRITE3( ENAME, 'AVLAI', ALLAYS3, 0, 0,
+        IF ( .NOT. WRITE3( ENAME, 'AVLAI', 0, 0,
      &                     AVLAI ) ) THEN
             MESG = 'Could not write "AVLAI" to ' // ENAME
             CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'GRASNO', ALLAYS3, 0, 0,
+        IF ( .NOT. WRITE3( ENAME, 'GRASNO', 0, 0,
      &                     GRASNO ) ) THEN
             MESG = 'Could not write "GRASNO"to ' // ENAME
             CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'FORENO', ALLAYS3, 0, 0,
+        IF ( .NOT. WRITE3( ENAME, 'FORENO', 0, 0,
      &                     FORENO ) ) THEN
             MESG = 'Could not write "FORENO"to ' // ENAME
             CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'WETLNO', ALLAYS3, 0, 0,
+        IF ( .NOT. WRITE3( ENAME, 'WETLNO', 0, 0,
      &                     WETLNO ) ) THEN
             MESG = 'Could not write "WETLNO"to ' // ENAME
             CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'AGRINO', ALLAYS3, 0, 0,
+        IF ( .NOT. WRITE3( ENAME, 'AGRINO', 0, 0,
      &                     AGRINO ) ) THEN
             MESG = 'Could not write "AGRINO"to ' // ENAME
             CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
