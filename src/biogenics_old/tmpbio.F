@@ -151,12 +151,13 @@ C.......   Name tables for file NNAME
 
         CHARACTER*16    NORMV( BTYPES * ( BSPCS - 1 ) )   ! names for VOC vbles
         CHARACTER*16    NORMN( LUSES )          !  names for  NO-emission vbles
-        CHARACTER*72    PARMENU( 4 )            ! Methods to calc. PAR
+        CHARACTER*72    PARMENU( 5 )            ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use observational clouds',
      &             'Use MM5 generated RGND',
      &             'Use KUO cloud attenuation',
-     &             'Use KF  cloud attenuation'   /
+     &             'Use KF  cloud attenuation',   
+     &             'Use NO CUM Param'   /
             
 
 C***********************************************************************
@@ -202,7 +203,7 @@ C.......   Get environment variable logical variables
 
 C.......   Get the method to calculate PAR
 
-        PARTYPE = GETMENU( 4, PARTYPE, 'How will PAR be calculated?',
+        PARTYPE = GETMENU( 5, PARTYPE, 'How will PAR be calculated?',
      &                     PARMENU )
 
 C.......   Get input files
@@ -440,7 +441,8 @@ C.............  Write to screen because WRITE3 only writes to LDEV
                   CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
               END IF
 
-              IF ( (PARTYPE.EQ.3) .OR. (PARTYPE.EQ.4) ) THEN
+              IF ( (PARTYPE.EQ.3) .OR. (PARTYPE.EQ.4) .OR.
+     &		    (PARTYPE.EQ.5)	 ) THEN
                  DO 70 R = 1, NROWS
                     DO 60 C = 1, NCOLS
                        PRSFC( C, R ) = PRSFC( C, R ) / 100.0  ! Pa to mb

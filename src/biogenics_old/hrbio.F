@@ -264,6 +264,12 @@ C.......   Interpolate [ A | B | C ]DAY to this JDATE:
                  CLDTYPE = 'KAIN-FRITSCH'
                  CALL CLDATEN_CALC( JDATE, JTIME, LAT, LON, 
      &                              CLDTYPE, CLDATN )
+
+              ELSE IF (PARTYPE .EQ. 5 ) THEN ! no CU cloud
+                 CLDTYPE = 'NO CUM PARAM  '
+                 CALL CLDATEN_CALC( JDATE, JTIME, LAT, LON,
+     &                              CLDTYPE, CLDATN )
+
               END IF
 
 C...........   compute direct horizontal radiation, attenuation:
