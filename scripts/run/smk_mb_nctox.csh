@@ -127,10 +127,21 @@ setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
-# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override 
+setenv SPC_OVERRIDE  cmaq.cb4p25_wtox.m  # Chemical mechanism override
+setenv YEAR_OVERRIDE     1999     # Overrides YEAR (base) in Assigns file
 setenv INVTABLE_OVERRIDE invtable_onroad.cb4.120202.txt   # Inventory table override
+# setenv CNTLCASE                 # Control case name
 
 ##############################################################################
+
+# NOTE:  The MOBILE6 inputs for the case you want to run
+#        should all have file names with a .in extension and should
+#        be placed in a *directory* named as follows:
+#          No control name    : $INVDIR/mobile/m6_$EF_YEAR/
+#          With control name  : $INVDIR/mobile/m6_$EFYEAR_$CNTLCASE/
+#        where EF_YEAR is either YEAR if SMK_FUTURE_YN = N and is
+#        FYEAR if SMK_FUTURE_YN = Y.  The CNTLCASE variable will only
+#        be used in the directory name if it is defined.
 
 ## Run Smkinven, Spcmat, Grdmat, Cntlmat, Mbsetup, and Premobl if needed
 #
