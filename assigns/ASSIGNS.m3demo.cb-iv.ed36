@@ -119,7 +119,7 @@ endif
 
 #
 ## General input settings
-   setenv GSREF_ID m3.091600
+   setenv GSREF_ID $SPC.030102 
    setenv GSPRO_ID $SPC.beis3.021302
 
 ## Meteorology IO/API input files (MCIP output files)
