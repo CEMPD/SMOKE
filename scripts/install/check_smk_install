@@ -23,7 +23,7 @@ set ar_stat = $status
 
 # Check biogenic sources
 echo 'Biogenic source differences' >> $errfile
-diff $REPBGTS_L $SMKROOT/doc/checkdemo/reports/repbgts_l.* >> $errfile
+diff $REPBGTS_S $SMKROOT/doc/checkdemo/reports/repbgts_s.* >> $errfile
 set bg_stat = $status
 
 # Check mobile sources
