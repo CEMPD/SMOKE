@@ -324,6 +324,10 @@ case state:
    
    breaksw
 
+case custom:
+   set logabbr = custom
+   breaksw
+
 default
    echo 'SCRIPT ERROR: Environment variable QA_TYPE is set to'
    echo '              an unknown setting.  Valid values are'
