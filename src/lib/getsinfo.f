@@ -106,7 +106,12 @@ C.........  Set source-category-specific information
                 SC_BEGP( I ) = ARBEGL3( I )
                 SC_ENDP( I ) = ARENDL3( I )
             END DO
-            
+
+            SCCLEV1 = 2
+            SCCLEV2 = 4
+            SCCLEV3 = 7
+            SCCLEV4 = 10
+
         CASE( 'MOBILE' )
 
             LSCCEND  = SCCLEN3 - VIDLEN3   ! For reset SCCs CRWT // VCID
@@ -119,6 +124,11 @@ C.........  Set source-category-specific information
                 SC_BEGP( I ) = MBBEGL3( I )
                 SC_ENDP( I ) = MBENDL3( I )
             END DO
+
+            SCCLEV1 = 2
+            SCCLEV2 = 4
+            SCCLEV3 = 7
+            SCCLEV4 = 10
             
         CASE( 'POINT' )
 
@@ -132,6 +142,11 @@ C.........  Set source-category-specific information
                 SC_BEGP( I ) = PTBEGL3( I )
                 SC_ENDP( I ) = PTENDL3( I )
             END DO
+            
+            SCCLEV1 = 3   ! Assumes right-justified 10-digit w/ first 2 zero
+            SCCLEV2 = 5
+            SCCLEV3 = 8
+            SCCLEV4 = 10
             
         CASE DEFAULT
             MESG = 'Category ' // CATEGORY // ' not known in program.'
