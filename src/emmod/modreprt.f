@@ -122,7 +122,8 @@
             LOGICAL       :: BYRCL         ! true: by road class (mb)
             LOGICAL       :: BYWEK         ! true: by weekly temporal code
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
-            LOGICAL       :: NORMCELL      ! true: output SCC name
+            LOGICAL       :: NORMCELL      ! true: normalize by cell area
+            LOGICAL       :: NORMPOP       ! true: normalize by county pop
             LOGICAL       :: O3SEASON      ! true: use O3 seas data
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SRCNAM        ! true: output facility nm
@@ -143,12 +144,9 @@
 
 !.........  Input file characteristics not available in MODINFO
         INTEGER, PUBLIC :: EMLAYS = 1       ! no. emissions layers
-        INTEGER, PUBLIC :: NCOLS  = 0       ! no. grid columns
-        INTEGER, PUBLIC :: NGRID  = 1       ! no. grid cells
         INTEGER, PUBLIC :: NMAJOR = 0       ! no. major sources
         INTEGER, PUBLIC :: NMATX  = 1       ! size of gridding matrix
         INTEGER, PUBLIC :: NPING  = 0       ! no. PinG sources
-        INTEGER, PUBLIC :: NROWS  = 0       ! no. grid rows
         INTEGER, PUBLIC :: NSTEPS = 0       ! no. time steps in data file
         INTEGER, PUBLIC :: PYEAR  = 0       ! projected inventory year
         INTEGER, PUBLIC :: SDATE  = 0       ! Julian start date of run
@@ -188,6 +186,7 @@
 
         LOGICAL, PUBLIC :: RC_ERROR = .FALSE.  ! true: error found reading file
         LOGICAL, PUBLIC :: DATAMISS = .FALSE.  ! true: no SELECT DATA instrs
+        LOGICAL, PUBLIC :: POFLAG   = .FALSE.  ! one or more rpts use pop data
 
 !.........  Group dimensions of group characteristic arrays
         INTEGER, PUBLIC :: MXREGREC = 0   ! max no. records in full region grp
@@ -222,7 +221,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INDNAM ( :,: ) ! var nams
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: OUTDNAM( :,: ) ! var nams
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: RDNAMES( :,: ) ! for reads
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: ALLUSET( :,: ) ! units
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: ALLUSET( :,: ) ! units
 
 !.........  Temporary output file-specific settings
 !.........  All widths include leading blanks and trailing commas
@@ -299,11 +298,11 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         LOGICAL, PUBLIC :: LSUBGRID      ! true: select with a subgrid
         LOGICAL, PUBLIC :: LREGION       ! true: select with a region group
 
-        CHARACTER(LEN=IOULEN3), PUBLIC :: UNITSET  ! current line units
+        CHARACTER(LEN=IODLEN3), PUBLIC :: UNITSET  ! current line units
         CHARACTER(LEN=LENTTL3), PUBLIC :: TITLE    ! current line title
 
         ! Output units for each output data column
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: OUTUNIT( : ) 
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: OUTUNIT( : ) 
 
         ! Conversion factors for each output data column
         REAL, ALLOCATABLE, PUBLIC :: UCNVFAC( : )

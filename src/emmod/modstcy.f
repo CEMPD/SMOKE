@@ -57,11 +57,16 @@
         CHARACTER*20, ALLOCATABLE, PUBLIC :: STATNAM( : ) ! State names
         CHARACTER*20, ALLOCATABLE, PUBLIC :: CNTYNAM( : ) ! County names
 
-!.........  Time zone by county array
+!.........  Other arrays by county 
         INTEGER, ALLOCATABLE, PUBLIC :: CNTYTZON( : )  ! time zone by county
-
-!.........  Daylight time exemptions (false is exempt)
+        REAL   , ALLOCATABLE, PUBLIC :: CNTYPOPL( : )  ! population by county
         LOGICAL, ALLOCATABLE, PUBLIC :: USEDAYLT( : )  ! true: use daylight time
+
+!.........  Other arrays by state
+        REAL   , ALLOCATABLE, PUBLIC :: STATPOPL( : )  ! population by state
+
+!.........  Other arrays by country
+        REAL   , ALLOCATABLE, PUBLIC :: CTRYPOPL( : )  ! population by country
 
 !.........  ORIS list with state and county codes
         INTEGER, PUBLIC :: NORIS     ! Number of all ORIS codes
@@ -70,5 +75,9 @@
         CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC :: ORISLST( : ) ! ORIS codes
         CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC :: ORISDSC( : ) ! ORIS desc
         
+!.........  Flags ans settings for optional file attributes
+        INTEGER, PUBLIC :: STCYPOPYR = 0       ! year of population data
+
+        LOGICAL, PUBLIC :: LSTCYPOP  = .FALSE. ! true: population is present
 
         END MODULE MODSTCY
