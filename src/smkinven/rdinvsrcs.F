@@ -620,12 +620,11 @@ C.................  Check that source characteristics are correct
      &      	           'code is non-integer at line', IREC
             	    CALL M3MESG( MESG )
             	END IF
-            	
+
             	IF( CFIP( 2:3 ) == '00' .OR.
      &      	    CFIP( 4:6 ) == '000'     ) THEN
-            	    EFLAG = .TRUE.
-            	    WRITE( MESG,94010 ) 'ERROR: State and/or county ' //
-     &      	           'code is missing at line', IREC
+            	    WRITE( MESG,94010 ) 'WARNING: State and/or county ' //
+     &      	           'code is zero (missing) at line', IREC
             	    CALL M3MESG( MESG )
             	END IF
 	
