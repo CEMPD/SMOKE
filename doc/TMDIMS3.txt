@@ -1,0 +1,55 @@
+
+C....................................................................
+C  INCLUDE FILE  TMDIMS3.EXT
+C
+C  CONTAINS:  
+C       dimensioning parameters for EDSS temporal-allocation
+C       Emissions Prototypes
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C       Prototype 7/95 by CJC
+C
+C....................................................................
+
+C.......   Dimensioning parameters:
+
+        INTEGER     NMCOD   !  number of actual monthly temp. profile codes
+        INTEGER     NWCOD   !    "              weekly           "
+        INTEGER     NDCOD   !    "              diurnal-weekday  "
+        INTEGER     NTCOD   !  NMCOD*NWCOD*(NDCOD + NECOD) = final table size
+        INTEGER     MXSRC   !  max number of sources (any type)
+
+        PARAMETER ( NMCOD =  350 , 
+     &              NWCOD =  250 ,  
+     &              NDCOD =   60 ,
+     &              NTCOD = NMCOD * NWCOD * NDCOD ,
+     &              MXSRC = 10000 )
+
+C.......   Temporal conversion parameters:
+
+        INTEGER     SEC2DAY     !  number of seconds in one day
+        INTEGER     SEC2HR      !  number of seconds in one hour
+        REAL        DAY2YR      !  number of days in one year
+
+        PARAMETER ( SEC2DAY = 86400 ,
+     &              SEC2HR  =  3600 ,
+     &              DAY2YR  =   365.0 )
+
+C.......   Flag values for determining temporal-profile-category 
+C.......   applicability:  the corresponding category of temporal 
+C.......   profile coefficients should be used for a source S iff 
+C.......   MOD( TPFLAG( S ), *TPRFAC ) = 0.  
+C.......   (The *TPRFAC's should all be distinct primes)
+
+        INTEGER     STPRFAC	! use seasonal    temporal-profile coeffs
+        INTEGER     MTPRFAC	! use month       temporal-profile coeffs
+        INTEGER     WTPRFAC	! use day-of-week temporal-profile coeffs
+
+        PARAMETER ( STPRFAC = 5 ,
+     &              MTPRFAC = 3 ,
+     &              WTPRFAC = 2 )
+
+C................   end   TMDIMS3.EXT   ....................................
+
