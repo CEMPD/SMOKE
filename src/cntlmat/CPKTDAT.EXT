@@ -56,5 +56,9 @@ C************************************************************************
             CHARACTER(LEN=PLTLEN3) :: PLT     ! tmp plant ID
             CHARACTER(LEN=SCCLEN3) :: TSCC    ! tmp 10-digit SCC
             CHARACTER(LEN=SPNLEN3) :: TMPPRF  ! tmp speciation profile code
+            CHARACTER(LEN=MACLEN3) :: CMCT    ! tmp char MACT code
+            CHARACTER(LEN=1)       :: APPFLAG ! tmp char application flag
+            CHARACTER(LEN=1)       :: REPFLAG ! tmp char replacement flag
+            CHARACTER(LEN=STPLEN3) :: CSTYP   ! tmp source type code
 
         END TYPE
