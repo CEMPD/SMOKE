@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -269,7 +269,6 @@ C.........  Keep case statement outside the loops to speed processing
                     LS  = S
                     IFIP  ( S )  = IFIPA  ( K )
                     ISIC  ( S )  = ISICA  ( K )
-                    IORIS ( S )  = IORISA ( K )
                     IDIU  ( S )  = IDIUA  ( K )
                     IWEK  ( S )  = IWEKA  ( K )
                     TPFLAG( S )  = TPFLGA ( K )
@@ -281,6 +280,7 @@ C.........  Keep case statement outside the loops to speed processing
                     STKTK ( S )  = STKTKA ( K )
                     STKVE ( S )  = STKVEA ( K )
                     CSCC  ( S )  = CSCCA  ( K )
+                    CORIS ( S )  = CORISA ( K )
                     CBLRID( S )  = CBLRIDA( K )
                     CPDESC( S )  = CPDESCA( K )
 
@@ -325,7 +325,9 @@ C           duplicate data, they are allowed
 C.........  Note that pollutants & activities  are stored in output order
 C           because they've been previously sorted in part based on their
 C           position in the master array of output pollutants/activities
-        IF( FILFMT .EQ. IDAFMT ) THEN
+        IF( FILFMT   .EQ. IDAFMT         .OR.
+     &    ( FILFMT   .EQ. EMSFMT   .AND.
+     &      CATEGORY .EQ. 'MOBILE'      )     ) THEN
             DO I = 1, NRAWBP
 
                 J = INDEXA( I )
@@ -338,11 +340,6 @@ C           position in the master array of output pollutants/activities
                 NPCNT( S ) = NPCNT( S ) + 1
 
             END DO
-
-
-C.........  For non-IDA formats for mobile sources...
-C.........  None supported currently
-        ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
 
 C.........  For non-IDA formats for area and point sources...
 C.........  NOTE- this section assumes that the ozone-day emissions and emission
