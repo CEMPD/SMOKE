@@ -45,7 +45,7 @@ setenv RAW_DUP_CHECK        N  # Y errors on duplicate records
 setenv SMK_BASEYR_OVERRIDE  0  # Enter year of the base year when future-year inven provided
 setenv SMKINVEN_FORMULA     "PMC=PM10-PM2_5" # Internal PMC calculation
 setenv WEST_HSPHERE         Y  # Y converts ALL stack coords to western hemisphere
-setenv WKDAY_NORMALIZE      Y  # Y normalizes weekly profiles by weekdays
+setenv WKDAY_NORMALIZE      N  # Y normalizes weekly profiles by weekdays
 #     REPORT_DEFAULTS      # see multiple-program controls, below
 
 ## For Grdmat

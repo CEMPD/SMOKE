@@ -53,7 +53,7 @@ setenv SMK_NHAPEXCLUDE_YN   Y  # Y uses NonHAP exclusions file
 setenv SMKINVEN_FORMULA    " " # Internal PMC calculation
 setenv SMK_VMTMIX_FIXFMT    N  # Y uses fixed-format VMT Mix file (EMS-95 input format only)
 setenv WEST_HSPHERE         Y  # Y converts ALL stack coords to western hemisphere
-setenv WKDAY_NORMALIZE      Y  # Y normalizes weekly profiles by weekdays
+setenv WKDAY_NORMALIZE      N  # Y normalizes weekly profiles by weekdays
 #     OUTZONE              # see multiple-program controls, below
 #     REPORT_DEFAULTS      # see multiple-program controls, below
 

@@ -23,7 +23,7 @@ setenv MRG_SOURCE  M           # source category to merge
 
 ## time independent programs
 setenv RUN_CNTLMAT   Y         # Y runs control matrix program
-setenv RUN_GRWINVEN  Y         # Y runs control matrix program
+setenv RUN_GRWINVEN  Y         # Y runs control application program
 setenv RUN_MBSETUP   Y        #  run speed/temperature setup program        
 
 ## episode dependent programs

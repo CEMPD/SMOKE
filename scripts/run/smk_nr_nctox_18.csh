@@ -23,7 +23,7 @@ setenv MRG_SOURCE  A           # source category to merge
 
 # time independent programs
 setenv RUN_CNTLMAT   Y         # Y runs control matrix program
-setenv RUN_GRWINVEN  Y         # Y runs control matrix program
+setenv RUN_GRWINVEN  Y         # Y runs control application program
 
 # time-dependent programs
 setenv RUN_TEMPORAL  Y         # Y runs temporal allocation program
@@ -42,7 +42,7 @@ setenv RUN_SMKREPORT Y         # Y runs reporting for state reports
 # For Grwinven
 setenv SMK_NUM_CTLMAT       1     # number of control/projection matrices
 setenv SMK_GRWSMKOUT_YN     Y     # Y outputs a SMOKE-formatted inventory
-setenv SMK_GRWIDAOUT_YN     N     # Y outputs an IDA-formatted inventory
+setenv SMK_GRWIDAOUT_YN     Y     # Y outputs an IDA-formatted inventory
 
 # For Temporal
 setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles

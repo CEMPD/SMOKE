@@ -23,7 +23,7 @@ setenv MRG_SOURCE  A           # source category to merge
 
 # time independent programs
 setenv RUN_CNTLMAT   Y         # Y runs control matrix program
-setenv RUN_GRWINVEN  Y         # Y runs control matrix program
+setenv RUN_GRWINVEN  Y         # Y runs control application program
 
 # time-dependent programs
 setenv RUN_TEMPORAL  Y         # Y runs temporal allocation program
