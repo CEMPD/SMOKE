@@ -103,8 +103,8 @@ C...........  0-D case, within-a-cell case:
             ELSE
 
                 NCEL = 1
-                ACEL( 1 ) = COL + ROW * ( NCOLS3D - 1 )
-                AFAC( 1 ) = 1.0
+                ACEL( 1 ) = COL + NCOLS3D * ( ROW - 1 )
+                AFAC( 1 ) = ALEN
 
             END IF
 
@@ -124,7 +124,7 @@ C...............   (Near)constant X -- 1-D problem in Y only
                 RETURN
             END IF
  
-            DYLNK = 1.0 / ABS( YLNK )  !  safe "/" -- 0-D case already done.
+            DYLNK = ALEN / ABS( YLNK )  !  safe "/" -- 0-D case already done.
  
             IF ( ROW .LT. RRR ) THEN             ! initialization, termination
 
@@ -137,7 +137,7 @@ C...............   (Near)constant X -- 1-D problem in Y only
                         J  = 1
                         NY = RRR - 1
                         YY = YORIG3D + YCELL3D * FLOAT( RRR - 1 )
-                        ACEL( 1 ) = RRR
+                        ACEL( 1 ) = COL + NCOLS3D * ( RRR - 1 )
                         AFAC( 1 ) = DYLNK * ( YEND - YY )
                     ELSE
                         J  = 0
@@ -146,13 +146,13 @@ C...............   (Near)constant X -- 1-D problem in Y only
                 ELSE            !  row >= 1 
                     IY = ROW + 1
                     YA = YORIG3D + YCELL3D * FLOAT( ROW )
-                    ACEL( 1 ) = ROW
+                    ACEL( 1 ) = COL + NCOLS3D * ( ROW - 1 )
                     AFAC( 1 ) = DYLNK * ( YA - YBEG )
                     IF ( RRR .LE. NROWS3D ) THEN
                         J  = 2
                         NY = RRR  - 1
                         YY = YORIG3D + YCELL3D * FLOAT( RRR - 1 )
-                        ACEL( 2 ) = RRR
+                        ACEL( 2 ) = COL + NCOLS3D * ( RRR - 1 )
                         AFAC( 2 ) = DYLNK * ( YEND - YY )
                     ELSE
                         J  = 1
@@ -171,7 +171,7 @@ C...............   (Near)constant X -- 1-D problem in Y only
                         J  = 1
                         NY = ROW - 1
                         YY = YORIG3D + YCELL3D * FLOAT( ROW - 1 )
-                        ACEL( 1 ) = ROW
+                        ACEL( 1 ) = COL + NCOLS3D * ( ROW - 1 )
                         AFAC( 1 ) = DYLNK * ( YEND - YY )
                     ELSE
                         J  = 0
@@ -180,13 +180,13 @@ C...............   (Near)constant X -- 1-D problem in Y only
                 ELSE                    !  row >= 1 
                     IY = RRR + 1
                     YA = YORIG3D + YCELL3D * FLOAT( RRR )
-                    ACEL( 1 ) = RRR
+                    ACEL( 1 ) = COL + NCOLS3D * ( RRR - 1 )
                     AFAC( 1 ) = DYLNK * ( YA - YBEG )
                     IF ( ROW .LE. NROWS3D ) THEN
                         J  = 2
                         NY = ROW  - 1
                         YY = YORIG3D + YCELL3D * FLOAT( ROW - 1 )
-                        ACEL( 2 ) = ROW
+                        ACEL( 2 ) = COL + NCOLS3D * ( ROW - 1 )
                         AFAC( 2 ) = DYLNK * ( YEND - YY )
                     ELSE
                         J  = 1
@@ -199,7 +199,7 @@ C...............   (Near)constant X -- 1-D problem in Y only
             FF = DYLNK * YCELL3D
             DO  11  IR = IY, NY
                 J  = J + 1
-                ACEL( J ) = COL + IR * ( NCOLS3D - 1 )
+                ACEL( J ) = COL + NCOLS3D * ( IR - 1 )
                 AFAC( J ) = FF
 11          CONTINUE
 
@@ -219,7 +219,7 @@ C...............   (Near)-constant Y -- 1-D problem in X only:
                 RETURN
             END IF
 
-            DXLNK = 1.0 / ABS( XLNK )  !  safe "/" -- 0-D case already done.
+            DXLNK = ALEN / ABS( XLNK )  !  safe "/" -- 0-D case already done.
  
             IF ( COL .LT. CCC ) THEN             !  initialization, termination
 
@@ -232,7 +232,7 @@ C...............   (Near)-constant Y -- 1-D problem in X only:
                         J  = 1
                         NX = CCC - 1
                         XX = XORIG3D + XCELL3D * FLOAT( CCC - 1 )
-                        ACEL( 1 ) = CCC
+                        ACEL( 1 ) = CCC + NCOLS3D * ( ROW - 1 )
                         AFAC( 1 ) = DXLNK * ( XEND - XX )
                     ELSE
                         J  = 0
@@ -241,13 +241,13 @@ C...............   (Near)-constant Y -- 1-D problem in X only:
                 ELSE            !  col >= 1 
                     IX = COL + 1
                     XA = XORIG3D + XCELL3D * FLOAT( COL )
-                    ACEL( 1 ) = COL
+                    ACEL( 1 ) = COL + NCOLS3D * ( ROW - 1 )
                     AFAC( 1 ) = DXLNK * ( XA - XBEG )
                     IF ( CCC .LE. NCOLS3D ) THEN
                         J  = 2
                         NX = CCC  - 1
                         XX = XORIG3D + XCELL3D * FLOAT( CCC - 1 )
-                        ACEL( 2 ) = CCC
+                        ACEL( 2 ) = CCC + NCOLS3D * ( ROW - 1 )
                         AFAC( 2 ) = DXLNK * ( XEND - XX )
                     ELSE
                         J  = 1
@@ -266,7 +266,7 @@ C...............   (Near)-constant Y -- 1-D problem in X only:
                         J  = 1
                         NX = COL - 1
                         XX = XORIG3D + XCELL3D * FLOAT( COL - 1 )
-                        ACEL( 1 ) = COL
+                        ACEL( 1 ) = COL + NCOLS3D * ( ROW - 1 )
                         AFAC( 1 ) = DXLNK * ( XEND - XX )
                     ELSE
                         J  = 0
@@ -275,13 +275,13 @@ C...............   (Near)-constant Y -- 1-D problem in X only:
                 ELSE                    !  ccc >= 1 
                     IX = CCC + 1
                     XA = XORIG3D + XCELL3D * FLOAT( CCC )
-                    ACEL( 1 ) = CCC
+                    ACEL( 1 ) = CCC + NCOLS3D * ( ROW - 1 )
                     AFAC( 1 ) = DXLNK * ( XA - XBEG )
                     IF ( COL .LE. NCOLS3D ) THEN
                         J  = 2
                         NX = COL  - 1
                         XX = XORIG3D + XCELL3D * FLOAT( COL - 1 )
-                        ACEL( 2 ) = COL
+                        ACEL( 2 ) = COL + NCOLS3D * ( ROW - 1 )
                         AFAC( 2 ) = DXLNK * ( XEND - XX )
                     ELSE
                         J  = 1
@@ -292,7 +292,7 @@ C...............   (Near)-constant Y -- 1-D problem in X only:
             END IF                      ! col <,> ccc (unequal, by construction)
  
             FF = DXLNK * XCELL3D
-            JZ = ROW * ( NCOLS3D - 1 )
+            JZ = NCOLS3D * ( ROW - 1 )
             DO  22  IC = IX, NX
                 J  = J + 1
                 ACEL( J ) = IC + JZ
@@ -442,7 +442,7 @@ C.......   Get the starting point:
             
             IF ( FF .LE. 2.0 ) THEN
                 J = J + 1
-                AFAC( J ) = MIN( 1.0, MAX( 0.0, FAC ) )
+                AFAC( J ) = ALEN * MIN( 1.0, MAX( 0.0, FAC ) )
                 ACEL( J ) = COL  +  NCOLS3D * ( ROW - 1 )
                 GO TO  133              !  to head of loop
             END IF
