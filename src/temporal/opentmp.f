@@ -51,10 +51,11 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                INDEX1
         CHARACTER(LEN=IODLEN3) GETCFDSC
+        INTEGER                GETIFDSC
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL        INDEX1, GETCFDSC, PROMPTMFILE, VERCHAR
+        EXTERNAL        INDEX1, GETCFDSC, GETIFDSC, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(LEN=NAMLEN3) ENAME ! emissions inven logical name (in)
@@ -79,7 +80,9 @@ C...........   Other local variables
 
         INTEGER         I, J, V     ! counters and indices
 
+        INTEGER         BYEAR       ! base year from inventory file
         INTEGER         NINVVAR     ! number of inventory variables
+        INTEGER         PYEAR       ! projected year from inventory file (or -1)
 
         CHARACTER*5     CTZONE      ! string of time zone
         CHARACTER*300   MESG        ! message buffer 
@@ -105,9 +108,11 @@ C.........  Get header information from inventory file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
 
-        IFDESC2 = GETCFDSC( FDESC3D, '/FROM/' )
-        IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/' )
+        IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+        IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
         NINVVAR = NVARS3D
+        BYEAR   = GETIFDSC( FDESC3D, '/BASE YEAR/', .TRUE. )
+        PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
         NVARS3D = NIPOL
         SDATE3D = SDATE
@@ -122,6 +127,9 @@ C.........  Get header information from inventory file
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
         FDESC3D( 4 ) = '/TZONE/ '   // CTZONE
+        WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR 
+        IF( PYEAR .GT. 0 ) 
+     &      WRITE( FDESC3D( 5 ),94010 ) '/PROJECTED YEAR/ ', PYEAR 
 
         FDESC3D( 11 ) = '/PNTS FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/PNTS VERSION/ ' // IFDESC3
@@ -147,6 +155,10 @@ C.........  Define source characteristic variables that are not strings
         ENDDO  ! End loop on pollutants for output
 
 C.........  Prompt for and open I/O API output file(s)...
+
+C NOTE: The packets indicating base year and future year should be passed 
+C through to the output file for purposes of controlling the day-of-week.
+
 
 C.........  If elevated sources are being written to a separate file, reset the
 C           applicable header entries and prompt for both layer-1 and upper-
@@ -189,5 +201,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94000   FORMAT( I2.2 )
  
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
         END SUBROUTINE OPENPTMP
 

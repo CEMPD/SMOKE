@@ -47,6 +47,9 @@ C.........  This module contains the temporal cross-reference tables
 C.........  This module contains the temporal profile tables
         USE MODTPRO
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
  
 C.........  INCLUDES:
@@ -85,14 +88,9 @@ C.........  Point sources work and output arrays
 C.........  Temporal allocation Matrix.  
         REAL, ALLOCATABLE :: TMAT( :, :, : ) ! temporal allocation factors
 
-C.........  Indicator for which public inventory arrays need to be read
-        INTEGER               , PARAMETER :: NINVARR = 5
-        CHARACTER(LEN=IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
-     &                                 ( / 'IFIP           '
-     &                                   , 'TZONES         '
-     &                                   , 'TPFLAG         '
-     &                                   , 'CSCC           '
-     &                                   , 'CSOURC         ' / )
+C.........  Array that contains the names of the inventory variables needed for
+C           this program
+        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
 
 C.........  Actual-SCC  table
         INTEGER                                NSCC
@@ -123,16 +121,6 @@ C...........   Arrays for flexible application of day- and hour-specific data
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: DAYPNAM( : ) ! dy-spec pol names
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: HRPNAM ( : ) ! hr-spec pol names
 
-C.........  Full list of inventory pollutants (in output order)
-        INTEGER                     MXIPOL       ! Max no of inv pollutants
-        INTEGER     , ALLOCATABLE:: INVPCOD( : ) ! 5-digit pollutant code
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: INVPNAM( : ) ! Name of pollutant
-
-C.........  Inventory pollutants actually in the inventory
-        INTEGER                               NIPOL      ! Actual no of inv pols
-        INTEGER               , ALLOCATABLE:: PCODE( : ) ! AIRS pollutant code
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: EINAM( : ) ! Name of actual pols
-
 C.........  Reshaped inventory pollutants and associated variables
         INTEGER         NGRP                ! number of pollutant groups 
         INTEGER         NGSZ                ! number of pollutants per group 
@@ -140,17 +128,16 @@ C.........  Reshaped inventory pollutants and associated variables
 
 C...........   Logical names and unit numbers
 
-        INTEGER         CDEV    !  for actual-SCC file
         INTEGER         LDEV    !  unit number for log file
-        INTEGER         PDEV    !  unit number for pollutants codes/names file
         INTEGER         RDEV    !  unit number for temporal profile file
         INTEGER         SDEV    !  unit number  for ASCII inventory file
         INTEGER         UDEV    !  unit no. for optional input elevated srcs
         INTEGER         XDEV    !  unit no. for cross-reference file
 
-        CHARACTER*16    ENAME   !  logical name for point-source input file
-        CHARACTER*16    DNAME   !  " day-specific  input file, or "NONE"
-        CHARACTER*16    HNAME   !  " hour-specific input file, or "NONE"
+        CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
+        CHARACTER*16    ENAME   !  logical name for I/O API inventory input file
+        CHARACTER*16 :: DNAME = 'NONE' !  " day-specific  input file, or "NONE"
+        CHARACTER*16 :: HNAME = 'NONE' !  " hour-specific input file, or "NONE"
         CHARACTER*16    TNAME   !  " timestepped (low-level)   output file
         CHARACTER*16    UNAME   !  " (upper-level) output file, or "NONE"
 
@@ -172,7 +159,7 @@ C...........   Other local variables
         INTEGER         JDATE, JTIME        ! Julian date and time
         INTEGER         JRUNLEN             ! models-3 "run length" in HHMMSS
         INTEGER         NLINE               ! tmp number of lines in ASCII file 
-        INTEGER         NPSRC               ! number of point sources
+        INTEGER         NSRC                ! general number of sources
         INTEGER         NSTEPS              ! number of output time steps
         INTEGER         SDATE, STIME        ! starting Julian date and time
         INTEGER         TNLEN               ! length of TNAME string
@@ -180,7 +167,7 @@ C...........   Other local variables
         INTEGER         TZONE               ! output-file time zone
         INTEGER         UNLEN               ! length of UNAME string
 
-        CHARACTER*5     TREFFMT !  temporal cross-reference format (LIST|FIXED)
+        CHARACTER*8     TREFFMT !  temporal cross-ref format (SOURCE|STANDARD)
         CHARACTER*14    DTBUF   !  buffer for MMDDYY
         CHARACTER*300   MESG    !  buffer for M3EXIT() messages
         CHARACTER(LEN=IOVLEN3) CBUF ! pollutant name temporary buffer 
@@ -203,6 +190,17 @@ C.........  Only abort if Models-3 environment variables are not set
 
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
+        DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', 'Use day-specific data',
+     &                   .FALSE., IOS )
+
+        HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
+     &                   .FALSE., IOS )
+
+        UFLAG = ENVYN ( 'ELEVATED_PT_YN', 
+     &                  'Generate elevated point-source file',
+     &                   .FALSE., IOS )
+
+C.........  Get Models-3-set episode settings
         SDATE  = ENVINT( 'G_STDATE', 'Start date (YYYYDDD)', 0, IOS )
         IF( IOS .NE. 0 ) THEN
             EFLAG = .TRUE.
@@ -245,69 +243,41 @@ C.........  Ensure that episode settings are consistent with SMOKE
 C.........   Set more time information based on environment variable inputs
         NSTEPS = JRUNLEN / 10000
 
+C.........  Set source category based on environment variable setting
+        CALL GETCTGRY
+
+C.........  Get inventory file names given source category
+        CALL GETINAME( CATEGORY, ENAME, ANAME )
+
 C.........  Prompt for and open input I/O API and ASCII files
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, 'PNTS', PROGNAME )
+     &          FSREAD3, ENAME, PROGNAME )
         ENLEN = LEN_TRIM( ENAME )
 
         SDEV = PROMPTFFILE( 
      &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., 'PSRC', PROGNAME )
+     &           .TRUE., .TRUE., ANAME, PROGNAME )
 
-        DNAME = PROMPTMFILE( 
-     &          'Enter logical name for DAY-SPECIFIC file, or "NONE"',
-     &          FSREAD3, 'PDAY', PROGNAME )
+        IF( DFLAG ) DNAME = PROMPTMFILE( 
+     &          'Enter logical name for DAY-SPECIFIC file',
+     &          FSREAD3, CRL // 'DAY', PROGNAME )
 
-        HNAME = PROMPTMFILE( 
-     &          'Enter logical name for HOUR-SPECIFIC file, or "NONE"',
-     &          FSREAD3, 'PHOUR', PROGNAME )
-
-        CDEV = PROMPTFFILE( 
-     &           'Enter logical name for ACTUAL SCC file',
-     &           .TRUE., .TRUE., 'PSCC', PROGNAME )
+        IF( HFLAG ) HNAME = PROMPTMFILE( 
+     &          'Enter logical name for HOUR-SPECIFIC file',
+     &          FSREAD3, CRL // 'HOUR', PROGNAME )
 
         XDEV = PROMPTFFILE( 
      &           'Enter logical name for TEMPORAL XREF file',
-     &           .TRUE., .TRUE., 'PTREF', PROGNAME )
+     &           .TRUE., .TRUE., 'GTREF', PROGNAME )
 
         RDEV = PROMPTFFILE( 
      &           'Enter logical name for TEMPORAL PROFILES file',
-     &           .TRUE., .TRUE., 'PTPRO', PROGNAME )
+     &           .TRUE., .TRUE., 'GTPRO', PROGNAME )
 
-        UDEV = PROMPTFFILE( 
-     &           'Enter logical name for ELEVATED SOURCES file, ' //
-     &           'or "NONE"', .TRUE., .TRUE., 'PELV', PROGNAME )
-
-        PDEV = PROMPTFFILE( 
-     &           'Enter logical name for POLLUTANT CODES & NAMES file',
-     &           .TRUE., .TRUE., 'SIPOLS', PROGNAME )
-
-C.........  Set logical flags that control optional input file usage
-        DFLAG = ( DNAME( 1:5 ) .NE. 'NONE ' ) ! day-specific file
-        HFLAG = ( HNAME( 1:5 ) .NE. 'NONE ' ) ! hour-specific file
-
-        IF( UDEV .EQ. -2 ) THEN               ! elevated IDs file
-            UFLAG = .FALSE.
-
-        ELSEIF( UDEV .GT. 0 ) THEN
-            UFLAG = .TRUE.
-
-        ELSE
-            MESG = 'Could not open ELEVATED SOURCES file'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-        ENDIF
-
-C.........  Read and sort pollutant codes/names file 
-        MXIPOL = GETFLINE( PDEV, 'Pollutant codes and names file')
-
-        ALLOCATE( INVPCOD( MXIPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVPCOD', PROGNAME )
-        ALLOCATE( INVPNAM( MXIPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVPNAM', PROGNAME )
-
-        CALL RDSIPOLS( PDEV, MXIPOL, INVPCOD, INVPNAM )
+        IF( UFLAG ) UDEV = PROMPTFFILE( 
+     &           'Enter logical name for ELEVATED SOURCES file',
+     &            .TRUE., .TRUE., 'PELV', PROGNAME )
 
 C.........  Get header description of inventory file 
         IF( .NOT. DESC3( ENAME ) ) THEN
@@ -315,39 +285,16 @@ C.........  Get header description of inventory file
      &             ENAME( 1:ENLEN ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
+C.........  Otherwise, store source-category-specific header information, 
+C           including the inventory pollutants in the file (if any).  Note that 
+C           the I/O API head info is passed by include file and the
+C           results are stored in module MODINFO.
         ELSE
-C.............  Store necessary header information, allocate memory for 
-C               pollutant names
-            NPSRC = NROWS3D
-            NIPOL = ( NVARS3D - NPTVAR3 ) / NPTPPOL3
 
-            ALLOCATE( EINAM( NIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
-            ALLOCATE( PCODE( NIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'PCODE', PROGNAME )
+            CALL GETSINFO
 
-C.............  Save pollutant names and codes
-            J = NPTVAR3 + 1
-            DO I = 1, NIPOL
-
-                CBUF = VNAME3D( J )
-                K    = INDEX1( CBUF, MXIPOL, INVPNAM )
-
-                IF( K .LE. 0 ) THEN
-                  
-                    L   = LEN_TRIM( CBUF )
-                    MESG= 'ERROR: inventory pollutant "'// CBUF( 1:L )//
-     &                    '" not found in master pollutant list.'
-                    CALL M3MSG2( MESG )
-
-                ENDIF
-
-                EINAM  ( I ) = CBUF
-                PCODE  ( I ) = INVPCOD( K )
-
-                J = J + NPTPPOL3   ! skip over other pollutant-spec variables
-
-            ENDDO
+C.............  Store non-category-specific header information
+            NSRC = NROWS3D
 
         ENDIF
 
@@ -427,19 +374,37 @@ C.........  Prompt for episode data only if PROMPTFLAG has been set to true
 C.........  Report episode information that is being used for the output file(s)
         DTBUF = MMDDYY( SDATE )
         WRITE( MESG,94050 )
-     &  'Output Time Zone :', TZONE,           CRLF() // BLANK5 //
-     &  '       Start Date:', DTBUF( 1:LEN_TRIM( DTBUF ) ) //
-     &                                         CRLF() // BLANK5 //
-     &  '       Start Time:', STIME,'HHMMSS'// CRLF() // BLANK5 //
-     &  '       Time Step :', 1    ,'hour'  // CRLF() // BLANK5 //
-     &  '       Duration  :', NSTEPS, 'hours'
+     &  'Output Time Zone:', TZONE,           CRLF() // BLANK5 //
+     &  '      Start Date:', DTBUF( 1:LEN_TRIM( DTBUF ) ) //
+     &                                        CRLF() // BLANK5 //
+     &  '      Start Time:', STIME,'HHMMSS'// CRLF() // BLANK5 //
+     &  '       Time Step:', 1    ,'hour'  // CRLF() // BLANK5 //
+     &  '        Duration:', NSTEPS, 'hours'
  
         CALL M3MSG2( MESG )
 
         CALL M3MSG2( 'Reading source data from inventory file...' )
 
+C.........  Set inventory variables to read for all source categories
+        IVARNAMS( 1 ) = 'TZONES'
+        IVARNAMS( 2 ) = 'TPFLAG'
+        IVARNAMS( 3 ) = 'CSCC'
+
 C.........  Allocate memory for and read required inventory characteristics
-        CALL RPNTSCHR( ENAME, SDEV, NPSRC, NINVARR, IVARNAMS )
+        IF( CATEGORY .EQ. 'AREA' ) THEN
+
+        ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
+
+        ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
+
+            IVARNAMS( 4 ) = 'CSOURC'
+
+            CALL RPNTSCHR( ENAME, SDEV, NSRC, 4, IVARNAMS, NCHARS )
+
+        END IF
+
+C.........  Build unique lists of SCCs per SIC from the inventory arrays
+        CALL GENUSLST
 
 C.........  Read elevated sources, set index to source list, and get actual 
 C           number of valid entries in PELV file. Note that RDPELV will drop
@@ -454,7 +419,7 @@ C.........  Allocate memory for EMISE
             ALLOCATE( INDXE( NLINE ), STAT=IOS )
             CALL CHECKMEM( IOS, 'INDXE', PROGNAME )
 
-            CALL RDPELV( UDEV, NPSRC, NLINE, CSOURC, NPELV, INDXE )
+            CALL RDPELV( UDEV, NSRC, NLINE, CSOURC, NPELV, INDXE )
 
             ALLOCATE( EMISE( NPELV ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EMISE', PROGNAME )
@@ -471,25 +436,13 @@ C.............  Update UFLAG in case NPELV is zero
 
         ENDIF
 
-C.........  Allocate memory for and read actual SCCs table
-        CALL M3MSG2( 'Reading ACTUAL SCC file...' )
-
-        NSCC = GETFLINE( CDEV, 'Actual SCC file' )
-        ALLOCATE( SCCLIST( NSCC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SCCLIST', PROGNAME )
-
-        CALL RDCHRSCC( CDEV, NSCC, SCCLIST )
-
-        CALL M3MSG2( 'Reading TEMPORAL XREF file...' )
-
 C.........  Read temporal-profile cross-reference file and put into tables
 C.........  Only read entries for pollutants that are in the inventory.
-        CALL RDTREF( XDEV, 'POINT', NIPOL, NSCC, EINAM, PCODE, 
-     &               SCCLIST, TREFFMT )
+        CALL RDTREF( XDEV, TREFFMT )
 
 C.........  Read temporal-profiles file:  4 parts (monthly, weekly, 
 C           weekday diurnal, and weekend diurnal)
-        CALL M3MSG2( 'Reading TEMPORAL PROFILE file...' )
+        CALL M3MSG2( 'Reading temporal profiles file...' )
 
         NMON = RDTPROF( RDEV, 'MONTHLY' )
         NWEK = RDTPROF( RDEV, 'WEEKLY'  )
@@ -516,21 +469,21 @@ C           into even groups and try again.
         NGRP = 1       ! Number of groups
         DO
 
-            ALLOCATE( TMAT ( NPSRC, NGSZ, 24 ), STAT=IOS1 )
-            ALLOCATE( MDEX ( NPSRC, NGSZ )    , STAT=IOS2 )
-            ALLOCATE( WDEX ( NPSRC, NGSZ )    , STAT=IOS3 )
-            ALLOCATE( DDEX ( NPSRC, NGSZ )    , STAT=IOS4 )
-            ALLOCATE( EDEX ( NPSRC, NGSZ )    , STAT=IOS5 )
-            ALLOCATE( EMIS ( NPSRC, NGSZ )    , STAT=IOS6 )
-            ALLOCATE( EMIST( NPSRC, NGSZ )    , STAT=IOS7 )
-            ALLOCATE( EMISV( NPSRC, NGSZ )    , STAT=IOS8 )
+            ALLOCATE( TMAT ( NSRC, NGSZ, 24 ), STAT=IOS1 )
+            ALLOCATE( MDEX ( NSRC, NGSZ )    , STAT=IOS2 )
+            ALLOCATE( WDEX ( NSRC, NGSZ )    , STAT=IOS3 )
+            ALLOCATE( DDEX ( NSRC, NGSZ )    , STAT=IOS4 )
+            ALLOCATE( EDEX ( NSRC, NGSZ )    , STAT=IOS5 )
+            ALLOCATE( EMIS ( NSRC, NGSZ )    , STAT=IOS6 )
+            ALLOCATE( EMIST( NSRC, NGSZ )    , STAT=IOS7 )
+            ALLOCATE( EMISV( NSRC, NGSZ )    , STAT=IOS8 )
 
             IF( IOS1 .GT. 0 .OR. IOS2 .GT. 0 .OR. IOS3 .GT. 0 .OR.
      &          IOS4 .GT. 0 .OR. IOS5 .GT. 0 .OR. IOS6 .GT. 0 .OR.
      &          IOS7 .GT. 0 .OR. IOS8 .GT. 0 ) THEN
 
                 IF( NGSZ .EQ. 1 ) THEN
-                    J = 8 * NPSRC * 31    ! Assume 8-byte reals
+                    J = 8 * NSRC * 31    ! Assume 8-byte reals
                     WRITE( MESG,94010 ) 
      &                'Insufficient memory to run program.' //
      &                CRLF() // BLANK5 // 'Could not allocate ' // 
@@ -576,19 +529,7 @@ C.........  Loop through pollutant groups
         DO N = 1, NGRP
 
 C.............  Write message stating the pollutants being processed
-            MESG = 'Processing pollutants: '
-            DO I = 1, NGSZ
-
-                L1 = LEN_TRIM( MESG )
-                CBUF = EINAM2D( I,N )
-                IF( EINAM2D( I,N ) .EQ. ' ' ) EXIT
-
-                L2 = LEN_TRIM( CBUF )
-                MESG = MESG( 1:L1 ) // ', "' // CBUF( 1:L2 ) // '"'
-
-            ENDDO
-
-            CALL M3MSG2( MESG )
+            CALL POLMESG( NGSZ, EINAM2D( 1,N ) )
 
 C.............  Set up logical arrays that indicate which pollutants are day-
 C               specific and which are hour-specific
@@ -614,15 +555,10 @@ C.............  Initialize emissions and other arrays for this pollutant group
             EMIST = 0.
             EMISV = 0.
 
-C NOTE: In routine that applies tables to sources, must go one pollutant at a
-C time instead of assuming that the profile for a specific pollutant can be
-C the default for all pollutants for that source.
-
 C.............  Assign temporal profiles by source and pollutant
             CALL M3MSG2( 'Assigning temporal profiles to sources...' )
 
-            CALL ASGNTPRO( 'POINT', NPSRC, NGSZ, NIPOL, EINAM2D( 1,N ),
-     &                     EINAM, TREFFMT )
+            CALL ASGNTPRO( NGSZ, EINAM2D( 1,N ), TREFFMT )
 
 C.............  Read in pollutant emissions from inventory for current group
             DO I = 1, NGSZ
@@ -640,6 +576,11 @@ C.............  Read in pollutant emissions from inventory for current group
                 ENDIF
             ENDDO
 
+C NOTE: Note: add a control for processing emissions using days of the week
+C   in the base year or the year of the G_SDATE (which might be a future year).
+C   Also, need to get the base year from the FDESC3D packet, and add different
+C   time variables (one for selecting day-of-week and one for output)
+
 C.............  For each time step and pollutant in current group, generate
 C               hourly emissions, write elevated emissions file (if any), and
 C               write layer-1 emissions file (or all data).
@@ -648,7 +589,7 @@ C               write layer-1 emissions file (or all data).
             DO T = 1, NSTEPS
 
 C.................  Generate hourly emissions for current hour
-                CALL GENHEMIS( 'POINT', NPSRC, NGSZ, NDAYPT, NHRPT, 
+                CALL GENHEMIS( CATEGORY, NSRC, NGSZ, NDAYPT, NHRPT, 
      &                         JDATE, JTIME, TZONE, DNAME, HNAME, 
      &                         LDSPOL, LHSPOL, EINAM2D( 1,N ), TZONES, 
      &                         TPFLAG, INDXD, EMISD, INDXH, EMISH, 
@@ -717,6 +658,11 @@ C.................  Advance the date/time by one time step
             ENDDO      ! End loop on time steps T
 
         ENDDO          ! End loop on pollutant groups N
+
+C.............  If not list format PTREF inputs, write out file of temporal 
+C               profiles used per source
+
+! NOTE: future
 
 C.........  Exit program with normal completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
