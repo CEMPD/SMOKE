@@ -209,6 +209,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER, ALLOCATABLE, PUBLIC :: LOC_BEGP( : )  ! actual src char string starts
         INTEGER, ALLOCATABLE, PUBLIC :: LOC_ENDP( : )  ! actual src char string ends
 
+        LOGICAL, ALLOCATABLE, PUBLIC :: LSPCPOL ( : )  ! true: spc pol in *SSUP file
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: SPCPOL( : ) ! pols for BYSPC
 
 !.........  Report characteristics arrays, dimensioned by NREPORT
