@@ -721,11 +721,18 @@ C.....................  Ensure that road class is valid and convert from road cl
 
 C.........................  Make sure SCC is at least 8 characters long
                         IF( LEN_TRIM( TSCC ) < 8 ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 'ERROR: SCC code ' //
-     &                          'must be at least 8 characters long ' //
-     &                          'at line', IREC
-                            CALL M3MESG( MESG )
+                            IF( NWARN < MXWARN ) THEN
+                                WRITE( MESG,94010 ) 'WARNING: SCC code ' //
+     &                             'is less than 8 characters long ' //
+     &                             'at line', IREC, '. Adding ' //
+     &                             'trailing zeros.'
+                                CALL M3MESG( MESG )
+                                NWARN = NWARN + 1
+                            END IF
+                            
+                            DO I = LEN_TRIM( TSCC )+1, 8
+                                TSCC( I:I ) = '0'
+                            END DO
                         END IF
 
 C.........................  Make sure we have a facility/plant ID
