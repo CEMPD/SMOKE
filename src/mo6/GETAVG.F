@@ -12,6 +12,10 @@ C
 C 
 C  Changes: (Last change first) 
 C 
+C  22 Jan 02 @EPA-djb  Bug379   Added check for Case #2 (freeway) and 
+C                               changed case error to device IOUREP. 
+C  18 Jan 02 @EPA-djb  Bug381   Initialize USRVMT after error 580, 
+C                               changed writes to IOUREP to QUITER calls. 
 C  14 Jan 02 @EPA-bag  Bug375   Added calls to QUITER to avoid user input of 
 C                            VMT fractions which are inconsistent with facility 
 C                            options, FREEWAY and AREAWIDE 
@@ -46,7 +50,7 @@ C
 C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'IOUCOM.I'      ! IOUOUT 
+      INCLUDE 'IOUCOM.I'      ! IOUOUT,IOUREP 
       INCLUDE 'SPEED0.I'      ! USRSPD,USRVMT,USRFAC,DEFAVG,AVGFLG 
 C 
 C     Declare variables. 
@@ -66,6 +70,8 @@ C
       REAL            :: MAXSPD   ! Given user inputs, maximum allowed area wide average speed. 
       REAL            :: MINSPD   ! Given user inputs, maximum allowed area wide average speed. 
       REAL            :: VMTSUM   ! Sum of user supplied roadway type VMT fractions. 
+      REAL            :: VMT1     ! Freeway portion of freeway and ramp VMT. 
+      REAL            :: VMT2     ! Ramp portion of freeway and ramp VMT. 
 C 
       PTR2 = 21 
 C 
@@ -98,9 +104,9 @@ C
       ELSEIF (TESTFIELD.EQ.'RAMP') THEN 
         USRFAC=6 
       ELSE 
-        WRITE(IOUOUT,110) TESTFIELD 
-  110   FORMAT(' *** ERROR: ',A10,' is not a valid option.') 
-        INERR = INERR + 1 
+        CALL QUITER(0.0,0,512,INERR) 
+        RC = 1 
+        GOTO 99 
       ENDIF 
 C 
 C     Read the user supplied distribution of roadway VMT. 
@@ -148,11 +154,39 @@ C     Check for inconsistent freeway and ramp vehicle fractions
         IF(USRVMT(1)<=0.00001.AND.USRVMT(2)<=0.00001) THEN 
           CALL QUITER(0.0,0,580,INERR) 
           RC = 1 
+          USRVMT(1) = 0.342  !Reset VMT to defaults. 
+          USRVMT(2) = 0.498 
+          USRVMT(3) = 0.130 
+          USRVMT(4) = 0.030 
           GOTO 99 
         ENDIF 
       ENDIF 
 C 
-C  If the area wide option is chosen, check the combination of 
+C  If the freeway option is chosen, check the combination of 
+C  user supplied values to determine if this option can be used. 
+C 
+      IF(USRFAC.EQ.2) THEN 
+C     Minimum and maximum combined freeway and freeway ramp speeds 
+C       based on the user supplied (or default) VMT fractions for both. 
+        VMT1=0.0 
+        VMT2=0.0 
+        IF(USRVMT(1).GT.0.0 .OR. USRVMT(4).GT.0.0) THEN 
+          VMT1 = USRVMT(1) / (USRVMT(1) + USRVMT(4)) 
+          VMT2 = USRVMT(4) / (USRVMT(1) + USRVMT(4)) 
+        ENDIF 
+        MINSPD = 1.0/((1.0/2.5)*VMT1+(1.0/DEFAVG(4))*VMT2) 
+        MAXSPD = 1.0/((1.0/65.0)*VMT1+(1.0/DEFAVG(4))*VMT2) 
+        IF(USRSPD.LT.MINSPD) THEN 
+          CALL QUITER(MINSPD,0,514,INERR) 
+          USRSPD=MINSPD 
+        ELSEIF(USRSPD.GT.MAXSPD) THEN 
+          CALL QUITER(MAXSPD,0,515,INERR) 
+          USRSPD=MAXSPD 
+        ENDIF 
+        INPSPD=USRSPD 
+      ENDIF 
+C 
+C  If the areawide option is chosen, check the combination of 
 C  user supplied values to determine if this option can be used. 
 C 
       IF(USRFAC.EQ.4) THEN 
@@ -181,46 +215,18 @@ C  and that the facility VMT will be changed.
 C 
       SELECT CASE (USRFAC) 
           CASE (1) 
-            WRITE(IOUREP,120) USRSPD 
+            CALL QUITER(USRSPD,0,581,INERR) 
           CASE (2) 
-            WRITE(IOUREP,130) USRSPD 
+            CALL QUITER(INPSPD,0,582,INERR) 
           CASE (3) 
-            WRITE(IOUREP,140) USRSPD 
+            CALL QUITER(USRSPD,0,583,INERR) 
           CASE (5) 
-            WRITE(IOUREP,160) 
+            CALL QUITER(DEFAVG(3),0,585,INERR) 
           CASE (6) 
-            WRITE(IOUREP,170) 
+            CALL QUITER(DEFAVG(4),0,586,INERR) 
           CASE DEFAULT     ! Case 4 is the default. 
-            WRITE(IOUREP,150) INPSPD 
+            CALL QUITER(INPSPD,0,584,INERR) 
       END SELECT 
-C 
-  120 FORMAT(/ 
-     &  '* A user supplied freeway average speed of ',F4.1,' will',/, 
-     &  '* be used for all hours of the day.  100% of VMT has been',/, 
-     &  '* assigned to the freeway roadway type for all hours of',/, 
-     &  '* the day and all vehicle types.',/) 
-  130 FORMAT(/ 
-     &  '* A user supplied freeway average speed of ',F4.1,' will',/, 
-     &  '* be used for all hours of the day.  100% of VMT has been',/, 
-     &  '* assigned to a fixed combination of freeways and freeway',/, 
-     &  '* ramps for all hours of the day and all vehicle types.',/) 
-  140 FORMAT(/ 
-     &  '* A user supplied arterial average speed of ',F4.1,' will',/, 
-     &  '* be used for all hours of the day.  100% of VMT has been',/, 
-     &  '* assigned to the arterial/collector roadway type for all',/, 
-     &  '* hours of the day and all vehicle types.',/) 
-  150 FORMAT(/ 
-     &  '* A user supplied area wide average speed of ',F4.1,' will',/, 
-     &  '* be used for all hours of the day.  100% of VMT has been',/, 
-     &  '* assigned to a fixed combination of freeways, freeway',/, 
-     &  '* ramps, arterial/collector and local roadways for all',/, 
-     &  '* hours of the day and all vehicle types.',/) 
-  160 FORMAT(/ 
-     &  '* 100% of VMT has been assigned to the local roadway type',/, 
-     &  '* for all hours of the day for all vehicle types.',/) 
-  170 FORMAT(/ 
-     &  '* 100% of VMT has been assigned to the freeway ramp roadway',/, 
-     &  '* type for all hours of the day for all vehicle types.',/) 
 C 
 C  Error or EOF on any attempted read. 
 C 

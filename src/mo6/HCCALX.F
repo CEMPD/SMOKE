@@ -9,6 +9,11 @@ C        HRLOOP, IEVPTR, PCTLEV, and QUITER.
 C
 C  Changes:
 C
+C  12 Mar 02 AIR Task Bug384: Compute All Veh evap components so that
+C            diesel evap and All Veh can be output properly(Note that
+C            MOBILE6 does not calculate evaporative emissions for
+C            diesels. The code associated with this note is for output
+C            only and should not effect the results.)
 C  15 Nov 01 AIR Task 27: added INERR to DBEVAP due to PMFLECON update.
 C  21 Dec 00 @EPA-bag beta24, added code for database aggregate output
 C  04 Dec 00 @EPA-bag Task X6, removed MY, JDX, and IDX from MYCODE.I; removed
@@ -116,7 +121,7 @@ C    /EVAPGR/ GREVP,IGREVP
 C    /RESUL1/ EFFTP,EFEXH,EFEVAP,REFL_GM_MI,EFRUNL,
 C             IEFFTP,IEFEXH,IEFEVAP,IEFREFL,IEFRUNL,
 C    /RESUL2/RLGGAL,RSTGPH,G_MI_EVP,IRLGGAL,IRSTGPH,IGMIEVP
-C    /RESUL3/ VFTP,VEXH,VEVAP,VLOSS,VRUNLS
+C    /RESUL3/ VFTP,VEXH,VEVAP,VLOSS,VRUNLS,VDRNL,VHTSK,VCRNK
 C    /RESUL4/ RUNEF,STARTEF,TOTEVAP,VTEVAP
 C
 C  Local array subscripts
@@ -298,6 +303,9 @@ C
       VTEVAP=0.0
       VEXH=0.0
       VEVAP=0.0
+      VDRNL=0.0
+      VHTSK=0.0
+      VCRNK=0.0
       VLOSS=0.0
       VRUNLS=0.0
       VRSTLS=0.0
@@ -424,7 +432,7 @@ ccs            CALL DBEXHRS(HEF,IP,IV,ACTUAL_MY,JDX,INERR)
 
 ccs   Call custom SMOKE routine to aggregate exhaust emmisions
             CALL SMKEXOUT(HEF,IP,IV,JDX)
-              
+
             IROAD=5   ! Restingloss,Refuel,Hotsoak,Diurnal and Crankcase are
                       ! road independent.
 ccs            CALL DBEVAP(FRESTLOSS,IV,JDX,NO_MILES_NO_EMISSIONS,
@@ -448,11 +456,10 @@ ccs   Call custom SMOKE routines to aggregate evaporative emissions
         CALL SMKEVPOTHER(FRESTLOSS,IV,JDX,NO_MILES_NO_EMISSIONS,IROAD)
         CALL SMKEVPOTHER(FCRNCASE,IV,JDX,NO_MILES_NO_EMISSIONS,IROAD)
         CALL SMKEVPOTHER(FREFUEL,IV,JDX,NO_MILES_NO_EMISSIONS,IROAD)
-      
-        DO IROAD = IFREEWAY, IRAMP
+        DO IROAD=IFREEWAY,IRAMP
           CALL SMKEVPRUN(FRUNLOSS,IV,JDX,NO_MILES_NO_EMISSIONS,IROAD)
         END DO
-
+          
             ENDIF !DBFLAG conditional
             CYCLE
           ENDIF
@@ -649,6 +656,9 @@ C       initialized to zero. Diesel vehicles do not contribute to these
 C       25 year vehicle emissions sums.
 C
         VEVAP  = VEVAP  + EFEVAP(IV)*VMTMIX(IV)
+        VDRNL  = VDRNL  + G_MI_EVP(IDIURNAL,IV)*VMTMIX(IV)
+        VHTSK  = VHTSK  + G_MI_EVP(IHOTSOAK,IV)*VMTMIX(IV)
+        VCRNK  = VCRNK  + G_MI_EVP(ICRNCASE,IV)*VMTMIX(IV)
         VLOSS  = VLOSS  + REFL_GM_MI(IV)*VMTMIX(IV)
         VRUNLS = VRUNLS + EFRUNL(IV)*VMTMIX(IV)
         VRSTLS = VRSTLS + G_MI_EVP(IRESTLOSS,IV)*VMTMIX(IV)
