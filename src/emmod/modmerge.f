@@ -125,6 +125,7 @@
         CHARACTER*16, PUBLIC :: AONAME ! area output gridded file
         CHARACTER*16, PUBLIC :: AREPNAME ! area report file name
 
+        CHARACTER*16, PUBLIC :: BONAME ! biogenic output for units conversion
         CHARACTER*16, PUBLIC :: BTNAME ! biogenic gridded, temporal input
         CHARACTER*16, PUBLIC :: BREPNAME ! biogenic report file name
 
