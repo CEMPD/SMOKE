@@ -14,7 +14,7 @@ C  database file.
       INCLUDE 'IVTYPE.I' ! VVDSL,VVGASMC
       INCLUDE 'MAXIMA.I' ! MAXYRS 
       INCLUDE 'MYRCAL.I' ! MEVMYR
-      INCLUDE 'PART1.I'  ! MAXIPPM 
+      INCLUDE 'PART1.I'  ! MAXIPPM, PSZCUT 
       INCLUDE 'PART3.I'  ! DBPM 
       INCLUDE 'SPEED9.I' ! HVMT
       INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
@@ -34,6 +34,7 @@ C  database file.
       INTEGER  ::  IV       ! vehicle type (1 - 28)
       INTEGER  ::  IVEH     ! vehicle class (1 - 8)
       INTEGER  ::  EMISPOS  ! position in master emission factor array
+      INTEGER  ::  POS25    ! position of EFs for 2.5 particle size
       
       REAL              ::  SUMVMT  ! vmt fraction for one of 8 vehicle types
       REAL              ::  MILES   ! hourly miles
@@ -48,8 +49,21 @@ C  Begin body of subroutine SMKPMOUT
 
 C  Check that we need this pollutant
          IF (DBSELPART(IPPM) == 1) CYCLE
+         
          IP = IPPM+6  ! PM pollutants start after classic pollutants
 
+C  Skip lead since it is not used by SMOKE
+         IF (IP == 11) CYCLE
+
+C  If particle size is 10, this is the second time through this routine -
+C  skip pollutants that don't depend on size (SO4, SO2, NH3)
+         IF (PSZCUT == 10) THEN
+             IF (IP == 7 .OR. IP == 12 .OR. IP == 13) CYCLE
+             
+C  Reset pollutant number to not interfere with 2.5 pollutants
+             IP = IP + 20
+         END IF
+             
 C  Set emission factor type based on pollutant 
 C  (always exhaust running except for brake and tire pollutants)
          IF (IPPM <= 7) THEN
@@ -148,8 +162,20 @@ C  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
 
                      DO IVEH = 1,8
                         EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
-     &                               IP, IVEH, EFTYPE, IROAD, IH)
-                        EMISSIONS(EMISPOS) = PMAGGR(IVEH)
+     &                                       IP, IVEH, EFTYPE, IROAD, 
+     &                                       IH, .TRUE. )
+     
+C  Subtract 2.5 values from 10 values if needed
+                        IF (PSZCUT == 10) THEN
+                           POS25 = EFPOSITION(STR2INT(DBSCTITLE),
+     &                                        IP-20, IVEH, EFTYPE, 
+     &                                        IROAD, IH, .TRUE. )           
+                           EMISSIONS(EMISPOS) = PMAGGR(IVEH) - 
+     &                                          EMISSIONS(POS25)
+                        ELSE
+                           EMISSIONS(EMISPOS) = PMAGGR(IVEH)
+                        END IF
+                        
                      END DO  ! loop over 8 vehicle types
 
                   END IF  ! road check
