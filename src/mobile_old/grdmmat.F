@@ -201,7 +201,7 @@ C...........   Other local variables
 
         INTEGER         C, R, S, F, I, J, K   !  loop counters.
         INTEGER         CMAX, CMIN
-        INTEGER         FIP, SID, RDT, LNK    ! temporary codes
+        INTEGER         FIP, SID, STC, RDT, LNK    ! temporary codes
         INTEGER         GZONE      !  zone based on gridding defn
         INTEGER         HCOL, HROW !  num cols and rows from srg header
         INTEGER         IOS        !  I/O status
@@ -947,7 +947,7 @@ C.......   Sort and process the surrogate cross-reference file
 
                 IF ( I1 .LT. MXSREF ) THEN  !  FIP-specific
                     I1 = I1 + 1
-                    SRFIPS( I1 ) = ( FIP / 1000 ) * 1000
+                    SRFIPS( I1 ) = FIP  ! already is XX000 b/c just tested
                     SRGIDS( I1 ) = SID 
                     SRRDTS( I1 ) = RDT
                 ELSE
@@ -1189,7 +1189,8 @@ C.................  Convert coordinate system from UTM to required system
 
             END IF
 
-            S = FIND2( FIP, RDT, NUMSCS, SRFIPS, SRRDTS )  !  state+roadtype
+            STC = ( FIP/1000 ) * 1000
+            S = FIND2( STC , RDT, NUMSCS, SRFIPS, SRRDTS )  !  state+roadtype
             IF ( S .GT. 0 ) THEN
                 
                 SID = SRGIDS( S )
