@@ -522,8 +522,8 @@ C.............  Exit to line 202 if first read is EOF, or error to line 1005
                 ELSEIF( INY .LT. 1970 ) THEN
 
                     CALL M3EXIT( 'EMSPOINT', 0, 0,
-     &               'INVYEAR packet has set bad 4-digit year' //
-     &               'in PNLST file', 2 ) 
+     &               'INVYEAR packet has set 4-digit year below 1970 '//
+     &               'minimum in PNLST file', 2 ) 
 
                 ENDIF
 
@@ -731,6 +731,8 @@ C.................  Convert units for stack parameters
                 IF ( STKT .GT. 0.0 ) STKT = STKT * FTOC  +  CTOK ! temp, degrees K
                 IF ( STKV .GT. 0.0 ) STKV = STKV * FT2M          ! Veloc ft/s to m/s
                 IF ( STKF .GT. 0.0 ) STKF = STKF * FLWE2M        ! Flow ft^3/min m^3/s
+C.................  Doesn't matter if FSAV is zero, because we're only
+C.................  storing velocity eventually
                 FSAV = 0.
 
 C.................  Calculate velocity from flow and diameter                
@@ -740,7 +742,8 @@ C.................  Calculate velocity from flow and diameter
                     STKV = STKF / ( 0.25 * PI * STKD * STKD )
 
 C.................  Compare flow to velocity and diameter
-                ELSEIF( ( STKF - STKV*0.25*PI*STKD*STKD ) / STKF
+                ELSEIF( STKF. GT. 0 .AND. 
+     &                  ( STKF - STKV*0.25*PI*STKD*STKD ) / STKF
      &                  .GT. 0.001                               ) THEN
 
                     FSAV = STKF
