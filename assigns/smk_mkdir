@@ -6,14 +6,12 @@
 
    ### Make input and output director(ies) #######
    if ( -e $SMKDAT ) then
-       if( ! -e $INVDIR ) then
-           mkdir -p $INVDIR/area 
-           mkdir -p $INVDIR/nonroad 
-           mkdir -p $INVDIR/biog
-           mkdir -p $INVDIR/point 
-           mkdir -p $INVDIR/mobile 
-           mkdir -p $INVDIR/other
-       endif
+       if( ! -e $INVDIR/area ) mkdir -p $INVDIR/area
+       if( ! -e $INVDIR/nonroad ) mkdir -p $INVDIR/nonroad
+       if( ! -e $INVDIR/biog ) mkdir -p $INVDIR/biog
+       if( ! -e $INVDIR/point ) mkdir -p $INVDIR/point
+       if( ! -e $INVDIR/mobile ) mkdir -p $INVDIR/mobile
+       if( ! -e $INVDIR/other ) mkdir -p $INVDIR/other
        if( ! -e $GE_DAT ) mkdir -p $GE_DAT
        if( ! -e $INVOPD ) mkdir -p $INVOPD
        if( ! -e $A_OUT )  mkdir -p $A_OUT
