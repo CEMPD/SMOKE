@@ -2,7 +2,7 @@
         PROGRAM SMKMERGE
 
 C***********************************************************************
-C  program SMKMERGE body starts at line 138
+C  program SMKMERGE body starts at line 148
 C
 C  DESCRIPTION:
 C      The purpose of this program is to merge the inventory or hourly
@@ -63,6 +63,9 @@ C.........  This module contains the arrays for state and county summaries
 C...........   This module contains the gridding surrogates tables
         USE MODSURG
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -77,10 +80,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
-        CHARACTER*14    MMDDYY
         INTEGER         WKDAY
 
-        EXTERNAL    CRLF, HHMMSS, INDEX1, MMDDYY, WKDAY
+        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -120,6 +122,7 @@ C...........   Other local variables
         INTEGER          NMAJOR        ! no. elevated sources
         INTEGER          NPING         ! no. plum-in-grid sources
         INTEGER          OCNT          ! tmp count output variable names
+        INTEGER       :: PDAY = 0      ! previous iteration day no.
         INTEGER          PGID          ! previous iteration group ID no.
         INTEGER          PJDATE        ! point-source Julian date for by-day
         INTEGER          NVPGP         ! tmp actual no. variables per group
@@ -151,7 +154,7 @@ C           to continue running the program.
 C.........  Retrieve control environment variables and set logical control
 C           flags. Use a local module to pass the control flags.
         CALL GETMRGEV
-        
+
 C.........  Open input files and retrieve episode information
         CALL OPENMRGIN
 
@@ -425,7 +428,10 @@ C.............  Loop through output time steps
 
 C................. For time-dependent processing, write out a few messages...
                 IF( TFLAG ) THEN
-                    
+
+C.....................  Determine weekday index (Monday is 1)
+                    DAY = WKDAY( JDATE )
+
 C.....................  Write out message for new day.  Note, For time-
 C                       independent, LDATE and JDATE will both be zero.
                     IF( JDATE .NE. LDATE ) THEN
@@ -434,12 +440,31 @@ C                       independent, LDATE and JDATE will both be zero.
 
                     END IF
 
+C.....................  Write out files that are being used for by-day treatment
+                    IF( DAY .NE. PDAY ) THEN
+
+                        IF( AFLAG_BD ) THEN
+                            MESG = '   with ATMP file ' // ATNAME( DAY )
+                            CALL M3MSG2( MESG )
+                        END IF
+
+                        IF( MFLAG_BD ) THEN
+                            MESG = '   with MTMP file ' // MTNAME( DAY )
+                            CALL M3MSG2( MESG )
+                        END IF
+
+                        IF( PFLAG_BD ) THEN
+                            MESG = '   with PTMP file ' // PTNAME( DAY )
+                            CALL M3MSG2( MESG )
+                        END IF
+
+                        PDAY = DAY
+
+                    END IF
+
 C.....................  For new hour...
 C.....................  Write to screen because WRITE3 only writes to LDEV
                     WRITE( *, 93020 ) HHMMSS( JTIME )
-
-C.....................  Determine weekday index (Monday is 1)
-                    DAY = WKDAY( JDATE )
 
                 END IF
 
