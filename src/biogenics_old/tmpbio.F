@@ -100,7 +100,8 @@ C...........   LOCAL VARIABLES and their descriptions:
         CHARACTER*16    ENAME   !  logical name for emissions output
         CHARACTER*16    NNAME   !  logical name for normalized-emissions input
         CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
-        CHARACTER*16    MNAME   !  logical name for MET_CRO_3D
+        CHARACTER*16    M3NAME  !  logical name for MET_CRO_3D
+        CHARACTER*16    M2NAME  !  logical name for MET_CRO_2D
         CHARACTER*16    SNAME   !  logical name for solar radiation file
 
         CHARACTER*256   MESG    !  message buffer for M3EXIT()
@@ -200,12 +201,15 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
            GNAME = PROMPTMFILE( 
      &             'Enter name for GRID_CRO_2D input file',
      &             FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
-           MNAME = PROMPTMFILE( 
+           M3NAME = PROMPTMFILE( 
      &             'Enter name for MET_CRO_3D input file',
      &             FSREAD3, 'MET_CRO_3D', 'TMPBIO' )
-           IF ( .NOT. DESC3( MNAME ) ) THEN
+           M2NAME = PROMPTMFILE( 
+     &             'Enter name for MET_CRO_2D input file',
+     &             FSREAD3, 'MET_CRO_2D', 'TMPBIO' )
+           IF ( .NOT. DESC3( M3NAME ) ) THEN
                MESG = 'Could not get description of file "' //
-     &                MNAME( 1:TRIMLEN( MNAME ) ) // '"'
+     &                M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
                CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
            END IF
 
@@ -223,7 +227,7 @@ C...........   Get starting date, time, run duration
      &                  'Enter starting date (YYYYDDD)' )
         STIME = GETNUM( 0, 235959, STIME3D, 
      &                  'Enter starting time  (HHMMSS)' )
-        NHRS  = GETNUM( 1, MXREC3D, MXREC3D, 
+        NHRS  = GETNUM( 1, MXREC3D-1, MXREC3D-1, 
      &                  'Enter run duration    (hours)' )
 
 
@@ -351,17 +355,17 @@ C.......   Loop on time steps:
      &                   NORNO, TSFC, TSOLAR, EMIS )
            ELSE        ! Use clouds to calculate PAR
 
-              IF ( .NOT. READ3( MNAME, 'TA', 1, 
+              IF ( .NOT. READ3( M2NAME, 'TGD', 1, 
      &             JDATE, JTIME, TASFC ) ) THEN
-                 MESG = 'Could not read TA from file "' //
-     &                   MNAME( 1:TRIMLEN( MNAME ) ) // '"'
+                 MESG = 'Could not read sfc. temp. from file "' //
+     &                   M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
                  CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
               END IF
 
-              IF ( .NOT. READ3( MNAME, 'PRES', 1, 
+              IF ( .NOT. READ3( M3NAME, 'PRES', 1, 
      &                        JDATE, JTIME, PRSFC ) ) THEN
                   MESG = 'Could not read PRES from file "' //
-     &                   MNAME( 1:TRIMLEN( MNAME ) ) // '"'
+     &                   M3NAME( 1:TRIMLEN( M3NAME ) ) // '"'
                   CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
               END IF
 
