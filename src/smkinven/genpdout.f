@@ -1,6 +1,7 @@
 
-        SUBROUTINE GENPDOUT( FDEV, TZONE, SDATE, STIME, NSTEPS, TSTEP, 
-     &                       NVAR, MXPDSRC, TYPNAM, EAIDX )
+        SUBROUTINE GENPDOUT( FDEV, MXIDAT, TZONE, SDATE, STIME, NSTEPS, 
+     &                       TSTEP, NVAR, MXPDSRC, TYPNAM, FNAME, 
+     &                       EAIDX, INVDCOD, INVDNAM )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -17,13 +18,13 @@ C
 C  REVISION  HISTORY:
 C      Created 12/99 by M. Houyoux
 C
-C****************************************************************************/
+C*************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -66,6 +67,7 @@ C.........  EXTERNAL FUNCTIONS
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV      ! file unit no.
+        INTEGER     , INTENT (IN) :: MXIDAT    ! max no of inventory data
         INTEGER     , INTENT (IN) :: TZONE     ! output time zone
         INTEGER     , INTENT (IN) :: SDATE     ! Julian starting date in TZONE
         INTEGER     , INTENT (IN) :: STIME     ! start time of data in TZONE
@@ -74,7 +76,10 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NVAR      ! no. period-specific variables
         INTEGER     , INTENT (IN) :: MXPDSRC   ! maximum period-specific sources
         CHARACTER(*), INTENT (IN) :: TYPNAM    ! 'day' or 'hour'
+        CHARACTER(*), INTENT (IN) :: FNAME     ! logical file name
         INTEGER     , INTENT (IN) :: EAIDX( NIPPA ) ! index to EANAM
+        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) !  inv data 5-digit codes
+        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) !  in data names
 
 C.........  Local allocatable arrays
         LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
@@ -97,7 +102,7 @@ C...........   Other local variables
 
         CHARACTER*300 :: MESG = ' '          ! message buffer
 
-        CHARACTER(LEN=NAMLEN3) FNAME         ! output file name
+        CHARACTER(LEN=NAMLEN3) ONAME         ! output file name
  
         CHARACTER*16 :: PROGNAME = 'GENPDOUT' !  program name
 
@@ -175,6 +180,7 @@ C.........  Initialize arrays
         IDXSRC = 0        ! array
         SPDIDA = 0        ! array
         EMISVA = BADVAL3  ! array
+        DYTOTA = BADVAL3  ! array
         LPDSRC = .FALSE.  ! array
 
 C.........  Message before reading the input file (list of files)
@@ -182,7 +188,8 @@ C.........  Message before reading the input file (list of files)
         CALL M3MSG2( MESG )
 
 C.........  Loop through input files and actually read the data
-        CALL RDLOOPPD( FDEV, TZONE, TSTEP, MXPDSRC, DFLAG, SDATE, STIME, 
+        CALL RDLOOPPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, DFLAG, 
+     &                 FNAME, INVDCOD, INVDNAM, SDATE, STIME, 
      &                 NSTEPS, EASTAT )
 
 C.........  Determine the actual number of day-specific or hour-specific sources
@@ -201,6 +208,11 @@ C           not exceed the maximum number of sources over all hours
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
+        ELSE IF( NPDSRC .EQ. 0 ) THEN
+
+            MESG = 'No period-specific sources found in input file'
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
         END IF
 
 C.........  Allocate memory for daily or hourly output arrays.  Allocate 
@@ -215,7 +227,7 @@ C           writing with a single WRITE3 statement.
 C.........  Open day-specific or hour-specific output file, depending on value
 C           of TYPNAM
         CALL OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, TSTEP, 
-     &                  TYPNAM, OFLAG, EAIDX, FNAME )
+     &                  TYPNAM, OFLAG, EAIDX, ONAME )
 
 C.........  Loop through time steps and output emissions
 
@@ -223,7 +235,7 @@ C.........  Loop through time steps and output emissions
         JTIME = STIME
         DO T = 1, NSTEPS
 
-            CALL WRPDEMIS( JDATE, JTIME, T, NPDSRC, NVAR, FNAME, 
+            CALL WRPDEMIS( JDATE, JTIME, T, NPDSRC, NVAR, ONAME, 
      &                     OFLAG, EAIDX, PDEMOUT( 1,1 ), PDEMOUT( 1,2 ),
      &                     EFLAG )
 
