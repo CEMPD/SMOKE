@@ -140,8 +140,8 @@ C...........   STATEMENT FUNCTIONS:
 
         NEUTRL( H, B, U, US ) =
      &     MIN( 10.0 * H, 
-     &          1.2 * ( (              B/( U*US*US )   )**3 *
-     &                  (  H + 1.3 * ( B/( U*US*US ) ) )**2 )**0.2  )
+     &          1.2 * ( (              B/( U*US*US )   )**0.6 *    ! pwr 3 * 0.2
+     &                  (  H + 1.3 * ( B/( U*US*US ) ) )**0.4   )) ! pwr 2 * 0.2
 
         STABLE( B, U, S ) =  2.6 * ( B / ( U * S ) )**D3
 
@@ -155,7 +155,7 @@ C.......   Compute buoyancy flux, convective scale.
         HSTAR = GRAV * HFX / TA( 1 )   ! Using surface temperature is correct
         BFLX  = 0.25*GRAV * ( STKTK-TSTK ) * STKVE * STKDM**2 / STKTK
 
-C.......   Initiallize layer of plume
+C.......   Initialize layer of plume
         LPLM  = LSTK
 
 C.......   Compute momentum rise
@@ -279,12 +279,15 @@ C...............    appropriate for a Gaussian plume rise model.
             IQ  = 2
             
         END IF			!  hstar ==> unstable, stable, or neutral
-
-
+  
 C.......   Compute further plume rise from between level surfaces:
 
         RBFLX = BFLX
         ZPLM  = DHT
+
+C.......   End calculations if the momentum rise was used in the calculation
+
+        IF( IQ .EQ. 4 ) GO TO 199  ! to point past iterative bouyancy loop
 
 C.......   NOTE: LPLM has been initialized at line 161, and may have been
 C                reset at line 185
