@@ -32,7 +32,7 @@ C       gridded or county level biomass, land use, and emissions factors,
 C       and surrogate factors if biomass is at county level.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C
+C       m3io
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC adapted from UAM BEIS2 subroutine NORMALEM
