@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,7 +45,11 @@ C Last updated: $Date$
 C
 C***********************************************************************
 
-      IMPLICIT NONE
+C...........   Modules for public variables
+C...........   This module contains the global variables for the 3-d grid
+        USE MODGRID
+
+        IMPLICIT NONE
 
 C...........   INCLUDES:
 
@@ -65,21 +69,21 @@ C...........   ARGUMENTS and their descriptions:
 
         INTEGER, INTENT (IN)  :: JDATE   !  current simulation date (YYYYDDD)
         INTEGER, INTENT (IN)  :: JTIME   !  current simulation time (HHMMSS)
-        INTEGER, INTENT (IN)  :: NX      !  no. columnse
-        INTEGER, INTENT (IN)  :: NY      !  no. rows
+        INTEGER, INTENT (IN)  :: NX      !  no. met columns
+        INTEGER, INTENT (IN)  :: NY      !  no. met rows
 
-        REAL, INTENT (IN)  ::  TA    ( NX, NY )  !  air temperature (K)
-        REAL, INTENT (IN)  ::  TSOLAR( NX, NY )  !  PAR
-        REAL, INTENT (IN)  ::  PINE ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  DECD ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  CONF ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  AGRC ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  LAI  ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  OTHR ( NX, NY, BSPCS-1 )     !  nor VOC emissions
-        REAL, INTENT (IN)  ::  AVLAI( NX, NY )              !  average LAI
-        REAL, INTENT (IN)  ::  NORNO( NX, NY, LUSES )       !  nor NO  emissions
+        REAL, INTENT (IN) :: TA    ( NX, NY )  !  air temperature (K)
+        REAL, INTENT (IN) :: TSOLAR( NX, NY )  !  PAR
+        REAL, INTENT (IN) :: PINE  ( NCOLS, NROWS, BSPCS-1 ) ! nor VOC emissions
+        REAL, INTENT (IN) :: DECD  ( NCOLS, NROWS, BSPCS-1 ) ! nor VOC emissions
+        REAL, INTENT (IN) :: CONF  ( NCOLS, NROWS, BSPCS-1 ) ! nor VOC emissions
+        REAL, INTENT (IN) :: AGRC  ( NCOLS, NROWS, BSPCS-1 ) ! nor VOC emissions
+        REAL, INTENT (IN) :: LAI   ( NCOLS, NROWS, BSPCS-1 ) ! nor VOC emissions
+        REAL, INTENT (IN) :: OTHR  ( NCOLS, NROWS, BSPCS-1 ) ! nor VOC emissions
+        REAL, INTENT (IN) :: AVLAI ( NCOLS, NROWS )          ! average LAI
+        REAL, INTENT (IN) :: NORNO ( NCOLS, NROWS, LUSES )   ! nor NO  emissions
 
-        REAL, INTENT (OUT)  ::  EMPOL ( NX, NY, BSPCS )      !  output pol emissions
+        REAL, INTENT(OUT) :: EMPOL ( NCOLS, NROWS, BSPCS )   ! output pol emissions
 
 
 C...........   PARAMETERS and their descriptions:
@@ -100,6 +104,8 @@ C...........   PARAMETERS and their descriptions:
  
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
+        INTEGER         I, J      !  indices
+        INTEGER         R, C, L
 
         REAL            CFPINE    !  isop corr fac -- pine
         REAL            CFDECD    !  isop corr fac -- deciduous
@@ -111,7 +117,6 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            CFNOW     !  NO   corr fac for land use WETL
         REAL            CFNOA     !  NO   corr fac for land use AGRI
         REAL            CFOVOC    !  non-isop corr fac
-        INTEGER         R, C, L
         REAL            PAR             !  photo. actinic flux (UE/M**2-S)
         REAL            PARZ, SQPARZ, CT, DT
         REAL            TAIR
@@ -152,6 +157,13 @@ C...........   loop thru cells
             DO  R = 1, NY
             DO  C = 1, NX
                 
+C.................  Adjust for subgrid
+                I = C - XOFF
+                J = R - YOFF
+
+                IF( I .LE. 0 .OR. I .GT. NCOLS .OR.
+     &              J .LE. 0 .OR. J .GT. NROWS       ) CYCLE
+
                 TAIR = TA(C,R)         ! unit in degree K
 
 C..........    Perform checks on max and min bounds for temperature
@@ -219,7 +231,7 @@ C................ cycle thru canopy layers
                         FCONF  = FCONF + 0.2 * 0.002878 * PARZ 
      &                                  / SQRT( 1.0 + ALPHA * SQPARZ )
                
-                        PARZ   = PAR * EXP(-0.042 * AVLAI( C,R )
+                        PARZ   = PAR * EXP(-0.042 * AVLAI( I,J )
      &                                            * FLOAT( 2 * L - 1 ) )
                         SQPARZ = PARZ * PARZ
                         FCLAI  = FCLAI + 0.2 * 0.002878 * PARZ
@@ -233,19 +245,19 @@ C................ cycle thru canopy layers
                     CFCLAI = CT * FCLAI
                     CFOTHR = CT * 0.002878 * PAR 
      &                          / SQRT( 1.0 + ALPHA * PAR * PAR )
-               
-                    BISOP = PINE( C,R,ISOP ) * CFPINE +
-     &                      DECD( C,R,ISOP ) * CFDECD +
-     &                      CONF( C,R,ISOP ) * CFCONF +
-     &                      LAI ( C,R,ISOP ) * CFCLAI +
-     &                      AGRC( C,R,ISOP ) * CFOTHR + 
-     &                      OTHR( C,R,ISOP ) * CFOTHR
+
+                    BISOP = PINE( I,J,ISOP ) * CFPINE +
+     &                      DECD( I,J,ISOP ) * CFDECD +
+     &                      CONF( I,J,ISOP ) * CFCONF +
+     &                      LAI ( I,J,ISOP ) * CFCLAI +
+     &                      AGRC( I,J,ISOP ) * CFOTHR + 
+     &                      OTHR( I,J,ISOP ) * CFOTHR
                 
-                    EMPOL( C,R, NISO ) = BISOP
+                    EMPOL( I,J, NISO ) = BISOP
                     
                 ELSE
                 
-                    EMPOL( C,R, NISO ) = 0.0
+                    EMPOL( I,J, NISO ) = 0.0
 
                 END IF
 
@@ -253,22 +265,22 @@ C..............  calculate OVOC and MONO emissions ; not speciated here
            
                 CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
 
-                BMONO = ( PINE( C,R,MONO ) +
-     &                    DECD( C,R,MONO ) +
-     &                    CONF( C,R,MONO ) +
-     &                    AGRC( C,R,MONO ) +  ! sl
-     &                    LAI ( C,R,MONO ) +
-     &                    OTHR( C,R,MONO )  ) * CFOVOC
+                BMONO = ( PINE( I,J,MONO ) +
+     &                    DECD( I,J,MONO ) +
+     &                    CONF( I,J,MONO ) +
+     &                    AGRC( I,J,MONO ) +  ! sl
+     &                    LAI ( I,J,MONO ) +
+     &                    OTHR( I,J,MONO )  ) * CFOVOC
 
-                BOVOC = ( PINE( C,R,OVOC ) +
-     &                    DECD( C,R,OVOC ) +
-     &                    CONF( C,R,OVOC ) +
-     &                    AGRC( C,R,OVOC ) +  ! sl
-     &                    LAI ( C,R,OVOC ) +
-     &                    OTHR( C,R,OVOC )  ) * CFOVOC
+                BOVOC = ( PINE( I,J,OVOC ) +
+     &                    DECD( I,J,OVOC ) +
+     &                    CONF( I,J,OVOC ) +
+     &                    AGRC( I,J,OVOC ) +  ! sl
+     &                    LAI ( I,J,OVOC ) +
+     &                    OTHR( I,J,OVOC )  ) * CFOVOC
 
-                EMPOL( C,R, NTERP ) = BMONO
-                EMPOL( C,R, NOVOC ) = BOVOC
+                EMPOL( I,J, NTERP ) = BMONO
+                EMPOL( I,J, NOVOC ) = BOVOC
 
 C............. calculate NO emissions by going thru temperature cases
 
@@ -279,10 +291,10 @@ C............. calculate NO emissions by going thru temperature cases
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,FORE ) * CFNOF +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( I,J, NNO ) =  NORNO( I,J,GRAS ) * CFNOG +
+     &                                   NORNO( I,J,FORE ) * CFNOF +
+     &                                   NORNO( I,J,WETL ) * CFNOW +
+     &                                   NORNO( I,J,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 268.3804 ) THEN     !  no forest NO
 
@@ -290,27 +302,27 @@ C............. calculate NO emissions by going thru temperature cases
                     CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( I,J, NNO ) =  NORNO( I,J,GRAS ) * CFNOG +
+     &                                   NORNO( I,J,WETL ) * CFNOW +
+     &                                   NORNO( I,J,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 265.11111 ) THEN    !  no forest, wet NO
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
                     CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMPOL( C,R, NNO ) =  NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
+                    EMPOL( I,J, NNO ) =  NORNO( I,J,GRAS ) * CFNOG +
+     &                                   NORNO( I,J,AGRI ) * CFNOA
 
                 ELSE IF ( TAIR .GT. 259.8333 ) THEN     ! NO from grass only
 
                     CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
 
-                    EMPOL( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG
+                    EMPOL( I,J, NNO ) = NORNO( I,J,GRAS ) * CFNOG
 
                 ELSE       !  else tair <= 259.8333
 
-                    EMPOL( C,R, NNO ) = 0.0
+                    EMPOL( I,J, NNO ) = 0.0
 
                 END IF          !  5-way conditional on TAIR
 
