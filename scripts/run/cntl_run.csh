@@ -131,8 +131,8 @@ if ( $?RUN_CNTLMAT ) then
          setenv LOGFILE $TMPLOG
 
          if ( $debugmode == Y ) then
-            if ( -e $IV_SRC/cntlmat.debug ) then
-               $debug_exe $IV_SRC/cntlmat.debug
+            if ( -e $CL_SRC/cntlmat.debug ) then
+               $debug_exe $CL_SRC/cntlmat.debug
             else
                 set debugexestat = 1
             endif
@@ -161,7 +161,7 @@ if ( $?RUN_CNTLMAT ) then
 
       if ( $debugexestat == 1 ) then
          echo 'SCRIPT ERROR: cntlmat.debug program does not exist in:'
-         echo '              '$IV_SRC
+         echo '              '$CL_SRC
          set exitstat = 1
       endif
 
@@ -169,7 +169,7 @@ if ( $?RUN_CNTLMAT ) then
       ls -1 $SMK_TMPDIR > $SMK_TMPDIR/filelist.txt
       set list = ( `cat $SMK_TMPDIR/filelist.txt | grep cntlmat` )
       if ( $status == 0 ) then
-         /bin/rm -rf $SMK_TMPDIR/cntlmat*
+#        /bin/rm -rf $SMK_TMPDIR/cntlmat*
       endif
 
    endif
