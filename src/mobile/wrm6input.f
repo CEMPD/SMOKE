@@ -1,6 +1,7 @@
 
         SUBROUTINE WRM6INPUT( GRPLIST, NLINES, SDEV, MDEV, 
-     &                        TEMPS, NCOUNTY, NSTEPS, SCENNUM, SRCNUM )
+     &                        TEMPS, NCOUNTY, NSTEPS, VOLNAM, 
+     &                        SCENNUM, SRCNUM )
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
@@ -30,15 +31,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &            WRSPDVMT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN)   :: GRPLIST( NLINES,3 )          ! GROUP file contents
-        INTEGER, INTENT (IN)   :: NLINES                       ! no. lines in GROUP file
-        INTEGER, INTENT (IN)   :: SDEV                         ! SPDSUM file unit no.
-        INTEGER, INTENT (IN)   :: MDEV                         ! M6INPUT file unit no.
-        REAL,    INTENT (IN)   :: TEMPS( NCOUNTY, 0:NSTEPS-1 ) ! temps per county
-        INTEGER, INTENT (IN)   :: NCOUNTY                      ! no. counties in temps array
-        INTEGER, INTENT (IN)   :: NSTEPS                       ! no. time steps in temps array
-        INTEGER, INTENT (OUT)  :: SCENNUM                      ! total number of scenarios
-        INTEGER, INTENT (OUT)  :: SRCNUM                       ! total number of sources
+        INTEGER,      INTENT (IN)  :: GRPLIST( NLINES,3 )          ! GROUP file contents
+        INTEGER,      INTENT (IN)  :: NLINES                       ! no. lines in GROUP file
+        INTEGER,      INTENT (IN)  :: SDEV                         ! SPDSUM file unit no.
+        INTEGER,      INTENT (IN)  :: MDEV                         ! M6INPUT file unit no.
+        REAL,         INTENT (IN)  :: TEMPS( NCOUNTY, 0:NSTEPS-1 ) ! temps per county
+        INTEGER,      INTENT (IN)  :: NCOUNTY                      ! no. counties in temps array
+        INTEGER,      INTENT (IN)  :: NSTEPS                       ! no. time steps in temps array
+        CHARACTER(*), INTENT (IN)  :: VOLNAM                       ! volatile pollutant name
+        INTEGER,      INTENT (OUT) :: SCENNUM                      ! total number of scenarios
+        INTEGER,      INTENT (OUT) :: SRCNUM                       ! total number of sources
 
 C...........   Local allocatable arrays
         CHARACTER(LEN=150),     ALLOCATABLE :: M6SCEN( : )    ! M6 scenario file
@@ -198,8 +200,20 @@ C.............  Write run level commands to M6 input file
                 WRITE( MDEV, 93000 ) 
      &                      M6SCEN( J )( 1:LEN_TRIM( M6SCEN( J ) ) )
             END DO
-            
-            WRITE( MDEV, 93000 ) 'EXPRESS HC AS VOC  :' // CRLF()
+
+C.............  Select M6 output based on volatile pollutant name            
+            SELECT CASE( VOLNAM( 1:LEN_TRIM( VOLNAM ) )
+            CASE ( 'THC' )
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS THC  :' // CRLF()
+            CASE ( 'NMH' )
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS NMHC :' // CRLF()
+            CASE ( 'TOG' )
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS TOG  :' // CRLF()
+            CASE ( 'NMO' )
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS HMOG :' // CRLF()
+            CASE DEFAULT
+                WRITE( MDEV,93000 ) 'EXPRESS HC AS VOC  :' // CRLF()
+            END SELECT
 
 C.............  Find starting line for current county in SPDSUM file
             STLINE = GETSPDLN( SDEV, CURRCOUNTY, NLINESPD )

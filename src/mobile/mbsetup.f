@@ -226,6 +226,8 @@ C.........  Loop through all the reference counties
             CALL WRSPDSUM( PDEV, I )
         END DO
 
+        WRITE( PDEV,94010 ) ' '
+
 C.........  Create time period group files
         MESG = 'Writing time period group files...'
         CALL M3MSG2( MESG )

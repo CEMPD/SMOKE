@@ -14,9 +14,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  STR2INT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN)  :: SDEV             ! SPDSUM file unit number
-        INTEGER, INTENT (IN)  :: NSRC             ! no. of sources
-        INTEGER, INTENT (OUT) :: SRCARRAY( NSRC ) ! array to hold county codes
+        INTEGER, INTENT (IN)  :: SDEV               ! SPDSUM file unit number
+        INTEGER, INTENT (IN)  :: NSRC               ! no. of sources
+        INTEGER, INTENT (OUT) :: SRCARRAY( NSRC,2 ) ! array to hold county codes
 
 C...........   Local arrays
         INTEGER       SOURCES( 7 )          ! line of sources from SPDSUM file
@@ -44,9 +44,11 @@ C   begin body of subroutine RDSPDSRC
 
         DO
         
+            SOURCES = 0   ! array
+        
 C.............  Read line from SPDSUM file
-            READ( SDEV, 93010, IOSTAT=IOS ) COUNTY, ROADTYPE, 
-     &            SPEED, SOURCES( 1:7 ), CONTCHAR
+            READ( SDEV, 93010, IOSTAT=IOS, END=10 ) COUNTY, ROADTYPE, 
+     &            SPEED, SOURCES, CONTCHAR
 
 C.............  Exit if we've reached the end of the file
             IF( IOS == -1 ) EXIT
@@ -54,7 +56,7 @@ C.............  Exit if we've reached the end of the file
             IREC = IREC + 1
 
 C.............  Check for other I/O errors        
-            IF( IOS > 0 ) THEN
+            IF( IOS /= 0 ) THEN
                 EFLAG = .TRUE.
 
                 WRITE( MESG, 94010 )
@@ -67,7 +69,7 @@ C.............  Check for other I/O errors
 C.............  Store county code for each source
             DO J = 1, 7
                 IF( SOURCES( J ) /= 0 ) THEN
-                    SRCARRAY( SOURCES( J ) ) = COUNTY
+                    SRCARRAY( SOURCES( J ),1 ) = COUNTY
                 END IF
             END DO
                         
@@ -79,7 +81,7 @@ C.........  Abort if error found while reading SPDSUM file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        RETURN
+10      RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 

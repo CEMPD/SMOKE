@@ -49,6 +49,8 @@ C.........  Initialize I/O API output file headers
      &                 ' emission factors file'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
+        FDESC3D( 4 ) = '/NOTE/ Time 000000 in file represents ' //
+     &                 '6 AM in local time zone'
 
 C.........  Set header values that cannot be default
 

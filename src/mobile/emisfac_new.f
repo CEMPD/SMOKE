@@ -84,6 +84,7 @@ C.........   Other local variables
         LOGICAL :: TEMPFLAG = .TRUE.       ! true: replace temperatures in M6 scenarios 
         
         CHARACTER*20           MODELNAM  ! emission factor model name
+        CHARACTER(LEN=IOVLEN3) VOLNAM    ! volatile pollutant name
         CHARACTER(LEN=80)      M6INPUT   ! Mobile6 input file name
         CHARACTER*300          MESG      ! message buffer 
         
@@ -194,6 +195,10 @@ C.........  Set inventory variables to read
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
+C.........  Set up emission process variable names
+        CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS, VNAME3D, 
+     &                 UNITS3D, VDESC3D, VOLNAM )
+     
 C.........  Get default episode information for temperature data
         SDATE = SDATE_MET
         STIME = STIME_MET
@@ -256,10 +261,6 @@ C.........  Create the concatenated MOBILE6 input file
      &                  TKCOUNTY, NROWS, NSTEPS, NUMSCEN, NUMSRC )
 
         NUMSCEN = NUMSCEN - 1
-
-C.........  Set up emission process variable names
-        CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS, VNAME3D, 
-     &                 UNITS3D, VDESC3D )
      
 C.........  Open file for storing emission factors (check this now rather than
 C           waste time running Mobile6)

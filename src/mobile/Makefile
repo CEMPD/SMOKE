@@ -49,8 +49,8 @@ premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 #
 #
 PRE2=premobl_new.o rdspdsrc.o getctynum.o chkfulldy.o \
-     openshour.o setoutdt.o hourtemp.o adjshour.o avertemp.o \
-     wrshour.o
+     openshour.o setoutdt.o hourtemp.o avertemp.o \
+     wrshour.o opengroup.o rdgroups.o asgngrps.o
 
 premobl_new: $(PRE2) $(ALLI) $(LIBPATH)
 	echo 'PREMOBL (new):'

@@ -1,6 +1,6 @@
 
-        SUBROUTINE OPENSHOUR( ENAME, SDATE, STIME, TVARNAME, NCOUNTY, 
-     &                        FNAME )
+        SUBROUTINE OPENSHOUR( ENAME, DESC, SDATE, STIME, TVARNAME, 
+     &                        NCOUNTY, TEMPDIR, FNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 81
@@ -56,17 +56,19 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
-        CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
+        LOGICAL                OPNFULL3
 
-        EXTERNAL        GETCFDSC, PROMPTMFILE, VERCHAR
+        EXTERNAL        GETCFDSC, VERCHAR, OPNFULL3
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: ENAME    ! name of inventory file
+        CHARACTER(*), INTENT    (IN) :: DESC     ! description of file type
         INTEGER     , INTENT    (IN) :: SDATE    ! julian start date
         INTEGER     , INTENT    (IN) :: STIME    ! HHMMSS start time
         CHARACTER(*), INTENT    (IN) :: TVARNAME ! name of variable for tmpr
         INTEGER     , INTENT    (IN) :: NCOUNTY  ! no. of counties in file
+        CHARACTER(*), INTENT    (IN) :: TEMPDIR  ! directory of output files
         CHARACTER(*), INTENT(IN OUT) :: FNAME    ! name output hourly tmpr file
 
 C...........   LOCAL PARAMETERS
@@ -75,7 +77,10 @@ C...........   LOCAL PARAMETERS
 C...........   Other local variables
         INTEGER     J
 
-        CHARACTER*300   MESG    !  message buffer
+        LOGICAL         FEXIST   ! true: file exists
+
+        CHARACTER*300   MESG     ! message buffer
+        CHARACTER*256   FULLNAME ! full file name
 
         CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from INVEN FDESC
 
@@ -97,14 +102,16 @@ C.........  Get header from inventory file
 C.........  Initialize I/O API output file headers
         CALL HDRMISS3
 
-        FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) //
-     &                 ' hourly temperature file'
+        FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) // DESC //
+     &                 ' temperature profiles file'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         WRITE( FDESC3D( 4 ), 94030 ) '/MINTEMP/', MINTEMP
         WRITE( FDESC3D( 5 ), 94030 ) '/MAXTEMP/', MAXTEMP
-        WRITE( FDESC3D( 6 ), 94030 ) '/T_UNITS/ "deg F"'
+        WRITE( FDESC3D( 6 ), 94030 ) '/T_UNITS/ "deg K"'
         WRITE( FDESC3D( 7 ), 94030 ) '/T_VNAME/ ' // TVARNAME
+        FDESC3D( 8 ) = '/NOTE/ Time 000000 in file represents ' //
+     &                 '6 AM in local time zone'
 
         FDESC3D( 21 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 22 ) = '/INVEN VERSION/ ' // IFDESC3
@@ -114,20 +121,40 @@ C.........  Set header values that cannot be default
         SDATE3D = SDATE
         STIME3D = 0
         TSTEP3D = 10000
-        NVARS3D = 1
+        NVARS3D = 2
         NROWS3D = NCOUNTY
         NLAYS3D = 1
  
         J = 1
+        VNAME3D( J ) = 'COUNTIES'
+        UNITS3D( J ) = 'n/a'
+        VDESC3D( J ) = 'County FIPS code'
+        VTYPE3D( J ) = M3INT
+        
+        J = 2
         VNAME3D( J ) = 'TKCOUNTY'
         UNITS3D( J ) = 'K'
         VDESC3D( J ) = 'Hourly source temperature by county'
         VTYPE3D( J ) = M3REAL
 
-C.........  Prompt for Source-based Output file
-        FNAME = PROMPTMFILE(
-     &          'Enter logical name for HOURLY TEMPERATURE file',
-     &          FSUNKN3, FNAME, PROGNAME )
+C.........  Create full file name
+        J = 0       
+        DO
+            J = J + 1
+
+            WRITE( FULLNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) // 
+     &                              '/' // DESC // '.', SDATE, '.',
+     &                              J, '.ncf'
+            INQUIRE( FILE=FULLNAME, EXIST=FEXIST )
+        
+            IF( .NOT. FEXIST ) EXIT                
+        END DO    
+
+C.........  Open new file
+        IF( .NOT. OPNFULL3( FNAME, FSUNKN3, FULLNAME, PROGNAME ) ) THEN
+            MESG = 'Could not create new output file ' // FULLNAME
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
         RETURN
 
@@ -135,7 +162,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
+94010   FORMAT( A, I7, A, I1, A )
 
 94030   FORMAT( A, F15.9, 1X, A )
 

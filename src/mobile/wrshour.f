@@ -1,6 +1,6 @@
 
-        SUBROUTINE WRSHOUR( NCOUNTY, NSTEPS, JDATE, JTIME, 
-     &                      FNAME, VHOUR )
+        SUBROUTINE WRSHOUR( FNAME, JDATE, JTIME, NCNTY, ARRAYPOS,
+     &                      CNTYCODES, HOURTEMP )
    
 C***********************************************************************
 C  subroutine WRSHOUR body starts at line < >
@@ -44,12 +44,13 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NCOUNTY        ! no. counties
-        INTEGER     , INTENT (IN) :: NSTEPS         ! no. steps
+        CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
         INTEGER     , INTENT (IN) :: JDATE          ! julian date
         INTEGER     , INTENT (IN) :: JTIME          ! time HHMMSS
-        CHARACTER(*), INTENT (IN) :: FNAME          ! logical file name
-        REAL        , INTENT (IN) :: VHOUR( NCOUNTY,0:NSTEPS-1 ) ! hourly values
+        INTEGER     , INTENT (IN) :: NCNTY          ! no. counties
+        INTEGER     , INTENT (IN) :: ARRAYPOS       ! position in temperature array
+        INTEGER     , INTENT (IN) :: CNTYCODES( NCNTY )   ! county FIPS codes
+        REAL        , INTENT (IN) :: HOURTEMP( NCNTY,24 ) ! hourly values
 
 C...........   Local variables
         INTEGER         I       ! index variable
@@ -61,25 +62,21 @@ C...........   Local variables
 C***********************************************************************
 C   begin body of subroutine WRSHOUR
 
-C...........   Loop through time steps
-        DO I = 0, NSTEPS - 1
+C.........  Write county codes to file
+        IF( .NOT. WRITE3( FNAME, 'COUNTIES', JDATE, JTIME,
+     &                    CNTYCODES ) ) THEN       
+     	    MESG = 'Could not write county codes to "' //
+     &              FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
+            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+        END IF
 
-C.................  Write out temperature information for the current hour
-
-            IF( .NOT. WRITE3( FNAME, 'TKCOUNTY', JDATE, JTIME, 
-     &                        VHOUR(:,I) ) ) THEN 
-
-                MESG = 'Could not write hourly data to "' //
-     &                  FNAME( 1:LEN_TRIM( FNAME ) ) //  '".'
-
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-            END IF
-
-C..................  Increment output time
-            CALL NEXTIME( JDATE, JTIME, 10000 )
-
-        END DO
+C.........  Write one hour of temperatures to file        
+        IF( .NOT. WRITE3( FNAME, 'TKCOUNTY', JDATE, JTIME,  
+     &                    HOURTEMP( :,ARRAYPOS ) ) ) THEN 
+            MESG = 'Could not write hourly data to "' //
+     &              FNAME( 1:LEN_TRIM( FNAME ) ) //  '".'
+            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+        END IF
 
         RETURN
 
