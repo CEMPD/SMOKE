@@ -24,6 +24,8 @@ switch ( $EDSS_EXE )
     setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}" 
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    setenv LIBS_SYS    "-lsmoke -ledsstools -lioapi -lnetcdf -lmp"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug -lmp"
     breaksw
   case SunOS5f90:
 #   NOTE: -Bstatic caused problems with ENVYN (perhaps because not
@@ -32,12 +34,16 @@ switch ( $EDSS_EXE )
     setenv FFLAGS   "$FFLAGS  -M${MD_SRC}/${EDSS_EXE} -M${ETDSRC}/${EDSS_EXE} -I${IOINC} -I${INC}"
     setenv DBGFLAGS "$DBGFLAGS -M${MD_SRC}/${EDSS_EXE} -M${ETDSRC}/${EDSS_EXE} -I${IOINC} -I${INC}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
     breaksw
 case HP_UX11f90:
     setenv FC  f90
     setenv FFLAGS   "$FFLAGS  -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "+U77 -Wl,-L,${SMK_BIN},${TOOLS_BIN}"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
     breaksw
 case AIX4n64f90:
 case AIX4f90:
@@ -45,22 +51,39 @@ case AIX4f90:
     setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -lxlsmp"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
     breaksw
 case Linux2_alpha:
     setenv FC  fort
     setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
+    breaksw
+case Linux2_x86ifc:
+    setenv FC  ifc
+    setenv FFLAGS   "$FFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
+    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
     breaksw
 default:
-    echo "Do not know about executable format "$EDSS_EXE
+    echo "The sysflags file in the ASSIGNS directory does not have compiler"
+    echo "    settings for executable format "$EDSS_EXE
+    echo "Pleae edit the sysflags file and add this exectuable format and the"
+    echo "    appropriate compiler settings."
     exit( 2 )
 endsw
 
 echo " "
 echo "Host name:             "`hostname`
 echo "Platform type:         $EDSS_EXE"
+echo "Main SMOKE directory:  $SMKROOT"
 echo "Executable directory:  $SMK_BIN"
+echo "Data directory:        $SMKDAT"
 echo " "
 
 unalias mv
