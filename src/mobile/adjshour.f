@@ -1,5 +1,5 @@
 
-        SUBROUTINE ADJSHOUR( NSRCIN, MINV_MIN, MAXV_MAX, DESC, 
+        SUBROUTINE ADJSHOUR( NSRCIN, NSTEPS, MINTEMP, MAXTEMP, DESC, 
      &                       HOURBYSRC ) 
 
 C***********************************************************************
@@ -45,7 +45,7 @@ C...........   This module is the source inventory arrays
 
 C.........  This module contains the information about the source category
         USE MODINFO
-
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -59,11 +59,12 @@ C...........   EXTERNAL FUNCTIONS
         EXTERNAL     CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT    (IN) :: NSRCIN              ! no. sources
-        REAL        , INTENT    (IN) :: MINV_MIN            ! min of minimum vals
-        REAL        , INTENT    (IN) :: MAXV_MAX            ! max of maximum vals
+        INTEGER,      INTENT    (IN) :: NSRCIN              ! no. sources
+        INTEGER,      INTENT    (IN) :: NSTEPS              ! no. time steps
+        REAL,         INTENT    (IN) :: MINTEMP             ! min of minimum vals
+        REAL,         INTENT    (IN) :: MAXTEMP             ! max of maximum vals
         CHARACTER(*), INTENT    (IN) :: DESC                ! data description
-        REAL        , INTENT(IN OUT) :: HOURBYSRC( NSRC,0:23 ) ! hourly temp values
+        REAL,         INTENT(IN OUT) :: HOURBYSRC( NSRCIN,0:NSTEPS-1 ) ! hourly temp values
 
 C...........   Other local variables
         INTEGER       H, L, S      ! counters and indices
@@ -72,8 +73,6 @@ C...........   Other local variables
         DOUBLE PRECISION :: MAX    ! tmp max value
 
         REAL          VAL          ! tmp value
-
-        LOGICAL       :: EFLAG    = .FALSE. ! true: error found
 
         CHARACTER*300 BUFFER        ! formatted source info for messages
         CHARACTER*300 MESG          ! message buffer
@@ -86,19 +85,19 @@ C   begin body of subroutine ADJSHOUR
 
 C.........  Set double precision temperature variables for computing and
 C           matching
-        MIN = DBLE( MINV_MIN )
-        MAX = DBLE( MAXV_MAX )
+        MIN = DBLE( MINTEMP )
+        MAX = DBLE( MAXTEMP )
         
 C.........  Loop through sources and check for minimum and maximum values
         DO S = 1, NSRCIN
-            DO H = 0, 23
+            DO H = 0, NSTEPS - 1
 
                 CSRC = CSOURC( S )
 
                 VAL = DBLE( HOURBYSRC( S,H ) )
 
 C.............  Screen for missing values
-                IF( VAL < AMISS3 .OR. VAL == 0.) CYCLE
+                IF( VAL < AMISS3 .OR. VAL == 0. ) CYCLE
 
                 IF( VAL < MIN ) THEN
 
@@ -107,11 +106,11 @@ C..............  Round value up to minimum
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                     WRITE( MESG, 94020 )
      &                     'Increasing hourly '  // DESC // ' from',
-     &                     VAL, 'to', MINV_MIN, 'for source' //
+     &                     VAL, 'to', MINTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
                     CALL M3MESG( MESG )
 
-                    HOURBYSRC( S,H ) = MINV_MIN 
+                    HOURBYSRC( S,H ) = MINTEMP 
 
                 ELSEIF( VAL > MAX ) THEN
 
@@ -120,23 +119,16 @@ C..............  Round value down to maximum
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                     WRITE( MESG, 94020 )
      &                     'Decreasing hourly '  // DESC // ' from',
-     &                     VAL, ' to', MAXV_MAX, 'for source' //
+     &                     VAL, ' to', MAXTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
                     CALL M3MESG( MESG )
 
-                    HOURBYSRC( S,H ) = MAXV_MAX
+                    HOURBYSRC( S,H ) = MAXTEMP
                 
                 END IF
 
             END DO
         END DO
-             
-        IF( EFLAG ) THEN
-
-            MESG = 'Problem processing temperatures'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-        END IF
 
         RETURN
 

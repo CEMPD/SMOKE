@@ -1,5 +1,6 @@
 
-        SUBROUTINE OPENSHOUR( ENAME, SDATE, STIME, TVARNAME, FNAME )
+        SUBROUTINE OPENSHOUR( ENAME, SDATE, STIME, TVARNAME, NCOUNTY, 
+     &                        FNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 81
@@ -65,6 +66,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: SDATE    ! julian start date
         INTEGER     , INTENT    (IN) :: STIME    ! HHMMSS start time
         CHARACTER(*), INTENT    (IN) :: TVARNAME ! name of variable for tmpr
+        INTEGER     , INTENT    (IN) :: NCOUNTY  ! no. of counties in file
         CHARACTER(*), INTENT(IN OUT) :: FNAME    ! name output hourly tmpr file
 
 C...........   LOCAL PARAMETERS
@@ -99,13 +101,10 @@ C.........  Initialize I/O API output file headers
      &                 ' hourly temperature file'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
-        WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/', MINT_MIN
-        WRITE( FDESC3D( 5 ), 94030 ) '/MINT_MAX/', MINT_MAX
-        WRITE( FDESC3D( 6 ), 94030 ) '/MAXT_MIN/', MAXT_MIN
-        WRITE( FDESC3D( 7 ), 94030 ) '/MAXT_MAX/', MAXT_MAX
-        WRITE( FDESC3D( 9 ), 94030 ) '/T_MAXINTVL/', TMXINVL
-        WRITE( FDESC3D( 10 ), 94030 ) '/T_UNITS/ "deg F"'
-        WRITE( FDESC3D( 11 ), 94030 ) '/T_VNAME/ ' // TVARNAME
+        WRITE( FDESC3D( 4 ), 94030 ) '/MINTEMP/', MINTEMP
+        WRITE( FDESC3D( 5 ), 94030 ) '/MAXTEMP/', MAXTEMP
+        WRITE( FDESC3D( 6 ), 94030 ) '/T_UNITS/ "deg F"'
+        WRITE( FDESC3D( 7 ), 94030 ) '/T_VNAME/ ' // TVARNAME
 
         FDESC3D( 21 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 22 ) = '/INVEN VERSION/ ' // IFDESC3
@@ -116,13 +115,13 @@ C.........  Set header values that cannot be default
         STIME3D = 0
         TSTEP3D = 10000
         NVARS3D = 1
-        NROWS3D = NSRC
+        NROWS3D = NCOUNTY
         NLAYS3D = 1
  
         J = 1
-        VNAME3D( J ) = 'TKHOUR'
+        VNAME3D( J ) = 'TKCOUNTY'
         UNITS3D( J ) = 'K'
-        VDESC3D( J ) = 'Hourly source temperature'
+        VDESC3D( J ) = 'Hourly source temperature by county'
         VTYPE3D( J ) = M3REAL
 
 C.........  Prompt for Source-based Output file
