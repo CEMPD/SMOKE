@@ -153,7 +153,7 @@ C.........  Fixed-dimension arrays
         REAL         LFULLHT( 0:MXLAYS3 )     !  full-level heights [m]
         REAL         LHALFHT( 1:MXLAYS3 )     !  half-level heights [m]
         REAL         SIGH   ( 0:MXLAYS3-1 )   !  half-level sigma values
-        REAL         VGLVSXG( 0:MXLAYS3 )     !  vertical coord values.
+        REAL         VGLVSXG( 0:MXLAYS3 )     !  vertical coord values
         REAL         WEIGHTS( 1:MXLAYS3 )     !  tmp weights for vertical aloc
 
 C...........   Logical names and unit numbers
@@ -577,6 +577,13 @@ C               that is "meters above ground."
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
+C...........  The following useless do loop is so that the SGI compiler will not
+C             give a core dump.  Yes, very strange.
+            DO I = 1, NLAYS3D
+                J = J + 1
+                SIGH   ( I-1 ) = 0.5 * ( VGLVSXG( J ) + VGLVSXG( J-1 ) )
+            END DO
+
         END IF      ! If using met data or not (not only for explicit plumes)
 
 C.........  Get horizontal grid structure from the G_GRIDPATH file
@@ -649,7 +656,7 @@ C           of whether the file is available.
         CALL RDPELV( PDEV, NSRC, .FALSE., NMAJOR, NPING )
 
 C.........  If explicit plume rise, only explicit plume sources will be
-C           output, but LMAJOR needs to be true for error checking.  So, set it.
+C           output, but LMAJOR needs to be true for error checking.  So, set it
         IF( XFLAG ) LMAJOR = .TRUE.
 
 C.........  Allocate memory for all remaining variables using dimensions 
