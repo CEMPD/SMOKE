@@ -21,6 +21,7 @@ C...........   This module contains emission factor tables and related
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
@@ -310,7 +311,7 @@ C               waste time running Mobile6)
             
 C.............  Allocate space for storing emission factors
             IF( INITIAL ) THEN
-                ALLOCATE( EMISSIONS( NUMSCEN*161*24 ), STAT=IOS )
+                ALLOCATE( EMISSIONS( NUMSCEN*NM6PROFS*24 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'EMISSIONS', PROGNAME )
             END IF
             
@@ -345,7 +346,6 @@ C.............  Increment start date by one day
 
 C.............  Make sure start date is 2 days later than current file date
             TIMEDIFF = SECSDIFF( FILEDATE, 0, SDATE, 0 ) / 3600 
-
 
             IF( TIMEDIFF < 48 ) THEN
                 NEWFILE = .FALSE.
