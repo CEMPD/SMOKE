@@ -86,6 +86,8 @@ C...........   Other local variables
         LOGICAL       :: EFLAG   = .FALSE.  ! True: error
         LOGICAL       :: BLRFLAG = .FALSE.  ! True: boilers requested
         LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
+        LOGICAL       :: ORSIN   = .FALSE.  ! Ture: DOE plant ID in input file
+        LOGICAL       :: ORSFLAG = .FALSE.  ! True: DOE plant ID requested
         LOGICAL       :: PDSFLAG = .FALSE.  ! True: plant description requested
         LOGICAL       :: SCCFLAG = .FALSE.  ! True: SCC requested
         LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
@@ -98,6 +100,7 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP   ! temporary character FIPs code
         CHARACTER(LEN=CHRLEN3) CHARS( 5 ) ! temporary plant characteristics
         CHARACTER(LEN=LNKLEN3) CLNK   ! temporary link ID
+        CHARACTER(LEN=ORSLEN3) CORS   ! temporary DOE plant ID
         CHARACTER(LEN=DSCLEN3) CPDS   ! temporary plant description
         CHARACTER(LEN=RWTLEN3) CRWT   ! temporary roadway type
         CHARACTER(LEN=SCCLEN3) CS     ! temporary scc
@@ -147,14 +150,6 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
                 CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
 
                 IF( .NOT. READ3(INFILE,'ISIC',ALLAYS3,0,0,ISIC ) ) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
-
-            CASE( 'IORIS' )
-                ALLOCATE( IORIS( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IORIS', PROGNAME )
-
-                IF( .NOT. READ3(INFILE,'IORIS',ALLAYS3,0,0,IORIS)) THEN
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ENDIF
 
@@ -337,6 +332,11 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     ALLOCATE( CSCC( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
 
+                CASE( 'CORIS' )
+                    ORSFLAG = .TRUE.
+                    ALLOCATE( CORIS( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CORIS', PROGNAME )
+
                 CASE( 'CBLRID' )
                     BLRFLAG = .TRUE. 
                     ALLOCATE( CBLRID( NSRC ), STAT=IOS )
@@ -440,18 +440,40 @@ C                   the first variable after the final source characteristic
                 J = INDEX1( 'SCC', NCOL, HEADER )
                 NC = J - 4  ! Four because Source ID, FIPS, Plant ID, & SCC 
 
+C.................  Determine if DOE plant ID is present
+                J = INDEX1( 'DOE plant code', NCOL, HEADER )
+                ORSIN = ( J .GT. 0 )
+
 C.................  Determine if boiler is present
                 J = INDEX1( 'Boiler code', NCOL, HEADER )
                 BLRIN = ( J .GT. 0 )
+
+C.................  If DOE plant ID not present but has been requested, then 
+C                   internal err
+                IF( .NOT. ORSIN .AND. ORSFLAG ) THEN
+
+                    MESG = 'INTERNAL ERROR: ORIS ID requested, but ' //
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+                    EFLAG = .TRUE.
+
+                END IF
 
 C.................  If boiler not present but has been requested, then 
 C                   internal err
                 IF( .NOT. BLRIN .AND. BLRFLAG ) THEN
 
-                    MESG = 'INTERNAL ERROR: Boiler request, but is ' //
-     &                     'not present in ASCII inventory file'
+                    MESG = 'INTERNAL ERROR: Boiler requested, but ' //
+     &                     'is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
-                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+                    EFLAG = .TRUE.
+
+                END IF
+
+                IF( EFLAG ) THEN
+
+                    MESG = 'ERROR: Problem reading inventory file(s)'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 END IF
 
@@ -466,7 +488,7 @@ C.....................  Read in line of character data
 
                     IF( BLRIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CBLR, CPDS
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CPDS
 
                     ELSE
 
@@ -476,6 +498,8 @@ C.....................  Read in line of character data
                     ENDIF
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
+
+                    IF( ORSFLAG ) CORIS ( S ) = CORS
 
                     IF( BLRFLAG ) CBLRID( S ) = CBLR
 
