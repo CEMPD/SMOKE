@@ -186,7 +186,7 @@ C           the various data fields
         END IF
 
 C.........  Replace blanks with zeros        
-        DO I = 1,6
+        DO I = 1,FIPLEN3
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
         END DO
             

@@ -113,7 +113,7 @@ C           the various data fields
         CFIP( 4:6 ) = LINE( 3:5 )
 
 C.........  Replace blanks with zeros        
-        DO I = 2,6
+        DO I = 1,FIPLEN3
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
         END DO
 
