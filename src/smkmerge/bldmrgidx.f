@@ -314,7 +314,7 @@ C.............  Determine location in the list of pollutants/activities
 
 C.............  Ensure that all pollutants for the same species or emission
 C               type will be in the same group
-            IF( J .NE. PJ .AND. VCNT + PPSCNT( J ) .GT. MXVARPGP ) THEN
+            IF( J .NE. PJ .AND. VCNT .GT. MXVARPGP ) THEN
                 GCNT = GCNT + 1
                 VCNT = 1
 
@@ -551,7 +551,7 @@ C                           store
             END DO      ! end loop on pollutants per group
         END DO          ! end loop on groups
 
-C.........  Now build indices for mulitplicative controls...
+C.........  Now build indices for multiplicative controls...
 C.........  For each source category, store per-group position for 
 C           inventory pollutants...
 
