@@ -146,6 +146,13 @@ C.................  Allocate memory for ungrouped cross-reference information
                 ALLOCATE( CSRCTA( J ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
 
+            ELSE IF( ACTION .EQ. 'COUNT' ) THEN
+
+                MESG = 'Counting entries in ' // 
+     &                 PKTLIST( K )( 1:LEN_TRIM( PKTLIST( K ) ) ) //
+     &                 ' packet...'
+                CALL M3MSG2( MESG )
+
             END IF
 
 C.............  Skip to first line of packet
@@ -179,13 +186,13 @@ C                   with master list.
 
 C.................  Initialize settings for no SIC expansion
                 EXPAND = .FALSE.
-                NSTART = IXSCC     ! Position of TSCC in INVSCC
-                NEND   = IXSCC
+                NSTART = 1    
+                NEND   = 1
 
 C.................  When SIC is defined, but SCC is not defined, need to 
 C                   count the additional records to insert.
-                IF( IXSIC .GT. 0       .AND. 
-     &              PKTINFO%TSCC  .EQ. SCCZERO       ) THEN
+                IF( IXSIC        .GT. 0       .AND. 
+     &              PKTINFO%TSCC .EQ. SCCZERO       ) THEN
                 
 C.....................  Using position of SIC in list of inventory SICs, 
 C                       extract start and end position of SCC in INVSCC
@@ -195,7 +202,7 @@ C                       extract start and end position of SCC in INVSCC
 
                     XCNT = XCNT + NEND - NSTART + 1
 
-C.................  When SCC is defined, just add one to the count
+C.................  When SCC is defined or zero, just add one to the count
                 ELSE
 
                     XCNT = XCNT + 1
