@@ -515,7 +515,9 @@ C.............  If interval indicator is blank, emissions are annual total
 
                 TPF = MTPRFAC * WKSET           !  use month, week profiles
 
-C.............  Emissions are peak day
+C.............  Emissions are peak day 
+C.............  NOTE: emissions will be stored as tons/day
+
             ELSE IF ( TMPAA( 1:1 ) .EQ. 'P' ) THEN
 
                 HH  = MOD( SDT        , 100 )
@@ -541,8 +543,6 @@ C.............  Emissions are peak day
                 ELSE
                     TPF = 1                     !  use only hourly profiles
                 END IF                                
-
-                EMIS = DAY2YR * EMIS
 
                 IF( FIRSTP .AND. INY .NE. IYY ) THEN
                     FIRSTP = .FALSE.
