@@ -159,7 +159,7 @@ C...........   Other local arrays
         INTEGER       PWIDTH( 4 )
 
 C...........   Other local variables
-        INTEGER     I, J, K, K1, K2, L, L1, L2, S, V
+        INTEGER     I, J, K, K1, K2, L, L1, L2, S, V, IOS
 
         INTEGER     LN              ! length of single units entry
         INTEGER     LU              ! cumulative width of units header
@@ -213,6 +213,15 @@ C.........  Initialize local variables for current report
         PWIDTH   = 0        ! array
         LU       = 0
 
+	DEALLOCATE( OUTDNAM )
+	ALLOCATE( OUTDNAM( RPT_%NUMDATA, RCNT ), STAT=IOS )
+	CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
+	OUTDNAM  = ''       ! array
+
+	DO I = 1, RPT_%NUMDATA
+	    IF( AFLAG ) OUTDNAM( I, RCNT ) = EANAM( I )
+	END DO
+
 C.........  Initialize report-specific settings
         RPT_ = ALLRPT( RCNT )  ! many-values
 
@@ -231,7 +240,13 @@ C.........  NOTE that (1) will not be used and none will be for area sources
 
         CASE( 'POINT' )
             CHRHDRS( 2 ) = 'Plant ID'
-            IF ( NCHARS .GE. 3 ) CHRHDRS( 3 ) = 'Char 1'
+            IF ( NCHARS .GE. 3 ) THEN
+		IF( .NOT. AFLAG ) THEN
+		    CHRHDRS( 3 ) = 'Char 1'
+		ELSE
+		    CHRHDRS( 3 ) = 'Stack ID'
+		END IF
+	    END IF
             IF ( NCHARS .GE. 4 ) CHRHDRS( 4 ) = 'Char 2'
             IF ( NCHARS .GE. 5 ) CHRHDRS( 5 ) = 'Char 3'
             IF ( NCHARS .GE. 6 ) CHRHDRS( 6 ) = 'Char 4'
@@ -246,7 +261,7 @@ C.........  For country, state, county, and SCC names, only flag which ones
 C           are being used by the selected sources.
 C............................................................................
         PDSCWIDTH = 1
-        DO I = 1, NOUTBINS
+	DO I = 1, NOUTBINS
 
 C.............  Include country name in string
             IF( RPT_%BYCONAM ) THEN
@@ -1020,7 +1035,7 @@ C.........  Whether multiplicative control factors were applied
         END IF
 
 C.........  Whether a gridding matrix was applied and the grid name
-        IF( RPT_%USEGMAT ) THEN
+        IF( RPT_%USEGMAT .OR. AFLAG ) THEN
             WRITE( FDEV,93000 ) 'Gridding matrix applied for grid' // 
      &                          TRIM( GRDNM )
         ELSE
@@ -1028,7 +1043,7 @@ C.........  Whether a gridding matrix was applied and the grid name
         END IF
 
 C.........  Whether a speciation matrix was applied and mole- or mass-based
-        IF( RPT_%USESLMAT ) THEN
+        IF( RPT_%USESLMAT .OR. AFLAG ) THEN
             WRITE( FDEV,93000 ) 'Molar speciation matrix applied'
 
         ELSE IF( RPT_%USESSMAT ) THEN
@@ -1048,7 +1063,7 @@ C.........  What pollutant was used for speciation profiles
 
 C.........  Whether hourly data or inventory data were input 
 C.........  For hourly data, the time period processed
-        IF( RPT_%USEHOUR ) THEN
+        IF( RPT_%USEHOUR .OR. AFLAG ) THEN
 
             K1 = WKDAY( SDATE )
             K2 = WKDAY( EDATE )
