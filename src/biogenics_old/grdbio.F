@@ -365,7 +365,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              '1. Error reading AREA TYPE from ' //
+     &              'Error reading AREA TYPE from ' //
      &              'LANDUSE at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
@@ -481,7 +481,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              '2. Error reading AREA TYPE from ' //
+     &              'Error reading AREA TYPE from ' //
      &              'LANDUSE at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
@@ -598,7 +598,7 @@ C...........   Land use type:  agriculture.  Process subtypes:
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              '3. Error reading AREA TYPE from ' //
+     &              'Error reading AREA TYPE from ' //
      &              'LANDUSE at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
@@ -640,7 +640,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                 IF ( ISTAT .NE. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              '4. Error reading AREA TYPE from ' //
+     &              'Error reading AREA TYPE from ' //
      &              'LANDUSE file at line', LINE
                     CALL M3EXIT( 'GRDBIO', 0, 0, MESG, 2 )
                 END IF
