@@ -78,9 +78,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   PARAMETER
 
         CHARACTER*16    NONE 
-        REAL            TON2GM
-        PARAMETER     ( NONE = 'NONE',
-     &                  TON2GM = 907184.74 )
+        PARAMETER     ( NONE = 'NONE' )
 
 
 C...........   LOCAL VARIABLES and their descriptions:

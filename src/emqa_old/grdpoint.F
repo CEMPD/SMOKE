@@ -80,8 +80,6 @@ C...........   PARAMETER
 
         CHARACTER*16    NONE
         PARAMETER     ( NONE = 'NONE' )
-        REAL GM2TON
-        PARAMETER ( GM2TON = 1.102311E-06 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point Sources input and output arrays (one variable at a time)
