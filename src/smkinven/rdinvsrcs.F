@@ -424,7 +424,7 @@ C.........................  Close current file and reset counter
 
 C.........................  Advance to next file
                         IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-                            CURFIL = CURFIL + 3
+                            CURFIL = CURFIL + 4
                         ELSE                    
                             CURFIL = CURFIL + 1
                         END IF
