@@ -839,9 +839,10 @@ C...........   Process volatile conversion factors if necessary
 
                             IF( RPDEFCV ) THEN
                                 WRITE( MESG,94010 )    ! sl
-     &                           'Using default volatile ' //
-     &                           ' converions factor for FIP:', 
-     &                            FIP, ' RDT:', RDT,' LNK:', LNK
+     &                           'Default volatile ' //
+     &                           'converion factor was ' //
+     &                           'applied to FIP ', 
+     &                            FIP, ' RDT ', RDT,' LNK ', LNK
                                 CALL M3MESG( MESG )
 
                             ENDIF  ! report defaults
