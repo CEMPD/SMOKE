@@ -244,7 +244,7 @@ C.............  Read the data from the raw inventory files and store in
 C               sorted order
             CALL M3MSG2( 'Reading inventory data...' )
             
-            CALL RDINVDATA( IDEV, INAME, NRAWBP, TFLAG )
+            CALL RDINVDATA( IDEV, INAME, NRAWBP )
 
 C.............  Check if toxics are being processed and reset NHAPEXCLUDE if needed
             IF( .NOT. TOXFLG .AND. UDEV > 0 ) THEN

@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDINVDATA( FDEV, FNAME, NRAWBP, TFLAG )
+        SUBROUTINE RDINVDATA( FDEV, FNAME, NRAWBP )
 
 C***********************************************************************
 C  subroutine body starts at line 133
@@ -98,7 +98,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,          INTENT (IN) :: FDEV         ! unit no. of inv file
         CHARACTER(LEN=*), INTENT (IN) :: FNAME        ! logical name of file
         INTEGER,          INTENT (IN) :: NRAWBP       ! no. sources with pollutants
-        LOGICAL,          INTENT(OUT) :: TFLAG        ! true: PTREF output
 
 C...........   Local parameters
         INTEGER, PARAMETER :: DATALEN3 = 25  ! length of data field
