@@ -18,6 +18,8 @@ debug: geofac.debug mvcondns.debug smk2emis.debug uam2ncf.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
+GEOF=geofac.o
+
 geofac: $(GEOF) $(ALLI) $(LIBPATH)
 	echo GEOFAC:
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GEOF) $(LIBS)
