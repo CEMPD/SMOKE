@@ -22,7 +22,7 @@ C
 C  REVISION  HISTORY:
 C      Created 11/98 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -64,15 +64,16 @@ C.........  Subroutine arguments and their descriptions:
         REAL        , INTENT (IN) :: POLBUF( NSRC,IPCNT*NPPOL )
                                             !  pol-based emissions & other data
 C...........   Output variable information
-        INTEGER                 EOUNITS( IPCNT,NPPOL ) ! units of output vars
+        INTEGER                 EOTYPES( IPCNT,NPPOL ) ! types output vars
         CHARACTER(LEN=IOVLEN3)  EONAMES( IPCNT,NPPOL ) ! names for pol-spec
         CHARACTER(LEN=IODLEN3)  CDUM   ( IPCNT,NPPOL ) ! char dummy
 
 C...........   Temporary integer array for output of integer variables
-        INTEGER                 INTBUF( NSRC )
+        INTEGER, ALLOCATABLE :: INTBUF ( : )
 
 C...........   Other local variables
         INTEGER                 I, J, L, V
+        INTEGER                 IOS     !  i/o status
 
         CHARACTER*300           MESG    !  message buffer
         CHARACTER(LEN=IOVLEN3 ) VAR     !  tmp variable name
@@ -88,7 +89,7 @@ C.........  Create message to use in case there is an error
 
 C.........  Get the list of variable names per pollutant
         CALL BLDENAMS( CATEGORY, IPCNT, NPPOL, POLNAM, EONAMES,
-     &                 CDUM, EOUNITS, CDUM )
+     &                 CDUM, EOTYPES, CDUM )
 
 C.........  Write the I/O API file, one variable at a time
         DO V = 1, IPCNT
@@ -100,7 +101,12 @@ C.........  Write the I/O API file, one variable at a time
                 L   = LEN_TRIM( VAR )
 
 C.................  Convert real variable to an integer, if needed
-                IF( EOUNITS( V,I ) .EQ. M3INT ) THEN
+                IF( EOTYPES( V,I ) .EQ. M3INT ) THEN
+
+                    IF( .NOT. ALLOCATED( INTBUF ) ) THEN
+                        ALLOCATE( INTBUF( NSRC ), STAT=IOS )
+                        CALL CHECKMEM( IOS, 'INTBUF', PROGNAME )
+                    END IF
 
                     INTBUF = INT( POLBUF( 1,J ) )  ! arrays
 
@@ -121,6 +127,8 @@ C.................  Simply write out real values directly
             END DO
 
         END DO
+
+        DEALLOCATE( INTBUF )
 
         RETURN
 
