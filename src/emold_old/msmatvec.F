@@ -7,13 +7,15 @@ C***********************************************************************
 C  subroutine body starts at line  43
 C
 C  FUNCTION:  apply a layered diagonal matrix to a layered vector
+C             and sum to existing output vector
 C
-C  PRECONDITIONS REQUIRED:  none
+C  PRECONDITIONS REQUIRED: Initialization of C input vector
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
 C  REVISION  HISTORY:
 C       prototype 2/95 by CJC
+C       modified  6/95 by M Houyoux to add to exsiting C
 C
 C***********************************************************************
 
@@ -43,7 +45,7 @@ C   begin body of subroutine  MSMATVEC
             DO  11  L = 1, M
                 S = S  +  A( R,L ) * V( R,L )
 11          CONTINUE
-            C( R ) = S
+            C( R ) = C( R ) + S
         
 22      CONTINUE
 
