@@ -167,8 +167,7 @@ C.........  Create format statement for column labels
 
 C.........  Create format statement for output data rows
 
-        WRITE( OUTFMT,94010 ) '( I2.2, 2X, ', NCOL, '(' // 
-     &                        FMT( 1:L2 ) // ', 1X ), 2X, A )'
+        WRITE( OUTFMT,94020 ) NCOL, FMT( 1:L2 ) 
 
 C.........  Create format statement for output totals
 
@@ -260,6 +259,8 @@ C...........   Internal buffering formats............ 94xxx
  
 94010   FORMAT( 10( A, :, I3, :, 2X ) )
  
+94020   FORMAT( '( I2.2, 2X, ', I3, '(', A, ', 1X ), 2X, A )' )
+
 C******************  FORMAT  STATEMENTS   ******************************
 
         END
