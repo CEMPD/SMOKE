@@ -235,7 +235,7 @@ C.............  Read emissions from inventory file
                 IF ( CEMPIDX( V ) .LE. 0 ) CYCLE
 
                 CBUF = EANAM( CEMPIDX( V ) )
-                IF( .NOT. READ3( ENAME, CBUF, 1, 0, 
+                IF( .NOT. READSET( ENAME, CBUF, 1, ALLFILES, 0, 
      &                           0, EMIS( 1,V )     ) ) THEN
 
 C.....................  Write error if data could not be read
