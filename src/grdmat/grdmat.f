@@ -13,7 +13,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Modified 2/02 by Gabe Cano - deterministic/stochastic mode
+C     Modified 5/02 by Gabe Cano - deterministic/stochastic mode
 C
 C***************************************************************************
 C
@@ -51,6 +51,9 @@ C.........  This module contains the global variables for the 3-d grid
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module contains the uncertainty information
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -70,9 +73,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                PROMPTFFILE
         CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
-   
+        INTEGER                ENVINT   
+
         EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INGRID, PROMPTFFILE, 
-     &            PROMPTMFILE, VERCHAR
+     &            PROMPTMFILE, VERCHAR, ENVINT
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -108,7 +112,7 @@ c        INTEGER         ADEV    !  for adjustments file
 
 C...........   Other local variables
         
-        INTEGER         L1, L2, K, S !  indices and counters.
+        INTEGER         L1, L2, K, R, S !  indices and counters.
 
         INTEGER         COL     ! tmp column
         INTEGER         CMAX    ! max number srcs per cell
@@ -163,6 +167,10 @@ C.........  Get environment variables that control this program
         DFLAG = ENVYN( 'GRDMAT_LINKDEFS',
      &                 'Use link definitions file or not', 
      &                 .FALSE., IOS )
+
+C.........  Get the unceratinty flag
+        GUCFLAG = ENVYN( 'SMK_GRDMAT_UNCERT', 'Mode for SMOKE grdmat',
+     &                  .FALSE., IOS )
 
 C.........  Temporary section for disallowing optional files
         IF( AFLAG ) THEN
@@ -234,6 +242,7 @@ C.........  Set inventory variables to read for all source categories
             IVARNAMS( 2 ) = 'CSCC'
             IVARNAMS( 3 ) = 'CELLID'
             IVARNAMS( 4 ) = 'CSOURC'
+            UCAT = 'A'
 
         CASE ( 'MOBILE' )
             NINVARR = 10
@@ -246,6 +255,7 @@ C.........  Set inventory variables to read for all source categories
             IVARNAMS( 8 ) = 'YLOC1'
             IVARNAMS( 9 ) = 'XLOC2'
             IVARNAMS( 10 ) = 'YLOC2'
+            UCAT = 'M'
 
         CASE ( 'POINT' )
             NINVARR = 3
@@ -373,175 +383,196 @@ C.............  Allocate memory for indices to surrogates tables for each source
             ALLOCATE( SRGTOUSE( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SRGTOUSE', PROGNAME )
 
-            SRGTOUSE = IMISS3  !  Array
-
-C.............  Assigns the index of the surrogate to each source (stored
-C               in SRGIDPOS passed through MODXREF)
-            CALL ASGNSURG
-
         END IF   ! If surrogates are being used or not
 
-C.........  Ensure that the output grid is consistent with the input grid
-        IF ( INVGRDNM .NE. ' ' .AND.
-     &       INVGRDNM .NE. GRDNM     ) THEN
+C.........  Get the number of simulations to draw from sampling
+        IF ( GUCFLAG ) THEN
+            MESG = 'Realizations to draw'
+            DRAWRLZN = ENVINT( 'SMK_REALIZATIONS', MESG, 1 , IOS )
+        END IF
 
+C......... Begin looping through realizations.
+        DO R = 0, DRAWRLZN
+
+            IF( SRGFLAG ) THEN
+                SRGTOUSE = IMISS3  !  Array
+C.................  Assigns the index of the surrogate to each source (stored
+C                   in SRGIDPOS passed through MODXREF)
+                CALL ASGNSURG
+
+            END IF   ! If surrogates are being used or not
+
+C.............  Ensure that the output grid is consistent with the input grid
+            IF ( INVGRDNM .NE. ' ' .AND.
+     &           INVGRDNM .NE. GRDNM     ) THEN
+
+                L1 = LEN_TRIM( GRDNM )
+                L2 = LEN_TRIM( INVGRDNM )
+                MESG = 'Output grid "' // GRDNM( 1:L1 ) // 
+     &                 '" is inconsistent with inventory input grid "'//
+     &                 INVGRDNM( 1:L2 ) // '".'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+C.............  Write message stating grid name and description
             L1 = LEN_TRIM( GRDNM )
-            L2 = LEN_TRIM( INVGRDNM )
-            MESG = 'Output grid "' // GRDNM( 1:L1 ) // 
-     &             '" is inconsistent with inventory input grid "'//
-     &             INVGRDNM( 1:L2 ) // '".'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-        END IF
-
-C.........  Write message stating grid name and description
-        L1 = LEN_TRIM( GRDNM )
-        MESG = 'NOTE: Output grid "' // GRDNM( 1:L1 ) // 
-     &         '" set; described as' // CRLF() // BLANK10 // GDESC
-        CALL M3MSG2( MESG )
-
-C.........  If output grid is different from surrogates, write message
-        IF ( OFFLAG ) THEN
-            L1 = LEN_TRIM( SRGGRDNM )
-            MESG = 'NOTE: gridding surrogates extracted for output '//
-     &             'grid from grid "' // SRGGRDNM( 1:L1 ) // '"'
+            MESG = 'NOTE: Output grid "' // GRDNM( 1:L1 ) // 
+     &             '" set; described as' // CRLF() // BLANK10 // GDESC
             CALL M3MSG2( MESG )
-        END IF
 
-C.........  Depending on source category, convert coordinates, determine size
-C           of gridding matrix, and allocate gridding matrix.
+C.............  If output grid is different from surrogates, write message
+            IF ( OFFLAG ) THEN
+                L1 = LEN_TRIM( SRGGRDNM )
+                MESG = 'NOTE: gridding surrogates extracted '//
+     &                 'for output grid from grid "' // 
+     &                 SRGGRDNM( 1:L1 ) // '"'
+                CALL M3MSG2( MESG )
+            END IF
 
-        SELECT CASE( CATEGORY )
+C.............  Depending on source category, convert coordinates, determine size
+C               of gridding matrix, and allocate gridding matrix.
+                SELECT CASE( CATEGORY )
+              
+                CASE( 'AREA' )
+              
+C.....................  Determine sizes for allocating area gridding matrix 
+                    CALL SIZGMAT( CATEGORY, NSRC, NGRID, 
+     &                            MXSCEL, MXCSRC, NMATX )
+              
+C.....................  Allocate memory for mobile source gridding matrix
+                    IF ( ALLOCATED( GMAT ) ) DEALLOCATE( GMAT )
+                    ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
 
-        CASE( 'AREA' )
+                CASE( 'MOBILE' )
+              
+C.....................  Convert mobile source coordinates from lat-lon to output grid
+c                   CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
+c     &   &                        XCENT, YCENT, XLOC1, YLOC1 )
+              
+c                   CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+c     &   &                        XCENT, YCENT, XLOC2, YLOC2 )
+              
+C.....................  Determine sizes for allocating mobile gridding matrix 
+                    CALL SIZGMAT( CATEGORY, NSRC, NGRID,
+     &                            MXSCEL, MXCSRC, NMATX )
+              
+C.....................  Allocate memory for mobile source gridding matrix
+                    IF ( ALLOCATED( GMAT ) ) DEALLOCATE( GMAT )
+                    ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
+              
+C.....................  Allocate memory for mobile source ungridding matrix
+                    IF ( ALLOCATED( UMAT ) ) DEALLOCATE( UMAT )
+                    ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
+              
+                CASE( 'POINT' )
+              
+C.....................  Convert point source coordinates from lat-lon to output grid
+                    CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+     &                             XCENT, YCENT, XLOCA, YLOCA )
+              
+C.....................  Set the number of source-cell intersections
+                    DO S = 1, NSRC
+                        IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                            NCOLS, NROWS, COL, ROW  ) ) THEN
+                            NMATX = NMATX + 1
+                        END IF
+                    END DO
+              
+C.....................  Allocate memory for point source gridding matrix
+                    ALLOCATE( GMAT( NGRID + NMATX ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
+              
+                END SELECT
 
-C.............  Determine sizes for allocating area gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
+C.............  Abort of there are no source-cell intersections
+            IF( NMATX .EQ. 0 ) THEN
+                MESG = 'No source-cell intersections found.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
-C.............  Allocate memory for mobile source gridding matrix
-            ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
+C.............  Get file names; open output gridding matrix (and ungridding matrix
+C               for mobile) using grid characteristics from DSCM3GRD() above        
+C.............  Also open report file 
+            CALL OPENGMAT( NMATX, R, IFDESC2, IFDESC3, 
+     &                     GNAME, UNAME, RDEV )
+            UFLAG = ( UNAME .NE. 'NONE' )
 
-        CASE( 'MOBILE' )
+            CALL M3MSG2( 'Generating gridding matrix...' )
 
-C.............  Convert mobile source coordinates from lat-lon to output grid
-c            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
-c     &                     XCENT, YCENT, XLOC1, YLOC1 )
+C.............  Generate gridding matrix for given source category, and write it
+C               out.  It is necessary to write it out while in the subroutine,
+C               because of the type transformation from real to integer that
+C               is done so the sparse i/o api format can be used.
 
-c            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
-c     &                     XCENT, YCENT, XLOC2, YLOC2 )
+            SELECT CASE( CATEGORY )
 
-C.............  Determine sizes for allocating mobile gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
- 
-C.............  Allocate memory for mobile source gridding matrix
-            ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
+            CASE( 'AREA' )
 
-C.............  Allocate memory for mobile source ungridding matrix
-            ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
+                CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NGRID, NMATX, 
+     &                         GMAT( 1 ), GMAT( NGRID+1 ), 
+     &                         GMAT( NGRID+NMATX+1 ), 
+     &                         NK, CMAX, CMIN)
 
-        CASE( 'POINT' )
+            CASE( 'MOBILE' )
 
-C.............  Convert point source coordinates from lat-lon to output grid
-            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
-     &                     XCENT, YCENT, XLOCA, YLOCA )
+                CALL GENMGMAT( GNAME, UNAME, RDEV, MXSCEL, MXCSRC, NSRC,
+     &                         NGRID, NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
+     &                         GMAT( NGRID+NMATX+1 ), UMAT( 1 ), 
+     &                         UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
+     &                        NK, CMAX, CMIN, NKU, CMAXU, CMINU )
 
-C.............  Set the number of source-cell intersections
-            DO S = 1, NSRC
-                IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
-                    NMATX = NMATX + 1
-                END IF
-            END DO
-
-C.............  Allocate memory for point source gridding matrix
-            ALLOCATE( GMAT( NGRID + NMATX ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
-
-        END SELECT
-
-C.........  Abort of there are no source-cell intersections
-        IF( NMATX .EQ. 0 ) THEN
-            MESG = 'No source-cell intersections found.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-C.........  Get file names; open output gridding matrix (and ungridding matrix
-C           for mobile) using grid characteristics from DSCM3GRD() above        
-C.........  Also open report file 
-        CALL OPENGMAT( NMATX, IFDESC2, IFDESC3, GNAME, UNAME, RDEV )
-        UFLAG = ( UNAME .NE. 'NONE' )
-
-        CALL M3MSG2( 'Generating gridding matrix...' )
-
-C.........  Generate gridding matrix for given source category, and write it
-C           out.  It is necessary to write it out while in the subroutine,
-C           because of the type transformation from real to integer that
-C           is done so the sparse i/o api format can be used.
-
-        SELECT CASE( CATEGORY )
-
-        CASE( 'AREA' )
-
-            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NGRID, NMATX, 
-     &                     GMAT( 1 ), GMAT( NGRID+1 ), 
-     &                     GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
-
-        CASE( 'MOBILE' )
-
-            CALL GENMGMAT( GNAME, UNAME, RDEV, MXSCEL, MXCSRC, NSRC, 
-     &                     NGRID, NMATX, GMAT( 1 ), GMAT( NGRID+1 ), 
-     &                     GMAT( NGRID+NMATX+1 ), UMAT( 1 ), 
-     &                     UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
-     &                     NK, CMAX, CMIN, NKU, CMAXU, CMINU )
-
-        CASE( 'POINT' )
+            CASE( 'POINT' )
    
-            CALL GENPGMAT( GNAME, NSRC, NGRID, XLOCA, YLOCA, 
-     &                     GMAT( 1 ), GMAT( NGRID+1 ), NK, CMAX, CMIN )
+                CALL GENPGMAT( GNAME, NSRC, NGRID, XLOCA, YLOCA, 
+     &                         GMAT( 1 ), GMAT( NGRID+1 ), 
+     &                         NK, CMAX, CMIN )
 
-        END SELECT
+            END SELECT
 
-C.........  Report statistics for gridding matrix
+C.............  Report statistics for gridding matrix
 
-        CAVG = FLOAT( NK ) / FLOAT( NGRID )
-        CALL M3MSG2( 'GRIDDING-MATRIX statistics:' )
-
-        WRITE( MESG,94010 ) 
-     &         'Total number of coefficients   :', NK   ,
-     &         CRLF() // BLANK5 //
-     &         'Max  number of sources per cell:', CMAX,
-     &         CRLF() // BLANK5 //
-     &         'Min  number of sources per cell:', CMIN
-
-        L1 = LEN_TRIM( MESG )
-        WRITE( MESG,94020 ) MESG( 1:L1 ) // CRLF() // BLANK5 //
-     &         'Mean number of sources per cell:', CAVG
-
-        CALL M3MSG2( MESG )
-
-C.........  Report statistics for ungridding matrix
-        IF( UFLAG ) THEN
-
-            CAVG = FLOAT( NKU ) / FLOAT( NSRC )
-            CALL M3MSG2( 'UNGRIDDING-MATRIX statistics:' )
+            CAVG = FLOAT( NK ) / FLOAT( NGRID )
+            CALL M3MSG2( 'GRIDDING-MATRIX statistics:' )
 
             WRITE( MESG,94010 ) 
-     &        'Total number of coefficients   :', NKU ,
-     &        CRLF() // BLANK5 //
-     &        'Max  number of cells per source:', CMAXU,
-     &        CRLF() // BLANK5 //
-     &        'Min  number of cells per source:', CMINU
+     &             'Total number of coefficients   :', NK   ,
+     &             CRLF() // BLANK5 //
+     &             'Max  number of sources per cell:', CMAX,
+     &             CRLF() // BLANK5 //
+     &             'Min  number of sources per cell:', CMIN
 
-            WRITE( MESG, 94020 ) MESG( 1:LEN_TRIM( MESG ) ) //
-     &        CRLF() // BLANK5 //
-     &        'Mean number of cells per source:', CAVG
+            L1 = LEN_TRIM( MESG )
+            WRITE( MESG,94020 ) MESG( 1:L1 ) // CRLF() // BLANK5 //
+     &             'Mean number of sources per cell:', CAVG
 
             CALL M3MSG2( MESG )
 
-        END IF 
+C.............  Report statistics for ungridding matrix
+            IF( UFLAG ) THEN
+
+                CAVG = FLOAT( NKU ) / FLOAT( NSRC )
+                CALL M3MSG2( 'UNGRIDDING-MATRIX statistics:' )
+
+                WRITE( MESG,94010 ) 
+     &            'Total number of coefficients   :', NKU ,
+     &            CRLF() // BLANK5 //
+     &            'Max  number of cells per source:', CMAXU,
+     &            CRLF() // BLANK5 //
+     &            'Min  number of cells per source:', CMINU
+
+                WRITE( MESG, 94020 ) MESG( 1:LEN_TRIM( MESG ) ) //
+     &            CRLF() // BLANK5 //
+     &            'Mean number of cells per source:', CAVG
+
+                CALL M3MSG2( MESG )
+
+            END IF 
+
+        END DO  ! R for realizations loop
 
 C.........  End of program
       
@@ -571,11 +602,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT( A, :, F8.2 )
 
-C...........   Internal buffering formats............ 94xxx
-
-98000   FORMAT( A, I4)
-98010   FORMAT( A)
-
         END PROGRAM GRDMAT
-
-
