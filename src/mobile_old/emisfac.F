@@ -249,12 +249,12 @@ C.........  Get MOBILE5a input file (no prompt)
 C.........  Prompt for diurnal master list EFs input file for modeling year
         ENAME = PROMPTMFILE(
      &          'Enter logical name for NON-DIURNAL EF input '//
-     &          'file or "NONE"', FSRDWR3, 'MEFSND', 'EMISFAC' )
+     &          'file or "NONE"', FSRDWR3, 'MEFSND_IN', 'EMISFAC' )
 
 C.........  Prompt for diurnal master list EFs input file for modeling year
         DNAME = PROMPTMFILE(
      &          'Enter logical name for DIURNAL EF input ' //
-     &          'file or "NONE"', FSRDWR3, 'MEFSD', 'EMISFAC' )
+     &          'file or "NONE"', FSRDWR3, 'MEFSD_IN', 'EMISFAC' )
 
         SDEV = -9
         IF( DNAME .NE. 'NONE' .OR. ENAME .NE. 'NONE' ) THEN
@@ -279,15 +279,6 @@ C.........  Prompt for MPREF (general MOBILE5a parameter x-ref file)
         NRDEV = PROMPTFFILE( 
      &          'Enter logical name for MPREF input file',
      &          .TRUE., .TRUE., 'MPREF', 'EMISFAC' )
-
-C.........  Write out list of legal hydrocarbon species
-        MESG = VOLTYP( 1 )
-        DO 22 I = 2, NUMVOL
-            WRITE( MESG, 94010 ) MESG( 1:TRIMLEN( MESG ) ) // 
-     &                           CRLF() // BLANK5 // VOLTYP( I )
-22      CONTINUE 
-
-        CALL M3MSG2( MESG )
 
 C.........  If starting with existing non-diurnal emission factors file,
 C.........  set parameters that would otherwise get from prompt
@@ -328,9 +319,9 @@ C.............  Check that file delta temperature is same as compiled value
             BTEMP = XORIG3D
             ETEMP = BTEMP + TINTV * FLOAT( NTEMP - 1 ) 
 
-            DO 33 I = 1, NTEMP
+            DO 22 I = 1, NTEMP
                 TEMPIN( I ) = BTEMP + ( I - 1 ) * TINTV
-33          CONTINUE
+22          CONTINUE
 
 C.............  Set the volatile pollutant used in this file
 
@@ -357,6 +348,15 @@ C.............  Set the volatile pollutant used in this file
 
 C.........  If ENAME does _not_ exist, build the parameters from scratch
         ELSE 
+
+C.............  Write out list of legal hydrocarbon species
+            MESG = VOLTYP( 1 )
+            DO 33 I = 2, NUMVOL
+                WRITE( MESG, 94010 ) MESG( 1:TRIMLEN( MESG ) ) // 
+     &                           CRLF() // BLANK5 // VOLTYP( I )
+33          CONTINUE 
+
+            CALL M3MSG2( MESG )
 
 C.........  Prompt for type of volatile pollutant to use (numbers match
 C.........  MOBILE5 numbers)
@@ -401,8 +401,11 @@ C.............  Prompt for modeling year
             JYEAR = GETNUM( 0, 9999, JYEAR,
      &             'Enter modeling year for emission factors (YYYY)' )
 
+            CALL M3MSG2( 
+     &       'Enter temperatures for non-diurnal emission factors:' )
+
 C.............  Prompt for start temperature
-            BTEMP = GETREAL( 1.,110., 1.,
+            BTEMP = GETREAL( 50.,110., 1.,
      &                   'Enter minimum temperature [deg F]' )
 
 C.............   Prompt for end temperature
@@ -424,6 +427,19 @@ C.............  Set temperatures
 
 51          CONTINUE
             NTEMP = I
+
+C.............  Ensure no overflow of temperatures
+            IF( NTEMP .GT. MAXTMP ) THEN
+
+                WRITE( MESG,94010 )
+     &                 'Number of temperatures requested:', NTEMP,
+     &                 CRLF() // BLANK5 //
+     &                 'Max dimensioned number (MAXTMP):', MAXTMP,
+     &                 CRLF() // BLANK5 //
+     &                 'Max number of temperatures exceeded.'
+                CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
+
+            ENDIF
 
 C.............  Set up non-diurnal master list file description
 
