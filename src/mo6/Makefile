@@ -1,3 +1,9 @@
+# Version @(#)$Id$ 
+# Path    $Source$
+# Date    $Date$ 
+#
+LIBS          = $(LDIRS) -lioapi
+LIBS_DEBUG    = $(LDIRS) -lioapi.debug
 
 MODOBJS = \
 	ATWORK.o \
@@ -348,6 +354,7 @@ OBJS = \
 	PMDB_AGGR.o \
 	PMDB_DAILY.o \
 	PMDRCPSOF.o \
+	PMDEMFAC.o \
 	PMDSO4SO2.o \
 	PMFLECON.o \
 	PMFRACA.o \
@@ -424,10 +431,10 @@ OBJS = \
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 mobile6: $(MODOBJS) $(OBJS) DRIVER.o
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MODOBJS) $(OBJS) DRIVER.o
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS)
 
 mobile6.debug: $(MODOBJS) $(OBJS) DRIVER.o
-	$(FC) $(DBGFLAGS) -o $(@) $(MODOBJS) $(OBJS) DRIVER.o
+	$(FC) $(DBGFLAGS) -o $(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS_DEBUG)
 
 lib: $(MODOBJS) $(OBJS) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(MODOBJS) $(OBJS) SMKDRIVER.o
