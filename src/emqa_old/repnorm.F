@@ -1,7 +1,7 @@
         PROGRAM REPNORM
 
 C***********************************************************************
-C  program body starts at line 45
+C  program body starts at line 168
 C
 C  DESCRIPTION:
 C       Produces state and county totals for biogenic normalized 
@@ -134,19 +134,17 @@ C...........   Other local variables
         REAL            XOFF, YOFF              !  surrogate offsets from grid
         REAL            XX, YY                  !  cell number or l-l position
         REAL            SNORM, SLAI, TTMP       !  tmp conversion factors
-        INTEGER         C, S, F, I, J, K, L, M, N, T  !  counters, subscripts
+        INTEGER         I, J, K, L, M, N  !  counters, subscripts
         INTEGER         COL,  ROW
         INTEGER         FIP, SID, CID
         INTEGER         HCOL, HROW              !  surrogate hdr cols and rows
         INTEGER         IOS                     !  I/O status
         INTEGER         IREC                    !  input line (record) number
         INTEGER         MFIP, LSTA, STA 
-        INTEGER         LO, HI
         INTEGER         NSRG                 ! Count of srgts in EPS2 srgts
         INTEGER         B
         INTEGER         NSTA 
         LOGICAL         EFLAG   !  input error flat
-        LOGICAL         ST_REPORT  ! Output state-based emissions totals
 
         CHARACTER*5     FFORMAT !  temporary indicator for input formats
         CHARACTER*16    SCRBUF
@@ -185,9 +183,6 @@ C
      &             .FALSE., .TRUE., 'NORMREP' , 'REPNORM' )
 
 C.......   Get environment variable settings
-
-        ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
-     &                      .TRUE., IOS )
 
         JSRG = ENVINT( 'JSRG', 
      &             'Record number for area surrogate',
@@ -628,31 +623,26 @@ C.......   Loops reading the various categories of normalized emissions:
         NSTA = K 
 C.............  Write report if report flag is switched on
 
-            IF( ST_REPORT ) THEN 
+        MESG = 'Biogenic normalized emissions ' //
+     &         '(tons/ hour) within grid ' // GRDNM
 
-              MESG = 'Biogenic normalized emissions ' //
-     &                '(tons/ hour) within grid ' //
-     &                GRDNM
-              DO M = 1, BTYPES
+        DO M = 1, BTYPES
 
-               CALL STATELST( RDEV  , MESG , NASID , NSTA , BSPCS-1,
+            CALL STATELST( RDEV  , MESG , NASID , NSTA , BSPCS-1,
      &              'F8.2', NORMV( 1, M ) , STATES, STVOC( 1, 1, M)) 
 
-              ENDDO
+        ENDDO
 
 
-              CALL STATELST( RDEV  , MESG , NASID , NSTA , LUSES,
-     &              'F8.2', NORMN , STATES, STNO )
+        CALL STATELST( RDEV  , MESG , NASID , NSTA , LUSES,
+     &                'F8.2', NORMN , STATES, STNO )
 
-              MESG = 'Biogenic leaf area index ' //
-     &                'within grid ' //
-     &                GRDNM
+        MESG = 'Biogenic leaf area index within grid ' // GRDNM
 
-              CALL STATELST( RDEV  , MESG , NASID , NSTA , 1 ,
-     &              'F8.2', CLAI , STATES, STLAI )
+        CALL STATELST( RDEV  , MESG , NASID , NSTA , 1 ,
+     &                 'F8.2', CLAI , STATES, STLAI )
+
  
-            ENDIF
-
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
