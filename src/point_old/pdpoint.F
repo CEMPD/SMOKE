@@ -78,14 +78,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TIME2SEC
         INTEGER         STR2INT
         REAL            STR2REAL
+        INTEGER         YEAR4
         
         EXTERNAL    DT2STR, ENVYN, FIND1, GETDATE, GETNUM, GETYN,
      &              JULIAN, PROMPTFFILE, PROMPTMFILE, SECSDIFF, 
-     &              SEC2TIME, STR2INT, STR2REAL, TIME2SEC
-
-C...........   Parameters
-        INTEGER     YEARBRK     ! Break-point for century 1900 vs. 2000
-        PARAMETER ( YEARBRK = 1960 )
+     &              SEC2TIME, STR2INT, STR2REAL, TIME2SEC, YEAR4
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   NOTE that SSC (point-source-category) ID's are 10-digit
@@ -191,12 +188,7 @@ C.......   Get starting date (default borrowed from input file:
         MM    = MOD( SDT / 100, 100 )      ! Set 2-digit month
         YY    = SDT/10000                  ! Set 2-digit year 
 
-        IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
-            YY = 1900 + YY
-        ELSE
-            YY = 2000 + YY
-        ENDIF
-
+        YY    = YEAR4( YY )                ! Convert to 4-digit year
         SDT   = 1000 * YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
         JDATE = SDT
 
@@ -207,13 +199,9 @@ C.......   Get starting date (default borrowed from input file:
         MM    = MOD( EDT / 100, 100 )
         YY    = EDT/10000
 
-        IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
-            YY = 1900 + YY
-        ELSE
-            YY = 2000 + YY
-        ENDIF
-
+        YY    = YEAR4( YY )                ! Convert to 4-digit year
         EDATE = 1000 * YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
+
         CALL NEXTIME( EDATE, ETIME, 10000 ) !  ETIME:  *through* hr HH
 
         TSTEP = SEC2TIME( SECSDIFF( JDATE, JTIME, EDATE, ETIME ) )
@@ -323,15 +311,10 @@ C...........   Read the input file:
             STM = 10000 * HH
             DD  = MOD( SDT / 100  , 100 )
             MM  = MOD( SDT / 10000, 100 )
-            YY  = SDT/1000000                  ! Set 2-digit year 
+            YY  = SDT/1000000                      ! Set 2-digit year 
 
-            IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
-                YY = 1900 + YY
-            ELSE
-                YY = 2000 + YY
-            ENDIF
-
-            SDT = 1000 * YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
+            YY  = YEAR4( YY )                      ! Convert to 4-digit year
+            SDT = 1000 * YY + JULIAN( YY, MM, DD ) ! As Julian date  YYYYDDD
 
 C.............  Get time step occuring between this record and the last
             SECS = SECSDIFF( JDATE, JTIME, SDT, STM )
@@ -424,16 +407,11 @@ C.............  date, reset date, and initialize number of sources
             ETM = 10000 * HH
             DD  = MOD( EDT / 100  , 100 )
             MM  = MOD( EDT / 10000, 100 )
-            YY  = EDT/1000000                  ! Set 2-digit year 
+            YY  = EDT/1000000                      ! Set 2-digit year 
 
-            IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
-                YY = 1900 + YY
-            ELSE
-                YY = 2000 + YY
-            ENDIF
-
-            EDT = 1000 * YY + JULIAN( YY, MM, DD )      !  as Julian date YYYYDDD
-            CALL NEXTIME( EDT, ETM, 10000 )      ! ETM means *through* hr HH
+            YY  = YEAR4( YY )                      ! Convert to 4-digit year
+            EDT = 1000 * YY + JULIAN( YY, MM, DD ) ! As Julian date YYYYDDD
+            CALL NEXTIME( EDT, ETM, 10000 )        ! ETM means *through* hr HH
 
             SECS  = SECSDIFF( SDT, STM, EDT, ETM )
             IF ( SECS .NE. STEP ) THEN
