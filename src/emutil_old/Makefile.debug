@@ -5,9 +5,9 @@ all: faketemp.debug getrecs.debug mappoint.debug mkmplist.debug \
 #
 # compile-link options for subroutines
 #
-LIBS =$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+LIBS =$(LDIRS) -lemlib.debug -lioapi.debug -lnetcdf.debug
 #
-LIBS2=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug -leps2.debug
+LIBS2=$(LDIRS) $(LIBS) -leps2.debug
 #
 #
 #
@@ -31,7 +31,7 @@ getrecs.debug: $(OBJS) $(INCS)
 #
 #
 #
-MAP= mappoint.f
+MAP= mappoint.F
 #
 MAPI= PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
 #
@@ -76,7 +76,7 @@ SRGI = ARDIMS3.EXT GRDIMS3.EXT
 #
 srggrid.debug: $(SRGP) $(SRGI)
 	echo SRGGRID:
-	f77 $(FFLAGS) -o srggrid.debug $(SRGP) $(LIBS)
+	f77 $(DBGFLAGS) -o srggrid.debug $(SRGP) $(LIBS)
 #
 #
 #

@@ -4,9 +4,9 @@ all: faketemp getrecs mappoint mkmplist smk2emis smk2pts srggrid
 #
 # compile-link options for subroutines
 #
-LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
+LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
-LIBS2=$(LDIRS) -lemstuff -lm3io -lnetcdf -leps2
+LIBS2=$(LDIRS) $(LIBS) -leps2
 #
 #
 #
