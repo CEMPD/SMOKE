@@ -78,16 +78,15 @@ C...........   Local allocateable arrays for ORIS lists
         CHARACTER(LEN=OPTLEN3), ALLOCATABLE :: ORISPNTA( : )  ! ORIS // point
         CHARACTER(LEN=DSCLEN3), ALLOCATABLE :: INVODSCA( : ) ! plant description from inventory
 
-C...........   Concatonated SIC and SCC for all sources
-        CHARACTER(LEN=SICLEN3+SCCLEN3), ALLOCATABLE :: CSICSCC( : )
-
 C...........   Other local variables
         INTEGER          I, J, J1, J2, L1, L2, N, S
         INTEGER          IOS                 ! allocate i/o status
         INTEGER          FIP                 ! current cntry/st/co code
         INTEGER          PFIP                ! previous iteration cntry/st/co 
         INTEGER          PSIC                ! previous iteration SIC 
+        INTEGER          PSIC2               ! previous iteration 2-digit SIC 
         INTEGER          SIC                 ! tmp SIC 
+        INTEGER          SIC2                ! tmp 2-digit SIC 
 
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
@@ -245,34 +244,46 @@ C.................  Sort all SICs in the point sources inventory in increasing
 C                   order
                 CALL SORTI1( NSRC, INDX, ISIC )
 
-C.................  Count number of unique SICs
-                PSIC = -9
+C.................  Count number of unique SICs and number of unique
+C                   2-digit SICs
+                PSIC  = -9
+                PSIC2 = -9
                 J1 = 0
+                J2 = 0
                 DO S = 1, NSRC
 
                     J = INDX( S )
 
-                    SIC = ISIC( J )
+                    SIC  = ISIC( J )
+                    SIC2 = SIC/100
 
-                    IF( SIC .NE. PSIC ) J1 = J1 + 1
+                    IF( SIC  .NE. PSIC  ) J1 = J1 + 1
+                    IF( SIC2 .NE. PSIC2 ) J2 = J2 + 1 
 
-                    PSIC = SIC
+                    PSIC  = SIC
+                    PSIC2 = SIC2
 
                 END DO 
-                NINVSIC = J1
+                NINVSIC  = J1
+                NINVSIC2 = J2
 
 C.................  Allocate memory for SIC lists
                 ALLOCATE( INVSIC( NINVSIC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVSIC', PROGNAME )
+                ALLOCATE( INVSIC2( NINVSIC2 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVSIC2', PROGNAME )
 
 C.................  Create unique SIC list
-                PSIC = -9
+                PSIC  = -9
+                PSIC2 = -9
                 J1 = 0
+                J2 = 0
                 DO S = 1, NSRC
 
                     J = INDX( S )
 
                     SIC = ISIC( J )
+                    SIC2 = SIC/100
 
                     IF( SIC .NE. PSIC ) THEN
                         J1 = J1 + 1
@@ -280,114 +291,15 @@ C.................  Create unique SIC list
                         PSIC = SIC
                     END IF
 
-                END DO 
-
-C.................  Create list of SCCs for each SIC, based on the contents of
-C                   the inventory...
-
-C.................  Allocate memory for combo string
-                ALLOCATE( CSICSCC( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'CSICSCC', PROGNAME )
-
-C.................  Initialize SIC sorting index and create combo SIC/SCC string
-                DO S = 1, NSRC
-
-                    SIC  = ISIC( S )
-                    TSCC = CSCC( S )
-
-                    WRITE( CSIC, FMTSIC ) SIC
-
-                    INDX( S ) = S
-                    CSICSCC( S ) = CSIC // TSCC
-                   
-                END DO
-
-C.................  Sort SIC/SCC combination
-                CALL SORTIC( NSRC, INDX, CSICSCC )
-
-C.................  Count the total number of SCCs for all SICs
-                J1 = 0
-                PCSIC = '-9'
-                PSCC  = '-9'
-                L1    = SICLEN3 + 1
-                L2    = SICLEN3 + SCCLEN3
-                DO S = 1, NSRC
-
-                    J = INDX( S )
- 
-                    CSIC = CSICSCC( J )(  1:SICLEN3 )
-                    TSCC = CSICSCC( J )( L1:L2      )
-
-                    IF( CSIC .NE. PCSIC .OR. 
-     &                  TSCC .NE. PSCC       ) THEN
-                        J1 = J1 + 1
-                        PCSIC = CSIC
-                        PSCC  = TSCC
+                     IF( SIC2 .NE. PSIC2 ) THEN
+                        J2 = J2 + 1
+                        INVSIC2( J2 ) = SIC2
+                        PSIC2 = SIC2
                     END IF
 
-                END DO
-                NSCCPSIC = J1
-
-C.................  Allocate memory for SCCs per SICs array and indices
-                ALLOCATE( SCCPSIC( NSCCPSIC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'SCCPSIC', PROGNAME )
-                ALLOCATE( IBEGSIC( NINVSIC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IBEGSIC', PROGNAME )
-                ALLOCATE( IENDSIC( NINVSIC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IENDSIC', PROGNAME )
-
-C.................  Store the total SCCs for all SICs and the needed indexes
-                J1 = 0
-                J2 = 0
-                PCSIC = '-9'
-                PSCC  = '-9'
-                DO S = 1, NSRC
-
-                    J = INDX( S )
- 
-                    CSIC = CSICSCC( J )(  1:SICLEN3 )
-                    TSCC = CSICSCC( J )( L1:L2      )
-
-                    IF( CSIC .NE. PCSIC .OR. 
-     &                  TSCC .NE. PSCC       ) THEN
-                        J1 = J1 + 1
-                        IF( J1 .LE. NSCCPSIC ) SCCPSIC( J1 ) = TSCC
-                        PSCC  = TSCC
-                    END IF
-
-                    IF( CSIC .NE. PCSIC ) THEN
-                        J2 = J2 + 1                        
-                        IF( J2 .LE. NINVSIC ) IBEGSIC( J2 ) = J1
-                        PCSIC = CSIC
-                    END IF
-
-                    IF( J2 .LE. NINVSIC ) IENDSIC( J2 ) = J1
-
-                END DO
-
-C.................  Confirm that SCC-per-SIC count was correct
-                IF( J1 .NE. NSCCPSIC ) THEN
-                    MESG = 'INTERNAL ERROR: SCC-per-SIC count was '//
-     &                     'insufficient for processing.'
-                    CALL M3MSG2( MESG )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-                END IF
-
-C...,,,,..........  Confirm that SIC count is same as J2 in above loop
-                IF( J2 .NE. NINVSIC ) THEN
-
-                    MESG = 'INTERNAL ERROR: SIC count in SCC-per-SIC '//
-     &                     'loop is not equal to NINVSIC.'
-                    CALL M3MSG2( MESG )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-                END IF
+               END DO 
 
             END IF   ! End SIC processing
-
-C.............  Deallocate local allocatable arrays
-            IF( ALLOCATED( CSICSCC ) ) DEALLOCATE( CSICSCC )
 
             DEALLOCATE( INDX )
 
