@@ -450,7 +450,7 @@ C                   the first variable after the final source characteristic
                 NC = J - 4  ! Four because Source ID, FIPS, Plant ID, & SCC 
 
 C.................  Determine if DOE plant ID is present
-                J = INDEX1( 'DOE plant code', NCOL, HEADER )
+                J = INDEX1( 'DOE plant ID', NCOL, HEADER )
                 ORSIN = ( J .GT. 0 )
 
 C.................  Determine if boiler is present
