@@ -2,7 +2,7 @@
         SUBROUTINE PROCINVEN( NRAWBP, MXIDAT, FILFMT, PRATIO, INVSTAT )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 106
 C
 C  DESCRIPTION:
 C      This subroutine 
@@ -311,7 +311,7 @@ C           these are stored as reals until output
         POLVAL  = BADVAL3          ! array
         RIMISS3 = REAL( IMISS3 )
         IF( NC1 .GT. 0 ) POLVAL( :,NC1 ) = RIMISS3 ! array
-        IF( NC1 .GT. 0 ) POLVAL( :,NC2 ) = RIMISS3 ! array
+        IF( NC2 .GT. 0 ) POLVAL( :,NC2 ) = RIMISS3 ! array
 
 C.........  Initialize pollutant count per source array
         NPCNT = 0  ! array
@@ -345,6 +345,8 @@ C.........  None supported currently
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
 
 C.........  For non-IDA formats for area and point sources...
+C.........  NOTE- this section assumes that the ozone-day emissions and emission
+C           factors are not assigned for this format
         ELSE IF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. EMSFMT ) THEN
         
             K = 0
@@ -367,6 +369,7 @@ C                       statement is for new pollutants
                     POLVAL( K, NEM ) = POLVLA( J, NEM )
                     POLVAL( K, NCE ) = POLVLA( J, NCE )
                     POLVAL( K, NRE ) = POLVLA( J, NRE )
+                    IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
 
                     PIPCOD = IPOSCOD( I ) 
 
@@ -383,6 +386,9 @@ C                   or activity and use weighted average for control factors
      &                                  POLVLA( J,NCE )*EMISN  ) * EMISI
                     POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
      &                                  POLVLA( J,NRE )*EMISN  ) * EMISI
+                    IF( NRP .GT. 0 ) 
+     &              POLVAL( K,NRP ) = ( POLVAL( K,NRP )*EMISO + 
+     &                                  POLVLA( J,NRP )*EMISN  ) * EMISI
 
                 END IF
 
