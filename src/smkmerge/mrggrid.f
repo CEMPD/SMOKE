@@ -5,8 +5,8 @@ C***********************************************************************
 C  program body starts at line 
 C
 C  DESCRIPTION:
-C    Program MRGGRID reads 2-D area, biogenic, mobile, and 3-D
-C    point source emissions and merges into a single 3-D file.
+C    Program MRGGRID reads 2-D and 3-D I/O API files and merges them
+C    into a single 2-D or 3-D file (depending on the inputs)
 C    The time period merged is adjusted based on the latest
 C    starting file and earliest ending file.  All variables are
 C    merged, even if different variables are in each file.
@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -41,6 +41,10 @@ C Last updated: $Date$
 C
 C***********************************************************************
  
+C...........   MODULES for public variables
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
  
 C...........   INCLUDES:
@@ -71,29 +75,23 @@ C.........  LOCAL PARAMETERS and their descriptions:
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Emissions arrays
-        REAL, ALLOCATABLE :: E2D( :,: ) ! all 2-d emissions
-        REAL, ALLOCATABLE :: E3D( :,: ) ! 3-d emissions
+        REAL, ALLOCATABLE :: E2D ( : )   ! 2-d emissions
+        REAL, ALLOCATABLE :: EOUT( :,: ) ! output emissions
 
 C...........   Input file descriptors
-        INTEGER     , ALLOCATABLE :: DURATA( : ) ! 2-d no. time steps
-        INTEGER     , ALLOCATABLE :: NCOLSA( : ) ! 2-d no. columns
-        INTEGER     , ALLOCATABLE :: NROWSA( : ) ! 2-d no. rows
-        INTEGER     , ALLOCATABLE :: NVARSA( : ) ! 2-d no. variables
-        INTEGER     , ALLOCATABLE :: SDATEA( : ) ! 2-d start date
-        INTEGER     , ALLOCATABLE :: STIMEA( : ) ! 2-d start time
+        INTEGER     , ALLOCATABLE :: DURATA( : ) ! no. time steps
+        INTEGER     , ALLOCATABLE :: NCOLSA( : ) ! no. columns
+        INTEGER     , ALLOCATABLE :: NROWSA( : ) ! no. rows
+        INTEGER     , ALLOCATABLE :: NVARSA( : ) ! no. variables
+        INTEGER     , ALLOCATABLE :: SDATEA( : ) ! start date
+        INTEGER     , ALLOCATABLE :: STIMEA( : ) ! start time
+        INTEGER     , ALLOCATABLE :: NLAYSA( : ) ! number of layers in the file
         CHARACTER*16, ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
-        INTEGER       DURATP           ! pt no. time steps
-        INTEGER       NCOLSP           ! pt no. columns
-        INTEGER    :: NLAYSP = 0       ! pt no. layers
-        INTEGER       NROWSP           ! pt no. rows
-        INTEGER       NVARSP           ! pt no. variables
-        INTEGER       SDATEP           ! pt start date
-        INTEGER       STIMEP           ! pt start time
 
         LOGICAL     , ALLOCATABLE :: LVOUTA( :,: ) ! iff out var in input file
-        CHARACTER*16, ALLOCATABLE :: VNAMEA( :,: ) ! 2-d variable names
-        CHARACTER*16, ALLOCATABLE :: VUNITA( :,: ) ! 2-d variable units
-        CHARACTER*80, ALLOCATABLE :: VDESCA( :,: ) ! 2-d var descrip
+        CHARACTER*16, ALLOCATABLE :: VNAMEA( :,: ) ! variable names
+        CHARACTER*16, ALLOCATABLE :: VUNITA( :,: ) ! variable units
+        CHARACTER*80, ALLOCATABLE :: VDESCA( :,: ) ! var descrip
         CHARACTER*16                 VNAMEP( MXVARS3 ) ! pt variable names
         CHARACTER*16                 VUNITP( MXVARS3 ) ! pt variable units
         CHARACTER*80                 VDESCP( MXVARS3 ) ! pt var descrip
@@ -116,7 +114,7 @@ C...........   Logical names and unit numbers
         CHARACTER*16  PNAME           ! Point source input file name 
 
 C...........   Other local variables 
-        INTEGER       C, F, J, K, L, V, T ! pointers and counters
+        INTEGER       C, F, J, K, L, L1, L2, NL, V, T ! pointers and counters
 
         INTEGER       EDATE                      ! ending julian date
         INTEGER       ETIME                      ! ending time HHMMSS
@@ -127,14 +125,11 @@ C...........   Other local variables
         INTEGER       LB                         ! leading blanks counter
         INTEGER       LE                         ! location of end of string
         INTEGER       MXNFIL                     ! max no. of 2-d input files
-        INTEGER       NCOLS                      ! no. grid columns
         INTEGER       NFILE                      ! no. of 2-d input files
-        INTEGER       NGRID                      ! no. grid cells
-        INTEGER       NLAYS                      ! no. layers
-        INTEGER       NROWS                      ! no. grid rows
         INTEGER       NSTEPS                     ! no. of output time steps
         INTEGER       NVOUT                      ! no. of output variables
         INTEGER       RDATE                      ! reference date
+        INTEGER       SAVLAYS                    ! number of layers
         INTEGER       SDATE                      ! starting julian date
         INTEGER       SECS                       ! tmp seconds
         INTEGER       SECSMAX                    ! seconds maximum
@@ -142,14 +137,18 @@ C...........   Other local variables
         INTEGER       STIME                      ! starting time HHMMSS
         INTEGER       TIMET                      ! tmp time from seconds
         INTEGER       TSTEP                      ! time step
+        INTEGER       VLB                        ! VGLVS3D lower bound 
 
+        CHARACTER*16  FDESC                      ! tmp file description
         CHARACTER*16  NAM                        ! tmp file name
         CHARACTER*16  VNM                        ! tmp variable name
         CHARACTER*256 LINE                       ! input buffer
         CHARACTER*256 MESG                       ! message field
 
-        LOGICAL    :: EFLAG = .FALSE.            ! error flag
-        LOGICAL    :: LFLAG = .FALSE.            ! true iff 3-d file input
+        LOGICAL    :: EFLAG   = .FALSE.   ! error flag
+        LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
+        LOGICAL    :: LFLAG   = .FALSE.   ! true iff 3-d file input
+        LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
 
         CHARACTER*16  :: PROGNAME = 'MRGGRID' ! program name
 
@@ -162,21 +161,11 @@ C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
-C.........  Retrieve values of environment variables
-        LFLAG   = ENVYN( 'MRG_LAYERS_YN', 
-     &                   'Use layer fractions or not', .FALSE., IOS )
-
 C.........  Read names of input files and open files
         MESG = 'Enter logical name for 2-D AND 3-D GRIDDED INPUTS list'
 
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
      &                      'FILELIST', PROGNAME   )
- 
-STOPPED HERE:
-C I'm in the process of changing input to accept a list of 2d and 3d files, and
-c   being able to merge multiple 3d files as well as output on a different 
-c   grid and permit all input files to be on different grids (with the same
-c   resolution and projection, but different origins).
 
 C.........  Determine maximum number of input files in file
         MXNFIL = GETFLINE( IDEV, 'List of files to merge' )
@@ -189,6 +178,8 @@ C           of files
         CALL CHECKMEM( IOS, 'NCOLSA', PROGNAME )
         ALLOCATE( NROWSA( MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NROWSA', PROGNAME )
+        ALLOCATE( NLAYSA( MXNFIL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NLAYSA', PROGNAME )
         ALLOCATE( NVARSA( MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NVARSA', PROGNAME )
         ALLOCATE( SDATEA( MXNFIL ), STAT=IOS )
@@ -205,6 +196,11 @@ C           of files
         CALL CHECKMEM( IOS, 'VUNITA', PROGNAME )
         ALLOCATE( VDESCA( MXVARS3,MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VDESCA', PROGNAME )
+
+C.........  Allocate output layer structure
+        ALLOCATE( VGLVS( 0:MXLAYS3 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VGLVS', PROGNAME )
+        VGLVS = 0.
 
 C.........  Loop through input files and open them
         F = 0
@@ -240,8 +236,8 @@ C.............  Read file names - exit if read is at end of file
      &                     FNAME( F )( 1 : LEN_TRIM( FNAME(F) ) )// '".'
                     CALL M3MSG2( MESG )
                     MESG = 'Ending program "MRGGRID".'
-                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
- 
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
                 END IF      !  if open3() failed
             END IF
 
@@ -253,16 +249,21 @@ C.............  Read file names - exit if read is at end of file
         IF( NFILE .GT. MXNFIL ) THEN
             WRITE( MESG,94010 )
      &        'INTERNAL ERROR: Dimension mismatch.  Input file count:',
-     &        NFFILE, 'program allows (MXNFIL):', MXNFIL
+     &        NFILE, 'program allows (MXNFIL):', MXNFIL
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         ELSEIF( NFILE .EQ. 0 ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, 'No input files!', 2 )
+            MESG = 'No input files in list!'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         ENDIF
 
+C.........  Determine I/O API layer storage lower bound
+        VLB = LBOUND( VGLVS3D,1 )
+
 C.........  Get file descriptions and store for all input files
 C.........  Loop through 2D input files
+        NLAYS = 1
         DO F = 1, NFILE
 
             NAM = FNAME( F )
@@ -273,6 +274,7 @@ C.........  Loop through 2D input files
             ELSE
                 NROWSA( F ) = NROWS3D
                 NCOLSA( F ) = NCOLS3D
+                NLAYSA( F ) = NLAYS3D
                 NVARSA( F ) = NVARS3D
                 SDATEA( F ) = SDATE3D
                 STIMEA( F ) = STIME3D
@@ -284,84 +286,114 @@ C.........  Loop through 2D input files
                 END DO
             END IF
 
-        END DO
+C.............  Compare all other grids back to first grid.
+C.............  They must match exactly.
+            WRITE( FDESC, '(A,I3.3)' ) 'FILE', F
+            TFLAG = .FALSE.
+            CALL CHKGRID( FDESC, 'GRID', 0, TFLAG )
+
+            IF( TFLAG ) THEN
+                EFLAG = .TRUE.
+                L = LEN_TRIM( NAM )
+                WRITE( MESG,94010 ) 'ERROR: File "' // NAM( 1:L ) //
+     &            '" (NX,NY)  : (', NCOLSA( F ), ',', NROWSA( F ), ')'//
+     &            CRLF() // BLANK10 // 'is inconsistent with first ' //
+     &            'file (NX,NY) : (', NCOLS, ',', NROWS, ')'
+                CALL M3MSG2( MESG )
+            END IF
+
+C.............  Compare layer structures for 3-d files. The number of layers do 
+C               not need to match, but the layer structures do need to match.
+            NLAYS = MAX( NLAYS, NLAYSA( F ) )
+            IF( NLAYSA( F ) .GT. 1 ) THEN
+                LFLAG = .TRUE.
+
+C.................  For the first file that is 3-d, initialize output layer
+C                   structure       
+		IF ( FIRST3D ) THEN
+
+                    NLAYS = NLAYSA( F )
+                    VGTYP = VGTYP3D
+                    VGTOP = VGTOP3D
+                    VGLVS( 0:NLAYS ) = VGLVS3D( 0+VLB:NLAYS+VLB )   ! array
+                    FIRST3D = .FALSE.
+
+C.................  For additional 3-d files, compare the layer structures
+                ELSE
+
+C.....................  Check vertical type
+                    IF( VGTYP3D .NE. VGTYP ) THEN
+                        EFLAG = .TRUE.
+                        L = LEN_TRIM( NAM )
+                        WRITE( MESG, 94010 ) 'ERROR: Vertical ' //
+     &                         'coordinate type', VGTYP3D, 
+     &                         'in file "'// NAM(1:L) //
+     &                         '" is inconsistent with first 3-d'//
+     &                         'file value of', VGTYP
+                        CALL M3MSG2( MESG )
+                    END IF
+
+C.....................  Check vertical top
+                    IF( VGTOP3D .NE. VGTOP ) THEN
+                        EFLAG = .TRUE.
+                        L = LEN_TRIM( NAM )
+                        WRITE( MESG, 94010 ) 'ERROR: Vertical ' //
+     &                         'top value', VGTOP3D, 
+     &                         'in file "'// NAM(1:L) //
+     &                         '" is inconsistent with first 3-d'//
+     &                         'file value of', VGTOP
+                        CALL M3MSG2( MESG )
+                    END IF
+
+C.....................  Loop through layers of current file F
+                    DO NL = 0, NLAYSA( F )
+
+C.........................  For layers that are common to this file and previous
+C                           files
+                        IF( NL .LE. NLAYS ) THEN
+
+                            IF( VGLVS3D( NL+VLB ) .NE. VGLVS( NL )) THEN
+                                EFLAG = .TRUE.
+                                L = LEN_TRIM( NAM )
+                                WRITE( MESG, 94020 ) 'ERROR: Layer', NL,
+     &                            'in file "'// NAM( 1:L ) // 
+     &                            '" with level value', VGLVS3D(NL+VLB), 
+     &                            CRLF()//BLANK10//'is inconsistent '//
+     &                            'with first file value of', VGLVS(NL)
+                                CALL M3MSG2( MESG )
+                            END IF
+
+C.........................  Add additional layers from current file to output 
+C                           layer structure
+                        ELSE
+                            VGLVS( NL ) = VGLVS3D( NL+VLB )
+                        END IF
+
+                    END DO    ! End checking layers
+
+C.....................  Reset the global number of layers as the maximum between
+C                       the current file and all previous files
+                    NLAYS = MAX( NLAYS, NLAYSA( F ) )
+
+                END IF        ! End first 3-d file or not
+            END IF            ! End 3-d files
+
+        END DO                ! End loop through files
 
         TSTEP  = TSTEP3D     ! Set for all program
 
-C.........  Compare grids from all files with each other
-        NROWS = NROWSA( 1 )
-        NCOLS = NCOLSA( 1 )
-        DO F = 1, NFILE
-
-            IF( NROWSA( F ) .NE. NROWS .OR. 
-     &          NCOLSA( F ) .NE. NCOLS      ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'File "' // FNAME( F ) //
-     &            '" (NX,NY)  : (', NCOLSA( F ), ',', NROWSA( F ), ')'
-                CALL M3MSG2( MESG )
-            ENDIF
-
-        END DO
-
-C.........  3-D SOURCES - get description and compare grids
-        IF( LFLAG ) THEN
-
-            IF ( .NOT. DESC3( PNAME ) ) THEN
-                MESG = 'Could not get description of file "'  //
-     &                  PNAME( 1:LEN_TRIM( PNAME ) ) // '"'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            ELSEIF( TSTEP3D .NE. TSTEP ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, 'Bad point time step', 2 )
-
-            ELSE
-                NROWSP = NROWS3D
-                NCOLSP = NCOLS3D
-                NLAYSP = NLAYS3D
-                NVARSP = NVARS3D
-                SDATEP = SDATE3D
-                STIMEP = STIME3D
-                DURATP = MXREC3D
-                DO V = 1, NVARSP
-                    VNAMEP( V ) = VNAME3D( V )
-                    VUNITP( V ) = UNITS3D( V )
-                    VDESCP( V ) = VDESC3D( V )
-                END DO
-            ENDIF
-
-            IF( NROWSP .NE. NROWS .OR. NCOLSP .NE. NCOLS ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &               'Point     (X,Y,Z): (', NCOLSP, ',', NROWSP, ',',
-     &               NLAYSP, ')'
-                CALL M3MSG2( MESG )
-            ENDIF
-
-        ELSE
-
-            SDATEP = SDATEA( 1 )  ! For initializing references below
-            STIMEP = STIMEA( 1 )
-            DURATP = DURATA( 1 )
-
-        END IF
-        
+C.........  Give error message and end program unsuccessfully
         IF( EFLAG ) THEN
-            WRITE( MESG,94010 )
-     &           'First file (X,Y): (', NCOLS, ',', NROWS, ')' //
-     &           CRLF() // BLANK5 //
-     &           'The grids are inconsistent among the files!'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, 'Bad input', 2 )
-
+            MESG = 'Inconsistent grid or layers among the files!'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Set start date/time as latest start date/time
 
         RDATE = ( SDATEA( 1 )/1000 ) * 1000 + 1  ! Set reference date
 
-C.........  Find maximum seconds count b/w file and reference, using point
-C.........  sources to initialize maximum 
-
-        SECSMAX = SECSDIFF( RDATE, STIMEA( 1 ), SDATEP, STIMEP )
+C.........  Find maximum seconds count b/w file and reference
+        SECSMAX = 0
         DO F = 1, NFILE
             SECS = SECSDIFF( RDATE, STIMEA( 1 ), 
      &                       SDATEA( F ), STIMEA( F ) )
@@ -376,11 +408,11 @@ C.........  Set latest start date/time of all files
         STIME = STIMEA( 1 )
         CALL NEXTIME( SDATE, STIME, TIMET )
 
-C.........  Set duration given shortest file - initialize w/ point
-
-        EDATE = SDATEP
-        ETIME = STIMEP
-        CALL NEXTIME( EDATE, ETIME, DURATP * 10000 )
+C.........  Set duration given shortest file, but initialize duration with
+C           longest possible period across all durations.
+        EDATE = SDATE
+        ETIME = STIME
+        CALL NEXTIME( EDATE, ETIME, MAXVAL( DURATA ) * 10000 )
         SECSMIN = SECSDIFF( SDATE, STIME, EDATE, ETIME ) ! for point
 
         DO F = 1, NFILE
@@ -399,7 +431,7 @@ C.........  Set duration given shortest file - initialize w/ point
 C.........  Build master output variables list
         NVOUT = 0
 
-C.........  Loop through 2-D input files
+C.........  Loop through input files and build an output variable list
         DO F = 1, NFILE
 
 C.............  Loop through variables in the files
@@ -417,54 +449,60 @@ C.................  If its not in the output list, add it
                     OUTNAM( NVOUT ) = VNM
                     VDESCU( NVOUT ) = VDESCA( V,F )
                     VUNITU( NVOUT ) = VUNITA( V,F )
-                END IF 
 
-            END DO
-        END DO
+C.................  If variable is in the output list, check the units
+                ELSE
+                    IF ( VUNITA( V,F ) .NE. VUNITU( K ) ) THEN
+                        EFLAG = .TRUE.
+                        L  = LEN_TRIM( VNM )
+                        L1 = LEN_TRIM( VUNITA( V,F ) )
+                        L2 = LEN_TRIM( VUNITU( K )   )
+                        WRITE( MESG,94010 ) 'ERROR: Variable "' //
+     &                         VNM( 1:L ) // '" in file', F,
+     &                         'has units "'// VUNITA( V,F )( 1:L1 ) //
+     &                         '"' // CRLF() // BLANK10 //
+     &                         'that are inconsistent with a '//
+     &                         'previous file that had units "' //
+     &                         VUNITU(K)( 1:L2 )// '" for this variable'
+                        CALL M3MSG2( MESG )
 
-C.........  POINT
-        IF( LFLAG ) THEN
-            DO V = 1, NVARSP
+                    END IF  ! End check of units
 
-                VNM = VNAMEP( V )
+                END IF      ! End variable in output list already or not
 
-C.................  Look for variable name in output list
-                K = INDEX1( VNM, NVOUT, OUTNAM  )  ! look in output list
+            END DO          ! End loop through variables in this file
+        END DO              ! End loop through files.
 
-C.................  If its not in the output list, add it
-                IF( K .LE. 0 ) THEN
-                    NVOUT = NVOUT + 1
-                    INDXN ( NVOUT ) = NVOUT
-                    OUTNAM( NVOUT ) = VNM
-                    VDESCU( NVOUT ) = VDESCP( V )
-                    VUNITU( NVOUT ) = VUNITP( V )
-                END IF 
-            END DO          
-        ENDIF 
+C.........  Give error message and end program unsuccessfully
+        IF( EFLAG ) THEN
+            MESG = 'Inconsistent units for common variables among '//
+     &             'the files!'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Sort output variables into alphabetical order
         CALL SORTIC( NVOUT, INDXN, OUTNAM )
 
-C.........  Set up for opening output file
-        IF ( LFLAG ) THEN
-            IF( .NOT. DESC3( PNAME ) ) THEN
-                MESG = 'Could not get description of file "'  //
-     &                  PNAME( 1:LEN_TRIM( PNAME ) ) // '"'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            ENDIF
-
-        ELSE
-            IF( .NOT. DESC3( FNAME( 1 ) ) ) THEN
-                MESG = 'Could not get description of file "'  //
-     &                  FNAME( 1 )( 1:LEN_TRIM( FNAME(1) ) ) // '"'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            ENDIF
-
+C.........  Set up for opening output file...
+C.........  Get grid information
+        IF( .NOT. DESC3( FNAME( 1 ) ) ) THEN
+            MESG = 'Could not get description of file "'  //
+     &              FNAME( 1 )( 1:LEN_TRIM( FNAME(1) ) ) // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
 
         SDATE3D = SDATE
         STIME3D = STIME
         NVARS3D = NVOUT
+
+C.........  Set up layer structure for output file
+        NLAYS3D = NLAYS
+        VGTOP3D = VGTOP
+        VGTYP3D = VGTYP
+        VGLVS3D = 0.     ! initialize array
+        DO NL = 0, NLAYS
+            VGLVS3D( NL+VLB ) = VGLVS( NL )
+        END DO
 
 C........  Update variable names in sorted order, and also 
 C........  set up logical arrays for which files have which species
@@ -476,12 +514,6 @@ C........  set up logical arrays for which files have which species
             UNITS3D( V ) = VUNITU( INDXN( V ) )
             VTYPE3D( V ) = M3REAL
 
-            IF( LFLAG ) THEN
-                LVOUTP( V ) = .FALSE.
-                J = INDEX1( VNM, NVARSP, VNAMEP )
-                IF( J .GT. 0 ) LVOUTP( V ) = .TRUE.
-            ENDIF
-    
             DO F = 1, NFILE
                 LVOUTA( V,F ) = .FALSE.
 
@@ -493,17 +525,16 @@ C........  set up logical arrays for which files have which species
 
 C.........  Allocate memory for the number of grid cells and layers
         NGRID = NROWS * NCOLS
-        NLAYS = MAX( NLAYSP, 1 )
-        ALLOCATE( E2D( NGRID, MXNFIL ), STAT=IOS )
+        ALLOCATE( E2D( NGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'E2D', PROGNAME )
-        ALLOCATE( E3D( NGRID, NLAYS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'E3D', PROGNAME )
+        ALLOCATE( EOUT( NGRID, NLAYS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EOUT', PROGNAME )
 
 C.........  Prompt for and open output file
 
         ONAME = PROMPTMFILE( 
      &          'Enter logical name for MERGED GRIDDED OUTPUT file',
-     &          FSUNKN3, 'EMIS3D', PROGNAME )
+     &          FSUNKN3, 'OUTFILE', PROGNAME )
 
 C.........  Loop through hours
 
@@ -516,72 +547,68 @@ C.............  Loop through species
 
                 VNM = VNAME3D( V ) 
 
-C.................  Initialize 2-d variables to zero, in case any are not read
-                E2D = 0.
-
-                DO F = 1, NFFILE
-
-C.................  If file has species, read (do this for all files)...
-
-                    NAM = FNAME( F )
-                    IF( LVOUTA( V,F ) ) THEN
-
-                        IF( .NOT. READ3( NAM  , VNM  , 1 , JDATE,  
-     &                                  JTIME, E2D( 1,F ) ) ) THEN
-
-                            MESG = 'Could not read "' // VNM //
-     &                             '" from file "' //
-     &                             NAM( 1 : LEN_TRIM( NAM ) ) // '".'
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                        ENDIF
-                    ENDIF
-
-                END DO
-
-C.................  Read point sources - if not there, then initialize
-                IF( LFLAG .AND. LVOUTP( V ) ) THEN
-
-                    IF( .NOT. READ3( PNAME, VNM, ALLAYS3, 
-     &                               JDATE, JTIME, E3D    ) ) THEN
-
-                        MESG = 'Could not read "'// VNM //
-     &                         '" from file "' 
-     &                         //PNAME( 1 : LEN_TRIM( PNAME ) ) // '".'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    ENDIF
-
-C.................  Initialize 
-                ELSE
-
-                    E3D = 0. ! array
-
-                ENDIF
-
-C.................  Add up emissions in layer 1 for hour/species
+C.................  Output array
+                EOUT = 0.   ! array
 
                 DO F = 1, NFILE
-                    DO C = 1, NGRID
 
-                        E3D( C,1 ) = E3D( C,1 ) + E2D( C,F )
+C.....................  Set tmp variables
+                    NAM = FNAME ( F )       ! input file name
+                    NL  = NLAYSA( F )       ! number of layers
 
-                    END DO
-                END DO
+C.....................  If file has species, read (do this for all files)...
+                    IF( LVOUTA( V,F ) ) THEN
+
+C.........................  If 2-d input file, read, and add
+                        IF( NL .EQ. 1 ) THEN
+                            IF( .NOT. READ3( NAM, VNM, 1, JDATE,  
+     &                                       JTIME, E2D          )) THEN
+
+                                MESG = 'Could not read "' // VNM //
+     &                                 '" from file "' //
+     &                                 NAM( 1:LEN_TRIM( NAM ) )// '".'
+                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                            ENDIF
+
+                            EOUT( 1:NGRID,1 ) = EOUT( 1:NGRID,1 ) + E2D
+
+C.........................  If 3-d input file, allocate memory, read, and add
+                        ELSE
+
+                            DO K = 1, NL
+                                IF( .NOT. READ3( NAM, VNM, K, JDATE,  
+     &                                           JTIME, E2D      )) THEN
+
+                                    MESG = 'Could not read "' // VNM //
+     &                                     '" from file "' //
+     &                                   NAM( 1:LEN_TRIM( NAM ) )// '".'
+                                    CALL M3EXIT( PROGNAME,0,0,MESG,2 )
+                                END IF
+
+                                EOUT( 1:NGRID,K )= EOUT( 1:NGRID,K ) + 
+     &                                              E2D( 1:NGRID )
+                            END DO
+
+                        END IF  ! if 2-d or 3-d
+                    END IF      ! if pollutant is in this file
+
+                END DO          ! loop over input files
 
 C.................  Write species/hour to output file
-            IF( .NOT. WRITE3( ONAME, VNM, JDATE, JTIME, E3D ) ) THEN
+                IF( .NOT. WRITE3( ONAME, VNM, JDATE, JTIME, EOUT )) THEN
 
-                MESG = 'Could not write "' // VNM // '" to file "' // 
-     &                 ONAME( 1:LEN_TRIM( ONAME ) ) // '".'
+                    MESG = 'Could not write "'// VNM// '" to file "'// 
+     &                      ONAME( 1:LEN_TRIM( ONAME ) ) // '".'
      &                        
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
-            ENDIF
+                END IF
 
-            END DO   
+            END DO   ! loop through variables
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
       
-        END DO        
+        END DO       ! loop through timesteps
 
 C......... Normal Completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0)
@@ -600,4 +627,6 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I7, :, 1X ) )
 
-	END
+94020   FORMAT( A, :, I3, :, 1X, 10 ( A, :, F8.5, :, 1X ) )
+
+	END PROGRAM MRGGRID
