@@ -1,6 +1,6 @@
 
         SUBROUTINE MOINBLD( MODEV, IPARM , IP  , NIDX, CIDX, VOLATIL,
-     &                      YEAR , TMPRTR, TMIN, TMAX, WARNON         )
+     &                      YEAR , WARNON  )
 
 C***********************************************************************
 C  program body starts at line 227
@@ -1182,29 +1182,18 @@ C........... OPERATING MODE FRACTIONS
         ENDIF
 
 C.........  Write out scenario record: Set no diurnal/diurnal to 'N'
-C              
-        IF( NSPEED .EQ. 1 .AND. TMPRTR .LT. 100. ) THEN
+C.........  Hard code temperature, because it's overridden in MOBILE5 anyway
+C             
+        TMPRTR = 80. 
+        IF( NSPEED .EQ. 1 ) THEN
 
             WRITE( MODEV, 93400 ) 
      &            REGION, YEAR-1900, SPEED( 1 ), TMPRTR,
      &            ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
 
-        ELSEIF( NSPEED .EQ. 1 .AND. TMPRTR .GE. 100. ) THEN
-
-            WRITE( MODEV, 93405 ) 
-     &            REGION, YEAR-1900, SPEED( 1 ), TMPRTR,
-     &            ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
-
-        ELSEIF( TMPRTR .LT. 100. ) THEN
+        ELSE
 
             WRITE( MODEV, 93410 ) 
-     &              REGION, YEAR-1900, 
-     &              ( SPEED ( K ), K=1,8 ), TMPRTR,
-     &              ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
-
-        ELSEIF( TMPRTR .GE. 100. ) THEN
-
-            WRITE( MODEV, 93415 ) 
      &              REGION, YEAR-1900, 
      &              ( SPEED ( K ), K=1,8 ), TMPRTR,
      &              ( TOMODE( K,JOPM ), K=1,3 ), MONTH, 'N'
@@ -1242,6 +1231,11 @@ c       JRCL = FIND1( RCL, NRCLAS, MROADS3 )
 
 C...........  Blank out fuel volatility if missing
         IF( TFUELV( JLAPMO ) .EQ. 'N' ) TFUELV( JLAPMO ) = ' '
+
+C...........  Hard code min/max temperature, because is overridden in
+C...........  MOBILE5 anyway
+        TMIN = 70.
+        TMAX = 90.
 
         WRITE( MODEV, 93500 ) 
      &         'Road Class Name', 
