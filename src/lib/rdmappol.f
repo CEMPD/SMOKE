@@ -1,12 +1,13 @@
 
-        SUBROUTINE RDMAPPOL( ENAME, NMAPVAR, MAPVARS, MAPFILES, NSRC,
-     &                       NVAR, NLOOP, INVARS, RDVARS, MASK, EOUT  )
+        SUBROUTINE RDMAPPOL( NSRC, NVARS, NPVAR, VARNAMS, OUTVALS )
 
 C***********************************************************************
 C  program body starts at line 
 C
 C  DESCRIPTION:
-C     Reads in pollutants from map-formatted inventory files.
+C     Reads in pollutant or activity data and associated 
+C     variables from map-formatted or old-format inventory files.  
+C     Stores the data by source instead of by sparse record.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -14,7 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C
-C****************************************************************************/
+C************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -37,14 +38,18 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C...........   MODULES for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
+
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -56,163 +61,112 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL    CRLF, INDEX1, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: ENAME                ! i/o api logical file name
-        INTEGER     , INTENT (IN) :: NMAPVAR              ! no. map-file variables
-        CHARACTER(*), INTENT (IN) :: MAPVARS ( NMAPVAR )  ! map-file variables
-        CHARACTER(*), INTENT (IN) :: MAPFILES( NMAPVAR )  ! map-file files
-        INTEGER     , INTENT (IN) :: NSRC                 ! no. inven sources
-        INTEGER     , INTENT (IN) :: NVAR                 ! no. output emissions
-        INTEGER     , INTENT (IN) :: NLOOP                ! no. vars to read
-        CHARACTER(*), INTENT (IN) :: INVARS ( NLOOP )     ! var names
-        CHARACTER(*), INTENT (IN) :: RDVARS ( NLOOP )     ! vars to read
-        INTEGER     , INTENT (IN) :: MASK   ( NLOOP )     ! variable index to EOUT
-        REAL        , INTENT(OUT) :: EOUT   ( NSRC, NVAR )! output emissions
+        INTEGER     , INTENT (IN) :: NSRC                 ! no. inven sources        
+        INTEGER     , INTENT (IN) :: NVARS                ! number of pol/act
+        INTEGER     , INTENT (IN) :: NPVAR                ! number of vars per pol/act
+        CHARACTER(*), INTENT (IN) :: VARNAMS( NVARS )     ! vars to map
+        REAL        , INTENT(OUT) :: OUTVALS( NSRC, NVARS*NPVAR )! output data
 
 C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: SRCID( : )  ! source IDs in sparse pol files
-        REAL   , ALLOCATABLE :: ETMP ( : )  ! emissions in sparse pol files
+        INTEGER, ALLOCATABLE :: SRCID( :   )  ! source IDs in sparse pol files
+        REAL   , ALLOCATABLE :: ETMP ( :,: )  ! emissions in sparse pol files
 
 C...........   Other local variables
-        INTEGER          I, J, K, N, S   ! counters and indices
+        INTEGER          I, J, L, M, N, S, V   ! counters and indices
 
+        INTEGER          ADJINDX      ! adjustment index for special seasonal read
         INTEGER          IOS          ! i/o status
         INTEGER          NSPARSE      ! number of rows in sparse pol input file
+        INTEGER          NSRCLOC      ! number of rows in sparse pol input file
 
         LOGICAL       :: EFLAG = .FALSE.  ! true: error found
+        LOGICAL       :: OFLAG = .FALSE.  ! true: old inventory format
+        LOGICAL       :: SFLAG = .FALSE.  ! true: error found on read of inven data
 
+        CHARACTER*16        :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
         CHARACTER*256          MESG   ! message buffer
-        CHARACTER(LEN=IOVLEN3) PNAME  ! logical file name for data files
+        CHARACTER(LEN=IOVLEN3) VBUF   ! tmp variable name buffer
 
         CHARACTER*16 :: PROGNAME = 'RDMAPPOL'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine RDMAPPOL
 
-        PNAME = 'TMP_POL_FILE'
+C........  Initialize output arrays to zero
+        OUTVALS = 0.   ! array
 
-        J = 0
-        DO I = 1, NLOOP
+        DO V = 1, NVARS
 
-C.............  Do not read variable if mask is zero
-            IF( MASK( I ) .LE. 0 ) CYCLE
+            ADJINDX = 2
+            VBUF = VARNAMS( V )
 
-C.............  If no map file is available, assume old-formatted
-C               inventory file, and read it.
-            IF( NMAPVAR .LE. 0 ) THEN
+C............  Check if ozone-season prefix is in the name
+            IF( VARNAMS( V )( 1:3 ) .EQ. OZNSEART ) THEN
+                L = LEN_TRIM( VARNAMS( V ) )
+                VBUF = VARNAMS( V )( 4:L )  
+                ADJINDX = 3
 
-                IF( .NOT. READSET( ENAME, RDVARS( I ), ALLAYS3, 
-     &                             ALLFILES, 0, 0, EOUT( 1,I ) ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'Error reading "' // TRIM(RDVARS(I)) //
-     &                     '" from file "' // TRIM( ENAME ) // '."'
+C...............  Give error if reading more than a single variable
+                IF( NPVAR .GT. 1 ) THEN
+                    MESG = 'INTERNAL ERROR: Cannot specify seasonal ' //
+     &                     'value and have NPVAR > 1'
                     CALL M3MSG2( MESG )
-
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
-                CYCLE   ! To start of loop
 
             END IF
 
-C.............  Find variable to read in map list of available vars
-            K = INDEX1( INVARS( I ), NMAPVAR, MAPVARS )
-
-C.............  If variable is invalid, give error and abort
-            IF( K .LE. 0 ) THEN
-                EFLAG = .TRUE.
-                MESG = 'ERROR: Variable "' // TRIM( INVARS( I ) ) // 
-     &                 '" requested by program but not found in ' //
-     &                 'map-formatted inventory.'
+C............  Find variable in map
+            M = INDEX1( VBUF, NMAP, MAPNAM )
+            IF( M .LE. 0 ) THEN
+                MESG = 'INTERNAL ERROR: Could not find variable "'//
+     &                 TRIM( VBUF ) // '" in map file'
                 CALL M3MSG2( MESG )
-                CYCLE
-            END IF
-
-C.............  Set temporary environment variable to use for reading
-C               pollutant file
-            IF( .NOT. SETENVVAR( PNAME, MAPFILES( K ) ) ) THEN
-                MESG = 'ERROR: Could not set logical file name '
-     &                 // CRLF() // BLANK10 // 'for file ' //
-     &                 TRIM( MAPFILES( K ) )
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-C..............  Open file for current pollutant
-            ELSE IF( .NOT. OPENSET( PNAME, FSREAD3, PROGNAME ) ) THEN
-                EFLAG = .TRUE.
-                MESG = 'ERROR: Could not open "'// TRIM( INVARS( I ) )//
-     &                 '" file listed in ' // CRLF() // BLANK10 // 
-     &                 'map-formatted inventory for file name: ' //
-     &                 CRLF() // BLANK10 // TRIM( MAPFILES( K ) )
-                CALL M3MSG2( MESG )
-
-C.............  Get description for current pollutant so that we'll
-C               know how many records are in this file
-            ELSE IF( .NOT. DESCSET( PNAME, ALLFILES ) ) THEN
-                MESG = 'Could not get description of file: ' // CRLF()//
-     &                 BLANK10// TRIM( MAPFILES( K ) )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
             END IF
 
+C............  Open physical file name for this pollutant or activity
+C............  Also, get description
+            CALL OPENPHYS( PROGNAME, RNAME, FSREAD3, MAPFIL( M ),
+     &                     EFLAG )
+            
             NSPARSE = NROWS3D
 
-C................  Allocate memory for local read arrays
+C............  Allocate memory for local read arrays
             IF( ALLOCATED( ETMP ) ) DEALLOCATE( ETMP, SRCID )
-            ALLOCATE( ETMP( NSPARSE ), STAT=IOS )
+            ALLOCATE( ETMP( NSPARSE, NPVAR ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ETMP', PROGNAME )
             ALLOCATE( SRCID( NSPARSE ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
 
-C................  Read source ID variable
-            IF( .NOT. READSET( PNAME, 'SRCID', ALLAYS3, 1, 
-     &                         0, 0, SRCID                    ) ) THEN
-                EFLAG = .TRUE.
-                MESG = 'Error reading "SRCID" from file: ' // CRLF()//
-     &                 BLANK10// TRIM( MAPFILES( K ) )
-     &                 
-                CALL M3MSG2( MESG )
+C.............  Use subroutine to read in data. This subroutine
+C               already handles integer and real
+            J = ADJINDX + ( V-1 ) * NPVAR
+            CALL RDINVPOL( RNAME, NSPARSE, NPVAR, VNAMESET( J ), 
+     &                     VTYPESET( J ), SRCID, ETMP, SFLAG     )
 
-            END IF
-
-C................  Read inventory pollutant data
-            IF( .NOT. READSET( PNAME, RDVARS( I ), ALLAYS3, 
-     &                         ALLFILES, 0, 0, ETMP         ) ) THEN
-                EFLAG = .TRUE.
-                MESG = 'Error reading "' // TRIM( RDVARS(I) ) //
-     &                 '" from file:' // CRLF()//
-     &                 BLANK10// TRIM( MAPFILES( K ) )
-                CALL M3MSG2( MESG )
-
-            END IF
-
-C...........  Increment output index and ensure that it has
-C             not exceed maximum value.
-            J = J + 1
-            IF( J .GT. NVAR ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'INTERNAL ERROR: Counter for ' //
-     &                 'pollutant used in output variable EOUT has' //
-     &                 CRLF() // BLANK10 // 'exceeded maximum ' //
-     &                 'expected value of ', NVAR
-                CALL M3MSG2( MESG )
-                CYCLE
-            END IF
-
-C...........  Initialize output emissions
-            EOUT = 0.   ! array
+            IF( SFLAG ) EFLAG = .TRUE.
+            IF( EFLAG ) CYCLE
 
 C...........  Transfer sparse-storage pollutant to output arrays
-            DO N = 1, NSPARSE
-                S = SRCID( N )
-                EOUT( S,J ) = ETMP( N )
-            END DO
+            DO I = 1, NPVAR
 
-C...........  If map-formatted inventory, close pollutant file
-            IF( .NOT. CLOSESET( PNAME ) ) THEN
-                MESG = 'Could not close file:'// CRLF()// BLANK10//
-     &                 TRIM( MAPFILES( K ) )
+                J = I + ( V-1 ) * NPVAR
+                DO N = 1, NSPARSE
+                    S = SRCID( N )
+                    OUTVALS( S,J ) = ETMP( N,I )
+                END DO
+ 
+            END DO     ! End loop over variable per pol or act (if any)
+
+C...............  Close output file for this variable
+            IF( .NOT. CLOSESET( RNAME ) ) THEN
+                MESG = 'Could not close file:'//CRLF()//BLANK10//
+     &                     TRIM( MAPFIL( M ) )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-        END DO      ! end loop through input variables
+        END DO         ! End loop over pols or acts
 
 C.........  Abort if an error has been found
         IF( EFLAG ) THEN
@@ -221,6 +175,8 @@ C.........  Abort if an error has been found
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
+
+        IF( ALLOCATED( SRCID ) ) DEALLOCATE( SRCID, ETMP )
 
         RETURN
 

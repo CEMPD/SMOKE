@@ -1,9 +1,9 @@
 
-        SUBROUTINE RDINVPOL( FILNAM, NSRC, VCNT, JDATE, JTIME, VNAMES, 
-     &                       POLDAT, STATUS )
+        SUBROUTINE RDINVPOL( FILNAM, NCNT, VCNT, VNAMES, VTYPES, SRCID, 
+     &                       POLDAT, EFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 82
 C
 C  DESCRIPTION:
 C      Reads inventory pollutant-specific data for variables listed in VNAMES
@@ -47,24 +47,22 @@ C.........  This module is required by the FileSetAPI
 C...........   INCLUDE FILES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
-c        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-c        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        INTEGER     INDEX1
-        EXTERNAL    INDEX1
+        CHARACTER*2 CRLF
+        EXTERNAL    CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER*(*), INTENT (IN) :: FILNAM           ! Logical file name	
-        INTEGER      , INTENT (IN) :: NSRC             ! Number of sources
-        INTEGER      , INTENT (IN) :: VCNT             ! Number of variables
-        INTEGER      , INTENT (IN) :: JDATE            ! Julian date
-        INTEGER      , INTENT (IN) :: JTIME            ! time (HHMMSS)
+        INTEGER      , INTENT (IN) :: NCNT             ! Number of records
+        INTEGER      , INTENT (IN) :: VCNT             ! No. vars other than SRCID
         CHARACTER*(*), INTENT (IN) :: VNAMES( VCNT )   ! Variable names
-        REAL         , INTENT(OUT) :: POLDAT( NSRC,VCNT ) ! Data
-        INTEGER      , INTENT(OUT) :: STATUS           ! Exit status
+        INTEGER      , INTENT (IN) :: VTYPES( VCNT )   ! Variable types
+        INTEGER      , INTENT(OUT) :: SRCID ( NCNT )   ! Data
+        REAL         , INTENT(OUT) :: POLDAT( NCNT,VCNT ) ! Data
+        LOGICAL      , INTENT(OUT) :: EFLAG            ! true: error found
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: IREAD ( : )  ! integer read array
@@ -75,22 +73,23 @@ C...........   Other local variables
         INTEGER         IOS       ! i/o status
 
         CHARACTER(LEN=IOVLEN3)   VARBUF
-        CHARACTER*300   MESG 
+        CHARACTER*256   MESG 
 
         CHARACTER*16 :: PROGNAME = 'RDINVPOL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDINVPOL
 
-        STATUS = 0
+        EFLAG = .FALSE.
 
-C.........  Get description of file header so we can get variable types
-        IF ( .NOT. DESCSET( FILNAM, ALLFILES ) ) THEN
-            MESG = 'Could not get description of file "'
-     &             // FILNAM( 1:LEN_TRIM( FILNAM ) ) // '".'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        IF( .NOT. READSET( FILNAM, 'SRCID', ALLAYS3, 1,
+     &                     0, 0, SRCID                    ) ) THEN
+            EFLAG = .TRUE.
+            MESG = 'Error reading "SRCID" from file: ' // CRLF()//
+     &             BLANK10// TRIM( FILNAM )
+            CALL M3MSG2( MESG )
+
         END IF
-       
 
 C.........  Read variables by type, and store as REAL in POLDAT
         DO V = 1, VCNT
@@ -98,21 +97,18 @@ C.........  Read variables by type, and store as REAL in POLDAT
             VARBUF = VNAMES( V )
             LV = LEN_TRIM( VARBUF )
 
-C.............  Find variable name in list to get type
-            K = INDEX1( VARBUF, NVARSET, VNAMESET )
-
-            IF( VTYPESET( K ) .EQ. M3INT ) THEN
+            IF( VTYPES( V ) .EQ. M3INT ) THEN
 
 C.................  If memory is not allocated for integer read array, then
 C                   allocate it
                 IF( .NOT. ALLOCATED( IREAD ) ) THEN
-                    ALLOCATE( IREAD( NSRC ), STAT=IOS )
+                    ALLOCATE( IREAD( NCNT ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'IREAD', PROGNAME )
                 END IF
 
                 IF( .NOT. READSET( FILNAM, VARBUF, ALLAYS3,
-     &                             ALLFILES, JDATE, JTIME, IREAD )) THEN
-                    STATUS = 1
+     &                             ALLFILES, 0, 0, IREAD )) THEN
+                    EFLAG = .TRUE.
                     MESG = 'ERROR: Could not read "' //
      &                      VARBUF( 1:LV ) // '" from file.'
                     CALL M3MSG2( MESG )
@@ -124,9 +120,8 @@ C                   allocate it
                 END IF
 
             ELSE IF( .NOT. READSET( FILNAM, VARBUF, ALLAYS3,
-     &                              ALLFILES, JDATE, JTIME, 
-     &                              POLDAT( 1,V )            ) ) THEN
-                STATUS = 1
+     &                              ALLFILES, 0, 0, POLDAT(1,V) ) ) THEN
+                EFLAG = .TRUE.
                 MESG = 'ERROR: Could not read "' //
      &                 VARBUF( 1:LV ) // '" from file.'
                 CALL M3MSG2( MESG )

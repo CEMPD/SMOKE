@@ -24,7 +24,7 @@ FILES_B = \
   alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
   alocatbl.o   applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o    rdsccdsc.o \
   dscsprof.o   fillatbl.o   getformt.o   rdlines.o    verchar.o  \
-  efsetup.o    getidasz.o   normtpro.o   rdpelv.o \
+  efsetup.o    getidasz.o   normtpro.o   rdpelv.o     rdmapmask.o \
   getdysav.o   ingrid.o     rdrmat.o     rdinvmap.o   rdmappol.o
 
 FILES_C = \
@@ -151,7 +151,9 @@ rdinvpol.o: $(MODFILESET)
 rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
 rdinvmap.o: $(MODINFO)
-	 $(FC) $(FFLAGS) -c -o $@ rdinvmap.f
+	$(FC) $(FFLAGS) -c -o $@ rdinvmap.f
+rdmappol.o: $(MODINFO) $(MODFILESET)
+	$(FC) $(FFLAGS) -c -o $@ rdmappol.f
 rdorsdsc.o : $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdorsdsc.f
 rdpelv.o : $(MODINFO) $(MODELEV)
