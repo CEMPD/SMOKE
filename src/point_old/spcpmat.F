@@ -24,7 +24,7 @@ C ****************************************************************************/
         PROGRAM SPCPMAT
 
 C***********************************************************************
-C  program body starts at line 242
+C  program body starts at line 244
 C
 C  DESCRIPTION:
 C       Construct point source chemical speciation matrix from data 
@@ -43,7 +43,8 @@ C
 C  REVISION  HISTORY:
 C       Prototype  3/95 by CJC.
 C       Version   11/95 by CJC sorts the chem-xref input file
-C
+C	Version    8/96 by CJC supports EMS-95-input version's
+C	work toward generalized chemistry mechanisms
 C***********************************************************************
 
       IMPLICIT NONE
@@ -86,6 +87,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER     SCC ! (Source Category Code, of course)
         INTEGER     PID ! plant ID
         INTEGER     SID ! stack ID
+
         INTEGER     XID ! stack ID
         INTEGER     LID ! last ID read
                                  
@@ -649,7 +651,7 @@ C.......   Open speciation matrix file:  reuse much of point file description
         FTYPE3D = GRDDED3
         DO  11  V = 1, NMPOL
 
-            I = INDEX( VNAME3D( V ), '_to_' )
+            I = INDEX( SFNAM( V ), '_to_' )
             VNAME3D( V ) = SFNAM( V )
             UNITS3D( V ) = 'moles/gm'
             VDESC3D( V ) = 'Conversion factor, ' // 
