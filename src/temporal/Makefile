@@ -19,8 +19,8 @@ debug: temporal.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
-     setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o 
+TMP= asgntpro.o mktmat.o opentmp.o opentmpin.o pretmpr.o \
+     setdaylt.o temporal.o tmnamunt.o updtmat.o genhemis.o
 #qatmpr.o
 
 #
