@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
+C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
 C  
@@ -147,8 +148,12 @@ C.........  Allocate and initialize report arrays
         ALLRPT%ELEVSTAT = 0
         ALLRPT%NUMDATA  = -9      ! zero is legitimate
         ALLRPT%NUMTITLE = 0
+	ALLRPT%NUMFILES = 0
+	ALLRPT%NUMSECT  = 0
         ALLRPT%OUTTIME  = 0
         ALLRPT%RENDLIN  = 0
+	ALLRPT%RPTMODE  = 0
+	ALLRPT%RPTNVAR  = 0
         ALLRPT%RSTARTLIN= 0
         ALLRPT%SCCRES   = 10
         ALLRPT%SRGRES   = 0
