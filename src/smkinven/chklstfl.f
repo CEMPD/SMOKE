@@ -66,10 +66,9 @@ C...........   File units and logical/physical names
 
 C...........   Other local variables
         INTEGER      I, J
+        INTEGER      EXTFORMAT           !  used when a #LIST entry has format info
+        INTEGER      IOS                 !  I/O status
 
-        INTEGER      FLEN        !  length of string FNAME
-
-        LOGICAL   :: EFLAG     = .FALSE. !  true: error found
         LOGICAL   :: EMSFLAG   = .FALSE. !  true: at least one file is EMS format
         LOGICAL   :: IDAORNTI  = .FALSE. !  true: at least one file is IDA or NTI format
 
@@ -81,13 +80,15 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine CHKLSTFL
 
-        FLEN = LEN_TRIM( FNAME )
-
         EMSFLAG  = .FALSE.   ! Need to reset for each each subroutine call
         IDAORNTI = .FALSE.
+        EXTFORMAT = -1
         
 C.........  Loop through lines of list-formatted file to check the formats
         DO J = 1, NLINE
+
+C.............  Skip blank lines
+            IF( NLSTSTR( J ) == ' ' ) CYCLE
 
 C.............  Store the current line's file name  
             INFILE = NLSTSTR( J )
@@ -106,31 +107,53 @@ C.............  Skip the date range packet
                 CYCLE
             END IF
 
+C.............  Check for #LIST entry
+            I = INDEX( INFILE, '#LIST' )
+            IF( I .GT. 0 ) THEN
+                FILFMT( J ) = -1
+                
+                IF( INDEX( INFILE, 'IDA' ) > 0 ) THEN
+                    EXTFORMAT = IDAFMT
+                    
+                ELSE IF( INDEX( INFILE, 'EMS-95' ) > 0 ) THEN
+                    EXTFORMAT = EMSFMT
+                    
+                ELSE IF( INDEX( INFILE, 'CEM' ) > 0 ) THEN
+                    EXTFORMAT = CEMFMT
+                    
+                ELSE IF( INDEX( INFILE, 'TOXICS' ) > 0 ) THEN
+                    IF( INDEX( INFILE, 'NONPOINT' ) > 0 ) THEN
+                        EXTFORMAT = TOXNPFMT
+                    ELSE
+                        EXTFORMAT = TOXFMT
+                    END IF
+                END IF
+                
+                CYCLE
+            END IF
+
 C.............  Open INFILE
             TDEV = JUNIT()
-            OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD' )
+            OPEN( TDEV, FILE=INFILE, STATUS='OLD', IOSTAT=IOS )
 
-C.............  Determine format of INFILE
-            FILFMT( J ) = GETFORMT( TDEV )
-
-C.............  Make sure that file format was found
-            IF( FILFMT( J ) .LT. 0 ) THEN
-                
-                EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 
-     &                 'ERROR: In SMOKE list-formatted inventory file, '
-     &                 // TRIM( FNAME ) // ', could '// CRLF() // 
-     &                 BLANK10 // 'not determine format of file ' //
-     &                 'listed at line', J
-                CALL M3MESG( MESG )
+C.............  Check for problems opening raw input file
+            IF( IOS /= 0 ) THEN
+                WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' //
+     &             TRIM( FNAME ) // '.' // ' Could not open file:' //
+     &             CRLF() // BLANK5 // TRIM( INFILE )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+        
+C.............  Determine format of INFILE
+            FILFMT( J ) = GETFORMT( TDEV, EXTFORMAT )
 
             CLOSE( TDEV )
 
 C.............  Set flag based on format
             IF( FILFMT( J ) == EMSFMT ) EMSFLAG = .TRUE.
             IF( FILFMT( J ) == IDAFMT .OR. 
-     &          FILFMT( J ) == NTIFMT ) IDAORNTI = .TRUE.
+     &          FILFMT( J ) == TOXFMT .OR.
+     &          FILFMT( J ) == TOXNPFMT ) IDAORNTI = .TRUE.
 
 C.............  Check that file formats are consistent
             IF( EMSFLAG .AND. FILFMT( J ) /= EMSFMT ) THEN
@@ -145,38 +168,28 @@ C.............  Check that file formats are consistent
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            IF( IDAORNTI              .AND. 
-     &          FILFMT( J ) /= IDAFMT .AND. 
-     &          FILFMT( J ) /= NTIFMT      ) THEN
+            IF( IDAORNTI                .AND. 
+     &          FILFMT( J ) /= IDAFMT   .AND. 
+     &          FILFMT( J ) /= TOXFMT   .AND.
+     &          FILFMT( J ) /= TOXNPFMT       ) THEN
                 WRITE( MESG,94010 )
      &                 'ERROR: In SMOKE list-formatted inventory file, '
      &                 // TRIM( FNAME ) // ', at least one file is ' //
-     &                 CRLF() // BLANK10 // 'IDA or NTI format ' //
-     &                 'while another is neither IDA nor NTI ' //
-     &                 'format.' // CRLF() // BLANK10 // 'When ' //
-     &                 'using IDA or NTI formatted inventories, all ' //
-     &                 'other inventories ' // CRLF() // BLANK10 //
-     &                 'must also be IDA or NTI format.'
+     &                 CRLF() // BLANK10 // 'IDA or SMOKE toxics ' //
+     &                 'format while another is neither IDA nor ' //
+     &                 'SMOKE toxics format.' // CRLF() // BLANK10 //
+     &                 'When using IDA or SMOKE toxics formatted ' //
+     &                 'inventories, all other inventories ' // 
+     &                 CRLF() // BLANK10 // 'must also be IDA or SMOKE '
+     &                 // 'toxics format.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-        END DO     ! End of loop through list-formatted file
+            EXTFORMAT = FILFMT( J )
 
-C.........  Exit if couldn't determine format of files in list-formatted file
-        IF( EFLAG ) THEN
-            MESG = 'Problem reading SMOKE list format'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
+        END DO     ! End of loop through list-formatted file
  
         RETURN
-
-C******************  ERROR MESSAGES WITH EXIT **************************
- 
-C.........  Error opening raw input file
-1006    WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' //
-     &         FNAME( 1:FLEN ) // '.' // ' Could not open file:' //
-     &         CRLF() // BLANK5 // INFILE( 1:LEN_TRIM( INFILE ) )
-        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
