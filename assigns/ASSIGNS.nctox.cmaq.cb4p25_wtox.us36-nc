@@ -2,7 +2,7 @@
 #
 ## HEADER ########################################################
 #
-#  SMOKE ASSIGNS file (sets up for area, biogenic, mobile, and point sources)
+#  SMOKE ASSIGNS file (sets up for area, biogenic, mobile, nonroad, and point sources)
 #
 #  Version @(#)$Id$
 #  Path    $Source$
@@ -10,7 +10,7 @@
 #
 #  Scenario Description:
 #     This assigns file sets up the environment variables for use of 
-#     SMOKE Version 1.3 outside of the Models-3 system.
+#     SMOKE Version 2.1 outside of the Models-3 system.
 #
 ## I/O Naming roots
 #
@@ -28,6 +28,7 @@
    setenv METSCEN      a1a              # Met scenario name
    setenv GRID         us36-nc          # Gridding root for naming
    setenv IOAPI_GRIDNAME_1 US36NC_23X12 # Grid selected from GRIDDESC file
+   setenv IOAPI_ISPH   20               # Specifies spheroid type associated with grid
    setenv SPC          cmaq.cb4p25_wtox # Speciation type
 
 ## Mobile episode variables
