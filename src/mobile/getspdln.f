@@ -1,5 +1,5 @@
 
-        INTEGER FUNCTION GETSPDLN( SDEV, COUNTY, NLINES )
+        SUBROUTINE GETSPDLN( SDEV, COUNTY, NLINES, CURRLINE )
         
         IMPLICIT NONE
 
@@ -8,15 +8,15 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   FUNCTION ARGUMENTS
-        INTEGER,                INTENT (IN) :: SDEV       ! SPDSUM file unit no.
-        CHARACTER(LEN=FIPLEN3), INTENT (IN) :: COUNTY     ! county to search for
-        INTEGER,                INTENT (IN) :: NLINES     ! number of lines in SPDSUM file
+        INTEGER,                INTENT (IN)   :: SDEV     ! SPDSUM file unit no.
+        CHARACTER(LEN=FIPLEN3), INTENT (IN)   :: COUNTY   ! county to search for
+        INTEGER,                INTENT (IN)   :: NLINES   ! number of lines in SPDSUM file
+        INTEGER,                INTENT (INOUT):: CURRLINE ! current line number in SPDSUM file
 
 C...........   Other local variables
-        INTEGER I                          ! counters and indices                     
+        INTEGER I                         ! counters and indices                     
 
         INTEGER IOS                       ! I/O status
-        INTEGER :: IREC = 0               ! record counter
         
         LOGICAL :: FNDLINE = .FALSE.      ! true: found starting line for county
         
@@ -27,18 +27,15 @@ C...........   Other local variables
         CHARACTER*16 :: PROGNAME = 'GETSPDLN'   ! program name
 
 C***********************************************************************
-C   begin body of function GETSPDLN
-
-        IREC = 0
+C   begin body of subroutine GETSPDLN
+        
         FNDLINE = .FALSE.
 
-C.........  Loop through SPDSUM file
-        DO I = 1, NLINES
+C.........  Loop through remaining lines in SPDSUM file
+        DO I = CURRLINE, NLINES
         
-C.........  Read line
+C.............  Read line
             READ( SDEV, 93000, IOSTAT=IOS ) LINE
-            
-            IREC = IREC + 1
             
             IF( IOS /= 0 ) THEN
                 IF( IOS == -1 ) THEN
@@ -49,7 +46,7 @@ C.........  Read line
                 
                 WRITE( MESG, 94010 )
      &              'I/O error', IOS,
-     &              'reading speed summary file at line', IREC
+     &              'reading speed summary file at line', I
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -58,18 +55,18 @@ C.........  Read line
             CALL PADZERO( CURRCOUNTY )
             
             IF( CURRCOUNTY == COUNTY ) THEN
-                GETSPDLN = IREC
                 FNDLINE = .TRUE.
+                BACKSPACE( SDEV )
+                CURRLINE = I
                 EXIT
             END IF
 
         END DO
         	
         IF( .NOT. FNDLINE ) THEN
-            GETSPDLN = 0
+            REWIND( SDEV )
+            CURRLINE = 0
         END IF
-        	
-        BACKSPACE( SDEV )
         	
         RETURN
 
@@ -83,5 +80,5 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
        
-        END FUNCTION GETSPDLN
+        END SUBROUTINE GETSPDLN
         
