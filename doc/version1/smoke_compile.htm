@@ -1,0 +1,2888 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Chapter 12</title>
+</head>
+
+<body>
+
+<h1><a name="Chapter_12_compile"></a>Chapter 12. Compiling and
+Performance</h1>
+<h2>Contents</h2>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Introduction">Introduction</a></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Compiling">Compiling SMOKE for UNIX</a></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Performance">SMOKE Performance</a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#SGI_perf">SGI configuration</a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Sun_perf">Sun configuration</a></p>
+<p class="MsoNormal"><!--[if gte vml 1]><v:line id="_x0000_s1026" style='position:absolute;
+ z-index:1' from="0,12pt" to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4"
+ strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><![endif]-->
+<span style="mso-ignore:vglayout;position:
+relative;z-index:0;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_1.gif" v:shapes="_x0000_s1026" width="631" height="8"></span>&nbsp;<o:p>
+</o:p>
+</p>
+<br style="mso-ignore:vglayout" clear="ALL">
+<h2><a name="Introduction"></a>Introduction</h2>
+<p class="MsoNormal">The first part of this chapter provides instructions on how
+to compile SMOKE for UNIX platforms other than those supported by MCNC. The
+SMOKE compile scripts are configured to use a UNIX c-shell environment, so they
+will not be useful for creating Windows-based SMOKE files. SMOKE will be
+supported by MCNC for Windows-NT/2000 in the future, but is not supported at
+this time. For users with operating systems supported by MCNC, users need only
+to download the SMOKE executables available from the MCNC-Environmenal Programs
+registration page, accessible at <a href="http://envpro.ncsc.org/products">http://www.emc.mcnc.org/products</a>
+(then click on “Register).</p>
+<p class="MsoNormal">The second part of this chapter contains information about
+performance for the SMOKE test cases provided in the SMOKE stand-alone version
+in the $SCRIPTS/run directory. More information on these scripts is available in
+<a href="smoke_use.html#Scripts">Chapter 10: Using SMOKE: Scripts,
+Models-3, and EDSS</a>.</p>
+<h2><a name="Compiling"></a>Compiling SMOKE for UNIX</h2>
+<p class="MsoNormal">In order to compile SMOKE, the first step is installing
+SMOKE on your system. Installation instructions are provided on-line when you
+download SMOKE, from the web site <a href="http://envpro.ncsc.org/EDSS/edss_register/install_smoke.html">http://www.emc.mcnc.org/EDSS/edss_register/install_smoke.html</a>.</p>
+<p class="MsoNormal">Prior to SMOKE compilation, users must take the following
+steps:</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Install SMOKE as described on the web site</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Install the I/O API library (libioapi.a) and NetCDF library (libnetcdf.a)
+in the $SMK_BIN directory. This can also be accomplished with a symbolic link to
+the libraries if they are located elsewhere. The libioapi.a and libnetcdf.a
+files available from the MCNC web site are inconsistent with the ones provided
+with the SMOKE binary tar files, because those on the web site were compiled
+with older compilers (FORTRAN 77) that are not compatible with the current
+FORTRAN 90 compilers needed to compile SMOKE executables. Therefore, users may
+have to compile the I/O API and NetCDF libraries on their systems from scratch.
+See the I/O API documentation <span style="layout-grid-mode:
+both"><a href="http://envpro.ncsc.org/products/ioapi/H.AVAIL.html">http://www.emc.mcnc.org/products/ioapi/H.AVAIL.html</a>
+</span>for more information on availability and compiling of the latest I/O API.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>If needed, update the file $EDSS_ROOT/scripts/platform to have the
+compiler options for your operating system. To decide whether you need to update
+this file, enter the following command from the UNIX prompt after having setup
+for EDSS (i.e., installed the EDSS Root and logged back into UNIX):<br>
+<br>
+<span style="font-size:10.0pt;font-family:&quot;Courier New&quot;;
+mso-bidi-font-family:&quot;Times New Roman&quot;" class="Keyboard">echo $EDSS_OS</span></p>
+<p class="MsoBodyTextIndent">If the value that comes back from this command is
+not listed as a “case” in the platform file in lines 41 – 60, then you
+need to update the platform file to have your case in lines 41 – 60, and you
+need to update for your case in the section comprised of lines 64 – 101. You
+will need to determine which compiler options are needed on your system for
+maximum optimization (like the –O3 option), if any options are needed for
+portable executables (like –static), or if any options are needed for extra
+memory allocation (like -bmaxdata:0X20000000 on AIX systems).</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>If needed, update the file $EDSS_SUBSYS/edss_tools/setup/sysflags
+to have the compiler options for your operating system. See the instructions
+above for “platform” updates to determine if you need this. All of the same
+cases available in the platform file are also available in the $EDSS_SUBSYS/edss_tools/setup/sysflags
+file.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>If needed, update the file $SMKROOT/assigns/sysflags to have the
+compiler options for your operating system. See the instructions above for
+“platform” updates to determine if you need this. All of the same cases
+available in the platform file are also available in the $SMKROOT/assigns/sysflags
+file.</p>
+<p class="MsoNormal">Once the appropriate libraries and compile options have
+been installed (as just described above), then you are read to use the SMOKE
+compile scripts, which are quite simple to use. To compile SMOKE, you must then:</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Source an Assigns file to ensure that your system is configured
+properly for installation</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Change directories to $SMKROOT/scripts/make</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Optionally edit the header of the Makeall file to turn off
+building one or more libraries needed for SMOKE (libedsstools, libsmoke, or
+libmo5b). You can only turn off these options if these libraries have been
+previously compiled for your system.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>At the UNIX prompt, type:</p>
+<h1 style="page-break-after:auto"><span style="font-size:
+10.0pt;font-family:&quot;Courier New&quot;;mso-bidi-font-family:&quot;Times New Roman&quot;" class="Keyboard">Makeall<o:p>
+</o:p>
+</span></h1>
+<p class="MsoNormal" style="mso-pagination:widow-orphan">The only errors that
+are acceptable when you use this script are errors after the “/bin/rm”
+commands. The “/bin/rm” commands will fail if there are no object files (*.o
+files) in your SMOKE source code directories, which will be the case if you have
+not previously compiled SMOKE.</p>
+<p class="MsoNormal" style="mso-pagination:widow-orphan"><span style="display:
+none;mso-hide:all">[<a href="#Chapter_12_compile">Return to top</a>]</span></p>
+<h2><a name="Performance"></a>SMOKE Performance</h2>
+<p class="MsoNormal">The tables below provide SMOKE “user” CPU times for the
+SMOKE programs run using the scripts provided with the SMOKE installation. The
+“user” CPU times are provided here because these are least influenced by
+issues such as disk speed and network configurations (such as disks mounted on a
+remote computer). These CPU times are comparable to wall-clock times when disk
+storage speeds are high and local disks are used by the system.</p>
+<p class="MsoNormal">Please note that the “net96, baseA” case is the entire
+1996 National Emissions Inventory (NEI) for a 36-km grid over the entire US. The
+“m3demo” case is an Eastern U.S. inventory with a 36-km grid over only the
+Eastern U.S. Mobile emissions for the net96 case use emissions only (no VMT used
+in the SMOKE processing), whereas the m3demo case uses VMT for mobile emissions
+and computes emission factors with Mobile5b based on gridded, hourly
+temperatures.</p>
+<h3><a name="SGI_perf"></a>SGI Configuration</h3>
+<p class="MsoNormal">The SGI configuration that we used for testing was a 250
+MHZ MIPS R10000 Processor (Chip Revision 3.4), with 2 GB of system memory.<br style="mso-special-character:line-break">
+<br style="mso-special-character:line-break">
+</p>
+<table border="0" cellspacing="0" cellpadding="0" width="427" style="width:320.0pt;
+ border-collapse:collapse;mso-padding-alt:0in 0in 0in 0in">
+  <tr style="height:12.75pt">
+    <td width="17" nowrap valign="bottom" style="width:13.0pt;padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td width="168" nowrap valign="bottom" style="width:1.75in;padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td width="177" nowrap colspan="2" valign="bottom" style="width:133.0pt;padding:
+  .75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">CPU
+      &quot;user&quot; times<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td width="64" nowrap valign="bottom" style="width:48.0pt;padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">net96,
+      baseA<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center"><b><span style="font-size:10.0pt;font-family:Arial">m3demo<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Area<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      7 emis<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">663.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">247.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grdmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">54.2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Spcmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">67.5<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">29.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Temporal,
+      25 hours<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">110.8<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">60.5<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      25 hrs<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">176<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">48.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport
+      &quot;state&quot;<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">562.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">208.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Cntlmat,
+      projections<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">58<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grwinven<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">156.2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">27.2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">13.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Biogenics<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Rawbio,
+      summer<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">7.8<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Rawbio,
+      winter<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">12.1<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Tmpbio,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">0.5<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">22<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">0.8<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">0.2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Mobile<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      7 emis <o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">353.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      2 actv<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">41.5<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grdmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">61<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Spcmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">105.1<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">51.1<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Premobl,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">26.6<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Emisfac<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">544.8<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Temporal,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">176.9<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">115.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">84.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">66.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport
+      &quot;state.std&quot;<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">416.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">171.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Cntlmat,
+      projections<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">25.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grwinven<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">18.5<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">20.0<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">17.9<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Point<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      7 emis<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">947<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">300.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grdmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">3.6<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">1.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Spcmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">690.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">284.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Elevpoint<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">14<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Temporal<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">148.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">81.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Laypoint<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">209.3<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">68.6<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      3-d<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">327.9<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">79.1<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      UAM<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport
+      &quot;state&quot;<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">230.8<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">90.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Cntlmat,
+      projections<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">161<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grwinven<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">183.6<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">42.6<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">21.1<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">All
+      merge<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      mole<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">13.0<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">3.6<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      mass<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">3.2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+</table>
+<p class="MsoNormal">&nbsp;<o:p>
+</o:p>
+</p>
+<h3><a name="Sun_perf"></a>Sun Configuration</h3>
+<p class="MsoNormal">The Sun configuration that we used for testing was a Sun
+Ultra 5/10 UPA/PCI (UltraSPARC-IIi 440MHz) with 256 MB memory. The substantially
+higher CPU times than for the SGI case for some of the steps is likely due to
+needing more than 256 MB of memory (the SGI case had 2 GB of memory available).
+Performance information for the net96 case is not yet available.<br style="mso-special-character:line-break">
+<br style="mso-special-character:line-break">
+</p>
+<table border="0" cellspacing="0" cellpadding="0" width="336" style="width:3.5in;
+ border-collapse:collapse;mso-padding-alt:0in 0in 0in 0in">
+  <tr style="height:12.75pt">
+    <td width="17" nowrap valign="bottom" style="width:13.0pt;padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="H5" style="margin:0in;margin-bottom:.0001pt;page-break-before:always;
+  page-break-after:auto;mso-outline-level:body-text">&nbsp;<span style="font-family:Arial;mso-bidi-font-weight:bold"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td width="168" nowrap valign="bottom" style="width:1.75in;padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td width="151" nowrap colspan="2" valign="bottom" style="width:113.0pt;padding:
+  .75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">CPU
+      &quot;user&quot; times<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center"><b><span style="font-size:10.0pt;font-family:Arial">m3demo<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+  </tr>
+  <tr style="height:15.0pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center"><b><span style="font-size:10.0pt;font-family:Arial">Falcon<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:15.0pt">
+      <p class="MsoNormal" align="center" style="margin:0in;margin-bottom:.0001pt;
+  text-align:center">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Area<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      7 emis<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">204<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grdmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">14<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Spcmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">21<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Temporal,
+      25 hours<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">105<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      25 hrs<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">166<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport
+      &quot;state&quot;<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">691<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Cntlmat,
+      projections<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">46<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grwinven<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">179<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">23.8<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Biogenics<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Rawbio,
+      summer<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">5<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Rawbio,
+      winter<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Tmpbio,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">0.2<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Mobile<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      7 emis <o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      2 actv<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">32<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grdmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Spcmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">42<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Premobl,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">26<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Emisfac<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">581<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Temporal,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">171<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      1 day<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">234<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport
+      &quot;state.std&quot;<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">932<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Cntlmat,
+      projections<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">18<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grwinven<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">15<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">34.4<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><b><span style="font-size:10.0pt;font-family:Arial">Point<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkinven,
+      7 emis<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">242<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grdmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">1<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Spcmat<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">27<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Elevpoint<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">13<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Temporal<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">122<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Laypoint<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">102<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      3-d<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">314<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      UAM<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">n/a<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkreport
+      &quot;state&quot;<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">178<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Cntlmat,
+      projections<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">125<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Grwinven<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">185<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(sec)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><b><span style="font-size:10.0pt;font-family:Arial">Total:<o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">21.8<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap colspan="2" valign="bottom" style="padding:.75pt .75pt 0in .75pt;
+  height:12.75pt">
+      <p class="H5" style="margin:0in;margin-bottom:.0001pt"><span style="font-family:
+  Arial;mso-bidi-font-weight:bold">All merge<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt;page-break-after:
+  avoid">&nbsp;<span style="font-size:10.0pt;
+  font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt;page-break-after:
+  avoid">&nbsp;<span style="font-size:10.0pt;
+  font-family:Arial"><o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      mole<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">11.6<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+  <tr style="height:12.75pt">
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt">&nbsp;<b><span style="font-size:10.0pt;font-family:Arial"><o:p>
+      </o:p>
+      </span></b></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">Smkmerge,
+      mass<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" align="right" style="margin:0in;margin-bottom:.0001pt;
+  text-align:right"><span style="font-size:10.0pt;font-family:Arial">11.7<o:p>
+      </o:p>
+      </span></p>
+    </td>
+    <td nowrap valign="bottom" style="padding:.75pt .75pt 0in .75pt;height:12.75pt">
+      <p class="MsoNormal" style="margin:0in;margin-bottom:.0001pt"><span style="font-size:10.0pt;font-family:Arial">(min)<o:p>
+      </o:p>
+      </span></p>
+    </td>
+  </tr>
+</table>
+<p class="MsoNormal">&nbsp;<o:p>
+</o:p>
+</p>
+<p class="MsoNormal"><span style="display:none;mso-hide:all"><span style="mso-spacerun: yes">&nbsp;</span>[<a href="#Chapter_12_compile">Retur<span style="mso-bookmark:_Hlt482344314">n</span>
+t<span style="mso-bookmark:_Hlt482345315">o</span> top</a><a name="_Hlt482345321"></a><a name="_Hlt482345315"></a><a name="_Hlt482344314"></a>]<o:p>
+</o:p>
+</span></p>
+
+</body>
+
+</html>

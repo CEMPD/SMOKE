@@ -1,0 +1,299 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Chapter 1</title>
+</head>
+
+<body>
+
+<h1><a name="Chapter_1_introduction"></a><span style="color:black">Chapter
+1: Introduction<o:p>
+</o:p>
+</span></h1>
+<p class="MsoNormal">The environmental community has developed advanced
+numerical air quality models (AQMs) to understand the interactions among
+meteorology, emissions (both man-made and biogenic), and pollutant chemistry and
+dynamics. Emissions data from emissions models and regulatory inventories are
+one of the most important inputs for these air quality models. Scientist use air
+quality modeling for a number of purposes: for state and federal implementation
+plan development, for research on improved modeling methods, and most recently
+for air quality forecasting. In all of these cases, the trend has been to model
+larger regions, at a finer grid resolution, with more emissions sources, and for
+more purposes (e.g., ozone, particulates, toxics). These needs require a
+computationally efficient, user-friendly, and flexible emissions data processing
+system.</p>
+<p class="MsoNormal">MCNC has created the Sparse Matrix Operator Kernel
+Emissions (SMOKE) Modeling System to allow emissions data processing methods to
+integrate high-performance-computing (HPC) sparse-matrix algorithms. The SMOKE
+system has greatly enhanced support for decision making about emissions controls
+for both urban and regional applications, has provided a mechanism for preparing
+specialized inputs for air quality modeling research, and has made air quality
+forecasting possible. SMOKE supports area, mobile, and point source emission
+processing and also includes biogenic emissions modeling through a rewrite of
+the Biogenic Emission Inventory System, version 2 (BEIS2) [<a href="http://www.epa.gov/ttn/chief/software.html#pcbeis">http://www.epa.gov/ttn/chief/software.html<span style="mso-bookmark:_Hlt482174050">#</span>pcbeis</a><a name="_Hlt482174050"></a>].</p>
+<p class="MsoNormal">The current version of SMOKE is primarily an emission
+processing system and not an emission inventory preparation system. This means
+that, with the exception of mobile sources, its purpose is to provide an
+efficient tool for converting emissions inventory data into the formatted
+emission files required by an AQM. For mobile sources, SMOKE additionally
+computes an emissions inventory from mobile-source activity data, using emission
+factors.</p>
+<p class="MsoNormal">The sparse matrix approach utilized throughout SMOKE
+permits both rapid and flexible processing of emissions data. The processing is
+rapid because SMOKE utilizes a series of matrix calculations instead of less
+efficient algorithms used in previous systems. The processing is flexible
+because the processing steps of temporal projection, controls, chemical
+speciation, temporal allocation, and spatial allocation have been separated into
+independent operations wherever possible. The results from these steps are
+merged together at a final stage of processing using vector-matrix mathematics.
+The flow diagram below shows the relationship between data and processors in
+SMOKE. One example of how this approach is beneficial is development of a
+control strategy. In SMOKE, changing a control strategy requires only the
+control and merge steps to be processed again, whereas in other systems, most or
+all of the steps need to be redone.</p>
+<p class="MsoNormal" align="center" style="text-align:center"><!--[if gte vml 1]><v:shapetype
+ id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
+ path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f">
+ <v:stroke joinstyle="miter"/>
+ <v:formulas>
+  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+  <v:f eqn="sum @0 1 0"/>
+  <v:f eqn="sum 0 0 @1"/>
+  <v:f eqn="prod @2 1 2"/>
+  <v:f eqn="prod @3 21600 pixelWidth"/>
+  <v:f eqn="prod @3 21600 pixelHeight"/>
+  <v:f eqn="sum @0 0 1"/>
+  <v:f eqn="prod @6 1 2"/>
+  <v:f eqn="prod @7 21600 pixelWidth"/>
+  <v:f eqn="sum @8 21600 0"/>
+  <v:f eqn="prod @7 21600 pixelHeight"/>
+  <v:f eqn="sum @10 21600 0"/>
+ </v:formulas>
+ <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+ <o:lock v:ext="edit" aspectratio="t"/>
+</v:shapetype><v:shape id="_x0000_i1025" type="#_x0000_t75" style='width:468pt;
+ height:223.5pt' fillcolor="window">
+ <v:imagedata src="file:///C:/DOCUME~1/bergen/LOCALS~1/Temp/msoclip1/01/clip_image001.jpg"
+  o:title="dataflow"/>
+</v:shape><![endif]-->
+<img border="0" src="smoke_21.jpg" v:shapes="_x0000_i1025" width="624" height="298"></p>
+<p class="MsoNormal" style="margin-left:9.0pt"><b style="mso-bidi-font-weight:
+normal"><i style="mso-bidi-font-style:normal">Relationship between data and
+processors in SMOKE.<o:p>
+</o:p>
+</i></b></p>
+<p class="MsoNormal">The SMOKE prototype has been available since 1996, and it
+has been an effective tool for emissions processing in a number of regional air
+quality modeling applications. In 1998 and 1999, SMOKE was redesigned and
+improved with the support of the U.S. Environmental Protection Agency (EPA), for
+use with EPA's Models-3 Air Quality Modeling Sys<a name="_Hlt482173921">t</a>em
+[<a href="http://www.epa.gov/asmdnerl/models3/">http://www.epa.gov/asmdnerl/models3</a>].
+The primary purposes of the SMOKE redesign were support of (1) emissions
+processing with user-selected chemical mechanisms and (2) emissions processing
+for reactivity assessments (which will be described in more detail in <a href="smoke_concepts.htm#reactivity_controls">Chapter
+2</a>).</p>
+<p class="MsoNormal">The SMOKE modeling system can be used in a variety of ways.
+Currently, the most commonly used method is through the use of UNIX scripts.
+Although significant steps have been made to integrate SMOKE with Models-3, this
+process is ongoing. In addition, while the Environmental Decision Support System
+(EDSS) <a name="_Hlt482174065">[</a><a href="http://www.emc.mcnc.org/EDSS"><span style="mso-bookmark:_Hlt482174065">http://www.emc.mcnc.o<span style="mso-bookmark:
+_Hlt485734621">r</span>g/EDSS</span></a>] is capable
+of providing an interface for using SMOKE without any changes to EDSS or SMOKE,
+the necessary steps for getting the two systems working together have not been
+made for all parts of the latest version of SMOKE. In addition, training is only
+available for the latest version of SMOKE using scripts.</p>
+<p class="MsoNormal">Below, we summarize the major features of SMOKE.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Support of Inventory Data Analyzer
+(IDA), Emissions Modeling System, ’95 (EMS-95), and Emissions Preprocessor
+System 2.0 (EPS2.0) inventory input formats. The National Emissions Trends (NET)
+data will be available in IDA and EMS-95 formats.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Supports both gridded and county
+total landuse for biogenic emissions modeling.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Multi-country capability up to 10
+countries.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Fastest emissions processing tool
+available.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Improved disk space requirements
+over other emissions processing software.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><i style="mso-bidi-font-style:normal"><span style="color:windowtext">Any</span></i><span style="color:windowtext">
+pollutant can be processed by the system.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><i style="mso-bidi-font-style:normal"><span style="color:windowtext">Any</span></i><span style="color:windowtext">
+chemical mechanism can be used to partition pollutants to model species, as long
+as the appropriate input data are supplied.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Improved control strategy input
+formats and design over other systems.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Control strategies can include
+changes in the reactivity of emitted pollutants. This is useful, for example,
+when a solvent is changed in an industrial process.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Run-time memory allocation,
+eliminating any need to recompile the programs for different inventories, grids,
+or chemical mechanisms.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">No third party software is required
+to run SMOKE, although some input file preparation may require other software.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Fewer SMOKE programs than the SMOKE
+prototype because programs were combined where possible to be used for multiple
+source categories.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Support of plume in grid
+processing.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Integrated with Models-3 file
+formats and settings.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Improved data file formats.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l2 level1 lfo3"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Support of CMAQ, MAQSIP, UAM-IV,
+UAM-V, and CAMx emissions input formats.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="mso-outline-level:1"><span style="color:windowtext">Some
+features that will be available in the near future are:<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l3 level1 lfo4"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Enhanced quality assurance pre- and
+post-processing.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l3 level1 lfo4"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Fully integrated with Models-3,
+which will provide the SMOKE Tool for SMOKE input file preparation.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l3 level1 lfo4"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Further testing of all routines
+with the latest inventory and data.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l3 level1 lfo4"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Packaged with the National
+Emissions Trends (NET) inventory and other latest available data.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-outline-level:
+1;mso-list:l3 level1 lfo4"><span style="font-family:Symbol;
+color:windowtext">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><span style="color:windowtext">Support of MAQSIP-PM, UAM-AERO, and
+REMSAD models.<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal" style="margin-left:.25in;mso-outline-level:1"><span style="color:windowtext">&nbsp;<o:p>
+</o:p>
+</span></p>
+<h2 style="page-break-before:always">About this document</h2>
+<p class="MsoNormal">This document is the most complete reference available on
+SMOKE. Chapters 2 and 3 provide background on emissions data processing,
+SMOKE-specific concepts, and other concepts specific to the four main source
+categories. Chapter 4, when available, will compare SMOKE methods, performance,
+and results to other emissions processing systems. Chapter 5 provides background
+on how SMOKE interacts with the environments in which SMOKE can be used: UNIX
+scripts, Models-3, and EDSS. Chapter 6 documents the file format converters and
+other SMOKE routines that can help prepare SMOKE inputs. Chapter documents the
+core emissions processing programs of SMOKE. Chapter 8 gives a small amount of
+documentation on the SMOKE quality assurance programs and utilities that are
+available at this time. Chapter 9 provides file format information for all of
+the SMOKE input files, but the SMOKE intermediate and output file formats are
+not yet documented. Chapter 10 provides documentation on the SMOKE scripts, and
+will eventual provide user instructions on how to run SMOKE from the scripts,
+from Models-3, or from EDSS. Chapters 11, 12, and 13 are not available at this
+time, but they will respectively provide documentation of the source code and
+include files, documentation on compiling SMOKE and SMOKE performance, and
+documentation on SMOKE errors and warnings. Chapter 14 contains the training
+materials: both copies of the slide presentations and the lab exercises.
+Finally, the Appendix provides a list of known SMOKE bugs and errors, and will
+provide a glossary of terms and an acronyms index. As the incomplete chapters
+become available, they will be released on the SMOKE web site.</p>
+<p class="MsoNormal">This manual does not provide technical documentation on the
+code itself, but the code has extensive in-line documentation to assist
+Fortran-savvy users in understanding its workings.</p>
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="../word/smoke_user_doc.htm#TOP">Return
+to Table of Contents</a>]</span></p>
+
+</body>
+
+</html>

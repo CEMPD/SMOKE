@@ -1,0 +1,778 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Chapter 5</title>
+</head>
+
+<body>
+
+<h1><a name="Chapter_5_Environment"></a>Chapter 5. Usage Environments</h1>
+<h2>Contents</h2>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Introduction">Introduction</a></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#SharedEVs">Shared Environment Variables</a></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Scripts">SMOKE scripts</a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Scripts_programEVs">Program-Specific En<span style="mso-bookmark:_Hlt482345235">v</span>ironment
+Variables</a><a name="_Hlt482345235"></a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#Scripts_multiprogramEVs">Multiple-P<span style="mso-bookmark:_Hlt482345232">r</span>ogram
+Environment Variables</a><a name="_Hlt482345232"></a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#AssignsFile">Assig<span style="mso-bookmark:
+_Hlt482345230">n</span><span style="mso-bookmark:_Hlt482345204">s</span> File</a><a name="_Hlt482345204"></a><a name="_Hlt482345230"></a></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#M3studyplanner">Models-3 Study Planner</a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><a name="_Hlt482342807"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></a><a href="#M3globalEVs"><span style="mso-bookmark:
+_Hlt482342807">Global En<span style="mso-bookmark:_Hlt482345250">v</span>ironment
+Variables</span></a><a name="_Hlt482345250"></a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#M3planEVs">Plan Environment Variables</a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#M3programEVs">Progr<span style="mso-bookmark:
+_Hlt482345323">a</span>m Environment Variables</a><a name="_Hlt482345323"></a></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#EDSSstudyplanner">EDSS Study Planner</a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#EDSSglobalEVs">Global Environment Variables</a></p>
+<p class="MsoNormal" style="margin-left:.75in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><a href="#EDSSprogramEVs">Program Environment Variabl<span style="mso-bookmark:_Hlt482345351">e</span>s</a><a name="_Hlt482345351"></a></p>
+<p class="MsoNormal"><!--[if gte vml 1]><v:line id="_x0000_s1027" style='position:absolute;
+ z-index:2' from="0,12pt" to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4"
+ strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><![endif]-->
+<span style="mso-ignore:vglayout;position:
+relative;z-index:0;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_18.gif" v:shapes="_x0000_s1027" width="631" height="8"></span>&nbsp;<o:p>
+</o:p>
+</p>
+<br style="mso-ignore:vglayout" clear="ALL">
+<h2><a name="Introduction"></a>Introduction</h2>
+<p class="MsoNormal">Currently, the SMOKE programs need to be executed using the
+C shell in the Unix environment, which is defined using environment variables.
+The environment variables can be defined at the UNIX prompt, in C shell scripts,
+through the Models-3 Study Planner, or with the <a href="http://www.emc.mcnc.org/EDSS">Environmental
+Decision Support System (EDSS) Study Planner</a>. Released implementations of
+SMOKE integrated with Models-3 or with EDSS are not currently available.
+However, SMOKE can be run using scripts until the time that these more
+user-friendly interfaces are available with SMOKE.</p>
+<p class="MsoNormal">There are a very large number of environment variables used
+to control SMOKE. The variables can affect a single SMOKE program or multiple
+programs. SMOKE variables affect all programs. Depending on the interface that
+you are using for SMOKE, these variables are classified differently based on the
+structure of the interface. This chapter describes the different methods by
+which SMOKE can be run, and summarizes all of the environment variables that are
+shared by two or more programs. In the next section, the descriptions of all
+shared environment variables are provided. In subsequent sections, these
+variables will be listed, but not explained.</p>
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_5_Environment">Retur<span style="mso-bookmark:_Hlt482344314">n</span>
+t<span style="mso-bookmark:_Hlt482345315">o</span> top</a><a name="_Hlt482345321"></a><a name="_Hlt482345315"></a><a name="_Hlt482344314"></a>]<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal"><!--[if gte vml 1]><v:line id="_x0000_s1026" style='position:absolute;
+ z-index:1' from="0,12pt" to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4"
+ strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><![endif]-->
+<span style="mso-ignore:vglayout;position:
+relative;z-index:1;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_19.gif" v:shapes="_x0000_s1026" width="631" height="8"></span>&nbsp;<o:p>
+</o:p>
+</p>
+<br style="mso-ignore:vglayout" clear="ALL">
+<h2><a name="SharedEVs"></a>Shared Environment Variables</h2>
+<p class="MsoNormal">The following environment variables are shared by two or
+more programs. They are listed in alphabetic order.</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">DAY_SPECIFIC_YN:</b> [P]
+[default N]<br>
+Defines whether or not to import day-specific inventory data</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Y: Imports day-specific data</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>N: Does not import day-specific data</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">G_SDATE:</b> Sets the
+default simulation starting date. Julian format (DDDYYYY). <b style="mso-bidi-font-weight:normal"><o:p>
+</o:p>
+</b></p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">G_STIME:</b> Sets the
+default simulation starting time for the simulation (HHMMSS). Midnight may be
+entered as 0 instead of 000000. <b style="mso-bidi-font-weight:normal"><o:p>
+</o:p>
+</b></p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">G_RUNLEN:</b> Sets the
+default length of simulation (HHMMSS). <b style="mso-bidi-font-weight:
+normal"><o:p>
+</o:p>
+</b></p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">G_TSTEP:</b> Sets the
+default time step (HHMMSS). SMOKE will not permit any other value that 10000
+(hourly time steps), because many data formats assume hourly time steps.</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">HOUR_SPECIFIC_YN:</b> [P]
+[default N]<br>
+Defines whether or not to import hour-specific inventory data</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Y: Imports hour-specific data</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>N: Does not import hour-specific data</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">OUTZONE: </b>The Temporal
+and Tmpbio programs use this environment variable for output of hourly emissions
+with the correct time shift from Greenwich Mean Time (GMT). The date and time
+environment variables (G_STDATE and G_STTIME) are further defined to SMOKE with
+the OUTZONE setting, because SMOKE interprets the date/time settings to be for
+the time zone set by OUTZONE. Users should not attempt to account for daylight
+time in their setting of OUTZONE, but rather, <b>use the standard time</b> for
+the time zone of interest. SMOKE will adjust to daylight time for episodes that
+are during periods and in regions where daylight time applies.</p>
+<p class="DefinitionList" style="margin-top:5.0pt;margin-right:0in;margin-bottom:
+5.0pt;margin-left:.25in">The table below provides possible allowed values for
+OUTZONE. The CMAQ and MAQSIP models expect OUTZONE to be 0, while other models,
+such as UAM-IV, UAM-V, REMSAD, and CAM<sub>X</sub> often use time zone 5. All
+models expect that the emissions and the meteorology data provided to the model
+will have a consistent time zone. SMOKE expects that the meteorology data will
+be in GMT).</p>
+<p class="DefinitionList" style="margin-top:5.0pt;margin-right:0in;margin-bottom:
+5.0pt;margin-left:.25in"><b>SMOKE “OUTZONE” settings for different SMOKE
+output time zones.<o:p>
+</o:p>
+</b></p>
+<table border="0" cellspacing="0" cellpadding="0" style="margin-left:23.25pt;
+ border-collapse:collapse;mso-table-layout-alt:fixed;mso-padding-alt:0in 5.25pt 0in 5.25pt">
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center"><b style="mso-bidi-font-weight:normal">OUTZONE<o:p>
+      </o:p>
+      </b></p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border:ridge windowtext 3.0pt;
+  border-left:none;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center"><b style="mso-bidi-font-weight:normal">GMT<o:p>
+      </o:p>
+      </b></p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border:ridge windowtext 3.0pt;
+  border-left:none;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center"><b style="mso-bidi-font-weight:normal">Time
+      zone</b></p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border:ridge windowtext 3.0pt;
+  border-left:none;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center"><b style="mso-bidi-font-weight:normal">Description</b></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">0</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">+0:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">GMT</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Greenwich Mean Time (Also known as Zulu time)</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">4</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-4:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">AST</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Atlantic standard time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">5</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-5:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">EST</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Eastern standard time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">6</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-6:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">CST</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Central standard time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">7</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-7:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">MST</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Mountain standard time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">8</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-8:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">PST</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Pacific standard time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">9</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-9:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">YST</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Yukon standard time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">10</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-10:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">HST</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Hawaiian<span style="mso-spacerun: yes">&nbsp; </span>standard
+      time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">10</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-10:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">CAT</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Central Alaska time</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="108" valign="top" style="width:81.0pt;border:ridge windowtext 3.0pt;
+  border-top:none;mso-border-top-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">11</p>
+    </td>
+    <td width="66" valign="top" style="width:49.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">-11:00</p>
+    </td>
+    <td width="90" valign="top" style="width:67.5pt;border-top:none;border-left:none;
+  border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal" align="center" style="text-align:center">NT</p>
+    </td>
+    <td width="343" valign="top" style="width:257.25pt;border-top:none;border-left:
+  none;border-bottom:ridge windowtext 3.0pt;border-right:ridge windowtext 3.0pt;
+  mso-border-top-alt:three-d-emboss windowtext 3.0pt;mso-border-left-alt:three-d-emboss windowtext 3.0pt;
+  mso-border-alt:three-d-emboss windowtext 3.0pt;padding:0in 5.25pt 0in 5.25pt">
+      <p class="MsoNormal">Nome time</p>
+    </td>
+  </tr>
+</table>
+<p class="MsoNormal" style="margin-left:.25in">Note that SMOKE expects OUTZONE
+to be set as a positive number for time zones in the Western Hemisphere,
+although standard notation would list these as negative values. For example,
+Eastern Standard Time is listed in this table as -5:00 hours from GMT, but
+OUTZONE for EST in SMOKE is 5.</p>
+<p class="MsoNormal" style="margin-left:.25in">For more information on time
+zones, see <a href="http://time.greenwich2000.com/info/timezone.htm">http://time.greenwich2000.com/info/timezone.htm</a>.</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">PROMPTFLAG:</b> [default:
+Y]<br>
+Defines whether the program prompts for user input.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Y: program runs interactively, prompting for user input</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>N: program runs automatically using only preset environment
+variables</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">REPORT_DEFAULTS:</b>
+[default: Y]<br>
+Defines whether or not this program reports when the emission factor
+cross-reference file designates the default emission factor to an emissions
+source.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Y: list sources in the Logfile when they use default emission
+factors</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>N: does not list sources that use the default emission factors</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SMK_DEFAULT_TZONE: </b>[A,
+M, P] [default: 5]<br>
+This variable defines the default time zone to use for sources that do not match
+entries in the COSTCY file.</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SMK_EMLAYS: </b>[default:
+-1]<br>
+integer, number of emissions layers, must be at least 4<b style="mso-bidi-font-weight:
+normal"><o:p>
+</o:p>
+</b></p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SMK_MAXERROR:</b> [default
+100]<br>
+Defines the maximum number of each type of ERROR statements to be displayed by
+SMOKE. Set this environment variable to an integer, such as 100. <b style="mso-bidi-font-weight:normal"><o:p>
+</o:p>
+</b></p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SMK_MAXWARNING:</b>
+[default 100]<br>
+Defines the maximum number of each type of WARNING statements to be displayed by
+SMOKE. Set this environment variable to an integer, such as 100. <b style="mso-bidi-font-weight:normal"><o:p>
+</o:p>
+</b></p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SMK_O3SEASON_YN:</b>
+[default: N]<br>
+Indicates whether or not to read ozone season emissions instead of annual
+emissions from the inventory file. This settings affects Cntlmat reporting for
+the emissions values being annual or seasonal; Temporal for the emissions that
+are used for temporal allocation; and Smkmerge for the emissions that are read
+from the SMOKE inventory files <i>when merging without temporal allocation.</i></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Y: read ozone season emissions</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>N: do not read ozone season emissions</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SMK_PING_METHOD: </b><span style="mso-bidi-font-weight:bold">[default
+0 (no PinG sources)]<br>
+Defines the method to use in determining plume-in-grid point sources for further
+SMOKE processing.</span></p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>0: No PinG sources</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>1: Use PinG section of PELVCONFIG configuration file</p>
+<p class="MsoBodyTextIndent">For all models that SMOKE supports except MAQSIP,
+use of PinG sources is optional. MAQSIP does not include a released PinG
+implementation. Some models may have limitations on the number of PinG sources
+supported, and users must make sure that these limitations are met. SMOKE does
+not automatically compare with these limitations, if any (at the time of this
+writing, we do not know what these limitations are).</p>
+<p class="MsoNormal" style="margin-left:.5in">For CMAQ, SMOKE will output a
+STACK_GROUPS file from the Elevpoint program and a PINGTS_[S|L] file from the
+Smkmerge program to support PinG. For UAM-style processing<span style="mso-bidi-font-weight:bold">,
+it causes SMOKE to will flag PinG sources in the ASCII elevated file created by
+Smkmerge, and should be used with the SMK_ASCIIELEV_YN option set to Y to create
+this ASCII elevated file.</span><b style="mso-bidi-font-weight:normal"><o:p>
+</o:p>
+</b></p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SMK_SOURCE:</b> [default:
+blank]<br>
+Defines the type of sources to be processed. Valid values are:</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>A: area sources</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>M: on-road mobile sources</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>P: point sources</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>B: biogenic sources</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">SPEC_OUTPUT:</b> [A, M, P]
+[default: ALL]<br>
+Defines the types of speciation outputs to create.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>MASS: output speciation matrix based on mass</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>MOLE: output speciation matrix based on moles</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>ALL: output both mass and mole speciation matrices</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">TVARNAME:</b> [default:
+TEMPG]<br>
+The name of the temperature variable to use for temperatures read by the
+program.</p>
+<p class="MsoNormal" style="margin-left:.25in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><b style="mso-bidi-font-weight:normal">WEST_HSPHERE:</b> [default:
+Y]<br>
+Defines how the program interprets spatial coordinates.</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;page-break-after:
+avoid;mso-list:l0 level1 lfo1"><span style="font-family:
+Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Y: converts longitudinal coordinates for the Western Hemisphere
+(positive values are converted to negative values)</p>
+<p class="MsoNormal" style="margin-left:.5in;text-indent:-.25in;mso-list:l0 level1 lfo1"><span style="font-family:Symbol">·<span style="font:7.0pt &quot;Times New Roman&quot;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>N: does not convert longitude values (positive values are not
+changed)</p>
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_5_Environment">Return
+to top</a>]</span></p>
+<p class="MsoNormal"><!--[if gte vml 1]><v:line id="_x0000_s1028" style='position:absolute;
+ z-index:3' from="0,12pt" to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4"
+ strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><![endif]-->
+<span style="mso-ignore:vglayout;position:
+relative;z-index:2;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_20.gif" v:shapes="_x0000_s1028" width="631" height="8"></span>&nbsp;<o:p>
+</o:p>
+</p>
+<br style="mso-ignore:vglayout" clear="ALL">
+<h2><a name="Scripts"></a>SMOKE Scripts</h2>
+<p class="MsoNormal">The headers of the SMOKE scripts list most of the
+environment variables used by the SMOKE programs called from the script. These
+listings of environment variables are arranged by program and by
+multiple-program variables.</p>
+<h3><a name="Scripts_programEVs"></a>Program-Specific Environment
+Variables</h3>
+<p class="MsoNormal">The program-specific variables are description in <a href="smoke_programs.htm">Chapter
+7.</a></p>
+<h3><a name="Scripts_multiprogramEVs"></a>Multiple-Program Environment
+Variables</h3>
+<p class="MsoNormal">All variables listed above as Shared Environment Variables
+should be listed as a multiple-program environment variable in the scripts.</p>
+<h3><a name="AssignsFile"></a>Assigns File</h3>
+<p class="MsoNormal">The Assigns file is a UNIX script that defines environment
+variables for running a SMOKE program or programs from the UNIX prompt or from
+scripts. The environment variables in the Assigns file are either parts of file
+names or directories (e.g, ESCEN is the emissions scenario name and is used in
+file names), particular directories, or particular files. Those environment
+variables that correspond to files are logical names. Global, plan, and program
+environment variables are generally set in run scripts and not the Assigns file,
+but they could be set in the Assign file if the user wanted to.</p>
+<p class="MsoNormal">The Assigns files are located in the $SMKROOT/assigns
+directory, but this directory is different depending on whether you have
+installed SMOKE under EDSS or Models-3. If you have installed SMOKE under EDSS,
+the directory is $EDSS_ROOT/subsys/smoke/assigns. If you have installed SMOKE
+under Models-3, the directory is $M3MODEL/smoke/assigns.</p>
+<p class="MsoNormal">In order to utilize this ASSIGNS file, first edit the file
+so the statements use appropriate path and file names for your computer and
+preferences. Then, change your active directory to the directory containing the
+ASSIGNS file and issue the following shell command. Note that in this example,
+the Assigns file is simply named &quot;ASSIGNS,&quot; but the names usually have
+the emissions scenario, chemical mechanism abbreviation, and grid names in the
+file name.</p>
+<blockquote>
+  <blockquote>
+<p class="Blockquote"><span style="font-size:10.0pt;
+font-family:&quot;Courier New&quot;;mso-bidi-font-family:&quot;Times New Roman&quot;" class="Typewriter">source
+ASSIGNS<o:p>
+</o:p>
+</span></p>
+  </blockquote>
+</blockquote>
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_5_Environment">Return
+to <span style="mso-bookmark:_Hlt482345689">t</span>op</a><a name="_Hlt482345689"></a>]<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal"><!--[if gte vml 1]><v:line id="_x0000_s1029" style='position:absolute;
+ z-index:4' from="0,12pt" to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4"
+ strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><![endif]-->
+<span style="mso-ignore:vglayout;position:
+relative;z-index:3;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_21.gif" v:shapes="_x0000_s1029" width="631" height="8"></span>&nbsp;<o:p>
+</o:p>
+</p>
+<br style="mso-ignore:vglayout" clear="ALL">
+<h2><a name="M3studyplanner"></a>Models-3 Study Planner</h2>
+<h3><a name="M3globalEVs"></a>Global Environment Variables</h3>
+<p class="MsoNormal">The implementation of SMOKE in the Models-3 environment
+groups the shared environment variables into two groups: global and plan. Global
+environment variables affect the behavior of many or all SMOKE programs. To
+define the global environment variables in the Study Planner, go to the Study
+Properties screen and enter these variables under Study Global Environment
+Variables. The Study Planner will also show these same variables as plan and
+program environment variables, so that the user can override the global setting
+for specific plans or programs.</p>
+<p class="MsoNormal">The shared environment variables that are provided as
+global Study Planner variables are the following:</p>
+<p class="MsoNormal">G_SDATE</p>
+<p class="MsoNormal">G_STIME</p>
+<p class="MsoNormal">G_RUNLEN</p>
+<p class="MsoNormal">G_TSTEP</p>
+<p class="MsoNormal">OUTZONE</p>
+<p class="MsoNormal">PROMPTFLAG</p>
+<p class="MsoNormal">REPORT_DEFAULTS</p>
+<p class="MsoNormal">SMK_MAXERROR</p>
+<p class="MsoNormal">SMK_MAXWARNING</p>
+<p class="MsoNormal">SMK_O3SEASON_YN</p>
+<p class="MsoNormal">SMK_PING_YN</p>
+<p class="MsoNormal">SMK_SPECELEV_YN</p>
+<p class="MsoNormal">WEST_HSPHERE</p>
+<h3><a name="M3planEVs"></a>Plan Environment Variables</h3>
+<p class="MsoNormal">Plan environment variables affect a group of programs or
+for a source category. In the Models-3 Study Planner, these variables are
+defined at the plan level within a study. To define these variables in the Study
+Planner, first select a plan, and then select its Env Parameters tab. Define and
+initialize the environment variables on this screen. The Study Planner will show
+these same variables (with the exception of the date and time variables, which
+are not shown at all) as program environment variables, so that the user can
+override the plan settings.</p>
+<p class="MsoNormal">The shared environment variables that are provided as plan
+Study Planner variables are the following:</p>
+<p class="MsoNormal">DAYLIGHT_EXEMPT</p>
+<p class="MsoNormal">DAY_SPECIFIC_YN</p>
+<p class="MsoNormal">HOUR_SPECIFIC_YN</p>
+<p class="MsoNormal">SMK_DEFAULT_TZONE</p>
+<p class="MsoNormal">SMK_SOURCE</p>
+<p class="MsoNormal">TVARNAME</p>
+<h3><a name="M3programEVs"></a>Program Environment Variables</h3>
+<p class="MsoNormal">Program environment variables affect the behavior of a
+single program. These variables are described in the Program documentation. When
+using the Models-3 interface, define program-specific environment variables in
+the Program Manager module as part of defining the program's files and settings.
+To do this, select a program from the Program Manager, and then select Details.
+Go to the Env Vars screen and view the variables that have been defined for that
+individual program. For SMOKE programs, this step will have already been done
+when the SMOKE programs were registered with the Models-3 database.</p>
+<p class="MsoNormal">To change the value of an environment variable for the
+study, first open the program within the Study Planner by double clicking with
+your computer mouse on the SMOKE program node in the plan. The program
+environment variables will be one of the elements of the window for the program.
+Edit the environment variable values you need to change and save your changes
+before executing the study. The specific program environment variables used by
+each program are described with each program.</p>
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_5_Environment">Return
+to top</a>]<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal"><!--[if gte vml 1]><v:line id="_x0000_s1030" style='position:absolute;
+ z-index:5' from="0,12pt" to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4"
+ strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><v:line id="_x0000_s1032" style='position:absolute;z-index:7' from="0,12pt"
+ to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4" strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><![endif]-->
+<span style="mso-ignore:vglayout;position:
+relative;z-index:4;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_22.gif" v:shapes="_x0000_s1030 _x0000_s1032" width="631" height="8"></span>&nbsp;<o:p>
+</o:p>
+</p>
+<br style="mso-ignore:vglayout" clear="ALL">
+<h2><a name="EDSSstudyplanner"></a>EDSS Study Planner</h2>
+<p class="MsoNormal">Study Planner variables in EDSS are similar to those in the
+Models-3 Study Planner. One major exception is that there are no plan
+environment variables. This is because in EDSS, only one plan is allowed per
+study. So, there is no need to differentiate between variables that affect just
+a plan, and those that affect all plans.</p>
+<h3><a name="EDSSglobalEVs"></a>Global Environment Variables</h3>
+<p class="MsoNormal">The following variables are global environment variables in
+the EDSS implementation of SMOKE. Some shared variables are treated as program
+environment variables in order to reduce the number of global environment
+variables.</p>
+<p class="MsoNormal">G_SDATE</p>
+<p class="MsoNormal">G_STIME</p>
+<p class="MsoNormal">G_RUNLEN</p>
+<p class="MsoNormal">G_TSTEP</p>
+<p class="MsoNormal">OUTZONE</p>
+<p class="MsoNormal">PROMPTFLAG</p>
+<h3><a name="EDSSprogramEVs"></a>Program Environment Variables</h3>
+<p class="MsoNormal">All shared variables not treated as global variables in the
+EDSS Study Planner are treated as program environment variables. In addition,
+the true program environment variables are described in <a href="smoke_programs.htm">Chapter
+7</a>.</p>
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="#Chapter_5_Environment">Return
+to top</a>]<o:p>
+</o:p>
+</span></p>
+<p class="MsoNormal"><!--[if gte vml 1]><v:line id="_x0000_s1031" style='position:absolute;
+ z-index:6' from="0,12pt" to="468pt,12.05pt" o:allowincell="f" strokecolor="#d4d4d4"
+ strokeweight="1.75pt">
+ <v:shadow on="t" origin=",32385f" offset="0,-1pt"/>
+</v:line><![endif]-->
+<span style="mso-ignore:vglayout;position:
+relative;z-index:6;left:-3px;top:12px;width:631px;height:20px"><img src="smoke_23.gif" v:shapes="_x0000_s1031" width="631" height="8"></span>&nbsp;<o:p>
+</o:p>
+</p>
+<br style="mso-ignore:vglayout" clear="ALL">
+<p class="MsoNormal"><span style="display:none;mso-hide:all">[<a href="../word/../user_v1.3.2/smoke_user_doc.htm#TOP">Return
+to Table of Contents</a>]</span></p>
+
+</body>
+
+</html>
