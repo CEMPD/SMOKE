@@ -411,7 +411,7 @@ C.................  Store region code
 C.................  Store country name index. Note for population that some
 C                   form of "by region is required"
                 IF( RPT_%BYCONAM ) THEN
-                    F = FIP / 100000
+                    F = ( FIP / 100000 ) * 100000
                     K = FIND1( F, NCOUNTRY, CTRYCOD )
                     BINCOIDX( B ) = K
 
