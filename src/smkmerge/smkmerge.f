@@ -1,8 +1,7 @@
-
         PROGRAM SMKMERGE
 
 C***********************************************************************
-C  program SMKMERGE body starts at line 148
+C  program SMKMERGE body starts at line 159
 C
 C  DESCRIPTION:
 C      The purpose of this program is to merge the inventory or hourly
@@ -27,17 +26,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Modeling Center
-C MCNC
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C smoke@emc.mcnc.org
+C env_progs@mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -66,6 +65,9 @@ C...........   This module contains the gridding surrogates tables
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
 
+C.........  This module contains the global variables for uncertainty
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -81,8 +83,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
         INTEGER         WKDAY
+        INTEGER         ENVINT
 
-        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY
+        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY, ENVINT
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -93,6 +96,7 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Local temporary array for input and output variable names
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: OUTNAMES( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: INNAMES ( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: INNAMESU( : )
 
 C...........   Local allocatable arrays for creating list of all explicit srcs
         INTEGER, ALLOCATABLE :: TMPSRC( : )
@@ -104,7 +108,7 @@ C...........   Logical names and unit numbers (not in MODMERGE)
      
 C...........   Other local variables
     
-        INTEGER          I, J, K, L1, L2, M, N, V, S, T ! counters and indices
+        INTEGER          I, J, K, L1, L2, M, N, V, R, S, T ! counters and indices
 
         INTEGER          AJDATE        ! area-source Julian date for by-day
         INTEGER          DAY           ! day-of-week index (monday=1)
@@ -131,15 +135,19 @@ C...........   Other local variables
         INTEGER       :: PDAY = 0      ! previous iteration day no.
         INTEGER          PGID          ! previous iteration group ID no.
         INTEGER          PJDATE        ! point-source Julian date for by-day
-        INTEGER      :: SRGNROWS = 0   ! no. rows in surrogates file
-        INTEGER      :: SRGNCOLS = 0   ! no. cols in surrogates file
+        INTEGER       :: SRGNROWS = 0  ! no. rows in surrogates file
+        INTEGER       :: SRGNCOLS = 0  ! no. cols in surrogates file
+
+        LOGICAL          RFLAG         ! realization shutdown status
 
         REAL          :: RDUM = 0      ! dummy real value
         REAL             RDUM1, RDUM2, RDUM3, RDUM4, RDUM5, RDUM6
         REAL             F1, F2, FB    ! tmp conversion factors
 
-        CHARACTER*16      SRGFMT           ! gridding surrogates format
-        CHARACTER*16   :: SRGGRDNM  = ' '  !  surrogates file grid name
+        CHARACTER*16    SRGFMT         ! gridding surrogates format
+        CHARACTER*16 :: SRGGRDNM = ' ' ! surrogates file grid name
+        CHARACTER*16 :: UINAME = ' '   ! uncertainty input file
+
         CHARACTER*300          MESG    ! message buffer
         CHARACTER(LEN=IOVLEN3) LBUF    ! previous species or pollutant name
         CHARACTER(LEN=IOVLEN3) PBUF    ! tmp pollutant or emission type name
@@ -150,226 +158,262 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program SMKMERGE
-        
-        LDEV = INIT3()
 
+        LDEV = INIT3()
+  
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
-
+  
 C.........  Retrieve control environment variables and set logical control
 C           flags. Use a local module to pass the control flags.
         CALL GETMRGEV
 
-C.........  Open input files and retrieve episode information
-        CALL OPENMRGIN( SRGNROWS, SRGNCOLS, SRGGRDNM, SRGFMT )
+        DO R = 0, DRAWRLZN
 
-C.........  Do setup for biogenic state and county reporting
-        IF( BFLAG .AND. LREPANY ) THEN
-
-C.............  Read gridding surrogates
-            CALL RDSRG( GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
-
-C.........  If output grid is different from surrogates, write message
-            IF ( OFFLAG ) THEN
-                L1 = LEN_TRIM( SRGGRDNM )
-                MESG = 'NOTE: gridding surrogates (for biogenic '//
-     &                 'totals) extracted for output'// CRLF()// 
-     &                 BLANK10 //'grid from grid "' // 
-     &                 SRGGRDNM( 1:L1 ) // '"'
+C.............  Open input files and retrieve episode information
+            IF( R .GT. 0 .AND. GUCFLAG ) THEN
+                WRITE( MESG, 94010 ) 'Processing uncertainty ' //
+     &                               'realization:', R
                 CALL M3MSG2( MESG )
+                CALL OPENUGRID( R )
             END IF
 
-        END IF
+            CALL OPENMRGIN( R, SRGNROWS, SRGNCOLS, SRGGRDNM, SRGFMT )
 
-C.........  Create arrays of sorted unique pol-to-species
-C.........  Create arrays of sorted unique pollutants
-C.........  Create arrays of sorted unique species
-        CALL MRGVNAMS
+C.............  Do setup for biogenic state and county reporting
+            IF( BFLAG .AND. LREPANY ) THEN
 
-C.........  Determine units conversion factors
-        CALL MRGUNITS
+C.................  Read gridding surrogates
+                CALL RDSRG( GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
 
-C.........  Read in any needed source characteristics
-        CALL RDMRGINV
-
-C.........  Do setup for state and county reporting
-C.........  Do this even if there LREPANY is false, in order to allocate
-C           memory for the state and county total arrays to ensure
-C           MRGMULT will work.
-
-C.........  Read the state and county names file and store for the 
-C           states and counties in the grid
-C.........  For anthropogenic source categories, use FIPS list
-C           from the inventory for limiting state/county list
-        IF( AFLAG .OR. MFLAG .OR. PFLAG ) THEN
-            CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
-
-C.........  Otherwise, for biogenic merge only, use list of codes from the 
-C           surrogates file needed for state and county totals
-        ELSE
-            CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
-
-        END IF
-
-C.........  Allocate memory for fixed-size arrays by source category...
-        CALL ALLOCMRG( MXGRP, MXVARPGP )
-
-C.........  Read in elevated sources and plume-in-grid information, if needed
-C.........  Reset flag for PinG if none in the input file
-        IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG ) ) THEN
-
-            CALL RDPELV( EDEV, NPSRC, ELEVFLAG, NMAJOR, NPING )
-
-            IF( ELEVFLAG .AND. NMAJOR .EQ. 0 ) THEN
-                MESG = 'WARNING: No sources are major elevated ' //
-     &                 'sources in input file, ' // CRLF() // 
-     &                 BLANK10 // 'so elevated source emissions ' //
-     &                 'file will not be written.'
-                CALL M3MSG2( MESG )
-                ELEVFLAG = .FALSE.
-            ELSE IF ( NMAJOR .EQ. 0 ) THEN
-                NMAJOR = NPSRC
-            END IF 
-
-            IF( PINGFLAG .AND. NPING .EQ. 0 ) THEN
-                MESG = 'WARNING: No sources are PinG sources in ' //
-     &                 'input file, so PinG ' // CRLF() // BLANK10 //
-     &                 'emissions file will not be written.'
-                CALL M3MSG2( MESG )
-                PINGFLAG = .FALSE.
-            END IF
-
-C.............  Read stack group IDs
-            IF ( .NOT. READ3( PVNAME, 'ISTACK', 1,
-     &                        PVSDATE, PVSTIME, GRPGID ) ) THEN
-
-                L2 = LEN_TRIM( PVNAME )
-                MESG = 'Could not read "ISTACK" from file "' //
-     &                 PVNAME( 1:L2 ) // '"'
-                CALL M3EXIT( PROGNAME, SDATE, 0, MESG, 2 )
+C.................  If output grid is different from surrogates, write message
+                IF ( OFFLAG ) THEN
+                    L1 = LEN_TRIM( SRGGRDNM )
+                    MESG = 'NOTE: gridding surrogates (for biogenic '//
+     &                     'totals) extracted for output'// CRLF()// 
+     &                     BLANK10 //'grid from grid "' // 
+     &                     SRGGRDNM( 1:L1 ) // '"'
+                    CALL M3MSG2( MESG )
+                END IF
 
             END IF
 
-C.............  Update elevated sources filter for elevated sources
-            DO S = 1, NPSRC
-                IF( GROUPID( S ) .GT. 0 ) ELEVFLTR( S ) = 1.
-            END DO
+C.............  Create arrays of sorted unique pol-to-species
+C.............  Create arrays of sorted unique pollutants
+C.............  Create arrays of sorted unique species
+            CALL MRGVNAMS
 
-        END IF
+C.............  Determine units conversion factors
+            CALL MRGUNITS
 
-C.........  Create complete source list for explicit elevated sources
-        IF( EXPLFLAG ) THEN
+C.............  Read in any needed source characteristics
+            CALL RDMRGINV
 
-C.............  Allocate memory for temporary unsorted list and index
-            ALLOCATE( SRCFLG( NPSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SRCFLG', PROGNAME )
-            ALLOCATE( TMPSRC( NHRSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TMPSRC', PROGNAME )
-            ALLOCATE( TMPIDX( NHRSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TMPIDX', PROGNAME )
-            SRCFLG = .FALSE.
+C.............  Do setup for state and county reporting
+C.............  Do this even if there LREPANY is false, in order to allocate
+C               memory for the state and county total arrays to ensure
+C               MRGMULT will work.
 
-C.............  Loop through hours in PLAY_EX file and determine all sources
-C               that are listed for all hours
-            JDATE  = SDATE
-            JTIME  = STIME
-            N      = 0
-            DO T = 1, NSTEPS
-                IF( .NOT. READ3( PHNAME, 'INDXH', ALLAYS3, 
-     &                           JDATE, JTIME, INDXH      ) ) THEN
+C.............  Read the state and county names file and store for the 
+C               states and counties in the grid
+C.............  For anthropogenic source categories, use FIPS list
+C               from the inventory for limiting state/county list
+            IF( AFLAG .OR. MFLAG .OR. PFLAG ) THEN
+                CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
 
-                    MESG = 'Could not read INDXH from ' // PHNAME
-                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+C.............  Otherwise, for biogenic merge only, use list of codes from the 
+C               surrogates file needed for state and county totals
+            ELSE
 
-                END IF   ! if read3() failed
+                CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
+     
+            END IF
 
-C.................  Loop through this hour's indices, and store any new ones
-                DO I = 1, NHRSRC
+            REWIND( CDEV )
+     
+C.............  Allocate memory for fixed-size arrays by source category...
+            CALL ALLOCMRG( MXGRP, MXVARPGP )
 
-                    S = INDXH( I )
+C.............  Read in elevated sources and plume-in-grid information, if needed
+C.............  Reset flag for PinG if none in the input file
+            IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG ) ) THEN
 
-C.....................  Exit loop if done sources for this hour
-                    IF ( S .EQ. 0 ) EXIT
+                CALL RDPELV( EDEV, NPSRC, NMAJOR, NPING )
 
-C.....................  Store if not already
-                    IF ( .NOT. SRCFLG( S ) ) THEN
-                        SRCFLG( S ) = .TRUE.
-                        N = N + 1
-                        TMPSRC( N ) = S
-                        TMPIDX( N ) = N
-                    END IF
+                IF( ELEVFLAG .AND. NMAJOR .EQ. 0 ) THEN
+                    MESG = 'WARNING: No sources are major elevated ' //
+     &                     'sources in input file, ' // CRLF() // 
+     &                     BLANK10 // 'so elevated source emissions ' //
+     &                     'file will not be written.'
+                    CALL M3MSG2( MESG )
+                    ELEVFLAG = .FALSE.
+                ELSE IF ( NMAJOR .EQ. 0 ) THEN
+                    NMAJOR = NPSRC
+                END IF 
+           
+                IF( PINGFLAG .AND. NPING .EQ. 0 ) THEN
+                    MESG = 'WARNING: No sources are PinG sources in ' //
+     &                     'input file, so PinG ' //CRLF() // BLANK10 //
+     &                     'emissions file will not be written.'
+                    CALL M3MSG2( MESG )
+                    PINGFLAG = .FALSE.
+                END IF
 
+C.................  Read stack group IDs
+                IF ( .NOT. READ3( PVNAME, 'ISTACK', 1,
+     &                            PVSDATE, PVSTIME, GRPGID ) ) THEN
+          
+                    L2 = LEN_TRIM( PVNAME )
+                    MESG = 'Could not read "ISTACK" from file "' //
+     &                     PVNAME( 1:L2 ) // '"'
+                    CALL M3EXIT( PROGNAME, SDATE, 0, MESG, 2 )
+          
+                END IF
+          
+C.................  Update elevated sources filter for elevated sources
+                DO S = 1, NPSRC
+                    IF( GROUPID( S ) .GT. 0 ) ELEVFLTR( S ) = 1.
                 END DO
+    
+            END IF 
+    
+C.............  Create complete source list for explicit elevated sources
+            IF( EXPLFLAG ) THEN
 
-                CALL NEXTIME( JDATE, JTIME, TSTEP )
+C.................  Allocate memory for temporary unsorted list and index
+                ALLOCATE( SRCFLG( NPSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'SRCFLG', PROGNAME )
+                ALLOCATE( TMPSRC( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'TMPSRC', PROGNAME )
+                ALLOCATE( TMPIDX( NHRSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'TMPIDX', PROGNAME )
+                SRCFLG = .FALSE.
 
-            END DO
-            NHRSRC = N   ! Reset to permit FINDs in case whole PLAY_EX not used
+C.................  Loop through hours in PLAY_EX file and determine all sources
+C                   that are listed for all hours
+                JDATE  = SDATE
+                JTIME  = STIME
+                N      = 0
+                DO T = 1, NSTEPS
+                    IF( .NOT. READ3( PHNAME, 'INDXH', ALLAYS3, 
+     &                               JDATE, JTIME, INDXH      ) ) THEN
+           
+                        MESG = 'Could not read INDXH from ' // PHNAME
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+           
+                    END IF   ! if read3() failed
 
-C.............  Sort list index
-            CALL SORTI1( NHRSRC, TMPIDX, TMPSRC )
+C.....................  Loop through this hour's indices, and store any new ones
+                    DO I = 1, NHRSRC
 
-C.............  Store final sorted list
-            DO I = 1, NHRSRC
-                J = TMPIDX( I )
-                ELEVSRC( I ) = TMPSRC( J )
-            END DO
+                        S = INDXH( I )
 
-C.............  Deallocate temporary memory
-            DEALLOCATE( SRCFLG, TMPSRC, TMPIDX )
+C.........................  Exit loop if done sources for this hour
+                        IF ( S .EQ. 0 ) EXIT
 
-        END IF
+C.........................  Store if not already
+                        IF ( .NOT. SRCFLG( S ) ) THEN
+                            SRCFLG( S ) = .TRUE.
+                            N = N + 1
+                            TMPSRC( N ) = S
+                            TMPIDX( N ) = N
+                        END IF
 
-C.........  Read reactivity matrices
-        IF( ARFLAG ) CALL RDRMAT( ARNAME, ANSREAC, ARNMSPC, ACRIDX, 
-     &                            ACRREPEM, ACRPRJFC, ACRMKTPN, ACRFAC )
+                    END DO
+    
+                    CALL NEXTIME( JDATE, JTIME, TSTEP )
+    
+                END DO
+                NHRSRC = N   ! Reset to permit FINDs in case whole PLAY_EX not used
 
-        IF( MRFLAG ) CALL RDRMAT( MRNAME, MNSREAC, MRNMSPC, MCRIDX, 
-     &                            MCRREPEM, MCRPRJFC, MCRMKTPN, MCRFAC )
+C.................  Sort list index
+                CALL SORTI1( NHRSRC, TMPIDX, TMPSRC )
 
-        IF( PRFLAG ) CALL RDRMAT( PRNAME, PNSREAC, PRNMSPC, PCRIDX, 
-     &                            PCRREPEM, PCRPRJFC, PCRMKTPN, PCRFAC )
+C.................  Store final sorted list
+                DO I = 1, NHRSRC
+                    J = TMPIDX( I )
+                    ELEVSRC( I ) = TMPSRC( J )
+                END DO
+    
+C.................  Deallocate temporary memory
+                DEALLOCATE( SRCFLG, TMPSRC, TMPIDX )
 
-C.........  Read gridding matrices (note, must do through subroutine because of
-C           needing contiguous allocation for integer and reals)
-        IF( AFLAG ) CALL RDGMAT( AGNAME, NGRID, ANGMAT, ANGMAT,
-     &                           AGMATX( 1 ), AGMATX( NGRID + 1 ),
-     &                           AGMATX( NGRID + ANGMAT + 1 ) )
+            END IF
 
-        IF( MFLAG ) CALL RDGMAT( MGNAME, NGRID, MNGMAT, MNGMAT,
-     &                           MGMATX( 1 ), MGMATX( NGRID + 1 ),
-     &                           MGMATX( NGRID + MNGMAT + 1 ) )
+C.............  Read reactivity matrices
+            IF( ARFLAG ) CALL RDRMAT( ARNAME, 
+     &                                ANSREAC, ARNMSPC, ACRIDX, 
+     &                                ACRREPEM, ACRPRJFC, ACRMKTPN, 
+     &                                ACRFAC )
+          
+            IF( MRFLAG ) CALL RDRMAT( MRNAME, 
+     &                                MNSREAC, MRNMSPC, MCRIDX, 
+     &                                MCRREPEM, MCRPRJFC, MCRMKTPN, 
+     &                                MCRFAC )
+          
+            IF( PRFLAG ) CALL RDRMAT( PRNAME, 
+     &                                PNSREAC, PRNMSPC, PCRIDX, 
+     &                                PCRREPEM, PCRPRJFC, PCRMKTPN, 
+     &                                PCRFAC )
 
-        IF( PFLAG ) THEN
+C.............  Read gridding matrices (note, must do through subroutine because of
+C               needing contiguous allocation for integer and reals)
+            IF( AFLAG ) CALL RDGMAT( AGNAME, NGRID, ANGMAT, ANGMAT,
+     &                               AGMATX( 1 ), AGMATX( NGRID + 1 ),
+     &                               AGMATX( NGRID + ANGMAT + 1 ) )
+          
+            IF( MFLAG ) CALL RDGMAT( MGNAME, NGRID, MNGMAT, MNGMAT,
+     &                               MGMATX( 1 ), MGMATX( NGRID + 1 ),
+     &                               MGMATX( NGRID + MNGMAT + 1 ) )
 
-            PGMATX = 1.  ! initialize array b/c latter part not in file
-            CALL RDGMAT( PGNAME, NGRID, NPSRC, 1,
-     &                   PGMATX( 1 ), PGMATX( NGRID + 1 ), RDUM )
-        END IF
+            IF( PFLAG ) THEN
+          
+                PGMATX = 1.  ! initialize array b/c latter part not in file
+                CALL RDGMAT( PGNAME, NGRID, NPSRC, 1,
+     &                       PGMATX( 1 ), PGMATX( NGRID + 1 ), RDUM )
+            END IF
 
-C.........  Build indicies for pollutant/species groups
-        CALL BLDMRGIDX( MXGRP, MXVARPGP, NGRP )
+C.............  Build indicies for pollutant/species groups
+            CALL BLDMRGIDX( MXGRP, MXVARPGP, NGRP )
+
+c        END IF ! end uncertainty if block
 
 C.........  Open NetCDF output files, open ASCII report files, and write headers
-        CALL OPENMRGOUT( NGRP )
+        CALL OPENMRGOUT( NGRP, R )
 
-C.........  In case reactivity does not exist, initialize temporary arrays
-C           for reactivity information anyway.  These are used even without
-C           reactivity matrix inputs so that the code does not need even
-C           more conditionals in the matrix multiplication step.
-        IF( AFLAG ) ARINFO = 0.  ! array
-        IF( MFLAG ) MRINFO = 0.  ! array
-        IF( PFLAG ) PRINFO = 0.  ! array
+c        IF( R .EQ. 0 ) THEN
 
-C.........  Intialize state/county summed emissions to zero
-        CALL INITSTCY
+C.............  In case reactivity does not exist, initialize temporary arrays
+C               for reactivity information anyway.  These are used even without
+C               reactivity matrix inputs so that the code does not need even
+C               more conditionals in the matrix multiplication step.
+            IF( AFLAG ) ARINFO = 0.  ! array
+            IF( MFLAG ) MRINFO = 0.  ! array
+            IF( PFLAG ) PRINFO = 0.  ! array
 
-C.........  Allocate memory for temporary list of species and pollutant names
-        ALLOCATE( OUTNAMES( MXVARPGP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'OUTNAMES', PROGNAME )
-        ALLOCATE( INNAMES( MXVARPGP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INNAMES', PROGNAME )
+C.............  Intialize state/county summed emissions to zero
+            IF( ALLOCATED( AICNY ) ) DEALLOCATE( AICNY )
+            IF( ALLOCATED( MICNY ) ) DEALLOCATE( MICNY )
+            IF( ALLOCATED( PICNY ) ) DEALLOCATE( PICNY )
+   
+            CALL INITSTCY( R )
+
+C.............  Allocate memory for temporary list of species and pollutant names
+            IF( ALLOCATED( OUTNAMES ) ) DEALLOCATE( OUTNAMES )
+            IF( ALLOCATED( INNAMES  ) ) DEALLOCATE( INNAMES  )
+
+            ALLOCATE( OUTNAMES( MXVARPGP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OUTNAMES', PROGNAME )
+            ALLOCATE( INNAMES( MXVARPGP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INNAMES', PROGNAME )
+
+c        ELSE IF ( TUCFLAG ) THEN
+        IF ( R .GT. 0 ) THEN
+
+            CALL GETUNCRT( R, MXGRP, MXVARPGP, NGRP, UINAME )
+
+        END IF
 
 C.........  Loop through processing groups (if speciation, this will be specia-
 C           tion groups, but if no speciation, this will be pollutant groups,  
@@ -433,6 +477,7 @@ C.............  Loop through variables in current group...
             LBUF = ' '
             INNAMES  = ' '  ! array
             OUTNAMES = ' '  ! array
+
             DO V = 1, NVPGP  ! No. variables per group 
 
                 K1 = 0
@@ -444,6 +489,7 @@ C.................  Extract name of variable in group
 
 C.................  For speciation...
         	IF( SFLAG ) THEN
+
 
 C.....................  Update list of output species names for message
                     SBUF = EMNAM( SPINDEX( V,N ) )
@@ -559,10 +605,34 @@ C                   step for all area-source pollutants in current pol group
 C.................  The *_EXIST are counters that point to the position in
 C                   the source category emissions of the variables names 
 C                   in INNAMES. Data are stored in *EMSRC in the global order.
-                IF( AFLAG )
-     &              CALL RD3MASK( ATNAME( DAY ), AJDATE, JTIME, NASRC, 
-     &                            NVPGP, INNAMES( 1 ), A_EXIST( 1,N ),
-     &                            AEMSRC )
+
+                IF( AFLAG ) THEN
+
+                    IF( TUCFLAG ) THEN
+
+                        IF( R .EQ. 0 ) THEN
+
+                            CALL RDU3MASK( ATNAME( DAY ), AJDATE, JTIME,
+     &                                     NASRC,  NVPGP, INNAMES( 1 ), 
+     &                                     A_EXIST( 1,N ), AEMSRC )
+
+                        ELSE
+
+                            CALL RDTMPU( UINAME, UTNAME( DAY ), AJDATE, 
+     &                                   JTIME, NASRC, NVPGP, 
+     &                                   INNAMES( 1 ),
+     &                                   UI_EXIST( 1,N ), AEMSRC )
+
+                        END IF
+
+                    ELSE
+
+                        CALL RD3MASK( ATNAME( DAY ), AJDATE, JTIME, 
+     &                                NASRC,  NVPGP, INNAMES( 1 ), 
+     &                                A_EXIST( 1,N ), AEMSRC )
+
+                    END IF
+                END IF
 
 C.................  If mobile sources, read inventory emissions or activities
 C                   for this time step for all mobile-source pollutants in 
@@ -664,7 +734,7 @@ C.............................  Apply valid matrices & store
      &                         AGMATX(1), AGMATX(NGRID+1), 
      &                         AGMATX(K5), AICNY, AEMGRD, TEMGRD,
      &                         AEBCNY, AEUCNY, AEACNY, AERCNY, 
-     &                         AECCNY )
+     &                         AECCNY, R )
                     END IF
                             
 C.....................  For biogenic sources, read gridded emissions,
@@ -764,7 +834,7 @@ C.........................  Apply valid matrices & store
 
 C.........................  Apply matrices for elevated and plume-in-grid 
 C                           outputs, if this pollutant is used for point srcs.
-                        IF( K1. GT. 0 .AND.
+                        IF( K1 .GT. 0 .AND.
      &                    ( ELEVFLAG .OR. PINGFLAG ) ) THEN
                             CALL MRGELEV( NPSRC, NMAJOR, NPING, 
      &                                    K1, K2, K3, K4, F1 )
@@ -806,7 +876,7 @@ C.................  Write country, state, and county emissions (all that apply)
 C.................  The subroutine will only write for certain hours and 
 C                   will reinitialize the totals after output
                 IF( LREPANY ) THEN
-                    CALL WRMRGREP( JDATE, JTIME, N )
+                    CALL WRMRGREP( JDATE, JTIME, N, R )
                 END IF
 
                 LDATE = JDATE
@@ -817,7 +887,18 @@ C                   will reinitialize the totals after output
 
         END DO   ! End of loop on pollutant/pol-to-spcs groups
 
-C.........  Successful completion of program
+C.............  Successful completion of program
+c            WRITE( MESG, 94010 ) 'Process ', R, 'terminated'
+c            L1 = LEN_TRIM( MESG )
+c            RFLAG = SHUT3()
+c            IF( .NOT.( RFLAG ) ) THEN
+c                MESG = MESG( 1:L1 ) // ' with errors'
+c            END IF
+c            CALL M3MSG2( MESG )
+
+        END DO   ! End of loop on realizations
+
+C.............  Successful completion of program
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
 
@@ -838,4 +919,3 @@ C...........   Internal buffering formats............ 94xxx
 94030   FORMAT( 8X, 'at time ', A8 )
 
         END PROGRAM SMKMERGE
-
