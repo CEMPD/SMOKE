@@ -45,17 +45,25 @@
 
         INTEGER, PUBLIC :: NINVSIC  ! no. unique SICs in inventory
         INTEGER, PUBLIC :: NINVSCC  ! no. unique SCCs in inventory
-        INTEGER, PUBLIC :: NINVSCL  ! no. unique left-SCCs in inventory
+        INTEGER, PUBLIC :: NINVSCL  ! no. unique left SCCs in inventory
+        INTEGER, PUBLIC :: NSCCPSIC ! no. all SCCs for all SICs
+        INTEGER, PUBLIC :: NINVIFIP ! no. unique country/state/county codes
 
 !.........  Unique lists of source characteristics and associated arrays...
 
 !.........  SIC arrays dimensioned by NINVSIC
         INTEGER, ALLOCATABLE, PUBLIC :: INVSIC ( : ) ! SICs
-        INTEGER, ALLOCATABLE, PUBLIC :: IBEGSIC( : ) ! start position in INVSCC
-        INTEGER, ALLOCATABLE, PUBLIC :: IENDSIC( : ) ! end   position in INVSCC
+        INTEGER, ALLOCATABLE, PUBLIC :: IBEGSIC( : ) ! start position in SICSCC
+        INTEGER, ALLOCATABLE, PUBLIC :: IENDSIC( : ) ! end   position in SICSCC
 
 !.........  SCC arrays dimensioned by NINVSCC
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCC( : ) ! SCCs
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCL( : ) ! left SCCs
+
+!.........  SCCs for all SICs
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: SCCPSIC( : )
+
+!.........  Country/state/county codes dimensioned by NINVFIP
+        INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
 
         END MODULE MODLISTS

@@ -39,16 +39,21 @@
 
         INCLUDE 'EMPRVT3.EXT'
 
+!...........   Number of stack groups
+        INTEGER, PUBLIC :: NGROUP
+
 !...........   Allocatable arrays for specifying source type
         INTEGER, ALLOCATABLE, PUBLIC:: GROUPID( : ) ! stack group ID
         LOGICAL, ALLOCATABLE, PUBLIC:: LMAJOR ( : ) ! true: src is a major src
         LOGICAL, ALLOCATABLE, PUBLIC:: LPING  ( : ) ! true: src is a PinG src
 
 !...........   Allocatable arrays for stack groups
-        INTEGER, ALLOCATABLE, PUBLIC:: GRPGID( : ) ! stack group ID
+        INTEGER, ALLOCATABLE, PUBLIC:: GRPGID( : ) ! sorted stack group ID
+        INTEGER, ALLOCATABLE, PUBLIC:: GRPGIDA( : )! unsorted stack group ID
         INTEGER, ALLOCATABLE, PUBLIC:: GRPCNT( : ) ! no. stacks per group
         INTEGER, ALLOCATABLE, PUBLIC:: GRPCOL( : ) ! col number
         INTEGER, ALLOCATABLE, PUBLIC:: GRPROW( : ) ! row number
+        INTEGER, ALLOCATABLE, PUBLIC:: GRPIDX( : ) ! sorting index for GRPGIDA
 
         REAL   , ALLOCATABLE, PUBLIC:: GRPDM ( : ) ! group intl stack diam [m]
         REAL   , ALLOCATABLE, PUBLIC:: GRPFL ( : ) ! group exit flw rate [m^3/s]

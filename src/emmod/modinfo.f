@@ -50,12 +50,12 @@
         INTEGER    , PUBLIC :: MXCHRS   ! max no. of source characteristics
         INTEGER    , PUBLIC :: NCHARS   ! actual no. of source characteristics
         INTEGER    , PUBLIC :: NEMSFILE ! no. EMS-95 files
-        INTEGER    , PUBLIC :: NIACT    ! no. unique activities in inventory
-        INTEGER    , PUBLIC :: NIPOL    ! no. unique pollutants in inventory
-        INTEGER    , PUBLIC :: NIPPA    ! NIACT + NIPPA
-        INTEGER    , PUBLIC :: NPACT    ! number of variables per activity
-        INTEGER    , PUBLIC :: NPPOL    ! number of variables per pollutant
-        INTEGER    , PUBLIC :: NSRC     ! number of SMOKE sources
+        INTEGER    , PUBLIC :: NIACT =0 ! no. unique activities in inventory
+        INTEGER    , PUBLIC :: NIPOL =0 ! no. unique pollutants in inventory
+        INTEGER    , PUBLIC :: NIPPA =0 ! NIACT + NIPPA
+        INTEGER    , PUBLIC :: NPACT =0 ! number of variables per activity
+        INTEGER    , PUBLIC :: NPPOL =0 ! number of variables per pollutant
+        INTEGER    , PUBLIC :: NSRC  =0 ! number of SMOKE sources
         INTEGER    , PUBLIC :: PLTIDX   ! index of plant (if any) in SC_BEGP
         INTEGER    , PUBLIC :: RSCCBEG  ! beginning of right-SCC
 
@@ -82,11 +82,20 @@
 !.........  Inventory pollutants dimensioned by NIPOL
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM( : )
 
-!.........  Inventory activities, dimensioned by NIACT
+!.........  Inventory activities and units, dimensioned by NIACT
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ACTVTY( : )
 
 !.........  Inventory pollutants and inventory activies, dimensioned by NIPPA
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EAREAD( : ) ! for read3
+
+!.........  Inventory pollutants/activies units and descriptions
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EAUNIT( : )
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EADESC( : )
+
+!.........  Units conversions information
+        INTEGER               , PUBLIC :: INVPIDX = 0    ! annual/O3 season idx
+        REAL, ALLOCATABLE, PUBLIC :: EACNV( : )          ! units conv factors
 
 !.........  Mobile source characteristics tables
         INTEGER                                     :: NVTYPE ! no. veh types

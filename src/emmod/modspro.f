@@ -1,3 +1,4 @@
+
         MODULE MODSPRO
 
 !***********************************************************************
@@ -74,6 +75,10 @@
 !.........  Table of species names per inventory pollutant
 
 	CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: SPCNAMES( :,: )
+
+!.........  Table of mole-based units per inventory pollutant for all species
+
+	CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: MOLUNITS( :,: )
 
 !.........  Sorted groups of pollutant to pollutant conversion factors
 

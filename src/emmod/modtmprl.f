@@ -20,7 +20,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -40,18 +40,18 @@
 !.........  Sorted temporal profiles
         INTEGER, PUBLIC :: NMON   ! number of monthly profiles
         INTEGER, PUBLIC :: NWEK   ! number of weekly profiles
-        INTEGER, PUBLIC :: NDIU   ! number of weekday diurnal profiles 
+        INTEGER, PUBLIC :: NWKD   ! number of weekday diurnal profiles 
         INTEGER, PUBLIC :: NEND   ! number of weekend diurnal profiles 
 
         INTEGER, ALLOCATABLE, PUBLIC :: MONREF( : )   ! Monthly codes
         INTEGER, ALLOCATABLE, PUBLIC :: WEKREF( : )   ! Weekly codes 
-        INTEGER, ALLOCATABLE, PUBLIC :: DIUREF( : )   ! Weekday-diurnal codes
+        INTEGER, ALLOCATABLE, PUBLIC :: WKDREF( : )   ! Weekday-diurnal codes
         INTEGER, ALLOCATABLE, PUBLIC :: ENDREF( : )   ! Weekend-diurnal codes
 
         REAL   , ALLOCATABLE, PUBLIC :: MONFAC( :,: ) ! Monthly factors
         REAL   , ALLOCATABLE, PUBLIC :: WEKFAC( :,: ) ! Weekly facs (week-norm)
         REAL   , ALLOCATABLE, PUBLIC :: XWKFAC( :,: ) ! Weekly facs (wkday-norm)
-        REAL   , ALLOCATABLE, PUBLIC :: DIUFAC( :,: ) ! Weekday-diurnal factors
+        REAL   , ALLOCATABLE, PUBLIC :: WKDFAC( :,: ) ! Weekday-diurnal factors
         REAL   , ALLOCATABLE, PUBLIC :: ENDFAC( :,: ) ! Weekend-diurnal factors        
 
         END MODULE MODTPRO

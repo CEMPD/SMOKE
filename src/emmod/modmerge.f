@@ -21,7 +21,7 @@
 !                System
 ! File: @(#)$Id$
 !
-! COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+! COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 ! All Rights Reserved
 !
 ! See file COPYRIGHT for conditions of use.
@@ -76,6 +76,8 @@
         LOGICAL, PUBLIC :: SFLAG   ! use speciation
         LOGICAL, PUBLIC :: LFLAG   ! use layer fractions
         LOGICAL, PUBLIC :: VFLAG   ! process VMT (not emission)
+        LOGICAL, PUBLIC :: HFLAG   ! create hourly outputs
+        LOGICAL, PUBLIC :: PINGFLAG! create plume-in-grid hourly file
         LOGICAL, PUBLIC :: LMETCHK ! compare met information in headers
         LOGICAL, PUBLIC :: LMKTPON ! true: use market penetration
         LOGICAL, PUBLIC :: LGRDOUT ! output gridded I/O API NetCDF file(s)
@@ -85,6 +87,7 @@
         LOGICAL, PUBLIC :: LREPINV ! include inventory emissions in report(s)
         LOGICAL, PUBLIC :: LREPSPC ! include speciated emissions in report(s)
         LOGICAL, PUBLIC :: LREPCTL ! include controlled emissions in report(s)
+        LOGICAL, PUBLIC :: LO3SEAS ! use ozone season emissions from the inven
 
 !.........  FILE NAMES AND UNIT NUMBERS...
 
@@ -93,13 +96,15 @@
         INTEGER     , PUBLIC :: ASDEV  ! area ASCII inventory input
         INTEGER     , PUBLIC :: BRDEV  ! bioegnic ASCII report output
         INTEGER     , PUBLIC :: CDEV   ! state/county names file
+        INTEGER     , PUBLIC :: EDEV   ! elevated/PinG ASCII input file
         INTEGER     , PUBLIC :: GDEV   ! gridding surrogates file
         INTEGER     , PUBLIC :: MRDEV  ! mobile ASCII report output
         INTEGER     , PUBLIC :: MSDEV  ! mobile ASCII inventory input
-        INTEGER     , PUBLIC :: PDEV   ! inventory pollutants list
+        INTEGER     , PUBLIC :: PDEV  = 0  ! inventory pollutants list
         INTEGER     , PUBLIC :: PRDEV  ! point ASCII report output
         INTEGER     , PUBLIC :: PSDEV  ! point ASCII inventory input
         INTEGER     , PUBLIC :: TRDEV  ! total ASCII report output
+        INTEGER     , PUBLIC :: VDEV  = 0  ! activities list
 
 !.........  Logical file names
         CHARACTER*16, PUBLIC :: AENAME ! area inventory input
@@ -134,6 +139,7 @@
         CHARACTER*16, PUBLIC :: PRNAME ! point reactivity control matrix input
         CHARACTER*16, PUBLIC :: PUNAME ! point multiplicative cntl matrix input
         CHARACTER*16, PUBLIC :: PONAME ! point output gridded file
+        CHARACTER*16, PUBLIC :: PINGNAME ! plume-in-grid emissions file name
         CHARACTER*16, PUBLIC :: PREPNAME ! point report file name
 
         CHARACTER*16, PUBLIC :: TONAME ! total output gridded file
@@ -150,6 +156,13 @@
         INTEGER, PUBLIC :: MNIPOL = 0  ! mobile
         INTEGER, PUBLIC :: PNIPOL = 0  ! point
         INTEGER, PUBLIC :: NIPOL  = 0  ! global
+
+!.........  Number of inventory activities
+        INTEGER, PUBLIC :: MNIACT = 0  ! mobile
+
+!.........  Number of inventory pollutants and activities
+        INTEGER, PUBLIC :: MNIPPA = 0  ! mobile
+        INTEGER, PUBLIC :: NIPPA  = 0  ! global
 
 !.........  Number of pol-to-species combinations
         INTEGER, PUBLIC :: ANSMATV = 0  ! area
@@ -198,12 +211,35 @@
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PEINAM( : ) ! point
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM ( : ) ! all
 
+!.........  Associated pollutant variable names from inventory file, O=other
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AONAMES( : ) ! area
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MONAMES( : ) ! mobile
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PONAMES( : ) ! point
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: TONAMES( : ) ! all
+
+!.........  Associated pollutant variable units from inventory file
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: AOUNITS( : ) ! area
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: MOUNITS( : ) ! mobile
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: POUNITS( : ) ! point
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: TOUNITS( : ) ! all
+
+!.........  Pollutant and activity names from inventory/temporal file
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MEANAM( : ) ! mobile
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : ) ! all
+
 !.........  Pollutant-to-species names from speciation file
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: ASVDESC( : ) ! area
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: BSVDESC( : ) ! biogenic
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC( : ) ! mobile
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: PSVDESC( : ) ! point
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: TSVDESC( : ) ! all
+
+!.........  Pollutant-to-species units from speciation file
+        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: ASVUNIT( : ) ! area
+        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: BSVUNIT( : ) ! biogenic
+        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: MSVUNIT( : ) ! mobile
+        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: PSVUNIT( : ) ! point
+        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: TSVUNIT( : ) ! all
 
 !.........  Pollutant-to-species names from reactivity file
         CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: ARVDESC( : ) ! area
@@ -227,17 +263,18 @@
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PEMNAM  ( : ) ! point
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC ::  EMNAM  ( : ) ! all
 
+!.........  Index between all model species names and all inventory pollutants
+        INTEGER, ALLOCATABLE, PUBLIC :: EMIDX( : )
+
 !.........  NAMES AND INDICES FOR GROUP STRUCTURE
 
-!.........  Grouped pollutant arrays
-        INTEGER, ALLOCATABLE, PUBLIC :: PLCNT( : )  ! count per group
-        INTEGER, ALLOCATABLE, PUBLIC :: IDPGP( : )  ! group ID number
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PLNAMES( :,: ) ! pol name
-
-!.........  Grouped pol-to-species
-        INTEGER, ALLOCATABLE, PUBLIC :: NSMPPG( :,: )    ! No. spcs per pol/grp 
-        INTEGER, ALLOCATABLE, PUBLIC :: SMINDEX( :,:,: ) ! index to TSVDESC
-        INTEGER, ALLOCATABLE, PUBLIC :: SPINDEX( :,:,: ) ! index to EMNAM
+!.........  Grouped variable arrays
+        INTEGER, ALLOCATABLE, PUBLIC :: VGRPCNT( : )  ! count per group
+        INTEGER, ALLOCATABLE, PUBLIC :: IDVGP( : )    ! group ID number
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: GVNAMES( :,: ) ! var name
+        INTEGER, ALLOCATABLE, PUBLIC :: SIINDEX( :,: ) ! index to EANAM
+        INTEGER, ALLOCATABLE, PUBLIC :: SPINDEX( :,: ) ! index to EMNAM
+        LOGICAL, ALLOCATABLE, PUBLIC :: GVLOUT ( :,: ) ! output points
 
 !.........  Group indices for inventory emissions
         INTEGER, ALLOCATABLE, PUBLIC :: A_EXIST( :,: )   ! area
@@ -255,15 +292,15 @@
         INTEGER, ALLOCATABLE, PUBLIC :: PA_EXIST( :,: )   ! point
 
 !.........  Group indices for reactivity control matrices
-        INTEGER, ALLOCATABLE, PUBLIC :: AR_EXIST( :,:,: )   ! area
-        INTEGER, ALLOCATABLE, PUBLIC :: MR_EXIST( :,:,: )   ! mobile
-        INTEGER, ALLOCATABLE, PUBLIC :: PR_EXIST( :,:,: )   ! point
+        INTEGER, ALLOCATABLE, PUBLIC :: AR_EXIST( :,: )   ! area
+        INTEGER, ALLOCATABLE, PUBLIC :: MR_EXIST( :,: )   ! mobile
+        INTEGER, ALLOCATABLE, PUBLIC :: PR_EXIST( :,: )   ! point
 
 !.........  Group indices for speciation matrices
-        INTEGER, ALLOCATABLE, PUBLIC :: AS_EXIST( :,:,: )   ! area
-        INTEGER, ALLOCATABLE, PUBLIC :: BS_EXIST( :,:,: )   ! biogenic 
-        INTEGER, ALLOCATABLE, PUBLIC :: MS_EXIST( :,:,: )   ! mobile
-        INTEGER, ALLOCATABLE, PUBLIC :: PS_EXIST( :,:,: )   ! point
+        INTEGER, ALLOCATABLE, PUBLIC :: AS_EXIST( :,: )   ! area
+        INTEGER, ALLOCATABLE, PUBLIC :: BS_EXIST( :,: )   ! biogenic 
+        INTEGER, ALLOCATABLE, PUBLIC :: MS_EXIST( :,: )   ! mobile
+        INTEGER, ALLOCATABLE, PUBLIC :: PS_EXIST( :,: )   ! point
 
 !.........  GRID AND EPISODE SETTINGS...
 !.........  Grid information
@@ -300,9 +337,17 @@
         INTEGER, PUBLIC :: BYEAR  = 0     ! base inventory year
         INTEGER, PUBLIC :: PYEAR  = 0     ! projected inventory year
 
-!.........  Units
-        CHARACTER(LEN=IOVLEN3), PUBLIC :: INVUNIT = ' ' ! emis units w/time
-        CHARACTER(LEN=IOVLEN3), PUBLIC :: SPCUNIT = ' ' ! speciation units
+!.........  Units conversions information
+        INTEGER               , PUBLIC :: INVPIDX = 1    ! annual/O3 season idx
+
+        REAL             , PUBLIC :: BIOFAC      ! conv fac for grd bio
+        REAL, ALLOCATABLE, PUBLIC :: GRDFAC( : ) ! for spc/pol/act grid outputs
+        REAL, ALLOCATABLE, PUBLIC :: TOTFAC( : ) ! for spc/pol/act st/co outputs
+
+        CHARACTER(LEN=IOULEN3), PUBLIC :: BIOUNIT = ' '  ! biogenic input units
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: GRDUNIT( : ) ! gridded output units
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT( : ) ! speciation units
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: TOTUNIT( : ) ! st/co total units
 
 !.........  INPUT ARRAYS ...
 !.........  Country/State/County codes
@@ -341,12 +386,15 @@
         REAL   , ALLOCATABLE, PUBLIC :: MRINFO( :,: ) ! mobile
         REAL   , ALLOCATABLE, PUBLIC :: PRINFO( :,: ) ! point
 
+!.........  Plume-in-grid arrays
+        REAL   , ALLOCATABLE, PUBLIC :: PGRPEMIS( : ) ! PinG group emissions
+
 !.........  OUTPUT ARRAYS ...
 
 !.........  Gridded emissions (or for mobile, VMT)
         REAL   , ALLOCATABLE, PUBLIC :: AEMGRD( : )   ! area  , dim: ngrid
         REAL   , ALLOCATABLE, PUBLIC :: MEMGRD( : )   ! mobile, dim: ngrid
-        REAL   , ALLOCATABLE, PUBLIC :: PEMGRD( : )   ! point , dim: ngrid
+        REAL   , ALLOCATABLE, PUBLIC :: PEMGRD( :,: ) ! point , dim: ngrid
         REAL   , ALLOCATABLE, PUBLIC :: TEMGRD( :,: ) ! all,3d, dim: ngrid,nlay
 
 !.........  In the following lists, ndim can either by nipol (number of 

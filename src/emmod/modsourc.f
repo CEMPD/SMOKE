@@ -43,6 +43,8 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
         INTEGER, ALLOCATABLE, PUBLIC:: ISIC  ( : )  !  source SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IORIS ( : )  !  source ORIS ID code
+        INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
+        INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: IPOSCOD( : ) !  positn of pol in INVPCOD
         INTEGER, ALLOCATABLE, PUBLIC:: TZONES( : )  !  time zones
         INTEGER, ALLOCATABLE, PUBLIC:: TPFLAG( : )  !  temporal profile types
@@ -57,6 +59,7 @@
         REAL   , ALLOCATABLE, PUBLIC:: YLOC1 ( : )  !  lat Y-location link start
         REAL   , ALLOCATABLE, PUBLIC:: XLOC2 ( : )  !  lon X-location link end 
         REAL   , ALLOCATABLE, PUBLIC:: YLOC2 ( : )  !  lat Y-location link end
+        REAL   , ALLOCATABLE, PUBLIC:: SPEED ( : )  !  speed
         REAL   , ALLOCATABLE, PUBLIC:: STKHT ( : )  !  stack height   (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKDM ( : )  !  stack diameter (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKTK ( : )  !  exhaust temp   (deg K)
@@ -67,34 +70,43 @@
 
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCC  ( : ) !  SCC
         CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID( : ) !  boiler ID
+        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK ( : ) !  link
         CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC( : ) !  plant desc
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURC( : ) !  concat src
+        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE( : ) !  vehicle type
 
 
 !.........  Unsorted list of point sources for SMOKE inventory file
-        INTEGER, ALLOCATABLE, PUBLIC:: INDEXA( : ) !  subscript table for SORTIC()
+        INTEGER, ALLOCATABLE, PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
         INTEGER, ALLOCATABLE, PUBLIC:: IFIPA ( : ) !  raw state/county FIPS code
         INTEGER, ALLOCATABLE, PUBLIC:: ISICA ( : ) !  raw SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IORISA( : ) !  raw ORIS ID code
+        INTEGER, ALLOCATABLE, PUBLIC:: IRCLASA( : )!  road class number
+        INTEGER, ALLOCATABLE, PUBLIC:: IVTYPEA( : )!  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: TPFLGA( : ) !  temporal resolution code
         INTEGER, ALLOCATABLE, PUBLIC:: INVYRA( : ) !  inventory year
-        INTEGER, ALLOCATABLE, PUBLIC:: IDIUA ( : ) !  Hourly profile code for each source
-        INTEGER, ALLOCATABLE, PUBLIC:: ISPEEDA ( : ) ! speed
-        INTEGER, ALLOCATABLE, PUBLIC:: IWEKA ( : ) !  Weekly profile code for each source
-        INTEGER, ALLOCATABLE, PUBLIC:: NPCNTA( : ) !  No. of pollutants per raw record
+        INTEGER, ALLOCATABLE, PUBLIC:: IDIUA ( : ) !  Hrly prof code per source
+        INTEGER, ALLOCATABLE, PUBLIC:: IWEKA ( : ) !  Wkly prof code per source
+        INTEGER, ALLOCATABLE, PUBLIC:: NPCNTA( : ) !  No. of pols per raw record
         INTEGER, ALLOCATABLE, PUBLIC:: SRCIDA( : ) !  Source ID
 
-        REAL,    ALLOCATABLE, PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
-        REAL,    ALLOCATABLE, PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
-        REAL,    ALLOCATABLE, PUBLIC:: STKHTA( : ) !  stack height   (m)
-        REAL,    ALLOCATABLE, PUBLIC:: STKDMA( : ) !  stack diameter (m)
-        REAL,    ALLOCATABLE, PUBLIC:: STKTKA( : ) !  exhaust temperature (deg K)
-        REAL,    ALLOCATABLE, PUBLIC:: STKVEA( : ) !  exhaust velocity    (m/s)
-        REAL,    ALLOCATABLE, PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
-        REAL,    ALLOCATABLE, PUBLIC:: VMTA  ( : ) !  vehicle miles traveled
+        REAL   , ALLOCATABLE, PUBLIC:: XLOCAA( : ) !  UTM X-location (m)
+        REAL   , ALLOCATABLE, PUBLIC:: YLOCAA( : ) !  UTM Y-location (m)
+        REAL   , ALLOCATABLE, PUBLIC:: XLOC1A( : ) !  lon X-location link start 
+        REAL   , ALLOCATABLE, PUBLIC:: YLOC1A( : ) !  lat Y-location link start
+        REAL   , ALLOCATABLE, PUBLIC:: XLOC2A( : ) !  lon X-location link end 
+        REAL   , ALLOCATABLE, PUBLIC:: YLOC2A( : ) !  lat Y-location link end
+        REAL   , ALLOCATABLE, PUBLIC:: SPEEDA( : ) !  speed
+        REAL   , ALLOCATABLE, PUBLIC:: STKHTA( : ) !  stack height   (m)
+        REAL   , ALLOCATABLE, PUBLIC:: STKDMA( : ) !  stack diameter (m)
+        REAL   , ALLOCATABLE, PUBLIC:: STKTKA( : ) !  exhaust temperature (deg K)
+        REAL   , ALLOCATABLE, PUBLIC:: STKVEA( : ) !  exhaust velocity    (m/s)
+        REAL   , ALLOCATABLE, PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
+        REAL   , ALLOCATABLE, PUBLIC:: VMTA  ( : ) !  vehicle miles traveled
 
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCA  ( : ) !  SCC
         CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) !  boiler ID
+        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINKA ( : ) !  link
         CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) !  plant desc
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURCA( : ) !  concat src
         CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) !  vehicle type
