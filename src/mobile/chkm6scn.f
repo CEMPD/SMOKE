@@ -1,5 +1,6 @@
 
-        SUBROUTINE CHKM6SCN( FILENAME, SCENARIO, NLINES, EFYEAR )
+        SUBROUTINE CHKM6SCN( FILENAME, SCENARIO, NLINES, EFYEAR,
+     &                       FLATFLAG )
      
 C***********************************************************************
 C  subroutine body starts at line 77
@@ -39,9 +40,6 @@ C Last updated: $Date$
 C
 C***********************************************************************
         
-C.........  MODULES for public variables        
-        USE MODINFO, ONLY:
-        
         IMPLICIT NONE        
 
 C...........   INCLUDES:
@@ -60,6 +58,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER*150, INTENT (INOUT) :: SCENARIO( NLINES )   ! M6 scenario
         INTEGER,       INTENT (IN)    :: NLINES               ! no. lines in scenario (size of array)
         INTEGER,       INTENT (IN)    :: EFYEAR               ! emission factor year
+        LOGICAL,       INTENT (IN)    :: FLATFLAG             ! true: use flat hourly VMT profile
 
 C...........   Other local variables
         INTEGER I, J, K                       ! counters and indices                     
@@ -92,11 +91,19 @@ C.............  Comment out unused commands (this can be added to as needed)
             IF( INDEX( COMMAND, 'SCENARIO RECORD' ) > 0 .OR.
      &          INDEX( COMMAND, 'PARTICLE SIZE' ) > 0 .OR.
      &          INDEX( COMMAND, 'AVERAGE SPEED' ) > 0 .OR.
-     &          INDEX( COMMAND, 'SPEED VMT' ) > 0 .OR.
-     &          INDEX( COMMAND, 'I/M CREDIT FILE' ) > 0 ) THEN
+     &          INDEX( COMMAND, 'SPEED VMT' ) > 0 ) THEN
                 RPLCLINE( 1:1 ) = '*'
                 RPLCLINE( 2:150 ) = CURRLINE( 1:149 )
                 SCENARIO( I ) = RPLCLINE
+            END IF
+
+C.............  Check for VMT BY HOUR command
+            IF( FLATFLAG ) THEN
+                IF( INDEX( COMMAND, 'VMT BY HOUR' ) > 0 ) THEN
+                    RPLCLINE( 1:1 ) = '*'
+                    RPLCLINE( 2:150 ) = CURRLINE( 1:149 )
+                    SCENARIO( I ) = RPLCLINE
+                END IF
             END IF
 
 C.............  Search command for year command

@@ -99,11 +99,12 @@ C...........   Other local variables
         REAL    CURRSPD                   ! speed value from SPDSUM file
         REAL    PREVSPD                   ! previous speed
 
-        LOGICAL      :: ADJHOUR           ! true: adjust hourly speeds for ramps
-        LOGICAL      :: ADJINV            ! true: adjust inventory speeds for ramps
+        LOGICAL,SAVE :: ADJHOUR           ! true: adjust hourly speeds for ramps
+        LOGICAL,SAVE :: ADJINV            ! true: adjust inventory speeds for ramps
         LOGICAL      :: EFLAG   = .FALSE. ! true: error found
         LOGICAL,SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
         LOGICAL      :: NEWSCEN = .FALSE. ! true: print current and create a new scenario
+        LOGICAL,SAVE :: FLATFLAG = .TRUE. ! true: use flat hourly VMT profile in MOBILE6
         
         CHARACTER(LEN=FIPLEN3) CURRCOUNTY            ! current county FIPS code
         CHARACTER(LEN=FIPLEN3) REFCOUNTY             ! ref. county FIPS code for curr. county
@@ -142,6 +143,10 @@ C.............  Get settings for adjusting speeds
                 MESG = 'Adjust hourly speeds for freeway ramps'
                 ADJHOUR = ENVYN( 'ADJUST_HR_SPEED', MESG, .TRUE., IOS )
             END IF
+
+C.............  Check if flat hourly VMT profile should be used in MOBILE6
+            MESG = 'Use flat hourly VMT profile in MOBILE6'
+            FLATFLAG = ENVYN( 'M6_FLAT_VMT', MESG, .TRUE., IOS )
             
 C.............  Get the year for computing the emission factors
             MESG = 'Emission factors year'
@@ -219,7 +224,8 @@ C.............  Find beginning of scenario commands
             END IF           
 
 C.............  Check M6 scenario for unused commands and calendar year
-            CALL CHKM6SCN( SCENFILE, M6SCEN, NLINESCEN, JYEAR )
+            CALL CHKM6SCN( SCENFILE, M6SCEN, NLINESCEN, JYEAR, 
+     &                     FLATFLAG )
 
             IF( TEMPFLAG .OR. RHFLAG ) THEN
             	
@@ -270,6 +276,12 @@ C.............  Select M6 output based on volatile pollutant name
                 MESG = 'ERROR: Unrecognized hydrocarbon type'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END SELECT
+
+C.............  Add VMT BY HOUR to run level commands if needed
+            IF( FLATFLAG ) THEN
+                WRITE( MDEV,93000 ) 'VMT BY HOUR        : ' //
+     &                              'SMOKE_flat_hr_vmt.def'
+            END IF
 
 C.............  Move to starting line for current county in SPDSUM file
             CALL GETSPDLN( SDEV, CURRCOUNTY, NLINESPD, CURRLINE )
