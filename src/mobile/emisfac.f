@@ -98,7 +98,7 @@ C...........   Commons linked with MOBILE subroutine
 
 C...........   Local parameters
 
-        CHARACTER*50, PARAMETER :: SCCSW    = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
         INTEGER     , PARAMETER :: PURETYPE = -1
         INTEGER     , PARAMETER :: CMBOTYPE =  1
 
@@ -180,7 +180,7 @@ C   begin body of program EMISFAC
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY

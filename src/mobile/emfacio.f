@@ -87,8 +87,7 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT   (OUT) :: DIREUSE  ! true: reusing diur EFs
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW = ! SCCS string with version no. at end
-     &               '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Local file names and unit numbers
         INTEGER        CDEV        ! mobile codes for vehicle types and rtypes
@@ -231,7 +230,7 @@ C.............  Set up non-default header options for non-diurnal EF file
             FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) //
      &                     ' non-diurnal emission factors'
             FDESC3D( 2 ) =               '/FROM/ '    // PROGNAME
-            FDESC3D( 3 ) =               '/VERSION/ '// VERCHAR( SCCSW )
+            FDESC3D( 3 ) =               '/VERSION/ '// VERCHAR( CVSW )
             WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/ ', MINT_MIN
             WRITE( FDESC3D( 5 ), 94030 ) '/MAXT_MAX/ ', MAXT_MAX
             WRITE( FDESC3D( 6 ), 94030 ) '/T_INTERVAL/ ', TMMINVL
@@ -307,7 +306,7 @@ C.............  Set up diurnal master List file description
             FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) //
      &                     ' diurnal emission factors'
             FDESC3D( 2 ) =               '/FROM/ '    // PROGNAME
-            FDESC3D( 3 ) =               '/VERSION/ '// VERCHAR( SCCSW )
+            FDESC3D( 3 ) =               '/VERSION/ '// VERCHAR( CVSW )
             WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/ ', MINT_MIN
             WRITE( FDESC3D( 5 ), 94030 ) '/MINT_MAX/ ', MINT_MAX
             WRITE( FDESC3D( 6 ), 94030 ) '/MAXT_MIN/ ', MAXT_MIN

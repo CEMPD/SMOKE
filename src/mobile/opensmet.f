@@ -68,8 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN OUT) :: FNAME    ! name output min/max tmpr file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW = ! SCCS string with version no. at end
-     &               '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
         INTEGER     J
@@ -99,7 +98,7 @@ C.........  Initialize I/O API output file headers
         FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) //
      &                 ' min/max temperature file'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/', MINT_MIN
         WRITE( FDESC3D( 5 ), 94030 ) '/MINT_MAX/', MINT_MAX
         WRITE( FDESC3D( 6 ), 94030 ) '/MAXT_MIN/', MAXT_MIN

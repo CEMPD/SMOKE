@@ -85,8 +85,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &               WKDAY
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: SCCSW = ! SCCS string with version no. at end
-     &               '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -180,7 +179,7 @@ C   begin body of program PREMOBL
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
