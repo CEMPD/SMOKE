@@ -1,6 +1,6 @@
 
         SUBROUTINE GENREACT( NSRC, NIPOL, BYEAR, PYEAR, ENAME,
-     &                       RPOL, EINAM )
+     &                       RPOL, USEPOL, EINAM )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -72,6 +72,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year for reactivity
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
         CHARACTER(LEN=IOVLEN3), INTENT (IN) :: RPOL! pol for procssing reactvity
+        LOGICAL     , INTENT (IN) :: USEPOL( NIPOL ) ! true: pol valid for pkt
         CHARACTER(*), INTENT (IN) :: EINAM( NIPOL )  ! all pollutant names
 
 C...........   Local arrays allocated by subroutine arguments
@@ -166,7 +167,8 @@ C.............  Determine if source category is point sources, or other
 C.........  For pollutant in subroutine argument...
 
 C.........  Determine which reactivity packet goes to each source
-        CALL ASGNCNTL( NSRC, 1, 'REACTIVITY', RPOL, IDUM, ISREA )
+        CALL ASGNCNTL( NSRC, 1, 'REACTIVITY', USEPOL, RPOL, 
+     &                 IDUM, ISREA )
 
 C.........  Count up the number of sources that have reactivity data
         NSREAC = 0

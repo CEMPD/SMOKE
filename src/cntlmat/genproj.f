@@ -1,5 +1,6 @@
 
-        SUBROUTINE GENPROJ( NSRC, NIPPA, BYEAR, PYEAR, ENAME, EANAM )
+        SUBROUTINE GENPROJ( NSRC, NIPPA, BYEAR, PYEAR, ENAME, 
+     &                      USEPOL, EANAM )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -21,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -65,7 +66,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: BYEAR  ! base year
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
-        CHARACTER(*), INTENT (IN) :: EANAM( NIPPA )  ! all pollutant names
+        LOGICAL     , INTENT (IN) :: USEPOL( NIPPA )  ! true: pol used in pkt
+        CHARACTER(*), INTENT (IN) :: EANAM ( NIPPA )  ! all pollutant names        
 
 C...........   Local arrays allocated by subroutine arguments
         INTEGER          ISPRJ ( NSRC ) ! projection control data table index
@@ -97,7 +99,8 @@ C           Since the projection packet is not pollutant specific,
 C           simply send the first pollutant in the pollutant list
 C           to ASGNCNTL in order to avoid looping through all pollutants.
 
-         CALL ASGNCNTL( NSRC, 1, 'PROJECTION', EANAM(1), IDUM, ISPRJ )
+         CALL ASGNCNTL( NSRC, 1, 'PROJECTION', USEPOL, EANAM(1), 
+     &                  IDUM, ISPRJ )
 
 C.........  Allocate memory for the projection matrix.  Use data
 C           structures for point sources, but this routine can be used for area
