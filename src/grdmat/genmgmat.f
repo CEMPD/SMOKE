@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -227,7 +227,7 @@ C.......       sixth case:   fallback default
         NNOSRG   = 0
         NLKOGRD = 0
         JMAX  = -1
-        LNKEND = VTPPOS3 - 1
+        LNKEND = VIDPOS3 - 1
         ADJ    = 1.    !  temporary
         ADJC   = 1.    !  temporary
 
@@ -237,7 +237,7 @@ C.......       sixth case:   fallback default
             RWT  = IRCLAS( S )
             CLNK = CLINK ( S )
             CSRC = CSOURC( S )
-            CSRC2= CSRC( 1:VTPPOS3-1 )  ! abridged for these purposes
+            CSRC2= CSRC( 1:VIDPOS3-1 )  ! abridged for these purposes
 
 C.............  Initialize sources as being in the domain
             INDOMAIN( S ) = .TRUE.
