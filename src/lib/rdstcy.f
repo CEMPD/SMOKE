@@ -43,7 +43,7 @@ C.........  This module contains the arrays for state and county summaries
      &                     CTRYCOD,  STATCOD,  CNTYCOD,
      &                     CTRYNAM,  STATNAM,  CNTYNAM,
      &                     CTRYPOPL, STATPOPL, CNTYPOPL,
-     &                     CNTYTZON
+     &                     CNTYTZON, CNTYTZNM
 
         IMPLICIT NONE
 
@@ -351,6 +351,8 @@ C.........  Allocate memory for data arrays from MODSTCY module
         CALL CHECKMEM( IOS, 'CNTYNAM', PROGNAME )
         ALLOCATE( CNTYTZON( NDIMCY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNTYTZON', PROGNAME )
+        ALLOCATE( CNTYTZNM( NDIMCY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNTYTZNM', PROGNAME )
         ALLOCATE( CNTYPOPL( NDIMCY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNTYPOPL', PROGNAME )
         ALLOCATE( USEDAYLT( NDIMCY ), STAT=IOS )
@@ -567,6 +569,10 @@ C.................  If the time zone is not defined, apply default.
                     CNTYTZON( K ) = TZONE0
 
                 END IF
+
+C.................  Store time zone name (do not apply default time zone)
+                CNTYTZNM( K ) = TZN
+
             END IF
 
             LFIP = FIP
