@@ -80,6 +80,8 @@
         CHARACTER(LEN=ALLLEN3), POINTER,     PUBLIC:: CSOURC( : ) ! concat src
         CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE( : ) ! vehicle type
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
+        CHARACTER(LEN=MACLEN3), ALLOCATABLE, PUBLIC:: CMACT ( : )  ! source MACT code
+        CHARACTER(LEN=NAILEN3), ALLOCATABLE, PUBLIC:: CNAICS( : )  !  source NAICS code
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
