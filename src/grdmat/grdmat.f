@@ -141,6 +141,7 @@ C...........   Other local variables
         LOGICAL      :: EFLAG   = .FALSE.  ! true: error found
         LOGICAL      :: SRGFLAG = .FALSE.  ! true: surrogates are needed
         LOGICAL      :: UFLAG   = .FALSE.  ! true: create ungridding matrix
+        LOGICAL      :: VFLAG   = .FALSE.  ! true: use variable grid
 
         CHARACTER(16)       COORUNIT !  coordinate system projection units
         CHARACTER(16)    :: INVGRDNM  = ' '  !  inventory grid name
@@ -169,6 +170,10 @@ C.........  Get environment variables that control this program
 
         DFLAG = ENVYN( 'GRDMAT_LINKDEFS',
      &                 'Use link definitions file or not', 
+     &                 .FALSE., IOS )
+
+        VFLAG = ENVYN( 'USE_VARIABLE_GRID',
+     &                 'Use variable grid definition',
      &                 .FALSE., IOS )
 
 C.........  Temporary section for disallowing optional files
@@ -330,7 +335,7 @@ C.............  Read the gridding cross-reference
 C.............  Read the surrogates header and initialize the grid description
 C.............  Also, obtain the format of the file.
 C.............  Save the name of the input grid
-            CALL RDSRGHDR( GDEV, SRGFMT )
+            CALL RDSRGHDR( VFLAG, GDEV, SRGFMT )
             SRGGRDNM = GRDNM
             SRGNCOLS = NCOLS
             SRGNROWS = NROWS
@@ -349,12 +354,22 @@ C.........  Get grid name from the environment and read grid parameters
         END IF
 
 C.........  Check or initialize the output grid grid settings (depends on
-C           if a surrogates file is being used).
-        CALL CHKGRID( GDNAM3D, 'GRIDDESC', 1, EFLAG )
-
-        IF ( EFLAG ) THEN
-            MESG = 'Problem with gridded input data.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C           if a surrogates file is being used). For variable grids,
+C           do not allow subgrids.
+        IF( VFLAG ) THEN
+            CALL CHKGRID( GDNAM3D, 'GRIDDESC', 0, EFLAG )
+            
+            IF( EFLAG ) THEN
+                MESG = 'Problem with variable grid input data.'
+ 		CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+            END IF
+        ELSE
+            CALL CHKGRID( GDNAM3D, 'GRIDDESC', 1, EFLAG )
+            
+            IF ( EFLAG ) THEN
+                MESG = 'Problem with gridded input data.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
         END IF
 
 C.........  If surrogates are needed, read the gridding surrogates,  
@@ -494,8 +509,8 @@ C.........  Abort of there are no source-cell intersections
 C.........  Get file names; open output gridding matrix (and ungridding matrix
 C           for mobile) using grid characteristics from DSCM3GRD() above        
 C.........  Also open report file 
-        CALL OPENGMAT( NMATX, NMATXU, UFLAG, IFDESC2, IFDESC3, GNAME, 
-     &                 UNAME, RDEV )
+        CALL OPENGMAT( NMATX, NMATXU, UFLAG, IFDESC2, IFDESC3, VFLAG,
+     &                 GNAME, UNAME, RDEV )
 
         CALL M3MSG2( 'Generating gridding matrix...' )
 
@@ -522,7 +537,7 @@ C           is done so the sparse i/o api format can be used.
 
         CASE( 'POINT' )
    
-            CALL GENPGMAT( GNAME, NSRC, NGRID, XLOCA, YLOCA, 
+            CALL GENPGMAT( GNAME, NSRC, NGRID, XLOCA, YLOCA, VFLAG,
      &                     GMAT( 1 ), GMAT( NGRID+1 ), NK, CMAX, CMIN )
 
         END SELECT
