@@ -283,7 +283,7 @@ C       INTEGER         RDEV    ! ...output report file
         INTEGER         H, HCORR, I, II, IREC  
         INTEGER         J, K, KU, L, M, N1, N2, F, S, T, V
         INTEGER         J1, J2, J3, J4   
-        INTEGER         MONTH, DAY, LDATE
+        INTEGER         MONTH, DAY
         REAL            TMMIDV
 
         REAL            SCR, PP, QQ
@@ -380,7 +380,7 @@ C.........  Prompt for time zone of temperature data.
 
         UNAME = PROMPTMFILE( 
      &          'Enter logical name for UNGRIDDING MATRIX input file',
-     &          FSREAD3, 'MUGMAT', 'TMPMOBIL' )
+     &          FSREAD3, 'MUMAT', 'TMPMOBIL' )
 
         WNAME = PROMPTMFILE( 
      &          'Enter logical name for UNGRIDDED MIN/MAX TEMPERATURE '
@@ -404,30 +404,11 @@ C.........  Prompt for time zone of temperature data.
 
         TDEV = PROMPTFFILE( 
      &           'Enter logical name for SPECIATION LIST file',
-     &           .TRUE., .TRUE., 'MSLST', 'TMPMOBIL' )
+     &           .TRUE., .TRUE., 'SPCS', 'TMPMOBIL' )
 
 C       RDEV = PROMPTFFILE( 
 C    &           'Enter logical name for output report file',
 C    &           .FALSE., .FALSE., 'MRPRT', 'TMPMOBIL' )
-
-C.......   Get time period for output file:
-
-        IF ( ISDSTIME( SDATE3D ) ) THEN
-            TZONE = 4
-        ELSE 
-            TZONE = 5
-        END IF
-        TZONE  = GETNUM( -12, 12, TZONE, 
-     &           'Enter time zone for output emissions (0 for GMT)' )
-        JDATE  = GETNUM( 0, 9999999, 1988200, 
-     &                   'Enter simulation starting date (YYYYDDD)' )
-        JTIME  = GETNUM( 0, 999999, 0, 
-     &                   'Enter simulation starting time  (HHMMSS)' )
-        NSTEPS = GETNUM( 1, 999999, 24,
-     &                   'Enter simulation duration (hours)' )
-
-        TSTEP  = 10000
-        JYEAR  = JDATE / 1000
 
 C.........  Get starting date and time from met data file
         IF ( .NOT. DESC3( MNAME ) ) THEN
@@ -439,6 +420,19 @@ C.........  Get starting date and time from met data file
 
         SCEN_STR = FDESC3D( 2 )
         SCHE_STR = FDESC3D( 3 )
+
+        TZONE  = GETNUM( -12, 12, IZONE, 
+     &           'Enter time zone for output emissions (0 for GMT)' )
+        JDATE  = GETNUM( 0, 9999999, SDATE3D, 
+     &                   'Enter simulation starting date (YYYYDDD)' )
+        JTIME  = GETNUM( 0, 999999, STIME3D, 
+     &                   'Enter simulation starting time  (HHMMSS)' )
+        NSTEPS = GETNUM( 1, 999999, MXREC3D,
+     &                   'Enter simulation duration (hours)' )
+
+C.........  Hard-code time step b/c all processors assume hourly processing
+        TSTEP  = 10000
+        JYEAR  = JDATE / 1000
 
 C.........  Set   date/time for temperature based on simulation
 C........   start date/time
@@ -1312,100 +1306,107 @@ C.......   Set date for reading emission factors
         FDATE = JYEAR * 1000 + 1
 
 C.......   Read emissions factor tables:
-
+        EFLAG = .FALSE.
         DO  366  T = 1, REFCNT
 
             IF ( .NOT. READ3( FNAME, 'EXH_CO', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        EXH_CO( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable EXH_CO from ' // FNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read EXH_CO for PSI', 
+     &          REFLIST( T ), 'from file ' // FNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( FNAME, 'EXH_NOX', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        EXH_NOX( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable EXH_NOX from ' // FNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read EXH_NOX for PSI', 
+     &          REFLIST( T ), 'from file ' // FNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( FNAME, 'EXH_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        EXH_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable EXH_VOC from ' // FNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read EXH_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // FNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( FNAME, 'EVP_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        EVP_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable EVP_VOC from ' // FNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read EVP_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // FNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( FNAME, 'RNL_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        RNL_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable RNL_VOC from ' // FNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read RNL_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // FNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( FNAME, 'RST_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        RST_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable RST_VOC from ' // FNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read RST_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // FNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( DNAME, 'WDL_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        WDL_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable WDL_VOC from ' // DNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read WDL_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // DNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( DNAME, 'DNL_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        DNL_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable DNL_VOC from ' // DNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read DNL_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // DNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( DNAME, 'HOT_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        HOT_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable HOT_VOC from ' // DNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read HOT_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // DNAME
+                EFLAG = .TRUE.
             END IF
 
             IF ( .NOT. READ3( DNAME, 'CRC_VOC', ALLAYS3, 
      &                        FDATE, SEC2TIME( REFLIST( T ) ),
      &                        CRC_VOC( 1,1,T ) ) ) THEN
                 WRITE( MESG,94010 ) 
-     &          'Could not read record', REFLIST( T ),
-     &          'of variable CRC_VOC from ' // DNAME
-                CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+     &          'Could not read CRC_VOC for PSI', 
+     &          REFLIST( T ), 'from file ' // DNAME
+                EFLAG = .TRUE.
             END IF
 
 366     CONTINUE
+
+        IF( EFLAG ) THEN
+            WRITE( MESG,94010 ) 
+     &         'ERROR: Emission factors missing!  Rerun EMISFAC.'
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+
+        ENDIF
 
 C.......   Read ungridding matrix:
 
@@ -1423,7 +1424,7 @@ C...........   For each time step, write out the area source emissions values:
 
         WRITE( *,92000 ) ' ', 'Writing out emissions values...', ' '
 
-        LDATE = -1   !  initialization forces TMAT calculation on first iter.
+        EFLAG = .FALSE.
 
         DO  899  T = 1, NSTEPS
 
@@ -1435,10 +1436,7 @@ C...........   For each time step, write out the area source emissions values:
 C...............   If this is a new month, or new day, calculate
 C...............   new TMAT
 
-C           IF ( LDATE .NE. JDATE ) THEN
             IF ( MOD( T,24 ) .EQ. 1 ) THEN
-
-                LDATE = JDATE
 
 C...............   Adjust sources' time zones to account for daylight time
 C..................   Add 1 if date is daylight and TZONES is not
@@ -1519,6 +1517,10 @@ C.................  Read ungridded MIN/MAX temperature indices for the day
 
             DO  888  S = 1, NMSRC
 
+                FIP = IFIP  ( S )
+                RDT = IRCLAS( S )
+                LNK = ILINK ( S )
+
 C...............   Ungrid temperature:
 
                 TASRC = 0.0
@@ -1537,23 +1539,49 @@ C...............   Get factors for interpolating non-diurnal emission factors
                     PP = 0.0
                     QQ = 0.0
                     II = 1
- 
-                ELSEIF ( TASRC .LT. TEMP0 ) THEN   !  trap TASRC against TEMP0
 
-                    WRITE( MESG,94030 )
-     &                  'Temperature', TASRC, 'at source ', S,
-     &                  'is below MEFS table min:', TEMP0
+C.................  Trap sources that have CU( KU ) = 0.  These are sources
+C                   that have no surrogates but are not excluded from grid.
+C                   This can happen when a road type or link with no VMT
+C                   is assigned a major highways surrogate, but there are
+C                   no major highways in the county in question.
+                ELSEIF ( TASRC .EQ. 0. ) THEN   
+                    WRITE( MESG,94010 ) 'NOTE: No ungridding for FIP:',
+     &                  FIP, 'RDT:', RDT, 'LNK:', LNK
+                    CALL M3MESG( MESG )
+
+                    PP = 1.0
+                    QQ = 0.0
+                    II = 1
+
+C.................  Trap source's temperature against minimum temperature
+C                   available in emission factors file
+                ELSEIF ( TASRC .LT. TEMP0 ) THEN   
+
+                    WRITE( MESG,94010 )
+     &                  'Source temp < MEFSND min for FIP:',
+     &                  FIP, 'RDT:', RDT, 'LNK:', LNK
                     CALL M3WARN( 'TMPMOBIL', JDATE, JTIME, MESG )
+
+                    WRITE( MESG,92030 ) '(T source [K]=', TASRC, 
+     &                               'but T min [K]=', TEMP0, ')'
+                    CALL M3MESG( MESG )
+
                     PP = 1.0
                     QQ = 0.0
                     II = 1
 
                 ELSE IF ( TASRC .GT. TEMP1 ) THEN   !  and against TEMP1
 
-                    WRITE( MESG,94030 )
-     &                  'Temperature', TASRC, 'at source', S,
-     &                  'is above MEFS table max:', TEMP1
+                    WRITE( MESG,94010 )
+     &                  'Source temp > MEFSND min for FIP:',
+     &                  FIP, 'RDT:', RDT, 'LNK:', LNK
                     CALL M3WARN( 'TMPMOBIL', JDATE, JTIME, MESG )
+
+                    WRITE( MESG,92030 ) '(T source [K]=', TASRC, 
+     &                               'but T max [K]=', TEMP1, ')'
+                    CALL M3MESG( MESG )
+
                     PP = 0.0
                     QQ = 1.0
                     II = NTEMP - 1
@@ -1566,6 +1594,10 @@ C...............   Get factors for interpolating non-diurnal emission factors
                     PP  = 1.0 - QQ
 
                 END IF		!  tasrc trapped; coeffs & index found.
+
+C...............   Adjust which hourly EF to use based on time zone
+                HCORR = MOD( H + TZONE + 25 - TZONES( S ), 24 )
+                M     = EFDEX( HCORR, S )
 
 C...............   Get factors for interpolating diurnal emission factors
 C...................   Note that min/max has already been trapped by PREDIUR
@@ -1591,6 +1623,23 @@ C.................  Set up if diurnal emissions are non-zero
                     S1     = AMOD ( DNLTI * ( TKMAX(S) - TMAX0 ), 1.0 )
                     S2     = 1.0 - S1
 
+C.....................  Check if diurnal emissions factors have been
+C                       calculated for this temperature.  If one set has
+C                       been, they all have been.
+                    IF( WDL_VOC( J1,1,M ) .LT. 0 .OR.
+     &                  WDL_VOC( J2,1,M ) .LT. 0 .OR.
+     &                  WDL_VOC( J3,1,M ) .LT. 0 .OR.
+     &                  WDL_VOC( J4,1,M ) .LT. 0      ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 
+     &                    'Diurnal EFs not available for PSI',
+     &                     REFLIST( M )
+                        CALL M3MESG( MESG )
+                        GOTO 888
+
+                    ENDIF
+
 C.................  Set up if diurnal emissions are zero
                 ELSE
                     J1 = 1
@@ -1604,11 +1653,6 @@ C.................  Set up if diurnal emissions are zero
 
                 ENDIF
                   
-C...............   Adjust which hourly EF to use based on time zone
-
-                HCORR = MOD( H + TZONE + 25 - TZONES( S ), 24 )
-                M     = EFDEX( HCORR, S )
-
                 I = 1 
 
                 IF( EMTNAM( I ) .EQ. 'EXH_CO' ) THEN
@@ -1754,6 +1798,14 @@ C...............   Adjust which hourly EF to use based on time zone
 
 899     CONTINUE
 
+        IF( EFLAG ) THEN
+            WRITE( MESG,94010 ) 
+     &         'ERROR: Diurnal emission factors missing! ' //
+     &         'Rerun PREDIUR and EMISFAC.'
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+
+        ENDIF
+
         IF( OFLAG ) THEN
 
             WRITE( MESG, 94010 ) 
@@ -1780,6 +1832,8 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92020   FORMAT( 5X, A, I9 )
 
+92030   FORMAT( 10X, 5( A, :, 1X, 1PG12.5, :, 1X ) )
+
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
@@ -1792,8 +1846,6 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
 
 94020   FORMAT( A, I5, 1X, A, I7, 1X, 10( A, I7, :, 1X ) )
-
-94030   FORMAT( 10 ( A, :, 1PG12.5, :, 2X , A, :, I5, :, 2X ) )
 
         END
 
