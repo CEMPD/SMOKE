@@ -448,11 +448,11 @@ C.....................  Allocate memory for mobile source gridding matrix
                 CASE( 'MOBILE' )
               
 C.....................  Convert mobile source coordinates from lat-lon to output grid
-c                   CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
-c     &   &                        XCENT, YCENT, XLOC1, YLOC1 )
+                   CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
+     &                            XCENT, YCENT, XLOC1, YLOC1 )
               
-c                   CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
-c     &   &                        XCENT, YCENT, XLOC2, YLOC2 )
+                   CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+     &                            XCENT, YCENT, XLOC2, YLOC2 )
               
 C.....................  Determine sizes for allocating mobile gridding matrix 
                     CALL SIZGMAT( CATEGORY, NSRC, NGRID,
