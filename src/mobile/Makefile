@@ -33,7 +33,7 @@ mbsetup.debug: $(MBSET) $(ALLI) $(LIBPATH_DEBUG)
 #
 PRE=premobl.o rdspdsrc.o openshour.o asgngrps.o \
       hourtemp.o avertemp.o wrshour.o opengroup.o \
-      rdgroups.o 
+      rdgroups.o calcrelhum.o
 
 premobl: $(PRE) $(ALLI) $(LIBPATH)
 	echo 'PREMOBL:'
@@ -48,7 +48,7 @@ premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 EMS=emisfac.o rdm6list.o wrm6input.o rdgrplist.o \
      openscen.o rdspdline.o chkm6scn.o getspdln.o \
      wrspdvmt.o rdhourtemp.o rplctemp.o wrm6header.o \
-     opensef.o wremfacs.o
+     opensef.o wremfacs.o rplcmet.o
 
 emisfac: $(EMS) $(ALLI) $(LIBPATH)
 	echo 'EMISFAC:'
@@ -68,27 +68,28 @@ include $(FS_ROOT)/modmake.inc
 
 asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
 asgnspds.o    : $(MODSOURC) $(MODXREF) $(MODINFO)
+avertemp.o    : $(MODMET)
 chkm6scn.o    : $(MODINFO)
-emisfac.o     : $(MODSOURC) $(MODINFO) $(MODMET) $(MODEMFAC) $(MODFILESET)
-hourtemp.o    : $(MODMBSET) $(MODSOURC) $(MODINFO)
+emisfac.o     : $(MODINFO) $(MODLISTS) $(MODMET) $(MODEMFAC) $(MODFILESET)
+hourtemp.o    : $(MODMBSET) $(MODSOURC) $(MODINFO) $(MODMET)
 mbsetup.o     : $(MODSOURC) $(MODINFO) $(MODMBSET)
 openscen.o    : $(MODEMFAC)
-opensef.o     : $(MODINFO) $(MODEMFAC)
+opensef.o     : $(MODINFO) $(MODEMFAC) $(MODFILESET)
 openshour.o   : $(MODINFO) $(MODMET)
 premobl.o     : $(MODSOURC) $(MODINFO) $(MODMET) $(MODGRID) $(MODMBSET)
 rdgroups.o    : $(MODINFO)
+rdhourtemp.o  : $(MODMET)
 rdm6list.o    : $(MODEMFAC)
-rdmcref.o     : $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMBSET)
-rdmvref.o     : $(MODSOURC) $(MODMBSET)
-rdspdline.o   : $(MODMBSET)
-	$(FC) $(FFLAGS) -c -o $@ rdspdline.F
+rdmcref.o     : $(MODMBSET)
+rdmvref.o     : $(MODMBSET)
+rplcmet.o     : $(MODMET)
+rplctemp.o    : $(MODMET)
 wremfacs.o    : $(MODSOURC) $(MODINFO) $(MODEMFAC)
 wrm6header.o  : $(MODEMFAC)
-wrm6input.o   : $(MODSOURC) $(MODINFO) $(MODEMFAC)
-wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET) $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ wrspdsum.F
 wrspdvmt.o    : $(MODMOBIL) $(MODMBSET)
-wrtimegr.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
+wrtimegr.o    : $(MODMBSET)
+rdspdline.o   : $(MODEMFAC)
+wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET) $(MODXREF)
 
 clean:
 	/bin/rm -f *.o
