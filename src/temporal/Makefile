@@ -3,9 +3,11 @@
 # Date    $Date$ 
 #
 LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
+#LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
+LIBS_DEBUG    = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
 LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+#LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.a
 #
 
 all: temporal
@@ -19,8 +21,8 @@ debug: temporal.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-TMP= asgntpro.o mktmat.o opentmp.o opentmpin.o pretmpr.o \
-     setdaylt.o temporal.o tmnamunt.o updtmat.o genhemis.o
+TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o \
+     setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o
 #qatmpr.o
 
 #
@@ -55,8 +57,6 @@ temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ temporal.f
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ tmnamunt.f
-tmpintrp.o: $(MODSOURC) $(MODMET) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ tmpintrp.f
 qatmpr.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ qatmpr.f
 updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
