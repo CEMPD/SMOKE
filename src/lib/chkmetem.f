@@ -97,6 +97,7 @@ C.........  Other local variables
         LOGICAL      :: EFLAG     = .FALSE.  ! true: error in comparing files
         LOGICAL      :: DOT_BASIS = .FALSE.  ! true: the comparison file is dot
         LOGICAL      :: THREE_D   = .FALSE.  ! true: one of the inputs is 3d
+        LOGICAL      :: VFLAG     = .FALSE.  ! true: error in vertical
 
         CHARACTER(LEN=IOVLEN3) FILNAM 
         CHARACTER*300          MESG 
@@ -286,7 +287,7 @@ C.............  Check horizontal parameters from header
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Horizontal grid parameters in file "' // 
      &                 FILNAM( 1:L2 ) // '"'// CRLF() // BLANK10//
-     &                 'are inconsitent with initialized values.'
+     &                 'are inconsistent with initialized values.'
                 CALL M3MSG2( MESG )
 
             END IF
@@ -300,24 +301,27 @@ C.............  Check vertical parameters from header
      &               VGTOP .NE. VGTOP3D      ) THEN
 
                     EFLAG = .TRUE.
+                    VFLAG = .TRUE.
 
                 ELSE
 
                     J = LBOUND( VGLVS3D,1 )
                     DO K = 0, NLAYS
 
-                        IF( FLTERR( VGLVS( K ), VGLVS3D( J ) ) ) 
-     &                      EFLAG = .TRUE.
+                        IF( FLTERR( VGLVS( K ), VGLVS3D( J ) ) ) THEN
+                            EFLAG = .TRUE.
+                            VFLAG = .TRUE.
+                        END IF
                         J = J + 1
 
                     END DO
 
                 END IF
 
-                IF( EFLAG ) THEN
+                IF( VFLAG ) THEN
                     MESG = 'ERROR: Vertical grid parameters in file "'// 
      &                     FILNAM( 1:L2 ) // '"'//CRLF() // BLANK10//
-     &                     'are inconsitent with initialized values.'
+     &                     'are inconsistent with initialized values.'
                     CALL M3MSG2( MESG )
                 END IF
 
