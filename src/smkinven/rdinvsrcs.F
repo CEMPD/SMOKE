@@ -976,7 +976,7 @@ C           record number
         END IF
      
 C.........  Sort inventory sources if needed (only if have more than MXRECS values)
-        IF( NRAWSRCS > MXRECS ) THEN
+        IF( NSTRECS > MXRECS ) THEN
             CALL M3MESG( 'Sorting sources by characteristics...' )
             
             CALL SORTIC( NRAWSRCS, CSRCIDX, CSOURCA )
