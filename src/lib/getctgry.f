@@ -61,7 +61,7 @@ C...........   LOCAL PARAMETER:
         CHARACTER*1, PARAMETER :: LETLIST( NLIST ) = 
      &                                    ( / 'A', 'B', 'M', 'P' / )
 
-        CHARACTER*6, PARAMETER :: CATLIST( NLIST ) = 
+        CHARACTER*6, PARAMETER :: CATTYPE( NLIST ) = 
      &                                    ( / 'AREA  ', 'BIOGEN',
      &                                        'MOBILE', 'POINT ' / )
 
@@ -101,7 +101,7 @@ C.........  Retrieve environment variable that indicates the source of interest
 
         ELSE
 
-            CATEGORY = CATLIST( J )
+            CATEGORY = CATTYPE( J )
             CATDESC  = CATLDSC( J )
 
             CATLEN   = LEN_TRIM( CATEGORY )
