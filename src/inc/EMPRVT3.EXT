@@ -58,8 +58,9 @@ C.........  Start of each field in source definitions
         PRIVATE :: ALLLEN3
         PRIVATE :: SCCPOS3
         PRIVATE :: RWTPOS3
-        PRIVATE :: VTPPOS3
+        PRIVATE :: VIDPOS3
         PRIVATE :: LNKPOS3
+        PRIVATE :: MSCPOS3
         PRIVATE :: ARBEGL3
         PRIVATE :: ARENDL3
         PRIVATE :: MBBEGL3
