@@ -93,8 +93,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: IREC      ! line number
         CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
         LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
-        INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIDAT ) ! emis dropped per pol
+        INTEGER   , INTENT(INOUT) :: NDROP     ! number of records dropped
+        REAL      , INTENT(INOUT) :: EDROP( MXIDAT ) ! emis dropped per pol
 
 C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: SRTDCOD( : )
@@ -460,6 +460,7 @@ C.............  Emissions are over a special interval
      &                  ' in inventory input file' 
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
+                NDROP = NDROP + 1
                 CYCLE          !  to head of PDEV-read loop
 
             END IF          !  tests on record type line( 57:58 )

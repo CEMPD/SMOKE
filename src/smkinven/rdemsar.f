@@ -83,8 +83,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: IREC      ! line number
         CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
         LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
-        INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIDAT ) ! emis dropped per pol
+        INTEGER    , INTENT(INOUT):: NDROP     ! number of records dropped
+        REAL       , INTENT(INOUT):: EDROP( MXIDAT ) ! emis dropped per pol
 
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables

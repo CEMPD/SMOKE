@@ -84,8 +84,8 @@ C              VMT is initialied in calling program.
         INTEGER     , INTENT (IN) :: NRAWBV      ! total rec x data var count
         INTEGER     , INTENT (IN) :: WKSET       ! weekly profile interpretation
         INTEGER     , INTENT(OUT) :: NRAWOUT     ! valid raw record count
-        INTEGER     , INTENT(OUT) :: NDROP       ! number of records dropped
-        REAL        , INTENT(OUT) :: VDROP( MXIDAT ) ! sum of data dropped
+        INTEGER     ,INTENT(INOUT):: NDROP       ! number of records dropped
+        REAL        ,INTENT(INOUT):: VDROP( MXIDAT ) ! sum of data dropped
         LOGICAL     , INTENT(OUT) :: EFLAG       ! error flag
 
 C...........   Local parameters, indpendent

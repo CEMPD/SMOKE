@@ -95,8 +95,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: IREC      ! line number
         CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
         LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
-        INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
-        REAL        , INTENT(OUT) :: DDROP( MXIDAT ) ! emis dropped per pol/act
+        INTEGER   , INTENT(INOUT) :: NDROP     ! number of records dropped
+        REAL      , INTENT(INOUT) :: DDROP( MXIDAT ) ! emis dropped per pol/act
 
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
@@ -451,6 +451,7 @@ C.............  Set error flag if return status is zero or less
 C.............  Message are written out in GETVMIX
             IF( K1 .LE. 0 ) THEN
                 EFLAG = .TRUE.
+		NDROP = NDROP + 1
                 CYCLE
             END IF
 

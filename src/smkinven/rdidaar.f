@@ -83,8 +83,8 @@ C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: WKSET  ! weekly profile interpretation
         INTEGER     , INTENT(OUT) :: NRAWOUT! outgoing source * pollutants
         LOGICAL     , INTENT(OUT) :: EFLAG  ! outgoing error flag
-        INTEGER     , INTENT(OUT) :: NDROP  !  number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIDAT )  ! emis dropped per pol
+        INTEGER     ,INTENT(INOUT):: NDROP  !  number of records dropped
+        REAL        ,INTENT(INOUT):: EDROP( MXIDAT )  ! emis dropped per pol
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 63  ! maximum pollutants in file
@@ -249,6 +249,7 @@ C.................  Update start and end positions
      &                     TMPNAM( V )( 1:L ) // ' are not a number ' //
      &                     'or have bad formatting at line', IREC
                     CALL M3MESG( MESG )
+                    NDROP = NDROP + 1
 
                 END IF
 

@@ -95,8 +95,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: IREC      ! line number
         CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
         LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
-        INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIDAT ) ! emis dropped per pol
+        INTEGER     ,INTENT(INOUT):: NDROP     ! number of records dropped
+        REAL        ,INTENT(INOUT):: EDROP( MXIDAT ) ! emis dropped per pol
 
 C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: SRTDCOD( : )
@@ -414,6 +414,7 @@ C.............  Check emissions-associated values
      &                 CRLF() //BLANK10 // 
      &                 'have bad formatting at line', IREC
                 CALL M3MESG( MESG )
+                NDROP = NDROP + 1
             END IF
 
 C.............  If there has been an error, do not try to store any of the

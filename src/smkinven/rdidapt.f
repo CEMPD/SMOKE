@@ -85,8 +85,8 @@ C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: WKSET  ! weekly profile interpretation
         INTEGER     , INTENT(OUT) :: NRAWOUT! outgoing source * pollutants
         LOGICAL     , INTENT(OUT) :: EFLAG  ! outgoing error flag
-        INTEGER     , INTENT(OUT) :: NDROP  !  number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIDAT )  ! emis dropped per pol
+        INTEGER     ,INTENT(INOUT):: NDROP  !  number of records dropped
+        REAL        ,INTENT(INOUT):: EDROP( MXIDAT )  ! emis dropped per pol
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: BLIDLEN  = 6   ! width of boiler field
@@ -255,6 +255,7 @@ C.............  Check state/county codes, error for missing
                 WRITE( MESG,94010 ) 'ERROR: State and/or county ' //
      &                 'code is non-integer or missing at line', IREC
                 CALL M3MESG( MESG )
+		NDROP = NDROP + 1
             END IF
 
 C.............  Check SIC code, warning for missing
