@@ -169,8 +169,8 @@ C.............  Loop through lines of current packet to read them
             DO I = 1, PKTCNT( K )
 
 C.................  Read packet information (populates CPKTDAT.EXT common)
-                CALL RDPACKET( FDEV, PKTLIST( K ), IREC, PKTINFO, 
-     &                         EFLAG )
+                CALL RDPACKET( FDEV, PKTLIST( K ), PKTFIXED( K ), 
+     &                         IREC, PKTINFO, EFLAG )
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
@@ -191,23 +191,24 @@ C.................  Initialize settings for no SIC expansion
 
 C.................  When SIC is defined, but SCC is not defined, need to 
 C                   count the additional records to insert.
-                IF( IXSIC        .GT. 0       .AND. 
-     &              PKTINFO%TSCC .EQ. SCCZERO       ) THEN
+C NOTE: This code does not work because SIC/SCC match-ups are not unique
+c                IF( IXSIC        .GT. 0       .AND. 
+c     &              PKTINFO%TSCC .EQ. SCCZERO       ) THEN
                 
 C.....................  Using position of SIC in list of inventory SICs, 
 C                       extract start and end position of SCC in INVSCC
-                    NSTART = IBEGSIC( IXSIC )
-                    NEND   = IENDSIC( IXSIC )
-                    EXPAND = .TRUE.
+c                    NSTART = IBEGSIC( IXSIC )
+c                    NEND   = IENDSIC( IXSIC )
+c                    EXPAND = .TRUE.
 
-                    XCNT = XCNT + NEND - NSTART + 1
+c                    XCNT = XCNT + NEND - NSTART + 1
 
 C.................  When SCC is defined or zero, just add one to the count
-                ELSE
+c                ELSE
 
                     XCNT = XCNT + 1
 
-                END IF
+c                END IF
 
 C.................  Write pollutant sorted position to a character string
                 WRITE( CPOS, '(I5)' ) JPOL
