@@ -63,9 +63,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-
-        EXTERNAL        PROMPTFFILE, 
-     &                  PROMPTMFILE
+        LOGICAL         ENVYN
+        
+        EXTERNAL        PROMPTFFILE, PROMPTMFILE, ENVYN
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -89,6 +89,7 @@ C.........  Unit numbers and logical file names
         INTEGER         XDEV     ! unit number for county cross-reference file
         INTEGER         VDEV     ! unit number for ref. county settings file
         INTEGER         SDEV     ! unit number for ASCII inventory file
+        INTEGER         ZDEV     ! unit number for speed cross-reference file
         INTEGER         PDEV     ! unit number for speeds summary file
         
         CHARACTER*16    ANAME   !  logical name for ASCII inventory file
@@ -106,6 +107,7 @@ C.........   Other local variables
         INTEGER          NGRDCTY           ! no. counties inside grid
         
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
+        LOGICAL       :: SPDFLAG = .FALSE. !  true: use speed profiles
         
         CHARACTER*300          MESG      !  message buffer 
         
@@ -136,7 +138,12 @@ C.........  Obtain settings from the environment...
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.......   Get file names and units; open input files
+C.........  Check if speed profiles are to be used
+        SPDFLAG = ENVYN( 'USE_SPEED_PROFILES', 
+     &            'Use speed profiles instead of inventory speeds', 
+     &            .FALSE., IOS )
+
+C.........  Get file names and units; open input files
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
@@ -156,6 +163,13 @@ C.......   Get file names and units; open input files
         VDEV = PROMPTFFILE(
      &           'Enter logical name for MVREF settings file',
      &           .TRUE., .TRUE., 'MVREF', PROGNAME )
+     
+        IF( SPDFLAG ) THEN
+            ZDEV = PROMPTFFILE(
+     &           'Enter logical name for SPDREF speed profile ' //
+     &           'cross-reference file',
+     &           .TRUE., .TRUE., 'SPDREF', PROGNAME );
+        END IF
      
         PDEV = PROMPTFFILE(
      &           'Enter logical name for SPDSUM speed summary file',
@@ -205,9 +219,12 @@ C......... If the dimensions were in error, abort
         
 C.........  Set inventory variables to read
         IVARNAMS( 1 ) = 'IFIP'
-        IVARNAMS( 2 ) = 'IRCLAS'
-        IVARNAMS( 3 ) = 'SPEED'
-        NINVARR = 3
+        IVARNAMS( 2 ) = 'CSOURC'
+        IVARNAMS( 3 ) = 'CSCC'
+        IVARNAMS( 4 ) = 'IRCLAS'
+        IVARNAMS( 5 ) = 'IVTYPE'
+        IVARNAMS( 6 ) = 'SPEED'
+        NINVARR = 6
 
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
@@ -269,9 +286,20 @@ C.........  Create speeds summary file
         MESG = 'Processing speed information...'
         CALL M3MSG2( MESG )
 
+C.........  Process speed profiles
+        IF( SPDFLAG ) THEN
+        
+C.............  Read speed profile cross-reference file
+            CALL RDSPDREF( ZDEV )
+
+C.............  Assign speed profile to each source
+            CALL ASGNSPDS
+            
+        END IF
+
 C.........  Loop through all the reference counties
         DO I = 1, NREFC
-            CALL WRSPDSUM( PDEV, I )
+            CALL WRSPDSUM( PDEV, I, SPDFLAG )
         END DO
 
         WRITE( PDEV,94010 ) ' '
