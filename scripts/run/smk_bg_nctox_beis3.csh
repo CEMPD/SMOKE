@@ -76,6 +76,9 @@ while ( $cnt < $EPI_NDAY )
    @ cnt = $cnt + $NDAYS
    source $ASSIGNS_FILE   # Invoke Assigns file to set new dates
 
+   # Override grid name
+   setenv IOAPI_GRIDNAME_1 US36_132X90 
+
    # Override file names to use Tmpbeis3 outputs
    setenv BGTS_L     $B3GTS_L
    setenv BGTS_S     $B3GTS_S
