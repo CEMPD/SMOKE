@@ -24,22 +24,22 @@ setenv MRG_CTLMAT_REAC ' '    # [A|M|P|AMP] for merging with reactivity controls
 
 ## time independent programs
 setenv RUN_SMKINVEN  Y        #  run inventory import program
-setenv RUN_SPCMAT    N        #  run speciation matrix program
-setenv RUN_GRDMAT    N        #  run gridding matrix program
+setenv RUN_SPCMAT    Y        #  run speciation matrix program
+setenv RUN_GRDMAT    Y        #  run gridding matrix program
 setenv RUN_CNTLMAT   N        #  run control matrix program
-setenv RUN_MBSETUP   N        #  run speed/temperature setup program        
+setenv RUN_MBSETUP   Y        #  run speed/temperature setup program        
 
 ## episode dependent programs
-setenv RUN_PREMOBL   N        #  Y runs temperature preprocessing program
-setenv RUN_EMISFAC   N        #  Y runs emission factors program
+setenv RUN_PREMOBL   Y        #  Y runs temperature preprocessing program
+setenv RUN_EMISFAC   Y        #  Y runs emission factors program
 
 ## time-dependent programs
-setenv RUN_TEMPORAL  N        #  run temporal allocation program
-setenv RUN_SMKMERGE  N        #  run merge program
+setenv RUN_TEMPORAL  Y        #  run temporal allocation program
+setenv RUN_SMKMERGE  Y        #  run merge program
 setenv RUN_SMK2EMIS  N        #  run conversion of 2-d to UAM binary
 
 ## quality assurance
-setenv RUN_SMKREPORT N        # Y runs reporting for state reports
+setenv RUN_SMKREPORT Y        # Y runs reporting for state reports
 
 ## Program-specific controls...
 
@@ -80,7 +80,7 @@ setenv UNIFORM_STIME        -1    # -1 or HHMMSS for uniform start hour for "day
 #     Temporary file paths    # set automatically
 
 # For Emisfac
-setenv MB_HC_TYPE           VOC   # hydrocarbon type from MOBILE6
+setenv MB_HC_TYPE           TOG   # hydrocarbon type from MOBILE6
 setenv REPLACE_TEMPERATURES   Y   # Y: use gridded hourly tmprs; N: use tmprs in M6 files
 #     EF_YEAR                 # SMK_FUTURE_YN=N: set to $YEAR from Assigns
 #                             # SMK_FUTURE_YN=Y: set to $FYEAR from scripts
@@ -122,7 +122,7 @@ setenv QA_TYPE            all     # [none, all, part1-part4, or custom]
 setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
 setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
 setenv AUTO_DELETE_LOG    Y       # Y automatically deletes logs without asking
-setenv DEBUGMODE          Y       # Y changes script to use debugger
+setenv DEBUGMODE          N       # Y changes script to use debugger
 setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 ##############################################################################
@@ -137,7 +137,8 @@ setenv RUN_PART1 N
 
 ## Run emisfac for cases needed by temperature choices in MVREF file
 #
-foreach GROUP_TYPE  ( episode )  # can include ( daily weekly monthly episode )
+foreach group ( episode )  # can include ( daily weekly monthly episode )
+  setenv GROUP_TYPE $group
   source emisfac_run.csh     # Run programs
 endif
 
