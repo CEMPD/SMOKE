@@ -342,13 +342,6 @@ C...........   Other local variables
         CHARACTER*256   LINE    !  buffer for reading XREF file
         CHARACTER*256   MESG    !  buffer for M3EXIT()
 
-        CHARACTER*10    DAYS( 7 )
-        DATA            DAYS
-     &          /
-     &          'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-     &          'Friday', 'Saturday', 'Sunday'
-     &          /
-
 C***********************************************************************
 C   begin body of program TMPMOBIL
 
@@ -412,7 +405,7 @@ C.........  Prompt for time zone of temperature data.
 
         MNAME = PROMPTMFILE( 
      &          'Enter logical name for SURFACE TEMPERATURE input file',
-     &          FSREAD3, 'TKDAT01', 'TMPMOBIL' )
+     &          FSREAD3, 'TKDAT', 'TMPMOBIL' )
 
         UNAME = PROMPTMFILE( 
      &          'Enter logical name for UNGRIDDING MATRIX input file',
@@ -466,12 +459,12 @@ C.........  Get starting date and time from met data file
 C.........  Record integer entries in LDEV
         DTBUF = MMDDYY( JDATE )
         WRITE( MESG,94050 ) 
-     &  'Output Time Zone :',  TZONE,       CRLF() // BLANK5 //
-     &  '       Start Date:'// DTBUF( 1:TRIMLEN( DTBUF ) ) //
-     &                                      CRLF() // BLANK5 //
-     &  '       Start Time:',  JTIME,       CRLF() // BLANK5 //
-     &  '       Time Step :',  1, 'hour' // CRLF() // BLANK5 //
-     &  '       Duration  :',  NSTEPS, 'hours'
+     &  'Output Time Zone :', TZONE,           CRLF() // BLANK5 //
+     &  '       Start Date:', DTBUF( 1:TRIMLEN( DTBUF ) ) //
+     &                                         CRLF() // BLANK5 //
+     &  '       Start Time:', JTIME,'HHMMSS'// CRLF() // BLANK5 //
+     &  '       Time Step :', 1    ,'hour'  // CRLF() // BLANK5 //
+     &  '       Duration  :', NSTEPS, 'hours'
 
         CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
@@ -594,9 +587,8 @@ C.........  Get list of scenario-specific emission types in compiled order
         NETYPE  = CSVNAME( TDEV, .TRUE., .FALSE., .TRUE., EMTNAM )
 
         IF( NETYPE .LE. 0 ) THEN
-            WRITE( MESG,94010 )
-     &             'Error reading SPECIATION LIST file'
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 
+     &                   'Error reading SPECIATION LIST file.', 2 )
         ENDIF
 
 C.........  Get description of MRAW file for initialization of MTMP
@@ -605,6 +597,13 @@ C.........  Get description of MRAW file for initialization of MTMP
      &                  'Could not get description of file "' 
      &                  // ANAME( 1:TRIMLEN( ANAME ) ) // '"',
      &                  2 )
+        END IF
+
+        IF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MOBL file:', NROWS3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         END IF
 
 C.........  Get file name; open output time-stepped area sources file
@@ -893,8 +892,8 @@ C.....................  Check table size for overflow
         NPRFA = K
 
         WRITE( MESG,94010 )
-     &      'Number of XREF entries--dimensioned', MXREF,
-     &      'actual', NPRFA
+     &      'Number TEMPORAL XREF entries--dimensioned (MXREF):', 
+     &       MXREF, 'actual', NPRFA
         CALL M3MSG2( MESG )
 
         IF ( EFLAG ) THEN
@@ -1587,7 +1586,7 @@ C.................  Read ungridded MIN/MAX temperature indices for the day
             END IF      ! if jdate not ldate
 
 C.............  Write to screen because WRITE3 only writes to LDEV
-            WRITE( *, 94060 ) HHMMSS( JTIME )
+            WRITE( *, 93020 ) HHMMSS( JTIME )
 
             H  = 1 + MOD( JTIME / 10000 , 24 )
             KU = 0
@@ -1910,10 +1909,12 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A16 )
 
+93020   FORMAT( 8X, 'at time ', A8 )
+
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+94010   FORMAT( 10 ( A, :, I7, :, 2X ) )
 
 94030   FORMAT( A, 1X, I5, :, 10( A, 1X, I7.7, 1X, I6.6, : ) )
 
@@ -1921,10 +1922,8 @@ C...........   Internal buffering formats............ 94xxx
 
 94040   FORMAT( 10 ( A, :, I8, :, 1X ) )
 
-94050   FORMAT( A, 1X, I6, A, 1X, A, 1X, I6.6, 
-     &          A, 1X, I6, 1X, A, 1X, I6, A   )
-
-94060   FORMAT( 8X, 'at time ', A8 )
+94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
+     &          A, 1X, I2.2, 1X, A, 1X, I2.2, 1X, A   )
 
         END
 
