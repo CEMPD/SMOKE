@@ -142,12 +142,6 @@ C           is assumed to be in GMT.
 
         END DO
 
-c note: The ending hour check should be re-done in such a way that the last 
-c n: day is a "day" when all of the sources have a least 1 hour during that
-c n: day.  With the current code, if ETIME = 120000 and ENDDAYHR = 50000, then
-c n: no missing hours would be reported, but really 24-7=17 missing hours 
-c n: should have been reported for the next day.
-
 C.........  Compute average number of days per time zone.  This is averaged
 C           in case some sources in a given time zone use daylight savings
 C           and some do not.
