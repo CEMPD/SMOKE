@@ -480,6 +480,22 @@ C.................  Ensure consistent spec matrix type for all source categories
 
             END IF  ! end of speciation open
 
+C.............  Open multiplicative control matrix, compare number of sources, 
+C               and store control variable names.
+            IF( MUFLAG ) THEN
+                MESG = 'Enter logical name for the MOBILE ' //
+     &                 'MULTIPLICATIVE CONTROL MATRIX'
+                MUNAME = PROMPTMFILE( MESG, FSREAD3, 'MCMAT', PROGNAME )
+
+                CALL RETRIEVE_IOAPI_HEADER( MUNAME )
+                CALL CHKSRCNO( 'mobile', 'MCMAT', NROWS3D, NMSRC, EFLAG)
+                MNUMATV = NVARS3D
+                ALLOCATE( MUVNAMS( MNUMATV ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MUVNAMS', PROGNAME )
+                CALL STORE_VNAMES( 1, 1, MNUMATV, MUVNAMS )
+
+            END IF  ! end of multiplicative control open
+
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( MRFLAG ) THEN
