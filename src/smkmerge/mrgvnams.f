@@ -132,10 +132,14 @@ C.........  Read, sort, and store activity codes/names file
 
 C.........  Loop through pollutants and/or activities in each source category
 C           and update status of pollutants and activities in master list.
-        CALL SET_MASTER_POL_STAT( 'area'    , ANIPOL, AEINAM, EFLAG )
-        CALL SET_MASTER_POL_STAT( 'biogenic', BNIPOL, BEINAM, EFLAG )
-        CALL SET_MASTER_POL_STAT( 'mobile'  , MNIPPA, MEANAM, EFLAG )
-        CALL SET_MASTER_POL_STAT( 'point'   , PNIPOL, PEINAM, EFLAG )
+        IF( AFLAG )
+     &    CALL SET_MASTER_POL_STAT( 'area'    , ANIPOL, AEINAM, EFLAG )
+        IF( BFLAG )
+     &    CALL SET_MASTER_POL_STAT( 'biogenic', BNIPOL, BEINAM, EFLAG )
+        IF( MFLAG )
+     &    CALL SET_MASTER_POL_STAT( 'mobile'  , MNIPPA, MEANAM, EFLAG )
+        IF( PFLAG )
+     &    CALL SET_MASTER_POL_STAT( 'point'   , PNIPOL, PEINAM, EFLAG )
 
 C.........  If any pollutants/activities from matrices not found in master
 C           list, exit
@@ -165,7 +169,7 @@ C           user is using emissions from the inventory file, and has selected
 C           ozone season emissions instead of annual emissions.
         ALLOCATE( EANAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
-        ALLOCATE( EINAM( NIPPA ), STAT=IOS )
+        ALLOCATE( EINAM( NIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
         ALLOCATE( TONAMES( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TONAMES', PROGNAME )
@@ -210,14 +214,18 @@ C.........  Also determine number of pollutants and store pollutants-only array
 
 C.........  Create array of input variable names and units that combines
 C           this information from anthropogenic source categories.
-        CALL BUILD_NAMES_UNITS( ANIPOL, AEINAM, AONAMES, AOUNITS, 
-     &                          TONAMES, TOUNITS )
-        CALL BUILD_NAMES_UNITS( BNIPOL, BEINAM, BONAMES, BOUNITS, 
-     &                          TONAMES, TOUNITS )
-        CALL BUILD_NAMES_UNITS( MNIPPA, MEANAM, MONAMES, MOUNITS, 
-     &                          TONAMES, TOUNITS )
-        CALL BUILD_NAMES_UNITS( PNIPOL, PEINAM, PONAMES, POUNITS, 
-     &                          TONAMES, TOUNITS )
+        IF( AFLAG )
+     &    CALL BUILD_NAMES_UNITS( ANIPOL, AEINAM, AONAMES, AOUNITS, 
+     &                            TONAMES, TOUNITS )
+        IF( BFLAG )
+     &    CALL BUILD_NAMES_UNITS( BNIPOL, BEINAM, BONAMES, BOUNITS, 
+     &                            TONAMES, TOUNITS )
+        IF( MFLAG )
+     &    CALL BUILD_NAMES_UNITS( MNIPPA, MEANAM, MONAMES, MOUNITS, 
+     &                            TONAMES, TOUNITS )
+        IF( PFLAG )
+     &    CALL BUILD_NAMES_UNITS( PNIPOL, PEINAM, PONAMES, POUNITS, 
+     &                            TONAMES, TOUNITS )
 
 C.........  Create array of sorted unique pol-to-species, sorted in order of
 C           pollutants, and then in alphabetical order by species...
@@ -248,13 +256,13 @@ C           species name.  Make sure the same name is not stored twice.
      &    CALL BUILD_VDESC_UNSORT( NCNT, MRNMSPC, MRVDESC(JM) ) ! mobile rctvty
         IF( PRFLAG ) 
      &    CALL BUILD_VDESC_UNSORT( NCNT, PRNMSPC, PRVDESC(JP) ) ! point rctvty
-        IF( AFLAG ) 
+        IF( AFLAG .AND. SFLAG ) 
      &    CALL BUILD_VDESC_UNSORT( NCNT, ANSMATV, ASVDESC     ) ! area spectn
         IF( BFLAG ) 
      &    CALL BUILD_VDESC_UNSORT( NCNT, BNSMATV, BSVDESC     ) ! biogenics
-        IF( MFLAG ) 
+        IF( MFLAG .AND. SFLAG ) 
      &    CALL BUILD_VDESC_UNSORT( NCNT, MNSMATV, MSVDESC     ) ! mobile spectn
-        IF( PFLAG ) 
+        IF( PFLAG .AND. SFLAG ) 
      &    CALL BUILD_VDESC_UNSORT( NCNT, PNSMATV, PSVDESC     ) ! point spectn
 
         NSMATV = NCNT 
@@ -300,81 +308,88 @@ C           and the master pollutant names
 
 C.........  Call subprogram to store species names in appropriate order
 C           for all source categories and the total.
-        IF( AFLAG ) 
+        IF( AFLAG .AND. SFLAG ) 
      &    CALL BUILD_SPECIES_ARRAY( ANSMATV, ASVDESC, ANMSPC, AEMNAM )
         IF( BFLAG ) 
      &    CALL BUILD_SPECIES_ARRAY( BNSMATV, BSVDESC, BNMSPC, BEMNAM )
-        IF( MFLAG ) 
+        IF( MFLAG .AND. SFLAG ) 
      &    CALL BUILD_SPECIES_ARRAY( MNSMATV, MSVDESC, MNMSPC, MEMNAM )
-        IF( PFLAG ) 
+        IF( PFLAG .AND. SFLAG ) 
      &    CALL BUILD_SPECIES_ARRAY( PNSMATV, PSVDESC, PNMSPC, PEMNAM )
-        CALL BUILD_SPECIES_ARRAY(  NSMATV, TSVDESC, NMSPC, EMNAM )
+        IF( SFLAG ) 
+     &    CALL BUILD_SPECIES_ARRAY(  NSMATV, TSVDESC, NMSPC, EMNAM )
 
 C.........  Resort biogenic species names to be consistent with global species
 C           list
-        ALLOCATE( TMPBNAM( BNMSPC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TMPBNAM', PROGNAME )
-        ALLOCATE( TMPBIDXA( BNMSPC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TMPBIDXA', PROGNAME )
-        ALLOCATE( TMPBIDXB( BNMSPC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TMPBIDXB', PROGNAME )
+        IF( BFLAG ) THEN
+            ALLOCATE( TMPBNAM( BNMSPC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPBNAM', PROGNAME )
+            ALLOCATE( TMPBIDXA( BNMSPC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPBIDXA', PROGNAME )
+            ALLOCATE( TMPBIDXB( BNMSPC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPBIDXB', PROGNAME )
 
-        DO I = 1, BNMSPC
-            J = INDEX1( BEMNAM( I ), NMSPC, EMNAM )
-            TMPBIDXA( I ) = J
-            TMPBIDXB( I ) = I
-        END DO
+            DO I = 1, BNMSPC
+                J = INDEX1( BEMNAM( I ), NMSPC, EMNAM )
+                TMPBIDXA( I ) = J
+                TMPBIDXB( I ) = I
+            END DO
 
-        CALL SORTI1( BNMSPC, TMPBIDXB, TMPBIDXA )        
+            CALL SORTI1( BNMSPC, TMPBIDXB, TMPBIDXA )        
 
-        TMPBNAM = BEMNAM  ! array
+            TMPBNAM = BEMNAM  ! array
 
-        DO I = 1, BNMSPC
-            J = TMPBIDXB( I )
-            BEMNAM( I ) = TMPBNAM( J )
-        END DO
-   
+            DO I = 1, BNMSPC
+                J = TMPBIDXB( I )
+                BEMNAM( I ) = TMPBNAM( J )
+            END DO
+
+        END IF
+
 C.........  Create index between master species names and master inventory names
 C.........  If there are multiple pollutants per species, the last pollutant
 C           will be put in the index.
 C.........  Also create the speciation units per pollutant
-        DO I = 1, NSMATV
+        IF( SFLAG ) THEN
+            DO I = 1, NSMATV
 
-C.............  Get positions of pollutants and model species
-            L1 = INDEX( TSVDESC( I ), SPJOIN )
-            L2 = LEN_TRIM( TSVDESC( I ) )
-            J  = INDEX1( TSVDESC( I )(    1:L1-1 ), NIPPA, EANAM )
-            K  = INDEX1( TSVDESC( I )( L1+1:L2   ), NMSPC, EMNAM )
+C.................  Get positions of pollutants and model species
+                L1 = INDEX( TSVDESC( I ), SPJOIN )
+                L2 = LEN_TRIM( TSVDESC( I ) )
+                J  = INDEX1( TSVDESC( I )(    1:L1-1 ), NIPPA, EANAM )
+                K  = INDEX1( TSVDESC( I )( L1+1:L2   ), NMSPC, EMNAM )
 
-C.............  Store position of pollutant for each species
-            EMIDX( K ) = J
+C.................  Store position of pollutant for each species
+                EMIDX( K ) = J
 
-C.............  Find speciation name in one of the speciation matrices and
-C               set units accordingly.  Set it based on the first one found.
-            IF( SPCUNIT( J ) .EQ. ' ' ) THEN
+C.................  Find speciation name in one of the speciation matrices and
+C                   set units accordingly.  Set it based on the first one found.
+                IF( SPCUNIT( J ) .EQ. ' ' ) THEN
 
-                IF( AFLAG ) THEN
-                    M = INDEX1( TSVDESC( I ), ANSMATV, ASVDESC )
-                    IF( M .GT. 0 ) SPCUNIT( J ) = ASVUNIT( M )
+                    IF( AFLAG ) THEN
+                        M = INDEX1( TSVDESC( I ), ANSMATV, ASVDESC )
+                        IF( M .GT. 0 ) SPCUNIT( J ) = ASVUNIT( M )
+                    END IF
+
+                    IF( MFLAG ) THEN
+                        M = INDEX1( TSVDESC( I ), MNSMATV, MSVDESC )
+                        IF( M .GT. 0 ) SPCUNIT( J ) = MSVUNIT( M )
+                    END IF
+
+                    IF( PFLAG ) THEN
+                        M = INDEX1( TSVDESC( I ), PNSMATV, PSVDESC )
+                        IF( M .GT. 0 ) SPCUNIT( J ) = PSVUNIT( M )
+                    END IF
+
                 END IF
 
-                IF( MFLAG ) THEN
-                    M = INDEX1( TSVDESC( I ), MNSMATV, MSVDESC )
-                    IF( M .GT. 0 ) SPCUNIT( J ) = MSVUNIT( M )
-                END IF
+            END DO
 
-                IF( PFLAG ) THEN
-                    M = INDEX1( TSVDESC( I ), PNSMATV, PSVDESC )
-                    IF( M .GT. 0 ) SPCUNIT( J ) = PSVUNIT( M )
-                END IF
-
-            END IF
-
-        END DO
+        END IF      ! End if speciation
 
 C.........  Deallocate temporary arrays
         DEALLOCATE( INDXA, TVSORTA, TVDESCA, INVDCOD, INVDNAM, INVSTAT )
-        DEALLOCATE( TMPBNAM, TMPBIDXA, TMPBIDXB )
+        IF( BFLAG ) DEALLOCATE( TMPBNAM, TMPBIDXA, TMPBIDXB )
 
 C.........  Abort if error(s) found
         IF( EFLAG ) THEN
@@ -504,18 +519,26 @@ C.............  This internal subprogram builds the unsorted list of unique
 C               pollutant-to-species speciation variable descriptions.
             SUBROUTINE BUILD_VDESC_UNSORT( NCNT, NVARS, VDESCS )
 
+            INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+
 C.............  Subprogram arguments
 
             INTEGER     , INTENT(IN OUT) :: NCNT            ! running count
             INTEGER     , INTENT    (IN) :: NVARS           ! no of var descs
             CHARACTER(*), INTENT    (IN) :: VDESCS( NVARS ) ! spec var descs
 
-C.............  Local subprogram variables
-            INTEGER      I, K1, K2, L, L2     ! counters and indices
-            INTEGER      LJ, LS               ! string lengths of separators
+C.............  Local subprogram arrays
+            INTEGER,                SAVE :: EMBIN ( MXVARS3 )
+            CHARACTER(LEN=IOVLEN3), SAVE :: EMLIST( MXVARS3 )
 
-            CHARACTER*5                IBUF   ! tmp variable position to
-            CHARACTER*5                PBUF   ! tmp pollutant position
+C.............  Local subprogram variables
+            INTEGER, SAVE :: EMCNT                ! count of species
+            INTEGER          I, K1, K2, K3, L, L2 ! counters and indices
+            INTEGER          LJ, LS               ! string lengths of separators
+
+            CHARACTER*5                CBIN   ! tmp pollutant bin
+            CHARACTER*5                CPOL   ! tmp pollutant index
+            CHARACTER*5                IBUF   ! tmp variable position to INVDNAM
             CHARACTER(LEN=IOVLEN3)     POLNAM ! tmp pollutant name
             CHARACTER(LEN=IOVLEN3)     SPCNAM ! tmp species name
             CHARACTER(LEN=IODLEN3)     TDESC  ! tmp combined pollutant & species
@@ -549,17 +572,38 @@ C.................  Extract pollutant name (without emissions type, if applies)
                 K1 = INDEX1( POLNAM, NIPOL, EINAM )  ! find pol in sorted list
                 K2 = INDEX1( TDESC, NCNT, TVDESCA )  ! find combo
 
+C.................  Look for species name in temporary list. If found, assign
+C                   pollutant bin number, if not, initialize pollutant bin 
+C                   number.                
+                K3 = INDEX1( SPCNAM, EMCNT, EMLIST )
+                IF( K3 .GT. 0 ) THEN
+                    K3 = EMBIN( K3 )
+                    
+                ELSE
+                    EMCNT = EMCNT + 1
+                    EMLIST( EMCNT ) = SPCNAM
+                    EMBIN ( EMCNT ) = K1
+                    K3 = K1
+                                        
+                END IF
+
 C.................  When pollutant is found, store sorting variable
-C.................  Sorting variable is designed to sort by pollutants (e.g.CO),
-C                   then species, and then emission type (e.g. EXH_CO)
+C.................  Sorting variable is designed to sort by pollutant (e.g.CO),
+C                   then species, and then emission type (e.g. EXH_CO).
+C.................  If multiple pollutants contribute to the same species, the
+C                   sorting must ensure the species are together. An example
+C                   of this is ROG and VOC creating the same species. The
+C                   CBIN variable ensures that this is the case.
                 IF( K1 .GT. 0 .AND. K2 .LE. 0 ) THEN
                     NCNT = NCNT + 1
  
-                    WRITE( PBUF, '(I5.5)' ) K1
+                    WRITE( CBIN, '(I5.5)' ) K3
+                    WRITE( CPOL, '(I5.5)' ) K1
                     WRITE( IBUF, '(I5.5)' ) I
                     INDXA  ( NCNT ) = NCNT
-                    TVSORTA( NCNT ) = PBUF // SPCNAM // IBUF
+                    TVSORTA( NCNT ) = CBIN // SPCNAM // CPOL // IBUF
                     TVDESCA( NCNT ) = TDESC
+
                 ELSE IF( K1 .LE. 0 ) THEN
                     L1 = LEN_TRIM( TDESC( 1:L-1 ) )
                     L2 = LEN_TRIM( SPCNAM )
