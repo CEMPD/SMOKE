@@ -2,15 +2,13 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	      = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
-LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
-LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -ledsstools -lioapi_new -lnetcdf -lpvm3 -mp
-LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -ledsstools.debug -lioapi_new -lnetcdf -lpvm3 -mp
-
+LIBS	      = $(LDIRS) $(LIBS_SYS) 
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)  -L/env/proj/ppar/IRIX6n32dbg -lsmoke.debug -ledsstools.debug -lioapi_v2.1 -lnetcdf -lmp 
+LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
+LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp
+LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp
 #
-
 all: smkmerge mrggrid
 
 debug: smkmerge.debug mrggrid.debug
@@ -23,9 +21,10 @@ pvm: smkmerge.pvm
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-MRG= smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o mrgmult.o mrgonams.o \
-     mrgvnams.o openmrgin.o openmrgout.o wmrgemis.o wrmrgrep.o initstcy.o \
-     rdmrginv.o mrgelev.o mrgunits.o mrgbio.o wmrgelev.o
+MRG= smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o   getuncrt.o mrgmult.o  \
+     mrgonams.o mrgvnams.o openmrgin.o openmrgout.o wmrgemis.o wrmrgrep.o \
+     initstcy.o rdmrginv.o mrgelev.o   mrgunits.o   mrgbio.o   wmrgelev.o \
+     rdtmpu.o   openugrid.o            rdu3mask.o
 #
 smkmerge: $(MRG) $(ALLI) $(LIBPATH)
 	echo SMKMERGE:
@@ -60,12 +59,16 @@ allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ allocmrg.f
 bldmrgidx.o : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ bldmrgidx.f
-getmrgev.o  : $(MODMERGE)
+getmrgev.o  : $(MODMERGE) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ getmrgev.f
+getuncrt.o  : $(MODMERGE) $(MODUNCERT) 
+	$(FC) $(FFLAGS) -c -o $@ getuncrt.f
 initstcy.o  : $(MODMERGE) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ initstcy.f
 mrgelev.o   : $(MODMERGE) $(MODCNTL) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ mrgelev.f
+mrggrid.o   : $(MODGRID)
+	$(FC) $(FFLAGS) -c -o $@ mrggrid.f
 mrgmult.o   : $(MODMERGE) $(MODSTCY) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ mrgmult.f
 mrgonams.o  : $(MODMERGE)
@@ -74,13 +77,17 @@ mrgunits.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ mrgunits.f
 mrgvnams.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ mrgvnams.f
-openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) 
+openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ openmrgin.f
-openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) 
+openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ openmrgout.f
+openugrid.o : $(MODMERGE) $(MODGRID) $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ openugrid.f
 rdmrginv.o: $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ rdmrginv.f
-smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) 
+rdtmpu.o    : $(MODMERGE) $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ rdtmpu.f
+smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) $(MODUNCERT) 
 	$(FC) $(FFLAGS) -c -o $@ smkmerge.f
 wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ wmrgelev.f
@@ -88,6 +95,8 @@ wmrgemis.o  : $(MODMERGE) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ wmrgemis.f
 wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ wrmrgrep.f
+rdu3mask.o  :
+	$(FC) $(FFLAGS) -c -o $@ rdu3mask.f
 
 
 clean:
