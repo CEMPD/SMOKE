@@ -76,6 +76,9 @@ C.........  SUBROUTINE ARGUMENTS
         REAL        , INTENT (OUT) :: PDDATA( NPDSRC,NVAR )! sparse data storage
         LOGICAL     , INTENT (OUT) :: EFLAG                ! true: error found
 
+C...........   Local allocatable arrays
+        LOGICAL, ALLOCATABLE, SAVE :: NOMISS( :,: )
+
 C...........   Other local variables
         INTEGER          I, J, K, L2, LS, S, V
 
@@ -105,6 +108,11 @@ C.............  Get settings from the environment.
             SFLAG = ENVYN( 'RAW_SRC_CHECK',
      &                     'Error if missing species-records',
      &                     .FALSE., IOS )
+
+C.............  Allocate memory for flag for writing missing-data messages
+            ALLOCATE( NOMISS( NSRC,NVAR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NOMISS', PROGNAME )
+            NOMISS = .TRUE.  ! Array
 
             FIRSTIME = .FALSE.
 
@@ -148,11 +156,14 @@ C.............  If emissions are not yet set for current source and variable
 C.............  Otherwise, sum emissions, report, and set error if needed
             ELSE 
 
-                PDDATA( K,V )  = PDDATA( K,V ) + EMISVA( J,TIDX )
-                PDTOTL( K,V )  = PDTOTL( K,V ) + DYTOTA( J,TIDX )
+                IF( EMISVA( J,TIDX ) .GE. 0. )
+     &              PDDATA( K,V )  = PDDATA( K,V ) + EMISVA( J,TIDX )
+
+                IF( DYTOTA( J,TIDX ) .GE. 0. )
+     &              PDTOTL( K,V )  = PDTOTL( K,V ) + DYTOTA( J,TIDX )
 
                 CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-
+                
                 IF( DFLAG ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Duplicate source in inventory:'//
@@ -188,17 +199,23 @@ C.................  Check for missing values
                 IF ( PDDATA( I,V ) .LT. AMISS3 ) THEN
                     IF( SFLAG ) THEN
                 	EFLAG = .TRUE.
-                	MESG = 'ERROR: Data missing for:' //
-     &                         CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                         ' VAR: ' // EANAM( EAIDX( V ) )
-                        CALL M3MESG( MESG )
+                        IF( NOMISS( S,V ) ) THEN
+                	    MESG = 'ERROR: Data missing for:' //
+     &                             CRLF()// BLANK10// BUFFER( 1:L2 )//
+     &                             ' VAR: '// EANAM( EAIDX( V ) )
+                            CALL M3MESG( MESG )
+                            NOMISS( S,V ) = .FALSE.
+                        END IF
                         CYCLE
 
                     ELSE
-                	MESG = 'WARNING: Data missing for: ' //
-     &                         CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                         ' VAR: ' // EANAM( EAIDX( V ) )
-                        CALL M3MESG( MESG )
+                        IF( NOMISS( S,V ) ) THEN
+                	    MESG = 'WARNING: Data missing for: ' //
+     &                             CRLF()// BLANK10// BUFFER( 1:L2 )//
+     &                             ' VAR: '// EANAM( EAIDX( V ) )
+                            CALL M3MESG( MESG )
+                            NOMISS( S,V ) = .FALSE.
+                        END IF
 
                     END IF
                 END IF
