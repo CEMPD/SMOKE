@@ -104,7 +104,7 @@ endsw
 
 switch ( $EDSS_EXE )
 case Linux2_x86ifc:
-    setenv M6_FFLAGS "$M6_FFLAGS -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT}"
+    setenv M6_FFLAGS "$M6_FFLAGS -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT} -I${MD_SRC}/${EDSS_EXE}"
     breaksw
 default:
     setenv M6_FFLAGS "$FFLAGS"
