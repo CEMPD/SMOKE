@@ -45,7 +45,7 @@
         INTEGER, PARAMETER, PUBLIC :: NCRTSYBL = 12
         INTEGER, PARAMETER, PUBLIC :: RPT_IDX  = 1  ! pos. report pkt in master
         INTEGER, PARAMETER, PUBLIC :: TIM_IDX  = 2  ! pos. report time in mstr
-        INTEGER, PARAMETER, PUBLIC :: O3S_IDX  = 3  ! pos. O3 season in master
+        INTEGER, PARAMETER, PUBLIC :: ADY_IDX  = 3  ! pos. average day in master
         INTEGER, PARAMETER, PUBLIC :: FIL_IDX  = 4  ! pos. file pkt in master
         INTEGER, PARAMETER, PUBLIC :: DEL_IDX  = 5  ! pos. delimiter pkt in mstr
         INTEGER, PARAMETER, PUBLIC :: REG_IDX  = 6  ! pos. region pkt in master
@@ -67,7 +67,7 @@
      &                          ALLPCKTS( NALLPCKT ) = 
      &                                  ( / '/CREATE REPORT/      ',
      &                                      '/REPORT TIME/        ',
-     &                                      '/O3SEASON/           ',
+     &                                      '/AVEDAY/             ',
      &                                      '/NEWFILE/            ',
      &                                      '/DELIMITER/          ',
      &                                      '/DEFINE GROUP REGION/',
@@ -130,7 +130,7 @@
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
             LOGICAL       :: NORMCELL      ! true: normalize by cell area
             LOGICAL       :: NORMPOP       ! true: normalize by county pop
-            LOGICAL       :: O3SEASON      ! true: use O3 seas data
+            LOGICAL       :: AVEDAY        ! true: use average day data
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms

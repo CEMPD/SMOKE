@@ -1078,7 +1078,7 @@ C.............  Local arrays
 C.............  Local variables
             INTEGER        D, L, N      ! counters and indices
 
-            INTEGER        INVPIDX   ! tmp index for ozone-season or not
+            INTEGER        INVPIDX   ! tmp index for average day or not
             INTEGER        LOCZONE   ! tmp time zone
             INTEGER        LOCNVAR   ! tmp local number of variables in file 
             INTEGER        NFILE     ! no. hourly emission files
@@ -1152,10 +1152,10 @@ C.................  Check the number of sources
 
                 END SELECT
 
-C.................  Determine ozone-season emissions status from hourly file
-                INVPIDX = GETIFDSC( FDESC3D, '/OZONE SEASON/', .FALSE. )
+C.................  Determine average day emissions status from hourly file
+                INVPIDX = GETIFDSC( FDESC3D, '/AVERAGE DAY/', .FALSE. )
                 IF( INVPIDX .EQ. 1 ) THEN
-                    MESG = 'NOTE: Ozone-season emissions in ' //
+                    MESG = 'NOTE: Average day emissions in ' //
      &                     LOCCAT // ' hourly emissions file'
                     CALL M3MSG2( MESG )
                 END IF

@@ -206,7 +206,7 @@ C           second dimension of the pollutant-specific data (e.g., POLVLA
 C           and POLVAL)
         DO I = 1, NPPOL
             IF( ENAMES( I )(1:IOVLEN3)  .EQ. 'DUM' )    NEM = I
-            IF( ENAMES( I )(1:CPRTLEN3) .EQ. OZNSEART ) NOZ = I
+            IF( ENAMES( I )(1:CPRTLEN3) .EQ. AVEDAYRT ) NDY = I
             IF( ENAMES( I )(1:CPRTLEN3) .EQ. CTLEFFRT ) NCE = I
             IF( ENAMES( I )(1:CPRTLEN3) .EQ. RULEFFRT ) NRE = I
             IF( ENAMES( I )(1:CPRTLEN3) .EQ. RULPENRT ) NRP = I
@@ -219,7 +219,7 @@ C.........  Ensure that all of the expect output variable names are present
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
 
-            IF( NEM .EQ. 0 .OR. NOZ .EQ. 0 .OR. NCE .EQ. 0 .OR.
+            IF( NEM .EQ. 0 .OR. NDY .EQ. 0 .OR. NCE .EQ. 0 .OR.
      &          NRE .EQ. 0 .OR. NRP .EQ. 0 .OR. NEF .EQ. 0      ) 
      &          EFLAG = .TRUE.
 
@@ -229,7 +229,7 @@ C.........  Ensure that all of the expect output variable names are present
 
         CASE( 'POINT' ) 
 
-            IF( NEM .EQ. 0 .OR. NOZ .EQ. 0 .OR. NCE .EQ. 0 .OR.
+            IF( NEM .EQ. 0 .OR. NDY .EQ. 0 .OR. NCE .EQ. 0 .OR.
      &          NRE .EQ. 0 .OR. NEF .EQ. 0 .OR. NC1 .EQ. 0 .OR.
      &          NC2 .EQ. 0 ) EFLAG = .TRUE.
  

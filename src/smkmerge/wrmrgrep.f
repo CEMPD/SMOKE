@@ -534,8 +534,8 @@ C..............................................................................
             L  = LEN_TRIM( HEADER )
 
             DATANAM = ' average'
-            IF( LO3SEAS .AND. ( AFLAG .OR. PFLAG ) ) 
-     &          DATANAM = ' ozone-season'
+            IF( LAVEDAY .AND. ( AFLAG .OR. PFLAG ) ) 
+     &          DATANAM = ' average day'
             LD1 = LEN_TRIM( DATANAM )
      
             TYPENAM = ' inventory'

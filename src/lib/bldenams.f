@@ -78,7 +78,7 @@ C.........  Data arrays for variable names...
 
 C.........  Area source variable name parameters
         CHARACTER(LEN=CPRTLEN3) ARPREFIX( 2:NARPPOL3 )
-        DATA ARPREFIX / OZNSEART, EMISFCRT, CTLEFFRT, 
+        DATA ARPREFIX / AVEDAYRT, EMISFCRT, CTLEFFRT, 
      &                  RULEFFRT, RULPENRT /
 
         CHARACTER(LEN=IOULEN3) ARUNITS( NARPPOL3 )
@@ -90,7 +90,7 @@ C.........  Area source variable name parameters
 
         CHARACTER(LEN=IODLEN3) ARDESCS( NARPPOL3 )
         DATA ARDESCS / 'Annual Emissions'
-     &               , 'Ozone Season Emissions'
+     &               , 'Average Day Emissions'
      &               , 'Emission Factors'
      &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
      &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
@@ -99,7 +99,7 @@ C.........  Area source variable name parameters
 
 C.........  Mobile source variable name parameters
         CHARACTER(LEN=CPRTLEN3) MBPREFIX( 2:NMBPPOL3 )
-        DATA MBPREFIX / OZNSEART /
+        DATA MBPREFIX / AVEDAYRT /
 
         CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
         DATA MBUNITS / 'tons/yr', 'tons/day' /
@@ -108,11 +108,11 @@ C.........  Mobile source variable name parameters
         DATA MBTYPES / M3REAL, M3REAL /
 
         CHARACTER(LEN=IODLEN3) MBDESCS( NMBPPOL3 )
-        DATA MBDESCS / 'Annual Data', 'Ozone Season Data' /
+        DATA MBDESCS / 'Annual Data', 'Average Day Data' /
 
 C.........  Point source variable name parameters
         CHARACTER(LEN=CPRTLEN3) PTPREFIX( 2:NPTPPOL3 )
-        DATA PTPREFIX / OZNSEART, CTLEFFRT, RULEFFRT, 
+        DATA PTPREFIX / AVEDAYRT, CTLEFFRT, RULEFFRT, 
      &                  EMISFCRT, CECOD1RT, CECOD2RT /
 
         CHARACTER(LEN=IOULEN3) PTUNITS( NPTPPOL3 )
@@ -125,7 +125,7 @@ C.........  Point source variable name parameters
 
         CHARACTER(LEN=IODLEN3) PTDESCS( NPTPPOL3 )
         DATA PTDESCS / 'Annual Emissions'
-     &               , 'Ozone Season Emissions'
+     &               , 'Average Day Emissions'
      &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
      &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
      &               , 'Emission Factors'

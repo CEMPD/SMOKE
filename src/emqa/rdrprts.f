@@ -126,7 +126,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%LAYFRAC  = .FALSE.
         ALLRPT%NORMCELL = .FALSE.
         ALLRPT%NORMPOP  = .FALSE.
-        ALLRPT%O3SEASON = .FALSE.
+        ALLRPT%AVEDAY   = .FALSE.
         ALLRPT%SCCNAM   = .FALSE.
         ALLRPT%SRCNAM   = .FALSE.
         ALLRPT%STKPARM  = .FALSE.

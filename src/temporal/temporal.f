@@ -416,7 +416,7 @@ C.........  Set inventory variables to read for specific source categories
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
-C.........  Reset TPFLAG if ozone-season emissions are being used since
+C.........  Reset TPFLAG if average day emissions are being used since
 C           we don't want to apply the monthly adjustment factors in this case.
         IF ( INVPIDX .EQ. 1 ) THEN
             DO S = 1, NSRC
@@ -1100,10 +1100,10 @@ C                 error to avoid problems in genhemis routine
                     CALL M3MSG2( MESG )
                 END IF
 
-C.................  If pollutant name is ozone-season-based, remove the
+C.................  If pollutant name is average day-based, remove the
 C                   prefix from the input pollutant name
                 K = INDEX1( CBUF, NIPPA, EAREAD )
-                J = INDEX( CBUF, OZNSEART )
+                J = INDEX( CBUF, AVEDAYRT )
                 IF( J .GT. 0 ) THEN
                     CBUF = CBUF( CPRTLEN3+1:L1 )
                     ALLIN2D( I,N ) = CBUF

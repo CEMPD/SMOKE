@@ -141,13 +141,13 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
         LOGICAL       :: LFLAG    = .FALSE.  ! true: link will be included in report
-        LOGICAL, SAVE :: LO3SEAS  = .FALSE.  ! true: use ozone-season emissions
+        LOGICAL, SAVE :: LAVEDAY  = .FALSE.  ! true: use average day emissions
         LOGICAL, SAVE :: MASSOUT  = .FALSE.  ! true: output mass-based spc facs
         LOGICAL, SAVE :: MOLEOUT  = .FALSE.  ! true: output mole-based spc facs
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point source processing
 
         CHARACTER*4      OUTTYPE             ! speciation output type
-        CHARACTER(LEN=IOVLEN3) VNAM          ! tmp ozone-season var name
+        CHARACTER(LEN=IOVLEN3) VNAM          ! tmp average day var name
         CHARACTER*256    BUFFER              ! string buffer for building output fmt
         CHARACTER*256    HDRSTR              ! string for part of header line
         CHARACTER*256    MESG                ! message buffer
@@ -166,8 +166,8 @@ C.............  Retrieve the type of speciation outputs (mass,mole,or all)
             CALL ENVSTR( 'SPEC_OUTPUT', MESG, 'ALL', OUTTYPE, IOS )
 
 C.............  Get environment variables that control program behavior
-            MESG = 'Use annual or ozone season emissions'
-            LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+            MESG = 'Use annual or average day emissions'
+            LAVEDAY = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
 
 C.........  Open reports file
             RPTDEV( 3 ) = PROMPTFFILE( 
@@ -228,8 +228,8 @@ C...........  Write output report header
      &                  'Controls applied with /REACTIVITY/ packet '//
      &                  'for pollutant "' // TRIM( RPOL ) // '".'
 
-                IF( LO3SEAS ) THEN
-                    WRITE(RDEV,93000)'Ozone-season data basis in report'
+                IF( LAVEDAY ) THEN
+                    WRITE(RDEV,93000)'Average day data basis in report'
                 ELSE
                     WRITE(RDEV,93000)'Annual total data basis in report'
                 END IF
@@ -461,11 +461,11 @@ C.........  Allocate memory for names of output variables
         CALL CHECKMEM( IOS, 'MOLEONAM', PROGNAME )
 
 C.........  Read emissions for current pollutant from the inventory file
-C.........  Note that ozone-season read will not work if RPOL is
+C.........  Note that average day read will not work if RPOL is
 C           more than 13 characters - must use BLDENAMS routine to
 C           do this correctly.
-        IF( LO3SEAS ) THEN
-            VNAM = OZNSEART // RPOL( 1:MIN( LEN_TRIM( RPOL ), 13 ) )
+        IF( LAVEDAY ) THEN
+            VNAM = AVEDAYRT // RPOL( 1:MIN( LEN_TRIM( RPOL ), 13 ) )
         ELSE
             VNAM = RPOL
         END IF
@@ -483,7 +483,7 @@ C           those that have it
             IF( K .GT. 0 ) THEN 
 
 C................. Adjust annual emissions values
-                IF( .NOT. LO3SEAS ) EMIS( S ) = EMIS( S ) * YFAC
+                IF( .NOT. LAVEDAY ) EMIS( S ) = EMIS( S ) * YFAC
 
 C.................  For storing inventory emissions, use the value from the
 C                   reactivity table only if it is greater than zero. Otherwise,

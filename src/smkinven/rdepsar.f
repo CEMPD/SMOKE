@@ -105,7 +105,7 @@ C...........   Other local variables
         REAL             CEFF    !  tmp control effectiveness
         REAL             DAY2YR  !  Local, leap-year-able, DAY to YEAR factor
         REAL             EMIS    !  tmp emission value
-        REAL             OZEMIS  !  tmp ozone season emission value
+        REAL             DYEMIS  !  tmp average day emission value
         REAL             REFF    !  tmp rule effectiveness
         REAL             RPEN    !  tmp rule penetration   
         REAL             YREMIS  !  tmp annual emission value
@@ -392,7 +392,7 @@ C.............  If interval indicator is blank, emissions are annual total
                 TPF = MTPRFAC * WTPRFAC           !  use month, week profiles
 
 C.............  Emissions are peak day.  Do not multiply emissions by day2yr
-C               conversion, because they will be stored as ozone-season day 
+C               conversion, because they will be stored as average day 
 C               emissions.
             ELSE IF ( TMPAA( 1:1 ) .EQ. 'P' ) THEN
 
@@ -485,14 +485,14 @@ C.............  Emissions are over a special interval
 
             END IF          !  tests on record type line( 57:58 )
 
-C.............  Set annual or ozone-season value, depending on type of data 
+C.............  Set annual or average day value, depending on type of data 
 C               available.
             IF( TMPAA .EQ. 'PO' ) THEN
                 YREMIS = 0.
-                OZEMIS = EMIS
+                DYEMIS = EMIS
             ELSE
                 YREMIS = EMIS
-                OZEMIS = 0.
+                DYEMIS = 0.
             END IF
   
 C.............  Time to store data in unsorted lists if we've made it this far
@@ -505,7 +505,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 INVYRA ( ES ) = INY
                 CSCCA  ( ES ) = TSCC
                 POLVLA ( ES,NEM ) = YREMIS
-                POLVLA ( ES,NOZ ) = OZEMIS
+                POLVLA ( ES,NDY ) = DYEMIS
                 POLVLA ( ES,NCE ) = CEFF
                 POLVLA ( ES,NRE ) = REFF
                 POLVLA ( ES,NRP ) = RPEN

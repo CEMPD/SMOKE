@@ -600,7 +600,7 @@ C-------------------------------------------------------------------------
             BUFFER = ' '
 
 C.............  Modify the formats if needed for the data values for the
-C               annual and (if needed) the seasonal emissions. This is only
+C               annual and (if needed) the average day emissions. This is only
 C               needed if the format for the non-decimal part of the number 
 C               is too small.
             DO I = 1, MIN( NPPOL, 2 )

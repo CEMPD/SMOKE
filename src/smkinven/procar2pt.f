@@ -6,7 +6,7 @@ C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C      This subroutine process the area-to-point sources, adding X and Y
-C      locations and adjusting the annual and ozone-season emissions.
+C      locations and adjusting the annual and average day emissions.
 C
 C  PRECONDITIONS REQUIRED:
 C      
@@ -49,7 +49,7 @@ C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: AR2PTIDX, AR2PTTBL, AR2PTCNT
         
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, NEM, NOZ, NEF, NRP, NPPOL
+        USE MODINFO, ONLY: NSRC, NEM, NDY, NEF, NRP, NPPOL
 
 C.........  This module contains the arrays for the area-to-point x-form
         USE MODAR2PT, ONLY: AR2PTABL, NCONDSRC, REPAR2PT
@@ -259,7 +259,7 @@ C.........................  If not adding sources, factor should be 1.0, so skip
 C                           adjusting emissions                        
                         IF( FACTOR /= 1. ) THEN
                             POLVAL( K,NEM ) = POLVAL( K,NEM ) * FACTOR
-                            POLVAL( K,NOZ ) = POLVAL( K,NOZ ) * FACTOR
+                            POLVAL( K,NDY ) = POLVAL( K,NDY ) * FACTOR
                         END IF
 
                         REPSUMEMIS( REPPOS ) = POLVAL( K,NEM )
@@ -297,12 +297,12 @@ C.............................  Increment record position and store pollutant co
                             NEWRECPOS = NEWRECPOS + 1
                             IPOSCOD( NEWRECPOS ) = OLDIPOSCOD( K )
 
-C.............................  Adjust annual and ozone season emissions based on ar2pt factor
+C.............................  Adjust annual and average day emissions based on ar2pt factor
                             POLVAL( NEWRECPOS, NEM ) = 
      &                          OLDPOLVAL( K,NEM ) * FACTOR
                 
-                            POLVAL( NEWRECPOS,NOZ ) = 
-     &                          OLDPOLVAL( K,NOZ ) * FACTOR
+                            POLVAL( NEWRECPOS,NDY ) = 
+     &                          OLDPOLVAL( K,NDY ) * FACTOR
 
 C.............................  Copy remaining values to new array
                             POLVAL( NEWRECPOS,NEF:NRP ) = 

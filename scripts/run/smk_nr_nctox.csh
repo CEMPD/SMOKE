@@ -39,7 +39,7 @@ setenv RUN_SMKREPORT Y        # Y runs reporting for state reports
 ## Program-specific controls...
 
 ## For Smkinven
-setenv FILL_ANN_WSEAS       N  # Y fills annual value when only seasonal is provided
+setenv FILL_ANNUAL          N  # Y fills annual value when only average day is provided
 setenv IMPORT_GRDIOAPI_YN   N  # Y imported gridded I/O API inventory
 setenv RAW_DUP_CHECK        N  # Y errors on duplicate records
 setenv SMK_ARTOPNT_YN       Y  # Y uses area-to-point conversions
@@ -60,7 +60,7 @@ setenv POLLUTANT_CONVERSION Y     # Y uses ROG to TOG file, for example
 ## For Cntlmat
 setenv REACTIVITY_POL       ' '   # Set to VOC or ROG (only for reactivity controls) 
 #     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_O3SEASON_YN         # see multiple-program controls
+#     SMK_AVEDAY_YN           # see multiple-program controls
 
 # For Temporal
 setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles
@@ -68,7 +68,7 @@ setenv UNIFORM_TPROF_YN     N     # Y makes all temporal profiles uniform
 setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 #     OUTZONE                 # see multiple-program controls, below
 #     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_O3SEASON_YN         # see multiple-program controls, below
+#     SMK_AVEDAY_YN           # see multiple-program controls, below
 #     Date/time settings      # in Assigns file
 
 # For Smkmerge
@@ -81,13 +81,13 @@ setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
 setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
-#     SMK_O3SEASON_YN             # see multiple-program controls
+#     SMK_AVEDAY_YN               # see multiple-program controls
 
 # Multiple-program controls
 setenv OUTZONE              0     # output time zone of emissions
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
+setenv SMK_AVEDAY_YN        N     # Y uses average day emissions instead of annual
 setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
 

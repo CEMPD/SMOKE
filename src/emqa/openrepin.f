@@ -186,10 +186,10 @@ C.............  Set parameters and pollutants from hourly file
             CALL CHKSRCNO( CATDESC, TNAME, NROWS3D, NSRC, EFLAG )
             CALL UPDATE_TIME_INFO( TNAME )
 
-C.............  Determine ozone-season emissions status from hourly file
-            INVPIDX = GETIFDSC( FDESC3D, '/OZONE SEASON/', .FALSE. )
+C.............  Determine average day emissions status from hourly file
+            INVPIDX = GETIFDSC( FDESC3D, '/AVERAGE DAY/', .FALSE. )
             IF( INVPIDX .EQ. 1 ) THEN
-                MESG = 'NOTE: Ozone-season emissions in hourly ' //
+                MESG = 'NOTE: Average day emissions in hourly ' //
      &                 'emissions file'
                 CALL M3MSG2( MESG )
             END IF

@@ -169,7 +169,7 @@ C...........   Other local variables
         LOGICAL  :: DATFLOAT              ! true: use float output format
         LOGICAL  :: STATMISS              ! true: >=1 missing state name
         LOGICAL  :: SCCMISS               ! true: >=1 missing SCC name
-        LOGICAL  :: O3STAT                ! true: write O3-season header
+        LOGICAL  :: DYSTAT                ! true: write average day header
 
         CHARACTER*50   :: BUFFER          ! write buffer
         CHARACTER*50   :: LINFMT          ! header line of '-'
@@ -903,23 +903,23 @@ C.........  For hourly data, the time period processed
      &             DAYS( K2 )( 1:L2 ) // ' '// MMDDYY( EDATE ) //
      &             ' at', ETIME
 
-C.............  Compare ozone-season setting in configuration file with what
+C.............  Compare average day setting in configuration file with what
 C               is actually available in the hourly emissions file.  Give
 C               messages and titles accordingly.
-            O3STAT = .FALSE.
-            IF( INVPIDX .EQ. 1 ) O3STAT = .TRUE.
+            DYSTAT = .FALSE.
+            IF( INVPIDX .EQ. 1 ) DYSTAT = .TRUE.
 
         ELSE
             WRITE( FDEV,93000 ) 'No temporal factors applied'
 
-            O3STAT = .FALSE.
-            IF( RPT_%O3SEASON ) O3STAT = .TRUE.
+            DYSTAT = .FALSE.
+            IF( RPT_%AVEDAY ) DYSTAT = .TRUE.
 
         END IF
 
-C.........  Write ozone-season status
-        IF( O3STAT ) THEN
-            WRITE( FDEV,93000 ) 'Ozone-season data basis in report'
+C.........  Write average day status
+        IF( DYSTAT ) THEN
+            WRITE( FDEV,93000 ) 'Average day data basis in report'
         ELSE
             WRITE( FDEV,93000 ) 'Annual total data basis in report'
         END IF

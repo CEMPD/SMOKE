@@ -41,7 +41,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NEM, NOZ, NEF, NCE, NRE, NRP
+        USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NRP
         
         IMPLICIT NONE
 
@@ -119,7 +119,7 @@ C.........  Use the file format definition to parse the line into
 C           the various data fields
         READPOL ( 1     ) = SEGMENT( 4 )
         READDATA( 1,NEM ) = SEGMENT( 5 )
-        READDATA( 1,NOZ ) = SEGMENT( 6 )
+        READDATA( 1,NDY ) = SEGMENT( 6 )
         READDATA( 1,NEF ) = ' '
         READDATA( 1,NCE ) = SEGMENT( 7 )
         READDATA( 1,NRE ) = SEGMENT( 8 )

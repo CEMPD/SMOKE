@@ -41,7 +41,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NEM, NOZ, NEF, NCE, NRE, NRP
+        USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NRP
         
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVDNAM
@@ -120,7 +120,7 @@ C           the various data fields
         CALL UPCASE( READPOL( 1 ) )
          
         READDATA( 1,NEM ) = LINE( 52:65 )
-        READDATA( 1,NOZ ) = '0'
+        READDATA( 1,NDY ) = '0'
         READDATA( 1,NEF ) = '0'
         READDATA( 1,NCE ) = LINE( 88:94 )
         READDATA( 1,NRE ) = '100.0'

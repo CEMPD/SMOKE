@@ -119,7 +119,7 @@ C...........   Other local variables
         REAL             FSAV    !  Flow saved
         REAL             LAT     !  tmp latitude  (y-dir)
         REAL             LON     !  tmp longitude (x-dir)
-        REAL             OZEMIS  !  tmp ozone season emission value
+        REAL             DYEMIS  !  tmp average day emission value
         REAL             RBUF    !  tmp real value (any)
         REAL             REFF    !  tmp rule effectiveness
         REAL             RPEN    !  tmp rule penetration   
@@ -655,14 +655,14 @@ C.............  Emissions are over a special interval
 
             END IF          !  tests on record type line( 57:58 )
 
-C.............  Set annual or ozone-season value, depending on type of data 
+C.............  Set annual or average day value, depending on type of data 
 C               available.
             IF( TMPAA .EQ. 'PO' ) THEN
                 YREMIS = 0.
-                OZEMIS = EMIS
+                DYEMIS = EMIS
             ELSE
                 YREMIS = EMIS
-                OZEMIS = 0.
+                DYEMIS = 0.
             END IF
   
 C.............  Time to store data in unsorted lists if we've made it this far
@@ -685,7 +685,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 CBLRIDA( ES ) = BLRBLNK3
                 CPDESCA( ES ) = DESC
                 POLVLA ( ES,NEM ) = YREMIS
-                POLVLA ( ES,NOZ ) = OZEMIS
+                POLVLA ( ES,NDY ) = DYEMIS
                 POLVLA ( ES,NCE ) = CEFF
                 POLVLA ( ES,NRE ) = REFF
                 POLVLA ( ES,NC1 ) = CPRI

@@ -102,7 +102,7 @@ C...........   Other local variables
         LOGICAL         DFLAG       ! true: day-specific  file available
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
         LOGICAL         HFLAG       ! true: hour-specific file available
-        LOGICAL         OFLAG       ! true: ozone-season emissios needed
+        LOGICAL         OFLAG       ! true: average day emissions needed
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
 
         CHARACTER*16    INAME       ! tmp name for inven file of unknown fmt
@@ -124,7 +124,7 @@ C.........  Get environment variables that control program behavior
      &                     .FALSE., IOS )
         END IF
 
-        OFLAG = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+        OFLAG = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
 
 C.........  Prompt for and open input I/O API and ASCII files
         MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
@@ -177,7 +177,7 @@ C.........  Store source-category-specific header information,
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
-C.........  Set ozone-season emissions flag (INVPIDX)
+C.........  Set average day emissions flag (INVPIDX)
         IF( OFLAG ) INVPIDX = 1
         CALL GETSINFO( ENAME )
 

@@ -141,9 +141,9 @@ C.........  Set up header for I/O API output files
         IF( PYEAR .NE. BYEAR ) 
      &      WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
         
-C.........  Set ozone-season description buffer
+C.........  Set average day description buffer
         DESCBUF = ' '
-        IF( LO3SEAS ) DESCBUF = 'Ozone-season value, '
+        IF( LAVEDAY ) DESCBUF = 'Average day value, '
         LD = MAX( LEN_TRIM( DESCBUF ), 1 )
 
 C.........  Set up and open I/O API output file

@@ -37,7 +37,7 @@ setenv RUN_SMKREPORT Y         # Y runs reporting for state reports
 # Program-specific controls...
 
 # For Cntlmat
-#      SMK_O3SEASON_YN (see below)# Y uses seas emis in assessing cutoff, etc.
+#      SMK_AVEDAY_YN (see below)  # Y uses seas emis in assessing cutoff, etc.
 #      REPORT_DEFAULTS            # See multi-program controls
 
 # For Grwinven
@@ -58,7 +58,7 @@ setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 #     HOUR_SPECIFIC_YN        # see multiple-program controls, below
 #     OUTZONE                 # see multiple-program controls, below
 #     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_O3SEASON_YN         # see multiple-program controls, below
+#     SMK_AVEDAY_YN           # see multiple-program controls, below
 #     Date/time settings      # in Assigns file
 
 # For Smkmerge
@@ -75,7 +75,7 @@ setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     EXPLICIT_PLUME_YN           # see multiple-program controls
 #     SMK_EMLAYS                  # see multiple-program controls
-#     SMK_O3SEASON_YN             # see multiple-program controls
+#     SMK_AVEDAY_YN               # see multiple-program controls
 #     SMK_PING_METHOD             # see multiple-program controls, below
 
 # Multiple-program controls
@@ -86,7 +86,7 @@ setenv OUTZONE              0     # output time zone of emissions
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_EMLAYS           12    # number of emissions layers
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
+setenv SMK_AVEDAY_YN        N     # Y uses average day emissions instead of annual
 setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv SMK_PING_METHOD      1     # 1 outputs for PinG (using Elevpoint outputs), 0 no PING

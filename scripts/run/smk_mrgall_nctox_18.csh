@@ -53,7 +53,7 @@ setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     EXPLICIT_PLUME_YN           # see multiple-program controls
 #     SMK_EMLAYS                  # see multiple-program controls
-#     SMK_O3SEASON_YN             # see multiple-program controls
+#     SMK_AVEDAY_YN               # see multiple-program controls
 #     SMK_PING_METHOD             # see multiple-program controls, below
 
 # Multiple-program controls
@@ -63,7 +63,7 @@ setenv HOUR_SPECIFIC_YN     Y     # Y imports and uses hour-specific inventory
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_EMLAYS           12    # number of emissions layers
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
+setenv SMK_AVEDAY_YN        N     # Y uses average day emissions instead of annual
 setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv SMK_PING_METHOD      1     # 1 outputs for PinG (using Elevpoint outputs), 0 no PING

@@ -74,7 +74,7 @@ C...........   Local allocatable arrays
 C...........   Other local variables
         INTEGER          I, J, L, M, N, S, V   ! counters and indices
 
-        INTEGER          ADJINDX      ! adjustment index for special seasonal read
+        INTEGER          ADJINDX      ! adjustment index for special average day read
         INTEGER          IOS          ! i/o status
         INTEGER          NSPARSE      ! number of rows in sparse pol input file
         INTEGER          NSRCLOC      ! number of rows in sparse pol input file
@@ -100,15 +100,15 @@ C........  Initialize output arrays to zero
             ADJINDX = 2
             VBUF = VARNAMS( V )
 
-C............  Check if ozone-season prefix is in the name
-            IF( VARNAMS( V )( 1:3 ) .EQ. OZNSEART ) THEN
+C............  Check if average day prefix is in the name
+            IF( VARNAMS( V )( 1:3 ) .EQ. AVEDAYRT ) THEN
                 L = LEN_TRIM( VARNAMS( V ) )
                 VBUF = VARNAMS( V )( 4:L )  
                 ADJINDX = 3
 
 C...............  Give error if reading more than a single variable
                 IF( NPVAR .GT. 1 ) THEN
-                    MESG = 'INTERNAL ERROR: Cannot specify seasonal ' //
+                    MESG = 'INTERNAL ERROR: Cannot specify average day ' //
      &                     'value and have NPVAR > 1'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

@@ -485,7 +485,7 @@ C----------------------------------------------------------------------
 C.................  Initialize SRCPOL pollutant/activity-specific data array
 C                   as missing
                 SRCPOL( :,1 ) = 0.      ! array
-                IF( NOZ .GT. 0 ) SRCPOL( :,NOZ ) = 0.      ! array
+                IF( NDY .GT. 0 ) SRCPOL( :,NDY ) = 0.      ! array
                 IF( NC1 .GT. 0 ) SRCPOL( :,NC1 ) = RIMISS3 ! array
                 IF( NC2 .GT. 0 ) SRCPOL( :,NC2 ) = RIMISS3 ! array
                 IF( NCE .GT. 0 ) SRCPOL( :,NCE ) = 0.      ! array
@@ -525,7 +525,7 @@ C                        formula, then store data in formula arrays
                             COMPUTED( S,1 ) = COMPUTED( S,1 ) +         ! Annual value
      &                                        MAX( 0., SRCPOL( N,1 ) )
 
-                            IF( NPVAR .GT. 1 ) COMPUTED(S,2)=           ! Seasonal value
+                            IF( NPVAR .GT. 1 ) COMPUTED(S,2)=           ! Average day value
      &                          COMPUTED(S,2) + MAX( 0., SRCPOL(N,2) )
 
                             IF( NPVAR .GT. 2 )                          ! Other info
@@ -657,7 +657,7 @@ C......................  Check for negative values for annual value
                             COMPUTED( S,1 ) = 0.
                         END IF
 
-C......................  Check for negative values for seasonal value
+C......................  Check for negative values for average day value
                         IF( COMPUTED( S,2 ) .LT. 0 ) THEN
                             L = LEN_TRIM( VNAMFORM( 3 ) )  ! 3 is correct
                             CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )

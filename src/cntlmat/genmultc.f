@@ -139,7 +139,7 @@ C...........   Other local variables
         REAL             RULEFF   ! tmp rule effectiveness
         REAL             RULPEN   ! tmp rule penetration
 
-        LOGICAL          LO3SEAS  ! true: use ozone-season emissions
+        LOGICAL          LAVEDAY  ! true: use average day emissions
         LOGICAL, SAVE :: APPLFLAG = .FALSE. ! true: something has been applied
         LOGICAL, SAVE :: OPENFLAG = .FALSE. ! true: output file has been opened
 
@@ -159,8 +159,8 @@ C***********************************************************************
 C   begin body of subroutine GENMULTC
 
 C.........  Get environment variables that control program behavior
-        MESG = 'Use annual or ozone season emissions'
-        LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+        MESG = 'Use annual or average day emissions'
+        LAVEDAY = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
 
 C.........  Get path for temporary files
         MESG = 'Path where temporary control files will be written'
@@ -284,7 +284,7 @@ C             will be used in reading the inventory file.
 
         DO I = 1, 6
             IF( OUTNAMES( 1,I )(1:IOVLEN3)  .EQ. PNAMMULT(1) ) NEM = I
-            IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. OZNSEART ) NOZ = I
+            IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. AVEDAYRT ) NDY = I
             IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. CTLEFFRT ) NCE = I
             IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. RULEFFRT ) NRE = I
             IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. RULPENRT ) NRP = I
@@ -312,9 +312,9 @@ C...........  Fractionalize control-packet information
             EMSRLPN = EMSRLPN*0.01  ! array
         END IF
 
-C...........  Set emissions index depending on ozone-season or not
+C...........  Set emissions index depending on average day or not
         E = NEM
-        IF( LO3SEAS ) E = NOZ
+        IF( LAVEDAY ) E = NDY
 
 C...........  Loop through pollutants that receive controls
         DO I = 1, NVCMULT
@@ -338,7 +338,7 @@ C...............  Check for missing values and reset to zero
                 IF( DATVAL( S,E ) .LT. AMISS3 ) DATVAL( S,E ) = 0.0
 
 C...............  Divide annual emissions to get average day
-                IF( .NOT. LO3SEAS ) DATVAL( S,E ) = DATVAL( S,E ) * FAC
+                IF( .NOT. LAVEDAY ) DATVAL( S,E ) = DATVAL( S,E ) * FAC
 
 C.................  Compute group emissions before controls
                 J = GRPINDX( S )
@@ -719,8 +719,8 @@ C.........  Write out controlled facilities report for point sources
      &                  'Controls applied with /CTG/ packet'
             IF( LFLAG ) WRITE( RDEV, 93000 ) 
      &                  'Controls applied with /ALLOWABLE/ packet'
-            IF( LO3SEAS ) THEN
-                WRITE( RDEV,93000 ) 'Ozone-season data basis in report'
+            IF( LAVEDAY ) THEN
+                WRITE( RDEV,93000 ) 'Average day data basis in report'
             ELSE
                 WRITE( RDEV,93000 ) 'Annual total data basis in report'
             END IF

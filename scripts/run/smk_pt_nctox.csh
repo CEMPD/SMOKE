@@ -41,7 +41,7 @@ setenv RUN_SMKREPORT Y        # Y runs reporting for state reports
 ## Program-specific controls...
 
 ## For Smkinven
-setenv FILL_ANN_WSEAS       N # Y fills annual value when only seasonal is provided
+setenv FILL_ANNUAL          N # Y fills annual value when only average day is provided
 setenv HOURLY_TO_DAILY      N # Y reads daily total only from hourly file
 setenv HOURLY_TO_PROFILE    N # Y converts hourly data to source-specific profs
 setenv IMPORT_AVEINV_YN     Y # Y then import annual/average inventory
@@ -64,7 +64,7 @@ setenv POLLUTANT_CONVERSION Y     # Y uses ROG to TOG file, for example
 ## For Cntlmat
 setenv REACTIVITY_POL       ' '   # Set to VOC or ROG (only for reactivity controls) 
 #     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_O3SEASON_YN         # see multiple-program controls
+#     SMK_AVEDAY_YN           # see multiple-program controls
 
 # For Elevpoint
 setenv SMK_ELEV_METHOD      1     # 0=Laypoint sets elev srcs; 1=use PELVCONFIG
@@ -79,7 +79,7 @@ setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 #     HOUR_SPECIFIC_YN        # see multiple-program controls, below
 #     OUTZONE                 # see multiple-program controls, below
 #     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_O3SEASON_YN         # see multiple-program controls, below
+#     SMK_AVEDAY_YN           # see multiple-program controls, below
 #     Date/time settings      # in Assigns file
 
 # For Laypoint
@@ -104,7 +104,7 @@ setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     EXPLICIT_PLUME_YN           # see multiple-program controls
 #     SMK_EMLAYS                  # see multiple-program controls
-#     SMK_O3SEASON_YN             # see multiple-program controls
+#     SMK_AVEDAY_YN               # see multiple-program controls
 #     SMK_PING_METHOD             # see multiple-program controls, below
 
 # Multiple-program controls
@@ -115,7 +115,7 @@ setenv OUTZONE              0     # output time zone of emissions
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_EMLAYS           12    # number of emissions layers
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
+setenv SMK_AVEDAY_YN        N     # Y uses average day emissions instead of annual
 setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv SMK_PING_METHOD      1     # 1 outputs for PinG (using Elevpoint outputs), 0 no PING

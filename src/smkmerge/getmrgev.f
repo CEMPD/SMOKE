@@ -198,16 +198,15 @@ C           processing
             PFLAG_BD = ( INDEX( TMPBYDAY, 'P' ) .GT. 0 .AND. PFLAG )
         END IF
 
-C.........  Retrieve variable to indicate whether to use annual or ozone 
-C           season data
-        MESG = 'Use annual or ozone season emissions'
-        LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+C.........  Retrieve variable to indicate whether to use annual or average day data
+        MESG = 'Use annual or average day emissions'
+        LAVEDAY = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
 
 C.........  Set index for extracting pollutant data
         INVPIDX = 1
         IF( ( AFLAG .OR. PFLAG ) .AND. 
      &      .NOT. TFLAG          .AND. 
-     &      LO3SEAS                    ) INVPIDX = 2
+     &      LAVEDAY                    ) INVPIDX = 2
 
 C.........  Check output flags to ensure at least some output
         IF( .NOT. LGRDOUT .AND.

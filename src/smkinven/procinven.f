@@ -49,7 +49,7 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NEM, NOZ, NEF, NCE, NRE, NRP, 
+        USE MODINFO, ONLY: CATEGORY, NEM, NDY, NEF, NCE, NRE, NRP, 
      &                     NPPOL, NSRC, NC1, NC2, NCHARS 
 
         IMPLICIT NONE
@@ -92,9 +92,9 @@ C...........   Other local variables
 
         REAL            EMISI       !  inverse emissions value
         REAL            EMISN       !  new emissions value
-        REAL            EMISN_OZ    !  new ozone season emissions value
+        REAL            EMISN_DY    !  new average day emissions value
         REAL            EMISO       !  old emissions value
-        REAL            EMISO_OZ    !  old ozone season emissions value
+        REAL            EMISO_DY    !  old average day emissions value
         REAL            EMIST       !  total old and new emissions
         REAL            RIMISS3     !  real typed integer missing value
 
@@ -130,7 +130,7 @@ C.........  Allocate memory for sorted inventory data
         CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
 
 C.........  Initialize pollutant/activity-specific values.  
-C.........  Initialize annual and ozone-season values with 0.
+C.........  Initialize annual and average day values with 0.
 C.........  Inititalize integer
 C           values with the real version of the missing integer flag, since
 C           these are stored as reals until output
@@ -230,13 +230,13 @@ C.............  Reset emissions values to zero, if it's negative
             END IF
 
             IF( .NOT. ACTFLAG ) THEN                
-                IF ( POLVLA( J, NOZ ) < 0 .AND.
-     &               POLVLA( J, NOZ ) > AMISS3 ) THEN
-                    POLVLA( J, NOZ ) = 0.
+                IF ( POLVLA( J, NDY ) < 0 .AND.
+     &               POLVLA( J, NDY ) > AMISS3 ) THEN
+                    POLVLA( J, NDY ) = 0.
     
                     IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
                         CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                        MESG = 'WARNING: Negative seasonal data ' //
+                        MESG = 'WARNING: Negative average day data ' //
      &                         'reset to zero for:' //
      &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
@@ -297,9 +297,9 @@ C                   statement is for new pollutants
                 POLVAL( K, NEM ) = POLVLA( J, NEM )
                 
                 IF( .NOT. ACTFLAG ) THEN
-                    POLVAL( K, NOZ ) = POLVLA( J, NOZ )
+                    POLVAL( K, NDY ) = POLVLA( J, NDY )
                 ELSE
-                    POLVAL( K, NOZ ) = BADVAL3
+                    POLVAL( K, NDY ) = BADVAL3
                 END IF
                     
                 IF( NCE > 0 ) POLVAL( K, NCE ) = POLVLA( J, NCE )
@@ -317,8 +317,8 @@ C               or activity and use weighted average for control factors
 
                 EMISN    = 0.
                 EMISO    = 0.
-                EMISN_OZ = 0.
-                EMISO_OZ = 0.
+                EMISN_DY = 0.
+                EMISO_DY = 0.
 
                 IF( POLVAL( K, NEM ) >= 0. ) THEN
                     EMISN = POLVLA( J, NEM )
@@ -327,15 +327,15 @@ C               or activity and use weighted average for control factors
                 END IF
 
                 IF( .NOT. ACTFLAG ) THEN
-                    IF( POLVAL( K, NOZ ) >= 0. ) THEN
-                        EMISN_OZ = POLVLA( J, NOZ )
-                        EMISO_OZ = POLVAL( K, NOZ )
-                        POLVAL( K, NOZ ) = EMISO_OZ + EMISN_OZ
+                    IF( POLVAL( K, NDY ) >= 0. ) THEN
+                        EMISN_DY = POLVLA( J, NDY )
+                        EMISO_DY = POLVAL( K, NDY )
+                        POLVAL( K, NDY ) = EMISO_DY + EMISN_DY
     
-C.........................  Use ozone season emissions for weighting if 
+C.........................  Use average day emissions for weighting if 
 C                           annual emissions are not available.
-                        IF( EMISN == 0. ) EMISN = EMISN_OZ
-                        IF( EMISO == 0. ) EMISO = EMISO_OZ
+                        IF( EMISN == 0. ) EMISN = EMISN_DY
+                        IF( EMISO == 0. ) EMISO = EMISO_DY
                     END IF
                 END IF
 

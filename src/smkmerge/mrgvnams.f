@@ -135,7 +135,7 @@ C.........  Allocate memory for array of sorted pollutants and activities and
 C           for pollutants only, and for the input variable names and units
 C.........  NOTE - the input variable names could be different from EANAM if
 C           user is using emissions from the inventory file, and has selected
-C           ozone season emissions instead of annual emissions.
+C           average day emissions instead of annual emissions.
         ALLOCATE( EANAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
         ALLOCATE( EINAM( NIPOL ), STAT=IOS )

@@ -82,7 +82,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: LCATSET   = .FALSE.  ! true: source category set
         LOGICAL, SAVE :: LDELIM    = .FALSE.  ! true: manual delimeter set
 
-        CHARACTER*1      O3SYN             !  Y or N for ozone season
+        CHARACTER*1      DAYYN             !  Y or N for average day
         CHARACTER*6      FILNUM            !  tmp file number string
         CHARACTER*300    MESG              !  message buffer
 
@@ -103,7 +103,7 @@ C.........  Initialize for start of file
             PKTCOUNT  = 0         ! array
             PKTSTATUS = .FALSE.   ! array
 
-            RPT_%O3SEASON = .FALSE.  ! default to not use ozone season data
+            RPT_%AVEDAY   = .FALSE.  ! default to not use average day data
             RPT_%OUTTIME  = 230000   ! default to output at 2300 hours
             RPT_%DELIM    = ';'      ! default to semi-colon
 
@@ -261,31 +261,31 @@ C.........................  Ensure reporting time is set
                         PKTEND   = IREC
                         INPACKET = .FALSE.             ! end implied
 
-C.....................  A ozone season data usage packet
-                    CASE( O3S_IDX )
+C.....................  An average day data usage packet
+                    CASE( ADY_IDX )
 
-C.........................  Ensure ozone season setting made
+C.........................  Ensure average day setting made
                         IF( J+1 .GE. L2 ) THEN
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
 
                         ELSE                            
-                            O3SYN = ADJUSTL( LINE( J+1:L2 ) )
-                            CALL UPCASE( O3SYN )
-                            IF( O3SYN .EQ. 'Y' ) THEN
-                                RPT_%O3SEASON = .TRUE.
+                            DAYYN = ADJUSTL( LINE( J+1:L2 ) )
+                            CALL UPCASE( DAYYN )
+                            IF( DAYYN .EQ. 'Y' ) THEN
+                                RPT_%AVEDAY = .TRUE.
 
-                            ELSE IF( O3SYN .EQ. 'N' ) THEN
-                                RPT_%O3SEASON = .FALSE.
+                            ELSE IF( DAYYN .EQ. 'N' ) THEN
+                                RPT_%AVEDAY = .FALSE.
 
                             ELSE
-                                L = LEN_TRIM( O3SYN )
+                                L = LEN_TRIM( DAYYN )
                                 WRITE( MESG,94010 ) 
-     &                            'WARNING: Unrecognized /O3SEASON/ ' //
-     &                            'settting "' // O3SYN( 1:L ) // 
+     &                            'WARNING: Unrecognized /AVEDAY/ ' //
+     &                            'settting "' // DAYYN( 1:L ) // 
      &                            '" at line', IREC, '. Setting to ' //
      &                            'default of FALSE.'  
                                 CALL M3MSG2( MESG )
-                                RPT_%O3SEASON = .FALSE.
+                                RPT_%AVEDAY = .FALSE.
 
                             END IF
 

@@ -73,10 +73,10 @@
         INTEGER :: NCE = 0 !  pos in 2nd dim of POLVLA of control efficiency
         INTEGER :: NEF = 0 !  pos in 2nd dim of POLVLA of emission factors
         INTEGER :: NEM = 0 !  pos in 2nd dim of POLVLA of annual emissions
-        INTEGER :: NOZ = 0 !  pos in 2nd dim of POLVLA of ozone season emis
+        INTEGER :: NDY = 0 !  pos in 2nd dim of POLVLA of average day emis
         INTEGER :: NRE = 0 !  pos in 2nd dim of POLVLA of rule effectivenss
         INTEGER :: NRP = 0 !  pos in 2nd dim of POLVLA of rule penetration
-        PUBLIC NC1, NC2, NCE, NEF, NEM, NOZ, NRE, NRP
+        PUBLIC NC1, NC2, NCE, NEF, NEM, NDY, NRE, NRP
 
         CHARACTER*1, PUBLIC :: CRL      = ' ' ! 'A', 'M', or 'P'
         CHARACTER*6, PUBLIC :: CATEGORY = ' ' ! 'AREA', 'MOBILE', or 'POINT'
@@ -109,7 +109,7 @@
         CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: MAPFIL( : )
 
 !.........  Units conversions information
-        INTEGER               , PUBLIC :: INVPIDX = 0    ! annual/O3 season idx
+        INTEGER               , PUBLIC :: INVPIDX = 0    ! annual/average day idx
         REAL, ALLOCATABLE, PUBLIC :: EACNV( : )          ! units conv factors
 
 !.........  Arrays for reading inventory file headers

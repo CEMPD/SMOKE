@@ -268,9 +268,9 @@ C.............  Assign bin numbers to selected records
             CALL M3MSG2( MESG )
 
 C.............  Update inventory input names and units, depending on status of 
-C               ozone-season emissions.
+C               average day emissions.
             INVPIDX = 0
-            IF ( RPT_%O3SEASON ) INVPIDX = 1
+            IF ( RPT_%AVEDAY ) INVPIDX = 1
             CALL GETSINFO( ENAME )
             IF( JSCC .GT. 0 ) NCHARS = NCHARS - 1  ! duplicate of rdrepin.f
 

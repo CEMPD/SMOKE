@@ -50,7 +50,7 @@ C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: LNONHAP
         
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, NPPOL, NCHARS, NEM, NOZ
+        USE MODINFO, ONLY: NSRC, NPPOL, NCHARS, NEM, NDY
 
         IMPLICIT NONE
 
@@ -101,9 +101,9 @@ C.........   Other local variables
         INTEGER  ENDIDX       ! ending index into pollutant array
         
         REAL     VOCEANN      ! summed annual VOC emissions
-        REAL     VOCEOZN      ! summed ozone season VOC emissions
+        REAL     VOCEDAY      ! summed average day VOC emissions
         REAL     TOGEANN      ! summed annual TOG emissions
-        REAL     TOGEOZN      ! summed ozone season TOG emissions
+        REAL     TOGEDAY      ! summed average day TOG emissions
         
         LOGICAL  FNDPOL       ! true: found toxic pollutant to be processed
         LOGICAL  FNDVOC       ! true: found VOC entry in inventory
@@ -186,9 +186,9 @@ C.............  Initialize values for this source
             FNDTOG = .FALSE.
             
             VOCEANN = 0.
-            VOCEOZN = 0.
+            VOCEDAY = 0.
             TOGEANN = 0.
-            TOGEOZN = 0.
+            TOGEDAY = 0.
             
             EFLAG = .FALSE.
             LASTFLAG = .FALSE.
@@ -214,7 +214,7 @@ C.....................  Find pollutant position in raw list
 C.....................  If pollutant is not a model species, set it to zero
                     IF( .NOT. ITMSPC( CPOLRAW ) ) THEN
                         POLVAL( CURRPOS,NEM ) = 0.0
-                        POLVAL( CURRPOS,NOZ ) = 0.0
+                        POLVAL( CURRPOS,NDY ) = 0.0
 
 C..................... Otherwise, if pollutant is not an explicit species, rename to NOI
                     ELSE IF( .NOT. ITEXPL( CPOLRAW ) ) THEN
@@ -283,13 +283,13 @@ C                   INVDVTS = 'V' => part of VOC and TOG
 C                   INVDVTS = 'T' => part of TOG only
                 IF( PROCVOC .AND. INVDVTS( CPOL ) == 'V' ) THEN
                     VOCEANN = VOCEANN + POLVAL( CURRPOS,NEM )
-                    VOCEOZN = VOCEOZN + POLVAL( CURRPOS,NOZ )
+                    VOCEDAY = VOCEDAY + POLVAL( CURRPOS,NDY )
                     FNDVOC = .TRUE.
                 END IF
                 
                 IF( PROCTOG ) THEN
                     TOGEANN = TOGEANN + POLVAL( CURRPOS,NEM )
-                    TOGEOZN = TOGEOZN + POLVAL( CURRPOS,NOZ )
+                    TOGEDAY = TOGEDAY + POLVAL( CURRPOS,NDY )
                     FNDTOG = .TRUE.
                 END IF
 
@@ -369,8 +369,8 @@ C.................  Subtract toxic emissions from criteria emissions
                 IF( PROCVOC ) THEN                  
                     POLVAL( VOCPOS,NEM ) = 
      &                  POLVAL( VOCPOS,NEM ) - VOCEANN
-                    POLVAL( VOCPOS,NOZ ) =
-     &                  POLVAL( VOCPOS,NOZ ) - VOCEOZN
+                    POLVAL( VOCPOS,NDY ) =
+     &                  POLVAL( VOCPOS,NDY ) - VOCEDAY
 
 C.....................  Check that annual NONHAP value is not negative
                     IF( POLVAL( VOCPOS,NEM ) < 0. ) THEN
@@ -386,19 +386,19 @@ C.....................  Check that annual NONHAP value is not negative
                         POLVAL( VOCPOS,NEM ) = .0
                     END IF
      
-C.....................  Check that ozone season NONHAP value is not negative
-                    IF( POLVAL( VOCPOS,NOZ ) < 0. ) THEN
+C.....................  Check that average day NONHAP value is not negative
+                    IF( POLVAL( VOCPOS,NDY ) < 0. ) THEN
                         IF( NWARN <= MXWARN ) THEN
-                            MESG = 'WARNING: Total ozone season ' //
+                            MESG = 'WARNING: Total average day ' //
      &                             'toxic emissions greater than ' //
-     &                             'ozone season VOC emissions for ' //
+     &                             'average day VOC emissions for ' //
      &                             'source:' // CRLF() // BLANK5 // 
      &                             BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
                             NWARN = NWARN + 1
                         END IF
                         
-                        POLVAL( VOCPOS,NOZ ) = .0
+                        POLVAL( VOCPOS,NDY ) = .0
                     END IF
                     
 C.....................  Rename VOC to NONHAPVOC
@@ -410,8 +410,8 @@ C.....................  Rename VOC to NONHAPVOC
                 IF( PROCTOG ) THEN
                     POLVAL( TOGPOS,NEM ) = 
      &                  POLVAL( TOGPOS,NEM ) - TOGEANN
-                    POLVAL( TOGPOS,NOZ ) =
-     &                  POLVAL( TOGPOS,NOZ ) - TOGEOZN
+                    POLVAL( TOGPOS,NDY ) =
+     &                  POLVAL( TOGPOS,NDY ) - TOGEDAY
      
 C.....................  Check that annual NONHAP value is not negative
                     IF( POLVAL( TOGPOS,NEM ) < 0. ) THEN
@@ -427,19 +427,19 @@ C.....................  Check that annual NONHAP value is not negative
                         POLVAL( TOGPOS,NEM ) = .0
                     END IF
                 
-C.....................  Check that ozone season NONHAP value is not negative
-                    IF( POLVAL( TOGPOS,NOZ ) < 0. ) THEN
+C.....................  Check that average day NONHAP value is not negative
+                    IF( POLVAL( TOGPOS,NDY ) < 0. ) THEN
                         IF( NWARN <= MXWARN ) THEN
-                            MESG = 'WARNING: Total ozone season ' //
+                            MESG = 'WARNING: Total average day ' //
      &                             'toxic emissions greater than ' //
-     &                             'ozone season TOG emissions for ' //
+     &                             'average day TOG emissions for ' //
      &                             'source:' // CRLF() // BLANK5 // 
      &                             BUFFER( 1:L2 )
                             CALL M3MESG( MESG )
                             NWARN = NWARN + 1
                         END IF
                         
-                        POLVAL( TOGPOS,NOZ ) = .0
+                        POLVAL( TOGPOS,NDY ) = .0
                     END IF
                     
 C....................  Rename TOG to NONHAPTOG

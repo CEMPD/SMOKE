@@ -10,7 +10,7 @@ C     the inventory header, which should be read prior to calling this
 C     routine.
 C
 C  PRECONDITIONS REQUIRED:
-C     O3SEASON_YN e.v. to have been checked to set the value of INVPIDX
+C     SMK_AVEDAY_YN e.v. to have been checked to set the value of INVPIDX
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:  M3EXIT
 C
@@ -72,7 +72,7 @@ C...........   LOCAL VARIABLES their descriptions:
         INTEGER       NVAR        ! number of non-pollutant variables 
 
         LOGICAL    :: EFLAG = .FALSE.  ! true: error found
-        LOGICAL       LO3SEAS     ! true: use ozone season emissions
+        LOGICAL       LAVEDAY     ! true: use average day emissions
 
         CHARACTER*16  TMPNAME      ! tmp logical file name for map data files
         CHARACTER*256 MESG         ! Message buffer
