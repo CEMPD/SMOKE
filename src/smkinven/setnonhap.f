@@ -228,6 +228,15 @@ C.................  Increment current position in arrays
 
 C.................  Store pollutant for this position
                 CPOL = IPOSCOD( CURRPOS )
+
+C.................  If current pollutant is VOC or TOG entry, save position
+                IF( CPOL == VNMPOS ) THEN
+                    VOCPOS = CURRPOS
+                END IF
+                
+                IF( CPOL == TNMPOS ) THEN
+                    TOGPOS = CURRPOS
+                END IF
             
 C.................  Check if this is last pollutant for this source
                 IF( J == NPCNT( I ) ) THEN
@@ -237,15 +246,6 @@ C.................  Otherwise, if not part of VOC or TOG, skip rest of loop
                 ELSE IF( INVDVTS( CPOL ) == 'N' ) THEN
                     CYCLE
                     
-                END IF
-
-C.................  If current pollutant is VOC or TOG entry, save position
-                IF( CPOL == VNMPOS ) THEN
-                    VOCPOS = CURRPOS
-                END IF
-                
-                IF( CPOL == TNMPOS ) THEN
-                    TOGPOS = CURRPOS
                 END IF
 
 C.................  Sum toxic emissions for this source
