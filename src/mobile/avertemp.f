@@ -1,6 +1,6 @@
 
         SUBROUTINE AVERTEMP( NSRC, NCNTY, CNTYCODE, SRCARRAY,  
-     &                       TSTEP, CNTYTEMP, CNTYRH, CNTYBP, NDAYSRC ) 
+     &                       TSTEP, CNTYTEMP, CNTYQV, CNTYBP, NDAYSRC ) 
 
 C***********************************************************************
 C  subroutine body starts at line 78
@@ -41,7 +41,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TKHOUR, RHHOUR, BPHOUR
+        USE MODMET, ONLY: TKHOUR, QVHOUR, BPHOUR
         
         IMPLICIT NONE
 
@@ -63,7 +63,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT   (IN) :: SRCARRAY( NSRC )       ! county codes for each source
         INTEGER, INTENT   (IN) :: TSTEP                  ! current time step
         REAL,    INTENT  (OUT) :: CNTYTEMP( NCNTY )      ! averaged temps by county
-        REAL,    INTENT  (OUT) :: CNTYRH  ( NCNTY )      ! averaged rel. hum. by county
+        REAL,    INTENT  (OUT) :: CNTYQV  ( NCNTY )      ! averaged mix. ratio by county
         REAL,    INTENT  (OUT) :: CNTYBP  ( NCNTY )      ! averaged baro. pressure by county
         INTEGER, INTENT(INOUT) :: NDAYSRC( NSRC,24 )     ! no. days to average over
 
@@ -75,7 +75,7 @@ C...........   Other local variables
         INTEGER NUMSRC                    ! no. sources to be averaged
 
         REAL    TEMPSUM                   ! sum of temperatures
-        REAL    RHSUM                     ! sum of relative humidities
+        REAL    QVSUM                     ! sum of mixing ratios
         REAL    BPSUM                     ! sum of barometric pressures
 
         LOGICAL :: INITIAL = .TRUE.       ! true: first time through routine
@@ -92,7 +92,7 @@ C.........  Loop through all counties
             NUMSRC = 0
             
             TEMPSUM = 0
-            RHSUM   = 0
+            QVSUM   = 0
             BPSUM   = 0
         
             CURRCNTY = CNTYCODE( I )
@@ -108,13 +108,13 @@ C                   gridding surrogates do not contain data for all counties
                 
                 TEMPSUM = TEMPSUM + 
      &                    ( TKHOUR( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
-                RHSUM = RHSUM +
-     &                    ( RHHOUR( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
+                QVSUM = QVSUM +
+     &                    ( QVHOUR( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
                 BPSUM = BPSUM +
      &                    ( BPHOUR( J,TSTEP ) / NDAYSRC( J,TSTEP ) )
      
                 TKHOUR( J,TSTEP ) = 0
-                RHHOUR( J,TSTEP ) = 0
+                QVHOUR( J,TSTEP ) = 0
                 BPHOUR( J,TSTEP ) = 0
                 NDAYSRC( J,TSTEP ) = 0
 
@@ -128,7 +128,7 @@ C                   gridding surrogates do not contain data for all counties
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ELSE
                 CNTYTEMP( I ) = TEMPSUM / NUMSRC
-                CNTYRH  ( I ) = RHSUM   / NUMSRC
+                CNTYQV  ( I ) = QVSUM   / NUMSRC
                 CNTYBP  ( I ) = BPSUM   / NUMSRC
             END IF
         END DO
