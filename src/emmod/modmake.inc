@@ -81,7 +81,7 @@ $(MODDAYHR): $(MD_SRC)/moddayhr.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	if ( test -f moddayhr.M   ) ; then mv moddayhr.M   $(MD_OUT) ; fi
 	if ( test -f MODDAYHR.mod ) ; then mv MODDAYHR.mod $(MD_OUT) ; fi
 
-$(MODCNTRL): $(MD_SRC)/modcntrl.f
+$(MODCNTRL): $(MD_SRC)/modcntrl.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modcntrl.f
 	if ( test -f modcntrl.mod ) ; then mv modcntrl.mod $(MD_OUT) ; fi
 	if ( test -f modcntrl.M   ) ; then mv modcntrl.M   $(MD_OUT) ; fi
@@ -93,31 +93,31 @@ $(MODSURG): $(MD_SRC)/modsurg.f
 	if ( test -f modsurg.M   ) ; then mv modsurg.M   $(MD_OUT) ; fi
 	if ( test -f MODSURG.mod ) ; then mv MODSURG.mod $(MD_OUT) ; fi
 
-$(MODEMFAC): $(MD_SRC)/modemfac.f
+$(MODEMFAC): $(MD_SRC)/modemfac.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modemfac.f
 	if ( test -f modemfac.mod ) ; then mv modemfac.mod $(MD_OUT) ; fi
 	if ( test -f modemfac.M   ) ; then mv modemfac.M   $(MD_OUT) ; fi
 	if ( test -f MODEMFAC.mod ) ; then mv MODEMFAC.mod $(MD_OUT) ; fi
 
-$(MODSTCY): $(MD_SRC)/modstcy.f
+$(MODSTCY): $(MD_SRC)/modstcy.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modstcy.f
 	if ( test -f modstcy.mod ) ; then mv modstcy.mod $(MD_OUT) ; fi
 	if ( test -f modstcy.M   ) ; then mv modstcy.M   $(MD_OUT) ; fi
 	if ( test -f MODSTCY.mod ) ; then mv MODSTCY.mod $(MD_OUT) ; fi
 
-$(MODMERGE): $(MD_SRC)/modmerge.f
+$(MODMERGE): $(MD_SRC)/modmerge.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modmerge.f
 	if ( test -f modmerge.mod ) ; then mv modmerge.mod $(MD_OUT) ; fi
 	if ( test -f modmerge.M   ) ; then mv modmerge.M   $(MD_OUT) ; fi
 	if ( test -f MODMERGE.mod ) ; then mv MODMERGE.mod $(MD_OUT) ; fi
 
-$(MODELEV): $(MD_SRC)/modelev.f
+$(MODELEV): $(MD_SRC)/modelev.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modelev.f
 	if ( test -f modelev.mod ) ; then mv modelev.mod $(MD_OUT) ; fi
 	if ( test -f modelev.M   ) ; then mv modelev.M   $(MD_OUT) ; fi
 	if ( test -f MODELEV.mod ) ; then mv MODELEV.mod $(MD_OUT) ; fi
 
-$(MODMET): $(MD_SRC)/modmet.f
+$(MODMET): $(MD_SRC)/modmet.f $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $(MD_SRC)/modmet.f
 	if ( test -f modmet.mod ) ; then mv modmet.mod $(MD_OUT) ; fi
 	if ( test -f modmet.M   ) ; then mv modmet.M   $(MD_OUT) ; fi
