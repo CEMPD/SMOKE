@@ -78,6 +78,7 @@ C...........  ALLOCATABLE VARIABLES and their decriptions...
 
 C...........  Variables for reading and writing inventory pollutants
         INTEGER, ALLOCATABLE :: SRCID  ( : ) ! source numbers
+        INTEGER, ALLOCATABLE :: INVYR_BASE( : ) ! input inventory year
         REAL   , ALLOCATABLE :: DATAVAR( :,: ) ! emissions and associated vars
         REAL   , ALLOCATABLE :: SRCDAT ( :,: ) ! emissions and associated vars
 
@@ -296,6 +297,10 @@ C.........  Allocate memory based on number of control/projection matrices
         ALLOCATE( CPVNAMS( MXVARS3, NCMAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CPVNAMS', PROGNAME )
 
+C.........  Allocate memory for storing input inventory year by source
+        ALLOCATE( INVYR_BASE( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INVYR_BASE', PROGNAME )
+
 C.............  Initialize arrays
         CNAMEA  = ' '  ! array
         CTYPEA  = 0    ! array
@@ -355,7 +360,7 @@ C.............  For projection and control matrices, interpret variable
 C               names and compare to pollutant list. Determine whether 
 C               matrix applies to the inventory or not.
             N = 0
-            DO V = 1, NVARS3D
+            DO V = 1, NVARSET
 
                 VARBUF = VNAMESET( V )
                 CPVNAMS( V,I ) = VARBUF
@@ -367,7 +372,7 @@ C.................  Count variables that apply to all pollutants and acts
      &              VARBUF .EQ. 'pfac'      ) THEN
                     M = M + 1
 
-                ELSE IF( K .LE. 0 ) THEN   ! Store names don't match with EANAM
+                ELSE IF( K .LE. 0 ) THEN   ! Report names don't match with EANAM
                     N = N + 1
 
                     WRITE( MESG,94010 ) 'WARNING: variable "' //
@@ -583,10 +588,12 @@ C           able to build relative file names for the map file.
 
         END DO
         
-
+C.........  Save the input inventory year by source for application
+C           of the projection factors
 C.........  Update the year of the data if the projection year is non-zero
         IF( PPYEAR .NE. 0 ) THEN
             DO S = 1, NSRC
+                INVYR_BASE( S ) = INVYR( S )
                 IF( INVYR( S ) .EQ. PBYEAR ) INVYR( S ) = PPYEAR
             END DO
         END IF
@@ -693,9 +700,9 @@ C                   loop through sources, applying factors as needed
                         IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
                         IF( K .GT. 0 ) PSFAC  = CFAC( S )
 
-C.........................  Skip if the base year is the same as the
+C.........................  Skip if the base year is not the same as the
 C                           base year of the projection matrix...
-                        IF( INVYR( S ) .NE. PBYEAR ) CYCLE
+                        IF( INVYR_BASE( S ) .NE. PBYEAR ) CYCLE
 
 C.........................  Adjust annual emissions or activity
                         DATAVAR( C,1 ) = DATAVAR( C,1 ) * ALLFAC* PSFAC
