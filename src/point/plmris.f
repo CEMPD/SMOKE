@@ -1,13 +1,13 @@
 
         SUBROUTINE  PLMRIS( EMLAYS, LPBL, LSTK, HFX, HMIX, STKDM, STKHT, 
-     &                      STKTK, STKVE, TSTK, USTAR, DTHDZ, TA, WSPD, 
-     &                      ZF, ZH, ZSTK, WSTK, TOP, BOT )
+     &                      STKTK, STKVE, TSTK, DTHDZ, TA, WSPD, ZF, ZH,
+     &                      ZSTK, WSTK, ZPLM )
 
 C***********************************************************************
 C  subroutine body starts at line 141
 C
 C  DESCRIPTION:  
-C       computes elevation TOP, BOT of plume top and bottom.
+C       computes plume rise height
 C
 C  PRECONDITIONS REQUIRED:
 C	meteorology and stack parameters
@@ -20,6 +20,7 @@ C       Prototype 12/95 by CJC, based on Briggs algorithm adapted from
 C         RADM 2.6 subroutine PLUMER() (but with completely different 
 C         data structuring).
 C       Copied from plmris.F 4.4 by M Houyoux 3/99 
+C       Updated with code from Jim Godowitch at EPA, 9/03
 C
 C***********************************************************************
 C  
@@ -65,7 +66,6 @@ C...........   ARGUMENTS and their descriptions:
         REAL   , INTENT (IN) :: STKTK          ! exhaust temperature (deg K)
         REAL   , INTENT (IN) :: STKVE          ! exhaust velocity (m/s)
         REAL   , INTENT (IN) :: TSTK           ! tmptr at top of stack (deg K)
-        REAL   , INTENT (IN) :: USTAR          ! friction velocity (m/s)
         REAL   , INTENT (IN) :: DTHDZ( EMLAYS )! gradient of THETV
         REAL   , INTENT (IN) :: TA   ( EMLAYS )! temperature (deg K)
         REAL   , INTENT (IN) :: WSPD ( EMLAYS )! wind speed (m/s)
@@ -73,8 +73,7 @@ C...........   ARGUMENTS and their descriptions:
         REAL   , INTENT (IN) :: ZH   ( EMLAYS )! layer center height (m) 
         REAL   , INTENT (IN) :: ZSTK ( EMLAYS )! zf( l )   - stkht   (m)
         REAL, INTENT(IN OUT) :: WSTK           ! wind speed @ top of stack (m/s)
-        REAL   , INTENT(OUT) :: TOP            ! plume top    elevation (m)
-        REAL   , INTENT(OUT) :: BOT            ! plume bottom elevation (m)
+        REAL   , INTENT(OUT) :: ZPLM           ! current plume height above stack
 
 C...........   PARAMETERS and their descriptions:
 
@@ -84,8 +83,8 @@ C...........   PARAMETERS and their descriptions:
         REAL, PARAMETER :: SMALL   =  1.0E-5         ! Criterion for stability
         REAL, PARAMETER :: D3      =  1.0 /  3.0     ! 1/ 3
         REAL, PARAMETER :: D30     =  1.0 / 30.0     ! 1/30
-        REAL, PARAMETER :: D2664   =  1.0 /  2.664   ! 1/ 2.664
-        REAL, PARAMETER :: D59319  =  1.0 / 59.319   ! 1/59.319
+        REAL, PARAMETER :: D1355   =  1.0 /  1.355   ! 1/ 1.355
+        REAL, PARAMETER :: D17576  =  1.0 / 17.576   ! 1/17.576
         REAL, PARAMETER :: TWOTHD  =  2.0 /  3.0     ! 2/ 3
         REAL, PARAMETER :: FIVETHD =  5.0 /  3.0     ! 5/ 3S
         REAL, PARAMETER :: NODIV0  =  1.0E-10        ! Prevent divide by zero
@@ -111,22 +110,19 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL    TPLM            !  temperature at top of plume (m/s)
         REAL    WPLM            !  wind speed  at top of plume (m/s)
         REAL    ZMIX            !  hmix - hs
-        REAL    ZPLM            !  current plume height above stack 
-                                !    (can be greater than the height of the 
-                                !     top of the EMLAYS layer)
 
 C...........   STATEMENT FUNCTIONS:
 
-        REAL    B, H, U, US     !  arguments
+        REAL    B, H, U         !  arguments
 
         REAL    NEUTRL		!  neutral-stability plume rise function
         REAL    STABLE		!  stable            plume rise function
         REAL    UNSTBL		!  unstable          plume rise function
 
-        NEUTRL( H, B, U, US ) =
+        NEUTRL( H, B, U ) =
      &     MIN( 10.0 * H, 
-     &          1.2 * ( (              B/( U*US*US )   )**0.6 *    ! pwr 3 * 0.2
-     &                  (  H + 1.3 * ( B/( U*US*US ) ) )**0.4   )) ! pwr 2 * 0.2
+     &          1.2 * ( (    144.*B/( U*WSPD(1)*WSPD(1) )   )**0.6 *    ! pwr 3 * 0.2
+     &          ( H + 1.3 * (144.*B/( U*WSPD(1)*WSPD(1) ) ) )**0.4   )) ! pwr 2 * 0.2
 
         STABLE( B, U, S ) =  2.6 * ( B / ( U * S ) )**D3
 
@@ -150,9 +146,9 @@ C.......   When BFLX <= zero, use momentum rise only
 C.......   NOTE: This part of algorithm added based on Models-3 plume rise
 
         IF( BFLX .LE. 0.0 ) THEN
+        
+            ZPLM = STKHT + MAX( DHM, +2. )
 
-            TOP = STKHT + 1.5 * DHM
-            BOT = STKHT + 0.5 * DHM
             RETURN
 
         ENDIF
@@ -177,7 +173,7 @@ C.................  EPA 10/8/97 why this is done and haven't gotten a response.
                     IF( WSTK .EQ. 0. ) WSTK = NODIV0
                 ENDIF
 
-                DHN = NEUTRL( STKHT, BFLX, WSTK, USTAR )
+                DHN = NEUTRL( STKHT, BFLX, WSTK )
                 DH  = STABLE( BFLX, WSTK, S )
 
 C.............  NOTE- The Models-3 version of plume rise recalculates the
@@ -197,38 +193,12 @@ C.............        DHM = 3.0 * STKDM * STKVE / WSTK
                     DH = DHM
                 ENDIF
 
-                DHT = 1.5 * DH
-
-            ELSE IF ( ZMIX .LE. CRDIST ) THEN	!  need to compute penetration
-
-                S   = MAX( GRAV * DTHDZ( LSTK ) / TSTK, SMALL )
-                DHT  = 1.5 * STABLE( BFLX, WSTK, S )
-
-C...............  Set the plume rise based on the partial penetration method
-C...............    in Models-3.  There were several problems in the original
-C...............    RADM algorithm which have been changed.  This method is
-C...............    still not the same as Daewon's paper because that is only
-C...............    appropriate for a Gaussian plume rise model.
-                IF ( ZMIX .GE. DHT ) THEN
-                    TOP = HMIX
-                    BOT = TWOTHD * TOP
-                    BOT = MAX( BOT, STKHT )
-                    BOT = 0.5 * BOT
-
-                ELSE
-                    TOP = ZF( LSTK )
-                    BOT = TWOTHD * TOP
-                    BOT = MAX( BOT, STKHT )
-                    BOT = 0.5 * BOT
-
-                END IF
-
-                RETURN
+                DHT = DH
 
             ELSE				!  unstable case:
 
                 DH  = UNSTBL( BFLX, WSTK )
-                DHN = NEUTRL( STKHT, BFLX, WSTK, USTAR )
+                DHN = NEUTRL( STKHT, BFLX, WSTK )
 
                 IF ( DHN .LT. DH ) THEN
                     DH = DHN
@@ -242,15 +212,15 @@ C...............    appropriate for a Gaussian plume rise model.
                     IQ = 4 
                 ENDIF
 
-                DHT = 1.5 * DH
-
+                DHT = DH
+	       
             END IF
 
         ELSE IF( HSTAR .LT. -HCRIT ) THEN      !  stable case:
 
             S   = MAX( GRAV * DTHDZ( LSTK ) / TSTK, SMALL )
-            DHT = 1.5 * STABLE( BFLX, WSTK, S )
-            DHN = 1.5 * NEUTRL( STKHT, BFLX, WSTK, USTAR )
+            DHT =  STABLE( BFLX, WSTK, S )
+            DHN =  NEUTRL( STKHT, BFLX, WSTK )
 
             IF ( DHN .LT. DHT ) THEN
                 DHT = DHN
@@ -261,7 +231,7 @@ C...............    appropriate for a Gaussian plume rise model.
 
         ELSE					!  neutral case:
 
-            DHT = 1.5 * NEUTRL( STKHT, BFLX, WSTK, USTAR )
+            DHT =  NEUTRL( STKHT, BFLX, WSTK )
             IQ  = 2
             
         END IF			!  hstar ==> unstable, stable, or neutral
@@ -306,9 +276,10 @@ C...........   Compute residual bflx by stability case IQ:
                 RBFLX = WPLM * R**FIVETHD
             ELSE IF ( IQ .EQ. 2 ) THEN
                 P = STKHT + TWOTHD * ZPLM
-                RBFLX = D2664 * R * WPLM * USTAR**2 * ( R / P )**TWOTHD
+                RBFLX = D1355 * R * WPLM * ( ( WSPD( 1 )**2. )/144. ) 
+     &               * ( R / P )**TWOTHD
             ELSE	!  else iq = 3:
-                RBFLX = D59319 * WPLM * S * R**3
+                RBFLX = D17576 * WPLM * S * R**3
             END IF	!  if stability flag iq is 1, 2, or 3
 
 C...........   Prevent divide-by-zero by WPLM
@@ -320,9 +291,9 @@ C...........   Process according to stability cases:
             S    = GRAV * DTHDZ( LPLM ) / TPLM
             IF( S .GT. SMALL ) THEN               ! stable case:
 
-                DHT = 1.5 * STABLE( RBFLX, WPLM, S )
-                DHN = 1.5 * NEUTRL( STKHT, RBFLX, WPLM, USTAR )
-                IF ( DHN .LT. DHT ) THEN
+               DHT =  STABLE( RBFLX, WPLM, S )
+               DHN =  NEUTRL( STKHT, RBFLX, WPLM )
+               IF ( DHN .LT. DHT ) THEN
                     DHT = DHN
                     IQ  = 2
                 ELSE
@@ -330,23 +301,33 @@ C...........   Process according to stability cases:
                 END IF
 
             ELSE          ! if upper layer is not stable, use neutral formula
-                            
-                DHT = 1.5 * NEUTRL( STKHT, RBFLX, WPLM, USTAR )
-                IQ  = 2
 
+                DHN =  NEUTRL( STKHT, RBFLX, WPLM )
+                DH  = UNSTBL( BFLX, WSTK )
+                IQ = 1
+                IF ( DHN .LT. DH ) THEN
+                    DH = DHN
+                    IQ  = 2
+		        ENDIF
+		        DHT = DH
+	
             END IF
-
+ 
             ZPLM = ZSTK( LPLM-1 ) + DHT
 
-        END DO
+        END DO    !  end loop computing further plume rise
 
-199     CONTINUE   !  end loop computing further plume rise
+199     CONTINUE
 
-C.......   Compute plume spread:
+C.........  Adjust for layer 1 combustion pt. source stacks with plume
+C           rise limited to layer 1; put plume height in middle of layer 2  
+        IF ( ZPLM .LE. ZF( 1 ) .AND. STKTK .GT. TA( 1 ) ) THEN
+            ZPLM = ZH( 2 )
+        ENDIF
 
-        TOP = STKHT +      ZPLM
-        BOT = STKHT + D3 * ZPLM
-
+C.........   Determine actual height of plume centerline after rise
+        ZPLM = ZPLM + STKHT
+      
         RETURN
 
         END SUBROUTINE PLMRIS

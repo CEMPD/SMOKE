@@ -38,7 +38,7 @@ C
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
-C Last updated: %G 
+C Last updated: $Date$
 C  
 C***********************************************************************
 
@@ -61,9 +61,10 @@ C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -76,11 +77,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         REAL            PLUMRIS
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
 
         EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, 
-     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE, 
-     &                  PROMPTMFILE
+     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -140,6 +139,7 @@ C...........   Other allocatable arrays
 
 C...........   File units and logical/physical names
         INTEGER         CDEV    !  elevated source configuration file
+        INTEGER         IDEV    !  tmp unit number if ENAME is map file
         INTEGER         LDEV    !  log-device
         INTEGER         PDEV    !  for output major/mepse src ID file
         INTEGER         RDEV    !  ASCII output report
@@ -147,6 +147,7 @@ C...........   File units and logical/physical names
 
         CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
         CHARACTER*16    ENAME   !  logical name for i/o api inventory input file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
         CHARACTER*16    MNAME   !  plume-in-grid srcs stack groups output file
 
 C...........   Other local variables
@@ -154,7 +155,6 @@ C...........   Other local variables
 
         INTEGER         COL           ! tmp column number
         INTEGER      :: ELEVTYPE = 0  ! code for elevated source approach
-        INTEGER         ENLEN         ! inventory file name length
         INTEGER         FIP           ! tmp country/st/county code
         INTEGER         IGRP          ! tmp group ID
         INTEGER         IOS           ! i/o status
@@ -179,6 +179,7 @@ C...........   Other local variables
         INTEGER      :: SDATE = 0     ! Julian start date
         INTEGER      :: STIME = 0     ! start time
         INTEGER      :: TSTEP = 10000 ! time step HHMMSS
+        INTEGER      :: TSTEP_T       ! unsued timestep from environment
         INTEGER         TZONE         ! output time zone
 
         REAL            DM            ! tmp inside stack diameter [m]
@@ -194,14 +195,12 @@ C...........   Other local variables
         REAL            TK            ! tmp stack exit temperature [K]
         REAL            VE            ! tmp stack exit velocity diameter [m/s]
 
-        LOGICAL :: CFLAG    = .FALSE. ! true: convert from English to metric
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
-        LOGICAL :: WFLAG    = .FALSE. ! true: convert lon to western
 
         CHARACTER*80    GDESC     !  grid description
-        CHARACTER*300   BUFFER
-        CHARACTER*300   MESG
+        CHARACTER*256   BUFFER
+        CHARACTER*256   MESG
 
         CHARACTER(LEN=IOVLEN3) COORD3D  !  coordinate system name
         CHARACTER(LEN=IOVLEN3) COORUN3D !  coordinate system units 
@@ -225,12 +224,6 @@ C.........  Get environment variables that control this program
 
         MESG = 'Approach for defining major/minor sources'
         ELEVTYPE = ENVINT( 'SMK_ELEV_METHOD', MESG, 0, IOS )
-
-        MESG = 'Indicator for converting all longitudes to Western'
-        WFLAG = ENVYN( 'WEST_HSPHERE', MESG, .TRUE., IOS )
-
-        MESG = 'Indicator for English to metric units conversion'
-        CFLAG = ENVYN( 'SMK_ENG2METRIC_YN', MESG, .FALSE., IOS )
 
 C.........  End program for invalid settings
         IF ( ELEVTYPE .GT. PELVCONFIG_APPROACH .OR.
@@ -304,15 +297,28 @@ C.........  Write out notes about elevated and PinG approachs
 C.......   Get file name; open input point source and output
 C.......   elevated points files
 
-C.........   Get file names and open inventory files
-        ENAME = PROMPTMFILE( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENLEN = LEN_TRIM( ENAME )
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        SDEV = PROMPTFFILE( 
-     &         'Enter logical name for the ASCII INVENTORY file',
-     &         .TRUE., .TRUE., ANAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
+
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
 C.........  Get elevated source configuration file, if needed
         IF( PINGTYPE .EQ. PELVCONFIG_APPROACH .OR. 
@@ -330,21 +336,11 @@ C.........  Open ASCII report file
      &        'Enter name for ELEVATED SELECTION REPORT file',
      &        .FALSE., .TRUE., 'REP' // CRL // 'ELV', PROGNAME )
 
-C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESC3( ENAME ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:ENLEN ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Otherwise, store source-category-specific header information, 
+C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API header info is passed by include file and the
 C           results are stored in module MODINFO.
-        ELSE
-
-            CALL GETSINFO
-
-        END IF
+        CALL GETSINFO( ENAME )
 
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
@@ -452,7 +448,7 @@ C               STACK_PING file
      &             'time period for emissions input file'
             CALL M3MSG2( MESG )
 
-            CALL GETM3EPI( -9, SDATE, STIME, NSTEPS )
+            CALL GETM3EPI( -9, SDATE, STIME, TSTEP_T, NSTEPS )
 
 C.............  Create maximum daily emissions by stack group.  The stack
 C               groups have already been set, and now the emissions for those
@@ -465,7 +461,7 @@ C               groups must be computed to assign MEPSEs and MPSs.
      &             'use in STACK_PING file'
             CALL M3MSG2( MESG )
 
-            CALL GETM3EPI( -9, SDATE, STIME, -9 )
+            CALL GETM3EPI( -9, SDATE, STIME, TSTEP_T, -9 )
 
         END IF  ! End of whether emissions are needed as a criteria
 
@@ -973,7 +969,7 @@ C               add call to FIXSTK routine
             MINVE = MINVAL( GRPVE( 1:NGROUP ) )
             MINFL = MINVAL( GRPFL( 1:NGROUP ) )
 
-            IF( MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LE. 0. ) THEN
+            IF( MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LT. 0. ) THEN
                 MESG = 'Bad stack group or stack split file. ' //
      &                 'Unable to assign stack ' // CRLF()//BLANK10//
      &                 'parameters to all stack groups. Could be '//

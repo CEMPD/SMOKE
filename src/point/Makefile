@@ -2,10 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
-LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp
-LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
+LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp $(LIBS_COMPILE)
+LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp $(LIBS_COMPILE)
 
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
@@ -22,7 +22,7 @@ pvm: laypoint.pvm
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-LAY=laypoint.o openlayout.o preplm.o plmris.o postplm.o
+LAY=laypoint.o openlayout.o preplm.o plmris.o postplm.o plsprd.o
 #
 laypoint: $(LAY) $(ALLI) $(LIBPATH)
 	echo LAYPOINT:
@@ -55,12 +55,14 @@ elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
 #
 
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgngrps.o: $(MODSOURC) $(MODELEV) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgngrps.f
 laypoint.o: $(MODSOURC) $(MODELEV) $(MODGRID) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ laypoint.f
-mxgrpemis.o: $(MODSOURC) $(MODELEV) $(MODINFO)
+mxgrpemis.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ mxgrpemis.f
 elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ elevpoint.f
@@ -78,4 +80,11 @@ wpingstk.o: $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ wpingstk.f
 #
 clean:
-	/bin/rm *.o 
+	/bin/rm -f *.o 
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)
