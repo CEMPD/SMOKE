@@ -2,14 +2,18 @@
         SUBROUTINE WREPINVEN( ADEV, CDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 108
 C
 C  DESCRIPTION:
-C      This subroutine writes out the REPINVEN file.
+C      This subroutine writes out the REPINVEN file, which contains
+C      reports on the toxics emissions inventory and the area-to-point
+C      sources.
 C
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
+C      I/O API functions
+C      RDSCCDESC
 C
 C  REVISION  HISTORY:
 C     Created 11/2002 by A. Holland
@@ -61,43 +65,42 @@ C...........   INCLUDES
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-	INTEGER		FIND1
 	INTEGER		INDEX1
         
-        EXTERNAL	FIND1, INDEX1
+        EXTERNAL	INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
 
         INTEGER     , INTENT (IN) :: ADEV  ! file unit no. for REPINVEN file
-        INTEGER     , INTENT (IN) :: CDEV
+        INTEGER     , INTENT (IN) :: CDEV  ! file unit no. for SCC desc. file
 
 C...........   Local variables
 
-	CHARACTER*1	KEEP
-        CHARACTER(LEN=DDSLEN3)	DESC
-        CHARACTER(LEN=SCCLEN3)  SCC
-        CHARACTER(LEN=IOVLEN3)  DNAME
-        CHARACTER(LEN=SDSLEN3)	SCCDC
-        CHARACTER(LEN=SCCLEN3)  PSCC
+	CHARACTER*1	KEEP               ! determines if CAS number is kept
+        CHARACTER(LEN=DDSLEN3)	DESC       ! temp. SCC description
+        CHARACTER(LEN=SCCLEN3)  SCC        ! temp. SCC code
+        CHARACTER(LEN=IOVLEN3)  DNAME      ! temp. data name
+        CHARACTER(LEN=SDSLEN3)	SCCDC      ! temp. SCC description
+        CHARACTER(LEN=SCCLEN3)  PSCC       ! previous SCC code
         
-        INTEGER		I, J, K, L, S, IOS
-        INTEGER		STATE
-        INTEGER		NFIPS
-        INTEGER		POLL
-        INTEGER		PFIP
+        INTEGER		I, J, K, L, S, IOS ! counters and indicies
+        INTEGER		STATE              ! temp. state code
+        INTEGER		NFIPS              ! temp. number of FIPS codes
+        INTEGER		POLL               ! temp. pollutant
+        INTEGER		PFIP               ! previous FIPS code
         
-        INTEGER, ALLOCATABLE :: ASSIGNED( : )
-        INTEGER, ALLOCATABLE :: UNASSIGN( : )
+        INTEGER, ALLOCATABLE :: ASSIGNED( : ) ! number of FIPS codes assigned
+        INTEGER, ALLOCATABLE :: UNASSIGN( : ) ! number of FIPS codes unassigned
         
-        REAL		VALCHECK
-        REAL		DIFF
-        REAL		OEMIS
-        REAL		SEMIS
+        REAL		VALCHECK           ! temp. value check
+        REAL		DIFF               ! temp. difference
+        REAL		OEMIS              ! temp. original emissions
+        REAL		SEMIS              ! temp. summed emissions
 
 C...........   Other local variables
 
-	CHARACTER*300	MESG
-        CHARACTER(LEN=SDSLEN3)	CBUF
+	CHARACTER*300	MESG               ! temp. message buffer
+        CHARACTER(LEN=SDSLEN3)	CBUF       ! temp. buffer
 
         CHARACTER*16  :: PROGNAME = 'WREPINVEN' ! program name
 
@@ -105,14 +108,20 @@ C***********************************************************************
 C   begin body of subroutine WREPINVEN
 
 C.........  Write out first report to REPINVEN file
+C           This report summarizies by CAS code the emissions,
+C           the number of inventory records, whether all, some, or none
+C           of the pollutants are kept and the CAS description.
 
+C............  Write out header
         WRITE( ADEV, 93010 ) 'CAS Code', 'Keep', 'Nrecs', 
      &         'Emissions', 'CAS Description'
      
         WRITE( ADEV, 93020 ) '[tons/year]'
         
         WRITE( ADEV, 93000 ) REPEAT( '-', 85 )
-          
+        
+C............  Determine whether all, some, or none of the pollutants
+C              are kept            
         DO I = 1, NUNIQCAS
           IF( UCASNPOL( I ) .EQ. UCASNKEP( I ) ) THEN
             KEEP = 'Y'
@@ -122,7 +131,8 @@ C.........  Write out first report to REPINVEN file
           ELSE IF( UCASNKEP( I ) .EQ. 0 ) THEN
             KEEP = 'N'
           END IF
-            
+          
+C............  Find CAS code in the original list to get the description            
           K = INDEX1( UNIQCAS( I ), NINVTBL, ITCASA )
           IF( K .GT. 0 ) THEN
             DESC = ITCASDSCA( K )
@@ -131,6 +141,7 @@ C.........  Write out first report to REPINVEN file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 1 )
           END IF
           
+C............  Write out report data fields          
           WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP, RECSBYCAS( I ),
      &             EMISBYCAS( I ), DESC
 
@@ -141,7 +152,10 @@ C.........  Write out first report to REPINVEN file
         WRITE( ADEV, 93000 ) ' '
         
 C.........  Write out second report to REPINVEN file
+C           The report contains emissions before and after disaggregation.
+C           Only pollutants that have KEEP=Y will be reported.
 
+C............  Write out header
 	WRITE( ADEV, 93040 ) 'CAS Code', 'CAS Emissions', 'Factor',
      &         'Data Name', 'Data Emissions', 'Data Description', 
      &         'CAS Description'
@@ -152,8 +166,10 @@ C.........  Write out second report to REPINVEN file
         
         DO I = 1, NINVTBL
 
+C............  If CAS code is blank, skip
           IF( SORTCAS( I ) .EQ. '        ' ) CYCLE
           
+C............  Find sorted CAS code in unique list
           K = INDEX1( SORTCAS( I ), NUNIQCAS, UNIQCAS )
           IF( K .LE. 0 ) THEN
             WRITE( MESG, 94010 )
@@ -164,8 +180,10 @@ C.........  Write out second report to REPINVEN file
           
           J = SCASIDX( I )
           
+C............  If pollutant is not kept then skip
           IF( .NOT. ITKEEPA( J ) ) CYCLE
           
+C............  Check value of factored emissions
           VALCHECK = EMISBYCAS( K ) * ITFACA( J )
           DIFF = VALCHECK - EMISBYPOL( I )
           IF( ABS( DIFF ) .NE. 0.0 ) THEN
@@ -176,6 +194,7 @@ C.........  Write out second report to REPINVEN file
             CALL M3MESG( MESG )
           END IF
 
+C............  Write out report data fields
           WRITE( ADEV, 93060 ) SORTCAS( I ), EMISBYCAS( K ),
      &           ITFACA( J ), ITNAMA( J ), EMISBYPOL( I ),
      &           ITDSCA( J ), ITCASDSCA( J )
@@ -192,16 +211,22 @@ C           to point allocation is occuring
        
         IF( ALLOCATED( REPAR2PT ) ) THEN
         
+C.........  Read in SCC description file
           CALL RDSCCDSC( CDEV )
           
 C.........  Write out third report to REPINVEN file
+C           This report lists the SCCs that have area-to-point source
+C           factor file assignments but are not in the inventory.
 
+C............  Write out header
 	  WRITE( ADEV, 93000 ) ' SCCs in area-to-point factors '//
      &           'file not found in the inventory:'
           WRITE( ADEV, 93000 ) ' '
           
           DO I = 1, NA2PSCC
           
+C............  Find area-to-point SCC in inventory SCC list.  If
+C              not found, write SCC to REPINVEN file
             K = INDEX1( A2PSCC( I ), NINVSCC, INVSCC )
             IF( K .LE. 0 ) THEN
               WRITE( ADEV, 93130 ) A2PSCC( I )
@@ -214,7 +239,12 @@ C.........  Write out third report to REPINVEN file
           WRITE( ADEV, 93000 ) ' '
         
 C.........  Write out fourth report to REPINVEN file
+C           Reports the pollutant name, emissions total before and 
+C           after factors are applied, the total number of FIPS codes
+C           affected by SCC and the SCC description for area emissions
+C           assigned to point sources.
 
+C............  Write out header
 	  WRITE( ADEV, 93070 ) 'SCC Code', 'Data Name',
      &         'FIPS count', 'Emissions before', 'Emissions after',
      &         'SCC Description'
@@ -233,6 +263,7 @@ C.........  Write out fourth report to REPINVEN file
             OEMIS = REPAR2PT( I )%ORIGEMIS
             SEMIS = REPAR2PT( I )%SUMEMIS
            
+C............  Find SCC in master list of SCC codes
             K = INDEX1( SCC, NINVSCC, INVSCC )
             IF( K .LE. 0 ) THEN
               WRITE( MESG, 94010 )
@@ -248,7 +279,8 @@ C.........  Write out fourth report to REPINVEN file
             DO J = 1, NCONDSRC
             
               IF( REPAR2PT( J )%STATE .EQ. STATE ) CYCLE
-              
+        
+C............  Sum emissions and count up FIPS codes by SCC      
               IF( REPAR2PT( J )%SCC .EQ. SCC .AND.
      &            REPAR2PT( J )%POLL .EQ. POLL ) THEN
                 NFIPS = NFIPS + REPAR2PT( J )%NFIPS
@@ -258,6 +290,7 @@ C.........  Write out fourth report to REPINVEN file
               
             END DO
             
+C............  Write out report data fields
             WRITE( ADEV, 93090 ) SCC, DNAME, NFIPS,
      &            OEMIS, SEMIS, SCCDC
             
@@ -268,7 +301,9 @@ C.........  Write out fourth report to REPINVEN file
           WRITE( ADEV, 93000 ) ' '
         
 C.........  Write out fifth report to REPINVEN file
+C           This report is similar to the above one separated by state.
 
+C............  Write out header
 	  WRITE( ADEV, 93100 ) 'State', 'SCC Code', 'Data Name',
      &         'FIPS count', 'Emissions before', 'Emissions after',
      &         'SCC Description'
@@ -285,7 +320,8 @@ C.........  Write out fifth report to REPINVEN file
             NFIPS = REPAR2PT( I )%NFIPS
             OEMIS = REPAR2PT( I )%ORIGEMIS
             SEMIS = REPAR2PT( I )%SUMEMIS
-           
+
+C............  Find SCC in master list of SCC codes        
             K = INDEX1( SCC, NINVSCC, INVSCC )
             IF( K .LE. 0 ) THEN
               WRITE( MESG, 94010 )
@@ -298,6 +334,7 @@ C.........  Write out fifth report to REPINVEN file
             L = LEN_TRIM( CBUF )
             SCCDC = CBUF( 1:L )
            
+C............  Write out report data fields
             WRITE( ADEV, 93120 ) STATE, SCC, DNAME, NFIPS,
      &            OEMIS, SEMIS, SCCDC
      
@@ -309,12 +346,16 @@ C.........  Write out fifth report to REPINVEN file
         
         
 C.........  Write out sixth report to REPINVEN file
+C           Reports for each SCC, the number of FIPS codes getting assigned
+C           or unassigned to point locations.
 
+C............  Write out header
 	  WRITE( ADEV, 93140 ) 'FIPS count'
 	  WRITE( ADEV, 93150 ) 'SCC Code', 'Assigned',
      &         'Unassigned', 'SCC Description'
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
           
+C............  Allocate and initialize arrays
           ALLOCATE( ASSIGNED( NINVSCC ), STAT=IOS )
           CALL CHECKMEM( IOS, 'ASSIGNED', PROGNAME )
           ALLOCATE( UNASSIGN( NINVSCC ), STAT=IOS )
@@ -322,13 +363,18 @@ C.........  Write out sixth report to REPINVEN file
           ASSIGNED = 0
           UNASSIGN = 0
           
+C............  Initialize previous FIPS and SCC codes
           PFIP = 99999
           PSCC = '9999999999'
           
+C............  Loop through sources
           DO S = 1, NSRC
-          
+        
+C............  If FIPS and SCC codes are equal to previous, cycle  
             IF( IFIP( S ) .EQ. PFIP .AND. CSCC( S ) .EQ. PSCC ) CYCLE
-            
+
+C............  If SCC is in the area-to-point SCC list then determine
+C              if it is assigned or unassigned     
             J = INDEX1( CSCC( S ), NA2PSCC, A2PSCC )
             IF( J .GT. 0 ) THEN
             
@@ -341,12 +387,14 @@ C.........  Write out sixth report to REPINVEN file
               END IF
               
             END IF
-            
+     
+C............  Reset previous FIPS and SCC codes to current ones       
             PFIP = IFIP( S )
             PSCC = CSCC( S )
             
           END DO
           
+C............  Write out report data fields
           DO I = 1, NINVSCC
           
             WRITE( ADEV, 93160 ) INVSCC( I ), ASSIGNED( I ),
