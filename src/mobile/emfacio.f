@@ -3,7 +3,7 @@
      &                      RDEV, SDEV, NDREUSE, DIREUSE )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 117
 C
 C  DESCRIPTION:
 C      This subroutine opens the existing or new diurnal and non-diurnal
@@ -175,24 +175,6 @@ C............................................................................
 C           Non-diurnal file section
 C............................................................................
 
-C.........  Get description of non-diurnal emission factors input file
-C.........  Store various things from the header
-        IF( NDREUSE ) THEN
-
-            IF( .NOT. DESC3( NNAME_IN ) ) THEN
-                MESG = 'Could not get description of ' // NNAME_IN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-        END IF
-
-C.........  Get temperature information from non-diurnal emission factors
-C           file or from environment variables, and store for comparison
-C           with non-diurnal file
-C.........  Build the allowable non-diurnal temperature array
-        TFLAG = ( .NOT. NDREUSE )
-        CALL TMPRINFO( TFLAG, 'NOMINMAX' )
-
 C.........  If starting with existing non-diurnal emission factors file,
 C           set parameters that would otherwise get from prompt
         IF( NDREUSE ) THEN
@@ -200,22 +182,33 @@ C           set parameters that would otherwise get from prompt
 C.............  Set output file name to same as input
             NNAME = NNAME_IN
 
+C.............  Get emission factor names, units, and descriptions for the  
+C               emission factor model of interest
+            CALL EFSETUP( NNAME, MODELNAM, 'NONDIURNAL', MXVARS3, NNDI, 
+     &                    VNAME3D, UNITS3D, VDESC3D )
+
 C.............  Set modeling year (override the environment variable setting)
             JYEAR = SDATE3D / 1000
 
-C.............  Set the number of non diurnal emission factors
-            NNDI = NVARS3D
+C.............  Get temperature information from non-diurnal EF file
+C               and build allowable non-diurnal tmpr array
+            CALL TMPRINFO( .FALSE., 'NOMINMAX' )
 
 C.........  If not starting with an existing non-diurnal emission factors file,
 C           set up the header, prompt for the file, and open it
         ELSE
+
+C.............  Get temperature information from environment variables
+C               and build allowable non-diurnal tmpr array
+            CALL TMPRINFO( .TRUE., 'NOMINMAX' )
 
 C.............  Initialize emissions header to missing
             CALL HDRMISS3
 
 C.............  Get emission factor names, units, and descriptions for the  
 C               emission factor model of interest
-            CALL EFSETUP( MODELNAM, 'NONDIURNAL', MXVARS3, NNDI, 
+            NNAME = 'NONE'
+            CALL EFSETUP( NNAME, MODELNAM, 'NONDIURNAL', MXVARS3, NNDI, 
      &                    VNAME3D, UNITS3D, VDESC3D )
 
 C.............  Set I/O API variable information
@@ -238,11 +231,11 @@ C.............  Set up non-default header options for non-diurnal EF file
      &                     ' non-diurnal emission factors'
             FDESC3D( 2 ) =               '/FROM/ '    // PROGNAME
             FDESC3D( 3 ) =               '/VERSION/ '// VERCHAR( SCCSW )
-            WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/', MINT_MIN
-            WRITE( FDESC3D( 5 ), 94030 ) '/MAXT_MAX/', MAXT_MAX
-            WRITE( FDESC3D( 6 ), 94030 ) '/T_INTERVAL/', TMMINVL
+            WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/ ', MINT_MIN
+            WRITE( FDESC3D( 5 ), 94030 ) '/MAXT_MAX/ ', MAXT_MAX
+            WRITE( FDESC3D( 6 ), 94030 ) '/T_INTERVAL/ ', TMMINVL
             FDESC3D( 7 ) =               '/T_UNITS/ "K"'
-            FDESC3D( 8 ) =               '/FROM MODEL/' // MODELNAM
+            FDESC3D( 8 ) =               '/FROM MODEL/ ' // MODELNAM
 
             MESG = 'Enter logical name for output NON-DIURNAL ' //
      &             'EMISSION FACTORS file'
@@ -255,23 +248,6 @@ C............................................................................
 C           Diurnal file section
 C............................................................................
 
-C.........  Get description of diurnal emission factors input file
-C.........  Store various things from the header
-        IF( DIREUSE ) THEN
-
-            IF( .NOT. DESC3( DNAME_IN ) ) THEN
-                MESG = 'Could not get description of ' // DNAME_IN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-        END IF
-
-C.........  Get temperature information from diurnal emission factors
-C           file or from environment variables
-C.........  Build the allowable min/max diurnal temperature arrays
-        TFLAG = ( .NOT. DIREUSE )
-        CALL TMPRINFO( TFLAG, 'MINMAX' )
-
 C.........  If starting with existing non-diurnal emission factors file,
 C           set parameters that would otherwise get from prompt
         IF ( DIREUSE ) THEN 
@@ -282,20 +258,31 @@ C.............  Set output file name to same as input
 C.............  Make sure that the non-diurnal and diurnal files are consistent
             CALL CHKEFHDR( NNAME, DNAME )
 
-C.............  Set the number of diurnal emission factors
-            NDIU = NVARS3D
+C.............  Get emission factor names, units, and descriptions for the  
+C               emission factor model of interest
+            CALL EFSETUP( DNAME, MODELNAM, 'DIURNAL', MXVARS3, NDIU, 
+     &                    VNAME3D, UNITS3D, VDESC3D )
+
+C.............  Get temperature information from diurnal EF file
+C               and build allowable diurnal tmpr arrays
+            CALL TMPRINFO( .FALSE., 'MINMAX' )
 
 C.........  If not starting with an existing diurnal emission factors file,
 C           set up the header, prompt for the file, and open it
         ELSE
+
+C.............  Get temperature information from environment variables
+C               and build allowable diurnal tmpr arrays
+            CALL TMPRINFO( .TRUE., 'MINMAX' )
 
 C.............  Initialize emissions header to missing
             CALL HDRMISS3
 
 C.............  Get emission factor names, units, and descriptions for the  
 C               emission factor model of interest
-            CALL EFSETUP( MODELNAM, 'DIURNAL', MXVARS3, NDIU, 
-     &                   VNAME3D, UNITS3D, VDESC3D )
+            DNAME = 'NONE'
+            CALL EFSETUP( DNAME, MODELNAM, 'DIURNAL', MXVARS3, NDIU, 
+     &                    VNAME3D, UNITS3D, VDESC3D )
 
 C.............  Set I/O API variable type
             VTYPE3D( 1:NDIU ) = M3REAL           
@@ -319,14 +306,14 @@ C.............  Set up diurnal master List file description
      &                     ' diurnal emission factors'
             FDESC3D( 2 ) =               '/FROM/ '    // PROGNAME
             FDESC3D( 3 ) =               '/VERSION/ '// VERCHAR( SCCSW )
-            WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/', MINT_MIN
-            WRITE( FDESC3D( 5 ), 94030 ) '/MINT_MAX/', MINT_MAX
-            WRITE( FDESC3D( 6 ), 94030 ) '/MAXT_MIN/', MAXT_MIN
-            WRITE( FDESC3D( 7 ), 94030 ) '/MAXT_MAX/', MAXT_MAX
-            WRITE( FDESC3D( 8 ), 94030 ) '/T_INTERVAL/', TMMINVL
-            WRITE( FDESC3D( 9 ), 94030 ) '/T_MAXINTVL/', TMXINVL
+            WRITE( FDESC3D( 4 ), 94030 ) '/MINT_MIN/ ', MINT_MIN
+            WRITE( FDESC3D( 5 ), 94030 ) '/MINT_MAX/ ', MINT_MAX
+            WRITE( FDESC3D( 6 ), 94030 ) '/MAXT_MIN/ ', MAXT_MIN
+            WRITE( FDESC3D( 7 ), 94030 ) '/MAXT_MAX/ ', MAXT_MAX
+            WRITE( FDESC3D( 8 ), 94030 ) '/T_INTERVAL/ ', TMMINVL
+            WRITE( FDESC3D( 9 ), 94030 ) '/T_MAXINTVL/ ', TMXINVL
             FDESC3D( 10 ) =              '/T_UNITS/ "K"'
-            FDESC3D( 11 ) =              '/FROM MODEL/' // MODELNAM
+            FDESC3D( 11 ) =              '/FROM MODEL/ ' // MODELNAM
 
             MESG = 'Enter logical name for output DIURNAL ' //
      &             'EMISSION FACTORS file'
