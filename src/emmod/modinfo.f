@@ -52,6 +52,7 @@
         INTEGER    , PUBLIC :: NEMSFILE ! no. EMS-95 files
         INTEGER    , PUBLIC :: NIACT    ! no. unique activities in inventory
         INTEGER    , PUBLIC :: NIPOL    ! no. unique pollutants in inventory
+        INTEGER    , PUBLIC :: NIPPA    ! NIACT + NIPPA
         INTEGER    , PUBLIC :: NPACT    ! number of variables per activity
         INTEGER    , PUBLIC :: NPPOL    ! number of variables per pollutant
         INTEGER    , PUBLIC :: NSRC     ! number of SMOKE sources
@@ -83,6 +84,9 @@
 
 !.........  Inventory activities, dimensioned by NIACT
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ACTVTY( : )
+
+!.........  Inventory pollutants and inventory activies, dimensioned by NIPPA
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM( : )
 
 !.........  Mobile source characteristics tables
         INTEGER                                     :: NVTYPE ! no. veh types
