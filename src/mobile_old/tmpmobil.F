@@ -1758,10 +1758,10 @@ C.................  If there are no weekend packets...
                     IF( OUTMSG ) THEN
                         MESG = 'Processing ' //
      &                         DAYS( DAY ) // MMDDYY( JDATE )
+
+                        CALL M3MSG2( MESG )
                         OUTMSG = .FALSE.
                     ENDIF
-
-                    CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, JTIME, MONTH,  
      &                           DAYOW, TZONE,  TZONES, ONEOR24,
@@ -1776,10 +1776,10 @@ C.................  If there are weekend packets, and it's a weekend...
                     IF( OUTMSG ) THEN
                         MESG = 'Processing weekend day ' //
      &                         DAYS( DAY ) // MMDDYY( JDATE )
+
+                        CALL M3MSG2( MESG )
                         OUTMSG = .FALSE.
                     ENDIF
-
-                    CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, JTIME, MONTH,
      &                           DAYOW, TZONE,  TZONES, ONEOR24,
@@ -1793,10 +1793,10 @@ C.................  If there are weekend packets, and it's not a weekend...
                     IF( OUTMSG ) THEN
                         MESG = 'Processing midweek day ' //
      &                         DAYS( DAY ) // MMDDYY( JDATE )
+
+                        CALL M3MSG2( MESG )
                         OUTMSG = .FALSE.
                     ENDIF
-
-                    CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, JTIME, MONTH,
      &                           DAYOW, TZONE,  TZONES, ONEOR24,
