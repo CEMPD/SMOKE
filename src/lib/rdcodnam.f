@@ -71,13 +71,13 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: FDEV   ! iventory table unit no.
 
 C...........   Parameters
-        INTEGER, PARAMETER :: NFIELDS = 12  ! no. input fields
+        INTEGER, PARAMETER :: NFIELDS = 14  ! no. input fields
         INTEGER, PARAMETER :: FBEG( NFIELDS ) = 
      &                      ( / 1 , 13, 24, 30, 32, 34,
-     &                          40, 42, 44, 48, 65, 106 / )
+     &                          40, 42, 44, 46, 48, 52, 69, 110 / )
         INTEGER, PARAMETER :: FEND( NFIELDS ) = 
      &                      ( / 11, 22, 28, 30, 32, 38,
-     &                          40, 42, 46, 63, 104, 145 / )
+     &                          40, 42, 44, 46, 50, 67, 108, 153 / )
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: LOCIDX  ( : ) ! sorting index
@@ -149,6 +149,10 @@ C.........  Allocate memory for storing raw unsorted inventory table
         CALL CHECKMEM( IOS, 'ITSTATA', PROGNAME )
         ALLOCATE( ITKEEPA( NINVTBL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ITKEEPA', PROGNAME )
+        ALLOCATE( ITEXPL( NINVTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ITEXPL', PROGNAME )
+        ALLOCATE( ITMSPC( NINVTBL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ITMSPC', PROGNAME )
         ALLOCATE( ITFACA( NINVTBL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ITFACA', PROGNAME )
         ALLOCATE( ITVTSA( NINVTBL ), STAT=IOS )
@@ -174,6 +178,8 @@ C.........  Allocate memory for storing raw unsorted inventory table
         ITREAA  = -9            ! default missing
         ITSTATA = 1             ! array (expected by PROCINVEN)
         ITKEEPA = .FALSE.       ! all pollutants dropped unless otherwise set in INVTABLE
+        ITMSPC  = .FALSE.       ! all pollutants no model species
+        ITEXPL  = .FALSE.       ! all pollutants not explicit in mechanism
         ITFACA  = 1.            ! initialize to have no change
         ITVTSA  = 'N'           ! initialize as not part of VOC or TOG
         ITNAMA  = ' '           ! names are blank
@@ -254,7 +260,7 @@ C.............  Check that integer fields are integers
                 CALL M3MSG2( MESG )
             END IF
 
-            IF( .NOT. CHKINT( SEGMENT( 9 ) ) ) THEN
+            IF( .NOT. CHKINT( SEGMENT( 11 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: NTI code is not an ' //
      &                 'integer at line', IREC
@@ -275,14 +281,18 @@ C.............  Convert to upper case, where needed
             CALL UPCASE( SEGMENT( 5 )( 1:FLEN(5) ) )
             CALL UPCASE( SEGMENT( 7 )( 1:FLEN(7) ) )
             CALL UPCASE( SEGMENT( 8 )( 1:FLEN(8) ) )
+            CALL UPCASE( SEGMENT( 9 )( 1:FLEN(9) ) )
+            CALL UPCASE( SEGMENT( 10)( 1:FLEN(10) ) )
 
 C.............  Correct unknown entries
             IF( SEGMENT( 7 ) .NE. 'V' .AND.
      &          SEGMENT( 7 ) .NE. 'T'       ) SEGMENT( 7 ) = 'N'
             IF( SEGMENT( 8 ) .NE. 'Y'       ) SEGMENT( 8 ) = 'N'
+            IF( SEGMENT( 9 ) .NE. 'Y'       ) SEGMENT( 9 ) = 'N'
+            IF( SEGMENT( 10) .NE. 'Y'       ) SEGMENT( 10) = 'N'
 
 C.............  Error for blank units
-            IF( SEGMENT( 10 ) .EQ. ' ' ) THEN
+            IF( SEGMENT( 12 ) .EQ. ' ' ) THEN
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
@@ -306,13 +316,15 @@ C.............  Store unsorted variables
                 ITKEEPA  ( NDAT ) = ( SEGMENT( 5 ) .EQ. 'Y' )
                 ITFACA   ( NDAT ) = STR2REAL( SEGMENT( 6 ) )
                 ITVTSA   ( NDAT ) = TRIM( SEGMENT( 7 ) )
-                ITNTIA   ( NDAT ) = STR2INT( SEGMENT( 9 ) )
-                ITUNTA   ( NDAT ) = TRIM( SEGMENT( 10 ) )
-                ITDSCA   ( NDAT ) = TRIM( SEGMENT( 11 ) )
-                ITCASDSCA( NDAT ) = TRIM( SEGMENT( 12 ) )
+                ITMSPC   ( NDAT ) = ( SEGMENT( 8 ) .EQ. 'Y' )
+                ITEXPL   ( NDAT ) = ( SEGMENT( 9 ) .EQ. 'Y' )
+                ITNTIA   ( NDAT ) = STR2INT( SEGMENT( 11 ) )
+                ITUNTA   ( NDAT ) = TRIM( SEGMENT( 12 ) )
+                ITDSCA   ( NDAT ) = TRIM( SEGMENT( 13 ) )
+                ITCASDSCA( NDAT ) = TRIM( SEGMENT( 14 ) )
                 ITCASDNMA( NDAT ) = ITCASA( NDAT ) // ITNAMA( NDAT )
 
-                IF( SEGMENT( 8 ) .EQ. 'Y' ) ITSTATA( NDAT ) = -1
+                IF( SEGMENT( 10 ) .EQ. 'Y' ) ITSTATA( NDAT ) = -1
                 IF( ITKEEPA( NDAT ) ) NINVKEEP = NINVKEEP + 1
 
             END IF
