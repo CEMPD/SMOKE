@@ -1101,7 +1101,7 @@ C...........   Internal buffering formats............ 94xxx
 94040   FORMAT( A, ' FIP', I7.5, '  ASC', I9.7, I3.3 )
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
-     &          A, 1X, I2.2, 1X, A, 1X, I2.2, 1X, A   )
+     &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
 
         END
 
