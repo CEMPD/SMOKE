@@ -46,11 +46,16 @@ C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NIACT
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
+        
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET, ONLY: TKHOUR
 
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS
+        USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS,
+     &                      INPUTHC, OUTPUTHC, NSUBPOL, SUBPOLS,
+     &                      NEPOL, EMTPOL, EMTNAM
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET
@@ -91,6 +96,8 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: GRPLIST( :,: ) ! contents of GROUP file
         INTEGER, ALLOCATABLE :: TEMPCTY( : )   ! list of counties from temperature file
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: RAWSUBS( : )  ! list of pollutants to be
+                                                             ! subtracted from HC
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
@@ -99,12 +106,13 @@ C           this program
 C.........  Unit numbers and logical file names
         INTEGER         CDEV     ! unit number for county MOBILE6 scenarios file (M6LIST)
         INTEGER         GDEV     ! unit number for time period group file (GROUP)
-        INTEGER         IDEV  ! tmp unit number if ENAME is map file
+        INTEGER         IDEV     ! tmp unit number if ENAME is map file
         INTEGER         LDEV     ! unit number for log file
         INTEGER         MDEV     ! unit number for concatenated MOBILE6 input file (M6INPUT)
         INTEGER         PDEV     ! unit number for speeds summary file (SPDSUM)
         INTEGER         SDEV     ! unit number for ASCII inventory file
         INTEGER         TDEV     ! unit number for emission processes file
+        INTEGER         VDEV     ! unit number for inventory data table
         
         CHARACTER*16    ANAME   !  logical name for ASCII inventory file
         CHARACTER*16    ENAME   !  logical name for I/O API inventory file   
@@ -113,7 +121,7 @@ C.........  Unit numbers and logical file names
         CHARACTER*16    TNAME   !  logical name for I/O API temperature file
 
 C.........   Other local variables
-        INTEGER    I, L          ! counters and indices
+        INTEGER    I, J, K, L, L2! counters and indices
         INTEGER    IOS           ! i/o status
         INTEGER    NINVARR       ! number inventory variables to input
         INTEGER    SDATE         ! current start date
@@ -134,6 +142,8 @@ C.........   Other local variables
         LOGICAL :: INITIAL  = .TRUE.     ! true: first time through loop
         LOGICAL :: FEXIST   = .FALSE.    ! true: file exists
         LOGICAL :: FILEOPEN = .FALSE.    ! true: emisfacs file is open
+        LOGICAL :: FNDINPUT = .FALSE.    ! true: found input hydrocarbon
+        LOGICAL :: FNDOUTPUT = .FALSE.   ! true: found output hydrocarbon
         
         CHARACTER*20           MODELNAM  ! emission factor model name
         CHARACTER*20           GRP_NAME  ! temperature aggregation group
@@ -223,6 +233,10 @@ C           do not store the pollutants as separate
      &           'Enter logical name for EMISSION PROCESSES file',
      &           .TRUE., .TRUE., 'MEPROC', PROGNAME )
 
+        VDEV = PROMPTFFILE( 
+     &           'Enter logical name for INVENTORY DATA TABLE file',
+     &           .TRUE., .TRUE., 'INVTABLE', PROGNAME )
+
         SELECT CASE( GRP_NAME )
         CASE( 'daily' )
            GDEV = PROMPTFFILE(
@@ -296,6 +310,99 @@ C.........  Set up emission process variable names
 
 C.........  Read emission processes file.  Populate array in MODEMFAC.
         CALL RDEPROC( TDEV )
+
+C.........  Read inventory table
+        CALL RDCODNAM( VDEV )
+
+C.........  Set up arrays for processing NONHAP values
+
+C.........  Set input and output hydrocarbon names
+        INPUTHC = TRIM( VOLNAM )
+        OUTPUTHC = 'NONHAP' // TRIM( INPUTHC )
+
+        ALLOCATE( RAWSUBS( MXIDAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RAWSUBS', PROGNAME )
+        
+        FNDINPUT = .FALSE.
+        FNDOUTPUT = .FALSE.
+        K = 0
+
+C.........  Loop through all pollutants        
+        DO I = 1, MXIDAT
+            IF( INVDNAM( I ) == INPUTHC ) THEN
+                FNDINPUT = .TRUE.
+                CYCLE
+            END IF
+            
+            IF( INVDNAM( I ) == OUTPUTHC ) THEN
+                FNDOUTPUT = .TRUE.
+                CYCLE
+            END IF
+
+C.............  If requested hydrocarbon is not TOG or VOC, skip rest of loop
+            IF( INPUTHC /= 'TOG' .AND. INPUTHC /= 'VOC' ) CYCLE
+         
+            IF( INVDVTS( I ) /= 'N' ) THEN
+            
+C.................  Check that pollutant is generated by MOBILE6   
+                DO J = 1, NEPOL
+                    IF( INVDNAM( I ) == EMTPOL( J ) ) THEN
+                        IF( INVDVTS( I ) == 'V' ) THEN
+                            K = K + 1
+                            RAWSUBS( K ) = INVDNAM( I )
+                        ELSE IF( INPUTHC == 'TOG' ) THEN
+                            K = K + 1
+                            RAWSUBS( K ) = INVDNAM( I )
+                        END IF
+                        EXIT
+                    END IF
+                END DO
+            END IF
+        END DO
+
+C.........  Check that the input hydrocarbon was found
+        IF( .NOT. FNDINPUT ) THEN
+            MESG = 'Requested MOBILE6 hydrocarbon ' //
+     &             TRIM( VOLNAM ) // 'is not in the inventory ' //
+     &             'data table.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+        END IF
+
+C.........  If output was not found, set name to blank and set no. polls to zero        
+        IF( .NOT. FNDOUTPUT ) THEN
+            OUTPUTHC = ' '
+            NSUBPOL = 0
+        ELSE
+            NSUBPOL = K
+            IF( NSUBPOL == 0 ) THEN
+                MESG = 'WARNING: No pollutants in the inventory ' //
+     &                 'data table are labeled as part of VOC ' //
+     &                 'or TOG for calculation of NONHAP values.'
+                CALL M3MESG( MESG )
+            END IF                
+        END IF
+
+        IF( NSUBPOL > 0 ) THEN
+            ALLOCATE( SUBPOLS( NSUBPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SUBPOLS', PROGNAME )
+            
+            SUBPOLS = RAWSUBS( 1:NSUBPOL )            
+        END IF
+        
+        DEALLOCATE( RAWSUBS )
+
+C.........  Rename emission factors if necessary
+        IF( OUTPUTHC /= ' ' ) THEN
+            DO I = 1, SIZE( EMTNAM,1 )
+                L = INDEX( EMTNAM( I,1 ), ETJOIN )
+                L2 = LEN_TRIM( ETJOIN )
+                
+                IF( EMTNAM( I,1 )( L+L2:IOVLEN3 ) == INPUTHC ) THEN
+                    EMTNAM( I,1 )( L+L2:IOVLEN3 ) = OUTPUTHC
+                    CYCLE
+                END IF
+            END DO
+        END IF
 
 C.........  Get output directory information from the environment
         MESG = 'Path where emission factors files will be written'
