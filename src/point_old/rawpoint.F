@@ -611,7 +611,7 @@ C...........   and still call what they are doing "UTM":
 
         ADEV = PROMPTFFILE(
      &          'Enter the name of the ACTUAL SCC output file',
-     &          .FALSE., .TRUE., 'PSCC', 'RAWPOINT' )
+     &          .FALSE., .TRUE., 'PSCC', 'EMSPOINT' )
         
 C.......   Use SORTI4() to perform an indirect sort by FIPS,SCC,PLANT,STACK
 C.......   then permute the records according to the result:
