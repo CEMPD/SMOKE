@@ -74,7 +74,12 @@ C...........   Local allocatable arrays
         CHARACTER(LEN=IOULEN3), ALLOCATABlE :: SUBHCS ( :,: ) ! hydrocarbon names from packet
 
 C...........   Local parametes
+#ifdef DBLBSLASH
+        CHARACTER, PARAMETER :: CONTCHAR = '\\'  ! line continuation character
+#else
         CHARACTER, PARAMETER :: CONTCHAR = '\'  ! line continuation character
+#endif
+
 
 C...........   Other local variables
         INTEGER         I, J, K, L, M, V    !  counters and indices

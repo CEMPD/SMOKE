@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
@@ -103,6 +103,8 @@ uam2ncf.debug: $(UAMC) $(ALLI) $(LIBPATH_DEBUG)
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 invsplit.o : $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ invsplit.f
@@ -115,3 +117,10 @@ smk2emis.o  : $(MODINFO)
 
 clean:
 	/bin/rm -f *.o
+
+ifcclean:
+	/bin/rm -f *.o
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(MODGRID)

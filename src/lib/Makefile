@@ -7,10 +7,13 @@
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
 
+all: lib
+
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
+#  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o   blkorcmt.o 
 FILES_A = \
   applumat.o   evalcrit.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
@@ -141,7 +144,7 @@ rdar2pt.o: $(MODLISTS) $(MODAR2PT)
 rdcodnam.o: $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdcodnam.f
 rdeproc.o: $(MODEMFAC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdeproc.f
+	$(FC) $(FFLAGS) -c -o $@ rdeproc.F
 rdgref.o : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdgref.f
 rdinvchr.o: $(MODSOURC) 
@@ -151,7 +154,7 @@ rdinvpol.o: $(MODFILESET)
 rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
 rdinvmap.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdinvmap.f
+	$(FC) $(FFLAGS) -c -o $@ rdinvmap.F
 rdmappol.o: $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ rdmappol.f
 rdorsdsc.o : $(MODLISTS)
@@ -190,4 +193,12 @@ xreftbl.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ xreftbl.f
 
 clean:
-	/bin/rm -f *.o $MD_SRC/$(EDSS_EXE)/*.o $MD_SRC/$(EDSS_EXE)/*.mod $MD_SRC/$(EDSS_EXE)/*.M
+	/bin/rm -f *.o 
+	/bin/rm -f $(MODALL)
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

@@ -147,7 +147,12 @@ C.....................  Stick local sources in with previous scenario
             END DO
 
 C.............  Check if there are more lines to read for this speed and road type
+#ifdef DBLBSLASH
+            IF( CONTCHAR /= '\\' ) EXIT
+#else
             IF( CONTCHAR /= '\' ) EXIT
+#endif
+
 
         END DO
 

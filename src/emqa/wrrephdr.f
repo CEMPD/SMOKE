@@ -153,7 +153,6 @@ C...........   Other local arrays
 C...........   Other local variables
         INTEGER     I, J, K, K1, K2, L, L1, L2, S, V
 
-        INTEGER     LH              ! cumulative width of header
         INTEGER     LN              ! length of single units entry
         INTEGER     LU              ! cumulative width of units header
         INTEGER     LV              ! width of delimiter

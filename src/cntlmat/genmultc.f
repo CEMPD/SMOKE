@@ -201,8 +201,8 @@ C.............  Count the number of groups in the inventory
                 SCCBEG = ARBEGL3( 2 )
                 SCCEND = ARENDL3( 2 )
             ELSE            ! MOBILE
-                SCCBEG = MBBEGL3( 4 )
-                SCCEND = MBENDL3( 4 )
+                SCCBEG = MBBEGL3( 5 )
+                SCCEND = MBENDL3( 5 )
             END IF
 
 C.............  Build and sort source array for SCC-state grouping

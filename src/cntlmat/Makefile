@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a  $(TOOLS_BIN)/libedsstools.debug.a
 #
@@ -34,6 +34,7 @@ cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH_DEBUG)
 # Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 aloccmat.o: $(MODXREF) $(MODCNTRL) $(MODINFO)
@@ -75,3 +76,10 @@ wcntlrep.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
 #
 clean:
 	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

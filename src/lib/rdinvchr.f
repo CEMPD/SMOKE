@@ -134,7 +134,8 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
               ALLOCATE( IFIP( NSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
 
-              IF(.NOT. READSET(INFILE,'IFIP',ALLAYS3,1,0,0,IFIP)) THEN
+c             IF(.NOT. READSET(INFILE,'IFIP',ALLAYS3,1,0,0,IFIP)) THEN
+              IF(.NOT. READ3(INFILE,'IFIP',ALLAYS3,0,0,IFIP)) THEN
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               ENDIF
 

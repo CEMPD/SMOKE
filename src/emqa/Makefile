@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 
@@ -30,12 +30,13 @@ smkreport.debug: $(SMR) $(ALLI) $(LIBPATH_DEBUG)
 #
 #
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgnbins.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODELEV) \
             $(MODSTCY) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ asgnbins.f
-bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODFILESET)
+bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODFILESET) $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ bldrepidx.f
 genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODINFO) $(MODSTCY) 
 	$(FC) $(FFLAGS) -c -o $@ genrprt.f
@@ -70,3 +71,10 @@ wrrepout.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) \
 #
 clean:
 	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

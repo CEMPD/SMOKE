@@ -2,12 +2,12 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) 
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
-LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp
-LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
+LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp $(LIBS_COMPILE)
+LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp $(LIBS_COMPILE)
 
-LIBPATH       = $(SMK_BIN)/libsmoke.a   $(TOOLS_BIN)/libedsstools.a
+LIBPATH       = $(SMK_BIN)/libsmoke.a   $(TOOLS_BIN)/libedsstools.a 
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 
 #  BEIS3 executables : beis3 and normbeis3
@@ -77,7 +77,8 @@ tmpbio.pvm.debug: $(TBIO) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(DBGFLAGS) -o $(SMK_BIN)/$(@) $(TBIO) $(LIBS_PVMDB)
 
 include $(MD_SRC)/modmake.inc
-
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 beis3.o:  $(MODBEIS3)
 	$(FC) $(FFLAGS) -c -o $@ beis3.f
@@ -93,10 +94,18 @@ hrbio.o: $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ hrbio.f
 hrbios.o: $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ hrbios.f
+tmpbeis3.o: $(MODSPRO) $(MODBEIS3)
+	$(FC) $(FFLAGS) -c -o $@ tmpbeis3.f
 tmpbio.o: $(MODSPRO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ tmpbio.f
 rdbpro.o:$(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ rdbpro.f
 #
 clean:
-	/bin/rm -f *.o 
+	/bin/rm -f *.o  
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)

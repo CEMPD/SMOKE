@@ -71,7 +71,6 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
-        INTEGER         ENVINT
         INTEGER         GETFLINE
         INTEGER         GETFORMT
         INTEGER         GETINVYR
@@ -83,7 +82,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
         INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR,  
+        EXTERNAL        CRLF, GETFLINE, GETFORMT, GETINVYR,  
      &                  GETVMIX, JUNIT, FIND1, FIND1FIRST, FINDC,
      &                  CHKINT, STR2INT
 
@@ -124,20 +123,17 @@ C...........   Other local variables
         INTEGER         ISTREC      !  no. of records stored
         INTEGER         IVT         !  vehicle type code
         INTEGER         LDEV        !  device no. for log file
-        INTEGER         MXWARN      !  maximum number of warnings
         INTEGER         NLINE       !  number of lines in list format file
         INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
         INTEGER         NRECPERLN   !  no. of records per line
-        INTEGER      :: NWARN = 0   !  current number of warnings
         INTEGER      :: NWRLINE = 0 !  no. of lines in file writting to log
         INTEGER         ROAD        !  road class number
         INTEGER         RWT         !  roadway type
         INTEGER      :: TOTSRCS = 0 !  total number of sources
         INTEGER      :: TOTRECS = 0 !  total number of records
         
-        LOGICAL      :: EFLAG   = .FALSE. ! true: error occured
-        LOGICAL      :: EMSFLAG = .FALSE. ! true: at least one file is EMS-95 format
-        LOGICAL      :: HDRFLAG           ! true: current line is part of header
+        LOGICAL      :: EFLAG  = .FALSE. ! true: error occured
+        LOGICAL      :: HDRFLAG          ! true: current line is part of header
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
 
         CHARACTER(LEN=FIPLEN3) CFIP    ! fips code
@@ -176,22 +172,16 @@ C   begin body of subroutine RDINVSRCS
 C.........  Get log file number for reports
         LDEV = INIT3()
 
-C.........  Get maximum number of warnings
-        MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
-        
 C.........  Get temporary directory location
         MESG = 'Path where temporary import file will be written'
         CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
         
         IF( IOS /= 0 ) THEN
-            IF( NWARN < MXWARN ) THEN
-                MESG = 'WARNING: Temporary input file will be ' //
-     &                 'placed in executable directory because ' // 
-     &                 CRLF() // BLANK10 // 'SMK_TMPDIR environment '//
-     &                 'variable is not set properly'
-                CALL M3MSG2( MESG )
-                NWARN = NWARN + 1
-            END IF
+            MESG = 'WARNING: Temporary input file will be placed ' //
+     &             'in executable directory because ' // CRLF() //
+     &             BLANK10 // 'SMK_TMPDIR environment variable ' //
+     &             'is not set properly'
+            CALL M3MSG2( MESG )
         END IF
 
 C.........  Initialize toxics flag to false
@@ -246,15 +236,7 @@ C.........  If not list format, then set FILFMT to the type of file (IDA,EPS)
 C.........  Set default inventory characteristics (declared in MODINFO) used
 C           by the IDA and EPS formats, including NPPOL
         CALL INITINFO( FILFMT( 1 ) )
-
-C.........  Check if any files are EMS-95 format
-        DO I = 1, NLINE
-            IF( FILFMT( I ) == EMSFMT ) THEN
-                EMSFLAG = .TRUE.
-                EXIT
-            END IF
-        END DO
-
+        
 C.........  Read vehicle mix, if it is available
 C.........  The tables are passed through MODMOBIL and MODXREF
         IF( VDEV .GT. 0 ) THEN
@@ -262,14 +244,25 @@ C.........  The tables are passed through MODMOBIL and MODXREF
         ELSE
 
 C.............  Check if VMT mix is required
-            IF( CATEGORY == 'MOBILE' .AND. EMSFLAG ) THEN
-                MESG = 'Mobile VMT mix data are required ' //
-     &                 'for import of EMS-95 mobile format' //
-     &                 CRLF() // BLANK10 //
-     &                 'Set the IMPORT_VMTMIX_YN environment' //
-     &                 ' variable to Y and try again.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            IF( CATEGORY == 'MOBILE' ) THEN
+                DO I = 1,NLINE
+                    IF( FILFMT( I ) == EMSFMT ) THEN
+                        MESG = 'Mobile VMT mix data are required ' //
+     &                         'for import of EMS-95 mobile format' //
+     &                         CRLF() // BLANK10 //
+     &                         'Set the IMPORT_VMTMIX_YN environment' //
+     &                         ' variable to Y and try again.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                END DO
             END IF
+        END IF
+
+C.........  Read speeds info, if it is available
+C.........  The tables are passed through MODMOBIL and MODXREF
+        IF( SDEV .GT. 0 ) THEN
+c            CALL RDSPEED( SDEV )
+c note: write this routine
         END IF
 
         CURFIL = 1
@@ -281,11 +274,13 @@ C.........  If file is list format, check for inventory year packet
             IF( GETINVYR( LINE ) > 0 ) THEN
                 CURFIL = CURFIL + 1  ! move to next file in list
             ELSE
-                IF( EMSFLAG ) THEN
-                    MESG = 'Must set inventory year using ' //
-     &                     'INVYEAR packet for EMS-95 input.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
+                DO I = 1,NLINE
+                    IF( FILFMT( I ) == EMSFMT ) THEN
+                        MESG = 'Must set inventory year using ' //
+     &                         'INVYEAR packet for EMS-95 input.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                END DO
             END IF
             
 C.............  Store path of file name
@@ -438,10 +433,10 @@ C.................  Process line depending on file format and source category
                     MESG = 'EPS 2.0 format is not currently supported'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 CASE( EMSFMT )
+                    MESG = 'EMS-95 format is not currently supported'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    
                     SELECT CASE( CATEGORY )
-                    CASE( 'AREA' )
-                        CALL RDSRCEMSAR( LINE, CFIP, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
                     CASE( 'MOBILE' )
                         CALL RDSRCEMSMB( LINE, CFIP, CROAD, CLNK,
      &                                   NPOLPERLN, HDRFLAG, EFLAG )
@@ -482,18 +477,6 @@ C.................  Write first ten lines of inventory to log file
                             WRITE( LDEV, '(A)' ) TRIM( TENLINES( I ) )
                         END DO
                     END IF
-                END IF
-
-C.................  Make sure some emissions are kept for this source
-                IF( NPOLPERLN == 0 ) THEN
-                    IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: No kept '//
-     &                     'pollutants found at line', IREC, '. ' //
-     &                     'The source will be dropped.'
-                        CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
-                    END IF
-                    CYCLE
                 END IF
 
 C.................  Check that source characteristics are correct
@@ -593,6 +576,15 @@ C.....................  Ensure that road class is valid and convert from road cl
 
 C.................  Skip rest of loop if an error has occured
                 IF( EFLAG ) CYCLE
+
+C.................  Make sure some emissions are kept for this source
+                IF( NPOLPERLN == 0 ) THEN
+!                    WRITE( MESG,94010 ) 'No valid pollutants found ' //
+!     &                     'at line', IREC, '. The source will be ' //
+!     &                     'dropped.'
+!                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
 
 C.................  If file format is mobile, EMS-95, make sure adding
 C                   sources won't go over ISTREC limit
@@ -768,7 +760,11 @@ C.....................  Make sure not to go outside the array
 C.........................  If already read NSCSEG-1 records, write line with continuation
 C                           character and start new line
                         IF( NRECPERLN == NSCSEG-1 ) THEN
+#ifdef DBLBSLASH
+                            OUTLINE = TRIM( OUTLINE ) // ' \\'
+#else
                             OUTLINE = TRIM( OUTLINE ) // ' \'
+#endif
                             WRITE( CDEV, '(A)' ) TRIM( OUTLINE )
                             OUTLINE = TRIM( TMPCSOURC( J ) )
                             NRECPERLN = 0
@@ -872,16 +868,8 @@ C.................  Store file number
 C.........  Sort sources by record array by file number then record number
         CALL M3MESG( 'Sorting sources by file and line number...' )
 
-C.........  If processing mobile EMS-95 format, add third dimension to sort
-C           since there will be multiple sources with the same file and 
-C           record number
-        IF( CATEGORY == 'MOBILE' .AND. EMSFLAG ) THEN
-            CALL SORTI3( NSTRECS, RECIDX, SRCSBYREC( :,1 ), 
-     &                   SRCSBYREC( :,2 ), SRCSBYREC( :,3 ) )
-        ELSE
-            CALL SORTI2( NSTRECS, RECIDX, SRCSBYREC( :,1 ),
-     &                   SRCSBYREC( :,2 ) )
-        END IF
+        CALL SORTI2( NSTRECS, RECIDX, SRCSBYREC( :,1 ), 
+     &               SRCSBYREC( :,2 ) )
      
 C.........  Sort inventory sources
         CALL M3MESG( 'Sorting sources by characteristics...' )

@@ -171,8 +171,12 @@ C.............  This internal subprogram uses WRITE3 and exits gracefully
 C               if a write error occurred
             SUBROUTINE SAFE_WRITE3( FILNAM, EMDATA )
 
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+
             CHARACTER(*), INTENT (IN) :: FILNAM
             REAL        , INTENT (IN) :: EMDATA( * )
+
+C.......................................................................
 
             IF( .NOT. WRITESET( FILNAM, VNAME, ALLFILES,
      &                          JDATE, JTIME, EMDATA ) ) THEN

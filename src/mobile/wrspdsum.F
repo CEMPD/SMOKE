@@ -492,10 +492,16 @@ C.............  If no. sources is more than NSRCLINE, use multiple lines
 
 C.............  Loop through all lines except last one (to write continuation character)
             DO M = 1, NLINES
-                
+
+#ifdef DBLBSLASH
+                WRITE( MDEV,93010 ) COUNTY, 
+     &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
+     &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\\'
+#else
                 WRITE( MDEV,93010 ) COUNTY, 
      &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
+#endif
                     
                 STSRCWR  = STSRCWR  + NSRCLINE
                 ENDSRCWR = ENDSRCWR + NSRCLINE

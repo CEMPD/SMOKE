@@ -150,8 +150,13 @@ C.............  Determine path of inventory map
             L = LEN_TRIM( APHYS )
             DO N = L, 1, -1
 
+#ifdef DBLBSLASH
+                IF( APHYS( N:N ) .EQ. '/' .OR.
+     &              APHYS( N:N ) .EQ. '\\'      ) THEN
+#else
                 IF( APHYS( N:N ) .EQ. '/' .OR.
      &              APHYS( N:N ) .EQ. '\'      ) THEN
+#endif
                     PATH = APHYS( 1:N )
                     EXIT
                 END IF

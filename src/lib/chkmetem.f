@@ -50,7 +50,6 @@ C.........  INCLUDE FILES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-        INCLUDE 'FLTERR.EXT'    !  error filter statement function
 
 C.........  EXTERNAL FUNCTIONS
         CHARACTER*2   CRLF
@@ -226,11 +225,6 @@ C.........  Checking for meteorology dot-point 3d file
 
         RETURN
 
-C******************  FORMAT  STATEMENTS   ******************************
- 
-C...........   Internal buffering formats............ 94xxx
- 
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
  
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
@@ -352,5 +346,22 @@ C               there, compare to the original settings.
 
             END SUBROUTINE CHECK_MET_INFO
 
-        END FUNCTION CHKMETEM
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
 
+C.............  This internal subprogram tries to retrieve the I/O API header
+C               and aborts if it was not successful
+            LOGICAL FUNCTION FLTERR( P, Q )
+
+            REAL, INTENT (IN) ::  P, Q
+
+C----------------------------------------------------------------------
+
+            FLTERR =
+     &          ( (P - Q)**2  .GT.  1.0E-12*( P*P + Q*Q + 1.0E-5 ) )
+
+            RETURN
+
+            END FUNCTION FLTERR
+
+        END FUNCTION CHKMETEM

@@ -865,7 +865,7 @@ C           duration using environment variable settings, then prompt.
         END IF   !  if have temporalized inputs and outputs
 
 C.........  Compare base year with episode and warn if not consistent
-        IF( SDATE / 1000 .NE. BYEAR ) THEN
+        IF( BYEAR .NE. 0 .AND. SDATE / 1000 .NE. BYEAR ) THEN
 
             WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR, 
      &             'is inconsistent with year ' // CRLF() // BLANK10 //
@@ -926,6 +926,8 @@ C----------------------------------------------------------------------
 C.............  This subprogram tries to retrieve the description for a file
 C               set and aborts if it was not successful
             SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.............  Subprogram arguments
             CHARACTER(*) FILNAM
@@ -1594,6 +1596,8 @@ C.............  This subprogram stores I/O API NetCDF variable descriptions into
 C               a local array based on indices in subprogram call.
             SUBROUTINE STORE_VDESCS( ISTART,INCRMT,NDESC,LFSET,DESCS )
 
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+
 C.............  Subprogram arguments
             INTEGER     , INTENT (IN) :: ISTART   ! starting position in VDESCS of names
             INTEGER     , INTENT (IN) :: INCRMT   ! increment of VDESCS for names
@@ -1628,6 +1632,8 @@ C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable units into
 C               a local array based on indices in subprogram call.
             SUBROUTINE STORE_VUNITS( ISTART,INCRMT,NUNIT,LFSET,UNITS )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.............  Subprogram arguments
             INTEGER     , INTENT (IN) :: ISTART        ! starting position in VDESCS of names
@@ -1665,6 +1671,8 @@ C               units using the map-formatted inventory information
             SUBROUTINE STORE_INVEN_VARS( NMAPVAR, NHDRVAR, NPPOL, IDX2, 
      &                                   MAPVARS, MAPFILES, NAMES1, 
      &                                   NAMES2, UNITS )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.............  Subprogram arguments
             INTEGER,      INTENT (IN) :: NMAPVAR    ! no. data in map file

@@ -1,8 +1,8 @@
 # Version @(#)$Id$ 
 # Path    $Source$
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) 
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
+LIBS          = $(LDIRS) $(LIBS_SYS)  $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)  $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
@@ -31,6 +31,7 @@ temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
@@ -58,3 +59,10 @@ wrtsup.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
 #
 clean:
 	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

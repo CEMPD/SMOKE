@@ -333,8 +333,13 @@ C           able to build relative file names for the map file.
         L = LEN_TRIM( DATPATH )
         DO N = L, 1, -1
 
+#ifdef DBLBSLASH
+            IF( DATPATH( N:N ) .EQ. '/' .OR.
+     &          DATPATH( N:N ) .EQ. '\\'      ) THEN
+#else
             IF( DATPATH( N:N ) .EQ. '/' .OR.
      &          DATPATH( N:N ) .EQ. '\'      ) THEN
+#endif
                 BPATH = DATPATH( 1:N )
                 RPATH = DATPATH( N+1:L )
                 EXIT

@@ -568,6 +568,8 @@ C.............  This subprogram tries to retrieve the description for a file
 C               set and aborts if it was not successful
             SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
 
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
+
 C.............  Subprogram arguments
             CHARACTER(*) FILNAM
 

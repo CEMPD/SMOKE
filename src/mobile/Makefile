@@ -2,10 +2,10 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
-LIBS2         = $(LDIRS) $(LIBS_SYS) -lmo6
-LIBS2_DEBUG   = $(LDIRS) $(LIBS_DEBUG_SYS) -lmo6.debug
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
+LIBS2         = $(LDIRS) $(LIBS_SYS) -lmo6 $(LIBS_COMPILE)
+LIBS2_DEBUG   = $(LDIRS) $(LIBS_DEBUG_SYS) -lmo6.debug $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
@@ -63,6 +63,7 @@ emisfac.debug: $(EMS) $(ALLI) $(LIBPATH_DEBUG)
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
@@ -79,12 +80,21 @@ rdm6list.o    : $(MODEMFAC)
 rdmcref.o     : $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMBSET)
 rdmvref.o     : $(MODSOURC) $(MODMBSET)
 rdspdline.o   : $(MODMBSET)
+	$(FC) $(FFLAGS) -c -o $@ rdspdline.F
 wremfacs.o    : $(MODSOURC) $(MODINFO) $(MODEMFAC)
 wrm6header.o  : $(MODEMFAC)
 wrm6input.o   : $(MODSOURC) $(MODINFO) $(MODEMFAC)
 wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
+	$(FC) $(FFLAGS) -c -o $@ wrspdsum.F
 wrspdvmt.o    : $(MODMBSET)
 wrtimegr.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
 
 clean:
 	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

@@ -447,10 +447,10 @@ OBJS6 = \
 	YRTEST.o
 
 .F.o:
-	$(FC) $(FFLAGS) -DM6LIB -c -o $@ $<
+	$(FC) $(M6_FFLAGS) -DM6LIB -c -o $@ $<
 
 mobile6: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) DRIVER.o
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS)
+	$(FC) $(M6_FFLAGS) -o $(SMK_BIN)/$(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS)
 
 mobile6.debug: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) DRIVER.o
 	$(FC) $(DBGFLAGS) -o $(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS_DEBUG)
@@ -485,3 +485,8 @@ SMKPMOUT.o     : $(MODEMFAC)
 clean:
 	/bin/rm -f *.o
 	/bin/rm -f *.mod
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f *.mod $(MODEMFAC)

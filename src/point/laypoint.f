@@ -1271,6 +1271,8 @@ C.............  This internal subprogram tries to retrieve the I/O API header
 C               and aborts if it was not successful
             SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
 
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+
 C.............  Subprogram arguments
             CHARACTER(*) FILNAM
 
