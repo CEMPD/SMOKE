@@ -2,7 +2,7 @@
 #
 # Include file for making modules and doing needed copies, etc.
 #
-MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
+MD_OUT = $(MD_SRC)/$(EDSS_EXE)
 
 MODSOURC = $(MD_OUT)/modsourc.o
 MODMOBIL = $(MD_OUT)/modmobil.o
@@ -24,10 +24,10 @@ MODREPRT = $(MD_OUT)/modreprt.o
 MODREPBN = $(MD_OUT)/modrepbn.o
 
 #
-MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODTMPRL) $(MODSPRO) \
-           $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODMERGE)  \
-           $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV) $(MODMET)   \
-           $(MODBIOG)  $(MODREPRT) $(MODREPBN)
+MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF)  $(MODTMPRL) $(MODSPRO)  \
+           $(MODCNTRL) $(MODLISTS) $(MODINFO)  $(MODDAYHR) \
+           $(MODMERGE) $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV)  \
+           $(MODMET)   $(MODBIOG)  $(MODREPRT) $(MODREPBN)
 #
 # Module dependencies...
 # The copies from $EL_SRC to here are needed for the debug version, because
