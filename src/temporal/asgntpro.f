@@ -52,7 +52,7 @@ C...........   This module contains the cross-reference tables
         USE MODXREF
 
 C...........   This module contains the temporal profile tables
-        USE MODTPRO
+        USE MODTMPRL
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -158,7 +158,7 @@ C.................  Set WFLAG to trur for using weekly temporal adjustments
                 MREF = MPRNA( S )
                 WREF = WPRNA( S )
                 DREF = DPRNA( S )
-                CALL SETSOURCE_TPROFS  ! Sets MDEX, WDEX, DDEX, EDEX
+                CALL SETSOURCE_TPROFS  ! Sets MDEX, WDEX, DDEX
 
             ENDDO
 
@@ -167,7 +167,6 @@ C.............  Set for remaining pollutants in group
                 MDEX( :,J ) = MDEX( :,1 )
                 WDEX( :,J ) = WDEX( :,1 )
                 DDEX( :,J ) = DDEX( :,1 )
-                EDEX( :,J ) = EDEX( :,1 )
             ENDDO
 
        ENDIF
@@ -774,7 +773,7 @@ C----------------------------------------------------------------------
 
             END IF
 
-            DDEX( S,J ) = MAX( FIND1( DREF, NWKD, WKDREF ), 0 )
+            DDEX( S,J ) = MAX( FIND1( DREF, NHRL, HRLREF ), 0 )
 
             IF( DDEX( S,J ) .EQ. 0 ) THEN
 
@@ -789,26 +788,6 @@ C----------------------------------------------------------------------
                 CALL M3MESG( MESG )
 
             END IF
-
-            IF( NEND .GT. 0 ) THEN
-
-                EDEX( S,J ) = MAX( FIND1( DREF, NEND, ENDREF ), 0 )
-
-                IF( EDEX( S,J ) .EQ. 0 ) THEN
-
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 
-     &                 'ERROR: Weekend diurnal profile', DREF, 
-     &                 'is not in profiles, but was assigned' //
-     &                 CRLF() // BLANK5 // 'to source:' //
-     &                 CRLF() // BLANK5 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-
-                END IF
-
-            END IF  ! If there are weekend diurnal profiles
 
             RETURN
 
