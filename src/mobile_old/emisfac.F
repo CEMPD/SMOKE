@@ -33,6 +33,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER      FIND1
+        INTEGER      GETEFILE
         INTEGER      GETNUM
         REAL         GETREAL
         LOGICAL      GETYN 
@@ -44,14 +45,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      STR2INT
         INTEGER      TRIMLEN
 
-        EXTERNAL     FIND1, GETNUM, GETREAL, GETYN, INDEX1, LOCAT1, 
-     &               PROMPTFFILE, PROMPTMFILE, SEC2TIME, STR2INT,
-     &               TRIMLEN
+        EXTERNAL     FIND1, GETEFILE, GETNUM, GETREAL, GETYN, 
+     &               INDEX1, LOCAT1, PROMPTFFILE, PROMPTMFILE, 
+     &               SEC2TIME, STR2INT, TRIMLEN
 
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Simulation-specific MOBILE5a parmeter list variables
-        INTEGER IPSIDX( MXPREF )          ! Sorting index for IPSIR
+        INTEGER IPSIDX( MXPSI )          ! Sorting index for IPSIR
         INTEGER IPSIR ( MXPSI*24 )       ! Unique parameter scheme indices list
         INTEGER MPNUM                    ! Actual no. in IPSIR
         INTEGER P1, P2, P3, P4( 24 )     ! Dummies
@@ -134,6 +135,7 @@ C...........   Other local variables
         REAL    TF_MAX                    ! temporary maximum temperature
         REAL    TF_MIN                    ! temporary minimum temperature
 
+        INTEGER EMTIDX( MXEMIS )          ! Index to EMTLST for actual EFs
         INTEGER I, II, IM, IPM            ! Counters and pointers
         INTEGER J, JJ, K, KK, L, T        ! Counters and pointers
         INTEGER IERR                      ! MOBILE5 error value
@@ -187,10 +189,8 @@ C   begin body of program EMISFAC
             CALL EXIT( 0 )
         END IF
 
-C.........  Prompt for MOBILE5a input file
-        MODEV = PROMPTFFILE(
-     &          'Enter logical name for temporary MOBILE5a input file',
-     &          .FALSE., .TRUE., 'MO5AIN', 'EMISFAC' )
+C.........  Get MOBILE5a input file (no prompt)
+        MODEV = GETEFILE( 'MO5AIN', .FALSE., .TRUE., 'EMISFAC' )
 
 C.........  Prompt for diurnal master list EFs input file for modeling year
         ENAME = PROMPTMFILE(
@@ -249,6 +249,22 @@ C.........  MOBILE5 numbers
         CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
 
    25   CONTINUE
+
+C.........  Find VOLNAM in EMTLST for setting output variable names
+
+        EMTIDX( 1 ) = 1   ! For CO
+        EMTIDX( 2 ) = 2   ! For NOX
+        K = 2
+
+        DO 26 I = 3, MXEALL
+
+            L = INDEX( EMTLST( I ), '_' )
+            IF( EMTLST( I )(L+1:7 ) .EQ. VOLNAM ) THEN
+                K = K + 1
+                EMTIDX( K ) = I
+            ENDIF
+
+   26   CONTINUE
 
 C.........  Set start and ending temperature depending on input file
 C.........  If it exists, use the parameters from the file.
@@ -353,9 +369,9 @@ C.............  Set up non-diurnal master list file description
             K = 0
             DO 33 J = 1, MXNDET
                 K = K + 1
-                VNAME3D( J ) = EMTLST ( K )
-                UNITS3D( J ) = EMTUNIT( K )
-                VDESC3D( J ) = EMTDESC( K )
+                VNAME3D( J ) = EMTLST ( EMTIDX( K ) )
+                UNITS3D( J ) = EMTUNIT( EMTIDX( K ) )
+                VDESC3D( J ) = EMTDESC( EMTIDX( K ) )
                 VTYPE3D( J ) = M3REAL
    33       CONTINUE
  
@@ -414,9 +430,9 @@ C.............  Set up diurnal master List file description
             K = MXNDET
             DO 35 J = 1, MXDET
                 K = K + 1
-                VNAME3D( J ) = EMTLST ( K )
-                UNITS3D( J ) = EMTUNIT( K )
-                VDESC3D( J ) = EMTDESC( K )
+                VNAME3D( J ) = EMTLST ( EMTIDX( K ) )
+                UNITS3D( J ) = EMTUNIT( EMTIDX( K ) )
+                VDESC3D( J ) = EMTDESC( EMTIDX( K ) )
                 VTYPE3D( J ) = M3REAL
    35       CONTINUE
  
@@ -794,7 +810,7 @@ C.....................  Init diurnal arrays b/c blanks will exist on write3
 C.................  If exists, initialize by reading existing values
                 ELSE
 
-                    IF ( .NOT. READ3( DNAME, 'WDL_VOC', ALLAYS3,
+                    IF( .NOT. READ3( DNAME, VNAME3D( 1 ), ALLAYS3,
      &                                SDATE3D, IPTIM, WDL_VOC   ) ) THEN
                         WRITE( MESG,94010 ) 
      &                         'Could not read record', IPARM, 
@@ -802,7 +818,7 @@ C.................  If exists, initialize by reading existing values
                         CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
                     ENDIF
 
-                    IF ( .NOT. READ3( DNAME, 'DNL_VOC', ALLAYS3,
+                    IF( .NOT. READ3( DNAME, VNAME3D( 2 ), ALLAYS3,
      &                                SDATE3D, IPTIM, DNL_VOC   ) ) THEN
                         WRITE( MESG,94010 ) 
      &                         'Could not read record', IPARM, 
@@ -810,7 +826,7 @@ C.................  If exists, initialize by reading existing values
                         CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
                     ENDIF
 
-                    IF ( .NOT. READ3( DNAME, 'HOT_VOC', ALLAYS3,
+                    IF( .NOT. READ3( DNAME, VNAME3D( 3 ), ALLAYS3,
      &                                SDATE3D, IPTIM, HOT_VOC   ) ) THEN
                         WRITE( MESG,94010 ) 
      &                         'Could not read record', IPARM, 
@@ -818,7 +834,7 @@ C.................  If exists, initialize by reading existing values
                         CALL M3EXIT( 'EMISFAC', 0, 0, MESG, 2 )
                     ENDIF
 
-                    IF ( .NOT. READ3( DNAME, 'CRC_VOC', ALLAYS3,
+                    IF( .NOT. READ3( DNAME, VNAME3D( 4 ), ALLAYS3,
      &                                SDATE3D, IPTIM, CRC_VOC   ) ) THEN
                         WRITE( MESG,94010 ) 
      &                         'Could not read record', IPARM, 
