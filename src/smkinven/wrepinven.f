@@ -131,7 +131,7 @@ C.........  Write out second report to REPINVEN file
      
      	WRITE( ADEV, 93050 ) '[tons/year]', '[tons/year]'
         
-        WRITE( ADEV, 93000 ) REPEAT( '-', 100 )
+        WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
         
         DO I = 1, NINVTBL
           K = INDEX1( SORTCAS( I ), NUNIQCAS, UNIQCAS )
@@ -161,10 +161,10 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93030   FORMAT( 1X, A8, 4X, A1, 7X, I5, 4X, F16.10, 4X, A40 )
 
-93040	FORMAT( 1X, A8, 4X, A13, 4X, A6, 4X, A9, 4X, A14, 4X,
-     &          A16, 4X, A15 )
+93040	FORMAT( 1X, A8, 6X, A13, 4X, A6, 2X, A9, 13X, A14, 4X,
+     &          A16, 28X, A15 )
      
-93050	FORMAT( 13X, A11, 29X, A11 )
+93050	FORMAT( 15X, A11, 36X, A11 )
 
 93060	FORMAT( 1X, A8, 4X, F16.10, 4X, F3.1, 4X, A16, 4X, F16.10,
      &          4X, A40, 4X, A40 )
