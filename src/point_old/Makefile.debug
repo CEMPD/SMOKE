@@ -2,11 +2,22 @@
 #
 all: debug 
 #
-debug: cselev.debug   csgpoint.debug ctlpmat.debug  elevpoint.debug \
-      emspoint.debug grdpmat.debug  grdpoint.debug laypoint.debug  \
-      pdpoint.debug  rawpoint.debug spcpmat.debug  tmppoint.debug
+debug: adjpmat.debug   cselev.debug   csgpoint.debug ctlpmat.debug  \
+       elevpoint.debug emspoint.debug grdpmat.debug  grdpoint.debug \
+       laypoint.debug  pdemspt.debug  pdpoint.debug  rawpoint.debug \
+       spcpmat.debug   tmppoint.debug
 #
 LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+#
+#
+ADJS=adjpmat.F
+#
+AINC=PTDIMS3.EXT CHDIMS3.EXT
+#
+adjpmat.debug:  $(ADJS) $(AINC)
+	echo ADJPMAT:
+	f77 $(FFLAGS) -o adjpmat.debug $(ADJS) $(LIBS)
+#
 #
 #
 CSE=cselev.F
@@ -86,6 +97,16 @@ LAYE=PTDIMS3.EXT TMDIMS3.EXT VGRD3.EXT GRDIMS3.EXT
 laypoint.debug: $(LAY) $(LAYE)
 	echo LAYPOINT:
 	f77 $(DBGFLAGS)   -o laypoint.debug $(LAY) $(LIBS)
+#
+#
+#
+DYPE=pdemspt.F
+#
+DPEI=PTDIMS3.EXT CHDIMS3.EXT
+#
+pdemspt.debug: $(DYPE) $(DPEI)
+	echo PDEMSPT:
+	f77 $(DBGFLAGS) -o pdemspt.debug $(DYPE) $(LIBS)
 #
 #
 #

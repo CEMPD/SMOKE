@@ -2,10 +2,20 @@
 #
 all: opts
 #
-opts: cselev csgpoint ctlpmat elevpoint emspoint grdpmat \
-      grdpoint laypoint pdpoint rawpoint spcpmat tmppoint
+opts: adjpmat cselev csgpoint ctlpmat elevpoint emspoint grdpmat \
+      grdpoint laypoint pdemspt pdpoint rawpoint spcpmat tmppoint
 #
 LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
+#
+#
+ADJS=adjpmat.F
+#
+AINC=PTDIMS3.EXT CHDIMS3.EXT
+#
+adjpmat:  $(ADJS) $(AINC)
+	echo adjpmat:
+	f77 $(FFLAGS) -o $(SCENDIR)/adjpmat $(ADJS) $(LIBS)
+#
 #
 #
 CSE=cselev.F
@@ -85,6 +95,16 @@ LAYE=PTDIMS3.EXT TMDIMS3.EXT VGRD3.EXT GRDIMS3.EXT
 laypoint: $(LAY) $(LAYE)
 	echo LAYPOINT:
 	f77 $(FFLAGS)   -o $(SCENDIR)/laypoint $(LAY) $(LIBS)
+#
+#
+#
+DYPE=pdemspt.F
+#
+DPEI=PTDIMS3.EXT CHDIMS3.EXT
+#
+pdemspt: $(DYPE) $(DPEI)
+	echo PDEMSPT:
+	f77 $(FFLAGS) -o $(SCENDIR)/pdemspt $(DYPE) $(LIBS)
 #
 #
 #
