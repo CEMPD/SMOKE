@@ -30,10 +30,11 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
 
 RAW=chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o openinvin.o \
-    openinvout.o openpdout.o procinven.o rdcempd.o rdemsar.o rdemsmb.o \
-    rdemspd.o rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o rdidaar.o \
-    rdidamb.o rdidapt.o rdinven.o rdlooppd.o smkinven.o srcmem.o wrinvchr.o \
-    wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
+    openinvout.o openpdout.o procinven.o rdemsar.o rdemsmb.o rdemspd.o \
+    rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o rdidaar.o rdidamb.o \
+    rdidapt.o rdinven.o rdlooppd.o smkinven.o srcmem.o wrinvchr.o wrinvemis.o \
+    wrinvpol.o wrptref.o wrpdemis.o scanuncert.o rduncert.o \
+    prclinuc.o asgnuncert.o openucout.o wrucout.o rdcempd.o
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -45,8 +46,11 @@ smkinven.debug: $(RAW) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKINVEN \(debug\):
 	$(FC) $(FFLAGS) -o $(@) $(RAW) $(LIBS_DEBUG)
 
+
 include $(MD_SRC)/modmake.inc
 
+asgnuncert.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ asgnuncert.f
 fixstk.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ fixstk.f
 genpdout.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY)
@@ -60,11 +64,13 @@ grwinven.o: $(MODSOURC) $(MODINFO)
 initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ initinfo.f
 opengrwout.o: $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ opengrwout.f
+	$(FC) $(FFLAGS) -c -o $@ opengrwout.f       
 openinvout.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openinvout.f
 openpdout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openpdout.f
+openucout.o: $(MODINFO) $(MODLISTS) $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ openucout.f
 procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ procinven.f
 rdcempd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
@@ -105,6 +111,14 @@ wrinvemis.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrinvemis.f
 wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
 	$(FC) $(FFLAGS) -c -o $@ wrpdemis.f
+scanuncert.o: $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ scanuncert.f
+rduncert.o: $(MODUNCERT) $(MODXREF) $(MODINFO) $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ rduncert.f
+prclinuc.o: $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ prclinuc.f
+wrucout.o: $(MODUNCERT) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ wrucout.f        
 wrptref.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrptref.f
 
