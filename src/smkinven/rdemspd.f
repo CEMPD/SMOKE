@@ -533,7 +533,7 @@ C.............  If SCCs are needed for matching...
                 CHAR4 = TSCC
 
                 CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                      CHAR4, CHRBLNK3, POLBLNK3, CSRC )
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
                 J = FINDC( CSRC, NS, CSOURC( SS ) )
@@ -543,7 +543,7 @@ C.............  If SCCs are not being used for matching (at least not yet)...
 
 C.................  Build source characteristics field for searching inventory
                 CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                      TSCC, CHRBLNK3, POLBLNK3, CSRC )
+     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
                 J = FINDC( CSRC, NS, CSOURC( SS ) )
@@ -561,7 +561,7 @@ C                   if reading the SCC in helps (needed for IDA format)
                     CHAR4 = TSCC
 
                     CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                            CHAR4, CHRBLNK3, POLBLNK3, CSRC )
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
 C.....................  Search for this record in sources
                     J = FINDC( CSRC, NS, CSOURC( SS ) )
                     IF ( J .GT. 0 ) TFLAG = .TRUE.
