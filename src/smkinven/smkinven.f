@@ -164,6 +164,7 @@ C...........   Other local variables
         LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
         LOGICAL         HFLAG            ! true: hour-specific inputs used
         LOGICAL         IFLAG            ! true: average inventory inputs used
+        LOGICAL         NONPOINT         ! true: importing nonpoint inventory
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
         LOGICAL         TOXFLG           ! true: toxics are being processed
 
@@ -244,7 +245,7 @@ C.............  Read the data from the raw inventory files and store in
 C               sorted order
             CALL M3MSG2( 'Reading inventory data...' )
             
-            CALL RDINVDATA( IDEV, INAME, NRAWBP )
+            CALL RDINVDATA( IDEV, INAME, NRAWBP, NONPOINT )
 
 C.............  Check if toxics are being processed and reset NHAPEXCLUDE if needed
             IF( .NOT. TOXFLG .AND. UDEV > 0 ) THEN
@@ -370,7 +371,7 @@ C.............  Open output I/O API and ASCII files
 
 C.............  Write source characteristics to inventory files (I/O API and
 C               ASCII)
-            CALL WRINVCHR( ENAME, SDEV, A2PFLAG )
+            CALL WRINVCHR( ENAME, SDEV, A2PFLAG, NONPOINT )
 
 C.............  Deallocate sorted inventory info arrays, except CSOURC
             CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
