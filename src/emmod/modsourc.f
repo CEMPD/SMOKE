@@ -51,12 +51,18 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
         INTEGER, ALLOCATABLE, PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
 
-        REAL   , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  UTM X-location (m)
-        REAL   , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  UTM Y-location (m)
+        REAL   , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
+        REAL   , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
+        REAL   , ALLOCATABLE, PUBLIC:: XLOC1 ( : )  !  lon X-location link start 
+        REAL   , ALLOCATABLE, PUBLIC:: YLOC1 ( : )  !  lat Y-location link start
+        REAL   , ALLOCATABLE, PUBLIC:: XLOC2 ( : )  !  lon X-location link end 
+        REAL   , ALLOCATABLE, PUBLIC:: YLOC2 ( : )  !  lat Y-location link end
         REAL   , ALLOCATABLE, PUBLIC:: STKHT ( : )  !  stack height   (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKDM ( : )  !  stack diameter (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKTK ( : )  !  exhaust temp   (deg K)
         REAL   , ALLOCATABLE, PUBLIC:: STKVE ( : )  !  exhaust veloc  (m/s)
+        REAL   , ALLOCATABLE, PUBLIC:: VMT   ( : )  !  vehicle miles traveled (miles/day)
+
         REAL   , ALLOCATABLE, PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
 
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCC  ( : ) !  SCC
