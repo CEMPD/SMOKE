@@ -2,7 +2,7 @@
         PROGRAM CNTLMAT
 
 C***********************************************************************
-C  program body starts at line 135
+C  program body starts at line 136
 C
 C  DESCRIPTION:
 C
@@ -68,7 +68,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '@(#)$Id$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -137,7 +137,7 @@ C   begin body of program CNTLMAT
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Get environment variable values...
 C.........  Get type of projection entries: with year or without it (EPS)
@@ -180,6 +180,12 @@ C.........   Get file names and open files
      &           'Enter logical name for ASCII CONTROL PACKETS file',
      &           .TRUE., .TRUE., 'GCNTL', PROGNAME )
 
+C.........  Open reports file
+        IF( NFLAG ) THEN
+            RDEV = PROMPTFFILE( 
+     &           'Enter logical name for ASCII CONTROL REPORTS file',
+     &           .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
+        END IF
 
 C.........  Get header description of inventory file, error if problem
         IF( .NOT. DESC3( ENAME ) ) THEN
@@ -240,7 +246,8 @@ C.........  Initialize arrays
         XRFCNT = 0  ! array
 
 C.........  Allocate memory for control packet information in input file.
-        CALL ALOCPKTS( CDEV, SYEAR, CPYEAR, PKTCNT, PKTBEG, XRFCNT )
+        CALL ALOCPKTS( CDEV, RDEV, SYEAR, CPYEAR, PKTCNT, 
+     &                 PKTBEG, XRFCNT )
 
 C.........  Set the flags that indicate which packets are valid
         GFLAG = ( PKTCNT( 1 ) .GT. 0 )
@@ -268,15 +275,8 @@ C           each packet type while determining the pollutants to use in opening
 C           the final output files.
 
         ACTION = 'PROCESS'
-        CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, CPYEAR,
-     &                ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
-
-C.........  Open reports file
-        IF( NFLAG ) THEN
-            RDEV = PROMPTFFILE( 
-     &           'Enter logical name for ASCII CONTROL REPORTS file',
-     &           .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
-        END IF
+        CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, RDEV, 
+     &                CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Process control matrices that depend on pollutants...
 
