@@ -123,6 +123,7 @@ C.............  Read past header
             READ( IDEV, * ) 
 
 C.............  Read table of name combinations
+            EFLAG = .FALSE.
             ICNT  = 1 ! Already past header
             COUNT = 0
    33       CONTINUE  ! Head of table read
