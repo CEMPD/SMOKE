@@ -7,9 +7,9 @@
 # This script sets up needed environment variables for running area source
 # emissions in SMOKE, and calls the script that runs the SMOKE programs. 
 #
-# Script created by : M. Houyoux, North Carolina 
-#                     Supercomputing Center
-#
+# Script created by : M. Houyoux, MCNC 
+#                     Environmental Modeling Center 
+#                     April, 2002
 #*********************************************************************
 
 # set Assigns file name
@@ -19,6 +19,9 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.m3demo.cb-iv.ed36
 setenv SMK_SOURCE A           # source category to process
 setenv MRG_SOURCE A           # source category to merge
 setenv SRCABBR    ar          # abbreviation for naming log files
+
+setenv MRG_BYDAY       ' '    # [A|M|P] use a by-day approach for the hourly input files
+
 setenv MRG_CTLMAT_MULT ' '    # [A|P|AP] for merging with multiplier controls
 setenv MRG_CTLMAT_ADD  ' '    # [A|P|AP] for merging with additive controls
 setenv MRG_CTLMAT_REAC ' '    # [A|M|P|AMP] for merging with reactivity controls
@@ -39,6 +42,8 @@ setenv RUN_SMKREPORT Y            # Y runs reporting for state reports
 # Program-specific controls...
 
 # For Smkinven
+setenv FILL_ANN_WSEAS       N     # Y use seasonal emissions when annual records missing
+setenv IMPORT_GRDIOAPI_YN   N     # Y import gridded NetCDF inventory
 setenv RAW_DUP_CHECK        N     # Y errors on duplicate records
 setenv RAW_SRC_CHECK        N     # Y errors if missing pollutants or activities
 setenv WKDAY_NORMALIZE      Y     # Y normalizes weekly profiles by weekdays
@@ -53,8 +58,8 @@ setenv SMK_GSREF_FIXED      N     # Y uses fixed-format speciation x-ref
 setenv SPEC_OUTPUT          ALL   # [ALL|MASS|MOLE] controls program outputs
 
 # For Cntlmat
-setenv TMP_CTL_PATH $EDSS_ROOT/data/tmp # directory for temporary program files
-setenv CONTROL_REPORT       Y     # Y outputs a report of factors by source
+setenv TMP_CTL_PATH         $SMKDAT/tmp  # directory for temporary program files
+setenv CONTROL_REPORT       Y            # Y outputs a report of factors by source
 
 # For Temporal
 setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles
@@ -80,13 +85,14 @@ setenv QA_TYPE              state      # run state reports at each proc stage
 setenv PROMPTFLAG           N     # Y (never set to Y for batch processing)
 setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
+setenv WEST_HSPHERE         Y     # Y converts stack coords to wst hemisphere
 setenv SMK_USE_ACTVNAMS     ' '   # Y force use of activities list
 setenv SMK_USE_SIPOLS       ' '   # Y force use if pollutants list
 setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
 setenv SMK_MAXERROR         100   # maximum number of errors in log file
-setenv OUTZONE              0     # output time zone of emissions
+setenv OUTZONE              0     # output time zone of emissions, 0 = GMT
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv AUTO_DELETE_LOG      Y     # Y automatically deletes logs without asking
+setenv AUTO_DELETE_LOG      N     # Y automatically deletes logs without asking
 
 # Invoke Assigns file
 source $ASSIGNS_FILE
