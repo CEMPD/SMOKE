@@ -127,7 +127,7 @@ C.............  Replace either temperature command with hourly temperatures
 C.........  Check that a temperature command was found
         IF( .NOT. FOUNDCMD ) THEN
             MESG = 'Could not find MIN/MAX TEMPERATURE ' //
-                   'or HOURLY TEMPERATURES command in MOBILE6 input'
+     &             'or HOURLY TEMPERATURES command in MOBILE6 input'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
