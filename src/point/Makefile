@@ -22,7 +22,9 @@ pvm: laypoint.pvm
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-LAY=laypoint.o openlayout.o preplm.o plmris.o postplm.o plsprd.o
+LAY=laypoint.o openlayout.o preplm.o plmris.o postplm.o plsprd.o \
+    fire_preplm.o fire_plmris.o fire_postplm.o 
+
 #
 laypoint: $(LAY) $(ALLI) $(LIBPATH)
 	echo LAYPOINT:
