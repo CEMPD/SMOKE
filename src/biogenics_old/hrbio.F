@@ -1,9 +1,9 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
+C Version "@(#)hrbio.f	1.5 /home/sunnylo/smoke/beis2/bio/SCCS/s.hrbio.f 19 Jul 1996 14:10:13
 
         SUBROUTINE  HRBIO( JDATE, JTIME, LAT, LON, PRES, TA, 
      &                     PINE, DECD, CONF, LAI, OTHR, AVLAI, NORNO,
-     &                     EMIS )
+     &                     EMIS, TSFC, TSOLAR, AGRC )
 
 C***********************************************************************
 C  subroutine body starts at line  160
@@ -69,6 +69,7 @@ C...........   ARGUMENTS and their descriptions:
         REAL            DECD ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            CONF ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            LAI  ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
+        REAL            AGRC ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            OTHR ( NCOLS, NROWS, BSPCS-1 )     !  nor VOC emissions
         REAL            AVLAI( NCOLS, NROWS )              !  average LAI
         REAL            NORNO( NCOLS, NROWS, LUSES )       !  nor NO  emissions
@@ -170,7 +171,12 @@ C...........   SAVED LOCAL VARIABLES and their descriptions:
         DATA BIOFRA  / 0.27, 0.21, 0.18, 0.17, 0.17 /
 
         SAVE   FIRSTIME, ADAY, BDAY, CDAY, CANATN, BIOFRA
- 
+
+C...........   SAVED LOCAL VARIABLES and their descriptions:
+
+        REAL   TSFC   ( NCOLS, NROWS )
+        REAL   TSOLAR ( NCOLS, NROWS )
+
 
 C***********************************************************************
 C   begin body of subroutine  HRBIO
@@ -190,56 +196,48 @@ c11          CONTINUE
 
 C.......   Begin processing for this hour:  look at cos of 
 C.......   zenith angle, and whether sun is above the horizon:
-        write(98,*) 'JDATE before CZANGLE = ',JDATE
-        CALL CZANGLE( JDATE, JTIME, LAT, LON, COSZEN, GETATN )
+c       CALL CZANGLE( JDATE, JTIME, LAT, LON, COSZEN, GETATN )
 
-        IF ( GETATN ) THEN !  sun above horizon:; compute direct radiation: 
+c       IF ( GETATN ) THEN !  sun above horizon:; compute direct radiation: 
 
 C.......   Interpolate [ A | B | C ]DAY to this JDATE:
 
-        write(98,*) 'JDATE before DAYMON = ',JDATE
-            CALL DAYMON( JDATE, JMON, JDAY )
-        write(98,*) 'JDATE after  DAYMON = ',JDATE
+c           CALL DAYMON( JDATE, JMON, JDAY )
 
-              write(98,*) 'JDATE   = ', JDATE
-              write(98,*) 'JMON    = ', JMON
-              write(98,*) 'JDAY    = ', JDAY
-              DO 151 I = 0, 13
-                 IF ( MOD(JDATE, 1000) .LE. IDAY(I) ) GO TO 201 
-151           CONTINUE
+c             DO 151 I = 0, 13
+c                IF ( MOD(JDATE, 1000) .LE. IDAY(I) ) GO TO 201 
+c151           CONTINUE
 
-              WRITE(6, 1001) JDAY
-1001          FORMAT(// 5X, '*** ERROR ABORT in TMPBIO,'
-     &                / 5X, '   Error in subroutine HRBIO: '
-     &                / 5X, '   Table lookup, JDAY out of range: ',
-     &                / 5X, '   JDAY = ', I3)
-              CALL EXIT
+c             WRITE(6, 1001) JDAY
+c1001          FORMAT(// 5X, '*** ERROR ABORT in TMPBIO,'
+c    &                / 5X, '   Error in subroutine HRBIO: '
+c    &                / 5X, '   Table lookup, JDAY out of range: ',
+c    &                / 5X, '   JDAY = ', I3)
+c             CALL EXIT
 
-201           CONTINUE
+c201           CONTINUE
    
-              write(98,*) 'I       = ', I
-              IF ( I .LT. 0 .OR. I .GT. 13 ) THEN
-                 WRITE(6, 2001) I
-2001             FORMAT(// 5X, '*** ERROR ABORT in BEIS2,'
-     &                   / 5X, '   Error in subroutine HRBIO: '
-     &                   / 5X, '   Day index out of range ',
-     &                   / 5X, ' I(day index) = ', I2)
-                 CALL EXIT
-              END IF
+c             IF ( I .LT. 0 .OR. I .GT. 13 ) THEN
+c                WRITE(6, 2001) I
+c2001             FORMAT(// 5X, '*** ERROR ABORT in BEIS2,'
+c    &                   / 5X, '   Error in subroutine HRBIO: '
+c    &                   / 5X, '   Day index out of range ',
+c    &                   / 5X, ' I(day index) = ', I2)
+c                CALL EXIT
+c             END IF
 
-              IF ( IDAY(I) .EQ. 1 ) THEN
-                 AA = ADAY(0)
-                 BB = BDAY(0)
-                 CC = CDAY(0)
-              ELSE
-                 J = IDAY( I-1 )
-                 DAYINC = FLOAT( MOD(JDATE, 1000) - J ) 
-     &                    / FLOAT( IDAY(I) - J )
-                 AA = ADAY(I-1) + (ADAY(I)-ADAY(I-1))*DAYINC
-                 BB = BDAY(I-1) + (BDAY(I)-BDAY(I-1))*DAYINC
-                 CC = CDAY(I-1) + (CDAY(I)-CDAY(I-1))*DAYINC
-              END IF
-            write(98,*) AA, BB, CC, BDAY(I-1), BDAY(I), DAYINC 
+c             IF ( IDAY(I) .EQ. 1 ) THEN
+c                AA = ADAY(0)
+c                BB = BDAY(0)
+c                CC = CDAY(0)
+c             ELSE
+c                J = IDAY( I-1 )
+c                DAYINC = FLOAT( MOD(JDATE, 1000) - J ) 
+c    &                    / FLOAT( IDAY(I) - J )
+c                AA = ADAY(I-1) + (ADAY(I)-ADAY(I-1))*DAYINC
+c                BB = BDAY(I-1) + (BDAY(I)-BDAY(I-1))*DAYINC
+c                CC = CDAY(I-1) + (CDAY(I)-CDAY(I-1))*DAYINC
+c             END IF
 
 
 c           P  = DMON( JMON ) * FLOAT( JDAY - 1 )
@@ -249,69 +247,70 @@ c           AA = Q * ADAY( JMON-1 )  +  P * ADAY( JMON )
 c           BB = Q * BDAY( JMON-1 )  +  P * BDAY( JMON )
 c           CC = Q * CDAY( JMON-1 )  +  P * CDAY( JMON )
 
-            CALL CLDATEN( JDATE, JTIME, LAT, LON, CLDATN )
+c           CALL CLDATEN( JDATE, JTIME, LAT, LON, CLDATN )
 
-            write(98,*) '****************************************'
-            write(98,*) 'CLDATN', JTIME 
-            write(98,*) '****************************************'
-c           do r = 1,nrows
-c              write(98,*) (CLDATN(c,r),c=1,ncols) 
-c           end do
 C...........   compute direct horizontal radiation, attenuation:
 C...........   first, perform the table look up
-
-            write (98,*) JTIME, 'TA (43-77,45): ', TA(43,45), 
-     &                    TA(44,45), TA(45,45), TA(46,45), TA(47,45)
 
             DO  122  R = 1, NROWS
             DO  111  C = 1, NCOLS
                 
-                TAIR = TA( C,R )
+c           if ( (jtime.eq.200000).and.(c.eq.17).and.(r.eq.52) ) then
+c              print *, 'debug'
+c           end if
+
+                TAIR = TSFC(C,R) + 273.16     ! Convert temp from C to K
+C..................   Check TAIR and PAR are not out of range
+ 
+c               TAIR = TA( C,R )
 
                 DT   = 28668.514 / TAIR
                 CT   = EXP( 37.711 - 0.398570815 * DT ) /
      &                 (1.0 + EXP( 91.301 - DT ) )
-c               write(98,*) 'CT = ', CT
 
-                IF ( COSZEN( C,R ) .LT. 0.02079483 ) THEN !  effectively no PAR
+c               IF ( COSZEN( C,R ) .LT. 0.02079483 ) THEN !  effectively no PAR
 
 C...................   Biogenic ISOP emissions (due to photo. activity) zero
 
-                    EMIS( C,R, NISO ) = 0.0
+c                   EMIS( C,R, NISO ) = 0.0
 
-                ELSE
+c               ELSE
 
 C...................   Compute biogenic VOC emissions, due to
 C...................   photosynthetic activity:
 
-                    EXPA  = EXP( -BB * DPRES0 * PRES( C,R ) 
-     &                      / COSZEN( C,R ) )
-                    DRCT0 = CN * AA * EXPA
-                    TOTAL = DRCT0 * ( COSZEN(C,R) + CC )   !  direct + diffuse
-                    TOTAL = TOTAL * WM2LY * CLDATN(C, R)
-                    PAR   = 0.5 * LY2UE * TOTAL ! vis:  assumed 50% of total
+c                   EXPA  = EXP( -BB * DPRES0 * PRES( C,R ) 
+c    &                      / COSZEN( C,R ) )
+c                   DRCT0 = CN * AA * EXPA
+c                   TOTAL = DRCT0 * ( COSZEN(C,R) + CC )   !  direct + diffuse
+c                   TOTAL = TOTAL * WM2LY * CLDATN(C, R)
+c                   PAR   = 0.5 * LY2UE * TOTAL ! vis:  assumed 50% of total
 c                   PAR   = EXPA * CLDATN( C,R ) 
 c    &                       * ( COSZEN( C,R ) + CC )
-                    if ( (r.eq.45).and.(c.eq.45) )then
-                       write(98,*) 'JTIME        = ',JTIME
-                       write(98,*) 'COSZEN(C,R)  = ',coszen(c,r)
-                       write(98,*) 'EXPA         = ',EXPA
-                       write(98,*) '-BB          = ',-BB
-                       write(98,*) 'PRES(C,R)    = ',PRES(C,R)
-                       write(98,*) 'COSZEN(C,R)  = ',COSZEN(c,r)
-                       write(98,*) 'EXPA         = ',EXPA
-                       write(98,*) 'CLDATN(C,R)  = ',CLDATN(C,R)
-                       write(98,*) 'CC           = ',CC
-                       write(98,*) 'PAR          = ',PAR
-                    end if
+
+
+                PAR   = TSOLAR ( C, R )
+ 
+                IF (TAIR .LT. 0.0  .OR. TAIR .GT. 315.0) THEN
+                  WRITE (6, 240) TAIR, NGRID, NCOLS, NROWS
+240               FORMAT (1X,' TAIR is out of range, the value is:', 
+     &             F10.2, 1X, 'at hour ', I2, ' col and row are ', 
+     &             I5, I5 )
+                END IF
+ 
+                IF (PAR .LT. 0.0 .OR. PAR .GT. 2500.0) THEN
+                  WRITE (6, 250) PAR, NGRID, NCOLS, NROWS
+250               FORMAT (1X,' PAR is out of range, the value is:', F10.2,
+     &               1X, 'at hour ', I2, ' col and row are ', I5, I5 )
+                  CALL EXIT
+                END IF
+
 
                     FPINE = 0.0
                     FDECD = 0.0
                     FCONF = 0.0
                     FCLAI = 0.0
                     
-c                   write (98,*) 'PAR      CANATN(L,LPINE)'
-c                   write (98,*) PAR, CANATN(L,LPINE)
 
                     DO  101  L = 1, CLAYS
                         PARZ   = PAR * CANATN( L,LPINE )
@@ -348,30 +347,32 @@ c                   write (98,*) PAR, CANATN(L,LPINE)
      &                      DECD( C,R,ISOP ) * CFDECD +
      &                      CONF( C,R,ISOP ) * CFCONF +
      &                      LAI ( C,R,ISOP ) * CFCLAI +
+     &                      AGRC( C,R,ISOP ) * CFOTHR +  ! sl from hrlyem2.f
      &                      OTHR( C,R,ISOP ) * CFOTHR
 
                     EMIS( C,R, NISO ) = DENISO   * BISOP
 
-                END IF                  !  if coszen > 0.02 or not
+c               END IF                  !  if coszen > 0.02 or not
                     
                 CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
 
                 BMONO = ( PINE( C,R,MONO ) +
      &                    DECD( C,R,MONO ) +
      &                    CONF( C,R,MONO ) +
+     &                    AGRC( C,R,MONO ) +  ! sl
      &                    LAI ( C,R,MONO ) +
      &                    OTHR( C,R,MONO )  ) * CFOVOC
 
                 BOVOC = ( PINE( C,R,OVOC ) +
      &                    DECD( C,R,OVOC ) +
      &                    CONF( C,R,OVOC ) +
+     &                    AGRC( C,R,OVOC ) +  ! sl
      &                    LAI ( C,R,OVOC ) +
      &                    OTHR( C,R,OVOC )  ) * CFOVOC
 
                 EMIS( C,R, NPAR ) = MON2PAR  * BMONO +  OTH2PAR * BOVOC
                 EMIS( C,R, NOLE ) = MON2OLE  * BMONO +  OTH2OLE * BOVOC
                 EMIS( C,R, NALD ) = MON2ALD2 * BMONO
-
 
 C...........   Compute correction factors for NO, NO emissions:
 C...........   In the following, simultaneously solve inequalities for 
@@ -439,86 +440,86 @@ C80              CONTINUE
 111         CONTINUE
 122         CONTINUE
 
-        ELSE    !  not GETATN:
+c       ELSE    !  not GETATN:
         
-            DO 222 R = 1,NROWS
-            DO 211 C = 1,NCOLS
+c           DO 222 R = 1,NROWS
+c           DO 211 C = 1,NCOLS
                    
 C...........   Sun below horizon; set photosynthetic emissions factors 
 C...........   (and therefore biogenic ISOP emissions) to zero
 
-                TAIR   = TA( C,R )
+c               TAIR   = TSFC( C,R )
 
-                CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
+c               CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
 
-                BMONO  = ( PINE( C,R,MONO ) +
-     &                     DECD( C,R,MONO ) +
-     &                     CONF( C,R,MONO ) +
-     &                     LAI ( C,R,MONO ) +
-     &                     OTHR( C,R,MONO )  ) * CFOVOC
+c               BMONO  = ( PINE( C,R,MONO ) +
+c    &                     DECD( C,R,MONO ) +
+c    &                     CONF( C,R,MONO ) +
+c    &                     LAI ( C,R,MONO ) +
+c    &                     OTHR( C,R,MONO )  ) * CFOVOC
 
-                BOVOC  = ( PINE( C,R,OVOC ) +
-     &                     DECD( C,R,OVOC ) +
-     &                     CONF( C,R,OVOC ) +
-     &                     LAI ( C,R,OVOC ) +
-     &                     OTHR( C,R,OVOC )  ) * CFOVOC
+c               BOVOC  = ( PINE( C,R,OVOC ) +
+c    &                     DECD( C,R,OVOC ) +
+c    &                     CONF( C,R,OVOC ) +
+c    &                     LAI ( C,R,OVOC ) +
+c    &                     OTHR( C,R,OVOC )  ) * CFOVOC
 
-                EMIS( C,R, NPAR ) = MON2PAR  * BMONO +  OTH2PAR * BOVOC
-                EMIS( C,R, NOLE ) = MON2OLE  * BMONO +  OTH2OLE * BOVOC
-                EMIS( C,R, NALD ) = MON2ALD2 * BMONO
-                EMIS( C,R, NISO ) = 0.0
+c               EMIS( C,R, NPAR ) = MON2PAR  * BMONO +  OTH2PAR * BOVOC
+c               EMIS( C,R, NOLE ) = MON2OLE  * BMONO +  OTH2OLE * BOVOC
+c               EMIS( C,R, NALD ) = MON2ALD2 * BMONO
+c               EMIS( C,R, NISO ) = 0.0
 
 C...........   Compute correction factors for NO (see note, above)
 
-                IF ( TAIR .GT. 268.8690 ) THEN  !  most frequent case first
+c               IF ( TAIR .GT. 268.8690 ) THEN  !  most frequent case first
 
-                    CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
-                    CFNOF = EXP( 0.05964 * TAIR  -  18.16535 ) !  forest
-                    CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
+c                   CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
+c                   CFNOF = EXP( 0.05964 * TAIR  -  18.16535 ) !  forest
+c                   CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
+c                   CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,FORE ) * CFNOF +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENNO
+c                   EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
+c    &                                   NORNO( C,R,FORE ) * CFNOF +
+c    &                                   NORNO( C,R,WETL ) * CFNOW +
+c    &                                   NORNO( C,R,AGRI ) * CFNOA
+c    &                                 ) * DENNO
 
-                ELSE IF ( TAIR .GT. 268.3804 ) THEN     !  no forest NO
+c               ELSE IF ( TAIR .GT. 268.3804 ) THEN     !  no forest NO
 
-                    CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
-                    CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
+c                   CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
+c                   CFNOW = EXP( 0.06532 * TAIR  -  19.66061 ) !  wetland
+c                   CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,WETL ) * CFNOW +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENNO
+c                   EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
+c    &                                   NORNO( C,R,WETL ) * CFNOW +
+c    &                                   NORNO( C,R,AGRI ) * CFNOA
+c    &                                 ) * DENNO
 
-                ELSE IF ( TAIR .GT. 265.11111 ) THEN    !  no forest, wetl NO
+c               ELSE IF ( TAIR .GT. 265.11111 ) THEN    !  no forest, wetl NO
 
-                    CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
-                    CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
+c                   CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
+c                   CFNOA = EXP( 0.05112 * TAIR  -  15.68248 ) !  agriculture
 
-                    EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
-     &                                   NORNO( C,R,AGRI ) * CFNOA
-     &                                 ) * DENNO
+c                   EMIS( C,R, NNO ) = ( NORNO( C,R,GRAS ) * CFNOG +
+c    &                                   NORNO( C,R,AGRI ) * CFNOA
+c    &                                 ) * DENNO
 
-                ELSE IF ( TAIR .GT. 259.8333 ) THEN     !  only grass NO
+c               ELSE IF ( TAIR .GT. 259.8333 ) THEN     !  only grass NO
 
-                    CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
+c                   CFNOG = EXP( 0.04686 * TAIR  -  14.30579 ) !  grass
 
-                    EMIS( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG*DENNO
+c                   EMIS( C,R, NNO ) = NORNO( C,R,GRAS ) * CFNOG*DENNO
 
-                ELSE            !  tair <= 259.8333; no NO
+c               ELSE            !  tair <= 259.8333; no NO
 
-                    EMIS( C,R, NO ) = 0.0
+c                   EMIS( C,R, NO ) = 0.0
 
-                END IF          !  5-way conditional on TAIR
+c               END IF          !  5-way conditional on TAIR
 
-211         CONTINUE
-222         CONTINUE
+c211         CONTINUE
+c222         CONTINUE
 
-        END IF          !  if getatn (sun above horizon) or not
+c       END IF          !  if getatn (sun above horizon) or not
 
         RETURN
 
