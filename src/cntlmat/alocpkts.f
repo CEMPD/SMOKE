@@ -409,7 +409,7 @@ C.............  Local variables
             INTEGER    I, J, L, S1, S2    ! indices
             INTEGER    IOS             ! i/o status
 
-            INTEGER, SAVE :: SAVYEAR   ! saved output year
+            INTEGER, SAVE :: SAVYEAR = 0  ! saved output year
 
             LOGICAL, SAVE :: SFLAG     ! true: there is a saved output year
 
@@ -507,6 +507,8 @@ C.................  Packet is good
                 END IF   ! End checks on year-specific records
 
             END IF       ! End year-specific processing
+
+            OUTYEAR = SAVYEAR
 
             RETURN
        
