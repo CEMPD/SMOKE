@@ -1,0 +1,209 @@
+      SUBROUTINE GETAVG(INPREC,INERR,RC) 
+C 
+C  GETAVG obtains the user specified average speed for a specific 
+C  roadway type and the roadway type distribution. 
+C 
+C 
+C  Called by DSPTCH. 
+C 
+C 
+C  Calls NXTTOK, QUITER, UCCOMP. 
+C 
+C 
+C  Changes: (Last change first) 
+C 
+C  19 Jul 01 @EPA-djb Wish235, Add Average Speed command. 
+C 
+C  Input on call: 
+C 
+C    argument list: INPREC,NSCEN,INERR,RC 
+C    common blocks: 
+C      /SPEED0/ DEFAVG 
+C 
+C  Output on return: 
+C 
+C    argument list: INPREC, NSCEN, INERR, RC 
+C    common blocks: 
+C      /SPEED0/ USRSPD,USRVMT,USRFAC 
+C 
+C  Local variable / array dictionary: 
+C 
+C   Name   Type              Description 
+C  ------  ----  ------------------------------------------------------- 
+C  INPSPD    R   Variable to temporarily store the user input average speed. 
+C  MAXSPD    R   Maximum speed that can be calculated from the combination 
+C                of average speed and roadway type VMT fractions. 
+C  MINSPD    R   Minimum speed that can be calculated from the combination 
+C                of average speed and roadway type VMT fractions. 
+C  VMTSUM    R   Sum of user supplied roadway type VMT fractions. 
+C 
+C 
+C  Notes: 
+C 
+C 
+      IMPLICIT NONE 
+C 
+      INCLUDE 'IOUCOM.I'      ! IOUOUT 
+      INCLUDE 'SPEED0.I'      ! USRSPD,USRVMT,USRFAC,DEFAVG,AVGFLG 
+C 
+C     Declare variables. 
+C 
+      CHARACTER(80)   :: DATAFIELD 
+      CHARACTER(*)    :: INPREC 
+      CHARACTER*10    :: TESTFIELD 
+C 
+      INTEGER, INTENT(INOUT)  :: INERR 
+      INTEGER, INTENT(INOUT)  :: RC 
+C 
+      INTEGER         :: IROAD    ! Roadway type index. 
+      INTEGER         :: PTR1 
+      INTEGER         :: PTR2 
+C 
+      REAL            :: INPSPD   ! Storage of user input average speed. 
+      REAL            :: MAXSPD   ! Given user inputs, maximum allowed area wide average speed. 
+      REAL            :: MINSPD   ! Given user inputs, maximum allowed area wide average speed. 
+      REAL            :: VMTSUM   ! Sum of user supplied roadway type VMT fractions. 
+C 
+      PTR2 = 21 
+C 
+C     Read the user supplied average speed value. 
+C 
+      CALL NXTTOK(INPREC,DATAFIELD,PTR1,PTR2) 
+      READ (DATAFIELD,*,IOSTAT=RC) USRSPD 
+      IF(USRSPD.LT.2.5) THEN 
+        CALL QUITER(USRSPD,0,52,INERR) 
+        USRSPD=2.5 
+      ELSEIF(USRSPD.GT.65.0) THEN 
+        CALL QUITER(USRSPD,0,96,INERR) 
+        USRSPD=65.0 
+      ENDIF 
+C 
+C     Read the user specified average speed option. 
+C 
+      CALL NXTTOK(INPREC,DATAFIELD,PTR1,PTR2) 
+      CALL UCCOMP(DATAFIELD,TESTFIELD) 
+      IF (TESTFIELD.EQ.'NON-RAMP') THEN 
+        USRFAC=1 
+      ELSEIF (TESTFIELD.EQ.'FREEWAY') THEN 
+        USRFAC=2 
+      ELSEIF (TESTFIELD.EQ.'ARTERIAL') THEN 
+        USRFAC=3 
+      ELSEIF (TESTFIELD.EQ.'AREAWIDE') THEN 
+        USRFAC=4 
+      ELSEIF (TESTFIELD.EQ.'LOCAL') THEN 
+        USRFAC=5 
+      ELSEIF (TESTFIELD.EQ.'RAMP') THEN 
+        USRFAC=6 
+      ELSE 
+        WRITE(IOUOUT,110) TESTFIELD 
+  110   FORMAT(' *** ERROR: ',A10,' is not a valid option.') 
+        INERR = INERR + 1 
+      ENDIF 
+C 
+C     Read the user supplied distribution of roadway VMT. 
+C 
+      DO IROAD=1,4 
+        CALL NXTTOK(INPREC,DATAFIELD,PTR1,PTR2) 
+        READ (DATAFIELD,*,IOSTAT=RC) USRVMT(IROAD) 
+      END DO 
+      VMTSUM=USRVMT(1)+USRVMT(2)+USRVMT(3)+USRVMT(4) 
+      IF(VMTSUM.LT.0.0001 .OR. RC.NE.0) THEN   ! Set values to defaults. 
+        USRVMT(1) = 0.342 
+        USRVMT(2) = 0.498 
+        USRVMT(3) = 0.130 
+        USRVMT(4) = 0.030 
+        RC=0 
+      ELSEIF(     (VMTSUM.GT.0.999 .AND. VMTSUM.LT.1.001) 
+     *       .OR. (VMTSUM.GT. 99.9 .AND. VMTSUM.LT.100.1) ) THEN 
+        IF(VMTSUM.NE.1.0) THEN  ! Normalize user input. 
+          USRVMT(1) = USRVMT(1)/VMTSUM 
+          USRVMT(2) = USRVMT(2)/VMTSUM 
+          USRVMT(3) = USRVMT(3)/VMTSUM 
+          USRVMT(4) = USRVMT(4)/VMTSUM 
+        ENDIF 
+      ELSE 
+        CALL QUITER(VMTSUM,0,16,INERR) 
+        USRVMT(1) = USRVMT(1)/VMTSUM 
+        USRVMT(2) = USRVMT(2)/VMTSUM 
+        USRVMT(3) = USRVMT(3)/VMTSUM 
+        USRVMT(4) = USRVMT(4)/VMTSUM 
+      ENDIF 
+C 
+C  If the area wide option is chosen, check the combination of 
+C  user supplied values to determine if this option can be used. 
+C 
+      IF(USRFAC.EQ.4) THEN 
+C     Minimum and maximum freeway and arterial speeds assume 
+C       than the same adjustment will be applied to both. 
+        MINSPD = 1.0/((1.0/2.92)*USRVMT(1)+(1.0/2.5)*USRVMT(2) 
+     *    +(1.0/DEFAVG(3))*USRVMT(3)+(1.0/DEFAVG(4))*USRVMT(4)) 
+        MAXSPD = 1.0/((1.0/65.0)*USRVMT(1)+(1.0/55.56)*USRVMT(2) 
+     *    +(1.0/DEFAVG(3))*USRVMT(3)+(1.0/DEFAVG(4))*USRVMT(4)) 
+        IF(USRSPD.LT.MINSPD) THEN 
+          CALL QUITER(MINSPD,0,14,INERR) 
+          USRSPD=MINSPD 
+        ELSEIF(USRSPD.GT.MAXSPD) THEN 
+          CALL QUITER(MAXSPD,0,15,INERR) 
+          USRSPD=MAXSPD 
+        ENDIF 
+C     Determine and apply adjustment to default arterial/collector average speed. 
+        INPSPD=USRSPD 
+        USRSPD=DEFAVG(2) * 
+     *    ((1/DEFAVG(1))*USRVMT(1)+(1/DEFAVG(2))*USRVMT(2)) / 
+     *    ((1/USRSPD)-((1/DEFAVG(3))*USRVMT(3)+(1/DEFAVG(4))*USRVMT(4))) 
+      ENDIF 
+C 
+C  Alert user in descriptive output that an average speed will be used 
+C  and that the facility VMT will be changed. 
+C 
+      SELECT CASE (USRFAC) 
+          CASE (1) 
+            WRITE(IOUREP,120) USRSPD 
+          CASE (2) 
+            WRITE(IOUREP,130) USRSPD 
+          CASE (3) 
+            WRITE(IOUREP,140) USRSPD 
+          CASE (5) 
+            WRITE(IOUREP,160) 
+          CASE (6) 
+            WRITE(IOUREP,170) 
+          CASE DEFAULT     ! Case 4 is the default. 
+            WRITE(IOUREP,150) INPSPD 
+      END SELECT 
+C 
+  120 FORMAT(/ 
+     &  '* A user supplied freeway average speed of ',F4.1,' will',/, 
+     &  '* be used for all hours of the day.  100% of VMT has been',/, 
+     &  '* assigned to the freeway roadway type for all hours of',/, 
+     &  '* the day and all vehicle types.',/) 
+  130 FORMAT(/ 
+     &  '* A user supplied freeway average speed of ',F4.1,' will',/, 
+     &  '* be used for all hours of the day.  100% of VMT has been',/, 
+     &  '* assigned to a fixed combination of freeways and freeway',/, 
+     &  '* ramps for all hours of the day and all vehicle types.',/) 
+  140 FORMAT(/ 
+     &  '* A user supplied arterial average speed of ',F4.1,' will',/, 
+     &  '* be used for all hours of the day.  100% of VMT has been',/, 
+     &  '* assigned to the arterial/collector roadway type for all',/, 
+     &  '* hours of the day and all vehicle types.',/) 
+  150 FORMAT(/ 
+     &  '* A user supplied area wide average speed of ',F4.1,' will',/, 
+     &  '* be used for all hours of the day.  100% of VMT has been',/, 
+     &  '* assigned to a fixed combination of freeways, freeway',/, 
+     &  '* ramps, arterial/collector and local roadways for all',/, 
+     &  '* hours of the day and all vehicle types.',/) 
+  160 FORMAT(/ 
+     &  '* 100% of VMT has been assigned to the local roadway type',/, 
+     &  '* for all hours of the day for all vehicle types.',/) 
+  170 FORMAT(/ 
+     &  '* 100% of VMT has been assigned to the freeway ramp roadway',/, 
+     &  '* type for all hours of the day for all vehicle types.',/) 
+C 
+C  Error or EOF on any attempted read. 
+C 
+      IF(RC.NE.0)THEN 
+         INERR = INERR + 1 
+      END IF 
+C 
+      RETURN 
+      END 
