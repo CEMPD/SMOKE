@@ -2,7 +2,7 @@
         PROGRAM LAYPOINT
 
 C***********************************************************************
-C  program body starts at line 247
+C  program body starts at line 272
 C
 C  DESCRIPTION:
 C       Produces source-level layer fractions, using the emissions-source 
@@ -63,6 +63,8 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2     CRLF
+        INTEGER         ENVINT
+        LOGICAL         ENVYN
         LOGICAL         DSCGRID
         INTEGER         GETDATE
         INTEGER         GETNUM
@@ -77,9 +79,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY
 
-        EXTERNAL        CRLF, DSCGRID, GETDATE, GETNUM, GETYN, HHMMSS, 
-     &                  LAMBERT, LL2LAM, MMDDYY, POLY, PROMPTFFILE, 
-     &                  PROMPTMFILE, TRIMLEN, WKDAY 
+        EXTERNAL        CRLF, ENVINT, ENVYN, DSCGRID, GETDATE, GETNUM, 
+     &                  GETYN, HHMMSS, LAMBERT, LL2LAM, MMDDYY, POLY, 
+     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY 
 
 C...........   PARAMETERS and their descriptions
 
@@ -97,16 +99,21 @@ C...........   PARAMETERS and their descriptions
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point source stack parameters:
 
-        INTEGER     IFIP ( NPSRC )  !  source FIPS (county) ID
-        INTEGER     ISCC ( NPSRC )  !  source SCC
-        REAL        XLOCA( NPSRC )  !  UTM X-location (m)
-        REAL        YLOCA( NPSRC )  !  UTM Y-location (m)
-        REAL        STKHT( NPSRC )  !  stack height   (m)
-        REAL        STKDM( NPSRC )  !  stack diameter (m)
-        REAL        STKTK( NPSRC )  !  exhaust temperature (deg K)
-        REAL        STKVE( NPSRC )  !  exhaust velocity    (m/s)
-
+        INTEGER     IFIP  ( NPSRC )  !  source FIPS (county) ID
+        INTEGER     ISCC  ( NPSRC )  !  source SCC
+        INTEGER     IPLANT( NPSRC )  !  source plant ID
+        INTEGER     ISTACK( NPSRC )  !  source stack ID
+        REAL        XLOCA ( NPSRC )  !  UTM X-location (m)
+        REAL        YLOCA ( NPSRC )  !  UTM Y-location (m)
+        REAL        STKHT ( NPSRC )  !  stack height   (m)
+        REAL        STKDM ( NPSRC )  !  stack diameter (m)
+        REAL        STKTK ( NPSRC )  !  exhaust temperature (deg K)
+        REAL        STKVE ( NPSRC )  !  exhaust velocity    (m/s)
+ 
 C.......   Point source meteorology profiles and variables
+
+        INTEGER     LSTK            !  first L: ZF(L) > STKHT
+        INTEGER     LPBL            !  first L: ZF(L) above mixing layer
 
         REAL        TSFC ( NPSRC )  !  surface temperature (deg K)
         REAL        HFX  ( NPSRC )  !  sensible heat flux (M K / S )
@@ -120,22 +127,21 @@ C.......   Point source meteorology profiles and variables
         REAL        VWIND( EMLAYS, NPSRC )  !  wind speed (m/s)
         REAL        PRES ( EMLAYS, NPSRC )  !  pressure (Pa)
         REAL        PRESF( 0:EMLAYS )  !  pressure at full-levels
-        REAL        ZZF  ( 0:EMLAYS )  !  elevation at full-levels
-        REAL        WSPD ( EMLAYS ) !  wind speed (m/s)
+        REAL        ZZF  ( 0:EMLAYS )      !  elevation at full-levels
+        REAL        DTHDZ( EMLAYS )        !  gradient of THETV
+        REAL        DDZH ( EMLAYS,NPSRC )  !  1/( zh(l) - zh(l-1) )
+        REAL        DDZF ( EMLAYS,NPSRC )  !  1/( zh(l) - zh(l-1) )
+        REAL        ZSTK ( EMLAYS,NPSRC )  !  zf( l,s )   - stkht(s)   (m)
+        REAL        WSPD ( EMLAYS )        !  wind speed (m/s)
         REAL        PSFC            !  surface pressure (Pa)
         REAL        QSFC            !  surface heat flux
         REAL        ES              !  water vapor pressure
         REAL        TVSFC           !  sfc virtual temperature
         REAL        THETG           !  sfc virtual potential temperature
         REAL        THV1, THVK      !  virtual potential temperature
-        INTEGER     LSTK            !  first L: ZH(L) > STKHT
-        INTEGER     LPBL            !  first L: ZH(L) above mixing layer
-        REAL        DTHDZ( NLAYS )  !  gradient of THETV
-        REAL        DDZH ( NLAYS,NPSRC )  !  1/( zh(l) - zh(l-1) )
-        REAL        DDZF ( NLAYS,NPSRC )  !  1/( zh(l) - zh(l-1) )
-        REAL        ZSTK ( NLAYS,NPSRC )  !  zh( l,s )   - stkht(s)   (m)
-        REAL        TSTK            !  temperature at top of stack (deg K)
-        REAL        WSTK            !  wind speed  at top of stack (m/s)
+
+        REAL        TSTK                  !  temperature at top of stack (deg K)
+        REAL        WSTK                  !  wind speed  at top of stack (m/s)
 
 C.......   Cross- and dot-point meteorology input buffers
 
@@ -156,38 +162,24 @@ C.......   Output layer fractions (in I/O order)
 
         REAL            LFRAC( NPSRC, EMLAYS )
 
-C...........   Other local variables
-
-        INTEGER         TSTEP   !  output time step
-        INTEGER         JDATE, JTIME
-        INTEGER         NSTEPS
-        INTEGER         I, L, M, S
-        REAL            X, Y, P, Q, PP, QQ
-        REAL            ZZ0, ZZ1, ZF0, ZF1
-        REAL            ZBOT    !  plume bottom elevation (m)
-        REAL            ZTOP    !  plume top    elevation (m)
-        REAL            PBOT    !  plume bottom sigma
-        REAL            PDIFF   !  PBOT - PTOP
-        REAL            PTOP    !  plume top    sigma
-        INTEGER         LBOT    !  plume bottom layer
-        INTEGER         LTOP    !  plume top    layer
-        REAL            DDP     !  1/(plume-thickness)
-        CHARACTER*16    ENAME   !  logical name for point-source input file
-        CHARACTER*16    DNAME   !  dot-point   met file name
-        CHARACTER*16    SNAME   !  cross-point sfc met file name
-        CHARACTER*16    XNAME   !  cross-point lay met file name
-        CHARACTER*16    SGRID   !  cross-point sfc grid file name
-        CHARACTER*16    XGRID   !  cross-point lay grid file name
-        CHARACTER*16    LNAME   !  " timestepped layer fractions output file
-
-        CHARACTER*256   MESG    !  buffer for M3EXIT() messages
-        INTEGER         LDEV    !  unit number for log file
 
 C.......   Dot and cross point grid description parameters:
 
         INTEGER      NCOLSDG      ! dot grid number of grid columns
         INTEGER      NROWSDG      ! dot grid number of grid rows
         INTEGER      NLAYSDG      ! dot grid number of layers
+        INTEGER      NCOLSXG      ! cross grid number of grid columns
+        INTEGER      NROWSXG      ! cross grid number of grid rows
+        INTEGER      NLAYSXG      ! cross grid number of layers
+        INTEGER      VGTYPXG      ! vertical coordinate type (VGSIGP3, ...)
+        INTEGER      VGTYPDG      ! vertical coordinate type (VGSIGP3, ...)
+
+        REAL         SIGH   ( 0 : MXLAYS3 - 1 )    !  half-level sigma values
+        REAL         VGLVSDG( 0 : MXLAYS3 )  !  vertical coord values.
+        REAL         VGLVSXG( 0 : MXLAYS3 )  !  vertical coord values.
+        REAL         VGTOPDG      ! model-top, for sigma coord types.
+        REAL         VGTOPXG      ! model-top, for sigma coord types.
+
         REAL*8       P_ALPDG      ! dot grid first, second, third map
         REAL*8       P_BETDG      ! dot grid projection descriptive
         REAL*8       P_GAMDG      ! dot grid parameters.
@@ -197,33 +189,65 @@ C.......   Dot and cross point grid description parameters:
         REAL*8       YORIGDG      ! dot grid Y-coordinate origin of grid
         REAL*8       XCELLDG      ! dot grid X-coordinate cell dimension
         REAL*8       YCELLDG      ! dot grid Y-coordinate cell dimension
-        INTEGER      VGTYPDG      ! vertical coordinate type (VGSIGP3, ...)
-        REAL         VGTOPDG      ! model-top, for sigma coord types.
-        REAL         VGLVSDG( 0 : MXLAYS3 )  !  vertical coord values.
-        CHARACTER*16 GRDNMDG      ! dot grid grid name
-        CHARACTER*16 COONMDG      ! dot grid coordinate system name
-        INTEGER      NCOLSXG      ! cross grid number of grid columns
-        INTEGER      NROWSXG      ! cross grid number of grid rows
-        INTEGER      NLAYSXG      ! cross grid number of layers
         REAL*8       P_ALPXG      ! cross grid first, second, third map
         REAL*8       P_BETXG      ! cross grid projection descriptive
         REAL*8       P_GAMXG      ! cross grid parameters.
         REAL*8       XCENTXG      ! cross grid lon for coord-system X=0
         REAL*8       YCENTXG      ! cross grid lat for coord-system Y=0
-        REAL*8       XORIGXG      ! cross grid X-coordinate origin of grid (map units)
+        REAL*8       XORIGXG      ! cross grid X-cord origin of grid (map units)
         REAL*8       YORIGXG      ! cross grid Y-coordinate origin of grid
         REAL*8       XCELLXG      ! cross grid X-coordinate cell dimension
         REAL*8       YCELLXG      ! cross grid Y-coordinate cell dimension
-        CHARACTER*14 DTBUF        ! Date buffer
-        CHARACTER*16 GRDNMXG      ! cross grid grid name
-        CHARACTER*16 COONMXG      ! cross grid coordinate system name
-        INTEGER      VGTYPXG      ! vertical coordinate type (VGSIGP3, ...)
-        REAL         VGTOPXG      ! model-top, for sigma coord types.
-        REAL         VGLVSXG( 0 : MXLAYS3 )  !  vertical coord values.
-        REAL         SIGH   ( 0 : MXLAYS3 - 1 )    !  half-level sigma values
+
+        CHARACTER*14    DTBUF     ! Date buffer
+        CHARACTER*16    COONMDG   ! dot grid coordinate system name
+        CHARACTER*16    COONMXG   ! cross grid coordinate system name
+        CHARACTER*16    GRDNMDG   ! dot grid grid name
+        CHARACTER*16    GRDNMXG   ! cross grid grid name
+
+C...........   Logical names and unit numbers
+
+        INTEGER         LDEV    !  unit number for log file
+        INTEGER         RDEV    !  optional report iff REP_LAYER_MAX is set
+
+        CHARACTER*16    ENAME   !  logical name for point-source input file
+        CHARACTER*16    DNAME   !  dot-point   met file name
+        CHARACTER*16    LNAME   !  " timestepped layer fractions output file
+        CHARACTER*16    SGRID   !  cross-point sfc grid file name
+        CHARACTER*16    SNAME   !  cross-point sfc met file name
+        CHARACTER*16    XGRID   !  cross-point lay grid file name
+        CHARACTER*16    XNAME   !  cross-point lay met file name
+
+C...........   Other local variables
+
+        REAL            DDP       !  1/(plume-thickness)
+        REAL            PBOT      !  plume bottom sigma
+        REAL            PDIFF     !  PBOT - PTOP
+        REAL            PTOP      !  plume top    sigma
+        REAL            X, Y, P, Q, PP, QQ
+        REAL            XBEG, XEND, XL
+        REAL            YBEG, YEND, YL
+        REAL            ZZ0, ZZ1, ZF0, ZF1
+        REAL            ZBOT      !  plume bottom elevation (m)
+        REAL            ZTOP      !  plume top    elevation (m)
+
+        INTEGER         I, L, M, S
+        INTEGER         IOS
+        INTEGER         JDATE, JTIME
+        INTEGER         LBOT      !  plume bottom layer
+        INTEGER         LDATE     !  previous date
+        INTEGER         LTOP      !  plume top    layer
+        INTEGER         NSTEPS
+        INTEGER         REP_LAYR  !  Layer for reporting srcs w/ high plumes
+        INTEGER         STATUS    !  dummy status for envint
+        INTEGER         TSTEP     !  output time step
+
+        LOGICAL         EFLAG     !  error flag
+        LOGICAL         PROMPTF   !  iff PROMPTFLAG E.V. is true or not defined
+
         CHARACTER*80    SCEN_STR  !  temporary string for scenario name
         CHARACTER*80    SCHE_STR  !  temporary string for cloud scheme name
-
+        CHARACTER*256   MESG      !  buffer for M3EXIT() messages
 
 
 C.......   STATEMENT FUNCTION for evaluating relative error: TRUE
@@ -282,6 +306,24 @@ C   begin body of program LAYPOINT
             CALL M3EXIT( 'LAYPOINT', 0, 0, 'Ending program', 2 )
         END IF
 
+C.......   Get environment variable logical variables
+        REP_LAYR = ENVINT( 'REP_LAYER_MAX', 
+     &                     'Layer number for reporting high plume rise',
+     &                     9999, STATUS )
+
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
+
+        IF( STATUS   .EQ. 0        .AND. 
+     &    ( REP_LAYR .LT. 1 .OR.
+     &      REP_LAYR .GT. EMLAYS )       ) THEN
+
+            WRITE( MESG,94010 ) 'Environment variable REP_LAYR (=', 
+     &                          REP_LAYR, ') is out of range 1 to',
+     &                          EMLAYS, '.'
+            CALL M3EXIT( 'LAYPOINT', 0, 0, MESG, 2 )
+
+        ENDIF
 
 C.......   Get file name; open input point sources, temporal cross-reference,
 C.......   and temporal profiles files
@@ -339,15 +381,51 @@ C.......   Get time period for output file, dot point grid desc parameters:
 
         END IF
 
-        JDATE  = SDATE3D
-        JTIME  = STIME3D
-        NSTEPS = MXREC3D - 1
+C.......   Get default time characteristic for output file:
+C.......   If we're going to prompt, then set the defaults from the met data
+C.......      otherwise, use environment variables to set defaults
+        EFLAG = .FALSE.
+        IF( PROMPTF ) THEN
+
+            JDATE  = SDATE3D
+            JTIME  = STIME3D
+            NSTEPS = MXREC3D
+
+        ELSE
+
+            JDATE  = ENVINT( 'ESDATE', 'Start date', 1995182, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but ESDATE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+
+            JTIME  = ENVINT( 'STIME' , 'Start time', 0 , IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but STIME is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            NSTEPS = ENVINT( 'DURATION', 'Duration', 24, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but DURATION is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+
+            IF( EFLAG ) THEN
+                CALL M3EXIT( 'TMPPOINT', 0, 0,
+     &                       'Bad environment variable setting(s)', 2 )
+            ENDIF
+
+        ENDIF
 
         JDATE  = GETDATE( JDATE, 
      &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
 
-        JTIME  = GETNUM( 0, 999999, JTIME, 
-     &                  'Enter starting time  (HHMMSS)' )
+        JTIME  = GETNUM( 0, 235959, JTIME, 
+     &                  'Enter simulation starting time (HHMMSS)' )
         TSTEP  = 10000
         NSTEPS = GETNUM( 1, 999999, NSTEPS,
      &                   'Enter output duration (hours)' )
@@ -491,6 +569,11 @@ C.......   Get time period for output file, dot point grid desc parameters:
 
         END IF
 
+C.......   Store begining and ending coordinates of grid in X and Y
+        XBEG = XORIG3D
+        YBEG = YORIG3D
+        XEND = XORIG3D + NCOLS * XCELL3D
+        YEND = YORIG3D + NROWS * YCELL3D
 
 C.......   Get description of met input file; use most of it 
 C.......   for description of output file
@@ -546,6 +629,12 @@ C.......   for description of output file
      &          'Enter name for LAYER FRACTIONS output file',
      &          FSUNKN3, 'PLAY', 'LAYPOINT' )
 
+        IF( REP_LAYR .NE. 9999 ) THEN
+            RDEV = PROMPTFFILE( 'Enter logical name for report',
+     &                        .FALSE., .TRUE., 'REPRTLAY', 'LAYPOINT' )
+            WRITE( RDEV,93040 ) REP_LAYR
+
+        ENDIF
 
 C...........   Read in emissions stack parameters IFIP, ISCC, XLOCA, YLOCA,
 C...........   STKHT, STKDM, STKTK, STKVE
@@ -558,6 +647,16 @@ C...........   STKHT, STKDM, STKTK, STKVE
         IF ( .NOT. READ3( ENAME, 'ISCC', ALLAYS3,0,0, ISCC ) ) THEN
             CALL M3EXIT( 'LAYPOINT', 0, 0, 
      &                   'Error reading ISCC from file' // ENAME, 2)
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'IPLANT', ALLAYS3,0,0, IPLANT ) ) THEN
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 
+     &                   'Error reading IPLANT from file' // ENAME, 2)
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'ISTACK', ALLAYS3,0,0, ISTACK ) ) THEN
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 
+     &                   'Error reading ISTACK from file' // ENAME, 2)
         END IF
 
         IF ( .NOT. READ3( ENAME, 'XLOCA', ALLAYS3,0,0, XLOCA ) ) THEN
@@ -627,14 +726,14 @@ C.......   Read time-independent ZF, ZH:
 
         DO  45  S = 1, NPSRC
 
-            ZZ0 = ZH( 1,S )
+            ZZ0 = ZF( 1,S )
             ZSTK ( 1,S ) = ZZ0 - STKHT( S )
             ZF0 = ZF( 1,S )
             DDZF( 1,S ) = 1.0 / ZF0
 
             DO  44  L = 2, EMLAYS
 
-                ZZ1 = ZH( L,S )
+                ZZ1 = ZF( L,S )
                 ZSTK( L  ,S ) = ZZ1 - STKHT( S )
                 DDZH( L-1,S ) = 1.0 / ( ZZ1 - ZZ0 )
                 ZZ0 = ZZ1
@@ -652,18 +751,31 @@ C...........   For each time step, compute the layer fractions:
 
         CALL M3MSG2( 'Calculating hourly layer fractions...' )
 
+        LDATE = 0
+        EFLAG = .FALSE.
         DO  144  I = 1, NSTEPS
 
-            IF ( MOD( I,24 ) .EQ. 1 ) THEN
+            IF ( LDATE .NE. JDATE ) THEN
  
                 MESG = 'Processing ' //
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
                 CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+
+                IF( RDEV .GT. 0 ) THEN
+                    WRITE( RDEV,93000 ) MESG
+                ENDIF
+
+                LDATE = JDATE
  
             END IF
 
 C.............  Write to screen because WRITE3 only writes to LDEV
             WRITE( *, 93020 ) HHMMSS( JTIME )
+
+C.............  Write to report file if report feature is on
+            IF( RDEV .GT. 0 ) THEN
+                WRITE( RDEV,93020 ) HHMMSS( JTIME )
+            ENDIF
 
 C...........   Read and transform meteorology:
 
@@ -746,6 +858,16 @@ C...........   Read and transform meteorology:
 
             DO 133  S = 1, NPSRC
 
+C...........   Skip source if it is outside grid
+
+	       XL = XLOCA( S )
+	       YL = YLOCA( S )
+               IF( XL .LT. XBEG .OR. XL .GT. XEND .OR.
+     &             YL .LT. YBEG .OR. YL .GT. YEND     ) THEN 
+                   GO TO 133
+
+	       ENDIF
+
 C...........   Convert pressure to millibars from pascals; compute wind speed:
 
                 DO 101  L = 1, EMLAYS
@@ -771,10 +893,10 @@ C...........   Compute other derived meteorology variables:
                 THETG = TVSFC * ( 1000.0 / PSFC )**0.286
                 THV1  = TV( 1,S )*( 1000.0 / PRES( 1,S ) )**0.286
                 DTHDZ( 1 ) = ( THV1 - THETG ) / ZH( 1,S )
-                IF ( HMIX ( S ) .LE. ZH( 1,S ) ) THEN
+                IF ( HMIX ( S ) .LE. ZF( 1,S ) ) THEN
                     LPBL = 1
                 END IF
-                IF ( STKHT( S ) .LE. ZH( 1,S ) ) THEN
+                IF ( STKHT( S ) .LE. ZF( 1,S ) ) THEN
                     LSTK = 1
                 END IF
                 ZZF( 0 ) = 0.0
@@ -782,8 +904,8 @@ C...........   Compute other derived meteorology variables:
 
                 DO 111  L = 2, EMLAYS
 
-                    IF ( HMIX ( S ) .GT. ZH( L-1,S ) )  LPBL = L
-                    IF ( STKHT( S ) .GT. ZH( L-1,S ) )  LSTK = L
+                    IF ( HMIX ( S ) .GT. ZF( L-1,S ) )  LPBL = L
+                    IF ( STKHT( S ) .GT. ZF( L-1,S ) )  LSTK = L
 
                     THVK = TV( L,S ) * ( 1000.0 / PRES( L,S ) )**0.286
                     DTHDZ( L ) = DDZH( L-1,S ) * ( THVK - THV1 )
@@ -805,12 +927,23 @@ C...........   Compute other derived meteorology variables:
 C...............   Compute plume rise for this source (noting inversion of MOL):
 C...............   Trap USTAR at a minimum realistic value 
 
-                CALL PLMRIS( ZH( 1,S ), ZZF( 1 ), WSPD, 
+                CALL PLMRIS( ZH( 1,S ), ZZF( 0 ), WSPD, 
      &               TA( 1,S ), DTHDZ, MAX( USTAR( S ), USTARMIN ), 
      &               HMIX( S ), HFX( S ), STKHT( S ), STKDM( S ), 
      &               STKTK( S ), STKVE( S ), ZSTK( 1,S ), TSTK, 
      &               WSTK, LSTK, LPBL, ZTOP, ZBOT )
 
+C...............   Check plume rise for nonsense output
+                IF( ZTOP .LT. STKHT( S ) ) THEN
+                    WRITE( MESG,94010 ) 
+     &                     'WARNING: Top of plume found to be ' //
+     &                     '< top of stack!' // CRLF() // BLANK5 //
+     &                     'for source: ', S, '( FIP:', IFIP( S ), 
+     &                     'SCC:', ISCC( S ), 'PLT:', IPLANT( S ), 
+     &                      'STK:', ISTACK( S ), ' )'
+                    CALL M3MESG( MESG )
+
+                ENDIF
 
 C...............   Compute plume fractions, assuming uniform distribution
 C...............   in pressure (~mass concentration -- minor hydrostatic
@@ -899,8 +1032,10 @@ C...................   (Use 3rd order polynomial via POLY() )
                         DDP  = 1.0 / ( PDIFF )  !  = d(plumefrac)/d(pres)
 
                     ELSE
+                        WRITE( LDEV,93030 ) 
+     &                         ZBOT, PBOT, ZTOP, PTOP, PDIFF, VGTOPXG
                         WRITE( MESG,94010 ) 
-     &                   'Infinately small plume created for source ', S
+     &                   'Infinitely small plume created for source ', S
                         CALL M3EXIT( 'LAYPOINT', JDATE, JTIME, MESG, 2 )
 
                     ENDIF
@@ -918,12 +1053,30 @@ C...................   (Use 3rd order polynomial via POLY() )
 
                 END IF          !  if ztop in same layer as zbot, or not
 
+C.................  Check if LTOP out of range, and report (will only work
+C.................    if REP_LAYR env var has been set b/c default is 9999
+                IF( LTOP .GT. REP_LAYR ) THEN
+
+                    WRITE( RDEV,93042 ) S, IFIP( S ), ISCC( S ), 
+     &                     IPLANT( S ), ISTACK( S ), STKHT( S ),
+     &                     STKVE ( S ), STKTK( S ), TSTK, WSTK, LPBL, 
+     &                     LTOP 
+
+                ENDIF
+
 133         CONTINUE	!  end loop on sources S
 
-            IF ( .NOT. WRITE3( LNAME, 'LFRAC', 
+            IF( EFLAG ) THEN
+
+                CALL M3EXIT( 'LAYPOINT', JDATE, JTIME,
+     &                       'Bad plume rise calculations.' , 2 )
+
+            ELSEIF ( .NOT. WRITE3( LNAME, 'LFRAC', 
      &                         JDATE, JTIME, LFRAC ) ) THEN
+
                 MESG = 'Error writing LFRAC to ' // LNAME
                 CALL M3EXIT( 'LAYPOINT', JDATE, JTIME, MESG, 2 )
+
             END IF
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
@@ -959,13 +1112,26 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( 8X, 'at time ', A8 )
 
+93030   FORMAT( 8X, 'ERROR computing plume rise!' /
+     &         10X, 'Plume bottom at ',F7.2,' [m] and ',F7.2, ' sigma' /
+     &         10X, 'Plume top    at ',F7.2,' [m] and ',F7.2, ' sigma' /
+     &         10X, 'Difference      ',F7.2,' [m]' /
+     &         10X, 'Domain top   at ',F7.2, '[cb]' )
+
+93040   FORMAT( 'Sources with top of plume greater than layer', I3, //,
+     &          'Src ID', 1X, 'FIP', 3X, 'SCC', 6X, 'Plant' , 2X,
+     &          'Stack', 2X, 'H[m]', 3X, 'V[m/s]', 1X, 'Ts[K]', 2X, 
+     &          'Ta[K]', 1X, 'U[m/s]', 1X, 'LPBL', 1X, 'LTOP' )
+
+93042   FORMAT( I6, 1X, I5.5, 1X, I8.8, 1X, I6, 1X, I6, 1X, F6.1, 1X,
+     &          F6.2, 1X, F6.1, 1X, F5.1, 1X, F6.2, 1X, I3, 1X, I3 )
 
 C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 12( A, :, I8, :, 1X ) )
 
 94050   FORMAT( A, 1X, A, 1X, I6.6, 1X,
-     &          A, 1X, I2.2, 1X, A, 1X, I2.2, 1X, A   )
+     &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
 
 
         END
