@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCPKTS( ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR,
+        SUBROUTINE PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR,
      &                       PKTTYP, ENAME, USEPOL, SFLAG )
 
 C***********************************************************************
@@ -30,17 +30,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -79,7 +79,6 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: CDEV      ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV      ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV      ! file unit no. for tmp ALW file
-        INTEGER     , INTENT (IN) :: RDEV      ! file unit no. for report
         INTEGER     , INTENT (IN) :: CPYEAR    ! year to project to 
         CHARACTER(*), INTENT (IN) :: PKTTYP    ! packet type
         CHARACTER(*), INTENT (IN) :: ENAME     ! inventory file name
@@ -90,7 +89,7 @@ C.........  Reshaped inventory pollutants and associated variables
         INTEGER         NGRP                ! number of pollutant groups 
         INTEGER         NGSZ                ! number of pollutants per group 
         INTEGER               , ALLOCATABLE:: IPSTAT ( : )   ! pol status (0|1)
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: EINAM2D( :,: )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: EANAM2D( :,: )
 
 C...........   Other local variables
 
@@ -150,8 +149,7 @@ C               in the inventory
 
 C.............  Generate reactivity matrices 
             USEPOL = .TRUE.  ! array
-            CALL GENREACT( NSRC, NIPOL, BYEAR, CPYEAR, ENAME, 
-     &                     RPOL, USEPOL, EINAM )
+            CALL GENREACT( CPYEAR, ENAME, RPOL, USEPOL )
 
             SFLAG = .TRUE.
 
@@ -159,7 +157,7 @@ C.............  Generate reactivity matrices
 
 C.............  Generate projection matrix
             USEPOL = .TRUE.  ! array
-            CALL GENPROJ( CPYEAR, RDEV, ENAME, USEPOL )
+            CALL GENPROJ( CPYEAR, ENAME, USEPOL )
 
             SFLAG = .TRUE.
 
@@ -172,13 +170,23 @@ C.............  Note that this routine only determines the allocation the
 C               first time it is called.
             CALL ALOCCMAT( NGRP, NGSZ )
 
-            IF( .NOT. ALLOCATED( EINAM2D ) ) THEN
+            IF( .NOT. ALLOCATED( EANAM2D ) ) THEN
 
-C.................  Create 2-dimensional arrays of pollutant names
-                ALLOCATE( EINAM2D( NGSZ, NGRP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'EINAM2D', PROGNAME )
-                EINAM2D = ' '
-                EINAM2D = RESHAPE( EINAM, (/ NGSZ, NGRP /) )
+C.................  Create 2-dimensional arrays of pollutant names. 
+                ALLOCATE( EANAM2D( NGSZ, NGRP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EANAM2D', PROGNAME )
+                EANAM2D = ' '
+
+C.................  Cannot use RESIZE, because if NGSZ*NGRP != NIPPA,
+C                   then garbage will get inserted in "blanks".
+                K = 0
+                DO J = 1, NGRP
+                    DO I = 1, NGSZ
+                        K = K + 1
+                        IF ( K .GT. NIPPA ) CYCLE
+                        EANAM2D( I,J ) = EANAM( K )
+                    END DO
+                END DO
 
 C.................  Create array for indicating the status of pollutants at each
 C                   iteration
@@ -220,7 +228,7 @@ C               been processed.
             DO N = 1, NGRP
 
 C.................  Write message stating the pollutants are being processed
-                CALL POLMESG( NGSZ, EINAM2D( 1,N ) )
+                CALL POLMESG( NGSZ, EANAM2D( 1,N ) )
 
                 SELECT CASE( PKTTYP )
 
@@ -229,7 +237,7 @@ C.................  Write message stating the pollutants are being processed
                     CTGIDX = 0   ! array
                     VIDXMULT = 0 ! array
                     CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
-     &                             EINAM2D( 1,N ), IPSTAT, CTGIDX )
+     &                             EANAM2D( 1,N ), IPSTAT, CTGIDX )
 
                     CALL UPDATE_POLLIST( N, NGSZ, CTGIDX,
      &                                   VIDXMULT, 2 )
@@ -243,10 +251,23 @@ C.................  Write message stating the pollutants are being processed
 
                 CASE( 'CONTROL', 'EMS_CONTROL' )
 
+C...................  Reset USEPOL to skip activities because they
+C                     do not have the base-year control effectiveness
+                    DO I = 1, NGSZ
+                        J = INDEX1( EANAM2D( I,N ), NIACT, ACTVTY )
+                        IF ( J .GT. 0 ) THEN
+                            MESG = 'Skipping activity "' //
+     &                             TRIM( EANAM2D( I,N ) )// '" since '//
+     &                             'CONTROL packet cannot apply.'
+                            CALL M3MSG2( MESG )
+                            USEPOL( NIPOL + J ) = .FALSE.
+                        END IF
+                    END DO
+
                     CTLIDX = 0   ! array
                     VIDXMULT = 0 ! array
                     CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
-     &                             EINAM2D( 1,N ), IPSTAT, CTLIDX )
+     &                             EANAM2D( 1,N ), IPSTAT, CTLIDX )
 
                     CALL UPDATE_POLLIST( N, NGSZ, CTLIDX,
      &                                   VIDXMULT, 1 )
@@ -263,7 +284,7 @@ C.................  Write message stating the pollutants are being processed
                     ALWIDX = 0   ! array
                     VIDXMULT = 0 ! array
                     CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
-     &                             EINAM2D( 1,N ), IPSTAT, ALWIDX )
+     &                             EANAM2D( 1,N ), IPSTAT, ALWIDX )
 
                     CALL UPDATE_POLLIST( N, NGSZ, ALWIDX,
      &                                   VIDXMULT, 3 )
@@ -275,12 +296,12 @@ C.................  Write message stating the pollutants are being processed
 
                     SFLAG = .TRUE.
 
-                CASE( 'ADD' )
+c                CASE( 'ADD' )
 
-                    ADDIDX = 0   ! array
-                    VIDXMULT = 0 ! array
-                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
-     &                             EINAM2D( 1,N ), IPSTAT, ADDIDX )
+c                    ADDIDX = 0   ! array
+c                    VIDXMULT = 0 ! array
+c                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
+c     &                             EANAM2D( 1,N ), IPSTAT, ADDIDX )
 
 c                    CALL UPDATE_POLLIST( N, NGSZ, ADDIDX,
 c     &                                   VIDXMULT, 4 )
@@ -290,7 +311,7 @@ c                       OFLAG(4) = .TRUE.
 c                    END IF
 c                    CALL WRCTMP( ADEV, N, NGSZ, ADDIDX, VIDXMULT )
 
-                    SFLAG = .TRUE.
+c                    SFLAG = .TRUE.
 
                 END SELECT
 
@@ -333,7 +354,7 @@ C.............  Subprogram arguments
             INTEGER     , INTENT (IN) :: IGRP            ! pollutant group
             INTEGER     , INTENT (IN) :: NGSZ            ! # pollutants/group
             INTEGER     , INTENT (IN) :: IDX(NSRC,NGSZ)  ! index to data tables
-            INTEGER , INTENT (IN OUT) :: VIDX(NIPOL)     ! pollutant flags
+            INTEGER , INTENT (IN OUT) :: VIDX(NIPPA)     ! pollutant flags
             INTEGER     , INTENT (IN) :: CFLG            ! control flag
 
 C.............  Local variables
@@ -372,7 +393,7 @@ C.............  Check to see if current pollutant has controls applied
               NVCMULT  = NVCMULT + 1
               VIDX(K)  = 1
               PCTLFLAG( NVCMULT, CFLG ) = .TRUE.
-              PNAMMULT( NVCMULT ) = EINAM( K )
+              PNAMMULT( NVCMULT ) = EANAM( K )
            END IF
 
         END DO  ! end pollutant group loop

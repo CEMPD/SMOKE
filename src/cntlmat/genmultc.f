@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, RDEV, NCPE, PYEAR,
+        SUBROUTINE GENMULTC( ADEV, CDEV, GDEV, LDEV, NCPE, PYEAR,
      &                       ENAME, MNAME, CFLAG, GFLAG, LFLAG, SFLAG )
 
 C***********************************************************************
@@ -22,17 +22,17 @@ C Project Title: Sparse Matrix Operator Kernel gsions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center  
+C Environmental Modeling Center
+C MCNC  
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -62,9 +62,11 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL   ENVYN
         INTEGER   GETEFILE
+        INTEGER   INDEX1
+        INTEGER   PROMPTFFILE
         REAL      YR2DAY
 
-        EXTERNAL  ENVYN, GETEFILE, YR2DAY
+        EXTERNAL  ENVYN, GETEFILE, INDEX1, PROMPTFFILE, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
 
@@ -72,12 +74,11 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV   ! file unit no. for tmp ALW file
-        INTEGER     , INTENT (IN) :: RDEV   ! file unit no. for output report
         INTEGER     , INTENT (IN) :: NCPE   ! no. of control packet entries
         INTEGER     , INTENT (IN) :: PYEAR  ! projected year, or missing
         CHARACTER*16, INTENT (IN) :: ENAME  ! logical name for i/o api 
                                             ! inventory input file
-        CHARACTER*16, INTENT (IN) :: MNAME  ! logical name for mult. cntl. mat.
+        CHARACTER*16, INTENT (IN OUT) :: MNAME  ! logical name for mult. cntl. mat.
         LOGICAL     , INTENT (IN) :: CFLAG  ! true = apply CTL controls
         LOGICAL     , INTENT (IN) :: GFLAG  ! true = apply CTG controls
         LOGICAL     , INTENT (IN) :: LFLAG  ! true = apply ALW controls
@@ -87,7 +88,8 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: ALWINDX ( :,: ) ! indices to ALW controls table
         INTEGER, ALLOCATABLE :: CTGINDX ( :,: ) ! indices to CTG controls table
         INTEGER, ALLOCATABLE :: CTLINDX ( :,: ) ! indices to CTL controls table
-        INTEGER, ALLOCATABLE :: PLTINDX ( : )   ! index from sources to plants
+        INTEGER, ALLOCATABLE :: GRPINDX ( : )   ! index from sources to groups
+        INTEGER, ALLOCATABLE :: GRPSTIDX( : )   ! sorting index
 
         REAL   , ALLOCATABLE :: BACKOUT ( : )   ! factor used to account for pol
                                                 ! specific control info that is
@@ -97,12 +99,14 @@ C...........   Local allocatable arrays
         REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
         REAL   , ALLOCATABLE :: RULEFF  ( : )   ! rule effectiveness
         REAL   , ALLOCATABLE :: RULPEN  ( : )   ! rule penetration
-        REAL   , ALLOCATABLE :: PLTINEM ( :,: ) ! initial emissions
-        REAL   , ALLOCATABLE :: PLTOUTEM( :,: ) ! controlled emissions
+        REAL   , ALLOCATABLE :: GRPINEM ( :,: ) ! initial emissions
+        REAL   , ALLOCATABLE :: GRPOUTEM( :,: ) ! controlled emissions
 
-        LOGICAL, ALLOCATABLE :: PLTFLAG ( : )   ! true: plant controlled
+        LOGICAL, ALLOCATABLE :: GRPFLAG ( : )   ! true: group controlled
 
-C.........  Local arrays
+        CHARACTER(LEN=STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
+
+C.........   Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
 
         CHARACTER(LEN=IOVLEN3)  OUTNAMES( NVCMULT,6 ) ! var names
@@ -112,10 +116,13 @@ C.........  Local arrays
 C...........   Other local variables
         INTEGER          I, J, K, S  ! counters and indices
 
-        INTEGER          IDX      ! plant index
+        INTEGER          IDX      ! group index
         INTEGER          IOS      ! input/output status
-        INTEGER          NPLT     ! number of plants
+        INTEGER          NGRP     ! number of reporting groups
         INTEGER          PIDX     ! previous IDX
+        INTEGER          RDEV     ! Report unit number
+        INTEGER          SCCBEG   ! begining of SCC in CSOURC string
+        INTEGER          SCCEND   ! end of SCC in CSOURC string
 
         REAL             ALWFAC   ! allowable control factor
         REAL             ALWEMIS  ! allowable emissions
@@ -131,11 +138,17 @@ C...........   Other local variables
         REAL             REPLACE  ! replacement emissions
 
         LOGICAL          LO3SEAS  ! true: use ozone-season emissions
+        LOGICAL, SAVE :: APPLFLAG = .FALSE. ! true: something has been applied
+        LOGICAL, SAVE :: OPENFLAG = .FALSE. ! true: output file has been opened
 
         CHARACTER*100          OUTFMT     ! header format buffer
         CHARACTER*300          MESG       ! message buffer
         CHARACTER(LEN=FPLLEN3) CPLT       ! tmp point src info through plant
         CHARACTER(LEN=FPLLEN3) PPLT       ! previous CPLT
+        CHARACTER(LEN=STALEN3) CSTA       ! tmp char state
+        CHARACTER(LEN=STALEN3) PSTA       ! previous char state
+        CHARACTER(LEN=SCCLEN3) TSCC       ! tmp SCC
+        CHARACTER(LEN=SCCLEN3) PSCC       ! previous SCC
         CHARACTER(LEN=SRCLEN3) CSRC       ! tmp source chars
         CHARACTER(LEN=IOVLEN3) PNAM       ! tmp pollutant name
 
@@ -144,51 +157,94 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine GENMULTC
 
-C...........  Get environment variables that control program behavior
-          MESG = 'Use annual or ozone season emissions'
-          LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+C.........  Get environment variables that control program behavior
+        MESG = 'Use annual or ozone season emissions'
+        LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
 
-C...........  Get set up for reporting...
-          IF( CATEGORY .EQ. 'POINT' ) THEN
+C.........  Open reports file
+        RPTDEV( 1 ) = PROMPTFFILE( 
+     &                'Enter logical name for MULTIPLICATIVE ' //
+     &                'CONTROLS REPORT',
+     &                .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
+        RDEV = RPTDEV( 1 )
 
-C...............  Count the number of plants in the domain
-              PPLT = ' '
-              NPLT = 0
-              DO S = 1, NSRC
-                  CPLT = CSOURC( S )( 1:FPLLEN3 )
-                  IF( CPLT .NE. PPLT ) NPLT = NPLT + 1
-                  PPLT = CPLT
-              END DO
+C.........  Allocate index to reporting groups
+        ALLOCATE( GRPINDX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPINDX', PROGNAME )
+        ALLOCATE( GRPSTIDX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPSTIDX', PROGNAME )
+        ALLOCATE( GRPCHAR( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPCHAR', PROGNAME )
+        GRPINDX  = 0  ! array
 
-C...............  Allocate memory for the number of plants for storing emissions
-              ALLOCATE( PLTINDX( NSRC ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'PLTINDX', PROGNAME )
-              ALLOCATE( PLTFLAG( NPLT ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'PLTFLAG', PROGNAME )
-              ALLOCATE( PLTINEM( NPLT, NVCMULT ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'PLTINEM', PROGNAME )
-              ALLOCATE( PLTOUTEM( NPLT, NVCMULT ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'PLTOUTEM', PROGNAME )
- 
-C...............  Initialize
-              PLTINDX  = 0  ! array
-              PLTINEM  = 0. ! array
-              PLTOUTEM = 0. ! array
-              PLTFLAG  = .FALSE.  ! array
+C.........  Get set up for group reporting...
+        IF( CATEGORY .EQ. 'POINT' ) THEN
 
-C...............  Create index from sources to plants
-              PPLT = ' '
-              NPLT = 0
-              DO S = 1, NSRC
-                  CPLT = CSOURC( S )( 1:FPLLEN3 )
-                  IF( CPLT .NE. PPLT ) THEN
-                      NPLT = NPLT + 1
-                      PPLT = CPLT
-                  END IF
-                  PLTINDX( S ) = NPLT
-              END DO
+C.............  Count the number of groups in the inventory
+            PPLT = ' '
+            NGRP = 0
+            DO S = 1, NSRC
+                CPLT = CSOURC( S )( 1:FPLLEN3 )
+                IF( CPLT .NE. PPLT ) THEN
+                    NGRP = NGRP + 1
+                    PPLT = CPLT
+                END IF
+                GRPINDX ( S ) = NGRP
+                GRPSTIDX( S ) = S     ! Needed for loops, but not used to sort
+            END DO
 
-          END IF
+        ELSE 
+
+            IF( CATEGORY .EQ. 'AREA' ) THEN
+                SCCBEG = ARBEGL3( 2 )
+                SCCEND = ARENDL3( 2 )
+            ELSE            ! MOBILE
+                SCCBEG = MBBEGL3( 4 )
+                SCCEND = MBENDL3( 4 )
+            END IF
+
+C.............  Build and sort source array for SCC-state grouping
+            DO S = 1, NSRC
+                CSTA = CSOURC( S )( 1     :STALEN3 )
+                TSCC = CSOURC( S )( SCCBEG:SCCEND  )
+
+                GRPSTIDX( S ) = S  
+                GRPCHAR ( S ) = CSTA // TSCC
+            END DO
+
+            CALL SORTIC( NSRC, GRPSTIDX, GRPCHAR )
+
+C.............  Count the number of state/SCCs in the domain
+            PSTA = ' '
+            PSCC = ' '
+            SCCBEG = STALEN3 + 1
+            SCCEND = STALEN3 + SCCLEN3
+            DO S = 1, NSRC
+                J = GRPSTIDX( S )
+                CSTA = GRPCHAR( J )( 1     :STALEN3 )
+                TSCC = GRPCHAR( J )( SCCBEG:SCCEND  )
+                IF( CSTA .NE. PSTA .OR. TSCC .NE. PSCC ) THEN
+                    NGRP = NGRP + 1
+                    PSTA = CSTA
+                    PSCC = TSCC
+                END IF
+                GRPINDX( J ) = NGRP
+            END DO
+
+        END IF
+
+C...........  Allocate memory for the number of groups for storing emissions
+          ALLOCATE( GRPFLAG( NGRP ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'GRPFLAG', PROGNAME )
+          ALLOCATE( GRPINEM( NGRP, NVCMULT ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'GRPINEM', PROGNAME )
+          ALLOCATE( GRPOUTEM( NGRP, NVCMULT ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'GRPOUTEM', PROGNAME )
+
+C...........  Initialize
+          GRPINEM  = 0. ! array
+          GRPOUTEM = 0. ! array
+          GRPFLAG  = .FALSE.  ! array
 
 C...........  Allocate local memory
           ALLOCATE( ALWINDX( NSRC, NVCMULT ), STAT=IOS )
@@ -292,19 +348,23 @@ C...........  Annual emissions
                    CALL WRITE_MESG_EXIT( OUTNAMES(I,1), PROGNAME )
                END IF
 
-C.................  Divide annual emissions to get average day
-                FAC = YR2DAY( BYEAR )
-                EMIS = EMIS * FAC      ! array
+C...............  Divide annual emissions to get average day
+              FAC = YR2DAY( BYEAR )
+              EMIS = EMIS * FAC      ! array
 
-           END IF
+            END IF
 
-           DO S = 1, NSRC
+            DO S = 1, NSRC
 
-              IF ( EMIS( S ) .LT. AMISS3 ) THEN
-                 EMIS( S ) = 0.0
-              END IF
+                IF ( EMIS( S ) .LT. AMISS3 ) THEN
+                    EMIS( S ) = 0.0
+                END IF
 
-           END DO ! end source loop
+C.................  Compute group emissions before controls
+                J = GRPINDX( S )
+                GRPINEM ( J,I ) = GRPINEM ( J,I ) + EMIS( S )
+
+            END DO ! end source loop
 
 C...........  If CONTROL packet is present: For the current pollutant, read
 C             in control efficiency, rule effectiveness, and, in the case of 
@@ -313,6 +373,7 @@ C             AREA sources, rule penetration.
 
               SELECT CASE( CATEGORY )
 
+C.............  Area sources...
               CASE( 'AREA' )
 
               IF ( .NOT. READ3( ENAME, OUTNAMES(I,4), 1, 0, 0, 
@@ -330,6 +391,14 @@ C             AREA sources, rule penetration.
                  CALL WRITE_MESG_EXIT( OUTNAMES(I,6), PROGNAME )
               END IF
 
+C.............  Mobile sources...
+              CASE( 'MOBILE' ) 
+
+              CTLEFF = 0.   ! array
+              RULEFF = 0.   ! array
+              RULPEN = 0.   ! array
+
+C.............  Point sources...
               CASE( 'POINT' )
 
               IF ( .NOT. READ3( ENAME, OUTNAMES(I,3), 1, 0, 0, 
@@ -343,6 +412,10 @@ C             AREA sources, rule penetration.
               END IF
 
               RULPEN = 100.0  ! array
+
+              CASE DEFAULT
+                  MESG = 'Case ' // CATEGORY // ' not supported.'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
               END SELECT      ! end select on category
 
@@ -424,22 +497,12 @@ C                    control factor
 C.....................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
                     WRITE( CDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
+                    APPLFLAG = .TRUE.
 
 C..................  Overwrite temporary file line with new info
                  ELSE
                     E2 = E1
                     WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
-
-                 END IF
-
-C..................  Store input and output emissions for plant
-                 IF( CATEGORY .EQ. 'POINT' ) THEN
-                     J = PLTINDX( S )
-                     PLTINEM ( J,I ) = PLTINEM ( J,I ) + E1
-                     PLTOUTEM( J,I ) = PLTOUTEM( J,I ) + E2
-
-C......................  Flag plant if emissions are different
-                     IF( E1 .NE. E2 ) PLTFLAG( J ) = .TRUE.
 
                  END IF
 
@@ -474,22 +537,12 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
 C.....................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
                     WRITE( CDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
+                    APPLFLAG = .TRUE.
 
 C..................  Overwrite temporary file line with new info
                  ELSE
                     E2 = E1
                     WRITE( CDEV,93300 ) 0, 'D', 0., 0., 0.
-
-                 END IF
-
-C..................  Store input and output emissions for plant
-                 IF( CATEGORY .EQ. 'POINT' ) THEN
-                     J = PLTINDX( S )
-                     PLTINEM ( J,I ) = PLTINEM ( J,I ) + E1
-                     PLTOUTEM( J,I ) = PLTOUTEM( J,I ) + E2
-
-C......................  Flag plant if emissions are different
-                     IF( E1 .NE. E2 ) PLTFLAG( J ) = .TRUE.
 
                  END IF
 
@@ -555,7 +608,8 @@ C........................  Compute aggregate factor for current source
 
 C........................  Overwrite temporary file line with new info
                        WRITE( GDEV,93300 ) 1, PNAM, E1, E2, FAC
- 
+                       APPLFLAG = .TRUE.
+
 C.....................  If no controls, then overwrite temporary line only
                     ELSE
                        WRITE( GDEV,93300 ) 0, 'D', 0., 0., 0.
@@ -615,6 +669,7 @@ C                       Replace.
 C.....................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
                     WRITE( LDEV,93300 ) 1, PNAM, E1, E2, FACTOR( S )
+                    APPLFLAG = .TRUE.
 
 C..................  If no controls, then overwrite temporary line only
                  ELSE
@@ -622,23 +677,45 @@ C..................  If no controls, then overwrite temporary line only
 
                  END IF
 
-              END DO ! end source loop
+                END DO ! end source loop
 
-           END IF
+            END IF
 
-C...........  Write multiplicative controls for current pollutant
+C.............  Store output emissions for groups
+C.............  This must be in a separate loop to account for all possible
+C               combinations of packets
+            DO S = 1, NSRC
 
-            IF( .NOT. WRITE3( MNAME, PNAM, 0, 0, FACTOR ) ) THEN
-                MESG = 'Failed to write multiplicative control ' // 
-     &                 'factors for pollutant ' // PNAM
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                E1 = EMIS( S )
+                E2 = E1 * FACTOR( S )
+                J  = GRPINDX( S )
+                GRPOUTEM( J,I ) = GRPOUTEM( J,I ) + E2
+
+C.................  Flag group if emissions are different
+                IF( E1 .NE. E2 ) GRPFLAG( J ) = .TRUE.
+
+            END DO
+
+C.............  Open control matrix, if needed and if not opened before
+            IF( APPLFLAG .AND. .NOT. OPENFLAG ) THEN 
+                CALL OPENCMAT( ENAME, 'MULTIPLICATIVE', MNAME )
+                OPENFLAG = .TRUE.
+            END IF
+
+C.............  Write multiplicative controls for current pollutant
+            IF( OPENFLAG ) THEN
+                IF( .NOT. WRITE3( MNAME, PNAM, 0, 0, FACTOR ) ) THEN
+                    MESG = 'Failed to write multiplicative control ' // 
+     &                     'factors for pollutant ' // PNAM
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
             END IF
 
         END DO ! end pollutant loop
 
 C.........  Write out controlled facilities report for point sources
-        IF( CATEGORY .EQ. 'POINT' ) THEN
-            WRITE( RDEV, 93000 ) 'Processed as point sources'
+        IF( APPLFLAG ) THEN
+            WRITE( RDEV, 93000 ) 'Processed as '// CATDESC// ' sources'
             IF ( PYEAR .GT. 0 ) THEN
                 WRITE( RDEV, 93390 ) 'Projected inventory year ', PYEAR
             ELSE
@@ -657,11 +734,25 @@ C.........  Write out controlled facilities report for point sources
             ELSE
                 WRITE( RDEV,93000 ) 'Annual total data basis in report'
             END IF
-            WRITE( RDEV, 93000 ) 
-     &             'Emissions by facility before and after controls'
-            WRITE( RDEV, 93400 ) 
-     &           ( PNAMMULT( I ), PNAMMULT( I ), I=1,NVCMULT )
-            
+
+            IF ( CATEGORY .EQ. 'POINT' ) THEN
+                WRITE( RDEV, 93000 ) 
+     &             'Emissions by controlled facility before and ' //
+     &             'after controls'
+            ELSE
+                WRITE( RDEV, 93000 )
+     &             'Emissions by controlled state/SCC before and ' //
+     &             'after controls'
+            END IF
+
+            IF ( CATEGORY .EQ. 'POINT' ) THEN
+                WRITE( RDEV, 93400 ) 
+     &               ( PNAMMULT( I ), PNAMMULT( I ), I=1,NVCMULT )
+            ELSE
+                WRITE( RDEV, 93402 ) 
+     &               ( PNAMMULT( I ), PNAMMULT( I ), I=1,NVCMULT )
+            END IF
+
             PNAM = '[tons/day]'
             WRITE( RDEV, 93405 ) ( PNAM, PNAM, I=1,NVCMULT )
             
@@ -670,29 +761,53 @@ C.........  Write out controlled facilities report for point sources
  
             PIDX = 0
             DO S = 1, NSRC
-        	 IDX = PLTINDX( S )
- 
-        	 IF( IDX .NE. PIDX .AND.
-     &               PLTFLAG( IDX )      ) THEN
+                K   = GRPSTIDX( S )
+                IDX = GRPINDX ( K )
 
-                     J = FIPLEN3 + 1
-                     CSRC = CSOURC( S )                    
-                     WRITE( RDEV, 93410 ) 
-     &                      CSRC( 1:FIPLEN3 ), CSRC( J:FPLLEN3 ),
-     &                      ( PLTINEM ( IDX,I ), PLTOUTEM( IDX,I ),
+                IF( IDX .NE. PIDX .AND.
+     &              GRPFLAG( IDX )      ) THEN
+
+                    J = FIPLEN3 + 1
+                    SELECT CASE( CATEGORY )
+                    CASE ( 'AREA' , 'MOBILE' )
+                        CSRC = GRPCHAR( S )
+                        WRITE( RDEV, 93410 ) 
+     &                      CSRC( 1:STALEN3 ), CSRC( SCCBEG:SCCEND ),
+     &                      ( GRPINEM ( IDX,I ), GRPOUTEM( IDX,I ),
      &                        I = 1, NVCMULT )
+                    CASE ( 'POINT' )                 
+                        CSRC = CSOURC( S )
+                        WRITE( RDEV, 93412 ) 
+     &                      CSRC( 1:FIPLEN3 ), CSRC( J:FPLLEN3 ),
+     &                      ( GRPINEM ( IDX,I ), GRPOUTEM( IDX,I ),
+     &                        I = 1, NVCMULT )
+                    END SELECT
 
-                     PIDX = IDX
-        	 END IF
+                    PIDX = IDX
+                END IF
             END DO
+
+        END IF
+
+        IF( .NOT. APPLFLAG ) THEN
+
+            MESG = 'WARNING: No CONTROL, EMS_CONTROL, CTG, or ' //
+     &             'ALLOWABLE packet entries match inventory.'
+            CALL M3MSG2( MESG )
+
+            MESG = 'WARNING: Multiplicative control will not be output!'
+            CALL M3MSG2( MESG )
+
+            WRITE( RDEV, 93000 ) 'No CONTROL, EMS_CONTROL, CTG, or ' //
+     &             'ALLOWABLE packet entries matched inventory.'
+
         END IF
 
 C.........  Deallocate local memory
         DEALLOCATE( ALWINDX, CTGINDX, CTLINDX, BACKOUT, CTLEFF,
      &              EMIS, FACTOR, RULEFF, RULPEN )
 
-        IF( CATEGORY .EQ. 'POINT' ) 
-     &      DEALLOCATE( PLTINDX, PLTFLAG, PLTINEM, PLTOUTEM )
+        DEALLOCATE( GRPINDX, GRPFLAG, GRPINEM, GRPOUTEM )
 
         RETURN
 
@@ -709,10 +824,16 @@ C...........   Formatted file I/O formats............ 93xxx
 93400   FORMAT( ' Region;', 5X, 'Facility ID;', 1X, 
      &          100( '  In ', A16, ';', 1X, 'Out ', A16, :, ';' ) )
 
+93402   FORMAT( '  State;', 5X, '        SCC;', 1X, 
+     &          100( '  In ', A16, ';', 1X, 'Out ', A16, :, ';' ) )
+
 93405   FORMAT( 7X, ';', 16X, ';', 1X
      &          100( 2X, A16, 3X, ';', 1X, A16, :, 4X, ';' ))
 
-93410   FORMAT( 1X, A6, ';', 1X, A15, ';', 1X, 
+93410   FORMAT( 4X, A3, ';', 6X, A10, ';', 1X, 
+     &          100( 10X, E11.4, :, ';' ))
+
+93412   FORMAT( 1X, A6, ';', 1X, A15, ';', 1X, 
      &          100( 10X, E11.4, :, ';' ))
 
 C...........   Internal buffering formats............ 94xxx

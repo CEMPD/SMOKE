@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALOCPKTS( FDEV, RDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
+        SUBROUTINE ALOCPKTS( FDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
      &                       XRFCNT )
 
 C***********************************************************************
@@ -22,17 +22,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -64,7 +64,6 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   SUBROUTINE ARGUMENTS:
 
         INTEGER     , INTENT (IN) :: FDEV      ! in file unit number
-        INTEGER     , INTENT (IN) :: RDEV      ! report file unit number
         INTEGER     , INTENT (IN) :: INYEAR    ! year to project from 
         INTEGER     , INTENT(OUT) :: CPYEAR    ! year to project to
         INTEGER     , INTENT(OUT) :: PKTCNT( NPACKET ) ! count of packet recs
@@ -369,7 +368,7 @@ C           find SIC NE 0 and SCC EQ 0, and expand the memory requirements
 C           accordingly.
 
         ACTION = 'COUNT'
-        CALL PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR,
+        CALL PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
      &                ACTION, BLANK5, PKTCNT, PKTBEG, XRFCNT )
 
 C.........  Rewind file
@@ -409,7 +408,7 @@ C.............  Local variables
             INTEGER    I, J, L, S1, S2    ! indices
             INTEGER    IOS             ! i/o status
 
-            INTEGER, SAVE :: SAVYEAR   ! saved output year
+            INTEGER, SAVE :: SAVYEAR = 0  ! saved output year
 
             LOGICAL, SAVE :: SFLAG     ! true: there is a saved output year
 
@@ -507,6 +506,8 @@ C.................  Packet is good
                 END IF   ! End checks on year-specific records
 
             END IF       ! End year-specific processing
+
+            OUTYEAR = SAVYEAR
 
             RETURN
        

@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENPROJ( PYEAR, RDEV, ENAME, USEPOL )
+        SUBROUTINE GENPROJ( PYEAR, ENAME, USEPOL )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -21,17 +21,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -64,7 +64,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year
-        INTEGER     , INTENT (IN) :: RDEV   ! unit numnber of report file
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
         LOGICAL     , INTENT (IN) :: USEPOL( NIPPA )  ! true: pol used in pkt
 
@@ -87,8 +86,10 @@ C...........   Other local variables
         INTEGER          IDUM          ! dummy integer
         INTEGER          IOS           ! i/o error status
         INTEGER          NC            ! local number src chars
+        INTEGER          RDEV          ! Report unit number
 
         LOGICAL       :: EFLAG    = .FALSE.   ! true: error has occurred
+        LOGICAL, SAVE :: APPLFLAG = .FALSE.  ! true: something has been applied
 
         CHARACTER*16     VARNAM 
         CHARACTER*300    MESG                 ! message buffer
@@ -97,6 +98,12 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine GENPROJ
+
+C.........  Open reports file
+        RPTDEV( 4 ) = PROMPTFFILE( 
+     &                'Enter logical name for PROJECTION REPORT', 
+     &                .FALSE., .TRUE., CRL // 'PROJREP', PROGNAME )
+        RDEV = RPTDEV( 4 )
 
 C.........  Allocate memory for the projection matrix.  Use data
 C           structures for point sources, but this routine can be used for area
@@ -116,15 +123,25 @@ C           to ASGNCNTL in order to avoid looping through all pollutants.
      &                  IDUM, ISPRJ )
 
 C..........  Write header for report.
-         WRITE( RDEV, 93000 ) 'Projection factors report:'
-         WRITE( RDEV, 93000 ) '    Factors applied to all pollutants' //
-     &                        ' uniformly.'
+         WRITE( RDEV, 93000 ) 'Processed as '// CATDESC// ' sources'
+         WRITE( RDEV, 93000 ) 
+     &          'Projection factors applied with /PROJECTION/ packet'
+
+         WRITE( RDEV, 93390 ) '      from base year    ', BYEAR
+         WRITE( RDEV, 93390 ) '      to projected year ', PYEAR
+
+         WRITE( RDEV, 93000 ) '      to all pollutants uniformly'
          WRITE( RDEV, 93000 ) ' '
 
 C.........  Loop through all sources and store projection information for
-C           those that have it. Otherwise, set projection factor=1.
+C           those that have it.  Otherwise, set projection factor=1.
 
 c        ISPRJ = 1  ! array
+C.........  Initialize valid columns
+        LF = .FALSE.  ! array
+        DO J = 1, NCHARS
+            LF( J ) = .TRUE.
+        END DO
 
         DO S = 1, NSRC
 
@@ -146,6 +163,7 @@ C                   that are getting projected
      &               ( CHARS( J )( 1:SC_ENDP(J)-SC_BEGP(J)+1 ), J=1,NC )
                 L = LEN_TRIM( MESG )
                 WRITE( RDEV, 94020 ) MESG( 1:L ), PRJFAC( S )
+                APPLFLAG = .TRUE.
 
             ELSE
 C.................  If source does not have projection info., set to 1.
@@ -155,6 +173,23 @@ C.................  If source does not have projection info., set to 1.
             END IF
 
         END DO
+
+        IF( .NOT. APPLFLAG ) THEN
+
+            MESG = 'WARNING: No PROJECTION packet entries match ' //
+     &             'inventory.'
+            CALL M3MSG2( MESG )
+
+            MESG = 'WARNING: Projection matrix will not be created!'
+            CALL M3MSG2( MESG )
+
+C.............  Write not into report file
+            WRITE( RDEV, 93000 ) 
+     &             'No projection packet entries matched the inventory.'
+
+            RETURN
+
+        END IF
 
 C.........  Set up and open output projection matrices
 
@@ -185,6 +220,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+
+93390   FORMAT( A, I4.4 )
 
 C...........   Internal buffering formats............ 94xxx
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR,
+        SUBROUTINE PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
      &                      ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
 C***********************************************************************
@@ -24,17 +24,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -69,7 +69,6 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(IN) :: CDEV      ! file unit no. for tmp CTL file 
         INTEGER     , INTENT(IN) :: GDEV      ! file unit no. for tmp CTG file
         INTEGER     , INTENT(IN) :: LDEV      ! file unit no. for tmp ALW file
-        INTEGER     , INTENT(IN) :: RDEV      ! file unit no. for report
         INTEGER     , INTENT(IN) :: CPYEAR    ! year to project to
         CHARACTER(*), INTENT(IN) :: ACTION    ! action to take for packets 
         CHARACTER(*), INTENT(IN) :: ENAME     ! inventory file name 
@@ -104,6 +103,7 @@ C...........   Other local variables
         LOGICAL      :: SKIPPOL= .FALSE.   ! true: pol-spec entries skipped
         LOGICAL      :: SKIPREC= .FALSE.   ! true: packet entries skipped
 
+        CHARACTER(LEN=4) :: FAKECSIC = '0000' ! fake CSIC code needed for call to FLTRXREF
         CHARACTER*5     CPOS               ! char pollutant position in EINAM
         CHARACTER*300   MESG               ! message buffer
         CHARACTER(LEN=SCCLEN3) SCCZERO     ! buffer for zero SCC
@@ -184,13 +184,18 @@ C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pollutant name 
 C                   with master list.
-                CALL FLTRXREF( PKTINFO%CFIP, PKTINFO%CSIC, 
-     &                         PKTINFO%TSCC, PKTINFO%CPOL, IXSIC, 
+                CALL FLTRXREF( PKTINFO%CFIP, FAKECSIC, 
+     &                         SCCZERO, PKTINFO%CPOL, IXSIC, 
      &                         IXSCC, JPOL, LTMP, SKIPREC  )
      
                 IF( SKIPREC ) CYCLE  ! Skip this record
 
                 SKIPPOL = ( SKIPPOL .OR. LTMP )
+
+C.................  Format SCC since this wasn't done in FLTRXREF so that
+C                   partial-SCCs would not get filtered out.
+                CALL FLTRNEG( PKTINFO%TSCC )     ! Filter 0 and -9 to blank
+                CALL PADZERO( PKTINFO%TSCC )     ! Pad with zeros
 
 C.................  Initialize settings for no SIC expansion
                 EXPAND = .FALSE.
@@ -258,7 +263,7 @@ C.................  Group cross-reference information for current packet
 
 C.................  Match controls to sources and pollutants, as needed for 
 C                   each packet type
-                CALL PROCPKTS( ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR, 
+                CALL PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR, 
      &                         PKTLIST( K ), ENAME, USEPOL, OFLAG )
 
             END IF  ! End process section

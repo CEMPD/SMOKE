@@ -1,5 +1,5 @@
 
-        SUBROUTINE WCNTLREP( ODEV, ADEV, CDEV, GDEV, LDEV )
+        SUBROUTINE WCNTLREP( ADEV, CDEV, GDEV, LDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -20,17 +20,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: %W%
 C
-C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center  
+C Environmental Modeling Center
+C MCNC  
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: %P%
 C Last updated: %G% %U%
@@ -59,12 +59,12 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETEFILE
+        INTEGER         PROMPTFFILE
 
-        EXTERNAL   GETEFILE
+        EXTERNAL   GETEFILE, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
 
-        INTEGER     , INTENT (IN) :: ODEV   ! file unit no. for output report
         INTEGER     , INTENT (IN) :: ADEV   ! file unit no. for tmp ADD file
         INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
@@ -96,7 +96,8 @@ C.........  Local arrays
 C...........   Other local variables
         INTEGER          S, V  ! counters and indices
 
-        INTEGER          CIDX     ! control plant index
+        INTEGER          CIDX   ! control plant index
+        INTEGER          ODEV   ! file unit no. for output report
 
         REAL             E_IN   ! emissions before controls
         REAL             E_OUT  ! emissions after controls
@@ -116,12 +117,24 @@ C.........  Rewind temporary files
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
 
+C.........  Open reports file
+        IF( MAX( ADEV, CDEV, GDEV, LDEV ) .GT. 0 ) THEN
+            RPTDEV( 2 ) = PROMPTFFILE( 
+     &                'Enter logical name for SUMMARY ' //
+     &                'PROJECTION/CONTROLS REPORT',
+     &                .FALSE., .TRUE., CRL // 'CSUMREP', PROGNAME )
+            ODEV = RPTDEV( 2 )
+        END IF
+
 C.........  For each pollutant that receives controls, obtain variable
 C             names for control efficiency, rule effectiveness, and, in the
 C             case of AREA sources, rule penetration. These variable names
 C             will be used in reading the inventory file.
 
 c note: updated for all pollutants that get controls
+        
+C.........  Check that NVCMULT does not equal 0, otherwise some systems will get confused
+        IF( NVCMULT == 0 ) RETURN
 
         CALL BLDENAMS( CATEGORY, NVCMULT, 6, PNAMMULT, OUTNAMES,
      &                 OUTUNITS, OUTTYPES, OUTDESCS )
@@ -219,9 +232,10 @@ C.............  Skip records that are not controlled
 C.............  Write message for pollutant for each new pollutant
             IF( PNAM .NE. LNAM ) THEN
 
-                MESG = 'Controls for pollutant ' // PNAM
+                MESG = 'Source controls for pollutant ' // PNAM
                 L = LEN_TRIM( MESG )
                 WRITE( FDEV,93000 ) ' '
+                WRITE( FDEV, 93000 ) REPEAT( '-', 80 )
                 WRITE( FDEV,93000 ) MESG( 1:L )
                 WRITE( FDEV,93000 ) ' '
                 LNAM = PNAM
@@ -261,10 +275,10 @@ C...........   Formatted file I/O formats............ 93xxx
 93000       FORMAT( A )
 
 93380       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ', 
-     &              F10.3, ' [tons/yr]. WARNING: Control factor of 1.' )
+     &              E11.4, ' [tons/yr]. WARNING: Control factor of 1.' )
 
 93400       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ',  
-     &              F10.3, ' [tons/yr]. Factor:', F5.2 )
+     &              E11.4, ' [tons/yr]. Factor:', E9.3 )
 
             END SUBROUTINE CONTROL_MESG
 
