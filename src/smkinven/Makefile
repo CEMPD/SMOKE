@@ -16,10 +16,10 @@ debug: smkinven.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
-RAW=chklstfl.o fixstk.o genpdout.o getpdinfo.o initinfo.o openinvin.o       \
-    openinvout.o openpdout.o procinven.o rdemsar.o rdemspd.o rdemspt.o      \
-    rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o smkinven.o srcmem.o  \
-    wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o
+RAW=chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o openinvin.o \
+    openinvout.o openpdout.o procinven.o rdemsar.o rdemsmb.o rdemspd.o \
+    rdemspt.o rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o smkinven.o \
+    srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -39,6 +39,8 @@ genpdout.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
 genpdinfo.o: $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $<
+gethdr.o: $(MODINFO) $(MODSTCY)
+	$(FC) $(FFLAGS) -c -o $@ $<
 initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 openinvout.o: $(MODLISTS) $(MODINFO)
@@ -48,6 +50,8 @@ openpdout.o: $(MODINFO)
 procinven.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdemsar.o: $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ $< 
@@ -59,7 +63,7 @@ rdidamb.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdidapt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdinven.o: $(MODSOURC) $(MODINFO)
+rdinven.o: $(MODSOURC) $(MODMOBIL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdlooppd.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
