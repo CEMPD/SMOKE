@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDAR2PT( FDEV )
+        SUBROUTINE RDAR2PT( FDEV, CDEV, LDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -50,6 +50,9 @@ C.........  MODULES for public variables
 C.........  This module is for cross reference tables
         USE MODXREF
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS   ! Note - needed for reporting only
+
 C.........  This module contains the arrays for the area-to-point x-form
         USE MODAR2PT
 
@@ -64,7 +67,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL       CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER , INTENT (IN) :: FDEV   ! iventory table unit no.
+        INTEGER , INTENT (IN) :: FDEV   ! area-to-point factors unit no.
+        INTEGER , INTENT (IN) :: CDEV   ! SCC descriptions unit no.
+        INTEGER , INTENT (IN) :: LDEV   ! log file unit no.
 
 C.............  Parameters
         INTEGER, PARAMETER :: NFIELDS = 11  ! no. input fields
@@ -75,12 +80,19 @@ C.............  Parameters
      &                      ( / 6 , 8, 20, 30, 50, 64,
      &                          76, 90, 105, 120, 127 / )
 
-C...........   Local allocatable arrays
+C...........   Local allocatable arrays...
+C...........   For processing:
         INTEGER      , ALLOCATABLE :: IDXA2P  ( :,: )   ! sorting index
         INTEGER      , ALLOCATABLE :: LOCFIP  ( : )     ! tmp FIPS codes
         INTEGER      , ALLOCATABLE :: NUMSCC  ( : )     ! no. SCCs per table
         TYPE( AR2PT ), ALLOCATABLE :: UNSRTA2P( :,: )   ! unsorted tables
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: AR2PTSCC( :,: ) ! SCCs per table
+
+C...........   For reporting:
+        INTEGER      , ALLOCATABLE :: SCCIDX  ( : )       ! sorting index
+        INTEGER      , ALLOCATABLE :: SCCSECTN( : )       ! section no. for SCC
+        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: INVSCCA( : ) ! unsorted SCCs
+
 
 C...........   Local arrays
         CHARACTER*32 SEGMENT( NFIELDS )
@@ -279,8 +291,75 @@ C.........  Call cross-referencing routine, which will also populate
 C           the ARPT09 array (full FIPs and full SCC matches only)
         CALL XREFTBL( 'AR2PT', NXREF )
 
+C.........  Report to the log file the SCCs, SCC descriptions, and
+C           the section of the input file set for each SCC.
+C.........  To create this report, we will create a fake INVSCC array
+C           for the MODLISTS module, which will allow us to read
+C           and assign the SCC descriptions for this report...
+
+C.........  Sum SCC count
+        NINVSCC = 0
+        DO N = 1, NTABLA2P
+            NINVSCC = NINVSCC + NUMSCC( N )
+        END DO
+
+C.........  Allocate temporary "inventory" SCC list from MODLISTS
+        ALLOCATE( INVSCC( NINVSCC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INVSCC', PROGNAME )
+
+C.........  Allocate unsorted arrays
+        ALLOCATE( SCCIDX( NINVSCC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCCIDX', PROGNAME )
+        ALLOCATE( INVSCCA( NINVSCC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INVSCCA', PROGNAME )
+        ALLOCATE( SCCSECTN( NINVSCC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCCSECTN', PROGNAME )
+
+C.........  Store unsorted SCCs
+        J = 0
+        DO N = 1, NTABLA2P
+            DO K = 1, NUMSCC( N )
+                J = J + 1
+                SCCIDX  ( J ) = J
+                INVSCCA ( J ) = AR2PTSCC( K,N )
+                SCCSECTN( J ) = N
+            END DO
+        END DO
+
+C.........  Sort SCC list, needed for reading SCC descriptions
+        CALL SORTIC( NINVSCC, SCCIDX, INVSCCA )
+        DO J = 1, NINVSCC
+            INVSCC( J ) = INVSCCA( SCCIDX( J ) )
+        END DO
+
+C.........  Retrieve SCC descriptions
+        CALL RDSCCDSC( CDEV )
+
+C.........  Write header of report
+        MESG = 'NOTE: The area-to-point factors file ' //
+     &         'included the following SCCs and '// CRLF()//
+     &         BLANK10 // 'section numbers'
+        CALL M3MESG( MESG )
+        WRITE( LDEV, 94010 ) ' '
+
+        MESG = 'SCC        Section   SCC Description'
+        WRITE( LDEV, 94010 ) BLANK10 // TRIM( MESG )
+        WRITE( LDEV, 94010 ) BLANK10 // REPEAT( '-', 70 )
+
+C.........  Loop through SCCs and list them, section no.'s, and descriptions
+        DO J = 1, NINVSCC
+            K = SCCIDX( J )
+            WRITE( LDEV,94675 ) INVSCC( J ), SCCSECTN( K ), 
+     &                          TRIM( SCCDESC( J ) )
+        END DO
+        WRITE( LDEV, 94010 ) ' '
+
+C.........  Deallocate borrowed MODLISTS arrays
+        DEALLOCATE( INVSCC, SCCDESC )
+
 C.........  Deallocate local memory
         DEALLOCATE( IDXA2P, NUMSCC, UNSRTA2P, AR2PTSCC )
+        DEALLOCATE( SCCIDX, INVSCCA, SCCSECTN )
 
 C.........  Deallocate cross-reference sorting arrays
         DEALLOCATE( INDXTA, IFIPTA, CSCCTA, CSRCTA, IARPTA )
@@ -292,6 +371,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94675   FORMAT( 10X, A10, 4X, I2.2, 5X, A )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
