@@ -114,14 +114,14 @@ C.........  Get value of these controls from the environment
             MESG = 'Import hour-specific data'
             HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
         ELSE
-            MESG = 'Read and use area-to-point factors file'
-            CFLAG = ENVYN ( 'SMK_ARTOPNT_YN', MESG, .FALSE., IOS )
-
             MESG = 'Read and use non-HAP exclusions file'
             NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', MESG, .FALSE., IOS )
         END IF
 
         IF ( CATEGORY .EQ. 'AREA' ) THEN
+            MESG = 'Read and use area-to-point factors file'
+            CFLAG = ENVYN ( 'SMK_ARTOPNT_YN', MESG, .FALSE., IOS )
+            
             MESG = 'Import gridded I/O API inventory data'
             GFLAG = ENVYN ( 'IMPORT_GRDIOAPI_YN', MESG, .FALSE., IOS )
         END IF
