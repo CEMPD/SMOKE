@@ -45,9 +45,10 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
+        CHARACTER*2   CRLF
         INTEGER       GETEFILE
 
-        EXTERNAL      GETEFILE
+        EXTERNAL      CRLF, GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS:
 
@@ -76,6 +77,14 @@ C   Begin body of subroutine OPENCTMP
             MESG = 'Path where temporary control files will be written'
             CALL ENVSTR( 'TMP_CTL_PATH', MESG, '.', PATHNM, IOS )
 
+            IF( IOS .NE. 0 ) THEN
+                MESG = 'WARNING: Large temporary files being placed '//
+     &                 'executable directory because ' // CRLF() //
+     &                 BLANK10 // 'environment variable TMP_CTL_PATH '//
+     &                 'is not set properly'
+                CALL M3MSG2( MESG )
+            END IF
+
         END IF
 
         SELECT CASE( PKTTYP )
@@ -85,7 +94,7 @@ C   Begin body of subroutine OPENCTMP
               FILENM = PATHNM // '/.ctgtmp'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
-           CASE ( 'CONTROL' )
+           CASE ( 'CONTROL', 'EMS_CONTROL' )
 
               FILENM = PATHNM // '/.ctltmp'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
