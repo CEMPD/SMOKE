@@ -1,10 +1,8 @@
 # Version @(#)$Id$ 
 # Path    $Source$
-# Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
-#LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
-LIBS_DEBUG    = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
+LIBS          = $(LDIRS) $(LIBS_SYS) 
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 #LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.a
@@ -23,7 +21,6 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o \
      setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o
-#qatmpr.o
 
 #
 temporal: $(TMP) $(ALLI) $(LIBPATH)
@@ -46,19 +43,15 @@ mktmat.o: $(MODTMPRL)
 	$(FC) $(FFLAGS) -c -o $@ mktmat.f
 opentmp.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opentmp.f
-opentmpin.o: $(MODMET) $(MODINFO)
+opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ opentmpin.f
-rdefacs.o: $(MODMOBIL) $(MODEMFAC) $(MODINFO) $(MODMET) $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ rdefacs.f
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ setdaylt.f
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
-            $(MODDAYHR) $(MODLISTS)
+            $(MODDAYHR) $(MODLISTS) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ temporal.f
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ tmnamunt.f
-qatmpr.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ qatmpr.f
 updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ updtmat.f
 #
