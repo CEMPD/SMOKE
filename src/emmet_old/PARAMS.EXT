@@ -1,0 +1,49 @@
+C ******   PARAMS.EXT   ******************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C
+****************************************************************************/
+C
+C....................................................................
+C  INCLUDE FILE  PARAMS.EXT
+C
+C  CONTAINS:
+C       grid dimensioning parameters for METCDF
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C       Prototype 7/96 by C. Sunny Lo
+C
+C....................................................................
+
+       INTEGER NL        ! Number of Layers from MCIP Data
+       INTEGER NT        ! Number of Timesteps from MCIP Data
+       INTEGER NVMAX     ! Maximum Number of Variables Read from MCIP
+       INTEGER NTPHTMAX  ! Maximum Number of Heights to be Interpolated
+       INTEGER OUTVAR    ! Output variable number from PBLPWR 
+       PARAMETER    ( 
+     &                NL       = 22,      ! Total layer number
+     &                NT       = 120,     ! Total time steps to be processed
+c    &                NVMAX    = 20,      ! Max No. allowed for input data
+     &                NTPHTMAX = 99,      ! Max ht No allowed for interpolation 
+     &                OUTVAR   = 9        ! Output variable number from PBLPWR
+     &              )
