@@ -6,11 +6,16 @@ LIBS	  = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
 LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug -lioapi.debug -lnetcdf.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libiotools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
+LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -liotools -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -liotools.debug -lioapi_new -lnetcdf -lpvm3 -mp
+
 #
 
 all: smkmerge mrggrid
 
 debug: smkmerge.debug mrggrid.debug
+
+pvm: smkmerge.pvm
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -29,6 +34,11 @@ smkmerge: $(MRG) $(ALLI) $(LIBPATH)
 smkmerge.debug: $(MRG) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKMERGE \(debug\):
 	$(FC) $(DBGFLAGS) -o $(@) $(MRG) $(LIBS_DEBUG)
+#
+#
+smkmerge.pvm: $(MRG) $(ALLI) $(LIBPATH)
+	echo SMKMERGE \(pvm\):
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS_PVM)
 #
 MGD= mrggrid.o
 #
