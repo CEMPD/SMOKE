@@ -54,7 +54,7 @@ C...........   This module contains the cross-reference tables
      &                     CHRT09
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, CATEGORY, SCCLEV1, SCCLEV2, SCCLEV3
+        USE MODINFO, ONLY: NSRC, SCCLEV1, SCCLEV2, SCCLEV3
 
         IMPLICIT NONE
 
@@ -119,31 +119,26 @@ C.........  Loop through the sorted sources
         DO S = 1, NSRC
 
 C.............  Create selection 
-            SELECT CASE ( CATEGORY )
-
-            CASE ( 'AREA', 'MOBILE' )
-                CSRC    = CSOURC( S )
-                CFIP    = CSRC( 1:FIPLEN3 )
-                CSTA    = CFIP( 1:STALEN3 )
+            CSRC    = CSOURC( S )
+            CFIP    = CSRC( 1:FIPLEN3 )
+            CSTA    = CFIP( 1:STALEN3 )
                 
-C.................  Set type of SCC                
-                SCCFLAG = SETSCCTYPE ( CSCC( S ) )
-                TSCC_D  = CSCC( S )             ! Level 4 (all)
-                TSCC_A  = TSCC_D( 1:SCCLEV1 )   ! Level 1
-                TSCC_B  = TSCC_D( 1:SCCLEV2 )   ! Level 2
-                TSCC_C  = TSCC_D( 1:SCCLEV3 )   ! Level 3
+C.............  Set type of SCC                
+            SCCFLAG = SETSCCTYPE ( CSCC( S ) )
+            TSCC_D  = CSCC( S )             ! Level 4 (all)
+            TSCC_A  = TSCC_D( 1:SCCLEV1 )   ! Level 1
+            TSCC_B  = TSCC_D( 1:SCCLEV2 )   ! Level 2
+            TSCC_C  = TSCC_D( 1:SCCLEV3 )   ! Level 3
 
-                CFIPS_A = CFIP // TSCC_A
-                CFIPS_B = CFIP // TSCC_B
-                CFIPS_C = CFIP // TSCC_C
-                CFIPS_D = CFIP // TSCC_D
+            CFIPS_A = CFIP // TSCC_A
+            CFIPS_B = CFIP // TSCC_B
+            CFIPS_C = CFIP // TSCC_C
+            CFIPS_D = CFIP // TSCC_D
 
-                CSTAS_A = CSTA // TSCC_A
-                CSTAS_B = CSTA // TSCC_B
-                CSTAS_C = CSTA // TSCC_C
-                CSTAS_D = CSTA // TSCC_D
-
-            END SELECT
+            CSTAS_A = CSTA // TSCC_A
+            CSTAS_B = CSTA // TSCC_B
+            CSTAS_C = CSTA // TSCC_C
+            CSTAS_D = CSTA // TSCC_D
 
 C.............  Try for any FIPS code & SCC matches; then any Cy/st code & 
 C               SCC matches
