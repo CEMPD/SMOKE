@@ -61,6 +61,8 @@
         INTEGER, PARAMETER, PUBLIC :: LENTTL3  = 300! length of titles
         INTEGER, PARAMETER, PUBLIC :: QAFMTL3  = 2000 ! lngth of format statmnt
 
+        CHARACTER*4, PARAMETER, PUBLIC :: CHKPFX = 'chk_'
+
         CHARACTER(LEN=RPKTLEN), PARAMETER, PUBLIC :: 
      &                          ALLPCKTS( NALLPCKT ) = 
      &                                  ( / '/CREATE REPORT/      ',
@@ -122,6 +124,8 @@
             LOGICAL       :: BYSRG         ! true: by surrogate codes
             LOGICAL       :: BYRCL         ! true: by road class (mb)
             LOGICAL       :: BYWEK         ! true: by weekly temporal code
+            LOGICAL       :: CHKPROJ       ! true: check projctns vs. rpt
+            LOGICAL       :: CHKCNTL       ! true: check controls vs. rpt
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
             LOGICAL       :: NORMCELL      ! true: normalize by cell area
             LOGICAL       :: NORMPOP       ! true: normalize by county pop
@@ -129,8 +133,11 @@
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
+            LOGICAL       :: USECRMAT      ! true: use reactivity controls
+            LOGICAL       :: USECUMAT      ! true: use multiplicative controls
             LOGICAL       :: USEGMAT       ! true: use gridding
             LOGICAL       :: USEHOUR       ! true: use hourly data
+	    LOGICAL       :: USEPRMAT      ! true: use projection matrix
             LOGICAL       :: USESLMAT      ! true: use mole spec
             LOGICAL       :: USESSMAT      ! true: use mass spec
 
@@ -150,6 +157,8 @@
         INTEGER, PUBLIC :: NPING  = 0       ! no. PinG sources
         INTEGER, PUBLIC :: NSTEPS = 0       ! no. time steps in data file
         INTEGER, PUBLIC :: PYEAR  = 0       ! projected inventory year
+        INTEGER, PUBLIC :: PRBYR  = 0       ! proj matrix base yr
+        INTEGER, PUBLIC :: PRPYR  = 0       ! proj matrix projected yr
         INTEGER, PUBLIC :: SDATE  = 0       ! Julian start date of run
         INTEGER, PUBLIC :: STIME  = 0       ! start time of run (HHMMSS)
         INTEGER, PUBLIC :: TSTEP  = 0       ! time step (HHMMSS)
@@ -158,7 +167,7 @@
 !.........  Controls for whether input files are needed
 !.........  These variables are set once, and never reset
         LOGICAL, PUBLIC :: CUFLAG = .FALSE. ! true: read in multipl. control matrix
-        LOGICAL, PUBLIC :: CAFLAG = .FALSE. ! true: read in additive control matrix
+        LOGICAL, PUBLIC :: CURPTFLG = .FALSE. ! true: read mult. cntl report
         LOGICAL, PUBLIC :: CRFLAG = .FALSE. ! true: read in reactivity control matrix
         LOGICAL, PUBLIC :: GFLAG  = .FALSE. ! true: read in grd matrix and G_GRIDPATH
         LOGICAL, PUBLIC :: GSFLAG = .FALSE. ! true: read gridding supplementary file
@@ -166,6 +175,8 @@
         LOGICAL, PUBLIC :: NFLAG  = .FALSE. ! true: read in SCC names file
         LOGICAL, PUBLIC :: SLFLAG = .FALSE. ! true: read in mole speciation matrix
         LOGICAL, PUBLIC :: SSFLAG = .FALSE. ! true: read in mass speciation matrix
+        LOGICAL, PUBLIC :: PRFLAG = .FALSE. ! true: read projection matrix
+        LOGICAL, PUBLIC :: PRRPTFLG = .FALSE. ! true: read projectn report
         LOGICAL, PUBLIC :: PSFLAG = .FALSE. ! true: read spec supplementary
         LOGICAL, PUBLIC :: TFLAG  = .FALSE. ! true: read in hourly emissions
         LOGICAL, PUBLIC :: TSFLAG = .FALSE. ! true: read tmprl supplementary
