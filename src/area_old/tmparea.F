@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM TMPAREA
 
 C***********************************************************************
-C  program body starts at line 177
+C  program body starts at line 233
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
@@ -25,11 +23,38 @@ C       TIME2SEC, TRIMLEN, WKDAY
 C
 C  REVISION  HISTORY:
 C       Prototype  3/95 by CJC.
+C
 C       Modified   8/95 by CJC -- proper handling of time zones, 
 C       daylight saving time, annualized vs. day-specific inventories
+C
 C       Modified  10/95 by CJC -- Uses TPFLAG, to determine source-dependent
 C       applicability of monthly, weekly profiles (applicable iff 
 C	mod( tflag( source ), [M|W]PRFAC ) is zero
+C
+C	Modified 8/96 by CJC:  style changes.  Now uses AIRS-format
+c  	ATREF, rather than filtered, cut-down ATREF.
+C***********************************************************************
+C
+C PROJECT TITLE: 
+C	Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling System
+C
+C File Version @(#)$Id$ $Source$ $Date$ 
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
 C***********************************************************************
 
       IMPLICIT NONE
@@ -201,7 +226,6 @@ C...........   Other local variables
         CHARACTER*16    ANAME   !  logical name for area-source      input file
         CHARACTER*16    TNAME   !  logical name for timestepped     output file
         CHARACTER*256   MESG    !  buffer for M3EXIT()
-
 
 C***********************************************************************
 C   begin body of program TMPAREA
@@ -465,7 +489,7 @@ C.......   Read temporal-profile cross-reference file.
             
             IREC = IREC + 1
             READ( XDEV, 93020, END=22, IOSTAT=IOS ) 
-     &              FIP, PLANT, ID7C, ID3C, CODE, IMON, IWEK, IDIU
+     &              FIP, ID7C, ID3C, CODE, IMON, IWEK, IDIU
             
             IF ( IOS .NE. 0 ) THEN
 
@@ -473,9 +497,10 @@ C.......   Read temporal-profile cross-reference file.
      &                           'I/O status  ', IOS
                 CALL M3EXIT( 'TMPAREA', 0, 0, 
      &                       'Error reading CROSS-REFERENCE file', 2 )
-            ENDIF
+            END IF
 
 C.............  Define pollutant for this record
+
             IF ( CODE .GT. 0 ) THEN
                 I = FIND1( CODE, NIPOL, PCODE )
             ELSE
@@ -483,15 +508,16 @@ C.............  Define pollutant for this record
             END IF
 
 C.............  Check for all reasons to move on to the next record
+
             IF( PLANT .GT. 0 ) THEN   ! Point source x-ref entry
 
                 GO TO 21
 
-            ELSEIF( ID7C(1:1) .GT. '9' ) THEN  ! Motor vehicle x-ref entry
+            ELSE IF( ID7C(1:1) .GT. '9' ) THEN  ! Motor vehicle x-ref entry
 
                 GO TO 21
 
-            ELSEIF( I .LT. 0 ) THEN   ! Pollutant code not found
+            ELSE IF( I .LT. 0 ) THEN   ! Pollutant code not found
 
                 II = -1
                 DO B = 1,IBADC
@@ -507,11 +533,12 @@ C.............  Check for all reasons to move on to the next record
      &                     'Pollutant code', CODE, 'not used'
                     CALL M3MESG( MESG )
 
-                ENDIF
+                END IF
 
                 GO TO 21
 
 C.............  For AREA x-ref entries, check if needed
+
             ELSE
            
                 ID7 = STR2INT( ID7C ) 
@@ -521,7 +548,7 @@ C.............  For AREA x-ref entries, check if needed
                     J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )
                 ELSE
                     J = 1
-                ENDIF
+                END IF
 
                 IF( J .LE. 0 ) THEN   ! ASC code not found in ASCC LIST file
 
@@ -561,7 +588,8 @@ C.............  For AREA x-ref entries, check if needed
                     GO TO  21
 
 C.....................  For correct x-ref records, store if fits
-                ELSEIF( K .GE. MXREF ) THEN  !  X-ref storage overflow
+
+                ELSE IF( K .GE. MXREF ) THEN  !  X-ref storage overflow
 
                     WRITE( MESG,94030 ) 
      &                     'XREF table overflow at record', IREC
@@ -580,9 +608,9 @@ C.....................  For correct x-ref records, store if fits
                     DPRFA( K ) = IDIU
                     CODEA( K ) = I
 
-                ENDIF !  No overflow, ASC found in list, no errors
+                END IF !  No overflow, ASC found in list, no errors
 
-            ENDIF     !  Area records and pollutant code found
+            END IF     !  Area records and pollutant code found
 
             GO TO 21  !  To head of read-XREF loop
                             
@@ -1103,7 +1131,6 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93015   FORMAT ( I7, I3 )
 
-cmh 93020   FORMAT( I5, I8, I3, I6, 3 I4 )
 93020   FORMAT( I5, 1X, I5, 9X, A7, A3, I6, 3 I4 )
 
 93030   FORMAT( I5.5, 15X, I7.7, I3.3, 1X, I5, 3 I4 )
