@@ -31,7 +31,7 @@ debug:
 	f77 $(DBGFLAGSM5) -c g*.F h*.F
 	f77 $(DBGFLAGSM5) -c i*.F l*.F m*.F n*.F
 	f77 $(DBGFLAGSM5) -c o*.F
-	f77 $(DBGFLAGSM5) -c p*.F q*.F r*.F s*.F t*.F u*.F v.F w*.F y*.F z*.F
+	f77 $(DBGFLAGSM5) -c p*.F q*.F r*.F s*.F t*.F u*.F v*.F w*.F y*.F z*.F
 	ar rv $(EDSS_LIB)/libmo5b.debug.a a*.o b*.o
 	ar rv $(EDSS_LIB)/libmo5b.debug.a c*.o
 	ar rv $(EDSS_LIB)/libmo5b.debug.a d*.o e*.o f*.o
