@@ -112,6 +112,11 @@ C   Begin body of subroutine OPENCTMP
 
               FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_proj'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
+              
+           CASE ( 'MACT' )
+           
+              FILENM = PATHNM( 1:LP ) // '/cntlmat_tmp_mact'
+              IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
         END SELECT
 
